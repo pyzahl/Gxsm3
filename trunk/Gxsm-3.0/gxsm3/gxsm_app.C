@@ -1,0 +1,963 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
+/* Gxsm - Gnome X Scanning Microscopy
+ * universal STM/AFM/SARLS/SPALEED/... controlling and
+ * data analysis software
+ * 
+ * Copyright (C) 1999,2000,2001,2002,2003 Percy Zahl
+ *
+ * Authors: Percy Zahl <zahl@users.sf.net>
+ * additional features: Andreas Klust <klust@users.sf.net>
+ * WWW Home: http://gxsm.sf.net
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+// NOTE: pzahl@phenom:/usr/share/help/C/gnome-devel-demos/samples
+
+#include <locale.h>
+#include <glib.h>
+#include <glib/gi18n.h>
+
+#include "../pixmaps/gxsmlogo.xpm"
+
+#include "gxsm_app.h"
+#include "gxsm_window.h"
+
+#include "version.h"
+#include "glbvars.h"
+
+#include "unit.h"
+#include "pcs.h"
+
+#include "xsmtypes.h"
+#include "surface.h"
+// #include "tips_dialog.h"
+#include "plugin_ctrl.h"
+
+extern int generate_preferences_gschema;
+extern int generate_gl_preferences_gschema;
+void surf3d_write_schema (); // in vsurf3d.C
+
+
+typedef struct { 
+        const gchar *label;
+        const gchar *tooltip;
+        const gchar *toolbar_action;
+        const gchar *icon_name;
+        GActionEntry gaction;
+} GXSM_ACTION_INFO;
+
+#define GXSM_TOOLBAR_ACTION_ENTRY(L, ACTION, T, CB, TA, ICON) { N_(L), N_(T), TA, ICON, { ACTION, CB, NULL, NULL, NULL} }
+#define GXSM_TOOLBAR_END { NULL, NULL, NULL, NULL, { NULL, NULL, NULL, NULL } }
+
+static GXSM_ACTION_INFO main_actions[] = {
+	GXSM_TOOLBAR_ACTION_ENTRY ("Start Scan", "scan-start", "Start scanning the surface",
+                                   App::action_toolbar_callback, "Toolbar_Scan_Start",
+                                   "system-run-symbolic"),
+	GXSM_TOOLBAR_ACTION_ENTRY ("Start Movie", "scan-movie", "Repeat scanning the surface and store in time dimension",
+                                   App::action_toolbar_callback, "Toolbar_Scan_Movie",
+                                   "camera-video-symbolic"),
+	GXSM_TOOLBAR_ACTION_ENTRY ("Pause Scan", "scan-pause", "Pause a running scan",
+                                   App::action_toolbar_callback, "Toolbar_Scan_Pause",
+                                   "media-playback-pause-symbolic"),
+	GXSM_TOOLBAR_ACTION_ENTRY ("Stop Scan", "scan-stop", "Stop a running scan",
+                                   App::action_toolbar_callback, "Toolbar_Scan_Stop",
+                                   "process-stop-symbolic"),
+	GXSM_TOOLBAR_ACTION_ENTRY ("Open File", "file-open", "Open an existing scan", 
+                                    App::file_open_callback, NULL,
+                                   "document-open-symbolic"),
+	GXSM_TOOLBAR_ACTION_ENTRY ("Save All", "file-save", "Save scans with automatically generated names",
+                                   App::file_save_callback, NULL,
+                                   "document-save-symbolic"),
+	GXSM_TOOLBAR_ACTION_ENTRY ("Auto Display", "autodisp", "Autoscale active view, use rectange for subregion!",
+                                   App::view_autodisp_callback, NULL,
+                                   "view-refresh-symbolic"),
+	GXSM_TOOLBAR_ACTION_ENTRY ("Exit Gxsm", "quit", "Exit the GXSM",
+                                   App::file_quit_callback, NULL,
+                                   "system-shutdown-symbolic"),
+        GXSM_TOOLBAR_END
+};
+        
+static GActionEntry app_gxsm_action_entries[] = {
+        // { , NULL, NULL, NULL },
+        // { "rgb-mode", ViewControl::view_view_color_rgb_callback, NULL, "false", NULL },
+        // { "set-marker-group", ViewControl::view_tool_marker_group_radio_callback, "s", "'red'", NULL },
+        { "file-open", App::file_open_callback, NULL, NULL, NULL },
+        { "file-open-to-free-channel", App::file_open_in_new_window_callback, NULL, NULL, NULL },
+        { "file-close", App::file_close_callback, NULL, NULL, NULL },
+        { "autodisp", App::view_autodisp_callback,  NULL, NULL, NULL },
+        { "plugins-reload", App::tools_plugin_reload_callback, NULL, NULL, NULL },
+        { "plugins-info", App::tools_plugin_info_callback, NULL, NULL, NULL },
+        //        { "help-tip", App::help_tip_callback, NULL, NULL, NULL },
+        { "preferences", App::options_preferences_callback, NULL, NULL, NULL },
+        { "about", App::help_about_callback, NULL, NULL, NULL },
+        { "quit", App::file_quit_callback, NULL, NULL, NULL }
+};
+
+        
+// ========================================
+// Application Startup Point
+// ========================================
+
+App::App(GApplication *g_app)
+{
+        XSM_DEBUG(DBG_L2, "App::App" );
+        // until Application is created
+
+	g_application = g_app; // GApplication reference
+
+        // gxsm base settings object
+        gxsm_app_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT);
+        as_settings       = g_settings_new (GXSM_RES_BASE_PATH_DOT".gui.as");
+
+        // GVariant *x = g_settings_get_value (gxsm_app_settings, "first-start");
+        // g_print (GXSM_RES_BASE_PATH_DOT" * first-start [b] = %s\n", g_variant_get_boolean (x)? "true":"false");
+
+        /*
+        g_settings_bind (priv->settings, "transition",
+                         priv->stack, "transition-type",
+                         G_SETTINGS_BIND_DEFAULT);
+        g_object_bind_property (priv->search, "active",
+                                priv->searchbar, "search-mode-enabled",
+                                G_BINDING_BIDIRECTIONAL);
+         action = g_settings_create_action (priv->settings, "show-words");
+         g_action_map_add_action (G_ACTION_MAP (win), action);
+         g_object_unref (action);
+
+        */
+
+        // TEST
+        //        gtk_icon_theme_append_search_path (gtk_icon_theme_get_default (), "/usr/local/share/gxsm3/icons/");
+        // Gxsm customized icons (svg) compiled in via grescources
+        gtk_icon_theme_add_resource_path (gtk_icon_theme_get_default (), "/org/gnome/gxsm3/resources/icons");
+
+        app_window = NULL;
+	appbar = NULL;
+
+	// still not created
+        channelselector = NULL;
+        monitorcontrol = NULL;
+        spm_control = NULL;
+        xsm = NULL;
+
+	// Remote Control Lists
+        RemoteEntryList  = NULL;  
+        RemoteActionList = NULL;  
+	remotecontrol    = NULL;
+
+	// Plungin Interface, Plugin Events
+	GxsmPlugins = NULL;
+	PluginNotifyOnSPMRange = NULL;
+	PluginNotifyOnStartScan = NULL;
+	PluginNotifyOnStopScan = NULL;
+	PluginNotifyOnCDFLoad = NULL;
+	PluginNotifyOnCDFSave = NULL;
+	PluginNotifyOnLoadFile = NULL;
+	PluginNotifyOnSaveFile = NULL;
+	PluginRemoteAction = NULL;
+
+	PluginCallGetNCInfo = NULL;
+	PluginCallPrinter = NULL;
+	PluginCallMkicons = NULL;
+  
+	// Application Gxsm
+        nodestroy = TRUE;
+
+        // Splash widgets
+	splash_progress_bar = NULL;
+        splash = NULL;
+        splash_darea = NULL;
+        splash_img = NULL;
+
+	for(int i=0; i<4; ++i){
+		glb_ref_point_xylt_index[i]=0;
+		glb_ref_point_xylt_world[i]=0.;
+	}
+}
+
+App::~App(){
+	XSM_DEBUG (DBG_L1,  "App::~App ** saving Geometry **" );
+	SaveGeometry();
+
+        //        SetStatus(N_("App::~App: Closing Application object now."));
+
+	XSM_DEBUG (DBG_L1,  "App::~App ** EXITING **" );
+
+        XSM_DEBUG(DBG_L2, "App::~App: Closing Application object now..." );
+
+	XSM_DEBUG (DBG_L1,  "App::~App ** unloading plugins **" );
+
+	// remove plugins: killflag = TRUE
+	reload_gxsm_plugins( TRUE );
+
+	XSM_DEBUG (DBG_L1,  "App::~App ** unloading plugins done. **" );
+
+	XSM_DEBUG (DBG_L1,  "App::~App ** Deleting Channelselector **" );
+        delete channelselector;
+
+	XSM_DEBUG (DBG_L1,  "App::~App ** Deleting Monitor **" );
+        delete monitorcontrol;
+
+	XSM_DEBUG (DBG_L1,  "App::~App ** Deleting xsm **" );
+        delete xsm;
+
+        //        g_clear_object (&gxsm_app_settings);
+        //        g_clear_object (&as_settings);
+
+	XSM_DEBUG (DBG_L1,  "App::~App ** -- all done -- by by -- **" );
+        XSM_DEBUG(DBG_L2, "App::~App: done." );
+}
+
+
+void App::AppWindowInit(const gchar *title){
+	XSM_DEBUG (DBG_L2,  "App::WindowInit" );
+
+
+        //        app_window = gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
+        window = GTK_WINDOW (app_window);
+
+        header_bar = gtk_header_bar_new ();
+        gtk_widget_show (header_bar);
+        gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), true);
+        gtk_header_bar_set_decoration_layout (GTK_HEADER_BAR (header_bar), "icon"); //  "icon,menu:close");
+        // "minimize, maximize, close, icon (the window icon), and menu (a menu button for the fallback app menu).
+        // "menu:minimize,maximize,close” "
+                                              
+        g_action_map_add_action_entries (G_ACTION_MAP (g_application),
+                                         app_gxsm_action_entries, G_N_ELEMENTS (app_gxsm_action_entries),
+                                         this);
+
+        // create window PopUp menu  ---------------------------------------------------------------------
+        XSM_DEBUG (DBG_L2,  "App::AppWindowInit main menu" );
+
+        gxsm_menu = gtk_menu_new_from_model (G_MENU_MODEL (get_gxsm_main_menu ()));
+        g_assert (GTK_IS_MENU (gxsm_menu));
+
+
+        XSM_DEBUG (DBG_L2,  "App GXSM main popup Header Buttons setup. " );
+	GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
+
+        // attach full view popup menu to tool button ----------------------------------------------------
+        GtkWidget *header_menu_button = gtk_menu_button_new ();
+        //        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("emblem-system-symbolic", tmp_toolbar_icon_size));
+        gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), gxsm_menu);
+        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+
+        // attach display mode section from popup menu to tool button --------------------------------
+        header_menu_button = gtk_menu_button_new ();
+        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("emblem-system-symbolic", tmp_toolbar_icon_size));
+        GMenuModel *section = find_extension_point_section (G_MENU_MODEL (get_gxsm_main_menu ()), "math-section");
+        if (section) {
+                gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), gtk_menu_new_from_model (G_MENU_MODEL (section)));
+                gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+        }
+
+        XSM_DEBUG (DBG_L2,  "App GXSM main popup Header Buttons setup. C TOOLBAR POPULATE " );
+
+        // Create GXSM main action bar buttons and configure special toolbar_callback type actions
+        // load, populate toolbar and setup all application actions
+
+        for (GXSM_ACTION_INFO *gai=&main_actions[0]; gai->gaction.name; ++gai){
+                XSM_DEBUG (DBG_L2, "GXSM MAIN TOOLBAR SETUP -- adding action = " << gai->gaction.name << " ** ceck:" << g_action_name_is_valid (gai->gaction.name));
+
+                GSimpleAction *ti_action = g_simple_action_new (gai->gaction.name, NULL);
+                // GSimpleAction *ti_action = g_simple_action_new_stateful (gai->gaction.name, NULL, g_variant_new_boolean (FALSE));
+                // g_simple_action_set_enabled (ti_action, TRUE);
+                g_signal_connect (ti_action, "activate", G_CALLBACK (gai->gaction.activate), g_application);
+                if (gai->toolbar_action){
+                        g_object_set_data (G_OBJECT (ti_action), "toolbar_action", (gpointer) gai->toolbar_action);
+                        XSM_DEBUG(DBG_L2, "........ adding toolbar_action = " << gai->toolbar_action);
+                }
+                g_action_map_add_action (G_ACTION_MAP (g_application), G_ACTION (ti_action));
+
+                if (gai->label){
+                        XSM_DEBUG(DBG_L2, "........ adding toolbutton = " << gai->label);
+
+                        /* B) Create a button for the action, with a stock image */
+
+                        GtkToolItem *ti_button = gtk_tool_button_new (NULL, NULL);
+
+                        if (gai == &main_actions[0]) scan_button = ti_button; // Scan Button ref
+
+                        gtk_tool_button_set_icon_name (GTK_TOOL_BUTTON (ti_button), gai->icon_name);
+                        gtk_widget_set_tooltip_text (GTK_WIDGET (ti_button), gai->label);
+
+                        gchar *app_action = g_strconcat ("app.", gai->gaction.name, NULL); 
+                        gtk_actionable_set_action_name (GTK_ACTIONABLE (ti_button), app_action);
+                        g_object_set_data (G_OBJECT (ti_action), "toolbar_button", (gpointer)ti_button);
+                        g_free (app_action);
+
+                        gtk_header_bar_pack_start (GTK_HEADER_BAR (header_bar), GTK_WIDGET (ti_button));
+                }
+        }
+
+        // Title bar
+        gtk_window_set_title (GTK_WINDOW (window), title);
+        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
+        gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), GXSM_VERSION_NAME);
+        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+
+        /* main window content is a grid to place main control elements */
+        grid = gtk_grid_new ();
+        gtk_container_add (GTK_CONTAINER (window), GTK_WIDGET (grid));
+
+        /* Make Statusbar and attach to grid at bottom now */
+	appbar = gtk_statusbar_new ();
+	appbar_ctx_id = gtk_statusbar_get_context_id (GTK_STATUSBAR (appbar), "GXSM MAIN STATUS");
+        gtk_grid_attach (GTK_GRID (grid), appbar, 0, 10, 1, 1);
+
+        //        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
+        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
+        
+	gtk_widget_show_all (GTK_WIDGET (window));
+}
+
+void App::build_gxsm (Gxsm3appWindow *win){
+        //        const gchar *quit_accels[2] = { "<Ctrl>Q", NULL };
+
+        XSM_DEBUG(DBG_L2, "App::build_gxsm_1" );
+
+        pcs_set_current_gschema_group ("core");
+
+	// manage main window geometry
+        app_window = win;
+        // setup core functionality header bar, grid with status bar
+        AppWindowInit (N_("Gxsm 3"));
+        
+        // gtk_application_window_set_show_menubar (GTK_APPLICATION_WINDOW (win), TRUE);
+
+        //        gtk_grid_attach (GTK_GRID (grid), toolbar, 0, 0, 1, 1);
+
+
+        
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - starting up" );
+        SetStatus(N_("Starting GXSM..."));
+        
+        /* Now read User Confiugartion */
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - reading config" );
+        SetStatus(N_("Reading User Config"));
+
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - gnome_res_preferences_new (xsm_res_def)" );
+	GnomeResPreferences *pref = gnome_res_preferences_new (xsm_res_def, GXSM_RES_PREFERENCES_PATH);
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - read_user_config" );
+
+        if (generate_preferences_gschema) {
+                gchar *gschema = gnome_res_write_gschema (pref);
+                
+                std::ofstream f;
+                f.open (GXSM_RES_BASE_PATH_DOT ".preferences.gschema.xml", std::ios::out);
+                f << gschema
+                  << std::endl;
+                f.close ();
+
+                g_free (gschema);
+                gnome_res_destroy (pref);
+
+                exit (0);
+        }
+        if (generate_gl_preferences_gschema) {
+                surf3d_write_schema ();
+                exit (0);
+        }
+                
+        gnome_res_read_user_config (pref);
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - destroy preferences object" );
+	gnome_res_destroy (pref);
+
+        set_window_geometry    ("main");
+
+        XSM_DEBUG(DBG_L2, "App::build_gxsm_10" );
+	
+	if(xsmres.HardwareTypeCmd)
+		strcpy(xsmres.HardwareType, xsmres.HardwareTypeCmd);
+	if(xsmres.DSPDevCmd)
+		strcpy(xsmres.DSPDev, xsmres.DSPDevCmd);
+
+	XSM_DEBUG (DBG_L1,  "DSPDev :" << xsmres.DSPDev );
+	XSM_DEBUG (DBG_L1,  "DSPType:" << xsmres.HardwareType );
+
+        ClearStatus();
+
+        /* Erzeuge und Initialise Xsm system */
+
+        pcs_set_current_gschema_group ("corehwi");
+
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - xsm = new Surface" );
+        SetStatus(N_("Generating Surface Object..."));
+        xsm = new Surface (); // This is the master backend (app is only passed to HwI's)
+
+        XSM_DEBUG(DBG_L2, "App::build_gxsm_12" );
+
+
+	/* Enable DND to accept file Drops */
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - DnD setup" );
+	configure_drop_on_widget (GTK_WIDGET (app_window));
+
+        /* Attach more Elements... to main window */
+
+        XSM_DEBUG(DBG_L2, "App::build_gxsm_15" );
+
+	/* fill in Gxsm main control elements SPM + AS + UI */
+	xsm->SetModeFlg (MODE_SETSTEPS);
+
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - attach control elements SPM+AS+UI" );
+
+        pcs_set_current_gschema_group ("mainwindow");
+
+	if(IS_SPALEED_CTRL)
+		// SPALEED Controls
+		spm_control  = create_spa_control ();
+	else
+		// SPM Controls
+		spm_control  = create_spm_control ();
+
+        gtk_grid_attach (GTK_GRID (grid), spm_control, 0, 1, 1, 1);
+        gtk_widget_show (spm_control);
+
+        XSM_DEBUG(DBG_L2, "App::build_gxsm_16" );
+
+	// Auto Save Control
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - AS control" );
+        as_control   = create_as_control ();
+        gtk_grid_attach (GTK_GRID (grid), as_control, 0, 2, 1, 1);
+
+	// User Info Control
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - UI control" );
+        ui_control   = create_ui_control ();
+        gtk_grid_attach (GTK_GRID (grid), ui_control, 0, 3, 1, 1);
+
+	gtk_widget_show_all (GTK_WIDGET (window));
+
+        /* create default control windows */
+        
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - Monitor");
+        /* create windows */
+        pcs_set_current_gschema_group ("monitorwindow");
+        monitorcontrol  = new MonitorControl();
+
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - Channelselector");
+        pcs_set_current_gschema_group ("channelselectorwindow");
+
+        channelselector = new ChannelSelector();
+
+  	/* Load Gxsm Plugins: additional control windows, math/filters/etc. */
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - Scanning for PlugIns...");
+        pcs_set_current_gschema_group ("plugins");
+        SetStatus(N_("Scanning for GXSM Plugins..."));
+	if( !xsmres.disableplugins )
+		reload_gxsm_plugins();
+
+        pcs_set_current_gschema_group ("post-build-error-path");
+
+	/* call hook to update gxsm setting from hardware as desired */
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - call xsmhard->update_gxsm_configurations");
+
+        if (xsm->hardware)
+                xsm->hardware->update_gxsm_configurations ();
+        else{
+                XSM_DEBUG(DBG_L2, "App::build_gxsm - no call: xsm->hardware invalid.");
+        }
+
+        SetStatus(N_("Ready."));
+      
+        /* Update all fields */
+        XSM_DEBUG (DBG_L2, "App::build_gxsm - update all entries");
+        spm_update_all (-xsm->data.display.ViewFlg);
+        monitorcontrol->LogEvent ("GXSM", "startup");
+
+
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - done.");
+}
+
+// Plugin handling
+// ========================================
+
+gint App::Gxsm_Plugin_Check (const gchar *category){
+	if( category ){
+		// HARD_ELEM = noHARD, spmHARD, spaHARD, ccdHARD, [bbHARD, dspHARD]
+		// (+HARD) = (+HARD +HARD_ELEM)
+		// (-HARD) = (-HARD -HARD_ELEM)
+		// INST_ELEM = STM, AFM, SARLS, SPALEED, ELSLEED, CCD, ALL
+		// (+INST) = (+INST +INST_ELEM)
+		// (-INST) = (-INST -INST_ELEM)
+		// Decision is:
+		// LoadPlugin if ( (+HARD && -HARD) && (+INST && -INST) )
+		// (+HARD) = (+HARD || (+HARD_ELEM is HardwareType))
+		// (-HARD) = (-HARD && (-HARD_ELEM is not HardwareType))
+		// (+INST) = (+INST || (+INST_ELEM is InstrumentType))
+		// (-INST) = (-INST && (-INST_ELEM is not InstrumentType))
+		
+		// z.B. load if
+		// category = "+noHARD -SPALEED" :  no Hardware and not SPALEED
+		// category = "+SPALEED"  :  only SPALEED
+		// category = "+spm -AFM" :  spm Hardware and not AFM
+		
+		gint  phard, mhard, pinst, minst;
+		gchar *pht=g_strconcat("+", xsmres.HardwareType, "HARD", NULL);
+		gchar *mht=g_strconcat("-", xsmres.HardwareType, "HARD", NULL);
+		gchar *pit=g_strconcat("+", xsmres.InstrumentType, NULL);
+		gchar *mit=g_strconcat("-", xsmres.InstrumentType, NULL);
+		
+		if(  strstr( category, pht ) || !strstr( category, "HARD") )
+			phard = TRUE; else phard = FALSE;
+		if( !strstr( category, mht ) || !strstr( category, "HARD") )
+			mhard = TRUE; else mhard = FALSE;
+		
+		if(  strstr( category, pit ) || strstr( category, "+ALL") )
+			pinst = TRUE; else pinst = FALSE;
+		if( !strstr( category, mit ) || strstr( category, "+ALL") )
+			minst = TRUE; else minst = FALSE;
+		
+		g_free(pit);
+		g_free(mit);
+		g_free(pht);
+		g_free(mht);
+		
+		if((phard && mhard) && (pinst && minst))
+			return TRUE;
+		return FALSE;
+	}
+	return TRUE;
+}
+
+
+GxsmMenuExtension *App::gxsm_app_extend_menu (const gchar *extension_point, const gchar *menu_entry_text, const gchar *action)
+{
+	GMenuModel *model;
+	GMenuModel *section;
+
+        //	g_return_val_if_fail (extension_point != NULL, NULL);
+
+        XSM_DEBUG_GP (DBG_L2, "App::gxsm_app_extend_menu  at %s : %s -> %s\n", extension_point, menu_entry_text, action);
+        
+	/* First look in the window menu */
+	section = find_extension_point_section (G_MENU_MODEL (get_gxsm_main_menu ()), extension_point);
+
+        //        g_print ("App::gxsm_app_extend_menu - section\n");
+
+        
+	/* otherwise look in the app menu */
+	if (section == NULL) {
+                //                g_print ("App::gxsm_app_extend_menu - looking for app menu...\n");
+                model = gtk_application_get_app_menu (GTK_APPLICATION (g_application));
+                
+                if (model != NULL)
+                        section = find_extension_point_section (model, extension_point);
+        }
+
+	if (section == NULL){ // try last resort fallback to fixed plugin-section 
+                XSM_DEBUG_GP (DBG_EVER, "App::gxsm_app_extend_menu - failed to locate extension point '%s', fallback to PlugIn menu...\n", extension_point);
+                section = find_extension_point_section (G_MENU_MODEL (get_gxsm_main_menu ()), "plugins-section");
+        }
+        
+	if (section != NULL){
+                XSM_DEBUG_GP (DBG_L1, "App::gxsm_app_extend_menu - extending menu at <%s> + %s [%s]\n", extension_point, menu_entry_text, action);
+                //                priv->menu_ext = gedit_app_activatable_extend_menu (g_application, "tools-section");
+                //                item = g_menu_item_new (_("S_ort..."), "win.sort");
+                GxsmMenuExtension *menu_ext = gxsm_menu_extension_new (G_MENU (section));
+                GMenuItem *item = g_menu_item_new (menu_entry_text, action);
+
+                gxsm_menu_extension_append_menu_item (menu_ext, item);
+                g_object_unref (item);
+
+                return menu_ext;
+        } else
+                return NULL;
+}
+
+int App::signal_emit_toolbar_action (const gchar *action, GSimpleAction *simple){
+        GtkWidget *w = (GtkWidget*) g_object_get_data (G_OBJECT (app_window), action);
+        if (w){
+                if (simple)
+                        g_object_set_data (G_OBJECT (w), "simple-action", (gpointer)simple);
+                g_signal_emit_by_name (G_OBJECT (w), "pressed" );
+                XSM_DEBUG(DBG_L2, "Toolbar Plugin for action \"" << action << "\" action requested by program." );
+                return 0;
+        }
+        XSM_DEBUG(DBG_L2, "no Toolbar Plugin \"" << action << "\" Registerd!" );
+        return -1;
+}
+
+void App::set_dsp_scan_in_progress (gboolean flg){
+        static gboolean last = false;
+
+        if (flg != last){ // be smart
+                GdkRGBA red = { 1.,0.,0., 0.5 };
+                GdkRGBA *color = flg ? &red : NULL;
+                
+                gtk_widget_override_background_color (GTK_WIDGET (scan_button),
+                                                      GTK_STATE_FLAG_NORMAL,
+                                                      color);
+                gtk_widget_override_background_color (GTK_WIDGET (scan_button),
+                                                      GTK_STATE_FLAG_INSENSITIVE,
+                                                      color);
+                gtk_widget_override_background_color (GTK_WIDGET (scan_button),
+                                                      GTK_STATE_FLAG_ACTIVE,
+                                                      color);
+                last = flg;
+        }
+}
+
+void App::ConnectPluginToSPMRangeEvent( void (*cbfkt)(gpointer) ){
+	PluginNotifyOnSPMRange = g_list_prepend(PluginNotifyOnSPMRange, (gpointer) cbfkt);
+}
+void App::ConnectPluginToStartScanEvent( void (*cbfkt)(gpointer) ){
+	PluginNotifyOnStartScan = g_list_prepend(PluginNotifyOnStartScan, (gpointer) cbfkt);
+}
+void App::ConnectPluginToStopScanEvent( void (*cbfkt)(gpointer) ){
+	PluginNotifyOnStopScan = g_list_prepend(PluginNotifyOnStopScan, (gpointer) cbfkt);
+}
+void App::ConnectPluginToCDFLoadEvent( void (*cbfkt)(gpointer) ){
+	PluginNotifyOnCDFLoad = g_list_prepend(PluginNotifyOnCDFLoad, (gpointer) cbfkt);
+}
+void App::ConnectPluginToCDFSaveEvent( void (*cbfkt)(gpointer) ){
+	PluginNotifyOnCDFSave = g_list_prepend(PluginNotifyOnCDFSave, (gpointer) cbfkt);
+}
+void App::ConnectPluginToLoadFileEvent( void (*cbfkt)(gpointer) ){
+	PluginNotifyOnLoadFile = g_list_prepend(PluginNotifyOnLoadFile, (gpointer) cbfkt);
+}
+void App::ConnectPluginToSaveFileEvent( void (*cbfkt)(gpointer) ){
+	PluginNotifyOnSaveFile = g_list_prepend(PluginNotifyOnSaveFile, (gpointer) cbfkt);
+}
+
+void App::ConnectPluginToGetNCInfoEvent( void (*cbfkt)(gchar *filename ) ){
+	PluginCallGetNCInfo = cbfkt;
+}
+
+void App::ConnectPluginToPrinterEvent( void (*cbfkt)(GtkWidget*, void*) ){
+	PluginCallPrinter = cbfkt;
+}
+
+void App::ConnectPluginToMkiconsEvent( void (*cbfkt)(GtkWidget*, void*) ){
+	PluginCallMkicons = cbfkt;
+}
+
+void App::ConnectPluginToRemoteAction( void (*cbfkt)(gpointer, gchar*) ){
+	PluginRemoteAction = g_list_prepend(PluginRemoteAction, (gpointer) cbfkt);
+}
+
+
+void App::reload_gxsm_plugins( gint killflag ){
+	gint (*gxsm_plugin_check)(const gchar *) = Gxsm_Plugin_Check;
+	GList *PluginDirs = NULL;
+	XSM_DEBUG(DBG_L2, "Remove/Reload Gxsm plugins" );
+
+	
+	if( PluginNotifyOnSPMRange ){
+		g_list_free( PluginNotifyOnSPMRange);
+		PluginNotifyOnSPMRange = NULL;
+	}
+	if( PluginNotifyOnStartScan ){
+		g_list_free( PluginNotifyOnStartScan );
+		PluginNotifyOnStartScan = NULL;
+	}
+	if( PluginNotifyOnStopScan ){
+		g_list_free( PluginNotifyOnStopScan );
+		PluginNotifyOnStopScan = NULL;
+	}
+	if( PluginNotifyOnCDFLoad ){
+		g_list_free( PluginNotifyOnCDFLoad );
+		PluginNotifyOnCDFLoad = NULL;
+	}
+	if( PluginNotifyOnCDFSave ){
+		g_list_free( PluginNotifyOnCDFSave );
+		PluginNotifyOnCDFSave = NULL;
+	}
+	if( PluginNotifyOnLoadFile ){
+		g_list_free( PluginNotifyOnLoadFile );
+		PluginNotifyOnLoadFile = NULL;
+	}
+	if( PluginNotifyOnSaveFile ){
+		g_list_free( PluginNotifyOnSaveFile );
+		PluginNotifyOnSaveFile = NULL;
+	}
+
+	PluginCallGetNCInfo = NULL;
+	PluginCallPrinter = NULL;
+	PluginCallMkicons = NULL;
+        
+	if( !GxsmPlugins && killflag ){
+		XSM_DEBUG(DBG_L2, "no GXSM plugins found, done." );
+                gapp->GxsmSplash (2.0, "no GXSM PlugIns found.", "Finishing."); // this will auto remove splash after timout!
+		return;
+	}
+	
+	if( GxsmPlugins ){
+		SetStatus(N_("Removing Plugins..."));
+		delete GxsmPlugins;
+		GxsmPlugins = NULL;
+		if( killflag ){ // cleanup only ?
+			// (re)load HwI
+			xsm->reload_hardware_interface (killflag ? NULL:this);
+			return;
+		}
+		
+		XSM_DEBUG(DBG_L2, "Plugins removed" );
+		SetStatus(N_("Plugins removed"));
+
+		GtkWidget *dialog = gtk_message_dialog_new 
+			(window,
+			 GTK_DIALOG_DESTROY_WITH_PARENT,
+			 GTK_MESSAGE_QUESTION, 
+			 GTK_BUTTONS_NONE,
+			 N_("GXSM PlugIns unloaded. Reload plug-ins now?\n\n"
+			    "Yes: automatic plug-in selection\n"
+			    "All: force loading of all plug-ins\n"
+			    "No: do not load any plug-in,\n"
+			    "  call 'GXSM->Reload Plugins' again\n"
+			    "  to auto load plug-ins again!"));
+		gtk_dialog_add_buttons (GTK_DIALOG (dialog), 
+					_("_Yes"), 1,
+					N_("All"), 99,
+					_("_No"), 0,
+					NULL);
+
+		int ret = gtk_dialog_run (GTK_DIALOG(dialog));
+		gtk_widget_destroy (dialog);
+
+		switch(ret){
+		case 1 : break;
+		case 99 : gxsm_plugin_check = NULL; break;
+		default: return;
+		}
+	}
+
+	// (re)load HwI
+	xsm->reload_hardware_interface (killflag ? NULL:this);
+
+        GxsmSplash(0.01, "Looking for GXSM PlugIns", " ... ");
+	
+	// Make plugin search dir list
+	PluginDirs = g_list_prepend
+		(PluginDirs, g_strconcat(PACKAGE_PLUGIN_DIR, "/common", NULL));
+	PluginDirs = g_list_prepend
+		(PluginDirs, g_strconcat(PACKAGE_PLUGIN_DIR, "/math", NULL));
+	PluginDirs = g_list_prepend
+		(PluginDirs, g_strconcat(PACKAGE_PLUGIN_DIR, "/probe", NULL));
+	PluginDirs = g_list_prepend
+		(PluginDirs, g_strconcat(PACKAGE_PLUGIN_DIR, "/control", NULL));
+	PluginDirs = g_list_prepend
+		(PluginDirs, g_strconcat(PACKAGE_PLUGIN_DIR, "/scan", NULL));
+
+#ifdef GXSM_ENABLE_SCAN_USER_PLUGIN_PATH
+	PluginDirs = g_list_prepend
+		(PluginDirs, g_strconcat(g_get_home_dir(), "/.gxsm/plugins", NULL));
+	PluginDirs = g_list_prepend
+		(PluginDirs, g_strdup(xsmres.UserPluginPath));
+#endif
+	
+
+	GxsmPlugins = new gxsm_plugins(this, PluginDirs, gxsm_plugin_check);
+	
+	// and remove list
+	GList *node = PluginDirs;
+	while(node){
+		g_free(node->data);
+		node = node->next;
+	}
+	g_list_free(PluginDirs);
+	
+	gchar *txt = g_strdup_printf
+		(N_("%d Plugins loaded!"), GxsmPlugins->how_many());
+
+        gapp->GxsmSplash (2.0, txt, "Init and hookup completed."); // this will auto remove splash after timout!
+        
+        SetStatus(txt);
+	//  message((const char*)txt);
+	g_free(txt);
+}
+
+void App::CallPlugin( void (*cbfkt)( gpointer ), gpointer data){
+	(*cbfkt) ( data ); 
+}
+
+void App::SignalEventToPlugins( GList *PluginNotifyList, gpointer data ){
+	g_list_foreach( PluginNotifyList, (GFunc) CallPlugin, data);    
+}
+
+
+// Gxsm Splash
+// ========================================
+
+gint App::RemoveGxsmSplash(GtkWidget *widget, gpointer data){
+        App *a = (App *)data;
+
+        XSM_DEBUG_GP (DBG_L1, "App::RemoveGxsmSplash (hiding it)\n");
+
+        //        gtk_widget_destroy (widget); // splash window
+        gtk_widget_hide (widget); // splash window
+
+        //      a->splash = NULL;
+        //	a->splash_progress_bar = NULL;
+        //      a->splash_darea = NULL;
+        
+	return FALSE;
+}
+
+gboolean App::splash_draw_callback (GtkWidget *widget, cairo_t *cr, gpointer data){
+        App *a = (App *)data;
+
+        static cairo_item_text *text1 = NULL;
+        static cairo_item_text *text2 = NULL;
+        static cairo_item_text *text3 = NULL;
+        static cairo_item_text *text4 = NULL;
+        
+        XSM_DEBUG_GP (DBG_L1, "App::splash_draw_callback: %s, %s \n",
+                 (const gchar*) g_object_get_data( G_OBJECT (widget), "splash_progress_text"),
+                 (const gchar*) g_object_get_data( G_OBJECT (widget), "splash_info_text"));
+        
+        gint w = GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget), "splash_w"));
+        gint h = GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget), "splash_h"));
+
+        if (text1 == NULL){
+                text1 = new  cairo_item_text (w/2., 30., "GXSM-" VERSION);
+                text1->set_font_face_size ("Ununtu", 24);
+                text1->set_stroke_rgba (1.0, 0.1, 0.1, 1.);
+
+                text2 = new  cairo_item_text (w/2., 30.+18.+5., "\"" GXSM_VERSION_NAME "\"");
+                text2->set_font_face_size ("Ununtu", 18.);
+                text2->set_stroke_rgba (1.0, 0.2, 0.2, 1.);
+
+                text3 = new  cairo_item_text (w/2., h-20., (const gchar*) g_object_get_data( G_OBJECT (widget), "splash_message"));
+                text3->set_stroke_rgba (0.1, 1.0, 0.1, 1.);
+                text3->set_pango_font ((const gchar*) g_object_get_data( G_OBJECT (widget), "splash_message_font"));
+
+                if (g_object_get_data( G_OBJECT (widget), "splash_info_text")){
+                        text4 = new  cairo_item_text (w/2., h+10., (const gchar*) g_object_get_data( G_OBJECT (widget), "splash_info_text"));
+                        text4->set_font_face_size ("Ununtu", 12.);
+                        text4->set_stroke_rgba (0.1, 0.1, 1.0, 1.);
+                }
+        }
+        
+        if (text4){
+                if (g_object_get_data( G_OBJECT (widget), "splash_info_text") == NULL)
+                        text4->hide ();
+                else{
+                        text4->set_text ((const gchar*) g_object_get_data( G_OBJECT (widget), "splash_info_text"));
+                        text4->show ();
+                }
+        }
+
+        /* Set color for background */
+        cairo_set_source_rgba(cr, 0., 0., 0., 1.);
+        /* fill in the background color*/
+        cairo_paint(cr);
+
+        /* draw logo pixbuf */
+        gdk_cairo_set_source_pixbuf (cr, GDK_PIXBUF (g_object_get_data( G_OBJECT (widget), "splash_gdk_pixbuf")), 0, 0);
+        cairo_paint (cr);
+
+        /* set color for rectangle */
+        cairo_set_source_rgb (cr, 0.8, 0.0, 0.0);
+        /* set the line width */
+        cairo_set_line_width (cr, 2);
+        /* draw the rectangle's path beginning at 3,3 */
+        cairo_rectangle (cr, 1, 1, w-2, h+20-2);
+        /* stroke the rectangle's path with the chosen color so it's actually visible */
+        cairo_stroke(cr);
+
+        /* Draw Text Lines */
+
+        text1->draw (cr);
+        text2->draw (cr);
+        text3->draw (cr);
+        if (text4) text4->draw (cr);
+
+        return FALSE;
+}
+
+void App::GxsmSplash(gdouble progress, const gchar *info, const gchar* text){
+        GVariant *splash_timeout = g_settings_get_value (gxsm_app_settings, "splash-timeout");
+
+	if (splash_progress_bar && splash && progress > -0.2){
+                gtk_widget_show_all (splash); // splash window
+                gtk_window_present (GTK_WINDOW (splash)); // make sure to present window
+                XSM_DEBUG_GP (DBG_L1, "App::GxsmSplash Update: %g, %s, %s \n", progress, info, text);
+		if (progress >= 0. && progress <= 1.0)
+			gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (splash_progress_bar), progress);
+		else
+			gtk_progress_bar_pulse (GTK_PROGRESS_BAR (splash_progress_bar));
+		if (text){
+                        g_object_set_data( G_OBJECT (splash_darea), "splash_progress_text", (gpointer) text);
+			gtk_progress_bar_set_text (GTK_PROGRESS_BAR (splash_progress_bar), text);
+		}
+		if (info && splash_darea){
+                        g_object_set_data( G_OBJECT (splash_darea), "splash_info_text", (gpointer) info);
+                }
+                gtk_widget_queue_draw (splash_darea);
+
+                if (progress > 1.1){
+                        XSM_DEBUG_GP (DBG_L1, "App::GxsmSplash Update [%g] -- schedule remove in %d ms \n", progress, (guint)g_variant_get_double (splash_timeout));
+                        g_timeout_add ((guint)g_variant_get_double (splash_timeout), 
+                                       (GSourceFunc) App::RemoveGxsmSplash, 
+                                       splash);
+                }
+                check_events ();
+                return;
+	}
+        
+        XSM_DEBUG_GP (DBG_L1, "App::GxsmSplash Build: %s, %s \n", info, text);
+
+        // const gint ImgW = atoi(xxsmlogo_xpm[0]);
+        // const gint ImgH = atoi(xxsmlogo_xpm[0]+4);
+        const gint ImgW = 320;
+        const gint ImgH = 320;
+
+        GVariant *splash_display = g_settings_get_value (gxsm_app_settings, "splash");
+        GVariant *splash_message = g_settings_get_value (gxsm_app_settings, "splash-message");
+        GVariant *splash_message_font = g_settings_get_value (gxsm_app_settings, "splash-message-font");
+
+        if (g_variant_get_boolean (splash_display)){
+                splash = gtk_window_new (GTK_WINDOW_POPUP);
+                gtk_window_set_default_size (GTK_WINDOW(splash), ImgW, ImgH+20);
+                gtk_window_set_title (GTK_WINDOW(splash), "GXSM-3 Startup");
+                gtk_window_set_position (GTK_WINDOW(splash), GTK_WIN_POS_CENTER);
+
+                GtkWidget *vb = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+		gtk_widget_show (vb);
+                gtk_container_add (GTK_CONTAINER (splash), vb);
+
+                splash_darea = gtk_drawing_area_new();
+                gtk_widget_set_size_request (splash_darea, ImgW, ImgH+20);
+                
+                if (!splash_img){ // keep for ever!
+                        splash_img = gdk_pixbuf_new_from_file (PACKAGE_ICON_DIR "/gxsm3-icon.svg", NULL);
+                        //        splash_img = gdk_pixbuf_new_from_xpm_data(xxsmlogo_xpm);
+                }
+                
+                g_object_set_data( G_OBJECT (splash_darea), "splash_w", GINT_TO_POINTER (ImgW));
+                g_object_set_data( G_OBJECT (splash_darea), "splash_h", GINT_TO_POINTER (ImgH));
+                g_object_set_data( G_OBJECT (splash_darea), "splash_gdk_pixbuf", (gpointer) splash_img);
+                g_object_set_data( G_OBJECT (splash_darea), "splash_info_text", (gpointer) info);
+
+                g_object_set_data( G_OBJECT (splash_darea), "splash_message", (gpointer) g_variant_get_string (splash_message, NULL));
+                g_object_set_data( G_OBJECT (splash_darea), "splash_message_font", (gpointer) g_variant_get_string (splash_message_font, NULL));
+
+                g_signal_connect (splash_darea, "draw", G_CALLBACK (App::splash_draw_callback),  this);
+                
+                gtk_box_pack_start (GTK_BOX (vb), splash_darea, FALSE, FALSE, 0);
+                gtk_widget_show (splash_darea);
+
+		splash_progress_bar = gtk_progress_bar_new ();
+                gtk_progress_bar_set_show_text (GTK_PROGRESS_BAR (splash_progress_bar), true);
+		gtk_progress_bar_set_ellipsize (GTK_PROGRESS_BAR (splash_progress_bar), PANGO_ELLIPSIZE_START);
+		gtk_widget_show (splash_progress_bar);
+		gtk_box_pack_start (GTK_BOX (vb), splash_progress_bar, FALSE, FALSE, 0);
+
+                gtk_widget_show (splash);
+        }
+}
+

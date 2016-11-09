@@ -1,0 +1,786 @@
+// .h
+
+class ImExportFile : public Dataio{
+ public:
+  ImExportFile(Scan *s, const char *n) : Dataio(s,n){ };
+  virtual FIO_STATUS Read();
+  virtual FIO_STATUS Write();
+ private:
+  FIO_STATUS gnuRead(const char *fname);
+  FIO_STATUS d2dRead(const char *fname);
+  FIO_STATUS nscRead(const char *fname);
+  FIO_STATUS matsRead(const char *fname);
+};
+
+
+-------------
+// .C
+
+// ==================================================
+// GNU File Types Extension
+// and tga export
+
+// für TGA Export
+
+typedef struct { short k[6], x,y, pixsz; } TGA_head;
+typedef struct { unsigned char val[3]; } TGA_pix;
+
+
+
+// d2d import :=)
+FIO_STATUS ImExportFile::Read(){
+// für Gnu-Paket:
+  const char *fname;
+
+  cout << "Import Export erreicht" << endl;
+
+  // check for file OK !
+  if(strlen(name)>0){
+    ifstream f;
+    f.open(name, ios::in | ios::bin);
+    if(!f.good())
+      {
+	cout << "File Fehler" << endl;
+	return status=FIO_OPEN_ERR;
+      }
+    f.close();
+    fname = (const char*)name;
+  }
+  else
+    {
+      // cout << "Dialogbox" << endl;
+      fname = gapp->file_dialog("File Import","d2d and all gnu´s",
+			      "*.[FfBbDdSsCcPp][LlYyAaHhPpBbGg2][TtXxLlMmEeDd]",NULL,"gnuread");
+     
+    }
+  // cout << fname << endl;
+  if (fname == NULL || strlen(fname) < 4) 
+    {
+      // cout << "File Fehler" << endl;
+      return FIO_OPEN_ERR;
+    }
+ 
+  // cout << "File Fehler" << endl;
+
+  // select types
+  if(!strncasecmp(fname+strlen(fname)-3, "h16", 3)) // "Mats" plain short
+    {
+      // cout << "Mats Entscheidung" << endl;
+      return matsRead(fname);
+    } 
+else
+    if(!strncasecmp(fname+strlen(fname)-3, "d2d", 3)) // spa4's SpaLeed D2D files
+      {
+	// cout << "d2d Entscheidung" << endl;
+	return d2dRead(fname);
+      }
+    else
+      if(!strncasecmp(fname+strlen(fname)-3, "nsc", 3)) // nanoscope with asc header
+	{
+	  // cout << "nsc Entscheidung" << endl;
+	  return nscRead(fname);
+	}      
+      else
+	{
+	  // cout << "Gnu Entscheidung" << endl;
+	  return gnuRead(fname);
+	}
+}
+
+FIO_STATUS ImExportFile::gnuRead(const char *fname){
+// für Gnu-Paket:
+  FILETYPE ft=BYTFIL;
+  int i,j;
+  long nb, anz;
+  char *buf;
+  unsigned char *pb;
+  short *ps;
+  float *pf;
+  double *pd;
+  FILE *fh;
+  FILEHEAD fhead;   /* union  class */
+  // const char *fname;
+  char *cfname;
+  
+  cout << "gnu file !" << endl;
+  
+  cfname = strdup(fname);
+  nb=FileCheck(cfname, &ft, &fhead, &fh);
+  if(nb<=0)
+    return FIO_NO_GNUFILE;
+  
+  cout << "nb=" << nb << endl;
+  
+  // load additional Info from File name.xxx.sklinfo or /tmp/labinfo if exists
+  ifstream labf;
+  char *infoname = new char[strlen(cfname)+10];
+  strcpy(infoname,cfname);
+  strcat(infoname, ".sklinfo");
+  
+  free(cfname);
+  
+  labf.open(infoname,ios::in);
+  cout << "Looking for:" << infoname << endl;
+  if(labf.good())
+    cout << "LABI:" << infoname << endl;
+  else{
+    labf.open("/tmp/labinfo.asc",ios::in);
+    if(labf.good())
+      cout << "LABI:" << "/tmp/labinfo" << endl;
+  }
+  
+  struct { int valid; double xmin,xmax,ymin,ymax; int ydir; int xn,yn; char labx[40], laby[40], tit[40], prec[20]; } sklinfo;
+  sklinfo.valid = 0;
+  sklinfo.ydir  = 1;
+  if(labf.good()){
+    labf >> sklinfo.labx >> sklinfo.xmin >> sklinfo.xmax >> sklinfo.xn;
+    labf >> sklinfo.laby >> sklinfo.ymin >> sklinfo.ymax >> sklinfo.yn;
+    labf.getline(sklinfo.tit, sizeof(sklinfo.tit)); // rest of line...
+    labf.getline(sklinfo.tit, sizeof(sklinfo.tit));
+    if(sklinfo.ymin > sklinfo.ymax){
+      double ytmp;
+      sklinfo.ydir = -1;
+      ytmp = sklinfo.ymax;
+      sklinfo.ymax = sklinfo.ymin;
+      sklinfo.ymin = ytmp;
+    }
+    cout << "LabDataX:" << sklinfo.labx << ": " << sklinfo.xmin << " .. " << sklinfo.xmax << endl;
+    cout << "LabDataY:" << sklinfo.laby << ": " << sklinfo.ymin << " .. " << sklinfo.ymax << endl;
+  }
+  
+  if(( buf = (char*)salloc(nb,1)) == 0){
+    XSM_SHOW_ALERT(ERR_SORRY, ERR_NOMEM," ",1);
+    return FIO_NO_MEM;
+  }
+  
+  if (FileRead (fh, buf, nb) != 0) {
+    XSM_SHOW_ALERT(ERR_SORRY, ERR_FILEREAD,fname,1);
+    sfree (buf);
+    return FIO_READ_ERR;
+  }
+  
+  if(ft == CPXFIL){
+    XSM_SHOW_ALERT(ERR_SORRY, ERR_NOGNUCPX,fname,1);
+    sfree (buf);
+    return FIO_NO_GNUFILE;
+  }
+  if (ft == DATFIL){
+    anz = (long)fhead.kopf.nx[0]*(long)fhead.kopf.ny[0];
+    scan->mem2d->Resize(scan->data.s.nx = (int)fhead.kopf.nx[0], 
+			scan->data.s.ny = (int)fhead.kopf.ny[0]);
+  }
+  else{
+    anz = (long)fhead.xydim.x*(long)fhead.xydim.y;
+    scan->mem2d->Resize(scan->data.s.nx = (int)fhead.xydim.x, 
+			scan->data.s.ny = (int)fhead.xydim.y,
+			ft == FLTFIL ? ZD_FLOAT :
+			ft == DBLFIL ? ZD_DOUBLE :
+			ZD_SHORT
+			);
+    cout << "nanz,x,y=" << anz << " " 
+	 << (int)fhead.xydim.x << " " << (int)fhead.xydim.y << " " << endl;
+  }
+  
+  scan->data.s.ntimes  = 1;
+  scan->data.s.nvalues = 1;
+  
+  pb = (unsigned char*)buf;
+  ps = (short*)buf;
+  pf = (float*)buf;
+  pd = (double*)buf;
+  for(j=0; j<scan->data.s.ny; j++)
+    for(i=0; i<scan->data.s.nx; i++)
+      switch(ft){
+      case BYTFIL: case PGMFIL: 
+	scan->mem2d->PutDataPkt((SHT)(*pb++), i, sklinfo.ydir>0? j:scan->data.s.ny-1-j); break;
+      case DATFIL: case SHTFIL: 
+	scan->mem2d->PutDataPkt((SHT)(*ps++), i, sklinfo.ydir>0? j:scan->data.s.ny-1-j);
+	break;
+      case FLTFIL: 
+	scan->mem2d->PutDataPkt(*pf++, i, sklinfo.ydir>0? j:scan->data.s.ny-1-j); break;
+      case DBLFIL: 
+	scan->mem2d->PutDataPkt(*pd++, i, sklinfo.ydir>0? j:scan->data.s.ny-1-j); break;
+	//      case CPXFIL: mem2d->PutDataPkt((CNT)(*pd++), i, sklinfo.ydir>0? j:scan->data.s.ny-1-j); break;
+      default: break;
+      }
+  sfree(buf);
+  
+  if(getlogin()){
+    G_FREE_STRDUP(scan->data.ui.user, getlogin());
+  }
+  else{
+    G_FREE_STRDUP(scan->data.ui.user, "unkonwn user");
+  }
+  time_t t; // Scan - Startzeit eintragen 
+  time(&t);
+  G_FREE_STRCONCAT(scan->data.ui.dateofscan, ctime(&t), " (Imported)");
+  G_FREE_STRDUP(scan->data.ui.name, fname);
+  G_FREE_STRDUP(scan->data.ui.originalname, fname);
+  switch(ft){
+  case BYTFIL: G_FREE_STRDUP(scan->data.ui.type, "Gnu Type: BYT "); break;
+  case PGMFIL: G_FREE_STRDUP(scan->data.ui.type, "Gnu Type: PGM "); break;
+  case DATFIL: G_FREE_STRDUP(scan->data.ui.type, "Gnu Type: DAT "); break;
+  case SHTFIL: G_FREE_STRDUP(scan->data.ui.type, "Gnu Type: SHT "); break;
+  case FLTFIL: G_FREE_STRDUP(scan->data.ui.type, "Gnu Type: FLT "); break;
+  case DBLFIL: G_FREE_STRDUP(scan->data.ui.type, "Gnu Type: DBL "); break;
+  case CPXFIL: G_FREE_STRDUP(scan->data.ui.type, "Gnu Type: CPX "); break;
+  default: G_FREE_STRDUP(scan->data.ui.type, "Gnu Type: ??? "); break;
+  }
+  
+  if(labf.good()){
+    labf.close();
+    gchar *tmp=g_strdup(scan->data.ui.comment);
+    G_FREE_STRCONCAT(scan->data.ui.comment, tmp, " + Skl.Info from File");
+    g_free(tmp);
+    scan->data.s.rx = sklinfo.xmax-sklinfo.xmin;
+    scan->data.s.ry = sklinfo.ymax-sklinfo.ymin;
+    scan->data.s.dx = (sklinfo.xmax-sklinfo.xmin)/scan->data.s.nx;
+    scan->data.s.dy = (sklinfo.ymin-sklinfo.ymax)/scan->data.s.ny;
+    scan->data.s.dz = 1;
+    scan->data.s.x0 = sklinfo.xmin;
+    scan->data.s.y0 = sklinfo.ymax;
+    scan->data.s.alpha = 0;
+    scan->mem2d->data->MkYLookup(sklinfo.ymax, sklinfo.ymin);
+    scan->mem2d->data->MkXLookup(sklinfo.xmin, sklinfo.xmax);
+    G_FREE_STRCONCAT(scan->data.ui.comment, 
+		     "Imported by xxsm from\n",
+		     fname, "\n",
+		     sklinfo.tit);
+  }
+  else{
+    G_FREE_STRCONCAT(scan->data.ui.comment, 
+		     "Imported by xxsm from\n",
+		     fname);
+    scan->data.s.dx = 1;
+    scan->data.s.dy = 1;
+    scan->data.s.dz = 1;
+    scan->data.s.rx = scan->data.s.nx;
+    scan->data.s.ry = scan->data.s.ny;
+    scan->data.s.x0 = 0;
+    scan->data.s.y0 = 0;
+    scan->data.s.alpha = 0;
+    scan->mem2d->data->MkYLookup(scan->data.s.y0, scan->data.s.y0+scan->data.s.ry);
+    scan->mem2d->data->MkXLookup(scan->data.s.x0-scan->data.s.rx/2., scan->data.s.x0+scan->data.s.rx/2.);
+  }
+  scan->data.hardpars.SPA_Gatetime = 1.;
+  scan->data.hardpars.SPA_Energy   = 1.;
+  scan->data.s.SPA_OrgX     = 0.;
+  scan->data.s.SPA_OrgY     = 0.;
+  scan->data.display.cpshigh       = 1e3;
+  scan->data.display.cpslow        = 1.;
+  scan->data.display.cnttime       = 1.;
+  
+  switch(ft){
+  case BYTFIL: case PGMFIL:
+    scan->data.display.bright = 0.;
+    scan->data.display.contrast = 0.25;
+    break;
+  default:
+    scan->data.display.bright = 32.;
+    scan->data.display.contrast = 0.1;
+    break;
+  }
+  scan->data.display.gamma = 1;
+
+  // gnu read done.
+  return FIO_OK; 
+}
+
+
+FIO_STATUS ImExportFile::d2dRead(const char *fname){
+  D2D_SPA_DAT spa4header;
+
+  ifstream f;
+  cout << "D2D Import" << endl;  
+    
+  f.open(fname, ios::in | ios::bin);
+  if(!f.good())
+    return FIO_OPEN_ERR;
+
+
+  f.read((void*)&spa4header, sizeof(D2D_SPA_DAT));
+  f.seekg(0x180, ios::beg); // Auf Datenanfang Positionieren
+  
+  scan->data.s.nx = spa4header.PointsX;
+  scan->data.s.ny = spa4header.PointsY;
+  scan->data.s.ntimes  = 1;
+  scan->data.s.nvalues = 1;
+  scan->data.s.x0 = spa4header.Xo;
+  scan->data.s.y0 = spa4header.Yo;
+  scan->data.s.rx = spa4header.XYdist  ;
+  scan->data.s.ry = spa4header.XYdist*scan->data.s.ny/scan->data.s.nx;
+  scan->data.s.dx = scan->data.s.rx / scan->data.s.nx;
+  scan->data.s.dy = scan->data.s.ry / scan->data.s.ny;
+  scan->data.s.alpha = spa4header.Alpha  ;
+  scan->data.hardpars.SPA_Gatetime   = spa4header.GateTime*1e-3;
+  scan->data.display.cnttime = spa4header.GateTime*1e-3;;
+  scan->data.s.dz = 1./scan->data.display.cnttime;
+  scan->data.display.cpshigh         = spa4header.CpsHigh;
+  scan->data.display.cpslow          = spa4header.CpsLow;
+  scan->data.hardpars.SPA_Energy     = spa4header.Energy ;
+  //  spa->data.s.Focus1 = spa4header.Focus1 ;
+  //  spa->data.s.Current = spa4header.Current;
+  //  spa->data.s.dS=spa->data.s.usr[0]  = spa4header.usr1;
+  //  spa->data.s.d0=spa->data.s.usr[1]  = spa4header.usr2;
+  //  spa->data.s.usr[2]  = spa4header.usr3;
+  //  spa->data.s.usr[3]  = spa4header.usr4;
+  //  spa->data.s.Scanmarker = spa4header.Scanmarker;
+  G_FREE_STRDUP(scan->data.ui.dateofscan, spa4header.dateofscan);
+  G_FREE_STRDUP_PRINTF(scan->data.ui.comment,
+		       "%s\n E=%6.1feV G=%6.1fms\nCPS[%g:%g]\nFocus=%g, Current=%g\nusr1..4: %g, %g, %g, %g",
+		       spa4header.comment,
+		       spa4header.Energy, 
+		       spa4header.GateTime, 
+		       spa4header.CpsLow, spa4header.CpsHigh,
+		       spa4header.Focus1, spa4header.Current,
+		       spa4header.usr1, spa4header.usr2, spa4header.usr3, spa4header.usr4
+		       );
+  
+  //  if(*(spa4header.comment+59)=='*');
+  //     strcpy(spa->data.s.dateofscan, spa4header.comment+60);
+  G_FREE_STRDUP(scan->data.ui.user, "D2D");
+  G_FREE_STRDUP(scan->data.ui.name, fname);
+  G_FREE_STRDUP(scan->data.ui.originalname, fname);
+  G_FREE_STRDUP(scan->data.ui.type, "D2D type");
+  
+  scan->mem2d->Resize(scan->data.s.nx, scan->data.s.ny);
+  // load Paraemter and Data
+  scan->mem2d->DataD2DRead(f, spa4header.GateTime);
+  if(f.fail()){
+    f.close();
+    return status=FIO_READ_ERR; 
+  }
+  f.close();
+  scan->mem2d->data->MkYLookup(scan->data.s.y0-scan->data.s.ry/2., scan->data.s.y0+scan->data.s.ry/2.);
+  scan->mem2d->data->MkXLookup(scan->data.s.x0-scan->data.s.rx/2., scan->data.s.x0+scan->data.s.rx/2.);
+  return FIO_OK; 
+}
+
+// Nanoscope Import
+FIO_STATUS ImExportFile::nscRead(const char *fname){
+  int i,j; 
+  FIO_STATUS ret=FIO_OK;
+  unsigned long npix;
+  short *buf, *ps;
+  double size=0., zscale=0., zmag;
+  gchar line[128];
+
+  cout << "Nanoscope Asc Import" << endl;  
+  //  info = g_strdup("Nanoscope Asc Import");
+
+  FILE *f = fopen(fname,"r");
+  for(i=0; i<145; i++){
+    fgets(line, 127, f);
+    if(strncmp(line, "\\Samps/line: ",12) == 0){
+      printf("%s\n",line);
+      scan->data.s.nx = atoi(&line[12]);
+    }
+    if(strncmp(line, "\\Number of lines: ",17) == 0){
+      printf("%s\n",line);
+      scan->data.s.ny = atoi(&line[17]);
+    }
+    if(strncmp(line, "\\Scan size: ",11) == 0){
+      printf("%s\n",line);
+      size = atof(&line[11]);
+    }
+    if(strncmp(line, "\\Z scale: ",10) == 0){
+      printf("%s\n",line);
+      zscale = atof(&line[10]);
+    }
+    if(strncmp(line, "\\Z magnify image: ",18) == 0){
+      printf("%s\n",line);
+      zmag = atof(&line[18]);
+    }
+  }
+  fclose(f);
+
+  if(!(buf = g_new(short, npix = scan->data.s.nx*scan->data.s.ny)))
+    return FIO_NO_MEM;
+
+  f = fopen(fname,"r");
+  fseek(f, 0x2000L, SEEK_SET);
+  if(fread((void*)buf, sizeof(short), npix, f) < npix){
+    fprintf(stderr,"In File corrupt / too short !\n");
+    //    tmp=info; info=g_str_concat(tmp, "In File corrupt / too short !\n");
+    ret=FIO_NSC_ERR;
+  }
+  fclose(f);
+
+  scan->mem2d->Resize(scan->data.s.nx,
+		      scan->data.s.ny,
+		      ZD_SHORT
+		      );
+
+  scan->data.s.ntimes  = 1;
+  scan->data.s.nvalues = 1;
+  
+  ps=buf;
+  for(j=0; j<scan->data.s.ny; j++)
+    for(i=0; i<scan->data.s.nx; i++)
+      scan->mem2d->PutDataPkt(*ps++, i, j);
+  
+  g_free(buf);
+
+  if(getlogin()){
+    G_FREE_STRDUP(scan->data.ui.user, getlogin());
+  }
+  else{
+    G_FREE_STRDUP(scan->data.ui.user, "unkonwn user");
+  }
+  time_t t; // Scan - Startzeit eintragen 
+  time(&t);
+  G_FREE_STRCONCAT(scan->data.ui.dateofscan, ctime(&t), " (Imported)");
+  G_FREE_STRDUP(scan->data.ui.name, fname);
+  G_FREE_STRDUP(scan->data.ui.originalname, fname);
+  G_FREE_STRDUP(scan->data.ui.type, "Nanoscope Type "); 
+  G_FREE_STRCONCAT(scan->data.ui.comment, 
+		   "Imported by gxsm from\n",
+		   fname);
+  
+  scan->data.s.dx = size*10./(double)scan->data.s.nx;
+  scan->data.s.dy = size*10./(double)scan->data.s.ny;
+  scan->data.s.dz = zscale*10.;
+  scan->data.s.rx = size*10.;
+  scan->data.s.ry = size*10.;
+  scan->data.s.x0 = 0;
+  scan->data.s.y0 = 0;
+  scan->data.s.alpha = 0;
+  scan->mem2d->data->MkYLookup(scan->data.s.y0, scan->data.s.y0+scan->data.s.ry);
+  scan->mem2d->data->MkXLookup(scan->data.s.x0-scan->data.s.rx/2., scan->data.s.x0+scan->data.s.rx/2.);
+
+  scan->data.display.bright = 32.;
+  scan->data.display.contrast = 0.1;
+  scan->data.display.gamma = 1;
+
+  scan->data.s.ViewFlg = SCAN_V_QUICK;
+
+  return ret; 
+}
+
+FIO_STATUS ImExportFile::matsRead(const char *fname){
+  int i,j;
+  long npix;
+  short *buf, *ps;
+
+  ifstream f;
+  // cout << "Mats Import" << endl;  
+  
+  f.open(fname, ios::in | ios::bin);
+  if(!f.good())
+    return FIO_OPEN_ERR;
+
+  double num=256.;
+  gapp->ValueRequest("Enter X Size", "# X-Point", "Number of Points in X Direction for Matsfile",
+ 	     gapp->xsm->Unity, 2., 4096., ".0f", &num);
+  scan->data.s.nx=(int)num;
+
+  num=128.;
+  gapp->ValueRequest("Enter Y Size", "# Y-Point", "Number of Points in Y Direction for Matsfile",
+  gapp->xsm->Unity, 2., 4096., ".0f", &num);
+  scan->data.s.ny=(int)num;
+  
+  
+  if(!(buf = g_new(short, npix = scan->data.s.nx*scan->data.s.ny)))
+    return FIO_NO_MEM;
+
+  f.read((void*)buf, sizeof(short)*npix);
+
+
+  scan->mem2d->Resize(scan->data.s.nx,
+		      scan->data.s.ny,
+		      ZD_SHORT
+		      );
+
+  scan->data.s.ntimes  = 1;
+  scan->data.s.nvalues = 1;
+  
+  ps=buf;
+  for(j=0; j<scan->data.s.ny; j++)
+    for(i=0; i<scan->data.s.nx; i++)
+      scan->mem2d->PutDataPkt(*ps++, i, j);
+  
+  g_free(buf);
+
+  if(getlogin()){
+    G_FREE_STRDUP(scan->data.ui.user, getlogin());
+  }
+  else{
+    G_FREE_STRDUP(scan->data.ui.user, "unkonwn user");
+  }
+  time_t t; // Scan - Startzeit eintragen 
+  time(&t);
+  G_FREE_STRCONCAT(scan->data.ui.dateofscan, ctime(&t), " (Imported)");
+  G_FREE_STRDUP(scan->data.ui.name, fname);
+  G_FREE_STRDUP(scan->data.ui.originalname, fname);
+  G_FREE_STRDUP(scan->data.ui.type, "Mats Type "); 
+  G_FREE_STRCONCAT(scan->data.ui.comment, 
+		   "Imported by gxsm from\n",
+		   fname);
+  
+  scan->data.s.dx = 1;
+  scan->data.s.dy = 1;
+  scan->data.s.dz = 1;
+  scan->data.s.rx = scan->data.s.nx;
+  scan->data.s.ry = scan->data.s.ny;
+  scan->data.s.x0 = 0;
+  scan->data.s.y0 = 0;
+  scan->data.s.alpha = 0;
+  scan->mem2d->data->MkYLookup(scan->data.s.y0, scan->data.s.y0+scan->data.s.ry);
+  scan->mem2d->data->MkXLookup(scan->data.s.x0-scan->data.s.rx/2., scan->data.s.x0+scan->data.s.rx/2.);
+
+  scan->data.display.bright = 0.;
+  scan->data.display.contrast = 4.;
+  scan->data.display.gamma = 1;
+
+  scan->data.s.ViewFlg = SCAN_V_DIRECT;
+
+  return FIO_OK; 
+}
+
+
+
+
+FIO_STATUS ImExportFile::Write(){
+  FILETYPE ft;
+  int MapMode=1;
+  int i,j,Nx,Ny;
+  long nb, PixSize;
+  char *buf;
+  char *pb;
+  short *ps;
+  float *pf;
+  double *pd;
+  FILEHEAD fhead;   /* union  class */
+  const char *fname;
+  double val=0.;
+  int maxcol=1024;
+  unsigned char tgapal[1024][3];
+  PixSize=0;
+
+  if(strlen(name)>0)
+    fname = (const char*)name;
+  else
+    fname = gapp->file_dialog("File Export: all GNU, PGM, TGA"," ","*.[FfBbDdSsCcPpTt][LlYyAaHhPpBbGg][TtXxLlMmAa]","","gnuwrite");
+  if (fname == NULL) return FIO_NO_NAME;
+  if (strncmp(fname+strlen(fname)-4,".sht",4) == 0)
+    ft=SHTFIL, PixSize=sizeof(short);
+  else
+    if (strncmp(fname+strlen(fname)-4,".flt",4) == 0)
+      ft=FLTFIL, PixSize=sizeof(float);
+    else
+      if (strncmp(fname+strlen(fname)-4,".dbl",4) == 0)
+	ft=DBLFIL, PixSize=sizeof(double);
+      else
+	if (strncmp(fname+strlen(fname)-4,".byt",4) == 0)
+	  ft=BYTFIL, PixSize=sizeof(char);
+	else
+	  if (strncmp(fname+strlen(fname)-4,".pgm",4) == 0)
+	    ft=PGMFIL, PixSize=sizeof(char);
+	  else
+	    if (strncmp(fname+strlen(fname)-4,".tga",4) == 0)
+	      ft=TGAFIL, PixSize=sizeof(short);
+	    else{
+	      XSM_SHOW_ALERT(ERR_SORRY, ERR_WRONGGNUTYPE,fname,1);
+	      return FIO_NO_GNUFILE;
+	    }
+  nb = (Nx=scan->mem2d->GetNx()) * (Ny=scan->mem2d->GetNy()) * PixSize;
+  if(( buf = (char*)salloc(nb,1)) == 0){
+    XSM_SHOW_ALERT(ERR_SORRY, ERR_NOMEM," ",1);
+    return FIO_NO_MEM;
+  }
+
+  pb = (char*)buf;
+  ps = (short*)buf;
+  pf = (float*)buf;
+  pd = (double*)buf;
+
+#define MAXGREYS 255
+#define GFAC     (double)((MAXGREYS+1)/IMGMAXCOLORS)
+
+  if(scan->data.s.ViewFlg == SCAN_V_DIRECT && ft == TGAFIL){
+    MapMode=1+XSM_SHOW_CHOICE(Q_DIRECTEXPORT, fname, Q_DIRECTMODE, 3, L_8bit, L_16bit, L_24bit, 1);
+  }
+  else
+    switch(ft){
+    case PGMFIL:
+    case BYTFIL: MapMode=1; break;
+    default: MapMode=2; break;
+    }
+
+  if(MapMode == 3){
+    SPACOLOR c;
+    int cval;
+    long r,g,b;
+    long nhue, nvs;
+    nhue = (unsigned int)(maxcol/3*(scan->data.display.huea-scan->data.display.hueb)/360);
+    nvs  = (maxcol-nhue)/2;
+    for(cval=0, c.h=scan->data.display.huea, c.s=1., c.v=0.; cval < nvs; cval++){
+      c.v = (double)cval / (double)(nvs);
+      hsv2rgb(&c);
+      r = (unsigned long)(c.r * 255);
+      g = (unsigned long)(c.g * 255);
+      b = (unsigned long)(c.b * 255);
+      tgapal[cval][0] = (unsigned char)r;
+      tgapal[cval][1] = (unsigned char)g;
+      tgapal[cval][2] = (unsigned char)b;
+    }
+    for(c.v=1., i=0; i < nhue; cval++, i++){
+      c.h = scan->data.display.hueb+(scan->data.display.huea-scan->data.display.hueb)*(1. - (double)i / (double)(nhue));
+      hsv2rgb(&c);
+      r = (unsigned long)(c.r * 255);
+      g = (unsigned long)(c.g * 255);
+      b = (unsigned long)(c.b * 255);
+      tgapal[cval][0] = (unsigned char)r;
+      tgapal[cval][1] = (unsigned char)g;
+      tgapal[cval][2] = (unsigned char)b;
+    }
+    for(c.h=scan->data.display.hueb, i=0; cval < maxcol; cval++, i++){
+      c.s = 1. - (double)i / (double)(nvs);
+      hsv2rgb(&c);
+      r = (unsigned long)(c.r * 255);
+      g = (unsigned long)(c.g * 255);
+      b = (unsigned long)(c.b * 255);
+      tgapal[cval][0] = (unsigned char)r;
+      tgapal[cval][1] = (unsigned char)g;
+      tgapal[cval][2] = (unsigned char)b;
+    }
+  }
+
+  for(j=0; j<Ny; j++)
+    for(i=0; i<Nx; i++){
+      switch(scan->data.s.ViewFlg){ 
+      case SCAN_V_QUICK:
+	val=((val=(GFAC*(scan->mem2d->GetDataPktLineReg(i,j)*scan->data.display.contrast+scan->data.display.bright))) > MAXGREYS ? MAXGREYS : val < 0 ? 0 : val);
+	break;
+      case SCAN_V_DIRECT:
+	if(MapMode==2) // 16 bit Pov
+	  val=scan->mem2d->GetDataPkt(i,j); 
+	else
+	  if(MapMode==1) // 8 bit
+	    val=((val=(GFAC*(scan->mem2d->GetDataPkt(i,j)*scan->data.display.contrast+scan->data.display.bright))) > MAXGREYS ? MAXGREYS : val < 0 ? 0 : val);
+	  else // 24bit
+	    val=((val=(scan->mem2d->GetDataPkt(i,j)*scan->data.display.contrast+scan->data.display.bright)) >= maxcol ? maxcol-1 : val < 0 ? 0 : val);
+	break;
+      case SCAN_V_PERIODIC:
+	val=(SHT)(GFAC*(scan->mem2d->GetDataPkt(i,j)*scan->data.display.contrast+scan->data.display.bright)) & MAXGREYS;
+	break;
+      case SCAN_V_HORIZONTAL:
+	val=(val=GFAC*(scan->mem2d->GetDataPktHorizont(i,j)*scan->data.display.contrast+scan->data.display.bright)) > MAXGREYS ? MAXGREYS : val < 0 ? 0 : val;
+	  break;
+      default: // primitive
+	//	val=(scan->mem2d->GetDataPkt(i,j))&MAXGREYS; 
+	break;
+      }
+
+      switch(ft){
+      case BYTFIL: case PGMFIL: *pb++ = (char)val; break;
+	//      case SHTFIL: *ps++ = (short)((double)(mem2d->GetDataPkt(i, j) - CntLow)*65535./CntRange - 32767.); break;
+      case TGAFIL:
+      case SHTFIL: *ps++ = (short)val; break;
+      case FLTFIL: *pf++ = (float)scan->mem2d->GetDataPkt(i,j); break;
+      case DBLFIL: *pd++ = (double)scan->mem2d->GetDataPkt(i,j); break;
+	//      case CPXFIL: mem2d->PutDataPkt((CNT)(*pd++), i, j); break;
+      default: break;
+      }
+    }
+  if(ft == TGAFIL){
+    ofstream f;
+    TGA_head TGAhead;
+    TGA_pix *TGAline;
+    long LineSize;
+    unsigned short Val;
+     /* Speicher für eine Zeile */
+    TGAline = (TGA_pix *) malloc( LineSize=Nx*sizeof(TGA_pix));
+    if (TGAline == NULL) {
+      return FIO_NO_MEM;
+    }
+    memset(TGAline, 0, LineSize);
+    
+    /* open file, schreibe Header */
+    f.open(fname, ios::out | ios::bin | ios::trunc, 0644);
+    if(!f.good()){
+      sfree (buf);
+      return FIO_WRITE_ERR;
+    }
+
+    TGAhead.k[0]=0; TGAhead.k[1]=2;
+    TGAhead.k[2]=0; TGAhead.k[3]=0;
+    TGAhead.k[4]=0; TGAhead.k[5]=0;
+    TGAhead.pixsz = 0x2018;
+    TGAhead.x = (short)Nx;
+    TGAhead.y = (short)Ny;
+#ifdef WORDS_BIGENDIAN
+    cout << "TGA Export, fix of WORDS_BIGENDIAN!!" << endl;
+    // correct byteorder
+    unsigned char *swp = (unsigned char*)&TGAhead;
+    for(unsigned int ii=0; ii<sizeof(TGA_head); ii+=2){
+      unsigned char tmp = *swp;
+      swp[0] = swp[1];
+      swp[1] = tmp;
+      swp += 2;
+    }
+#endif
+    f.write((void *)&TGAhead,sizeof(TGA_head));
+
+    ps = (short*)buf;
+    for(i=0;i<Ny;i++){
+      switch(scan->data.s.ViewFlg){ 
+      case SCAN_V_QUICK:
+	for(j=0;j<Nx;j++){
+	  Val = (unsigned short)(*ps++);
+	  (TGAline+j)->val[0] = (unsigned char)(Val&0x00ff);
+	  (TGAline+j)->val[1] = (unsigned char)(Val&0x00ff);
+	  (TGAline+j)->val[2] = (unsigned char)(Val&0x00ff);
+	}
+	break;
+      case SCAN_V_DIRECT:
+	if(MapMode==2){ // 16bit für Povray
+	  for(j=0;j<Nx;j++){
+	    Val = (unsigned short)((long)(-(*ps++))+32767L);
+	    (TGAline+j)->val[1] = (unsigned char)(Val&0x00ff);
+	    (TGAline+j)->val[2] = (unsigned char)((Val>>8)&0x00ff);
+	  }
+	}
+	else
+	  if(MapMode==3){ // 24bit True Color
+	    for(j=0;j<Nx;j++){
+	      Val = (unsigned short)(*ps++);
+	      if(Val>=maxcol) Val=maxcol-1;
+	      (TGAline+j)->val[0] = tgapal[Val][2];
+	      (TGAline+j)->val[1] = tgapal[Val][1];
+	      (TGAline+j)->val[2] = tgapal[Val][0];
+	    }
+	  }
+	  else // 8bit Grey
+	    for(j=0;j<Nx;j++){
+	      Val = (unsigned short)(*ps++);
+	      (TGAline+j)->val[0] = (unsigned char)(Val&0x00ff);
+	      (TGAline+j)->val[1] = (unsigned char)(Val&0x00ff);
+	      (TGAline+j)->val[2] = (unsigned char)(Val&0x00ff);
+	    }
+	break;
+      }
+      f.write(TGAline, LineSize); 
+    
+      if(f.fail()){
+	ERROR_ALARM;
+	f.close();
+	return FIO_WRITE_ERR; // FIO_DISK_FULL
+      }
+    }
+    f.close();
+    free(TGAline); 
+  }
+  else{
+    fhead.xydim.x = Nx;
+    fhead.xydim.y = Ny;
+    
+    if(FileWrite((char*)fname, buf, &fhead) != 0){
+      sfree (buf);
+      return FIO_WRITE_ERR;
+    }
+  }
+  sfree(buf);
+
+  return FIO_OK; 
+}

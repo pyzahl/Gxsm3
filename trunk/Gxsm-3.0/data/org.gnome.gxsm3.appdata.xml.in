@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2014 Percy Zahli <zahl@users.sf.net> -->
+<application>
+  <id type="desktop">org.gnome.gxsm3.desktop</id>
+  <metadata_license>CC0</metadata_license>
+  <project_license>GPL-2.0+</project_license>
+  <description>
+    <_p>
+      gxsm3 is the official text editor of .. for the GNOME desktop environment.
+    </_p>
+    <_p>
+      Its flexible plugin system allows you to tailor the application to your
+      needs and adapt it to your workflow.
+    </_p>
+  </description>
+  <screenshots>
+    <screenshot type="default">http://gxsm.sourceforge.net/Gxsm2-MK3-SigW-ICNT2014-b.png</screenshot>
+  </screenshots>
+  <url type="homepage">http://gxsm.sf.net</url>
+  <updatecontact>zahl@users.sf.net</updatecontact>
+</application>

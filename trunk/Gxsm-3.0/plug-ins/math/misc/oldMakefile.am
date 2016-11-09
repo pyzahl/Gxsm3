@@ -1,0 +1,21 @@
+libdir = $(plugindir)/math
+
+lib_LTLIBRARIES = \
+	libfindlocmax.la \
+	libpsdadd.la \
+	libspectrocut.la \
+	liblayersmooth.la
+
+libfindlocmax_la_SOURCES = findlocmax.C
+libfindlocmax_la_LDFLAGS = -export-dynamic -avoid-version
+
+libpsdadd_la_SOURCES = psdadd.C
+libpsdadd_la_LDFLAGS = -export-dynamic -avoid-version
+
+libspectrocut_la_SOURCES = spectrocut.C
+libspectrocut_la_LDFLAGS = -export-dynamic -avoid-version
+
+liblayersmooth_la_SOURCES = layersmooth.C
+liblayersmooth_la_LDFLAGS = -export-dynamic -avoid-version
+
+INCLUDES = @GTK_CFLAGS@ -Wall -I$(includedir) $(GNOME_INCLUDEDIR) -I$(top_builddir)/intl -I$(top_builddir)/gxsm

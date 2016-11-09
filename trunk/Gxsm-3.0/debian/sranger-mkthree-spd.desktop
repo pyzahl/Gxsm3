@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Name=Smart Piezo Drive conf
+Comment=Python script for configuration of the SR-SPD HV1
+Exec=mk3_spd.py
+Icon=gnome-mime-application-x-python-bytecode
+Terminal=1
+Type=Application
+Categories=Gxsm
+X-AppInstall-Package=sranger
+

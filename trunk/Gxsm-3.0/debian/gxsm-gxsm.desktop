@@ -1,0 +1,107 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Encoding=UTF-8
+Value=1.0
+Name=GXSM
+GenericName=Data acquisition and processing
+Comment=GXSM - startup in normal mode or rightclick
+Exec=gxsm3 %F
+TryExec=gxsm3
+Icon=gxsm-app
+Terminal=1
+Type=Application
+X-AppInstall-Package=gxsm3
+X-GNOME-Settings-Panel=gxsm3
+X-Ayatana-Desktop-Shortcuts=normal;no-hardware;gxsm_mkthree;sranger_mktwo;sranger_mkthree;sranger_mkthree_spd;gxsm_std;sranger_std;sranger_std_autoconf;update;initSR;manual_gxsm; manual_sranger;gxsm;sranger;ventiotec;softdb;gxsm_dsp;
+
+[normal Shortcut Group]
+Name=GXSM normal startup
+Exec=gxsm3
+TargetEnvironment=Unity
+
+[no-hardware Shortcut Group]
+Name=GXSM no hardware
+Exec=gxsm3 "-h=no"
+TargetEnvironment=Unity
+
+[update Shortcut Group]
+Name=GXSM updater
+Exec=update_GXSM_SRanger.py
+TargetEnvironment=Unity
+
+[manual_gxsm Shortcut Group]
+Name=GXSM offline manual
+Exec=evince /usr/share/doc/gxsm3/Gxsm3-main.pdf.gz
+TargetEnvironment=Unity
+
+[ventiotec Shortcut Group]
+Name=ventiotec homepage
+Exec=gnome-open http://www.ventiotec.com
+TargetEnvironment=Unity
+
+[gxsm Shortcut Group]
+Name=Gxsm project homepage
+Exec=gnome-open http://gxsm.sf.net
+TargetEnvironment=Unity
+
+[sranger Shortcut Group]
+Name=SRanger project homepage
+Exec=gnome-open http://sranger.sf.net
+TargetEnvironment=Unity
+
+[softdb Shortcut Group]
+Name=softdb homepage
+Exec=gnome-open http://www.softdb.com
+TargetEnvironment=Unity
+
+[gxsm_dsp Shortcut Group]
+Name=folder with DSP firmware for SRanger boards
+Exec=gnome-open /usr/share/gxsm3/dsp-firmware
+TargetEnvironment=Unity
+
+[gxsm_mkthree Shortcut Group]
+Name=GXSM SR-MK2/3Pro
+Exec=gxsm3 "-h=SRangerMK2:SPM" "-d=/dev/sranger_mk2_0"
+TargetEnvironment=Unity
+
+[gxsm_std Shortcut Group]
+Name=GXSM STD/SP2
+Exec=gxsm3 "-h=SRanger:SPM" "-d=/dev/sranger_0"
+TargetEnvironment=Unity
+
+[initSR Shortcut Group]
+Name=SRanger init
+Exec=initSR.py
+TargetEnvironment=Unity
+
+[manual_sranger Shortcut Group]
+Name=SRanger offline manual
+Exec=evince /usr/share/doc/gxsm3/sranger-main.pdf.gz
+TargetEnvironment=Unity
+
+[sranger_mktwo Shortcut Group]
+Name=SRanger MK2 A810 conf
+Exec=mk2_spm_control.py
+TargetEnvironment=Unity
+
+[sranger_mkthree Shortcut Group]
+Name=SRanger MK3Pro A810 conf
+Exec=mk3_spm_configurator.py
+TargetEnvironment=Unity
+
+[sranger_mkthree_spd Shortcut Group]
+Name=Smart Piezo Drive conf (MK3Pro)
+Exec=mk3_spd.py
+TargetEnvironment=Unity
+
+[sranger_std_autoconf Shortcut Group]
+Name=SRanger STD autoconf
+Exec=spm_autoconf.py
+TargetEnvironment=Unity
+
+[sranger_std Shortcut Group]
+Name=SRanger STD conf
+Exec=sr_spm_control.py
+TargetEnvironment=Unity
+

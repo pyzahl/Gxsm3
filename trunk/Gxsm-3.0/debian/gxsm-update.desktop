@@ -1,0 +1,14 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Name=GXSM updater
+Comment=Python script for updating Gxsm
+Exec=update_GXSM_SRanger.py
+Icon=update-manager
+Terminal=1
+Type=Application
+Encoding=UTF-8
+Value=1.0
+X-AppInstall-Package=gxsm3
+X-GNOME-Settings-Panel=gxsm3
+

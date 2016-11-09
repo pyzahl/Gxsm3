@@ -1,0 +1,2957 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
+/* Gnome gxsm - Gnome X Scanning Microscopy
+ * universal STM/AFM/SARLS/SPALEED/... controlling and
+ * data analysis software
+ * 
+ * Gxsm Plugin Name:afm_lj_mechanical_sim.C
+ * ========================================
+ * 
+ * Copyright (C) 1999 The Free Software Foundation
+ *
+ * Authors: Percy Zahl <zahl@fkp.uni-hannover.de>
+ * additional features: Andreas Klust <klust@fkp.uni-hannover.de>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+/* Please do not change the Begin/End lines of this comment section!
+ * this is a LaTeX style section used for auto generation of the PlugIn Manual 
+ * Chapter. Add a complete PlugIn documentation inbetween the Begin/End marks!
+ * All "% PlugInXXX" commentary tags are mandatory
+ * All "% OptPlugInXXX" tags are optional
+ * --------------------------------------------------------------------------------
+% BeginPlugInDocuSection
+% PlugInDocuCaption: AFM (NC-AFM) mechanical tip apex/molecule imaging simulations
+% PlugInName:afm_lj_mechanical_sim
+% PlugInAuthor: Percy Zahl
+% PlugInAuthorEmail: zahl@users.sf.net
+% PlugInMenuPath: Math/Probe/AFM_mechanical_sim
+
+% PlugInDescription
+Simulating NC-AFM images and force curves. Based on publication:
+
+PHYSICAL REVIEW B 90, 085421 (2014)
+Mechanism of high-resolution STM/AFM imaging with functionalized tips
+Prokop Hapala --Institute of Physics, Academy of Sciences of the Czech Republic, v.v.i., Cukrovarnick a 10, 162 00 Prague, Czech Republic;
+Georgy Kichin, Christian Wagner, F. Stefan Tautz, and Ruslan Temirov -- Peter Gr\"unberg Institut (PGI-3), Forschungszentrum J\"ulich, 52425 J\"ulich, Germany
+and J\"ulich Aachen Research Alliance (JARA), Fundamentals of Future Information Technology, 52425 J\"ulich, Germany;
+Pavel Jelinek -- Institute of Physics, Academy of Sciences of the Czech Republic, v.v.i., Cukrovarnick a 10, 162 00 Prague, Czech Republic and Graduate School of Engineering, Osaka University 2-1, Yamada-Oka, Suita, Osaka 565-0871, Japan
+
+High-resolution atomic force microscopy (AFM) and scanning tunneling microscopy (STM) imaging with
+functionalized tips is well established, but a detailed understanding of the imaging mechanism is still missing. We
+present a numerical STM/AFM model, which takes into account the relaxation of the probe due to the tip-sample
+interaction. We demonstrate that the model is able to reproduce very well not only the experimental intra- and
+intermolecular contrasts, but also their evolution upon tip approach. At close distances, the simulations unveil a
+significant probe particle relaxation towards local minima of the interaction potential. This effect is responsible
+for the sharp submolecular resolution observed in AFM/STM experiments. In addition, we demonstrate that sharp
+apparent intermolecular bonds should not be interpreted as true hydrogen bonds, in the sense of representing
+areas of increased electron density. Instead, they represent the ridge between two minima of the potential energy
+landscape due to neighboring atoms.
+
+and
+
+related Supplementary Material: The mechanism of high-resolution STM/AFM imaging with functionalized tips.
+
+% PlugInUsage
+Call \GxsmMenu{Math/Probe/AFM mechanical sim}
+
+% OptPlugInSources
+The active channel is used as geometry/size/offset template only. Must be of type DOUBLE.
+
+% OptPlugInObjects
+Input data file to load as external molecule/structure model.
+
+"model.xyz" type file. 1st line: "N" number of atoms, 2nd line comment/name/info -- ignored.
+Then atom 1...N in following lines. Format:
+
+El X Y Z   
+ C 0 0 0
+ O 2.365 0.213 0.03
+Cu 0.1 0.7 -3.5
+...   
+
+El=Element Symbol, mut be two characters like " C" " O" "Cu", then X Y Z  coordinates in Angstroem
+
+% OptPlugInDest
+The computation result is placed into an existing math channel, else into a new created math channel.
+
+% OptPlugInConfig
+The PlugIn configurator...
+
+% EndPlugInDocuSection
+ * -------------------------------------------------------------------------------- 
+ */
+
+#include <gtk/gtk.h>
+#include <glib.h>
+#include <math.h>
+#include "config.h"
+#include "gxsm/plugin.h"
+
+#include "vectorutil.h"
+#include <nlopt.hpp>
+
+#include <sstream>
+using namespace std;
+
+
+#define MODE_NO_OPT 0
+#define MODE_NL_OPT 1
+#define MODE_IPF_NL_OPT 2
+#define MODE_TOPO   3
+#define MODE_CTIS   4
+#define MODE_NONE   5
+
+#define MODE_L_J           0x01
+#define MODE_COULOMB       0x02
+
+#define MODE_PROBE_L_J     0x10 // always
+#define MODE_PROBE_COULOMB 0x20 // always
+#define MODE_PROBE_SPRING  0x40 // option
+
+
+/* PLUGIN DEFINITION */
+
+#define UTF8_ANGSTROEM "\303\205"
+
+static void cancel_callback (GtkWidget *widget, int *status);
+static void afm_lj_mechanical_sim_about( void );
+static void afm_lj_mechanical_sim_configuration( void );
+
+static const char *about_text = N_("Gxsm (Raster-) Probe Image Extraction Math-Plugin\n\n"
+                                   "Probe Event Data extraction:\n"
+				   "A new image is generated from specified probe data.");
+
+#ifdef GXSM3_MAJOR_VERSION // GXSM3
+
+static gboolean afm_lj_mechanical_sim_run(Scan *Dest );
+
+GxsmPlugin afm_lj_mechanical_sim_pi = {
+	NULL,
+	NULL,
+	0,
+	NULL,
+	"AFM_Mechanical_Sim-M1D-PX",
+	NULL,
+	NULL,
+	"Percy Zahl",
+	"math-probe-section",
+	N_("AFM Mechanical Simulation"),
+	N_("AFM mechanical image/force simulating"),
+	"no more info",
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	afm_lj_mechanical_sim_about,
+	afm_lj_mechanical_sim_configuration,
+	NULL,
+	NULL
+};
+
+GxsmMathNoSrcOneDestPlugin afm_lj_mechanical_sim_m1d_pi = {
+	afm_lj_mechanical_sim_run
+};
+GxsmMathNoSrcOneDestPlugin *get_gxsm_math_no_src_one_dest_plugin_info( void ) { 
+	return &afm_lj_mechanical_sim_m1d_pi; 
+}
+
+static void afm_lj_mechanical_sim_about( void )
+{
+	const gchar *authors[] = {afm_lj_mechanical_sim_pi.authors, NULL};
+	gtk_show_about_dialog (GTK_WINDOW (gapp->get_app_window ()), 
+			       "program-name", afm_lj_mechanical_sim_pi.name,
+			       "version", VERSION,
+			       "license", GTK_LICENSE_GPL_3_0,
+			       "comments", about_text,
+			       "authors", authors,
+			       NULL
+			       );
+}
+
+#else // GXSM2
+
+static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest );
+
+GxsmPlugin afm_lj_mechanical_sim_pi = {
+	NULL,
+	NULL,
+	0,
+	NULL,
+	"AFM_Mechanical_Sim-M1D-PX",
+	NULL,
+	NULL,
+	"Percy Zahl",
+	"_Math/_Probe/",
+	N_("AFM Mechanical Simulation"),
+	N_("AFM mechanical image/force simulating"),
+	"no more info",
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	afm_lj_mechanical_sim_about,
+	afm_lj_mechanical_sim_configuration,
+	NULL,
+	NULL
+};
+
+// NOTE: new Gxsm3 math plugin type no src one dest not in gxsm2 available.
+// GxsmMathNoSrcOneDestPlugin afm_lj_mechanical_sim_m1d_pi = {
+GxsmMathOneSrcPlugin afm_lj_mechanical_sim_m1s_pi = {
+	afm_lj_mechanical_sim_run
+};
+
+GxsmMathOneSrcPlugin *get_gxsm_math_one_src_plugin_info( void ) { 
+	return &afm_lj_mechanical_sim_m1s_pi; 
+}
+
+static void afm_lj_mechanical_sim_about( void )
+{
+	const gchar *authors[] = {afm_lj_mechanical_sim_pi.authors, NULL};
+	gtk_show_about_dialog (NULL, //GTK_WINDOW (gapp->get_app_window ()), 
+			       "program-name", afm_lj_mechanical_sim_pi.name,
+			       "version", VERSION,
+                               //			       "license", GTK_LICENSE_GPL_3_0,
+			       "comments", about_text,
+			       "authors", authors,
+			       NULL
+			       );
+}
+
+
+#endif
+
+
+
+GxsmPlugin *get_gxsm_plugin_info ( void ){ 
+	afm_lj_mechanical_sim_pi.description = g_strdup_printf(N_("Gxsm MathNoSrcOneDestArg afm_lj_mechanical_sim plugin %s"), VERSION);
+	return &afm_lj_mechanical_sim_pi; 
+}
+
+
+static void afm_lj_mechanical_sim_configuration( void ){
+#if 0
+	afm_lj_mechanical_sim_pi.app->ValueRequest("Enter Number", "Index", 
+                                                   "Default Value",
+                                                   afm_lj_mechanical_sim_pi.app->xsm->Unity, 
+                                                   1., 10., ".0f", &DefaultValue);
+#endif
+}
+
+/* END PLUGIN CORE DEFINITION CODE */
+
+#define CONST_e    1.60217656535e-19   // Elementarladung [As] = [C]
+#define CONST_me   9.10938356e-31  // electron mass [kg]
+#define CONST_h    6.62607004e-34  // Planck's constant m^2 kg / s
+#define CONST_heVs 4.135667662e−15 // h in eV s
+#define CONST_hbar (6.62607004e-34/2./M_PI)  // 1/2pi * Planck's constant m^2 kg / s
+#define CONST_ke   8.9875517873681764e9 // Coulomb force constant  ke [ kg·m^3 / (s^2 C^2) ]
+#define CONST_ke_ee ( CONST_ke*1e20*1e12*CONST_e*CONST_e ) // ke for C in e, r in Ang ==> pN
+
+/*
+ * GXSM SCAN/MEM2d Layer assignments for output data matrix, layered, with time elements for Z
+ */
+typedef enum {
+        FREQ_SHIFT_L = 0,
+        FREQ_SHIFT_FIXED_L,
+        APEX_FZ_L,
+        APEX_F_LJ_L,
+        APEX_F_COULOMB_L,
+        APEX_FZ_FIXED_L,
+        APEX_F_LJ_FIXED_L,
+        APEX_F_COULOMB_FIXED_L,
+        PROBE_FNORM_L,
+        PROBE_CTIS_L,
+        PROBE_TOPO_L,
+        PROBE_X_L,
+        PROBE_Y_L,
+        PROBE_Z_L,
+        PROBE_FX_FIELD_L,
+        PROBE_FY_FIELD_L,
+        PROBE_FZ_FIELD_L,
+        PROBE_FCX_FIELD_L,
+        PROBE_FCY_FIELD_L,
+        PROBE_FCZ_FIELD_L,
+        PROBE_FFX_FIELD_L,
+        PROBE_FFY_FIELD_L,
+        PROBE_FFZ_FIELD_L,
+        PROBE_FLX_FIELD_L,
+        PROBE_FLY_FIELD_L,
+        PROBE_FLZ_FIELD_L,
+        PROBE_dxFX_L,
+        PROBE_dxFY_L,
+        PROBE_dxFZ_L,
+        PROBE_dyFX_L,
+        PROBE_dyFY_L,
+        PROBE_dyFZ_L,
+        PROBE_dzFX_L,
+        PROBE_dzFY_L,
+        PROBE_dzFZ_L,
+        PROBE_dxFCX_L,
+        PROBE_dxFCY_L,
+        PROBE_dxFCZ_L,
+        PROBE_dyFCX_L,
+        PROBE_dyFCY_L,
+        PROBE_dyFCZ_L,
+        PROBE_dzFCX_L,
+        PROBE_dzFCY_L,
+        PROBE_dzFCZ_L,
+        PROBE_FX_L,
+        PROBE_FY_L,
+        PROBE_FZ_L,
+        PROBE_I_L,
+        PROBE_NLOPT_ITER_L,
+        N_LAYERS
+} LAYER_ASSIGNMENT_SIMULATION;
+
+
+
+
+typedef struct {
+        int    N; // N -- Periodic Table Ordnungszahl
+        const gchar* name; // Element name
+        double LJp[2];  // L-J Parameters { eps_a, r_a  } epsilon[meV], radius [A]
+        double Phi; // Workfunction [eV]
+} Element;
+
+// I(d) = C  e V exp (-2 d sqrt (2me Phi) / hbar )
+// I = 4e pi / hbar Int dk[  f(Ef-eV+k) - f(Ef+k) ] R_{surface}(Ef-eV+k) R_{probe}(Ef+k) |M|^2 ]
+// M = ...
+/*
+In case you use the Probe Particle Model for your research, consider also citing this papers: 
+
+Prokop Hapala, Georgy Kichin, Christian Wagner, F. Stefan Tautz, Ruslan Temirov, and Pavel Jelínek, Mechanism of high-resolution STM/AFM imaging with functionalized tips, Phys. Rev. B 90, 085421 – Published 19 August 2014 
+
+Prokop Hapala, Ruslan Temirov, F. Stefan Tautz, and Pavel Jelínek, Origin of High-Resolution IETS-STM Images of Organic Molecules with Functionalized Tips, Phys. Rev. Lett. 113, 226101 – Published 25 November 2014
+
+Columns: equlibrium distance Rii0[Å], binding energy Eii0[eV], comment (Z, element, ref. of L-J parameters)
+Note: Number of row = proton number of the element!!
+1.4870	0.0006808054	1	H	abalone	AMBER	2003	OPLS
+1.4815	0.0009453220	2	He	abalone	AMBER	2003	OPLS
+2.0000	0.0100000000	3	Li	abalone	AMBER	2003	OPLS
+2.0000	0.0100000000	4	Be				
+2.0800	0.0037292520	5	B	abalone	AMBER	2003	OPLS
+1.9080	0.0037292524	6	C	abalone	AMBER	2003	OPLS
+1.7800	0.0073719000	7	N	abalone	AMBER	2003	OPLS
+1.6612	0.0091063140	8	O	abalone	AMBER	2003	OPLS
+1.7500	0.0026451670	9	F	abalone	AMBER	2003	OPLS
+1.5435	0.0036425260	10	Ne	abalone	AMBER	2003	OPLS
+2.0000	0.0100000000	11	Na	abalone	AMBER	2003	OPLS
+2.0000	0.0100000000	12	Mg	abalone	AMBER	2003	OPLS
+2.0000	0.0100000000	13	Al				
+1.9000	0.0254899514	14	Si	Gromos	Si	J.	Chem.
+2.1000	0.0086726800	15	P	abalone	AMBER	2003	OPLS
+2.0000	0.0108408500	16	S	abalone	AMBER	2003	OPLS
+1.9480	0.0114913010	17	Cl	abalone	AMBER	2003	OPLS
+1.8805	0.0123412240	18	Ar	abalone	AMBER	2003	OPLS
+2.0000	0.0100000000	19	K	abalone	AMBER	2003	OPLS
+2.0000	0.0100000000	20	Ca	abalone	AMBER	2003	OPLS
+2.0000	0.0100000000	21	Sc				
+2.0000	0.0100000000	22	Ti				
+2.0000	0.0100000000	23	V				
+2.0000	0.0100000000	24	Cr				
+2.0000	0.0100000000	25	Mn				
+2.0000	0.0100000000	26	Fe				
+2.0000	0.0100000000	27	Co				
+2.0000	0.0100000000	28	Ni				
+2.0000	0.0100000000	29	Cu				
+2.0000	0.0100000000	30	Zn				
+2.0000	0.0100000000	31	Ga				
+2.0000	0.0100000000	32	Ge				
+2.0000	0.0100000000	33	As				
+2.0000	0.0100000000	34	Se				
+2.2200	0.0138762880	35	Br				
+2.0000	0.0100000000	36	Kr				
+2.0000	0.0100000000	37	Rb				
+2.0000	0.0100000000	38	Sr				
+2.0000	0.0100000000	39	Y				
+2.0000	0.0100000000	40	Zr				
+2.0000	0.0100000000	41	Nb				
+2.0000	0.0100000000	42	Mo				
+2.0000	0.0100000000	43	Tc				
+2.0000	0.0100000000	44	Ru				
+2.0000	0.0100000000	45	Rh				
+2.0000	0.0100000000	46	Pd				
+2.0000	0.0100000000	47	Ag				
+2.0000	0.0100000000	48	Cd				
+2.0000	0.0100000000	49	In				
+2.0000	0.0100000000	50	Sn				
+2.0000	0.0100000000	51	Sb				
+2.0000	0.0100000000	52	Te				
+2.3500	0.0173453600	53	I				
+2.1815	0.0243442128	54	Xe				
+2.0000	0.0100000000	55	Cs				
+2.0000	0.0100000000	56	Ba				
+2.0000	0.0100000000	57	La				
+2.0000	0.0100000000	58	Ce				
+2.0000	0.0100000000	59	Pr				
+2.0000	0.0100000000	60	Nd				
+2.0000	0.0100000000	61	Pm				
+2.0000	0.0100000000	62	Sm				
+2.0000	0.0100000000	63	Eu				
+2.0000	0.0100000000	64	Gd				
+2.0000	0.0100000000	65	Tb				
+2.0000	0.0100000000	66	Dy				
+2.0000	0.0100000000	67	Ho				
+2.0000	0.0100000000	68	Er				
+2.0000	0.0100000000	69	Tm				
+2.0000	0.0100000000	70	Yb				
+2.0000	0.0100000000	71	Lu				
+2.0000	0.0100000000	72	Hf				
+2.0000	0.0100000000	73	Ta				
+2.0000	0.0100000000	74	W				
+2.0000	0.0100000000	75	Re				
+2.0000	0.0100000000	76	Os				
+2.0000	0.0100000000	77	Ir				
+2.0000	0.0100000000	78	Pt				
+2.0000	0.0100000000	79	Au				
+2.0000	0.0100000000	80	Hg				
+2.0000	0.0100000000	81	Tl				
+2.0000	0.0100000000	82	Pb				
+2.0000	0.0100000000	83	Bi				
+2.0000	0.0100000000	84	Po				
+2.0000	0.0100000000	85	At				
+2.0000	0.0100000000	86	Rn				
+2.0000	0.0100000000	87	Fr				
+2.0000	0.0100000000	88	Ra				
+2.0000	0.0100000000	89	Ac				
+2.0000	0.0100000000	90	Th				
+2.0000	0.0100000000	91	Pa				
+2.0000	0.0100000000	92	U				
+2.0000	0.0100000000	93	Np				
+2.0000	0.0100000000	94	Pu				
+2.0000	0.0100000000	95	Am				
+2.0000	0.0100000000	96	Cm				
+2.0000	0.0100000000	97	Bk				
+2.0000	0.0100000000	98	Cf				
+2.0000	0.0100000000	99	Es				
+2.0000	0.0100000000	100	Fm				
+2.0000	0.0100000000	101	Md				
+2.0000	0.0100000000	102	No				
+2.0000	0.0100000000	103	Lr				
+2.0000	0.0100000000	104	Rf				
+2.0000	0.0100000000	105	Db				
+2.0000	0.0100000000	106	Sg				
+2.0000	0.0100000000	107	Bh				
+2.0000	0.0100000000	108	Hs				
+2.0000	0.0100000000	109	Mt				
+2.0000	0.0100000000	110	Ds				
+2.0000	0.0100000000	111	Rg				
+2.0000	0.0100000000	112	Cn				
+2.0000	0.0100000000	113	Uut				
+2.0000	0.0100000000	114	Fl				
+2.0000	0.0100000000	115	Uup				
+2.0000	0.0100000000	116	Lv				
+2.0000	0.0100000000	117	Uus				
+2.0000	0.0100000000	118	Uuo			
+
+ */
+// incomplete table:
+// Z (#Proton), Element Name, L-J parameters: E0 [meV], r0 [Ang] 
+Element Elements[] {
+        {  0, "Apex",{ 1000.0    ,   2.0000  }, 1. }, // arbitrary rigid tip apex, paper *
+        {  1,  "H",  {  0.6808054,   1.4870  }, 1. }, // paper / PP-Hapala *
+        {  2, "He",  {  0.9453220,   1.4815  }, 1. }, // PP-Hapala
+        {  3, "Li",  { 10.0      ,   2.000   }, 2.9  },  // PP-Hapala
+        {  4, "Be",  { 10.0      ,   2.000   }, 0. },
+        {  5,  "B",  {  3.7292520,   2.080   }, 0. },  // PP-Hapala
+        {  6,  "C",  {  3.7292524,   1.9080  }, 4.81 }, // paper *
+        {  7,  "N",  {  7.3719   ,   1.7800  }, 1. },  // PP-Hapala
+        {  8,  "O",  {  9.106314 ,   1.6612  }, 1. }, // paper *
+        {  9,  "F",  {  2.6451670,   1.75    }, 0. },  // PP-Hapala
+        { 10, "Ne",  {  3.642526 ,   1.5435  }, 0. }, // Ascroft M
+        { 11, "Na",  { 10.00     ,   2.000   }, 0. },
+        { 12, "Mg",  { 10.00     ,   2.000   }, 0. },
+        { 13, "Al",  { 10.00     ,   2.100   }, 4.28 },  // L-J values guessed
+        { 14, "Si",  { 25.4899514,   1.9     }, 0. },
+        { 15,  "P",  {  8.67268  ,   2.1     }, 0. },
+        { 16,  "S",  { 10.84085  ,   2.000   }, 0. },
+        { 17, "Cl",  { 11.491301 ,   1.948   }, 0. },
+        { 18, "Ar",  { 12.341224 ,   1.8805  }, 0. }, // Ascroft M
+        { 22, "Ti",  { 10.00     ,   2.100  }, 4.6  },  // L-J values guessed
+        { 24, "Cr",  { 10.00     ,   2.100  }, 4.6  },  // L-J values guessed
+        { 28, "Ni",  { 10.00     ,   2.100  }, 4.65 },  // L-J values guessed
+        { 29, "Cu",  { 10.00     ,   2.100  }, 4.65 },  // L-J values guessed
+        { 30, "Sn",  { 15.50     ,   2.100  }, 4.42 },  // L-J values guessed
+        { 32, "Ge",  { 25.50     ,   2.100  }, 4.65 },  // L-J values guessed
+        { 42, "Mo",  { 15.50     ,   2.100  }, 4.37 },  // L-J values guessed
+        { 47, "Ag",  { 15.50     ,   2.100  }, 4.26 },  // L-J values guessed
+        { 54, "Xe",  { 24.3442128,   2.1815 }, 1. },    // paper *
+        { 55, "Cs",  { 15.50 ,    2.100  }, 2.14 },  // L-J values guessed
+        { 74,  "W",  { 25.50 ,    2.100  }, 4.5  },  // L-J values guessed
+        { 78, "Pt",  { 25.50 ,    2.100  }, 4.5  },  // L-J values guessed
+        { 79, "Au",  { 25.50 ,    2.100  }, 5.1  },  // L-J values guessed
+        { 82, "Pb",  { 25.50 ,    2.100  }, 4.25 },  // L-J values guessed
+        { -1, "END.",{ -1.00 ,   -1.00  }, 0. }
+};
+
+typedef struct{
+        double xyzc[4]; // coordinates XYZ + partial Charge [Ang,Ang,Ang, C[e]]
+        int    N;      // atom id / ordnungszahl -- match perdiodic table above
+} Model_item;
+
+class xyzc_model{
+public:
+        // emty model
+        xyzc_model (int num_atoms){
+                size = num_atoms;
+                probe = NULL;
+                model = new Model_item[num_atoms+1];
+                for (int pos=0; pos<size+1; ++pos){
+                        model[pos].xyzc[0] = 0.;
+                        model[pos].xyzc[1] = 0.;
+                        model[pos].xyzc[2] = 0.;
+                        model[pos].xyzc[3] = 0.;
+                        model[pos].N = -1;
+                }
+                make_probe ();
+        };
+        
+        xyzc_model (Model_item *m){
+                for (size = 0; m[size].N > 0; ++size);
+                probe = NULL;
+                model = new Model_item[size+1];
+                for (int pos=0; pos<size; ++pos){
+                        copy_vec4 (model[pos].xyzc, m[pos].xyzc);
+                        model[pos].N = m[pos].N;
+                }
+                mark_end (size);
+                make_probe ();
+        };
+
+        // read from xyz file
+        xyzc_model (gchararray xyzc_file){
+                std::ifstream f;
+                Model_item *atom_entry;
+                gchar xyzc_line[1024];
+                
+                size = 0;
+                probe = NULL;
+                model = NULL;
+
+                make_probe ();
+
+                // xyzc file:
+                //1137
+                //Cu 3ML 4x4 + TMA1                       
+                //Cu  -10.252485  -17.757826    0.000000  [charge, optional]
+                //Cu  -15.378728   -8.878913    0.000000   0.1
+                // O  -15.378728   -8.878913    3.200000  -0.1
+                //...
+
+                f.open(xyzc_file, std::ios::in);
+                if(!f.good()){
+                        return;
+                }
+                
+                // read header
+                f.getline(xyzc_line, 1024); // num atoms
+                int num_atoms = atoi(xyzc_line);
+                if (num_atoms > 1){
+                        size = num_atoms;
+                        model = new Model_item[num_atoms+1];
+                        for (int pos=0; pos<size+1; ++pos){
+                                model[pos].xyzc[0] = 0.;
+                                model[pos].xyzc[1] = 0.;
+                                model[pos].xyzc[2] = 0.;
+                                model[pos].xyzc[3] = 0.;
+                                model[pos].N = -1;
+                        }
+
+                        f.getline(xyzc_line, 1024); // comment, discard
+
+                        int count=0;
+                        while (f.good()){
+                                f.getline(xyzc_line, 1024);
+                        
+                                if (xyzc_line[0] == ' ')
+                                        xyzc_line[0] = '_';
+
+                                std::cout << xyzc_line << std::endl;
+        
+                                gchar **record = g_strsplit_set(xyzc_line, " \t", -1);
+                                gchar **token = record;
+                        
+                                atom_entry = new Model_item;
+                                atom_entry->N=0;
+                                atom_entry->xyzc[0] = 0.; // default: X=0
+                                atom_entry->xyzc[1] = 0.; // default: Y=0
+                                atom_entry->xyzc[2] = 0.; // default: Z=0
+                                atom_entry->xyzc[3] = 0.; // default: C=0 -- no charge unless specified 
+                                for (int j=0; *token; ++token){
+                                        if (j==0){
+                                                if (*token[0] == '_')
+                                                        *token[0] = ' ';
+                                        
+                                                // find Element
+                                                std::cout << "Searching for " << *token << std::endl;
+                                                for (int n=0; Elements[n].N >= 0; ++n){
+                                                        // std::cout << "comparing N=" << n << ": >" << Elements[n].name << "< with >" << *token << "<" << std::endl;
+                                                        if (! strcmp (g_strstrip(*token), Elements[n].name)){
+                                                                atom_entry->N=Elements[n].N;
+                                                                break;
+                                                        }
+                                                }
+                                        
+                                                if (atom_entry->N == 0){
+                                                        std::cout << "ERROR: Unkown Element L-J Parameters for >" << *token << "<" << std::endl;
+                                                        continue; // try to continue
+                                                }
+                                                std::cout << "N=" << atom_entry->N << std::endl;
+                                                ++j;
+                                                continue;
+                                        }
+                                        if (strlen(*token) > 0){
+                                                if (j<5)
+                                                        atom_entry->xyzc[j-1] = atof (*token);
+                                                ++j;
+                                        }
+                                }
+                                std::cout << std::endl;
+                                if (atom_entry->N > 0)
+                                        put_atom (atom_entry, count++);
+                                g_strfreev (record);
+                        }
+                }
+                f.close ();
+        };
+
+        // custom model filter function
+        xyzc_model (xyzc_model *source, gchararray filter, gchararray filter_param = NULL, Scan *scan_area=NULL){
+                size = source->get_size ();
+                probe = NULL;
+                model = new Model_item[size+1];
+                for (int pos=0; pos<size+1; ++pos){
+                        model[pos].xyzc[0] = 0.;
+                        model[pos].xyzc[1] = 0.;
+                        model[pos].xyzc[2] = 0.;
+                        model[pos].xyzc[3] = 0.;
+                        model[pos].N = -1;
+                }
+                make_probe ();
+
+                Model_item atom;
+                
+                if (!strncmp (filter, "None", 4)){ // copy only
+                        for (int i=0; i<size && source->model[i].N > 0; ++i){
+                                copy_vec4 (atom.xyzc, source->model[i].xyzc);
+                                atom.N = source->model[i].N;
+                                put_atom(&atom, i);
+                        }
+                        return;
+                        
+                } else if ( !strncmp (filter, "TMA-C+TMA-R-flip", 16)  || !strncmp (filter, "TMA-Rosette", 11) ){
+                        int j=0;
+                        double xy[3];
+                        double z0[3] = { 0., 0., 4.167425 }; // top Cu
+                        double mcenter[3];
+                        double m1[3] = {  1.28097400, 0.73657400, 0. }; // TMA-R 10x10bb
+                        double m2[3] = { -8.97151180, 0.73657400, 0. }; // TMA-L 10x10bb -> flip x&y
+                        double m3[3] = {-14.097754,   9.615486,   0. }; // TMA-Lup60
+                        double ma[3], mb[3], mc[3], m4[3], m5[3], m6[3], tmp[3];
+                        // Cu  -14.097754    9.615486    4.137566
+                        // Cu   -3.845269    9.615486    4.137566
+
+                        double flip_xy[3] = { -1., -1.,  1. };
+                        double flip_y[3]  = {  1., -1.,  1. };
+                        double flip_x[3]  = { -1.,  1.,  1. };
+                        double r=5.;
+                        double rCu=14.;
+                        int include_Cu=0;
+                        int rosette=0;
+
+                        copy_vec (mcenter, m1);
+                        add_to_vec (mcenter, m2);
+                        mul_vec_scalar (mcenter, 0.5);
+
+                        // build base
+                        copy_vec (ma, m2);
+                        sub_from_vec (ma, m1);
+                        copy_vec (mb, m3);
+                        sub_from_vec (mb, m1);
+                        sub_from_vec (mb, ma);
+                        copy_vec (mc, m3);
+                        sub_from_vec (mc, m1);
+                        copy_vec (m4, m1);
+                        add_to_vec (m4, mb); add_to_vec (m4, mb);
+                        copy_vec (m5, m4);
+                        sub_from_vec (m5, ma);
+                        copy_vec (m6, m5);
+                        sub_from_vec (m6, mb);
+                        
+                        if (!strncmp (filter, "TMA-C+TMA-R-flip+Cu111", 22))
+                                include_Cu = 1;
+
+                        if (!strncmp (filter, "TMA-Rosette+Cu111", 17))
+                                include_Cu = 2;
+
+                        if (!strncmp (filter, "TMA-Rosette", 11))
+                                rosette = 1;
+                                
+                        for (int i=0; i<size && source->model[i].N > 0; ++i){
+                                copy_vec4 (atom.xyzc, source->model[i].xyzc);
+                                atom.N = source->model[i].N;
+                                sub_from_vec (atom.xyzc, z0);
+
+                                if (include_Cu){
+                                        copy_vec (xy, atom.xyzc); xy[2]=0.;
+                                        sub_from_vec (xy, mcenter);
+                                        if (norm_vec(xy) < rCu && atom.xyzc[2] < 1.) // Cu only
+                                                put_atom(&atom, j++);
+                                }
+                                
+                                copy_vec (xy, atom.xyzc); xy[2]=0.;
+                                sub_from_vec (xy, m1);
+                                if (norm_vec(xy) < r && atom.xyzc[2] > 1.){ // TMA1 only "TMA-X"
+                                        put_atom(&atom, j++);
+                                }
+                                
+                                copy_vec (xy, atom.xyzc); xy[2]=0.;
+                                sub_from_vec (xy, m2);
+                                if (norm_vec(xy) < r && atom.xyzc[2] > 1.){ // TMA2, flip "TMA-
+                                        sub_from_vec (atom.xyzc, m2);
+                                        mul_vec_vec (atom.xyzc, flip_xy);
+                                        add_to_vec (atom.xyzc, m2);
+                                        put_atom(&atom, j++);
+                                        
+                                        if (rosette){ // translate+flip to build rosette
+                                                // TMA3 non-flip
+                                                copy_vec4 (atom.xyzc, source->model[i].xyzc);
+                                                sub_from_vec (atom.xyzc, z0);
+                                                sub_from_vec (atom.xyzc, m2);
+                                                add_to_vec (atom.xyzc, m3);
+                                                put_atom(&atom, j++);
+                                                
+                                                // TMA3p flip
+                                                copy_vec (atom.xyzc, source->model[i].xyzc);
+                                                sub_from_vec (atom.xyzc, z0);
+                                                sub_from_vec (atom.xyzc, m2);
+                                                mul_vec_vec (atom.xyzc, flip_xy);
+                                                add_to_vec (atom.xyzc, m3);
+                                                add_to_vec (atom.xyzc, ma);
+                                                put_atom(&atom, j++);
+
+                                                // TMA4 flip
+                                                copy_vec (atom.xyzc, source->model[i].xyzc);
+                                                sub_from_vec (atom.xyzc, z0);
+                                                sub_from_vec (atom.xyzc, m2);
+                                                mul_vec_vec (atom.xyzc, flip_xy);
+                                                add_to_vec (atom.xyzc, m4);
+                                                put_atom(&atom, j++);
+
+                                                // TMA5
+                                                copy_vec (atom.xyzc, source->model[i].xyzc);
+                                                sub_from_vec (atom.xyzc, z0);
+                                                sub_from_vec (atom.xyzc, m2);
+                                                add_to_vec (atom.xyzc, m5);
+                                                put_atom(&atom, j++);
+
+                                                // TMA6 flip
+                                                copy_vec (atom.xyzc, source->model[i].xyzc);
+                                                sub_from_vec (atom.xyzc, z0);
+                                                sub_from_vec (atom.xyzc, m2);
+                                                mul_vec_vec (atom.xyzc, flip_xy);
+                                                add_to_vec (atom.xyzc, m6);
+                                                put_atom(&atom, j++);
+
+                                                // TMA1p flip
+                                                copy_vec (atom.xyzc, source->model[i].xyzc);
+                                                sub_from_vec (atom.xyzc, z0);
+                                                sub_from_vec (atom.xyzc, m2);
+                                                mul_vec_vec (atom.xyzc, flip_xy);
+                                                add_to_vec (atom.xyzc, m2);
+                                                sub_from_vec (atom.xyzc, mc);
+                                                put_atom(&atom, j++);
+
+                                                // TMA2p
+                                                copy_vec (atom.xyzc, source->model[i].xyzc);
+                                                sub_from_vec (atom.xyzc, z0);
+                                                sub_from_vec (atom.xyzc, m2);
+                                                add_to_vec (atom.xyzc, m1);
+                                                copy_vec(tmp, mc);
+                                                mul_vec_vec (tmp, flip_y);
+                                                add_to_vec (atom.xyzc, tmp);
+                                                put_atom(&atom, j++);
+
+
+                                        }
+                                }
+                        }
+                        mark_end(j);
+                        return;
+
+                } else if (!strncmp (filter, "Custom", 6)){
+                        double rcut = 0.;
+                        double zoff = 0.;
+                        double origin[4];
+                        double corner[4];
+                        double ra[4];
+
+                        if (filter_param)
+                                std::cout << "Make_Model Filter: Custom. " << filter_param << std::endl;
+                        else
+                                std::cout << "Make_Model Filter: Custom, default. " << std::endl;
+                        
+                        // get sim scan area origin in ang                        
+                        origin[0]=origin[1]=origin[2]=origin[3]=0.;
+                        corner[0]=corner[1]=corner[2]=corner[3]=0.;
+
+                        if (scan_area){
+                                std::cout << "Make_Model Filter: Custom default. Auto Cutoff." << std::endl;
+                                scan_area->Pixel2World (scan_area->mem2d->GetNx ()/2, scan_area->mem2d->GetNy ()/2, origin[0], origin[1]);
+                                scan_area->Pixel2World (0, 0, corner[0], corner[1]);
+                                sub_from_vec (corner, origin);
+                                rcut = norm_vec (corner) + 6.;
+                        }
+
+                        /*
+                        if (filter_param){
+                                if (strlen (filter_param) > 2)
+                                        switch (filter_param[0]){
+                                        case 'R': rcut = atof (filter_param+1); break;
+                                        case 'Z': zoff = atof (filter_param+1); break;
+                                        }
+                        }
+                        */
+
+                        zoff = -4.18;
+
+                        std::cout << "Make_Model Filter: Custom. Zoff=" << zoff << " Rcut=" << rcut << std::endl;
+                        int j=0;
+                        for (int i=0; i<size && source->model[i].N > 0; ++i){
+                                copy_vec4 (atom.xyzc, source->model[i].xyzc);
+                                atom.N = source->model[i].N;
+                                if (atom.xyzc[2] < 20.){
+                                        if (rcut > 0.){
+                                                copy_vec (ra, atom.xyzc);
+                                                sub_from_vec (ra, origin);
+                                                if (norm_vec (ra) > rcut)
+                                                        continue;
+                                        }
+                                        atom.xyzc[2] += zoff;
+                                        //if ( atom.xyzc[2] > -1.) // with 1st Cu layer
+                                        if ( atom.xyzc[2] > 1.) // TMA only
+                                                put_atom(&atom, j++);
+                                }
+                        }
+                        mark_end(j);
+                        return;
+                }
+        };
+
+        ~xyzc_model (){
+                if (model) delete[] model;
+                if (probe) delete[] probe;
+        };
+        
+        void make_probe(int N=8, double q=-0.100, double dz=3.661){ // 3.661
+                if (probe) delete[] probe;
+                probe = new Model_item[2];
+
+                // prepare LJ parameters
+                std::cout << "#=======================================================" << std::endl;
+                std::cout << "AFMMechSim: Prepare L-J parameters Probe <-> ModelAtoms." << std::endl;
+                int i=0;
+                for (; Elements[i].N > 0 && Elements[i].N != N; ++i);
+                lj_param_pre_compute (Elements[i].LJp); // O tip probe
+                std::cout << "#=======================================================" << std::endl;
+        
+                if (dz < 0.1){
+                        dz = pow(2. * LJp_AB_lookup[0][0] / LJp_AB_lookup[0][1], 1./6.);
+                        std::cout << "==> Probe dz [r0] = " << dz << std::endl;
+                }
+                
+                probe[0].xyzc[0] = 0.; // [0] => Apex
+                probe[0].xyzc[1] = 0.;
+                probe[0].xyzc[2] = 0.;
+                probe[0].xyzc[3] = -q;
+                probe[0].N = 0;
+                
+                probe[1].xyzc[0] = 0.; // [1] ==> probe Atom
+                probe[1].xyzc[1] = 0.;
+                probe[1].xyzc[2] = -dz;
+                probe[1].xyzc[3] = q;
+                probe[1].N = 8;
+        };
+
+        inline double get_probe_dz () { return  probe[1].xyzc[2]; };
+        void set_probe_dz (double dz) { probe[1].xyzc[2] = dz; };
+        
+        void mark_end (int pos) {
+                if (pos < size){
+                        model[pos].xyzc[0] = 0.;
+                        model[pos].xyzc[1] = 0.;
+                        model[pos].xyzc[2] = 0.;
+                        model[pos].xyzc[3] = 0.;
+                        model[pos].N = -1;
+                }
+        };
+        
+        void put_atom (Model_item *atom, int pos) {
+                if (pos < size){
+                        copy_vec4 (model[pos].xyzc, atom->xyzc);
+                        model[pos].N = atom->N;
+                        std::cout << pos << " => N=" << model[pos].N
+                                  << " " << model[pos].xyzc[0]
+                                  << " " << model[pos].xyzc[1]
+                                  << " " << model[pos].xyzc[2]
+                                  << " " << model[pos].xyzc[3]
+                                  << std::endl;
+                } else
+                        std::cout << pos << " ERROR: OUT OF RANGE"
+                                  << std::endl;
+        };
+
+        inline void cAab (double LJp_a[2], double LJp_b[2], double AB[2]){
+                double p_ab = LJp_a[1]+LJp_b[1];
+                double p_ab2 = p_ab*p_ab;
+                double p_ab4 = p_ab2*p_ab2;
+                double p_ab6 = p_ab4*p_ab2;
+                double p_ab12 = p_ab6*p_ab6;
+                AB[0] = 2.0*sqrt (LJp_a[0]*LJp_b[0]) * p_ab6;  // (LJp_a[1]+LJp_b[1])^6;
+                AB[1] =     sqrt (LJp_a[0]*LJp_b[0]) * p_ab12; // (LJp_a[1]+LJp_b[1])^12;
+        }
+        
+        // pre compute L-J parameters needed: probe to ... all atoms
+        void lj_param_pre_compute (double LJp_probe[2]){
+                // LP_probe <-> atom_i
+                for (int i=0; Elements[i].N != -1; ++i)
+                        if (Elements[i].LJp[0] > 0.){
+                                cAab(LJp_probe, Elements[i].LJp, LJp_AB_lookup[Elements[i].N]);
+                                WorkF_lookup[Elements[i].N] = Elements[i].Phi;
+                                printf("## LJp[%02d] --- eps_a= %10.8f eV, r_a= %10.8f Ang, %2s => L-J-AB to probe eps_ab= %14.4f r_ab= %14.4f\n",
+                                       Elements[i].N, Elements[i].LJp[0], Elements[i].LJp[1],
+                                       Elements[i].name, LJp_AB_lookup[Elements[i].N][0], LJp_AB_lookup[Elements[i].N][1]);
+                        }
+        }
+
+        void scale_charge (double factor) {
+                for (int pos=0; pos<size && model[pos].N > 0; ++pos)
+                        model[pos].xyzc[3] *= factor;
+        };
+
+        void print () {
+                std::cout << "#============= MODEL n N XYZC ============" << std::endl;
+                for (int pos=0; pos<size && model[pos].N > 0; ++pos)
+                        std::cout << pos << " " << model[pos].N
+                                  << " " << model[pos].xyzc[0]
+                                  << " " << model[pos].xyzc[1]
+                                  << " " << model[pos].xyzc[2]
+                                  << " " << model[pos].xyzc[3]
+                                  << std::endl;
+                std::cout << "#============= PROBE n N XYZC ============" << std::endl;
+                for (int pos=0; pos<2 && model[pos].N > 0; ++pos)
+                        std::cout << pos << " " << probe[pos].N
+                                  << " " << probe[pos].xyzc[0]
+                                  << " " << probe[pos].xyzc[1]
+                                  << " " << probe[pos].xyzc[2]
+                                  << " " << probe[pos].xyzc[3]
+                                  << std::endl;
+                std::cout << "#=========================================" << std::endl;
+        };
+        
+        Model_item *get_model_ref() { return model; };
+        Model_item *get_probe_ref() { return probe; };
+        int get_size() { return size; };
+
+        void set_options (int o) { options = o; };
+        void set_sim_zinfo (double sz0, double szf, double sdz) { sim_z0 = sz0, sim_zf = szf, sim_dz=sdz; };
+        void get_sim_zinfo (double &sz0, double &szf, double &sdz) { sz0 = sim_z0, szf = sim_zf, sdz=sim_dz; };
+        
+public:
+        Model_item *model;
+        Model_item *probe;
+
+        // Lookup Tables
+        double LJp_AB_lookup[108][2]; // [0] AB: Probe - Apex, [1...n] Probe - Atom-n
+        double WorkF_lookup[108]; // WorkFunc Loookup
+
+        int options;
+
+        double sensor_f0_k0[3];
+        double probe_flex[3];
+private:
+        int size;
+        double sim_z0, sim_zf, sim_dz;
+};
+
+
+/*
+ * Build in Model Definition (TMA, TMA on Cu111 -- DFT relaxed)
+ */
+
+
+#define CdeltaQ_O -0.100 // x6
+#define CdeltaQ_C  0.060 // x9
+#define CdeltaQ_H  0.010  // x6
+
+Model_item model_TMA[] = {
+        // ------------- TMA
+        { { -2.2657299, -0.149312,     3.1958958, CdeltaQ_O },    8 },//1-- O1..6
+        { {  1.944746,  -2.7530839,    3.3754341, CdeltaQ_O },    8 },
+        { {  4.0908289,  3.2430279,    3.3728768, CdeltaQ_O },    8 },
+        { { -2.175231,   2.105442 ,    3.3714391, CdeltaQ_O },    8 },
+        { {  3.9413929, -1.702212 ,    3.1951982, CdeltaQ_O },    8 },
+        { {  2.182831,   4.4482431,    3.1951162, CdeltaQ_O },    8 },//6
+        { { -0.114092,   0.8978820,    3.3588320, CdeltaQ_C },    6 },//1-- C1-9
+        { {  1.957628,  -0.3640630,    3.3590242, CdeltaQ_C },    6 },//2
+        { {  2.014699,   2.061168 ,    3.3591639, CdeltaQ_C },    6 },//3
+        { {  0.5595030, -0.332026 ,    3.3545519, CdeltaQ_C },    6 },//4
+        { {  0.6126090,  2.0933731,    3.355055 , CdeltaQ_C },    6 },//5
+        { {  2.686532,   0.8345090,    3.3550102, CdeltaQ_C },    6 },//6
+        { {  2.7322209,  3.3642991,    3.3098089, CdeltaQ_C },    6 },//7
+        { { -1.601254 ,  0.8683400,    3.3095662, CdeltaQ_C },    6 },//8
+        { {  2.727854 , -1.636749 ,    3.3104231, CdeltaQ_C },    6 },//9
+        { { -0.0247530, -1.254158 ,    3.34009  , CdeltaQ_H },    1 },//1-- H1..6
+        { {  0.106357 ,  3.0599561,    3.3414542, CdeltaQ_H },    1 },//2
+        { {  3.7769761,  0.7893200,    3.3409788, CdeltaQ_H },    1 },//3
+        { { -3.1466689,  1.970835 ,    3.271311 , CdeltaQ_H },    1 },//4
+        { {  4.459666 ,  4.151723 ,    7.439335-4.167425, CdeltaQ_H },   1 }, //5
+        { {  2.547698 , -3.52652  ,    3.2740132, CdeltaQ_H },    1 },//6
+        { {  0., 0., 0., +0.000 }, -1 } // end table
+};
+
+Model_item model_TMA_Cu111[] = {
+        // ------------- Cu111
+        { {  -3.84526900,  -8.14233970,  -0.02985890, +0.000 },  63 },
+        { {  -8.97151180,   0.73657400,  -0.02985890, +0.000 },  63 },
+        { {   6.40721700,  -8.14233970,  -0.02985890, +0.000 },  63 },
+        { {   1.28097400,   0.73657400,  -0.02985890, +0.000 },  63 },
+        { {  -3.84526900,   9.61548610,  -0.02985890, +0.000 },  63 },
+        { {  11.53345900,   0.73657400,  -0.02985890, +0.000 },  63 },
+        { {   6.40721700,   9.61548610,  -0.02985890, +0.000 },  63 },
+        { {  -5.12948080,  -5.92050500,  -0.00034410, +0.000 },  63 },
+        { { -10.25572400,   2.95840810,  -0.00034410, +0.000 },  63 },
+        { {   5.12300400,  -5.92050500,  -0.00034410, +0.000 },  63 },
+        { {  -0.00323800,   2.95840810,  -0.00034410, +0.000 },  63 },
+        { {  10.24924700,   2.95840810,  -0.00034410, +0.000 },  63 },
+        { {  -6.41020490,  -3.70313690,   0.00259410, +0.000 },  63 },
+        { {   3.84227990,  -3.70313690,   0.00259410, +0.000 },  63 },
+        { {  -1.28396300,   5.17577600,   0.00259410, +0.000 },  63 },
+        { {   8.96852300,   5.17577600,   0.00259410, +0.000 },  63 },
+        { {  -2.56313990, -10.36370800,  -0.03171290, +0.000 },  63 },
+        { {  -7.68938300,  -1.48479500,  -0.03171290, +0.000 },  63 },
+        { {   2.56310300,  -1.48479500,  -0.03171290, +0.000 },  63 },
+        { {  -2.56313990,   7.39411780,  -0.03171290, +0.000 },  63 },
+        { {   7.68934490,   7.39411780,  -0.03171290, +0.000 },  63 },
+        { {  -1.28067900,  -8.13591480,  -0.00079620, +0.000 },  63 },
+        { {  -6.40692090,   0.74299800,  -0.00079620, +0.000 },  63 },
+        { {   3.84556390,   0.74299800,  -0.00079620, +0.000 },  63 },
+        { {  -1.28067900,   9.62191100,  -0.00079620, +0.000 },  63 },
+        { {  -2.56187200,  -5.91890810,  -0.03133620, +0.000 },  63 },
+        { {  -7.68811510,   2.96000500,  -0.03133620, +0.000 },  63 },
+        { {   7.69061280,  -5.91890810,  -0.03133620, +0.000 },  63 },
+        { {   2.56436990,   2.96000500,  -0.03133620, +0.000 },  63 },
+        { {  -3.84314300,  -3.70026110,   0.01125300, +0.000 },  63 },
+        { {  -8.96938510,   5.17865180,   0.01125300, +0.000 },  63 },
+        { {   6.40934180,  -3.70026110,   0.01125300, +0.000 },  63 },
+        { {   1.28310000,   5.17865180,   0.01125300, +0.000 },  63 },
+        { {  -0.00166800, -10.36079400,   0.01077810, +0.000 },  63 },
+        { {  -5.12791110,  -1.48188100,   0.01077810, +0.000 },  63 },
+        { {   5.12457510,  -1.48188100,   0.01077810, +0.000 },  63 },
+        { {  -0.00166800,   7.39703180,   0.01077810, +0.000 },  63 },
+        { {   1.27965610,  -8.13668440,   0.00251500, +0.000 },  63 },
+        { {  -3.84658690,   0.74222800,   0.00251500, +0.000 },  63 },
+        { {   6.40589900,   0.74222800,   0.00251500, +0.000 },  63 },
+        { {   1.27965610,   9.62114140,   0.00251500, +0.000 },  63 },
+        { { -10.25145900,  -5.91750910,   0.01260580, +0.000 },  63 },
+        { {   0.00102600,  -5.91750910,   0.01260580, +0.000 },  63 },
+        { {  -5.12521600,   2.96140410,   0.01260580, +0.000 },  63 },
+        { {  10.25351100,  -5.91750910,   0.01260580, +0.000 },  63 },
+        { {   5.12726880,   2.96140410,   0.01260580, +0.000 },  63 },
+        { {   0.00102600,  11.84031700,   0.01260580, +0.000 },  63 },
+        { {  -1.27984910,  -3.70021800,   0.00135390, +0.000 },  63 },
+        { {  -6.40609120,   5.17869520,   0.00135390, +0.000 },  63 },
+        { {   8.97263720,  -3.70021800,   0.00135390, +0.000 },  63 },
+        { {   3.84639410,   5.17869520,   0.00135390, +0.000 },  63 },
+        { {   2.56073190, -10.35686800,   0.00940720, +0.000 },  63 },
+        { {  -2.56551000,  -1.47795500,   0.00940720, +0.000 },  63 },
+        { {  -7.69175290,   7.40095810,   0.00940720, +0.000 },  63 },
+        { {   7.68697500,  -1.47795500,   0.00940720, +0.000 },  63 },
+        { {   2.56073190,   7.40095810,   0.00940720, +0.000 },  63 },
+        { {  -6.41086010,  -8.13850880,  -0.03156310, +0.000 },  63 },
+        { { -11.53710300,   0.74040400,  -0.03156310, +0.000 },  63 },
+        { {   3.84162500,  -8.13850880,  -0.03156310, +0.000 },  63 },
+        { {  -1.28461690,   0.74040400,  -0.03156310, +0.000 },  63 },
+        { {  -6.41086010,   9.61931710,  -0.03156310, +0.000 },  63 },
+        { {   8.96786790,   0.74040400,  -0.03156310, +0.000 },  63 },
+        { {   3.84162500,   9.61931710,  -0.03156310, +0.000 },  63 },
+        { {  -7.69151310,  -5.91883420,   0.01138510, +0.000 },  63 },
+        { {   2.56097200,  -5.91883420,   0.01138510, +0.000 },  63 },
+        { {  -2.56526990,   2.96007900,   0.01138510, +0.000 },  63 },
+        { {   7.68721490,   2.96007900,   0.01138510, +0.000 },  63 },
+        { {  -8.97151570,  -3.70199890,   0.01212180, +0.000 },  63 },
+        { {   1.28097000,  -3.70199890,   0.01212180, +0.000 },  63 },
+        { {  -3.84527300,   5.17691420,   0.01212180, +0.000 },  63 },
+        { {   6.40721180,   5.17691420,   0.01212180, +0.000 },  63 },
+        { {  -5.12537480, -10.36281600,   0.00000020, +0.000 },  63 },
+        { { -10.25161700,  -1.48390310,   0.00000020, +0.000 },  63 },
+        { {   5.12711000, -10.36281600,   0.00000020, +0.000 },  63 },
+        { {   0.00086700,  -1.48390310,   0.00000020, +0.000 },  63 },
+        { {  -5.12537480,   7.39501000,   0.00000020, +0.000 },  63 },
+        { {  10.25335300,  -1.48390310,   0.00000020, +0.000 },  63 },
+        { {   5.12711000,   7.39501000,   0.00000020, +0.000 },  63 },
+        //  ----------- TMA
+        { { -2.2657299, -0.149312,     3.1958958, +0.000 },    8 },//1-- O1..6
+        { {  1.944746,  -2.7530839,    3.3754341, +0.000 },    8 },//2
+        { {  4.0908289,  3.2430279,    3.3728768, +0.000 },    8 },//3
+        { { -2.175231,   2.105442 ,    3.3714391, +0.000 },    8 },//4
+        { {  3.9413929, -1.702212 ,    3.1951982, +0.000 },    8 },//5
+        { {  2.182831,   4.4482431,    3.1951162, +0.000 },    8 },//6
+        { { -0.114092,   0.8978820,    3.3588320, +0.000 },    6 },//1-- C1-9
+        { {  1.957628,  -0.3640630,    3.3590242, +0.000 },    6 },//2
+        { {  2.014699,   2.061168 ,    3.3591639, +0.000 },    6 },//3
+        { {  0.5595030, -0.332026 ,    3.3545519, +0.000 },    6 },//4
+        { {  0.6126090,  2.0933731,    3.355055 , +0.000 },    6 },//5
+        { {  2.686532,   0.8345090,    3.3550102, +0.000 },    6 },//6
+        { {  2.7322209,  3.3642991,    3.3098089, +0.000 },    6 },//7
+        { { -1.601254 ,  0.8683400,    3.3095662, +0.000 },    6 },//8
+        { {  2.727854 , -1.636749 ,    3.3104231, +0.000 },    6 },//9
+        { { -0.0247530, -1.254158 ,    3.34009  , +0.000 },    1 },//1-- H1..6
+        { {  0.106357 ,  3.0599561,    3.3414542, +0.000 },    1 },//2
+        { {  4.459666 ,  4.151723 ,    7.439335-4.167425, +0.000 },   1 },//3
+        { {  3.7769761,  0.7893200,    3.3409788, +0.000 },    1 },//4
+        { { -3.1466689,  1.970835 ,    3.271311 , +0.000 },    1 },//5
+        { {  2.547698 , -3.52652  ,    3.2740132, +0.000 },    1 },//6
+        // ------------
+        { {  0., 0., 0., +0.000 }, -1 } // end table
+};
+
+// thread job environment data
+typedef struct{
+	Scan* Dest;
+	Mem2d* work;
+	int line_i, line_f, line_inc;
+        int time_index;
+        double z, dz, precision;
+        int maxiter;
+        xyzc_model *model;
+	int *status;
+	int job;
+	double progress;
+	int verbose_level;
+        gint gradflag;
+} Probe_Optimize_Job_Env;
+
+
+// NL-OPL function parameters
+typedef struct{
+        double A[3];       // apex coordinates
+        double Fsum[3];    // all over force sum
+        double Fljsum[3];  // probe - molecule object/surface -- LJ
+        double Fcsum[3];   //  probe - molecule object/surface -- Coulomb
+        double Fa_lj[3];   // apex-probe force vector -- LJ component
+        double Fa_c[3];    // apex-probe force vector -- Coulomb component
+        double Fa_flex[3]; // apex-probe force vector -- Flex component
+        double Fa[3];      // apex-probe force vector -- Sum of above
+        double grad[3];    // force field gradient to "apex"
+        double Fz;         // apex Z force componet
+        double residual_force_mag;
+        xyzc_model *model;
+        Scan *scan;
+        double dz, z0, zf;
+        gint count;
+} LJ_calc_params;
+
+
+#ifdef GXSM3_MAJOR_VERSION // GXSM3 GUI code
+
+static void cancel_callback (GtkWidget *widget, int *status){
+	*status = 1; 
+}
+	
+void ChangeValue (GtkComboBox* Combo,  gchararray *string){
+	GtkTreeIter iter;
+	GtkTreeModel *model;
+	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (Combo), &iter);
+	model = gtk_combo_box_get_model (GTK_COMBO_BOX (Combo));
+        if (*string){
+                g_free (*string); *string=NULL;
+        }
+	gtk_tree_model_get (model, &iter, 0, &(*string), -1);
+        std::cout << *string << std::endl;
+}
+
+void ChangeEntry (GtkEntry* entry,  gchararray *string){
+        const gchar *ctxt = gtk_entry_get_text (GTK_ENTRY (entry));
+        if (*string)
+                g_free (*string);
+        *string = g_strdup (ctxt);
+        std::cout << *string << std::endl;
+}
+        
+void xyz_file_set (GtkFileChooserButton *chooser,  gchar **string){
+        *string = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));    
+        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (g_object_get_data (G_OBJECT (chooser), "COMBO")), *string, *string);
+        std::cout << *string << std::endl;
+}
+
+void ChangeIndex (GtkSpinButton *spinner, double *index){
+	*index = gtk_spin_button_get_value (spinner);
+
+	std::cout << "Change Index: " << ((int)*index) << std::endl;
+}
+
+
+#else // GXSM2 GUI code
+
+
+static void cancel_callback (GtkWidget *widget, int *status){
+	*status = 1; 
+}
+	
+void ChangeValue (GtkComboBox* Combo,  gchar **string){
+	GtkTreeIter iter;
+	GtkTreeModel *model;
+	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (Combo), &iter);
+	model = gtk_combo_box_get_model (GTK_COMBO_BOX (Combo));
+        std::cout << "ChangeValue called" << std::endl << std::flush;
+        if (*string)
+                g_free (*string);
+	gtk_tree_model_get (model, &iter, 0, &(*string), -1);
+        std::cout << *string << std::endl;
+}
+	
+void ChangeEntry (GtkEntry* entry,  gchar **string){
+        const gchar *ctxt = gtk_entry_get_text (GTK_ENTRY (entry));
+        if (*string)
+                g_free (*string);
+        *string = g_strdup (ctxt);
+        std::cout << *string << std::endl;
+}
+        
+void xyz_file_set (GtkFileChooserButton *chooser,  gchar **string){
+        *string = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));    
+        //        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (g_object_get_data (G_OBJECT (chooser), "COMBO")), *string, *string);
+        gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (g_object_get_data (G_OBJECT (chooser), "COMBO")), *string);
+        std::cout << *string << std::endl;
+}
+
+void ChangeIndex (GtkSpinButton *spinner, double *index){
+	*index = gtk_spin_button_get_value (spinner);
+
+	std::cout << "Change Index: " << ((int)*index) << std::endl;
+}
+
+#define ADD_LINE(A,B)                           \
+        do{ \
+        hbox = gtk_hbox_new (FALSE, 0);                                 \
+        gtk_container_set_border_width (GTK_CONTAINER (hbox), 5);       \
+        gtk_widget_show (hbox);                                         \
+        gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);     \
+        gtk_box_pack_start (GTK_BOX (hbox), A, FALSE, FALSE, 0);    \
+        gtk_box_pack_start (GTK_BOX (hbox), B, FALSE, FALSE, 0);    \
+        }while(0)
+
+#define APP_LINE(A)                           \
+        do{ \
+        gtk_box_pack_start (GTK_BOX (hbox), A, FALSE, FALSE, 0);    \
+        }while(0)
+
+#define ADD_EC_WITH_SCALE(LABEL, UNIT, ERROR_TEXT, VAR, LO, HI, FMT, STEP, PAGE, CALLBACK) \
+        do{\
+		input = mygtk_create_spin_input(_(LABEL), vbox_param, hbox_param, 400); \
+		Gtk_EntryControl *ec = new Gtk_EntryControl (UNIT, _(ERROR_TEXT), VAR, LO, HI, FMT, input, STEP, PAGE);	\
+		if (CALLBACK)						\
+			ec->Set_ChangeNoticeFkt(CALLBACK, this);	\
+		SetupScale(ec->GetAdjustment(), hbox_param);		\
+	}while(0)
+
+#define ADD_EC(LABEL, UNIT, ERROR_TEXT, VAR, LO, HI, FMT, STEP, PAGE, CALLBACK) \
+        do{\
+		input = mygtk_create_input(_(LABEL), vbox_param, hbox_param, 150); \
+		Gtk_EntryControl *ec = new Gtk_EntryControl (UNIT, _(ERROR_TEXT), VAR, LO, HI, FMT, input, STEP, PAGE);	\
+		if (CALLBACK)						\
+			ec->Set_ChangeNoticeFkt(CALLBACK, this);	\
+	}while(0)
+#define APP_EC(LABEL, UNIT, ERROR_TEXT, VAR, LO, HI, FMT, STEP, PAGE, CALLBACK) \
+        do{\
+		input = mygtk_add_input(_(LABEL), hbox_param, 150); \
+		Gtk_EntryControl *ec = new Gtk_EntryControl (UNIT, _(ERROR_TEXT), VAR, LO, HI, FMT, input, STEP, PAGE);	\
+		if (CALLBACK)						\
+			ec->Set_ChangeNoticeFkt(CALLBACK, this);	\
+	}while(0)
+#endif
+
+class Dialog : public AppBase{
+public:
+	Dialog (double &zi, double &zf, double &dz, double &precision, double &maxiter,
+                double sensor_f0_k0[2], double probe_flex[3],
+                gchararray *model_selected, gchararray *model_filter, gchararray *model_filter_param,
+                gchararray *calc_mode_selected, gchararray *calc_options_selected,
+                gchararray *external_model,
+                gchararray *probe_type, gchararray *probe_model,
+                double &initial_probe_below_apex,
+                double &probe_charge,
+                double &charge_scaling,
+                double &max_threads,
+                gchararray *progress_detail
+                ){
+
+#ifdef GXSM3_MAJOR_VERSION // GXSM3 GUI code
+                
+		GtkWidget *dialog;
+                GtkWidget *choice;
+                GtkWidget *chooser;
+
+                UnitObj *meVA    = new UnitObj("meV/" UTF8_ANGSTROEM, "meV/" UTF8_ANGSTROEM );
+                UnitObj *pcharge = new UnitObj("e", "e");
+                UnitObj *hertz = new UnitObj("Hz", "Hz");
+                UnitObj *stiffness = new UnitObj("N/m", "N/m");
+
+                GtkDialogFlags flags =  (GtkDialogFlags) (GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT);
+                dialog = gtk_dialog_new_with_buttons (N_("AFM Simulation Settings for Force Probe Path Tracing"),
+                                                      GTK_WINDOW (gapp->get_app_window ()),
+                                                      flags,
+                                                      _("_OK"),
+                                                      GTK_RESPONSE_ACCEPT,
+                                                      _("_Cancel"),
+                                                      GTK_RESPONSE_REJECT,
+                                                      NULL);
+                BuildParam bp;
+                gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
+                bp.error_text = "Value not allowed.";
+                bp.input_nx = 5;
+                bp.grid_add_ec_with_scale ("Z initial",   gapp->xsm->Z_Unit, &zi,     0.,   100., ".2f", 0.1,  1.); bp.new_line ();
+		bp.grid_add_ec_with_scale ("Z-final",     gapp->xsm->Z_Unit, &zf,     0.,   100., ".2f", 0.1,  1.); bp.new_line ();
+                bp.grid_add_ec_with_scale ("Z step",      gapp->xsm->Z_Unit, &dz,     0.,    10., ".3f", 0.1,  1.); bp.new_line ();
+                bp.grid_add_ec_with_scale ("NL-OPT precision", meVA, &precision,   0.,     1., "g", 0.00001,  0.0001); bp.new_line ();
+                bp.grid_add_ec_with_scale ("NL-OPT maxiter",   gapp->xsm->Unity, &maxiter,     0.,  1000., "g", 1.,  10.); bp.new_line ();
+
+                bp.input_nx = 1;
+                bp.grid_add_ec ("Sensor res freq.",   hertz, &sensor_f0_k0[0],     1.,  1e7, "g", 1.,  10.);
+                gtk_entry_set_width_chars (GTK_ENTRY (bp.input), 10);
+                bp.grid_add_ec ("k0",   stiffness, &sensor_f0_k0[1],     1.,  1e5, "g", 1.,  10.);
+                gtk_entry_set_width_chars (GTK_ENTRY (bp.input), 10);
+                bp.new_line ();
+        
+                bp.grid_add_ec ("Probe stiffness X",   stiffness, &probe_flex[0],     0.,  1000., "g", 1.,  10.);
+                gtk_entry_set_width_chars (GTK_ENTRY (bp.input), 8);
+                bp.grid_add_ec ("Y",   stiffness, &probe_flex[1],     0.,  1000., "g", 1.,  10.);
+                gtk_entry_set_width_chars (GTK_ENTRY (bp.input), 8);
+                bp.grid_add_ec ("Z",   stiffness, &probe_flex[2],     0.,  1000., "g", 1.,  10.);
+                gtk_entry_set_width_chars (GTK_ENTRY (bp.input), 8);
+                bp.new_line ();
+
+                bp.grid_add_label ("Model");
+		choice = gtk_combo_box_text_new ();
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "TMA", "TMA");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Cu111+TMA", "Cu111+TMA");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*model_selected));
+		bp.grid_add_widget (choice, 5);
+
+                chooser = gtk_file_chooser_button_new (_("XYZ Model File"), GTK_FILE_CHOOSER_ACTION_OPEN);
+                g_object_set_data (G_OBJECT (chooser), "COMBO", choice);
+		g_signal_connect (G_OBJECT (chooser), "file-set", G_CALLBACK (xyz_file_set), &(*external_model));
+		gtk_widget_show (chooser);
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 0);
+		bp.grid_add_widget (chooser, 5);
+                bp.new_line ();
+                        
+                bp.grid_add_label ("Model Filter");
+		choice = gtk_combo_box_text_new ();
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "None", "None");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "TMA-C+TMA-R-flip",       "TMA-C+TMA-R-flip");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "TMA-C+TMA-R-flip+Cu111", "TMA-C+TMA-R-flip+Cu111");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "TMA-Rosette",       "TMA-Rosette");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "TMA-Rosette+Cu111", "TMA-Rosette+Cu111");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Custom: 1<Z<20", "Custom: 1<Z<20");
+		gtk_widget_show (choice);			
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*model_filter));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 0);
+		bp.grid_add_widget (choice, 5);
+                bp.new_line ();
+                        
+                bp.grid_add_input ("Model Filter Param", 15);
+		g_signal_connect(G_OBJECT (bp.input), "changed", G_CALLBACK (ChangeEntry), &(*model_filter_param));
+                bp.new_line ();
+                        
+                bp.grid_add_label ("Calculation Mode");
+		choice = gtk_combo_box_text_new ();
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "NO-OPT", "NO-OPT/Force at fixed probe");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "NL-OPT", "NL-OPT/Probe relax");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "IPF-NL-OPT", "IPF-NL-OPT/Probe relax -- fast: using interpolated fields and gradients");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "TOPO", "TOPO/Display Model");
+                // gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "CTIS", "CTIS");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "NONE", "NONE/Abort");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*calc_mode_selected));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 0);
+		bp.grid_add_widget (choice, 15);
+                bp.new_line ();
+
+                bp.grid_add_label ("Calculation Options");
+		choice = gtk_combo_box_text_new ();
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J Model", "L-J Model");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J+Coulomb Model", "L-J+Coulomb Model");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*calc_options_selected));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 0);
+		bp.grid_add_widget (choice, 15);
+                bp.new_line ();
+
+                bp.grid_add_label ("Probe (active tip)");
+		choice = gtk_combo_box_text_new ();
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Copper", "Copper probe");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Oxigen", "Oxigen terminated probe (CO like)");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Xenon",  "Xenon terminated probe");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Carbon", "Carbon terminated probe");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Tungston", "Tungston terminated probe");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Platinum", "Platinum terminated probe");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*probe_type));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 1);
+		bp.grid_add_widget (choice, 15);
+                bp.new_line ();
+
+                bp.grid_add_label ("Probe Model:");
+		choice = gtk_combo_box_text_new ();
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Spring", "Spring");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J", "L-J");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J + Coulomb", "L-J + Coulomb");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J + Spring", "L-J + Spring");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J + Coulomb + Spring", "L-J + Coulomb + Spring");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*probe_model));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 1);
+		bp.grid_add_widget (choice, 15);
+                bp.new_line ();
+
+                bp.input_nx = 5;
+                bp.grid_add_ec_with_scale ("Initial Probe below Aplex (0=auto)",  gapp->xsm->Z_Unit, &initial_probe_below_apex,  -20.,  20., ".3f", 0.1,  1.);
+                bp.new_line ();
+                bp.grid_add_ec_with_scale ("Probe Charge",   pcharge,  &probe_charge,  -2.,    2., ".3f", 0.01,  0.1);
+                bp.new_line ();
+                bp.grid_add_ec_with_scale ("Charge Scaling", gapp->xsm->Unity, &charge_scaling,     -100.,  100., ".3f", 0.1,  1.);
+                bp.new_line ();
+		bp.grid_add_ec_with_scale ("Max Thread #",   gapp->xsm->Unity, &max_threads,    1.,   64., ".0f", 1.,  4.);
+                bp.new_line ();
+
+                bp.grid_add_label ("Progress Detail");
+		choice = gtk_combo_box_text_new ();
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Basic", "Basic");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Combined Job", "Combined Job");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Job Detail", "Job Detail");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*progress_detail));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 2);
+		bp.grid_add_widget (choice, 15);
+
+                gtk_widget_show_all (dialog);
+                
+		gint r=gtk_dialog_run(GTK_DIALOG(dialog));
+		gtk_widget_destroy (dialog);
+              
+                delete meVA;
+                delete pcharge;
+                delete hertz;
+                delete stiffness;
+
+                if (r == GTK_RESPONSE_REJECT){
+                        *calc_mode_selected = g_strdup ("NONE");
+                }
+
+#else // GXSM2 GUI code
+		GtkWidget *dialog;
+		GtkWidget *vbox;
+		GtkWidget *hbox;
+		GtkWidget *hbox_param;
+		GtkWidget *vbox_param;
+		GtkWidget *label;
+                GtkWidget *input;
+                GtkWidget *choice, *entry;
+		GtkWidget *grid;
+                GtkWidget *chooser;
+                int x,y;
+
+                UnitObj *meVA    = new UnitObj("meV/" UTF8_ANGSTROEM, "meV/" UTF8_ANGSTROEM );
+                UnitObj *pcharge = new UnitObj("e", "e");
+                UnitObj *hertz = new UnitObj("Hz", "Hz");
+                UnitObj *stiffness = new UnitObj("N/m", "N/m");
+
+                GtkDialogFlags flags =  (GtkDialogFlags) (GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT);
+                dialog = gtk_dialog_new_with_buttons (N_("AFM Simulation Settings for Force Probe Path Tracing"),
+                                                      NULL, // GTK_WINDOW (gapp->get_app_window ()),
+                                                      flags,
+                                                      GTK_STOCK_OK,
+						      GTK_RESPONSE_ACCEPT,
+						      NULL);
+ 
+		vbox_param = vbox = gtk_vbox_new (FALSE, 0);
+		gtk_widget_show (vbox);
+                gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox),
+                                   vbox, FALSE, FALSE, GNOME_PAD);
+
+                //                x=y=1;
+                //		grid = gtk_grid_new ();
+                //		gtk_widget_show (grid);
+		//gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area (GTK_DIALOG(dialog))),
+		//		    grid, FALSE, FALSE, GXSM_WIDGET_PAD);
+                //		gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area (GTK_DIALOG(dialog))),
+		//		    vbox, FALSE, FALSE, GNOME_PAD);
+
+		//	ADD_EC_WITH_SCALE(LABEL, UNIT, ERROR_TEXT, VAR, LO, HI, FMT, STEP, PAGE, CALLBACK);
+                ++y; x=1;
+                ADD_EC_WITH_SCALE(N_("Z initial"),   gapp->xsm->Z_Unit, "Value not allowed.", &zi,     0.,   100., ".2f", 0.1,  1., NULL);
+                ++y; x=1;
+		ADD_EC_WITH_SCALE(N_("Z-final"),     gapp->xsm->Z_Unit, "Value not allowed.", &zf,     0.,   100., ".2f", 0.1,  1., NULL);
+                ++y; x=1;
+                APP_EC(N_("Z step"),      gapp->xsm->Z_Unit, "Value not allowed.", &dz,     0.,    10., ".3f", 0.1,  1., NULL);
+                ++y; x=1;
+                ADD_EC(N_("NL-OPT precision"), meVA, "Value not allowed.", &precision,   0.,     1., "g", 0.00001,  0.0001, NULL);
+                ++y; x=1;
+                APP_EC(N_("NL-OPT maxiter"),   gapp->xsm->Unity, "Value not allowed.", &maxiter,     0.,  1000., "g", 1.,  10., NULL);
+                ++y; x=1;
+
+                ++y; x=1;
+                ADD_EC(N_("Sensor res freq."),   hertz, "Value not allowed.", &sensor_f0_k0[0],     1.,  1e7, "g", 1.,  10., NULL);
+                APP_EC(N_("k0"),   stiffness, "Value not allowed.", &sensor_f0_k0[1],     1.,  1e5, "g", 1.,  10., NULL);
+                ++y; x=1;
+                ADD_EC(N_("Probe stiffness X"),   stiffness, "Value not allowed.", &probe_flex[0],     0.,  1000., "g", 1.,  10., NULL);
+                APP_EC(N_("Y"),   stiffness, "Value not allowed.", &probe_flex[1],     0.,  1000., "g", 1.,  10., NULL);
+                APP_EC(N_("Z"),   stiffness, "Value not allowed.", &probe_flex[2],     0.,  1000., "g", 1.,  10., NULL);
+
+                label = gtk_label_new (N_("Model"));	
+		gtk_widget_show (label);			
+                //		gtk_grid_attach (GTK_GRID (grid), label, x++,y, 1,1); 
+		choice = gtk_combo_box_text_new ();
+                ADD_LINE (label, choice);
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "TMA");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Cu111+TMA");
+		gtk_widget_show (choice);			
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*model_selected));
+                //		gtk_grid_attach (GTK_GRID (grid), choice, x++, y, 1,1);
+                
+                chooser = gtk_file_chooser_button_new (_("XYZ Model File"), GTK_FILE_CHOOSER_ACTION_OPEN);
+                g_object_set_data (G_OBJECT (chooser), "COMBO", choice);
+		g_signal_connect (G_OBJECT (chooser), "file-set", G_CALLBACK (xyz_file_set), &(*external_model));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 0);
+		gtk_widget_show (chooser);
+                //                gtk_grid_attach (GTK_GRID (grid), chooser, x++, y, 1,1);
+                APP_LINE (chooser);
+                        
+                ++y; x=1;
+                label = gtk_label_new (N_("Model Filter"));	
+                //		gtk_grid_attach (GTK_GRID (grid), label, x++,y, 1,1); 
+		choice = gtk_combo_box_text_new ();
+                ADD_LINE (label, choice);
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "None");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "TMA-C+TMA-R-flip");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "TMA-C+TMA-R-flip+Cu111");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "TMA-Rosette");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "TMA-Rosette+Cu111");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Custom: 1<Z<20");
+                //		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Custom-3", "Custom-3");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*model_filter));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 0);
+                //		gtk_grid_attach (GTK_GRID (grid), choice, x++, y, 1,1);
+           	//gtk_combo_box_text_append_text (GTK_COMBO_BOX (source2_combo), defaultprobe->get_label (i));
+
+                ++y; x=1;
+                label = gtk_label_new (N_("Model Filter Param"));	
+		gtk_widget_show (label);			
+                //		gtk_grid_attach (GTK_GRID (grid), label, x++,y, 1,1); 
+                entry = gtk_entry_new ();
+		gtk_widget_show (entry);
+                //		gtk_grid_attach (GTK_GRID (grid), entry, x++,y, 1,1); 
+		g_signal_connect(G_OBJECT (entry), "changed", G_CALLBACK (ChangeEntry), &(*model_filter_param));
+                ADD_LINE (label, entry);
+                
+                ++y; x=1;
+                label = gtk_label_new (N_("Calculation Mode"));	
+                //		gtk_grid_attach (GTK_GRID (grid), label, x++,y, 1,1); 
+		choice = gtk_combo_box_text_new ();
+                ADD_LINE (label, choice);
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "NO-OPT/Force at fixed probe");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "NL-OPT/Probe relax");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "IPF-NL-OPT/Probe relax");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "TOPO/Display Model");
+                // gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "CTIS", "CTIS");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "NONE/Abort");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*calc_mode_selected));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 0);
+                //		gtk_grid_attach (GTK_GRID (grid), choice, x++, y, 1,1);
+
+                ++y; x=1;
+                label = gtk_label_new (N_("Probe (active tip)"));	
+                //		gtk_grid_attach (GTK_GRID (grid), label, x++,y, 1,1); 
+		choice = gtk_combo_box_text_new ();
+                ADD_LINE (label, choice);
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Copper probe");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Oxigen terminated probe (CO like)");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Xenon terminated probe");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Carbon terminated probe");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Tungston terminated probe");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Platinum terminated probe");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*probe_type));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 1);
+		gtk_widget_show (choice);			
+                //		gtk_grid_attach (GTK_GRID (grid), choice, x++, y, 1,1);
+
+
+                ++y; x=1;
+                label = gtk_label_new (N_("Probe Model:"));	
+		gtk_widget_show (label);			
+                //		gtk_grid_attach (GTK_GRID (grid), label, x++,y, 1,1); 
+		choice = gtk_combo_box_text_new ();
+                ADD_LINE (label, choice);
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Spring");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "L-J");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "L-J + Coulomb");
+		gtk_combo_box_text_append_tetx (GTK_COMBO_BOX_TEXT (choice), "L-J + Spring");
+		gtk_combo_box_text_append_tetx (GTK_COMBO_BOX_TEXT (choice), "L-J + Coulomb + Spring");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*probe_model));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 1);
+		gtk_widget_show (choice);			
+                //		gtk_grid_attach (GTK_GRID (grid), choice, x++, y, 15,1);
+
+                ++y; x=1;
+                ADD_EC(N_("Initial Probe below Aplex (0=auto)"),      gapp->xsm->Z_Unit, "Value not allowed.", &initial_probe_below_apex,  -20.,  20., ".3f", 0.1,  1., NULL);
+               ++y; x=1;
+               ADD_EC(N_("Probe Charge"),      pcharge, "Value not allowed.", &probe_charge,  -2.,    2., ".3f", 0.01,  0.1, NULL);
+
+                ++y; x=1;
+                APP_EC(N_("Charge Scaling"),      gapp->xsm->Unity, "Value not allowed.", &charge_scaling,     -100.,  100., ".3f", 0.1,  1., NULL);
+                ++y; x=1;
+		ADD_EC(N_("Max Thread #"),      gapp->xsm->Unity, "Value not allowed.", &max_threads,    1.,   64., ".0f", 1.,  4., NULL);
+
+                ++y; x=1;
+                label = gtk_label_new (N_("Progress Detail"));	
+		gtk_widget_show (label);			
+                //		gtk_grid_attach (GTK_GRID (grid), label, x++,y, 1,1); 
+		choice = gtk_combo_box_text_new ();
+                ADD_LINE (label, choice);
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Basic");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Combined Job");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Job Detail");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*progress_detail));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 1);
+
+		gtk_widget_show_all (vbox);			
+                //		gtk_grid_attach (GTK_GRID (grid), choice, x++, y, 1,1);
+
+		gtk_dialog_run(GTK_DIALOG(dialog));
+		gtk_widget_destroy (dialog);
+
+                delete meVA;
+                delete pcharge;
+                delete hertz;
+                delete stiffness;
+#endif
+        }
+
+	~Dialog () {};
+};
+
+// Sader Formula
+// Citation: Applied Physics Letters 84, 1801 (2004); doi: 10.1063/1.1667267
+// View online: http://dx.doi.org/10.1063/1.1667267
+// -------------------------------------------------------------------------
+// F_small(z)  F=Force W=Freq
+// Omega(z) = Delta W(z) / W_res
+// k=Spring Const Sensor  -- QPlus is approx 1800 N/m
+// F_small(z) = 2k Integral(zi)_z->inf dzi W(zi)
+
+// reverse Sader -- not needd here
+double sader_Force(double z, double k=1800.){
+        // need to integrate...
+        return 1.;
+}
+
+// differential Sader -- small amplitude
+// W(z) = diff_z  F_small(z)/(2k)
+double sader_dFrequency (double z, const double Pz[3], const double Fz[3], double k=1800., double W_res=29000.){
+        double dz = 0.5 * (Pz[2]-Pz[0]);
+        return W_res * 0.5*(Fz[2]-Fz[0]) / (dz * 2.*k);
+}
+
+// need pN/Ang =>  1e-12N/1e-10m  =>  1e-2 N/m  <== N/n  x 100
+// R = A-P --> Rz-dz > 0 for P "extended" from exquiv
+// F=-kx, U=1/2kx^2
+void probe_flex_force (const double r[3], double f[3], double g[3][3], xyzc_model *model){
+        copy_vec (f, r);
+        f[2] -= fabs (model->get_probe_dz ()); // this is negative for "close" (pushing away) Z
+        mul_vec_vec (f, model->probe_flex);
+        neg_vec (f); // invert for force respose: positive for repulsive now!
+        if (g)
+                for (int i=0; i<3; ++i){
+                        copy_vec (g[i], f);
+                        g[i][i] = model->probe_flex[i];
+                }
+}
+
+/*
+// LJ Force, R = "Apx - P" for apex-probe or "Amod - P" for model-probe
+ */
+
+inline void lj_force (double R[3], double A, double B, double Fab[3]){
+        // compute Lennard-Jones Force between two atoms A,B, spaced by R:
+        // F_L-J = R*(12*B/r^14 - 6*A/r^8)
+        double r = norm_vec(R);
+        double r2 = r*r;
+        double r4 = r2*r2;
+        double r8 = r4*r4;
+        double r14 = r8*r4*r2;
+        const double C_pN = 6 * 1.60217656535;  // to give result in pN
+        copy_vec(Fab, R);
+        // mul_vec_scalar(Fab, 12.0*B/r14 - 6.0*A/r8); // ==> in meV * 1e-10m / (1e-10m)^2 =  1.6021766e-12 kg m / s^2 ~=~ 1.6e-12 N = 1.6 pN
+        mul_vec_scalar(Fab, C_pN * (2.*B/r14 - A/r8)); // ==> pN -- positive is repulsive (close), negative is attarctive (far)
+}
+
+// no need, not used, doing it numericall.... -- draft code only!
+inline void lj_force_and_gradient (double R[3], double A, double B, double Fab[3], double dFab[3]){
+        // compute Lennard-Jones Force between two atoms A,B, spaced by R:
+        // F_L-J = R*(12*B/r^14 - 6*A/r^8)
+        double r = norm_vec(R);
+        double r2 = r*r;
+        double r4 = r2*r2;
+        double r8 = r4*r4;
+        double r14 = r8*r4*r2;
+        const double C_pN = 6 * 1.60217656535;  // to give result in pN
+        copy_vec(Fab, R);
+        copy_vec(dFab, R);
+        // mul_vec_scalar(Fab, 12.0*B/r14 - 6.0*A/r8); // ==> in meV * 1e-10m / (1e-10m)^2 =  1.6021766e-12 kg m / s^2 ~=~ 1.6e-12 N = 1.6 pN
+        mul_vec_scalar(Fab, C_pN * (2.*B/r14 - A/r8)); // ==> pN
+        mul_vec_scalar(dFab, C_pN * (28.*B/r14 - 8.*A/r8)/r); // ==> pN/A
+}
+
+/*
+// |\mathbf F|=k_e{|q_1q_2|\over r^2}\qquad and {\displaystyle \qquad \mathbf {F} _{1}=k_{e}{\frac {q_{1}q_{2}}{{|\mathbf {r} _{12}|}^{2}}}\mathbf {\hat {r}} _{21},\qquad } {\displaystyle \qquad \mathbf {F} _{1}=k_{e}{\frac {q_{1}q_{2}}{{|\mathbf {r} _{12}|}^{2}}}\mathbf {\hat {r}} _{21},\qquad } respectively,
+// where ke is Coulomb's constant (ke = 8.9875517873681764×109 N m2 C−2), q1 and q2 are the signed magnitudes of the charges
+// partial charge component based on Coulomb point charges at atom centers
+// ==================================================
+// R in Ang, q1,2 in e => pN
+*/
+inline void coulomb_force (const double R[3], double q1, double q2, double Fab[3]){
+        // compute Coulomb Force between two atoms at R1 and R2
+        // F_12 = kc q1 q2 R12 / r12^2
+        double r = norm_vec(R);
+        double r2 = r*r;
+        const double keA=CONST_ke_ee; // ke for C in e, r in Ang ==> pN
+        copy_vec(Fab, R);
+        mul_vec_scalar(Fab, keA*q1*q2/r2/r);
+}
+
+
+// L-J, Coulobm, Flex Probe-Apex and Probe-Surface object Force calculation for
+// -------------------------------------------------------------
+// param->A: Apex: tip pos (fixed)
+// param->model: Model and options...
+// P: Probe Atom -- to be optimized
+// param->Fsum: residual force -- to be minimized
+// returns Fz, Z-projected force on Apex
+double calculate_apex_probe_and_probe_model_forces (LJ_calc_params *param, const double P[3]){
+        double R[4];
+        double F[3];
+        double AB[3];
+        double R1[4], R2[4];
+        copy_vec (R, param->A); R[3]=0.; // Probe Charge
+        sub_from_vec (R, P);   // R = A-P;
+        Model_item *m = param->model->get_model_ref ();
+        Model_item *p = param->model->get_probe_ref ();
+
+        // move out of here!!!!
+        set_vec (param->Fa_lj, 0.);
+        set_vec (param->Fa_c, 0.);
+        set_vec (param->Fa_flex, 0.);        
+
+        // Force on Probe to Tipapex -- L-J force componet
+        // cAab(LJp_ta, LJp_p, AB); // LJ params tipapex <-> probe
+        if (param->model->options & MODE_PROBE_L_J)
+                lj_force(R, param->model->LJp_AB_lookup[0][0], param->model->LJp_AB_lookup[0][1], param->Fa_lj);    // R:= A-P
+
+        // Force on Probe to Tipapex -- coulomb force componet
+        if (param->model->options & MODE_PROBE_COULOMB)
+                coulomb_force (R, p[1].xyzc[3], p[0].xyzc[3], param->Fa_c); // q1, q2 -> qP, qA, R:= A-P
+
+        // Force on Probe to Tipapex -- flex force componet
+        if (param->model->options & MODE_PROBE_SPRING)
+                probe_flex_force (R, param->Fa_flex, NULL, param->model);
+
+        copy_vec (param->Fa, param->Fa_lj);
+        add_to_vec (param->Fa, param->Fa_c);
+        add_to_vec (param->Fa, param->Fa_flex);        
+
+        // Force on Probe to model/surface -- LJ and Coulomb components
+        // sum Forces to surface atoms/molecules/..
+        // Fsum: total F-LJ + F-Coulomb
+        // Fcsum: F-Coulomb on Probe
+        set_vec (param->Fljsum, 0.);
+        set_vec (param->Fcsum, 0.);
+        set_vec (param->Fsum, 0.);
+        for (int n=0; m[n].N > 0; ++n){
+                copy_vec (R, m[n].xyzc);
+                // cAab (&mol[n][5], LPp_p, AB); // LJ params atom <-> probe
+                sub_from_vec (R, P);  // R := R_atom - P
+                lj_force(R, param->model->LJp_AB_lookup[m[n].N][0], param->model->LJp_AB_lookup[m[n].N][1], F);
+                add_to_vec (param->Fljsum, F);
+                if (param->model->options & MODE_COULOMB){
+                        coulomb_force(R, p[1].xyzc[3], m[n].xyzc[3], F);
+                        add_to_vec (param->Fcsum, F);
+                }
+        }
+        // sum all forces -- to be minimized
+        add_to_vec (param->Fsum, param->Fljsum);
+        add_to_vec (param->Fsum, param->Fcsum);
+
+        // separate Apex force "Z" component
+        double Fz_probe = param->Fsum[2];
+        add_to_vec (param->Fsum, param->Fa);
+
+        return Fz_probe;
+}
+
+#define VEC_L(X,I) ((int)(X)+i)
+#define dI_G_VEC_L(X,I) ((int)(X)+3*i)
+
+// same as above, but using precomuted L-J and Coulomb force fields for model
+double calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (LJ_calc_params *param, const double P[3], LJ_calc_params grad_param[3]=NULL, double eps=0.05){
+        double R[4];
+        double F[3];
+        double AB[3];
+        double R1[4], R2[4];
+        copy_vec (R, param->A); R[3]=0.; // Probe Charge
+        sub_from_vec (R, P);   // R = A-P;
+        Model_item *m = param->model->get_model_ref ();
+        Model_item *p = param->model->get_probe_ref ();
+        
+        // move out of here!!!!
+        set_vec (param->Fa_lj, 0.);
+        set_vec (param->Fa_c, 0.);
+        set_vec (param->Fa_flex, 0.);        
+
+        // Force on Probe to Tipapex -- L-J force componet
+        if (param->model->options & MODE_PROBE_L_J)
+                // cAab(LJp_ta, LJp_p, AB); // LJ params tipapex <-> probe
+                lj_force(R, param->model->LJp_AB_lookup[0][0], param->model->LJp_AB_lookup[0][1], param->Fa_lj);    // R:= A-P
+
+        // Force on Probe to Tipapex -- coulomb force componet
+        if (param->model->options & MODE_PROBE_COULOMB)
+                coulomb_force (R, p[1].xyzc[3], p[0].xyzc[3], param->Fa_c); // q1, q2 -> qP, qA, R:= A-P
+        
+        // Force on Probe to Tipapex -- flex force componet
+        if (param->model->options & MODE_PROBE_SPRING)
+                probe_flex_force (R, param->Fa_flex, NULL, param->model);
+        
+        copy_vec (param->Fa, param->Fa_lj);
+        add_to_vec (param->Fa, param->Fa_c);
+        add_to_vec (param->Fa, param->Fa_flex);        
+
+        // sum Forces to surface atoms/molecules/..
+        // Fsum: total F-LJ + F-Coulomb
+        // Fcsum: F-Coulomb on Probe
+        set_vec (param->Fsum, 0.);
+        
+        // replaced sum over model with interpolated force field
+        double dix, diy, diz;
+        param->scan->World2Pixel (P[0], P[1], dix, diy);
+        diz = P[2] + param->model->get_probe_dz (); // compensate!
+        param->Fljsum[0] = param->scan->mem2d->GetDataPktInterpol (dix, diy, PROBE_FX_FIELD_L, P[2], param->scan, param->dz, param->z0);
+        param->Fljsum[1] = param->scan->mem2d->GetDataPktInterpol (dix, diy, PROBE_FY_FIELD_L, P[2], param->scan, param->dz, param->z0);
+        param->Fljsum[2] = param->scan->mem2d->GetDataPktInterpol (dix, diy, PROBE_FZ_FIELD_L, P[2], param->scan, param->dz, param->z0);
+        add_to_vec (param->Fsum, param->Fljsum);
+
+        if (param->model->options == MODE_COULOMB){
+                param->Fcsum[0] = param->scan->mem2d->GetDataPktInterpol (dix, diy, PROBE_FCX_FIELD_L, P[2], param->scan, param->dz, param->z0);
+                param->Fcsum[1] = param->scan->mem2d->GetDataPktInterpol (dix, diy, PROBE_FCY_FIELD_L, P[2], param->scan, param->dz, param->z0);
+                param->Fcsum[2] = param->scan->mem2d->GetDataPktInterpol (dix, diy, PROBE_FCZ_FIELD_L, P[2], param->scan, param->dz, param->z0);
+                add_to_vec (param->Fsum, param->Fcsum);
+        }
+#if 0
+        std::cout << "LJ-INTERPOL-F dixyz=" << dix << ", " << diy << ", " << P[2]
+                  << " FLJinter=[" << param->Fljsum[0] 
+                  << ", " << param->Fljsum[1] 
+                  << ", " << param->Fljsum[2] 
+                  << "]" << std::endl;
+#endif
+        
+        // sum all forces -- to be minimized
+
+        // separate Apex force "Z" component
+        double Fz_probe = param->Fsum[2];
+        add_to_vec (param->Fsum, param->Fa);
+
+
+        if (grad_param){
+                double Pg[4], Rg[4]; // xyzc
+                double Fg[3], Fag_l[3], Fag_r[3];
+                double tmp_vec[3];
+                double tmp_field_vec[3];
+                double eps2 = 1./(2.*eps);
+                for (int i=0; i<3; ++i){ // calc gradient matrix, @dx, @dy, @dz... aka dI...
+                        // force gradient probe to apex part -- calculate real F L-J + Coulomb
+                        
+                        copy_vec (Rg, R); Rg[i] -= eps; // R := A-P;  P +/- eps for grad  ==> P+eps
+
+                        // Force on Probe to Tipapex -- L-J force componet
+                        if (param->model->options & MODE_PROBE_L_J)
+                                // cAab(LJp_ta, LJp_p, AB); // LJ params tipapex <-> probe
+                                lj_force(Rg, param->model->LJp_AB_lookup[0][0], param->model->LJp_AB_lookup[0][1], Fag_l);    // R:= A-P
+                         else 
+                                set_vec (Fag_l, 0.);
+                        
+                        // Force on Probe to Tipapex -- coulomb force componet
+                        if (param->model->options & MODE_PROBE_COULOMB){
+                                coulomb_force (Rg, p[1].xyzc[3], p[0].xyzc[3], Fg); // q1, q2 -> qP, qA, R:= A-P
+                                add_to_vec (Fag_l, Fg);
+                        }
+
+                        // Force on Probe to Tipapex -- flex force componet
+                        if (param->model->options & MODE_PROBE_SPRING){
+                                probe_flex_force (Rg, Fg, NULL, param->model);
+                                add_to_vec (Fag_l, Fg);
+                        }
+                        // --------------------------------------------------------
+                        copy_vec (Rg, R); Rg[i] += eps; // P-eps
+
+                        if (param->model->options & MODE_PROBE_L_J)
+                                // cAab(LJp_ta, LJp_p, AB); // LJ params tipapex <-> probe
+                                lj_force(Rg, param->model->LJp_AB_lookup[0][0], param->model->LJp_AB_lookup[0][1], Fag_r);    // R:= A-P
+                         else 
+                                set_vec (Fag_r, 0.);
+                        
+                        // Force on Probe to Tipapex -- coulomb force componet
+                        if (param->model->options & MODE_PROBE_COULOMB){
+                                coulomb_force (Rg, p[1].xyzc[3], p[0].xyzc[3], Fg); // q1, q2 -> qP, qA, R:= A-P
+                                add_to_vec (Fag_r, Fg);
+                        }
+
+                        // Force on Probe to Tipapex -- flex force componet
+                        if (param->model->options & MODE_PROBE_SPRING){
+                                probe_flex_force (Rg, Fg, NULL, param->model);
+                                add_to_vec (Fag_r, Fg);
+                        }
+
+                        // ========================================================
+                        
+                        // differentiate, normalize
+                        sub_from_vec (Fag_l, Fag_r); // = F(P+eps) - F(P-eps)
+                        mul_vec_scalar (Fag_l, eps2);  // = dF(P+/-eps) / 2eps
+
+                        //                        std::cout << " GRADIENT d_"<<i<<" : ";
+                        //                        print_vec ("grad F probe--apex", Fag);
+                        
+                        // force gradient dI-FX/Y/Z to Probe at P -- interpolated Model force gradient part (L-J + Coulomb)
+                        set_vec (grad_param[i].Fsum, 0.);
+                        //                        print_vec ("Probe @", P);
+
+                        grad_param[i].Fljsum[0] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFX_L, i), diz, param->scan, param->dz, param->z0);
+                        grad_param[i].Fljsum[1] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFY_L, i), diz, param->scan, param->dz, param->z0);
+                        grad_param[i].Fljsum[2] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFZ_L, i), diz, param->scan, param->dz, param->z0);
+                        add_to_vec (grad_param[i].Fsum, grad_param[i].Fljsum);
+
+                        if (param->model->options & MODE_COULOMB){
+                                grad_param[i].Fcsum[0] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFCX_L, i), diz, param->scan, param->dz, param->z0);
+                                grad_param[i].Fcsum[1] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFCY_L, i), diz, param->scan, param->dz, param->z0);
+                                grad_param[i].Fcsum[2] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFCZ_L, i), diz, param->scan, param->dz, param->z0);
+                                add_to_vec (grad_param[i].Fsum, grad_param[i].Fcsum);
+                        }
+                        //                        print_vec ("grad F-probe-field", grad_param[i].Fljsum);
+                        add_to_vec (grad_param[i].Fsum, Fag_l);
+                        //                        print_vec ("grad F-sum", grad_param[i].Fsum);
+                }
+        }
+        
+        return Fz_probe;
+}
+
+// FIXME!!
+// simple current sum -- only via distances
+double current_sum (const double A[3], const double P[3], double minVec[3], xyzc_model *model){
+        double R[4];
+        double I_sum;
+        double r,I;
+        double rmin=1000.;
+        Model_item *m = model->get_model_ref ();
+        Model_item *p = model->get_probe_ref ();
+        
+        const double Bias = 0.1;
+        const double C1 = CONST_e * Bias;
+        const double C2 = -2. *  sqrt (2. * CONST_me) / CONST_hbar;
+
+        // some crude trivial STM current contributions sum up to surface atoms/molecules/..
+        I_sum = 0.;
+        for (int n=0; m[n].N > 0; ++n){
+                copy_vec (R, m[n].xyzc);
+                sub_from_vec (R, P);  // R = R_atom - P
+                r = norm_vec (R) * 1e-9; // Ang -> m
+                if (r < rmin) { rmin = r; copy_vec (minVec, R); }
+
+                I = C1 * exp (C2*r*sqrt ( 0.5 * (model->WorkF_lookup[p[1].N] + model->WorkF_lookup[m[n].N]) + Bias)); // PhiTip - PhiModelAtom
+                I_sum += I;
+        }
+
+        return I_sum;
+}
+
+// NL-OPT min function
+double lj_residual_force (unsigned int n, const double *Popt, double *grad, void *data){
+        LJ_calc_params *param = (LJ_calc_params*)(data);
+        
+        param->Fz = calculate_apex_probe_and_probe_model_forces (param, Popt);
+        // copy_vec (param->Popt, Popt);
+        
+        param->residual_force_mag = norm_vec (param->Fsum);
+
+        param->count++;
+        
+        return param->residual_force_mag;
+}
+
+// NL-OPT min function, provides gradient if requested - both from force fields, interpolated
+double lj_residual_interpol_force (unsigned int n, const double *Popt, double *grad, void *data){
+        LJ_calc_params *param = (LJ_calc_params*)(data);
+        LJ_calc_params gparam[3];
+        
+        if (grad){
+                param->Fz = calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (param, Popt, gparam, 0.05);
+                param->grad[0] = grad[0] = norm_vec (gparam[0].Fsum);
+                param->grad[1] = grad[1] = norm_vec (gparam[1].Fsum);
+                param->grad[2] = grad[2] = norm_vec (gparam[2].Fsum);
+                //                std::cout << "LJrif grad=" << grad[0] << ", " << grad[1] << ", " << grad[2] << std::endl;
+        } else  {
+                param->Fz = calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (param, Popt);
+        }
+        
+        param->residual_force_mag = norm_vec (param->Fsum);
+
+        param->count++;
+
+        return param->residual_force_mag;
+}
+
+
+void z_sader_run (Mem2d *m[3], int col, int line, double z, xyzc_model *model){
+        double Fz[3], Fz_fix[3], Pz[3];
+        double dz;
+        for (int i=0; i<3; ++i){
+                Fz[i]     = m[i]->GetDataPkt (col, line, APEX_FZ_L) * 1e-12; // now in Newton
+                Fz_fix[i] = m[i]->GetDataPkt (col, line, APEX_FZ_FIXED_L) * 1e-12; // now in Newton
+                Pz[i]     = m[i]->GetDataPkt (col, line, PROBE_Z_L) * 1e-10; // now in meter
+        }
+        // calc freq shift...
+        m[1]->PutDataPkt (sader_dFrequency (z, Pz, Fz, model->sensor_f0_k0[1], model->sensor_f0_k0[0]),
+                          col, line, FREQ_SHIFT_L);
+        m[1]->PutDataPkt (sader_dFrequency (z, Pz, Fz_fix, model->sensor_f0_k0[1], model->sensor_f0_k0[0]),
+                          col, line, FREQ_SHIFT_FIXED_L);
+}
+
+// force field calculations: LJ, Coulomb, Flex, Probe-Surface/Object
+void z_probe_simple_force_run (Scan *Dest, Mem2d *work, int col, int line, double z, xyzc_model *model, gint gradflag=0){
+        LJ_calc_params param;
+        double xyz[3];
+        double P[3], Popt[3];
+
+        xyz[2] = z;
+        Dest->Pixel2World (col, line, xyz[0], xyz[1]); // all in Angstroems
+        work->PutDataPkt (xyz[0], col, line, PROBE_X_L);
+        work->PutDataPkt (xyz[1], col, line, PROBE_Y_L);
+        work->PutDataPkt (xyz[2], col, line, PROBE_Z_L);
+        
+        copy_vec (param.A, xyz);
+        copy_vec (Popt, param.A); Popt[2] += model->get_probe_dz ();
+        param.model = model;
+        param.model = model;
+
+        // calculate force at position xyz (param.A) with probe at Popt = (x,y,z - model->probe_dz)
+        double Fz  = calculate_apex_probe_and_probe_model_forces (&param, Popt);
+        double Fc  = norm_vec (param.Fcsum);
+        double Flj = norm_vec (param.Fljsum);
+
+        for (int i=0; i<3; ++i){
+                work->PutDataPkt (Popt[i], col, line, VEC_L(PROBE_X_L, i));
+                work->PutDataPkt (param.Fljsum[i], col, line, VEC_L(PROBE_FX_FIELD_L, i));
+                work->PutDataPkt (param.Fcsum[i], col, line, VEC_L(PROBE_FCX_FIELD_L, i));
+                work->PutDataPkt (param.Fa_flex[i], col, line, VEC_L(PROBE_FFX_FIELD_L, i));
+                work->PutDataPkt (param.Fa_lj[i], col, line, VEC_L(PROBE_FLX_FIELD_L, i));
+                work->PutDataPkt (param.Fsum[i], col, line, VEC_L(PROBE_FX_L, i));
+        }
+        work->PutDataPkt (norm_vec(param.Fsum), col, line, PROBE_FNORM_L);
+
+        // Force "Fz" in eV * 1e-10m / (1e-10m)^2 =  1.6021766e-12N kg m / s^2 ~=~ 1.6e-12 N = 1.6 pN
+        work->PutDataPkt (Fz, col, line, APEX_FZ_FIXED_L); // Unit: pN
+        work->PutDataPkt (Flj,col, line, APEX_F_LJ_FIXED_L); // Unit: pN
+        work->PutDataPkt (Fc, col, line, APEX_F_COULOMB_FIXED_L); // Unit: pN
+
+        // fixed initial -- copy only
+        work->PutDataPkt (Fz, col, line, APEX_FZ_L); // Unit: pN
+        work->PutDataPkt (Flj,col, line, APEX_F_LJ_L); // Unit: pN
+        work->PutDataPkt (Fc, col, line, APEX_F_COULOMB_L); // Unit: pN
+
+        // single pass fixed mode
+        work->PutDataPkt (1, col, line, PROBE_NLOPT_ITER_L); // # iterations
+
+        if (gradflag){
+                LJ_calc_params param_d[2];
+                copy_vec (param_d[0].A, param.A);
+                copy_vec (param_d[1].A, param.A);
+                param_d[0].model = model;
+                param_d[1].model = model;
+
+                double eps = 0.05;
+                double eps2 = 1./(2.*eps);
+                double Pd[3];
+
+                // compute gradient matrix numerically
+                for (int i=0; i<3; ++i){
+                        copy_vec (Pd, Popt); Pd[i] -= eps;
+                        calculate_apex_probe_and_probe_model_forces(&param_d[0], Pd);
+                        copy_vec (Pd, Popt); Pd[i] += eps;
+                        calculate_apex_probe_and_probe_model_forces(&param_d[1], Pd);
+
+                        sub_from_vec (param_d[1].Fljsum,param_d[0].Fljsum);
+                        mul_vec_scalar (param_d[1].Fljsum, eps2);
+
+                        sub_from_vec (param_d[1].Fcsum,param_d[0].Fcsum);
+                        mul_vec_scalar (param_d[1].Fcsum, eps2);
+
+                        work->PutDataPkt (param_d[1].Fljsum[0], col, line, dI_G_VEC_L(PROBE_dxFX_L, i));
+                        work->PutDataPkt (param_d[1].Fljsum[1], col, line, dI_G_VEC_L(PROBE_dxFY_L, i));
+                        work->PutDataPkt (param_d[1].Fljsum[2], col, line, dI_G_VEC_L(PROBE_dxFZ_L, i));
+                        
+                        work->PutDataPkt (param_d[1].Fcsum[0],  col, line, dI_G_VEC_L(PROBE_dxFCX_L, i));
+                        work->PutDataPkt (param_d[1].Fcsum[1],  col, line, dI_G_VEC_L(PROBE_dxFCY_L, i));
+                        work->PutDataPkt (param_d[1].Fcsum[2],  col, line, dI_G_VEC_L(PROBE_dxFCZ_L, i));
+                }
+        }
+}
+
+// template/trial test, todo
+void z_probe_topo_run (Scan *Dest, Mem2d *work, int col, int line, double z, xyzc_model *model){
+        double xyz[3];
+        double A[3], P[3], Popt[3];
+        double minVec[3];
+
+        xyz[2] = z;
+        Dest->Pixel2World (col, line, xyz[0], xyz[1]); // all in Angstroems
+        work->PutDataPkt (xyz[0], col, line, PROBE_X_L);
+        work->PutDataPkt (xyz[1], col, line, PROBE_Y_L);
+        work->PutDataPkt (xyz[2], col, line, PROBE_Z_L);
+        
+        copy_vec (A, xyz);
+        copy_vec (Popt, A); Popt[2] += model->get_probe_dz ();
+        
+        double I = current_sum (A, Popt, minVec, model) * 1e9; // FIXME
+        double d = norm_vec (minVec); // FIXME
+
+        //testing
+        work->PutDataPkt (I, col, line, PROBE_I_L);    // Unit: nA
+        work->PutDataPkt (I, col, line, PROBE_CTIS_L); // Unit: nA/ddV
+        work->PutDataPkt (d, col, line, PROBE_TOPO_L); // Unit: Ang
+
+}
+
+// template, todo
+void z_probe_ctis_run (Scan *Dest, Mem2d *work, int col, int line, double z, xyzc_model *model){
+        double xyz[3];
+        double A[3], P[3], Popt[3];
+        double minVec[3];
+
+        xyz[2] = z;
+        Dest->Pixel2World (col, line, xyz[0], xyz[1]); // all in Angstroems
+        work->PutDataPkt (xyz[0], col, line, PROBE_X_L);
+        work->PutDataPkt (xyz[1], col, line, PROBE_Y_L);
+        work->PutDataPkt (xyz[2], col, line, PROBE_Z_L);
+        
+        copy_vec (A, xyz);
+        copy_vec (Popt, A); Popt[2] += model->get_probe_dz ();
+        
+        double I = current_sum(A, Popt,  minVec, model); // FIXME
+        double d = norm_vec (minVec); // FIXME
+        
+        work->PutDataPkt (I, col, line, PROBE_I_L);    // Unit: nA
+        work->PutDataPkt (I, col, line, PROBE_CTIS_L); // Unit: nA/ddV
+        work->PutDataPkt (d, col, line, PROBE_TOPO_L); // Unit: Ang
+
+}
+
+// full tip/probe force relaxation
+void z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, double z, double dz, double precision, int maxiter, xyzc_model *model){
+        Mem2d *m = work;
+        nlopt_opt opt;
+        LJ_calc_params param;
+        double Popt[3];
+        double Fres, Fz, Fc, Flj;
+
+        param.model  = model;
+        param.scan = Dest;
+        param.count  = 0;
+        param.A[2] = z;
+        Dest->Pixel2World (col, line, param.A[0], param.A[1]); // all coordinates in Angstroems
+
+        // compute fixed scenario for reference
+        copy_vec (Popt, param.A); Popt[2] += model->get_probe_dz ();
+
+        Fz = calculate_apex_probe_and_probe_model_forces (&param, Popt);
+        Fc = norm_vec (param.Fcsum);
+        Flj = norm_vec (param.Fljsum);
+        m->PutDataPkt (Fz, col, line, APEX_FZ_FIXED_L); // Unit: pN
+        m->PutDataPkt (Fc, col, line, APEX_F_COULOMB_FIXED_L); // Unit: pN
+        m->PutDataPkt (Flj, col, line, APEX_F_LJ_FIXED_L); // Unit: pN
+
+        // start / continue probe tracing
+        if (m_prev){ // continue tracing, just put us "dz" lower from previous found probe position as start 
+                Popt[0] = m_prev->GetDataPkt (col, line, PROBE_X_L);
+                Popt[1] = m_prev->GetDataPkt (col, line, PROBE_Y_L);
+                Popt[2] = m_prev->GetDataPkt (col, line, PROBE_Z_L) - dz;
+        } // else { // start trace probe pdz Ang below tip apex
+                // copy_vec (Popt, param.A); Popt[2] -= pdz;
+        //}
+
+        double lb[3];
+        double ub[3];
+        double hrl[3];
+        set_vec (hrl, 5.); // 4.
+        copy_vec (lb, Popt); sub_from_vec (lb, hrl);
+        copy_vec (ub, Popt); add_to_vec (ub, hrl);
+
+        opt = nlopt_create (NLOPT_LN_COBYLA, 3); /* algorithm and dimensionality */
+        // opt = nlopt_create (NLOPT_LD_MMA, 3); /* algorithm and dimensionality -- needs derivative !! */
+        nlopt_set_lower_bounds (opt, lb);
+        nlopt_set_upper_bounds (opt, ub);
+
+        nlopt_set_min_objective (opt, lj_residual_force, &param);
+
+        //        nlopt_set_xtol_rel (opt, precision);
+        if (precision > 0.)
+                nlopt_set_xtol_abs1 (opt, precision);
+        if (maxiter > 0)
+                nlopt_set_maxeval(opt, maxiter);
+
+        double dx[3] = { 0.001, 0.001, 0.001 }; // double dx[3] = { 0.01, 0.01, 0.001 };
+        nlopt_set_initial_step(opt, dx);
+
+        // terminate via
+        // nlopt_force_stop(opt);
+
+        if (nlopt_optimize (opt, Popt, &Fres) < 0) {
+                lj_residual_force (0, Popt, NULL, &param); 
+                printf("nlopt failed at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], Fres);
+        }
+        else {
+                
+                // double check result ???
+                lj_residual_force(0, Popt, NULL, &param);
+                // store Position, ...
+                for (int i=0; i<3; ++i){
+                        m->PutDataPkt (Popt[i], col, line, VEC_L(PROBE_X_L, i));
+                        m->PutDataPkt (param.Fljsum[i], col, line, VEC_L(PROBE_FX_FIELD_L, i));
+                        m->PutDataPkt (param.Fcsum[i], col, line, VEC_L(PROBE_FCX_FIELD_L, i));
+                        m->PutDataPkt (param.Fa_flex[i], col, line, VEC_L(PROBE_FFX_FIELD_L, i));
+                        m->PutDataPkt (param.Fa_lj[i], col, line, VEC_L(PROBE_FLX_FIELD_L, i));
+                        m->PutDataPkt (param.Fsum[i], col, line, VEC_L(PROBE_FX_L, i));
+                }
+                m->PutDataPkt (Fres, col, line, PROBE_FNORM_L);
+                // Force "Fz" in meV * 1e-10m / (1e-10m)^2 =  1.6021766e-12 kg m / s^2 ~=~ 1.6e-12 N = 1.6 pN
+                m->PutDataPkt (1.6022 * param.Fz, col, line, APEX_FZ_L); // Unit: pN
+
+                // Coulomb contribution
+                Fc = norm_vec (param.Fcsum);
+                m->PutDataPkt (Fc, col, line, APEX_F_COULOMB_L); // Unit: pN
+                Flj = norm_vec (param.Fljsum);
+                m->PutDataPkt (Flj, col, line, APEX_F_LJ_L); // Unit: pN
+
+                m->PutDataPkt ((double)param.count, col, line, PROBE_NLOPT_ITER_L); // # iterations
+              
+                if (0)
+                        printf("found minimum at Popt(%g,%g,%g) = %0.10g\n", Popt[0], Popt[1], Popt[2], Fres);
+        }
+
+        nlopt_destroy (opt);
+}
+
+// full tip/probe force relaxation, use precomputed interpolated force field
+void ipf_z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, double z, double dz, double precision, int maxiter, xyzc_model *model){
+        Mem2d *m = work;
+        nlopt_opt opt;
+        LJ_calc_params param;
+        double Popt[3];
+        double Fres, Fz, Fc, Flj;
+
+        model->get_sim_zinfo (param.z0, param.zf, param.dz);
+        param.scan = Dest;
+        param.model  = model;
+        
+        param.A[2] = z;
+        Dest->Pixel2World (col, line, param.A[0], param.A[1]); // all coordinates in Angstroems
+
+        // compute fixed scenario for reference
+        copy_vec (Popt, param.A); Popt[2] += model->get_probe_dz ();
+
+        // start / continue probe tracing
+        if (m_prev){ // continue tracing
+                Popt[0] = m_prev->GetDataPkt (col, line, PROBE_X_L);
+                Popt[1] = m_prev->GetDataPkt (col, line, PROBE_Y_L);
+                Popt[2] = m_prev->GetDataPkt (col, line, PROBE_Z_L) - dz;
+        }
+
+        // force field bounds, must stay within
+        double lb[3];
+        double ub[3];
+        Dest->Pixel2World (1, work->GetNy ()-1, lb[0], lb[1]); // all coordinates in Angstroems
+        lb[2] =  param.zf+param.dz;
+        Dest->Pixel2World (work->GetNx ()-1, 1, ub[0], ub[1]); // all coordinates in Angstroems
+        ub[2] =  param.z0+param.dz;
+
+#define OPT_ON
+#ifdef OPT_ON
+        //opt = nlopt_create (NLOPT_LN_COBYLA, 3); /* algorithm and dimensionality */
+        opt = nlopt_create (NLOPT_LD_MMA, 3); /* algorithm and dimensionality -- needs derivative !! */
+
+        nlopt_set_lower_bounds (opt, lb);
+        //        print_vec ("Set Lower bound", lb);
+        nlopt_set_upper_bounds (opt, ub);
+        //        print_vec ("Set Upper bound", ub);
+
+        nlopt_set_min_objective (opt, lj_residual_interpol_force, &param);
+
+        //        nlopt_set_xtol_rel (opt, precision);
+        if (precision > 0.)
+                nlopt_set_xtol_abs1 (opt, precision);
+        if (maxiter > 0)
+                nlopt_set_maxeval(opt, maxiter);
+
+        double dx[3] = { 0.05, 0.05, 0.0025 };
+        nlopt_set_initial_step(opt, dx);
+
+        // terminate via
+        // nlopt_force_stop(opt);
+        if (nlopt_optimize (opt, Popt, &Fres) < 0) {
+#else
+        if (1) {
+#endif
+                double grad[3];
+                //                lj_residual_force (0, Popt, NULL, &param); 
+                //                printf("nlopt failed after #%d iteration [L-J full:] at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.count, param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], Fres);
+                lj_residual_interpol_force (0, Popt, grad, &param); 
+                m->PutDataPkt (Popt[0], col, line, PROBE_X_L);
+                m->PutDataPkt (Popt[1], col, line, PROBE_Y_L);
+                m->PutDataPkt (Popt[2], col, line, PROBE_Z_L);
+
+                m->PutDataPkt (param.grad[0], col, line, PROBE_FCX_FIELD_L); // test, final gradient store
+                m->PutDataPkt (param.grad[1], col, line, PROBE_FCY_FIELD_L);
+                m->PutDataPkt (param.grad[2], col, line, PROBE_FCZ_FIELD_L);
+        }
+#ifdef OPT_ON
+        else 
+#endif
+        {
+                //                printf("nlopt failed after #%d iteration [L-J interpol:] at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g  Grad(%g, %g, %g)!\n", param.count, param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], Fres, grad[0], grad[1], grad[2]);
+                m->PutDataPkt (Popt[0], col, line, PROBE_X_L);
+                m->PutDataPkt (Popt[1], col, line, PROBE_Y_L);
+                m->PutDataPkt (Popt[2], col, line, PROBE_Z_L);
+
+                m->PutDataPkt (param.grad[0], col, line, PROBE_FCX_FIELD_L); // test, final gradient store
+                m->PutDataPkt (param.grad[1], col, line, PROBE_FCY_FIELD_L);
+                m->PutDataPkt (param.grad[2], col, line, PROBE_FCZ_FIELD_L);
+#if 0
+                std::cout << "LJ-INTERPOL-F [" << col << "," << line << "] Popt=" << Popt[0] << ", " << Popt[1] << ", " << Popt[2]
+                          << " Fsum_inter=[" << param.Fsum[0] 
+                          << ", " << param.Fsum[1] 
+                          << ", " << param.Fsum[2] 
+                          << "] #" << param.count
+                          << std::endl;
+#endif
+
+                // double check result ???
+                // lj_residual_force(0, Popt, NULL, &param);
+                m->PutDataPkt (param.Fsum[0], col, line, PROBE_FX_L);
+                m->PutDataPkt (param.Fsum[1], col, line, PROBE_FY_L);
+                m->PutDataPkt (param.Fsum[2], col, line, PROBE_FZ_L);
+                m->PutDataPkt (Fres, col, line, PROBE_FNORM_L);
+                // Force "Fz" in meV * 1e-10m / (1e-10m)^2 =  1.6021766e-12 kg m / s^2 ~=~ 1.6e-12 N = 1.6 pN
+                m->PutDataPkt (1.6022 * param.Fz, col, line, APEX_FZ_L); // Unit: pN
+
+                // Coulomb contribution
+                Fc = norm_vec (param.Fcsum);
+                m->PutDataPkt (Fc, col, line, APEX_F_COULOMB_L); // Unit: pN
+                Flj = norm_vec (param.Fljsum);
+                m->PutDataPkt (Flj, col, line, APEX_F_LJ_L); // Unit: pN
+
+                m->PutDataPkt ((double)param.count, col, line, PROBE_NLOPT_ITER_L); // # iterations
+                
+                if (0)
+                        printf("found minimum at Popt(%g,%g,%g) = %0.10g\n", Popt[0], Popt[1], Popt[2], Fres);
+        }
+
+#ifdef OPT_ON
+        nlopt_destroy (opt);
+#endif
+}
+
+
+gpointer probe_optimize_thread (void *env){
+        const int pkn=20;
+	Probe_Optimize_Job_Env* job = (Probe_Optimize_Job_Env*)env;
+
+        double pkt = (job->line_f-job->line_i)*job->work->GetNx ()/job->line_inc;
+        int pk=0;
+        for(int line=job->line_i; line<job->line_f; line+=job->line_inc)
+                for(int col=0; col<job->work->GetNx (); ++col, ++pk){
+                        z_probe_run (job->Dest, job->work, job->time_index > 0 ? job->Dest->mem2d_time_element (job->time_index-1) : NULL,
+                                     col, line, job->z, job->dz, job->precision, job->maxiter, job->model);
+                        if (! (pk % pkn)) {
+                                job->progress = pk/pkt;
+                                // std::cout << job->job << std::flush;
+                                if (*(job->status)){
+                                        job->job = -2; // aborted
+                                        return NULL;
+                                }
+                        }
+                }
+
+	job->job = -1; // done indicator
+	return NULL;
+}
+
+gpointer probe_optimize_ipf_thread (void *env){
+        const int pkn=20;
+	Probe_Optimize_Job_Env* job = (Probe_Optimize_Job_Env*)env;
+
+        double pkt = (job->line_f-job->line_i)*job->work->GetNx ()/job->line_inc;
+        int pk=0;
+        for(int line=job->line_i; line<job->line_f; line+=job->line_inc){
+                if (line == 0)
+                        continue;
+                if (line == job->work->GetNx ()-1)
+                        break;
+                for(int col=1; col<job->work->GetNx ()-1; ++col, ++pk){
+                        ipf_z_probe_run (job->Dest, job->work, job->time_index > 0 ? job->Dest->mem2d_time_element (job->time_index-1) : NULL,
+                                         col, line, job->z, job->dz, job->precision, job->maxiter, job->model);
+                        if (! (pk % pkn)) {
+                                job->progress = pk/pkt;
+                                // std::cout << job->job << std::flush;
+                                if (*(job->status)){
+                                        job->job = -2; // aborted
+                                        return NULL;
+                                }
+                        }
+                }
+        }
+
+	job->job = -1; // done indicator
+	return NULL;
+}
+
+gpointer probe_simple_thread (void *env){
+        const int pkn=20;
+	Probe_Optimize_Job_Env* job = (Probe_Optimize_Job_Env*)env;
+        
+        double pkt = (job->line_f-job->line_i)*job->work->GetNx ()/job->line_inc;
+        int pk=0;
+        for(int line=job->line_i; line<job->line_f; line+=job->line_inc)
+                for(int col=0; col<job->work->GetNx (); ++col, ++pk){
+                        z_probe_simple_force_run (job->Dest, job->work, col, line, job->z, job->model, job->gradflag);
+                        if (! (pk % pkn)) {
+                                job->progress = pk/pkt;
+                                // std::cout << job->job << std::flush;
+                                if (*(job->status)){
+                                        job->job = -2; // aborted
+                                        return NULL;
+                                }
+                        }
+                }
+
+	job->job = -1; // done indicator
+	return NULL;
+}
+
+gpointer probe_topo_thread (void *env){
+        const int pkn=20;
+	Probe_Optimize_Job_Env* job = (Probe_Optimize_Job_Env*)env;
+        
+        double pkt = (job->line_f-job->line_i)*job->work->GetNx ()/job->line_inc;
+        int pk=0;
+        for(int line=job->line_i; line<job->line_f; line+=job->line_inc)
+                for(int col=0; col<job->work->GetNx (); ++col, ++pk){
+                        z_probe_topo_run (job->Dest, job->work, col, line, job->z, job->model);
+                        if (! (pk % pkn)) {
+                                job->progress = pk/pkt;
+                                // std::cout << job->job << std::flush;
+                                if (*(job->status)){
+                                        job->job = -2; // aborted
+                                        return NULL;
+                                }
+                        }
+                }
+
+	job->job = -1; // done indicator
+	return NULL;
+}
+
+gpointer probe_ctis_thread (void *env){
+        const int pkn=20;
+	Probe_Optimize_Job_Env* job = (Probe_Optimize_Job_Env*)env;
+        
+        double pkt = (job->line_f-job->line_i)*job->work->GetNx ()/job->line_inc;
+        int pk=0;
+        for(int line=job->line_i; line<job->line_f; line+=job->line_inc)
+                for(int col=0; col<job->work->GetNx (); ++col, ++pk){
+                        // not implemented -- trival test calc only
+                        z_probe_ctis_run (job->Dest, job->work, col, line, job->z, job->model);
+                        if (! (pk % pkn)) {
+                                job->progress = pk/pkt;
+                                // std::cout << job->job << std::flush;
+                                if (*(job->status)){
+                                        job->job = -2; // aborted
+                                        return NULL;
+                                }
+                        }
+                }
+
+	job->job = -1; // done indicator
+	return NULL;
+}
+
+
+
+// force calculation for tip probe and apex, simple: no opt or using NL-OPT lib.
+// time dimension is assigned to Z-apex position
+// Dest: destination scan object
+// z: current z of trace, dz: z-step
+// current time_index, precision, iter limit
+void image_run (Scan *Dest, double z, double dz, int time_index, double precision, int maxiter,
+                xyzc_model *model,
+                int &status, int calc_mode=MODE_NO_OPT, int pass=0, int max_jobs=4,
+                gchararray progress_detail=NULL
+                ){
+
+        Probe_Optimize_Job_Env job[max_jobs];
+
+        Mem2d *work=NULL;
+        if (pass == 0)
+                work = new Mem2d (Dest->mem2d, M2D_COPY);
+        else
+                work = Dest->mem2d_time_element (time_index);
+        
+        std::cout << "AFM Sim Probe Opt M=" << calc_mode << " Z[" << time_index << "]=" << z << " spawing g_threads for pass=" << pass
+                  << " Dest: " << Dest->mem2d->GetNx () << ", " << Dest->mem2d->GetNy () << ", " << Dest->mem2d->GetNv () 
+                  << " work: " << work->GetNx () << ", " << work->GetNy () << ", " << work->GetNv ()  
+                  << std::endl;
+
+        GThread* tpi[max_jobs];
+        
+        // to be threadded:
+        //	for (int yi=0; yi < Ny; yi++)...
+        int lines_per_job = Dest->mem2d->GetNy () / (max_jobs-1);
+        int line_i = 0;
+        for (int jobno=0; jobno < max_jobs && jobno < Dest->mem2d->GetNy (); ++jobno){
+                // std::cout << "Job #" << jobno << std::endl;
+                job[jobno].Dest = Dest;
+                job[jobno].work = work;
+                job[jobno].line_i = jobno;
+                job[jobno].line_inc = max_jobs;
+                job[jobno].line_f = Dest->mem2d->GetNy ();
+                job[jobno].time_index = time_index;
+                job[jobno].z = z;
+                job[jobno].dz = dz;
+                job[jobno].precision = precision;
+                job[jobno].maxiter = maxiter;
+                job[jobno].model = model;
+                job[jobno].status = &status;
+                job[jobno].job = jobno+1;
+                job[jobno].progress = 0.;
+                job[jobno].verbose_level = 0;
+                job[jobno].gradflag = 0;
+                
+                switch (calc_mode){
+                case MODE_NL_OPT:
+                        tpi[jobno] = g_thread_new ("probe_optimize_NL_OPT_thread", probe_optimize_thread, &job[jobno]);
+                        break;
+                case MODE_NO_OPT:
+                        job[jobno].gradflag = 1;
+                        tpi[jobno] = g_thread_new ("probe_simple_NO_OPT_thread", probe_simple_thread, &job[jobno]);
+                        break;
+                case MODE_IPF_NL_OPT:
+                        switch (pass){
+                        case 0:
+                                job[jobno].gradflag = 1;
+                                tpi[jobno] = g_thread_new ("probe_simple_NO_OPT_thread", probe_simple_thread, &job[jobno]);
+                                break;
+                        case 1:
+                                tpi[jobno] = g_thread_new ("probe_optimize_IPF_NL_OPT_thread", probe_optimize_ipf_thread, &job[jobno]);
+                                break;
+                        }
+                        break;
+                case MODE_TOPO:
+                        tpi[jobno] = g_thread_new ("probe_topo_thread", probe_topo_thread, &job[jobno]);
+                        break;
+                case MODE_CTIS:
+                        tpi[jobno] = g_thread_new ("probe_ctis_thread", probe_ctis_thread, &job[jobno]);
+                        break;
+                case MODE_NONE:
+                        job[jobno].job = -1;
+                        tpi[jobno] = NULL;
+                        break;
+                }
+        }
+        
+        // std::cout << "Waiting for all threads to complete." << std::endl;
+        gapp->check_events ();
+        
+        if (progress_detail)
+                if (!strncmp (progress_detail, "Basic", 5))
+                        ;
+                else if (!strncmp (progress_detail, "Combined", 8))
+                        for (int running=1; running;){
+                                running=0;
+                                for (int jobno=0; jobno < max_jobs; ++jobno){
+                                        if (job[jobno].job >= 0)
+                                                running++;
+                                        gapp->progress_info_set_bar_fraction (job[jobno].progress, 2);
+                                        gchar *info = g_strdup_printf ("Job %d", jobno+1);
+                                        gapp->progress_info_set_bar_text (info, 2);
+                                        g_free (info);
+                                        gapp->check_events ();
+                                }
+                        }
+                else if (!strncmp (progress_detail, "Job Detail", 10))
+                        for (int running=1; running;){
+                                running=0;
+                                for (int jobno=0; jobno < max_jobs; ++jobno){
+                                        if (job[jobno].job >= 0)
+                                                running++;
+                                        gapp->progress_info_set_bar_fraction (job[jobno].progress, jobno+2);
+                                        gchar *info = g_strdup_printf ("Job %d", jobno+1);
+                                        gapp->progress_info_set_bar_text (info, jobno+2);
+                                        g_free (info);
+                                        gapp->check_events ();
+                                }
+                        }
+        
+        for (int jobno=0; jobno < max_jobs; ++jobno)
+                if (tpi[jobno])
+                        g_thread_join (tpi[jobno]);
+        
+        // std::cout << "Threads completed." << std::endl;
+
+        if (pass == 0){
+                Dest->append_current_to_time_elements (time_index, z, work);
+                Dest->data.s.ntimes = time_index+1;
+                
+                delete work;
+        }
+        
+        if (time_index > 2){
+                std::cout << std::endl << "Sader Run -- dF compute @Z=" << z << std::endl;
+                for(int line=0; line<Dest->mem2d->GetNy (); ++line)
+                        for(int col=0; col<Dest->mem2d->GetNx (); ++col){
+                                Mem2d *m[3];
+                                for (int i=0; i<3; ++i)
+                                        m[i] = Dest->mem2d_time_element (time_index-i);
+                                z_sader_run (m, col, line, z, model);
+                        }
+        }
+        
+        std::cout << "AFM Sim for Z=" << z << " Ang complete. Pass=" << pass << std::endl;
+}
+
+// PlugIn run function, called by menu via PlugIn mechanism.
+#ifdef GXSM3_MAJOR_VERSION // GXSM3 code
+static gboolean afm_lj_mechanical_sim_run(Scan *Dest)
+#else // GXSM2
+static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
+#endif
+{
+	static double verbose_level=0;
+        xyzc_model *xyzc_model_filter = NULL;
+	int stop_flag = 0;			// set to 1 to stop the plugin
+
+        double zi=18.;  // default Z-start (upper box bound)
+        double zf=8.;   // default Z-end (lower box bound)
+        double dz=0.05; // default z slice width
+        double charge_scaling=1.; // default charge scaling for model xyzc -- if c given
+        double precision=1e-6; // nl-opt precision
+        double sensor_f0_k0[3] = {29000., 1800., 0. };  // Hz, N/m
+        double probe_flex[3] = { 0.5, 0.5, 20. }; // probe stiffness x,y,z potential N/m
+        double maxiter=0.; // default (0=none) nl-opt optional max iter limit
+        double max_threads=g_get_num_processors (); // default concurrency for multi threadded computation, # CPU's/cores
+        int calc_mode = 0; // MODE_NO_OPT; // default: no opt (static)
+        int calc_opt  = 0; // MODE_L_J | MODE_PROBE_SPRING; // default L-J only, no statics (coulomb), spring tip probe model
+        
+	PI_DEBUG (DBG_L2, "Afm_Mechanical_Sim Scan");
+        std::cout << "AFM Mechanical Scan Simulation" << std::endl << std::flush;
+        
+        gchararray model_name = NULL;
+        gchararray model_filter = NULL;
+        gchararray model_filter_param = NULL;
+        gchararray cmode   = NULL;
+        gchararray copt    = NULL;
+        gchararray external_model = NULL;
+        gchararray probe_type = NULL;
+        gchararray probe_model = NULL;
+        double initial_probe_below_apex=4.0;  // 3.67;
+        double probe_charge = -0.05;
+        gchararray progress_detail = NULL;
+        Dialog *dlg = new Dialog (zi, zf, dz, precision, maxiter,
+                                  sensor_f0_k0, probe_flex,
+                                  &model_name, &model_filter, &model_filter_param,
+                                  &cmode, &copt,
+                                  &external_model,
+                                  &probe_type, &probe_model,
+                                  initial_probe_below_apex,
+                                  probe_charge, charge_scaling,
+                                  max_threads, &progress_detail);
+
+        ostringstream info_stream;
+        info_stream << "AFM Simulation PLugIn Run with:\n";
+
+        // sanity check/fixes
+        if (dz <= 0.)
+                dz = 0.1;
+        
+        if (zi < zf){ // check, swap.
+                double tmp=zi;
+                zi=zf; zf=tmp;
+        }
+        
+        info_stream << "dz = " << dz << " Ang\n";
+        info_stream << " z = [" << zi << ", " << zf << "] Ang\n";
+        info_stream << "precision = " << precision << " meV / maxiter = " << maxiter << "\n";
+
+        xyzc_model *model = NULL;
+        if (model_name){
+                std::cout << "Model-id: >>" << model_name << "<<" << std::endl;
+                if (!strncmp (model_name, "TMA", 3))
+                        model = new xyzc_model (model_TMA);
+                else if (!strncmp (model_name, "Cu111+TMA", 9))
+                        model = new xyzc_model (model_TMA_Cu111);
+                else if (!(model = new xyzc_model (model_name)))
+                        return MATH_FILE_ERROR;
+                info_stream << "Model = " << model_name << "\n";
+        } else {
+                model = new xyzc_model (model_TMA);
+                info_stream << "Model = TMA -- build in fallback\n";
+        }
+        std::cout << "XYZ[C] Model:" << std::endl;
+        model->print ();
+        
+        if (model_filter){
+                xyzc_model_filter = new xyzc_model (model, model_filter, model_filter_param); // filter model, create new version
+                std::cout << "XYZ Model after Filter: >>" << model_filter << "<<" << std::endl;
+                xyzc_model_filter->print ();
+                delete model;
+                model = xyzc_model_filter; // swap to filtered model
+                info_stream << "Model Filter = " << model_filter << "\n";
+                if (model_filter_param)
+                        info_stream << "Model Filter Param = " << model_filter_param << "\n";
+        }
+
+        if (probe_type){
+                std::cout << "Probe Type: >>" << probe_type << "<<" << std::endl;
+                if (!strncmp (probe_type, "Copper", 6))
+                        model->make_probe (29, probe_charge, initial_probe_below_apex);
+                else if (!strncmp (probe_type, "Oxigen", 6))
+                        model->make_probe (8, probe_charge, initial_probe_below_apex);
+                else if (!strncmp (probe_type, "Xenon", 5))
+                        model->make_probe (54, probe_charge, initial_probe_below_apex);
+                else if (!strncmp (probe_type, "Carbon", 6))
+                        model->make_probe (6, probe_charge, initial_probe_below_apex);
+                else if (!strncmp (probe_type, "Tungsten", 8))
+                        model->make_probe (74, probe_charge, initial_probe_below_apex);
+                else if (!strncmp (probe_type, "Platinum", 8))
+                        model->make_probe (78, probe_charge, initial_probe_below_apex);
+                else
+                        model->make_probe ();
+                info_stream << "Probe = " << probe_type << ", Probe-delta-charge = " << probe_charge << " e, -dzi=" << initial_probe_below_apex << " Ang\n"
+                            << "Probe dz calculated = " << model->get_probe_dz () << " Ang\n";
+        } else {
+                info_stream << "Probe = fallback Oxigen default\n";
+                model->make_probe ();
+        }
+        model->scale_charge (charge_scaling);
+        info_stream << "Model Charge Scaling = " << charge_scaling << "\n";
+        
+        if (cmode){
+                std::cout << "Calc mode: >>" << cmode << "<<" << std::endl;
+                if (!strncmp (cmode, "NO-OPT", 6)) calc_mode = MODE_NO_OPT;
+                else if (!strncmp (cmode, "NL-OPT", 6)) calc_mode = MODE_NL_OPT;
+                else if (!strncmp (cmode, "IPF-NL-OPT", 10)) calc_mode = MODE_IPF_NL_OPT;
+                else if (!strncmp (cmode, "TOPO", 4)) calc_mode = MODE_TOPO;
+                else if (!strncmp (cmode, "CTIS", 4)) calc_mode = MODE_CTIS;
+                else if (!strncmp (cmode, "NONE", 4)) calc_mode = MODE_NONE;
+                info_stream << "Calculation Mode = " << cmode << " [" << calc_mode << "]\n";
+        }
+
+        if (copt){
+                std::cout << "Calc options: >>" << copt << "<<" << std::endl;
+                if (!strncmp (copt, "L-J Model", 9)) calc_opt = MODE_L_J;
+                else if (!strncmp (copt, "L-J+Coulomb Model", 17)) calc_opt = MODE_L_J | MODE_COULOMB;
+                info_stream << "Calculation Options = " << copt << " [" << calc_opt << "]\n";
+        }
+
+        if (probe_model){
+                std::cout << "Probe Model: >>" << probe_model << "<<" << std::endl;
+                if (strstr (probe_model, "Spring")) calc_opt |= MODE_PROBE_SPRING;
+                if (strstr (probe_model, "L-J")) calc_opt |= MODE_PROBE_L_J;
+                if (strstr (probe_model, "Coulomb")) calc_opt |= MODE_PROBE_COULOMB;
+                info_stream << "Calculation Options Probe = " << probe_model << " [" << calc_opt << "]\n";
+        }
+       
+        model->set_options (calc_opt);
+        
+        if (progress_detail){
+                std::cout << "Progress: >>" << progress_detail << "<<" << std::endl;
+                if (!strncmp (progress_detail, "Job Detail", 10))
+                        gapp->progress_info_new ("NC-AFM Simulation", 1+(int)max_threads, GCallback (cancel_callback), &stop_flag);
+                else if (!strncmp (progress_detail, "Basic", 5))
+                        gapp->progress_info_new ("NC-AFM Simulation", 1, GCallback (cancel_callback), &stop_flag);
+                else
+                        gapp->progress_info_new ("NC-AFM Simulation", 2, GCallback (cancel_callback), &stop_flag);
+        } else {
+                gapp->progress_info_new ("NC-AFM Simulation", 2, GCallback (cancel_callback), &stop_flag);
+        }
+
+	gapp->progress_info_set_bar_fraction (0., 1);
+
+        gchar *info = g_strdup_printf ("Z=%g " UTF8_ANGSTROEM, zi);
+        gapp->progress_info_set_bar_text (info, 1);
+        g_free (info);
+
+        // cleanup if previously filled in time space
+        Dest->free_time_elements ();
+        
+	Dest->data.s.nvalues=N_LAYERS;
+	Dest->data.s.dz=1.0;
+
+        time_t ts = time (0);
+        info_stream << "Start Time = " << ts << "\n";
+        
+        Dest->data.ui.SetComment ((const gchar*)info_stream.str().c_str());
+        Dest->data.ui.SetName ((const gchar*)model_name);
+
+        if (calc_mode == MODE_NONE)
+                stop_flag=1; // bypass calculations
+
+        model->set_sim_zinfo (zi, zf, -dz);
+        copy_vec (model->sensor_f0_k0, sensor_f0_k0);
+        copy_vec (model->probe_flex, probe_flex);
+
+        // adjust spring const unit to match pN / Ang from N/m [pN -> N 1e-12 /  Ang -> m 1e10 = x 1e-2 ] and set force direction ("centering" force)
+        double adjust_spring_const[3] = { 100., 100., 100. };
+        mul_vec_vec (model->probe_flex, adjust_spring_const);
+        
+        //        if (norm_vec (probe_flex) > 0)
+        //                calc_opt |= MODE_PROBE_SPRING;
+
+        model->set_options (calc_opt);
+        
+        int ti=0;
+        double z;
+        for (z=zi; z>zf && !stop_flag; z-=dz){
+
+                // setup data storage for "time element" used for current z and assign labels to layers
+                Dest->mem2d->Resize (Dest->mem2d->GetNx (), Dest->mem2d->GetNy (), N_LAYERS, ZD_DOUBLE);
+                Dest->mem2d->data->MkVLookup(0., (double)N_LAYERS-1);
+
+                Dest->mem2d->SetLayer (FREQ_SHIFT_L);            Dest->mem2d->add_layer_information (new LayerInformation ("FREQ SHIFT [Hz]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (FREQ_SHIFT_FIXED_L);      Dest->mem2d->add_layer_information (new LayerInformation ("FREQ SHIFT (Fixed, initial) [Hz]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (APEX_FZ_L);               Dest->mem2d->add_layer_information (new LayerInformation ("APEX FZ [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (APEX_F_LJ_L);             Dest->mem2d->add_layer_information (new LayerInformation ("APEX F LJ [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (APEX_F_COULOMB_L);        Dest->mem2d->add_layer_information (new LayerInformation ("APEX FZ COULOMB contribution [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (APEX_FZ_FIXED_L);         Dest->mem2d->add_layer_information (new LayerInformation ("APEX FZ (Fixed, initial) [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (APEX_F_LJ_FIXED_L);       Dest->mem2d->add_layer_information (new LayerInformation ("APEX F LJ (Fixed, initial) [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (APEX_F_COULOMB_FIXED_L);  Dest->mem2d->add_layer_information (new LayerInformation ("APEX FZ COULOMB (Fixed, initial) contribution [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FNORM_L);           Dest->mem2d->add_layer_information (new LayerInformation ("PROBE F NORM (Error) [x1.6 pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_X_L);     Dest->mem2d->add_layer_information (new LayerInformation ("PROBE X [Ang]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_Y_L);     Dest->mem2d->add_layer_information (new LayerInformation ("PROBE Y [Ang]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_Z_L);     Dest->mem2d->add_layer_information (new LayerInformation ("PROBE Z [Ang]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FX_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FX FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FY_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FY FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FZ_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FZ FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FCX_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FCX FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FCY_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FCY FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FCZ_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FCZ FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FFX_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FFX FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FFY_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FFY FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FFZ_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FFZ FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FLX_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FLX FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FLY_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FLY FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FLZ_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FLZ FIELD [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dxFX_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dxFX [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dxFY_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dxFY [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dxFZ_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dxFZ [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dyFX_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dyFX [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dyFY_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dyFY [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dyFZ_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dyFZ [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dzFX_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dzFX [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dzFY_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dzFY [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dzFZ_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dzFZ [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dxFCX_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dxFCX [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dxFCY_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dxFCY [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dxFCZ_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dxFCZ [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dyFCX_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dyFCX [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dyFCY_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dyFCY [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dyFCZ_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dyFCZ [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dzFCX_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dzFCX [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dzFCY_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dzFCY [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_dzFCZ_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dzFCZ [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FX_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FX [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FY_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FY [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_FZ_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FZ [pN]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_I_L);     Dest->mem2d->add_layer_information (new LayerInformation ("PROBE I [pA]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_CTIS_L);  Dest->mem2d->add_layer_information (new LayerInformation ("PROBE CTIS [pA/ddV]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_TOPO_L);  Dest->mem2d->add_layer_information (new LayerInformation ("PROBE TOPO Z@setpt [Ang]", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (PROBE_NLOPT_ITER_L);  Dest->mem2d->add_layer_information (new LayerInformation ("NLOPT ITERs", (double)z, "z=%06.3fA"));
+                Dest->mem2d->SetLayer (FREQ_SHIFT_FIXED_L);
+                
+                // set progress info
+                gapp->progress_info_set_bar_fraction ((z-zf)/(zi-zf), 1);
+                info = g_strdup_printf ("pass1 Z=%g " UTF8_ANGSTROEM, z);
+                gapp->progress_info_set_bar_text (info, 1);
+                g_free (info);
+
+                // run z slice pass 1 -- static field calculation or brute force nl-opt on exact L-J (more comp. intense) forces, etc.
+                image_run (Dest, z, dz, ti++, precision, (int)maxiter, model, stop_flag, calc_mode, 0, (int)max_threads, progress_detail);
+        }
+
+        // 2nd pass for interpolated force field,.. run 
+        if (calc_mode == MODE_IPF_NL_OPT){
+                for (ti=1,z=zi-dz; z>zf+dz && !stop_flag; z-=dz){
+                        Dest->retrieve_time_element (ti);
+                        gapp->progress_info_set_bar_fraction ((z-zf)/(zi-zf), 1);
+                        info = g_strdup_printf ("pass2 OPT Z=%g " UTF8_ANGSTROEM, z);
+                        gapp->progress_info_set_bar_text (info, 1);
+                        g_free (info);
+                        // run z slice for pass 2 using pre computed force/gradient fields, interpolated
+                        image_run (Dest, z, dz, ti++, precision, (int)maxiter, model, stop_flag, calc_mode, 1, (int)max_threads, progress_detail);
+                }
+        }
+
+        // add stopped info?
+        if (stop_flag)
+                info_stream << "** Job canceld at z= " << z << "\n";
+
+	gapp->progress_info_set_bar_text ("finishing up jobs", 1);
+
+        time_t te = time (0);
+        info_stream << "End Time = " << te << "\n";
+        te -= ts;
+        info_stream << "Calculation Time = " << te << " sec -- " << ctime (&te) << "\n";
+
+	Dest->data.ui.SetComment ((const gchar*)info_stream.str().c_str());
+
+	gapp->check_events ();
+
+ 	std::cout << "PI:run ** cleaning up." << std::endl;
+
+        if (model)
+                delete model;
+
+	Dest->data.s.nvalues = Dest->mem2d->GetNv ();
+ 	Dest->retrieve_time_element (0);
+	Dest->mem2d->SetLayer(0);
+
+        gapp->progress_info_close ();
+
+	return MATH_OK;
+}

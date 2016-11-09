@@ -1,0 +1,17 @@
+debian/Gxsm3-main.pdf usr/share/doc/gxsm3
+debian/sranger-main.pdf usr/share/doc/gxsm3
+pixmaps/gxsm-*.png usr/share/gxsm3/pixmaps
+debian/*.desktop usr/share/gxsm3/menu
+debian/*.directory usr/share/gxsm3/menu
+tools/*.py usr/bin
+plug-ins/hard/SR-STD_spmcontrol/python_scripts/*.py usr/bin
+plug-ins/hard/SR-STD_spmcontrol/FB_spmcontrol.out usr/share/gxsm3/dsp-firmware/SR-STD_SP2
+plug-ins/hard/MK2-A810_spmcontrol/python_scripts/*.py usr/bin
+plug-ins/hard/MK2-A810_spmcontrol/FB_spmcontrol_MK2_*.out usr/share/gxsm3/dsp-firmware/SR-MK2
+plug-ins/hard/MK3-A810_spmcontrol/python_scripts/*.py usr/bin
+plug-ins/hard/MK3-A810_spmcontrol/python_scripts/*.sed usr/bin
+plug-ins/hard/MK3-A810_spmcontrol/python_scripts/*.png usr/share/gxsm3/pixmaps
+debian/signal_graph.svg usr/share/gxsm3/pixmaps
+debian/signal_graph.dot usr/share/gxsm3/pixmaps
+plug-ins/hard/MK3-A810_spmcontrol/FB_spmcontrol.out usr/share/gxsm3/dsp-firmware/SR-MK3Pro
+

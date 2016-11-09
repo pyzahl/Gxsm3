@@ -1,0 +1,2730 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
+/* Gxsm - Gnome X Scanning Microscopy
+ * universal STM/AFM/SARLS/SPALEED/... controlling and
+ * data analysis software
+ * 
+ * Copyright (C) 1999,2000,2001,2002,2003 Percy Zahl
+ *
+ * Authors: Percy Zahl <zahl@users.sf.net>
+ * additional features: Andreas Klust <klust@users.sf.net>
+ * WWW Home: http://gxsm.sf.net
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#include <locale.h>
+#include <libintl.h>
+#include <gtk/gtk.h>
+
+// Gxsm headers 
+#include "gxsm_app.h"
+#include "gxsm_window.h"
+
+#include "unit.h"
+#include "util.h"
+#include "pcs.h"
+#include "xsmtypes.h"
+#include "glbvars.h"
+#include "action_id.h"
+#include "app_profile.h"
+#include "app_profilepopupdef.h"
+
+// ============================================================
+// Popup Menu and Object Action Map
+// ============================================================
+
+static GActionEntry win_profile_popup_entries[] = {
+        { "file-open", ProfileControl::file_open_callback, NULL, NULL, NULL },
+        { "print", ProfileControl::file_print5_callback, NULL, NULL, NULL },
+
+        { "skl-Y-auto", ProfileControl::skl_Yauto_callback, NULL, "true", NULL },
+        { "skl-Y-log",  ProfileControl::logy_callback, NULL, "false", NULL },
+        { "skl-Y-hold",  ProfileControl::yhold_callback, NULL, "false", NULL },
+        { "skl-Y-expand",  ProfileControl::yexpand_callback, NULL, "false", NULL },
+
+        { "opt-Y-linreg",  ProfileControl::linreg_callback, NULL, "false", NULL },
+        { "opt-Y-diff",  ProfileControl::ydiff_callback, NULL, "false", NULL },
+        { "opt-Y-lowpass",  ProfileControl::ylowpass_callback, NULL, "false", NULL },
+        { "opt-Y-ft",  ProfileControl::psd_callback, NULL, "false", NULL },
+        { "opt-Y-points",  ProfileControl::skl_Ponly_callback, NULL, "false", NULL },
+        { "opt-Y-binary",  ProfileControl::skl_Binary_callback, NULL, "false", NULL },
+
+        { "cursor-A",  ProfileControl::cur_Ashow_callback, NULL, NULL, NULL },
+        { "cursor-B",  ProfileControl::cur_Bshow_callback, NULL, NULL, NULL },
+        { "cursor-A-left",  ProfileControl::cur_Aleft_callback, NULL, NULL, NULL },
+        { "cursor-A-right",  ProfileControl::cur_Aright_callback, NULL, NULL, NULL }, 
+        { "cursor-A-rmin",  ProfileControl::cur_Armin_callback, NULL, NULL, NULL },
+        { "cursor-A-rmax",  ProfileControl::cur_Armax_callback, NULL, NULL, NULL },
+        { "cursor-A-lmin",  ProfileControl::cur_Almin_callback, NULL, NULL, NULL },
+        { "cursor-A-lmax",  ProfileControl::cur_Almax_callback, NULL, NULL, NULL },
+        { "cursor-B-left",  ProfileControl::cur_Bleft_callback, NULL, NULL, NULL },
+        { "cursor-B-right",  ProfileControl::cur_Bright_callback, NULL, NULL, NULL },
+        { "cursor-B-rmin",  ProfileControl::cur_Brmin_callback, NULL, NULL, NULL },
+        { "cursor-B-rmax",  ProfileControl::cur_Brmax_callback, NULL, NULL, NULL },
+        { "cursor-B-lmin",  ProfileControl::cur_Blmin_callback, NULL, NULL, NULL },
+        { "cursor-B-lmax",  ProfileControl::cur_Blmax_callback, NULL, NULL, NULL }
+        // { "side-pane", ViewControl::side_pane_callback, NULL, "true", NULL },
+        // { "view-mode", ViewControl::view_view_set_view_mode_radio_callback, "s", "'quick'", NULL },
+};
+
+// Popup Menu Item Label have to be identically !!!!!!! with these below:
+// used for adjusting defaults
+menuoptionlist profile_modes[] = {
+	{ "Options/no Gridlines", PROFILE_MODE_XGRID, TRUE },
+	{ "Options/no Gridlines", PROFILE_MODE_YGRID, TRUE },
+	{ "Options/Ticmarks", PROFILE_MODE_NOTICS, FALSE },
+	{ "Options/Y linregression", PROFILE_MODE_YLINREG, FALSE },
+	{ "Options/Y logarithmic", PROFILE_MODE_YLOG, FALSE },
+	{ NULL, 0, 0 }
+};
+
+menuoptionlist profile_scale[] = {
+	{ "Y hold", PROFILE_SCALE_YHOLD, FALSE },
+	{ "Y expand only", PROFILE_SCALE_YEXPAND, FALSE },
+	{ NULL, 0, 0 }
+};
+
+#define LOG_RESCUE_RATIO 100.
+
+inline guint32 RGBAColor (float c[4]) { 
+	if (c[3] < 0.01) return 0;
+	return	(guint32)(c[3]*0xff)
+		| ((guint32)(c[2]*0xff)<<8)
+		| ((guint32)(c[1]*0xff)<<16)
+		| ((guint32) (c[0]*0xff)<<24)
+		;	
+}
+
+
+ProfileElement::ProfileElement(Scan *sc, ProfileControl *pc, const gchar *col, int Yy){
+	XSM_DEBUG (DBG_L2, "ProfileElement::ProfileElement sc");
+	yy = Yy;
+	scan = sc;
+	psd_scan = NULL;
+
+	if(col)
+		color = g_strdup(col);
+	else
+		color = g_strdup("black");
+
+	pctrl=pc;
+	for (int i=0; i<NPI; ++i)
+		pathitem[i] = pathitem_draw[i]   = NULL;
+	XSM_DEBUG (DBG_L2, "ProfileElement::ProfileElement sc done");
+}
+
+ProfileElement::ProfileElement(ProfileElement *pe, const gchar *col, int Yy){
+	XSM_DEBUG (DBG_L2, "ProfileElement::ProfileElement pe");
+	yy = Yy;
+	scan = pe->scan;
+	psd_scan = NULL;
+
+	if(col)
+		color = g_strdup(col);
+	else
+		color = g_strdup("black");
+
+	pctrl=pe->pctrl;
+	for (int i=0; i<NPI; ++i)
+		pathitem[i] = pathitem_draw[i]   = NULL;
+	XSM_DEBUG (DBG_L2, "ProfileElement::ProfileElement pe done.");
+}
+
+ProfileElement::~ProfileElement(){
+	XSM_DEBUG (DBG_L2, "ProfileElement::~ProfileElement");
+	for (int i=0; i<NPI; ++i){
+		if(pathitem[i])
+			delete pathitem[i];
+		if(pathitem_draw[i])
+			delete pathitem_draw[i];
+        }
+        // ===>>>> SHOULD CALL 	void unref_delete  (GtkWidget *canvas)  before <<<< ======
+                // UNREF_DELETE_CAIRO_ITEM (pathitem[i], canvas);
+
+	g_free(color);
+}
+
+void ProfileElement::SetMode(long Mode){
+	mode=Mode;
+}
+
+void ProfileElement::SetOptions(long Flg){
+	flg=Flg;
+}
+
+/*
+ * unref, remove and delete unused paths
+ * allocate new as needed
+ */
+void ProfileElement::cleanup_renew (GtkWidget *canvas, int ymode, int id){
+	if(!(ymode & PROFILE_MODE_BINARY8))
+		for (int i=1; i<NPI; ++i){
+                        UNREF_DELETE_CAIRO_ITEM (pathitem[i], canvas);
+                        UNREF_DELETE_CAIRO_ITEM (pathitem_draw[i], canvas);
+                }
+	n=scan->mem2d->GetNx();
+
+        if (pathitem[id]){
+                if (pathitem[id]->get_n_nodes () != n){
+                        UNREF_DELETE_CAIRO_ITEM (pathitem[id], canvas);
+                        pathitem[id] = new cairo_item_path (n);
+                }
+        }
+        else        
+                pathitem[id] = new cairo_item_path (n);
+
+        pathcoords_world = true;
+};
+
+double ProfileElement::calc(int ymode, int id, int binary_mask, double y_offset){
+	Scan    *s;
+	double  dc=0.;
+
+        // XSM_DEBUG (DBG_L5, "ProfileElement::calc enter id=" << id);
+
+	if(n < 2)
+		return 0.;
+
+	if(ymode & PROFILE_MODE_YPSD && n > 16){
+		if(psd_scan)
+			delete psd_scan;
+		psd_scan = new Scan (scan);
+		psd_scan->SetView ();
+		F1D_LogPowerSpec(scan, psd_scan);
+		n=psd_scan->mem2d->GetNx();
+		dc=psd_scan->mem2d->GetDataPkt (n/2-1, 0);
+		double c=psd_scan->mem2d->GetDataPkt (n/2-3, 0);
+		psd_scan->mem2d->PutDataPkt (c, n/2-1, 0); // remove DC component
+		psd_scan->mem2d->PutDataPkt (c, n/2-2, 0); // remove DC component
+		s = psd_scan;
+	} else {
+
+		if(psd_scan){
+			delete psd_scan;
+			psd_scan = NULL;
+		}
+		s = scan;
+	}
+
+        // must call cleanup_renew before with canvas!
+        // pathitem[id]->set_xy (i, x,y); // manages xy data!
+
+	if(ymode & PROFILE_MODE_BINARY8){
+		ylocmin=-0.5; ylocmax=8.;
+		if(ymode & PROFILE_MODE_BINARY16)
+			ylocmax=16.;
+		for(int i=0; i < n; ++i)
+			pathitem[id]->set_xy_fast (i,
+                                                   s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
+                                                   y_offset + (( (int)(s->mem2d->GetDataPkt(i,yy)) & binary_mask ) ? 0.7 : 0.));
+
+	} else if(ymode & PROFILE_MODE_YLINREG){
+		for(int i=0; i < n; ++i)
+			pathitem[id]->set_xy_test (i,
+                                                   s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
+                                                   s->data.Zunit->Base2Usr(s->mem2d->GetDataPktLineReg(i,yy)*s->data.s.dz));
+	} else if(ymode & PROFILE_MODE_YLOWPASS){
+		ylocmin=ylocmax=0.;
+		double vp = 0.;\
+		double v = s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(0,yy) * s->data.s.dz);
+		double lpn = pctrl->lp_gain;
+		double lpo = 1.0-lpn;
+		vp=v;
+		for(int i=0, ix=0, iy=1; i < n; ix+=2, iy+=2, ++i){
+                        double y;
+			v = y =  lpo*v + lpn * s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy) * s->data.s.dz);
+
+			if(ymode & PROFILE_MODE_YDIFF){
+			      y  = v-vp;
+			      vp = v;
+			}
+			pathitem[id]->set_xy_test (i, s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)), y);
+		}
+	} else if(ymode & PROFILE_MODE_YDIFF){
+		for(int i=0; i < n; ++i)
+			pathitem[id]->set_xy_test (i,
+                                                   s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
+                                                   s->data.Zunit->Base2Usr(s->mem2d->GetDataPktDiff(i+1,yy) * s->data.s.dz));
+	}else if(ymode & PROFILE_MODE_YLOG){
+		for(int i=0; i < n; ++i)
+			pathitem[id]->set_xy_hold_logmin (i,
+                                                          s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
+                                                          s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy)*s->data.s.dz),
+                                                          xsmres.ProfileLogLimit);
+	}else{
+		for(int i=0; i < n; ++i)
+			pathitem[id]->set_xy_test (i,
+                                                   s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
+                                                   s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy)*s->data.s.dz));
+        }
+
+        // update and get X and Y bounds
+        pathitem[id]->update_bbox (false);
+        pathitem[id]->get_bb_min (xlocmin, ylocmin);
+        pathitem[id]->get_bb_max (xlocmax, ylocmax);
+
+	return dc;
+}
+
+void ProfileElement::draw(cairo_t* cr){
+        // XSM_DEBUG (DBG_L5, "ProfileElement::draw ******************");
+        for (int id=0; id<NPI; ++id)
+                if (pathitem_draw[id])
+                        pathitem_draw[id]->draw (cr);
+                else
+                        return;
+}
+
+void ProfileElement::update(GtkWidget *canvas, int id, int style){
+        // XSM_DEBUG (DBG_L5, "ProfileElement::update ******************");
+        if (pathitem[id]){
+                if (pathitem_draw[id])
+                        delete pathitem_draw[id];
+                pathitem_draw[id] = new cairo_item_path (pathitem[id]);
+        }
+        if (pathitem_draw[id]){
+                pathitem_draw[id]->set_line_style (style);
+                pathitem_draw[id]->set_stroke_rgba (color);
+                pathitem_draw[id]->set_line_width (pctrl->get_lw1 (xsmres.ProfileLineWidth));
+
+                // TDB
+                //        pathitem[id]->map_xy ( &pctrl->scan2canvas);
+                for(int i=0; i < n; ++i){
+                        double x,y;
+                        pathitem[id]->get_xy (i, x, y);
+                        pctrl->scan2canvas (x ,y);
+                        pathitem_draw[id]->set_xy_fast (i, x, y);
+                }
+
+                pathitem_draw[id]->queue_update (canvas);
+        }
+
+}
+
+gchar *ProfileElement::GetDeltaInfo(int i, int j, int ymode){
+	double x1,y1, x2,y2, dx,dz, z1, z2, zint12, dxint12, rms12;
+	GetCurXYc (&x1, &y1, i);
+	GetCurXYc (&x2, &y2, j);
+	if(i<n && i>=0 && j<n && j>=0){
+		int n=0;
+		Scan *sc = ymode & PROFILE_MODE_YPSD ? psd_scan : scan;
+		x1 = sc->mem2d->data->GetXLookup(i);
+		x2 = sc->mem2d->data->GetXLookup(j);
+		zint12 = 0.;
+		dxint12 = 0.;
+		rms12 = 0.;
+		for (int k=i<j?i:j; k<(j>i?j:i); ++k){
+			dxint12 = sc->mem2d->data->GetXLookup(k+1) - sc->mem2d->data->GetXLookup (k);
+			zint12  += dxint12 * sc->mem2d->GetDataPkt(k,yy);
+			double z = ymode & PROFILE_MODE_YLINREG ? sc->mem2d->GetDataPktLineReg (k,yy) : sc->mem2d->GetDataPkt (k,yy);
+			rms12 += z*z;
+			++n;
+		}
+		rms12 = sqrt (rms12/n);
+		dx = x2-x1;
+		z1=sc->mem2d->GetDataPkt(i,yy);
+		z2=sc->mem2d->GetDataPkt(j,yy);
+		gchar *s1 = sc->data.Xunit->UsrString (dx);
+		gchar *s2 = ymode & PROFILE_MODE_YLINREG ?
+			sc->data.Zunit->UsrString (dz = (( sc->mem2d->GetDataPktLineReg(i,yy)
+							   - sc->mem2d->GetDataPktLineReg(j,yy))
+							 *sc->data.s.dz))
+			:
+			sc->data.Zunit->UsrString (dz = (( sc->mem2d->GetDataPkt(i,yy) 
+							   - sc->mem2d->GetDataPkt(j,yy) )
+							 *sc->data.s.dz));
+		gchar *s3 = g_strdup_printf ("%g" UTF8_DEGREE, 180./M_PI*atan(fabs(dz/dx)));
+		gchar *sz1 = g_strdup (sc->data.Zunit->UsrString (z1*sc->data.s.dz));
+		gchar *sz2 = g_strdup (sc->data.Zunit->UsrString (z2*sc->data.s.dz));
+		gchar *szi12 = g_strdup (sc->data.Zunit->UsrString (zint12/sc->data.s.dx));
+		gchar *szrms12 = g_strdup (sc->data.Zunit->UsrString (rms12*sc->data.s.dz));
+		gchar *s = g_strconcat ("Cursor Delta (", s1, ", ", s2, ")",
+					" Slope: ", s3,
+					"  Y1: ", sz1, ", Y2: ", sz2,
+					"  Int: ", szi12, 
+					"  RMS: ", szrms12, 
+					NULL);
+		pctrl->UpdateCursorInfo (x1, x2, z1, z2);
+
+		g_free (s1);
+		g_free (s2);
+		g_free (s3);
+		g_free (sz1);
+		g_free (sz2);
+		g_free (szi12);
+		g_free (szrms12);
+		return s;
+	}
+	else
+		return g_strdup("out of scan !");
+}
+
+
+// ========================================
+
+gint ProfileControl_auto_update_callback (ProfileControl *pc){
+	if (! pc->get_auto_update_id ()) 
+		return FALSE;
+
+	if (pc->update_needed () == TRUE) {
+		pc->mark_for_update (111); // lock
+		pc->UpdateArea ();
+//		pc->show ();
+		pc->mark_for_update (FALSE); // unlock and done
+	}
+	return TRUE;
+}
+
+ProfileControl::ProfileControl (const gchar *titlestring, int ChNo){
+	Init(titlestring, ChNo);
+	ref ();
+}
+
+ProfileControl::ProfileControl (const gchar *titlestring, int n, UnitObj *ux, UnitObj *uy, double xmin, double xmax, const gchar *resid) : LineProfile1D(n, ux, uy, xmin, xmax){
+	Init(titlestring, -1, resid);
+	ref ();
+	g_signal_connect(G_OBJECT(window),
+			   "delete_event",
+			   G_CALLBACK (ProfileControl::file_close_callback),
+			   this);
+	gchar *tmp;
+	SetXlabel (tmp = scan1d->data.Xunit->MakeLongLabel());
+	g_free (tmp);
+	
+	SetYlabel (tmp = scan1d->data.Zunit->MakeLongLabel());
+	g_free (tmp);
+
+	AddScan(scan1d);
+
+	UpdateArea ();
+	show();
+}
+
+ProfileControl::ProfileControl (const gchar *filename, const gchar *resource_id_string){
+	XSM_DEBUG (DBG_L3, "ProfileControl::ProfileControl from file" << filename );
+
+	gchar *t = g_strconcat (filename, " - Profile from File", NULL);
+	Init (t, -1, resource_id_string);
+	g_free (t);
+
+	g_signal_connect(G_OBJECT(window),
+			   "delete_event",
+			   G_CALLBACK (ProfileControl::file_close_callback),
+			   this);
+
+	XSM_DEBUG (DBG_L3, "ProfileControl::ProfileControl from file - Init done, loading data");
+
+	load (filename);
+
+	XSM_DEBUG (DBG_L3, "ProfileControl::ProfileControl from file - label setup...");
+
+	gchar *tmp;
+	SetXlabel (tmp = scan1d->data.Xunit->MakeLongLabel());
+	g_free (tmp);
+	
+	SetYlabel (tmp = scan1d->data.Zunit->MakeLongLabel());
+	g_free (tmp);
+	
+	XSM_DEBUG (DBG_L3, "ProfileControl::ProfileControl from file Add Scan" );
+
+	AddScan(scan1d);
+
+	XSM_DEBUG (DBG_L3, "ProfileControl::ProfileControl from file Update" );
+
+	UpdateArea ();
+	show();
+	
+	XSM_DEBUG (DBG_L3, "ProfileControl::ProfileControl from file done." );
+}
+
+void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid){
+	int i;
+        //	GtkWidget *popup;
+	GtkWidget *tb;
+	gchar *tmp;
+	gchar *defaultval;
+	char xcline[256];
+
+        window_w = window_h = 0;
+        
+        tmp_effected = -1;
+
+	auto_update_id = 0;
+
+	lp_gain = 0.1;
+
+	ref_count = 0;
+	lock = FALSE;
+	tic_x1=0.,tic_x2=0.,tic_y1=0.,tic_y2=0.;
+	tic_ym=0;
+
+	cursor_bound_object = NULL;
+
+	xcolors_list = NULL;
+	num_xcolors = 0;
+	xcolors_list_2 = NULL;
+	num_xcolors_2 = 0;
+
+	std::ifstream xcolors;
+
+	// default
+	gchar *pname = g_strdup_printf ("%s/%s", xsmres.GxsmPalettePath, xsmres.ProfileXColorsPath);
+
+	xcolors.open (pname, std::ios::in);
+
+	if(!xcolors.good()) // or try this, absolute
+		xcolors.open (xsmres.ProfileXColorsPath, std::ios::in);
+
+//	if(!xcolors.good()) // if nothing, try this
+//		xcolors.open ("/etc/X11/rgb.txt", std::ios::in);
+
+	if(xcolors.good()){
+		gchar **rgbcolor;
+		xcolors.getline(xcline, 255);
+		if (strstr (xcline, "rgb.txt")){
+			int lastcolorsum=0;
+			int colorsum=0;
+			GString* strbuffer = g_string_new ("");
+			while (xcolors.good()){
+				xcolors.getline(xcline, 255);
+				rgbcolor = g_strsplit (xcline, "\t\t", 2);
+//				std::cout << "RGB-Name[" << num_xcolors << "]:" << rgbcolor[0] <<","<< rgbcolor[1] <<"."<< std::endl;
+				int r=256,g=256,b=256;
+				if (rgbcolor[0]){
+					r = atoi (&rgbcolor[0][0]);
+					g = atoi (&rgbcolor[0][4]);
+					b = atoi (&rgbcolor[0][8]);
+				}
+				colorsum = r+g+b;
+				if (rgbcolor[1] && colorsum<600 && lastcolorsum != colorsum){ // sort out very light colors and remove duplicates
+//					std::cout << rgbcolor[1] << std::endl;
+					strbuffer = g_string_append (strbuffer, rgbcolor[1]);
+					strbuffer = g_string_append (strbuffer, "\n");
+					g_strfreev (rgbcolor);
+					++num_xcolors;
+				}
+				lastcolorsum = colorsum;
+			}
+			xcolors_list = g_strsplit (strbuffer->str, "\n", 0);
+			g_string_free (strbuffer, TRUE);
+		} else { 
+			// get length of file:
+			xcolors.seekg (0, std::ios::end);
+			int length = xcolors.tellg();
+			gchar *buffer = g_strnfill (length+1, '*');
+			xcolors.seekg (0, std::ios::beg);
+			xcolors.read (buffer, length);
+			buffer[length]=0;
+			xcolors_list = g_strsplit (buffer, "\n", 0);
+			g_free (buffer);
+			for (; xcolors_list[num_xcolors]; ++num_xcolors)
+				;
+//				std::cout << xcolors_list[num_xcolors] << std::endl;
+		}
+		xcolors.close ();
+	}
+
+	// init legend
+	for (int ils=0; ils<PC_LEGEND_ITEMS_MAX; ++ils)
+		ys_legend_label_list[ils] = NULL;
+
+	// use resif or auto-choose profile type and select resource
+	if (resid)
+		profile_res_id = g_strconcat ("Profile/", resid, NULL);
+	else{
+		if(strstr(titlestring, "Red"))
+			profile_res_id = g_strdup("Profile/Red-Line");
+		else
+			if(strstr(titlestring, "from"))
+				profile_res_id = g_strdup("Profile/Show-Line");
+			else
+				if(strstr(titlestring, "Probe"))
+					profile_res_id = g_strdup("Profile/Probe-Data");
+				else
+					if(strstr(titlestring, ".asc"))
+						profile_res_id = g_strdup("Profile/File-Data");
+					else
+						profile_res_id = g_strdup("Profile/Other-Line");
+	}
+  
+	chno=ChNo;
+  
+	if (titlestring)
+		AppWindowInit (titlestring);
+	else
+		AppWindowInit ("Profile");
+
+	Cursor[0][0] = NULL;
+	Cursor[0][1] = NULL;
+	Cursor[1][0] = NULL;
+	Cursor[1][1] = NULL;
+	CursorsIdx[0]=0;
+	CursorsIdx[1]=0;
+
+	last_pe = NULL;
+	scount=0;
+	statusheight = 30;
+	bbarwidth    = 30;
+	border=0.10;
+	pasize=1.0;
+	aspect=3./2.;
+	papixel=400;
+  
+	Yticn=8;
+	Xticn=8;
+
+	Xtics   = new cairo_item*[PC_XTN];
+	Ytics   = new cairo_item*[PC_YTN];
+	Xlabels = new cairo_item_text*[PC_XLN];
+	Ylabels = new cairo_item_text*[PC_YLN];
+	LegendSym  = new cairo_item*[PC_LEGEND_ITEMS_MAX];
+	LegendText = new cairo_item_text*[PC_LEGEND_ITEMS_MAX];
+	num_legend=0;
+	for(i=0; i<PC_XTN; i++) Xtics[i] = NULL;
+	for(i=0; i<PC_YTN; i++) Ytics[i] = NULL;
+	for(i=0; i<PC_XLN; i++) Xlabels[i] = NULL;
+	for(i=0; i<PC_YLN; i++) Ylabels[i] = NULL;
+	for(i=0; i<PC_LEGEND_ITEMS_MAX; i++) LegendSym[i] = NULL, LegendText[i] = NULL;
+
+	ScanList = NULL;
+	background = NULL;
+	frame = NULL;
+	xaxislabel = NULL;
+	yaxislabel = NULL;
+
+	xlabel0 = NULL;
+	ylabel0 = NULL;
+	xlabel = g_strdup("x");
+	ylabel = g_strdup("y");
+	title  = g_strdup("titlestring");
+
+	xticfmt = g_strdup("%g");
+	yticfmt = g_strdup("%g");
+
+	SetXrange(0., 1.);
+	SetYrange(0., 1.);
+
+	SetMode(PROFILE_MODE_XGRID | PROFILE_MODE_YGRID | PROFILE_MODE_CONNECT);
+	SetScaling(PROFILE_SCALE_XAUTO | PROFILE_SCALE_YAUTO);
+
+	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl set_data to widget");
+
+	g_object_set_data  (G_OBJECT (window), "Ch", GINT_TO_POINTER (chno));
+	g_object_set_data  (G_OBJECT (window), "ChNo", GINT_TO_POINTER (chno+1));
+
+        //	gapp->configure_drop_on_widget (window);
+
+	if(chno>=0)
+		g_signal_connect(G_OBJECT(window),
+				   "delete_event",
+				   G_CALLBACK(App::close_scan_event_cb),
+				   this);
+
+	// New Scrollarea
+
+	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl canvas");
+
+        canvas = gtk_drawing_area_new(); // gtk3 cairo drawing-area -> "canvas"
+
+	scrollarea = gtk_scrolled_window_new (NULL, NULL);
+	gtk_container_set_border_width (GTK_CONTAINER (scrollarea), 0);
+
+        gtk_widget_set_hexpand (scrollarea, TRUE);
+        gtk_widget_set_vexpand (scrollarea, TRUE);
+        
+	/* the policy is one of GTK_POLICY AUTOMATIC, or GTK_POLICY_ALWAYS.
+	 * GTK_POLICY_AUTOMATIC will automatically decide whether you need
+	 * scrollbars, whereas GTK_POLICY_ALWAYS will always leave the scrollbars
+	 * there.  The first one is the horizontal scrollbar, the second, 
+	 * the vertical. */
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrollarea),
+					GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	/* The dialog window is created with a vbox packed into it. */                            
+        gtk_widget_set_hexpand (scrollarea, TRUE);
+        gtk_widget_set_vexpand (scrollarea, TRUE);
+        gtk_grid_attach (GTK_GRID (v_grid), scrollarea, 1,1, 9,20);
+	gtk_container_add(GTK_CONTAINER(scrollarea), canvas);
+
+	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl hbox");
+
+	// New Statusbar
+	statusbar = gtk_statusbar_new ();
+	statusid  = gtk_statusbar_get_context_id(GTK_STATUSBAR(statusbar), "drag");
+	g_object_set_data (G_OBJECT (window), "statusbar", statusbar);
+	//  statusbar = (GtkWidget*)g_object_get_data (G_OBJECT (canvas), "statusbar");
+        gtk_grid_attach (GTK_GRID (v_grid), statusbar, 1,100, 11,1);
+
+        //statusheight = gtk_widget_get_allocated_height (statusbar);
+
+        
+        g_signal_connect (G_OBJECT (canvas), "draw",
+                          G_CALLBACK (ProfileControl::canvas_draw_callback), this);
+
+        /* Event signals */
+        g_signal_connect (canvas, "event",
+                          G_CALLBACK (ProfileControl::canvas_event_cb), this);
+
+        gtk_widget_add_events (canvas,
+                               GDK_BUTTON_PRESS_MASK
+                               | GDK_BUTTON_RELEASE_MASK 
+                               | GDK_BUTTON_MOTION_MASK
+			       | GDK_POINTER_MOTION_HINT_MASK
+                               );
+
+	SetSize();
+
+	g_object_set_data (G_OBJECT (canvas), "statusbar", statusbar);
+
+	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl draw!");
+
+	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl show!");
+	gtk_widget_show( canvas );
+
+        // Tool Button simply attached to grid.
+
+        int k=1;
+	tb = gtk_check_button_new_with_label ("LR");
+        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-linreg");
+        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLINREG) ? TRUE : FALSE);
+        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::linreg_callback), this);
+        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+
+        //bbarwidth = gtk_widget_get_allocated_width (tb);
+ 
+	tb = gtk_check_button_new_with_label ("LG");
+        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-log");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLOG) ? TRUE : FALSE);
+        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::logy_callback), this);
+        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+
+	tb = gtk_check_button_new_with_label ("FT");
+        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-ft");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YPSD) ? TRUE : FALSE);
+        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::psd_callback), this);
+        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+
+	tb = gtk_check_button_new_with_label ("dY");
+        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-diff");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YDIFF) ? TRUE : FALSE);
+        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::ydiff_callback), this);
+        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+
+	tb = gtk_check_button_new_with_label ("LP");
+        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-lowpass");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLOWPASS) ? TRUE : FALSE);
+        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::ylowpass_callback), this);
+        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+        
+	tb = gtk_check_button_new_with_label ("YH");
+        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-hold");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (scaleing & PROFILE_SCALE_YHOLD) ? TRUE : FALSE);
+        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::yhold_callback), this);
+        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+
+	tb = gtk_check_button_new_with_label ("YE");
+        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-expand");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (scaleing & PROFILE_SCALE_YEXPAND) ? TRUE : FALSE);
+        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::yexpand_callback), this);
+        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+
+	tb = gtk_check_button_new_with_label ("CA");
+        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.cursor-A");
+        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::cur_Ashow_callback), this);
+        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+
+	tb = gtk_check_button_new_with_label ("CB");
+        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.cursor-B");
+        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::cur_Bshow_callback), this);
+        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+
+	tb = gtk_check_button_new_with_label ("PO");	
+        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-points");
+        //        g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::skl_Ponly_callback), this);
+        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+
+	tb = gtk_check_button_new_with_label ("BI");
+        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-binary");
+        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::skl_Binary_callback), this);
+        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+
+        gtk_widget_show_all (v_grid);
+
+	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl done.");
+}
+
+ProfileControl::~ProfileControl ()
+{
+	XsmRescourceManager xrm(profile_res_id);
+
+	XSM_DEBUG (DBG_L2, "ProfileControl::~ProfileControl");
+
+	// save settings
+	xrm.Put("ModeCode", (int)mode);
+	xrm.Put("ScalingCode", (int)scaleing);
+
+	auto_update (0);
+
+	RemoveScans();
+
+	delete[] Xtics;
+	delete[] Ytics;
+	delete[] Xlabels;
+	delete[] Ylabels;
+	delete[] LegendSym;
+	delete[] LegendText;
+
+	g_free(profile_res_id);
+	g_free(xticfmt);
+	g_free(yticfmt);
+	g_free(xlabel);
+	g_free(ylabel);
+	g_free(title);
+
+	if (xcolors_list)
+		g_strfreev (xcolors_list);
+
+	// delete legend
+	for (int ils=0; ils<PC_LEGEND_ITEMS_MAX; ++ils)
+		if (ys_legend_label_list[ils])
+			g_free (ys_legend_label_list[ils]);
+
+	XSM_DEBUG (DBG_L2, "done.");
+}
+
+
+void ProfileControl::AppWindowInit(const gchar *title){
+	XSM_DEBUG (DBG_L2,  "ViewControl::WidgetInit" );
+
+
+        app_window = gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
+        window = GTK_WINDOW (app_window);
+
+        header_bar = gtk_header_bar_new ();
+        gtk_widget_show (header_bar);
+        gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), true);
+
+        g_action_map_add_action_entries (G_ACTION_MAP (app_window),
+                                         win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
+                                         this);
+
+        
+        // create window PopUp menu  ---------------------------------------------------------------------
+        XSM_DEBUG (DBG_L2,  "VC::VC popup" );
+        GObject *profile_popup_menu = gapp->get_profile_popup_menu ();
+        p_popup_menu = gtk_menu_new_from_model (G_MENU_MODEL (profile_popup_menu));
+        g_assert (GTK_IS_MENU (p_popup_menu));
+
+
+        XSM_DEBUG (DBG_L2,  "VC::VC popup Header Buttons setup. " );
+	GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
+
+        // attach full view popup menu to tool button ----------------------------------------------------
+        GtkWidget *header_menu_button = gtk_menu_button_new ();
+        //        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("emblem-system-symbolic", tmp_toolbar_icon_size));
+        gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), p_popup_menu);
+        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+        gtk_widget_show (header_menu_button);
+
+#if 0
+        // attach display mode section from popup menu to tool button --------------------------------
+        header_menu_button = gtk_menu_button_new ();
+        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("emblem-system-symbolic", tmp_toolbar_icon_size));
+        //        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("zoom-fit-best", tmp_toolbar_icon_size));
+        GMenuModel *section = find_extension_point_section (G_MENU_MODEL (view2d_menu), "view-display-mode-section");
+        if (section) {
+                gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), gtk_menu_new_from_model (G_MENU_MODEL (section)));
+                gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+                gtk_widget_show (header_menu_button);
+        }
+
+        // attach edit section from popup menu to tool button --------------------------------
+        header_menu_button = gtk_menu_button_new ();
+        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("applications-engineering", tmp_toolbar_icon_size));
+        section = find_extension_point_section (G_MENU_MODEL (view2d_menu), "view-objects-section");
+        if (section) {
+                gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), gtk_menu_new_from_model (G_MENU_MODEL (section)));
+                gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+                gtk_widget_show (header_menu_button);
+        }
+#endif
+
+        gtk_window_set_title (GTK_WINDOW (window), title);
+        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
+        gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
+        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+
+	v_grid = gtk_grid_new ();
+        gtk_container_add (GTK_CONTAINER (window), v_grid);
+	g_object_set_data (G_OBJECT (window), "v_grid", v_grid);
+
+        //        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
+        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
+
+        g_signal_connect (GTK_CONTAINER (window), "check-resize", G_CALLBACK (ProfileControl::resize_drawing), this);
+        
+	gtk_widget_show_all (GTK_WIDGET (window));
+}
+
+gboolean ProfileControl::resize_drawing (GtkWidget *widget, ProfileControl *pc){
+        gint w,h;
+        gtk_window_get_size (GTK_WINDOW (pc->window), &w, &h);
+        //g_print ("Profile Window Resize: %d, %d\n", w,h);
+
+        // correct size down to canvas area available
+        w -= pc->bbarwidth;
+        h -= pc->statusheight;
+        //g_print ("Profile Window Corrected: %d, %d\n", w,h);
+        
+        // invert: gtk_widget_set_size_request (canvas, (int)(papixel*(aspect+3*border)), (gint)(papixel*(1.+border))+statusheight);
+        // w=papixel*(aspect+3*border)       -> papixel = w/(aspect+3*border)
+        // h=papixel*(1.+border)+statusheight
+
+        if ((pc->window_w != w || pc->window_h != h) && w>10 && h>10 && w<4000 && h<2000){
+                pc->window_w = w, pc->window_h = h;
+                if (pc->ref_count > 0){
+                        double ap = (double)(w*(1.-3.*pc->border))/(double)(h*(1.-pc->border));
+                        //g_print ("Profile Drawing Resize: %d, %d, ap=%g\n", w,h, ap);
+                        pc->papixel = (int)(w / (ap+3*pc->border));
+                        pc->SetSize (ap);
+                }
+        }
+        return FALSE;
+}
+
+gboolean ProfileControl::cairo_draw_profile_only_callback (cairo_t *cr, ProfileControl *pc){
+        cairo_item **c_item;
+        cairo_item_text **c_item_t;
+
+        cairo_scale (cr, pc->pixel_size, pc->pixel_size);
+        pc->drawScans (cr);
+
+        return FALSE;
+}
+
+gboolean ProfileControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, ProfileControl *pc){
+        cairo_item **c_item;
+        cairo_item_text **c_item_t;
+
+        cairo_scale (cr, pc->pixel_size, pc->pixel_size);
+        cairo_translate (cr, 3.*pc->border, pc->border/4.);
+
+        // XSM_DEBUG (DBG_L2,  "ProfileControl:::canvas_draw_callback ********************** PROFILE PAINT *********************" );
+        // XSM_DEBUG (DBG_L2,  "ProfileControl:::canvas_draw_callback *** pixel_size=" << pc->pixel_size << " border=" << pc->border << " pasize=" << pc->pasize  << " papixel=" << pc->papixel);
+
+        pc->frame->draw (cr);
+        pc->xaxislabel->draw (cr);
+        pc->yaxislabel->draw (cr, 90.);
+        
+        c_item = &pc->Xtics[0];   
+        while (*c_item) (*c_item++)->draw (cr);
+        c_item_t = &pc->Xlabels[0]; 
+        while (*c_item_t) (*c_item_t++)->draw (cr);
+
+        c_item = &pc->Ytics[0];  
+        while (*c_item) (*c_item++)->draw (cr);
+        c_item_t = &pc->Ylabels[0]; 
+        while (*c_item_t) (*c_item_t++)->draw (cr);
+
+        c_item = &pc->LegendSym[0]; 
+        while (*c_item) (*c_item++)->draw (cr);
+        c_item_t = &pc->LegendText[0]; 
+        while (*c_item_t) (*c_item_t++)->draw (cr);
+
+        pc->drawScans (cr);
+
+        for (int id=0; id<2; ++id)
+                if (pc->Cursor[id][0]){
+                        pc->Cursor[id][0]->draw (cr);
+                        pc->Cursor[id][1]->draw (cr);
+                }
+        
+        return FALSE;
+}
+
+
+void ProfileControl::auto_update(int rate){ // auto update, rate in ms. Disable: rate=0
+        if (rate > 0 && !auto_update_id)
+		auto_update_id = g_timeout_add (rate, (GSourceFunc) ProfileControl_auto_update_callback, this);
+  
+	if (rate == 0 && auto_update_id){
+//	      g_idle_remove_by_data (this);
+	      auto_update_id = 0;
+	}
+}
+
+void ProfileControl::SetSize(double new_aspect){
+	if (papixel > 4000) return;
+
+        if (new_aspect > 0.)
+                aspect = new_aspect;
+
+        if (aspect > 100. || aspect < 0.01)
+                return;
+        
+	cxwidth=pasize*aspect;
+	cywidth=pasize;
+
+        pixel_size = (double)papixel / (3*border+pasize);
+        lw_1 = 1. / pixel_size;
+
+        gtk_widget_set_size_request (canvas, (int)(papixel*(aspect+3*border)), (gint)(papixel*(1.+border))+statusheight);
+
+        updateFrame ();
+        updateTics  (TRUE);
+        updateScans ();
+}
+
+gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ProfileControl *pc){
+	static int dragging=FALSE;
+	static GtkWidget *coordpopup=NULL;
+	static GtkWidget *coordlab=NULL;
+        double mouse_pix_xy[2];
+	GtkWidget *frame;
+	gchar *mld;
+	GdkCursor *fleur;
+        cairo_item *items[2] = { pc->Cursor[0][1], pc->Cursor[1][1] };
+
+        // ***** cairo_scale (cr, pc->pixel_size, pc->pixel_size);
+        // ***** cairo_translate (cr, 3.*pc->border, pc->border/4.);
+        // undo cairo image translation/scale:
+        mouse_pix_xy[0] = ((double)event->button.x/pc->pixel_size - (double)(3.*pc->border   ));
+        mouse_pix_xy[1] = ((double)event->button.y/pc->pixel_size - (double)(   pc->border/4.));
+
+        pc->canvas2scan (mouse_pix_xy[0], mouse_pix_xy[1], mouse_pix_xy[0], mouse_pix_xy[1]);
+        
+        // 1st check if mouse on editable object
+        pc->tmp_event = event;     // data for foreach
+        pc->tmp_xy = mouse_pix_xy; // data for foreach
+
+        if (!dragging){ // only if not displaying coordinate info
+                if (pc->tmp_effected >= 0){
+                        g_print ("CANVAS EVENT curso grab mode image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
+                        pc->cursor_event (items, event, mouse_pix_xy, pc);
+                        return FALSE;
+                }
+                pc->cursor_event (items, event, mouse_pix_xy, pc);
+
+                if (pc->tmp_effected >= 0) // handled by object, done. no more action here!
+                        return FALSE;
+        }
+           
+	switch (event->type) {
+	case GDK_BUTTON_PRESS:
+		switch(event->button.button) {
+		case 1: 
+			break;
+		case 2: // Show XYZ display
+                        g_print ("M BUTTON_PRESS image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
+			mld = g_strdup_printf ("%g, %g", mouse_pix_xy[0], mouse_pix_xy[1]);
+			coordpopup = gtk_window_new (GTK_WINDOW_POPUP);
+			gtk_window_set_position (GTK_WINDOW (coordpopup), GTK_WIN_POS_MOUSE);
+			gtk_container_add (GTK_CONTAINER (coordpopup), frame = gtk_frame_new (NULL));
+			gtk_container_add (GTK_CONTAINER (frame),   coordlab = gtk_label_new (mld));
+			gtk_widget_show_all (coordpopup);
+			g_free(mld);
+                        // fleur = gdk_cursor_new(GDK_CROSSHAIR);
+                        //  g_object_unref (fleur);
+			dragging=TRUE;
+
+                        break;
+                case 3: // do popup
+                        g_print ("RM BUTTON_PRESS (do popup) image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
+                        {
+                        int button, event_time;
+
+                        button = 3;
+                        event_time = gtk_get_current_event_time ();
+
+                        gtk_menu_popup (GTK_MENU (pc->p_popup_menu), NULL, NULL, NULL, NULL,
+                                        button, event_time);
+                        }
+                        break;
+		}
+		break;
+		
+	case GDK_MOTION_NOTIFY:
+                g_print ("MOTION XY: %g, %g\n", event->button.x, event->button.y);
+		if (dragging && (event->motion.state & GDK_BUTTON2_MASK)){
+			mld =  g_strdup_printf ("%g, %g", mouse_pix_xy[0], mouse_pix_xy[1]);
+			gtk_label_set_text (GTK_LABEL (coordlab), mld);
+			g_free(mld);
+		}
+		break;
+		
+	case GDK_BUTTON_RELEASE:
+		switch(event->button.button){
+		case 2:  // remove XYZ display
+			gtk_widget_destroy (coordpopup);
+			coordpopup=NULL;
+			dragging=FALSE;
+			break;
+		}
+		break;
+	default: break;
+	}
+	return FALSE;
+}
+
+gint ProfileControl::cursor_event(cairo_item *items[2], GdkEvent *event, double mxy[2], ProfileControl *pc){
+	static double x, y;
+	double new_x, new_y;
+	double item_x=0., item_y=0.;
+  	static int dragging=FALSE;
+	GdkCursor *fleur;
+        cairo_item *item = NULL;
+
+	item_x = mxy[0];
+	item_y = mxy[1];
+ 
+        //        g_print (" ProfileControl::cursor_event %d, %d\n", pc->tmp_effected, dragging );
+
+        if (pc->tmp_effected >= 0 && dragging)
+                item = items[pc->tmp_effected];
+        else {
+                // check items
+                for(int i=0; i<2; i++)
+                        if (items[i])
+                                if (items[i]->check_grab_bbox (mxy[0], mxy[1])){
+                                        item = items[i];
+                                        pc->tmp_effected = i;
+                                        break;
+                                }
+        }
+
+        if (item == NULL)
+                return false;
+
+	switch (event->type){
+        case GDK_BUTTON_PRESS:
+                switch(event->button.button){
+                case 1:
+                        x = item_x;
+                        y = item_y;
+                                
+                        // cursor = gdk_cursor_new(GDK_FLEUR);
+                        // gdk_cursor_destroy(cursor);
+
+                        item->grab ();
+                        dragging = true;
+                        break;
+
+                default:
+                        break;
+                }
+                break;
+		
+        case GDK_MOTION_NOTIFY:
+                if (item->is_grabbed () && dragging && (event->motion.state & GDK_BUTTON1_MASK)){
+  			new_x = item_x;
+			new_y = item_y;
+                        if (pc->tmp_effected >= 0) // make sure
+                                pc->moveCur (pc->tmp_effected, 0, 2, new_x);
+			x = new_x;
+			y = new_y;
+                }
+                break;
+		
+        case GDK_BUTTON_RELEASE:
+                if (item->is_grabbed () && dragging){
+                        item->ungrab ();
+                        pc->tmp_effected = -1;
+                }
+
+                dragging = false;
+                return false;
+                break;
+
+        default:
+                break;
+        }
+        
+	return true;
+}
+
+
+const gchar *ProfileControl::get_xcolor (int i){
+	const gchar *sccl[] = { "red","orange","yellow",
+				"green","ForestGreen",
+				"magenta","SteelBlue","blue"
+				
+	};
+	if (xcolors_list && num_xcolors)
+		return (const gchar*)xcolors_list[i%num_xcolors];
+	else
+		return sccl[i&7];
+}
+
+void ProfileControl::AddScan(Scan* scan, int line, gchar *col){
+	XSM_DEBUG (DBG_L3, "ProfileControl::AddScan");
+	if(col)
+		last_pe = new ProfileElement(scan, this, col, line);
+	else
+		last_pe = new ProfileElement(scan, this, get_xcolor (scount), line);
+	ScanList = g_slist_prepend( ScanList, last_pe);
+	++scount;
+	XSM_DEBUG (DBG_L3, "ProfileControl::AddScan done.");
+}
+
+void ProfileControl::AddLine(int line, gchar *col){
+	if(!last_pe) return;
+
+	if(col)
+		last_pe = new ProfileElement(last_pe, col, line);
+	else
+		last_pe = new ProfileElement(last_pe, get_xcolor (scount), line);
+	ScanList = g_slist_prepend( ScanList, last_pe);
+	++scount;
+}
+
+void ProfileControl::RemoveScans(){
+	if(!ScanList || !scount) return;
+	
+	g_slist_foreach(ScanList, (GFunc) ProfileControl::kill_elem, this);
+	g_slist_free(ScanList);
+	ScanList = NULL;
+	last_pe = NULL;
+	scount   = 0;
+}
+
+void ProfileControl::draw_elem(ProfileElement *pe, cairo_t* cr){
+        //	XSM_DEBUG (DBG_L5, "ProfileElement::draw_elem - enter");
+        pe->draw (cr);
+}
+
+void ProfileControl::update_elem(ProfileElement *pe, ProfileControl *pc){
+	int i=0;
+	double yboff=0.;
+	int bmask = 0x0001;
+	XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - enter");
+	do {
+                XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - cleanup renew");
+                // cleanup and renew path item(s)
+                pe->cleanup_renew (pc->canvas, pc->mode, i);
+
+                XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - calc");
+                // calculate and map path to canvas coordinates
+		double dc = pe->calc (pc->mode, i, bmask, yboff);
+
+                XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - calc1 OK");
+		if (dc > 0.){
+			gchar *p=g_strdup_printf ("Y-DC: %g", dc);
+			gtk_statusbar_push (GTK_STATUSBAR(pc->statusbar), pc->statusid, p);
+			g_free (p);
+		}
+		pc->SetXrange(pe->xlocmin, pe->xlocmax);
+		if (pc->mode & PROFILE_MODE_BINARY16)
+			pc->SetYrange(-0.5, 16.);	
+		else if (pc->mode & PROFILE_MODE_BINARY8)
+			pc->SetYrange(-0.5, 8.);	
+		else if(pc->scaleing&PROFILE_SCALE_YEXPAND || (pc->SklOnly && !(pc->scaleing&PROFILE_SCALE_YHOLD)))
+			pc->SetYrange(MIN(pe->ylocmin, pc->ymin), MAX(pe->ylocmax, pc->ymax));
+		else
+			if(!(pc->scaleing & PROFILE_SCALE_YHOLD))
+				pc->SetYrange(pe->ylocmin, pe->ylocmax);
+		
+                XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - skl done");
+		if(!pc->SklOnly){
+                        XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - draw");
+			pe->update (pc->canvas, i++, pc->mode & PROFILE_MODE_POINTS ? CAIRO_LINE_DASHED : CAIRO_LINE_SOLID );
+		} else
+			i = NPI;
+                XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - draw passed");
+		
+		if (pc->mode & PROFILE_MODE_BINARY8){
+			bmask <<= 1; 
+			yboff += 1.;
+			if (!(pc->mode & PROFILE_MODE_BINARY16) && i >= 8)
+				i = NPI;
+		} else 
+			i = NPI;
+	} while (i < NPI);
+	XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - done");
+}
+
+// Add New Data / Change:
+// 1) add scan data:
+//    sc : Scan to add
+// ------------------------------------
+// line = -1: Get marked Line from Scan
+// line >= 0: use Line line from Scan
+// sc==NULL => jump to Line line in last scan
+gint ProfileControl::NewData_redprofile(Scan* sc, int redblue){
+	if (lock){
+//		std::cout << "ProfileControl::NewData *** Locked: Update Overload *** skipping. - exit." << std::endl;
+		return TRUE; // auto load balancing, low priority
+	}
+	// lock object
+	lock = TRUE;
+
+//	std::cout << "BlueProfileAdd" << std::endl;
+
+	SetData_redprofile (sc, redblue);
+
+	int sn2 = scan1d_2 ? scan1d_2->mem2d->GetNy () : 0;
+	if (scount != scan1d->mem2d->GetNy () + sn2){
+		RemoveScans();
+		int n=scan1d->mem2d->GetNy ();
+		AddScan (scan1d, 0, xcolors_list[0]);
+		for(int i=1; i<n; ++i)
+			AddLine(i, xcolors_list[i]);
+		if (sn2>0){
+			n=scan1d_2->mem2d->GetNy ();
+			AddScan (scan1d_2, 0, xcolors_list_2[0]);
+			for(int i=1; i<n; ++i)
+				AddLine(i, xcolors_list_2[i]);
+		}
+	}
+
+	gchar *tmp;
+	SetXlabel (tmp = scan1d->data.Xunit->MakeLongLabel());
+	g_free (tmp);
+	
+	SetYlabel (tmp = scan1d->data.Zunit->MakeLongLabel());
+	g_free (tmp);
+
+	// unlock object
+	lock = FALSE;
+
+	return FALSE;
+}
+
+gint ProfileControl::NewData(Scan* sc, int line, int cpyscan, VObject *vo, gboolean append){
+	gchar *txt;
+
+	if (lock){
+//		std::cout << "ProfileControl::NewData *** Locked: Update Overload *** skipping. - exit." << std::endl;
+		return TRUE; // auto load balancing, low priority
+	}
+	// lock object
+	lock = TRUE;
+
+	if(sc){
+		if(cpyscan){ // make copy
+  		        SetData(sc, vo, append);
+			if (scount != scan1d->mem2d->GetNy ()){
+				RemoveScans();
+				int n=scan1d->mem2d->GetNy ();
+				AddScan (scan1d);
+				for(int i=1; i<n; ++i)
+					AddLine(i);
+			}
+			
+		}else{ // use scan
+			if(! scount){
+				XSM_DEBUG (DBG_L2, "ProfileControl::NewData AddScan, scount>0, SetData");
+				SetData(sc, -2); // only ref to scan !!
+				XSM_DEBUG (DBG_L2, "ProfileControl::NewData AddScan, sc=" << sc);
+				AddScan(sc);
+			}
+			last_pe->SetY(line);
+		}
+	}
+
+	if (line >= 0)
+		txt=g_strdup_printf("Line: %d", line);
+	else {
+		if(sc->RedLineActive )
+			txt=g_strdup_printf ("Red Line #: %d", sc->Pkt2dScanLine[0].y);
+		else
+			txt=g_strdup_printf ("multi dimensional cut %s, # series: %d", vo?vo->obj_text ():"", scan1d->mem2d->GetNy ());
+	}
+
+	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, txt);
+	g_free(txt);
+
+	Scan *labsrcsc = NULL;
+	if(cpyscan){
+		labsrcsc = scan1d;
+	} else  labsrcsc = sc;
+
+	if(labsrcsc){
+		gchar *tmp;
+		SetXlabel (tmp=labsrcsc->data.Xunit->MakeLongLabel());
+		g_free (tmp);
+	  
+		SetYlabel (tmp = labsrcsc->data.Zunit->MakeLongLabel());
+		g_free (tmp);
+	}
+
+	// unlock object
+	lock = FALSE;
+
+	if (vo)
+		UpdateArea();
+
+
+	return FALSE;
+}
+
+void ProfileControl::drawScans (cairo_t* cr){
+        //	XSM_DEBUG (DBG_L5, "ProfileElement::drawScans - enter");
+	g_slist_foreach(ScanList, (GFunc) ProfileControl::draw_elem, cr);
+}
+
+void ProfileControl::updateScans (int flg)
+{
+        //	XSM_DEBUG (DBG_L5, "ProfileElement::updateScans - enter");
+	SklOnly=TRUE;
+	g_slist_foreach(ScanList, (GFunc) ProfileControl::update_elem, this); // do only scaling
+	SklOnly=FALSE;
+	g_slist_foreach(ScanList, (GFunc) ProfileControl::update_elem, this);
+}
+
+void ProfileControl::updateFrame ()
+{
+	if(!frame){
+		frame = new cairo_item_rectangle (0., 0., cxwidth, cywidth);
+                frame->set_fill_rgba (1.,1.,1.,1.);
+                frame->set_stroke_rgba (0.,1.,0.,1.);
+                frame->set_line_width (lw_1*1.5);
+        } else 
+		frame->set_xy (1, cxwidth, cywidth);
+
+	if(!xaxislabel){
+		xaxislabel = new cairo_item_text ( cxwidth/2., cywidth+border, "X-axis");
+                xaxislabel->set_stroke_rgba (0.,0.,1.,0.5);
+                xaxislabel->set_font_face_size ("Georgia", get_lw1 (12.)); //  "font", xsmres.ProfileLabFont,
+                xaxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
+        } else  
+		xaxislabel->set_xy (0, cxwidth/2., cywidth+border);
+
+
+	if(!yaxislabel){
+		yaxislabel = new cairo_item_text ( -2.*border, cywidth/2., "Y-axis");
+                yaxislabel->set_stroke_rgba (0.,0.,1.,0.5);
+                yaxislabel->set_font_face_size ("Georgia", get_lw1 (12.)); //  "font", xsmres.ProfileLabFont,
+                yaxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
+        } else 
+                yaxislabel->set_xy (0, -2.*border, cywidth/2.);
+
+        frame->queue_update (canvas);
+        xaxislabel->queue_update (canvas);
+        yaxislabel->queue_update (canvas);
+}
+
+#define TIC_TOP    1
+#define TIC_BOTTOM 2
+#define TIC_LEFT   3
+#define TIC_RIGHT  4
+#define TIC_GRID_H 5
+#define TIC_GRID_V 6
+#define TIC_EMPTY  10
+#define LAB_EMPTY  11
+#define ADD_LEGEND       20
+#define ADD_LEGEND_EMPTY 21
+
+
+void ProfileControl::addTic(cairo_item **tic, cairo_item_text **lab,
+			    double val, double len, int pos, const gchar *fmt, double tval, const gchar *color){
+	double tx=0, ty=0;
+	int lstyl;
+        int txtanchor = CAIRO_ANCHOR_CENTER;
+        double coords[4];
+  
+        //        XSM_DEBUG (DBG_L5, "ProfileElement::addTic");
+	
+	if (tval != tval || val != val || len != len){ // check for floating infinity "NaN" and abort!
+		XSM_DEBUG (DBG_L5, "ProfileElement::addTic out-of-range abort");
+		return;
+	}
+
+	lstyl=CAIRO_LINE_SOLID;
+
+        //        XSM_DEBUG (DBG_L5, "ProfileElement::addTic - select");
+
+        if(*tic == NULL)
+                *tic = new cairo_item_path (2);
+        (*tic)->set_stroke_rgba (color);
+
+	switch(pos){
+	case TIC_EMPTY: case LAB_EMPTY:
+	case TIC_TOP:    tx=coords[0]=coords[2]=scan2canvasX(val); coords[1]=0.; 
+		ty=-len+(coords[3]=-len); 
+		txtanchor = CAIRO_ANCHOR_N;
+		break;
+	case TIC_BOTTOM: tx=coords[0]=coords[2]=scan2canvasX(val); coords[1]=cywidth; 
+		ty=len+(coords[3]=cywidth+len); 
+		txtanchor = CAIRO_ANCHOR_S;
+		break;
+	case TIC_LEFT:   ty=coords[1]=coords[3]=scan2canvasY(val); coords[0]=0.; 
+		tx=-4*len+(coords[2]=-len); 
+		txtanchor = CAIRO_ANCHOR_E;
+		break;
+	case TIC_RIGHT:  ty=coords[1]=coords[3]=scan2canvasY(val); coords[0]=cxwidth; 
+		tx=4*len+(coords[2]=cxwidth+len); 
+		txtanchor = CAIRO_ANCHOR_W;
+		break;
+	case TIC_GRID_V:
+		coords[0]=coords[2]=scan2canvasX(val);
+		coords[1]=0.; coords[3]=cywidth; 
+                (*tic)->set_stroke_rgba (xsmres.ProfileGridColor);
+		lstyl=CAIRO_LINE_ON_OFF_DASH;
+		break;
+	case TIC_GRID_H:
+		coords[1]=coords[3]=scan2canvasY(val); 
+		coords[0]=0.; coords[2]=cxwidth; 
+                (*tic)->set_stroke_rgba (xsmres.ProfileGridColor);
+		lstyl=CAIRO_LINE_ON_OFF_DASH;
+		break;
+	case ADD_LEGEND:  ty=coords[1]=coords[3]=scan2canvasY(val); coords[0]=cxwidth+len/10.; 
+		tx=len/2.+(coords[2]=cxwidth+len+len/10.); 
+		txtanchor = CAIRO_ANCHOR_W;
+                (*tic)->set_stroke_rgba (color);
+                //                (*tic)->set_stroke_rgba (xsmres.ProfileGridColor);
+		lstyl=CAIRO_LINE_SOLID;
+		break;
+	default:
+		return;
+	}
+
+        //	XSM_DEBUG (DBG_L5, "ProfileElement::addTic - format");
+        
+	if(fmt && ty != NAN && tx != NAN && ty != -NAN && tx != -NAN){
+		gchar *txt=g_strdup_printf (fmt, tval);
+		if(*lab == NULL)
+			*lab = new cairo_item_text (tx, ty, txt);
+                else
+                        (*lab)->set_text (tx, ty, txt);
+                (*lab)->set_stroke_rgba (0.,0.,0.,1.);
+                (*lab)->set_font_face_size ("Unutu", get_lw1 (10.)); // "font", xsmres.ProfileTicFont,
+                // (*lab)->set_font_face_size ("Georgia", get_lw1 (10.)); // "font", xsmres.ProfileTicFont,
+                (*lab)->set_anchor (txtanchor); // anchor
+                (*lab)->queue_update (canvas);
+		g_free(txt);
+	}
+		
+        //	XSM_DEBUG (DBG_L5, "ProfileElement::addTic - item_set ");
+
+        (*tic)->set_xy (0, coords[0], coords[1]);
+        (*tic)->set_xy (1, coords[2], coords[3]);
+        (*tic)->set_line_width (get_lw1 ());
+        (*tic)->set_line_style (lstyl);
+        (*tic)->queue_update (canvas);
+		
+        //	XSM_DEBUG (DBG_L5, "ProfileElement::addTic done");
+}
+
+const gchar *ProfileControl::get_ys_label (int i){ if (i < PC_LEGEND_ITEMS_MAX) return ys_legend_label_list[i]; else return NULL; }
+void  *ProfileControl::set_ys_label (int i, const gchar *label){
+	if (i < PC_LEGEND_ITEMS_MAX){
+		if (ys_legend_label_list[i])
+			g_free (ys_legend_label_list[i]);
+		ys_legend_label_list[i] = g_strdup (label); 
+	}
+	return NULL;
+}
+
+gint ProfileControl::updateTics (gboolean force)
+{
+	int    i, nTics;
+	double l10;
+	double Lab,dLab,MaxLab,LabW,Lab0;
+	const double TicL1 = 0.01;
+	const double TicL2 = 0.015;
+	XSM_DEBUG (DBG_L5, "ProfileElement::drawTics X");
+ 
+	// rebuild only if needed !!
+	if(tic_x1 != xmin || tic_x2 != xmax || Xtics[0]==NULL || force){
+		tic_x1=xmin; tic_x2=xmax;
+		nTics  = Xticn;
+				
+		Lab0   = xmin;
+		MaxLab = Lab0+xrange;
+		ixt=ixl=0;
+#define TICLABSEP 1
+		if(Lab0 < MaxLab){
+			LabW = MaxLab-Lab0;
+			dLab = AutoSkl(LabW/(double)nTics);
+			l10 = pow(10.,floor(log10(MaxLab)));
+			if(l10 < 1000. && l10 > 0.01) l10=1.;
+			if(dLab <= 0.) return(-1);
+			for(i=0, Lab=AutoNext(Lab0,dLab); Lab<MaxLab; Lab+=dLab, ++i){
+				if (ixt >= PC_XTN-2) break;
+				if (ixl >= PC_XLN-2) break;
+				if(i%TICLABSEP){ 
+					addTic(&Xtics[ixt++], &Xlabels[ixl], Lab, TicL1, TIC_BOTTOM);
+				}
+				else{
+					addTic(&Xtics[ixt++], &Xlabels[ixl++], Lab, TicL2, TIC_BOTTOM, xticfmt, Lab);
+					if(mode & PROFILE_MODE_XGRID)
+						addTic(&Xtics[ixt++], &Xlabels[ixl], Lab, TicL2, TIC_GRID_V);
+				}
+			}
+		}
+		else{
+			LabW = Lab0-MaxLab;
+			dLab = AutoSkl(LabW/(double)nTics);
+			l10 = pow(10.,floor(log10(MaxLab)));
+			if(l10 < 1000. && l10 > 0.01) l10=1.;
+			if(dLab <= 0.) return(-1);
+			for(i=0, Lab=AutoNext(MaxLab,dLab); Lab<Lab0; Lab+=dLab, ++i){
+				if (ixt >= PC_XTN-2) break;
+				if (ixl >= PC_XLN-2) break;
+				if(i%TICLABSEP){ 
+					addTic(&Xtics[ixt++], &Xlabels[ixl], Lab, TicL1, TIC_BOTTOM);
+				}
+				else{
+					addTic(&Xtics[ixt++], &Xlabels[ixl++], Lab, TicL2, TIC_BOTTOM, xticfmt, Lab);
+					if(mode & PROFILE_MODE_XGRID)
+						addTic(&Xtics[ixt++], &Xlabels[ixl], Lab, TicL2, TIC_GRID_V);
+				}
+			}
+		}
+		while(Xtics[ixt]){
+			UNREF_DELETE_CAIRO_ITEM (Xtics[ixt], canvas);
+			ixt++;
+		}
+		while(Xlabels[ixl]){
+			UNREF_DELETE_CAIRO_ITEM (Xlabels[ixl], canvas);
+			ixl++;
+		}
+	}
+
+	XSM_DEBUG (DBG_L5, "ProfileElement::drawTics Y");
+	if (tic_y1 != ymin || tic_y2 != ymax || tic_ym != mode || Ytics[0]==NULL || force){
+		tic_y1=ymin; tic_y2=ymax; tic_ym=mode;
+		nTics  = Yticn;
+		Lab0   = ymin;
+		MaxLab = Lab0+yrange;
+		iyt=iyl=0;
+    
+		if(mode & PROFILE_MODE_YLOG){
+			XSM_DEBUG (DBG_L5, "ProfileElement::drawTics Y-log");
+			if (Lab0 <= 0.){
+				XSM_DEBUG_WARNING (DBG_L2, "ProfileElement::drawTics Y-log mode: negative Ymin!");
+				Lab0 = MaxLab/LOG_RESCUE_RATIO; // FixMe: auto safety hack -- must match!
+			}
+			if (Lab0 > 0.){
+				l10 = pow (10.,floor (log10 (Lab0)));
+				for (i=1, Lab=l10; Lab<MaxLab; Lab+=l10, ++i){
+					if (iyt >= PC_YTN-2) break;
+					if (iyl >= PC_YLN-2) break;
+					if (Lab < Lab0) continue;
+					if (Lab > 9.999*l10){ l10=Lab=10.*l10; i=1; }
+					if (i!=5 && i!=1){ 
+						addTic (&Ytics[iyt++], &Ylabels[iyl], Lab, TicL1, TIC_LEFT);
+					}
+					else{
+						addTic (&Ytics[iyt++], &Ylabels[iyl++], Lab, TicL1, TIC_LEFT, yticfmt, Lab);
+						if (mode & PROFILE_MODE_YGRID)
+							addTic(&Ytics[iyt++], &Ylabels[iyl], Lab, TicL2, TIC_GRID_H);
+					}
+				}
+			}
+		}else{
+			if(Lab0 < MaxLab){
+				LabW = MaxLab-Lab0;
+				dLab = AutoSkl(LabW/(double)nTics);
+				l10 = pow(10.,floor(log10(MaxLab)));
+				if(l10 < 1000. && l10 > 0.01) l10=1.;
+				if(dLab <= 0.) return(-1);
+				for(i=0, Lab=AutoNext(Lab0,dLab); Lab<MaxLab; Lab+=dLab, ++i){
+					if (iyt >= PC_YTN-2) break;
+					if (iyl >= PC_YLN-2) break;
+					if(i%TICLABSEP){ 
+						addTic(&Ytics[iyt++], &Ylabels[iyl], Lab, TicL1, TIC_LEFT);
+					}
+					else{
+						addTic(&Ytics[iyt++], &Ylabels[iyl++], Lab, TicL1, TIC_LEFT, yticfmt, Lab);
+						if(mode & PROFILE_MODE_YGRID)
+							addTic(&Ytics[iyt++], &Ylabels[iyl], Lab, TicL2, TIC_GRID_H);
+					}
+				}
+			}
+			else{
+				LabW = Lab0-MaxLab;
+				dLab = AutoSkl(LabW/(double)nTics);
+				l10 = pow(10.,floor(log10(MaxLab)));
+				if(l10 < 1000. && l10 > 0.01) l10=1.;
+				if(dLab <= 0.) return(-1);
+				for(i=0, Lab=AutoNext(MaxLab,dLab); Lab<Lab0; Lab+=dLab, ++i){
+					if (iyt >= PC_YTN-2) break;
+					if (iyl >= PC_YLN-2) break;
+					if(i%TICLABSEP){ 
+						addTic(&Ytics[iyt++], &Ylabels[iyl], Lab, TicL1, TIC_LEFT);
+					}
+					else{
+						addTic(&Ytics[iyt++], &Ylabels[iyl++], Lab, TicL1, TIC_LEFT, yticfmt, Lab);
+						if(mode & PROFILE_MODE_YGRID)
+							addTic(&Ytics[iyt++], &Ylabels[iyl], Lab, TicL2, TIC_GRID_H);
+					}
+				}
+			}
+		}
+
+		XSM_DEBUG (DBG_L5, "ProfileElement::drawTics - garbage collecting");
+
+
+		while(Ytics[iyt]){
+			UNREF_DELETE_CAIRO_ITEM (Ytics[iyt], canvas);
+                        iyt++;
+		}
+		while(Ylabels[iyl]){
+			UNREF_DELETE_CAIRO_ITEM (Ylabels[iyl], canvas);
+			iyl++;
+		}
+	}
+
+
+	if (num_legend != scount || force){
+		int k=0;
+		Scan *s=NULL;
+		for (i=0; i<scount && i < PC_LEGEND_ITEMS_MAX-2; ++i, ++k){
+			if (get_ys_label (i)){
+				gchar *tmp = g_strconcat ("%.0f: ", get_ys_label (i), NULL);
+				addTic(&LegendSym[i], &LegendText[i], ymax-i*(ymax-ymin)/scount, TicL1*10., ADD_LEGEND, tmp, 
+				       (double)i, get_xcolor (i));
+				g_free (tmp);
+			} else {
+				ProfileElement *pe = (ProfileElement*)g_slist_nth_data (ScanList, i);
+				if (s && s != pe->get_scan ())
+					k=0;
+				addTic(&LegendSym[i], &LegendText[i], ymax-i*(ymax-ymin)/scount, TicL1*10., ADD_LEGEND, "%.2f", 
+				       (pe->get_scan ())->mem2d->data->GetYLookup (k), pe->get_color ());
+				s=pe->get_scan ();
+			}
+		}
+		while(LegendSym[i]){
+                        UNREF_DELETE_CAIRO_ITEM (LegendSym[i], canvas);
+                        UNREF_DELETE_CAIRO_ITEM (LegendText[i], canvas);
+			++i;
+		}
+	}
+
+	XSM_DEBUG (DBG_L5, "ProfileElement::drawTics - done");
+
+	return 0;
+}
+
+void ProfileControl::UpdateArea ()
+{
+	if (lock){
+		std::cout <<  "ProfileControl::UpdateArea -- scans are locked -- skipping." << std::endl;
+		return; // avoid attempts to draw while scan data is updated
+	}
+
+	XSM_DEBUG (DBG_L4,  "ProfileControl::UpdateArea drw scans" );
+        updateScans ();
+        
+	XSM_DEBUG (DBG_L4,  "ProfileControl::UpdateArea ticks?" );
+	if(mode & PROFILE_MODE_NOTICS){
+		int i=0;
+		while(Xtics[i]){
+                        UNREF_DELETE_CAIRO_ITEM (Xtics[i], canvas);
+			i++;
+		}
+		i=0;
+		while(Xlabels[i]){	
+                        UNREF_DELETE_CAIRO_ITEM (Xlabels[i], canvas);
+			i++;
+		}
+		i=0;
+		while(Ytics[i]){
+                        UNREF_DELETE_CAIRO_ITEM (Ytics[i], canvas);
+			i++;
+		}
+		i=0;
+		while(Ylabels[i]){
+                        UNREF_DELETE_CAIRO_ITEM (Ylabels[i], canvas);
+			i++;
+		}
+	}
+	else{
+		XSM_DEBUG (DBG_L4,  "ProfileControl::UpdateArea drawing ticks!" );
+                updateTics();
+		moveCur(0, 0);
+		moveCur(1, 0);
+	}
+}
+
+void ProfileControl::showCur(int id, int show){
+	if(show){
+		if(Cursor[id][0]){
+			Cursor[id][0]->show ();
+		}else{
+                        double x,y;
+			const char *c[]={"blue","green"};
+
+                        last_pe->GetCurXYc(&x, &y, CursorsIdx[id]);
+
+                        Cursor[id][0] = new cairo_item_segments (4);
+                        Cursor[id][0]->set_xy (0, 0., y);
+                        Cursor[id][0]->set_xy (1, cxwidth, y);
+                        Cursor[id][0]->set_xy (2, x, 0.);
+                        Cursor[id][0]->set_xy (3, x, cywidth);
+                        Cursor[id][0]->set_stroke_rgba (c[id]);
+                        Cursor[id][0]->set_line_width (get_lw1 (1.5*xsmres.ProfileLineWidth));
+			Cursor[id][0]->show ();
+                        Cursor[id][0]->queue_update (canvas);
+                        
+                        Cursor[id][1] = new cairo_item_path_closed (3);
+                        Cursor[id][1]->set_xy (0, x-0.02*cxwidth, cywidth-0.05*cxwidth);
+                        Cursor[id][1]->set_xy (1, x+0.02*cxwidth, cywidth+0.05*cxwidth);
+                        Cursor[id][1]->set_xy (2, x, cywidth);
+                        Cursor[id][1]->set_stroke_rgba (c[id]);
+                        Cursor[id][1]->set_fill_rgba (c[id]);
+                        Cursor[id][1]->set_line_width (get_lw1 (1.5*xsmres.ProfileLineWidth));
+                        Cursor[id][1]->queue_update (canvas);
+		}
+	}else{
+		if(Cursor[id][0]){
+                        UNREF_DELETE_CAIRO_ITEM (Cursor[id][0], canvas);
+                        UNREF_DELETE_CAIRO_ITEM (Cursor[id][1], canvas);
+		}
+        }
+        
+	if (cursor_bound_object)
+		cursor_bound_object->Update ();
+}
+
+void ProfileControl::moveCur(int id, int dir, int search, double cx){
+        double x,y;
+
+        if (Cursor[id][0] == NULL) return;
+        if (Cursor[id][1] == NULL) return;
+
+        last_pe->GetCurXYc(&x, &y, CursorsIdx[id]);
+       
+	if(search == 2){
+                x = cx;
+        }else{
+		if(search){
+			if(search>0) CursorsIdx[id] = last_pe->nextMax(CursorsIdx[id], dir);
+			if(search<0) CursorsIdx[id] = last_pe->nextMin(CursorsIdx[id], dir);
+                        last_pe->GetCurXYc(&x, &y, CursorsIdx[id]);
+		}else{
+                        last_pe->GetCurXYc(&x, &y, CursorsIdx[id] += dir);
+		}
+        }
+
+        scan2canvas (x, y);
+
+        Cursor[id][0]->set_xy (0, 0., y);
+        Cursor[id][0]->set_xy (1, cxwidth, y);
+        Cursor[id][0]->set_xy (2, x, 0.);
+        Cursor[id][0]->set_xy (3, x, cywidth);
+        Cursor[id][0]->queue_update (canvas);
+  
+        Cursor[id][1]->set_xy (0, x-0.02*cxwidth, cywidth-0.05*cxwidth);
+        Cursor[id][1]->set_xy (1, x+0.02*cxwidth, cywidth+0.05*cxwidth);
+        Cursor[id][1]->set_xy (2, x, cywidth);
+        Cursor[id][1]->queue_update (canvas);
+  
+        gchar *p;
+        if (Cursor[0][0] && Cursor[1][0] )
+                gtk_statusbar_push (GTK_STATUSBAR(statusbar), statusid, 
+                                    p=last_pe->GetDeltaInfo( CursorsIdx[0], CursorsIdx[1], mode));
+        else
+                gtk_statusbar_push (GTK_STATUSBAR(statusbar), statusid, 
+                                    p=last_pe->GetInfo( CursorsIdx[id], mode));
+        g_free (p);
+
+	if (cursor_bound_object)
+		cursor_bound_object->Update ();
+}
+
+void ProfileControl::SetYrange (double y1, double y2)
+{
+	if (y1 < y2){
+		ymin = y1; ymax = y2; yrange=y2-y1;
+	} else if (y1 > y2){
+		ymin = y2; ymax = y1; yrange=y1-y2;
+	}else{ // fallback
+		ymin = y2; ymax = y1+1.; yrange=y1+1.-y2;
+	}
+	if (ymax > 0. && ymin > 0. && ymin < ymax){
+		lmin    = log (ymin);
+		lmaxmin = log (ymax) - lmin;
+	}else{
+		if (ymax > 0.) { // FixMe: must match with / in DrawTicks!!
+			lmin    = log (ymax/LOG_RESCUE_RATIO);
+			lmaxmin = log (ymax) - lmin;
+		} else { // dummy range
+			lmaxmin = 1.;
+			lmin = 0.;
+		}
+	}
+}
+
+void ProfileControl::SetXrange(double x1, double x2)
+{
+	if (x1 < x2){
+		xmin = x1; xmax = x2; xrange=x2-x1;
+	} else if (x1 > x2){
+		xmin = x2; xmax = x1; xrange=x1-x2;
+	} else{ // fallback
+		xmin = x2; xmax = x1+1.; xrange=x1+1.-x2;
+	}
+}
+
+void ProfileControl::SetXlabel (const gchar *xlab)
+{
+	if (xlab){
+		if (xlabel0) 
+			g_free (xlabel0);
+		xlabel0 = g_strdup (xlab);
+	}
+
+	if (xlabel)
+		g_free (xlabel);
+
+	if (!xlabel0) return;
+
+	if(mode & PROFILE_MODE_YPSD)
+		xlabel = g_strconcat ("Inverse::", xlabel0, NULL);
+	else
+		xlabel = g_strdup (xlabel0);
+
+	if (xaxislabel)
+                xaxislabel->set_text (xlabel);
+}
+
+void ProfileControl::SetYlabel (const gchar *ylab)
+{
+	if (ylab){
+		if (ylabel0)
+			g_free (ylabel0); 
+		ylabel0 = g_strdup (ylab);
+	}
+
+	if (ylabel)
+		g_free (ylabel);
+
+	if (!ylabel0) return;
+
+	if(mode & PROFILE_MODE_YDIFF)
+		ylabel = g_strconcat ("d ", ylabel0, "/dx", NULL);
+	else
+		ylabel = g_strdup (ylabel0);
+
+
+	if (yaxislabel)
+                yaxislabel->set_text (ylabel);
+}
+
+void ProfileControl::SetActive(int flg){
+	if (flg){
+		// gnome_canvas_item_set (frame,
+		// 		       "fill_color", "white",
+		// 		       NULL);
+		gtk_statusbar_push (GTK_STATUSBAR(statusbar), statusid, 
+				    "channel is active now");
+	}else{
+		// gnome_canvas_item_set (frame,
+		// 		       "fill_color", "grey80",
+		// 		       NULL);
+		gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, 
+				   "inactive");
+	}
+}
+
+void ProfileControl::SetTitle(const gchar *tit, gboolean append){
+	gchar *t;
+	if (append){
+		t = g_strconcat (title, tit, NULL);
+		g_free(title);
+		title = t;
+	} else {
+		g_free(title);
+		title = g_strdup (tit);
+	}
+	gtk_window_set_title (GTK_WINDOW (window), title);
+}
+
+
+void ProfileControl::file_open_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	gchar *ffname;
+	ffname = gapp->file_dialog ("Profile to load", NULL, 
+				    "*.asc", NULL, "profileload");
+	if (ffname)
+		gapp->xsm->load (ffname);
+}
+
+void ProfileControl::file_save_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	gchar *ffname;
+	gchar *mld, *oname;
+		
+	oname = g_strconcat (pc->scan1d->data.ui.originalname, ".asc", NULL);
+	ffname = gapp->file_dialog (N_("Profile to save"), NULL, 
+				    "*.asc", oname, "profilesave");
+	if (gapp->check_file (ffname)){
+		pc->save (ffname);
+		mld = g_strconcat (N_("profile saved as "), ffname, NULL);
+	}else
+		mld = g_strdup (N_("save canceld"));
+	gtk_statusbar_push (GTK_STATUSBAR(pc->statusbar), pc->statusid, mld);
+	g_free (mld);
+}
+
+void ProfileControl::file_save_as_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	gchar *ffname;
+	gchar *mld, *oname;
+		
+	oname = g_strconcat (pc->scan1d->data.ui.originalname, ".asc", NULL);
+	ffname = gapp->file_dialog (N_("Profile to save"), NULL, 
+				    "*.asc", oname, "profilesaveas");
+	if (gapp->check_file (ffname)){
+		pc->save (ffname);
+		mld = g_strconcat (N_("profile saved as "),ffname,NULL);
+	}else
+		mld = g_strdup (N_("save canceld"));
+	gtk_statusbar_push (GTK_STATUSBAR(pc->statusbar), pc->statusid, mld);
+	g_free (mld);
+}
+
+void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+#if 0
+        // GTK3QQQ -- cairo!!!
+
+	static gchar *suggest=NULL;
+	GError *error=NULL;
+	gint w,h;
+	gchar *imgname;
+	if (!suggest)
+		suggest = g_strdup_printf ("%s-snap.png", "profile");
+
+	imgname = gapp->file_dialog("Save Canvas as PNG/JPEG-Image", NULL, "*.png", suggest);
+
+	if (imgname == NULL || strlen(imgname) < 5) 
+		return;
+
+	g_free (suggest);
+	suggest = g_strdup (imgname);
+
+	gdk_window_get_size (GTK_WIDGET (pc->canvas)->window, &w, &h);
+	GdkPixbuf* pixbuf = gdk_pixbuf_get_from_drawable (NULL, GTK_WIDGET (pc->canvas)->window, NULL, 0,0,0,0, w,h);
+
+	if (strncasecmp (imgname+strlen(imgname)-4,".jpg", 4)==0 || strncasecmp (imgname+strlen(imgname)-5,".jpeg", 5)==0)
+		gdk_pixbuf_save (pixbuf, imgname, "jpeg", &error, "quality", "100", NULL);
+	else
+		gdk_pixbuf_save (pixbuf, imgname, "png", &error, NULL);
+#endif
+}
+
+void ProfileControl::file_close_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	XSM_DEBUG (DBG_L2, "ProfileElement::file_close_callback, refcount=" << pc->ref_count);
+		
+	if (pc->ref_count == 0)
+		gapp->xsm->RemoveProfile (pc);
+	else
+		XSM_DEBUG_ERROR (DBG_L1, "Sorry, cant't do this, other object depends on me!" );
+}
+
+void ProfileControl::file_print1_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->file_print_callback (1, pc);
+}
+
+void ProfileControl::file_print2_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->file_print_callback (2, pc);
+}
+
+void ProfileControl::file_print3_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->file_print_callback (3, pc);
+}
+
+void ProfileControl::file_print4_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->file_print_callback (4, pc);
+}
+
+// Experimental new print_callback for xmgrace
+void ProfileControl::file_print5_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->file_print_callback (5, pc);
+}
+
+// Experimental new print_callback for matplotlob
+void ProfileControl::file_print6_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->file_print_callback (6, pc);
+}
+
+void ProfileControl::file_print_callback (int index, ProfileControl *pc)
+{
+	int tmpf;
+	gchar *tmp;
+	GError *printer_failure;
+		
+	--index;
+	if ((tmpf=g_file_open_tmp("GXSM_TEMPFILE_XXXXXX", &tmp, &printer_failure)) != -1){
+		FILE *gricmd;
+		char command[512];
+		char retinfo[64];
+		int ret;
+        		
+		close (tmpf);
+		pc->save(tmp);
+        	
+//         		if (setenv("GXSMGRIDATAFILE", tmp, TRUE))
+// 						XSM_DEBUG_ERROR (DBG_L1,  "error: can't set GXSMGRIDATAFILE enviromentvar!" );
+//         		if (setenv("GXSMGRIXLAB", pc->xlabel, TRUE))
+// 						XSM_DEBUG_ERROR (DBG_L1,  "error: can't set GXSMGRIXLAB enviromentvar!" );
+//         		if (setenv("GXSMGRIYLAB", pc->ylabel, TRUE))
+// 						XSM_DEBUG_ERROR (DBG_L1,  "error: can't set GXSMGRIYLAB enviromentvar!" );
+//         		if (setenv("GXSMGRIPLOTTITLE", xsmres.griplottitle, TRUE))
+// 						XSM_DEBUG_ERROR (DBG_L1,  "error: can't set GXSMGRIPLOTTITLE enviromentvar!" );
+// 				
+		if((index >= 0) && (index < GRIMAX)){
+			sprintf(command, "%s %s \"%s\"\n",xsmres.gricmd1d[index], tmp, xsmres.griplottitle);
+//				sprintf(command,  // xmgrace plots only 1&5nd column!!!
+//				"xmgrace  -graph 0 -pexec \"title \\\"%s\\\"\"  -pexec \"xaxis label \\\"%s\\\"\" -pexec \"yaxis label \\\"%s\\\"\" -block %s -bxy %d:%d\n", 
+//				tmp, pc->xlabel, pc->ylabel, tmp, 3+scan1d->mem2d->GetNy(), 4+scan1d->mem2d->GetNy());
+		}else {
+			; // Cannot be reached.
+		}
+		gricmd=popen(command,"r");
+		ret=pclose(gricmd);
+		if(ret){
+			sprintf(retinfo, "%s", ret ? "Execution Error" : "OK");
+			XSM_SHOW_ALERT("PRINT INFO", command, retinfo,1);
+		}
+// 			else{
+// 				gchar *p;
+// 				if(strrchr(xsmres.gricmd1d[index], '.') && index < 4){ //do this for gri
+// 					*(p = strrchr(xsmres.gricmd1d[index], '.')) = 0;
+// 					sprintf(command, "gv %s.ps\n", strrchr(xsmres.gricmd1d[index], '/')+1);
+// 					*p = '.';
+// 					gricmd=popen(command,"r");
+// 			        	pclose(gricmd);
+// 				}
+//         		}
+		// remove tmp file
+		sprintf(command, "rm %s\n", tmp);
+		gricmd=popen(command,"r");
+		pclose(gricmd);
+	}
+	g_free (tmp);
+}
+
+void ProfileControl::file_activate_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	if (pc->chno >= 0)
+		gapp->xsm->ActivateChannel (pc->chno);
+}
+
+void ProfileControl::logy_callback (GSimpleAction *action, GVariant *parameter, 
+                                    gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+                
+
+        if (g_variant_get_boolean (new_state))
+		pc->mode = (pc->mode & ~PROFILE_MODE_YLOG) | PROFILE_MODE_YLOG;
+	else
+		pc->mode &= ~PROFILE_MODE_YLOG;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->UpdateArea ();
+}
+
+void ProfileControl::linreg_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->mode = (pc->mode & ~PROFILE_MODE_YLINREG) | PROFILE_MODE_YLINREG;
+	else
+		pc->mode &= ~PROFILE_MODE_YLINREG;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->UpdateArea ();
+}
+
+void ProfileControl::psd_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->mode = (pc->mode & ~PROFILE_MODE_YPSD) | PROFILE_MODE_YPSD;
+	else
+		pc->mode &= ~PROFILE_MODE_YPSD;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->SetXlabel ();
+	pc->UpdateArea ();
+}
+
+void ProfileControl::ydiff_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->mode = (pc->mode & ~PROFILE_MODE_YDIFF) | PROFILE_MODE_YDIFF;
+	else
+		pc->mode &= ~PROFILE_MODE_YDIFF;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->SetYlabel ();
+	pc->UpdateArea ();
+}
+
+void ProfileControl::ylowpass_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state)){
+		pc->mode = (pc->mode & ~PROFILE_MODE_YLOWPASS) | PROFILE_MODE_YLOWPASS;
+		gchar *p=g_strdup_printf ("LP gain: %g", pc->lp_gain);
+		gtk_statusbar_push (GTK_STATUSBAR(pc->statusbar), pc->statusid, p);
+		g_free (p);
+	} else {
+		pc->mode &= ~PROFILE_MODE_YLOWPASS;
+		pc->lp_gain *= 0.5;
+		if (pc->lp_gain < 0.01)
+		        pc->lp_gain = 0.4;
+        }
+        
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->SetYlabel ();
+	pc->UpdateArea ();
+}
+
+void ProfileControl::yhold_callback (GSimpleAction *action, GVariant *parameter, 
+                                     gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
+	else
+		pc->scaleing &= ~PROFILE_SCALE_YHOLD;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->UpdateArea ();
+}
+
+void ProfileControl::yexpand_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->scaleing = (pc->scaleing& ~PROFILE_SCALE_YEXPAND) | PROFILE_SCALE_YEXPAND;
+	else
+		pc->scaleing &= ~PROFILE_SCALE_YEXPAND;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Yauto_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->scaleing &= ~PROFILE_SCALE_YHOLD;
+	pc->UpdateArea ();
+	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Yupperup_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
+	if(pc->mode & PROFILE_MODE_YLOG)
+		pc->SetYrange(pc->ymin, pc->ymax*2.);
+	else{
+		double yrange = pc->ymax - pc->ymin;
+		pc->SetYrange(pc->ymin, pc->ymax+0.1*yrange);
+	}
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Yupperdn_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
+	if(pc->mode & PROFILE_MODE_YLOG)
+		pc->SetYrange(pc->ymin, pc->ymax/2.);
+	else{
+		double yrange = pc->ymax - pc->ymin;
+		pc->SetYrange(pc->ymin, pc->ymax-0.1*yrange);
+	}
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Ylowerup_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
+	if(pc->mode & PROFILE_MODE_YLOG)
+		pc->SetYrange(pc->ymin*2., pc->ymax);
+	else{
+		double yrange = pc->ymax - pc->ymin;
+		pc->SetYrange(pc->ymin+0.1*yrange, pc->ymax);
+	}
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Ylowerdn_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
+	if(pc->mode & PROFILE_MODE_YLOG)
+		pc->SetYrange(pc->ymin/2., pc->ymax);
+	else{
+		double yrange = pc->ymax - pc->ymin;
+		pc->SetYrange(pc->ymin-0.1*yrange, pc->ymax);
+	}
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Yzoomin_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
+	double yrange = pc->ymax - pc->ymin;
+	if (pc->mode & PROFILE_MODE_YLOG){
+		if (yrange > 50.)
+			pc->SetYrange (pc->ymin*2., pc->ymax/2.);
+	}
+	else
+		pc->SetYrange (pc->ymin+0.1*yrange, pc->ymax-0.1*yrange);
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Yzoomout_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
+	if (pc->mode & PROFILE_MODE_YLOG)
+		pc->SetYrange (pc->ymin/2., pc->ymax*2.);
+	else{
+		double yrange = pc->ymax - pc->ymin;
+		pc->SetYrange (pc->ymin-0.1*yrange, pc->ymax+0.1*yrange);
+	}
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Yset_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
+	pc->SetYrange (10., 1e6);
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Xauto_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->UpdateArea();
+}
+
+void ProfileControl::skl_Xset_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Ponly_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->mode = (pc->mode & ~PROFILE_MODE_POINTS) | PROFILE_MODE_POINTS;
+	else
+		pc->mode &= ~PROFILE_MODE_POINTS;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->SetYlabel ();
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Binary_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+	static int b2=0;
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state)){
+		if (b2==0)
+			pc->mode = (pc->mode & ~(PROFILE_MODE_BINARY8 | PROFILE_MODE_BINARY16)) | PROFILE_MODE_BINARY8;
+		else
+			pc->mode = (pc->mode & ~PROFILE_MODE_BINARY8) | (PROFILE_MODE_BINARY8 | PROFILE_MODE_BINARY16);
+		++b2; b2 &= 1;
+	} else {
+		pc->mode &= ~(PROFILE_MODE_BINARY8 | PROFILE_MODE_BINARY16);
+	}
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->SetYlabel ();
+	pc->UpdateArea ();
+}
+
+void ProfileControl::tics_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->mode &= ~PROFILE_MODE_NOTICS;
+	else
+		pc->mode = (pc->mode & ~PROFILE_MODE_NOTICS) | PROFILE_MODE_NOTICS;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->SetYlabel ();
+	pc->UpdateArea ();
+}
+
+void ProfileControl::symbols_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->mode = (pc->mode & ~PROFILE_MODE_SYMBOLS) | PROFILE_MODE_SYMBOLS;
+	else
+		pc->mode &= ~PROFILE_MODE_SYMBOLS;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->UpdateArea();
+}
+
+void ProfileControl::legend_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->mode = (pc->mode & ~PROFILE_MODE_LEGEND) | PROFILE_MODE_LEGEND;
+	else
+		pc->mode &= ~PROFILE_MODE_LEGEND;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->UpdateArea();
+}
+
+void ProfileControl::nogrid_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->mode = (pc->mode & ~(PROFILE_MODE_XGRID | PROFILE_MODE_YGRID)) 
+			| (PROFILE_MODE_XGRID | PROFILE_MODE_YGRID);
+	else
+		pc->mode &= ~(PROFILE_MODE_XGRID | PROFILE_MODE_YGRID);
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	pc->UpdateArea();
+}
+
+void ProfileControl::zoom_out_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	if (pc->papixel < 100) return;
+	pc->papixel *= 2;
+	pc->papixel /= 3;
+	pc->SetSize();
+	pc->UpdateArea();
+}
+
+void ProfileControl::zoom_in_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	if (pc->papixel > 2000) return;
+	pc->papixel /= 2;
+	pc->papixel *= 3;
+	pc->SetSize();
+	pc->UpdateArea();
+}
+
+void ProfileControl::aspect_inc_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	if (pc->aspect > 5.) return;
+
+	if (pc->aspect > 2.)
+		pc->aspect += 1.;
+	else if (pc->aspect > 0.5)
+		pc->aspect += 0.25;
+	else
+		pc->aspect += 0.1;
+
+	pc->SetSize();
+	pc->UpdateArea();
+}
+
+void ProfileControl::aspect_dec_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	if (pc->aspect < 0.2) return;
+
+	if (pc->aspect > 2.)
+		pc->aspect -= 1.;
+	else if (pc->aspect > 0.5)
+		pc->aspect -= 0.25;
+	else
+		pc->aspect -= 0.1;
+
+	pc->SetSize();
+	pc->UpdateArea();
+}
+
+void ProfileControl::canvas_size_store_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	XsmRescourceManager xrm (pc->profile_res_id);
+	xrm.Put("XYaspectratio", pc->aspect);
+	xrm.Put("Xsize", pc->papixel);
+}
+
+void ProfileControl::cur_Ashow_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->showCur(0,TRUE);
+	else
+		pc->showCur(0,FALSE);
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+}
+
+void ProfileControl::cur_Bshow_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->showCur(1,TRUE);
+	else
+		pc->showCur(1,FALSE);
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+}
+
+void ProfileControl::cur_Aleft_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(0,-1);
+}
+
+void ProfileControl::cur_Aright_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(0,1);
+}
+
+void ProfileControl::cur_Bleft_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(1,-1);
+}
+
+void ProfileControl::cur_Bright_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(1,1);
+}
+
+// Min Max search
+void ProfileControl::cur_Almax_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(0,-1,1);
+}
+void ProfileControl::cur_Almin_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(0,-1,-1);
+}
+void ProfileControl::cur_Armax_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(0,1,1);
+}
+void ProfileControl::cur_Armin_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(0,1,-1);
+}
+
+void ProfileControl::cur_Blmax_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(1,-1,1);
+}
+void ProfileControl::cur_Blmin_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(1,-1,-1);
+}
+void ProfileControl::cur_Brmax_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(1,1,1);
+}
+void ProfileControl::cur_Brmin_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+
+	pc->moveCur(1,1,-1);
+}
+
+void ProfileControl::UpdateCursorInfo (double x1, double x2, double z1, double z2){
+	if (gapp->xsm->GetActiveScan ()){
+		if (strncmp (xlabel, "Z", 1) == 0){
+			double dz = gapp->xsm->GetActiveScan()->data.s.dz;
+			gapp->xsm->GetActiveScan()->mem2d->SetZHiLitRange (x1/dz, x2/dz);
+		} else
+			gapp->xsm->GetActiveScan()->mem2d->SetZHiLitRange (z1, z2);
+	}
+}
+
+double ProfileControl::getCursorPos(int id) { 
+	double ret = -1.;
+	if (id>=0 && id <2 && last_pe)
+		if (Cursor[id][0])
+			ret = last_pe->GetXPos(CursorsIdx[id]);
+	return ret; 
+}

@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Name=SRanger STD autoconf
+Comment=Python script for automatic configuration of the SR-STD/SP2 boards
+Exec=spm_autoconf.py
+Icon=gnome-mime-application-x-python-bytecode
+Terminal=1
+Type=Application
+Categories=Gxsm
+X-AppInstall-Package=sranger
+

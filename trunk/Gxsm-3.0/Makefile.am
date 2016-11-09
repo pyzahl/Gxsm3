@@ -1,0 +1,51 @@
+SUBDIRS = gxsm3 plug-ins palette thumbnailers tools pixmaps icons profileplot 
+
+# data
+# po commented out, see discussion in the forums.
+
+# man_MANS = man/gxsm2.1 man/vpdata2ascii.1 man/nctopng.1 man/gmetopng.1 man/rhkspm32topng.1 man/scalatopng.1
+
+EXTRA_DIST = gxsm3.desktop
+
+Applicationdir = $(datadir)/applications
+gxsmdatadir = $(datadir)/gxsm3/data
+
+#ac_default_prefix = /usr
+ac_default_prefix = /usr/local/gxsm
+
+
+#the application icon
+appicondir=$(datadir)/icons/hicolor/scalable/apps
+appicon_DATA=icons/gxsm3-icon.svg
+
+#icons in the application
+NULL =
+
+private_icons = \
+        gxsm3-icon.svg \
+	arrow-up-symbolic.svg \
+	arrow-down-symbolic.svg \
+	arrow-left-symbolic.svg \
+	arrow-right-symbolic.svg \
+	goto-position-symbolic.svg \
+	goto-center-symbolic.svg \
+	goto-home-symbolic.svg \
+	approach-symbolic.svg \
+	process-stopall-symbolic.svg \
+	retract-symbolic.svg \
+	seek-backward-symbolic.svg \
+	seek-forward-symbolic.svg \
+	seek-left-symbolic.svg \
+	seek-right-symbolic.svg \
+	system-busy-symbolic.svg \
+	system-off-symbolic.svg \
+	xymode-symbolic.svg \
+	$(NULL)
+
+install-icons:
+	for icon in $(private_icons); do \
+		mkdir -p $(DESTDIR)$(pkgdatadir)/icons/; \
+		$(INSTALL_DATA) $(srcdir)/icons/$$icon $(DESTDIR)$(pkgdatadir)/icons/; \
+	done
+
+install-data-local: install-icons

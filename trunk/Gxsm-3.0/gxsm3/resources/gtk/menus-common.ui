@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<interface>
+  <!-- interface-requires gtk+ 3.0 -->
+  <menu id="notebook-menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Move _Left</attribute>
+        <attribute name="action">move-left</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Move _Right</attribute>
+        <attribute name="action">move-right</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Move to New _Window</attribute>
+        <attribute name="action">move-to-new-window</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Move to New Tab _Group</attribute>
+        <attribute name="action">move-to-new-tab-group</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">_Close</attribute>
+        <attribute name="action">close</attribute>
+      </item>
+    </section>
+  </menu>
+  <menu id="tab-width-menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Automatic Indentation</attribute>
+        <attribute name="action">win.auto-indent</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label">2</attribute>
+        <attribute name="action">win.tab-width</attribute>
+        <attribute name="target" type="u">2</attribute>
+      </item>
+      <item>
+        <attribute name="label">4</attribute>
+        <attribute name="action">win.tab-width</attribute>
+        <attribute name="target" type="u">4</attribute>
+      </item>
+      <item>
+        <attribute name="label">8</attribute>
+        <attribute name="action">win.tab-width</attribute>
+        <attribute name="target" type="u">8</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Use Spaces</attribute>
+        <attribute name="action">win.use-spaces</attribute>
+      </item>
+    </section>
+  </menu>
+  <menu id="line-col-menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Display line numbers</attribute>
+        <attribute name="action">win.show-line-numbers</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Display right margin</attribute>
+        <attribute name="action">win.display-right-margin</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Highlight current line</attribute>
+        <attribute name="action">win.highlight-current-line</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Text wrapping</attribute>
+        <attribute name="action">win.wrap-mode</attribute>
+      </item>
+    </section>
+  </menu>
+</interface>

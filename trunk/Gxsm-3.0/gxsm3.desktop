@@ -1,0 +1,13 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=GXSM3
+Name[de]=GXSM3
+Comment=Gnome X Scanning Microscopy and Data Analysis & Visualisation -- start in analysis mode
+Comment[de]=Gnome X Rastersonden Mikroskopie und Daten Analyse & Visualisation  -- start im Auswertemodus
+Exec=gxsm3 -h no
+Icon=/usr/local/share/icons/hicolor/scalable/apps/gxsm3-icon.svg
+Terminal=true
+Type=Application
+Categories=GTK;GNOME;Science
+X-AppInstall-Package=gxsm3
+MimeType=application/x-netcdf

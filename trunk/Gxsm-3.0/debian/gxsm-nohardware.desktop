@@ -1,0 +1,14 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Name=GXSM no hardware
+Comment=GXSM - startup in analysis/emulation mode
+Exec=gxsm3 "-h no"
+Icon=gxsm-app
+Terminal=1
+Type=Application
+Encoding=UTF-8
+Value=1.0
+MimeType=nc
+X-AppInstall-Package=gxsm3
+

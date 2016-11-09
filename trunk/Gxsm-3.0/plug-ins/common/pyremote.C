@@ -1,0 +1,2565 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
+/* Gnome gxsm - Gnome X Scanning Microscopy
+ * universal STM/AFM/SARLS/SPALEED/... controlling and
+ * data analysis software
+ *
+ * Gxsm Plugin Name: pyremote.C
+ * ========================================
+ *
+ * Copyright (C) 1999 The Free Software Foundation
+ *
+ * Authors: Percy Zahl <zahl@fkp.uni-hannover.de>
+ * additional features: Andreas Klust <klust@fkp.uni-hannover.de>
+ * Large segments of code were borrowewd from gwyddion's
+ * (http://gwyddion.net/) pygwy. These were originally authored by
+ * David Necas (Yeti), Petr Klapetek and Jan Horak
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+/* Please do not change the Begin/End lines of this comment section!
+ * this is a LaTeX style section used for auto generation of the PlugIn Manual
+ * Chapter. Add a complete PlugIn documentation inbetween the Begin/End marks!
+ * All "% PlugInXXX" commentary tags are mandatory
+ * All "% OptPlugInXXX" tags are optional
+ * --------------------------------------------------------------------------------
+% BeginPlugInDocuSection
+% PlugInDocuCaption: Python remote control
+% PlugInName: pyremote
+% PlugInAuthor: Stefan Schr\"oder
+% PlugInAuthorEmail: stefan_fkp@users.sf.net
+% PlugInMenuPath: Tools/Pyremote Console
+
+% PlugInDescription
+ This plugin is an interface to an embedded Python
+ Interpreter.
+
+% PlugInUsage
+ Choose Pyremote Console from the \GxsmMenu{Tools} menu to enter a
+ python console. A default command script is loaded when the console
+ is started for the first time, but is not executed automatically. In
+ the appendix you will find a tutorial with examples and tips and
+ tricks.
+
+% OptPlugInSection: Reference
+
+The following script shows you all commands that the gxsm-module supports:
+
+\begin{alltt}
+print dir(gxsm)
+\end{alltt}
+
+The result will look like this:
+
+\begin{alltt}
+['__doc__', '__name__', 'autodisplay', 'chmodea',
+'chmodem', 'chmoden', 'chmodeno', 'chmodex',
+'chview1d', 'chview2d', 'chview3d', 'da0', 'direct',
+'echo', 'gnuexport', 'gnuimport', 'load', 'log',
+'logev', 'menupath', 'quick', 'save', 'saveas',
+'scaninit', 'scanline', 'scanupdate', 'scanylookup',
+'set', 'sleep', 'startscan', 'stopscan', 'unitbz',
+'unitev', 'units', 'unitvolt', 'waitscan', 'createscan']
+\end{alltt}
+
+
+The following list shows a brief explanation of the commands, together with
+the signature (that is the type of arguments).
+
+'()' equals no argument. E.g. \verb+startscan()+
+
+'(N)' equals one Integer arument. E.g. \verb+chview1d(2)+
+
+'(X)' equals one Float argument. No example.
+
+'(S)' equals a string. Often numbers are evaluated as strings first. Like
+in \verb+set("RangeX", "234.12")+
+
+'(S,N)' equals two parameters. E.g. \verb+gnuexport("myfilename.nc", 1)+
+
+\begin{tabular}{ll} \hline
+Scan operation\\
+\texttt{startscan() }   &       Start a scan.\\
+\texttt{stopscan() }    &       Stop scanning.\\
+\texttt{waitscan}       &       is commented out in app\_remote.C\\
+\texttt{initscan() }    &       only initialize.\\
+\texttt{scanupdate() }  &       Set hardware parameters on DSP.\\
+\texttt{setylookup(N,X)}&       ?\\
+\texttt{scanline}       &       Not implemented.\\ \hline
+File operation\\
+\texttt{save() }  &       Save all.\\
+\texttt{saveas(S,N) }    &       Save channel N with filename S.\\
+\texttt{load(S,N)   }    &       Load file S to channel N.\\
+\texttt{gnuimport(S,N) } &       Import file S to channel N.\\
+\texttt{gnuexport(S,N) } &       Export channel N to file S.\\ \hline
+Channel operation\\
+\texttt{chmodea(N)}      &       Set channel(N) as active.\\
+\texttt{chmodex(N)}      &       Set channel(N) to X.\\
+\texttt{chmodem(N)}      &       Set channel(N) to Math.\\
+\texttt{chmoden(N),N}    &       Set channel(N) to mode(N).\\
+\texttt{chmodeno(N)}     &       Set channel(N) to mode 'No'.\\
+\texttt{chview1d(N)}     &       View channel(N) in 1d-mode.\\
+\texttt{chview2d(N)}     &       View channel(N) in 2d-mode.\\
+\texttt{chview3d(N)}     &       View channel(N) in 3d-mode.\\ \hline
+Views\\
+\texttt{autodisplay()}  &       Autodisplay.\\
+\texttt{quick()}        &       Set active display to quickview.\\
+\texttt{direct()}       &       Set active display to directview.\\
+\texttt{log()}          &       Set active display to logview.\\ \hline
+Units\\
+\texttt{unitbz() }      &       Set units to BZ.\\
+\texttt{unitvolt()}     &       Set units to Volt.\\
+\texttt{unitev()}       &       Set units to eV.\\
+\texttt{units()}        &       Set units to S.\\ \hline
+Others\\
+\texttt{createscan(N,N,N,N,A) }  &  Create scan from array.\\
+\texttt{list() }  &  Get list of known parameters for get/set.\\
+\texttt{set(S,S)}       &  Set parameter to value.\\
+\texttt{get(S)}         &  Get parameter, returns floating point value in current user unit .\\
+\texttt{gets(S)}         &  Get parameter, returns string with user unit.\\
+\texttt{rtquery(S)}     &  Ask current HwI to run RTQuery with parameter S, return vector of three values depening on query.\\
+\texttt{y\_current()}    &  Ask current HwI to run RTQuery what shall return the actual scanline of a scan in progress, undefined return otherwise.\\
+\texttt{echo(S)  }  &       Print S to console.\\
+\texttt{logev(S) }  &       Print S to logfile.\\
+\texttt{sleep(N) }  &       Sleep N/10 seconds.\\
+\texttt{add\_layerinformation(S,N)   }  &       Add Layerinformation string S to active scan, layer N.\ \
+\texttt{da0(X)   }  &       Set Analog Output channel 0 to X Volt. (not implemented).\\
+\texttt{menupath(S)}  &       Activate Menuentry 'S'\\
+\end{tabular}
+
+% OptPlugInSubSection: The set-command
+
+The set command can modify the following parameters:
+
+\begin{tabular}{ll}
+\texttt{ACAmp} & \texttt{ACFrq} \\
+\texttt{ACPhase} & \texttt{} \\
+\texttt{CPShigh} & \texttt{CPSlow} \\
+\texttt{Counter} & \texttt{Energy} \\
+\texttt{Gatetime} & \texttt{Layers} \\
+\texttt{LengthX} & \texttt{LengthY} \\
+\texttt{Offset00X} & \texttt{Offset00Y} \\
+\texttt{OffsetX} & \texttt{OffsetY} \\
+\texttt{PointsX} & \texttt{PointsY} \\
+\texttt{RangeX} & \texttt{RangeY} \\
+\texttt{Rotation} & \texttt{} \\
+\texttt{StepsX} & \texttt{StepsY} \\
+\texttt{SubSmp} & \texttt{VOffsetZ} \\
+\texttt{VRangeZ} & \texttt{ValueEnd} \\
+\texttt{ValueStart} & \texttt{nAvg} \\
+\end{tabular}
+
+These parameters are case-sensitive.
+To help the python remote programmer to figure out the correct
+set-names of all remote enabled entry fields a nifty option
+was added to the Help menu to show tooltips with the correct "remote set name"
+if the mouse is hovering over the entry.
+
+% OptPlugInSubSection: The get-command
+
+The \texttt{get()} command can retrieve the value of the remote control parameters.
+While \texttt{get()} retrieves the internal value as a floating points number,
+\texttt{gets()} reads the actual string from the text entry including units.
+The list of remote control accessible parameters can be retrieved with \texttt{list()}.
+
+\begin{alltt}
+print "OffsetX = ", gxsm.get("OffsetX")
+gxsm.set("OffsetX", "12.0")
+print "Now OffsetX = ", gxsm.get("OffsetX")
+
+for i in gxsm.list():
+    print i, " ", gxsm.get(i), " as string: ", gxsm.gets(i)
+\end{alltt}
+
+On my machine (without hardware attached) this prints:
+
+\begin{alltt}
+OffsetX =  0.0
+Now OffsetX =  12.0
+Counter   0.0  as string:  00000
+VOffsetZ   0.0  as string:  0 nm
+VRangeZ   500.0  as string:  500 nm
+Rotation   1.92285320764e-304  as string:  1.92285e-304 °
+TimeSelect   0.0  as string:  0
+Time   1.0  as string:  1
+LayerSelect   0.0  as string:  0
+Layers   1.0  as string:  1
+OffsetY   0.0  as string:  0.0 nm
+OffsetX   12.0  as string:  12.0 nm
+PointsY   1000.0  as string:  1000
+PointsX   1000.0  as string:  1000
+StepsY   0.519863986969  as string:  0.52 nm
+StepsX   0.519863986969  as string:  0.52 nm
+RangeY   64.9830993652  as string:  65.0 nm
+RangeX   64.9830993652  as string:  65.0 nm
+\end{alltt}
+
+All entry fields with assigned id can now be queried.
+
+
+% OptPlugInSubSection: Creating new scans
+
+Pyremote can create new images from scratch using the
+\verb+createscan+ command. Its arguments are
+pixels in x-direction, pixels in y-direction,
+range in x-direction (in Angstrom),
+range in y-direction (in Angstrom) and finally
+a flat, numeric array that must contain
+as many numbers as needed to fill the matrix.
+
+This example creates a new scan employing sine to
+show some pretty landscape.
+
+\begin{alltt}
+import array   # for array
+import Numeric # for fromfunction
+import math    # for sin
+
+def dist(x,y):
+   return ((Numeric.sin((x-50)/15.0) + Numeric.sin((y-50)/15.0))*100)
+
+m = Numeric.fromfunction(dist, (100,100))
+n = Numeric.ravel(m) # make 1-d
+p = n.tolist()       # convert to list
+
+examplearray = array.array('l', p) #
+gxsm.createscan(100, 100, 10000, 10000, examplearray)
+\end{alltt}
+
+
+\GxsmScreenShot{GxsmPI_pyremote01}{An autogenerated image.}
+
+This command can be easily extended to create an importer for arbitrary
+file formats via python. The scripts directory contains an elaborate
+example how to use this facility to import the file format employed
+by Nanonis.
+
+
+% OptPlugInSubSection: Menupath and Plugins
+
+Any plugin, that has a menuentry can be
+executed via the
+\GxsmTT{menupath}-command. Several of them, however, open a dialog and ask
+for a specific parameter, e.g. the diff-PI in \GxsmMenu{Math/Filter1D}.
+This can become annoying, when you want to batch process a greater number
+of files. To execute a PI non-interactively it is possible to
+call a plugin from scripts with default parameters and no user interaction.
+
+The \GxsmTT{diff}-PI can be called like this:
+
+\begin{alltt}
+print "Welcome to Python."
+gxsm.logev('my logentry')
+gxsm.startscan()
+gxsm.action('diff_PI')
+\end{alltt}
+
+The \GxsmTT{diff}- and \GxsmTT{smooth}-function are, at the time of this
+writing, the only Math-PI, that have such an 'action'-callback. Others
+will follow. See \GxsmFile{diff.C} to find out, how to extend your
+favourite PI with action-capabilities.
+
+The action-command can execute the following PI:
+
+\begin{tabular}{ll}
+\GxsmTT{diff\_PI} & kernel-size set to 5+1\\
+\GxsmTT{smooth\_PI} & kernel-size set to 5+1\\
+\GxsmTT{print\_PI} & defaults are read from gconf\\
+\end{tabular}
+
+% OptPlugInSubSection: DSP-Control
+
+The DSP-Control is the heart of SPM activity. The following parameters
+can be set with \GxsmTT{set}. (DSP2 commands are available in Gxsm 2 only)
+
+\GxsmNote{Manual Hacker notes: list of DSP/DSP2 is depricated. All entry fields with hover-over entry id is now remote capable.}
+
+\begin{tabular}{ll}
+\GxsmTT{DSP\_CI} & \GxsmTT{DSP2\_CI} \\
+\GxsmTT{DSP\_CP} & \GxsmTT{DSP2\_CP} \\
+\GxsmTT{DSP\_CS} & \GxsmTT{DSP2\_CS} \\
+\GxsmTT{DSP\_I} & \GxsmTT{DSP2\_I} \\
+\GxsmTT{DSP\_MoveLoops} & \GxsmTT{DSP2\_MoveLoops} \\
+\GxsmTT{DSP\_MoveSpd} & \GxsmTT{DSP2\_MoveSpd} \\
+\GxsmTT{DSP\_NAvg} & \GxsmTT{DSP2\_NAvg} \\
+\GxsmTT{DSP\_Pre} & \GxsmTT{DSP2\_Pre} \\
+\GxsmTT{DSP\_ScanLoops} & \GxsmTT{DSP2\_ScanLoops} \\
+\GxsmTT{DSP\_ScanSpd} & \GxsmTT{DSP2\_ScanSpd} \\
+\GxsmTT{DSP\_SetPoint} & \GxsmTT{DSP2\_SetPoint} \\
+\GxsmTT{DSP\_U} & \GxsmTT{DSP2\_U} \\
+\end{tabular}
+
+\GxsmNote{Manual Hacker notes: VP exectutes via hover-over ExecuteID and action command.}
+
+
+
+% OptPlugInSubSection: Peakfinder
+
+Another plugin allows remote control. The plugin-functions are commonly
+executed by a call of the \GxsmTT{action}-command. It is
+\GxsmFile{Peakfinder}:
+
+DSP Peak Find Plugin Commandset for the SPA-LEED peak finder:\\
+
+\begin{tabular}{lllll}
+\Mcol{Commands Plugin \filename{DSP Peak Find}:}\\ \\ \hline
+Cmd & Arg. & \multicolumn{2}{l}{Values} & Description\\ \hline
+\hline
+action & DSPPeakFind\_XY0\_1 &&& Get fitted XY Position\\
+action & DSPPeakFind\_OffsetFromMain\_1 &&& Get Offset from Main\\
+action & DSPPeakFind\_OffsetToMain\_1 &&& Put Offset to Main\\
+action & DSPPeakFind\_EfromMain\_1 &&& Get Energy from Main\\
+action & DSPPeakFind\_RunPF\_1 &&& Run Peak Finder\\
+\hline
+action & DSPPeakFind\_XXX\_N &&& run action XXX (see above)\\
+       &                    &&& on PF Folder N\\
+\end{tabular}
+
+The call is equivalent to the example above.
+
+% OptPlugInConfig
+
+The plugin can be configured in the preferences. The default script
+that will be loaded when the console is enetred for the first time
+is defined in the path-tab in item \GxsmFile{PyremoteFile}.
+The name must be a qualified python module name. A module name
+is not a filename! Thus \verb+remote.py+ is not a valid entry,
+but \verb+remote+ (the default) is. The module is found by searching the
+directories listed in the environment variable PYTHONPATH. If no file is
+defined or a file matching the name cannot be found, a warning will be issued.
+
+The module with GXSM internal commands
+is called \GxsmFile{gxsm}.
+
+To find the Python-script \GxsmFile{remote.py}, the environment-variable
+PYTHONPATH is evaluated. If it is not expliticly declared, GXSM will set
+PYTHONPATH to your current working directory. This is equivalent to the
+following call:
+
+\begin{alltt}
+$export PYTHONPATH='.'
+$gxsm3
+\end{alltt}
+
+Thus, the script in your current working directory will be found.
+
+If you want to put your script somewhere else than into the
+current directory, modify the environment variable
+\GxsmFile{PYTHONPATH}. Python
+will look into all directories, that are stored there.
+
+\begin{alltt}
+$export PYTHONPATH='/some/obscure/path/'
+$gxsm
+\end{alltt}
+
+Or you can link it from somewhere else. Or you can create a one line script,
+that executes another script or several scripts. Do whatever you like.
+
+
+% OptPlugInFiles
+ Python precompiles your remote.py to remote.pyc. You can safely remove the
+file remote.pyc file at any time, Python will regenerate it upon start of
+the interpreter.
+
+% OptPlugInRefs
+See the appendix for more information. Don't know Python? Visit
+\GxsmTT{python.org}.
+
+% OptPlugInKnownBugs
+
+The error handling is only basic. Your script may run if you give
+wrong parameters but not deliver the wanted results. You can crash
+Gxsm or even X! E.g. by selecting an illegal channel. Remember that channel
+counting in the scripts begins with 0. Gxsm's channel numbering begins with 1.
+
+The embedded functions return $-1$ as error value. It's a good idea
+to attach \texttt{print} to critical commands to check this.
+
+The \verb+remote_echo+ command is implemented via debug printing.
+Using Pythons \texttt{print} is recommended.
+
+The view functions \GxsmFile{quick}, \GxsmFile{direct}, \GxsmFile{log}
+change the viewmode, but not the button in the main window, don't be
+confused.
+
+The waitscan and da0 function are not yet implemented and likely will never
+be.
+
+The library detection during compilation is amateurish. Needs work.
+
+Python will check for the
+right type of your arguments. Remember, that all values in \GxsmTT{set} are strings
+and have to be quoted. Additionaly care for the case sensitivity.
+
+If you you want to pause script execution, use the embedded sleep command
+\GxsmTT{gxsm.sleep()} and not \GxsmTT{time.sleep()}, because the function from
+the time library will freeze GXSM totally during the sleep.
+(This is not a bug, it's a feature.)
+
+% OptPlugInNotes
+TODO: Add more action-handlers in Math-PI.
+% and clean up inconsistent use of spaces and tabs.
+
+% OptPlugInHints
+If you write a particularly interesting remote-script, please give it back
+to the community. The GXSM-Forums always welcome input.
+
+% EndPlugInDocuSection
+ * --------------------------------------------------------------------------------
+ */
+
+#include "config.h"
+#include "pyremote.h"
+#include "gxsm/plugin.h"
+
+#if defined HAVE_PYTHON2_7_PYTHON_H
+#    include <python2.7/Python.h>
+#elif defined HAVE_PYTHON2_6_PYTHON_H
+#    include <python2.6/Python.h>
+#elif defined HAVE_PYTHON2_5_PYTHON_H
+#    include <python2.5/Python.h>
+#endif
+
+
+#include <sys/types.h>
+#include <signal.h>
+
+#include "action_id.h"
+#include "xsmtypes.h"
+
+#include "config.h"
+#include "gxsm/plugin.h"
+#include "glbvars.h"
+
+#include "glib/gstdio.h"
+
+//#include "app_remote.h"
+#include "pyremote.h"
+
+#include <gtksourceview/gtksource.h>
+
+#include "gapp_service.h"
+#include "xsm.h"
+#include "unit.h"
+#include "pcs.h"
+
+#include "gxsm_app.h"
+
+      // Fill in the GxsmPlugin Description here
+GxsmPlugin pyremote_pi = {
+	  NULL,                   // filled in and used by Gxsm, don't touch !
+	  NULL,                   // filled in and used by Gxsm, don't touch !
+	  0,                      // filled in and used by Gxsm, don't touch !
+	  NULL,                   // The Gxsm-App Class Ref.pointer (called "gapp" in Gxsm) is
+	  // filled in here by Gxsm on Plugin load,
+	  // just after init() is called !!!
+	  // ----------------------------------------------------------------------
+	  // Plugins Name, CodeStly is like: Name-M1S[ND]|M2S-BG|F1D|F2D|ST|TR|Misc
+	  (char *)"Pyremote",
+	  NULL,
+	  // Description, is shown by PluginViewer (Plugin: listplugin, Tools->Plugin Details)
+	  (char *)"Remote control",
+	  // Author(s)
+	  (char *) "Stefan Schroeder",
+	  // Menupath to position where it is appended to
+	  (char *)"tools-section",
+	  // Menuentry
+	  N_("Pyremote Console"),
+	  // help text shown on menu
+	  N_("Python Remote Control Console."),
+	  // more info...
+	  (char *)"See Manual.",
+	  NULL,          // error msg, plugin may put error status msg here later
+	  NULL,          // Plugin Status, managed by Gxsm, plugin may manipulate it too
+	  // init-function pointer, can be "NULL",
+	  // called if present at plugin load
+	  pyremote_init,
+	  // query-function pointer, can be "NULL",
+	  // called if present after plugin init to let plugin manage it install itself
+	  NULL, // query should be "NULL" for Gxsm-Math-Plugin !!!
+	  // about-function, can be "NULL"
+	  // can be called by "Plugin Details"
+	  pyremote_about,
+	  // configure-function, can be "NULL"
+	  // can be called by "Plugin Details"
+	  pyremote_configure,
+	  // run-function, can be "NULL", if non-Zero and no query defined,
+	  // it is called on menupath->"plugin"
+	  pyremote_run, // run should be "NULL" for Gxsm-Math-Plugin !!!
+	  // cleanup-function, can be "NULL"
+	  // called if present at plugin removal
+	  NULL, // direct menu entry callback1 or NULL
+	  NULL, // direct menu entry callback2 or NULL
+
+	  pyremote_cleanup
+	  };
+
+class py_gxsm_console;
+
+// GXSM PY REMOTE GUI/CONSOLE CLASS
+py_gxsm_console *py_gxsm_remote_console = NULL;
+
+// Text used in Aboutbox, please update!!a
+static const char *about_text = N_("Gxsm Plugin\n\n"
+                                   "Python Remote Control.");
+
+// Symbol "get_gxsm_plugin_info" is resolved by dlsym from Gxsm, used to get Plugin's info!!
+GxsmPlugin *get_gxsm_plugin_info ( void ){
+	pyremote_pi.description = g_strdup_printf(N_("Gxsm pyremote plugin %s"), VERSION);
+	return &pyremote_pi;
+}
+
+// 5.) Start here with the plugins code, vars def., etc.... here.
+// ----------------------------------------------------------------------
+//
+// TODO:
+// More error-handling
+// Cannot return int in run
+// fktname editable in preferences.
+// Add numeric interface (LOW)
+// Add image interface (LOW)
+// Add i/o possibility (LOW)
+
+// about-Function
+static void pyremote_about(void)
+{
+	const gchar *authors[] = { pyremote_pi.authors, NULL};
+	gtk_show_about_dialog (NULL, 
+			       "program-name",  pyremote_pi.name,
+			       "version", VERSION,
+			       "license", GTK_LICENSE_GPL_3_0,
+			       "comments", about_text,
+			       "authors", authors,
+			       NULL
+			       );
+}
+
+// configure-Function
+static void pyremote_configure(void)
+{
+	if(pyremote_pi.app){
+		pyremote_pi.app->message("Pyremote Plugin Configuration");
+	}
+}
+
+#include <pygtk-2.0/pygobject.h>
+
+typedef struct {
+        GList *plugins;
+        PyObject *dict;
+        PyObject *main_module;
+} PygwyModuleInfo;
+
+
+class py_gxsm_console : public AppBase{
+public:
+	py_gxsm_console (){
+                script_filename = NULL;
+                gui_ready = false;
+                initialize ();
+        };
+	virtual ~py_gxsm_console ();
+        
+        void AppWindowInit(const gchar *title);
+	
+        void initialize(void);
+        void register_classes(PyObject *d);
+        PyObject* run_string(const char *cmd, int type, PyObject *g, PyObject *l);
+        void show_stderr(gchar *str);
+        void initialize_stderr_redirect(PyObject *d);
+        void finalize_stderr_redirect(PyObject *d);
+        void destroy_environment(PyObject *d, gboolean show_errors);
+        PyObject* create_environment(const gchar *filename, gboolean show_errors);
+
+        char* run_command(const gchar *cmd, int mode);
+        void append(gchar *msg);
+
+        static void open_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+        static void save_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+        static void save_file_as_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+        static void configure_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+
+        static void run_file (GtkToolButton *btn, gpointer user_data);
+        static void kill (GtkToggleButton *btn, gpointer user_data);
+
+        void create_gui(void);
+        void run();
+
+        static void command_execute(GtkEntry *entry, gpointer user_data);
+        static void clear_output(GtkToolButton *btn, gpointer user_data);
+        // static gboolean check_func(PyObject *m, gchar *name, gchar *filename);
+
+        void set_script_filename (const gchar *name = NULL){
+                if (name){
+                        if (script_filename)
+                                g_free (script_filename);
+                        script_filename = g_strdup (name);
+                }
+                if (script_filename)
+                        gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), script_filename);
+                else
+                        gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), "no valid file name");
+        };
+        void write_example_file (void);
+
+        void fix_eols_to_unix (gchar *text);
+
+private:
+        gboolean gui_ready;
+
+        GSettings *gsettings;
+        GtkWidget *file_menu;
+
+        PygwyModuleInfo s_pygwy;
+        const char *example_filename = "gxsm_pyremote_example.py";
+
+        // Console GUI elemets
+        PyObject *std_err;
+        PyObject *dictionary;
+        GtkWidget *console_output;
+        GtkWidget *console_file_content;
+        gchar *script_filename;
+        gboolean query_filename;
+        gboolean fail;
+        gdouble exec_value;
+};
+
+
+///////////////////////////////////////////////////////////////
+// BLOCK I
+// grep AddEntry2RemoteList src/*.C
+// ACAmp
+// ACFrq
+// ACPhase
+// CPShigh
+// CPSlow
+// Energy
+// Gatetime
+// Layers
+// LengthX
+// LengthY
+// Offset00X
+// Offset00Y
+// OffsetX
+// OffsetY
+// PointsX
+// PointsY
+// RangeX
+// RangeY
+// Rotation
+// StepsX
+// StepsY
+// SubSmp
+// VOffsetZ
+// VRangeZ
+// ValueEnd
+// ValueStart
+// nAvg
+
+/* stolen from app_remote.C */
+static void Check_ec(Gtk_EntryControl* ec, remote_args* ra){
+	ec->CheckRemoteCmd (ra);
+};
+
+static void CbAction_ra(remote_action_cb* ra, gpointer arglist){
+	if(ra->cmd && ((gchar**)arglist)[1])
+		if(! strcmp(((gchar**)arglist)[1], ra->cmd)){
+			if (ra->data)
+				(*ra->RemoteCb) (ra->widget, ra->data);
+			else
+				(*ra->RemoteCb) (ra->widget, arglist);
+			// see above and pcs.h
+		}
+};
+
+/* This function will build and return a python tuple
+   that contains all the objects (string name) that
+   you can 'set' and 'get'.
+
+   Example output of 'print gxsm.list()':
+
+   ('Counter', 'VOffsetZ', 'VRangeZ', 'Rotation',
+   'TimeSelect', 'Time', 'LayerSelect', 'Layers',
+   'OffsetY', 'OffsetX', 'PointsY', 'PointsX',
+   'StepsY', 'StepsX', 'RangeY', 'RangeX')
+
+   when no hardware is attached.
+
+*/
+static PyObject* remote_list(PyObject *self, PyObject *args)
+{
+	int slen = g_slist_length( gapp->RemoteEntryList ); // How many entries?
+
+	// This will be our return object with as many slots as input list has:
+	PyObject *ret = PyTuple_New(slen);
+	GSList* tmp = gapp->RemoteEntryList;
+	for (int n=0; n<slen; n++)
+		{
+			Gtk_EntryControl* ec = (Gtk_EntryControl*)tmp->data; // Look at data item in GSList.
+			PyTuple_SetItem(ret, n, PyString_FromString(ec->get_refname())); // Add Refname to Return-list
+			tmp = g_slist_next(tmp);
+		}
+
+	return ret;
+}
+
+static PyObject* remote_gets(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Getting as string ");
+	gchar *parameter;
+
+	if (!PyArg_ParseTuple(args, "s", &parameter))
+		return Py_BuildValue("i", -1);
+
+	int parameterlen = strlen(parameter);
+	int slen = g_slist_length( gapp->RemoteEntryList );
+
+	gchar *ret = NULL;
+
+	GSList* tmp = gapp->RemoteEntryList;
+	for (int n=0; n<slen; n++)
+		{
+			Gtk_EntryControl* ec = (Gtk_EntryControl*)tmp->data;
+
+			if (strncmp(parameter, ec->get_refname(), parameterlen) == 0)
+				{
+					ret = g_strdup(ec->Get_UsrString());
+				}
+			tmp = g_slist_next(tmp);
+		}
+
+	if (ret == NULL) // If the parameter doesn't exist.
+		{
+			ret = g_strdup("ERROR");
+		}
+
+	return Py_BuildValue("s", ret);
+}
+
+
+// Getting value in current user unit as plain double number -- could also/option get as string with unit
+static PyObject* remote_get(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Getting ");
+	gchar *parameter;
+	remote_args ra;
+	ra.qvalue = 0.;
+
+	if (!PyArg_ParseTuple(args, "s", &parameter))
+		return Py_BuildValue("i", -1);
+
+	PI_DEBUG(DBG_L2, parameter << " query" );
+
+	ra.qvalue = 0.;
+	gchar *list[] = {(gchar *)"get", parameter, NULL};
+	ra.arglist = list;
+
+	g_slist_foreach(gapp->RemoteEntryList, (GFunc) Check_ec, (gpointer)&ra);
+	PI_DEBUG(DBG_L2, parameter << " query result: " << ra.qvalue );
+
+	return Py_BuildValue("f", ra.qvalue);
+}
+
+
+static PyObject* remote_set(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Setting ");
+	remote_args ra;
+	gchar *parameter, *value;
+
+	if (!PyArg_ParseTuple(args, "ss", &parameter, &value))
+		return Py_BuildValue("i", -1);
+
+	PI_DEBUG(DBG_L2, parameter << " to " << value );
+
+	ra.qvalue = 0.;
+	gchar *list[] = { (char *)"set", parameter, value, NULL };
+	ra.arglist = list;
+
+	g_slist_foreach(gapp->RemoteEntryList, (GFunc) Check_ec, (gpointer)&ra);
+
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_action(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Action ") ;
+	gchar *parameter, *value = (char *)"5.0";
+
+	if (!PyArg_ParseTuple(args, "s|s", &parameter, &value))
+		return Py_BuildValue("i", -1);
+
+	PI_DEBUG(DBG_L2, parameter );
+
+	PI_DEBUG(DBG_L2, "value:" << value);
+
+	gchar *line3[] ={(char *)"action", parameter, value};
+
+	g_slist_foreach(gapp->RemoteActionList, (GFunc) CbAction_ra, (gpointer)line3);
+
+	return Py_BuildValue("i", 0);
+}
+
+// asks HwI via RTQuery for real time watches -- depends on HwI and it's capabilities/availabel options
+/* Hardware realtime monitoring -- all optional */
+/* default properties are
+ * "X" -> current realtime tip position in X, inclusive rotation and offset
+ * "Y" -> current realtime tip position in Y, inclusive rotation and offset
+ * "Z" -> current realtime tip position in Z
+ * "xy" -> X and Y
+ * "zxy" -> Z, X, Y [mk2/3]
+ * "o" -> Z, X, Y-Offset [mk2/3]
+ * "f" -> feedback watch: f0, I, Irms as read on PanView [mk2/3]
+ * "s" -> status bits [FB,SC,VP,MV,(PAC)], [DSP load], [DSP load peak]  [mk2/3]
+ * "i" -> GPIO watch -- speudo real time, may be chached by GXSM: out, in, dir  [mk2/3]
+ * "U" -> current bias
+ */
+static PyObject* remote_rtquery(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: RTQuery ") ;
+	gchar *parameter;
+
+	if (!PyArg_ParseTuple(args, "s", &parameter))
+		return Py_BuildValue("i", -1);
+
+	double u,v,w;
+	gapp->xsm->hardware->RTQuery (parameter, u,v,w);
+
+	return Py_BuildValue("fff", u,v,w);
+}
+
+// asks HwI via RTQuery for real time watches -- depends on HwI and it's capabilities/availabel options
+static PyObject* remote_y_current(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: y_current ") ;
+	gchar *parameter;
+
+	gint y = gapp->xsm->hardware->RTQuery ();
+
+	return Py_BuildValue("i", y);
+}
+
+///////////////////////////////////////////////////////////////
+// BLOCK II
+// startscan .    DONE
+// stopscan .    DONE
+// waitscan    DONE is commented out in app_remote
+// initscan .    DONE
+// scanupdate .   DONE
+// setylookup N,X  DONE
+// scanline  N,N,N  DONE
+///////////////////////////////////////////////////////////////
+
+static PyObject* remote_startscan(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Starting scan");
+	gapp->signal_emit_toolbar_action ("Toolbar_Scan_Start");
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_createscan(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Creating scan");
+
+	/////
+	PyObject *the_array;
+	long* pbuf;
+	int blen, i;
+
+	long sizex, sizey, rangex, rangey;
+
+	if(!PyArg_ParseTuple(args, "llllO", &sizex, &sizey, &rangex, &rangey, &the_array))
+		return 0;
+	if(PyObject_AsWriteBuffer(the_array, (void**)&pbuf, (Py_ssize_t*)&blen))
+		return 0;
+	blen /= sizeof(long);
+
+	if ( blen != sizex*sizey ) {
+		// Wrong number of arguments in List
+		//return Py_BuildValue("i", -1);
+		return 0;
+	}
+
+	/*for(i=0; i<blen; ++i)
+	  pbuf[i] += 1;*/
+
+	Scan *dst;
+	gapp->xsm->ActivateFreeChannel();
+	dst = gapp->xsm->GetActiveScan();
+
+	dst->data.s.nx = sizex;
+	dst->data.s.ny = sizey;
+	dst->data.s.dx = 1; // unit?
+	dst->data.s.dy = 1; // unit?
+	dst->data.s.dz = 1;
+	dst->data.s.rx = rangex;
+	dst->data.s.ry = rangey;
+
+	dst->data.s.x0 = 0.;
+	dst->data.s.y0 = 0.;
+	//  dst->data.s.alpha = 0.;
+
+	dst->data.ui.SetUser ("User");
+
+	gchar *tmp=g_strconcat ("PyCreate ",
+				NULL);
+	dst->data.ui.SetComment (tmp);
+	g_free (tmp);
+
+	dst->mem2d->Resize (dst->data.s.nx, dst->data.s.ny);
+
+	/*Read*/
+	for(gint i=0; i<dst->mem2d->GetNy(); i++){
+                for(gint j=0; j<dst->mem2d->GetNx(); j++){
+                        dst->mem2d->data->Z( (double) pbuf[i+sizex*j], j, i);
+                }
+        }
+	dst->data.orgmode = SCAN_ORG_CENTER;
+	dst->mem2d->data->MkXLookup (-dst->data.s.rx/2., dst->data.s.rx/2.);
+	dst->mem2d->data->MkYLookup (-dst->data.s.ry/2., dst->data.s.ry/2.);
+	gapp->spm_update_all();
+	dst->draw();
+	dst=NULL;
+	return Py_BuildValue("i", 0);
+}
+
+///////////////////////////////////////////////////////////////
+
+static PyObject *remote_createscanf(PyObject * self, PyObject * args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Creating scanf");
+
+	//
+	PyObject *the_array;
+	float *pbuf;
+	int blen, i;
+
+	long sizex, sizey, rangex, rangey;
+
+	if (!PyArg_ParseTuple (args, "llllO", &sizex, &sizey, &rangex, &rangey, &the_array))
+		return 0;
+	if (PyObject_AsWriteBuffer(the_array, (void **) &pbuf, (Py_ssize_t*)&blen))
+		return 0;
+	blen /= sizeof(float);
+
+	if (blen != sizex * sizey) {
+		return 0;
+	}
+
+	Scan *dst;
+	gapp->xsm->ActivateFreeChannel();
+	dst = gapp->xsm->GetActiveScan();
+
+	dst->data.s.nx = sizex;
+	dst->data.s.ny = sizey;
+	dst->data.s.dx = 1;  // unit?
+	dst->data.s.dy = 1;  // unit?
+	dst->data.s.dz = 1;
+	dst->data.s.rx = rangex;
+	dst->data.s.ry = rangey;
+
+	dst->data.s.x0 = 0.;
+	dst->data.s.y0 = 0.;
+
+	dst->data.ui.SetUser("User");
+
+	gchar *tmp = g_strconcat("PyCreate ", pbuf[0], NULL);
+	dst->data.ui.SetComment(tmp);
+	g_free(tmp);
+
+	dst->mem2d->Resize(dst->data.s.nx, dst->data.s.ny, ZD_FLOAT);
+
+	/*Read */
+	for (gint i = 0; i < dst->mem2d->GetNy(); i++) {
+		for (gint j = 0; j < dst->mem2d->GetNx(); j++) {
+			dst->mem2d->data->Z((float) pbuf[i + sizex * j], j,
+					    i);
+		}
+	}
+	dst->data.orgmode = SCAN_ORG_CENTER;
+	dst->mem2d->data->MkXLookup(-dst->data.s.rx / 2.,
+				    dst->data.s.rx / 2.);
+	dst->mem2d->data->MkYLookup(-dst->data.s.ry / 2.,
+				    dst->data.s.ry / 2.);
+	gapp->spm_update_all();
+	dst->draw();
+	dst = NULL;
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_stopscan(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Stopping scan");
+	gapp->signal_emit_toolbar_action ("Toolbar_Scan_Stop");
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_waitscan(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Wait scan: commented out");
+	//  if( gapp->xsm->ScanInProgress() ){
+	//    PI_DEBUG(DBG_L2, "pyremote: Scan is in progress ");
+	//  }
+	//  else{
+	//    PI_DEBUG(DBG_L2, "pyremote: Scan is finished ");
+	//  }
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_scaninit(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Initializing scan");
+	gapp->signal_emit_toolbar_action ("Toolbar_Scan_Init");
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_scanupdate(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Updating scan (hardware)");
+	gapp->signal_emit_toolbar_action ("Toolbar_Scan_UpdateParam");
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_scanylookup(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Scanylookup");
+	int value1 = 0;
+	double value2 = 0.0;
+	if (!PyArg_ParseTuple(args, "ld", &value1, &value2))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2,  value1 << " and " << value2 );
+	if(value1 && value2){
+		gchar *cmd = NULL;
+		cmd = g_strdup_printf ("2 %d %g", value1, value2);
+		gapp->PutPluginData (cmd);
+		gapp->signal_emit_toolbar_action ("Toolbar_Scan_SetYLookup");
+		g_free (cmd);
+	}
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_scanline(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Scan line");
+	int value1 = 0, value2 = 0, value3 = 0;
+	if (!PyArg_ParseTuple(args, "lll", &value1, &value2, &value3))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2,  value1 << " and " << value2 << " and " << value3);
+	PI_DEBUG(DBG_L2, "pyremote: Warning toolbar NYI");
+	if(value1){
+		gchar *cmd = NULL;
+		if(value2 && value3){
+			cmd = g_strdup_printf ("3 %d %d %d",
+					       value1,
+					       value2,
+					       value3);
+			gapp->PutPluginData (cmd);
+			gapp->signal_emit_toolbar_action ("Toolbar_Scan_Partial_Line");
+		}
+		else{
+			cmd = g_strdup_printf ("d %d",
+					       value1);
+			gapp->PutPluginData (cmd);
+			gapp->signal_emit_toolbar_action ("Toolbar_Scan_Line");
+		}
+		g_free (cmd);
+	}
+	return Py_BuildValue("i", 0);
+}
+
+///////////////////////////////////////////////////////////////
+// BLOCK III
+// save  .      DONE
+// saveas S,N       DONE
+// load  S,N      DONE
+// gnuimport S,N    DONE
+// gnuexport S,N    DONE
+// renamed import and export to avoid nameclash in python.
+///////////////////////////////////////////////////////////////
+
+static PyObject* remote_save(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Save");
+	//gapp->xsm->save (TRUE);
+	//                              auto  all
+	gapp->xsm->save(MANUAL_SAVE_AS, NULL, -1, TRUE);
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_saveas(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Save As ");
+	gchar* zeile;
+	long channel = 0;
+	if (!PyArg_ParseTuple(args, "sl", &zeile, &channel))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2, zeile << " to Channel " << channel );
+	if(zeile && channel){
+		gapp->xsm->save(MANUAL_SAVE_AS, zeile, channel, TRUE);
+		//gapp->xsm->save(TRUE, zeile, channel);
+	}
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_load(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Loading ");
+	gchar* zeile;
+	long channel = 0;
+	if (!PyArg_ParseTuple(args, "si", &zeile, &channel))
+		return Py_BuildValue("i", -1);;
+	PI_DEBUG(DBG_L2, zeile << " to Channel " << channel );
+	if(zeile && channel){
+		gapp->xsm->ActivateChannel( channel );
+		gapp->xsm->load( zeile );
+	}
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_import(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Importing ");
+	gchar* zeile;
+	long channel = 0;
+	if (!PyArg_ParseTuple(args, "sl", &zeile, &channel))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2,  zeile << " to Channel " << channel);
+	if(zeile && channel){
+		gapp->xsm->ActivateChannel( channel );
+		gapp->xsm->load( zeile );
+	}
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_export(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Exporting ");
+	gchar* zeile;
+	long channel = 0;
+	if (!PyArg_ParseTuple(args, "sl", &zeile, &channel))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2, zeile << " to Channel " << channel);
+	if(zeile && channel){
+		gapp->xsm->ActivateChannel( channel );
+		gapp->xsm->gnuexport( zeile );
+	}
+
+	return Py_BuildValue("i", 0);
+}
+
+///////////////////////////////////////////////////////////////
+// BLOCK IV
+// autodisp .      DONE
+// chmodea N      DONE
+// chmodex N      DONE
+// chmodem N      DONE
+// chmoden N,N      DONE
+// chmodeno N      DONE
+// chview1d N      DONE
+// chview2d N      DONE
+// chview3d N      DONE
+// quick .      DONE
+// direct .      DONE
+// log .      DONE
+///////////////////////////////////////////////////////////////
+
+static PyObject* remote_autodisplay(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Autodisplay");
+	gapp->xsm->AutoDisplay();
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_chmodea(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Chmode a ");
+	long channel = 0;
+	if (!PyArg_ParseTuple(args, "l", &channel))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2,  channel);
+	if (channel)
+		gapp->xsm->ActivateChannel( channel );
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_chmodex(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Chmode x ");
+	long channel = 0;
+	if (!PyArg_ParseTuple(args, "l", &channel))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2, channel );
+	if (channel)
+		gapp->xsm->SetMode( channel, ID_CH_M_X );
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_chmodem(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Chmode m ");
+	long channel = 0;
+	if (!PyArg_ParseTuple(args, "l", &channel))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2,  channel );
+	if (channel)
+		gapp->xsm->SetMode( channel, ID_CH_M_MATH );
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_chmoden(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Chmode n ");
+	long channel = 0;
+	long mode = 0;
+	if (!PyArg_ParseTuple(args, "ll", &channel, &mode))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2, channel << " to " << mode );
+	if (channel && mode)
+		gapp->xsm->SetMode(channel, ID_CH_M_X+mode);
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_chmodeno(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Chmode no ");
+	long channel = 0;
+	if (!PyArg_ParseTuple(args, "l", &channel))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2, channel );
+	if (channel)
+		gapp->xsm->SetView( channel, ID_CH_V_NO );
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_chview1d(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Chview 1d.");
+	long channel;
+	if (!PyArg_ParseTuple(args, "l", &channel))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2, channel );
+	if (channel)
+		gapp->xsm->SetView( channel, ID_CH_V_PROFILE );
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_chview2d(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Chview 2d");
+	long channel;
+	if (!PyArg_ParseTuple(args, "l", &channel))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2, channel );
+	if (channel)
+		gapp->xsm->SetView( channel, ID_CH_V_GREY );
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_chview3d(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Chview 3d.");
+	long channel;
+	if (!PyArg_ParseTuple(args, "l", &channel))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2, channel );
+	if (channel)
+		gapp->xsm->SetView( channel, ID_CH_V_SURFACE );
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_quick(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Quick");
+	gapp->xsm->SetVM(SCAN_V_QUICK);
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_direct(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Direkt");
+	gapp->xsm->SetVM(SCAN_V_DIRECT);
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_log(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Log");
+	gapp->xsm->SetVM(SCAN_V_LOG);
+	return Py_BuildValue("i", 0);
+}
+
+///////////////////////////////////////////////////////////////
+// BLOCK V
+// unitbz .   DONE
+// unitvolt .  DONE
+// unitev .  DONE
+// units .  DONE
+///////////////////////////////////////////////////////////////
+
+static PyObject* remote_unitbz(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: unitbz");
+	gapp->xsm->SetModeFlg(MODE_BZUNIT);
+	gapp->xsm->ClrModeFlg(MODE_VOLTUNIT);
+	return Py_BuildValue("i", 0);
+}
+static PyObject* remote_unitvolt(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: unitvolt");
+	gapp->xsm->SetModeFlg(MODE_VOLTUNIT);
+	gapp->xsm->ClrModeFlg(MODE_BZUNIT);
+	return Py_BuildValue("i", 0);
+}
+static PyObject* remote_unitev(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: unitev");
+	gapp->xsm->SetModeFlg(MODE_ENERGY_EV);
+	gapp->xsm->ClrModeFlg(MODE_ENERGY_S);
+	return Py_BuildValue("i", 0);
+}
+static PyObject* remote_units(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: units");
+	gapp->xsm->SetModeFlg(MODE_ENERGY_S);
+	gapp->xsm->ClrModeFlg(MODE_ENERGY_EV);
+	return Py_BuildValue("i", 0);
+}
+
+///////////////////////////////////////////////////////////////
+// BLOCK VI
+// echo S      DONE
+// logev S      DONE
+// da0 X      DONE, commented out
+// menupath S      DONE
+// more actions by plugins S  NYI
+///////////////////////////////////////////////////////////////
+
+static PyObject* remote_echo(PyObject *self, PyObject *args)
+{
+
+	PI_DEBUG(DBG_L2, "pyremote: Echo.");
+	gchar* line1;
+	if (!PyArg_ParseTuple(args, "s", &line1))
+		return Py_BuildValue("i", -1);
+	/*Change the Debuglevel to: print always.*/
+	PI_DEBUG(DBG_EVER, line1 );
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_logev(PyObject *self, PyObject *args)
+{
+
+	PI_DEBUG(DBG_L2, "pyremote: Log ev.");
+	gchar* zeile;
+	if (!PyArg_ParseTuple(args, "s", &zeile))
+		return Py_BuildValue("i", -1);
+	if(zeile){
+		gapp->monitorcontrol->LogEvent((char *)"RemoteLogEv", zeile);
+	}else{
+		gapp->monitorcontrol->LogEvent((char *)"RemoteLogEv", (char *)"--");
+	}
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_add_layer_information(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: add_layer_information to active scan channel");
+
+	gchar* info;
+	long layer = 0;
+	if (!PyArg_ParseTuple(args, "sl", &info, &layer))
+		return Py_BuildValue("i", -1);
+	PI_DEBUG(DBG_L2, info << " to layer info, lv=" << layer );
+	if(info && layer>=0 && layer<gapp->xsm->GetActiveScan() -> mem2d->GetNv())
+		gapp->xsm->GetActiveScan() -> mem2d->add_layer_information ((int)layer, new LayerInformation (info));
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_da0(PyObject *self, PyObject *args)
+{
+
+	PI_DEBUG(DBG_L2, "pyremote: da0 ");
+	double channel;
+	if (!PyArg_ParseTuple(args, "d", &channel))
+		return Py_BuildValue("i", -1);
+	if (channel){
+		PI_DEBUG(DBG_L2, "Commented out.");
+		//gapp->xsm->hardware->SetAnalog("da-name", channel);
+	}
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_menupath(PyObject *self, PyObject *args)
+{
+
+	PI_DEBUG(DBG_L2, "pyremote: Searching menupath ");
+	gchar *menu1;
+	if (!PyArg_ParseTuple(args, "s", &menu1)) {
+		return Py_BuildValue("i", -1);
+	}
+	PI_DEBUG(DBG_L2, menu1 );
+
+	g_print ("remote_menupath %s -- exec needs to be ported to GTK3.\n", menu1);
+
+	// GTK3QQQ MENU
+#if 0
+	GtkWidget *menushell;
+	GtkWidget *menuitem;
+	gint pos;
+	menushell = gnome_app_find_menu_pos (gapp->gxsmmenu, menu1, &pos);
+	--pos;
+	if(!menushell) {
+		return 0;
+	}
+	PI_DEBUG(DBG_L2, "pyremote: Menu Shell Found: " << pos << " Item=" << menushell);
+
+	menuitem = (GtkWidget*)g_list_nth_data(GTK_MENU_SHELL (menushell) -> children, pos);
+
+	if (!menuitem) {
+		return 0;
+	}
+	PI_DEBUG(DBG_L2, "pyremote: Menu Item Found: " << menuitem);
+
+	GdkEvent event;
+	gint return_val;
+	gtk_signal_emit (G_OBJECT(GTK_MENU_ITEM (menuitem) ),
+			 gtk_signal_lookup ("activate", G_OBJECT_TYPE (G_OBJECT(menuitem))),
+			 &event, &return_val);
+
+	//    PI_DEBUG(DBG_L2, "pyremote: Signal emitted to pos " << pos << " ! ret=" << return_val);
+
+#endif
+	
+	return Py_BuildValue("i", 0);
+}
+
+/* Taken from somewhere*/
+static gboolean busy_sleep;
+gint ret_false()
+{
+	gtk_main_quit();
+	return FALSE;
+}
+
+void sleep_ms(int ms)
+{
+	if (busy_sleep) return;          /* Don't allow more than 1 sleep_ms */
+	busy_sleep=TRUE;
+	g_timeout_add(ms,(GSourceFunc)ret_false,0); /* Start time-out function*/
+	gtk_main();                             /* wait */
+	busy_sleep=FALSE;
+}
+
+static PyObject* remote_sleep(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Sleep ");
+	long l;
+	if (!PyArg_ParseTuple(args, "l", &l))
+		return Py_BuildValue("i", -1);
+	if (l){
+		sleep_ms(l*100);
+	}
+	return Py_BuildValue("i", 0);
+}
+
+///////////////////////////////////////////////////////////
+
+static PyMethodDef EmbMethods[] = {
+	// BLOCK I
+	{"set", remote_set, METH_VARARGS, "Set."},
+	{"get", remote_get, METH_VARARGS, "Get."},
+	{"gets", remote_gets, METH_VARARGS, "Get string."},
+	{"list", remote_list, METH_VARARGS, "List."},
+	{"action", remote_action, METH_VARARGS, "Action."},
+	{"rtquery", remote_rtquery, METH_VARARGS, "RTQuery."},
+	{"y_current", remote_y_current, METH_VARARGS, "RTQuery Current Scanline."},
+
+	// BLOCK II
+	{"createscan", remote_createscan, METH_VARARGS, "Create Scan."},
+	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float."},
+
+	{"startscan", remote_startscan, METH_VARARGS, "Start Scan."},
+	{"stopscan", remote_stopscan, METH_VARARGS, "Stop Scan."},
+	{"waitscan", remote_waitscan, METH_VARARGS, "Wait Scan."},
+	{"scaninit", remote_scaninit, METH_VARARGS, "Scaninit."},
+	{"scanupdate", remote_scanupdate, METH_VARARGS, "Scanupdate."},
+	{"scanylookup", remote_scanylookup, METH_VARARGS, "Scanylookup."},
+	{"scanline", remote_scanline, METH_VARARGS, "Scan line."},
+
+	// BLOCK III
+	{"save", remote_save, METH_VARARGS, "Save."},
+	{"saveas", remote_saveas, METH_VARARGS, "Save As."},
+	{"load", remote_load, METH_VARARGS, "Load."},
+	{"gnuexport", remote_export, METH_VARARGS, "Export."},
+	{"gnuimport", remote_import, METH_VARARGS, "Import."},
+
+	// BLOCK IV
+	{"autodisplay", remote_autodisplay, METH_VARARGS, "Autodisplay."},
+	{"chmodea", remote_chmodea, METH_VARARGS, "Chmode A."},
+	{"chmodex", remote_chmodex, METH_VARARGS, "Chmode X."},
+	{"chmodem", remote_chmodem, METH_VARARGS, "Chmode M."},
+	{"chmoden", remote_chmoden, METH_VARARGS, "Chmode N."},
+	{"chmodeno", remote_chmodeno, METH_VARARGS, "Chmode No."},
+	{"chview1d", remote_chview1d, METH_VARARGS, "Chview 1d."},
+	{"chview2d", remote_chview2d, METH_VARARGS, "Chview 2d."},
+	{"chview3d", remote_chview3d, METH_VARARGS, "Chview 3d."},
+	{"quick", remote_quick, METH_VARARGS, "Quick."},
+	{"direct", remote_direct, METH_VARARGS, "Direct."},
+	{"log", remote_log, METH_VARARGS, "Log."},
+
+	// BLOCK V
+	{"unitbz", remote_unitbz, METH_VARARGS, "UnitBZ."},
+	{"unitvolt", remote_unitvolt, METH_VARARGS, "UnitVolt."},
+	{"unitev", remote_unitev, METH_VARARGS, "UniteV."},
+	{"units", remote_units, METH_VARARGS, "UnitS."},
+
+	// BLOCK VI
+	{"echo", remote_echo, METH_VARARGS, "Echo. "},
+	{"logev", remote_logev, METH_VARARGS, "Logev. "},
+	{"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation."}, 
+	{"da0", remote_da0, METH_VARARGS, "Da0. "},
+	{"menupath", remote_menupath, METH_VARARGS, "Menupath. "},
+	{"sleep", remote_sleep, METH_VARARGS, "Sleep. "},
+
+	{NULL, NULL, 0, NULL}
+};
+
+
+int ok_button_callback( GtkWidget *widget, gpointer data)
+{
+	//    cout << getpid() << endl;
+	kill (getpid(), SIGINT);
+	//    cout << "pressed" <<endl;
+	return 0;
+}
+
+// NOTE: stuff below was taken from pygwy console in gwyddion and minimally adpated to gxsm
+
+// not really sure what's the piurposed of this
+/* ---------- types from other modules ---------- */
+static PyTypeObject *_PyGObject_Type;
+#define PyGObject_Type (*_PyGObject_Type)
+static PyTypeObject *_PyGtkTable_Type;
+#define PyGtkTable_Type (*_PyGtkTable_Type)
+static PyTypeObject *_PyGtkWidget_Type;
+#define PyGtkWidget_Type (*_PyGtkWidget_Type)
+static PyTypeObject *_PyGtkDialog_Type;
+#define PyGtkDialog_Type (*_PyGtkDialog_Type)
+static PyTypeObject *_PyGtkButton_Type;
+#define PyGtkButton_Type (*_PyGtkButton_Type)
+static PyTypeObject *_PyGtkDrawingArea_Type;
+#define PyGtkDrawingArea_Type (*_PyGtkDrawingArea_Type)
+static PyTypeObject *_PyGtkObject_Type;
+#define PyGtkObject_Type (*_PyGtkObject_Type)
+static PyTypeObject *_PyGtkWindow_Type;
+#define PyGtkWindow_Type (*_PyGtkWindow_Type)
+static PyTypeObject *_PyGtkLayout_Type;
+#define PyGtkLayout_Type (*_PyGtkLayout_Type)
+static PyTypeObject *_PyGtkTreeView_Type;
+#define PyGtkTreeView_Type (*_PyGtkTreeView_Type)
+static PyTypeObject *_PyGtkVBox_Type;
+#define PyGtkVBox_Type (*_PyGtkVBox_Type)
+static PyTypeObject *_PyGtkStatusbar_Type;
+#define PyGtkStatusbar_Type (*_PyGtkStatusbar_Type)
+static PyTypeObject *_PyGtkComboBox_Type;
+#define PyGtkComboBox_Type (*_PyGtkComboBox_Type)
+static PyTypeObject *_PyGtkTooltips_Type;
+#define PyGtkTooltips_Type (*_PyGtkTooltips_Type)
+static PyTypeObject *_PyGtkOrientation_Type;
+#define PyGtkOrientation_Type (*_PyGtkOrientation_Type)
+static PyTypeObject *_PyGtkPositionType_Type;
+#define PyGtkPositionType_Type (*_PyGtkPositionType_Type)
+static PyTypeObject *_PyGtkTreeIter_Type;
+#define PyGtkTreeIter_Type (*_PyGtkTreeIter_Type)
+static PyTypeObject *_PyGtkListStore_Type;
+#define PyGtkListStore_Type (*_PyGtkListStore_Type)
+static PyTypeObject *_PyGtkUpdateType_Type;
+#define PyGtkUpdateType_Type (*_PyGtkUpdateType_Type)
+static PyTypeObject *_PyGdkDrawable_Type;
+#define PyGdkDrawable_Type (*_PyGdkDrawable_Type)
+static PyTypeObject *_PyGdkPixbuf_Type;
+#define PyGdkPixbuf_Type (*_PyGdkPixbuf_Type)
+static PyTypeObject *_PyGdkGC_Type;
+#define PyGdkGC_Type (*_PyGdkGC_Type)
+static PyTypeObject *_PyGdkLineStyle_Type;
+#define PyGdkLineStyle_Type (*_PyGdkLineStyle_Type)
+
+py_gxsm_console::~py_gxsm_console (){
+        PI_DEBUG(DBG_L2, "Pyremote Plugin: destructor. Empty. Done.");
+}
+
+
+/* initialise stuff extension classes */
+void py_gxsm_console::register_classes(PyObject *d)
+{
+	PyObject *module;
+
+	if ((module = PyImport_ImportModule("gobject")) != NULL) {
+		_PyGObject_Type = (PyTypeObject *)PyObject_GetAttrString(module, "GObject");
+		if (_PyGObject_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name GObject from gobject");
+			return ;
+		}
+	} else {
+		PyErr_SetString(PyExc_ImportError,
+				"could not import gobject");
+		return ;
+	}
+
+        // crashing w gtk3 -- fixme
+#if 0
+	if ((module = PyImport_ImportModule("gtk")) != NULL) {
+		_PyGtkTable_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Table");
+		if (_PyGtkTable_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Table from gtk");
+			return ;
+		}
+		_PyGtkWidget_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Widget");
+		if (_PyGtkWidget_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Widget from gtk");
+			return ;
+		}
+		_PyGtkDialog_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Dialog");
+		if (_PyGtkDialog_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Dialog from gtk");
+			return ;
+		}
+		_PyGtkButton_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Button");
+		if (_PyGtkButton_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Button from gtk");
+			return ;
+		}
+		_PyGtkDrawingArea_Type = (PyTypeObject *)PyObject_GetAttrString(module, "DrawingArea");
+		if (_PyGtkDrawingArea_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name DrawingArea from gtk");
+			return ;
+		}
+		_PyGtkObject_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Object");
+		if (_PyGtkObject_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Object from gtk");
+			return ;
+		}
+		_PyGtkWindow_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Window");
+		if (_PyGtkWindow_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Window from gtk");
+			return ;
+		}
+		_PyGtkLayout_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Layout");
+		if (_PyGtkLayout_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Layout from gtk");
+			return ;
+		}
+		_PyGtkTreeView_Type = (PyTypeObject *)PyObject_GetAttrString(module, "TreeView");
+		if (_PyGtkTreeView_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name TreeView from gtk");
+			return ;
+		}
+		_PyGtkVBox_Type = (PyTypeObject *)PyObject_GetAttrString(module, "VBox");
+		if (_PyGtkVBox_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name VBox from gtk");
+			return ;
+		}
+		_PyGtkStatusbar_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Statusbar");
+		if (_PyGtkStatusbar_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Statusbar from gtk");
+			return ;
+		}
+		_PyGtkComboBox_Type = (PyTypeObject *)PyObject_GetAttrString(module, "ComboBox");
+		if (_PyGtkComboBox_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name ComboBox from gtk");
+			return ;
+		}
+		_PyGtkTooltips_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Tooltips");
+		if (_PyGtkTooltips_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Tooltips from gtk");
+			return ;
+		}
+		_PyGtkOrientation_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Orientation");
+		if (_PyGtkOrientation_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Orientation from gtk");
+			return ;
+		}
+		_PyGtkPositionType_Type = (PyTypeObject *)PyObject_GetAttrString(module, "PositionType");
+		if (_PyGtkPositionType_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name PositionType from gtk");
+			return ;
+		}
+		_PyGtkTreeIter_Type = (PyTypeObject *)PyObject_GetAttrString(module, "TreeIter");
+		if (_PyGtkTreeIter_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name TreeIter from gtk");
+			return ;
+		}
+		_PyGtkListStore_Type = (PyTypeObject *)PyObject_GetAttrString(module, "ListStore");
+		if (_PyGtkListStore_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name ListStore from gtk");
+			return ;
+		}
+		_PyGtkUpdateType_Type = (PyTypeObject *)PyObject_GetAttrString(module, "UpdateType");
+		if (_PyGtkUpdateType_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name UpdateType from gtk");
+			return ;
+		}
+	} else {
+		PyErr_SetString(PyExc_ImportError,
+				"could not import gtk");
+		return ;
+	}
+	if ((module = PyImport_ImportModule("gtk.gdk")) != NULL) {
+		_PyGdkDrawable_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Drawable");
+		if (_PyGdkDrawable_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Drawable from gtk.gdk");
+			return ;
+		}
+		_PyGdkPixbuf_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Pixbuf");
+		if (_PyGdkPixbuf_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name Pixbuf from gtk.gdk");
+			return ;
+		}
+		_PyGdkGC_Type = (PyTypeObject *)PyObject_GetAttrString(module, "GC");
+		if (_PyGdkGC_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name GC from gtk.gdk");
+			return ;
+		}
+		_PyGdkLineStyle_Type = (PyTypeObject *)PyObject_GetAttrString(module, "LineStyle");
+		if (_PyGdkLineStyle_Type == NULL) {
+			PyErr_SetString(PyExc_ImportError,
+					"cannot import name LineStyle from gtk.gdk");
+			return ;
+		}
+	} else {
+		PyErr_SetString(PyExc_ImportError,
+				"could not import gtk.gdk");
+		return ;
+	}
+#endif
+	// NOTE: are there any gxsm classes we need to register?
+	//     pygobject_register_class(d, "GwyAxis", GWY_TYPE_AXIS, &PyGwyAxis_Type, Py_BuildValue("(O)", &PyGtkWidget_Type));
+}
+
+
+void py_gxsm_console::initialize(void)
+{
+	PyObject *m;
+
+	PI_DEBUG(DBG_L2, "pyremote Plugin :: initialize()");
+
+	if (!Py_IsInitialized()) {
+		PI_DEBUG (DBG_L2, "Checking function table sanity");
+		PI_DEBUG (DBG_L1, "Initializing Python interpreter");
+		// Do not register signal handlers
+		Py_InitializeEx(0);
+		PI_DEBUG (DBG_L2, "Add main module");
+		s_pygwy.main_module = PyImport_AddModule("__main__");
+		PI_DEBUG (DBG_L2, "Init pygobject");
+		init_pygobject();
+
+		PI_DEBUG (DBG_L2, "Init gxsm module");
+		m = Py_InitModule ("gxsm", EmbMethods);
+		PI_DEBUG (DBG_L2, "Get dict");
+		s_pygwy.dict = PyModule_GetDict (m);
+
+		PI_DEBUG (DBG_L2, "Register classes");
+		register_classes (s_pygwy.dict);
+	} else {
+		g_warning ("Python interpreter already initialized");
+	}
+}
+
+PyObject* py_gxsm_console::run_string(const char *cmd, int type, PyObject *g, PyObject *l) {
+	PyObject *ret = PyRun_String(cmd, type, g, l);
+	if (!ret) {
+		PyErr_Print();
+	}
+	return ret;
+}
+
+void py_gxsm_console::show_stderr(gchar *str)
+{
+	GtkWidget *dlg, *scroll, *frame, *text;
+        GtkDialogFlags flags =  (GtkDialogFlags) (GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT);
+        GtkWidget *dialog = gtk_dialog_new_with_buttons (N_("Python interpreter result"),
+                                                         window,
+                                                         flags,
+                                                         _("_CLOSE"), GTK_RESPONSE_CLOSE,
+                                                         NULL);
+
+	scroll = gtk_scrolled_window_new (NULL, NULL);
+	gtk_container_add (GTK_CONTAINER(frame), scroll);
+
+	text = gtk_text_view_new ();
+	gtk_container_add (GTK_CONTAINER (scroll), text);
+	gtk_text_view_set_editable (GTK_TEXT_VIEW(text), FALSE);
+	gtk_text_buffer_set_text (gtk_text_view_get_buffer(GTK_TEXT_VIEW(text)),
+                                  str,
+                                  -1);
+        gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), scroll);
+
+        gtk_widget_show_all (dialog);
+
+        gint result = gtk_dialog_run (GTK_DIALOG (dialog));
+        gtk_widget_destroy (dialog);
+}
+
+void py_gxsm_console::initialize_stderr_redirect(PyObject *d)
+{
+	// redirect stderr to temporary file
+	run_string("import sys, tempfile\n"
+		   "_stderr_redir = tempfile.TemporaryFile()\n"
+		   "sys.stderr = _stderr_redir\n",
+		   //"sys.stdout = _stderr_redir",
+		   Py_file_input,
+		   d,
+		   d);
+}
+
+void py_gxsm_console::finalize_stderr_redirect(PyObject *d)
+{
+	PyObject *py_stderr;
+	gchar *buf;
+	// rewind redirected stderr file, read its content and display it in error window
+	run_string("_stderr_redir.seek(0)\n"
+		   "_stderr_str = _stderr_redir.read()\n"
+		   "_stderr_redir.close()",
+		   Py_file_input,
+		   d,
+		   d);
+	py_stderr = PyDict_GetItemString(d, "_stderr_str");
+	if (py_stderr && PyString_Check(py_stderr)) {
+		buf = PyString_AsString(py_stderr);
+		PI_DEBUG(DBG_L1, "Pygwy plugin stderr output:\n%s" << buf);
+		if (buf[0] != '\0') // show stderr only when it is not empty string
+			show_stderr(buf);
+		g_free(buf);
+	}
+}
+
+PyObject *py_gxsm_console::create_environment(const gchar *filename, gboolean show_errors) {
+	PyObject *d, *plugin_filename;
+	char *argv[1];
+	argv[0] = NULL;
+
+	d = PyDict_Copy(PyModule_GetDict(s_pygwy.main_module));
+	// set __file__ variable for clearer error reporting
+	plugin_filename = Py_BuildValue("s", filename);
+	PyDict_SetItemString(d, "__file__", plugin_filename);
+	PySys_SetArgv(0, argv);
+
+	// redirect stderr and stdout of python script to temporary file
+	if (show_errors) {
+		PI_DEBUG (DBG_L4,  "showing errors");
+		initialize_stderr_redirect(d);
+	} else {
+		PI_DEBUG (DBG_L4,  "NOT showing errors");
+        }
+	return d;
+}
+
+void py_gxsm_console::destroy_environment(PyObject *d, gboolean show_errors) {
+	// show content of temporary file which contains stderr and stdout of python
+	// script and close it
+	if (show_errors)
+		finalize_stderr_redirect(d);
+	PyDict_Clear(d);
+	Py_DECREF(d);
+}
+
+void py_gxsm_console::clear_output(GtkToolButton *btn, gpointer user_data)
+{
+	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+	GtkTextBuffer *console_buf;
+	GtkTextIter start_iter, end_iter;
+	GtkTextView *textview;
+
+	textview = GTK_TEXT_VIEW (pygc->console_output);
+	console_buf = gtk_text_view_get_buffer(textview);
+	gtk_text_buffer_get_bounds(console_buf, &start_iter, &end_iter);
+	gtk_text_buffer_delete(console_buf, &start_iter, &end_iter);
+}
+
+
+/*
+ * killing the interpreter
+ * see http://stackoverflow.com/questions/1420957/stopping-embedded-python
+ * for possibly adding an exit flag.
+ */
+void py_gxsm_console::kill(GtkToggleButton *btn, gpointer user_data)
+{
+	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+
+	//Py_AddPendingCall(-1);
+	PI_DEBUG (DBG_L2,  "trying to kill interpreter");
+	PyErr_SetInterrupt();
+}
+
+char* py_gxsm_console::run_command(const gchar *cmd, int mode)
+{
+	if (!cmd) {
+		g_warning("No command.");
+		return NULL;
+	}
+
+	// store _stderr_redir location
+	run_string(cmd,
+		   mode,
+		   dictionary,
+		   dictionary);
+	run_string("_stderr_redir_pos = _stderr_redir.tell()\n"
+		   "_stderr_redir.seek(0)\n"
+		   "_stderr_redir_string = _stderr_redir.read(_stderr_redir_pos)\n"
+		   "_stderr_redir.seek(0)",
+		   Py_file_input,
+		   dictionary,
+		   dictionary);
+
+	return PyString_AsString(PyDict_GetItemString(dictionary,
+						      "_stderr_redir_string"));
+}
+
+void py_gxsm_console::append(gchar *msg)
+{
+	GtkTextBuffer *console_buf;
+	GtkTextIter start_iter, end_iter;
+	GtkTextView *textview;
+	GString *output;
+	GtkTextMark *end_mark;
+
+	if (!msg) {
+		g_warning("No message to append.");
+		return;
+	}
+
+	// read string which contain last command output
+	textview = GTK_TEXT_VIEW(console_output);
+	console_buf = gtk_text_view_get_buffer(textview);
+	gtk_text_buffer_get_bounds(console_buf, &start_iter, &end_iter);
+
+	// get output widget content
+	output = g_string_new(gtk_text_buffer_get_text(console_buf,
+						       &start_iter, &end_iter,
+						       FALSE));
+
+	// append input line
+	output = g_string_append(output, msg);
+	gtk_text_buffer_set_text(console_buf, output->str, -1);
+	g_string_free(output, TRUE);
+
+	// scroll to end
+	gtk_text_buffer_get_end_iter(console_buf, &end_iter);
+	end_mark = gtk_text_buffer_create_mark(console_buf, "cursor", &end_iter,
+					       FALSE);
+	g_object_ref(end_mark);
+	gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(console_output),
+				     end_mark, 0.0, FALSE, 0.0, 0.0);
+	g_object_unref(end_mark);
+
+}
+
+void py_gxsm_console::run_file(GtkToolButton *btn, gpointer user_data)
+{
+	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+	GtkTextView *textview;
+	GtkTextBuffer *console_file_buf;
+	GtkTextIter start_iter, end_iter;
+	gchar *output, *file_info_line, *script;
+
+	textview = GTK_TEXT_VIEW(pygc->console_file_content);
+	console_file_buf = gtk_text_view_get_buffer(textview);
+
+	file_info_line
+		= g_strdup_printf(N_(">>> Running file content of below textfield\n"));
+
+	pygc->append(file_info_line);
+
+	gtk_text_buffer_get_bounds(console_file_buf, &start_iter, &end_iter);
+	script = gtk_text_buffer_get_text(console_file_buf,
+					  &start_iter, &end_iter, FALSE);
+	output = pygc->run_command(script, Py_file_input);
+	g_free(script);
+	pygc->append(output);
+}
+
+void py_gxsm_console::fix_eols_to_unix(gchar *text)
+{
+	gchar *p = strchr(text, '\r');
+	guint i, j;
+
+	/* Unix */
+	if (!p)
+		return;
+
+	/* Mac */
+	if (p[1] != '\n') {
+		do {
+			*p = '\n';
+		} while ((p = strchr(p+1, '\r')));
+
+		return;
+	}
+
+	/* MS-DOS */
+	for (i = 0, j = 0; text[i]; i++) {
+		if (text[i] != '\r') {
+			text[j] = text[i];
+			j++;
+		}
+	}
+	text[j] = '\0';
+}
+
+void py_gxsm_console::open_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{
+	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+	GtkWidget *file_chooser;
+	GtkFileFilter *filter = gtk_file_filter_new();
+	GtkTextBuffer *console_file_buf;
+	GtkTextView *textview;
+
+	gtk_file_filter_add_mime_type(filter, "text/x-python");
+	gtk_file_filter_add_pattern(filter, "*.py");
+
+	file_chooser = gtk_file_chooser_dialog_new(N_("Open Python script"),
+                                                   pygc->window,
+                                                   GTK_FILE_CHOOSER_ACTION_OPEN,
+                                                   N_("_Cancel"), GTK_RESPONSE_CANCEL,
+                                                   N_("_Open"), GTK_RESPONSE_ACCEPT,
+                                                   NULL);
+	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(file_chooser), filter);
+	if (!pygc-> query_filename ||
+	    gtk_dialog_run(GTK_DIALOG(file_chooser)) == GTK_RESPONSE_ACCEPT) {
+		gchar *file_content;
+		GError *err = NULL;
+
+		if (pygc->query_filename) {
+                        pygc->set_script_filename (gtk_file_chooser_get_filename
+                                                   (GTK_FILE_CHOOSER(file_chooser)));
+		}
+		else {
+			/* this is a bit of a kludge, so i want to ensure that using the set
+			   filename is chosen explicitly each time*/
+			pygc->query_filename = true;
+		}
+		if (!g_file_get_contents(pygc->script_filename,
+					 &file_content,
+					 NULL,
+					 &err)) {
+			gchar *message = g_strdup_printf("Cannot read content of file "
+							 "'%s': %s",
+							 pygc->script_filename,
+							 err->message);
+			g_clear_error(&err);
+			pygc->append(message);
+			pygc->fail = true;
+			g_free(message);
+                        pygc->set_script_filename (NULL);
+		}
+		else {
+			pygc->fix_eols_to_unix(file_content);
+
+			// read string which contain last command output
+			textview = GTK_TEXT_VIEW(pygc->console_file_content);
+			console_file_buf = gtk_text_view_get_buffer(textview);
+			// append input line
+			gtk_text_buffer_set_text(console_file_buf, file_content, -1);
+			g_free(file_content);
+			pygc->fail = false;
+		}
+	}
+	gtk_widget_destroy(GTK_WIDGET(file_chooser));
+}
+
+void py_gxsm_console::save_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{
+	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+	GtkTextView *textview;
+	GtkTextBuffer *buf;
+	GtkTextIter start_iter, end_iter;
+	gchar *script;
+	FILE *f;
+
+	if (pygc->script_filename == NULL) {
+		pygc->save_file_as_callback (NULL, NULL, user_data);
+	}
+	else {
+		textview = GTK_TEXT_VIEW (pygc->console_file_content);
+		buf = gtk_text_view_get_buffer(textview);
+		gtk_text_buffer_get_bounds(buf, &start_iter, &end_iter);
+		script = gtk_text_buffer_get_text(buf, &start_iter, &end_iter, FALSE);
+		f = g_fopen (pygc->script_filename, "wb");
+		if (f) {
+			fwrite(script, 1, strlen(script), f);
+			fclose(f);
+                        pygc->set_script_filename ();
+		}
+		else {
+			gchar *message = g_strdup_printf("Cannot open file '%s': %s",
+							 pygc->script_filename,
+							 g_strerror(errno));
+			pygc->append(message);
+			g_free(message);
+                        pygc->set_script_filename ("invalid file");
+		}
+		g_free(script);
+	}
+}
+
+void py_gxsm_console::save_file_as_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{
+	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+	GtkWidget *dialog;
+
+	dialog = gtk_file_chooser_dialog_new(N_("Save Script as"),
+					     NULL,
+					     GTK_FILE_CHOOSER_ACTION_SAVE,
+					     N_("_Cancel"), GTK_RESPONSE_CANCEL,
+					     N_("_Save"), GTK_RESPONSE_ACCEPT,
+					     NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
+
+	//gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), default_folder_for_saving);
+	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog),
+					  "Untitled document");
+
+	if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+		pygc->script_filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+		pygc->save_file_callback (NULL, NULL, user_data);
+	}
+	gtk_widget_destroy(dialog);
+}
+
+void py_gxsm_console::configure_callback (GSimpleAction *action, GVariant *parameter, 
+                                          gpointer user_data){
+        py_gxsm_console *pygc = (py_gxsm_console *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+                
+        g_print ("Toggle action %s activated, state changes from %d to %d\n",
+                 g_action_get_name (G_ACTION (action)),
+                 g_variant_get_boolean (old_state),
+                 g_variant_get_boolean (new_state));
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	if (g_variant_get_boolean (new_state)){
+		;
+	}
+}
+
+static GActionEntry win_py_gxsm_action_entries[] = {
+	{ "pyfile-open", py_gxsm_console::open_file_callback, NULL, NULL, NULL },
+	{ "pyfile-save", py_gxsm_console::save_file_callback, NULL, NULL, NULL },
+	{ "pyfile-save-as", py_gxsm_console::save_file_as_callback, NULL, NULL, NULL },
+	{ "pyremote-configure", py_gxsm_console::configure_callback, NULL, NULL, NULL },
+};
+
+void py_gxsm_console::AppWindowInit(const gchar *title){
+
+        PI_DEBUG(DBG_L2, "pyremote Plugin :: AppWindoInit() -- building Console AppWindow.");
+
+        //        SET_PCS_GROUP("plugin_libpyremote");
+        //        gsettings = g_settings_new (GXSM_RES_BASE_PATH_DOT".plugin.common.libpyremote");
+
+        app_window = gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
+        window = GTK_WINDOW (app_window);
+
+        header_bar = gtk_header_bar_new ();
+        gtk_widget_show (header_bar);
+        // hide close, min, max window decorations
+        gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), false);
+
+        g_action_map_add_action_entries (G_ACTION_MAP (app_window),
+                                         win_py_gxsm_action_entries, G_N_ELEMENTS (win_py_gxsm_action_entries),
+                                         this);
+	PI_DEBUG (DBG_L2,  "pyremote Plugin :: setup file menu" );
+
+        // create window PopUp menu  ---------------------------------------------------------------------
+        file_menu = gtk_menu_new_from_model (G_MENU_MODEL (gapp->get_plugin_pyremote_file_menu ()));
+        g_assert (GTK_IS_MENU (file_menu));
+
+	GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
+
+        // attach popup file menu button --------------------------------
+        GtkWidget *header_menu_button = gtk_menu_button_new ();
+        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("document-open-symbolic", tmp_toolbar_icon_size));
+        gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), file_menu);
+        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+        gtk_widget_show (header_menu_button);
+
+	PI_DEBUG (DBG_L2,  "pyremote Plugin ::  header button" );
+       
+        // attach execute action buttons --------------------------------
+        GtkWidget *header_action_button = gtk_button_new ();
+        gtk_button_set_image (GTK_BUTTON (header_action_button), gtk_image_new_from_icon_name ("system-run-symbolic", tmp_toolbar_icon_size));
+        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_action_button);
+        gtk_widget_show (header_action_button);
+	g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::run_file), this);
+
+        header_action_button = gtk_button_new ();
+        gtk_button_set_image (GTK_BUTTON (header_action_button), gtk_image_new_from_icon_name ("edit-clear-all-symbolic", tmp_toolbar_icon_size));
+        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_action_button);
+        gtk_widget_show (header_action_button);
+        g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::clear_output), this);
+
+        header_action_button = gtk_button_new ();
+        gtk_button_set_image (GTK_BUTTON (header_action_button), gtk_image_new_from_icon_name ("system-shutdown-symbolic", tmp_toolbar_icon_size));
+        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_action_button);
+        gtk_widget_show (header_action_button);
+	g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::kill), this);
+
+	PI_DEBUG (DBG_L2,  "pyremote Plugin :: setup titlbar" );
+
+        gtk_window_set_title (GTK_WINDOW (window), title);
+        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
+        if (script_filename)
+                gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), script_filename);
+        else
+                gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), "no script file name.");
+        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+
+        g_signal_connect (G_OBJECT(window),
+                          "delete_event",
+                          G_CALLBACK(App::close_scan_event_cb),
+                          this);
+        
+	v_grid = gtk_grid_new ();
+        gtk_container_add (GTK_CONTAINER (window), v_grid);
+	g_object_set_data (G_OBJECT (window), "v_grid", v_grid);
+
+	gtk_widget_show_all (GTK_WIDGET (window));
+
+        PI_DEBUG(DBG_L2, "pyremote Plugin :: AppWindoInit() -- building Console AppWindow -- calling GUI builder.");
+        create_gui ();
+
+        gui_ready = true;
+        PI_DEBUG(DBG_L2, "pyremote Plugin :: AppWindoInit() -- Console AppWindow ready.");
+
+        set_window_geometry ("python-console");
+ }
+
+
+
+
+void py_gxsm_console::create_gui ()
+{
+	GtkWidget *console_scrolledwin, *file_scrolledwin,
+		*vpaned, *frame, *image_clear;
+	GtkWidget *entry_input, *button_bar, *button_open, *button_run,
+		*button_save, *button_save_as, *button_clearout, *button_kill;
+
+	GtkWidget *exec_input;
+
+	GtkTextView *file_textview, *output_textview;
+	PangoFontDescription *font_desc;
+
+	BuildParam *bp;
+	UnitObj *null_unit;
+
+#ifdef HAVE_GTKSOURCEVIEW
+	GtkSourceLanguageManager *manager;
+	GtkSourceBuffer *sourcebuffer;
+	GtkSourceLanguage *language;
+#endif
+        PI_DEBUG(DBG_L2, "pyremote Plugin :: create_gui() -- building GUI elements.");
+
+        bp = new BuildParam (v_grid, NULL, gapp->RemoteEntryList);
+        
+	// create static structure;
+	exec_value = 50.0; // mid value
+
+	// create GUI
+
+        PI_DEBUG(DBG_L2, "pyremote Plugin :: create_gui() -- building GUI elements..");
+
+	// window
+	vpaned = gtk_paned_new (GTK_ORIENTATION_VERTICAL);
+        gtk_widget_set_hexpand (vpaned, TRUE);
+        gtk_widget_set_vexpand (vpaned, TRUE);
+        bp->grid_add_widget (vpaned, 100);
+        bp->new_line ();
+
+	file_scrolledwin = gtk_scrolled_window_new(NULL, NULL);
+	gtk_paned_pack1(GTK_PANED(vpaned), file_scrolledwin, TRUE, FALSE);
+	gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(file_scrolledwin),
+					    GTK_SHADOW_IN);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(file_scrolledwin),
+				       GTK_POLICY_AUTOMATIC,
+				       GTK_POLICY_AUTOMATIC);
+	console_scrolledwin = gtk_scrolled_window_new(NULL, NULL);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(console_scrolledwin),
+				       GTK_POLICY_AUTOMATIC,
+				       GTK_POLICY_AUTOMATIC);
+	gtk_paned_pack2(GTK_PANED(vpaned), console_scrolledwin, TRUE, TRUE);
+	gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(console_scrolledwin),
+					    GTK_SHADOW_IN);
+
+        PI_DEBUG(DBG_L2, "pyremote Plugin :: create_gui() -- building GUI elements...");
+
+	// console output
+	console_output = gtk_text_view_new();
+	output_textview = GTK_TEXT_VIEW(console_output);
+	gtk_container_add(GTK_CONTAINER(console_scrolledwin), console_output);
+	gtk_text_view_set_editable(output_textview, FALSE);
+
+	// source view file buffer
+        sourcebuffer = gtk_source_buffer_new (NULL);
+        console_file_content = gtk_source_view_new_with_buffer (sourcebuffer);
+	file_textview = GTK_TEXT_VIEW(console_file_content);
+	gtk_source_view_set_show_line_numbers(GTK_SOURCE_VIEW(file_textview), TRUE);
+	gtk_source_view_set_auto_indent(GTK_SOURCE_VIEW(file_textview), TRUE);
+	manager = gtk_source_language_manager_get_default();
+
+	language = gtk_source_language_manager_get_language(manager, "pygwy");
+	if (!language)
+		language = gtk_source_language_manager_get_language(manager, "python");
+	gtk_source_buffer_set_language(sourcebuffer, language);
+	gtk_source_buffer_set_highlight_syntax(sourcebuffer, TRUE);
+
+#if 0
+	console_file_content = gtk_text_view_new();
+	file_textview = GTK_TEXT_VIEW(console_file_content);
+#endif
+
+        PI_DEBUG(DBG_L2, "pyremote Plugin :: create_gui() -- building GUI elements....");
+	// set font
+	font_desc = pango_font_description_from_string ("Monospace 8");
+	gtk_widget_override_font (console_file_content, font_desc);
+        gtk_widget_override_font (console_output, font_desc);
+	pango_font_description_free (font_desc);
+
+	gtk_container_add (GTK_CONTAINER(file_scrolledwin),
+                           console_file_content);
+	gtk_text_view_set_editable (file_textview, TRUE);
+
+	gtk_paned_set_position (GTK_PANED(vpaned), 300);
+
+	frame = gtk_frame_new (N_("Command"));
+	entry_input = gtk_entry_new ();
+	gtk_container_add (GTK_CONTAINER(frame), entry_input);
+	gtk_entry_set_invisible_char (GTK_ENTRY(entry_input), 9679);
+	gtk_widget_grab_focus (GTK_WIDGET(entry_input));
+        bp->grid_add_widget (frame, 80);
+        
+	null_unit = new UnitObj(" "," ");
+	bp->grid_add_ec ("Script Control", null_unit, &exec_value, 0.0, 100.0, "4g", 1., 10., "script-control");
+        exec_input = bp->input;
+        //        g_object_set_data( G_OBJECT (exec_input), "Adjustment_PCS_Name", (void*)("Script-Control"));
+
+        gapp->RemoteEntryList = bp->get_remote_list_head ();
+
+	g_signal_connect(entry_input, "activate",
+			 G_CALLBACK(py_gxsm_console::command_execute), this);
+        
+        PI_DEBUG(DBG_L2, "pyremote Plugin :: console_create_gui() -- building GUI elements.... hooking up");
+
+	// connect on window close()
+	g_signal_connect (window, "delete-event",
+			  G_CALLBACK(gtk_widget_hide_on_delete), this);
+	gtk_text_view_set_wrap_mode (output_textview, GTK_WRAP_WORD_CHAR);
+
+        gtk_widget_show_all (v_grid);
+
+        gtk_window_resize (GTK_WINDOW(window), 600, 500);
+        PI_DEBUG(DBG_L2, "pyremote Plugin :: console_create_gui() -- building GUI elements.... completed.");
+}
+
+
+// Small idiotic funxtion to create a file with some pyremote example commands if none is found.
+void  py_gxsm_console::write_example_file(void)
+{
+	std::ofstream example_file;
+	example_file.open(example_filename);
+	example_file << "\n#Since no default file / script was found, here are some\n"
+		"# things you can do with the python interface\n"
+		"# - see the manual for more information\n"
+		"# Execute to try these\n"
+		"c = gxsm.get(\"script-control\")\n"
+		"print \"Control value: \", c\n"
+		"if c < 50:\n"
+		"    print \"control value below limit - aborting!\"\n"
+		"    print \"you can set the value in the window above\"\n"
+		"    # you could set Script_Control like any other variable - see below\n"
+		"else:\n"
+		"    gxsm.set (\"RangeX\",\"200\")\n"
+		"    gxsm.set (\"RangeY\",\"200\")\n"
+		"    gxsm.set (\"PointsX\",\"100\")\n"
+		"    gxsm.set (\"PointsY\",\"100\")\n"
+		"    gxsm.set (\"dsp-fbs-bias\",\"0.1\")\n"
+		"    gxsm.set (\"dsp-fbs-mx0-current-set\",\"1.5\")\n"
+		"    gxsm.set (\"dsp-fbs-cp\", \"25\")\n"
+		"    gxsm.set (\"dsp-fbs-ci\", \"20\")\n"
+		"    gxsm.set (\"OffsetX\", \"0\")\n"
+		"    gxsm.set (\"OffsetY\", \"0\")\n"
+		"    gxsm.action (\"DSP_CMD_AUTOAPP\")\n"
+		"    gxsm.sleep (10)\n"
+		"    gxsm.startscan ()\n";
+	example_file.close();
+}
+
+void py_gxsm_console::run()
+{
+	PyObject *d;
+	gchar *file_content;
+	GtkTextBuffer *console_file_buf;
+	GtkTextView *textview;
+
+	PI_DEBUG(DBG_L2, "pyremote Plugin :: console_run()");
+
+        // are we up already? just make sure to (re) present window, else create
+        if (gui_ready){
+                PI_DEBUG(DBG_L2, "pyremote Plugin :: console_run() -- GUI is ready, presenting again.");
+                gtk_window_present (GTK_WINDOW(window));
+		return;
+	} else {
+                PI_DEBUG(DBG_L2, "pyremote Plugin :: console_run() -- building GUI now...");
+		AppWindowInit ("Gxsm Python Remote Console");
+        }
+
+	PI_DEBUG(DBG_L2, "pyremote Plugin :: console_run() -- initialize");
+	initialize();
+
+	script_filename = NULL;
+        fail = false;
+	// create new environment
+	d = create_environment("__console__", FALSE); // was FALSE, want to see change in error message handling
+	if (!d) {
+		g_warning("Cannot create copy of Python dictionary.");
+		return;
+	}
+
+	PI_DEBUG(DBG_L2, "pyremote Plugin :: console_run() run_string");
+	// redirect stdout & stderr to temporary file
+	run_string("import sys, gxsm, tempfile\n"
+		   "import gxsm as emb\n" // to satisfy legacy scripts - probbaly should be removed at some point?
+		   "_stderr_redir = tempfile.TemporaryFile()\n"
+		   "sys.stderr = _stderr_redir\n"
+		   "sys.stdout = _stderr_redir\n",
+		   Py_file_input,
+		   d,
+		   d);
+
+	// store values for closing console
+	std_err = PyDict_GetItemString(d, "_stderr_redir");
+	Py_INCREF(std_err);
+	dictionary = d;
+
+	// try loading the default pyremote file
+	script_filename = g_strdup_printf("%s.py", xsmres.PyremoteFile);
+	query_filename = false;
+
+	PI_DEBUG(DBG_L1, "Pyremote console opening " << script_filename);
+	open_file_callback (NULL, NULL, this);
+
+	// put some small sommand example if no file is found
+	if (fail) {
+                PI_DEBUG(DBG_L1, "Pyremote console opening " << script_filename << " failed. Generating example.");
+		query_filename = false;
+		write_example_file();
+		script_filename = g_strdup(example_filename);
+		open_file_callback (NULL, NULL, this);
+	}
+
+        PI_DEBUG(DBG_L2, "pyremote Plugin :: console_run() -- startup finished and ready. Standing by.");
+}
+
+void py_gxsm_console::command_execute(GtkEntry *entry, gpointer user_data)
+{
+	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+	gchar *input_line;
+	const gchar *command;
+	GString *output;
+
+	input_line = g_strconcat(">>> ", gtk_entry_get_text(entry), "\n", NULL);
+	output = g_string_new(input_line);
+	command = gtk_entry_get_text(GTK_ENTRY(entry));
+	output = g_string_append(output,
+				 pygc->run_command(command, Py_single_input));
+
+	pygc->append((gchar *)output->str);
+	g_string_free(output, TRUE);
+
+	gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1);
+}
+
+
+// -------------------------------------------------- GXSM PLUGIN INTERFACE
+
+// init-Function
+static void pyremote_init(void)
+{
+	/* Python will search for remote.py in the directories, defined
+	   by PYTHONPATH. */
+	PI_DEBUG(DBG_L2, "pyremote Plugin Init");
+	if (!getenv("PYTHONPATH")){
+		PI_DEBUG(DBG_L2, "pyremote: PYTHONPATH is not set.");
+		PI_DEBUG(DBG_L2, "pyremote: Setting to '.'");
+		setenv("PYTHONPATH", ".", 0);
+	}
+
+	if (!py_gxsm_remote_console)
+		py_gxsm_remote_console = new py_gxsm_console ();
+	
+	py_gxsm_remote_console->run();
+}
+
+
+// cleanup-Function
+static void pyremote_cleanup(void)
+{
+	PI_DEBUG(DBG_L2, "Pyremote Plugin Cleanup");
+	if (py_gxsm_remote_console){
+                PI_DEBUG(DBG_L2, "Pyremote Plugin: savinggeometry forced now.");
+                py_gxsm_remote_console->SaveGeometry (); // some what needed and now it running the destruictor also. Weird.
+                PI_DEBUG(DBG_L2, "Pyremote Plugin: closing up remote control console: delete py_gxsm_remote_console.");
+		delete py_gxsm_remote_console;
+        }
+        py_gxsm_remote_console = NULL;
+}
+
+void pyremote_run( GtkWidget *w, void *data ){
+	PI_DEBUG(DBG_L2, "pyremote Plugin Run Console.");
+
+        // check if we are created -- should be.
+        if (!py_gxsm_remote_console)
+		py_gxsm_remote_console = new py_gxsm_console ();
+
+	PI_DEBUG(DBG_L2, "pyremote Plugin Run: Console-Run");
+	py_gxsm_remote_console->run();
+}
