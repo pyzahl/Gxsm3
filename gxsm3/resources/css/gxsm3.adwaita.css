@@ -1,0 +1,135 @@
+GeditWindow .pane-separator,
+GeditWindow .pane-separator:hover {
+    border-width: 0 1px 1px 1px;
+    border-style: solid;
+    border-color: @borders;
+    background-color: shade(@theme_bg_color, 0.95);
+    color: @borders;
+}
+
+.open-document-selector-listbox-row {
+    border-bottom: 1px solid shade(@theme_bg_color, 0.95);
+    padding: 6px 6px 6px 12px;
+}
+
+.open-document-selector-listbox-row .name-label {
+    color: @theme_fg_color;
+}
+
+.open-document-selector-listbox-row .path-label {
+    font-size: smaller;
+}
+
+.open-document-selector-listbox-row:selected .path-label {
+    font-size: smaller;
+}
+
+.gxsm3-document-panel {
+    background-color: @sidebar_bg;
+}
+
+.gxsm3-document-panel-group-row,
+.gxsm3-document-panel-group-row:hover {
+    border-top: 1px solid shade(@sidebar_bg, 0.90);
+    background-color: @sidebar_bg;
+}
+
+.gxsm3-document-panel-document-row:hover {
+    background-color: shade(@sidebar_bg, 0.95);
+}
+
+.gxsm3-document-panel-document-row:selected,
+.gxsm3-document-panel-document-row:selected:hover {
+    background-color: @theme_selected_bg_color;
+}
+
+/* sidepane close button styling (copied from the gtk tab close button) */
+.gxsm3-document-panel .list-row .button {
+    color: transparent;
+    border-image: none;
+    background-image: none;
+    background-color: transparent;
+    border-radius: 3px;
+    border-style: solid;
+    border-color: transparent;
+    border-width: 1px;
+    padding: 1px;
+    icon-shadow: none;
+}
+
+.gxsm3-document-panel .prelight-row .button  {
+    color: mix(@theme_fg_color, @sidebar_bg, 0.6);
+    border-color: alpha(black, 0.1);
+    transition: all 200ms ease-in;
+}
+
+.gxsm3-document-panel .list-row .button:hover,
+.gxsm3-document-panel .prelight-row .button:hover {
+    color: @theme_fg_color;
+    border-color: alpha(black, 0.1);
+    transition: all 200ms ease-in;
+}
+
+.gxsm3-document-panel .prelight-row .button:active {
+    color:  @button_active_text;
+    background-color: alpha(black, 0.08);
+    box-shadow: inset 0 1px alpha(black, 0.05);
+    icon-shadow: 0 1px @button_active_text_shadow;
+
+    border-color: alpha(black, 0.27)
+                  alpha(black, 0.13)
+                  alpha(black, 0.13)
+                  alpha(black, 0.13);
+}
+
+.gxsm3-document-panel .prelight-row .button:backdrop {
+    color: mix(@theme_unfocused_fg_color, @theme_unfocused_base_color, 0.7);
+    icon-shadow: none;
+}
+
+.gxsm3-document-panel .prelight-row .button:backdrop:hover {
+    color: @theme_unfocused_fg_color;
+    transition: all 200ms ease-out;
+}
+
+.gxsm3-document-panel-dragged-row {
+    border: 1px solid @borders;
+    background-color: shade(@sidebar_bg, 0.90);
+    color: @theme_fg_color;
+}
+
+.gxsm3-document-panel-placeholder-row {
+    border: none;
+    background-color: mix(@sidebar_bg, @theme_selected_bg_color, 0.20);
+    transition: all 200ms ease-in;
+}
+
+GeditStatusbar {
+    border-top: 1px solid @borders;
+}
+
+GeditStatusbar .button.flat {
+    border-radius: 0;
+}
+
+GeditViewFrame .gxsm3-search-slider {
+    background-color: @theme_base_color;
+    padding: 6px;
+    border-color: shade (@notebook_tab_gradient_b, 0.80);
+    border-radius: 0 0 3px 3px;
+    border-width: 0 1px 1px 1px;
+    border-style: solid;
+}
+
+GeditFileBrowserWidget .toolbar {
+    padding: 3px;
+    border-bottom: 1px solid @borders;
+    box-shadow: inset 0 3px alpha(black, 0.03), inset 0 2px alpha(black, 0.03), inset 0 1px alpha(black, 0.03);
+    background-color: shade(@theme_bg_color, 0.95);
+}
+
+.gxsm3-search-entry-occurrences-tag {
+    color: shade (@theme_unfocused_fg_color, 0.8);
+    margin: 2px;
+    padding: 2px;
+}

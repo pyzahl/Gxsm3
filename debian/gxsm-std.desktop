@@ -1,0 +1,13 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Name=GXSM SR-STD/SP2
+Comment=GXSM with STD/SP2 support
+Exec=gxsm3 "-h=SRanger:SPM" "-d=/dev/sranger_0"
+Icon=gxsm-app
+Terminal=1
+Type=Application
+Encoding=UTF-8
+Value=1.0
+X-AppInstall-Package=gxsm3
+

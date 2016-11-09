@@ -1,0 +1,542 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
+/* Gxsm - Gnome X Scanning Microscopy
+ * universal STM/AFM/SARLS/SPALEED/... controlling and
+ * data analysis software
+ * 
+ * Copyright (C) 1999,2000,2001,2002,2003 Percy Zahl
+ *
+ * Authors: Percy Zahl <zahl@users.sf.net>
+ * additional features: Andreas Klust <klust@users.sf.net>
+ * WWW Home: http://gxsm.sf.net
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#include <locale.h>
+#include <libintl.h>
+
+#include "gnome-res.h"
+
+#include "gxsm_app.h"
+
+#include "unit.h"
+#include "pcs.h"
+#include "xsmtypes.h"
+#include "action_id.h"
+#include "glbvars.h"
+
+#include "gxsm_app.h"
+#include "gxsm_window.h"
+
+#include "app_profile.h"
+#include "app_vobj.h"
+#include "app_v3dcontrol.h"
+#include "app_v3dpopupdef.h"
+
+#include <gtk/gtk.h>
+
+#include <GL/gl.h>
+#include <GL/glu.h>
+
+#include <gdk/gdkkeysyms.h>
+
+
+void V3dControl::configure_callback (GSimpleAction *action, GVariant *parameter, 
+                                     gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+                
+        g_print ("Toggle action %s activated, state changes from %d to %d\n",
+                 g_action_get_name (G_ACTION (action)),
+                 g_variant_get_boolean (old_state),
+                 g_variant_get_boolean (new_state));
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	if (g_variant_get_boolean (new_state)){
+                g_print ("running GLupdate in manual request.\n");
+                Surf3d *s = ((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"));
+                Surf3d::GLupdate (s);
+	}
+}
+
+static GActionEntry win_v3d_gxsm_action_entries[] = {
+	{ "view3d-activate", V3dControl::Activate_callback, NULL, NULL, NULL },
+	{ "view3d-autodisp", V3dControl::AutoDisp_callback, NULL, NULL, NULL },
+	{ "view3d-view-mode", V3dControl::view_view_mode_callback, "s", "'direct'", NULL },
+	{ "view3d-gl-mw-mode", V3dControl::view_GL_mouse_wheel_mode_callback, "s", "'zoom'", NULL },
+	{ "view3d-gl-mesh", V3dControl::view_GL_Mesh_callback,  NULL, "false", NULL },
+	{ "view3d-gl-smooth", V3dControl::view_GL_Smooth_callback, NULL, "true", NULL },
+	{ "view3d-gl-ticks", V3dControl::view_GL_Ticks_callback, NULL, "true", NULL },
+	{ "view3d-gl-n-zp", V3dControl::view_GL_nZP_callback, NULL, "false", NULL },
+	{ "view3d-configure-scene", V3dControl::scene_setup_callback, NULL, NULL, NULL },
+	{ "view3d-open", V3dControl::view_file_openhere_callback, NULL, NULL, NULL },
+	{ "view3d-save-auto", V3dControl::view_file_save_callback, NULL, NULL, NULL },
+	{ "view3d-save-as", V3dControl::view_file_save_as_callback, NULL, NULL, NULL },
+	{ "view3d-save-as-image", V3dControl::view_file_save_callback, NULL, NULL, NULL },
+	{ "view3d-close", V3dControl::view_file_kill_callback, NULL, NULL, NULL },
+	{ "view3d-configure", V3dControl::configure_callback, NULL, "false", NULL },
+};
+
+// V3dControl
+// ========================================
+
+void V3dControl::AppWindowInit(const gchar *title){
+	XSM_DEBUG(DBG_L2, "V3dControl::WidgetInit" );
+
+        app_window = gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
+        window = GTK_WINDOW (app_window);
+
+        header_bar = gtk_header_bar_new ();
+        gtk_widget_show (header_bar);
+        // hide close, min, max window decorations
+        gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), false);
+
+        g_action_map_add_action_entries (G_ACTION_MAP (app_window),
+                                         win_v3d_gxsm_action_entries, G_N_ELEMENTS (win_v3d_gxsm_action_entries),
+                                         this);
+
+        // create window PopUp menu  ---------------------------------------------------------------------
+        GtkWidget *file_menu = gtk_menu_new_from_model (G_MENU_MODEL (gapp->get_view3d_menu ()));
+        g_assert (GTK_IS_MENU (file_menu));
+
+	GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
+
+        // attach popup file menu button --------------------------------
+        GtkWidget *header_menu_button = gtk_menu_button_new ();
+        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("document-open-symbolic", tmp_toolbar_icon_size));
+        gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), file_menu);
+        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+        gtk_widget_show (header_menu_button);
+
+        // attach execute action buttons --------------------------------
+        GtkWidget *header_action_button = gtk_button_new ();
+        gtk_button_set_image (GTK_BUTTON (header_action_button), gtk_image_new_from_icon_name ("system-run-symbolic", tmp_toolbar_icon_size));
+        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_action_button);
+        gtk_widget_show (header_action_button);
+        //	g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::run_file), this);
+
+        gtk_window_set_title (GTK_WINDOW (window), title);
+        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
+        gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), "V3D view subtitle");
+
+        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+
+        //        g_signal_connect (G_OBJECT(window),
+        //                          "delete_event",
+        //                          G_CALLBACK(App::close_scan_event_cb),
+        //                          this);
+        
+	v_grid = gtk_grid_new ();
+        gtk_container_add (GTK_CONTAINER (window), v_grid);
+	g_object_set_data (G_OBJECT (window), "v_grid", v_grid);
+
+	gtk_widget_show_all (GTK_WIDGET (window));
+
+        //        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
+        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
+
+	XSM_DEBUG(DBG_L2, "V3dControl::WidgetInit done." );
+}
+
+V3dControl::V3dControl (const char *title, int ChNo, Scan *sc, 
+			GCallback resize_event_cb,
+			GCallback render_event_cb,
+			GCallback realize_event_cb,
+			void *vdata){
+	GtkWidget *statusbar;
+	gint major, minor;
+
+	XSM_DEBUG(DBG_L2, "V3dControl::V3dControl" );
+
+	WheelFkt = &Surf3d::Zoom;
+	scan = sc;
+	chno=ChNo;
+
+	AppWindowInit(title);
+	g_object_set_data  (G_OBJECT (window), "Ch", GINT_TO_POINTER (ChNo));
+	g_object_set_data  (G_OBJECT (window), "ChNo", GINT_TO_POINTER (ChNo+1));
+
+        gapp->configure_drop_on_widget (GTK_WIDGET (window));
+        //	gtk_window_set_default_size(GTK_WINDOW(window), 500, 500);
+
+        glarea = gtk_gl_area_new ();
+
+        gtk_widget_set_size_request (glarea, 500, 500);
+
+        gtk_widget_add_events (glarea,
+                               GDK_BUTTON1_MOTION_MASK    |
+                               GDK_BUTTON2_MOTION_MASK    |
+                               GDK_BUTTON_PRESS_MASK      |
+                               GDK_VISIBILITY_NOTIFY_MASK);
+		
+        g_signal_connect (G_OBJECT (glarea), "resize",
+				  G_CALLBACK (resize_event_cb), vdata);
+        g_signal_connect (G_OBJECT (glarea), "render",
+                          G_CALLBACK (render_event_cb), vdata);
+
+        if (realize_event_cb)
+                g_signal_connect (G_OBJECT (glarea), "realize",
+                                  G_CALLBACK (realize_event_cb), vdata);
+                          
+
+        // put glarea into window and show it all
+	gtk_grid_attach (GTK_GRID (v_grid), glarea, 1,1, 1,1);
+
+	g_signal_connect (G_OBJECT (glarea), "event",
+			  (GCallback) V3dControl::glarea_event_cb,
+			  this);
+
+	// New Statusbar
+	statusbar = gtk_statusbar_new ();
+	gtk_grid_attach (GTK_GRID (v_grid), statusbar, 1, 10, 10,1);
+
+	g_object_set_data (G_OBJECT (glarea), "vdata", vdata);
+	g_object_set_data (G_OBJECT (glarea), "statusbar", statusbar);
+	g_object_set_data (G_OBJECT (glarea), "Ch", GINT_TO_POINTER (ChNo));
+	g_object_set_data (G_OBJECT (glarea), "V3dControl", this);
+
+	gtk_widget_show_all (v_grid);
+	XSM_DEBUG(DBG_L2, "V3dControl::V3dControl done." );
+
+        if (vdata)
+                ((Surf3d*)vdata) -> preferences();
+
+	XSM_DEBUG(DBG_L2, "V3dControl::V3dControl show 3D preferences." );
+}
+
+V3dControl::~V3dControl (){
+	XSM_DEBUG(DBG_L2, "~V3dControl in" );
+	gtk_widget_destroy (glarea);
+	XSM_DEBUG(DBG_L2, "~V3dControl out" );
+}
+
+void V3dControl::SetTitle(char *title){
+	gtk_window_set_title (GTK_WINDOW (window), title);
+	CheckOptions();
+}
+
+void V3dControl::SetActive(int flg){
+	GtkWidget *statusbar = (GtkWidget*)g_object_get_data (G_OBJECT (glarea), "statusbar");
+	gint statusid  = gtk_statusbar_get_context_id(GTK_STATUSBAR(statusbar), "drag");
+
+	if(flg){
+		gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, "channel is active now");
+	}else{
+		gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, "inactive");
+	}
+}
+
+void V3dControl::CheckOptions(){
+	GtkWidget *menushell;
+	GtkWidget *menuitem;
+	gint pos;
+	gchar *vmode=NULL;
+
+	switch(scan->GetVM()){
+	case SCAN_V_DIRECT: vmode=g_strconcat(N_("View"),"/Direct", NULL); break;
+	case SCAN_V_QUICK:  vmode=g_strconcat(N_("View"),"/Quick", NULL); break;
+	case SCAN_V_LOG:    vmode=g_strconcat(N_("View"),"/Logarithmic", NULL); break;
+	case SCAN_V_DIFFERENTIAL:    vmode=g_strconcat(N_("View"),"/Differential", NULL); break;
+	case SCAN_V_PERIODIC:    vmode=g_strconcat(N_("View"),"/Periodic", NULL); break;
+	}
+}
+
+gint V3dControl::glarea_event_cb(GtkWidget *glarea, GdkEvent *event, V3dControl *vc){
+	static int dragging=FALSE;
+	static int busy=0;
+	static double xs,ys;
+	//  gchar *mld;
+	//  GdkCursor *fleur;
+	double x,y;
+	x = event->button.x;
+	y = event->button.y;
+	switch (event->type) 
+	{
+	case GDK_BUTTON_PRESS:
+		switch(event->button.button) 
+		{
+		case 1: 
+			dragging=TRUE;
+			xs=x; ys=y;
+			break;
+		case 2:
+			dragging=TRUE;
+			xs=x; ys=y;
+			break;
+		case 3: 
+			break;
+		case 4:
+			(((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->*(vc->WheelFkt))(1.0);
+			break;
+		case 5:
+			(((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->*(vc->WheelFkt))(-1.0);
+			break;
+		}
+		break;
+
+	case GDK_MOTION_NOTIFY:
+		if(!busy){
+			busy=1;
+			if (dragging && (event->motion.state & GDK_BUTTON1_MASK)){
+				((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Rotate(1, x-xs);
+				((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Rotate(0, y-ys);
+                                gtk_gl_area_queue_render (GTK_GL_AREA (glarea));
+				xs=x; ys=y;
+			}
+			if (dragging && (event->motion.state & GDK_BUTTON2_MASK)){
+				((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Translate(0, x-xs);
+				((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Translate(1, ys-y);
+                                gtk_gl_area_queue_render (GTK_GL_AREA (glarea));
+				xs=x; ys=y;
+			}
+			busy=0;
+		}
+		break;
+
+	case GDK_BUTTON_RELEASE:
+		switch(event->button.button){
+		case 1:
+			dragging=FALSE;
+			break;
+		case 2:
+			dragging=FALSE;
+			break;
+		}
+		break;
+	default: break;
+	}
+	return 0;
+}
+
+void V3dControl::Activate_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	gapp->xsm->ActivateChannel(vc->chno);
+}
+void V3dControl::SetOff_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	gapp->xsm->SetMode(vc->chno, ID_CH_M_OFF);
+}
+void V3dControl::SetOn_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	gapp->xsm->SetMode(vc->chno, ID_CH_M_ON);
+}
+void V3dControl::SetMath_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	gapp->xsm->SetMode(vc->chno, ID_CH_M_MATH);
+}
+void V3dControl::SetX_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	gapp->xsm->SetMode(vc->chno, ID_CH_M_X);
+}
+
+void V3dControl::AutoDisp_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	gapp->xsm->ActivateChannel(vc->chno);
+	gapp->xsm->AutoDisplay();
+	((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->update(0, vc->scan->mem2d->GetNy());
+        //        ((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->GLdrawscene(-1., true);
+        gtk_gl_area_queue_render (GTK_GL_AREA (vc->glarea));
+
+}
+
+void V3dControl::apply_all_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))
+		->GLupdate(g_object_get_data (G_OBJECT (vc->glarea), "vdata"));
+}
+
+void V3dControl::view_file_openhere_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	gapp->xsm->ActivateChannel(vc->chno);
+	gapp->xsm->load();
+}
+
+void V3dControl::view_file_save_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	gapp->xsm->save(AUTO_NAME_SAVE, NULL, vc->chno);
+}
+
+void V3dControl::view_file_save_as_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	gapp->xsm->save(MANUAL_SAVE_AS, NULL, vc->chno);
+}
+
+void V3dControl::view_file_save_image_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	XSM_DEBUG(DBG_L2, "Sorry, I'm working on!" );
+        //	((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->
+        //		save_to_image(imagename);
+}
+
+void V3dControl::view_file_print_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	gapp->xsm->ActivateChannel(vc->chno);
+	//	gapp->file_print_callback(widget, NULL);
+	XSM_DEBUG(DBG_L2, "VIEW PRINT CALLBACK!\n" );
+}
+
+void V3dControl::view_file_kill_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	gapp->xsm->SetMode(vc->chno, ID_CH_M_OFF);
+}
+
+void V3dControl::view_view_mode_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        gint mode=SCAN_V_QUICK; // fall back
+        
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
+                
+        g_print ("VIEW-MODE Radio action %s activated, state changes from %s to %s\n",
+                 g_action_get_name (G_ACTION (action)),
+                 g_variant_get_string (old_state, NULL),
+                 g_variant_get_string (new_state, NULL));
+
+
+        if (!strcmp (g_variant_get_string (new_state, NULL), "quick")){
+                mode = SCAN_V_QUICK;
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "direct")){
+                mode = SCAN_V_DIRECT;
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "hilit")){
+                mode = SCAN_V_HILITDIRECT;
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "plane")){
+                mode = SCAN_V_PLANESUB;
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "horizontal")){
+                mode = SCAN_V_HORIZONTAL;
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "periodic")){
+                mode = SCAN_V_PERIODIC;
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "log")){
+                mode = SCAN_V_LOG;
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "diff")){
+                mode = SCAN_V_DIFFERENTIAL;
+        }
+
+   	if (vc->chno < 0){
+                vc->scan->SetVM(mode);
+        } else {
+                gapp->xsm->ActivateChannel(vc->chno);
+		gapp->xsm->SetVM(mode);
+        }
+      
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+}
+
+void V3dControl::view_GL_Mesh_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+                
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+        ((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->
+		GLModes(ID_GL_Mesh, g_variant_get_boolean (new_state));
+}
+
+void V3dControl::view_GL_Ticks_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+        ((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->
+		GLModes(ID_GL_Ticks, g_variant_get_boolean (new_state));
+}
+
+void V3dControl::view_GL_Smooth_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+                
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+        ((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->
+		GLModes(ID_GL_Smooth, g_variant_get_boolean (new_state));
+}
+
+void V3dControl::view_GL_nZP_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+                
+        g_print ("Toggle action %s activated, state changes from %d to %d\n",
+                 g_action_get_name (G_ACTION (action)),
+                 g_variant_get_boolean (old_state),
+                 g_variant_get_boolean (new_state));
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+        ((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->
+		GLModes(ID_GL_nZP, g_variant_get_boolean (new_state));
+}
+
+void V3dControl::view_GL_mouse_wheel_mode_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        // default
+        vc->WheelFkt = &Surf3d::Zoom; 
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
+                
+        g_print ("GL-MW-MODE Radio action %s activated, state changes from %s to %s\n",
+                 g_action_get_name (G_ACTION (action)),
+                 g_variant_get_string (old_state, NULL),
+                 g_variant_get_string (new_state, NULL));
+
+
+        if (!strcmp (g_variant_get_string (new_state, NULL), "zoom")){
+                vc->WheelFkt = &Surf3d::Zoom; 
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "rot-x")){
+                vc->WheelFkt = &Surf3d::RotateX; 
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "rot-y")){
+                vc->WheelFkt = &Surf3d::RotateY; 
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "rot-z")){
+                vc->WheelFkt = &Surf3d::RotateZ; 
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "z-scale")){
+		vc->WheelFkt = &Surf3d::HeightSkl; 
+        }
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+}
+
+void V3dControl::scene_setup_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+	((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->
+		preferences();
+}

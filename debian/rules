@@ -1,0 +1,43 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+#
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+#
+# Modified to make a template file for a multi-binary package with separated
+# build-arch and build-indep targets  by Bill Allombert 2001
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=0
+export DH_ALWAYS_EXCLUDE=config.status:config.log:.svn
+
+# This has to be exported to make some magic below work.
+#export DH_OPTIONS
+#
+#DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+#DEB_CONFIGURE_EXTRA_FLAGS += --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH)
+
+
+%:
+	dh $@ --parallel --with autotools-dev
+
+override_dh_autoreconf:
+	dh_autoreconf ./autogen.sh
+
+override_dh_auto_configure:
+	dh_auto_configure -- -- libdir=\$${prefix}/lib
+
+override_dh_auto_build: 	
+	rm -rf man/gmetopng.1 man/rhkspm32topng.1 man/scalatopng.1 gxsm
+	cp -R gxsm3 gxsm
+	cp man/nctopng.1 man/gmetopng.1 	
+	cp man/nctopng.1 man/rhkspm32topng.1
+	cp man/nctopng.1 man/scalatopng.1
+	dh_auto_build
+
+override_dh_installdocs:
+	dh_installdocs NEWS
+

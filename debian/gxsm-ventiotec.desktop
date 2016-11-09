@@ -1,0 +1,13 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Encoding=UTF-8
+Value=1.0
+Name=ventiotec
+GenericName=web resource
+Comment=Link to the ventiotec homepage
+Exec=firefox http://www.ventiotec.de
+Icon=gnome-mime-text-html.png
+Terminal=0
+Type=Application
+X-AppInstall-Package=gxsm3

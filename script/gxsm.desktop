@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=GXSM
+Name[de]=GXSM
+Comment=Gnome X Scanning Microscopy and Data Analysis & Visualisation
+Comment[de]=Gnome X Rastersonden Mikroskopie und Daten Analyse & Visualisation
+Exec=gxsm3
+Icon=/usr/local/share/pixmaps/Gxsm-AFM.png
+Terminal=1
+Type=Application
+Categories=Application

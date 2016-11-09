@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Name=SRanger MK2&A810 conf
+Comment=Python script for configuration of the SR-MK2&A810 boards
+Exec=mk2_spm_control.py
+Icon=gnome-mime-application-x-python-bytecode
+Terminal=1
+Type=Application
+Categories=Gxsm
+X-AppInstall-Package=sranger
+

@@ -1,0 +1,138 @@
+Source: gxsm3
+Section: science
+Priority: optional
+Maintainer: Thorsten Wagner <stm@users.sf.net>
+Build-Depends: 	debhelper (>= 9.0.0), 
+		autotools-dev, 
+		bison, 
+		byacc, 
+		freeglut3-dev, 
+		gnome-common,  
+		gsettings-desktop-schemas-dev,
+		itstool,		
+		libatkmm-1.6-dev, 
+		libcairomm-1.0-dev, 
+		libcv-dev, 
+		libfftw3-dev, 
+		libgail-3-dev,
+		libglib2.0-dev, 
+		libgnomeui-dev, 
+		libgtk-3-dev (>=3.20.6), 
+		libgtkglext1-dev, 
+		libgtkmm-2.4-dev, 
+		libgtkmm-3.0-dev, 
+		libgtksourceview2.0-dev,
+		libgtksourceview-3.0-dev,
+		libnetcdf-dev, 
+		libnetcdf-c++4-dev,
+		libnetcdf-cxx-legacy-dev,
+		libnlopt-dev,
+		libopencv-contrib-dev, 
+		libopencv-core-dev, 
+		libopencv-dev, 
+		libopencv-highgui-dev, 
+		libopencv-imgproc-dev, 
+		libopencv-objdetect-dev, 
+		libopencv-video-dev,  
+		libpangomm-1.4-dev, 
+		libquicktime-dev, 
+		python2.7-dev, 
+		python-gobject-2-dev, 
+		subversion
+Standards-Version: 3.9.7
+Homepage: http://gxsm.sf.net
+#Vcs-Git: svn://svn.code.sf.net/p/gxsm/svn/branches/Gxsm-3.0-beta
+#Vcs-Browser:  http://svn.code.sf.net/p/gxsm/svn/branches/Gxsm-3.0-beta
+
+Package: gxsm3
+Architecture: any
+Multi-Arch: same
+Pre-Depends:	${misc:Pre-Depends}
+Depends: 	${shlibs:Depends}, 
+		${misc:Depends}, 
+		bash, 
+		devscripts, 
+		eog,
+		freeglut3,
+		gsettings-desktop-schemas, 
+		gnome-devel, 
+		gnome-icon-theme,
+		libatkmm-1.6-1v5, 
+		libcairomm-1.0-1v5,  
+		libfftw3-3, 
+		libgail-3-0,
+		libglib2.0-0,
+		libglib2.0-bin, 
+		libgnomeui-0, 
+		libgnomeui-common, 
+		libgtk-3-0 (>=3.20.6), 
+		libgtk-3-bin, 
+		libgtk-3-common, 
+		libgtkglext1, 
+		libgtkmm-2.4-1v5, 
+		libgtkmm-3.0-1v5, 
+		libgtksourceview2.0-0, 
+		libgtksourceview2.0-common,
+		libgtksourceview-3.0-1, 
+		libgtksourceview-3.0-common,		 
+		libnetcdf-c++4-1, 
+		libnetcdf11, 
+		libnetcdff6,
+		libnlopt0, 
+		libopencv-contrib2.4v5, 
+		libopencv-core2.4v5, 
+		libopencv-highgui2.4v5, 
+		libopencv-imgproc2.4v5, 
+		libopencv-objdetect2.4v5, 
+		libopencv-video2.4v5,  
+		libpangomm-1.4-1v5, 
+		libquicktime2,  
+		libxdot4, 
+		python, 
+		python-gobject-2, 
+		python-numpy, 
+		python-opencv, 
+		python-pydot,
+		python-scipy, 
+		sed, 
+		subversion, 
+		unity-services, 
+		xdg-utils, 
+		xdot
+Suggests: sranger-modules-mk23-dkms, sranger-modules-std-dkms
+Replaces: sranger (<< 0.0.2 ), gxsm
+Breaks: sranger (<< 0.0.2 ), gxsm
+Description: Multi-channel data acquisition via STM/AFM
+ GXSM -- Gnome X Scanning Microscopy.
+ .
+ Gxsm is a powerful graphical interface for any kind of 2D
+ and 3D (multilayered 2D mode) data acquisition methods, 
+ especially designed for SPM and SPA-LEED, which are used 
+ in surface science. It includes methods for 2D data (of 
+ various types: byte, short, long, double) visualization 
+ and manipulation. We are currently using it for STM, AFM, 
+ SARLS, and SPA-LEED.
+ .
+ Gxsm is powerful, it is easy to extend via plug-ins, it is
+ unlimited in data size... and it is a free and open source 
+ software hosted by SourceForge! It is based on the Linux 
+ Gtk+/Gnome development environment.
+ .
+ More details on http://gxsm.sf.net and 
+ http://sranger.sf.net or in 
+ J. Vac. Sci. Technol. B 28, C4E39 (2010) 
+ (doi:10.1116/1.3374719) 
+ .
+ This is an experimental version which give you a preview on
+ the new GXSM3 which is based on GTK3. To use this package 
+ you will have to upgrade your libgtk+-3 to version >3.20 by
+ adding the gnome-staging repository
+ apt-add-repository ppa:gnome3-team/gnome3
+ apt-add-repository ppa:gnome3-team/gnome3-staging
+ apt update
+ apt dist-upgrade
+ .
+ To remove this ppa install ppa-purge and run
+ ppa-purge ppa:gnome3-team/gnome3
+ ppa-purge ppa:gnome3-team/gnome3-staging
+

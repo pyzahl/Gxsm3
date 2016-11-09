@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<interface>
+  <!-- interface-requires gtk+ 3.0 -->
+  <!-- ************************************************** -->
+  <!-- DSP MOVER CONFIG POPUP MENU -->
+
+  <menu id="plugin-pyremote-file-menu">
+    <section>
+      <attribute name="id">plugin-pyremote-file-section</attribute>
+      <item>
+	<attribute name="label" translatable="yes">_Open here</attribute>
+	<attribute name="action">win.pyfile-open</attribute>
+      </item>
+      <item>
+	<attribute name="label" translatable="yes">_Save</attribute>
+	<attribute name="action">win.pyfile-save</attribute>
+      </item>
+      <item>
+	<attribute name="label" translatable="yes">Save _as...</attribute>
+	<attribute name="action">win.pyfile-save-as</attribute>
+      </item>
+      <item>
+	<attribute name="label" translatable="yes">Configure</attribute>
+	<attribute name="action">win.pyremote-configure</attribute>
+      </item>
+    </section>
+  </menu>
+
+</interface>

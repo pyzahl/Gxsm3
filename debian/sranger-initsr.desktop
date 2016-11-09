@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Name=SRanger init
+Comment=Python script for initializing SRanger boards
+Exec=initSR.py
+Icon=gnome-mime-application-x-python-bytecode
+Terminal=1
+Type=Application
+Categories=Gxsm
+X-AppInstall-Package=sranger
+

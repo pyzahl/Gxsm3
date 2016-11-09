@@ -1,0 +1,20 @@
+gxsm3 for Ubuntu
+----------------
+
+If you need access to bleeding edge features of gxsm3, please compile from source.
+You can always get the current version from SVN via:
+
+svn checkout svn://svn.code.sf.net/p/gxsm/svn/branches/Gxsm-3.0-beta gxsm-svn
+
+This package was built from the svn version with no specific procedure 
+regarding stability, thus it might be broken for some use-cases. If this
+happens, you should contact the packager or the developers via email or
+by posting a bug report in our forums at:
+
+gxsm.sf.net
+
+Thank you for trying the deb-package of gxsm.
+
+Please contribute to improve Gxsm.
+
+-- Thorsten Wagner <stm@users.sf.net>  Thu, 24 Jul 2014 20:56:51 +0200

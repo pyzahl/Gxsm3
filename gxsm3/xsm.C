@@ -1,0 +1,659 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
+/* Gxsm - Gnome X Scanning Microscopy
+ * universal STM/AFM/SARLS/SPALEED/... controlling and
+ * data analysis software
+ * 
+ * Copyright (C) 1999,2000,2001,2002,2003 Percy Zahl
+ *
+ * Authors: Percy Zahl <zahl@users.sf.net>
+ * additional features: Andreas Klust <klust@users.sf.net>
+ * WWW Home: http://gxsm.sf.net
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#include <time.h>
+// #include <unistd.h>
+#include <signal.h>
+
+#ifndef __XSM_H
+#include "xsm.h"
+#endif
+
+#ifndef __PLUGIN_CTRL_H
+#include "plugin_ctrl.h"
+#endif
+
+#ifndef __GLBVARS_H
+#include "glbvars.h"
+#endif
+#define UTF8_DEGREE    "\302\260"
+#define UTF8_MU        "\302\265"
+#define UTF8_ANGSTROEM "\303\205"
+
+GSettings *settings_hwi_interfaces = NULL;
+
+// Alles wird auf dies Basiseinheit "1A" bezogen - nur User I/O in nicht A !!
+UnitsTable XsmUnitsTable[] = {
+	// Id (used in preferences), Units Symbol, Units Symbol (ps-Version), scale factor, precision1, precision2
+	{ "AA", UTF8_ANGSTROEM,   "\305",    1e0, ".1f", ".3f" }, // UFT-8 Ang did not work
+	{ "nm", "nm",  "nm",     10e0, ".1f", ".3f" },
+	{ "um", UTF8_MU"m",  "\265m",     10e3, ".1f", ".3f" },
+	{ "mm", "mm",  "mm",     10e6, ".1f", ".3f" },
+	{ "BZ", "%BZ", "%BZ",     1e0, ".1f", ".2f" },
+	{ "sec","\"",  "\"",      1e0, ".1f", ".2f" },
+	{ "V",  "V",   "V",       1e0, ".2f", ".3f" },
+	{ "mV", "mV",  "mV",      1e-3, ".2f", ".3f" },
+	{ "*V",  "*V", "*V",      1e0, ".2f", ".3f" },
+	{ "*dV", "*dV","*dV",     1e0, ".2f", ".3f" },
+	{ "*ddV", "*ddV","*ddV",  1e0, ".2f", ".3f" },
+	{ "V2", "V2", "V2",       1e0, ".2f", ".3f" },
+	{ "1",  " ",   " ",       1e0, ".3f", ".4f" },
+	{ "0",  " ",   " ",       1e0, ".3f", ".4f" },
+	{ "B",  "Bool",   "Bool", 1e0, ".3f", ".4f" },
+	{ "X",  "X",   "X",       1e0, ".3f", ".4f" },
+	{ "xV",  "xV",   "xV",    1e0, ".3f", ".4f" },
+	{ "deg", UTF8_DEGREE, "deg",       1e0, ".3f", ".4f" },
+	{ "Amp", "A",  "A",       1e9, "g", "g" },
+	{ "nA", "nA",  "nA",      1e0, ".2f", ".3f" },
+	{ "pA", "pA",  "pA",      1e-3, ".1f", ".2f" },
+	{ "nN", "nN",  "nN",      1e0, ".2f", ".3f" },
+	{ "Hz", "Hz",  "Hz",      1e0, ".2f", ".3f" },
+	{ "mHz", "mHz",  "mHz",   1e-3, ".2f", ".3f" },
+	{ "K",  "K",   "K",       1e0, ".2f", ".3f" },
+	{ "amu","amu", "amu",     1e0, ".1f", ".2f" },
+	{ "CPS","Cps", "Cps",     1e0, ".1f", ".2f" },
+	{ "CNT","CNT", "CNT",     1e0, ".1f", ".2f" },
+	{ "Int","Int", "Int",     1e0, ".1f", ".2f" },
+	{ "A/s","A/s", "A/s",     1e0, ".2f", ".3f" },
+	{ "s","s", "s",           1e0, ".2f", ".3f" },
+	{ "ms","ms", "ms",        1e0, ".2f", ".3f" },
+	{ NULL, NULL, NULL,       0e0, NULL, NULL }
+};
+
+
+
+
+/* Main XSM Object */
+
+Xsm::Xsm(){
+
+	// check for Cmd-Line override
+	if(xsmres.UnitCmd)
+		strcpy(xsmres.Unit, xsmres.UnitCmd);
+
+	// Look for Unitalias
+	for(AktUnit=XsmUnitsTable; AktUnit->alias; ++AktUnit)
+		if(! strcmp(AktUnit->alias, xsmres.Unit)) break;
+
+	if(!AktUnit->alias){
+		AktUnit = &XsmUnitsTable[1];
+		XSM_DEBUG_ERROR (DBG_L1, "Invalid Unit specified ! Falling back to default." );
+	}
+
+	// Setup Units used
+	Unity       = new UnitObj(" "," ");
+	ArcUnit     = new UnitObj(UTF8_DEGREE,"\260"); // 0x00B0 "°"
+	HzUnit      = new UnitObj("Hz","Hz");
+	RadUnit     = new LinUnit(" "," ",180./M_PI);
+	VoltUnit    = new UnitObj("V","V",".2f","Volt");
+	BZSymUnit   = new UnitObj("%BZ","%BZ");
+	CurrentUnit = new UnitObj("nA","nA","g","Current");
+	TimeUnitms  = new LinUnit("ms","ms", "Time", 1e-3);
+	TimeUnit    = new UnitObj("s","s", "g", "Time");
+	CPSUnit     = new CPSCNTUnit("Cps","Cps","Int.");
+	CPSHiLoUnit = new CPSCNTUnit("Cps","Cps","Int.");
+	EnergyUnit  = new UnitObj("eV","eV",".2f","Energy");
+	BZ_Unit     = new BZUnit("%BZ","%BZ", xsmres.Sensitivity, 1.);
+	YSUnit      = new SUnit("S","S", xsmres.SampleLayerDist, xsmres.ThetaChGunInt);
+
+	LenUnit     = NULL;
+	LenUnitZ    = NULL;
+
+	// do not delete those!!
+	X_Unit = Y_Unit = Z_Unit = NULL;
+
+	if( IS_SPALEED_CTRL ){
+		if(! strcmp(AktUnit->alias, "BZ") )
+			X_Unit = Y_Unit = BZ_Unit;
+		else
+			X_Unit = Y_Unit = VoltUnit;
+		Z_Unit = CPSUnit;
+		X_Unit->SetAlias (AktUnit->alias);
+		Z_Unit->SetAlias ("Cps");
+	}else{
+		LenUnit  = new LinUnit(AktUnit->s, AktUnit->pss, "L",AktUnit->fac);
+		LenUnit->SetAlias (AktUnit->alias);
+		LenUnitZ = new LinUnit(AktUnit->s, AktUnit->pss, "H",AktUnit->fac);
+		LenUnitZ->SetAlias (AktUnit->alias);
+		Z_Unit   = LenUnitZ;
+		X_Unit = Y_Unit = LenUnit;
+	}
+
+	// Override Hardware Resource by CmdParam ??
+	if(xsmres.HardwareTypeCmd)
+		strcpy(xsmres.HardwareType, xsmres.HardwareTypeCmd);
+	if(xsmres.DSPDevCmd)
+		strcpy(xsmres.DSPDev, xsmres.DSPDevCmd);
+
+	hardware=NULL;
+	HwI_plugins = NULL;
+	// (re)load_hardware_interface is called later
+  
+	if(IS_SPALEED_CTRL) /* XSM Instrument anlegen */
+		Inst = new SPALEED_Instrument(xsmres, 
+					      &data.s.Energy, 
+					      &data.display.cnttime, 
+					      &ModeFlg);
+	else
+		Inst = new XSM_Instrument(xsmres);
+
+
+	ModeFlg = 0;
+	ZoomFlg = VIEW_ZOOM | VIEW_Z400;
+
+
+	data.LoadValues(Inst, hardware); // Check Resources, else use peredefiend default Value
+
+	mradius=1.; // Math2D Radius
+
+	counter = 0;
+	subcounter = 0;
+
+	data.ui.MakeUIdefaults();
+
+	data.Xunit      = NULL;
+	data.Yunit      = NULL;
+	data.Zunit      = NULL;
+	data.Vunit      = NULL;
+
+	data.SetXUnit (X_Unit);
+	data.SetYUnit (Y_Unit);
+	data.SetZUnit (Z_Unit);
+	data.SetVUnit (VoltUnit);
+
+	data.CurrentUnit= CurrentUnit->Copy ();
+	data.VoltUnit   = VoltUnit->Copy ();
+	data.TimeUnit   = TimeUnit->Copy ();
+	data.TimeUnitms = TimeUnitms->Copy ();
+	data.CPSUnit    = CPSUnit->Copy ();
+	data.EnergyUnit = EnergyUnit->Copy ();
+
+	XSM_DEBUG (DBG_L2, "Xsm::Xsm : Init done");
+}
+
+Xsm::~Xsm(){
+	XSM_DEBUG (DBG_L2, "Xsm::~Xsm deleting unit objects");
+
+	if(LenUnit)
+		delete LenUnit;
+	if(LenUnitZ)
+		delete LenUnitZ;
+	delete YSUnit;
+	delete BZ_Unit;
+	delete EnergyUnit;
+	delete CPSUnit;
+	delete TimeUnit;
+	delete TimeUnitms;
+	delete CurrentUnit;
+	delete BZSymUnit;
+	delete VoltUnit;
+	delete RadUnit;
+	delete HzUnit;
+	delete ArcUnit;
+	delete Unity;
+
+	XSM_DEBUG (DBG_L2, "Xsm::~Xsm delete hardware");
+	if (HwI_plugins) {
+		if (!HwI_plugins -> get_xsm_hwi_class () && hardware)
+			delete hardware; // remove build-in default base XSM-Hardware!
+		delete HwI_plugins; // clean up HwI, even if empty list, will (should) deallocate internally hardware class
+	} else
+		delete hardware; // else remove GXSM-build-in HW-class stuff
+
+	hardware=NULL;
+
+	delete Inst;
+	Inst=NULL;
+
+	XSM_DEBUG (DBG_L2, "Xsm::~Xsm done.");
+
+}
+
+
+void Xsm::reload_hardware_interface (App *app){
+        XSM_DEBUG (DBG_L1, "Xsm::reload_hardware_interface");
+	// cleanup
+	if (HwI_plugins) {
+		if (!HwI_plugins -> get_xsm_hwi_class () && hardware)
+			delete hardware; // remove build-in default base XSM-Hardware!
+		delete HwI_plugins; // clean up HwI, even if empty list, will (should) deallocate internally hardware class
+	} else 
+		if (hardware)
+			delete hardware; // remove GXSM-build-in HW-class stuff
+
+	HwI_plugins = NULL;
+	hardware=NULL;
+
+        XSM_DEBUG (DBG_L1, "Xsm::reload_hardware_interface -- reloading");
+
+	// cleanup only?
+	if (!app) return;
+
+        XSM_DEBUG (DBG_L1, "Xsm::reload_hardware_interface -- check for HwI");
+        
+	// Check for HwI PIs
+	if(!hardware)
+		hardware = HwI_Plugin_Load (app);
+
+        XSM_DEBUG (DBG_L1, "Xsm::reload_hardware_interface -- check for hardware interface OK");
+
+	if(!hardware) // still no Hardware Interface ?
+		hardware = new XSM_Hardware; // Erzeuge Hardware Simulations Objekt
+
+        XSM_DEBUG (DBG_L1, "Xsm::reload_hardware_interface -- done.");
+}
+
+UnitObj *Xsm::MakeUnit(const gchar *alias, const gchar *label){
+	UnitsTable *u;
+
+	// Look for Unitalias
+	for(u=XsmUnitsTable; u->alias; ++u)
+		if(! strcmp(u->alias, alias)) break;
+
+	if(!u->alias){
+		u = &XsmUnitsTable[1];
+		XSM_DEBUG_ERROR (DBG_L3, "Invalid Unit >" << alias << "< specified ! Falling back to default.");
+	}
+	XSM_DEBUG(DBG_L3, "MakeUnit" << u->alias );
+	UnitObj *uob = new LinUnit(u->s, u->pss, label, u->fac);
+	uob->SetAlias (u->alias);
+	XSM_DEBUG(DBG_L3, "MakeUnit" << u->alias << " done." );
+
+	return uob;
+}
+
+void Xsm::UpdateUnits(){
+	return; // PZ 20070202 - disabled it.
+	if(IsMode(MODE_BZUNIT) && X_Unit != BZ_Unit){
+		X_Unit = Y_Unit = BZ_Unit;
+		gapp->spm_update_all();
+	}else
+		if(IsMode(MODE_VOLTUNIT) && X_Unit != VoltUnit){
+			X_Unit = Y_Unit = VoltUnit;
+			gapp->spm_update_all();
+		}
+}
+
+
+
+// Hardware Interface (HwI) Plugin check and handling
+// ==================================================
+
+gint Xsm::HwI_Plugin_Check (const gchar *category){
+	gint ret = FALSE;
+	gint i;
+	gchar **catlist, **cs;
+	gchar *fullclass;
+        gchar *tmp, *hwilist = NULL;
+
+	if( ! category ) 
+		return ret;
+
+        XSM_DEBUG_GP (DBG_L1, "Xsm::HwI_Plugin_Check -- %s\n", category);
+        
+
+	// HwI category convention for single and multiple subclass support:
+	// -----------------------------------------------------------------
+	// valid category strings are, ",:" are special chars here, do not use otherwise
+
+	// "video4linux"                 
+	//  -> HwI provides a single interface, will be listed as "video4linux" only
+
+	// "SRanger:SPM:SPA-LEED[:..]"
+	//  -> HwI provides multiple interfaces based on SRanger, listed and queried as 
+	//     "SRanger:SPM" and "SRanger:SPA-LEED" [and ...]
+
+	// separete possible subclasses
+	//	for (cs = catlist = g_strsplit_set (category, ":", 0); *cs; ++cs){ // only since glib 2.4
+	for (cs = catlist = g_strsplit (category, ":", 0); *cs; ++cs){
+		fullclass = g_strdup (*catlist);
+		if (cs == catlist) ++cs; // skip base class
+		if (*cs){
+			g_free (fullclass);
+			fullclass = g_strconcat (*catlist, ":", *cs, NULL);
+		}
+
+                i = g_settings_get_int (settings_hwi_interfaces, "hwi-count");
+                hwilist = g_settings_get_string (settings_hwi_interfaces, "hwi-list");
+
+                XSM_DEBUG_GP (DBG_L1, "Xsm::HwI_Plugin_Check -- [HWI count=%d, list='%s']  %s\n", i, hwilist, category);
+
+                ++i;
+
+                g_settings_set_int (settings_hwi_interfaces, "hwi-count", i);
+
+                if (strlen(hwilist) > 1){
+                        tmp = hwilist;
+                        hwilist = g_strdup_printf ("%s;%s", hwilist, fullclass); g_free (tmp);
+                } else 
+                        hwilist = g_strdup (fullclass);
+
+                XSM_DEBUG_GP (DBG_L1, "Xsm::HwI_Plugin_Check -- [HWI count=%d list='%s']  %s\n", i, hwilist, category);
+                
+		if ( !strcmp (xsmres.HardwareType, fullclass) ) // match?
+			ret = TRUE;
+
+		g_free (fullclass);
+
+		if (! *cs) break;
+	}
+
+        g_settings_set_string (settings_hwi_interfaces, "hwi-list", hwilist);
+        g_settings_sync ();
+
+        g_free (hwilist);
+
+	g_strfreev (catlist);
+
+	return ret;
+}
+
+XSM_Hardware* Xsm::HwI_Plugin_Load (App* app){
+        settings_hwi_interfaces = g_settings_new (GXSM_RES_BASE_PATH_DOT".hardware-interfaces");
+        g_settings_set_int (settings_hwi_interfaces, "hwi-count", 0);
+        g_settings_set_string (settings_hwi_interfaces, "hwi-list", "");
+        g_settings_sync ();
+        
+	gint (*hwi_type_check_func)(const gchar *) =  HwI_Plugin_Check;
+	GList *PluginDirs = NULL;
+	XSM_DEBUG(DBG_L2, "Load/select GXSM HwI plugin(s)" );
+	
+	// Make plugin search dir list
+	PluginDirs = g_list_prepend
+		(PluginDirs, g_strconcat(PACKAGE_PLUGIN_DIR, "/hard", NULL));
+
+        HwI_plugins = new gxsm_hwi_plugins (PluginDirs, hwi_type_check_func, xsmres.HardwareType, app, "GXSM-HwI");
+
+	// and remove list
+	GList *node = PluginDirs;
+	while(node){
+		g_free(node->data);
+		node = node->next;
+	}
+	g_list_free(PluginDirs);
+
+        g_clear_object (&settings_hwi_interfaces);
+
+	return HwI_plugins -> get_xsm_hwi_class ();
+}
+
+
+
+
+/* SCAN_DATA */
+
+SCAN_DATA::SCAN_DATA(){ 
+		//-todo-offset-, should be OK now
+		if(xsmres.ScanOrgCenter) // if (IS_SPALEED_CTRL)
+				orgmode = SCAN_ORG_CENTER;
+		else
+				orgmode = SCAN_ORG_MIDDLETOP;
+
+		scan_mode = SCAN_MODE_SINGLE_DSPSET;
+		scan_repeat_mode = SCAN_REPEAT_MODE_UNIDIR;
+		scan_type = SCAN_TYPE_NORMAL;
+
+		UnitObj UnityNA ("N/A","N/A");
+		
+		Zunit = UnityNA.Copy ();
+		Xunit = UnityNA.Copy ();
+		Yunit = UnityNA.Copy ();
+		Vunit = UnityNA.Copy ();
+		CurrentUnit = UnityNA.Copy ();
+		VoltUnit = UnityNA.Copy ();
+		TimeUnit = UnityNA.Copy ();
+		TimeUnitms = UnityNA.Copy ();
+		CPSUnit = UnityNA.Copy ();
+		EnergyUnit = UnityNA.Copy ();
+
+		UnitsAlloc = TRUE;
+
+		XSM_DEBUG (DBG_L2, "SCAN_DATA::SCANDATA #" << ++scandatacount); cnt=scandatacount; 
+}
+
+SCAN_DATA::~SCAN_DATA(){ 
+	if(UnitsAlloc){
+		if(Zunit) { 
+			delete Zunit; Zunit=NULL; 
+		}
+		if(Xunit) { 
+			delete Xunit; Xunit=NULL; 
+		}
+		if(Yunit) { 
+			delete Yunit; Yunit=NULL; 
+		}
+		if(Vunit) { 
+			delete Vunit; Vunit=NULL; 
+		}
+		if(CurrentUnit) { 
+			delete CurrentUnit; CurrentUnit=NULL; 
+		}
+		if(VoltUnit) { 
+			delete VoltUnit; VoltUnit=NULL; 
+		}
+		if(TimeUnit) { 
+			delete TimeUnit; TimeUnit=NULL; 
+		}
+		if(TimeUnitms) { 
+			delete TimeUnitms; TimeUnitms=NULL; 
+		}
+		if(CPSUnit) { 
+			delete CPSUnit; CPSUnit=NULL; 
+		}
+		if(EnergyUnit) { 
+			delete EnergyUnit; EnergyUnit=NULL; 
+		}
+	}
+	XSM_DEBUG (DBG_L2, "SCAN_DATA::~SCANDATA #" << scandatacount--); 
+}
+
+
+void SCAN_DATA::CpUnits(SCAN_DATA &src){
+	XSM_DEBUG (DBG_L2, "SCAN_DATA: CpUnits #" << cnt);
+  
+        if (src.Zunit){
+                if (Zunit) delete Zunit;
+                Zunit = src.Zunit->Copy();
+        }
+        
+	if (src.Xunit){
+                if(Xunit)
+                        delete Xunit;
+		Xunit = src.Xunit->Copy();
+        }
+        
+	if (src.Yunit){
+                if(Yunit)
+                        delete Yunit;
+		Yunit = src.Yunit->Copy();
+        }
+        
+	if(src.Vunit){
+                if (Vunit)
+                        delete Vunit;
+		Vunit = src.Vunit->Copy();
+        }
+        
+	if(CurrentUnit) delete CurrentUnit;
+	CurrentUnit = src.CurrentUnit->Copy();
+  
+	if(VoltUnit) delete VoltUnit;
+	VoltUnit = src.VoltUnit->Copy();
+  
+	if(TimeUnit) delete TimeUnit;
+	TimeUnit = src.TimeUnit->Copy();
+  
+	if(TimeUnitms) delete TimeUnitms;
+	TimeUnitms = src.TimeUnitms->Copy();
+  
+	if(CPSUnit) delete CPSUnit;
+	CPSUnit = src.CPSUnit->Copy();
+  
+	if(EnergyUnit) delete EnergyUnit;
+	EnergyUnit = src.EnergyUnit->Copy();
+
+	UnitsAlloc = TRUE;
+}
+
+void SCAN_DATA::SetXUnit(UnitObj *u){
+	if(Xunit) delete Xunit;
+	Xunit = u->Copy();
+}
+
+void SCAN_DATA::SetYUnit(UnitObj *u){
+	if(Yunit) delete Yunit;
+	Yunit = u->Copy();
+}
+
+void SCAN_DATA::SetVUnit(UnitObj *u){
+	if(Vunit) delete Vunit;
+	Vunit = u->Copy();
+}
+
+void SCAN_DATA::SetZUnit(UnitObj *u){
+	if(Zunit) delete Zunit;
+	Zunit = u->Copy();
+}
+
+/* Save / Retrive Values from Rescource */
+void SCAN_DATA::SaveValues(gchar *SetName){
+	XsmRescourceManager xrm("Values", SetName);
+	xrm.Put("XSMVersion", PACKAGE "-" VERSION);
+	xrm.Put("XSMBuild", COMPILEDBYNAME);
+
+	xrm.Put("s.ntimes", s.ntimes);
+	xrm.Put("s.values", s.nvalues);
+	xrm.Put("s.nx", s.nx);
+	xrm.Put("s.ny", s.ny);
+
+	xrm.Put("s.rx", s.rx);
+	xrm.Put("s.ry", s.ry);
+	xrm.Put("s.rz", s.rz);
+	xrm.Put("s.dx", s.dx);
+	xrm.Put("s.dy", s.dy);
+	xrm.Put("s.dz", s.dz);
+	xrm.Put("s.dl", s.dl);
+
+	xrm.Put("s.alpha", s.alpha);
+	xrm.Put("s.x0", s.x0);
+	xrm.Put("s.y0", s.y0);
+	xrm.Put("s.SPA_OrgX", s.SPA_OrgX);
+	xrm.Put("s.SPA_OrgY", s.SPA_OrgY);
+
+	xrm.Put("s.Bias", s.Bias);
+	xrm.Put("s.Current", s.Current);
+	xrm.Put("s.SetPoint", s.SetPoint);
+	xrm.Put("s.Energy", s.Energy);
+	xrm.Put("s.GateTime", s.GateTime);
+
+	xrm.Put("display.ViewFlg", display.ViewFlg);
+	xrm.Put("display.contrast", display.contrast);
+	xrm.Put("display.bright", display.bright);
+	xrm.Put("display.cpshigh", display.cpshigh);
+	xrm.Put("display.cpslow", display.cpslow);
+	xrm.Put("display.vrange_z", display.vrange_z);
+	xrm.Put("display.voffset_z", display.voffset_z);
+	xrm.Put("display.vframe", display.vframe);
+	xrm.Put("display.vlayer", display.vlayer);
+};
+
+void SCAN_DATA::LoadValues(XSM_Instrument *Inst, XSM_Hardware *hardware, gchar *SetName){
+	gchar *defaultval;
+
+        // NOTE: pretty much obsoleted, valed default in schema and overriden later, only for gschema writer used and initial default.
+	XsmRescourceManager xrm("Values", SetName);
+
+	//    xrm.Get("XSMVersion", XSM_VERSION); -- no sense to read back this, only Informative --
+	//    xrm.Get("XSMVerDate", XSM_VERDATE); -- no sense to read back this, only Informative --
+	s.rx=s.ry=s.rz=1000.; s.dx=s.dy=s.dl=1.; s.alpha=0.; s.x0=s.y0=0.; // fallback
+
+        if (Inst){
+		XSM_DEBUG_GP (DBG_L5, "Inst->XResolution=%g A\n", Inst->XResolution());
+		XSM_DEBUG_GP (DBG_L5, "Inst->YResolution=%g A\n", Inst->XResolution());
+		defaultval = g_strdup_printf("%g", 2000.*Inst->XResolution());
+		xrm.Get("s.rx", &s.rx, defaultval);
+		g_free(defaultval);
+		defaultval = g_strdup_printf("%g", 2000.*Inst->YResolution());
+		xrm.Get("s.ry", &s.ry, defaultval);
+		g_free(defaultval);
+		xrm.Get("s.rz", &s.rz, "1000");
+		defaultval = g_strdup_printf("%g", 16.*Inst->XResolution());
+		xrm.Get("s.dx", &s.dx, defaultval);
+		g_free(defaultval);
+		defaultval = g_strdup_printf("%g", 16.*Inst->YResolution());
+		xrm.Get("s.dy", &s.dy, defaultval);
+		g_free(defaultval);
+	}
+	xrm.Get("s.dz", &s.dz, "10");
+	xrm.Get("s.dl", &s.dl, "10");
+	xrm.Get("s.alpha", &s.alpha, "0");
+	xrm.Get("s.x0", &s.x0, "0");
+	xrm.Get("s.y0", &s.y0, "0");
+	xrm.Get("s.SPA_OrgX", &s.SPA_OrgX, "0");
+	xrm.Get("s.SPA_OrgY", &s.SPA_OrgY, "0");
+
+	if(hardware)
+		defaultval = g_strdup_printf("%d", (int) MIN(R2INT(s.rx/s.dx), hardware->GetMaxPointsPerLine()));
+	else
+		defaultval = g_strdup_printf("1000");
+
+	xrm.Get("s.nx", &s.nx, defaultval);
+	g_free(defaultval);
+
+
+	if(hardware)
+		defaultval = g_strdup_printf("%d", (int) MIN(R2INT(s.ry/s.dy), hardware->GetMaxLines()));
+	else
+		defaultval = g_strdup_printf("1000");
+
+	xrm.Get("s.ny", &s.ny, defaultval);
+	g_free(defaultval);
+
+	xrm.Get("s.nvalues", &s.nvalues, "1");
+	xrm.Get("s.ntimes", &s.ntimes, "1");
+
+	xrm.Get("s.Bias", &s.Bias, "2");
+	xrm.Get("s.Current", &s.Current, "1");
+	xrm.Get("s.SetPoint", &s.SetPoint, "0");
+	xrm.Get("s.GateTime", &s.GateTime, "1");
+	xrm.Get("s.Energy", &s.Energy, "72");
+
+	defaultval = g_strdup_printf("%d", SCAN_V_QUICK);
+	xrm.Get("display.ViewFlg", &display.ViewFlg, defaultval);
+	g_free(defaultval);
+	xrm.Get("display.contrast", &display.contrast, "0.5");
+	xrm.Get("display.bright", &display.bright, "32.0");
+	xrm.Get("display.cpshigh", &display.cpshigh, "1e6");
+	xrm.Get("display.cpslow", &display.cpslow, "0.0");
+	xrm.Get("display.vrange_z", &display.vrange_z, "25.0");
+	xrm.Get("display.voffset_z", &display.voffset_z, "0.0");
+	xrm.Get("display.vframe", &display.vframe, "0");
+	xrm.Get("display.vlayer", &display.vlayer, "0");
+}
+
+
+// END

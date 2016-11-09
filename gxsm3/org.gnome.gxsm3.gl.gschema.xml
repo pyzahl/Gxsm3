@@ -1,0 +1,557 @@
+<schemalist>
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-slice-direction">
+    <value value="0" nick="X "/>
+    <value value="1" nick="Y "/>
+    <value value="2" nick="Z "/>
+    <value value="3" nick="Volume "/>
+    <value value="4" nick="Scatter "/>
+  </enum>
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-light-light0">
+    <value value="0" nick="On "/>
+    <value value="1" nick="Off "/>
+  </enum>
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-mat-surf-color-mode">
+    <value value="0" nick="Material Color "/>
+    <value value="1" nick="Terrain Colors "/>
+    <value value="2" nick="Palette Colors "/>
+    <value value="3" nick="RGBA "/>
+  </enum>
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-mat-surf-color-src">
+    <value value="0" nick="Uniform "/>
+    <value value="1" nick="Height "/>
+    <value value="2" nick="X-Chan "/>
+  </enum>
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-render-op-fog">
+    <value value="0" nick="true "/>
+    <value value="1" nick="false "/>
+  </enum>
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-render-op-tick-frame-options">
+    <value value="0" nick="0: Simple "/>
+    <value value="1" nick="1: XYZ with Labels "/>
+    <value value="2" nick="2: XYZ Box "/>
+    <value value="3" nick="3: XYZ w L Box "/>
+  </enum>
+
+  <schema id="org.gnome.gxsm3.gl.v3dcontrol.view" path="/org/gnome/gxsm3/gl/v3dcontrol.view/">
+    <key name="rotationx" type="d">
+      <default>120</default>
+      <summary>Rotation Angle in X</summary>
+      <description>
+        Rotation Angle in X
+      </description>
+    </key>
+    <key name="rotationy" type="d">
+      <default>90</default>
+      <summary>Rotation Angle in Y</summary>
+      <description>
+        Rotation Angle in Y
+      </description>
+    </key>
+    <key name="rotationz" type="d">
+      <default>0</default>
+      <summary>Rotation Angle in Z</summary>
+      <description>
+        Rotation Angle in Z
+      </description>
+    </key>
+    <key name="translation" type="ad">
+      <default>[0,0,0]</default>
+      <summary>set translations vector X, Y, Z
+additional hint: use middle mouse to
+button and drag surface up/down!</summary>
+      <description>
+        set translations vector X, Y, Z
+additional hint: use middle mouse to
+button and drag surface up/down!
+      </description>
+    </key>
+    <key name="fov" type="d">
+      <default>45.0</default>
+      <summary>Field of View</summary>
+      <description>
+        Field of View
+      </description>
+    </key>
+    <key name="dist" type="d">
+      <default>1.5</default>
+      <summary>Distance</summary>
+      <description>
+        Distance
+      </description>
+    </key>
+    <key name="perspzfar" type="d">
+      <default>200</default>
+      <summary>Perspective: Z far distance relative to surface width (=1))</summary>
+      <description>
+        Perspective: Z far distance relative to surface width (=1))
+      </description>
+    </key>
+    <key name="perspznear" type="d">
+      <default>10</default>
+      <summary>Perspective: Z near distance (to center of surface)
+</summary>
+      <description>
+        Perspective: Z near distance (to center of surface)
+
+      </description>
+    </key>
+    <key name="hskl" type="d">
+      <default>1</default>
+      <summary>Height Scaling (Z scale)</summary>
+      <description>
+        Height Scaling (Z scale)
+      </description>
+    </key>
+    <key name="tskl" type="d">
+      <default>1</default>
+      <summary>Tetra Scaling (Triangle scale)</summary>
+      <description>
+        Tetra Scaling (Triangle scale)
+      </description>
+    </key>
+    <key name="sliceoffset" type="d">
+      <default>1</default>
+      <summary>Volume Slice Offset Z</summary>
+      <description>
+        Volume Slice Offset Z
+      </description>
+    </key>
+    <key name="slicedirection" type="s">
+      <choices>
+        <choice value='X'/>
+        <choice value='Y'/>
+        <choice value='Z'/>
+        <choice value='Volume'/>
+        <choice value='Scatter'/>
+      </choices>
+      <default>'Z'</default>
+      <summary>Slicing Direction X,Y or Z (Z is default surface plane)</summary>
+      <description>
+        Slicing Direction X,Y or Z (Z is default surface plane)
+      </description>
+    </key>
+    <key name="slicelimiter" type="ad">
+      <default>[0,0,1,0]</default>
+      <summary>Slicing Control, set #num to 0 for all: [Start, #num, Step, Sep]</summary>
+      <description>
+        Slicing Control, set #num to 0 for all: [Start, #num, Step, Sep]
+      </description>
+    </key>
+    <key name="sliceplanes" type="ad">
+      <default>[-1,-1,-1,0]</default>
+      <summary>Slice Plane to add, set to -1 for off, else index [X, Y, Z, mode]</summary>
+      <description>
+        Slice Plane to add, set to -1 for off, else index [X, Y, Z, mode]
+      </description>
+    </key>
+  </schema>
+
+  <schema id="org.gnome.gxsm3.gl.v3dcontrol.light" path="/org/gnome/gxsm3/gl/v3dcontrol.light/">
+    <key name="globalambient" type="ad">
+      <default>[1,1,1,1]</default>
+      <summary>Global Ambient Light [red, green, blue, alpha]</summary>
+      <description>
+        Global Ambient Light [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="light0" type="s">
+      <choices>
+        <choice value='On'/>
+        <choice value='Off'/>
+      </choices>
+      <default>'On'</default>
+      <summary>Light0: switch On/Off</summary>
+      <description>
+        Light0: switch On/Off
+      </description>
+    </key>
+    <key name="light0pos" type="ad">
+      <default>[1,1,1,1]</default>
+      <summary>Light0: Position, relative to surface width (=1) [X, Y, Z, 1]</summary>
+      <description>
+        Light0: Position, relative to surface width (=1) [X, Y, Z, 1]
+      </description>
+    </key>
+    <key name="light0spec" type="ad">
+      <default>[1,1,1,1]</default>
+      <summary>Light0: Specular Light Color [red, green, blue, alpha]</summary>
+      <description>
+        Light0: Specular Light Color [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="light0diff" type="ad">
+      <default>[0.4,0.4,0.4,1]</default>
+      <summary>Light0: Diffuse Light Color [red, green, blue, alpha]</summary>
+      <description>
+        Light0: Diffuse Light Color [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="light0amb" type="ad">
+      <default>[0.1,0.1,0.1,1]</default>
+      <summary>Light0: Ambient Light Color [red, green, blue, alpha]</summary>
+      <description>
+        Light0: Ambient Light Color [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="light1" type="s">
+      <choices>
+        <choice value='On'/>
+        <choice value='Off'/>
+      </choices>
+      <default>'On'</default>
+      <summary>Light1: switch On/Off</summary>
+      <description>
+        Light1: switch On/Off
+      </description>
+    </key>
+    <key name="light1pos" type="ad">
+      <default>[-1,1,1,1]</default>
+      <summary>Light1: Position, relative to surface width (=1) [X, Y, Z, 1]</summary>
+      <description>
+        Light1: Position, relative to surface width (=1) [X, Y, Z, 1]
+      </description>
+    </key>
+    <key name="light1spec" type="ad">
+      <default>[1,1,1,1]</default>
+      <summary>Light1: Specular Light Color [red, green, blue, alpha]</summary>
+      <description>
+        Light1: Specular Light Color [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="light1diff" type="ad">
+      <default>[0.4,0.4,0.4,1]</default>
+      <summary>Light1: Diffuse Light Color [red, green, blue, alpha]</summary>
+      <description>
+        Light1: Diffuse Light Color [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="light1amb" type="ad">
+      <default>[0.1,0.1,0.1,1]</default>
+      <summary>Light1: Ambient Light Color [red, green, blue, alpha]</summary>
+      <description>
+        Light1: Ambient Light Color [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="light2" type="s">
+      <choices>
+        <choice value='On'/>
+        <choice value='Off'/>
+      </choices>
+      <default>'Off'</default>
+      <summary>Light2: switch On/Off</summary>
+      <description>
+        Light2: switch On/Off
+      </description>
+    </key>
+    <key name="light2pos" type="ad">
+      <default>[1,1,1,0]</default>
+      <summary>Light2: Position, relative to surface width (=1) [X, Y, Z, 0]</summary>
+      <description>
+        Light2: Position, relative to surface width (=1) [X, Y, Z, 0]
+      </description>
+    </key>
+    <key name="light2spec" type="ad">
+      <default>[1,1,1,1]</default>
+      <summary>Light2: Specular Light Color [red, green, blue, alpha]</summary>
+      <description>
+        Light2: Specular Light Color [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="light2diff" type="ad">
+      <default>[0.1,0.1,0.1,1]</default>
+      <summary>Light2: Diffuse Light Color [red, green, blue, alpha]</summary>
+      <description>
+        Light2: Diffuse Light Color [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="light2amb" type="ad">
+      <default>[0.1,0.1,0.1,1]</default>
+      <summary>Light2: Ambient Light Color [red, green, blue, alpha]</summary>
+      <description>
+        Light2: Ambient Light Color [red, green, blue, alpha]
+      </description>
+    </key>
+  </schema>
+
+  <schema id="org.gnome.gxsm3.gl.v3dcontrol.matsurf" path="/org/gnome/gxsm3/gl/v3dcontrol.matsurf/">
+    <key name="ambient" type="ad">
+      <default>[0.45,0.15,0.07,1]</default>
+      <summary>Surface Ambient Color:
+ Specify the ambient RGBA reflectance of the material.
+Used only in "Uniform/Material Color Mode".</summary>
+      <description>
+        Surface Ambient Color:
+ Specify the ambient RGBA reflectance of the material.
+Used only in "Uniform/Material Color Mode".
+      </description>
+    </key>
+    <key name="diffuse" type="ad">
+      <default>[0.6,0.2,0.1,1]</default>
+      <summary>Surface Diffuse Color:
+ Specify the diffuse RGBA reflectance of the material.
+Used only in "Uniform/Material Color Mode".</summary>
+      <description>
+        Surface Diffuse Color:
+ Specify the diffuse RGBA reflectance of the material.
+Used only in "Uniform/Material Color Mode".
+      </description>
+    </key>
+    <key name="specular" type="ad">
+      <default>[1,1,0.3,1]</default>
+      <summary>Surface Specular Color:
+ Specify the specular RGBA reflectance of the material.</summary>
+      <description>
+        Surface Specular Color:
+ Specify the specular RGBA reflectance of the material.
+      </description>
+    </key>
+    <key name="shininess" type="d">
+      <default>7</default>
+      <summary>Surface Shininess</summary>
+      <description>
+        Surface Shininess
+      </description>
+    </key>
+    <key name="colormode" type="s">
+      <choices>
+        <choice value='Material Color'/>
+        <choice value='Terrain Colors'/>
+        <choice value='Palette Colors'/>
+        <choice value='RGBA'/>
+      </choices>
+      <default>'Material Color'</default>
+      <summary>Select Surface Coloring Mode.</summary>
+      <description>
+        Select Surface Coloring Mode.
+      </description>
+    </key>
+    <key name="colorsrc" type="s">
+      <choices>
+        <choice value='Uniform'/>
+        <choice value='Height'/>
+        <choice value='X-Chan'/>
+      </choices>
+      <default>'Uniform'</default>
+      <summary>Select Surface Color Source.</summary>
+      <description>
+        Select Surface Color Source.
+      </description>
+    </key>
+    <key name="colorcontrast" type="d">
+      <default>1</default>
+      <summary>Color Contrast: to scale color source</summary>
+      <description>
+        Color Contrast: to scale color source
+      </description>
+    </key>
+    <key name="coloroffset" type="d">
+      <default>0</default>
+      <summary>Color Contrast: shift color source</summary>
+      <description>
+        Color Contrast: shift color source
+      </description>
+    </key>
+    <key name="colorsaturation" type="d">
+      <default>1</default>
+      <summary>Color Saturation, 1=normal</summary>
+      <description>
+        Color Saturation, 1=normal
+      </description>
+    </key>
+    <key name="transparency" type="d">
+      <default>1</default>
+      <summary>Volume Model Transparency</summary>
+      <description>
+        Volume Model Transparency
+      </description>
+    </key>
+    <key name="transparencyoffset" type="d">
+      <default>0</default>
+      <summary>Volume Model Transparency Offset</summary>
+      <description>
+        Volume Model Transparency Offset
+      </description>
+    </key>
+  </schema>
+
+  <schema id="org.gnome.gxsm3.gl.v3dcontrol.matbox" path="/org/gnome/gxsm3/gl/v3dcontrol.matbox/">
+    <key name="color" type="ad">
+      <default>[0.6,0.1,0.1,1]</default>
+      <summary>Box Color [red, green, blue, alpha]</summary>
+      <description>
+        Box Color [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="ambient" type="ad">
+      <default>[0.6,0.1,0.1,1]</default>
+      <summary>Box Ambient [red, green, blue, alpha]</summary>
+      <description>
+        Box Ambient [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="specular" type="ad">
+      <default>[1,1,1,1]</default>
+      <summary>Box Specular</summary>
+      <description>
+        Box Specular
+      </description>
+    </key>
+    <key name="diffuse" type="ad">
+      <default>[0,0,0,1]</default>
+      <summary>Box Diffuse</summary>
+      <description>
+        Box Diffuse
+      </description>
+    </key>
+    <key name="shininess" type="d">
+      <default>20</default>
+      <summary>Box Shininess</summary>
+      <description>
+        Box Shininess
+      </description>
+    </key>
+  </schema>
+
+  <schema id="org.gnome.gxsm3.gl.v3dcontrol.renderop" path="/org/gnome/gxsm3/gl/v3dcontrol.renderop/">
+    <key name="quenchfactor" type="d">
+      <default>0.8</default>
+      <summary>Quench or PreView Factor:
+ 1: normal, adj to approx. optimal size dep. on viewport size, not on distance/zoom
+ 0: use all grid points (slow, dep. on image size)
+>1: use less (fast)</summary>
+      <description>
+        Quench or PreView Factor:
+ 1: normal, adj to approx. optimal size dep. on viewport size, not on distance/zoom
+ 0: use all grid points (slow, dep. on image size)
+>1: use less (fast)
+      </description>
+    </key>
+    <key name="clearcolor" type="ad">
+      <default>[0.6,0.7,0.7,1.0]</default>
+      <summary>GL Clear Color, e.g. background  [red, green, blue, alpha]</summary>
+      <description>
+        GL Clear Color, e.g. background  [red, green, blue, alpha]
+      </description>
+    </key>
+    <key name="fog" type="b">
+      <default>false</default>
+      <summary>enable/disable fog</summary>
+      <description>
+        enable/disable fog
+      </description>
+    </key>
+    <key name="fogcolor" type="ad">
+      <default>[0.6,0.7,0.7,1.0]</default>
+      <summary>Fog Color [red, green, blue, alpha].
+Fog blends a fog color with each rasterized pixel fragment's
+posttexturing color using a blending factor f. Factor f is computed in
+one of three ways (here: f=exp(-density*z)), depending on the fog
+mode. Let z be the distance in eye coordinates from the origin to the
+fragment being fogged.
+Note: you usually want to use the background (clear) color.</summary>
+      <description>
+        Fog Color [red, green, blue, alpha].
+Fog blends a fog color with each rasterized pixel fragment's
+posttexturing color using a blending factor f. Factor f is computed in
+one of three ways (here: f=exp(-density*z)), depending on the fog
+mode. Let z be the distance in eye coordinates from the origin to the
+fragment being fogged.
+Note: you usually want to use the background (clear) color.
+      </description>
+    </key>
+    <key name="fogdensity" type="d">
+      <default>0.8</default>
+      <summary>Density of fog, see fog color help!
+Effect depends on distance to object and size of object.</summary>
+      <description>
+        Density of fog, see fog color help!
+Effect depends on distance to object and size of object.
+      </description>
+    </key>
+    <key name="tex" type="b">
+      <default>false</default>
+      <summary>enable/disable texture (sorry not implemented today)</summary>
+      <description>
+        enable/disable texture (sorry not implemented today)
+      </description>
+    </key>
+    <key name="mesh" type="b">
+      <default>false</default>
+      <summary>enable/disable mesh mode (use mesh or solid model)</summary>
+      <description>
+        enable/disable mesh mode (use mesh or solid model)
+      </description>
+    </key>
+    <key name="transparentslices" type="b">
+      <default>false</default>
+      <summary>enable/disable transparency for normal non voluem view/slices</summary>
+      <description>
+        enable/disable transparency for normal non voluem view/slices
+      </description>
+    </key>
+    <key name="emission" type="b">
+      <default>false</default>
+      <summary>enable/disable emission mode</summary>
+      <description>
+        enable/disable emission mode
+      </description>
+    </key>
+    <key name="cull" type="b">
+      <default>false</default>
+      <summary>enable/disable cull face mode (surface back is not drawn!)
+Note: if enabled you will not see your surface,
+if you are looking from below!</summary>
+      <description>
+        enable/disable cull face mode (surface back is not drawn!)
+Note: if enabled you will not see your surface,
+if you are looking from below!
+      </description>
+    </key>
+    <key name="smooth" type="b">
+      <default>true</default>
+      <summary>enable/disable Smooth Shading (GL color model is smooth or flat)
+Note: smooth shading is much slower but looks also much better.</summary>
+      <description>
+        enable/disable Smooth Shading (GL color model is smooth or flat)
+Note: smooth shading is much slower but looks also much better.
+      </description>
+    </key>
+    <key name="ortho" type="b">
+      <default>false</default>
+      <summary>enable/disable ortho mode (not implemented)</summary>
+      <description>
+        enable/disable ortho mode (not implemented)
+      </description>
+    </key>
+    <key name="zeroplane" type="b">
+      <default>true</default>
+      <summary>enable/disable Zero Plane/Box</summary>
+      <description>
+        enable/disable Zero Plane/Box
+      </description>
+    </key>
+    <key name="tickmarks" type="b">
+      <default>false</default>
+      <summary>enable/disable 3D Tickmarks drawing
+ (Note: not yet available!!)</summary>
+      <description>
+        enable/disable 3D Tickmarks drawing
+ (Note: not yet available!!)
+      </description>
+    </key>
+    <key name="tickframeoptions" type="s">
+      <choices>
+        <choice value='0: Simple'/>
+        <choice value='1: XYZ with Labels'/>
+        <choice value='2: XYZ Box'/>
+        <choice value='3: XYZ w L Box'/>
+      </choices>
+      <default>'0: Simple'</default>
+      <summary>Tick Frame Options)</summary>
+      <description>
+        Tick Frame Options)
+      </description>
+    </key>
+  </schema>
+</schemalist>
+
