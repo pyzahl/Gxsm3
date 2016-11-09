@@ -22,45 +22,37 @@ current work in progress:
    ... LM (VP Prog tab): color buttons, figure out how, add description for mode field?, simple mode: eliminate RHS fields??
    ... chain CP/CI 100/120%
 
-   --check PAC monitor update, check/complete PAC gschemata, config enty broken, make sure vales getting stored/restored
-   xxx--PAC defaults: full phase, allow neg. ampl. ***, 29800Hz, -0.1 - 3V,  0-5V, *** 0.020, +7.5/-41  -140deg, -73/-140 (15Hz) done.
-
 pending ports:
-- 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working.
+- 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2
 
 
 pending solution/reworks:
 -> build a analysis clone "gxsm3a" instance with independent session/session manager and gsettings path
 -> auto organize Matrix of Plots?!?!?
 
-pending minor issues:
+pending minor issues/ideas:
 ---PROBE FOLDERS/CONTROL:
-  -join button state issue
   -recode LM/graphs button?
 - Point Obj "Follow" -- new solution for odl problem. Central on/off switch on titlebar. May add new tip-monitor/move/grab object/life-indicator
-- View2D sidepane controls reworked, pending: OSD xy, SelectNC-Vars, Arrow/..size --> gsettings // issues with show-probe checkbox(es)/crashes -- check,fix!
 - Profile View: Cursors/DnD pending
 - minor left overs of h/vboxes and packing in dialogs... -- non critical, works fine but should be done as officially obsoleted.
   --> smart manage window position???
--- PCS is NOT yet updating non user set values -- akak file nunber aut oadvance, client settings, remote...
+-- PCS is NOT yet updating non user set values -- ak file number auto advance, client settings, remote...
 
 Major upcoming task:
-- testing and validation, creating a test procedute/list for
-  - core
-  - math plugins
-  - HwI plugin(s)
-- Manual, embeded manual code reviewing/updating
-
+- Manual updates, embeded manual code reviewing/updating
+- Website
 
 Testing, Issues found, Ideas:
-- Red/Blue-Line Profile Color List [swap order]
 - RedLine Profile ==> [option?] overlay/underlay/below scan view 2D -- done, works (linked to 2d profile, can be hidden), evaluating...
-
 - DSP-Control/Graphs -> add clear Coulmns/divers
 
-{crash w auto-plot at VP start ??? on some machines only -- odd stuff again -- using total new update/plot schme now as gtk3 suggests????}
+Bug Report Log:
+-> {crash w auto-plot at VP start ??? on some machines only -- odd stuff again -- using total new update/plot schme now as gtk3 suggests????}
+-> Defaults for Amp/GPIO in Mover-Auto Tab needs user update to take effect after 1st start ?? unclear.
+-> View2D sidepane controls reworked, pending: OSD xy, SelectNC-Vars, Arrow/..size --> gsettings // issues with show-probe checkbox(es)/crashes -- check,fix!
 
+Low Priority, new ideas, ...:
+- Red/Blue-Line Profile Color List [swap order]
 - Window Pos Management -- issue with size resore if config/normal mode!! [small/big] -- Window manager interferse stupidly :( :( o[
-
-Low Priority:
 - Make possibel to adjust rotation live while scanning -- just liek "move", but hi-level, slowly... ???
