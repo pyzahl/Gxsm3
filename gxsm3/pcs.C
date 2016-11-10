@@ -884,11 +884,15 @@ gint Gtk_EntryControl::ShowMessage(const char *txt, const char *options, int def
 
 		return 1;
 	} else {
-		GtkWidget *dialog = gtk_message_dialog_new (GTK_WINDOW (gtk_widget_get_toplevel (entry)), // get underlying window as parent
-							    GTK_DIALOG_DESTROY_WITH_PARENT,
-							    GTK_MESSAGE_INFO,
-							    GTK_BUTTONS_CLOSE,
-							    "%s", txt);
+                GtkWidget *toplevel = gtk_widget_get_toplevel (entry);  // try to get the underlying window as parent for dialog
+                GtkWindow *ww = NULL;
+                if (gtk_widget_is_toplevel (toplevel))
+                        ww = GTK_WINDOW (toplevel);
+                GtkWidget *dialog = gtk_message_dialog_new (ww,
+                                                            GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                            GTK_MESSAGE_INFO,
+                                                            GTK_BUTTONS_CLOSE,
+                                                            "%s", txt);
 	
 		g_signal_connect_swapped (G_OBJECT (dialog), "response",
 					  G_CALLBACK (gtk_widget_destroy),
