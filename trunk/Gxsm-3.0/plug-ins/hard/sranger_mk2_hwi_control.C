@@ -395,17 +395,6 @@ DSPControlUserTabs::DSPControlUserTabs ()
 {
         GtkWidget *notebook;
         GtkWidget *grid_base;
-
-	GtkWidget *frame_param;
-
-	GtkWidget *wid, *label, *input;
-	GtkWidget *menu;
-	GtkWidget *menuitem;
-	GtkWidget *checkbutton;
-	GtkWidget *button;
-
-	GtkWidget *tabs_checkbutton;
-        int x,y;
         
 	gchar *tmp = g_strdup_printf ("SR DSP Control %s %s [%s]", (DSPPACClass)? "MK3-PLL/A810":"MK2/A810", N_("User Tabs"), xsmres.DSPDev);
         PI_DEBUG (DBG_L5, "DSPControlUserTabs::DSPControlUserTabs");
@@ -416,26 +405,8 @@ DSPControlUserTabs::DSPControlUserTabs ()
 	DSPControlContainerClass->add_notebook (notebook, NOTEBOOK_SR_CRTL_USER);
 	gtk_grid_attach (GTK_GRID (v_grid), notebook, 1,1, 1,1);
 	gtk_widget_show (notebook);
-        gtk_widget_set_size_request  (notebook, 500, 450);
+        gtk_widget_set_size_request  (notebook, 500, 400);
 
-        //	gtk_notebook_append_page (GTK_NOTEBOOK (notebook), wid=gtk_label_new ("I AM EMTPY"), gtk_label_new ("o"));
-        
-        //	DSPControlContainerClass->add_tab (wid=gtk_label_new ("I AM EMTPY"), NOTEBOOK_TAB_UT);
-	gtk_widget_show_all (wid);
-        
-#if 0
-// ==== Folder: User Tabs Empty  ========================================
-        grid_base = build_tab_start ("UT", "tab-ut", NOTEBOOK_TAB_UT);
-
-	// ========================================
- 	frame_param = gtk_frame_new (N_("User Tabs (Empty, Experimental)"));
-        gtk_grid_attach (GTK_GRID (grid_base), frame_param, 1,1, 1,1);
-
- 	gtk_widget_show (frame_param);
-        //        gtk_container_add (GTK_CONTAINER (frame_param), xxx);
-
-	gtk_widget_show_all (grid_base);
-#endif
 	set_window_geometry ("dsp-control-1");
 }
 
@@ -2355,15 +2326,17 @@ DSPControl::DSPControl () {
                 dsp_bp->grid_add_button (N_(stolab), NULL, 1,
                                          G_CALLBACK (callback_LM_store_vp), this,
                                          "key", gckey);
-                if (gdk_rgba_parse (&rgba, "tomato"))
-                        gtk_widget_override_background_color ( GTK_WIDGET (dsp_bp->button), GTK_STATE_FLAG_PRELIGHT, &rgba);
+                // CSS
+                //                if (gdk_rgba_parse (&rgba, "tomato"))
+                //                        gtk_widget_override_background_color ( GTK_WIDGET (dsp_bp->button), GTK_STATE_FLAG_PRELIGHT, &rgba);
 
                 dsp_bp->set_xy (i+1, 11);
                 dsp_bp->grid_add_button (N_(rcllab), NULL, 1,
                                          G_CALLBACK (callback_LM_restore_vp), this,
                                          "key", gckey);
-                if (gdk_rgba_parse (&rgba, "SeaGreen3"))
-                        gtk_widget_override_background_color ( GTK_WIDGET (dsp_bp->button), GTK_STATE_FLAG_PRELIGHT, &rgba);
+                // CSS
+                //                if (gdk_rgba_parse (&rgba, "SeaGreen3"))
+                //                        gtk_widget_override_background_color ( GTK_WIDGET (dsp_bp->button), GTK_STATE_FLAG_PRELIGHT, &rgba);
 	}
 
         // ===================== done with panned
@@ -2937,8 +2910,9 @@ void DSPControl::LM_store_vp (const gchar *key){
         g_variant_unref (probe_vector_program_matrix);
         g_variant_dict_unref (dict);
 
-        for (int i=0; pc_array[i]; ++i)
-                g_variant_unref (pc_array[i]);
+        // Can't do, don't need??? -- getting this: GLib-CRITICAL **: g_variant_unref: assertion 'value->ref_count > 0' failed
+        //        for (int i=0; pc_array[i]; ++i)
+        //                g_variant_unref (pc_array[i]);
 }
 
 void DSPControl::LM_restore_vp (const gchar *key){
@@ -3248,6 +3222,8 @@ gint DSPControl::SetUserParam (gint n, gchar *id, double value){
 }
 
 void DSPControl::update(){
+        if (!GUI_ready) return;
+
 	g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "DSP_EC_list"),
 			(GFunc) App::update_ec, NULL);
 	g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "DSP_VPC_OPTIONS_list"),

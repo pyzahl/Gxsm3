@@ -1447,7 +1447,8 @@ void ProfileControl::addTic(cairo_item **tic, cairo_item_text **lab,
 
         if(*tic == NULL)
                 *tic = new cairo_item_path (2);
-        (*tic)->set_stroke_rgba (color);
+        if (color)
+                (*tic)->set_stroke_rgba (color);
 
 	switch(pos){
 	case TIC_EMPTY: case LAB_EMPTY:
@@ -1482,7 +1483,8 @@ void ProfileControl::addTic(cairo_item **tic, cairo_item_text **lab,
 	case ADD_LEGEND:  ty=coords[1]=coords[3]=scan2canvasY(val); coords[0]=cxwidth+len/10.; 
 		tx=len/2.+(coords[2]=cxwidth+len+len/10.); 
 		txtanchor = CAIRO_ANCHOR_W;
-                (*tic)->set_stroke_rgba (color);
+                if (color)
+                        (*tic)->set_stroke_rgba (color);
                 //                (*tic)->set_stroke_rgba (xsmres.ProfileGridColor);
 		lstyl=CAIRO_LINE_SOLID;
 		break;
@@ -1492,7 +1494,8 @@ void ProfileControl::addTic(cairo_item **tic, cairo_item_text **lab,
 
         //	XSM_DEBUG (DBG_L5, "ProfileElement::addTic - format");
         
-	if(fmt && ty != NAN && tx != NAN && ty != -NAN && tx != -NAN){
+	if(fmt && ty != NAN && tx != NAN && ty != -NAN && tx != -NAN && tval != NAN && tval != -NAN){
+                if (fabs (tval) < 1e-15) tval = 0.; // check for "zero" and eliminate rounding residuals
 		gchar *txt=g_strdup_printf (fmt, tval);
 		if(*lab == NULL)
 			*lab = new cairo_item_text (tx, ty, txt);
