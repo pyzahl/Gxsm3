@@ -11,6 +11,8 @@ Note to self -- remove old/obsolete entries and reset to defaults:
 to clean dconf database and reset run as user:
 dconf reset -f /org/gnome/gxsm3/
 
+to debug glib,... messages:
+G_DEBUG=fatal_warnings gdb gxsm3
 
 
 current work in progress:

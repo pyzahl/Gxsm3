@@ -294,6 +294,8 @@ class VObject{
 
 	float custom_element_color[4];
 	float custom_element_b_color[4];
+
+	gboolean dragging_active;
  private:
 	int id;
 	V_OBJECT_TYPE type_id;
@@ -314,6 +316,8 @@ class VObPoint : public VObject{
  public:
 	VObPoint(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
 	virtual ~VObPoint();
+
+	virtual void draw_extra(cairo_t *cr);
 	
 	virtual void Update();
 	virtual void follow_on();
