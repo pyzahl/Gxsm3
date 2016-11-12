@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -255,6 +257,8 @@ static gboolean opencvmatch_run(Scan *Src, Scan *Dest)
 		break;
 	}
 
+	std::cout << "Recr["<<x1<<","<<y1<<","<<x2<<","<<y2<<"] in ["<<Src->mem2d->GetNx ()<<", "<<Src->mem2d->GetNy () <<"]"<< std::endl;
+	
 	// coordinates validity check, rect points must be RHS/pos.
 	if (x1 < 0 || x1 >= x2 || x2 < 0 || x1 >= Src->mem2d->GetNx () || x2 >= Src->mem2d->GetNx ()
 	    || y1 < 0 || y1 >= y2 || y2 < 0 || y1 >= Src->mem2d->GetNy () || y2 >= Src->mem2d->GetNy ())
@@ -264,14 +268,14 @@ static gboolean opencvmatch_run(Scan *Src, Scan *Dest)
 	double high, low;
 	Src->mem2d->HiLo(&high, &low, FALSE, NULL, NULL, 1);
 	std::cout << "mat:" << std::endl;
-	Mat img1 = Mat (Src->mem2d->GetNx (), Src->mem2d->GetNy (), CV_32F);
+	Mat img1 = Mat (Src->mem2d->GetNy (), Src->mem2d->GetNx (), CV_32F);
 	for (int i=0; i<Src->mem2d->GetNy (); ++i){
 		for (int j=0; j<Src->mem2d->GetNx (); ++j){
 			double pv = Src->mem2d->data->Z(j,i);
-			//			std::cout << pv << ":";
+			//std::cout <<j<<","<<i<<" = "<< pv << ";";
 			img1.at<float>(i,j) = (float)((pv-low)/(high-low));
 		}
-		//		std::cout << std::endl;
+		//std::cout << std::endl;
 	}
 	//	imshow("img1", img1);
 

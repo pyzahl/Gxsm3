@@ -371,11 +371,12 @@ void Param_Control::Set_FromValue(double nVal){
 	}
 	else{
 		gchar *ref = g_strconcat("[",refname ? refname:" ","]",NULL);
-		gchar *txt = g_strdup_printf("%s %s: %s ... %s", 
+		gchar *txt = g_strdup_printf("%s %s: %s ... %s\nrequested: %s", 
 					     MLD_VALID_RANGE,
 					     ref,
 					     unit->UsrString (vMin), 
-					     unit->UsrString (vMax));
+					     unit->UsrString (vMax),
+                                             unit->UsrString (nVal));
 
 		if (warning)
 			ShowMessage(txt);
