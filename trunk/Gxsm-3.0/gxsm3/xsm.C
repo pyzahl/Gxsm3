@@ -28,6 +28,7 @@
 #include <time.h>
 // #include <unistd.h>
 #include <signal.h>
+#include "glib/gstdio.h"
 
 #ifndef __XSM_H
 #include "xsm.h"
@@ -474,7 +475,12 @@ SCAN_DATA::~SCAN_DATA(){
 
 void SCAN_DATA::CpUnits(SCAN_DATA &src){
 	XSM_DEBUG (DBG_L2, "SCAN_DATA: CpUnits #" << cnt);
-  
+
+        if (&src == this){
+                g_critical ("SCAN_DATA CpUnits: src equal self.");
+                return;
+        }
+        
         if (src.Zunit){
                 if (Zunit) delete Zunit;
                 Zunit = src.Zunit->Copy();

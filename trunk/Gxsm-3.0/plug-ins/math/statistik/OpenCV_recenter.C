@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -144,7 +146,7 @@ GxsmPlugin *get_gxsm_plugin_info ( void ){
   return &opencvrecenter_pi; 
 }
 
-GxsmMathTwoSrcPlugin *get_gxsm_math_two_src_plugin_info( void ) { 
+GxsmMathTwoSrcPlugin *get_gxsm_math_two_src_no_same_size_check_plugin_info( void ) { 
   return &opencvrecenter_m2s_pi; 
 }
 
@@ -238,6 +240,7 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
 
 	setup_opencv_recenter ("Setup Feature Recentering", Src, recenter_threshold, object_radius, method, max_markers, i_marker_group);
 
+#if 0
 	// find reference feature (rectangle object)
 	while (n_obj--){
 		scan_object_data *obj;
@@ -259,42 +262,36 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
 	if (x1 < 0 || x1 >= x2 || x2 < 0 || x1 >= Src->mem2d->GetNx () || x2 >= Src->mem2d->GetNx ()
 	    || y1 < 0 || y1 >= y2 || y2 < 0 || y1 >= Src->mem2d->GetNy () || y2 >= Src->mem2d->GetNy ())
 	    return MATH_SELECTIONERR;
-	      
+#endif
+	
 	// convert Scan->Src data into OpenCV Mat => img1
 	double high, low;
 	Src->mem2d->HiLo(&high, &low, FALSE, NULL, NULL, 1);
-	std::cout << "mat:" << std::endl;
-	Mat img1 = Mat (Src->mem2d->GetNx (), Src->mem2d->GetNy (), CV_32F);
+	std::cout << "img1: mat src:" << std::endl;
+	Mat img1 = Mat (Src->mem2d->GetNy (), Src->mem2d->GetNx (), CV_32F);
 	for (int i=0; i<Src->mem2d->GetNy (); ++i){
 		for (int j=0; j<Src->mem2d->GetNx (); ++j){
 			double pv = Src->mem2d->data->Z(j,i);
-			//			std::cout << pv << ":";
 			img1.at<float>(i,j) = (float)((pv-low)/(high-low));
 		}
-		//		std::cout << std::endl;
 	}
 	//	imshow("img1", img1);
 
-	Mat img2tmp = Mat (SrcRef->mem2d->GetNx (), SrcRef->mem2d->GetNy (), CV_32F);
+	SrcRef->mem2d->HiLo(&high, &low, FALSE, NULL, NULL, 1);
+	std::cout << "img2: mat ref:" << std::endl;
+	Mat img2 = Mat (SrcRef->mem2d->GetNy (), SrcRef->mem2d->GetNx (), CV_32F);
 	for (int i=0; i<SrcRef->mem2d->GetNy (); ++i){
 		for (int j=0; j<SrcRef->mem2d->GetNx (); ++j){
 			double pv = SrcRef->mem2d->data->Z(j,i);
-			//			std::cout << pv << ":";
-			img2tmp.at<float>(i,j) = (float)((pv-low)/(high-low));
+			img2.at<float>(i,j) = (float)((pv-low)/(high-low));
 		}
-		//		std::cout << std::endl;
 	}
-
-	
-	// extract reference feature => img2
-	double dx = x2-x1;
-	double dy = y2-y1;
-	Mat img2 = img2tmp (Rect(x1,y1,dx,dy)).clone();
-	//	imshow("img2", img2);
 
 	if(img1.empty() || img2.empty()){
 		return MATH_LIB_ERR;
 	}
+
+	std::cout << "run match..." << std::endl;
 
 	// do recentering via OpenCV library and some data post processing
 	Mat img_result, img_recenter, img_tmp, img_t8, img_r8;
@@ -303,6 +300,8 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
 	pow (img_recenter, 3., img_result);
 	threshold(img_result, img_tmp, recenter_threshold, 0., THRESH_TOZERO);
 
+	std::cout << "convert result, apply threashold..." << std::endl;
+	
 	//	img_tmp.convertTo(img_t8, CV_8UC1, 255., 0.);
 	//	img_tmp.convertTo(img_r8, CV_8UC1, 255., 0.);
 	//	imshow("t8", img_t8);
@@ -323,97 +322,60 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
 	for (int i=0; i<Dest->mem2d->GetNy () && i < img_result.rows; ++i){
 		for (int j=0; j<Dest->mem2d->GetNx () && j < img_result.cols; ++j){
 			double pv = img_result.at<float>(i,j);
-	//			std::cout << pv << ":";
 			Dest->mem2d->PutDataPkt(pv, j,i);
 		}
-	//		std::cout << std::endl;
 	}
 
 	// now mark features in Src Scan using Marker Objects, avoid duplicated in a radius "r=4 pix (object_radius)"
 	gchar *tmp;
 	int count=0;
+	double peak=0.;
+	int ip, jp;
+	ip=jp=0;
 	for (int i=0; i<img_result.rows; ++i){
 		for (int j=0; j<img_result.cols; ++j){
-			if (count > max_markers)
-				continue;
 			if (img_result.at<float>(i,j) < recenter_threshold)
 				continue;
-
-			// mark done
-			
-			int flag=0;
-			int r=object_radius;
-			double m=img_result.at<float>(i,j);
-			int km=i;
-			int lm=j;
-			for (int k=i-r; !flag && k<=i+r && k<img_result.rows; ++k){
-				if (k<0) continue;
-				for (int l=j-r; l<=j+r && j<img_result.cols; ++l){
-					if (l<0) continue;
-					if (img_result.at<float>(k,l) == 2.){
-						flag=1; break;
-					}
-					if (img_result.at<float>(k,l) > m){
-						km=k; lm=l;
-					}
-				}
+			if (img_result.at<float>(i,j) > peak){
+			        peak = img_result.at<float>(i,j);
+				ip=i, jp=j;
 			}
-
-			if (flag) continue;
 			
-			img_result.at<float>(i,j) = 2.; // Flag mark this spot as marked now.
-
-			if (Src->view){
-				if (Src->view->Get_ViewControl ()){
-					VObject *vo;
-					double xy[2];
-					gfloat c[4] = { 1.,0.,0.,1.};
-					int spc[2][2] = {{0,0},{0,0}};
-					int sp00[2] = {1,1};
-					int s = 0;
-					Src->Pixel2World (lm+dx/2., km+dy/2., xy[0], xy[1]);
-					//					Src->Pixel2World (j, i, xy[0], xy[1]);
-					//					std::cout << "Add Marker at " << i << "," << j << std::endl;
-					gchar *lab = g_strdup_printf ("M%05d",++count);
-					(Src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((Src->view->Get_ViewControl ())->canvas, xy, Src->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, 1.));
-					vo->set_obj_name (marker_group[i_marker_group]);
-					vo->set_custom_label_font ("Sans Bold 12");
-					vo->set_custom_label_color (c);
-					vo->set_on_spacetime  (sp00[0] ? FALSE:TRUE, spc[0]);
-					vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
-					vo->show_label (s);
-					vo->remake_node_markers ();
-				}
-			}
 		}
 	}
 
-	
-#if 0
-	// detecting keypoints
-	SurfFeatureDetector detector(400);
-	vector<KeyPoint> keypoints1, keypoints2;
-	detector.detect(img1, keypoints1);
-	detector.detect(img2, keypoints2);
+        // center to ref box (not origin)
+        jp += SrcRef->mem2d->GetNx ()/2;
+        ip += SrcRef->mem2d->GetNy ()/2;
+                
+        if (Src->view && peak > 0.){
+                if (Src->view->Get_ViewControl ()){
+                        VObject *vo;
+                        double xy[2];
+                        gfloat c[4] = { 1.,0.,0.,1.};
+                        int spc[2][2] = {{0,0},{0,0}};
+                        int sp00[2] = {1,1};
+                        int s = 0;
+                        Src->Pixel2World (jp, ip, xy[0], xy[1]);
+                        std::cout << "Center best match found at: "
+                                  << xy[0] << ", " << xy[1]
+                                  << " [" << jp << "," << ip << "] ==> " << peak << std::endl;
+                        gchar *lab = g_strdup_printf ("Center");
+                        (Src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((Src->view->Get_ViewControl ())->canvas, xy, Src->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, 1.));
+                        vo->set_obj_name (marker_group[i_marker_group]);
+                        vo->set_custom_label_font ("Sans Bold 12");
+                        vo->set_custom_label_color (c);
+                        vo->set_on_spacetime  (sp00[0] ? FALSE:TRUE, spc[0]);
+                        vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
+                        vo->show_label (s);
+                        vo->remake_node_markers ();
 
-	// computing descriptors
-	SurfDescriptorExtractor extractor;
-	Mat descriptors1, descriptors2;
-	extractor.compute(img1, keypoints1, descriptors1);
-	extractor.compute(img2, keypoints2, descriptors2);
-	
-	// recentering descriptors
-	BruteForceRecenterer<L2<float> > recenterer;
-	vector<DRecenter> recenteres;
-	recenterer.recenter(descriptors1, descriptors2, recenteres);
-	
-	// drawing the results
-	namedWindow("recenteres", 1);
-	Mat img_recenteres;
-	drawRecenteres(img1, keypoints1, img2, keypoints2, recenteres, img_recenteres);
-	imshow("recenteres", img_recenteres);
+                        gapp->xsm->data.s.x0 = xy[0];
+                        gapp->xsm->data.s.y0 = xy[1];
+                        gapp->spm_offset_check (NULL, gapp);
+                }
+	}
 
-#endif	
-
+	
 	return MATH_OK;
 }

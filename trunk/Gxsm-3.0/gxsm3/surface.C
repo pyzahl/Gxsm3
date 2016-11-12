@@ -328,9 +328,9 @@ int Surface::ActivateChannel(int NewActiveChannel){
 }
 
 // Service Fkt, suche Channel Nr. mit fid als ID
-int Surface::FindChan(int fid){
+int Surface::FindChan(int fid, int start){
 	int i;
-	for(i=0; i<MAX_CHANNELS; i++){
+	for(i=start; i<MAX_CHANNELS; i++){
 		if(ChannelMode[i] == fid){
 			//      XSM_DEBUG (DBG_L2, "Surface::FindChan ID=" << fid << " => Match #" << i);
 			return i;
@@ -1280,37 +1280,45 @@ void Surface::MathOperation(gboolean (*MOp)(MATHOPPARAMS)){
 	// Punkte: Diagonale Ecken von Rechteck
 	int Merr;
 	int ChDest;
+        int start=0;
 	if(ActiveScan){ // ist ein Scan Active ? (als Quelle noeig)
-		if((ChDest=FindChan(ID_CH_M_MATH)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
-			if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
-				// alle belegt !!!
-				XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
-				return;
-			}
-		}
-		// anlegen/erneuern einen Math Scans
-		gapp->channelselector->SetMode(ChDest, ID_CH_M_MATH);
-		ChannelMode[ChDest] = ID_CH_M_MATH;
-		if(! scan[ChDest]){ // Topo,.. Channel neu anlegen ?
-			//      scan[ChDest] = NewScan(ChannelView[ChDest], data.display.ViewFlg, ChDest, &data);
-			scan[ChDest] = new Scan(ChannelView[ChDest], data.display.ViewFlg, ChDest, &data, ActiveScan->mem2d->GetTyp());
-			// Fehler ?
-			if(!scan[ChDest]){
-				XSM_SHOW_ALERT(ERR_SORRY, ERR_NOMEM,"",1);
-				return;
-			}
-		}
-		// Parameter bernehmen, Groesse einstellen, etc.
-		scan[ChDest]->create();
-		G_FREE_STRDUP_PRINTF(scan[ChDest]->data.ui.name, "%s", ActiveScan->data.ui.name); // Copy FileName
-		// call of MathOp( SourceMem2d, DestMem2d )
-		if( (Merr=(*MOp)(ActiveScan, scan[ChDest])) ){
-			XSM_SHOW_ALERT(ERR_MATH, MathErrString[Merr], "", 1);
-			SetMode (ChDest, ID_CH_M_OFF, TRUE);
-		} 
-		else
-			scan[ChDest]->draw();
-	}
+                do{
+                        if((ChDest=FindChan(ID_CH_M_MATH, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
+                                if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
+                                        // alle belegt !!!
+                                        XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
+                                        return;
+                                }
+                        }
+                        if (scan[ChDest] == ActiveScan){
+                                start = ChDest+1;
+                                ChDest = -1;
+                        }
+                } while (ChDest<0);
+
+                // anlegen/erneuern einen Math Scans
+                gapp->channelselector->SetMode(ChDest, ID_CH_M_MATH);
+                ChannelMode[ChDest] = ID_CH_M_MATH;
+                if(! scan[ChDest]){ // Topo,.. Channel neu anlegen ?
+                        //      scan[ChDest] = NewScan(ChannelView[ChDest], data.display.ViewFlg, ChDest, &data);
+                        scan[ChDest] = new Scan(ChannelView[ChDest], data.display.ViewFlg, ChDest, &data, ActiveScan->mem2d->GetTyp());
+                        // Fehler ?
+                        if(!scan[ChDest]){
+                                XSM_SHOW_ALERT(ERR_SORRY, ERR_NOMEM,"",1);
+                                return;
+                        }
+                }
+                // Parameter bernehmen, Groesse einstellen, etc.
+                scan[ChDest]->create();
+                G_FREE_STRDUP_PRINTF(scan[ChDest]->data.ui.name, "%s", ActiveScan->data.ui.name); // Copy FileName
+                // call of MathOp( SourceMem2d, DestMem2d )
+                if( (Merr=(*MOp)(ActiveScan, scan[ChDest])) ){
+                        XSM_SHOW_ALERT(ERR_MATH, MathErrString[Merr], "", 1);
+                        SetMode (ChDest, ID_CH_M_OFF, TRUE);
+                } 
+                else
+                        scan[ChDest]->draw();
+        }
 	else{
 		XSM_SHOW_ALERT(ERR_SORRY, ERR_NOACTIVESCAN,HINT_ACTIVATESCANMATH,1);
 	}
@@ -1325,14 +1333,22 @@ void Surface::MathOperationS(gboolean (*MOp)(MATHOPPARAMDONLY)){
 	// Punkte: Diagonale Ecken von Rechteck
 	int Merr;
 	int ChDest;
+        int start=0;
 
-        if((ChDest=FindChan(ID_CH_M_MATH)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
-                if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
-                        // alle belegt !!!
-                        XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
-                        return;
+        do{
+                if((ChDest=FindChan(ID_CH_M_MATH, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
+                        if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
+                                // alle belegt !!!
+                                XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
+                                return;
+                        }
                 }
-        }
+                if (scan[ChDest] == ActiveScan){
+                        start = ChDest+1;
+                        ChDest = -1;
+                }
+        } while (ChDest < 0);
+
         // anlegen/erneuern einen Math Scans
         gapp->channelselector->SetMode(ChDest, ID_CH_M_MATH);
         ChannelMode[ChDest] = ID_CH_M_MATH;
@@ -1367,16 +1383,24 @@ void Surface::MathOperation_for_all_vt(gboolean (*MOp)(MATHOPPARAMS)){
 	// Punkte: Diagonale Ecken von Rechteck
 	int Merr;
 	int ChDest;
+        int start=0;
 	Scan *Src=NULL, *Dest=NULL;
 
 	if(ActiveScan){ // ist ein Scan Active ? (als Quelle noeig)
-		if((ChDest=FindChan(ID_CH_M_MATH)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
-			if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
-				// alle belegt !!!
-				XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
-				return;
-			}
-		}
+                do{
+                        if((ChDest=FindChan(ID_CH_M_MATH, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
+                                if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
+                                        // alle belegt !!!
+                                        XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
+                                        return;
+                                }
+                        }
+                        if (scan[ChDest] == ActiveScan){
+                                start = ChDest+1;
+                                ChDest = -1;
+                        }
+                } while (ChDest < 0);
+
 		// anlegen/erneuern einen Math Scans
 		gapp->channelselector->SetMode(ChDest, ID_CH_M_MATH);
 		ChannelMode[ChDest] = ID_CH_M_MATH;
@@ -1473,6 +1497,7 @@ void Surface::MathOperationX(gboolean (*MOp)(MATH2OPPARAMS), int IdSrc2, gboolea
 	// Punkte: Diagonale Ecken von Rechteck
 	int Merr;
 	int ChDest;
+        int start=0;
 	int ChSrc2;
 	if(ActiveScan){ // ist ein Scan Active ? (als Quelle noeig)
 		if((ChSrc2=FindChan(IdSrc2))>=0){ // ist zweite Quelle vorhanden ?
@@ -1489,13 +1514,20 @@ void Surface::MathOperationX(gboolean (*MOp)(MATH2OPPARAMS), int IdSrc2, gboolea
 					XSM_SHOW_ALERT(ERR_SORRY, ERR_SIZEDIFF,HINT_SIZEEQ,1);
 					return;
 				}
-			if((ChDest=FindChan(ID_CH_M_MATH)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
-				if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
-					// alle belegt !!!
-					XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
-					return;
-				}
-			}
+                        do{
+                                if((ChDest=FindChan(ID_CH_M_MATH, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
+                                        if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
+                                                // alle belegt !!!
+                                                XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
+                                                return;
+                                        }
+                                }
+                                if (scan[ChDest] == ActiveScan){
+                                        start = ChDest+1;
+                                        ChDest = -1;
+                                }
+                        } while (ChDest < 0);
+
 			// anlegen/erneuern einen Math Scans
 			gapp->channelselector->SetMode(ChDest, ID_CH_M_MATH);
 			ChannelMode[ChDest] = ID_CH_M_MATH;
