@@ -15,6 +15,7 @@ Build-Depends: 	debhelper (>= 9.0.0),
 		libcv-dev, 
 		libfftw3-dev, 
 		libgail-3-dev,
+		libglew-dev,		
 		libglib2.0-dev, 
 		libgnomeui-dev, 
 		libgtk-3-dev (>=3.20.6), 
@@ -41,8 +42,8 @@ Build-Depends: 	debhelper (>= 9.0.0),
 		subversion
 Standards-Version: 3.9.7
 Homepage: http://gxsm.sf.net
-#Vcs-Git: svn://svn.code.sf.net/p/gxsm/svn/branches/Gxsm-3.0-beta
-#Vcs-Browser:  http://svn.code.sf.net/p/gxsm/svn/branches/Gxsm-3.0-beta
+#Vcs-Git: svn.code.sf.net/p/gxsm/svn/trunk/Gxsm-3.0
+#Vcs-Browser:  http://svn.code.sf.net/p/gxsm/svn/trunk/Gxsm-3.0
 
 Package: gxsm3
 Architecture: any
@@ -61,6 +62,7 @@ Depends: 	${shlibs:Depends},
 		libcairomm-1.0-1v5,  
 		libfftw3-3, 
 		libgail-3-0,
+		libglew1.13,
 		libglib2.0-0,
 		libglib2.0-bin, 
 		libgnomeui-0, 
@@ -100,8 +102,8 @@ Depends: 	${shlibs:Depends},
 		xdg-utils, 
 		xdot
 Suggests: sranger-modules-mk23-dkms, sranger-modules-std-dkms
-Replaces: sranger (<< 0.0.2 ), gxsm
-Breaks: sranger (<< 0.0.2 ), gxsm
+Replaces: sranger (<< 0.0.2 )
+Breaks: sranger (<< 0.0.2 )
 Description: Multi-channel data acquisition via STM/AFM
  GXSM -- Gnome X Scanning Microscopy.
  .
