@@ -2,7 +2,13 @@ libdir = $(plugindir)/math
 AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
 
 lib_LTLIBRARIES = libift2d.la libft2d.la libcurvature.la liblocal_height.la libTderive.la libstat_diff.la libsmooth.la \
-	libedge.la libsmallconvol.la
+	libedge.la libsmallconvol.la libdespike2d.la liblineinterpol.la
+
+libdespike2d_la_SOURCES = despike2d.C
+libdespike2d_la_LDFLAGS = -module -export-dynamic -avoid-version
+
+liblineinterpol_la_SOURCES = lineinterpol.C
+liblineinterpol_la_LDFLAGS = -module -export-dynamic -avoid-version
 
 libsmallconvol_la_SOURCES = smallconvol.C
 libsmallconvol_la_LDFLAGS = -module -export-dynamic -avoid-version
