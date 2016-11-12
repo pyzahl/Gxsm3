@@ -2231,18 +2231,21 @@ void py_gxsm_console::AppWindowInit(const gchar *title){
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_action_button);
         gtk_widget_show (header_action_button);
 	g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::run_file), this);
+	gtk_widget_set_tooltip_text (header_action_button, N_("Execute Script"));
 
         header_action_button = gtk_button_new ();
         gtk_button_set_image (GTK_BUTTON (header_action_button), gtk_image_new_from_icon_name ("edit-clear-all-symbolic", tmp_toolbar_icon_size));
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_action_button);
         gtk_widget_show (header_action_button);
         g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::clear_output), this);
+	gtk_widget_set_tooltip_text (header_action_button, N_("Clear Console Output"));
 
         header_action_button = gtk_button_new ();
         gtk_button_set_image (GTK_BUTTON (header_action_button), gtk_image_new_from_icon_name ("system-shutdown-symbolic", tmp_toolbar_icon_size));
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_action_button);
         gtk_widget_show (header_action_button);
 	g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::kill), this);
+	gtk_widget_set_tooltip_text (header_action_button, N_("Abort Script"));
 
 	PI_DEBUG (DBG_L2,  "pyremote Plugin :: setup titlbar" );
 
