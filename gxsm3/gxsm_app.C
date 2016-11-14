@@ -571,6 +571,14 @@ GxsmMenuExtension *App::gxsm_app_extend_menu (const gchar *extension_point, cons
                 GMenuItem *item = g_menu_item_new (menu_entry_text, action);
 
                 gxsm_menu_extension_append_menu_item (menu_ext, item);
+
+                // gtk_widget_set_tooltip_text (GTK_WIDGET (item), action); // -- not supported ???
+                // Print action string info at startup
+#if 0
+                gchar *info = g_strdup_printf ("GXSM-Menu-Action for %s/%s => %s", extension_point, menu_entry_text, action);
+                g_message (info);
+                g_free (info);
+#endif
                 g_object_unref (item);
 
                 return menu_ext;

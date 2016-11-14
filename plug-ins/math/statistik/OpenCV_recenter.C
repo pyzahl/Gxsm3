@@ -34,7 +34,7 @@
  * All "% OptPlugInXXX" tags are optional
  * --------------------------------------------------------------------------------
 % BeginPlugInDocuSection
-% PlugInDocuCaption: Opencvrecenter
+% PlugInDocuCaption: OpenCV Re-Center Feature
 
 % PlugInName: opencvrecenter
 
@@ -45,39 +45,32 @@
 % PlugInMenuPath: Math/Statistics/Opencvrecenter
 
 % PlugInDescription
-The OpenCV Recenter...
+The OpenCV Recenter Feature identifies the most likely position of a
+given template feature (hold in a Channel set to Mode-X) in the active
+channel and sets the Scan-Offset to the resulting position.
 
 % PlugInUsage
-Call it from Gxsm Math/Statistics menu. It will prompt for the number
-of bins and provides a estimated number as default. Also the current
-min/max Z-value limits and range is shown for informative purpose.
+Call it from Gxsm Math/Statistics menu.
 
 % OptPlugInSources
-The active channel is used as data source.
+The active channel is used as data source. Channel set to X-Mode is used as template.
 
 % OptPlugInObjects
-A optional rectangle can not be used. Use crop before!
 
 % OptPlugInDest
-The computation result is placed into an new profile view.
+The computation result of matching threasholds is placed into an new math channel for reference.
 
 %% OptPlugInConfig
-%The number of bins can be set.
 
 %% OptPlugInFiles
-%Needs/creates no files.
 
 %% OptPlugInRefs
-%nope.
 
 %% OptPlugInKnownBugs
-%No known.
 
 %% OptPlugInNotes
-%Hmm, no notes\dots
 
 % OptPlugInHints
-Find out what happenes with more or less bins!
 
 % EndPlugInDocuSection
  * -------------------------------------------------------------------------------- 
@@ -224,7 +217,7 @@ void setup_opencv_recenter (const gchar *title, Scan *src, double &threshold, in
 
 static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
 {
-	double recenter_threshold = 0.75; // suggestion recenter quality
+	double recenter_threshold = 0.9; // suggestion recenter quality
 	int object_radius = 4; // no more than one mark withing this radius
 	int max_markers = 5000; // limit to this number -- in case things go weird
 	int method = CV_TM_CCOEFF_NORMED; // recentering algorithm, see http://docs.opencv.org/modules/imgproc/doc/object_detection.html
@@ -238,32 +231,10 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
 	double x1=-1,y1,x2,y2;
 	int n_obj = SrcRef->number_of_object ();
 
-	setup_opencv_recenter ("Setup Feature Recentering", Src, recenter_threshold, object_radius, method, max_markers, i_marker_group);
+        int interactive = 0;
+        if (interactive)
+                setup_opencv_recenter ("Setup Feature Recentering", Src, recenter_threshold, object_radius, method, max_markers, i_marker_group);
 
-#if 0
-	// find reference feature (rectangle object)
-	while (n_obj--){
-		scan_object_data *obj;
-		obj = SrcRef->get_object_data (n_obj);
-		std::cout << n_obj << ": " << obj->get_name () << std::endl;
-		if (strncmp (obj->get_name (), "Rectangle", 8))
-			continue; // ignore, look for rectangle
-		
-		if (obj->get_num_points () != 2) 
-			continue; // sth. is weired!
-		
-		// get real world coordinates of point
-		obj->get_xy_pixel (0, x1, y1);
-		obj->get_xy_pixel (1, x2, y2);
-		break;
-	}
-
-	// coordinates validity check, rect points must be RHS/pos.
-	if (x1 < 0 || x1 >= x2 || x2 < 0 || x1 >= Src->mem2d->GetNx () || x2 >= Src->mem2d->GetNx ()
-	    || y1 < 0 || y1 >= y2 || y2 < 0 || y1 >= Src->mem2d->GetNy () || y2 >= Src->mem2d->GetNy ())
-	    return MATH_SELECTIONERR;
-#endif
-	
 	// convert Scan->Src data into OpenCV Mat => img1
 	double high, low;
 	Src->mem2d->HiLo(&high, &low, FALSE, NULL, NULL, 1);
@@ -275,8 +246,8 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
 			img1.at<float>(i,j) = (float)((pv-low)/(high-low));
 		}
 	}
-	//	imshow("img1", img1);
 
+	// convert Scan->SrcRef data into OpenCV Mat => img2
 	SrcRef->mem2d->HiLo(&high, &low, FALSE, NULL, NULL, 1);
 	std::cout << "img2: mat ref:" << std::endl;
 	Mat img2 = Mat (SrcRef->mem2d->GetNy (), SrcRef->mem2d->GetNx (), CV_32F);
@@ -287,11 +258,12 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
 		}
 	}
 
+        // sanity check
 	if(img1.empty() || img2.empty()){
 		return MATH_LIB_ERR;
 	}
 
-	std::cout << "run match..." << std::endl;
+	std::cout << "running match..." << std::endl;
 
 	// do recentering via OpenCV library and some data post processing
 	Mat img_result, img_recenter, img_tmp, img_t8, img_r8;
@@ -300,24 +272,9 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
 	pow (img_recenter, 3., img_result);
 	threshold(img_result, img_tmp, recenter_threshold, 0., THRESH_TOZERO);
 
-	std::cout << "convert result, apply threashold..." << std::endl;
-	
-	//	img_tmp.convertTo(img_t8, CV_8UC1, 255., 0.);
-	//	img_tmp.convertTo(img_r8, CV_8UC1, 255., 0.);
-	//	imshow("t8", img_t8);
-	//	adaptiveThreshold(img_t8, img_r8, 1., ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY, 3, 1.);
-	//	img_tmp.convertTo(img_result, CV_32F, 1./255., 0.);
-	//      adaptiveThreshold(InputArray src, OutputArray dst, double maxValue, int adaptiveMethod, int thresholdType, int blockSize, double C)
-		
 	img_tmp.convertTo(img_result, CV_32F, 1., 0.);
 
-	//	img_result = img_tmp;
-	//	normalize(img_result,img_tmp);
-	//	imshow("recenteres", img_tmp);
-	//	img_result = img_tmp;
-
-	// put recentering probability into Dest Scan -- just for reference
-	//	std::cout << "Result [" << img_result.rows << "," << img_result.cols << "] :" << std::endl;
+        // store matching threaholds to result channel as reference
 	Dest->mem2d->Resize(img_result.cols, img_result.rows, ZD_FLOAT);
 	for (int i=0; i<Dest->mem2d->GetNy () && i < img_result.rows; ++i){
 		for (int j=0; j<Dest->mem2d->GetNx () && j < img_result.cols; ++j){
@@ -327,6 +284,7 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
 	}
 
 	// now mark features in Src Scan using Marker Objects, avoid duplicated in a radius "r=4 pix (object_radius)"
+        // and set scan offset to best match location (center of ref scan)
 	gchar *tmp;
 	int count=0;
 	double peak=0.;
@@ -375,7 +333,6 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
                         gapp->spm_offset_check (NULL, gapp);
                 }
 	}
-
 	
 	return MATH_OK;
 }

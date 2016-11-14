@@ -280,6 +280,140 @@ The action-command can execute the following PI:
 \GxsmTT{print\_PI} & defaults are read from gconf\\
 \end{tabular}
 
+GXSM3 Menu Action Table Information -- remote menu action/math/... call via action key, see table below for list, example:
+
+\begin{alltt}
+gxsm.signal_emit("math-filter1d-section-Koehler")
+\end{alltt}
+
+\begin{tabular}{l|l||l}
+Section ID & Menu Entry & Action Key\\
+\hline\hline
+math-filter2d-section & Stat Diff & math-filter2d-section-Stat-Diff\\
+math-convert-section & to float & math-convert-section-to-float\\
+math-arithmetic-section & Z Rescale & math-arithmetic-section-Z-Rescale\\
+math-statistics-section & Add Trail & math-statistics-section-Add-Trail\\
+math-transformations-section & OctoCorr & math-transformations-section-OctoCorr\\
+math-arithmetic-section & Mul X & math-arithmetic-section-Mul-X\\
+math-filter2d-section & Edge & math-filter2d-section-Edge\\
+math-arithmetic-section & Max & math-arithmetic-section-Max\\
+math-statistics-section & Stepcounter & math-statistics-section-Stepcounter\\
+math-convert-section & to double & math-convert-section-to-double\\
+math-filter1d-section & Koehler & math-filter1d-section-Koehler\\
+math-statistics-section & Histogram & math-statistics-section-Histogram\\
+math-background-section & Line: 2nd order & math-background-section-Line--2nd-order\\
+math-filter2d-section & Despike & math-filter2d-section-Despike\\
+math-transformations-section & Auto Align & math-transformations-section-Auto-Align\\
+math-background-section & Plane Regression & math-background-section-Plane-Regression\\
+math-statistics-section & Cross Correlation & math-statistics-section-Cross-Correlation\\
+math-arithmetic-section & Z Usr Rescale & math-arithmetic-section-Z-Usr-Rescale\\
+math-filter1d-section & Diff & math-filter1d-section-Diff\\
+math-filter2d-section & T derive & math-filter2d-section-T-derive\\
+math-background-section & Pass CC & math-background-section-Pass-CC\\
+math-statistics-section & Auto Correlation & math-statistics-section-Auto-Correlation\\
+math-transformations-section & Rotate 90deg & math-transformations-section-Rotate-90deg\\
+math-arithmetic-section & Invert & math-arithmetic-section-Invert\\
+math-background-section & Plane max prop & math-background-section-Plane-max-prop\\
+math-convert-section & U to float & math-convert-section-U-to-float\\
+math-transformations-section & Movie Concat & math-transformations-section-Movie-Concat\\
+math-transformations-section & Shear Y & math-transformations-section-Shear-Y\\
+math-statistics-section & NN-distribution & math-statistics-section-NN-distribution\\
+math-background-section & Waterlevel & math-background-section-Waterlevel\\
+math-transformations-section & Quench Scan & math-transformations-section-Quench-Scan\\
+math-arithmetic-section & Div X & math-arithmetic-section-Div-X\\
+math-statistics-section & Vacancy Line Analysis & math-statistics-section-Vacancy-Line-Analysis\\
+math-transformations-section & Shear X & math-transformations-section-Shear-X\\
+math-convert-section & to complex & math-convert-section-to-complex\\
+math-convert-section & make test & math-convert-section-make-test\\
+math-misc-section & Spectrocut & math-misc-section-Spectrocut\\
+math-arithmetic-section & Log & math-arithmetic-section-Log\\
+math-statistics-section & Average X Profile & math-statistics-section-Average-X-Profile\\
+math-filter2d-section & Lineinterpol & math-filter2d-section-Lineinterpol\\
+math-background-section & Z drift correct & math-background-section-Z-drift-correct\\
+math-background-section & Line Regression & math-background-section-Line-Regression\\
+math-statistics-section & SPALEED Simkz & math-statistics-section-SPALEED-Simkz\\
+math-convert-section & to byte & math-convert-section-to-byte\\
+math-statistics-section & Slope Abs & math-statistics-section-Slope-Abs\\
+math-filter2d-section & Small Convol & math-filter2d-section-Small-Convol\\
+math-convert-section & to long & math-convert-section-to-long\\
+math-transformations-section & Multi Dim Transpose & math-transformations-section-Multi-Dim-Transpose\\
+math-arithmetic-section & Sub X & math-arithmetic-section-Sub-X\\
+math-background-section & Stop CC & math-background-section-Stop-CC\\
+math-filter2d-section & FT 2D & math-filter2d-section-FT-2D\\
+math-convert-section & to short & math-convert-section-to-short\\
+math-transformations-section & Volume Transform & math-transformations-section-Volume-Transform\\
+math-background-section & Gamma & math-background-section-Gamma\\
+math-background-section & Plane 3 Points & math-background-section-Plane-3-Points\\
+math-transformations-section & Affine & math-transformations-section-Affine\\
+math-misc-section & Shape & math-misc-section-Shape\\
+math-background-section & Sub Const & math-background-section-Sub-Const\\
+math-transformations-section & Flip Diagonal & math-transformations-section-Flip-Diagonal\\
+math-background-section & Timescale FFT & math-background-section-Timescale-FFT\\
+math-misc-section & Layersmooth & math-misc-section-Layersmooth\\
+math-filter1d-section & Lin stat diff & math-filter1d-section-Lin-stat-diff\\
+math-filter2d-section & Smooth & math-filter2d-section-Smooth\\
+math-transformations-section & Manual Drift Fix/Align & math-transformations-section-Manual-Drift-Fix-Align\\
+math-statistics-section & Polar Histogramm & math-statistics-section-Polar-Histogramm\\
+math-statistics-section & feature match & math-statistics-section-feature-match\\
+math-statistics-section & Angular Analysis & math-statistics-section-Angular-Analysis\\
+math-transformations-section & Merge V & math-transformations-section-Merge-V\\
+math-filter2d-section & Local height & math-filter2d-section-Local-height\\
+math-filter2d-section & IFT 2D & math-filter2d-section-IFT-2D\\
+math-statistics-section & Baseinfo & math-statistics-section-Baseinfo\\
+math-transformations-section & Scale Scan & math-transformations-section-Scale-Scan\\
+math-filter2d-section & Curvature & math-filter2d-section-Curvature\\
+math-arithmetic-section & Add X & math-arithmetic-section-Add-X\\
+math-transformations-section & Mirror X & math-transformations-section-Mirror-X\\
+math-transformations-section & Merge H & math-transformations-section-Merge-H\\
+math-statistics-section & feature recenter & math-statistics-section-feature-recenter\\
+math-transformations-section & Shift-Area & math-transformations-section-Shift-Area\\
+math-misc-section & Workfuncextract & math-misc-section-Workfuncextract\\
+math-filter1d-section & t dom filter & math-filter1d-section-t-dom-filter\\
+math-statistics-section & SPALEED Sim. & math-statistics-section-SPALEED-Sim.\\
+math-statistics-section & Slope Dir & math-statistics-section-Slope-Dir\\
+math-transformations-section & Reverse Layers & math-transformations-section-Reverse-Layers\\
+math-filter1d-section & Despike & math-filter1d-section-Despike\\
+math-background-section & Rm Line Shifts & math-background-section-Rm-Line-Shifts\\
+math-transformations-section & Rotate & math-transformations-section-Rotate\\
+math-transformations-section & Mirror Y & math-transformations-section-Mirror-Y\\
+math-arithmetic-section & Z Limiter & math-arithmetic-section-Z-Limiter\\
+math-probe-section & AFM Mechanical Simulation & math-probe-section-AFM-Mechanical-Simulation\\
+math-probe-section & Image Extract & math-probe-section-Image-Extract\\
+\hline
+file-import-section & PNG & file-import-section-PNG\\
+file-export-section & PNG & file-export-section-PNG\\
+file-import-section & WIP & file-import-section-WIP\\
+file-export-section & WIP & file-export-section-WIP\\
+file-import-section & primitive auto & file-import-section-primitive-auto\\
+file-export-section & primitive auto & file-export-section-primitive-auto\\
+file-import-section & UKSOFT & file-import-section-UKSOFT\\
+file-export-section & UKSOFT & file-export-section-UKSOFT\\
+file-import-section & PsiHDF & file-import-section-PsiHDF\\
+file-export-section & PsiHDF & file-export-section-PsiHDF\\
+file-import-section & WSxM & file-import-section-WSxM\\
+file-export-section & WSxM & file-export-section-WSxM\\
+file-import-section & RHK-200 & file-import-section-RHK-200\\
+file-import-section & RHK SPM32 & file-import-section-RHK-SPM32\\
+file-export-section & RHK SPM32 & file-export-section-RHK-SPM32\\
+file-import-section & Nano Scope & file-import-section-Nano-Scope\\
+file-import-section & Omicron Scala & file-import-section-Omicron-Scala\\
+file-import-section & UK2k & file-import-section-UK2k\\
+file-import-section & Vis5D & file-import-section-Vis5D\\
+file-export-section & Vis5D & file-export-section-Vis5D\\
+file-import-section & G-dat & file-import-section-G-dat\\
+file-export-section & G-dat & file-export-section-G-dat\\
+file-import-section & SDF & file-import-section-SDF\\
+file-import-section & GME Dat & file-import-section-GME-Dat\\
+file-export-section & GME Dat & file-export-section-GME-Dat\\
+file-import-section & ASCII & file-import-section-ASCII\\
+file-export-section & ASCII & file-export-section-ASCII\\
+file-import-section & SPA4-d2d & file-import-section-SPA4-d2d\\
+file-export-section & SPA4-d2d & file-export-section-SPA4-d2d\\
+file-import-section & Quicktime & file-import-section-Quicktime\\
+file-export-section & Quicktime & file-export-section-Quicktime\\
+\end{tabular}
+
+
 % OptPlugInSubSection: DSP-Control
 
 The DSP-Control is the heart of SPM activity. The following parameters
@@ -329,6 +463,8 @@ action & DSPPeakFind\_XXX\_N &&& run action XXX (see above)\\
 \end{tabular}
 
 The call is equivalent to the example above.
+
+% OptPlugInSubSection: Peakfinder
 
 % OptPlugInConfig
 
@@ -1345,6 +1481,7 @@ static PyObject* remote_units(PyObject *self, PyObject *args)
 // logev S      DONE
 // da0 X      DONE, commented out
 // menupath S      DONE
+// signal S      DONE
 // more actions by plugins S  NYI
 ///////////////////////////////////////////////////////////////
 
@@ -1403,6 +1540,34 @@ static PyObject* remote_da0(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", 0);
 }
 
+static PyObject* remote_signal_emit(PyObject *self, PyObject *args)
+{
+
+	PI_DEBUG(DBG_L2, "pyremote: Searching menupath ");
+	gchar *action;
+	if (!PyArg_ParseTuple(args, "s", &action)) {
+		return Py_BuildValue("i", -1);
+	}
+	PI_DEBUG(DBG_L2, action );
+
+	g_message ("pyremote::remote_signal_emit (calling g_action_group_activate_action): %s", action);
+
+        GActionMap *gm = G_ACTION_MAP (g_application_get_default ());
+        //        g_message ("pyremote::remote_signal_emit get g_action_map: %s", gm ? "OK":"??");
+
+        GAction *ga = g_action_map_lookup_action (gm, action);
+        //        GAction *ga = g_action_map_lookup_action (G_ACTION_MAP (gapp->getApp ()), action);
+        //	g_message ("pyremote::remote_signal_emit g_action_map_lookup_action: %s -> %s", action, ga?"OK":"??");
+
+        if (ga){
+                g_action_activate (ga, NULL);
+                return Py_BuildValue("i", 0);
+        } else {
+                g_warning ("==> action unknown: %s", action);
+                return Py_BuildValue("i", -1);
+        }
+}
+
 static PyObject* remote_menupath(PyObject *self, PyObject *args)
 {
 
@@ -1413,8 +1578,12 @@ static PyObject* remote_menupath(PyObject *self, PyObject *args)
 	}
 	PI_DEBUG(DBG_L2, menu1 );
 
-	g_print ("remote_menupath %s -- exec needs to be ported to GTK3.\n", menu1);
+	g_print ("remote_menupath %s -- exec needs to be ported to GTK3 -- please use signal_emit.\n", menu1);
 
+        // gtk_application_get_app_menu ()
+        // simply emit signal for action -- no menu path
+        // g_signal_emit_by_name (gapp->getApp (), menu1);
+        
 	// GTK3QQQ MENU
 #if 0
 	GtkWidget *menushell;
@@ -1532,6 +1701,7 @@ static PyMethodDef EmbMethods[] = {
 	{"logev", remote_logev, METH_VARARGS, "Logev. "},
 	{"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation."}, 
 	{"da0", remote_da0, METH_VARARGS, "Da0. "},
+	{"signal_emit", remote_signal_emit, METH_VARARGS, "Action-String. "},
 	{"menupath", remote_menupath, METH_VARARGS, "Menupath. "},
 	{"sleep", remote_sleep, METH_VARARGS, "Sleep. "},
 
@@ -2362,10 +2532,10 @@ void py_gxsm_console::create_gui ()
 
         PI_DEBUG(DBG_L2, "pyremote Plugin :: create_gui() -- building GUI elements....");
 	// set font
-	font_desc = pango_font_description_from_string ("Monospace 8");
-	gtk_widget_override_font (console_file_content, font_desc);
-        gtk_widget_override_font (console_output, font_desc);
-	pango_font_description_free (font_desc);
+	//font_desc = pango_font_description_from_string ("Monospace 8");
+	//gtk_widget_override_font (console_file_content, font_desc);
+        //gtk_widget_override_font (console_output, font_desc);
+	//pango_font_description_free (font_desc);
 
 	gtk_container_add (GTK_CONTAINER(file_scrolledwin),
                            console_file_content);
