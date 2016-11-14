@@ -94,13 +94,12 @@ void App::spm_range_check(Param_Control* pcs, gpointer app){
                 return;
 
         const gchar *tmp = ((App*)app)->xsm->hardware->Info (0);
-        g_message ("spm_range_check");
-        g_print (">%s<=>%d", tmp, strncmp (tmp, "Data Analysis Mode", 18));
+        // g_print (">%s<=>%d", tmp, strncmp (tmp, "Data Analysis Mode", 18));
         if (strncmp (tmp, "Data Analysis mode", 18) == 0){
-                g_message ("Skipping range check. Analysis Mode.");
+                // g_message ("Skipping range check. Analysis Mode.");
                 return;
-        } else 
-                g_message ("Checking ranges. HwI Mode.");
+        }
+        //        else g_message ("Checking ranges. HwI Mode.");
         
         if(IS_SPALEED_CTRL){
                 // always calc steps
