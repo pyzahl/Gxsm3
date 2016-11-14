@@ -88,7 +88,20 @@ void App::spm_range_check(Param_Control* pcs, gpointer app){
         XSM_DEBUG(DBG_L3,  "range check" );
         XSM_Instrument *Inst = a->xsm->Inst;
         SCAN_DATA *data = &(a->xsm->data);
-	
+
+        // check if we run in analysis mode, then do not check.
+        if (!((App*)app)->xsm->hardware)
+                return;
+
+        const gchar *tmp = ((App*)app)->xsm->hardware->Info (0);
+        g_message ("spm_range_check");
+        g_print (">%s<=>%d", tmp, strncmp (tmp, "Data Analysis Mode", 18));
+        if (strncmp (tmp, "Data Analysis mode", 18) == 0){
+                g_message ("Skipping range check. Analysis Mode.");
+                return;
+        } else 
+                g_message ("Checking ranges. HwI Mode.");
+        
         if(IS_SPALEED_CTRL){
                 // always calc steps
                 data->s.dx = data->s.rx/(data->s.nx-1);
