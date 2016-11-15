@@ -686,9 +686,10 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 							1e3*(double)vp_duration/frq_ref, dU_IV, dU_step*1e3, options, vis_Source
 					);
 			if (IV_status){
+				gtk_entry_set_text (GTK_ENTRY (IV_status), info);
+#if 0
 				GtkStyle *style;
 				GdkColor ct, cbg;
-				gtk_entry_set_text (GTK_ENTRY (IV_status), info);
 				style = gtk_style_copy (gtk_widget_get_style(IV_status));
 				if (warn_flag){
 					ct.red = 0xffff;
@@ -711,6 +712,7 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 				style->text[GTK_STATE_NORMAL] = ct;
 				style->bg[GTK_STATE_NORMAL] = cbg;
 				gtk_widget_set_style(IV_status, style);
+#endif
 			}
 			g_free (info);
 		}

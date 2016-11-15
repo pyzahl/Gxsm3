@@ -177,11 +177,10 @@ static void converter_cleanup(void)
 
 
 //Gtk+ Signal Funktion
-static void converter_convert_callback(GtkWidget *w, void *data)
-{
-  converterControl *Popup = new converterControl();
-  Popup->run();
-  PI_DEBUG(DBG_L2,"converter dialog opened");
+static void converter_convert_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
+	converterControl *Popup = new converterControl();
+	Popup->run();
+	PI_DEBUG(DBG_L2,"converter dialog opened");
 }
 
 
@@ -489,8 +488,8 @@ void converterControl::run()
   gtk_widget_set_size_request (VarName, 100, -1);
   gtk_widget_show (VarName);
   gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-  gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-  gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
+  //gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
+  //gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
   gtk_box_pack_start (GTK_BOX (hbox), VarName, TRUE, TRUE, 0);
 	
   SrcDir_button = gtk_file_chooser_button_new ("source folder", GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
@@ -507,8 +506,8 @@ void converterControl::run()
   gtk_widget_set_size_request (VarName, 100, -1);
   gtk_widget_show (VarName);
   gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-  gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-  gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
+  // gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
+  // gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
   gtk_box_pack_start (GTK_BOX (hbox), VarName, TRUE, TRUE, 0);
   
   SrcMask = variable = gtk_entry_new ();
@@ -528,8 +527,8 @@ void converterControl::run()
   VarName = gtk_label_new (N_("Destination Path"));
   gtk_widget_set_size_request (VarName, 100, -1);
   gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-  gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-  gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
+  // gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
+  // gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
   gtk_box_pack_start (GTK_BOX (hbox), VarName, TRUE, TRUE, 0);
 
   DestDir_button = gtk_file_chooser_button_new ("target folder", GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
@@ -546,8 +545,8 @@ void converterControl::run()
   gtk_widget_set_size_request (VarName, 100, -1);
   gtk_widget_show (VarName);
   gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-  gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-  gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
+  // gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
+  // gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
   gtk_box_pack_start (GTK_BOX (hbox), VarName, TRUE, TRUE, 0);
   
   DestMask = variable = gtk_entry_new ();

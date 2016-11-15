@@ -399,97 +399,97 @@ GtkTreeModel *Wip_ImExportFile::create_and_fill_model (void)
 
 GtkWidget *Wip_ImExportFile::create_view_and_model (void)
 {
-  GtkTreeViewColumn   *col;
-  GtkCellRenderer     *renderer;
-  GtkWidget           *view;
-  GtkTreeModel        *model;
+	GtkTreeViewColumn   *col;
+	GtkCellRenderer     *renderer;
+	GtkWidget           *view;
+	GtkTreeModel        *model;
 
-  view = gtk_tree_view_new();
+	view = gtk_tree_view_new();
 
-  /* --- Column #1 --- */
+	/* --- Column #1 --- */
 
-  col = gtk_tree_view_column_new();
+	col = gtk_tree_view_column_new();
 
-  gtk_tree_view_column_set_title(col, "Tag Name");
+	gtk_tree_view_column_set_title(col, "Tag Name");
 
-  /* pack tree view column into tree view */
-  gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
+	/* pack tree view column into tree view */
+	gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
 
-  renderer = gtk_cell_renderer_text_new();
+	renderer = gtk_cell_renderer_text_new();
 
-  /* pack cell renderer into tree view column */
-  gtk_tree_view_column_pack_start(col, renderer, TRUE);
+	/* pack cell renderer into tree view column */
+	gtk_tree_view_column_pack_start(col, renderer, TRUE);
 
-  /* connect 'text' property of the cell renderer to model column that contains the first name */
-  gtk_tree_view_column_add_attribute(col, renderer, "text", COL_TAG_NAME);
-
-
-  /* --- Column #2 --- */
-
-  col = gtk_tree_view_column_new();
-
-  gtk_tree_view_column_set_title(col, "Kind");
-
-  /* pack tree view column into tree view */
-  gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
-
-  renderer = gtk_cell_renderer_text_new();
-
-  /* pack cell renderer into tree view column */
-  gtk_tree_view_column_pack_start(col, renderer, TRUE);
-
-  /* connect 'text' property of the cell renderer to model column that contains the last name */
-  gtk_tree_view_column_add_attribute(col, renderer, "text", COL_TAG_KIND);
-
-  /* set 'weight' property of the cell renderer to bold print (we want all last names in bold) */
-  g_object_set(renderer, "weight", PANGO_WEIGHT_BOLD, "weight-set", TRUE, NULL);
+	/* connect 'text' property of the cell renderer to model column that contains the first name */
+	gtk_tree_view_column_add_attribute(col, renderer, "text", COL_TAG_NAME);
 
 
-  /* --- Column #3 --- */
+	/* --- Column #2 --- */
 
-  col = gtk_tree_view_column_new();
+	col = gtk_tree_view_column_new();
 
-  gtk_tree_view_column_set_title(col, "#Items");
+	gtk_tree_view_column_set_title(col, "Kind");
 
-  /* pack tree view column into tree view */
-  gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
+	/* pack tree view column into tree view */
+	gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
 
-  renderer = gtk_cell_renderer_text_new();
+	renderer = gtk_cell_renderer_text_new();
 
-  /* pack cell renderer into tree view column */
-  gtk_tree_view_column_pack_start(col, renderer, TRUE);
+	/* pack cell renderer into tree view column */
+	gtk_tree_view_column_pack_start(col, renderer, TRUE);
 
-  /* connect a cell data function */
-  gtk_tree_view_column_set_cell_data_func(col, renderer, age_cell_data_func, NULL, NULL);
+	/* connect 'text' property of the cell renderer to model column that contains the last name */
+	gtk_tree_view_column_add_attribute(col, renderer, "text", COL_TAG_KIND);
 
-
-  model = create_and_fill_model();
-
-  gtk_tree_view_set_model(GTK_TREE_VIEW(view), model);
-
-  g_object_unref(model); /* destroy model automatically with view */
-
-  gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(view)), GTK_SELECTION_NONE);
-
-  /* --- Column #4 --- */
-
-  col = gtk_tree_view_column_new();
-
-  gtk_tree_view_column_set_title(col, "Content");
-
-  /* pack tree view column into tree view */
-  gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
-
-  renderer = gtk_cell_renderer_text_new();
-
-  /* pack cell renderer into tree view column */
-  gtk_tree_view_column_pack_start(col, renderer, TRUE);
-
-  /* connect 'text' property of the cell renderer to model column that contains the first name */
-  gtk_tree_view_column_add_attribute(col, renderer, "text", COL_TAG_DATA);
+	/* set 'weight' property of the cell renderer to bold print (we want all last names in bold) */
+	g_object_set(renderer, "weight", PANGO_WEIGHT_BOLD, "weight-set", TRUE, NULL);
 
 
-  return view;
+	/* --- Column #3 --- */
+
+	col = gtk_tree_view_column_new();
+
+	gtk_tree_view_column_set_title(col, "#Items");
+
+	/* pack tree view column into tree view */
+	gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
+
+	renderer = gtk_cell_renderer_text_new();
+
+	/* pack cell renderer into tree view column */
+	gtk_tree_view_column_pack_start(col, renderer, TRUE);
+
+	/* connect a cell data function */
+	gtk_tree_view_column_set_cell_data_func(col, renderer, age_cell_data_func, NULL, NULL);
+
+
+	model = create_and_fill_model();
+
+	gtk_tree_view_set_model(GTK_TREE_VIEW(view), model);
+
+	g_object_unref(model); /* destroy model automatically with view */
+
+	gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(view)), GTK_SELECTION_NONE);
+
+	/* --- Column #4 --- */
+
+	col = gtk_tree_view_column_new();
+
+	gtk_tree_view_column_set_title(col, "Content");
+
+	/* pack tree view column into tree view */
+	gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
+
+	renderer = gtk_cell_renderer_text_new();
+
+	/* pack cell renderer into tree view column */
+	gtk_tree_view_column_pack_start(col, renderer, TRUE);
+
+	/* connect 'text' property of the cell renderer to model column that contains the first name */
+	gtk_tree_view_column_add_attribute(col, renderer, "text", COL_TAG_DATA);
+
+
+	return view;
 }
 
 // configure-Function
@@ -502,8 +502,7 @@ void Wip_ImExportFile::wip_im_export_configure_select ()
 		GtkWidget *dialog = gtk_dialog_new_with_buttons (N_("WITeC Project (WIP) Import"),
 								 NULL,
 								 (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
-								 GTK_STOCK_OK,
-								 GTK_RESPONSE_ACCEPT,
+								 _("_OK"), GTK_RESPONSE_ACCEPT,
 								 NULL);
 		
 		vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
