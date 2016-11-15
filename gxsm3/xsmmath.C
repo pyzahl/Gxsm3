@@ -389,7 +389,7 @@ gboolean ZoomOutScan(MATHOPPARAMS){
 
 	// center zoom out
 	//  Dest->data.s.x0 += 0;
-	if (!Src->data.orgmode == SCAN_ORG_CENTER)
+	if (! (Src->data.orgmode == SCAN_ORG_CENTER))
 		Dest->data.s.y0 += Src->data.s.ny*Src->data.s.dy;
 
 	// Adapt to next possible value
@@ -1100,7 +1100,8 @@ gboolean F2D_LogPowerSpec(MATHOPPARAMS)
 
 	// allocate memory for real and inplace complex data
 	int xlen=2*(Src->mem2d->GetNx ()/2+1);
-	double *in  = new double [ Src->mem2d->GetNx () * Src->mem2d->GetNy () ];
+        int size_in = Src->mem2d->GetNx () * Src->mem2d->GetNy ();
+	double *in  = new double [ size_in ];
 	fftw_complex *dat  = new fftw_complex [ xlen*Src->mem2d->GetNy () ];
 
 	if (dat == NULL) {
@@ -1108,7 +1109,7 @@ gboolean F2D_LogPowerSpec(MATHOPPARAMS)
 		return MATH_NOMEM;
 	}
 
-	memset(in, 0, sizeof(in));
+        //	memset(in, 0, size_in * sizeof (double));
 
 	// create plan for in-place transform
 	fftw_plan plan    = fftw_plan_dft_r2c_2d (Src->mem2d->GetNy (), Src->mem2d->GetNx (), 
@@ -1197,7 +1198,8 @@ gboolean F1D_ift_ft(MATH2OPPARAMS,
 	int line, col;
 
 	// allocate memory for complex data
-	double  *in  = new double [ Src1->mem2d->GetNx() ];
+        int size_in = Src1->mem2d->GetNx ();
+	double *in  = new double [ size_in ];
 	fftw_complex *dat = new fftw_complex [ Src1->mem2d->GetNx() ];
 	double scale;
 
@@ -1221,8 +1223,6 @@ gboolean F1D_ift_ft(MATH2OPPARAMS,
 		if(dat) delete dat;
 		return MATH_NOMEM;
 	}
-
-	memset(in, 0, sizeof(in));
 
 	// convert image data to fftw_real
 	for (line=0; line < Src1->mem2d->GetNy(); line++) {
@@ -1409,7 +1409,7 @@ gboolean F2D_ift_ft(MATH2OPPARAMS, gboolean (*spkfkt)(MATH2OPPARAMS, fftw_comple
 		return MATH_LIB_ERR;
 	}
 
-	memset(in, 0, sizeof(in));
+	// memset(in, 0, sizeof(in));
 
 	// convert image data to fftw_real
 	for (line=0; line < Src1->mem2d->GetNy(); line++) {

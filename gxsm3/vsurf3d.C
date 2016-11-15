@@ -53,10 +53,6 @@
 #include "xsmdebug.h"
 
 
-#define XSM_DEBUG_GP(a,args,...) g_print(args)
-
-
-
 // not yet done
 #undef __ALTIVEC__
 

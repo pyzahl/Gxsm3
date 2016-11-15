@@ -681,7 +681,7 @@ GSList* Mem2d::ReportScanEvents (GFunc report_obj_func, gpointer gp, double *xy,
 int Mem2d::WriteScanEvents (NcFile *ncf){
 	GSList *sel; // List of ScanEvents
 	int p_index; // Event_Probe_####_... NcVar name counter, grouping of similar (same dimensions) data sets
-	int u_index;
+	//int u_index;
 	int p_dim_sets=0;
 	int p_dim_samples=0;
 	NcVar* evdata_var=NULL;
@@ -709,7 +709,7 @@ int Mem2d::WriteScanEvents (NcFile *ncf){
 
 	GSList *UserEventsList=NULL;
 
-	u_index=0;
+	//u_index=0;
 	// pre parse all scan and user events
 	sel = scan_event_list; // List of ScanEvents
 
@@ -753,13 +753,13 @@ int Mem2d::WriteScanEvents (NcFile *ncf){
 
 	XSM_DEBUG (DBG_L2, "NCF Write Scan Events -- writing probe events");
 	if (ProbeEventsList){
-		gdouble sc;
+		// gdouble sc;
 		p_index=0;
 		GSList *pel=ProbeEventsList;
 		Event *prev = e = (Event*) pel->data;
 		if (e->pe->write_nc_variable_set (ncf, p_index, evdata_var, evcoords_var, e->same_count) == 0)
 			++p_index;
-		sc = (gdouble)e->same_count;
+		// sc = (gdouble)e->same_count;
 
 		// only for progress info
 		double sip=0.;
@@ -772,7 +772,7 @@ int Mem2d::WriteScanEvents (NcFile *ncf){
 			if (! e->same(*prev)){
 				if (e->pe->write_nc_variable_set (ncf, p_index, evdata_var, evcoords_var, e->same_count) == 0)
 					++p_index;
-				sc = (gdouble)e->same_count;
+				// sc = (gdouble)e->same_count;
 			}
 
 			// write data
@@ -890,7 +890,7 @@ int Mem2d::LoadScanEvents (NcFile *ncf){
 
 	// scan NC-file for User Event Dims, extract Names
 	XSM_DEBUG (DBG_L2, "NCF Load: Scan Events -- User Entry...");
-	NcDim* data_dim=NULL;
+        // NcDim* data_dim=NULL;
 	for (int n=0; n < ncf->num_dims (); n++) {
 		ue = NULL;
 		se = NULL;
@@ -899,7 +899,7 @@ int Mem2d::LoadScanEvents (NcFile *ncf){
 		gchar *dimname = g_strdup((gchar*)dim->name());
 //		XSM_DEBUG (DBG_L2, "[" << n << "] " << dimname);
 		if (!g_strcmp0 (dimname, "Event_User_Adjust_Data_Dim")){ // == shoudl be 20
-			data_dim = dim;
+			// data_dim = dim;
 			g_free (dimname);
 			continue;
 		}
@@ -1361,7 +1361,7 @@ double Mem2d::GetDataPktInterpol(double x, double y, int v, double t, Scan *sct,
                 tid = (t-t0)/dt; // assume linear time scale fixed spacing
         }   
 
-	int tei=(int)round (tid);
+	// int tei=(int)round (tid);
 	int ifloor = (int)(floor(tid));
 	int iceil = (int)(ceil(tid));
 
@@ -1608,14 +1608,16 @@ void Mem2d::CalcLinRegress(int yfirst, int ylast)
 	int i, istep;
 	// short *lpi, *lpo ;
 	int    imax, imin;
-	double Xmax, Xmin;
+	//double Xmax, Xmin;
 	double a, b, n, xmean, ymean;
 
 	for(y=yfirst; y<=ylast; y++){
 		n = 0;
 		sumx = sumxq = sumy = sumxy = 0.0; // sumyq = 0.0;
-		Xmax = data->GetXLookup (imax = data->GetNx()-data->GetNx()/10); // etwas Abstand (10%) vom Rand !
-		Xmin = data->GetXLookup (imin = data->GetNx()/10);
+		imax = data->GetNx()-data->GetNx()/10; // etwas Abstand (10%) vom Rand !
+		imin = data->GetNx()/10;
+		//Xmax = data->GetXLookup (imax = data->GetNx()-data->GetNx()/10); // etwas Abstand (10%) vom Rand !
+		//Xmin = data->GetXLookup (imin = data->GetNx()/10);
 		istep = (long) MAX(1,(imax-imin)/30); // 30 Samples / Line !!!
 		for (i=imin; i < imax; i+=istep) { /* Rev 2 */
 			sumx += data->GetXLookup (i);
@@ -1667,8 +1669,9 @@ double Mem2d::GetDataPktInterpol(double x, double y, double dw, double ds, int l
 int Mem2d::GetDataLineFrom(Point2D *start, Point2D *end, Mem2d *Mob, SCAN_DATA *sdata_src,  SCAN_DATA *sdata_dest, GETLINEORGMODE orgmode, double dw, double ds, MEM2D_DIM profile_dim, MEM2D_DIM series_dim, gboolean series, int series_i, int series_nt, gboolean append){
 	int i, j, SamplesPerLine, SeriesPerLine;
   	double dx, dy, xy_LineLength;
-  	double x,y,dl;
-
+  	double x,dl;
+        // double y;
+        
 	int num_series=1, num_points=0;
 	int num_points_0 = append ? GetNx () : 0;
 	
@@ -1820,7 +1823,7 @@ int Mem2d::GetDataLineFrom(Point2D *start, Point2D *end, Mem2d *Mob, SCAN_DATA *
   	xy[2] = Mob->data->GetXLookup((int)end->x);
   	xy[3] = Mob->data->GetYLookup((int)end->y);
   	x = data->GetXLookup((int)(start->x+dx/2));
-  	y = data->GetYLookup((int)(start->y+dy/2));
+  	// y = data->GetYLookup((int)(start->y+dy/2)); // not used here
 	dl = sqrt((xy[2]-xy[0])*(xy[2]-xy[0]) + (xy[3]-xy[1])*(xy[3]-xy[1]));
 
 	sdata_dest->s.nx = num_points_0 + num_points;

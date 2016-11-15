@@ -73,9 +73,9 @@ static void gnome_res_get_option_callback     (GtkWidget *menuitem, gpointer res
 static void gnome_res_new_user_druid_prepare  (GtkWidget *w, gpointer druid, gpointer gp_self);
 static void gnome_res_new_user_druid_next     (GtkWidget *w, gpointer druid, gpointer gp_self);
 static void gnome_res_new_user_druid_back     (GtkWidget *w, gpointer druid, gpointer gp_self);
-#endif
 static void gnome_res_new_user_druid_finished (GtkWidget *w, gpointer druid, gpointer gp_self);
 static void gnome_res_new_user_druid_cancel   (GtkWidget *w, gpointer druid, gpointer gp_self);
+#endif
 
 /* helper functions */
 /* g_free result!!! */
@@ -1072,8 +1072,8 @@ void gnome_res_make_resource_variable_edit_field (GnomeResEntryInfoType *res,
         gtk_widget_set_size_request (VarName, PREF_VAR_USIZE, -1);
         gtk_widget_show (VarName);
         gtk_label_set_justify (GTK_LABEL (VarName), GTK_JUSTIFY_LEFT);
-        gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-        gtk_misc_set_padding (GTK_MISC (VarName), PREF_VAR_PADDING, 0);
+        //        gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
+        //        gtk_misc_set_padding (GTK_MISC (VarName), PREF_VAR_PADDING, 0);
 	
         gtk_grid_attach (GTK_GRID (grid), VarName, 0, col, 1, 1);
 	
@@ -1586,7 +1586,6 @@ static void gnome_res_new_user_druid_back (GtkWidget *w, gpointer druid, gpointe
         gnome_druid_set_page (GNOME_DRUID (self->druid), GNOME_DRUID_PAGE (self->page));
         DEBUG_VERBOSE ("BACKn: %d (%d)\n", self->pageindex, self->pagescreated);
 }
-#endif
 
 static void gnome_res_new_user_druid_finished (GtkWidget *w, gpointer druid, gpointer gp_self) {
         GnomeResNewUserDruid *self =  (GnomeResNewUserDruid *) gp_self;
@@ -1606,7 +1605,7 @@ void gnome_res_new_user_druid_cancel (GtkWidget *w, gpointer druid, gpointer gp_
         gtk_main_quit ();
         //    }
 }
-
+#endif
 
 #ifdef __cplusplus
 }

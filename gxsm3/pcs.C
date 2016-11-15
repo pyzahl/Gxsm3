@@ -688,7 +688,8 @@ void Gtk_EntryControl::Put_Value(){
 	gchar *txt = Get_UsrString ();
 	gtk_entry_set_text (GTK_ENTRY (entry), txt);
         g_free (txt);
-        
+
+#if 0 // GTKQQQ ??? dynamic CSS ??
 	if (color) {
 		GdkRGBA bgc;
 		gdk_rgba_parse (&bgc,color);
@@ -696,6 +697,7 @@ void Gtk_EntryControl::Put_Value(){
 	} else {
                 gtk_widget_override_color( GTK_WIDGET(entry), GTK_STATE_FLAG_NORMAL, NULL); 		
 	}
+#endif
         
 	if(adj){
 		switch (log_mode){
@@ -939,7 +941,7 @@ void Gtk_EntryControl::pcs_adjustment_configure (){
 	g_free (tmp);
 
         BuildParam bp;
-        bp.error_text = N_("Value not allowed.");
+        bp.set_error_text (N_("Value not allowed."));
 
         gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
 
@@ -1133,7 +1135,7 @@ void Gtk_EntryControl::get_pcs_configuartion (){
                         if (n_stores < 10)
                                 g_print ("PCS GSETTINGS DATA ERROR: g_settings_get_fixed_array returned the wrong number %d of elements:\n"
                                          " ===> Need at a minimum of 10 double values for key %s.%s.\nConfiguration",
-                                         n_stores,
+                                         (int)n_stores,
                                          dotpath,
                                          name);
                         else {
@@ -1327,7 +1329,6 @@ void Gtk_EntryControl::InitRegisterCb(double AdjStep, double AdjPage, double Adj
 
 
 GSList *Gtk_EntryControl::AddEntry2RemoteList(const gchar *RefName, GSList *remotelist){
-	gchar *help;
 	if(refname) 
 		g_free (refname);
 	refname = g_strdup(RefName);

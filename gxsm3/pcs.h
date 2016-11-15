@@ -52,11 +52,6 @@ good starting point.
 #include "gxsm_conf.h"
 #include "unit.h"
 
-#ifndef MLD_WERT_NICHT_OK
-#define MLD_WERT_NICHT_OK        "Value out of Range !"
-#define MLD_VALID_RANGE          "Valid Range: "
-#endif
-
 
 extern int generate_pcs_gschema;
 extern int generate_pcs_adj_gschema;

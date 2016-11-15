@@ -269,7 +269,7 @@ void ChannelSelector::restore_callback (GtkWidget *widget, ChannelSelector *cs){
         // <key name="channel-setup-a" type="a(iii)">
         GVariant *storage = g_settings_get_value (cs->ch_settings, store_key);
         array = (gint32*) g_variant_get_fixed_array (storage, &n_stores, 3*sizeof (gint32));
-	XSM_DEBUG_GP(DBG_L2, "CannelSelector::restore_callback:  n_stores: %d\n", n_stores);
+	// XSM_DEBUG_GP(DBG_L2, "CannelSelector::restore_callback:  n_stores: %d\n", n_stores);
 
 	for (int channel=0; channel < (gint)n_stores && channel < NumCh; ++channel){
                 XSM_DEBUG_GP(DBG_L2,

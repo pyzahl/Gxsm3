@@ -398,7 +398,7 @@ void App::help_about_callback (GSimpleAction *simple, GVariant *parameter, gpoin
         GdkPixbuf *logo = gdk_pixbuf_new_from_file (PACKAGE_ICON_DIR "/gxsm3-icon.svg", NULL);
 	gtk_show_about_dialog (NULL,
 			       "program-name", "GXSM 3",
-			       "version", VERSION" \""GXSM_VERSION_NAME"\"",
+			       "version", VERSION " \"" GXSM_VERSION_NAME "\"",
                                "logo", logo,
 			       "title", N_("About GXSM"),
 			       "authors", authors,

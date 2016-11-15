@@ -162,7 +162,6 @@ V3dControl::V3dControl (const char *title, int ChNo, Scan *sc,
 			GCallback realize_event_cb,
 			void *vdata){
 	GtkWidget *statusbar;
-	gint major, minor;
 
 	XSM_DEBUG(DBG_L2, "V3dControl::V3dControl" );
 
@@ -245,9 +244,7 @@ void V3dControl::SetActive(int flg){
 }
 
 void V3dControl::CheckOptions(){
-	GtkWidget *menushell;
-	GtkWidget *menuitem;
-	gint pos;
+#if 0
 	gchar *vmode=NULL;
 
 	switch(scan->GetVM()){
@@ -257,6 +254,7 @@ void V3dControl::CheckOptions(){
 	case SCAN_V_DIFFERENTIAL:    vmode=g_strconcat(N_("View"),"/Differential", NULL); break;
 	case SCAN_V_PERIODIC:    vmode=g_strconcat(N_("View"),"/Periodic", NULL); break;
 	}
+#endif
 }
 
 gint V3dControl::glarea_event_cb(GtkWidget *glarea, GdkEvent *event, V3dControl *vc){
@@ -380,7 +378,7 @@ void V3dControl::view_file_save_as_callback (GSimpleAction *action, GVariant *pa
 }
 
 void V3dControl::view_file_save_image_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
-        V3dControl *vc = (V3dControl *) user_data;
+        // V3dControl *vc = (V3dControl *) user_data;
 	XSM_DEBUG(DBG_L2, "Sorry, I'm working on!" );
         //	((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->
         //		save_to_image(imagename);

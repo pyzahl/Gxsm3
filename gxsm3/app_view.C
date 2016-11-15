@@ -1241,8 +1241,10 @@ void ViewControl::Resize (char *title, int nx, int ny,
                 ximg->Resize (nx/ZoomFac,ny/ZoomFac);
 	}
 
-	usx = MIN((nx+rulewidth+2*border), (2*gdk_screen_width()/3));
-        usy = MIN((int)(ny+rulewidth+2*border), (2*gdk_screen_height()/3));
+        //	usx = MIN((nx+rulewidth+2*border), (2*gdk_screen_width()/3));
+        //        usy = MIN((int)(ny+rulewidth+2*border), (2*gdk_screen_height()/3));
+	usx = MIN((nx+rulewidth+2*border), 550);
+        usy = MIN((int)(ny+rulewidth+2*border), 550);
 	
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (side_pane_control))){
                 NcDumpToWidget ncdump (scan->data.ui.name);
@@ -1748,15 +1750,7 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
 			}
                         break;
                 case 3: // do popup
-                        {
-                        int button, event_time;
-
-                        button = 3;
-                        event_time = gtk_get_current_event_time ();
-
-                        gtk_menu_popup (GTK_MENU (vc->v_popup_menu), NULL, NULL, NULL, NULL,
-                                        button, event_time);
-                        }
+                        gtk_menu_popup_at_pointer (GTK_MENU (vc->v_popup_menu), event);
                         break;
 		case 4: if(vc->ZoomQFkt) (*vc->ZoomQFkt)(0,1,vc->ZQFktData); break; // Zoom Out
 		case 5: if(vc->ZoomQFkt) (*vc->ZoomQFkt)(1,0,vc->ZQFktData); break; // Zoom In

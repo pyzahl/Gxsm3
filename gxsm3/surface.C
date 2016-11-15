@@ -196,11 +196,11 @@ int Surface::SetSDir(int Channel, int choice){
 }
 
 int Surface::SetMode(int Channel, int choice, int force){
-	int lastmode;
+        // int lastmode;
 	XSM_DEBUG (DBG_L2, "Surface::SetMode: " << Channel << " " << choice);
 	if (Channel == -1) Channel = ActiveChannel;
 	if (Channel < 0 || Channel >= MAX_CHANNELS) return -1;
-	lastmode=ChannelMode[Channel];
+	// lastmode=ChannelMode[Channel];
 
 	switch (choice){
 	case ID_CH_M_ACTIVE: 
