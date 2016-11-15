@@ -115,7 +115,7 @@ public:
                 gtk_widget_show_all (scrolled_contents);
         };
         
-        void grid_add_button_vpc (const gchar *icon_id, const gchar *tooltip, int gx, int gy, int wx, int wy, int k){
+        GtkWidget* grid_add_button_vpc (const gchar *icon_id, const gchar *tooltip, int gx, int gy, int wx, int wy, int k){
                 button = gtk_button_new_from_icon_name (icon_id, GTK_ICON_SIZE_BUTTON);
 		gtk_widget_set_tooltip_text (button, tooltip);
 		gtk_grid_attach (GTK_GRID (grid), button, gx, gy, wx, wy);
@@ -128,11 +128,13 @@ public:
 #endif
                 if (configure_list)
                         configure_list = g_slist_prepend (configure_list, button);
+
+                return button;
 	};
 
-        void grid_add_mixer_input_options (gint channel, gint preset){ // preset = mix_fbsource[CHANNEL]);
-		wid = gtk_combo_box_text_new ();
-		g_object_set_data(G_OBJECT (wid), "mix_channel_fbsource", GINT_TO_POINTER (channel));
+        GtkWidget* grid_add_mixer_input_options (gint channel, gint preset){ // preset = mix_fbsource[CHANNEL]);
+		GtkWidget *cbtxt = gtk_combo_box_text_new ();
+		g_object_set_data(G_OBJECT (cbtxt), "mix_channel_fbsource", GINT_TO_POINTER (channel));
                 
 		for (int jj=0;  jj<NUM_SIGNALS_UNIVERSAL && sranger_common_hwi->lookup_dsp_signal_managed (jj)->p; ++jj){
 			if ( !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Analog_IN")
@@ -141,67 +143,64 @@ public:
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "LockIn")
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "PAC")){
 			        if (channel == 0 && !strcmp(sranger_common_hwi->lookup_dsp_signal_managed (jj)->label, "In 0"))
-                                        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "In0: I-Tunnel"); g_free (id); }
+                                        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "In0: I-Tunnel"); g_free (id); }
 				else
-                                        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label); g_free (id); }
+                                        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label); g_free (id); }
                         }
 		}
-		gtk_combo_box_set_active (GTK_COMBO_BOX (wid), preset);
-		g_signal_connect (G_OBJECT (wid), "changed",
+		gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), preset);
+		g_signal_connect (G_OBJECT (cbtxt), "changed",
 				  G_CALLBACK (DSPControl::choice_mixsource_callback),
 				  this);
-                grid_add_widget (wid);
+                grid_add_widget (cbtxt);
+                wid=cbtxt;
+                return cbtxt;
         };
 
-        void grid_add_mixer_options (gint channel, gint preset){ // preset = mix_transform_mode[CHANNEL]
+        GtkWidget* grid_add_mixer_options (gint channel, gint preset){ // preset = mix_transform_mode[CHANNEL]
                 gchar *id;
-                MixMode mm;
-                mm.l = 0;
-                mm.s.ch = channel;
-                wid = gtk_combo_box_text_new ();
+                GtkWidget *cbtxt = gtk_combo_box_text_new ();
                                                        
-		g_object_set_data(G_OBJECT (wid), "mix_channel", GINT_TO_POINTER (channel)); 
+                g_object_set_data (G_OBJECT (cbtxt), "mix_channel", GINT_TO_POINTER (channel)); 
                                                                         
-                id = g_strdup_printf ("%d", MM_OFF);         gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "OFF"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_ON);          gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "LIN"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_NEG|MM_ON);   gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "NEG-LIN"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_LOG|MM_ON);   gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "LOG"); g_free (id); 
+                id = g_strdup_printf ("%d", MM_OFF);         gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "OFF"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_ON);          gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "LIN"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_NEG|MM_ON);   gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-LIN"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_LOG|MM_ON);   gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "LOG"); g_free (id); 
 									
-		id = g_strdup_printf ("%d", MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "FUZZY"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "NEG-FUZZY"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "FUZZY-LOG"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "NEG-FUZZY-LOG"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "FUZZY"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-FUZZY"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "FUZZY-LOG"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-FUZZY-LOG"); g_free (id); 
 		
 		if (preset == MM_OFF) 
-			gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0); 
+			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 0); 
 		else if (preset == MM_ON)	
-			gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 1); 
+			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 1); 
 		else if (preset == (MM_NEG|MM_ON))	
-			gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 2); 
+			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 2); 
 		else if (preset == (MM_LOG|MM_ON))	
-			gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 3); 
+			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 3); 
 		else if (preset == (MM_FUZZY|MM_ON)) 
-			gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 4); 
+			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 4); 
 		else if (preset == (MM_NEG|MM_FUZZY|MM_ON)) 
-			gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 5); 
+			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 5); 
 		else if (preset == (MM_FUZZY|MM_LOG|MM_ON)) 
-			gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 6); 
+			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 6); 
 		else if (preset == (MM_NEG|MM_FUZZY|MM_LOG|MM_ON)) 
-			gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 7); 
-                                                                        
-		g_signal_connect (G_OBJECT (wid),"changed",	
+			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 7); 
+
+		g_signal_connect (G_OBJECT (cbtxt),"changed",	
 				  G_CALLBACK (DSPControl::choice_mixmode_callback), 
 				  this);				
-
-                grid_add_widget (wid);
+                
+                grid_add_widget (cbtxt);
+                return cbtxt;
         };
 
-        void grid_add_scan_input_signal_options (gint channel, gint preset){ // preset=scan_source[CHANNEL]
-                MixMode mm;                    
-		mm.l = 0; 
-		mm.s.ch = channel; 
-		wid = gtk_combo_box_text_new (); 
-		g_object_set_data(G_OBJECT (wid), "scan_channel_source", GINT_TO_POINTER (channel)); 
+        GtkWidget *grid_add_scan_input_signal_options (gint channel, gint preset){ // preset=scan_source[CHANNEL]
+		GtkWidget *cbtxt = gtk_combo_box_text_new (); 
+		g_object_set_data(G_OBJECT (cbtxt), "scan_channel_source", GINT_TO_POINTER (channel)); 
 		
 		for (int jj=0;  jj<NUM_SIGNALS_UNIVERSAL && sranger_common_hwi->lookup_dsp_signal_managed (jj)->p; ++jj){ 
 			if (1 || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Analog_IN") 
@@ -215,7 +214,7 @@ public:
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "RMS") 
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "PAC")){ 
 				if (sranger_common_hwi->lookup_dsp_signal_managed (jj)->index >= 0){ 
-					int si = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_SCAN_CHANNEL_MAP0_ID+mm.s.ch); 
+					int si = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_SCAN_CHANNEL_MAP0_ID+channel); 
 					const gchar *vjfixedlab[] = { "Counter 0", "Counter 1", "NULL", "NULL" }; 
 					int vi=sranger_common_hwi->lookup_dsp_signal_managed (si)->index/8; 
 					int vj=sranger_common_hwi->lookup_dsp_signal_managed (si)->index - 8*vi; 
@@ -225,24 +224,25 @@ public:
 								     ? sranger_common_hwi->lookup_dsp_signal_managed (sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE0_INPUT_ID+vj))->label 
 								     : vjfixedlab[vj-4] 
 								     );	
-					{ gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, tmp); g_free (id); } 
+					{ gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, tmp); g_free (id); } 
 					g_free (tmp); 
 				} else {				
-					{ gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label); g_free (id); } 
+					{ gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label); g_free (id); } 
 				} 
 			} 
 		} 
-		gtk_combo_box_set_active (GTK_COMBO_BOX (wid), preset); 
-		g_signal_connect (G_OBJECT (wid), "changed",	
+		gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), preset); 
+		g_signal_connect (G_OBJECT (cbtxt), "changed",	
 				  G_CALLBACK (DSPControl::choice_scansource_callback), 
 				  this);
-                grid_add_widget (wid);
+                grid_add_widget (cbtxt);
+                return cbtxt;
 	};
 
-        void grid_add_probe_source_signal_options (gint channel, gint preset){ // preset=probe_source[CHANNEL])
-                wid = gtk_combo_box_text_new (); 
-		gtk_widget_set_size_request (wid, 50, -1); 
-		g_object_set_data(G_OBJECT (wid), "prb_channel_source", GINT_TO_POINTER (channel)); 
+        GtkWidget *grid_add_probe_source_signal_options (gint channel, gint preset){ // preset=probe_source[CHANNEL])
+                GtkWidget *cbtxt = gtk_combo_box_text_new (); 
+		gtk_widget_set_size_request (cbtxt, 50, -1); 
+		g_object_set_data(G_OBJECT (cbtxt), "prb_channel_source", GINT_TO_POINTER (channel)); 
 		
 		for (int jj=0;  jj<NUM_SIGNALS_UNIVERSAL && sranger_common_hwi->lookup_dsp_signal_managed (jj)->p; ++jj){ 
 			if (1 || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Analog_IN") 
@@ -255,19 +255,20 @@ public:
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Mixer") 
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "RMS") 
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "PAC")){ 
-			        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label); g_free (id); } 
+			        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label); g_free (id); } 
 			} 
 		} 
-		gtk_combo_box_set_active (GTK_COMBO_BOX (wid), preset); 
-		g_signal_connect (G_OBJECT (wid), "changed",	
+		gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), preset); 
+		g_signal_connect (G_OBJECT (cbtxt), "changed",	
 				  G_CALLBACK (DSPControl::choice_prbsource_callback), 
 				  this);				
-                grid_add_widget (wid);
+                grid_add_widget (cbtxt);
+                return cbtxt;
         };
 
-        void grid_add_lockin_input_signal_options (gint channel, gint preset){ // preset=lockin_input[CHANNEL]
-		wid = gtk_combo_box_text_new (); 
-		g_object_set_data(G_OBJECT (wid), "lck_channel_source", GINT_TO_POINTER (channel)); 
+        GtkWidget *grid_add_lockin_input_signal_options (gint channel, gint preset){ // preset=lockin_input[CHANNEL]
+		GtkWidget *cbtxt = gtk_combo_box_text_new (); 
+		g_object_set_data(G_OBJECT (cbtxt), "lck_channel_source", GINT_TO_POINTER (channel)); 
 		
 		for (int jj=0;  jj<NUM_SIGNALS_UNIVERSAL && sranger_common_hwi->lookup_dsp_signal_managed (jj)->p; ++jj){ 
 			if ( !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Analog_IN") 
@@ -276,21 +277,22 @@ public:
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Mixer") 
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "LockIn") 
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "PAC")){ 
-			        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label); g_free (id); } 
+			        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label); g_free (id); } 
 			} 
 		} 
-		gtk_combo_box_set_active (GTK_COMBO_BOX (wid), preset); 
-		g_signal_connect (G_OBJECT (wid), "changed",	
+		gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), preset); 
+		g_signal_connect (G_OBJECT (cbtxt), "changed",	
 				  G_CALLBACK (DSPControl::choice_lcksource_callback), 
 				  this);				
-                grid_add_widget (wid);
+                grid_add_widget (cbtxt);
+                return cbtxt;
 	};
 
         GtkWidget* grid_add_probe_status (const gchar *status_label) {
-                wid = grid_add_input (status_label);
-		gtk_entry_set_text (GTK_ENTRY(wid), " --- ");
-		gtk_editable_set_editable (GTK_EDITABLE (wid), FALSE);
-                return wid;
+                GtkWidget *inp = grid_add_input (status_label);
+		gtk_entry_set_text (GTK_ENTRY (inp), " --- ");
+		gtk_editable_set_editable (GTK_EDITABLE (inp), FALSE);
+                return inp;
 	};
 
         void grid_add_probe_controls (gboolean have_dual,
@@ -1280,7 +1282,8 @@ DSPControl::DSPControl () {
         const gchar *mixer_remote_id_set[4] = { "fbs-mx0-current-set",  "fbs-mx1-freq-set",   "fbs-mx2-set",   "fbs-mx3-set" };
         const gchar *mixer_remote_id_gn[4]  = { "fbs-mx0-current-gain" ,"fbs-mx1-freq-gain",  "fbs-mx2-gain",  "fbs-mx3-gain" };
         const gchar *mixer_remote_id_fl[4]  = { "fbs-mx0-current-level","fbs-mx1-freq-level", "fbs-mx2-level", "fbs-mx3-level" };
-        
+
+        // Note: transform mode is always default [LOG,OFF,OFF,OFF] -- NOT READ BACK FROM DSP -- !!!
         for (gint ch=0; ch<4; ++ch){
                 if (mix_transform_mode[ch] == MM_OFF)
                         dsp_bp->set_configure_list_mode_on (); 
@@ -1422,7 +1425,7 @@ DSPControl::DSPControl () {
         dsp_bp->set_configure_list_mode_on ();
 
 	LDC_status = dsp_bp->grid_add_check_button ("Enable Linear Drift Correction", NULL, 3);
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(LDC_status), 0);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (LDC_status), 0);
 	ldc_flag = 0;
 	g_signal_connect (G_OBJECT (LDC_status), "clicked",
 			    G_CALLBACK (DSPControl::ldc_callback), this);
@@ -3403,7 +3406,7 @@ void DSPControl::updateDSP(int FbFlg){
 							z_servo, m_servo);
 
 	// Update LDC?
-	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(LDC_status))){
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (LDC_status))){
 		gapp->spm_freeze_scanparam(1);
 		sranger_common_hwi->set_ldc (dxdt, dydt, dzdt);
 		ldc_flag = 1;

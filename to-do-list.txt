@@ -45,6 +45,11 @@ pending minor issues/ideas:
   --> smart manage window position???
 -- PCS is NOT yet updating non user set values -- ak file number auto advance, client settings, remote...
 
+External/glib/gtk related issues:
+- https://bugzilla.gnome.org/show_bug.cgi?id=771242  ComboBoxText problem causes:
+(gxsm3:31920): Gdk-CRITICAL **: gdk_window_get_window_type: assertion 'GDK_IS_WINDOW (window)' failed
+
+
 Major upcoming task:
 - Manual updates, embeded manual code reviewing/updating
 - Website
