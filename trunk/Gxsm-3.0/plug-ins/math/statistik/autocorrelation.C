@@ -296,8 +296,7 @@ static void autocorrelation_cleanup(void)
 					      NULL,
 					      //(GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
 					      GTK_DIALOG_MODAL,
-					      GTK_STOCK_OK,
-					      GTK_RESPONSE_NONE,					   
+					      _("_OK"), GTK_RESPONSE_ACCEPT,
 					      NULL);
 	
 	wmenu = gtk_combo_box_text_new ();

@@ -228,8 +228,7 @@ public:
 		dialog = gtk_dialog_new_with_buttons (N_("Settings"),
 						      NULL,
 						      (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
-						      GTK_STOCK_OK,
-						      GTK_RESPONSE_ACCEPT,
+						      _("_OK"), GTK_RESPONSE_ACCEPT,
 						      NULL);
 		BuildParam bp;
 		gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
@@ -272,7 +271,7 @@ public:
 		bp.grid_add_widget (source2_combo);
 		bp.new_line ();
 
-		bp.error_text = "Value not allowed.";
+		bp.set_error_text ("Value not allowed.");
 		bp.grid_add_ec_with_scale ("Image Filter:\n0 (sharp) ... 10 (smooth)",          Unity, &(*index),     0.,   10., ".1f", 0.1,  1.); bp.new_line ();
 		bp.grid_add_ec_with_scale ("Quality Control:\n0 (non) ... 1 (precise match)",   Unity, &(*qc),        0.,    1., ".2f", 0.1,  1.); bp.new_line ();
 		bp.grid_add_ec_with_scale ("\nRef. Index for Subtract:\n-1 (non) 0..N-1",       Unity, &(*ref_i),    -1., NSets, ".0f"); bp.new_line ();
