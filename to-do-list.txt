@@ -28,7 +28,7 @@ current work in progress:
 
 pending ports:
 - 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2
-
+x
 
 pending solution/reworks:
 -> build a analysis clone "gxsm3a" instance with independent session/session manager and gsettings path
