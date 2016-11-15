@@ -156,7 +156,7 @@ int LineProfile1D::load(const gchar *fname){
 //			std::cout << "VP DATA FOUND IS VALID" << std::endl;
 
 			// scan vector table
-			int nvsec = 0;
+                        int nvsec = 0;
 			gchar sec_position_vector[64][1024];
 			double svXS[64], svYS[64], svZS[64], svtime[64];
 			int svindexi[64];
@@ -181,11 +181,12 @@ int LineProfile1D::load(const gchar *fname){
 							svZS[i] = atof (*svtoc+5);
 					}
 					if (secvec)
-					g_strfreev (secvec);
+                                                g_strfreev (secvec);
 					nvsec = ++i;
 				} else break;
+                                g_print ("SecVecTable: %d [#%d t=%g XYZ=(%g %g %g)\n]", nvsec, svindexi[i], svtime[i], svXS[i], svYS[i], svZS[i]);
 			}
-
+                        
 //			std::cout << "VP DATA -- SECTAB OK: nvsec=" << nvsec << std::endl;
 
 			while (f.good()){

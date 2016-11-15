@@ -38,8 +38,8 @@
 #include "gnome-res.h"
 
 #include "gxsm_resoucetable.h"
-#include "../pixmaps/gxsmdruidlogo.xpm"
-#include "../pixmaps/gxsmwatermark.xpm"
+// #include "../pixmaps/gxsmdruidlogo.xpm"
+// #include "../pixmaps/gxsmwatermark.xpm"
 
 #define UTF8_DOT       "\302\267"
 #define UTF8_DEGREE    "\302\260"

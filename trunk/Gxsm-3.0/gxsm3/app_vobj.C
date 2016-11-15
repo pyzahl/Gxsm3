@@ -245,11 +245,15 @@ VObject::~VObject(){
 
         UNREF_DELETE_CAIRO_ITEM (label, canvas);
 
-	for (i=0; i<6; ++i)
+	for (i=0; i<6; ++i){
                 UNREF_DELETE_CAIRO_ITEM (arrow_head[i], canvas);
+        }
         
-	for (i=0; i<2*6; ++i){
+	for (i=0; i<2; ++i){
                 UNREF_DELETE_CAIRO_ITEM (cursors[i], canvas);
+        }
+
+        for (i=0; i<2*6; ++i){
 		UNREF_DELETE_CAIRO_ITEM (avg_area_marks[i], canvas);
 		UNREF_DELETE_CAIRO_ITEM (avg_circ_marks[i], canvas);
 	}
@@ -1105,7 +1109,7 @@ void VObject::GoLocMax(int r){
 gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
 	static double x, y;
 	double new_x, new_y;
-	GdkCursor *cursor;
+        //	GdkCursor *cursor;
 	static int dragging;
 	double item_x=0., item_y=0.;
         cairo_item* item = NULL;
@@ -1166,23 +1170,13 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
                         touched_item  = item;
                         touched_xy[0] = item_x;
                         touched_xy[1] = item_y;
-                        {
-                                int button, event_time;
-                                                
-                                button = 2;
-                                event_time = gtk_get_current_event_time ();
-
-                                // GTK3QQQ -- no better clue yet -- testing fix
-                                g_object_set_data (G_OBJECT (canvas), "VObject", this);
-
-                                gtk_menu_popup (GTK_MENU (obj_popup_menu), NULL, NULL, NULL,
-                                                this,
-                                                button, event_time);
+                        // GTK3QQQ -- no better clue yet -- testing fix
+                        g_object_set_data (G_OBJECT (canvas), "VObject", this);
+                        gtk_menu_popup_at_pointer (GTK_MENU (obj_popup_menu), event);
                                 // ????? how ????
                                 //g_action_map_add_action_entries (G_ACTION_MAP (gs_action_group),
                                 //                                 win_object_popup_entries, G_N_ELEMENTS (win_object_popup_entries),
                                 //                                 this);
-                        }
                         break;
 
                 default:

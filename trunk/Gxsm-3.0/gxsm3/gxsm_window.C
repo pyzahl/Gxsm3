@@ -55,12 +55,12 @@ G_DEFINE_TYPE_WITH_PRIVATE(Gxsm3appWindow, gxsm3_app_window, GTK_TYPE_APPLICATIO
 static void
 gxsm3_app_window_init (Gxsm3appWindow *win)
 {
-        Gxsm3appWindowPrivate *priv;
+        //        Gxsm3appWindowPrivate *priv;
 
         // ................**********************************************************************
         XSM_DEBUG(DBG_L2, "gxsm3_app_window_init ================================================" );
 
-        priv = (Gxsm3appWindowPrivate *) gxsm3_app_window_get_instance_private (win);
+        //        priv = (Gxsm3appWindowPrivate *) gxsm3_app_window_get_instance_private (win);
         // no template in use currently
         // gtk_widget_init_template (GTK_WIDGET (win));
 
@@ -80,11 +80,11 @@ gxsm3_app_window_init (Gxsm3appWindow *win)
 static void
 gxsm3_app_window_dispose (GObject *object)
 {
-        Gxsm3appWindow *win;
-        Gxsm3appWindowPrivate *priv;
+        //        Gxsm3appWindow *win;
+        //        Gxsm3appWindowPrivate *priv;
 
-        win = GXSM3_APP_WINDOW (object);
-        priv = (Gxsm3appWindowPrivate *) gxsm3_app_window_get_instance_private (win);
+        // win = GXSM3_APP_WINDOW (object);
+        //        priv = (Gxsm3appWindowPrivate *) gxsm3_app_window_get_instance_private (win);
 
         // g_clear_object (&priv->settings);
 
@@ -113,11 +113,11 @@ void
 gxsm3_app_window_open (Gxsm3appWindow *win,
 		       GFile            *file)
 {
-        Gxsm3appWindowPrivate *priv;
+        //        Gxsm3appWindowPrivate *priv;
         gchar *basename;
         gboolean re_use = false;
 
-        priv = (Gxsm3appWindowPrivate *) gxsm3_app_window_get_instance_private (win);
+        //        priv = (Gxsm3appWindowPrivate *) gxsm3_app_window_get_instance_private (win);
         basename = g_file_get_basename (file);
 
         std::ifstream test;

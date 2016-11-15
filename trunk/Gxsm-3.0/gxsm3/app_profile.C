@@ -452,10 +452,7 @@ ProfileControl::ProfileControl (const gchar *filename, const gchar *resource_id_
 
 void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid){
 	int i;
-        //	GtkWidget *popup;
 	GtkWidget *tb;
-	gchar *tmp;
-	gchar *defaultval;
 	char xcline[256];
 
         window_w = window_h = 0;
@@ -827,9 +824,7 @@ void ProfileControl::AppWindowInit(const gchar *title){
         p_popup_menu = gtk_menu_new_from_model (G_MENU_MODEL (profile_popup_menu));
         g_assert (GTK_IS_MENU (p_popup_menu));
 
-
         XSM_DEBUG (DBG_L2,  "VC::VC popup Header Buttons setup. " );
-	GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
 
         // attach full view popup menu to tool button ----------------------------------------------------
         GtkWidget *header_menu_button = gtk_menu_button_new ();
@@ -905,12 +900,8 @@ gboolean ProfileControl::resize_drawing (GtkWidget *widget, ProfileControl *pc){
 }
 
 gboolean ProfileControl::cairo_draw_profile_only_callback (cairo_t *cr, ProfileControl *pc){
-        cairo_item **c_item;
-        cairo_item_text **c_item_t;
-
         cairo_scale (cr, pc->pixel_size, pc->pixel_size);
         pc->drawScans (cr);
-
         return FALSE;
 }
 
@@ -994,7 +985,7 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
         double mouse_pix_xy[2];
 	GtkWidget *frame;
 	gchar *mld;
-	GdkCursor *fleur;
+        //	GdkCursor *fleur;
         cairo_item *items[2] = { pc->Cursor[0][1], pc->Cursor[1][1] };
 
         // ***** cairo_scale (cr, pc->pixel_size, pc->pixel_size);
@@ -1042,15 +1033,7 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
                         break;
                 case 3: // do popup
                         g_print ("RM BUTTON_PRESS (do popup) image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
-                        {
-                        int button, event_time;
-
-                        button = 3;
-                        event_time = gtk_get_current_event_time ();
-
-                        gtk_menu_popup (GTK_MENU (pc->p_popup_menu), NULL, NULL, NULL, NULL,
-                                        button, event_time);
-                        }
+                        gtk_menu_popup_at_pointer (GTK_MENU (pc->p_popup_menu), event);
                         break;
 		}
 		break;
@@ -1079,11 +1062,11 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
 }
 
 gint ProfileControl::cursor_event(cairo_item *items[2], GdkEvent *event, double mxy[2], ProfileControl *pc){
-	static double x, y;
+        static double x, y;
 	double new_x, new_y;
 	double item_x=0., item_y=0.;
   	static int dragging=FALSE;
-	GdkCursor *fleur;
+        //	GdkCursor *fleur;
         cairo_item *item = NULL;
 
 	item_x = mxy[0];
@@ -1150,6 +1133,8 @@ gint ProfileControl::cursor_event(cairo_item *items[2], GdkEvent *event, double 
         default:
                 break;
         }
+
+        g_print ("Cursor at %g, %g\n", x,y);
         
 	return true;
 }
@@ -1950,7 +1935,7 @@ void ProfileControl::SetTitle(const gchar *tit, gboolean append){
 
 void ProfileControl::file_open_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        ProfileControl *pc = (ProfileControl *) user_data;
+        //        ProfileControl *pc = (ProfileControl *) user_data;
 
 	gchar *ffname;
 	ffname = gapp->file_dialog ("Profile to load", NULL, 
@@ -1999,7 +1984,7 @@ void ProfileControl::file_save_as_callback (GSimpleAction *simple, GVariant *par
 
 void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        ProfileControl *pc = (ProfileControl *) user_data;
+        //        ProfileControl *pc = (ProfileControl *) user_data;
 
 #if 0
         // GTK3QQQ -- cairo!!!

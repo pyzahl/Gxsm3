@@ -418,7 +418,7 @@ UserEntry::UserEntry (const gchar *Name, NcFile *ncf, const gchar *Message_id, S
 	g_free (ue_data_dim_name);
 	if (!ue_data_dim)
 		return;
-	int dim_coord_data  = (gint) ue_data_dim->size ();
+	// int dim_coord_data  = (gint) ue_data_dim->size ();
 
 	gchar *ue_entities_dim_name = g_strdup_printf ("Event_User_%s_Dim", message_id);
 //	std::cout << " UE NCF dim entities checking >" << ue_entities_dim_name << std::endl;

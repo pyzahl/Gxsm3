@@ -31,7 +31,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
-#include "../pixmaps/gxsmlogo.xpm"
+// #include "../pixmaps/gxsmlogo.xpm"
 
 #include "gxsm_app.h"
 #include "gxsm_window.h"
@@ -603,9 +603,9 @@ void App::set_dsp_scan_in_progress (gboolean flg){
         static gboolean last = false;
 
         if (flg != last){ // be smart
+#if 0 // GTKQQQ                
                 GdkRGBA red = { 1.,0.,0., 0.5 };
                 GdkRGBA *color = flg ? &red : NULL;
-                
                 gtk_widget_override_background_color (GTK_WIDGET (scan_button),
                                                       GTK_STATE_FLAG_NORMAL,
                                                       color);
@@ -615,6 +615,7 @@ void App::set_dsp_scan_in_progress (gboolean flg){
                 gtk_widget_override_background_color (GTK_WIDGET (scan_button),
                                                       GTK_STATE_FLAG_ACTIVE,
                                                       color);
+#endif
                 last = flg;
         }
 }
@@ -801,7 +802,7 @@ void App::SignalEventToPlugins( GList *PluginNotifyList, gpointer data ){
 // ========================================
 
 gint App::RemoveGxsmSplash(GtkWidget *widget, gpointer data){
-        App *a = (App *)data;
+        // App *a = (App *)data;
 
         XSM_DEBUG_GP (DBG_L1, "App::RemoveGxsmSplash (hiding it)\n");
 
@@ -816,7 +817,7 @@ gint App::RemoveGxsmSplash(GtkWidget *widget, gpointer data){
 }
 
 gboolean App::splash_draw_callback (GtkWidget *widget, cairo_t *cr, gpointer data){
-        App *a = (App *)data;
+        // App *a = (App *)data;
 
         static cairo_item_text *text1 = NULL;
         static cairo_item_text *text2 = NULL;

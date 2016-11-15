@@ -461,6 +461,7 @@ gxsm3_app_new (void)
                                          NULL);
 }
 
+#if 0
 
 
 static void gxsm3_app_shutdown (GApplication *app, gpointer user_data)
@@ -473,7 +474,6 @@ static void gxsm3_app_shutdown (GApplication *app, gpointer user_data)
 	gapp = NULL;
 }
 
-#if 0
 
 static gint
 gxsm_app_command_line (GApplication            *application,

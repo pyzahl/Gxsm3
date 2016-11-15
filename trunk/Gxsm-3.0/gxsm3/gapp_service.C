@@ -959,8 +959,12 @@ void AppBase::show_auto (){
 void AppBase::position_auto (){
         if (window_geometry){
                 if (window_geometry[WGEO_FLAG]){
+                        gtk_window_move (GTK_WINDOW (window), window_geometry[WGEO_XPOS], window_geometry[WGEO_YPOS]);
+#if 0
                         GdkDisplay *display = gdk_display_get_default();
                         GdkScreen *screen = gdk_display_get_default_screen(display);
+
+                        // ==> consider gdk_monitor_get_workarea (), ...
                         gint screenWidth = gdk_screen_get_width(screen);
                         gint screenHeight = gdk_screen_get_height(screen);
                         
@@ -970,6 +974,7 @@ void AppBase::position_auto (){
                         if(window_geometry[WGEO_XPOS] >= 0 && window_geometry[WGEO_YPOS] >= 0){
                                 gtk_window_move (GTK_WINDOW (window), window_geometry[WGEO_XPOS], window_geometry[WGEO_YPOS]);
                         }
+#endif
                 }
         }
 }
@@ -977,6 +982,8 @@ void AppBase::position_auto (){
 void AppBase::resize_auto (){
         if (window_geometry){
                 if (window_geometry[WGEO_FLAG]){
+                        gtk_window_resize (GTK_WINDOW (window), window_geometry[WGEO_WIDTH], window_geometry[WGEO_HEIGHT]);
+#if 0
                         GdkDisplay *display = gdk_display_get_default();
                         GdkScreen *screen = gdk_display_get_default_screen(display);
                         gint screenWidth = gdk_screen_get_width(screen);
@@ -984,6 +991,7 @@ void AppBase::resize_auto (){
                         if (window_geometry[WGEO_WIDTH] > 0 && window_geometry[WGEO_HEIGHT] > 0
                             && window_geometry[WGEO_WIDTH] < screenWidth && window_geometry[WGEO_HEIGHT] < screenHeight)
                                 gtk_window_resize (GTK_WINDOW (window), window_geometry[WGEO_WIDTH], window_geometry[WGEO_HEIGHT]);
+#endif
                 }
         }
 }

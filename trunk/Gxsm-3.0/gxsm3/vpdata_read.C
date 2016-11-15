@@ -127,6 +127,7 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
 					g_strfreev (secvec);
 					nvsec = ++i;
 				} else break;
+                                g_print ("SecVecTable: %d [#%d t=%g XYZ=(%g %g %g)\n]", nvsec, svindexi[i], svtime[i], svXS[i], svYS[i], svZS[i]);
 			}
 
 			std::cout << "VP DATA -- SECTAB OK: nvsec=" << nvsec << std::endl;
