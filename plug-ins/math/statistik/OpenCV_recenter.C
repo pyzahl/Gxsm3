@@ -184,7 +184,7 @@ void setup_opencv_recenter (const gchar *title, Scan *src, double &threshold, in
 	GtkWidget *dialog = gtk_dialog_new_with_buttons (N_(title),
 							 NULL, 
 							 (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
-							 GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
+                                                         _("_OK"), GTK_RESPONSE_ACCEPT,
 							 NULL); 
 	BuildParam bp;
         gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
