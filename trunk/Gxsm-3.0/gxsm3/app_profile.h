@@ -420,6 +420,8 @@ class ProfileControl : public AppBase, public LineProfile1D{
         double pixel_size;
         double lw_1;
 
+        double current_geometry[2];
+        
 	double xmin, xmax, xrange;
 	double ymin, ymax, yrange;
 	double lmaxmin, lmin;

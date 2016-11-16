@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -130,6 +132,8 @@ GxsmPlugin UK2k_import_pi = {
 static const char *about_text = N_("Gxsm UK2k Data File Import Plugin\n\n"
                                    "This plugin reads in UK2k datafiles."
 	);
+
+static const char *file_mask = "*.[Ss][tT][dDpP]";
 
 // Symbol "get_gxsm_plugin_info" is resolved by dlsym from Gxsm, used to get Plugin's info!! 
 // Essential Plugin Function!!
@@ -632,17 +636,25 @@ static void UK2k_import_filecheck_load_callback (gpointer data ){
 
 static void UK2k_import_import_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 //				  "known extensions: std, stp, STD, STP",
-	gchar *fn = gapp->file_dialog("UK2k Import", NULL,
-				  "*.std",
-				  NULL, "UK2k-Import");
-
-    PI_DEBUG (DBG_L2, "FLDLG-IM::" << fn );
-    UK2k_import_filecheck_load_callback (&fn );
+	gchar **help = g_strsplit (UK2k_import_pi.help, ",", 2);
+	gchar *dlgid = g_strconcat (UK2k_import_pi.name, "-import\n", UK2k_import_pi.info, NULL);
+	gchar *fn = gapp->file_dialog_load (help[0], NULL, file_mask, NULL);
+	//	gchar *fn = gapp->file_dialog("UK2k Import", NULL,
+	//				  "*.std",
+	//				  NULL, "UK2k-Import");
+	if (fn){
+                PI_DEBUG (DBG_L2, "FLDLG-IM::" << fn );
+                UK2k_import_filecheck_load_callback (&fn );
+                g_free (fn);
+	}
 }
 
 
 static void UK2k_import_export_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 //				      "known extensions: std, stp, STD, STP",
+//	gchar **help = g_strsplit (UK2k_import_pi.help, ",", 2);
+//	gchar *dlgid = g_strconcat (UK2k_import_pi.name, "-import\n", UK2k_import_pi.info, NULL);
+//  *** gchar *fn = gapp->file_dialog_save (help[1], NULL, file_mask, NULL);
 //	gchar *fn = gapp->file_dialog("UK2k Export", NULL,
 //				      "*.std",
 //				      "","UK2k-Export");

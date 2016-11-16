@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -225,7 +227,7 @@ GxsmPlugin uksoft2001_im_export_pi = {
   "file-import-section,file-export-section", // sep. im/export menuentry path by comma!
   N_("UKSOFT,UKSOFT"), // menu entry (same for both)
   N_("UKSOFT import,UKSOFT export"), // short help for menu entry
-  N_("UKSOFT 2001/UView import filter."), // info
+  N_("UKSOFT 2001/UView import filter (Elimtec LEEM 2001-2016)."), // info
 // -- END EDIT --
   NULL,          // error msg, plugin may put error status msg here later
   NULL,          // Plugin Status, managed by Gxsm, plugin may manipulate it too
@@ -1184,17 +1186,23 @@ static void uksoft2001_im_export_filecheck_save_callback (gpointer data ){
 static void uksoft2001_im_export_import_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	gchar **help = g_strsplit (uksoft2001_im_export_pi.help, ",", 2);
 	gchar *dlgid = g_strconcat (uksoft2001_im_export_pi.name, "-import", NULL);
-	gchar *fn = gapp->file_dialog (help[0], NULL, file_mask, NULL, dlgid);
+	gchar *fn = gapp->file_dialog_load (help[0], NULL, file_mask, NULL);
 	g_strfreev (help); 
 	g_free (dlgid);
-	uksoft2001_im_export_filecheck_load_callback (&fn );
+	if (fn){
+                uksoft2001_im_export_filecheck_load_callback (&fn );
+                g_free (fn);
+	}
 }
 
 static void uksoft2001_im_export_export_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	gchar **help = g_strsplit (uksoft2001_im_export_pi.help, ",", 2);
 	gchar *dlgid = g_strconcat (uksoft2001_im_export_pi.name, "-export", NULL);
-	gchar *fn = gapp->file_dialog(help[1], NULL, file_mask, NULL, dlgid);
+	gchar *fn = gapp->file_dialog_save (help[1], NULL, file_mask, NULL);
 	g_strfreev (help); 
 	g_free (dlgid);
-	uksoft2001_im_export_filecheck_save_callback (&fn );
+       	if (fn){
+                uksoft2001_im_export_filecheck_save_callback (&fn );
+                g_free (fn);
+	}
 }

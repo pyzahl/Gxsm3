@@ -658,7 +658,7 @@ gchar *GnomeAppService::file_dialog_load (const gchar *title,
         
         dialog = gtk_file_chooser_dialog_new (title,
                                               window, // parent_window,
-                                              GTK_FILE_CHOOSER_ACTION_SAVE,
+                                              GTK_FILE_CHOOSER_ACTION_OPEN,
                                               N_("_Cancel"), GTK_RESPONSE_CANCEL,
                                               N_("_Load"), GTK_RESPONSE_ACCEPT,
                                               NULL);

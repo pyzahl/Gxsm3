@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -24,8 +26,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 /* Please do not change the Begin/End lines of this comment section!
  * this is a LaTeX style section used for auto generation of the PlugIn Manual 
@@ -1392,20 +1392,24 @@ static void primitive_im_export_filecheck_save_callback (gpointer data ){
 
 static void primitive_im_export_import_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 //                                "known extensions: pgm h16 nsc d2d dat sht byt flt dbl",
-        gchar *fn = gapp->file_dialog("Primitive Auto Import", NULL,
-				      "*.[PpHhNnDdSsBbFf][Gg1Ss2AaHhYyLlBb][Mm6CcDdTtLl]", 
-				      NULL, "primitive-Import");
-
-	PI_DEBUG (DBG_L2, "FLDLG-IM::" << fn );
-	primitive_im_export_filecheck_load_callback (&fn );
+        gchar *fn = gapp->file_dialog_load ("Primitive Auto Import", NULL,
+					    "*.[PpHhNnDdSsBbFf][Gg1Ss2AaHhYyLlBb][Mm6CcDdTtLl]", 
+					    NULL);
+	if (fn){
+	        PI_DEBUG (DBG_L2, "FLDLG-IM::" << fn );
+		primitive_im_export_filecheck_load_callback (&fn );
+		g_free (fn);
+	}
 }
 
 static void primitive_im_export_export_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 //                                    "known extensions: pgm tga dat sht byt flt dbl",
-        gchar *fn = gapp->file_dialog("Primitive Auto Export", NULL,
-                                      "*.[PpTtDdSsBbFf][GgAaHhYyLlBb][MmAaTtLl]",
-                                      "","primitive-Export");
-
-	PI_DEBUG (DBG_L2, "FLDLG-EX::" << fn );
-	primitive_im_export_filecheck_save_callback (&fn );
+        gchar *fn = gapp->file_dialog_save ("Primitive Auto Export", NULL,
+					    "*.[PpTtDdSsBbFf][GgAaHhYyLlBb][MmAaTtLl]",
+					    NULL);
+	if (fn){
+	        PI_DEBUG (DBG_L2, "FLDLG-EX::" << fn );
+		primitive_im_export_filecheck_save_callback (&fn );
+		g_free (fn);
+	}
 }

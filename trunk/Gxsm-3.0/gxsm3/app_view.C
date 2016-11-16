@@ -2227,7 +2227,6 @@ void ViewControl::view_file_save_as_callback (GSimpleAction *simple, GVariant *p
 void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant *parameter, 
                                                 gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
-	// GTK3QQQ
 
 	gchar *imgname;
 	gchar *suggest = g_strdup_printf ("%s-snap.png", vc->scan->data.ui.name);

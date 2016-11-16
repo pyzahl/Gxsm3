@@ -48,6 +48,7 @@
 
 static GActionEntry win_profile_popup_entries[] = {
         { "file-open", ProfileControl::file_open_callback, NULL, NULL, NULL },
+        { "file-image-save", ProfileControl::file_save_image_callback, NULL, NULL, NULL },
         { "print", ProfileControl::file_print5_callback, NULL, NULL, NULL },
 
         { "skl-Y-auto", ProfileControl::skl_Yauto_callback, NULL, "true", NULL },
@@ -971,7 +972,11 @@ void ProfileControl::SetSize(double new_aspect){
         pixel_size = (double)papixel / (3*border+pasize);
         lw_1 = 1. / pixel_size;
 
-        gtk_widget_set_size_request (canvas, (int)(papixel*(aspect+3*border)), (gint)(papixel*(1.+border))+statusheight);
+        // calculate approx. window size -- need to est. borders. GTK3QQQ: find actual widget (button onr ight) width??
+        current_geometry[0] = papixel*(aspect+3*border);
+        current_geometry[1] = papixel*(1.+border)+statusheight;
+        gtk_widget_set_size_request (canvas, (int)current_geometry[0], (gint)current_geometry[1]);
+        //        gtk_widget_set_size_request (canvas, (int)(papixel*(aspect+3*border)), (gint)(papixel*(1.+border))+statusheight);
 
         updateFrame ();
         updateTics  (TRUE);
@@ -1938,8 +1943,8 @@ void ProfileControl::file_open_callback (GSimpleAction *simple, GVariant *parame
         //        ProfileControl *pc = (ProfileControl *) user_data;
 
 	gchar *ffname;
-	ffname = gapp->file_dialog ("Profile to load", NULL, 
-				    "*.asc", NULL, "profileload");
+	ffname = gapp->file_dialog_load ("Profile to load", NULL, 
+                                         "*.asc", NULL);
 	if (ffname)
 		gapp->xsm->load (ffname);
 }
@@ -1984,34 +1989,82 @@ void ProfileControl::file_save_as_callback (GSimpleAction *simple, GVariant *par
 
 void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //        ProfileControl *pc = (ProfileControl *) user_data;
+        ProfileControl *pc = (ProfileControl *) user_data;
+	if(!pc->last_pe) return;
 
-#if 0
-        // GTK3QQQ -- cairo!!!
-
-	static gchar *suggest=NULL;
-	GError *error=NULL;
-	gint w,h;
 	gchar *imgname;
-	if (!suggest)
-		suggest = g_strdup_printf ("%s-snap.png", "profile");
+	gchar *suggest = g_strdup_printf ("%s-profile-snap.png", pc->last_pe->get_scan ()->data.ui.name);
 
-	imgname = gapp->file_dialog("Save Canvas as PNG/JPEG-Image", NULL, "*.png", suggest);
+        cairo_surface_t *surface;
+        cairo_t *cr;
+        cairo_status_t status;
+
+	imgname = gapp->file_dialog("Save Profile Canvas as png or svg file", NULL, "*.png", suggest);
+	g_free (suggest);
 
 	if (imgname == NULL || strlen(imgname) < 5) 
 		return;
 
-	g_free (suggest);
-	suggest = g_strdup (imgname);
+        int png=0;
 
-	gdk_window_get_size (GTK_WIDGET (pc->canvas)->window, &w, &h);
-	GdkPixbuf* pixbuf = gdk_pixbuf_get_from_drawable (NULL, GTK_WIDGET (pc->canvas)->window, NULL, 0,0,0,0, w,h);
-
-	if (strncasecmp (imgname+strlen(imgname)-4,".jpg", 4)==0 || strncasecmp (imgname+strlen(imgname)-5,".jpeg", 5)==0)
-		gdk_pixbuf_save (pixbuf, imgname, "jpeg", &error, "quality", "100", NULL);
-	else
-		gdk_pixbuf_save (pixbuf, imgname, "png", &error, NULL);
+        double scaling = 1.;
+        
+	if (strncasecmp (imgname+strlen(imgname)-3,".svg", 3)==0){
+#if 0
+#ifdef CAIRO_HAS_SVG_SURFACE
+                surface = cairo_svg_surface_create (imgname, pc->current_geometry[0], pc->current_geometry[1]);
+                cairo_svg_surface_restrict_to_version (surface, CAIRO_SVG_VERSION_1_2);
+#else
+                g_print ("Sorry -- CAIRO_HAS_SVG_SURFACE not defined/not available.\n");
+                return;
 #endif
+        } else if (strncasecmp (imgname+strlen(imgname)-3,".pdf", 3)==0){
+#ifdef CAIRO_HAS_PDF_SURFACE
+                surface = cairo_pdf_surface_create (imgname, cpc->urrent_geometry[0], pc->current_geometry[1]); 
+#else
+                g_print ("Sorry -- CAIRO_HAS_PDF_SURFACE not defined/not available.\n");
+                return;
+#endif
+#else
+                g_print ("Sorry -- CAIRO SVG/PDF_SURFACE is not available.\n");
+                return;
+#endif
+        } else {
+                scaling = 3.;
+                surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, scaling * pc->current_geometry[0], scaling * pc->current_geometry[1]);
+                png=1;
+        }
+
+        cr = cairo_create (surface);
+        //        cairo_scale (cr, IMAGE_DPI/72.0, IMAGE_DPI/72.0);
+        
+        cairo_scale (cr, scaling, scaling);
+        cairo_save (cr);
+
+        // 1) draw Frame -- not here
+        // 2) draw Image and red line via ShmImage2D
+	pc->canvas_draw_callback (NULL, cr, pc);
+
+        cairo_restore (cr);
+
+        status = cairo_status(cr);
+        if (status)
+                printf("%s\n", cairo_status_to_string (status));
+        
+        cairo_destroy (cr);
+
+	if (png){
+                g_print ("Cairo save scan view to png: '%s'\n", imgname);
+                status = cairo_surface_write_to_png (surface, imgname);
+                if (status)
+                        printf("%s\n", cairo_status_to_string (status));
+        } else {
+                cairo_surface_flush (surface);
+                cairo_surface_finish (surface);
+                g_print ("Cairo save scan view to sng: '%s'\n", imgname);
+        }
+        
+        cairo_surface_destroy (surface);
 }
 
 void ProfileControl::file_close_callback (GSimpleAction *simple, GVariant *parameter, 
