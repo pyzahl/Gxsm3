@@ -1324,7 +1324,7 @@ public:
                                                       NULL);
                 BuildParam bp;
                 gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
-                bp.error_text = "Value not allowed.";
+                bp.set_error_text ("Value not allowed.");
                 bp.input_nx = 5;
                 bp.grid_add_ec_with_scale ("Z initial",   gapp->xsm->Z_Unit, &zi,     0.,   100., ".2f", 0.1,  1.); bp.new_line ();
 		bp.grid_add_ec_with_scale ("Z-final",     gapp->xsm->Z_Unit, &zf,     0.,   100., ".2f", 0.1,  1.); bp.new_line ();
