@@ -28,10 +28,14 @@ current work in progress:
 
 pending ports:
 - 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2
+- View: OSD objects missing
 
 pending solution/reworks:
 -> build a analysis clone "gxsm3a" instance with independent session/session manager and gsettings path
 -> auto organize Matrix of Plots?!?!?
+
+pending (old) fixed/issues:
+-> Im/-Export Scan plugins: proper file dialog load/save, free filename!! => see WIP as example (fixed)
 
 pending minor issues/ideas:
 - probe graph, signal button list for source not updating correctly label??

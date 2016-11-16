@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -1206,17 +1208,23 @@ static void gmeyer_im_export_filecheck_save_callback (gpointer data ){
 static void gmeyer_im_export_import_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	gchar **help = g_strsplit (gmeyer_im_export_pi.help, ",", 2);
 	gchar *dlgid = g_strconcat (gmeyer_im_export_pi.name, "-import", NULL);
-	gchar *fn = gapp->file_dialog(help[0], NULL, file_mask, NULL, dlgid);
+	gchar *fn = gapp->file_dialog_load (help[0], NULL, file_mask, NULL);
 	g_strfreev (help); 
 	g_free (dlgid);
-	gmeyer_im_export_filecheck_load_callback (&fn );
+	if (fn){
+	        gmeyer_im_export_filecheck_load_callback (&fn);
+                g_free (fn);
+	}
 }
 
 static void gmeyer_im_export_export_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	gchar **help = g_strsplit (gmeyer_im_export_pi.help, ",", 2);
 	gchar *dlgid = g_strconcat (gmeyer_im_export_pi.name, "-export", NULL);
-	gchar *fn = gapp->file_dialog(help[1], NULL, file_mask, NULL, dlgid);
+	gchar *fn = gapp->file_dialog_save (help[1], NULL, file_mask, NULL);
 	g_strfreev (help); 
 	g_free (dlgid);
-	gmeyer_im_export_filecheck_save_callback (&fn );
+	if (fn){
+                gmeyer_im_export_filecheck_save_callback (&fn);
+                g_free (fn);
+	}
 }

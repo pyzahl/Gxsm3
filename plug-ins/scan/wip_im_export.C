@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -67,7 +69,7 @@ The plug-in is called by \GxsmMenu{File/Import/WIP}.
 
 // WIP file header
 typedef struct {
-  gchar  tag_name[8]; // WIP file id tag "WIT_PRCT" for project file
+        gchar  tag_name[8]; // WIP file id tag "WIT_PRCT" for project file
 } WIP_header_tag;
 
 // WIP tag part initial
@@ -79,11 +81,11 @@ typedef struct {
 typedef struct {
 	gint32 kind;
 	gint32 data_start_position;
-  gint32 t1;
+        gint32 t1;
 	gint32 data_stop_position;
-  gint32 t2;
-  //	guint64 data_start_position;
-  //	guint64 data_stop_position;
+        gint32 t2;
+        //	guint64 data_start_position;
+        //	guint64 data_stop_position;
 } WIP_tag_f;
 
 
@@ -120,17 +122,17 @@ typedef enum {
 } WIP_tag_kind;
 
 const gchar *tag_kind_lookup[] = {
-    "LIST",
-    "EXTENDED",
-    "DOUBLE",
-    "FLOAT",
-    "LARGE_INT",
-    "INTEGER",
-    "WORD",
-    "BYTE",
-    "BOOL",
-    "STRING",
-    "10???"
+        "LIST",
+        "EXTENDED",
+        "DOUBLE",
+        "FLOAT",
+        "LARGE_INT",
+        "INTEGER",
+        "WORD",
+        "BYTE",
+        "BOOL",
+        "STRING",
+        "10???"
 };
 
 static inline guint16 swap_u16 (guint16 x){
@@ -143,7 +145,7 @@ static inline guint32 swap_u32 (guint32 x){
 
 static inline guint64 swap_u64 (guint64 x){
         return ( (((x      ) & 0xff) << 56) | (((x >>  8)  & 0xff) << 48) | (((x >> 16) & 0xff) << 40) | (((x >> 24) & 0xff) << 32)	
-	       | (((x >> 32) & 0xff) << 24) | (((x >> 40)  & 0xff) << 16) | (((x >> 48) & 0xff) <<  8) | (((x >> 56) & 0xff)      ) );
+                 | (((x >> 32) & 0xff) << 24) | (((x >> 40)  & 0xff) << 16) | (((x >> 48) & 0xff) <<  8) | (((x >> 56) & 0xff)      ) );
 }
 // -mno-strict-align ??? 
 static inline gfloat check_and_swap_float (gfloat *x){
@@ -167,7 +169,7 @@ public:
 	virtual ~Wip_ImExportFile();
 	virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
 	virtual FIO_STATUS Write();
-  gint64 read_tag (gint64 start=8, gint64 stop=-1, WIP_data *wip_data=NULL, int level=0, GtkTreeIter *toplevel=NULL, int newlevel=1); 
+        gint64 read_tag (gint64 start=8, gint64 stop=-1, WIP_data *wip_data=NULL, int level=0, GtkTreeIter *toplevel=NULL, int newlevel=1); 
         GtkTreeModel *create_and_fill_model (void);
         GtkWidget *create_view_and_model (void);
         void wip_im_export_configure_select ();
@@ -195,42 +197,42 @@ static void wip_im_export_export_callback (GSimpleAction *simple, GVariant *para
 
 // Fill in the GxsmPlugin Description here
 GxsmPlugin wip_im_export_pi = {
-  NULL,                   // filled in and used by Gxsm, don't touch !
-  NULL,                   // filled in and used by Gxsm, don't touch !
-  0,                      // filled in and used by Gxsm, don't touch !
-  NULL,                   // The Gxsm-App Class Ref.pointer (called "gapp" in Gxsm) is 
-                          // filled in here by Gxsm on Plugin load, 
-                          // just after init() is called !!!
-// -- START EDIT --
-  "WIP-ImExport",            // PlugIn name
-  NULL,                   // PlugIn's Categorie, set to NULL for all, I just don't want this always to be loaded!
-  // Description, is shown by PluginViewer (Plugin: listplugin, Tools->Plugin Details)
-  NULL,
-  "Percy Zahl",
-  "file-import-section,file-export-section", // sep. im/export menuentry path by comma!
-  N_("WIP,WIP"), // menu entry (same for both)
-  N_("WIP import,WIP export"), // short help for menu entry
-  N_("WIP: WiTeC Project import filter."), // info
-// -- END EDIT --
-  NULL,          // error msg, plugin may put error status msg here later
-  NULL,          // Plugin Status, managed by Gxsm, plugin may manipulate it too
-  wip_im_export_init,
-  wip_im_export_query,
-  // about-function, can be "NULL"
-  // can be called by "Plugin Details"
-  wip_im_export_about,
-  // configure-function, can be "NULL"
-  // can be called by "Plugin Details"
-  NULL, //wip_im_export_configure,
-  // run-function, can be "NULL", if non-Zero and no query defined, 
-  // it is called on menupath->"plugin"
-  NULL,
-  // cleanup-function, can be "NULL"
-  // called if present at plugin removal
-  wip_im_export_import_callback, // direct menu entry callback1 or NULL
-  wip_im_export_export_callback, // direct menu entry callback2 or NULL
+        NULL,                   // filled in and used by Gxsm, don't touch !
+        NULL,                   // filled in and used by Gxsm, don't touch !
+        0,                      // filled in and used by Gxsm, don't touch !
+        NULL,                   // The Gxsm-App Class Ref.pointer (called "gapp" in Gxsm) is 
+        // filled in here by Gxsm on Plugin load, 
+        // just after init() is called !!!
+        // -- START EDIT --
+        "WIP-ImExport",            // PlugIn name
+        NULL,                   // PlugIn's Categorie, set to NULL for all, I just don't want this always to be loaded!
+        // Description, is shown by PluginViewer (Plugin: listplugin, Tools->Plugin Details)
+        NULL,
+        "Percy Zahl",
+        "file-import-section,file-export-section", // sep. im/export menuentry path by comma!
+        N_("WIP,WIP"), // menu entry (same for both)
+        N_("WIP import,WIP export"), // short help for menu entry
+        N_("WIP: WiTeC Project import filter -- experimental, read/view tree model only. Need for data selection."), // info
+        // -- END EDIT --
+        NULL,          // error msg, plugin may put error status msg here later
+        NULL,          // Plugin Status, managed by Gxsm, plugin may manipulate it too
+        wip_im_export_init,
+        wip_im_export_query,
+        // about-function, can be "NULL"
+        // can be called by "Plugin Details"
+        wip_im_export_about,
+        // configure-function, can be "NULL"
+        // can be called by "Plugin Details"
+        NULL, //wip_im_export_configure,
+        // run-function, can be "NULL", if non-Zero and no query defined, 
+        // it is called on menupath->"plugin"
+        NULL,
+        // cleanup-function, can be "NULL"
+        // called if present at plugin removal
+        wip_im_export_import_callback, // direct menu entry callback1 or NULL
+        wip_im_export_export_callback, // direct menu entry callback2 or NULL
 
-  wip_im_export_cleanup
+        wip_im_export_cleanup
 };
 
 // Text used in Aboutbox, please update!!
@@ -263,8 +265,8 @@ int file_dim=0;
 // Symbol "get_gxsm_plugin_info" is resolved by dlsym from Gxsm, used to get Plugin's info!! 
 // Essential Plugin Function!!
 GxsmPlugin *get_gxsm_plugin_info ( void ){ 
-  wip_im_export_pi.description = g_strdup_printf(N_("Gxsm im_export plugin %s"), VERSION);
-  return &wip_im_export_pi; 
+        wip_im_export_pi.description = g_strdup_printf(N_("Gxsm im_export plugin %s"), VERSION);
+        return &wip_im_export_pi; 
 }
 
 // Query Function, installs Plugin's in File/Import and Export Menupaths!
@@ -277,10 +279,10 @@ static void wip_im_export_query(void)
 {
 	if(wip_im_export_pi.status) g_free(wip_im_export_pi.status); 
 	wip_im_export_pi.status = g_strconcat (
-		N_("Plugin query has attached "),
-		wip_im_export_pi.name, 
-		N_(": File IO Filters are ready to use."),
-		NULL);
+                                               N_("Plugin query has attached "),
+                                               wip_im_export_pi.name, 
+                                               N_(": File IO Filters are ready to use."),
+                                               NULL);
 	
 	// register this plugins filecheck functions with Gxsm now!
 	// This allows Gxsm to check files from DnD, open, 
@@ -323,77 +325,77 @@ static void wip_im_export_cleanup(void)
 
 
 enum
-{
-  COL_TAG_NAME = 0,
-  COL_TAG_KIND,
-  COL_TAG_ITEMS,
-  COL_TAG_DATA,
-  COL_TAG_START,
-  NUM_COLS
-} ;
+        {
+                COL_TAG_NAME = 0,
+                COL_TAG_KIND,
+                COL_TAG_ITEMS,
+                COL_TAG_DATA,
+                COL_TAG_START,
+                NUM_COLS
+        } ;
 
 void age_cell_data_func (GtkTreeViewColumn *col,
-                    GtkCellRenderer   *renderer,
-                    GtkTreeModel      *model,
-                    GtkTreeIter       *iter,
-                    gpointer           user_data)
+                         GtkCellRenderer   *renderer,
+                         GtkTreeModel      *model,
+                         GtkTreeIter       *iter,
+                         gpointer           user_data)
 {
-  guint  items;
-  gchar  buf[64];
+        guint  items;
+        gchar  buf[64];
 
-  gtk_tree_model_get(model, iter, COL_TAG_ITEMS, &items, -1);
+        gtk_tree_model_get(model, iter, COL_TAG_ITEMS, &items, -1);
 
-  if (items > 0)
-  {
-    g_snprintf(buf, sizeof(buf), "%d", items);
+        if (items > 0)
+                {
+                        g_snprintf(buf, sizeof(buf), "%d", items);
 
-    g_object_set(renderer, "foreground-set", FALSE, NULL); /* print this normal */
-  }
-  else
-  {
-    g_snprintf(buf, sizeof(buf), "invalid");
-    g_object_set(renderer, "foreground", "Red", "foreground-set", TRUE, NULL); /* make red */
-  }
+                        g_object_set(renderer, "foreground-set", FALSE, NULL); /* print this normal */
+                }
+        else
+                {
+                        g_snprintf(buf, sizeof(buf), "invalid");
+                        g_object_set(renderer, "foreground", "Red", "foreground-set", TRUE, NULL); /* make red */
+                }
 
-  g_object_set(renderer, "text", buf, NULL);
+        g_object_set(renderer, "text", buf, NULL);
 }
 
 GtkTreeModel *Wip_ImExportFile::create_and_fill_model (void)
 {
 
-  treestore = gtk_tree_store_new(NUM_COLS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_UINT64);
+        treestore = gtk_tree_store_new(NUM_COLS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_UINT64);
 
 #if 0
-  GtkTreeIter    toplevel, child;
+        GtkTreeIter    toplevel, child;
 
-  /* Append a top level row and leave it empty */
-  gtk_tree_store_append(treestore, &toplevel, NULL);
-  gtk_tree_store_set(treestore, &toplevel,
-                     COL_TAG_NAME, "Maria",
-                     COL_TAG_KIND, "Incognito",
-                     -1);
+        /* Append a top level row and leave it empty */
+        gtk_tree_store_append(treestore, &toplevel, NULL);
+        gtk_tree_store_set(treestore, &toplevel,
+                           COL_TAG_NAME, "Maria",
+                           COL_TAG_KIND, "Incognito",
+                           -1);
 
-  /* Append a second top level row, and fill it with some data */
-  gtk_tree_store_append(treestore, &toplevel, NULL);
-  gtk_tree_store_set(treestore, &toplevel,
-                     COL_TAG_NAME, "Jane",
-                     COL_TAG_KIND, "Average",
-                     COL_TAG_ITEMS, (guint) 1962,
-                     -1);
+        /* Append a second top level row, and fill it with some data */
+        gtk_tree_store_append(treestore, &toplevel, NULL);
+        gtk_tree_store_set(treestore, &toplevel,
+                           COL_TAG_NAME, "Jane",
+                           COL_TAG_KIND, "Average",
+                           COL_TAG_ITEMS, (guint) 1962,
+                           -1);
 
-  /* Append a child to the second top level row, and fill in some data */
-  gtk_tree_store_append(treestore, &child, &toplevel);
-  gtk_tree_store_set(treestore, &child,
-                     COL_TAG_NAME, "Janinita",
-                     COL_TAG_KIND, "Average",
-                     COL_TAG_ITEMS, (guint) 1985,
-                     COL_TAG_DATA, "Test",
-                     -1);
+        /* Append a child to the second top level row, and fill in some data */
+        gtk_tree_store_append(treestore, &child, &toplevel);
+        gtk_tree_store_set(treestore, &child,
+                           COL_TAG_NAME, "Janinita",
+                           COL_TAG_KIND, "Average",
+                           COL_TAG_ITEMS, (guint) 1985,
+                           COL_TAG_DATA, "Test",
+                           -1);
 #endif
 
-  read_tag ();
+        read_tag ();
 
-  return GTK_TREE_MODEL(treestore);
+        return GTK_TREE_MODEL(treestore);
 }
 
 
@@ -497,35 +499,29 @@ void Wip_ImExportFile::wip_im_export_configure_select ()
 {
 	if(wip_im_export_pi.app){
 		XsmRescourceManager xrm("WIP_IM_EXPORT");
-		GtkWidget *vbox, *scrolled_contents;
-		GtkWidget *view;
 		GtkWidget *dialog = gtk_dialog_new_with_buttons (N_("WITeC Project (WIP) Import"),
 								 NULL,
 								 (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
 								 _("_OK"), GTK_RESPONSE_ACCEPT,
+                                                                 _("_Cancel"), GTK_RESPONSE_CANCEL,
 								 NULL);
 		
-		vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-		gtk_widget_show (vbox);
-		gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area (GTK_DIALOG(dialog))),
-				    vbox, TRUE, TRUE, GXSM_WIDGET_PAD);
 
-                scrolled_contents = gtk_scrolled_window_new (NULL, NULL);
+                GtkWidget *scrolled_contents = gtk_scrolled_window_new (NULL, NULL);
+                gtk_widget_set_hexpand (scrolled_contents, TRUE);
+                gtk_widget_set_vexpand (scrolled_contents, TRUE);
+
                 gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_contents), 
                                                 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 
-		gtk_box_pack_start (GTK_BOX(vbox), scrolled_contents, TRUE, TRUE, GXSM_WIDGET_PAD);
+		gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG(dialog))), scrolled_contents);
 
+		GtkWidget *view = create_view_and_model ();
+                gtk_container_add (GTK_CONTAINER (scrolled_contents), view);
 
-		view = create_view_and_model ();
-                gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scrolled_contents), view);
-		gtk_widget_show (view);		
-		gtk_widget_show (scrolled_contents);
-
-		gtk_widget_show(dialog);
+		gtk_widget_show_all (dialog);
 		gtk_dialog_run(GTK_DIALOG(dialog));
 		gtk_widget_destroy (dialog);
-
 	}
 }
 
@@ -539,7 +535,7 @@ gint64 Wip_ImExportFile::read_tag (gint64 start, gint64 stop, WIP_data *wip_data
 	GtkTreeIter child;
 	GtkTreeIter toplevel_local;
 	if (toplevel)
-	  memcpy (&toplevel_local, toplevel, sizeof(toplevel_local));
+                memcpy (&toplevel_local, toplevel, sizeof(toplevel_local));
 
 	gchar *lv=new gchar[level+1];
 	memset (lv, '.', level+1);
@@ -553,181 +549,181 @@ gint64 Wip_ImExportFile::read_tag (gint64 start, gint64 stop, WIP_data *wip_data
 	//	std::cout << "TAG name len: " << start << " :" << tag_i.name_length << std::endl;
 
 	if (tag_i.name_length > 0 && tag_i.name_length < 1000){
-	  tag_data.name = new gchar[tag_i.name_length+1];
+                tag_data.name = new gchar[tag_i.name_length+1];
 
-	  memset (tag_data.name, 0, tag_i.name_length+1);
-	  f.read ((char*)tag_data.name, tag_i.name_length);
+                memset (tag_data.name, 0, tag_i.name_length+1);
+                f.read ((char*)tag_data.name, tag_i.name_length);
 
-	  memset (&tag_data.tag, 0, sizeof (WIP_tag_f));
-	  f.read ((char*)&tag_data.tag, sizeof (WIP_tag_f));
+                memset (&tag_data.tag, 0, sizeof (WIP_tag_f));
+                f.read ((char*)&tag_data.tag, sizeof (WIP_tag_f));
 
-	  tag_data.size = tag_data.tag.data_stop_position-tag_data.tag.data_start_position; 
+                tag_data.size = tag_data.tag.data_stop_position-tag_data.tag.data_start_position; 
 
-	  gchar *preview = NULL;
-	  gchar *tmp1 = NULL;
-	  gchar *tmp2 = NULL;
-	  tag_data.data = NULL;
-	  if (tag_data.size < 100 && tag_data.size > 0  && tag_data.tag.kind > 0){ // just for preview if small
-	    //	    std::cout << "data read len: " << tag_data.size << ", kind=" << tag_data.tag.kind << std::endl;
-	    tag_data.data = new gchar[tag_data.size];
-	    f.read ((char*)tag_data.data, tag_data.size);
-	    //	    std::cout << "data read OK." << std::endl;
+                gchar *preview = NULL;
+                gchar *tmp1 = NULL;
+                gchar *tmp2 = NULL;
+                tag_data.data = NULL;
+                if (tag_data.size < 100 && tag_data.size > 0  && tag_data.tag.kind > 0){ // just for preview if small
+                        //	    std::cout << "data read len: " << tag_data.size << ", kind=" << tag_data.tag.kind << std::endl;
+                        tag_data.data = new gchar[tag_data.size];
+                        f.read ((char*)tag_data.data, tag_data.size);
+                        //	    std::cout << "data read OK." << std::endl;
 	  
-	    switch (tag_data.tag.kind){
-	    case WIP_TAG_STRING:{
-	      int len = (int)*(gint32*)tag_data.data;
-	      if (len > 0 && len < 1000){
-		tmp1 = g_strndup (tag_data.data+4, len);
-		preview = g_strdup_printf("%s", tmp1);
-		g_free (tmp1);
-	      } else
-		preview = g_strdup_printf("[%d] -N/A-", len);
-	      }
-	      break;
-	    case WIP_TAG_LARGE_INT:
-	      data_size=8;
-	      preview = g_strdup_printf ("%d", (int)*((gint64*)tag_data.data));
-	      for (int i=1; i<tag_data.size/data_size; ++i){
-		tmp1 = preview;
-		preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %d", (int)*(((gint64*)tag_data.data)+i), NULL));
-		g_free (tmp1);
-		g_free (tmp2);
-	      }
-	      break;
-	    case WIP_TAG_INT:
-	      data_size=4;
-	      preview = g_strdup_printf ("%d", (int)*((gint32*)tag_data.data));
-	      for (int i=1; i<tag_data.size/data_size; ++i){
-		tmp1 = preview;
-		preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %d", (int)*(((gint32*)tag_data.data)+i)), NULL);
-		g_free (tmp1);
-		g_free (tmp2);
-	      }
-	      break;
-	    case WIP_TAG_WORD:
-	      data_size=2;
-	      preview = g_strdup_printf ("%d", (int)*((guint16*)tag_data.data));
-	      for (int i=1; i<tag_data.size/data_size; ++i){
-		tmp1 = preview;
-		preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %d", (int)*(((guint16*)tag_data.data)+i)), NULL);
-		g_free (tmp1);
-		g_free (tmp2);
-	      }
-	      break;
-	    case WIP_TAG_BYTE:
-	      data_size=1;
-	      preview = g_strdup_printf ("%d", (int)*((gint8*)tag_data.data));
-	      for (int i=1; i<tag_data.size/data_size; ++i){
-		tmp1 = preview;
-		preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %d", (int)*(((gint8*)tag_data.data)+i)), NULL);
-		g_free (tmp1);
-		g_free (tmp2);
-	      }
-	      break;
-	    case WIP_TAG_BOOL:
-	      data_size=1;
-	      preview = g_strdup_printf ("%s", (int)*((gint8*)tag_data.data)?"true":"false");
-	      for (int i=1; i<tag_data.size/data_size; ++i){
-		tmp1 = preview;
-		preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %s", (int)*(((gint8*)tag_data.data)+i)?"T":"F"), NULL);
-		g_free (tmp1);
-		g_free (tmp2);
-	      }
-	      break;
-	    case WIP_TAG_FLOAT:
-	      data_size=4;
-	      preview = g_strdup_printf ("%f", *((float*)tag_data.data));
-	      for (int i=1; i<tag_data.size/data_size; ++i){
-		tmp1 = preview;
-		preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %f", *(((float*)tag_data.data)+i)), NULL);
-		g_free (tmp1);
-		g_free (tmp2);
-	      }
-	      break;
-	    case WIP_TAG_DOUBLE:
-	      data_size=8;
-	      preview = g_strdup_printf ("%f", *((double*)tag_data.data));
-	      for (int i=1; i<tag_data.size/data_size; ++i){
-		tmp1 = preview;
-		preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %f", (double) *(((double*)tag_data.data)+i)), NULL);
-		g_free (tmp1);
-		g_free (tmp2);
-	      }
-	      break;
-	    case WIP_TAG_EXTENDED: // 10 byte floating point
-	      data_size=10;
-	      preview = g_strdup_printf ("%f", (double) *((long double*)tag_data.data));
-	      for (int i=1; i<tag_data.size/data_size; ++i){
-		tmp1 = preview;
-		preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %f", (double) *(((long double*)tag_data.data)+i)), NULL);
-		g_free (tmp1);
-		g_free (tmp2);
-	      }
-	      break;
-	    }
-	    g_free (tag_data.data);
-	  }
-	  if (!preview){
-	    if (tag_data.tag.kind == WIP_LIST)
-	      preview = g_strdup(lv);
-	    else
-	      preview = g_strdup("[...] big data array or invalid data size");
-	  }
+                        switch (tag_data.tag.kind){
+                        case WIP_TAG_STRING:{
+                                int len = (int)*(gint32*)tag_data.data;
+                                if (len > 0 && len < 1000){
+                                        tmp1 = g_strndup (tag_data.data+4, len);
+                                        preview = g_strdup_printf("%s", tmp1);
+                                        g_free (tmp1);
+                                } else
+                                        preview = g_strdup_printf("[%d] -N/A-", len);
+                        }
+                                break;
+                        case WIP_TAG_LARGE_INT:
+                                data_size=8;
+                                preview = g_strdup_printf ("%d", (int)*((gint64*)tag_data.data));
+                                for (int i=1; i<tag_data.size/data_size; ++i){
+                                        tmp1 = preview;
+                                        preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %d", (int)*(((gint64*)tag_data.data)+i), NULL));
+                                        g_free (tmp1);
+                                        g_free (tmp2);
+                                }
+                                break;
+                        case WIP_TAG_INT:
+                                data_size=4;
+                                preview = g_strdup_printf ("%d", (int)*((gint32*)tag_data.data));
+                                for (int i=1; i<tag_data.size/data_size; ++i){
+                                        tmp1 = preview;
+                                        preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %d", (int)*(((gint32*)tag_data.data)+i)), NULL);
+                                        g_free (tmp1);
+                                        g_free (tmp2);
+                                }
+                                break;
+                        case WIP_TAG_WORD:
+                                data_size=2;
+                                preview = g_strdup_printf ("%d", (int)*((guint16*)tag_data.data));
+                                for (int i=1; i<tag_data.size/data_size; ++i){
+                                        tmp1 = preview;
+                                        preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %d", (int)*(((guint16*)tag_data.data)+i)), NULL);
+                                        g_free (tmp1);
+                                        g_free (tmp2);
+                                }
+                                break;
+                        case WIP_TAG_BYTE:
+                                data_size=1;
+                                preview = g_strdup_printf ("%d", (int)*((gint8*)tag_data.data));
+                                for (int i=1; i<tag_data.size/data_size; ++i){
+                                        tmp1 = preview;
+                                        preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %d", (int)*(((gint8*)tag_data.data)+i)), NULL);
+                                        g_free (tmp1);
+                                        g_free (tmp2);
+                                }
+                                break;
+                        case WIP_TAG_BOOL:
+                                data_size=1;
+                                preview = g_strdup_printf ("%s", (int)*((gint8*)tag_data.data)?"true":"false");
+                                for (int i=1; i<tag_data.size/data_size; ++i){
+                                        tmp1 = preview;
+                                        preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %s", (int)*(((gint8*)tag_data.data)+i)?"T":"F"), NULL);
+                                        g_free (tmp1);
+                                        g_free (tmp2);
+                                }
+                                break;
+                        case WIP_TAG_FLOAT:
+                                data_size=4;
+                                preview = g_strdup_printf ("%f", *((float*)tag_data.data));
+                                for (int i=1; i<tag_data.size/data_size; ++i){
+                                        tmp1 = preview;
+                                        preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %f", *(((float*)tag_data.data)+i)), NULL);
+                                        g_free (tmp1);
+                                        g_free (tmp2);
+                                }
+                                break;
+                        case WIP_TAG_DOUBLE:
+                                data_size=8;
+                                preview = g_strdup_printf ("%f", *((double*)tag_data.data));
+                                for (int i=1; i<tag_data.size/data_size; ++i){
+                                        tmp1 = preview;
+                                        preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %f", (double) *(((double*)tag_data.data)+i)), NULL);
+                                        g_free (tmp1);
+                                        g_free (tmp2);
+                                }
+                                break;
+                        case WIP_TAG_EXTENDED: // 10 byte floating point
+                                data_size=10;
+                                preview = g_strdup_printf ("%f", (double) *((long double*)tag_data.data));
+                                for (int i=1; i<tag_data.size/data_size; ++i){
+                                        tmp1 = preview;
+                                        preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %f", (double) *(((long double*)tag_data.data)+i)), NULL);
+                                        g_free (tmp1);
+                                        g_free (tmp2);
+                                }
+                                break;
+                        }
+                        g_free (tag_data.data);
+                }
+                if (!preview){
+                        if (tag_data.tag.kind == WIP_LIST)
+                                preview = g_strdup(lv);
+                        else
+                                preview = g_strdup("[...] big data array or invalid data size");
+                }
 
 #if 0
-	  std::cout << lv << "+" << tag_data.name << ": K=" << tag_data.tag.kind
-		    << ", data size: " << tag_data.size << ", =" << preview << std::endl;
+                std::cout << lv << "+" << tag_data.name << ": K=" << tag_data.tag.kind
+                          << ", data size: " << tag_data.size << ", =" << preview << std::endl;
 #endif
 
-	  if (newlevel){
-	    /* Append new level */
-	    gtk_tree_store_append(treestore, &child, toplevel);
-	    gtk_tree_store_set(treestore, &child,
-			       COL_TAG_NAME, tag_data.name ,
-			       COL_TAG_KIND, tag_kind_lookup[tag_data.tag.kind],
-			       COL_TAG_ITEMS, tag_data.size/data_size,
-			       COL_TAG_DATA, preview,
-			       COL_TAG_START, start,
-			       -1);
-	  } else {
-	    /* Append at current level */
-	    gtk_tree_store_append(treestore, &child, &toplevel_local);
-	    gtk_tree_store_set(treestore, &child,
-			       COL_TAG_NAME, tag_data.name ,
-			       COL_TAG_KIND, tag_kind_lookup[tag_data.tag.kind],
-			       COL_TAG_ITEMS, tag_data.size/data_size,
-			       COL_TAG_DATA, preview,
-			       COL_TAG_START, start,
-			       -1);
-	  }
+                if (newlevel){
+                        /* Append new level */
+                        gtk_tree_store_append(treestore, &child, toplevel);
+                        gtk_tree_store_set(treestore, &child,
+                                           COL_TAG_NAME, tag_data.name ,
+                                           COL_TAG_KIND, tag_kind_lookup[tag_data.tag.kind],
+                                           COL_TAG_ITEMS, tag_data.size/data_size,
+                                           COL_TAG_DATA, preview,
+                                           COL_TAG_START, start,
+                                           -1);
+                } else {
+                        /* Append at current level */
+                        gtk_tree_store_append(treestore, &child, &toplevel_local);
+                        gtk_tree_store_set(treestore, &child,
+                                           COL_TAG_NAME, tag_data.name ,
+                                           COL_TAG_KIND, tag_kind_lookup[tag_data.tag.kind],
+                                           COL_TAG_ITEMS, tag_data.size/data_size,
+                                           COL_TAG_DATA, preview,
+                                           COL_TAG_START, start,
+                                           -1);
+                }
 
-	  if (level == 2 && strncmp( tag_data.name, "Data", 4)==0)
-	    memcpy (&data_caption, &child, sizeof(data_caption));
+                if (level == 2 && strncmp( tag_data.name, "Data", 4)==0)
+                        memcpy (&data_caption, &child, sizeof(data_caption));
 
-	  if (strncmp( tag_data.name, "Caption", 7)==0)
-	    gtk_tree_store_set(treestore, &data_caption,
-			       COL_TAG_DATA, preview,
-			       -1);
+                if (strncmp( tag_data.name, "Caption", 7)==0)
+                        gtk_tree_store_set(treestore, &data_caption,
+                                           COL_TAG_DATA, preview,
+                                           -1);
 
-	  g_free (preview);
+                g_free (preview);
 #if 0	  
-	  std::cout << "TAG data size: " << tag_data.size << std::endl;
-	  std::cout << "TAG data start: " << (tag_data.tag.data_start_position) << std::endl;
-	  std::cout << "TAG data stop: " << (tag_data.tag.data_stop_position) << std::endl;
+                std::cout << "TAG data size: " << tag_data.size << std::endl;
+                std::cout << "TAG data start: " << (tag_data.tag.data_start_position) << std::endl;
+                std::cout << "TAG data stop: " << (tag_data.tag.data_stop_position) << std::endl;
 
-	  for (int i=0; i<sizeof(WIP_tag_f); ++i)
-	    //	    std::setf(std::hex);
-	    std::cout << " " << (int)((guint8)(*((char*)(&tag_data.tag)+i)));
-	  std::cout << std::endl;
+                for (int i=0; i<sizeof(WIP_tag_f); ++i)
+                        //	    std::setf(std::hex);
+                        std::cout << " " << (int)((guint8)(*((char*)(&tag_data.tag)+i)));
+                std::cout << std::endl;
 #endif
-	  //	f.seek (tag_data.tag.data_start_position);
+                //	f.seek (tag_data.tag.data_start_position);
 	  
-	  if (tag_data.tag.kind == WIP_LIST)
-	    read_tag (tag_data.tag.data_start_position, tag_data.tag.data_stop_position, 
-		      NULL, level+1, &child, 1);
+                if (tag_data.tag.kind == WIP_LIST)
+                        read_tag (tag_data.tag.data_start_position, tag_data.tag.data_stop_position, 
+                                  NULL, level+1, &child, 1);
 
-	  if (level>0 && tag_data.tag.data_stop_position < stop)
-	    read_tag (tag_data.tag.data_stop_position, stop, NULL, level, &toplevel_local, 0);
+                if (level>0 && tag_data.tag.data_stop_position < stop)
+                        read_tag (tag_data.tag.data_stop_position, stop, NULL, level, &toplevel_local, 0);
 
 	}
 
@@ -735,7 +731,7 @@ gint64 Wip_ImExportFile::read_tag (gint64 start, gint64 stop, WIP_data *wip_data
 }
 
 Wip_ImExportFile::Wip_ImExportFile(Scan *s, const char *n) : Dataio(s,n){
-  treestore = NULL;
+        treestore = NULL;
 }
 
 Wip_ImExportFile::~Wip_ImExportFile(){
@@ -764,15 +760,15 @@ FIO_STATUS Wip_ImExportFile::Read(gboolean append_in_time){
 	ifstream f;
 	f.open(fname, ios::in);
 	if(!f.good()){
-	  PI_DEBUG (DBG_L2, "Error at file open. File not good/readable.");
-	  return status=FIO_OPEN_ERR;
+                PI_DEBUG (DBG_L2, "Error at file open. File not good/readable.");
+                return status=FIO_OPEN_ERR;
 	}
 	f.close();
 	scan->SetVM(SCAN_V_DIRECT);
 		
 	// Check all known File Types:
 	if ((ret=import_data (fname)) !=  FIO_NOT_RESPONSIBLE_FOR_THAT_FILE)
-	  return ret;
+                return ret;
 	
 	return  status=FIO_NOT_RESPONSIBLE_FOR_THAT_FILE;
 }
@@ -795,9 +791,9 @@ FIO_STATUS Wip_ImExportFile::import_data(const char *fname){
 	f.read((char*)&header_tag, sizeof(header_tag)); // read header
 	std::cout << "Found: >>" << header_tag.tag_name << " <<" << std::endl;
 
-// file type sanity check
+        // file type sanity check
 	if(strncmp ((char*)&header_tag, "WIT_PRCT", 8)){ // check GME type, skip, do not complain!
-	  std::cout << "not a WiTeC Project file: >>" << header_tag.tag_name << " <<" << std::endl;
+                std::cout << "not a WiTeC Project file: >>" << header_tag.tag_name << " <<" << std::endl;
 		f.close ();
 		return FIO_NOT_RESPONSIBLE_FOR_THAT_FILE;
 	}
@@ -845,7 +841,7 @@ static void wip_im_export_filecheck_load_callback (gpointer data ){
 			if (ret != FIO_NOT_RESPONSIBLE_FOR_THAT_FILE)
 				*fn=NULL;
 			// no more data: remove allocated and unused scan now, force!
-//			gapp->xsm->SetMode(-1, ID_CH_M_OFF, TRUE); 
+                        //			gapp->xsm->SetMode(-1, ID_CH_M_OFF, TRUE); 
 			PI_DEBUG (DBG_L2, "Read Error " << ((int)ret) );
 		}else{
 			// got it!
@@ -890,18 +886,24 @@ static void wip_im_export_filecheck_save_callback (gpointer data ){
 
 static void wip_im_export_import_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	gchar **help = g_strsplit (wip_im_export_pi.help, ",", 2);
-	gchar *dlgid = g_strconcat (wip_im_export_pi.name, "-import", NULL);
-	gchar *fn = gapp->file_dialog (help[0], NULL, file_mask, NULL, dlgid);
+	gchar *dlgid = g_strconcat (wip_im_export_pi.name, "-import\n", wip_im_export_pi.info, NULL);
+	gchar *fn = gapp->file_dialog_load (help[0], NULL, file_mask, NULL);
 	g_strfreev (help); 
 	g_free (dlgid);
-	wip_im_export_filecheck_load_callback (&fn );
+	if (fn){
+                wip_im_export_filecheck_load_callback (&fn);
+                g_free (fn);
+	}
 }
 
 static void wip_im_export_export_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	gchar **help = g_strsplit (wip_im_export_pi.help, ",", 2);
-	gchar *dlgid = g_strconcat (wip_im_export_pi.name, "-export", NULL);
-	gchar *fn = gapp->file_dialog(help[1], NULL, file_mask, NULL, dlgid);
+	gchar *dlgid = g_strconcat (wip_im_export_pi.name, "-export\n", wip_im_export_pi.info, NULL);
+	gchar *fn = gapp->file_dialog_save (help[1], NULL, file_mask, NULL);
 	g_strfreev (help); 
 	g_free (dlgid);
-	wip_im_export_filecheck_save_callback (&fn );
+	if (fn){
+                wip_im_export_filecheck_save_callback (&fn);
+                g_free (fn);
+	}
 }

@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     float file_version = 0.; 
     float *y_val, *x_val, readout[22], y_avg = 0.;	//2 pointers of float type and readout array
     //different int's
-    int result = 0, filesize = 0, i = 0, j = 0, numcol = 0, num_cycle = 0, numofpasup = 0, numofpasdn = 0, numofpnt = 0, headerbeginat = 0, headerlength = 0, pointsperpass = 0;	//numofpas = 0,index =0
+    int filesize = 0, i = 0, j = 0, numcol = 0, num_cycle = 0, numofpasup = 0, numofpasdn = 0, numofpnt = 0, headerbeginat = 0, headerlength = 0, pointsperpass = 0;	//numofpas = 0,index =0
     //filenames arrays
     char filetoread[255], filetowrite[255], copyofheader[512];
     //descriptors of columns
@@ -129,7 +129,7 @@ check file version
 	printf("fseek(): File seek failed!\n");
 	exit(EXIT_FAILURE);
     }
-    result = fread(buf, sizeof(char), filesize, fptr);
+    fread(buf, sizeof(char), filesize, fptr);
     sscanf(buf + wiff(buf, searchstr0) + sizeof(searchstr0) - 1, "%f",
 	   &file_version);
 
@@ -182,7 +182,7 @@ analysing vector informations
 	printf("fseek(): File seek failed!\n");
 	exit(EXIT_FAILURE);
     }
-    result = fread(buf, sizeof(char), filesize, fptr);
+    fread(buf, sizeof(char), filesize, fptr);
     numofpasup = hmf(buf, searchstr2, seps23);
 
 //backward direction - searching for occurrences of "S[2]"
@@ -192,7 +192,7 @@ analysing vector informations
 	printf("fseek(): File seek failed!\n");
 	exit(EXIT_FAILURE);
     }
-    result = fread(buf, sizeof(char), filesize, fptr);
+    fread(buf, sizeof(char), filesize, fptr);
     numofpasdn = hmf(buf, searchstr3, seps23);
     //printf("\"%s\": %d -> %d pass(es) down\n", searchstr3, numofpasdn, numofpasdn);
 
@@ -205,7 +205,7 @@ total number of points
 	printf("fseek(): File seek failed!\n");
 	exit(EXIT_FAILURE);
     }
-    result = fread(buf, sizeof(char), filesize, fptr);
+    fread(buf, sizeof(char), filesize, fptr);
     sscanf(buf + wiff(buf, searchstr4) + sizeof(searchstr4) - 1, "%d",
 	   &numofpnt);
 
