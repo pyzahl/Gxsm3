@@ -1,25 +1,22 @@
-GXSM3 -- ToDo List/Status -- 20161117
+GXSM3 -- ToDo List/Status -- 20161118
 (C) PyZahl et al
 http://gxsm.sf.net
 ==================================================
 
-Porting to Grid and new gxsm3 internal BuildParam helper -- pending tasks:
-- pending: old SR-STD/SP2 GUI
-
-
-Note to self -- remove old/obsolete entries and reset to defaults:
+Notes to self: -- remove old/obsolete entries and reset to defaults:
 to clean dconf database and reset run as user:
 $$ dconf reset -f /org/gnome/gxsm3/
 
 to debug glib,... messages:
 $$ G_DEBUG=fatal_warnings gdb gxsm3
 
+==================================================
 
-current work in progress, optimizing, ideas:
-- DSP Control (MK3 HwI):
+current work in progress, testing, evaluating while working with it, optimizing, ideas:
+-> DSP Control (MK3 HwI):
    ... implementing new GUI simplification scheme via config mode, FB tab done -- testing -- done.
    ... optimize/discuss "config-mode" Widgets, hide FB switch, ...? hide IIR, ICross, ...?, all of Scan Char frame??
-   ... mixer channels, blend out set to "OFF" channels automatically in non config mode -- fix mode switch crash issue/manage => see below gtk3.22 bug/issue ??
+   ... mixer channels, blend out set to "OFF" channels automatically in non config mode -- fix mode switch crash issue/manage => see below gtk3.22 bug/issue ?? ***
        --> need to manage/save/restore mixing mode, so far not managed!!
    ... in non config mode show scale for setpoint
    ???... have a "setup" or "optimize" mode/level for config widgets
@@ -27,12 +24,13 @@ current work in progress, optimizing, ideas:
    ... chain CP/CI 100/120%
    ... Probe/Graphs -- issue with reading/setting/updating default Signal Source Channels
    ... read/sync V-XYZ from Smart-Piezo-Drive via USB link automatically!
-- DSP Mover:
+-> DSP Mover:
    ... issue with Ampl and GPIO defaults at startup not taking effect, need to update numbers after restart ?!?
    
 pending ports:
-- 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2
-- View: OSD objects missing
+-> View 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2 -- can any one help here? ==> vsurf3d.C
+-> View: OSD objects missing
+-> pending/obsolete/outdated??:  port to Grid and new gxsm3 internal BuildParam helper: old SR-STD/SP2 GUI [old SR-STD HwI not availabe at this time for gxsm3]
 
 pending solution/reworks:
 -> build a analysis clone "gxsm3a" instance with independent session/session manager and gsettings path
@@ -48,41 +46,53 @@ pending minor issues/ideas:
 - red/blue showline -- fix color order to logic left-right -> new-old (old-new currently)
 - Point Obj "Follow" -- new solution for old problem. Central on/off switch on titlebar. May add new tip-monitor/move/grab object/life-indicator
 - Profile View: Cursors/DnD pending
-- minor left overs of h/vboxes and packing in dialogs... -- non critical, works fine but should be done as officially obsoleted.
+- minor left overs of h/vboxes and packing in dialogs... -- non critical, works fine but should be done as officially obsoleted. [check what's left, no obsolete warnings any more!]
   --> smart manage window position???
 -- PCS is NOT yet updating non user set values -- ak file number auto advance, client settings, remote...
+- add remote support: a few importrant control buttons pyremote accessible (global FB ON/OFF, PAC, Z-Adjuster**)
 
 External/glib/gtk related issues:
-- https://bugzilla.gnome.org/show_bug.cgi?id=771242  ComboBoxText problem causes:
-(gxsm3:31920): Gdk-CRITICAL **: gdk_window_get_window_type: assertion 'GDK_IS_WINDOW (window)' failed
+- https://bugzilla.gnome.org/show_bug.cgi?id=771242  ComboBoxText problem causes glib warning/critical or even crash?? -- TDB:
+ *** (gxsm3:31920): Gdk-CRITICAL **: gdk_window_get_window_type: assertion 'GDK_IS_WINDOW (window)' failed
 
 
 Major upcoming task:
 - Manual updates, embeded manual code reviewing/updating
-- Website
+- GXSM main Website? Overhaul. Find some simple CMS.
 
-Testing, Issues found, Ideas:
+Testing, Issues found, Ideas, please comment:
 - RedLine Profile ==> [option?] overlay/underlay/below scan view 2D -- done, works (linked to 2d profile, can be hidden), evaluating...
 - DSP-Control/Graphs -> add clear Coulmns/divers
 - Life rotate scan while scanning -> make work (kind or rot/arc move to via slow adjust matrix)!
 - implement Z-adjuster (manual Z offset if FB=OFF)
-- window manager -- any way to force window positioning?? Ignoring/default/auto if not fit/overlap currently.
-  Per default the (any??) window-manager is free to ignore window positioning request -- and does.
+- Startup Control,.. Window Positioning Management -- issue with size resore if config/normal mode!! [small/big] -- Window manager interferse stupidly :( :( o[
+  .. any way to force window positioning?? Ignoring/default/auto if not fit/overlap currently.
+  .. Per default the (any??) window-manager is free to ignore window positioning request -- and does.
   * note: you can watch the gxsm manages/stored window coordinated via dconf...
 - graphs -- add color/shade/divider for colums
-- issue with Mixer - Mode Change (OFF/LIN/LOG/..), odd behavior to random crash ?!?! => gtk 3.22 combo-box issue -- see above
+- issue with Mixer - Mode Change (OFF/LIN/LOG/..), odd behavior to random crash ?!?! => gtk 3.22 combo-box issue -- see above ***
 - SLS: may NOT restore last vales??
 
-Scripts:
+Py Scripts:
 - spm_control/tune scope -- adjust defaults
+- signal, data complete DSP configuratiuon save to file and restore. Save to file started/working.
 - better icons
 
 Bug Report Log:
+-> (temporary??) issue with Mixer - Mode Change (OFF/LIN/LOG/..), odd behavior to random crash ?!?! => gtk 3.22 combo-box issue -- see above ***
 -> {crash w auto-plot at VP start ??? on some machines only -- odd stuff again -- using total new update/plot schme now as gtk3 suggests????}
 -> Defaults for Amp/GPIO in Mover-Auto Tab needs user update to take effect after 1st start ?? unclear.
 -> View2D sidepane controls reworked, pending: OSD xy, SelectNC-Vars, Arrow/..size --> gsettings // issues with show-probe checkbox(es)/crashes -- check,fix!
 
 Low Priority, new ideas, ...:
 - Red/Blue-Line Profile Color List [swap order]
-- Window Pos Management -- issue with size resore if config/normal mode!! [small/big] -- Window manager interferse stupidly :( :( o[
 - Make possibel to adjust rotation live while scanning -- just liek "move", but hi-level, slowly... ???
+
+DSP Code Road-Map:
+- Z-Adjuster to any Z (FB=OFF, simple user/script Z-adjust) **
+  ... create generic "adjuster" module to save code space? evalute options!
+- Smooth Rotation Matrix adjuster (life rotation)
+- PAC/PLL additional mode "Q"-Control: Develop Polyphase FIR for precise phase shifting (delay, interpolation) of imput signal to mix/feedback with excitation option -- if AM/PH controllers are OFF.
+
+=========================
+END.
