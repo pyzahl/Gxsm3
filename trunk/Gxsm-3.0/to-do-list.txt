@@ -20,6 +20,7 @@ current work in progress, optimizing, ideas:
    ... implementing new GUI simplification scheme via config mode, FB tab done -- testing -- done.
    ... optimize/discuss "config-mode" Widgets, hide FB switch, ...? hide IIR, ICross, ...?, all of Scan Char frame??
    ... mixer channels, blend out set to "OFF" channels automatically in non config mode -- fix mode switch crash issue/manage => see below gtk3.22 bug/issue ??
+       --> need to manage/save/restore mixing mode, so far not managed!!
    ... in non config mode show scale for setpoint
    ???... have a "setup" or "optimize" mode/level for config widgets
    ... LM (VP Prog tab): color buttons, figure out how, add description for mode field?, simple mode: eliminate RHS fields?? => dynamic CSS
@@ -45,7 +46,7 @@ pending minor issues/ideas:
 ---PROBE FOLDERS/CONTROL:
   -recode LM/graphs button?
 - red/blue showline -- fix color order to logic left-right -> new-old (old-new currently)
-- Point Obj "Follow" -- new solution for odl problem. Central on/off switch on titlebar. May add new tip-monitor/move/grab object/life-indicator
+- Point Obj "Follow" -- new solution for old problem. Central on/off switch on titlebar. May add new tip-monitor/move/grab object/life-indicator
 - Profile View: Cursors/DnD pending
 - minor left overs of h/vboxes and packing in dialogs... -- non critical, works fine but should be done as officially obsoleted.
   --> smart manage window position???
@@ -65,10 +66,12 @@ Testing, Issues found, Ideas:
 - DSP-Control/Graphs -> add clear Coulmns/divers
 - Life rotate scan while scanning -> make work (kind or rot/arc move to via slow adjust matrix)!
 - implement Z-adjuster (manual Z offset if FB=OFF)
-- window manager -- any way to force window positioning?? Ignoring/default/auto if not fit/overlap currently
+- window manager -- any way to force window positioning?? Ignoring/default/auto if not fit/overlap currently.
+  Per default the (any??) window-manager is free to ignore window positioning request -- and does.
+  * note: you can watch the gxsm manages/stored window coordinated via dconf...
 - graphs -- add color/shade/divider for colums
 - issue with Mixer - Mode Change (OFF/LIN/LOG/..), odd behavior to random crash ?!?! => gtk 3.22 combo-box issue -- see above
-- SLS: may NOT restore last??
+- SLS: may NOT restore last vales??
 
 Scripts:
 - spm_control/tune scope -- adjust defaults
