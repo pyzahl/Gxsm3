@@ -73,6 +73,11 @@ Testing, Issues found, Ideas, please comment:
 - issue with Mixer - Mode Change (OFF/LIN/LOG/..), odd behavior to random crash ?!?! => gtk 3.22 combo-box issue -- see above ***
 - SLS: may NOT restore last vales??
 
+Other GUI, window manager, ... related:
+- If "focus" switching and related grey-out/normal GUI element rendering feels suggish/delayed this is a feature of the Gnome-SHell with in particular the new Adwaita CSS Scheme:
+  ...you may want to use for a better experience a high end graphics card and enjoy...
+  ...or use a different scheme (find one, make/modify...) or use a simple fast window manager
+
 Py Scripts:
 - spm_control/tune scope -- adjust defaults
 - signal, data complete DSP configuratiuon save to file and restore. Save to file started/working.
