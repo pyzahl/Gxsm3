@@ -2200,10 +2200,17 @@ class Mk3_Configurator:
 			button.connect("clicked", self.mk3spm.disable_signal_input, 0, 0) # REVERT TO POWER-UP-DEFAULT
 			box2.pack_start(button)
 
-			button = gtk.Button("SAVE TO FILE")
-			button.connect("clicked",  self.mk3spm.read_and_save_actual_module_configuration, "mk3_signal_configuration.list") # store to file
-			box2.pack_start(button)
+			hb = gobject.new(gtk.HBox(spacing=10))
+			box2.pack_start(hb)
+			button = gtk.Button("SAVE DSP-CONFIG TO FILE")
+			button.connect("clicked",  self.mk3spm.read_and_save_actual_module_configuration, "mk3_signal_configuration.pkl") # store to file
+			hb.pack_start(button)
 
+			button = gtk.Button("LOAD DSP-CONFIG FROM FILE")
+			button.connect("clicked",  self.mk3spm.load_and_write_actual_module_configuration, "mk3_signal_configuration.pkl") # restore from file
+			hb.pack_start(button)
+
+                        
 			hb = gobject.new(gtk.HBox(spacing=10))
 			box2.pack_start(hb)
 			button = gtk.Button("STORE TO FLASH")
