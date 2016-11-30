@@ -38,6 +38,8 @@ import re
 
 from numpy import *
 
+import pickle
+
 NUM_MONITOR_SIGNALS = 30
 PHASE_FACTOR_Q19 = 2913   # /* (1<<15)*SPECT_SIN_LEN/360/(1<<5) */
 
@@ -1273,16 +1275,26 @@ class SPMcontrol():
 
 	# def change_signal_input(self, _signal, _input_id, voffset_func=lambda:0):
 
+#import pickle
+#dict = {'one': 1, 'two': 2}
+#file = open('dump.txt', 'w')
+#pickle.dump(dict, file)
+#
+#file = open('dump.txt', 'r')
+#dict = pickle.load(file)
 
         def read_and_save_actual_module_configuration (self, __button, file_name):
+                print "DSP CONFIG SAVE TO FILE: ", file_name
                 print "MK3_SPMDSPC**CURRENT FB_SPMCONTROL MODULE SIGNAL INPUT CONFIGURATION:"
                 print "FB_SPM_SIGNAL_LIST_VERSION  = ", hex(FB_SPM_SIGNAL_LIST_VERSION)
                 print "FB_SPM_SIGNAL_INPUT_VERSION = ", hex(FB_SPM_SIGNAL_INPUT_VERSION)
                 print "INPUT_ID:                       Signal Name ==> Input Name"
+                mod_input_config = []
                 for mod in DSP_MODULE_INPUT_ID_CATEGORIZED.keys():
                         for mod_inp in DSP_MODULE_INPUT_ID_CATEGORIZED[mod]:
                                 [signal, data, offset] = self.query_module_signal_input(mod_inp[0], mod_inp[3])
                                 mod_inp[2] = signal [SIG_INDEX];
+                                mod_input_config.append ({ 'mod_inp': mod_inp, 'signal': signal, 'data': data, 'offset': offset })
                                 if mod_inp[2] >= 0:
                                         s="'"+signal[SIG_NAME]+"'"
                                         print hex(mod_inp[0]), " : %32s"%s," ==> ",mod_inp[1], "[",offset,"] (",signal[SIG_VAR],"[",offset,"])"
@@ -1292,13 +1304,40 @@ class SPMcontrol():
                                         else:
                                                 if	data[3] == 0 and data[0] == -1:
                                                         print hex(mod_inp[0]), " : ", "ERROR #  (can not associate signal adress): [p=0] ==> (", mod_inp, signal, data, ")"
+                print "MK3_SPMDSPC**CURRENT USER_SIGNAL_ARRAY VALUES:"
+                user_array_data = []
                 for j in range (0,2):
                         for i in range (0,16):
 				ij = 16*j+i
                                 [u,uv, sig] = self.read_signal_by_name ("user signal array", ij)
+                                user_array_data.append ([ij, uv])
                                 print "user_signal_array[",ij,"] = ", u, ", ", uv, signal[SIG_UNIT]
-                                                        
 
+                print "---- SAVING ----"
+                config = { 'module_inputs' : mod_input_config, 'user_array_data' : user_array_data }
+                print config
+                file = open(file_name, 'w')
+                pickle.dump (config, file)
+                
+        def load_and_write_actual_module_configuration (self, __button, file_name):
+                print "DSP CONFIG RESTORE FROM FILE: ", file_name
+                print "---- LOADING ----"
+                file = open(file_name, 'r')
+                config = pickle.load (file)
+                mod_input_config = config['module_inputs']
+                user_array_data  = config['user_array_data']
+                print "RESTORING**MODULE_INPUT_CONFIGURATION:"
+                # print mod_input_config
+                for mod in mod_input_config:
+                        print mod
+			self.change_signal_input (0,  mod['signal'], mod['mod_inp'][0], lambda:mod['offset'])
+                
+                print "RESTORING**USER_SIGNAL_ARRAY VALUES:"
+                # print user_array_data
+                for ud in user_array_data:
+                        print ud
+                        self.write_signal_by_name ("user signal array", ud[1], ud[0])
+                
 	##### basic support
 
         def magic(self, i):
