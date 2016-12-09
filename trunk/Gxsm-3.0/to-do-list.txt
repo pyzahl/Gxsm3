@@ -12,7 +12,7 @@ $$ G_DEBUG=fatal_warnings gdb gxsm3
 
 ==================================================
 
-current work in progress, testing, evaluating while working with it, optimizing, ideas:
+current work in progress, testing, evaluating while working with it, optimizing, ideas, minor issues:
 -> DSP Control (MK3 HwI):
    ... implementing new GUI simplification scheme via config mode, FB tab done -- testing -- done.
    ... optimize/discuss "config-mode" Widgets, hide FB switch, ...? hide IIR, ICross, ...?, all of Scan Char frame??
@@ -26,6 +26,7 @@ current work in progress, testing, evaluating while working with it, optimizing,
    ... read/sync V-XYZ from Smart-Piezo-Drive via USB link automatically!
 -> DSP Mover:
    ... issue with Ampl and GPIO defaults at startup not taking effect, need to update numbers after restart ?!?
+   ... Auto folder: defaults (as shown) not applying for GPIO, Ampl, step??? -- need to touch values for update ??? Check!
    
 pending ports:
 -> View 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2 -- can any one help here? ==> vsurf3d.C
@@ -72,14 +73,20 @@ Testing, Issues found, Ideas, please comment:
 - graphs -- add color/shade/divider for colums
 - issue with Mixer - Mode Change (OFF/LIN/LOG/..), odd behavior to random crash ?!?! => gtk 3.22 combo-box issue -- see above ***
 - SLS: may NOT restore last vales??
+- PAC gui:
+  ...f0 and sine-volume not memorized (zero at start)
+  ...add quick button to transfer auto set or current life freq (locked) to f-sine and f0-ref
 
 Other GUI, window manager, ... related:
 - If "focus" switching and related grey-out/normal GUI element rendering feels suggish/delayed this is a feature of the Gnome-SHell with in particular the new Adwaita CSS Scheme:
   ...you may want to use for a better experience a high end graphics card and enjoy...
   ...or use a different scheme (find one, make/modify...) or use a simple fast window manager
 
+- Issues with VP auto plot on LT-STM machine with Nvidia Quadro K2200 (GM107GL) , nv driver
+
 Py Scripts:
 - spm_control/tune scope -- adjust defaults
+- tune scope -- memorize last settings (f0, ampl,...)
 - signal, data complete DSP configuratiuon save to file and restore. Save to file started/working.
 - better icons
 
@@ -94,6 +101,7 @@ Low Priority, new ideas, ...:
 - Make possibel to adjust rotation live while scanning -- just liek "move", but hi-level, slowly... ???
 
 DSP Code Road-Map:
+- FIX: minor issue (old) Wave-Out-X/Y(0,1) old value if wave action was aborded early via button up (not completed) stays and is assigned if other direction is used eventually to Y or X (vs). => always Reset and zero numbers. On DSP or even high level/gxsm. Applies to Gxsm2 and 3.
 - Z-Adjuster to any Z (FB=OFF, simple user/script Z-adjust) **
   ... create generic "adjuster" module to save code space? evalute options!
 - Smooth Rotation Matrix adjuster (life rotation)
