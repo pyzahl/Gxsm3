@@ -209,17 +209,12 @@ void plugin_ctrl::add_pi(const gchar *filename, const gchar *name){
 			}
 		}
 		else{
-                        XSM_DEBUG_GP (DBG_L2, "plugin_ctrl::add_pi -- ERROR: reference symbol not found, no valid GXSM plugin. : %s\n", filename );
-			XSM_DEBUG (DBG_L3, "--> symbol not found, no/bad GXSM plugin? :" << g_module_error() );
-			XSM_DEBUG_ERROR (DBG_L1, "  Error: " << g_module_error() );
-			XSM_DEBUG_ERROR (DBG_L1, "  closing module." );
+                        XSM_DEBUG_GP_ERROR (DBG_L2, "plugin_ctrl.C: plugin_ctrl::add_pi -- reference symbol not found, no valid GXSM plugin. : %s [%s] -- skipping.\n", filename, g_module_error () );
 			g_module_close(gxsm_module);
 		}
 	}
 	else{
-		XSM_DEBUG (DBG_L3, "--> module >" << filename << "< not found: " << g_module_error());
-		XSM_DEBUG_ERROR (DBG_L1, "  Error:" << g_module_error() );
-		XSM_DEBUG_GP (DBG_L2, "Error loading PlugIn %s: %s", filename, g_module_error());
+		XSM_DEBUG_GP_ERROR (DBG_L1, "Failed loading PlugIn <%s>: %s", filename, g_module_error () );
 	}
 
         g_free (pcs_settings_key);

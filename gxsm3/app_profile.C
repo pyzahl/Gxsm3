@@ -2076,7 +2076,7 @@ void ProfileControl::file_close_callback (GSimpleAction *simple, GVariant *param
 	if (pc->ref_count == 0)
 		gapp->xsm->RemoveProfile (pc);
 	else
-		XSM_DEBUG_ERROR (DBG_L1, "Sorry, cant't do this, other object depends on me!" );
+		XSM_DEBUG_GP_WARNING (DBG_L1, "Sorry, cant't do this, other object depends on me!" );
 }
 
 void ProfileControl::file_print1_callback (GSimpleAction *simple, GVariant *parameter, 

@@ -254,13 +254,13 @@ gxsm3_app_startup (GApplication *app)
 #endif
         GObject *app_menu = gtk_builder_get_object (builder, "appmenu");
         if (!app_menu)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id appmenu can not be found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id appmenu can not be found in resource.\n");
         else
                 gtk_application_set_app_menu (GTK_APPLICATION (app), G_MENU_MODEL (app_menu));
 
         GObject *gxsm_menubar = gtk_builder_get_object (builder, "gxsm-menubar");
         if (!gxsm_menubar)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id gxsm_menubar can not be found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id gxsm_menubar can not be found in resource.\n");
 
 #ifdef ENABLE_GXSM_MENUBAR
 
@@ -324,43 +324,43 @@ gxsm3_app_startup (GApplication *app)
    
         GObject *view2d_menu = gtk_builder_get_object (builder, "view2d-menu");
         if (!view2d_menu)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id view2d-menu not found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id view2d-menu not found in resource.\n");
         else
                 gapp->set_view2d_menu (view2d_menu);
 
         GObject *vobj_ctx_menu_1p = gtk_builder_get_object (builder, "vobj-ctx-menu-1p");
         if (!vobj_ctx_menu_1p)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id vobj-ctx-menu-1p  not found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id vobj-ctx-menu-1p  not found in resource.\n");
         else
                 gapp->set_vobj_ctx_menu_1p (vobj_ctx_menu_1p);
 
         GObject *vobj_ctx_menu_2p = gtk_builder_get_object (builder, "vobj-ctx-menu-2p");
         if (!vobj_ctx_menu_2p)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id vobj-ctx-menu-2p not found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id vobj-ctx-menu-2p not found in resource.\n");
         else 
                 gapp->set_vobj_ctx_menu_2p (vobj_ctx_menu_2p);
 
         GObject *vobj_ctx_menu_np = gtk_builder_get_object (builder, "vobj-ctx-menu-np");
         if (!vobj_ctx_menu_np)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id vobj-ctx-menu-np not found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id vobj-ctx-menu-np not found in resource.\n");
         else 
                 gapp->set_vobj_ctx_menu_np (vobj_ctx_menu_np);
 
         GObject *vobj_ctx_menu_event = gtk_builder_get_object (builder, "vobj-ctx-menu-event");
         if (!vobj_ctx_menu_event)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id vobj-ctx-menu-event not found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id vobj-ctx-menu-event not found in resource.\n");
         else
                 gapp->set_vobj_ctx_menu_event (vobj_ctx_menu_event);
 
         GObject *view3d_menu = gtk_builder_get_object (builder, "view3d-menu");
         if (!view3d_menu)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id view3d-menu not found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id view3d-menu not found in resource.\n");
         else
                 gapp->set_view3d_menu (view3d_menu);
 
         GObject *profile_popup_menu = gtk_builder_get_object (builder, "profile-popup-menu");
         if (!profile_popup_menu)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id profile-popup-menu not found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id profile-popup-menu not found in resource.\n");
         else
                 gapp->set_profile_popup_menu (profile_popup_menu);
 
@@ -370,13 +370,13 @@ gxsm3_app_startup (GApplication *app)
 
         GObject *hwi_mover_popup_menu = gtk_builder_get_object (builder, "hwi-mover-popup-menu");
         if (!hwi_mover_popup_menu)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id hwi-mover-popup-menu not found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id hwi-mover-popup-menu not found in resource.\n");
         else
                 gapp->set_hwi_mover_popup_menu (hwi_mover_popup_menu);
 
         GObject *hwi_control_popup_menu = gtk_builder_get_object (builder, "hwi-control-popup-menu");
         if (!hwi_control_popup_menu)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id hwi-control-popup_menu not found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id hwi-control-popup_menu not found in resource.\n");
         else
                 gapp->set_hwi_control_popup_menu (hwi_control_popup_menu);
 
@@ -386,7 +386,7 @@ gxsm3_app_startup (GApplication *app)
 
         GObject *plugin_pyremote_file_menu = gtk_builder_get_object (builder, "plugin-pyremote-file-menu");
         if (!plugin_pyremote_file_menu)
-                PI_DEBUG_GP (DBG_L1, "ERROR: id plugin-pyremote-file-menu not found in resource.\n");
+                PI_DEBUG_GP_ERROR (DBG_L1, "id plugin-pyremote-file-menu not found in resource.\n");
         else
                 gapp->set_plugin_pyremote_file_menu (plugin_pyremote_file_menu);
 

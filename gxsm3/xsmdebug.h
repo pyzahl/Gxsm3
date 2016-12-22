@@ -61,7 +61,8 @@
  #define XSM_DEBUG_ERROR(L, DBGTXT)   do { if(debug_level > L) ERR_OUT << "** (" << __FILE__ << ": " << __FUNCTION__ << ") Gxsm-ERROR **:" << NEWLINE << " - " << DBGTXT << NEWLINE; } while(0)
 
  #define XSM_DEBUG_GP(L, ARGS...)  do { if(debug_level > L) g_print (ARGS); } while(0)
-
+ #define XSM_DEBUG_GP_WARNING(L, ARGS...)  do { if(debug_level > L) g_warning (ARGS); } while(0)
+ #define XSM_DEBUG_GP_ERROR(L, ARGS...)  do { if(debug_level > L) g_error (ARGS); } while(0)
 
 /* GXSM-PlugIn debugging messages */
  #define PI_DEBUG(L, DBGTXT)          do { if(pi_debug_level > L) MSG_OUT << "** (" << __FILE__ << ": " << __FUNCTION__ << ") Gxsm-PlugIn-DEBUG-MESSAGE **: " << NEWLINE << " - " << DBGTXT << NEWLINE; } while(0)
@@ -70,6 +71,8 @@
  #define PI_DEBUG_ERROR(L, DBGTXT)    do { if(pi_debug_level > L) ERR_OUT << "** (" << __FILE__ << ": " << __FUNCTION__ << ") Gxsm-PlugIn-ERROR **:" << NEWLINE << " - " << DBGTXT << NEWLINE; } while(0)
 
  #define PI_DEBUG_GP(L, ARGS...)  do { if(pi_debug_level > L) g_print (ARGS); } while(0)
+ #define PI_DEBUG_GP_WARNING(L, ARGS...)  do { if(pi_debug_level > L) g_warning (ARGS); } while(0)
+ #define PI_DEBUG_GP_ERROR(L, ARGS...)  do { if(pi_debug_level > L) g_error (ARGS); } while(0)
 
 #else
 
