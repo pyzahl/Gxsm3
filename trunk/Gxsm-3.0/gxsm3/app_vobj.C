@@ -493,11 +493,20 @@ void get_obj_coords_wrapper2(int i, double &x, double &y){
 }
 
 void VObject::Activate (){
-	((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->PaintAllRegionsInactive();
+        if (!G_IS_OBJECT (canvas)){
+                PI_DEBUG_GP_ERROR (DBG_L1, "app_vobj.C: VObject::Activate  ERROR, canvas is no G_OBJECT.");
+                return;
+        }
+	ViewControl* vc=(ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"); 
+	if (vc) vc->PaintAllRegionsInactive();
+        else {
+                PI_DEBUG_GP_ERROR (DBG_L1, "app_vobj.C: VObject::Activate  ERROR, no valid ViewControl property set.");
+                return;
+        }
 	set_color_to_active();
 
 	if (current_vobject2){
-		XSM_DEBUG(DBG_L2, "VObjetc::Activate  ERROR, recursive call occured!!" );
+                PI_DEBUG_GP_ERROR (DBG_L1, "app_vobj.C: VObject::Activate  ERROR, recursive call dismissed.");
 		return;
 	}
 	if (id){

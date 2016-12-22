@@ -28,7 +28,6 @@
 #include <locale.h>
 #include <libintl.h>
 
-
 #include "mem2d.h"
 #include "glbvars.h"
 #include "clip.h"
@@ -279,29 +278,29 @@ int TZData<ZTYP>::CopyFrom(ZData *src, int x, int y, int tox, int toy, int nx, i
 
 template <class ZTYP> 
 void TZData<ZTYP>::TNew( void ){
-  XSM_DEBUG (DBG_L6, "TZData: TNew: (" << nx << "," << ny << ")");
-  Zdat = new ZTYP*[ny*nv];
-  for(int i=0; i<ny*nv; i++){
-    Zdat[i] = new ZTYP[nx];
-    if(!Zdat[i]){
-      ny=i-1;
-      XSM_DEBUG_ERROR (DBG_L1, "No Mem in Mem2d:New" );
-      return;
-    }
-    memset(Zdat[i], 0, sizeof(ZTYP)*nx);
-  }
+        XSM_DEBUG (DBG_L6, "TZData: TNew: (" << nx << "," << ny << ")");
+        Zdat = new ZTYP*[ny*nv];
+        for(int i=0; i<ny*nv; i++){
+                Zdat[i] = new ZTYP[nx];
+                if(!Zdat[i]){
+                        ny=i-1;
+                        XSM_DEBUG (DBG_L1, "Error: No Mem in Mem2d:New");
+                        return;
+                }
+                memset(Zdat[i], 0, sizeof(ZTYP)*nx);
+        }
 }
 
 template <class ZTYP> 
 void TZData<ZTYP>::TDel( void ){
-  if(!Zdat) return;
-  XSM_DEBUG (DBG_L6, "TZData: TDel ny=" << ny);
-  for(int i=0; i<ny*nv; i++){
-    delete [] Zdat[i];
-  }
-  delete [] Zdat;
-  Zdat = NULL;
-  XSM_DEBUG (DBG_L6, "TZData: TDel OK. Zdat=" << Zdat);
+        if(!Zdat) return;
+        XSM_DEBUG (DBG_L6, "TZData: TDel ny=" << ny);
+        for(int i=0; i<ny*nv; i++){
+                delete [] Zdat[i];
+        }
+        delete [] Zdat;
+        Zdat = NULL;
+        XSM_DEBUG (DBG_L6, "TZData: TDel OK. Zdat=" << Zdat);
 }
 
 // set Z values to const in opt. area

@@ -1225,12 +1225,23 @@ void Gtk_EntryControl::put_pcs_configuartion (){
 
 static gint
 ec_gtk_spin_button_sci_output (GtkSpinButton *spin_button)
-{   
-	gchar *buf = ((Gtk_EntryControl *)g_object_get_data( G_OBJECT (spin_button), "Gtk_EntryControl"))->Get_UsrString();
-	if (strcmp (buf, gtk_entry_get_text (GTK_ENTRY (spin_button))))
-		gtk_entry_set_text (GTK_ENTRY (spin_button), buf);
-	g_free (buf);
-	return TRUE;
+{
+        if (G_IS_OBJECT(spin_button) ){ 
+                Gtk_EntryControl *ec = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (spin_button), "Gtk_EntryControl");
+                if (ec){
+                        gchar *buf = ec->Get_UsrString();
+                        if (strcmp (buf, gtk_entry_get_text (GTK_ENTRY (spin_button))))
+                                gtk_entry_set_text (GTK_ENTRY (spin_button), buf);
+                        g_free (buf);
+                        return TRUE;
+                } else {
+                        XSM_DEBUG_GP_ERROR (DBG_L1, "pcs.C: ec_gtk_spin_button_sci_output -- EC not set.");
+                        return FALSE;
+                }
+        } else {
+                XSM_DEBUG_GP_ERROR (DBG_L1, "pcs.C: ec_gtk_spin_button_sci_output -- sping_button is no G_OBJECT.");
+                return FALSE;
+        }
 }
 
 static gint
