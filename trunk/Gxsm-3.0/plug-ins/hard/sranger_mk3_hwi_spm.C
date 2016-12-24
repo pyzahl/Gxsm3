@@ -666,8 +666,24 @@ void sranger_mk3_hwi_spm::reset_scandata_fifo(int stall){
 }
 
 void sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
-	static AREA_SCAN_MK3 dsp_scan;
+	AREA_SCAN_MK3 dsp_scan;
+	PROBE_MK3 dsp_probe;
 
+        // make sure no conflicts
+	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+        sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
+        CONV_32 (dsp_scan.pflg);
+        if (dsp_scan.pflg){
+                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- scanning! [%x]", dsp_scan.pflg);
+                return;
+        }
+	lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+        sr_read  (dsp, &dsp_probe, sizeof (dsp_probe));
+        CONV_32 (dsp_probe.pflg);
+        if (dsp_probe.pflg){
+                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- probe active! [%x]", dsp_probe.pflg);
+                return;
+        }
 	// get current position
 	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 	sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
@@ -715,11 +731,16 @@ void sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
 
 	// verify Pos,
 	// wait until ready
+        int i=150;
 	do {
 		usleep (20000); // give some time
 		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
 		//		CallIdleFunc ();
-	} while (dsp_scan.pflg);
+	} while (dsp_scan.pflg && --i); // check complete and timeout ~3s
+
+        if (!i)
+                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- tip move timeout exceeded.");
+
 	dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
 	dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
 	SRANGER_DEBUG("SR:EndScan2D return XYPos: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));

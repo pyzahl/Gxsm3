@@ -382,7 +382,9 @@ public:
                 xy[0].x=x, xy[0].y=y; 
                 pango_font = NULL;
                 t=g_strdup (text);
-                font_face = g_strdup ("Ununtu"); font_size = 16.; t_anchor = 0; t_justify = 0; spacing = 1.1; 
+                font_face = NULL;
+                t_anchor = 0; t_justify = 0; spacing = 1.1;
+                set_font_face_size ("Ununtu", 16.);
         };
 	virtual ~cairo_item_text () { g_free (xy); if (t) g_free (t); if (font_face) g_free (font_face); if (pango_font) pango_font_description_free (pango_font); };
 	virtual void set_text (const gchar *text) { if (t) g_free (t); t=g_strdup (text); };
@@ -395,7 +397,7 @@ public:
 	virtual void set_font_face_size (const gchar *face, double size, cairo_font_slant_t slant = CAIRO_FONT_SLANT_NORMAL, cairo_font_weight_t weight = CAIRO_FONT_WEIGHT_NORMAL) { 
                 if (font_face)
                         g_free (font_face);
-                font_face=g_strdup (face); 
+                font_face = g_strdup (face); 
                 font_size = size; font_slant = slant; font_weight = weight;
         };
         virtual void set_pango_font (const gchar *pango_font_name) { 

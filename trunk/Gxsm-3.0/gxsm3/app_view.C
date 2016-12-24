@@ -2460,8 +2460,10 @@ void ViewControl::SetMarkerGroup (const gchar *mgcolor){
 
 void ViewControl::view_tool_addpoint (GtkWidget *widget, ViewControl *vc){
 	double xy[2] = {0.,0.};
-	vc->AddObject (MAKE_VOB_DEFAULTS (VObPoint));
+        VObPoint* p;
+	vc->AddObject (p=MAKE_VOB_DEFAULTS (VObPoint));
 	vc->scan->PktVal=1;
+        p->follow_on();
 }
 void ViewControl::view_tool_addmarker (GtkWidget *widget, ViewControl *vc){
 	double xy[2] = {0.,0.};

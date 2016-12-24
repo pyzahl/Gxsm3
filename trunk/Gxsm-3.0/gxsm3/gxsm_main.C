@@ -26,6 +26,12 @@
  */
 // grep -rl gtk_object_ . | xargs sed -i s/gtk_object_/g_object_/g
 
+// #define GXSM_GLOBAL_MEMCHECK
+
+#ifdef GXSM_GLOBAL_MEMCHECK
+#include <mcheck.h>
+#endif
+
 #include <new>
 #include <cstring>
 
@@ -595,6 +601,10 @@ int main (int argc, char **argv)
         GError *error = NULL;
         GOptionContext *context;
 
+#ifdef GXSM_GLOBAL_MEMCHECK
+        mtrace(); /* Starts the recording of memory allocations and releases */
+#endif
+        
         // init GL engine ????
         //        if (gtk_gl_init_check (&argc, argv)
         //                glutInit (&argc, argv);
@@ -630,4 +640,9 @@ int main (int argc, char **argv)
         XSM_DEBUG(DBG_L2, "gxsm3_main g_application_run =========================================" );
 
         return g_application_run (G_APPLICATION (gxsm3_app_new ()), argc, argv);
+
+#ifdef GXSM_GLOBAL_MEMCHECK
+       	muntrace(); /* End the recording of memory allocations and releases */
+#endif
+
 }

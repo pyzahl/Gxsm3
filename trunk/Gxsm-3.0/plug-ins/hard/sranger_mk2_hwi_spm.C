@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -22,8 +24,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 /* irnore this module for docuscan
 % PlugInModuleIgnore
@@ -602,7 +602,20 @@ void sranger_mk2_hwi_spm::reset_scandata_fifo(int stall){
 }
 
 void sranger_mk2_hwi_spm::tip_to_origin(double x, double y){
-	static AREA_SCAN dsp_scan;
+        AREA_SCAN dsp_scan;
+        PROBE dsp_probe;
+
+        // make sure no conflicts
+	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+        sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
+        if (dsp_scan.pflg)
+                return;
+        
+	lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+        sr_read  (dsp, &dsp_probe, sizeof (dsp_probe));
+        if (dsp_probe.pflg)
+                return;
+        
 
 	// get current position
 	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
@@ -654,6 +667,7 @@ void sranger_mk2_hwi_spm::tip_to_origin(double x, double y){
 
 	// verify Pos,
 	// wait until ready
+        int i=150;
 	do {
 		usleep (20000); // release cpu time
 		CallIdleFunc ();
@@ -661,7 +675,11 @@ void sranger_mk2_hwi_spm::tip_to_origin(double x, double y){
 		DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
 
 		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
-	} while (dsp_scan.pflg);
+	} while (dsp_scan.pflg && --i); // check complete or timeout ~3s
+
+        if (!i)
+                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- tip move timeout exceeded.");
+
 	dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
 	dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
 	SRANGER_DEBUG("SR:EndScan2D return XYPos: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));

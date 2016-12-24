@@ -595,26 +595,7 @@ PKG_CHECK_MODULES(GXSM3, [
 	gsettings-desktop-schemas
 ])
 
-if test "$os_osx" = "no" &&
-   test "$os_win32" = "no"; then
-	PKG_CHECK_MODULES(X11, [
-		x11
-	])
-else
-	X11_CFLAGS=
-	X11_LIBS=
-fi
-
-if test "$platform_win32" = "no"; then
-	PKG_CHECK_MODULES(UNIX, [
-		gio-unix-2.0 >= 2.25.5
-	])
-else
-	UNIX_CFLAGS=
-	UNIX_LIBS=
-fi
-
-GXSM3_CFLAGS="$GXSM3_CFLAGS $X11_CFLAGS $UNIX_CFLAGS"
+GXSM3_CFLAGS="$CFLAGS $GXSM3_CFLAGS $X11_CFLAGS $UNIX_CFLAGS"
 GXSM3_LIBS="$GXSM3_LIBS $X11_LIBS $UNIX_LIBS"
 
 AC_SUBST(GXSM3_CFLAGS)
@@ -761,6 +742,8 @@ Configuration:
 
 	Source code location:	${srcdir}
 	Compiler:		${CC}
+	CFLAGS:			${CFLAGS}
+	GXSM3_CFLAGS:		${GXSM3_CFLAGS}
 	Spell Plugin enabled:	$enable_enchant
 	Gvfs metadata enabled:	$enable_gvfs_metadata
 	Deprecations enabled:	$enable_deprecations
