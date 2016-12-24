@@ -146,6 +146,7 @@ App::App(GApplication *g_app)
 
         app_window = NULL;
 	appbar = NULL;
+	appbar_ctx_id = 0;
 
 	// still not created
         channelselector = NULL;
@@ -914,7 +915,7 @@ void App::GxsmSplash(gdouble progress, const gchar *info, const gchar* text){
                                        (GSourceFunc) App::RemoveGxsmSplash, 
                                        splash);
                 }
-                check_events ();
+                // check_events ();
                 return;
 	}
         

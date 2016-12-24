@@ -73,7 +73,6 @@ epsfutils.C epsfutils.h
 pixmapdir = $(datadir)/pixmaps
 
 DEFS = @DEFS@ \
-	-O2 \
 	$(CFLAGS) \
         -Wall -Wstrict-aliasing=0 -ggdb
 

@@ -493,13 +493,16 @@ void get_obj_coords_wrapper2(int i, double &x, double &y){
 }
 
 void VObject::Activate (){
+        g_message ("app_vobj.C: VObject::Activate  canvas=0x%x", canvas);
         if (!G_IS_OBJECT (canvas)){
+                g_error ("app_vobj.C: VObject::Activate  ERROR, canvas is no G_OBJECT.");
                 PI_DEBUG_GP_ERROR (DBG_L1, "app_vobj.C: VObject::Activate  ERROR, canvas is no G_OBJECT.");
                 return;
         }
 	ViewControl* vc=(ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"); 
 	if (vc) vc->PaintAllRegionsInactive();
         else {
+                g_error ("app_vobj.C: VObject::Activate  ERROR, no valid VC set.");
                 PI_DEBUG_GP_ERROR (DBG_L1, "app_vobj.C: VObject::Activate  ERROR, no valid ViewControl property set.");
                 return;
         }
@@ -1298,8 +1301,9 @@ void VObPoint::Update(){
         //	if (follow)
         //		update_scanposition ();
 
-	if (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->tip_follow_mode ())
-		update_scanposition ();
+        if (follow)
+                if (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->tip_follow_mode ())
+                        update_scanposition ();
 
 	if (profile){
 		profile->show();
@@ -1316,69 +1320,70 @@ VObPoint::~VObPoint(){}
 
 // draw extra "tip" marker symbol if tip dragging is active
 void VObPoint::draw_extra(cairo_t *cr){
-        if (dragging_active && ((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->tip_follow_mode ()){
-                cairo_save (cr);
-                cairo_translate (cr, xy[0], xy[1]-2*14.);
-                cairo_scale (cr, 2.,2.);
+        if (follow)
+                if (dragging_active && ((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->tip_follow_mode ()){
+                        cairo_save (cr);
+                        cairo_translate (cr, xy[0], xy[1]-2*14.);
+                        cairo_scale (cr, 2.,2.);
 
-                cairo_move_to (cr, 0, 0);
-                cairo_rel_curve_to (cr,
-                                    -2.76142,0,
-                                    -5,2.23858,
-                                    -5,5);
-                cairo_rel_curve_to (cr,
-                                    0,0.17259,
-                                    0.0142,0.33191,
-                                    0.0312,0.5);
-                cairo_rel_curve_to (cr,
-                                    0.0137,0.16725,
-                                    0.0358,0.33617,
-                                    0.0625,0.5);
-                cairo_rel_curve_to (cr,
-                                    0.57248,3.51444,
-                                    2.9063,6.00336,
-                                    4.9063,8.00336);
-                cairo_rel_curve_to (cr,
-                                    2,-2,
-                                    4.33372,-4.48892,
-                                    4.9062,-8.00336);
-                cairo_rel_curve_to (cr,
-                                    0.0267,-0.16383,
-                                    0.0488,-0.33275,
-                                    0.0625,-0.5);
-                cairo_rel_curve_to (cr,
-                                    0.0171,-0.16809,
-                                    0.0312,-0.32741,
-                                    0.0312,-0.5);
-                cairo_rel_curve_to (cr,
-                                    0,-2.76142,
-                                    -2.23858,-5,
-                                    -5,-5);
-                cairo_close_path (cr);
-                cairo_move_to (cr, 0.,3.);
-                cairo_rel_curve_to (cr,
-                                    1.10457,0,
-                                    2,0.89543,
-                                    2,2);
-                cairo_rel_curve_to (cr,
-                                    0,1.10457,
-                                    -0.89543,2,
-                                    -2,2);
-                cairo_rel_curve_to (cr,
-                                    -1.10457,0,
-                                    -2,-0.89543,
-                                    -2,-2);
-                cairo_rel_curve_to (cr,
-                                    0,-1.10457,
-                                    0.89543,-2,
-                                    2,-2); 
-                cairo_close_path (cr);
-                cairo_set_source_rgba (cr, 0.8, 0., 0., 0.5);
-                cairo_fill (cr);
-                cairo_stroke (cr);
+                        cairo_move_to (cr, 0, 0);
+                        cairo_rel_curve_to (cr,
+                                            -2.76142,0,
+                                            -5,2.23858,
+                                            -5,5);
+                        cairo_rel_curve_to (cr,
+                                            0,0.17259,
+                                            0.0142,0.33191,
+                                            0.0312,0.5);
+                        cairo_rel_curve_to (cr,
+                                            0.0137,0.16725,
+                                            0.0358,0.33617,
+                                            0.0625,0.5);
+                        cairo_rel_curve_to (cr,
+                                            0.57248,3.51444,
+                                            2.9063,6.00336,
+                                            4.9063,8.00336);
+                        cairo_rel_curve_to (cr,
+                                            2,-2,
+                                            4.33372,-4.48892,
+                                            4.9062,-8.00336);
+                        cairo_rel_curve_to (cr,
+                                            0.0267,-0.16383,
+                                            0.0488,-0.33275,
+                                            0.0625,-0.5);
+                        cairo_rel_curve_to (cr,
+                                            0.0171,-0.16809,
+                                            0.0312,-0.32741,
+                                            0.0312,-0.5);
+                        cairo_rel_curve_to (cr,
+                                            0,-2.76142,
+                                            -2.23858,-5,
+                                            -5,-5);
+                        cairo_close_path (cr);
+                        cairo_move_to (cr, 0.,3.);
+                        cairo_rel_curve_to (cr,
+                                            1.10457,0,
+                                            2,0.89543,
+                                            2,2);
+                        cairo_rel_curve_to (cr,
+                                            0,1.10457,
+                                            -0.89543,2,
+                                            -2,2);
+                        cairo_rel_curve_to (cr,
+                                            -1.10457,0,
+                                            -2,-0.89543,
+                                            -2,-2);
+                        cairo_rel_curve_to (cr,
+                                            0,-1.10457,
+                                            0.89543,-2,
+                                            2,-2); 
+                        cairo_close_path (cr);
+                        cairo_set_source_rgba (cr, 0.8, 0., 0., 0.5);
+                        cairo_fill (cr);
+                        cairo_stroke (cr);
 
-                cairo_restore (cr);
-        }
+                        cairo_restore (cr);
+                }
 /*
 <path
        style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#bebebe;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:new"

@@ -906,10 +906,10 @@ static void spm_scancontrol_set_subscan_callback (GtkWidget *w, void *data){
 
                                 PI_DEBUG (DBG_L1, "SSC::SET_SUBSCAN => [" << p[0].x << ", " << p[0].y << ", " << p[1].x << ", " << p[1].y << "]");
                                 
-                                ((SPM_ScanControl*)data) -> set_subscan ((double)(p[0].x < p[1].x ? p[0].x:p[1].x),
-                                                                         fabs ((double)p[1].x-(double)p[0].x),
-                                                                         (double)(p[0].y < p[1].y ? p[0].y:p[1].y),
-                                                                         fabs ((double)p[1].y-(double)p[0].y));
+                                ((SPM_ScanControl*)data) -> set_subscan ((double)(p[0].x < p[1].x ? p[0].x:p[1].x-1),
+                                                                         fabs ((double)p[1].x-(double)p[0].x)+1,
+                                                                         (double)(p[0].y < p[1].y ? p[0].y:p[1].y-1),
+                                                                         fabs ((double)p[1].y-(double)p[0].y)+1);
                         
                                 PI_DEBUG (DBG_L1, "SSC::SET_SUBSCAN done.");
                                	((Gtk_EntryControl*) g_object_get_data (G_OBJECT (w), "SLSC0")) -> Put_Value ();

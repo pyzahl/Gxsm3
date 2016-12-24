@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -23,7 +25,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #define XSHMIMG_MAXZOOM 10
 
@@ -267,7 +268,7 @@ int Grey2D::update(int y1, int y2){
 	if (!XImg) 
 		return 0;
 
-	if (y2 < y1){
+	if (y2 < y1 && viewcontrol){
 		if (ChanNo == gapp->xsm->ActiveChannel)
 			viewcontrol->SetActive (TRUE);
 		else
@@ -321,7 +322,7 @@ int Grey2D::update(int y1, int y2){
 	
 	// Show Red Line ...
 	--y2;
-	if (y1 == y2){
+	if (y1 == y2 && viewcontrol){
 		scan->Pkt2dScanLine[0].x = 0;
 		scan->Pkt2dScanLine[0].y = y1;
 		scan->Pkt2dScanLine[1].x = m->GetNx () - 1;
@@ -333,13 +334,15 @@ int Grey2D::update(int y1, int y2){
 }
 
 void Grey2D::add_object(int type, gpointer data){
-	double *xy = (double*) data;
-	scan -> realloc_pkt2d ((int)xy[0]);
-	viewcontrol -> AddObject(
-		new VObPolyLine (viewcontrol->GetCanvas(),
-				 xy, scan->Pkt2d,
-				 FALSE, VOBJ_COORD_ABSOLUT)
-		);
+        if (viewcontrol){
+                double *xy = (double*) data;
+                scan -> realloc_pkt2d ((int)xy[0]);
+                viewcontrol -> AddObject(
+                                         new VObPolyLine (viewcontrol->GetCanvas(),
+                                                          xy, scan->Pkt2d,
+                                                          FALSE, VOBJ_COORD_ABSOLUT)
+                                         );
+        }
 }
 
 void Grey2D::update_events(){
@@ -348,7 +351,8 @@ void Grey2D::update_events(){
 }
 
 void Grey2D::update_event_info(ScanEvent* se){
-	viewcontrol->update_event_panel (se);
+	if (viewcontrol) 
+                viewcontrol->update_event_panel (se);
 }
 
 
@@ -538,11 +542,13 @@ void Grey2D::show_trace(){
 }
 
 void Grey2D::hide_trace(){
-	viewcontrol->remove_trace ();
+	if (viewcontrol) 
+                viewcontrol->remove_trace ();
 }
 
 void Grey2D::update_trace(){
-//	viewcontrol->update_trace (double *xy, int len);
+        //	if (viewcontrol) 
+        //	viewcontrol->update_trace (double *xy, int len);
 }
 
 void Grey2D::remove_events(){
@@ -552,4 +558,6 @@ void Grey2D::remove_events(){
 	}
 }
 
-gpointer Grey2D::grab_OSD_canvas(){ return GTK_WIDGET (viewcontrol->grab_canvas()); }
+gpointer Grey2D::grab_OSD_canvas(){
+        return GTK_WIDGET (viewcontrol->grab_canvas());
+}
