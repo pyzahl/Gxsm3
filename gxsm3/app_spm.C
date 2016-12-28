@@ -494,7 +494,7 @@ GtkWidget* App::create_spm_control (){
                                        0., // xsm->XRangeMin(),
                                        xsm->XRangeMax(), 
                                        xsm->AktUnit->prec1,
-                                       1.,1.,
+                                       0.,0.,
                                        "RangeX");
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Rx", spm_bp->ec);
@@ -503,7 +503,7 @@ GtkWidget* App::create_spm_control (){
                                        0., // xsm->XRangeMin(),
                                        xsm->YRangeMax(), 
                                        xsm->AktUnit->prec1,
-                                       1.,1.,
+                                       0.,0.,
                                        "RangeY");
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Ry", spm_bp->ec);
@@ -514,7 +514,7 @@ GtkWidget* App::create_spm_control (){
                                        0., // xsm->XstepsMin(),
                                        xsm->XStepMax(), 
                                        xsm->AktUnit->prec2,
-                                       1.,1.,
+                                       0.,0.,
                                        "StepsX");
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Stx", spm_bp->ec);
@@ -524,7 +524,7 @@ GtkWidget* App::create_spm_control (){
                                        0., // xsm->YStepsMin(),
                                        xsm->YStepMax(), 
                                        xsm->AktUnit->prec2,
-                                       1.,1.,
+                                       0.,0.,
                                        "StepsY");
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Sty", spm_bp->ec);
@@ -567,7 +567,7 @@ GtkWidget* App::create_spm_control (){
         spm_bp->grid_add_ec ("Offset XY", xsm->X_Unit, &xsm->data.s.x0,
                              xsm->XOffsetMin(), xsm->XOffsetMax(),
                              xsm->AktUnit->prec1,
-                             1.,1.,
+                             0.,0.,
                              "OffsetX");
         EC_OffsetFix_list = g_slist_prepend( EC_OffsetFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Offx", spm_bp->ec);
@@ -575,7 +575,7 @@ GtkWidget* App::create_spm_control (){
         spm_bp->grid_add_ec (NULL, xsm->Y_Unit, &xsm->data.s.y0,
                              xsm->YOffsetMin(), xsm->YOffsetMax(),
                              xsm->AktUnit->prec1,
-                             1.,1.,
+                             0.,0.,
                              "OffsetY");
         EC_OffsetFix_list = g_slist_prepend( EC_OffsetFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Offy", spm_bp->ec);
@@ -588,7 +588,7 @@ GtkWidget* App::create_spm_control (){
         spm_bp->grid_add_ec("Scan XY", xsm->X_Unit, &xsm->data.s.sx,
                             -xsm->XRangeMax()/2., xsm->XRangeMax()/2.,
                             xsm->AktUnit->prec1,
-                            1.,1.,
+                            0.,0.,
                             "ScanX");
         EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_ScanX", spm_bp->ec);
@@ -596,7 +596,7 @@ GtkWidget* App::create_spm_control (){
         spm_bp->grid_add_ec (NULL, xsm->Y_Unit, &xsm->data.s.sy,
                              -xsm->YRangeMax()/2., xsm->YRangeMax()/2.,
                              xsm->AktUnit->prec1,
-                             1.,1.,
+                             0.,0.,
                              "ScanY");
         EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_ScanY", spm_bp->ec);

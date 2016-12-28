@@ -607,6 +607,7 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
 
 	switch (gpcs->log_mode){
 	case PARAM_CONTROL_LOG_MODE_OFF:
+                //                g_message ("Gtk_EntryControl::adjustment_callback ->  gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE) val=%g new_adj_val=%g [%s]", gpcs->Get_dValue (), gtk_adjustment_get_value (adj), gpcs->get_refname ());
                 gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE);
                 break;
 	case PARAM_CONTROL_LOG_MODE_LOG: {
@@ -752,11 +753,16 @@ void Gtk_EntryControl::Set_Parameter(double Value=0., int flg=FALSE, int usr2bas
 			value=unit->Usr2Base (ctxt);
 	}
 
+        //        g_message ("Gtk_EntryControl::Set_Parameter value=%g [%s] flg=%d ?-> usr2base=%d", value, refname, flg, usr2base);
+        
 	Set_FromValue (value);
         update_value_in_settings ();
 
 	if((c=(GtkWidget*)g_object_get_data( G_OBJECT (entry), "HasClient")) && enable_client){
 		Gtk_EntryControl *cec = (Gtk_EntryControl *) g_object_get_data( G_OBJECT (c), "Gtk_EntryControl");
+
+                //                g_message ("Gtk_EntryControl::Set_Parameter update client with value=%g [%s]", value, cec->refname);
+
                 cec->Set_FromValue (new_value);
                 cec->update_value_in_settings ();
         }
@@ -1320,7 +1326,7 @@ void Gtk_EntryControl::InitRegisterCb(double AdjStep, double AdjPage, double Adj
                                   G_CALLBACK (&ec_pcs_populate_popup),
                                   (gpointer) this);
                 
-		adj = gtk_adjustment_new( Get_dValue (), vMin, vMax, step, page, 0);
+                adj = gtk_adjustment_new( Get_dValue (), vMin, vMax, step, page, 0);
 		g_signal_connect (G_OBJECT (adj), "value_changed",
                                   G_CALLBACK (Gtk_EntryControl::adjustment_callback), this);
 
