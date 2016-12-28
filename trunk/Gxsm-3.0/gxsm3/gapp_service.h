@@ -234,9 +234,11 @@ class BuildParam{
         };
 
 
-        GtkWidget* grid_add_ec (const gchar* label, UnitObj *unit, double *var, double lo, double hi, const gchar *fmt, double step=1., double page=1., const gchar *remote_id=NULL, gint ec_array_index=-1){
+        GtkWidget* grid_add_ec (const gchar* label, UnitObj *unit, double *var, double lo, double hi, const gchar *fmt, double step=0., double page=0., const gchar *remote_id=NULL, gint ec_array_index=-1){
                 gchar *rid = NULL;
                 gchar *arr = NULL;
+
+                // step and page must be set to zero for NO ADJUSTMENT USE !!
                 
                 if (ec_array_index >= 0)
                         arr = g_strdup_printf ("%02d", ec_array_index);

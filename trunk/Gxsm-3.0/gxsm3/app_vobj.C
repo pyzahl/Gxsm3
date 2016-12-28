@@ -493,7 +493,7 @@ void get_obj_coords_wrapper2(int i, double &x, double &y){
 }
 
 void VObject::Activate (){
-        g_message ("app_vobj.C: VObject::Activate  canvas=0x%x", canvas);
+        //        g_message ("app_vobj.C: VObject::Activate  canvas=0x%x", canvas);
         if (!G_IS_OBJECT (canvas)){
                 g_error ("app_vobj.C: VObject::Activate  ERROR, canvas is no G_OBJECT.");
                 PI_DEBUG_GP_ERROR (DBG_L1, "app_vobj.C: VObject::Activate  ERROR, canvas is no G_OBJECT.");
