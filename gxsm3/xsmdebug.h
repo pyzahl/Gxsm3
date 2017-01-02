@@ -45,6 +45,8 @@
 
 /* please use only these functions for debugging outputs! */
 
+extern int logging_level;
+
 #ifdef XSM_DEBUG_OPTION
  extern int debug_level;
  extern int pi_debug_level;

@@ -340,15 +340,16 @@ public:
                                                                         
                 new_line ();
                 
-                gchar *help = g_strconcat ("Remote example: action ("", ra->cmd, """, NULL); 
-                grid_add_button ("Execute", help, 2,
-                                 GCallback (exec_cb), cb_data);
-                                                                        
                 remote_action_cb *ra = g_new( remote_action_cb, 1);     
                 ra -> cmd = g_strdup_printf("DSP_VP_%s_EXECUTE", control_id); 
                 ra -> RemoteCb = (void (*)(GtkWidget*, void*))exec_cb;  
                 ra -> widget = button;                                  
                 ra -> data = cb_data;                                      
+
+                gchar *help = g_strconcat ("Remote example: action (", ra->cmd, ")", NULL); 
+                grid_add_button ("Execute", help, 2,
+                                 GCallback (exec_cb), cb_data);
+                                                                        
                 gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra ); 
                 PI_DEBUG (DBG_L2, "Adding new Remote Cmd: " << ra->cmd ); 
                                                                         
@@ -849,7 +850,9 @@ DSPControl::DSPControl () {
         PI_DEBUG (DBG_L5, "DSPControl::DSPControl ()");
 
 	GUI_ready = FALSE;
+        idle_callback_data_fn = NULL;
         idle_id = 0;
+        idle_id_update_gui = 0;
         
         hwi_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT".hwi.sranger-mk23");
 

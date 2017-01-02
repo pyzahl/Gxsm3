@@ -443,14 +443,39 @@ class DSPControl : public AppBase{
 	};
 		
 	void Probing_graph_update_thread_safe (int finish_flag=0) {
+                // call: Probing_graph_callback (NULL, this, finish_flag);
                 // check for --  idle_id ??
                 if (idle_id == 0){
                         idle_callback_data_ff = finish_flag;
                         idle_id = gdk_threads_add_idle (DSPControl::idle_callback, this);
                 }
-                // call: Probing_graph_callback (NULL, this, finish_flag);
 	};
 
+
+	static gboolean idle_callback_update_gui (gpointer data){
+		DSPControl *dspc = (DSPControl*) data;
+                gapp->spm_update_all();
+                gapp->SetStatus(N_("Saved VP data: "), dspc->idle_callback_data_fn);
+                gchar *bbt = g_strdup_printf ("Save now - last: %s", dspc->idle_callback_data_fn);
+                gtk_button_set_label (GTK_BUTTON (dspc->save_button), bbt);
+                g_free (bbt);
+                g_free (dspc->idle_callback_data_fn); // clean up tmp data now
+                dspc->idle_callback_data_fn = NULL;
+		dspc->idle_id_update_gui = 0; // done.
+		return FALSE;
+	};
+		
+	void update_gui_thread_safe (const gchar *fntmp) {
+                // execute GUI updated thread safe
+                if (idle_id_update_gui == 0){
+                        idle_callback_data_fn = g_strdup (fntmp);
+                        idle_id_update_gui = gdk_threads_add_idle (DSPControl::idle_callback_update_gui, this);
+                }
+	};
+
+
+
+        
 	int probedata_length () { return current_probe_data_index; };
 	void push_probedata_arrays ();
 	GArray** pop_probedata_arrays ();
@@ -803,6 +828,10 @@ class DSPControl : public AppBase{
  protected:
         int idle_callback_data_ff;
         guint idle_id;
+
+        gchar *idle_callback_data_fn;
+        guint idle_id_update_gui;
+
 	gboolean GUI_ready;
 };
 
