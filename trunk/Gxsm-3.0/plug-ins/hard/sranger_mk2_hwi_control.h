@@ -437,17 +437,61 @@ class DSPControl : public AppBase{
 
 	static gboolean idle_callback (gpointer data){
 		DSPControl *dspc = (DSPControl*) data;
+
+                // make probe vector data is not locked for vector manipulations, wait until available (fast)
+                while (dspc->pv_lock)
+                        usleep (1000);
+
+                dspc->gr_lock = TRUE;
 		dspc->Probing_graph_callback (NULL, dspc, dspc->idle_callback_data_ff);
+                dspc->gr_lock = FALSE;
+                
 		dspc->idle_id = 0; // done.
+
 		return FALSE;
 	};
 		
 	void Probing_graph_update_thread_safe (int finish_flag=0) {
+                static int timeout_count=0;
+                static int last_index=0;
+                static int count=0;
+                // g_message ("Probing_graph_update_thread_safe: current index=%d, last=%d", current_probe_data_index, last_index);
+
+                if (current_probe_data_index <= last_index && !finish_flag){
+                        // g_message ("Probing_graph_update_thread_safe: exit no new data");
+                        return;
+                }
+                last_index = current_probe_data_index;
+                ++count;
                 // call: Probing_graph_callback (NULL, this, finish_flag);
                 // check for --  idle_id ??
+                while (idle_id && finish_flag){
+                        g_message ("Probing_graph_update_thread_safe: Finish_flag set -- waiting for last update to complete. current index=%d, last=%d, #toc=%d",
+                                   current_probe_data_index, last_index, timeout_count);
+                        usleep(250000);
+                        ++timeout_count;
+                        
+                        if (last_index == current_probe_data_index && timeout_count > 10){
+                                g_warning ("Probing_graph_update_thread_safe: Trying auto recovery from stalled update (timeout reached). current index=%d, last=%d",
+                                         current_probe_data_index, last_index);
+                                idle_id = 0;
+                                timeout_count = 0;
+                        }
+                        
+                }
                 if (idle_id == 0){
+                        // g_message ("Probing_graph_update_thread_safe: plot update. delayed by %d attempts. Current data index=%d",
+                        //           count, current_probe_data_index);
+                        count=0;
                         idle_callback_data_ff = finish_flag;
                         idle_id = gdk_threads_add_idle (DSPControl::idle_callback, this);
+                        if (finish_flag){
+                                g_message ("Probing_graph_update_thread_safe: plot update. Finished. Current data index=%d",
+                                           current_probe_data_index);
+                                last_index = 0;
+                        }
+                } else {
+                        // g_warning ("Probing_graph_update_thread_safe: is busy, skipping. [%d]", count);
                 }
 	};
 
@@ -470,6 +514,8 @@ class DSPControl : public AppBase{
                 if (idle_id_update_gui == 0){
                         idle_callback_data_fn = g_strdup (fntmp);
                         idle_id_update_gui = gdk_threads_add_idle (DSPControl::idle_callback_update_gui, this);
+                } else {
+                        g_warning ("update_gui_thread_safe: is busy, skipping [%s].", fntmp);
                 }
 	};
 

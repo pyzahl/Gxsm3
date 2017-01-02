@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -22,8 +24,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 /* ignore this module for docuscan
 % PlugInModuleIgnore
@@ -1047,7 +1047,7 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 	}
 
 	if (start){
-		std::cout << "Exec Probe Now!!" << std::endl;
+                g_message ("Executing Vector Probe Now!");
 		gapp->monitorcontrol->LogEvent ("VectorProbe", "Execute");
 	}
 
