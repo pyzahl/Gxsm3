@@ -258,7 +258,6 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 	XSM_DEBUG_PG("DBG-M VIS  " << xlab << " : " << ylab);
 
 	XSM_DEBUG_PG ("DSPControl::probedata_visualize -- enter");
-	XSM_DEBUG_PG ("Probing_graph_callback Visualization X-limits" );
 
 	// find min and max X limit
 	xmin = xmax = g_array_index (probedata_x, double, 0);
@@ -426,72 +425,24 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 	XSM_DEBUG_PG ("DSPControl::probedata_visualize -- exit");
 }
 
-/*
-
--- odd crash log --
-
-Exec Probe Now!!
-HWI-DEV-MK2-DBGI mk2::start fifo read
-DSPControl::Probing_graph_callback -- enter
-Probing_graph_callback
-Probing_graph_callback lock?
-Probing_graph_callback data-ready?
-DSPControl::Probing_graph_callback -- exit no data
-DSPControl::Probing_graph_callback -- enter
-Probing_graph_callback
-Probing_graph_callback lock?
-Probing_graph_callback data-ready?
-Segmentation fault
-
-
-
-HWI-DEV-MK2-DBGI mk2::start fifo read
-DSPControl::Probing_graph_callback -- enter
-Probing_graph_callback
-Probing_graph_callback lock?
-Probing_graph_callback data-ready?
-Probing_graph_callback data -- current index=0
-DSPControl::Probing_graph_callback -- exit no data
-DSPControl::Probing_graph_callback -- enter
-Probing_graph_callback
-Probing_graph_callback lock?
-Probing_graph_callback data-ready?
-Segmentation fault
-
-
- // not happening now with dbg info on -- Argrr.
-*/
-
 
 int DSPControl::Probing_graph_callback( GtkWidget *widget, DSPControl *dspc, int finish_flag){
 // show and update data pv graph
-	static gboolean busy=FALSE;
 	static ProfileControl *pc[2*MAX_NUM_CHANNELS][2*MAX_NUM_CHANNELS]; // The factor of 2 is to have it big enough to hold also the averaged data
 
 	XSM_DEBUG_PG ("DSPControl::Probing_graph_callback -- enter");
-	XSM_DEBUG_PG ("Probing_graph_callback" );
-	if (busy){
-		XSM_DEBUG_PG ("DSPControl::Probing_graph_callback -- exit busy");
-		return -1;
-	}
-	busy=TRUE;
 
-	XSM_DEBUG_PG ("Probing_graph_callback lock?" );
-
-	while (	dspc->pv_lock ) gapp->check_events ();
-
-	XSM_DEBUG_PG ("Probing_graph_callback data-ready?" );
-
+#if 0
 	dspc->dump_probe_hdr (); // TESTING
 
 	XSM_DEBUG_PG ("Probing_graph_callback data -- current index=" << dspc->current_probe_data_index );
 
 	if (!dspc->current_probe_data_index){
-		busy=FALSE;
 		XSM_DEBUG_PG ("DSPControl::Probing_graph_callback -- exit no data");
 		return 0;
 	}
-
+#endif
+	
 //xxxxxxxxxxxxx atach event to active channel, if one exists -- manual mode xxxxxxxxxxxxxxxxxxxxx
 
 	XSM_DEBUG_PG ("Probing_graph_callback MasterScan? Add Ev." );
@@ -624,13 +575,8 @@ int DSPControl::Probing_graph_callback( GtkWidget *widget, DSPControl *dspc, int
 				}
 			}
 		}
-		XSM_DEBUG_PG("DBG-Mbb2x");
 	}
-	XSM_DEBUG_PG("DBG-Mbb3");
-
-	XSM_DEBUG_PG ("Probing_graph_callback DONE." );
-	busy=FALSE;
-	XSM_DEBUG_PG ("DSPControl::Probing_graph_callback -- exit");
+	XSM_DEBUG_PG ("DSPControl::Probing_graph_callback -- done");
 	return 0;
 }
 

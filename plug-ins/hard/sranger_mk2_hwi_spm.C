@@ -608,14 +608,19 @@ void sranger_mk2_hwi_spm::tip_to_origin(double x, double y){
         // make sure no conflicts
 	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
         sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
-        if (dsp_scan.pflg)
+        CONV_32 (dsp_scan.pflg);
+        if (dsp_scan.pflg){
+                g_warning ("sranger_mk2_hwi_spm::tip_to_origin -- scanning!  [%x] -- skipping.", dsp_scan.pflg);
                 return;
+        }
         
 	lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
         sr_read  (dsp, &dsp_probe, sizeof (dsp_probe));
-        if (dsp_probe.pflg)
+        CONV_32 (dsp_probe.pflg);
+        if (dsp_probe.pflg){
+                g_warning ("sranger_mk2_hwi_spm::tip_to_origin -- probe active!  [%x] -- skipping.", dsp_probe.pflg);
                 return;
-        
+        }
 
 	// get current position
 	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);

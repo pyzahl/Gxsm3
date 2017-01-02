@@ -1339,7 +1339,7 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 	}
 
 	if (start){
-		std::cout << "Exec Probe Now!!" << std::endl;
+                g_message ("Executing Vector Probe Now!");
 		gapp->monitorcontrol->LogEvent ("VectorProbe", "Execute");
 	}
 
