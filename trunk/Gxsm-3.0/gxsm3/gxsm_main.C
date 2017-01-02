@@ -53,6 +53,7 @@ XSMRESOURCES xsmres;
 App *gapp = NULL;
 int restarted = 0;
 int debug_level = 0;
+int logging_level = 1;
 int pi_debug_level = 0;
 int force_gconf_defaults = 0;
 int no_glx_init = 0;
@@ -118,6 +119,10 @@ static const GOptionEntry gxsm_options[] =
 
 	{ "pi-debug-level", 'P', 0, G_OPTION_ARG_INT, &pi_debug_level,
           N_("Set Gxsm Plug-In debug level. 0: no debug output on console, 1: normal, 2: more verbose, ...5 increased verbosity"), "PDN"
+        },
+
+	{ "logging-level", 'L', 1, G_OPTION_ARG_INT, &logging_level,
+          N_("Set Gxsm logging/monitor level. 0: omit all loggings. 1: default logging, 2: verbose logging"), "LN"
         },
 
 	/* New instance */
@@ -234,9 +239,7 @@ gxsm3_app_startup (GApplication *app)
         gxsm_check_new_user_config ();
         XSM_DEBUG(DBG_L1, "DONE ** GXSM run druids check");
 
-        XSM_DEBUG(DBG_L1, "GXSM / PlugIn debug level is: " << debug_level << " / " << pi_debug_level);
-
-
+        XSM_DEBUG(DBG_L1, "GXSM / PlugIn debug / logging level is: " << debug_level << " / " << pi_debug_level << " / " << logging_level);
 
         XSM_DEBUG(DBG_L2, "gapplication startup -- app menu installations" );
   
@@ -634,6 +637,7 @@ int main (int argc, char **argv)
                         PI_DEBUG_GP (DBG_L1, "=> force_gconf_defaults . = %d   (GSettings now)\n", force_gconf_defaults);
                         PI_DEBUG_GP (DBG_L1, "=> debug_level .......... = %d\n", debug_level);
                         PI_DEBUG_GP (DBG_L1, "=> pi_debug_level ....... = %d\n", pi_debug_level);
+                        PI_DEBUG_GP (DBG_L1, "=> logging_level ........ = %d\n", logging_level);
                 }
 
         // ................**********************************************************************

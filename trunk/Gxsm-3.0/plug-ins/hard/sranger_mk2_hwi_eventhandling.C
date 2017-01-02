@@ -823,11 +823,7 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 	f.close ();
 
 	// update counter on main window!
-	gapp->spm_update_all();
-	gapp->SetStatus(N_("Saved VP data: "), fntmp);
-	gchar *bbt = g_strdup_printf ("Save now - last: %s", fntmp);
-	gtk_button_set_label (GTK_BUTTON (dspc->save_button), bbt);
-	g_free (bbt);
+	dspc->update_gui_thread_safe (fntmp);
 	g_free (fntmp);
 
 	return 0;

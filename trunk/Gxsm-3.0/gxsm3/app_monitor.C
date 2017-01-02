@@ -78,35 +78,37 @@ MonitorControl::~MonitorControl (){
 }
 
 void MonitorControl::LogEvent (const gchar *Action, const gchar *Entry){
-	GtkTextIter start_iter, end_iter;
-	GtkTextMark *end_mark;
+        if (logging_level > 0){
+                GtkTextIter start_iter, end_iter;
+                GtkTextMark *end_mark;
 
-	gtk_text_buffer_get_bounds (log_buf, &start_iter, &end_iter);
+                gtk_text_buffer_get_bounds (log_buf, &start_iter, &end_iter);
 
-	GString *output = g_string_new (gtk_text_buffer_get_text (log_buf,
-                                                                  &start_iter, &end_iter,
-                                                                  FALSE));
-	// append to log
-        GTimeVal gt;
-        g_get_current_time (&gt);
-        gchar *tmp = g_time_val_to_iso8601 (&gt);
-        output = g_string_append(output, tmp);
-        g_free (tmp);
-	output = g_string_append(output, ": \t");
-	output = g_string_append(output, Action);
-	output = g_string_append(output, ": \t");
-	output = g_string_append(output, Entry);
-	output = g_string_append(output, "\n");
+                GString *output = g_string_new (gtk_text_buffer_get_text (log_buf,
+                                                                          &start_iter, &end_iter,
+                                                                          FALSE));
+                // append to log
+                GTimeVal gt;
+                g_get_current_time (&gt);
+                gchar *tmp = g_time_val_to_iso8601 (&gt);
+                output = g_string_append(output, tmp);
+                g_free (tmp);
+                output = g_string_append(output, ": \t");
+                output = g_string_append(output, Action);
+                output = g_string_append(output, ": \t");
+                output = g_string_append(output, Entry);
+                output = g_string_append(output, "\n");
 
-	gtk_text_buffer_set_text (log_buf, output->str, -1);
-	g_string_free(output, TRUE);
+                gtk_text_buffer_set_text (log_buf, output->str, -1);
+                g_string_free(output, TRUE);
 
-	// scroll to end
-	gtk_text_buffer_get_end_iter (log_buf, &end_iter);
-	end_mark = gtk_text_buffer_create_mark (log_buf, "cursor", &end_iter,
-                                                FALSE);
-	g_object_ref (end_mark);
-	gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (log_view),
-				     end_mark, 0.0, FALSE, 0.0, 0.0);
-	g_object_unref (end_mark);
+                // scroll to end
+                gtk_text_buffer_get_end_iter (log_buf, &end_iter);
+                end_mark = gtk_text_buffer_create_mark (log_buf, "cursor", &end_iter,
+                                                        FALSE);
+                g_object_ref (end_mark);
+                gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (log_view),
+                                              end_mark, 0.0, FALSE, 0.0, 0.0);
+                g_object_unref (end_mark);
+        }
 }
