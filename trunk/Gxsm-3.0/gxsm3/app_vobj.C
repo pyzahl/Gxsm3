@@ -1126,11 +1126,6 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
 	double item_x=0., item_y=0.;
         cairo_item* item = NULL;
 	
-	if (lock && !(event->type == GDK_BUTTON_PRESS && event->button.button == 2)){
-		Update();
-		return false;
-	}
-	
 	item_x = mxy[0];
 	item_y = mxy[1];
 
@@ -1158,6 +1153,45 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
         if (!item)
                 return false;
 
+        // locked item?
+	if (lock){
+                g_message ("VObject::check_event:  LOCKED OBJ  b=%d",event->button.button);
+                switch (event->type){
+                case GDK_BUTTON_PRESS:
+                        switch(event->button.button){
+                        case 1:
+                                x = item_x;
+                                y = item_y;
+                                
+                                touched_item  = item;
+                                touched_xy[0] = item_x;
+                                touched_xy[1] = item_y;
+                                        
+                                // cursor = gdk_cursor_new(GDK_FLEUR);
+                                // gdk_cursor_destroy(cursor);
+
+                                item->grab ();
+                                dragging = true;
+                                Update();
+                                break;
+                        default:
+                                break;
+                        }
+                        break;
+                case GDK_ENTER_NOTIFY:
+                        set_color_to_hilit ();
+                        Update();
+                        break;
+                case GDK_LEAVE_NOTIFY:
+                        set_color_to_inactive ();
+                        Update();
+                        break;
+                default:
+                        break;
+                }
+                return false;
+	}
+        
 	switch (event->type){
         case GDK_BUTTON_PRESS:
                 switch(event->button.button){
