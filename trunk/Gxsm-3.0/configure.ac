@@ -4,8 +4,8 @@ dnl Process this file with autoconf to produc a configure script.
 AC_PREREQ(2.63.2)
 
 m4_define(gxsm3_major_version, 3)
-m4_define(gxsm3_minor_version, 40)
-m4_define(gxsm3_micro_version, 2)
+m4_define(gxsm3_minor_version, 41)
+m4_define(gxsm3_micro_version, 0)
 m4_define(gxsm3_version, gxsm3_major_version.gxsm3_minor_version.gxsm3_micro_version)
 
 AC_INIT([gxsm3],
@@ -14,7 +14,7 @@ AC_INIT([gxsm3],
 	[gxsm3],
 	[http://gxsm.sf.net])
 
-AC_DEFINE_UNQUOTED(GXSM_VERSION_NAME, "Red Force","GXSM version identifier screen name")
+AC_DEFINE_UNQUOTED(GXSM_VERSION_NAME, "Red Force One","GXSM version identifier screen name")
 AC_DEFINE_UNQUOTED(GXSM_WIDGET_PAD, 5, "default widget padding (replaces obsolete GNOME_PAD)")
 
 AC_DEFINE_UNQUOTED(GXSM_RES_BASE_PATH_DOT,     "org.gnome.gxsm3",              "GSettings and Builder dot base path without leadiong or trailing slashes")
