@@ -154,8 +154,8 @@ static GActionEntry win_view_popup_entries[] = {
         { "set-local-radius", ViewControl::view_tool_mvprop_radius_radio_callback, "s", "'10'", NULL },
         { "move-all-objects-loc-max", ViewControl::view_tool_all2locmax_callback, NULL, NULL, NULL },
         { "remove-all-objects", ViewControl::view_tool_removeall_callback, NULL, NULL, NULL },
-        { "show-probe-events", ViewControl::events_probe_callback, NULL, NULL, NULL },
-        { "show-user-events", ViewControl::events_user_callback, NULL, NULL, NULL },
+        //        { "show-probe-events", ViewControl::events_probe_callback, NULL, NULL, NULL },
+        //        { "show-user-events", ViewControl::events_user_callback, NULL, NULL, NULL },
         { "show-event-lables", ViewControl::events_labels_callback, NULL, NULL, NULL },
         { "events-verbose", ViewControl::events_verbose_callback, NULL, NULL, NULL },
         { "remove-all-events", ViewControl::events_remove_callback, NULL, NULL, NULL },
@@ -169,7 +169,6 @@ static GActionEntry win_object_popup_entries[] = {
         { "get-coordinates-as-global-reference", ViewControl::obj_global_ref_point_callback, NULL, NULL, NULL },
         { "follow", ViewControl::obj_follow_callback, NULL, "false", NULL },
         { "goto-local-max", ViewControl::obj_go_locmax_callback, NULL, NULL, NULL },
-        { "dump-object-properties", ViewControl::obj_dump_callback, NULL, NULL, NULL },
         { "remove-line-object", ViewControl::obj_remove_callback, NULL, NULL, NULL },
         { "object-properties", ViewControl::obj_properties_callback, NULL, NULL, NULL },
         { "get-coordinates", ViewControl::obj_getcoords_callback, NULL, NULL, NULL },
@@ -180,7 +179,6 @@ static GActionEntry win_object_popup_entries[] = {
         { "object-properties", ViewControl::obj_properties_callback, NULL, NULL, NULL },
         { "add-polyline-node", ViewControl::obj_addnode_callback, NULL, NULL, NULL },
         { "delete-polyline-node", ViewControl::obj_delnode_callback, NULL, NULL, NULL },
-        { "dump-object-properties", ViewControl::obj_dump_callback, NULL, NULL, NULL },
         { "use-event-data", ViewControl::obj_event_use_callback, NULL, NULL, NULL },
         { "open-event", ViewControl::obj_event_open_callback, NULL, NULL, NULL },
         { "save-event", ViewControl::obj_event_save_callback, NULL, NULL, NULL },
@@ -227,7 +225,8 @@ public:
 			);
 	};
 	static void varshow_toggel_cb (GtkWidget *widget, gchar *varname){
-		XsmRescourceManager xrm("App_View_NCraw");
+                g_warning ("varshow_toggel_cb -- missing port.");
+		// XsmRescourceManager xrm("App_View_NCraw");
                 // gsettings!!!
                 // ==> <key name="view-nc-raw" type="b">
 		// xrm.PutBool (varname, gtk_toggle_button_get_active ( GTK_TOGGLE_BUTTON (widget)));
@@ -1139,24 +1138,24 @@ void ViewControl::AppWindowInit(const gchar *title){
                 gtk_widget_show (header_menu_button);
         }
 
-        header_menu_button = side_pane_control = gtk_toggle_button_new ();
-        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("view-dual-symbolic", tmp_toolbar_icon_size));
-        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
-        gtk_widget_show (header_menu_button);
-	gtk_widget_set_tooltip_text (header_menu_button, N_("Show Side Info/Control Pane"));
+        side_pane_control = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (side_pane_control), gtk_image_new_from_icon_name ("view-dual-symbolic", tmp_toolbar_icon_size));
+        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), side_pane_control);
+        gtk_widget_show (side_pane_control);
+	gtk_widget_set_tooltip_text (side_pane_control, N_("Show Side Info/Control Pane"));
         g_settings_bind (view_settings, "sidepane-show",
                          G_OBJECT (side_pane_control), "active",
                          G_SETTINGS_BIND_DEFAULT);
         g_signal_connect (G_OBJECT (side_pane_control), "toggled",
                           G_CALLBACK (ViewControl::side_pane_callback), this);
         
-        header_menu_button = side_pane_control = gtk_toggle_button_new ();
+        header_menu_button = gtk_toggle_button_new ();
         gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("mark-location-symbolic", tmp_toolbar_icon_size));
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
         gtk_widget_show (header_menu_button);
         gtk_widget_set_name (header_menu_button, "view-headerbar-tip-follow"); // name used by CSS to apply custom color scheme
 	gtk_widget_set_tooltip_text (header_menu_button, N_("Enable Tip (Scan Position) Follow Point Objects"));
-        g_signal_connect (G_OBJECT (side_pane_control), "toggled",
+        g_signal_connect (G_OBJECT (header_menu_button), "toggled",
                           G_CALLBACK (ViewControl::tip_follow_callback), this);
         //        GtkStyleContext *context = gtk_widget_get_style_context (header_menu_button);
         //        gtk_style_context_add_class(context, ".view-headerbar-tip-follow");
@@ -1366,14 +1365,16 @@ void ViewControl::add_event_obj(ScanEvent *se, ViewControl *vc)
 
 void ViewControl::RemoveEventObjects(){
 // unsets object flag and delete obj!
-	g_slist_foreach((GSList*) geventlist, (GFunc) ViewControl::unflag_scan_event_and_remove_obj, this); 
-	g_slist_free(geventlist);
-	geventlist = NULL;
-
+        if (geventlist){
+                g_slist_foreach((GSList*) geventlist, (GFunc) ViewControl::unflag_scan_event_and_remove_obj, this); 
+                g_slist_free(geventlist);
+                geventlist = NULL;
+        }
 	active_event = NULL; 
 }
 
 void ViewControl::set_event_label(ScanEvent *se, ViewControl *vc){
+        g_warning ("ViewControl::set_event_label -- N/A.");
 }
 
 void ViewControl::SetEventLabels(int mode){
@@ -1474,12 +1475,12 @@ void ViewControl::update_event_panel (ScanEvent *se){
 	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ychan), yi);
 
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (tog_plot)))
-		obj_event_plot_callback (NULL, NULL, this);
+		obj_event_plot_callback (NULL, this);
 
 // 	i = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_xchan));
 }
 
-void  ViewControl::obj_event_plot_callback (GSimpleAction *simple, GVariant *parameter, 
+void  ViewControl::obj_event_plot_callback (GtkWidget* widget, 
                                             gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
 	if (!vc->active_event) return;
@@ -2897,31 +2898,27 @@ void ViewControl::view_view_zoom_fix_radio_callback (GSimpleAction *action, GVar
         g_variant_unref (old_state);
 }
 
-// Events control
-void ViewControl::events_probe_callback (GSimpleAction *simple, GVariant *parameter, 
+// Events probe show/hide control
+void ViewControl::events_probe_callback (GtkWidget *widget,
                                          gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
 	vc->RemoveEventObjects ();
 
-	int state;
-        state = g_variant_get_int32 (parameter);
-
-	if (state)
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
 		vc->SetEventFilter ("P",0);
 	else
 		vc->SetEventFilter ("-",0);
 
 	vc->RescanEventObjects ();
 }
-void ViewControl::events_user_callback (GSimpleAction *simple, GVariant *parameter, 
+
+// Events user show/hide control
+void ViewControl::events_user_callback (GtkWidget *widget,
                                         gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
 	vc->RemoveEventObjects ();
 
-	int state;
-        state = g_variant_get_int32 (parameter);
-
-	if (state)
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
 		vc->SetEventFilter ("U",1);
 	else
 		vc->SetEventFilter ("-",1);
@@ -3077,7 +3074,7 @@ void ViewControl::obj_delnode_callback (GSimpleAction *simple, GVariant *paramet
 	vo->DelNode ();
 }
 
-void ViewControl::obj_event_dump_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
+void ViewControl::obj_event_dump_callback (GtkWidget *widget, gpointer user_data){
 	ViewControl *vc = (ViewControl *) user_data;
 	// VObject *vo = (VObject*)g_object_get_data (G_OBJECT (vc->canvas), "VObject");
 	if(vc->GetActiveScanEvent ())
