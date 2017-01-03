@@ -82,8 +82,6 @@ Other GUI, window manager, ... related:
   ...you may want to use for a better experience a high end graphics card and enjoy...
   ...or use a different scheme (find one, make/modify...) or use a simple fast window manager
 
-- Issues with VP auto plot on LT-STM machine with Nvidia Quadro K2200 (GM107GL) , nv driver
-
 Py Scripts:
 - spm_control/tune scope -- adjust defaults
 - tune scope -- memorize last settings (f0, ampl,...)
