@@ -1394,8 +1394,9 @@ void ViewControl::update_event_panel (ScanEvent *se){
 	}
 
 	active_event = se;
-//	se->print ();
-
+	se->print ();
+        g_message ("ViewControl::update_event_panel");
+        
 	xi = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_xchan));
 	yi = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_ychan));
 
