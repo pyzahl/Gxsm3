@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -22,8 +24,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 /* ignore this module for docuscan
 % PlugInModuleIgnore
@@ -173,7 +173,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
 	while ((garr = dspc->pop_probedata_arrays ()) != NULL){
 		++popped;
 		
-// atach event to active channel, if one exists -- raster mode ------------------------------
+// attach event to active channel, if one exists -- raster mode ------------------------------
 
 		ScanEvent *se = NULL;
 		if (gapp->xsm->MasterScan){
@@ -432,9 +432,9 @@ int DSPControl::Probing_graph_callback( GtkWidget *widget, DSPControl *dspc, int
 
 	XSM_DEBUG_PG ("DSPControl::Probing_graph_callback -- enter");
 
-#if 0
 	dspc->dump_probe_hdr (); // TESTING
 
+#if 0
 	XSM_DEBUG_PG ("Probing_graph_callback data -- current index=" << dspc->current_probe_data_index );
 
 	if (!dspc->current_probe_data_index){

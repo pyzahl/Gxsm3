@@ -90,8 +90,9 @@ public:
                 ViewControl *vc = (ViewControl *) user_data; if(vc->ZoomQFkt) (*vc->ZoomQFkt)(0,1,vc->ZQFktData); };
         static void view_view_zoom_fix_radio_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
-        static void events_probe_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-        static void events_user_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void events_probe_callback (GtkWidget *widget, gpointer user_data);
+        static void events_user_callback (GtkWidget *widget, gpointer user_data);
+
         static void events_labels_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void events_verbose_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void events_remove_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
@@ -112,8 +113,8 @@ public:
         static void obj_reset_counter_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void obj_show_counter_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
-        static void obj_event_plot_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-        static void obj_event_dump_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void obj_event_plot_callback (GtkWidget *widget, gpointer user_data);
+        static void obj_event_dump_callback (GtkWidget *widget, gpointer user_data);
 
         static void side_pane_action_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data); // F9 accel key
         static void side_pane_callback (GtkWidget *widget, gpointer user_data);
