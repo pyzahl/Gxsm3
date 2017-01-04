@@ -70,6 +70,53 @@ inline void mul_vec_vec (double u[3], double v[3]){
 		u[i] *= v[i];
 }
 
+inline void make_mat_zeros (double m[3][3]){
+	for (int i=0; i<3; ++i)
+                for (int j=0; j<3; ++j)
+                        m[i][j] = 0.;
+}
+ 
+inline void make_mat_kd (double m[3][3]){
+	for (int i=0; i<3; ++i)
+                for (int j=0; j<3; ++j)
+                        if (i == j)
+                                m[i][j] = 1.;
+                        else
+                                m[i][j] = 0.;
+}
+
+inline void make_mat_rot_xy_tr (double m[3][3], double phi, double tr[3]){
+        make_mat_kd (m);
+        double s=sin (phi*M_PI/180.);
+        double c=cos (phi*M_PI/180.);
+        m[0][0] = c;
+        m[0][1] = -s;
+        m[1][0] = s;
+        m[1][1] = c;
+	for (int i=0; i<3; ++i)
+                m[i][2] = tr[i];
+}
+ 
+inline void mul_mat_vec (double u[3], double m[3][3], double v[3]){
+	for (int i=0; i<3; ++i){
+                u[i] = 0.;
+                for (int j=0; j<3; ++j)
+                        u[i] += m[i][j]*v[j];
+        }
+}
+
+// 2d rot/affine + transformation, copy 3rd,4th dim
+inline void mul_mat_vec_tc4 (double u[4], double m[3][3], double v[4]){
+        double tmp[3] = { v[0], v[1], 1. };
+	for (int i=0; i<3; ++i){
+                u[i] = 0.;
+                for (int j=0; j<3; ++j)
+                        u[i] += m[i][j]*tmp[j];
+        }
+        u[2] += v[2]; // translate
+        u[3] = v[3]; // copy only
+}
+
 inline void mul_vec_scalar (double u[3], const double f){
 	for (int i=0; i<3; ++i)
 		u[i] *= f;
@@ -116,3 +163,18 @@ inline void print_vec (const gchar *name, const double v[3]){
 inline void print_vec4 (const gchar *name, const double v[4]){
         std::cout << name << " = [ " << v[0] << ", " << v[1] << ", " << v[2] << ", " << v[3] << "]" << std::endl;
 }
+
+inline void g_print_vec (const gchar *name, const double v[3]){
+        g_message ("%s = (%g, %g, %g)", name, v[0], v[1], v[2]);
+}
+
+inline void g_print_vec4 (const gchar *name, const double v[3]){
+        g_message ("%s = (%g, %g, %g, %g)", name, v[0], v[1], v[2], v[3]);
+}
+
+inline void g_print_mat (const gchar *name, const double m[3][3]){
+        g_message ("%s   /%6g, %6g, %6g\\", name, m[0][0], m[0][1], m[0][2]);
+        g_message ("%s = |%6g, %6g, %6g|",  name, m[1][0], m[1][1], m[1][2]);
+        g_message ("%s   \\%6g, %6g, %6g/", name, m[2][0], m[2][1], m[2][2]);
+}
+
