@@ -660,13 +660,16 @@ public:
                         double xy[3];
                         double z0[3] = { 0., 0., 4.167425 }; // top Cu -- valid for Mark's cu3ml10x8tma2s1vd.contA.xyz 
                         double mcenter[3];
-                        double m1[3] = {  1.28097400, 0.73657400, 0. }; // TMA-R 10x10bb
-                        double m2[3] = { -8.97151180, 0.73657400, 0. }; // TMA-L 10x10bb -> flip x&y
+                        //double m1[3] = {  1.28097400, 0.73657400, 0. }; // TMA-R 10x10bb
+                        //double m2[3] = { -8.97151180, 0.73657400, 0. }; // TMA-L 10x10bb -> flip x&y
+                        double m1[3] = { -4.71, 0., 0. }; // TMA-R 10x10bb
+                        double m2[3] = {  4.91, 0., 0. }; // TMA-L 10x10bb -> flip x&y
                         double m3[3] = {-14.097754,   9.615486,   0. }; // TMA-Lup60
                         double ma[3], mb[3], mc[3], m4[3], m5[3], m6[3], tmp[3];
                         // Cu  -14.097754    9.615486    4.137566
                         // Cu   -3.845269    9.615486    4.137566
 
+                        double flip_non[3] ={  1.,  1.,  1. };
                         double flip_xy[3] = { -1., -1.,  1. };
                         double flip_y[3]  = {  1., -1.,  1. };
                         double flip_x[3]  = { -1.,  1.,  1. };
