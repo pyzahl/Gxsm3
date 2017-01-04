@@ -632,22 +632,23 @@ public:
 
         // custom model filter function
         xyzc_model (xyzc_model *source, gchararray filter, gchararray filter_param = NULL, Scan *scan_area=NULL){
-                size = source->get_size ();
+                int src_size = source->get_size ();
                 probe = NULL;
-                model = new Model_item[size+1];
-                for (int pos=0; pos<size+1; ++pos){
-                        model[pos].xyzc[0] = 0.;
-                        model[pos].xyzc[1] = 0.;
-                        model[pos].xyzc[2] = 0.;
-                        model[pos].xyzc[3] = 0.;
-                        model[pos].N = -1;
-                }
                 make_probe ();
 
                 Model_item atom;
                 
                 if (!strncmp (filter, "None", 4)){ // copy only
-                        for (int i=0; i<size && source->model[i].N > 0; ++i){
+                        size = src_size;
+                        model = new Model_item[size+1];
+                        for (int pos=0; pos<size+1; ++pos){
+                                model[pos].xyzc[0] = 0.;
+                                model[pos].xyzc[1] = 0.;
+                                model[pos].xyzc[2] = 0.;
+                                model[pos].xyzc[3] = 0.;
+                                model[pos].N = -1;
+                        }
+                        for (int i=0; i<src_size && source->model[i].N > 0; ++i){
                                 copy_vec4 (atom.xyzc, source->model[i].xyzc);
                                 atom.N = source->model[i].N;
                                 put_atom(&atom, i);
@@ -657,7 +658,7 @@ public:
                 } else if ( !strncmp (filter, "TMA-C+TMA-R-flip", 16)  || !strncmp (filter, "TMA-Rosette", 11) ){
                         int j=0;
                         double xy[3];
-                        double z0[3] = { 0., 0., 4.167425 }; // top Cu
+                        double z0[3] = { 0., 0., 4.167425 }; // top Cu -- valid for Mark's cu3ml10x8tma2s1vd.contA.xyz 
                         double mcenter[3];
                         double m1[3] = {  1.28097400, 0.73657400, 0. }; // TMA-R 10x10bb
                         double m2[3] = { -8.97151180, 0.73657400, 0. }; // TMA-L 10x10bb -> flip x&y
@@ -692,17 +693,54 @@ public:
                         sub_from_vec (m5, ma);
                         copy_vec (m6, m5);
                         sub_from_vec (m6, mb);
-                        
-                        if (!strncmp (filter, "TMA-C+TMA-R-flip+Cu111", 22))
+
+                        size = 0;
+                        if (!strncmp (filter, "TMA-C+TMA-R-flip+Cu111", 22)){
+                                g_message ("include Cu111=Yes");
                                 include_Cu = 1;
-
-                        if (!strncmp (filter, "TMA-Rosette+Cu111", 17))
+                                size = src_size + 21;
+                        }
+                        
+                        if (!strncmp (filter, "TMA-Rosette+Cu111", 17)){
+                                g_message ("include Cu111=Yes");
                                 include_Cu = 2;
-
-                        if (!strncmp (filter, "TMA-Rosette", 11))
+                                size = src_size;
+                        }
+                        
+                        if (!strncmp (filter, "TMA-Rosette", 11)){
+                                g_message ("Rosette=Yes");
                                 rosette = 1;
-                                
-                        for (int i=0; i<size && source->model[i].N > 0; ++i){
+                                size += 8*21;
+                        }
+
+                        double phi=0.;
+                        double tr[3]={0.,0.,0.};
+                        if (filter_param){
+                                gchar *c=filter_param;
+                                for (; *c; ++c){
+                                        switch (*c){
+                                        case 'R': ++c; while (*c && (*c ==' ' || *c=='=')) ++c; phi = atof (c); break;
+                                        case 'X': ++c; while (*c && (*c ==' ' || *c=='=')) ++c; tr[0] = atof (c+1); break;
+                                        case 'Y': ++c; while (*c && (*c ==' ' || *c=='=')) ++c; tr[1] = atof (c+1); break;
+                                        case 'Z': ++c; while (*c && (*c ==' ' || *c=='=')) ++c; tr[2] = atof (c+1); break;
+                                        default: break;
+                                        }
+                                }
+                                g_message ("Rosette Transformation: R=%g deg Tr=(%g, %g, %g)", phi, tr[0], tr[1], tr[2]);
+                        }
+                        make_mat_rot_xy_tr (TrMat, phi, tr);
+                        g_print_mat ("TrMat", TrMat);
+                        
+                        model = new Model_item[size+1];
+                        for (int pos=0; pos<size+1; ++pos){
+                                model[pos].xyzc[0] = 0.;
+                                model[pos].xyzc[1] = 0.;
+                                model[pos].xyzc[2] = 0.;
+                                model[pos].xyzc[3] = 0.;
+                                model[pos].N = -1;
+                        }
+                        
+                        for (int i=0; i<src_size && source->model[i].N > 0; ++i){
                                 copy_vec4 (atom.xyzc, source->model[i].xyzc);
                                 atom.N = source->model[i].N;
                                 sub_from_vec (atom.xyzc, z0);
@@ -717,7 +755,7 @@ public:
                                 copy_vec (xy, atom.xyzc); xy[2]=0.;
                                 sub_from_vec (xy, m1);
                                 if (norm_vec(xy) < r && atom.xyzc[2] > 1.){ // TMA1 only "TMA-X"
-                                        put_atom(&atom, j++);
+                                        put_atom(&atom, j++, 1);
                                 }
                                 
                                 copy_vec (xy, atom.xyzc); xy[2]=0.;
@@ -726,7 +764,7 @@ public:
                                         sub_from_vec (atom.xyzc, m2);
                                         mul_vec_vec (atom.xyzc, flip_xy);
                                         add_to_vec (atom.xyzc, m2);
-                                        put_atom(&atom, j++);
+                                        put_atom(&atom, j++, 1);
                                         
                                         if (rosette){ // translate+flip to build rosette
                                                 // TMA3 non-flip
@@ -734,7 +772,7 @@ public:
                                                 sub_from_vec (atom.xyzc, z0);
                                                 sub_from_vec (atom.xyzc, m2);
                                                 add_to_vec (atom.xyzc, m3);
-                                                put_atom(&atom, j++);
+                                                put_atom(&atom, j++, 1);
                                                 
                                                 // TMA3p flip
                                                 copy_vec (atom.xyzc, source->model[i].xyzc);
@@ -743,7 +781,7 @@ public:
                                                 mul_vec_vec (atom.xyzc, flip_xy);
                                                 add_to_vec (atom.xyzc, m3);
                                                 add_to_vec (atom.xyzc, ma);
-                                                put_atom(&atom, j++);
+                                                put_atom(&atom, j++, 1);
 
                                                 // TMA4 flip
                                                 copy_vec (atom.xyzc, source->model[i].xyzc);
@@ -751,14 +789,14 @@ public:
                                                 sub_from_vec (atom.xyzc, m2);
                                                 mul_vec_vec (atom.xyzc, flip_xy);
                                                 add_to_vec (atom.xyzc, m4);
-                                                put_atom(&atom, j++);
+                                                put_atom(&atom, j++, 1);
 
                                                 // TMA5
                                                 copy_vec (atom.xyzc, source->model[i].xyzc);
                                                 sub_from_vec (atom.xyzc, z0);
                                                 sub_from_vec (atom.xyzc, m2);
                                                 add_to_vec (atom.xyzc, m5);
-                                                put_atom(&atom, j++);
+                                                put_atom(&atom, j++, 1);
 
                                                 // TMA6 flip
                                                 copy_vec (atom.xyzc, source->model[i].xyzc);
@@ -766,7 +804,7 @@ public:
                                                 sub_from_vec (atom.xyzc, m2);
                                                 mul_vec_vec (atom.xyzc, flip_xy);
                                                 add_to_vec (atom.xyzc, m6);
-                                                put_atom(&atom, j++);
+                                                put_atom(&atom, j++, 1);
 
                                                 // TMA1p flip
                                                 copy_vec (atom.xyzc, source->model[i].xyzc);
@@ -775,7 +813,7 @@ public:
                                                 mul_vec_vec (atom.xyzc, flip_xy);
                                                 add_to_vec (atom.xyzc, m2);
                                                 sub_from_vec (atom.xyzc, mc);
-                                                put_atom(&atom, j++);
+                                                put_atom(&atom, j++, 1);
 
                                                 // TMA2p
                                                 copy_vec (atom.xyzc, source->model[i].xyzc);
@@ -785,7 +823,7 @@ public:
                                                 copy_vec(tmp, mc);
                                                 mul_vec_vec (tmp, flip_y);
                                                 add_to_vec (atom.xyzc, tmp);
-                                                put_atom(&atom, j++);
+                                                put_atom(&atom, j++, 1);
 
 
                                         }
@@ -800,6 +838,16 @@ public:
                         double origin[4];
                         double corner[4];
                         double ra[4];
+
+                        size = src_size;
+                        model = new Model_item[size+1];
+                        for (int pos=0; pos<size+1; ++pos){
+                                model[pos].xyzc[0] = 0.;
+                                model[pos].xyzc[1] = 0.;
+                                model[pos].xyzc[2] = 0.;
+                                model[pos].xyzc[3] = 0.;
+                                model[pos].N = -1;
+                        }
 
                         if (filter_param)
                                 std::cout << "Make_Model Filter: Custom. " << filter_param << std::endl;
@@ -901,9 +949,12 @@ public:
                 }
         };
         
-        void put_atom (Model_item *atom, int pos) {
+        void put_atom (Model_item *atom, int pos, int mode=0) {
                 if (pos < size){
-                        copy_vec4 (model[pos].xyzc, atom->xyzc);
+                        if (mode == 1){
+                                mul_mat_vec_tc4 (model[pos].xyzc, TrMat, atom->xyzc);
+                        } else
+                                copy_vec4 (model[pos].xyzc, atom->xyzc);
                         model[pos].N = atom->N;
                         std::cout << pos << " => N=" << model[pos].N
                                   << " " << model[pos].xyzc[0]
@@ -987,6 +1038,8 @@ public:
 private:
         int size;
         double sim_z0, sim_zf, sim_dz;
+
+        double TrMat[3][3];
 };
 
 

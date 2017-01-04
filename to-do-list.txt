@@ -31,6 +31,7 @@ current work in progress, testing, evaluating while working with it, optimizing,
 pending ports:
 -> View 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2 -- can any one help here? ==> vsurf3d.C
 -> View: OSD objects missing
+-> View, Objects(s) Label -- missing, set fonst issue, Objekt coordinate spin not working right +/- limits off?, ShowLine Cursors dragging not hooked (left/right via menu works) but only blue m,ark in scan line object?
 -> pending/obsolete/outdated??:  port to Grid and new gxsm3 internal BuildParam helper: old SR-STD/SP2 GUI [old SR-STD HwI not availabe at this time for gxsm3]
 
 pending solution/reworks:
