@@ -1337,16 +1337,17 @@ void Surface::MathOperationS(gboolean (*MOp)(MATHOPPARAMDONLY)){
 
         do{
                 if((ChDest=FindChan(ID_CH_M_MATH, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
-                        if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
+                        if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // kein Math Scan, dann neuen anlegen, noch moelich ?
                                 // alle belegt !!!
                                 XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
                                 return;
                         }
                 }
-                if (scan[ChDest] == ActiveScan){
-                        start = ChDest+1;
-                        ChDest = -1;
-                }
+                if (ActiveScan)
+                        if (scan[ChDest] == ActiveScan){
+                                start = ChDest+1;
+                                ChDest = -1;
+                        }
         } while (ChDest < 0);
 
         // anlegen/erneuern einen Math Scans
