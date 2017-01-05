@@ -93,7 +93,7 @@ inline void make_mat_rot_xy_tr (double m[3][3], double phi, double tr[3]){
         m[0][1] = -s;
         m[1][0] = s;
         m[1][1] = c;
-	for (int i=0; i<3; ++i)
+	for (int i=0; i<2; ++i)
                 m[i][2] = tr[i];
 }
  
@@ -102,6 +102,14 @@ inline void mul_mat_vec (double u[3], double m[3][3], double v[3]){
                 u[i] = 0.;
                 for (int j=0; j<3; ++j)
                         u[i] += m[i][j]*v[j];
+        }
+}
+
+ inline void mul_mattr_vec (double u[3], double m[3][3], double v[3]){
+	for (int i=0; i<3; ++i){
+                u[i] = 0.;
+                for (int j=0; j<3; ++j)
+                        u[i] += m[j][i]*v[j];
         }
 }
 

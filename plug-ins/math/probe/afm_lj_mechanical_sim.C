@@ -581,7 +581,7 @@ public:
                                 if (xyzc_line[0] == ' ')
                                         xyzc_line[0] = '_';
 
-                                std::cout << xyzc_line << std::endl;
+                                //std::cout << xyzc_line << std::endl;
         
                                 gchar **record = g_strsplit_set(xyzc_line, " \t", -1);
                                 gchar **token = record;
@@ -598,7 +598,7 @@ public:
                                                         *token[0] = ' ';
                                         
                                                 // find Element
-                                                std::cout << "Searching for " << *token << std::endl;
+                                                //std::cout << "Searching for " << *token << std::endl;
                                                 for (int n=0; Elements[n].N >= 0; ++n){
                                                         // std::cout << "comparing N=" << n << ": >" << Elements[n].name << "< with >" << *token << "<" << std::endl;
                                                         if (! strcmp (g_strstrip(*token), Elements[n].name)){
@@ -611,7 +611,7 @@ public:
                                                         std::cout << "ERROR: Unkown Element L-J Parameters for >" << *token << "<" << std::endl;
                                                         continue; // try to continue
                                                 }
-                                                std::cout << "N=" << atom_entry->N << std::endl;
+                                                //std::cout << "N=" << atom_entry->N << std::endl;
                                                 ++j;
                                                 continue;
                                         }
@@ -621,7 +621,7 @@ public:
                                                 ++j;
                                         }
                                 }
-                                std::cout << std::endl;
+                                //std::cout << std::endl;
                                 if (atom_entry->N > 0)
                                         put_atom (atom_entry, count++);
                                 g_strfreev (record);
@@ -658,18 +658,22 @@ public:
                 } else if ( !strncmp (filter, "TMA-C+TMA-R-flip", 16)  || !strncmp (filter, "TMA-Rosette", 11) ){
                         int j=0;
                         double xy[3];
+                        double xyr[3];
                         double z0[3] = { 0., 0., 4.167425 }; // top Cu -- valid for Mark's cu3ml10x8tma2s1vd.contA.xyz 
-                        double mcenter[3];
+                        //double mcenter[3];
                         //double m1[3] = {  1.28097400, 0.73657400, 0. }; // TMA-R 10x10bb
                         //double m2[3] = { -8.97151180, 0.73657400, 0. }; // TMA-L 10x10bb -> flip x&y
-                        double m1[3] = { -4.71, 0., 0. }; // TMA-R 10x10bb
-                        double m2[3] = {  4.91, 0., 0. }; // TMA-L 10x10bb -> flip x&y
-                        double m3[3] = {-14.097754,   9.615486,   0. }; // TMA-Lup60
-                        double ma[3], mb[3], mc[3], m4[3], m5[3], m6[3], tmp[3];
+                        //double m3[3] = {-14.097754,   9.615486,   0. }; // TMA-Lup60
+                        double m1[3] = { -4.71, 0., 0. }; // TMA-L 10x10bb -> 0,0 at origin
+                        double m2[3] = {  4.91, 0., 0. }; // TMA-R 10x10bb flipped -> 4r,0 pos
+                        //                        double m3[3] = { -9.387754,  8.878912,   0. }; // TMA-Lup60
+                        //double m4[3] = { 10.2245,  0.,   0. }; // TMA-R pos
+                        //double ma[3], mb[3], mc[3], m4[3], m5[3], m6[3], tmp[3];
                         // Cu  -14.097754    9.615486    4.137566
                         // Cu   -3.845269    9.615486    4.137566
-
-                        double flip_non[3] ={  1.,  1.,  1. };
+                        // Cu a0=3.6149 r=2.5561  4r=10.2245
+                        double e_cu[3][3] = { { 2.5561, 0., 0. }, { 0., 0., 0. }, { 0.,0.,2.5561}};
+                        double no_flip[3] ={  1.,  1.,  1. };
                         double flip_xy[3] = { -1., -1.,  1. };
                         double flip_y[3]  = {  1., -1.,  1. };
                         double flip_x[3]  = { -1.,  1.,  1. };
@@ -677,26 +681,41 @@ public:
                         double rCu=14.;
                         int include_Cu=0;
                         int rosette=0;
+                        double zero[3] = {0.,0.,0.};
+                        double tma_nL[6][3] = {
+                                { 0.0,  0.0,  0.0},
+                                { 7.5,  3.0,  0.0},
+                                { 4.5,  7.5,  0.0},
+                                {12.0, 10.5,  0.0},
+                                { 9.0, 15.0,  0.0},
+                                { 1.5, 12.0,  0.0}
+                        };
+                        double tma_nR[6][3] = {
+                                {-4.0, -3.5,  0.0},
+                                { 3.5, -0.5,  0.0},
+                                { 8.0,  7.0,  0.0},
+                                { 0.5,  4.0,  0.0},
+                                { 5.0, 11.5,  0.0},
+                                {12.5, 14.5,  0.0}
+                        };
+                        double tma_L[5][3], tma_R[5][3];
+                        double rotM_L[3][3];
+                        double rotM_R[3][3];
+                        make_mat_rot_xy_tr (rotM_L, -7.5, zero);
+                        make_mat_rot_xy_tr (rotM_R, -7.5, zero);
+                        
+                        make_mat_rot_xy_tr (TrMat, 120., zero);
+                        mul_mat_vec (e_cu[1], TrMat, e_cu[0]);
 
-                        copy_vec (mcenter, m1);
-                        add_to_vec (mcenter, m2);
-                        mul_vec_scalar (mcenter, 0.5);
-
-                        // build base
-                        copy_vec (ma, m2);
-                        sub_from_vec (ma, m1);
-                        copy_vec (mb, m3);
-                        sub_from_vec (mb, m1);
-                        sub_from_vec (mb, ma);
-                        copy_vec (mc, m3);
-                        sub_from_vec (mc, m1);
-                        copy_vec (m4, m1);
-                        add_to_vec (m4, mb); add_to_vec (m4, mb);
-                        copy_vec (m5, m4);
-                        sub_from_vec (m5, ma);
-                        copy_vec (m6, m5);
-                        sub_from_vec (m6, mb);
-
+                        g_print_mat ("e_Cu", e_cu);
+                        
+                        for (int k=0; k<6; ++k){
+                                mul_mattr_vec (tma_L[k], e_cu, tma_nL[k]);
+                                g_print_vec ("tma_L", tma_L[k]);
+                                mul_mattr_vec (tma_R[k], e_cu, tma_nR[k]);
+                                g_print_vec ("tma_R", tma_R[k]);
+                        }
+                        
                         size = 0;
                         if (!strncmp (filter, "TMA-C+TMA-R-flip+Cu111", 22)){
                                 g_message ("include Cu111=Yes");
@@ -726,6 +745,19 @@ public:
                                         case 'X': ++c; while (*c && (*c ==' ' || *c=='=')) ++c; tr[0] = atof (c+1); break;
                                         case 'Y': ++c; while (*c && (*c ==' ' || *c=='=')) ++c; tr[1] = atof (c+1); break;
                                         case 'Z': ++c; while (*c && (*c ==' ' || *c=='=')) ++c; tr[2] = atof (c+1); break;
+                                        case 'A': ++c; while (*c && (*c ==' ' || *c=='=')) ++c;
+                                                {
+                                                        double alpha = atof (c+1);
+                                                        make_mat_rot_xy_tr (rotM_L, alpha, zero);
+                                                        make_mat_rot_xy_tr (rotM_R, alpha, zero);
+                                                }
+                                                break;
+                                        case 'B': ++c; while (*c && (*c ==' ' || *c=='=')) ++c;
+                                                {
+                                                        double alpha = atof (c+1);
+                                                        make_mat_rot_xy_tr (rotM_R, alpha, zero);
+                                                }
+                                                break;
                                         default: break;
                                         }
                                 }
@@ -744,91 +776,72 @@ public:
                         }
                         
                         for (int i=0; i<src_size && source->model[i].N > 0; ++i){
+                                // Cu 3 ML Dimer: ~0/2/4 (Cu) ~7.4 (TMA)
+
+                                if (source->model[i].xyzc[2] > 12.)
+                                        continue;
+                                if (source->model[i].xyzc[2] < 3.)
+                                        continue;
+                                
+                                copy_vec4 (atom.xyzc, source->model[i].xyzc);
+                                atom.N = source->model[i].N;
+                                sub_from_vec (atom.xyzc, z0); // shift 1st Cu ML to Z=0
+
+                                if (include_Cu){
+                                        if (atom.xyzc[2] < 1. && atom.xyzc[2] > -0.5){ // Cu 1st layer only
+                                                put_atom(&atom, j++);
+                                        }
+                                        // make Cu lattice, Z=0
+                                        if (0){
+                                                for (int l=0; l<16; ++l)
+                                                        for (int m=0; m<16; ++m){
+                                                                double lm[3] = { (double)l, (double)m, 1. };
+                                                                mul_mattr_vec (xy, e_cu, lm);
+                                                                copy_vec (atom.xyzc, xy);
+                                                                put_atom(&atom, j++);
+                                                        }
+                                        }
+                                }
+                                
                                 copy_vec4 (atom.xyzc, source->model[i].xyzc);
                                 atom.N = source->model[i].N;
                                 sub_from_vec (atom.xyzc, z0);
 
-                                if (include_Cu){
-                                        copy_vec (xy, atom.xyzc); xy[2]=0.;
-                                        sub_from_vec (xy, mcenter);
-                                        if (norm_vec(xy) < rCu && atom.xyzc[2] < 1.) // Cu only
-                                                put_atom(&atom, j++);
-                                }
-                                
-                                copy_vec (xy, atom.xyzc); xy[2]=0.;
+                                copy_vec (xy, atom.xyzc);
                                 sub_from_vec (xy, m1);
-                                if (norm_vec(xy) < r && atom.xyzc[2] > 1.){ // TMA1 only "TMA-X"
-                                        put_atom(&atom, j++, 1);
+                                if (norm_vec(xy) < r && atom.xyzc[2] > 1.){ // TMA-L 
+                                        if (rosette){ // translate+flip to build rosette
+                                                for (int k=0; k<6; ++k){
+                                                        mul_mat_vec (xyr, rotM_L, xy);
+                                                        copy_vec (atom.xyzc, xyr);
+                                                        if (0)
+                                                                mul_vec_vec (atom.xyzc, flip_xy);
+                                                        add_to_vec (atom.xyzc, tma_L[k]);
+                                                        put_atom(&atom, j++, 1);
+                                                }
+                                        } else {
+                                                put_atom(&atom, j++, 1);
+                                        }
                                 }
                                 
-                                copy_vec (xy, atom.xyzc); xy[2]=0.;
+                                copy_vec4 (atom.xyzc, source->model[i].xyzc);
+                                atom.N = source->model[i].N;
+                                sub_from_vec (atom.xyzc, z0);
+
+                                copy_vec (xy, atom.xyzc);
                                 sub_from_vec (xy, m2);
-                                if (norm_vec(xy) < r && atom.xyzc[2] > 1.){ // TMA2, flip "TMA-
-                                        sub_from_vec (atom.xyzc, m2);
-                                        mul_vec_vec (atom.xyzc, flip_xy);
-                                        add_to_vec (atom.xyzc, m2);
-                                        put_atom(&atom, j++, 1);
-                                        
+                                if (norm_vec(xy) < r && atom.xyzc[2] > 1.){ // TMA-R
                                         if (rosette){ // translate+flip to build rosette
-                                                // TMA3 non-flip
-                                                copy_vec4 (atom.xyzc, source->model[i].xyzc);
-                                                sub_from_vec (atom.xyzc, z0);
-                                                sub_from_vec (atom.xyzc, m2);
-                                                add_to_vec (atom.xyzc, m3);
+                                                for (int k=0; k<6; ++k){
+                                                        mul_mat_vec (xyr, rotM_R, xy);
+                                                        copy_vec (atom.xyzc, xyr);
+                                                        if (0)
+                                                                mul_vec_vec (atom.xyzc, flip_xy);
+                                                        add_to_vec (atom.xyzc, tma_R[k]);
+                                                        put_atom(&atom, j++, 1);
+                                                }
+                                        } else {
                                                 put_atom(&atom, j++, 1);
-                                                
-                                                // TMA3p flip
-                                                copy_vec (atom.xyzc, source->model[i].xyzc);
-                                                sub_from_vec (atom.xyzc, z0);
-                                                sub_from_vec (atom.xyzc, m2);
-                                                mul_vec_vec (atom.xyzc, flip_xy);
-                                                add_to_vec (atom.xyzc, m3);
-                                                add_to_vec (atom.xyzc, ma);
-                                                put_atom(&atom, j++, 1);
-
-                                                // TMA4 flip
-                                                copy_vec (atom.xyzc, source->model[i].xyzc);
-                                                sub_from_vec (atom.xyzc, z0);
-                                                sub_from_vec (atom.xyzc, m2);
-                                                mul_vec_vec (atom.xyzc, flip_xy);
-                                                add_to_vec (atom.xyzc, m4);
-                                                put_atom(&atom, j++, 1);
-
-                                                // TMA5
-                                                copy_vec (atom.xyzc, source->model[i].xyzc);
-                                                sub_from_vec (atom.xyzc, z0);
-                                                sub_from_vec (atom.xyzc, m2);
-                                                add_to_vec (atom.xyzc, m5);
-                                                put_atom(&atom, j++, 1);
-
-                                                // TMA6 flip
-                                                copy_vec (atom.xyzc, source->model[i].xyzc);
-                                                sub_from_vec (atom.xyzc, z0);
-                                                sub_from_vec (atom.xyzc, m2);
-                                                mul_vec_vec (atom.xyzc, flip_xy);
-                                                add_to_vec (atom.xyzc, m6);
-                                                put_atom(&atom, j++, 1);
-
-                                                // TMA1p flip
-                                                copy_vec (atom.xyzc, source->model[i].xyzc);
-                                                sub_from_vec (atom.xyzc, z0);
-                                                sub_from_vec (atom.xyzc, m2);
-                                                mul_vec_vec (atom.xyzc, flip_xy);
-                                                add_to_vec (atom.xyzc, m2);
-                                                sub_from_vec (atom.xyzc, mc);
-                                                put_atom(&atom, j++, 1);
-
-                                                // TMA2p
-                                                copy_vec (atom.xyzc, source->model[i].xyzc);
-                                                sub_from_vec (atom.xyzc, z0);
-                                                sub_from_vec (atom.xyzc, m2);
-                                                add_to_vec (atom.xyzc, m1);
-                                                copy_vec(tmp, mc);
-                                                mul_vec_vec (tmp, flip_y);
-                                                add_to_vec (atom.xyzc, tmp);
-                                                put_atom(&atom, j++, 1);
-
-
                                         }
                                 }
                         }
