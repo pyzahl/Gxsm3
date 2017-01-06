@@ -499,6 +499,8 @@ Element Elements[] {
         { -1, "END.",{ -1.00 ,   -1.00  }, 0. }
 };
 
+#define GLOBAL_R_CUTOFF 8.0
+
 typedef struct{
         double xyzc[4]; // coordinates XYZ + partial Charge [Ang,Ang,Ang, C[e]]
         int    N;      // atom id / ordnungszahl -- match perdiodic table above
@@ -522,14 +524,54 @@ public:
         };
         
         xyzc_model (Model_item *m){
+                int p=0;
                 for (size = 0; m[size].N > 0; ++size);
                 probe = NULL;
                 model = new Model_item[size+1];
                 for (int pos=0; pos<size; ++pos){
-                        copy_vec4 (model[pos].xyzc, m[pos].xyzc);
-                        model[pos].N = m[pos].N;
+                        copy_vec4 (model[p].xyzc, m[pos].xyzc);
+                        model[p].N = m[pos].N;
+                        ++p;
                 }
-                mark_end (size);
+                mark_end (p);
+                make_probe ();
+        };
+        xyzc_model (xyzc_model *m, Scan *bb_ref_scan=NULL){
+                double bb[2][2] = {{-1000.,-1000.},{1000.,1000.}};
+                int p=0;
+                int model_size=0;
+                for (model_size = 0; m->model[model_size].N > 0; ++model_size);
+                probe = NULL;
+                if (bb_ref_scan){ // Bounding box
+                        bb_ref_scan->Pixel2World (0, bb_ref_scan->mem2d->GetNy()-1, bb[0][0], bb[0][1]);
+                        bb_ref_scan->Pixel2World (bb_ref_scan->mem2d->GetNx()-1, 0, bb[1][0], bb[1][1]);
+                        g_message ("BB=[ (%g,%g) :: (%g,%g)]", bb[0][0], bb[0][1], bb[1][0], bb[1][1]);
+                }
+                size = 0;
+                for (int pos=0; pos<model_size; ++pos){
+                        if (bb_ref_scan){ // Bounding box
+                                if (m->model[pos].xyzc[0] < bb[0][0]-GLOBAL_R_CUTOFF) { g_message ("out L"); continue; }
+                                if (m->model[pos].xyzc[0] > bb[1][0]+GLOBAL_R_CUTOFF) { g_message ("out R"); continue; }
+                                if (m->model[pos].xyzc[1] > bb[1][1]+GLOBAL_R_CUTOFF) { g_message ("out T");continue; }
+                                if (m->model[pos].xyzc[1] < bb[0][1]-GLOBAL_R_CUTOFF) { g_message ("out B");continue; }
+                        }
+                        size++;
+                }
+                g_message ("BB scan model: model %d atoms, in BB %d atoms", model_size, size);
+                model = new Model_item[size+1];
+                p=0;
+                for (int pos=0; pos<model_size; ++pos){
+                        if (bb_ref_scan){ // Bounding box
+                                if (m->model[pos].xyzc[0] < bb[0][0]-GLOBAL_R_CUTOFF) continue;
+                                if (m->model[pos].xyzc[0] > bb[1][0]+GLOBAL_R_CUTOFF) continue;
+                                if (m->model[pos].xyzc[1] > bb[1][1]+GLOBAL_R_CUTOFF) continue;
+                                if (m->model[pos].xyzc[1] < bb[0][1]-GLOBAL_R_CUTOFF) continue;
+                        }
+                        copy_vec4 (model[p].xyzc, m->model[pos].xyzc);
+                        model[p].N = m->model[pos].N;
+                        ++p;
+                }
+                mark_end (p);
                 make_probe ();
         };
 
@@ -677,7 +719,7 @@ public:
                         double flip_xy[3] = { -1., -1.,  1. };
                         double flip_y[3]  = {  1., -1.,  1. };
                         double flip_x[3]  = { -1.,  1.,  1. };
-                        double r=5.;
+                        double r=6.;
                         double rCu=14.;
                         int include_Cu=0;
                         int rosette=0;
@@ -716,23 +758,20 @@ public:
                                 g_print_vec ("tma_R", tma_R[k]);
                         }
                         
-                        size = 0;
+                        size = 21*21+100+10*21;
                         if (!strncmp (filter, "TMA-C+TMA-R-flip+Cu111", 22)){
                                 g_message ("include Cu111=Yes");
                                 include_Cu = 1;
-                                size = src_size + 21;
                         }
                         
                         if (!strncmp (filter, "TMA-Rosette+Cu111", 17)){
                                 g_message ("include Cu111=Yes");
                                 include_Cu = 2;
-                                size = src_size;
                         }
                         
                         if (!strncmp (filter, "TMA-Rosette", 11)){
                                 g_message ("Rosette=Yes");
                                 rosette = 1;
-                                size += 8*21;
                         }
 
                         double phi=0.;
@@ -774,33 +813,65 @@ public:
                                 model[pos].xyzc[3] = 0.;
                                 model[pos].N = -1;
                         }
-                        
+                        // fit all: 55x55A, 550px, O=7,16
+
+                        if (include_Cu){
+                                g_message("Building Cu111 Lattice");
+                                atom.N = 29; // Cu
+                                for (int l=-5; l<=17; ++l)
+                                        for (int m=-5; m<=17; ++m){
+                                                double lm[3] = { (double)l, (double)m, 1. };
+                                                mul_mattr_vec (xy, e_cu, lm);
+                                                copy_vec (atom.xyzc, xy);
+                                                atom.xyzc[2]=0.; // Z=0
+                                                put_atom(&atom, j++);
+                                        }
+                        }
+                        if (rosette){ // add a few CO
+                                g_message("Adding CO");
+                                double lm[][3] = {
+                                        { -5., -3., 1. },
+                                        {  0., -3,  1. },
+                                        {  1., -3., 1. },
+                                        {  2., -3., 1. },
+                                        {  3., -3., 1. },
+                                        {  4.,  4., 1. },
+                                        { 15., 12., 1. },
+                                        { 16., 12., 1. },
+                                        { 17., 12., 1. },
+                                        { 15., 13., 1. },
+                                        { 15., 14., 1. },
+                                        { 0.,0.,-1.}
+                                };
+                                //tma_L[2];
+                                for (int m=0; lm[m][2]>0.; ++m){
+                                        mul_mattr_vec (xy, e_cu, lm[m]);
+                                        copy_vec (atom.xyzc, xy);
+                                        atom.N = 6; // C
+                                        atom.xyzc[2]=2.004; // Z=2.004
+                                        put_atom(&atom, j++);
+                                        atom.N = 8; // O
+                                        atom.xyzc[2]=3.7886; // Z=3.7886
+                                        put_atom(&atom, j++);
+                                }
+                        }
+
                         for (int i=0; i<src_size && source->model[i].N > 0; ++i){
                                 // Cu 3 ML Dimer: ~0/2/4 (Cu) ~7.4 (TMA)
-
                                 if (source->model[i].xyzc[2] > 12.)
                                         continue;
                                 if (source->model[i].xyzc[2] < 3.)
                                         continue;
                                 
-                                copy_vec4 (atom.xyzc, source->model[i].xyzc);
-                                atom.N = source->model[i].N;
-                                sub_from_vec (atom.xyzc, z0); // shift 1st Cu ML to Z=0
-
-                                if (include_Cu){
+                                if (0){
+                                        copy_vec4 (atom.xyzc, source->model[i].xyzc);
+                                        atom.N = source->model[i].N;
+                                        sub_from_vec (atom.xyzc, z0); // shift 1st Cu ML to Z=0
                                         if (atom.xyzc[2] < 1. && atom.xyzc[2] > -0.5){ // Cu 1st layer only
+                                                g_message("Cu from xyz");
                                                 put_atom(&atom, j++);
                                         }
                                         // make Cu lattice, Z=0
-                                        if (0){
-                                                for (int l=0; l<16; ++l)
-                                                        for (int m=0; m<16; ++m){
-                                                                double lm[3] = { (double)l, (double)m, 1. };
-                                                                mul_mattr_vec (xy, e_cu, lm);
-                                                                copy_vec (atom.xyzc, xy);
-                                                                put_atom(&atom, j++);
-                                                        }
-                                        }
                                 }
                                 
                                 copy_vec4 (atom.xyzc, source->model[i].xyzc);
@@ -1011,6 +1082,13 @@ public:
                         model[pos].xyzc[3] *= factor;
         };
 
+        const gchar *proton_number_to_name (int pn){
+                for (int i=1; Elements[i].N > 0; ++i)
+                        if (Elements[i].N == pn)
+                                return Elements[i].name;
+                return "??";
+        };
+        
         void print () {
                 std::cout << "#============= MODEL n N XYZC ============" << std::endl;
                 for (int pos=0; pos<size && model[pos].N > 0; ++pos)
@@ -1030,6 +1108,20 @@ public:
                                   << std::endl;
                 std::cout << "#=========================================" << std::endl;
         };
+
+        void print_xyz () {
+                std::cout << "#============= MODEL El X Y Z format ============" << std::endl;
+                std::cout << size << std::endl;
+                std::cout << "XYZ-Model-Gxsm-AFM-Sim-Plugin-Generated" << std::endl;
+                for (int pos=0; pos<size && model[pos].N > 0; ++pos)
+                        std::cout << proton_number_to_name (model[pos].N)
+                                  << " " << model[pos].xyzc[0]
+                                  << " " << model[pos].xyzc[1]
+                                  << " " << model[pos].xyzc[2]
+                                  << std::endl;
+                std::cout << "#=========================================" << std::endl;
+        };
+
         
         Model_item *get_model_ref() { return model; };
         Model_item *get_probe_ref() { return probe; };
@@ -1818,11 +1910,16 @@ inline void coulomb_force (const double R[3], double q1, double q2, double Fab[3
 // P: Probe Atom -- to be optimized
 // param->Fsum: residual force -- to be minimized
 // returns Fz, Z-projected force on Apex
+// new: R_LJF_cutoff 
 double calculate_apex_probe_and_probe_model_forces (LJ_calc_params *param, const double P[3]){
         double R[4];
         double F[3];
         double AB[3];
         double R1[4], R2[4];
+        //        double R_LJF_cutoff = GLOBAL_R_CUTOFF;
+        //        if (param->A[2] > R_LJF_cutoff) // auto adjust for far field if high above
+        //               R_LJF_cutoff += param->A[2];
+        
         copy_vec (R, param->A); R[3]=0.; // Probe Charge
         sub_from_vec (R, P);   // R = A-P;
         Model_item *m = param->model->get_model_ref ();
@@ -1861,12 +1958,14 @@ double calculate_apex_probe_and_probe_model_forces (LJ_calc_params *param, const
                 copy_vec (R, m[n].xyzc);
                 // cAab (&mol[n][5], LPp_p, AB); // LJ params atom <-> probe
                 sub_from_vec (R, P);  // R := R_atom - P
+                // if (norm_vec (R) < R_LJF_cutoff){ // generating atrifacts
                 lj_force(R, param->model->LJp_AB_lookup[m[n].N][0], param->model->LJp_AB_lookup[m[n].N][1], F);
                 add_to_vec (param->Fljsum, F);
                 if (param->model->options & MODE_COULOMB){
                         coulomb_force(R, p[1].xyzc[3], m[n].xyzc[3], F);
                         add_to_vec (param->Fcsum, F);
                 }
+                //}
         }
         // sum all forces -- to be minimized
         add_to_vec (param->Fsum, param->Fljsum);
@@ -2809,10 +2908,14 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
                 std::cout << "XYZ Model after Filter: >>" << model_filter << "<<" << std::endl;
                 xyzc_model_filter->print ();
                 delete model;
-                model = xyzc_model_filter; // swap to filtered model
+                model = new xyzc_model (xyzc_model_filter, Dest); // swap to filtered model, apply bounding box with cutoff
+                delete xyzc_model_filter;
                 info_stream << "Model Filter = " << model_filter << "\n";
                 if (model_filter_param)
                         info_stream << "Model Filter Param = " << model_filter_param << "\n";
+                
+                g_message ("XYZ[C] Model after filter and bb cutoff");
+                model->print_xyz ();
         }
 
         if (probe_type){
