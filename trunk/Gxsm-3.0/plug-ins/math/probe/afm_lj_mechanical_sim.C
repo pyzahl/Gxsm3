@@ -499,7 +499,7 @@ Element Elements[] {
         { -1, "END.",{ -1.00 ,   -1.00  }, 0. }
 };
 
-#define GLOBAL_R_CUTOFF 8.0
+#define GLOBAL_R_CUTOFF 4.0
 
 typedef struct{
         double xyzc[4]; // coordinates XYZ + partial Charge [Ang,Ang,Ang, C[e]]
@@ -743,8 +743,8 @@ public:
                         double tma_L[5][3], tma_R[5][3];
                         double rotM_L[3][3];
                         double rotM_R[3][3];
-                        make_mat_rot_xy_tr (rotM_L, -7.5, zero);
-                        make_mat_rot_xy_tr (rotM_R, -7.5, zero);
+                        make_mat_rot_xy_tr (rotM_L, -6.6, zero);
+                        make_mat_rot_xy_tr (rotM_R, -6.6, zero);
                         
                         make_mat_rot_xy_tr (TrMat, 120., zero);
                         mul_mat_vec (e_cu[1], TrMat, e_cu[0]);
@@ -1965,7 +1965,7 @@ double calculate_apex_probe_and_probe_model_forces (LJ_calc_params *param, const
                         coulomb_force(R, p[1].xyzc[3], m[n].xyzc[3], F);
                         add_to_vec (param->Fcsum, F);
                 }
-                //}
+                // }
         }
         // sum all forces -- to be minimized
         add_to_vec (param->Fsum, param->Fljsum);
