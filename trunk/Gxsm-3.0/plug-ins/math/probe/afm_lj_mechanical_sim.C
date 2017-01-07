@@ -524,16 +524,14 @@ public:
         };
         
         xyzc_model (Model_item *m){
-                int p=0;
                 for (size = 0; m[size].N > 0; ++size);
                 probe = NULL;
                 model = new Model_item[size+1];
                 for (int pos=0; pos<size; ++pos){
-                        copy_vec4 (model[p].xyzc, m[pos].xyzc);
-                        model[p].N = m[pos].N;
-                        ++p;
+                        copy_vec4 (model[pos].xyzc, m[pos].xyzc);
+                        model[pos].N = m[pos].N;
                 }
-                mark_end (p);
+                mark_end (size);
                 make_probe ();
         };
         xyzc_model (xyzc_model *m, Scan *bb_ref_scan=NULL){
@@ -555,7 +553,7 @@ public:
                                 if (m->model[pos].xyzc[1] > bb[1][1]+GLOBAL_R_CUTOFF) { g_message ("out T");continue; }
                                 if (m->model[pos].xyzc[1] < bb[0][1]-GLOBAL_R_CUTOFF) { g_message ("out B");continue; }
                         }
-                        size++;
+                        ++size; // count only
                 }
                 g_message ("BB scan model: model %d atoms, in BB %d atoms", model_size, size);
                 model = new Model_item[size+1];
@@ -758,7 +756,7 @@ public:
                                 g_print_vec ("tma_R", tma_R[k]);
                         }
                         
-                        size = 21*21+100+10*21;
+                        size = 30*30+200+16*21; // just enough, clean up later
                         if (!strncmp (filter, "TMA-C+TMA-R-flip+Cu111", 22)){
                                 g_message ("include Cu111=Yes");
                                 include_Cu = 1;
@@ -851,7 +849,8 @@ public:
                                         atom.xyzc[2]=2.004; // Z=2.004
                                         put_atom(&atom, j++);
                                         atom.N = 8; // O
-                                        atom.xyzc[2]=3.7886; // Z=3.7886
+                                        //atom.xyzc[2]+=1.7846; // Z=3.7886 (LJ r C,O average)
+                                        atom.xyzc[2]+=1.128; // assuming CO bond length 112.8pm
                                         put_atom(&atom, j++);
                                 }
                         }
@@ -993,15 +992,15 @@ public:
                 if (probe) delete[] probe;
         };
         
-        void make_probe(int N=8, double q=-0.100, double dz=3.661){ // 3.661
+        void make_probe(int N=8, double q=-0.100, double dz=3.132){ // 3.661
                 if (probe) delete[] probe;
-                probe = new Model_item[2];
+                probe = new Model_item[2+5];
 
                 // prepare LJ parameters
                 std::cout << "#=======================================================" << std::endl;
                 std::cout << "AFMMechSim: Prepare L-J parameters Probe <-> ModelAtoms." << std::endl;
                 int i=0;
-                for (; Elements[i].N > 0 && Elements[i].N != N; ++i);
+                for (; Elements[i].N != -1 && Elements[i].N != N; ++i);
                 lj_param_pre_compute (Elements[i].LJp); // O tip probe
                 std::cout << "#=======================================================" << std::endl;
         
@@ -1009,18 +1008,59 @@ public:
                         dz = pow(2. * LJp_AB_lookup[0][0] / LJp_AB_lookup[0][1], 1./6.);
                         std::cout << "==> Probe dz [r0] = " << dz << std::endl;
                 }
-                
-                probe[0].xyzc[0] = 0.; // [0] => Apex
-                probe[0].xyzc[1] = 0.;
-                probe[0].xyzc[2] = 0.;
-                probe[0].xyzc[3] = -q;
-                probe[0].N = 0;
-                
-                probe[1].xyzc[0] = 0.; // [1] ==> probe Atom
-                probe[1].xyzc[1] = 0.;
-                probe[1].xyzc[2] = -dz;
-                probe[1].xyzc[3] = q;
-                probe[1].N = 8;
+
+                i=0;
+                probe[i].xyzc[0] = 0.; // [0] => Apex
+                probe[i].xyzc[1] = 0.;
+                probe[i].xyzc[2] = 0.;
+                probe[i].xyzc[3] = -q;
+                probe[i++].N = 0;
+
+                // O (default)
+                probe[i].xyzc[0] = 0.; // [1] ==> probe Atom
+                probe[i].xyzc[1] = 0.;
+                probe[i].xyzc[2] = -dz;
+                probe[i].xyzc[3] = q;
+                probe[i++].N = N;
+
+                // C -- model purpose ony
+                probe[i].xyzc[0] = 0.;
+                probe[i].xyzc[1] = 0.;
+                probe[i].xyzc[2] = -2.004;
+                probe[i].xyzc[3] = 0;
+                probe[i++].N = 6;
+                // Cu Apex -- model purpose ony
+                probe[i].xyzc[0] = 0.; // [2...] => Cu Apex just for model
+                probe[i].xyzc[1] = 0.;
+                probe[i].xyzc[2] = 0.;
+                probe[i].xyzc[3] = -q;
+                probe[i++].N = 29;
+                probe[i].xyzc[0] = -1.27805; // [2...] => Cu Apex just for model
+                probe[i].xyzc[1] = 1.27805;
+                probe[i].xyzc[2] = 1.27805;
+                probe[i].xyzc[3] = -q;
+                probe[i++].N = 29;
+                probe[i].xyzc[0] = 1.27805; // [2...] => Cu Apex just for model
+                probe[i].xyzc[1] = 1.27805;
+                probe[i].xyzc[2] = 1.27805;
+                probe[i].xyzc[3] = -q;
+                probe[i++].N = 29;
+                probe[i].xyzc[0] = 0.; // [2...] => Cu Apex just for model
+                probe[i].xyzc[1] = -1.27805;
+                probe[i].xyzc[2] = 1.27805;
+                probe[i].xyzc[3] = -q;
+                probe[i++].N = 29;
+                /*
+                  Cu 2.5561 -4.4273 0
+                  Cu 1.27805 2.21365 0
+                  Cu 1.27805 -2.21365 0
+                  Cu 2.5561 0 0
+                  Cu 0 0 0
+                  Cu -2.5561 0 0
+                  Cu -1.27805 2.21365 0
+                  Cu -1.27805 -2.21365 0
+                */
+
         };
 
         inline double get_probe_dz () { return  probe[1].xyzc[2]; };
@@ -1111,13 +1151,19 @@ public:
 
         void print_xyz () {
                 std::cout << "#============= MODEL El X Y Z format ============" << std::endl;
-                std::cout << size << std::endl;
-                std::cout << "XYZ-Model-Gxsm-AFM-Sim-Plugin-Generated" << std::endl;
+                std::cout << (size+6) << std::endl;
+                std::cout << "XYZ-Model-Gxsm-AFM-Sim-Plugin-Generated-w-apex" << std::endl;
                 for (int pos=0; pos<size && model[pos].N > 0; ++pos)
                         std::cout << proton_number_to_name (model[pos].N)
                                   << " " << model[pos].xyzc[0]
                                   << " " << model[pos].xyzc[1]
                                   << " " << model[pos].xyzc[2]
+                                  << std::endl;
+                for (int k=1; k<7; ++k)
+                        std::cout << proton_number_to_name (probe[k].N)
+                                  << " " << (probe[k].xyzc[0]+8.)
+                                  << " " << (probe[k].xyzc[1]+20.)
+                                  << " " << (probe[k].xyzc[2]+12.)
                                   << std::endl;
                 std::cout << "#=========================================" << std::endl;
         };
@@ -1959,6 +2005,7 @@ double calculate_apex_probe_and_probe_model_forces (LJ_calc_params *param, const
                 // cAab (&mol[n][5], LPp_p, AB); // LJ params atom <-> probe
                 sub_from_vec (R, P);  // R := R_atom - P
                 // if (norm_vec (R) < R_LJF_cutoff){ // generating atrifacts
+                //g_message ("calculate_apex_probe_and_probe_model_forces:: lj_force[%d]",n);
                 lj_force(R, param->model->LJp_AB_lookup[m[n].N][0], param->model->LJp_AB_lookup[m[n].N][1], F);
                 add_to_vec (param->Fljsum, F);
                 if (param->model->options & MODE_COULOMB){
@@ -2227,7 +2274,6 @@ void z_probe_simple_force_run (Scan *Dest, Mem2d *work, int col, int line, doubl
         
         copy_vec (param.A, xyz);
         copy_vec (Popt, param.A); Popt[2] += model->get_probe_dz ();
-        param.model = model;
         param.model = model;
 
         // calculate force at position xyz (param.A) with probe at Popt = (x,y,z - model->probe_dz)
