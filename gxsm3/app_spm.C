@@ -88,17 +88,38 @@ void App::spm_range_check(Param_Control* pcs, gpointer app){
         XSM_DEBUG(DBG_L3,  "range check" );
         XSM_Instrument *Inst = a->xsm->Inst;
         SCAN_DATA *data = &(a->xsm->data);
-
+        int analysis_mode = 0;
+        
         // check if we run in analysis mode, then do not check.
         if (!((App*)app)->xsm->hardware)
-                return;
+                analysis_mode = 1;
+        else {
+                const gchar *tmp = ((App*)app)->xsm->hardware->Info (0);
+                if (strncmp (tmp, "Data Analysis mode", 18) == 0)
+                        analysis_mode = 1;
+        }
 
-        const gchar *tmp = ((App*)app)->xsm->hardware->Info (0);
-        // g_print (">%s<=>%d", tmp, strncmp (tmp, "Data Analysis Mode", 18));
-        if (strncmp (tmp, "Data Analysis mode", 18) == 0){
+        if (analysis_mode){
+                // g_print (">%s<=>%d", tmp, strncmp (tmp, "Data Analysis Mode", 18));
                 // g_message ("Skipping range check. Analysis Mode.");
+                if (a->xsm->IsMode(MODE_SETPOINTS)){
+                        // Points from Range & dx
+                        data->s.nx = 1 + R2INT(data->s.rx/data->s.dx);
+                        data->s.ny = 1 + R2INT(data->s.ry/data->s.dy);
+                } else if (a->xsm->IsMode(MODE_SETSTEPS)){
+                        // dx from Range & Points
+                        data->s.dx = data->s.rx/(data->s.nx-1);
+                        data->s.dy = data->s.ry/(data->s.ny-1);
+                } else {
+                        // rx from dx & Points
+                        data->s.rx = (data->s.nx-1) * data->s.dx;
+                        data->s.ry = (data->s.ny-1) * data->s.dy;
+                }
+                data->s.dz = Inst->ZResolution();
+                a->spm_update_all();
                 return;
         }
+
         //        else g_message ("Checking ranges. HwI Mode.");
         
         if(IS_SPALEED_CTRL){
@@ -109,7 +130,7 @@ void App::spm_range_check(Param_Control* pcs, gpointer app){
                         data->s.dy = data->s.ry/(data->s.ny-1);
                         data->s.ry = data->s.dy*(data->s.ny-1);
                 }else{
-                        // alway range from points and dx if ry!=0
+                        // always range from points and dx if ry!=0
                         if(data->s.ry > 0.){
                                 data->s.dy = data->s.dx;
                                 data->s.ry = (data->s.ny-1)*data->s.dy;
