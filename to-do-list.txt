@@ -52,6 +52,8 @@ pending minor issues/ideas:
   --> smart manage window position???
 -- PCS is NOT yet updating non user set values -- ak file number auto advance, client settings, remote...
 - add remote support: a few importrant control buttons pyremote accessible (global FB ON/OFF, PAC, Z-Adjuster**)
+- better auto file name for xxx-snap.png (image save as)
+- side-pane objects: may be put object context (from popup) in there? Make object position lock as option available.
 
 External/glib/gtk related issues:
 - https://bugzilla.gnome.org/show_bug.cgi?id=771242  ComboBoxText problem causes glib warning/critical or even crash?? -- TDB:
@@ -105,6 +107,7 @@ DSP Code Road-Map:
   ... create generic "adjuster" module to save code space? evalute options!
 - Smooth Rotation Matrix adjuster (life rotation)
 - PAC/PLL additional mode "Q"-Control: Develop Polyphase FIR for precise phase shifting (delay, interpolation) of imput signal to mix/feedback with excitation option -- if AM/PH controllers are OFF.
+- RT "max/limit some thing" watch dog to (re) enable/TBD feedback w attempt to re-adjust Z??
 
 =========================
 END.
