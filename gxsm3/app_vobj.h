@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -22,8 +24,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #ifndef APP_VOBJ_H
 #define APP_VOBJ_H
@@ -80,9 +80,33 @@ class VObject{
 	virtual int follow(){ return FALSE; };
 	virtual void AddNode(){};
 	virtual void DelNode(){};
-	virtual void show_label(int flg = -1);
 
-	void show_profile (gboolean pflg=TRUE);
+	static void colorchange_callback(GtkColorChooser *colorsel, VObject *vo);
+	static void fontchange_callback(GtkFontChooser *gfp, VObject *vo);
+	static void label_changed_cb (GtkEditable *e, VObject *vo);
+        static void selection_dim_changed_cb (GtkComboBox *cb, VObject *vo);
+        static void selection_dimp_changed_cb (GtkComboBox *cb, VObject *vo);
+        static void selection_dims_changed_cb (GtkComboBox *cb, VObject *vo);
+        static void selection_data_changed_cb (GtkComboBox *cb, VObject *vo);
+        static void selection_data_plot_changed_cb (GtkComboBox *cb, VObject *vo);
+        static void selection_grid_plot_changed_cb (GtkComboBox *cb, VObject *vo);
+        
+	void copy_xsmres_to_GdkRGBA (GdkRGBA &color, float c[4]){
+                color.red   = c[0];
+                color.green = c[1];
+                color.blue  = c[2];
+                color.alpha = c[3];
+	};
+
+	static void show_label_cb (GtkWidget *widget, VObject *vo);
+	void show_label (gboolean flg=true);
+	void update_label () { if (label) show_label (); };
+
+	void build_properties_view (gboolean add=true);
+	
+	static void show_profile_cb (GtkWidget *widget,  VObject *vo);
+	void show_profile (gboolean flg=true);
+
 	void set_xy_node(double *xy_node, VOBJ_COORD_MODE cmode, int node=0);
 	void insert_node(double *xy_node=NULL);
 
@@ -108,9 +132,9 @@ class VObject{
 	void set_object_label(const gchar *lab){ if (text) g_free (text); text = g_strdup (lab); }
 
 	void set_custom_label_font (const gchar *f) { if (custom_label_font) g_free (custom_label_font); custom_label_font = g_strdup (f); };
-	void set_custom_label_color (gfloat c[4]) { custom_label_color [0] = c[0]; custom_label_color [1] = c[1]; custom_label_color [2] = c[2]; custom_label_color [3] = c[3]; };
-	void set_custom_element_color (gfloat c[4]) { custom_element_color [0] = c[0]; custom_element_color [1] = c[1]; custom_element_color [2] = c[2]; custom_element_color [3] = c[3]; };
-	void set_custom_element_b_color (gfloat c[4]) { custom_element_b_color [0] = c[0]; custom_element_b_color [1] = c[1]; custom_element_b_color [2] = c[2]; custom_element_b_color [3] = c[3]; };
+	void set_custom_label_color (gfloat c[4]) { copy_xsmres_to_GdkRGBA (custom_label_color, c); };
+	void set_custom_element_color (gfloat c[4]) { copy_xsmres_to_GdkRGBA (custom_element_color, c); };
+	void set_custom_element_b_color (gfloat c[4]) { copy_xsmres_to_GdkRGBA (custom_element_b_color, c); };
 
 	// Show/Hide controls for spacetime (Layer, Time)
 	void set_on_spacetime (gboolean flag, int spacetime[2], int id=0);
@@ -159,12 +183,12 @@ class VObject{
 	}
 
 	void save(std::ofstream &o){
-		o << "(VObject \"" << name << "\" CustomColor (" << custom_element_color[0] << " " << custom_element_color[1] << " " << custom_element_color[2] << " " << custom_element_color[3] << ")"
+		o << "(VObject \"" << name << "\" CustomColor (" << custom_element_color.red << " " << custom_element_color.green << " " << custom_element_color.blue << " " << custom_element_color.alpha << ")"
 		  << std::endl
 		  << "   (Label \"" << text << "\" "
 		  << "Font \"" << custom_label_font << "\" "
 		  << "MarkerSkl (" << marker_scale << ") "
-		  << "Color (" << custom_label_color[0] << " " << custom_label_color[1] << " " << custom_label_color[2] << " " << custom_label_color[3] << ") "
+		  << "Color (" << custom_label_color.red << " " << custom_label_color.blue << " " << custom_label_color.green << " " << custom_label_color.alpha << ") "
 		  << "SpaceTimeOnOff ((" << space_time_on[0] << " " << space_time_on[1] << ") (" << space_time_off[0] << " " << space_time_off[1] << ")) "
 		  << "SpaceTimeFromUntil (" << (space_time_from_0 ? 1:0) << " " << (space_time_until_00 ? 1:0) << ") "
 		  << "Show (" << (label? 1:0) << ") "
@@ -251,6 +275,9 @@ class VObject{
 	GSimpleActionGroup *gs_action_group;
 
  protected:
+	UnitObj *Pixel;
+	UnitObj *Unity;
+	BuildParam *properties_bp;
 	ProfileControl *profile;
 	double path_width; // path width or area radius
 	double path_step; // path step (average length in path direction)
@@ -292,8 +319,8 @@ class VObject{
 	ScanEvent *scan_event;
 	gboolean label_osd_stye;
 
-	float custom_element_color[4];
-	float custom_element_b_color[4];
+	GdkRGBA custom_element_color;
+	GdkRGBA custom_element_b_color;
 
 	gboolean dragging_active;
  private:
@@ -306,7 +333,7 @@ class VObject{
 	gboolean space_time_from_0, space_time_until_00;
 
 	gchar *custom_label_font;
-	float custom_label_color[4];
+	GdkRGBA custom_label_color;
 
 	GtkWidget *obj_popup_menu;
 };

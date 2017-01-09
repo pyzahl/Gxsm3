@@ -106,7 +106,7 @@ void VObject::set_osd_style (gboolean flg){
 	if (custom_label_font)
 		g_free (custom_label_font);
 	custom_label_font = g_strdup (label_osd_stye? xsmres.OSDFont : xsmres.ObjectLabFont);
-	memcpy (custom_label_color, label_osd_stye? xsmres.OSDColor : xsmres.ObjectLabColor, sizeof (custom_label_color));
+        copy_xsmres_to_GdkRGBA (custom_label_color, xsmres.ObjectLabColor);
 }
 
 VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale){
@@ -115,6 +115,10 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pfl
 	int i;
 	XSM_DEBUG(DBG_L2, "VObject::VObject");
         show ();
+
+        properties_bp = NULL;
+	Pixel = new UnitObj("Pix","Pix");
+	Unity = new UnitObj(" "," ");
 
 	scan_event=NULL;
 	lock=0;
@@ -136,11 +140,13 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pfl
 	space_time_until_00 = TRUE;
 
 	custom_label_font = g_strdup (label_osd_stye? xsmres.OSDFont : xsmres.ObjectLabFont);
-	memcpy (custom_label_color, label_osd_stye? xsmres.OSDColor : xsmres.ObjectLabColor, sizeof (custom_label_color));
-	memcpy (custom_element_color, xsmres.ObjectElmColor, sizeof (custom_element_color));
-	memcpy (custom_element_b_color, xsmres.ObjectElmColor, sizeof (custom_element_color));
-	custom_element_b_color[3] = 1.;
-	for (int i=0; i<4; ++i) custom_element_b_color[i] *= 0.66;
+        copy_xsmres_to_GdkRGBA (custom_label_color, label_osd_stye? xsmres.OSDColor : xsmres.ObjectLabColor);
+	copy_xsmres_to_GdkRGBA (custom_element_color, xsmres.ObjectElmColor);
+	copy_xsmres_to_GdkRGBA (custom_element_b_color, xsmres.ObjectElmColor);
+	custom_element_b_color.alpha = 1.;
+	custom_element_b_color.red   *= 0.66;
+	custom_element_b_color.green *= 0.66;
+	custom_element_b_color.blue  *= 0.66;
 
 	type_id=O_NONE;
 	p2d = P2d;
@@ -238,6 +244,16 @@ VObject::~VObject(){
 		delete profile;
 	profile=NULL;
 
+        if (properties_bp){ // clean up
+                gtk_grid_remove_row (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), 1);
+                properties_bp->delete_all_ec ();
+                delete properties_bp;
+                properties_bp = NULL;
+        }
+	delete Pixel;
+	delete Unity;
+
+        
         UNREF_DELETE_CAIRO_ITEM (selected_bbox, canvas);
 
 	for(i=0; abl[i]; i++)
@@ -270,6 +286,13 @@ VObject::~VObject(){
 
         g_object_unref (gs_action_group);
 
+}
+
+void VObject::show_profile_cb (GtkWidget *widget, VObject *vo){
+        if (widget)
+                vo->show_profile (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        else 
+                vo->show_profile ();
 }
 
 void VObject::show_profile (gboolean pflg){
@@ -518,32 +541,83 @@ void VObject::Activate (){
 		if (sc) sc->update_object (id, name, text, get_obj_coords_wrapper2);
 		current_vobject2 = NULL;
 	}
-
+        // update properties view for this object
+        build_properties_view ();
 }
 
-static void label_changed_cb (GtkEditable *e, gchar **text){
-	g_free (*text);		
-	*text = gtk_editable_get_chars (GTK_EDITABLE (e), 0, -1);
+void VObject::label_changed_cb (GtkEditable *e, VObject *vo){
+	if (vo->text) g_free (vo->text);
+	vo->text = gtk_editable_get_chars (GTK_EDITABLE (e), 0, -1);
+        vo->Update ();
 }
 
-static void colorchange_callback(GtkColorChooser *colorsel, gfloat *rgba){
-        GdkRGBA color;
-	gtk_color_chooser_get_rgba (GTK_COLOR_CHOOSER (colorsel), &color);
-	rgba[0] = (gfloat)color.red;
-	rgba[1] = (gfloat)color.green;
-	rgba[2] = (gfloat)color.blue;
-	rgba[3] = (gfloat)color.alpha;
+void VObject::colorchange_callback(GtkColorChooser *colorsel, VObject *vo){
+        GdkRGBA *color = (GdkRGBA *) g_object_get_data  (G_OBJECT (colorsel), "COLOR_ELEMENT_DATA");
+        if (color){
+                gtk_color_chooser_get_rgba (GTK_COLOR_CHOOSER (colorsel), color);
+                vo->Update ();
+        }
 }
 
-
-static void fontchange_callback(GtkFontChooser *gfp, gchar *arg1, char **font){
-	if (*font) g_free (*font);
-	*font = g_strdup (gtk_font_chooser_get_font (GTK_FONT_CHOOSER (gfp)));
+void VObject::fontchange_callback(GtkFontChooser *gfp, VObject *vo){ // gchar **font){
+	if (vo->custom_label_font) g_free (vo->custom_label_font);
+	vo->custom_label_font = g_strdup (gtk_font_chooser_get_font (GTK_FONT_CHOOSER (gfp)));
+        vo->Update ();
 }
 
-void VObject::properties(){
-	int ii;
-	GtkWidget *dialog;
+void VObject::selection_dim_changed_cb (GtkComboBox *cb, VObject *vo){
+        switch (gtk_combo_box_get_active (GTK_COMBO_BOX (cb))){
+        case 0: vo->set_profile_path_dimension (MEM2D_DIM_LAYER); break;
+        case 1: vo->set_profile_path_dimension (MEM2D_DIM_TIME); break;
+        default: vo->set_profile_path_dimension (MEM2D_DIM_LAYER); break;
+        }
+        vo->Update ();
+}
+
+void VObject::selection_dimp_changed_cb (GtkComboBox *cb, VObject *vo){
+        switch (gtk_combo_box_get_active (GTK_COMBO_BOX (cb))){
+        case 0: vo->set_profile_path_dimension (MEM2D_DIM_XY); break;
+        case 1: vo->set_profile_path_dimension (MEM2D_DIM_LAYER); break;
+        case 2: vo->set_profile_path_dimension (MEM2D_DIM_TIME); break;
+        default: vo->set_profile_path_dimension (MEM2D_DIM_XY); break;
+        }
+        vo->Update ();
+}
+
+void VObject::selection_dims_changed_cb (GtkComboBox *cb, VObject *vo){
+        switch (gtk_combo_box_get_active (GTK_COMBO_BOX (cb))){
+        case 0: vo->set_profile_series_dimension (MEM2D_DIM_XY); break;
+        case 1: vo->set_profile_series_dimension (MEM2D_DIM_LAYER); break;
+        case 2: vo->set_profile_series_dimension (MEM2D_DIM_TIME); break;
+        default: vo->set_profile_series_dimension (MEM2D_DIM_LAYER); break;
+        }
+        vo->Update ();
+}
+
+void VObject::selection_data_changed_cb (GtkComboBox *cb, VObject *vo){
+        switch (gtk_combo_box_get_active (GTK_COMBO_BOX (cb))){
+        case 0: vo->set_profile_series_all (FALSE); break;
+        case 1: vo->set_profile_series_all (TRUE); break;
+        default: vo->set_profile_series_all (FALSE); break;
+        }
+        vo->Update ();
+}
+
+void VObject::selection_data_plot_changed_cb (GtkComboBox *cb, VObject *vo){
+        switch (gtk_combo_box_get_active (GTK_COMBO_BOX (cb))){
+        case 0: vo->set_profile_series_pg2d (FALSE); break;
+        case 1: vo->set_profile_series_pg2d (TRUE); break;
+        default: vo->set_profile_series_pg2d (FALSE); break;
+        }
+        vo->Update ();
+}
+
+void VObject::selection_grid_plot_changed_cb (GtkComboBox *cb, VObject *vo){
+        vo->grid_mode = gtk_combo_box_get_active (GTK_COMBO_BOX (cb));
+        vo->Update ();
+}
+
+void VObject::build_properties_view (gboolean add){
 	GtkWidget *textinput = NULL;
 	GtkWidget *dim_sel = NULL;
 	GtkWidget *dimp_sel = NULL;
@@ -554,243 +628,264 @@ void VObject::properties(){
 	GtkWidget *showlabel_checkbutton = NULL;
 	GtkWidget *showprofile_checkbutton = NULL;
 
-	UnitObj *Pixel = new UnitObj("Pix","Pix");
-	UnitObj *Unity = new UnitObj(" "," ");
-
+        if (properties_bp){
+                // free EC's
+                properties_bp->delete_all_ec ();
+                delete properties_bp;
+        }
+#if 0
+        // FIX!!!
 	++space_time_on[0];
 	++space_time_on[1];
 	++space_time_off[0];
 	++space_time_off[1];
+#endif
 
 	if (space_time_from_0)
-		space_time_on[0]=space_time_on[1]=0;
+		space_time_on[0]=space_time_on[1]=-1;
 	if (space_time_until_00)
-		space_time_off[0]=space_time_off[1]=0;
-
-	do {
-		dialog = gtk_dialog_new_with_buttons (N_("Object Properties"), 
-						      GTK_WINDOW (gtk_widget_get_toplevel (canvas)), 
-						      (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
-						      _("_OK"), GTK_RESPONSE_ACCEPT,
-						      NULL); 
+		space_time_off[0]=space_time_off[1]=-1;
         
-                BuildParam bp;
+#if 0
+	--space_time_on[0];
+	--space_time_on[1];
+	--space_time_off[0];
+	--space_time_off[1];
+#endif
+        properties_bp = new BuildParam;
 
-                gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
+        gtk_grid_remove_row (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), 1);
 
-		gchar *objident = g_strdup_printf ("Edit Object \"%s\"", name);
-                bp.grid_add_label (objident);
-		g_free (objident);
-                bp.new_line ();
+        if (add)
+            gtk_grid_attach (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), properties_bp->grid, 1,1, 1,1);
 
-		if (text){
-                        bp.new_grid_with_frame ("Object Label", 10);
-                        textinput = bp.grid_add_input (NULL, 2);
-			gtk_entry_set_text (GTK_ENTRY (textinput), text);
+        gchar *objident = g_strdup_printf ("Edit Object \"%s\"", name);
+        properties_bp->grid_add_label (objident);
+        g_free (objident);
+        properties_bp->new_line ();
 
-			GtkWidget *fpick = gtk_font_button_new_with_font (custom_label_font);
-			//gnome_font_picker_set_title (GNOME_FONT_PICKER (fpick), "Label Font");
-			g_signal_connect (G_OBJECT (fpick), "font_set",
-                                          G_CALLBACK (fontchange_callback), 
-                                          (gpointer) &custom_label_font);
-			bp.grid_add_widget (fpick);
+        if (text){
+                properties_bp->new_grid_with_frame ("Object Label", 10);
+                textinput = properties_bp->grid_add_input (NULL, 2);
+                gtk_entry_set_text (GTK_ENTRY (textinput), text);
 
-			GdkRGBA color;
-                        color.red   = custom_label_color[0];
-			color.green = custom_label_color[1];
-                        color.blue  = custom_label_color[2];
-			color.alpha = custom_label_color[3];
-                        GtkWidget *cpick =  gtk_color_button_new_with_rgba (&color);
-                        gtk_color_chooser_set_use_alpha (GTK_COLOR_CHOOSER(cpick), true);
-                        gtk_color_button_set_title (GTK_COLOR_BUTTON (cpick), "Label Color");
-			g_signal_connect (G_OBJECT (cpick), "color_set",
-                                          G_CALLBACK (colorchange_callback), 
-                                          (gpointer) custom_label_color);
-			bp.grid_add_widget (cpick, 2);
+                GtkWidget *fpick = gtk_font_button_new_with_font (custom_label_font);
+                //gnome_font_picker_set_title (GNOME_FONT_PICKER (fpick), "Label Font");
+                g_signal_connect (G_OBJECT (fpick), "font_set",
+                                  G_CALLBACK (fontchange_callback), this);
+                properties_bp->grid_add_widget (fpick);
 
-			showlabel_checkbutton = gtk_check_button_new_with_label( N_("Show Label"));
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (showlabel_checkbutton), label ? TRUE:FALSE);
-			bp.grid_add_widget (showlabel_checkbutton, 2);
-                        bp.new_line ();
-		
-			if (obj_type_id () != O_POINT) {
-                                bp.grid_add_label ("Line/Fill Color:");
+                GtkWidget *cpick =  gtk_color_button_new_with_rgba (&custom_label_color);
+                gtk_color_chooser_set_use_alpha (GTK_COLOR_CHOOSER(cpick), true);
+                g_object_set_data  (G_OBJECT (cpick), "COLOR_ELEMENT_DATA", &custom_label_color);
+                gtk_color_button_set_title (GTK_COLOR_BUTTON (cpick), "Label Color");
+                g_signal_connect (G_OBJECT (cpick), "color_set",
+                                  G_CALLBACK (colorchange_callback), this);
+                properties_bp->grid_add_widget (cpick, 2);
 
-                                color.red   = custom_element_color[0];
-                                color.green = custom_element_color[1];
-                                color.blue  = custom_element_color[2];
-                                color.alpha = custom_element_color[3];
-                                GtkWidget *cpick =  gtk_color_button_new_with_rgba (&color);
-                                gtk_color_chooser_set_use_alpha (GTK_COLOR_CHOOSER (cpick), true);
-                                gtk_color_button_set_title (GTK_COLOR_BUTTON (cpick), "Element Color");
-				g_signal_connect (G_OBJECT (cpick), "color_set",
-                                                  G_CALLBACK (colorchange_callback), 
-                                                  (gpointer) custom_element_color);
-                                bp.grid_add_widget (cpick, 2);
-
-                                color.red   = custom_element_b_color[0];
-                                color.green = custom_element_b_color[1];
-                                color.blue  = custom_element_b_color[2];
-                                color.alpha = custom_element_b_color[3];
-                                cpick =  gtk_color_button_new_with_rgba (&color);
-                                gtk_color_chooser_set_use_alpha (GTK_COLOR_CHOOSER (cpick), true);
-                                gtk_color_button_set_title (GTK_COLOR_BUTTON (cpick), "Element B Color");
-				g_signal_connect (G_OBJECT (cpick), "color_set",
-                                                  G_CALLBACK (colorchange_callback), 
-                                                  (gpointer) custom_element_b_color);
-                                bp.grid_add_widget (cpick, 2);
-			}
-                        bp.pop_grid ();
-		}
-                bp.new_line ();
-
-		// Profile enable
-		showprofile_checkbutton = gtk_check_button_new_with_label( N_("Show Profile"));
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (showprofile_checkbutton), profile ? TRUE:FALSE);
-                bp.grid_add_widget (showprofile_checkbutton, 2);
-                bp.new_line ();
-		
-
-		gchar *label = g_strdup_printf ("Show SpcT[%d:%d]:", space_time_now[1], space_time_now[0]);
-                bp.grid_add_ec (label, Unity, &space_time_on[1], 0, 1000, ".0f");
-                bp.grid_add_ec (NULL,  Unity, &space_time_on[0], 0, 1000, ".0f");
-		g_free (label);
-                bp.new_line ();
+                showlabel_checkbutton = gtk_check_button_new_with_label( N_("Show Label"));
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (showlabel_checkbutton), label ? TRUE:FALSE);
+                properties_bp->grid_add_widget (showlabel_checkbutton, 2);
+                g_signal_connect (G_OBJECT (showlabel_checkbutton), "clicked",
+                                  G_CALLBACK (VObject::show_label_cb), this);
                 
-		label = g_strdup_printf ("Hide SpcT[%d:%d]", space_time_now[1], space_time_now[0]);
-                bp.grid_add_ec (label, Unity, &space_time_off[1], 0, 1000, ".0f");
-                bp.grid_add_ec (NULL,  Unity, &space_time_off[0], 0, 1000, ".0f");
-		g_free (label);
-                bp.new_line ();
+                properties_bp->new_line ();
+		
+                if (obj_type_id () != O_POINT) {
+                        properties_bp->grid_add_label ("Line/Fill Color:");
 
-		// marker_scale
-                bp.grid_add_ec ("Marker Scale", Unity, &marker_scale, 0., 1000., ".2f");
-                bp.new_line ();
+                        GtkWidget *cpick =  gtk_color_button_new_with_rgba (&custom_element_color);
+                        g_object_set_data  (G_OBJECT (cpick), "COLOR_ELEMENT_DATA", &custom_element_color);
+                        gtk_color_chooser_set_use_alpha (GTK_COLOR_CHOOSER (cpick), true);
+                        gtk_color_button_set_title (GTK_COLOR_BUTTON (cpick), "Element Color");
+                        g_signal_connect (G_OBJECT (cpick), "color_set",
+                                          G_CALLBACK (colorchange_callback), this);
+                        properties_bp->grid_add_widget (cpick, 2);
 
-		for (int n=0; n<np; ++n){
-			int i=2*n;
-			gchar *label = g_strdup_printf ("P%d:", n);
-                        bp.grid_add_ec (label, Pixel, &xy[i],   -32767, 32767, ".0f");
-                        bp.grid_add_ec (NULL,  Pixel, &xy[i+1], -32767, 32767, ".0f");
-			g_free (label);
-                        bp.new_line ();
-		}
-		if (obj_type_id () == O_POINT && profile){ // Point Path at XY in Layer, Series in Time or in Time, Series in Layer
-                        bp.grid_add_ec ("Path Width", Pixel, &path_width, 0, 1000, ".0f");
-                        bp.new_line ();
+                        cpick =  gtk_color_button_new_with_rgba (&custom_element_b_color);
+                        g_object_set_data  (G_OBJECT (cpick), "COLOR_ELEMENT_DATA", &custom_element_b_color);
+                        gtk_color_chooser_set_use_alpha (GTK_COLOR_CHOOSER (cpick), true);
+                        gtk_color_button_set_title (GTK_COLOR_BUTTON (cpick), "Element B Color");
+                        g_signal_connect (G_OBJECT (cpick), "color_set",
+                                          G_CALLBACK (colorchange_callback), this);
+                        properties_bp->grid_add_widget (cpick, 2);
+                }
+                properties_bp->pop_grid ();
+        }
+        properties_bp->new_line ();
 
-                        bp.grid_add_ec ("Series Limits", Unity, &series_limits[0], 0, 1000, ".0f");
-                        bp.grid_add_ec (NULL,            Unity, &series_limits[1], 0, 1000, ".0f");
-                        bp.new_line ();
+        // Profile enable
+        showprofile_checkbutton = gtk_check_button_new_with_label( N_("Show Profile"));
+        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (showprofile_checkbutton), profile ? TRUE:FALSE);
+        properties_bp->grid_add_widget (showprofile_checkbutton, 2);
+        properties_bp->new_line ();
+        g_signal_connect (G_OBJECT (showprofile_checkbutton), "clicked",
+                          G_CALLBACK (VObject::show_profile_cb), this);
+		
 
-			dim_sel = gtk_combo_box_text_new ();
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dim_sel), "path-layer", "Dimension for Path: Layer (Value)");
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dim_sel), "path-time", "Dimension for Path: Time");
-			gtk_combo_box_set_active (GTK_COMBO_BOX (dim_sel), get_profile_path_dimension () == MEM2D_DIM_LAYER ? 0:1);
-                        bp.grid_add_widget (dim_sel, 10);
-                        bp.new_line ();
-                        
-			data_sel = gtk_combo_box_text_new ();
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_sel), "plot-curview", "Plot data of current view");
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_sel), "plot-all", "Plot all data series");
-			gtk_combo_box_set_active (GTK_COMBO_BOX (data_sel), get_profile_series_all () ? 1:0);
-                        bp.grid_add_widget (data_sel, 10);
-                        bp.new_line ();
+        gchar *label = g_strdup_printf ("Show SpcT[%d:%d]:", space_time_now[1], space_time_now[0]);
+        properties_bp->grid_add_ec (label, Unity, &space_time_on[1], -1, 1000, ".0f");
+        properties_bp->grid_add_ec (NULL,  Unity, &space_time_on[0], -1, 1000, ".0f");
+        g_free (label);
+        properties_bp->new_line ();
+                
+        label = g_strdup_printf ("Hide SpcT[%d:%d]", space_time_now[1], space_time_now[0]);
+        properties_bp->grid_add_ec (label, Unity, &space_time_off[1], -1, 1000, ".0f");
+        properties_bp->grid_add_ec (NULL,  Unity, &space_time_off[0], -1, 1000, ".0f");
+        g_free (label);
+        properties_bp->new_line ();
 
-			data_plot = gtk_combo_box_text_new ();
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_plot), "no-2d", "No Grey 2D view");
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_plot), "add-2d", "Add Grey 2D view");
-			gtk_combo_box_set_active (GTK_COMBO_BOX (data_plot), plot_g2d? 1:0);
-                        bp.grid_add_widget (data_plot, 10);
-                        bp.new_line ();
-		}
-		if (obj_type_id () == O_LINE && profile){ // Profile Path in XY, series in Layer/Time
-                        bp.grid_add_ec ("Path Width", Pixel, &path_width, 0, 1000, ".0f");
-                        bp.new_line ();
+        // marker_scale
+        properties_bp->grid_add_ec ("Marker Scale", Unity, &marker_scale, 0., 1000., ".2f");
+        properties_bp->new_line ();
 
-                        bp.grid_add_ec ("Path Step", Pixel, &path_step, 0, 1000, ".0f");
-                        bp.new_line ();
+        for (int n=0; n<np; ++n){
+                int i=2*n;
+                gchar *label = g_strdup_printf ("P%d:", n);
+                properties_bp->grid_add_ec (label, Pixel, &xy[i],   -32767, 32767, ".0f");
+                properties_bp->grid_add_ec (NULL,  Pixel, &xy[i+1], -32767, 32767, ".0f");
+                g_free (label);
+                properties_bp->new_line ();
+        }
+        if (obj_type_id () == O_POINT && profile){ // Point Path at XY in Layer, Series in Time or in Time, Series in Layer
+                properties_bp->grid_add_ec ("Path Width", Pixel, &path_width, 0, 1000, ".0f");
+                properties_bp->new_line ();
 
-                        bp.grid_add_ec ("Series Limits", Unity, &series_limits[0], 0, 1000, ".0f");
-                        bp.grid_add_ec (NULL,            Unity, &series_limits[1], 0, 1000, ".0f");
-                        bp.new_line ();
+                properties_bp->grid_add_ec ("Series Limits", Unity, &series_limits[0], 0, 1000, ".0f");
+                properties_bp->grid_add_ec (NULL,            Unity, &series_limits[1], 0, 1000, ".0f");
+                properties_bp->new_line ();
 
-			dimp_sel = gtk_combo_box_text_new ();
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dimp_sel), "dim-path-xy", "Dimension for Path: XY");
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dimp_sel), "dim-path-layer","Dimension for Path: Layer (Value)");
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dimp_sel), "dim-parth-time","Dimension for Path: Time");
-			ii = (int)path_dimension - 2; if (ii<0) ii=0;
-			gtk_combo_box_set_active (GTK_COMBO_BOX (dimp_sel), ii);
-                        bp.grid_add_widget (dimp_sel, 10);
-                        bp.new_line ();
+                dim_sel = gtk_combo_box_text_new ();
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dim_sel), "path-layer", "Dimension for Path: Layer (Value)");
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dim_sel), "path-time", "Dimension for Path: Time");
+                gtk_combo_box_set_active (GTK_COMBO_BOX (dim_sel), get_profile_path_dimension () == MEM2D_DIM_LAYER ? 0:1);
+                properties_bp->grid_add_widget (dim_sel, 10);
+                g_signal_connect (G_OBJECT (dim_sel), "changed",
+                                  G_CALLBACK (VObject::selection_dim_changed_cb), this);
+                properties_bp->new_line ();
+                               
+                data_sel = gtk_combo_box_text_new ();
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_sel), "plot-curview", "Plot data of current view");
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_sel), "plot-all", "Plot all data series");
+                gtk_combo_box_set_active (GTK_COMBO_BOX (data_sel), get_profile_series_all () ? 1:0);
+                properties_bp->grid_add_widget (data_sel, 10);
+                g_signal_connect (G_OBJECT (data_sel), "changed",
+                                  G_CALLBACK (VObject::selection_data_changed_cb), this);
+                properties_bp->new_line ();
 
-			dims_sel = gtk_combo_box_text_new ();
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dims_sel), "dim-ser-xy","Dimension for Series: XY");
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dims_sel), "dim-ser-layer","Dimension for Series: Layer (Value)");
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dims_sel), "dim-ser-timexy","Dimension for Series: Time");
-			ii= (int)series_dimension - 2; if (ii<0) ii=0;
-			gtk_combo_box_set_active (GTK_COMBO_BOX (dims_sel), ii);
-                        bp.grid_add_widget (dims_sel, 10);
-                        bp.new_line ();
+                data_plot = gtk_combo_box_text_new ();
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_plot), "no-2d", "No Grey 2D view");
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_plot), "add-2d", "Add Grey 2D view");
+                gtk_combo_box_set_active (GTK_COMBO_BOX (data_plot), plot_g2d? 1:0);
+                properties_bp->grid_add_widget (data_plot, 10);
+                g_signal_connect (G_OBJECT (data_plot), "changed",
+                                  G_CALLBACK (VObject::selection_data_plot_changed_cb), this);
+                properties_bp->new_line ();
+        }
+        if (obj_type_id () == O_LINE && profile){ // Profile Path in XY, series in Layer/Time
+                properties_bp->grid_add_ec ("Path Width", Pixel, &path_width, 0, 1000, ".0f");
+                properties_bp->new_line ();
 
-			data_sel = gtk_combo_box_text_new ();
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_sel), "plot-curview","Plot data of current view");
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_sel), "plot-all-sets","Plot all data sets");
-			gtk_combo_box_set_active (GTK_COMBO_BOX (data_sel), series_all? 1:0);
-                        bp.grid_add_widget (data_sel, 10);
-                        bp.new_line ();
+                properties_bp->grid_add_ec ("Path Step", Pixel, &path_step, 0, 1000, ".0f");
+                properties_bp->new_line ();
 
-			data_plot = gtk_combo_box_text_new ();
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_plot), "no-2d", "No Grey 2D view");
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_plot), "add-2d", "Add Grey 2D view");
-			gtk_combo_box_set_active (GTK_COMBO_BOX (data_plot), plot_g2d? 1:0);
-                        bp.grid_add_widget (data_plot, 10);
-                        bp.new_line ();
-		}
-		if (obj_type_id () == O_KSYS){ // Koord-system / grid
-			grid_plot = gtk_combo_box_text_new ();
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-free-none", "Grid: free none");       // 0
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-free-lines","Grid: free Lines");      // 1
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-free-circ","Grid: free Circels");    // 2
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-free-line+circ","Grid: free Lines + Circles"); // 3
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-none","Grid: (111) none");      // 4
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-lines","Grid: (111) Lines");     // 5
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-circ","Grid: (111) Circles");   // 6
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-line+circ","Grid: (111) Lines + Circles");    // 7
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-100-none","Grid: (100) none");      // 8
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-100-lines","Grid: (100) Lines");     // 9
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-100-circles","Grid: (100) Circles");   // 10
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-100-lines+circ","Grid: (100) Lines + Circles");    // 11
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-hexas","Grid: (111) Hexas");    // 12
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-hexash","Grid: (111) Hexas-H");    // 13
-			gtk_combo_box_set_active (GTK_COMBO_BOX (grid_plot), grid_mode);
-                        bp.grid_add_widget (grid_plot, 10);
-                        bp.new_line ();
+                properties_bp->grid_add_ec ("Series Limits", Unity, &series_limits[0], 0, 1000, ".0f");
+                properties_bp->grid_add_ec (NULL,            Unity, &series_limits[1], 0, 1000, ".0f");
+                properties_bp->new_line ();
 
-                        bp.grid_add_ec ("Grid Multiples", Unity, &grid_multiples, 1, 1000, ".0f");
-                        bp.new_line ();
+                dimp_sel = gtk_combo_box_text_new ();
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dimp_sel), "dim-path-xy", "Dimension for Path: XY");
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dimp_sel), "dim-path-layer","Dimension for Path: Layer (Value)");
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dimp_sel), "dim-parth-time","Dimension for Path: Time");
+                int ii = (int)path_dimension - 2; if (ii<0) ii=0;
+                gtk_combo_box_set_active (GTK_COMBO_BOX (dimp_sel), ii);
+                properties_bp->grid_add_widget (dimp_sel, 10);
+                g_signal_connect (G_OBJECT (dimp_sel), "changed",
+                                  G_CALLBACK (VObject::selection_dimp_changed_cb), this);
+                properties_bp->new_line ();
 
-                        bp.grid_add_ec ("Grid Size", Unity, &grid_size, 1, 1000, ".0f");
-                        bp.new_line ();
+                dims_sel = gtk_combo_box_text_new ();
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dims_sel), "dim-ser-xy","Dimension for Series: XY");
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dims_sel), "dim-ser-layer","Dimension for Series: Layer (Value)");
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dims_sel), "dim-ser-timexy","Dimension for Series: Time");
+                ii= (int)series_dimension - 2; if (ii<0) ii=0;
+                gtk_combo_box_set_active (GTK_COMBO_BOX (dims_sel), ii);
+                properties_bp->grid_add_widget (dims_sel, 10);
+                g_signal_connect (G_OBJECT (dims_sel), "changed",
+                                  G_CALLBACK (VObject::selection_dims_changed_cb), this);
+                properties_bp->new_line ();
 
-                        bp.grid_add_ec ("Grid Aspect", Unity, &grid_aspect, 0., 2., ".4f");
-                        bp.new_line ();
-		}
+                data_sel = gtk_combo_box_text_new ();
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_sel), "plot-curview","Plot data of current view");
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_sel), "plot-all-sets","Plot all data sets");
+                gtk_combo_box_set_active (GTK_COMBO_BOX (data_sel), series_all? 1:0);
+                properties_bp->grid_add_widget (data_sel, 10);
+                g_signal_connect (G_OBJECT (data_sel), "changed",
+                                  G_CALLBACK (VObject::selection_data_changed_cb), this);
+                properties_bp->new_line ();
 
-		if (textinput)
-			g_signal_connect (G_OBJECT (textinput), "changed", G_CALLBACK (label_changed_cb), &text);
+                data_plot = gtk_combo_box_text_new ();
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_plot), "no-2d", "No Grey 2D view");
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (data_plot), "add-2d", "Add Grey 2D view");
+                gtk_combo_box_set_active (GTK_COMBO_BOX (data_plot), plot_g2d? 1:0);
+                properties_bp->grid_add_widget (data_plot, 10);
+                g_signal_connect (G_OBJECT (data_plot), "changed",
+                                  G_CALLBACK (VObject::selection_data_plot_changed_cb), this);
+                properties_bp->new_line ();
+        }
+        if (obj_type_id () == O_KSYS){ // Koord-system / grid
+                grid_plot = gtk_combo_box_text_new ();
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-free-none", "Grid: free none");       // 0
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-free-lines","Grid: free Lines");      // 1
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-free-circ","Grid: free Circels");    // 2
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-free-line+circ","Grid: free Lines + Circles"); // 3
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-none","Grid: (111) none");      // 4
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-lines","Grid: (111) Lines");     // 5
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-circ","Grid: (111) Circles");   // 6
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-line+circ","Grid: (111) Lines + Circles");    // 7
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-100-none","Grid: (100) none");      // 8
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-100-lines","Grid: (100) Lines");     // 9
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-100-circles","Grid: (100) Circles");   // 10
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-100-lines+circ","Grid: (100) Lines + Circles");    // 11
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-hexas","Grid: (111) Hexas");    // 12
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-hexash","Grid: (111) Hexas-H");    // 13
+                gtk_combo_box_set_active (GTK_COMBO_BOX (grid_plot), grid_mode);
+                properties_bp->grid_add_widget (grid_plot, 10);
+                g_signal_connect (G_OBJECT (grid_plot), "changed",
+                                  G_CALLBACK (VObject::selection_grid_plot_changed_cb), this);
+                properties_bp->new_line ();
 
-                // bp.show_all ();
-		gtk_widget_show_all (dialog);
-		gtk_dialog_run (GTK_DIALOG(dialog));
+                properties_bp->grid_add_ec ("Grid Multiples", Unity, &grid_multiples, 1, 1000, ".0f");
+                properties_bp->new_line ();
 
-		if (showlabel_checkbutton)
-			show_label (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (showlabel_checkbutton)) ? 1:0);
+                properties_bp->grid_add_ec ("Grid Size", Unity, &grid_size, 1, 1000, ".0f");
+                properties_bp->new_line ();
 
-		if (showprofile_checkbutton)
-			show_profile (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (showprofile_checkbutton)) ? TRUE:FALSE);
+                properties_bp->grid_add_ec ("Grid Aspect", Unity, &grid_aspect, 0., 2., ".4f");
+                properties_bp->new_line ();
+        }
 
+        if (textinput)
+                g_signal_connect (G_OBJECT (textinput), "changed", G_CALLBACK (label_changed_cb), this);
 
+        properties_bp->show_all ();
+}
+
+void VObject::properties(){
+        GtkWidget *dialog = gtk_dialog_new_with_buttons (N_("Object Properties"), 
+                                                         GTK_WINDOW (gtk_widget_get_toplevel (canvas)), 
+                                                         (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                         _("_OK"), GTK_RESPONSE_ACCEPT,
+                                                         NULL); 
+        build_properties_view (false);
+        gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), properties_bp->grid);
+                
+        gtk_widget_show_all (dialog);
+        gtk_dialog_run (GTK_DIALOG(dialog));
+
+#if 0
+        do {
+                gtk_dialog_run (GTK_DIALOG(dialog));
 		if (dim_sel)
 			switch (gtk_combo_box_get_active (GTK_COMBO_BOX (dim_sel))){
 			case 0: set_profile_path_dimension (MEM2D_DIM_LAYER); break;
@@ -825,16 +920,24 @@ void VObject::properties(){
 			}
 		if (grid_plot)
 			grid_mode = gtk_combo_box_get_active (GTK_COMBO_BOX (grid_plot));
-
+                
 		gtk_widget_destroy (dialog);
 
 		// repeat: do not allow same path & series dimension.
 
                 // free EC's
                 bp.delete_all_ec ();
-
 	} while ((obj_type_id () == O_LINE) && (get_profile_series_dimension () == get_profile_path_dimension ())); 
+#endif
 
+        gtk_widget_destroy (dialog);
+
+#if 0        
+	++space_time_on[0];
+	++space_time_on[1];
+	++space_time_off[0];
+	++space_time_off[1];
+        
 	if (!space_time_on[0] || !space_time_on[1])
 		space_time_from_0=TRUE;
 	else
@@ -849,12 +952,11 @@ void VObject::properties(){
 	--space_time_on[1];
 	--space_time_off[0];
 	--space_time_off[1];
-      
+#endif
+        
 	if (profile)
 		profile->NewData(vinfo->sc, this);
 
-	delete Pixel;
-	delete Unity;
 
 	remake_node_markers ();
 }
@@ -893,7 +995,6 @@ void VObject::remake_node_markers (){
 	}
 
 	Update ();
-	show_label ();
 }
 
 void VObject::set_on_spacetime (gboolean flag, int spacetime[2], int id){
@@ -1038,58 +1139,41 @@ void VObject::SetUpScan(){
 	gapp->spm_update_all();
 }
 
-void VObject::show_label(int flg){
-	switch (flg){
-	case 1:
-		if (!label){
+void VObject::show_label_cb(GtkWidget *widget, VObject *vo){
+        if (widget)
+                vo->show_label (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        else
+                vo->show_label ();
+}
+
+
+void VObject::show_label(gboolean flg){
+	if (flg){
+		if (!label)
 			label = new cairo_item_text (xy[0] + label_offset_xy[0]*get_marker_scale (), 
                                                      xy[1] + label_offset_xy[1]*get_marker_scale (), 
                                                      text);
+                label->set_xy (0, 
+                               xy[0] + label_offset_xy[0]*get_marker_scale (), 
+                               xy[1] + label_offset_xy[1]*get_marker_scale ());
+                label->set_text (text);
+                label->set_pango_font (custom_label_font);
+                label->set_stroke_rgba (&custom_label_color);
 
-                        label->set_pango_font (custom_label_font);
-			// "font", custom_label_font,
-                        // "anchor", label_osd_stye? GTK_ANCHOR_EAST : GTK_ANCHOR_CENTER,
-			label->set_stroke_rgba (custom_label_color);
-		} else {
-			label->set_xy (0, 
-                                       xy[0] + label_offset_xy[0]*get_marker_scale (), 
-                                       xy[1] + label_offset_xy[1]*get_marker_scale ());
-			label->set_text (text);
-                        label->set_pango_font (custom_label_font);
-			label->set_stroke_rgba (custom_label_color);
-                }
-		if (is_spacetime ())
-			label->show ();
-		else
-			label->hide ();
-			
+                if (is_spacetime ())
+                        label->show ();
+                else
+                        label->hide ();
+                
                 label->queue_update (canvas);
-		return;
-	case 0:
-		if (label){
-			label->hide ();
-                        label->queue_update (canvas);
-			delete label;
-			label = NULL;
-		}
-		return;
-	case -1:
-		if (label) {
-			label->set_xy (0, 
-                                       xy[0] + label_offset_xy[0]*get_marker_scale (), 
-                                       xy[1] + label_offset_xy[1]*get_marker_scale ());
-			label->set_text (text);
-			label->set_stroke_rgba (custom_label_color);
 
-                        if (is_spacetime ())
-                                label->show ();
-                        else
-                                label->hide ();
-			
-                        label->queue_update (canvas);
-		}
-		return;
-	}
+	} else if (label){
+                label->hide ();
+                label->queue_update (canvas);
+                delete label;
+                label = NULL;
+        }
+
 }
 
 void VObject::GoLocMax(int r){
@@ -1261,7 +1345,6 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
                         }
                                 
                         Update();
-                        show_label();
                         x = new_x;
                         y = new_y;
                 }
@@ -1306,6 +1389,9 @@ void VObPoint::Update(){
 				 s1=vinfo->makeXYZinfo(xy[0],xy[1], &p2d[0]),
 				 NULL);
 	g_free(s1);
+
+        update_label ();
+        
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=1;
 
@@ -1534,7 +1620,7 @@ void VObLine::Update(){
 		// Line
 		abl[np+segment]->set_xy (0, xy[segment*2+0], xy[segment*2+1]); 
 		abl[np+segment]->set_xy (1, xy[segment*2+2]-(l*M[0] + l*M[1]), xy[segment*2+3]+(l*M[2] + l*M[3]));
-                abl[np+segment]->set_stroke_rgba (custom_element_color);
+                abl[np+segment]->set_stroke_rgba (&custom_element_color);
                 abl[np+segment]->set_line_width (OBJECT_LINE_WIDTH);
 
                 abl[np+segment]->queue_update (canvas);
@@ -1704,7 +1790,7 @@ void VObLine::Update(){
                 arrow_head[segment]->set_xy (1, -(l*M[0] + l*M[1]), (l*M[2] + l*M[3]));
 
 		arrow_head[segment]->set_xy (2, 0., 0.);
-                arrow_head[segment]->set_stroke_rgba (custom_element_color);
+                arrow_head[segment]->set_stroke_rgba (&custom_element_color);
                 arrow_head[segment]->set_fill_rgba (0., 0., 0., 0.33);
                 arrow_head[segment]->set_line_width (OBJECT_LINE_WIDTH);
                 arrow_head[segment]->queue_update (canvas);
@@ -1715,6 +1801,8 @@ void VObLine::Update(){
                         hide ();
 	}
   
+        update_label ();
+
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=2;
 
@@ -1771,6 +1859,8 @@ void VObPolyLine::Update(){
 		abl[np]->set_xy (i, xy[2*i], xy[1+2*i]);
 	}
 
+        update_label ();
+
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=np;
 	g_free(mld);
@@ -1824,6 +1914,8 @@ void VObTrace::Update(){
 	for( int i=0; i<np; ++i)
                	abl[np]->set_xy (i, xy[2*i], xy[1+2*i]);
 
+        update_label ();
+
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=np;
 	g_free(mld);
@@ -1849,10 +1941,10 @@ VObKsys::VObKsys(GtkWidget *_canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_C
 	n_bounds = 0;
 	grid_mode = 6;
 
-	custom_element_b_color[0]=200./255.;
-	custom_element_b_color[1]=255./255.;
-	custom_element_b_color[2]=100./255.;
-	custom_element_b_color[3]=100./255.;
+	custom_element_b_color.red=200./255.;
+	custom_element_b_color.green=255./255.;
+	custom_element_b_color.blue=100./255.;
+	custom_element_b_color.alpha=100./255.;
 
 	abl[3]->set_xy (0, xy[0], xy[1]);	/* end of first vector, initally looking to the right */ 
         abl[3]->set_xy (1, xy[2], xy[3]);	/* origin */
@@ -1940,7 +2032,7 @@ void VObKsys::calc_grid(){
 		if (bounds == NULL){
                         n_bounds = nl;
                         bounds = new cairo_item_segments (n_bounds);
-                        bounds->set_stroke_rgba (custom_element_b_color);
+                        bounds->set_stroke_rgba (&custom_element_b_color);
                         bounds->set_fill_rgba (0.,0.,0.,0.);
                         bounds->set_line_width (OBJECT_LINE_WIDTH);
 		}
@@ -2001,7 +2093,7 @@ void VObKsys::calc_grid(){
                 }
                         
                 bounds->show ();
-                bounds->set_stroke_rgba (custom_element_b_color);
+                bounds->set_stroke_rgba (&custom_element_b_color);
                 bounds->queue_update (canvas);
         } else {
                 if (bounds){
@@ -2022,7 +2114,7 @@ void VObKsys::calc_grid(){
                         n_atoms = np;
                         XSM_DEBUG_GP (DBG_L1, "calc atoms -- new atoms n=%d\n", n_atoms); 
                         atoms = new cairo_item_circle (n_atoms);
-                        atoms->set_stroke_rgba (custom_element_b_color);
+                        atoms->set_stroke_rgba (&custom_element_b_color);
                         atoms->set_fill_rgba (0.,0.,0.,0.);
                         atoms->set_line_width (OBJECT_LINE_WIDTH);
                         atoms->set_radius (rx[0]/2.);
@@ -2043,7 +2135,7 @@ void VObKsys::calc_grid(){
                                 }
 
                 atoms->set_radius (arx > ary ? arx : ary);
-                atoms->set_stroke_rgba (custom_element_b_color);
+                atoms->set_stroke_rgba (&custom_element_b_color);
                 atoms->show ();
                 atoms->queue_update (canvas);
 
@@ -2068,7 +2160,7 @@ void VObKsys::calc_grid(){
 		if (lines == NULL){
                         n_lines = nl;
                         lines = new cairo_item_segments (n_lines);
-                        lines->set_stroke_rgba (custom_element_b_color);
+                        lines->set_stroke_rgba (&custom_element_b_color);
                         lines->set_fill_rgba (0.,0.,0.,0.);
                         lines->set_line_width (OBJECT_LINE_WIDTH);
 		}
@@ -2094,7 +2186,7 @@ void VObKsys::calc_grid(){
 		}  
 
                 lines->show ();
-                lines->set_stroke_rgba (custom_element_b_color);
+                lines->set_stroke_rgba (&custom_element_b_color);
                 lines->queue_update (canvas);
 
 	} else {
@@ -2155,7 +2247,7 @@ void VObKsys::Update(){
 
 		arrow_head[segment]->set_xy (2, xy[segment*2+2], xy[segment*2+3]);
 
-                arrow_head[segment]->set_stroke_rgba (custom_element_color);
+                arrow_head[segment]->set_stroke_rgba (&custom_element_color);
                 arrow_head[segment]->set_fill_rgba (0.,0.,0., 0.33);
                 arrow_head[segment]->set_line_width (OBJECT_LINE_WIDTH);
                 arrow_head[segment]->queue_update (canvas);
@@ -2189,11 +2281,13 @@ void VObKsys::Update(){
 	abl[np]->set_xy (0, xy[0], xy[1]);
 	abl[np]->set_xy (1, xy[2], xy[3]);
         abl[np]->set_xy (2, xy[4], xy[5]);
-        abl[np]->set_fill_rgba (custom_element_color);
+        abl[np]->set_fill_rgba (&custom_element_color);
 
 	calc_grid ();
 	update_grid ();
   
+        update_label ();
+
 	vinfo->sc->PktVal=3;
 
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
@@ -2222,7 +2316,7 @@ VObParabel::VObParabel(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, V
 	abl[3]->set_xy (0, xy[0], xy[1]); 
         abl[3]->set_xy (0, xy[2], xy[3]);
         abl[3]->set_xy (0, xy[4], xy[5]);
-        abl[3]->set_stroke_rgba (custom_element_color);
+        abl[3]->set_stroke_rgba (&custom_element_color);
         abl[3]->set_line_width (OBJECT_LINE_WIDTH);
         abl[3]->queue_update (canvas);
 
@@ -2268,11 +2362,13 @@ void VObParabel::Update(){
 		abl[np]->set_xy (i, xy[2] + c*x + s*x*x*skl, xy[3] - s*x + c*x*x*skl);
 	}
 
-        abl[np]->set_fill_rgba (custom_element_color);
+        abl[np]->set_fill_rgba (&custom_element_color);
         abl[np]->queue_update (canvas);
 
 	vinfo->sc->PktVal=3;
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
+
+        update_label ();
 
 	if(profile){
 		profile->show();
@@ -2293,7 +2389,7 @@ VObRectangle::VObRectangle(GtkWidget *canvas, double *xy0, Point2D *P2d, int pfl
 	obj_type_id (O_RECTANGLE);
 
         abl[2] = new cairo_item_rectangle (xy[0], xy[1], xy[2], xy[3]);
-        abl[2]->set_stroke_rgba (custom_element_color);
+        abl[2]->set_stroke_rgba (&custom_element_color);
         abl[2]->set_fill_rgba (0.,0.,0.,0.2);
         abl[2]->set_line_width (OBJECT_LINE_WIDTH);
         abl[2]->queue_update (canvas);
@@ -2314,7 +2410,7 @@ void VObRectangle::Update(){
 	g_free(vinfo->makeXYinfo(xy[2],xy[3], &p2d[1]));
         abl[np]->set_xy (0, xy[0], xy[1]);
         abl[np]->set_xy (1, xy[2], xy[3]);
-        abl[np]->set_stroke_rgba (custom_element_color);
+        abl[np]->set_stroke_rgba (&custom_element_color);
 
 	if (is_spacetime ())
                 show ();
@@ -2323,6 +2419,8 @@ void VObRectangle::Update(){
 
         abl[np]->queue_update (canvas);
 
+        update_label ();
+                
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=2;
 
@@ -2387,7 +2485,7 @@ VObCircle::VObCircle(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOB
         double dx = xy[0] - xy[2];
         double dy = xy[1] - xy[3];
 	abl[2] = new cairo_item_circle (xy[0], xy[1], sqrt (dx*dx+dy*dy));
-        abl[2]->set_stroke_rgba (custom_element_color);
+        abl[2]->set_stroke_rgba (&custom_element_color);
         abl[2]->set_fill_rgba (0.,0.,0.,0.);
         abl[2]->set_line_width (OBJECT_LINE_WIDTH);
         abl[2]->queue_update (canvas);
@@ -2409,9 +2507,11 @@ void VObCircle::Update(){
         double dy = xy[1] - xy[3];
 	abl[2]->set_xy (0, xy[0], xy[1]);
 	((cairo_item_circle*)abl[2])->set_radius (sqrt (dx*dx+dy*dy)); // radius
-        abl[2]->set_stroke_rgba (custom_element_color);
+        abl[2]->set_stroke_rgba (&custom_element_color);
         abl[2]->set_line_width (OBJECT_LINE_WIDTH);
         abl[2]->queue_update (canvas);
+
+        update_label ();
 
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=2;
@@ -2447,6 +2547,8 @@ void VObEvent::Update(){
 
 	if (vinfo->sc->view)
 		vinfo->sc->view->update_event_info (scan_event);
+
+        update_label ();
 
 	Activate ();
 

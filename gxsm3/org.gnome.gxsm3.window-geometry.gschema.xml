@@ -23,6 +23,11 @@
       <summary>show/hide state, option, X,Y, H,W</summary>
       <description>geometry</description>
     </key>
+    <key name="view-scan2d-0" type="ai">
+      <default>[0,0, 0,0,0,0]</default>
+      <summary>show/hide state, option, X,Y, H,W</summary>
+      <description>geometry</description>
+    </key>
     <key name="view-scan2d-1" type="ai">
       <default>[0,0, 0,0,0,0]</default>
       <summary>show/hide state, option, X,Y, H,W</summary>
