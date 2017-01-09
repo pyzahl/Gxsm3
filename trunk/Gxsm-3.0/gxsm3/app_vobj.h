@@ -102,10 +102,13 @@ class VObject{
 	void show_label (gboolean flg=true);
 	void update_label () { if (label) show_label (); };
 
-	void build_properties_view (gboolean add=true);
-	
+	static void lock_position_cb (GtkWidget *widget, VObject *vo);
+	void lock_object (gboolean l) { lock = l; };
+
 	static void show_profile_cb (GtkWidget *widget,  VObject *vo);
 	void show_profile (gboolean flg=true);
+
+	void build_properties_view (gboolean add=true);
 
 	void set_xy_node(double *xy_node, VOBJ_COORD_MODE cmode, int node=0);
 	void insert_node(double *xy_node=NULL);
@@ -119,7 +122,6 @@ class VObject{
         void hide () { show_flag = FALSE; };
 
 	void Activate ();
-	void lock_object (int l) { lock = l? 1:0; };
 
 	void set_color_to_active (); // "blue"
 	void set_color_to_inactive (); // "red"
@@ -326,7 +328,7 @@ class VObject{
  private:
 	int id;
 	V_OBJECT_TYPE type_id;
-	int lock;
+	gboolean lock;
         gboolean show_flag;
 
 	int space_time_now[2], space_time_on[2], space_time_off[2];

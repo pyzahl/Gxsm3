@@ -121,7 +121,7 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pfl
 	Unity = new UnitObj(" "," ");
 
 	scan_event=NULL;
-	lock=0;
+	lock=false;
 	id=0;
 	label_osd_stye = FALSE;
 
@@ -627,6 +627,7 @@ void VObject::build_properties_view (gboolean add){
 	GtkWidget *grid_plot = NULL;
 	GtkWidget *showlabel_checkbutton = NULL;
 	GtkWidget *showprofile_checkbutton = NULL;
+	GtkWidget *lock_checkbutton = NULL;
 
         if (properties_bp){
                 // free EC's
@@ -688,9 +689,9 @@ void VObject::build_properties_view (gboolean add){
                 properties_bp->grid_add_widget (showlabel_checkbutton, 2);
                 g_signal_connect (G_OBJECT (showlabel_checkbutton), "clicked",
                                   G_CALLBACK (VObject::show_label_cb), this);
-                
+
                 properties_bp->new_line ();
-		
+                
                 if (obj_type_id () != O_POINT) {
                         properties_bp->grid_add_label ("Line/Fill Color:");
 
@@ -718,10 +719,16 @@ void VObject::build_properties_view (gboolean add){
         showprofile_checkbutton = gtk_check_button_new_with_label( N_("Show Profile"));
         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (showprofile_checkbutton), profile ? TRUE:FALSE);
         properties_bp->grid_add_widget (showprofile_checkbutton, 2);
-        properties_bp->new_line ();
         g_signal_connect (G_OBJECT (showprofile_checkbutton), "clicked",
                           G_CALLBACK (VObject::show_profile_cb), this);
 		
+        lock_checkbutton = gtk_check_button_new_with_label( N_("Lock Position"));
+        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (lock_checkbutton), lock);
+        properties_bp->grid_add_widget (lock_checkbutton, 2);
+        g_signal_connect (G_OBJECT (lock_checkbutton), "clicked",
+                          G_CALLBACK (VObject::lock_position_cb), this);
+
+        properties_bp->new_line ();
 
         gchar *label = g_strdup_printf ("Show SpcT[%d:%d]:", space_time_now[1], space_time_now[0]);
         properties_bp->grid_add_ec (label, Unity, &space_time_on[1], -1, 1000, ".0f");
@@ -1140,10 +1147,7 @@ void VObject::SetUpScan(){
 }
 
 void VObject::show_label_cb(GtkWidget *widget, VObject *vo){
-        if (widget)
-                vo->show_label (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
-        else
-                vo->show_label ();
+        vo->show_label (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
 }
 
 
@@ -1174,6 +1178,10 @@ void VObject::show_label(gboolean flg){
                 label = NULL;
         }
 
+}
+
+void VObject::lock_position_cb (GtkWidget *widget, VObject *vo){
+        vo->lock_object (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
 }
 
 void VObject::GoLocMax(int r){
@@ -1236,45 +1244,6 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
 
         if (!item)
                 return false;
-
-        // locked item?
-	if (lock){
-                g_message ("VObject::check_event:  LOCKED OBJ  b=%d",event->button.button);
-                switch (event->type){
-                case GDK_BUTTON_PRESS:
-                        switch(event->button.button){
-                        case 1:
-                                x = item_x;
-                                y = item_y;
-                                
-                                touched_item  = item;
-                                touched_xy[0] = item_x;
-                                touched_xy[1] = item_y;
-                                        
-                                // cursor = gdk_cursor_new(GDK_FLEUR);
-                                // gdk_cursor_destroy(cursor);
-
-                                item->grab ();
-                                dragging = true;
-                                Update();
-                                break;
-                        default:
-                                break;
-                        }
-                        break;
-                case GDK_ENTER_NOTIFY:
-                        set_color_to_hilit ();
-                        Update();
-                        break;
-                case GDK_LEAVE_NOTIFY:
-                        set_color_to_inactive ();
-                        Update();
-                        break;
-                default:
-                        break;
-                }
-                return false;
-	}
         
 	switch (event->type){
         case GDK_BUTTON_PRESS:
@@ -1300,13 +1269,8 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
                         touched_item  = item;
                         touched_xy[0] = item_x;
                         touched_xy[1] = item_y;
-                        // GTK3QQQ -- no better clue yet -- testing fix
                         g_object_set_data (G_OBJECT (canvas), "VObject", this);
                         gtk_menu_popup_at_pointer (GTK_MENU (obj_popup_menu), event);
-                                // ????? how ????
-                                //g_action_map_add_action_entries (G_ACTION_MAP (gs_action_group),
-                                //                                 win_object_popup_entries, G_N_ELEMENTS (win_object_popup_entries),
-                                //                                 this);
                         break;
 
                 default:
@@ -1315,7 +1279,7 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
                 break;
 		
         case GDK_MOTION_NOTIFY:
-                if (item->is_grabbed () && dragging && (event->motion.state & GDK_BUTTON1_MASK)){
+                if (!lock && item->is_grabbed () && dragging && (event->motion.state & GDK_BUTTON1_MASK)){
                         new_x = item_x;
                         new_y = item_y;
 				
@@ -2532,7 +2496,7 @@ VObEvent::VObEvent(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_
 	: VObject(canvas, xy0, 0, P2d, pflg, cmode, lab, marker_scale){
 	set_obj_name ("Event");
 	obj_type_id (O_EVENT);
-	lock_object (TRUE);
+	lock_object (true);
 	Update();
 }
 
