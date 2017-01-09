@@ -924,6 +924,10 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 4), label5);
 	gtk_label_set_angle (GTK_LABEL (label5), 90);
 
+        side_pane_tab_objects = base_grid;
+        //	gtk_grid_attach (GTK_GRID (side_pane_tab_objects), gridxxx, 1,1, 1,1);
+
+#if 0
         grid = gtk_grid_new ();
 	gtk_grid_attach (GTK_GRID (base_grid), grid, 1,1, 1,1);
         x=y=1;
@@ -958,7 +962,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
 	gtk_tree_view_set_model (GTK_TREE_VIEW (view), model);
 	gtk_grid_attach (GTK_GRID (grid), view, 1,1, 1,1);
-
+#endif
 
 	// -- On Scan Display Setup (OSD) -- Tab
 	XSM_DEBUG (DBG_L2,  "VC::VC OSD-Tab" );
@@ -2097,7 +2101,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 		    !strncmp (line, "(VObject \"*Marker:", 18)
 			){
 			double xy[2];
-			gfloat c[4], mas;
+                        gfloat c[4], mas;
 			gchar *f, *nm;
 			int spc[2][2], sp00[2], s;
 			VObject *vo;

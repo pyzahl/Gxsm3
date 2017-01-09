@@ -148,11 +148,10 @@ public:
                 spt[0] = vc->scan->data.display.vlayer;
                 spt[1] = vc->scan->data.display.vframe;
                 vo -> set_spacetime (spt);
-                vo -> show_label ();
                 vo -> Update();
         };
-        static void obj_label_on(VObject *vo, ViewControl *vc){ vo->show_label(1); };
-        static void obj_label_off(VObject *vo, ViewControl *vc){ vo->show_label(0); };
+        static void obj_label_on(VObject *vo, ViewControl *vc){ vo->show_label(true); };
+        static void obj_label_off(VObject *vo, ViewControl *vc){ vo->show_label(false); };
         static void remove_obj(VObject *vo, ViewControl *vc){ 
                 vc->scan->del_object (vo->obj_id ());
                 delete vo; 
@@ -226,6 +225,8 @@ public:
         gchar *MakeMarkerLabel () { return g_strdup_printf ("%d:%d", marker_group, ++marker_counter [marker_group]); };
 
         GtkWidget *canvas;
+        GtkWidget *side_pane_tab_objects;
+        
 private:
         GSettings *view_settings;
         gboolean destruction_in_progress;
