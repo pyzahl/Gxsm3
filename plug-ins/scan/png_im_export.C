@@ -52,7 +52,9 @@ without any transformation or scaling to the PNG file in RGB mode.
 
 In case of image series/movies this export filter automatically generates a series of png images: \GxsmFile{ bild0001.png \dots bild0099.png}.
 To import image series replace 0000 \dots 0099 in your file name by any valid C-format string like \GxsmFile{bild\%04d.png}.
- 
+
+To scale (call AutoDisp function) each frame incude the string \"autodisp\" in the export filename.
+
 % PlugInUsage
 The plug-in is called by \GxsmMenu{File/Import/PNG} and \GxsmMenu{File/Export/PNG}.
 
@@ -659,6 +661,8 @@ FIO_STATUS PNG_ImExportFile::Write(){
 			PI_DEBUG (DBG_L2, "MaxCol#: " << maxcol );
 			PI_DEBUG (DBG_L2, "VFlg:    " << scan->data.display.ViewFlg );
 
+                        if (strstr (name, "autodisp"))
+                                scan->AutoDisplay (0.,0.,1);
 
 			// Set View-Mode Data Range and auto adapt Vcontrast/Bright
 			m->SetDataRange(0, maxcol);
