@@ -300,8 +300,8 @@ void Scan::AutoDisplay(double hi, double lo, int Delta){
 		// store high and low in vdata
 		mem2d->GetZHiLo (&vdata->display.cpshigh, &vdata->display.cpslow);
 		// calculate Vrange in Units
-		vdata->display.vrange_z = fabs (vdata->s.dz * mem2d->GetZRange ())
-			* (vdata->display.vrange_z > 0. ? 1.:-1.);
+		double signum = vdata->display.vrange_z > 0. ? 1.:-1.;
+		vdata->display.vrange_z = signum * (1e-100+fabs (vdata->s.dz * mem2d->GetZRange ()));
 		vdata->display.voffset_z = 0.;
 		// only neede by SPALEED
 		vdata->display.cpshigh /= vdata->display.cnttime; // correct to CPS now!
