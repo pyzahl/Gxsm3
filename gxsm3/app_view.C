@@ -1914,42 +1914,112 @@ void ViewControl::view_file_saveobjects_callback (GSimpleAction *simple, GVarian
 }
 
 
+int GetDArray (gchar *line, gdouble *d, int count){
+        gchar **p = g_strsplit_set (line, " ,;()#", 2*count+20);
+        int k=0;
+        for (int i=0; i<count; ++i){
+                while (p[k] && !*p[k]) ++k;
+                if (p[k]){
+                        d[i] = atof (p[k++]);
+                }else{
+                        g_warning ("Error reading Double Array at [%d].",i);
+                        g_strfreev (p);
+                        return -1;
+                }
+        }
+        g_strfreev (p);
+        return 0;
+}
+
+int GetFArray (gchar *line, gfloat *d, int count){
+        gchar **p = g_strsplit_set (line, " ,;()#", 2*count+20);
+        int k=0;
+        for (int i=0; i<count; ++i){
+                while (p[k] && !*p[k]) ++k;
+                if (p[k]){
+                        d[i] = atof (p[k++]);
+                }else{
+                        g_warning ("Error reading Double Array at [%d].",i);
+                        g_strfreev (p);
+                        return -1;
+                }
+        }
+        g_strfreev (p);
+        return 0;
+}
+
+int GetIArray (gchar *line, int *c, int count){
+        gchar **p = g_strsplit_set (line, " ,;()#", 2*count+20);
+        int k=0;
+        for (int i=0; i<count; ++i){
+                while (p[k] && !*p[k]) ++k;
+                if (p[k]){
+                        c[i] = atoi (p[k++]);
+                }else{
+                        g_warning ("Error reading Int Array at [%d].",i);
+                        g_strfreev (p);
+                        return -1;
+                }
+        }
+        g_strfreev (p);
+        return 0;
+}
+
 void GetColor (gchar *line, const gchar *tag, gfloat *c){
-	gchar *p = strstr (line, tag);
-	if (p){
-		p += strlen(tag);
-		c[0] = atof ( strtok( p, " ,;()"));
-		c[1] = atof ( strtok( NULL, " ,;()"));
-		c[2] = atof ( strtok( NULL, " ,;()"));
-		c[3] = atof ( strtok( NULL, " ,;()"));
+	gchar *p0 = strstr (line, tag);
+	if (p0){
+		p0 += strlen(tag);
+
+                if (GetFArray (p0, c, 4))
+                        g_message ("Error reading color %s.", tag);
+
+                //c[0] = atof ( strtok( p, " ,;()"));
+		//c[1] = atof ( strtok( NULL, " ,;()"));
+		//c[2] = atof ( strtok( NULL, " ,;()"));
+		//c[3] = atof ( strtok( NULL, " ,;()"));
 	}
 }
 
 void GetTuple (gchar *line, const gchar *tag, int c[2]){
-	gchar *p = strstr (line, tag);
-	if (p){
-		p += strlen(tag);
-		c[0] = atoi ( strtok( p, " ,;()"));
-		c[1] = atoi ( strtok( NULL, " ,;()"));
+	gchar *p0 = strstr (line, tag);
+	if (p0){
+		p0 += strlen(tag);
+
+                if (GetIArray (p0, c, 2))
+                        g_warning ("Error reading Tuple %s.",tag);
+
+                //c[0] = atoi ( strtok( p, " ,;()"));
+		//c[1] = atoi ( strtok( NULL, " ,;()"));
 	}
 }
 
 void GetDTuple (gchar *line, const gchar *tag, int c[2][2]){
-	gchar *p = strstr (line, tag);
-	if (p){
-		p += strlen(tag);
-		c[0][0] = atoi ( strtok( p, " ,;()"));
-		c[0][1] = atoi ( strtok( NULL, " ,;()"));
-		c[1][0] = atoi ( strtok( NULL, " ,;()"));
-		c[1][1] = atoi ( strtok( NULL, " ,;()"));
-	}
+	gchar *p0 = strstr (line, tag);
+	if (p0){
+		p0 += strlen(tag);
+                int x[4] = {0,0,0,0};
+                if (GetIArray (p0, x, 4))
+                        g_warning ("Error reading DTuple %s.",tag);
+                int k=0;
+                for (int i=0; i<2; ++i)
+                        for (int j=0; j<2; ++j)
+                                c[i][j] = x[k++];
+                                        
+                //c[0][0] = atoi ( strtok( p, " ,;()"));
+		//c[0][1] = atoi ( strtok( NULL, " ,;()"));
+		//c[1][0] = atoi ( strtok( NULL, " ,;()"));
+		//c[1][1] = atoi ( strtok( NULL, " ,;()"));
+        }
 }
 
 gfloat GetNumber (gchar *line, const gchar *tag){
-	gchar *p = strstr (line, tag);
-	if (p){
-		p += strlen(tag);
-		return atof ( strtok( p, " ,;()"));
+	gchar *p0 = strstr (line, tag);
+	if (p0){
+		p0 += strlen(tag);
+                gfloat x[1] = {0.};
+                if (GetFArray (p0, x, 1))
+                        g_message("Error reading Number %s",tag);
+                return x[0];
 	}
 	return 0.;
 }
@@ -1994,26 +2064,97 @@ gchar *GetLabelInfo (std::ifstream &is, gchar **fnt, gfloat *mas, gfloat col[4],
 }
 
 int GetXAngYAng (std::ifstream &is, double *xy, int initial){
-	gchar line[64];
+        gchar **p;
+	gchar line[512];
+        int i;
 	int n;
 
+        xy[0]=xy[1]=0.;
+        
 	n=0;
 	// skip NPkte, Info, ... until Coords tag
 	while (initial && is.good ()){
-		is.getline (line, 64); // read and check
+		is.getline (line, 512); // read and check
+                g_message("GetXAngYAng a{%s}", line);
 		if (strstr (line, "(NPkte")){
-			n = atoi (strtok(line, " ,;(NPkte)"));
-			continue;
+			p = g_strsplit_set (line, " ,;(NPkte)", 20);
+                        if (p){
+                                int k=0;
+                                while (p[k] && !*p[k]) ++k;
+                                for (; p[k] && *p[k]; ++k){
+                                        g_message ("g_strplit_set() => tok[%i]={%s}",k,p[k]);
+                                }
+                                for (k=0; p[k] && !*p[k]; ++k);
+                                if (p[k]){
+                                        n = atoi (p[k]);
+                                        g_strfreev (p);
+                                }else{
+                                        g_warning ("Error reading N Pkte.");
+                                        g_strfreev (p);
+                                        return 0;
+                                }
+                                g_message("n=%d",n);
+                        }else{
+                                g_warning ("Error reading N Pkte.");
+                                return 0;
+                        }
+                        continue;
 		}
 		if (strstr (line, "(Coords i X Y"))
 			break; // found, proceed below
 	}
-	is.getline (line, 64); // get XY data
-        // int i = atoi (strtok(line, " ,;()"));
-	strtok(NULL, " ,;()"); // ignore X in pix
-	strtok(NULL, " ,;()"); // ignore Y in pix
-	xy[0] = atof (strtok(NULL, " ,;()"));
-	xy[1] = atof (strtok(NULL, " ,;()"));
+	is.getline (line, 512); // get XY data
+        g_message("GetXAngYAng b{%s}", line);
+        p = g_strsplit_set (line, " ,;()", 20);
+        if (p){
+                int k=0;
+                while (p[k] && !*p[k]) ++k;
+                for (; *p[k]; ++k)
+                        g_message ("g_strplit_set() => tok[%i]={%s}",k,p[k]);
+                for (k=0; p[k] && !*p[k]; ++k);
+                if (p[k]){
+                        i = atoi (p[k++]);
+                }else{
+                        g_warning ("Error reading index.");
+                        g_strfreev (p);
+                        return 0;
+                }
+                while (p[k] && !*p[k]) ++k;
+                if (!p[k]){
+                        g_warning ("Error skipping X-pixel.");
+                        g_strfreev (p);
+                        return 0;
+                }
+                ++k;
+                while (p[k] && !*p[k]) ++k;
+                if (!p[k]){
+                        g_warning ("Error skipping Y-pixel.");
+                        g_strfreev (p);
+                        return 0;
+                }
+                ++k;
+                while (p[k] && !*p[k]) ++k;
+                if (p[k]){
+                        xy[0] = atof (p[k++]);
+                }else{
+                        g_warning ("Error reading X coordinate.");
+                        g_strfreev (p);
+                        return 0;
+                }
+                while (p[k] && !*p[k]) ++k;
+                if (p[k]){
+                        xy[1] = atof (p[k++]);
+                }else{
+                        g_warning ("Error reading Y coordinate.");
+                        g_strfreev (p);
+                        return 0;
+                }
+                g_strfreev (p);
+        }else{
+                g_warning ("Error reading coordinates.");
+                return 0;
+        }
+        g_message ("Coords OK = [%d] (%g, %g)Ang", i, xy[0], xy[1]);
 	return n;
 }
 
@@ -2025,13 +2166,48 @@ int GetProfileConfig (std::ifstream &is, int *params_pws, int *params_dims){
 		is.getline (line, 128); // read and check
 		if (strstr (line, "))"))
 			return 0;
+		if (strstr (line, ")")){
+                        if (is.good())
+                                is.getline (line, 128); // read and check
+                        else
+                                return 0;
+                }
 		if (strstr (line, "(ProfileActive PathWidthStep")){
-			params_pws[0] = atoi (strtok(line, " ,;(ProfileActive PathWidthStep)"));
-			params_pws[1] = atoi (strtok(NULL, " ,;(ProfileActive PathWidthStep)"));
-			params_dims[0] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
-			params_dims[1] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
-			params_dims[2] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
-			params_dims[3] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
+                        gchar **p = g_strsplit_set (line, " ,;()", 20);
+                        int k=0;
+                        while (p[k] && !*p[k]) ++k;
+                        ++k; // skip
+                        while (p[k] && !*p[k]) ++k;
+                        ++k; // skip
+                        for (int i=0; i<2; ++i){
+                                while (p[k] && !*p[k]) ++k;
+                                if (p[k]){
+                                        params_pws[i] = atoi (p[k++]);
+                                }else{
+                                        g_warning ("Error reading ProfileActive Configuration pws[%d].",i);
+                                        g_strfreev (p);
+                                        return 0;
+                                }
+                        }
+                        for (int i=0; i<4; ++i){
+                                while (p[k] && !*p[k]) ++k;
+                                if (p[k]){
+                                        params_dims[i] = atoi (p[k++]);
+                                }else{
+                                        g_warning ("Error reading ProfileActive Configuration dims[%d].",i);
+                                        g_strfreev (p);
+                                        return 0;
+                                }
+                        }
+                        g_strfreev (p);
+
+                        //params_pws[0] = atoi (strtok(line, " ,;(ProfileActive PathWidthStep)"));
+			//params_pws[1] = atoi (strtok(NULL, " ,;(ProfileActive PathWidthStep)"));
+			//params_dims[0] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
+			//params_dims[1] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
+			//params_dims[2] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
+			//params_dims[3] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
+
 			return 1;
 		}
 	}
@@ -2054,6 +2230,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 		gchar line[512];
 		gchar *lab = NULL;
 		vc->objloadstream.getline (line, 512);
+                g_message("ViewControl::view_file_loadobjects_callback a{%s}", line);
 		if (!strncmp (line, "#C Vector Probe Header List --", 30)){
 
 // #C Vector Probe Header List -----------------
@@ -2063,6 +2240,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 // ...
 	
 		       vc->objloadstream.getline (line, 512); // skip header line
+                       g_message("ViewControl::view_file_loadobjects_callback b{%s}", line);
 		       double arr[7];
 		       double xy[2] = {0., 0.};
 		       gfloat c[4]  = {0., 0., 1., 1.};
@@ -2073,14 +2251,15 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 		       std::cout << "Reading Trail to Objetcs..." << std::endl << line << std::endl;
 		       while (vc->objloadstream.good ()){
 			   vc->objloadstream.getline (line, 512); // skip line end to next
+                           g_message("ViewControl::view_file_loadobjects_callback c{%s}", line);
 			   std::cout << line << std::endl;
 			   if (!strncmp (line, "#C END", 6))
 				   break;
-			   
-			   arr[0] = atof (strtok(line, " ,;()#"));
-			   for (int i=1; i<7; ++i)
-				   arr[i] = atof (strtok(NULL, " ,;()#"));
-//			   std::cout << arr[0] << " t" << arr[1]  << " x" << arr[3]  << " y" << arr[4] << " z" << arr[5]  << " s" << arr[6];
+
+                           if (GetDArray(line, arr, 7))
+                                   g_message ("Error reading Trail Array.");
+
+                           //			   std::cout << arr[0] << " t" << arr[1]  << " x" << arr[3]  << " y" << arr[4] << " z" << arr[5]  << " s" << arr[6];
 			   xy[0] = arr[3];
 			   xy[1] = arr[4];
 			   lab = g_strdup_printf ("T%05.0f:%.3fms:Z=%gA", arr[0], arr[1], arr[5]);
@@ -2182,7 +2361,9 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			gchar *f;
 			int spc[2][2], sp00[2], s;
 			VObject *vo;		
+                        g_message("VOb CIRCLE");
 			lab = GetLabelInfo (vc->objloadstream, &f, &mas, c, spc, sp00, &s);
+                        g_message("VOb CIRCLE lb=%s",lab);
 			GetXAngYAng (vc->objloadstream, xy, TRUE);
 			GetColor (line, "CustomColor", ec);
 			GetXAngYAng (vc->objloadstream, xy+2, FALSE);
