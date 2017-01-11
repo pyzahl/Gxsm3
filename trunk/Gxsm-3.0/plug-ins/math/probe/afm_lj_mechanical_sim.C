@@ -704,8 +704,8 @@ public:
                         //double m1[3] = {  1.28097400, 0.73657400, 0. }; // TMA-R 10x10bb
                         //double m2[3] = { -8.97151180, 0.73657400, 0. }; // TMA-L 10x10bb -> flip x&y
                         //double m3[3] = {-14.097754,   9.615486,   0. }; // TMA-Lup60
-                        double m1[3] = { -4.71, 0., 0. }; // TMA-L 10x10bb -> 0,0 at origin
-                        double m2[3] = {  4.91, 0., 0. }; // TMA-R 10x10bb flipped -> 4r,0 pos
+                        double m1[3] = { 0.5*(-6.133162+3.333204), 0.5*(0.078078+0.029748), 0. }; // TMA-L 10x10bb -> 0,0 at origin
+                        double m2[3] = { 0.5*( 3.455264+6.255669), 0.5*(0.148316+0.100187), 0. }; // TMA-R 10x10bb flipped -> 4r,0 pos
                         //                        double m3[3] = { -9.387754,  8.878912,   0. }; // TMA-Lup60
                         //double m4[3] = { 10.2245,  0.,   0. }; // TMA-R pos
                         //double ma[3], mb[3], mc[3], m4[3], m5[3], m6[3], tmp[3];
