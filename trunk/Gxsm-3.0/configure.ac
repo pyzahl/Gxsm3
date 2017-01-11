@@ -16,9 +16,6 @@ AC_INIT([gxsm3],
 
 AC_DEFINE_UNQUOTED(GXSM_VERSION_NAME, "Red Force One","GXSM version identifier screen name")
 AC_DEFINE_UNQUOTED(GXSM_WIDGET_PAD, 5, "default widget padding (replaces obsolete GNOME_PAD)")
-#
-#AC_CHECK_LIB (gtk-3, gtk_menu_popup_at_pointer, AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up"), AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup (M, NULL, NULL, NULL, NULL, E->button.button, E->button.time), "for gtk versions older than 3.22"))
-#AC_CHECK_LIB (GTK3, gtk_menu_popup_at_pointer, AC_DEFINE_UNQUOTED(MENU_GTK_3_22_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up"), AC_DEFINE_UNQUOTED(MENU_GTK_3_18_AT_POINTER(M,E), gtk_menu_popup (M, NULL, NULL, NULL, NULL, E->button.button, E->button.time), "for gtk versions older than 3.22"))
 AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up")
 # AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup (M, NULL, NULL, NULL, NULL, E->button.button, E->button.time), "for gtk versions older than 3.22")
 AC_DEFINE_UNQUOTED(GXSM_RES_BASE_PATH_DOT,     "org.gnome.gxsm3",              "GSettings and Builder dot base path without leadiong or trailing slashes")
@@ -30,8 +27,17 @@ AC_DEFINE_UNQUOTED(GXSM_RES_GL_PATH,           "org/gnome/gxsm3/gl",           "
 
 # Dependencies
 GLIB_REQUIRED=2.48.1
-GTK_REQUIRED=3.20.0
-GDK_REQUIRED=3.20.0
+ 
+# for gtk+3.0 >= 3.22
+GTK_REQUIRED=3.22.0
+GDK_REQUIRED=3.22.0
+AC_DEFINE_UNQUOTED(MENU_GTK_3_22_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up")
+
+# for gtk+3.0 3.20.0
+# GTK_REQUIRED=3.20.0
+# GDK_REQUIRED=3.20.0
+# AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup (M, NULL, NULL, NULL, NULL, E->button.button, E->button.time), "for gtk versions older than 3.22")
+
 GTKSOURCEVIEW_REQUIRED=3.12.0
 # LIBPEAS_REQUIRED=1.7.0
 LIBXML_REQUIRED=2.5.0
