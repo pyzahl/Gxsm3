@@ -1270,7 +1270,7 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
                         touched_xy[0] = item_x;
                         touched_xy[1] = item_y;
                         g_object_set_data (G_OBJECT (canvas), "VObject", this);
-                        gtk_menu_popup_at_pointer (GTK_MENU (obj_popup_menu), event);
+                        MENU_AT_POINTER (GTK_MENU (obj_popup_menu), event);
                         break;
 
                 default:
