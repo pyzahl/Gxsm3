@@ -16,7 +16,11 @@ AC_INIT([gxsm3],
 
 AC_DEFINE_UNQUOTED(GXSM_VERSION_NAME, "Red Force One","GXSM version identifier screen name")
 AC_DEFINE_UNQUOTED(GXSM_WIDGET_PAD, 5, "default widget padding (replaces obsolete GNOME_PAD)")
-
+#
+#AC_CHECK_LIB (gtk-3, gtk_menu_popup_at_pointer, AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up"), AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup (M, NULL, NULL, NULL, NULL, E->button.button, E->button.time), "for gtk versions older than 3.22"))
+#AC_CHECK_LIB (GTK3, gtk_menu_popup_at_pointer, AC_DEFINE_UNQUOTED(MENU_GTK_3_22_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up"), AC_DEFINE_UNQUOTED(MENU_GTK_3_18_AT_POINTER(M,E), gtk_menu_popup (M, NULL, NULL, NULL, NULL, E->button.button, E->button.time), "for gtk versions older than 3.22"))
+AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up")
+# AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup (M, NULL, NULL, NULL, NULL, E->button.button, E->button.time), "for gtk versions older than 3.22")
 AC_DEFINE_UNQUOTED(GXSM_RES_BASE_PATH_DOT,     "org.gnome.gxsm3",              "GSettings and Builder dot base path without leadiong or trailing slashes")
 AC_DEFINE_UNQUOTED(GXSM_RES_BASE_PATH,         "org/gnome/gxsm3",              "GSettings and Builder base path without leadiong or trailing slashes")
 AC_DEFINE_UNQUOTED(GXSM_RES_PREFERENCES_PATH,  "org/gnome/gxsm3/preferences",  "GSettings path for preferences")
@@ -26,8 +30,8 @@ AC_DEFINE_UNQUOTED(GXSM_RES_GL_PATH,           "org/gnome/gxsm3/gl",           "
 
 # Dependencies
 GLIB_REQUIRED=2.48.1
-GTK_REQUIRED=3.22.0
-GDK_REQUIRED=3.22.0
+GTK_REQUIRED=3.20.0
+GDK_REQUIRED=3.20.0
 GTKSOURCEVIEW_REQUIRED=3.12.0
 # LIBPEAS_REQUIRED=1.7.0
 LIBXML_REQUIRED=2.5.0
@@ -759,20 +763,7 @@ if expr ${GXSM3_MINOR_VERSION} % 2 > /dev/null; then
 cat << EOF
  *** IMPORTANT ***
 
-This is an unstable version of gxsm3.
-It is for test purposes only.
-
-Please, DO NOT use it in a production environment.
-It will probably crash and you will lose your data.
-
-If you are looking for a stable release of gxsm3, either download
-it from:
-
- ...
-
-Or checkout the gnome-${GXSM3_MAJOR_VERSION}-${stable_version} branch of the gxsm3 module from:
-
- ...
+This is not the lastest and producion approved version of Gxsm-3.
 
 Thanks,
 The Gxsm team

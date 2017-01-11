@@ -1038,7 +1038,7 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
                         break;
                 case 3: // do popup
                         g_print ("RM BUTTON_PRESS (do popup) image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
-                        gtk_menu_popup_at_pointer (GTK_MENU (pc->p_popup_menu), event);
+                        MENU_AT_POINTER (GTK_MENU (pc->p_popup_menu), event);
                         break;
 		}
 		break;

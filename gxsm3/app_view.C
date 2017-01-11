@@ -1605,6 +1605,7 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 							break;
 						
 						vc->EventPlot->AddScan (vc->EventPlot->scan1d, count);
+
 						for(int i = 0; i < nn; i++)
 						        vc->EventPlot->SetPoint (i, pen->get (i, yi), count);
 						
@@ -1756,7 +1757,7 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
 			}
                         break;
                 case 3: // do popup
-                        gtk_menu_popup_at_pointer (GTK_MENU (vc->v_popup_menu), event);
+                        MENU_AT_POINTER (GTK_MENU (vc->v_popup_menu), event);
                         break;
 		case 4: if(vc->ZoomQFkt) (*vc->ZoomQFkt)(0,1,vc->ZQFktData); break; // Zoom Out
 		case 5: if(vc->ZoomQFkt) (*vc->ZoomQFkt)(1,0,vc->ZQFktData); break; // Zoom In
