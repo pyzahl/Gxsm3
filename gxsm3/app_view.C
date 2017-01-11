@@ -1972,11 +1972,6 @@ void GetColor (gchar *line, const gchar *tag, gfloat *c){
 
                 if (GetFArray (p0, c, 4))
                         g_message ("Error reading color %s.", tag);
-
-                //c[0] = atof ( strtok( p, " ,;()"));
-		//c[1] = atof ( strtok( NULL, " ,;()"));
-		//c[2] = atof ( strtok( NULL, " ,;()"));
-		//c[3] = atof ( strtok( NULL, " ,;()"));
 	}
 }
 
@@ -1987,9 +1982,6 @@ void GetTuple (gchar *line, const gchar *tag, int c[2]){
 
                 if (GetIArray (p0, c, 2))
                         g_warning ("Error reading Tuple %s.",tag);
-
-                //c[0] = atoi ( strtok( p, " ,;()"));
-		//c[1] = atoi ( strtok( NULL, " ,;()"));
 	}
 }
 
@@ -2004,11 +1996,6 @@ void GetDTuple (gchar *line, const gchar *tag, int c[2][2]){
                 for (int i=0; i<2; ++i)
                         for (int j=0; j<2; ++j)
                                 c[i][j] = x[k++];
-                                        
-                //c[0][0] = atoi ( strtok( p, " ,;()"));
-		//c[0][1] = atoi ( strtok( NULL, " ,;()"));
-		//c[1][0] = atoi ( strtok( NULL, " ,;()"));
-		//c[1][1] = atoi ( strtok( NULL, " ,;()"));
         }
 }
 
@@ -2075,16 +2062,11 @@ int GetXAngYAng (std::ifstream &is, double *xy, int initial){
 	// skip NPkte, Info, ... until Coords tag
 	while (initial && is.good ()){
 		is.getline (line, 512); // read and check
-                g_message("GetXAngYAng a{%s}", line);
 		if (strstr (line, "(NPkte")){
 			p = g_strsplit_set (line, " ,;(NPkte)", 20);
                         if (p){
                                 int k=0;
                                 while (p[k] && !*p[k]) ++k;
-                                for (; p[k] && *p[k]; ++k){
-                                        g_message ("g_strplit_set() => tok[%i]={%s}",k,p[k]);
-                                }
-                                for (k=0; p[k] && !*p[k]; ++k);
                                 if (p[k]){
                                         n = atoi (p[k]);
                                         g_strfreev (p);
@@ -2104,14 +2086,11 @@ int GetXAngYAng (std::ifstream &is, double *xy, int initial){
 			break; // found, proceed below
 	}
 	is.getline (line, 512); // get XY data
-        g_message("GetXAngYAng b{%s}", line);
+        g_message("GetXAngYAng {%s}", line);
         p = g_strsplit_set (line, " ,;()", 20);
         if (p){
                 int k=0;
                 while (p[k] && !*p[k]) ++k;
-                for (; *p[k]; ++k)
-                        g_message ("g_strplit_set() => tok[%i]={%s}",k,p[k]);
-                for (k=0; p[k] && !*p[k]; ++k);
                 if (p[k]){
                         i = atoi (p[k++]);
                 }else{
@@ -2154,7 +2133,7 @@ int GetXAngYAng (std::ifstream &is, double *xy, int initial){
                 g_warning ("Error reading coordinates.");
                 return 0;
         }
-        g_message ("Coords OK = [%d] (%g, %g)Ang", i, xy[0], xy[1]);
+        g_message ("Coords OK = [%d] (%g, %g) Ang", i, xy[0], xy[1]);
 	return n;
 }
 
@@ -2201,13 +2180,6 @@ int GetProfileConfig (std::ifstream &is, int *params_pws, int *params_dims){
                         }
                         g_strfreev (p);
 
-                        //params_pws[0] = atoi (strtok(line, " ,;(ProfileActive PathWidthStep)"));
-			//params_pws[1] = atoi (strtok(NULL, " ,;(ProfileActive PathWidthStep)"));
-			//params_dims[0] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
-			//params_dims[1] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
-			//params_dims[2] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
-			//params_dims[3] = atoi (strtok(NULL, " ,;(PathSerDimAllG2d)"));
-
 			return 1;
 		}
 	}
@@ -2230,7 +2202,6 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 		gchar line[512];
 		gchar *lab = NULL;
 		vc->objloadstream.getline (line, 512);
-                g_message("ViewControl::view_file_loadobjects_callback a{%s}", line);
 		if (!strncmp (line, "#C Vector Probe Header List --", 30)){
 
 // #C Vector Probe Header List -----------------
@@ -2240,7 +2211,6 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 // ...
 	
 		       vc->objloadstream.getline (line, 512); // skip header line
-                       g_message("ViewControl::view_file_loadobjects_callback b{%s}", line);
 		       double arr[7];
 		       double xy[2] = {0., 0.};
 		       gfloat c[4]  = {0., 0., 1., 1.};
@@ -2251,7 +2221,6 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 		       std::cout << "Reading Trail to Objetcs..." << std::endl << line << std::endl;
 		       while (vc->objloadstream.good ()){
 			   vc->objloadstream.getline (line, 512); // skip line end to next
-                           g_message("ViewControl::view_file_loadobjects_callback c{%s}", line);
 			   std::cout << line << std::endl;
 			   if (!strncmp (line, "#C END", 6))
 				   break;
@@ -2259,7 +2228,6 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
                            if (GetDArray(line, arr, 7))
                                    g_message ("Error reading Trail Array.");
 
-                           //			   std::cout << arr[0] << " t" << arr[1]  << " x" << arr[3]  << " y" << arr[4] << " z" << arr[5]  << " s" << arr[6];
 			   xy[0] = arr[3];
 			   xy[1] = arr[4];
 			   lab = g_strdup_printf ("T%05.0f:%.3fms:Z=%gA", arr[0], arr[1], arr[5]);
