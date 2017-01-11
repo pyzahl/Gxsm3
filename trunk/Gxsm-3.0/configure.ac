@@ -31,7 +31,6 @@ GLIB_REQUIRED=2.48.1
 # for gtk+3.0 >= 3.22
 GTK_REQUIRED=3.22.0
 GDK_REQUIRED=3.22.0
-AC_DEFINE_UNQUOTED(MENU_GTK_3_22_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up")
 
 # for gtk+3.0 3.20.0
 # GTK_REQUIRED=3.20.0

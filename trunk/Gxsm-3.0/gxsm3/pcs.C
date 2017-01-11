@@ -918,7 +918,29 @@ gint Gtk_EntryControl::ShowMessage(const char *txt, const char *options, int def
 
 gint Gtk_EntryControl::update_callback(GtkEditable *editable, void *data){
 	Gtk_EntryControl *current_object = ((Gtk_EntryControl *)g_object_get_data( G_OBJECT (editable), "Gtk_EntryControl"));
-	current_object->Set_Parameter (atof ( gtk_editable_get_chars (editable, 0 , -1)), FALSE, FALSE);
+        if (editable && current_object){
+                gchar *p = gtk_editable_get_chars (editable, 0 , -1);
+                if (p){
+#if 0 // enable to monitor updates
+                        gchar *tmp;
+                        g_message ("Gtk_EntryControl::update_callback txt={%s} pcs=%s", p, tmp=current_object->get_refname ());
+                        g_free (tmp);
+                        double x=atof (p);
+                        current_object->Set_Parameter (x, FALSE, FALSE);
+#else
+                        current_object->Set_Parameter (atof (p), FALSE, FALSE);
+#endif
+                        g_free (p);
+                } else {
+                        gchar *tmp;
+                        g_warning ("Gtk_EntryControl::update_callback -- empty editable text. {%s}", tmp=current_object->get_refname ());
+                        if (tmp)
+                                g_free (tmp);
+                }
+                        
+        } else {
+                g_warning ("Gtk_EntryControl::update_callback -- no current object.");
+        }
 	return FALSE;
 }
 

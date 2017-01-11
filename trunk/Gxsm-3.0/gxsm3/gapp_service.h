@@ -506,6 +506,8 @@ class BuildParam{
                 Gtk_EntryControl *ec_tmp = (Gtk_EntryControl*)data;
                 delete ec_tmp;
         };
+        static void update_ec(Gtk_EntryControl* ec, gpointer data){ ec->Put_Value(); };
+        void update_all_ec () { g_slist_foreach (ec_list, (GFunc) BuildParam::update_ec, NULL); };
         void delete_all_ec () {
                g_slist_free_full (ec_list, BuildParam::delete_ec);
                ec_list = NULL;
