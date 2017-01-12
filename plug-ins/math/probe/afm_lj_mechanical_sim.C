@@ -704,7 +704,7 @@ public:
                         //double m1[3] = {  1.28097400, 0.73657400, 0. }; // TMA-R 10x10bb
                         //double m2[3] = { -8.97151180, 0.73657400, 0. }; // TMA-L 10x10bb -> flip x&y
                         //double m3[3] = {-14.097754,   9.615486,   0. }; // TMA-Lup60
-                        double m1[3] = { 0.5*(-6.133162+3.333204), 0.5*(0.078078+0.029748), 0. }; // TMA-L 10x10bb -> 0,0 at origin
+                        double m1[3] = { 0.5*(-6.133162-3.333204), 0.5*(0.078078+0.029748), 0. }; // TMA-L 10x10bb -> 0,0 at origin
                         double m2[3] = { 0.5*( 3.455264+6.255669), 0.5*(0.148316+0.100187), 0. }; // TMA-R 10x10bb flipped -> 4r,0 pos
                         //                        double m3[3] = { -9.387754,  8.878912,   0. }; // TMA-Lup60
                         //double m4[3] = { 10.2245,  0.,   0. }; // TMA-R pos
@@ -2746,6 +2746,8 @@ void image_run (Scan *Dest, double z, double dz, int time_index, double precisio
                 work = new Mem2d (Dest->mem2d, M2D_COPY);
         else
                 work = Dest->mem2d_time_element (time_index);
+
+        work->set_frame_time (z);
         
         std::cout << "AFM Sim Probe Opt M=" << calc_mode << " Z[" << time_index << "]=" << z << " spawing g_threads for pass=" << pass
                   << " Dest: " << Dest->mem2d->GetNx () << ", " << Dest->mem2d->GetNy () << ", " << Dest->mem2d->GetNv () 
@@ -2927,6 +2929,10 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
                 double tmp=zi;
                 zi=zf; zf=tmp;
         }
+        
+        delete Dest->data.TimeUnit;
+        // UTF8_ANGSTROEM "\303\205"
+	Dest->data.TimeUnit = new UnitObj("\303\205","\303\205", "g", "Z");
         
         info_stream << "dz = " << dz << " Ang\n";
         info_stream << " z = [" << zi << ", " << zf << "] Ang\n";
