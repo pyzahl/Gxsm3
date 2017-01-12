@@ -273,6 +273,8 @@ class VObject{
 
 	void set_osd_style (gboolean flg);
 
+	void destroy_properties_bp ();
+        
 	GtkWidget *canvas;
 	GSimpleActionGroup *gs_action_group;
 

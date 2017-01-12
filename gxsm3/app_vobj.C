@@ -244,11 +244,7 @@ VObject::~VObject(){
 		delete profile;
 	profile=NULL;
 
-        if (properties_bp){ // clean up
-                gtk_grid_remove_row (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), 1);
-                delete properties_bp;
-                properties_bp = NULL;
-        }
+        destroy_properties_bp ();
 	delete Pixel;
 	delete Unity;
 
@@ -650,9 +646,6 @@ void VObject::build_properties_view (gboolean add){
 
         if (properties_bp){
                 properties_bp->update_all_ec ();
-                // g_message ("VObject::build_properties_view -- rebuilding, cleanup.");
-                // gtk_grid_remove_row (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), 1);
-                // delete properties_bp;
         } else {
                 properties_bp = new BuildParam;
                 properties_bp->set_no_spin (true);
@@ -872,21 +865,19 @@ void VObject::build_properties_view (gboolean add){
                 if (textinput)
                         g_signal_connect (G_OBJECT (textinput), "changed", G_CALLBACK (label_changed_cb), this);
 
+                g_object_set_data  (G_OBJECT (properties_bp->grid), "VOBJECT", this);
+
         }
 
         GtkWidget *current_view = gtk_grid_get_child_at (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), 1,1);
 
         if (current_view != properties_bp->grid){
-                //if (current_view)
-                //      g_object_ref (current_view);
-
-                g_object_ref (current_view);
-
-                gtk_grid_remove_row (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), 1);
+                VObject *vcc = (VObject*)g_object_get_data  (G_OBJECT (current_view), "VOBJECT");
+                if (vcc)
+                        vcc->destroy_properties_bp ();
 
                 if (add){
                         gtk_grid_attach (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), properties_bp->grid, 1,1, 1,1);
-                        // g_object_unref (properties_bp->grid);
                 }
         }
         properties_bp->show_all ();
@@ -899,11 +890,9 @@ void VObject::properties(){
                                                          (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
                                                          _("_OK"), GTK_RESPONSE_ACCEPT,
                                                          NULL); 
+        destroy_properties_bp ();
         build_properties_view (false);
-        g_object_ref (properties_bp->grid);
-        gtk_grid_remove_row (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), 1);
         gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), properties_bp->grid);
-        g_object_unref (properties_bp->grid);
                 
         gtk_widget_show_all (dialog);
         gtk_dialog_run (GTK_DIALOG(dialog));
@@ -989,6 +978,16 @@ void VObject::properties(){
 
 	remake_node_markers ();
 }
+
+void  VObject::destroy_properties_bp (){
+        if (properties_bp){ // clean up
+                g_object_ref (properties_bp->grid);
+                gtk_grid_remove_row (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), 1);
+                delete properties_bp;
+                properties_bp = NULL;
+        }
+}
+
 
 void VObject::remake_node_markers (){
 	++space_time_on[0];
