@@ -3354,10 +3354,11 @@ void ViewControl::osd_toggle_callback (GtkWidget *widget, ViewControl *vc){
 			//gchar *vary = g_strdup_printf ("osd_y%02d", pos);
 			vc->set_osd (ly_info, pos);
 			vc->osd_item[pos] -> show_label (true);
-			g_free (ly_info);
 			vc->osd_item[pos] -> obj_get_xy_i (0, x, y);
 			x-=vc->scan->data.s.x0; x /= vc->scan->data.s.rx/2; // make relative
 			y-=vc->scan->data.s.y0; y /= vc->scan->data.s.ry/2;
+                        g_message ("OSD[%d] %s (%g, %g) = show",pos, ly_info, x,y);
+			g_free (ly_info);
                         // gsettings!!!
                         // ==> <key name="osd-position" type="a(iii)">
                         //			xrm.Put (varx, x);
@@ -3368,7 +3369,7 @@ void ViewControl::osd_toggle_callback (GtkWidget *widget, ViewControl *vc){
 		}
 	} else {
 		if (vc->osd_item[pos]){
-			vc->osd_item[pos] -> show_label (0);
+			vc->osd_item[pos] -> show_label (false);
                         //xrm.Put (flag, vc->osd_item_enable[pos]);
 		}
 	}
@@ -3397,8 +3398,7 @@ void ViewControl::set_osd (gchar *osd_text, int pos){
 				spt[1] = scan->data.display.vframe;
 				osd_item[pos] -> obj_text (ot);
 				osd_item[pos] -> set_spacetime (spt);
-				osd_item[pos] -> show_label ();
-				osd_item[pos] -> Update ();
+				osd_item[pos] -> show_label (true);
 			}else{
                                 //	XsmRescourceManager xrm("App_View_OSD");
 				double xy[2];

@@ -109,7 +109,7 @@ class VObject{
 	void show_profile (gboolean flg=true);
 
 	void build_properties_view (gboolean add=true);
-
+        static void ec_properties_changed (Param_Control *pcs, gpointer data) { VObject* vob = (VObject*)data; vob->Update (); vob->remake_node_markers (); };
 	void set_xy_node(double *xy_node, VOBJ_COORD_MODE cmode, int node=0);
 	void insert_node(double *xy_node=NULL);
 

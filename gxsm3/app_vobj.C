@@ -649,6 +649,7 @@ void VObject::build_properties_view (gboolean add){
         } else {
                 properties_bp = new BuildParam;
                 properties_bp->set_no_spin (true);
+                properties_bp->set_default_ec_change_notice_fkt (VObject::ec_properties_changed, this);
 
                 gchar *objident = g_strdup_printf ("Edit Object \"%s\"", name);
                 properties_bp->grid_add_label (objident);
@@ -897,50 +898,7 @@ void VObject::properties(){
         gtk_widget_show_all (dialog);
         gtk_dialog_run (GTK_DIALOG(dialog));
 
-#if 0
-        do {
-                gtk_dialog_run (GTK_DIALOG(dialog));
-		if (dim_sel)
-			switch (gtk_combo_box_get_active (GTK_COMBO_BOX (dim_sel))){
-			case 0: set_profile_path_dimension (MEM2D_DIM_LAYER); break;
-			case 1: set_profile_path_dimension (MEM2D_DIM_TIME); break;
-			default: set_profile_path_dimension (MEM2D_DIM_LAYER); break;
-			}
-		if (dimp_sel)
-			switch (gtk_combo_box_get_active (GTK_COMBO_BOX (dimp_sel))){
-			case 0: set_profile_path_dimension (MEM2D_DIM_XY); break;
-			case 1: set_profile_path_dimension (MEM2D_DIM_LAYER); break;
-			case 2: set_profile_path_dimension (MEM2D_DIM_TIME); break;
-			default: set_profile_path_dimension (MEM2D_DIM_XY); break;
-			}
-		if (dims_sel)
-			switch (gtk_combo_box_get_active (GTK_COMBO_BOX (dims_sel))){
-			case 0: set_profile_series_dimension (MEM2D_DIM_XY); break;
-			case 1: set_profile_series_dimension (MEM2D_DIM_LAYER); break;
-			case 2: set_profile_series_dimension (MEM2D_DIM_TIME); break;
-			default: set_profile_series_dimension (MEM2D_DIM_LAYER); break;
-			}
-		if (data_sel)
-			switch (gtk_combo_box_get_active (GTK_COMBO_BOX (data_sel))){
-			case 0: set_profile_series_all (FALSE); break;
-			case 1: set_profile_series_all (TRUE); break;
-			default: set_profile_series_all (FALSE); break;
-			}
-		if (data_plot)
-			switch (gtk_combo_box_get_active (GTK_COMBO_BOX (data_plot))){
-			case 0: set_profile_series_pg2d (FALSE); break;
-			case 1: set_profile_series_pg2d (TRUE); break;
-			default: set_profile_series_pg2d (FALSE); break;
-			}
-		if (grid_plot)
-			grid_mode = gtk_combo_box_get_active (GTK_COMBO_BOX (grid_plot));
-                
-		gtk_widget_destroy (dialog);
-
-		// repeat: do not allow same path & series dimension.
-
-	} while ((obj_type_id () == O_LINE) && (get_profile_series_dimension () == get_profile_path_dimension ())); 
-#endif
+        //{} while ((obj_type_id () == O_LINE) && (get_profile_series_dimension () == get_profile_path_dimension ())); 
 
         // I clean up here, make sure destructor is called.
         g_object_ref (properties_bp->grid);
@@ -950,7 +908,6 @@ void VObject::properties(){
 
         gtk_widget_destroy (dialog);
 
-#if 0        
 	++space_time_on[0];
 	++space_time_on[1];
 	++space_time_off[0];
@@ -970,11 +927,9 @@ void VObject::properties(){
 	--space_time_on[1];
 	--space_time_off[0];
 	--space_time_off[1];
-#endif
         
 	if (profile)
 		profile->NewData(vinfo->sc, this);
-
 
 	remake_node_markers ();
 }
@@ -1185,6 +1140,16 @@ void VObject::show_label(gboolean flg){
                 label->set_pango_font (custom_label_font);
                 label->set_stroke_rgba (&custom_label_color);
 
+#if 0
+                g_message ("VObject show label {%s} F:%s Cra:%g %g SPC:%s XY(%g,%g)",
+                           text,custom_label_font,
+                           custom_label_color.red,custom_label_color.alpha,
+                           is_spacetime ()?"on":"off",
+                           xy[0] + label_offset_xy[0]*get_marker_scale (),
+                           xy[1] + label_offset_xy[1]*get_marker_scale ()
+                           );
+#endif
+                
                 if (is_spacetime ())
                         label->show ();
                 else
