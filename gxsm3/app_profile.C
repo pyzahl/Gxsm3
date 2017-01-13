@@ -48,6 +48,7 @@
 
 static GActionEntry win_profile_popup_entries[] = {
         { "file-open", ProfileControl::file_open_callback, NULL, NULL, NULL },
+        { "file-save", ProfileControl::file_save_callback, NULL, NULL, NULL },
         { "file-image-save", ProfileControl::file_save_image_callback, NULL, NULL, NULL },
         { "print", ProfileControl::file_print5_callback, NULL, NULL, NULL },
 
@@ -1943,8 +1944,7 @@ void ProfileControl::file_open_callback (GSimpleAction *simple, GVariant *parame
         //        ProfileControl *pc = (ProfileControl *) user_data;
 
 	gchar *ffname;
-	ffname = gapp->file_dialog_load ("Profile to load", NULL, 
-                                         "*.asc", NULL);
+	ffname = gapp->file_dialog_load ("Profile to load", NULL, NULL);
 	if (ffname)
 		gapp->xsm->load (ffname);
 }
@@ -1957,8 +1957,7 @@ void ProfileControl::file_save_callback (GSimpleAction *simple, GVariant *parame
 	gchar *mld, *oname;
 		
 	oname = g_strconcat (pc->scan1d->data.ui.originalname, ".asc", NULL);
-	ffname = gapp->file_dialog (N_("Profile to save"), NULL, 
-				    "*.asc", oname, "profilesave");
+	ffname = gapp->file_dialog_save (N_("Profile to save"), NULL, oname);
 	if (gapp->check_file (ffname)){
 		pc->save (ffname);
 		mld = g_strconcat (N_("profile saved as "), ffname, NULL);
@@ -1976,8 +1975,7 @@ void ProfileControl::file_save_as_callback (GSimpleAction *simple, GVariant *par
 	gchar *mld, *oname;
 		
 	oname = g_strconcat (pc->scan1d->data.ui.originalname, ".asc", NULL);
-	ffname = gapp->file_dialog (N_("Profile to save"), NULL, 
-				    "*.asc", oname, "profilesaveas");
+	ffname = gapp->file_dialog_save (N_("Profile to save"), NULL, oname);
 	if (gapp->check_file (ffname)){
 		pc->save (ffname);
 		mld = g_strconcat (N_("profile saved as "),ffname,NULL);
@@ -1999,7 +1997,13 @@ void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *
         cairo_t *cr;
         cairo_status_t status;
 
-	imgname = gapp->file_dialog("Save Profile Canvas as png or svg file", NULL, "*.png", suggest);
+        GtkFileFilter *filter = gtk_file_filter_new ();
+        gtk_file_filter_set_name (filter, "Images");
+        //        gtk_file_filter_add_pattern (filter, "*");
+        gtk_file_filter_add_pattern (filter, "*.png");
+        gtk_file_filter_add_pattern (filter, "*.svg");
+
+	imgname = gapp->file_dialog_save ("Save Profile Canvas as png or svg file", NULL, suggest, filter);
 	g_free (suggest);
 
 	if (imgname == NULL || strlen(imgname) < 5) 

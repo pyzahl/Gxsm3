@@ -41,27 +41,25 @@
 #ifndef __GLBVARS_H
 #include "glbvars.h"
 #endif
-#define UTF8_DEGREE    "\302\260"
-#define UTF8_MU        "\302\265"
-#define UTF8_ANGSTROEM "\303\205"
+
 
 GSettings *settings_hwi_interfaces = NULL;
 
 // Alles wird auf dies Basiseinheit "1A" bezogen - nur User I/O in nicht A !!
 UnitsTable XsmUnitsTable[] = {
 	// Id (used in preferences), Units Symbol, Units Symbol (ps-Version), scale factor, precision1, precision2
-	{ "AA", UTF8_ANGSTROEM,   "\305",    1e0, ".1f", ".3f" }, // UFT-8 Ang did not work
+	{ "AA", UTF8_ANGSTROEM,   "Ang",    1e0, ".1f", ".3f" }, // UFT-8 Ang did not work // PS: "\305"
 	{ "nm", "nm",  "nm",     10e0, ".1f", ".3f" },
-	{ "um", UTF8_MU"m",  "\265m",     10e3, ".1f", ".3f" },
+	{ "um", UTF8_MU"m",  "um",     10e3, ".1f", ".3f" }, // PS: "\265m"
 	{ "mm", "mm",  "mm",     10e6, ".1f", ".3f" },
-	{ "BZ", "%BZ", "%BZ",     1e0, ".1f", ".2f" },
+	{ "BZ", "%BZ", "BZ",     1e0, ".1f", ".2f" },
 	{ "sec","\"",  "\"",      1e0, ".1f", ".2f" },
 	{ "V",  "V",   "V",       1e0, ".2f", ".3f" },
 	{ "mV", "mV",  "mV",      1e-3, ".2f", ".3f" },
-	{ "*V",  "*V", "*V",      1e0, ".2f", ".3f" },
-	{ "*dV", "*dV","*dV",     1e0, ".2f", ".3f" },
-	{ "*ddV", "*ddV","*ddV",  1e0, ".2f", ".3f" },
-	{ "V2", "V2", "V2",       1e0, ".2f", ".3f" },
+	{ "V",  "*V", "V",      1e0, ".2f", ".3f" },
+	{ "*dV", "*dV","dV",     1e0, ".2f", ".3f" },
+	{ "*ddV", "*ddV","ddV",  1e0, ".2f", ".3f" },
+	{ "*V2", "V2", "V2",       1e0, ".2f", ".3f" },
 	{ "1",  " ",   " ",       1e0, ".3f", ".4f" },
 	{ "0",  " ",   " ",       1e0, ".3f", ".4f" },
 	{ "B",  "Bool",   "Bool", 1e0, ".3f", ".4f" },

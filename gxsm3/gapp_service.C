@@ -613,91 +613,79 @@ void GnomeAppService::progress_info_close (){
 	}
 }
 
-
-gchar *GnomeAppService::file_dialog (const gchar *title, 
-				     const gchar *path, 
-				     const gchar *mask, 
-				     const gchar *name, 
-				     const gchar *historyid, 
-				     GappBrowseFunc browsefkt,
-				     gpointer data){
-
-        GtkWidget *dialog;
+/*
+  must g_free returned file name!
+  GtkFileFilter *filter = gtk_file_filter_new ();
+  gtk_file_filter_set_name (filter, "all");
+  gtk_file_filter_add_pattern (filter, "*");
+*/
+gchar *GnomeAppService::file_dialog_save (const gchar *title, 
+                                          const gchar *path, 
+                                          const gchar *name,
+                                          GtkFileFilter *filter
+                                          ){
         gchar *filename = NULL;
+        GtkWidget *dialog = gtk_file_chooser_dialog_new (title,
+                                                         window, // parent_window,
+                                                         GTK_FILE_CHOOSER_ACTION_SAVE,
+                                                         N_("_Cancel"), GTK_RESPONSE_CANCEL,
+                                                         N_("_Save"), GTK_RESPONSE_ACCEPT,
+                                                         NULL);
 
-
-        
-        dialog = gtk_file_chooser_dialog_new (title,
-                                              window, // parent_window,
-                                              GTK_FILE_CHOOSER_ACTION_SAVE,
-                                              N_("_Cancel"), GTK_RESPONSE_CANCEL,
-                                              N_("_Save"), GTK_RESPONSE_ACCEPT,
-                                              NULL);
         gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
 
-        //  gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), name);
-        gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog), name);
-  
-        if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
-                {
-                        filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-                        //      save_to_file (filename);
-                        //      g_free (filename);
-                }
+        if (path){
+                gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), path);
+        }
+        
+        if (name){
+                gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog), name);
+                gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), name);
+        }
+
+        if (filter){
+                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
+        }
+
+        if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT){
+                filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+        }
 
         gtk_widget_destroy (dialog);
-        return filename;
+        return filename; // must g_free is non NULL
 }
 
 gchar *GnomeAppService::file_dialog_load (const gchar *title, 
                                           const gchar *path, 
-                                          const gchar *mask, 
-                                          const gchar *name){
-        GtkWidget *dialog;
+                                          const gchar *name,
+                                          GtkFileFilter *filter
+                                          ){
         gchar *filename = NULL;
-        
-        dialog = gtk_file_chooser_dialog_new (title,
-                                              window, // parent_window,
-                                              GTK_FILE_CHOOSER_ACTION_OPEN,
-                                              N_("_Cancel"), GTK_RESPONSE_CANCEL,
-                                              N_("_Load"), GTK_RESPONSE_ACCEPT,
-                                              NULL);
+        GtkWidget *dialog = gtk_file_chooser_dialog_new (title,
+                                                         window, // parent_window,
+                                                         GTK_FILE_CHOOSER_ACTION_OPEN,
+                                                         N_("_Cancel"), GTK_RESPONSE_CANCEL,
+                                                         N_("_Load"), GTK_RESPONSE_ACCEPT,
+                                                         NULL);
+        if (path){
+                gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), path);
+        }
 
-        gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog), name);
-  
+        if (name){
+                gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog), name);
+                gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), name);
+        }
+
+        if (filter){
+                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
+        }
+        
         if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
                 filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-
+        
         gtk_widget_destroy (dialog);
         return filename;
 }
-
-gchar *GnomeAppService::file_dialog_save (const gchar *title, 
-                                          const gchar *path, 
-                                          const gchar *mask, 
-                                          const gchar *name){
-        GtkWidget *dialog;
-        gchar *filename = NULL;
-        
-        dialog = gtk_file_chooser_dialog_new (title,
-                                              window, // parent_window,
-                                              GTK_FILE_CHOOSER_ACTION_SAVE,
-                                              N_("_Cancel"), GTK_RESPONSE_CANCEL,
-                                              N_("_Save"), GTK_RESPONSE_ACCEPT,
-                                              NULL);
-
-        gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
-
-        gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog), name);
-  
-        if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
-                filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-
-        gtk_widget_destroy (dialog);
-        return filename;
-}
-
-
 
 void  GnomeAppService::string_cb (gchar *string, gpointer data){
 }

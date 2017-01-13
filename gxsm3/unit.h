@@ -35,8 +35,9 @@
 
 #include <gtk/gtk.h>
 
-#define __UTF8_ANGSTROEM "\303\205"
-#define __UTF8_MU        "\302\265"
+#define UTF8_ANGSTROEM "\303\205"
+#define UTF8_MU        "\302\265"
+#define UTF8_DEGREE    "\302\260"
 
 class UnitObj;
 
@@ -126,7 +127,7 @@ public:
 
         /* do g_free this returned string !!! */
         virtual gchar *UsrString(double b, UNIT_MODES um=UNIT_SM_NORMAL){
-                gchar *fmt = g_strconcat("%",prec," ", Symbol(um),NULL);
+                gchar *fmt = g_strconcat("%",prec,um==UNIT_SM_NORMAL?" ":"", Symbol(um),NULL);
                 gchar *txt;
                 txt = g_strdup_printf(fmt, Base2Usr(b));
                 g_free(fmt);
@@ -182,7 +183,7 @@ public:
         };
 
         virtual gchar *UsrString(double b, UNIT_MODES um=UNIT_SM_NORMAL){
-                const gchar  *prefix[]    = { "a",  "f",   "p",   "n", __UTF8_MU, "m", " ", "k", "M", "G", "T"  };
+                const gchar  *prefix[]    = { "a",  "f",   "p",   "n", UTF8_MU, "m", " ", "k", "M", "G", "T"  };
                 double x = set_mag_get_base (b);
                 gchar *fmt = g_strconcat("%",prec," ", prefix[mi], Symbol(um), NULL);
                 gchar *txt;
@@ -192,7 +193,7 @@ public:
         };
         virtual double Usr2Base(const gchar *ustr){
                 double u=atof (ustr);
-                const gchar  *prefix[]    = { "a",  "f",   "p",   "n", __UTF8_MU, "m", " ", "k", "M", "G", "T", "u",   };
+                const gchar  *prefix[]    = { "a",  "f",   "p",   "n", UTF8_MU, "m", " ", "k", "M", "G", "T", "u",   };
                 const double magnitude[]  = {  1e-18, 1e-15, 1e-12, 1e-9,  1e-6,  1e-3, 1., 1e3, 1e6, 1e9, 1e12, 1e-6 };
                 int i;
                 for (i=0; i<=11; ++i){

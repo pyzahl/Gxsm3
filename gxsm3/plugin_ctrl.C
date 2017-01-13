@@ -273,9 +273,14 @@ void plugin_ctrl::view_pi_info(){
 	GList *node = plugins;
 	time_t t;
 	time (&t);
-	gchar *pi_status_file = gapp->file_dialog("HTML PlugIn status file to save", ".", 
-						  "*.html", "/tmp/gxsm_plugins.html", 
-						  "pi_status_save");
+        GtkFileFilter *filter = gtk_file_filter_new ();
+        gtk_file_filter_set_name (filter, "HTML");
+        gtk_file_filter_add_pattern (filter, "*.html");
+
+	gchar *pi_status_file = gapp->file_dialog_load ("HTML PlugIn status file to save", ".", 
+                                                        "/tmp/gxsm_plugins.html",
+                                                        filter
+                                                        );
 	if (!pi_status_file) return;
 	std::ofstream html_file;
 	html_file.open (pi_status_file);

@@ -61,11 +61,11 @@ void App::file_open_in_new_window_callback (GSimpleAction *simple, GVariant *par
 
 void App::file_browse_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	if(!gapp) return;
-	gapp->file_dialog (
-		N_("DAT/NC/HDF file to load"), NULL, 
-		"*.[nNdDsSh][cCaApPd]*", NULL, "browseload",
-		(GappBrowseFunc) App::browse_callback, 
-		(gpointer) gapp);
+
+        //GtkFileFilter *filter = gtk_file_filter_new ();
+        //gtk_file_filter_set_name (filter, "GXSM NetCDF or other");
+        //gtk_file_filter_add_pattern (filter, "*.[nNdDsSh][cCaApPd]*");
+ 
 	return;
 }
 
@@ -85,8 +85,8 @@ void App::file_set_datapath_callback (GSimpleAction *simple, GVariant *parameter
 void App::file_set_probepath_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	XsmRescourceManager xrm("FilingPathMemory");
 	gchar *path = xrm.GetStr ("Probe_DataSavePath", xsmres.DataPath);
-	gchar *newpath = gapp->file_dialog(N_("Select path for probe data files"), path, 
-					   "", "", "Probe_DataPath");
+	gchar *newpath = gapp->file_dialog_load (N_("Select path for probe data files"), path, NULL);
+
 	g_free (path);
 	if (newpath){
 		xrm.Put ("Probe_DataSavePath", newpath);

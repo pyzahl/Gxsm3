@@ -35,8 +35,6 @@
 #include "app_vinfo.h"
 #include "clip.h"
 
-#define UTF8_ANGSTROEM "\303\205"
-
 ViewInfo::ViewInfo(Scan *Sc, int qf, int zf){
   Qfac = qf; Zfac = zf;
   sc=Sc; 
