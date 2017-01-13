@@ -55,7 +55,6 @@ using namespace std;
 //using namespace netCDF;
 
 
-#define UTF8_ANGSTROEM "\303\205"
 #define OUT_OF_RANGE N_("Value out of range!")
 
 #define VIEW_PREFIX "AppView_"
@@ -1902,7 +1901,7 @@ void ViewControl::view_file_saveobjects_callback (GSimpleAction *simple, GVarian
                                                   gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
 	gchar *oname = g_strconcat(vc->scan->data.ui.basename,"-objects",NULL);
-	gchar *fname = gapp->file_dialog("Save Objects, list or .plt (HPGL)", NULL, NULL, oname, "objectsave");
+	gchar *fname = gapp->file_dialog_save ("Save Objects or .plt or HPGL", NULL, oname);
 	g_free(oname);
 	if (!fname) return;
 	vc->objsavestream.open(fname, std::ios::out);
@@ -2190,7 +2189,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
                                                   gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
 	gchar *oname = g_strconcat (vc->scan->data.ui.basename,"-objects",NULL);
-	gchar *fname = gapp->file_dialog_load ("Load Objects list (not .plt)", NULL, NULL, oname);
+	gchar *fname = gapp->file_dialog_load ("Load Objects", NULL, oname);
 	g_free (oname);
 	vc->objloadstream.open (fname, std::ios::in);
 
@@ -2385,13 +2384,52 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
         ViewControl *vc = (ViewControl *) user_data;
 
 	gchar *imgname;
-	gchar *suggest = g_strdup_printf ("%s-snap.png", vc->scan->data.ui.name);
+        gchar *s_value = vc->scan->data.Vunit->UsrString (vc->scan->mem2d->data->GetVLookup (vc->scan->mem2d->GetLayer ()), UNIT_SM_PS);
+        gchar *s_time = vc->scan->data.TimeUnit->UsrString (vc->scan->mem2d->get_frame_time (), UNIT_SM_PS);
+        gchar *s_vrange = vc->scan->data.Zunit->UsrString (vc->scan->data.display.vrange_z, UNIT_SM_PS);
+	gchar *suggest0 = g_strdup_printf ("%s%s%s%s%s-VZ%s-snap.png", vc->scan->data.ui.originalname,
+                                          vc->scan->data.s.ntimes>1?"_L":"",
+                                          vc->scan->data.s.ntimes>1?s_time:"",
+                                          vc->scan->data.s.nvalues>1?"_T":"",
+                                          vc->scan->data.s.nvalues>1?s_value:"",
+                                          s_vrange
+                                          );
 
+        g_free (s_value);
+        g_free (s_time);
+        g_free (s_vrange);
+
+        g_message (suggest0);
+        gchar *suggest1 = g_strdelimit (suggest0, " ", '_');
+        gchar *name = g_path_get_basename (suggest1);
+        gchar *path = g_path_get_dirname (suggest1);
+        g_message (name);
+        g_message (path);
+        gchar *suggest;
+        
+        if (g_file_test (path, G_FILE_TEST_IS_DIR)){
+                suggest = suggest1;
+                g_free (name);
+                g_free (path);
+        } else {
+                suggest = name;
+                g_free (suggest1);
+                g_free (path);
+        }
+        
         cairo_surface_t *surface;
         cairo_t *cr;
         cairo_status_t status;
 
-	imgname = gapp->file_dialog("Save Canvas as png or svg file", NULL, "*.png", suggest);
+        g_message (suggest);
+        
+        GtkFileFilter *filter = gtk_file_filter_new ();
+        gtk_file_filter_set_name (filter, "Images");
+        //        gtk_file_filter_add_pattern (filter, "*");
+        gtk_file_filter_add_pattern (filter, "*.png");
+        gtk_file_filter_add_pattern (filter, "*.svg");
+        
+        imgname = gapp->file_dialog_save ("Save Canvas as png or svg file", path, suggest, filter);
 	g_free (suggest);
 
 	if (imgname == NULL || strlen(imgname) < 5) 

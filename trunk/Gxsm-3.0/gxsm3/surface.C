@@ -591,7 +591,7 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
                                                                           gapp->get_window (), 
 									  GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
 									  _("_Cancel"), GTK_RESPONSE_CANCEL,
-									  _("_Open"), GTK_RESPONSE_ACCEPT,
+									  _("_Select"), GTK_RESPONSE_ACCEPT,
 									  NULL);
 			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (chooser), path);
 			if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT){
@@ -748,7 +748,7 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
                                                                                   gapp->get_window (),
 										  GTK_FILE_CHOOSER_ACTION_SAVE,
 										  _("_Cancel"), GTK_RESPONSE_CANCEL,
-										  _("_Open"), GTK_RESPONSE_ACCEPT,
+										  _("_Save"), GTK_RESPONSE_ACCEPT,
 										  NULL);
 				gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (chooser), path);
 				gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (chooser), defaultname);

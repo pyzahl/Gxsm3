@@ -41,8 +41,6 @@
 
 #include "clip.h"
 
-#define UTF8_DEGREE "\302\260"
-
 #define MAXHANDLECOLORS 4
 
 #define OBJECT_LINE_WIDTH     xsmres.ObjectLineWidth

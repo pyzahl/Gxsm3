@@ -939,6 +939,10 @@
 	  <attribute name="action">win.file-open</attribute>
 	</item>
 	<item>
+	  <attribute name="label" translatable="yes">_Save</attribute>
+	  <attribute name="action">win.file-save</attribute>
+	</item>
+	<item>
 	  <attribute name="label" translatable="yes">_Save Image</attribute>
 	  <attribute name="action">win.file-image-save</attribute>
 	</item>

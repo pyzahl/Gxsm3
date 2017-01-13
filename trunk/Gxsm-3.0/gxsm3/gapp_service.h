@@ -881,23 +881,35 @@ public:
 	static void destroy (GtkWidget *widget, GnomeAppService *p);
 
 	// File Dialog
-	gchar *file_dialog (const gchar *title, 
-			    const gchar *path, 
-			    const gchar *mask, 
-			    const gchar *name, 
-			    const gchar *historyid=NULL, 
-			    GappBrowseFunc browsefkt = NULL, 
-			    gpointer data = NULL);
 	gchar *file_dialog_load (const gchar *title, 
 				 const gchar *path, 
-				 const gchar *mask, 
-				 const gchar *name);
+				 const gchar *name,
+                                 GtkFileFilter *filter=NULL);
 	gchar *file_dialog_save (const gchar *title, 
 				 const gchar *path, 
-				 const gchar *mask, 
-				 const gchar *name);
+				 const gchar *name,
+                                 GtkFileFilter *filter=NULL);
 
+        // compat for PLugIns -- obsoleted
+        gchar *file_dialog(const gchar *title, 
+                           const gchar *path, 
+                           const gchar *mask,
+                           const gchar *name,
+                           const gchar *id){
+                g_warning ("gapp_service function File_dialog is obsoleted, use file_dialog_load/save.");
+                GtkFileFilter *filter = NULL;
+                if (mask){
+                        filter = gtk_file_filter_new ();
+                        gtk_file_filter_set_name (filter, mask);
+                        gtk_file_filter_add_pattern (filter, mask);
+                }
 
+                if (name) // guessing
+                        return file_dialog_save (title, path, name, filter);
+                else
+                        return file_dialog_load (title, path, name, filter);
+        };
+        
 	// Value Request
 	void ValueRequest(const gchar *title, const gchar *label, const gchar *infotxt, 
 			  UnitObj *u, double minv, double maxv, const gchar *vfmt,
