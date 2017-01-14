@@ -121,6 +121,7 @@ public:
         };
 
 	virtual void set_text (const gchar *text) {};
+	virtual void set_text (double x, double y, const gchar *text) {};
         virtual void update_bbox (gboolean add_lw=true) {
                 if (n){
                         bbox[2]=bbox[0]=xy[0].x; 
