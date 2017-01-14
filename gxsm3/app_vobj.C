@@ -282,10 +282,15 @@ VObject::~VObject(){
 }
 
 void VObject::show_profile_cb (GtkWidget *widget, VObject *vo){
-        if (widget)
+        if (widget){
                 vo->show_profile (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        }
         else 
                 vo->show_profile ();
+
+        // rebuild
+        vo->destroy_properties_bp ();
+        vo->build_properties_view ();
 }
 
 void VObject::show_profile (gboolean pflg){
@@ -1128,20 +1133,18 @@ void VObject::show_label_cb(GtkWidget *widget, VObject *vo){
 void VObject::show_label(gboolean flg){
 	if (flg){
 		if (!label)
-			label = new cairo_item_text (xy[0] + label_offset_xy[0]*get_marker_scale (), 
-                                                     xy[1] + label_offset_xy[1]*get_marker_scale (), 
-                                                     text);
-                label->set_xy (0, 
-                               xy[0] + label_offset_xy[0]*get_marker_scale (), 
-                               xy[1] + label_offset_xy[1]*get_marker_scale ());
-                label->set_text (text);
+			label = new cairo_item_text ();
+
+                label->set_text (xy[0] + label_offset_xy[0]*get_marker_scale (), 
+                                 xy[1] + label_offset_xy[1]*get_marker_scale (),
+                                 text);
                 label->set_pango_font (custom_label_font);
                 label->set_stroke_rgba (&custom_label_color);
 
 #if 0
-                g_message ("VObject show label {%s} F:%s Cra:%g %g SPC:%s XY(%g,%g)",
+                g_message ("VObject show label {%s} F:%s Crgba:%g %g %g %g SPC:%s XY(%g,%g)",
                            text,custom_label_font,
-                           custom_label_color.red,custom_label_color.alpha,
+                           custom_label_color.red,custom_label_color.green,custom_label_color.blue,custom_label_color.alpha,
                            is_spacetime ()?"on":"off",
                            xy[0] + label_offset_xy[0]*get_marker_scale (),
                            xy[1] + label_offset_xy[1]*get_marker_scale ()
@@ -1154,7 +1157,6 @@ void VObject::show_label(gboolean flg){
                         label->hide ();
                 
                 label->queue_update (canvas);
-
 	} else if (label){
                 label->hide ();
                 label->queue_update (canvas);
