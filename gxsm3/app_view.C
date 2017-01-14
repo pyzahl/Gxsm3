@@ -762,9 +762,9 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         //  <key name="view-max-number-events" type="d"> 
         //  <key name="view-arrow-size" type="d">
 	XsmRescourceManager xrm("App_View");
-        xrm.Get ("CursorRadius", &CursorRadius, "100.");
-        xrm.Get ("MaxNumberEventsCursorRadius", &MaxNumberEvents, "30");
-        xrm.Get ("ArrowSize", &ArrowSize, "25.");
+        xrm.Get ("CursorRadius", &CursorRadius, "10000.");
+        xrm.Get ("MaxNumberEventsCursorRadius", &MaxNumberEvents, "300");
+        xrm.Get ("ArrowSize", &ArrowSize, "35.");
 
 	frame_param = gtk_frame_new (N_("Probe Events"));
 	gtk_grid_attach (GTK_GRID (base_grid), frame_param, 1,1, 1,1);
@@ -843,14 +843,14 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
 	XSM_DEBUG (DBG_L2,  "VC::VC EVCtrl-Tab cc: LU" << gapp->xsm->LenUnit );
 
-        // !!!!!!!!!!!!! PORT TO BUILD_PARAM !!!!!!!!!!!!!
+        // !!!!!!!!!!!!! PORT EVENTSTAB TO BUILD_PARAM !!!!!!!!!!!!!
         x=1, ++y;
         {
                 GtkWidget *input = mygtk_grid_add_spin_input (N_("Radius"), grid, x, y);
                 // g_object_set_data (G_OBJECT (input), "Adjustment_PCS_Name", (void*)(VIEW_PREFIX LABEL));
                 ec_radius = new Gtk_EntryControl (gapp->xsm->LenUnit ? gapp->xsm->LenUnit : gapp->xsm->X_Unit,
                                                   OUT_OF_RANGE,
-                                                  &CursorRadius, 0., 100000., ".1f", input, 10., 100.);
+                                                  &CursorRadius, 0., 1000000., ".1f", input, 10., 100.);
 	}
 
         x=1, ++y;
@@ -858,7 +858,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
                 GtkWidget *input = mygtk_grid_add_spin_input (N_("Number"), grid, x, y);
                 ec_number = new Gtk_EntryControl (gapp->xsm->Unity,
                                                   OUT_OF_RANGE,
-                                                  &MaxNumberEvents, 0., 500., ".0f", input, 1., 10.);
+                                                  &MaxNumberEvents, 0., 25000., ".0f", input, 1., 10.);
 	}
         x=1, ++y;
         {
@@ -924,44 +924,6 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	gtk_label_set_angle (GTK_LABEL (label5), 90);
 
         side_pane_tab_objects = base_grid;
-        //	gtk_grid_attach (GTK_GRID (side_pane_tab_objects), gridxxx, 1,1, 1,1);
-
-#if 0
-        grid = gtk_grid_new ();
-	gtk_grid_attach (GTK_GRID (base_grid), grid, 1,1, 1,1);
-        x=y=1;
-
-	GtkListStore *v_objects_store = gtk_list_store_new (3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
-	GtkTreeIter iter;
-	gtk_list_store_append (v_objects_store, &iter);
-	gtk_list_store_set (v_objects_store, &iter,
-		       0, "Obj[1]",
-		       1, "0",
-		       2, "00",
-		       -1);
-	gtk_list_store_append (v_objects_store, &iter);
-	gtk_list_store_set (v_objects_store, &iter,
-		       0, "Obj[2]",
-		       1, "0",
-		       2, "00",
-		       -1);
-	GtkCellRenderer     *renderer;
-	GtkTreeModel        *model = GTK_TREE_MODEL (v_objects_store);
-	GtkWidget           *view;
-
-	view = gtk_tree_view_new ();
-
-	renderer = gtk_cell_renderer_text_new ();
-	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
-						     -1,      
-						     "Label",  
-						     renderer,
-						     "text", 0,
-						     NULL);
-
-	gtk_tree_view_set_model (GTK_TREE_VIEW (view), model);
-	gtk_grid_attach (GTK_GRID (grid), view, 1,1, 1,1);
-#endif
 
 	// -- On Scan Display Setup (OSD) -- Tab
 	XSM_DEBUG (DBG_L2,  "VC::VC OSD-Tab" );
@@ -1398,7 +1360,7 @@ void ViewControl::update_event_panel (ScanEvent *se){
 
 	active_event = se;
 	se->print ();
-        g_message ("ViewControl::update_event_panel");
+        //        g_message ("ViewControl::update_event_panel");
         
 	xi = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_xchan));
 	yi = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_ychan));
@@ -2328,9 +2290,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			gchar *f;
 			int spc[2][2], sp00[2], s;
 			VObject *vo;		
-                        g_message("VOb CIRCLE");
 			lab = GetLabelInfo (vc->objloadstream, &f, &mas, c, spc, sp00, &s);
-                        g_message("VOb CIRCLE lb=%s",lab);
 			GetXAngYAng (vc->objloadstream, xy, TRUE);
 			GetColor (line, "CustomColor", ec);
 			GetXAngYAng (vc->objloadstream, xy+2, FALSE);
@@ -2394,17 +2354,13 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
                                           vc->scan->data.s.nvalues>1?s_value:"",
                                           s_vrange
                                           );
-
         g_free (s_value);
         g_free (s_time);
         g_free (s_vrange);
 
-        g_message (suggest0);
         gchar *suggest1 = g_strdelimit (suggest0, " ", '_');
         gchar *name = g_path_get_basename (suggest1);
         gchar *path = g_path_get_dirname (suggest1);
-        g_message (name);
-        g_message (path);
         gchar *suggest;
         
         if (g_file_test (path, G_FILE_TEST_IS_DIR)){
@@ -2420,8 +2376,6 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
         cairo_surface_t *surface;
         cairo_t *cr;
         cairo_status_t status;
-
-        g_message (suggest);
         
         GtkFileFilter *filter = gtk_file_filter_new ();
         gtk_file_filter_set_name (filter, "Images");
