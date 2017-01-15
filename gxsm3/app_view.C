@@ -1592,17 +1592,26 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 void ViewControl::DrawObjects(cairo_t *cr){
 	g_slist_foreach((GSList*) gobjlist, (GFunc) ViewControl::draw_obj, cr);
 	g_slist_foreach((GSList*) geventlist, (GFunc) ViewControl::draw_obj, cr);
+	for (gsize i=0; i<OSD_MAX; ++i)
+		if (osd_item[i])
+                        osd_item[i]->draw (cr);
 }
 
 
 void ViewControl::PaintAllRegionsInactive(){
 	g_slist_foreach((GSList*) gobjlist, (GFunc) ViewControl::deactivate_obj, this); 
 	g_slist_foreach((GSList*) geventlist, (GFunc) ViewControl::deactivate_obj, this); 
+        for (gsize i=0; i<OSD_MAX; ++i)
+                if (osd_item[i])
+                        deactivate_obj (osd_item[i], this);
 }
 
 void ViewControl::PaintAllRegionsActive(){
 	g_slist_foreach((GSList*) gobjlist, (GFunc) ViewControl::activate_obj, this); 
 	g_slist_foreach((GSList*) geventlist, (GFunc) ViewControl::activate_obj, this); 
+        for (gsize i=0; i<OSD_MAX; ++i)
+                if (osd_item[i])
+                        activate_obj (osd_item[i], this);
 }
 
 void ViewControl::MoveAllObjects2LocMax(){
@@ -1625,6 +1634,9 @@ void ViewControl::RemoveObjects(){
 
 void ViewControl::UpdateObjects(){
 	g_slist_foreach((GSList*) gobjlist, (GFunc) ViewControl::obj_update, this);
+        for (gsize i=0; i<OSD_MAX; ++i)
+                if (osd_item[i])
+                        obj_update (osd_item[i], this);
 }
 
 void ViewControl::SaveObjects(){
@@ -1677,10 +1689,18 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
                         
                         return FALSE;
                 }
-                
+
+                // Objects drawn manually
                 g_slist_foreach((GSList*) vc->gobjlist, (GFunc) ViewControl::check_obj_event, vc);
 
-                if (vc->tmp_effected > 0) // handled by object, done. no more action here!
+                // Event Objects
+                g_slist_foreach((GSList*) vc->geventlist, (GFunc) ViewControl::check_obj_event, vc);
+
+                for (gsize i=0; i<OSD_MAX; ++i)
+                        if (vc->osd_item[i])
+                                vc->check_obj_event (vc->osd_item[i], vc);
+
+        if (vc->tmp_effected > 0) // handled by object, done. no more action here!
                         return FALSE;
         }
            
