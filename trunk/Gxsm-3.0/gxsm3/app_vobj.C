@@ -1247,6 +1247,7 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
 
                         item->grab ();
                         dragging_active = dragging = true;
+                        g_message ("BTN DN on OBJECT");
                         Update();
                         break;
 
