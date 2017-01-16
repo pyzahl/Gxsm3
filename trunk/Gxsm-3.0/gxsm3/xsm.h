@@ -77,9 +77,9 @@ public:
         double YStepMin(){ return Inst->YResolution(); };
         double YStepMax(){ return Inst->YRangeMax()/50.; };
 
-        double XMinPoints(){ return 1.; };
+        double XMinPoints(){ return 2.; };
         double XMaxPoints(){ if (hardware) return (double)hardware->GetMaxPointsPerLine(); else return (double)MAXDATALINES; };
-        double YMinPoints(){ return 1.; };
+        double YMinPoints(){ return 2.; };
         double YMaxPoints(){ return (double)MAXDATALINES; };
 
         double MaxValues(){ return MAXVALUES; };

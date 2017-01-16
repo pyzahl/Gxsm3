@@ -150,6 +150,9 @@ public:
         virtual gboolean check_grab_bbox (double x, double y) {
                 return (x >= bbox[0] && x <= bbox[2] && y >= bbox[1] && y <= bbox[3]) ? true : false;
         }
+        virtual gboolean check_grab_bbox_dxy (double x, double y, double dx, double dy) {
+                return (x >= bbox[0]-dx && x <= bbox[2]+dx && y >= bbox[1]-dy && y <= bbox[3]+dy) ? true : false;
+        }
 	virtual double distance (double x, double y) { 
                 double dx = x-v0.x;
                 double dy = y-v0.y;
@@ -233,7 +236,7 @@ public:
 	virtual ~cairo_item_path () { g_free (xy); };
 	
         virtual void draw (cairo_t* cr, double alpha=1.0, gboolean tr=true) { // add qf???
-                if (show_flag){
+                if (show_flag && n > 1){
                         cairo_save (cr);
                         cairo_translate (cr, v0.x, v0.y);
                         cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
@@ -250,6 +253,8 @@ public:
                         }
                         cairo_stroke (cr);
                         cairo_restore (cr);
+                } else {
+                        g_warning ("cairo_item_path::draw called with insufficent node number.");
                 }
         };
 
@@ -286,7 +291,7 @@ public:
 	virtual ~cairo_item_path_closed () { g_free (xy); };
 	
         virtual void draw (cairo_t* cr, double alpha=1.0, gboolean tr=true) { // add qf???
-                if (show_flag){
+                if (show_flag && n>1){
                         cairo_save (cr);
                         if (tr)
                                 cairo_translate (cr, v0.x, v0.y);
@@ -300,6 +305,8 @@ public:
                         // cairo_set_source_rgba (cr, fill_rgba[0], fill_rgba[1], fill_rgba[2], alpha*fill_rgba[3]);
                         cairo_fill (cr);
                         cairo_restore (cr);
+                } else {
+                        g_warning ("cairo_item_path_closed::draw called with insufficent node number.");
                 }
         };
 
