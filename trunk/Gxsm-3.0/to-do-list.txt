@@ -30,9 +30,10 @@ current work in progress, testing, evaluating while working with it, optimizing,
    
 pending ports:
 -> View 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2 -- can any one help here? ==> vsurf3d.C
--> View: OSD objects missing
--> View, Objects(s) Label -- missing, set fonst issue, Objekt coordinate spin not working right +/- limits off?, ShowLine Cursors dragging not hooked (left/right via menu works) but only blue m,ark in scan line object?
+-> View: OSD objects missing -- completed, OK.
+-> View, Objects(s) Label -- missing, set fonst issue, Objekt coordinate spin not working right +/- limits off?, ShowLine Cursors dragging not hooked (left/right via menu works) but only blue m,ark in scan line object? fxied/completed, except cursor dragging.
 -> pending/obsolete/outdated??:  port to Grid and new gxsm3 internal BuildParam helper: old SR-STD/SP2 GUI [old SR-STD HwI not availabe at this time for gxsm3]
+-> track/trail -- completed.
 
 pending solution/reworks:
 -> build a analysis clone "gxsm3a" instance with independent session/session manager and gsettings path
@@ -40,7 +41,7 @@ pending solution/reworks:
 -> auto organize Matrix of Plots?!?!?
 
 pending (old) fixed/issues:
--> Im/-Export Scan plugins: proper file dialog load/save, free filename!! => see WIP as example (fixed)
+-> Im/-Export Scan plugins: proper file dialog load/save, free filename!! => see WIP as example (fixed) -- check/follow up
 
 pending minor issues/ideas:
 - probe graph, signal button list for source not updating correctly label??
