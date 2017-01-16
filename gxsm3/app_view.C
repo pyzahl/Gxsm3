@@ -1592,6 +1592,8 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 void ViewControl::DrawObjects(cairo_t *cr){
 	g_slist_foreach((GSList*) gobjlist, (GFunc) ViewControl::draw_obj, cr);
 	g_slist_foreach((GSList*) geventlist, (GFunc) ViewControl::draw_obj, cr);
+	g_slist_foreach((GSList*) gindicatorlist, (GFunc) ViewControl::draw_obj, cr);
+
 	for (gsize i=0; i<OSD_MAX; ++i)
 		if (osd_item[i])
                         osd_item[i]->draw (cr);

@@ -259,6 +259,10 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 
 	XSM_DEBUG_PG ("DSPControl::probedata_visualize -- enter");
 
+        if (!probedata_x || !probedata_y){
+                g_warning ("DSPControl::probedata_visualize called with probedata_x/y=NULL");
+                return;
+        }
 	// find min and max X limit
 	xmin = xmax = g_array_index (probedata_x, double, 0);
 	for(int i = 1; i < current_i; i++){
@@ -432,18 +436,9 @@ int DSPControl::Probing_graph_callback( GtkWidget *widget, DSPControl *dspc, int
 
 	XSM_DEBUG_PG ("DSPControl::Probing_graph_callback -- enter");
 
-	dspc->dump_probe_hdr (); // TESTING
+        dspc->dump_probe_hdr (); // TESTING TRAIL 
 
-#if 0
-	XSM_DEBUG_PG ("Probing_graph_callback data -- current index=" << dspc->current_probe_data_index );
-
-	if (!dspc->current_probe_data_index){
-		XSM_DEBUG_PG ("DSPControl::Probing_graph_callback -- exit no data");
-		return 0;
-	}
-#endif
-	
-//xxxxxxxxxxxxx atach event to active channel, if one exists -- manual mode xxxxxxxxxxxxxxxxxxxxx
+//xxxxxxxxxxxxx attach event to active channel, if one exists -- manual mode xxxxxxxxxxxxxxxxxxxxx
 
 	XSM_DEBUG_PG ("Probing_graph_callback MasterScan? Add Ev." );
 
@@ -953,7 +948,7 @@ void DSPControl::add_probe_hdr(double pv[9]){
 
 void DSPControl::dump_probe_hdr(){ 
 #define VP_TRAIL_LEN 256
-	static VObPoint *vp_trail[VP_TRAIL_LEN];
+	static VObEvent *vp_trail[VP_TRAIL_LEN];
 	static int vp_trail_i = -1;
 	static int vp_trail_n = -1;
 	static double x=0.;
@@ -962,7 +957,7 @@ void DSPControl::dump_probe_hdr(){
 	double val[10];
 	double t0=0.;
 
-// #define DUMP_TERM
+        // #define DUMP_TERM
 #ifdef DUMP_TERM
 	std::cout << "Vector Probe Header List -----------------" << std::endl;
 	std::cout << "# ####\t time[ms]  \t dt[ms]    \t X[Ang]   \t Y[Ang]   \t Z[Ang]    \t Sec" << std::endl;
@@ -1019,14 +1014,14 @@ void DSPControl::dump_probe_hdr(){
 					double xy[2] = {xyz[0], xyz[1]};
 					if (vp_trail_n < VP_TRAIL_LEN){
 						ViewControl *vc = gapp->xsm->MasterScan->view->Get_ViewControl();
-						VObPoint *vp;
+						VObEvent *vp;
 						if (vp_trail_n == 0)
 							vc->RemoveIndicators ();
 						else
 							vp_trail[vp_trail_n-1]->set_color_to_custom (color_gray, color_yellow);
-						vc->AddIndicator (vp = new VObPoint (vc->GetCanvas (), xy, NULL, FALSE, VOBJ_COORD_ABSOLUT, info, 0.25));
+						vc->AddIndicator (vp = new VObEvent (vc->GetCanvas (), xy, NULL, FALSE, VOBJ_COORD_ABSOLUT, info, 0.25));
 						vp->set_marker_scale (0.25);
-						vp->set_obj_name ("*Marker:yellow");
+						vp->set_obj_name ("*Trailpoint");
 						vp_trail[vp_trail_n] = vp;
 
 						++vp_trail_n;
