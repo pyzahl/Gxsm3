@@ -100,8 +100,7 @@ The PlugIn configurator...
 #include <math.h>
 #include "config.h"
 #include "gxsm/plugin.h"
-
-#include "vectorutil.h"
+#include "gxsm/vectorutil.h"
 #include <nlopt.hpp>
 
 #include <sstream>

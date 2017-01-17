@@ -29,6 +29,7 @@
 #include <pango/pangocairo.h>
 #include "cairo_item.h"
 
+#include "vectorutil.h"
 
 float BasicColors[][4] = { // "red","green","cyan","yellow","blue","magenta","grey"
         { 1.0, 0.0, 0.0, 1.0 }, // RGBA red
@@ -103,7 +104,21 @@ draw_text (cairo_t *cr)
 
       cairo_restore (cr);
     }
+            width, height = 0,0
+              angle = (360. * i) / N_WORDS;
+              
+              cr.save ()
 
+              red   = (1 + math.cos ((angle - 60) * math.pi / 180.)) / 2
+              cr.set_source_rgb ( red, 0, 1.0 - red)
+              cr.rotate ( angle * math.pi / 180.)
+              #/* Inform Pango to re-layout the text with the new transformation */
+              PangoCairo.update_layout (cr, layout)
+              width, height = layout.get_size()
+              cr.move_to ( - (float(width) / 1024.) / 2, - RADIUS)
+              PangoCairo.show_layout (cr, layout)
+              cr.restore()
+              
   /* free the layout object */
   g_object_unref (layout);
 }
@@ -112,11 +127,12 @@ draw_text (cairo_t *cr)
 
 void cairo_item_text::draw (cairo_t* cr, double angle, gboolean tr) {
         if (show_flag){
-                double y = xy[0].y;
+                double y = 0;
                 gchar **lines = g_strsplit (t,"\n",0);
                 cairo_text_extents_t te;
                 PangoLayout *layout = NULL;
 
+                cairo_save (cr);
                 if (pango_font){
                         layout = pango_cairo_create_layout (cr);  /* Create a PangoLayout, set the font and text */
                 } else {
@@ -126,11 +142,23 @@ void cairo_item_text::draw (cairo_t* cr, double angle, gboolean tr) {
                 cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
                 cairo_set_line_width (cr, lw); 
                         
-                cairo_save (cr);
+                //double xy0[3] = {v0.x, v0.y, 0. };
                 cairo_translate (cr, v0.x, v0.y);
-                //                if (fabs (angle) > 0.)
-                //                        cairo_rotate (cr, angle * G_PI / 180.);
+                cairo_translate (cr, xy[0].x, xy[0].y);
+                if (fabs (angle) > 0.){
+                        //      double M[3][3];
+                        //double r[3] = {v0.x, v0.y, 0. };
+                        //double zero[3] = {0.,0.,0.};
 
+                        cairo_rotate (cr, angle * M_PI / 180.);
+
+                        //g_print_vec ("XY0i", xy0);
+                        //make_mat_rot_xy_tr (M, -angle, zero);
+                        //mul_mat_vec (xy0, M, r);
+                        //g_print_vec ("XY0r", xy0);
+                }
+
+                
                 for (gchar **l=lines; *l; ++l){
                         double x0,y0;
                         double xj = 0.;
@@ -157,7 +185,7 @@ void cairo_item_text::draw (cairo_t* cr, double angle, gboolean tr) {
                         default: break; // this is CAIRO_ANCHOR_CENTER
                         }
                         
-                        cairo_move_to (cr, x0=xy[0].x - te.x_bearing - xj, y0=y - te.y_bearing - yj);
+                        cairo_move_to (cr, x0 = - te.x_bearing - xj, y0 = y - te.y_bearing - yj);
 
                         if (pango_font)
                                 pango_cairo_show_layout (cr, layout);

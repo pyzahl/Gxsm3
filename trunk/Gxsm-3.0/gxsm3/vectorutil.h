@@ -28,6 +28,11 @@
  */
 
 
+#include <glib.h>
+#include <math.h>
+#include "string.h"
+
+
 inline void set_vec (double u[3], double c){
 	for (int i=0; i<3; ++i)
 		u[i] = c;
@@ -164,6 +169,7 @@ inline void norm3pkte (const double p1[3], const double p2[3], const double p3[3
 	norm_cross_prod (v1, v2, n);
 }
 
+#ifdef USR_STDCOUT
 inline void print_vec (const gchar *name, const double v[3]){
         std::cout << name << " = [ " << v[0] << ", " << v[1] << ", " << v[2] << "]" << std::endl;
 }
@@ -171,6 +177,7 @@ inline void print_vec (const gchar *name, const double v[3]){
 inline void print_vec4 (const gchar *name, const double v[4]){
         std::cout << name << " = [ " << v[0] << ", " << v[1] << ", " << v[2] << ", " << v[3] << "]" << std::endl;
 }
+#endif
 
 inline void g_print_vec (const gchar *name, const double v[3]){
         g_message ("%s = (%g, %g, %g)", name, v[0], v[1], v[2]);
