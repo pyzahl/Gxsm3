@@ -921,7 +921,7 @@ gboolean ProfileControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, P
 
         pc->frame->draw (cr);
         pc->xaxislabel->draw (cr);
-        pc->yaxislabel->draw (cr, 90.);
+        pc->yaxislabel->draw (cr, -90.);
         
         c_item = &pc->Xtics[0];   
         while (*c_item) (*c_item++)->draw (cr);
