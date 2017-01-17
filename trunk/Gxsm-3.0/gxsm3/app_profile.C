@@ -897,6 +897,7 @@ gboolean ProfileControl::resize_drawing (GtkWidget *widget, ProfileControl *pc){
                         //g_print ("Profile Drawing Resize: %d, %d, ap=%g\n", w,h, ap);
                         pc->papixel = (int)(w / (ap+3*pc->border));
                         pc->SetSize (ap);
+                        pc->UpdateArea (); // new 20170116
                 }
         }
         return FALSE;
@@ -914,9 +915,6 @@ gboolean ProfileControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, P
 
         cairo_scale (cr, pc->pixel_size, pc->pixel_size);
         cairo_translate (cr, 3.*pc->border, pc->border/4.);
-
-        // XSM_DEBUG (DBG_L2,  "ProfileControl:::canvas_draw_callback ********************** PROFILE PAINT *********************" );
-        // XSM_DEBUG (DBG_L2,  "ProfileControl:::canvas_draw_callback *** pixel_size=" << pc->pixel_size << " border=" << pc->border << " pasize=" << pc->pasize  << " papixel=" << pc->papixel);
 
         pc->frame->draw (cr);
         pc->xaxislabel->draw (cr);
@@ -1009,7 +1007,7 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
 
         if (!dragging){ // only if not displaying coordinate info
                 if (pc->tmp_effected >= 0){
-                        g_message ("CANVAS EVENT cursor grab mode image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
+                        //g_message ("CANVAS EVENT cursor grab mode image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
                         pc->cursor_event (items, event, mouse_pix_xy, pc);
                         return FALSE;
                 }
@@ -1025,7 +1023,7 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
 		case 1: 
 			break;
 		case 2: // Show XYZ display
-                        g_message ("M BUTTON_PRESS image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
+                        //g_message ("M BUTTON_PRESS image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
 			mld = g_strdup_printf ("%g, %g", mouse_pix_xy[0], mouse_pix_xy[1]);
 			coordpopup = gtk_window_new (GTK_WINDOW_POPUP);
 			gtk_window_set_position (GTK_WINDOW (coordpopup), GTK_WIN_POS_MOUSE);
@@ -1046,7 +1044,7 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
 		break;
 		
 	case GDK_MOTION_NOTIFY:
-                g_message ("MOTION XY: %g, %g\n", event->button.x, event->button.y);
+                //g_message ("MOTION XY: %g, %g\n", event->button.x, event->button.y);
 		if (dragging && (event->motion.state & GDK_BUTTON2_MASK)){
 			mld =  g_strdup_printf ("%g, %g", mouse_pix_xy[0], mouse_pix_xy[1]);
 			gtk_label_set_text (GTK_LABEL (coordlab), mld);
@@ -1069,31 +1067,31 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
 }
 
 gint ProfileControl::cursor_event(cairo_item *items[2], GdkEvent *event, double mxy[2], ProfileControl *pc){
-        static double x, y;
-	double new_x, new_y;
-	double item_x=0., item_y=0.;
+        double x, y;
   	static int dragging=FALSE;
-        //	GdkCursor *fleur;
         cairo_item *item = NULL;
 
-	item_x = mxy[0];
-	item_y = mxy[1];
+	x = mxy[0];
+	y = mxy[1];
  
-        // g_message (" ProfileControl::cursor_event [%s] %d, %d\n", pc->title, pc->tmp_effected, dragging );
+        //g_message (" ProfileControl::cursor_event [%s] %d, %d\n", pc->title, pc->tmp_effected, dragging );
 
         if (pc->tmp_effected >= 0 && dragging)
                 item = items[pc->tmp_effected];
         else {
                 // check items
+                pc->scan2canvas (x ,y);
                 for(int i=0; i<2; i++)
-                        if (items[i])
-                                //if (items[i]->check_grab_bbox (mxy[0], mxy[1])){
-                                if (items[i]->check_grab_bbox_dxy (mxy[0], mxy[1], pc->cxwidth/66., pc->cywidth/66.)){
+                        if (items[i]){
+                                //g_message (" ProfileControl::cursor_event check item[%d] [%s] CHK BBOX: %d, %d\n",i,pc->title, pc->tmp_effected, dragging );
+                                if (items[i]->check_grab_bbox (x, y)){
+                                        //if (items[i]->check_grab_bbox_dxy (mxy[0], mxy[1], pc->cxwidth/66., pc->cywidth/66.)){
                                         item = items[i];
                                         pc->tmp_effected = i;
-                                        g_message (" ProfileControl::cursor_event [%s] CHK BBOX: %d, %d\n", pc->title, pc->tmp_effected, dragging );
+                                        //g_message (" ProfileControl::cursor_event [%s] CHK BBOX OK: %d, %d\n", pc->title, pc->tmp_effected, dragging );
                                         break;
                                 }
+                        }
         }
 
         if (item == NULL)
@@ -1103,13 +1101,13 @@ gint ProfileControl::cursor_event(cairo_item *items[2], GdkEvent *event, double 
         case GDK_BUTTON_PRESS:
                 switch(event->button.button){
                 case 1:
-                        x = item_x;
-                        y = item_y;
-                                
-                        // cursor = gdk_cursor_new(GDK_FLEUR);
-                        // gdk_cursor_destroy(cursor);
-
+                        {
+                                GdkWindow* win = gtk_widget_get_parent_window(pc->canvas);
+                                GdkCursor *grab_cursor = gdk_cursor_new_from_name (gdk_display_get_default (), "grab");
+                                gdk_window_set_cursor(win, grab_cursor);
+                        }
                         item->grab ();
+                        
                         dragging = true;
                         break;
 
@@ -1120,15 +1118,11 @@ gint ProfileControl::cursor_event(cairo_item *items[2], GdkEvent *event, double 
 		
         case GDK_MOTION_NOTIFY:
                 if (item->is_grabbed () && dragging && (event->motion.state & GDK_BUTTON1_MASK)){
-  			new_x = item_x;
-			new_y = item_y;
-                        g_message (" ProfileControl::cursor_event MOTION EV");
+                        //g_message (" ProfileControl::cursor_event MOTION EV [%d] to x=%g", pc->tmp_effected, mxy[0]);
                         if (pc->tmp_effected >= 0){ // make sure
-                                g_message (" ProfileControl::cursor_event MOTION EV => MOVE CURSOR");
-                                pc->moveCur (pc->tmp_effected, 0, 2, new_x);
+                                //g_message (" ProfileControl::cursor_event MOTION EV => MOVE CURSOR");
+                                pc->moveCur (pc->tmp_effected, 0, 2, mxy[0]);
                         }
-                        x = new_x;
-			y = new_y;
                 }
                 break;
 		
@@ -1136,6 +1130,9 @@ gint ProfileControl::cursor_event(cairo_item *items[2], GdkEvent *event, double 
                 if (item->is_grabbed () && dragging){
                         item->ungrab ();
                         pc->tmp_effected = -1;
+                        GdkWindow* win = gtk_widget_get_parent_window(pc->canvas);
+                        GdkCursor *default_cursor = gdk_cursor_new_from_name (gdk_display_get_default (), "default");
+                        gdk_window_set_cursor(win, default_cursor);
                 }
 
                 dragging = false;
@@ -1145,8 +1142,6 @@ gint ProfileControl::cursor_event(cairo_item *items[2], GdkEvent *event, double 
         default:
                 break;
         }
-
-        g_message ("Cursor at %g, %g -- EV CHECK CURSOR DONE.\n", x,y);
         
 	return true;
 }
@@ -1745,8 +1740,8 @@ void ProfileControl::UpdateArea ()
 	else{
 		XSM_DEBUG (DBG_L4,  "ProfileControl::UpdateArea drawing ticks!" );
                 updateTics();
-		moveCur(0, 0);
-		moveCur(1, 0);
+                moveCur (0);
+                moveCur (1);
 	}
 }
 
@@ -1754,6 +1749,7 @@ void ProfileControl::showCur(int id, int show){
 	if(show){
 		if(Cursor[id][0]){
 			Cursor[id][0]->show ();
+			Cursor[id][1]->show ();
 		}else{
                         double x,y;
 			const char *c[]={"blue","green"};
@@ -1769,14 +1765,18 @@ void ProfileControl::showCur(int id, int show){
                         Cursor[id][0]->set_line_width (get_lw1 (1.5*xsmres.ProfileLineWidth));
 			Cursor[id][0]->show ();
                         Cursor[id][0]->queue_update (canvas);
-                        
+
+                        double rsz=0.05*cxwidth;
                         Cursor[id][1] = new cairo_item_path_closed (3);
-                        Cursor[id][1]->set_xy (0, x-0.02*cxwidth, cywidth-0.05*cxwidth);
-                        Cursor[id][1]->set_xy (1, x+0.02*cxwidth, cywidth+0.05*cxwidth);
-                        Cursor[id][1]->set_xy (2, x, cywidth);
+                        Cursor[id][1]->set_position (x, cywidth);
+                        Cursor[id][1]->set_xy (0, 0., 0.);
+                        Cursor[id][1]->set_xy (1, -rsz/3., -rsz);
+                        Cursor[id][1]->set_xy (2,  rsz/3., -rsz);
                         Cursor[id][1]->set_stroke_rgba (c[id]);
                         Cursor[id][1]->set_fill_rgba (c[id]);
                         Cursor[id][1]->set_line_width (get_lw1 (1.5*xsmres.ProfileLineWidth));
+                        Cursor[id][1]->show ();
+                        Cursor[id][1]->update_bbox ();
                         Cursor[id][1]->queue_update (canvas);
 		}
 	}else{
@@ -1800,6 +1800,9 @@ void ProfileControl::moveCur(int id, int dir, int search, double cx){
        
 	if(search == 2){
                 x = cx;
+                double xx,yy;
+                xx=x; yy=0.;
+                CursorsIdx[id] = last_pe->GetCurX(&xx, &yy); 
         }else{
 		if(search){
 			if(search>0) CursorsIdx[id] = last_pe->nextMax(CursorsIdx[id], dir);
@@ -1812,15 +1815,15 @@ void ProfileControl::moveCur(int id, int dir, int search, double cx){
 
         scan2canvas (x, y);
 
+        //g_message ("ProfileControl::moveCur(%d, %d, %d, %g) x=%g", id,dir,search,cx,x);
+        
         Cursor[id][0]->set_xy (0, 0., y);
         Cursor[id][0]->set_xy (1, cxwidth, y);
         Cursor[id][0]->set_xy (2, x, 0.);
         Cursor[id][0]->set_xy (3, x, cywidth);
         Cursor[id][0]->queue_update (canvas);
   
-        Cursor[id][1]->set_xy (0, x-0.02*cxwidth, cywidth-0.05*cxwidth);
-        Cursor[id][1]->set_xy (1, x+0.02*cxwidth, cywidth+0.05*cxwidth);
-        Cursor[id][1]->set_xy (2, x, cywidth);
+        Cursor[id][1]->set_position (x, cywidth);
         Cursor[id][1]->queue_update (canvas);
   
         gchar *p;

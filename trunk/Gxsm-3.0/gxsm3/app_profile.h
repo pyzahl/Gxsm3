@@ -288,7 +288,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	void file_print_callback (int index, ProfileControl *pc);
 
 	void showCur(int id, int show);
-	void moveCur(int id, int dir, int search=0, double ix=0.);
+	void moveCur(int id, int dir=0, int search=0, double ix=0.);
 
 	void UpdateArea();
 
