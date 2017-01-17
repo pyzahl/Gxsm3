@@ -991,7 +991,6 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
 	static GtkWidget *coordpopup=NULL;
 	static GtkWidget *coordlab=NULL;
         double mouse_pix_xy[2];
-	GtkWidget *frame;
 	gchar *mld;
         //	GdkCursor *fleur;
         cairo_item *items[2] = { pc->Cursor[0][1], pc->Cursor[1][1] };
@@ -1026,18 +1025,22 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
 		case 1: 
 			break;
 		case 2: // Show XYZ display
-                        //g_message ("M BUTTON_PRESS image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
-			mld = g_strdup_printf ("%g, %g", mouse_pix_xy[0], mouse_pix_xy[1]);
-			coordpopup = gtk_window_new (GTK_WINDOW_POPUP);
-			gtk_window_set_position (GTK_WINDOW (coordpopup), GTK_WIN_POS_MOUSE);
-			gtk_container_add (GTK_CONTAINER (coordpopup), frame = gtk_frame_new (NULL));
-			gtk_container_add (GTK_CONTAINER (frame),   coordlab = gtk_label_new (mld));
-			gtk_widget_show_all (coordpopup);
-			g_free(mld);
-                        // fleur = gdk_cursor_new(GDK_CROSSHAIR);
-                        //  g_object_unref (fleur);
-			dragging=TRUE;
+                        {
+                                GtkWidget *pframe;
+                                //g_message ("M BUTTON_PRESS image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
+                                mld = g_strdup_printf ("%g, %g", mouse_pix_xy[0], mouse_pix_xy[1]);
+                                coordpopup = gtk_window_new (GTK_WINDOW_POPUP);
+                                gtk_window_set_position (GTK_WINDOW (coordpopup), GTK_WIN_POS_MOUSE);
+                                gtk_container_add (GTK_CONTAINER (coordpopup), pframe = gtk_frame_new (NULL));
+                                gtk_container_add (GTK_CONTAINER (pframe),   coordlab = gtk_label_new (mld));
+                                gtk_widget_show_all (coordpopup);
+                                g_free(mld);
 
+                                GdkWindow* win = gtk_widget_get_parent_window(pc->canvas);
+                                GdkCursor *grab_cursor = gdk_cursor_new_from_name (gdk_display_get_default (), "cell"); // "cell" "crosshair"
+                                gdk_window_set_cursor(win, grab_cursor);
+                        }
+			dragging=TRUE;
                         break;
                 case 3: // do popup
                         g_print ("RM BUTTON_PRESS (do popup) image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
@@ -1060,7 +1063,12 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
 		case 2:  // remove XYZ display
 			gtk_widget_destroy (coordpopup);
 			coordpopup=NULL;
-			dragging=FALSE;
+                        {
+                                GdkWindow* win = gtk_widget_get_parent_window(pc->canvas);
+                                GdkCursor *grab_cursor = gdk_cursor_new_from_name (gdk_display_get_default (), "default");
+                                gdk_window_set_cursor(win, grab_cursor);
+                        }
+                        dragging=FALSE;
 			break;
 		}
 		break;
@@ -1382,8 +1390,8 @@ void ProfileControl::updateFrame ()
 {
 	if(!frame){
 		frame = new cairo_item_rectangle (0., 0., cxwidth, cywidth);
-                frame->set_fill_rgba (1.,1.,1.,1.);
-                frame->set_stroke_rgba (0.,1.,0.,1.);
+                frame->set_fill_rgba ("white");
+                frame->set_stroke_rgba ("black");
                 frame->set_line_width (lw_1*1.5);
         } else 
 		frame->set_xy (1, cxwidth, cywidth);
@@ -1395,7 +1403,6 @@ void ProfileControl::updateFrame ()
                 xaxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
         } else  
 		xaxislabel->set_xy (0, cxwidth/2., cywidth+border);
-
 
 	if(!yaxislabel){
 		yaxislabel = new cairo_item_text ( -2.*border, cywidth/2., "Y-axis");
@@ -1444,6 +1451,8 @@ void ProfileControl::addTic(cairo_item **tic, cairo_item_text **lab,
                 *tic = new cairo_item_path (2);
         if (color)
                 (*tic)->set_stroke_rgba (color);
+        else
+                (*tic)->set_stroke_rgba ("black");
 
 	switch(pos){
 	case TIC_EMPTY: case LAB_EMPTY:
