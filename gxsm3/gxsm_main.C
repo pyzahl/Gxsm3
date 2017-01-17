@@ -70,71 +70,70 @@ int just_exit = 0;
 static const GOptionEntry gxsm_options[] =
 {
 	/* Version */
-	{ "version", 'V', 0, G_OPTION_ARG_NONE, NULL, N_("Show the application's version"), NULL },
+	{ "version", 'V', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, NULL, N_("Show the application's version"), NULL },
         
 	{ "hardware-card", 'h', 0, G_OPTION_ARG_STRING, &xsmres.HardwareTypeCmd,
           N_("Hardware Card: no | ... (depends on available HwI plugins)"), NULL
         },
 
-	{ "Hardware-DSPDev", 'd', 0, G_OPTION_ARG_STRING, &xsmres.DSPDevCmd,
+	{ "Hardware-DSPDev", 'd', G_OPTION_FLAG_NONE, G_OPTION_ARG_STRING, &xsmres.DSPDevCmd,
 	  N_("Hardware DSP Device Path: /dev/sranger0 | ... (depends on module type and index if multiple DSPs)"), NULL
         },
 
-	{ "User-Unit", 'u', 0, G_OPTION_ARG_STRING, &xsmres.UnitCmd,
+	{ "User-Unit", 'u', G_OPTION_FLAG_NONE, G_OPTION_ARG_STRING, &xsmres.UnitCmd,
 	  N_("XYZ Unit: AA | nm | um | mm | BZ | sec | V | 1 "), NULL
         },
 
+	{ "logging-level", 'L', G_OPTION_FLAG_NONE, G_OPTION_ARG_INT, &logging_level,
+          N_("Set Gxsm logging/monitor level. 0: omit all loggings. 1: default logging, 2: verbose logging"), NULL
+        },
 
-	{ "disable-plugins", 'd', 0, G_OPTION_ARG_NONE, &xsmres.disableplugins,
+	{ "disable-plugins", 'd', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &xsmres.disableplugins,
           N_("Disable default plugin loading on startup"), NULL
         },
         
-	{ "force-configure", 0, 0, G_OPTION_ARG_NONE, &xsmres.force_config,
+	{ "force-configure", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &xsmres.force_config,
           N_("Force to reconfigure Gxsm on startup"), NULL
         },
 
-	{ "force-rebuild-configuration-defaults", 0, 0, G_OPTION_ARG_NONE, &force_gconf_defaults,
+	{ "force-rebuild-configuration-defaults", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &force_gconf_defaults,
           N_("Forces to restore all GXSM gconf defaults on startup"), NULL
         },
 
-	{ "write-gxsm-preferences-gschema", 0, 0, G_OPTION_ARG_NONE, &generate_preferences_gschema,
+	{ "write-gxsm-preferences-gschema", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &generate_preferences_gschema,
           N_("Generate Gxsm preferences gschema file on startup with build in defaults and exit"), NULL
         },
 
-	{ "write-gxsm-gl-preferences-gschema", 0, 0, G_OPTION_ARG_NONE, &generate_gl_preferences_gschema,
+	{ "write-gxsm-gl-preferences-gschema", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &generate_gl_preferences_gschema,
           N_("Generate Gxsm GL preferences gschema file on startup with build in defaults and exit"), NULL
         },
 
-	{ "write-gxsm-pcs-gschema", 0, 0, G_OPTION_ARG_NONE, &generate_pcs_gschema,
+	{ "write-gxsm-pcs-gschema", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &generate_pcs_gschema,
           N_("Generate Gxsm pcs gschema file on startup with build in defaults while execution"), NULL
         },
 
-	{ "write-gxsm-pcs-adj-gschema", 0, 0, G_OPTION_ARG_NONE, &generate_pcs_adj_gschema,
+	{ "write-gxsm-pcs-adj-gschema", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &generate_pcs_adj_gschema,
           N_("Generate Gxsm pcs adjustements gschema file on startup with build in defaults while execution"), NULL
         },
 
-	{ "debug-level", 'D', 0, G_OPTION_ARG_INT, &debug_level,
+	{ "debug-level", 'D', G_OPTION_FLAG_NONE, G_OPTION_ARG_INT, &debug_level,
           N_("Set Gxsm debug level. 0: no debug output on console, 1: normal, 2: more verbose, ...5 increased verbosity"), "DN"
         },
 
-	{ "pi-debug-level", 'P', 0, G_OPTION_ARG_INT, &pi_debug_level,
+	{ "pi-debug-level", 'P', G_OPTION_FLAG_NONE, G_OPTION_ARG_INT, &pi_debug_level,
           N_("Set Gxsm Plug-In debug level. 0: no debug output on console, 1: normal, 2: more verbose, ...5 increased verbosity"), "PDN"
-        },
-
-	{ "logging-level", 'L', 1, G_OPTION_ARG_INT, &logging_level,
-          N_("Set Gxsm logging/monitor level. 0: omit all loggings. 1: default logging, 2: verbose logging"), "LN"
         },
 
 	/* New instance */
 	{
-		"standalone", 's', 0, G_OPTION_ARG_NONE, NULL,
+		"standalone", 's', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, NULL,
 		N_("Run gxsm3 in standalone mode"),
 		NULL
 	},
 
 	/* collects file arguments */
 	{
-		G_OPTION_REMAINING, '\0', 0, G_OPTION_ARG_FILENAME_ARRAY, NULL, NULL,
+		G_OPTION_REMAINING, '\0', G_OPTION_FLAG_NONE, G_OPTION_ARG_FILENAME_ARRAY, NULL, NULL,
 		N_("[FILE...] [+LINE[:COLUMN]]")
 	},
 
