@@ -1716,8 +1716,8 @@ void VObLine::Update(){
                                 }
                                 cursors[1]->set_stroke_rgba (CAIRO_COLOR_GREEN);
                                 cursors[1]->set_line_width (OBJECT_LINE_WIDTH);
-                                cursors[1]->set_xy (0, xy[2*seg+0] + dx*posA - dy*l, xy[2*seg+1] + dy*posA + dx*l);
-                                cursors[1]->set_xy (1, xy[2*seg+0] + dx*posA + dy*l, xy[2*seg+1] + dy*posA - dx*l);
+                                cursors[1]->set_xy (0, xy[2*seg+0] + dx*posB - dy*l, xy[2*seg+1] + dy*posB + dx*l);
+                                cursors[1]->set_xy (1, xy[2*seg+0] + dx*posB + dy*l, xy[2*seg+1] + dy*posB - dx*l);
 
 			} else
 				if (cursors[1])

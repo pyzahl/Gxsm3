@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: gxsm3
 Description: gxsm3
 Requires: gtksourceview-3.0 libpeas-1.0 libpeas-gtk-1.0
-Version: 3.41.2
+Version: 3.41.3
 Cflags: -I${includedir}/gxsm3-@GEDIT_API_VERSION@
 Libs: -L${libdir} @GEDIT_IMPLIB@
