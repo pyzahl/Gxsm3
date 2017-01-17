@@ -75,9 +75,9 @@
 	    <attribute name="action">win.view-save-as</attribute>
 	    <!-- signal name="activate" handler="ViewControl::view_file_save_as_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_STOCK(N_("Save Image"), N_("save as image (gif, jpeg, png, tiff, xpm)"),  -->
+	  <!--  GNOMEUIINFO_ITEM_STOCK(N_("Save Image/Drawing"), N_("save as image (png, svg, pdf)"),  -->
 	  <item>
-	    <attribute name="label" translatable="yes">Save Image</attribute>
+	    <attribute name="label" translatable="yes">Save Image/Drawing</attribute>
 	    <attribute name="action">win.view-save-as-image</attribute>
 	    <!-- signal name="activate" handler="ViewControl::view_file_saveimage_callback"/ -->
 	  </item>
@@ -943,7 +943,7 @@
 	  <attribute name="action">win.file-save</attribute>
 	</item>
 	<item>
-	  <attribute name="label" translatable="yes">_Save Image</attribute>
+	  <attribute name="label" translatable="yes">_Save Image/Drawing</attribute>
 	  <attribute name="action">win.file-image-save</attribute>
 	</item>
       </section>

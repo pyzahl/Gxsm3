@@ -884,11 +884,11 @@ public:
 	gchar *file_dialog_load (const gchar *title, 
 				 const gchar *path, 
 				 const gchar *name,
-                                 GtkFileFilter *filter=NULL);
+                                 GtkFileFilter **filter=NULL);
 	gchar *file_dialog_save (const gchar *title, 
 				 const gchar *path, 
 				 const gchar *name,
-                                 GtkFileFilter *filter=NULL);
+                                 GtkFileFilter **filter=NULL);
 
         // compat for PLugIns -- obsoleted
         gchar *file_dialog(const gchar *title, 
@@ -897,17 +897,24 @@ public:
                            const gchar *name,
                            const gchar *id){
                 g_warning ("gapp_service function File_dialog is obsoleted, use file_dialog_load/save.");
-                GtkFileFilter *filter = NULL;
                 if (mask){
-                        filter = gtk_file_filter_new ();
-                        gtk_file_filter_set_name (filter, mask);
-                        gtk_file_filter_add_pattern (filter, mask);
+                        GtkFileFilter *f1 = gtk_file_filter_new ();
+                        gtk_file_filter_set_name (f1, mask);
+                        gtk_file_filter_add_pattern (f1, mask);
+                        GtkFileFilter *f0 = gtk_file_filter_new ();
+                        gtk_file_filter_set_name (f0, "All");
+                        gtk_file_filter_add_pattern (f0, "*");
+                        GtkFileFilter *filter[] = { f1, f0, NULL };
+                        if (name) // guessing
+                                return file_dialog_save (title, path, name, filter);
+                        else
+                                return file_dialog_load (title, path, name, filter);
                 }
 
                 if (name) // guessing
-                        return file_dialog_save (title, path, name, filter);
+                        return file_dialog_save (title, path, name);
                 else
-                        return file_dialog_load (title, path, name, filter);
+                        return file_dialog_load (title, path, name);
         };
         
 	// Value Request

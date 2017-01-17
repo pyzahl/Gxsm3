@@ -622,7 +622,7 @@ void GnomeAppService::progress_info_close (){
 gchar *GnomeAppService::file_dialog_save (const gchar *title, 
                                           const gchar *path, 
                                           const gchar *name,
-                                          GtkFileFilter *filter
+                                          GtkFileFilter **filter
                                           ){
         gchar *filename = NULL;
         GtkWidget *dialog = gtk_file_chooser_dialog_new (title,
@@ -643,9 +643,9 @@ gchar *GnomeAppService::file_dialog_save (const gchar *title,
                 gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), name);
         }
 
-        if (filter){
-                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
-        }
+        if (filter)
+                while (*filter)
+                        gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), *filter++);
 
         if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT){
                 filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
@@ -658,7 +658,7 @@ gchar *GnomeAppService::file_dialog_save (const gchar *title,
 gchar *GnomeAppService::file_dialog_load (const gchar *title, 
                                           const gchar *path, 
                                           const gchar *name,
-                                          GtkFileFilter *filter
+                                          GtkFileFilter **filter
                                           ){
         gchar *filename = NULL;
         GtkWidget *dialog = gtk_file_chooser_dialog_new (title,
@@ -676,9 +676,9 @@ gchar *GnomeAppService::file_dialog_load (const gchar *title,
                 gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), name);
         }
 
-        if (filter){
-                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
-        }
+        if (filter)
+                while (*filter)
+                        gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), *filter++);
         
         if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
                 filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));

@@ -273,9 +273,19 @@ void plugin_ctrl::view_pi_info(){
 	GList *node = plugins;
 	time_t t;
 	time (&t);
-        GtkFileFilter *filter = gtk_file_filter_new ();
-        gtk_file_filter_set_name (filter, "HTML");
-        gtk_file_filter_add_pattern (filter, "*.html");
+
+        GtkFileFilter *f1 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f1, "All");
+        gtk_file_filter_add_pattern (f1, "*");
+
+        GtkFileFilter *f2 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f2, "HTML");
+        gtk_file_filter_add_pattern (f2, "*.html");
+        gtk_file_filter_add_pattern (f2, "*.htm");
+        gtk_file_filter_add_pattern (f2, "*.HTM");
+        gtk_file_filter_add_pattern (f2, "*.HTML");
+
+        GtkFileFilter *filter[] = { f1, f2, NULL };
 
 	gchar *pi_status_file = gapp->file_dialog_load ("HTML PlugIn status file to save", ".", 
                                                         "/tmp/gxsm_plugins.html",

@@ -1562,6 +1562,16 @@ public:
 		bp.grid_add_widget (choice, 5);
 
                 chooser = gtk_file_chooser_button_new (_("XYZ Model File"), GTK_FILE_CHOOSER_ACTION_OPEN);
+                GtkFileFilter *xyz_filter = gtk_file_filter_new ();
+                gtk_file_filter_set_name (xyz_filter, "XYZ");
+                gtk_file_filter_add_pattern (xyz_filter, "*.xyz");
+                gtk_file_filter_add_pattern (xyz_filter, "*.XYZ");
+                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), xyz_filter);
+                GtkFileFilter *all_filter = gtk_file_filter_new ();
+                gtk_file_filter_set_name (all_filter, "All");
+                gtk_file_filter_add_pattern (all_filter, "*");
+                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), all_filter);
+
                 g_object_set_data (G_OBJECT (chooser), "COMBO", choice);
 		g_signal_connect (G_OBJECT (chooser), "file-set", G_CALLBACK (xyz_file_set), &(*external_model));
 		gtk_widget_show (chooser);

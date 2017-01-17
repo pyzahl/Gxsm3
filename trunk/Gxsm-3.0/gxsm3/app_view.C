@@ -30,6 +30,9 @@
 #include <locale.h>
 #include <libintl.h>
 
+#include <cairo-svg.h>
+#include <cairo-pdf.h>
+
 #include "gxsm_app.h"
 #include "gxsm_window.h"
 
@@ -2399,13 +2402,29 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
         cairo_t *cr;
         cairo_status_t status;
         
-        GtkFileFilter *filter = gtk_file_filter_new ();
-        gtk_file_filter_set_name (filter, "Images");
-        //        gtk_file_filter_add_pattern (filter, "*");
-        gtk_file_filter_add_pattern (filter, "*.png");
-        gtk_file_filter_add_pattern (filter, "*.svg");
-        
-        imgname = gapp->file_dialog_save ("Save Canvas as png or svg file", path, suggest, filter);
+        GtkFileFilter *f0 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f0, "All");
+        gtk_file_filter_add_pattern (f0, "*");
+
+        GtkFileFilter *f2 = gtk_file_filter_new ();
+        gtk_file_filter_add_mime_type (f2, "image/png");
+        gtk_file_filter_add_mime_type (f2, "image/jpeg");
+        gtk_file_filter_add_mime_type (f2, "image/gif");
+        gtk_file_filter_set_name (f2, "Images");
+        gtk_file_filter_add_pattern (f2, "*.png");
+        gtk_file_filter_add_pattern (f2, "*.jpeg");
+
+        GtkFileFilter *f3 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f3, "SVG");
+        gtk_file_filter_add_pattern (f3, "*.svg");
+
+        GtkFileFilter *f4 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f4, "PDF");
+        gtk_file_filter_add_pattern (f4, "*.pdf");
+
+        GtkFileFilter *filter[] = { f2, f3, f4, f0, NULL };
+                
+        imgname = gapp->file_dialog_save ("Save Canvas as png, svg or pdf file", path, suggest, filter);
 	g_free (suggest);
 
 	if (imgname == NULL || strlen(imgname) < 5) 
@@ -2413,8 +2432,8 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
 
         int png=0;
 
-	if (strncasecmp (imgname+strlen(imgname)-3,".svg", 3)==0){
-#if 0
+	if (g_strrstr (imgname,".svg")){
+#if 1
 #ifdef CAIRO_HAS_SVG_SURFACE
                 surface = cairo_svg_surface_create (imgname, (double)vc->npx, (double)vc->npy);
                 cairo_svg_surface_restrict_to_version (surface, CAIRO_SVG_VERSION_1_2);
@@ -2422,7 +2441,7 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
                 g_print ("Sorry -- CAIRO_HAS_SVG_SURFACE not defined/not available.\n");
                 return;
 #endif
-        } else if (strncasecmp (imgname+strlen(imgname)-3,".pdf", 3)==0){
+        } else if (g_strrstr (imgname,".pdf")){
 #ifdef CAIRO_HAS_PDF_SURFACE
                 surface = cairo_pdf_surface_create (imgname, (double)vc->npx, (double)vc->npy);
 #else
@@ -2468,7 +2487,7 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
         } else {
                 cairo_surface_flush (surface);
                 cairo_surface_finish (surface);
-                g_print ("Cairo save scan view to sng: '%s'\n", imgname);
+                g_print ("Cairo save scan view to svg/pdf: '%s'\n", imgname);
         }
         
         cairo_surface_destroy (surface);
@@ -3270,25 +3289,36 @@ void ViewControl::obj_event_open_callback (GSimpleAction *simple, GVariant *para
 void ViewControl::obj_event_save_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	ViewControl *vc = (ViewControl *) user_data;
 	VObject *vo = (VObject*)g_object_get_data (G_OBJECT (vc->canvas), "VObject");
-        GtkWidget *filew;
+        GtkWidget *chooser = gtk_file_chooser_dialog_new ("Save File",
+                                                          GTK_WINDOW (gtk_widget_get_toplevel (vc->canvas)),
+                                                          GTK_FILE_CHOOSER_ACTION_SAVE,
+                                                          _("_Cancel"), GTK_RESPONSE_CANCEL,
+                                                          _("_Save"), GTK_RESPONSE_ACCEPT,
+                                                          NULL);
 
-        filew = gtk_file_chooser_dialog_new ("Save File",
-                                             GTK_WINDOW (gtk_widget_get_toplevel (vc->canvas)), // GTK_WINDOW(widget),
-                                             GTK_FILE_CHOOSER_ACTION_SAVE,
-                                             _("_Cancel"), GTK_RESPONSE_CANCEL,
-                                             _("_Save"), GTK_RESPONSE_ACCEPT,
-                                             NULL);
+        //gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (chooser), path);
 
-        gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (filew), TRUE);
+        GtkFileFilter *x_filter = gtk_file_filter_new ();
+        gtk_file_filter_set_name (x_filter, "OBJ");
+        gtk_file_filter_add_pattern (x_filter, "*.obj");
+        gtk_file_filter_add_pattern (x_filter, "*.o");
+        gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), x_filter);
 
-        if (gtk_dialog_run (GTK_DIALOG(filew)) == GTK_RESPONSE_ACCEPT)
+        GtkFileFilter *all_filter = gtk_file_filter_new ();
+        gtk_file_filter_set_name (all_filter, "All");
+        gtk_file_filter_add_pattern (all_filter, "*");
+        gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), all_filter);
+
+        gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (chooser), TRUE);
+
+        if (gtk_dialog_run (GTK_DIALOG(chooser)) == GTK_RESPONSE_ACCEPT)
                 if (vo)
                         if (vo->get_scan_event()){
-                                vo->get_scan_event()->saveto=(gchar*)gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filew));
+                                vo->get_scan_event()->saveto=(gchar*)gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
                                 (vo->get_scan_event())->save ();
                         }
 
-        gtk_widget_destroy (filew);
+        gtk_widget_destroy (chooser);
 }
 
 
