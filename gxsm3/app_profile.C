@@ -29,6 +29,9 @@
 #include <libintl.h>
 #include <gtk/gtk.h>
 
+#include <cairo-svg.h>
+#include <cairo-pdf.h>
+
 // Gxsm headers 
 #include "gxsm_app.h"
 #include "gxsm_window.h"
@@ -2006,11 +2009,27 @@ void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *
         cairo_t *cr;
         cairo_status_t status;
 
-        GtkFileFilter *filter = gtk_file_filter_new ();
-        gtk_file_filter_set_name (filter, "Images");
-        //        gtk_file_filter_add_pattern (filter, "*");
-        gtk_file_filter_add_pattern (filter, "*.png");
-        gtk_file_filter_add_pattern (filter, "*.svg");
+        GtkFileFilter *f0 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f0, "All");
+        gtk_file_filter_add_pattern (f0, "*");
+
+        GtkFileFilter *f2 = gtk_file_filter_new ();
+        gtk_file_filter_add_mime_type (f2, "image/png");
+        gtk_file_filter_add_mime_type (f2, "image/jpeg");
+        gtk_file_filter_add_mime_type (f2, "image/gif");
+        gtk_file_filter_set_name (f2, "Images");
+        gtk_file_filter_add_pattern (f2, "*.png");
+        gtk_file_filter_add_pattern (f2, "*.jpeg");
+
+        GtkFileFilter *f3 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f3, "SVG");
+        gtk_file_filter_add_pattern (f3, "*.svg");
+
+        GtkFileFilter *f4 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f4, "PDF");
+        gtk_file_filter_add_pattern (f4, "*.pdf");
+
+        GtkFileFilter *filter[] = { f2, f3, f4, f0, NULL };
 
 	imgname = gapp->file_dialog_save ("Save Profile Canvas as png or svg file", NULL, suggest, filter);
 	g_free (suggest);
@@ -2021,9 +2040,9 @@ void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *
         int png=0;
 
         double scaling = 1.;
-        
-	if (strncasecmp (imgname+strlen(imgname)-3,".svg", 3)==0){
-#if 0
+
+	if (g_strrstr (imgname,".svg")){
+#if 1
 #ifdef CAIRO_HAS_SVG_SURFACE
                 surface = cairo_svg_surface_create (imgname, pc->current_geometry[0], pc->current_geometry[1]);
                 cairo_svg_surface_restrict_to_version (surface, CAIRO_SVG_VERSION_1_2);
@@ -2031,9 +2050,9 @@ void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *
                 g_print ("Sorry -- CAIRO_HAS_SVG_SURFACE not defined/not available.\n");
                 return;
 #endif
-        } else if (strncasecmp (imgname+strlen(imgname)-3,".pdf", 3)==0){
+        } else if (g_strrstr (imgname,".pdf")){
 #ifdef CAIRO_HAS_PDF_SURFACE
-                surface = cairo_pdf_surface_create (imgname, cpc->urrent_geometry[0], pc->current_geometry[1]); 
+                surface = cairo_pdf_surface_create (imgname, pc->current_geometry[0], pc->current_geometry[1]); 
 #else
                 g_print ("Sorry -- CAIRO_HAS_PDF_SURFACE not defined/not available.\n");
                 return;
@@ -2074,7 +2093,7 @@ void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *
         } else {
                 cairo_surface_flush (surface);
                 cairo_surface_finish (surface);
-                g_print ("Cairo save scan view to sng: '%s'\n", imgname);
+                g_print ("Cairo save scan view to svg/pdf: '%s'\n", imgname);
         }
         
         cairo_surface_destroy (surface);
