@@ -30,10 +30,11 @@ current work in progress, testing, evaluating while working with it, optimizing,
    
 pending ports:
 -> View 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2 -- can any one help here? ==> vsurf3d.C
--> View: OSD objects missing -- completed, OK.
--> View, Objects(s) Label -- missing, set fonst issue, Objekt coordinate spin not working right +/- limits off?, ShowLine Cursors dragging not hooked (left/right via menu works) but only blue m,ark in scan line object? fxied/completed, except cursor dragging.
 -> pending/obsolete/outdated??:  port to Grid and new gxsm3 internal BuildParam helper: old SR-STD/SP2 GUI [old SR-STD HwI not availabe at this time for gxsm3]
--> track/trail -- completed.
+
+->\/ View: OSD objects missing -- Completed.
+->\/ View, Objects(s) Label -- missing, set fonst issue, Objekt coordinate spin not working right +/- limits off?, ShowLine Cursors dragging not hooked (left/right via menu works) but only blue m,ark in scan line object? -- Completed.
+->\/ track/trail -- completed.
 
 pending solution/reworks:
 -> build a analysis clone "gxsm3a" instance with independent session/session manager and gsettings path
@@ -48,15 +49,15 @@ pending minor issues/ideas:
 ---PROBE FOLDERS/CONTROL:
   -recode LM/graphs button?
 - red/blue showline -- fix color order to logic left-right -> new-old (old-new currently)
--\/ Point Obj "Follow" -- new solution for old problem. Central on/off switch on titlebar. May add new tip-monitor/move/grab object/life-indicator -- DONE.
-- Profile View: Cursors/DnD pending
 - minor left overs of h/vboxes and packing in dialogs... -- non critical, works fine but should be done as officially obsoleted. [check what's left, no obsolete warnings any more!]
   --> smart manage window position???
--- PCS is NOT yet updating non user set values -- ak file number auto advance, client settings, remote...
+-- PCS is NOT yet updating non user set values -- ak file number auto advance, client settings, remote... TDB.
 - add remote support: a few importrant control buttons pyremote accessible (global FB ON/OFF, PAC, Z-Adjuster**)
-- better auto file name for xxx-snap.png (image save as)
--\/ side-pane objects: may be put object context (from popup) in there? Make object position lock as option available. DONE!
--\/ load objects fails, some issue with file name/readline?!?! RECODED strtoc with g_strsplit_set: DONE and OK.
+-\/ Point Obj "Follow" -- new solution for old problem. Central on/off switch on titlebar. May add new tip-monitor/move/grab object/life-indicator -- DONE.
+-\/ Profile View: Cursors/DnD -- reimplement DONE.
+-\/ better auto file name for xxx-snap.png (image save as) -- DONE.
+-\/ side-pane objects: may be put object context (from popup) in there? Make object position lock as option available. DONE.
+-\/ load objects fails, some issue with file name/readline?!?! RECODED strtoc with g_strsplit_set: DONE.
 
 External/glib/gtk related issues:
 - https://bugzilla.gnome.org/show_bug.cgi?id=771242  ComboBoxText problem causes glib warning/critical or even crash?? -- TDB:
