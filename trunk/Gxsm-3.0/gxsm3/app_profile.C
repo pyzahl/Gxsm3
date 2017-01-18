@@ -570,6 +570,8 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 	else
 		AppWindowInit ("Profile");
 
+        title = g_strdup (titlestring);
+        
 	Cursor[0][0] = NULL;
 	Cursor[0][1] = NULL;
 	Cursor[1][0] = NULL;
@@ -607,12 +609,14 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 	frame = NULL;
 	xaxislabel = NULL;
 	yaxislabel = NULL;
-
+	saxislabel = NULL;
+	titlelabel = NULL;
+        
+        
 	xlabel0 = NULL;
 	ylabel0 = NULL;
 	xlabel = g_strdup("x");
 	ylabel = g_strdup("y");
-	title  = g_strdup("titlestring");
 
 	xticfmt = g_strdup("%g");
 	yticfmt = g_strdup("%g");
@@ -917,11 +921,15 @@ gboolean ProfileControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, P
         cairo_item_text **c_item_t;
 
         cairo_scale (cr, pc->pixel_size, pc->pixel_size);
-        cairo_translate (cr, 3.*pc->border, pc->border/4.);
+        cairo_translate (cr, 3.*pc->border, 5./4.*pc->border);
 
         pc->frame->draw (cr);
         pc->xaxislabel->draw (cr);
         pc->yaxislabel->draw (cr, -90.);
+        if (pc->saxislabel)
+                pc->saxislabel->draw (cr);
+        if (pc->titlelabel)
+                pc->titlelabel->draw (cr);
         
         c_item = &pc->Xtics[0];   
         while (*c_item) (*c_item++)->draw (cr);
@@ -977,7 +985,7 @@ void ProfileControl::SetSize(double new_aspect){
 
         // calculate approx. window size -- need to est. borders. GTK3QQQ: find actual widget (button onr ight) width??
         current_geometry[0] = papixel*(aspect+3*border);
-        current_geometry[1] = papixel*(1.+border)+statusheight;
+        current_geometry[1] = papixel*(1.+2*border);
         gtk_widget_set_size_request (canvas, (int)current_geometry[0], (gint)current_geometry[1]);
         //        gtk_widget_set_size_request (canvas, (int)(papixel*(aspect+3*border)), (gint)(papixel*(1.+border))+statusheight);
 
@@ -999,8 +1007,8 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
         // ***** cairo_translate (cr, 3.*pc->border, pc->border/4.);
         // undo cairo image translation/scale:
         mouse_pix_xy[0] = ((double)event->button.x/pc->pixel_size - (double)(3.*pc->border   ));
-        mouse_pix_xy[1] = ((double)event->button.y/pc->pixel_size - (double)(   pc->border/4.));
-
+        mouse_pix_xy[1] = ((double)event->button.y/pc->pixel_size - (double)(5./4.*pc->border));
+        
         pc->canvas2scan (mouse_pix_xy[0], mouse_pix_xy[1], mouse_pix_xy[0], mouse_pix_xy[1]);
         
         // 1st check if mouse on editable object
@@ -1341,8 +1349,11 @@ gint ProfileControl::NewData(Scan* sc, int line, int cpyscan, VObject *vo, gbool
 	else {
 		if(sc->RedLineActive )
 			txt=g_strdup_printf ("Red Line #: %d", sc->Pkt2dScanLine[0].y);
-		else
+		else{
 			txt=g_strdup_printf ("multi dimensional cut %s, # series: %d", vo?vo->obj_text ():"", scan1d->mem2d->GetNy ());
+                        if (titlelabel)
+                                titlelabel->set_text (txt);
+                }
 	}
 
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, txt);
@@ -1412,9 +1423,31 @@ void ProfileControl::updateFrame ()
         } else 
                 yaxislabel->set_position (-2.*border, cywidth/2.);
 
+#if 1
+	if(!saxislabel){
+		saxislabel = new cairo_item_text ( cxwidth, -border, "Series");
+                saxislabel->set_stroke_rgba (0.,0.,1.,1.);
+                saxislabel->set_font_face_size ("Georgia", get_lw1 (12.)); //  "font", xsmres.ProfileLabFont,
+                saxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
+        } else 
+                saxislabel->set_position ( cxwidth+border, -border);
+        saxislabel->queue_update (canvas);
+#endif
+	if(!titlelabel){
+		titlelabel = new cairo_item_text ( cxwidth/2., -border, "Title");
+                titlelabel->set_stroke_rgba (0.,0.,1.,1.);
+                titlelabel->set_font_face_size ("Georgia", get_lw1 (14.)); //  "font", xsmres.ProfileLabFont,
+                titlelabel->set_anchor (CAIRO_ANCHOR_CENTER);
+        } else {
+		titlelabel->set_position (cxwidth/2., -border);
+                if (title)
+                        titlelabel->set_text (title);
+        }
+        
         frame->queue_update (canvas);
         xaxislabel->queue_update (canvas);
         yaxislabel->queue_update (canvas);
+        titlelabel->queue_update (canvas);
 }
 
 #define TIC_TOP    1
