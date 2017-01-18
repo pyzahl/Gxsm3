@@ -5,51 +5,37 @@
   <!-- 2D VIEW POPUP MENU -->
   <menu id="view2d-menu">
     <section>
-      <!--  GNOMEUIINFO_ITEM_NONE(N_("Activate"),N_("activate this Channel"), ViewControl::Activate_callback), -->
       <item>
 	<attribute name="label" translatable="yes">Activate</attribute>
 	<attribute name="action">win.view-activate</attribute>
-	<!-- signal name="activate" handler="ViewControl::Activate_callback"/ -->
       </item>
-      <!--  GNOMEUIINFO_ITEM_NONE(N_("AutoDisp"),N_("autoscale Area"), ViewControl::AutoDisp_callback), -->
       <item>
 	<attribute name="label" translatable="yes">Auto Display</attribute>
 	<attribute name="action">win.view-autodisp</attribute>
-	<!-- signal name="activate" handler="ViewControl::AutoDisp_callback"/ -->
       </item>
       <submenu>
 	<attribute name="label" translatable="yes">Mode</attribute>
 	<section>
 	  <attribute name="id">view-channel-mode-section</attribute>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("Active"),N_("activate this channel"),  ViewControl::Activate_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Active</attribute>
 	    <attribute name="action">win.view-set-active</attribute>
-	    <!-- signal name="activate" handler="ViewControl::Activate_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("On"),N_("set channel mode to On"),  ViewControl::SetOn_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">On</attribute>
 	    <attribute name="action">win.view-set-on</attribute>
-	    <!-- signal name="activate" handler="ViewControl::SetOn_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("Math"),N_("set channel mode to Math"),  ViewControl::SetMath_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Math</attribute>
 	    <attribute name="action">win.view-set-math</attribute>
-	    <!-- signal name="activate" handler="ViewControl::SetMath_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("X"),N_("set channel mode to X"),  ViewControl::SetX_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">X</attribute>
 	    <attribute name="action">win.view-set-x</attribute>
-	    <!-- signal name="activate" handler="ViewControl::SetX_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("Off"),N_("kill channel"),  ViewControl::SetOff_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Off</attribute>
 	    <attribute name="action">win.view-set-off</attribute>
-	    <!-- signal name="activate" handler="ViewControl::SetOff_callback"/ -->
 	  </item>
 	</section>
       </submenu>
@@ -57,58 +43,41 @@
 	<attribute name="label" translatable="yes">File</attribute>
 	<section>
 	  <attribute name="id">view-file-section</attribute>
-	  <!--  GNOMEUIINFO_ITEM_STOCK(N_("_Open here"), N_("load scan into this channel"),  -->
 	  <item>
 	    <attribute name="label" translatable="yes">_Open here</attribute>
 	    <attribute name="action">win.view-open</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_file_openhere_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_STOCK(N_("_Save"), N_("Save this scans with automatically generated name"),  -->
 	  <item>
 	    <attribute name="label" translatable="yes">_Save</attribute>
 	    <attribute name="action">win.view-save-auto</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_file_save_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_STOCK(N_("Save _as..."), N_("Save this scan with a new name"),  -->
 	  <item>
 	    <attribute name="label" translatable="yes">Save _as...</attribute>
 	    <attribute name="action">win.view-save-as</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_file_save_as_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_STOCK(N_("Save Image/Drawing"), N_("save as image (png, svg, pdf)"),  -->
 	  <item>
 	    <attribute name="label" translatable="yes">Save Image/Drawing</attribute>
 	    <attribute name="action">win.view-save-as-image</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_file_saveimage_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_STOCK(N_("Save Objects"), N_("save objects, .plt (HPGL) or else as obj list"),  -->
 	  <item>
 	    <attribute name="label" translatable="yes">Save Objects</attribute>
 	    <attribute name="action">win.view-save-objects</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_file_saveobjects_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_STOCK(N_("Load Objects"), N_("load objects"),  -->
 	  <item>
 	    <attribute name="label" translatable="yes">Load Objects</attribute>
 	    <attribute name="action">win.view-load-objecs</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_file_loadobjects_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_STOCK(N_("Get Info"), N_("show all info about this scan (NC view)"),  -->
 	  <item>
 	    <attribute name="label" translatable="yes">Get Info</attribute>
 	    <attribute name="action">win.view-get-info</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_file_getinfo_callback"/ -->
 	  </item>
-	  <!-- GNOMEUIINFO_ITEM_NONE(N_("Print"),N_("Print"),  ViewControl::view_file_print_callback, NULL ), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Print</attribute>
 	    <attribute name="action">win.view-print</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_file_print_callback"/ -->
 	  </item>
 	  <item>
 	    <attribute name="label" translatable="yes">Close</attribute>
 	    <attribute name="action">win.view-close</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_file_kill_callback"/ -->
 	  </item>
 	</section>
       </submenu>
@@ -116,29 +85,21 @@
 	<attribute name="label" translatable="yes">Edit</attribute>
 	<section>
 	  <attribute name="id">view-edit-section</attribute>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("Copy"),N_("copy scan to new channel"),  ViewControl::view_edit_copy_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Copy</attribute>
 	    <attribute name="action">win.copy-scan-to-new-channel</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_edit_copy_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("Crop"),N_("crop rectangular area to new channel"),  ViewControl::view_edit_crop_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Crop</attribute>
 	    <attribute name="action">win.crop-rect-to-new-channel</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_edit_crop_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("Cpy zoom in"),N_("zoom into rectangular area, put data in new channel, calculate new positions"),  ViewControl::view_edit_zoomin_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Cpy zoom in</attribute>
 	    <attribute name="action">win.zoom-into-rect</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_edit_zoomin_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("Cpy zoom out"),N_("zoom rectangular area out, put data in new channel, calculate new positions"),  ViewControl::view_edit_zoomout_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Cpy zoom out</attribute>
 	    <attribute name="action">win.zoom-out-of-rect</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_edit_zoomout_callback"/ -->
 	  </item>
 	</section>
       </submenu>
@@ -146,13 +107,10 @@
 	<attribute name="label" translatable="yes">View</attribute>
 	<section>
 	  <attribute name="id">view-display-mode-section</attribute>
-	  <!--  GNOMEUIINFO_TOGGLEITEM(N_("Side Pane"), N_("show/hide side pane"),  ViewControl::side_pane_callback, NULL), -->
 	  <!-- item-->
 	    <!-- attribute name="label" translatable="yes">Side Pane</attribute -->
 	    <!-- attribute name="action">win.side-pane</attribute -->
-	    <!-- signal name="activate" handler="ViewControl::side_pane_callback"/ -->
 	  <!-- /item-->
-	  <!--	  GNOMEUIINFO_SEPARATOR, -->
 	  <item>
 	    <attribute name="label" translatable="yes">Quick</attribute>
 	    <attribute name="action">win.view-mode</attribute>
@@ -193,84 +151,58 @@
 	    <attribute name="action">win.view-mode</attribute>
 	    <attribute name="target">diff</attribute>
 	  </item>
-	  <!--	  GNOMEUIINFO_RADIOLIST(scan_view_modes_radiolist), -->
-	  <!--	  GNOMEUIINFO_TOGGLEITEM(N_("X linearize"),N_("linearize X via LookUp"),  ViewControl::view_view_x_linearize_callback, NULL), -->
 	  <item>
 	    <attribute name="label" translatable="yes">X linearize</attribute>
 	    <attribute name="action">win.x-linearize</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_view_x_linearize_callback"/ -->
 	  </item>
-	  <!--	  GNOMEUIINFO_TOGGLEITEM(N_("red Profile"),N_("show profile of red line while scanning"),  ViewControl::view_view_redline_callback, NULL), -->
 	  <item>
 	    <attribute name="label" translatable="yes">red Profile</attribute>
 	    <attribute name="action">win.show-redline</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_view_redline_callback"/ -->
 	  </item>
-	  <!--	  GNOMEUIINFO_TOGGLEITEM(N_("add blue Profile (CH+1)"),N_("show profile of red line while scanning"),  ViewControl::view_view_blueline_callback, NULL), -->
 	  <item>
 	    <attribute name="label" translatable="yes">add blue Profile (CH+1)</attribute>
 	    <attribute name="action">win.show-blueline</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_view_blueline_callback"/ -->
 	  </item>
-	  <!--      GNOMEUIINFO_SEPARATOR, -->
-	  <!--	  GNOMEUIINFO_TOGGLEITEM(N_("Autozoom"),N_("enable/disable autozoom/quench"),  ViewControl::view_view_autozoom_callback, NULL), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Autozoom</attribute>
 	    <attribute name="action">win.autozoom-mode</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_view_autozoom_callback"/ -->
 	  </item>
-	  <!--	  GNOMEUIINFO_TOGGLEITEM(N_("Palette"),N_("enable/disable color mode"),  ViewControl::view_view_color_callback, NULL), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Palette</attribute>
 	    <attribute name="action">win.palette-mode</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_view_color_callback"/ -->
 	  </item>
-	  <!--	  GNOMEUIINFO_TOGGLEITEM(N_("Native RGB"),N_("enable/disable native RGB color mode"),  ViewControl::view_view_color_rgb_callback, NULL), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Native RGB</attribute>
 	    <attribute name="action">win.rgb-mode</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_view_color_rgb_callback"/ -->
 	  </item>
-	  <!-- GNOMEUIINFO_SUBTREE   (N_("Coordinates"), scan_view_coordinates_menu), -->
 	  <submenu>
 	    <attribute name="label" translatable="yes">Coordinates</attribute>
 	    <section>
-	      <!--	  GNOMEUIINFO_RADIOITEM(N_("Absolute"),N_("set XY display units to absolute coordinates (offset and rotation)"),  ViewControl::view_view_coord_absolute_callback, NULL), -->
 	      <item>
 		<attribute name="label" translatable="yes">Absolute</attribute>
 		<attribute name="action">win.coordinate-mode</attribute>
 		<attribute name="target">absolute</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_coord_absolute_callback"/ -->
 	      </item>
-	      <!--	  GNOMEUIINFO_RADIOITEM(N_("Relative"),N_("set XY display units to relative coordinates (no offset, no rotation)"),  ViewControl::view_view_coord_relative_callback, NULL), -->
 	      <item>
 		<attribute name="label" translatable="yes">Relative</attribute>
 		<attribute name="action">win.coordinate-mode</attribute>
 		<attribute name="target">relative</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_coord_relative_callback"/ -->
 	      </item>
-	      <!--	  GNOMEUIINFO_RADIOITEM(N_("Pixels"),N_("set XY display units to pixels"),  ViewControl::view_view_coord_pixels_callback, NULL), -->
 	      <item>
 		<attribute name="label" translatable="yes">Pixels</attribute>
 		<attribute name="action">win.coordinate-mode</attribute>
 		<attribute name="target">pixels</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_coord_pixels_callback"/ -->
 	      </item>
 	    </section>
 	  </submenu>
-	  <!--	  GNOMEUIINFO_ITEM_NONE(N_("zoom in"),N_("zoom in one level"),  ViewControl::view_view_zoom_out_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">zoom in</attribute>
 	    <attribute name="action">win.zoom-in</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_view_zoom_out_callback"/ -->
 	  </item>
-	  <!--	  GNOMEUIINFO_ITEM_NONE(N_("zoom out"),N_("zoom out one level"),  ViewControl::view_view_zoom_in_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">zoom out</attribute>
 	    <attribute name="action">win.zoom-out</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_view_zoom_in_callback"/ -->
 	  </item>
-	  <!--	  GNOMEUIINFO_SUBTREE  (N_("Zoom"), scan_view_zoom_menu), -->
 	  <submenu>
 	    <attribute name="label" translatable="yes">Zoom</attribute>
 	    <section>
@@ -279,83 +211,61 @@
 		<attribute name="label" translatable="yes">Auto</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-auto</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom10_1_callback"/ -->
 	      </item>
 	      <item>
 		<attribute name="label" translatable="yes">10:1</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-10x</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom10_1_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_(" 5:1"),N_("set zoomfactor to 5"),   ViewControl::view_view_zoom5_1_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">5:1</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-5x</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom5_1_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_(" 4:1"),N_("set zoomfactor to 4"),   ViewControl::view_view_zoom4_1_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">4:1</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-4x</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom4_1_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_(" 3:1"),N_("set zoomfactor to 3"),   ViewControl::view_view_zoom3_1_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">3:1</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-3x</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom3_1_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_(" 2:1"),N_("set zoomfactor to 2"),   ViewControl::view_view_zoom2_1_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">2:1</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-2x</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom2_1_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_(" 1:1"),N_("set zoomfactor to 1"),   ViewControl::view_view_zoom1_1_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">1:1</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-1x</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom1_1_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_(" 1:2"),N_("set zoomfactor to 1/2"),  ViewControl::view_view_zoom1_2_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">1:2</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-1by2</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom1_2_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_(" 1:3"),N_("set zoomfactor to 1/3"),  ViewControl::view_view_zoom1_3_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">1:3</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-1by3</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom1_3_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_(" 1:4"),N_("set zoomfactor to 1/4"),  ViewControl::view_view_zoom1_4_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">1:4</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-1by4</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom1_4_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_(" 1:5"),N_("set zoomfactor to 1/5"),  ViewControl::view_view_zoom1_5_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">1:5</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-1by5</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom1_5_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_(" 1:10"),N_("set zoomfactor to 1/10"),  ViewControl::view_view_zoom1_10_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">1:10</attribute>
 		<attribute name="action">win.fix-zoom</attribute>
 		<attribute name="target">zoomfactor-1by10</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_view_zoom1_10_callback"/ -->
 	      </item>
 	    </section>
 	  </submenu>
@@ -365,220 +275,157 @@
 	<attribute name="label" translatable="yes">Objects</attribute>
 	<section>
 	  <attribute name="id">view-objects-section</attribute>
-	  <!--	GNOMEUIINFO_RADIOLIST(scan_objectslist_menu), -->
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("Rectangle"),N_("add rectangle objects"),  ViewControl::view_tool_addrectangle_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Rectangle</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">rectangle</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_addrectangle_callback"/ -->
 	  </item>
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("Point"),N_("add point object"),  ViewControl::view_tool_addpoint_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Point</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">point</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_addpoint_callback"/ -->
 	  </item>
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("Marker"),N_("add marker point object"),  ViewControl::view_tool_addmarker_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Marker</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">marker</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_addmarker_callback"/ -->
 	  </item>
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("Line"),N_("add line object"),  ViewControl::view_tool_addline_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Line</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">line</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_addline_callback"/ -->
 	  </item>
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("Circle"),N_("add circle objects"),  ViewControl::view_tool_addcircle_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Circle</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">circle</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_addcircle_callback"/ -->
 	  </item>
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("PolyLine"),N_("add polyline object"),  ViewControl::view_tool_addpolyline_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">PolyLine</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">polyline</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_addpolyline_callback"/ -->
 	  </item>
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("Ksys"),N_("add Koord.sys object"),  ViewControl::view_tool_addksys_callback), -->
 	  <item>
-	    <attribute name="label" translatable="yes">Ksys</attribute>
+	    <attribute name="label" translatable="yes">Lattice</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">ksys</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_addksys_callback"/ -->
 	  </item>
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("Parabel"),N_("add parabel object"),  ViewControl::view_tool_addparabel_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Parabel</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">parabel</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_addparabel_callback"/ -->
 	  </item>
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("Show Point"),N_("add point object and show profile in layer dimension"),  ViewControl::view_tool_addshowpoint_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Show Point</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">point-show</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_addshowpoint_callback"/ -->
 	  </item>
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("Show Line"),N_("add line object and show path profile"),  ViewControl::view_tool_showline_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Show Line</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">line-show</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_showline_callback"/ -->
 	  </item>
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("Show Circle"),N_("add circle objects and show path profile"),  ViewControl::view_tool_addshowcircle_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Show Circle</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">circle-show</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_addshowcircle_callback"/ -->
 	  </item>
-	  <!--   GNOMEUIINFO_ITEM_NONE(N_("Disable"),N_("disable object creation"),  ViewControl::view_tool_disable_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Disable</attribute>
 	    <attribute name="action">win.object-mode</attribute>
 	    <attribute name="target">disable</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_disable_callback"/ -->
 	  </item>
-	  <!--	GNOMEUIINFO_SEPARATOR, -->
-	  <!--  GNOMEUIINFO_TOGGLEITEM(N_("Show Labels"),N_("show/hide object lables"),  ViewControl::view_tool_labels_callback, NULL), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Show Labels</attribute>
 	    <attribute name="action">win.show-object-lables</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_labels_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("Reset Counter"),N_("Reset Object Counter"),  ViewControl::obj_reset_counter_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Reset Counter</attribute>
 	    <attribute name="action">win.reset-object-counter</attribute>
-	    <!-- signal name="activate" handler="ViewControl::obj_reset_counter_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("Show Counter"),N_("Show Object Counter"),  ViewControl::obj_show_counter_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Show Counter</attribute>
 	    <attribute name="action">win.show-object-counter</attribute>
-	    <!-- signal name="activate" handler="ViewControl::obj_show_counter_callback"/ -->
 	  </item>
-	  <!--	    GNOMEUIINFO_SUBTREE (N_("Marker Group"), scan_objects_markergroup_menu), -->
-	  <!--	    GNOMEUIINFO_RADIOLIST(scan_objects_markergroup_rmenu), -->
 	  <submenu>
 	    <attribute name="label" translatable="yes">Marker Group</attribute>
 	    <section>
 	      <attribute name="id">view-marker-group-section</attribute>
-	      <!--     GNOMEUIINFO_ITEM_NONE(N_("Red"),N_("select group red"),  ViewControl::view_tool_marker_red_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Red</attribute>
 		<attribute name="action">win.set-marker-group</attribute>
 		<attribute name="target">red</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_marker_red_callback"/ -->
 	      </item>
-	      <!--     GNOMEUIINFO_ITEM_NONE(N_("Green"),N_("select group green"),  ViewControl::view_tool_marker_green_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Green</attribute>
 		<attribute name="action">win.set-marker-group</attribute>
 		<attribute name="target">green</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_marker_green_callback"/ -->
 	      </item>
-	      <!--     GNOMEUIINFO_ITEM_NONE(N_("Blue"),N_("select group blue"),  ViewControl::view_tool_marker_blue_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Blue</attribute>
 		<attribute name="action">win.set-marker-group</attribute>
 		<attribute name="target">blue</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_marker_blue_callback"/ -->
 	      </item>
-	      <!--     GNOMEUIINFO_ITEM_NONE(N_("Yellow"),N_("select group yellow"),  ViewControl::view_tool_marker_yellow_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Yellow</attribute>
 		<attribute name="action">win.set-marker-group</attribute>
 		<attribute name="target">yellow</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_marker_yellow_callback"/ -->
 	      </item>
-	      <!--     GNOMEUIINFO_ITEM_NONE(N_("Magenta"),N_("select group magenta"),  ViewControl::view_tool_marker_magenta_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Magenta</attribute>
 		<attribute name="action">win.set-marker-group</attribute>
 		<attribute name="target">magenta</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_marker_magenta_callback"/ -->
 	      </item>
-	      <!--     GNOMEUIINFO_ITEM_NONE(N_("Cyan"),N_("select group cyan"),  ViewControl::view_tool_marker_cyan_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Cyan</attribute>
 		<attribute name="action">win.set-marker-group</attribute>
 		<attribute name="target">cyan</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_marker_cyan_callback"/ -->
 	      </item>
 	    </section>
 	  </submenu>
-	  <!--	GNOMEUIINFO_SUBTREE (N_("Local Radius"), scan_objects_localradius_menu), -->
 	  <submenu>
 	    <attribute name="label" translatable="yes">Local Radius</attribute>
 	    <section>
 	      <attribute name="id">view-objects-local-radius-section</attribute>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_("Set R=2"),N_("set local search radius"),  ViewControl::view_tool_mvprop_r2_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Set R=2</attribute>
 		<attribute name="action">win.set-local-radius</attribute>
 		<attribute name="target">2</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_mvprop_r2_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_("Set R=5"),N_("set local search radius"),  ViewControl::view_tool_mvprop_r5_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Set R=5</attribute>
 		<attribute name="action">win.set-local-radius</attribute>
 		<attribute name="target">5</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_mvprop_r5_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_("Set R=10"),N_("set local search radius"),  ViewControl::view_tool_mvprop_r10_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Set R=10</attribute>
 		<attribute name="action">win.set-local-radius</attribute>
 		<attribute name="target">10</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_mvprop_r10_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_("Set R=20"),N_("set local search radius"),  ViewControl::view_tool_mvprop_r20_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Set R=20</attribute>
 		<attribute name="action">win.set-local-radius</attribute>
 		<attribute name="target">20</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_mvprop_r20_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_("Set R=50"),N_("set local search radius"),  ViewControl::view_tool_mvprop_r50_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Set R=50</attribute>
 		<attribute name="action">win.set-local-radius</attribute>
 		<attribute name="target">50</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_mvprop_r50_callback"/ -->
 	      </item>
-	      <!--   GNOMEUIINFO_ITEM_NONE(N_("Set R=100"),N_("set local search radius"),  ViewControl::view_tool_mvprop_r100_callback), -->
 	      <item>
 		<attribute name="label" translatable="yes">Set R=100</attribute>
 		<attribute name="action">win.set-local-radius</attribute>
 		<attribute name="target">100</attribute>
-		<!-- signal name="activate" handler="ViewControl::view_tool_mvprop_r100_callback"/ -->
 	      </item>
 	    </section>
 	  </submenu>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("All loc max "),N_("move all objects to loc. Max"),  ViewControl::view_tool_all2locmax_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">All loc max </attribute>
 	    <attribute name="action">win.move-all-objects-loc-max</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_all2locmax_callback"/ -->
 	  </item>
-	  <!--  GNOMEUIINFO_ITEM_NONE(N_("Remove all"),N_("remove all objects"),  ViewControl::view_tool_removeall_callback), -->
 	  <item>
 	    <attribute name="label" translatable="yes">Remove all</attribute>
 	    <attribute name="action">win.remove-all-objects</attribute>
-	    <!-- signal name="activate" handler="ViewControl::view_tool_removeall_callback"/ -->
 	  </item>
 	</section>
       </submenu>
@@ -591,43 +438,29 @@
             <attribute name="action">win.file-open-here</attribute>
 	  </item>
 	</section>
-	<!--  GNOMEUIINFO_TOGGLEITEM(N_("Show Probe"),N_("show/hide probe events"),  ViewControl::events_probe_callback, NULL), -->
 	<item>
 	  <attribute name="label" translatable="yes">Show Probe</attribute>
 	  <attribute name="action">win.show-probe-events</attribute>
-	  <!-- signal name="activate" handler="ViewControl::events_probe_callback"/ -->
 	</item>
-	<!--  GNOMEUIINFO_TOGGLEITEM(N_("Show User"),N_("show/hide user events"),  ViewControl::events_user_callback, NULL), -->
 	<item>
 	  <attribute name="label" translatable="yes">Show User</attribute>
 	  <attribute name="action">win.show-user-events</attribute>
-	  <!-- signal name="activate" handler="ViewControl::events_user_callback"/ -->
 	</item>
-	<!--  GNOMEUIINFO_SEPARATOR, -->
-	<!--  GNOMEUIINFO_TOGGLEITEM(N_("Show Labels"),N_("show/hide event lables"),  ViewControl::events_labels_callback, NULL), -->
 	<item>
 	  <attribute name="label" translatable="yes">Show Labels</attribute>
 	  <attribute name="action">win.show-event-lables</attribute>
-	  <!-- signal name="activate" handler="ViewControl::events_labels_callback"/ -->
 	</item>
-	<!--  GNOMEUIINFO_TOGGLEITEM(N_("Verbose"),N_("show/hide event lables"),  ViewControl::events_verbose_callback, NULL), -->
 	<item>
 	  <attribute name="label" translatable="yes">Verbose</attribute>
 	  <attribute name="action">win.events-verbose</attribute>
-	  <!-- signal name="activate" handler="ViewControl::events_verbose_callback"/ -->
 	</item>
-	<!--  GNOMEUIINFO_ITEM_NONE(N_("Remove All"),N_("remove all events and attached data"),  ViewControl::events_remove_callback), -->
 	<item>
 	  <attribute name="label" translatable="yes">Remove All</attribute>
 	  <attribute name="action">win.remove-all-events</attribute>
-	  <!-- signal name="activate" handler="ViewControl::events_remove_callback"/ -->
 	</item>
-	<!-- GNOMEUIINFO_SEPARATOR, -->
-	<!--  GNOMEUIINFO_ITEM_NONE(N_("Remove Trails"),N_("remove all trail indicators"),  ViewControl::indicators_remove_callback), -->
 	<item>
 	  <attribute name="label" translatable="yes">Remove Trails</attribute>
 	  <attribute name="action">win.remove-all-trails</attribute>
-	  <!-- signal name="activate" handler="ViewControl::indicators_remove_callback"/ -->
 	</item>
       </submenu>
     </section>
@@ -635,149 +468,105 @@
   <!-- ************************************************** -->
   <!-- OBJECTS 1Point CONTEXT MENU -->
   <menu id="vobj-ctx-menu-1p">
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Remove"),N_("remove point object"),  ViewControl::obj_remove_callback), -->
     <item>
       <attribute name="label" translatable="yes">Remove</attribute>
       <attribute name="action">win.remove-point-object</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_remove_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Properties"),N_("open object properties dialog"),  ViewControl::obj_properties_callback), -->
     <item>
       <attribute name="label" translatable="yes">Properties</attribute>
       <attribute name="action">win.open-object-properties-dialog</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_properties_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Set current Offset to Point"),N_("get coordinates from this Point and set Offset in main to this position"),  ViewControl::obj_setoffset_callback), -->
     <item>
       <attribute name="label" translatable="yes">Set current Offset to Point</attribute>
       <attribute name="action">win.get-coordinates-offset</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_setoffset_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Global Reference Point"),N_("get coordinates from this Point and use as global reference"),  ViewControl::obj_global_ref_point_callback), -->
     <item>
       <attribute name="label" translatable="yes">Global Reference Point</attribute>
       <attribute name="action">win.get-coordinates-as-global-reference</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_global_ref_point_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Go Loc.Max."),N_("look for local maximum and goto there"),  ViewControl::obj_go_locmax_callback), -->
     <item>
       <attribute name="label" translatable="yes">Go Loc.Max.</attribute>
       <attribute name="action">win.goto-local-max</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_go_locmax_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Dump"),N_("Dump Object's Properties"),  ViewControl::obj_dump_callback), -->
     <item>
       <attribute name="label" translatable="yes">Dump</attribute>
       <attribute name="action">win.dump-object-properties</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_dump_callback"/ -->
     </item>
   </menu>
   <!-- ************************************************** -->
   <!-- OBJECTS 2Points CONTEXT MENU -->
   <menu id="vobj-ctx-menu-2p">
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Remove"),N_("remove line object"),  ViewControl::obj_remove_callback), -->
     <item>
       <attribute name="label" translatable="yes">Remove</attribute>
       <attribute name="action">win.remove-line-object</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_remove_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Properties"),N_("open object properties dialog"),  ViewControl::obj_properties_callback), -->
     <item>
       <attribute name="label" translatable="yes">Properties</attribute>
       <attribute name="action">win.object-properties</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_properties_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Get Coordintes"),N_("get coordinates for new 1D scan"),  ViewControl::obj_getcoords_callback), -->
     <item>
       <attribute name="label" translatable="yes">Get Coordintes</attribute>
       <attribute name="action">win.get-coordinates</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_getcoords_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Go Loc.Max."),N_("look for local maximum and goto there"),  ViewControl::obj_go_locmax_callback), -->
     <item>
       <attribute name="label" translatable="yes">Go Loc.Max.</attribute>
       <attribute name="action">win.look-for-maximum-goto</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_go_locmax_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Add Node"),N_("add polyline node"),  ViewControl::obj_addnode_callback), -->
     <item>
       <attribute name="label" translatable="yes">Add Node</attribute>
       <attribute name="action">win.objmode-polyline-node</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_addnode_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Dump"),N_("Dump Object's Properties"),  ViewControl::obj_dump_callback), -->
     <item>
       <attribute name="label" translatable="yes">Dump</attribute>
       <attribute name="action">win.dump-object-properties</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_dump_callback"/ -->
     </item>
   </menu>
   <!-- ************************************************** -->
   <!-- OBJECTS NPoints CONTEXT MENU -->
   <menu id="vobj-ctx-menu-np">
-    <!--   GNOMEUIINFO_ITEM_NONE(N_("Remove"),N_("remove line object"),  ViewControl::obj_remove_callback), -->
     <item>
       <attribute name="label" translatable="yes">Remove</attribute>
       <attribute name="action">win.remove-line-object</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_remove_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Properties"),N_("open object properties dialog"),  ViewControl::obj_properties_callback), -->
     <item>
       <attribute name="label" translatable="yes">Properties</attribute>
       <attribute name="action">win.object-properties</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_properties_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Add Node"),N_("add polyline node"),  ViewControl::obj_addnode_callback), -->
     <item>
       <attribute name="label" translatable="yes">Add Node</attribute>
       <attribute name="action">win.add-polyline-node</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_addnode_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Delete Node"),N_("delete polyline node"),  ViewControl::obj_delnode_callback), -->
     <item>
       <attribute name="label" translatable="yes">Delete Node</attribute>
       <attribute name="action">win.delete-polyline-node</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_delnode_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Dump"),N_("Dump Object's Properties"),  ViewControl::obj_dump_callback), -->
     <item>
       <attribute name="label" translatable="yes">Dump</attribute>
       <attribute name="action">win.dump-object-properties</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_dump_callback"/ -->
     </item>
   </menu>
   <!-- ************************************************** -->
   <!-- EVENT OBJECTS CONTEXT MENU -->
   <menu id="vobj-ctx-menu-event">
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Dump Event"),N_("use event data for..."),  ViewControl::obj_event_use_callback), -->
     <item>
       <attribute name="label" translatable="yes">Dump Event</attribute>
       <attribute name="action">win.use-event-data</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_event_use_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Open Event"),N_("open event, show attached data"),  ViewControl::obj_event_open_callback), -->
     <item>
       <attribute name="label" translatable="yes">Open Event</attribute>
       <attribute name="action">win.open-event</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_event_open_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Save Event"),N_("save event, export attached data"),  ViewControl::obj_event_save_callback), -->
     <item>
       <attribute name="label" translatable="yes">Save Event</attribute>
       <attribute name="action">win.save-event</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_event_save_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Properties"),N_("open object properties dialog"),  ViewControl::obj_properties_callback), -->
     <item>
       <attribute name="label" translatable="yes">Properties</attribute>
       <attribute name="action">win.object-properties</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_properties_callback"/ -->
     </item>
-    <!--  GNOMEUIINFO_ITEM_NONE(N_("Set current Offset to Point"),N_("get coordinates from this Point and set Offset in main to this position"), ViewControl::obj_setoffset_callback ), -->
     <item>
       <attribute name="label" translatable="yes">Set current Offset to Point</attribute>
       <attribute name="action">win.get-coordinates-offset</attribute>
-      <!-- signal name="activate" handler="ViewControl::obj_setoffset_callback"/ -->
     </item>
   </menu>
   <!-- ************************************************** -->
