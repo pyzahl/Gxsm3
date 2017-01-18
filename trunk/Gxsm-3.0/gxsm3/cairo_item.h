@@ -232,10 +232,14 @@ protected:
 
 class cairo_item_path : public cairo_item{
 public:
-	cairo_item_path (int nodes) { xy = g_new (cairo_point, nodes); n=nodes; };
-	cairo_item_path (cairo_item_path *cip) { xy = g_new (cairo_point, n=cip->get_n_nodes()); };
+	cairo_item_path (int nodes) { xy = g_new (cairo_point, nodes); n=nodes; impulse_floor=0.; mark_radius=1.; linemode=0; };
+	cairo_item_path (cairo_item_path *cip) { xy = g_new (cairo_point, n=cip->get_n_nodes());  impulse_floor=0.; mark_radius=1.; linemode=0; };
 	virtual ~cairo_item_path () { g_free (xy); };
 	
+	void set_linemode (gint m) { linemode=m; };
+	void set_impulse_floor (double y) { impulse_floor=y; };
+	void set_mark_radius (double r) { mark_radius=r; };
+        
         virtual void draw (cairo_t* cr, double alpha=1.0, gboolean tr=true) { // add qf???
                 if (show_flag && n > 1){
                         cairo_save (cr);
@@ -245,12 +249,39 @@ public:
 #ifdef __CIP_DEBUG
                         g_print ("cip::draw  M %+8.3f,%+8.3fg\n", xy[0].x, xy[0].y);
 #endif
-                        cairo_move_to (cr, xy[0].x, xy[0].y);
-                        for (int i=1; i<n; ++i){
-                                cairo_line_to (cr, xy[i].x, xy[i].y);
+                        switch (linemode){
+                        case 0: // connect solid
+                                cairo_move_to (cr, xy[0].x, xy[0].y);
+                                for (int i=1; i<n; ++i){
+                                        cairo_line_to (cr, xy[i].x, xy[i].y);
 #ifdef __CIP_DEBUG
-                                g_print ("cip::draw  L %+8.3f,%+8.3fg\n", xy[i].x, xy[i].y);
+                                        g_print ("cip::draw  L %+8.3f,%+8.3fg\n", xy[i].x, xy[i].y);
 #endif
+                                }
+                                break;
+                        case 1: // dots (h-bars, lw) 
+                                for (int i=0; i<n; ++i){
+                                        cairo_move_to (cr, xy[i].x, xy[i].y);
+                                        cairo_line_to (cr, xy[i].x+lw, xy[i].y);
+                                }
+                                break;
+                        case 2: // impulse 
+                                for (int i=0; i<n; ++i){
+                                        cairo_move_to (cr, xy[i].x, impulse_floor);
+                                        cairo_line_to (cr, xy[i].x, xy[i].y);
+                                }
+                                break;
+                        case 3: // X marks
+                                for (int i=0; i<n; ++i){
+                                        cairo_move_to (cr, xy[i].x-mark_radius, xy[i].y-mark_radius);
+                                        cairo_line_to (cr, xy[i].x+mark_radius, xy[i].y+mark_radius);
+                                        cairo_move_to (cr, xy[i].x+mark_radius, xy[i].y-mark_radius);
+                                        cairo_line_to (cr, xy[i].x-mark_radius, xy[i].y+mark_radius);
+                                }
+                                break;
+                        default:
+                                g_warning ("cairo_item_path::draw called with unhandled linemode.");
+                                break;
                         }
                         cairo_stroke (cr);
                         cairo_restore (cr);
@@ -260,6 +291,9 @@ public:
         };
 
 private:
+        gint linemode;
+        double impulse_floor;
+        double mark_radius;
 };
 
 class cairo_item_segments : public cairo_item{

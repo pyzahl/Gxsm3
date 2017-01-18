@@ -52,6 +52,8 @@ typedef struct{
 #define PROFILE_MODE_BINARY8  (1<<13)
 #define PROFILE_MODE_BINARY16 (1<<14)
 #define PROFILE_MODE_YLOWPASS (1<<15)
+#define PROFILE_MODE_HEADER   (1<<16)
+#define PROFILE_MODE_STICS    (1<<17)
 
 #define PROFILE_SCALE_XAUTO   (1<<0)
 #define PROFILE_SCALE_YAUTO   (1<<1)
@@ -83,6 +85,7 @@ class ProfileElement{
 	void SetY(int Yy=0){ yy=Yy; };
 	void SetLastY(){ yy=scan->mem2d->GetNy()-1; };
 	void SetMode(long Mode);
+        gint GetMode() { return mode; };
 	void SetOptions(long Flg);
   
 	void   cleanup_renew (GtkWidget *canvas, int ymode=0, int id=0);
@@ -231,15 +234,20 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	static void file_activate_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void file_close_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
+        void settings_adjust_mode_callback (GSimpleAction *action, GVariant *parameter, gint flg);
+
 	static void logy_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void linreg_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void psd_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void ydiff_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void ylowpass_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-	static void tics_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-	static void symbols_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-	static void legend_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-	static void nogrid_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	static void settings_xgrid_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	static void settings_ygrid_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	static void settings_notics_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	static void settings_pathmode_radio_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	static void settings_header_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	static void settings_legend_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	static void settings_series_tics_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
 	static void zoom_in_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void zoom_out_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
@@ -259,7 +267,6 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	static void skl_Yset_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void skl_Xauto_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void skl_Xset_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-	static void skl_Ponly_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void skl_Binary_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
 	static void cur_Ashow_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
@@ -323,6 +330,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	void SetTitle(const gchar *tit, gboolean append=FALSE);
 
 	void SetMode(long flg) { mode=flg; };
+        gint GetMode() { return mode; };
 	void SetScaling(long flg) { scaleing = flg; };
 
 	void scan2canvas(double sx, double sy, double &cx, double &cy){
@@ -412,13 +420,14 @@ class ProfileControl : public AppBase, public LineProfile1D{
         int    window_w, window_h;
 	int    statusheight;
 	int    bbarwidth;
-	double border;
-	double pasize;
-	double cxwidth, cywidth;
-	double aspect;
-	int    papixel;
-        double pixel_size;
-        double lw_1;
+	double border;  // [=0.1] in canvas units (0..1 is drawing area range)
+	double pasize;  // current actual size
+	double cxwidth, cywidth; // => y=pasize, x=pasize*aspect
+	double aspect;  // current drawingarea aspect ratio
+        double left_border, top_border; // in broder units
+	int    papixel; // actual physical screen pixels (y)
+        double pixel_size; // relation to actual physical screen pixel size
+        double lw_1;    // line width corresponding to "1 pixel"
 
         double current_geometry[2];
         
@@ -438,7 +447,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	gchar *profile_res_id;
 
 	double tic_x1, tic_x2, tic_y1, tic_y2;
-	int tic_ym;
+	int tic_xm, tic_ym;
 	gchar *xticfmt;
 	gchar *yticfmt;
 
