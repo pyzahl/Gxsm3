@@ -383,12 +383,14 @@ class cairo_item_text : public cairo_item{
 public:
 	cairo_item_text () { \
                 xy = g_new (cairo_point, 1); n=1; t=NULL; 
+                xy[0].x=0., xy[0].y=0.; 
                 pango_font = NULL;
                 font_face = g_strdup ("Ununtu"); font_size = 16.; t_anchor = 0; t_justify = 0; spacing = 1.1; 
         };
 	cairo_item_text (double x, double y, const gchar *text) { 
                 xy = g_new (cairo_point, 1); n=1; 
-                xy[0].x=x, xy[0].y=y; 
+                xy[0].x=0., xy[0].y=0.; 
+                v0.x=x, v0.y=y; 
                 pango_font = NULL;
                 t=g_strdup (text);
                 font_face = NULL;
@@ -398,7 +400,7 @@ public:
 	virtual ~cairo_item_text () { g_free (xy); if (t) g_free (t); if (font_face) g_free (font_face); if (pango_font) pango_font_description_free (pango_font); };
 	virtual void set_text (const gchar *text) { if (t) g_free (t); t=g_strdup (text); };
 	virtual void set_text (double x, double y, const gchar *text) {  
-                xy[0].x=x, xy[0].y=y;
+                v0.x=x, v0.y=y;
                 if (t)
                         g_free (t);
                 t=g_strdup (text); 
@@ -417,14 +419,7 @@ public:
 	virtual void set_justify (int justify) { t_justify = justify; }; 
 	virtual void set_spacing (double line_spacing) { spacing = line_spacing > 0. ? 1.+line_spacing : -1.-line_spacing; }; 
         virtual void update_bbox (gboolean add_lw=true) {
-#if 0 // can only be done in draw as cr needed to get actual text extends
-                if (bbox[0] == 0 && bbox[2] == 0.);
-                        bbox[0] = xy[0].x-10*fontsize;
-                        bbox[1] = xy[0].y-fontsize;
-                        bbox[2] = xy[0].x+10*fontsize;
-                        bbox[3] = xy[0].y+fontsize;
-                }
-#endif
+                // needs pango, cr, etc, updated on draw
         };
         virtual void queue_update (GtkWidget* imgarea) {
                         gtk_widget_queue_draw (imgarea);

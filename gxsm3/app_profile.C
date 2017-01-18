@@ -1402,7 +1402,7 @@ void ProfileControl::updateFrame ()
                 xaxislabel->set_font_face_size ("Georgia", get_lw1 (12.)); //  "font", xsmres.ProfileLabFont,
                 xaxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
         } else  
-		xaxislabel->set_xy (0, cxwidth/2., cywidth+border);
+		xaxislabel->set_position (cxwidth/2., cywidth+border);
 
 	if(!yaxislabel){
 		yaxislabel = new cairo_item_text ( -2.*border, cywidth/2., "Y-axis");
@@ -1410,7 +1410,7 @@ void ProfileControl::updateFrame ()
                 yaxislabel->set_font_face_size ("Georgia", get_lw1 (12.)); //  "font", xsmres.ProfileLabFont,
                 yaxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
         } else 
-                yaxislabel->set_xy (0, -2.*border, cywidth/2.);
+                yaxislabel->set_position (-2.*border, cywidth/2.);
 
         frame->queue_update (canvas);
         xaxislabel->queue_update (canvas);

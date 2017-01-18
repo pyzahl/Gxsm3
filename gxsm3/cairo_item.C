@@ -142,22 +142,10 @@ void cairo_item_text::draw (cairo_t* cr, double angle, gboolean tr) {
                 cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
                 cairo_set_line_width (cr, lw); 
                         
-                //double xy0[3] = {v0.x, v0.y, 0. };
                 cairo_translate (cr, v0.x, v0.y);
-                cairo_translate (cr, xy[0].x, xy[0].y);
-                if (fabs (angle) > 0.){
-                        //      double M[3][3];
-                        //double r[3] = {v0.x, v0.y, 0. };
-                        //double zero[3] = {0.,0.,0.};
-
+                if (fabs (angle) > 0.)
                         cairo_rotate (cr, angle * M_PI / 180.);
-
-                        //g_print_vec ("XY0i", xy0);
-                        //make_mat_rot_xy_tr (M, -angle, zero);
-                        //mul_mat_vec (xy0, M, r);
-                        //g_print_vec ("XY0r", xy0);
-                }
-
+                cairo_translate (cr, xy[0].x, xy[0].y);
                 
                 for (gchar **l=lines; *l; ++l){
                         double x0,y0;
@@ -207,10 +195,10 @@ void cairo_item_text::draw (cairo_t* cr, double angle, gboolean tr) {
                         y -= font_size * spacing;
                 }
 
-                bbox[0] += v0.x;
-                bbox[1] += v0.y;
-                bbox[2] += v0.x;
-                bbox[3] += v0.y;
+                bbox[0] += v0.x + xy[0].x;
+                bbox[1] += v0.y + xy[0].y;
+                bbox[2] += v0.x + xy[0].x;
+                bbox[3] += v0.y + xy[0].y;
 
                 cairo_restore (cr);
 

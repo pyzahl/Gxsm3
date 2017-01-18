@@ -1141,7 +1141,7 @@ void VObject::show_label(gboolean flg){
                 label->set_pango_font (custom_label_font);
                 label->set_stroke_rgba (&custom_label_color);
 
-#if 0
+#if 1
                 g_message ("VObject show label {%s} F:%s Crgba:%g %g %g %g SPC:%s XY(%g,%g)",
                            text,custom_label_font,
                            custom_label_color.red,custom_label_color.green,custom_label_color.blue,custom_label_color.alpha,
