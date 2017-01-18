@@ -920,9 +920,12 @@ gboolean ProfileControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, P
         cairo_item **c_item;
         cairo_item_text **c_item_t;
 
+        // -- this must be inverted to transform canvas mouse coordinates
+        // -- back to world in canvas_event_cb () +++ 
         cairo_scale (cr, pc->pixel_size, pc->pixel_size);
         cairo_translate (cr, 3.*pc->border, 5./4.*pc->border);
-
+        // +++++++++++++++++++++++++++++++++++++++++++++++++++
+        
         pc->frame->draw (cr);
         pc->xaxislabel->draw (cr);
         pc->yaxislabel->draw (cr, -90.);
@@ -999,15 +1002,16 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
 	static GtkWidget *coordpopup=NULL;
 	static GtkWidget *coordlab=NULL;
         double mouse_pix_xy[2];
-	gchar *mld;
-        //	GdkCursor *fleur;
         cairo_item *items[2] = { pc->Cursor[0][1], pc->Cursor[1][1] };
 
+        // -- this must be the inverted transformation for canvas mouse coordinates into world
+        // -- see canvas_draw_callback (), cairo scale/translate +++ 
         // ***** cairo_scale (cr, pc->pixel_size, pc->pixel_size);
-        // ***** cairo_translate (cr, 3.*pc->border, pc->border/4.);
+        // ***** cairo_translate (cr, 3.*pc->border, 5./4.*pc->border);
         // undo cairo image translation/scale:
         mouse_pix_xy[0] = ((double)event->button.x/pc->pixel_size - (double)(3.*pc->border   ));
         mouse_pix_xy[1] = ((double)event->button.y/pc->pixel_size - (double)(5./4.*pc->border));
+        // ++++++++++++++++++++++++++++++++++++++++++++++++++
         
         pc->canvas2scan (mouse_pix_xy[0], mouse_pix_xy[1], mouse_pix_xy[0], mouse_pix_xy[1]);
         
@@ -1036,7 +1040,7 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
                         {
                                 GtkWidget *pframe;
                                 //g_message ("M BUTTON_PRESS image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
-                                mld = g_strdup_printf ("%g, %g", mouse_pix_xy[0], mouse_pix_xy[1]);
+                                gchar *mld = g_strdup_printf ("%g, %g", mouse_pix_xy[0], mouse_pix_xy[1]);
                                 coordpopup = gtk_window_new (GTK_WINDOW_POPUP);
                                 gtk_window_set_position (GTK_WINDOW (coordpopup), GTK_WIN_POS_MOUSE);
                                 gtk_container_add (GTK_CONTAINER (coordpopup), pframe = gtk_frame_new (NULL));
@@ -1060,9 +1064,9 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
 	case GDK_MOTION_NOTIFY:
                 //g_message ("MOTION XY: %g, %g\n", event->button.x, event->button.y);
 		if (dragging && (event->motion.state & GDK_BUTTON2_MASK)){
-			mld =  g_strdup_printf ("%g, %g", mouse_pix_xy[0], mouse_pix_xy[1]);
+			gchar *mld =  g_strdup_printf ("%g, %g", mouse_pix_xy[0], mouse_pix_xy[1]);
 			gtk_label_set_text (GTK_LABEL (coordlab), mld);
-			g_free(mld);
+			g_free (mld);
 		}
 		break;
 		
