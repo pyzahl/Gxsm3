@@ -170,19 +170,19 @@
     </key>
 
     <key name="dsp-fbs-bias" type="ad">
-      <default>[10, -10, 1e+111, -1e+111, 1e+111, 1e+111, 0.001, 0.01, 0.1, 0,  0, 0      ]      </default>
+      <default>[10.0, -10.0, 1e+111, -1e+111, 1e+111, 1e+111, 0.001, 0.01, 0.1, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dsp-fbs-bias' </summary>
       <description>Configuration for GXSM Entry with ID 'dsp-fbs-bias'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
     <key name="dsp-fbs-motor" type="ad">
-      <default>[10, -10, 1e+111, -1e+111, 1e+111, 1e+111, 0.001, 0.01, 0.1, 0,  0, 0      ]      </default>
+      <default>[10.0, -10.0, 1e+111, -1e+111, 1e+111, 1e+111, 0.001, 0.01, 0.1, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dsp-fbs-motor' </summary>
       <description>Configuration for GXSM Entry with ID 'dsp-fbs-motor'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
     <key name="dsp-fbs-mx0-current-set" type="ad">
-      <default>[50, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.001, 0.01, 0.1, 0,  0, 0      ]      </default>
+      <default>[50.0, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.001, 0.01, 0.1, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dsp-fbs-mx0-current-set' </summary>
       <description>Configuration for GXSM Entry with ID 'dsp-fbs-mx0-current-set'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
@@ -194,13 +194,13 @@
     </key>
 
     <key name="dsp-fbs-mx0-current-level" type="ad">
-      <default>[50, -50, 1e+111, -1e+111, 1e+111, 1e+111, 0.001, 0.01, 0.1, 0,  0, 0      ]      </default>
+      <default>[50.0, -50, 1e+111, -1e+111, 1e+111, 1e+111, 0.001, 0.01, 0.1, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dsp-fbs-mx0-current-level' </summary>
       <description>Configuration for GXSM Entry with ID 'dsp-fbs-mx0-current-level'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
     <key name="dsp-fbs-mx1-freq-set" type="ad">
-      <default>[50, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.001, 0.01, 0.1, 0,  0, 0      ]      </default>
+      <default>[50.0, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.001, 0.01, 0.1, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dsp-fbs-mx1-freq-set' </summary>
       <description>Configuration for GXSM Entry with ID 'dsp-fbs-mx1-freq-set'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>

@@ -1254,6 +1254,8 @@ class SPMcontrol():
                                         else:
                                                 if	data[3] == 0 and data[0] == -1:
                                                         print hex(mod_inp[0]), " : ", "ERROR (can not associate signal adress): [p=0] ==> (", mod_inp, signal, data, ")"
+                                                else:
+                                                        print hex(mod_inp[0]), " : ", "OTHER ERROR # (can not associate signal adress): [p=0] ==> (", mod_inp, signal, data, ")"
 
         def read_actual_module_configuration (self):
                 print "MK3_SPMDSPC**CURRENT FB_SPMCONTROL MODULE SIGNAL INPUT CONFIGURATION:"
@@ -1272,6 +1274,22 @@ class SPMcontrol():
                                         else:
                                                 if	data[3] == 0 and data[0] == -1:
                                                         print hex(mod_inp[0]), " : ", "ERROR # (can not associate signal adress): [p=0] ==> (", mod_inp, signal, data, ")"
+                                                else:
+                                                        print hex(mod_inp[0]), " : ", "OTHER ERROR # (can not associate signal adress): [p=0] ==> (", mod_inp, signal, data, ")"
+                                                        if mod_inp[0] < 0xf000:
+                                                                print ("Trying to recover, resetting to In 0 signal.")
+			                                        s = self.lookup_signal_by_name ("In 0")
+			                                        self.change_signal_input (0, s, mod_inp[0])
+                                                                print ("Retry signal read back.")
+                                                                [signal, data, offset] = self.query_module_signal_input(mod_inp[0], mod_inp[3])
+                                                                mod_inp[2] = signal [SIG_INDEX];
+                                                                if mod_inp[2] >= 0:
+                                                                        print hex(mod_inp[0]), " : %32s"%signal[SIG_NAME]," ==> ",mod_inp[1], "[",offset,"] (",signal[SIG_VAR],"[",offset,"])"
+                                                                else:
+                                                                        if mod_inp[2] == 0 and mod_inp[3] == 1:
+                                                                                print hex(mod_inp[0]), " : ", "DISABLED*", " [p=0] ==> ", mod_inp[1],mod_inp[3]
+                                                                        else:
+                                                                                print hex(mod_inp[0]), " : ", "CAN NO RECOVER -- PERMANENT ERROR, PLEASE TRY POWER CYCLE DSP # (can not associate signal adress): [p=0] ==> (", mod_inp, signal, data, ")"
 
 	# def change_signal_input(self, _signal, _input_id, voffset_func=lambda:0):
 
