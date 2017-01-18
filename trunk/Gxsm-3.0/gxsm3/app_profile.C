@@ -286,8 +286,6 @@ void ProfileElement::update(GtkWidget *canvas, int id, int style){
         else if (m & PROFILE_MODE_SYMBOLS) lm = 3;
         else if (m & PROFILE_MODE_CONNECT) lm = 0;
 
-        g_message (" ProfileElement::update  lm=%d", lm);
-
         if (pathitem[id]){
                 if (pathitem_draw[id])
                         delete pathitem_draw[id];
