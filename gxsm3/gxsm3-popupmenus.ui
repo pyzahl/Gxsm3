@@ -861,6 +861,56 @@
 	</item>
       </section>
     </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Settings</attribute>
+      <section>
+	<attribute name="id">profile-settings-section</attribute>
+	<item>
+	  <attribute name="label" translatable="yes">X grid</attribute>
+	  <attribute name="action">win.settings-xgrid</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">Y grid</attribute>
+	  <attribute name="action">win.settings-ygrid</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">No tics</attribute>
+	  <attribute name="action">win.settings-notics</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">Connect</attribute>
+	  <attribute name="action">win.settings-pathmode</attribute>
+	  <attribute name="target">connect</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">Points</attribute>
+	  <attribute name="action">win.settings-pathmode</attribute>
+	  <attribute name="target">points</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">Impulses</attribute>
+	  <attribute name="action">win.settings-pathmode</attribute>
+	  <attribute name="target">impulses</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">Symbols-X</attribute>
+	  <attribute name="action">win.settings-pathmode</attribute>
+	  <attribute name="target">symbols</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">header</attribute>
+	  <attribute name="action">win.settings-header</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">legend</attribute>
+	  <attribute name="action">win.settings-legend</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">series tics</attribute>
+	  <attribute name="action">win.settings-series-tics</attribute>
+	</item>
+      </section>
+    </submenu>
   </menu>
 
 </interface>

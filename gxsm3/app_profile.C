@@ -53,6 +53,7 @@ static GActionEntry win_profile_popup_entries[] = {
         { "file-open", ProfileControl::file_open_callback, NULL, NULL, NULL },
         { "file-save", ProfileControl::file_save_callback, NULL, NULL, NULL },
         { "file-image-save", ProfileControl::file_save_image_callback, NULL, NULL, NULL },
+        
         { "print", ProfileControl::file_print5_callback, NULL, NULL, NULL },
 
         { "skl-Y-auto", ProfileControl::skl_Yauto_callback, NULL, "true", NULL },
@@ -64,8 +65,8 @@ static GActionEntry win_profile_popup_entries[] = {
         { "opt-Y-diff",  ProfileControl::ydiff_callback, NULL, "false", NULL },
         { "opt-Y-lowpass",  ProfileControl::ylowpass_callback, NULL, "false", NULL },
         { "opt-Y-ft",  ProfileControl::psd_callback, NULL, "false", NULL },
-        { "opt-Y-points",  ProfileControl::skl_Ponly_callback, NULL, "false", NULL },
         { "opt-Y-binary",  ProfileControl::skl_Binary_callback, NULL, "false", NULL },
+
         { "cursor-A",  ProfileControl::cur_Ashow_callback, NULL, "false", NULL },
         { "cursor-B",  ProfileControl::cur_Bshow_callback, NULL, "false", NULL },
 
@@ -80,39 +81,19 @@ static GActionEntry win_profile_popup_entries[] = {
         { "cursor-B-rmin",  ProfileControl::cur_Brmin_callback, NULL, NULL, NULL },
         { "cursor-B-rmax",  ProfileControl::cur_Brmax_callback, NULL, NULL, NULL },
         { "cursor-B-lmin",  ProfileControl::cur_Blmin_callback, NULL, NULL, NULL },
-        { "cursor-B-lmax",  ProfileControl::cur_Blmax_callback, NULL, NULL, NULL }
-        // { "side-pane", ViewControl::side_pane_callback, NULL, "true", NULL },
-        // { "view-mode", ViewControl::view_view_set_view_mode_radio_callback, "s", "'quick'", NULL },
-};
+        { "cursor-B-lmax",  ProfileControl::cur_Blmax_callback, NULL, NULL, NULL },
 
-// Popup Menu Item Label have to be identically !!!!!!! with these below:
-// used for adjusting defaults
-menuoptionlist profile_modes[] = {
-	{ "Options/no Gridlines", PROFILE_MODE_XGRID, TRUE },
-	{ "Options/no Gridlines", PROFILE_MODE_YGRID, TRUE },
-	{ "Options/Ticmarks", PROFILE_MODE_NOTICS, FALSE },
-	{ "Options/Y linregression", PROFILE_MODE_YLINREG, FALSE },
-	{ "Options/Y logarithmic", PROFILE_MODE_YLOG, FALSE },
-	{ NULL, 0, 0 }
-};
+        { "settings-xgrid",   ProfileControl::settings_xgrid_callback, NULL, "true", NULL },
+        { "settings-ygrid",   ProfileControl::settings_ygrid_callback, NULL, "true", NULL },
+        { "settings-notics",  ProfileControl::settings_notics_callback, NULL, "false", NULL },
+        { "settings-pathmode",ProfileControl::settings_pathmode_radio_callback, "s", "'connect'", NULL },
+        { "settings-header",  ProfileControl::settings_header_callback, NULL, "false", NULL },
+        { "settings-legend",  ProfileControl::settings_legend_callback, NULL, "false", NULL },
+        { "settings-series-tics",  ProfileControl::settings_series_tics_callback, NULL, "false", NULL }
 
-menuoptionlist profile_scale[] = {
-	{ "Y hold", PROFILE_SCALE_YHOLD, FALSE },
-	{ "Y expand only", PROFILE_SCALE_YEXPAND, FALSE },
-	{ NULL, 0, 0 }
 };
 
 #define LOG_RESCUE_RATIO 100.
-
-inline guint32 RGBAColor (float c[4]) { 
-	if (c[3] < 0.01) return 0;
-	return	(guint32)(c[3]*0xff)
-		| ((guint32)(c[2]*0xff)<<8)
-		| ((guint32)(c[1]*0xff)<<16)
-		| ((guint32) (c[0]*0xff)<<24)
-		;	
-}
-
 
 ProfileElement::ProfileElement(Scan *sc, ProfileControl *pc, const gchar *col, int Yy){
 	XSM_DEBUG (DBG_L2, "ProfileElement::ProfileElement sc");
@@ -287,6 +268,7 @@ double ProfileElement::calc(int ymode, int id, int binary_mask, double y_offset)
 
 void ProfileElement::draw(cairo_t* cr){
         // XSM_DEBUG (DBG_L5, "ProfileElement::draw ******************");
+
         for (int id=0; id<NPI; ++id)
                 if (pathitem_draw[id])
                         pathitem_draw[id]->draw (cr);
@@ -296,6 +278,16 @@ void ProfileElement::draw(cairo_t* cr){
 
 void ProfileElement::update(GtkWidget *canvas, int id, int style){
         // XSM_DEBUG (DBG_L5, "ProfileElement::update ******************");
+        gint m = pctrl->GetMode ();
+        gint lm = 0;        // 0l,1d,2i,3x
+
+        if (m & PROFILE_MODE_POINTS) lm = 1;
+        else if (m & PROFILE_MODE_IMPULS) lm = 2;
+        else if (m & PROFILE_MODE_SYMBOLS) lm = 3;
+        else if (m & PROFILE_MODE_CONNECT) lm = 0;
+
+        g_message (" ProfileElement::update  lm=%d", lm);
+
         if (pathitem[id]){
                 if (pathitem_draw[id])
                         delete pathitem_draw[id];
@@ -305,15 +297,21 @@ void ProfileElement::update(GtkWidget *canvas, int id, int style){
                 pathitem_draw[id]->set_line_style (style);
                 pathitem_draw[id]->set_stroke_rgba (color);
                 pathitem_draw[id]->set_line_width (pctrl->get_lw1 (xsmres.ProfileLineWidth));
+                pathitem_draw[id]->set_mark_radius (pctrl->get_lw1 (5.));
+                pathitem_draw[id]->set_linemode (lm);
 
                 // TDB
                 //        pathitem[id]->map_xy ( &pctrl->scan2canvas);
+                double yf=0.;
                 for(int i=0; i < n; ++i){
                         double x,y;
                         pathitem[id]->get_xy (i, x, y);
                         pctrl->scan2canvas (x ,y);
                         pathitem_draw[id]->set_xy_fast (i, x, y);
+                        if (i==0) yf=y;
+                        else if (yf < y) yf=y;
                 }
+                pathitem_draw[id]->set_impulse_floor (yf);
 
                 pathitem_draw[id]->queue_update (canvas);
         }
@@ -587,7 +585,10 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 	pasize=1.0;
 	aspect=3./2.;
 	papixel=400;
-  
+        left_border = 3.;
+        top_border  = 1./4.;
+
+        
 	Yticn=8;
 	Xticn=8;
 
@@ -757,11 +758,6 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
         //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::cur_Bshow_callback), this);
         gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
 
-	tb = gtk_check_button_new_with_label ("PO");	
-        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-points");
-        //        g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::skl_Ponly_callback), this);
-        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
-
 	tb = gtk_check_button_new_with_label ("BI");
         gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-binary");
         //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::skl_Binary_callback), this);
@@ -923,17 +919,19 @@ gboolean ProfileControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, P
         // -- this must be inverted to transform canvas mouse coordinates
         // -- back to world in canvas_event_cb () +++ 
         cairo_scale (cr, pc->pixel_size, pc->pixel_size);
-        cairo_translate (cr, 3.*pc->border, 5./4.*pc->border);
+        cairo_translate (cr, pc->left_border*pc->border, pc->top_border*pc->border);
         // +++++++++++++++++++++++++++++++++++++++++++++++++++
         
         pc->frame->draw (cr);
         pc->xaxislabel->draw (cr);
         pc->yaxislabel->draw (cr, -90.);
-        if (pc->saxislabel)
-                pc->saxislabel->draw (cr);
-        if (pc->titlelabel)
-                pc->titlelabel->draw (cr);
-        
+
+        if (pc->top_border > 1.){ // else invisible...
+                if (pc->saxislabel)
+                        pc->saxislabel->draw (cr);
+                if (pc->titlelabel)
+                        pc->titlelabel->draw (cr);
+        }
         c_item = &pc->Xtics[0];   
         while (*c_item) (*c_item++)->draw (cr);
         c_item_t = &pc->Xlabels[0]; 
@@ -1009,8 +1007,8 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
         // ***** cairo_scale (cr, pc->pixel_size, pc->pixel_size);
         // ***** cairo_translate (cr, 3.*pc->border, 5./4.*pc->border);
         // undo cairo image translation/scale:
-        mouse_pix_xy[0] = ((double)event->button.x/pc->pixel_size - (double)(3.*pc->border   ));
-        mouse_pix_xy[1] = ((double)event->button.y/pc->pixel_size - (double)(5./4.*pc->border));
+        mouse_pix_xy[0] = ((double)event->button.x/pc->pixel_size - (double)(pc->left_border*pc->border));
+        mouse_pix_xy[1] = ((double)event->button.y/pc->pixel_size - (double)(pc->top_border*pc->border));
         // ++++++++++++++++++++++++++++++++++++++++++++++++++
         
         pc->canvas2scan (mouse_pix_xy[0], mouse_pix_xy[1], mouse_pix_xy[0], mouse_pix_xy[1]);
@@ -1253,7 +1251,7 @@ void ProfileControl::update_elem(ProfileElement *pe, ProfileControl *pc){
                 XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - skl done");
 		if(!pc->SklOnly){
                         XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - draw");
-			pe->update (pc->canvas, i++, pc->mode & PROFILE_MODE_POINTS ? CAIRO_LINE_DASHED : CAIRO_LINE_SOLID );
+			pe->update (pc->canvas, i++, CAIRO_LINE_SOLID);
 		} else
 			i = NPI;
                 XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - draw passed");
@@ -1581,8 +1579,8 @@ gint ProfileControl::updateTics (gboolean force)
 	XSM_DEBUG (DBG_L5, "ProfileElement::drawTics X");
  
 	// rebuild only if needed !!
-	if(tic_x1 != xmin || tic_x2 != xmax || Xtics[0]==NULL || force){
-		tic_x1=xmin; tic_x2=xmax;
+	if(tic_x1 != xmin || tic_x2 != xmax || tic_xm != mode || Xtics[0]==NULL || force){
+		tic_x1=xmin; tic_x2=xmax; tic_ym = mode;
 		nTics  = Xticn;
 				
 		Lab0   = xmin;
@@ -1726,21 +1724,25 @@ gint ProfileControl::updateTics (gboolean force)
 	if (num_legend != scount || force){
 		int k=0;
 		Scan *s=NULL;
-		for (i=0; i<scount && i < PC_LEGEND_ITEMS_MAX-2; ++i, ++k){
-			if (get_ys_label (i)){
-				gchar *tmp = g_strconcat ("%.0f: ", get_ys_label (i), NULL);
-				addTic(&LegendSym[i], &LegendText[i], ymax-i*(ymax-ymin)/scount, TicL1*10., ADD_LEGEND, tmp, 
-				       (double)i, get_xcolor (i));
-				g_free (tmp);
-			} else {
-				ProfileElement *pe = (ProfileElement*)g_slist_nth_data (ScanList, i);
-				if (s && s != pe->get_scan ())
-					k=0;
-				addTic(&LegendSym[i], &LegendText[i], ymax-i*(ymax-ymin)/scount, TicL1*10., ADD_LEGEND, "%.2f", 
-				       (pe->get_scan ())->mem2d->data->GetYLookup (k), pe->get_color ());
-				s=pe->get_scan ();
-			}
-		}
+                if (mode & PROFILE_MODE_STICS){
+                        for (i=0; i<scount && i < PC_LEGEND_ITEMS_MAX-2; ++i, ++k){
+                                if (get_ys_label (i)){
+                                        gchar *tmp = g_strconcat ("%.0f: ", get_ys_label (i), NULL);
+                                        addTic(&LegendSym[i], &LegendText[i], ymax-i*(ymax-ymin)/scount, TicL1*10., ADD_LEGEND, tmp, 
+                                               (double)i, get_xcolor (i));
+                                        g_free (tmp);
+                                } else {
+                                        ProfileElement *pe = (ProfileElement*)g_slist_nth_data (ScanList, i);
+                                        if (s && s != pe->get_scan ())
+                                                k=0;
+                                        addTic(&LegendSym[i], &LegendText[i], ymax-i*(ymax-ymin)/scount, TicL1*10., ADD_LEGEND, "%.2f", 
+                                               (pe->get_scan ())->mem2d->data->GetYLookup (k), pe->get_color ());
+                                        s=pe->get_scan ();
+                                }
+                        }
+                } else {
+                        i=0;
+                }
 		while(LegendSym[i]){
                         UNREF_DELETE_CAIRO_ITEM (LegendSym[i], canvas);
                         UNREF_DELETE_CAIRO_ITEM (LegendText[i], canvas);
@@ -1759,6 +1761,12 @@ void ProfileControl::UpdateArea ()
 		std::cout <<  "ProfileControl::UpdateArea -- scans are locked -- skipping." << std::endl;
 		return; // avoid attempts to draw while scan data is updated
 	}
+
+        if (mode & PROFILE_MODE_HEADER)
+                top_border = 5./4.;
+        else
+                top_border = 1./4.;
+                        
 
 	XSM_DEBUG (DBG_L4,  "ProfileControl::UpdateArea drw scans" );
         updateScans ();
@@ -2528,26 +2536,6 @@ void ProfileControl::skl_Xset_callback (GSimpleAction *action, GVariant *paramet
 	pc->UpdateArea ();
 }
 
-void ProfileControl::skl_Ponly_callback (GSimpleAction *action, GVariant *parameter, 
-                                 gpointer user_data){
-        ProfileControl *pc = (ProfileControl *) user_data;
-        GVariant *old_state, *new_state;
-
-        old_state = g_action_get_state (G_ACTION (action));
-        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
- 
-        if (g_variant_get_boolean (new_state))
-		pc->mode = (pc->mode & ~PROFILE_MODE_POINTS) | PROFILE_MODE_POINTS;
-	else
-		pc->mode &= ~PROFILE_MODE_POINTS;
-
-        g_simple_action_set_state (action, new_state);
-        g_variant_unref (old_state);
-
-	pc->SetYlabel ();
-	pc->UpdateArea ();
-}
-
 void ProfileControl::skl_Binary_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
 	static int b2=0;
@@ -2574,78 +2562,82 @@ void ProfileControl::skl_Binary_callback (GSimpleAction *action, GVariant *param
 	pc->UpdateArea ();
 }
 
-void ProfileControl::tics_callback (GSimpleAction *action, GVariant *parameter, 
-                                 gpointer user_data){
-        ProfileControl *pc = (ProfileControl *) user_data;
+void ProfileControl::settings_adjust_mode_callback (GSimpleAction *action, GVariant *parameter, gint flg){
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
  
         if (g_variant_get_boolean (new_state))
-		pc->mode &= ~PROFILE_MODE_NOTICS;
+		mode = (mode & ~flg) | flg;
 	else
-		pc->mode = (pc->mode & ~PROFILE_MODE_NOTICS) | PROFILE_MODE_NOTICS;
+		mode &= ~flg;
 
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
 
-	pc->SetYlabel ();
-	pc->UpdateArea ();
+	UpdateArea();
 }
 
-void ProfileControl::symbols_callback (GSimpleAction *action, GVariant *parameter, 
-                                 gpointer user_data){
+void ProfileControl::settings_xgrid_callback (GSimpleAction *action, GVariant *parameter, 
+                                              gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_XGRID);
+}
+
+void ProfileControl::settings_ygrid_callback (GSimpleAction *action, GVariant *parameter, 
+                                              gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_YGRID);
+}
+void ProfileControl::settings_notics_callback (GSimpleAction *action, GVariant *parameter, 
+                                               gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_NOTICS);
+}
+void ProfileControl::settings_header_callback (GSimpleAction *action, GVariant *parameter, 
+                                               gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_HEADER);
+}
+void ProfileControl::settings_legend_callback (GSimpleAction *action, GVariant *parameter, 
+                                               gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_LEGEND);
+}
+void ProfileControl::settings_series_tics_callback (GSimpleAction *action, GVariant *parameter, 
+                                                    gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_STICS);
+}
+
+void ProfileControl::settings_pathmode_radio_callback (GSimpleAction *action, GVariant *parameter, 
+                                                       gpointer user_data){
         ProfileControl *pc = (ProfileControl *) user_data;
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
-        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
- 
-        if (g_variant_get_boolean (new_state))
-		pc->mode = (pc->mode & ~PROFILE_MODE_SYMBOLS) | PROFILE_MODE_SYMBOLS;
-	else
-		pc->mode &= ~PROFILE_MODE_SYMBOLS;
+        new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
+                
+        g_print ("PATHMODE Radio action %s activated, state changes from %s to %s\n",
+                 g_action_get_name (G_ACTION (action)),
+                 g_variant_get_string (old_state, NULL),
+                 g_variant_get_string (new_state, NULL));
 
-        g_simple_action_set_state (action, new_state);
-        g_variant_unref (old_state);
+        // clear all
+        pc->mode &= ~(PROFILE_MODE_POINTS|PROFILE_MODE_CONNECT|PROFILE_MODE_SYMBOLS|PROFILE_MODE_IMPULS);
 
-	pc->UpdateArea();
-}
-
-void ProfileControl::legend_callback (GSimpleAction *action, GVariant *parameter, 
-                                 gpointer user_data){
-        ProfileControl *pc = (ProfileControl *) user_data;
-        GVariant *old_state, *new_state;
-
-        old_state = g_action_get_state (G_ACTION (action));
-        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
- 
-        if (g_variant_get_boolean (new_state))
-		pc->mode = (pc->mode & ~PROFILE_MODE_LEGEND) | PROFILE_MODE_LEGEND;
-	else
-		pc->mode &= ~PROFILE_MODE_LEGEND;
-
-        g_simple_action_set_state (action, new_state);
-        g_variant_unref (old_state);
-
-	pc->UpdateArea();
-}
-
-void ProfileControl::nogrid_callback (GSimpleAction *action, GVariant *parameter, 
-                                 gpointer user_data){
-        ProfileControl *pc = (ProfileControl *) user_data;
-        GVariant *old_state, *new_state;
-
-        old_state = g_action_get_state (G_ACTION (action));
-        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
- 
-        if (g_variant_get_boolean (new_state))
-		pc->mode = (pc->mode & ~(PROFILE_MODE_XGRID | PROFILE_MODE_YGRID)) 
-			| (PROFILE_MODE_XGRID | PROFILE_MODE_YGRID);
-	else
-		pc->mode &= ~(PROFILE_MODE_XGRID | PROFILE_MODE_YGRID);
-
+        if (!strcmp (g_variant_get_string (new_state, NULL), "connect"))
+                pc->mode |= PROFILE_MODE_CONNECT;
+        else if (!strcmp (g_variant_get_string (new_state, NULL), "points"))
+                pc->mode |= PROFILE_MODE_POINTS;
+        else if (!strcmp (g_variant_get_string (new_state, NULL), "impulses"))
+                pc->mode |= PROFILE_MODE_IMPULS;
+        else if (!strcmp (g_variant_get_string (new_state, NULL), "symbols"))
+                pc->mode |= PROFILE_MODE_SYMBOLS;
+        else // fallback
+                pc->mode |= PROFILE_MODE_CONNECT;
+        
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
 
