@@ -454,7 +454,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	ProfileElement *last_pe;
 	
 	cairo_item *frame, *background;
-	cairo_item_text *xaxislabel, *yaxislabel;
+	cairo_item_text *titlelabel, *xaxislabel, *yaxislabel, *saxislabel;
 
 #define PC_XTN (2*Xticn+100)
 #define PC_YTN (2*Xticn+100)
