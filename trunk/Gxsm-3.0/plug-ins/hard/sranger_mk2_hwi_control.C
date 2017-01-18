@@ -132,7 +132,7 @@ public:
                 return button;
 	};
 
-        GtkWidget* grid_add_mixer_input_options (gint channel, gint preset){ // preset = mix_fbsource[CHANNEL]);
+        GtkWidget* grid_add_mixer_input_options (gint channel, gint preset, gpointer ref){ // preset = mix_fbsource[CHANNEL]);
 		GtkWidget *cbtxt = gtk_combo_box_text_new ();
 		g_object_set_data(G_OBJECT (cbtxt), "mix_channel_fbsource", GINT_TO_POINTER (channel));
                 
@@ -151,13 +151,13 @@ public:
 		gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), preset);
 		g_signal_connect (G_OBJECT (cbtxt), "changed",
 				  G_CALLBACK (DSPControl::choice_mixsource_callback),
-				  this);
+				  ref);
                 grid_add_widget (cbtxt);
                 wid=cbtxt;
                 return cbtxt;
         };
 
-        GtkWidget* grid_add_mixer_options (gint channel, gint preset){ // preset = mix_transform_mode[CHANNEL]
+        GtkWidget* grid_add_mixer_options (gint channel, gint preset, gpointer ref){ // preset = mix_transform_mode[CHANNEL]
                 gchar *id;
                 GtkWidget *cbtxt = gtk_combo_box_text_new ();
                                                        
@@ -192,13 +192,13 @@ public:
 
 		g_signal_connect (G_OBJECT (cbtxt),"changed",	
 				  G_CALLBACK (DSPControl::choice_mixmode_callback), 
-				  this);				
+				  ref);				
                 
                 grid_add_widget (cbtxt);
                 return cbtxt;
         };
 
-        GtkWidget *grid_add_scan_input_signal_options (gint channel, gint preset){ // preset=scan_source[CHANNEL]
+        GtkWidget *grid_add_scan_input_signal_options (gint channel, gint preset, gpointer ref){ // preset=scan_source[CHANNEL]
 		GtkWidget *cbtxt = gtk_combo_box_text_new (); 
 		g_object_set_data(G_OBJECT (cbtxt), "scan_channel_source", GINT_TO_POINTER (channel)); 
 		
@@ -234,56 +234,70 @@ public:
 		gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), preset); 
 		g_signal_connect (G_OBJECT (cbtxt), "changed",	
 				  G_CALLBACK (DSPControl::choice_scansource_callback), 
-				  this);
+				  ref);
                 grid_add_widget (cbtxt);
                 return cbtxt;
 	};
 
-        GtkWidget *grid_add_probe_source_signal_options (gint channel, gint preset){ // preset=probe_source[CHANNEL])
+        GtkWidget *grid_add_probe_source_signal_options (gint channel, gint preset, gpointer ref){ // preset=probe_source[CHANNEL])
                 GtkWidget *cbtxt = gtk_combo_box_text_new (); 
 		gtk_widget_set_size_request (cbtxt, 50, -1); 
 		g_object_set_data(G_OBJECT (cbtxt), "prb_channel_source", GINT_TO_POINTER (channel)); 
-		
+
+#if 0
+                if (1 || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Analog_IN") 
+                    || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Control") 
+                    || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Counter") 
+                    || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "LockIn") 
+                    || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "VP") 
+                    || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Z_Servo") 
+                    || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "M_Servo") 
+                    || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Mixer") 
+                    || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "RMS") 
+                    || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "PAC")){
+                }
+#endif
+                
 		for (int jj=0;  jj<NUM_SIGNALS_UNIVERSAL && sranger_common_hwi->lookup_dsp_signal_managed (jj)->p; ++jj){ 
-			if (1 || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Analog_IN") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Control") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Counter") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "LockIn") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "VP") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Z_Servo") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "M_Servo") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Mixer") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "RMS") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "PAC")){ 
-			        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label); g_free (id); } 
-			} 
+                        gchar *id = g_strdup_printf ("%d", jj);
+                        const gchar *label = sranger_common_hwi->lookup_dsp_signal_managed (jj)->label;
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, label?label:"???");
+                        g_free (id);
 		} 
-		gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), preset); 
+                if (preset > 0)
+                        gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), preset); 
+                else
+                        gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 68); // NULL SIGNAL [TESTING FALLBACK for -1/error]
+                
 		g_signal_connect (G_OBJECT (cbtxt), "changed",	
 				  G_CALLBACK (DSPControl::choice_prbsource_callback), 
-				  this);				
+				  ref);				
                 grid_add_widget (cbtxt);
                 return cbtxt;
         };
 
-        GtkWidget *grid_add_lockin_input_signal_options (gint channel, gint preset){ // preset=lockin_input[CHANNEL]
+        GtkWidget *grid_add_lockin_input_signal_options (gint channel, gint preset, gpointer ref){ // preset=lockin_input[CHANNEL]
 		GtkWidget *cbtxt = gtk_combo_box_text_new (); 
 		g_object_set_data(G_OBJECT (cbtxt), "lck_channel_source", GINT_TO_POINTER (channel)); 
-		
+#if 0
+                if ( !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Analog_IN") 
+                     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Control") 
+                     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Counter") 
+                     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Mixer") 
+                     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "LockIn") 
+                     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "PAC")){
+                }
+#endif
 		for (int jj=0;  jj<NUM_SIGNALS_UNIVERSAL && sranger_common_hwi->lookup_dsp_signal_managed (jj)->p; ++jj){ 
-			if ( !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Analog_IN") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Control") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Counter") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Mixer") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "LockIn") 
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "PAC")){ 
-			        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label); g_free (id); } 
-			} 
-		} 
+                        gchar *id = g_strdup_printf ("%d", jj);
+                        const gchar *label = sranger_common_hwi->lookup_dsp_signal_managed (jj)->label;
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, label?label:"???");
+                        g_free (id);
+                } 
 		gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), preset); 
 		g_signal_connect (G_OBJECT (cbtxt), "changed",	
 				  G_CALLBACK (DSPControl::choice_lcksource_callback), 
-				  this);				
+				  ref);				
                 grid_add_widget (cbtxt);
                 return cbtxt;
 	};
@@ -855,6 +869,7 @@ DSPControl::DSPControl () {
         idle_id_update_gui = 0;
         
         hwi_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT".hwi.sranger-mk23");
+        VPSig_menu = NULL;
 
 	for (i=0; i<10; ++i)
 		VPprogram[i] = NULL;
@@ -1190,14 +1205,16 @@ DSPControl::DSPControl () {
 	probe_source[5] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_LIMITER_INPUT_ID);
 	probe_source[6] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_TRACKER_INPUT_ID);
 
-	for (int jj=0; jj<4; ++jj){
-		PI_DEBUG (DBG_L2, "mix" << jj << ": " << mix_fbsource[jj]
-			  << ", probe: " << probe_source[jj]  
-			  );
-        }
-                        
 	lockin_input[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_LOCKIN_A_INPUT_ID);
 	lockin_input[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_LOCKIN_B_INPUT_ID);
+
+	for (int jj=0; jj<4; ++jj)
+		g_message ("Mixer Signal Input[%d] = %d -> %s", jj, mix_fbsource[jj], sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->label);
+	for (int jj=0; jj<=6; ++jj)
+		g_message ("Probe Signal Input[%d] = %d -> %s", jj, probe_source[jj], sranger_common_hwi->lookup_dsp_signal_managed (probe_source[jj])->label);
+	for (int jj=0; jj<2; ++jj)
+		g_message ("LockIn Signal Input[%d] = %d -> %s", jj, lockin_input[jj], sranger_common_hwi->lookup_dsp_signal_managed (lockin_input[jj])->label);
+                        
 
 	Unity    = new UnitObj(" "," ");
 	//Volt     = new UnitAutoMag("V","V");
@@ -1294,7 +1311,7 @@ DSPControl::DSPControl () {
                         dsp_bp->set_configure_list_mode_off ();
                
                 if (sranger_common_hwi->check_pac() != -1) {
-                        dsp_bp->grid_add_mixer_input_options (ch, mix_fbsource[ch]);
+                        dsp_bp->grid_add_mixer_input_options (ch, mix_fbsource[ch], this);
                 } else {
                         dsp_bp->grid_add_label (mixer_channel_label[ch]);
                 }
@@ -1306,7 +1323,7 @@ DSPControl::DSPControl () {
                 dsp_bp->set_configure_list_mode_on ();
                 dsp_bp->grid_add_ec (NULL, Unity, &mix_gain[ch], -0.5, 0.5, "5g", 0.001, 0.01, mixer_remote_id_gn[ch]);
                 dsp_bp->grid_add_ec (NULL, mixer_unit[ch], &mix_level[0], -50.0, 50.0, "5g", 0.001, 0.01, mixer_remote_id_fl[ch]);
-                dsp_bp->grid_add_mixer_options (ch, mix_transform_mode[ch]);
+                dsp_bp->grid_add_mixer_options (ch, mix_transform_mode[ch], this);
                 dsp_bp->set_configure_list_mode_off ();
                 dsp_bp->new_line ();
         }
@@ -1356,7 +1373,7 @@ DSPControl::DSPControl () {
 		dsp_bp->grid_add_widget (wid);
 
                 for (int i=0; i<4; ++i){
-                        dsp_bp->grid_add_scan_input_signal_options (i, scan_source[i]);
+                        dsp_bp->grid_add_scan_input_signal_options (i, scan_source[i], this);
                         VPScanSrcVPitem[i] =  dsp_bp->wid;
                 }
 	}
@@ -1913,7 +1930,7 @@ DSPControl::DSPControl () {
 	if (sranger_common_hwi->check_pac() != -1){
 		kk = 1;
 		dsp_bp->grid_add_label ("Limiter on");
-		dsp_bp->grid_add_probe_source_signal_options (5, probe_source[5]);
+		dsp_bp->grid_add_probe_source_signal_options (5, probe_source[5], this);
 
                 g_signal_connect (G_OBJECT (wid), "changed",
                                   G_CALLBACK (DSPControl::callback_change_FZ_ref),
@@ -2399,7 +2416,7 @@ DSPControl::DSPControl () {
 
 	if (sranger_common_hwi->check_pac() != -1) {
 		dsp_bp->grid_add_label ("mode=-1: follow uphill.  Tracker on Signal:");
-		dsp_bp->grid_add_probe_source_signal_options (6, probe_source[6]);
+		dsp_bp->grid_add_probe_source_signal_options (6, probe_source[6], this);
 	} else {            
 		GtkWidget* TK_ref_option_menu = gtk_combo_box_text_new ();
                 dsp_bp->grid_add_widget (TK_ref_option_menu, 2);
@@ -2506,11 +2523,11 @@ DSPControl::DSPControl () {
                 PI_DEBUG (DBG_L4, "DSPC----TAB-LOCKIN ------------------------------- MK3 ****");
                 dsp_bp->new_line ();
 		dsp_bp->grid_add_label ("LockIn-A");
-		dsp_bp->grid_add_lockin_input_signal_options (0, lockin_input[0]);
+		dsp_bp->grid_add_lockin_input_signal_options (0, lockin_input[0], this);
 		dsp_bp->grid_add_ec ("Phase-A", Deg, &AC_phaseA, -360., 360., "5g", 1., 10., "LCK-AC-Phase-A");
                 dsp_bp->new_line ();
 		dsp_bp->grid_add_label ("LockIn-B");
-		dsp_bp->grid_add_lockin_input_signal_options (1, lockin_input[1]);
+		dsp_bp->grid_add_lockin_input_signal_options (1, lockin_input[1], this);
 		dsp_bp->grid_add_ec ("Phase-B", Deg, &AC_phaseB, -360., 360., "5g", 1., 10., "LCK-AC-Phase-B");
 	} else {
                 dsp_bp->new_line ();
@@ -2650,7 +2667,7 @@ DSPControl::DSPControl () {
 	};
 	const char* lablookup[] = { "ADC0-I", "ADC1-SP", "ADC2-Mx2", "ADC3-Mx3", "ADC4", "ADC5","ADC6","ADC7",
 				    "Zmon", "Umon",
-				    "LockIn0", "LockIn1stA",  "LockIn1stB", "LockIn2ndA", "LockIn2ndB", "Counter",
+				    "LockIn0", "LockIn1stA",  "LockIn1stB", "LockIn2ndA", "LockIn2ndB", "Counter", // last 4 in this line are "signals" for MK3 => i=12..16
 				    "Time", "XS", "YS", "ZS", "U", "PHI", "SEC",
 				    NULL
 	};
@@ -2701,9 +2718,10 @@ DSPControl::DSPControl () {
                                                GCallback (change_source_callback), this,
                                                Source, (((int) msklookup[i]) & 0xfffffff)
                                                );
+                // MK3: Signal Sources i=12..16:
                 if (m >= 0 && sranger_common_hwi->check_pac() != -1){
-                        dsp_bp->grid_add_probe_source_signal_options (m, probe_source[m]);
-                } else {
+                        dsp_bp->grid_add_probe_source_signal_options (m, probe_source[m], this);
+                } else { // MK2: fixed assignment
                         dsp_bp->grid_add_label (lablookup[i]);
                 }
                 g_object_set_data (G_OBJECT(dsp_bp->button), "Source_Channel", GINT_TO_POINTER ((int) msklookup[i])); 
@@ -2755,7 +2773,7 @@ DSPControl::DSPControl () {
 
 	if (sranger_common_hwi->check_pac() != -1){
 		dsp_bp->grid_add_label ("Trigger on");
-		dsp_bp->grid_add_probe_source_signal_options (4, probe_source[4]);
+		dsp_bp->grid_add_probe_source_signal_options (4, probe_source[4], this);
 	}
 
 	dsp_bp->grid_add_check_button ("Join all graphs for same X", "Join all plots with same X.\n"
@@ -4149,12 +4167,17 @@ int DSPControl::auto_probe_callback(GtkWidget *widget, DSPControl *dspc){
 }
 
 int DSPControl::choice_mixmode_callback (GtkWidget *widget, DSPControl *dspc){
-	MixMode mm;
+	gint channel=0;
+        gint selection=0;
+
         PI_DEBUG_GP (DBG_L4, "%s \n",__FUNCTION__);
-        mm.s.ch = GPOINTER_TO_INT (g_object_get_data(G_OBJECT (widget), "mix_channel"));
-        mm.s.x = atoi (gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget)));
-	PI_DEBUG_GP (DBG_L3, "MixMode[%d]=0x%x\n",mm.s.ch,mm.s.x);
-	dspc->mix_transform_mode[mm.s.ch] = mm.s.x;
+
+        channel = GPOINTER_TO_INT (g_object_get_data(G_OBJECT (widget), "mix_channel"));
+        selection = atoi (gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget)));
+
+	PI_DEBUG_GP (DBG_L3, "MixMode[%d]=0x%x\n",channel,selection);
+
+	dspc->mix_transform_mode[channel] = selection;
 
         PI_DEBUG_GP (DBG_L4, "%s ** 2\n",__FUNCTION__);
 
@@ -4204,7 +4227,12 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
 
 int DSPControl::choice_vector_index_j_callback (GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L4, "%s \n",__FUNCTION__);
-        dspc->DSP_vpdata_ij[1] = atoi (gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget))); // GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget), "vector_index_j"));
+        gint i = atoi (gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget)));
+        if (i>=0){
+                dspc->DSP_vpdata_ij[1] = i;
+                g_message ("DSPControl::choice_vector_index_j_callback -- DSP_vpdata_ij[1]=%d",i);
+        } else
+                g_warning ("DSPControl::choice_vector_index_j_callback -- ignoring: index < 0");
 }
 
 void DSPControl::update_sourcesignals_from_DSP_callback (){
@@ -4289,7 +4317,6 @@ void DSPControl::update_sourcesignals_from_DSP_callback (){
 }
 
 int DSPControl::choice_scansource_callback (GtkWidget *widget, DSPControl *dspc){
-	MixMode mm;				\
         PI_DEBUG_GP (DBG_L4, "%s \n",__FUNCTION__);
 
         if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) == -1 || g_object_get_data( G_OBJECT (widget), "updating_in_progress")){
@@ -4297,8 +4324,9 @@ int DSPControl::choice_scansource_callback (GtkWidget *widget, DSPControl *dspc)
                 return 0;
         }
             
-	int signal  = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
-        int channel = GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget), "scan_channel_source"));
+	gint signal  = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+        gint channel = GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget), "scan_channel_source"));
+
 	PI_DEBUG_GP (DBG_L3, "ScanSource-Input[%d]=0x%x  <== %s\n",channel,signal, sranger_common_hwi->dsp_signal_lookup_managed[signal].label);
 	sranger_common_hwi->change_signal_input (signal, DSP_SIGNAL_SCAN_CHANNEL_MAP0_ID+channel, dspc->DSP_vpdata_ij[0]*8+dspc->DSP_vpdata_ij[1]);
 	dspc->scan_source[channel] = signal;
@@ -4355,98 +4383,98 @@ int DSPControl::choice_scansource_callback (GtkWidget *widget, DSPControl *dspc)
 }
 
 int DSPControl::choice_prbsource_callback (GtkWidget *widget, DSPControl *dspc){
-	MixMode mm;				\
         PI_DEBUG_GP (DBG_L4, "%s \n",__FUNCTION__);
         
         if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) == -1)
                 return 0;
 
-        mm.s.x = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
-	mm.s.ch = GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget), "prb_channel_source"));
-        PI_DEBUG_GP (DBG_L3, "DSPControl::choice_prbsource_callback %d %d -- disabled, broken. *************************************************************************\n", mm.s.ch,mm.s.x);
-        return 0; // GTK3QQQ -- broken below some what
-	if (mm.s.ch >= 4){
-		switch (mm.s.ch){
-		case 4: PI_DEBUG_GP (DBG_L3, "Probe-Trigger-Input=0x%x  <== %s\n",mm.s.x, sranger_common_hwi->dsp_signal_lookup_managed[mm.s.x].label);
-			sranger_common_hwi->change_signal_input(mm.s.x, DSP_SIGNAL_VECPROBE_TRIGGER_INPUT_ID);
+        gint selection = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+	gint channel   = GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget), "prb_channel_source"));
+
+	if (channel >= 4){
+		switch (channel){
+		case 4: PI_DEBUG_GP (DBG_L3, "Probe-Trigger-Input=0x%x  <== %s\n",selection, sranger_common_hwi->dsp_signal_lookup_managed[selection].label);
+			sranger_common_hwi->change_signal_input(selection, DSP_SIGNAL_VECPROBE_TRIGGER_INPUT_ID);
 			break;
-		case 5: PI_DEBUG_GP (DBG_L3, "Probe-Limiter-Input=0x%x  <== %s\n",mm.s.x, sranger_common_hwi->dsp_signal_lookup_managed[mm.s.x].label);
-			sranger_common_hwi->change_signal_input(mm.s.x, DSP_SIGNAL_VECPROBE_LIMITER_INPUT_ID);
+		case 5: PI_DEBUG_GP (DBG_L3, "Probe-Limiter-Input=0x%x  <== %s\n",selection, sranger_common_hwi->dsp_signal_lookup_managed[selection].label);
+			sranger_common_hwi->change_signal_input(selection, DSP_SIGNAL_VECPROBE_LIMITER_INPUT_ID);
 			break;
-		case 6: PI_DEBUG_GP (DBG_L3, "Probe-Tracker-Input=0x%x  <== %s\n",mm.s.x, sranger_common_hwi->dsp_signal_lookup_managed[mm.s.x].label);
-			sranger_common_hwi->change_signal_input(mm.s.x, DSP_SIGNAL_VECPROBE_TRACKER_INPUT_ID);
+		case 6: PI_DEBUG_GP (DBG_L3, "Probe-Tracker-Input=0x%x  <== %s\n",selection, sranger_common_hwi->dsp_signal_lookup_managed[selection].label);
+			sranger_common_hwi->change_signal_input(selection, DSP_SIGNAL_VECPROBE_TRACKER_INPUT_ID);
 			break;
 		default: return -1;
 		}
 	} else {
-		PI_DEBUG_GP (DBG_L3, "Probe-Input[%d]=0x%x  <== %s\n",mm.s.ch,mm.s.x, sranger_common_hwi->dsp_signal_lookup_managed[mm.s.x].label);
-		sranger_common_hwi->change_signal_input(mm.s.x, DSP_SIGNAL_VECPROBE0_INPUT_ID+mm.s.ch);
+		PI_DEBUG_GP (DBG_L3, "Probe-Input[%d]=0x%x  <== %s\n",channel,selection, sranger_common_hwi->dsp_signal_lookup_managed[selection].label);
+		sranger_common_hwi->change_signal_input(selection, DSP_SIGNAL_VECPROBE0_INPUT_ID+channel);
+                dspc->probe_source[channel] = selection;
+                // g_message ("Probe Signal Input[%d] = %d -> %s", channel, dspc->probe_source[channel], sranger_common_hwi->lookup_dsp_signal_managed (dspc->probe_source[channel])->label);
 	}
-	dspc->probe_source[mm.s.ch] = mm.s.x;
+	dspc->probe_source[channel] = selection;
 
-	if (mm.s.ch < 4){
+	if (channel < 4){
+                if (!dspc->VPSig_menu)
+                        return 0;
 		// VPsig item update
-		// VPSig_menu = wid = gtk_option_menu_new ();
-		int si = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE0_INPUT_ID+mm.s.ch);
-                //		int n=gtk_option_menu_get_history (GTK_OPTION_MENU (dspc->VPSig_menu));
-                //		if (n == mm.s.ch)
-                //			gtk_option_menu_set_history (GTK_OPTION_MENU (dspc->VPSig_menu), 4);
-                //		gtk_menu_item_set_label (GTK_MENU_ITEM (dspc->VPSig_mi[mm.s.ch]), sranger_common_hwi->lookup_dsp_signal_managed (si)->label);
+		int si = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE0_INPUT_ID+channel);
+                if (si != selection)
+                        g_warning ("Failed to verify probe source selection:");
+                const gchar *label = sranger_common_hwi->lookup_dsp_signal_managed (si)->label;
+                g_message ("Probe Signal Input[%d] verify := %d -> %s", channel, si, label);
 
-                gchar *id = g_strdup_printf ("%d", mm.s.ch);
-                int active = gtk_combo_box_get_active (GTK_COMBO_BOX (dspc->VPSig_menu));
-                gtk_combo_box_set_active (GTK_COMBO_BOX (dspc->VPSig_menu), -1);
-                gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (dspc->VPSig_menu), mm.s.ch);
-                gtk_combo_box_text_insert (GTK_COMBO_BOX_TEXT (dspc->VPSig_menu), mm.s.ch,
-                                           id, sranger_common_hwi->lookup_dsp_signal_managed (si)->label);
+                gchar *id = g_strdup_printf ("%d", channel);
+                //g_message ("Probe Signal Input[%d] id -> %s", channel, id);
+                gint active = gtk_combo_box_get_active (GTK_COMBO_BOX (dspc->VPSig_menu));
+                //g_message ("Probe Signal Input[%d] active -> %d -- deactivating", channel, active);
+                gtk_combo_box_set_active (GTK_COMBO_BOX (dspc->VPSig_menu), 6); // -1); -- -1 is supposed to deactivate but it's crashing??
+                //g_message ("Probe Signal Input[%d] active -> %d -- removing", channel, active);
+                gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (dspc->VPSig_menu), channel);
+                //g_message ("Probe Signal Input[%d] active -> %d -- insering -> %s", channel, active, label);
+                gtk_combo_box_text_insert (GTK_COMBO_BOX_TEXT (dspc->VPSig_menu), channel, id, label?label : "???");
+                //g_message ("Probe Signal Input[%d] active -> %d -- activating.", channel, active);
                 gtk_combo_box_set_active (GTK_COMBO_BOX (dspc->VPSig_menu), active);
+                //g_message ("Probe Signal Input[%d] active -> free id.", channel);
                 g_free (id);
 
-                //		if (n == mm.s.ch)
-                //			gtk_option_menu_set_history (GTK_OPTION_MENU (dspc->VPSig_menu), n);
-
-		dspc->update_sourcesignals_from_DSP_callback ();
-	} else if (mm.s.ch >= 4) {
+                //g_message ("Probe Signal Input[%d] updating.", channel);
+                dspc->update_sourcesignals_from_DSP_callback ();
+	} else if (channel >= 4) {
 		int si = -1;
-		switch (mm.s.ch){
+		switch (channel){
 		case 4:  si = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_TRIGGER_INPUT_ID); break;
 		case 5:  si = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_LIMITER_INPUT_ID); break;
 		case 6:  si = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_TRACKER_INPUT_ID); break;
 		default: return -1;
 		}
-                gchar *id = g_strdup_printf ("%d", mm.s.ch);
+                gchar *id = g_strdup_printf ("%d", channel);
                 int active = gtk_combo_box_get_active (GTK_COMBO_BOX (dspc->VPSig_menu));
                 gtk_combo_box_set_active (GTK_COMBO_BOX (dspc->VPSig_menu), -1);
-                gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (dspc->VPSig_menu), mm.s.ch);
-                gtk_combo_box_text_insert (GTK_COMBO_BOX_TEXT (dspc->VPSig_menu), mm.s.ch,
+                gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (dspc->VPSig_menu), channel);
+                gtk_combo_box_text_insert (GTK_COMBO_BOX_TEXT (dspc->VPSig_menu), channel,
                                            id, sranger_common_hwi->lookup_dsp_signal_managed (si)->label);
                 gtk_combo_box_set_active (GTK_COMBO_BOX (dspc->VPSig_menu), active);
                 g_free (id);
-
-                // int n=gtk_option_menu_get_history (GTK_OPTION_MENU (dspc->VPSig_menu));
-		// if (n == mm.s.ch)
-		// 	gtk_option_menu_set_history (GTK_OPTION_MENU (dspc->VPSig_menu), 4);
-		// gtk_menu_item_set_label (GTK_MENU_ITEM (dspc->VPSig_mi[mm.s.ch]), sranger_common_hwi->lookup_dsp_signal_managed (si)->label);
-		// if (n == mm.s.ch)
-		// 	gtk_option_menu_set_history (GTK_OPTION_MENU (dspc->VPSig_menu), n);
-
-		dspc->update_sourcesignals_from_DSP_callback ();
+                dspc->update_sourcesignals_from_DSP_callback ();
 	}
+
 	return 0;
 }
 
 int DSPControl::choice_lcksource_callback (GtkWidget *widget, DSPControl *dspc){
-	MixMode mm;				\
+	gint channel=0;
+        gint selection=0;
+
         PI_DEBUG_GP (DBG_L4, "%s \n",__FUNCTION__);
 
         if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) == -1)
                 return 0;
             
-	mm.s.x = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
-	mm.s.ch = GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget), "lck_channel_source"));
-	PI_DEBUG_GP (DBG_L3, "LockIn-Input[%d]=0x%x  <== %s\n",mm.s.ch,mm.s.x, sranger_common_hwi->dsp_signal_lookup_managed[mm.s.x].label);
-	sranger_common_hwi->change_signal_input(mm.s.x, DSP_SIGNAL_LOCKIN_A_INPUT_ID+mm.s.ch);
-	dspc->lockin_input[mm.s.ch] = mm.s.x;
+	selection = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+	channel   = GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget), "lck_channel_source"));
+
+	PI_DEBUG_GP (DBG_L3, "LockIn-Input[%d]=0x%x  <== %s\n",channel,selection, sranger_common_hwi->dsp_signal_lookup_managed[selection].label);
+	sranger_common_hwi->change_signal_input(selection, DSP_SIGNAL_LOCKIN_A_INPUT_ID+channel);
+	dspc->lockin_input[channel] = selection;
 }
 
 int DSPControl::choice_Ampl_callback (GtkWidget *widget, DSPControl *dspc){
