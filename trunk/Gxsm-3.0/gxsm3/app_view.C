@@ -1672,9 +1672,6 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
 	static GtkWidget *coordpopup=NULL;
 	static GtkWidget *coordlab=NULL;
         double mouse_pix_xy[2];
-	GtkWidget *frame;
-	gchar *mld;
-        //	GdkCursor *fleur;
 
         // undo cairo image translation/scale:
         double zf = vc->vinfo->GetZfac();
@@ -1721,15 +1718,19 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
 			break;
 		case 2: // Show XYZ display
                         // g_print ("BUTTON_PRESS image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
-			mld = vc->vinfo->makeXYZinfo (mouse_pix_xy[0], mouse_pix_xy[1], NULL);
-			coordpopup = gtk_window_new (GTK_WINDOW_POPUP);
-			gtk_window_set_position (GTK_WINDOW (coordpopup), GTK_WIN_POS_MOUSE);
-			gtk_container_add (GTK_CONTAINER (coordpopup), frame = gtk_frame_new (NULL));
-			gtk_container_add (GTK_CONTAINER (frame),   coordlab = gtk_label_new (mld));
-			gtk_widget_show_all (coordpopup);
-			g_free(mld);
-                        // fleur = gdk_cursor_new(GDK_CROSSHAIR);
-                        //  g_object_unref (fleur);
+			{
+                                gchar *mld = vc->vinfo->makeXYZinfo (mouse_pix_xy[0], mouse_pix_xy[1], NULL);
+                                coordpopup = gtk_window_new (GTK_WINDOW_POPUP);
+                                gtk_window_set_position (GTK_WINDOW (coordpopup), GTK_WIN_POS_MOUSE);
+                                GtkWidget *frame;
+                                gtk_container_add (GTK_CONTAINER (coordpopup), frame = gtk_frame_new (NULL));
+                                gtk_container_add (GTK_CONTAINER (frame),   coordlab = gtk_label_new (mld));
+                                gtk_widget_show_all (coordpopup);
+                                g_free(mld);
+                                GdkWindow* win = gtk_widget_get_parent_window(vc->canvas);
+                                GdkCursor *grab_cursor = gdk_cursor_new_from_name (gdk_display_get_default (), "cell"); //"crosshair");
+                                gdk_window_set_cursor (win, grab_cursor);
+                        }
 			dragging=TRUE;
 
 			if (vc->event_filter){
@@ -1753,7 +1754,7 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
 	case GDK_MOTION_NOTIFY:
                 // g_print ("MOTION XY: %g, %g\n", event->button.x, event->button.y);
 		if (dragging && (event->motion.state & GDK_BUTTON2_MASK)){
-			mld = vc->vinfo->makeXYZinfo (mouse_pix_xy[0], mouse_pix_xy[1], NULL);
+			gchar *mld = vc->vinfo->makeXYZinfo (mouse_pix_xy[0], mouse_pix_xy[1], NULL);
 			gtk_label_set_text (GTK_LABEL (coordlab), mld);
 			g_free(mld);
 		}
@@ -1764,6 +1765,11 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
 		case 2:  // remove XYZ display
 			gtk_widget_destroy (coordpopup);
 			coordpopup=NULL;
+                        {
+                                GdkWindow* win = gtk_widget_get_parent_window(vc->canvas);
+                                GdkCursor *grab_cursor = gdk_cursor_new_from_name (gdk_display_get_default (), "default");
+                                gdk_window_set_cursor (win, grab_cursor);
+                        }
 			dragging=FALSE;
 			break;
 		}
