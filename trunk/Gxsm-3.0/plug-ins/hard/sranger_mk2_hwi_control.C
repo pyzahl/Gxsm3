@@ -1184,37 +1184,38 @@ DSPControl::DSPControl () {
 
         get_tab_settings ("AB", ABORT_option_flags, ABORT_auto_flags, ABORT_glock_data);
 
-	sranger_common_hwi->read_dsp_signals (); // read DSP signals or set up empty list depending on actual HW
+	if (DSPPACClass) { // MK3
+                sranger_common_hwi->read_dsp_signals (); // read DSP signals or set up empty list depending on actual HW
 
-	// override gconf of MIX0..3 INPUT config by actual configured DSP signal:
-	mix_fbsource[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER0_INPUT_ID);
-	mix_fbsource[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER1_INPUT_ID);
-	mix_fbsource[2] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER2_INPUT_ID);
-	mix_fbsource[3] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER3_INPUT_ID);
+                // override gconf of MIX0..3 INPUT config by actual configured DSP signal:
+                mix_fbsource[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER0_INPUT_ID);
+                mix_fbsource[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER1_INPUT_ID);
+                mix_fbsource[2] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER2_INPUT_ID);
+                mix_fbsource[3] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER3_INPUT_ID);
 
-	scan_source[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_SCAN_CHANNEL_MAP0_ID);
-	scan_source[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_SCAN_CHANNEL_MAP1_ID);
-	scan_source[2] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_SCAN_CHANNEL_MAP2_ID);
-	scan_source[3] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_SCAN_CHANNEL_MAP3_ID);
+                scan_source[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_SCAN_CHANNEL_MAP0_ID);
+                scan_source[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_SCAN_CHANNEL_MAP1_ID);
+                scan_source[2] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_SCAN_CHANNEL_MAP2_ID);
+                scan_source[3] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_SCAN_CHANNEL_MAP3_ID);
 
-	probe_source[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE0_INPUT_ID);
-	probe_source[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE1_INPUT_ID);
-	probe_source[2] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE2_INPUT_ID);
-	probe_source[3] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE3_INPUT_ID);
-	probe_source[4] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_TRIGGER_INPUT_ID);
-	probe_source[5] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_LIMITER_INPUT_ID);
-	probe_source[6] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_TRACKER_INPUT_ID);
+                probe_source[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE0_INPUT_ID);
+                probe_source[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE1_INPUT_ID);
+                probe_source[2] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE2_INPUT_ID);
+                probe_source[3] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE3_INPUT_ID);
+                probe_source[4] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_TRIGGER_INPUT_ID);
+                probe_source[5] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_LIMITER_INPUT_ID);
+                probe_source[6] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_TRACKER_INPUT_ID);
 
-	lockin_input[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_LOCKIN_A_INPUT_ID);
-	lockin_input[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_LOCKIN_B_INPUT_ID);
+                lockin_input[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_LOCKIN_A_INPUT_ID);
+                lockin_input[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_LOCKIN_B_INPUT_ID);
 
-	for (int jj=0; jj<4; ++jj)
-		g_message ("Mixer Signal Input[%d] = %d -> %s", jj, mix_fbsource[jj], sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->label);
-	for (int jj=0; jj<=6; ++jj)
-		g_message ("Probe Signal Input[%d] = %d -> %s", jj, probe_source[jj], sranger_common_hwi->lookup_dsp_signal_managed (probe_source[jj])->label);
-	for (int jj=0; jj<2; ++jj)
-		g_message ("LockIn Signal Input[%d] = %d -> %s", jj, lockin_input[jj], sranger_common_hwi->lookup_dsp_signal_managed (lockin_input[jj])->label);
-                        
+                for (int jj=0; jj<4; ++jj)
+                        g_message ("Mixer Signal Input[%d] = %d -> %s", jj, mix_fbsource[jj], sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->label);
+                for (int jj=0; jj<=6; ++jj)
+                        g_message ("Probe Signal Input[%d] = %d -> %s", jj, probe_source[jj], sranger_common_hwi->lookup_dsp_signal_managed (probe_source[jj])->label);
+                for (int jj=0; jj<2; ++jj)
+                        g_message ("LockIn Signal Input[%d] = %d -> %s", jj, lockin_input[jj], sranger_common_hwi->lookup_dsp_signal_managed (lockin_input[jj])->label);
+        }                        
 
 	Unity    = new UnitObj(" "," ");
 	//Volt     = new UnitAutoMag("V","V");
