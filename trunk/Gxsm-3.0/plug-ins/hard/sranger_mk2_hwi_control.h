@@ -958,7 +958,7 @@ public:
 	static void Changed_ControllerPhase (Param_Control* pcs, gpointer data);
 	static void Changed_ControllerPhaseAutoSet (Param_Control* pcs, gpointer data);
 	static void Changed_TauPAC (Param_Control* pcs, gpointer data);
-
+        static void copy_ref_freq_to_ref_callback (Param_Control* pcs, DSPPACControl *dspc);
 	static void SetClipping_callback(GtkWidget* widget, DSPPACControl *dspc);
 	static int controller_callback (GtkWidget *widget, DSPPACControl *dspc);
 

@@ -334,6 +334,7 @@ static gboolean create_window_key_press_event_lcb(GtkWidget *widget, GdkEventKey
 			
 
 void DSPPACControl::create_folder (){
+	GSList *EC_FRQ_list=NULL;
 	GSList *EC_R_list=NULL;
 	GSList *EC_CLIP_list=NULL;
 	GSList *EC_CIP_amp_list=NULL;
@@ -369,6 +370,7 @@ void DSPPACControl::create_folder (){
 	pac_bp->grid_add_ec ("Ref.", Hz, &pll.Reference[0], 0., 75000., "11.5f", 0.1, 100., "ref");
         pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Reference Freq.");
+	EC_FRQ_list = g_slist_prepend( EC_FRQ_list, pac_bp->ec);
         pac_bp->new_line();
         
 	pac_bp->grid_add_button ("Set Ranges", NULL, 2);
@@ -626,17 +628,23 @@ void DSPPACControl::create_folder (){
         // ========== Excitation Sine/Monitor
 	pac_bp->new_grid_with_frame ("Excitation Sine");
 
-	pac_bp->grid_add_ec ("Sine-Amp", Volt, &pll.volumeSine, 0., 10., "11.5f", 0.1, 1.0);
+        pac_bp->set_pcs_remote_prefix ("dsp-pac-excitation-sine-");
+        pac_bp->set_no_spin (false);
+	pac_bp->grid_add_ec ("Sine-Amp", Volt, &pll.volumeSine, 0., 10., "11.5f", 0.1, 1.0,"amp");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Sine, this);
 	EC_amp_freeze_list = g_slist_prepend (EC_amp_freeze_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Excitation Sine Wave Amplitude");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Sine-Freq", Hz, &pll.FSineHz, 0., 75000., "11.5f", 0.1, 100.);
+	pac_bp->grid_add_ec ("Sine-Freq", Hz, &pll.FSineHz, 0., 75000., "11.5f", 0.1, 100.,"freq");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Sine, this);
 	EC_phase_freeze_list = g_slist_prepend( EC_phase_freeze_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Excitation Frequency");
         pac_bp->new_line ();
+        pac_bp->set_no_spin ();
+	EC_FRQ_list = g_slist_prepend( EC_FRQ_list, pac_bp->ec);
+
+        pac_bp->set_pcs_remote_prefix ("dsp-pac-");
 
 //----- Monitoring
 	pac_bp->grid_add_ec ("Res-Freq", Hz, &pll.Filter64Out[F64_Excitation], 0., 75000., "11.5f");
@@ -675,11 +683,15 @@ void DSPPACControl::create_folder (){
 	pac_bp->ec->Freeze ();
         pac_bp->new_line ();
 
-	pac_bp->grid_add_check_button ("Monitor Signals", NULL, 2);
+	pac_bp->grid_add_check_button ("Monitor", NULL, 1);
 	g_object_set_data (G_OBJECT (pac_bp->button), "CONTROLLER_ID", GINT_TO_POINTER (100)); // 0 is AMPLITUDE SWITCH
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (pac_bp->button), refresh_timer_id ? 1:0);
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked",
 			    G_CALLBACK (DSPPACControl::controller_callback), this);
+
+	pac_bp->grid_add_button ("Copy Res-Freq to Ref.", NULL, 1);
+	g_signal_connect (G_OBJECT (pac_bp->button), "clicked",
+                          G_CALLBACK (DSPPACControl::copy_ref_freq_to_ref_callback), this);
 
         pac_bp->pop_grid ();
         
@@ -797,6 +809,7 @@ void DSPPACControl::create_folder (){
 	// save List away...
 	g_object_set_data( G_OBJECT (window), "PAC_EC_list", pac_bp->ec_list);
 	g_object_set_data( G_OBJECT (window), "PAC_EC_READINGS_list", EC_R_list);
+	g_object_set_data( G_OBJECT (window), "PAC_EC_FRQ_list", EC_FRQ_list);
 	g_object_set_data( G_OBJECT (window), "PAC_EC_AMP_FREEZE_list", EC_amp_freeze_list);
 	g_object_set_data( G_OBJECT (window), "PAC_EC_PHASE_FREEZE_list", EC_phase_freeze_list);
 	g_object_set_data( G_OBJECT (window), "PAC_EC_CLIP_list", EC_CLIP_list);
@@ -959,6 +972,16 @@ int DSPPACControl::controller_callback (GtkWidget *widget, DSPPACControl *dspc){
 	        sranger_common_hwi->write_dsp_state((gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) ? MD_PLL:-MD_PLL);
 		break;
 	}
+}
+
+void DSPPACControl::copy_ref_freq_to_ref_callback (Param_Control* pcs, DSPPACControl *dspc){
+        g_message ("Copy res. freq. %g", dspc->pll.Filter64Out[F64_Excitation]);
+        dspc->pll.FSineHz      = dspc->pll.Filter64Out[F64_Excitation];
+        dspc->pll.Reference[0] = dspc->pll.Filter64Out[F64_Excitation];
+	g_slist_foreach
+		( (GSList*) g_object_get_data( G_OBJECT (dspc->window), "PAC_EC_FRQ_list"),
+		  (GFunc) App::update_ec, NULL
+			);
 }
 
 
