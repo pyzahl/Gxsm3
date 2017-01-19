@@ -1047,7 +1047,7 @@
     </key>
 
     <key name="d-s-p-a-x-v-end" type="d">
-      <default>10</default>
+      <default>1</default>
       <summary>PCS Remote-ID: 'DSP_AX-V-End', Default/U:     10 V   </summary>
       <description>pcs0000, PCS Remote-ID: 'DSP_AX-V-End', Default/U:     10 V  , Adjustment PCS Name: 'DSP_AX-V-End' </description>
     </key>
