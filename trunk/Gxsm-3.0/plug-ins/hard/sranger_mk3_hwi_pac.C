@@ -630,7 +630,7 @@ void DSPPACControl::create_folder (){
 
         pac_bp->set_pcs_remote_prefix ("dsp-pac-excitation-sine-");
         pac_bp->set_no_spin (false);
-	pac_bp->grid_add_ec ("Sine-Amp", Volt, &pll.volumeSine, 0., 10., "11.5f", 0.1, 1.0,"amp");
+	pac_bp->grid_add_ec ("Sine-Amp", Volt, &pll.volumeSine, 0., 10., "11.5f", 0.01, 0.1,"amp");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Sine, this);
 	EC_amp_freeze_list = g_slist_prepend (EC_amp_freeze_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Excitation Sine Wave Amplitude");
@@ -699,6 +699,7 @@ void DSPPACControl::create_folder (){
         // ----- Amplitude FB:
 	pac_bp->new_grid_with_frame ("Amplitude FB Controller");
 
+        pac_bp->set_no_spin (false);
 	pac_bp->grid_add_ec ("Setpoint-Amp", Volt, &pll.setpoint_Amp, 0., 10., "11.5f", 1e-3, 0.01, "am-set");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerAmp, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Setpoint Amp.");
@@ -719,11 +720,13 @@ void DSPPACControl::create_folder (){
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_ControllerAmp, this);
 	EC_CIP_amp_list = g_slist_prepend (EC_CIP_amp_list, pac_bp-> ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Coef. Integral Amplitide gain");
+        pac_bp->set_no_spin (true);
 
 	pac_bp->grid_add_check_button ("Inv");
 	g_object_set_data(G_OBJECT (pac_bp->button), "CONTROLLER_ID", GINT_TO_POINTER (2)); // 2 is AMPLITUDE SWITCH CI INV (negatibe signum)
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (pac_bp->button), pll.signum_ci_Amp<0. ? 1:0);
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (DSPPACControl::controller_callback), this);
+
         pac_bp->new_line ();
 
 
@@ -759,6 +762,7 @@ void DSPPACControl::create_folder (){
         // ----- Phase FB:
 	pac_bp->new_grid_with_frame ("Phase FB Controller");
 
+        pac_bp->set_no_spin (false);
 	pac_bp->grid_add_ec ("Setpoint-Phase", Deg, &pll.setpoint_Phase, -180., 180., "11.5f", 0.1, 5., "ph-set");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerPhase, this);
 	EC_CIP_phase_list = g_slist_prepend( EC_CIP_phase_list, pac_bp->ec);
@@ -781,6 +785,7 @@ void DSPPACControl::create_folder (){
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerPhase, this);
 	EC_CIP_phase_list = g_slist_prepend( EC_CIP_phase_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Coef. Integral Phase gain");
+        pac_bp->set_no_spin (true);
 
 	pac_bp->grid_add_check_button ("Inv");
 	g_object_set_data(G_OBJECT (pac_bp->button), "CONTROLLER_ID", GINT_TO_POINTER (12)); // 12 is Phase SWITCH CI INV (negatibe signum)
