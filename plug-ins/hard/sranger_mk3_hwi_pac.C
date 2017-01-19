@@ -684,7 +684,7 @@ void DSPPACControl::create_folder (){
         pac_bp->new_line ();
 
 	pac_bp->grid_add_check_button ("Monitor", NULL, 1);
-	g_object_set_data (G_OBJECT (pac_bp->button), "CONTROLLER_ID", GINT_TO_POINTER (100)); // 0 is AMPLITUDE SWITCH
+	g_object_set_data (G_OBJECT (pac_bp->button), "CONTROLLER_ID", GINT_TO_POINTER (100)); // 100 is MONITOR SWITCH
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (pac_bp->button), refresh_timer_id ? 1:0);
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked",
 			    G_CALLBACK (DSPPACControl::controller_callback), this);
@@ -800,7 +800,7 @@ void DSPPACControl::create_folder (){
 
 	pac_bp->grid_add_check_button ("Phase Feedback Switch", NULL, 2);
 	// read currect FB (MD_PID) state
-	g_object_set_data(G_OBJECT (pac_bp->button), "CONTROLLER_ID", GINT_TO_POINTER (10)); // 1 is PHASE SWITCH
+	g_object_set_data(G_OBJECT (pac_bp->button), "CONTROLLER_ID", GINT_TO_POINTER (10)); // 10 is PHASE CONTROLLER SWITCH
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (pac_bp->button), pll.ctrlmode_Phase ? 1:0);
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked",
                           G_CALLBACK (DSPPACControl::controller_callback), this);
