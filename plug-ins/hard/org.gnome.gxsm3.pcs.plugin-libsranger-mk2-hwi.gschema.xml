@@ -103,6 +103,18 @@
       <description>pcs0000, PCS Remote-ID: 'dsp-pac-tau', Default/U:       15.00 µs    , Adjustment PCS Name: 'dsp-pac-tau' </description>
     </key>
 
+    <key name="dsp-pac-excitation-sine-amp" type="d">
+      <default>0.1</default>
+      <summary>PCS Remote-ID: 'dsp-pac-excitation-sine-amp', Default/U:       0.1 V     </summary>
+      <description>pcs0000, PCS Remote-ID: 'dsp-pac-excitation-sine-amp', Default/U:       0.1 V    , Adjustment PCS Name: 'dsp-pac-excitation-sine-amp' </description>
+    </key>
+
+    <key name="dsp-pac-excitation-sine-freq" type="d">
+      <default>29900.0</default>
+      <summary>PCS Remote-ID: 'dsp-pac-excitation-sine-freq', Default/U:       29900 Hz  </summary>
+      <description>pcs0000, PCS Remote-ID: 'dsp-pac-excitation-sine-freq', Default/U:      29900 Hz    , Adjustment PCS Name: 'dsp-pac-excitation-sine-freq' </description>
+    </key>
+
     <key name="dsp-pac-am-set" type="d">
       <default>0</default>
       <summary>PCS Remote-ID: 'dsp-pac-am-set', Default/U:     0.00000 V     </summary>
