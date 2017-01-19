@@ -1279,7 +1279,7 @@ class SPMcontrol():
                                                         if mod_inp[0] < 0xf000:
                                                                 print ("Trying to recover, resetting to In 0 signal.")
 			                                        s = self.lookup_signal_by_name ("In 0")
-			                                        self.change_signal_input (0, s, mod_inp[0])
+			                                        #self.change_signal_input (0, s, mod_inp[0])
                                                                 print ("Retry signal read back.")
                                                                 [signal, data, offset] = self.query_module_signal_input(mod_inp[0], mod_inp[3])
                                                                 mod_inp[2] = signal [SIG_INDEX];
