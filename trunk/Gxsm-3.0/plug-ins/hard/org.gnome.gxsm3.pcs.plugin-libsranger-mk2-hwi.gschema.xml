@@ -951,7 +951,7 @@
 
     <key name="dsp-ax-v-end" type="d">
       <default>100</default>
-      <summary>PCS Remote-ID: 'dsp-AX-V-End', Default/U:    100 V     </summary>
+      <summary>PCS Remote-ID: 'dsp-AX-V-End', Default/U:    1 V     </summary>
       <description>pcs0000, PCS Remote-ID: 'dsp-AX-V-End', Default/U:    100 V    , Adjustment PCS Name: 'dsp-AX-V-End' </description>
     </key>
 
@@ -969,13 +969,13 @@
 
     <key name="dsp-ax-v-slope" type="d">
       <default>100</default>
-      <summary>PCS Remote-ID: 'dsp-AX-V-Slope', Default/U:    100 V/s     </summary>
+      <summary>PCS Remote-ID: 'dsp-AX-V-Slope', Default/U:    10 V/s     </summary>
       <description>pcs0000, PCS Remote-ID: 'dsp-AX-V-Slope', Default/U:    100 V/s    , Adjustment PCS Name: 'dsp-AX-V-Slope' </description>
     </key>
 
     <key name="dsp-ax-slope-ramp" type="d">
       <default>100</default>
-      <summary>PCS Remote-ID: 'dsp-AX-Slope-Ramp', Default/U:    100 V/s     </summary>
+      <summary>PCS Remote-ID: 'dsp-AX-Slope-Ramp', Default/U:    10 V/s     </summary>
       <description>pcs0000, PCS Remote-ID: 'dsp-AX-Slope-Ramp', Default/U:    100 V/s    , Adjustment PCS Name: 'dsp-AX-Slope-Ramp' </description>
     </key>
 
