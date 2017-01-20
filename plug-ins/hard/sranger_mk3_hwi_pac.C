@@ -745,7 +745,7 @@ void DSPPACControl::create_folder (){
 	gtk_widget_set_tooltip_text (pac_bp->input, "Resonator gain needed for auto set CP,CI calculation");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Res. Gain now", Unity, &pll.res_gain_computed, -1e10, 1e10, "11.5f", 1.,1.,"rgnow");
+	pac_bp->grid_add_ec ("Res. Gain now", Unity, &pll.res_gain_computed, -1e10, 1e10, "11.5f");
 	EC_R_list = g_slist_prepend( EC_R_list, pac_bp->ec);
 	pac_bp->ec->Freeze ();
         pac_bp->new_line ();
@@ -980,7 +980,8 @@ int DSPPACControl::controller_callback (GtkWidget *widget, DSPPACControl *dspc){
 }
 
 void DSPPACControl::copy_ref_freq_to_ref_callback (Param_Control* pcs, DSPPACControl *dspc){
-        g_message ("Copy res. freq. %g", dspc->pll.Filter64Out[F64_Excitation]);
+        gchar *msg = g_strdup_printf ("Copy res. freq. %g", dspc->pll.Filter64Out[F64_Excitation]);
+        gapp->monitorcontrol->LogEvent ("DSPPACControl", msg);
         dspc->pll.FSineHz      = dspc->pll.Filter64Out[F64_Excitation];
         dspc->pll.Reference[0] = dspc->pll.Filter64Out[F64_Excitation];
 	g_slist_foreach

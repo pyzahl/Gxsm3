@@ -162,6 +162,8 @@ class Param_Control{
         const gchar *get_gsettings_path () { return gsettings_path;  };
         const gchar *get_gsettings_key() { return gsettings_key;  };
 
+        void set_suspend_settings_update (gboolean x=true) { suspend_settings_update = x; };
+        
  protected:
 	UnitObj *unit;
 	gchar *warning;
@@ -199,6 +201,7 @@ protected:
         gchar *gsettings_key;
         GVariant *g_variant_var;
         GSettings *pcs_settings;
+        gboolean suspend_settings_update;
 };
 
 class Gtk_EntryControl : public Param_Control{

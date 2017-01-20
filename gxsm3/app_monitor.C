@@ -75,10 +75,14 @@ MonitorControl::MonitorControl ()
 }
 
 MonitorControl::~MonitorControl (){
+        PutEvent("MonitorControl", "End of Session Log. Exit OK.");
 }
 
 void MonitorControl::LogEvent (const gchar *Action, const gchar *Entry){
         if (logging_level > 0){
+                // add to log file
+                PutEvent(Action, Entry);
+
                 GtkTextIter start_iter, end_iter;
                 GtkTextMark *end_mark;
 
