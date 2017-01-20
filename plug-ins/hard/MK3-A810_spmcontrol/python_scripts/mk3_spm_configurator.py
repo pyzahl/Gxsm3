@@ -1718,7 +1718,7 @@ class Mk3_Configurator:
 					i_actual_signal=i
 				i=i+1
 		if flag_nullptr_ok:
-			item = self.make_menu_item("DISABLED", self.mk3spm.disable_signal_input, [0,0,"DISABLED","DISABLED","0",0], _input_id)
+			item = self.make_menu_item("DISABLED", self.mk3spm.disable_signal_input, 0, _input_id, self.global_vector_index)
 			menu.append(item)
 
 		if i_actual_signal == -1:
@@ -2197,7 +2197,7 @@ class Mk3_Configurator:
 			box1.pack_start(box2, expand=False)
 
 			button = gtk.Button("REVERT TO POWER UP DEFAULTS")
-			button.connect("clicked", self.mk3spm.disable_signal_input, 0, 0) # REVERT TO POWER-UP-DEFAULT
+			button.connect("clicked", self.mk3spm.disable_signal_input, 0, 0, 0) # REVERT TO POWER-UP-DEFAULT
 			box2.pack_start(button)
 
 			hb = gobject.new(gtk.HBox(spacing=10))

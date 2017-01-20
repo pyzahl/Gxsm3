@@ -1836,7 +1836,7 @@ class SPMcontrol():
 			ret = ret + s + "\n"
 		return ret
 
-        def disable_signal_input(self, dum, dumdum, _input_id): # _input_id == 0 reverts to power up defaults!!
+        def disable_signal_input(self, _signal, _input_id, voffset_func=lambda:0): # _input_id == 0 reverts to power up defaults!!
 		fmt = "<llLL"
 		self.write (i_signal_monitor, struct.pack (fmt, _input_id, DSP_SIGNAL_NULL_POINTER_REQUEST_ID,0,0))
 		print "Signal Input Disabled (mindex) %d set to NULL-POINTER."%_input_id
@@ -1848,6 +1848,18 @@ class SPMcontrol():
 		print s,d,o
 		return 1
 
+        def disable_signal_input(self, dum, _signal, _input_id, voffset_func=lambda:0): # _input_id == 0 reverts to power up defaults!!
+		fmt = "<llLL"
+		self.write (i_signal_monitor, struct.pack (fmt, _input_id, DSP_SIGNAL_NULL_POINTER_REQUEST_ID,0,0))
+		print "Signal Input Disabled (mindex) %d set to NULL-POINTER."%_input_id
+		time.sleep(0.01)
+		print "Return:"
+		print self.read (i_signal_monitor, fmt)
+		print "Verify:"
+		[s,d,o] = self.query_module_signal_input (_input_id, 1)
+		print s,d,o
+		return 1
+                
         def query_module_signal_input(self, _input_id, nullok=0):
 		fmt = "<llLL"
 		self.write (i_signal_monitor, struct.pack (fmt, _input_id, -1,0,0), 0) # 8 -- does not work w python :(
