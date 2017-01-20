@@ -126,11 +126,11 @@ void Monitor::PutEvent(const gchar *Action, const gchar *Entry){
         time_t t;
         time(&t);
         Fields[0] = g_strdup(ctime(&t)); Fields[0][24]=' ';
-        Fields[1] = g_strdup_printf("%10s : ",Action);
-        Fields[2] = g_strdup_printf("%30s : ",Entry);
-        Fields[3] = g_strdup_printf("%10.6f ",0.0);
-        Fields[4] = g_strdup_printf("%10.6f ",0.0);
-        Fields[5] = g_strdup_printf("%10.6f ",0.0);
+        Fields[1] = g_strdup_printf("%12s : ",Action);
+        Fields[2] = g_strdup_printf("%s : ",Entry);
+        Fields[3] = NULL; //g_strdup_printf("%10.6f ",0.0);
+        Fields[4] = NULL; //g_strdup_printf("%10.6f ",0.0);
+        Fields[5] = NULL; //g_strdup_printf("%10.6f ",0.0);
         Fields[6] = NULL;
 
         AppLine();

@@ -159,6 +159,7 @@ void Param_Control::Init(){
 	refname = NULL; // g_strdup_printf ("pcs%04d", ++global_pcs_count);
 	info=NULL;
 	ShowMessage_flag=0;
+        suspend_settings_update = false;
 	set_log (PARAM_CONTROL_LOG_MODE_OFF);
 
         // GSettings 
@@ -540,6 +541,9 @@ void Gtk_EntryControl::get_init_value_from_settings (int array_flag){
 }
  
 void Gtk_EntryControl::update_value_in_settings (int array_flag){
+        if (suspend_settings_update)
+                return;
+
         if (check_gsettings_path ()){
                 
                 XSM_DEBUG_GP (DBG_L2, "PCS update value for %s.%s[%d] = %g\n", gsettings_path, gsettings_key, get_count (), Get_dValue () );
