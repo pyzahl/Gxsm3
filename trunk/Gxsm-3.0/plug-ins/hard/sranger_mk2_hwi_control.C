@@ -1209,12 +1209,24 @@ DSPControl::DSPControl () {
                 lockin_input[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_LOCKIN_A_INPUT_ID);
                 lockin_input[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_LOCKIN_B_INPUT_ID);
 
-                for (int jj=0; jj<4; ++jj)
-                        g_message ("Mixer Signal Input[%d] = %d -> %s", jj, mix_fbsource[jj], sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->label);
-                for (int jj=0; jj<=6; ++jj)
-                        g_message ("Probe Signal Input[%d] = %d -> %s", jj, probe_source[jj], sranger_common_hwi->lookup_dsp_signal_managed (probe_source[jj])->label);
-                for (int jj=0; jj<2; ++jj)
-                        g_message ("LockIn Signal Input[%d] = %d -> %s", jj, lockin_input[jj], sranger_common_hwi->lookup_dsp_signal_managed (lockin_input[jj])->label);
+                for (int jj=0; jj<4; ++jj){
+                        gchar *txt = g_strdup_printf ("Mixer Signal Input[%d] = %d -> %s", jj, mix_fbsource[jj], sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->label);
+                        PI_DEBUG_GP (DBG_L1, txt);
+                        gapp->monitorcontrol->LogEvent ("MK3-SIGNAL-CONFIGURATION-INFO", txt);
+                        g_free (txt);
+                }
+                for (int jj=0; jj<=6; ++jj){
+                        gchar *txt = g_strdup_printf ("Probe Signal Input[%d] = %d -> %s", jj, probe_source[jj], sranger_common_hwi->lookup_dsp_signal_managed (probe_source[jj])->label);
+                        PI_DEBUG_GP (DBG_L1, txt);
+                        gapp->monitorcontrol->LogEvent ("MK3-SIGNAL-CONFIGURATION-INFO", txt);
+                        g_free (txt);
+                }
+                for (int jj=0; jj<2; ++jj){
+                        gchar *txt = g_strdup_printf ("LockIn Signal Input[%d] = %d -> %s", jj, lockin_input[jj], sranger_common_hwi->lookup_dsp_signal_managed (lockin_input[jj])->label);
+                        PI_DEBUG_GP (DBG_L1, txt);
+                        gapp->monitorcontrol->LogEvent ("MK3-SIGNAL-CONFIGURATION-INFO", txt);
+                        g_free (txt);
+                }
         }                        
 
 	Unity    = new UnitObj(" "," ");
@@ -1731,10 +1743,15 @@ DSPControl::DSPControl () {
 						      );
 
 			gapp->alert (N_("Warning"), N_("GXSM2->InstSPM Offset settings verification with DSP settings failed"), msg, 1);
+                        gapp->monitorcontrol->LogEvent ("GXSM startup MK3 DSP signal verification", "WARNING SITUATION FOUND!");
+                        gapp->monitorcontrol->LogEvent ("WARNING", msg);
 			g_free (msg);
-		} else
+		} else {
 			gapp->message (N_(outconfig));
-
+                        gapp->monitorcontrol->LogEvent ("GXSM startup MK3 DSP signal verification", "NORMAL");
+                        gapp->monitorcontrol->LogEvent ("INFORMATION", outconfig);
+                }
+                
 		PI_DEBUG (DBG_L1, outconfig);
 		g_free (outconfig);
 
@@ -1749,8 +1766,12 @@ DSPControl::DSPControl () {
 					      gapp->xsm->Inst->OffsetMode() == OFM_ANALOG_OFFSET_ADDING ? "Analog via DAC0/1":"digital (DSP), offset outputs not used!",
 					      dsp_state_mode & MD_OFFSETADDING ? "digital adding":"external/analog adding of ADC0/1_o to ADC3/4_s" );
 		gapp->alert (N_("Warning"), N_("GXSM2->InstSPM Offset settings verification with DSP settings failed"), msg, 1);
+                gapp->monitorcontrol->LogEvent ("GXSM startup MK2 DSP configuration verification", "WARNING SITUATION FOUND!");
+                gapp->monitorcontrol->LogEvent ("WARNING", msg);
 		g_free (msg);
-	}
+	} else {
+                gapp->monitorcontrol->LogEvent ("GXSM startup MK2 DSP configuration verification", "NORMAL");
+        }
 
 	// ========================================
         dsp_bp->pop_grid ();
@@ -4231,7 +4252,7 @@ int DSPControl::choice_vector_index_j_callback (GtkWidget *widget, DSPControl *d
         gint i = atoi (gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget)));
         if (i>=0){
                 dspc->DSP_vpdata_ij[1] = i;
-                g_message ("DSPControl::choice_vector_index_j_callback -- DSP_vpdata_ij[1]=%d",i);
+                PI_DEBUG_GP (DBG_L3, "DSPControl::choice_vector_index_j_callback -- DSP_vpdata_ij[1]=%d",i);
         } else
                 g_warning ("DSPControl::choice_vector_index_j_callback -- ignoring: index < 0");
 }
