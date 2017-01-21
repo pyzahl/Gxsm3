@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -22,8 +24,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #include <locale.h>
 #include <libintl.h>
@@ -292,6 +292,8 @@ void Scan::realloc_pkt2d(int n){
 
 void Scan::AutoDisplay(double hi, double lo, int Delta){
 
+        gapp->monitorcontrol->LogEvent("AutoDisp_callback", "in");
+
 	if (hi == 0. && lo == 0.){
 		SetVM (-2, NULL, Delta);
 
@@ -320,6 +322,8 @@ void Scan::AutoDisplay(double hi, double lo, int Delta){
 	}
 
 	data.GetDisplay_Param(*vdata);
+
+        // gapp->monitorcontrol->LogEvent("AutoDisp_callback", "out");
 }
 
 int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta){
