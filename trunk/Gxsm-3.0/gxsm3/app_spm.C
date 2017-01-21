@@ -826,32 +826,39 @@ void App::spm_update_all(int Vflg){
                                                              G_OBJECT (spm_control), "SPM_EC_list"),
                                  (GFunc) App::update_ec, NULL);
         }
+
         if(Vflg<0) Vflg=-Vflg;
         XSM_DEBUG(DBG_L3, "App::spm_update_all - Vflg=" << Vflg);
+        
+        GtkToggleButton *tb = NULL;
         switch(Vflg){
         case 0: break;
-        case SCAN_V_DIRECT:
-                gtk_toggle_button_set_active( (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "directbutton"), TRUE);
-                break;
         case SCAN_V_QUICK:
-                gtk_toggle_button_set_active( (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "quickbutton"), TRUE);
+                tb = (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "quickbutton");
+                break;
+        case SCAN_V_DIRECT:
+                tb = (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "directbutton");
                 break;
         case SCAN_V_PLANESUB:
-                gtk_toggle_button_set_active( (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "planesubbutton"), TRUE);
+                tb = (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "planesubbutton");
                 break;
         case SCAN_V_LOG:
-                gtk_toggle_button_set_active( (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "logbutton"), TRUE);
+                tb = (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "logbutton");
                 break;
         case SCAN_V_HORIZONTAL:
-                gtk_toggle_button_set_active( (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "horziontalbutton"), TRUE);
-                break;
-        case SCAN_V_PERIODIC:
-                gtk_toggle_button_set_active( (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "periodicbutton"), TRUE);
+                tb = (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "horziontalbutton");
                 break;
         case SCAN_V_DIFFERENTIAL:
-                gtk_toggle_button_set_active( (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "differentialbutton"), TRUE);
+                tb = (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "differentialbutton");
                 break;
+        case SCAN_V_PERIODIC:
+                tb = (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "periodicbutton");
+                break;
+        default: break;
         }
+        if (tb)
+                gtk_toggle_button_set_active (tb, TRUE);
+        
         if(gapp)
                 gapp->xsm->SetRedraw(); // Enable redraw and do one redraw !
 	
