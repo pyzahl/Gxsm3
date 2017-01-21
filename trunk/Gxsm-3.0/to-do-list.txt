@@ -9,6 +9,16 @@ $$ dconf reset -f /org/gnome/gxsm3/
 
 to debug glib,... messages:
 $$ G_DEBUG=fatal_warnings gdb gxsm3
+$$ for((i=0;;++i)) { echo $i `cat /proc/12640/status | grep VmSize | grep -o '[0-9]*'`; sleep 10 || break; } > gxsm3mem
+$$ for((i=0;;++i)) { echo $i `cat /proc/\`pidof gxsm3\`/status | grep VmSize | grep -o '[0-9]*'`; sleep 10 || break; } > gxsm3mem
+tail -f gxsm3mem
+gnulifeplot.gnu:
+--
+plot "gxsm3mem" using 1:2 with lines
+pause 10
+reread
+--
+gnuplot gnulifeplot.gnu
 
 ==================================================
 
@@ -29,7 +39,8 @@ current work in progress, evaluating while working with it, optimizing, new idea
 -> VP: ...auto organize Matrix of Plots -- same "x-axis" plot in single window stacked.
 ->     ...auto time unit adjust [ms, s, ..] depending on range
 -> 2D view: in SLS mode: make Red-Line work!    
-   
+-> OSD -- adjust labels to left/right align instead of center
+
 pending ports:
 -> View 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2 -- can any one help here? ==> vsurf3d.C
 -> SR1?? ... pending/obsolete/outdated??:  port to Grid and new gxsm3 internal BuildParam helper: old SR-STD/SP2 GUI [old SR-STD HwI not availabe at this time for gxsm3]
@@ -54,6 +65,7 @@ pending minor issues/ideas:
 
 -------------------
 DONE:
+-> \/ more debug message cleanups -- mostly done
 -> \/ ... Probe/Graphs -- issue with reading/setting/updating default Signal Source Channels -- fixed
 ->\/ View: OSD objects missing -- Completed.
 ->\/ View, Objects(s) Label -- missing, set fonst issue, Objekt coordinate spin not working right +/- limits off?, ShowLine Cursors dragging not hooked (left/right via menu works) but only blue m,ark in scan line object? -- Completed.
