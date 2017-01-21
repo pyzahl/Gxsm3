@@ -506,13 +506,21 @@ GtkWidget* GnomeAppService::progress_info_new (const gchar *title, gint levels, 
 	last_data = data;
 
 	if (!progress_dialog){
-		progress_dialog = gtk_dialog_new ();
+                progress_dialog = gtk_dialog_new_with_buttons (N_(title?title:"Progress"),
+                                                               gapp->get_window (), 
+                                                               (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                               NULL, NULL, NULL);
+                //_("_Cancel"),
+                // GTK_RESPONSE_REJECT,
+                // NULL);
+
+                //progress_dialog = gtk_dialog_new ();
 
 		for (int i=0; i<MAX_PROGRESS_LEVELS; ++i)
 			progress_bar[i]	= NULL;
-	}
-
-        gtk_window_set_title (GTK_WINDOW (progress_dialog), N_(title?title:"Progress"));
+	} else {
+                gtk_window_set_title (GTK_WINDOW (progress_dialog), N_(title?title:"Progress"));
+        }
 
 	//	Add GtkProgressBar
 
