@@ -2444,18 +2444,18 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
                 surface = cairo_svg_surface_create (imgname, (double)vc->npx, (double)vc->npy);
                 cairo_svg_surface_restrict_to_version (surface, CAIRO_SVG_VERSION_1_2);
 #else
-                g_print ("Sorry -- CAIRO_HAS_SVG_SURFACE not defined/not available.\n");
+                g_message ("Sorry -- CAIRO_HAS_SVG_SURFACE not defined/not available.\n");
                 return;
 #endif
         } else if (g_strrstr (imgname,".pdf")){
 #ifdef CAIRO_HAS_PDF_SURFACE
                 surface = cairo_pdf_surface_create (imgname, (double)vc->npx, (double)vc->npy);
 #else
-                g_print ("Sorry -- CAIRO_HAS_PDF_SURFACE not defined/not available.\n");
+                g_message ("Sorry -- CAIRO_HAS_PDF_SURFACE not defined/not available.\n");
                 return;
 #endif
 #else
-                g_print ("Sorry -- CAIRO SVG/PDF_SURFACE is not available.\n");
+                g_message ("Sorry -- CAIRO SVG/PDF_SURFACE is not available.\n");
                 return;
 #endif
         } else {
@@ -2486,14 +2486,14 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
         cairo_destroy (cr);
 
 	if (png){
-                g_print ("Cairo save scan view to png: '%s'\n", imgname);
+                g_message ("Cairo save scan view to png: '%s'\n", imgname);
                 status = cairo_surface_write_to_png (surface, imgname);
                 if (status)
                         printf("%s\n", cairo_status_to_string (status));
         } else {
                 cairo_surface_flush (surface);
                 cairo_surface_finish (surface);
-                g_print ("Cairo save scan view to svg/pdf: '%s'\n", imgname);
+                g_message ("Cairo save scan view to svg/pdf: '%s'\n", imgname);
         }
         
         cairo_surface_destroy (surface);
@@ -2601,10 +2601,10 @@ void ViewControl::view_tool_marker_group_radio_callback (GSimpleAction *action, 
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
                 
-        g_print ("TOOL-MARKER Radio action %s activated, state changes from %s to %s\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_string (old_state, NULL),
-                 g_variant_get_string (new_state, NULL));
+        XSM_DEBUG_GP (DBG_L1, "TOOL-MARKER Radio action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
 
         vc->SetMarkerGroup (g_variant_get_string (new_state, NULL));
         
@@ -2730,10 +2730,10 @@ void ViewControl::view_object_mode_radio_callback (GSimpleAction *action, GVaria
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
                 
-        g_print ("OBJECT-MODE Radio action %s activated, state changes from %s to %s\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_string (old_state, NULL),
-                 g_variant_get_string (new_state, NULL));
+        XSM_DEBUG_GP (DBG_L1, "OBJECT-MODE Radio action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
 
         if (!strcmp (g_variant_get_string (new_state, NULL), "rectangle")){
                 vc->AddObjFkt = ViewControl::view_tool_addrectangle;
@@ -2772,13 +2772,14 @@ void ViewControl::view_tool_mvprop_radius_radio_callback (GSimpleAction *action,
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
                 
-        g_print ("MVPROP-MODE RADIUS Radio action %s activated, state changes from %s to %s\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_string (old_state, NULL),
-                 g_variant_get_string (new_state, NULL));
+        XSM_DEBUG_GP (DBG_L1, "MVPROP-MODE RADIUS Radio action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
 
         vc->local_radius = atoi (g_variant_get_string (new_state, NULL));
-        g_print ("r=%d\n",  vc->local_radius);
+
+        XSM_DEBUG_GP (DBG_L1, "r=%d\n",  vc->local_radius);
         
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
@@ -2795,11 +2796,10 @@ void ViewControl::view_view_set_view_mode_radio_callback (GSimpleAction *action,
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
                 
-        g_print ("VIEW-MODE Radio action %s activated, state changes from %s to %s\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_string (old_state, NULL),
-                 g_variant_get_string (new_state, NULL));
-
+        XSM_DEBUG_GP (DBG_L1, "VIEW-MODE Radio action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
 
         if (!strcmp (g_variant_get_string (new_state, NULL), "quick")){
                 mode = SCAN_V_QUICK;
@@ -2839,11 +2839,11 @@ void ViewControl::view_view_x_linearize_callback (GSimpleAction *action, GVarian
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
                 
-        g_print ("Toggle action %s activated, state changes from %d to %d\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_boolean (old_state),
-                 g_variant_get_boolean (new_state));
-
+        XSM_DEBUG_GP (DBG_L1, "Toggle action %s activated, state changes from %d to %d\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_boolean (old_state),
+                      g_variant_get_boolean (new_state));
+        
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
 
@@ -2866,10 +2866,10 @@ void ViewControl::view_view_redline_callback (GSimpleAction *action, GVariant *p
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
                 
-        g_print ("Toggle action %s activated, state changes from %d to %d\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_boolean (old_state),
-                 g_variant_get_boolean (new_state));
+        XSM_DEBUG_GP (DBG_L1, "Toggle action %s activated, state changes from %d to %d\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_boolean (old_state),
+                      g_variant_get_boolean (new_state));
 
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
@@ -2899,10 +2899,10 @@ void ViewControl::view_view_blueline_callback (GSimpleAction *action, GVariant *
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
                 
-        g_print ("Toggle action %s activated, state changes from %d to %d\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_boolean (old_state),
-                 g_variant_get_boolean (new_state));
+        XSM_DEBUG_GP (DBG_L1, "Toggle action %s activated, state changes from %d to %d\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_boolean (old_state),
+                      g_variant_get_boolean (new_state));
 
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
@@ -2922,10 +2922,10 @@ void ViewControl::view_view_autozoom_callback (GSimpleAction *action, GVariant *
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
                 
-        g_print ("Toggle action %s activated, state changes from %d to %d\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_boolean (old_state),
-                 g_variant_get_boolean (new_state));
+        XSM_DEBUG_GP (DBG_L1, "Toggle action %s activated, state changes from %d to %d\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_boolean (old_state),
+                      g_variant_get_boolean (new_state));
 
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
@@ -2946,11 +2946,11 @@ void ViewControl::view_view_color_callback (GSimpleAction *action, GVariant *par
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
                 
-        g_print ("Toggle action %s activated, state changes from %d to %d\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_boolean (old_state),
-                 g_variant_get_boolean (new_state));
-
+        XSM_DEBUG_GP (DBG_L1, "Toggle action %s activated, state changes from %d to %d\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_boolean (old_state),
+                      g_variant_get_boolean (new_state));
+        
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
 
@@ -2978,10 +2978,10 @@ void ViewControl::view_view_color_rgb_callback (GSimpleAction *action, GVariant 
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
                 
-        g_print ("Toggle action %s activated, state changes from %d to %d\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_boolean (old_state),
-                 g_variant_get_boolean (new_state));
+        XSM_DEBUG_GP (DBG_L1, "Toggle action %s activated, state changes from %d to %d\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_boolean (old_state),
+                      g_variant_get_boolean (new_state));
 
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
@@ -3000,10 +3000,10 @@ void ViewControl::view_view_coordinate_mode_radio_callback (GSimpleAction *actio
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
                 
-        g_print ("ZOOM-FIX Radio action %s activated, state changes from %s to %s\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_string (old_state, NULL),
-                 g_variant_get_string (new_state, NULL));
+        XSM_DEBUG_GP (DBG_L1, "ZOOM-FIX Radio action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
 
         if (!strcmp (g_variant_get_string (new_state, NULL), "absolute")){
 		vc->vinfo->SetCoordMode (SCAN_COORD_ABSOLUTE);
@@ -3034,10 +3034,10 @@ void ViewControl::view_view_coord_time_callback (GSimpleAction *action, GVariant
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
                 
-        g_print ("Toggle action %s activated, state changes from %d to %d\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_boolean (old_state),
-                 g_variant_get_boolean (new_state));
+        XSM_DEBUG_GP (DBG_L1, "Toggle action %s activated, state changes from %d to %d\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_boolean (old_state),
+                      g_variant_get_boolean (new_state));
 
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
@@ -3057,10 +3057,10 @@ void ViewControl::view_view_zoom_fix_radio_callback (GSimpleAction *action, GVar
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
                 
-        g_print ("ZOOM-FIX Radio action %s activated, state changes from %s to %s\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_string (old_state, NULL),
-                 g_variant_get_string (new_state, NULL));
+        XSM_DEBUG_GP (DBG_L1, "ZOOM-FIX Radio action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
 
         if (!strcmp (g_variant_get_string (new_state, NULL), "zoomfactor-10x")){
                 if(vc->ZoomQFkt) (*vc->ZoomQFkt)(10,1,vc->ZQFktData);
