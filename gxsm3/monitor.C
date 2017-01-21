@@ -33,6 +33,37 @@
 #include "unit.h"
 #include "xsmdebug.h"
 
+// #define MONITOR_VMEMORY_USAGE
+#ifdef MONITOR_VMEMORY_USAGE
+
+gint parseLine (char* line){
+        // This assumes that a digit will be found and the line ends in " Kb".
+        gint i = strlen(line);
+        const char* p = line;
+        while (*p <'0' || *p > '9') p++;
+        line[i-3] = '\0';
+        i = atoi(p);
+        return i;
+}
+
+// use: getValue ("VmSize:");
+gint getValue (const gchar *what){ //Note: this value is in KB!
+        FILE* file = fopen("/proc/self/status", "r");
+        gint result = -1;
+        gchar line[128];
+        
+        while (fgets(line, 128, file) != NULL){
+                if (strncmp(line, what, strlen(what)) == 0){
+                        result = parseLine(line);
+                        break;
+                }
+        }
+        fclose(file);
+        return result;
+}
+
+#endif
+
 Monitor::Monitor(const gchar *name){
         dt=10.0;
 
@@ -148,6 +179,11 @@ gint Monitor::AppLine(){
     
                 for(gchar **field = Fields; *field; ++field)
                         f << *field;
+
+#ifdef MONITOR_VMEMORY_USAGE
+                f << " VmSize: " << getValue ("VmSize:") << " kB";
+#endif
+
                 f << "\n";
                 f.close();
         }

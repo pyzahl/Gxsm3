@@ -1051,7 +1051,7 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
 			dragging=TRUE;
                         break;
                 case 3: // do popup
-                        g_print ("RM BUTTON_PRESS (do popup) image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
+                        // g_print ("RM BUTTON_PRESS (do popup) image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
                         MENU_AT_POINTER (GTK_MENU (pc->p_popup_menu), event);
                         break;
 		}
@@ -2617,11 +2617,11 @@ void ProfileControl::settings_pathmode_radio_callback (GSimpleAction *action, GV
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
                 
-        g_print ("PATHMODE Radio action %s activated, state changes from %s to %s\n",
-                 g_action_get_name (G_ACTION (action)),
-                 g_variant_get_string (old_state, NULL),
-                 g_variant_get_string (new_state, NULL));
-
+        XSM_DEBUG_GP (DBG_L1, "PATHMODE Radio action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
+        
         // clear all
         pc->mode &= ~(PROFILE_MODE_POINTS|PROFILE_MODE_CONNECT|PROFILE_MODE_SYMBOLS|PROFILE_MODE_IMPULS);
 

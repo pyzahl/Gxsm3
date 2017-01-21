@@ -347,12 +347,11 @@ void V3dControl::SetX_callback (GSimpleAction *action, GVariant *parameter, gpoi
 
 void V3dControl::AutoDisp_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
         V3dControl *vc = (V3dControl *) user_data;
-	gapp->xsm->ActivateChannel(vc->chno);
+        gapp->xsm->ActivateChannel(vc->chno);
 	gapp->xsm->AutoDisplay();
 	((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->update(0, vc->scan->mem2d->GetNy());
         //        ((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->GLdrawscene(-1., true);
         gtk_gl_area_queue_render (GTK_GL_AREA (vc->glarea));
-
 }
 
 void V3dControl::apply_all_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
