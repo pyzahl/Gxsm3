@@ -132,15 +132,30 @@ ProfileElement::ProfileElement(ProfileElement *pe, const gchar *col, int Yy){
 ProfileElement::~ProfileElement(){
 	XSM_DEBUG (DBG_L2, "ProfileElement::~ProfileElement");
 	for (int i=0; i<NPI; ++i){
-		if(pathitem[i])
-			delete pathitem[i];
-		if(pathitem_draw[i])
-			delete pathitem_draw[i];
+		UNREF_DELETE_CAIRO_ITEM_NO_UPDATE (pathitem[i]);
+                UNREF_DELETE_CAIRO_ITEM_NO_UPDATE (pathitem_draw[i]);
         }
-        // ===>>>> SHOULD CALL 	void unref_delete  (GtkWidget *canvas)  before <<<< ======
-                // UNREF_DELETE_CAIRO_ITEM (pathitem[i], canvas);
-
 	g_free(color);
+}
+
+void ProfileElement::calc_decimation (){
+#define USE_AUTO_DECIMATION
+#ifdef USE_AUTO_DECIMATION
+        gint w = (gint) (pctrl->get_drawing_width());
+        if (n > 2*w){
+                dec_len = n / w;
+                n_dec   = n / dec_len;
+                // g_message ("ProfileElement::calc_decimation -- decimation on. dec_len=%d n_dec=%d", dec_len, n_dec);
+        } else { // no decimating
+                dec_len = 1;
+                n_dec = n;
+                // g_message ("ProfileElement::calc_decimation -- decimation off. dec_len=%d n_dec=%d", dec_len, n_dec);
+        }
+#else
+        // no decimating
+        dec_len = 1;
+        n_dec = n;
+#endif
 }
 
 void ProfileElement::SetMode(long Mode){
@@ -158,20 +173,24 @@ void ProfileElement::SetOptions(long Flg){
 void ProfileElement::cleanup_renew (GtkWidget *canvas, int ymode, int id){
 	if(!(ymode & PROFILE_MODE_BINARY8))
 		for (int i=1; i<NPI; ++i){
-                        UNREF_DELETE_CAIRO_ITEM (pathitem[i], canvas);
+                        UNREF_DELETE_CAIRO_ITEM_NO_UPDATE (pathitem[i]);
                         UNREF_DELETE_CAIRO_ITEM (pathitem_draw[i], canvas);
                 }
+        
 	n=scan->mem2d->GetNx();
         if (n<1) n=2;
-
+        
+        // n => n_dec, dec_len -- use auto (random pick) decimation if more points than physical x pixels!
+        calc_decimation ();
         if (pathitem[id]){
-                if (pathitem[id]->get_n_nodes () != n){
-                        UNREF_DELETE_CAIRO_ITEM (pathitem[id], canvas);
-                        pathitem[id] = new cairo_item_path (n);
+                if (pathitem[id]->get_n_nodes () != n_dec){
+                        UNREF_DELETE_CAIRO_ITEM_NO_UPDATE (pathitem[id]);
+                        UNREF_DELETE_CAIRO_ITEM (pathitem_draw[id], canvas);
+                        pathitem[id] = new cairo_item_path (n_dec);
                 }
+        } else {
+                pathitem[id] = new cairo_item_path (n_dec);
         }
-        else        
-                pathitem[id] = new cairo_item_path (n);
 
         pathcoords_world = true;
 };
@@ -209,55 +228,119 @@ double ProfileElement::calc(int ymode, int id, int binary_mask, double y_offset)
         // must call cleanup_renew before with canvas!
         // pathitem[id]->set_xy (i, x,y); // manages xy data!
 
-	if(ymode & PROFILE_MODE_BINARY8){
-		ylocmin=-0.5; ylocmax=8.;
-		if(ymode & PROFILE_MODE_BINARY16)
-			ylocmax=16.;
-		for(int i=0; i < n; ++i)
-			pathitem[id]->set_xy_fast (i,
-                                                   s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
-                                                   y_offset + (( (int)(s->mem2d->GetDataPkt(i,yy)) & binary_mask ) ? 0.7 : 0.));
+        if (dec_len > 1){
+                int k=0;
+                if(ymode & PROFILE_MODE_BINARY8){
+                        ylocmin=-0.5; ylocmax=8.;
+                        if(ymode & PROFILE_MODE_BINARY16)
+                                ylocmax=16.;
+                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                                int ii = i + (rand() % dec_len);
+                                pathitem[id]->set_xy_fast (k,
+                                                           s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)),
+                                                           y_offset + (( (int)(s->mem2d->GetDataPkt(ii,yy)) & binary_mask ) ? 0.7 : 0.));
+                        }
+                } else if(ymode & PROFILE_MODE_YLINREG){
+                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                                int ii = i + (rand() % dec_len);
+                                pathitem[id]->set_xy_test (k,
+                                                           s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)),
+                                                           s->data.Zunit->Base2Usr(s->mem2d->GetDataPktLineReg(ii,yy)*s->data.s.dz));
+                        }
+                } else if(ymode & PROFILE_MODE_YLOWPASS){
+                        ylocmin=ylocmax=0.;
+                        double vp = 0.;
+                        double v = s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(0,yy) * s->data.s.dz);
+                        double lpn = pctrl->lp_gain;
+                        double lpo = 1.0-lpn;
+                        vp=v;
+                        // for(int i=0, ix=0, iy=1; i < n; ix+=2, iy+=2, ++i){
+                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                                int ii = i + dec_len/2;
+                                double y=0.;
+                                for (int m=0; m<dec_len; ++m){
+                                        v = y =  lpo*v + lpn * s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i+m,yy) * s->data.s.dz);
+                                }
+                                if(ymode & PROFILE_MODE_YDIFF){
+                                        y  = v-vp;
+                                        vp = v;
+                                }
+                                pathitem[id]->set_xy_test (k, s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)), y);
+                        }
+                } else if(ymode & PROFILE_MODE_YDIFF){
+                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                                int ii = i + (rand() % dec_len);
+                                pathitem[id]->set_xy_test (k,
+                                                           s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)),
+                                                           s->data.Zunit->Base2Usr(s->mem2d->GetDataPktDiff(ii+1,yy) * s->data.s.dz));
+                        }
+                }else if(ymode & PROFILE_MODE_YLOG){
+                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                                int ii = i + (rand() % dec_len);
+                                pathitem[id]->set_xy_hold_logmin (k,
+                                                                  s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)),
+                                                                  s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(ii,yy)*s->data.s.dz),
+                                                                  xsmres.ProfileLogLimit);
+                        }
+                }else{
+                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                                int ii = i + (rand() % dec_len);
+                                pathitem[id]->set_xy_test (k,
+                                                           s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)),
+                                                           s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(ii,yy)*s->data.s.dz));
+                        }
+                }
+        } else {
+                if(ymode & PROFILE_MODE_BINARY8){
+                        ylocmin=-0.5; ylocmax=8.;
+                        if(ymode & PROFILE_MODE_BINARY16)
+                                ylocmax=16.;
+                        for(int i=0; i < n; ++i)
+                                pathitem[id]->set_xy_fast (i,
+                                                           s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
+                                                           y_offset + (( (int)(s->mem2d->GetDataPkt(i,yy)) & binary_mask ) ? 0.7 : 0.));
 
-	} else if(ymode & PROFILE_MODE_YLINREG){
-		for(int i=0; i < n; ++i)
-			pathitem[id]->set_xy_test (i,
-                                                   s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
-                                                   s->data.Zunit->Base2Usr(s->mem2d->GetDataPktLineReg(i,yy)*s->data.s.dz));
-	} else if(ymode & PROFILE_MODE_YLOWPASS){
-		ylocmin=ylocmax=0.;
-		double vp = 0.;\
-		double v = s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(0,yy) * s->data.s.dz);
-		double lpn = pctrl->lp_gain;
-		double lpo = 1.0-lpn;
-		vp=v;
-		for(int i=0, ix=0, iy=1; i < n; ix+=2, iy+=2, ++i){
-                        double y;
-			v = y =  lpo*v + lpn * s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy) * s->data.s.dz);
+                } else if(ymode & PROFILE_MODE_YLINREG){
+                        for(int i=0; i < n; ++i)
+                                pathitem[id]->set_xy_test (i,
+                                                           s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
+                                                           s->data.Zunit->Base2Usr(s->mem2d->GetDataPktLineReg(i,yy)*s->data.s.dz));
+                } else if(ymode & PROFILE_MODE_YLOWPASS){
+                        ylocmin=ylocmax=0.;
+                        double vp = 0.;
+                        double v = s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(0,yy) * s->data.s.dz);
+                        double lpn = pctrl->lp_gain;
+                        double lpo = 1.0-lpn;
+                        vp=v;
+                        // for(int i=0, ix=0, iy=1; i < n; ix+=2, iy+=2, ++i){
+                        for(int i=0; i < n; ++i){
+                                double y;
+                                v = y =  lpo*v + lpn * s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy) * s->data.s.dz);
 
-			if(ymode & PROFILE_MODE_YDIFF){
-			      y  = v-vp;
-			      vp = v;
-			}
-			pathitem[id]->set_xy_test (i, s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)), y);
-		}
-	} else if(ymode & PROFILE_MODE_YDIFF){
-		for(int i=0; i < n; ++i)
-			pathitem[id]->set_xy_test (i,
-                                                   s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
-                                                   s->data.Zunit->Base2Usr(s->mem2d->GetDataPktDiff(i+1,yy) * s->data.s.dz));
-	}else if(ymode & PROFILE_MODE_YLOG){
-		for(int i=0; i < n; ++i)
-			pathitem[id]->set_xy_hold_logmin (i,
-                                                          s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
-                                                          s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy)*s->data.s.dz),
-                                                          xsmres.ProfileLogLimit);
-	}else{
-		for(int i=0; i < n; ++i)
-			pathitem[id]->set_xy_test (i,
-                                                   s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
-                                                   s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy)*s->data.s.dz));
+                                if(ymode & PROFILE_MODE_YDIFF){
+                                        y  = v-vp;
+                                        vp = v;
+                                }
+                                pathitem[id]->set_xy_test (i, s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)), y);
+                        }
+                } else if(ymode & PROFILE_MODE_YDIFF){
+                        for(int i=0; i < n; ++i)
+                                pathitem[id]->set_xy_test (i,
+                                                           s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
+                                                           s->data.Zunit->Base2Usr(s->mem2d->GetDataPktDiff(i+1,yy) * s->data.s.dz));
+                }else if(ymode & PROFILE_MODE_YLOG){
+                        for(int i=0; i < n; ++i)
+                                pathitem[id]->set_xy_hold_logmin (i,
+                                                                  s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
+                                                                  s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy)*s->data.s.dz),
+                                                                  xsmres.ProfileLogLimit);
+                }else{
+                        for(int i=0; i < n; ++i)
+                                pathitem[id]->set_xy_test (i,
+                                                           s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
+                                                           s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy)*s->data.s.dz));
+                }
         }
-
         // update and get X and Y bounds
         pathitem[id]->update_bbox (false);
         pathitem[id]->get_bb_min (xlocmin, ylocmin);
@@ -287,8 +370,7 @@ void ProfileElement::update(GtkWidget *canvas, int id, int style){
         else if (m & PROFILE_MODE_CONNECT) lm = 0;
 
         if (pathitem[id]){
-                if (pathitem_draw[id])
-                        delete pathitem_draw[id];
+                UNREF_DELETE_CAIRO_ITEM (pathitem_draw[id], canvas);
                 pathitem_draw[id] = new cairo_item_path (pathitem[id]);
         }
         if (pathitem_draw[id]){
@@ -301,7 +383,11 @@ void ProfileElement::update(GtkWidget *canvas, int id, int style){
                 // TDB
                 //        pathitem[id]->map_xy ( &pctrl->scan2canvas);
                 double yf=0.;
-                for(int i=0; i < n; ++i){
+                if (pathitem[id]->get_n_nodes () != n_dec || pathitem_draw[id]->get_n_nodes () != n_dec){
+                        g_warning ("ProfileElement::update -- WARNING, abort: pathitem[id]->get_n_nodes () != n_dec || pathitem_draw[id]->get_n_nodes () != n_dec");
+                        return;
+                }
+                for(int i=0; i < n_dec; ++i){
                         double x,y;
                         pathitem[id]->get_xy (i, x, y);
                         pctrl->scan2canvas (x ,y);
@@ -391,17 +477,19 @@ gint ProfileControl_auto_update_callback (ProfileControl *pc){
 }
 
 ProfileControl::ProfileControl (const gchar *titlestring, int ChNo){
+        pc_in_window = NULL;
 	Init(titlestring, ChNo);
 	ref ();
 }
 
-ProfileControl::ProfileControl (const gchar *titlestring, int n, UnitObj *ux, UnitObj *uy, double xmin, double xmax, const gchar *resid) : LineProfile1D(n, ux, uy, xmin, xmax){
+ProfileControl::ProfileControl (const gchar *titlestring, int n, UnitObj *ux, UnitObj *uy, double xmin, double xmax, const gchar *resid,  Gxsm3appWindow *in_external_window) : LineProfile1D(n, ux, uy, xmin, xmax){
+        pc_in_window = in_external_window;
 	Init(titlestring, -1, resid);
 	ref ();
 	g_signal_connect(G_OBJECT(window),
-			   "delete_event",
-			   G_CALLBACK (ProfileControl::file_close_callback),
-			   this);
+                         "delete_event",
+                         G_CALLBACK (ProfileControl::file_close_callback),
+                         this);
 	gchar *tmp;
 	SetXlabel (tmp = scan1d->data.Xunit->MakeLongLabel());
 	g_free (tmp);
@@ -417,15 +505,16 @@ ProfileControl::ProfileControl (const gchar *titlestring, int n, UnitObj *ux, Un
 
 ProfileControl::ProfileControl (const gchar *filename, const gchar *resource_id_string){
 	XSM_DEBUG (DBG_L3, "ProfileControl::ProfileControl from file" << filename );
+        pc_in_window = NULL;
 
 	gchar *t = g_strconcat (filename, " - Profile from File", NULL);
 	Init (t, -1, resource_id_string);
 	g_free (t);
 
-	g_signal_connect(G_OBJECT(window),
-			   "delete_event",
-			   G_CALLBACK (ProfileControl::file_close_callback),
-			   this);
+	g_signal_connect (G_OBJECT (window),
+                          "delete_event",
+                          G_CALLBACK (ProfileControl::file_close_callback),
+                          this);
 
 	XSM_DEBUG (DBG_L3, "ProfileControl::ProfileControl from file - Init done, loading data");
 
@@ -457,7 +546,10 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 	GtkWidget *tb;
 	char xcline[256];
 
+        pc_grid = NULL;
+        set_pc_matrix_size ();
         window_w = window_h = 0;
+        font_size_10 = 10.;
         
         tmp_effected = -1;
 
@@ -560,13 +652,15 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 	}
   
 	chno=ChNo;
-  
-	if (titlestring)
-		AppWindowInit (titlestring);
-	else
-		AppWindowInit ("Profile");
 
-        title = g_strdup (titlestring);
+        // setup basic window and header, create and attach (if in own window) pc_grid
+        // set or gets app_window, window
+        if (titlestring)
+                title = g_strdup (titlestring);
+        else
+                title = g_strdup ("Profile");
+
+        AppWindowInit (title);
         
 	Cursor[0][0] = NULL;
 	Cursor[0][1] = NULL;
@@ -610,6 +704,7 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 	yaxislabel = NULL;
 	saxislabel = NULL;
 	titlelabel = NULL;
+	infotext = NULL;
         
         
 	xlabel0 = NULL;
@@ -635,9 +730,9 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 
 	if(chno>=0)
 		g_signal_connect(G_OBJECT(window),
-				   "delete_event",
-				   G_CALLBACK(App::close_scan_event_cb),
-				   this);
+                                 "delete_event",
+                                 G_CALLBACK(App::close_scan_event_cb),
+                                 this);
 
 	// New Scrollarea
 
@@ -661,20 +756,22 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 	/* The dialog window is created with a vbox packed into it. */                            
         gtk_widget_set_hexpand (scrollarea, TRUE);
         gtk_widget_set_vexpand (scrollarea, TRUE);
-        gtk_grid_attach (GTK_GRID (v_grid), scrollarea, 1,1, 9,20);
+        gtk_grid_attach (GTK_GRID (pc_grid), scrollarea, 1,1, 9,20);
 	gtk_container_add(GTK_CONTAINER(scrollarea), canvas);
 
 	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl hbox");
 
-	// New Statusbar
-	statusbar = gtk_statusbar_new ();
-	statusid  = gtk_statusbar_get_context_id(GTK_STATUSBAR(statusbar), "drag");
-	g_object_set_data (G_OBJECT (window), "statusbar", statusbar);
-	//  statusbar = (GtkWidget*)g_object_get_data (G_OBJECT (canvas), "statusbar");
-        gtk_grid_attach (GTK_GRID (v_grid), statusbar, 1,100, 11,1);
-
-        //statusheight = gtk_widget_get_allocated_height (statusbar);
-
+        if (!pc_in_window){
+                // New Statusbar
+                statusbar = gtk_statusbar_new ();
+                statusid  = gtk_statusbar_get_context_id (GTK_STATUSBAR(statusbar), "drag");
+                gtk_grid_attach (GTK_GRID (pc_grid), statusbar, 1,100, 11,1);
+        } else {
+                // Get Statusbar
+                statusbar = (GtkWidget*) g_object_get_data (G_OBJECT (window), "statusbar");
+                statusid  = gtk_statusbar_get_context_id (GTK_STATUSBAR(statusbar), "drag");
+        }
+        g_object_set_data (G_OBJECT (canvas), "statusbar", statusbar);
         
         g_signal_connect (G_OBJECT (canvas), "draw",
                           G_CALLBACK (ProfileControl::canvas_draw_callback), this);
@@ -692,8 +789,6 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 
 	SetSize();
 
-	g_object_set_data (G_OBJECT (canvas), "statusbar", statusbar);
-
 	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl draw!");
 
 	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl show!");
@@ -701,67 +796,56 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 
         // Tool Button simply attached to grid.
 
-        int k=1;
-	tb = gtk_check_button_new_with_label ("LR");
-        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-linreg");
-        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLINREG) ? TRUE : FALSE);
-        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::linreg_callback), this);
-        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+        if (!pc_in_window){
+                int k=1;
+                tb = gtk_check_button_new_with_label ("LR");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-linreg");
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLINREG) ? TRUE : FALSE);
+                gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
-        //bbarwidth = gtk_widget_get_allocated_width (tb);
- 
-	tb = gtk_check_button_new_with_label ("LG");
-        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-log");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLOG) ? TRUE : FALSE);
-        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::logy_callback), this);
-        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+                tb = gtk_check_button_new_with_label ("LG");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-log");
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLOG) ? TRUE : FALSE);
+                gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
-	tb = gtk_check_button_new_with_label ("FT");
-        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-ft");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YPSD) ? TRUE : FALSE);
-        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::psd_callback), this);
-        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+                tb = gtk_check_button_new_with_label ("FT");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-ft");
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YPSD) ? TRUE : FALSE);
+                gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
-	tb = gtk_check_button_new_with_label ("dY");
-        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-diff");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YDIFF) ? TRUE : FALSE);
-        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::ydiff_callback), this);
-        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
-
-	tb = gtk_check_button_new_with_label ("LP");
-        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-lowpass");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLOWPASS) ? TRUE : FALSE);
-        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::ylowpass_callback), this);
-        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+                tb = gtk_check_button_new_with_label ("dY");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-diff");
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YDIFF) ? TRUE : FALSE);
+                gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
         
-	tb = gtk_check_button_new_with_label ("YH");
-        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-hold");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (scaleing & PROFILE_SCALE_YHOLD) ? TRUE : FALSE);
-        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::yhold_callback), this);
-        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+                tb = gtk_check_button_new_with_label ("LP");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-lowpass");
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLOWPASS) ? TRUE : FALSE);
+                gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
+        
+                tb = gtk_check_button_new_with_label ("YH");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-hold");
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (scaleing & PROFILE_SCALE_YHOLD) ? TRUE : FALSE);
+                gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
-	tb = gtk_check_button_new_with_label ("YE");
-        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-expand");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (scaleing & PROFILE_SCALE_YEXPAND) ? TRUE : FALSE);
-        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::yexpand_callback), this);
-        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+                tb = gtk_check_button_new_with_label ("YE");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-expand");
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (scaleing & PROFILE_SCALE_YEXPAND) ? TRUE : FALSE);
+                gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
-	tb = gtk_check_button_new_with_label ("CA");
-        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.cursor-A");
-        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::cur_Ashow_callback), this);
-        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
+                tb = gtk_check_button_new_with_label ("CA");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.cursor-A");
+                gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
-	tb = gtk_check_button_new_with_label ("CB");
-        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.cursor-B");
-        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::cur_Bshow_callback), this);
-        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
-
-	tb = gtk_check_button_new_with_label ("BI");
-        gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-binary");
-        //	g_signal_connect (G_OBJECT (tb), "toggled", G_CALLBACK(ProfileControl::skl_Binary_callback), this);
-        gtk_grid_attach (GTK_GRID (v_grid), tb, 10,k++, 1,1);
-
-        gtk_widget_show_all (v_grid);
+                tb = gtk_check_button_new_with_label ("CB");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.cursor-B");
+                gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
+        
+                tb = gtk_check_button_new_with_label ("BI");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-binary");
+                gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
+        }
+        gtk_widget_show_all (pc_grid);
 
 	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl [" << title << "] done.");
 }
@@ -772,9 +856,9 @@ ProfileControl::~ProfileControl ()
 
 	XSM_DEBUG (DBG_L2, "ProfileControl::~ProfileControl");
 
-	// save settings
-	xrm.Put("ModeCode", (int)mode);
-	xrm.Put("ScalingCode", (int)scaleing);
+        // must undo
+        // resize_cb_handler_id = g_signal_connect (GTK_CONTAINER (window), "check-resize", G_CALLBACK (ProfileControl::resize_drawing), this);
+        g_signal_handler_disconnect (GTK_CONTAINER (window), resize_cb_handler_id);
 
 	auto_update (0);
 
@@ -802,103 +886,132 @@ ProfileControl::~ProfileControl ()
 		if (ys_legend_label_list[ils])
 			g_free (ys_legend_label_list[ils]);
 
-	XSM_DEBUG (DBG_L2, "done.");
+        if (pc_in_window){
+                // destroy grid and widgets, unref app_window and window
+                gtk_widget_destroy (pc_grid);
+                pc_grid = NULL;
+                app_window = NULL;
+                window = NULL;
+        }
+
+        XSM_DEBUG (DBG_L2, "done.");
+       
 }
 
 
 void ProfileControl::AppWindowInit(const gchar *title){
 	XSM_DEBUG (DBG_L2,  "ViewControl::WidgetInit" );
 
-
-        app_window = gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
-        window = GTK_WINDOW (app_window);
-
-        header_bar = gtk_header_bar_new ();
-        gtk_widget_show (header_bar);
-        gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), true);
-
-        g_action_map_add_action_entries (G_ACTION_MAP (app_window),
-                                         win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
-                                         this);
-
-        
         // create window PopUp menu  ---------------------------------------------------------------------
         XSM_DEBUG (DBG_L2,  "VC::VC popup" );
         GObject *profile_popup_menu = gapp->get_profile_popup_menu ();
         p_popup_menu = gtk_menu_new_from_model (G_MENU_MODEL (profile_popup_menu));
         g_assert (GTK_IS_MENU (p_popup_menu));
 
-        XSM_DEBUG (DBG_L2,  "VC::VC popup Header Buttons setup. " );
+        if (pc_in_window){
+                // g_message ("ProfileControl::AppWindowInit in external window >%s<", title);
+                // get app_window and window
+                pc_grid = gtk_grid_new ();
+                app_window = pc_in_window;
+                window = GTK_WINDOW (app_window);
+                // needs a solution to identify graphs/mapping
+        } else {
+                // g_message ("ProfileControl::AppWindowInit create own app_window >%s<", title);
+                // create our own app_window
+                app_window = gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
+                window = GTK_WINDOW (app_window);
 
-        // attach full view popup menu to tool button ----------------------------------------------------
-        GtkWidget *header_menu_button = gtk_menu_button_new ();
-        //        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("emblem-system-symbolic", tmp_toolbar_icon_size));
-        gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), p_popup_menu);
-        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
-        gtk_widget_show (header_menu_button);
+                header_bar = gtk_header_bar_new ();
+                gtk_widget_show (header_bar);
+                gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), true);
+
+                g_action_map_add_action_entries (G_ACTION_MAP (app_window),
+                                                 win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
+                                                 this);
+
+                XSM_DEBUG (DBG_L2,  "VC::VC popup Header Buttons setup. " );
+
+                // attach full view popup menu to tool button ----------------------------------------------------
+                GtkWidget *header_menu_button = gtk_menu_button_new ();
+                //        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("emblem-system-symbolic", tmp_toolbar_icon_size));
+                gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), p_popup_menu);
+                gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+                gtk_widget_show (header_menu_button);
 
 #if 0
-        // attach display mode section from popup menu to tool button --------------------------------
-        header_menu_button = gtk_menu_button_new ();
-        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("emblem-system-symbolic", tmp_toolbar_icon_size));
-        //        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("zoom-fit-best", tmp_toolbar_icon_size));
-        GMenuModel *section = find_extension_point_section (G_MENU_MODEL (view2d_menu), "view-display-mode-section");
-        if (section) {
-                gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), gtk_menu_new_from_model (G_MENU_MODEL (section)));
-                gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
-                gtk_widget_show (header_menu_button);
-        }
+                // attach display mode section from popup menu to tool button --------------------------------
+                header_menu_button = gtk_menu_button_new ();
+                gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("emblem-system-symbolic", tmp_toolbar_icon_size));
+                //        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("zoom-fit-best", tmp_toolbar_icon_size));
+                GMenuModel *section = find_extension_point_section (G_MENU_MODEL (view2d_menu), "view-display-mode-section");
+                if (section) {
+                        gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), gtk_menu_new_from_model (G_MENU_MODEL (section)));
+                        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+                        gtk_widget_show (header_menu_button);
+                }
 
-        // attach edit section from popup menu to tool button --------------------------------
-        header_menu_button = gtk_menu_button_new ();
-        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("applications-engineering", tmp_toolbar_icon_size));
-        section = find_extension_point_section (G_MENU_MODEL (view2d_menu), "view-objects-section");
-        if (section) {
-                gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), gtk_menu_new_from_model (G_MENU_MODEL (section)));
-                gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
-                gtk_widget_show (header_menu_button);
-        }
+                // attach edit section from popup menu to tool button --------------------------------
+                header_menu_button = gtk_menu_button_new ();
+                gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("applications-engineering", tmp_toolbar_icon_size));
+                section = find_extension_point_section (G_MENU_MODEL (view2d_menu), "view-objects-section");
+                if (section) {
+                        gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), gtk_menu_new_from_model (G_MENU_MODEL (section)));
+                        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+                        gtk_widget_show (header_menu_button);
+                }
 #endif
 
-        gtk_window_set_title (GTK_WINDOW (window), title);
-        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
-        gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
-        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+                gtk_window_set_title (GTK_WINDOW (window), title);
+                gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
+                //gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
+                gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
 
-	v_grid = gtk_grid_new ();
-        gtk_container_add (GTK_CONTAINER (window), v_grid);
-	g_object_set_data (G_OBJECT (window), "v_grid", v_grid);
+                v_grid = gtk_grid_new ();
+                gtk_container_add (GTK_CONTAINER (window), v_grid);
+                g_object_set_data (G_OBJECT (window), "v_grid", v_grid);
+                pc_grid = v_grid;
 
-        //        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
-        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
-
-        g_signal_connect (GTK_CONTAINER (window), "check-resize", G_CALLBACK (ProfileControl::resize_drawing), this);
+                //        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
+                g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
+               	gtk_widget_show_all (GTK_WIDGET (window));
+        }
         
-	gtk_widget_show_all (GTK_WIDGET (window));
+        resize_cb_handler_id = g_signal_connect (GTK_CONTAINER (window), "check-resize", G_CALLBACK (ProfileControl::resize_drawing), this);
+        
+	gtk_widget_show_all (GTK_WIDGET (pc_grid));
 }
 
 gboolean ProfileControl::resize_drawing (GtkWidget *widget, ProfileControl *pc){
         gint w,h;
         gtk_window_get_size (GTK_WINDOW (pc->window), &w, &h);
-        //g_print ("Profile Window Resize: %d, %d\n", w,h);
 
-        // correct size down to canvas area available
-        w -= pc->bbarwidth;
-        h -= pc->statusheight;
-        //g_print ("Profile Window Corrected: %d, %d\n", w,h);
-        
         // invert: gtk_widget_set_size_request (canvas, (int)(papixel*(aspect+3*border)), (gint)(papixel*(1.+border))+statusheight);
         // w=papixel*(aspect+3*border)       -> papixel = w/(aspect+3*border)
         // h=papixel*(1.+border)+statusheight
 
-        if ((pc->window_w != w || pc->window_h != h) && w>10 && h>10 && w<4000 && h<2000){
+        if (pc->window_w != w || pc->window_h != h || pc->w_pc_nrows != pc->pc_nrows || pc->w_pc_ncolumns != pc->pc_ncolumns){
                 pc->window_w = w, pc->window_h = h;
+                pc->w_pc_nrows = pc->pc_nrows,  pc->w_pc_ncolumns = pc->pc_ncolumns;
                 if (pc->ref_count > 0){
-                        double ap = (double)(w*(1.-3.*pc->border))/(double)(h*(1.-pc->border));
-                        //g_print ("Profile Drawing Resize: %d, %d, ap=%g\n", w,h, ap);
-                        pc->papixel = (int)(w / (ap+3*pc->border));
+                        double ap;
+                        if (!pc->pc_in_window){
+                                // correct size down to canvas area available
+                                w -= pc->bbarwidth;
+                                h -= pc->statusheight;
+                                //g_print ("Profile Window Corrected: %d, %d\n", w,h);
+                                ap = (double)(w*(1.-3.*pc->border))/(double)(h*(1.-pc->border));
+                                //g_print ("Profile Drawing Resize: %d, %d, ap=%g\n", w,h, ap);
+                                pc->papixel = (int)(w / (ap+3*pc->border));
+                        } else {
+                                w /= pc->pc_ncolumns;
+                                h /= pc->pc_nrows;
+                                if (! (pc->mode & PROFILE_MODE_HEADER))
+                                        pc->mode |= PROFILE_MODE_HEADER;
+                                ap = (double)(w)/(double)(h);
+                                pc->papixel = (int)(w/ap);
+                        }
                         pc->SetSize (ap);
-                        pc->UpdateArea (); // new 20170116
+                        pc->UpdateArea ();
                 }
         }
         return FALSE;
@@ -929,7 +1042,10 @@ gboolean ProfileControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, P
                         pc->saxislabel->draw (cr);
                 if (pc->titlelabel)
                         pc->titlelabel->draw (cr);
+                if (pc->infotext)
+                        pc->infotext->draw (cr);
         }
+
         c_item = &pc->Xtics[0];   
         while (*c_item) (*c_item++)->draw (cr);
         c_item_t = &pc->Xlabels[0]; 
@@ -1052,7 +1168,16 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
                         break;
                 case 3: // do popup
                         // g_print ("RM BUTTON_PRESS (do popup) image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
-                        MENU_AT_POINTER (GTK_MENU (pc->p_popup_menu), event);
+                        // gtk_menu_popup_at_pointer (Menu, Event)
+
+                        if (pc->pc_in_window){
+                                g_action_map_add_action_entries (G_ACTION_MAP (pc->app_window),
+                                                                 win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
+                                                                 pc);
+                                // MENU_AT_POINTER (GTK_MENU (pc->p_popup_menu), event); // no actions bound?? FIX ME!
+                        } else {
+                                MENU_AT_POINTER (GTK_MENU (pc->p_popup_menu), event);
+                        }
                         break;
 		}
 		break;
@@ -1078,6 +1203,12 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
                         }
                         dragging=FALSE;
 			break;
+                case 3:
+                        if (pc->pc_in_window){
+                                for (guint i=0; i<G_N_ELEMENTS (win_profile_popup_entries); ++i)
+                                        g_action_map_remove_action (G_ACTION_MAP (pc->app_window), win_profile_popup_entries[i].name);
+                        }
+                        break;
 		}
 		break;
 	default: break;
@@ -1412,6 +1543,7 @@ void ProfileControl::updateFrame ()
                 xaxislabel->set_stroke_rgba (0.,0.,1.,0.5);
                 xaxislabel->set_font_face_size ("Georgia", get_lw1 (12.)); //  "font", xsmres.ProfileLabFont,
                 xaxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
+                font_size_10 = get_lw1 (10.); // set reference
         } else  
 		xaxislabel->set_position (cxwidth/2., cywidth+border);
 
@@ -1421,7 +1553,7 @@ void ProfileControl::updateFrame ()
                 yaxislabel->set_font_face_size ("Georgia", get_lw1 (12.)); //  "font", xsmres.ProfileLabFont,
                 yaxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
         } else 
-                yaxislabel->set_position (-2.*border, cywidth/2.);
+                yaxislabel->set_position (-2.5*border, cywidth/2.);
 
 #if 1
 	if(!saxislabel){
@@ -1443,11 +1575,28 @@ void ProfileControl::updateFrame ()
                 if (title)
                         titlelabel->set_text (title);
         }
+
+	if(!infotext){
+		infotext = new cairo_item_text ( cxwidth, -0.4*border, "dec info");
+                infotext->set_stroke_rgba (0.1,0.1,0.1,0.8);
+                infotext->set_font_face_size ("Unutu", get_lw1 (10.));
+                infotext->set_anchor (CAIRO_ANCHOR_E);
+        } else {
+		infotext->set_position ( cxwidth, -0.4*border);
+                if (last_pe){
+                        gint d,n;
+                        last_pe->get_decimation (d,n);
+                        gchar *info = g_strdup_printf ("dec=%d:%d",d,n);
+                        infotext->set_text (info);
+                        g_free (info);
+                }
+        }
         
         frame->queue_update (canvas);
         xaxislabel->queue_update (canvas);
         yaxislabel->queue_update (canvas);
         titlelabel->queue_update (canvas);
+        infotext->queue_update (canvas);
 }
 
 #define TIC_TOP    1
@@ -1539,8 +1688,10 @@ void ProfileControl::addTic(cairo_item **tic, cairo_item_text **lab,
                 else
                         (*lab)->set_text (tx, ty, txt);
                 (*lab)->set_stroke_rgba (0.,0.,0.,1.);
-                (*lab)->set_font_face_size ("Unutu", get_lw1 (10.)); // "font", xsmres.ProfileTicFont,
-                // (*lab)->set_font_face_size ("Georgia", get_lw1 (10.)); // "font", xsmres.ProfileTicFont,
+                (*lab)->set_font_face_size ("Unutu", 1.2*font_size_10); // "font", xsmres.ProfileTicFont,
+                //(*lab)->set_font_face_size ("Unutu", get_lw1 (8.)); // "font", xsmres.ProfileTicFont,
+                //g_message ("set_font_face_size %g for %s", get_lw1 (8.), txt);
+                //(*lab)->set_font_face_size ("Georgia", get_lw1 (10.)); // "font", xsmres.ProfileTicFont,
                 (*lab)->set_anchor (txtanchor); // anchor
                 (*lab)->queue_update (canvas);
 		g_free(txt);
@@ -1804,7 +1955,11 @@ void ProfileControl::showCur(int id, int show){
 	if(show){
 		if(Cursor[id][0]){
 			Cursor[id][0]->show ();
+                        Cursor[id][0]->update_bbox ();
+                        Cursor[id][0]->queue_update (canvas);
 			Cursor[id][1]->show ();
+                        Cursor[id][1]->update_bbox ();
+                        Cursor[id][1]->queue_update (canvas);
 		}else{
                         double x,y;
 			const char *c[]={"blue","green"};

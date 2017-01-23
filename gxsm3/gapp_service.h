@@ -721,13 +721,13 @@ public:
 	Gxsm3appWindow* get_app_window() { return app_window; };
 
 protected:
-	void destroy(){ gtk_widget_destroy (GTK_WIDGET (window)); window=NULL; nodestroy=TRUE; };
+	void destroy(){ if (window) { gtk_widget_destroy (GTK_WIDGET (window)); window=NULL; } nodestroy=TRUE; };
 	int nodestroy;
 
         Gxsm3appWindow *app_window;
 	GtkWindow* window;     // main window for this object
 	GtkWidget* header_bar;
-	GtkWidget* v_grid; // vbox -> v_grid soon
+	GtkWidget* v_grid; // 1st level grid in window
 
 private:
 

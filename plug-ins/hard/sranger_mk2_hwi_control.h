@@ -422,6 +422,7 @@ class DSPControl : public AppBase{
 	static int callback_change_ABORT_option_flags (GtkWidget *widget, DSPControl *dspc);
 	static int callback_change_ABORT_auto_flags (GtkWidget *widget, DSPControl *dspc);
 	static int callback_XJoin (GtkWidget *widget, DSPControl *dspc);
+	static int callback_GrMatWindow (GtkWidget *widget, DSPControl *dspc);
 	static int DSP_multiIV_callback (GtkWidget *widget, DSPControl *dspc);
 
 	static int DSP_cret_callback (GtkWidget *widget, DSPControl *dspc);
@@ -542,7 +543,8 @@ class DSPControl : public AppBase{
 				  ProfileControl* &pc, ProfileControl* &pc_av, int plot_msk,
 				  const gchar *xlab, const gchar *xua, double xmult,
 				  const gchar *ylab, const gchar *yua, double ymult,
-				  int current_i, int si, int nas, gboolean join_same_x=FALSE);
+				  int current_i, int si, int nas, gboolean join_same_x=FALSE,
+                                  gint xmap=0, gint src=0, gint num_active_xmaps=1, gint num_active_sources=1);
 
 	void StartScanPreCheck ();
 	pv_mode write_vector_mode;
@@ -661,7 +663,8 @@ class DSPControl : public AppBase{
 	
 
 	// Graphs Folder -- user settings origin
-	int Source, XSource, XJoin, PSource;
+	int Source, XSource, PSource;
+        gboolean XJoin, GrMatWin;
 	int PlotAvg, PlotSec;
 
 	// Graphs used life -- dep. on GLOCK if copy of user settings or memorized last setting
@@ -871,6 +874,11 @@ class DSPControl : public AppBase{
 
 	GSettings *hwi_settings;
 
+        // ==== VP graphs organizer
+        Gxsm3appWindow *vpg_app_window;
+	GtkWindow* vpg_window;
+        GtkWidget* vpg_grid;
+        
  protected:
         int idle_callback_data_ff;
         guint idle_id;

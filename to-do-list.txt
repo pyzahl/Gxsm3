@@ -36,7 +36,6 @@ current work in progress, evaluating while working with it, optimizing, new idea
 -> DSP Mover:
    ... issue with Ampl and GPIO defaults at startup not taking effect, need to update numbers after restart ?!? Check! -- touch values after start!
    ... Auto folder: defaults (as shown) not applying for GPIO, Ampl, step??? -- need to touch values for update ??? Check! - -touch value after start!
--> VP: ...auto organize Matrix of Plots -- same "x-axis" plot in single window stacked.
 ->     ...auto time unit adjust [ms, s, ..] depending on range
 -> 2D view: in SLS mode: make Red-Line work!    
 -> OSD -- adjust labels to left/right align instead of center
@@ -54,7 +53,8 @@ pending (old) fixed/issues:
 -> Im/-Export Scan plugins: proper file dialog load/save, free filename!! => see WIP as example (fixed) -- check/follow up
 
 pending minor issues/ideas:
-- probe graph, signal button list for source not updating correctly label??
+-- With hardware only: odd glib error message at gxsm3 shutown after gxsm-app destructions completed.
+-- Some times, in particual w hardware -- Object Labels not showing ?!?!? (some thing uninitialized?)
 ---PROBE FOLDERS/CONTROL:
   -recode LM/graphs button?
 - red/blue showline -- fix color order to logic left-right -> new-old (old-new currently)
@@ -65,6 +65,8 @@ pending minor issues/ideas:
 
 -------------------
 DONE:
+-> \/  VP: ...auto organize Matrix of Plots -- same "x-axis" plot in single window stacked. -- done.
+           --> only Pending Popup-Menu hooks or some kind of control means. Also added auto data decimation to profile.
 -> \/ more debug message cleanups -- mostly done
 -> \/ ... Probe/Graphs -- issue with reading/setting/updating default Signal Source Channels -- fixed
 ->\/ View: OSD objects missing -- Completed.

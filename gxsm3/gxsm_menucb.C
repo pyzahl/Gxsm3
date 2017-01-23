@@ -127,6 +127,7 @@ void App::file_quit_callback (GSimpleAction *simple, GVariant *parameter, gpoint
 	if(gapp->question_yes_no (Q_WANTQUIT) == 1){
                 GApplication *application = (GApplication *) user_data;
                 delete gapp;
+                gapp=NULL;
                 g_application_quit (application);
 	}
 }
