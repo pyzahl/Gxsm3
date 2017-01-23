@@ -222,8 +222,8 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	  N_("Max DA Digital Value corresponding to Max Voltage")
 		),
 	GNOME_RES_ENTRY_AUTO_PATH_UNIT
-	( GNOME_RES_FLOAT_W_UNIT,  "Analog/Volt-Max-Out", "10.0", &xsmres.AnalogVMaxOut, UnitV, N_("Inst-SPM"),
-	  N_("Max Voltage of DA [V]")
+	( GNOME_RES_FLOAT_W_UNIT,  "Analog/Volt-Max-Out", "10.4", &xsmres.AnalogVMaxOut, UnitV, N_("Inst-SPM"),
+	  N_("Max Voltage of DA [V] -- note: MK3-A810 new gen., else 10.0V.")
 		),
 /* has to match: V[0..GAIN_POSITIONS-1] !! */
         GNOME_RES_ENTRY_AUTO_PATH
@@ -743,11 +743,11 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	  N_("bool: true=append scan to channel in time dim on load, false: replace")
 		),
 	GNOME_RES_ENTRY_ASK_PATH_OPTION
-	( GNOME_RES_STRING, "User/XYUnit","nm", &xsmres.Unit, UserXYUnitList, N_("User"),
+	( GNOME_RES_STRING, "User/XYUnit","AA", &xsmres.Unit, UserXYUnitList, N_("User"),
 	  N_("XY Unit alias, choose one of: AA (" UTF8_ANGSTROEM "), nm, um (" UTF8_MU "m), mm, BZ, sec, V, 1")
 		),
 	GNOME_RES_ENTRY_ASK_PATH
-	( GNOME_RES_INT, "User/HiLoDelta", "4", &xsmres.HiLoDelta, N_("User"), 
+	( GNOME_RES_INT, "User/HiLoDelta", "2", &xsmres.HiLoDelta, N_("User"), 
 	  N_("Gridsize used by Autodisp, e.g: 1: all Pixels are examined")
 		),
 
@@ -850,37 +850,66 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	GNOME_RES_ENTRY_ASK_PATH
 	( GNOME_RES_STRING, "User/2d-gricmdfile4", PACKAGE_PROFILEPLOT_DIR G_DIR_SEPARATOR_S "gxsmplot2d-4.gri", &xsmres.gricmd2d[3], N_("User"), 
 	  N_("Path/name of your 2d gri cmd file #4")
-		),
+          ),
 
 	GNOME_RES_ENTRY_SEPARATOR (N_("User"), NULL),
 
+	GNOME_RES_ENTRY_COLORSEL
+	( "User/ProfileFrameColor", "Profile Frame Color", "0.0 0.0 0.0 1.0", 
+	  &xsmres.ProfileFrameColor, N_("User"),
+	  N_("Profile Graph Color for canvas frame."), NULL
+		),
+	GNOME_RES_ENTRY_COLORSEL
+	( "User/ProfileCanvasColor", "Profile Canvas Color", "1.0 1.0 1.0 1.0", 
+	  &xsmres.ProfileCanvasColor, N_("User"),
+	  N_("Profile Graph Color for canvas."), NULL
+          ),
+
 	GNOME_RES_ENTRY_FONTSEL
-	( "User/ProfileTicFont", "Profile Ticmarks Font", "Arial 8", 
+	( "User/ProfileTicFont", "Profile Ticmarks Font", "Unutu 10", 
 	  &xsmres.ProfileTicFont, N_("User"), 
-	  N_("Pic a font used for tickmarks of the profile view."), 
+	  N_("Profile Graph Font for tickmarks."), 
 	  NULL
-		),
+          ),
+	GNOME_RES_ENTRY_COLORSEL
+	( "User/ProfileTicColor", "Profile Ticmark Color", "0.0 0.0 0.0 1.0", 
+	  &xsmres.ProfileTicColor, N_("User"),
+	  N_("Profile Graph Color for ticmarks."), NULL
+          ),
+	GNOME_RES_ENTRY_COLORSEL
+	( "User/ProfileGridColor", "ProfileGridColor", "0.7 0.7 0.7 0.5", 
+	  &xsmres.ProfileGridColor, N_("User"),
+	  N_("Profile Graph Color for XY grid lines."), NULL
+          ),
+
 	GNOME_RES_ENTRY_FONTSEL
-	( "User/ProfileLabFont", "Profile Label Font", "Arial 10", 
-	  &xsmres.ProfileLabFont, N_("User"), 
-	  N_("Pic a font used for X and Y labels of the profile view."), 
+	( "User/ProfileLabelFont", "Profile Label Font", "Georgia 12", 
+	  &xsmres.ProfileLabelFont, N_("User"), 
+	  N_("Profile Graph Font for X and Y axis labels."), 
 	  NULL
-		),
+          ),
+	GNOME_RES_ENTRY_COLORSEL
+	( "User/ProfileLabelColor", "Profile Label Color", "0.0 0.0 0.0 1.0", 
+	  &xsmres.ProfileLabelColor, N_("User"),
+	  N_("Profile Graph Color for X and Y axis labels"), NULL
+          ),
+
+	GNOME_RES_ENTRY_FONTSEL
+	( "User/ProfileTitleFont", "Profile Title Font", "Georgia 14", 
+	  &xsmres.ProfileTitleFont, N_("User"), 
+	  N_("Profile Graph Font for title."), 
+	  NULL
+          ),
+	GNOME_RES_ENTRY_COLORSEL
+	( "User/ProfileTitleColor", "Profile Title Color", "1.0 0.0 0.0 1.0", 
+	  &xsmres.ProfileTitleColor, N_("User"),
+	  N_("Profile Graph Color for title."), NULL
+          ),
+
 	GNOME_RES_ENTRY_AUTO_PATH
 	( GNOME_RES_INT, "User/ProfileLineWidth", "1", &xsmres.ProfileLineWidth, N_("User"), 
 	  N_("Line width used for profiles (pixels)")
 	  ),
-
-	GNOME_RES_ENTRY_AUTO_PATH_OPTION
-	( GNOME_RES_BOOL, "User/ProfileAntialiasCanvas", "true", &xsmres.ProfileAntialiasCanvas, TrueFalseList, N_("User"),
-	  N_("Enable Antialas Mode in Canvas View for Profile.\nIn unsure, set to false if any performance issues with older machines")
-		), 
-
-	GNOME_RES_ENTRY_COLORSEL
-	( "User/ProfileGridColor", "ProfileGridColor", "0.7 0.7 0.7 0.5", 
-	  &xsmres.ProfileGridColor, N_("User"),
-	  N_("Profile XY Grid Color [red, green, blue, alpha]"), NULL
-		),
 
 	GNOME_RES_ENTRY_AUTO_PATH
 	( GNOME_RES_INT, "User/ProfileOrgMode", "0", &xsmres.LineProfileOrgMode, N_("User"), 
@@ -890,12 +919,12 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("User"), NULL),
 
 	GNOME_RES_ENTRY_AUTO_PATH
-	( GNOME_RES_STRING, "User/RedLineHistoryColors", "red,salmon,LightSalmon,bisque3,bisque2", &xsmres.RedLineHistoryColors, N_("User"), 
-	  N_("Commata separated list of xcolor names like: \"red,tomato,salmon,LightSalmon,bisque3,bisque2,bisque1\" ")
+	( GNOME_RES_STRING, "User/RedLineHistoryColors", "LightSalmon,salmon,red", &xsmres.RedLineHistoryColors, N_("User"), 
+	  N_("Commata separated list of xcolor names like: \"LightSalmon,salmon,red\" ")
 	  ),
 	GNOME_RES_ENTRY_AUTO_PATH
-	( GNOME_RES_STRING, "User/BlueLineHistoryColors", "blue,purple,black", &xsmres.BlueLineHistoryColors, N_("User"), 
-	  N_("Commata separated list of xcolor names like: \"blue,purple,black\" ")
+	( GNOME_RES_STRING, "User/BlueLineHistoryColors", "black,purple,blue", &xsmres.BlueLineHistoryColors, N_("User"), 
+	  N_("Commata separated list of xcolor names like: \"black,purple,blue\" ")
 	  ),
 	GNOME_RES_ENTRY_AUTO_PATH
 	( GNOME_RES_INT, "User/RedLineWidth", "1", &xsmres.RedLineWidth, N_("User"), 
@@ -989,11 +1018,6 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	  &xsmres.OSDFont, N_("GUI"),
 	  N_("Select OSD text font"), NULL
 		),
-
-	GNOME_RES_ENTRY_AUTO_PATH_OPTION
-	( GNOME_RES_BOOL, "GUI/AntialiasCanvas", "true", &xsmres.antialiascanvas, TrueFalseList, N_("GUI"),
-	  N_("Enable Antialas Mode in Canvas View, transparency etc.")
-		), 
 
 	GNOME_RES_ENTRY_LAST
 };

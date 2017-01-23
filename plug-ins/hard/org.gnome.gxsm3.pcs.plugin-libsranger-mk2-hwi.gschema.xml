@@ -950,9 +950,9 @@
     </key>
 
     <key name="dsp-ax-v-end" type="d">
-      <default>100</default>
+      <default>1</default>
       <summary>PCS Remote-ID: 'dsp-AX-V-End', Default/U:    1 V     </summary>
-      <description>pcs0000, PCS Remote-ID: 'dsp-AX-V-End', Default/U:    100 V    , Adjustment PCS Name: 'dsp-AX-V-End' </description>
+      <description>pcs0000, PCS Remote-ID: 'dsp-AX-V-End', Default/U:    1 V    , Adjustment PCS Name: 'dsp-AX-V-End' </description>
     </key>
 
     <key name="dsp-ax-points" type="d">

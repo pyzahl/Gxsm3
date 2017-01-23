@@ -3,8 +3,9 @@ AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
 
 lib_LTLIBRARIES = \
 	libspm_scancontrol.la \
-	libmultidim_movie_control.la \
-	libNanoPlott.la
+	libmultidim_movie_control.la
+
+#	libNanoPlott.la
 
 #	libnano_manipulator.la \
 #	librhk_scancontrol.la \

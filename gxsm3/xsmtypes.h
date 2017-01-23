@@ -157,11 +157,16 @@ typedef struct{
 	gchar gricmd1d[GRIMAX][PATHSIZE];
 	gchar gricmd2d[GRIMAX][PATHSIZE];
 	gchar XSM_Version[STRSIZE];
+	float ProfileFrameColor[4];
+	float ProfileCanvasColor[4];
 	gchar ProfileTicFont[STRSIZE];
-	gchar ProfileLabFont[STRSIZE];
-	gint  ProfileLineWidth;
-	gint  ProfileAntialiasCanvas;
+	float ProfileTicColor[4];
 	float ProfileGridColor[4];
+	gchar ProfileLabelFont[STRSIZE];
+	float ProfileLabelColor[4];
+	gchar ProfileTitleFont[STRSIZE];
+	float ProfileTitleColor[4];
+	gint  ProfileLineWidth;
 	gchar AutosaveUnit[12]; 	// storing Autosaveunit = percent, seconds, lines
 	gchar AutosaveOverwritemode[8];
 	gint  LineProfileOrgMode;
@@ -169,7 +174,6 @@ typedef struct{
 	gint  load_append_in_time;
 	gint  datnullok;
 	gint  menutooltips;
-	gint  antialiascanvas;
 	gint  disableplugins;
 	gint  force_config;
 	gint  AutosaveValue;		//storing AutosaveValue for repetition of autosave

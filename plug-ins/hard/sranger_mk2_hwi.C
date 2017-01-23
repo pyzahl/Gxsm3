@@ -1526,7 +1526,7 @@ Special features and behaviors to be documented here!
 #define THIS_HWI_PREFIX      "SR-MK2/3_HwI"
 
 extern int debug_level;
-extern int force_gconf_defaults;
+extern int force_gxsm_defaults;
 
 
 // Plugin Prototypes
@@ -1768,7 +1768,7 @@ static void sranger_mk2_hwi_query(void)
 
 //      Setup Control Windows
 // ==================================================
-	DSPControlContainerClass = new DSPControlContainer ( force_gconf_defaults || debug_level > 10 ? 1:0, debug_level);
+	DSPControlContainerClass = new DSPControlContainer ( force_gxsm_defaults || debug_level > 10 ? 1:0, debug_level);
 	DSPControlContainerClass->realize ();
 
 	sranger_mk2_hwi_pi.status = g_strconcat(N_("Plugin query has attached "),

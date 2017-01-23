@@ -52,38 +52,4 @@ class XsmRescourceManager{
 	gchar *GetStr(const gchar *name, const gchar *defaultv=NULL, gint i=-1)  { return g_strdup (defaultv); };
 };
 
-#if 0
-/* OBSOLETE */
-
-/* GSETTINGS BASED */
-
-/* Generalize Rescoure Management 
- * Prefix allows to save different Value Sets by name
- */
-class XsmRescourceManager{
- public:
-	XsmRescourceManager(const gchar *prefix = NULL, const gchar *group = NULL);
-	~XsmRescourceManager();
-
-	void SetGroup(const gchar *group = NULL);
-	gchar* KeyTranslate(const gchar *name, int i=-1);
-
-	void PutBool(const gchar *name, gboolean value, gint i=-1);
-	void Put(const gchar *name, double value, gint i=-1);
-	void Put(const gchar *name, int value, gint i=-1);
-	void Put(const gchar *name, const gchar *value, gint i=-1);
-
-	gboolean GetBool(const gchar *name, gboolean defaultv=FALSE, gint i=-1);
-	int Get(const gchar *name, double *value, const gchar *defaultv=NULL, gint i=-1);
-	int Get(const gchar *name, int *value, const gchar *defaultv=NULL, gint i=-1);
-	int Get(const gchar *name, gchar **value, const gchar *defaultv=NULL, gint i=-1);
-	gchar *GetStr(const gchar *name, const gchar *defaultv=NULL, gint i=-1);
- private:
-        GSettingsSchema *gs_schema_source; // for auto schema management
-	GSettings *Xgsettings;
-	gchar *Prefix;
-	gchar *Group;
-};
-#endif
-
 #endif /* __GXSM_CONF_H */
