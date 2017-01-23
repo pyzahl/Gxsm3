@@ -25,6 +25,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <stdlib.h>
+
 #include "gtk/gtk.h"
 #include <pango/pangocairo.h>
 #include "cairo_item.h"
@@ -207,4 +209,32 @@ void cairo_item_text::draw (cairo_t* cr, double angle, gboolean tr) {
                 if (layout)
                         g_object_unref (layout);
         }
+}
+
+void cairo_item_text::set_font_face_size_from_string (const gchar *face_size, double scale){
+        gchar **face_items = g_strsplit_set (face_size," ", 12);
+        gint i;
+        for (i=0; face_items[i]; ++i);
+        if (i<2) return;
+        --i;
+        double size = atof (face_items[i]);
+        gchar *p;
+        gchar *face= g_strdup("");
+        for (int k=0; k<i; ++k){
+                p=face;
+                if (g_strrstr (face_items[k], "Regular")) break;
+                if (g_strrstr (face_items[k], "Bold")) break;
+                if (g_strrstr (face_items[k], "Italic")) break;
+                if (g_strrstr (face_items[k], "Caps")) break;
+                if (g_strrstr (face_items[k], "Cond")) break;
+                if (g_strrstr (face_items[k], "Medium")) break;
+                if (g_strrstr (face_items[k], "Oblique")) break;
+                if (g_strrstr (face_items[k], "Condensed")) break;
+                face = g_strconcat (face, face_items[k], " ", NULL);
+                g_free(p);
+        }
+        // g_message ("set_font_face_size_from_string %s => face=%s s=%g", face_size, face, size);
+        set_font_face_size (face, size * scale);
+        g_free (face);
+        g_strfreev (face_items);
 }

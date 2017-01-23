@@ -656,7 +656,7 @@ void DSPControl::get_tab_settings (const gchar *tab_key, guint64 &option_flags, 
         
         GVariant *value = g_variant_dict_lookup_value (dict, tab_key, ((const GVariantType *) "at")); // array uint64
         if (!value){
-                PI_DEBUG_GPX (dbg_level, "ERROR -- Note: only at FIRST START OK: DSPControl::get_tab_settings -- can't get find array 'at' data for key '%s' in 'probe-tab-options' dictionary.\n Storing default now.", tab_key);
+                g_warning ("WARNING (Normal at first start) -- Note: only at FIRST START: Building Settings. DSPControl::get_tab_settings:\n --> can't get find array 'at' data for key '%s' in 'probe-tab-options' dictionary.\n Storing default now.", tab_key);
 
                 if (dict)
                         g_variant_dict_unref (dict);
@@ -1191,7 +1191,7 @@ DSPControl::DSPControl () {
 	if (DSPPACClass) { // MK3
                 sranger_common_hwi->read_dsp_signals (); // read DSP signals or set up empty list depending on actual HW
 
-                // override gconf of MIX0..3 INPUT config by actual configured DSP signal:
+                // override configuration of MIX0..3 INPUT config by actual configured DSP signal:
                 mix_fbsource[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER0_INPUT_ID);
                 mix_fbsource[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER1_INPUT_ID);
                 mix_fbsource[2] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER2_INPUT_ID);

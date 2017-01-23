@@ -235,10 +235,10 @@
       </description>
     </key>
     <key name="volt-max-out" type="d">
-      <default>10.0</default>
-      <summary>Unit: [V] Max Voltage of DA [V]</summary>
+      <default>10.4</default>
+      <summary>Unit: [V] Max Voltage of DA [V] -- note: MK3-A810 new gen., else 10.0V.</summary>
       <description>
-        Max Voltage of DA [V]
+        Max Voltage of DA [V] -- note: MK3-A810 new gen., else 10.0V.
       </description>
     </key>
     <key name="v1" type="d">
@@ -1463,14 +1463,14 @@ choose from:
         <choice value='V'/>
         <choice value='1'/>
       </choices>
-      <default>'nm'</default>
+      <default>'AA'</default>
       <summary>XY Unit alias, choose one of: AA (Å), nm, um (µm), mm, BZ, sec, V, 1</summary>
       <description>
         XY Unit alias, choose one of: AA (Å), nm, um (µm), mm, BZ, sec, V, 1
       </description>
     </key>
     <key name="hilodelta" type="x">
-      <default>4</default>
+      <default>2</default>
       <summary>Gridsize used by Autodisp, e.g: 1: all Pixels are examined</summary>
       <description>
         Gridsize used by Autodisp, e.g: 1: all Pixels are examined
@@ -1645,20 +1645,70 @@ if zero no waiting for pending events.
         Path/name of your 2d gri cmd file #4
       </description>
     </key>
-    <key name="profileticfont" type="s">
-
-      <default>'Arial 8'</default>
-      <summary>Pic a font used for tickmarks of the profile view.</summary>
+    <key name="profileframecolor" type="ad">
+      <default>[0.0,0.0,0.0,1.0]</default>
+      <summary>Profile Graph Color for canvas frame.</summary>
       <description>
-        Pic a font used for tickmarks of the profile view.
+        Profile Graph Color for canvas frame.
       </description>
     </key>
-    <key name="profilelabfont" type="s">
-
-      <default>'Arial 10'</default>
-      <summary>Pic a font used for X and Y labels of the profile view.</summary>
+    <key name="profilecanvascolor" type="ad">
+      <default>[1.0,1.0,1.0,1.0]</default>
+      <summary>Profile Graph Color for canvas.</summary>
       <description>
-        Pic a font used for X and Y labels of the profile view.
+        Profile Graph Color for canvas.
+      </description>
+    </key>
+    <key name="profileticfont" type="s">
+
+      <default>'Unutu 10'</default>
+      <summary>Profile Graph Font for tickmarks.</summary>
+      <description>
+        Profile Graph Font for tickmarks.
+      </description>
+    </key>
+    <key name="profileticcolor" type="ad">
+      <default>[0.0,0.0,0.0,1.0]</default>
+      <summary>Profile Graph Color for ticmarks.</summary>
+      <description>
+        Profile Graph Color for ticmarks.
+      </description>
+    </key>
+    <key name="profilegridcolor" type="ad">
+      <default>[0.7,0.7,0.7,0.5]</default>
+      <summary>Profile Graph Color for XY grid lines.</summary>
+      <description>
+        Profile Graph Color for XY grid lines.
+      </description>
+    </key>
+    <key name="profilelabelfont" type="s">
+
+      <default>'Georgia 12'</default>
+      <summary>Profile Graph Font for X and Y axis labels.</summary>
+      <description>
+        Profile Graph Font for X and Y axis labels.
+      </description>
+    </key>
+    <key name="profilelabelcolor" type="ad">
+      <default>[0.0,0.0,0.0,1.0]</default>
+      <summary>Profile Graph Color for X and Y axis labels</summary>
+      <description>
+        Profile Graph Color for X and Y axis labels
+      </description>
+    </key>
+    <key name="profiletitlefont" type="s">
+
+      <default>'Georgia 14'</default>
+      <summary>Profile Graph Font for title.</summary>
+      <description>
+        Profile Graph Font for title.
+      </description>
+    </key>
+    <key name="profiletitlecolor" type="ad">
+      <default>[1.0,0.0,0.0,1.0]</default>
+      <summary>Profile Graph Color for title.</summary>
+      <description>
+        Profile Graph Color for title.
       </description>
     </key>
     <key name="profilelinewidth" type="x">
@@ -1666,22 +1716,6 @@ if zero no waiting for pending events.
       <summary>Line width used for profiles (pixels)</summary>
       <description>
         Line width used for profiles (pixels)
-      </description>
-    </key>
-    <key name="profileantialiascanvas" type="b">
-      <default>true</default>
-      <summary>Enable Antialas Mode in Canvas View for Profile.
-In unsure, set to false if any performance issues with older machines</summary>
-      <description>
-        Enable Antialas Mode in Canvas View for Profile.
-In unsure, set to false if any performance issues with older machines
-      </description>
-    </key>
-    <key name="profilegridcolor" type="ad">
-      <default>[0.7,0.7,0.7,0.5]</default>
-      <summary>Profile XY Grid Color [red, green, blue, alpha]</summary>
-      <description>
-        Profile XY Grid Color [red, green, blue, alpha]
       </description>
     </key>
     <key name="profileorgmode" type="x">
@@ -1693,18 +1727,18 @@ In unsure, set to false if any performance issues with older machines
     </key>
     <key name="redlinehistorycolors" type="s">
 
-      <default>'red,salmon,LightSalmon,bisque3,bisque2'</default>
-      <summary>Commata separated list of xcolor names like: "red,tomato,salmon,LightSalmon,bisque3,bisque2,bisque1" </summary>
+      <default>'LightSalmon,salmon,red'</default>
+      <summary>Commata separated list of xcolor names like: "LightSalmon,salmon,red" </summary>
       <description>
-        Commata separated list of xcolor names like: "red,tomato,salmon,LightSalmon,bisque3,bisque2,bisque1" 
+        Commata separated list of xcolor names like: "LightSalmon,salmon,red" 
       </description>
     </key>
     <key name="bluelinehistorycolors" type="s">
 
-      <default>'blue,purple,black'</default>
-      <summary>Commata separated list of xcolor names like: "blue,purple,black" </summary>
+      <default>'black,purple,blue'</default>
+      <summary>Commata separated list of xcolor names like: "black,purple,blue" </summary>
       <description>
-        Commata separated list of xcolor names like: "blue,purple,black" 
+        Commata separated list of xcolor names like: "black,purple,blue" 
       </description>
     </key>
     <key name="redlinewidth" type="x">
@@ -1826,13 +1860,6 @@ In unsure, set to false if any performance issues with older machines
       <summary>Select OSD text font</summary>
       <description>
         Select OSD text font
-      </description>
-    </key>
-    <key name="antialiascanvas" type="b">
-      <default>true</default>
-      <summary>Enable Antialas Mode in Canvas View, transparency etc.</summary>
-      <description>
-        Enable Antialas Mode in Canvas View, transparency etc.
       </description>
     </key>
   </schema>

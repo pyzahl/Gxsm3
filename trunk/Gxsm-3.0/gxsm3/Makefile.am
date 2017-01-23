@@ -11,7 +11,7 @@ gxsm_window.C gxsm_window.h \
 plugin_ctrl.C plugin.h plugin_ctrl.h \
 \
 cairo_item.C cairo_item.h \
-gxsm_conf.C gxsm_conf.h \
+gxsm_conf.h \
 gapp_service.C gapp_service.h \
 gxsm_app.C gxsm_app.h \
 xxsmlogo.xpm \

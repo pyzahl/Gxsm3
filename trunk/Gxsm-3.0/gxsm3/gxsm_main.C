@@ -55,7 +55,7 @@ int restarted = 0;
 int debug_level = 0;
 int logging_level = 1;
 int pi_debug_level = 0;
-int force_gconf_defaults = 0;
+int force_gxsm_defaults = 0;
 int no_glx_init = 0;
 int generate_preferences_gschema = 0;
 int generate_gl_preferences_gschema = 0;
@@ -96,8 +96,8 @@ static const GOptionEntry gxsm_options[] =
           N_("Force to reconfigure Gxsm on startup"), NULL
         },
 
-	{ "force-rebuild-configuration-defaults", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &force_gconf_defaults,
-          N_("Forces to restore all GXSM gconf defaults on startup"), NULL
+	{ "force-rebuild-configuration-defaults", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &force_gxsm_defaults,
+          N_("Forces to restore all GXSM values to build in defaults at startup"), NULL
         },
 
 	{ "write-gxsm-preferences-gschema", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &generate_preferences_gschema,
@@ -634,7 +634,7 @@ int main (int argc, char **argv)
                         PI_DEBUG_GP (DBG_L1, "=> xsmres.DSPDevCmd  .... = %s\n", xsmres.DSPDevCmd);
                         PI_DEBUG_GP (DBG_L1, "=> xsmres.UnitCmd ....... = %s\n", xsmres.UnitCmd);
                         PI_DEBUG_GP (DBG_L1, "=> xsmres.force_config .. = %d\n", xsmres.force_config);
-                        PI_DEBUG_GP (DBG_L1, "=> force_gconf_defaults . = %d   (GSettings now)\n", force_gconf_defaults);
+                        PI_DEBUG_GP (DBG_L1, "=> force gxsm defaults .. = %d\n", force_gxsm_defaults);
                         PI_DEBUG_GP (DBG_L1, "=> debug_level .......... = %d\n", debug_level);
                         PI_DEBUG_GP (DBG_L1, "=> pi_debug_level ....... = %d\n", pi_debug_level);
                         PI_DEBUG_GP (DBG_L1, "=> logging_level ........ = %d\n", logging_level);

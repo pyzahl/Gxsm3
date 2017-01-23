@@ -2880,6 +2880,8 @@ void ViewControl::view_view_redline_callback (GSimpleAction *action, GVariant *p
 		if(!vc->RedLine){
 			gchar *tmp = g_strdup_printf ("Red Line Ch%d" ,vc->scan->get_channel_id ()+1);
 			vc->RedLine = new ProfileControl(tmp);
+                        vc->RedLine->SetMode (PROFILE_MODE_XGRID | PROFILE_MODE_YGRID | PROFILE_MODE_IMPULS | PROFILE_MODE_STICS);
+
 			g_free (tmp);
 		}
 	}else{

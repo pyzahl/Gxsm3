@@ -1532,16 +1532,16 @@ void ProfileControl::updateFrame ()
 {
 	if(!frame){
 		frame = new cairo_item_rectangle (0., 0., cxwidth, cywidth);
-                frame->set_fill_rgba ("white");
-                frame->set_stroke_rgba ("black");
-                frame->set_line_width (lw_1*1.5);
+                frame->set_fill_rgba (xsmres.ProfileCanvasColor);
+                frame->set_stroke_rgba (xsmres.ProfileFrameColor);
+                frame->set_line_width (lw_1*1.5*xsmres.ProfileLineWidth);
         } else 
 		frame->set_xy (1, cxwidth, cywidth);
 
 	if(!xaxislabel){
 		xaxislabel = new cairo_item_text ( cxwidth/2., cywidth+border, "X-axis");
-                xaxislabel->set_stroke_rgba (0.,0.,1.,0.5);
-                xaxislabel->set_font_face_size ("Georgia", get_lw1 (12.)); //  "font", xsmres.ProfileLabFont,
+                xaxislabel->set_stroke_rgba (xsmres.ProfileLabelColor);
+                xaxislabel->set_font_face_size_from_string (xsmres.ProfileLabelFont, get_lw1 ());
                 xaxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
                 font_size_10 = get_lw1 (10.); // set reference
         } else  
@@ -1549,8 +1549,10 @@ void ProfileControl::updateFrame ()
 
 	if(!yaxislabel){
 		yaxislabel = new cairo_item_text ( -2.*border, cywidth/2., "Y-axis");
-                yaxislabel->set_stroke_rgba (0.,0.,1.,0.5);
-                yaxislabel->set_font_face_size ("Georgia", get_lw1 (12.)); //  "font", xsmres.ProfileLabFont,
+                yaxislabel->set_stroke_rgba (xsmres.ProfileLabelColor);
+                yaxislabel->set_font_face_size_from_string (xsmres.ProfileLabelFont, get_lw1 ());
+                //yaxislabel->set_stroke_rgba (0.,0.,1.,0.5);
+                //yaxislabel->set_font_face_size ("Georgia", get_lw1 (12.)); //  "font", xsmres.ProfileLabFont,
                 yaxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
         } else 
                 yaxislabel->set_position (-2.5*border, cywidth/2.);
@@ -1558,8 +1560,8 @@ void ProfileControl::updateFrame ()
 #if 1
 	if(!saxislabel){
 		saxislabel = new cairo_item_text ( cxwidth, -border, "Series");
-                saxislabel->set_stroke_rgba (0.,0.,1.,1.);
-                saxislabel->set_font_face_size ("Georgia", get_lw1 (12.)); //  "font", xsmres.ProfileLabFont,
+                saxislabel->set_stroke_rgba (xsmres.ProfileLabelColor);
+                saxislabel->set_font_face_size_from_string (xsmres.ProfileLabelFont, get_lw1 ());
                 saxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
         } else 
                 saxislabel->set_position ( cxwidth+border, -border);
@@ -1567,8 +1569,10 @@ void ProfileControl::updateFrame ()
 #endif
 	if(!titlelabel){
 		titlelabel = new cairo_item_text ( cxwidth/2., -border, "Title");
-                titlelabel->set_stroke_rgba (0.,0.,1.,1.);
-                titlelabel->set_font_face_size ("Georgia", get_lw1 (14.)); //  "font", xsmres.ProfileLabFont,
+                titlelabel->set_stroke_rgba (xsmres.ProfileTitleColor);
+                titlelabel->set_font_face_size_from_string (xsmres.ProfileTitleFont, get_lw1 ());
+                //titlelabel->set_stroke_rgba (0.,0.,1.,1.);
+                //titlelabel->set_font_face_size ("Georgia", get_lw1 (14.)); //  "font", xsmres.ProfileLabFont,
                 titlelabel->set_anchor (CAIRO_ANCHOR_CENTER);
         } else {
 		titlelabel->set_position (cxwidth/2., -border);
@@ -1687,11 +1691,10 @@ void ProfileControl::addTic(cairo_item **tic, cairo_item_text **lab,
 			*lab = new cairo_item_text (tx, ty, txt);
                 else
                         (*lab)->set_text (tx, ty, txt);
-                (*lab)->set_stroke_rgba (0.,0.,0.,1.);
-                (*lab)->set_font_face_size ("Unutu", 1.2*font_size_10); // "font", xsmres.ProfileTicFont,
-                //(*lab)->set_font_face_size ("Unutu", get_lw1 (8.)); // "font", xsmres.ProfileTicFont,
-                //g_message ("set_font_face_size %g for %s", get_lw1 (8.), txt);
-                //(*lab)->set_font_face_size ("Georgia", get_lw1 (10.)); // "font", xsmres.ProfileTicFont,
+                (*lab)->set_stroke_rgba (xsmres.ProfileTicColor);
+                (*lab)->set_font_face_size_from_string (xsmres.ProfileTicFont, get_lw1 ());
+                //(*lab)->set_stroke_rgba (0.,0.,0.,1.);
+                //(*lab)->set_font_face_size ("Unutu", 1.2*font_size_10); // "font", xsmres.ProfileTicFont,
                 (*lab)->set_anchor (txtanchor); // anchor
                 (*lab)->queue_update (canvas);
 		g_free(txt);

@@ -50,8 +50,8 @@ extern int debug_level;
 # define DEBUG_VERBOSE(format, args...) ;
 #endif
 
-/* restore all GXSM buildin gconf defaults */
-extern int force_gconf_defaults;
+/* startup with build in GXSM configuration defaults */
+extern int force_gxsm_defaults;
 
 #define PREF_CONFDLG_XSIZE   500
 #define PREF_CONFDLG_YSIZE   400
@@ -658,7 +658,7 @@ void gnome_res_read_user_config (GnomeResPreferences *self){
                 case GNOME_RES_BOOL: 
                         if (BE_VERBOSE) g_print ("-BOOL-\n");
 
-                        if (force_gconf_defaults){
+                        if (force_gxsm_defaults){
                                 GVariant *gvar_default = g_variant_new_boolean (!strcasecmp (res->vdefault, "true") || !strcasecmp (res->vdefault, "yes"));
                                 g_settings_set_value (settings, key, gvar_default);
                                 //                                g_variant_unref (gvar_default);
@@ -674,7 +674,7 @@ void gnome_res_read_user_config (GnomeResPreferences *self){
                 case GNOME_RES_STRING: 
                         if (BE_VERBOSE) g_print ("-STRING-\n");
 
-                        if (force_gconf_defaults){
+                        if (force_gxsm_defaults){
                                 GVariant *gvar_default = g_variant_new_string (res->vdefault);
                                 g_settings_set_value (settings, key, gvar_default);
                                 //                                g_variant_unref (gvar_default);
@@ -691,7 +691,7 @@ void gnome_res_read_user_config (GnomeResPreferences *self){
                 case GNOME_RES_INT: 
                         if (BE_VERBOSE) g_print ("-INT-\n");
 
-                        if (force_gconf_defaults){
+                        if (force_gxsm_defaults){
                                 GVariant *gvar_default = g_variant_new_int64 (atol (res->vdefault));
                                 g_settings_set_value (settings, key, gvar_default);
                                 //                                g_variant_unref (gvar_default);
@@ -709,7 +709,7 @@ void gnome_res_read_user_config (GnomeResPreferences *self){
                 case GNOME_RES_FLOAT_W_UNIT: 
                         if (BE_VERBOSE) g_print ("-FLOAT/_W_UNIT-\n");
 
-                        if (force_gconf_defaults){
+                        if (force_gxsm_defaults){
                                 GVariant *gvar_default = g_variant_new_double (atof (res->vdefault));
                                 g_settings_set_value (settings, key, gvar_default);
                                 //                                g_variant_unref (gvar_default);
@@ -726,7 +726,7 @@ void gnome_res_read_user_config (GnomeResPreferences *self){
                 case GNOME_RES_FLOAT_VEC3:
                         if (BE_VERBOSE) g_print ("-FLOAT_VEC3-\n");
 
-                        if (force_gconf_defaults){
+                        if (force_gxsm_defaults){
                                 string_to_vector (res->vdefault, gdvec, 3);
                                 GVariant *gvar_default = g_variant_new_fixed_array (G_VARIANT_TYPE_DOUBLE, (gconstpointer) gdvec, 3, sizeof (gdouble));
                                 g_settings_set_value (settings, key, gvar_default);
@@ -746,7 +746,7 @@ void gnome_res_read_user_config (GnomeResPreferences *self){
                 case GNOME_RES_FLOAT_VEC4:
                         if (BE_VERBOSE) g_print ("-FLOAT_VEC4-\n");
 
-                        if (force_gconf_defaults){
+                        if (force_gxsm_defaults){
                                 string_to_vector (res->vdefault, gdvec, 4);
                                 GVariant *gvar_default = g_variant_new_fixed_array (G_VARIANT_TYPE_DOUBLE, (gconstpointer) gdvec, 4, sizeof (gdouble));
                                 g_settings_set_value (settings, key, gvar_default);
@@ -775,10 +775,10 @@ void gnome_res_read_user_config (GnomeResPreferences *self){
 
         if (BE_VERBOSE) g_print ("Read User Config done.\n");
         // reset now
-        if (force_gconf_defaults == 2)
-                force_gconf_defaults = 1;
+        if (force_gxsm_defaults == 2)
+                force_gxsm_defaults = 1;
         else
-                force_gconf_defaults = 0;
+                force_gxsm_defaults = 0;
 }
 
 /*
