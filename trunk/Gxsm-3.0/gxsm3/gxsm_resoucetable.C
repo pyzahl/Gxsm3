@@ -866,7 +866,7 @@ GnomeResEntryInfoType xsm_res_def[] = {
           ),
 
 	GNOME_RES_ENTRY_FONTSEL
-	( "User/ProfileTicFont", "Profile Ticmarks Font", "Unutu 10", 
+	( "User/ProfileTicFont", "Profile Ticmarks Font", "Unutu 11", 
 	  &xsmres.ProfileTicFont, N_("User"), 
 	  N_("Profile Graph Font for tickmarks."), 
 	  NULL

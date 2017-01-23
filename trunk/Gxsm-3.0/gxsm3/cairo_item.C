@@ -211,11 +211,11 @@ void cairo_item_text::draw (cairo_t* cr, double angle, gboolean tr) {
         }
 }
 
-void cairo_item_text::set_font_face_size_from_string (const gchar *face_size, double scale){
+double cairo_item_text::set_font_face_size_from_string (const gchar *face_size, double scale){
         gchar **face_items = g_strsplit_set (face_size," ", 12);
         gint i;
         for (i=0; face_items[i]; ++i);
-        if (i<2) return;
+        if (i<2) return 10.;
         --i;
         double size = atof (face_items[i]);
         gchar *p;
@@ -237,4 +237,5 @@ void cairo_item_text::set_font_face_size_from_string (const gchar *face_size, do
         set_font_face_size (face, size * scale);
         g_free (face);
         g_strfreev (face_items);
+        return (size * scale);
 }

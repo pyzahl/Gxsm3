@@ -1541,9 +1541,10 @@ void ProfileControl::updateFrame ()
 	if(!xaxislabel){
 		xaxislabel = new cairo_item_text ( cxwidth/2., cywidth+border, "X-axis");
                 xaxislabel->set_stroke_rgba (xsmres.ProfileLabelColor);
+                font_size_10 = xaxislabel->set_font_face_size_from_string (xsmres.ProfileTicFont, get_lw1 ()); // make reference for tics only
+                // font_size_10 = get_lw1 (10.); // set reference
                 xaxislabel->set_font_face_size_from_string (xsmres.ProfileLabelFont, get_lw1 ());
                 xaxislabel->set_anchor (CAIRO_ANCHOR_CENTER);
-                font_size_10 = get_lw1 (10.); // set reference
         } else  
 		xaxislabel->set_position (cxwidth/2., cywidth+border);
 
@@ -1693,8 +1694,7 @@ void ProfileControl::addTic(cairo_item **tic, cairo_item_text **lab,
                         (*lab)->set_text (tx, ty, txt);
                 (*lab)->set_stroke_rgba (xsmres.ProfileTicColor);
                 (*lab)->set_font_face_size_from_string (xsmres.ProfileTicFont, get_lw1 ());
-                //(*lab)->set_stroke_rgba (0.,0.,0.,1.);
-                //(*lab)->set_font_face_size ("Unutu", 1.2*font_size_10); // "font", xsmres.ProfileTicFont,
+                (*lab)->set_font_face_size ("Unutu", font_size_10); // from xsmres.ProfileTicFont, set at initial frame build -- needs to scale now!
                 (*lab)->set_anchor (txtanchor); // anchor
                 (*lab)->queue_update (canvas);
 		g_free(txt);
