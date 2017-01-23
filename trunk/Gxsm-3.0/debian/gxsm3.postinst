@@ -20,8 +20,6 @@ set -e
 
 case "$1" in
     configure)
-	echo "reseting dconf"
-	dconf reset -f /org/gnome/gxsm3/
 	echo "setting up gxsm menu"
 	cd /usr/share/gxsm3/pixmaps
 	xdg-icon-resource install --size 24 --context apps --mode system gxsm-icon_24x24.png gxsm-app	
@@ -47,7 +45,7 @@ case "$1" in
 	xdg-desktop-menu forceupdate
 	value=`gsettings get com.canonical.Unity.Launcher favorites`
 	newvalue=`echo ${value:1} | sed "s/^/['gxsm-gxsm.desktop',/g"`
-	gsettings set com.canonical.Unity.Launcher favorites "$newvalue"
+	dbus-launch gsettings set com.canonical.Unity.Launcher favorites "$newvalue"
 	echo "added gxsm icon to unity toolbar"
 #	gxsmplugindir="/usr/lib/gxsm-plugins"
 #	if [ -d "$gxsmplugindir" ]; then 
