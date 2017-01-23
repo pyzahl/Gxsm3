@@ -19,9 +19,11 @@ set -e
 
 case "$1" in
     remove|upgrade|deconfigure)
+	echo "reseting dconf"
+	dbus-launch dconf reset -f /org/gnome/gxsm3/
 	value=`gsettings get com.canonical.Unity.Launcher favorites`
 	newvalue=`echo $value | sed "s/'gxsm-gxsm.desktop',//g"`
-	gsettings set com.canonical.Unity.Launcher favorites "$newvalue"
+	dbus-launch gsettings set com.canonical.Unity.Launcher favorites "$newvalue"
 	echo "removed gxsm icon to unity toolbar"
 	echo "removing gxsm menu"	
 	cd /usr/share/gxsm3/menu	

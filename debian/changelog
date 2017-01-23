@@ -1,3 +1,17 @@
+gxsm3 (3.41.0-0ubuntu3) xenial; urgency=medium
+
+  * clean up of debian packaging scripts 
+  * - removed gconf default
+  * - started dbus-launch before changing dconf
+
+ -- Thorsten Wagner <stm@users.sf.net>  Mon, 23 Jan 2017 19:10:30 +0100
+
+gxsm3 (3.41.0-0ubuntu2) xenial; urgency=medium
+
+  * intermediated build due to missing autoconf.sh 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Wed, 11 Jan 2017 20:56:22 +0100
+
 gxsm3 (3.41.0-0ubuntu1) xenial; urgency=medium
 
   * including now patch file to downgrade from gtk+3.0 3.22 to 3.20
