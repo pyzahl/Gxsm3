@@ -862,6 +862,9 @@ DSPControl::DSPControl () {
 	gchar *input_signal = NULL;
 
         PI_DEBUG (DBG_L5, "DSPControl::DSPControl ()");
+        vpg_window = NULL;
+        vpg_app_window = NULL;
+        vpg_grid = NULL;
 
 	GUI_ready = FALSE;
         idle_callback_data_fn = NULL;
@@ -1016,7 +1019,8 @@ DSPControl::DSPControl () {
         // Source = 0x3030;
         Source  = g_settings_get_int (hwi_settings, "probe-sources");
         XSource = g_settings_get_int (hwi_settings, "probe-sources-x");
-        XJoin   = g_settings_get_int (hwi_settings, "probe-x-join");
+        XJoin   = g_settings_get_boolean (hwi_settings, "probe-x-join");
+        GrMatWin= g_settings_get_boolean (hwi_settings, "probe-graph-matrix-window");
         PSource = g_settings_get_int (hwi_settings, "probe-p-sources");
         PlotAvg = g_settings_get_int (hwi_settings, "probe-pavg-sources");
         PlotSec = g_settings_get_int (hwi_settings, "probe-psec-sources");
@@ -2804,6 +2808,11 @@ DSPControl::DSPControl () {
                                        GCallback (callback_XJoin), this,
                                        XJoin, 1
                                        );
+	dsp_bp->grid_add_check_button ("Use single window", "Place all probe graphs in single window.",
+                                       1,
+                                       GCallback (callback_GrMatWindow), this,
+                                       GrMatWin, 1
+                                       );
 
         dsp_bp->pop_grid ();
         dsp_bp->new_line ();
@@ -2849,7 +2858,9 @@ static void remove(gpointer entry, gpointer from) {
 }
 
 DSPControl::~DSPControl (){
+        // g_message ("DSPControl::~DSPContro -- store values");
 	store_values ();
+        // g_message ("DSPControl::~DSPContro -- store values done.");
 
 	GUI_ready = FALSE;
 
@@ -2881,14 +2892,19 @@ DSPControl::~DSPControl (){
 	delete SetPtUnit;
 
         delete dsp_bp;
+
+        // g_message ("DSPControl::~DSPContro -- unref data done.");
         
         g_clear_object (&hwi_settings);
+
+        // g_message ("DSPControl::~DSPContro -- clear hwi_settings done.");
 }
 
 void DSPControl::store_values (){
         g_settings_set_int (hwi_settings, "probe-sources", Source);
         g_settings_set_int (hwi_settings, "probe-sources-x", XSource);
-        g_settings_set_int (hwi_settings, "probe-x-join", XJoin);
+        g_settings_set_boolean (hwi_settings, "probe-x-join", XJoin);
+        g_settings_set_boolean (hwi_settings, "probe-graph-matrix-window", GrMatWin);
         g_settings_set_int (hwi_settings, "probe-p-sources", PSource);
         g_settings_set_int (hwi_settings, "probe-pavg-sources", PlotAvg);
         g_settings_set_int (hwi_settings, "probe-psec-sources", PlotSec);
@@ -4985,7 +5001,13 @@ int DSPControl::callback_XJoin (GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
 	dspc->XJoin = (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) ? TRUE : FALSE;
 	dspc->vis_XJoin = dspc->XJoin;
-        g_settings_set_int (dspc->hwi_settings, "probe-x-join", dspc->XJoin);
+        g_settings_set_boolean (dspc->hwi_settings, "probe-x-join", dspc->XJoin);
+}
+
+int DSPControl::callback_GrMatWindow (GtkWidget *widget, DSPControl *dspc){
+        PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
+	dspc->GrMatWin = (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) ? TRUE : FALSE;
+        g_settings_set_boolean (dspc->hwi_settings, "probe-graph-matrix-window", dspc->GrMatWin);
 }
 
 

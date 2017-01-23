@@ -38,6 +38,7 @@ extern float BasicColors[][4];
 int cairo_basic_color_lookup (const gchar *color);
 
 #define UNREF_DELETE_CAIRO_ITEM(ITEM, CANVAS) { if (ITEM){ ITEM->hide (); ITEM->queue_update (CANVAS); delete ITEM; ITEM=NULL; }}
+#define UNREF_DELETE_CAIRO_ITEM_NO_UPDATE(ITEM) { if (ITEM){ delete ITEM; ITEM=NULL; }}
 
 #define CAIRO_BASIC_COLOR(I) BasicColors[(I)<0?0: (I)>9? 9 : I]
 
@@ -232,8 +233,16 @@ protected:
 
 class cairo_item_path : public cairo_item{
 public:
-	cairo_item_path (int nodes) { xy = g_new (cairo_point, nodes); n=nodes; impulse_floor=0.; mark_radius=1.; linemode=0; };
-	cairo_item_path (cairo_item_path *cip) { xy = g_new (cairo_point, n=cip->get_n_nodes());  impulse_floor=0.; mark_radius=1.; linemode=0; };
+	cairo_item_path (int nodes) {
+                xy = g_new (cairo_point, nodes);
+                n=nodes;
+                impulse_floor=0.; mark_radius=1.; linemode=0;
+        };
+	cairo_item_path (cairo_item_path *cip) {
+                n=cip->get_n_nodes();
+                xy = g_new (cairo_point, n);
+                impulse_floor=0.; mark_radius=1.; linemode=0;
+        };
 	virtual ~cairo_item_path () { g_free (xy); };
 	
 	void set_linemode (gint m) { linemode=m; };

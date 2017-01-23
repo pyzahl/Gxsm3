@@ -37,6 +37,9 @@
 #include <time.h>
 #include <iomanip>
 
+#include "gxsm_app.h"
+#include "gxsm_window.h"
+
 #include "glbvars.h"
 #include "app_view.h"
 #include "app_vobj.h"
@@ -249,12 +252,49 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 				      ProfileControl* &pc, ProfileControl* &pc_av, int plot_msk,
 				      const gchar *xlab, const gchar *xua, double xmult,
 				      const gchar *ylab, const gchar *yua, double ymult,
-				      int current_i, int si, int nas, gboolean join_same_x){
+				      int current_i, int si, int nas, gboolean join_same_x,
+                                      gint xmap, gint src, gint num_active_xmaps, gint num_active_sources){
 
 	UnitObj *UXaxis = new UnitObj(xua, " ", "g", xlab);
 	UnitObj *UYaxis = new UnitObj(yua,  " ", "g", ylab);
 	double xmin, xmax, x;
 
+        // force rebuild if view/window arrangement changed?
+        if (pc){
+                if ((GrMatWin && !pc->is_external_window_set ()) || (!GrMatWin && pc->is_external_window_set ())){
+                        delete pc;
+                        pc = NULL;
+                }
+        }
+        
+        if (!GrMatWin && vpg_app_window){
+                // g_message ("PGCV destroy vpg_window");
+                gtk_widget_destroy (GTK_WIDGET (vpg_app_window));
+                vpg_app_window = NULL;
+                vpg_window = NULL;
+                vpg_grid = NULL;
+        }
+        
+        if (GrMatWin && !vpg_window){
+                vpg_app_window =  gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
+                vpg_window = GTK_WINDOW (vpg_app_window);
+                gtk_window_resize (GTK_WINDOW (vpg_window),
+                                   400*num_active_xmaps > 1100? 1100:400*num_active_xmaps,
+                                   200*num_active_sources > 800? 800:200*num_active_sources);
+                vpg_grid = gtk_grid_new ();
+                gtk_window_set_title (GTK_WINDOW (vpg_window), "VPG Graphs");
+                g_object_set_data (G_OBJECT (vpg_window), "v_grid", vpg_grid);
+                gtk_container_add (GTK_CONTAINER (vpg_window), vpg_grid);
+                gtk_widget_show_all (GTK_WIDGET (vpg_window));
+                // g_signal_connect (G_OBJECT (vpg_window), "window-state-event", G_CALLBACK (AppBase::window_state_watch_callback), this);
+                // g_signal_connect (G_OBJECT (vpg_window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
+
+                GtkWidget *statusbar = gtk_statusbar_new ();
+                g_object_set_data (G_OBJECT (vpg_window), "statusbar", statusbar);
+                gtk_grid_attach (GTK_GRID (vpg_grid), statusbar, 1,100, 100,1);
+
+        } 
+        
 	XSM_DEBUG_PG("DBG-M VIS  " << xlab << " : " << ylab);
 
 	XSM_DEBUG_PG ("DSPControl::probedata_visualize -- enter");
@@ -263,6 +303,7 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
                 g_warning ("DSPControl::probedata_visualize called with probedata_x/y=NULL");
                 return;
         }
+
 	// find min and max X limit
 	xmin = xmax = g_array_index (probedata_x, double, 0);
 	for(int i = 1; i < current_i; i++){
@@ -285,10 +326,18 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 		gchar   *title  = g_strdup_printf ("Vector Probe, Channel: %s", ylab);
 		XSM_DEBUG_PG("DBG-M VIS c2  " << title << " xr= " << xmin << " .. " << xmax << " " << ylab);
                 gchar *resid = g_strdelimit (g_strconcat (xlab,ylab,NULL), " ;:()[],./?!@#$%^&*()+-=<>", '_');
+
 		pc = new ProfileControl (title, current_i, 
-					  UXaxis, UYaxis, 
-					  xmin, xmax,
-					  resid);
+                                         UXaxis, UYaxis, 
+                                         xmin, xmax,
+                                         resid,
+                                         GrMatWin ? vpg_app_window : NULL);
+
+                if (GrMatWin){
+                        pc->set_pc_matrix_size (num_active_xmaps, num_active_sources);
+                        gtk_grid_attach (GTK_GRID (vpg_grid), pc->get_pc_grid (), xmap,src, 1,1);
+                }
+                
 		g_free (resid);
 		XSM_DEBUG_PG("DBG-M VIS c3");
 		pc->scan1d->mem2d->Resize (current_i, join_same_x ? nas:1);
@@ -302,7 +351,10 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 	} else {	
 		XSM_DEBUG_PG("DBG-M VIS u1");
 		XSM_DEBUG_PG ("Probing_graph_callback Visualization -- add/update pc" );
-		
+
+                if (GrMatWin)
+                        pc->set_pc_matrix_size (num_active_xmaps, num_active_sources);
+
 		if(!join_same_x || nas < pc->get_scount ()){
 			pc->RemoveScans ();
 			pc->scan1d->mem2d->Resize (current_i, join_same_x ? nas:1);
@@ -511,6 +563,11 @@ int DSPControl::Probing_graph_callback( GtkWidget *widget, DSPControl *dspc, int
 		}
 	}
 
+        int num_active_xmaps = 0;
+	for (int xmap=0; msklookup[xmap]>=0; ++xmap)
+		if (dspc->vis_XSource & msklookup[xmap])
+                        ++num_active_xmaps; 
+
 	int num_active_sources = 0;
 	int source_index;
 	int src0 = -1;
@@ -520,6 +577,9 @@ int DSPControl::Probing_graph_callback( GtkWidget *widget, DSPControl *dspc, int
 				src0 = src;
 			++num_active_sources;
 		}
+
+        // g_message ("PGV %d x %d",num_active_xmaps,num_active_sources);
+        
 
 // on-the-fly visualisation graphs update
 	for (int xmap=0; msklookup[xmap]>=0; ++xmap){
@@ -540,7 +600,8 @@ int DSPControl::Probing_graph_callback( GtkWidget *widget, DSPControl *dspc, int
 						msklookup[src],
 						dspc->vp_label_lookup (xmap), dspc->vp_unit_lookup (xmap), dspc->vp_scale_lookup (xmap),
 						dspc->vp_label_lookup (src), dspc->vp_unit_lookup (src), dspc->vp_scale_lookup (src),
-						dspc->current_probe_data_index, source_index++, num_active_sources, dspc->vis_XJoin);
+						dspc->current_probe_data_index, source_index++, num_active_sources, dspc->vis_XJoin,
+                                                xmap, src, num_active_xmaps, dspc->vis_XJoin ? 1 : num_active_sources);
 					XSM_DEBUG_PG("DBG-Mbb1x");
 				} else { // clean up unused windows...
 					XSM_DEBUG_PG("DBG-Mbb1e");

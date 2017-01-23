@@ -97,11 +97,18 @@
 	probe X source channel encoding (bit coded)
       </description>
     </key>
-   <key name="probe-x-join" type="i">
-      <default>0</default>
+   <key name="probe-x-join" type="b">
+      <default>false</default>
       <summary>x-joing mode</summary>
       <description>
 	x join mode 0x3030 ??
+      </description>
+    </key>
+   <key name="probe-graph-matrix-window" type="b">
+      <default>true</default>
+      <summary>probe-graph-matrix-window mode</summary>
+      <description>
+	use single window to organize all probe graphs
       </description>
     </key>
    <key name="probe-p-sources" type="i">

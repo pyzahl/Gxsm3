@@ -81,6 +81,8 @@ class ProfileElement{
 		        UNREF_DELETE_CAIRO_ITEM (pathitem[i], canvas);
 	};
 
+        void calc_decimation ();
+        void get_decimation (gint &dl, gint &nd) { dl=dec_len; nd=n_dec; };
 	int GetNy(){ return scan->mem2d->GetNy(); };
 	void SetY(int Yy=0){ yy=Yy; };
 	void SetLastY(){ yy=scan->mem2d->GetNy()-1; };
@@ -95,16 +97,16 @@ class ProfileElement{
 
 	void GetCurXYc(double *x, double *y, int i, int id=0){
 		if(pathitem[id])
-			pathitem[id]->get_xy (i, *x, *y);
+			pathitem[id]->get_xy (i/dec_len, *x, *y);
         };
 
 	int GetCurX(double *x, double *y, int id=0){
 		if(pathitem[id]){
 			double xl, xr, ytmp;
 			pathitem[id]->get_xy (  0, xl, ytmp);
-			pathitem[id]->get_xy (n-1, xr, ytmp);
+			pathitem[id]->get_xy (n/dec_len-1, xr, ytmp);
 			int i = (int)(n*(*x-xl)/(xr-xl));
-			pathitem[id]->get_xy (i, *x, *y);
+			pathitem[id]->get_xy (i/dec_len, *x, *y);
 			// search:
 			//      while(*x > pn->coords[2*i] && i > 1) --i;
 			//      while(*x < pn->coords[2*i] && i < n-2) ++i;
@@ -194,8 +196,9 @@ class ProfileElement{
 	double ylocmin, ylocmax;
 	double xlocmin, xlocmax;
  private:
-	int n;
-	int yy;
+	gint n;
+        gint dec_len, n_dec; // decimate for large n
+	gint yy;
 
 	ProfileControl    *pctrl;
 	cairo_item_path   *pathitem[NPI];
@@ -213,11 +216,16 @@ class ProfileControl : public AppBase, public LineProfile1D{
 
  public:
 	ProfileControl (const gchar *titlestring=NULL, int ChNo=-1);
-	ProfileControl (const gchar *titlestring, int n, UnitObj *ux, UnitObj *uy, double xmin=0., double xmax=1., const gchar *resid=NULL);
+	ProfileControl (const gchar *titlestring, int n, UnitObj *ux, UnitObj *uy, double xmin=0., double xmax=1.,
+                        const gchar *resid=NULL, Gxsm3appWindow *in_external_window=NULL);
 	ProfileControl (const gchar *filename, const gchar *resource_id_string);
 	~ProfileControl ();
         virtual void AppWindowInit (const gchar *title);
 
+        GtkWidget *get_pc_grid () { return pc_grid; };
+        void set_pc_matrix_size (gint ncolumns=1, gint nrows=1) { pc_ncolumns=ncolumns; pc_nrows=nrows; };
+        gboolean is_external_window_set () { return pc_in_window != NULL ; };
+        
 	void Init(const gchar *titlestring, int ChNo, const gchar *resid=NULL);
 
 	static void file_open_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
@@ -289,6 +297,8 @@ class ProfileControl : public AppBase, public LineProfile1D{
 
 	// canvas draw
         static gboolean resize_drawing (GtkWidget *widget, ProfileControl *pc);
+        gulong resize_cb_handler_id;
+        
         static gboolean cairo_draw_profile_only_callback (cairo_t *cr, ProfileControl *pc);
 	static gboolean canvas_draw_callback (GtkWidget *widget, cairo_t *cr, ProfileControl *pc);
 
@@ -417,9 +427,12 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	int    chno;
 	int    SklOnly;
 
-        int    window_w, window_h;
+        gint   pc_nrows;
+        gint   pc_ncolumns;
+        int    window_w, window_h, w_pc_nrows, w_pc_ncolumns;
 	int    statusheight;
 	int    bbarwidth;
+        double font_size_10;
 	double border;  // [=0.1] in canvas units (0..1 is drawing area range)
 	double pasize;  // current actual size
 	double cxwidth, cywidth; // => y=pasize, x=pasize*aspect
@@ -453,17 +466,20 @@ class ProfileControl : public AppBase, public LineProfile1D{
 
         GtkWidget *p_popup_menu;
 
+        Gxsm3appWindow *pc_in_window;
+        GtkWidget *pc_grid;
 	GtkWidget *canvas;
 	GtkWidget *scrollarea;
 	GtkWidget *statusbar;
 	GtkWidget *linecounter;
 	gint statusid;
 
+        
 	GSList *ScanList;
 	ProfileElement *last_pe;
 	
 	cairo_item *frame, *background;
-	cairo_item_text *titlelabel, *xaxislabel, *yaxislabel, *saxislabel;
+	cairo_item_text *titlelabel, *xaxislabel, *yaxislabel, *saxislabel, *infotext;
 
 #define PC_XTN (2*Xticn+100)
 #define PC_YTN (2*Xticn+100)

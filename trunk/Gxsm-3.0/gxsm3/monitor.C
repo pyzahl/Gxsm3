@@ -33,7 +33,7 @@
 #include "unit.h"
 #include "xsmdebug.h"
 
-// #define MONITOR_VMEMORY_USAGE
+#define MONITOR_VMEMORY_USAGE
 #ifdef MONITOR_VMEMORY_USAGE
 
 gint parseLine (char* line){
