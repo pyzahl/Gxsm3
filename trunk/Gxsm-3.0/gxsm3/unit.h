@@ -116,8 +116,8 @@ public:
         gchar *psSymbol(){ return pssym; }; /* Symbol for Postscript use */
         gchar *Label(){ return label; }; /* Name/Label for this Unit */
         gchar *Alias(){ return alias; }; /* Units Aliasname */
-        gchar *MakeLongLabel( UNIT_MODES um=UNIT_SM_NORMAL ){ /* free this later !! */
-                return g_strconcat(label, " [", Symbol(um), "]", NULL);
+        virtual gchar *MakeLongLabel( UNIT_MODES um=UNIT_SM_NORMAL ){ /* free this later !! */
+                return g_strconcat(label, " in ", Symbol(um), NULL);
         };
 
         virtual double Usr2Base(double u){ return u; }; /* Usr -> Base */
@@ -160,6 +160,11 @@ public:
                 :UnitObj(s, pss, "g", lab){ fac=1.; mi=6; };
 
         virtual UnitObj* Copy(){ return new UnitAutoMag(*this); };
+
+        virtual gchar *MakeLongLabel( UNIT_MODES um=UNIT_SM_NORMAL ){ /* free this later !! */
+                const gchar  *prefix[]    = { "a",  "f",   "p",   "n", UTF8_MU, "m", " ", "k", "M", "G", "T"  };
+                return g_strconcat(label, " in ",  prefix[mi], Symbol(um), NULL);
+        };
 
         double set_mag_get_base (double v, double bf=0.) {
                 if (bf > 0.){
