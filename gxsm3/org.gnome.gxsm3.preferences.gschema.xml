@@ -1661,7 +1661,7 @@ if zero no waiting for pending events.
     </key>
     <key name="profileticfont" type="s">
 
-      <default>'Unutu 10'</default>
+      <default>'Unutu 11'</default>
       <summary>Profile Graph Font for tickmarks.</summary>
       <description>
         Profile Graph Font for tickmarks.

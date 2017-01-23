@@ -448,7 +448,7 @@ public:
                         g_free (t);
                 t=g_strdup (text); 
         };
-        virtual void set_font_face_size_from_string (const gchar *face_size, double scale=1.);
+        virtual double set_font_face_size_from_string (const gchar *face_size, double scale=1.);
 	virtual void set_font_face_size (const gchar *face, double size, cairo_font_slant_t slant = CAIRO_FONT_SLANT_NORMAL, cairo_font_weight_t weight = CAIRO_FONT_WEIGHT_NORMAL) { 
                 if (font_face)
                         g_free (font_face);
