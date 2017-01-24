@@ -1783,7 +1783,6 @@ void ViewControl::CheckRedLine(){
 	if(RedLine){
 		if (vinfo->sc->RedLineActive)
 			RedLine->NewData_redprofile (vinfo->sc, 'r');
-
 		if (vinfo->sc->BlueLineActive && RedLine){
 			int ch_next = vinfo->sc->get_channel_id ()+1;
 			if (ch_next >= 0 && ch_next < MAX_CHANNELS){

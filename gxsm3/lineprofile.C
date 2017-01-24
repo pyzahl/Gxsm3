@@ -545,7 +545,7 @@ int LineProfile1D::SetData_redprofile(Scan *sc, int redblue){
 	//  XSMDEBUG("LineProfile1D::SetData_redprofile");
 
 	if (sc->Pkt2dScanLine[0].y >= sc->mem2d->GetNy() || sc->Pkt2dScanLine[0].y < 0) {
-	        std::cout << __func__ << " invalid data request" << std::endl;
+	        g_warning ("LineProfile1D::SetData_redprofile invalid data request");
   	        return 0;
 	}
 
@@ -608,23 +608,24 @@ int LineProfile1D::SetData_redprofile(Scan *sc, int redblue){
 	a.x = sc->Pkt2dScanLine[0].x;
 	s->data.s.nx = sc->mem2d->GetNx ();
 	
-        //	gchar trb[2] = {redblue, 0};
+        //        gchar trb[2] = {redblue, 0};
 
 	gint sydir = sc->data.s.ydir;
 	if (sydir > 0){ 
 	        a.y = sc->Pkt2dScanLine[0].y-hist_len;
 		while (a.y < 0){
-		  a.y++;
-		  hist_len--;
+                        a.y++;
+                        hist_len--;
 		}
 
+#if 0
 		if (sc->mem2d->data->Li[sc->Pkt2dScanLine[0].y].IsNew() != 1 || hist_len < 0){
-//		  std::cout << __func__ << trb << " top-dn[" << sydir << "] - not valid new data for line: a.y=" << a.y << ", with histlen=" << hist_len << std::endl;
-		  return 0;
+                        std::cout << __func__ << trb << " top-dn[" << sydir << "] - not valid new data for line: a.y=" << a.y << ", with histlen=" << hist_len << std::endl;
+                        return 0;
 		}
-
+#endif
 		s->data.s.ny = 1 + sc->Pkt2dScanLine[0].y - a.y;
-//		std::cout << __func__ << " " << trb << " top-dn[" << sydir << "] [#" << hist_len << ", Nx=" << s->mem2d->GetNx () << ", Ny=" << s->mem2d->GetNy () << "] s->data.s.ny=" << s->data.s.ny << " a.y=" << a.y << "  with histlen=" << hist_len << std::endl;
+		//std::cout << __func__ << " " << trb << " top-dn[" << sydir << "] [#" << hist_len << ", Nx=" << s->mem2d->GetNx () << ", Ny=" << s->mem2d->GetNy () << "] s->data.s.ny=" << s->data.s.ny << " a.y=" << a.y << "  with histlen=" << hist_len << std::endl;
 		s->mem2d->Resize (s->data.s.nx, s->data.s.ny);
 		s->mem2d->ConvertFrom (sc->mem2d, 0, a.y, 0,0,  s->data.s.nx, s->data.s.ny, 1);
 			
@@ -635,16 +636,19 @@ int LineProfile1D::SetData_redprofile(Scan *sc, int redblue){
 	} else {
 	        a.y = sc->Pkt2dScanLine[0].y+hist_len;
 		while (a.y >= sc->mem2d->GetNy ()){
-		  a.y--;
-		  hist_len--;
+                        a.y--;
+                        hist_len--;
 		}
 
+#if 0
 		if (sc->mem2d->data->Li[a.y].IsNew() != 1 || hist_len < 0){
-//		  std::cout << __func__ << trb  << " bot-up[" << sydir << "] - not valid new data for line a.y=" << a.y << ", with histlen=" << hist_len << std::endl;
-		  return 0;
+                        std::cout << __func__ << trb  << " bot-up[" << sydir << "] - not valid new data for line a.y=" << a.y << ", with histlen=" << hist_len << std::endl;
+                        return 0;
 		}
-		s->data.s.ny = 1 + a.y - sc->Pkt2dScanLine[0].y;
-//		std::cout << __func__ << " " << trb << " bot-up[" << sydir << "] [#" << hist_len << ", Nx=" << s->mem2d->GetNx () << ", Ny=" << s->mem2d->GetNy () << "] s->data.s.ny=" << s->data.s.ny << " a.y=" << a.y << "  with histlen=" << hist_len << std::endl;
+#endif
+
+                s->data.s.ny = 1 + a.y - sc->Pkt2dScanLine[0].y;
+		//std::cout << __func__ << " " << trb << " bot-up[" << sydir << "] [#" << hist_len << ", Nx=" << s->mem2d->GetNx () << ", Ny=" << s->mem2d->GetNy () << "] s->data.s.ny=" << s->data.s.ny << " a.y=" << a.y << "  with histlen=" << hist_len << std::endl;
 		s->mem2d->Resize (s->data.s.nx, s->data.s.ny);
 		s->mem2d->ConvertFrom (sc->mem2d, 0,  sc->Pkt2dScanLine[0].y, 0,0,  s->data.s.nx, s->data.s.ny, 0);
 
