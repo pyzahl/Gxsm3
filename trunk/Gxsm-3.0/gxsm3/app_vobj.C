@@ -168,7 +168,7 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pfl
 
         selected_bbox = NULL;
 
-	label = NULL;
+	object_label = NULL;
         label_anchor = CAIRO_ANCHOR_CENTER;
         cursors[0] = NULL;
 	cursors[1] = NULL;
@@ -254,7 +254,7 @@ VObject::~VObject(){
 	for(i=0; abl[i]; i++)
                 UNREF_DELETE_CAIRO_ITEM (abl[i], canvas);
 
-        UNREF_DELETE_CAIRO_ITEM (label, canvas);
+        UNREF_DELETE_CAIRO_ITEM (object_label, canvas);
 
 	for (i=0; i<6; ++i){
                 UNREF_DELETE_CAIRO_ITEM (arrow_head[i], canvas);
@@ -428,9 +428,9 @@ void VObject::draw (cairo_t *cr){
                 for(int i=0; i<np+6; i++)
                         if (abl[i]) 
                                 abl[i]->draw (cr);
-                if (label){
-                        label->draw (cr);
-                        // label->print ();
+                if (object_label){
+                        object_label->draw (cr);
+                        // object_label->print ();
                 }
                 if (cursors[0])
                         cursors[0]->draw (cr);
@@ -683,7 +683,7 @@ void VObject::build_properties_view (gboolean add){
                         properties_bp->grid_add_widget (cpick, 2);
 
                         showlabel_checkbutton = gtk_check_button_new_with_label( N_("Show Label"));
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (showlabel_checkbutton), label ? TRUE:FALSE);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (showlabel_checkbutton), object_label ? TRUE:FALSE);
                         properties_bp->grid_add_widget (showlabel_checkbutton, 2);
                         g_signal_connect (G_OBJECT (showlabel_checkbutton), "clicked",
                                           G_CALLBACK (VObject::show_label_cb), this);
@@ -728,16 +728,16 @@ void VObject::build_properties_view (gboolean add){
 
                 properties_bp->new_line ();
 
-                gchar *label = g_strdup_printf ("Show SpcT[%d:%d]:", space_time_now[1], space_time_now[0]);
-                properties_bp->grid_add_ec (label, Unity, &space_time_on[1], -1, 1000, ".0f");
+                gchar *tmp = g_strdup_printf ("Show SpcT[%d:%d]:", space_time_now[1], space_time_now[0]);
+                properties_bp->grid_add_ec (tmp, Unity, &space_time_on[1], -1, 1000, ".0f");
                 properties_bp->grid_add_ec (NULL,  Unity, &space_time_on[0], -1, 1000, ".0f");
-                g_free (label);
+                g_free (tmp);
                 properties_bp->new_line ();
                 
-                label = g_strdup_printf ("Hide SpcT[%d:%d]", space_time_now[1], space_time_now[0]);
-                properties_bp->grid_add_ec (label, Unity, &space_time_off[1], -1, 1000, ".0f");
+                tmp = g_strdup_printf ("Hide SpcT[%d:%d]", space_time_now[1], space_time_now[0]);
+                properties_bp->grid_add_ec (tmp, Unity, &space_time_off[1], -1, 1000, ".0f");
                 properties_bp->grid_add_ec (NULL,  Unity, &space_time_off[0], -1, 1000, ".0f");
-                g_free (label);
+                g_free (tmp);
                 properties_bp->new_line ();
 
                 // marker_scale
@@ -746,10 +746,10 @@ void VObject::build_properties_view (gboolean add){
 
                 for (int n=0; n<np; ++n){
                         int i=2*n;
-                        gchar *label = g_strdup_printf ("P%d:", n);
-                        properties_bp->grid_add_ec (label, Pixel, &xy[i],   -32767, 32767, ".0f");
+                        gchar *tmp = g_strdup_printf ("P%d:", n);
+                        properties_bp->grid_add_ec (tmp, Pixel, &xy[i],   -32767, 32767, ".0f");
                         properties_bp->grid_add_ec (NULL,  Pixel, &xy[i+1], -32767, 32767, ".0f");
-                        g_free (label);
+                        g_free (tmp);
                         properties_bp->new_line ();
                 }
                 if (obj_type_id () == O_POINT && profile){ // Point Path at XY in Layer, Series in Time or in Time, Series in Layer
@@ -1136,15 +1136,15 @@ void VObject::show_label_cb(GtkWidget *widget, VObject *vo){
 
 void VObject::show_label(gboolean flg){
 	if (flg){
-		if (!label)
-			label = new cairo_item_text ();
+		if (!object_label)
+			object_label = new cairo_item_text ();
 
-                label->set_text (xy[0] + label_offset_xy[0]*get_marker_scale (), 
+                object_label->set_text (xy[0] + label_offset_xy[0]*get_marker_scale (), 
                                  xy[1] + label_offset_xy[1]*get_marker_scale (),
                                  text);
-                label->set_anchor (label_anchor);
-                label->set_pango_font (custom_label_font);
-                label->set_stroke_rgba (&custom_label_color);
+                object_label->set_anchor (label_anchor);
+                object_label->set_pango_font (custom_label_font);
+                object_label->set_stroke_rgba (&custom_label_color);
 
 #if 0
                 g_message ("VObject show label {%s} F:%s Crgba:%g %g %g %g SPC:%s XY(%g,%g)",
@@ -1157,16 +1157,16 @@ void VObject::show_label(gboolean flg){
 #endif
                 
                 if (is_spacetime ())
-                        label->show ();
+                        object_label->show ();
                 else
-                        label->hide ();
+                        object_label->hide ();
                 
-                label->queue_update (canvas);
-	} else if (label){
-                label->hide ();
-                label->queue_update (canvas);
-                delete label;
-                label = NULL;
+                object_label->queue_update (canvas);
+	} else if (object_label){
+                object_label->hide ();
+                object_label->queue_update (canvas);
+                delete object_label;
+                object_label = NULL;
         }
 
 }
@@ -1228,9 +1228,9 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
                                         break;
                                 }
                 }
-                if (label)
-                        if (label->check_grab_bbox (mxy[0], mxy[1]))
-                                item = label;
+                if (object_label)
+                        if (object_label->check_grab_bbox (mxy[0], mxy[1]))
+                                item = object_label;
         }
 
         if (!item)
@@ -1280,7 +1280,7 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
                             item == arrow_head[0] || item == arrow_head[1] || 
                             item == arrow_head[2] || item == arrow_head[3] || 
                             item == arrow_head[4] || item == arrow_head[5] ||
-                            item == label 
+                            item == object_label 
                             ){
                                 for(int i=0; i<np; i++){
                                         xy[2*i]+=new_x-x; // Move Object
