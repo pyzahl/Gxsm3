@@ -555,7 +555,7 @@ SPM_ScanControl::SPM_ScanControl ()
         
         x=1,++y;
 	remote_param = mygtk_grid_add_input(N_("Target Param."), grid_ctrl, x,y, 3);
-	gtk_entry_set_text (GTK_ENTRY (remote_param), "DSP_Bias");
+	gtk_entry_set_text (GTK_ENTRY (remote_param), "dsp-fbs-bias");
 	
 // Multi-Volt Setup Frame
         x=1,++y;

@@ -591,16 +591,16 @@ void Scan::start(int l, double lv){
 	mem2d->SetLayerDataPut (l);
 	mem2d->data->SetVLookup (l, lv);
         mem2d->data->ResetLineInfo ();
-	mem2d->add_layer_information (new LayerInformation ("Layer-Param", lv, "%5.3f [V]"));
+	mem2d->add_layer_information (new LayerInformation ("Bias", gapp->xsm->data.s.Bias, "%5.3f V"));
 	mem2d->add_layer_information (new LayerInformation ("Layer", l, "%03.0f"));
 	mem2d->add_layer_information (new LayerInformation ("Name", data.ui.name));
 	mem2d->add_layer_information (new LayerInformation (data.ui.dateofscan)); // Date of scan (series) start
+	mem2d->add_layer_information (new LayerInformation ("Current", gapp->xsm->data.s.Current, "%5.2f nA"));
+	mem2d->add_layer_information (new LayerInformation ("Layer-Param", lv, "%5.3f [V]"));
 	mem2d->add_layer_information (new LayerInformation ("Frame-Start",ctime(&t))); // Date for frame start (now)
 	mem2d->add_layer_information (new LayerInformation ("X-size original", data.s.rx, "Rx: %5.1f \303\205"));
 	mem2d->add_layer_information (new LayerInformation ("Y-size original", data.s.ry, "Ry: %5.1f \303\205"));
-	mem2d->add_layer_information (new LayerInformation ("Bias", gapp->xsm->data.s.Bias, "%5.3f V"));
 	mem2d->add_layer_information (new LayerInformation ("SetPoint", gapp->xsm->data.s.SetPoint, "%5.2f V"));
-	mem2d->add_layer_information (new LayerInformation ("Current", gapp->xsm->data.s.Current, "%5.2f nA"));
 
 	Running = 1;
 }

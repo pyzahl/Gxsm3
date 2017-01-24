@@ -100,7 +100,7 @@ class VObject{
 
 	static void show_label_cb (GtkWidget *widget, VObject *vo);
 	void show_label (gboolean flg=true);
-	void update_label () { if (label) show_label (); };
+	void update_label () { if (object_label) show_label (); };
 
 	static void lock_position_cb (GtkWidget *widget, VObject *vo);
 	void lock_object (gboolean l) { lock = l; };
@@ -194,7 +194,7 @@ class VObject{
 		  << "Color (" << custom_label_color.red << " " << custom_label_color.blue << " " << custom_label_color.green << " " << custom_label_color.alpha << ") "
 		  << "SpaceTimeOnOff ((" << space_time_on[0] << " " << space_time_on[1] << ") (" << space_time_off[0] << " " << space_time_off[1] << ")) "
 		  << "SpaceTimeFromUntil (" << (space_time_from_0 ? 1:0) << " " << (space_time_until_00 ? 1:0) << ") "
-		  << "Show (" << (label? 1:0) << ") "
+		  << "Show (" << (object_label? 1:0) << ") "
 		  << ")" << std::endl
 		  << "   (NPkte " << np << ")" << std::endl
 		  << "   (Coords i X Y (XAng YAng)" << std::endl;
@@ -307,7 +307,7 @@ class VObject{
 	double *xy;
 	Point2D  *p2d;
 	cairo_item **abl;
-	cairo_item_text *label;
+	cairo_item_text *object_label;
         int label_anchor;
 	cairo_item *arrow_head[6];
 	cairo_item *cursors[2];
