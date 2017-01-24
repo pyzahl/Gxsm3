@@ -117,6 +117,7 @@ public:
 
 	virtual void ZFrameAddDataFrom(ZData *src)=0;
 
+	virtual void ResetLineInfo();
 	virtual int  Resize(int Nx, int Ny, int Nv=1)=0;
 
 	void         ZPutDataSetDest(int ixy_sub[4]);

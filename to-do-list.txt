@@ -36,9 +36,10 @@ current work in progress, evaluating while working with it, optimizing, new idea
 -> DSP Mover:
    ... issue with Ampl and GPIO defaults at startup not taking effect, need to update numbers after restart ?!? Check! -- touch values after start!
    ... Auto folder: defaults (as shown) not applying for GPIO, Ampl, step??? -- need to touch values for update ??? Check! - -touch value after start!
-->     ...auto time unit adjust [ms, s, ..] depending on range
--> 2D view: in SLS mode: make Red-Line work!
--> OSD -- adjust labels to left/right align instead of center
+->     ...auto time unit adjust [ms, s, ..] depending on range -- may be...
+-> 2D view: in SLS mode: make Red-Line work! -- working on this. isNew data control issue in LineInfo, must reset, etc.
+       ... SLS BotUp scandir leads to crash
+       ... need to auto reset SLS for any new dimension scan and at gxsm startup, but must keep RemoteControlHooks
 
 pending ports:
 -> View 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2 -- can any one help here? ==> vsurf3d.C

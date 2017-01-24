@@ -75,6 +75,11 @@ ZData::~ZData(){
   delete [] Li;
 }
 
+void ZData::ResetLineInfo(){
+	if(Li) delete [] Li;
+	Li=new LineInfo[ny*nv]; 
+}
+
 int ZData::ZResize(int Nx, int Ny, int Nv){ 
 	XSM_DEBUG (DBG_L6, "ZData: ZResize, delete Li Li=" << Li << " " << Li[0].IsValid());
 	double *xl = Xlookup;
