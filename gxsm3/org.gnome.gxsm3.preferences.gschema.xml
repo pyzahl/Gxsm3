@@ -1856,7 +1856,7 @@ if zero no waiting for pending events.
     </key>
     <key name="osdfont" type="s">
 
-      <default>'Sans Bold 12'</default>
+      <default>'Sans Bold 8'</default>
       <summary>Select OSD text font</summary>
       <description>
         Select OSD text font

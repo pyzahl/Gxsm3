@@ -1014,7 +1014,7 @@ GnomeResEntryInfoType xsm_res_def[] = {
 		),
 
 	GNOME_RES_ENTRY_FONTSEL
-	( "GUI/OSDFont", "OSD Font", "Sans Bold 12", 
+	( "GUI/OSDFont", "OSD Font", "Sans Bold 8", 
 	  &xsmres.OSDFont, N_("GUI"),
 	  N_("Select OSD text font"), NULL
 		),

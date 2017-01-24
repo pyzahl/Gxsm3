@@ -34,7 +34,7 @@
 
 #include <gtk/gtk.h>
 
-#define IMGMAXCOLORENTRYS 1024
+#define IMGMAXCOLORENTRYS 8192
 #define HILITCOLORENTRYS  32
 
 /*

@@ -135,6 +135,7 @@ class VObject{
 
 	void set_custom_label_font (const gchar *f) { if (custom_label_font) g_free (custom_label_font); custom_label_font = g_strdup (f); };
 	void set_custom_label_color (gfloat c[4]) { copy_xsmres_to_GdkRGBA (custom_label_color, c); };
+	void set_custom_label_anchor (int anchor) { label_anchor = anchor; };
 	void set_custom_element_color (gfloat c[4]) { copy_xsmres_to_GdkRGBA (custom_element_color, c); };
 	void set_custom_element_b_color (gfloat c[4]) { copy_xsmres_to_GdkRGBA (custom_element_b_color, c); };
 
@@ -307,6 +308,7 @@ class VObject{
 	Point2D  *p2d;
 	cairo_item **abl;
 	cairo_item_text *label;
+        int label_anchor;
 	cairo_item *arrow_head[6];
 	cairo_item *cursors[2];
 	cairo_item *avg_area_marks[2*6];

@@ -1037,9 +1037,10 @@ gboolean ProfileControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, P
         pc->xaxislabel->draw (cr);
         pc->yaxislabel->draw (cr, -90.);
 
-        if (pc->top_border > 1.){ // else invisible...
-                if (pc->saxislabel)
-                        pc->saxislabel->draw (cr);
+        if (pc->mode & PROFILE_MODE_HEADER){ // else invisible...
+                if (pc->mode & PROFILE_MODE_STICS)
+                        if (pc->saxislabel)
+                                pc->saxislabel->draw (cr);
                 if (pc->titlelabel)
                         pc->titlelabel->draw (cr);
                 if (pc->infotext)

@@ -117,7 +117,7 @@ void ShmImage2D::MkPalette(const char *name){
 		XSM_SHOW_ALERT(ERR_SORRY, ERR_PALFILEREAD, name, 1);
 	}
 	// default grey and fallback mode:
-	for (maxcol=64, cval=0; cval<maxcol; ++cval){
+	for (maxcol=IMGMAXCOLORENTRYS, cval=0; cval<maxcol; ++cval){
 		r = b = g = cval * 255 / maxcol; 
 		ULColorTable[cval] = (b << 16) | (g << 8) | r ;
 	}

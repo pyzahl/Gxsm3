@@ -122,6 +122,7 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pfl
 	lock=false;
 	id=0;
 	label_osd_stye = FALSE;
+        set_custom_label_anchor (CAIRO_ANCHOR_N);
 
         dragging_active = false;
         
@@ -168,7 +169,8 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pfl
         selected_bbox = NULL;
 
 	label = NULL;
-	cursors[0] = NULL;
+        label_anchor = CAIRO_ANCHOR_CENTER;
+        cursors[0] = NULL;
 	cursors[1] = NULL;
 	for (i=0; i<6; ++i){
 		arrow_head[i]= NULL;
@@ -1138,6 +1140,7 @@ void VObject::show_label(gboolean flg){
                 label->set_text (xy[0] + label_offset_xy[0]*get_marker_scale (), 
                                  xy[1] + label_offset_xy[1]*get_marker_scale (),
                                  text);
+                label->set_anchor (label_anchor);
                 label->set_pango_font (custom_label_font);
                 label->set_stroke_rgba (&custom_label_color);
 
