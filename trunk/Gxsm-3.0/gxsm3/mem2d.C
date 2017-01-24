@@ -965,7 +965,7 @@ void Mem2d::Mdelete(){
 void Mem2d::Init(){
 	SetDataPktMode(SCAN_V_DIRECT);
 	Mod = MEM_SET;
-	SetDataRange(0, 64);
+	SetDataRange(0, 1024);
 	SetDataSkl(0.1, 32.);
 	SetZHiLitRange(-1., 1.);
 	SetHiLitVRange(32, 1024); // must match!!!!

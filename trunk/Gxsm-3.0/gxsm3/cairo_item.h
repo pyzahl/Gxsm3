@@ -121,6 +121,7 @@ public:
                         (*map_xy_func) (xy[i].x, xy[i].y);
         };
 
+	virtual void set_anchor (int anchor) {}; 
 	virtual void set_text (const gchar *text) {};
 	virtual void set_text (double x, double y, const gchar *text) {};
         virtual void update_bbox (gboolean add_lw=true) {
@@ -425,19 +426,26 @@ private:
 class cairo_item_text : public cairo_item{
 public:
 	cairo_item_text () { \
-                xy = g_new (cairo_point, 1); n=1; t=NULL; 
+                xy = g_new (cairo_point, 1); n=1;
+                t=NULL; 
                 xy[0].x=0., xy[0].y=0.; 
                 pango_font = NULL;
-                font_face = g_strdup ("Ununtu"); font_size = 16.; t_anchor = 0; t_justify = 0; spacing = 1.1; 
+                font_face = NULL;
+                t_anchor  = CAIRO_ANCHOR_N;
+                t_justify = CAIRO_JUSTIFY_CENTER;
+                spacing = 1.1; 
+                set_font_face_size ("Ununtu", 16.);
         };
 	cairo_item_text (double x, double y, const gchar *text) { 
                 xy = g_new (cairo_point, 1); n=1; 
                 xy[0].x=0., xy[0].y=0.; 
                 v0.x=x, v0.y=y; 
-                pango_font = NULL;
                 t=g_strdup (text);
+                pango_font = NULL;
                 font_face = NULL;
-                t_anchor = 0; t_justify = 0; spacing = 1.1;
+                t_anchor  = CAIRO_ANCHOR_N;
+                t_justify = CAIRO_JUSTIFY_CENTER;
+                spacing = 1.1;
                 set_font_face_size ("Ununtu", 16.);
         };
 	virtual ~cairo_item_text () { g_free (xy); if (t) g_free (t); if (font_face) g_free (font_face); if (pango_font) pango_font_description_free (pango_font); };

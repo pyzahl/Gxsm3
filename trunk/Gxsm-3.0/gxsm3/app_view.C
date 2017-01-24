@@ -3454,6 +3454,7 @@ void ViewControl::set_osd (gchar *osd_text, int pos){
 			}else{
                                 //	XsmRescourceManager xrm("App_View_OSD");
 				double xy[2];
+                                double x;
 				//gchar *varx = g_strdup_printf ("osd_x%02d", pos);
 				//gchar *vary = g_strdup_printf ("osd_y%02d", pos);
                                 // gsettings!!!
@@ -3465,16 +3466,21 @@ void ViewControl::set_osd (gchar *osd_text, int pos){
 				//g_free (varx);
 				//g_free (vary);
 				if (fabs (xy[0]) > 1. || fabs (xy[1]) > 1.){
-					xy[0] =  2.*((pos%2)-0.5) * 0.7 + 0.25;
-					xy[1] = -2.*(((pos/2)%2)-0.5) * (0.9 - (0.2*((pos/4)%4)));
-				} 
+					xy[0] =  2.*((pos%2)-0.5) * 0.9; // left or right
+					xy[1] = -2.*(((pos/2)%2)-0.5) * (0.9 - (0.1*((pos/4)%4)));
+				}
+                                x=xy[0];
+                                xy[0] *= 0.7;
+                                xy[1] *= 0.7;
 				xy[0] *= scan->data.s.rx/2; xy[0]+=scan->data.s.x0;
 				xy[1] *= scan->data.s.ry/2; xy[1]+=scan->data.s.y0;
 				osd_item[pos] = new VObPoint (canvas, xy, scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, ot, 0.);
 				xy[0]=xy[1]=0.;
 				osd_item[pos] -> set_osd_style (true);
 				osd_item[pos] -> set_label_offset (xy);
+                                osd_item[pos] -> set_custom_label_anchor (x < 0.5 ? CAIRO_ANCHOR_W : CAIRO_ANCHOR_E);
 				osd_item[pos] -> show_label (true);
+
 			}
 		else{
 			if (osd_item[pos])

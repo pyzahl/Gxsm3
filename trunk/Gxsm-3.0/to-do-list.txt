@@ -38,8 +38,6 @@ current work in progress, evaluating while working with it, optimizing, new idea
    ... Auto folder: defaults (as shown) not applying for GPIO, Ampl, step??? -- need to touch values for update ??? Check! - -touch value after start!
 ->     ...auto time unit adjust [ms, s, ..] depending on range
 -> 2D view: in SLS mode: make Red-Line work!
--> Adjust default 2D view grey map to 1024
--> Rework Font Preferences Storage -> use PangoFont?
 -> OSD -- adjust labels to left/right align instead of center
 
 pending ports:
