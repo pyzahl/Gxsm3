@@ -1412,12 +1412,11 @@ gint ProfileControl::NewData_redprofile(Scan* sc, int redblue){
 	// lock object
 	lock = TRUE;
 
-//	std::cout << "BlueProfileAdd" << std::endl;
-
 	SetData_redprofile (sc, redblue);
 
 	int sn2 = scan1d_2 ? scan1d_2->mem2d->GetNy () : 0;
-	if (scount != scan1d->mem2d->GetNy () + sn2){
+
+        if (scount != scan1d->mem2d->GetNy () + sn2){
 		RemoveScans();
 		int n=scan1d->mem2d->GetNy ();
 		AddScan (scan1d, 0, xcolors_list[0]);
