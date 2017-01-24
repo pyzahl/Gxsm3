@@ -8,6 +8,7 @@ to clean dconf database and reset run as user:
 $$ dconf reset -f /org/gnome/gxsm3/
 
 to debug glib,... messages:
+$$ G_DEBUG=fatal_criticals gdb gxsm3
 $$ G_DEBUG=fatal_warnings gdb gxsm3
 $$ for((i=0;;++i)) { echo $i `cat /proc/12640/status | grep VmSize | grep -o '[0-9]*'`; sleep 10 || break; } > gxsm3mem
 $$ for((i=0;;++i)) { echo $i `cat /proc/\`pidof gxsm3\`/status | grep VmSize | grep -o '[0-9]*'`; sleep 10 || break; } > gxsm3mem
@@ -19,6 +20,8 @@ pause 10
 reread
 --
 gnuplot gnulifeplot.gnu
+--
+percy@ltncafm:~$ sed -n -e 's/^.*\(VmSize: \)/\1/p' Ev_Jan2017.log | awk '{print NR " " $2}'
 
 ==================================================
 
@@ -133,3 +136,23 @@ DSP Code Road-Map:
 
 =========================
 END.
+
+
+
+(gxsm3:10270): GLib-GObject-CRITICAL **: g_object_get_data: assertion 'G_IS_OBJECT (object)' failed
+
+Thread 1 "gxsm3" received signal SIGTRAP, Trace/breakpoint trap.
+0x00007ffff3eb1261 in ?? () from /lib/x86_64-linux-gnu/libglib-2.0.so.0
+(gdb) backtrace
+#0  0x00007ffff3eb1261 in ?? () from /lib/x86_64-linux-gnu/libglib-2.0.so.0
+#1  0x00007ffff3eb266d in g_logv () from /lib/x86_64-linux-gnu/libglib-2.0.so.0
+#2  0x00007ffff3eb27cf in g_log () from /lib/x86_64-linux-gnu/libglib-2.0.so.0
+#3  0x00007ffff418e454 in g_object_get_data () from /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0
+#4  0x00005555555d13f0 in VObject::build_properties_view (this=0x555559694f50, add=1) at app_vobj.C:883
+#5  0x00005555555d32be in VObject::Activate (this=<optimized out>) at app_vobj.C:547
+#6  0x00005555555d7c5e in VObPoint::Update (this=0x555559694f50) at app_vobj.C:1390
+#7  0x00005555555e5fa7 in ViewControl::obj_update (vc=0x55555890f800, vo=0x555559694f50) at app_view.h:151
+#8  ViewControl::UpdateObjects (this=0x55555890f800) at app_view.C:1644
+#9  0x0000555555623b12 in Grey2D::draw (this=0x555557fb9800, zoomoverride=<optimized out>) at view.C:528
+#10 0x000055555561f885 in Scan::draw (this=<optimized out>, y1=<optimized out>, y2=<optimized out>) at scan.C:511
+#11 0x0000555555620d2b in Scan::SetVM (this=0x5555561aaa00, vflg=2, src=src@entry=0x555555d7a7a0, Delta=4) at scan.C:458

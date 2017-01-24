@@ -78,6 +78,7 @@ ZData::~ZData(){
 void ZData::ResetLineInfo(){
 	if(Li) delete [] Li;
 	Li=new LineInfo[ny*nv]; 
+        // g_message ("ZData::ResetLineInfo %d, %d",nv, ny);
 }
 
 int ZData::ZResize(int Nx, int Ny, int Nv){ 
