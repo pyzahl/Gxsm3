@@ -208,6 +208,8 @@ void cairo_item_text::draw (cairo_t* cr, double angle, gboolean tr) {
 
                 if (layout)
                         g_object_unref (layout);
+        } else {
+                g_message ("cairo_item_text::draw hiding >%s<",t);
         }
 }
 

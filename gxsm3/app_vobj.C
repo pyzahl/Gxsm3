@@ -428,8 +428,10 @@ void VObject::draw (cairo_t *cr){
                 for(int i=0; i<np+6; i++)
                         if (abl[i]) 
                                 abl[i]->draw (cr);
-                if (label)
+                if (label){
                         label->draw (cr);
+                        // label->print ();
+                }
                 if (cursors[0])
                         cursors[0]->draw (cr);
                 if (cursors[1])
