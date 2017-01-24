@@ -3470,8 +3470,8 @@ void ViewControl::set_osd (gchar *osd_text, int pos){
 					xy[1] = -2.*(((pos/2)%2)-0.5) * (0.9 - (0.1*((pos/4)%4)));
 				}
                                 x=xy[0];
-                                xy[0] *= 0.7;
-                                xy[1] *= 0.7;
+                                //xy[0] *= 0.7;
+                                //xy[1] *= 0.7;
 				xy[0] *= scan->data.s.rx/2; xy[0]+=scan->data.s.x0;
 				xy[1] *= scan->data.s.ry/2; xy[1]+=scan->data.s.y0;
 				osd_item[pos] = new VObPoint (canvas, xy, scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, ot, 0.);
