@@ -2,15 +2,15 @@
   <schema id="org.gnome.gxsm3.pcs.mainwindow" path="/org/gnome/gxsm3/pcs/mainwindow/">
 
     <key name="range-x" type="d">
-      <default>610.743</default>
-      <summary>PCS Remote-ID: 'RangeX', Default/U: 610.7 Å     </summary>
-      <description>pcs0000, PCS Remote-ID: 'RangeX', Default/U: 610.7 Å    , Adjustment PCS Name: 'RangeX' </description>
+      <default>400</default>
+      <summary>PCS Remote-ID: 'RangeX', Default/U: 400 Å     </summary>
+      <description>pcs0000, PCS Remote-ID: 'RangeX', Default/U: 400 Å    , Adjustment PCS Name: 'RangeX' </description>
     </key>
 
     <key name="range-y" type="d">
-      <default>610.743</default>
-      <summary>PCS Remote-ID: 'RangeY', Default/U: 610.7 Å     </summary>
-      <description>pcs0000, PCS Remote-ID: 'RangeY', Default/U: 610.7 Å    , Adjustment PCS Name: 'RangeY' </description>
+      <default>400</default>
+      <summary>PCS Remote-ID: 'RangeY', Default/U: 400 Å     </summary>
+      <description>pcs0000, PCS Remote-ID: 'RangeY', Default/U: 400 Å    , Adjustment PCS Name: 'RangeY' </description>
     </key>
 
     <key name="steps-x" type="d">

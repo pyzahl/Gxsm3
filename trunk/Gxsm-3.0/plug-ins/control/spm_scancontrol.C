@@ -550,6 +550,14 @@ SPM_ScanControl::SPM_ScanControl ()
         g_object_set_data (G_OBJECT (slscheckbutton), "SLSC3", ec);
 #endif
 
+        // Reset SLS at startup
+        sls_mode = FALSE;
+        sls_config[0] = sls_config[1] = sls_config[2] = sls_config[3] = 0;
+        ((Gtk_EntryControl*) g_object_get_data (G_OBJECT (slscheckbutton), "SLSC0")) -> Put_Value ();
+        ((Gtk_EntryControl*) g_object_get_data (G_OBJECT (slscheckbutton), "SLSC1")) -> Put_Value ();
+        ((Gtk_EntryControl*) g_object_get_data (G_OBJECT (slscheckbutton), "SLSC2")) -> Put_Value ();
+        ((Gtk_EntryControl*) g_object_get_data (G_OBJECT (slscheckbutton), "SLSC3")) -> Put_Value ();
+
 	spm_scancontrol_pi.app->RemoteEntryList = g_slist_concat (spm_scancontrol_pi.app->RemoteEntryList, SPMC_RemoteEntryList);
 
         

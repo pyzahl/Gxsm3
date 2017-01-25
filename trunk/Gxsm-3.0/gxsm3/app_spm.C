@@ -554,14 +554,14 @@ GtkWidget* App::create_spm_control (){
         spm_bp->new_line ();
 
         inputMN = spm_bp->grid_add_ec ("Points XY", xsm->Unity, &xsm->data.s.nx,
-                                       xsm->XMinPoints (), xsm->XMaxPoints (), 
+                                       xsm->XMinPoints ()<2.? 2.:xsm->XMinPoints (), xsm->XMaxPoints (), 
                                        ".0f",
                                        "PointsX");
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Pnx", spm_bp->ec);
         
         inputCN = spm_bp->grid_add_ec (NULL, xsm->Unity, &xsm->data.s.ny,
-                                       xsm->YMinPoints(), xsm->YMaxPoints(), 
+                                       xsm->YMinPoints()<2.? 2.:xsm->YMinPoints (), xsm->YMaxPoints(), 
                                        ".0f",
                                        "PointsY");
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);

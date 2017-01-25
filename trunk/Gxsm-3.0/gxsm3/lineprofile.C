@@ -618,11 +618,11 @@ int LineProfile1D::SetData_redprofile(Scan *sc, int redblue){
                         hist_len--;
 		}
 
-#if 1
+#if 0
 		if (sc->mem2d->data->Li[sc->Pkt2dScanLine[0].y].IsNew() != 1 || hist_len < 0){
                         g_warning ("LineProfile1D::SetData_redprofile dir>0 -- already processed line %d or history length %d invalid.", a.y, hist_len);
                         //std::cout << __func__ << trb << " top-dn[" << sydir << "] - not valid new data for line: a.y=" << a.y << ", with histlen=" << hist_len << std::endl;
-                        //return 0;
+                        return 0;
 		}
 #endif
 		s->data.s.ny = 1 + sc->Pkt2dScanLine[0].y - a.y;
@@ -641,11 +641,11 @@ int LineProfile1D::SetData_redprofile(Scan *sc, int redblue){
                         hist_len--;
 		}
 
-#if 1
+#if 0
 		if (sc->mem2d->data->Li[a.y].IsNew() != 1 || hist_len < 0){
                         g_warning ("LineProfile1D::SetData_redprofile dir<0 -- already processed line %d or history length %d invalid.", a.y, hist_len);
                         //std::cout << __func__ << trb  << " bot-up[" << sydir << "] - not valid new data for line a.y=" << a.y << ", with histlen=" << hist_len << std::endl;
-                        //return 0;
+                        return 0;
 		}
 #endif
 
