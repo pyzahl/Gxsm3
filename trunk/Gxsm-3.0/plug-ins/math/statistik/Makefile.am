@@ -31,10 +31,14 @@ libbaseinfo_la_SOURCES = baseinfo.C
 libbaseinfo_la_LDFLAGS = -module -export-dynamic -avoid-version
 
 libOpenCV_match_la_SOURCES = OpenCV_match.C
-libOpenCV_match_la_LDFLAGS = -module -export-dynamic -avoid-version -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_ml -lopencv_video -lopencv_features2d -lopencv_calib3d -lopencv_objdetect -lopencv_contrib -lopencv_legacy -lopencv_flann
+libOpenCV_match_la_LDFLAGS = -module -export-dynamic -avoid-version -lopencv_core -lopencv_highgui -lopencv_features2d -lopencv_objdetect
+
+### -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_ml -lopencv_video -lopencv_features2d -lopencv_calib3d -lopencv_objdetect -lopencv_contrib -lopencv_legacy -lopencv_flann
 
 libOpenCV_recenter_la_SOURCES = OpenCV_recenter.C
-libOpenCV_recenter_la_LDFLAGS = -module -export-dynamic -avoid-version -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_ml -lopencv_video -lopencv_features2d -lopencv_calib3d -lopencv_objdetect -lopencv_contrib -lopencv_legacy -lopencv_flann
+libOpenCV_recenter_la_LDFLAGS = -module -export-dynamic -avoid-version -lopencv_core -lopencv_highgui -lopencv_features2d -lopencv_objdetect
+
+### -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_ml -lopencv_video -lopencv_features2d -lopencv_calib3d -lopencv_objdetect -lopencv_contrib -lopencv_legacy -lopencv_flann
 
 libnndistribution_la_SOURCES = nndistribution.C
 libnndistribution_la_LDFLAGS = -module -export-dynamic -avoid-version
