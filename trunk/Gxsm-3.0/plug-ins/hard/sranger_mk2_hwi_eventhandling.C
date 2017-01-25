@@ -102,19 +102,19 @@ static int   expdi_lookup[] = { PROBEDATA_ARRAY_AIC0, PROBEDATA_ARRAY_AIC1, PROB
 
 
 const char* lablookup[]  = { "ADC0-I", "ADC1-SP", "ADC2-Mx2", "ADC3-Mx3", "ADC4", "ADC5","ADC6","ADC7",
-			      "Zmon", "Umon", 
-			      "LockIn0", "LockIn1stA", "LockIn1stB", "LockIn2ndA", "LockIn2ndB",
-			      "Count",
-			      "Time", "XS",   "YS",   "ZS",   "Bias", "Phase", "VP-Section",
-			      "BLOCK",NULL
+                             "Zmon", "Umon", 
+                             "LockIn0", "LockIn A-1st",  "LockIn B-1st", "LockIn A-2nd", "LockIn B-2nd",
+                             "Count",
+                             "Time", "XS",   "YS",   "ZS",   "Bias", "Phase", "VP-Section",
+                             "BLOCK",NULL
 };
 
 const char* unitlookup[] = { "V",   "V",    "V",    "V",    "V",    "V",     "V",   "V",
-			      UTF8_ANGSTROEM,   "V",    
-			      "V", "dV", "dV",  "ddV", "ddV",
-			      "CNT",
-			      "ms", UTF8_ANGSTROEM, UTF8_ANGSTROEM, UTF8_ANGSTROEM, "V", "deg", "#",
-			      "BS",NULL
+                             UTF8_ANGSTROEM,   "V",    
+                             "V", "dV", "dV",  "ddV", "ddV",
+                             "CNT",
+                             "ms", UTF8_ANGSTROEM, UTF8_ANGSTROEM, UTF8_ANGSTROEM, "V", "deg", "#",
+                             "BS",NULL
 };
 
 

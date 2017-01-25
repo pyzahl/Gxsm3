@@ -2693,7 +2693,7 @@ DSPControl::DSPControl () {
 	};
 	const char* lablookup[] = { "ADC0-I", "ADC1-SP", "ADC2-Mx2", "ADC3-Mx3", "ADC4", "ADC5","ADC6","ADC7",
 				    "Zmon", "Umon",
-				    "LockIn0", "LockIn1stA",  "LockIn1stB", "LockIn2ndA", "LockIn2ndB", "Counter", // last 4 in this line are "signals" for MK3 => i=12..16
+				    "LockIn0", "LockIn A-1st",  "LockIn B-1st", "LockIn A-2nd", "LockIn B-2nd", "Counter", // last 4 in this line are "signals" for MK3 => i=12..16
 				    "Time", "XS", "YS", "ZS", "U", "PHI", "SEC",
 				    NULL
 	};
