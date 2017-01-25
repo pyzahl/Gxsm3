@@ -139,6 +139,7 @@ static GActionEntry win_view_popup_entries[] = {
         { "side-pane", ViewControl::side_pane_action_callback, NULL, "true", NULL },
         { "view-mode", ViewControl::view_view_set_view_mode_radio_callback, "s", "'quick'", NULL },
         { "x-linearize", ViewControl::view_view_x_linearize_callback, NULL, "false", NULL },
+        { "attach-redline", ViewControl::view_view_attach_redline_callback, NULL, "false", NULL },
         { "show-redline", ViewControl::view_view_redline_callback, NULL, "false", NULL },
         { "show-blueline", ViewControl::view_view_blueline_callback, NULL, "false", NULL },
         { "autozoom-mode", ViewControl::view_view_autozoom_callback, NULL, "false", NULL },
@@ -587,6 +588,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	v_trace  = NULL;
 	AddObjFkt = ViewControl::view_tool_addrectangle;
 	ZoomQFkt = NULL;
+        attach_redline_flag=FALSE;
 	scan = sc;
 	scan->RedLineActive = FALSE;
 	scan->BlueLineActive = FALSE;
@@ -1185,7 +1187,7 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
         //	XSM_DEBUG (DBG_L2,  "ViewControl:::canvas_draw_callback ********************** SCAN PAINT OBJ *********************" );
         vc->DrawObjects (cr);
 
-        if(vc->RedLine){
+        if(vc->RedLine && vc->attach_redline_flag){
                 cairo_translate (cr, 0, vc->npy/zf);
                 cairo_scale (cr, vc->npx/zf/vc->RedLine->get_drawing_width()*1.3, vc->npy/zf/vc->RedLine->get_drawing_width()*0.2);
                  
@@ -2855,6 +2857,30 @@ void ViewControl::view_view_x_linearize_callback (GSimpleAction *action, GVarian
 	if (vc->chno < 0) return;
 	gapp->xsm->ActivateChannel(vc->chno);
 	gapp->xsm->AutoDisplay();
+}
+
+void ViewControl::view_view_attach_redline_callback (GSimpleAction *action, GVariant *parameter, 
+                                                     gpointer user_data){
+        ViewControl *vc = (ViewControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+                
+        XSM_DEBUG_GP (DBG_L1, "Toggle action %s activated, state changes from %d to %d\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_boolean (old_state),
+                      g_variant_get_boolean (new_state));
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+
+	if (g_variant_get_boolean (new_state)){
+		vc->attach_redline_flag=TRUE;
+	}else{
+		vc->attach_redline_flag=FALSE;
+	}
 }
 
 void ViewControl::view_view_redline_callback (GSimpleAction *action, GVariant *parameter, 

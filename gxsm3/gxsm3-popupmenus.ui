@@ -156,11 +156,15 @@
 	    <attribute name="action">win.x-linearize</attribute>
 	  </item>
 	  <item>
-	    <attribute name="label" translatable="yes">red Profile</attribute>
+	    <attribute name="label" translatable="yes">Attach Red Profile</attribute>
+	    <attribute name="action">win.attach-redline</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">Red Profile</attribute>
 	    <attribute name="action">win.show-redline</attribute>
 	  </item>
 	  <item>
-	    <attribute name="label" translatable="yes">add blue Profile (CH+1)</attribute>
+	    <attribute name="label" translatable="yes">Add Blue Profile (CH+1)</attribute>
 	    <attribute name="action">win.show-blueline</attribute>
 	  </item>
 	  <item>
@@ -196,11 +200,11 @@
 	    </section>
 	  </submenu>
 	  <item>
-	    <attribute name="label" translatable="yes">zoom in</attribute>
+	    <attribute name="label" translatable="yes">Zoom In</attribute>
 	    <attribute name="action">win.zoom-in</attribute>
 	  </item>
 	  <item>
-	    <attribute name="label" translatable="yes">zoom out</attribute>
+	    <attribute name="label" translatable="yes">Zoom Out</attribute>
 	    <attribute name="action">win.zoom-out</attribute>
 	  </item>
 	  <submenu>
