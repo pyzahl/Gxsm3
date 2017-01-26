@@ -54,6 +54,7 @@ App *gapp = NULL;
 int restarted = 0;
 int debug_level = 0;
 int logging_level = 1;
+int developer_option = 0;
 int pi_debug_level = 0;
 int force_gxsm_defaults = 0;
 int no_glx_init = 0;
@@ -86,6 +87,10 @@ static const GOptionEntry gxsm_options[] =
 
 	{ "logging-level", 'L', G_OPTION_FLAG_NONE, G_OPTION_ARG_INT, &logging_level,
           N_("Set Gxsm logging/monitor level. 0: omit all loggings. 1: default logging, 2: verbose logging"), NULL
+        },
+
+	{ "developer", 'y', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &developer_option,
+          N_("GXSM developer option/modes. Hidden from help. May be critical. Warning!"), NULL
         },
 
 	{ "disable-plugins", 'd', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &xsmres.disableplugins,

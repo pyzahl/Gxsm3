@@ -590,7 +590,7 @@ void Scan::start(int l, double lv){
 	mem2d->SetLayer (l);
 	mem2d->SetLayerDataPut (l);
 	mem2d->data->SetVLookup (l, lv);
-        mem2d->data->ResetLineInfo ();
+        // mem2d->data->ResetLineInfo ();
 	mem2d->add_layer_information (new LayerInformation ("Bias", gapp->xsm->data.s.Bias, "%5.3f V"));
 	mem2d->add_layer_information (new LayerInformation ("Layer", l, "%03.0f"));
 	mem2d->add_layer_information (new LayerInformation ("Name", data.ui.name));

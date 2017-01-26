@@ -1675,7 +1675,7 @@ DSPControl::DSPControl () {
 		int ch_si[8][5];
 		int ns[8][5];
 		int iid=DSP_SIGNAL_OUTMIX_CH0_INPUT_ID;
-		gchar *outconfig=g_strdup(" CURRENT MK3 OUTMIX CONFIGURATION: ");
+		gchar *outconfig=g_strdup("\n ** CURRENT MK3 OUTMIX CONFIGURATION ** ");
 		gchar *tmp;
 		for (int outn=0; outn<8; ++outn){
 			for (int om=0; om<5; ++om){
