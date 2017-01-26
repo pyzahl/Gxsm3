@@ -23,6 +23,8 @@ AC_DEFINE_UNQUOTED(GXSM_RES_BASE_PATH,         "org/gnome/gxsm3",              "
 AC_DEFINE_UNQUOTED(GXSM_RES_PREFERENCES_PATH,  "org/gnome/gxsm3/preferences",  "GSettings path for preferences")
 AC_DEFINE_UNQUOTED(GXSM_RES_GL_PATH,           "org/gnome/gxsm3/gl",           "GSettings path for gl preferences")
 
+AC_DEFINE_UNQUOTED(GXSM_MONITOR_VMEMORY_USAGE, "", "define this for adding a time stamp in sec and VmSize to Ev_log file")
+
 ## AC_DEFINE_UNQUOTED(GXSM_ENABLE_SCAN_USER_PLUGIN_PATH, "yes", "enable scanning in user path for plugins");
 
 # Dependencies

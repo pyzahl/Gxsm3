@@ -33,8 +33,9 @@
 #include "unit.h"
 #include "xsmdebug.h"
 
-#define MONITOR_VMEMORY_USAGE
-#ifdef MONITOR_VMEMORY_USAGE
+// may be enabled via configure.ac or here directly
+// #define GXSM_MONITOR_VMEMORY_USAGE
+#ifdef GXSM_MONITOR_VMEMORY_USAGE
 
 gint parseLine (char* line){
         // This assumes that a digit will be found and the line ends in " Kb".
@@ -180,7 +181,7 @@ gint Monitor::AppLine(){
                 for(gchar **field = Fields; *field; ++field)
                         f << *field;
 
-#ifdef MONITOR_VMEMORY_USAGE
+#ifdef GXSM_MONITOR_VMEMORY_USAGE
                 f << " RealTime: " << g_get_real_time ();
                 f << " VmSize: " << getValue ("VmSize:") << " kB";
 #endif

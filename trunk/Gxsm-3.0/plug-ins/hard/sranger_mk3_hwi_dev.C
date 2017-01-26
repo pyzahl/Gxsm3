@@ -122,8 +122,7 @@ gpointer ProbeFifoReadFunction3 (void *ptr_sr, int dspdev);
  * - ...
  */
 sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
-	SRANGER_DEBUG("open driver");
-	SRANGER_DEBUG_GP ("HWI-DEV-MK3-I** HwI SR-MK3 probing\n");
+	PI_DEBUG_GP (DBG_L1, " -> HWI-DEV-MK3-I** HwI SR-MK3: verifying MK3 FB_SPM software details.\n");
 	AIC_max_points = 1<<15; // SR-AIC resolution is limiting...
 	fifo_read_thread = NULL;
 	probe_fifo_read_thread = NULL;
@@ -153,14 +152,14 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 	gint srdev_index_start = atoi ( strrchr (xsmres.DSPDev, '_')+1); // start at given device, keep looking for higher numbers
 	while (srdev_index_start >= 0 && srdev_index_start < 8) {
 	        sprintf (xsmres.DSPDev,"/dev/sranger_mk2_%d", srdev_index_start); // override
-		SRANGER_DEBUG_GP ("Looking for MK3 with runnign GXSM compatible FB_spmcontrol DSP code starting at %s\n", xsmres.DSPDev);
+                PI_DEBUG_GP (DBG_L1, " -> Looking for MK3 up and running GXSM compatible FB_spmcontrol DSP code starting at %s.\n", xsmres.DSPDev);
 	  
 		if((dsp = open (xsmres.DSPDev, O_RDWR)) <= 0){
-		        SRANGER_DEBUG_GP ("HWI-DEV-MK3-E01-- can not open device >%s<, please check permissions. \nError: %s\n", 
-				 xsmres.DSPDev, strerror(errno));
+		        PI_DEBUG_GP (DBG_L1, " -> HWI-DEV-MK3 E01-- can not open device >%s<, please check permissions. \nError: %s\n", 
+                                     xsmres.DSPDev, strerror(errno));
 			dsp = 0;
 			if (++srdev_index_start < 8){
-				SRANGER_DEBUG_GP ("HWI-DEV-MK3-MSG01-- Continue searching for next device...\n");
+				PI_DEBUG_GP (DBG_L1, " -> HWI-DEV-MK3 MSG01 -- Continue searching for next device...\n");
 				continue;
 			}
 			SRANGER_ERROR(
