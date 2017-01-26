@@ -82,6 +82,9 @@
 #define SR_READFIFO_RESET -1
 #define SR_EMPTY_PROBE_FIFO -2
 
+extern int developer_option;
+extern int pi_debug_level;
+
 extern DSPControl *DSPControlClass;
 extern GxsmPlugin sranger_mk2_hwi_pi;
 extern DSPPACControl *DSPPACClass;
@@ -122,7 +125,11 @@ gpointer ProbeFifoReadFunction3 (void *ptr_sr, int dspdev);
  * - ...
  */
 sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
+        gchar *tmp;
 	PI_DEBUG_GP (DBG_L1, " -> HWI-DEV-MK3-I** HwI SR-MK3: verifying MK3 FB_SPM software details.\n");
+        g_message ("sranger_mk3_hwi_dev::sranger_mk3_hwi_dev  PI dbg lv=%d", pi_debug_level);
+	g_message (" -> HWI-DEV-MK3-I** HwI SR-MK3: verifying MK3 FB_SPM software details.\n");
+        gapp->monitorcontrol->LogEvent ("HWI-DEV-MK3-I** HwI SR-MK3", "verifying MK3 FB_SPM software details.\n");
 	AIC_max_points = 1<<15; // SR-AIC resolution is limiting...
 	fifo_read_thread = NULL;
 	probe_fifo_read_thread = NULL;
@@ -153,6 +160,7 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 	while (srdev_index_start >= 0 && srdev_index_start < 8) {
 	        sprintf (xsmres.DSPDev,"/dev/sranger_mk2_%d", srdev_index_start); // override
                 PI_DEBUG_GP (DBG_L1, " -> Looking for MK3 up and running GXSM compatible FB_spmcontrol DSP code starting at %s.\n", xsmres.DSPDev);
+                g_message (" -> Looking for MK3 up and running GXSM compatible FB_spmcontrol DSP code starting at %s.\n", xsmres.DSPDev);
 	  
 		if((dsp = open (xsmres.DSPDev, O_RDWR)) <= 0){
 		        PI_DEBUG_GP (DBG_L1, " -> HWI-DEV-MK3 E01-- can not open device >%s<, please check permissions. \nError: %s\n", 
@@ -178,6 +186,7 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 						   "Start 'gxsm3 -h no' to change the device path/name.",
 						   xsmres.DSPDev);
 			gapp->alert (N_("No Hardware"), N_("Open Device failed."), productid, 1);
+                        gapp->monitorcontrol->LogEvent (N_("No Hardware"), N_("Open Device failed."));
 			exit (-1);
 			return;
 		}
@@ -274,38 +283,53 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 					exit (-1);
 					return;
 				}
-				
+				tmp = g_strdup_printf ("%08x   [HwI:%08x]", magic_data.dsp_soft_id, FB_SPM_SOFT_ID);
+                                gapp->monitorcontrol->LogEvent ("HWI-DEV-MK3-I*CPU* DSP-SoftId.... ", tmp); g_free (tmp);
 				SRANGER_DEBUG_GP ("HWI-DEV-MK3-I*CPU* DSP-SoftId : %08x   [HwI:%08x]\n", magic_data.dsp_soft_id, FB_SPM_SOFT_ID);
-				SRANGER_DEBUG_GP ("HWI-DEV-MK3-I*CPU* DSP-Version: %08x   [HwI:%08x]\n", magic_data.version, FB_SPM_VERSION);				
+
+				tmp = g_strdup_printf ("%08x   [HwI:%08x]", magic_data.version, FB_SPM_VERSION);
+                                gapp->monitorcontrol->LogEvent ("HWI-DEV-MK3-I*CPU* DSP-Version... ", tmp); g_free (tmp);
 				SRANGER_DEBUG_GP ("HWI-DEV-MK3-I*CPU* DSP-Magic::SignalLookup: %08x\n", magic_data.signal_lookup);
+
+				tmp = g_strdup_printf ("%08x\n", magic_data.signal_lookup);
+				gapp->monitorcontrol->LogEvent ("HWI-DEV-MK3-I*CPU* DSP-Magic::SignalLookup at address", tmp); g_free (tmp);
+				SRANGER_DEBUG_GP ("HWI-DEV-MK3-I*CPU* DSP-Magic::SignalLookup: %08x\n", magic_data.signal_lookup);
+                                
 				if (FB_SPM_VERSION != magic_data.version || 
 				    FB_SPM_SOFT_ID != magic_data.dsp_soft_id){
 				        gchar *details = g_strdup_printf(
+                                                                         "Critical Warning:\n"
 									 "Detected SRanger DSP Software Version: %x.%02x\n"
 									 "GXSM was build for DSP Software Version: %x.%02x\n\n"
 									 "Note: This may cause incompatility problems and unpredictable toubles,\n"
-									 "however, trying to proceed in case you know what you are doing.\n\n"
+									 "however, trying to proceed in case you know what you are doing is possible.\n\n"
 									 "SwapFlag: %d   Target: %d\n",
 									 magic_data.version >> 8, 
 									 magic_data.version & 0xff,
 									 FB_SPM_VERSION >> 8, 
 									 FB_SPM_VERSION & 0xff,
-									 swap_flg, target)
-					  SRANGER_DEBUG ("Signal Ranger FB_SPM soft Version mismatch\n" << details);
+									 swap_flg, target);
+                                        SRANGER_DEBUG ("Signal Ranger FB_SPM soft Version mismatch\n" << details);
 					SRANGER_DEBUG_GP ("HWI-DEV-MK3-VW01-- DSP software version mismatch warning.\n%s\n", details);
-					gapp->alert (N_("Warning"), N_("Signal Ranger FB_SPM software version mismatch detected!"), details, 1);
+					gapp->alert (N_("Critical Warning"), N_("Signal Ranger FB_SPM software version mismatch detected! Exiting now."), details, 1);
+                                        gapp->monitorcontrol->LogEvent ("Critical: Signal Ranger FB_SPM soft Version mismatch:\n", details);
+                                        g_critical ("Signal Ranger FB_SPM soft Version mismatch:\n%s", details);
 					g_free (details);
+
+                                        if (developer_option == 0)
+                                                exit (-1);
 				}
 				
 				SRANGER_DEBUG ("ProductId:" << productid);
 
 				if (InfoString)
 				        g_free (InfoString);
-				InfoString = g_strdup_printf("SR-MK3-PLL connected at %s"
+				InfoString = g_strdup_printf("\nSR-MK3-PLL connected at %s"
 							     "\nDSP-SoftId : %04x [HwI:%04x]"
 							     "\nDSP-SoftVer: %04x [HwI:%04x]",
 							     xsmres.DSPDev, magic_data.dsp_soft_id, FB_SPM_SOFT_ID, magic_data.version, FB_SPM_VERSION);
 
+                                gapp->monitorcontrol->LogEvent ("MK3 HwI Intialization and DSP software verification completed", InfoString);
                                 
 				// open some more DSP connections, used by threads
 				if((thread_dsp = open (xsmres.DSPDev, O_RDWR)) <= 0){
