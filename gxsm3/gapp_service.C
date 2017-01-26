@@ -744,6 +744,53 @@ void GnomeAppService::ValueRequest(const gchar *title, const gchar *label, const
 	gtk_widget_destroy (dialog);
 }
 
+
+gint GnomeAppService::terminate_timeout_func (GtkWidget *widget, gpointer data){
+#if 0
+        gint c = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (data), "CM"));
+        gchar *m  = (gchar*)g_object_get_data (G_OBJECT (data), "SM");
+        --c;
+        if (c > 0){
+                gchar *message = g_strdup_printf ("%s\nTerminating in %d s.", m, c);
+                g_message (message);
+                g_object_set_data (G_OBJECT (data), "CM", GINT_TO_POINTER (c));
+                gtk_message_dialog_set_markup (GTK_MESSAGE_DIALOG (data), message);
+                g_free (message);
+                return true;
+        }
+        g_free (m);
+#endif
+        g_critical ("GXSM is terminating now due to DSP software version mismatch. Please update DSP.");
+        exit (-1);
+        return false;
+}
+
+void GnomeAppService::alert(const gchar *s1, const gchar *s2, const gchar *s3, int c){
+        if(window){
+                GtkWidget *dialog = gtk_message_dialog_new_with_markup (window,
+                                                                        GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                                        GTK_MESSAGE_WARNING,
+                                                                        GTK_BUTTONS_CLOSE,
+                                                                        "%s\n%s\n%s", s1, s2, s3);
+                g_signal_connect_swapped (G_OBJECT (dialog), "response",
+                                          G_CALLBACK (gtk_widget_destroy),
+                                          G_OBJECT (dialog));
+
+                gtk_widget_show (dialog);
+
+                if (c > 5){
+                        g_message ("adding timeout for forced exit");
+                        g_object_set_data (G_OBJECT (dialog), "SM", (gpointer)g_strdup_printf ("%s\n%s\n%s", s1, s2, s3));
+                        g_object_set_data (G_OBJECT (dialog), "CM", GINT_TO_POINTER (c));
+                        g_timeout_add_seconds ((guint)20, 
+                                               (GSourceFunc) GnomeAppService::terminate_timeout_func, 
+                                               dialog
+                                               );
+                }
+        }
+}
+
+
 // ============================================================
 // AppBase
 // ============================================================
@@ -1048,4 +1095,3 @@ int AppBase::LoadGeometry(){
 
 	return 0;
 }
-

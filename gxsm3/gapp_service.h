@@ -796,19 +796,8 @@ public:
 			gtk_widget_show (dialog);
 		}
 	};
-	void alert(const char *s1, const char *s2, const char *s3, int c){
-		if(window){
-			GtkWidget *dialog = gtk_message_dialog_new (window,
-								    GTK_DIALOG_DESTROY_WITH_PARENT,
-								    GTK_MESSAGE_WARNING,
-								    GTK_BUTTONS_CLOSE,
-								    "%s\n%s\n%s", s1, s2, s3);
-			g_signal_connect_swapped (G_OBJECT (dialog), "response",
-						  G_CALLBACK (gtk_widget_destroy),
-						  G_OBJECT (dialog));
-			gtk_widget_show (dialog);
-		}
-	};
+        static gint terminate_timeout_func (GtkWidget *widget, gpointer data);
+	void alert(const gchar *s1, const gchar *s2, const gchar *s3, int c);
 	void errormsg(const char *mld){
 		if(window){
 			GtkWidget *dialog = gtk_message_dialog_new (window,

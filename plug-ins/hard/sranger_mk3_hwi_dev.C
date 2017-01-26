@@ -127,7 +127,6 @@ gpointer ProbeFifoReadFunction3 (void *ptr_sr, int dspdev);
  */
 sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
         gchar *tmp;
-        gboolean force_terminate=false;
 	g_message ("HWI-DEV-MK3-I** HwI SR-MK3: verifying MK3 FB_SPM software details.");
 	PI_DEBUG_GP (DBG_L1, " -> HWI-DEV-MK3-I** HwI SR-MK3: verifying MK3 FB_SPM software details.\n");
         gapp->monitorcontrol->LogEvent ("HWI-DEV-MK3-I** HwI SR-MK3", "verifying MK3 FB_SPM software details.");
@@ -312,13 +311,14 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 									 swap_flg, target);
                                         SRANGER_DEBUG ("Signal Ranger FB_SPM soft Version mismatch\n" << details);
 					SRANGER_DEBUG_GP ("HWI-DEV-MK3-VW01-- DSP software version mismatch warning.\n%s\n", details);
-					gapp->alert (N_("Critical Warning"), N_("Signal Ranger FB_SPM software version mismatch detected! Exiting now."), details, 1);
+					gapp->alert (N_("Critical Warning:"), N_("Signal Ranger FB_SPM software version mismatch detected! Exiting required."), details,
+                                                     developer_option == 0 ? 20 : 5);
                                         gapp->monitorcontrol->LogEvent ("Critical: Signal Ranger FB_SPM soft Version mismatch:\n", details);
                                         g_critical ("Signal Ranger FB_SPM soft Version mismatch:\n%s", details);
 					g_free (details);
 
-                                        if (developer_option == 0)
-                                                force_terminate=true;
+                                        //if (developer_option == 0)
+                                        //        exit (-1);
                                         
 				}
 				
@@ -410,16 +410,6 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 		g_string_free(details, TRUE); 
 		details=NULL;
 	}
-
-        if (force_terminate){
-                const int tout=10;
-                for (int i=0; i<tout; ++i){
-                        g_message ("Exiting in %d s.", tout-i);
-                        gapp->check_events ();
-                        usleep (1000000);
-                }
-                exit (-1);
-        }
 }
 
 /* Destructor
