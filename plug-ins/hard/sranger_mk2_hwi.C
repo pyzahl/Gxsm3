@@ -1671,6 +1671,9 @@ GxsmPlugin *get_gxsm_plugin_info ( void ){
 // Symbol "get_gxsm_hwi_hardware_class" is resolved by dlsym from Gxsm for all HwI type PIs, 
 // Essential Plugin Function!!
 XSM_Hardware *get_gxsm_hwi_hardware_class ( void *data ) {
+        gchar *tmp;
+        g_message ("HWI-DEV-MK2/3: Initialization and DSP verification.");
+        gapp->monitorcontrol->LogEvent (THIS_HWI_PREFIX " XSM_Hardware *get_gxsm_hwi_hardware_class", "Init 1");
 	PI_DEBUG_GP (DBG_L1, THIS_HWI_PREFIX " XSM_Hardware *get_gxsm_hwi_hardware_class:\n"
                      " -> SR-MK2/3 HardwareInterface                        * Init 1\n");
 	sranger_mk2_hwi_configure_string = g_strdup ((gchar*)data);
@@ -1685,7 +1688,11 @@ XSM_Hardware *get_gxsm_hwi_hardware_class ( void *data ) {
                      " -> sranger_mk2/3_hwi HardwareInterface probing MK2.. * Init 4\n");
                 PI_DEBUG_GP (DBG_L1,
                      " -> DSP Mark ID found: MK %d\n", sranger_common_hwi -> get_mark_id());
-		if (sranger_common_hwi->get_mark_id () != 2){ // no MK2 found
+
+                tmp = g_strdup_printf ("MK %d", sranger_common_hwi -> get_mark_id());
+                gapp->monitorcontrol->LogEvent ("DSP Mark ID found", tmp); g_free (tmp);
+                
+                if (sranger_common_hwi->get_mark_id () != 2){ // no MK2 found
 			PI_DEBUG_GP (DBG_L1,
                                      "    ... not a MK2 DSP\n");
 			delete sranger_common_hwi;
@@ -1693,10 +1700,10 @@ XSM_Hardware *get_gxsm_hwi_hardware_class ( void *data ) {
 			PI_DEBUG_GP (DBG_L1,
                                      "    ... probing for MK3 DSP and software details.\n");
 			sranger_common_hwi = new sranger_mk3_hwi_spm ();
-			PI_DEBUG_GP (DBG_L2,
+			PI_DEBUG_GP (DBG_L3,
                                      "    ... verifying.\n");
 			if (sranger_common_hwi){
-                                PI_DEBUG_GP (DBG_L2, "    ... verify 1.\n");
+                                PI_DEBUG_GP (DBG_L3, "    ... verify 1.\n");
 				if (sranger_common_hwi->get_mark_id() != 3){ // no MK3 found
                                         PI_DEBUG_GP (DBG_L1,
                                       "    ... MK3 test failed. :(");
@@ -1705,29 +1712,31 @@ XSM_Hardware *get_gxsm_hwi_hardware_class ( void *data ) {
 					PI_DEBUG_GP (DBG_L1, " -> E01 -- DSP auto detection failed, no MK3 or MK2 found.\n");
 					g_warning (" HwI Initialization error: -> E01 -- DSP auto detection failed, no MK3 or MK2 found.\n"
                                                    " Make sure DSP is plugged in and powered. Check kernel module and permissions.\n");
+                                        gapp->monitorcontrol->LogEvent ("E01 -- DSP auto detection failed, no MK3 or MK2 found.", " ??? ");
 					exit (0);
 					return NULL;
 				}
-                                PI_DEBUG_GP (DBG_L2, "    ... verify 2.\n");
+                                PI_DEBUG_GP (DBG_L3, "    ... verify 2.\n");
 			} else {
 				PI_DEBUG_GP (DBG_L1, " -> E02 -- HwI common init failed.\n");
                                 g_warning (" HwI Init failed with E02.");
 				exit (0);
 				return NULL;
 			}
-                        PI_DEBUG_GP (DBG_L2, "    ... verify 3.\n");
+                        PI_DEBUG_GP (DBG_L3, "    ... verify 3.\n");
 		}
-                PI_DEBUG_GP (DBG_L2, "    ... verify 4.\n");
+                PI_DEBUG_GP (DBG_L3, "    ... verify 4.\n");
 	} else {
 		PI_DEBUG_GP (DBG_L1, " -> E03 -- failed, no MK3 or MK2 found.\n");
-                g_warning (" HwI Init failed with E03.");
+                g_critical ("HWI-DEV-MK2/3: HwI Init failed with E03.");
 		exit (0);
 		return NULL;
 	}
         PI_DEBUG_GP (DBG_L2, "    ... verify 5.\n");
 	
+        g_message ("HWI-DEV-MK2/3: auto probing succeeded: MK%d DSP identified and ready.", sranger_common_hwi -> get_mark_id ());
 	PI_DEBUG_GP (DBG_L1, " -> probing succeeded: MK%d identified.\n", sranger_common_hwi -> get_mark_id ());
-        g_message (" -> HwI: probing succeeded: MK%d DSP identified and ready.\n", sranger_common_hwi -> get_mark_id ());
+        gapp->monitorcontrol->LogEvent ("HwI: probing succeeded.", "DSP System Ready.");
 	return sranger_common_hwi;
 }
 

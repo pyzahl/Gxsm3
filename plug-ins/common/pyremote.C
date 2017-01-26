@@ -1967,7 +1967,7 @@ void py_gxsm_console::initialize(void)
 		PI_DEBUG (DBG_L2, "Register classes");
 		register_classes (s_pygwy.dict);
 	} else {
-		g_message ("Python interpreter already initialized");
+		g_message ("Python interpreter already initialized, OK.");
 	}
 }
 
