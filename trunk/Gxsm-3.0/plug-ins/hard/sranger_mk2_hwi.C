@@ -1677,25 +1677,26 @@ XSM_Hardware *get_gxsm_hwi_hardware_class ( void *data ) {
 	PI_DEBUG_GP (DBG_L1,
                      " -> sranger_mk2/3_hwi HardwareInterface               * Init 2\n");
 	// probe for MK2
-	PI_DEBUG_GP (DBG_L1,
-                     " -> probing for MK2...\n");
 	sranger_common_hwi = new sranger_mk2_hwi_spm ();
 	PI_DEBUG_GP (DBG_L1,
-                     " -> sranger_mk2/3_hwi HardwareInterface common        * Init 2\n");
+                     " -> sranger_mk2/3_hwi HardwareInterface common        * Init 3\n");
 	if (sranger_common_hwi){
                 PI_DEBUG_GP (DBG_L1,
-                     " -> sranger_mk2/3_hwi HardwareInterface probing MK2.. * Init 3\n");
+                     " -> sranger_mk2/3_hwi HardwareInterface probing MK2.. * Init 4\n");
                 PI_DEBUG_GP (DBG_L1,
-                     " -> mark id found: MK-%d\n", sranger_common_hwi -> get_mark_id());
+                     " -> DSP Mark ID found: MK %d\n", sranger_common_hwi -> get_mark_id());
 		if (sranger_common_hwi->get_mark_id () != 2){ // no MK2 found
 			PI_DEBUG_GP (DBG_L1,
                                      "    ... not a MK2 DSP\n");
 			delete sranger_common_hwi;
 			// probe for MK3
 			PI_DEBUG_GP (DBG_L1,
-                                     "    ... probing for MK3 DSP.\n");
+                                     "    ... probing for MK3 DSP and software details.\n");
 			sranger_common_hwi = new sranger_mk3_hwi_spm ();
+			PI_DEBUG_GP (DBG_L2,
+                                     "    ... verifying.\n");
 			if (sranger_common_hwi){
+                                PI_DEBUG_GP (DBG_L2, "    ... verify 1.\n");
 				if (sranger_common_hwi->get_mark_id() != 3){ // no MK3 found
                                         PI_DEBUG_GP (DBG_L1,
                                       "    ... MK3 test failed. :(");
@@ -1707,19 +1708,23 @@ XSM_Hardware *get_gxsm_hwi_hardware_class ( void *data ) {
 					exit (0);
 					return NULL;
 				}
+                                PI_DEBUG_GP (DBG_L2, "    ... verify 2.\n");
 			} else {
 				PI_DEBUG_GP (DBG_L1, " -> E02 -- HwI common init failed.\n");
                                 g_warning (" HwI Init failed with E02.");
 				exit (0);
 				return NULL;
 			}
+                        PI_DEBUG_GP (DBG_L2, "    ... verify 3.\n");
 		}
+                PI_DEBUG_GP (DBG_L2, "    ... verify 4.\n");
 	} else {
 		PI_DEBUG_GP (DBG_L1, " -> E03 -- failed, no MK3 or MK2 found.\n");
                 g_warning (" HwI Init failed with E03.");
 		exit (0);
 		return NULL;
 	}
+        PI_DEBUG_GP (DBG_L2, "    ... verify 5.\n");
 	
 	PI_DEBUG_GP (DBG_L1, " -> probing succeeded: MK%d identified.\n", sranger_common_hwi -> get_mark_id ());
         g_message (" -> HwI: probing succeeded: MK%d DSP identified and ready.\n", sranger_common_hwi -> get_mark_id ());
