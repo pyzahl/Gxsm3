@@ -40,9 +40,9 @@ current work in progress, evaluating while working with it, optimizing, new idea
    ... issue with Ampl and GPIO defaults at startup not taking effect, need to update numbers after restart ?!? Check! -- touch values after start!
    ... Auto folder: defaults (as shown) not applying for GPIO, Ampl, step??? -- need to touch values for update ??? Check! - -touch value after start!
 ->     ...auto time unit adjust [ms, s, ..] depending on range -- may be...
--> 2D view: in SLS mode: make Red-Line work! -- working on this. isNew data control issue in LineInfo, must reset, etc.
-       ... SLS BotUp scandir leads to crash
-       ... need to auto reset SLS for any new dimension scan and at gxsm startup, but must keep RemoteControlHooks
+->\/ 2D view: in SLS mode: make Red-Line work! -- working on this. isNew data control issue in LineInfo, must reset, etc. ==> done.
+       ... SLS BotUp scandir leads to crash  -- TDB, do not use rigth now.
+       ... need to auto reset SLS for any new dimension scan and at gxsm startup, but must keep RemoteControlHooks  ==> reset done at startup now.
 
 pending ports:
 -> View 3D / GL view -- started, work in progress.... NEEDS MAJOR PORT TO OPEN-GL > V3.1 :( total incompat, not working. Neither Gxsm-2 -- can any one help here? ==> vsurf3d.C
@@ -137,6 +137,10 @@ DSP Code Road-Map:
 =========================
 END.
 
+
+pending reports:
+
+------------- TDB, random finding:
 
 
 (gxsm3:10270): GLib-GObject-CRITICAL **: g_object_get_data: assertion 'G_IS_OBJECT (object)' failed
