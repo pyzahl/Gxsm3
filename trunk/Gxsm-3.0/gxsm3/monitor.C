@@ -181,6 +181,7 @@ gint Monitor::AppLine(){
                         f << *field;
 
 #ifdef MONITOR_VMEMORY_USAGE
+                f << " RealTime: " << g_get_real_time ();
                 f << " VmSize: " << getValue ("VmSize:") << " kB";
 #endif
 
