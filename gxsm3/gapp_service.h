@@ -796,7 +796,7 @@ public:
 			gtk_widget_show (dialog);
 		}
 	};
-        static gint terminate_timeout_func (GtkWidget *widget, gpointer data);
+        static gint terminate_timeout_func (gpointer data);
 	void alert(const gchar *s1, const gchar *s2, const gchar *s3, int c);
 	void errormsg(const char *mld){
 		if(window){
