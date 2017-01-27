@@ -37,6 +37,13 @@
 // #define GXSM_MONITOR_VMEMORY_USAGE
 #ifdef GXSM_MONITOR_VMEMORY_USAGE
 
+gint auto_log_timeout_func (gpointer data){
+        Monitor* m = (Monitor*)data;
+        if (m)
+                m->PutEvent ("Monitor VM usage", "");
+        return true;
+}
+
 gint parseLine (char* line){
         // This assumes that a digit will be found and the line ends in " Kb".
         gint i = strlen(line);
@@ -84,6 +91,10 @@ Monitor::Monitor(const gchar *name){
                 Fields[i] = NULL;
 
         LogEvent("Monitor", "startup");
+
+#ifdef GXSM_MONITOR_VMEMORY_USAGE
+        g_timeout_add_seconds ((guint)10, (GSourceFunc) auto_log_timeout_func, this);
+#endif
 }
 
 Monitor::~Monitor(){

@@ -296,9 +296,7 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
                                 
 				if (FB_SPM_VERSION != magic_data.version || 
 				    FB_SPM_SOFT_ID != magic_data.dsp_soft_id){
-				        gchar *details = g_strdup_printf(
-                                                                         "Critical Warning:\n"
-									 "Detected SRanger DSP Software Version: %x.%02x\n"
+				        gchar *details = g_strdup_printf("Detected SRanger DSP Software Version: %x.%02x\n"
 									 "GXSM was build for DSP Software Version: %x.%02x\n\n"
 									 "Note: This may cause incompatility problems and unpredictable toubles,\n"
 									 "however, trying to proceed in case you know what you are doing is possible.\n\n"

@@ -745,21 +745,20 @@ void GnomeAppService::ValueRequest(const gchar *title, const gchar *label, const
 }
 
 
-gint GnomeAppService::terminate_timeout_func (GtkWidget *widget, gpointer data){
-#if 0
-        gint c = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (data), "CM"));
+gint GnomeAppService::terminate_timeout_func (gpointer data){
         gchar *m  = (gchar*)g_object_get_data (G_OBJECT (data), "SM");
-        --c;
+        gint c = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (data), "CM"));
+        --c; // c=0 if dialog closed, will terminate rigth away.
         if (c > 0){
                 gchar *message = g_strdup_printf ("%s\nTerminating in %d s.", m, c);
-                g_message (message);
+                // g_message (message);
                 g_object_set_data (G_OBJECT (data), "CM", GINT_TO_POINTER (c));
                 gtk_message_dialog_set_markup (GTK_MESSAGE_DIALOG (data), message);
+                gtk_window_present (GTK_WINDOW (data));
                 g_free (message);
                 return true;
         }
-        g_free (m);
-#endif
+        if (m) g_free (m);
         g_critical ("GXSM is terminating now due to DSP software version mismatch. Please update DSP.");
         exit (-1);
         return false;
@@ -771,7 +770,7 @@ void GnomeAppService::alert(const gchar *s1, const gchar *s2, const gchar *s3, i
                                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
                                                                         GTK_MESSAGE_WARNING,
                                                                         GTK_BUTTONS_CLOSE,
-                                                                        "%s\n%s\n%s", s1, s2, s3);
+                                                                        "<span foreground='red' size='large' weight='bold'>%s</span>\n%s\n%s", s1, s2, s3);
                 g_signal_connect_swapped (G_OBJECT (dialog), "response",
                                           G_CALLBACK (gtk_widget_destroy),
                                           G_OBJECT (dialog));
@@ -780,12 +779,12 @@ void GnomeAppService::alert(const gchar *s1, const gchar *s2, const gchar *s3, i
 
                 if (c > 5){
                         g_message ("adding timeout for forced exit");
-                        g_object_set_data (G_OBJECT (dialog), "SM", (gpointer)g_strdup_printf ("%s\n%s\n%s", s1, s2, s3));
+                        g_object_set_data (G_OBJECT (dialog), "SM", (gpointer)g_strdup_printf ("<span foreground='red' size='large' weight='bold'>%s</span>\n%s\n%s", s1, s2, s3));
                         g_object_set_data (G_OBJECT (dialog), "CM", GINT_TO_POINTER (c));
-                        g_timeout_add_seconds ((guint)20, 
-                                               (GSourceFunc) GnomeAppService::terminate_timeout_func, 
-                                               dialog
-                                               );
+                        g_timeout_add ((guint)1000, 
+                                       (GSourceFunc) GnomeAppService::terminate_timeout_func, 
+                                       dialog
+                                       );
                 }
         }
 }
