@@ -66,36 +66,6 @@ inline guint32 RGBAColor (float c[4]) {
 		;	
 }
 
-#if 0
-// in app_view.C :
-static GActionEntry win_object_popup_entries[] = {
-        { "remove-point-object", ViewControl::obj_remove_callback, NULL, NULL, NULL },
-        { "open-object-properties-dialog", ViewControl::obj_properties_callback, NULL, NULL, NULL },
-        { "get-coordinates-offset", ViewControl::obj_setoffset_callback, NULL, NULL, NULL },
-        { "get-coordinates-as-global-reference", ViewControl::obj_global_ref_point_callback, NULL, NULL, NULL },
-        { "follow", ViewControl::obj_follow_callback, NULL, "false", NULL },
-        { "goto-local-max", ViewControl::obj_go_locmax_callback, NULL, NULL, NULL },
-        { "dump-object-properties", ViewControl::obj_dump_callback, NULL, NULL, NULL },
-        { "remove-line-object", ViewControl::obj_remove_callback, NULL, NULL, NULL },
-        { "object-properties", ViewControl::obj_properties_callback, NULL, NULL, NULL },
-        { "get-coordinates", ViewControl::obj_getcoords_callback, NULL, NULL, NULL },
-        { "look-for-maximum-goto", ViewControl::obj_go_locmax_callback, NULL, NULL, NULL },
-        { "objmode-polyline-node", ViewControl::obj_addnode_callback, NULL, NULL, NULL },
-        { "dump-object-properties", ViewControl::obj_dump_callback, NULL, NULL, NULL },
-        { "remove-line-object", ViewControl::obj_remove_callback, NULL, NULL, NULL },
-        { "object-properties", ViewControl::obj_properties_callback, NULL, NULL, NULL },
-        { "add-polyline-node", ViewControl::obj_addnode_callback, NULL, NULL, NULL },
-        { "delete-polyline-node", ViewControl::obj_delnode_callback, NULL, NULL, NULL },
-        { "dump-object-properties", ViewControl::obj_dump_callback, NULL, NULL, NULL },
-        { "use-event-data", ViewControl::obj_event_use_callback, NULL, NULL, NULL },
-        { "open-event", ViewControl::obj_event_open_callback, NULL, NULL, NULL },
-        { "save-event", ViewControl::obj_event_save_callback, NULL, NULL, NULL },
-        { "object-properties", ViewControl::obj_properties_callback, NULL, NULL, NULL },
-        { "get-coordinates-offset", ViewControl::obj_setoffset_callback, NULL, NULL, NULL }
-};
-#endif
-
-
 VObject *current_vobject2 = NULL;
 
 void VObject::set_osd_style (gboolean flg){

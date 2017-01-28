@@ -120,6 +120,7 @@ public:
         static void side_pane_action_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data); // F9 accel key
         static void side_pane_callback (GtkWidget *widget, gpointer user_data);
         static void tip_follow_callback (GtkWidget *widget, gpointer user_data);
+        static void scan_start_stop_callback (GtkWidget *widget, gpointer user_data);
         static void close_side_pane_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
         static void obj_setoffset_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);

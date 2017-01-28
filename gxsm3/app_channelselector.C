@@ -79,14 +79,22 @@ ChannelSelector::ChannelSelector (int ChAnz){
 
         XSM_DEBUG(DBG_L2, "ChannelSelector::ChannelSelector");
 
+	ChSDirWidget = new GtkWidget*[ChAnz];
+	ChModeWidget = new GtkWidget*[ChAnz];
+	ChViewWidget = new GtkWidget*[ChAnz];
+	RestoreWidget = new GtkWidget*[1];
+
+	for(i=0; i<ChAnz; i++){
+                ChSDirWidget[i] = NULL;
+                ChModeWidget[i] = NULL;
+                ChViewWidget[i] = NULL;
+        }
+  
 	AppWindowInit(CHANNELSELECTOR_TITLE);
 
-        ch_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT".gui.channelselector");
-        int showPrevious = g_settings_get_boolean (ch_settings, "auto-restore") ? 1:0;
-  
-	// dividing window into two sections
+        // add headers
 
-	wid = gtk_label_new ("Ch.");
+        wid = gtk_label_new ("Ch.");
 	gtk_widget_show (wid);
 	gtk_grid_attach (GTK_GRID (v_grid), wid, 0, 0, 1, 1);
 
@@ -102,18 +110,56 @@ ChannelSelector::ChannelSelector (int ChAnz){
 	gtk_widget_show (wid);
 	gtk_grid_attach (GTK_GRID (v_grid), wid, 5, 0, 1, 1);
 
-	ChSDirWidget = new GtkWidget*[ChAnz];
-	ChModeWidget = new GtkWidget*[ChAnz];
-	ChViewWidget = new GtkWidget*[ChAnz];
-	RestoreWidget = new GtkWidget*[1];
+        ch_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT".gui.channelselector");
+        int showPrevious = g_settings_get_boolean (ch_settings, "auto-restore") ? 1:0;
 
-	for(i=0; i<ChAnz; i++){
-                ChSDirWidget[i] = NULL;
-                ChModeWidget[i] = NULL;
-                ChViewWidget[i] = NULL;
-        }
+        // add scrolled area for channels
+        
+	GtkWidget *scrollarea = gtk_scrolled_window_new (NULL, NULL);
+	gtk_container_set_border_width (GTK_CONTAINER (scrollarea), 0);
+        gtk_widget_set_hexpand (scrollarea, TRUE);
+        gtk_widget_set_vexpand (scrollarea, TRUE);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrollarea),
+					GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+        gtk_grid_attach (GTK_GRID (v_grid), scrollarea, 0,1, 20,1);
+
+	// add store/restore buttons and entry
+	static  const char* presets[] = {"A","B","C","Default"};
   
-	for(i=1; i<=ChAnz; i++){
+	if (showPrevious == 1){
+                wid = gtk_button_new_with_label("Store");
+                gtk_grid_attach (GTK_GRID (v_grid), wid, 0,100, 2,1);
+                g_signal_connect (G_OBJECT (wid), "clicked",
+                                  G_CALLBACK (ChannelSelector::store_callback),
+                                  this);
+                gtk_widget_show(wid);
+                
+                dropDownMenu = gtk_combo_box_text_new ();
+                RestoreWidget[0] = dropDownMenu;
+                gtk_widget_show (dropDownMenu);
+                for (k = 0; k<4;k++)
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dropDownMenu), g_strdup_printf ("%d",k), presets[k]);
+                
+		gtk_combo_box_set_active_id (GTK_COMBO_BOX (dropDownMenu), "0");
+                gtk_grid_attach (GTK_GRID (v_grid), dropDownMenu, 2,100, 2,1);
+                
+                wid = gtk_button_new_with_label("Restore");
+                gtk_grid_attach (GTK_GRID (v_grid), wid, 4,100, 2,1);
+                gtk_widget_show(wid);
+                g_signal_connect (G_OBJECT (wid), "clicked",
+                                  G_CALLBACK (ChannelSelector::restore_callback),
+                                  this);    
+        }
+
+        gtk_widget_show_all (v_grid);
+
+        // new grid in scrolled container
+        v_grid = gtk_grid_new ();
+	gtk_container_add(GTK_CONTAINER(scrollarea), v_grid);
+        gtk_widget_show_all (v_grid);
+        
+        // create channels and add to grid
+        	for(i=1; i<=ChAnz; i++){
 		sprintf(txt,"% 2d", i);
 
 		wid = gtk_label_new (txt);
@@ -223,34 +269,6 @@ ChannelSelector::ChannelSelector (int ChAnz){
 
 	}
   
-	// Store/restore buttons and entry
-	static  const char* presets[] = {"A","B","C","Default"};
-  
-	if (showPrevious == 1){
-                wid = gtk_button_new_with_label("Store");
-                gtk_grid_attach (GTK_GRID (v_grid), wid, 0,100, 2,1);
-                g_signal_connect (G_OBJECT (wid), "clicked",
-                                  G_CALLBACK (ChannelSelector::store_callback),
-                                  this);
-                gtk_widget_show(wid);
-                
-                dropDownMenu = gtk_combo_box_text_new ();
-                RestoreWidget[0] = dropDownMenu;
-                gtk_widget_show (dropDownMenu);
-                for (k = 0; k<4;k++)
-                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dropDownMenu), g_strdup_printf ("%d",k), presets[k]);
-                
-		gtk_combo_box_set_active_id (GTK_COMBO_BOX (dropDownMenu), "0");
-                gtk_grid_attach (GTK_GRID (v_grid), dropDownMenu, 2,100, 2,1);
-                
-                wid = gtk_button_new_with_label("Restore");
-                gtk_grid_attach (GTK_GRID (v_grid), wid, 4,100, 2,1);
-                gtk_widget_show(wid);
-                g_signal_connect (G_OBJECT (wid), "clicked",
-                                  G_CALLBACK (ChannelSelector::restore_callback),
-                                  this);    
-        }
-
         alife = 1;
 
 	set_window_geometry ("channel-selector");

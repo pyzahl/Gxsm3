@@ -465,6 +465,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	gchar *yticfmt;
 
         GtkWidget *p_popup_menu;
+	GSimpleActionGroup *pc_action_group;
 
         Gxsm3appWindow *pc_in_window;
         GtkWidget *pc_grid;
