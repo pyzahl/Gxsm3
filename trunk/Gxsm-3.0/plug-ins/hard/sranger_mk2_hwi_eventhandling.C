@@ -278,6 +278,13 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
         if (GrMatWin && !vpg_window){
                 vpg_app_window =  gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
                 vpg_window = GTK_WINDOW (vpg_app_window);
+                GtkWidget *header_bar = gtk_header_bar_new ();
+                gtk_widget_show (header_bar);
+                gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), true);
+                gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), "Graph Matrix");
+                //gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
+                gtk_window_set_titlebar (GTK_WINDOW (vpg_window), header_bar);
+
                 gtk_window_resize (GTK_WINDOW (vpg_window),
                                    400*num_active_xmaps > 1100? 1100:400*num_active_xmaps,
                                    200*num_active_sources > 800? 800:200*num_active_sources);
@@ -292,6 +299,7 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
                 GtkWidget *statusbar = gtk_statusbar_new ();
                 g_object_set_data (G_OBJECT (vpg_window), "statusbar", statusbar);
                 gtk_grid_attach (GTK_GRID (vpg_grid), statusbar, 1,100, 100,1);
+                gtk_widget_show_all (GTK_WIDGET (statusbar));
 
         } 
         

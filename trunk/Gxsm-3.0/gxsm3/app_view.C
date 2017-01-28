@@ -1060,7 +1060,7 @@ void ViewControl::AppWindowInit(const gchar *title){
 
         XSM_DEBUG (DBG_L2,  "VC::VC popup Header Buttons setup. " );
 	GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
-
+      
         // attach full view popup menu to tool button ----------------------------------------------------
         GtkWidget *header_menu_button = gtk_menu_button_new ();
         //        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("emblem-system-symbolic", tmp_toolbar_icon_size));
@@ -1129,7 +1129,16 @@ void ViewControl::AppWindowInit(const gchar *title){
                           G_CALLBACK (ViewControl::tip_follow_callback), this);
         //        GtkStyleContext *context = gtk_widget_get_style_context (header_menu_button);
         //        gtk_style_context_add_class(context, ".view-headerbar-tip-follow");
-        
+
+
+        header_menu_button = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("system-run-symbolic", tmp_toolbar_icon_size));
+        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+        gtk_widget_show (header_menu_button);
+        gtk_widget_set_name (header_menu_button, "view-start-stop-scan"); // name used by CSS to apply custom color scheme
+	gtk_widget_set_tooltip_text (header_menu_button, N_("Start/Stop Scan"));
+        g_signal_connect (G_OBJECT (header_menu_button), "toggled",
+                          G_CALLBACK (ViewControl::scan_start_stop_callback), this);
         XSM_DEBUG (DBG_L2,  "VC::VC setup titlbar" );
 
         gtk_window_set_title (GTK_WINDOW (window), title);
@@ -3220,6 +3229,13 @@ void ViewControl::side_pane_callback (GtkWidget *widget, gpointer user_data) {
 void ViewControl::tip_follow_callback (GtkWidget *widget, gpointer user_data) {
         ViewControl *vc = (ViewControl *) user_data; 
         vc->tip_follow_control (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+}
+
+void ViewControl::scan_start_stop_callback (GtkWidget *widget, gpointer user_data){
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                gapp->signal_emit_toolbar_action ("Toolbar_Scan_Start");
+        else
+                gapp->signal_emit_toolbar_action ("Toolbar_Scan_Stop");
 }
 
 void ViewControl::side_pane_action_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data) {

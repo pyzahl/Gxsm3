@@ -703,6 +703,10 @@ SPM_ScanControl::~SPM_ScanControl (){
 	gapp->RegisterPluginToolbarButton (NULL, "Toolbar_Scan_Movie");
 	gapp->RegisterPluginToolbarButton (NULL, "Toolbar_Scan_Pause");
 	gapp->RegisterPluginToolbarButton (NULL, "Toolbar_Scan_Stop");
+#ifdef ADD_SLS_CONTROL
+	gapp->RegisterPluginToolbarButton (NULL, "Toolbar_SubLineScan");
+#endif
+
 
 //	std::cout << "SPM_ScanControl - cleanup scanlists" << std::endl;
 	// clean up
