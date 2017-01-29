@@ -103,11 +103,14 @@ private:
 
 class MonitorControl : public AppBase, Monitor{
 public:
-        MonitorControl();
+        MonitorControl (gint loglevel=2, gint maxlines=500);
         virtual ~MonitorControl();
 
-        virtual void LogEvent(const gchar *Action, const gchar *Entry);
+        virtual void LogEvent(const gchar *Action, const gchar *Entry, gint level=1);
+
+        void set_max_lines (gint ml) { max_lines = ml; };
 private:
+        gint          max_lines;
         GtkWidget     *log_view;
 	GtkTextBuffer *log_buf;
 };

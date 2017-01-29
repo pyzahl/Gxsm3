@@ -93,7 +93,7 @@ UnitsTable XsmUnitsTable[] = {
 /* Main XSM Object */
 
 Xsm::Xsm(){
-        gapp->monitorcontrol->LogEvent("Xsm object", "constructor");
+        gapp->monitorcontrol->LogEvent("Xsm object", "constructor", 3);
 
 	// check for Cmd-Line override
 	if(xsmres.UnitCmd)
@@ -197,12 +197,12 @@ Xsm::Xsm(){
 	data.EnergyUnit = EnergyUnit->Copy ();
 
 	XSM_DEBUG (DBG_L2, "Xsm::Xsm : Init done");
-        gapp->monitorcontrol->LogEvent("Xsm object", "destructor completed");
+        gapp->monitorcontrol->LogEvent("Xsm object", "destructor completed", 3);
 }
 
 Xsm::~Xsm(){
 	XSM_DEBUG (DBG_L2, "Xsm::~Xsm deleting unit objects");
-        gapp->monitorcontrol->LogEvent("Xsm object", "destructor");
+        gapp->monitorcontrol->LogEvent("Xsm object", "destructor", 3);
         
 	if(LenUnit)
 		delete LenUnit;
@@ -237,7 +237,7 @@ Xsm::~Xsm(){
 	Inst=NULL;
 
 	XSM_DEBUG (DBG_L2, "Xsm::~Xsm done.");
-        gapp->monitorcontrol->LogEvent("Xsm object", "destructor complete");
+        gapp->monitorcontrol->LogEvent("Xsm object", "destructor complete", 3);
 }
 
 

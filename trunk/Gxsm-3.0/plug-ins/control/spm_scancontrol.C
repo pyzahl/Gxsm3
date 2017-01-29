@@ -1998,7 +1998,7 @@ double SPM_ScanControl::update_status_info (int reset){
 			gchar *nl;
 			if ((nl=strchr (tt, '\n'))) *nl=' '; // remove \n for logfile
 			gchar *mt = g_strdup_printf ("Scan Progress [%d]", line);
-			gapp->monitorcontrol->LogEvent (mt, tt);
+			gapp->monitorcontrol->LogEvent (mt, tt, 2);
 			g_free(mt);
 		}
 		g_free(tt);

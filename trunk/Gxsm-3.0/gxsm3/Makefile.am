@@ -53,7 +53,6 @@ xshmimg.C xshmimg.h \
 view.C view.h \
 vprofile.C \
 vsurf3d.C \
-trackball.C trackball.h \
 \
 xsmhard.C xsmhard.h \
 \

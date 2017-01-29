@@ -53,7 +53,7 @@ XSMRESOURCES xsmres;
 App *gapp = NULL;
 int restarted = 0;
 int debug_level = 0;
-int logging_level = 1;
+int logging_level = 2;
 int developer_option = 0;
 int pi_debug_level = 0;
 int force_gxsm_defaults = 0;
@@ -86,7 +86,7 @@ static const GOptionEntry gxsm_options[] =
         },
 
 	{ "logging-level", 'L', G_OPTION_FLAG_NONE, G_OPTION_ARG_INT, &logging_level,
-          N_("Set Gxsm logging/monitor level. 0: omit all loggings. 1: default logging, 2: verbose logging"), NULL
+          N_("Set Gxsm logging/monitor level. omit all loggings: 0, minimal logging: 1, default logging: 2, verbose logging: 3, ..."), NULL
         },
 
 	{ "developer", 'y', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &developer_option,
