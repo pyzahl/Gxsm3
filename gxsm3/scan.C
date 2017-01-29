@@ -28,6 +28,7 @@
 #include <locale.h>
 #include <libintl.h>
 
+#include <config.h>
 
 #include <time.h>
 #include "surface.h"
@@ -36,9 +37,13 @@
 #include "action_id.h"
 #include "xsm.h"
 
+#include "gxsm_monitor_vmemory_and_refcounts.h"
+
 int scandatacount=0;
 
 Scan::Scan(Scan *scanmaster){
+        GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_SCANOBJ, "constructor");
+        GXSM_REF_OBJECT (GXSM_GRC_SCANOBJ);
 	TimeList = NULL;
 	refcount=0;
 	Running = 0;
@@ -66,6 +71,8 @@ Scan::Scan(Scan *scanmaster){
 
 
 Scan::Scan(int vtype, int vflg, int ChNo, SCAN_DATA *vd, ZD_TYPE mtyp){
+        GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_SCANOBJ, "constructor");
+        GXSM_REF_OBJECT (GXSM_GRC_SCANOBJ);
 	TimeList = NULL;
 	mem2d_refcount = 0;
 	refcount = 0;
@@ -109,6 +116,8 @@ Scan::~Scan(){
 
 	delete[] Pkt2d; 
 	destroy_all_objects ();
+        GXSM_UNREF_OBJECT (GXSM_GRC_SCANOBJ);
+        GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_SCANOBJ, "destructor");
 }
 
 int Scan::free_time_elements (){
@@ -291,8 +300,7 @@ void Scan::realloc_pkt2d(int n){
 }
 
 void Scan::AutoDisplay(double hi, double lo, int Delta){
-
-        gapp->monitorcontrol->LogEvent("AutoDisp_callback", "in");
+        GXSM_LOG_ANY_ACTION ("AutoDisp_callback", "in");
 
 	if (hi == 0. && lo == 0.){
 		SetVM (-2, NULL, Delta);
@@ -323,7 +331,7 @@ void Scan::AutoDisplay(double hi, double lo, int Delta){
 
 	data.GetDisplay_Param(*vdata);
 
-        // gapp->monitorcontrol->LogEvent("AutoDisp_callback", "out");
+        GXSM_LOG_ANY_ACTION ("AutoDisp_callback", "out");
 }
 
 int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta){

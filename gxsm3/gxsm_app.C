@@ -202,21 +202,29 @@ App::~App(){
 	XSM_DEBUG (DBG_L1,  "App::~App ** unloading plugins **" );
 
 	// remove plugins: killflag = TRUE
+        monitorcontrol->LogEvent ("GXSM shudown", "unloading plugins.");
 	reload_gxsm_plugins( TRUE );
 
 	XSM_DEBUG (DBG_L1,  "App::~App ** unloading plugins done. **" );
 
 	XSM_DEBUG (DBG_L1,  "App::~App ** Deleting Channelselector **" );
+        monitorcontrol->LogEvent ("GXSM shudown", "deleting channelselector.");
         delete channelselector;
 
-	XSM_DEBUG (DBG_L1,  "App::~App ** Deleting Monitor **" );
-        delete monitorcontrol;
-
 	XSM_DEBUG (DBG_L1,  "App::~App ** Deleting xsm **" );
+        monitorcontrol->LogEvent ("GXSM shudown", "deleting xsm object.");
+
+        ClearStatus();
+        
         delete xsm;
 
         //        g_clear_object (&gxsm_app_settings);
         //        g_clear_object (&as_settings);
+
+	XSM_DEBUG (DBG_L1,  "App::~App ** Deleting Monitor **" );
+
+        monitorcontrol->LogEvent ("GXSM shudown", "deleting monitor, last log of session.");
+        delete monitorcontrol;
 
 	XSM_DEBUG (DBG_L1,  "App::~App ** -- all done -- by by -- **" );
         XSM_DEBUG(DBG_L2, "App::~App: done." );
@@ -392,6 +400,10 @@ void App::build_gxsm (Gxsm3appWindow *win){
 
         ClearStatus();
 
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - Monitor");
+        pcs_set_current_gschema_group ("monitorwindow");
+        monitorcontrol  = new MonitorControl();
+
         /* Erzeuge und Initialise Xsm system */
 
         pcs_set_current_gschema_group ("corehwi");
@@ -444,11 +456,6 @@ void App::build_gxsm (Gxsm3appWindow *win){
 
         /* create default control windows */
         
-        XSM_DEBUG(DBG_L2, "App::build_gxsm - Monitor");
-        /* create windows */
-        pcs_set_current_gschema_group ("monitorwindow");
-        monitorcontrol  = new MonitorControl();
-
         XSM_DEBUG(DBG_L2, "App::build_gxsm - Channelselector");
         pcs_set_current_gschema_group ("channelselectorwindow");
 
@@ -478,7 +485,6 @@ void App::build_gxsm (Gxsm3appWindow *win){
         XSM_DEBUG (DBG_L2, "App::build_gxsm - update all entries");
         spm_update_all (-xsm->data.display.ViewFlg);
         monitorcontrol->LogEvent ("GXSM", "startup");
-
 
         XSM_DEBUG(DBG_L2, "App::build_gxsm - done.");
 }
@@ -813,7 +819,9 @@ gint App::RemoveGxsmSplash(GtkWidget *widget, gpointer data){
         //      a->splash = NULL;
         //	a->splash_progress_bar = NULL;
         //      a->splash_darea = NULL;
-        
+
+        splash_draw_callback (NULL, NULL, NULL); // destroy self
+                
 	return FALSE;
 }
 
@@ -824,6 +832,15 @@ gboolean App::splash_draw_callback (GtkWidget *widget, cairo_t *cr, gpointer dat
         static cairo_item_text *text2 = NULL;
         static cairo_item_text *text3 = NULL;
         static cairo_item_text *text4 = NULL;
+
+
+        if (widget == NULL){ // cleanup self
+                if (text1) { delete text1; text1=NULL; }
+                if (text2) { delete text2; text2=NULL; }
+                if (text3) { delete text3; text3=NULL; }
+                if (text4) { delete text4; text4=NULL; }
+                return true;
+        }
         
         XSM_DEBUG_GP (DBG_L1, "App::splash_draw_callback: %s, %s \n",
                  (const gchar*) g_object_get_data( G_OBJECT (widget), "splash_progress_text"),

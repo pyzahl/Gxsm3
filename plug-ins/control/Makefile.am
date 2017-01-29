@@ -22,8 +22,8 @@ libspm_scancontrol_la_SOURCES = spm_scancontrol.C
 libmultidim_movie_control_la_LDFLAGS = -module -export-dynamic -avoid-version
 libmultidim_movie_control_la_SOURCES = multidim_movie_control.C
 
-libNanoPlott_la_LDFLAGS = -module -export-dynamic -avoid-version
-libNanoPlott_la_SOURCES = NanoPlott.C
+#libNanoPlott_la_LDFLAGS = -module -export-dynamic -avoid-version
+#libNanoPlott_la_SOURCES = NanoPlott.C
 
 # broken plugins, not gtkdatabox / not gcc3.3 compat
 #	libSpaLeedControl.la

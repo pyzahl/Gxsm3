@@ -30,8 +30,10 @@
 #include "mem2d.h"
 #include "glbvars.h"
 #include "action_id.h"
+#include "gxsm_monitor_vmemory_and_refcounts.h"
 
 LineProfile1D::LineProfile1D(){
+        GXSM_REF_OBJECT (GXSM_GRC_PROFILEOBJ);
 	scan1d = NULL;
 	scan1d_2 = NULL;
 	private_scan1d = NULL;
@@ -39,6 +41,7 @@ LineProfile1D::LineProfile1D(){
 }
 
 LineProfile1D::LineProfile1D(int n, UnitObj *ux, UnitObj *uy, double xmin, double xmax, int ns){
+        GXSM_REF_OBJECT (GXSM_GRC_PROFILEOBJ);
 	scan1d_2 = NULL;
 	private_scan1d_2 = NULL;
 
@@ -79,6 +82,7 @@ LineProfile1D::~LineProfile1D(){
 		delete private_scan1d;
 	if(private_scan1d_2)
 		delete private_scan1d_2;
+        GXSM_UNREF_OBJECT (GXSM_GRC_PROFILEOBJ);
 }
 
 // Lesen und schreiben von spa4 .d1d Daten

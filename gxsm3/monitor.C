@@ -27,15 +27,37 @@
 
 
 #include <iostream>
+#include <iomanip>
 #include <time.h>
 #include "monitor.h"
 #include "meldungen.h"
 #include "unit.h"
 #include "xsmdebug.h"
+#include "gxsm_monitor_vmemory_and_refcounts.h"
 
 // may be enabled via configure.ac or here directly
 // #define GXSM_MONITOR_VMEMORY_USAGE
 #ifdef GXSM_MONITOR_VMEMORY_USAGE
+int global_ref_counter[32] = {
+        0,0,0,0, 0,0,0,0,
+        0,0,0,0, 0,0,0,0,
+        0,0,0,0, 0,0,0,0,
+        0,0,0,0, 0,0,0,0
+};
+
+const gchar *grc_name[] = {
+        "UnitObj",
+        "ScanDataObj",
+        "ScanObj",
+        "ZData",
+        "LayerInfo",
+        "Mem2d",
+        "Mem2dSco",
+        "VObj",
+        "CairoItem",
+        "ProfileObj",
+        NULL
+};
 
 gint auto_log_timeout_func (gpointer data){
         Monitor* m = (Monitor*)data;
@@ -193,8 +215,12 @@ gint Monitor::AppLine(){
                         f << *field;
 
 #ifdef GXSM_MONITOR_VMEMORY_USAGE
-                f << " RealTime: " << g_get_real_time ();
-                f << " VmSize: " << getValue ("VmSize:") << " kB";
+              
+                f << "\nRealTime: "  << std::setw(21) << g_get_real_time ();
+                f << " VmSize: " << std::setw(14) << getValue ("VmSize:") << " kB";
+                f << " RefCounts: ";
+                for (int i=0; i<GXSM_GRC_LAST && grc_name[i]; ++i)
+                        f << " " << grc_name[i] << ": "  << std::setw(6) << global_ref_counter[i];
 #endif
 
                 f << "\n";

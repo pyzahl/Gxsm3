@@ -83,7 +83,7 @@ void XSM_Instrument::update_piezosensitivity (XSMRESOURCES &xsmres, double temp)
 	}
 
 	XSM_DEBUG_GP (DBG_L1, "XSM_Instrument::update_piezosensitivity ** xsmres.X/Y/ZPiezoAV = %g, %g, %g Ang/V\n", xPsens, yPsens, zPsens);
-	XSM_DEBUG_GP (DBG_L1, "XSM_Instrument::update_piezosensitivity ** xsmres.DigRangeOut  = %d V\n", DigRangeOut);
+	XSM_DEBUG_GP (DBG_L1, "XSM_Instrument::update_piezosensitivity ** xsmres.DigRangeOut  = %ld V\n", DigRangeOut);
 
 	xR = AnalogVMaxOut*xPsens;
 	yR = AnalogVMaxOut*yPsens;

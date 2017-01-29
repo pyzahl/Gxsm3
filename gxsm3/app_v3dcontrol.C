@@ -236,6 +236,7 @@ void V3dControl::SetActive(int flg){
 	GtkWidget *statusbar = (GtkWidget*)g_object_get_data (G_OBJECT (glarea), "statusbar");
 	gint statusid  = gtk_statusbar_get_context_id(GTK_STATUSBAR(statusbar), "drag");
 
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	if(flg){
 		gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, "channel is active now");
 	}else{

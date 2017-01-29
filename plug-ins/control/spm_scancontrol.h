@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -25,10 +27,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-
 #ifndef __SPM_SCANCONTROL_H
 #define __SPM_SCANCONTROL_H
+
+#include <config.h>
 
 typedef enum { SCAN_DIR_TOPDOWN, SCAN_DIR_TOPDOWN_BOTUP, SCAN_DIR_BOTUP } SCAN_DIR;
 typedef enum { SCAN_FLAG_READY, SCAN_FLAG_STOP,  SCAN_FLAG_PAUSE,  SCAN_FLAG_RUN } SCAN_FLAG;
@@ -58,9 +60,10 @@ public:
 
 	};
 	~MultiVoltEntry (){
-		std::cout << "~MultiVolt: " << label << std::endl;
-		XsmRescourceManager xrm("SPMScanControl");
-		xrm.Put (label, value);
+                PI_DEBUG (DBG_L2, "~MultiVolt: " << label);
+		// XsmRescourceManager xrm("SPMScanControl");
+		// xrm.Put (label, value);
+		//delete ec;
 		g_free (label);
 	};
 

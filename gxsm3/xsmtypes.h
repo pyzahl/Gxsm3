@@ -34,6 +34,8 @@
 // system headers
 #include <unistd.h>
 
+#include <config.h>
+
 // Gxsm headers
 #ifndef __XSMDEBUG_H
 #include "xsmdebug.h"
