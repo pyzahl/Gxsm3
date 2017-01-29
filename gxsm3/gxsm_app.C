@@ -202,17 +202,17 @@ App::~App(){
 	XSM_DEBUG (DBG_L1,  "App::~App ** unloading plugins **" );
 
 	// remove plugins: killflag = TRUE
-        monitorcontrol->LogEvent ("GXSM shudown", "unloading plugins.");
+        monitorcontrol->LogEvent ("GXSM shudown", "unloading plugins.", 3);
 	reload_gxsm_plugins( TRUE );
 
 	XSM_DEBUG (DBG_L1,  "App::~App ** unloading plugins done. **" );
 
 	XSM_DEBUG (DBG_L1,  "App::~App ** Deleting Channelselector **" );
-        monitorcontrol->LogEvent ("GXSM shudown", "deleting channelselector.");
+        monitorcontrol->LogEvent ("GXSM shudown", "deleting channelselector.", 3);
         delete channelselector;
 
 	XSM_DEBUG (DBG_L1,  "App::~App ** Deleting xsm **" );
-        monitorcontrol->LogEvent ("GXSM shudown", "deleting xsm object.");
+        monitorcontrol->LogEvent ("GXSM shudown", "deleting xsm object.", 3);
 
         ClearStatus();
         
@@ -223,7 +223,7 @@ App::~App(){
 
 	XSM_DEBUG (DBG_L1,  "App::~App ** Deleting Monitor **" );
 
-        monitorcontrol->LogEvent ("GXSM shudown", "deleting monitor, last log of session.");
+        monitorcontrol->LogEvent ("GXSM shudown", "closing logging monitor, last log of session.");
         delete monitorcontrol;
 
 	XSM_DEBUG (DBG_L1,  "App::~App ** -- all done -- by by -- **" );
@@ -402,8 +402,9 @@ void App::build_gxsm (Gxsm3appWindow *win){
 
         XSM_DEBUG(DBG_L2, "App::build_gxsm - Monitor");
         pcs_set_current_gschema_group ("monitorwindow");
-        monitorcontrol  = new MonitorControl();
 
+        monitorcontrol  = new MonitorControl (logging_level);
+        
         /* Erzeuge und Initialise Xsm system */
 
         pcs_set_current_gschema_group ("corehwi");

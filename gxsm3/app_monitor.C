@@ -51,8 +51,10 @@ MONITORLOGENTRY tabledef[] = {
   { NULL, 0, NULL }
 };
 
-MonitorControl::MonitorControl ()
+MonitorControl::MonitorControl (gint loglevel, gint maxlines):Monitor(loglevel)
 {
+        set_max_lines (maxlines);
+
         AppWindowInit(N_("GXSM Activity Monitor and Logbook"));
 
         log_view = gtk_text_view_new ();
@@ -75,18 +77,28 @@ MonitorControl::MonitorControl ()
 }
 
 MonitorControl::~MonitorControl (){
-        PutEvent("MonitorControl", "End of Session Log. Exit OK.");
+        LogEvent ("MonitorControl", "End of Session Log. Exit OK.");
 }
 
-void MonitorControl::LogEvent (const gchar *Action, const gchar *Entry){
-        if (logging_level > 0){
+void MonitorControl::LogEvent (const gchar *Action, const gchar *Entry, gint level){
+        if (logging_level >= level){
                 // add to log file
-                PutEvent(Action, Entry);
+                PutLogEvent (Action, Entry);
 
-                GtkTextIter start_iter, end_iter;
+                // no logging into text buffer if max_lines < 0
+                if (max_lines < 0)
+                        return;
+                
+                GtkTextIter start_iter, end_trim_iter, end_iter;
                 GtkTextMark *end_mark;
-
+                gint lines = gtk_text_buffer_get_line_count (log_buf);
+         
+#if 0
                 gtk_text_buffer_get_bounds (log_buf, &start_iter, &end_iter);
+                // limit buffer max_lines lines unless max_lines == 0
+                if (max_lines > 1)
+                        if (lines > max_lines)
+                                gtk_text_buffer_get_iter_at_line_index (log_buf, &start_iter, lines-max_lines, 0);
 
                 GString *output = g_string_new (gtk_text_buffer_get_text (log_buf,
                                                                           &start_iter, &end_iter,
@@ -114,5 +126,38 @@ void MonitorControl::LogEvent (const gchar *Action, const gchar *Entry){
                 gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (log_view),
                                               end_mark, 0.0, FALSE, 0.0, 0.0);
                 g_object_unref (end_mark);
+
+#else
+                // append to log buffer view
+                GTimeVal gt;
+                g_get_current_time (&gt);
+                gchar *tmp = g_time_val_to_iso8601 (&gt);
+                GString *output = g_string_new (tmp);
+                g_free (tmp);
+                output = g_string_append(output, ": \t");
+                output = g_string_append(output, Action);
+                output = g_string_append(output, ": \t");
+                output = g_string_append(output, Entry);
+                output = g_string_append(output, "\n");
+
+                gtk_text_buffer_get_bounds (log_buf, &start_iter, &end_iter);
+
+                // limit buffer max_lines lines unless max_lines == 0
+                if (max_lines > 1 && lines > max_lines){
+                        gtk_text_buffer_get_iter_at_line_index (log_buf, &end_trim_iter, lines-max_lines, 0);
+                        gtk_text_buffer_delete (log_buf,  &start_iter,  &end_trim_iter);
+                }
+
+                end_mark = gtk_text_buffer_create_mark (log_buf, "cursor", &end_iter, false);
+                g_object_ref (end_mark);
+
+                gtk_text_buffer_move_mark (log_buf, end_mark, &end_iter );
+                gtk_text_buffer_insert_at_cursor(log_buf, output->str, -1 );
+
+                g_string_free(output, TRUE);
+
+                gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (log_view), end_mark, 0.0, true, 0.5, 1);
+                g_object_unref (end_mark);
+#endif
         }
 }

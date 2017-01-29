@@ -43,8 +43,6 @@
 
 #include "app_v3dcontrol.h"
 
-#include "trackball.h"
-
 #include <gtk/gtk.h>
 #include "action_id.h"
 

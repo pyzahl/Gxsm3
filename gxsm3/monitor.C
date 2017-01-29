@@ -35,10 +35,9 @@
 #include "xsmdebug.h"
 #include "gxsm_monitor_vmemory_and_refcounts.h"
 
-// may be enabled via configure.ac or here directly
-// #define GXSM_MONITOR_VMEMORY_USAGE
+
 #ifdef GXSM_MONITOR_VMEMORY_USAGE
-int global_ref_counter[32] = {
+gint global_ref_counter[32] = {
         0,0,0,0, 0,0,0,0,
         0,0,0,0, 0,0,0,0,
         0,0,0,0, 0,0,0,0,
@@ -59,14 +58,32 @@ const gchar *grc_name[] = {
         NULL
 };
 
-gint auto_log_timeout_func (gpointer data){
+gchar* Monitor::get_vmem_and_refcounts_info (){
+        gchar *tmp;
+        gint64 t=g_get_real_time ();
+        gchar *info = g_strdup_printf ("RealTime: %21ld us %10.2f s VmSize: %14d kB RefCounts: ",
+                                       t, (double)(t-t0)*1e-6,
+                                       getValue ("VmSize:"));
+        for (int i=0; i<GXSM_GRC_LAST && grc_name[i]; ++i){
+                tmp=g_strdup_printf (" %s: %6d", grc_name[i], global_ref_counter[i]);
+                info = g_strconcat (info, tmp, NULL);
+                g_free (tmp);
+        }
+        return info;
+}
+
+gint Monitor::auto_log_timeout_func (gpointer data){
         Monitor* m = (Monitor*)data;
-        if (m)
-                m->PutEvent ("Monitor VM usage", "");
+        if (m){
+                gchar *info = m->get_vmem_and_refcounts_info ();
+                m->LogEvent ("GXSM-Vm-Status", info, 3);
+                // only this is visible in monitor buffer
+                g_free (info);
+        }
         return true;
 }
 
-gint parseLine (char* line){
+gint Monitor::parseLine (char* line){
         // This assumes that a digit will be found and the line ends in " Kb".
         gint i = strlen(line);
         const char* p = line;
@@ -77,7 +94,7 @@ gint parseLine (char* line){
 }
 
 // use: getValue ("VmSize:");
-gint getValue (const gchar *what){ //Note: this value is in KB!
+gint Monitor::getValue (const gchar *what){ //Note: this value is in KB!
         FILE* file = fopen("/proc/self/status", "r");
         gint result = -1;
         gchar line[128];
@@ -94,20 +111,25 @@ gint getValue (const gchar *what){ //Note: this value is in KB!
 
 #endif
 
-Monitor::Monitor(const gchar *name){
+Monitor::Monitor(gint loglevel){
         dt=10.0;
+        t0=g_get_real_time ();        
 
-        if(name)
-                logname = g_strdup(name);
-        else{
-                char buf[64];
-                time_t t;
-                time(&t);               // 012345678901234567890123456789
-                strcpy(buf, ctime(&t)); // Thu Jun 25 12:44:55 1998
-                buf[7]=0; buf[24]=0;
-                logname = g_strdup_printf("Ev_%3s%4s.log", &buf[4], &buf[20]);
-                XSM_DEBUG (DBG_L2, "LogName:>" << logname << "<" );
-        }
+#ifdef GXSM_MONITOR_VMEMORY_USAGE
+        vmem_auto_log_interval_seconds = 10;
+#else
+        vmem_auto_log_interval_seconds = 0;
+#endif
+        
+        set_logging_level (loglevel);
+        
+        char buf[64];
+        time_t t;
+        time(&t);               // 012345678901234567890123456789
+        strcpy(buf, ctime(&t)); // Thu Jun 25 12:44:55 1998
+        buf[7]=0; buf[24]=0;
+        logname = g_strdup_printf("Ev_%3s%4s.log", &buf[4], &buf[20]);
+        XSM_DEBUG (DBG_L2, "LogName:>" << logname << "<" );
 
         for(int i=0; i < MAXMONITORFIELDS; ++i)
                 Fields[i] = NULL;
@@ -115,7 +137,7 @@ Monitor::Monitor(const gchar *name){
         LogEvent("Monitor", "startup");
 
 #ifdef GXSM_MONITOR_VMEMORY_USAGE
-        g_timeout_add_seconds ((guint)10, (GSourceFunc) auto_log_timeout_func, this);
+        g_timeout_add_seconds (vmem_auto_log_interval_seconds, (GSourceFunc) auto_log_timeout_func, this);
 #endif
 }
 
@@ -132,62 +154,19 @@ void Monitor::SetLogName(char *name){
         logname = g_strdup(name);
 }
 
-gint Monitor::Load(gchar *fname){
-        std::ifstream f;
-        return 0;
+void Monitor::Messung(double val, gchar *txt){
+        gchar *result = g_strdup_printf ("%8.4f", val);
+        LogEvent (txt, result);
+        g_free (result);
 }
 
-gint Monitor::Save(gchar *fname){
-        std::ofstream f;
-        time_t t;
-        time(&t); 
+void Monitor::PutLogEvent(const gchar *Action, const gchar *Entry, gint r){
 
-        f.open(fname, std::ios::out | std::ios::trunc);
-        if(!f.good()){
-                return 1;
-        }
-        f << "# Monitor Data\n" << "# Date: " << ctime(&t) << "#" << fname << "\n";
-  
-        //  foralllines...
-        f << "\n";
-
-        f.close();
-        return 0;
-}
-
-void Monitor::Messung(float val, gchar *txt){
-        /*
-          char buf[256];
-          time_t t;
-          time(&t);               // 012345678901234567890123456789
-          strcpy(buf, ctime(&t)); // Thu Jun 25 12:44:55 1998
-          buf[24]=0;
- 
-          strcpy(Field[0], buf);
-          sprintf(Field[1], "%6.0f  ", val);
-          if(!nlast)
-          f0=fn;
-          sprintf(Field[2], "------  ");
-          sprintf(Field[3], "------  ");
-          if(txt)
-          sprintf(Field[LastField-1], "*X: %3d %s", nlast, txt);
-          else
-          sprintf(Field[LastField-1], "*X: %3d", nlast);
-
-          AppLine();
-        */
-}
-
-void Monitor::LogEvent(const gchar *Action, const gchar *Entry){
-        PutEvent(Action, Entry);
-}
-
-void Monitor::PutEvent(const gchar *Action, const gchar *Entry){
-        //  return;
         for(gchar **field = Fields; *field; ++field){
                 g_free(*field);
                 *field=NULL;
         }
+        
         time_t t;
         time(&t);
         Fields[0] = g_strdup(ctime(&t)); Fields[0][24]=' ';
@@ -199,6 +178,15 @@ void Monitor::PutEvent(const gchar *Action, const gchar *Entry){
         Fields[6] = NULL;
 
         AppLine();
+
+#ifdef GXSM_MONITOR_VMEMORY_USAGE
+        if (r==0){ // only if no recursion
+                // add VmInfo line, this only goes into the log file
+                gchar *info = get_vmem_and_refcounts_info ();
+                PutLogEvent ("GXSM-Vm-Status", info, 1); // recursion control=1
+                g_free (info);
+        }
+#endif
 }
 
 gint Monitor::AppLine(){
@@ -213,15 +201,6 @@ gint Monitor::AppLine(){
     
                 for(gchar **field = Fields; *field; ++field)
                         f << *field;
-
-#ifdef GXSM_MONITOR_VMEMORY_USAGE
-              
-                f << "\nRealTime: "  << std::setw(21) << g_get_real_time ();
-                f << " VmSize: " << std::setw(14) << getValue ("VmSize:") << " kB";
-                f << " RefCounts: ";
-                for (int i=0; i<GXSM_GRC_LAST && grc_name[i]; ++i)
-                        f << " " << grc_name[i] << ": "  << std::setw(6) << global_ref_counter[i];
-#endif
 
                 f << "\n";
                 f.close();

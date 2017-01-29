@@ -1407,7 +1407,7 @@ void DSPControl::write_dsp_vector (int index){
 					      dsp_vector.f_dphi / CONST_DSP_F16
 			);
 
-		gapp->monitorcontrol->LogEvent (pvi, pvd);
+		gapp->monitorcontrol->LogEvent (pvi, pvd, 2);
 		g_free (pvi);
 		g_free (pvd);
 	}

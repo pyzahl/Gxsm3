@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -23,8 +25,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-
 #ifndef __MONITOR_H
 #define __MONITOR_H
 
@@ -43,29 +43,35 @@
 
 class Monitor{
 public:
-  Monitor(const gchar *name=NULL);
-  virtual ~Monitor();
+        Monitor(gint loglevel=2);
+        virtual ~Monitor();
 
-  virtual void run() {};
-  virtual void stop() {};
+#ifdef GXSM_MONITOR_VMEMORY_USAGE
+        gchar* get_vmem_and_refcounts_info ();
+        static gint auto_log_timeout_func (gpointer data);
+        gint parseLine (char* line);
+        gint getValue (const gchar *what);
+#endif
+                
+        virtual void Messung (double val=0., gchar *txt=NULL);
+        virtual void LogEvent (const gchar *Action, const gchar *Entry, gint level=1) {
+                if (logging_level >= level)
+                        PutLogEvent (Action, Entry);
+        };
 
-  virtual void Messung(float val=0., gchar *txt=NULL);
-  virtual void LogEvent(const gchar *Action, const gchar *Entry);
-
-  void PutEvent(const gchar *Action, const gchar *Entry);
-
-  gint Load(gchar *fname);
-  gint Save(gchar *fname);
-
-  gint AppLine();
-  gint GetLine();
-
-  void SetLogName(char *name);
-
-  gchar *Fields[MAXMONITORFIELDS];
+        void set_logging_level (gint lv=1) { logging_level=lv; };
+        void SetLogName (char *name);
+        void PutLogEvent (const gchar *Action, const gchar *Entry, gint r=0);
+        gint AppLine ();
+        
 protected:
-  double dt;
-  char   *logname;
+        gint logging_level;
+        double dt;
+        char   *logname;
+private:
+        gchar *Fields[MAXMONITORFIELDS];
+        guint vmem_auto_log_interval_seconds;
+        gint64 t0;
 };
 
 #endif
