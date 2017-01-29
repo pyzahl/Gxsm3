@@ -211,6 +211,7 @@ public:
         /* Status Handling */
 
         void SetStatus(const gchar *mld, const gchar *val=NULL){
+                gtk_statusbar_remove_all (GTK_STATUSBAR (appbar), appbar_ctx_id);
                 if(val){
                         gchar *longmld = g_strdup_printf("%s: %s",mld, val);
                         gtk_statusbar_push(GTK_STATUSBAR (appbar), appbar_ctx_id, longmld);

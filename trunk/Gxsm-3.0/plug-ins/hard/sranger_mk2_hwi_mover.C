@@ -1345,11 +1345,12 @@ void DSPMoverControl::ChangedWaveOut(Param_Control* pcs, gpointer dspc){
 }
 
 void DSPMoverControl::ExecCmd(int cmd){
-	PI_DEBUG (DBG_L2, "DSPMoverControl::ExecCmd ==> >" << cmd << "< "
-                  << " Amp=" << mover_param.AFM_Amp
-                  << " Speed=" << mover_param.AFM_Speed
-                  << " Steps=" << mover_param.AFM_Steps
-                  << " GPIO=0x" << std::hex << mover_param.AFM_GPIO_setting << std::dec)
-        
+	PI_DEBUG (DBG_L2, "DSPMoverControl::ExecCmd ==> >" << cmd);
+
+        //<< " Amp=" << sranger_common_hwi->mover_param.AFM_Amp
+        //<< " Speed=" << sranger_common_hwi->mover_param.AFM_Speed
+        //<< " Steps=" << sranger_common_hwi->mover_param.AFM_Steps
+        //<< " GPIO=0x" << std::hex << sranger_common_hwi->mover_param.AFM_GPIO_setting << std::dec
+                
         sranger_common_hwi->ExecCmd (cmd);
 }

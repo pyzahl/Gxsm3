@@ -30,6 +30,7 @@
 
 #include <math.h>
 #include "gtk/gtk.h"
+#include "gxsm_monitor_vmemory_and_refcounts.h"
 
 typedef struct { double x,y; } cairo_point;
 #define BASIC_COLORS 7
@@ -86,12 +87,13 @@ typedef enum {
 #define CAIRO_JUSTIFY_TOP     3
 #define CAIRO_JUSTIFY_BOTTOM  4
 
-
 // #define __CIP_DEBUG
 
 class cairo_item{
 public:
         cairo_item () { 
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "constructor");
+                GXSM_REF_OBJECT (GXSM_GRC_CAIRO_ITEM);
                 n=0; xy = NULL; 
                 v0.x = v0.y = 0.;  
                 set_line_width (1.0); set_stroke_rgba (0); set_fill_rgba (0); set_line_style (0);
@@ -99,7 +101,11 @@ public:
                 grabbed = false;
                 show();  
         };
-	virtual ~cairo_item () { hide(); };
+	virtual ~cairo_item () {
+                hide();
+                GXSM_UNREF_OBJECT (GXSM_GRC_CAIRO_ITEM);
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "destructor");
+        };
 	virtual void draw (cairo_t* cr, double alpha=1.0, gboolean tr=true) {};
         virtual void set_xy_fast (int i, double x, double y) { xy[i].x=x, xy[i].y=y; };
         virtual void set_xy_test (int i, double x, double y) { 
@@ -235,16 +241,21 @@ protected:
 class cairo_item_path : public cairo_item{
 public:
 	cairo_item_path (int nodes) {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "path new");
                 xy = g_new (cairo_point, nodes);
                 n=nodes;
                 impulse_floor=0.; mark_radius=1.; linemode=0;
         };
 	cairo_item_path (cairo_item_path *cip) {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "path new");
                 n=cip->get_n_nodes();
                 xy = g_new (cairo_point, n);
                 impulse_floor=0.; mark_radius=1.; linemode=0;
         };
-	virtual ~cairo_item_path () { g_free (xy); };
+	virtual ~cairo_item_path () {
+                g_free (xy);
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "path delete");
+        };
 	
 	void set_linemode (gint m) { linemode=m; };
 	void set_impulse_floor (double y) { impulse_floor=y; };
@@ -308,9 +319,18 @@ private:
 
 class cairo_item_segments : public cairo_item{
 public:
-	cairo_item_segments (int nodes) { xy = g_new (cairo_point, nodes); n=nodes; };
-	cairo_item_segments (cairo_item_path *cip) { xy = g_new (cairo_point, n=cip->get_n_nodes()); };
-	virtual ~cairo_item_segments () { g_free (xy); };
+	cairo_item_segments (int nodes) {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "segments new");
+                xy = g_new (cairo_point, nodes); n=nodes;
+        };
+	cairo_item_segments (cairo_item_path *cip) {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "segments new");
+                xy = g_new (cairo_point, n=cip->get_n_nodes());
+        };
+	virtual ~cairo_item_segments () {
+                g_free (xy);
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "segments delete");
+        };
 	
         virtual void draw (cairo_t* cr, double alpha=1.0, gboolean tr=true) { // add qf???
                 if (show_flag){
@@ -332,8 +352,14 @@ private:
 
 class cairo_item_path_closed : public cairo_item{
 public:
-	cairo_item_path_closed (int nodes) { xy = g_new (cairo_point, nodes); n=nodes; };
-	virtual ~cairo_item_path_closed () { g_free (xy); };
+	cairo_item_path_closed (int nodes) {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "path closed new");
+                xy = g_new (cairo_point, nodes); n=nodes;
+        };
+	virtual ~cairo_item_path_closed () {
+                g_free (xy);
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "path closed delete");
+        };
 	
         virtual void draw (cairo_t* cr, double alpha=1.0, gboolean tr=true) { // add qf???
                 if (show_flag && n>1){
@@ -360,9 +386,18 @@ private:
 
 class cairo_item_rectangle : public cairo_item{
 public:
-	cairo_item_rectangle () { xy = g_new (cairo_point, 2); n=2; };
-	cairo_item_rectangle (double x1, double y1, double x2, double y2) { xy = g_new (cairo_point, 2); n=2; xy[0].x=x1, xy[0].y=y1; xy[1].x=x2, xy[1].y=y2; };
-	virtual ~cairo_item_rectangle () { g_free (xy); };
+	cairo_item_rectangle () {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "rectangle new");
+                xy = g_new (cairo_point, 2); n=2;
+        };
+	cairo_item_rectangle (double x1, double y1, double x2, double y2) {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "rectangle new");
+                xy = g_new (cairo_point, 2); n=2; xy[0].x=x1, xy[0].y=y1; xy[1].x=x2, xy[1].y=y2;
+        };
+	virtual ~cairo_item_rectangle () {
+                g_free (xy);
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "rectangle delete");
+        };
 	
         virtual void draw (cairo_t* cr, double alpha=1.0, gboolean tr=true) { // add qf???
                 if (show_flag){
@@ -389,9 +424,18 @@ private:
 
 class cairo_item_circle : public cairo_item{
 public:
-	cairo_item_circle (int n_circels=1) { xy = g_new (cairo_point, n_circels); n=n_circels; radius=1.; };
-	cairo_item_circle (double x, double y, double r) { xy = g_new (cairo_point, 1); n=1; xy[0].x=x, xy[0].y=y; radius=r; };
-	virtual ~cairo_item_circle () { g_free (xy); };
+	cairo_item_circle (int n_circels=1) {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "circle new");
+                xy = g_new (cairo_point, n_circels); n=n_circels; radius=1.;
+        };
+	cairo_item_circle (double x, double y, double r) {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "circle new");
+                xy = g_new (cairo_point, 1); n=1; xy[0].x=x, xy[0].y=y; radius=r;
+        };
+	virtual ~cairo_item_circle () {
+                g_free (xy);
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "circle delete");
+        };
         void set_radius (double r) { radius = r; };
         virtual void update_bbox (gboolean add_lw=true) {
                 bbox[0] = xy[0].x-radius-lw;
@@ -426,6 +470,7 @@ private:
 class cairo_item_text : public cairo_item{
 public:
 	cairo_item_text () { \
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "text new");
                 xy = g_new (cairo_point, 1); n=1;
                 t=NULL; 
                 xy[0].x=0., xy[0].y=0.; 
@@ -437,6 +482,7 @@ public:
                 set_font_face_size ("Ununtu", 16.);
         };
 	cairo_item_text (double x, double y, const gchar *text) { 
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "text new");
                 xy = g_new (cairo_point, 1); n=1; 
                 xy[0].x=0., xy[0].y=0.; 
                 v0.x=x, v0.y=y; 
@@ -448,7 +494,10 @@ public:
                 spacing = 1.1;
                 set_font_face_size ("Ununtu", 16.);
         };
-	virtual ~cairo_item_text () { g_free (xy); if (t) g_free (t); if (font_face) g_free (font_face); if (pango_font) pango_font_description_free (pango_font); };
+	virtual ~cairo_item_text () {
+                g_free (xy); if (t) g_free (t); if (font_face) g_free (font_face); if (pango_font) pango_font_description_free (pango_font);
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "text delete");
+        };
 	virtual void set_text (const gchar *text) { if (t) g_free (t); t=g_strdup (text); };
 	virtual void set_text (double x, double y, const gchar *text) {  
                 v0.x=x, v0.y=y;

@@ -35,9 +35,12 @@
 
 #include <gtk/gtk.h>
 
+#include "gxsm_monitor_vmemory_and_refcounts.h"
+
 #define UTF8_ANGSTROEM "\303\205"
 #define UTF8_MU        "\302\265"
 #define UTF8_DEGREE    "\302\260"
+
 
 class UnitObj;
 
@@ -47,6 +50,7 @@ typedef enum { UNIT_SM_NORMAL, UNIT_SM_PS } UNIT_MODES;
 class UnitObj{
 public:
         UnitObj(UnitObj &usrc){
+                GXSM_REF_OBJECT (GXSM_GRC_UNITOBJ);
                 sym   = g_strdup(usrc.sym); 
                 pssym = g_strdup(usrc.pssym); 
                 prec  = g_strdup(usrc.prec);
@@ -57,6 +61,7 @@ public:
                         alias = NULL;
         };
         UnitObj(const gchar *s, const gchar *pss){ 
+                GXSM_REF_OBJECT (GXSM_GRC_UNITOBJ);
                 sym   = g_strdup(s); 
                 pssym = g_strdup(pss); 
                 prec  = g_strdup("g");
@@ -64,6 +69,7 @@ public:
                 alias = NULL;
         };
         UnitObj(const gchar *s, const gchar *pss, const gchar *precc){ 
+                GXSM_REF_OBJECT (GXSM_GRC_UNITOBJ);
                 sym   = g_strdup(s); 
                 pssym = g_strdup(pss); 
                 prec  = g_strdup(precc);
@@ -71,6 +77,7 @@ public:
                 alias = NULL;
         };
         UnitObj(const gchar *s, const gchar *pss, const gchar *precc, const gchar *lab){ 
+                GXSM_REF_OBJECT (GXSM_GRC_UNITOBJ);
                 sym   = g_strdup(s); 
                 pssym = g_strdup(pss); 
                 prec  = g_strdup(precc);
@@ -80,6 +87,7 @@ public:
         virtual ~UnitObj(){ 
                 g_free(sym); g_free(pssym); g_free(prec); g_free(label);
                 if(alias) g_free(alias);
+                GXSM_UNREF_OBJECT (GXSM_GRC_UNITOBJ);
         };
 
         virtual UnitObj* Copy(){ return new UnitObj(*this); };

@@ -30,6 +30,8 @@
 #include <signal.h>
 #include "glib/gstdio.h"
 
+#include <config.h>
+
 #ifndef __XSM_H
 #include "xsm.h"
 #endif
@@ -41,6 +43,8 @@
 #ifndef __GLBVARS_H
 #include "glbvars.h"
 #endif
+
+#include "gxsm_monitor_vmemory_and_refcounts.h"
 
 
 GSettings *settings_hwi_interfaces = NULL;
@@ -89,6 +93,7 @@ UnitsTable XsmUnitsTable[] = {
 /* Main XSM Object */
 
 Xsm::Xsm(){
+        gapp->monitorcontrol->LogEvent("Xsm object", "constructor");
 
 	// check for Cmd-Line override
 	if(xsmres.UnitCmd)
@@ -103,7 +108,7 @@ Xsm::Xsm(){
 		XSM_DEBUG_ERROR (DBG_L1, "Invalid Unit specified ! Falling back to default." );
 	}
 
-	// Setup Units used
+	// Setup a set of 14 static base Units used as templates
 	Unity       = new UnitObj(" "," ");
 	ArcUnit     = new UnitObj(UTF8_DEGREE,"\260"); // 0x00B0 "°"
 	HzUnit      = new UnitObj("Hz","Hz");
@@ -192,11 +197,13 @@ Xsm::Xsm(){
 	data.EnergyUnit = EnergyUnit->Copy ();
 
 	XSM_DEBUG (DBG_L2, "Xsm::Xsm : Init done");
+        gapp->monitorcontrol->LogEvent("Xsm object", "destructor completed");
 }
 
 Xsm::~Xsm(){
 	XSM_DEBUG (DBG_L2, "Xsm::~Xsm deleting unit objects");
-
+        gapp->monitorcontrol->LogEvent("Xsm object", "destructor");
+        
 	if(LenUnit)
 		delete LenUnit;
 	if(LenUnitZ)
@@ -204,6 +211,7 @@ Xsm::~Xsm(){
 	delete YSUnit;
 	delete BZ_Unit;
 	delete EnergyUnit;
+	delete CPSHiLoUnit;
 	delete CPSUnit;
 	delete TimeUnit;
 	delete TimeUnitms;
@@ -229,7 +237,7 @@ Xsm::~Xsm(){
 	Inst=NULL;
 
 	XSM_DEBUG (DBG_L2, "Xsm::~Xsm done.");
-
+        gapp->monitorcontrol->LogEvent("Xsm object", "destructor complete");
 }
 
 
@@ -406,36 +414,45 @@ XSM_Hardware* Xsm::HwI_Plugin_Load (App* app){
 /* SCAN_DATA */
 
 SCAN_DATA::SCAN_DATA(){ 
-		//-todo-offset-, should be OK now
-		if(xsmres.ScanOrgCenter) // if (IS_SPALEED_CTRL)
-				orgmode = SCAN_ORG_CENTER;
-		else
-				orgmode = SCAN_ORG_MIDDLETOP;
+        GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_SCANDATAOBJ, "constructor");
+        GXSM_REF_OBJECT (GXSM_GRC_SCANDATAOBJ);
+        //-todo-offset-, should be OK now
+        if(xsmres.ScanOrgCenter) // if (IS_SPALEED_CTRL)
+                orgmode = SCAN_ORG_CENTER;
+        else
+                orgmode = SCAN_ORG_MIDDLETOP;
 
-		scan_mode = SCAN_MODE_SINGLE_DSPSET;
-		scan_repeat_mode = SCAN_REPEAT_MODE_UNIDIR;
-		scan_type = SCAN_TYPE_NORMAL;
+        scan_mode = SCAN_MODE_SINGLE_DSPSET;
+        scan_repeat_mode = SCAN_REPEAT_MODE_UNIDIR;
+        scan_type = SCAN_TYPE_NORMAL;
 
-		UnitObj UnityNA ("N/A","N/A");
-		
-		Zunit = UnityNA.Copy ();
-		Xunit = UnityNA.Copy ();
-		Yunit = UnityNA.Copy ();
-		Vunit = UnityNA.Copy ();
-		CurrentUnit = UnityNA.Copy ();
-		VoltUnit = UnityNA.Copy ();
-		TimeUnit = UnityNA.Copy ();
-		TimeUnitms = UnityNA.Copy ();
-		CPSUnit = UnityNA.Copy ();
-		EnergyUnit = UnityNA.Copy ();
+        UnitObj UnityNA ("N/A","N/A");
 
-		UnitsAlloc = TRUE;
+        // create 10 default unit objects
+        Zunit = UnityNA.Copy ();
+        Xunit = UnityNA.Copy ();
+        Yunit = UnityNA.Copy ();
+        Vunit = UnityNA.Copy ();
+        
+        CurrentUnit = UnityNA.Copy ();
+        VoltUnit = UnityNA.Copy ();
+        TimeUnit = UnityNA.Copy ();
+        TimeUnitms = UnityNA.Copy ();
 
-		XSM_DEBUG (DBG_L2, "SCAN_DATA::SCANDATA #" << ++scandatacount); cnt=scandatacount; 
+        CPSUnit = UnityNA.Copy ();
+        EnergyUnit = UnityNA.Copy ();
+
+        UnitsAlloc = TRUE;
+
+        XSM_DEBUG (DBG_L2, "SCAN_DATA::SCANDATA #" << ++scandatacount); cnt=scandatacount; 
+        GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_SCANDATAOBJ, "constructor complete");
 }
 
 SCAN_DATA::~SCAN_DATA(){ 
+        GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_SCANDATAOBJ, "destructor");
 	if(UnitsAlloc){
+                GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_SCANDATAOBJ, "destructor dealloc units");
+;
 		if(Zunit) { 
 			delete Zunit; Zunit=NULL; 
 		}
@@ -468,6 +485,8 @@ SCAN_DATA::~SCAN_DATA(){
 		}
 	}
 	XSM_DEBUG (DBG_L2, "SCAN_DATA::~SCANDATA #" << scandatacount--); 
+        GXSM_UNREF_OBJECT (GXSM_GRC_SCANDATAOBJ);
+        GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_SCANDATAOBJ, "destructor complete");
 }
 
 
@@ -480,7 +499,8 @@ void SCAN_DATA::CpUnits(SCAN_DATA &src){
         }
         
         if (src.Zunit){
-                if (Zunit) delete Zunit;
+                if (Zunit)
+                        delete Zunit;
                 Zunit = src.Zunit->Copy();
         }
         

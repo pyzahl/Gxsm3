@@ -394,18 +394,6 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
 	pan_area->set_line_width (get_lw (1.0)); // fix me
 	pan_area->queue_update (canvas);
 
-#if 0 // replaces this:
-	pan_area = gnome_canvas_item_new ( gnome_canvas_root (GNOME_CANVAS (canvas)), 
-					   gnome_canvas_rect_get_type(),
-					   "x1", TO_CANVAS_X(x0r),
-					   "x2", TO_CANVAS_X(-x0r),
-					   "y1", TO_CANVAS_Y(y0r),
-					   "y2", TO_CANVAS_Y(-y0r),
-					   "fill_color","white",
-					   "outline_color","red",
-					   "width_units", 1.5,
-					   NULL );
-#endif
         // TEXTs are drawn in fixed pixel coordinate system
 	info = new cairo_item_text (WXS/2.-10, -WYS/2.+5., "I: --- nA");
 	//	info->set_text ("updated text")
@@ -422,30 +410,6 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
 	infoXY0->set_anchor (CAIRO_ANCHOR_E);
 	infoXY0->queue_update (canvas);
  	
-#if 0
-	info = gnome_canvas_item_new (gnome_canvas_root (GNOME_CANVAS (canvas)),
-				      gnome_canvas_text_get_type(),
-				      "text", "I: --- nA f0: --- Hz",
-				      "x", TO_CANVAS_X(max_x-max_x/30.),
-				      "y", TO_CANVAS_Y(min_y),
-//				      "font", "",
-				      "anchor", GTK_ANCHOR_SOUTH_EAST,
-				      "justification", GTK_JUSTIFY_RIGHT,
-				      "fill_color", "blue",
-				      NULL);
-	
-	infoXY0 = gnome_canvas_item_new (gnome_canvas_root (GNOME_CANVAS (canvas)),
-					 gnome_canvas_text_get_type(),
-					 "text", "XY0: -,-",
-					 "x", TO_CANVAS_X(max_x-max_x/30.),
-					 "y", TO_CANVAS_Y(max_y),
-//				         "font", "",
-					 "anchor", GTK_ANCHOR_NORTH_EAST,
-					 "justification", GTK_JUSTIFY_RIGHT,
-					 "fill_color", "blue",
-					 NULL);
-#endif
-	
 	pre_current_view = NULL;
     	current_view = NULL;
 	tip_marker = NULL;
@@ -466,6 +430,23 @@ PanView::~PanView (){
 
 	stop_tip_monitor ();
 
+        UNREF_DELETE_CAIRO_ITEM (pan_area_extends, canvas);
+        UNREF_DELETE_CAIRO_ITEM (pan_area, canvas);
+        UNREF_DELETE_CAIRO_ITEM (info, canvas);
+        UNREF_DELETE_CAIRO_ITEM (current_view, canvas);
+        UNREF_DELETE_CAIRO_ITEM (infoXY0, canvas);
+        UNREF_DELETE_CAIRO_ITEM (tip_marker, canvas);
+        UNREF_DELETE_CAIRO_ITEM (tip_marker_zoom, canvas);
+        UNREF_DELETE_CAIRO_ITEM (tip_marker_z, canvas);
+        UNREF_DELETE_CAIRO_ITEM (tip_marker_z0, canvas);
+
+	for (int i=0; i<16; ++i){
+                UNREF_DELETE_CAIRO_ITEM (DSP_status_indicator[i], canvas);
+        }
+	for (int i=0; i<16; ++i){
+                UNREF_DELETE_CAIRO_ITEM (DSP_gpio_indicator[i], canvas);
+        }
+        
 	PI_DEBUG (DBG_L4, "PanView::~PanView () -- done.");
 }
 
@@ -769,12 +750,7 @@ void PanView :: tip_refresh()
                 Ilg = log10 (fabs(y) + 1.0);
 		
 		gchar *tmp = NULL;
-#if 0
-		if (x >= 0.)
-			tmp = g_strdup_printf ("I-avg: %.4f nA\nI-rms: %.4f nA\nfo: %7.0f Hz\nZ: %7.4f V, %7.3f " UTF8_ANGSTROEM, y, q, x, z, gapp->xsm->Inst->V2ZAng(z));
-		else
-			tmp = g_strdup_printf ("I: %.4f nA\nZ: %7.4f V %7.3f " UTF8_ANGSTROEM, y, z, gapp->xsm->Inst->V2ZAng(z));
-#endif
+
                 if (fabs(y) < 0.25)
                         tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y*1000., x, gapp->xsm->Inst->V2ZAng(z));
                 else

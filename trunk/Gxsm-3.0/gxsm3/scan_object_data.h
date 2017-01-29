@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -23,10 +25,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-
 #ifndef __SCAN_OBJECT_DATA_H
 #define __SCAN_OBJECT_DATA_H
+
+#include "gxsm_monitor_vmemory_and_refcounts.h"
 
 /**
  *  scan_object_ixy_func:
@@ -50,12 +52,13 @@ typedef void (*scan_object_ixy_func)  (int, double&, double&);
  */
 
 class scan_object_data{
- public:
+public:
 	scan_object_data(int _id,
 			 const gchar *_name, 
 			 const gchar *_text,
 			 int _np, 
 			 scan_object_ixy_func f_ixy){
+                GXSM_REF_OBJECT (GXSM_GRC_MEM2D_SCO);
 		id = _id;
 		np = _np;
 		xy = new double[np*2];
@@ -72,12 +75,12 @@ class scan_object_data{
 		delete [] ixy;
 		g_free (name);
 		g_free (text);
-
+                GXSM_UNREF_OBJECT (GXSM_GRC_MEM2D_SCO);
 	};
 
-/**
- *  dump:
- *
+        /**
+         *  dump:
+         *
  *  Dumps object information to stdout.
  */
 	void dump(){

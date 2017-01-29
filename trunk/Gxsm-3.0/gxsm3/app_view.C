@@ -1646,6 +1646,12 @@ void ViewControl::RemoveObjects(){
 	g_slist_free(gobjlist);
 	gobjlist = NULL;
 	scan->PktVal=0;
+
+        for (gsize i=0; i<OSD_MAX; ++i)
+		if (osd_item[i]){
+                        delete osd_item[i];
+                        osd_item[i] = NULL;
+                }
 }
 
 void ViewControl::UpdateObjects(){
@@ -1667,6 +1673,7 @@ void ViewControl::SetActive(int flg){
 	GtkWidget *statusbar = (GtkWidget*)g_object_get_data (G_OBJECT (canvas), "statusbar");
 	gint statusid  = gtk_statusbar_get_context_id(GTK_STATUSBAR(statusbar), "drag");
 	
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	if(flg){
                 ActiveFrameWidth=vinfo->GetZfac ();
                 //		gnome_canvas_item_show(ActiveFrame);
@@ -1713,7 +1720,7 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
                         if (vc->osd_item[i])
                                 vc->check_obj_event (vc->osd_item[i], vc);
 
-        if (vc->tmp_effected > 0) // handled by object, done. no more action here!
+                if (vc->tmp_effected > 0) // handled by object, done. no more action here!
                         return FALSE;
         }
            
@@ -1807,36 +1814,7 @@ void ViewControl::CheckRedLine(){
 
 
 void ViewControl::CheckOptions(){
-//	GtkWidget *menushell;
-//	GtkWidget *menuitem;
-//	gint pos;
-	gchar *vmode=NULL;
-	
-	switch(scan->GetVM()){
-	case SCAN_V_DIRECT: vmode=g_strconcat(N_("View"),"/",N_("Direct"), NULL); break;
-	case SCAN_V_QUICK:  vmode=g_strconcat(N_("View"),"/",N_("Quick"), NULL); break;
-	case SCAN_V_LOG:    vmode=g_strconcat(N_("View"),"/",N_("Logarithmic"), NULL); break;
-	case SCAN_V_DIFFERENTIAL:    vmode=g_strconcat(N_("View"),"/",N_("Differential"), NULL); break;
-	case SCAN_V_PERIODIC:    vmode=g_strconcat(N_("View"),"/",N_("Periodic"), NULL); break;
-	}
-	if(vmode){
-/*
-		menushell = (GtkWidget*)gnome_app_find_menu_pos 
-			(
-				(GtkWidget*)g_object_get_data (G_OBJECT (canvas), "viewpopup"), 
-				vmode, 
-				&pos
-				);
-		if(menushell){
-			menuitem = (GtkWidget*)g_list_nth_data(GTK_MENU_SHELL (menushell) -> children, --pos);
-			if(menuitem){
-				if (!gtk_check_menu_item_get_active  (GTK_CHECK_MENU_ITEM(menuitem)))
-					gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), TRUE);
-			}
-		}
-*/
-		g_free(vmode);
-	}
+	// scan->GetVM() ....
 }
 
 void ViewControl::Activate_window_callback (GtkWindow *window, gpointer user_data){

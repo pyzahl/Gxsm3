@@ -28,9 +28,12 @@
 #include <locale.h>
 #include <libintl.h>
 
+#include <config.h>
+
 #include "mem2d.h"
 #include "glbvars.h"
 #include "clip.h"
+#include "gxsm_monitor_vmemory_and_refcounts.h"
 
 #define UTF8_DEGREE "\302\260"
 
@@ -56,23 +59,25 @@ const char *ZD_name[] = { "I", "Byte", "Short", "Long", "ULong", "LLong",
  */
 
 ZData::ZData(int Nx, int Ny, int Nv){ 
-  XSM_DEBUG (DBG_L6, "ZData::ZData");
-  nx=Nx; ny=Ny; nv=Nv; vlayer_put=vlayer=0;
-  Li = new LineInfo[ny*nv]; 
-  Xlookup=new double[nx]; 
-  Ylookup=new double[ny]; 
-  Vlookup=new double[nv]; 
-  memset (Xlookup, 0, Nx);
-  memset (Ylookup, 0, Ny);
-  memset (Vlookup, 0, Nv);
+        GXSM_REF_OBJECT (GXSM_GRC_ZDATA);
+        XSM_DEBUG (DBG_L6, "ZData::ZData");
+        nx=Nx; ny=Ny; nv=Nv; vlayer_put=vlayer=0;
+        Li = new LineInfo[ny*nv]; 
+        Xlookup=new double[nx]; 
+        Ylookup=new double[ny]; 
+        Vlookup=new double[nv]; 
+        memset (Xlookup, 0, Nx);
+        memset (Ylookup, 0, Ny);
+        memset (Vlookup, 0, Nv);
 }
  
 ZData::~ZData(){ 
-  XSM_DEBUG (DBG_L6, "ZData::~ZData");
-  delete [] Ylookup;
-  delete [] Xlookup;
-  delete [] Vlookup;
-  delete [] Li;
+        XSM_DEBUG (DBG_L6, "ZData::~ZData");
+        delete [] Ylookup;
+        delete [] Xlookup;
+        delete [] Vlookup;
+        delete [] Li;
+        GXSM_UNREF_OBJECT (GXSM_GRC_ZDATA);
 }
 
 void ZData::ResetLineInfo(){
@@ -374,6 +379,7 @@ void TZData<ZTYP>::NcGet(NcVar *ncfield, int time_index){
  */
 
 LayerInformation::LayerInformation (const gchar *description, const char *string){
+        GXSM_REF_OBJECT (GXSM_GRC_LAYERINFO);
 	if (string)
 		desc = g_strconcat (description, ": ", string, NULL);
 	else
@@ -386,6 +392,7 @@ LayerInformation::LayerInformation (const gchar *description, const char *string
 }
 
 LayerInformation::LayerInformation (const gchar *description, double x, const gchar *format){
+        GXSM_REF_OBJECT (GXSM_GRC_LAYERINFO);
 	desc = g_strdup (description);
 	fmt = g_strdup_printf ("%%s: %s", format);
 	fmtosd = g_strdup (format);
@@ -395,6 +402,7 @@ LayerInformation::LayerInformation (const gchar *description, double x, const gc
 }
 
 LayerInformation::LayerInformation (const gchar *description, double x, double y, const gchar *format){
+        GXSM_REF_OBJECT (GXSM_GRC_LAYERINFO);
 	desc = g_strdup (description);
 	fmt = g_strdup_printf ("%%s: %s", format);
 	fmtosd = g_strdup (format);
@@ -404,6 +412,7 @@ LayerInformation::LayerInformation (const gchar *description, double x, double y
 }
 
 LayerInformation::LayerInformation (LayerInformation *li){
+        GXSM_REF_OBJECT (GXSM_GRC_LAYERINFO);
 	desc = g_strdup (li->desc);
 	fmt = NULL;
 	fmtosd = NULL;
@@ -417,6 +426,7 @@ LayerInformation::LayerInformation (LayerInformation *li){
 }
 
 LayerInformation::LayerInformation (NcVar* ncv_description, NcVar* ncv_format, NcVar* ncv_osd_format, NcVar* ncv_values, int ti, int v, int k){
+        GXSM_REF_OBJECT (GXSM_GRC_LAYERINFO);
 	int n=0;
 	desc = NULL;
 	fmt = NULL;
@@ -466,6 +476,7 @@ LayerInformation::~LayerInformation (){
 		g_free (fmt);
 	if (fmtosd)
 		g_free (fmtosd);
+        GXSM_UNREF_OBJECT (GXSM_GRC_LAYERINFO);
 }
 
 gchar *LayerInformation::get (gboolean osd){
@@ -534,6 +545,7 @@ void LayerInformation::write_layer_information (NcVar* ncv_description, NcVar* n
 
 // make new with size and type
 Mem2d::Mem2d(int Nx, int Ny, ZD_TYPE type){
+        GXSM_REF_OBJECT (GXSM_GRC_MEM2D);
 	data   = NULL; 
 	scan_event_list = NULL;
 	layer_information_list = NULL;
@@ -543,6 +555,7 @@ Mem2d::Mem2d(int Nx, int Ny, ZD_TYPE type){
 }
 
 Mem2d::Mem2d(int Nx, int Ny, int Nv, ZD_TYPE type){
+        GXSM_REF_OBJECT (GXSM_GRC_MEM2D);
 	data=NULL;
 	scan_event_list = NULL;
 	layer_information_list = NULL;
@@ -553,6 +566,7 @@ Mem2d::Mem2d(int Nx, int Ny, int Nv, ZD_TYPE type){
 
 // make copy or empty
 Mem2d::Mem2d(Mem2d *m, MEM2D_CREATE_MODE Option){
+        GXSM_REF_OBJECT (GXSM_GRC_MEM2D);
 	int ly;
 	data=NULL;
 	scan_event_list = NULL;
@@ -584,6 +598,7 @@ Mem2d::Mem2d(Mem2d *m, MEM2D_CREATE_MODE Option){
 
 // make with size from same type
 Mem2d::Mem2d(Mem2d *m, int Nx, int Ny, int Nv){
+        GXSM_REF_OBJECT (GXSM_GRC_MEM2D);
 	data=NULL;
 	scan_event_list = NULL;
 	layer_information_list = NULL;
@@ -596,6 +611,7 @@ Mem2d::~Mem2d(){
 	XSM_DEBUG (DBG_L6, "Mem2d::~Mem2d");
 	RemoveScanEvents ();
 	Mdelete();
+        GXSM_UNREF_OBJECT (GXSM_GRC_MEM2D);
 }
 
 /** Mem2d::copy copy full mem2d object per default or subregion

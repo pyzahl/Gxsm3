@@ -40,6 +40,7 @@
 #include "gtk/gtk.h"
 
 #include "clip.h"
+#include "gxsm_monitor_vmemory_and_refcounts.h"
 
 #define MAXHANDLECOLORS 4
 
@@ -78,6 +79,7 @@ void VObject::set_osd_style (gboolean flg){
 }
 
 VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale){
+        GXSM_REF_OBJECT (GXSM_GRC_VOBJ);
 	static int obj_count = 0;
 	static int event_count = 0;
 	int i;
@@ -251,6 +253,7 @@ VObject::~VObject(){
 
         g_object_unref (gs_action_group);
 
+        GXSM_UNREF_OBJECT (GXSM_GRC_VOBJ);
 }
 
 void VObject::show_profile_cb (GtkWidget *widget, VObject *vo){
@@ -1317,6 +1320,7 @@ void VObPoint::Update(){
 
         update_label ();
         
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=1;
 
@@ -1728,6 +1732,7 @@ void VObLine::Update(){
   
         update_label ();
 
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=2;
 
@@ -1786,6 +1791,7 @@ void VObPolyLine::Update(){
 
         update_label ();
 
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=np;
 	g_free(mld);
@@ -1841,6 +1847,7 @@ void VObTrace::Update(){
 
         update_label ();
 
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=np;
 	g_free(mld);
@@ -2215,6 +2222,7 @@ void VObKsys::Update(){
 
 	vinfo->sc->PktVal=3;
 
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	if(profile){
 		profile->show();
@@ -2291,6 +2299,7 @@ void VObParabel::Update(){
         abl[np]->queue_update (canvas);
 
 	vinfo->sc->PktVal=3;
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 
         update_label ();
@@ -2346,6 +2355,7 @@ void VObRectangle::Update(){
 
         update_label ();
                 
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=2;
 
@@ -2438,6 +2448,7 @@ void VObCircle::Update(){
 
         update_label ();
 
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=2;
 
@@ -2467,6 +2478,7 @@ void VObEvent::Update(){
 				 s1=vinfo->makeXYZinfo(xy[0],xy[1], &p2d[0]),
 				 NULL);
 	g_free(s1);
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	vinfo->sc->PktVal=1;
 

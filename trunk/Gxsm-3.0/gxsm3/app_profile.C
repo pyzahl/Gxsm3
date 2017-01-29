@@ -759,7 +759,6 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl hbox");
 
         g_object_set_data (G_OBJECT (app_window), "ProfileControl", this);
-        gtk_menu_attach_to_widget (GTK_MENU (p_popup_menu), canvas, NULL);
 
         if (!pc_in_window){
                 // New Statusbar
@@ -770,6 +769,7 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
                 // Get Statusbar
                 statusbar = (GtkWidget*) g_object_get_data (G_OBJECT (window), "statusbar");
                 statusid  = gtk_statusbar_get_context_id (GTK_STATUSBAR(statusbar), "drag");
+                gtk_menu_attach_to_widget (GTK_MENU (p_popup_menu), canvas, NULL);
         }
         g_object_set_data (G_OBJECT (canvas), "statusbar", statusbar);
         
@@ -866,6 +866,25 @@ ProfileControl::~ProfileControl ()
 
 	RemoveScans();
 
+        UNREF_DELETE_CAIRO_ITEM (frame, canvas);
+        UNREF_DELETE_CAIRO_ITEM (xaxislabel, canvas);
+        UNREF_DELETE_CAIRO_ITEM (yaxislabel, canvas);
+        UNREF_DELETE_CAIRO_ITEM (saxislabel, canvas);
+        UNREF_DELETE_CAIRO_ITEM (titlelabel, canvas);
+        UNREF_DELETE_CAIRO_ITEM (infotext, canvas);
+        for (int id=0; id<2; ++id){
+                UNREF_DELETE_CAIRO_ITEM (Cursor[id][0], canvas);
+                UNREF_DELETE_CAIRO_ITEM (Cursor[id][1], canvas);
+        }
+        for(int i=0; i<PC_XTN; i++) if (Xtics[i]) { UNREF_DELETE_CAIRO_ITEM (Xtics[i], canvas); }
+	for(int i=0; i<PC_YTN; i++)  if (Ytics[i]) { UNREF_DELETE_CAIRO_ITEM (Ytics[i], canvas); }
+        for(int i=0; i<PC_XLN; i++)  if (Xlabels[i]) { UNREF_DELETE_CAIRO_ITEM (Xlabels[i], canvas); }
+        for(int i=0; i<PC_YLN; i++)  if (Ylabels[i]) { UNREF_DELETE_CAIRO_ITEM (Ylabels[i], canvas); }
+	for(int i=0; i<PC_LEGEND_ITEMS_MAX; i++) {
+                if (LegendSym[i]) { UNREF_DELETE_CAIRO_ITEM (LegendSym[i], canvas); }
+                if (LegendText[i]) { UNREF_DELETE_CAIRO_ITEM (LegendText[i], canvas); }
+        }
+        
 	delete[] Xtics;
 	delete[] Ytics;
 	delete[] Xlabels;
@@ -890,8 +909,10 @@ ProfileControl::~ProfileControl ()
 
         if (pc_in_window){
                 // destroy grid and widgets, unref app_window and window
-                gtk_widget_destroy (pc_grid);
-                pc_grid = NULL;
+                if (pc_grid){
+                        gtk_widget_destroy (pc_grid);
+                        pc_grid = NULL;
+                }
                 app_window = NULL;
                 window = NULL;
         }
@@ -921,7 +942,8 @@ void ProfileControl::AppWindowInit(const gchar *title){
                 app_window = pc_in_window;
                 window = GTK_WINDOW (app_window);
                 header_bar = gtk_window_get_titlebar (GTK_WINDOW (window));
-
+                // gtk_window_present (GTK_WINDOW (window));
+                g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
         } else {
                 // g_message ("ProfileControl::AppWindowInit create own app_window >%s<", title);
                 // create our own app_window
@@ -955,7 +977,9 @@ void ProfileControl::AppWindowInit(const gchar *title){
                 g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
                	gtk_widget_show_all (GTK_WIDGET (window));
         }
-
+        
+        g_signal_connect (G_OBJECT (pc_grid), "destroy", G_CALLBACK (gtk_widget_destroyed), &pc_grid);
+        
         g_action_map_add_action_entries (G_ACTION_MAP (app_window),
                                          win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
                                          app_window);
@@ -1346,6 +1370,7 @@ void ProfileControl::update_elem(ProfileElement *pe, ProfileControl *pc){
                 XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - calc1 OK");
 		if (dc > 0.){
 			gchar *p=g_strdup_printf ("Y-DC: %g", dc);
+                        gtk_statusbar_remove_all (GTK_STATUSBAR (pc->statusbar), pc->statusid);
 			gtk_statusbar_push (GTK_STATUSBAR(pc->statusbar), pc->statusid, p);
 			g_free (p);
 		}
@@ -1469,6 +1494,7 @@ gint ProfileControl::NewData(Scan* sc, int line, int cpyscan, VObject *vo, gbool
                 }
 	}
 
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, txt);
 	g_free(txt);
 
@@ -2029,6 +2055,7 @@ void ProfileControl::moveCur(int id, int dir, int search, double cx){
         Cursor[id][1]->queue_update (canvas);
   
         gchar *p;
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
         if (Cursor[0][0] && Cursor[1][0] )
                 gtk_statusbar_push (GTK_STATUSBAR(statusbar), statusid, 
                                     p=last_pe->GetDeltaInfo( CursorsIdx[0], CursorsIdx[1], mode));
@@ -2121,6 +2148,7 @@ void ProfileControl::SetYlabel (const gchar *ylab)
 }
 
 void ProfileControl::SetActive(int flg){
+        gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	if (flg){
 		// gnome_canvas_item_set (frame,
 		// 		       "fill_color", "white",
@@ -2175,6 +2203,7 @@ void ProfileControl::file_save_callback (GSimpleAction *simple, GVariant *parame
 		mld = g_strconcat (N_("profile saved as "), ffname, NULL);
 	}else
 		mld = g_strdup (N_("save canceld"));
+        gtk_statusbar_remove_all (GTK_STATUSBAR (pc->statusbar), pc->statusid);
 	gtk_statusbar_push (GTK_STATUSBAR(pc->statusbar), pc->statusid, mld);
 	g_free (mld);
 }
@@ -2194,6 +2223,7 @@ void ProfileControl::file_save_as_callback (GSimpleAction *simple, GVariant *par
 		mld = g_strconcat (N_("profile saved as "),ffname,NULL);
 	}else
 		mld = g_strdup (N_("save canceld"));
+        gtk_statusbar_remove_all (GTK_STATUSBAR (pc->statusbar), pc->statusid);
 	gtk_statusbar_push (GTK_STATUSBAR(pc->statusbar), pc->statusid, mld);
 	g_free (mld);
 }

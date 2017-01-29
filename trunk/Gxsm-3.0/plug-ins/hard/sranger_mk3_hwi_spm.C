@@ -1124,7 +1124,7 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
 		dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
 		
-		SRANGER_DEBUG("SR:Start/Rot XYPos: " << (dsp_scan.Xpos>>16) << ", " << (dsp_scan.Ypos>>16));
+		SRANGER_DEBUG("SR:Start/Rot XYPos: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
 
 		// setup scan
                 if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(DSPControlClass->FastScan_status))) 

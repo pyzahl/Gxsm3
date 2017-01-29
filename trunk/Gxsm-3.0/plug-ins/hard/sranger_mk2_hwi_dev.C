@@ -365,8 +365,7 @@ sranger_mk2_hwi_dev::sranger_mk2_hwi_dev(){
 									 magic_data.version & 0xff,
 									 FB_SPM_VERSION >> 8, 
 									 FB_SPM_VERSION & 0xff,
-									 swap_flg, target)
-					  SRANGER_DEBUG ("Signal Ranger FB_SPM soft Version mismatch\n" << details);
+									 swap_flg, target);
 					PI_DEBUG_GP (DBG_L1, "HWI-DEV-MK2-VW01-- DSP software version mismatch warning.\n%s\n", details);
 					gapp->alert (N_("Warning"), N_("Signal Ranger FB_SPM software version mismatch detected!"), details, 1);
 					g_free (details);

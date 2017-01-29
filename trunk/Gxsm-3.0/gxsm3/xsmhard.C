@@ -67,7 +67,10 @@ XSM_Hardware::XSM_Hardware(){
         sim_mode = 0;
 }
 
-XSM_Hardware::~XSM_Hardware(){;}
+XSM_Hardware::~XSM_Hardware(){
+        g_free (AddStatusString);
+        g_free (InfoString);
+}
 
 
 gint XSM_Hardware::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
