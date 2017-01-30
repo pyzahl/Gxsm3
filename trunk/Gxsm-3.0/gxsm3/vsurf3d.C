@@ -846,7 +846,7 @@ void Surf3d::GLdrawGimmicks(){
 		sprintf(buf,"(%f/%f)", x1, y2);
 		;//glRasterPos3f(-(XPM_x/2.0),0.0, (XPM_y/2.0)); printstring(GLUT_BITMAP_HELVETICA_12, buf);
 		sprintf(buf,"(%f/%f)", x2, y2);
-		glRasterPos3f( (XPM_x/2.0),0.0, (XPM_y/2.0)); printstring(GLUT_BITMAP_HELVETICA_12, buf);
+		;//***************FIXME glRasterPos3f( (XPM_x/2.0),0.0, (XPM_y/2.0)); printstring(GLUT_BITMAP_HELVETICA_12, buf);
 	}
 			
 	glGetFloatv (GL_MODELVIEW_MATRIX, m);// Need this matrix for label side calcu.

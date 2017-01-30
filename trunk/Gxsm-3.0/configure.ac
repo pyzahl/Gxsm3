@@ -23,7 +23,7 @@ AC_DEFINE_UNQUOTED(GXSM_RES_BASE_PATH,         "org/gnome/gxsm3",              "
 AC_DEFINE_UNQUOTED(GXSM_RES_PREFERENCES_PATH,  "org/gnome/gxsm3/preferences",  "GSettings path for preferences")
 AC_DEFINE_UNQUOTED(GXSM_RES_GL_PATH,           "org/gnome/gxsm3/gl",           "GSettings path for gl preferences")
 
-## AC_DEFINE_UNQUOTED(GXSM_MONITOR_VMEMORY_USAGE, "", "define this for adding a time stamp in sec and VmSize to Ev_log file")
+AC_DEFINE_UNQUOTED(GXSM_MONITOR_VMEMORY_USAGE, "", "define this for adding a time stamp in sec and VmSize to Ev_log file")
 
 ## AC_DEFINE_UNQUOTED(GXSM_ENABLE_SCAN_USER_PLUGIN_PATH, "yes", "enable scanning in user path for plugins");
 
@@ -524,7 +524,6 @@ case "$target_or_host" in
 esac
 
 
-
 echo --- System Architecture detection ---
 echo Host CPU  : $host_cpu
 echo Target  : $target
@@ -589,6 +588,13 @@ AC_SUBST(localedir)
 plugindir=${libdir}/gxsm3-plugins
 AC_SUBST(plugindir)
 
+
+###############################
+# only for memory debugging
+CFLAGS="-O0 -g"
+CXXFLAGS="-O0 -g"
+#OBJCFLAGS="-O0 -g"
+#LTCFLAGS="-O0 -g"
 
 # Dependencies
 

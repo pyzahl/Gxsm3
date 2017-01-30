@@ -157,7 +157,7 @@ public:
         void get_bb_max (double &x, double &y) { x=bbox[2]; y=bbox[3]; };
         virtual gboolean check_grab_bbox (double x, double y) {
                 // g_message ("check_grab_bbox x=%g %g %g, y=%g %g %g", x, bbox[0], bbox[2], y, bbox[1], bbox[3] );
-                return (x >= bbox[0] && x <= bbox[2] && y >= bbox[1] && y <= bbox[3]) ? true : false;
+                return (x >= bbox[0] && x <= bbox[2] && y >= bbox[1] && y <= bbox[3]) ? true : false;  // *VG?uiv
         }
         virtual gboolean check_grab_bbox_dxy (double x, double y, double dx, double dy) {
                 return (x >= bbox[0]-dx && x <= bbox[2]+dx && y >= bbox[1]-dy && y <= bbox[3]+dy) ? true : false;

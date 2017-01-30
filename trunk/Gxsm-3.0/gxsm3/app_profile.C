@@ -1742,7 +1742,7 @@ gint ProfileControl::updateTics (gboolean force)
 	XSM_DEBUG (DBG_L5, "ProfileElement::drawTics X");
  
 	// rebuild only if needed !!
-	if(tic_x1 != xmin || tic_x2 != xmax || tic_xm != mode || Xtics[0]==NULL || force){
+	if(tic_x1 != xmin || tic_x2 != xmax || tic_xm != mode || Xtics[0]==NULL || force){ // *VG?uiv
 		tic_x1=xmin; tic_x2=xmax; tic_ym = mode;
 		nTics  = Xticn;
 				

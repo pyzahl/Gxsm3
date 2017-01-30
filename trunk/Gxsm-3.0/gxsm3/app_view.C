@@ -2166,14 +2166,143 @@ int GetProfileConfig (std::ifstream &is, int *params_pws, int *params_dims){
 	return 0;
 }
 
+int GetAXYZ (std::ifstream &is, gchar **id, double *xy, double &z){
+        gchar **p;
+	gchar line[512];
+
+        xy[0]=xy[1]=0.; z=0.;
+
+	if (is.good ()){
+		is.getline (line, 512); // read and check
+                p = g_strsplit_set (line, " ", 20);
+                if (p){
+                        gint k=0;
+                        while (p[k] && !*p[k]) ++k;
+                        if (p[k]){
+                                *id = g_strdup (p[k]);
+                        }else{
+                                g_warning ("Error reading id XYZ file.");
+                                g_strfreev (p);
+                                return 0;
+                        }
+                        ++k;
+
+                        while (p[k] && !*p[k]) ++k;
+                        if (p[k]){
+                                xy[0] = atof (p[k]);
+                        }else{
+                                g_warning ("Error reading X XYZ file.");
+                                g_strfreev (p);
+                                return 0;
+                        }
+                        ++k;
+
+                        while (p[k] && !*p[k]) ++k;
+                        if (p[k]){
+                                xy[1] = atof (p[k]);
+                        }else{
+                                g_warning ("Error reading Y XYZ file.");
+                                g_strfreev (p);
+                                return 0;
+                        }
+                        ++k;
+
+                        while (p[k] && !*p[k]) ++k;
+                        if (p[k]){
+                                z = atof (p[k]);
+                        }else{
+                                g_warning ("Error reading Z XYZ file.");
+                                g_strfreev (p);
+                                return 0;
+                        }
+                        g_strfreev (p);
+                        g_message("%2s %10.4fs %10.4fs %10.4f", *id, xy[0], xy[1], z);
+                        return -1;
+                }else{
+                        g_warning ("Error reading XYZ file.");
+                        return 0;
+                }
+        }
+        return 0;
+}
+
+gfloat *lookup_atom_color (gchar *id){
+        if (g_strrstr (id, "Cu"))
+                return CAIRO_COLOR_GREY1;
+        if (g_strrstr (id, "Ti"))
+                return CAIRO_COLOR_GREY1;
+        if (g_strrstr (id, "O"))
+                return CAIRO_COLOR_RED;
+        if (g_strrstr (id, "C"))
+                return CAIRO_COLOR_BLACK;
+        if (g_strrstr (id, "N"))
+                return CAIRO_COLOR_BLUE;
+        if (g_strrstr (id, "H"))
+                return CAIRO_COLOR_WHITE;
+        else
+                return CAIRO_COLOR_GREEN;
+}
+
 void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVariant *parameter, 
                                                   gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
 	gchar *oname = g_strconcat (vc->scan->data.ui.basename,"-objects",NULL);
-	gchar *fname = gapp->file_dialog_load ("Load Objects", NULL, oname);
+
+        GtkFileFilter *f0 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f0, "All");
+        gtk_file_filter_add_pattern (f0, "*");
+
+        GtkFileFilter *f1 = gtk_file_filter_new ();
+        gtk_file_filter_add_pattern (f1, "*.objects");
+
+        GtkFileFilter *f2 = gtk_file_filter_new ();
+        gtk_file_filter_add_pattern (f2, "*.xyz");
+
+        GtkFileFilter *filter[] = { f2, f1, f0, NULL };
+        
+	gchar *fname = gapp->file_dialog_load ("Load Objects", NULL, oname, filter);
 	g_free (oname);
 	vc->objloadstream.open (fname, std::ios::in);
 
+        // try if it is a .xyz file
+        if (g_strrstr (fname, ".xyz")){
+                gchar line[512];
+                vc->objloadstream.getline (line, 512);
+                gint natoms=atoi (line);
+                gchar xyz_model_name[512];
+                vc->objloadstream.getline (xyz_model_name, 512);
+                while (vc->objloadstream.good () && natoms>0){
+                        gchar *lab = NULL;
+                        int spc[2][2] = {{0,0},{0,0}};
+                        int sp00[2] = {1,1};
+                        double xy0[2] = {0.,0.};
+                        double xy[4];
+                        double z;
+                        double r=1.;
+                        if (GetAXYZ (vc->objloadstream, &lab, xy, z)){
+                                --natoms;
+                                VObject *vo;		
+                                xy[2] = xy[0]+r;
+                                xy[3] = xy[1];
+                                XSM_DEBUG(DBG_L2, "Adding Circle@xy:" << xy[0] << ", " << xy[1]
+                                          << " : " << xy[2] << ", " << xy[3] );
+                                vc->AddObject (vo = new VObCircle (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, 0.));
+                                vo->set_custom_label_font ("Sans 6");
+                                vo->set_custom_label_color (lookup_atom_color (lab));
+                                vo->set_on_spacetime  (sp00[0] ? FALSE:TRUE, spc[0]);
+                                vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
+                                vo->set_label_offset (xy0);
+                                vo->show_label (true);
+                                vo->set_marker_scale (0.); // do not show
+                                vo->remake_node_markers ();
+                                g_free (lab); lab=NULL;
+                        }
+                        g_free (lab); lab=NULL;
+                }
+                vc->objloadstream.close ();
+                return;
+        }
+        
 // very primitive parser of object data
 //  I've no idea how to choose from "Object-Name" automatically the right object class 
 //  without using a explicit if ( strcpm (..)) chooser list!
