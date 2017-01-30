@@ -28,6 +28,8 @@
 #ifndef __GXSM_MONITOR_VMEMORY_AND_REFCOUNTS_H
 #define __GXSM_MONITOR_VMEMORY_AND_REFCOUNTS_H
 
+#include <config.h>
+
 #define GXSM_GRC_UNITOBJ      0
 #define GXSM_GRC_SCANDATAOBJ  1
 #define GXSM_GRC_SCANOBJ      2
@@ -38,7 +40,8 @@
 #define GXSM_GRC_VOBJ         7
 #define GXSM_GRC_CAIRO_ITEM   8
 #define GXSM_GRC_PROFILEOBJ   9
-#define GXSM_GRC_LAST        10
+#define GXSM_GRC_PROFILECTRL 10
+#define GXSM_GRC_LAST        11
 
 #ifdef GXSM_MONITOR_VMEMORY_USAGE
 extern gint global_ref_counter[32];

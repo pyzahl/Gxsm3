@@ -44,6 +44,8 @@
 #include "action_id.h"
 #include "app_profile.h"
 
+#include "gxsm_monitor_vmemory_and_refcounts.h"
+
 // ============================================================
 // Popup Menu and Object Action Map
 // ============================================================
@@ -545,6 +547,8 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 	GtkWidget *tb;
 	char xcline[256];
 
+        GXSM_REF_OBJECT (GXSM_GRC_PROFILECTRL);
+
         pc_grid = NULL;
         set_pc_matrix_size ();
         window_w = window_h = 0;
@@ -916,6 +920,7 @@ ProfileControl::~ProfileControl ()
                 window = NULL;
         }
 
+        GXSM_UNREF_OBJECT (GXSM_GRC_PROFILECTRL);
         XSM_DEBUG (DBG_L2, "done.");
        
 }
