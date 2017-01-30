@@ -948,6 +948,11 @@
 	  <attribute name="target">off</attribute>
 	</item>
 	<item>
+	  <attribute name="label" translatable="yes">10 lines</attribute>
+	  <attribute name="action">win.logging-history</attribute>
+	  <attribute name="target">max-10-lines</attribute>
+	</item>
+	<item>
 	  <attribute name="label" translatable="yes">50 lines</attribute>
 	  <attribute name="action">win.logging-history</attribute>
 	  <attribute name="target">max-50-lines</attribute>

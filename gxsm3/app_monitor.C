@@ -71,6 +71,9 @@ MonitorControl::MonitorControl (gint loglevel, gint maxlines):Monitor(loglevel)
         log_view = gtk_text_view_new ();
         gtk_text_view_set_editable (GTK_TEXT_VIEW (log_view), FALSE);
         log_buf = gtk_text_view_get_buffer (GTK_TEXT_VIEW (log_view));
+        GtkTextIter end_iter;
+        gtk_text_buffer_get_end_iter (log_buf, &end_iter);
+        text_end_mark = gtk_text_buffer_create_mark (log_buf, "cursor", &end_iter, false);
 
         GtkWidget *scrolled_window = gtk_scrolled_window_new (NULL, NULL);
         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window),
@@ -85,6 +88,8 @@ MonitorControl::MonitorControl (gint loglevel, gint maxlines):Monitor(loglevel)
         gtk_widget_show_all (v_grid);
 
         set_window_geometry ("monitor");
+
+        LogEvent ("MonitorControl", "startup");
 }
 
 MonitorControl::~MonitorControl (){
@@ -181,6 +186,8 @@ void MonitorControl::set_logging_history_radio_callback (GSimpleAction *action, 
         
         if (!strcmp (g_variant_get_string (new_state, NULL), "off"))
                 mc->set_max_lines (-1);
+        else if (!strcmp (g_variant_get_string (new_state, NULL), "max-10-lines"))
+                mc->set_max_lines (10);
         else if (!strcmp (g_variant_get_string (new_state, NULL), "max-50-lines"))
                 mc->set_max_lines (50);
         else if (!strcmp (g_variant_get_string (new_state, NULL), "max-500-lines"))
@@ -239,7 +246,6 @@ void MonitorControl::LogEvent (const gchar *Action, const gchar *Entry, gint lev
                         return;
                 
                 GtkTextIter start_iter, end_trim_iter, end_iter;
-                GtkTextMark *end_mark;
                 gint lines = gtk_text_buffer_get_line_count (log_buf);
          
                 // append to log buffer view
@@ -254,7 +260,7 @@ void MonitorControl::LogEvent (const gchar *Action, const gchar *Entry, gint lev
                 output = g_string_append(output, Entry);
                 output = g_string_append(output, "\n");
 
-                gtk_text_buffer_get_bounds (log_buf, &start_iter, &end_iter);
+                gtk_text_buffer_get_start_iter (log_buf, &start_iter);
 
                 // limit buffer max_lines lines unless max_lines == 0
                 if (max_lines > 1 && lines > max_lines){
@@ -262,15 +268,13 @@ void MonitorControl::LogEvent (const gchar *Action, const gchar *Entry, gint lev
                         gtk_text_buffer_delete (log_buf,  &start_iter,  &end_trim_iter);
                 }
 
-                end_mark = gtk_text_buffer_create_mark (log_buf, "cursor", &end_iter, false);
-                g_object_ref (end_mark);
-
-                gtk_text_buffer_move_mark (log_buf, end_mark, &end_iter );
-                gtk_text_buffer_insert_at_cursor(log_buf, output->str, -1 );
-
+                gtk_text_buffer_get_end_iter (log_buf, &end_iter);
+                gtk_text_buffer_move_mark (log_buf, text_end_mark, &end_iter );
+                // gtk_text_buffer_insert_at_cursor (log_buf, output->str, -1 );
+                gtk_text_buffer_insert (log_buf, &end_iter, output->str, -1 );
                 g_string_free(output, TRUE);
 
-                gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (log_view), end_mark, 0.0, true, 0.5, 1);
-                g_object_unref (end_mark);
+                gtk_text_buffer_get_end_iter (log_buf, &end_iter);
+                gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (log_view), text_end_mark, 0.0, true, 0.5, 1);
         }
 }
