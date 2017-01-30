@@ -335,6 +335,12 @@ gxsm3_app_startup (GApplication *app)
 
         XSM_DEBUG(DBG_L1, "************ GXSM: loading popup menus from rescources ***************");
    
+        GObject *monitor_menu = gtk_builder_get_object (builder, "monitor-menu");
+        if (!monitor_menu)
+                PI_DEBUG_GP_ERROR (DBG_L1, "id view2d-menu not found in resource.\n");
+        else
+                gapp->set_monitor_menu (monitor_menu);
+
         GObject *view2d_menu = gtk_builder_get_object (builder, "view2d-menu");
         if (!view2d_menu)
                 PI_DEBUG_GP_ERROR (DBG_L1, "id view2d-menu not found in resource.\n");

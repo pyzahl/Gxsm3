@@ -105,7 +105,13 @@ class MonitorControl : public AppBase, Monitor{
 public:
         MonitorControl (gint loglevel=2, gint maxlines=500);
         virtual ~MonitorControl();
+        virtual void AppWindowInit(const gchar *title);
 
+        static void file_open_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void file_save_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void file_close_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);        
+        static void set_logging_history_radio_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);        
+        static void set_logging_level_radio_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);        
         virtual void LogEvent(const gchar *Action, const gchar *Entry, gint level=1);
 
         void set_max_lines (gint ml) { max_lines = ml; };
@@ -394,6 +400,7 @@ public:
 
         GObject *get_gxsm_main_menu () { return gxsm_main_menu; };
         GObject *get_gxsm_app_menu () { return gxsm_app_menu; };
+        GObject *get_monitor_menu () { return monitor_menu; };
         GObject *get_view2d_menu () { return view2d_menu; };
         GObject *get_vobj_ctx_menu_1p () { return vobj_ctx_menu_1p; };
         GObject *get_vobj_ctx_menu_2p () { return vobj_ctx_menu_2p; };
@@ -410,6 +417,7 @@ public:
         
         GObject *set_gxsm_main_menu (GObject *o=NULL) { if (o) { gxsm_main_menu=o; g_object_ref (o); } return gxsm_main_menu; };
         GObject *set_gxsm_app_menu (GObject *o=NULL) { if (o) { gxsm_app_menu=o; g_object_ref (o); }  return gxsm_app_menu; };
+        GObject *set_monitor_menu (GObject *o=NULL) { if (o) { monitor_menu=o; g_object_ref (o); }  return monitor_menu; };
         GObject *set_view2d_menu (GObject *o=NULL) { if (o) { view2d_menu=o; g_object_ref (o); }  return view2d_menu; };
         GObject *set_vobj_ctx_menu_1p (GObject *o=NULL) { if (o) { vobj_ctx_menu_1p=o; g_object_ref (o); } return vobj_ctx_menu_1p; };
         GObject *set_vobj_ctx_menu_2p (GObject *o=NULL) {  if (o) { vobj_ctx_menu_2p=o; g_object_ref (o); }  return vobj_ctx_menu_2p; };
@@ -454,6 +462,7 @@ private:
         
         GObject*   gxsm_main_menu;
         GObject*   gxsm_app_menu;
+        GObject*   monitor_menu;
         GObject*   view2d_menu;
         GObject*   vobj_ctx_menu_1p;
         GObject*   vobj_ctx_menu_2p;

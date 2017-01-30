@@ -43,7 +43,6 @@
 #include "glbvars.h"
 #include "action_id.h"
 #include "app_profile.h"
-#include "app_profilepopupdef.h"
 
 // ============================================================
 // Popup Menu and Object Action Map

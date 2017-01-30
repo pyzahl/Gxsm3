@@ -90,7 +90,7 @@ ChannelSelector::ChannelSelector (int ChAnz){
                 ChViewWidget[i] = NULL;
         }
   
-	AppWindowInit(CHANNELSELECTOR_TITLE);
+	AppWindowInit (CHANNELSELECTOR_TITLE);
 
         // add headers
 
