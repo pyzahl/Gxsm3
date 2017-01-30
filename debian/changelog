@@ -1,3 +1,15 @@
+gxsm3 (3.41.0-0ubuntu5) xenial; urgency=medium
+
+  * bug fixed unit favorites integration 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 29 Jan 2017 21:40:15 +0100
+
+gxsm3 (3.41.0-0ubuntu4) xenial; urgency=medium
+
+  * update for new liveDVD
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 29 Jan 2017 20:04:13 +0100
+
 gxsm3 (3.41.0-0ubuntu3) xenial; urgency=medium
 
   * clean up of debian packaging scripts 

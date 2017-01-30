@@ -22,9 +22,9 @@ case "$1" in
 	echo "reseting dconf"
 	dbus-launch dconf reset -f /org/gnome/gxsm3/
 	value=`gsettings get com.canonical.Unity.Launcher favorites`
-	newvalue=`echo $value | sed "s/'gxsm-gxsm.desktop',//g"`
+	newvalue=`echo ${value} | sed s/"'application:\/\/gxsm-gxsm.desktop', "//g`
 	dbus-launch gsettings set com.canonical.Unity.Launcher favorites "$newvalue"
-	echo "removed gxsm icon to unity toolbar"
+	echo "removed gxsm icon from unity toolbar"
 	echo "removing gxsm menu"	
 	cd /usr/share/gxsm3/menu	
 	xdg-desktop-menu uninstall --noupdate gxsm-gxsm.directory gxsm-mktwothree.directory gxsm-mktwothree.desktop sranger-mktwo.desktop sranger-mkthree.desktop sranger-mkthree-spd.desktop
