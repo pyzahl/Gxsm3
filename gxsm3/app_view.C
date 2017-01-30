@@ -2226,21 +2226,45 @@ int GetAXYZ (std::ifstream &is, gchar **id, double *xy, double &z){
         return 0;
 }
 
-gfloat *lookup_atom_color (gchar *id){
-        if (g_strrstr (id, "Cu"))
-                return CAIRO_COLOR_GREY1;
-        if (g_strrstr (id, "Ti"))
-                return CAIRO_COLOR_GREY1;
-        if (g_strrstr (id, "O"))
-                return CAIRO_COLOR_RED;
-        if (g_strrstr (id, "C"))
-                return CAIRO_COLOR_BLACK;
-        if (g_strrstr (id, "N"))
-                return CAIRO_COLOR_BLUE;
-        if (g_strrstr (id, "H"))
-                return CAIRO_COLOR_WHITE;
-        else
-                return CAIRO_COLOR_GREEN;
+gfloat *lookup_atom_color (gchar *id, double &r){
+        if (g_strrstr (id, "Cu")){
+                r=1.4175; return CAIRO_COLOR_GREY1;
+        }
+        if (g_strrstr (id, "Ti")){
+                r=1.47; return CAIRO_COLOR_GREY1;
+        }
+        if (g_strrstr (id, "O")){
+                r=0.7665; return CAIRO_COLOR_RED;
+        }
+        if (g_strrstr (id, "Cl")){
+                r=1.039; return CAIRO_COLOR_GREEN;
+        }
+        if (g_strrstr (id, "Xe")){
+                r=1.3755; return CAIRO_COLOR_GREEN;
+        }
+        if (g_strrstr (id, "Ar")){
+                r=1.029; return CAIRO_COLOR_GREEN;
+        }
+        if (g_strrstr (id, "F")){
+                r=0.7455; return CAIRO_COLOR_BLUE;
+        }
+        if (g_strrstr (id, "C")){
+                r=0.8085; return CAIRO_COLOR_BLACK;
+        }
+        if (g_strrstr (id, "S")){
+                r=1.092; return CAIRO_COLOR_YELLOW;
+        }
+        if (g_strrstr (id, "P")){
+                r=1.050; return CAIRO_COLOR_YELLOW;
+        }
+        if (g_strrstr (id, "N")){
+                r=0.7875; return CAIRO_COLOR_BLUE;
+        }
+        if (g_strrstr (id, "H")){
+                r=0.399; return CAIRO_COLOR_WHITE;
+        } else {
+                r=0.5; return CAIRO_COLOR_CYAN;
+        }
 }
 
 void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVariant *parameter, 
@@ -2275,6 +2299,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
                         gchar *lab = NULL;
                         int spc[2][2] = {{0,0},{0,0}};
                         int sp00[2] = {1,1};
+                        gfloat *atom_color;
                         double xy0[2] = {0.,0.};
                         double xy[4];
                         double z;
@@ -2282,13 +2307,15 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
                         if (GetAXYZ (vc->objloadstream, &lab, xy, z)){
                                 --natoms;
                                 VObject *vo;		
+                                atom_color = lookup_atom_color (lab, r); // r=atomic radius, may scale by "ball" factor 0.4
                                 xy[2] = xy[0]+r;
                                 xy[3] = xy[1];
                                 XSM_DEBUG(DBG_L2, "Adding Circle@xy:" << xy[0] << ", " << xy[1]
                                           << " : " << xy[2] << ", " << xy[3] );
                                 vc->AddObject (vo = new VObCircle (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, 0.));
                                 vo->set_custom_label_font ("Sans 6");
-                                vo->set_custom_label_color (lookup_atom_color (lab));
+                                vo->set_custom_label_color (atom_color);
+                                vo->set_custom_element_color (atom_color);
                                 vo->set_on_spacetime  (sp00[0] ? FALSE:TRUE, spc[0]);
                                 vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
                                 vo->set_label_offset (xy0);

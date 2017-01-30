@@ -2941,7 +2941,10 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
         
         delete Dest->data.TimeUnit;
         // UTF8_ANGSTROEM "\303\205"
-	Dest->data.TimeUnit = new UnitObj("\303\205","\303\205", "g", "Z");
+        UnitObj *tmp_unit = new UnitObj("\303\205","\303\205", "g", "Z");
+        // consider: gapp->xsm->MakeUnit ("AA", "Z");
+	Dest->data.SetTimeUnit (tmp_unit);
+        delete tmp_unit;
         
         info_stream << "dz = " << dz << " Ang\n";
         info_stream << " z = [" << zi << ", " << zf << "] Ang\n";

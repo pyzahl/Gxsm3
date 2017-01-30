@@ -351,6 +351,22 @@ FIO_STATUS NetCDF::Read(gboolean append_in_time){
 	NcAtt *unit_att = NULL;
 	NcAtt *label_att = NULL;
 
+	if ((unit_att = nc.get_var("time")->get_att("unit"))){
+		if ((label_att = nc.get_var("time")->get_att("label"))){
+			NcValues *unit  = unit_att->values();
+			NcValues *label = label_att->values();
+			UnitObj *u = gapp->xsm->MakeUnit (unit->as_string(0), label->as_string(0));
+			scan->data.SetTimeUnit(u);
+			delete unit;
+			delete label;
+			delete u;
+			delete label_att;
+			label_att = NULL;
+		}
+		delete unit_att;
+		unit_att = NULL;
+	}
+
 	if ((unit_att = nc.get_var("value")->get_att("unit"))){
 		if ((label_att = nc.get_var("value")->get_att("label"))){
 			NcValues *unit  = unit_att->values();
@@ -614,9 +630,18 @@ FIO_STATUS NetCDF::Write(){
 	XSM_DEBUG (DBG_L2, "NetCDF::Write-> Adding time, att");
 
 	NcVar* time  = nc.add_var("time", ncDouble, timed);
-	time->add_att("long_name", "Time since reftime (actual time scanning)");
+	time->add_att("long_name", "Time since reftime (actual time scanning) or other virtual in time changeing parameter");
 	time->add_att("short_name", "Scan Time");
-	time->add_att("var_unit", "s");
+	//time->add_att("var_unit", "s"); // 20170130-PYZ-added-actual-unit-info
+	time->add_att("dimension_unit_info", "actual data dimension for SrcType in time element dimension");
+	if (scan->data.TimeUnit){
+		time->add_att("label", scan->data.TimeUnit->Label());
+		time->add_att("unit", scan->data.TimeUnit->Symbol());
+	}else{
+		time->add_att("label", "time");
+		time->add_att("unit", "s");
+	}
+  
   
 	XSM_DEBUG (DBG_L2, "NetCDF::Write-> Adding Units Value");
 
