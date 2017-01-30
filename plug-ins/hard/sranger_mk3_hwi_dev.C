@@ -309,10 +309,10 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 									 swap_flg, target);
                                         SRANGER_DEBUG ("Signal Ranger FB_SPM soft Version mismatch\n" << details);
 					SRANGER_DEBUG_GP ("HWI-DEV-MK3-VW01-- DSP software version mismatch warning.\n%s\n", details);
-					gapp->alert (N_("Critical Warning:"), N_("Signal Ranger FB_SPM software version mismatch detected! Exiting required."), details,
+					gapp->alert (N_("Critical Warning:"), N_("Signal Ranger MK3 FB_SPM software version mismatch detected! Exiting required."), details,
                                                      developer_option == 0 ? 20 : 5);
-                                        gapp->monitorcontrol->LogEvent ("Critical: Signal Ranger FB_SPM soft Version mismatch:\n", details);
-                                        g_critical ("Signal Ranger FB_SPM soft Version mismatch:\n%s", details);
+                                        gapp->monitorcontrol->LogEvent ("Critical: Signal Ranger MK3 FB_SPM soft Version mismatch:\n", details);
+                                        g_critical ("Signal Ranger MK3 FB_SPM soft Version mismatch:\n%s", details);
 					g_free (details);
 
                                         //if (developer_option == 0)

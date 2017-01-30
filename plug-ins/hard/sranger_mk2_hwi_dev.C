@@ -40,10 +40,12 @@
 #include <iostream>   // for cout
 #include <sstream>    // for istringstream
 
-#include "glbvars.h"
-#include "xsmtypes.h"
 #include <fcntl.h>
 #include <sys/ioctl.h>
+
+#include "glbvars.h"
+#include "xsmtypes.h"
+#include "xsmdebug.h"
 
 #include "sranger_mk2_hwi.h"
 
@@ -71,6 +73,8 @@
 #define VOLT2AIC(U)   (int)(gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2V (U)))
 #define DVOLT2AIC(U)  (int)(gapp->xsm->Inst->VoltOut2Dig ((U)/gapp->xsm->Inst->BiasGainV2V ()))
 
+extern int developer_option;
+extern int pi_debug_level;
 
 extern DSPControl *DSPControlClass;
 extern GxsmPlugin sranger_mk2_hwi_pi;
@@ -104,6 +108,7 @@ gpointer ProbeFifoReadFunction (void *ptr_sr, int dspdev);
  * - ...
  */
 sranger_mk2_hwi_dev::sranger_mk2_hwi_dev(){
+	gchar *tmp;
 	SRANGER_DEBUG("open driver");
 	PI_DEBUG_GP (DBG_L1, "HWI-DEV-MK2-I** HwI SR-MK2 probing\n");
 	AIC_max_points = 1<<15; // SR-AIC resolution is limiting...
@@ -331,8 +336,15 @@ sranger_mk2_hwi_dev::sranger_mk2_hwi_dev(){
 							     "\nDSP-SoftId : %04x [HwI:%04x]"
 							     "\nDSP-SoftVer: %04x [HwI:%04x]",
 							     xsmres.DSPDev, magic_data.dsp_soft_id, FB_SPM_SOFT_ID, magic_data.version, FB_SPM_VERSION);
-				
-				PI_DEBUG_GP (DBG_L1, "HWI-DEV-MK2-I*CPU* DSP-SoftId : %04x   [HwI:%04x]\n", magic_data.dsp_soft_id, FB_SPM_SOFT_ID);
+
+				tmp = g_strdup_printf ("%04x   [HwI:%04x]", magic_data.dsp_soft_id, FB_SPM_SOFT_ID);
+                                gapp->monitorcontrol->LogEvent ("HWI-DEV-MK2-I*CPU* DSP-SoftId.... ", tmp);
+				PI_DEBUG_GP (DBG_L1, "HWI-DEV-MK2-I*CPU* DSP-SoftId...: %s\n", tmp); g_free (tmp);
+
+				tmp = g_strdup_printf ("%04x   [HwI:%04x]", magic_data.version, FB_SPM_VERSION);
+                                gapp->monitorcontrol->LogEvent ("HWI-DEV-MK2-I*CPU* DSP-Version... ", tmp);
+				PI_DEBUG_GP (DBG_L1, "HWI-DEV-MK2-I*CPU* DSP-Version..: %s\n", tmp); g_free (tmp);
+
 				if (FB_SPM_SOFT_ID != magic_data.dsp_soft_id){
 				        gchar *details = g_strdup_printf(
 									 "Bad SR DSP Software ID %4X found.\n"
@@ -342,6 +354,13 @@ sranger_mk2_hwi_dev::sranger_mk2_hwi_dev(){
 									 (unsigned int) magic_data.dsp_soft_id,
 									 (unsigned int) FB_SPM_SOFT_ID);
 					SRANGER_DEBUG ("Signal Ranger FB_SPM soft Version mismatch\n" << details);
+					gapp->alert (N_("Critical Warning:"), N_("Signal Ranger MK2 FB_SPM software version mismatch detected! Exiting required."), details,
+                                                     developer_option == 0 ? 20 : 5);
+                                        gapp->monitorcontrol->LogEvent ("Critical: Signal Ranger MK2 FB_SPM soft Version mismatch:\n", details);
+                                        g_critical ("Signal Ranger MK2 FB_SPM soft Version mismatch:\n%s", details);
+
+
+
 					gapp->alert (N_("Warning"), N_("Signal Ranger FB_SPM software version mismatch detected!"), details, 1);
 					PI_DEBUG_GP (DBG_L1, "HWI-DEV-MK2-VE01-- old magic -- DSP software version mismatch.\n");
 					g_free (details);
