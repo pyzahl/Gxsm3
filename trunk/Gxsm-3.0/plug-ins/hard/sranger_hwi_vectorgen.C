@@ -339,6 +339,7 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 	double dU_IV=0.;
 	double dU_step=0.;
 	int vpci;
+        gchar *info=NULL;
 
 	if (!sranger_hwi_hardware) return; 
 
@@ -347,6 +348,7 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 
 	switch (pvm){
 	case PV_MODE_NONE: // write dummy delay and NULL Vector
+                g_free (vp_exec_mode_name); vp_exec_mode_name = g_strdup ("VP: None");
 		options      = (PL_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
 			     | (PL_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
 		ramp_sources = PL_option_flags & FLAG_SHOW_RAMP ? Source : 0x000;
@@ -361,6 +363,7 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 		break;
 
 	case PV_MODE_IV: // ------------ Special Vector Setup for IV Probes "Probe ala STM"
+                g_free (vp_exec_mode_name); vp_exec_mode_name = g_strdup ("VP: STS");
 		options      = (IV_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
 			     | (IV_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
 		ramp_sources = IV_option_flags & FLAG_SHOW_RAMP ? Source : 0x000;
@@ -611,7 +614,6 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 
 
 		{
-			gchar *info=NULL;
 			int warn_flag=FALSE;
 			if (probe_trigger_raster_points_user > 0 && write_vector_mode != PV_MODE_NONE){
 				double T_probe_cycle   = 1e3 * (double)vp_duration/frq_ref; // Time of full probe cycle in ms
@@ -670,13 +672,13 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 				style->bg[GTK_STATE_NORMAL] = cbg;
 				gtk_widget_set_style(IV_status, style);
 			}
-			g_free (info);
 		}
 
 		break;
 
 
 	case PV_MODE_FZ: // ------------ Special Vector Setup for FZ (Force(or what ever!!)-Distance) "Probe ala AFM"
+                g_free (vp_exec_mode_name); vp_exec_mode_name = g_strdup ("VP: FZ");
 		options      = (FZ_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
 			     | (FZ_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
 		ramp_sources = FZ_option_flags & FLAG_SHOW_RAMP ? Source : 0x000;
@@ -713,7 +715,6 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 		sranger_hwi_hardware->probe_time_estimate = (int)vp_duration; // used for timeout check
 
 		{
-			gchar *info=NULL;
 			if (probe_trigger_raster_points_user > 0 && write_vector_mode != PV_MODE_NONE){
 				double T_probe_cycle   = 1e3 * (double)vp_duration/frq_ref; // Time of full probe cycle in ms
 				double T_raster2raster = 1e3 * gapp->xsm->data.s.rx / (gapp->xsm->data.s.nx/probe_trigger_raster_points_user) / scan_speed_x; // Time inbetween raster points in ms
@@ -741,7 +742,6 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 					);
 			if (FZ_status)
 				gtk_entry_set_text (GTK_ENTRY (FZ_status), info);
-			g_free (info);
 		}
 
 		break;
@@ -749,6 +749,7 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 
 
 	case PV_MODE_PL: // ------------ Special Vector Setup for PL (Puls)
+                g_free (vp_exec_mode_name); vp_exec_mode_name = g_strdup ("VP: PL");
 		options      = (PL_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
 			     | (PL_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
 		ramp_sources = PL_option_flags & FLAG_SHOW_RAMP ? Source : 0x000;
@@ -779,17 +780,16 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 		sranger_hwi_hardware->probe_time_estimate = (int)vp_duration; // used for timeout check
 
 		{
-			gchar *info=NULL;
 			info = g_strdup_printf ("T_total=%.2f ms, O*0x%02x S*0x%06x", 
 						1e3*(double)vp_duration/frq_ref, options, Source
 				);
 			if (PL_status)
 				gtk_entry_set_text (GTK_ENTRY (PL_status), info);
-			g_free (info);
 		}
 		break;
 
 	case PV_MODE_SP: // ------------ Special Vector Setup for Slow PL (Puls) + Flag
+                g_free (vp_exec_mode_name); vp_exec_mode_name = g_strdup ("VP: SP");
 		options      = (SP_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
 			     | (SP_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
 		ramp_sources = SP_option_flags & FLAG_SHOW_RAMP ? Source : 0x000;
@@ -837,17 +837,16 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 		sranger_hwi_hardware->probe_time_estimate = (int)vp_duration; // used for timeout check
 
 		{
-			gchar *info=NULL;
 			info = g_strdup_printf ("T_total=%.2f ms, O*0x%02x S*0x%06x", 
 						1e3*(double)vp_duration/frq_ref, options, Source
 				);
 			if (SP_status)
 				gtk_entry_set_text (GTK_ENTRY (SP_status), info);
-			g_free (info);
 		}
 		break;
 
 	case PV_MODE_LP: // ------------ Special Vector Setup for LP (Laserpuls)
+                g_free (vp_exec_mode_name); vp_exec_mode_name = g_strdup ("VP: LP");
 		options      = (LP_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
 			     | (LP_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
 		ramp_sources = LP_option_flags & FLAG_SHOW_RAMP ? Source : 0x000;
@@ -886,18 +885,17 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 		sranger_hwi_hardware->probe_time_estimate = (int)vp_duration; // used for timeout check
 
                 {
-                        gchar *info=NULL;
                         info = g_strdup_printf ("T_total=%.2f ms, O*0x%02x S*0x%06x", 
                                                 1e3*(double)vp_duration/frq_ref, options, Source
                                 );
                         if (LP_status)
                                 gtk_entry_set_text (GTK_ENTRY (LP_status), info);
-                        g_free (info);
                 }
                 break;
 		
 
 	case PV_MODE_TS: // ------------ Special Vector Setup for TS (Time Spectroscopy)
+                g_free (vp_exec_mode_name); vp_exec_mode_name = g_strdup ("VP: TS");
 		options      = (TS_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
 			     | (TS_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
 		ramp_sources = TS_option_flags & FLAG_SHOW_RAMP ? Source : 0x000;
@@ -914,18 +912,17 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 		sranger_hwi_hardware->probe_time_estimate = (int)vp_duration; // used for timeout check
 
 		{
-			gchar *info=NULL;
 			info = g_strdup_printf ("T_total=%.2f ms, O*0x%02x S*0x%06x", 
 						1e3*(double)vp_duration/frq_ref, options, Source
 				);
 			if (TS_status)
 				gtk_entry_set_text (GTK_ENTRY (TS_status), info);
-			g_free (info);
 		}
 		break;
 
 
-	case PV_MODE_LM: // ------------ Special Vector Setup for LM (lat manipulation)
+	case PV_MODE_LM: // ------------ Special Vector Setup for LM (lat manipulation) -- now "VP" = generic VectorProgram
+                g_free (vp_exec_mode_name); vp_exec_mode_name = g_strdup ("VP: Vector Program");
 		options      = (LM_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
 			     | (LM_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
 		ramp_sources = LM_option_flags & FLAG_SHOW_RAMP ? Source : 0x000;
@@ -948,14 +945,14 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 		sranger_hwi_hardware->probe_time_estimate = (int)vp_duration; // used for timeout check
 
 		{
-			gchar *info = g_strdup_printf ("T=%.2f ms", 1e3*(double)vp_duration/frq_ref);
+			info = g_strdup_printf ("T=%.2f ms", 1e3*(double)vp_duration/frq_ref);
 			if (LM_status)
 				gtk_entry_set_text (GTK_ENTRY (LM_status), info);
-			g_free (info);
 		}
 		break;
 
 	case PV_MODE_AC: // ------------ Special Vector Setup for AC (phase probe)
+                g_free (vp_exec_mode_name); vp_exec_mode_name = g_strdup ("VP: AC");
 		options      = (AC_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
 			     | (AC_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
 		ramp_sources = AC_option_flags & FLAG_SHOW_RAMP ? Source : 0x000;
@@ -991,17 +988,16 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 		sranger_hwi_hardware->probe_time_estimate = (int)vp_duration; // used for timeout check
 
 		{
-			gchar *info=NULL;
 			info = g_strdup_printf ("T_total=%.2f ms, O*0x%02x S*0x%06x", 
 						1e3*(double)vp_duration/frq_ref, options, Source
 				);
 			if (AC_status)
 				gtk_entry_set_text (GTK_ENTRY (AC_status), info);
-			g_free (info);
 		}
 		break;
 
 	case PV_MODE_AX: // ------------ Special Vector Setup for AX (auxillary probe, QMA, CMA, ...)
+                g_free (vp_exec_mode_name); vp_exec_mode_name = g_strdup ("VP: AX");
 		options      = (AX_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
 			     | (AX_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
 		ramp_sources = AX_option_flags & FLAG_SHOW_RAMP ? Source : 0x000;
@@ -1038,18 +1034,20 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 		sranger_hwi_hardware->probe_time_estimate = (int)vp_duration; // used for timeout check
 
 		{
-			gchar *info = g_strdup_printf ("T=%.2f ms, Slope: %.4f V/s", 1e3*(double)vp_duration/frq_ref, AX_slope);
+			info = g_strdup_printf ("T=%.2f ms, Slope: %.4f V/s", 1e3*(double)vp_duration/frq_ref, AX_slope);
 			if (AX_status)
 				gtk_entry_set_text (GTK_ENTRY (AX_status), info);
-			g_free (info);
 		}
 		break;
 	}
 
 	if (start){
-                g_message ("Executing Vector Probe Now!");
-		gapp->monitorcontrol->LogEvent ("VectorProbe", "Execute");
+                g_message ("Executing Vector Probe Now! Mode: %s", vp_exec_mode_name);
+		gapp->monitorcontrol->LogEvent ("VectorProbe Execute", vp_exec_mode_name);
+		gapp->monitorcontrol->LogEvent ("VectorProbe", info, 2);
 	}
+
+        g_free (info);
 
 	// --------------------------------------------------
 

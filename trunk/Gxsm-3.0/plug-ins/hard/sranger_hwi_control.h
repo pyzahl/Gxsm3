@@ -373,6 +373,7 @@ class DSPControl : public AppBase{
 
 	// The factor of 2 is to have it big enough to hold also the averaged data
 	ProfileControl *probe_pc_matrix[2*MAX_NUM_CHANNELS][2*MAX_NUM_CHANNELS];
+	gchar *vp_exec_mode_name;
 
 	int    current_auto_flags;
 	int    raster_auto_flags;

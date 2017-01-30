@@ -281,15 +281,15 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
                 GtkWidget *header_bar = gtk_header_bar_new ();
                 gtk_widget_show (header_bar);
                 gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), true);
-                gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), "Graph Matrix");
-                //gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
+
+                gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), "last plot");
                 gtk_window_set_titlebar (GTK_WINDOW (vpg_window), header_bar);
 
                 gtk_window_resize (GTK_WINDOW (vpg_window),
                                    400*num_active_xmaps > 1100? 1100:400*num_active_xmaps,
                                    200*num_active_sources > 800? 800:200*num_active_sources);
+
                 vpg_grid = gtk_grid_new ();
-                gtk_window_set_title (GTK_WINDOW (vpg_window), "VPG Graphs");
                 g_object_set_data (G_OBJECT (vpg_window), "v_grid", vpg_grid);
                 gtk_container_add (GTK_CONTAINER (vpg_window), vpg_grid);
                 gtk_widget_show_all (GTK_WIDGET (vpg_window));
@@ -302,7 +302,13 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
                 gtk_widget_show_all (GTK_WIDGET (statusbar));
 
         } 
-        
+        if (GrMatWin){
+                if (vp_exec_mode_name)
+                        gtk_header_bar_set_title ( GTK_HEADER_BAR (gtk_window_get_titlebar (vpg_window)), vp_exec_mode_name);
+                else
+                        gtk_header_bar_set_title ( GTK_HEADER_BAR (gtk_window_get_titlebar (vpg_window)), "Probe Graphing Matrix Display");
+        }
+            
 	XSM_DEBUG_PG("DBG-M VIS  " << xlab << " : " << ylab);
 
 	XSM_DEBUG_PG ("DSPControl::probedata_visualize -- enter");

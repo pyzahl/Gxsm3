@@ -962,7 +962,7 @@ void ProfileControl::AppWindowInit(const gchar *title){
                 gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
                 gtk_widget_show (header_menu_button);
 
-                gtk_window_set_title (GTK_WINDOW (window), title);
+                //gtk_window_set_title (GTK_WINDOW (window), title);
                 gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
                 //gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
                 gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
@@ -2173,7 +2173,11 @@ void ProfileControl::SetTitle(const gchar *tit, gboolean append){
 		g_free(title);
 		title = g_strdup (tit);
 	}
-	gtk_window_set_title (GTK_WINDOW (window), title);
+        
+        if (pc_in_window)
+                gtk_header_bar_set_subtitle (GTK_HEADER_BAR (gtk_window_get_titlebar (GTK_WINDOW (window))), title);
+        else
+                gtk_header_bar_set_title (GTK_HEADER_BAR (gtk_window_get_titlebar (GTK_WINDOW (window))), title);
 }
 
 
