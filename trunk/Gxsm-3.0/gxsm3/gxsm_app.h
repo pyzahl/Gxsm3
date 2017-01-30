@@ -119,6 +119,7 @@ private:
         gint          max_lines;
         GtkWidget     *log_view;
 	GtkTextBuffer *log_buf;
+        GtkTextMark   *text_end_mark;
 };
 
 /* App. Main Window */
