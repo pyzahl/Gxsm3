@@ -563,6 +563,11 @@ void SCAN_DATA::SetZUnit(UnitObj *u){
 	Zunit = u->Copy();
 }
 
+void SCAN_DATA::SetTimeUnit(UnitObj *u){
+	if(TimeUnit) delete TimeUnit;
+	TimeUnit = u->Copy();
+}
+
 /* Save / Retrive Values from Rescource */
 void SCAN_DATA::SaveValues(gchar *SetName){
 	XsmRescourceManager xrm("Values", SetName);

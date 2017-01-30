@@ -452,6 +452,7 @@ public:
 	void SetYUnit(UnitObj *u);
 	void SetVUnit(UnitObj *u);
 	void SetZUnit(UnitObj *u);
+	void SetTimeUnit(UnitObj *u);
 
 	/* Update Functions */
 	void GetScan_Param(SCAN_DATA &src){ 
