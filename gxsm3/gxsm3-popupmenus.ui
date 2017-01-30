@@ -932,6 +932,10 @@
 	  <attribute name="label" translatable="yes">_Save</attribute>
 	  <attribute name="action">win.file-save</attribute>
 	</item>
+	<item>
+	  <attribute name="label" translatable="yes">_Close</attribute>
+	  <attribute name="action">win.file-close</attribute>
+	</item>
       </section>
     </submenu>
     <submenu>
@@ -981,8 +985,8 @@
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Normal</attribute>
-	  <attribute name="action">win.logging-normal</attribute>
-	  <attribute name="target">off</attribute>
+	  <attribute name="action">win.logging-level</attribute>
+	  <attribute name="target">normal</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Verbose</attribute>

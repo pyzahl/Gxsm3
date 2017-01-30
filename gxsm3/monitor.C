@@ -61,7 +61,7 @@ const gchar *grc_name[] = {
 gchar* Monitor::get_vmem_and_refcounts_info (){
         gchar *tmp;
         gint64 t=g_get_real_time ();
-        gchar *info = g_strdup_printf ("RealTime: %21ld us %10.2f s VmSize: %14d kB RefCounts: ",
+        gchar *info = g_strdup_printf ("RealTime: %21ld us %10.3f s VmSize: %14d kB RefCounts: ",
                                        t, (double)(t-t0)*1e-6,
                                        getValue ("VmSize:"));
         for (int i=0; i<GXSM_GRC_LAST && grc_name[i]; ++i){
