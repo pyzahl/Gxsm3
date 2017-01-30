@@ -917,4 +917,85 @@
     </submenu>
   </menu>
 
+  <!-- ************************************************** -->
+  <!-- PROFILECONTROL POPUP MENU -->
+  <menu id="monitor-menu">
+    <submenu>
+      <attribute name="label" translatable="yes">File</attribute>
+      <section>
+	<attribute name="id">monitor-file-section</attribute>
+	<item>
+	  <attribute name="label" translatable="yes">_Open</attribute>
+	  <attribute name="action">win.file-open</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">_Save</attribute>
+	  <attribute name="action">win.file-save</attribute>
+	</item>
+      </section>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Logging History</attribute>
+      <section>
+	<attribute name="id">monitor-logging-history-section</attribute>
+	<item>
+	  <attribute name="label" translatable="yes">Off</attribute>
+	  <attribute name="action">win.logging-history</attribute>
+	  <attribute name="target">off</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">50 lines</attribute>
+	  <attribute name="action">win.logging-history</attribute>
+	  <attribute name="target">max-50-lines</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">500 lines</attribute>
+	  <attribute name="action">win.logging-history</attribute>
+	  <attribute name="target">max-500-lines</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">5000 lines</attribute>
+	  <attribute name="action">win.logging-history</attribute>
+	  <attribute name="target">max-5000-lines</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">Infinit</attribute>
+	  <attribute name="action">win.logging-history</attribute>
+	  <attribute name="target">infinit</attribute>
+	</item>
+      </section>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Logging Level</attribute>
+      <section>
+	<attribute name="id">monitor-logging-level-section</attribute>
+	<item>
+	  <attribute name="label" translatable="yes">Off</attribute>
+	  <attribute name="action">win.logging-level</attribute>
+	  <attribute name="target">off</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">Basic</attribute>
+	  <attribute name="action">win.logging-level</attribute>
+	  <attribute name="target">basic</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">Normal</attribute>
+	  <attribute name="action">win.logging-normal</attribute>
+	  <attribute name="target">off</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">Verbose</attribute>
+	  <attribute name="action">win.logging-level</attribute>
+	  <attribute name="target">verbose</attribute>
+	</item>
+	<item>
+	  <attribute name="label" translatable="yes">All</attribute>
+	  <attribute name="action">win.logging-level</attribute>
+	  <attribute name="target">all</attribute>
+	</item>
+      </section>
+    </submenu>
+  </menu>
+
 </interface>
