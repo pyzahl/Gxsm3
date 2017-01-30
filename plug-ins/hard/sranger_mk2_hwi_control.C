@@ -412,7 +412,7 @@ DSPControlUserTabs::DSPControlUserTabs ()
 {
         GtkWidget *notebook;
         GtkWidget *grid_base;
-        
+
 	gchar *tmp = g_strdup_printf ("SR DSP Control %s %s [%s]", (DSPPACClass)? "MK3-PLL/A810":"MK2/A810", N_("User Tabs"), xsmres.DSPDev);
         PI_DEBUG (DBG_L5, "DSPControlUserTabs::DSPControlUserTabs");
 
@@ -870,6 +870,8 @@ DSPControl::DSPControl () {
         idle_callback_data_fn = NULL;
         idle_id = 0;
         idle_id_update_gui = 0;
+
+        vp_exec_mode_name = NULL;
         
         hwi_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT".hwi.sranger-mk23");
         VPSig_menu = NULL;
@@ -2864,6 +2866,8 @@ DSPControl::~DSPControl (){
 
 	GUI_ready = FALSE;
 
+        g_free (vp_exec_mode_name);
+ 
 	// remove all left over pc's from pc matrix
 	for (int i=0; i < 2*MAX_NUM_CHANNELS; ++i) 
 		for (int j=0; j < 2*MAX_NUM_CHANNELS; ++j) 
@@ -4464,7 +4468,7 @@ int DSPControl::choice_prbsource_callback (GtkWidget *widget, DSPControl *dspc){
                 //g_message ("Probe Signal Input[%d] id -> %s", channel, id);
                 gint active = gtk_combo_box_get_active (GTK_COMBO_BOX (dspc->VPSig_menu));
                 //g_message ("Probe Signal Input[%d] active -> %d -- deactivating", channel, active);
-                gtk_combo_box_set_active (GTK_COMBO_BOX (dspc->VPSig_menu), 6); // -1); -- -1 is supposed to deactivate but it's crashing??
+                gtk_combo_box_set_active (GTK_COMBO_BOX (dspc->VPSig_menu), 6); // -1); -- -1 is supposed to deactivate but it's crashing?? GTK3QQQ
                 //g_message ("Probe Signal Input[%d] active -> %d -- removing", channel, active);
                 gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (dspc->VPSig_menu), channel);
                 //g_message ("Probe Signal Input[%d] active -> %d -- insering -> %s", channel, active, label);
@@ -4484,14 +4488,6 @@ int DSPControl::choice_prbsource_callback (GtkWidget *widget, DSPControl *dspc){
 		case 6:  si = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE_TRACKER_INPUT_ID); break;
 		default: return -1;
 		}
-                gchar *id = g_strdup_printf ("%d", channel);
-                int active = gtk_combo_box_get_active (GTK_COMBO_BOX (dspc->VPSig_menu));
-                gtk_combo_box_set_active (GTK_COMBO_BOX (dspc->VPSig_menu), -1);
-                gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (dspc->VPSig_menu), channel);
-                gtk_combo_box_text_insert (GTK_COMBO_BOX_TEXT (dspc->VPSig_menu), channel,
-                                           id, sranger_common_hwi->lookup_dsp_signal_managed (si)->label);
-                gtk_combo_box_set_active (GTK_COMBO_BOX (dspc->VPSig_menu), active);
-                g_free (id);
                 dspc->update_sourcesignals_from_DSP_callback ();
 	}
 
