@@ -33,7 +33,7 @@
 
 #include "vectorutil.h"
 
-float BasicColors[][4] = { // "red","green","cyan","yellow","blue","magenta","grey"
+gfloat BasicColors[][4] = { // "red","green","cyan","yellow","blue","magenta","grey"
         { 1.0, 0.0, 0.0, 1.0 }, // RGBA red
         { 0.0, 1.0, 0.0, 1.0 }, // green
         { 0.0, 1.0, 1.0, 1.0 }, // cyan
