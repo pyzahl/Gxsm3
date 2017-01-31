@@ -422,7 +422,7 @@ DSPControlUserTabs::DSPControlUserTabs ()
 	DSPControlContainerClass->add_notebook (notebook, NOTEBOOK_SR_CRTL_USER);
 	gtk_grid_attach (GTK_GRID (v_grid), notebook, 1,1, 1,1);
 	gtk_widget_show (notebook);
-        gtk_widget_set_size_request  (notebook, 500, 400);
+        gtk_widget_set_size_request  (notebook, 400, 300);
 
 	set_window_geometry ("dsp-control-1");
 }
@@ -2528,12 +2528,14 @@ DSPControl::DSPControl () {
 	// ======== NOISE MODULE control in here =============
         PI_DEBUG (DBG_L4, "DSPC----TAB-LOCKIN -------------------------------");
 	if (DSPPACClass) {
+                dsp_bp->set_configure_list_mode_on ();
                 dsp_bp->new_grid_with_frame ("Noise Generator settings");
 		dsp_bp->grid_add_ec ("Noise-Amplitude", Volt, &noise_amp, 0., 1., "5g", 0.001, 0.01, "Noise-Amplitude");
                 dsp_bp->set_ec_change_notice_fkt (DSPControl::lockin_adjust_callback, this);
                 // dsp_bp->grid_add_ec ("Noise-Amplitude", Volt, OUT_OF_RANGE, &noise_amp, 0., 1., "5g", 0.001, 0.01);
                 dsp_bp->pop_grid ();
                 dsp_bp->new_line ();
+                dsp_bp->set_configure_list_mode_off ();
 	}
 
 	// ======== LOCKIN A/B MODULE
@@ -2597,6 +2599,7 @@ DSPControl::DSPControl () {
 	}
 
         PI_DEBUG (DBG_L4, "DSPC----TAB-LOCKIN ------------------------------- MK3 * done.");
+        dsp_bp->set_configure_list_mode_on ();
         dsp_bp->new_line (0, 2);
         dsp_bp->grid_add_label ("Cycles");
         dsp_bp->grid_add_label ("Sweep Span");
@@ -2631,6 +2634,8 @@ DSPControl::DSPControl () {
                                          GCallback (DSPControl::Probing_abort_callback),
                                          this,
                                          "AC");
+        dsp_bp->set_configure_list_mode_off ();
+        
         dsp_bp->notebook_tab_show_all ();
         dsp_bp->pop_grid ();
 

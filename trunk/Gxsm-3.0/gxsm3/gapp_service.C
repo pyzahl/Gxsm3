@@ -1022,7 +1022,7 @@ int AppBase::SaveGeometry(int savealways){
         }
 	XSM_DEBUG (DBG_L2, "** AppBase::SaveGeometry of " << window_key);
 
-        g_message ("AutoSave Window Geometry: %s", window_key);
+        // g_message ("AutoSave Window Geometry: %s", window_key);
 
         // just in case it was not loaded right
         if (!window_geometry)
@@ -1048,7 +1048,7 @@ int AppBase::LoadGeometry(){
         }
 	XSM_DEBUG (DBG_L2, "AppBase::LoadGeometry -- Load Geometry for window " << window_key );
 
-        g_message ("AutoLoad Window Geometry: %s", window_key);
+        // g_message ("AutoLoad Window Geometry: %s", window_key);
 
         gsize n_stores;
 
