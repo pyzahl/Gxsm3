@@ -480,6 +480,8 @@ void App::build_gxsm (Gxsm3appWindow *win){
                 XSM_DEBUG(DBG_L2, "App::build_gxsm - no call: xsm->hardware invalid.");
         }
 
+        // monitorcontrol->LogEvent ("Hardware Information", xsm->hardware->get_info ());
+
         SetStatus(N_("Ready."));
       
         /* Update all fields */

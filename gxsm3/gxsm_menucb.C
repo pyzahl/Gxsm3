@@ -410,7 +410,12 @@ void App::help_about_callback (GSimpleAction *simple, GVariant *parameter, gpoin
                                "comments", message,
                                "license-type", GTK_LICENSE_GPL_3_0,
 			       NULL, NULL);
-	g_free(message);
+        
+        //gtk_about_dialog_add_credit_section (GtkAboutDialog *about,
+        //                                     const gchar *section_name,
+        //                                     const gchar **people);
+
+        g_free(message);
 	return;
 }
 

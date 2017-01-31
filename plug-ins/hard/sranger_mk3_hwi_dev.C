@@ -326,8 +326,14 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 				        g_free (InfoString);
 				InfoString = g_strdup_printf("\nSR-MK3-PLL connected at %s"
 							     "\nDSP-SoftId : %04x [HwI:%04x]"
-							     "\nDSP-SoftVer: %04x [HwI:%04x]",
-							     xsmres.DSPDev, magic_data.dsp_soft_id, FB_SPM_SOFT_ID, magic_data.version, FB_SPM_VERSION);
+							     "\nDSP-SoftVer: %04x [HwI:%04x]"
+							     "\nDSP-SoftDat: %04x %04x [HwI:%04x %04x]",
+							     xsmres.DSPDev,
+							     magic_data.dsp_soft_id, FB_SPM_SOFT_ID,
+							     magic_data.version, FB_SPM_VERSION,
+							     magic_data.mmdd, magic_data.year, FB_SPM_DATE_MMDD, FB_SPM_DATE_YEAR
+                                                             );
+
                                 gapp->monitorcontrol->LogEvent ("MK3 HwI Intialization and DSP software verification completed", InfoString);
                                 
 				// open some more DSP connections, used by threads
