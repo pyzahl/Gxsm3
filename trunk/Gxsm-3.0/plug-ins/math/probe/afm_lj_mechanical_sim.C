@@ -2939,10 +2939,10 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
                 zi=zf; zf=tmp;
         }
         
-        delete Dest->data.TimeUnit;
+        // delete Dest->data.TimeUnit;
         // UTF8_ANGSTROEM "\303\205"
-        UnitObj *tmp_unit = new UnitObj("\303\205","\303\205", "g", "Z");
-        // consider: gapp->xsm->MakeUnit ("AA", "Z");
+        // UnitObj *tmp_unit = new UnitObj("\303\205","\303\205", "g", "Z");
+        UnitObj *tmp_unit =  gapp->xsm->MakeUnit ("AA", "Z");
 	Dest->data.SetTimeUnit (tmp_unit);
         delete tmp_unit;
         
@@ -3038,13 +3038,13 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
         if (progress_detail){
                 std::cout << "Progress: >>" << progress_detail << "<<" << std::endl;
                 if (!strncmp (progress_detail, "Job Detail", 10))
-                        gapp->progress_info_new ("NC-AFM Simulation", 1+(int)max_threads, GCallback (cancel_callback), &stop_flag);
+                        gapp->progress_info_new ("NC-AFM Simulation", 1+(int)max_threads, GCallback (cancel_callback), &stop_flag, false);
                 else if (!strncmp (progress_detail, "Basic", 5))
-                        gapp->progress_info_new ("NC-AFM Simulation", 1, GCallback (cancel_callback), &stop_flag);
+                        gapp->progress_info_new ("NC-AFM Simulation", 1, GCallback (cancel_callback), &stop_flag, false);
                 else
-                        gapp->progress_info_new ("NC-AFM Simulation", 2, GCallback (cancel_callback), &stop_flag);
+                        gapp->progress_info_new ("NC-AFM Simulation", 2, GCallback (cancel_callback), &stop_flag, false);
         } else {
-                gapp->progress_info_new ("NC-AFM Simulation", 2, GCallback (cancel_callback), &stop_flag);
+                gapp->progress_info_new ("NC-AFM Simulation", 2, GCallback (cancel_callback), &stop_flag, false);
         }
 
 	gapp->progress_info_set_bar_fraction (0., 1);

@@ -913,7 +913,7 @@ public:
 
   
 	// Progress Dialog
-	GtkWidget* progress_info_new (const gchar *title=NULL, gint levels=1, GCallback cancel_cb=NULL, gpointer data=NULL);
+	GtkWidget* progress_info_new (const gchar *title=NULL, gint levels=1, GCallback cancel_cb=NULL, gpointer data=NULL, gboolean modal=false);
 	int progress_info_set_bar_fraction (gdouble fraction=0., gint level=1);
 	int progress_info_set_bar_pulse (gint level=1, gdouble fraction=-1.);
 	int progress_info_set_bar_text (const gchar* text=NULL, gint level=1);
