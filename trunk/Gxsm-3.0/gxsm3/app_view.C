@@ -2277,9 +2277,11 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
         gtk_file_filter_add_pattern (f0, "*");
 
         GtkFileFilter *f1 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f1, "Objects");
         gtk_file_filter_add_pattern (f1, "*.objects");
 
         GtkFileFilter *f2 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f2, "xyz Model");
         gtk_file_filter_add_pattern (f2, "*.xyz");
 
         GtkFileFilter *filter[] = { f2, f1, f0, NULL };
@@ -2313,6 +2315,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
                                 XSM_DEBUG(DBG_L2, "Adding Circle@xy:" << xy[0] << ", " << xy[1]
                                           << " : " << xy[2] << ", " << xy[3] );
                                 vc->AddObject (vo = new VObCircle (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, 0.));
+                                vo->set_obj_name ("Circle:Atom");
                                 vo->set_custom_label_font ("Sans 6");
                                 vo->set_custom_label_color (atom_color);
                                 vo->set_custom_element_color (atom_color);
@@ -2322,6 +2325,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
                                 vo->show_label (true);
                                 vo->set_marker_scale (0.); // do not show
                                 vo->remake_node_markers ();
+                                vo->lock_object (true);
                                 g_free (lab); lab=NULL;
                         }
                         g_free (lab); lab=NULL;
