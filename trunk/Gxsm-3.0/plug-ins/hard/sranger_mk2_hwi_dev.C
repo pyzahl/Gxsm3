@@ -334,16 +334,14 @@ sranger_mk2_hwi_dev::sranger_mk2_hwi_dev(){
 				        g_free (InfoString);
 				InfoString = g_strdup_printf("SR-MK2 connect at %s"
 							     "\nDSP-SoftId : %04x [HwI:%04x]"
-							     "\nDSP-SoftVer: %04x [HwI:%04x]",
-							     xsmres.DSPDev, magic_data.dsp_soft_id, FB_SPM_SOFT_ID, magic_data.version, FB_SPM_VERSION);
-
-				tmp = g_strdup_printf ("%04x   [HwI:%04x]", magic_data.dsp_soft_id, FB_SPM_SOFT_ID);
-                                gapp->monitorcontrol->LogEvent ("HWI-DEV-MK2-I*CPU* DSP-SoftId.... ", tmp);
-				PI_DEBUG_GP (DBG_L1, "HWI-DEV-MK2-I*CPU* DSP-SoftId...: %s\n", tmp); g_free (tmp);
-
-				tmp = g_strdup_printf ("%04x   [HwI:%04x]", magic_data.version, FB_SPM_VERSION);
-                                gapp->monitorcontrol->LogEvent ("HWI-DEV-MK2-I*CPU* DSP-Version... ", tmp);
-				PI_DEBUG_GP (DBG_L1, "HWI-DEV-MK2-I*CPU* DSP-Version..: %s\n", tmp); g_free (tmp);
+							     "\nDSP-SoftVer: %04x [HwI:%04x]"
+							     "\nDSP-SoftDat: %04x %04x [HwI:%04x %04x]",
+							     xsmres.DSPDev,
+							     magic_data.dsp_soft_id, FB_SPM_SOFT_ID,
+							     magic_data.version, FB_SPM_VERSION,
+							     magic_data.mmdd, magic_data.year, FB_SPM_DATE_MMDD, FB_SPM_DATE_YEAR
+							     );
+                                gapp->monitorcontrol->LogEvent ("MK2 HwI identification data", InfoString);
 
 				if (FB_SPM_SOFT_ID != magic_data.dsp_soft_id){
 				        gchar *details = g_strdup_printf(
