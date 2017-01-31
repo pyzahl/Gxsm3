@@ -327,9 +327,20 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
 
 	pan_area = NULL;
 	pan_area_extends = NULL;
+    	current_view = NULL;
 	current_view_zoom = NULL;
+	pre_current_view = NULL;
+        tip_marker = NULL;
 	tip_marker_zoom = NULL;
+        tip_marker_z = NULL;
+        tip_marker_z0 = NULL;
+        info = NULL;
+        infoXY0 = NULL;
+
 	timer_id = 0;
+
+	for(i=0; i<16; ++i)
+		DSP_status_indicator[i] = DSP_status_indicator[i] = NULL;
 
 	for(i=0; i<16; ++i)
 		DSP_status_indicator[i] = DSP_gpio_indicator[i] = NULL;
@@ -353,13 +364,8 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
 	gtk_widget_show (canvas);
 	gtk_grid_attach (GTK_GRID (v_grid), canvas, 1,1, 10,10);
 
-
 	/* set up the system relevant Parameters */
 	update_expanded_scan_limits ();
-
-	/*gnome_canvas_set_pixels_per_unit( GNOME_CANVAS (canvas), PPU);*/	
-	//	gnome_canvas_set_scroll_region( GNOME_CANVAS ( canvas ), TO_CANVAS_X(max_x), TO_CANVAS_Y(max_y),
-	//					TO_CANVAS_X(min_x), TO_CANVAS_Y(min_y));
 
 #if 0	
 	if (gapp->xsm->Inst->OffsetMode() == OFM_ANALOG_OFFSET_ADDING){
@@ -410,11 +416,6 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
 	infoXY0->set_anchor (CAIRO_ANCHOR_E);
 	infoXY0->queue_update (canvas);
  	
-	pre_current_view = NULL;
-    	current_view = NULL;
-	tip_marker = NULL;
-	tip_marker_z = NULL;
-	tip_marker_z0 = NULL;
 
 	PanView_valid = TRUE;
 
@@ -434,6 +435,7 @@ PanView::~PanView (){
         UNREF_DELETE_CAIRO_ITEM (pan_area, canvas);
         UNREF_DELETE_CAIRO_ITEM (info, canvas);
         UNREF_DELETE_CAIRO_ITEM (current_view, canvas);
+        UNREF_DELETE_CAIRO_ITEM (pre_current_view, canvas);
         UNREF_DELETE_CAIRO_ITEM (infoXY0, canvas);
         UNREF_DELETE_CAIRO_ITEM (tip_marker, canvas);
         UNREF_DELETE_CAIRO_ITEM (tip_marker_zoom, canvas);

@@ -312,7 +312,6 @@ gxsm3_app_startup (GApplication *app)
 
         gapp->set_gxsm_main_menu (gxsm_menubar);
         gapp->set_gxsm_app_menu (app_menu);
-        gapp->show ();
         
         // create all later used POPUP menus and keep GObjects for later activations
 
