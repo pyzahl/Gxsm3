@@ -123,38 +123,24 @@ DSPMoverControl::DSPMoverControl ()
        
 	PI_DEBUG (DBG_L2, "DSPMoverControl::DSPMoverControl xrm read mk2 mover settings");
 
-	xrm.Get("MOV_Ampl", &mover_param.MOV_Ampl, "1.0");
-	xrm.Get("MOV_Speed", &mover_param.MOV_Speed, "4.0");
-	xrm.Get("MOV_Steps", &mover_param.MOV_Steps, "5.0");
-	xrm.Get("MOV_GPIO_setting", &mover_param.MOV_GPIO_setting, "0");
 	xrm.Get("AFM_Amp", &mover_param.AFM_Amp, "1");
 	xrm.Get("AFM_Speed", &mover_param.AFM_Speed, "3");
 	xrm.Get("AFM_Steps", &mover_param.AFM_Steps, "10");
 	xrm.Get("AFM_GPIO_setting", &mover_param.AFM_GPIO_setting, "0");
 
-  	// defaults for AFM Mover (hardware SICAF)
-	// [0] Besocke XY
-	// [1] Besocke rotation
-	// [2] Besocke PSD
-	// [3] Besocke lens
-  
-	xrm.Get("AFM_usrAmp0", &mover_param.AFM_usrAmp[0], "1.0");
-	xrm.Get("AFM_usrAmp1", &mover_param.AFM_usrAmp[1], "1.0");
-	xrm.Get("AFM_usrAmp2", &mover_param.AFM_usrAmp[2], "1.0");
-	xrm.Get("AFM_usrAmp3", &mover_param.AFM_usrAmp[3], "1.0");
-	xrm.Get("AFM_usrSpeed0", &mover_param.AFM_usrSpeed[0], "3");
-	xrm.Get("AFM_usrSpeed1", &mover_param.AFM_usrSpeed[1], "3");
-	xrm.Get("AFM_usrSpeed2", &mover_param.AFM_usrSpeed[2], "5");
-	xrm.Get("AFM_usrSpeed3", &mover_param.AFM_usrSpeed[3], "5");
-	xrm.Get("AFM_usrSteps0", &mover_param.AFM_usrSteps[0], "10");
-	xrm.Get("AFM_usrSteps1", &mover_param.AFM_usrSteps[1], "2");
-	xrm.Get("AFM_usrSteps2", &mover_param.AFM_usrSteps[2], "100");
-	xrm.Get("AFM_usrSteps3", &mover_param.AFM_usrSteps[3], "100");
-	xrm.Get("AFM_GPIO_setting0", &mover_param.AFM_GPIO_usr_setting[0], "0");
-	xrm.Get("AFM_GPIO_setting1", &mover_param.AFM_GPIO_usr_setting[1], "0");
-	xrm.Get("AFM_GPIO_setting2", &mover_param.AFM_GPIO_usr_setting[2], "0");
-	xrm.Get("AFM_GPIO_setting3", &mover_param.AFM_GPIO_usr_setting[3], "0");
+  	// defaults presets storage for "Besocke" style coarse motions
+	// [0..5] Besocke XY, Besocke Rotation, Besocke PSD, Besocke Lens, Auto, Stepper Motor
 
+        for (int i=0; i< DSP_AFMMOV_MODES; ++i){
+                gchar *id=g_strdup_printf ("AFM_usrAmp%d", i);
+                xrm.Get(id, &mover_param.AFM_usrAmp[0], "1.0"); g_free (id);
+                id=g_strdup_printf ("AFM_usrSpeed%d", i);
+                xrm.Get(id, &mover_param.AFM_usrSpeed[0], "3"); g_free (id);
+                id=g_strdup_printf ("AFM_usrSteps%d", i);
+                xrm.Get(id, &mover_param.AFM_usrSteps[0], "10"); g_free (id);
+                id=g_strdup_printf ("AFM_GPIO_setting%d", i);
+                xrm.Get(id, &mover_param.AFM_GPIO_usr_setting[0], "0"); g_free (id);
+        }
 	xrm.Get("MOV_output", &mover_param.MOV_output, "0");
 	xrm.Get("MOV_waveform_id", &mover_param.MOV_waveform_id, "0");
 	xrm.Get("MOV_wave0_out_channel", &mover_param.wave_out_channel[0], "3");
@@ -311,60 +297,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 
 
 DSPMoverControl::~DSPMoverControl (){
-	
-	XsmRescourceManager xrm("sranger_mk2_hwi_control");
-	
 	this_mover_control=NULL;
-	
-	xrm.Put("MOV_Ampl", mover_param.MOV_Ampl);
-	xrm.Put("MOV_Speed", mover_param.MOV_Speed);
-	xrm.Put("MOV_Steps", mover_param.MOV_Steps);
-	xrm.Put("MOV_GPIO_setting", mover_param.MOV_GPIO_setting);
-
-	xrm.Put("AFM_Amp", mover_param.AFM_Amp);
-	xrm.Put("AFM_Speed", mover_param.AFM_Speed);
-	xrm.Put("AFM_Steps", mover_param.AFM_Steps);
-	xrm.Put("AFM_GPIO_setting", mover_param.AFM_GPIO_setting);
-	xrm.Put("AFM_usrAmp0", mover_param.AFM_usrAmp[0]);
-	xrm.Put("AFM_usrAmp1", mover_param.AFM_usrAmp[1]);
-	xrm.Put("AFM_usrAmp2", mover_param.AFM_usrAmp[2]);
-	xrm.Put("AFM_usrAmp3", mover_param.AFM_usrAmp[3]);
-	xrm.Put("AFM_usrSpeed0", mover_param.AFM_usrSpeed[0]);
-	xrm.Put("AFM_usrSpeed1", mover_param.AFM_usrSpeed[1]);
-	xrm.Put("AFM_usrSpeed2", mover_param.AFM_usrSpeed[2]);
-	xrm.Put("AFM_usrSpeed3", mover_param.AFM_usrSpeed[3]);
-	xrm.Put("AFM_usrSteps0", mover_param.AFM_usrSteps[0]);
-	xrm.Put("AFM_usrSteps1", mover_param.AFM_usrSteps[1]);
-	xrm.Put("AFM_usrSteps2", mover_param.AFM_usrSteps[2]);
-	xrm.Put("AFM_usrSteps3", mover_param.AFM_usrSteps[3]);
-	xrm.Put("AFM_GPIO_setting0", mover_param.AFM_GPIO_usr_setting[0]);
-	xrm.Put("AFM_GPIO_setting1", mover_param.AFM_GPIO_usr_setting[1]);
-	xrm.Put("AFM_GPIO_setting2", mover_param.AFM_GPIO_usr_setting[2]);
-	xrm.Put("AFM_GPIO_setting3", mover_param.AFM_GPIO_usr_setting[3]);
-
-	xrm.Put("MOV_output", mover_param.MOV_output);
-	xrm.Put("MOV_waveform_id", mover_param.MOV_waveform_id);
-	xrm.Put("MOV_wave0_out_channel", mover_param.wave_out_channel[0]);
-	xrm.Put("MOV_wave1_out_channel", mover_param.wave_out_channel[1]);
-	xrm.Put("MOV_mode", mover_param.MOV_mode);
-	xrm.Put("AUTO_final_delay", mover_param.final_delay);
-	xrm.Put("AUTO_max_settling_time", mover_param.max_settling_time);
-	xrm.Put("InchWorm_phase", mover_param.inch_worm_phase);
-
-	xrm.Put("Wave_space", mover_param.Wave_space);
-		
-	xrm.Put("GPIO_on", mover_param.GPIO_on);
-	xrm.Put("GPIO_off", mover_param.GPIO_off);
-	xrm.Put("GPIO_reset", mover_param.GPIO_reset);
-	xrm.Put("GPIO_scan", mover_param.GPIO_scan);
-	xrm.Put("GPIO_tmp1", mover_param.GPIO_tmp1);
-	xrm.Put("GPIO_tmp2", mover_param.GPIO_tmp2);
-	xrm.Put("GPIO_direction", mover_param.GPIO_direction);
-	xrm.Put("GPIO_delay", mover_param.GPIO_delay);
-
-	xrm.Put("Z0_speed", Z0_speed);
-	xrm.Put("Z0_adjust", Z0_adjust);
-	xrm.Put("Z0_goto", Z0_goto);
 
 	delete Length;
 	delete Phase;
@@ -394,7 +327,7 @@ static gboolean create_window_key_press_event_lcb(GtkWidget *widget, GdkEventKey
 // ============================================================
 
 static GActionEntry win_DSPMover_popup_entries[] = {
-        { "dsp-mover-configure", DSPMoverControl::configure_callback, NULL, "true", NULL },
+        { "dsp-mover-configure", DSPMoverControl::configure_callback, NULL, "false", NULL },
 };
 
 void DSPMoverControl::configure_callback (GSimpleAction *action, GVariant *parameter, 
@@ -402,16 +335,23 @@ void DSPMoverControl::configure_callback (GSimpleAction *action, GVariant *param
         DSPMoverControl *mc = (DSPMoverControl *) user_data;
         GVariant *old_state, *new_state;
 
-        old_state = g_action_get_state (G_ACTION (action));
-        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+        if (action){
+                old_state = g_action_get_state (G_ACTION (action));
+                new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
                 
-        PI_DEBUG_GP (DBG_L4, "Toggle action %s activated, state changes from %d to %d\n",
-                     g_action_get_name (G_ACTION (action)),
-                     g_variant_get_boolean (old_state),
-                     g_variant_get_boolean (new_state));
+                g_simple_action_set_state (action, new_state);
+                g_variant_unref (old_state);
 
-        g_simple_action_set_state (action, new_state);
-        g_variant_unref (old_state);
+                PI_DEBUG_GP (DBG_L4, "Toggle action %s activated, state changes from %d to %d\n",
+                             g_action_get_name (G_ACTION (action)),
+                             g_variant_get_boolean (old_state),
+                             g_variant_get_boolean (new_state));
+
+                g_simple_action_set_state (action, new_state);
+                g_variant_unref (old_state);
+        } else {
+                new_state = g_variant_new_boolean (false);
+        }
 
 	if (g_variant_get_boolean (new_state)){
                 g_slist_foreach
@@ -432,61 +372,69 @@ void DSPMoverControl::configure_callback (GSimpleAction *action, GVariant *param
                           (GFunc) DSPMoverControl::show_tab_as_configured, NULL
                           );
         }
+        if (!action){
+                g_variant_unref (new_state);
+        }
 }
 
 void DSPMoverControl::AppWindowInit(const gchar *title){
-        PI_DEBUG (DBG_L2, "DSPMoverControl::AppWindowInit -- header bar");
+        if (title) { // stage 1
+                PI_DEBUG (DBG_L2, "DSPMoverControl::AppWindowInit -- header bar");
 
-        app_window = gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
-        window = GTK_WINDOW (app_window);
+                app_window = gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
+                window = GTK_WINDOW (app_window);
 
-        header_bar = gtk_header_bar_new ();
-        gtk_widget_show (header_bar);
-        // hide close, min, max window decorations
-        gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), false);
+                header_bar = gtk_header_bar_new ();
+                gtk_widget_show (header_bar);
+                // hide close, min, max window decorations
+                gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), false);
 
-        g_action_map_add_action_entries (G_ACTION_MAP (app_window),
-                                         win_DSPMover_popup_entries, G_N_ELEMENTS (win_DSPMover_popup_entries),
-                                         this);
+                XSM_DEBUG (DBG_L2,  "VC::VC setup titlbar" );
 
-        // create window PopUp menu  ---------------------------------------------------------------------
-        mc_popup_menu = gtk_menu_new_from_model (G_MENU_MODEL (gapp->get_hwi_mover_popup_menu ()));
-        g_assert (GTK_IS_MENU (mc_popup_menu));
+                gtk_window_set_title (GTK_WINDOW (window), title);
+                gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
+                // gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
+                gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
 
-	GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
-
-        // attach popup menu configuration to tool button --------------------------------
-        GtkWidget *header_menu_button = gtk_menu_button_new ();
-        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("applications-utilities-symbolic", tmp_toolbar_icon_size));
-        gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), mc_popup_menu);
-        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
-        gtk_widget_show (header_menu_button);
-
-        g_settings_bind (hwi_settings, "configure-mode",
-                         G_OBJECT (GTK_BUTTON (header_menu_button)), "active",
-                         G_SETTINGS_BIND_DEFAULT);
+                g_signal_connect (G_OBJECT(window),
+                                  "delete_event",
+                                  G_CALLBACK(App::close_scan_event_cb),
+                                  this);
         
-        XSM_DEBUG (DBG_L2,  "VC::VC setup titlbar" );
+                v_grid = gtk_grid_new ();
+                gtk_container_add (GTK_CONTAINER (window), v_grid);
+                g_object_set_data (G_OBJECT (window), "v_grid", v_grid); // was "vbox"
 
-        gtk_window_set_title (GTK_WINDOW (window), title);
-        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
-        // gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
-        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+                gtk_widget_show_all (GTK_WIDGET (window));
 
-        g_signal_connect (G_OBJECT(window),
-                          "delete_event",
-                          G_CALLBACK(App::close_scan_event_cb),
-                          this);
-        
-	v_grid = gtk_grid_new ();
-        gtk_container_add (GTK_CONTAINER (window), v_grid);
-	g_object_set_data (G_OBJECT (window), "v_grid", v_grid); // was "vbox"
+                //        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
+                g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
+                
+        } else {
+                PI_DEBUG (DBG_L2, "DSPMoverControl::AppWindowInit -- header bar -- stage two, hook configure menu");
 
-	gtk_widget_show_all (GTK_WIDGET (window));
+                g_action_map_add_action_entries (G_ACTION_MAP (app_window),
+                                                 win_DSPMover_popup_entries, G_N_ELEMENTS (win_DSPMover_popup_entries),
+                                                 this);
 
-        //        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
-        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
- }
+                // create window PopUp menu  ---------------------------------------------------------------------
+                mc_popup_menu = gtk_menu_new_from_model (G_MENU_MODEL (gapp->get_hwi_mover_popup_menu ()));
+                g_assert (GTK_IS_MENU (mc_popup_menu));
+
+                GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
+
+                // attach popup menu configuration to tool button --------------------------------
+                GtkWidget *header_menu_button = gtk_menu_button_new ();
+                gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("applications-utilities-symbolic", tmp_toolbar_icon_size));
+                gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), mc_popup_menu);
+                gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+                gtk_widget_show (header_menu_button);
+
+                g_settings_bind (hwi_settings, "configure-mode",
+                                 G_OBJECT (GTK_BUTTON (header_menu_button)), "active",
+                                 G_SETTINGS_BIND_DEFAULT);  
+        }
+}
 
 void DSPMoverControl::create_folder (){
 	GSList *EC_list=NULL;
@@ -503,10 +451,10 @@ void DSPMoverControl::create_folder (){
 
 	if( IS_MOVER_CTRL ){
                 //		accel_group = gtk_accel_group_new ();
-		AppWindowInit (MOV_MOVER_TITLE);
+		AppWindowInit (MOV_MOVER_TITLE); // stage one
 	}
 	else {
-		AppWindowInit (MOV_SLIDER_TITLE);
+		AppWindowInit (MOV_SLIDER_TITLE); // stage one
         }
         
 	// ========================================
@@ -516,9 +464,9 @@ void DSPMoverControl::create_folder (){
 	gtk_widget_show (notebook);
 	gtk_grid_attach (GTK_GRID (v_grid), notebook, 1,1, 1,1);
 
-	const char *MoverNames[] = { "X&Y", "Rot", "PSD", "Lens", "Auto", "Z0","SM", "Config", NULL};
-	const char *mover_tab_key[] = { "mover-tab-xy", "mover-tab-rot", "mover-tab-psd", "mover-tab-lens", "mover-tab-auto", "mover-tab-z0","mover-tab-sm", "mover-tab-config", NULL};
-	const char *pcs_tab_remote_key_prefix[] = { "dspmover-xy-", "dspmover-rot-", "dspmover-psd-", "dspmover-lens-", "dspmover-auto-", "dspmover-z0-","dspmover-sm-", "dspmover-config-", NULL};
+	const char *MoverNames[] = { "X&Y", "Rot", "PSD", "Lens", "Auto", "SM", "Z0", "Config", NULL};
+	const char *mover_tab_key[] = { "mover-tab-xy", "mover-tab-rot", "mover-tab-psd", "mover-tab-lens", "mover-tab-auto", "mover-tab-sm", "mover-tab-z0", "mover-tab-config", NULL};
+	const char *pcs_tab_remote_key_prefix[] = { "dspmover-xy-", "dspmover-rot-", "dspmover-psd-", "dspmover-lens-", "dspmover-auto-", "dspmover-sm-", "dspmover-z0-", "dspmover-config-", NULL};
 
 	Gtk_EntryControl *Ampl, *Spd, *Stp, *GPIO_on, *GPIO_off, *GPIO_reset, *GPIO_scan, *GPIO_dir, *Wave_out0, *Wave_out1;
 	int i,itab;
@@ -538,7 +486,7 @@ void DSPMoverControl::create_folder (){
                         
                 mov_bp->set_pcs_remote_prefix (pcs_tab_remote_key_prefix[i]);
 
-                if (i==5){
+                if (i==6){ // Z0 Tab
                         mov_bp->new_grid_with_frame ("Z-Offset Control");
 			mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
@@ -617,7 +565,7 @@ void DSPMoverControl::create_folder (){
 			continue;
 		}
 
-		if (i==7){
+		if (i==7){ // configure tab
 			GtkWidget *radiobutton;
 			
                         mov_bp->new_grid_with_frame ("Output Configuration");
@@ -872,7 +820,7 @@ void DSPMoverControl::create_folder (){
 			continue;
 		}
 
-		if( i<4){
+		if (i<DSP_AFMMOV_MODES){ // modes stores 0..5
                         mov_bp->new_grid_with_frame ("Mover Timing");
                         mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
@@ -892,23 +840,6 @@ void DSPMoverControl::create_folder (){
 
                         mov_bp->set_configure_list_mode_off ();
                 }
-
-		if(i==4 || i==6){
-			if( IS_MOVER_CTRL ){
-                                mov_bp->new_grid_with_frame ("Mover Timing");
-				mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
-
-                                mov_bp->grid_add_ec ("Max. Steps", Unity, &mover_param.MOV_Steps, 1., 5000., "4.0f", 1., 10., "max-steps"); mov_bp->new_line ();
-
-                                mov_bp->set_configure_list_mode_on ();
-                                mov_bp->grid_add_ec ("Amplitude", Volt, &mover_param.MOV_Ampl, -20., 20., "5.2f", 0.1, 1., "amplitude"); mov_bp->new_line ();
-                                mov_bp->grid_add_ec ("Duration", Time, &mover_param.MOV_Speed, 0.1, 110., "4.3f", 0.1, 1., "duration"); mov_bp->new_line ();
-                                mov_bp->grid_add_ec ("GPIO", Hex, &mover_param.MOV_GPIO_setting, 0, 0xffff, "04X", "gpio"); mov_bp->new_line ();
-				gtk_widget_set_tooltip_text (mov_bp->input, "GPIO setting used to engage this tab mode.");
-                                mov_bp->set_configure_list_mode_off ();
-			}
-		}
-		// ========================================
 
                 mov_bp->pop_grid ();
                 mov_bp->new_line ();
@@ -1156,6 +1087,9 @@ void DSPMoverControl::create_folder (){
 	g_object_set_data( G_OBJECT (window), "MOVER_EC_list", mov_bp->get_ec_list_head ());
 	sranger_mk2_hwi_pi.app->RemoteEntryList = g_slist_concat (sranger_mk2_hwi_pi.app->RemoteEntryList, mov_bp->get_remote_list_head ());
 
+        AppWindowInit (NULL); // stage two
+        configure_callback (NULL, NULL, this); // configure "false"
+        
         set_window_geometry ("dsp-mover-control");
 }
 
@@ -1210,8 +1144,9 @@ void DSPMoverControl::updateDSP(int sliderno){
 	}
 
 	if (mover_param.AFM_GPIO_setting == mover_param.GPIO_scan 
-	    && ((sliderno >= 0 && sliderno < 4)? mover_param.AFM_GPIO_usr_setting[sliderno] : mover_param.MOV_GPIO_setting) != mover_param.GPIO_scan){
+	    && ((sliderno >= 0 && sliderno < DSP_AFMMOV_MODES)? mover_param.AFM_GPIO_usr_setting[sliderno] : mover_param.MOV_GPIO_setting) != mover_param.GPIO_scan){
 	        // auto offset ZERO
+		sranger_common_hwi->MovetoXY (0,0); // set
 		sranger_common_hwi->SetOffset (0,0); // set
 		sranger_common_hwi->SetOffset (0,0); // wait for finish
 		
@@ -1229,7 +1164,7 @@ void DSPMoverControl::updateDSP(int sliderno){
 		        mover_param.AFM_GPIO_setting = mover_param.GPIO_scan;
 		}
 	}
-	if (sliderno >= 0 && sliderno < 4){
+	if (sliderno >= 0 && sliderno < DSP_AFMMOV_MODES){
 	        // auto scan XY and offset to ZERO
                 sranger_common_hwi->MovetoXY (0,0);
 		sranger_common_hwi->SetOffset (0,0); // set
@@ -1255,14 +1190,6 @@ void DSPMoverControl::updateDSP(int sliderno){
 		} else {
 		        mover_param.AFM_GPIO_setting = mover_param.AFM_GPIO_usr_setting[sliderno];
 		}
-	}else{
-                sranger_common_hwi->MovetoXY (0,0);
-		sranger_common_hwi->SetOffset (0,0); // set
-		sranger_common_hwi->SetOffset (0,0); // wait for finish
-		mover_param.AFM_Amp   = mover_param.MOV_Ampl;
-		mover_param.AFM_Speed = mover_param.MOV_Speed;
-		mover_param.AFM_Steps = mover_param.MOV_Steps;
-		mover_param.AFM_GPIO_setting = mover_param.MOV_GPIO_setting;
 	}
 }
 

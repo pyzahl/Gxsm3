@@ -530,7 +530,7 @@ void  DSPControlContainer::populate_tabs_missing () {
 // ============================================================
 
 static GActionEntry win_DSPControl_popup_entries[] = {
-        { "dsp-control-configure", DSPControl::configure_callback, NULL, "true", NULL },
+        { "dsp-control-configure", DSPControl::configure_callback, NULL, "false", NULL },
 };
 
 void DSPControl::configure_callback (GSimpleAction *action, GVariant *parameter, 
@@ -538,12 +538,15 @@ void DSPControl::configure_callback (GSimpleAction *action, GVariant *parameter,
         DSPControl *dspc = (DSPControl *) user_data;
         GVariant *old_state, *new_state;
 
-        old_state = g_action_get_state (G_ACTION (action));
-        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+        if (action){
+                old_state = g_action_get_state (G_ACTION (action));
+                new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
                 
-        g_simple_action_set_state (action, new_state);
-        g_variant_unref (old_state);
-
+                g_simple_action_set_state (action, new_state);
+                g_variant_unref (old_state);
+        } else {
+                new_state = g_variant_new_boolean (false);
+        }
 	if (g_variant_get_boolean (new_state)){
                 g_slist_foreach
                         ( dspc->dsp_bp->get_configure_list_head (),
@@ -571,59 +574,71 @@ void DSPControl::configure_callback (GSimpleAction *action, GVariant *parameter,
                           (GFunc) DSPControl::show_tab_as_configured, NULL
                           );
         }
+        if (!action){
+                g_variant_unref (new_state);
+        }
 }
 
 void DSPControl::AppWindowInit(const gchar *title){
-        PI_DEBUG (DBG_L2, "DSPControl::AppWindowInit -- header bar");
+        if (title) { // stage 1
+                PI_DEBUG (DBG_L2, "DSPControl::AppWindowInit -- header bar");
 
-        app_window = gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
-        window = GTK_WINDOW (app_window);
+                app_window = gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
+                window = GTK_WINDOW (app_window);
 
-        header_bar = gtk_header_bar_new ();
-        gtk_widget_show (header_bar);
-        // hide close, min, max window decorations
-        gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), false);
+                header_bar = gtk_header_bar_new ();
+                gtk_widget_show (header_bar);
+                // hide close, min, max window decorations
+                gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), false);
 
-        g_action_map_add_action_entries (G_ACTION_MAP (app_window),
-                                         win_DSPControl_popup_entries, G_N_ELEMENTS (win_DSPControl_popup_entries),
-                                         this);
+                // == moved to stage two ==
+                
+                PI_DEBUG (DBG_L2,  "VC::VC setup titlbar" );
 
-        // create window PopUp menu  ---------------------------------------------------------------------
-        dspc_popup_menu = gtk_menu_new_from_model (G_MENU_MODEL (gapp->get_hwi_control_popup_menu ()));
-        g_assert (GTK_IS_MENU (dspc_popup_menu));
+                gtk_window_set_title (GTK_WINDOW (window), title);
+                gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
+                // gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
+                gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
 
-	GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
-
-        // attach popup menu configuration to tool button --------------------------------
-        GtkWidget *header_menu_button = gtk_menu_button_new ();
-        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("applications-utilities-symbolic", tmp_toolbar_icon_size));
-        gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), dspc_popup_menu);
-        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
-        gtk_widget_show (header_menu_button);
-        g_settings_bind (hwi_settings, "configure-mode",
-                         G_OBJECT (GTK_BUTTON (header_menu_button)), "active",
-                         G_SETTINGS_BIND_DEFAULT);
+                g_signal_connect (G_OBJECT(window),
+                                  "delete_event",
+                                  G_CALLBACK(App::close_scan_event_cb),
+                                  this);
         
-        PI_DEBUG (DBG_L2,  "VC::VC setup titlbar" );
+                v_grid = gtk_grid_new ();
+                gtk_container_add (GTK_CONTAINER (window), v_grid);
+                g_object_set_data (G_OBJECT (window), "v_grid", v_grid);
 
-        gtk_window_set_title (GTK_WINDOW (window), title);
-        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
-        // gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
-        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+                gtk_widget_show_all (GTK_WIDGET (window));
 
-        g_signal_connect (G_OBJECT(window),
-                          "delete_event",
-                          G_CALLBACK(App::close_scan_event_cb),
-                          this);
-        
-	v_grid = gtk_grid_new ();
-        gtk_container_add (GTK_CONTAINER (window), v_grid);
-	g_object_set_data (G_OBJECT (window), "v_grid", v_grid); // was "vbox"
+                //        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
+                g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
 
-	gtk_widget_show_all (GTK_WIDGET (window));
+        } else {
+                
+                PI_DEBUG (DBG_L2, "DSPControl::AppWindowInit -- header bar -- stage two, hook configure menu");
 
-        //        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
-        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
+                g_action_map_add_action_entries (G_ACTION_MAP (app_window),
+                                                 win_DSPControl_popup_entries, G_N_ELEMENTS (win_DSPControl_popup_entries),
+                                                 this);
+
+                // create window PopUp menu  ---------------------------------------------------------------------
+                dspc_popup_menu = gtk_menu_new_from_model (G_MENU_MODEL (gapp->get_hwi_control_popup_menu ()));
+                g_assert (GTK_IS_MENU (dspc_popup_menu));
+
+                GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
+
+                // attach popup menu configuration to tool button --------------------------------
+                GtkWidget *header_menu_button = gtk_menu_button_new ();
+                gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("applications-utilities-symbolic", tmp_toolbar_icon_size));
+                gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), dspc_popup_menu);
+                gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
+                gtk_widget_show (header_menu_button);
+                g_object_set_data (G_OBJECT (window), "configure_menu", header_menu_button);
+                g_settings_bind (hwi_settings, "configure-mode",
+                                 G_OBJECT (GTK_BUTTON (header_menu_button)), "active",
+                                 G_SETTINGS_BIND_DEFAULT);
+        }
 }
 
 
@@ -1259,7 +1274,7 @@ DSPControl::DSPControl () {
 
 	gchar *tmp = g_strdup_printf ("SR DSP Control %s [%s]", (DSPPACClass)? "MK3-PLL/A810":"MK2/A810", xsmres.DSPDev);
 
-	AppWindowInit(tmp);
+	AppWindowInit (tmp); // call one, setup window
 
 	// update some from DSP -- new!!
 	sranger_common_hwi->read_dsp_feedback ();
@@ -1618,7 +1633,6 @@ DSPControl::DSPControl () {
         dsp_bp->set_input_width_chars (10);
 	dsp_bp->grid_add_ec ("FrqRef", Frq, &frq_ref, 10000., 150000., "6g", 0.01, 0.1, "adv-dsp-freq-ref");
         dsp_bp->new_line ();
-        dsp_bp->set_configure_list_mode_off ();
 
         IIR_flag = IIR_I_crossover > 0 ? 1:0;
         dsp_bp->grid_add_check_button ("IIR self adaptive on MIX0", "enable self adaptive IIR filtering", 1,
@@ -1645,6 +1659,7 @@ DSPControl::DSPControl () {
 		dsp_bp->grid_add_ec ("IIR2 fo", Frq, &IIR_f0_max[2], 100., 75000., ".0f", 100., 1000.,  "adv-iir2-fo");
 		dsp_bp->grid_add_ec ("IIR3 fo", Frq, &IIR_f0_max[3], 100., 75000., ".0f", 100., 1000.,  "adv-iir3-fo");
 	}
+        dsp_bp->set_configure_list_mode_off ();
 
 	// -------- Automatic Raster Probe Mode Select
         dsp_bp->pop_grid ();
@@ -1792,12 +1807,9 @@ DSPControl::DSPControl () {
         // g_signal_connect(ext_add_checkbutton, "toggled", G_CALLBACK(DSPControl::set_clr_mode_callback), GINT_TO_POINTER (MD_OFFSETADDING));
 
         dsp_bp->new_line ();
-        dsp_bp->set_configure_list_mode_off ();
-
 	dsp_bp->grid_add_ec ("Fast Return", Unity, &fast_return, 1., 1000., "5g", 1., 10.,  "adv-scan-fast-return");
 	dsp_bp->grid_add_ec ("Fwd Slow Down", Unity, &scan_forward_slow_down, 1, 32000, "5g", "adv-scan-fwd-slow-down");
 
-        dsp_bp->set_configure_list_mode_on ();
         dsp_bp->new_line ();
 	dsp_bp->grid_add_ec ("Pre Pts", Unity, &pre_points, 0, 100, "5g", "adv-scan-pre-pts");
 	dsp_bp->grid_add_ec ("XS 2nd ZOff", Angstroem, &x2nd_Zoff, -10000., 10000., ".2f", 1., 1., "adv-scan-xs2nd-z-offset");
@@ -1883,12 +1895,17 @@ DSPControl::DSPControl () {
         dsp_bp->set_pcs_remote_prefix (REMOTE_PREFIX);
         
         dsp_bp->new_line ();
+
+        dsp_bp->set_configure_list_mode_on ();
 	dsp_bp->grid_add_ec ("dz", Angstroem, &IV_dz, -1000.0, 1000.0, "5.4g", 1., 2., "IV-dz");
 	dsp_bp->grid_add_ec ("#dZ probes", Unity, &IVdz_repetitions, 0, 100, "3g", "IV-dz-rep");
+        dsp_bp->set_configure_list_mode_off ();
+
         dsp_bp->new_line ();
 	dsp_bp->grid_add_ec ("Slope", Vslope, &IV_slope,0.1,1000.0, "5.3g", 1., 10., "IV-Slope");
 	dsp_bp->grid_add_ec ("Slope Ramp", Vslope, &IV_slope_ramp,0.1,1000.0, "5.3g", 1., 10., "IV-Slope-Ramp");
         dsp_bp->new_line ();
+        dsp_bp->set_configure_list_mode_on ();
 	dsp_bp->grid_add_ec ("#IV sets", Unity, &IV_repetitions, 1, 100, "3g", "IV-rep");
 
         dsp_bp->new_line ();
@@ -1908,6 +1925,7 @@ DSPControl::DSPControl () {
         dsp_bp->new_line ();
 	dsp_bp->grid_add_ec ("Final Delay", Time, &IV_final_delay, 0., 1., "5.3g", 0.001, 0.01,  "IV-Final-Delay");
 	dsp_bp->grid_add_ec ("IV-Recover-Delay", Time, &IV_recover_delay, 0., 1., "5.3g", 0.001, 0.01,  "IV-Recover-Delay");
+        dsp_bp->set_configure_list_mode_off ();
         dsp_bp->new_line ();
 
 	IV_status = dsp_bp->grid_add_probe_status ("Status");
@@ -2235,10 +2253,13 @@ DSPControl::DSPControl () {
         dsp_bp->grid_add_label ("LM-dX", "vec-dx (default or mapped)");
         dsp_bp->grid_add_label ("LM-dY", "vec-dy (default or mapped)");
         dsp_bp->grid_add_label ("LM-dZ", "vec-dz");
+        dsp_bp->set_configure_list_mode_on ();
         dsp_bp->grid_add_label ("LM-dSig", "vec-dSignal mapped");
+        dsp_bp->set_configure_list_mode_off ();
         dsp_bp->grid_add_label ("time", "total time for VP section");
         dsp_bp->grid_add_label ("points", "points (# vectors to add)");
         dsp_bp->grid_add_label ("FB", "Feedback");
+        dsp_bp->set_configure_list_mode_on ();
         dsp_bp->grid_add_label ("IOS", "GPIO-Set");
         dsp_bp->grid_add_label ("IOR", "GPIO-Read");
         dsp_bp->grid_add_label ("TP", "TRIGGER-POS");
@@ -2246,6 +2267,7 @@ DSPControl::DSPControl () {
         dsp_bp->grid_add_label ("GPIO", "data for GPIO / mask for trigger on GPIO");
         dsp_bp->grid_add_label ("Nrep", "VP # repetition");
         dsp_bp->grid_add_label ("PCJR", "Vector-PC jump relative\n (example: set to -2 to repeat previous two vectors.)");
+        dsp_bp->set_configure_list_mode_off ();
         dsp_bp->grid_add_label("Shift", "Edit: Shift VP Block up/down");
 
         dsp_bp->new_line ();
@@ -2270,8 +2292,10 @@ DSPControl::DSPControl () {
 		dsp_bp->grid_add_ec (NULL, Angstroem, &LM_dz[k], -1000.0, 1000.0, "6.4g", 1., 10., "lm-dz", k); 
                 if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
 
+                dsp_bp->set_configure_list_mode_on (); // === advanced ===========================================
 		dsp_bp->grid_add_ec (NULL,    Volt, &LM_dsig[k], -1000.0, 1000.0, "6.4g",1., 10., "lm-dsig", k); 
                 if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+                dsp_bp->set_configure_list_mode_off (); // ========================================================
 
 		dsp_bp->grid_add_ec (NULL,      Time, &LM_ts[k], 0., 10000.0,     "5.4g", 1., 10., "lm-dt", k); 
                 if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
@@ -2286,6 +2310,8 @@ DSPControl::DSPControl () {
                                                LM_opt[k], VP_FEEDBACK_HOLD);
                 EC_vpc_opt_list = g_slist_prepend( EC_vpc_opt_list, dsp_bp->button);
                 g_object_set_data (G_OBJECT (dsp_bp->button), "VPC", GINT_TO_POINTER (k));
+
+                dsp_bp->set_configure_list_mode_on (); // ================ advanced section
 
                 dsp_bp->grid_add_check_button ("", NULL, 1,
                                                GCallback (callback_change_LM_vpc_option_flags), this,
@@ -2319,6 +2345,8 @@ DSPControl::DSPControl () {
 
 		dsp_bp->grid_add_ec (NULL, Unity, &LM_vpcjr[k], -50.,   0.,  ".0f", "lm-pcjr", k); 
                 if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+
+                dsp_bp->set_configure_list_mode_off (); // ==================================
 
                 GtkWidget *button;
 		if (k > 0){
@@ -2396,10 +2424,12 @@ DSPControl::DSPControl () {
         dsp_bp->new_line ();
 
 	dsp_bp->new_grid_with_frame ("VP Finish Settings and Status");
+        dsp_bp->set_configure_list_mode_on ();
 	dsp_bp->grid_add_ec ("LM-Final-Delay", Time, &LM_final_delay, 0., 1., "5.3g", 0.001, 0.01, "LM-Final-Delay");
 	dsp_bp->grid_add_label ("GPIO key", "Key code to enable GPIO set operations.\n(GPIO manipulation is locked out if not set right.)");
-	dsp_bp->grid_add_ec ("GPIO-Lock=" LM_GPIO_KEYCODE_S, Unity, &LM_GPIO_lock, 0, 9999, "04.0f", "LM-GPIO-Lock-" LM_GPIO_KEYCODE_S);
+	dsp_bp->grid_add_ec (LM_GPIO_KEYCODE_S, Unity, &LM_GPIO_lock, 0, 9999, "04.0f", "LM-GPIO-Lock-" LM_GPIO_KEYCODE_S);
         dsp_bp->new_line ();
+        dsp_bp->set_configure_list_mode_off ();
 
 	LM_status = dsp_bp->grid_add_probe_status ("Status");
 
@@ -2850,6 +2880,9 @@ DSPControl::DSPControl () {
 
 	GUI_ready = TRUE;
 
+	AppWindowInit (NULL); // call two, setup header bar menu, confiugure mode needs to operate on default show/hide
+        configure_callback (NULL, NULL, this);
+        
 	set_window_geometry ("dsp-control-0");
 }
 

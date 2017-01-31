@@ -166,7 +166,7 @@ typedef struct{
 	double MOV_Ampl, MOV_Speed, MOV_Steps;
 	int MOV_GPIO_setting; /* Parameter Memory for different Mover/Slider Modes */
 	
-#define DSP_AFMMOV_MODES 4
+#define DSP_AFMMOV_MODES 6
 	double AFM_Amp, AFM_Speed, AFM_Steps;  /* STM/AFM Besocke Kontrolle -- current */
 	int    AFM_GPIO_setting; /* Parameter Memory for different Mover/Slider Modes */
 	double AFM_usrAmp[DSP_AFMMOV_MODES];  
