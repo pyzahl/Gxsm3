@@ -195,20 +195,6 @@ void App::view_tolerant_callback (GSimpleAction *simple, GVariant *parameter, gp
 	return;
 }
 
-void App::view_palette_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-	if(!gapp) return;
-#if 0
-        //GTK3QQQ
-	if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (widget))){
-		SET_FLAG(gapp->xsm->ZoomFlg, VIEW_PALETTE);
-		SET_FLAG(gapp->xsm->ZoomFlg, VIEW_COLOR);
-	}else{
-		CLR_FLAG(gapp->xsm->ZoomFlg, VIEW_PALETTE);
-		CLR_FLAG(gapp->xsm->ZoomFlg, VIEW_COLOR);
-	}
-#endif
-	return;
-}
 
 void App::view_zoom_in_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	gapp->xsm->MathOperation(ZoomInScan);
@@ -271,27 +257,9 @@ void App::tools_monitor_callback (GSimpleAction *simple, GVariant *parameter, gp
 	return;
 }
 
-// void App::tools_remote_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-// 	if (gapp->PluginCallRemote)
-// 		(*gapp->PluginCallRemote) (widget, data);
-// 	else
-// 		gapp->message(N_("Sorry, no 'pyremote' plugin loaded!"));
-// 	return;
-// }
-
 void App::tools_chanselwin_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	gapp->channelselector->show();
 	return;
-}
-
-void App::tools_mkicons_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-#if 0
-	if (gapp->PluginCallMkicons)
-		(*gapp->PluginCallMkicons) (widget, user_data);
-	else
-		gapp->message(N_("Sorry, no 'Mkicons' plugin loaded!"));
-	return;
-#endif
 }
 
 void App::tools_plugin_reload_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
@@ -309,7 +277,7 @@ void App::tools_plugin_info_callback (GSimpleAction *simple, GVariant *parameter
 	return;
 }
 
-/* Options ================================================== */
+/* Preferenes, etc. ========================================== */
 
 void App::options_preferences_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	gxsm_search_for_palette();
@@ -321,35 +289,12 @@ void App::options_preferences_callback (GSimpleAction *simple, GVariant *paramet
 	return;
 }
 
-/* Help ================================================== */
-void App::help_license_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-	gapp->message(N_(
-			 "GXSM - Gnome X Scanning Microscopy\n"
-			 "universal STM/AFM/SARLS/SPALEED/... controlling and\n"
-			 "data analysis software\n"
-			 "\n"
-			 "Copyright (C) 1999-2010 Percy Zahl\n"
-			 "\n"
-			 "Authors: Percy Zahl <zahl@users.sf.net>\n"
-			 "additional features: Andreas Klust <klust@users.sf.net>\n"
-			 "WWW Home: http://gxsm.sourceforge.net\n"
-			 "\n"
-			 "This program is free software; you can redistribute it and/or modify\n"
-			 "it under the terms of the GNU General Public License as published by\n"
-			 "the Free Software Foundation; either version 2 of the License, or\n"
-			 "(at your option) any later version.\n"
-			 "\n"
-			 "This program is distributed in the hope that it will be useful,\n"
-			 "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-			 "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-			 "GNU General Public License for more details.\n"
-			 "\n"
-			 "You should have received a copy of the GNU General Public License\n"
-			 "along with this program; if not, write to the Free Software\n"
-			 "Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.\n"
-			 "\n"
-			 "Online at http://www.gnu.org/copyleft/gpl.html\n"
-			 ));
+void App::save_geometry_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
+        gapp->save_app_geometry ();
+}
+
+void App::load_geometry_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
+        gapp->load_app_geometry ();
 }
 
 /* Help ================================================== */
@@ -418,20 +363,6 @@ void App::help_about_callback (GSimpleAction *simple, GVariant *parameter, gpoin
         g_free(message);
 	return;
 }
-
-/*
-void App::help_tip_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-	tips_dialog_create ();
-}
-
-void App::help_home_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-        //GTK3QQQ	gnome_url_show ("http://gxsm.sourceforge.net", NULL);
-}
-
-void App::help_manual_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-        //GTK3QQQ	gnome_url_show ("http://gxsm.sourceforge.net/Gxsm2-main.pdf", NULL);
-}
-*/
 
 /* Diverse CallBack Handler */
 

@@ -154,7 +154,6 @@ public:
         static void view_autodisp_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_autozoom_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_tolerant_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-        static void view_palette_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_zoom_in_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_zoom_out_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
@@ -174,19 +173,13 @@ public:
 
         static void tools_monitor_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void tools_chanselwin_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-
-        static void tools_mkicons_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-        static void tools_remote_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void tools_plugin_reload_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void tools_plugin_info_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
         static void options_preferences_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-  
-        static void help_license_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-        static void help_home_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-        static void help_manual_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void save_geometry_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void load_geometry_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void help_about_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-        static void help_tip_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
         /* Window Delete Events */ 
         static gint close_scan_event_cb (GtkWidget *window, GdkEventAny* e, gpointer data);
@@ -239,6 +232,15 @@ public:
                 if(p>=0. && p<=1.)
                         ; //GTK3QQQ: gnome_appbar_set_progress_percentage( GNOME_APPBAR (appbar), p);
         };
+
+        void add_appwindow_to_list (AppBase *w) {
+                gxsm_app_windows_list = g_slist_prepend (gxsm_app_windows_list, w);
+        };
+
+        static void call_save_geometry (AppBase* a, gpointer data){ a->SaveGeometry (); };
+        static void call_load_geometry (AppBase* a, gpointer data){ a->LoadGeometry (); };
+        void save_app_geometry () { g_slist_foreach (gxsm_app_windows_list, (GFunc) App::call_save_geometry, NULL); };
+        void load_app_geometry () { g_slist_foreach (gxsm_app_windows_list, (GFunc) App::call_load_geometry, NULL); };
 
         /* Init Stuff */
         void gxsm_new_user_config (RES_ENTRY *res_def);
@@ -318,6 +320,8 @@ public:
         GSList *RemoteEntryList;
         GSList *RemoteActionList;
 
+        GSList *gxsm_app_windows_list;
+        
         /* Remote */
         RemoteControl *remotecontrol;
 
