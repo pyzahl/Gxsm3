@@ -969,14 +969,16 @@ int AppBase::set_window_geometry (const gchar *key, gint index){
 
         add_window_to_window_menu (window_key, window_key);
 
+        if (gapp)
+                gapp->add_appwindow_to_list (this);
+
         XSM_DEBUG_GP (DBG_L9, "AppBase::set_window_geometry and append '%s' to Windows Menu -- done.\n", window_key);
 	return 0;
 }
 
 void AppBase::hide (){
-        gtk_window_iconify (window);
         showstate=FALSE;
-        SaveGeometry ();
+        gtk_window_iconify (window);
 }
 
 void AppBase::show (){
@@ -985,7 +987,6 @@ void AppBase::show (){
         showstate=TRUE;
         position_auto ();
         resize_auto ();
-        SaveGeometry ();
 }
 
 void AppBase::show_auto (){
@@ -999,43 +1000,15 @@ void AppBase::show_auto (){
 }
 
 void AppBase::position_auto (){
-        if (window_geometry){
-                if (window_geometry[WGEO_FLAG]){
+        if (window_geometry)
+                if (window_geometry[WGEO_FLAG])
                         gtk_window_move (GTK_WINDOW (window), window_geometry[WGEO_XPOS], window_geometry[WGEO_YPOS]);
-#if 0
-                        GdkDisplay *display = gdk_display_get_default();
-                        GdkScreen *screen = gdk_display_get_default_screen(display);
-
-                        // ==> consider gdk_monitor_get_workarea (), ...
-                        gint screenWidth = gdk_screen_get_width(screen);
-                        gint screenHeight = gdk_screen_get_height(screen);
-                        
-                        /* reposition the window but make sure we're not putting it off the
-                         * screen. If so, reset to default values. */
-                        
-                        if(window_geometry[WGEO_XPOS] >= 0 && window_geometry[WGEO_YPOS] >= 0){
-                                gtk_window_move (GTK_WINDOW (window), window_geometry[WGEO_XPOS], window_geometry[WGEO_YPOS]);
-                        }
-#endif
-                }
-        }
 }
 
 void AppBase::resize_auto (){
-        if (window_geometry){
-                if (window_geometry[WGEO_FLAG]){
+        if (window_geometry)
+                if (window_geometry[WGEO_FLAG])
                         gtk_window_resize (GTK_WINDOW (window), window_geometry[WGEO_WIDTH], window_geometry[WGEO_HEIGHT]);
-#if 0
-                        GdkDisplay *display = gdk_display_get_default();
-                        GdkScreen *screen = gdk_display_get_default_screen(display);
-                        gint screenWidth = gdk_screen_get_width(screen);
-                        gint screenHeight = gdk_screen_get_height(screen);
-                        if (window_geometry[WGEO_WIDTH] > 0 && window_geometry[WGEO_HEIGHT] > 0
-                            && window_geometry[WGEO_WIDTH] < screenWidth && window_geometry[WGEO_HEIGHT] < screenHeight)
-                                gtk_window_resize (GTK_WINDOW (window), window_geometry[WGEO_WIDTH], window_geometry[WGEO_HEIGHT]);
-#endif
-                }
-        }
 }
 
 void AppBase::SaveGeometryCallback(AppBase *apb){
@@ -1048,6 +1021,8 @@ int AppBase::SaveGeometry(int savealways){
                 return -1;
         }
 	XSM_DEBUG (DBG_L2, "** AppBase::SaveGeometry of " << window_key);
+
+        g_message ("AutoSave Window Geometry: %s", window_key);
 
         // just in case it was not loaded right
         if (!window_geometry)
@@ -1073,6 +1048,8 @@ int AppBase::LoadGeometry(){
         }
 	XSM_DEBUG (DBG_L2, "AppBase::LoadGeometry -- Load Geometry for window " << window_key );
 
+        g_message ("AutoLoad Window Geometry: %s", window_key);
+
         gsize n_stores;
 
         GVariant *storage = g_settings_get_value (geometry_settings, window_key);
@@ -1080,6 +1057,7 @@ int AppBase::LoadGeometry(){
 
         if (!window_geometry)
                 window_geometry = g_new (gint32, WGEO_SIZE);
+
         memcpy (window_geometry, tmp, WGEO_SIZE*sizeof (gint32));
 
         // g_free (storage); // ??

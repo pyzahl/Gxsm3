@@ -312,7 +312,8 @@ gxsm3_app_startup (GApplication *app)
 
         gapp->set_gxsm_main_menu (gxsm_menubar);
         gapp->set_gxsm_app_menu (app_menu);
-
+        gapp->show ();
+        
         // create all later used POPUP menus and keep GObjects for later activations
 
         XSM_DEBUG(DBG_L1, "************ GXSM: loading menu rescourses ***************");
@@ -633,23 +634,20 @@ int main (int argc, char **argv)
         g_option_context_add_main_entries (context, gxsm_options, GETTEXT_PACKAGE);
         g_option_context_add_group (context, gtk_get_option_group (TRUE));
 
-        if (!g_option_context_parse (context, &argc, &argv, &error))
-                {
-                        PI_DEBUG_GP (DBG_EVER, "option parsing failed: %s\n", error->message);
-                        exit (1);
-                }
-        else
-                {
-                        PI_DEBUG_GP (DBG_L1, "GXSM3 comandline option parsing results:\n");
-                        PI_DEBUG_GP (DBG_L1, "=> xsmres.HardwareTypeCmd = %s\n", xsmres.HardwareTypeCmd);
-                        PI_DEBUG_GP (DBG_L1, "=> xsmres.DSPDevCmd  .... = %s\n", xsmres.DSPDevCmd);
-                        PI_DEBUG_GP (DBG_L1, "=> xsmres.UnitCmd ....... = %s\n", xsmres.UnitCmd);
-                        PI_DEBUG_GP (DBG_L1, "=> xsmres.force_config .. = %d\n", xsmres.force_config);
-                        PI_DEBUG_GP (DBG_L1, "=> force gxsm defaults .. = %d\n", force_gxsm_defaults);
-                        PI_DEBUG_GP (DBG_L1, "=> debug_level .......... = %d\n", debug_level);
-                        PI_DEBUG_GP (DBG_L1, "=> pi_debug_level ....... = %d\n", pi_debug_level);
-                        PI_DEBUG_GP (DBG_L1, "=> logging_level ........ = %d\n", logging_level);
-                }
+        if (!g_option_context_parse (context, &argc, &argv, &error)){
+                PI_DEBUG_GP (DBG_EVER, "option parsing failed: %s\n", error->message);
+                exit (1);
+        } else {
+                PI_DEBUG_GP (DBG_L1, "GXSM3 comandline option parsing results:\n");
+                PI_DEBUG_GP (DBG_L1, "=> xsmres.HardwareTypeCmd = %s\n", xsmres.HardwareTypeCmd);
+                PI_DEBUG_GP (DBG_L1, "=> xsmres.DSPDevCmd  .... = %s\n", xsmres.DSPDevCmd);
+                PI_DEBUG_GP (DBG_L1, "=> xsmres.UnitCmd ....... = %s\n", xsmres.UnitCmd);
+                PI_DEBUG_GP (DBG_L1, "=> xsmres.force_config .. = %d\n", xsmres.force_config);
+                PI_DEBUG_GP (DBG_L1, "=> force gxsm defaults .. = %d\n", force_gxsm_defaults);
+                PI_DEBUG_GP (DBG_L1, "=> debug_level .......... = %d\n", debug_level);
+                PI_DEBUG_GP (DBG_L1, "=> pi_debug_level ....... = %d\n", pi_debug_level);
+                PI_DEBUG_GP (DBG_L1, "=> logging_level ........ = %d\n", logging_level);
+        }
 
         // ................**********************************************************************
         XSM_DEBUG(DBG_L2, "gxsm3_main g_application_run =========================================" );

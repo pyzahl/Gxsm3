@@ -36,9 +36,6 @@ current work in progress, evaluating while working with it, optimizing, new idea
    ... LM (VP Prog tab): color buttons, figure out how (CSS!), add description/memo field for ABC... programs?, simple mode: eliminate RHS fields?? => dynamic CSS
    ... chain CP/CI 100/120% option
    ... read/sync V-XYZ from Smart-Piezo-Drive via USB link automatically!
--> DSP Mover:
-   ... issue with Ampl and GPIO defaults at startup not taking effect, need to update numbers after restart ?!? Check! -- touch values after start!
-   ... Auto folder: defaults (as shown) not applying for GPIO, Ampl, step??? -- need to touch values for update ??? Check! - -touch value after start!
 ->     ...auto time unit adjust [ms, s, ..] depending on range -- may be...
 ->\/ 2D view: in SLS mode: make Red-Line work! -- working on this. isNew data control issue in LineInfo, must reset, etc. ==> done.
        ... SLS BotUp scandir leads to crash  -- TDB, do not use rigth now.
@@ -61,14 +58,16 @@ pending minor issues/ideas:
 -- Some times, in particual w hardware -- Object Labels not showing ?!?!? (some thing uninitialized?)
 ---PROBE FOLDERS/CONTROL:
   -recode LM/graphs button?
-- red/blue showline -- fix color order to logic left-right -> new-old (old-new currently)
 - minor left overs of h/vboxes and packing in dialogs... -- non critical, works fine but should be done as officially obsoleted. [check what's left, no obsolete warnings any more!]
-  --> smart manage window position???
 -- PCS is NOT yet updating non user set values -- ak file number auto advance, client settings, remote... TDB.
 - add remote support: a few importrant control buttons pyremote accessible (global FB ON/OFF, PAC, Z-Adjuster**)
 
 -------------------
 DONE:
+->\/ store/restore window gemoetry, fixed, done. Added manual store/restore Gxsm system menu options  --> smart manage window position???
+->\/ DSP Mover:
+   ... issue with Ampl and GPIO defaults at startup not taking effect, need to update numbers after restart ?!? Check! -- touch values after start!
+   ... Auto folder: defaults (as shown) not applying for GPIO, Ampl, step??? -- need to touch values for update ??? Check! - -touch value after start!
 -> \/  VP: ...auto organize Matrix of Plots -- same "x-axis" plot in single window stacked. -- done.
            --> only Pending Popup-Menu hooks or some kind of control means. Also added auto data decimation to profile.
 -> \/ more debug message cleanups -- mostly done

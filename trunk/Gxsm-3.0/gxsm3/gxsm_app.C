@@ -103,6 +103,8 @@ static GActionEntry app_gxsm_action_entries[] = {
         { "plugins-info", App::tools_plugin_info_callback, NULL, NULL, NULL },
         //        { "help-tip", App::help_tip_callback, NULL, NULL, NULL },
         { "preferences", App::options_preferences_callback, NULL, NULL, NULL },
+        { "save-geometry", App::save_geometry_callback, NULL, NULL, NULL },
+        { "load-geometry", App::load_geometry_callback, NULL, NULL, NULL },
         { "about", App::help_about_callback, NULL, NULL, NULL },
         { "quit", App::file_quit_callback, NULL, NULL, NULL }
 };
@@ -122,6 +124,8 @@ App::App(GApplication *g_app)
         // gxsm base settings object
         gxsm_app_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT);
         as_settings       = g_settings_new (GXSM_RES_BASE_PATH_DOT".gui.as");
+        gxsm_app_windows_list  = NULL; // holds a list of GXSM windows classes
+
 
         // GVariant *x = g_settings_get_value (gxsm_app_settings, "first-start");
         // g_print (GXSM_RES_BASE_PATH_DOT" * first-start [b] = %s\n", g_variant_get_boolean (x)? "true":"false");
@@ -387,7 +391,7 @@ void App::build_gxsm (Gxsm3appWindow *win){
 	gnome_res_destroy (pref);
 
         set_window_geometry    ("main");
-
+        
         XSM_DEBUG(DBG_L2, "App::build_gxsm_10" );
 	
 	if(xsmres.HardwareTypeCmd)
@@ -488,7 +492,7 @@ void App::build_gxsm (Gxsm3appWindow *win){
         XSM_DEBUG (DBG_L2, "App::build_gxsm - update all entries");
         spm_update_all (-xsm->data.display.ViewFlg);
         monitorcontrol->LogEvent ("GXSM", "startup");
-
+        
         XSM_DEBUG(DBG_L2, "App::build_gxsm - done.");
 }
 
