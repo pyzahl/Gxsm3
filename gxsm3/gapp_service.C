@@ -491,7 +491,7 @@ int GnomeAppService::dialog(const char *title, const char *content,
 	return result;
 }
 
-GtkWidget* GnomeAppService::progress_info_new (const gchar *title, gint levels, GCallback cancel_cb, gpointer data){
+GtkWidget* GnomeAppService::progress_info_new (const gchar *title, gint levels, GCallback cancel_cb, gpointer data, gboolean modal){
 	static gint last_levels=0;
 	static GCallback last_cancel_cb=NULL;
 	static gpointer last_data=NULL;
@@ -508,7 +508,7 @@ GtkWidget* GnomeAppService::progress_info_new (const gchar *title, gint levels, 
 	if (!progress_dialog){
                 progress_dialog = gtk_dialog_new_with_buttons (N_(title?title:"Progress"),
                                                                gapp->get_window (), 
-                                                               (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                               (GtkDialogFlags)((modal ? GTK_DIALOG_MODAL:0) | GTK_DIALOG_DESTROY_WITH_PARENT),
                                                                NULL, NULL, NULL);
                 //_("_Cancel"),
                 // GTK_RESPONSE_REJECT,
