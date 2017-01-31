@@ -64,6 +64,7 @@ pending minor issues/ideas:
 
 -------------------
 DONE:
+->fixed shutdow issue in panview
 ->\/ store/restore window gemoetry, fixed, done. Added manual store/restore Gxsm system menu options  --> smart manage window position???
 ->\/ DSP Mover:
    ... issue with Ampl and GPIO defaults at startup not taking effect, need to update numbers after restart ?!? Check! -- touch values after start!

@@ -469,7 +469,7 @@ void App::build_gxsm (Gxsm3appWindow *win){
   	/* Load Gxsm Plugins: additional control windows, math/filters/etc. */
         XSM_DEBUG(DBG_L2, "App::build_gxsm - Scanning for PlugIns...");
         pcs_set_current_gschema_group ("plugins");
-        SetStatus(N_("Scanning for GXSM Plugins..."));
+        // SetStatus(N_("Scanning for GXSM Plugins..."));
 	if( !xsmres.disableplugins )
 		reload_gxsm_plugins();
 

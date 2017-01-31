@@ -2625,9 +2625,6 @@ void py_gxsm_console::run()
 		AppWindowInit ("Gxsm Python Remote Console");
         }
 
-	PI_DEBUG(DBG_L2, "pyremote Plugin :: console_run() -- initialize");
-	initialize();
-
 	script_filename = NULL;
         fail = false;
 	// create new environment

@@ -119,7 +119,7 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
         
 	static gint         signal_monitor_index[] = { 0,       1,       2,       3,       4,       5,       6,       11,              12,               13,              14,               16,         17,         18,       -1 };
 	// ------------------------------------ Current, ..                        X-Scan   Y-Scan   Z-Scan
-	static const gchar *signal_monitor_setup[] = { "MIX 0", "MIX 1", "MIX 2", "MIX 3", "Out 3", "Out 4", "Out 5", "Z Servo Watch", "PLL Exci Frq LP", "signal AVG-256", "signal RMS-256", "X Offset", "Y Offset", "Z Offset", NULL };
+	static const gchar *signal_monitor_setup[] = { "MIX IN 0", "MIX IN 1", "MIX IN 2", "MIX IN 3", "Out 3", "Out 4", "Out 5", "Z Servo Watch", "PLL Exci Frq LP", "signal AVG-256", "signal RMS-256", "X Offset", "Y Offset", "Z Offset", NULL };
 	static gint   signal_id[NUM_MONITOR_SIGNALS];
 
 	if (!init){ // setup signal monitor
@@ -448,7 +448,7 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 			dsp_aap.piezo_speed = (int)DSPMoverClass->mover_param.AFM_Speed;     /* Speed */
 			dsp_aap.piezo_speed = long_2_sranger_long(dsp_aap.piezo_speed >= 1 ? dsp_aap.piezo_speed : 1);
 		}
-		std::cout << "Auto-Steps: " << dsp_aap.piezo_steps << " Amp=" << DSPMoverClass->mover_param.AFM_Amp << std::endl;
+		// std::cout << "Auto-Steps: " << dsp_aap.piezo_steps << " Amp=" << DSPMoverClass->mover_param.AFM_Amp << std::endl;
 		lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_aap,  MAX_WRITE_AUTOAPPROACH<<1); 
 		break;
@@ -511,7 +511,7 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 			dsp_aap.piezo_speed = (int)DSPMoverClass->mover_param.AFM_Speed;     /* Speed */
 			dsp_aap.piezo_speed = long_2_sranger_long(dsp_aap.piezo_speed >= 1 ? dsp_aap.piezo_speed : 1);
 		}
-		std::cout << "MOV-Steps: " << dsp_aap.piezo_steps << " Amp=" << DSPMoverClass->mover_param.AFM_Amp << "   ENTRY:" << DSPMoverClass->mover_param.AFM_Steps << std::endl;
+		// std::cout << "MOV-Steps: " << dsp_aap.piezo_steps << " Amp=" << DSPMoverClass->mover_param.AFM_Amp << "   ENTRY:" << DSPMoverClass->mover_param.AFM_Steps << std::endl;
 		lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_aap,  MAX_WRITE_AUTOAPPROACH<<1); 
 		break;
@@ -613,9 +613,9 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 
 			if (dsp_gpio.gpio_data_out != (DSPMoverClass->mover_param.GPIO_reset | DSPMoverClass->mover_param.AFM_GPIO_setting)) {
 
-				std::cout << "GPIO ist   = " << std::hex << dsp_gpio.gpio_data_out << " ::M= " << gpio3_monitor_out << std::dec << std::endl;
-				std::cout << "GPIO update= " << std::hex << DSPMoverClass->mover_param.AFM_GPIO_setting << std::dec << std::endl;
-				std::cout << "GPIO dir   = " << std::hex << DSPMoverClass->mover_param.GPIO_direction << std::dec << std::endl;
+				// std::cout << "GPIO ist   = " << std::hex << dsp_gpio.gpio_data_out << " ::M= " << gpio3_monitor_out << std::dec << std::endl;
+				// std::cout << "GPIO update= " << std::hex << DSPMoverClass->mover_param.AFM_GPIO_setting << std::dec << std::endl;
+				// std::cout << "GPIO dir   = " << std::hex << DSPMoverClass->mover_param.GPIO_direction << std::dec << std::endl;
 
 				dsp_gpio.start = long_2_sranger_long (3); // (RE)CONFIGURE GPIO DIRECTION
 				dsp_gpio.stop  = long_2_sranger_long (0);
