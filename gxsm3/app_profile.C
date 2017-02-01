@@ -850,7 +850,18 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
         }
         gtk_widget_show_all (pc_grid);
 
-	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl [" << title << "] done.");
+        if (!pc_in_window){
+                if (g_strrstr (title, "Red Line Ch")){ // manage 1st 8 channels for red line type profiles
+                        gint i = atoi (&title[11]);
+                        if (i>=1 && i <= 8){
+                                gchar *id=g_strdup_printf ("view-profile-redline-%d", i);
+                                set_window_geometry (id);
+                                show ();
+                        }
+                }
+        }
+
+        XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl [" << title << "] done.");
 }
 
 ProfileControl::~ProfileControl ()

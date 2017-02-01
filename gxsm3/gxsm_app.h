@@ -237,6 +237,10 @@ public:
                 gxsm_app_windows_list = g_slist_prepend (gxsm_app_windows_list, w);
         };
 
+        void remove_appwindow_from_list (AppBase *w) {
+                gxsm_app_windows_list = g_slist_remove (gxsm_app_windows_list, w);
+        };
+
         static void call_save_geometry (AppBase* a, gpointer data){ a->SaveGeometry (); };
         static void call_load_geometry (AppBase* a, gpointer data){ a->LoadGeometry (); };
         void save_app_geometry () { g_slist_foreach (gxsm_app_windows_list, (GFunc) App::call_save_geometry, NULL); };

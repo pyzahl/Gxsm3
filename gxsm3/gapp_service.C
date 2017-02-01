@@ -808,10 +808,8 @@ AppBase::AppBase(){
 AppBase::~AppBase(){ 
 	XSM_DEBUG (DBG_L2, "AppBase::~AppBase destructor for window '" << (window_key?window_key:"--") << "'."); 
 
-	if(window_key){ // autosave show/hide state
-		SaveGeometry ();
-                // remove from menu!
-	}
+        if (gapp)
+                gapp->remove_appwindow_from_list (this); // remove self from list
         
 	if(!nodestroy){
 		XSM_DEBUG_GP (DBG_L2, "~AppBase -- calling widget destroy for window '%s'.",  (window_key?window_key:"--")); 
@@ -970,7 +968,7 @@ int AppBase::set_window_geometry (const gchar *key, gint index){
         add_window_to_window_menu (window_key, window_key);
 
         if (gapp)
-                gapp->add_appwindow_to_list (this);
+                gapp->add_appwindow_to_list (this); // add self to gapp globale list
 
         XSM_DEBUG_GP (DBG_L9, "AppBase::set_window_geometry and append '%s' to Windows Menu -- done.\n", window_key);
 	return 0;
