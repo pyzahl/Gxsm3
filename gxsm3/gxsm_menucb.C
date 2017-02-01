@@ -123,11 +123,13 @@ void App::file_close_callback (GSimpleAction *simple, GVariant *parameter, gpoin
 
 
 void App::file_quit_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
+        gint r=true;
 	if(!gapp) return;
 
-        gapp->save_app_geometry ();
+	if (gapp->question_yes_no_with_action (Q_WANTQUIT, "Save Window Geometry", r) == GTK_RESPONSE_YES){
+                if (r)
+                        gapp->save_app_geometry ();
 
-	if(gapp->question_yes_no (Q_WANTQUIT) == 1){
                 GApplication *application = (GApplication *) user_data;
                 delete gapp;
                 gapp=NULL;
