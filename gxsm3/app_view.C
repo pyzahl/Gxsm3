@@ -2310,6 +2310,8 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
                                 --natoms;
                                 VObject *vo;		
                                 atom_color = lookup_atom_color (lab, r); // r=atomic radius, may scale by "ball" factor 0.4
+                                xy[0] += gapp->xsm->data.s.sx;
+                                xy[1] += gapp->xsm->data.s.sy;
                                 xy[2] = xy[0]+r;
                                 xy[3] = xy[1];
                                 XSM_DEBUG(DBG_L2, "Adding Circle@xy:" << xy[0] << ", " << xy[1]
