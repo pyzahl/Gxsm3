@@ -36,6 +36,8 @@
 #define DSP_UINT32 guint32
 #define DSP_INT32  gint32
 
+#define SIGNAL_INPUT_DISABLED -10
+
 typedef struct{
 	DSP_UINT32    r_position;	  /* read pos (Gxsm) (always in word size) (WO) by host =WO */
 	DSP_UINT32    w_position;   /* write pos (DSP) (always in word size) (RO) by host =RO */

@@ -1232,19 +1232,19 @@ DSPControl::DSPControl () {
 
                 for (int jj=0; jj<4; ++jj){
                         gchar *txt = g_strdup_printf ("Mixer Signal Input[%d] = %d -> %s", jj, mix_fbsource[jj], sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->label);
-                        PI_DEBUG_GP (DBG_L1, txt);
+                        PI_DEBUG_GP (DBG_L1, "%s\n", txt);
                         gapp->monitorcontrol->LogEvent ("MK3-SIGNAL-CONFIGURATION-INFO", txt);
                         g_free (txt);
                 }
                 for (int jj=0; jj<=6; ++jj){
                         gchar *txt = g_strdup_printf ("Probe Signal Input[%d] = %d -> %s", jj, probe_source[jj], sranger_common_hwi->lookup_dsp_signal_managed (probe_source[jj])->label);
-                        PI_DEBUG_GP (DBG_L1, txt);
+                        PI_DEBUG_GP (DBG_L1, "%s\n", txt);
                         gapp->monitorcontrol->LogEvent ("MK3-SIGNAL-CONFIGURATION-INFO", txt);
                         g_free (txt);
                 }
                 for (int jj=0; jj<2; ++jj){
                         gchar *txt = g_strdup_printf ("LockIn Signal Input[%d] = %d -> %s", jj, lockin_input[jj], sranger_common_hwi->lookup_dsp_signal_managed (lockin_input[jj])->label);
-                        PI_DEBUG_GP (DBG_L1, txt);
+                        PI_DEBUG_GP (DBG_L1, "%s\n", txt);
                         gapp->monitorcontrol->LogEvent ("MK3-SIGNAL-CONFIGURATION-INFO", txt);
                         g_free (txt);
                 }
@@ -1697,16 +1697,23 @@ DSPControl::DSPControl () {
 		for (int outn=0; outn<8; ++outn){
 			for (int om=0; om<5; ++om){
 				ch_si[outn][om] = sranger_common_hwi->query_module_signal_input (iid++);
+                                if (ch_si[outn][om] < 0) // DISABLED?
+                                        continue;
+                                
 				if (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][om]].label && om<3) // and test for Null-Signal
 					ns[outn][om] = !strcmp (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][om]].label, "Null-Signal") ? 1:0;
 				else
 					ns[outn][om] = 0;
 			}
 
-			tmp = g_strdup_printf ("%s\nOUT[%d] := %s", outconfig, outn, sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][0]].label); 
+                        if (ch_si[outn][0] < 0) // DISABLED
+                                tmp = g_strdup_printf ("%s\nOUT[%d] : DISABLED", outconfig, outn);
+                        else
+                                tmp = g_strdup_printf ("%s\nOUT[%d] := %s", outconfig, outn, sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][0]].label); 
 			g_free (outconfig); outconfig = tmp;
 
-			if (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][3]].label) // SMAC_A ?
+                        // if (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][3]].label) // SMAC_A ?
+                        if (ch_si[outn][3] >= 0) // SMAC_A ?
 				tmp = g_strdup_printf ("%s + %s * %s", outconfig, 
 						       sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][1]].label,
 						       sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][3]].label
@@ -1715,7 +1722,8 @@ DSPControl::DSPControl () {
 				tmp = g_strdup_printf ("%s + %s", outconfig, sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][1]].label);
 			g_free (outconfig); outconfig = tmp;
 
-			if (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][4]].label) // SMAC_B ?
+			// if (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][4]].label) // SMAC_B ?
+			if (ch_si[outn][4] >= 0) // SMAC_B ?
 				tmp = g_strdup_printf ("%s + %s * %s", outconfig, 
 						       sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][2]].label,
 						       sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][4]].label
