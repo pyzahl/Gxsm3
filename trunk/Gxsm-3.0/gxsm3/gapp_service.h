@@ -785,11 +785,11 @@ public:
 	};
 	void warning(const char *mld){
 		if(window){
-			GtkWidget *dialog = gtk_message_dialog_new (window,
-								    GTK_DIALOG_DESTROY_WITH_PARENT,
-								    GTK_MESSAGE_WARNING,
-								    GTK_BUTTONS_CLOSE,
-								    "%s", mld);
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup (window,
+                                                                                GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                                                GTK_MESSAGE_WARNING,
+                                                                                GTK_BUTTONS_CLOSE,
+                                                                                "<span foreground='red' size='large' weight='bold'>%s</span>\n%s", N_("Warning!"),mld);
 			g_signal_connect_swapped (G_OBJECT (dialog), "response",
 						  G_CALLBACK (gtk_widget_destroy),
 						  G_OBJECT (dialog));
@@ -800,11 +800,11 @@ public:
 	void alert(const gchar *s1, const gchar *s2, const gchar *s3, int c);
 	void errormsg(const char *mld){
 		if(window){
-			GtkWidget *dialog = gtk_message_dialog_new (window,
-								    GTK_DIALOG_DESTROY_WITH_PARENT,
-								    GTK_MESSAGE_ERROR,
-								    GTK_BUTTONS_CLOSE,
-								    "%s", mld);
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup (window,
+                                                                                GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                                                GTK_MESSAGE_ERROR,
+                                                                                GTK_BUTTONS_CLOSE,
+                                                                                "<span foreground='red' size='large' weight='bold'>%s</span>\n%s", N_("Error!"), mld);
 			g_signal_connect_swapped (G_OBJECT (dialog), "response",
 						  G_CALLBACK (gtk_widget_destroy),
 						  G_OBJECT (dialog));
@@ -813,11 +813,11 @@ public:
 	};
 	void message(const char *mld){
 		if(window){
-			GtkWidget *dialog = gtk_message_dialog_new (window,
-								    GTK_DIALOG_DESTROY_WITH_PARENT,
-								    GTK_MESSAGE_INFO,
-								    GTK_BUTTONS_CLOSE,
-								    "%s", mld);
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup (window,
+                                                                                GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                                                GTK_MESSAGE_INFO,
+                                                                                GTK_BUTTONS_CLOSE,
+                                                                                "<span foreground='blue' size='large' weight='bold'>%s</span>\n%s", N_("Info"), mld);
 			g_signal_connect_swapped (G_OBJECT (dialog), "response",
 						  G_CALLBACK (gtk_widget_destroy),
 						  G_OBJECT (dialog));
@@ -830,15 +830,40 @@ public:
 			w = window;
 		if (w){
 			GtkDialogFlags flags = GTK_DIALOG_USE_HEADER_BAR; //  GTK_DIALOG_DESTROY_WITH_PARENT;
-			GtkWidget *dialog = gtk_message_dialog_new (w,
-                                                                    flags,
-								    GTK_MESSAGE_QUESTION,
-								    GTK_BUTTONS_YES_NO,
-								    "%s", question);
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup (w,
+                                                                                flags,
+                                                                                GTK_MESSAGE_QUESTION,
+                                                                                GTK_BUTTONS_YES_NO,
+                                                                                "<span foreground='blue' size='large' weight='bold'>%s</span>", question);
 
 			gint result = gtk_dialog_run (GTK_DIALOG (dialog));
 			gtk_widget_destroy (dialog);
 			return result == GTK_RESPONSE_YES;
+		}
+		return TRUE;
+	};
+
+	gint question_yes_no_with_action (const gchar *question, const gchar *action_label, gint &var,
+                                          GtkWidget *action=NULL, GtkWindow *pw=NULL){ // Yes / No ?
+		GtkWindow *w = pw;
+                if (w == NULL)
+			w = window;
+		if (w){
+			GtkDialogFlags flags = GTK_DIALOG_USE_HEADER_BAR; //  GTK_DIALOG_DESTROY_WITH_PARENT;
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup (w,
+                                                                                flags,
+                                                                                GTK_MESSAGE_QUESTION,
+                                                                                GTK_BUTTONS_YES_NO,
+                                                                                "<span foreground='blue' size='large' weight='bold'>%s</span>\n", question);
+                        if (!action)
+                                action = gtk_check_button_new_with_label( N_(action_label));
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (action), var? true:false);
+                        gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), action);
+                        gtk_widget_show_all (dialog);
+			gint result = gtk_dialog_run (GTK_DIALOG (dialog));
+                        var = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (action));
+			gtk_widget_destroy (dialog);
+			return result;
 		}
 		return TRUE;
 	};
