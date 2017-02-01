@@ -1,3 +1,15 @@
+gxsm3 (3.42.3-0ubuntu0) xenial; urgency=medium
+
+  * updated version number - just cosmetique
+
+ -- Thorsten Wagner <stm@users.sf.net>  Wed, 01 Feb 2017 20:16:25 +0100
+
+gxsm3 (3.41.0-0ubuntu7) xenial; urgency=medium
+
+  * MK2 firmware updated 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Wed, 01 Feb 2017 19:32:29 +0100
+
 gxsm3 (3.41.0-0ubuntu5) xenial; urgency=medium
 
   * bug fixed unit favorites integration 
