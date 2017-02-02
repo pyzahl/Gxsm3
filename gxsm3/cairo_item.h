@@ -44,10 +44,8 @@ int cairo_basic_color_lookup (const gchar *color);
 #define CAIRO_BASIC_COLOR(I) BasicColors[(I)<0?0: (I)>BASIC_COLORS? BASIC_COLORS-1 : I]
 
 typedef enum {
-        CAIRO_COLOR_WHITE_ID,
         CAIRO_COLOR_RED_ID,
         CAIRO_COLOR_GREEN_ID,
-        CAIRO_COLOR_FORESTGREEN_ID,
         CAIRO_COLOR_CYAN_ID,
         CAIRO_COLOR_YELLOW_ID,
         CAIRO_COLOR_BLUE_ID,
@@ -55,6 +53,8 @@ typedef enum {
         CAIRO_COLOR_GREY1_ID,
         CAIRO_COLOR_ORANGE_ID,
         CAIRO_COLOR_BLACK_ID,
+        CAIRO_COLOR_WHITE_ID,
+        CAIRO_COLOR_FORESTGREEN_ID,
         CAIRO_COLOR_GRAY1_ID,
         CAIRO_COLOR_GRAY2_ID,
         CAIRO_COLOR_GRAY3_ID,
