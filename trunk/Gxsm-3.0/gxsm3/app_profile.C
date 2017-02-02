@@ -31,6 +31,7 @@
 
 #include <cairo-svg.h>
 #include <cairo-pdf.h>
+#include <iomanip>
 
 // Gxsm headers 
 #include "gxsm_app.h"
@@ -54,6 +55,7 @@ static GActionEntry win_profile_popup_entries[] = {
         { "file-open", ProfileControl::file_open_callback, NULL, NULL, NULL },
         { "file-save", ProfileControl::file_save_callback, NULL, NULL, NULL },
         { "file-image-save", ProfileControl::file_save_image_callback, NULL, NULL, NULL },
+        { "file-save-data", ProfileControl::file_save_data_callback, NULL, NULL, NULL },
         
         { "print", ProfileControl::file_print5_callback, NULL, NULL, NULL },
 
@@ -64,9 +66,10 @@ static GActionEntry win_profile_popup_entries[] = {
 
         { "opt-Y-linreg",  ProfileControl::linreg_callback, NULL, "false", NULL },
         { "opt-Y-diff",  ProfileControl::ydiff_callback, NULL, "false", NULL },
-        { "opt-Y-lowpass",  ProfileControl::ylowpass_callback, NULL, "false", NULL },
         { "opt-Y-ft",  ProfileControl::psd_callback, NULL, "false", NULL },
         { "opt-Y-binary",  ProfileControl::skl_Binary_callback, NULL, "false", NULL },
+        { "opt-Y-lowpass-cycle",  ProfileControl::ylowpass_cycle_callback, NULL, "false", NULL },
+        { "opt-Y-lowpass",  ProfileControl::ylowpass_callback, "s", "'lp-off'", NULL },
 
         { "cursor-A",  ProfileControl::cur_Ashow_callback, NULL, "false", NULL },
         { "cursor-B",  ProfileControl::cur_Bshow_callback, NULL, "false", NULL },
@@ -167,19 +170,46 @@ void ProfileElement::SetOptions(long Flg){
 	flg=Flg;
 }
 
-/*
- * unref, remove and delete unused paths
- * allocate new as needed
- */
-void ProfileElement::cleanup_renew (GtkWidget *canvas, int ymode, int id){
-	if(!(ymode & PROFILE_MODE_BINARY8))
+double ProfileElement::calc(int ymode, int id, int binary_mask, double y_offset, GtkWidget *canvas){
+	Scan    *s;
+	double  dc=0.;
+
+        // XSM_DEBUG (DBG_L5, "ProfileElement::calc enter id=" << id);
+
+        if (scan->mem2d->GetNx() < 4)
+                return 0.;
+ 
+        /*
+         * unref, remove and delete unused paths
+         * allocate new as needed
+         */
+	if(!(ymode & PROFILE_MODE_BINARY8)){
 		for (int i=1; i<NPI; ++i){
                         UNREF_DELETE_CAIRO_ITEM_NO_UPDATE (pathitem[i]);
                         UNREF_DELETE_CAIRO_ITEM (pathitem_draw[i], canvas);
                 }
-        
-	n=scan->mem2d->GetNx();
-        if (n<1) n=2;
+        }
+
+       	if(ymode & PROFILE_MODE_YPSD){
+		if(psd_scan)
+			delete psd_scan;
+		psd_scan = new Scan (scan);
+		psd_scan->SetView ();
+		F1D_LogPowerSpec(scan, psd_scan);
+		n=psd_scan->mem2d->GetNx();
+		dc=psd_scan->mem2d->GetDataPkt (n-1, 0);
+                // g_message ("FT DC=%g  N=%d", dc, n);
+		double c=psd_scan->mem2d->GetDataPkt (n-2, 0);
+		psd_scan->mem2d->PutDataPkt (c, n-1, 0); // remove DC component
+		s = psd_scan;
+        } else {
+                n=scan->mem2d->GetNx();
+		if(psd_scan){
+			delete psd_scan;
+			psd_scan = NULL;
+		}
+		s = scan;
+        }
         
         // n => n_dec, dec_len -- use auto (random pick) decimation if more points than physical x pixels!
         calc_decimation ();
@@ -194,39 +224,8 @@ void ProfileElement::cleanup_renew (GtkWidget *canvas, int ymode, int id){
         }
 
         pathcoords_world = true;
-};
-
-double ProfileElement::calc(int ymode, int id, int binary_mask, double y_offset){
-	Scan    *s;
-	double  dc=0.;
-
-        // XSM_DEBUG (DBG_L5, "ProfileElement::calc enter id=" << id);
-
-	if(n < 2)
-		return 0.;
-
-	if(ymode & PROFILE_MODE_YPSD && n > 16){
-		if(psd_scan)
-			delete psd_scan;
-		psd_scan = new Scan (scan);
-		psd_scan->SetView ();
-		F1D_LogPowerSpec(scan, psd_scan);
-		n=psd_scan->mem2d->GetNx();
-		dc=psd_scan->mem2d->GetDataPkt (n/2-1, 0);
-		double c=psd_scan->mem2d->GetDataPkt (n/2-3, 0);
-		psd_scan->mem2d->PutDataPkt (c, n/2-1, 0); // remove DC component
-		psd_scan->mem2d->PutDataPkt (c, n/2-2, 0); // remove DC component
-		s = psd_scan;
-	} else {
-
-		if(psd_scan){
-			delete psd_scan;
-			psd_scan = NULL;
-		}
-		s = scan;
-	}
-
-        // must call cleanup_renew before with canvas!
+        // ----
+        
         // pathitem[id]->set_xy (i, x,y); // manages xy data!
 
         if (dec_len > 1){
@@ -360,6 +359,14 @@ void ProfileElement::draw(cairo_t* cr){
                         return;
 }
 
+void ProfileElement::stream_set (std::ofstream &ofs, int id){
+        for(int i=0; i < n_dec; ++i){
+                double x,y;
+                pathitem[id]->get_xy (i, x, y);
+                ofs << std::setw(6) << i << " "  << std::setw(10) << x << " " << std::setw(10) << y << std::endl;
+        }
+}
+        
 void ProfileElement::update(GtkWidget *canvas, int id, int style){
         // XSM_DEBUG (DBG_L5, "ProfileElement::update ******************");
         gint m = pctrl->GetMode ();
@@ -822,7 +829,7 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
         
                 tb = gtk_check_button_new_with_label ("LP");
-                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-lowpass");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-lowpass-cycle");
                 gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLOWPASS) ? TRUE : FALSE);
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
         
@@ -1363,6 +1370,33 @@ void ProfileControl::RemoveScans(){
 	scount   = 0;
 }
 
+void ProfileControl::save_data (const gchar *fname){
+        std::ofstream o;
+        GSList *s = ScanList;
+        o.open (fname);
+
+        while (s){
+                ProfileElement *pe = (ProfileElement*)s->data;
+                if (o.good ()){
+                        int i=0;
+                        o << "# Dataset Start" << std::endl;
+                        do {
+                                pe->stream_set (o, i++);
+                                if (mode & PROFILE_MODE_BINARY8){
+                                        if (!(mode & PROFILE_MODE_BINARY16) && i >= 8)
+                                                i = NPI;
+                                }
+                                else
+                                        i = NPI;
+                        } while (i < NPI);
+                        o << "# Dataset End" << std::endl;
+                }
+                s = g_slist_next (s);
+        }
+	g_slist_foreach(ScanList, (GFunc) ProfileControl::update_elem, this);
+
+}
+
 void ProfileControl::draw_elem(ProfileElement *pe, cairo_t* cr){
         //	XSM_DEBUG (DBG_L5, "ProfileElement::draw_elem - enter");
         pe->draw (cr);
@@ -1374,13 +1408,9 @@ void ProfileControl::update_elem(ProfileElement *pe, ProfileControl *pc){
 	int bmask = 0x0001;
 	XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - enter");
 	do {
-                XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - cleanup renew");
-                // cleanup and renew path item(s)
-                pe->cleanup_renew (pc->canvas, pc->mode, i);
-
                 XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - calc");
                 // calculate and map path to canvas coordinates
-		double dc = pe->calc (pc->mode, i, bmask, yboff);
+		double dc = pe->calc (pc->mode, i, bmask, yboff, pc->canvas);
 
                 XSM_DEBUG (DBG_L5, "ProfileElement::update_elem - calc1 OK");
 		if (dc > 0.){
@@ -2227,6 +2257,26 @@ void ProfileControl::file_save_callback (GSimpleAction *simple, GVariant *parame
 	g_free (mld);
 }
 
+void ProfileControl::file_save_data_callback (GSimpleAction *simple, GVariant *parameter, 
+                                 gpointer user_data){
+        //ProfileControl *pc = (ProfileControl *) user_data;
+        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+
+	gchar *ffname;
+	gchar *mld, *oname;
+		
+	oname = g_strconcat (pc->scan1d->data.ui.originalname, ".asc", NULL);
+	ffname = gapp->file_dialog_save (N_("Profile data save as viewed"), NULL, oname);
+	if (gapp->check_file (ffname)){
+		pc->save_data (ffname);
+		mld = g_strconcat (N_("profile data saved as "), ffname, NULL);
+	}else
+		mld = g_strdup (N_("save data canceld"));
+        gtk_statusbar_remove_all (GTK_STATUSBAR (pc->statusbar), pc->statusid);
+	gtk_statusbar_push (GTK_STATUSBAR(pc->statusbar), pc->statusid, mld);
+	g_free (mld);
+}
+
 void ProfileControl::file_save_as_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
         //ProfileControl *pc = (ProfileControl *) user_data;
@@ -2567,7 +2617,7 @@ void ProfileControl::ydiff_callback (GSimpleAction *action, GVariant *parameter,
 	pc->UpdateArea ();
 }
 
-void ProfileControl::ylowpass_callback (GSimpleAction *action, GVariant *parameter, 
+void ProfileControl::ylowpass_cycle_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
         //ProfileControl *pc = (ProfileControl *) user_data;
         ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
@@ -2587,6 +2637,44 @@ void ProfileControl::ylowpass_callback (GSimpleAction *action, GVariant *paramet
 		if (pc->lp_gain < 0.01)
 		        pc->lp_gain = 0.4;
         }
+        
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+        pc->updateFrame ();
+	pc->SetYlabel ();
+	pc->UpdateArea ();
+}
+
+void ProfileControl::ylowpass_callback (GSimpleAction *action, GVariant *parameter, 
+                                 gpointer user_data){
+        //ProfileControl *pc = (ProfileControl *) user_data;
+        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
+                
+        XSM_DEBUG_GP (DBG_L1, "LOWPASS Radio action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
+        
+        if (!strcmp (g_variant_get_string (new_state, NULL), "lp-off"))
+		pc->mode &= ~PROFILE_MODE_YLOWPASS, pc->lp_gain=1.0;
+        else if (!strcmp (g_variant_get_string (new_state, NULL), "lp0-1"))
+                pc->mode = (pc->mode & ~PROFILE_MODE_YLOWPASS) | PROFILE_MODE_YLOWPASS, pc->lp_gain = 0.001;
+        else if (!strcmp (g_variant_get_string (new_state, NULL), "lp1"))
+                pc->mode = (pc->mode & ~PROFILE_MODE_YLOWPASS) | PROFILE_MODE_YLOWPASS, pc->lp_gain = 0.01;
+        else if (!strcmp (g_variant_get_string (new_state, NULL), "lp5"))
+                pc->mode = (pc->mode & ~PROFILE_MODE_YLOWPASS) | PROFILE_MODE_YLOWPASS, pc->lp_gain = 0.05;
+        else if (!strcmp (g_variant_get_string (new_state, NULL), "lp10"))
+                pc->mode = (pc->mode & ~PROFILE_MODE_YLOWPASS) | PROFILE_MODE_YLOWPASS, pc->lp_gain = 0.10;
+        else if (!strcmp (g_variant_get_string (new_state, NULL), "lp50"))
+                pc->mode = (pc->mode & ~PROFILE_MODE_YLOWPASS) | PROFILE_MODE_YLOWPASS, pc->lp_gain = 0.50;
+        else if (!strcmp (g_variant_get_string (new_state, NULL), "lp90"))
+                pc->mode = (pc->mode & ~PROFILE_MODE_YLOWPASS) | PROFILE_MODE_YLOWPASS, pc->lp_gain = 0.90;
+        else pc->mode &= ~PROFILE_MODE_YLOWPASS, pc->lp_gain=1.0;
         
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);

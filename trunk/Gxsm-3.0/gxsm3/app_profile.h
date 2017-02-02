@@ -28,6 +28,8 @@
 #ifndef __APP_PROFILE_H
 #define __APP_PROFILE_H
 
+#include <iostream>
+#include <fstream>
 #include "cairo_item.h"
 
 typedef struct{
@@ -90,9 +92,9 @@ class ProfileElement{
         gint GetMode() { return mode; };
 	void SetOptions(long Flg);
   
-	void   cleanup_renew (GtkWidget *canvas, int ymode=0, int id=0);
-	double calc (int ymode=0, int id=0, int binary_mask=0x0001, double y_offset = 0.);
+	double calc (int ymode, int id, int binary_mask, double y_offset, GtkWidget *canvas);
 	void   draw (cairo_t* cr);
+        void   stream_set (std::ofstream &ofs, int id=0);
 	void   update (GtkWidget *canvas, int id=0, int style=CAIRO_LINE_SOLID);
 
 	void GetCurXYc(double *x, double *y, int i, int id=0){
@@ -232,6 +234,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	static void file_save_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void file_save_as_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void file_save_image_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	static void file_save_data_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void file_print1_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void file_print2_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void file_print3_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
@@ -249,6 +252,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	static void psd_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void ydiff_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void ylowpass_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	static void ylowpass_cycle_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void settings_xgrid_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void settings_ygrid_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void settings_notics_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
@@ -303,6 +307,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	static gboolean canvas_draw_callback (GtkWidget *widget, cairo_t *cr, ProfileControl *pc);
 
 	void file_print_callback (int index, ProfileControl *pc);
+	void save_data (const gchar *fname);
 
 	void showCur(int id, int show);
 	void moveCur(int id, int dir=0, int search=0, double ix=0.);
