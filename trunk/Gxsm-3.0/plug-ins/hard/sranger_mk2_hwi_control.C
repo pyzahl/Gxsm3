@@ -1166,7 +1166,7 @@ DSPControl::DSPControl () {
         get_tab_settings ("TS", TS_option_flags, TS_auto_flags, TS_glock_data);
 
 	// LM
-        LM_restore_vp ("current"); // last, current vp
+        LM_restore_vp ("LM_set_last"); // last in view
 
 	xrm.Get ("Probing_LM_GPIO_lock", &LM_GPIO_lock, LM_GPIO_KEYCODE_S);
 	xrm.Get ("Probing_LM_final_delay", &LM_final_delay,"0.01");
@@ -2907,7 +2907,8 @@ static void remove(gpointer entry, gpointer from) {
 
 DSPControl::~DSPControl (){
         // g_message ("DSPControl::~DSPContro -- store values");
-	store_values ();
+        // this does not function here any more ????!!!!
+	// ### store_values ();
         // g_message ("DSPControl::~DSPContro -- store values done.");
 
 	GUI_ready = FALSE;
@@ -2971,10 +2972,12 @@ void DSPControl::store_values (){
         set_tab_settings ("AX", AX_option_flags, AX_auto_flags, AX_glock_data);
         set_tab_settings ("AB", ABORT_option_flags, ABORT_auto_flags, ABORT_glock_data);
 
-        LM_store_vp ("current"); // last, current vp
+        LM_store_vp ("LM_set_last"); // last in view
+        // g_message ("DSPControl::store_values complete.");
 }
 
 void DSPControl::LM_store_vp (const gchar *key){
+	// g_message ("LM-VP store memo key=%s", key);
 	PI_DEBUG_GP (DBG_L2, "LM-VP store to memo %s\n", key);
         GVariant *v = g_settings_get_value (hwi_settings, "probe-lm-vector-program-matrix");
         GVariantDict *dict = g_variant_dict_new (v);
@@ -2982,8 +2985,11 @@ void DSPControl::LM_store_vp (const gchar *key){
                 PI_DEBUG_GP (DBG_L2, "ERROR: DSPControl::LM_store_vp -- can't read dictionary 'probe-lm-vector-program-matrix' a{sv}.\n");
                 return;
         }
-        
-        gsize    n = N_LM_VECTORS;
+
+        gint32 vp_program_length;
+        for (vp_program_length=0; LM_points[vp_program_length] > 0; ++vp_program_length);
+                
+        gsize    n = MIN (vp_program_length+1, N_LM_VECTORS);
         GVariant *pc_array_du = g_variant_new_fixed_array (g_variant_type_new ("d"), LM_du, n, sizeof (double));
         GVariant *pc_array_dx = g_variant_new_fixed_array (g_variant_type_new ("d"), LM_dx, n, sizeof (double));
         GVariant *pc_array_dy = g_variant_new_fixed_array (g_variant_type_new ("d"), LM_dy, n, sizeof (double));
@@ -3028,6 +3034,7 @@ void DSPControl::LM_store_vp (const gchar *key){
 }
 
 void DSPControl::LM_restore_vp (const gchar *key){
+	// g_message ("LM-VP restore memo key=%s", key);
 	PI_DEBUG_GP (DBG_L2, "LM-VP restore to memo %s\n", key);
         GVariant *v = g_settings_get_value (hwi_settings, "probe-lm-vector-program-matrix");
         GVariantDict *dict = g_variant_dict_new (v);
@@ -3044,45 +3051,53 @@ void DSPControl::LM_restore_vp (const gchar *key){
         const gchar *vckey_i[] = { "pn", "op", "da", "vn", "vp", NULL };
         double *LMd[] = { LM_du, LM_dx, LM_dy, LM_dz, LM_dsig, LM_ts, NULL };
         gint32 *LMi[] = { LM_points, LM_opt, LM_data, LM_vnrep, LM_vpcjr, NULL };
-        
-        for (int i=0; vckey_d[i]; ++i){
-                gchar *m_vckey = g_strdup_printf ("%s-%s", vckey_d[i], key);
-                if ((vd[i] = g_variant_dict_lookup_value (dict, m_vckey, ((const GVariantType *) "ad"))) == NULL){
-                        g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_d '%s' memo not found. Setting to Zero.\n", m_vckey);
-                        g_free (m_vckey);
-                        for (int k=0; k<N_LM_VECTORS; ++k) LMd[i][k]=0.; // zero
-                        continue;
-                }
-                // g_print ("LM restore: %s = %s\n", m_vckey, g_variant_print (vd[i], true));
-
-                pc_array_d[i] = (double*) g_variant_get_fixed_array (vd[i], &n, sizeof (double));
-                g_assert_cmpint (n, ==, N_LM_VECTORS);
-                // memcpy (LMd[i], pc_array_d[i], n * sizeof (double));
-                for (int k=0; k<N_LM_VECTORS; ++k)
-                        LMd[i][k]=pc_array_d[i][k];
-                g_free (m_vckey);
-                g_variant_unref (vd[i]);
-        }                        
+        gint32 vp_program_length=0;
         
         for (int i=0; vckey_i[i]; ++i){
                 gchar *m_vckey = g_strdup_printf ("%s-%s", vckey_i[i], key);
+                for (int k=0; k<N_LM_VECTORS; ++k) LMi[i][k]=0; // zero init vector
                 if ((vi[i] = g_variant_dict_lookup_value (dict, m_vckey, ((const GVariantType *) "ai"))) == NULL){
-                        g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
+                        PI_DEBUG_GP (DBG_L2, "GXSM DCONF: DSPControl::LM_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
+                        // g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
                         g_free (m_vckey);
-                        for (int k=0; k<N_LM_VECTORS; ++k) LMi[i][k]=0; // zero
                         continue;
                 }
                 // g_print ("LM restore: %s = %s\n", m_vckey, g_variant_print (vi[i], true));
 
                 pc_array_i[i] = (gint32*) g_variant_get_fixed_array (vi[i], &n, sizeof (gint32));
-                g_assert_cmpint (n, ==, N_LM_VECTORS);
-                // memcpy (LMi[i], pc_array_i[i], n * sizeof (gint32));
-                for (int k=0; k<N_LM_VECTORS; ++k)
+                if (i==0) // actual length of this vector should fit all others -- verify
+                        vp_program_length=n;
+                else
+                        if (n != vp_program_length)
+                                g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_i '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
+                // g_assert_cmpint (n, ==, N_LM_VECTORS);
+                for (int k=0; k<n && k<N_LM_VECTORS; ++k)
                         LMi[i][k]=pc_array_i[i][k];
                 g_free (m_vckey);
                 g_variant_unref (vi[i]);
         }                        
 
+        for (int i=0; vckey_d[i]; ++i){
+                gchar *m_vckey = g_strdup_printf ("%s-%s", vckey_d[i], key);
+                for (int k=0; k<N_LM_VECTORS; ++k) LMd[i][k]=0.; // zero init vector
+                if ((vd[i] = g_variant_dict_lookup_value (dict, m_vckey, ((const GVariantType *) "ad"))) == NULL){
+                        PI_DEBUG_GP (DBG_L2, "GXSM DCONF: DSPControl::LM_restore_vp -- key_d '%s' memo not found. Setting to Zero.", m_vckey);
+                        // g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_d '%s' memo not found. Setting to Zero.", m_vckey);
+                        g_free (m_vckey);
+                        continue;
+                }
+                // g_print ("LM restore: %s = %s\n", m_vckey, g_variant_print (vd[i], true));
+
+                pc_array_d[i] = (double*) g_variant_get_fixed_array (vd[i], &n, sizeof (double));
+                //g_assert_cmpint (n, ==, N_LM_VECTORS);
+                if (n != vp_program_length)
+                        g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_d '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
+                for (int k=0; k<vp_program_length && k<N_LM_VECTORS; ++k)
+                        LMd[i][k]=pc_array_d[i][k];
+                g_free (m_vckey);
+                g_variant_unref (vd[i]);
+        }                        
+        
         g_variant_dict_unref (dict);
         g_variant_unref (v);
 
@@ -4783,6 +4798,7 @@ int DSPControl::callback_change_LM_option_flags (GtkWidget *widget, DSPControl *
 		dspc->raster_auto_flags = dspc->LM_auto_flags;
 
         dspc->set_tab_settings ("LM", dspc->LM_option_flags, dspc->LM_auto_flags, dspc->LM_glock_data);
+        dspc->LM_store_vp ("LM_set_last"); // last in view
 }
 
 int DSPControl::callback_change_LM_vpc_option_flags (GtkWidget *widget, DSPControl *dspc){
@@ -5051,277 +5067,3 @@ int DSPControl::callback_GrMatWindow (GtkWidget *widget, DSPControl *dspc){
 	dspc->GrMatWin = (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) ? TRUE : FALSE;
         g_settings_set_boolean (dspc->hwi_settings, "probe-graph-matrix-window", dspc->GrMatWin);
 }
-
-
-/*
-
-#if 0
-store_values(){ //old
-	XsmRescourceManager xrm("sranger_mk2_hwi_control");
-        xrm.Put ("frq_ref", frq_ref);
-	xrm.Put ("bias", bias);
-	xrm.Put ("motor", motor);
-	xrm.Put ("mix_set_point0", mix_set_point[0]);
-	xrm.Put ("mix_set_point1", mix_set_point[1]);
-	xrm.Put ("mix_set_point2", mix_set_point[2]);
-	xrm.Put ("mix_set_point3", mix_set_point[3]);
-	xrm.Put ("mix_gain0", mix_gain[0]);
-	xrm.Put ("mix_gain1", mix_gain[1]);
-	xrm.Put ("mix_gain2", mix_gain[2]);
-	xrm.Put ("mix_gain3", mix_gain[3]);
-	xrm.Put ("mix_level0", mix_level[0]);
-	xrm.Put ("mix_level1", mix_level[1]);
-	xrm.Put ("mix_level2", mix_level[2]);
-	xrm.Put ("mix_level3", mix_level[3]);
-	xrm.Put ("mix_transform_mode_0", mix_transform_mode[0]);
-	xrm.Put ("mix_transform_mode_1", mix_transform_mode[1]);
-	xrm.Put ("mix_transform_mode_2", mix_transform_mode[2]);
-	xrm.Put ("mix_transform_mode_3", mix_transform_mode[3]);
-	xrm.Put ("mix_fbsource_0", mix_fbsource[0]);
-	xrm.Put ("mix_fbsource_1", mix_fbsource[1]);
-	xrm.Put ("mix_fbsource_2", mix_fbsource[2]);
-	xrm.Put ("mix_fbsource_3", mix_fbsource[3]);
-
-	xrm.Put ("probe_source_0", probe_source[0]);
-	xrm.Put ("probe_source_1", probe_source[1]);
-	xrm.Put ("probe_source_2", probe_source[2]);
-	xrm.Put ("probe_source_3", probe_source[3]);
-
-	xrm.Put ("probe_output_0", probe_output[0]);
-	xrm.Put ("probe_output_1", probe_output[1]);
-	xrm.Put ("probe_output_2", probe_output[2]);
-	xrm.Put ("probe_output_3", probe_output[3]);
-
-	xrm.Put ("lockin_input_0", lockin_input[0]);
-	xrm.Put ("lockin_input_1", lockin_input[1]);
-	xrm.Put ("lockin_input_2", lockin_input[2]);
-	xrm.Put ("lockin_input_3", lockin_input[3]);
-
-	xrm.Put ("move_speed_x", move_speed_x);
-	xrm.Put ("scan_speed_x", scan_speed_x_requested);
-	xrm.Put ("gain_ratio", gain_ratio);
-	xrm.Put ("z_servo_CP", z_servo[SERVO_CP]);
-	xrm.Put ("z_servo_CI", z_servo[SERVO_CI]);
-
-	xrm.Put ("dxdt", dxdt);
-	xrm.Put ("dydt", dydt);
-
-	xrm.Put ("IIR_f0_min", IIR_f0_min);
-	xrm.Put ("IIR_f0_max0", IIR_f0_max[0]);
-	xrm.Put ("IIR_f0_max1", IIR_f0_max[1]);
-	xrm.Put ("IIR_f0_max2", IIR_f0_max[2]);
-	xrm.Put ("IIR_f0_max3", IIR_f0_max[3]);
-	xrm.Put ("IIR_I_crossover", IIR_I_crossover);
-	xrm.Put ("LOG_I_offset", LOG_I_offset);
-	xrm.Put ("dynamic_zoom", dynamic_zoom);
-	xrm.Put ("fast_return", fast_return);
-	xrm.Put ("scan_forward_slow_down", scan_forward_slow_down);
-	xrm.Put ("pre_points", pre_points);
-	xrm.Put ("x2nd_Zoff_XP", x2nd_Zoff);
-	xrm.Put ("expert_mode", expert_mode);
-	xrm.Put ("guru_mode", guru_mode);
-	xrm.Put ("center_return_flag", center_return_flag);
-	xrm.Put ("area_slope_compensation_flag", area_slope_compensation_flag);
-	xrm.Put ("area_slope_x", area_slope_x);
-	xrm.Put ("area_slope_y", area_slope_y);
-
-	// M-Servo Module
-	xrm.Put ("m_servo_cp", m_servo[SERVO_CP]);
-	xrm.Put ("m_servo_ci", m_servo[SERVO_CI]);
-	xrm.Put ("m_servo_setpoint", m_servo[SERVO_SETPT]);
-
-	// LockIn and LockIn phase probe
-	xrm.Put ("AC_amp", AC_amp[0]);
-	xrm.Put ("AC_amp_aux_Z", AC_amp[1]);
-	xrm.Put ("AC_lockin_shr_corrprod", AC_amp[2]);
-	xrm.Put ("AC_lockin_shr_corrsum", AC_amp[3]);
-	xrm.Put ("AC_frq", AC_frq);
-	xrm.Put ("AC_phaseA", AC_phaseA);
-	xrm.Put ("AC_phaseB", AC_phaseB);
-	xrm.Put ("AC_lockin_avg_cycels", AC_lockin_avg_cycels);
-	xrm.Put ("AC_phase_span", AC_phase_span);
-	xrm.Put ("AC_points", AC_points);
-	xrm.Put ("AC_repetitions", AC_repetitions);
-	xrm.Put ("AC_phase_slope", AC_phase_slope);
-	xrm.Put ("AC_final_delay", AC_final_delay);
-	xrm.Put ("AC_option_flags", AC_option_flags);
-	xrm.Put ("AC_auto_flags", AC_auto_flags);
-	xrm.Put ("noise_amp", noise_amp);
-	XRM_PUT_GLOCKDATA("AC_glock", AC_glock_data);
-
-	// Probing
-	xrm.Put ("Probing_Sources", Source);
-	xrm.Put ("Probing_XSources", XSource);
-	xrm.Put ("Probing_XJoin", XJoin);
-	xrm.Put ("Probing_PSources", PSource);
-	xrm.Put ("Probing_PlotAvg", PlotAvg);
-	xrm.Put ("Probing_PlotSec", PlotSec);
-        
-        xrm.Put ("Probing_probe_trigger_raster_points", probe_trigger_raster_points_user);
-	xrm.Put ("Probing_probe_and_wait", probe_and_wait);
-	// STS
-	xrm.Put ("Probing_IV_sections", IV_sections);
-	xrm.Put ("multiIV_mode", multiIV_mode);
-	int i=0;
-	xrm.Put ("Probing_IV_Ustart", IV_start[i]);
-	xrm.Put ("Probing_IV_Uend", IV_end[i]);
-	xrm.Put ("Probing_IV_points", IV_points[i]);
-	++i;
-	xrm.Put ("Probing_IV_Ustart1", IV_start[i]);
-	xrm.Put ("Probing_IV_Uend1", IV_end[i]);
-	xrm.Put ("Probing_IV_points1", IV_points[i]);
-	++i;
-	xrm.Put ("Probing_IV_Ustart2", IV_start[i]);
-	xrm.Put ("Probing_IV_Uend2", IV_end[i]);
-	xrm.Put ("Probing_IV_points2", IV_points[i]);
-	++i;
-	xrm.Put ("Probing_IV_Ustart3", IV_start[i]);
-	xrm.Put ("Probing_IV_Uend3", IV_end[i]);
-	xrm.Put ("Probing_IV_points3", IV_points[i]);
-	++i;
-	xrm.Put ("Probing_IV_Ustart4", IV_start[i]);
-	xrm.Put ("Probing_IV_Uend4", IV_end[i]);
-	xrm.Put ("Probing_IV_points4", IV_points[i]);
-	++i;
-	xrm.Put ("Probing_IV_Ustart5", IV_start[i]);
-	xrm.Put ("Probing_IV_Uend5", IV_end[i]);
-	xrm.Put ("Probing_IV_points5", IV_points[i]);
-	++i;
-	xrm.Put ("Probing_IV_Ustart6", IV_start[i]);
-	xrm.Put ("Probing_IV_Uend6", IV_end[i]);
-	xrm.Put ("Probing_IV_points6", IV_points[i]);
-	++i;
-	xrm.Put ("Probing_IV_Ustart7", IV_start[i]);
-	xrm.Put ("Probing_IV_Uend7", IV_end[i]);
-	xrm.Put ("Probing_IV_points7", IV_points[i]);
-
-	xrm.Put ("Probing_IV_repetitions", IV_repetitions);
-	xrm.Put ("Probing_IV_dz", IV_dz);
-	xrm.Put ("Probing_IVdz_repetitions", IVdz_repetitions);
-	xrm.Put ("Probing_IV_slope", IV_slope);
-	xrm.Put ("Probing_IV_slope_ramp", IV_slope_ramp);
-	xrm.Put ("Probing_IV_final_delay", IV_final_delay);
-	xrm.Put ("Probing_IV_recover_delay", IV_recover_delay);
-	xrm.Put ("Probing_IV_dx", IV_dx);
-	xrm.Put ("Probing_IV_dy", IV_dy);
-	xrm.Put ("Probing_IV_dM", IV_dM);
-	xrm.Put ("Probing_IV_dxy_slope", IV_dxy_slope);
-	xrm.Put ("Probing_IV_dxy_delay", IV_dxy_delay);
-	xrm.Put ("Probing_IV_dxy_points", IV_dxy_points);
-	xrm.Put ("Probing_IV_option_flags", IV_option_flags);
-	xrm.Put ("Probing_IV_auto_flags", IV_auto_flags);
-	XRM_PUT_GLOCKDATA("Probing_IV_glock", IV_glock_data);
-	// FZ
-	xrm.Put ("Probing_FZ_Z_start", FZ_start);
-	xrm.Put ("Probing_FZ_Z_end", FZ_end);
-	xrm.Put ("Probing_FZ_points", FZ_points);
-	xrm.Put ("Probing_FZ_repetitions", FZ_repetitions);
-	xrm.Put ("Probing_FZ_limiter_ch", FZ_limiter_ch);
-	xrm.Put ("Probing_FZ_limiter_val0", FZ_limiter_val[0]);
-	xrm.Put ("Probing_FZ_limiter_val1", FZ_limiter_val[1]);
-	xrm.Put ("Probing_FZ_slope", FZ_slope);
-	xrm.Put ("Probing_FZ_slope_ramp", FZ_slope_ramp);
-	xrm.Put ("Probing_FZ_final_delay", FZ_final_delay);
-	xrm.Put ("Probing_FZ_option_flags", FZ_option_flags);
-	xrm.Put ("Probing_FZ_auto_flags", FZ_auto_flags);
-	XRM_PUT_GLOCKDATA("Probing_FZ_glock", FZ_glock_data);
-	// PL
-	xrm.Put ("Probing_PL_remote_set_target", gtk_entry_get_text (GTK_ENTRY (PL_remote_set_target)));
-	xrm.Put ("Probing_PL_remote_set_value", PL_remote_set_value);
-	xrm.Put ("Probing_PL_duration", PL_duration);
-	xrm.Put ("Probing_PL_time_resolution", PL_time_resolution);
-	xrm.Put ("Probing_PL_volt", PL_volt);
-	xrm.Put ("Probing_PL_dZ", PL_dZ);
-	xrm.Put ("Probing_PL_dZ_ext", PL_dZ_ext);
-	xrm.Put ("Probing_PL_slope", PL_slope);
-	xrm.Put ("Probing_PL_step", PL_step);
-	xrm.Put ("Probing_PL_stepZ", PL_stepZ);
-	xrm.Put ("Probing_PL_repetitions", PL_repetitions);
-	xrm.Put ("Probing_PL_initial_delay", PL_initial_delay);
-	xrm.Put ("Probing_PL_final_delay", PL_final_delay);
-	xrm.Put ("Probing_PL_option_flags", PL_option_flags);
-	xrm.Put ("Probing_PL_auto_flags", PL_auto_flags);
-	XRM_PUT_GLOCKDATA("Probing_PL_glock", PL_glock_data);
-	// LP
-	xrm.Put ("Probing_LP_duration", LP_duration);
-	xrm.Put ("Probing_LP_triggertime", LP_triggertime);
-	xrm.Put ("Probing_LP_volt", LP_volt);
-	xrm.Put ("Probing_LP_slope", LP_slope);
-	xrm.Put ("Probing_LP_final_delay", LP_final_delay);
-	xrm.Put ("Probing_LP_repetitions", LP_repetitions);
-	xrm.Put ("Probing_LP_FZ_end", LP_FZ_end);
-	xrm.Put ("Probing_LP_option_flags", LP_option_flags);
-	xrm.Put ("Probing_LP_auto_flags", LP_auto_flags);
-	XRM_PUT_GLOCKDATA("Probing_LP_glock", LP_glock_data);
-	// SP
-	xrm.Put ("Probing_SP_duration", SP_duration);
-	xrm.Put ("Probing_SP_volt", SP_volt);
-	xrm.Put ("Probing_SP_ramptime", SP_ramptime);
-	xrm.Put ("Probing_SP_flag_volt", SP_flag_volt);
-	xrm.Put ("Probing_SP_final_delay", SP_final_delay);
-	xrm.Put ("Probing_SP_repetitions", SP_repetitions);
-	xrm.Put ("Probing_SP_option_flags", SP_option_flags);
-	xrm.Put ("Probing_SP_auto_flags", SP_auto_flags);
-	XRM_PUT_GLOCKDATA("Probing_SP_glock", SP_glock_data);
-	// TS
-	xrm.Put ("Probing_TS_duration", TS_duration);
-	xrm.Put ("Probing_TS_points", TS_points);
-	xrm.Put ("Probing_TS_repetitions", TS_repetitions);
-	xrm.Put ("Probing_TS_option_flags", TS_option_flags);
-	xrm.Put ("Probing_TS_auto_flags", TS_auto_flags);
-	XRM_PUT_GLOCKDATA("Probing_TS_glock", TS_glock_data);
-	// LM
-	for (int k=0; k < N_LM_VECTORS; ++k){
-		xrm.Put ("Probing_LM_du", LM_du[k], k);
-		xrm.Put ("Probing_LM_dx", LM_dx[k], k);
-		xrm.Put ("Probing_LM_dy", LM_dy[k], k);
-		xrm.Put ("Probing_LM_dz", LM_dz[k], k);
-		xrm.Put ("Probing_LM_ts", LM_ts[k], k);
-		xrm.Put ("Probing_LM_points", LM_points[k], k);
-		xrm.Put ("Probing_LM_opt", LM_opt[k], k);
-		xrm.Put ("Probing_LM_data", LM_data[k], k);
-		xrm.Put ("Probing_LM_vnrep", LM_vnrep[k], k);
-		xrm.Put ("Probing_LM_vpcjr", LM_vpcjr[k], k);
-	}
-	xrm.Put ("Probing_LM_GPIO_lock", LM_GPIO_lock);
-	xrm.Put ("Probing_LM_final_delay", LM_final_delay);
-	xrm.Put ("Probing_LM_option_flags", LM_option_flags);
-	xrm.Put ("Probing_LM_auto_flags", LM_auto_flags);
-	XRM_PUT_GLOCKDATA("Probing_LM_glock", LM_glock_data);
-	// TK
-	xrm.Put ("Probing_TK_r", TK_r);
-	xrm.Put ("Probing_TK_r2", TK_r2);
-	xrm.Put ("Probing_TK_speed", TK_speed);
-	xrm.Put ("Probing_TK_delay", TK_delay);
-	xrm.Put ("Probing_TK_points", TK_points);
-	xrm.Put ("Probing_TK_nodes", TK_nodes);
-	xrm.Put ("Probing_TK_mode", TK_mode);
-	xrm.Put ("Probing_TK_ref", TK_ref);
-	xrm.Put ("Probing_TK_repetitions", TK_repetitions);
-	xrm.Put ("Probing_TK_option_flags", TK_option_flags);
-	xrm.Put ("Probing_TK_auto_flags", TK_auto_flags);
-	XRM_PUT_GLOCKDATA("Probing_TK_glock", TK_glock_data);
-	// AX
-	xrm.Put ("Probing_AX_start", AX_start);
-	xrm.Put ("Probing_AX_end", AX_end);
-	xrm.Put ("Probing_AX_points", AX_points);
-	xrm.Put ("Probing_AX_repetitions", AX_repetitions);
-	xrm.Put ("Probing_AX_slope", AX_slope);
-	xrm.Put ("Probing_AX_slope_ramp", AX_slope_ramp);
-	xrm.Put ("Probing_AX_final_delay", AX_final_delay);
-	xrm.Put ("Probing_AX_gatetime", AX_gatetime);
-	xrm.Put ("Probing_AX_gain", AX_gain);
-	xrm.Put ("Probing_AX_resolution", AX_resolution);
-	xrm.Put ("Probing_AX_option_flags", AX_option_flags);
-	xrm.Put ("Probing_AX_auto_flags", AX_auto_flags);
-	XRM_PUT_GLOCKDATA("Probing_AX_glock", AX_glock_data);
-	// ABORT
-	xrm.Put ("Probing_ABORT_final_delay", ABORT_final_delay);
-	xrm.Put ("Probing_ABORT_option_flags", ABORT_option_flags);
-	xrm.Put ("Probing_ABORT_auto_flags", ABORT_auto_flags);
-	XRM_PUT_GLOCKDATA("Probing_ABORT_glock", ABORT_glock_data);
-}
-#endif
-
-
- */
