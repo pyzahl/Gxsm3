@@ -33,9 +33,12 @@
 
 #include "vectorutil.h"
 
-gfloat BasicColors[][4] = { // "red","green","cyan","yellow","blue","magenta","grey"
-        { 1.0, 0.0, 0.0, 1.0 }, // RGBA red
+// RGBA
+gfloat BasicColors[][4] = {
+        { 1.0, 1.0, 1.0, 1.0 }, // white
+        { 1.0, 0.0, 0.0, 1.0 }, // red
         { 0.0, 1.0, 0.0, 1.0 }, // green
+        { 0.0, 0.5, 0.0, 1.0 }, // forest green
         { 0.0, 1.0, 1.0, 1.0 }, // cyan
         { 1.0, 1.0, 0.0, 1.0 }, // yellow
         { 0.0, 0.0, 1.0, 1.0 }, // blue
@@ -43,7 +46,16 @@ gfloat BasicColors[][4] = { // "red","green","cyan","yellow","blue","magenta","g
         { 0.95, 0.85, 0.85, 0.6 }, // grey1
         { 1.0, 1.0, 0.5, 1.0 }, // orange
         { 0.0, 0.0, 0.0, 1.0 }, // black
-        { 1.0, 1.0, 1.0, 1.0 } // black
+        { 0.1, 0.1, 0.1, 1.0 }, // gray1
+        { 0.2, 0.2, 0.2, 1.0 }, // gray2
+        { 0.3, 0.3, 0.3, 1.0 }, // gray3
+        { 0.4, 0.4, 0.4, 1.0 }, // gray4
+        { 0.5, 0.5, 0.5, 1.0 }, // gray5
+        { 0.6, 0.6, 0.6, 1.0 }, // gray6
+        { 0.7, 0.7, 0.7, 1.0 }, // gray7
+        { 0.8, 0.8, 0.8, 1.0 }, // gray8
+        { 0.9, 0.9, 0.9, 1.0 },  // gray9
+        { 0.95, 0.95, 0.95, 1.0 }  // gray95
 };
 
 int cairo_basic_color_lookup (const gchar *color){

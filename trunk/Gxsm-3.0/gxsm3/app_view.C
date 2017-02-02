@@ -2320,6 +2320,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
                                 vo->set_obj_name ("Circle:Atom");
                                 vo->set_custom_label_font ("Sans 6");
                                 vo->set_custom_label_color (atom_color);
+                                atom_color[3] = 0.6;
                                 vo->set_custom_element_color (atom_color);
                                 vo->set_on_spacetime  (sp00[0] ? FALSE:TRUE, spc[0]);
                                 vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
