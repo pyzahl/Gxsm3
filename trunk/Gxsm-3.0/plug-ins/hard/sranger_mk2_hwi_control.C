@@ -3048,8 +3048,8 @@ void DSPControl::LM_restore_vp (const gchar *key){
         for (int i=0; vckey_d[i]; ++i){
                 gchar *m_vckey = g_strdup_printf ("%s-%s", vckey_d[i], key);
                 if ((vd[i] = g_variant_dict_lookup_value (dict, m_vckey, ((const GVariantType *) "ad"))) == NULL){
+                        g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_d '%s' memo not found. Setting to Zero.\n", m_vckey);
                         g_free (m_vckey);
-                        PI_DEBUG_GP (DBG_L2, "ERROR: DSPControl::LM_restore_vp -- key '%s' memo not found. Setting to Zero.\n", m_vckey);
                         for (int k=0; k<N_LM_VECTORS; ++k) LMd[i][k]=0.; // zero
                         continue;
                 }
@@ -3067,8 +3067,8 @@ void DSPControl::LM_restore_vp (const gchar *key){
         for (int i=0; vckey_i[i]; ++i){
                 gchar *m_vckey = g_strdup_printf ("%s-%s", vckey_i[i], key);
                 if ((vi[i] = g_variant_dict_lookup_value (dict, m_vckey, ((const GVariantType *) "ai"))) == NULL){
+                        g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
                         g_free (m_vckey);
-                        PI_DEBUG_GP (DBG_L2, "ERROR: DSPControl::LM_restore_vp -- key '%s' memo not found. Setting to Zero.\n", m_vckey);
                         for (int k=0; k<N_LM_VECTORS; ++k) LMi[i][k]=0; // zero
                         continue;
                 }
