@@ -33,7 +33,7 @@
 #include "gxsm_monitor_vmemory_and_refcounts.h"
 
 typedef struct { double x,y; } cairo_point;
-#define BASIC_COLORS 7
+#define BASIC_COLORS 20
 
 extern float BasicColors[][4];
 int cairo_basic_color_lookup (const gchar *color);
@@ -41,22 +41,13 @@ int cairo_basic_color_lookup (const gchar *color);
 #define UNREF_DELETE_CAIRO_ITEM(ITEM, CANVAS) { if (ITEM){ ITEM->hide (); ITEM->queue_update (CANVAS); delete ITEM; ITEM=NULL; }}
 #define UNREF_DELETE_CAIRO_ITEM_NO_UPDATE(ITEM) { if (ITEM){ delete ITEM; ITEM=NULL; }}
 
-#define CAIRO_BASIC_COLOR(I) BasicColors[(I)<0?0: (I)>9? 9 : I]
-
-#define CAIRO_COLOR_RED     BasicColors[0]
-#define CAIRO_COLOR_GREEN   BasicColors[1]
-#define CAIRO_COLOR_CYAN    BasicColors[2]
-#define CAIRO_COLOR_YELLOW  BasicColors[3]
-#define CAIRO_COLOR_BLUE    BasicColors[4]
-#define CAIRO_COLOR_MAGENTA BasicColors[5]
-#define CAIRO_COLOR_GREY1   BasicColors[6]
-#define CAIRO_COLOR_ORANGE  BasicColors[7]
-#define CAIRO_COLOR_BLACK   BasicColors[8]
-#define CAIRO_COLOR_WHITE   BasicColors[9]
+#define CAIRO_BASIC_COLOR(I) BasicColors[(I)<0?0: (I)>BASIC_COLORS? BASIC_COLORS-1 : I]
 
 typedef enum {
+        CAIRO_COLOR_WHITE_ID,
         CAIRO_COLOR_RED_ID,
         CAIRO_COLOR_GREEN_ID,
+        CAIRO_COLOR_FORESTGREEN_ID,
         CAIRO_COLOR_CYAN_ID,
         CAIRO_COLOR_YELLOW_ID,
         CAIRO_COLOR_BLUE_ID,
@@ -64,8 +55,29 @@ typedef enum {
         CAIRO_COLOR_GREY1_ID,
         CAIRO_COLOR_ORANGE_ID,
         CAIRO_COLOR_BLACK_ID,
-        CAIRO_COLOR_WHITE_ID,
+        CAIRO_COLOR_GRAY1_ID,
+        CAIRO_COLOR_GRAY2_ID,
+        CAIRO_COLOR_GRAY3_ID,
+        CAIRO_COLOR_GRAY4_ID,
+        CAIRO_COLOR_GRAY5_ID,
+        CAIRO_COLOR_GRAY6_ID,
+        CAIRO_COLOR_GRAY7_ID,
+        CAIRO_COLOR_GRAY8_ID,
+        CAIRO_COLOR_GRAY9_ID
 } CAIRO_BASIC_COLOR_IDS;
+
+#define CAIRO_COLOR_WHITE        BasicColors[CAIRO_COLOR_WHITE_ID]
+#define CAIRO_COLOR_RED          BasicColors[CAIRO_COLOR_RED_ID]
+#define CAIRO_COLOR_GREEN        BasicColors[CAIRO_COLOR_GREEN_ID]
+#define CAIRO_COLOR_FORESTGREEN  BasicColors[CAIRO_COLOR_FORESTGREEN_ID]
+#define CAIRO_COLOR_CYAN         BasicColors[CAIRO_COLOR_CYAN_ID]
+#define CAIRO_COLOR_YELLOW       BasicColors[CAIRO_COLOR_YELLOW_ID]
+#define CAIRO_COLOR_BLUE         BasicColors[CAIRO_COLOR_BLUE_ID]
+#define CAIRO_COLOR_MAGENTA      BasicColors[CAIRO_COLOR_MAGENTA_ID]
+#define CAIRO_COLOR_GREY1        BasicColors[CAIRO_COLOR_GREY1_ID]
+#define CAIRO_COLOR_ORANGE       BasicColors[CAIRO_COLOR_ORANGE_ID]
+#define CAIRO_COLOR_BLACK        BasicColors[CAIRO_COLOR_BLACK_ID]
+#define CAIRO_COLOR_GRAY(N)      BasicColors[CAIRO_COLOR_BLACK_ID+N] // N=1..9 -- NO CHECK!
 
 #define CAIRO_LINE_SOLID       0
 #define CAIRO_LINE_DASHED      1
@@ -177,9 +189,10 @@ public:
         void set_position (double x, double y) { v0.x=x; v0.y=y; };
         void set_line_width (double line_width) { lw = line_width; };
         void set_line_style (int line_style) { ls = line_style; };
-        void set_stroke_rgba (int basic_color_index) {
-                for (int i=0; i<4; ++i)
+        void set_stroke_rgba (gint basic_color_index, gfloat a=1.0){
+                for (int i=0; i<3; ++i)
                         stroke_rgba[i]=BasicColors[basic_color_index % BASIC_COLORS][i];
+                stroke_rgba[3]=a;
         };
         void set_stroke_rgba (float c[4]) {
                 for (int i=0; i<4; ++i)
@@ -211,9 +224,10 @@ public:
                 if (gdk_rgba_parse (&rgba, color))
                         set_fill_rgba (&rgba); 
         };
-        void set_fill_rgba (int basic_color_index) {
-                for (int i=0; i<4; ++i)
+        void set_fill_rgba (gint basic_color_index, gfloat a=1.0) {
+                for (int i=0; i<3; ++i)
                         fill_rgba[i]=BasicColors[basic_color_index % BASIC_COLORS][i];
+                stroke_rgba[3]=a;
         };
         virtual void queue_update_bbox (GtkWidget* imgarea) {
                 gtk_widget_queue_draw_area (imgarea, bbox[0], bbox[1], bbox[2], bbox[3]);

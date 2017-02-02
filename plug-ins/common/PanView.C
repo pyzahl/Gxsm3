@@ -353,6 +353,8 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
 	AppWindowInit (N_("Pan View and OSD"));
 
 	// ========================================
+	/* set up the system relevant Parameters */
+	update_expanded_scan_limits ();
 
 	// Cairo: gtk drawing area
 	canvas = gtk_drawing_area_new(); // gtk3 cairo drawing-area -> "canvas"
@@ -364,53 +366,30 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
 	gtk_widget_show (canvas);
 	gtk_grid_attach (GTK_GRID (v_grid), canvas, 1,1, 10,10);
 
-	/* set up the system relevant Parameters */
-	update_expanded_scan_limits ();
-
-#if 0	
-	if (gapp->xsm->Inst->OffsetMode() == OFM_ANALOG_OFFSET_ADDING){
-
-		GdkBitmap *warn = gdk_bitmap_create_from_data (NULL, (gchar*)warn_bits, warn_width, warn_height);
-
-		pan_area_extends = gnome_canvas_item_new ( gnome_canvas_root (GNOME_CANVAS (canvas)), 
-							   gnome_canvas_rect_get_type(),
-							   "x1", TO_CANVAS_X(max_x),
-							   "x2", TO_CANVAS_X(min_x),
-							   "y1", TO_CANVAS_Y(max_y),
-							   "y2", TO_CANVAS_Y(min_y),
-							   "fill_color","yellow",
-							   "fill_stipple", warn,
-							   "outline_color","red",
-							   "width_units", 1.0,
-							   NULL );
-	}
-#endif
 	pan_area_extends = new cairo_item_rectangle (min_x, min_y, max_x, max_y);
-	pan_area_extends->set_stroke_rgba (1.,0.,0.,1.);
-	pan_area_extends->set_fill_rgba (1.,1.,0.,1.);
+	pan_area_extends->set_stroke_rgba (CAIRO_COLOR_RED);
+	pan_area_extends->set_fill_rgba (CAIRO_COLOR_YELLOW);
 	pan_area_extends->set_line_width (get_lw (1.0));
 	pan_area_extends->queue_update (canvas);
- // fix me
-
 
   	/*create a rectangle*/
 	pan_area = new cairo_item_rectangle (x0r, y0r, -x0r, -y0r);
-	pan_area->set_stroke_rgba (1.,0.,0.,1.);
-	pan_area->set_fill_rgba (1.,1.,1.,1.);
+	pan_area->set_stroke_rgba (CAIRO_COLOR_RED);
+	pan_area->set_fill_rgba (CAIRO_COLOR_WHITE);
 	pan_area->set_line_width (get_lw (1.0)); // fix me
 	pan_area->queue_update (canvas);
 
         // TEXTs are drawn in fixed pixel coordinate system
 	info = new cairo_item_text (WXS/2.-10, -WYS/2.+5., "I: --- nA");
 	//	info->set_text ("updated text")
-	info->set_stroke_rgba (0.,0.,1.,1.);
+	info->set_stroke_rgba (CAIRO_COLOR_BLUE);
 	info->set_font_face_size ("Ununtu", 12.);
 	info->set_spacing (-.1);
 	info->set_anchor (CAIRO_ANCHOR_E);
 	info->queue_update (canvas);
 
 	infoXY0 = new cairo_item_text (WXS/2.-10, +WYS/2.-8., "XY0: --,--");
-	infoXY0->set_stroke_rgba (0.,0.,1.,1.);
+	infoXY0->set_stroke_rgba (CAIRO_COLOR_BLUE);
 	infoXY0->set_font_face_size ("Ununtu", 12.);
 	infoXY0->set_spacing (.1);
 	infoXY0->set_anchor (CAIRO_ANCHOR_E);
@@ -465,50 +444,10 @@ void PanView::AppWindowInit(const gchar *title){
 	gtk_window_set_decorated (GTK_WINDOW(window), FALSE);
 	gtk_window_set_keep_above (GTK_WINDOW(window), TRUE);
 	gtk_window_stick (GTK_WINDOW(window));
-
-#if 0
-        header_bar = gtk_header_bar_new ();
-        gtk_widget_show (header_bar);
-        // hide close, min, max window decorations
-        gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), false);
-
-        g_action_map_add_action_entries (G_ACTION_MAP (app_window),
-                                         win_DSPMover_popup_entries, G_N_ELEMENTS (win_DSPMover_popup_entries),
-                                         this);
-
-        // create window PopUp menu  ---------------------------------------------------------------------
-        mc_popup_menu = gtk_menu_new_from_model (G_MENU_MODEL (gapp->get_hwi_mover_popup_menu ()));
-        g_assert (GTK_IS_MENU (mc_popup_menu));
-
-	GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
-
-        // attach popup menu configuration to tool button --------------------------------
-        GtkWidget *header_menu_button = gtk_menu_button_new ();
-        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("applications-utilities-symbolic", tmp_toolbar_icon_size));
-        gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), mc_popup_menu);
-        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
-        gtk_widget_show (header_menu_button);
-
-        g_settings_bind (hwi_settings, "configure-mode",
-                         G_OBJECT (GTK_BUTTON (header_menu_button)), "active",
-                         G_SETTINGS_BIND_DEFAULT);
-        
-        XSM_DEBUG (DBG_L2,  "VC::VC setup titlbar" );
-
-        gtk_window_set_title (GTK_WINDOW (window), title);
-        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
-        // gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
-        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
-
-        g_signal_connect (G_OBJECT(window),
-                          "delete_event",
-                          G_CALLBACK(App::close_scan_event_cb),
-                          this);
-#endif
         
 	v_grid = gtk_grid_new ();
         gtk_container_add (GTK_CONTAINER (window), v_grid);
-	g_object_set_data (G_OBJECT (window), "v_grid", v_grid); // was "vbox"
+	g_object_set_data (G_OBJECT (window), "v_grid", v_grid);
 	gtk_widget_show_all (GTK_WIDGET (window));
 
 	set_window_geometry ("pan-view");
@@ -527,19 +466,15 @@ gboolean  PanView::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, PanView
 	pv->pan_area->draw (cr);         // pan area
         pv->current_view->draw (cr);     // current set scan area
 
-	//		...
-	pv->tip_marker->draw (cr);
-
-        if (pv->Zratio > 0.){
+        if (pv->Zratio > 2.){
                 cairo_save (cr);
-
                 cairo_scale (cr, 0.7*pv->Zratio, 0.7*pv->Zratio);
-
                 pv->current_view->draw (cr, 0.3, false);     // current set scan area zoomed
-        
                 cairo_restore (cr);
+                if (pv->tip_marker_zoom)
+                        pv->tip_marker_zoom->draw (cr); // tip on zoomed view scan area
         }
-	pv->tip_marker_zoom->draw (cr);
+	pv->tip_marker->draw (cr); // absolute position
 
         cairo_restore (cr);
 
@@ -559,9 +494,8 @@ gboolean  PanView::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, PanView
 	pv->infoXY0->draw (cr);
         
         cairo_scale (cr, 1., -1);
-	pv->tip_marker_z->draw (cr);
 	pv->tip_marker_z0->draw (cr);
-
+	pv->tip_marker_z->draw (cr);
 }
  
 
@@ -664,7 +598,7 @@ void PanView :: tip_refresh()
 
 
         // Tip marker on zoomed scan area view w/o offset
-	if (Zratio > 0.){
+	if (Zratio > 2.){
 		rsz *= 1.7;
 
                 // example for new cairo_item code to replace the code below:
@@ -683,9 +617,11 @@ void PanView :: tip_refresh()
                 tip_marker_zoom->set_line_width (get_lw (1.0));
                 tip_marker_zoom->show ();
         } else {
-                tip_marker_zoom->hide ();
+                if (tip_marker_zoom)
+                        tip_marker_zoom->hide ();
         }
-        tip_marker_zoom->queue_update (canvas); // schedule update
+        if (tip_marker_zoom)
+                tip_marker_zoom->queue_update (canvas); // schedule update
 
 
 	// Z tip position marker
@@ -694,8 +630,8 @@ void PanView :: tip_refresh()
 
 	if (tip_marker_z == NULL){
 		tip_marker_z = new cairo_item_path_closed (4);
-                tip_marker_z->set_stroke_rgba (1., 1., 0., 1.);
-                tip_marker_z->set_fill_rgba (1., 1., 0., 1.);
+                tip_marker_z->set_stroke_rgba (CAIRO_COLOR_YELLOW);
+                tip_marker_z->set_fill_rgba (CAIRO_COLOR_YELLOW);
                 tip_marker_z->set_line_width (get_lw (1.0));
 	}
 	// XY Scan&Offset position marker
@@ -705,9 +641,9 @@ void PanView :: tip_refresh()
 	tip_marker_z->set_xy (2, -rsz, -rsz/asp);
 	tip_marker_z->set_xy (3, +rsz, +rsz/asp);
         if (fabs(z/max_z) < 0.8)
-                tip_marker_z->set_stroke_rgba (0., 1., 0., 0.8);
+                tip_marker_z->set_stroke_rgba (CAIRO_COLOR_FORESTGREEN_ID, 0.8);
         else
-                tip_marker_z->set_stroke_rgba (1., 0., 0., 1.0);
+                tip_marker_z->set_stroke_rgba (CAIRO_COLOR_RED);
         //tip_marker_z->set_fill_rgba (1., finish () ? 0.:1., 0., 1.);
 	tip_marker_z->queue_update (canvas); // schedule update
 	
@@ -735,15 +671,17 @@ void PanView :: tip_refresh()
                                 tip_marker_z0 = new cairo_item_path (2);
                                 tip_marker_z0->set_xy (0, +rsz, 0.);
                                 tip_marker_z0->set_xy (1, -rsz, 0.);
-                                tip_marker_z0->set_stroke_rgba (0., 0., 1., 1.);
+                                tip_marker_z0->set_fill_rgba (CAIRO_COLOR_BLUE_ID, 0.8);
+                                tip_marker_z0->set_stroke_rgba (CAIRO_COLOR_BLUE_ID, 0.8);
                                 tip_marker_z0->set_line_width (get_lw (3.0));
                         }
                         // XY Scan&Offset position marker
                         tip_marker_z0->set_position (WXS/2., WYS/2.*z0/z0r);
+                        tip_marker_z0->set_line_width ( WYS/2.*0.03);
                         if (fabs(z/z0r) < 0.75)
-                                tip_marker_z0->set_stroke_rgba (0., 0., 1., 0.8);
+                                tip_marker_z0->set_stroke_rgba (CAIRO_COLOR_BLUE_ID, 0.8);
                         else
-                                tip_marker_z0->set_stroke_rgba (1., 0., 0., 1.0);
+                                tip_marker_z0->set_stroke_rgba (CAIRO_COLOR_RED);
                         tip_marker_z0->queue_update (canvas); // schedule update
 		}
 
@@ -786,7 +724,7 @@ void PanView :: tip_refresh()
                     	if (DSP_status_indicator[status_id[i]] == NULL){
                                 DSP_status_indicator[status_id[i]] = new cairo_item_rectangle (0.,0.,w, 2.*w);
                                 DSP_status_indicator[status_id[i]]->set_position (-WXS/2+i*w*1.05, -WYS/2.);
-                                DSP_status_indicator[status_id[i]]->set_stroke_rgba (1.,1.,1.,1.);
+                                DSP_status_indicator[status_id[i]]->set_stroke_rgba (CAIRO_COLOR_WHITE);
                                 DSP_status_indicator[status_id[i]]->set_line_width (get_lw (0.5));
                         }
                         if (status &  status_bm_a[i])
@@ -985,50 +923,6 @@ void PanView :: refresh()
 		  max_corn[3][0]<<","<<max_corn[3][1] );
 
 	Zratio = fabs (max_x - min_x) / (fabs (max_corn[0][0]-max_corn[1][0]) + fabs (max_corn[1][0]-max_corn[2][0]));
-
-        // note: different "zoomed" view approach directly in draw
-#if 0
-	if (Zratio > 5){
-		Zratio *= 0.7;
-		/*redraw the PanView scanning area*/ 
-		GnomeCanvasPoints *scanarea_points = gnome_canvas_points_new (4);
-		Zxs=0.;
-		Zys=0.;
-		for(i=0,j=0; i < 4; i++){
-			Zxs += scanarea_points->coords[j]   = TO_CANVAS_X(Zratio * max_corn[i][0]);
-			Zys += scanarea_points->coords[j+1] = TO_CANVAS_Y(Zratio * max_corn[i][1]);
-			j+=2;
-		}
-		Zxs /= 4.; Zxs -= TO_CANVAS_X(0.);
-		Zys /= 4.; Zys -= TO_CANVAS_X(0.);
-		for(i=0,j=0; i < 4; i++){
-			scanarea_points->coords[j++] -= Zxs;
-			scanarea_points->coords[j++] -= Zys;
-		}
-		if (current_view_zoom)
-			gnome_canvas_item_set(current_view_zoom, 
-					      "points", scanarea_points,
-					      "outline_color", (error)?"red":"gray",
-					      "fill_color_rgba", 0x88888822,
-					      NULL );
-		else
-			current_view_zoom = gnome_canvas_item_new( gnome_canvas_root (GNOME_CANVAS (canvas)), 
-								   gnome_canvas_polygon_get_type(),
-								   "points", scanarea_points,
-								   "fill_color_rgba", 0x88888822,
-								   "outline_color", "gray",
-								   "width_units", 1.5,
-								   NULL);
-		
-		gnome_canvas_item_show (current_view_zoom);
-		gnome_canvas_points_free (scanarea_points);
-		
-	} else {
-		Zratio = 0.;
-		if (current_view_zoom)
-			gnome_canvas_item_hide (current_view_zoom);
-	}
-#endif 	
 
         // update scan area
         if (!current_view)
