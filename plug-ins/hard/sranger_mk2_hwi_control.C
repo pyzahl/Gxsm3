@@ -1810,11 +1810,13 @@ DSPControl::DSPControl () {
                                        dsp_state_mode, MD_OFFSETADDING);
         // gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(ext_add_checkbutton), dsp_state_mode & MD_OFFSETADDING ? 1:0); // DSP digital Offset Adding!!
         // g_signal_connect(ext_add_checkbutton, "toggled", G_CALLBACK(DSPControl::set_clr_mode_callback), GINT_TO_POINTER (MD_OFFSETADDING));
+        dsp_bp->set_configure_list_mode_off ();
 
         dsp_bp->new_line ();
 	dsp_bp->grid_add_ec ("Fast Return", Unity, &fast_return, 1., 1000., "5g", 1., 10.,  "adv-scan-fast-return");
 	dsp_bp->grid_add_ec ("Fwd Slow Down", Unity, &scan_forward_slow_down, 1, 32000, "5g", "adv-scan-fwd-slow-down");
 
+        dsp_bp->set_configure_list_mode_on ();
         dsp_bp->new_line ();
 	dsp_bp->grid_add_ec ("Pre Pts", Unity, &pre_points, 0, 100, "5g", "adv-scan-pre-pts");
 	dsp_bp->grid_add_ec ("XS 2nd ZOff", Angstroem, &x2nd_Zoff, -10000., 10000., ".2f", 1., 1., "adv-scan-xs2nd-z-offset");

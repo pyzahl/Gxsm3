@@ -1906,7 +1906,7 @@ int SPM_ScanControl::finish_scan (){
 	PI_DEBUG (DBG_L2, "finish_scan.");
 
 	// Wieder auf Ursprung fahren: Mitte erste Scanzeile !!
-	gapp->xsm->hardware->MovetoXY(0,0);
+	// gapp->xsm->hardware->MovetoXY(0,0); // *** Py 20102037 -- not here any more
 	PI_DEBUG (DBG_L2, "Return to (0,0) at the end of the scan.");
 	/*	switch (scan_dir){
 	case SCAN_DIR_TOPDOWN: 
