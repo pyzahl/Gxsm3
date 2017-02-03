@@ -350,6 +350,7 @@ class sranger_mk3_hwi_spm : public sranger_mk3_hwi_dev{
 
  private:
 	DSPControl *dc;
+	double tip_pos[2]; // manual tip positioning memory;
 };
 
 #endif

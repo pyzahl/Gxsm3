@@ -73,7 +73,8 @@ int gpio3_monitor_dir = 0;
 
 sranger_mk3_hwi_spm::sranger_mk3_hwi_spm():sranger_mk3_hwi_dev(){
 	SRANGER_DEBUG("Init Sranger SPM");
-	ScanningFlg=0;	
+	ScanningFlg=0;
+        tip_pos [0] = tip_pos[1] = 0.;
 }
 
 /*
@@ -733,15 +734,15 @@ void sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
 
 	// verify Pos,
 	// wait until ready
-        int i=150;
+        gint i=250;
 	do {
 		usleep (20000); // give some time
 		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
 		//		CallIdleFunc ();
-	} while (dsp_scan.pflg && --i); // check complete and timeout ~3s
+	} while (dsp_scan.pflg && --i); // check complete and timeout ~5s
 
         if (!i)
-                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- tip move timeout exceeded.");
+                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- tip move timeout 5s exceeded.");
 
 	dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
 	dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
@@ -771,15 +772,21 @@ void sranger_mk3_hwi_spm::EndScan2D(){
 		sr_write (dsp, &dsp_scan, MAX_WRITE_SCAN<<1);
 	}
 	// wait until ready
+        gint i=200;
 	do {
-		usleep (50000); // give some time
+		usleep (20000); // give some time
 		sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
 		CONV_32 (dsp_scan.pflg);
-	} while (dsp_scan.pflg);
+	} while (dsp_scan.pflg && --i); // check complete and timeout ~4s
+
+        if (!i)
+                g_warning ("sranger_mk3_hwi_spm::EndScan2D -- timeout 4s exceeded.");
 
 	// do return to center?
-	if (DSPControlClass->center_return_flag)
-		tip_to_origin ();
+	if (DSPControlClass->center_return_flag){
+                g_message ("sranger_mk3_hwi_spm::EndScan2D -- tip to orign/manual scan position [dig:%10.3f, %10.3f].", tip_pos[0]/(1<<16), tip_pos[1]/(1<<16));
+                tip_to_origin (tip_pos[0], tip_pos[1]);
+        }
 }
 
 // we are paused
@@ -876,7 +883,9 @@ void sranger_mk3_hwi_spm::MovetoXY(double x, double y){
 		        const double Q16 = 1<<16;
 			old_x = x;
 			old_y = y;
-			tip_to_origin (x * Q16, y * Q16);
+                        tip_pos[0] =  x * Q16;
+                        tip_pos[1] =  y * Q16;
+			tip_to_origin (tip_pos[0], tip_pos[1]);
 		}
 	}
 }
@@ -941,11 +950,16 @@ void sranger_mk3_hwi_spm::Move_delta_XYZ (double dx, double dy, double dz, Mem2d
 
 	// verify Pos,
 	// wait until ready
+        gint i=2000;
 	do {
 		usleep (5000); // give some time
 		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
                 CallIdleFunc ();
-	} while (dsp_scan.pflg);
+	} while (dsp_scan.pflg && --i); // with timeout ~5s
+
+        if (!i)
+                g_warning ("sranger_mk3_hwi_spm::Move_delta_XYZ -- timeout 5s exceeded.");
+        
         dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
         dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
 
@@ -1109,6 +1123,7 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		// check for new rotation
 		if (dsp_scan.rotm[0] != mxx || dsp_scan.rotm[1] != mxy || dsp_scan.rotm[2] != myx || dsp_scan.rotm[3] != myy){
 			// move to origin (rotation invariant point) before any rotation matrix changes!!
+                        g_message ("sranger_mk3_hwi_spm::ScanLineM -- setup, rotation matrix changed: tip to orign forced for rotation invariant point.");
 			tip_to_origin ();
 			// reread position
 			lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
@@ -1275,7 +1290,7 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 	us_per_line = dsp_scan.dnx*dsp_scan.nx/(2.*DSPControlClass->frq_ref)*1e6;
 	// wait for data, updated display, data move is done in background by the fifo read thread
 	do {
-	        usleep ((int)us_per_line < 20000 ? (int)us_per_line : 20000); // release cpu time
+	        usleep ((int)us_per_line < 10000 ? (int)us_per_line : 10000); // release cpu time
 		gapp->check_events (); // do not lock
 		DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
 		if (ydir > 0 && yindex <= fifo_data_y_index) break;

@@ -672,7 +672,7 @@ void sranger_mk2_hwi_spm::tip_to_origin(double x, double y){
 
 	// verify Pos,
 	// wait until ready
-        int i=150;
+        int i=250;
 	do {
 		usleep (20000); // release cpu time
 		CallIdleFunc ();
@@ -680,10 +680,10 @@ void sranger_mk2_hwi_spm::tip_to_origin(double x, double y){
 		DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
 
 		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
-	} while (dsp_scan.pflg && --i); // check complete or timeout ~3s
+	} while (dsp_scan.pflg && --i); // check complete or timeout ~5s
 
         if (!i)
-                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- tip move timeout exceeded.");
+                g_warning ("sranger_mk2_hwi_spm::tip_to_origin -- tip move timeout 5s exceeded.");
 
 	dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
 	dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
@@ -713,6 +713,7 @@ void sranger_mk2_hwi_spm::EndScan2D(){
 		sr_write (dsp, &dsp_scan, MAX_WRITE_SCAN<<1);
 	}
 	// wait until ready
+        gint i=200;
 	do {
 		usleep (20000); // release cpu time
 		CallIdleFunc ();
@@ -721,11 +722,16 @@ void sranger_mk2_hwi_spm::EndScan2D(){
 
 		sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
 		CONV_16 (dsp_scan.pflg);
-	} while (dsp_scan.pflg);
+	} while (dsp_scan.pflg && --i); // check complete and timeout ~4s
+
+        if (!i)
+                g_warning ("sranger_mk2_hwi_spm::EndScan2D -- timeout 4s exceeded.");
 
 	// do return to center?
-	if (DSPControlClass->center_return_flag)
-		tip_to_origin ();
+	if (DSPControlClass->center_return_flag){
+                g_message ("sranger_mk2_hwi_spm::EndScan2D -- tip to orign/manual scan position [dig:%10.3f, %10.3f].", tip_pos[0]/(1<<16), tip_pos[1]/(1<<16));
+                tip_to_origin (tip_pos[0], tip_pos[1]);
+        }
 }
 
 // we are paused
@@ -829,7 +835,9 @@ void sranger_mk2_hwi_spm::MovetoXY(double x, double y){
 		        const double Q16 = 1<<16;
 			old_x = x;
 			old_y = y;
-			tip_to_origin (x * Q16, y * Q16);
+                        tip_pos[0] =  x * Q16;
+                        tip_pos[1] =  y * Q16;
+			tip_to_origin (tip_pos[0], tip_pos[1]);
 		}
 	}
 }
@@ -990,6 +998,7 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		// check for new rotation
 		if (dsp_scan.rotm[0] != mxx || dsp_scan.rotm[1] != mxy || dsp_scan.rotm[2] != myx || dsp_scan.rotm[3] != myy){
 			// move to origin (rotation invariant point) before any rotation matrix changes!!
+                        g_message ("sranger_mk2_hwi_spm::ScanLineM -- setup, rotation matrix changed: tip to orign forced for rotation invariant point.");
 			tip_to_origin ();
 			// reread position
 			lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
