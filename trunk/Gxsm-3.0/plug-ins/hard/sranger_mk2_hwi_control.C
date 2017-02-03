@@ -96,7 +96,7 @@ public:
                 gtk_widget_set_vexpand (scrolled_contents, TRUE);
                 g_object_set_data (G_OBJECT (scrolled_contents), "tab-label-widget", gtk_label_new (name));
                 DSPControlContainerClass->add_tab (scrolled_contents, id);
-                
+
                 gtk_container_add (GTK_CONTAINER (scrolled_contents), grid);
                 
                 grid_add_check_button("Configuration: Enable This");
@@ -105,7 +105,7 @@ public:
 
                 config_checkbutton_list = g_slist_append (config_checkbutton_list, button);
                 configure_list = g_slist_prepend (configure_list, button);
-                
+
                 g_settings_bind (settings, settings_name,
                                  G_OBJECT (button), "active",
                                  G_SETTINGS_BIND_DEFAULT);
@@ -868,7 +868,6 @@ DSPControl::DSPControl () {
         GtkWidget *notebook;
 
         GtkWidget *grid_base;
-        GtkWidget *grid;
         
 	GtkWidget* wid, *label, *input;
 	GtkWidget* menu;
@@ -1280,7 +1279,7 @@ DSPControl::DSPControl () {
 	sranger_common_hwi->read_dsp_feedback ();
 
         // initialize GXSM DSP GUI builder
-        dsp_bp = new DSP_GUI_Builder (grid);
+        dsp_bp = new DSP_GUI_Builder ();
         dsp_bp->set_pcs_remote_prefix (REMOTE_PREFIX);
 
         dsp_bp->set_error_text (OUT_OF_RANGE);
@@ -1429,7 +1428,6 @@ DSPControl::DSPControl () {
         dsp_bp->new_line ();
         dsp_bp->grid_add_ec_with_scale ("CI", Unity, &z_servo[SERVO_CI], 0., (DSPPACClass) ? 100.:1., "5g", 0.001, 0.01, "fbs-ci");
 
-
 	input_signal = NULL;
 	if (DSPPACClass) { // MK3
 		int sig_i = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_M_SERVO_INPUT_ID);
@@ -1501,7 +1499,6 @@ DSPControl::DSPControl () {
         dsp_bp->grid_add_ec ("dZ", Speed, &dzdt, -100., 100., "5g", 0.001, 0.01, "fbs-scan-ldc-dz");
 
         dsp_bp->set_configure_list_mode_off ();
-
 
 	// ======================================== Piezo Drive / Amplifier Settings
         dsp_bp->pop_grid ();
