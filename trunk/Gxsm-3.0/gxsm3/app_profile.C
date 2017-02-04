@@ -67,6 +67,7 @@ static GActionEntry win_profile_popup_entries[] = {
         { "opt-Y-linreg",  ProfileControl::linreg_callback, NULL, "false", NULL },
         { "opt-Y-diff",  ProfileControl::ydiff_callback, NULL, "false", NULL },
         { "opt-Y-ft",  ProfileControl::psd_callback, NULL, "false", NULL },
+        { "opt-decimate",  ProfileControl::decimate_callback, NULL, "true", NULL },
         { "opt-Y-binary",  ProfileControl::skl_Binary_callback, NULL, "false", NULL },
         { "opt-Y-lowpass-cycle",  ProfileControl::ylowpass_cycle_callback, NULL, "false", NULL },
         { "opt-Y-lowpass",  ProfileControl::ylowpass_callback, "s", "'lp-off'", NULL },
@@ -142,35 +143,34 @@ ProfileElement::~ProfileElement(){
 	g_free(color);
 }
 
-void ProfileElement::calc_decimation (){
-#define USE_AUTO_DECIMATION
-#ifdef USE_AUTO_DECIMATION
-        gint w = (gint) (pctrl->get_drawing_width());
-        if (n > 2*w){
-                dec_len = n / w;
-                n_dec   = n / dec_len;
-                // g_message ("ProfileElement::calc_decimation -- decimation on. dec_len=%d n_dec=%d", dec_len, n_dec);
-        } else { // no decimating
+void ProfileElement::calc_decimation (gint64 ymode){
+        if (ymode & PROFILE_MODE_DECIMATE){
+                gint w = (gint) (pctrl->get_drawing_width());
+                if (n > 2*w){
+                        dec_len = n / w;
+                        n_dec   = n / dec_len;
+                        // g_message ("ProfileElement::calc_decimation -- decimation on. dec_len=%d n_dec=%d", dec_len, n_dec);
+                } else { // no decimating
+                        dec_len = 1;
+                        n_dec = n;
+                        // g_message ("ProfileElement::calc_decimation -- decimation off. dec_len=%d n_dec=%d", dec_len, n_dec);
+                }
+        } else {
+        // no decimating
                 dec_len = 1;
                 n_dec = n;
-                // g_message ("ProfileElement::calc_decimation -- decimation off. dec_len=%d n_dec=%d", dec_len, n_dec);
         }
-#else
-        // no decimating
-        dec_len = 1;
-        n_dec = n;
-#endif
 }
 
 void ProfileElement::SetMode(long Mode){
 	mode=Mode;
 }
 
-void ProfileElement::SetOptions(long Flg){
+void ProfileElement::SetOptions(gint64 Flg){
 	flg=Flg;
 }
 
-double ProfileElement::calc(int ymode, int id, int binary_mask, double y_offset, GtkWidget *canvas){
+double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offset, GtkWidget *canvas){
 	Scan    *s;
 	double  dc=0.;
 
@@ -212,7 +212,7 @@ double ProfileElement::calc(int ymode, int id, int binary_mask, double y_offset,
         }
         
         // n => n_dec, dec_len -- use auto (random pick) decimation if more points than physical x pixels!
-        calc_decimation ();
+        calc_decimation (ymode);
         if (pathitem[id]){
                 if (pathitem[id]->get_n_nodes () != n_dec){
                         UNREF_DELETE_CAIRO_ITEM_NO_UPDATE (pathitem[id]);
@@ -410,7 +410,7 @@ void ProfileElement::update(GtkWidget *canvas, int id, int style){
 
 }
 
-gchar *ProfileElement::GetDeltaInfo(int i, int j, int ymode){
+gchar *ProfileElement::GetDeltaInfo(int i, int j, gint64 ymode){
 	double x1,y1, x2,y2, dx,dz, z1, z2, zint12, dxint12, rms12;
 	GetCurXYc (&x1, &y1, i);
 	GetCurXYc (&x2, &y2, j);
@@ -728,7 +728,7 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 	SetXrange(0., 1.);
 	SetYrange(0., 1.);
 
-	SetMode(PROFILE_MODE_XGRID | PROFILE_MODE_YGRID | PROFILE_MODE_CONNECT);
+	SetMode(PROFILE_MODE_XGRID | PROFILE_MODE_YGRID | PROFILE_MODE_CONNECT | PROFILE_MODE_DECIMATE);
 	SetScaling(PROFILE_SCALE_XAUTO | PROFILE_SCALE_YAUTO);
 
 	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl set_data to widget");
@@ -2595,6 +2595,28 @@ void ProfileControl::psd_callback (GSimpleAction *action, GVariant *parameter,
 	pc->UpdateArea ();
 }
 
+void ProfileControl::decimate_callback (GSimpleAction *action, GVariant *parameter, 
+                                        gpointer user_data){
+        //ProfileControl *pc = (ProfileControl *) user_data;
+        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+		pc->mode = (pc->mode & ~PROFILE_MODE_DECIMATE) | PROFILE_MODE_DECIMATE;
+	else
+		pc->mode &= ~PROFILE_MODE_DECIMATE;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+        pc->updateFrame ();
+	pc->SetXlabel ();
+	pc->UpdateArea ();
+}
+
 void ProfileControl::ydiff_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
         //ProfileControl *pc = (ProfileControl *) user_data;
@@ -2893,7 +2915,7 @@ void ProfileControl::skl_Binary_callback (GSimpleAction *action, GVariant *param
 	pc->UpdateArea ();
 }
 
-void ProfileControl::settings_adjust_mode_callback (GSimpleAction *action, GVariant *parameter, gint flg){
+void ProfileControl::settings_adjust_mode_callback (GSimpleAction *action, GVariant *parameter, gint64 flg){
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
