@@ -74,7 +74,7 @@ public:
   int  SetVM(int mode=0);
   Scan* NewScan(int vtype, int vflg, int ChNo, SCAN_DATA *vd);
   int  ActivateFreeChannel();
-  int  ActivateChannel(int ActiveChannel);
+  int  ActivateChannel(int NewActiveChannel);
   int  FindChan(int fid, int start=0);
 
   void AutoDisplay(double hi=0., double lo=0.);

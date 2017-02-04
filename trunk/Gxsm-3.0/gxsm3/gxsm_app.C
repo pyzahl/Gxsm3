@@ -47,8 +47,8 @@
 // #include "tips_dialog.h"
 #include "plugin_ctrl.h"
 
-extern int generate_preferences_gschema;
-extern int generate_gl_preferences_gschema;
+extern gboolean generate_preferences_gschema;
+extern gboolean generate_gl_preferences_gschema;
 void surf3d_write_schema (); // in vsurf3d.C
 
 
@@ -92,7 +92,6 @@ static GXSM_ACTION_INFO main_actions[] = {
 };
         
 static GActionEntry app_gxsm_action_entries[] = {
-        // { , NULL, NULL, NULL },
         // { "rgb-mode", ViewControl::view_view_color_rgb_callback, NULL, "false", NULL },
         // { "set-marker-group", ViewControl::view_tool_marker_group_radio_callback, "s", "'red'", NULL },
         { "file-open", App::file_open_callback, NULL, NULL, NULL },
@@ -101,7 +100,6 @@ static GActionEntry app_gxsm_action_entries[] = {
         { "autodisp", App::view_autodisp_callback,  NULL, NULL, NULL },
         { "plugins-reload", App::tools_plugin_reload_callback, NULL, NULL, NULL },
         { "plugins-info", App::tools_plugin_info_callback, NULL, NULL, NULL },
-        //        { "help-tip", App::help_tip_callback, NULL, NULL, NULL },
         { "preferences", App::options_preferences_callback, NULL, NULL, NULL },
         { "save-geometry", App::save_geometry_callback, NULL, NULL, NULL },
         { "load-geometry", App::load_geometry_callback, NULL, NULL, NULL },
@@ -117,7 +115,6 @@ static GActionEntry app_gxsm_action_entries[] = {
 App::App(GApplication *g_app)
 {
         XSM_DEBUG(DBG_L2, "App::App" );
-        // until Application is created
 
 	g_application = g_app; // GApplication reference
 
@@ -126,26 +123,6 @@ App::App(GApplication *g_app)
         as_settings       = g_settings_new (GXSM_RES_BASE_PATH_DOT".gui.as");
         gxsm_app_windows_list  = NULL; // holds a list of GXSM windows classes
 
-
-        // GVariant *x = g_settings_get_value (gxsm_app_settings, "first-start");
-        // g_print (GXSM_RES_BASE_PATH_DOT" * first-start [b] = %s\n", g_variant_get_boolean (x)? "true":"false");
-
-        /*
-        g_settings_bind (priv->settings, "transition",
-                         priv->stack, "transition-type",
-                         G_SETTINGS_BIND_DEFAULT);
-        g_object_bind_property (priv->search, "active",
-                                priv->searchbar, "search-mode-enabled",
-                                G_BINDING_BIDIRECTIONAL);
-         action = g_settings_create_action (priv->settings, "show-words");
-         g_action_map_add_action (G_ACTION_MAP (win), action);
-         g_object_unref (action);
-
-        */
-
-        // TEST
-        //        gtk_icon_theme_append_search_path (gtk_icon_theme_get_default (), "/usr/local/share/gxsm3/icons/");
-        // Gxsm customized icons (svg) compiled in via grescources
         gtk_icon_theme_add_resource_path (gtk_icon_theme_get_default (), "/org/gnome/gxsm3/resources/icons");
 
         app_window = NULL;
@@ -194,24 +171,15 @@ App::App(GApplication *g_app)
 }
 
 App::~App(){
-	XSM_DEBUG (DBG_L1,  "App::~App ** saving Geometry **" );
-	SaveGeometry();
-
-        //        SetStatus(N_("App::~App: Closing Application object now."));
-
-	XSM_DEBUG (DBG_L1,  "App::~App ** EXITING **" );
-
-        XSM_DEBUG(DBG_L2, "App::~App: Closing Application object now..." );
-
-	XSM_DEBUG (DBG_L1,  "App::~App ** unloading plugins **" );
+	XSM_DEBUG (DBG_L1,  "App::~App ** cleaning up, unloading plugins **" );
 
 	// remove plugins: killflag = TRUE
         monitorcontrol->LogEvent ("GXSM shudown", "unloading plugins.", 3);
 	reload_gxsm_plugins( TRUE );
 
 	XSM_DEBUG (DBG_L1,  "App::~App ** unloading plugins done. **" );
-
 	XSM_DEBUG (DBG_L1,  "App::~App ** Deleting Channelselector **" );
+
         monitorcontrol->LogEvent ("GXSM shudown", "deleting channelselector.", 3);
         delete channelselector;
 
@@ -222,6 +190,7 @@ App::~App(){
         
         delete xsm;
 
+        // ------ not good, don't,  automatic
         //        g_clear_object (&gxsm_app_settings);
         //        g_clear_object (&as_settings);
 
@@ -230,14 +199,12 @@ App::~App(){
         monitorcontrol->LogEvent ("GXSM shudown", "closing logging monitor, last log of session.");
         delete monitorcontrol;
 
-	XSM_DEBUG (DBG_L1,  "App::~App ** -- all done -- by by -- **" );
-        XSM_DEBUG(DBG_L2, "App::~App: done." );
+        XSM_DEBUG(DBG_L1, "App::~App: done." );
 }
 
 
 void App::AppWindowInit(const gchar *title){
 	XSM_DEBUG (DBG_L2,  "App::WindowInit" );
-
 
         //        app_window = gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
         window = GTK_WINDOW (app_window);

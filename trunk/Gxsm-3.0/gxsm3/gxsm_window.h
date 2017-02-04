@@ -15,8 +15,9 @@ typedef struct _Gxsm3appWindowClass    Gxsm3appWindowClass;
 
 GType                 gxsm3_app_window_get_type     (void);
 Gxsm3appWindow       *gxsm3_app_window_new          (Gxsm3app *app);
-void                  gxsm3_app_window_open         (Gxsm3appWindow *win,
-						     GFile            *file);
+gboolean              gxsm3_app_window_open         (Gxsm3appWindow *win,
+						     GFile            *file,
+						     gboolean in_active_channel);
 
 
 #endif /* __GXSM3APPWIN_H */

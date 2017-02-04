@@ -53,8 +53,8 @@ good starting point.
 #include "unit.h"
 
 
-extern int generate_pcs_gschema;
-extern int generate_pcs_adj_gschema;
+extern gboolean generate_pcs_gschema;
+extern gboolean generate_pcs_adj_gschema;
 extern gchar *generate_pcs_gschema_path_add;
 
 extern const gchar* pcs_get_current_gschema_group ();
