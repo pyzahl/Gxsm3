@@ -232,12 +232,12 @@ void Param_Control::Prec(const char *p){
 	prec = g_strdup(p);
 }
 
-gint Param_Control::ShowMessage(const char *txt, const char *options, gint default_choice){
-	XSM_DEBUG(DBG_L2, txt );
-	if (options)
-		XSM_DEBUG(DBG_L2, options );
+void Param_Control::ShowInfo (const char *header, const char *text){
+        g_message ("%s\n%s", header, text);
+}
 
-	return default_choice;
+void Param_Control::ShowVerifySet (const char *header, const char *text){
+        g_message ("%s\n%s", header, text);
 }
 
 void Param_Control::Put_Value(){
@@ -343,8 +343,7 @@ void Param_Control::Set_FromValue(double nVal){
 					//Changes will eventually be done by the CB of the ShowMessage dialog
 					gchar *ref = g_strconcat("[",refname ? refname:" ","]",NULL);
 					gchar *txt = g_strdup_printf("Do you really want to\nenter the WARNING range?\n\n%s = %g", ref, new_value);
-					ShowMessage (txt, "Warning Limit reached!", 1);
-					XSM_DEBUG(DBG_L2, "Warning Limit reached! new_value=" << new_value );
+					ShowVerifySet ("Warning Limit reached!", txt);
                                         g_free (ref);
                                         g_free (txt);
 				}
@@ -360,8 +359,7 @@ void Param_Control::Set_FromValue(double nVal){
 			else{
 				gchar *ref = g_strconcat("[",refname ? refname:" ","]",NULL);
 				gchar *txt = g_strdup_printf("Do you really want to\nenter the EXCLUDE range?\n\n%s = %g", ref, new_value);
-				ShowMessage ((const gchar*)txt, "Exclude Limit reached!", 2);
-				XSM_DEBUG(DBG_L2, "Exclude Limit reached! new_value=" << new_value );
+				ShowVerifySet ("Exclude Limit reached!", (const gchar*)txt);
                                 g_free (ref);
                                 g_free (txt);
 			}
@@ -372,15 +370,14 @@ void Param_Control::Set_FromValue(double nVal){
 	}
 	else{
 		gchar *ref = g_strconcat("[",refname ? refname:" ","]",NULL);
-		gchar *txt = g_strdup_printf("%s %s: %s ... %s\nrequested: %s", 
-					     MLD_VALID_RANGE,
+		gchar *txt = g_strdup_printf("for %s: %s ... %s\nrequested: %s", 
 					     ref,
 					     unit->UsrString (vMin), 
 					     unit->UsrString (vMax),
                                              unit->UsrString (nVal));
 
 		if (warning)
-			ShowMessage(txt);
+			ShowInfo (MLD_VALID_RANGE, txt);
 		else
 			g_print ("%s", txt);
 
@@ -809,114 +806,75 @@ int Gtk_EntryControl::quit_callback(gpointer ec_object, gpointer dialog){
 	return FALSE;
 }
 
-gint Gtk_EntryControl::ShowMessage(const char *txt, const char *options, int default_choice){
-
-//	gpointer current_object = this;
-
-	if (!txt) 
-		return 0;
+void Gtk_EntryControl::ShowInfo (const char *header, const char *text){
+	if (!text || !header) 
+		return;
 
 	++total_message_count_int;
 	if (++total_message_count > 6){
-		std::cerr << "[" << total_message_count_int << "] Repeted Messag(es), popup blocked: " << txt << std::endl;
+		g_warning ("Repeting Messag(es) '%s' suppressed. count: %d", text, total_message_count);
 		--total_message_count;
-		return 0;
+		return;
 	}
 
-
-	if (options){
-		//construction of a warning window
-		GtkWidget *dialog;
-		GtkWidget *label;
-		GtkWidget *vbox;
-		GtkWidget *stock_item;
-		GtkWidget *text_box;
-		GtkWidget *action_box;
-
-
-		dialog = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-		gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
-		gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER);
-		gtk_window_set_keep_above (GTK_WINDOW (dialog), TRUE);
-		gtk_window_set_title (GTK_WINDOW (dialog), options);
-
-		vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-		gtk_widget_show (vbox);
-		gtk_container_add (GTK_CONTAINER (dialog), vbox);
-
-		//warning box consist of a text region a separator and a button region
-		text_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-		gtk_container_set_border_width (GTK_CONTAINER (text_box), 10);
-		gtk_box_set_spacing (GTK_BOX (text_box), 10);
-		gtk_widget_show (text_box);
-		gtk_box_pack_start (GTK_BOX (vbox), text_box, FALSE, FALSE, 0);
-		
-		GtkWidget *separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
-		gtk_widget_show (separator);
-		gtk_box_pack_start (GTK_BOX (vbox), separator, FALSE, FALSE, 0);
-
-		action_box = gtk_button_box_new (GTK_ORIENTATION_HORIZONTAL);
-		gtk_container_set_border_width (GTK_CONTAINER (action_box), 10);
-		gtk_button_box_set_layout (GTK_BUTTON_BOX (action_box), GTK_BUTTONBOX_END);
-		gtk_widget_show (action_box);
-		gtk_box_pack_start (GTK_BOX (vbox), action_box, FALSE, FALSE, 0);
-
-
-		//fill up text area with image and text
-		stock_item = gtk_image_new_from_icon_name("dialog-password", GTK_ICON_SIZE_DIALOG);
-		gtk_widget_show (stock_item);
-		gtk_box_pack_start (GTK_BOX (text_box), stock_item, FALSE, FALSE, 0);
-
-		label = gtk_label_new (N_(txt));
-		gtk_widget_show (label);
-		gtk_box_pack_start (GTK_BOX (text_box), label, FALSE, FALSE, 0);
-
-		//fill up the button box with the yes and cancel button
-		GtkWidget *force_button = gtk_button_new_with_mnemonic (_("_Yes"));
-		gtk_widget_show (force_button);
-		gtk_box_pack_start (GTK_BOX (action_box), force_button, FALSE, FALSE, 0);
-		g_signal_connect_swapped (G_OBJECT (force_button), "clicked",
-			    G_CALLBACK (Gtk_EntryControl::force_button_callback), this);
-		g_signal_connect_swapped (G_OBJECT (force_button), "clicked",
-			    G_CALLBACK (gtk_widget_destroy),  G_OBJECT (dialog));
-
-		GtkWidget *cancel_button = gtk_button_new_with_mnemonic (_("_Cancel"));
-		gtk_widget_show (cancel_button);
-		gtk_box_pack_start (GTK_BOX (action_box), cancel_button, FALSE, FALSE, 0);
-		g_signal_connect_swapped (G_OBJECT (cancel_button), "clicked",
-			    G_CALLBACK (Gtk_EntryControl::cancel_button_callback), this);
-		g_signal_connect_swapped (G_OBJECT (cancel_button), "clicked",
-			    G_CALLBACK (gtk_widget_destroy),  G_OBJECT (dialog));
-
-		//catching a delete event (eg. clicking on the x of the window or pressing Alt+F4)
-		g_signal_connect_swapped (G_OBJECT (dialog), "delete-event",
-			    G_CALLBACK (Gtk_EntryControl::quit_callback), this);
-
-		gtk_widget_show (dialog);
-		ShowMessage_flag=default_choice;
-
-		return 1;
-	} else {
-                GtkWidget *toplevel = gtk_widget_get_toplevel (entry);  // try to get the underlying window as parent for dialog
-                GtkWindow *ww = NULL;
-                if (gtk_widget_is_toplevel (toplevel))
-                        ww = GTK_WINDOW (toplevel);
-                GtkWidget *dialog = gtk_message_dialog_new (ww,
-                                                            GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                            GTK_MESSAGE_INFO,
-                                                            GTK_BUTTONS_CLOSE,
-                                                            "%s", txt);
+        GtkWidget *toplevel = gtk_widget_get_toplevel (entry);  // try to get the underlying window as parent for dialog
+        GtkWindow *ww = NULL;
+        if (gtk_widget_is_toplevel (toplevel))
+                ww = GTK_WINDOW (toplevel);
+        GtkWidget *dialog = gtk_message_dialog_new_with_markup
+                (ww,
+                 GTK_DIALOG_DESTROY_WITH_PARENT,
+                 GTK_MESSAGE_INFO,
+                 GTK_BUTTONS_CLOSE,
+                 "<span foreground='green' size='large' weight='bold'>%s</span>\n%s", header, text);
 	
-		g_signal_connect_swapped (G_OBJECT (dialog), "response",
-					  G_CALLBACK (gtk_widget_destroy),
-					  G_OBJECT (dialog));
-		gtk_widget_show (dialog);
+        g_signal_connect_swapped (G_OBJECT (dialog), "response",
+                                  G_CALLBACK (gtk_widget_destroy),
+                                  G_OBJECT (dialog));
+        gtk_widget_show (dialog);
 
+        --total_message_count;
+}
+
+void Gtk_EntryControl::ShowVerifySet (const char *header, const char *text){
+	if (!text || !header) 
+		return;
+
+	++total_message_count_int;
+	if (++total_message_count > 6){
+		g_warning ("Repeting Messag(es) '%s' suppressed. count: %d", text, total_message_count);
 		--total_message_count;
-		return default_choice;
+		return;
 	}
 
-	return -1;
+        GtkWidget *toplevel = gtk_widget_get_toplevel (entry);  // try to get the underlying window as parent for dialog
+        GtkWindow *ww = NULL;
+        if (gtk_widget_is_toplevel (toplevel))
+                ww = GTK_WINDOW (toplevel);
+        GtkWidget *dialog = gtk_message_dialog_new_with_markup
+                (ww,
+                 GTK_DIALOG_DESTROY_WITH_PARENT,
+                 GTK_MESSAGE_INFO,
+                 GTK_BUTTONS_YES_NO,
+                 "<span foreground='red' size='large' weight='bold'>%s</span>", header);
+                
+        gtk_message_dialog_format_secondary_markup
+                (GTK_MESSAGE_DIALOG (dialog),
+                 "%s", text);
+
+        gtk_widget_show (dialog);
+        gint result = gtk_dialog_run (GTK_DIALOG (dialog));
+        gtk_widget_destroy (dialog);
+
+        switch (result){
+        case GTK_RESPONSE_YES:
+                Set_NewValue (true);
+                break;
+        default:
+                Set_NewValue (false);
+                break;
+        }
+        --total_message_count;
 }
 
 
