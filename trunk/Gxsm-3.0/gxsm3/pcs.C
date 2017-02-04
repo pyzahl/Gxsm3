@@ -236,8 +236,9 @@ void Param_Control::ShowInfo (const char *header, const char *text){
         g_message ("%s\n%s", header, text);
 }
 
-void Param_Control::ShowVerifySet (const char *header, const char *text){
+gboolean Param_Control::ShowVerifySet (const char *header, const char *text){
         g_message ("%s\n%s", header, text);
+        return true; // no interaction in vitual base
 }
 
 void Param_Control::Put_Value(){
@@ -325,50 +326,65 @@ gchar *Param_Control::Get_UsrString(){
 }
 
 
-void Param_Control::Set_FromValue(double nVal){
-	if (ShowMessage_flag) return;	//do nothing if a message dialog is active
+gboolean Param_Control::Set_FromValue(double nVal){
+	if (ShowMessage_flag)
+                return false;	//do nothing if a message dialog is active
+
 	new_value = nVal;
 	if(nVal <= vMax && nVal >= vMin){
 		if(nVal >= vMax_warn || nVal <= vMin_warn){
-			//check if the current value is already inside the warning range
+			//check if the current value is already inside the warning range -- then OK
 			if (Get_dValue() >= vMax_warn || Get_dValue() <= vMin_warn){
-				Set_dValue(nVal);
+				Set_dValue (nVal); // set managed value variable
+                                Put_Value (); // update/auto reformat entry
+                                return true;
 			}
 			else{
 				if (warn_color[0] || warn_color[1]){
-					;
+					; // port warn colorscheme // GTK3QQQ
 				} else {
 					//The input exceeds the warning limits
 					//Put_Value will reset the entry to the current valid value
 					//Changes will eventually be done by the CB of the ShowMessage dialog
 					gchar *ref = g_strconcat("[",refname ? refname:" ","]",NULL);
 					gchar *txt = g_strdup_printf("Do you really want to\nenter the WARNING range?\n\n%s = %g", ref, new_value);
-					ShowVerifySet ("Warning Limit reached!", txt);
+					gboolean success = ShowVerifySet ("Warning Limit reached!", txt);
+                                        Set_NewValue (success); // set managed value variable on success of user confirmation, else restore previous
                                         g_free (ref);
                                         g_free (txt);
+                                        Put_Value (); // update/auto reformat entry
+                                        return success;
 				}
 			}
-			Put_Value ();
-			return;
-		}
+                        Put_Value (); // update/restore
+                        return false;
+ 		}
 
+		//check if the current value is already exclude range -- then OK
 		if(nVal >= v_ex_lo && nVal <= v_ex_hi){
 			if (Get_dValue() >= v_ex_lo && Get_dValue() <= v_ex_hi){
-				Set_dValue(nVal);
+				Set_dValue (nVal); // set managed value variable
+                                Put_Value (); // update/auto reformat entry
+                                return true;
 			}
 			else{
 				gchar *ref = g_strconcat("[",refname ? refname:" ","]",NULL);
 				gchar *txt = g_strdup_printf("Do you really want to\nenter the EXCLUDE range?\n\n%s = %g", ref, new_value);
-				ShowVerifySet ("Exclude Limit reached!", (const gchar*)txt);
+				gboolean success = ShowVerifySet ("Exclude Limit reached!", (const gchar*)txt);
+                                Set_NewValue (success); // set managed value variable on success of user confirmation, else restore previous
                                 g_free (ref);
                                 g_free (txt);
+                                Put_Value (); // update/auto reformat entry
+                                return success;
 			}
-			Put_Value ();
-			return;
 		}
-		Set_dValue(nVal);
+
+                // regular valid range, set managed value variable
+                Set_dValue (nVal);
+                Put_Value (); // set managed value variable
+                return true;
 	}
-	else{
+	else{ // out if absolute bounds, do nothing but show valid range information and restore previous value
 		gchar *ref = g_strconcat("[",refname ? refname:" ","]",NULL);
 		gchar *txt = g_strdup_printf("for %s: %s ... %s\nrequested: %s", 
 					     ref,
@@ -381,10 +397,11 @@ void Param_Control::Set_FromValue(double nVal){
 		else
 			g_print ("%s", txt);
 
-		g_free(txt);
-		g_free(ref);
+		g_free (txt);
+		g_free (ref);
+                Put_Value(); // set managed value variable
+                return false;
 	}
-	Put_Value();
 }
 
 void Param_Control::Set_Parameter(double value, int flg, int usr2base){
@@ -756,21 +773,23 @@ void Gtk_EntryControl::Set_Parameter(double Value=0., int flg=FALSE, int usr2bas
 
         //        g_message ("Gtk_EntryControl::Set_Parameter value=%g [%s] flg=%d ?-> usr2base=%d", value, refname, flg, usr2base);
         
-	Set_FromValue (value);
-        update_value_in_settings ();
+	if (Set_FromValue (value)){ // preoceed only with updated and potential client if new value was accepted
+                update_value_in_settings ();
 
-	if((c=(GtkWidget*)g_object_get_data( G_OBJECT (entry), "HasClient")) && enable_client){
-		Gtk_EntryControl *cec = (Gtk_EntryControl *) g_object_get_data( G_OBJECT (c), "Gtk_EntryControl");
+                if((c=(GtkWidget*)g_object_get_data( G_OBJECT (entry), "HasClient")) && enable_client){
+                        Gtk_EntryControl *cec = (Gtk_EntryControl *) g_object_get_data( G_OBJECT (c), "Gtk_EntryControl");
 
-                //                g_message ("Gtk_EntryControl::Set_Parameter update client with value=%g [%s]", value, cec->refname);
+                        //                g_message ("Gtk_EntryControl::Set_Parameter update client with value=%g [%s]", value, cec->refname);
 
-                cec->Set_FromValue (new_value);
-                cec->update_value_in_settings ();
+                        if (cec->Set_FromValue (new_value)) // only if also this succeeded
+                                cec->update_value_in_settings ();
+                }
+                if(ChangeNoticeFkt)
+                        (*ChangeNoticeFkt)(this, FktData);
         }
-	if(ChangeNoticeFkt) (*ChangeNoticeFkt)(this, FktData);
 }
 
-void Gtk_EntryControl::Set_NewValue(bool set_new_value){
+void Gtk_EntryControl::Set_NewValue (gboolean set_new_value){
 	GtkWidget *c;
 	if (!set_new_value){
 		ShowMessage_flag=0;
@@ -786,24 +805,6 @@ void Gtk_EntryControl::Set_NewValue(bool set_new_value){
 	// The ChangeNoticeFkt commits the current value to the DSP
 	if(ChangeNoticeFkt) (*ChangeNoticeFkt)(this, FktData);
 	ShowMessage_flag=0;
-}
-
-int Gtk_EntryControl::force_button_callback(gpointer ec_object, gpointer dialog){
-	--total_message_count;
-	((Gtk_EntryControl *)ec_object)->Set_NewValue (TRUE);
-	return FALSE;
-}
-
-int Gtk_EntryControl::cancel_button_callback(gpointer ec_object, gpointer dialog){
-	--total_message_count;
-	((Gtk_EntryControl *)ec_object)->Set_NewValue (FALSE);
-	return FALSE;
-}
-
-int Gtk_EntryControl::quit_callback(gpointer ec_object, gpointer dialog){
-	--total_message_count;
-	((Gtk_EntryControl *)ec_object)->Set_NewValue (FALSE);
-	return FALSE;
 }
 
 void Gtk_EntryControl::ShowInfo (const char *header, const char *text){
@@ -836,15 +837,15 @@ void Gtk_EntryControl::ShowInfo (const char *header, const char *text){
         --total_message_count;
 }
 
-void Gtk_EntryControl::ShowVerifySet (const char *header, const char *text){
+gboolean Gtk_EntryControl::ShowVerifySet (const char *header, const char *text){
 	if (!text || !header) 
-		return;
+		return false;
 
 	++total_message_count_int;
 	if (++total_message_count > 6){
 		g_warning ("Repeting Messag(es) '%s' suppressed. count: %d", text, total_message_count);
 		--total_message_count;
-		return;
+		return false;
 	}
 
         GtkWidget *toplevel = gtk_widget_get_toplevel (entry);  // try to get the underlying window as parent for dialog
@@ -865,16 +866,14 @@ void Gtk_EntryControl::ShowVerifySet (const char *header, const char *text){
         gtk_widget_show (dialog);
         gint result = gtk_dialog_run (GTK_DIALOG (dialog));
         gtk_widget_destroy (dialog);
+        --total_message_count;
 
         switch (result){
         case GTK_RESPONSE_YES:
-                Set_NewValue (true);
-                break;
+                return true;
         default:
-                Set_NewValue (false);
-                break;
+                return false;
         }
-        --total_message_count;
 }
 
 
