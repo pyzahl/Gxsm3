@@ -56,13 +56,15 @@ int debug_level = 0;
 int logging_level = 2;
 int developer_option = 0;
 int pi_debug_level = 0;
-int force_gxsm_defaults = 0;
-int no_glx_init = 0;
-int generate_preferences_gschema = 0;
-int generate_gl_preferences_gschema = 0;
 
-int generate_pcs_gschema = 0;
-int generate_pcs_adj_gschema = 0;
+gboolean force_gxsm_defaults = false;
+gboolean load_files_as_movie = false;
+
+gboolean gxsm_new_instance = false;
+gboolean generate_preferences_gschema = false;
+gboolean generate_gl_preferences_gschema = false;
+gboolean generate_pcs_gschema = false;
+gboolean generate_pcs_adj_gschema = false;
 gchar *current_pcs_gschema_path_group = NULL;
 
 /* True if parsing determined that all the work is already done.  */
@@ -87,6 +89,10 @@ static const GOptionEntry gxsm_options[] =
 
 	{ "logging-level", 'L', G_OPTION_FLAG_NONE, G_OPTION_ARG_INT, &logging_level,
           N_("Set Gxsm logging/monitor level. omit all loggings: 0, minimal logging: 1, default logging: 2, verbose logging: 3, ..."), NULL
+        },
+
+	{ "load-files-as-movie", 'm', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &load_files_as_movie,
+          N_("load file from command in one channel as movie"), NULL
         },
 
 	{ "developer", 'y', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &developer_option,
@@ -130,19 +136,11 @@ static const GOptionEntry gxsm_options[] =
         },
 
 	/* New instance */
-	{
-		"standalone", 's', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, NULL,
-		N_("Run gxsm3 in standalone mode"),
-		NULL
+	{ "new-instance", 's', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &gxsm_new_instance,
+          N_("Start a new instance of gxsm3 -- not yet functional, use different user account via ssh -X... for now."), NULL
 	},
 
-	/* collects file arguments */
-	{
-		G_OPTION_REMAINING, '\0', G_OPTION_FLAG_NONE, G_OPTION_ARG_FILENAME_ARRAY, NULL, NULL,
-		N_("[FILE...] [+LINE[:COLUMN]]")
-	},
-
-	{NULL}
+	{ NULL }
 };
 
 // global group control atg build time
@@ -440,9 +438,7 @@ gxsm3_app_open (GApplication  *app,
 {
   GList *windows;
   Gxsm3appWindow *win;
-  int i;
 
-        // ................**********************************************************************
         XSM_DEBUG(DBG_L2, "gxsm3_app_open =======================================================" );
 
         windows = gtk_application_get_windows (GTK_APPLICATION (app));
@@ -451,8 +447,12 @@ gxsm3_app_open (GApplication  *app,
         else
                 win = gxsm3_app_window_new (GXSM3_APP (app));
 
-        for (i = 0; i < n_files; i++)
-                gxsm3_app_window_open (win, files[i]);
+        if (load_files_as_movie)
+                gapp->xsm->ActivateFreeChannel();
+
+        for (gint i=0; i < n_files; ++i)
+                if (gxsm3_app_window_open (win, files[i], load_files_as_movie) == false)
+                        break;
 
         gtk_window_present (GTK_WINDOW (win));
 }
@@ -610,10 +610,18 @@ gxsm_app_open (GApplication  *application,
 
 #endif
 
+// #define GXSM_STARTUP_VERBOSE
+#ifdef GXSM_STARTUP_VERBOSE
+# define GXSM_STARTUP_MESSAGE_VERBOSE(ARGS...) g_message (ARGS)
+#else
+# define GXSM_STARTUP_MESSAGE_VERBOSE(ARGS...) ;
+#endif
+
 int main (int argc, char **argv)
 {
         GError *error = NULL;
-        GOptionContext *context;
+
+        GXSM_STARTUP_MESSAGE_VERBOSE ("GXSM3 main enter argc=%d", argc);
 
 #ifdef GXSM_GLOBAL_MEMCHECK
         mtrace(); /* Starts the recording of memory allocations and releases */
@@ -625,16 +633,16 @@ int main (int argc, char **argv)
 
         pcs_set_current_gschema_group ("core-init");
 
-        // uninstalled for testing only! Schema in workign dir
-        // g_setenv ("GSETTINGS_SCHEMA_DIR", ".", FALSE);
-        // --------------------------------------------------
+        GXSM_STARTUP_MESSAGE_VERBOSE ("GXSM3 g_option_context_new for comand line option parsing");
 
-        context = g_option_context_new ("List of loadable file(s) .nc, ...");
+        GOptionContext *context = g_option_context_new ("List of loadable file(s) .nc, ...");
         g_option_context_add_main_entries (context, gxsm_options, GETTEXT_PACKAGE);
         g_option_context_add_group (context, gtk_get_option_group (TRUE));
 
+        GXSM_STARTUP_MESSAGE_VERBOSE ("GXSM3 attempting g_option_context_parse on arguments.");
+
         if (!g_option_context_parse (context, &argc, &argv, &error)){
-                PI_DEBUG_GP (DBG_EVER, "option parsing failed: %s\n", error->message);
+                g_error ("GXSM3 comand line option parsing failed: %s", error->message);
                 exit (1);
         } else {
                 PI_DEBUG_GP (DBG_L1, "GXSM3 comandline option parsing results:\n");
@@ -648,13 +656,15 @@ int main (int argc, char **argv)
                 PI_DEBUG_GP (DBG_L1, "=> logging_level ........ = %d\n", logging_level);
         }
 
-        // ................**********************************************************************
         XSM_DEBUG(DBG_L2, "gxsm3_main g_application_run =========================================" );
-
-        return g_application_run (G_APPLICATION (gxsm3_app_new ()), argc, argv);
+        GXSM_STARTUP_MESSAGE_VERBOSE ("GXSM3: starting application module -- arguments left argc=%d", argc);
+        
+        int ret = g_application_run (G_APPLICATION (gxsm3_app_new ()), argc, argv);
 
 #ifdef GXSM_GLOBAL_MEMCHECK
        	muntrace(); /* End the recording of memory allocations and releases */
 #endif
 
+        GXSM_STARTUP_MESSAGE_VERBOSE ("GXSM3 main exit with ret=%d", ret);
+        return ret;
 }

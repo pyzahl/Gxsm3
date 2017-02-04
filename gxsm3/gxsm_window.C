@@ -57,7 +57,6 @@ gxsm3_app_window_init (Gxsm3appWindow *win)
 {
         //        Gxsm3appWindowPrivate *priv;
 
-        // ................**********************************************************************
         XSM_DEBUG(DBG_L2, "gxsm3_app_window_init ================================================" );
 
         //        priv = (Gxsm3appWindowPrivate *) gxsm3_app_window_get_instance_private (win);
@@ -109,15 +108,13 @@ gxsm3_app_window_new (Gxsm3app *app)
         return (Gxsm3appWindow *) g_object_new (GXSM3_APP_WINDOW_TYPE, "application", app, NULL);
 }
 
-void
+gboolean
 gxsm3_app_window_open (Gxsm3appWindow *win,
-		       GFile            *file)
+		       GFile          *file,
+                       gboolean in_active_channel)
 {
-        //        Gxsm3appWindowPrivate *priv;
+        gboolean ret=false;
         gchar *basename;
-        gboolean re_use = false;
-
-        //        priv = (Gxsm3appWindowPrivate *) gxsm3_app_window_get_instance_private (win);
         basename = g_file_get_basename (file);
 
         std::ifstream test;
@@ -126,15 +123,16 @@ gxsm3_app_window_open (Gxsm3appWindow *win,
         if (test.good ()) {
 
                 test.close ();
-                XSM_DEBUG(DBG_L2, "Attempt to load/import <" << basename << ">");
-
-                if (re_use)
-                        re_use = gapp->xsm->load (basename);
-                else
-                        if(!gapp->xsm->ActivateFreeChannel())
-                                // if no success, reuse this active scan next!
-                                re_use = gapp->xsm->load (basename);
+                XSM_DEBUG (DBG_L2, "Attempt to load/import <" << basename << ">");
+                
+                if (in_active_channel){
+                        gapp->xsm->load (basename);
+                        ret=true;
+                } else if (!gapp->xsm->ActivateFreeChannel()){ // returns 1 on error/no channel
+                        gapp->xsm->load (basename);
+                        ret=true;
+                }
         }
-
         g_free (basename);
+        return ret;
 }

@@ -275,12 +275,14 @@ Scan* Surface::NewScan(int vtype, int vflg, int ChNo, SCAN_DATA *vd){
 int Surface::ActivateFreeChannel(){
 	int Ch=0;
 	// auto activate Channel or use active one
-	if((Ch=FindChan(ID_CH_M_OFF)) < 0){
+	if ((Ch=FindChan (ID_CH_M_OFF)) < 0){
 		XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"View in new Channel",1);
 		return 1;
 	}
-	if(ActivateChannel(Ch))
+        
+	if (ActivateChannel(Ch))
 		return 1;
+
 	return 0;
 }
 
