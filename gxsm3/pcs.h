@@ -127,7 +127,8 @@ class Param_Control{
 	double Convert2Base (double x) { return unit->Usr2Base(x); };
 	double Convert2Usr (double x) { return unit->Base2Usr(x); };
 
-	virtual gint ShowMessage(const char *txt, const char *options=NULL, gint default_choice=0);
+	virtual void ShowInfo (const char *header, const char *txt);
+	virtual void ShowVerifySet (const char *header, const char *text);
 	virtual void Put_Value();
 	virtual void Set_Parameter(double value=0., int flg=FALSE, int usr2base=FALSE);
 	virtual gpointer GetEntryData(const gchar *txtid){ return NULL; };
@@ -262,7 +263,8 @@ class Gtk_EntryControl : public Param_Control{
 	void get_pcs_configuartion ();
 	void put_pcs_configuartion ();
 
-	virtual gint ShowMessage(const char *txt, const char *options=NULL, gint default_choice=0);
+	virtual void ShowInfo (const char *header, const char *text);
+	virtual void ShowVerifySet (const char *header, const char *text);
 	static int force_button_callback(gpointer ec_object, gpointer dialog);
 	static int cancel_button_callback(gpointer ec_object, gpointer dialog);
 	static int quit_callback(gpointer ec_object, gpointer dialog);
