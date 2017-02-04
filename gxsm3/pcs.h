@@ -105,6 +105,7 @@ class Param_Control{
 		unit = U;
 		Set_FromUsrValue(valusr);
 	};
+	virtual void Set_NewValue (gboolean set_new_value) {};
 	void Val(double *V);
 	void Val(unsigned long *V);
 	void Val(short *V);
@@ -122,13 +123,13 @@ class Param_Control{
 
 	double Get_dValue();
 	void Set_dValue(double nVal);
-	void Set_FromValue(double nVal);
+	gboolean Set_FromValue(double nVal);
 	void Set_FromUsrValue(double nVal){ Set_FromValue(unit->Usr2Base(nVal)); };
 	double Convert2Base (double x) { return unit->Usr2Base(x); };
 	double Convert2Usr (double x) { return unit->Base2Usr(x); };
 
 	virtual void ShowInfo (const char *header, const char *txt);
-	virtual void ShowVerifySet (const char *header, const char *text);
+	virtual gboolean ShowVerifySet (const char *header, const char *text);
 	virtual void Put_Value();
 	virtual void Set_Parameter(double value=0., int flg=FALSE, int usr2base=FALSE);
 	virtual gpointer GetEntryData(const gchar *txtid){ return NULL; };
@@ -264,11 +265,11 @@ class Gtk_EntryControl : public Param_Control{
 	void put_pcs_configuartion ();
 
 	virtual void ShowInfo (const char *header, const char *text);
-	virtual void ShowVerifySet (const char *header, const char *text);
+	virtual gboolean ShowVerifySet (const char *header, const char *text);
 	static int force_button_callback(gpointer ec_object, gpointer dialog);
 	static int cancel_button_callback(gpointer ec_object, gpointer dialog);
 	static int quit_callback(gpointer ec_object, gpointer dialog);
-	void Set_NewValue(bool set_new_value);
+	virtual void Set_NewValue (gboolean set_new_value);
 
 	GtkAdjustment* GetAdjustment(){ return adj; };
 	void SetExtraWidget(GtkWidget *e){ extra = e; };
