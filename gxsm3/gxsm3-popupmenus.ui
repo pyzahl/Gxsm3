@@ -772,6 +772,10 @@
 	  <attribute name="action">win.opt-Y-ft</attribute>
 	</item>
 	<item>
+	  <attribute name="label" translatable="yes">Auto Decimate</attribute>
+	  <attribute name="action">win.opt-decimate</attribute>
+	</item>
+	<item>
 	  <attribute name="label" translatable="yes">Lowpass off</attribute>
 	  <attribute name="action">win.opt-Y-lowpass</attribute>
 	  <attribute name="target">lp-off</attribute>

@@ -56,6 +56,7 @@ typedef struct{
 #define PROFILE_MODE_YLOWPASS (1<<15)
 #define PROFILE_MODE_HEADER   (1<<16)
 #define PROFILE_MODE_STICS    (1<<17)
+#define PROFILE_MODE_DECIMATE (1<<18)
 
 #define PROFILE_SCALE_XAUTO   (1<<0)
 #define PROFILE_SCALE_YAUTO   (1<<1)
@@ -83,16 +84,16 @@ class ProfileElement{
 		        UNREF_DELETE_CAIRO_ITEM (pathitem[i], canvas);
 	};
 
-        void calc_decimation ();
+        void calc_decimation (gint64 ymode);
         void get_decimation (gint &dl, gint &nd) { dl=dec_len; nd=n_dec; };
 	int GetNy(){ return scan->mem2d->GetNy(); };
 	void SetY(int Yy=0){ yy=Yy; };
 	void SetLastY(){ yy=scan->mem2d->GetNy()-1; };
-	void SetMode(long Mode);
-        gint GetMode() { return mode; };
+	void SetMode(gint64 mode);
+        gint64 GetMode() { return mode; };
 	void SetOptions(long Flg);
   
-	double calc (int ymode, int id, int binary_mask, double y_offset, GtkWidget *canvas);
+	double calc (gint64 ymode, int id, int binary_mask, double y_offset, GtkWidget *canvas);
 	void   draw (cairo_t* cr);
         void   stream_set (std::ofstream &ofs, int id=0);
 	void   update (GtkWidget *canvas, int id=0, int style=CAIRO_LINE_SOLID);
@@ -117,7 +118,7 @@ class ProfileElement{
 		return 0;
 	};
 
-	gchar *GetInfo(int i, int ymode=0){
+	gchar *GetInfo(int i, gint64 ymode=0){
 		double x,y;
 		x=y=0.;
 		GetCurXYc (&x, &y, i);
@@ -191,7 +192,7 @@ class ProfileElement{
 		else return 0;
 	};
 
-	gchar *GetDeltaInfo(int i, int j, int ymode=0);
+	gchar *GetDeltaInfo(int i, int j, gint64 ymode=0);
 	Scan *get_scan () { return scan; };
 	const gchar *get_color () { return color; };
 
@@ -210,8 +211,8 @@ class ProfileElement{
 	Scan *scan;
 	Scan *psd_scan;
 	gchar *color;
-	long flg;
-	long mode;
+	gint64 flg;
+	gint64 mode;
 };
 
 class ProfileControl : public AppBase, public LineProfile1D{
@@ -245,7 +246,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	static void file_activate_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void file_close_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
-        void settings_adjust_mode_callback (GSimpleAction *action, GVariant *parameter, gint flg);
+        void settings_adjust_mode_callback (GSimpleAction *action, GVariant *parameter, gint64 flg);
 
 	static void logy_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void linreg_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
@@ -253,6 +254,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	static void ydiff_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void ylowpass_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void ylowpass_cycle_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	static void decimate_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void settings_xgrid_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void settings_ygrid_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void settings_notics_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
@@ -344,9 +346,9 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	void SetYlabel(const gchar *ylab = NULL);
 	void SetTitle(const gchar *tit, gboolean append=FALSE);
 
-	void SetMode(long flg) { mode=flg; };
-        gint GetMode() { return mode; };
-	void SetScaling(long flg) { scaleing = flg; };
+	void SetMode(gint64 m) { mode=m; };
+        gint64 GetMode() { return mode; };
+	void SetScaling(gint64 sm) { scaleing = sm; };
 
 	void scan2canvas(double sx, double sy, double &cx, double &cy){
 		cx = (sx-xmin)*cxwidth/xrange;
@@ -456,7 +458,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	int CursorsIdx[2];
 	VObject *cursor_bound_object;
 
-	long mode, scaleing;
+	gint64 mode, scaleing;
 
 	gchar *xlabel, *xlabel0;
 	gchar *ylabel, *ylabel0;
