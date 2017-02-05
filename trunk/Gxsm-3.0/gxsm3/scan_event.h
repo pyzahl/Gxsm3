@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -22,8 +24,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #ifndef __SCAN_EVENT_H
 #define __SCAN_EVENT_H
@@ -98,6 +98,10 @@ public:
 	virtual double get (int n, int j){ 
 		if (j < 0)
 			return (double)n;
+		if (j >= chunk_size)
+                        return 0.;
+                if (n >= num_sets)
+                        return 0.;
 		return g_array_index (data, double, n*chunk_size+j); 
 	};
 	virtual void print ();
