@@ -83,16 +83,6 @@ using namespace std;
                    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (TOG), (DEFAULT)?1:0); \
         }while(0)
 
-//                   g_signal_connect (TOG, "toggled",G_CALLBACK(CB_FUNC), this);
-// obsolete:
-//                gtk_style_context_get_background_color (gtk_widget_get_style_context (GTK_WIDGET (VAR)), GTK_STATE_FLAG_INSENSITIVE, &color); 
-//                gtk_render_background (gtk_widget_get_style_context (GTK_WIDGET (VAR)), GTK_STATE_FLAG_INSENSITIVE, &color); 
-
-/* in SETUP_ENTRY
-                GdkRGBA color; 
-                gtk_style_context_get_background_color (gtk_widget_get_style_context (GTK_WIDGET (VAR)), GTK_STATE_FLAG_INSENSITIVE, &color); 
-		gtk_widget_override_background_color (GTK_WIDGET (VAR), GTK_STATE_FLAG_NORMAL, &color); 
-*/
 #define SETUP_ENTRY(VAR, TXT)			\
 	do {\
 		gtk_entry_set_text (GTK_ENTRY (VAR), TXT); \
