@@ -610,6 +610,7 @@ void sranger_mk2_hwi_spm::tip_to_origin(double x, double y){
         sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
         CONV_32 (dsp_scan.pflg);
         if (dsp_scan.pflg){
+                gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (scanning/moving in progress): skipping.", 3);
                 g_warning ("sranger_mk2_hwi_spm::tip_to_origin -- scanning!  [%x] -- skipping.", dsp_scan.pflg);
                 return;
         }
@@ -618,6 +619,7 @@ void sranger_mk2_hwi_spm::tip_to_origin(double x, double y){
         sr_read  (dsp, &dsp_probe, sizeof (dsp_probe));
         CONV_32 (dsp_probe.pflg);
         if (dsp_probe.pflg){
+                gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (probe active): skipping.", 3);
                 g_warning ("sranger_mk2_hwi_spm::tip_to_origin -- probe active!  [%x] -- skipping.", dsp_probe.pflg);
                 return;
         }
@@ -832,6 +834,9 @@ void sranger_mk2_hwi_spm::MovetoXY(double x, double y){
 	// only if not scan in progress!
 	if (ScanningFlg == 0){ 
 		if (x != old_x || y != old_y){
+                        gchar *tmp=g_strdup_printf ("%10.4f %10.4f requested", x/(1<<16), y/(1<<16));
+                        gapp->monitorcontrol->LogEvent ("MovetoSXY", tmp, 3);
+                        g_free (tmp);
 		        const double Q16 = 1<<16;
 			old_x = x;
 			old_y = y;

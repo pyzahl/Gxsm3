@@ -17,8 +17,8 @@ if c < 2:
     print ("you can set the value in the window above")
     # you could set Script_Control like any other variable - see below
 else:
-    gxsm.set ("RangeX","400")
-    gxsm.set ("RangeY","400")
+    gxsm.set ("RangeX","200")
+    gxsm.set ("RangeY","200")
     gxsm.set ("PointsX","400")
     gxsm.set ("PointsY","400")
     gxsm.set ("dsp-fbs-bias","0.1")
@@ -36,19 +36,38 @@ else:
         while c > 0 and vp > 0:
             c = gxsm.get("script-control")
             x=gxsm.rtquery("s")
-    	    vp=int(x[0])&8
+    	    vp=int(x[0])&8 # VP COMPLETE?
             sys.stdout.flush()
             print ("{:%Y-%m-%d %H:%M:%S} : waiting...".format(datetime.datetime.now()))
-    	    gxsm.sleep(10)
+    	    gxsm.sleep(5)
 	print('{:%Y-%m-%d %H:%M:%S} : Script DSP_VP_EXECUTE'.format(datetime.datetime.now()))
         print ("start action: DSP_VP_EXECUTE")
         sys.stdout.flush()
         gxsm.set ("ScanX", str(5*((c%20)-10)))
+        x=gxsm.rtquery("s")
+	vp=int(x[0])&8
+        c = gxsm.get("script-control")
+        while c > 0 and vp > 0:
+            c = gxsm.get("script-control")
+            x=gxsm.rtquery("s")
+    	    vp=int(x[0])&2  # SCAN POS COMPLETE?
+            sys.stdout.flush()
+            print ("{:%Y-%m-%d %H:%M:%S} : waiting...".format(datetime.datetime.now()))
+    	    gxsm.sleep(5)
         gxsm.set ("ScanY", str(5*((int((c%200)/20))-10)))
-        gxsm.sleep(200)
-        gxsm.set ("dsp-IV-Points00",str(500+10*c))
+        x=gxsm.rtquery("s")
+	vp=int(x[0])&8
+        c = gxsm.get("script-control")
+        while c > 0 and vp > 0:
+            c = gxsm.get("script-control")
+            x=gxsm.rtquery("s")
+    	    vp=int(x[0])&2  # SCAN POS COMPLETE?
+            sys.stdout.flush()
+            print ("{:%Y-%m-%d %H:%M:%S} : waiting...".format(datetime.datetime.now()))
+    	    gxsm.sleep(5)
+        # gxsm.set ("dsp-IV-Points00",str(500+10*c))
 	if c % 2:
-	        gxsm.action ("DSP_VP_IV_EXECUTE")
+	       gxsm.action ("DSP_VP_IV_EXECUTE")
 	else:
 	        gxsm.action ("DSP_VP_LM_EXECUTE")
 	cc = gxsm.get("script-control")
