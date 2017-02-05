@@ -120,13 +120,14 @@ DSPMoverControl::DSPMoverControl ()
 	XsmRescourceManager xrm("sranger_mk2_hwi_control");
 
         hwi_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT".hwi.sranger-mk23-mover");
+        mover_param.AFM_GPIO_setting = g_settings_get_int (hwi_settings, "mover-gpio-last");
        
 	PI_DEBUG (DBG_L2, "DSPMoverControl::DSPMoverControl xrm read mk2 mover settings");
 
 	xrm.Get("AFM_Amp", &mover_param.AFM_Amp, "1");
 	xrm.Get("AFM_Speed", &mover_param.AFM_Speed, "3");
 	xrm.Get("AFM_Steps", &mover_param.AFM_Steps, "10");
-	xrm.Get("AFM_GPIO_setting", &mover_param.AFM_GPIO_setting, "0");
+	// xrm.Get("AFM_GPIO_setting", &mover_param.AFM_GPIO_setting, "0");
 
   	// defaults presets storage for "Besocke" style coarse motions
 	// [0..5] Besocke XY, Besocke Rotation, Besocke PSD, Besocke Lens, Auto, Stepper Motor
@@ -1102,6 +1103,7 @@ void DSPMoverControl::update(){
 
 void DSPMoverControl::updateDSP(int sliderno){
 	PI_DEBUG (DBG_L2, "Hallo DSP ! Mover No:" << sliderno );
+
 	if (DSPPACClass){
 		if (sliderno == 200){
 			switch (mover_param.MOV_output){
@@ -1140,6 +1142,7 @@ void DSPMoverControl::updateDSP(int sliderno){
  			        mover_param.AFM_GPIO_setting = mover_param.GPIO_scan;
 			}
 		}
+                g_settings_set_int (hwi_settings, "mover-gpio-last", mover_param.AFM_GPIO_setting);
 		return;
 	}
 
@@ -1191,6 +1194,7 @@ void DSPMoverControl::updateDSP(int sliderno){
 		        mover_param.AFM_GPIO_setting = mover_param.AFM_GPIO_usr_setting[sliderno];
 		}
 	}
+        g_settings_set_int (hwi_settings, "mover-gpio-last", mover_param.AFM_GPIO_setting);
 }
 
 int DSPMoverControl::config_mode(GtkWidget *widget, DSPMoverControl *dspc){
