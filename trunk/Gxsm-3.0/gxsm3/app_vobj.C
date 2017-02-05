@@ -851,12 +851,12 @@ void VObject::build_properties_view (gboolean add){
         }
 
         GtkWidget *current_view = gtk_grid_get_child_at (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), 1,1);
-
         if (current_view != properties_bp->grid){
-                VObject *vcc = (VObject*)g_object_get_data  (G_OBJECT (current_view), "VOBJECT");
-                if (vcc)
-                        vcc->destroy_properties_bp ();
-
+                if (current_view){
+                        VObject *vcc = (VObject*)g_object_get_data  (G_OBJECT (current_view), "VOBJECT");
+                        if (vcc)
+                                vcc->destroy_properties_bp ();
+                }
                 if (add){
                         gtk_grid_attach (GTK_GRID (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->side_pane_tab_objects), properties_bp->grid, 1,1, 1,1);
                 }
