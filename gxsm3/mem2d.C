@@ -2169,8 +2169,8 @@ void Mem2d::AutoHistogrammEvalMode (Point2D *p1, Point2D *p2, int delta, double 
 	}
 	else{
 		nx0=ny0=0;
-		nx=data->GetNy()-1; 
-		ny=data->GetNx()-1;
+		nx=data->GetNx()-1; 
+		ny=data->GetNy()-1;
 	}
 	
 	if (nx0 > (nx-delta) || ny0 > (ny-delta))
