@@ -38,7 +38,6 @@
 #define VIEW_PALETTE  0x10
 #define VIEW_INFO     0x20
 #define VIEW_TICKS    0x40
-#define VIEW_TOLERANT 0x80
 
 #define SCAN_V_DIRECT       0x0001
 #define SCAN_V_QUICK        0x0002
@@ -49,7 +48,7 @@
 #define SCAN_V_PLANESUB     0x0040
 #define SCAN_V_HILITDIRECT  0x0080
 #define SCAN_V_SCALE_HILO   0x1000 // default
-#define SCAN_V_SCALE_SMART  0x1001 // tolerant mode, use histogram
+#define SCAN_V_SCALE_SMART  0x2000 // tolerant mode, use histogram
 
 
 #define MODE_LINE      0x01

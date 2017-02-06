@@ -156,7 +156,7 @@ int Surface::SetView(int Channel, int choice){
 
 void Surface::AutoDisplay(double hi, double lo){
 	if (ActiveScan){
-		ActiveScan->AutoDisplay(hi, lo, xsmres.HiLoDelta);	
+		ActiveScan->AutoDisplay(hi, lo, xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);	
 		SetVM ();
 		gapp->spm_update_all ();
 	}
@@ -168,7 +168,7 @@ int Surface::SetVM (int mode){
 		data.display.ViewFlg = mode;
 
 	if (ActiveScan && redrawflg)
-		ActiveScan->SetVM (data.display.ViewFlg, &data, xsmres.HiLoDelta);
+		ActiveScan->SetVM (data.display.ViewFlg, &data, xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);
 	
 	return 0;
 }

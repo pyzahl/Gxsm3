@@ -129,6 +129,7 @@ typedef struct{
 	float nNewton2Volt;
 	float dHertz2Volt;
 	int   HiLoDelta;
+	float SmartHistEpsilon;
 	// Adjustment: Limits, Step (Min,Max,Step,Page)
 	float ProfileLogLimit;
 	gchar pidsrc[PIDCHMAX][CHLABELLEN];

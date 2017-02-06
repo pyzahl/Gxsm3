@@ -299,11 +299,11 @@ void Scan::realloc_pkt2d(int n){
 	}
 }
 
-void Scan::AutoDisplay(double hi, double lo, int Delta){
+void Scan::AutoDisplay(double hi, double lo, int Delta, double sm_eps){
         GXSM_LOG_ANY_ACTION ("AutoDisp_callback", "in");
 
 	if (hi == 0. && lo == 0.){
-		SetVM (-2, NULL, Delta);
+		SetVM (-2, NULL, Delta, sm_eps);
 
 		// step 2: calculate contrast and bright from Zmin, Zrange
 		mem2d->AutoDataSkl (&vdata->display.contrast, &vdata->display.bright);
@@ -334,7 +334,7 @@ void Scan::AutoDisplay(double hi, double lo, int Delta){
         GXSM_LOG_ANY_ACTION ("AutoDisp_callback", "out");
 }
 
-int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta){
+int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta, double sm_eps){
 	if (vflg > 0)
 		data.display.ViewFlg=vflg;
 
@@ -369,7 +369,7 @@ int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta){
 			}
 			if (success){
 				if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
-					mem2d->AutoHistogrammEvalMode (&Pkt2d[0], &Pkt2d[1], Delta);
+					mem2d->AutoHistogrammEvalMode (&Pkt2d[0], &Pkt2d[1], Delta, sm_eps);
 				else{
 					if (data.display.ViewFlg & SCAN_V_LOG){
 						double hi,lo;
@@ -380,7 +380,7 @@ int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta){
 				}
 			} else {
 				if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
-					mem2d->AutoHistogrammEvalMode (NULL, NULL, Delta);
+					mem2d->AutoHistogrammEvalMode (NULL, NULL, Delta, sm_eps);
 				else{
 					if (data.display.ViewFlg & SCAN_V_LOG){
 						double hi,lo;
@@ -429,7 +429,7 @@ int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta){
 		}
 		if (success){
                         if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
-				mem2d->AutoHistogrammEvalMode (&Pkt2d[0], &Pkt2d[1], Delta);
+				mem2d->AutoHistogrammEvalMode (&Pkt2d[0], &Pkt2d[1], Delta, sm_eps);
 			else{
 				if (data.display.ViewFlg & SCAN_V_LOG){
 					double hi,lo;
@@ -440,7 +440,7 @@ int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta){
 			}
 		} else {
                         if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
-				mem2d->AutoHistogrammEvalMode (NULL, NULL, Delta);
+				mem2d->AutoHistogrammEvalMode (NULL, NULL, Delta, sm_eps);
 			else{
 				if (data.display.ViewFlg & SCAN_V_LOG){
 					double hi,lo;

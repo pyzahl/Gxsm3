@@ -108,6 +108,13 @@
       <summary>PCS Remote-ID: 'Counter', Default/U: 00000       </summary>
       <description>pcs0000, PCS Remote-ID: 'Counter', Default/U: 00000      , PCS has no adjustment </description>
     </key>
+    
+    <key name="auto-save-counter-i" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'auto-save-counter-i', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'auto-save-counter-i', Default/U: 0   , Adjustment PCS Name: 'auto-save-counter-i' </description>
+    </key>
+
   </schema>
 
 </schemalist>
