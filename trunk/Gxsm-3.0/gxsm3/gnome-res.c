@@ -1071,9 +1071,9 @@ void gnome_res_make_resource_variable_edit_field (GnomeResEntryInfoType *res,
         VarName = gtk_label_new (res->path);
         gtk_widget_set_size_request (VarName, PREF_VAR_USIZE, -1);
         gtk_widget_show (VarName);
-        gtk_label_set_justify (GTK_LABEL (VarName), GTK_JUSTIFY_LEFT);
-        //        gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-        //        gtk_misc_set_padding (GTK_MISC (VarName), PREF_VAR_PADDING, 0);
+        gtk_label_set_xalign (GTK_LABEL (VarName), 1.0);
+        gtk_widget_set_margin_start (GTK_WIDGET (VarName), 2);
+        gtk_widget_set_margin_end (GTK_WIDGET (VarName), 5);
 	
         gtk_grid_attach (GTK_GRID (grid), VarName, 0, col, 1, 1);
 	
