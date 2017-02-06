@@ -434,7 +434,7 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 		      << " nas:  " << nas );
 
 	if (current_i > 2){
-                if (last_current_i > current_i){
+                if (last_current_i >= current_i){
                         pc->SetScaling (PROFILE_SCALE_XAUTO | PROFILE_SCALE_YAUTO);
                 } else {
                         pc->SetScaling (PROFILE_SCALE_XAUTO | PROFILE_SCALE_YEXPAND);

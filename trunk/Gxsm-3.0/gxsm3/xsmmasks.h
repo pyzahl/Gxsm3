@@ -47,6 +47,7 @@
 #define SCAN_V_DIFFERENTIAL 0x0020
 #define SCAN_V_PLANESUB     0x0040
 #define SCAN_V_HILITDIRECT  0x0080
+#define SCAN_V_MASK         0x0FFF
 #define SCAN_V_SCALE_HILO   0x1000 // default
 #define SCAN_V_SCALE_SMART  0x2000 // tolerant mode, use histogram
 
