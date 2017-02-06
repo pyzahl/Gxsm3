@@ -72,6 +72,7 @@ public:
   //  void SetRedraw(int flg=TRUE){ if(redrawflg=flg) SetVM(); };
   void SetRedraw(int flg=TRUE){ redrawflg=flg; };
   int  SetVM(int mode=0);
+  int  GetVM();
   Scan* NewScan(int vtype, int vflg, int ChNo, SCAN_DATA *vd);
   int  ActivateFreeChannel();
   int  ActivateChannel(int NewActiveChannel);

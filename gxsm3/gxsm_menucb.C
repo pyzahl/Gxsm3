@@ -174,33 +174,6 @@ void App::view_autodisp_callback (GSimpleAction *simple, GVariant *parameter, gp
 	return;
 }
 
-void App::view_autozoom_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-	if(!gapp) return;
-#if 0
-        //GTK3QQQ
-	if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (widget))){
-		SET_FLAG(gapp->xsm->ZoomFlg, VIEW_ZOOM);
-	}else{
-		CLR_FLAG(gapp->xsm->ZoomFlg, VIEW_ZOOM);
-	}
-#endif
-	return;
-}
-
-void App::view_tolerant_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-	if(!gapp) return;
-#if 0
-        //GTK3QQQ
-	if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (widget))){
-		SET_FLAG(gapp->xsm->ZoomFlg, VIEW_TOLERANT);
-	}else{
-		CLR_FLAG(gapp->xsm->ZoomFlg, VIEW_TOLERANT);
-	}
-#endif
-	return;
-}
-
-
 void App::view_zoom_in_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	gapp->xsm->MathOperation(ZoomInScan);
 	return;

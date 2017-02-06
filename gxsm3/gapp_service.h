@@ -117,6 +117,8 @@ class BuildParam{
                 input_nx=1;
                 input_width_chars=-1;
                 label_width_chars=-1;
+                set_ec_label_xalign ();
+                set_ec_label_margins ();
                 no_spin = false;
                 if (build_grid)
                         grid = build_grid;
@@ -162,13 +164,16 @@ class BuildParam{
 
         void new_grid_with_frame (const gchar *frame_title, gint fwx=1, gint fwy=1) {
                 frame = gtk_frame_new (N_(frame_title));   
+                gtk_frame_set_label_align (GTK_FRAME (frame), 0.02, 0.5);
                 grid_add_widget (frame, fwx, fwy);
                 new_grid ();
                 gtk_container_add (GTK_CONTAINER (frame), grid);
         };
 
-        GtkWidget* grid_add_label (const gchar* labeltxt, const char *tooltip=NULL, gint lwx=1){
+        GtkWidget* grid_add_label (const gchar* labeltxt, const char *tooltip=NULL, gint lwx=1, gfloat xalign=0.5){
                 label = gtk_label_new (N_(labeltxt));
+                if (fabs (xalign-0.5) > 0.01)
+                        gtk_label_set_xalign (GTK_LABEL (label), xalign);
                 if (tooltip)
                         gtk_widget_set_tooltip_text(label, tooltip);
                 if (label_width_chars > 0)
@@ -182,7 +187,10 @@ class BuildParam{
 
                 if (labeltxt){
                         label = gtk_label_new (labeltxt);
-                        gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_RIGHT);
+                        gtk_label_set_xalign (GTK_LABEL (label), ec_label_xalign);
+                        gtk_widget_set_margin_start (GTK_WIDGET (label), margin_start);
+                        gtk_widget_set_margin_end (GTK_WIDGET (label), margin_end);
+                        gtk_widget_set_halign (GTK_WIDGET (label), GTK_ALIGN_END);
                         grid_add_widget (label, lwx);
                         if (label_width_chars > 0)
                                 gtk_label_set_width_chars (GTK_LABEL (label), label_width_chars);
@@ -216,7 +224,9 @@ class BuildParam{
                 if (labeltxt){
                         label = gtk_label_new (labeltxt);
                         grid_add_widget (label, lwx);
-                        gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_RIGHT);
+                        gtk_label_set_xalign (GTK_LABEL (label), ec_label_xalign);
+                        gtk_widget_set_margin_start (GTK_WIDGET (label), margin_start);
+                        gtk_widget_set_margin_end (GTK_WIDGET (label), margin_end);
                         if (label_width_chars > 0)
                                 gtk_label_set_width_chars (GTK_LABEL (label), label_width_chars);
                 }
@@ -567,6 +577,9 @@ class BuildParam{
                         remote_prefix = g_strdup (new_remote_prefix);
         };
         
+        void set_ec_label_xalign (gfloat xalign=1.0) { ec_label_xalign = xalign; };
+        void set_ec_label_margins (gint mstart=2, gint mend=5) { margin_start=mstart; margin_end=mend; };
+
         GtkWidget *grid;
         int x,y, wx, wy;
         int input_nx;
@@ -605,6 +618,8 @@ class BuildParam{
 private:
         GtkWidget *grid_push;
         gint xy_push[4];
+        gfloat ec_label_xalign;
+        gint   margin_start, margin_end;
 };
 
 #define MYGTK_LSIZE 100

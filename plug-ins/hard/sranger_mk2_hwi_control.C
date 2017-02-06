@@ -1607,7 +1607,7 @@ DSPControl::DSPControl () {
         dsp_bp->start_notebook_tab ("Advanced", "tab-advanced", NOTEBOOK_TAB_ADVANCED, hwi_settings);
         dsp_bp->new_grid_with_frame ("SR-FB Characteristics");
 
-	dsp_bp->grid_add_label ("FB Switch");
+	dsp_bp->grid_add_label ("Z-Control:");
 	// read current FB (MD_PID) state
 	gint32 dsp_state_mode;
 	sranger_common_hwi->read_dsp_state (dsp_state_mode);
@@ -1979,35 +1979,8 @@ DSPControl::DSPControl () {
 	dsp_bp->grid_add_ec ("# probes", Unity, &FZ_repetitions, 1, 1000, "5.3g", "Z-Reps");
         dsp_bp->new_line ();
 
-	int kk=4;
-	if (sranger_common_hwi->check_pac() != -1){
-		kk = 1;
-		dsp_bp->grid_add_label ("Limiter on");
-		dsp_bp->grid_add_probe_source_signal_options (5, probe_source[5], this);
-
-                g_signal_connect (G_OBJECT (wid), "changed",
-                                  G_CALLBACK (DSPControl::callback_change_FZ_ref),
-                                  this);
-	} else {
-		dsp_bp->grid_add_label ("Limiter");
-	}
-
-	GtkWidget* FZ_ref_option_menu = gtk_combo_box_text_new ();
-	dsp_bp->grid_add_widget (FZ_ref_option_menu);
-                
-        for (i = -kk; i <= kk; i++) {
-                gchar *tmp = i==0 ? g_strdup("OFF") : kk == 1? g_strdup (i>0? "<":">") : g_strdup_printf ("%d: Lim IN%d %s", i, abs(i)-1, i>0? ">":"<");
-                gchar *id = g_strdup_printf ("%d", 4+i);
-                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (FZ_ref_option_menu), id, N_(tmp));
-                g_free (id);
-                g_free (tmp);
-        }
-        gtk_combo_box_set_active (GTK_COMBO_BOX (FZ_ref_option_menu), 4+FZ_limiter_ch);
-
-        dsp_bp->new_line ();
-	dsp_bp->grid_add_ec ("Lim Val Up", Volt, &FZ_limiter_val[0], -10.0, 10.0, "5.3g", 0.1, 1.0, "VP-Lim-Val-Up");
-	dsp_bp->grid_add_ec ("Lim Val Dn", Volt, &FZ_limiter_val[1], -10.0, 10.0, "5.3g", 0.1, 1.0, "VP-Lim-Val-Dn");
-
+        // Limiter -- moved to Graphs as more generic
+        
         dsp_bp->new_line ();
 	dsp_bp->grid_add_ec ("Slope Ramp", Speed, &FZ_slope_ramp, 0.1,10000.0, "5.3g", 1., 10., "Z-Slope-Ramp");
         dsp_bp->new_line ();
@@ -2475,12 +2448,12 @@ DSPControl::DSPControl () {
         dsp_bp->new_line ();
 	dsp_bp->grid_add_ec ("Repetitions", Unity, &TK_repetitions, 1, 32000, "5g", "TK-Reps");
         dsp_bp->new_line ();
-	dsp_bp->grid_add_ec ("Mode", Unity, &TK_mode, -1, 1, "5g", "TK-Mode");
+	dsp_bp->grid_add_ec ("Up/Down hill +/-", Unity, &TK_mode, -1, 1, "5g", "TK-Mode");
         //       dsp_bp->new_line ();
         //	dsp_bp->grid_add_ec ("TK-Ref", Unity, OUT_OF_RANGE, &TK_ref, 0, 3, "1g", 1., 1.,  RemoteEntryList);
 
 	if (sranger_common_hwi->check_pac() != -1) {
-		dsp_bp->grid_add_label ("mode=-1: follow uphill.  Tracker on Signal:");
+		dsp_bp->grid_add_label ("Tracker on Signal:");
 		dsp_bp->grid_add_probe_source_signal_options (6, probe_source[6], this);
 	} else {            
 		GtkWidget* TK_ref_option_menu = gtk_combo_box_text_new ();
@@ -2570,7 +2543,9 @@ DSPControl::DSPControl () {
 
         dsp_bp->new_line (0, 2);
         dsp_bp->grid_add_label ("Bias Modulation Amp");
+        dsp_bp->grid_add_label ("");
         dsp_bp->grid_add_label ("Z Modulation Amp");
+        dsp_bp->grid_add_label ("");
         dsp_bp->grid_add_label ("Modulation Frequency");
         dsp_bp->new_line ();
 
@@ -2584,6 +2559,7 @@ DSPControl::DSPControl () {
         AC_frq_ec = dsp_bp->ec;
         dsp_bp->new_line (0, 2);
         dsp_bp->grid_add_label ("Source Signal");
+        dsp_bp->grid_add_label ("");
         dsp_bp->grid_add_label ("Phase");
         dsp_bp->new_line ();
 	if (DSPPACClass) {
@@ -2609,7 +2585,9 @@ DSPControl::DSPControl () {
         dsp_bp->set_configure_list_mode_on ();
         dsp_bp->new_line (0, 2);
         dsp_bp->grid_add_label ("Cycles");
+        dsp_bp->grid_add_label ("");
         dsp_bp->grid_add_label ("Sweep Span");
+        dsp_bp->grid_add_label ("");
         dsp_bp->grid_add_label ("Sweep Points");
         dsp_bp->new_line ();
 	dsp_bp->grid_add_ec ("Avg Cycles", Unity, &AC_lockin_avg_cycels, 1, 128, "5g", "LCK-AC-avg-Cycles");
@@ -2741,22 +2719,28 @@ DSPControl::DSPControl () {
 				    "Time", "XS", "YS", "ZS", "U", "PHI", "SEC",
 				    NULL
 	};
-	
-        dsp_bp->grid_add_label ("Source", "Check column to activate channel", 2);
+        
+        dsp_bp->grid_add_label ("Source", "Check column to activate channel", 2, 0.);
         dsp_bp->grid_add_label ("X", "Check column to plot channel on X axis.", 1);
         dsp_bp->grid_add_label ("Y", "Check column to plot channel on Y axis.", 1);
         dsp_bp->grid_add_label ("Avg", "Check column to plot average of all spectra", 1);
         dsp_bp->grid_add_label ("Sec", "Check column to show all sections.", 1);
-        dsp_bp->grid_add_label (" --- ", NULL, 5);
+        GtkWidget *sep = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
+        gtk_widget_set_size_request (sep, 5, -1);
+        dsp_bp->grid_add_widget (sep, 5);
+        //dsp_bp->grid_add_label (" --- ", NULL, 5);
 
-        dsp_bp->grid_add_label ("Source", "Check column to activate channel", 2);
+        dsp_bp->grid_add_label ("Source", "Check column to activate channel", 2, 0.);
         dsp_bp->grid_add_label ("X", "Check column to plot channel on X axis.", 1);
         dsp_bp->grid_add_label ("Y", "Check column to plot channel on Y axis.", 1);
         dsp_bp->grid_add_label ("Avg", "Check column to plot average of all spectra", 1);
         dsp_bp->grid_add_label ("Sec", "Check column to show all sections.", 1);
-        dsp_bp->grid_add_label (" --- ", NULL, 5);
+        sep = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
+        gtk_widget_set_size_request (sep, 5, -1);
+        dsp_bp->grid_add_widget (sep, 5);
+        //dsp_bp->grid_add_label (" --- ", NULL, 5);
 
-        dsp_bp->grid_add_label ("Source", "Check column to activate channel", 2);
+        dsp_bp->grid_add_label ("Source", "Check column to activate channel", 2, 0.);
         dsp_bp->grid_add_label ("X", "Check column to plot channel on X axis.", 1);
         dsp_bp->grid_add_label ("Y", "Check column to plot channel on Y axis.", 1);
         dsp_bp->grid_add_label ("Avg", "Check column to plot average of all spectra", 1);
@@ -2784,7 +2768,7 @@ DSPControl::DSPControl () {
                 dsp_bp->set_xy (c, r);
 
                 // Source
-                dsp_bp->grid_add_check_button (" ", NULL, 1,
+                dsp_bp->grid_add_check_button ("", NULL, 1,
                                                GCallback (change_source_callback), this,
                                                Source, (((int) msklookup[i]) & 0xfffffff)
                                                );
@@ -2792,7 +2776,7 @@ DSPControl::DSPControl () {
                 if (m >= 0 && sranger_common_hwi->check_pac() != -1){
                         dsp_bp->grid_add_probe_source_signal_options (m, probe_source[m], this);
                 } else { // MK2: fixed assignment
-                        dsp_bp->grid_add_label (lablookup[i]);
+                        dsp_bp->grid_add_label (lablookup[i], NULL, 1, 0.);
                 }
                 g_object_set_data (G_OBJECT(dsp_bp->button), "Source_Channel", GINT_TO_POINTER ((int) msklookup[i])); 
                 g_object_set_data (G_OBJECT(dsp_bp->button), "VPC", GINT_TO_POINTER (i)); 
@@ -2834,12 +2818,49 @@ DSPControl::DSPControl () {
                 // dsp_bp->grid_add_check_button_graph_matrix(" ", (int) (P_SOURCE_MSK | msklookup[i]), -1, i, this);
                 // dsp_bp->grid_add_check_button_graph_matrix(" ", (int) (A_SOURCE_MSK | msklookup[i]), -1, i, this);
                 // dsp_bp->grid_add_check_button_graph_matrix(" ", (int) (S_SOURCE_MSK | msklookup[i]), -1, i, this);
+                if (c < 23){
+                        sep = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
+                        gtk_widget_set_size_request (sep, 5, -1);
+                        dsp_bp->grid_add_widget (sep);
+                }
 	}
 
         
         dsp_bp->pop_grid ();
         dsp_bp->new_line ();
-        dsp_bp->new_grid_with_frame ("Trigger Signal Setup and Plot Mode");
+        dsp_bp->new_grid_with_frame ("For all Modes: Limiter Signal, Trigger Signal and Plot Mode Configuration");
+
+	int kk=4;
+	if (sranger_common_hwi->check_pac() != -1){
+		kk = 1;
+		dsp_bp->grid_add_label ("Limiter on");
+		dsp_bp->grid_add_probe_source_signal_options (5, probe_source[5], this);
+
+                g_signal_connect (G_OBJECT (wid), "changed",
+                                  G_CALLBACK (DSPControl::callback_change_FZ_ref),
+                                  this);
+	} else {
+		dsp_bp->grid_add_label ("Limiter");
+	}
+
+	GtkWidget* FZ_ref_option_menu = gtk_combo_box_text_new ();
+	dsp_bp->grid_add_widget (FZ_ref_option_menu);
+                
+        for (i = -kk; i <= kk; i++) {
+                gchar *tmp = i==0 ? g_strdup("OFF") : kk == 1? g_strdup (i>0? "<":">") : g_strdup_printf ("%d: Lim IN%d %s", i, abs(i)-1, i>0? ">":"<");
+                gchar *id = g_strdup_printf ("%d", 4+i);
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (FZ_ref_option_menu), id, N_(tmp));
+                g_free (id);
+                g_free (tmp);
+        }
+        //gtk_combo_box_set_active (GTK_COMBO_BOX (FZ_ref_option_menu), 4+FZ_limiter_ch);
+        gtk_combo_box_set_active (GTK_COMBO_BOX (FZ_ref_option_menu), 1); // OFF
+        dsp_bp->new_line ();
+
+	dsp_bp->grid_add_ec ("Lim Val Up", Volt, &FZ_limiter_val[0], -10.0, 10.0, "5.3g", 0.1, 1.0, "VP-Lim-Val-Up");
+	dsp_bp->grid_add_ec ("Lim Val Dn", Volt, &FZ_limiter_val[1], -10.0, 10.0, "5.3g", 0.1, 1.0, "VP-Lim-Val-Dn");
+
+        dsp_bp->new_line ();
 
 	if (sranger_common_hwi->check_pac() != -1){
 		dsp_bp->grid_add_label ("Trigger on");

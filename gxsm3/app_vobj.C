@@ -2244,8 +2244,7 @@ VObParabel::VObParabel(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, V
 	name = g_strdup("Parabel");
 	obj_type_id (O_PARABEL);
 
-        //	GnomeCanvasPoints  *pn = gnome_canvas_points_new (3);
-	abl[3] = new cairo_item_path (3); // GTK3QQQ
+	abl[3] = new cairo_item_path (3); // GTK3QQQ fix parabel path
 	abl[3]->set_xy (0, xy[0], xy[1]); 
         abl[3]->set_xy (0, xy[2], xy[3]);
         abl[3]->set_xy (0, xy[4], xy[5]);

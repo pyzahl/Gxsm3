@@ -368,7 +368,7 @@ int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta){
 				break;
 			}
 			if (success){
-				if(gapp->xsm->ZoomFlg & VIEW_TOLERANT)
+				if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
 					mem2d->AutoHistogrammEvalMode (&Pkt2d[0], &Pkt2d[1], Delta);
 				else{
 					if (data.display.ViewFlg & SCAN_V_LOG){
@@ -379,7 +379,7 @@ int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta){
 						mem2d->HiLoMod (&p[0], &p[1], Delta);
 				}
 			} else {
-				if(gapp->xsm->ZoomFlg & VIEW_TOLERANT)
+				if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
 					mem2d->AutoHistogrammEvalMode (NULL, NULL, Delta);
 				else{
 					if (data.display.ViewFlg & SCAN_V_LOG){
@@ -428,7 +428,7 @@ int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta){
 			break;
 		}
 		if (success){
-			if(gapp->xsm->ZoomFlg & VIEW_TOLERANT)
+                        if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
 				mem2d->AutoHistogrammEvalMode (&Pkt2d[0], &Pkt2d[1], Delta);
 			else{
 				if (data.display.ViewFlg & SCAN_V_LOG){
@@ -439,7 +439,7 @@ int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta){
 					mem2d->HiLoMod (&p[0], &p[1], Delta);
 			}
 		} else {
-			if(gapp->xsm->ZoomFlg & VIEW_TOLERANT)
+                        if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
 				mem2d->AutoHistogrammEvalMode (NULL, NULL, Delta);
 			else{
 				if (data.display.ViewFlg & SCAN_V_LOG){

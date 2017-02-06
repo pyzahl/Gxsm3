@@ -231,6 +231,7 @@ public:
         void SetProgress(gfloat p){
                 if(p>=0. && p<=1.)
                         ; //GTK3QQQ: gnome_appbar_set_progress_percentage( GNOME_APPBAR (appbar), p);
+                // there is no tool bar progress bar any more
         };
 
         void add_appwindow_to_list (AppBase *w) {
