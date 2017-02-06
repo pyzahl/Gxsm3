@@ -506,7 +506,7 @@ GtkWidget* App::create_spm_control (){
         spm_bp->new_grid_with_frame ("Scan Parameter", 3, 4);
         spm_bp->set_no_spin ();
         spm_bp->set_input_nx (3);
-        spm_bp->set_label_width_chars (13);
+        // spm_bp->set_label_width_chars (13);
         spm_bp->set_default_ec_change_notice_fkt (App::spm_range_check, this);
         
         // Range controls
@@ -657,10 +657,10 @@ GtkWidget* App::create_spm_control (){
         g_object_set_data( G_OBJECT (grid), "LayerSelectSpin", spm_bp->input);
         EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
 
-        spm_bp->set_label_width_chars (10);
+        // spm_bp->set_label_width_chars (10);
         spm_bp->grid_add_label ("-.--#");
         g_object_set_data (G_OBJECT (grid), "LayerSelectValue", spm_bp->label);
-        spm_bp->set_label_width_chars (13);
+        // spm_bp->set_label_width_chars (13);
 
         spm_bp->new_line ();
 
@@ -687,10 +687,10 @@ GtkWidget* App::create_spm_control (){
         g_object_set_data( G_OBJECT (grid), "TimeSelectSpin", spm_bp->input);
         EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
 
-        spm_bp->set_label_width_chars (10);
+        // spm_bp->set_label_width_chars (10);
         spm_bp->grid_add_label ("-.--#");
         g_object_set_data( G_OBJECT (grid), "TimeSelectValue", spm_bp->label);
-        spm_bp->set_label_width_chars (13);
+        // spm_bp->set_label_width_chars (13);
 	
         spm_bp->set_default_ec_change_notice_fkt  (NULL, this);
 	
@@ -1289,103 +1289,94 @@ void App::spa_update(){
 }
 
 GtkWidget* App::create_as_control (){
-        GSList *EC_list=NULL;
-	
-        GtkWidget *grid;
-        GtkWidget *frame;
-        GtkWidget *input;
-        GtkWidget *checkbutton;
-        int x,y;
-        
-        frame = gtk_frame_new (N_("File/Autosave"));
-        gtk_frame_set_label_align (GTK_FRAME (frame), 0.02, 0.5);
-        grid = gtk_grid_new ();
-        gtk_container_add (GTK_CONTAINER (frame), grid);
+        BuildParam *as_bp = new BuildParam ();
+        GObject *refob = G_OBJECT (as_bp->grid);
+        as_bp->new_grid_with_frame ("File/Autosave", 3, 4);
+        as_bp->set_no_spin ();
+        as_bp->grid_add_input(N_("Basename/#"));
+        as_bp->set_input_width_chars (20);
+        gtk_widget_set_hexpand (as_bp->input, TRUE);
+        g_object_set_data( refob, "basename", as_bp->input);
 
-        x=y=1;
-        input = mygtk_grid_add_input(N_("Basename/#"), grid, x,y);
-        gtk_label_set_width_chars (GTK_LABEL (gtk_grid_get_child_at (GTK_GRID (grid), 1,1)), 13);
-        g_object_set_data( G_OBJECT (frame), "basename", input);
-        gtk_entry_set_width_chars (GTK_ENTRY (input), 20);
-
-        g_signal_connect (G_OBJECT (input), "changed",
+        g_signal_connect (G_OBJECT (as_bp->input), "changed",
                           G_CALLBACK (cbbasename),
-                          input);
+                          as_bp->input);
 
         g_settings_bind (as_settings, "auto-save-basename",
-                         G_OBJECT (input), "text",
+                         G_OBJECT (as_bp->input), "text",
                          G_SETTINGS_BIND_DEFAULT);
+
         
-        input = mygtk_grid_add_input (NULL, grid, x,y);
-        gtk_entry_set_width_chars (GTK_ENTRY (input), 5);
+        as_bp->set_input_width_chars (5);
+        as_bp->grid_add_ec ("", xsm->Unity, &xsm->counter,
+                            0., 99999., "05.0f");
 
 #if 0
         g_settings_bind (as_settings, "auto-save-counter",
-                         G_OBJECT (input), "text",
+                         G_OBJECT (as_bp->input), "text",
                          G_SETTINGS_BIND_DEFAULT);
-        gint32 counter_initial = atoi (gtk_entry_get_text (GTK_ENTRY (input)));
+        gint32 counter_initial = atoi (gtk_entry_get_text (GTK_ENTRY (as_bp->input)));
 #endif
         
-        static Gtk_EntryControl Counter(xsm->Unity, MLD_WERT_NICHT_OK, &xsm->counter,
-                                        0., 99999., "05.0f", input);
-        EC_list = g_slist_prepend( EC_list, &Counter);
-        RemoteEntryList = Counter.AddEntry2RemoteList(N_("Counter"), RemoteEntryList);
+        //static Gtk_EntryControl Counter(xsm->Unity, MLD_WERT_NICHT_OK, &xsm->counter,
+        //                                0., 99999., "05.0f", input, 1,10, "Counter");
+        //--EC_list = g_slist_prepend( EC_list, &Counter);
+        //--RemoteEntryList = Counter.AddEntry2RemoteList(N_("Counter"), RemoteEntryList);
 
         //        xsm->counter = counter_initial;
         //        Counter.update_callback (GTK_EDITABLE (input), NULL);
         
         GtkWidget *pathbutton = gtk_button_new_with_label("...");
-        gtk_grid_attach (GTK_GRID (grid), pathbutton, x++,y, 1,1);
+        as_bp->grid_add_widget (pathbutton);
         g_signal_connect (G_OBJECT (pathbutton), "clicked",
                           G_CALLBACK (App::file_set_datapath_callback), NULL);
         //	G_CALLBACK (App::file_set_dataepath_callback) // sets NC Data Path
         //	G_CALLBACK (App::file_set_probepath_callback) // sets Probe Data Path
 
-        checkbutton = gtk_check_button_new_with_label( N_("Auto Save"));
-        gtk_grid_attach (GTK_GRID (grid), checkbutton, x++,y, 1,1);
+        GtkWidget *checkbutton = gtk_check_button_new_with_label( N_("Auto Save"));
+        as_bp->grid_add_widget (checkbutton);
         g_signal_connect (G_OBJECT (checkbutton), "clicked",
                           G_CALLBACK (cb_setmode), (void*)MODE_AUTOSAVE);
         g_settings_bind (as_settings, "auto-save",
                          G_OBJECT (checkbutton), "active",
                          G_SETTINGS_BIND_DEFAULT);
-        
-        x=1,++y;
-        input = mygtk_grid_add_input(N_("Originalname"), grid, x,y, 4);
-        gtk_widget_set_hexpand (input, TRUE);
-        g_object_set_data( G_OBJECT (frame), "originalname", input);
-        gtk_editable_set_editable (GTK_EDITABLE (input), FALSE);
+
+        as_bp->new_line ();
+
+        as_bp->grid_add_input (N_("Originalname"), 5);
+        gtk_widget_set_hexpand (as_bp->input, TRUE);
+        g_object_set_data (refob, "originalname", as_bp->input);
+        gtk_editable_set_editable (GTK_EDITABLE (as_bp->input), FALSE);
 	
         // save List away...
-        g_object_set_data( G_OBJECT (frame), "AS_EC_list", EC_list);
+        g_object_set_data (refob, "AS_EC_list", as_bp->get_ec_list_head ());
+        as_bp->show_all ();
+        g_object_set_data (refob, "AS_BP", as_bp);
 
-        gtk_widget_show_all (frame);
-        return(frame);
+        as_bp->pop_grid ();
+
+        return as_bp->grid;
 }
 
 
 void App::as_update(){
-        g_slist_foreach (
-                         (GSList*) g_object_get_data (
-                                                      G_OBJECT (as_control), "AS_EC_list"),
-                         (GFunc) App::update_ec, NULL);
-
+        g_slist_foreach
+                ((GSList*) g_object_get_data
+                 (G_OBJECT (as_control), "AS_EC_list"),
+                 (GFunc) App::update_ec, NULL);
+        
         // now automatic via as_settings bind, so get it !
-#if 0
-        gtk_entry_set_text ((GTK_ENTRY (g_object_get_data( G_OBJECT (as_control), "basename"))), 
-                            xsm->data.ui.basename);
-#else
         as_setdata();   
-#endif
         gtk_entry_set_text ((GTK_ENTRY (g_object_get_data( G_OBJECT (as_control), "originalname"))), 
                             xsm->data.ui.originalname);
 }
 
 void App::as_setdata(){
-        xsm->data.ui.SetBaseName (
-                                  gtk_entry_get_text (GTK_ENTRY 
-                                                      (g_object_get_data( G_OBJECT (as_control), 
-                                                                          "basename") ) )
-                                  );
+        xsm->data.ui.SetBaseName
+                (gtk_entry_get_text
+                 (GTK_ENTRY (g_object_get_data (G_OBJECT (as_control), 
+                                                "basename") ) )
+                 );
 }
 
 GtkWidget* App::create_ui_control (){
