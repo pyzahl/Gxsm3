@@ -132,8 +132,8 @@ static GActionEntry win_view_popup_entries[] = {
         { "attach-redline", ViewControl::view_view_attach_redline_callback, NULL, "false", NULL },
         { "show-redline", ViewControl::view_view_redline_callback, NULL, "false", NULL },
         { "show-blueline", ViewControl::view_view_blueline_callback, NULL, "false", NULL },
-        { "autozoom-mode", ViewControl::view_view_autozoom_callback, NULL, "false", NULL },
         { "palette-mode", ViewControl::view_view_color_callback, NULL, "false", NULL },
+        { "tolerant-mode", ViewControl::view_view_tolerant_callback, NULL, "false", NULL },
         { "rgb-mode", ViewControl::view_view_color_rgb_callback, NULL, "false", NULL },
         { "coordinate-mode", ViewControl::view_view_coordinate_mode_radio_callback, "s", "'absolute'", NULL },
         { "zoom-in", ViewControl::view_view_zoom_out_callback, NULL, NULL, NULL },
@@ -200,9 +200,6 @@ public:
                                                             );
                 gtk_dialog_run (GTK_DIALOG (dialog));
                 gtk_widget_destroy (dialog);
-
-                // GTK3QQQ OK?
-                // gtk_widget_show (gnome_message_box_new (message, GNOME_MESSAGE_BOX_INFO, GNOME_STOCK_BUTTON_OK, NULL));
 	};
 	void cleanup (GtkWidget *box){
 		g_slist_foreach (
@@ -499,11 +496,6 @@ void ViewControl::tip_follow_control (gboolean follow){
 }
 
 void ViewControl::setup_side_pane (gboolean show){
-        //show_side_pane = show;
-
-        // GTK3QQQ -- testing only
-        //g_settings_set_boolean (view_settings, "sidepane-show", show);
-
 	if (show){
 		gtk_widget_show (sidepane);
 		side_panel_width = 300;
@@ -2932,8 +2924,6 @@ void ViewControl::view_view_set_view_mode_radio_callback (GSimpleAction *action,
         ViewControl *vc = (ViewControl *) user_data;
         GVariant *old_state, *new_state;
 
-        gint mode=SCAN_V_QUICK; // fall back
-        
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
                 
@@ -2942,22 +2932,30 @@ void ViewControl::view_view_set_view_mode_radio_callback (GSimpleAction *action,
                       g_variant_get_string (old_state, NULL),
                       g_variant_get_string (new_state, NULL));
 
+        gint mode = SCAN_V_QUICK;
+        if (vc->chno < 0){
+                mode = vc->scan->GetVM ();
+        } else {
+                gapp->xsm->ActivateChannel(vc->chno);
+		mode = gapp->xsm->GetVM ();
+        }
+      
         if (!strcmp (g_variant_get_string (new_state, NULL), "quick")){
-                mode = SCAN_V_QUICK;
+                mode = (mode & 0xFF000) | SCAN_V_QUICK;
         } else if (!strcmp (g_variant_get_string (new_state, NULL), "direct")){
-                mode = SCAN_V_DIRECT;
+                mode = (mode & 0xFF000) | SCAN_V_DIRECT;
         } else if (!strcmp (g_variant_get_string (new_state, NULL), "hilit")){
-                mode = SCAN_V_HILITDIRECT;
+                mode = (mode & 0xFF000) | SCAN_V_HILITDIRECT;
         } else if (!strcmp (g_variant_get_string (new_state, NULL), "plane")){
-                mode = SCAN_V_PLANESUB;
+                mode = (mode & 0xFF000) | SCAN_V_PLANESUB;
         } else if (!strcmp (g_variant_get_string (new_state, NULL), "horizontal")){
-                mode = SCAN_V_HORIZONTAL;
+                mode = (mode & 0xFF000) | SCAN_V_HORIZONTAL;
         } else if (!strcmp (g_variant_get_string (new_state, NULL), "periodic")){
-                mode = SCAN_V_PERIODIC;
+                mode = (mode & 0xFF000) | SCAN_V_PERIODIC;
         } else if (!strcmp (g_variant_get_string (new_state, NULL), "log")){
-                mode = SCAN_V_LOG;
+                mode = (mode & 0xFF000) | SCAN_V_LOG;
         } else if (!strcmp (g_variant_get_string (new_state, NULL), "diff")){
-                mode = SCAN_V_DIFFERENTIAL;
+                mode = (mode & 0xFF000) | SCAN_V_DIFFERENTIAL;
         }
 
    	if (vc->chno < 0){
@@ -3081,9 +3079,9 @@ void ViewControl::view_view_blueline_callback (GSimpleAction *action, GVariant *
 		vc->scan->BlueLineActive=FALSE;
 }
 
-void ViewControl::view_view_autozoom_callback (GSimpleAction *action, GVariant *parameter, 
+void ViewControl::view_view_tolerant_callback (GSimpleAction *action, GVariant *parameter,
                                                gpointer user_data){
-        //ViewControl *vc = (ViewControl *) user_data;
+        ViewControl *vc = (ViewControl *) user_data;
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -3097,11 +3095,25 @@ void ViewControl::view_view_autozoom_callback (GSimpleAction *action, GVariant *
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
 
-
+        gint mode = SCAN_V_QUICK;
+        if (vc->chno < 0){
+                mode = vc->scan->GetVM ();
+        } else {
+                gapp->xsm->ActivateChannel(vc->chno);
+		mode = gapp->xsm->GetVM ();
+        }
+        
 	if (g_variant_get_boolean (new_state))
-		gapp->xsm->ZoomFlg = (gapp->xsm->ZoomFlg & ~VIEW_ZOOM) | VIEW_ZOOM;
-	else
-		gapp->xsm->ZoomFlg &= ~VIEW_ZOOM;
+                mode = (mode & 0x00FFF) | SCAN_V_SCALE_SMART;
+        else
+                mode = (mode & 0x00FFF) | SCAN_V_SCALE_HILO;
+
+   	if (vc->chno < 0){
+                vc->scan->SetVM(mode);
+        } else {
+                gapp->xsm->ActivateChannel(vc->chno);
+		gapp->xsm->SetVM(mode);
+        }
 }
 
 void ViewControl::view_view_color_callback (GSimpleAction *action, GVariant *parameter, 
@@ -3229,7 +3241,9 @@ void ViewControl::view_view_zoom_fix_radio_callback (GSimpleAction *action, GVar
                       g_variant_get_string (old_state, NULL),
                       g_variant_get_string (new_state, NULL));
 
-        if (!strcmp (g_variant_get_string (new_state, NULL), "zoomfactor-10x")){
+        if (!strcmp (g_variant_get_string (new_state, NULL), "zoomfactor-auto")){
+                if(vc->ZoomQFkt) (*vc->ZoomQFkt)(0,0, vc->ZQFktData); // auto
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "zoomfactor-10x")){
                 if(vc->ZoomQFkt) (*vc->ZoomQFkt)(10,1,vc->ZQFktData);
         } else if (!strcmp (g_variant_get_string (new_state, NULL), "zoomfactor-5x")){
                 if(vc->ZoomQFkt) (*vc->ZoomQFkt)(5,1,vc->ZQFktData);
@@ -3252,9 +3266,9 @@ void ViewControl::view_view_zoom_fix_radio_callback (GSimpleAction *action, GVar
         } else if (!strcmp (g_variant_get_string (new_state, NULL), "zoomfactor-1by10")){
                 if(vc->ZoomQFkt) (*vc->ZoomQFkt)(1,10,vc->ZQFktData);
         } else {
-                if(vc->ZoomQFkt) (*vc->ZoomQFkt)(1,1,vc->ZQFktData); // shall be auto -- TDB!!!!
+                if(vc->ZoomQFkt) (*vc->ZoomQFkt)(1,1,vc->ZQFktData); // 1:1 fallback
         }
-
+        
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
 }

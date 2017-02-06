@@ -162,7 +162,7 @@ void Surface::AutoDisplay(double hi, double lo){
 	}
 }
 
-int Surface::SetVM(int mode){
+int Surface::SetVM (int mode){
 	//  XSM_DEBUG (DBG_L2, "Surface::SetVM m:" << mode << " rdf:" << redrawflg);
 	if (mode)
 		data.display.ViewFlg = mode;
@@ -171,6 +171,10 @@ int Surface::SetVM(int mode){
 		ActiveScan->SetVM (data.display.ViewFlg, &data, xsmres.HiLoDelta);
 	
 	return 0;
+}
+
+int Surface::GetVM (){
+        return data.display.ViewFlg;
 }
 
 int Surface::SetSDir(int Channel, int choice){

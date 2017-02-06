@@ -1553,7 +1553,7 @@ public:
                 gtk_entry_set_width_chars (GTK_ENTRY (bp.input), 8);
                 bp.new_line ();
 
-                bp.grid_add_label ("Model");
+                bp.grid_add_label ("Model", NULL, 1, 1.0);
 		choice = gtk_combo_box_text_new ();
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "TMA", "TMA");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Cu111+TMA", "Cu111+TMA");
@@ -1578,7 +1578,7 @@ public:
 		bp.grid_add_widget (chooser, 5);
                 bp.new_line ();
                         
-                bp.grid_add_label ("Model Filter");
+                bp.grid_add_label ("Model Filter", NULL, 1, 1.0);
 		choice = gtk_combo_box_text_new ();
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "None", "None");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "TMA-C+TMA-R-flip",       "TMA-C+TMA-R-flip");
@@ -1596,7 +1596,7 @@ public:
 		g_signal_connect(G_OBJECT (bp.input), "changed", G_CALLBACK (ChangeEntry), &(*model_filter_param));
                 bp.new_line ();
                         
-                bp.grid_add_label ("Calculation Mode");
+                bp.grid_add_label ("Calculation Mode", NULL, 1, 1.0);
 		choice = gtk_combo_box_text_new ();
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "NO-OPT", "NO-OPT/Force at fixed probe");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "NL-OPT", "NL-OPT/Probe relax");
@@ -1609,7 +1609,7 @@ public:
 		bp.grid_add_widget (choice, 15);
                 bp.new_line ();
 
-                bp.grid_add_label ("Calculation Options");
+                bp.grid_add_label ("Calculation Options", NULL, 1, 1.0);
 		choice = gtk_combo_box_text_new ();
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J Model", "L-J Model");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J+Coulomb Model", "L-J+Coulomb Model");
@@ -1618,7 +1618,7 @@ public:
 		bp.grid_add_widget (choice, 15);
                 bp.new_line ();
 
-                bp.grid_add_label ("Probe (active tip)");
+                bp.grid_add_label ("Probe (active tip)", NULL, 1, 1.0);
 		choice = gtk_combo_box_text_new ();
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Copper", "Copper probe");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Oxigen", "Oxigen terminated probe (CO like)");
@@ -1631,7 +1631,7 @@ public:
 		bp.grid_add_widget (choice, 15);
                 bp.new_line ();
 
-                bp.grid_add_label ("Probe Model:");
+                bp.grid_add_label ("Probe Model:", NULL, 1, 1.0);
 		choice = gtk_combo_box_text_new ();
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Spring", "Spring");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J", "L-J");
@@ -1653,7 +1653,7 @@ public:
 		bp.grid_add_ec_with_scale ("Max Thread #",   gapp->xsm->Unity, &max_threads,    1.,   64., ".0f", 1.,  4.);
                 bp.new_line ();
 
-                bp.grid_add_label ("Progress Detail");
+                bp.grid_add_label ("Progress Detail", NULL, 1, 1.0);
 		choice = gtk_combo_box_text_new ();
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Basic", "Basic");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Combined Job", "Combined Job");

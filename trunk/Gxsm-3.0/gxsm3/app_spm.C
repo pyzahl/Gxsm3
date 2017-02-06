@@ -1298,6 +1298,7 @@ GtkWidget* App::create_as_control (){
         int x,y;
         
         frame = gtk_frame_new (N_("File/Autosave"));
+        gtk_frame_set_label_align (GTK_FRAME (frame), 0.02, 0.5);
         grid = gtk_grid_new ();
         gtk_container_add (GTK_CONTAINER (frame), grid);
 
@@ -1397,6 +1398,7 @@ GtkWidget* App::create_ui_control (){
         int x,y;
         
         frame = gtk_frame_new (N_("User Info & Comment"));
+        gtk_frame_set_label_align (GTK_FRAME (frame), 0.02, 0.5);
         grid = gtk_grid_new ();
         gtk_container_add (GTK_CONTAINER (frame), grid);
 

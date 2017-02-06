@@ -168,12 +168,12 @@
 	    <attribute name="action">win.show-blueline</attribute>
 	  </item>
 	  <item>
-	    <attribute name="label" translatable="yes">Autozoom</attribute>
-	    <attribute name="action">win.autozoom-mode</attribute>
-	  </item>
-	  <item>
 	    <attribute name="label" translatable="yes">Palette</attribute>
 	    <attribute name="action">win.palette-mode</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">Smart Scale</attribute>
+	    <attribute name="action">win.tolerant-mode</attribute>
 	  </item>
 	  <item>
 	    <attribute name="label" translatable="yes">Native RGB</attribute>

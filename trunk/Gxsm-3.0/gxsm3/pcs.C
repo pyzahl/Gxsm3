@@ -341,7 +341,7 @@ gboolean Param_Control::Set_FromValue(double nVal){
 			}
 			else{
 				if (warn_color[0] || warn_color[1]){
-					; // port warn colorscheme // GTK3QQQ
+					; // use warn colors, port to PangoAttribute done.
 				} else {
 					//The input exceeds the warning limits
 					//Put_Value will reset the entry to the current valid value
@@ -708,7 +708,31 @@ void Gtk_EntryControl::Put_Value(){
 	gtk_entry_set_text (GTK_ENTRY (entry), txt);
         g_free (txt);
 
-#if 0 // GTKQQQ ??? dynamic CSS ??
+	if (color) {
+                // g_message ("Entry %s has warning color set.", refname);
+                PangoAttrList *prev_attrs = gtk_entry_get_attributes (GTK_ENTRY (entry));
+		GdkRGBA bgc;
+		gdk_rgba_parse (&bgc,color);
+                PangoAttribute *pa_fg = pango_attr_foreground_new ((guint16) (65535.*bgc.red),
+                                                                   (guint16) (65535.*bgc.green),
+                                                                   (guint16) (65535.*bgc.blue));
+                PangoAttrList *attrs = pango_attr_list_new (); // ref count 1
+                pango_attr_list_insert (attrs, pa_fg); // the attribute to insert. Ownership of this value is assumed by the list.
+                gtk_entry_set_attributes (GTK_ENTRY (entry), attrs);
+                if (prev_attrs){
+                        // g_message ("Entry had Pango Attribs, replacing");
+                        pango_attr_list_unref (prev_attrs);
+                }
+        } else {
+                PangoAttrList *prev_attrs = gtk_entry_get_attributes (GTK_ENTRY (entry));
+                gtk_entry_set_attributes (GTK_ENTRY (entry), NULL);
+                if (prev_attrs){
+                        // g_message ("Entry had Pango Attribs, set to none");
+                        pango_attr_list_unref (prev_attrs);
+                }
+        }
+        
+#if 0 // old GTK2 -- this was easier I have to say
 	if (color) {
 		GdkRGBA bgc;
 		gdk_rgba_parse (&bgc,color);

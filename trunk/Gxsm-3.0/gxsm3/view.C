@@ -374,6 +374,11 @@ void Grey2D::ZoomOut(){
 }
 
 int Grey2D::SetZF(int zf, int qf, Grey2D *p){
+        if (!zf && !qf){
+                p->userzoom = FALSE;
+                p->draw();
+                return 0;
+        }
 	if(!zf){
 		p->ZoomIn();
 		return 0;

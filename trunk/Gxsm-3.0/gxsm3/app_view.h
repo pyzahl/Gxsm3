@@ -73,14 +73,15 @@ public:
         static void view_tool_addshowline (GtkWidget *widget, ViewControl *vc);
         static void view_tool_labels_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_tool_marker_group_radio_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+        //
         static void view_view_set_view_mode_radio_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_view_x_linearize_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_view_attach_redline_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_view_redline_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_view_blueline_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-        static void view_view_autozoom_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_view_color_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_view_color_rgb_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void view_view_tolerant_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         //
         static void view_view_coordinate_mode_radio_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void view_view_coord_time_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);

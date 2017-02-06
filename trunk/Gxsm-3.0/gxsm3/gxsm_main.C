@@ -236,11 +236,6 @@ gxsm3_app_startup (GApplication *app)
         gxsm_init_dynamic_res ();
         XSM_DEBUG(DBG_L1, "DONE ** Setup dynamic preferences");
 
-        XSM_DEBUG(DBG_L1, "START ** GXSM run druids check");
-        // Check for new user, present druids
-        gxsm_check_new_user_config ();
-        XSM_DEBUG(DBG_L1, "DONE ** GXSM run druids check");
-
         XSM_DEBUG(DBG_L1, "GXSM / PlugIn debug / logging level is: " << debug_level << " / " << pi_debug_level << " / " << logging_level);
 
         XSM_DEBUG(DBG_L2, "gapplication startup -- app menu installations" );
