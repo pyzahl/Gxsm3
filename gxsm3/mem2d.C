@@ -1573,7 +1573,7 @@ void Mem2d::SetDataVRangeZ(double VRangeZ, double VOffsetZ, double dz){
 }
 
 void Mem2d::SetDataPktMode(int mode){
-	switch (mode){	
+	switch (mode & SCAN_V_MASK){	
 	case SCAN_V_QUICK:        SetDataFkt (&Mem2d::ZQuick, &Mem2d::GetDataPktLineReg); break;
 	case SCAN_V_DIRECT:       SetDataFkt (&Mem2d::ZDirect, &Mem2d::GetDataPkt); break;
 	case SCAN_V_PLANESUB:     SetDataFkt (&Mem2d::ZPlaneSub, &Mem2d::GetDataPktPlaneSub); break;

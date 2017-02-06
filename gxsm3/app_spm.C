@@ -831,7 +831,7 @@ void App::spm_update_all(int Vflg){
         XSM_DEBUG(DBG_L3, "App::spm_update_all - Vflg=" << Vflg);
         
         GtkToggleButton *tb = NULL;
-        switch(Vflg){
+        switch(Vflg & SCAN_V_MASK){
         case 0: break;
         case SCAN_V_QUICK:
                 tb = (GtkToggleButton*)g_object_get_data( G_OBJECT (spm_control), "quickbutton");

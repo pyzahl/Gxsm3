@@ -853,14 +853,14 @@ class DSPControl : public AppBase{
 	gboolean        gr_lock;
 
 
- protected:
+protected:
 	void read_dsp_probe ();
 	void write_dsp_probe (int start, pv_mode pvm);
 
 	void read_dsp_vector (int index);
 	void write_dsp_vector (int index);
 
- private:
+private:
 	#define MAX_PV 50
 	PROBE_VECTOR_GENERIC     dsp_vector_list[MAX_PV]; // copy for GXSM internal use only
 
@@ -881,7 +881,7 @@ class DSPControl : public AppBase{
 	GtkWindow* vpg_window;
         GtkWidget* vpg_grid;
         
- protected:
+protected:
         int idle_callback_data_ff;
         guint idle_id;
 
