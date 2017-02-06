@@ -163,11 +163,11 @@ void ProfileElement::calc_decimation (gint64 ymode){
 }
 
 void ProfileElement::SetMode(long Mode){
-	mode=Mode;
+	mode=(gint64) Mode;
 }
 
-void ProfileElement::SetOptions(gint64 Flg){
-	flg=Flg;
+void ProfileElement::SetOptions(long Flg){
+	flg=(gint64) Flg;
 }
 
 double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offset, GtkWidget *canvas){
