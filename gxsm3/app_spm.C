@@ -1307,9 +1307,9 @@ GtkWidget* App::create_as_control (){
                          G_SETTINGS_BIND_DEFAULT);
 
         
-        as_bp->set_input_width_chars (5);
-        as_bp->grid_add_ec ("", xsm->Unity, &xsm->counter,
-                            0., 99999., "05.0f");
+        as_bp->set_input_width_chars (8);
+        as_bp->grid_add_ec ("#", xsm->Unity, &xsm->counter,
+                            0, 99999, "05.0f", "auto-save-counter-i");
 
 #if 0
         g_settings_bind (as_settings, "auto-save-counter",

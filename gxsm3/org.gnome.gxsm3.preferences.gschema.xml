@@ -1476,6 +1476,13 @@ choose from:
         Gridsize used by Autodisp, e.g: 1: all Pixels are examined
       </description>
     </key>
+    <key name="smarthistepsilon" type="d">
+      <default>0.05</default>
+      <summary>Smart Histogram Epsilon for comress (pos)/expand(neg) range</summary>
+      <description>
+	Smart Histogram Epsilon for comress (pos)/expand(neg) range.
+      </description>
+    </key>
     <key name="profileloglimit" type="d">
       <default>1e-20</default>
       <summary>Minimal Y value allwed in profile view in log view mode.</summary>

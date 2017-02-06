@@ -255,6 +255,7 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 				      int current_i, int si, int nas, gboolean join_same_x,
                                       gint xmap, gint src, gint num_active_xmaps, gint num_active_sources){
 
+        static gint last_current_i=0;
 	UnitObj *UXaxis = new UnitObj(xua, " ", "g", xlab);
 	UnitObj *UYaxis = new UnitObj(yua,  " ", "g", ylab);
 	double xmin, xmax, x;
@@ -433,10 +434,13 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 		      << " nas:  " << nas );
 
 	if (current_i > 2){
-//		pc->mark_for_update();
-//		pc->auto_update ();
+                if (last_current_i > current_i){
+                        pc->SetScaling (PROFILE_SCALE_XAUTO | PROFILE_SCALE_YAUTO);
+                } else {
+                        pc->SetScaling (PROFILE_SCALE_XAUTO | PROFILE_SCALE_YEXPAND);
+                }
+                last_current_i = current_i;
 		pc->UpdateArea ();
-//		pc->show ();
 	}
 
 	// Create graph for averaged data; you will find them in the pc-array above 

@@ -750,6 +750,10 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	( GNOME_RES_INT, "User/HiLoDelta", "2", &xsmres.HiLoDelta, N_("User"), 
 	  N_("Gridsize used by Autodisp, e.g: 1: all Pixels are examined")
 		),
+	GNOME_RES_ENTRY_ASK_PATH
+	( GNOME_RES_FLOAT, "User/SmartHistEpsilon", "0.05", &xsmres.SmartHistEpsilon, N_("User"), 
+	  N_("Smart Histogram Epsilon for hitogram evaluanted range compression (positive) or expand (negative).")
+		),
 
 	GNOME_RES_ENTRY_SEPARATOR (N_("User"), N_("Y limit in log view of profile.")),
 

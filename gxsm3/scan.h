@@ -116,8 +116,8 @@ public:
 	void GetDataSet(SCAN_DATA &dst);
 	
 	int SetView(int vtype=0);
-	void AutoDisplay(double hi=0., double lo=0., int Delta=4);
-	int SetVM(int vflg=0, SCAN_DATA *src=NULL, int Delta=4);
+	void AutoDisplay(double hi=0., double lo=0., int Delta=4, double sm_eps=0.05);
+	int SetVM(int vflg=0, SCAN_DATA *src=NULL, int Delta=4, double sm_eps=0.05);
 	int GetVM(){ return VFlg; };
 	void Activate();
 
