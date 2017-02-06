@@ -89,7 +89,7 @@ class ProfileElement{
 	int GetNy(){ return scan->mem2d->GetNy(); };
 	void SetY(int Yy=0){ yy=Yy; };
 	void SetLastY(){ yy=scan->mem2d->GetNy()-1; };
-	void SetMode(gint64 mode);
+	void SetMode(long Mode);
         gint64 GetMode() { return mode; };
 	void SetOptions(long Flg);
   
