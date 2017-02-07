@@ -3045,9 +3045,10 @@ void DSPControl::LM_store_vp (const gchar *key){
 
         GVariant *probe_vector_program_matrix = g_variant_dict_end (dict);
         g_settings_set_value (hwi_settings, "probe-lm-vector-program-matrix", probe_vector_program_matrix);
+
+        // all g_variants created here are "consumed" by the "set" calls, if I try to unref, it cause random crashes.
         //g_variant_unref (probe_vector_program_matrix);
         //g_variant_dict_unref (dict);
-
         // Can't do, don't need??? -- getting this: GLib-CRITICAL **: g_variant_unref: assertion 'value->ref_count > 0' failed
         //        for (int i=0; pc_array[i]; ++i)
         //                g_variant_unref (pc_array[i]);

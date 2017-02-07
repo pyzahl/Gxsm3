@@ -141,6 +141,7 @@ static GActionEntry win_view_popup_entries[] = {
         { "fix-zoom", ViewControl::view_view_zoom_fix_radio_callback, "s", "'zoomfactor-auto'", NULL },
         { "object-mode", ViewControl::view_object_mode_radio_callback, "s", "'rectangle'", NULL },
         { "show-object-lables", ViewControl::view_tool_labels_callback, NULL, "false", NULL },
+        { "show-legend-item", ViewControl::view_tool_legend_radio_callback, "s", "'off'", NULL },
         { "reset-object-counter", ViewControl::obj_reset_counter_callback, NULL, NULL, NULL },
         { "show-object-counter", ViewControl::obj_show_counter_callback, NULL, NULL, NULL },
         { "set-marker-group", ViewControl::view_tool_marker_group_radio_callback, "s", "'red'", NULL },
@@ -532,6 +533,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
         destruction_in_progress = false;
         tip_follow_flag = false;
+        legend_items_code = NULL;
         view_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT ".gui.view");
  
 	XSM_DEBUG (DBG_L2, "ViewControl::ViewControl");
@@ -1156,6 +1158,7 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
         XSM_DEBUG (DBG_L2,  "ViewControl:::canvas_draw_callback ********************** SCAN DRAW *********************" );
 
         double zf = vc->vinfo->GetZfac();
+        // double qf = vc->vinfo->GetQfac();
         vc->ximg->set_translate_offset (vc->rulewidth+vc->border/zf, vc->rulewidth+vc->border/zf);
         cairo_translate (cr, (double)(vc->rulewidth+vc->border/zf), (double)(vc->rulewidth+vc->border/zf));
         cairo_scale (cr, zf, zf);
@@ -1174,10 +1177,45 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
         // 2) draw image and red line via ShmImage2D
 	vc->ximg->draw_callback (cr);
 
-        // 3) Draw Objects and Events
+        // 3) draw legend items if eneabled
+        if (vc->legend_items_code){
+                // make convenient coordinate system
+                cairo_save (cr);
+                double wx = (double)vc->npx/zf;
+                double wy = (double)vc->npy/zf;
+                cairo_scale (cr, wx/400., wy/400.);
+
+                cairo_set_line_width (cr, 3.);
+                cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, 0.66);
+                cairo_rectangle (cr, 0.,0., 400., 400.);
+                cairo_stroke(cr);
+                
+                cairo_translate (cr, 250., 370.);
+
+                g_message ("DRAW LEGEND: npx=%d zf=%g", vc->npx, zf);
+                
+                if (vc->legend_items_code[0] == 'z'){ // ==zbar
+                        cairo_set_source_rgba (cr, 0.3, 0.3, 0.3, 0.66); // light grey
+                        cairo_set_line_width (cr, 2.);
+                        cairo_rectangle (cr, 0.,0., 140., 20.);
+                        cairo_stroke(cr);
+                }
+                if (vc->legend_items_code[1] == 'v'){ // ==zvbar
+                        cairo_set_line_width (cr, 2.);
+                        cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, 1.0); // grey scale
+                        cairo_rectangle (cr, 0.,0., 140., 20.);
+                        cairo_fill (cr);
+                }
+                // ...
+
+                cairo_restore (cr);
+        }
+        
+        // 4) Draw Objects and Events
         //	XSM_DEBUG (DBG_L2,  "ViewControl:::canvas_draw_callback ********************** SCAN PAINT OBJ *********************" );
         vc->DrawObjects (cr);
 
+        // 5) add red line overlay
         if(vc->RedLine && vc->attach_redline_flag){
                 cairo_translate (cr, 0, vc->npy/zf);
                 cairo_scale (cr, vc->npx/zf/vc->RedLine->get_drawing_width()*1.3, vc->npy/zf/vc->RedLine->get_drawing_width()*0.2);
@@ -2725,6 +2763,32 @@ void ViewControl::view_tool_labels_callback (GSimpleAction *action, GVariant *pa
         g_variant_unref (old_state);
 
         vc->CheckAllObjectsLabels (g_variant_get_boolean (new_state));
+}
+
+void ViewControl::view_tool_legend_radio_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        ViewControl *vc = (ViewControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
+                
+        XSM_DEBUG_GP (DBG_L1, "ZOOM-FIX Radio action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
+
+        if (!strcmp (g_variant_get_string (new_state, NULL), "off")){
+                vc->legend_items_code = NULL;
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "z-scale-bar")){
+                vc->legend_items_code = "zbar";
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "z-scale-bar-values")){
+                vc->legend_items_code = "zvbar";
+        } else { // fallback
+                vc->legend_items_code = NULL;
+        }
+        
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
 }
 
 void ViewControl::view_tool_marker_group_radio_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data) { 
