@@ -218,6 +218,69 @@ static void despike2d_cleanup(void)
   PI_DEBUG (DBG_L2, "Despike2d Plugin Cleanup");
 }
 
+
+void despike_32650max (Mem2d *in, Mem2d *out){
+	int i,j,k,l,za=0,nx,ny;
+	int anz=1;
+	int num=1;
+	double reihe1[20],reihe2[20],mi;
+
+        nx=out->GetNx();
+        ny=out->GetNy();
+
+        for (j=anz; j<ny-anz; ++j){
+                for (i=anz; i<nx-anz; ++i) {
+                        for (k=j-anz, l=0; k<=j+anz; k++,l++)
+                                reihe1[l] = in->data->Z(i,k);
+                        for (k=0; k<2*anz+1;k++)  {
+                                mi = 32650;
+                                for (l=0; l<2*anz+1;l++) {
+                                        if (reihe1[l]<mi) {
+                                                mi=reihe1[l];
+                                                reihe2[k]=mi;
+                                                za=l;
+                                        }
+                                }
+                                reihe1[za]=32650;
+                        }
+                        out->data->Z(reihe2[num], i,j);
+                }  /*i*/
+        } /*j*/
+}
+
+void despike_d (Mem2d *in, Mem2d *out){
+	int i,j,k,l,za=0,nx,ny;
+	int anz=1;
+	int num=1;
+	double reihe1[20],reihe2[20],mi;
+
+        nx=out->GetNx();
+        ny=out->GetNy();
+
+        double hi, lo;
+        in->HiLo (&hi, &lo);
+        
+        for (j=anz; j<ny-anz; ++j){
+                for (i=anz; i<nx-anz; ++i) {
+                        for (k=j-anz, l=0; k<=j+anz; k++,l++)
+                                reihe1[l] = in->data->Z(i,k);
+                        for (k=0; k<2*anz+1;k++)  {
+                                mi = hi;
+                                for (l=0; l<2*anz+1;l++) {
+                                        if (reihe1[l]<mi) {
+                                                mi=reihe1[l];
+                                                reihe2[k]=mi;
+                                                za=l;
+                                        }
+                                }
+                                reihe1[za]=hi;
+                        }
+                        out->data->Z(reihe2[num], i,j);
+                }  /*i*/
+        } /*j*/
+}
+
+
 // run-Function
 #ifdef GXSM_ONE_SRC_PLUGIN__DEF
  static gboolean despike2d_run(Scan *Src, Scan *Dest)
@@ -225,11 +288,6 @@ static void despike2d_cleanup(void)
  static gboolean despike2d_run(Scan *Src1, Scan *Src2, Scan *Dest)
 #endif
 {
-	int i,j,k,l,za=0,nx,ny;
-	int anz=1;
-	int num=1;
-	double reihe1[20],reihe2[20],mi;
-
 	int ti=0; 
 	int tf=0;
 	int vi=0;
@@ -265,23 +323,9 @@ static void despike2d_cleanup(void)
 			Dest->mem2d->SetLayer (v_index-vi);	
 
 			Dest->mem2d->CopyFrom(m, 0,0, 0,0, 
-					      nx=Dest->mem2d->GetNx(),ny=Dest->mem2d->GetNy());
-
-			for(j=anz; j<ny-anz; ++j)  {
-				for(i=anz; i<nx-anz; ++i) {
-					for(k=j-anz, l=0; k<=j+anz; k++,l++)
-						reihe1[l] = m->data->Z(i,k);
-					for(k=0; k<2*anz+1;k++)  {
-						mi = 32650;
-						for(l=0; l<2*anz+1;l++) {
-							if(reihe1[l]<mi) {  mi=reihe1[l]; reihe2[k]=mi; za=l;	}
-	  
-						}
-						reihe1[za]=32650;
-					}
-					Dest->mem2d->data->Z(reihe2[num], i,j);
-				}  /*i*/
-			} /*j*/
+					      Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+                        //despike_32650max (m, Dest->mem2d);
+                        despike_d (m, Dest->mem2d);
 
 		}
 		Dest->append_current_to_time_elements (time_index-ti, m->get_frame_time ());
