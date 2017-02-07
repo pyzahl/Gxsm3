@@ -1,0 +1,121 @@
+Adjustment of the default pathes /usr/local/... -> /usr/...
+The default device is /dev/sranger_mk2_0
+--- a/gxsm3/org.gnome.gxsm3.preferences.gschema.xml
++++ b/gxsm3/org.gnome.gxsm3.preferences.gschema.xml
+@@ -103,7 +103,7 @@
+     </key>
+     <key name="device" type="s">
+ 
+-      <default>'/dev/sranger0'</default>
++      <default>'/dev/sranger_mk2_0'</default>
+       <summary>Special Character Device used for (DSP)-Control,
+  default for DSP cards: "/dev/pcdsps/tms320" (new with devfs),
+  with Kernel 2.2.x modules use "/dev/pcdsp"
+@@ -1412,7 +1412,7 @@
+     </key>
+     <key name="gxsmpalette" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/palette'</default>
++      <default>'/usr/share/gxsm3/palette'</default>
+       <summary>searchpath to Gxsm Palette Pixmaps (1024x1 ACSII .pnm)</summary>
+       <description>
+         searchpath to Gxsm Palette Pixmaps (1024x1 ACSII .pnm)
+@@ -1558,7 +1558,7 @@
+     </key>
+     <key name="palette" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/palette/xxsmpalette.pnm'</default>
++      <default>'/usr/share/gxsm3/palette/xxsmpalette.pnm'</default>
+       <summary>Path/name of your favorite palette, (1024x1 pnm RGB Bitmap (ascii))</summary>
+       <description>
+         Path/name of your favorite palette, (1024x1 pnm RGB Bitmap (ascii))
+@@ -1574,7 +1574,7 @@
+     </key>
+     <key name="command1" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/profileplot/gxsmplot1d-1.gri.sh'</default>
++      <default>'/usr/share/gxsm3/profileplot/gxsmplot1d-1.gri.sh'</default>
+       <summary>Path/name of your 1d profile plot file #1</summary>
+       <description>
+         Path/name of your 1d profile plot file #1
+@@ -1582,7 +1582,7 @@
+     </key>
+     <key name="command2" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/profileplot/gxsmplot1d-2.gri.sh'</default>
++      <default>'/usr/share/gxsm3/profileplot/gxsmplot1d-2.gri.sh'</default>
+       <summary>Path/name of your 1d profile plot file #2</summary>
+       <description>
+         Path/name of your 1d profile plot file #2
+@@ -1590,7 +1590,7 @@
+     </key>
+     <key name="command3" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/profileplot/gxsmplot1d-3.gri.sh'</default>
++      <default>'/usr/share/gxsm3/profileplot/gxsmplot1d-3.gri.sh'</default>
+       <summary>Path/name of your 1d profile plot file #3</summary>
+       <description>
+         Path/name of your 1d profile plot file #3
+@@ -1598,7 +1598,7 @@
+     </key>
+     <key name="command4" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/profileplot/gxsmplot1d-4.gri.sh'</default>
++      <default>'/usr/share/gxsm3/profileplot/gxsmplot1d-4.gri.sh'</default>
+       <summary>Path/name of your 1d profile plot file #4</summary>
+       <description>
+         Path/name of your 1d profile plot file #4
+@@ -1606,7 +1606,7 @@
+     </key>
+     <key name="command5" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/profileplot/gxsmplot1d-xmgrace.sh'</default>
++      <default>'/usr/share/gxsm3/profileplot/gxsmplot1d-xmgrace.sh'</default>
+       <summary>Path/name of your 1d profile plot file #5</summary>
+       <description>
+         Path/name of your 1d profile plot file #5
+@@ -1614,7 +1614,7 @@
+     </key>
+     <key name="command6" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/profileplot/gxsmplot1d-matplot.py'</default>
++      <default>'/usr/share/gxsm3/profileplot/gxsmplot1d-matplot.py'</default>
+       <summary>Path/name of your 1d profile plot file #6</summary>
+       <description>
+         Path/name of your 1d profile plot file #6
+@@ -1622,7 +1622,7 @@
+     </key>
+     <key name="x2d-gricmdfile1" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/profileplot/gxsmplot2d-1.gri'</default>
++      <default>'/usr/share/gxsm3/profileplot/gxsmplot2d-1.gri'</default>
+       <summary>Path/name of your 2d gri cmd file #1</summary>
+       <description>
+         Path/name of your 2d gri cmd file #1
+@@ -1630,7 +1630,7 @@
+     </key>
+     <key name="x2d-gricmdfile2" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/profileplot/gxsmplot2d-2.gri'</default>
++      <default>'/usr/share/gxsm3/profileplot/gxsmplot2d-2.gri'</default>
+       <summary>Path/name of your 2d gri cmd file #2</summary>
+       <description>
+         Path/name of your 2d gri cmd file #2
+@@ -1638,7 +1638,7 @@
+     </key>
+     <key name="x2d-gricmdfile3" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/profileplot/gxsmplot2d-3.gri'</default>
++      <default>'/usr/share/gxsm3/profileplot/gxsmplot2d-3.gri'</default>
+       <summary>Path/name of your 2d gri cmd file #3</summary>
+       <description>
+         Path/name of your 2d gri cmd file #3
+@@ -1646,7 +1646,7 @@
+     </key>
+     <key name="x2d-gricmdfile4" type="s">
+ 
+-      <default>'/usr/local/share/gxsm3/profileplot/gxsmplot2d-4.gri'</default>
++      <default>'/usr/share/gxsm3/profileplot/gxsmplot2d-4.gri'</default>
+       <summary>Path/name of your 2d gri cmd file #4</summary>
+       <description>
+         Path/name of your 2d gri cmd file #4

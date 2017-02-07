@@ -1,1 +1,2 @@
 ubuntu_16.04_gtk+3.0.patch
+fix-default-pathes.path
