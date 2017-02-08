@@ -71,7 +71,13 @@ public:
         void ShowSubPic (int xs, int ys, int w, int h);
         void update_bbox (int y1, int y2);
         void set_translate_offset (gint x, gint y) { tr_xy[0]=x+x0; tr_xy[1]=y+y0; };
-  
+
+        void get_rgb_from_colortable (unsigned long val, double &r, double &g, double &b){
+                r = (double)( ULColorTable[val]      & 0xff)/256.;
+                g = (double)((ULColorTable[val]>> 8) & 0xff)/256.;
+                b = (double)((ULColorTable[val]>>16) & 0xff)/256.;
+        };
+        
 private:
 
         /*my palette of greys / LookUp Table*/

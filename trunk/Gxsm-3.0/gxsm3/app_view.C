@@ -594,7 +594,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	SetMarkerGroup ();
 
 	AppWindowInit (title);
-        set_window_geometry ("view-scan2d", ChNo+1);
+        set_window_geometry ("view-scan2d", ChNo+1, false);
         
 	g_object_set_data  (G_OBJECT (window), "Ch", GINT_TO_POINTER (ChNo));
 	g_object_set_data  (G_OBJECT (window), "ChNo", GINT_TO_POINTER (ChNo+1));
@@ -1192,19 +1192,48 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                 
                 cairo_translate (cr, 250., 370.);
 
-                g_message ("DRAW LEGEND: npx=%d zf=%g", vc->npx, zf);
-                
+                double bar_len=140.;
+                double bar_width=16.;
+                double bar_d=5.;
                 if (vc->legend_items_code[0] == 'z'){ // ==zbar
-                        cairo_set_source_rgba (cr, 0.3, 0.3, 0.3, 0.66); // light grey
-                        cairo_set_line_width (cr, 2.);
-                        cairo_rectangle (cr, 0.,0., 140., 20.);
+                        double r,g,b;
+                        gint bars = bar_len/bar_d;
+                        cairo_set_line_width (cr, 0.);
+                        for (gint i=0; i<bars; ++i){
+                                vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol() * (0.5*bar_d + i*bar_d)/bar_len), r,g,b);
+                                cairo_set_source_rgb (cr, r,g,b);
+                                cairo_rectangle (cr, i*bar_d, 0., bar_d*1.1, bar_width);
+                                cairo_fill (cr);
+                        }
+                        cairo_set_source_rgba (cr, 0.2, 0.2, 0.2, 0.66); // light grey
+                        cairo_set_line_width (cr, 1.5);
+                        cairo_rectangle (cr, 0.,0., bar_len, bar_width);
                         cairo_stroke(cr);
                 }
                 if (vc->legend_items_code[1] == 'v'){ // ==zvbar
-                        cairo_set_line_width (cr, 2.);
-                        cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, 1.0); // grey scale
-                        cairo_rectangle (cr, 0.,0., 140., 20.);
-                        cairo_fill (cr);
+                        double r,g,b;
+                        double data_zhi, data_zlo;
+                        vc->scan->mem2d->GetZHiLo (&data_zhi, &data_zlo);
+
+                        gchar *reading_low = vc->vinfo->makeZinfo (data_zlo, ".2f");
+                        cairo_item_text val_low (bar_d, bar_width/2, reading_low);
+                        vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol() * (bar_len-0.5*bar_d)/bar_len), r,g,b);
+                        val_low.set_position (bar_d, bar_width/2);
+                        val_low.set_stroke_rgba (r,g,b, 1.0);
+                        val_low.set_font_face_size ("Ununtu", bar_width*0.8);
+                        val_low.set_anchor (CAIRO_ANCHOR_W);
+                        val_low.draw (cr);
+                        g_free (reading_low);
+
+                        gchar *reading_hi = vc->vinfo->makeZinfo (data_zhi, ".2f");
+                        cairo_item_text val_hi (bar_width-bar_d, bar_width/2, reading_hi);
+                        vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol() * (0.5*bar_d)/bar_len), r,g,b);
+                        val_hi.set_position (bar_len-bar_d, bar_width/2);
+                        val_hi.set_stroke_rgba (r,g,b, 1.0);
+                        val_hi.set_font_face_size ("Sans Regular", bar_width*0.8);
+                        val_hi.set_anchor (CAIRO_ANCHOR_E);
+                        val_hi.draw (cr);
+                        g_free (reading_hi);
                 }
                 // ...
 

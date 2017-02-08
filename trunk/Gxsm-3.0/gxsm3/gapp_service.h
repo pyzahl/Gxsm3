@@ -702,7 +702,7 @@ public:
 	virtual void AppWindowInit(const gchar *title);
         virtual void add_window_to_window_menu(const gchar *menu_item_label, const gchar* key);
 
-	int set_window_geometry (const gchar *key, gint index=-1);
+	int set_window_geometry (const gchar *key, gint index=-1, gboolean add_to_menu=true);
 
 	static void SaveGeometryCallback(AppBase *apb);
 

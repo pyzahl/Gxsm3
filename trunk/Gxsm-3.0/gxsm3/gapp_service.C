@@ -942,7 +942,7 @@ void AppBase::add_window_to_window_menu(const gchar *menu_item_label, const gcha
         g_free (tmp);
 }
 
-int AppBase::set_window_geometry (const gchar *key, gint index){
+int AppBase::set_window_geometry (const gchar *key, gint index, gboolean add_to_menu){
         XSM_DEBUG_GP (DBG_L4, "AppBase::set_window_geometry and append '%s' to Windows Menu.\n", key);
 
         if (window_key){
@@ -965,7 +965,8 @@ int AppBase::set_window_geometry (const gchar *key, gint index){
 
         XSM_DEBUG_GP (DBG_L9, "AppBase::set_window_geometry and append '%s' to Windows Menu -- add to menu.\n", window_key);
 
-        add_window_to_window_menu (window_key, window_key);
+        if (add_to_menu)
+                add_window_to_window_menu (window_key, window_key);
 
         if (gapp)
                 gapp->add_appwindow_to_list (this); // add self to gapp globale list

@@ -40,49 +40,57 @@
 
 class ViewInfo{
 public:
-  ViewInfo(Scan *Sc, int qf, int zf);
-  virtual ~ViewInfo(){};
+        ViewInfo(Scan *Sc, int qf, int zf);
+        virtual ~ViewInfo(){};
   
-  void SetQfZf (int qf, int zf){
-    Qfac = qf; Zfac=zf;
-  };
+        void SetQfZf (int qf, int zf){
+                Qfac = qf; Zfac=zf;
+        };
   
-  void EnableTimeDisplay(int flag=TRUE){ showtime=flag; };
-  void SetPixelUnit(int flag=TRUE){ pixelmode=flag; };
-  void SetCoordMode(SCAN_COORD_MODE scm=SCAN_COORD_ABSOLUTE){ sc_mode=scm; };
-  void ChangeXYUnit(UnitObj *u){ uy=ux=u; };
-  void ChangeXUnit(UnitObj *u){ ux=u; };
-  void ChangeYUnit(UnitObj *u){ uy=u; };
-  void ChangeZUnit(UnitObj *u){ uz=u; };
+        void EnableTimeDisplay(int flag=TRUE){ showtime=flag; };
+        void SetPixelUnit(int flag=TRUE){ pixelmode=flag; };
+        void SetCoordMode(SCAN_COORD_MODE scm=SCAN_COORD_ABSOLUTE){ sc_mode=scm; };
+        void ChangeXYUnit(UnitObj *u){ uy=ux=u; };
+        void ChangeXUnit(UnitObj *u){ ux=u; };
+        void ChangeYUnit(UnitObj *u){ uy=u; };
+        void ChangeZUnit(UnitObj *u){ uz=u; };
+        
+        
+        gchar *makeXinfo(double x); // X only
+        gchar *makeDXYinfo(double xy1[2], double xy2[2], Point2D *p1=NULL, Point2D *p2=NULL, double factor=1.); // Delta X, w clipping, opt. scaleing w factor of user number
+        gchar *makeDnXYinfo(double *xy, int n); // length of polyline, n nodes
+        gchar *makeA2info(double xy1[2], double xy2[2]); // Area XY1-XY2
+        gchar *makeXYinfo(double x, double y, Point2D *p=NULL); // X,Y
+        gchar *makedXdYinfo(double xy1[2], double xy2[2]); // dX, dY
+        gchar *makeXYZinfo(double x, double y, Point2D *p=NULL); // Point: X,Y,Z
+        gchar *makeZinfo(double data_z, const gchar *new_prec=NULL){
+                UnitObj *u = Uz();
+                UnitObj tmp(*u);
+                if (new_prec)
+                        tmp.ChangePrec (new_prec);
+                return tmp.UsrString (data_z*(pixelmode ? 1. : sc->data.s.dz)); 
+        };
+        
+        void Angstroem2W(double &x, double &y);
+        void W2Angstroem(double &x, double &y);
+        double AngstroemXRel2W(double x);
 
-  gchar *makeXinfo(double x); // X only
-  gchar *makeDXYinfo(double xy1[2], double xy2[2], Point2D *p1=NULL, Point2D *p2=NULL, double factor=1.); // Delta X, w clipping, opt. scaleing w factor of user number
-  gchar *makeDnXYinfo(double *xy, int n); // length of polyline, n nodes
-  gchar *makeA2info(double xy1[2], double xy2[2]); // Area XY1-XY2
-  gchar *makeXYinfo(double x, double y, Point2D *p=NULL); // X,Y
-  gchar *makedXdYinfo(double xy1[2], double xy2[2]); // dX, dY
-  gchar *makeXYZinfo(double x, double y, Point2D *p=NULL); // Point: X,Y,Z
+        int GetQfac() { return Qfac; };
+        int GetZfac() { return Zfac; };
 
-  void Angstroem2W(double &x, double &y);
-  void W2Angstroem(double &x, double &y);
-  double AngstroemXRel2W(double x);
+        UnitObj *Ux();
+        UnitObj *Uy();
+        UnitObj *Uz();
 
-  int GetQfac() { return Qfac; };
-  int GetZfac() { return Zfac; };
-
-  UnitObj *Ux();
-  UnitObj *Uy();
-  UnitObj *Uz();
-
-  Scan *sc;
+        Scan *sc;
 private:
-  UnitObj *ux;
-  UnitObj *uy;
-  UnitObj *uz;
-  int Qfac, Zfac;
-  int pixelmode;
-  int showtime;
-  SCAN_COORD_MODE sc_mode;
+        UnitObj *ux;
+        UnitObj *uy;
+        UnitObj *uz;
+        int Qfac, Zfac;
+        int pixelmode;
+        int showtime;
+        SCAN_COORD_MODE sc_mode;
 };
 
 #endif
