@@ -1,4 +1,6 @@
-/* Gnome gxsm - Gnome X Scanning Microscopy
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
+ /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
  *
@@ -216,8 +218,8 @@ static void subconst_cleanup(void)
   PI_DEBUG (DBG_L2, "subconst Plugin Cleanup");
 }
 
-double TransformFkt (double val, double range){
-	return val - constval;
+double TransformFkt (double val, double parameter){
+	return (val - parameter);
 }
 
 // run-Function
@@ -276,11 +278,15 @@ double TransformFkt (double val, double range){
 
 			m->HiLo(&hi, &lo, FALSE);
 	
+                        double param = constval/Src->data.s.dz;
+
+                        g_message ("SubConst[%d][%d] constval=%f, dz=%f, param=%f", time_index, v_index, constval, Src->data.s.dz, param);
+                        
 			for (line=0; line<Dest->mem2d->GetNy (); line++)
-				for (col=0; col<Dest->mem2d->GetNx (); col++)
-					Dest->mem2d->PutDataPkt 
-					  (TransformFkt (m->GetDataPkt (col, line)-lo, hi-lo), 
-					   col, line);
+                                for (col=0; col<Dest->mem2d->GetNx (); col++)
+                                        Dest->mem2d->PutDataPkt 
+                                                (TransformFkt (m->GetDataPkt (col, line), param), 
+                                                 col, line);
 		}
 		Dest->append_current_to_time_elements (time_index-ti, m->get_frame_time ());
 	}
