@@ -125,6 +125,8 @@ gxsm3_app_window_open (Gxsm3appWindow *win,
                 test.close ();
                 XSM_DEBUG (DBG_L2, "Attempt to load/import <" << basename << ">");
                 
+                // g_message ("GXSM comandline load file <%s>", basename);
+                
                 if (in_active_channel){
                         gapp->xsm->load (basename);
                         ret=true;

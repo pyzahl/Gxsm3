@@ -1158,13 +1158,16 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
         XSM_DEBUG (DBG_L2,  "ViewControl:::canvas_draw_callback ********************** SCAN DRAW *********************" );
 
         double zf = vc->vinfo->GetZfac();
-        // double qf = vc->vinfo->GetQfac();
-        vc->ximg->set_translate_offset (vc->rulewidth+vc->border/zf, vc->rulewidth+vc->border/zf);
-        cairo_translate (cr, (double)(vc->rulewidth+vc->border/zf), (double)(vc->rulewidth+vc->border/zf));
+
+        if (widget){
+                vc->ximg->set_translate_offset (vc->rulewidth+vc->border/zf, vc->rulewidth+vc->border/zf);
+                cairo_translate (cr, (double)(vc->rulewidth+vc->border/zf), (double)(vc->rulewidth+vc->border/zf));
+        }
+
         cairo_scale (cr, zf, zf);
 
         // 1) draw ActiveFrame (or not)
-        if (vc->ActiveFrameWidth > 0.){
+        if (vc->ActiveFrameWidth > 0. && widget){
         //	XSM_DEBUG (DBG_L2,  "ViewControl:::canvas_draw_callback ********************** SCAN PAINT FRAME *********************" );
                 cairo_set_source_rgb (cr, 1.0, 1.0, 0.0); // yellow
                 cairo_set_line_width (cr, 4.*vc->ActiveFrameWidth);
@@ -1245,7 +1248,7 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
         vc->DrawObjects (cr);
 
         // 5) add red line overlay
-        if(vc->RedLine && vc->attach_redline_flag){
+        if(vc->RedLine && vc->attach_redline_flag && widget){
                 cairo_translate (cr, 0, vc->npy/zf);
                 cairo_scale (cr, vc->npx/zf/vc->RedLine->get_drawing_width()*1.3, vc->npy/zf/vc->RedLine->get_drawing_width()*0.2);
                  
@@ -2665,7 +2668,9 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
 
         cr = cairo_create (surface);
         //        cairo_scale (cr, IMAGE_DPI/72.0, IMAGE_DPI/72.0);
-        
+
+        canvas_draw_callback (NULL, cr, vc); // call with widget=NULL assumed external rendering and omits drawing active frame
+#if 0        
         double zf = vc->vinfo->GetZfac();
         cairo_scale (cr, zf, zf);
         cairo_save (cr);
@@ -2678,7 +2683,8 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
         vc->DrawObjects (cr);
 
         cairo_restore (cr);
-
+#endif
+        
         status = cairo_status(cr);
         if (status)
                 printf("%s\n", cairo_status_to_string (status));

@@ -191,7 +191,6 @@ G_DEFINE_TYPE(Gxsm3app, gxsm3_app, GTK_TYPE_APPLICATION);
 static void
 gxsm3_app_init (Gxsm3app *app)
 {
-        // ................**********************************************************************
         XSM_DEBUG(DBG_L2, "gxsm3_app_init =======================================================" );
 }
 
@@ -201,7 +200,6 @@ static void
 gxsm3_app_startup (GApplication *app)
 {
         GtkBuilder *builder;
-        // ................**********************************************************************
         XSM_DEBUG(DBG_L2, "gxsm3_app_startup ====================================================" );
         
 
@@ -410,7 +408,6 @@ static void
 gxsm3_app_activate (GApplication *app)
 {
         Gxsm3appWindow *win;
-        // ................**********************************************************************
         XSM_DEBUG(DBG_L2, "gxsm3_app_activate ==================================================" );
 
         if (gapp){
@@ -455,7 +452,6 @@ gxsm3_app_open (GApplication  *app,
 static void
 gxsm3_app_class_init (Gxsm3appClass *klass)
 {
-        // ................**********************************************************************
         XSM_DEBUG(DBG_L2, "gxsm3_app_class_init =================================================" );
 
         G_APPLICATION_CLASS (klass)->startup = gxsm3_app_startup;
@@ -466,7 +462,6 @@ gxsm3_app_class_init (Gxsm3appClass *klass)
 Gxsm3app *
 gxsm3_app_new (void)
 {
-        // ................**********************************************************************
         XSM_DEBUG(DBG_L2, "gxsm3_app_new ========================================================" );
 
         return (Gxsm3app*) g_object_new (GXSM3_APP_TYPE,
@@ -474,136 +469,6 @@ gxsm3_app_new (void)
                                          "flags", G_APPLICATION_HANDLES_OPEN,
                                          NULL);
 }
-
-
-#if 0
-
-
-static void gxsm3_app_shutdown (GApplication *app, gpointer user_data)
-{
-        // ................**********************************************************************
-        XSM_DEBUG(DBG_L2, "gxsm3_app_shutdown ===================================================" );
-
-        XSM_DEBUG(DBG_L1, "GXSM::SHUTDOWN");
-	delete gapp;
-	gapp = NULL;
-}
-
-
-static gint
-gxsm_app_command_line (GApplication            *application,
-                       GApplicationCommandLine *cl)
-{
-	GVariantDict *options;
-	const gchar **remaining_args;
-
-        // ................**********************************************************************
-        XSM_DEBUG(DBG_L2, "gxsm3_capp_comand_line ===============================================" );
-
-	options = g_application_command_line_get_options_dict (cl);
-
-        //	g_variant_dict_lookup (options, "new-window", "b", &priv->new_window);
-        //	g_variant_dict_lookup (options, "new-document", "b", &priv->new_document);
-        //	g_variant_dict_lookup (options, "geometry", "s", &priv->geometry);
-
-	if (g_variant_dict_contains (options, "wait"))
-                {
-                        //		priv->command_line = cl;
-                }
-
-
-	/* Parse filenames */
-	if (g_variant_dict_lookup (options, G_OPTION_REMAINING, "^a&ay", &remaining_args))
-                {
-                        gint i;
-
-                        for (i = 0; remaining_args[i]; i++)
-                                {
-                                        GFile *file;
-
-                                        file = g_application_command_line_create_file_for_arg (cl, remaining_args[i]);
-                        //                        priv->file_list = g_slist_prepend (priv->file_list, file);
-		}
-
-                //		priv->file_list = g_slist_reverse (priv->file_list);
-		g_free (remaining_args);
-	}
-
-	g_application_activate (application);
-
-	return 0;
-}
-
-static gint
-gxsm_app_handle_local_options (GApplication *application,
-                               GVariantDict *options)
-{
-	if (g_variant_dict_contains (options, "version"))
-	{
-		PI_DEBUG_GP (DBG_L1, "%s - Version %s\n", g_get_application_name (), VERSION);
-		return 0;
-	}
-#if 0
-	if (g_variant_dict_contains (options, "standalone"))
-	{
-		GApplicationFlags old_flags;
-
-		old_flags = g_application_get_flags (application);
-		g_application_set_flags (application, old_flags | G_APPLICATION_NON_UNIQUE);
-	}
-
-	if (g_variant_dict_contains (options, "wait"))
-	{
-		GApplicationFlags old_flags;
-
-		old_flags = g_application_get_flags (application);
-		g_application_set_flags (application, old_flags | G_APPLICATION_IS_LAUNCHER);
-	}
-#endif
-	return -1;
-}
-
-/* Note: when launched from command line we do not reach this method
- * since we manually handle the command line parameters in order to
- * parse +LINE:COL, stdin, etc.
- * However this method is called when open() is called via dbus, for
- * instance when double clicking on a file in nautilus
- */
-static void
-gxsm_app_open (GApplication  *application,
-                GFile        **files,
-                gint           n_files,
-                const gchar   *hint)
-{
-	gint i;
-        //	GSList *file_list = NULL;
-        int re_use=0;
-
-	for (i = 0; i < n_files; i++){
-                //		file_list = g_slist_prepend (file_list, files[i]);
-                gchar *fpath = g_file_get_path (files[i]);
-                std::ifstream test;
-                test.open (fpath, std::ios::in);
-                if (test.good ()) {
-                        test.close ();
-                        XSM_DEBUG(DBG_L2, "Attempt to load/import <" << fpath << ">");
-                        if (re_use)
-                                re_use = gapp->xsm->load (fpath);
-                        else
-                                if(!gapp->xsm->ActivateFreeChannel())
-                                        // if no success, reuse this active scan next!
-                                        re_use = gapp->xsm->load (fpath);
-                }
-                g_free (fpath);
-        }
-        if (re_use)
-                gapp->xsm->SetMode(-1, ID_CH_M_OFF, TRUE); // kill unused scan
-
-        //	file_list = g_slist_reverse (file_list);
-        //	g_slist_free (file_list);
-}
-
-#endif
 
 // #define GXSM_STARTUP_VERBOSE
 #ifdef GXSM_STARTUP_VERBOSE
