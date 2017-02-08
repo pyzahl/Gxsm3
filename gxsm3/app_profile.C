@@ -862,7 +862,7 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
                         gint i = atoi (&title[11]);
                         if (i>=1 && i <= 8){
                                 gchar *id=g_strdup_printf ("view-profile-redline-%d", i);
-                                set_window_geometry (id);
+                                set_window_geometry (id, -1, false);
                                 show ();
                         }
                 }

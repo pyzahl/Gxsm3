@@ -97,17 +97,17 @@ public:
                         alias = g_strdup(a);
         };
 
-        void ChangeSym(gchar *s, gchar *pss){ 
+        void ChangeSym(const gchar *s, const gchar *pss){ 
                 g_free(sym); g_free(pssym); 
                 sym=g_strdup(s); pssym=g_strdup(pss); 
         };
 
-        void ChangePrec(gchar *precc){ 
+        void ChangePrec(const gchar *precc){ 
                 g_free(prec);
                 prec = g_strdup(precc);
         };
 
-        void SetLabel(gchar *lab){ 
+        void SetLabel(const gchar *lab){ 
                 g_free(label);
                 label = g_strdup(lab);
         };
