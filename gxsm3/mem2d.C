@@ -374,6 +374,40 @@ void TZData<ZTYP>::NcGet(NcVar *ncfield, int time_index){
 	}
 }
 
+template <class ZTYP> 
+void TZData<ZTYP>::norm (double mag){
+        for(int v=0; v<nv; ++v){
+                double sum=0.;
+                for(int y=0; y<ny; y++)
+                        for(int x=0; x<nx; x++)
+                                sum += Zdat[y*nv+v][x];
+                mul (mag/sum);
+        }
+}
+
+template <class ZTYP> 
+void TZData<ZTYP>::add (double c){
+        for(int v=0; v<nv; ++v){
+                for(int y=0; y<ny; y++)
+                        for(int x=0; x<nx; x++){
+                                double tmp = (double)Zdat[y*nv+v][x];
+                                Zdat[y*nv+v][x] = (ZTYP)(tmp+c);
+                        }
+        }
+}
+
+template <class ZTYP> 
+void TZData<ZTYP>::mul (double f){
+        for(int v=0; v<nv; ++v){
+                for(int y=0; y<ny; y++)
+                        for(int x=0; x<nx; x++){
+                                double tmp = (double)Zdat[y*nv+v][x];
+                                Zdat[y*nv+v][x] = (ZTYP)(f*tmp);
+                        }
+        }
+}
+
+
 /*
  * Layer Information
  */
@@ -2343,145 +2377,151 @@ int Mem2d::SetDataValid(){ return data_valid=1; }
 // MemDigiFilter - public Mem2d
 
 MemDigiFilter::MemDigiFilter(double Xms, double Xns, int M, int N):Mem2d(2*N+1, 2*M+1, ZD_DOUBLE){
-  xms=Xms, xns=Xns;
-  n=N, m=M;
-  XSM_DEBUG (DBG_L4, "MemDigiFilter: " << n << " " << m << " " << xms << " " << xns);
+        xms=Xms, xns=Xns;
+        n=N, m=M;
+        XSM_DEBUG (DBG_L4, "MemDigiFilter: " << n << " " << m << " " << xms << " " << xns);
 }
 
 gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
-  int i0=0;
-  int i, j;
-  int ii, jj;
-  double scalefac, scalefaca;
-  int mm, nn;
-  int ms=m, ns=n;
-  gboolean again = FALSE;
+        int i0=0;
+        int i, j;
+        int ii, jj;
+        double scalefac, scalefaca;
+        int mm, nn;
+        int ms=m, ns=n;
+        gboolean again = FALSE;
   
-  XSM_DEBUG (DBG_L2, "MemDigiFilter::Convolve: create kernel");
-  // create the convolution kernel
-  do{
-    int ring_m, ring_n;
-    // (Re)Calc Kernel ... xms, xns, ms, ns
-    XSM_DEBUG (DBG_L6, "R " << (2*ms+1) << " " << (2*ns+1));
-    n=ns; m=ms;
-    Resize(2*ns+1, 2*ms+1, ZD_DOUBLE);
-    XSM_DEBUG (DBG_L6, "MemDigiFilter::Resize done.");
-    CalcKernel();
-    XSM_DEBUG (DBG_L6, "MemDigiFilter::CalcKernel done.");
-    for(ring_m=ring_n=-1, scalefaca=scalefac=0., i=0; i<2*ms+1; i++)
-      for(j=0; j<2*ns+1; j++){
-	int tmp_ring_m = abs(i-m);
-	int tmp_ring_n = abs(j-n);
-	scalefaca += fabs(data->Z(j,i));
-	scalefac  += data->Z(j,i);
-	if(data->Z(j,i)!=0. && ring_m<tmp_ring_m)
-	  ring_m = tmp_ring_m;
-	if(data->Z(j,i)!=0. && ring_n<tmp_ring_n)
-	  ring_n = tmp_ring_n;
-      }
-    scalefac = scalefac!=0. ? fabs(scalefac) : (scalefaca+1.)/2.;
+        XSM_DEBUG (DBG_L2, "MemDigiFilter::Convolve: create kernel");
+        // create the convolution kernel
+        do{
+                int ring_m, ring_n;
+                // (Re)Calc Kernel ... xms, xns, ms, ns
+                XSM_DEBUG (DBG_L6, "R " << (2*ms+1) << " " << (2*ns+1));
+                n=ns; m=ms;
+                Resize(2*ns+1, 2*ms+1, ZD_DOUBLE);
+                XSM_DEBUG (DBG_L6, "MemDigiFilter::Resize done.");
+                CalcKernel();
+                XSM_DEBUG (DBG_L6, "MemDigiFilter::CalcKernel done.");
+                for(ring_m=ring_n=-1, scalefaca=scalefac=0., i=0; i<2*ms+1; i++)
+                        for(j=0; j<2*ns+1; j++){
+                                int tmp_ring_m = abs(i-m);
+                                int tmp_ring_n = abs(j-n);
+                                scalefaca += fabs(data->Z(j,i));
+                                scalefac  += data->Z(j,i);
+                                if(data->Z(j,i)!=0. && ring_m<tmp_ring_m)
+                                        ring_m = tmp_ring_m;
+                                if(data->Z(j,i)!=0. && ring_n<tmp_ring_n)
+                                        ring_n = tmp_ring_n;
+                        }
+                scalefac = scalefac!=0. ? fabs(scalefac) : (scalefaca+1.)/2.;
     
-    again = FALSE;
-    if(ring_m < m)	{again = TRUE; ms = ring_m;}
-    if(ring_n < n)	{again = TRUE; ns = ring_n;}
-  }while(again);
-  XSM_DEBUG (DBG_L6, "MemDigiFilter::Scaleing done.");
+                again = FALSE;
+                if(ring_m < m)	{again = TRUE; ms = ring_m;}
+                if(ring_n < n)	{again = TRUE; ns = ring_n;}
+        }while(again);
+        XSM_DEBUG (DBG_L6, "MemDigiFilter::Scaleing done.");
   
-  if(Src->data->GetNx()<1 && Src->data->GetNy()<1)
-    return FALSE;
+        if(Src->data->GetNx()<1 && Src->data->GetNy()<1)
+                return FALSE;
  
-  XSM_DEBUG (DBG_L6, "Prep Larger Src: " << (Src->data->GetNx() + 2*ns) << " " << (Src->data->GetNy() + 2*ms));
-  // mm * nn is now size of Src:
-  Mem2d x((nn=Src->data->GetNx()) + 2*ns, (mm=Src->data->GetNy()) + 2*ms, Src->GetTyp());
+        XSM_DEBUG (DBG_L6, "Prep Larger Src: " << (Src->data->GetNx() + 2*ns) << " " << (Src->data->GetNy() + 2*ms));
+        // mm * nn is now size of Src:
+        Mem2d x((nn=Src->data->GetNx()) + 2*ns, (mm=Src->data->GetNy()) + 2*ms, Src->GetTyp());
  
-  // *** WORKINGMARKER *** 11/2/1999 PZ ***
-  // fill the central part of the x matrix with the data
-  XSM_DEBUG (DBG_L6, "Mem2dDigi: " << ns << " " << ms << " " << nn << " " << mm);
-  x.data->CopyFrom(Src->data, 0,0, ns,ms ,nn,mm); // !!!!!!!!!!!! tot
+        // *** WORKINGMARKER *** 11/2/1999 PZ ***
+        // fill the central part of the x matrix with the data
+        XSM_DEBUG (DBG_L6, "Mem2dDigi: " << ns << " " << ms << " " << nn << " " << mm);
+        x.data->CopyFrom(Src->data, 0,0, ns,ms ,nn,mm); // !!!!!!!!!!!! tot
   
-  // now fill edges and corners with copies of edge data
-  // edge left / right
-  for(i=0;i<mm;i++)
-    for(j=0;j<ns;j++){   
-      x.data->Z(Src->data->Z(i0,i),   j,      i+ms); // data[i+ms][j]       = Src->data[i][0];
-      x.data->Z(Src->data->Z(nn-1,i),j+ns+nn,i+ms); // data[i+ms][j+ns+nn] = Src->data[i][nn-1];
-    }
+        // now fill edges and corners with copies of edge data
+        // edge left / right
+        for(i=0;i<mm;i++)
+                for(j=0;j<ns;j++){   
+                        x.data->Z(Src->data->Z(i0,i),   j,      i+ms); // data[i+ms][j]       = Src->data[i][0];
+                        x.data->Z(Src->data->Z(nn-1,i),j+ns+nn,i+ms); // data[i+ms][j+ns+nn] = Src->data[i][nn-1];
+                }
   
-  // edge top / bottom
-  for(i=0;i<ms;i++){
-    x.data->CopyFrom(Src->data, 0,0, ns,i ,nn);
-    x.data->CopyFrom(Src->data, 0,mm-1, ns,i+mm+ms ,nn);
-  }
+        // edge top / bottom
+        for(i=0;i<ms;i++){
+                x.data->CopyFrom(Src->data, 0,0, ns,i ,nn);
+                x.data->CopyFrom(Src->data, 0,mm-1, ns,i+mm+ms ,nn);
+        }
   
-  // corners
-  for(i=0;i<ms;i++)
-    for(j=0;j<ns;j++){
-      x.data->Z(Src->data->Z(i0,i0), j,i);
-      x.data->Z(Src->data->Z(nn-1,i0), nn+ns+j,i);
-      x.data->Z(Src->data->Z(i0,mm-1), j,mm+ms+i);
-      x.data->Z(Src->data->Z(nn-1,mm-1), nn+ns+j,mm+ms+i);
-    }
+        // corners
+        for(i=0;i<ms;i++)
+                for(j=0;j<ns;j++){
+                        x.data->Z(Src->data->Z(i0,i0), j,i);
+                        x.data->Z(Src->data->Z(nn-1,i0), nn+ns+j,i);
+                        x.data->Z(Src->data->Z(i0,mm-1), j,mm+ms+i);
+                        x.data->Z(Src->data->Z(nn-1,mm-1), nn+ns+j,mm+ms+i);
+                }
   
 #ifdef SAVECONVOLKERN
-  // save Kernel to /tmp/convolkern.dbl
-  std::ofstream fk;
-  fk.open("/tmp/convolkern.dbl", ios::out|ios::bin);
-  struct { short nx,ny; } fkh; 
-  fkh.nx=data->GetNx();
-  fkh.ny=data->GetNy();
-  fk.write((void*)&fkh, sizeof(fkh));
-  DataWrite(fk);
-  fk.close();
+        // save Kernel to /tmp/convolkern.dbl
+        std::ofstream fk;
+        fk.open("/tmp/convolkern.dbl", ios::out|ios::bin);
+        struct { short nx,ny; } fkh; 
+        fkh.nx=data->GetNx();
+        fkh.ny=data->GetNy();
+        fk.write((void*)&fkh, sizeof(fkh));
+        DataWrite(fk);
+        fk.close();
 #endif
 #ifdef SAVECONVOLSRC
-  // save datasrc with added bounds to /tmp/convolsrc.xxx
-  std::ofstream fk;
-  switch(x.GetTyp()){
-    case ZD_BYTE: fk.open("/tmp/convolsrc.byt", std::ios::out); break;
-    case ZD_SHORT: fk.open("/tmp/convolsrc.sht", std::ios::out); break;
-    case ZD_LONG: fk.open("/tmp/convolsrc.lng", std::ios::out); break;
-    case ZD_DOUBLE: fk.open("/tmp/convolsrc.dbl", std::ios::out); break;
-    default: break;
-  }
-  if(fk.good()){
-    struct { short nx,ny; } fkh; 
-    fkh.nx=x.data->GetNx();
-    fkh.ny=x.data->GetNy();
-    fk.write((const char*)&fkh, sizeof(fkh));
-    x.DataWrite(fk);
-    fk.close();
-  }
+        // save datasrc with added bounds to /tmp/convolsrc.xxx
+        std::ofstream fk;
+        switch(x.GetTyp()){
+        case ZD_BYTE: fk.open("/tmp/convolsrc.byt", std::ios::out); break;
+        case ZD_SHORT: fk.open("/tmp/convolsrc.sht", std::ios::out); break;
+        case ZD_LONG: fk.open("/tmp/convolsrc.lng", std::ios::out); break;
+        case ZD_DOUBLE: fk.open("/tmp/convolsrc.dbl", std::ios::out); break;
+        default: break;
+        }
+        if(fk.good()){
+                struct { short nx,ny; } fkh; 
+                fkh.nx=x.data->GetNx();
+                fkh.ny=x.data->GetNy();
+                fk.write((const char*)&fkh, sizeof(fkh));
+                x.DataWrite(fk);
+                fk.close();
+        }
 #endif
 
-  //
-  if (Dest->GetNv () == 1)
-	  Dest->Resize(nn,mm);
+        //
+        if (Dest->GetNv () == 1)
+                Dest->Resize(nn,mm);
 
-  // do convolution !
-  gint pcent=0;
-  for(ii=0; ii<mm; ++ii){
-    if(pcent < 100*ii/mm ){
-      SET_PROGRESS((gfloat)ii/(gfloat)mm);
-    }
+        // do convolution !
+        gint pcent=0;
+        for(ii=0; ii<mm; ++ii){
+                if(pcent < 100*ii/mm ){
+                        SET_PROGRESS((gfloat)ii/(gfloat)mm);
+                }
 
-    for(jj=0; jj<nn; ++jj){
-      const int tms = 2*ms;
-      const int tns = 2*ns;
-      const int sf2 = (int)scalefac/2;
-      double sum;
+                for(jj=0; jj<nn; ++jj){
+                        const int tms = 2*ms;
+                        const int tns = 2*ns;
+#ifdef __INT_SF2
+                        const int sf2 = (int)scalefac/2;
+#endif
+                        double sum;
       
-      for(sum=0., i=0; i<=tms; ++i){
-	data->SetPtr(0,i);
-	x.data->SetPtr(jj,i+ii);
-	for(j=0; j<tns; j++)
-	  sum += x.data->GetNext() * data->GetNext();
-      }
-      Dest->data->Z(sum>0. ? ((sum+sf2)/scalefac) :
-		    -((-sum+sf2)/scalefac),
-		    jj,ii);
-    }
-  }
-  SET_PROGRESS(0);
-  XSM_DEBUG (DBG_L6, "done.");
-  return TRUE;  
+                        for(sum=0., i=0; i<=tms; ++i){
+                                data->SetPtr(0,i);
+                                x.data->SetPtr(jj,i+ii);
+                                for(j=0; j<tns; j++)
+                                        sum += x.data->GetNext() * data->GetNext();
+                        }
+#ifdef __INT_SF2
+                        Dest->data->Z(sum>0. ? ((sum+sf2)/scalefac) :
+                                      -((-sum+sf2)/scalefac),
+                                      jj,ii);
+#else
+                        Dest->data->Z(sum/scalefac, jj,ii);
+#endif
+                }
+        }
+        SET_PROGRESS(0);
+        XSM_DEBUG (DBG_L6, "done.");
+        return TRUE;  
 }
