@@ -177,6 +177,10 @@ public:
 	virtual void NcPut(NcVar *ncfield, int time_index=0)=0;
 	virtual void NcGet(NcVar *ncfield, int time_index=0)=0;
 
+	virtual void norm (double mag=1.)=0;
+	virtual void add (double c=1.)=0;
+	virtual void mul (double f=1.)=0;
+	
 	void SetLayer(int l){ vlayer=l; };
 	void SetLayerDataPut(int l){ vlayer_put=l; };
 	void StoreLayer(){ vlayerstore=vlayer; };
@@ -286,6 +290,10 @@ public:
 
 	void NcPut(NcVar *ncfield, int time_index=0);
 	void NcGet(NcVar *ncfield, int time_index=0);
+
+	void norm (double mag=1.);
+	void add (double c=1.);
+	void mul (double f=1.);
 
 protected:
 	ZTYP **Zdat;

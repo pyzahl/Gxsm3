@@ -262,6 +262,7 @@ public:
                                 double r2 = j*j+i*i;
                                 data->Z ((1.-r2/(2.*sig2))/(M_PI*sig2*sig2) * exp (-r2/(2*sig2)), j+n, i+m);
                         }
+		data->norm ();
 		return 0;
 	};
 };

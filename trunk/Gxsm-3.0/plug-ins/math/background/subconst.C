@@ -270,6 +270,9 @@ double TransformFkt (double val, double parameter){
 		if (multidim)
 			gapp->progress_info_set_bar_fraction ((gdouble)(time_index-ti)/(gdouble)ntimes_tmp, 1);
 
+                Dest->mem2d->copy (m);
+                Dest->mem2d->data->add (-constval/Src->data.s.dz);
+#if 0
 		Dest->mem2d->Resize (m->GetNx (), m->GetNy (), vf-vi+1, m->GetTyp());
 
 		for (int v_index = vi; v_index <= vf; ++v_index){
@@ -280,14 +283,32 @@ double TransformFkt (double val, double parameter){
 	
                         double param = constval/Src->data.s.dz;
 
-                        g_message ("SubConst[%d][%d] constval=%f, dz=%f, param=%f", time_index, v_index, constval, Src->data.s.dz, param);
+                        g_message ("SubConst[%d][%d] constval=%f, dz=%f,\n"
+                                   " range in =[%f .. %f],\n"
+                                   " range out=[%f .. %f],\n"
+                                   " range u  =[%f .. %f],\n"
+                                   " param=%f",
+                                   time_index, v_index,
+                                   constval, Src->data.s.dz,
+                                   lo, hi,
+                                   lo-param, hi-param,
+                                   (lo-param)*Src->data.s.dz, (hi-param)*Src->data.s.dz,
+                                   param);
                         
 			for (line=0; line<Dest->mem2d->GetNy (); line++)
-                                for (col=0; col<Dest->mem2d->GetNx (); col++)
-                                        Dest->mem2d->PutDataPkt 
-                                                (TransformFkt (m->GetDataPkt (col, line), param), 
-                                                 col, line);
+                                for (col=0; col<Dest->mem2d->GetNx (); col++){
+                                        double z, zz;
+                                        //Dest->mem2d->PutDataPkt 
+                                        //        (z=TransformFkt (zz=m->GetDataPkt (col, line), param), 
+                                        //         col, line);
+                                        zz=m->GetDataPkt (col, line);
+                                        z = zz - param;
+                                        Dest->mem2d->PutDataPkt (z, col, line);
+                                        if (line ==10 && col >100 && col < 120)
+                                                g_message ("(%f -%f> %f)",zz,param,z);
+                                }
 		}
+#endif
 		Dest->append_current_to_time_elements (time_index-ti, m->get_frame_time ());
 	}
 
