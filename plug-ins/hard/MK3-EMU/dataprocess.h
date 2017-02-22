@@ -93,9 +93,9 @@ extern    volatile unsigned int    TimerTemp, MeasuredTime, MaxTime, MinTime;
  
 */
  
-#define AIC_OUT(N) iobuf.mout[N]
-#define AIC_IN(N)  iobuf.min[N]
-#define COUNTER(N) QEP_cnt[N]
+#define AIC_OUT(N) DSP_MEMORY(iobuf).mout[N]
+#define AIC_IN(N)  DSP_MEMORY(iobuf).min[N]
+#define COUNTER(N) DSP_MEMORY(QEP_cnt[N])
 
 
 #endif						

@@ -42,11 +42,6 @@
 
 // PLL Buffers for the acquition 
 
-DSP_INT32 iobuf[32];
-
-DSP_INT32 Signal1[MaxSizeSigBuf];
-DSP_INT32 Signal2[MaxSizeSigBuf];
-	
 // Functions declarations -- dummy PAC-PLL for EMU
 
   // Must be called by the DPS only  (Return 1 if PLL option activated Return 0 if not)
@@ -69,8 +64,9 @@ void TestPhasePIResp_HL(){
 void TestAmpPIResp_HL(){
 }
 
-// Variables ******************************
+#if 0
 
+// Variables ******************************
 
 
 // Pointers for the acsiquition
@@ -144,4 +140,4 @@ DSP_INT32 cr2; // Sine 2F (RE)
 DSP_INT32 ci2; // Sine 2F (IM)
 	
 	
-	
+#endif	
