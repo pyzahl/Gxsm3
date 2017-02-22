@@ -1078,8 +1078,6 @@ typedef struct{
         MOVE_OFFSET move;
         AREA_SCAN scan;
         SCAN_EVENT_TRIGGER scan_event_trigger;
-        PROBE_VECTOR prbvh[500];
-        DSP_INT16 prbdf[100000];
         PROBE probe;
         AUTOAPPROACH autoapp;
         CR_OUT_PULSE CR_out_pulse;
@@ -1088,16 +1086,18 @@ typedef struct{
         DATA_FIFO datafifo;
         DATA_FIFO_EXTERN probe_datafifo;
         PLL_LOOKUP PLL_lookup;
-        PAC_PLL_MEMORY pac_pll_memory;
         DSP_SIG dsp_sig;
         DSP_INT32 VP_sec_end_buffer[10*8]; // 8x section + 8 values
         DSP_INT32 user_input_signal_array[32];
-        DSP_SIG dsp_signal_lookup[NUM_SIGNALS];
         DSP_INT32 sigma_delta_hr_mask[8*8]; // copy!
         struct iobuf_rec iobuf;
         DSP_INT16 QEP_cnt[2];
         DSP_INT32 GPIO_Data[4];
         DSP_INT32 GPIO_DataDir[4];
+        PAC_PLL_MEMORY pac_pll_memory;
+        DSP_SIG dsp_signal_lookup[NUM_SIGNALS];
+        PROBE_VECTOR prbvh[1000];
+        DSP_INT16 prbdf[100000];
         DSP_INT32 lock;
 } DSP_EMU_INTERNAL_MEMORY;
 

@@ -201,12 +201,13 @@
 #pragma DATA_SECTION(dsp_signal_lookup, "SMAGIC")
 #endif
 
+#endif
 
+/* END DSP_SIGNALS HEADER PART */
 
+/* CREATE TABLE */
 
-
-
-# ifdef CREATE_DSP_SIGNAL_LOOKUP
+#ifdef CREATE_DSP_SIGNAL_LOOKUP
 
 
 
@@ -314,8 +315,5 @@ DSP_SIG dsp_signal_lookup[NUM_SIGNALS] = {
 	MAKE_DSP_SIG_ENTRY_END ("END OF SIGNALS", "NA")  // END MARKING
 };
 
-# endif
-
 #endif
 
-/* END DSP_SIGNALS */
