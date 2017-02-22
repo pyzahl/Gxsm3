@@ -431,6 +431,10 @@ PLL_LOOKUP PLL_lookup;
 
 void setup_default_signal_configuration(){
 #ifdef DSPEMU
+        // copy signal lookup from gob def array via include file
+        for (int i=0; i<NUM_SIGNALS; ++i)
+                DSP_MEMORY(dsp_signal_lookup[i]).p = dsp_signal_lookup[i].p;
+                
         // Pointers for the acquisition
         DSP_MEMORY(PLL_lookup).pSignal1 = &DSP_MEMORY_PAC(pSignal1);
         DSP_MEMORY(PLL_lookup).pSignal2 = &DSP_MEMORY_PAC(pSignal2);

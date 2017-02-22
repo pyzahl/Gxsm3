@@ -104,7 +104,7 @@ map_dsp_memory (const gchar *sr_emu_dev_file)
                         handle_error("fstat");
                         return -1;
                 }
-
+                g_message ("shm mmap file size: %d", sb.st_size);
                 if (offset >= sb.st_size) {
                         fprintf(stderr, "offset is past end of file\n");
                         exit(EXIT_FAILURE);
@@ -194,6 +194,23 @@ gchar *watch_magic (){
                                 ".version:   %04x\n"
                                 ".year,mmdd: %04x %04x\n"
                                 ".softid:    %04x\n"
+                                ".statemachine:   %08x\n"
+                                ".AIC_in:         %08x\n"
+                                ".AIC_out:        %08x\n"
+                                ".analog:         %08x\n"
+                                ".signal_monitor: %08x\n"
+                                ".feedback_mixer: %08x\n"
+                                ".z_servo:        %08x\n"
+                                ".m_servo:        %08x\n"
+                                ".scan:           %08x\n"
+                                ".move:           %08x\n"
+                                ".probe:          %08x\n"
+                                ".signal_lookup:  %08x\n"
+                                " S00  %08x %08x %08x %08x\n"
+                                " S04  %08x %08x %08x %08x\n"
+                                " S08  %08x %08x %08x %08x\n"
+                                " S12  %08x %08x %08x %08x\n"
+                                " -----\n"
                                 ".life: %d\n"
                                 " *** %d *** ",
                                 (int)(sizeof (DSP_INT32_P) * 8),
@@ -201,6 +218,26 @@ gchar *watch_magic (){
                                 dspmem->magic.version,
                                 dspmem->magic.year, dspmem->magic.mmdd,
                                 dspmem->magic.dsp_soft_id,
+                                dspmem->magic.statemachine,
+                                dspmem->magic.AIC_in,
+                                dspmem->magic.AIC_out,
+                                dspmem->magic.analog,
+                                dspmem->magic.signal_monitor,
+                                dspmem->magic.feedback_mixer,
+                                dspmem->magic.z_servo,
+                                dspmem->magic.m_servo,
+                                dspmem->magic.scan,
+                                dspmem->magic.move,
+                                dspmem->magic.probe,
+                                dspmem->magic.signal_lookup,
+                                dspmem->dsp_signal_lookup[0],dspmem->dsp_signal_lookup[1],
+                                dspmem->dsp_signal_lookup[2],dspmem->dsp_signal_lookup[3],
+                                dspmem->dsp_signal_lookup[4],dspmem->dsp_signal_lookup[5],
+                                dspmem->dsp_signal_lookup[6],dspmem->dsp_signal_lookup[7],
+                                dspmem->dsp_signal_lookup[8],dspmem->dsp_signal_lookup[9],
+                                dspmem->dsp_signal_lookup[10],dspmem->dsp_signal_lookup[11],
+                                dspmem->dsp_signal_lookup[12],dspmem->dsp_signal_lookup[13],
+                                dspmem->dsp_signal_lookup[14],dspmem->dsp_signal_lookup[15],
                                 dspmem->magic.life,
                                 count++
                                 );
