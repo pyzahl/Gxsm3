@@ -1169,8 +1169,8 @@ void fill_magic()
 	DSP_MEMORY(magic).mmdd         = FB_SPM_DATE_MMDD;
 	DSP_MEMORY(magic).dsp_soft_id  = FB_SPM_SOFT_ID;
 	DSP_MEMORY(magic).statemachine = DSP_MEMORY_OFFSET(state);
-	DSP_MEMORY(magic).AIC_in       = DSP_MEMORY_OFFSET(AIC_IN(0));
-	DSP_MEMORY(magic).AIC_out      = DSP_MEMORY_OFFSET(AIC_OUT(0));
+	DSP_MEMORY(magic).AIC_in       = DSP_MEMORY_OFFSET(iobuf.min[0]);
+	DSP_MEMORY(magic).AIC_out      = DSP_MEMORY_OFFSET(iobuf.mout[0]);
 	DSP_MEMORY(magic).AIC_reg      = 0;
 	DSP_MEMORY(magic).analog       = DSP_MEMORY_OFFSET(analog);
 	DSP_MEMORY(magic).signal_monitor= DSP_MEMORY_OFFSET(sig_mon);
@@ -1409,7 +1409,7 @@ int main (int argc, char *argv[])
 	/* setup PLL */
 	DSP_MEMORY_PAC(pSignal1) = &DSP_MEMORY_PAC(InputFiltered);
 	DSP_MEMORY_PAC(pSignal2) = &DSP_MEMORY_PAC(Filter64Out[0]);
-	blcklen = 2096-1;
+	DSP_MEMORY_PAC(blcklen) = 2096-1;
 
 	DSP_MEMORY(PLL_lookup).pac_lib_status = StartPLL(4,7);
 #endif

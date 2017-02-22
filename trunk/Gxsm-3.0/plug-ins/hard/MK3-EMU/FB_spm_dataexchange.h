@@ -1095,6 +1095,7 @@ typedef struct{
         DSP_SIG dsp_signal_lookup[NUM_SIGNALS];
         DSP_INT32 sigma_delta_hr_mask[8*8]; // copy!
         struct iobuf_rec iobuf;
+        DSP_INT16 QEP_cnt[2];
         DSP_INT32 GPIO_Data[4];
         DSP_INT32 GPIO_DataDir[4];
         DSP_INT32 lock;

@@ -413,31 +413,31 @@ void dataprocess()
 		// setpoint_Amp;   //   (2^29-1)/10 x AmpSet[V]
 		// amp_estimation; //== "PLL Res Amp"  (2^22-1)/10 x Vol[V]
 		// volumeSine;     //== "PLL Exci Amp" (2^22-1)/10 x Vol[V]
-		if (volumeSine < 0){
-		        if (amp_estimation <= (setpoint_Amp >> 7)){
-		                memI_Amp = 0L;
+		if (DSP_MEMORY_PAC(volumeSine) < 0){
+		        if (DSP_MEMORY_PAC(amp_estimation) <= (DSP_MEMORY_PAC(setpoint_Amp) >> 7)){
+		                DSP_MEMORY_PAC(memI_Amp) = 0L;
 			}
 		}
 		
 	} else {
 		max_out_ch = 8; // it's down to 7 when PLL is active -- else PLL output signal is overwritten
-		if (blcklen != -1){
+		if (DSP_MEMORY_PAC(blcklen) != -1){
 			if (DSP_MEMORY(PLL_lookup).pflg == 0){ // ==0 : no trigger or go after trigger event
-				Signal1[blcklen] = pSignal1[0];
-				Signal2[blcklen] = pSignal2[0];
-				blcklen--;
+				DSP_MEMORY_PAC(Signal1[DSP_MEMORY_PAC(blcklen)]) = DSP_MEMORY_PAC(pSignal1[0]);
+				DSP_MEMORY_PAC(Signal2[DSP_MEMORY_PAC(blcklen)]) = DSP_MEMORY_PAC(pSignal2[0]);
+				DSP_MEMORY_PAC(blcklen)--;
 			} else { // manage trigger -- ONLY IF PLL OFF AVAILABLE
 				if (DSP_MEMORY(PLL_lookup).pflg > 0){ // pos trigger on level ".stop"
-					if (pSignal1[0] < (DSP_MEMORY(PLL_lookup).stop-2))
+					if (DSP_MEMORY_PAC(pSignal1[0]) < (DSP_MEMORY(PLL_lookup).stop-2))
 						DSP_MEMORY(PLL_lookup).pflg = 2;
 					else if (DSP_MEMORY(PLL_lookup).pflg > 1)
-						if (pSignal1[0] > DSP_MEMORY(PLL_lookup).stop)
+						if (DSP_MEMORY_PAC(pSignal1[0]) > DSP_MEMORY(PLL_lookup).stop)
 							DSP_MEMORY(PLL_lookup).pflg = 0; // go!
 				} else { // else neg trigger on level ".stop"
-					if (pSignal1[0] > (DSP_MEMORY(PLL_lookup).stop+2))
+					if (DSP_MEMORY_PAC(pSignal1[0]) > (DSP_MEMORY(PLL_lookup).stop+2))
 						DSP_MEMORY(PLL_lookup).pflg = -2;
 					else if (DSP_MEMORY(PLL_lookup).pflg < -1)
-						if (pSignal1[0] < DSP_MEMORY(PLL_lookup).stop)
+						if (DSP_MEMORY_PAC(pSignal1[0]) < DSP_MEMORY(PLL_lookup).stop)
 							DSP_MEMORY(PLL_lookup).pflg = 0; // go!
 				}
 			}
