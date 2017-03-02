@@ -966,6 +966,16 @@ void ProfileControl::AppWindowInit(const gchar *title){
                 header_bar = gtk_window_get_titlebar (GTK_WINDOW (window));
                 // gtk_window_present (GTK_WINDOW (window));
                 g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
+
+                GSimpleActionGroup *gsag = g_simple_action_group_new ();
+
+                g_action_map_add_action_entries (G_ACTION_MAP (gsag),
+                                                 win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
+                                                 this);
+
+                gtk_widget_insert_action_group (pc_grid, "profile", G_ACTION_GROUP (gsag));
+                
+        
         } else {
                 // g_message ("ProfileControl::AppWindowInit create own app_window >%s<", title);
                 // create our own app_window
@@ -998,13 +1008,13 @@ void ProfileControl::AppWindowInit(const gchar *title){
                 //        g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
                 g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
                	gtk_widget_show_all (GTK_WIDGET (window));
+
+                g_action_map_add_action_entries (G_ACTION_MAP (app_window),
+                                                 win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
+                                                 app_window);
         }
         
         g_signal_connect (G_OBJECT (pc_grid), "destroy", G_CALLBACK (gtk_widget_destroyed), &pc_grid);
-        
-        g_action_map_add_action_entries (G_ACTION_MAP (app_window),
-                                         win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
-                                         app_window);
         
         resize_cb_handler_id = g_signal_connect (GTK_CONTAINER (window), "check-resize", G_CALLBACK (ProfileControl::resize_drawing), this);
         
