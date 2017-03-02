@@ -768,7 +768,7 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 
 	XSM_DEBUG (DBG_L2, "ProfileControl::ProfileControl hbox");
 
-        g_object_set_data (G_OBJECT (app_window), "ProfileControl", this);
+        //g_object_set_data (G_OBJECT (app_window), "ProfileControl", this);
 
         if (!pc_in_window){
                 // New Statusbar
@@ -779,8 +779,10 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
                 // Get Statusbar
                 statusbar = (GtkWidget*) g_object_get_data (G_OBJECT (window), "statusbar");
                 statusid  = gtk_statusbar_get_context_id (GTK_STATUSBAR(statusbar), "drag");
-                gtk_menu_attach_to_widget (GTK_MENU (p_popup_menu), canvas, NULL);
         }
+        
+        gtk_menu_attach_to_widget (GTK_MENU (p_popup_menu), canvas, NULL);
+
         g_object_set_data (G_OBJECT (canvas), "statusbar", statusbar);
         
         g_signal_connect (G_OBJECT (canvas), "draw",
@@ -809,50 +811,50 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
         if (!pc_in_window){
                 int k=1;
                 tb = gtk_check_button_new_with_label ("LR");
-                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-linreg");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.opt-Y-linreg");
                 gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLINREG) ? TRUE : FALSE);
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
                 tb = gtk_check_button_new_with_label ("LG");
-                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-log");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.skl-Y-log");
                 gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLOG) ? TRUE : FALSE);
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
                 tb = gtk_check_button_new_with_label ("FT");
-                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-ft");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.opt-Y-ft");
                 gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YPSD) ? TRUE : FALSE);
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
                 tb = gtk_check_button_new_with_label ("dY");
-                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-diff");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.opt-Y-diff");
                 gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YDIFF) ? TRUE : FALSE);
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
         
                 tb = gtk_check_button_new_with_label ("LP");
-                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-lowpass-cycle");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.opt-Y-lowpass-cycle");
                 gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_YLOWPASS) ? TRUE : FALSE);
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
         
                 tb = gtk_check_button_new_with_label ("YH");
-                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-hold");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.skl-Y-hold");
                 gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (scaleing & PROFILE_SCALE_YHOLD) ? TRUE : FALSE);
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
                 tb = gtk_check_button_new_with_label ("YE");
-                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.skl-Y-expand");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.skl-Y-expand");
                 gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (scaleing & PROFILE_SCALE_YEXPAND) ? TRUE : FALSE);
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
                 tb = gtk_check_button_new_with_label ("CA");
-                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.cursor-A");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.cursor-A");
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
                 tb = gtk_check_button_new_with_label ("CB");
-                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.cursor-B");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.cursor-B");
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
         
                 tb = gtk_check_button_new_with_label ("BI");
-                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "win.opt-Y-binary");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.opt-Y-binary");
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
         }
         gtk_widget_show_all (pc_grid);
@@ -957,6 +959,7 @@ void ProfileControl::AppWindowInit(const gchar *title){
         p_popup_menu = gtk_menu_new_from_model (G_MENU_MODEL (profile_popup_menu));
         g_assert (GTK_IS_MENU (p_popup_menu));
 
+        
         if (pc_in_window){
                 // g_message ("ProfileControl::AppWindowInit in external window >%s<", title);
                 // get app_window and window
@@ -964,18 +967,9 @@ void ProfileControl::AppWindowInit(const gchar *title){
                 app_window = pc_in_window;
                 window = GTK_WINDOW (app_window);
                 header_bar = gtk_window_get_titlebar (GTK_WINDOW (window));
-                // gtk_window_present (GTK_WINDOW (window));
+                gtk_window_present (GTK_WINDOW (window));
                 g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
 
-                GSimpleActionGroup *gsag = g_simple_action_group_new ();
-
-                g_action_map_add_action_entries (G_ACTION_MAP (gsag),
-                                                 win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
-                                                 this);
-
-                gtk_widget_insert_action_group (pc_grid, "profile", G_ACTION_GROUP (gsag));
-                
-        
         } else {
                 // g_message ("ProfileControl::AppWindowInit create own app_window >%s<", title);
                 // create our own app_window
@@ -988,12 +982,14 @@ void ProfileControl::AppWindowInit(const gchar *title){
 
                 XSM_DEBUG (DBG_L2,  "VC::VC popup Header Buttons setup. " );
 
+#if 0
                 // attach full view popup menu to tool button ----------------------------------------------------
                 GtkWidget *header_menu_button = gtk_menu_button_new ();
                 //        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("emblem-system-symbolic", tmp_toolbar_icon_size));
                 gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), p_popup_menu);
                 gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
                 gtk_widget_show (header_menu_button);
+#endif
 
                 //gtk_window_set_title (GTK_WINDOW (window), title);
                 gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
@@ -1009,16 +1005,25 @@ void ProfileControl::AppWindowInit(const gchar *title){
                 g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
                	gtk_widget_show_all (GTK_WIDGET (window));
 
-                g_action_map_add_action_entries (G_ACTION_MAP (app_window),
-                                                 win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
-                                                 app_window);
+                // obsolete now, user_data = this!
+                //g_action_map_add_action_entries (G_ACTION_MAP (app_window),
+                //                                 win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
+                //                                 app_window);
+
         }
-        
+
         g_signal_connect (G_OBJECT (pc_grid), "destroy", G_CALLBACK (gtk_widget_destroyed), &pc_grid);
         
         resize_cb_handler_id = g_signal_connect (GTK_CONTAINER (window), "check-resize", G_CALLBACK (ProfileControl::resize_drawing), this);
         
 	gtk_widget_show_all (GTK_WIDGET (pc_grid));
+
+        // create action map for canvas/grid to manage "this" profile
+        GSimpleActionGroup *gsag = g_simple_action_group_new ();
+        gtk_widget_insert_action_group (pc_grid, "profile", G_ACTION_GROUP (gsag));
+        g_action_map_add_action_entries (G_ACTION_MAP (gsag),
+                                         win_profile_popup_entries, G_N_ELEMENTS (win_profile_popup_entries),
+                                         this); // app_window --> "ProfileControl"
 }
 
 gboolean ProfileControl::resize_drawing (GtkWidget *widget, ProfileControl *pc){
@@ -1211,12 +1216,9 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
                         // g_print ("RM BUTTON_PRESS (do popup) image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
                         // gtk_menu_popup_at_pointer (Menu, Event)
 
-                        if (pc->pc_in_window){
-                                g_object_set_data (G_OBJECT (pc->app_window), "ProfileControl", pc);
-                                MENU_AT_POINTER (GTK_MENU (pc->p_popup_menu), event); // no actions bound?? FIX ME!
-                        } else {
-                                MENU_AT_POINTER (GTK_MENU (pc->p_popup_menu), event);
-                        }
+                        //g_object_set_data (G_OBJECT (pc->app_window), "ProfileControl", pc);
+                        MENU_AT_POINTER (GTK_MENU (pc->p_popup_menu), event);
+                        g_message (" MENU_AT_POINTER BTN3  !");
                         break;
 		}
 		break;
@@ -1243,10 +1245,12 @@ gint ProfileControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, Profile
                         dragging=FALSE;
 			break;
                 case 3:
+#if 0
                         if (pc->pc_in_window){
                                 for (guint i=0; i<G_N_ELEMENTS (win_profile_popup_entries); ++i)
                                         g_action_map_remove_action (G_ACTION_MAP (pc->app_window), win_profile_popup_entries[i].name);
                         }
+#endif
                         break;
 		}
 		break;
@@ -2249,8 +2253,8 @@ void ProfileControl::file_open_callback (GSimpleAction *simple, GVariant *parame
 
 void ProfileControl::file_save_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	gchar *ffname;
 	gchar *mld, *oname;
@@ -2269,8 +2273,8 @@ void ProfileControl::file_save_callback (GSimpleAction *simple, GVariant *parame
 
 void ProfileControl::file_save_data_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	gchar *ffname;
 	gchar *mld, *oname;
@@ -2289,8 +2293,8 @@ void ProfileControl::file_save_data_callback (GSimpleAction *simple, GVariant *p
 
 void ProfileControl::file_save_as_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	gchar *ffname;
 	gchar *mld, *oname;
@@ -2309,8 +2313,8 @@ void ProfileControl::file_save_as_callback (GSimpleAction *simple, GVariant *par
 
 void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 	
         if(!pc->last_pe) return;
 
@@ -2413,8 +2417,8 @@ void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *
 
 void ProfileControl::file_close_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	XSM_DEBUG (DBG_L2, "ProfileElement::file_close_callback, refcount=" << pc->ref_count);
 		
@@ -2426,32 +2430,32 @@ void ProfileControl::file_close_callback (GSimpleAction *simple, GVariant *param
 
 void ProfileControl::file_print1_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->file_print_callback (1, pc);
 }
 
 void ProfileControl::file_print2_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->file_print_callback (2, pc);
 }
 
 void ProfileControl::file_print3_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->file_print_callback (3, pc);
 }
 
 void ProfileControl::file_print4_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->file_print_callback (4, pc);
 }
@@ -2459,8 +2463,8 @@ void ProfileControl::file_print4_callback (GSimpleAction *simple, GVariant *para
 // Experimental new print_callback for xmgrace
 void ProfileControl::file_print5_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->file_print_callback (5, pc);
 }
@@ -2468,8 +2472,8 @@ void ProfileControl::file_print5_callback (GSimpleAction *simple, GVariant *para
 // Experimental new print_callback for matplotlob
 void ProfileControl::file_print6_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->file_print_callback (6, pc);
 }
@@ -2533,8 +2537,8 @@ void ProfileControl::file_print_callback (int index, ProfileControl *pc)
 
 void ProfileControl::file_activate_callback (GSimpleAction *simple, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	if (pc->chno >= 0)
 		gapp->xsm->ActivateChannel (pc->chno);
@@ -2542,8 +2546,8 @@ void ProfileControl::file_activate_callback (GSimpleAction *simple, GVariant *pa
 
 void ProfileControl::logy_callback (GSimpleAction *action, GVariant *parameter, 
                                     gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -2564,8 +2568,8 @@ void ProfileControl::logy_callback (GSimpleAction *action, GVariant *parameter,
 
 void ProfileControl::linreg_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -2585,8 +2589,8 @@ void ProfileControl::linreg_callback (GSimpleAction *action, GVariant *parameter
 
 void ProfileControl::psd_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -2607,8 +2611,8 @@ void ProfileControl::psd_callback (GSimpleAction *action, GVariant *parameter,
 
 void ProfileControl::decimate_callback (GSimpleAction *action, GVariant *parameter, 
                                         gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -2629,8 +2633,8 @@ void ProfileControl::decimate_callback (GSimpleAction *action, GVariant *paramet
 
 void ProfileControl::ydiff_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -2651,8 +2655,8 @@ void ProfileControl::ydiff_callback (GSimpleAction *action, GVariant *parameter,
 
 void ProfileControl::ylowpass_cycle_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -2680,8 +2684,8 @@ void ProfileControl::ylowpass_cycle_callback (GSimpleAction *action, GVariant *p
 
 void ProfileControl::ylowpass_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -2718,8 +2722,8 @@ void ProfileControl::ylowpass_callback (GSimpleAction *action, GVariant *paramet
 
 void ProfileControl::yhold_callback (GSimpleAction *action, GVariant *parameter, 
                                      gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -2739,8 +2743,8 @@ void ProfileControl::yhold_callback (GSimpleAction *action, GVariant *parameter,
 
 void ProfileControl::yexpand_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -2760,8 +2764,8 @@ void ProfileControl::yexpand_callback (GSimpleAction *action, GVariant *paramete
 
 void ProfileControl::skl_Yauto_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->scaleing &= ~PROFILE_SCALE_YHOLD;
 
@@ -2772,8 +2776,8 @@ void ProfileControl::skl_Yauto_callback (GSimpleAction *action, GVariant *parame
 
 void ProfileControl::skl_Yupperup_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
 	if(pc->mode & PROFILE_MODE_YLOG)
@@ -2789,8 +2793,8 @@ void ProfileControl::skl_Yupperup_callback (GSimpleAction *action, GVariant *par
 
 void ProfileControl::skl_Yupperdn_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
 	if(pc->mode & PROFILE_MODE_YLOG)
@@ -2806,8 +2810,8 @@ void ProfileControl::skl_Yupperdn_callback (GSimpleAction *action, GVariant *par
 
 void ProfileControl::skl_Ylowerup_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
 	if(pc->mode & PROFILE_MODE_YLOG)
@@ -2822,8 +2826,8 @@ void ProfileControl::skl_Ylowerup_callback (GSimpleAction *action, GVariant *par
 
 void ProfileControl::skl_Ylowerdn_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
 	if(pc->mode & PROFILE_MODE_YLOG)
@@ -2838,8 +2842,8 @@ void ProfileControl::skl_Ylowerdn_callback (GSimpleAction *action, GVariant *par
 
 void ProfileControl::skl_Yzoomin_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
 	double yrange = pc->ymax - pc->ymin;
@@ -2855,8 +2859,8 @@ void ProfileControl::skl_Yzoomin_callback (GSimpleAction *action, GVariant *para
 
 void ProfileControl::skl_Yzoomout_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
 	if (pc->mode & PROFILE_MODE_YLOG)
@@ -2871,8 +2875,8 @@ void ProfileControl::skl_Yzoomout_callback (GSimpleAction *action, GVariant *par
 
 void ProfileControl::skl_Yset_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->scaleing = (pc->scaleing & ~PROFILE_SCALE_YHOLD) | PROFILE_SCALE_YHOLD;
 	pc->SetYrange (10., 1e6);
@@ -2881,8 +2885,8 @@ void ProfileControl::skl_Yset_callback (GSimpleAction *action, GVariant *paramet
 
 void ProfileControl::skl_Xauto_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
         pc->updateFrame ();
 	pc->UpdateArea();
@@ -2890,8 +2894,8 @@ void ProfileControl::skl_Xauto_callback (GSimpleAction *action, GVariant *parame
 
 void ProfileControl::skl_Xset_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
         pc->updateFrame ();
 	pc->UpdateArea ();
@@ -2900,8 +2904,8 @@ void ProfileControl::skl_Xset_callback (GSimpleAction *action, GVariant *paramet
 void ProfileControl::skl_Binary_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
 	static int b2=0;
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -2945,46 +2949,46 @@ void ProfileControl::settings_adjust_mode_callback (GSimpleAction *action, GVari
 
 void ProfileControl::settings_xgrid_callback (GSimpleAction *action, GVariant *parameter, 
                                               gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_XGRID);
 }
 
 void ProfileControl::settings_ygrid_callback (GSimpleAction *action, GVariant *parameter, 
                                               gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_YGRID);
 }
 void ProfileControl::settings_notics_callback (GSimpleAction *action, GVariant *parameter, 
                                                gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_NOTICS);
 }
 void ProfileControl::settings_header_callback (GSimpleAction *action, GVariant *parameter, 
                                                gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_HEADER);
 }
 void ProfileControl::settings_legend_callback (GSimpleAction *action, GVariant *parameter, 
                                                gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_LEGEND);
 }
 void ProfileControl::settings_series_tics_callback (GSimpleAction *action, GVariant *parameter, 
                                                     gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         pc->settings_adjust_mode_callback (action, parameter, PROFILE_MODE_STICS);
 }
 
 void ProfileControl::settings_pathmode_radio_callback (GSimpleAction *action, GVariant *parameter, 
                                                        gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -3018,8 +3022,8 @@ void ProfileControl::settings_pathmode_radio_callback (GSimpleAction *action, GV
 
 void ProfileControl::zoom_out_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	if (pc->papixel < 100) return;
 	pc->papixel *= 2;
@@ -3030,8 +3034,8 @@ void ProfileControl::zoom_out_callback (GSimpleAction *action, GVariant *paramet
 
 void ProfileControl::zoom_in_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	if (pc->papixel > 2000) return;
 	pc->papixel /= 2;
@@ -3042,8 +3046,8 @@ void ProfileControl::zoom_in_callback (GSimpleAction *action, GVariant *paramete
 
 void ProfileControl::aspect_inc_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	if (pc->aspect > 5.) return;
 
@@ -3061,8 +3065,8 @@ void ProfileControl::aspect_inc_callback (GSimpleAction *action, GVariant *param
 
 void ProfileControl::aspect_dec_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	if (pc->aspect < 0.2) return;
 
@@ -3079,8 +3083,8 @@ void ProfileControl::aspect_dec_callback (GSimpleAction *action, GVariant *param
 
 void ProfileControl::canvas_size_store_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	XsmRescourceManager xrm (pc->profile_res_id);
 	xrm.Put("XYaspectratio", pc->aspect);
@@ -3089,8 +3093,8 @@ void ProfileControl::canvas_size_store_callback (GSimpleAction *action, GVariant
 
 void ProfileControl::cur_Ashow_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -3107,8 +3111,8 @@ void ProfileControl::cur_Ashow_callback (GSimpleAction *action, GVariant *parame
 
 void ProfileControl::cur_Bshow_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -3125,32 +3129,32 @@ void ProfileControl::cur_Bshow_callback (GSimpleAction *action, GVariant *parame
 
 void ProfileControl::cur_Aleft_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(0,-1);
 }
 
 void ProfileControl::cur_Aright_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(0,1);
 }
 
 void ProfileControl::cur_Bleft_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(1,-1);
 }
 
 void ProfileControl::cur_Bright_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(1,1);
 }
@@ -3158,58 +3162,58 @@ void ProfileControl::cur_Bright_callback (GSimpleAction *action, GVariant *param
 // Min Max search
 void ProfileControl::cur_Almax_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(0,-1,1);
 }
 void ProfileControl::cur_Almin_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(0,-1,-1);
 }
 void ProfileControl::cur_Armax_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(0,1,1);
 }
 void ProfileControl::cur_Armin_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(0,1,-1);
 }
 
 void ProfileControl::cur_Blmax_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(1,-1,1);
 }
 void ProfileControl::cur_Blmin_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(1,-1,-1);
 }
 void ProfileControl::cur_Brmax_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(1,1,1);
 }
 void ProfileControl::cur_Brmin_callback (GSimpleAction *action, GVariant *parameter, 
                                  gpointer user_data){
-        //ProfileControl *pc = (ProfileControl *) user_data;
-        ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
+        ProfileControl *pc = (ProfileControl *) user_data;
+        //ProfileControl *pc = (ProfileControl *) g_object_get_data (G_OBJECT (user_data), "ProfileControl");
 
 	pc->moveCur(1,1,-1);
 }

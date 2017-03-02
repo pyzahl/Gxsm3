@@ -750,19 +750,19 @@
 	<attribute name="id">profile-file-section</attribute>
 	<item>
 	  <attribute name="label" translatable="yes">_Open</attribute>
-	  <attribute name="action">win.file-open</attribute>
+	  <attribute name="action">profile.file-open</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">_Save</attribute>
-	  <attribute name="action">win.file-save</attribute>
+	  <attribute name="action">profile.file-save</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">_Save Image/Drawing</attribute>
-	  <attribute name="action">win.file-image-save</attribute>
+	  <attribute name="action">profile.file-image-save</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">_Save Data</attribute>
-	  <attribute name="action">win.file-save-data</attribute>
+	  <attribute name="action">profile.file-save-data</attribute>
 	</item>
       </section>
     </submenu>
@@ -772,7 +772,7 @@
 	<attribute name="id">profile-print-section</attribute>
 	<item>
 	  <attribute name="label" translatable="yes">Print</attribute>
-	  <attribute name="action">win.print</attribute>
+	  <attribute name="action">profile.print</attribute>
 	</item>
       </section>
     </submenu>
@@ -782,53 +782,53 @@
 	<attribute name="id">profile-options-section</attribute>
 	<item>
 	  <attribute name="label" translatable="yes">Linregression</attribute>
-	  <attribute name="action">win.opt-Y-linreg</attribute>
+	  <attribute name="action">profile.opt-Y-linreg</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Differential</attribute>
-	  <attribute name="action">win.opt-Y-diff</attribute>
+	  <attribute name="action">profile.opt-Y-diff</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Fourier</attribute>
-	  <attribute name="action">win.opt-Y-ft</attribute>
+	  <attribute name="action">profile.opt-Y-ft</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Auto Decimate</attribute>
-	  <attribute name="action">win.opt-decimate</attribute>
+	  <attribute name="action">profile.opt-decimate</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Lowpass off</attribute>
-	  <attribute name="action">win.opt-Y-lowpass</attribute>
+	  <attribute name="action">profile.opt-Y-lowpass</attribute>
 	  <attribute name="target">lp-off</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Lowpass 0.1%</attribute>
-	  <attribute name="action">win.opt-Y-lowpass</attribute>
+	  <attribute name="action">profile.opt-Y-lowpass</attribute>
 	  <attribute name="target">lp0-1</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Lowpass 1%</attribute>
-	  <attribute name="action">win.opt-Y-lowpass</attribute>
+	  <attribute name="action">profile.opt-Y-lowpass</attribute>
 	  <attribute name="target">lp1</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Lowpass 5%</attribute>
-	  <attribute name="action">win.opt-Y-lowpass</attribute>
+	  <attribute name="action">profile.opt-Y-lowpass</attribute>
 	  <attribute name="target">lp5</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Lowpass 10%</attribute>
-	  <attribute name="action">win.opt-Y-lowpass</attribute>
+	  <attribute name="action">profile.opt-Y-lowpass</attribute>
 	  <attribute name="target">lp10</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Lowpass 50%</attribute>
-	  <attribute name="action">win.opt-Y-lowpass</attribute>
+	  <attribute name="action">profile.opt-Y-lowpass</attribute>
 	  <attribute name="target">lp50</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Lowpass 90%</attribute>
-	  <attribute name="action">win.opt-Y-lowpass</attribute>
+	  <attribute name="action">profile.opt-Y-lowpass</attribute>
 	  <attribute name="target">lp90</attribute>
 	</item>
       </section>
@@ -839,19 +839,19 @@
 	<attribute name="id">profile-file-section</attribute>
 	<item>
 	  <attribute name="label" translatable="yes">Y auto</attribute>
-	  <attribute name="action">win.skl-Y-auto</attribute>
+	  <attribute name="action">profile.skl-Y-auto</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Y log</attribute>
-	  <attribute name="action">win.skl-Y-log</attribute>
+	  <attribute name="action">profile.skl-Y-log</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Y hold</attribute>
-	  <attribute name="action">win.skl-Y-hold</attribute>
+	  <attribute name="action">profile.skl-Y-hold</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Y expand</attribute>
-	  <attribute name="action">win.skl-Y-expand</attribute>
+	  <attribute name="action">profile.skl-Y-expand</attribute>
 	</item>
       </section>
     </submenu>
@@ -861,59 +861,59 @@
 	<attribute name="id">profile-cursor-section</attribute>
 	<item>
 	  <attribute name="label" translatable="yes">Cursor A</attribute>
-	  <attribute name="action">win.cursor-A</attribute>
+	  <attribute name="action">profile.cursor-A</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Cursor B</attribute>
-	  <attribute name="action">win.cursor-B</attribute>
+	  <attribute name="action">profile.cursor-B</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">A left</attribute>
-	  <attribute name="action">win.cursor-A-left</attribute>
+	  <attribute name="action">profile.cursor-A-left</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">A right</attribute>
-	  <attribute name="action">win.cursor-A-right</attribute>
+	  <attribute name="action">profile.cursor-A-right</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">A next min</attribute>
-	  <attribute name="action">win.cursor-A-rmin</attribute>
+	  <attribute name="action">profile.cursor-A-rmin</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">A next max</attribute>
-	  <attribute name="action">win.cursor-A-rmax</attribute>
+	  <attribute name="action">profile.cursor-A-rmax</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">A prev min</attribute>
-	  <attribute name="action">win.cursor-A-lmin</attribute>
+	  <attribute name="action">profile.cursor-A-lmin</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">A prev max</attribute>
-	  <attribute name="action">win.cursor-A-lmax</attribute>
+	  <attribute name="action">profile.cursor-A-lmax</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">B left</attribute>
-	  <attribute name="action">win.cursor-B-left</attribute>
+	  <attribute name="action">profile.cursor-B-left</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">B right</attribute>
-	  <attribute name="action">win.cursor-B-right</attribute>
+	  <attribute name="action">profile.cursor-B-right</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">B next min</attribute>
-	  <attribute name="action">win.cursor-B-rmin</attribute>
+	  <attribute name="action">profile.cursor-B-rmin</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">B next max</attribute>
-	  <attribute name="action">win.cursor-B-rmax</attribute>
+	  <attribute name="action">profile.cursor-B-rmax</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">B prev min</attribute>
-	  <attribute name="action">win.cursor-B-lmin</attribute>
+	  <attribute name="action">profile.cursor-B-lmin</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">B prev max</attribute>
-	  <attribute name="action">win.cursor-B-lmax</attribute>
+	  <attribute name="action">profile.cursor-B-lmax</attribute>
 	</item>
       </section>
     </submenu>
@@ -923,47 +923,47 @@
 	<attribute name="id">profile-settings-section</attribute>
 	<item>
 	  <attribute name="label" translatable="yes">X grid</attribute>
-	  <attribute name="action">win.settings-xgrid</attribute>
+	  <attribute name="action">profile.settings-xgrid</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Y grid</attribute>
-	  <attribute name="action">win.settings-ygrid</attribute>
+	  <attribute name="action">profile.settings-ygrid</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">No tics</attribute>
-	  <attribute name="action">win.settings-notics</attribute>
+	  <attribute name="action">profile.settings-notics</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Connect</attribute>
-	  <attribute name="action">win.settings-pathmode</attribute>
+	  <attribute name="action">profile.settings-pathmode</attribute>
 	  <attribute name="target">connect</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Points</attribute>
-	  <attribute name="action">win.settings-pathmode</attribute>
+	  <attribute name="action">profile.settings-pathmode</attribute>
 	  <attribute name="target">points</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Impulses</attribute>
-	  <attribute name="action">win.settings-pathmode</attribute>
+	  <attribute name="action">profile.settings-pathmode</attribute>
 	  <attribute name="target">impulses</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">Symbols-X</attribute>
-	  <attribute name="action">win.settings-pathmode</attribute>
+	  <attribute name="action">profile.settings-pathmode</attribute>
 	  <attribute name="target">symbols</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">header</attribute>
-	  <attribute name="action">win.settings-header</attribute>
+	  <attribute name="action">profile.settings-header</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">legend</attribute>
-	  <attribute name="action">win.settings-legend</attribute>
+	  <attribute name="action">profile.settings-legend</attribute>
 	</item>
 	<item>
 	  <attribute name="label" translatable="yes">series tics</attribute>
-	  <attribute name="action">win.settings-series-tics</attribute>
+	  <attribute name="action">profile.settings-series-tics</attribute>
 	</item>
       </section>
     </submenu>
