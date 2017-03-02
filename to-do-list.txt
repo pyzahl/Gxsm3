@@ -103,8 +103,6 @@ Testing, Issues found, Ideas, please comment:
   .. any way to force window positioning?? Ignoring/default/auto if not fit/overlap currently.
   .. Per default the (any??) window-manager is free to ignore window positioning request -- and does.
   * note: you can watch the gxsm manages/stored window coordinated via dconf...
-- graphs -- add color/shade/divider for colums
-- issue with Mixer - Mode Change (OFF/LIN/LOG/..), odd behavior to random crash ?!?! => gtk 3.22 combo-box issue -- see above ***
 - SLS: may NOT restore last vales??
 - PAC gui:
   ...f0 and sine-volume not memorized (zero at start)
