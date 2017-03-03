@@ -624,34 +624,35 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
 									  NULL);
 
                         gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (chooser), path);
-                        GtkFileFilter *nc_filter = gtk_file_filter_new ();
-                        gtk_file_filter_set_name (nc_filter, "NetCDF");
-                        gtk_file_filter_add_pattern (nc_filter, "*.nc");
-                        gtk_file_filter_add_pattern (nc_filter, "*.cdf");
-                        gtk_file_filter_add_pattern (nc_filter, "*.netcdf");
-                        gtk_file_filter_add_pattern (nc_filter, "*.NC");
-                        gtk_file_filter_add_pattern (nc_filter, "*.hdf");
-                        gtk_file_filter_add_pattern (nc_filter, "*.HDF");
-                        gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), nc_filter);
+                        if (automode != CHANGE_PATH_ONLY){
+                                GtkFileFilter *all_filter = gtk_file_filter_new ();
+                                gtk_file_filter_set_name (all_filter, "All");
+                                gtk_file_filter_add_pattern (all_filter, "*");
+                                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), all_filter);
 
-                        GtkFileFilter *vp_filter = gtk_file_filter_new ();
-                        gtk_file_filter_set_name (vp_filter, "VPdata");
-                        gtk_file_filter_add_pattern (vp_filter, "*.asc");
-                        gtk_file_filter_add_pattern (vp_filter, "*.vpdata");
-                        gtk_file_filter_add_pattern (vp_filter, "*.VPdata");
-                        gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), vp_filter);
+                                GtkFileFilter *nc_filter = gtk_file_filter_new ();
+                                gtk_file_filter_set_name (nc_filter, "NetCDF");
+                                gtk_file_filter_add_pattern (nc_filter, "*.nc");
+                                gtk_file_filter_add_pattern (nc_filter, "*.cdf");
+                                gtk_file_filter_add_pattern (nc_filter, "*.netcdf");
+                                gtk_file_filter_add_pattern (nc_filter, "*.NC");
+                                gtk_file_filter_add_pattern (nc_filter, "*.hdf");
+                                gtk_file_filter_add_pattern (nc_filter, "*.HDF");
+                                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), nc_filter);
 
-                        GtkFileFilter *x_filter = gtk_file_filter_new ();
-                        gtk_file_filter_set_name (x_filter, "DAT");
-                        gtk_file_filter_add_pattern (x_filter, "*.dat");
-                        gtk_file_filter_add_pattern (x_filter, "*.DAT");
-                        gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), x_filter);
+                                GtkFileFilter *vp_filter = gtk_file_filter_new ();
+                                gtk_file_filter_set_name (vp_filter, "VPdata");
+                                gtk_file_filter_add_pattern (vp_filter, "*.asc");
+                                gtk_file_filter_add_pattern (vp_filter, "*.vpdata");
+                                gtk_file_filter_add_pattern (vp_filter, "*.VPdata");
+                                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), vp_filter);
 
-                        GtkFileFilter *all_filter = gtk_file_filter_new ();
-                        gtk_file_filter_set_name (all_filter, "All");
-                        gtk_file_filter_add_pattern (all_filter, "*");
-                        gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), all_filter);
-
+                                GtkFileFilter *x_filter = gtk_file_filter_new ();
+                                gtk_file_filter_set_name (x_filter, "DAT");
+                                gtk_file_filter_add_pattern (x_filter, "*.dat");
+                                gtk_file_filter_add_pattern (x_filter, "*.DAT");
+                                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), x_filter);
+                        }
                         gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (chooser), path);
 			if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT){
 				gchar *newpath = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
@@ -811,6 +812,22 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
 										  NULL);
 				gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (chooser), path);
 				gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (chooser), defaultname);
+
+                                GtkFileFilter *nc_filter = gtk_file_filter_new ();
+                                gtk_file_filter_set_name (nc_filter, "NetCDF");
+                                gtk_file_filter_add_pattern (nc_filter, "*.nc");
+                                gtk_file_filter_add_pattern (nc_filter, "*.cdf");
+                                gtk_file_filter_add_pattern (nc_filter, "*.netcdf");
+                                gtk_file_filter_add_pattern (nc_filter, "*.NC");
+                                gtk_file_filter_add_pattern (nc_filter, "*.hdf");
+                                gtk_file_filter_add_pattern (nc_filter, "*.HDF");
+                                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), nc_filter);
+                                
+
+                                GtkFileFilter *all_filter = gtk_file_filter_new ();
+                                gtk_file_filter_set_name (all_filter, "All");
+                                gtk_file_filter_add_pattern (all_filter, "*");
+                                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), all_filter);
 
 				ffname = NULL;
 				if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT){

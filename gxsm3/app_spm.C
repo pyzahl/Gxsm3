@@ -1311,21 +1311,6 @@ GtkWidget* App::create_as_control (){
         as_bp->grid_add_ec ("#", xsm->Unity, &xsm->counter,
                             0, 99999, "05.0f", "auto-save-counter-i");
 
-#if 0
-        g_settings_bind (as_settings, "auto-save-counter",
-                         G_OBJECT (as_bp->input), "text",
-                         G_SETTINGS_BIND_DEFAULT);
-        gint32 counter_initial = atoi (gtk_entry_get_text (GTK_ENTRY (as_bp->input)));
-#endif
-        
-        //static Gtk_EntryControl Counter(xsm->Unity, MLD_WERT_NICHT_OK, &xsm->counter,
-        //                                0., 99999., "05.0f", input, 1,10, "Counter");
-        //--EC_list = g_slist_prepend( EC_list, &Counter);
-        //--RemoteEntryList = Counter.AddEntry2RemoteList(N_("Counter"), RemoteEntryList);
-
-        //        xsm->counter = counter_initial;
-        //        Counter.update_callback (GTK_EDITABLE (input), NULL);
-        
         GtkWidget *pathbutton = gtk_button_new_with_label("...");
         as_bp->grid_add_widget (pathbutton);
         g_signal_connect (G_OBJECT (pathbutton), "clicked",
