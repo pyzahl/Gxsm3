@@ -155,11 +155,14 @@ class BuildParam{
         };
 
         void grid_add_widget (GtkWidget *w, gint wwx=1, gint wwy=1){
-		gtk_grid_attach (GTK_GRID (grid), w, x, y, wwx, wwy); x+=wwx;  
-                if (configure_list_active)
-                        configure_list = g_slist_prepend (configure_list, w);
-                if (configure_hide_list_active)
-                        configure_hide_list = g_slist_prepend (configure_hide_list, w);
+                if (w){
+                        gtk_grid_attach (GTK_GRID (grid), w, x, y, wwx, wwy);
+                        if (configure_list_active)
+                                configure_list = g_slist_prepend (configure_list, w);
+                        if (configure_hide_list_active)
+                                configure_hide_list = g_slist_prepend (configure_hide_list, w);
+                }
+                x+=wwx;
       };
 
         void new_grid_with_frame (const gchar *frame_title, gint fwx=1, gint fwy=1) {
@@ -495,6 +498,7 @@ class BuildParam{
         void set_no_spin (gboolean ns=true) { no_spin = ns; };
         void start (int wxs=0) { x=1; y=1; if (wxs>0) wx = wxs; }; // start at 1,1 with scale width wxs if > 0
         void new_line (int wxs=0, gint indent=1) { x=indent; ++y; if (wxs>0) wx = wxs; }; // start new line with scale width wxs if > 0
+        void skip_row (int wxs=1) { x += wxs; }; // skip row(s)
         void show_all () { gtk_widget_show_all (grid); };
 
         // set default entry/inpout width chars to be configured, -1: leve unset/default

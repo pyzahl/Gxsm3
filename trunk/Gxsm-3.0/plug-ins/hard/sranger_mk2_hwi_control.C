@@ -1830,7 +1830,7 @@ DSPControl::DSPControl () {
         dsp_bp->new_line ();
         dsp_bp->grid_add_ec_with_scale ("Slope Y", Unity, &area_slope_y, -0.1, 0.1, "7g", 0.001, 0.01,  "adv-scan-slope-y"); slope_y_ec = dsp_bp->ec;
         dsp_bp->set_scale_nx ();
-        dsp_bp->new_line ();
+        dsp_bp->new_line (1);
 
         dsp_bp->grid_add_check_button ("Enable Slope Compensation", "enable analog slope compensation...", 1,
                                        G_CALLBACK(DSPControl::DSP_slope_callback), this, area_slope_compensation_flag, 0);
