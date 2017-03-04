@@ -1422,7 +1422,7 @@ DSPControl::DSPControl () {
 	}
         dsp_bp->new_grid_with_frame (g_strconcat ("Z-Servo ", input_signal, NULL));
 
-        dsp_bp->set_label_width_chars (10);
+        dsp_bp->set_label_width_chars (7);
         dsp_bp->set_input_width_chars (12);
 	dsp_bp->grid_add_ec_with_scale ("CP", Unity, &z_servo[SERVO_CP], 0., (DSPPACClass) ? 100.:1., "5g", 0.001, 0.01, "fbs-cp");
         dsp_bp->new_line ();
@@ -1455,7 +1455,7 @@ DSPControl::DSPControl () {
         dsp_bp->new_grid_with_frame ("Scan Characteristics");
 
         dsp_bp->start (4); // wx=4
-        dsp_bp->set_label_width_chars (10);
+        dsp_bp->set_label_width_chars (7);
 
         dsp_bp->set_configure_list_mode_on ();
 //	dsp_bp->grid_add_ec_with_scale ("DynZoom", Unity, &dynamic_zoom, 0., 5., "5g", 0.01, 0.1, "fbs-scan-dyn-zoom");
@@ -1471,8 +1471,6 @@ DSPControl::DSPControl () {
         
 //	dsp_bp->grid_add_ec_with_scale ("ScanSpdReal", Speed,  &scan_speed_x, 0., 1e9, "5g", 1., 10.,  RemoteEntryList, ec->Freeze (), , "fbs-scan-speed-real");
 //      dsp_bp->new_line ();
-
-        dsp_bp->set_label_width_chars ();
 
         dsp_bp->set_configure_list_mode_on ();
 
@@ -1627,9 +1625,8 @@ DSPControl::DSPControl () {
         dsp_bp->new_line ();
 
         dsp_bp->set_configure_list_mode_on ();
-        dsp_bp->set_input_width_chars (10);
 	dsp_bp->grid_add_ec ("FrqRef", Frq, &frq_ref, 10000., 150000., "6g", 0.01, 0.1, "adv-dsp-freq-ref");
-        dsp_bp->new_line ();
+        dsp_bp->new_line (0,2);
 
         IIR_flag = IIR_I_crossover > 0 ? 1:0;
         dsp_bp->grid_add_check_button ("IIR self adaptive on MIX0", "enable self adaptive IIR filtering", 1,
@@ -1805,6 +1802,7 @@ DSPControl::DSPControl () {
         dsp_bp->new_grid_with_frame ("Scan Characteristics - Expert");
 
         dsp_bp->set_configure_list_mode_on ();
+        dsp_bp->new_line (0,2);
         dsp_bp->grid_add_check_button ("Internal Offset Adding", "set DSP internal (digital) offset adding.", 1,
                                        G_CALLBACK(DSPControl::set_clr_mode_callback), GINT_TO_POINTER (MD_OFFSETADDING),
                                        dsp_state_mode, MD_OFFSETADDING);
@@ -1830,7 +1828,7 @@ DSPControl::DSPControl () {
         dsp_bp->new_line ();
         dsp_bp->grid_add_ec_with_scale ("Slope Y", Unity, &area_slope_y, -0.1, 0.1, "7g", 0.001, 0.01,  "adv-scan-slope-y"); slope_y_ec = dsp_bp->ec;
         dsp_bp->set_scale_nx ();
-        dsp_bp->new_line (1);
+        dsp_bp->new_line (0,2);
 
         dsp_bp->grid_add_check_button ("Enable Slope Compensation", "enable analog slope compensation...", 1,
                                        G_CALLBACK(DSPControl::DSP_slope_callback), this, area_slope_compensation_flag, 0);
@@ -1847,8 +1845,6 @@ DSPControl::DSPControl () {
         
         dsp_bp->notebook_tab_show_all ();
         dsp_bp->pop_grid ();
-
-        dsp_bp->set_input_width_chars (10);
 
 // ==== Folder Set for Vector Probe ========================================
 // ==== Folder: I-V STS setup ========================================
