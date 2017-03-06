@@ -31,9 +31,6 @@ current work in progress, evaluating while working with it, optimizing, new idea
    ... chain CP/CI 100/120% option
    ... read/sync V-XYZ from Smart-Piezo-Drive via USB link automatically!
 ->     ...auto time unit adjust [ms, s, ..] depending on range -- may be...
-->\/ 2D view: in SLS mode: make Red-Line work! -- working on this. isNew data control issue in LineInfo, must reset, etc. ==> done.
-       ... SLS BotUp scandir leads to crash  -- TDB, do not use rigth now.
-       ... need to auto reset SLS for any new dimension scan and at gxsm startup, but must keep RemoteControlHooks  ==> reset done at startup now.
 
 ==> figure out how to set/change entry text color
 pango_attr_foreground_new ()
@@ -63,6 +60,9 @@ pending minor issues/ideas:
 
 -------------------
 DONE:
+->\/ 2D view: in SLS mode: make Red-Line work! -- working on this. isNew data control issue in LineInfo, must reset, etc. ==> done.
+       ... SLS BotUp scandir leads to crash  -- TDB, do not use rigth now.
+       ... need to auto reset SLS for any new dimension scan and at gxsm startup, but must keep RemoteControlHooks  ==> reset done at startup now.
 -\/ memorizing last GPIO setting not at restart, for pick up at previous conditions
 -\/ fixed not clean shutdown issue and missed/uninitialzied with NULL grid widget.
 -\/ minor left overs of h/vboxes and packing in dialogs... -- non critical, works fine but should be done as officially obsoleted. [check what's left, no obsolete warnings any more!] -- DONE
@@ -83,6 +83,9 @@ DONE:
 -\/ better auto file name for xxx-snap.png (image save as) -- DONE.
 -\/ side-pane objects: may be put object context (from popup) in there? Make object position lock as option available. DONE.
 -\/ load objects fails, some issue with file name/readline?!?! RECODED strtoc with g_strsplit_set: DONE.
+-\/ PAC gui:
+  ...f0 and sine-volume not memorized (zero at start) -- done
+  ...add quick button to transfer auto set or current life freq (locked) to f-sine and f0-ref -- done
 ------------------
 
 External/glib/gtk related issues:
@@ -95,18 +98,12 @@ Major upcoming task:
 - GXSM main Website? Overhaul. Find some simple CMS.
 
 Testing, Issues found, Ideas, please comment:
-- RedLine Profile ==> [option?] overlay/underlay/below scan view 2D -- done, works (linked to 2d profile, can be hidden), evaluating... -- OK
-- DSP-Control/Graphs -> add clear Coulmns/divers
 - Life rotate scan while scanning -> make work (kind or rot/arc move to via slow adjust matrix)!
-- implement Z-adjuster (manual Z offset if FB=OFF)
-- Startup Control,.. Window Positioning Management -- issue with size resore if config/normal mode!! [small/big] -- Window manager interferse stupidly :( :( o[
-  .. any way to force window positioning?? Ignoring/default/auto if not fit/overlap currently.
-  .. Per default the (any??) window-manager is free to ignore window positioning request -- and does.
-  * note: you can watch the gxsm manages/stored window coordinated via dconf...
-- SLS: may NOT restore last vales??
-- PAC gui:
-  ...f0 and sine-volume not memorized (zero at start)
-  ...add quick button to transfer auto set or current life freq (locked) to f-sine and f0-ref
+- Implement Z-adjuster (manual Z offset if FB=OFF)
+- VP: Emergency ABORT
+- VP: Check/enhance user friendlyness: trigger/limits
+- Coarse/Mover: design easy use macro recording/playing "button(s)" for repetetive tasks? (like Z-up, move XY, approach, :: => make SPD change gain accessible)
+-\/ SLS: may NOT restore last vales??  -- resetting, done
 
 Other GUI, window manager, ... related:
 - If "focus" switching and related grey-out/normal GUI element rendering feels suggish/delayed this is a feature of the Gnome-SHell with in particular the new Adwaita CSS Scheme:
