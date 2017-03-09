@@ -22,6 +22,22 @@ def wait_for_vp ():
 	gxsm.sleep(20)
 	return M
 
+def wait_scan_pos():
+        scaction = 1
+        M = 0
+        while scaction > 0 and M > -2.:
+	        gxsm.sleep (10) # sleep 10/10 sec
+ 		M=gxsm.get ("dsp-fbs-motor")
+ 	      	svec=gxsm.rtquery ("s")
+		s = int(svec[0])
+		scaction = s&(2+4)
+	        if os.path.exists("remote.py-stop"):
+	        	M = -10.
+			break
+	print "FB: ", s&1, " Scan: ", s&(2+4), "  VP: ", s&8, "   Mov: ", s&16, " PLL: ", s&32, " **Motor=", M
+	gxsm.sleep(20)
+	return M
+
 # wait for scan finish or abort
 def wait_for_scan ():
         scaction = 1
@@ -141,7 +157,7 @@ def run_vp_test_print (coords, num):
 	        gxsm.sleep (10)
 
 
-def run_vp (coords, num, ref_bias=2.35, ref_current=0.045, ff=0, run_ref=0, ref_bias_list=[0.1]):
+def run_vp (coords, num, ref_bias=1.8, ref_current=0.02, ff=0, run_ref=0, ref_bias_list=[0.1]):
 	x0=gxsm.get ("OffsetX")
 	y0=gxsm.get ("OffsetY")
 	i_ac_amp=gxsm.get ("dsp-LCK-AC-Bias-Amp")
@@ -187,6 +203,37 @@ def run_vp (coords, num, ref_bias=2.35, ref_current=0.045, ff=0, run_ref=0, ref_
 
 		if M < -0.9:
 			pause_tip_retract ()
+
+def run_vp_simple (coords, num, ref_bias=1.8, ref_current=0.02,run_ref=0):
+	gxsm.set ("dsp-fbs-bias","%f"%(ref_bias))
+	gxsm.set ("dsp-LCK-AC-Bias-Amp","0.03")
+	gxsm.set ("dsp-fbs-mx0-current-set","%f"%(ref_current))
+	i_ac_bias_amp=gxsm.get ("dsp-LCK-AC-Bias-Amp")
+	for i in range(0, num):
+		if run_ref > 0 and i % run_ref == 0:
+			gxsm.set ("dsp-LCK-AC-Bias-Amp","0")
+			run_ref_image (0.2, 0.01)
+			gxsm.set ("dsp-LCK-AC-Bias-Amp","%f"%i_ac_bias_amp)    
+			gxsm.set ("dsp-fbs-bias","%f"%(ref_bias))
+			gxsm.set ("dsp-fbs-mx0-current-set","%f"%(ref_current))
+	        sx=coords[i][0]
+	        sy=coords[i][1]
+# force offset and set scan coords
+	        print "ScanXY: ", sx, sy
+	        gxsm.set ("ScanY","%f"%(sy))
+		wait_scan_pos()
+	        gxsm.set ("ScanX","%f"%(sx))
+		wait_scan_pos()
+	        print "VP Execute #", i, " of ", len2, " (", (100.*float(i)/len2), "%)"
+	        gxsm.action ("DSP_VP_IV_EXECUTE")
+# wait until VP action has finished
+	        M = wait_for_vp ()
+	        if M < -3:
+	                terminate = 1
+	                break
+		if M < -0.9:
+			pause_tip_retract ()
+	gxsm.set ("dsp-LCK-AC-Bias-Amp","0.0")
 
 
 def run_lm (coords, num, ff, ref_bias=2.35, ref_current=0.045):
@@ -277,38 +324,49 @@ def chdcircle (m=10,n=400):
 
 #gxsm.save ()
 
-spn = 40.
-step = 5.0
-ys = 0.01
-sxlist = np.arange (-spn, spn+step, step)
-sylist = np.arange (-spn*ys, spn*ys+step, step)
-#sxlist = np.arange (-spn, step, step)
-#sylist = np.arange (0, spn*ys+step, step)
+spnx = 12.
+stepx = 1.
+
+spny = 18.
+stepy = 1.
+
+sxlist = np.arange (-spnx, spnx+stepx, stepx)
+sylist = np.arange (-spny, spny+stepy, stepy)
 
 len2 = np.size(sxlist) * np.size(sylist)
 xy = np.arange(2.0*len2).reshape(len2,2)
 
-xoff = [ 0.0 ]
-yoff = [ 0.0 ]
+position = [[ -39., -17.0 ]]
 
-for k in range (0, 1): # range (0, len (xoff)):
- 	i=0
+i=0
+for r in position:
 	for y in sylist:
 #		run_ref_image (0.7)
 		for x in sxlist:
-        	        xy[i][0] = x + xoff[k]
-        	        xy[i][1] = y + yoff[k]
+        	        xy[i][0] = x + r[0]
+        	        xy[i][1] = y + r[1]
         	        i=i+1           
+print len2
+print xy
+np.random.shuffle(xy)
+print xy
 
-
-#def run_vp (coords, num, ref_bias=2.35, ref_current=0.045, ff=0, run_ref=0, ref_bias_list=[0.1])
-
+###def run_vp (coords, num, ref_bias=2.35, ref_current=0.045, ff=0, run_ref=0, ref_bias_list=[0.1])
+run_vp_simple (xy, len2, 1.8, 0.02, 10)
 
 print "STARTING NOW..."
 
 # ACHTUNG: Clear/Expand Bias Warning Range - Warning Popup will block/terminate script execution
 
-terminate = run_set ([-1.7, -1.8, -2.0, -2.5, -3.0, 2.4, 3.0, -2.5, -2.2, -2.0 ])
+#gxsm.set ("dsp-fbs-mx0-current-set","0.005")
+#terminate = run_set ([0.1, 0.05, 0.5, -0.1, -0.5, -1.0, -2.0, 0.1, 1.0, 2.0, 2.5, -2.5, 0.1])
+#gxsm.set ("dsp-fbs-mx0-current-set","0.01")
+#terminate = run_set ([0.1, 0.05, 0.5, -0.1, -0.5, -1.0, -2.0, 0.1, 1.0, 2.0, 2.5, -2.5, 0.1])
+#gxsm.set ("dsp-fbs-mx0-current-set","0.02")
+#terminate = run_set ([0.1, 0.05, 0.5, -0.1, -0.5, -1.0, -2.0, 0.1, 1.0, 2.0, 2.5, -2.5, 0.1])
+#gxsm.set ("dsp-fbs-mx0-current-set","0.025")
+#terminate = run_set ([0.1, 0.05, 0.5, -0.1, -0.5, -1.0, -2.0, 0.1, 1.0, 2.0, 2.5, -2.5, 0.1])
+#gxsm.set ("dsp-fbs-mx0-current-set","0.01")
 
 #gxsm.set ("dsp-fbs-mx0-current-set","0.03")
 #gxsm.set ("dsp-adv-scan-fast-return","6")

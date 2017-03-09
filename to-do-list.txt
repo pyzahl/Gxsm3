@@ -55,6 +55,7 @@ pending minor issues/ideas:
 -- With hardware only: odd glib error message at gxsm3 shutown after gxsm-app destructions completed.
 ---PROBE FOLDERS/CONTROL:
   -recode LM/graphs button?
+  -fix default VP restore, some thing is odd. Reload preset!
 -- PCS is NOT yet updating non user set values -- ak file number auto advance, client settings, remote... TDB.
 - add remote support: a few importrant control buttons pyremote accessible (global FB ON/OFF, PAC, Z-Adjuster**)
 
