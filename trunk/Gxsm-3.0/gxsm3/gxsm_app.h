@@ -294,6 +294,8 @@ public:
         static void spm_range_check(Param_Control* pcs, gpointer data);
         static void spm_offset_check(Param_Control* pcs, gpointer data);
         static void spm_scanpos_check(Param_Control* pcs, gpointer data);
+        static void offset_to_preset_callback(GtkWidget* w, gpointer app);
+
         static void spm_nlayer_update(Param_Control* pcs, gpointer data);
         static void spm_select_layer(Param_Control* pcs, gpointer data);
         static void spm_select_time(Param_Control* pcs, gpointer data);

@@ -280,6 +280,18 @@ void App::spm_offset_check(Param_Control* pcs, gpointer app){
         XSM_DEBUG(DBG_L3,  "offset check -- done."  );
 }
 
+void App::offset_to_preset_callback(GtkWidget* w, gpointer app){
+         SCAN_DATA *data = &((App*)app)->xsm->data;
+         double *xy = (double*)g_object_get_data (G_OBJECT(w), "preset_xy");
+         if (xy){
+                 data->s.x0 = xy[0];
+                 data->s.y0 = xy[1];
+         } else
+                 data->s.x0 = data->s.y0 = 0.;
+         App::spm_offset_check(NULL, app);
+         // ((App*)app)->spm_update_all();
+}
+
 void App::spm_scanpos_check(Param_Control* pcs, gpointer app){
         XSM_DEBUG(DBG_L3,  "offset check"  );
         XSM_Instrument *Inst = ((App*)app)->xsm->Inst;
@@ -633,6 +645,11 @@ GtkWidget* App::create_spm_control (){
                              "Rotation");
         EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
 
+        GtkWidget *preset_button = spm_bp->grid_add_button
+                ("Move to Origin", "Move to Origin (Zero Offset)", 1,
+                 G_CALLBACK (App::offset_to_preset_callback), this);
+        g_object_set_data (G_OBJECT(preset_button), "preset_xy", NULL);
+        
         spm_bp->new_line ();
 
         // Layer Dimension Control
