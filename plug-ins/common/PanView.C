@@ -345,6 +345,11 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
 	for(i=0; i<16; ++i)
 		DSP_status_indicator[i] = DSP_gpio_indicator[i] = NULL;
 
+        for(i=0; i<N_PRESETS; ++i)
+                for(int j=0; j<N_PRESETS; ++j)
+                        pos_preset_box[i][j] = NULL;
+
+        
 	if (xsmres.HardwareType[0] == 'n' && xsmres.HardwareType[1] == 'o')
 		return;
 
@@ -372,6 +377,18 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
 	pan_area_extends->set_line_width (get_lw (1.0));
 	pan_area_extends->queue_update (canvas);
 
+        double pxw=(2*x0r)/N_PRESETS;
+        double pyw=(2*y0r)/N_PRESETS;
+        for(i=0; i<N_PRESETS; ++i)
+                for(int j=0; j<N_PRESETS; ++j){
+                        pos_preset_box[i][j] = new cairo_item_rectangle(0,0, pxw,pyw);
+                        pos_preset_box[i][j]->set_position (-x0r+pxw*i, -y0r+pyw*j);
+                        pos_preset_box[i][j]->set_stroke_rgba (CAIRO_COLOR_GREY1);
+                        pos_preset_box[i][j]->set_fill_rgba (0,0,0,0.1);
+                        pos_preset_box[i][j]->set_line_width (get_lw (1.0));
+                        pos_preset_box[i][j]->queue_update (canvas);
+                }
+        
   	/*create a rectangle*/
 	pan_area = new cairo_item_rectangle (x0r, y0r, -x0r, -y0r);
 	pan_area->set_stroke_rgba (CAIRO_COLOR_RED);
@@ -427,6 +444,10 @@ PanView::~PanView (){
 	for (int i=0; i<16; ++i){
                 UNREF_DELETE_CAIRO_ITEM (DSP_gpio_indicator[i], canvas);
         }
+        for(int i=0; i<N_PRESETS; ++i)
+                for(int j=0; j<N_PRESETS; ++j){
+                        UNREF_DELETE_CAIRO_ITEM (pos_preset_box[i][j], canvas);
+                }
         
 	PI_DEBUG (DBG_L4, "PanView::~PanView () -- done.");
 }
@@ -464,6 +485,13 @@ gboolean  PanView::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, PanView
 	// draw pan elements, tip, ...
         pv->pan_area_extends->draw (cr); // full area of reach with offsets
 	pv->pan_area->draw (cr);         // pan area
+
+        if (0)
+           for(int i=0; i<N_PRESETS; ++i)
+                for(int j=0; j<N_PRESETS; ++j)
+                        if (pv->pos_preset_box[i][j])
+                                pv->pos_preset_box[i][j]->draw (cr);
+
         pv->current_view->draw (cr);     // current set scan area
 
         if (pv->Zratio > 2.){
@@ -551,6 +579,15 @@ void PanView::update_expanded_scan_limits (){
 			pan_area->set_xy (1, -x0r, -y0r);
                         pan_area->set_line_width (get_lw (1.0));
                         pan_area->queue_update (canvas);
+                
+                        double pxw=(2*x0r)/N_PRESETS;
+                        double pyw=(2*y0r)/N_PRESETS;
+                        for(int i=0; i<N_PRESETS; ++i)
+                                for(int j=0; j<N_PRESETS; ++j){
+                                        pos_preset_box[i][j]->set_xy (1, pxw,pyw);
+                                        pos_preset_box[i][j]->set_position (-x0r+pxw*i, -y0r+pyw*j);
+                                        pos_preset_box[i][j]->queue_update (canvas);
+                                }
 		}
 	}
 }

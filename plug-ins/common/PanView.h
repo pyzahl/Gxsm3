@@ -95,7 +95,9 @@ private:
         cairo_item  *pre_current_view;  // scan area with prescan
         cairo_item  *current_view;      // scan area without prescan
         cairo_item  *current_view_zoom; // scan area without prescan zoomed
-
+        #define N_PRESETS 7
+        cairo_item  *pos_preset_box[N_PRESETS][N_PRESETS];
+        
         double get_lw (double lw=1.) { return lw*(max_x-min_x)/WXS; };
 	 
         void transform(double *dest, double *src, double rot, 
