@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -23,12 +25,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-
 // Global set of shared PCs for preview/readback
 
 #include <stdlib.h>
+#include "gxsm_window.h"
 
+#define VPDATA_IN_MATRIX                                                
 
 ProfileControl *tmp_pc[32] = { 
 	NULL, NULL, NULL, NULL,
@@ -36,6 +38,110 @@ ProfileControl *tmp_pc[32] = {
 	NULL, NULL, NULL, NULL,
 	NULL, NULL, NULL, NULL
 };
+
+#ifdef VPDATA_IN_MATRIX
+
+Gxsm3appWindow *vpdata_graph_app_window = NULL;
+GtkWindow* vpdata_graph_window = NULL;
+GtkWidget* vpdata_graph_grid = NULL;
+gboolean vpdata_gr_matrix_view = true;
+
+void vpdata_view_destroy (){
+        // only if not in nmatrix view, else keep!
+        if (!vpdata_gr_matrix_view && vpdata_graph_app_window){
+                gtk_widget_destroy (GTK_WIDGET (vpdata_graph_app_window));
+                vpdata_graph_app_window = NULL;
+                vpdata_graph_window = NULL;
+                vpdata_graph_grid = NULL;
+        }
+}
+
+void vpdata_view_init (gint num_active_xmaps, gint num_active_sources){
+        if (vpdata_graph_app_window)
+                vpdata_view_destroy (); 
+
+        if (!vpdata_graph_app_window){
+                vpdata_graph_app_window =  gxsm3_app_window_new (GXSM3_APP (gapp->get_application ()));
+                vpdata_graph_window = GTK_WINDOW (vpdata_graph_app_window);
+                GtkWidget *header_bar = gtk_header_bar_new ();
+                gtk_widget_show (header_bar);
+                gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), true);
+
+                gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), "last plot");
+                gtk_window_set_titlebar (GTK_WINDOW (vpdata_graph_window), header_bar);
+
+                gtk_window_resize (GTK_WINDOW (vpdata_graph_window),
+                                   400*num_active_xmaps > 1100? 1100:400*num_active_xmaps,
+                                   200*num_active_sources > 800? 800:200*num_active_sources);
+
+                vpdata_graph_grid = gtk_grid_new ();
+                g_object_set_data (G_OBJECT (vpdata_graph_window), "v_grid", vpdata_graph_grid);
+                gtk_container_add (GTK_CONTAINER (vpdata_graph_window), vpdata_graph_grid);
+                gtk_widget_show_all (GTK_WIDGET (vpdata_graph_window));
+                // g_signal_connect (G_OBJECT (vpdata_graph_window), "window-state-event", G_CALLBACK (AppBase::window_state_watch_callback), this);
+                // g_signal_connect (G_OBJECT (vpdata_graph_window), "delete-event", G_CALLBACK (AppBase::window_close_callback), this);
+
+                GtkWidget *statusbar = gtk_statusbar_new ();
+                g_object_set_data (G_OBJECT (vpdata_graph_window), "statusbar", statusbar);
+                gtk_grid_attach (GTK_GRID (vpdata_graph_grid), statusbar, 1,100, 100,1);
+                gtk_widget_show_all (GTK_WIDGET (statusbar));
+        }
+}
+
+
+// gtk_header_bar_set_title ( GTK_HEADER_BAR (gtk_window_get_titlebar (vpdata_graph_window)), vp_exec_mode_name);
+
+void vpdata_add_pc (ProfileControl* &pc, const gchar *title, gint numx,
+                    const gchar *xlab, UnitObj *UXaxis,
+                    const gchar *ylab, UnitObj *UYaxis,
+                    double xmin, double xmax,
+                    int si, int nas, gboolean join_same_x,
+                    gint xmap, gint src, gint num_active_xmaps, gint num_active_sources){
+	if (!pc){
+                gchar *resid = g_strdelimit (g_strconcat (xlab,ylab,NULL), " ;:()[],./?!@#$%^&*()+-=<>", '_');
+
+		pc = new ProfileControl (title, numx, 
+                                         UXaxis, UYaxis, 
+                                         xmin, xmax,
+                                         resid,
+                                         vpdata_gr_matrix_view ? vpdata_graph_app_window : NULL);
+
+                if (vpdata_gr_matrix_view){
+                        pc->set_pc_matrix_size (num_active_xmaps, num_active_sources);
+                        gtk_grid_attach (GTK_GRID (vpdata_graph_grid), pc->get_pc_grid (), xmap,src, 1,1);
+                }
+                
+		g_free (resid);
+		pc->scan1d->mem2d->Resize (numx, join_same_x ? nas:1);
+		pc->SetTitle (title);
+		pc->set_ys_label (0, ylab);
+	} else {	
+                if (vpdata_gr_matrix_view)
+                        pc->set_pc_matrix_size (num_active_xmaps, num_active_sources);
+
+		if(!join_same_x || nas < pc->get_scount ()){
+			pc->RemoveScans ();
+			pc->scan1d->mem2d->Resize (numx, join_same_x ? nas:1);
+			pc->AddScan (pc->scan1d, 0);
+		} else
+			pc->scan1d->mem2d->Resize (numx, join_same_x ? nas:1);
+
+		pc->scan1d->data.s.ny = join_same_x ? nas:1;
+		pc->scan1d->data.s.x0=0.;
+		pc->scan1d->data.s.y0=0.;
+		pc->scan1d->data.s.nvalues=1;
+		pc->scan1d->data.s.ntimes=1;
+		pc->SetXrange (xmin, xmax);
+
+		if (join_same_x && si >= pc->get_scount ()){
+			pc->AddLine (si);
+			pc->SetTitle (", ", TRUE);
+			pc->SetTitle (ylab, TRUE);
+			pc->set_ys_label (si, ylab);
+		}
+	}
+}
+#endif
 
 int vpdata_read (const gchar *fname, Scan *active_scan){
 	gchar l[1100];
@@ -184,7 +290,13 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
 			int join_same_x = FALSE;
 			int num_sets = 0;
 
-			for (j=0; *token; ++token){
+                        for (token=Hrecord; *token; ++token)
+                                ++num_sets;
+
+#ifdef VPDATA_IN_MATRIX
+                        vpdata_view_init (1, num_sets-1);
+#endif                        
+			for (j=0, token=Hrecord; *token; ++token){
 				if (! strcmp (*token, "#C Index"))
 					continue;
 				if (! strcmp (*token, "Block-Start-Index"))
@@ -218,7 +330,14 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
 					if (!tmp_pc[jj]){
 						gchar   *title  = g_strdup_printf ("VP File: %s : %s (%g, %.2f A, %.2f A, %.2f A)", fname, lu[0], svtime[0], svXS[0], svYS[0], svZS[0] );
 						std::cout << "VP DATA -- t:" << title << std::endl;
-				
+#ifdef VPDATA_IN_MATRIX                                                
+                                                vpdata_add_pc (tmp_pc[jj], title, numx,
+                                                               lu0, xuobj,
+                                                               lu[0], uobj,
+                                                               xmin, xmax,
+                                                               0, nas, join_same_x, // si, nas, join_same_x
+                                                               1, j, 1, num_sets-1);
+#else
 						tmp_pc[jj] = new ProfileControl (
 							title,
 							numx, xuobj, uobj,
@@ -227,9 +346,20 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
 						tmp_pc[jj]->scan1d->mem2d->Resize (numx, join_same_x ? nas:1);
 						tmp_pc[jj]->SetTitle (title);
 						tmp_pc[jj]->set_ys_label (0, lu[0]);
+#endif
 						g_free (title);
 					} else {	
 		
+#ifdef VPDATA_IN_MATRIX                                                
+						gchar   *title  = g_strdup_printf ("VP File: %s : %s (%g, %.2f A, %.2f A, %.2f A)", fname, lu[0], svtime[0], svXS[0], svYS[0], svZS[0] );
+                                                vpdata_add_pc (tmp_pc[jj], title, numx,
+                                                               lu0, xuobj,
+                                                               lu[0], uobj,
+                                                               xmin, xmax,
+                                                               0, nas, join_same_x, // si, nas, join_same_x
+                                                               1, j, 1, num_sets-1);
+						g_free (title);
+#else
 						if(!join_same_x || nas < tmp_pc[jj]->get_scount ()){
 							tmp_pc[jj]->RemoveScans ();
 							tmp_pc[jj]->scan1d->mem2d->Resize (numx, join_same_x ? nas:1);
@@ -250,6 +380,7 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
 							tmp_pc[jj]->SetTitle (lu[0], TRUE);
 							tmp_pc[jj]->set_ys_label (j-1, lu[0]);
 						}
+#endif
 					}
 				}
 
@@ -264,7 +395,7 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
 				if (lu)
 					g_strfreev (lu);
 
-				++j; ++num_sets;
+				++j;
 			}
 			g_strfreev (Hrecord);
 
@@ -325,6 +456,9 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
 				if (pe)
 					pe->add ((double*)&dataset);
 				g_strfreev (VPrecord);
+                                if (j>0)
+                                        if (tmp_pc[j-1])
+                                                tmp_pc[j-1]->UpdateArea ();
 			}
 			std::cout << "VP DATA -- DATA OK" << std::endl;
 			if (se)
