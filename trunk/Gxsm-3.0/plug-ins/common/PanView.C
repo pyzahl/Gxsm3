@@ -525,7 +525,7 @@ gint PanView::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, PanView *pv){
                         preset[1] = j-3;
                         g_object_set_data (G_OBJECT(canvas), "preset_xy", preset);
                         gapp->offset_to_preset_callback (canvas, gapp);
-                        g_message ("PanView Button1 Pressed at XY=%g, %g => %d, %d",  mouse_pix_xy[0], mouse_pix_xy[1], i,j );
+                        // g_message ("PanView Button1 Pressed at XY=%g, %g => %d, %d",  mouse_pix_xy[0], mouse_pix_xy[1], i,j );
 			break;
                 }
                 break;
@@ -541,7 +541,7 @@ gint PanView::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, PanView *pv){
                                 pv->pos_preset_box[i][j]->set_fill_rgba (1,0,0,0.3);
                                 pi=i; pj=j;
                         }
-                        g_message ("PanView XY=%g, %g => %d, %d",  mouse_pix_xy[0], mouse_pix_xy[1], i,j);
+                        // g_message ("PanView XY=%g, %g => %d, %d",  mouse_pix_xy[0], mouse_pix_xy[1], i,j);
                 }
 		break;
 		
