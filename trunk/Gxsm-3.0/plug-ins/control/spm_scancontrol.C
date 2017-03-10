@@ -339,7 +339,7 @@ SPM_ScanControl::SPM_ScanControl ()
 	GtkWidget *grid_setup;
 	GtkWidget *frame;
 	GtkWidget *scrolled_contents, *viewport;
-	GtkWidget *button,*label,*bs_tmp;
+	GtkWidget *button,*label,*bs_tmp, *bm_tmp;
         Gtk_EntryControl *ec;
         GtkWidget *input;
 
@@ -413,12 +413,14 @@ SPM_ScanControl::SPM_ScanControl ()
 	 		     this);
 	gapp->RegisterPluginToolbarButton (G_OBJECT (button), "Toolbar_Scan_Start");
 
-	button = gtk_button_new_with_label("Movie");
+	bm_tmp = button = gtk_button_new_with_label("Movie");
 	gtk_grid_attach (GTK_GRID (grid_ctrl), button, x++, y, 1,1);
 	g_signal_connect ( G_OBJECT (button), "pressed",
 			     G_CALLBACK (spm_scancontrol_movie_callback),
 			     this);
 	gapp->RegisterPluginToolbarButton (G_OBJECT (button), "Toolbar_Scan_Movie");
+        g_object_set_data( G_OBJECT (bs_tmp), "SPMCONTROL_MOVIE_BUTTON", button);
+        g_object_set_data( G_OBJECT (bm_tmp), "SPMCONTROL_START_BUTTON", button);
 
 #if 0
 	button = gtk_button_new_with_label("HS Capture");
@@ -440,6 +442,7 @@ SPM_ScanControl::SPM_ScanControl ()
                           this);
 	gapp->RegisterPluginToolbarButton (G_OBJECT (slsbutton), "Toolbar_SubLineScan");
         g_object_set_data( G_OBJECT (bs_tmp), "SPMCONTROL_SLS_BUTTON", slsbutton);
+        g_object_set_data( G_OBJECT (bm_tmp), "SPMCONTROL_SLS_BUTTON", slsbutton);
 #endif
 
         
@@ -507,6 +510,7 @@ SPM_ScanControl::SPM_ScanControl ()
                             G_CALLBACK (spm_scancontrol_set_subscan_callback),
 			    this);
         g_object_set_data( G_OBJECT (bs_tmp), "SPMCONTROL_SLS_MODE", slscheckbutton);
+        g_object_set_data( G_OBJECT (bm_tmp), "SPMCONTROL_SLS_MODE", slscheckbutton);
 	
 
 //------------ SLS controls
@@ -754,6 +758,9 @@ static void spm_scancontrol_start_callback (GtkWidget *w, void *data){
 
 	gtk_widget_set_sensitive (w, FALSE);
 	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_EC_NUM_VALUES"), FALSE);
+	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), FALSE);
+	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_BUTTON"), FALSE);
+	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_MODE"), FALSE);
 	gpointer ss_action = g_object_get_data (G_OBJECT (w), "simple-action");
 	if (ss_action)
 	        g_simple_action_set_enabled ((GSimpleAction*)ss_action, FALSE);
@@ -806,6 +813,9 @@ static void spm_scancontrol_start_callback (GtkWidget *w, void *data){
 		
 	} while (((SPM_ScanControl*)data) -> RepeatMode() && nostop);
 
+	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), TRUE);
+	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_BUTTON"), TRUE);
+	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_MODE"), TRUE);
 	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_EC_NUM_VALUES"), TRUE);
 	gtk_widget_set_sensitive (w, TRUE);
 	if (ss_action)
@@ -820,6 +830,9 @@ static void spm_scancontrol_movie_callback (GtkWidget *w, void *data){
 	if (G_IS_OBJECT (w)){
                 gtk_widget_set_sensitive (w, FALSE);
                 gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_EC_NUM_VALUES"), FALSE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), FALSE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_BUTTON"), FALSE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_MODE"), FALSE);
                 gpointer ss_action = g_object_get_data (G_OBJECT (w), "simple-action");
                 if (ss_action)
                         g_simple_action_set_enabled ((GSimpleAction*)ss_action, FALSE);
@@ -852,8 +865,11 @@ static void spm_scancontrol_movie_callback (GtkWidget *w, void *data){
 		gapp->xsm->save(AUTO_NAME_SAVE);
 
 	if (G_IS_OBJECT (w)){
-                gtk_widget_set_sensitive (w, TRUE);
                 gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_EC_NUM_VALUES"), TRUE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), TRUE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_BUTTON"), TRUE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_MODE"), TRUE);
+                gtk_widget_set_sensitive (w, TRUE);
                 gpointer ss_action = g_object_get_data (G_OBJECT (w), "simple-action");
                 if (ss_action)
                         g_simple_action_set_enabled ((GSimpleAction*)ss_action, TRUE);
@@ -889,9 +905,10 @@ static void spm_scancontrol_stop_callback (GtkWidget *w, void *data){
 
 static void spm_scancontrol_set_subscan_callback (GtkWidget *w, void *data){
         gboolean s;
-	int m = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (w), "SUBSCAN_MODE"));
+        if (((SPM_ScanControl*)data) ->  scan_in_progress())
+                return;
 
-        switch (m){
+        switch (GPOINTER_TO_INT (g_object_get_data (G_OBJECT (w), "SUBSCAN_MODE"))){
         case 0: ((SPM_ScanControl*)data)->set_sls_mode (TRUE);
                 gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (g_object_get_data (G_OBJECT (w), "SUBSCAN_RB")), TRUE);
                 if (gapp->xsm->GetActiveScan ()){
