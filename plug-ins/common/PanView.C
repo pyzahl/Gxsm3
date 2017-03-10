@@ -336,6 +336,7 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
         tip_marker_z0 = NULL;
         info = NULL;
         infoXY0 = NULL;
+        show_preset_grid = false;
 
 	timer_id = 0;
 
@@ -363,7 +364,21 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
 
 	// Cairo: gtk drawing area
 	canvas = gtk_drawing_area_new(); // gtk3 cairo drawing-area -> "canvas"
-	g_signal_connect (G_OBJECT (canvas), "draw",
+
+        gtk_widget_add_events (canvas,
+                               GDK_BUTTON_PRESS_MASK
+                               | GDK_ENTER_NOTIFY_MASK      
+                               | GDK_LEAVE_NOTIFY_MASK  
+                               | GDK_POINTER_MOTION_MASK
+                               );
+
+        /* Event signals */
+        g_signal_connect (G_OBJECT (canvas), "event",
+                          G_CALLBACK (PanView::canvas_event_cb), this);
+
+
+        
+        g_signal_connect (G_OBJECT (canvas), "draw",
 			  G_CALLBACK (PanView::canvas_draw_callback), this);
 		
 	gtk_widget_set_size_request (canvas, WXS+24, WYS+24);
@@ -474,6 +489,74 @@ void PanView::AppWindowInit(const gchar *title){
 	set_window_geometry ("pan-view");
 }
 
+gint PanView::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, PanView *pv){
+	static int dragging=FALSE;
+	static GtkWidget *coordpopup=NULL;
+	static GtkWidget *coordlab=NULL;
+        static int pi=-1;
+        static int pj=-1;
+        double mouse_pix_xy[2];
+        static double preset[2];
+        
+        //---------------------------------------------------------
+	// cairo_translate (cr, 12.+pv->WXS/2., 12.+pv->WYS/2.);
+        // scale to volate range
+	// cairo_scale (cr, 0.5*pv->WXS/pv->max_x, -0.5*pv->WYS/pv->max_y);
+
+        // undo cairo image translation/scale:
+        mouse_pix_xy[0] = (event->button.x - (double)(12+pv->WXS/2.))/( 0.5*pv->WXS/pv->max_x);
+        mouse_pix_xy[1] = (event->button.y - (double)(12+pv->WYS/2.))/( 0.5*pv->WYS/pv->max_y);
+   
+        double pxw=(2*pv->x0r)/N_PRESETS;
+        double pyw=(2*pv->y0r)/N_PRESETS;
+
+        int i = (int)((mouse_pix_xy[0]+pv->x0r)/pxw);
+        int j = 6-(int)((mouse_pix_xy[1]+pv->y0r)/pyw);
+        if (i < 0 || i > (N_PRESETS-1))
+                i=j=-1;
+        if (j < 0 || j > (N_PRESETS-1))
+                i=j=-1;
+
+        switch (event->type) {
+	case GDK_BUTTON_PRESS:
+		switch(event->button.button) {
+		case 1:
+                        preset[0] = i-3;
+                        preset[1] = j-3;
+                        g_object_set_data (G_OBJECT(canvas), "preset_xy", preset);
+                        gapp->offset_to_preset_callback (canvas, gapp);
+                        g_message ("PanView Button1 Pressed at XY=%g, %g => %d, %d",  mouse_pix_xy[0], mouse_pix_xy[1], i,j );
+			break;
+                }
+                break;
+		
+	case GDK_MOTION_NOTIFY:
+                if (pi != i || pj != j){
+                        if (pi>=0 && pj>=0){
+                                pv->pos_preset_box[pi][pj]->set_fill_rgba (0,0,0,0.1);
+                                pi=pj=-1;
+                        }
+                        
+                        if (i>=0 && j>=0){
+                                pv->pos_preset_box[i][j]->set_fill_rgba (1,0,0,0.3);
+                                pi=i; pj=j;
+                        }
+                        g_message ("PanView XY=%g, %g => %d, %d",  mouse_pix_xy[0], mouse_pix_xy[1], i,j);
+                }
+		break;
+		
+	case GDK_ENTER_NOTIFY:
+                pv->show_preset_grid = true;
+		break;
+	case GDK_LEAVE_NOTIFY:
+                pv->show_preset_grid = false;
+                break;
+		
+	default: break;
+	}
+	return FALSE;
+}
+
 gboolean  PanView::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, PanView *pv){
         // translate origin to window center
 	cairo_translate (cr, 12.+pv->WXS/2., 12.+pv->WYS/2.);
@@ -486,11 +569,11 @@ gboolean  PanView::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, PanView
         pv->pan_area_extends->draw (cr); // full area of reach with offsets
 	pv->pan_area->draw (cr);         // pan area
 
-        if (0)
-           for(int i=0; i<N_PRESETS; ++i)
-                for(int j=0; j<N_PRESETS; ++j)
-                        if (pv->pos_preset_box[i][j])
-                                pv->pos_preset_box[i][j]->draw (cr);
+        if (pv->show_preset_grid)
+                for(int i=0; i<N_PRESETS; ++i)
+                        for(int j=0; j<N_PRESETS; ++j)
+                                if (pv->pos_preset_box[i][j])
+                                        pv->pos_preset_box[i][j]->draw (cr);
 
         pv->current_view->draw (cr);     // current set scan area
 
@@ -579,17 +662,19 @@ void PanView::update_expanded_scan_limits (){
 			pan_area->set_xy (1, -x0r, -y0r);
                         pan_area->set_line_width (get_lw (1.0));
                         pan_area->queue_update (canvas);
-                
-                        double pxw=(2*x0r)/N_PRESETS;
-                        double pyw=(2*y0r)/N_PRESETS;
-                        for(int i=0; i<N_PRESETS; ++i)
-                                for(int j=0; j<N_PRESETS; ++j){
-                                        pos_preset_box[i][j]->set_xy (1, pxw,pyw);
-                                        pos_preset_box[i][j]->set_position (-x0r+pxw*i, -y0r+pyw*j);
-                                        pos_preset_box[i][j]->queue_update (canvas);
-                                }
-		}
-	}
+                }
+        }
+        if (pos_preset_box[0][0]){
+                double pxw=(2*x0r)/N_PRESETS;
+                double pyw=(2*y0r)/N_PRESETS;
+                for(int i=0; i<N_PRESETS; ++i)
+                        for(int j=0; j<N_PRESETS; ++j){
+                                pos_preset_box[i][j]->set_xy (1, pxw,pyw);
+                                pos_preset_box[i][j]->set_position (-x0r+pxw*i, -y0r+pyw*j);
+                                pos_preset_box[i][j]->set_line_width (get_lw (1.0));
+                                pos_preset_box[i][j]->queue_update (canvas);
+                        }
+        }
 }
 
 void PanView :: tip_refresh()

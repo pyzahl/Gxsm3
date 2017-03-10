@@ -60,7 +60,8 @@ public:
         void AppWindowInit(const gchar *title);
 
         static gboolean canvas_draw_callback (GtkWidget *widget, cairo_t *cr, PanView *pv);
-    
+        static gint canvas_event_cb(GtkWidget *canvas, GdkEvent *event, PanView *pv);
+        
         void show() {
                 gtk_widget_show_all (panwindow);
         };
@@ -97,6 +98,7 @@ private:
         cairo_item  *current_view_zoom; // scan area without prescan zoomed
         #define N_PRESETS 7
         cairo_item  *pos_preset_box[N_PRESETS][N_PRESETS];
+        gboolean    show_preset_grid;
         
         double get_lw (double lw=1.) { return lw*(max_x-min_x)/WXS; };
 	 

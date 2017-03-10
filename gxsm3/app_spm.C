@@ -284,8 +284,8 @@ void App::offset_to_preset_callback(GtkWidget* w, gpointer app){
          SCAN_DATA *data = &((App*)app)->xsm->data;
          double *xy = (double*)g_object_get_data (G_OBJECT(w), "preset_xy");
          if (xy){
-                 data->s.x0 = xy[0];
-                 data->s.y0 = xy[1];
+                 data->s.x0 = xy[0] * round(((App*)app)->xsm->XOffsetMax() / 3.5 / 10)*10;
+                 data->s.y0 = xy[1] * round(((App*)app)->xsm->YOffsetMax() / 3.5 / 10)*10;
          } else
                  data->s.x0 = data->s.y0 = 0.;
          App::spm_offset_check(NULL, app);
