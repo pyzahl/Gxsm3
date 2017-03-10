@@ -421,6 +421,32 @@ class BuildParam{
                 grid_add_widget (button, bwx);
                 return button;
         };
+        GtkWidget* grid_add_lock_button (const char *tooltip=NULL, gboolean state=false, int bwx=1,
+                                         GCallback cb=NULL, gpointer data=NULL){
+                button = gtk_toggle_button_new ();
+                gtk_button_set_image (GTK_BUTTON (button),
+                                      gtk_image_new_from_icon_name (state ? "changes-prevent-symbolic" : "changes-allow-symbolic", GTK_ICON_SIZE_BUTTON));
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), state);
+                if (tooltip)
+                        gtk_widget_set_tooltip_text (button, tooltip);
+
+                if (cb){
+                        g_signal_connect(G_OBJECT (button), "toggled", G_CALLBACK(cb), data);
+                }
+                grid_add_widget (button, bwx);
+                return button;
+        };
+        GtkWidget* grid_add_permission_button (const char *tooltip=NULL, gboolean perm=true, int bwx=1){
+                GPermission* p = g_simple_permission_new (perm);
+                button = gtk_lock_button_new (p);
+                // bool = g_permission_get_allowed (gtk_lock_button_get_permission (GTK_LOCK_BUTTON (button)));
+
+                if (tooltip)
+                        gtk_widget_set_tooltip_text (button, tooltip);
+
+                grid_add_widget (button, bwx);
+                return button;
+        };
 
         GtkWidget* grid_add_check_button_gint32 (const gchar* labeltxt, const char *tooltip=NULL, int bwx=1,
                                                  GCallback cb=NULL, gpointer data=NULL, gint32 source=0, gint32 mask=-1){

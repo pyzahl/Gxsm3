@@ -286,7 +286,7 @@ void App::offset_to_preset_callback(GtkWidget* w, gpointer app){
          if (!((App*)app)->spm_control)
                  return;
  
-         if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (g_object_get_data (G_OBJECT((((App*)app)->spm_control)), "offset_lock_toggle_button"))))
+         if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (g_object_get_data (G_OBJECT((((App*)app)->spm_control)), "offset_lock_button"))))
                  return;
 
          double *xy = (double*)g_object_get_data (G_OBJECT(w), "preset_xy");
@@ -656,8 +656,8 @@ GtkWidget* App::create_spm_control (){
                 ("Move to Origin", "Move to Origin (Zero Offset)", 1,
                  G_CALLBACK (App::offset_to_preset_callback), this);
         g_object_set_data (G_OBJECT(preset_button), "preset_xy", NULL);
-        GtkWidget *offset_lock = spm_bp->grid_add_check_button ("Lock", "Lock Move to Origin Actions", 1, NULL, NULL, 1,0);
-        g_object_set_data (G_OBJECT(grid), "offset_lock_toggle_button", offset_lock);
+        GtkWidget *offset_lock = spm_bp->grid_add_lock_button ("Lock Move to Origin Actions", true);
+        g_object_set_data (G_OBJECT(grid), "offset_lock_button", offset_lock);
         
         spm_bp->new_line ();
 
