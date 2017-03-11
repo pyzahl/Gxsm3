@@ -2581,7 +2581,7 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
         gchar *s_value = vc->scan->data.Vunit->UsrString (vc->scan->mem2d->data->GetVLookup (vc->scan->mem2d->GetLayer ()), UNIT_SM_PS);
         gchar *s_time = vc->scan->data.TimeUnit->UsrString (vc->scan->mem2d->get_frame_time (), UNIT_SM_PS);
         gchar *s_vrange = vc->scan->data.Zunit->UsrString (vc->scan->data.display.vrange_z, UNIT_SM_PS);
-	gchar *suggest0 = g_strdup_printf ("%s%s%s%s%s-VZ%s-snap.png", vc->scan->data.ui.originalname,
+	gchar *suggest0 = g_strdup_printf ("%s%s%s%s%s-VZ%s-snap.pdf", vc->scan->data.ui.originalname,
                                           vc->scan->data.s.ntimes>1?"_L":"",
                                           vc->scan->data.s.ntimes>1?s_time:"",
                                           vc->scan->data.s.nvalues>1?"_T":"",
@@ -2615,25 +2615,25 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
         gtk_file_filter_set_name (f0, "All");
         gtk_file_filter_add_pattern (f0, "*");
 
-        GtkFileFilter *f2 = gtk_file_filter_new ();
-        gtk_file_filter_add_mime_type (f2, "image/png");
-        gtk_file_filter_add_mime_type (f2, "image/jpeg");
-        gtk_file_filter_add_mime_type (f2, "image/gif");
-        gtk_file_filter_set_name (f2, "Images");
-        gtk_file_filter_add_pattern (f2, "*.png");
-        gtk_file_filter_add_pattern (f2, "*.jpeg");
+        GtkFileFilter *fpng = gtk_file_filter_new ();
+        gtk_file_filter_add_mime_type (fpng, "image/png");
+        gtk_file_filter_add_mime_type (fpng, "image/jpeg");
+        gtk_file_filter_add_mime_type (fpng, "image/gif");
+        gtk_file_filter_set_name (fpng, "Images");
+        gtk_file_filter_add_pattern (fpng, "*.png");
+        gtk_file_filter_add_pattern (fpng, "*.jpeg");
 
-        GtkFileFilter *f3 = gtk_file_filter_new ();
-        gtk_file_filter_set_name (f3, "SVG");
-        gtk_file_filter_add_pattern (f3, "*.svg");
+        GtkFileFilter *fsvg = gtk_file_filter_new ();
+        gtk_file_filter_set_name (fsvg, "SVG");
+        gtk_file_filter_add_pattern (fsvg, "*.svg");
 
-        GtkFileFilter *f4 = gtk_file_filter_new ();
-        gtk_file_filter_set_name (f4, "PDF");
-        gtk_file_filter_add_pattern (f4, "*.pdf");
+        GtkFileFilter *fpdf = gtk_file_filter_new ();
+        gtk_file_filter_set_name (fpdf, "PDF");
+        gtk_file_filter_add_pattern (fpdf, "*.pdf");
 
-        GtkFileFilter *filter[] = { f2, f3, f4, f0, NULL };
+        GtkFileFilter *filter[] = { fpdf, fsvg, fpng, f0, NULL };
                 
-        imgname = gapp->file_dialog_save ("Save Canvas as png, svg or pdf file", path, suggest, filter);
+        imgname = gapp->file_dialog_save ("Save Canvas as pdf, svg or png file", path, suggest, filter);
 	g_free (suggest);
 
 	if (imgname == NULL || strlen(imgname) < 5) 

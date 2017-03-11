@@ -2306,7 +2306,10 @@ void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *
         if(!pc->last_pe) return;
 
 	gchar *imgname;
-	gchar *suggest = g_strdup_printf ("%s-profile-snap.png", pc->last_pe->get_scan ()->data.ui.name);
+
+	gchar *suggest = g_strdup_printf ("%s/%s-profile-snap.pdf",
+                                          g_settings_get_string (gapp->get_as_settings (), "auto-save-folder"),
+                                          pc->last_pe->get_scan ()->data.ui.name);
 
         cairo_surface_t *surface;
         cairo_t *cr;
@@ -2316,25 +2319,25 @@ void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *
         gtk_file_filter_set_name (f0, "All");
         gtk_file_filter_add_pattern (f0, "*");
 
-        GtkFileFilter *f2 = gtk_file_filter_new ();
-        gtk_file_filter_add_mime_type (f2, "image/png");
-        gtk_file_filter_add_mime_type (f2, "image/jpeg");
-        gtk_file_filter_add_mime_type (f2, "image/gif");
-        gtk_file_filter_set_name (f2, "Images");
-        gtk_file_filter_add_pattern (f2, "*.png");
-        gtk_file_filter_add_pattern (f2, "*.jpeg");
+        GtkFileFilter *fpng = gtk_file_filter_new ();
+        gtk_file_filter_add_mime_type (fpng, "image/png");
+        gtk_file_filter_add_mime_type (fpng, "image/jpeg");
+        gtk_file_filter_add_mime_type (fpng, "image/gif");
+        gtk_file_filter_set_name (fpng, "Images");
+        gtk_file_filter_add_pattern (fpng, "*.png");
+        gtk_file_filter_add_pattern (fpng, "*.jpeg");
 
-        GtkFileFilter *f3 = gtk_file_filter_new ();
-        gtk_file_filter_set_name (f3, "SVG");
-        gtk_file_filter_add_pattern (f3, "*.svg");
+        GtkFileFilter *fsvg = gtk_file_filter_new ();
+        gtk_file_filter_set_name (fsvg, "SVG");
+        gtk_file_filter_add_pattern (fsvg, "*.svg");
 
-        GtkFileFilter *f4 = gtk_file_filter_new ();
-        gtk_file_filter_set_name (f4, "PDF");
-        gtk_file_filter_add_pattern (f4, "*.pdf");
+        GtkFileFilter *fpdf = gtk_file_filter_new ();
+        gtk_file_filter_set_name (fpdf, "PDF");
+        gtk_file_filter_add_pattern (fpdf, "*.pdf");
 
-        GtkFileFilter *filter[] = { f2, f3, f4, f0, NULL };
+        GtkFileFilter *filter[] = { fpdf, fsvg, fpng, f0, NULL };
 
-	imgname = gapp->file_dialog_save ("Save Profile Canvas as png or svg file", NULL, suggest, filter);
+	imgname = gapp->file_dialog_save ("Save Profile Canvas as pdf, svg or png file", NULL, suggest, filter);
 	g_free (suggest);
 
 	if (imgname == NULL || strlen(imgname) < 5) 
@@ -2345,25 +2348,10 @@ void ProfileControl::file_save_image_callback (GSimpleAction *simple, GVariant *
         double scaling = 1.;
 
 	if (g_strrstr (imgname,".svg")){
-#if 1
-#ifdef CAIRO_HAS_SVG_SURFACE
                 surface = cairo_svg_surface_create (imgname, pc->current_geometry[0], pc->current_geometry[1]);
                 cairo_svg_surface_restrict_to_version (surface, CAIRO_SVG_VERSION_1_2);
-#else
-                g_print ("Sorry -- CAIRO_HAS_SVG_SURFACE not defined/not available.\n");
-                return;
-#endif
         } else if (g_strrstr (imgname,".pdf")){
-#ifdef CAIRO_HAS_PDF_SURFACE
                 surface = cairo_pdf_surface_create (imgname, pc->current_geometry[0], pc->current_geometry[1]); 
-#else
-                g_print ("Sorry -- CAIRO_HAS_PDF_SURFACE not defined/not available.\n");
-                return;
-#endif
-#else
-                g_print ("Sorry -- CAIRO SVG/PDF_SURFACE is not available.\n");
-                return;
-#endif
         } else {
                 scaling = 3.;
                 surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, scaling * pc->current_geometry[0], scaling * pc->current_geometry[1]);
