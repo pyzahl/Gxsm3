@@ -1337,12 +1337,8 @@ GtkWidget* App::create_as_control (){
         as_bp->grid_add_ec ("#", xsm->Unity, &xsm->counter,
                             0, 99999, "05.0f", "auto-save-counter-i");
 
-        GtkWidget *pathbutton = gtk_button_new_with_label("...");
-        as_bp->grid_add_widget (pathbutton);
-        g_signal_connect (G_OBJECT (pathbutton), "clicked",
-                          G_CALLBACK (App::file_set_datapath_callback), NULL);
-        //	G_CALLBACK (App::file_set_dataepath_callback) // sets NC Data Path
-        //	G_CALLBACK (App::file_set_probepath_callback) // sets Probe Data Path
+        as_bp->grid_add_button ("...", "Set file storage folder.",1,
+                                G_CALLBACK (App::file_set_datapath_callback));
 
         GtkWidget *checkbutton = gtk_check_button_new_with_label( N_("Auto Save"));
         as_bp->grid_add_widget (checkbutton);
