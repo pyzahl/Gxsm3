@@ -656,7 +656,7 @@ GtkWidget* App::create_spm_control (){
                 ("Move to Origin", "Move to Origin (Zero Offset)", 1,
                  G_CALLBACK (App::offset_to_preset_callback), this);
         g_object_set_data (G_OBJECT(preset_button), "preset_xy", NULL);
-        GtkWidget *offset_lock = spm_bp->grid_add_lock_button ("Lock Move to Origin Actions", true);
+        GtkWidget *offset_lock = spm_bp->grid_add_lock_button ("Lock/Unlock Move to Origin Button\nand PanView Preset Move to Actions", false);
         g_object_set_data (G_OBJECT(grid), "offset_lock_button", offset_lock);
         
         spm_bp->new_line ();
