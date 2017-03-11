@@ -421,6 +421,14 @@ class BuildParam{
                 grid_add_widget (button, bwx);
                 return button;
         };
+        static void lock_callback (GtkWidget *button, void *data) {
+                gtk_button_set_image
+                        (GTK_BUTTON (button),
+                         gtk_image_new_from_icon_name
+                         (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button))
+                          ? "changes-prevent-symbolic" : "changes-allow-symbolic",
+                          GTK_ICON_SIZE_BUTTON));
+        };
         GtkWidget* grid_add_lock_button (const char *tooltip=NULL, gboolean state=false, int bwx=1,
                                          GCallback cb=NULL, gpointer data=NULL){
                 button = gtk_toggle_button_new ();
@@ -432,6 +440,8 @@ class BuildParam{
 
                 if (cb){
                         g_signal_connect(G_OBJECT (button), "toggled", G_CALLBACK(cb), data);
+                } else {
+                        g_signal_connect(G_OBJECT (button), "toggled", G_CALLBACK(lock_callback), this);
                 }
                 grid_add_widget (button, bwx);
                 return button;
