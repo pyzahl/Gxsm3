@@ -6,6 +6,7 @@ palette_DATA = \
 	greypal.pnm \
 	greyhilight.pnm \
 	greyhilightx.pnm \
+	greydeepsea.pnm \
 	deepsea.pnm \
 	bluepal.pnm \
 	bluepal2.pnm \
