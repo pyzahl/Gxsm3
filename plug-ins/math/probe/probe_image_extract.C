@@ -281,6 +281,8 @@ public:
    				                                                                Unity, &(*bg_sub),    0.,    1., ".0f", 0.1,  1.); bp.new_line ();
 		bp.grid_add_ec_with_scale ("\nVerbose Level 0..10", Unity, &(*verbose_level), 0., 10., ".0f", 1.0,  1.); bp.new_line ();
 
+		gtk_widget_show_all (dialog);
+		
 		gtk_dialog_run(GTK_DIALOG(dialog));
 		gtk_widget_destroy (dialog);
 
