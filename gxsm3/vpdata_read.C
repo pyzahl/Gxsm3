@@ -290,8 +290,13 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
 			int join_same_x = FALSE;
 			int num_sets = 0;
 
-                        for (token=Hrecord; *token; ++token)
+                        for (token=Hrecord; *token; ++token){
+				if (! strcmp (*token, "#C Index"))
+					continue;
+				if (! strcmp (*token, "Block-Start-Index"))
+					break;
                                 ++num_sets;
+                        }
 
 #ifdef VPDATA_IN_MATRIX
                         vpdata_view_init (1, num_sets-1);
