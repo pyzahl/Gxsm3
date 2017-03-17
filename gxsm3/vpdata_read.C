@@ -31,6 +31,7 @@
 #include "gxsm_window.h"
 
 #define VPDATA_IN_MATRIX                                                
+#define VPDATA_SKIP_LAST_TWO
 
 ProfileControl *tmp_pc[32] = { 
 	NULL, NULL, NULL, NULL,
@@ -40,6 +41,8 @@ ProfileControl *tmp_pc[32] = {
 };
 
 #ifdef VPDATA_IN_MATRIX
+
+
 
 Gxsm3appWindow *vpdata_graph_app_window = NULL;
 GtkWindow* vpdata_graph_window = NULL;
@@ -295,13 +298,24 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
 					continue;
 				if (! strcmp (*token, "Block-Start-Index"))
 					break;
+#ifdef VPDATA_SKIP_LAST_TWO
+                                if (token[1]){
+                                        if (token[2]){
+                                                if (! strcmp (token[2], "Block-Start-Index")){
+                                                        g_print ("num_sets=%d, [2]=Block-Start-Index [0]=%s [1]=%s\n", num_sets, token[0], token[1]);
+                                                        // [2]=Block-Start-Index [0]="Time (ms)" [1]="Bias (V)"
+                                                        break;
+                                                }
+                                        }
+                                }
+#endif
                                 ++num_sets;
                         }
-
+                        g_print("num_sets=%d\n");
 #ifdef VPDATA_IN_MATRIX
                         vpdata_view_init (1, num_sets-1);
 #endif                        
-			for (j=0, token=Hrecord; *token; ++token){
+			for (j=0, token=Hrecord; *token && j < num_sets; ++token){
 				if (! strcmp (*token, "#C Index"))
 					continue;
 				if (! strcmp (*token, "Block-Start-Index"))
