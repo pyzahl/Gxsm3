@@ -2376,6 +2376,7 @@ DSPControl::DSPControl () {
 		gchar *gckey  = g_strdup_printf ("LM_set_%s", keys[i]);
 		gchar *stolab = g_strdup_printf ("STO %s", keys[i]);
 		gchar *rcllab = g_strdup_printf ("RCL %s", keys[i]);
+		gchar *memolab = g_strdup_printf ("M %s", keys[i]);
 
                 dsp_bp->set_xy (i+1, 10);
                 dsp_bp->grid_add_button (N_(stolab), NULL, 1,
@@ -2392,6 +2393,12 @@ DSPControl::DSPControl () {
                 // CSS
                 //                if (gdk_rgba_parse (&rgba, "SeaGreen3"))
                 //                        gtk_widget_override_background_color ( GTK_WIDGET (dsp_bp->button), GTK_STATE_FLAG_PRELIGHT, &rgba);
+#if 0 // may adda memo/info button
+                dsp_bp->set_xy (i+2, 11);
+                dsp_bp->grid_add_button (N_(memolab), memolab, 1,
+                                         G_CALLBACK (callback_LM_memo_vp), this,
+                                         "key", gckey);
+#endif
 	}
 
         // ===================== done with panned
