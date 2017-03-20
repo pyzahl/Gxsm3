@@ -52,7 +52,18 @@ spascan.C \
 xshmimg.C xshmimg.h \
 view.C view.h \
 vprofile.C \
+\
 vsurf3d.C \
+ogl_framework.hpp \
+vertex.hpp \
+caps.cpp caps.hpp \
+error.cpp error.hpp \
+compiler.cpp compiler.hpp \
+buffer.cpp buffer.hpp \
+common.hpp \
+csv.cpp csv.hpp \
+pugiconfig.hpp pugixml.cpp pugixml.hpp \
+sementics.hpp \
 \
 xsmhard.C xsmhard.h \
 \

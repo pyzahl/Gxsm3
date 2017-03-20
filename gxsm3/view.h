@@ -39,10 +39,9 @@ class V3dControl;
 #include "xshmimg.h"
 #include <stdlib.h>
 
-#include <GL/gl.h>
-#include <GL/glx.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+
 
 #define TOPO_BORDER_WIDTH 14
 #define TOPO_MINSIZE      400 // Default Wert
@@ -279,6 +278,8 @@ typedef struct{
 
 } Surf3d_GLview_data;
 
+class gl_400_primitive_tessellation;
+
 class Surf3d  : public View{
 public:
         Surf3d();
@@ -295,6 +296,7 @@ public:
         gboolean GLdrawscene(GdkGLContext* context, int y_to_update=-1, int refresh_all=FALSE);
         static void GLupdate(void* data);
 
+        void MouseControl (int mouse, double x, double y);
         void Rotate(int n, double dphi);
         void RotateAbs(int n, double phi);
         double RotateX(double dphi);
@@ -310,7 +312,6 @@ public:
 
         void preferences();
         gboolean is_ready() { return (size > 0 && QuenchFac > 0 && scan != NULL && XPM_x > 1 && XPM_y > 1);  };
-  
 
 private: 
         void PutPointMode(int k, int j, int v=-1);
@@ -323,34 +324,29 @@ private:
         GnomeResEntryInfoType *v3dControl_pref_def;
 
         void GLvarinit ();
-        int  DelSmem ();
+        void delete_surface_buffer ();
         void GLdrawsurface (int y_to_update=-1, int refresh_all=FALSE);
         void GLdrawGimmicks ();
         void printstring (void *font, char *string);
-        void calccolor (GLfloat height, GLfloat c[3]);
+        void calccolor (float height, glm::vec4 &c);
 
-        GLfloat *surface;
-        GLfloat **surfacecolor;
-        GLubyte *surfacepic;
-        GLuint glZeroFrameList;
-        GLuint *glSurfaceList, *glSurfaceListRange;
-        GLuint *glVolumeXSList, *glVolumeXSListRange;
-        GLuint *glVolumeYSList, *glVolumeYSListRange;
-        GLuint *glSVolumeList, *glSVolumeListRange;
-        GLfloat ColorLookup[1024][3];
-
-        int valid;
-        unsigned long size;
+        glm::vec4 *surface_normal_z_buffer;
+        glm::vec4 *surface_color_buffer;
+        glm::vec3 ColorLookup[1024];
 
 public:
-        int GetSmem ();
-
-        int XPM_x, XPM_y, XPM_v;
-        int scrwidth;
-        int scrheight;
+        void create_surface_buffer ();
+        void set_gl_data ();
+        
+        gint XPM_x, XPM_y, XPM_v;
+        size_t size;
+        gint scrwidth;
+        gint scrheight;
 
         Surf3d_GLview_data GLv_data;
-  
+
+        gl_400_primitive_tessellation *gl_tess;
+        
 private:
         V3dControl *v3dcontrol;
 };

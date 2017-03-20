@@ -177,31 +177,34 @@ V3dControl::V3dControl (const char *title, int ChNo, Scan *sc,
         //	gtk_window_set_default_size(GTK_WINDOW(window), 500, 500);
 
         glarea = gtk_gl_area_new ();
-
+        gtk_gl_area_set_required_version (GTK_GL_AREA(glarea), 4, 0);
+        gtk_gl_area_set_use_es (GTK_GL_AREA(glarea), true);
+        g_object_set_data (G_OBJECT(glarea), "Surf3D", vdata); // Surf3D reference
+        
         gtk_widget_set_size_request (glarea, 500, 500);
-
+        gtk_widget_set_hexpand (glarea, TRUE);
+        gtk_widget_set_vexpand (glarea, TRUE);
         gtk_widget_add_events (glarea,
                                GDK_BUTTON1_MOTION_MASK    |
                                GDK_BUTTON2_MOTION_MASK    |
                                GDK_BUTTON_PRESS_MASK      |
                                GDK_VISIBILITY_NOTIFY_MASK);
 		
+        g_signal_connect (G_OBJECT (glarea), "realize",
+                          G_CALLBACK (realize_event_cb), vdata);
+                          
         g_signal_connect (G_OBJECT (glarea), "resize",
 				  G_CALLBACK (resize_event_cb), vdata);
+
         g_signal_connect (G_OBJECT (glarea), "render",
                           G_CALLBACK (render_event_cb), vdata);
-
-        if (realize_event_cb)
-                g_signal_connect (G_OBJECT (glarea), "realize",
-                                  G_CALLBACK (realize_event_cb), vdata);
-                          
-
-        // put glarea into window and show it all
-	gtk_grid_attach (GTK_GRID (v_grid), glarea, 1,1, 1,1);
 
 	g_signal_connect (G_OBJECT (glarea), "event",
 			  (GCallback) V3dControl::glarea_event_cb,
 			  this);
+
+        // put glarea into window and show it all
+	gtk_grid_attach (GTK_GRID (v_grid), glarea, 1,1, 1,1);
 
 	// New Statusbar
 	statusbar = gtk_statusbar_new ();
@@ -260,27 +263,24 @@ void V3dControl::CheckOptions(){
 
 gint V3dControl::glarea_event_cb(GtkWidget *glarea, GdkEvent *event, V3dControl *vc){
 	static int dragging=FALSE;
-	static int busy=0;
-	static double xs,ys;
-	//  gchar *mld;
-	//  GdkCursor *fleur;
 	double x,y;
 	x = event->button.x;
 	y = event->button.y;
-	switch (event->type) 
-	{
-	case GDK_BUTTON_PRESS:
+	XSM_DEBUG(DBG_L2, "V3dControl::glarea_event_cb mouse: " << x << ", " << y );
+
+	switch (event->type) {
+        case GDK_BUTTON_PRESS:
+                ((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->MouseControl ('i', x, y); // init mouse pos
 		switch(event->button.button) 
 		{
 		case 1: 
 			dragging=TRUE;
-			xs=x; ys=y;
 			break;
 		case 2:
 			dragging=TRUE;
-			xs=x; ys=y;
 			break;
 		case 3: 
+			dragging=TRUE;
 			break;
 		case 4:
 			(((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->*(vc->WheelFkt))(1.0);
@@ -292,31 +292,42 @@ gint V3dControl::glarea_event_cb(GtkWidget *glarea, GdkEvent *event, V3dControl 
 		break;
 
 	case GDK_MOTION_NOTIFY:
-		if(!busy){
-			busy=1;
-			if (dragging && (event->motion.state & GDK_BUTTON1_MASK)){
-				((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Rotate(1, x-xs);
-				((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Rotate(0, y-ys);
-                                gtk_gl_area_queue_render (GTK_GL_AREA (glarea));
-				xs=x; ys=y;
-			}
-			if (dragging && (event->motion.state & GDK_BUTTON2_MASK)){
-				((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Translate(0, x-xs);
-				((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Translate(1, ys-y);
-                                gtk_gl_area_queue_render (GTK_GL_AREA (glarea));
-				xs=x; ys=y;
-			}
-			busy=0;
-		}
+                if (dragging && (event->motion.state & GDK_BUTTON1_MASK)){
+                        ((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->MouseControl ('R', x, y); // do update
+                        //((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Rotate(1, x-xs);
+                        //((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Rotate(0, y-ys);
+                        //xs=x; ys=y;
+                        gtk_gl_area_queue_render (GTK_GL_AREA (glarea));
+                }
+                if (dragging && (event->motion.state & GDK_BUTTON2_MASK)){
+                        ((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->MouseControl ('T', x, y);
+                        //((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Translate(0, x-xs);
+                        //((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Translate(1, ys-y);
+                        //xs=x; ys=y;
+                        gtk_gl_area_queue_render (GTK_GL_AREA (glarea));
+                }
+                if (dragging && (event->motion.state & GDK_BUTTON3_MASK)){
+                        ((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->MouseControl ('M', x, y);
+                        //((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Translate(0, x-xs);
+                        //((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->Translate(1, ys-y);
+                        //xs=x; ys=y;
+                        gtk_gl_area_queue_render (GTK_GL_AREA (glarea));
+                }
 		break;
 
 	case GDK_BUTTON_RELEASE:
 		switch(event->button.button){
 		case 1:
 			dragging=FALSE;
+                        ((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->MouseControl ('r', x, y); // set current as new ref
 			break;
 		case 2:
 			dragging=FALSE;
+                        ((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->MouseControl ('t', x, y);
+			break;
+		case 3:
+			dragging=FALSE;
+                        ((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->MouseControl ('m', x, y);
 			break;
 		}
 		break;
