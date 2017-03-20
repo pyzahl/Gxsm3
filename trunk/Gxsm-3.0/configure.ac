@@ -351,6 +351,13 @@ else
   AC_DEFINE_UNQUOTED(PACKAGE_PALETTE_DIR, "${prefix}/share/${PACKAGE}/palette", [Define gxsm package install prefix])
 fi
 
+dnl Set PACKAGE_GL400_DIR in config.h.
+if test "x${prefix}" = "xNONE"; then
+  AC_DEFINE_UNQUOTED(PACKAGE_GL400_DIR, "${ac_default_prefix}/share/${PACKAGE}/gl-400", [Define gxsm package install prefix])
+else
+  AC_DEFINE_UNQUOTED(PACKAGE_GL400_DIR, "${prefix}/share/${PACKAGE}/gl-400", [Define gxsm package install prefix])
+fi
+
 #dnl Set PACKAGE_GRICMD_DIR in config.h.
 #if test "x${prefix}" = "xNONE"; then
 #  AC_DEFINE_UNQUOTED(PACKAGE_GRICMD_DIR, "${ac_default_prefix}/share/${PACKAGE}/gricmdfiles", [Define gxsm package path to gri cmd files])
@@ -740,6 +747,7 @@ plug-ins/math/transform/Makefile
 plug-ins/scan/Makefile
 plug-ins/hard/Makefile
 palette/Makefile
+gl-400/Makefile
 profileplot/Makefile
 tools/Makefile
 thumbnailers/Makefile

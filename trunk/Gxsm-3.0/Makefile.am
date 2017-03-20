@@ -1,4 +1,4 @@
-SUBDIRS = gxsm3 plug-ins palette thumbnailers tools pixmaps icons profileplot 
+SUBDIRS = gxsm3 plug-ins gl-400 palette thumbnailers tools pixmaps icons profileplot 
 
 # data
 # po commented out, see discussion in the forums.
