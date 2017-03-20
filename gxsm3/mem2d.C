@@ -1572,17 +1572,64 @@ ZVIEW_TYPE Mem2d::GetDataVMode(int x, int y){
 	return((ZVIEW_TYPE)(this->*ZVFkt)(x,y));
 }
 
+ZVIEW_TYPE Mem2d::GetDataVMode(int x, int y, int v){
+	int il=GetLayer ();
+	SetLayer (v);
+        // saturate indices
+        if (x<1) x=1;
+        if (y<1) y=1;
+        if (x>=GetNx()-1) x=GetNx()-2;
+        if (y>=GetNy()-1) y=GetNy()-2;
+        ZVIEW_TYPE zvt = (ZVIEW_TYPE)(this->*ZVFkt)(x,y);
+        SetLayer (il);
+	return (zvt);
+}
+
 ZVIEW_TYPE Mem2d::GetDataVModeInterpol(double x, double y, double v){
-	ZVIEW_TYPE zvt;
+        return (ZVIEW_TYPE) round (GetDataVModeInterpol_double (x,y,(int)round(v)));
+#if 0
+        ZVIEW_TYPE zvt;
 	int ix, iy, iv;
 	ix = (int)round(x);
 	iy = (int)round(y);
 	iv = (int)round(v);
+
 	int il=GetLayer ();
 	SetLayer (iv);
-	zvt = (ZVIEW_TYPE)(this->*ZVFkt)(ix,iy);
-	SetLayer (il);
+        zvt = (ZVIEW_TYPE)(this->*ZVFkt)(ix,iy);
+        SetLayer (il);
 	return (zvt);
+#endif
+}
+
+double Mem2d::GetDataVModeInterpol_double (double x, double y, int v){
+	double f1,f2,f3,f4;
+	int    x1,x2,y1,y2;
+        double z_inter = 0.;
+
+	x1 = (int)x;
+	x2 = x1 + 1;
+	y1 = (int)y;
+	y2 = y1 + 1;
+	f1 = ((double)x2-x)  *(y-(double)y1);
+	f2 = (x - (double)x1)*(y-(double)y1);
+	f3 = (x - (double)x1)*((double)y2-y);
+	f4 = ((double)x2-x)  *((double)y2-y);
+	// safety check, to make sure we dont have f1 = f2 = f3 = f4 = 0 
+	y2 = MIN (y2, GetNx()-1);
+	x2 = MIN (x2, GetNx()-1);
+
+	if(x1 < 0 || x1 >= GetNx() || y1 < 0 || y1 >= GetNy() ||
+	   x2 < 0 || x2 >= GetNx() || y2 < 0 || y2 >= GetNy())
+		z_inter = 0.;
+	else {
+                int il=GetLayer ();
+                SetLayer (v);
+		z_inter = f4 * (double)(this->*ZVFkt)(x1,y1) + f3 * (double)(this->*ZVFkt)(x2,y1)
+			+ f1 * (double)(this->*ZVFkt)(x1,y2) + f2 * (double)(this->*ZVFkt)(x2,y2);
+                SetLayer (il);
+        }
+	return z_inter;
 }
 
 

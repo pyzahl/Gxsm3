@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -23,8 +25,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-
 #ifndef __MEM2D_H
 #define __MEM2D_H
 
@@ -48,6 +48,8 @@
 #define c_re(c) ((c)[0])
 #define c_im(c) ((c)[1])
 #endif
+
+#include <glm/vec4.hpp>
 
 #include <netcdf.hh>
 //#include <netcdf>
@@ -244,6 +246,53 @@ public:
 	inline double GetDataPkt(int x, int y, int v){ 
 		return data->Z(x,y,v); 
 	};
+        inline void GetDataPkt_vec_normal_4F(int x, int y, int v, glm::vec4 *v4, double zs=1.){ 
+                // calculate average normal at x,y (v) vector vec4[0..2] and z at point in vec4[3]
+                double dxdz = data->Z(x+1,y,v) - data->Z(x-1,y,v);
+                double dydz = data->Z(x,y+1,v) - data->Z(x,y-1,v);
+                dxdz *= zs;
+                dydz *= zs;
+                // simplified cross product of vector from p(x-1,y,z) to p (x+1,y,z) X vector from p(x,y-1,z) to p(x,y+1,z) is:
+                v4->x = dxdz;
+                v4->y = -dydz;
+                v4->z = 2.;
+                v4->w = zs*data->Z(x,y,v); // "Z" height
+                double d = sqrt(dxdz*dxdz + dydz*dydz + 4.); // normalize
+                v4->x /= d;
+                v4->y /= d;
+                v4->z /= d;
+        };
+	inline void GetDataPktVMode_vec_normal_4F(int x, int y, int v, glm::vec4 *v4, double zs=1.){ 
+                // calculate average normal at x,y (v) vector vec4[0..2] and z at point in vec4[3]
+                double dxdz = GetDataVMode (x+1,y,v) - GetDataVMode (x-1,y,v);
+                double dydz = GetDataVMode (x,y+1,v) - GetDataVMode (x,y-1,v);
+                dxdz *= zs;
+                dydz *= zs;
+                // simplified cross product of vector from p(x-1,y,z) to p (x+1,y,z) X vector from p(x,y-1,z) to p(x,y+1,z) is:
+                v4->x = dxdz;
+                v4->y = -dydz;
+                v4->z = 2.;
+                v4->w = zs*GetDataVMode (x,y,v); // "Z" height
+                double d = sqrt(dxdz*dxdz + dydz*dydz + 4.); // normalize
+                v4->x /= d;
+                v4->y /= d;
+                v4->z /= d;
+	};
+	inline void GetDataPktVModeInterpol_vec_normal_4F(double x, double y, double v, glm::vec4 *v4, double zs=1.){ 
+                // calculate average normal at x,y (v) vector vec4[0..2] and z at point in vec4[3]
+                double dxdz = GetDataVModeInterpol (x+1,y,v) - GetDataVModeInterpol (x-1,y,v);
+                double dydz = GetDataVModeInterpol (x,y+1,v) - GetDataVModeInterpol (x,y-1,v);
+                dxdz *= zs;
+                dydz *= zs;
+                v4->x = dxdz;
+                v4->y = -dydz;
+                v4->z = 2.;
+                v4->w = zs*GetDataVModeInterpol (x,y,v); // "Z" height
+                double d = sqrt(dxdz*dxdz + dydz*dydz + 4.); // normalize
+                v4->x /= d;
+                v4->y /= d;
+                v4->z /= d;
+	};
 	double GetDataDiscAv(int x, int y, int v, double r);
 	double GetDataWidthAv(double x, double y, int v, double w, double s, double dx, double dy);
 	double GetDataPktInterpol(double x, double y);
@@ -270,7 +319,9 @@ public:
 	void GetPlaneMxyz (double &mx, double &my, double &z0) { mx = plane_mx; my = plane_my; z0 = plane_z0; };
 
 	ZVIEW_TYPE GetDataVMode(int x, int y);
+	ZVIEW_TYPE GetDataVMode(int x, int y, int v);
 	ZVIEW_TYPE GetDataVModeInterpol(double x, double y, double v);
+        double GetDataVModeInterpol_double (double x, double y, int v);
 	inline double GetDataMode(int x, int y);
 
 	/* *ZFkt points to one of this Mapping Functions */
