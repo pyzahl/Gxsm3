@@ -8,6 +8,18 @@
 
 namespace glf
 {
+	struct vertex_v4f
+	{
+		vertex_v4f
+		(
+			glm::vec4 const & position
+		) :
+			position(position)
+		{}
+
+		glm::vec2 position;
+	};
+
 	struct vertex_v2fv2f
 	{
 		vertex_v2fv2f

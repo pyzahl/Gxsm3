@@ -59,9 +59,6 @@
 // ------------------------------------------------------------
 #include "ogl_framework.hpp"
 
-#define OGL_SAMPLES_SOURCE_DIR PACKAGE_GL400_DIR
-#define OGL_SAMPLES_BINARY_DIR PACKAGE_GL400_DIR
-
 #define GL_DEBUG_L2 0
 
 // ------------------------------------------------------------
@@ -87,12 +84,12 @@ void surf3d_write_schema (){
 // ------------------------------------------------------------
 std::string getDataDirectory()
 {
-	return std::string(OGL_SAMPLES_SOURCE_DIR) + "/";
+	return std::string(PACKAGE_GL400_DIR) + "/";
 }
 
 std::string getBinaryDirectory()
 {
-	return std::string(OGL_SAMPLES_BINARY_DIR) + "/";
+	return std::string(PACKAGE_GL400_DIR) + "/";
 }
 
 // ------------------------------------------------------------
@@ -132,9 +129,15 @@ namespace
 	//GLint Uniform_noise_tile(0); // sampler2D
         
         
-	GLsizei const VertexCountSide(128);
-	GLsizei const VertexCountS3D(VertexCountSide * VertexCountSide);
-	GLsizeiptr const VertexSizeS3D = VertexCountS3D * sizeof(glm::vec2);
+	GLsizei const VertexCountS3D(4);
+	GLsizeiptr const VertexSizeS3D = VertexCountS3D * sizeof(glf::vertex_v4f);
+	glf::vertex_v4f const VertexDataS3D[VertexCountS3D] =
+	{
+		glf::vertex_v4f(glm::vec4(-128.0f,-128.0f, 0.0f, 0.0f)),
+		glf::vertex_v4f(glm::vec4( 128.0f,-128.0f, 0.0f, 0.0f)),
+		glf::vertex_v4f(glm::vec4( 128.0f, 128.0f, 0.0f, 0.0f)),
+		glf::vertex_v4f(glm::vec4(-128.0f, 128.0f, 0.0f, 0.0f))
+	};
 
 	GLint Uniform_screen_size(0); // vec2
 	GLint Uniform_lod_factor(0); // float
@@ -169,14 +172,10 @@ public:
                 RotationCurrent = RotationOrigin;
                 WindowSize  = glm::ivec2(500, 500);
                 mode = 1; // run simple tesselation test
-                // mode = 2; // use vsurf data
+                mode = 2; // use vsurf data
         };
         ~gl_400_primitive_tessellation(){
                 end ();
-        };
-
-        void resize (gint w, gint h){
-                WindowSize  = glm::ivec2(w, h);
         };
 
 private:
@@ -190,6 +189,7 @@ private:
         glm::vec3 cameraPosition() const {
                 return glm::vec3(0.0f, 0.0f, -this->TranslationCurrent.y);
         };
+        
         bool checkError(const char* Title) const {
                 int Error;
                 g_message (Title);
@@ -274,16 +274,19 @@ private:
                         if (mode == 1){
                                 UniformMVP = glGetUniformLocation(ProgramName, "MVP");
                         } else {
+                                this->checkError("initProgram -- get uniform variable references...");
                                 UniformMVP           = glGetUniformLocation(ProgramName, "mvp"); // mat4 -- projection
+                                this->checkError("initProgram get MVP");
                                 Uniform_diffuse      = glGetUniformLocation(ProgramName, "diffuse");     // sampler2D
+                                this->checkError("initProgram get diffuse");
                                 Uniform_terrain      = glGetUniformLocation(ProgramName, "terrain");     // sampler2D
+                                this->checkError("initProgram get terrain");
                                 // Uniform_noise_tile   = glGetUniformLocation(ProgramName, "noise_tile");  // sampler2D
+                                // this->checkError("initProgram get noise_tile");
                                 Uniform_screen_size  = glGetUniformLocation(ProgramName, "screen_size"); // vec2
+                                this->checkError("initProgram get screen_size");
                                 Uniform_lod_factor   = glGetUniformLocation(ProgramName, "lod_factor");  // float
-                                glUniform2f (Uniform_screen_size, numx,numy);
-                                glUniform1i (Uniform_diffuse, GL_TEXTURE0);
-                                glUniform1i (Uniform_terrain, GL_TEXTURE1);
-                                glUniform1f (Uniform_lod_factor, 4.0);
+                                this->checkError("initProgram get lod_factor");
                         }
 		}
 
@@ -309,10 +312,16 @@ private:
                         glEnableVertexAttribArray(semantic::attr::COLOR);
                         glBindVertexArray(0);
                 } else {
+                        // gletools python:
+                        // vbo = make_plane(128, 128);
                         glGenVertexArrays(1, &VertexArrayName);
                         glBindVertexArray(VertexArrayName);
                         glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
+                        glVertexAttribPointer(semantic::attr::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v4f), BUFFER_OFFSET(0));
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+                        glEnableVertexAttribArray(semantic::attr::POSITION);
+                        glBindVertexArray(0);
                 }
 
                 return this->checkError("initVertexArray");
@@ -329,12 +338,6 @@ private:
                 } else {
                         glGenBuffers(1, &ArrayBufferName);
                         glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                        glm::vec2 VertexDataS3D[VertexCountS3D];
-                        int i2 = VertexCountSide/2; 
-                        for (int i=0; i<VertexCountSide; ++i)
-                                for (int j=0; j<VertexCountSide; ++j)
-                                        VertexDataS3D[i+VertexCountSide*j] = glm::vec2(1.0f*(i-i2)/i2, 1.0f*(j-i2)/i2);
-
                         glBufferData(GL_ARRAY_BUFFER, VertexSizeS3D, VertexDataS3D, GL_STATIC_DRAW);
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
                 }
@@ -377,7 +380,6 @@ private:
 
                         glBindTexture(GL_TEXTURE_2D, 0);
 
-                        // vbo = make_plane(128, 128);
                         
                 }
                 
@@ -446,6 +448,7 @@ public:
                 if (mode == 1){
                         glDeleteVertexArrays(1, &VertexArrayName);
                 } else {
+                        glDeleteVertexArrays(1, &VertexArrayName);
                         glDeleteTextures(TextureCount, TextureName);
                 }
                 glDeleteProgram(ProgramName);
@@ -453,27 +456,28 @@ public:
 		return this->checkError("end");
 	};
 
-	bool render(Surf3d *s) {
+	bool render(Surf3d *s, GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f) {
 		if (!Validated) return false;
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+                // https://glm.g-truc.net/0.9.4/api/a00151.html
                 float aspect = WindowSize.x/WindowSize.y;
-		glm::mat4 Projection = glm::perspective(glm::pi<float>() * 0.25f, aspect, 0.1f, 100.0f);
+		glm::mat4 Projection = glm::perspective(glm::radians (fov), aspect, near, far);
 		glm::mat4 Model = glm::mat4(1.0f);
 		glm::mat4 MVP = Projection * this->view() * Model;
 
                 /* clear the viewport; the viewport is automatically resized when
                  * the GtkGLArea gets a new size allocation
                  */
-                glViewport (0, 0, WindowSize.x, WindowSize.y);
+                // glViewport (0, 0, WindowSize.x, WindowSize.y);
 
 		//glClearBufferfv(GL_COLOR, 0, &glm::vec4(0.0f)[0]);
                 glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
 
-		glUseProgram(ProgramName);
-                glUniformMatrix4fv(UniformMVP, 1, GL_FALSE, &MVP[0][0]);
-
+		glUseProgram (ProgramName);
+                glUniformMatrix4fv (UniformMVP, 1, GL_FALSE, &MVP[0][0]);
+                
                 if (mode == 1){
                         // g_message ("render mode 1 test");
                         glBindVertexArray(VertexArrayName);
@@ -482,12 +486,19 @@ public:
                         glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &glm::vec4(16.f)[0]);
                         glDrawArraysInstanced(GL_PATCHES, 0, VertexCount, 1);
                 } else {
-                        // g_message ("render mode 2 tess");
+                        glUniform2f (Uniform_screen_size, numx,numy);
+                        glUniform1i (Uniform_diffuse, GL_TEXTURE0);
+                        glUniform1i (Uniform_terrain, GL_TEXTURE1);
+                        glUniform1f (Uniform_lod_factor, 4.0);
+                        //----
+                        //gletools python code:
                         //glPatchParameteri(GL_PATCH_VERTICES, 4);
                         //vbo.draw(GL_PATCHES);
+                        //----
+                        //g_message ("render mode 2 tess");
                         glBindVertexArray(VertexArrayName);
-                        glPatchParameteri(GL_PATCH_VERTICES, VertexCount);
-                        glDrawArraysInstanced(GL_PATCHES, 0, VertexCount, 1);
+                        glPatchParameteri(GL_PATCH_VERTICES, VertexCountS3D);
+                        glDrawArraysInstanced(GL_PATCHES, 0, VertexCountS3D, 1);
 
                 }
                 /* flush the contents of the pipeline */
@@ -495,6 +506,10 @@ public:
                 
 		return true;
 	};
+
+        void resize (gint w, gint h){
+                WindowSize  = glm::ivec2(w, h);
+        };
 
         void cursorPositionCallback(int mouse, double x, double y){
                 if (mouse == 'i'){
@@ -523,7 +538,8 @@ public:
         };
         void set_rotation (float *wxyz){
                 Rotation3axis = glm::ivec3(glm::radians(wxyz[0]), glm::radians(wxyz[1]), glm::radians(wxyz[2]));
-                RotationCurrent = glm::ivec2(glm::radians(wxyz[0]), glm::radians(wxyz[1]));
+                RotationOrigin = glm::ivec2(glm::radians(wxyz[0]), glm::radians(wxyz[1]));
+                g_message ("%f %f",RotationOrigin.x,RotationOrigin.y);
         };
         void get_translation (float *rxyz){
                 rxyz[0] = TranslationCurrent.x;
@@ -531,7 +547,7 @@ public:
         };
         void set_translation (float *rxyz){
                 Translation3axis = glm::ivec3(glm::radians(rxyz[0]), glm::radians(rxyz[1]), glm::radians(rxyz[2]));
-                TranslationCurrent = glm::ivec2(glm::radians(rxyz[0]), glm::radians(rxyz[1]));
+                TranslationOrigin = glm::ivec2(glm::radians(rxyz[0]), glm::radians(rxyz[1]));
         };
 
         void set_surface_data (glm::vec4 *data, glm::vec4 *color, int nx, int ny, int nv){
@@ -851,33 +867,30 @@ void Surf3d::Rotate(int n, double dphi){
 
 double Surf3d::RotateX(double dphi){
 	GLv_data.rot[0] += 5*dphi;
-	if (v3dcontrol)
-                v3dcontrol->rerender_scene ();
-
         if (gl_tess)
                 gl_tess->set_rotation (GLv_data.rot);
+	if (v3dcontrol)
+                v3dcontrol->rerender_scene ();
 
 	return GLv_data.rot[0];
 }
 
 double Surf3d::RotateY(double dphi){
 	GLv_data.rot[1] += 5*dphi;
-	if (v3dcontrol)
-                v3dcontrol->rerender_scene ();
-
         if (gl_tess)
                 gl_tess->set_rotation (GLv_data.rot);
+	if (v3dcontrol)
+                v3dcontrol->rerender_scene ();
 
 	return GLv_data.rot[1];
 }
 
 double Surf3d::RotateZ(double dphi){
 	GLv_data.rot[2] += 5*dphi;
-	if (v3dcontrol)
-                v3dcontrol->rerender_scene ();
-
         if (gl_tess)
                 gl_tess->set_rotation (GLv_data.rot);
+	if (v3dcontrol)
+                v3dcontrol->rerender_scene ();
 
 	return GLv_data.rot[2];
 }
@@ -886,6 +899,8 @@ void Surf3d::Translate(int n, double delta){
         GLv_data.trans[n] += delta;
         if (gl_tess)
                 gl_tess->set_translation (GLv_data.trans);
+	if (v3dcontrol)
+                v3dcontrol->rerender_scene ();
 }
 
 double Surf3d::Zoom(double x){ 
@@ -1586,7 +1601,10 @@ render_vsurf3d_cb (GtkGLArea *area, GdkGLContext *context, Surf3d *s)
         
         XSM_DEBUG (GL_DEBUG_L2, "GL:::RENDER-EVENT -- execute GPU tesseleation");
 
-        return s->gl_tess->render (s);
+
+        //s->gl_tess->set_rotation (s->GLv_data.rot);
+        //s->gl_tess->get_translation (s->GLv_data.trans);
+        return s->gl_tess->render (s, s->GLv_data.fov, s->GLv_data.Znear, s->GLv_data.Zfar);
         // return s->GLdrawscene (context);
 }
 
