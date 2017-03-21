@@ -184,7 +184,7 @@ gint check_probe (ProbeEntry *a, ProbeEntry *b, char *Source2){
 	return -1;
 }
 
-void ChangeValue (GtkComboBox* Combo,  gchar **string){
+void pe_ChangeValue (GtkComboBox* Combo,  gchar **string){
 	GtkTreeIter iter;
 	GtkTreeModel *model;
 	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (Combo), &iter);
@@ -193,7 +193,7 @@ void ChangeValue (GtkComboBox* Combo,  gchar **string){
 	//std::cout << "Channel: " << *string << std::endl;
 }
 
-void ChangeIndex (GtkSpinButton *spinner, double *index){
+void pe_ChangeIndex (GtkSpinButton *spinner, double *index){
 	*index = gtk_spin_button_get_value (spinner);
 
 	std::cout << "Change Index: " << ((int)*index) << std::endl;
@@ -222,8 +222,11 @@ public:
 						  "ZS", "Bias", "Phase", NULL};
 
 		const char* Source2_lookup[]  = { "ADC0", "ADC1", "ADC2", "ADC3", "ADC4", "ADC5-I","ADC6","ADC7",
-						  "Zmon", "LockIn0", "LockIn1stA", "LockIn1stB", "LockIn2ndA",
-						  "LockIn2ndB", NULL};
+						  "Zmon",
+						  "LockIn0", "LockIn1stA", "LockIn1stB", "LockIn2ndA", "LockIn2ndB",
+						  "In_0", "In_1", "In_2", "In_3", "In_4", "In_5", "In_6", "In_7",
+						  "Counter_0", "Counter_1",
+						  NULL};
 	
 		dialog = gtk_dialog_new_with_buttons (N_("Settings"),
 						      NULL,
@@ -247,8 +250,8 @@ public:
 			}
 		}
 		gtk_combo_box_set_active (GTK_COMBO_BOX (source1_combo), 0);
-		ChangeValue(GTK_COMBO_BOX (source1_combo), &(*Source1));		//init Source1
-		g_signal_connect(G_OBJECT (source1_combo), "changed", G_CALLBACK (ChangeValue), &(*Source1));
+		pe_ChangeValue(GTK_COMBO_BOX (source1_combo), &(*Source1));		//init Source1
+		g_signal_connect(G_OBJECT (source1_combo), "changed", G_CALLBACK (pe_ChangeValue), &(*Source1));
 		bp.grid_add_widget (source1_combo);
 		bp.new_line ();
 
@@ -256,6 +259,7 @@ public:
 		source2_combo = gtk_combo_box_text_new ();
 		for (int i=0; i<defaultprobe->get_chunk_size (); i++){
 			int j=0;
+			g_message ("Source2: %s", defaultprobe->get_label (i));
 			while (Source2_lookup[j]){
 				if (!strncmp (defaultprobe->get_label (i), Source2_lookup[j], 4)){
 				  gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (source2_combo), defaultprobe->get_label (i), defaultprobe->get_label (i));
@@ -265,9 +269,9 @@ public:
 			}
 		}
 		gtk_combo_box_set_active (GTK_COMBO_BOX (source2_combo), 0);
-		ChangeValue(GTK_COMBO_BOX (source2_combo), &(*Source2));		//init Source2
+		pe_ChangeValue(GTK_COMBO_BOX (source2_combo), &(*Source2));		//init Source2
 		gtk_widget_show (source2_combo);			
-		g_signal_connect(G_OBJECT (source2_combo), "changed", G_CALLBACK (ChangeValue), &(*Source2));
+		g_signal_connect(G_OBJECT (source2_combo), "changed", G_CALLBACK (pe_ChangeValue), &(*Source2));
 		bp.grid_add_widget (source2_combo);
 		bp.new_line ();
 
