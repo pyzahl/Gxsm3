@@ -2,6 +2,7 @@
 
     in vec4 position;
     uniform sampler2D terrain;
+    uniform float height_scale;
     
     void main(void){
         vec2 texcoord = position.xy;

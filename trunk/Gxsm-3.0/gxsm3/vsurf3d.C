@@ -133,14 +133,15 @@ namespace
 	GLsizeiptr const VertexSizeS3D = VertexCountS3D * sizeof(glf::vertex_v4f);
 	glf::vertex_v4f const VertexDataS3D[VertexCountS3D] =
 	{
-		glf::vertex_v4f(glm::vec4(-128.0f,-128.0f, 0.0f, 0.0f)),
-		glf::vertex_v4f(glm::vec4( 128.0f,-128.0f, 0.0f, 0.0f)),
-		glf::vertex_v4f(glm::vec4( 128.0f, 128.0f, 0.0f, 0.0f)),
-		glf::vertex_v4f(glm::vec4(-128.0f, 128.0f, 0.0f, 0.0f))
+		glf::vertex_v4f(glm::vec4(-1.0f,-1.0f, 0.0f, 0.0f)),
+		glf::vertex_v4f(glm::vec4(-1.0f, 1.0f, 0.0f, 0.0f)),
+		glf::vertex_v4f(glm::vec4( 1.0f,-1.0f, 0.0f, 0.0f)),
+		glf::vertex_v4f(glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f))
 	};
 
 	GLint Uniform_screen_size(0); // vec2
 	GLint Uniform_lod_factor(0); // float
+        GLint Uniform_height_scale(0);
         GLsizei const TextureCount(2);
 	GLuint TextureName[2];
         
@@ -164,8 +165,10 @@ public:
                 glarea = area;
                 Major=4;
                 Minor=0;
-                TranslationOrigin  = glm::ivec3(0, 10, 0);
+                TranslationOrigin  = glm::ivec2(0, 0);
               	TranslationCurrent = TranslationOrigin;
+                DistanceOrigin  = glm::ivec2(0, 50);
+              	DistanceCurrent = DistanceOrigin;
                 MouseOrigin  = glm::ivec2(0, 0);
                 MouseCurrent = glm::ivec2(0, 0);
                 RotationOrigin = glm::ivec3(0,0,0);
@@ -179,17 +182,16 @@ public:
         };
 
 private:
+        glm::vec3 cameraPosition() const {
+                return glm::vec3(this->TranslationCurrent.x, -this->TranslationCurrent.y, -this->DistanceCurrent.y);
+        };
         glm::mat4 view() const {
-                glm::mat4 ViewTranslate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -this->TranslationCurrent.y));
+                glm::mat4 ViewTranslate = glm::translate(glm::mat4(1.0f),  cameraPosition());
                 glm::mat4 ViewRotateX = glm::rotate(ViewTranslate, this->RotationCurrent.y, glm::vec3(1.f, 0.f, 0.f));
                 glm::mat4 View = glm::rotate(ViewRotateX, this->RotationCurrent.x, glm::vec3(0.f, 1.f, 0.f));
                 return View;
         };
 
-        glm::vec3 cameraPosition() const {
-                return glm::vec3(0.0f, 0.0f, -this->TranslationCurrent.y);
-        };
-        
         bool checkError(const char* Title) const {
                 int Error;
                 g_message (Title);
@@ -276,17 +278,13 @@ private:
                         } else {
                                 this->checkError("initProgram -- get uniform variable references...");
                                 UniformMVP           = glGetUniformLocation(ProgramName, "mvp"); // mat4 -- projection
-                                this->checkError("initProgram get MVP");
                                 Uniform_diffuse      = glGetUniformLocation(ProgramName, "diffuse");     // sampler2D
-                                this->checkError("initProgram get diffuse");
                                 Uniform_terrain      = glGetUniformLocation(ProgramName, "terrain");     // sampler2D
-                                this->checkError("initProgram get terrain");
                                 // Uniform_noise_tile   = glGetUniformLocation(ProgramName, "noise_tile");  // sampler2D
                                 // this->checkError("initProgram get noise_tile");
                                 Uniform_screen_size  = glGetUniformLocation(ProgramName, "screen_size"); // vec2
-                                this->checkError("initProgram get screen_size");
+                                Uniform_height_scale = glGetUniformLocation(ProgramName, "height_scale");  // float
                                 Uniform_lod_factor   = glGetUniformLocation(ProgramName, "lod_factor");  // float
-                                this->checkError("initProgram get lod_factor");
                         }
 		}
 
@@ -456,14 +454,22 @@ public:
 		return this->checkError("end");
 	};
 
-	bool render(Surf3d *s, GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f) {
+	bool render(Surf3d *s) {
 		if (!Validated) return false;
 
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                glPolygonMode (GL_FRONT_AND_BACK, s->GLv_data.Mesh ? GL_LINE : GL_FILL);
+                glShadeModel(s->GLv_data.Smooth ? GL_SMOOTH : GL_FLAT);
 
+                if (s->GLv_data.Cull)
+                        glEnable (GL_CULL_FACE);
+                else
+                        glDisable (GL_CULL_FACE);
+
+                
                 // https://glm.g-truc.net/0.9.4/api/a00151.html
                 float aspect = WindowSize.x/WindowSize.y;
-		glm::mat4 Projection = glm::perspective(glm::radians (fov), aspect, near, far);
+                // GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f
+                glm::mat4 Projection = glm::perspective(glm::radians (s->GLv_data.fov), aspect, s->GLv_data.Znear, s->GLv_data.Zfar);
 		glm::mat4 Model = glm::mat4(1.0f);
 		glm::mat4 MVP = Projection * this->view() * Model;
 
@@ -489,6 +495,7 @@ public:
                         glUniform2f (Uniform_screen_size, numx,numy);
                         glUniform1i (Uniform_diffuse, GL_TEXTURE0);
                         glUniform1i (Uniform_terrain, GL_TEXTURE1);
+                        glUniform1f (Uniform_height_scale, s->GLv_data.hskl);
                         glUniform1f (Uniform_lod_factor, 4.0);
                         //----
                         //gletools python code:
@@ -524,11 +531,14 @@ public:
                         RotationOrigin = RotationCurrent;
                         return;
                 }
-                if (mouse == 'm') return;
-                if (mouse == 'M') return;
+                if (mouse == 'm'){
+                        DistanceOrigin = DistanceCurrent;
+                        return;
+                }
 
                 MouseCurrent = glm::ivec2(x, y);
-                TranslationCurrent = mouse == 'T' ? TranslationOrigin + (MouseCurrent - MouseOrigin) / 10.f : TranslationOrigin;
+                DistanceCurrent    = mouse == 'M' ? DistanceOrigin + (MouseCurrent - MouseOrigin) / 10.f : DistanceOrigin;
+                TranslationCurrent = mouse == 'T' ? TranslationOrigin + (MouseCurrent - MouseOrigin) / 100.f : TranslationOrigin;
                 RotationCurrent    = mouse == 'R' ? RotationOrigin + glm::radians(MouseCurrent - MouseOrigin) : RotationOrigin;
         };
 
@@ -539,7 +549,7 @@ public:
         void set_rotation (float *wxyz){
                 Rotation3axis = glm::ivec3(glm::radians(wxyz[0]), glm::radians(wxyz[1]), glm::radians(wxyz[2]));
                 RotationOrigin = glm::ivec2(glm::radians(wxyz[0]), glm::radians(wxyz[1]));
-                g_message ("%f %f",RotationOrigin.x,RotationOrigin.y);
+                g_message ("Rx %f Ry %f", RotationOrigin.x,RotationOrigin.y);
         };
         void get_translation (float *rxyz){
                 rxyz[0] = TranslationCurrent.x;
@@ -548,6 +558,14 @@ public:
         void set_translation (float *rxyz){
                 Translation3axis = glm::ivec3(glm::radians(rxyz[0]), glm::radians(rxyz[1]), glm::radians(rxyz[2]));
                 TranslationOrigin = glm::ivec2(glm::radians(rxyz[0]), glm::radians(rxyz[1]));
+                g_message ("Tx %f Ty %f", TranslationOrigin.x,TranslationOrigin.y);
+        };
+        void get_distance (float *d){
+                d[0] = DistanceCurrent.y;
+        };
+        void set_distance (float *d){
+                DistanceOrigin = glm::ivec2(0., d[0]);
+                g_message ("Dist %f", DistanceOrigin.y);
         };
 
         void set_surface_data (glm::vec4 *data, glm::vec4 *color, int nx, int ny, int nv){
@@ -569,6 +587,8 @@ private:
 	glm::vec2 MouseCurrent;
 	glm::vec2 TranslationOrigin;
 	glm::vec2 TranslationCurrent;
+	glm::vec2 DistanceOrigin;
+	glm::vec2 DistanceCurrent;
 	glm::vec2 RotationOrigin;
 	glm::vec2 RotationCurrent;
 	glm::vec3 Rotation3axis;
@@ -637,12 +657,12 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
         double z_scale = GLv_data.hskl/QuenchFac;
 	//scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F ((double)k,(double)j,(double)vi, &surface_normal_z_buffer[i], z_scale);
 	scan->mem2d->GetDataPktVMode_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], z_scale);
-        surface_normal_z_buffer[i][3] /= scan->mem2d->GetDataRange ();
+        //surface_normal_z_buffer[i][3] /= scan->mem2d->GetDataRange ();
 
 	if (GLv_data.ColorSrc[0] != 'U'){
 		switch (GLv_data.ColorSrc[0]){
 		case 'H': 
-			val = (GLfloat) (GLv_data.ColorOffset + GLv_data.ColorContrast * surface_normal_z_buffer[i].z);
+			val = (GLfloat) (GLv_data.ColorOffset + GLv_data.ColorContrast * surface_normal_z_buffer[i].w);
 			break;
 		case 'X': 
 			if (mem2d_x){
@@ -704,7 +724,7 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 	}
 
 	// set transparency/alpha blending
-	val = (GLfloat) (GLv_data.transparency_offset + GLv_data.transparency * surface_normal_z_buffer[i].z);
+	val = (GLfloat) (GLv_data.transparency_offset + GLv_data.transparency * surface_normal_z_buffer[i].w);
 	surface_color_buffer[i].w = val > 1.? 1. : val < 0.? 0. : val;
 
 	// adjust slice height level
@@ -766,6 +786,9 @@ void Surf3d::GLupdate (void* data){
                 s->ColorSrc();
 
                 XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLUPDATE rerender" << std::flush);
+                if (s->gl_tess)
+                        s->gl_tess->set_rotation (s->GLv_data.rot);
+
                 if (s->v3dcontrol)
                         s->v3dcontrol->rerender_scene ();
         }
@@ -1604,7 +1627,7 @@ render_vsurf3d_cb (GtkGLArea *area, GdkGLContext *context, Surf3d *s)
 
         //s->gl_tess->set_rotation (s->GLv_data.rot);
         //s->gl_tess->get_translation (s->GLv_data.trans);
-        return s->gl_tess->render (s, s->GLv_data.fov, s->GLv_data.Znear, s->GLv_data.Zfar);
+        return s->gl_tess->render (s);
         // return s->GLdrawscene (context);
 }
 
