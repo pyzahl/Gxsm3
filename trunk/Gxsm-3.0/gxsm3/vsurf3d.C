@@ -92,6 +92,7 @@ std::string getBinaryDirectory()
 	return std::string(PACKAGE_GL400_DIR) + "/";
 }
 
+
 // ------------------------------------------------------------
 // GL 4.0 required -- GL 3D support with GPU tesselation
 // ------------------------------------------------------------
@@ -129,16 +130,18 @@ namespace
 	//GLint Uniform_noise_tile(0); // sampler2D
         
         
-	GLsizei const VertexCountS3D(4);
-	GLsizeiptr const VertexSizeS3D = VertexCountS3D * sizeof(glf::vertex_v4f);
-	glf::vertex_v4f const VertexDataS3D[VertexCountS3D] =
+	GLsizei const VertexCountQP(128*128);
+	GLsizeiptr const VertexSizeQP = VertexCountQP * sizeof(glf::vertex_v4f);
+        /*
+	glf::vertex_v4f VertexDataQP[VertexCountQP];
+        =
 	{
 		glf::vertex_v4f(glm::vec4(-1.0f,-1.0f, 0.0f, 0.0f)),
-		glf::vertex_v4f(glm::vec4(-1.0f, 1.0f, 0.0f, 0.0f)),
 		glf::vertex_v4f(glm::vec4( 1.0f,-1.0f, 0.0f, 0.0f)),
+		glf::vertex_v4f(glm::vec4(-1.0f, 1.0f, 0.0f, 0.0f)),
 		glf::vertex_v4f(glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f))
 	};
-
+        */
 	GLint Uniform_screen_size(0); // vec2
 	GLint Uniform_lod_factor(0); // float
         GLint Uniform_height_scale(0);
@@ -160,9 +163,10 @@ namespace
 class gl_400_primitive_tessellation
 {
 public:
-        gl_400_primitive_tessellation (GtkGLArea *area){
+        gl_400_primitive_tessellation (GtkGLArea *area, Surf3d *surf){
 		Validated = true;
                 glarea = area;
+                s = surf;
                 Major=4;
                 Minor=0;
                 TranslationOrigin  = glm::ivec2(0, 0);
@@ -336,8 +340,11 @@ private:
                 } else {
                         glGenBuffers(1, &ArrayBufferName);
                         glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                        glBufferData(GL_ARRAY_BUFFER, VertexSizeS3D, VertexDataS3D, GL_STATIC_DRAW);
+
+                        glf::vertex_v4f *VertexDataQP = s->make_triangles_vbo (128, 128);
+                        glBufferData(GL_ARRAY_BUFFER, VertexSizeQP, VertexDataQP, GL_STATIC_DRAW);
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
+                        g_free (VertexDataQP);
                 }
                 
 		return this->checkError("initBuffer");
@@ -454,7 +461,7 @@ public:
 		return this->checkError("end");
 	};
 
-	bool render(Surf3d *s) {
+	bool render() {
 		if (!Validated) return false;
 
                 glPolygonMode (GL_FRONT_AND_BACK, s->GLv_data.Mesh ? GL_LINE : GL_FILL);
@@ -504,8 +511,10 @@ public:
                         //----
                         //g_message ("render mode 2 tess");
                         glBindVertexArray(VertexArrayName);
-                        glPatchParameteri(GL_PATCH_VERTICES, VertexCountS3D);
-                        glDrawArraysInstanced(GL_PATCHES, 0, VertexCountS3D, 1);
+                        glPatchParameteri(GL_PATCH_VERTICES, 1);
+                        //glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &glm::vec2(16.f)[0]);
+                        //glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &glm::vec4(16.f)[0]);
+                        glDrawArraysInstanced(GL_PATCHES, 0, VertexCountQP, 1);
 
                 }
                 /* flush the contents of the pipeline */
@@ -577,6 +586,7 @@ public:
         };
         
 private:
+        Surf3d *s;
         GtkGLArea *glarea;
         int Major, Minor; // minimal version needed
         bool Validated;
@@ -642,6 +652,52 @@ void Surf3d::hide(){
 		delete v3dcontrol;
 	v3dcontrol = NULL;
 	XSM_DEBUG (GL_DEBUG_L2, "Surf3d::hide");
+}
+
+glf::vertex_v4f* Surf3d::make_triangles_vbo (int width, int height){
+        glf::vertex_v4f *position = g_new (glf::vertex_v4f, width*height);
+        double s_factor = 1.0/(width-1);
+        double t_factor = 1.0/(height-1);
+        for (int y=0; y<height; ++y)
+                for (int x=0; x<width; ++x){
+                        int offset = y*width+x;
+                        glm::vec4 normal_z;
+                        double xd = x * s_factor;
+                        double yd = y * t_factor;
+                        double vd = 0.; // vi
+                        scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F (xd*XPM_x, yd*XPM_y, vd, &normal_z, GLv_data.hskl);
+                        position[offset].position.x = xd;
+                        position[offset].position.y = yd;
+                        position[offset].position.z = normal_z.w;
+                        position[offset].position.w = 1.;
+                        //normals[offset].x = normal_z.x;
+                        //normals[offset].y = normal_z.y;
+                        //normals[offset].z = normal_z.z;
+                }
+        #if 0
+        int i_width = width-1;
+        int i_height = height-1;
+        //indices = (c_uint*(i_width*i_height*6))()
+        for (int y=0; y<i_height; ++y)
+                for (int x=0; x<i_width; +=x){
+                        offset = x+y*i_width;
+                        int p1 = x+y*width;
+                        int p2 = p1+width;
+                        int p4 = p1+1;
+                        int p3 = p2+1;
+                        indices[offset] = glm:vec6 (p1, p2, p3, p1, p3, p4);
+                }
+        #endif
+        /*
+        return VBO(
+        count       = len(indices),
+        indices     = indices,
+        position_4  = position,
+        normal_3    = normals,
+        )
+        */
+
+        return position;
 }
 
 void inline Surf3d::PutPointMode(int k, int j, int vi){
@@ -1544,7 +1600,7 @@ void realize_vsurf3d_cb (GtkGLArea *area, Surf3d *s){
         if (gtk_gl_area_get_error (area) != NULL)
                 return;
 
-        s->gl_tess = new gl_400_primitive_tessellation (area);
+        s->gl_tess = new gl_400_primitive_tessellation (area, s);
         s->set_gl_data ();
         
 	if (! s->gl_tess->begin()){
@@ -1627,7 +1683,7 @@ render_vsurf3d_cb (GtkGLArea *area, GdkGLContext *context, Surf3d *s)
 
         //s->gl_tess->set_rotation (s->GLv_data.rot);
         //s->gl_tess->get_translation (s->GLv_data.trans);
-        return s->gl_tess->render (s);
+        return s->gl_tess->render ();
         // return s->GLdrawscene (context);
 }
 

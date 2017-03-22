@@ -280,6 +280,8 @@ typedef struct{
 
 class gl_400_primitive_tessellation;
 
+namespace glf{ struct vertex_v4f; }
+
 class Surf3d  : public View{
 public:
         Surf3d();
@@ -293,6 +295,7 @@ public:
         virtual void ZoomOut(){};
         virtual void setup_data_transformation();
 
+        glf::vertex_v4f* make_triangles_vbo (int width, int height);
         gboolean GLdrawscene(GdkGLContext* context, int y_to_update=-1, int refresh_all=FALSE);
         static void GLupdate(void* data);
 
