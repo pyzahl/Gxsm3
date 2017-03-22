@@ -17,7 +17,7 @@ namespace glf
 			position(position)
 		{}
 
-		glm::vec2 position;
+		glm::vec4 position;
 	};
 
 	struct vertex_v2fv2f
