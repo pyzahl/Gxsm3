@@ -50,11 +50,6 @@
 #define TRI_HANDLE_SIZE       15
 #define TRI_HANDLE_LINE_WIDTH xsmres.HandleLineWidth
 
-// #define HANDLE_FILL_COLOR          RGBAColor (xsmres.HandleActBgColor)
-#define HANDLE_FILL_COLOR          xsmres.HandleActBgColor[0],xsmres.HandleActBgColor[1],xsmres.HandleActBgColor[2]
-//#define HANDLE_FILL_COLOR_INACTIVE RGBAColor (xsmres.HandleInActBgColor)
-#define HANDLE_FILL_COLOR_INACTIVE xsmres.HandleInActBgColor[0],xsmres.HandleInActBgColor[1],xsmres.HandleInActBgColor[2]
-
 #define LABEL_XOFF 0.
 #define LABEL_YOFF -25.
 
@@ -428,7 +423,7 @@ void VObject::draw (cairo_t *cr){
 
 void VObject::set_color_to_active (){ // Active
 	for(int i=0; i<np; i++){
-                abl[i]->set_fill_rgba (HANDLE_FILL_COLOR);
+                abl[i]->set_fill_rgba (xsmres.HandleActBgColor);
                 abl[i]->set_stroke_rgba (
                                          name[0] == '*' ? cairo_basic_color_lookup(&name[8]) : // *Marker:[r]ed,...
                                          name[2] == '-' ? 3 : i%4
@@ -458,11 +453,13 @@ void VObject::set_color_to_active (){ // Active
 
 void VObject::set_color_to_inactive (){ // Inactive
 	for(int i=0; i<np; i++){
-                abl[i]->set_fill_rgba (HANDLE_FILL_COLOR_INACTIVE);
-                abl[i]->set_stroke_rgba (
-                                         name[0] == '*' ? cairo_basic_color_lookup(&name[8]) : // *Marker:[r]ed,...
-                                         name[2] == '-' ? name[3] == 'P' ? 1 : 4 : 6  // "green" : "blue" : "grey"
-                                         );
+                abl[i]->set_fill_rgba (xsmres.HandleInActBgColor);
+                int ci = name[0] == '*' ? cairo_basic_color_lookup(&name[8]) : // *Marker:[r]ed,...
+                        name[2] == '-' ? name[3] == 'P' ? 1 : 4 : 6;  // "green" : "blue" : "grey"
+                if (ci != 6)
+                        abl[i]->set_stroke_rgba (ci);
+                else
+                        abl[i]->set_stroke_rgba (xsmres.HandleInActBgColor);
                 abl[i]->queue_update (canvas);
         }
         UNREF_DELETE_CAIRO_ITEM (selected_bbox, canvas);
@@ -471,7 +468,7 @@ void VObject::set_color_to_inactive (){ // Inactive
 
 void VObject::set_color_to_hilit (){ // Hilight
 	for(int i=0; i<np; i++){
-                abl[i]->set_fill_rgba (HANDLE_FILL_COLOR_INACTIVE);
+                abl[i]->set_fill_rgba (xsmres.HandleInActBgColor);
                 abl[i]->set_stroke_rgba (3); // yellow
                 abl[i]->queue_update (canvas);
 	}
