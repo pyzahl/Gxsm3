@@ -177,7 +177,9 @@ V3dControl::V3dControl (const char *title, int ChNo, Scan *sc,
         //	gtk_window_set_default_size(GTK_WINDOW(window), 500, 500);
 
         glarea = gtk_gl_area_new ();
-        gtk_gl_area_set_required_version (GTK_GL_AREA(glarea), 4, 0);
+
+        // set required GL version (4.0)
+        gtk_gl_area_set_required_version (GTK_GL_AREA(glarea), 4, 2);
         gtk_gl_area_set_use_es (GTK_GL_AREA(glarea), true);
         g_object_set_data (G_OBJECT(glarea), "Surf3D", vdata); // Surf3D reference
         
