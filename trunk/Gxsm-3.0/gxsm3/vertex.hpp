@@ -9,20 +9,6 @@
 
 namespace glf
 {
-	struct vertex_v4fv3f
-	{
-		vertex_v4fv3f
-		(
-                        glm::vec4 const & position,
-			glm::vec3 const & normals
-		) :
-			position(position),
-			normals(normals)
-		{}
-
-		glm::vec4 position;
-		glm::vec3 normals;
-	};
 	struct vertex_v1i
 	{
 		vertex_v1i
@@ -33,6 +19,28 @@ namespace glf
 		{}
 
                 glm::highp_uvec1_t indices;
+	};
+	struct vertex_v4f
+	{
+		vertex_v4f
+		(
+                        glm::vec4 const & position
+		) :
+			position(position)
+		{}
+
+		glm::vec4 position;
+	};
+	struct vertex_v3f
+	{
+		vertex_v3f
+		(
+			glm::vec3 const & normals
+		) :
+			normals(normals)
+		{}
+
+		glm::vec3 normals;
 	};
 
 	struct vertex_v2fv2f

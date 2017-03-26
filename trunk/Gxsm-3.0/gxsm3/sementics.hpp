@@ -64,8 +64,9 @@ namespace semantic
 	{
                 enum type
                 {
-                        POSITION = 0,
-                        NORMALS  = 1
+                        INDICES  = 0,
+                        POSITION = 1,
+                        NORMALS  = 2
                 };
                 
 	}

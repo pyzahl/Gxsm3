@@ -117,7 +117,7 @@ namespace
 
 	GLuint ProgramName(0);
 	GLuint ArrayBufferName(0);
-	GLuint VertexArrayName[2];
+	GLuint VertexArrayName(0);
 
         // mode 2 (LOD tesselete surface)
         std::string const LODTESS_VERTEX_SHADER("vs3d_gl_vertex_shader.glsl");
@@ -127,11 +127,13 @@ namespace
 	std::string const LODTESS_FRAGMENT_SHADER("vs3d_gl_fragment_shader.glsl");
         
         
-	GLuint BufferObjectName(0);
-	GLsizei const VertexCountQP(128*128);
+	GLuint BufferObjectName[3];
 	GLsizei const IndicesCount(128*128*6);
-	GLsizeiptr const VertexSizeQP = VertexCountQP * sizeof(glf::vertex_v4fv3f);
-	GLsizeiptr const BufferObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
+	GLsizei const PositionCount(128*128);
+	GLsizei const NormalsCount(128*128);
+	GLsizeiptr const IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
+	GLsizeiptr const PositionObjectSize = PositionCount * sizeof(glf::vertex_v4f);
+	GLsizeiptr const NormalsObjectSize = NormalsCount * sizeof(glf::vertex_v3f);
         /*
 	glf::vertex_v4f VertexDataQP[VertexCountQP];
         =
@@ -179,7 +181,7 @@ public:
                 RotationCurrent = RotationOrigin;
                 WindowSize  = glm::ivec2(500, 500);
                 mode = 1; // run simple tesselation test
-                // mode = 2; // use vsurf data
+                //mode = 2; // use vsurf data
         };
         ~gl_400_primitive_tessellation(){
                 end ();
@@ -300,8 +302,8 @@ private:
 
                 // Build a vertex array object
                 if (mode == 1){
-                        glGenVertexArrays(1, &VertexArrayName[0]);
-                        glBindVertexArray(VertexArrayName[0]);
+                        glGenVertexArrays(1, &VertexArrayName);
+                        glBindVertexArray(VertexArrayName);
                         glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
                         glVertexAttribPointer(semantic::attr::POSITION, 2, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v2fc4f), BUFFER_OFFSET(0));
                         glVertexAttribPointer(semantic::attr::COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v2fc4f), BUFFER_OFFSET(sizeof(glm::vec2)));
@@ -314,22 +316,23 @@ private:
                 } else {
                         // gletools python:
                         // vbo = make_plane(128, 128);
-                        glGenVertexArrays(1, &VertexArrayName[0]);
-                        glBindVertexArray(VertexArrayName[0]);
-                        glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                        glVertexAttribPointer(semantic::triangles::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v4fv3f), BUFFER_OFFSET(0));
-                        glVertexAttribPointer(semantic::triangles::NORMALS, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v4fv3f), BUFFER_OFFSET(sizeof(glm::vec4)));
+                        glGenBuffers(1, &BufferObjectName[semantic::triangles::INDICES]);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::triangles::INDICES]);
+                        //glVertexAttribPointer(semantic::indices::INDICES, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(glf::vertex_v1i), BUFFER_OFFSET(0));
+                        glBindAttribLocation(ProgramName, 0, "indices");
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-                        glEnableVertexAttribArray(semantic::triangles::POSITION);
-                        glEnableVertexAttribArray(semantic::triangles::NORMALS);
-
-                        glGenBuffers(1, &BufferObjectName);
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName);
-                        glVertexAttribPointer(semantic::indices::INDICES, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(glf::vertex_v1i), BUFFER_OFFSET(0));
+                        glGenBuffers(1, &BufferObjectName[semantic::triangles::POSITION]);
+                        glBindBuffer(GL_ARRAY_BUFFER, BufferObjectName[semantic::triangles::POSITION]);
+                        //glVertexAttribPointer(semantic::indices::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v4f), BUFFER_OFFSET(0));
+                        glBindAttribLocation(ProgramName, 0, "position");
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-                        glEnableVertexAttribArray(semantic::indices::INDICES);
+                                
+                        glGenBuffers(1, &BufferObjectName[semantic::triangles::NORMALS]);
+                        glBindBuffer(GL_ARRAY_BUFFER, BufferObjectName[semantic::triangles::NORMALS]);
+                        //glVertexAttribPointer(semantic::indices::NORMALS, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3f), BUFFER_OFFSET(0));
+                        glBindAttribLocation(ProgramName, 0, "normals");
+                        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                         glBindVertexArray(0);
                 }
@@ -347,19 +350,28 @@ private:
 
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
                 } else {
-                        glGenBuffers(1, &ArrayBufferName);
-                        glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                        glf::vertex_v4fv3f *VertexDataQP = s->make_triangles_position_vbo (128, 128);
-                        glBufferData(GL_ARRAY_BUFFER, VertexSizeQP, VertexDataQP, GL_STATIC_DRAW);
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
-                        g_free (VertexDataQP);
+                        glf::vertex_v4f *position;
+                        glf::vertex_v3f *normals;
+                        glf::vertex_v1i *indices;
+                        s->make_triangles_vbo (128, 128,  &indices, &position, &normals);
 
-                        glGenBuffers(1, &BufferObjectName);
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName);
-                        glf::vertex_v1i *BufferData = s->make_triangles_indices_vbo (128, 128);
-                        glBufferData(GL_ELEMENT_ARRAY_BUFFER, BufferObjectSize, BufferData, GL_STATIC_DRAW);
+                        glGenBuffers(1, &BufferObjectName[semantic::indices::INDICES]);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::indices::INDICES]);
+                        glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndicesObjectSize, indices, GL_STATIC_DRAW);
                         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-                        g_free (BufferData);
+                        g_free (indices);
+
+                        glGenBuffers(1, &BufferObjectName[semantic::triangles::POSITION]);
+                        glBindBuffer(GL_ARRAY_BUFFER, BufferObjectName[semantic::triangles::POSITION]);
+                        glBufferData(GL_ARRAY_BUFFER, PositionObjectSize, position, GL_STATIC_DRAW);
+                        glBindBuffer(GL_ARRAY_BUFFER, 0);
+                        g_free (position);
+
+                        glGenBuffers(1, &BufferObjectName[semantic::triangles::NORMALS]);
+                        glBindBuffer(GL_ARRAY_BUFFER, BufferObjectName[semantic::triangles::NORMALS]);
+                        glBufferData(GL_ARRAY_BUFFER, NormalsObjectSize, normals, GL_STATIC_DRAW);
+                        glBindBuffer(GL_ARRAY_BUFFER, 0);
+                        g_free (normals);
                 }
                 
 		return this->checkError("initBuffer");
@@ -491,10 +503,11 @@ public:
                 gtk_gl_area_make_current (glarea);
 
                 if (mode == 1){
-                        glDeleteVertexArrays(1, &VertexArrayName[0]);
+                        glDeleteVertexArrays(1, &VertexArrayName);
                 } else {
-                        glDeleteVertexArrays(1, &VertexArrayName[0]);
-                        glDeleteBuffers(1, &BufferObjectName);
+                        glDeleteBuffers(1, &BufferObjectName[0]);
+                        glDeleteBuffers(2, &BufferObjectName[1]);
+                        glDeleteBuffers(3, &BufferObjectName[2]);
                         glDeleteTextures(TextureCount, TextureName);
                 }
                 glDeleteProgram(ProgramName);
@@ -534,7 +547,7 @@ public:
                 
                 if (mode == 1){
                         // g_message ("render mode 1 test");
-                        glBindVertexArray(VertexArrayName[0]);
+                        glBindVertexArray(VertexArrayName);
                         glPatchParameteri(GL_PATCH_VERTICES, VertexCount);
                         glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &glm::vec2(16.f)[0]);
                         glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &glm::vec4(16.f)[0]);
@@ -553,11 +566,12 @@ public:
                         //  vbo.draw(GL_PATCHES)
                         //----
                         //g_message ("render mode 2 tess");
-                        glBindVertexArray (VertexArrayName[0]);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::triangles::INDICES]);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::triangles::POSITION]);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::triangles::NORMALS]);
                         this->checkError ("render-setup2");
 
                         glPatchParameteri (GL_PATCH_VERTICES, 4);
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName);
                         this->checkError ("render-setup3");
 
                         glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
@@ -702,8 +716,9 @@ void Surf3d::hide(){
 	XSM_DEBUG (GL_DEBUG_L2, "Surf3d::hide");
 }
 
-glf::vertex_v4fv3f* Surf3d::make_triangles_position_vbo (int width, int height){
-        glf::vertex_v4fv3f *position = g_new (glf::vertex_v4fv3f, width*height);
+void Surf3d::make_triangles_vbo (int width, int height, glf::vertex_v1i** indices, glf::vertex_v4f** position, glf::vertex_v3f** normal){
+        *position = g_new (glf::vertex_v4f, width*height);
+        *normal   = g_new (glf::vertex_v3f, width*height);
         double s_factor = 1.0/(width-1);
         double t_factor = 1.0/(height-1);
         for (int y=0; y<height; ++y)
@@ -714,21 +729,18 @@ glf::vertex_v4fv3f* Surf3d::make_triangles_position_vbo (int width, int height){
                         double yd = y * t_factor;
                         double vd = 0.; // vi
                         scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F (xd*XPM_x, yd*XPM_y, vd, &normal_z, GLv_data.hskl);
-                        position[offset].position.x = xd;
-                        position[offset].position.y = yd;
-                        position[offset].position.z = normal_z.w;
-                        position[offset].position.w = 1.;
-                        position[offset].normals.x = normal_z.x;
-                        position[offset].normals.y = normal_z.y;
-                        position[offset].normals.z = normal_z.z;
+                        (*position)[offset].position.x = xd;
+                        (*position)[offset].position.y = yd;
+                        (*position)[offset].position.z = normal_z.w;
+                        (*position)[offset].position.w = 1.;
+                        (*normal)[offset].normals.x = normal_z.x;
+                        (*normal)[offset].normals.y = normal_z.y;
+                        (*normal)[offset].normals.z = normal_z.z;
                 }
-        return position;
-}
 
-glf::vertex_v1i* Surf3d::make_triangles_indices_vbo (int width, int height){
         int i_width = width-1;
         int i_height = height-1;
-        glf::vertex_v1i *indices = g_new (glf::vertex_v1i, width*height*6);
+        *indices = g_new (glf::vertex_v1i, width*height*6);
         int ii=0;
         for (int y=0; y<i_height; ++y)
                 for (int x=0; x<i_width; ++x){
@@ -736,12 +748,12 @@ glf::vertex_v1i* Surf3d::make_triangles_indices_vbo (int width, int height){
                         int p2 = p1+width;
                         int p4 = p1+1;
                         int p3 = p2+1;
-                        indices[ii++].indices.x = p1;
-                        indices[ii++].indices.x = p2;
-                        indices[ii++].indices.x = p3;
-                        indices[ii++].indices.x = p1;
-                        indices[ii++].indices.x = p3;
-                        indices[ii++].indices.x = p4;
+                        (*indices)[ii++].indices.x = p1;
+                        (*indices)[ii++].indices.x = p2;
+                        (*indices)[ii++].indices.x = p3;
+                        (*indices)[ii++].indices.x = p1;
+                        (*indices)[ii++].indices.x = p3;
+                        (*indices)[ii++].indices.x = p4;
                         // indices[offset..offset+6] = [p1, p2, p3, p1, p3, p4]
                 }
 
@@ -753,8 +765,6 @@ glf::vertex_v1i* Surf3d::make_triangles_indices_vbo (int width, int height){
         normal_3    = normals,
         )
         */
-
-        return indices;
 }
 
 void inline Surf3d::PutPointMode(int k, int j, int vi){
