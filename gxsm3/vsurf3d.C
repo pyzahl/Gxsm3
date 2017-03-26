@@ -117,7 +117,7 @@ namespace
 
 	GLuint ProgramName(0);
 	GLuint ArrayBufferName(0);
-	GLuint VertexArrayName(0);
+	GLuint VertexArrayName[2];
 
         // mode 2 (LOD tesselete surface)
         std::string const LODTESS_VERTEX_SHADER("vs3d_gl_vertex_shader.glsl");
@@ -125,13 +125,13 @@ namespace
 	std::string const LODTESS_EVALUATION_SHADER("vs3d_gl_eval_shader.glsl");
 	//std::string const LODTESS_GEOMETRY_SHADER("vs3d_gl_geometry_shader.glsl"); // **** new ?? copy
 	std::string const LODTESS_FRAGMENT_SHADER("vs3d_gl_fragment_shader.glsl");
-	GLint Uniform_diffuse(0); // sampler2D
-	GLint Uniform_terrain(0); // sampler2D
-	//GLint Uniform_noise_tile(0); // sampler2D
         
         
+	GLuint BufferObjectName(0);
 	GLsizei const VertexCountQP(128*128);
-	GLsizeiptr const VertexSizeQP = VertexCountQP * sizeof(glf::vertex_v4f);
+	GLsizei const IndicesCount(128*128*6);
+	GLsizeiptr const VertexSizeQP = VertexCountQP * sizeof(glf::vertex_v4fv3f);
+	GLsizeiptr const BufferObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
         /*
 	glf::vertex_v4f VertexDataQP[VertexCountQP];
         =
@@ -179,7 +179,7 @@ public:
                 RotationCurrent = RotationOrigin;
                 WindowSize  = glm::ivec2(500, 500);
                 mode = 1; // run simple tesselation test
-                mode = 2; // use vsurf data
+                // mode = 2; // use vsurf data
         };
         ~gl_400_primitive_tessellation(){
                 end ();
@@ -282,10 +282,7 @@ private:
                         } else {
                                 this->checkError("initProgram -- get uniform variable references...");
                                 UniformMVP           = glGetUniformLocation(ProgramName, "mvp"); // mat4 -- projection
-                                Uniform_diffuse      = glGetUniformLocation(ProgramName, "diffuse");     // sampler2D
-                                Uniform_terrain      = glGetUniformLocation(ProgramName, "terrain");     // sampler2D
-                                // Uniform_noise_tile   = glGetUniformLocation(ProgramName, "noise_tile");  // sampler2D
-                                // this->checkError("initProgram get noise_tile");
+
                                 Uniform_screen_size  = glGetUniformLocation(ProgramName, "screen_size"); // vec2
                                 Uniform_height_scale = glGetUniformLocation(ProgramName, "height_scale");  // float
                                 Uniform_lod_factor   = glGetUniformLocation(ProgramName, "lod_factor");  // float
@@ -303,8 +300,8 @@ private:
 
                 // Build a vertex array object
                 if (mode == 1){
-                        glGenVertexArrays(1, &VertexArrayName);
-                        glBindVertexArray(VertexArrayName);
+                        glGenVertexArrays(1, &VertexArrayName[0]);
+                        glBindVertexArray(VertexArrayName[0]);
                         glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
                         glVertexAttribPointer(semantic::attr::POSITION, 2, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v2fc4f), BUFFER_OFFSET(0));
                         glVertexAttribPointer(semantic::attr::COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v2fc4f), BUFFER_OFFSET(sizeof(glm::vec2)));
@@ -312,17 +309,28 @@ private:
 
                         glEnableVertexAttribArray(semantic::attr::POSITION);
                         glEnableVertexAttribArray(semantic::attr::COLOR);
+
                         glBindVertexArray(0);
                 } else {
                         // gletools python:
                         // vbo = make_plane(128, 128);
-                        glGenVertexArrays(1, &VertexArrayName);
-                        glBindVertexArray(VertexArrayName);
+                        glGenVertexArrays(1, &VertexArrayName[0]);
+                        glBindVertexArray(VertexArrayName[0]);
                         glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                        glVertexAttribPointer(semantic::attr::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v4f), BUFFER_OFFSET(0));
+                        glVertexAttribPointer(semantic::triangles::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v4fv3f), BUFFER_OFFSET(0));
+                        glVertexAttribPointer(semantic::triangles::NORMALS, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v4fv3f), BUFFER_OFFSET(sizeof(glm::vec4)));
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-                        glEnableVertexAttribArray(semantic::attr::POSITION);
+                        glEnableVertexAttribArray(semantic::triangles::POSITION);
+                        glEnableVertexAttribArray(semantic::triangles::NORMALS);
+
+                        glGenBuffers(1, &BufferObjectName);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName);
+                        glVertexAttribPointer(semantic::indices::INDICES, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(glf::vertex_v1i), BUFFER_OFFSET(0));
+                        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+                        glEnableVertexAttribArray(semantic::indices::INDICES);
+
                         glBindVertexArray(0);
                 }
 
@@ -336,15 +344,22 @@ private:
                         glGenBuffers(1, &ArrayBufferName);
                         glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
                         glBufferData(GL_ARRAY_BUFFER, VertexSize, VertexData, GL_STATIC_DRAW);
+
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
                 } else {
                         glGenBuffers(1, &ArrayBufferName);
                         glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-
-                        glf::vertex_v4f *VertexDataQP = s->make_triangles_vbo (128, 128);
+                        glf::vertex_v4fv3f *VertexDataQP = s->make_triangles_position_vbo (128, 128);
                         glBufferData(GL_ARRAY_BUFFER, VertexSizeQP, VertexDataQP, GL_STATIC_DRAW);
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
                         g_free (VertexDataQP);
+
+                        glGenBuffers(1, &BufferObjectName);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName);
+                        glf::vertex_v1i *BufferData = s->make_triangles_indices_vbo (128, 128);
+                        glBufferData(GL_ELEMENT_ARRAY_BUFFER, BufferObjectSize, BufferData, GL_STATIC_DRAW);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                        g_free (BufferData);
                 }
                 
 		return this->checkError("initBuffer");
@@ -368,29 +383,50 @@ private:
                            unit=GL_TEXTURE1, clamp='st',
                           )
                         */
-                        glGenTextures(TextureCount, TextureName);
-                        glBindTexture(GL_TEXTURE_2D, TextureName[0]);
-                        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Color);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                        glGenerateMipmap(GL_TEXTURE_2D);
-                        
-                        glBindTexture(GL_TEXTURE_2D, TextureName[1]);
-                        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Normal_Z);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                        glGenerateMipmap(GL_TEXTURE_2D);
+                        // sampler2D diffuse
+                        glUseProgram (ProgramName);
+                        glActiveTexture(GL_TEXTURE0);
+                         glGenTextures(TextureCount, TextureName);
+                         glBindTexture(GL_TEXTURE_2D, TextureName[0]);
+                         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Color);
+                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
+                         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                         glGenerateMipmap(GL_TEXTURE_2D);
+                         glUniform1i (glGetUniformLocation (ProgramName, "diffuse"), 0);
+
+                        // sampler2D terrain
+                        glActiveTexture(GL_TEXTURE1);
+                         glBindTexture(GL_TEXTURE_2D, TextureName[1]);
+                         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Normal_Z);
+                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                         glGenerateMipmap(GL_TEXTURE_2D);
+                         glUniform1i (glGetUniformLocation (ProgramName, "terrain"), 1);
 
                         glBindTexture(GL_TEXTURE_2D, 0);
-
-                        
                 }
                 
 		return this->checkError("initTextures");
         };
-        
+
+        static void GLMessageHandler (GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const GLvoid* userParam) { 
+                g_message ("Source : %d; Type: %d; ID : %d; Severity : %d; length : %d\n==> %s",
+                           source, type, id, severity, length,
+                           message);
+        };
+
+        bool initDebugOutput()
+        {
+                glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+                glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+                glDebugMessageCallbackARB ((GLDEBUGPROCARB)&GLMessageHandler, NULL);
+
+                return this->checkError("initDebugOutput");
+        };
+
 public:
 	int version(int major, int minor) const{ return major * 100 + minor * 10; }
         bool checkExtension(char const * ExtensionName) const {
@@ -438,6 +474,10 @@ public:
                 if(Validated)
                         Validated = initTextures();
 
+                if(Validated)
+                        Validated = initDebugOutput();
+
+                
                 if (Validated)
                         return Validated && this->checkError("begin");
 
@@ -451,9 +491,10 @@ public:
                 gtk_gl_area_make_current (glarea);
 
                 if (mode == 1){
-                        glDeleteVertexArrays(1, &VertexArrayName);
+                        glDeleteVertexArrays(1, &VertexArrayName[0]);
                 } else {
-                        glDeleteVertexArrays(1, &VertexArrayName);
+                        glDeleteVertexArrays(1, &VertexArrayName[0]);
+                        glDeleteBuffers(1, &BufferObjectName);
                         glDeleteTextures(TextureCount, TextureName);
                 }
                 glDeleteProgram(ProgramName);
@@ -493,28 +534,35 @@ public:
                 
                 if (mode == 1){
                         // g_message ("render mode 1 test");
-                        glBindVertexArray(VertexArrayName);
+                        glBindVertexArray(VertexArrayName[0]);
                         glPatchParameteri(GL_PATCH_VERTICES, VertexCount);
                         glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &glm::vec2(16.f)[0]);
                         glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &glm::vec4(16.f)[0]);
                         glDrawArraysInstanced(GL_PATCHES, 0, VertexCount, 1);
                 } else {
                         glUniform2f (Uniform_screen_size, numx,numy);
-                        glUniform1i (Uniform_diffuse, GL_TEXTURE0);
-                        glUniform1i (Uniform_terrain, GL_TEXTURE1);
                         glUniform1f (Uniform_height_scale, s->GLv_data.hskl);
                         glUniform1f (Uniform_lod_factor, 4.0);
                         //----
                         //gletools python code:
                         //glPatchParameteri(GL_PATCH_VERTICES, 4);
                         //vbo.draw(GL_PATCHES);
+
+                        //with nested(DepthTest, diffuse, terrain, noise_tile, program):
+                        //  glPatchParameteri(GL_PATCH_VERTICES, 4);
+                        //  vbo.draw(GL_PATCHES)
                         //----
                         //g_message ("render mode 2 tess");
-                        glBindVertexArray(VertexArrayName);
-                        glPatchParameteri(GL_PATCH_VERTICES, 1);
-                        //glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &glm::vec2(16.f)[0]);
-                        //glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &glm::vec4(16.f)[0]);
-                        glDrawArraysInstanced(GL_PATCHES, 0, VertexCountQP, 1);
+                        glBindVertexArray (VertexArrayName[0]);
+                        this->checkError ("render-setup2");
+
+                        glPatchParameteri (GL_PATCH_VERTICES, 4);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName);
+                        this->checkError ("render-setup3");
+
+                        glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
+
+                        this->checkError("render-draw");
 
                 }
                 /* flush the contents of the pipeline */
@@ -654,8 +702,8 @@ void Surf3d::hide(){
 	XSM_DEBUG (GL_DEBUG_L2, "Surf3d::hide");
 }
 
-glf::vertex_v4f* Surf3d::make_triangles_vbo (int width, int height){
-        glf::vertex_v4f *position = g_new (glf::vertex_v4f, width*height);
+glf::vertex_v4fv3f* Surf3d::make_triangles_position_vbo (int width, int height){
+        glf::vertex_v4fv3f *position = g_new (glf::vertex_v4fv3f, width*height);
         double s_factor = 1.0/(width-1);
         double t_factor = 1.0/(height-1);
         for (int y=0; y<height; ++y)
@@ -670,24 +718,33 @@ glf::vertex_v4f* Surf3d::make_triangles_vbo (int width, int height){
                         position[offset].position.y = yd;
                         position[offset].position.z = normal_z.w;
                         position[offset].position.w = 1.;
-                        //normals[offset].x = normal_z.x;
-                        //normals[offset].y = normal_z.y;
-                        //normals[offset].z = normal_z.z;
+                        position[offset].normals.x = normal_z.x;
+                        position[offset].normals.y = normal_z.y;
+                        position[offset].normals.z = normal_z.z;
                 }
-        #if 0
+        return position;
+}
+
+glf::vertex_v1i* Surf3d::make_triangles_indices_vbo (int width, int height){
         int i_width = width-1;
         int i_height = height-1;
-        //indices = (c_uint*(i_width*i_height*6))()
+        glf::vertex_v1i *indices = g_new (glf::vertex_v1i, width*height*6);
+        int ii=0;
         for (int y=0; y<i_height; ++y)
-                for (int x=0; x<i_width; +=x){
-                        offset = x+y*i_width;
+                for (int x=0; x<i_width; ++x){
                         int p1 = x+y*width;
                         int p2 = p1+width;
                         int p4 = p1+1;
                         int p3 = p2+1;
-                        indices[offset] = glm:vec6 (p1, p2, p3, p1, p3, p4);
+                        indices[ii++].indices.x = p1;
+                        indices[ii++].indices.x = p2;
+                        indices[ii++].indices.x = p3;
+                        indices[ii++].indices.x = p1;
+                        indices[ii++].indices.x = p3;
+                        indices[ii++].indices.x = p4;
+                        // indices[offset..offset+6] = [p1, p2, p3, p1, p3, p4]
                 }
-        #endif
+
         /*
         return VBO(
         count       = len(indices),
@@ -697,7 +754,7 @@ glf::vertex_v4f* Surf3d::make_triangles_vbo (int width, int height){
         )
         */
 
-        return position;
+        return indices;
 }
 
 void inline Surf3d::PutPointMode(int k, int j, int vi){

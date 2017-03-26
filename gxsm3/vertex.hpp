@@ -1,3 +1,4 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 #pragma once
 
 #define GLM_FORCE_RADIANS
@@ -8,16 +9,30 @@
 
 namespace glf
 {
-	struct vertex_v4f
+	struct vertex_v4fv3f
 	{
-		vertex_v4f
+		vertex_v4fv3f
 		(
-			glm::vec4 const & position
+                        glm::vec4 const & position,
+			glm::vec3 const & normals
 		) :
-			position(position)
+			position(position),
+			normals(normals)
 		{}
 
 		glm::vec4 position;
+		glm::vec3 normals;
+	};
+	struct vertex_v1i
+	{
+		vertex_v1i
+		(
+			glm::highp_uvec1_t const & indices
+		) :
+			indices(indices)
+		{}
+
+                glm::highp_uvec1_t indices;
 	};
 
 	struct vertex_v2fv2f

@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 #pragma once
 
 namespace semantic
@@ -58,6 +60,24 @@ namespace semantic
 		};
 	}//namespace attr
 
+        namespace triangles
+	{
+                enum type
+                {
+                        POSITION = 0,
+                        NORMALS  = 1
+                };
+                
+	}
+        namespace indices
+	{
+                enum type
+                {
+                        INDICES = 0
+                };
+                
+	}
+  
 	namespace vert
 	{
 		enum type
