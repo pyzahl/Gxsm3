@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -189,6 +191,20 @@ public:
 	LineInfo *GetLi (int y) { return &Li[y+ny*vlayer]; };
 	LineInfo *Li;
 
+	void update_ranges (int iv, gboolean extend=false){
+                if (!extend)
+                        zmin=zmax=Z (0,0,iv);
+                for (int ix=0; ix<nx; ++ix)
+                        for (int iy=0; iy<ny; ++iy){
+                                double z=Z (ix,iy,iv);
+                                if (zmin > z) zmin = z;
+                                if (zmax < z) zmax = z;
+                        }
+                zrange  = zmax - zmin;
+                zcenter = zmin + 0.5*zrange;
+	};
+	double zmin, zmax, zcenter, zrange;;
+	
 protected:
 	int  ZResize(int Nx, int Ny, int Nv=0);
 	int  nx, ny, nv;

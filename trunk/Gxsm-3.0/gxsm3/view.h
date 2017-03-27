@@ -283,6 +283,7 @@ class gl_400_primitive_tessellation;
 namespace glf{ struct vertex_v1i; }
 namespace glf{ struct vertex_v4f; }
 namespace glf{ struct vertex_v3f; }
+namespace glf{ struct vertex_v3fn3fc4f; }
 
 class Surf3d  : public View{
 public:
@@ -297,7 +298,7 @@ public:
         virtual void ZoomOut(){};
         virtual void setup_data_transformation();
 
-        void make_triangles_vbo (int width, int height, glf::vertex_v1i** idx, glf::vertex_v4f** pos, glf::vertex_v3f** norm);
+        void make_triangles_vbo (int width, int height, glf::vertex_v1i** index, glf::vertex_v3fn3fc4f** vertex);
         gboolean GLdrawscene(GdkGLContext* context, int y_to_update=-1, int refresh_all=FALSE);
         static void GLupdate(void* data);
 
