@@ -299,7 +299,7 @@ public:
         virtual void ZoomOut(){};
         virtual void setup_data_transformation();
 
-        void make_plane_vbo (int width, int height, glf::vertex_v1i** index, glf::vertex_v3fn3fc4f** vertex);
+        void make_plane_vbo (int width, int height, glf::vertex_v1i** index, glf::vertex_v3fn3fc4f** vertex, int option=0);
         gboolean GLdrawscene(GdkGLContext* context, int y_to_update=-1, int refresh_all=FALSE);
         static void GLupdate(void* data);
 
