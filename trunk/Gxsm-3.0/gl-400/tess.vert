@@ -26,7 +26,7 @@ out block
 
 void main()
 {	
-        vec2 terraincoord = Position.xy;
+        vec2 terraincoord = Position.xy+vec2(0.5,0.5);
 	float height = texture(terrain, terraincoord).a * height_scale + height_offset;
 	//gl_Position = vec4(Position, height, 1.0);
 	gl_Position = vec4(Position, 1.0);
