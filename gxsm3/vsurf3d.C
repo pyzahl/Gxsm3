@@ -79,19 +79,27 @@ void surf3d_write_schema (){
 	gnome_res_destroy (gl_pref);
 }
 
+//#define __GXSM_PY_DEVEL
+
 // ------------------------------------------------------------
 // glsl data and code locations
 // ------------------------------------------------------------
 std::string getDataDirectory()
 {
-	//return std::string(PACKAGE_GL400_DIR) + "/";
+#ifdef __GXSM_PY_DEVEL
         return std::string("/home/pzahl/SVN/Gxsm-3.0/gl-400/");
+#else
+	return std::string(PACKAGE_GL400_DIR) + "/";
+#endif
 }
 
 std::string getBinaryDirectory()
 {
-	//return std::string(PACKAGE_GL400_DIR) + "/";
+#ifdef __GXSM_PY_DEVEL
         return std::string("/home/pzahl/SVN/Gxsm-3.0/gl-400/");
+#else
+	return std::string(PACKAGE_GL400_DIR) + "/";
+#endif
 }
 
 
@@ -107,21 +115,29 @@ namespace
 	std::string const SAMPLE_GEOMETRY_SHADER("tess.geom");
 	std::string const SAMPLE_FRAGMENT_SHADER("tess.frag");
 
-        //GLuint const BaseGrid(128);
-        GLuint const BaseGrid(2);
-	GLsizei const VertexCount(BaseGrid*BaseGrid);
-	GLsizei const IndicesCount(BaseGrid*BaseGrid*6);
+        GLuint const BaseGridW(3);
+        GLuint const BaseGridH(3);
+	GLsizei const VertexCount(BaseGridW*BaseGridH);
+	GLsizei const IndicesCount((BaseGridW-1)*(BaseGridH-1)*4);
+
+	GLsizeiptr const VertexObjectSize = VertexCount * sizeof(glf::vertex_v3fn3fc4f);
+	GLsizeiptr const IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
+#if 0
 	GLsizeiptr const VertexSize = VertexCount * sizeof(glf::vertex_v3fn3fc4f);
 	glf::vertex_v3fn3fc4f const VertexData[VertexCount] =
 	{
-		glf::vertex_v3fn3fc4f(glm::vec3(-1.0f,-1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
-		glf::vertex_v3fn3fc4f(glm::vec3( 1.0f,-1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)),
-		glf::vertex_v3fn3fc4f(glm::vec3( 1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)),
-		glf::vertex_v3fn3fc4f(glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f))
+		glf::vertex_v3fn3fc4f(glm::vec3(-0.5f,-0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
+		glf::vertex_v3fn3fc4f(glm::vec3( 0.5f,-0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)),
+		glf::vertex_v3fn3fc4f(glm::vec3( 0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)),
+		glf::vertex_v3fn3fc4f(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)),
+                
+		glf::vertex_v3fn3fc4f(glm::vec3( 0.5f,-0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
+		glf::vertex_v3fn3fc4f(glm::vec3( 1.5f,-0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)),
+		glf::vertex_v3fn3fc4f(glm::vec3( 1.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)),
+		glf::vertex_v3fn3fc4f(glm::vec3( 0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f))
 	};
-
+#endif
 	GLuint ProgramName(0);
-	GLuint LinearFilterSamplerName(0);
 	GLuint ArrayBufferName(0);
 	GLuint VertexArrayName(0);
 
@@ -134,13 +150,6 @@ namespace
         
         
 	GLuint BufferObjectName[3];
-	GLsizeiptr const VertexObjectSize = VertexCount * sizeof(glf::vertex_v3fn3fc4f);
-
-	GLsizei const PositionCount(BaseGrid*BaseGrid);
-	GLsizei const NormalsCount(BaseGrid*BaseGrid);
-	GLsizeiptr const IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
-	GLsizeiptr const PositionObjectSize = PositionCount * sizeof(glf::vertex_v4f);
-	GLsizeiptr const NormalsObjectSize = NormalsCount * sizeof(glf::vertex_v3f);
 	GLint Uniform_screen_size(0); // vec2
 	GLint Uniform_lod_factor(0); // float
         GLint Uniform_height_scale(0);
@@ -344,13 +353,13 @@ private:
                 if (mode == 1){
                         glGenBuffers(1, &ArrayBufferName);
                         glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-#if 1
-                        glBufferData(GL_ARRAY_BUFFER, VertexSize, VertexData, GL_STATIC_DRAW);
+#if 0
+                        glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, VertexData, GL_STATIC_DRAW);
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
 #else                   
                         glf::vertex_v3fn3fc4f *vertex;
                         glf::vertex_v1i *indices;
-                        s->make_triangles_vbo (BaseGrid, BaseGrid,  &indices, &vertex);
+                        s->make_plane_vbo (BaseGridW, BaseGridH,  &indices, &vertex);
 
                         glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_STATIC_DRAW);
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -412,14 +421,9 @@ private:
                 // sampler2D diffuse
                 glUseProgram (ProgramName);
 
-                //glGenSamplers(1, &LinearFilterSamplerName);
-                //glSamplerParameteri(LinearFilterSamplerName, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                //glSamplerParameteri(LinearFilterSamplerName, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                         
                 glGenTextures(TextureCount, TextureName);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, TextureName[0]);
-                //glBindSampler(0, LinearFilterSamplerName);
 
                 //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Color);
@@ -432,7 +436,6 @@ private:
                 // sampler2D terrain
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, TextureName[1]);
-                //glBindSampler(0, LinearFilterSamplerName);
                 //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Normal_Z);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -582,10 +585,13 @@ public:
                         glBindTexture(GL_TEXTURE_2D, TextureName[0]);
                         glBindTexture(GL_TEXTURE_2D, TextureName[1]);
                         glBindVertexArray(VertexArrayName);
-                        glPatchParameteri(GL_PATCH_VERTICES, VertexCount);
-                        glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &glm::vec2(64.f)[0]);
-                        glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &glm::vec4(64.f)[0]);
-                        glDrawArraysInstanced(GL_PATCHES, 0, VertexCount, 1);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::indices::INDICES]);
+                        //glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &glm::vec2(64.f)[0]);
+                        //glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &glm::vec4(64.f)[0]);
+                        //glPatchParameteri(GL_PATCH_VERTICES, 4);
+                        //glDrawArraysInstanced(GL_PATCHES, 0, VertexCount, 1);
+                        glPatchParameteri(GL_PATCH_VERTICES, 4);
+                        glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
                 } else {
                         glUniform2f (Uniform_screen_size, numx,numy);
                         //----
@@ -760,7 +766,7 @@ void Surf3d::hide(){
 	XSM_DEBUG (GL_DEBUG_L2, "Surf3d::hide");
 }
 
-void Surf3d::make_triangles_vbo (int width, int height, glf::vertex_v1i** indices, glf::vertex_v3fn3fc4f** vertex){
+void Surf3d::make_plane_vbo (int width, int height, glf::vertex_v1i** indices, glf::vertex_v3fn3fc4f** vertex){
         *vertex = g_new (glf::vertex_v3fn3fc4f, width*height);
         double s_factor = 1.0/(width-1);
         double t_factor = 1.0/(height-1);
@@ -772,8 +778,8 @@ void Surf3d::make_triangles_vbo (int width, int height, glf::vertex_v1i** indice
                         double yd = y * t_factor;
                         double vd = 0.; // vi
                         scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F (xd*XPM_x, yd*XPM_y, vd, &normal_z, GLv_data.hskl);
-                        (*vertex)[offset].Position.x = xd;
-                        (*vertex)[offset].Position.y = yd;
+                        (*vertex)[offset].Position.x = -0.5+xd;
+                        (*vertex)[offset].Position.y = -0.5+yd;
                         (*vertex)[offset].Position.z = normal_z.w;
                         (*vertex)[offset].Normals.x = normal_z.x;
                         (*vertex)[offset].Normals.y = normal_z.y;
@@ -786,7 +792,7 @@ void Surf3d::make_triangles_vbo (int width, int height, glf::vertex_v1i** indice
 
         int i_width = width-1;
         int i_height = height-1;
-        *indices = g_new (glf::vertex_v1i, width*height*6);
+        *indices = g_new (glf::vertex_v1i, width*height*4);
         int ii=0;
         for (int y=0; y<i_height; ++y)
                 for (int x=0; x<i_width; ++x){
@@ -797,20 +803,8 @@ void Surf3d::make_triangles_vbo (int width, int height, glf::vertex_v1i** indice
                         (*indices)[ii++].indices.x = p1;
                         (*indices)[ii++].indices.x = p2;
                         (*indices)[ii++].indices.x = p3;
-                        (*indices)[ii++].indices.x = p1;
-                        (*indices)[ii++].indices.x = p3;
                         (*indices)[ii++].indices.x = p4;
-                        // indices[offset..offset+6] = [p1, p2, p3, p1, p3, p4]
                 }
-
-        /*
-        return VBO(
-        count       = len(indices),
-        indices     = indices,
-        position_4  = position,
-        normal_3    = normals,
-        )
-        */
 }
 
 void inline Surf3d::PutPointMode(int k, int j, int vi){

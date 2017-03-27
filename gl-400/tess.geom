@@ -27,7 +27,7 @@ void main()
 	for(int i = 0; i < gl_in.length(); ++i)
 	{
 		gl_Position = gl_in[i].gl_Position;
-                vec2 terraincoord = gl_Position.xy;
+                vec2 terraincoord = gl_Position.xy+vec2(0.5,0.5);
 		gl_Position.z = (texture(terrain, terraincoord).a) * height_scale + height_offset;
 		//Out.Color = texture(diffuse, terraincoord);
 		Out.Color = In[i].Color;
