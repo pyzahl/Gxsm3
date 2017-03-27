@@ -639,7 +639,8 @@ void Surf3d::make_plane_vbo (int width, int height, glf::vertex_v1i** indices, g
                         double xd = x * s_factor;
                         double yd = y * t_factor;
                         double vd = 0.; // vi
-                        scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F (xd*XPM_x, yd*XPM_y, vd, &normal_z, GLv_data.hskl);
+                        //scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F (xd*XPM_x, yd*XPM_y, vd, &normal_z, GLv_data.hskl);
+                        scan->mem2d->GetDataPkt_vec_normal_4F (xd*XPM_x, yd*XPM_y, vd, &normal_z, GLv_data.hskl);
                         //g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
                         (*vertex)[offset].Position = glm::vec3 (-0.5+xd, -0.5+yd, normal_z.w);
                         (*vertex)[offset].Normals  = glm::vec3 (normal_z.x, normal_z.y, normal_z.z);
@@ -745,6 +746,10 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
         //scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F ((double)k,(double)j,(double)vi, &surface_normal_z_buffer[i]);
 	//scan->mem2d->GetDataPktVMode_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], 1./MAXCOLOR);
 	scan->mem2d->GetDataPkt_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i]);
+
+        if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1)
+                surface_normal_z_buffer[i].w = -1.;
+        
         surface_normal_z_buffer[i].w -= scan->mem2d->data->zmin; ///= scan->mem2d->GetDataRange ();
         surface_normal_z_buffer[i].w /= scan->mem2d->data->zrange; ///= scan->mem2d->GetDataRange ();
 
