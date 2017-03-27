@@ -426,6 +426,15 @@ Used only in "Uniform/Material Color Mode".
 >1: use less (fast)
       </description>
     </key>
+    <key name="tesslevel" type="d">
+      <default>32.0</default>
+      <summary>Tesselation Level Max:
+ 32: normal, 1: min.
+      </summary>
+      <description>
+        Maximum Tesselation Level
+      </description>
+    </key>
     <key name="clearcolor" type="ad">
       <default>[0.6,0.7,0.7,1.0]</default>
       <summary>GL Clear Color, e.g. background  [red, green, blue, alpha]</summary>

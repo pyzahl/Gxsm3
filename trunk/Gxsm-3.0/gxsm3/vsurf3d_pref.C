@@ -51,6 +51,7 @@ const gchar *Slice_OptionsList[]  = {"-5","5","0.01","1","2",NULL };
 const gchar *Shininess_OptionsList[]  = {"0","50","0.1","1","1",NULL };
 const gchar *FogD_OptionsList[]  = {"0","10","0.01","0.05","2",NULL };
 const gchar *preV_OptionsList[]  = {"0","10","0.05","0.1","2",NULL };
+const gchar *tess_level_OptionsList[]  = {"1","64","1.0","1.0","1",NULL };
 
 GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_FIRST_NAME("GXSM_V3DCONTROL_20030901000"),
@@ -327,6 +328,13 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	     " 1: normal, adj to approx. optimal size dep. on viewport size, not on distance/zoom\n"
 	     " 0: use all grid points (slow, dep. on image size)\n"
 	     ">1: use less (fast)"), NULL
+		),
+
+	GNOME_RES_ENTRY_FLOATSLIDER
+	( "V3dControl.RenderOp/TessLevel", "Tesselation Level", "32.0", GET_GLV_OFFSET (&GLvd_offset.tess_level), 
+	  tess_level_OptionsList, N_("Render Opt."),
+	  N_("Tesseletion Level Max:\n"
+	     " 32: normal, 1: no tesselation"), NULL
 		),
 
 	GNOME_RES_ENTRY_SEPARATOR (N_("Render Opt."), NULL),

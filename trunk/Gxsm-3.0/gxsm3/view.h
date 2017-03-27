@@ -267,7 +267,8 @@ typedef struct{
 	float transparency_offset;
 	
 	float preV;
-
+        float tess_level;
+        
 	gchar ColorMode[20];
 	gchar ColorSrc[20];	
 
