@@ -118,9 +118,42 @@ namespace glf
 		glm::vec3 Texcoord;
 	};
 
+	struct vertex_v3fn3fc4f
+	{
+		vertex_v3fn3fc4f
+		(
+			glm::vec3 const & Position,
+			glm::vec3 const & Normals,
+			glm::vec4 const & Color
+		) :
+			Position(Position),
+			Normals(Normals),
+                        Color(Color)
+		{}
+
+		glm::vec3 Position;
+		glm::vec3 Normals;
+                glm::vec4 Color;
+	};
+
 	struct vertex_v3fn3f
 	{
 		vertex_v3fn3f
+		(
+			glm::vec3 const & Position,
+			glm::vec3 const & Normals
+		) :
+			Position(Position),
+			Normals(Normals)
+		{}
+
+		glm::vec3 Position;
+		glm::vec3 Normals;
+	};
+
+	struct vertex_v3ft3f
+	{
+		vertex_v3ft3f
 		(
 			glm::vec3 const & Position,
 			glm::vec3 const & Texcoord
@@ -178,6 +211,21 @@ namespace glf
 		{}
 
 		glm::vec2 Position;
+		glm::vec4 Color;
+	};
+
+	struct vertex_v3fc4f
+	{
+		vertex_v3fc4f
+		(
+			glm::vec3 const & Position,
+			glm::vec4 const & Color
+		) :
+			Position(Position),
+			Color(Color)
+		{}
+
+		glm::vec3 Position;
 		glm::vec4 Color;
 	};
 

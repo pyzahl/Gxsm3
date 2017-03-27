@@ -84,12 +84,14 @@ void surf3d_write_schema (){
 // ------------------------------------------------------------
 std::string getDataDirectory()
 {
-	return std::string(PACKAGE_GL400_DIR) + "/";
+	//return std::string(PACKAGE_GL400_DIR) + "/";
+        return std::string("/home/pzahl/SVN/Gxsm-3.0/gl-400/");
 }
 
 std::string getBinaryDirectory()
 {
-	return std::string(PACKAGE_GL400_DIR) + "/";
+	//return std::string(PACKAGE_GL400_DIR) + "/";
+        return std::string("/home/pzahl/SVN/Gxsm-3.0/gl-400/");
 }
 
 
@@ -105,17 +107,21 @@ namespace
 	std::string const SAMPLE_GEOMETRY_SHADER("tess.geom");
 	std::string const SAMPLE_FRAGMENT_SHADER("tess.frag");
 
-	GLsizei const VertexCount(4);
-	GLsizeiptr const VertexSize = VertexCount * sizeof(glf::vertex_v2fc4f);
-	glf::vertex_v2fc4f const VertexData[VertexCount] =
+        //GLuint const BaseGrid(128);
+        GLuint const BaseGrid(2);
+	GLsizei const VertexCount(BaseGrid*BaseGrid);
+	GLsizei const IndicesCount(BaseGrid*BaseGrid*6);
+	GLsizeiptr const VertexSize = VertexCount * sizeof(glf::vertex_v3fn3fc4f);
+	glf::vertex_v3fn3fc4f const VertexData[VertexCount] =
 	{
-		glf::vertex_v2fc4f(glm::vec2(-1.0f,-1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
-		glf::vertex_v2fc4f(glm::vec2( 1.0f,-1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)),
-		glf::vertex_v2fc4f(glm::vec2( 1.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)),
-		glf::vertex_v2fc4f(glm::vec2(-1.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f))
+		glf::vertex_v3fn3fc4f(glm::vec3(-1.0f,-1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
+		glf::vertex_v3fn3fc4f(glm::vec3( 1.0f,-1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)),
+		glf::vertex_v3fn3fc4f(glm::vec3( 1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)),
+		glf::vertex_v3fn3fc4f(glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f))
 	};
 
 	GLuint ProgramName(0);
+	GLuint LinearFilterSamplerName(0);
 	GLuint ArrayBufferName(0);
 	GLuint VertexArrayName(0);
 
@@ -128,25 +134,17 @@ namespace
         
         
 	GLuint BufferObjectName[3];
-	GLsizei const IndicesCount(128*128*6);
-	GLsizei const PositionCount(128*128);
-	GLsizei const NormalsCount(128*128);
+	GLsizeiptr const VertexObjectSize = VertexCount * sizeof(glf::vertex_v3fn3fc4f);
+
+	GLsizei const PositionCount(BaseGrid*BaseGrid);
+	GLsizei const NormalsCount(BaseGrid*BaseGrid);
 	GLsizeiptr const IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
 	GLsizeiptr const PositionObjectSize = PositionCount * sizeof(glf::vertex_v4f);
 	GLsizeiptr const NormalsObjectSize = NormalsCount * sizeof(glf::vertex_v3f);
-        /*
-	glf::vertex_v4f VertexDataQP[VertexCountQP];
-        =
-	{
-		glf::vertex_v4f(glm::vec4(-1.0f,-1.0f, 0.0f, 0.0f)),
-		glf::vertex_v4f(glm::vec4( 1.0f,-1.0f, 0.0f, 0.0f)),
-		glf::vertex_v4f(glm::vec4(-1.0f, 1.0f, 0.0f, 0.0f)),
-		glf::vertex_v4f(glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f))
-	};
-        */
 	GLint Uniform_screen_size(0); // vec2
 	GLint Uniform_lod_factor(0); // float
         GLint Uniform_height_scale(0);
+        GLint Uniform_height_offset(0);
         GLsizei const TextureCount(2);
 	GLuint TextureName[2];
         
@@ -194,7 +192,9 @@ private:
         glm::mat4 view() const {
                 glm::mat4 ViewTranslate = glm::translate(glm::mat4(1.0f),  cameraPosition());
                 glm::mat4 ViewRotateX = glm::rotate(ViewTranslate, this->RotationCurrent.y, glm::vec3(1.f, 0.f, 0.f));
-                glm::mat4 View = glm::rotate(ViewRotateX, this->RotationCurrent.x, glm::vec3(0.f, 1.f, 0.f));
+                //glm::mat4 View = glm::rotate(ViewRotateX, this->RotationCurrent.x, glm::vec3(0.f, 1.f, 0.f));
+                glm::mat4 ViewRotateY = glm::rotate(ViewRotateX, this->RotationCurrent.x, glm::vec3(0.f, 1.f, 0.f));
+                glm::mat4 View = glm::rotate(ViewRotateY, this->Rotation3axis.z, glm::vec3(0.f, 0.f, 1.f));
                 return View;
         };
 
@@ -279,16 +279,12 @@ private:
 		}
 
 		if(Validated){
-                        if (mode == 1){
-                                UniformMVP = glGetUniformLocation(ProgramName, "MVP");
-                        } else {
-                                this->checkError("initProgram -- get uniform variable references...");
-                                UniformMVP           = glGetUniformLocation(ProgramName, "mvp"); // mat4 -- projection
-
-                                Uniform_screen_size  = glGetUniformLocation(ProgramName, "screen_size"); // vec2
-                                Uniform_height_scale = glGetUniformLocation(ProgramName, "height_scale");  // float
-                                Uniform_lod_factor   = glGetUniformLocation(ProgramName, "lod_factor");  // float
-                        }
+                        UniformMVP = glGetUniformLocation(ProgramName, "mvp"); // mat4 -- projection
+                        Uniform_height_scale = glGetUniformLocation(ProgramName, "height_scale");  // float
+                        Uniform_height_offset = glGetUniformLocation(ProgramName, "height_offset");  // float
+                        Uniform_screen_size  = glGetUniformLocation(ProgramName, "screen_size"); // vec2
+                        Uniform_lod_factor   = glGetUniformLocation(ProgramName, "lod_factor");  // float
+                        this->checkError("initProgram -- get uniform variable references...");
 		}
 
                 if (Validated)
@@ -305,11 +301,13 @@ private:
                         glGenVertexArrays(1, &VertexArrayName);
                         glBindVertexArray(VertexArrayName);
                         glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                        glVertexAttribPointer(semantic::attr::POSITION, 2, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v2fc4f), BUFFER_OFFSET(0));
-                        glVertexAttribPointer(semantic::attr::COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v2fc4f), BUFFER_OFFSET(sizeof(glm::vec2)));
+                        glVertexAttribPointer(semantic::attr::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(0));
+                        glVertexAttribPointer(semantic::attr::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(sizeof(glm::vec3)));
+                        glVertexAttribPointer(semantic::attr::COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(2*sizeof(glm::vec3)));
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                         glEnableVertexAttribArray(semantic::attr::POSITION);
+                        glEnableVertexAttribArray(semantic::attr::NORMAL);
                         glEnableVertexAttribArray(semantic::attr::COLOR);
 
                         glBindVertexArray(0);
@@ -346,10 +344,27 @@ private:
                 if (mode == 1){
                         glGenBuffers(1, &ArrayBufferName);
                         glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
+#if 1
                         glBufferData(GL_ARRAY_BUFFER, VertexSize, VertexData, GL_STATIC_DRAW);
-
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
+#else                   
+                        glf::vertex_v3fn3fc4f *vertex;
+                        glf::vertex_v1i *indices;
+                        s->make_triangles_vbo (BaseGrid, BaseGrid,  &indices, &vertex);
+
+                        glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_STATIC_DRAW);
+                        glBindBuffer(GL_ARRAY_BUFFER, 0);
+                        g_free (vertex);
+
+                        glGenBuffers(1, &BufferObjectName[semantic::indices::INDICES]);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::indices::INDICES]);
+                        glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndicesObjectSize, indices, GL_STATIC_DRAW);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                        g_free (indices);
+#endif
+                        
                 } else {
+#if 0
                         glf::vertex_v4f *position;
                         glf::vertex_v3f *normals;
                         glf::vertex_v1i *indices;
@@ -372,6 +387,7 @@ private:
                         glBufferData(GL_ARRAY_BUFFER, NormalsObjectSize, normals, GL_STATIC_DRAW);
                         glBindBuffer(GL_ARRAY_BUFFER, 0);
                         g_free (normals);
+#endif
                 }
                 
 		return this->checkError("initBuffer");
@@ -381,45 +397,51 @@ private:
         bool initTextures() {
 		if (!Validated) return false;
 
-                if (mode == 1){
-                } else {
-                        /*
-                          size = 1024*4
-                          diffuse = Texture.raw_open('data/patches/snowy_mountains.diffuse', 
-                           width=size, height=size, format=GL_RGBA32F,
-                           mipmap=4, filter=GL_LINEAR_MIPMAP_LINEAR, clamp='st',
-                           unit=GL_TEXTURE0,
-                          )
-                          terrain = Texture.raw_open('data/patches/snowy_mountains.terrain',
-                           width=size, height=size, format=GL_RGBA32F,
-                           unit=GL_TEXTURE1, clamp='st',
-                          )
-                        */
-                        // sampler2D diffuse
-                        glUseProgram (ProgramName);
-                        glActiveTexture(GL_TEXTURE0);
-                         glGenTextures(TextureCount, TextureName);
-                         glBindTexture(GL_TEXTURE_2D, TextureName[0]);
-                         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Color);
-                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
-                         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                         glGenerateMipmap(GL_TEXTURE_2D);
-                         glUniform1i (glGetUniformLocation (ProgramName, "diffuse"), 0);
+                /*
+                  size = 1024*4
+                  diffuse = Texture.raw_open('data/patches/snowy_mountains.diffuse', 
+                  width=size, height=size, format=GL_RGBA32F,
+                  mipmap=4, filter=GL_LINEAR_MIPMAP_LINEAR, clamp='st',
+                  unit=GL_TEXTURE0,
+                  )
+                  terrain = Texture.raw_open('data/patches/snowy_mountains.terrain',
+                  width=size, height=size, format=GL_RGBA32F,
+                  unit=GL_TEXTURE1, clamp='st',
+                  )
+                */
+                // sampler2D diffuse
+                glUseProgram (ProgramName);
 
-                        // sampler2D terrain
-                        glActiveTexture(GL_TEXTURE1);
-                         glBindTexture(GL_TEXTURE_2D, TextureName[1]);
-                         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Normal_Z);
-                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                         glGenerateMipmap(GL_TEXTURE_2D);
-                         glUniform1i (glGetUniformLocation (ProgramName, "terrain"), 1);
+                //glGenSamplers(1, &LinearFilterSamplerName);
+                //glSamplerParameteri(LinearFilterSamplerName, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                //glSamplerParameteri(LinearFilterSamplerName, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                         
+                glGenTextures(TextureCount, TextureName);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, TextureName[0]);
+                //glBindSampler(0, LinearFilterSamplerName);
 
-                        glBindTexture(GL_TEXTURE_2D, 0);
-                }
+                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Color);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glGenerateMipmap(GL_TEXTURE_2D);
+                glUniform1i (glGetUniformLocation (ProgramName, "diffuse"), 0);
+
+                // sampler2D terrain
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, TextureName[1]);
+                //glBindSampler(0, LinearFilterSamplerName);
+                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Normal_Z);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glGenerateMipmap(GL_TEXTURE_2D);
+                glUniform1i (glGetUniformLocation (ProgramName, "terrain"), 1);
+
+                glBindTexture(GL_TEXTURE_2D, 0);
                 
 		return this->checkError("initTextures");
         };
@@ -508,8 +530,8 @@ public:
                         glDeleteBuffers(1, &BufferObjectName[0]);
                         glDeleteBuffers(2, &BufferObjectName[1]);
                         glDeleteBuffers(3, &BufferObjectName[2]);
-                        glDeleteTextures(TextureCount, TextureName);
                 }
+                glDeleteTextures(TextureCount, TextureName);
                 glDeleteProgram(ProgramName);
 
 		return this->checkError("end");
@@ -526,7 +548,9 @@ public:
                 else
                         glDisable (GL_CULL_FACE);
 
-                
+                if (s->GLv_data.Smooth)
+                        ; //glEnable (GL_LINE_SMOOTH);
+
                 // https://glm.g-truc.net/0.9.4/api/a00151.html
                 float aspect = WindowSize.x/WindowSize.y;
                 // GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f
@@ -543,19 +567,27 @@ public:
                 glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
 
 		glUseProgram (ProgramName);
+                this->checkError ("render-setup use prog");
                 glUniformMatrix4fv (UniformMVP, 1, GL_FALSE, &MVP[0][0]);
+                this->checkError ("render-setup-mvp");
+                glUniform1f (Uniform_height_scale, s->GLv_data.hskl);
+                glUniform1f (Uniform_height_offset, s->GLv_data.slice_offset);
+                glUniform1f (Uniform_lod_factor, 4.0);
+                this->checkError ("render-setup-base");
                 
                 if (mode == 1){
                         // g_message ("render mode 1 test");
+                        glEnableVertexAttribArray(TextureName[0]);
+                        glEnableVertexAttribArray(TextureName[1]);
+                        glBindTexture(GL_TEXTURE_2D, TextureName[0]);
+                        glBindTexture(GL_TEXTURE_2D, TextureName[1]);
                         glBindVertexArray(VertexArrayName);
                         glPatchParameteri(GL_PATCH_VERTICES, VertexCount);
-                        glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &glm::vec2(16.f)[0]);
-                        glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &glm::vec4(16.f)[0]);
+                        glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &glm::vec2(64.f)[0]);
+                        glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &glm::vec4(64.f)[0]);
                         glDrawArraysInstanced(GL_PATCHES, 0, VertexCount, 1);
                 } else {
                         glUniform2f (Uniform_screen_size, numx,numy);
-                        glUniform1f (Uniform_height_scale, s->GLv_data.hskl);
-                        glUniform1f (Uniform_lod_factor, 4.0);
                         //----
                         //gletools python code:
                         //glPatchParameteri(GL_PATCH_VERTICES, 4);
@@ -566,8 +598,15 @@ public:
                         //  vbo.draw(GL_PATCHES)
                         //----
                         //g_message ("render mode 2 tess");
+                        this->checkError ("render-setup0");
+                        glBindTexture(GL_TEXTURE_2D, TextureName[0]); 
+                        this->checkError ("render-setup1at0");
+                        glBindTexture(GL_TEXTURE_2D, TextureName[1]);
+                        this->checkError ("render-setup1at1");
                         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::triangles::INDICES]);
+                        this->checkError ("render-setup1b");
                         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::triangles::POSITION]);
+                        this->checkError ("render-setup1c");
                         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::triangles::NORMALS]);
                         this->checkError ("render-setup2");
 
@@ -579,6 +618,7 @@ public:
                         this->checkError("render-draw");
 
                 }
+              
                 /* flush the contents of the pipeline */
                 glFlush ();
                 
@@ -614,12 +654,15 @@ public:
         };
 
         void get_rotation (float *wxyz){
-                wxyz[0] = RotationCurrent.x;
-                wxyz[1] = RotationCurrent.y;
+                float dr = 180./M_PI;
+                wxyz[0] = dr*RotationCurrent.x;
+                wxyz[1] = dr*RotationCurrent.y;
         };
         void set_rotation (float *wxyz){
-                Rotation3axis = glm::ivec3(glm::radians(wxyz[0]), glm::radians(wxyz[1]), glm::radians(wxyz[2]));
-                RotationOrigin = glm::ivec2(glm::radians(wxyz[0]), glm::radians(wxyz[1]));
+                float dr = M_PI/180.;
+                Rotation3axis = glm::vec3(wxyz[0]*dr, wxyz[1]*dr, wxyz[2]*dr);
+                RotationOrigin = glm::vec2(wxyz[0]*dr, wxyz[1]*dr);
+                cursorPositionCallback('x',0,0);
                 g_message ("Rx %f Ry %f", RotationOrigin.x,RotationOrigin.y);
         };
         void get_translation (float *rxyz){
@@ -627,8 +670,9 @@ public:
                 rxyz[1] = TranslationCurrent.y;
         };
         void set_translation (float *rxyz){
-                Translation3axis = glm::ivec3(glm::radians(rxyz[0]), glm::radians(rxyz[1]), glm::radians(rxyz[2]));
-                TranslationOrigin = glm::ivec2(glm::radians(rxyz[0]), glm::radians(rxyz[1]));
+                Translation3axis = glm::vec3(rxyz[0], rxyz[1], rxyz[2]);
+                TranslationOrigin = glm::vec2(rxyz[0], rxyz[1]);
+                cursorPositionCallback('x',0,0);
                 g_message ("Tx %f Ty %f", TranslationOrigin.x,TranslationOrigin.y);
         };
         void get_distance (float *d){
@@ -716,9 +760,8 @@ void Surf3d::hide(){
 	XSM_DEBUG (GL_DEBUG_L2, "Surf3d::hide");
 }
 
-void Surf3d::make_triangles_vbo (int width, int height, glf::vertex_v1i** indices, glf::vertex_v4f** position, glf::vertex_v3f** normal){
-        *position = g_new (glf::vertex_v4f, width*height);
-        *normal   = g_new (glf::vertex_v3f, width*height);
+void Surf3d::make_triangles_vbo (int width, int height, glf::vertex_v1i** indices, glf::vertex_v3fn3fc4f** vertex){
+        *vertex = g_new (glf::vertex_v3fn3fc4f, width*height);
         double s_factor = 1.0/(width-1);
         double t_factor = 1.0/(height-1);
         for (int y=0; y<height; ++y)
@@ -729,13 +772,16 @@ void Surf3d::make_triangles_vbo (int width, int height, glf::vertex_v1i** indice
                         double yd = y * t_factor;
                         double vd = 0.; // vi
                         scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F (xd*XPM_x, yd*XPM_y, vd, &normal_z, GLv_data.hskl);
-                        (*position)[offset].position.x = xd;
-                        (*position)[offset].position.y = yd;
-                        (*position)[offset].position.z = normal_z.w;
-                        (*position)[offset].position.w = 1.;
-                        (*normal)[offset].normals.x = normal_z.x;
-                        (*normal)[offset].normals.y = normal_z.y;
-                        (*normal)[offset].normals.z = normal_z.z;
+                        (*vertex)[offset].Position.x = xd;
+                        (*vertex)[offset].Position.y = yd;
+                        (*vertex)[offset].Position.z = normal_z.w;
+                        (*vertex)[offset].Normals.x = normal_z.x;
+                        (*vertex)[offset].Normals.y = normal_z.y;
+                        (*vertex)[offset].Normals.z = normal_z.z;
+                        (*vertex)[offset].Color.x = normal_z.w;
+                        (*vertex)[offset].Color.y = normal_z.w;
+                        (*vertex)[offset].Color.z = normal_z.w;
+                        (*vertex)[offset].Color.w = 1.0;
                 }
 
         int i_width = width-1;
@@ -777,11 +823,17 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 	// mem2d:: inline void GetDataPkt_vec_normal_4F(int x, int y, int v, float *vec4){ 
 	// mem2d:: inline void GetDataPktVModeInterpol_vec_normal_4F(double x, double y, double v, float *vec4){ 
 
-        double z_scale = GLv_data.hskl/QuenchFac;
-	//scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F ((double)k,(double)j,(double)vi, &surface_normal_z_buffer[i], z_scale);
-	scan->mem2d->GetDataPktVMode_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], z_scale);
-        //surface_normal_z_buffer[i][3] /= scan->mem2d->GetDataRange ();
+        if (i==0)
+                g_message ("Z Range: %f .. %f", scan->mem2d->data->zmin, scan->mem2d->data->zmax);
 
+
+        //scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F ((double)k,(double)j,(double)vi, &surface_normal_z_buffer[i]);
+	//scan->mem2d->GetDataPktVMode_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], 1./MAXCOLOR);
+	scan->mem2d->GetDataPkt_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i]);
+        surface_normal_z_buffer[i].w -= scan->mem2d->data->zmin; ///= scan->mem2d->GetDataRange ();
+        surface_normal_z_buffer[i].w /= scan->mem2d->data->zrange; ///= scan->mem2d->GetDataRange ();
+
+        
 	if (GLv_data.ColorSrc[0] != 'U'){
 		switch (GLv_data.ColorSrc[0]){
 		case 'H': 
@@ -850,9 +902,25 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 	val = (GLfloat) (GLv_data.transparency_offset + GLv_data.transparency * surface_normal_z_buffer[i].w);
 	surface_color_buffer[i].w = val > 1.? 1. : val < 0.? 0. : val;
 
-	// adjust slice height level
-	surface_normal_z_buffer[i].w += (GLfloat)vi * GLv_data.slice_offset * (XPM_x+XPM_y)*0.5/XPM_v;
+	surface_color_buffer[i].x = surface_normal_z_buffer[i].w;
+	surface_color_buffer[i].y = surface_normal_z_buffer[i].w;
+	surface_color_buffer[i].z = surface_normal_z_buffer[i].w;
+	surface_color_buffer[i].w = 1.;
 
+	// adjust slice height level
+	//surface_normal_z_buffer[i].w += (GLfloat)vi * GLv_data.slice_offset * (XPM_x+XPM_y)*0.5/XPM_v;
+
+        if (i%100==0)
+                g_message ("%6d [%d,%d,%d]: n=(%8f, %8f, %8f) z=%8f   c=(%4f, %4f, %4f, %4f)",
+                           i, k,j,vi,
+                           surface_normal_z_buffer[i].x, surface_normal_z_buffer[i].y, surface_normal_z_buffer[i].z,
+                           surface_normal_z_buffer[i].w,
+                           surface_color_buffer[i].x,
+                           surface_color_buffer[i].y,
+                           surface_color_buffer[i].z,
+                           surface_color_buffer[i].w
+                           );
+        
         //        std::cout << "PutPointMode OK!" << std::endl << std::flush;
 }
 
@@ -954,11 +1022,26 @@ void Surf3d::create_surface_buffer(){
 	setup_data_transformation();
 
         // grab and prepare data buffers
-	for(int v=0; v<scan->mem2d->GetNv(); ++v)
+        for(int v=0; v<scan->mem2d->GetNv(); ++v){
+                scan->mem2d->data->update_ranges (v);
 		for(int j=0; j<scan->mem2d->GetNy(); j+=QuenchFac)
 			for(int k=0; k<scan->mem2d->GetNx(); k+=QuenchFac)
 				PutPointMode (k,j,v);
+        }
+#if 0
+        // dump to file
+        gchar *fn = g_strdup_printf("gxsm_normal_z_%dx%d.terrain", XPM_x, XPM_y);
+        FILE* terrain = fopen(fn, "wb");
+        g_free (fn);
+        fwrite ((void*)surface_normal_z_buffer, sizeof(glm::vec4), (size_t)size, terrain);
+        fclose (terrain);
 
+        fn = g_strdup_printf("gxsm_color_rgb_%dx%d.diffuse", XPM_x, XPM_y);
+        FILE* diffuse = fopen(fn, "wb");
+        g_free (fn);
+        fwrite ((void*)surface_color_buffer, sizeof(glm::vec4), (size_t)size, diffuse);
+        fclose (diffuse);
+#endif   
 }
 
 void Surf3d::delete_surface_buffer(){ 
