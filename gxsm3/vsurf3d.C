@@ -79,7 +79,7 @@ void surf3d_write_schema (){
 	gnome_res_destroy (gl_pref);
 }
 
-//#define __GXSM_PY_DEVEL
+// #define __GXSM_PY_DEVEL
 
 // ------------------------------------------------------------
 // glsl data and code locations
@@ -108,49 +108,26 @@ std::string getBinaryDirectory()
 // ------------------------------------------------------------
 namespace
 {
-        // mode 1 (test)
 	std::string const SAMPLE_VERTEX_SHADER("tess.vert");
 	std::string const SAMPLE_CONTROL_SHADER("tess.cont");
 	std::string const SAMPLE_EVALUATION_SHADER("tess.eval");
 	std::string const SAMPLE_GEOMETRY_SHADER("tess.geom");
 	std::string const SAMPLE_FRAGMENT_SHADER("tess.frag");
 
-        GLuint const BaseGridW(3);
-        GLuint const BaseGridH(3);
+        GLuint const BaseGridW(16);
+        GLuint const BaseGridH(16);
 	GLsizei const VertexCount(BaseGridW*BaseGridH);
 	GLsizei const IndicesCount((BaseGridW-1)*(BaseGridH-1)*4);
 
 	GLsizeiptr const VertexObjectSize = VertexCount * sizeof(glf::vertex_v3fn3fc4f);
 	GLsizeiptr const IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
-#if 0
-	GLsizeiptr const VertexSize = VertexCount * sizeof(glf::vertex_v3fn3fc4f);
-	glf::vertex_v3fn3fc4f const VertexData[VertexCount] =
-	{
-		glf::vertex_v3fn3fc4f(glm::vec3(-0.5f,-0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
-		glf::vertex_v3fn3fc4f(glm::vec3( 0.5f,-0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)),
-		glf::vertex_v3fn3fc4f(glm::vec3( 0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)),
-		glf::vertex_v3fn3fc4f(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)),
-                
-		glf::vertex_v3fn3fc4f(glm::vec3( 0.5f,-0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
-		glf::vertex_v3fn3fc4f(glm::vec3( 1.5f,-0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)),
-		glf::vertex_v3fn3fc4f(glm::vec3( 1.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)),
-		glf::vertex_v3fn3fc4f(glm::vec3( 0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f))
-	};
-#endif
 	GLuint ProgramName(0);
 	GLuint ArrayBufferName(0);
 	GLuint VertexArrayName(0);
 
-        // mode 2 (LOD tesselete surface)
-        std::string const LODTESS_VERTEX_SHADER("vs3d_gl_vertex_shader.glsl");
-	std::string const LODTESS_CONTROL_SHADER("vs3d_gl_control_shader.glsl");
-	std::string const LODTESS_EVALUATION_SHADER("vs3d_gl_eval_shader.glsl");
-	//std::string const LODTESS_GEOMETRY_SHADER("vs3d_gl_geometry_shader.glsl"); // **** new ?? copy
-	std::string const LODTESS_FRAGMENT_SHADER("vs3d_gl_fragment_shader.glsl");
-        
-        
 	GLuint BufferObjectName[3];
 	GLint Uniform_screen_size(0); // vec2
+	GLint Uniform_tess_level(0); // float
 	GLint Uniform_lod_factor(0); // float
         GLint Uniform_height_scale(0);
         GLint Uniform_height_offset(0);
@@ -187,8 +164,6 @@ public:
                 RotationOrigin = glm::ivec3(0,0,0);
                 RotationCurrent = RotationOrigin;
                 WindowSize  = glm::ivec2(500, 500);
-                mode = 1; // run simple tesselation test
-                //mode = 2; // use vsurf data
         };
         ~gl_400_primitive_tessellation(){
                 end ();
@@ -244,43 +219,22 @@ private:
 		if (Validated){
                         compiler Compiler;
 
-                        if (mode == 1){
-                                GLuint VertexShader     = Compiler.create(GL_VERTEX_SHADER, getDataDirectory() + SAMPLE_VERTEX_SHADER);
-                                GLuint ControlShader    = Compiler.create(GL_TESS_CONTROL_SHADER, getDataDirectory() + SAMPLE_CONTROL_SHADER);
-                                GLuint EvaluationShader = Compiler.create(GL_TESS_EVALUATION_SHADER, getDataDirectory() + SAMPLE_EVALUATION_SHADER);
-                                GLuint GeometryShader   = Compiler.create(GL_GEOMETRY_SHADER, getDataDirectory() + SAMPLE_GEOMETRY_SHADER);
-                                GLuint FragmentShader   = Compiler.create(GL_FRAGMENT_SHADER, getDataDirectory() + SAMPLE_FRAGMENT_SHADER);
+                        GLuint VertexShader     = Compiler.create(GL_VERTEX_SHADER, getDataDirectory() + SAMPLE_VERTEX_SHADER);
+                        GLuint ControlShader    = Compiler.create(GL_TESS_CONTROL_SHADER, getDataDirectory() + SAMPLE_CONTROL_SHADER);
+                        GLuint EvaluationShader = Compiler.create(GL_TESS_EVALUATION_SHADER, getDataDirectory() + SAMPLE_EVALUATION_SHADER);
+                        GLuint GeometryShader   = Compiler.create(GL_GEOMETRY_SHADER, getDataDirectory() + SAMPLE_GEOMETRY_SHADER);
+                        GLuint FragmentShader   = Compiler.create(GL_FRAGMENT_SHADER, getDataDirectory() + SAMPLE_FRAGMENT_SHADER);
 
-                                if (!VertexShader || !ControlShader || !EvaluationShader || !GeometryShader || !FragmentShader)
-                                        Validated = false;
-                                else {
-                                        ProgramName = glCreateProgram();
-                                        glAttachShader(ProgramName, VertexShader);
-                                        glAttachShader(ProgramName, ControlShader);
-                                        glAttachShader(ProgramName, EvaluationShader);
-                                        glAttachShader(ProgramName, GeometryShader);
-                                        glAttachShader(ProgramName, FragmentShader);
-                                        glLinkProgram(ProgramName);
-                                }
-                        } else {
-                                GLuint VertexShader     = Compiler.create(GL_VERTEX_SHADER, getDataDirectory() + LODTESS_VERTEX_SHADER);
-                                GLuint ControlShader    = Compiler.create(GL_TESS_CONTROL_SHADER, getDataDirectory() + LODTESS_CONTROL_SHADER);
-                                GLuint EvaluationShader = Compiler.create(GL_TESS_EVALUATION_SHADER, getDataDirectory() + LODTESS_EVALUATION_SHADER);
-                                //GLuint GeometryShader = Compiler.create(GL_GEOMETRY_SHADER, getDataDirectory() + LODTESS_GEOMETRY_SHADER);
-                                GLuint FragmentShader   = Compiler.create(GL_FRAGMENT_SHADER, getDataDirectory() + LODTESS_FRAGMENT_SHADER);
-                        
-                                //if (!VertexShader || !ControlShader || !EvaluationShader || !GeometryShader || !FragmentShader)
-                                if (!VertexShader || !ControlShader || !EvaluationShader || !FragmentShader)
-                                        Validated = false;
-                                else {
-                                        ProgramName = glCreateProgram();
-                                        glAttachShader(ProgramName, VertexShader);
-                                        glAttachShader(ProgramName, ControlShader);
-                                        glAttachShader(ProgramName, EvaluationShader);
-                                        //glAttachShader(ProgramName, GeometryShader);
-                                        glAttachShader(ProgramName, FragmentShader);
-                                        glLinkProgram(ProgramName);
-                                }
+                        if (!VertexShader || !ControlShader || !EvaluationShader || !GeometryShader || !FragmentShader)
+                                Validated = false;
+                        else {
+                                ProgramName = glCreateProgram();
+                                glAttachShader(ProgramName, VertexShader);
+                                glAttachShader(ProgramName, ControlShader);
+                                glAttachShader(ProgramName, EvaluationShader);
+                                glAttachShader(ProgramName, GeometryShader);
+                                glAttachShader(ProgramName, FragmentShader);
+                                glLinkProgram(ProgramName);
                         }
                         
 			Validated = Validated && Compiler.check();
@@ -289,10 +243,11 @@ private:
 
 		if(Validated){
                         UniformMVP = glGetUniformLocation(ProgramName, "mvp"); // mat4 -- projection
-                        Uniform_height_scale = glGetUniformLocation(ProgramName, "height_scale");  // float
+                        Uniform_height_scale  = glGetUniformLocation(ProgramName, "height_scale");  // float
                         Uniform_height_offset = glGetUniformLocation(ProgramName, "height_offset");  // float
-                        Uniform_screen_size  = glGetUniformLocation(ProgramName, "screen_size"); // vec2
-                        Uniform_lod_factor   = glGetUniformLocation(ProgramName, "lod_factor");  // float
+                        Uniform_screen_size   = glGetUniformLocation(ProgramName, "screen_size"); // vec2
+                        Uniform_lod_factor    = glGetUniformLocation(ProgramName, "lod_factor");  // float
+                        Uniform_tess_level    = glGetUniformLocation(ProgramName, "tess_level");  // float
                         this->checkError("initProgram -- get uniform variable references...");
 		}
 
@@ -306,43 +261,19 @@ private:
 		if (!Validated) return false;
 
                 // Build a vertex array object
-                if (mode == 1){
-                        glGenVertexArrays(1, &VertexArrayName);
-                        glBindVertexArray(VertexArrayName);
-                        glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                        glVertexAttribPointer(semantic::attr::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(0));
-                        glVertexAttribPointer(semantic::attr::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(sizeof(glm::vec3)));
-                        glVertexAttribPointer(semantic::attr::COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(2*sizeof(glm::vec3)));
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
+                glGenVertexArrays(1, &VertexArrayName);
+                glBindVertexArray(VertexArrayName);
+                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
+                glVertexAttribPointer(semantic::attr::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(0));
+                glVertexAttribPointer(semantic::attr::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(sizeof(glm::vec3)));
+                glVertexAttribPointer(semantic::attr::COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(2*sizeof(glm::vec3)));
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-                        glEnableVertexAttribArray(semantic::attr::POSITION);
-                        glEnableVertexAttribArray(semantic::attr::NORMAL);
-                        glEnableVertexAttribArray(semantic::attr::COLOR);
+                glEnableVertexAttribArray(semantic::attr::POSITION);
+                glEnableVertexAttribArray(semantic::attr::NORMAL);
+                glEnableVertexAttribArray(semantic::attr::COLOR);
 
-                        glBindVertexArray(0);
-                } else {
-                        // gletools python:
-                        // vbo = make_plane(128, 128);
-                        glGenBuffers(1, &BufferObjectName[semantic::triangles::INDICES]);
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::triangles::INDICES]);
-                        //glVertexAttribPointer(semantic::indices::INDICES, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(glf::vertex_v1i), BUFFER_OFFSET(0));
-                        glBindAttribLocation(ProgramName, 0, "indices");
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-                        glGenBuffers(1, &BufferObjectName[semantic::triangles::POSITION]);
-                        glBindBuffer(GL_ARRAY_BUFFER, BufferObjectName[semantic::triangles::POSITION]);
-                        //glVertexAttribPointer(semantic::indices::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v4f), BUFFER_OFFSET(0));
-                        glBindAttribLocation(ProgramName, 0, "position");
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
-                                
-                        glGenBuffers(1, &BufferObjectName[semantic::triangles::NORMALS]);
-                        glBindBuffer(GL_ARRAY_BUFFER, BufferObjectName[semantic::triangles::NORMALS]);
-                        //glVertexAttribPointer(semantic::indices::NORMALS, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3f), BUFFER_OFFSET(0));
-                        glBindAttribLocation(ProgramName, 0, "normals");
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-                        glBindVertexArray(0);
-                }
+                glBindVertexArray(0);
 
                 return this->checkError("initVertexArray");
 	};
@@ -350,54 +281,21 @@ private:
 	bool initBuffer() {
 		if (!Validated) return false;
 
-                if (mode == 1){
-                        glGenBuffers(1, &ArrayBufferName);
-                        glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-#if 0
-                        glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, VertexData, GL_STATIC_DRAW);
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
-#else                   
-                        glf::vertex_v3fn3fc4f *vertex;
-                        glf::vertex_v1i *indices;
-                        s->make_plane_vbo (BaseGridW, BaseGridH,  &indices, &vertex);
+                glGenBuffers(1, &ArrayBufferName);
+                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
+                glf::vertex_v3fn3fc4f *vertex;
+                glf::vertex_v1i *indices;
+                s->make_plane_vbo (BaseGridW, BaseGridH,  &indices, &vertex);
 
-                        glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_STATIC_DRAW);
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
-                        g_free (vertex);
+                glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_STATIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                g_free (vertex);
 
-                        glGenBuffers(1, &BufferObjectName[semantic::indices::INDICES]);
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::indices::INDICES]);
-                        glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndicesObjectSize, indices, GL_STATIC_DRAW);
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-                        g_free (indices);
-#endif
-                        
-                } else {
-#if 0
-                        glf::vertex_v4f *position;
-                        glf::vertex_v3f *normals;
-                        glf::vertex_v1i *indices;
-                        s->make_triangles_vbo (128, 128,  &indices, &position, &normals);
-
-                        glGenBuffers(1, &BufferObjectName[semantic::indices::INDICES]);
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::indices::INDICES]);
-                        glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndicesObjectSize, indices, GL_STATIC_DRAW);
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-                        g_free (indices);
-
-                        glGenBuffers(1, &BufferObjectName[semantic::triangles::POSITION]);
-                        glBindBuffer(GL_ARRAY_BUFFER, BufferObjectName[semantic::triangles::POSITION]);
-                        glBufferData(GL_ARRAY_BUFFER, PositionObjectSize, position, GL_STATIC_DRAW);
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
-                        g_free (position);
-
-                        glGenBuffers(1, &BufferObjectName[semantic::triangles::NORMALS]);
-                        glBindBuffer(GL_ARRAY_BUFFER, BufferObjectName[semantic::triangles::NORMALS]);
-                        glBufferData(GL_ARRAY_BUFFER, NormalsObjectSize, normals, GL_STATIC_DRAW);
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
-                        g_free (normals);
-#endif
-                }
+                glGenBuffers(1, &BufferObjectName[semantic::indices::INDICES]);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::indices::INDICES]);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndicesObjectSize, indices, GL_STATIC_DRAW);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                g_free (indices);
                 
 		return this->checkError("initBuffer");
 	};
@@ -406,18 +304,6 @@ private:
         bool initTextures() {
 		if (!Validated) return false;
 
-                /*
-                  size = 1024*4
-                  diffuse = Texture.raw_open('data/patches/snowy_mountains.diffuse', 
-                  width=size, height=size, format=GL_RGBA32F,
-                  mipmap=4, filter=GL_LINEAR_MIPMAP_LINEAR, clamp='st',
-                  unit=GL_TEXTURE0,
-                  )
-                  terrain = Texture.raw_open('data/patches/snowy_mountains.terrain',
-                  width=size, height=size, format=GL_RGBA32F,
-                  unit=GL_TEXTURE1, clamp='st',
-                  )
-                */
                 // sampler2D diffuse
                 glUseProgram (ProgramName);
 
@@ -510,10 +396,8 @@ public:
                         Validated = initVertexArray();
                 if(Validated)
                         Validated = initTextures();
-
-                if(Validated)
-                        Validated = initDebugOutput();
-
+                //if(Validated)
+                //        Validated = initDebugOutput();
                 
                 if (Validated)
                         return Validated && this->checkError("begin");
@@ -527,13 +411,10 @@ public:
                 /* we need to ensure that the GdkGLContext is set before calling GL API */
                 gtk_gl_area_make_current (glarea);
 
-                if (mode == 1){
-                        glDeleteVertexArrays(1, &VertexArrayName);
-                } else {
-                        glDeleteBuffers(1, &BufferObjectName[0]);
-                        glDeleteBuffers(2, &BufferObjectName[1]);
-                        glDeleteBuffers(3, &BufferObjectName[2]);
-                }
+                glDeleteVertexArrays(1, &VertexArrayName);
+                glDeleteBuffers(1, &BufferObjectName[0]);
+                //glDeleteBuffers(2, &BufferObjectName[1]);
+                //glDeleteBuffers(3, &BufferObjectName[2]);
                 glDeleteTextures(TextureCount, TextureName);
                 glDeleteProgram(ProgramName);
 
@@ -570,61 +451,35 @@ public:
                 glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
 
 		glUseProgram (ProgramName);
-                this->checkError ("render-setup use prog");
                 glUniformMatrix4fv (UniformMVP, 1, GL_FALSE, &MVP[0][0]);
-                this->checkError ("render-setup-mvp");
                 glUniform1f (Uniform_height_scale, s->GLv_data.hskl);
                 glUniform1f (Uniform_height_offset, s->GLv_data.slice_offset);
                 glUniform1f (Uniform_lod_factor, 4.0);
-                this->checkError ("render-setup-base");
+                glUniform1f (Uniform_tess_level, s->GLv_data.tess_level);
                 
-                if (mode == 1){
-                        // g_message ("render mode 1 test");
-                        glEnableVertexAttribArray(TextureName[0]);
-                        glEnableVertexAttribArray(TextureName[1]);
-                        glBindTexture(GL_TEXTURE_2D, TextureName[0]);
-                        glBindTexture(GL_TEXTURE_2D, TextureName[1]);
-                        glBindVertexArray(VertexArrayName);
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::indices::INDICES]);
-                        //glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &glm::vec2(64.f)[0]);
-                        //glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &glm::vec4(64.f)[0]);
-                        //glPatchParameteri(GL_PATCH_VERTICES, 4);
-                        //glDrawArraysInstanced(GL_PATCHES, 0, VertexCount, 1);
-                        glPatchParameteri(GL_PATCH_VERTICES, 4);
-                        glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
-                } else {
-                        glUniform2f (Uniform_screen_size, numx,numy);
-                        //----
-                        //gletools python code:
-                        //glPatchParameteri(GL_PATCH_VERTICES, 4);
-                        //vbo.draw(GL_PATCHES);
+                glEnableVertexAttribArray(TextureName[0]);
+                glEnableVertexAttribArray(TextureName[1]);
+                glBindTexture(GL_TEXTURE_2D, TextureName[0]);
+                glBindTexture(GL_TEXTURE_2D, TextureName[1]);
+                glBindVertexArray(VertexArrayName);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::indices::INDICES]);
+                //glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &glm::vec2(64.f)[0]);
+                //glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &glm::vec4(64.f)[0]);
+                //glPatchParameteri(GL_PATCH_VERTICES, 4);
+                //glDrawArraysInstanced(GL_PATCHES, 0, VertexCount, 1);
+                glPatchParameteri(GL_PATCH_VERTICES, 4);
+                glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
 
-                        //with nested(DepthTest, diffuse, terrain, noise_tile, program):
-                        //  glPatchParameteri(GL_PATCH_VERTICES, 4);
-                        //  vbo.draw(GL_PATCHES)
-                        //----
-                        //g_message ("render mode 2 tess");
-                        this->checkError ("render-setup0");
-                        glBindTexture(GL_TEXTURE_2D, TextureName[0]); 
-                        this->checkError ("render-setup1at0");
-                        glBindTexture(GL_TEXTURE_2D, TextureName[1]);
-                        this->checkError ("render-setup1at1");
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::triangles::INDICES]);
-                        this->checkError ("render-setup1b");
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::triangles::POSITION]);
-                        this->checkError ("render-setup1c");
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::triangles::NORMALS]);
-                        this->checkError ("render-setup2");
+                //----
+                //gletools python code:
+                //glPatchParameteri(GL_PATCH_VERTICES, 4);
+                //vbo.draw(GL_PATCHES);
 
-                        glPatchParameteri (GL_PATCH_VERTICES, 4);
-                        this->checkError ("render-setup3");
-
-                        glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
-
-                        this->checkError("render-draw");
-
-                }
-              
+                //with nested(DepthTest, diffuse, terrain, noise_tile, program):
+                //  glPatchParameteri(GL_PATCH_VERTICES, 4);
+                //  vbo.draw(GL_PATCHES)
+                //----
+                
                 /* flush the contents of the pipeline */
                 glFlush ();
                 
@@ -669,7 +524,7 @@ public:
                 Rotation3axis = glm::vec3(wxyz[0]*dr, wxyz[1]*dr, wxyz[2]*dr);
                 RotationOrigin = glm::vec2(wxyz[0]*dr, wxyz[1]*dr);
                 cursorPositionCallback('x',0,0);
-                g_message ("Rx %f Ry %f", RotationOrigin.x,RotationOrigin.y);
+                //g_message ("Rx %f Ry %f", RotationOrigin.x,RotationOrigin.y);
         };
         void get_translation (float *rxyz){
                 rxyz[0] = TranslationCurrent.x;
@@ -679,14 +534,14 @@ public:
                 Translation3axis = glm::vec3(rxyz[0], rxyz[1], rxyz[2]);
                 TranslationOrigin = glm::vec2(rxyz[0], rxyz[1]);
                 cursorPositionCallback('x',0,0);
-                g_message ("Tx %f Ty %f", TranslationOrigin.x,TranslationOrigin.y);
+                //g_message ("Tx %f Ty %f", TranslationOrigin.x,TranslationOrigin.y);
         };
         void get_distance (float *d){
                 d[0] = DistanceCurrent.y;
         };
         void set_distance (float *d){
                 DistanceOrigin = glm::ivec2(0., d[0]);
-                g_message ("Dist %f", DistanceOrigin.y);
+                //g_message ("Dist %f", DistanceOrigin.y);
         };
 
         void set_surface_data (glm::vec4 *data, glm::vec4 *color, int nx, int ny, int nv){
@@ -702,7 +557,6 @@ private:
         GtkGLArea *glarea;
         int Major, Minor; // minimal version needed
         bool Validated;
-        int mode;
         
         glm::vec2 WindowSize;
 	glm::vec2 MouseOrigin;
@@ -817,8 +671,8 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 	// mem2d:: inline void GetDataPkt_vec_normal_4F(int x, int y, int v, float *vec4){ 
 	// mem2d:: inline void GetDataPktVModeInterpol_vec_normal_4F(double x, double y, double v, float *vec4){ 
 
-        if (i==0)
-                g_message ("Z Range: %f .. %f", scan->mem2d->data->zmin, scan->mem2d->data->zmax);
+        //if (i==0)
+        //        g_message ("Z Range: %f .. %f", scan->mem2d->data->zmin, scan->mem2d->data->zmax);
 
 
         //scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F ((double)k,(double)j,(double)vi, &surface_normal_z_buffer[i]);
@@ -904,6 +758,7 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 	// adjust slice height level
 	//surface_normal_z_buffer[i].w += (GLfloat)vi * GLv_data.slice_offset * (XPM_x+XPM_y)*0.5/XPM_v;
 
+#if 0
         if (i%100==0)
                 g_message ("%6d [%d,%d,%d]: n=(%8f, %8f, %8f) z=%8f   c=(%4f, %4f, %4f, %4f)",
                            i, k,j,vi,
@@ -914,7 +769,7 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
                            surface_color_buffer[i].z,
                            surface_color_buffer[i].w
                            );
-        
+#endif   
         //        std::cout << "PutPointMode OK!" << std::endl << std::flush;
 }
 
@@ -1008,7 +863,7 @@ void Surf3d::create_surface_buffer(){
 
 	size = XPM_x * XPM_y * XPM_v;
 
-        g_message ("QF=%d size = %d, %d, %d", QuenchFac,  XPM_x, XPM_y, XPM_v);
+        //g_message ("QF=%d size = %d, %d, %d", QuenchFac,  XPM_x, XPM_y, XPM_v);
         
 	surface_normal_z_buffer = g_new (glm::vec4, size * sizeof(glm::vec4));
 	surface_color_buffer    = g_new (glm::vec4, size * sizeof(glm::vec4));

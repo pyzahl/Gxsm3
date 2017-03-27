@@ -17,7 +17,7 @@ out block
 } Out;
 
 out vec2 terraincoord;
-//out float depth;
+out float depth;
 
 uniform sampler2D terrain;
 uniform sampler2D diffuse;
@@ -45,7 +45,7 @@ void main()
 	terraincoord = position.xy+vec2(0.5,0.5);
 	float height = texture(terrain, terraincoord).a * height_scale + height_offset;
 	gl_Position = mvp * vec4(position.xy, height, 1.0);
-	//depth = gl_Position.z;
+	depth = gl_Position.z;
 	//Out.Color = interpolate(In[0].Color, In[1].Color, In[2].Color, In[3].Color);
 	Out.Color = texture(diffuse, terraincoord);
 }
