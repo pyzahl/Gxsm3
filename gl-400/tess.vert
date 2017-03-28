@@ -15,11 +15,15 @@ layout(location = COLOR) in vec4 Color;
 
 out block
 {
+        vec3 Vertex;
+        vec3 Normal;
 	vec4 Color;
 } Out;
 
 void main()
 {	
 	gl_Position = vec4(Position, 1.0);
+	Out.Vertex = Position;
+	Out.Normal = Normals;
 	Out.Color = Color;
 }

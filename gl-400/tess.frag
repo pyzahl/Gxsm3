@@ -1,18 +1,19 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-#version 440 core
+#version 400 core
 
 precision highp float;
 precision highp int;
 layout(std140, column_major) uniform;
 
-in vblock {
-        vec4 color;
-        vec3 vertex;
-        vec3 vertexEye;
-        vec3 normal;
+// WARNING in/out "blocks" are not part of namespace, members must be unique in code! Thumb Rule: use capital initials for In/Out.
+in block {
+        vec3 Vertex;
+        vec3 VertexEye;
+        vec3 Normal;
+        vec4 Color;
 } In;
 
-out vec4 fragColor;
+out vec4 FragColor;
 
 uniform sampler2D diffuse;
 uniform sampler2D terrain;
@@ -121,9 +122,9 @@ vec4 shadeTerrain(vec3 vertex,
     //finalColor = applyFog(finalColor, dist);
     finalColor = applyFog(finalColor, dist, viewDir);
         
-    return vec4(finalColor, color.a);
+    //return vec4(finalColor, color.a);
 
-    //return color;
+    return color;
 
     //return vec4(dist);
     //return vec4(dnoise(vertex.xz).z*0.5+0.5);
@@ -141,9 +142,9 @@ vec4 shadeTerrain(vec3 vertex,
 
 void main()
 {
-        fragColor = shadeTerrain(In.vertex,
-                                 In.vertexEye,
-                                 In.normal,
-                                 In.color);   // shade per pixel
+        FragColor = shadeTerrain(In.Vertex,
+                                 In.VertexEye,
+                                 In.Normal,
+                                 In.Color);   // shade per pixel
 }
 

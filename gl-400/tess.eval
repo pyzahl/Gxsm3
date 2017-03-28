@@ -1,21 +1,24 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-#version 440 core
+#version 400 core
 
 precision highp float;
 precision highp int;
 layout(std140, column_major) uniform;
 layout(quads, equal_spacing, ccw) in; //equal_spacing fractional_even_spacing fractional_odd_spacing
 
+// WARNING in/out "blocks" are not part of namespace, members must be unique in code! Thumb Rule: use capital initials for In/Out.
 in block
 {
-	vec4 Color;
+        vec3 Vertex;
+        vec3 Normal;
+        vec4 Color;
 } In[];
 
-out vblock {
-        vec4 color;
-        vec3 vertex;
-        vec3 vertexEye;
-        vec3 normal;
+out block {
+        vec3 Vertex;
+        vec3 VertexEye;
+        vec3 Normal;
+        vec4 Color;
 } Out;
 
 
@@ -46,10 +49,10 @@ void main()
 	vec2 terraincoord = position.xy+vec2(0.5,0.5);
 	float height = texture(terrain, terraincoord).a * height_scale + height_offset;
 
-        Out.vertex    = vec3(position.xy, height);
-        Out.vertexEye = vec3(ModelView * vec4(position.xy, height, 1));  // eye space
-        Out.normal    = texture(terrain, terraincoord).xyz-vec3(0.5,0.5,0.5);
-	Out.color     = texture(diffuse, terraincoord);
+        Out.Vertex    = vec3(position.xy, height);
+        Out.VertexEye = vec3(ModelView * vec4(position.xy, height, 1));  // eye space
+        Out.Normal    = texture(terrain, terraincoord).xyz-vec3(0.5,0.5,0.5);
+	Out.Color     = texture(diffuse, terraincoord);
 	//Out.Color = interpolate(In[0].Color, In[1].Color, In[2].Color, In[3].Color);
         
 	gl_Position = ModelViewProjection * vec4(position.xy, height, 1.0);
