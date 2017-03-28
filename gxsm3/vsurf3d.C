@@ -80,7 +80,11 @@ void surf3d_write_schema (){
 	gnome_res_destroy (gl_pref);
 }
 
-#define __GXSM_PY_DEVEL
+//#define __GXSM_PY_DEVEL
+#ifdef __GXSM_PY_DEVEL
+//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+#endif
 
 // ------------------------------------------------------------
 // glsl data and code locations
@@ -88,7 +92,7 @@ void surf3d_write_schema (){
 std::string getDataDirectory()
 {
 #ifdef __GXSM_PY_DEVEL
-        return std::string("/home/pzahl/SVN/Gxsm-3.0/gl-400/");
+        return std::string(GLSL_DEV_DIR);
 #else
 	return std::string(PACKAGE_GL400_DIR) + "/";
 #endif
@@ -97,7 +101,7 @@ std::string getDataDirectory()
 std::string getBinaryDirectory()
 {
 #ifdef __GXSM_PY_DEVEL
-        return std::string("/home/pzahl/SVN/Gxsm-3.0/gl-400/");
+        return std::string(GLSL_DEV_DIR);
 #else
 	return std::string(PACKAGE_GL400_DIR) + "/";
 #endif
