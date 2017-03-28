@@ -82,8 +82,8 @@ void surf3d_write_schema (){
 
 //#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 // ------------------------------------------------------------
@@ -706,18 +706,18 @@ void Surf3d::make_plane_vbo (int width, int height, glf::vertex_v1i** indices, g
 
         if (option){
                 // box bottom z=0 vertices
-                g_message ("mkplane -- vtx box");
+                //g_message ("mkplane -- vtx box");
                 offset = width*height;
                 for (int s=0; s<4; ++s){
                         int num = s%2 ? width : height;
-                        g_message ("mkplane -- vtx s=%d",s);
+                        //g_message ("mkplane -- vtx s=%d",s);
                         glm::vec3 normal(s%2 ? 0.: s==1 ? 1.:-1.,
                                          s%2 ? s==0 ? -1.:1. : 0.,
                                          0.);
                         for (int l=0; l<num; ++l){
                                 int x = s%2==0 ? l : s==1 ? width-1:0;
                                 int y = s%2==0 ? s==0 ? 0:height-1 : l;
-                                g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
+                                //g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
                                 double xd = x * s_factor;
                                 double yd = y * t_factor;
                                 (*vertex)[offset].Position = glm::vec3 (-0.5+xd, -0.5+yd, -1.0); // box z=0 base
@@ -729,7 +729,7 @@ void Surf3d::make_plane_vbo (int width, int height, glf::vertex_v1i** indices, g
         }
         g_message ("mkplane -- Vertex Count=%d", offset);
         
-        g_message ("mkplane -- vtx done.");
+        //g_message ("mkplane -- vtx done.");
 
         // Patch Indices
         int i_width = width-1;
@@ -756,7 +756,7 @@ void Surf3d::make_plane_vbo (int width, int height, glf::vertex_v1i** indices, g
                 // box patches
                 int pb0=width*height;
                 for (int s=0; s<4; ++s){
-                        g_message ("mkplane -- idx s=%d",s);
+                        //g_message ("mkplane -- idx s=%d",s);
                         int num = s%2 ? i_width : i_height;
                         for (int l=0; l<num; ++l){
                                 int x = s%2==0 ? l : s==1 ? width-1:0;
@@ -765,7 +765,7 @@ void Surf3d::make_plane_vbo (int width, int height, glf::vertex_v1i** indices, g
                                 int p2 = pb0+l;
                                 int p3 = p2+1;
                                 int p4 = p1+(s%2==0 ? 1:num);
-                                g_message ("mkplane idx -- x=%d y=%d  p: %d %d %d %d",x,y, p1,p2,p3,p4);
+                                //g_message ("mkplane idx -- x=%d y=%d  p: %d %d %d %d",x,y, p1,p2,p3,p4);
                                 (*indices)[ii++].indices.x = p1;
                                 (*indices)[ii++].indices.x = p2;
                                 (*indices)[ii++].indices.x = p3;
@@ -782,16 +782,28 @@ void Surf3d::make_plane_vbo (int width, int height, glf::vertex_v1i** indices, g
                 (*indices)[ii++].indices.x = pbf;
         }
         g_message ("mkplane -- Indices Count=%d of %d", ii, nindices);
-        g_message ("mkplane -- done");
+        //g_message ("mkplane -- done");
 }
 
 void inline Surf3d::PutPointMode(int k, int j, int vi){
 	int i;
 	GLfloat val;
-
+        
 	i = (k/QuenchFac) + (j/QuenchFac)*XPM_x + XPM_x*XPM_y*vi;
 	if (i >= (int)size) return;
 
+        // check for zero range
+        if (! (scan->mem2d->data->zrange > 0.)){
+                surface_normal_z_buffer[i].x=surface_normal_z_buffer[i].y=0.; surface_normal_z_buffer[i].z=1.;
+                surface_normal_z_buffer[i].w=0.;
+                surface_color_buffer[i].x = surface_normal_z_buffer[i].w;
+                surface_color_buffer[i].y = surface_normal_z_buffer[i].w;
+                surface_color_buffer[i].z = surface_normal_z_buffer[i].w;
+                surface_color_buffer[i].w = 1.;
+                return;
+        }
+
+        
 	// mem2d:: inline void GetDataPkt_vec_normal_4F(int x, int y, int v, float *vec4){ 
 	// mem2d:: inline void GetDataPktVModeInterpol_vec_normal_4F(double x, double y, double v, float *vec4){ 
 
@@ -801,6 +813,7 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 
         //scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F ((double)k,(double)j,(double)vi, &surface_normal_z_buffer[i]);
 	//scan->mem2d->GetDataPktVMode_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], 1./MAXCOLOR);
+
 	scan->mem2d->GetDataPkt_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], 1.0, XPM_x*GLv_data.hskl/scan->mem2d->data->zrange);
 
         if(0){
@@ -808,11 +821,13 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
                         surface_normal_z_buffer[i].w = -1.;
         }
         
+        // shift Norm to 0 .. 1
         surface_normal_z_buffer[i].x *= 0.5; surface_normal_z_buffer[i].x += 0.5;
         surface_normal_z_buffer[i].y *= 0.5; surface_normal_z_buffer[i].x += 0.5;
         surface_normal_z_buffer[i].z *= 0.5; surface_normal_z_buffer[i].x += 0.5;
-        surface_normal_z_buffer[i].w -= scan->mem2d->data->zmin; ///= scan->mem2d->GetDataRange ();
-        surface_normal_z_buffer[i].w /= scan->mem2d->data->zrange; ///= scan->mem2d->GetDataRange ();
+        // normalize Z to 0 .. 1
+        surface_normal_z_buffer[i].w -= scan->mem2d->data->zmin;
+        surface_normal_z_buffer[i].w /= scan->mem2d->data->zrange;
 
         
 	if (GLv_data.ColorSrc[0] != 'U'){
