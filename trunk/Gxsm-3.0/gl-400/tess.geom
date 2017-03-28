@@ -12,14 +12,18 @@ uniform sampler2D diffuse;
 uniform float height_scale;
 uniform float height_offset;
 
-in block
-{
-	vec4 Color;
+in block {
+        vec3 Vertex;
+        vec3 VertexEye;
+        vec3 Normal;
+        vec4 Color;
 } In[];
 
-out block
-{
-	vec4 Color;
+out block {
+        vec3 Vertex;
+        vec3 VertexEye;
+        vec3 Normal;
+        vec4 Color;
 } Out;
 
 void main()
@@ -27,9 +31,8 @@ void main()
 	for(int i = 0; i < gl_in.length(); ++i)
 	{
 		gl_Position = gl_in[i].gl_Position;
-                vec2 terraincoord = gl_Position.xy+vec2(0.5,0.5);
-		gl_Position.z = (texture(terrain, terraincoord).a) * height_scale + height_offset;
-		//Out.Color = texture(diffuse, terraincoord);
+		Out.Vertex = In[i].Vertex;
+		Out.Normal = In[i].Normal;
 		Out.Color = In[i].Color;
 		EmitVertex();
 	}
