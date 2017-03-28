@@ -47,11 +47,11 @@ void main()
 	vec4 b = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, u);
 	vec4 position = mix(a, b, v);
 	vec2 terraincoord = position.xy+vec2(0.5,0.5);
-	float height = texture(terrain, terraincoord).a * height_scale + height_offset;
+	float height = (texture(terrain, terraincoord).a-0.5) * height_scale + height_offset;
 
         Out.Vertex    = vec3(position.xy, height);
         Out.VertexEye = vec3(ModelView * vec4(position.xy, height, 1));  // eye space
-        Out.Normal    = texture(terrain, terraincoord).xyz-vec3(0.5,0.5,0.5);
+        Out.Normal    = texture(terrain, terraincoord).xyz-vec3(0.5,0.5,0.5); // "unpack"
 	Out.Color     = texture(diffuse, terraincoord);
 	//Out.Color = interpolate(In[0].Color, In[1].Color, In[2].Color, In[3].Color);
         
