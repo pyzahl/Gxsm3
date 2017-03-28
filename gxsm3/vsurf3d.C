@@ -150,6 +150,15 @@ namespace
         GLint Uniform_lightDirWorld(0); // vec3
         GLint Uniform_eyePosWorld(0);   // vec3
 
+        GLint Uniform_sunColor(0); // = vec3(1.0, 1.0, 0.7);
+        GLint Uniform_lightColor(0); // = vec3(1.0, 1.0, 0.7)*1.5;
+        GLint Uniform_fogColor(0); // = vec3(0.7, 0.8, 1.0)*0.7;
+
+        GLint Uniform_fogExp(0); // = 0.1;
+
+        GLint Uniform_shininess(0); // = 100.0;
+        GLint Uniform_ambientColor(0); // = vec3(0.05, 0.05, 0.15 );
+        GLint Uniform_wrap(0); // = 0.3;
 
 }//namespace
 
@@ -259,6 +268,15 @@ private:
                         Uniform_ModelView     = glGetUniformLocation(ProgramName, "ModelView"); // mat4 -- projection
                         Uniform_lightDirWorld = glGetUniformLocation(ProgramName, "lightDirWorld"); // vec3
                         Uniform_eyePosWorld   = glGetUniformLocation(ProgramName, "eyePosWorld"); // vec3
+                        Uniform_sunColor      = glGetUniformLocation(ProgramName, "sunColor"); // = vec3(1.0, 1.0, 0.7);
+                        Uniform_lightColor    = glGetUniformLocation(ProgramName, "lightColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
+                        Uniform_fogColor      = glGetUniformLocation(ProgramName, "fogColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
+
+                        Uniform_fogExp        = glGetUniformLocation(ProgramName, "fogExp"); // = 0.1;
+
+                        Uniform_shininess     = glGetUniformLocation(ProgramName, "shininess"); // = 100.0;
+                        Uniform_ambientColor  = glGetUniformLocation(ProgramName, "ambientColor"); // = vec3(0.05, 0.05, 0.15 );
+                        Uniform_wrap          = glGetUniformLocation(ProgramName, "wrap"); // = 0.3;
 
                         Uniform_height_scale  = glGetUniformLocation(ProgramName, "height_scale");  // float
                         Uniform_height_offset = glGetUniformLocation(ProgramName, "height_offset");  // float
@@ -457,10 +475,12 @@ public:
                 if (s->GLv_data.Smooth)
                         ; //glEnable (GL_LINE_SMOOTH);
 
+                glEnable (GL_DEPTH_TEST);
+
                 // https://glm.g-truc.net/0.9.4/api/a00151.html
                 float aspect = WindowSize.x/WindowSize.y;
                 // GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f
-                glm::mat4 Projection = glm::perspective(glm::radians (s->GLv_data.fov), aspect, s->GLv_data.Znear, s->GLv_data.Zfar);
+                glm::mat4 Projection = glm::perspective(glm::radians (s->GLv_data.fov/57.3f), aspect, s->GLv_data.Znear, s->GLv_data.Zfar);
 		glm::mat4 Model = glm::mat4(1.0f);
 		glm::mat4 ModelViewProjection = Projection * this->view() * Model;
 		glm::mat4 ModelView = this->view() * Model;
@@ -474,14 +494,27 @@ public:
                 glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
 
 		glUseProgram (ProgramName);
+                // Projection
                 glUniformMatrix4fv (Uniform_ModelViewProjection, 1, GL_FALSE, &ModelViewProjection[0][0]);
                 glUniformMatrix4fv (Uniform_ModelView, 1, GL_FALSE, &ModelView[0][0]);
                 glm::vec3 eye = cameraPosition(); // eye / camera
-                glm::vec3 sun = glm::vec3(1.0f,0.0f,-3.0f); // sun light direction world
-                glUniform3fv (Uniform_lightDirWorld, 1, &sun.x);
-                glUniform3fv (Uniform_eyePosWorld, 1, &eye.x);
+                //glm::vec3 sun = glm::vec3(1.0f,0.0f,-3.0f); // sun light direction world
+                glUniform3fv (Uniform_lightDirWorld, 1, &s->GLv_data.light_position[0][0]);
+                glUniform3fv (Uniform_eyePosWorld, 1, &eye.x); //s->GLv_data.light_position[1][0]);
 
-                
+                // Light
+                glm::vec3 light_color = 1.5f*glm::vec3(s->GLv_data.surf_mat_color[0], s->GLv_data.surf_mat_color[1], s->GLv_data.surf_mat_color[2]);
+                glUniform3fv (Uniform_sunColor, 1, &s->GLv_data.light_specular[0][0]); // = vec3(1.0, 1.0, 0.7);
+                glUniform3fv (Uniform_lightColor, 1, &light_color.x); // = vec3(1.0, 1.0, 0.7)*1.5;
+                glUniform3fv (Uniform_fogColor, 1, &s->GLv_data.fog_color[0]); // = vec3(0.7, 0.8, 1.0)*0.7;
+
+                glUniform1f  (Uniform_fogExp, s->GLv_data.fog_density); // = 0.1;
+
+                glUniform1f  (Uniform_shininess, s->GLv_data.surf_mat_shininess[0]/100.); // = 100.0;
+                glUniform3fv (Uniform_ambientColor, 1, &s->GLv_data.light_global_ambient[0]); // = vec3(0.05, 0.05, 0.15 );
+                glUniform1f  (Uniform_wrap, 0.3); //&s->GLv_data.xxx); // = 0.3;
+
+                // Geometry control
                 glUniform1f (Uniform_height_scale, s->GLv_data.hskl);
                 glUniform1f (Uniform_height_offset, s->GLv_data.slice_offset);
                 glUniform1f (Uniform_lod_factor, 4.0);
@@ -545,8 +578,8 @@ public:
         };
         void set_rotation (float *wxyz){
                 float dr = M_PI/180.;
-                Rotation3axis = glm::vec3(wxyz[0]*dr, wxyz[1]*dr, wxyz[2]*dr);
-                RotationOrigin = glm::vec2(wxyz[0]*dr, wxyz[1]*dr);
+                Rotation3axis = glm::vec3(wxyz[0]*dr, -wxyz[1]*dr, wxyz[2]*dr);
+                RotationOrigin = glm::vec2(wxyz[0]*dr, -wxyz[1]*dr);
                 cursorPositionCallback('x',0,0);
                 //g_message ("Rx %f Ry %f", RotationOrigin.x,RotationOrigin.y);
         };
@@ -768,11 +801,13 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 
         //scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F ((double)k,(double)j,(double)vi, &surface_normal_z_buffer[i]);
 	//scan->mem2d->GetDataPktVMode_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], 1./MAXCOLOR);
-	scan->mem2d->GetDataPkt_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i]);
+	scan->mem2d->GetDataPkt_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], 1.0, XPM_x*GLv_data.hskl/scan->mem2d->data->zrange);
 
-        if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1)
-                surface_normal_z_buffer[i].w = -1.;
-
+        if(0){
+                if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1)
+                        surface_normal_z_buffer[i].w = -1.;
+        }
+        
         surface_normal_z_buffer[i].x *= 0.5; surface_normal_z_buffer[i].x += 0.5;
         surface_normal_z_buffer[i].y *= 0.5; surface_normal_z_buffer[i].x += 0.5;
         surface_normal_z_buffer[i].z *= 0.5; surface_normal_z_buffer[i].x += 0.5;
@@ -1233,11 +1268,12 @@ int Surf3d::update(int y1, int y2){
 
 	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::update data");
 //	int v = scan->mem2d->GetLayer();
-	for(int v=0; v<scan->mem2d->GetNv(); ++v)
+	for(int v=0; v<scan->mem2d->GetNv(); ++v){
+                scan->mem2d->data->update_ranges (v);
 		for(int j=y1; j < y2; j += QuenchFac)
 			for(int k=0; k < scan->mem2d->GetNx (); k+=QuenchFac)
 				PutPointMode (k,j,v);
-	
+	}
 
         if (v3dcontrol)
                 v3dcontrol->rerender_scene ();
