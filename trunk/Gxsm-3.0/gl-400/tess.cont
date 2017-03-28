@@ -25,8 +25,27 @@ out block
         vec4 Color;
 } Out[];
 
-/*
-    
+#if 1
+
+// simple fixed tesseleation level
+void main()
+{	
+	gl_TessLevelInner[0] = tess_level;
+	gl_TessLevelInner[1] = tess_level;
+	gl_TessLevelOuter[0] = tess_level;
+	gl_TessLevelOuter[1] = tess_level;
+	gl_TessLevelOuter[2] = tess_level;
+	gl_TessLevelOuter[3] = tess_level;
+	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+	Out[gl_InvocationID].Vertex = In[gl_InvocationID].Vertex;
+	Out[gl_InvocationID].Normal = In[gl_InvocationID].Normal;
+	Out[gl_InvocationID].Color = In[gl_InvocationID].Color;
+}
+
+#else
+
+
+// automatic tesselation level determination
 bool offscreen(vec4 vertex){
         if(vertex.z < -0.5){
                 return true;
@@ -88,19 +107,4 @@ void main(){
         gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 }
 
-*/
-
-void main()
-{	
-	gl_TessLevelInner[0] = tess_level;
-	gl_TessLevelInner[1] = tess_level;
-	gl_TessLevelOuter[0] = tess_level;
-	gl_TessLevelOuter[1] = tess_level;
-	gl_TessLevelOuter[2] = tess_level;
-	gl_TessLevelOuter[3] = tess_level;
-	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-	Out[gl_InvocationID].Vertex = In[gl_InvocationID].Vertex;
-	Out[gl_InvocationID].Normal = In[gl_InvocationID].Normal;
-	Out[gl_InvocationID].Color = In[gl_InvocationID].Color;
-}
-
+#endif
