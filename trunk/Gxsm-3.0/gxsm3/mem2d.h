@@ -246,15 +246,15 @@ public:
 	inline double GetDataPkt(int x, int y, int v){ 
 		return data->Z(x,y,v); 
 	};
-        inline void GetDataPkt_vec_normal_4F(int x, int y, int v, glm::vec4 *v4, double zs=1.){ 
+        inline void GetDataPkt_vec_normal_4F(int x, int y, int v, glm::vec4 *v4, double zs=1.0, double nzs=1.0){ 
                 // calculate average normal at x,y (v) vector vec4[0..2] and z at point in vec4[3]
                 if (GetNx() < 4) return;
                 if (x<1){ x=1; } if (x>=GetNx()-2) x=GetNx()-2;
                 if (y<1){ y=1; } if (y>=GetNy()-2) y=GetNy()-2;
                 double dxdz = data->Z(x+1,y,v) - data->Z(x-1,y,v);
                 double dydz = data->Z(x,y+1,v) - data->Z(x,y-1,v);
-                dxdz *= zs;
-                dydz *= zs;
+                dxdz *= nzs;
+                dydz *= nzs;
                 // simplified cross product of vector from p(x-1,y,z) to p (x+1,y,z) X vector from p(x,y-1,z) to p(x,y+1,z) is:
                 v4->x = dxdz;
                 v4->y = -dydz;
@@ -265,15 +265,15 @@ public:
                 v4->y /= d;
                 v4->z /= d;
         };
-	inline void GetDataPktVMode_vec_normal_4F(int x, int y, int v, glm::vec4 *v4, double zs=1.){ 
+	inline void GetDataPktVMode_vec_normal_4F(int x, int y, int v, glm::vec4 *v4, double zs=1., double nzs=1.0){ 
                 if (GetNx() < 4) return;
                 if (x<1){ x=1; } if (x>=GetNx()-2) x=GetNx()-2;
                 if (y<1){ y=1; } if (y>=GetNy()-2) y=GetNy()-2;
                 // calculate average normal at x,y (v) vector vec4[0..2] and z at point in vec4[3]
                 double dxdz = GetDataVMode (x+1,y,v) - GetDataVMode (x-1,y,v);
                 double dydz = GetDataVMode (x,y+1,v) - GetDataVMode (x,y-1,v);
-                dxdz *= zs;
-                dydz *= zs;
+                dxdz *= nzs;
+                dydz *= nzs;
                 // simplified cross product of vector from p(x-1,y,z) to p (x+1,y,z) X vector from p(x,y-1,z) to p(x,y+1,z) is:
                 v4->x = dxdz;
                 v4->y = -dydz;
@@ -284,12 +284,12 @@ public:
                 v4->y /= d;
                 v4->z /= d;
 	};
-	inline void GetDataPktVModeInterpol_vec_normal_4F(double x, double y, double v, glm::vec4 *v4, double zs=1.){ 
+	inline void GetDataPktVModeInterpol_vec_normal_4F(double x, double y, double v, glm::vec4 *v4, double zs=1., double nzs=1.0){ 
                 // calculate average normal at x,y (v) vector vec4[0..2] and z at point in vec4[3]
                 double dxdz = GetDataVModeInterpol (x+1,y,v) - GetDataVModeInterpol (x-1,y,v);
                 double dydz = GetDataVModeInterpol (x,y+1,v) - GetDataVModeInterpol (x,y-1,v);
-                dxdz *= zs;
-                dydz *= zs;
+                dxdz *= nzs;
+                dydz *= nzs;
                 v4->x = dxdz;
                 v4->y = -dydz;
                 v4->z = 2.;
