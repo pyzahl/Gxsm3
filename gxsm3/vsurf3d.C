@@ -1748,7 +1748,7 @@ void realize_vsurf3d_cb (GtkGLArea *area, Surf3d *s){
 	if (! s->gl_tess->begin()){
                 gchar *message = g_strdup_printf
                         ("FAILURE GL-TESS BEGIN/INIT failed:\n"
-                         " --> GL VERSION requirements for GL 4.X not satified?\n"
+                         " --> GL VERSION requirements for GL 4.0 not satified?\n"
                          " --> GL GLSL program code not found/installed?");
 
                 g_critical (message);
