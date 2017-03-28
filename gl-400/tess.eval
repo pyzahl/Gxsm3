@@ -1,5 +1,5 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-#version 400 core
+#version 440 core
 
 precision highp float;
 precision highp int;
@@ -11,19 +11,20 @@ in block
 	vec4 Color;
 } In[];
 
-out block
-{
-	vec4 Color;
+out vblock {
+        vec4 color;
+        vec3 vertex;
+        vec3 vertexEye;
+        vec3 normal;
 } Out;
 
-out vec2 terraincoord;
-out float depth;
 
 uniform sampler2D terrain;
 uniform sampler2D diffuse;
 uniform float height_scale;
 uniform float height_offset;
-uniform mat4 mvp;
+uniform mat4 ModelView;
+uniform mat4 ModelViewProjection;
 				  
 
 vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
@@ -42,10 +43,14 @@ void main()
 	vec4 a = mix(gl_in[1].gl_Position, gl_in[0].gl_Position, u);
 	vec4 b = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, u);
 	vec4 position = mix(a, b, v);
-	terraincoord = position.xy+vec2(0.5,0.5);
+	vec2 terraincoord = position.xy+vec2(0.5,0.5);
 	float height = texture(terrain, terraincoord).a * height_scale + height_offset;
-	gl_Position = mvp * vec4(position.xy, height, 1.0);
-	depth = gl_Position.z;
+
+        Out.vertex    = vec3(position.xy, height);
+        Out.vertexEye = vec3(ModelView * vec4(position.xy, height, 1));  // eye space
+        Out.normal    = texture(terrain, terraincoord).xyz-vec3(0.5,0.5,0.5);
+	Out.color     = texture(diffuse, terraincoord);
 	//Out.Color = interpolate(In[0].Color, In[1].Color, In[2].Color, In[3].Color);
-	Out.Color = texture(diffuse, terraincoord);
+        
+	gl_Position = ModelViewProjection * vec4(position.xy, height, 1.0);
 }

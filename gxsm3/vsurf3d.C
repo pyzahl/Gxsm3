@@ -60,6 +60,7 @@
 #include "ogl_framework.hpp"
 
 #define GL_DEBUG_L2 0
+#define GL_DEBUG_L3 1
 
 // ------------------------------------------------------------
 // gschema creator for from internal recources
@@ -79,7 +80,7 @@ void surf3d_write_schema (){
 	gnome_res_destroy (gl_pref);
 }
 
-// #define __GXSM_PY_DEVEL
+#define __GXSM_PY_DEVEL
 
 // ------------------------------------------------------------
 // glsl data and code locations
@@ -137,8 +138,13 @@ namespace
         GLsizei const TextureCount(2);
 	GLuint TextureName[2];
         
-        // projection
-	GLint UniformMVP(0); // mat4
+        // Model View and Projection
+	GLint Uniform_ModelViewProjection(0); // mat4
+	GLint Uniform_ModelView(0); // mat4
+
+        // Lightening
+        GLint Uniform_lightDirWorld(0); // vec3
+        GLint Uniform_eyePosWorld(0);   // vec3
 
 
 }//namespace
@@ -245,7 +251,11 @@ private:
 		}
 
 		if(Validated){
-                        UniformMVP = glGetUniformLocation(ProgramName, "mvp"); // mat4 -- projection
+                        Uniform_ModelViewProjection = glGetUniformLocation(ProgramName, "ModelViewProjection"); // mat4 -- projection
+                        Uniform_ModelView     = glGetUniformLocation(ProgramName, "ModelView"); // mat4 -- projection
+                        Uniform_lightDirWorld = glGetUniformLocation(ProgramName, "lightDirWorld"); // vec3
+                        Uniform_eyePosWorld   = glGetUniformLocation(ProgramName, "eyePosWorld"); // vec3
+
                         Uniform_height_scale  = glGetUniformLocation(ProgramName, "height_scale");  // float
                         Uniform_height_offset = glGetUniformLocation(ProgramName, "height_offset");  // float
                         Uniform_screen_size   = glGetUniformLocation(ProgramName, "screen_size"); // vec2
@@ -414,12 +424,13 @@ public:
 
 	bool end() {
 		if (!Validated) return false;
+                Validated = false;
 
                 /* we need to ensure that the GdkGLContext is set before calling GL API */
                 gtk_gl_area_make_current (glarea);
 
                 glDeleteVertexArrays(1, &VertexArrayName);
-                glDeleteBuffers(1, &BufferObjectName[0]);
+                glDeleteBuffers(1, &BufferObjectName[semantic::indices::INDICES]);
                 //glDeleteBuffers(2, &BufferObjectName[1]);
                 //glDeleteBuffers(3, &BufferObjectName[2]);
                 glDeleteTextures(TextureCount, TextureName);
@@ -447,7 +458,8 @@ public:
                 // GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f
                 glm::mat4 Projection = glm::perspective(glm::radians (s->GLv_data.fov), aspect, s->GLv_data.Znear, s->GLv_data.Zfar);
 		glm::mat4 Model = glm::mat4(1.0f);
-		glm::mat4 MVP = Projection * this->view() * Model;
+		glm::mat4 ModelViewProjection = Projection * this->view() * Model;
+		glm::mat4 ModelView = this->view() * Model;
 
                 /* clear the viewport; the viewport is automatically resized when
                  * the GtkGLArea gets a new size allocation
@@ -458,7 +470,14 @@ public:
                 glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
 
 		glUseProgram (ProgramName);
-                glUniformMatrix4fv (UniformMVP, 1, GL_FALSE, &MVP[0][0]);
+                glUniformMatrix4fv (Uniform_ModelViewProjection, 1, GL_FALSE, &ModelViewProjection[0][0]);
+                glUniformMatrix4fv (Uniform_ModelView, 1, GL_FALSE, &ModelView[0][0]);
+                glm::vec3 eye = cameraPosition(); // eye / camera
+                glm::vec3 sun = glm::vec3(1.0f,0.0f,-3.0f); // sun light direction world
+                glUniform3fv (Uniform_lightDirWorld, 1, &sun.x);
+                glUniform3fv (Uniform_eyePosWorld, 1, &eye.x);
+
+                
                 glUniform1f (Uniform_height_scale, s->GLv_data.hskl);
                 glUniform1f (Uniform_height_offset, s->GLv_data.slice_offset);
                 glUniform1f (Uniform_lod_factor, 4.0);
@@ -749,7 +768,10 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 
         if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1)
                 surface_normal_z_buffer[i].w = -1.;
-        
+
+        surface_normal_z_buffer[i].x *= 0.5; surface_normal_z_buffer[i].x += 0.5;
+        surface_normal_z_buffer[i].y *= 0.5; surface_normal_z_buffer[i].x += 0.5;
+        surface_normal_z_buffer[i].z *= 0.5; surface_normal_z_buffer[i].x += 0.5;
         surface_normal_z_buffer[i].w -= scan->mem2d->data->zmin; ///= scan->mem2d->GetDataRange ();
         surface_normal_z_buffer[i].w /= scan->mem2d->data->zrange; ///= scan->mem2d->GetDataRange ();
 
@@ -909,14 +931,16 @@ void Surf3d::GLupdate (void* data){
 
 void Surf3d::set_gl_data (){
         if (gl_tess){
+                XSM_DEBUG (GL_DEBUG_L2, "Surf3d::set_gl_data." << std::flush);
                 delete_surface_buffer ();
                 create_surface_buffer ();
                 gl_tess->set_surface_data (surface_normal_z_buffer, surface_color_buffer, XPM_x, XPM_y, XPM_v);
+                XSM_DEBUG (GL_DEBUG_L2, "Surf3d::set_gl_data OK." << std::flush);
         }
 }
 
 void Surf3d::create_surface_buffer(){ 
-	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::create_surface_buffer");
+	XSM_DEBUG (GL_DEBUG_L2, "Surf3d::create_surface_buffer");
 
 	QuenchFac = 1; //1 + (int) ((double) scan->mem2d->GetNx () / (double) scrwidth * 4. * GLv_data.preV);
 
@@ -935,13 +959,16 @@ void Surf3d::create_surface_buffer(){
 
 	size = XPM_x * XPM_y * XPM_v;
 
-        //g_message ("QF=%d size = %d, %d, %d", QuenchFac,  XPM_x, XPM_y, XPM_v);
+	XSM_DEBUG_GP (GL_DEBUG_L3, "Surf3d::create_surface_buffer  ** QF=%d size = %d, %d, %d\n", QuenchFac,  XPM_x, XPM_y, XPM_v);
         
 	surface_normal_z_buffer = g_new (glm::vec4, size * sizeof(glm::vec4));
 	surface_color_buffer    = g_new (glm::vec4, size * sizeof(glm::vec4));
 
+	XSM_DEBUG (GL_DEBUG_L3, "Surf3d::create_surface_buffer  ** g_new completed");
+
 	setup_data_transformation();
 
+	XSM_DEBUG (GL_DEBUG_L3, "Surf3d::create_surface_buffer  ** computing surface and normals");
         // grab and prepare data buffers
         for(int v=0; v<scan->mem2d->GetNv(); ++v){
                 scan->mem2d->data->update_ranges (v);
@@ -949,6 +976,7 @@ void Surf3d::create_surface_buffer(){
 			for(int k=0; k<scan->mem2d->GetNx(); k+=QuenchFac)
 				PutPointMode (k,j,v);
         }
+	XSM_DEBUG (GL_DEBUG_L3, "Surf3d::create_surface_buffer  ** completed");
 #if 0
         // dump to file
         gchar *fn = g_strdup_printf("gxsm_normal_z_%dx%d.terrain", XPM_x, XPM_y);
@@ -966,16 +994,19 @@ void Surf3d::create_surface_buffer(){
 }
 
 void Surf3d::delete_surface_buffer(){ 
-	XSM_DEBUG (GL_DEBUG_L2, "SURF3D::delete_surface_buffer");
+	XSM_DEBUG (GL_DEBUG_L2, "SURF3D::delete_surface_buffer -- check for cleanup");
 
-	if (surface_normal_z_buffer)
+	if (surface_normal_z_buffer){
+                XSM_DEBUG (GL_DEBUG_L2, "SURF3D::delete_surface_buffer -- g_free: normal_z_buffer");
 		g_free (surface_normal_z_buffer);
-        surface_normal_z_buffer = NULL;
+                surface_normal_z_buffer = NULL;
+        }
 
-	if (surface_color_buffer)
+	if (surface_color_buffer){
+                XSM_DEBUG (GL_DEBUG_L2, "SURF3D::delete_surface_buffer -- g_free: color_buffer");
 		g_free (surface_color_buffer);
-        surface_color_buffer = NULL;
-
+                surface_color_buffer = NULL;
+        }
 	size = 0;
 }
 
@@ -1677,7 +1708,7 @@ void realize_vsurf3d_cb (GtkGLArea *area, Surf3d *s){
 	if (! s->gl_tess->begin()){
                 gchar *message = g_strdup_printf
                         ("FAILURE GL-TESS BEGIN/INIT failed:\n"
-                         " --> GL VERSION requirements for GL 4.0 not satified?\n"
+                         " --> GL VERSION requirements for GL 4.X not satified?\n"
                          " --> GL GLSL program code not found/installed?");
 
                 g_critical (message);
@@ -1687,36 +1718,7 @@ void realize_vsurf3d_cb (GtkGLArea *area, Surf3d *s){
                 delete s->gl_tess;
                 s->gl_tess = NULL;
         }
-
-        
-#if 0
-        g_message ("realize_vsurf3d_event_cb ********************** glew init");
-        // https://open.gl/context
-        glewExperimental = GL_TRUE;
-        glewInit();
-        //Make sure that you've set up your project correctly by calling the glGenBuffers function, which was loaded by GLEW for you!
-
-        // You can also use gtk_gl_area_set_error() in order
-        // to show eventual initialization errors on the
-        // GtkGLArea widget itself
-        GError *internal_error = NULL;
-        g_message ("realize_vsurf3d_event_cb ********************** init_buffer_objects");
-        s->init_buffer_objects (&internal_error);
-        if (internal_error != NULL){
-                gtk_gl_area_set_error (area, internal_error);
-                g_error_free (internal_error);
-                return;
-        }
-
-        g_message ("realize_vsurf3d_event_cb ********************** init_shaders");
-        s->init_shaders (&internal_error);
-        if (internal_error != NULL){
-                gtk_gl_area_set_error (area, internal_error);
-                g_error_free (internal_error);
-                return;
-        }
-        g_message ("realize_vsurf3d_event_cb ---------------------.");
-#endif
+        XSM_DEBUG (GL_DEBUG_L2, "GL:::REALIZE-EVENT  (realize_vsurf3d_cb) completed.");
 }
 
 
