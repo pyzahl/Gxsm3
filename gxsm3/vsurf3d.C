@@ -113,11 +113,11 @@ std::string getBinaryDirectory()
 // ------------------------------------------------------------
 namespace
 {
-	std::string const SAMPLE_VERTEX_SHADER("tess.vert");
-	std::string const SAMPLE_CONTROL_SHADER("tess.cont");
-	std::string const SAMPLE_EVALUATION_SHADER("tess.eval");
-	std::string const SAMPLE_GEOMETRY_SHADER("tess.geom");
-	std::string const SAMPLE_FRAGMENT_SHADER("tess.frag");
+	std::string const SAMPLE_VERTEX_SHADER("tess-vertex.glsl");
+	std::string const SAMPLE_CONTROL_SHADER("tess-control.glsl");
+	std::string const SAMPLE_EVALUATION_SHADER("tess-evaluation.glsl");
+	std::string const SAMPLE_GEOMETRY_SHADER("tess-geometry.glsl");
+	std::string const SAMPLE_FRAGMENT_SHADER("tess-fragment.glsl");
 
         GLuint const BaseGridW(16);
         GLuint const BaseGridH(16);
