@@ -109,6 +109,8 @@ public:
 
         virtual void color_mode(COLORMODE cm){ cmode = cm; };
 
+        Scan* get_scan() { return scan; };
+        
         int ZoomFac;
         int QuenchFac;
         COLORMODE cmode;
@@ -281,11 +283,6 @@ typedef struct{
 
 class gl_400_primitive_tessellation;
 
-namespace glf{ struct vertex_v1i; }
-namespace glf{ struct vertex_v4f; }
-namespace glf{ struct vertex_v3f; }
-namespace glf{ struct vertex_v3fn3fc4f; }
-
 class Surf3d  : public View{
 public:
         Surf3d();
@@ -299,7 +296,6 @@ public:
         virtual void ZoomOut(){};
         virtual void setup_data_transformation();
 
-        void make_plane_vbo (int width, int height, glf::vertex_v1i** index, glf::vertex_v3fn3fc4f** vertex, int option=0);
         gboolean GLdrawscene(GdkGLContext* context, int y_to_update=-1, int refresh_all=FALSE);
         static void GLupdate(void* data);
 
