@@ -8,6 +8,7 @@
 #include "sementics.hpp"
 #include "vertex.hpp"
 #include "buffer.hpp"
+#include "error.hpp"
 #include "caps.hpp"
 // #include "util.hpp"
 // #include "mesh.hpp"
