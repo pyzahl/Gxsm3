@@ -80,7 +80,7 @@ void surf3d_write_schema (){
 	gnome_res_destroy (gl_pref);
 }
 
-#define __GXSM_PY_DEVEL
+//#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
 //#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
 #define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
@@ -109,7 +109,6 @@ std::string getBinaryDirectory()
 #endif
 }
 
-
 // ------------------------------------------------------------
 // GL 4.0 required -- GL 3D support with GPU tesselation
 // ------------------------------------------------------------
@@ -122,10 +121,7 @@ namespace
 	std::string const SAMPLE_FRAGMENT_SHADER("tess-fragment.glsl");
 
 	GLuint ProgramName(0);
-	GLuint ArrayBufferName(0);
-	GLuint VertexArrayName(0);
 
-	GLuint BufferObjectName[3];
 	GLint Uniform_screen_size(0); // vec2
 	GLint Uniform_tess_level(0); // float
 	GLint Uniform_lod_factor(0); // float
@@ -152,38 +148,85 @@ namespace
         GLint Uniform_ambientColor(0); // = vec3(0.05, 0.05, 0.15 );
         GLint Uniform_wrap(0); // = 0.3;
 
-}//namespace
+} //namespace
 
 class base_plane{
 public:
         base_plane (Mem2d *m=NULL, int w=128, double aspect=1.0, int o=0){
+                Validated = true;
                 BaseGridW = w;
                 BaseGridH = w; // adjusted by make_plane_vbo using aspect
+                ArrayBufferName = 0;
+                VertexArrayName = 0;
 
                 make_plane_vbo (m, aspect, o);
 
+                Validated = init_buffer ();
+
+                Validated = init_vao ();
+        };
+        ~base_plane (){
+		if (Validated){
+                        g_free (indices);
+                        g_free (vertex);
+                        glDeleteVertexArrays(1, &VertexArrayName);
+                        glDeleteBuffers(1, &IndexBufferName);
+                        checkError("make_plane::~delete");
+                }
+        };
+        gboolean init_buffer (){
+                checkError("make_plane:: init_buffer");
+		if (!Validated) return false;
+
+                glGenBuffers(1, &ArrayBufferName);
+                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
                 glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_STATIC_DRAW);
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-                glGenBuffers(1, &BufferObjectName[semantic::indices::INDICES]);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::indices::INDICES]);
+                glGenBuffers(1, &IndexBufferName);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
                 glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndicesObjectSize, indices, GL_STATIC_DRAW);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-        }
-        ~base_plane (){
-                g_free (indices);
-                g_free (vertex);
-        }
-        void draw (){
+                return Validated && checkError("make_plane:: init_buffer");
+        };
+        gboolean init_vao (){
+                g_message ("base_plane init_vao");
+                checkError("make_plane::init_vao");
+		if (!Validated) return false;
+
+                // Build a vertex array object
+                glGenVertexArrays(1, &VertexArrayName);
                 glBindVertexArray(VertexArrayName);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferObjectName[semantic::indices::INDICES]);
+
+                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
+                glVertexAttribPointer(semantic::attr::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(0));
+                glVertexAttribPointer(semantic::attr::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(sizeof(glm::vec3)));
+                glVertexAttribPointer(semantic::attr::COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(2*sizeof(glm::vec3)));
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+                glEnableVertexAttribArray(semantic::attr::POSITION);
+                glEnableVertexAttribArray(semantic::attr::NORMAL);
+                glEnableVertexAttribArray(semantic::attr::COLOR);
+                glBindVertexArray(0);
+
+                g_message ("base_plane init_vao end");
+
+                return Validated && checkError("make_plane::init_vao");
+        };
+        gboolean draw (){
+		if (!Validated) return false;
+                
+                glBindVertexArray(VertexArrayName);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
                 glPatchParameteri(GL_PATCH_VERTICES, 4);
 
                 //if (s->GLv_data.TickFrameOptions[0]=='2' || s->GLv_data.TickFrameOptions[0]=='3') // surface with box
                 glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
                 //else
                 // glDrawElements(GL_PATCHES, IndicesCountSurface, GL_UNSIGNED_INT, 0); // surface only
+
+                return Validated && checkError("make_plane::draw");
         };
         
         // make plane with box
@@ -247,8 +290,6 @@ public:
 #endif
                 g_message ("mkplane -- Vertex Count=%d", offset);
         
-                //g_message ("mkplane -- vtx done.");
-
                 // Patch Indices
                 int i_width = BaseGridW-1;
                 int i_height = BaseGridH-1;
@@ -257,7 +298,6 @@ public:
                 IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
 
                 indices = g_new (glf::vertex_v1i, IndicesCount);
-                g_message ("mkplane -- idx alloc");
                 // surface patches
                 int ii=0;
                 for (int y=0; y<i_height; ++y){
@@ -305,14 +345,17 @@ public:
                 }
 #endif
                 g_message ("mkplane -- Indices Count=%d of %d", ii, IndicesCount);
-                //g_message ("mkplane -- done");
         };
 
 private:        
+        bool Validated;
         glf::vertex_v3fn3fc4f *vertex;
         glf::vertex_v1i *indices;
         GLuint BaseGridW;
         GLuint BaseGridH;
+	GLuint ArrayBufferName;
+	GLuint IndexBufferName;
+	GLuint VertexArrayName;
 	GLsizei VertexCount;
 	GLsizei IndicesCount;
         GLsizei IndicesCountSurface;
@@ -323,11 +366,10 @@ private:
 // ------------------------------------------------------------
 // core GL configuration management
 // ------------------------------------------------------------
-class gl_400_primitive_tessellation
-{
+class gl_400_primitive_tessellation{
 public:
         gl_400_primitive_tessellation (GtkGLArea *area, Surf3d *surf){
-		Validated = true;
+                Validated = true;
                 glarea = area;
                 s = surf;
                 Major=4;
@@ -348,6 +390,7 @@ public:
         };
 
 private:
+        
         glm::vec3 cameraPosition() const {
                 return glm::vec3(this->TranslationCurrent.x, -this->TranslationCurrent.y, -this->DistanceCurrent.y);
         };
@@ -360,38 +403,6 @@ private:
                 return View;
         };
 
-        bool checkError(const char* Title) const {
-                int Error;
-                g_message (Title);
-                if((Error = glGetError()) != GL_NO_ERROR)
-                        {
-                                std::string ErrorString;
-                                switch(Error)
-                                        {
-                                        case GL_INVALID_ENUM:
-                                                ErrorString = "GL_INVALID_ENUM";
-                                                break;
-                                        case GL_INVALID_VALUE:
-                                                ErrorString = "GL_INVALID_VALUE";
-                                                break;
-                                        case GL_INVALID_OPERATION:
-                                                ErrorString = "GL_INVALID_OPERATION";
-                                                break;
-                                        case GL_INVALID_FRAMEBUFFER_OPERATION:
-                                                ErrorString = "GL_INVALID_FRAMEBUFFER_OPERATION";
-                                                break;
-                                        case GL_OUT_OF_MEMORY:
-                                                ErrorString = "GL_OUT_OF_MEMORY";
-                                                break;
-                                        default:
-                                                ErrorString = "UNKNOWN";
-                                                break;
-                                        }
-                                g_error ("OpenGL Error(%s): %s\n", ErrorString.c_str(), Title);
-                                assert(0);
-                        }
-                return Error == GL_NO_ERROR;
-        };
 
 	bool initProgram() {
 		if (Validated){
@@ -439,44 +450,27 @@ private:
                         Uniform_screen_size   = glGetUniformLocation(ProgramName, "screen_size"); // vec2
                         Uniform_lod_factor    = glGetUniformLocation(ProgramName, "lod_factor");  // float
                         Uniform_tess_level    = glGetUniformLocation(ProgramName, "tess_level");  // float
-                        this->checkError("initProgram -- get uniform variable references...");
+                        checkError("initProgram -- get uniform variable references...");
 		}
 
                 if (Validated)
-                        return Validated && this->checkError("initProgram");
+                        return Validated && checkError("initProgram");
 
 		return Validated;
-	};
-
-	bool initVertexArray() {
-		if (!Validated) return false;
-
-                // Build a vertex array object
-                glGenVertexArrays(1, &VertexArrayName);
-                glBindVertexArray(VertexArrayName);
-                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                glVertexAttribPointer(semantic::attr::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(0));
-                glVertexAttribPointer(semantic::attr::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(sizeof(glm::vec3)));
-                glVertexAttribPointer(semantic::attr::COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(2*sizeof(glm::vec3)));
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-                glEnableVertexAttribArray(semantic::attr::POSITION);
-                glEnableVertexAttribArray(semantic::attr::NORMAL);
-                glEnableVertexAttribArray(semantic::attr::COLOR);
-
-                glBindVertexArray(0);
-
-                return this->checkError("initVertexArray");
 	};
 
 	bool initBuffer() {
 		if (!Validated) return false;
 
-                glGenBuffers(1, &ArrayBufferName);
-                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
                 surface_plane = new base_plane ((s->get_scan ())->mem2d, 32, (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx);
                 
-		return this->checkError("initBuffer");
+		return checkError("initBuffer");
+	};
+
+	bool initVertexArray() {
+		if (!Validated) return false;
+                // base_plane takes care of this itself
+                return checkError("initVertexArray");
 	};
 
 
@@ -511,7 +505,7 @@ private:
 
                 glBindTexture(GL_TEXTURE_2D, 0);
                 
-		return this->checkError("initTextures");
+		return checkError("initTextures");
         };
 
         static void GLMessageHandler (GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const GLvoid* userParam) { 
@@ -526,7 +520,7 @@ private:
                 glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
                 glDebugMessageCallbackARB ((GLDEBUGPROCARB)&GLMessageHandler, NULL);
 
-                return this->checkError("initDebugOutput");
+                return checkError("initDebugOutput");
         };
 
 public:
@@ -579,7 +573,7 @@ public:
                 //        Validated = initDebugOutput();
                 
                 if (Validated)
-                        return Validated && this->checkError("begin");
+                        return Validated && checkError("begin");
 
                 return Validated;
 	};
@@ -594,14 +588,10 @@ public:
                 if (surface_plane)
                         delete surface_plane;
                 
-                glDeleteVertexArrays(1, &VertexArrayName);
-                glDeleteBuffers(1, &BufferObjectName[semantic::indices::INDICES]);
-                //glDeleteBuffers(2, &BufferObjectName[1]);
-                //glDeleteBuffers(3, &BufferObjectName[2]);
                 glDeleteTextures(TextureCount, TextureName);
                 glDeleteProgram(ProgramName);
 
-		return this->checkError("end");
+		return checkError("end");
 	};
 
 	bool render() {
@@ -742,10 +732,10 @@ public:
         };
         
 private:
+        bool Validated;
         Surf3d *s;
         GtkGLArea *glarea;
         int Major, Minor; // minimal version needed
-        bool Validated;
 
         base_plane *surface_plane;
         
