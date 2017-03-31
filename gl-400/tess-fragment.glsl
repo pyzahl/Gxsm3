@@ -15,9 +15,10 @@ in block {
 
 out vec4 FragColor;
 
-uniform sampler2D diffuse;
-uniform sampler2D terrain;
-// uniform sampler2D noise_tile;
+//uniform sampler2D diffuse;
+//uniform sampler2D terrain;
+//uniform sampler2D noise_tile;
+uniform mat4 ModelViewProjection;
 
 uniform vec3 lightDirWorld;
 uniform vec3 eyePosWorld;
@@ -70,6 +71,16 @@ vec4 shadeTerrain(vec3 vertex,
                   vec4 color
                   )
 {
+# if 0
+        // Lambert's 
+        vec3 L = normalize(LightSource.position.xyz - vertexEye);   
+        vec4 Idiff = FrontLight.diffuse * max(dot(N,L), 0.0);  
+        Idiff = clamp(Idiff, 0.0, 1.0); 
+
+        return Idiff;
+#endif  
+#if 1
+        
         //const float shininess = 100.0;
         //const vec3 ambientColor = vec3(0.05, 0.05, 0.15 );
         //const float wrap = 0.3;
@@ -132,10 +143,9 @@ vec4 shadeTerrain(vec3 vertex,
         
         //return vec4(finalColor, 1.);
 
-        return specular*color;
+        return vec4(vec3(specular,normal.z,diffuse),1.0);
 
-        //return color;
-        //return vec4((specular+0.5)*sunColor*matColor, 1.); // digitalisch
+        //return vec4(specular*sunColor+diffuse*lightColor, 1.); // digitalisch
         //return vec4(ambientColor*matColor, 1.); // digitalisch
         //return vec4(diffuse*matColor*lightColor, 1.); // digitalisch
         //return vec4(vec3(height)*0.5+0.5, 1.);
@@ -154,6 +164,7 @@ vec4 shadeTerrain(vec3 vertex,
         //return vec4(occ);
         //return vec4(sun)*sunColor;
         //return noise2*0.5+0.5;
+#endif
 }
 
 void main()

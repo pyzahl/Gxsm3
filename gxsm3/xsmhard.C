@@ -245,7 +245,7 @@ void XSM_Hardware::ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_S
 				x = i*Dx*xdir + rx;
 				y = j*Dx + ry;
 				Transform(&x, &y);
-				Line.PutDataPkt(Simulate(x,y), i, 0);
+				Line.PutDataPkt(Simulate(x,y,muxmode), i, 0);
 			}
 
 			CallIdleFunc ();
@@ -261,7 +261,7 @@ void XSM_Hardware::ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_S
 			x = i*Dx*xdir + rx;
 			y = ry;
 			Transform(&x, &y);
-			Line.PutDataPkt(Simulate(x,y), i, 0);
+			Line.PutDataPkt(Simulate(x,y,muxmode), i, 0);
 		}
 
 		CallIdleFunc ();
@@ -320,19 +320,26 @@ double Islands(double x, double y){
         return h/(M_PI/2.);
 }
 
+double hexgrid_smooth(double *xy){
+        double a0 = 2.5;
+        double r[2];
+        double r2=sqrt(2.);
+        r[0]=xy[0]/a0*2*M_PI;
+        r[1]=xy[1]/a0*2*M_PI;
+        return sin (r[0])*cos(r[1]);
+        //return sin (r[0]+sin(r[1]*r2))*cos(r[1]+cos(r[0]*r2));
+        //return sin (r[0]+r2*sin(r[1]))*cos(r[1]+r2*cos(r[0]));
+}
+
 // Dummy Bild
-double XSM_Hardware::Simulate(double x, double y){
-        static double drift=0.;
-        //  static double dir=0.000003;
-        //  static double creep=0.;
-
-	sim_xyzS[0] = x;
-	sim_xyzS[1] = y;
-
-        x/=32767./10;
-        y/=32767./10; // jetzt x,y in Volt am DA
+double XSM_Hardware::Simulate(double x, double y, int muxmode){
+        // to Angstroem
+	sim_xyzS[0] = gapp->xsm->Inst->XResolution()*x;
+	sim_xyzS[1] = gapp->xsm->Inst->XResolution()*y;
 
         if(IS_SPALEED_CTRL){
+                x/=32767./10;
+                y/=32767./10; // jetzt x,y in Volt am DA
                 sim_xyzS[2] = Lorenz(x,y)+Gaus(x,y)
                         + Lorenz(x+1.0,y+.5)+Lorenz(x-1.0,y-.5)
                         + Lorenz(x+1.0,y-.5)+Lorenz(x-1.0,y+.5)
@@ -346,12 +353,11 @@ double XSM_Hardware::Simulate(double x, double y){
                         + Lorenz(x,y+5.0)+Gaus(x,y+5.0) 
                         + Ground() ;
         }else{
-                drift += 0.000003; 
-                x+=drift;
-                sim_xyzS[2] = 512.*(sin(M_PI*x*10.)*cos(M_PI*y*10.)
-                                    + Steps(x,y)
-                                    + Islands(x,y)
-                                    );
+                sim_xyzS[2] = (2.0*hexgrid_smooth(sim_xyzS))/gapp->xsm->Inst->ZResolution();
+                //sim_xyzS[2] = 512.*(sin(M_PI*x*10.)*cos(M_PI*y*10.)
+                //                    + Steps(x,y)
+                //                    + Islands(x,y)
+                //                    );
         }
         return sim_xyzS[2];
 }

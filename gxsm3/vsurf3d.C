@@ -82,8 +82,8 @@ void surf3d_write_schema (){
 
 //#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 // https://github.com/NVIDIAGameWorks/GraphicsSamples/blob/master/samples/es3aep-kepler/TerrainTessellation/TerrainTessellation.cpp
@@ -127,6 +127,7 @@ namespace
 	GLint Uniform_lod_factor(0); // float
         GLint Uniform_height_scale(0);
         GLint Uniform_height_offset(0);
+        GLint Uniform_aspect(0);
         GLsizei const TextureCount(2);
 	GLuint TextureName[2];
         
@@ -146,6 +147,7 @@ namespace
 
         GLint Uniform_shininess(0); // = 100.0;
         GLint Uniform_ambientColor(0); // = vec3(0.05, 0.05, 0.15 );
+	GLint Uniform_delta(0); // vec2 float -- for normal computation, should be 1/NX, 1/NY
         GLint Uniform_wrap(0); // = 0.3;
 
 } //namespace
@@ -244,7 +246,7 @@ public:
                 g_message ("mkplane w=%d h=%d  nvertices=%d", BaseGridW, BaseGridH, VertexCount);
                 vertex = g_new (glf::vertex_v3fn3fc4f, VertexCount);
                 double s_factor = 1.0/(BaseGridW-1);
-                double t_factor = aspect/(BaseGridH-1);
+                double t_factor = 1.0/(BaseGridH-1);
                 int offset;
                 // surface vertices
                 for (guint y=0; y<BaseGridH; ++y){
@@ -257,7 +259,7 @@ public:
                                 if (mob)
                                         mob->GetDataPkt_vec_normal_4F (xd*mob->GetNx(), yd*mob->GetNy(), vd, &normal_z, 1.); //GLv_data.hskl);
                                 //g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
-                                vertex[offset].Position = glm::vec3 (-0.5+xd, -0.5+yd, normal_z.w);
+                                vertex[offset].Position = glm::vec3 (-0.5+xd, -(0.5+yd)*aspect, normal_z.w);
                                 vertex[offset].Normals  = glm::vec3 (normal_z.x, normal_z.y, normal_z.z);
                                 vertex[offset].Color    = glm::vec4 (normal_z.w, normal_z.w, normal_z.w, 1.0);
                         }
@@ -444,9 +446,11 @@ private:
                         Uniform_shininess     = glGetUniformLocation(ProgramName, "shininess"); // = 100.0;
                         Uniform_ambientColor  = glGetUniformLocation(ProgramName, "ambientColor"); // = vec3(0.05, 0.05, 0.15 );
                         Uniform_wrap          = glGetUniformLocation(ProgramName, "wrap"); // = 0.3;
+                        Uniform_delta         = glGetUniformLocation(ProgramName, "delta"); //  1/nx,1/ny
 
                         Uniform_height_scale  = glGetUniformLocation(ProgramName, "height_scale");  // float
                         Uniform_height_offset = glGetUniformLocation(ProgramName, "height_offset");  // float
+                        Uniform_aspect        = glGetUniformLocation(ProgramName, "aspect");  // float
                         Uniform_screen_size   = glGetUniformLocation(ProgramName, "screen_size"); // vec2
                         Uniform_lod_factor    = glGetUniformLocation(ProgramName, "lod_factor");  // float
                         Uniform_tess_level    = glGetUniformLocation(ProgramName, "tess_level");  // float
@@ -648,10 +652,12 @@ public:
                 glUniform1f  (Uniform_shininess, s->GLv_data.surf_mat_shininess[0]/100.); // = 100.0;
                 glUniform3fv (Uniform_ambientColor, 1, &s->GLv_data.light_global_ambient[0]); // = vec3(0.05, 0.05, 0.15 );
                 glUniform1f  (Uniform_wrap, 0.3); //&s->GLv_data.xxx); // = 0.3;
+                glUniform2f  (Uniform_delta, 2./s->XPM_x, 2./s->XPM_x);
 
                 // Geometry control
                 glUniform1f (Uniform_height_scale, s->GLv_data.hskl);
                 glUniform1f (Uniform_height_offset, s->GLv_data.slice_offset);
+                glUniform1f (Uniform_aspect, (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx);
                 glUniform1f (Uniform_lod_factor, 4.0);
                 glUniform1f (Uniform_tess_level, s->GLv_data.tess_level);
                 
