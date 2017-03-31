@@ -1,6 +1,9 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 #version 400 core
 
+#define CALCULATE_NORMAL 1
+
+
 precision highp float;
 precision highp int;
 layout(std140, column_major) uniform;
@@ -24,36 +27,50 @@ out block {
 
 uniform sampler2D terrain;
 uniform sampler2D diffuse;
+uniform float aspect;
 uniform float height_scale;
 uniform float height_offset;
 uniform mat4 ModelView;
 uniform mat4 ModelViewProjection;
-				  
+uniform vec2 delta;
 
-vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
+float height(vec2 position)
 {
-	vec4 a = mix(v0, v1, gl_TessCoord.x);
-	vec4 b = mix(v3, v2, gl_TessCoord.x);
-	return mix(a, b, gl_TessCoord.y);
+        vec2 terraincoord = vec2 (position.x + 0.5, position.y/aspect + 0.5);
+        return height_scale * (texture(terrain, terraincoord).a-0.5) + height_offset;  
+}
+
+vec4 color(vec2 position)
+{
+        vec2 terraincoord = vec2 (position.x + 0.5, position.y/aspect + 0.5);
+        return texture (diffuse, terraincoord);
 }
 
 void main()
 {	
         //gl_Position = interpolate(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_in[2].gl_Position, gl_in[3].gl_Position);
+	//Out.Color = interpolate(In[0].Color, In[1].Color, In[2].Color, In[3].Color);
+
         float u = gl_TessCoord.x;
 	float v = gl_TessCoord.y;
   
 	vec4 a = mix(gl_in[1].gl_Position, gl_in[0].gl_Position, u);
 	vec4 b = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, u);
 	vec4 position = mix(a, b, v);
-	vec2 terraincoord = position.xy+vec2(0.5,0.5);
-	float height = (texture(terrain, terraincoord).a-0.5) * height_scale + height_offset;
+        position.z = height (position.xy);
 
-        Out.Vertex    = vec3(position.xy, height);
-        Out.VertexEye = vec3(ModelView * vec4(position.xy, height, 1));  // eye space
-        Out.Normal    = texture(terrain, terraincoord).xyz-vec3(0.5,0.5,0.5); // "unpack"
-	Out.Color     = texture(diffuse, terraincoord);
-	//Out.Color = interpolate(In[0].Color, In[1].Color, In[2].Color, In[3].Color);
+#if CALCULATE_NORMAL
+        // calculate normal
+        vec3 pa = vec3(position.x + delta.x, position.y, height (position.xy + vec2 (delta.x, 0.)));
+        vec3 pb = vec3(position.x, position.y + delta.y, height (position.xy + vec2 (0., delta.y)));
+        Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
+#else
+        Out.Normal    = texture (terrain, terraincoord).xyz-vec3(0.5,0.5,0.5); // "unpack"
+#endif
         
-	gl_Position = ModelViewProjection * vec4(position.xy, height, 1.0);
+        Out.Vertex    = vec3 (position.xyz);
+        Out.VertexEye = vec3 (ModelView * vec4(position.xyz, 1));  // eye space
+	Out.Color     = color (position.xy);
+        
+	gl_Position = ModelViewProjection * vec4(position.xyz, 1.0);
 }
