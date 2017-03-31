@@ -25,8 +25,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-// https://github.com/GPUOpen-LibrariesAndSDKs/Tessellation/blob/master/sample/terrainTessMain.cpp
-// http://codeflow.org/entries/2010/nov/07/opengl-4-tessellation/
+/*
+  https://github.com/NVIDIAGameWorks/GraphicsSamples/blob/master/samples/es3aep-kepler/TerrainTessellation/TerrainTessellation.cpp/
+*/
 
 #include <locale.h>
 #include <libintl.h>
@@ -86,7 +87,6 @@ void surf3d_write_schema (){
 //#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
-// https://github.com/NVIDIAGameWorks/GraphicsSamples/blob/master/samples/es3aep-kepler/TerrainTessellation/TerrainTessellation.cpp
 
 // ------------------------------------------------------------
 // glsl data and code locations
@@ -376,9 +376,9 @@ public:
                 s = surf;
                 Major=4;
                 Minor=0;
-                TranslationOrigin  = glm::ivec2(0, 0);
+                TranslationOrigin  = glm::vec2(0, -0.5);
               	TranslationCurrent = TranslationOrigin;
-                DistanceOrigin  = glm::ivec2(0, 50);
+                DistanceOrigin  = glm::vec3(0., -80., 0.);
               	DistanceCurrent = DistanceOrigin;
                 MouseOrigin  = glm::ivec2(0, 0);
                 MouseCurrent = glm::ivec2(0, 0);
@@ -394,17 +394,21 @@ public:
 private:
         
         glm::vec3 cameraPosition() const {
-                return glm::vec3(this->TranslationCurrent.x, -this->TranslationCurrent.y, -this->DistanceCurrent.y);
+                return glm::vec3(0., this->DistanceCurrent.x, this->DistanceCurrent.y);
         };
-        glm::mat4 view() const {
-                glm::mat4 ViewTranslate = glm::translate(glm::mat4(1.0f),  cameraPosition());
-                glm::mat4 ViewRotateX = glm::rotate(ViewTranslate, this->RotationCurrent.y, glm::vec3(1.f, 0.f, 0.f));
-                //glm::mat4 View = glm::rotate(ViewRotateX, this->RotationCurrent.x, glm::vec3(0.f, 1.f, 0.f));
-                glm::mat4 ViewRotateY = glm::rotate(ViewRotateX, this->RotationCurrent.x, glm::vec3(0.f, 1.f, 0.f));
-                glm::mat4 View = glm::rotate(ViewRotateY, this->Rotation3axis.z, glm::vec3(0.f, 0.f, 1.f));
-                return View;
+        glm::vec3 modelPosition() const {
+                return glm::vec3(this->TranslationCurrent.x, -this->TranslationCurrent.y, 0.);
         };
-
+        glm::mat4 modelView() const {
+                // rotate model 1st around it's origin
+                glm::mat4 ModelRotateX = glm::rotate(glm::mat4(1.0f), this->RotationCurrent.y, glm::vec3(1.f, 0.f, 0.f));
+                glm::mat4 ModelRotateY = glm::rotate(ModelRotateX, this->RotationCurrent.x, glm::vec3(0.f, 1.f, 0.f));
+                glm::mat4 ModelRotateZ = glm::rotate(ModelRotateY, this->Rotation3axis.z, glm::vec3(0.f, 0.f, 1.f));
+                // then translate
+                glm::mat4 ModelTranslate = glm::translate(ModelRotateZ,  modelPosition());
+                // final ModelView
+                return ModelTranslate;
+        };
 
 	bool initProgram() {
 		if (Validated){
@@ -619,10 +623,15 @@ public:
                 // https://glm.g-truc.net/0.9.4/api/a00151.html
                 float aspect = WindowSize.x/WindowSize.y;
                 // GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f
-                glm::mat4 Projection = glm::perspective(glm::radians (s->GLv_data.fov/57.3f), aspect, s->GLv_data.Znear, s->GLv_data.Zfar);
+                glm::mat4 Projection = glm::perspective (glm::radians (s->GLv_data.fov/57.3f), aspect, s->GLv_data.Znear, s->GLv_data.Zfar);
+                glm::mat4 Camera = glm::lookAt (cameraPosition(), // cameraPosition, the position of your camera, in world space
+                                                glm::vec3(0,0,0), //cameraTarget, where you want to look at, in world space
+                                                glm::vec3(0,0,1) // upVector, probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
+                                                );
+
 		glm::mat4 Model = glm::mat4(1.0f);
-		glm::mat4 ModelViewProjection = Projection * this->view() * Model;
-		glm::mat4 ModelView = this->view() * Model;
+		glm::mat4 ModelView = this->modelView() * Model;
+		glm::mat4 ModelViewProjection = Projection * Camera * ModelView;
 
                 /* clear the viewport; the viewport is automatically resized when
                  * the GtkGLArea gets a new size allocation
@@ -694,9 +703,13 @@ public:
                 }
 
                 MouseCurrent = glm::ivec2(x, y);
-                DistanceCurrent    = mouse == 'M' ? DistanceOrigin + (MouseCurrent - MouseOrigin) / 10.f : DistanceOrigin;
+                DistanceCurrent    = mouse == 'M' ? DistanceOrigin + glm::vec3(glm::vec2((MouseCurrent - MouseOrigin)) / 10.f, 0) : DistanceOrigin;
                 TranslationCurrent = mouse == 'T' ? TranslationOrigin + (MouseCurrent - MouseOrigin) / 100.f : TranslationOrigin;
                 RotationCurrent    = mouse == 'R' ? RotationOrigin + glm::radians(MouseCurrent - MouseOrigin) : RotationOrigin;
+
+                g_message ("Mouse Control: Distance  = (%g, %g)", DistanceCurrent.x, DistanceCurrent.y);
+                g_message ("Mouse Control: Translate = (%g, %g)", TranslationCurrent.x, TranslationCurrent.y);
+                g_message ("Mouse Control: Rotate    = (%g, %g)", RotationCurrent.x, RotationCurrent.y);
         };
 
         void get_rotation (float *wxyz){
@@ -725,8 +738,9 @@ public:
                 d[0] = DistanceCurrent.y;
         };
         void set_distance (float *d){
-                DistanceOrigin = glm::ivec2(0., d[0]);
-                //g_message ("Dist %f", DistanceOrigin.y);
+                DistanceOrigin = glm::vec3(0., -d[0], 0.);
+                cursorPositionCallback('x',0,0);
+                g_message ("Dist %f", DistanceOrigin.y);
         };
 
         void set_surface_data (glm::vec4 *data, glm::vec4 *color, int nx, int ny, int nv){
@@ -750,8 +764,8 @@ private:
 	glm::vec2 MouseCurrent;
 	glm::vec2 TranslationOrigin;
 	glm::vec2 TranslationCurrent;
-	glm::vec2 DistanceOrigin;
-	glm::vec2 DistanceCurrent;
+	glm::vec3 DistanceOrigin;
+	glm::vec3 DistanceCurrent;
 	glm::vec2 RotationOrigin;
 	glm::vec2 RotationCurrent;
 	glm::vec3 Rotation3axis;
@@ -1163,6 +1177,8 @@ void Surf3d::Translate(int n, double delta){
 
 double Surf3d::Zoom(double x){ 
 	GLv_data.dist += 0.1*x; 
+        if (gl_tess)
+                gl_tess->set_distance (&GLv_data.dist);
 	if (v3dcontrol)
                 v3dcontrol->rerender_scene ();
 

@@ -1,4 +1,8 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+/* GEOMETRY SHADER ** STAGE 4
+   -- Geometry manipulation, instancing, etc. -- pass through here 
+*/
+
 #version 400 core
 
 precision highp float;
