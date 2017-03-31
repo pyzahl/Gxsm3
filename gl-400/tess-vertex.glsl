@@ -1,4 +1,8 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+/* VERTEX SHADER ** STAGE 1
+   -- vertex preparation -- pass though from given array 
+*/
+
 #version 400 core
 
 #define POSITION		0

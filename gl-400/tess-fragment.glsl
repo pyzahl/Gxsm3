@@ -1,4 +1,8 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+/* FRAGMENT SHADER ** STAGE 5
+   -- color computation 
+*/
+
 #version 400 core
 
 precision highp float;

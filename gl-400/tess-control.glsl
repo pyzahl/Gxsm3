@@ -1,4 +1,8 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+/* TESSELATION CONTROL SHADER ** STAGE 2
+   -- tesselation (subdivision) control 
+*/
+
 #version 400 core
 
 precision highp float;

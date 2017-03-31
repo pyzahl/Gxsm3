@@ -1,4 +1,8 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+/* EVALUATION SHADER ** STAGE 3 
+   -- Z displacement at given tess level and normal calculations and projection 
+*/
+
 #version 400 core
 
 #define CALCULATE_NORMAL 1
