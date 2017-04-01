@@ -311,7 +311,7 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
 #endif
                                 ++num_sets;
                         }
-                        g_print("num_sets=%d\n");
+                        g_print("num_sets=%d\n", num_sets);
 #ifdef VPDATA_IN_MATRIX
                         vpdata_view_init (1, num_sets-1);
 #endif                        
