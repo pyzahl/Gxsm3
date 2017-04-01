@@ -382,7 +382,7 @@ public:
 
                 double aspect = (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx;
 
-                TranslationOrigin  = glm::vec2(0, -1.0*aspect);
+                TranslationOrigin  = glm::vec2(0, 1.0*aspect);
               	TranslationCurrent = TranslationOrigin;
                 Translation3axis = glm::vec3(0.0f,0.0f,0.0f);
 
@@ -407,7 +407,7 @@ private:
                 return glm::vec3(0., this->DistanceCurrent.x, this->DistanceCurrent.y);
         };
         glm::vec3 modelPosition() const {
-                return glm::vec3(-this->TranslationCurrent.x, -this->TranslationCurrent.y, 0.);
+                return glm::vec3(this->TranslationCurrent.x, this->TranslationCurrent.y, 0.);
         };
         glm::mat4 modelView() const {
                 // rotate model 1st around it's origin
@@ -1822,7 +1822,7 @@ void realize_vsurf3d_cb (GtkGLArea *area, Surf3d *s){
                 gchar *message = g_strdup_printf
                         ("FAILURE GL-TESS BEGIN/INIT failed:\n"
                          " --> GL VERSION requirements for GL 4.0 not satified?\n"
-                         " --> GL GLSL program code not found/installed?");
+                         " --> GL GLSL program code error or not found/installed?");
 
                 g_critical (message);
                 gapp->warning (message);

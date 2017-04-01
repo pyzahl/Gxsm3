@@ -1,19 +1,13 @@
 #pragma once
-//#pragma warning(disable:4456)
-//#pragma warning(disable:4458)
-//#pragma warning(disable:4459)
+
+#include <stdint.h>
 
 #include "csv.hpp"
 #include "compiler.hpp"
 #include "sementics.hpp"
 #include "vertex.hpp"
-#include "buffer.hpp"
 #include "error.hpp"
 #include "caps.hpp"
-// #include "util.hpp"
-// #include "mesh.hpp"
-
-//#include <GL/glew.h>
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -26,8 +20,6 @@
 #include <glm/gtx/color_space.hpp>
 #include <glm/gtx/integer.hpp>
 #include <glm/gtx/fast_trigonometry.hpp>
-
-//#include <gli/gli.hpp>
 
 #include <memory>
 #include <array>

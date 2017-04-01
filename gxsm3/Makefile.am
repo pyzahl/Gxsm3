@@ -59,7 +59,6 @@ vertex.hpp \
 caps.cpp caps.hpp \
 error.cpp error.hpp \
 compiler.cpp compiler.hpp \
-buffer.cpp buffer.hpp \
 common.hpp \
 csv.cpp csv.hpp \
 pugiconfig.hpp pugixml.cpp pugixml.hpp \
