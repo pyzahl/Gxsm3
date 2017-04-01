@@ -44,7 +44,7 @@ const gchar *Rot_OptionsList[]   = {"-180","180","1","5","0",NULL };
 const gchar *FoV_OptionsList[]   = {"0","180","1","5","0",NULL };
 const gchar *Dist_OptionsList[]  = {"0.1","1000","0.1","1","2",NULL };
 const gchar *PerspF_OptionsList[]  = {"10","1000","1","1","0",NULL };
-const gchar *PerspN_OptionsList[]  = {"0.1","10","1","1","2",NULL };
+const gchar *PerspN_OptionsList[]  = {"0.1","100","1","1","2",NULL };
 const gchar *Hskl_OptionsList[]  = {"-10","10","0.001","0.01","3",NULL };
 const gchar *Tskl_OptionsList[]  = {"0","20","0.1","1","1",NULL };
 const gchar *Slice_OptionsList[]  = {"-5","5","0.01","1","2",NULL };
@@ -96,7 +96,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/PerspZfar", "PerspZfar", "1000", GET_GLV_OFFSET (&GLvd_offset.Zfar), 
+	( "V3dControl.View/PerspZfar", "PerspZfar", "100", GET_GLV_OFFSET (&GLvd_offset.Zfar), 
 	  PerspF_OptionsList, N_("View"),
 	  N_("Perspective: Z far distance relative to surface width (=1))"),
 	     NULL
