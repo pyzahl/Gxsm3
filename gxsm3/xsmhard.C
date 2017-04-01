@@ -321,12 +321,12 @@ double Islands(double x, double y){
 }
 
 double hexgrid_smooth(double *xy){
-        double a0 = 2.5;
         double r[2];
         double r2=sqrt(2.);
+        double a0 = 3.14/r2;
         r[0]=xy[0]/a0*2*M_PI;
         r[1]=xy[1]/a0*2*M_PI;
-        return sin (r[0])*cos(r[1]);
+        return a0*sin (r[0])*cos(r[1]);
         //return sin (r[0]+sin(r[1]*r2))*cos(r[1]+cos(r[0]*r2));
         //return sin (r[0]+r2*sin(r[1]))*cos(r[1]+r2*cos(r[0]));
 }
@@ -353,7 +353,7 @@ double XSM_Hardware::Simulate(double x, double y, int muxmode){
                         + Lorenz(x,y+5.0)+Gaus(x,y+5.0) 
                         + Ground() ;
         }else{
-                sim_xyzS[2] = (2.0*hexgrid_smooth(sim_xyzS))/gapp->xsm->Inst->ZResolution();
+                sim_xyzS[2] = hexgrid_smooth(sim_xyzS)/gapp->xsm->Inst->ZResolution();
                 //sim_xyzS[2] = 512.*(sin(M_PI*x*10.)*cos(M_PI*y*10.)
                 //                    + Steps(x,y)
                 //                    + Islands(x,y)
