@@ -409,8 +409,8 @@ private:
         };
         glm::mat4 modelView() const {
                 // rotate model 1st around it's origin
-                glm::mat4 ModelRotateX = glm::rotate(glm::mat4(1.0f), this->RotationCurrent.x, glm::vec3(1.f, 0.f, 0.f));
-                glm::mat4 ModelRotateY = glm::rotate(ModelRotateX, this->RotationCurrent.y, glm::vec3(0.f, 1.f, 0.f));
+                glm::mat4 ModelRotateX = glm::rotate(glm::mat4(1.0f), this->RotationCurrent.y, glm::vec3(1.f, 0.f, 0.f));
+                glm::mat4 ModelRotateY = glm::rotate(ModelRotateX, -this->RotationCurrent.x, glm::vec3(0.f, 1.f, 0.f));
                 glm::mat4 ModelRotateZ = glm::rotate(ModelRotateY, this->Rotation3axis.z, glm::vec3(0.f, 0.f, 1.f));
                 // then translate
                 glm::mat4 ModelTranslate = glm::translate(ModelRotateZ,  modelPosition());
@@ -613,12 +613,15 @@ public:
 	bool render() {
 		if (!Validated) return false;
 
-                g_message ("Render with Distance  = (%g, %g),"
-                           " Translate = (%g, %g),"
-                           " Rotate    = (%g, %g)",
+                g_message ("Render: Camera at = (0, %g, %g),"
+                           " Translate = (%g, %g, 0),"
+                           " Rotate = (%g, %g, %g),"
+                           " Height-Scale = %g"
+                           "",
                            DistanceCurrent.x, DistanceCurrent.y,
                            TranslationCurrent.x, TranslationCurrent.y,
-                           RotationCurrent.x, RotationCurrent.y);
+                           RotationCurrent.x, RotationCurrent.y, Rotation3axis.z,
+                           s->GLv_data.hskl);
 
                 
                 glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -701,6 +704,10 @@ public:
         };
 
         void cursorPositionCallback(int mouse, double x, double y){
+                if (mouse == 'Z'){ // incremental
+                        DistanceCurrent = (DistanceOrigin += glm::vec3(x, y, 0.));
+                        return;
+                }
                 if (mouse == 'i'){
                         MouseOrigin = glm::ivec2(x, y);
                         return;
@@ -750,9 +757,7 @@ public:
                 d[0] = DistanceCurrent.y;
         };
         void set_distance (float *d){
-                DistanceOrigin = glm::vec3(0., -d[0], 0.);
-                cursorPositionCallback('x',0,0);
-                g_message ("Dist %f", DistanceOrigin.y);
+                DistanceCurrent = DistanceOrigin = glm::vec3(DistanceCurrent.x, d[0], DistanceCurrent.z);
         };
 
         void set_surface_data (glm::vec4 *data, glm::vec4 *color, int nx, int ny, int nv){
@@ -1188,7 +1193,7 @@ void Surf3d::Translate(int n, double delta){
 }
 
 double Surf3d::Zoom(double x){ 
-	GLv_data.dist += 0.1*x; 
+	GLv_data.dist += x; 
         if (gl_tess)
                 gl_tess->set_distance (&GLv_data.dist);
 	if (v3dcontrol)
@@ -1198,7 +1203,7 @@ double Surf3d::Zoom(double x){
 }
 
 double Surf3d::HeightSkl(double x){ 
-	GLv_data.hskl += 0.1*x; 
+	GLv_data.hskl += x; 
 	draw(); 
 	return GLv_data.hskl; 
 }
