@@ -33,11 +33,11 @@
 #include <array>
 
 #if (GLM_COMPILER & GLM_COMPILER_VC) && (GLM_COMPILER < GLM_COMPILER_VC12)
-#	error "The OpenGL Samples Pack requires at least Visual C++ 2013"
+#	error "The OpenGL based GXSM 3D view support requires at least Visual C++ 2013 and the GLM (GLSL GPU code compiler)."
 #endif//
 
 #if (GLM_COMPILER & GLM_COMPILER_GCC) && (GLM_COMPILER < GLM_COMPILER_GCC47)
-#	error "The OpenGL Samples Pack requires at least GCC 4.7"
+#	error "The OpenGL based GXSM 3D view support requires at least GCC 4.7 and the GLM (GLSL GPU code compiler)."
 #endif//
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
