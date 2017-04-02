@@ -1,9 +1,11 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 /* FRAGMENT SHADER ** STAGE 5
-   -- color computation 
+   -- color/light computation / Lambertian Reflection (Ambient+Diffuse+Specular)
 */
 
 #version 400 core
+
+#define USE_TERRAIN 0
 
 precision highp float;
 precision highp int;
@@ -28,15 +30,18 @@ uniform vec3 lightDirWorld;
 uniform vec3 eyePosWorld;
 
 uniform vec3 sunColor; // = vec3(1.0, 1.0, 0.7);
-uniform vec3 lightColor; // = vec3(1.0, 1.0, 0.7)*1.5;
+uniform vec3 specularColor; // = vec3(1.0, 1.0, 0.7)*1.5;
+uniform vec3 ambientColor; // = vec3(1.0, 1.0, 0.7)*1.5;
+uniform vec3 diffuseColor; // = vec3(1.0, 1.0, 0.7)*1.5;
 uniform vec3 fogColor; // = vec3(0.7, 0.8, 1.0)*0.7;
 uniform float fogExp; // = 0.1;
 
 uniform float shininess; // = 100.0;
+uniform float lightness;
 
-uniform vec3 ambientColor; // = vec3(0.05, 0.05, 0.15 );
 uniform float wrap; // = 0.3;
 
+uniform int color_source;
 
 float saturate(float v) {
     return clamp( v, 0.0, 1.0);
@@ -51,21 +56,21 @@ float linearstep(float a, float b, float x)
 #define smoothstep linearstep
 
 
-vec3 applyFog(vec3 col, float dist)
+vec4 applyFog(vec4 col, float dist)
 {
     float fogAmount = exp(-dist*fogExp);
-    return mix(fogColor, col, fogAmount);
+    return vec4( mix(fogColor, col.xyz, fogAmount), col.a);
 }
 
 // fog with scattering effect
 // http://www.iquilezles.org/www/articles/fog/fog.htm
-vec3 applyFog(vec3 col, float dist, vec3 viewDir)
+vec4 applyFog(vec4 col, float dist, vec3 viewDir)
 {
         float fogAmount = exp(-dist*fogExp);
         float sunAmount = max(dot(viewDir, lightDirWorld), 0.0);
         sunAmount = pow(sunAmount, 32.0);
         vec3 fogCol = mix(fogColor, sunColor, sunAmount);
-        return mix(fogCol, col, fogAmount);
+        return vec4 (mix(fogCol, col.xyz, fogAmount), col.a);
 }
 
 // vertex,... surface color
@@ -75,20 +80,7 @@ vec4 shadeTerrain(vec3 vertex,
                   vec4 color
                   )
 {
-# if 0
-        // Lambert's 
-        vec3 L = normalize(LightSource.position.xyz - vertexEye);   
-        vec4 Idiff = FrontLight.diffuse * max(dot(N,L), 0.0);  
-        Idiff = clamp(Idiff, 0.0, 1.0); 
-
-        return Idiff;
-#endif  
-#if 1
-        
-        //const float shininess = 100.0;
-        //const vec3 ambientColor = vec3(0.05, 0.05, 0.15 );
-        //const float wrap = 0.3;
-   
+#if USE_TERRAIN
         vec3 rockColor = vec3(0.4, 0.4, 0.4 );
         vec3 snowColor = vec3(0.9, 0.9, 1.0 );
         vec3 grassColor = vec3(77.0 / 255.0, 100.0 / 255.0, 42.0 / 255.0 );
@@ -106,8 +98,8 @@ vec4 shadeTerrain(vec3 vertex,
         float snowLine = 0.7;
         //float snowLine = 0.6 + nois*0.1;
         float isSnow = smoothstep(snowLine, snowLine+0.1, height * (0.5+0.5*normal.z)); // y
-
-        // lighting
+#endif
+        // Lambertian light model
 
         // world-space
         vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
@@ -119,11 +111,10 @@ vec4 shadeTerrain(vec3 vertex,
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
 
-#if 0
+#if USE_TERRAIN
         // add some noise variation to colors
         grassColor = mix(grassColor*0.5, grassColor*1.5, nois);
         brownColor = mix(brownColor*0.25, brownColor*1.5, nois);
-#endif
 
         // choose material color based on height and normal
 
@@ -136,26 +127,45 @@ vec4 shadeTerrain(vec3 vertex,
         float isWater = smoothstep(0.05, 0.0, height);
         matColor = mix(matColor, waterColor, isWater);
 
-        
-        vec3 finalColor = ambientColor*matColor + diffuse*matColor*lightColor + specular*lightColor*isWater;
-
+        vec3 finalColor = ambientColor*matColor + diffuse*matColor*specularColor + specular*specularColor*isWater;
         // fog
         //float dist = length(vertexEye);
         float dist = length(eyePosWorld);
         //finalColor = applyFog(finalColor, dist);
         finalColor = applyFog(finalColor, dist, viewDir);
-        
         //return vec4(finalColor, 1.);
+#endif
 
-        return vec4(vec3(specular,normal.z,diffuse),1.0);
+        float dist = length (eyePosWorld);
+        vec4 finalColor = vec4(lightness*(ambientColor+specular*specularColor+diffuse*diffuseColor)*color.xyz, color.a);
 
-        //return vec4(specular*sunColor+diffuse*lightColor, 1.); // digitalisch
+        switch (color_source){
+        case 1: return vec4(lightness*(ambientColor+diffuse*diffuseColor)*color.xyz, color.a);
+        case 2: return vec4(vec3(diffuse), 1.0);
+        case 3: return vec4(lightness*(ambientColor+specular*specularColor)*color.xyz, color.a);
+        case 4: return color;
+        case 5:
+                finalColor = applyFog (finalColor, dist, viewDir);
+                return finalColor;
+                
+#if 0
+        case 11: return vec4(vec3(height/100.)*0.5+0.5, 1.0);
+        case 12: return vec4(normal*0.5+0.5, 1.0);
+        case 13: return specular*color;
+        case 14: return vec4(vec3(specular,normal.z,diffuse),1.0);
+        case 15: return vec4(vec3(dist/100.), 1.0);
+        case 16: return vec4(matColor, 1.0);
+#endif
+        default: return finalColor; // 0 or any other value
+        }
+
+#if 0
+        //return vec4(vec3(specular,normal.z,diffuse),1.0);
+        //return vec4(specular*sunColor+diffuse*specularColor, 1.); // digitalisch
         //return vec4(ambientColor*matColor, 1.); // digitalisch
-        //return vec4(diffuse*matColor*lightColor, 1.); // digitalisch
+        //return vec4(diffuse*matColor*specularColor, 1.); // digitalisch
         //return vec4(vec3(height)*0.5+0.5, 1.);
-
         //return vec4(dist);
-
         //return vec4(dnoise(vertex.xz).z*0.5+0.5);
         //return vec4(normal*0.5+0.5, 1.0); //ok
         //return vec4(n*0.5+0.5, 1.0); //ok
@@ -178,30 +188,3 @@ void main()
                                  In.Normal,
                                  In.Color);   // shade per pixel
 }
-
-#if 0
-
-in vec2 texcoord;
-in float depth;
-out vec4 fragment;
-
-uniform sampler2D diffuse;
-uniform sampler2D terrain;
-// uniform sampler2D noise_tile;
-
-vec3 incident = normalize(vec3(1.0, 0.2, 0.5));
-vec4 light = vec4(1.0, 0.95, 0.9, 1.0) * 1.1;
-
-void main(){
-        vec3 normal = normalize(texture(terrain, texcoord).xyz);
-        vec4 color = texture(diffuse, texcoord);
-        // float noise_factor = texture(noise_tile, texcoord*32).r+0.1;
-
-        float dot_surface_incident = max(0, dot(normal, incident));
-
-        // color = color * light * noise_factor * (max(0.1, dot_surface_incident)+0.05)*1.5;
-        color = color * light * (max(0.1, dot_surface_incident)+0.05)*1.5;
-        fragment = mix(color, color*0.5+vec4(0.5, 0.5, 0.5, 1.0), depth*2.0);
-}
-
-#endif

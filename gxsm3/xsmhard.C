@@ -320,15 +320,21 @@ double Islands(double x, double y){
         return h/(M_PI/2.);
 }
 
+double norm_noise () { return rand() / (double )RAND_MAX; }
+
 double hexgrid_smooth(double *xy){
         double r[2];
         double r2=sqrt(2.);
-        double a0 = 3.14/r2;
-        r[0]=xy[0]/a0*2*M_PI;
-        r[1]=xy[1]/a0*2*M_PI;
-        return a0*sin (r[0])*cos(r[1]);
-        //return sin (r[0]+sin(r[1]*r2))*cos(r[1]+cos(r[0]*r2));
-        //return sin (r[0]+r2*sin(r[1]))*cos(r[1]+r2*cos(r[0]));
+        double a0 = (3.14/r2);
+        double zf = a0 / gapp->xsm->Inst->ZResolution();
+
+        r[0]=xy[0]/a0*2*M_PI + norm_noise () * 2*gapp->xsm->Inst->XResolution();
+        r[1]=xy[1]/a0*2*M_PI + norm_noise () * 2*gapp->xsm->Inst->YResolution();
+        return zf*sin(r[0])*cos(r[1]) + norm_noise () * 2*gapp->xsm->Inst->ZResolution();
+
+        // return xy[1]+xy[0];
+        // return sin (r[0]+sin(r[1]*r2))*cos(r[1]+cos(r[0]*r2));
+        // return sin (r[0]+r2*sin(r[1]))*cos(r[1]+r2*cos(r[0]));
 }
 
 // Dummy Bild
@@ -353,7 +359,7 @@ double XSM_Hardware::Simulate(double x, double y, int muxmode){
                         + Lorenz(x,y+5.0)+Gaus(x,y+5.0) 
                         + Ground() ;
         }else{
-                sim_xyzS[2] = hexgrid_smooth(sim_xyzS)/gapp->xsm->Inst->ZResolution();
+                sim_xyzS[2] = hexgrid_smooth(sim_xyzS);
                 //sim_xyzS[2] = 512.*(sin(M_PI*x*10.)*cos(M_PI*y*10.)
                 //                    + Steps(x,y)
                 //                    + Islands(x,y)

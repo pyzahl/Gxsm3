@@ -48,9 +48,9 @@ const gchar *PerspN_OptionsList[]  = {"0.1","100","1","1","2",NULL };
 const gchar *Hskl_OptionsList[]  = {"-10","10","0.001","0.01","3",NULL };
 const gchar *Tskl_OptionsList[]  = {"0","20","0.1","1","1",NULL };
 const gchar *Slice_OptionsList[]  = {"-5","5","0.01","1","2",NULL };
-const gchar *Shininess_OptionsList[]  = {"0","50","0.1","1","1",NULL };
-const gchar *FogD_OptionsList[]  = {"0","10","0.01","0.05","2",NULL };
-const gchar *preV_OptionsList[]  = {"0","10","0.05","0.1","2",NULL };
+const gchar *Shininess_OptionsList[]  = {"0","100","0.1","1","1",NULL };
+const gchar *FogD_OptionsList[]  = {"0","100","0.001","0.01","2",NULL };
+const gchar *shader_mode_OptionsList[]  = {"0","20","1","1","0",NULL };
 const gchar *tess_level_OptionsList[]  = {"1","64","1.0","1.0","1",NULL };
 
 GnomeResEntryInfoType v3dControl_pref_def_const[] = {
@@ -159,7 +159,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("Light0: switch On/Off")
 		),
 	GNOME_RES_ENTRY_FLOAT_VEC4
-	( "V3dControl.Light/Light0Pos", "Light0Pos", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_position[0]), N_("Light"),
+	( "V3dControl.Light/Light0Pos", "Light0Pos", "-0.1 -0.01 -0.7 1", GET_GLV_OFFSET (&GLvd_offset.light_position[0]), N_("Light"),
 	  N_("Light0: Position, relative to surface width (=1) [X, Y, Z, 1]"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
@@ -322,13 +322,24 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 // ============ Rendering Options
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.RenderOp/QuenchFactor", "Quench/PreView Factor", "0.8", GET_GLV_OFFSET (&GLvd_offset.preV), 
-	  preV_OptionsList, N_("Render Opt."),
-	  N_("Quench or PreView Factor:\n"
-	     " 1: normal, adj to approx. optimal size dep. on viewport size, not on distance/zoom\n"
-	     " 0: use all grid points (slow, dep. on image size)\n"
-	     ">1: use less (fast)"), NULL
-		),
+	( "V3dControl.RenderOp/ShadingMode", "Fragment Shading Mode Selector", "0.0", GET_GLV_OFFSET (&GLvd_offset.shader_mode), 
+	  shader_mode_OptionsList, N_("Render Opt."),
+	  N_("Fragment Shading Mode:\n"
+	     "0: specular*sunColor+diffuse*color\n"
+	     "1: diffuse*color\n"
+	     "2: diffuse\n"
+	     "3: specular\n"
+	     "4: color\n"
+	     "5: applyFog (specular+diffuse)*color, distance, viewDir)\n"
+	     "*** only in debug mode/adjustfragment shader! ***\n"
+	     "*11: vec4(vec3(height/100.)*0.5+0.5, 1.0)\n"
+	     "*12: vec4(normal*0.5+0.5, 1.0)\n"
+	     "*13: specular*color\n"
+	     "*14: vec4(vec3(specular,normal.z,diffuse),1.0)\n"
+	     "*15: vec4(vec3(dist/100.), 1.0)\n"
+	     "*16: vec4(matColor, 1.0)\n"
+	     ), NULL
+	  ),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.RenderOp/TessLevel", "Tesselation Level", "32.0", GET_GLV_OFFSET (&GLvd_offset.tess_level), 

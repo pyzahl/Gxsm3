@@ -128,6 +128,7 @@ namespace
         GLint Uniform_height_scale(0);
         GLint Uniform_height_offset(0);
         GLint Uniform_aspect(0);
+        GLint Uniform_color_source(0);
         GLsizei const TextureCount(2);
 	GLuint TextureName[2];
         
@@ -140,13 +141,15 @@ namespace
         GLint Uniform_eyePosWorld(0);   // vec3
 
         GLint Uniform_sunColor(0); // = vec3(1.0, 1.0, 0.7);
-        GLint Uniform_lightColor(0); // = vec3(1.0, 1.0, 0.7)*1.5;
+        GLint Uniform_specularColor(0); // = vec3(1.0, 1.0, 0.7)*1.5;
+        GLint Uniform_ambientColor(0); // = vec3(1.0, 1.0, 0.7)*1.5;
+        GLint Uniform_diffuseColor(0); // = vec3(1.0, 1.0, 0.7)*1.5;
         GLint Uniform_fogColor(0); // = vec3(0.7, 0.8, 1.0)*0.7;
 
         GLint Uniform_fogExp(0); // = 0.1;
 
         GLint Uniform_shininess(0); // = 100.0;
-        GLint Uniform_ambientColor(0); // = vec3(0.05, 0.05, 0.15 );
+        GLint Uniform_lightness(0); // = 100.0;
 	GLint Uniform_delta(0); // vec2 float -- for normal computation, should be 1/NX, 1/NY
         GLint Uniform_wrap(0); // = 0.3;
 
@@ -452,12 +455,15 @@ private:
                         Uniform_lightDirWorld = glGetUniformLocation(ProgramName, "lightDirWorld"); // vec3
                         Uniform_eyePosWorld   = glGetUniformLocation(ProgramName, "eyePosWorld"); // vec3
                         Uniform_sunColor      = glGetUniformLocation(ProgramName, "sunColor"); // = vec3(1.0, 1.0, 0.7);
-                        Uniform_lightColor    = glGetUniformLocation(ProgramName, "lightColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
+                        Uniform_specularColor = glGetUniformLocation(ProgramName, "specularColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
+                        Uniform_ambientColor  = glGetUniformLocation(ProgramName, "ambientColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
+                        Uniform_diffuseColor  = glGetUniformLocation(ProgramName, "diffuseColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
                         Uniform_fogColor      = glGetUniformLocation(ProgramName, "fogColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
 
                         Uniform_fogExp        = glGetUniformLocation(ProgramName, "fogExp"); // = 0.1;
 
                         Uniform_shininess     = glGetUniformLocation(ProgramName, "shininess"); // = 100.0;
+                        Uniform_lightness     = glGetUniformLocation(ProgramName, "lightness"); // = 1.0;
                         Uniform_ambientColor  = glGetUniformLocation(ProgramName, "ambientColor"); // = vec3(0.05, 0.05, 0.15 );
                         Uniform_wrap          = glGetUniformLocation(ProgramName, "wrap"); // = 0.3;
                         Uniform_delta         = glGetUniformLocation(ProgramName, "delta"); //  1/nx,1/ny
@@ -465,6 +471,7 @@ private:
                         Uniform_height_scale  = glGetUniformLocation(ProgramName, "height_scale");  // float
                         Uniform_height_offset = glGetUniformLocation(ProgramName, "height_offset");  // float
                         Uniform_aspect        = glGetUniformLocation(ProgramName, "aspect");  // float
+                        Uniform_color_source  = glGetUniformLocation(ProgramName, "color_source");  // int
                         Uniform_screen_size   = glGetUniformLocation(ProgramName, "screen_size"); // vec2
                         Uniform_lod_factor    = glGetUniformLocation(ProgramName, "lod_factor");  // float
                         Uniform_tess_level    = glGetUniformLocation(ProgramName, "tess_level");  // float
@@ -480,7 +487,7 @@ private:
 	bool initBuffer() {
 		if (!Validated) return false;
 
-                surface_plane = new base_plane ((s->get_scan ())->mem2d, 32, (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx);
+                surface_plane = new base_plane ((s->get_scan ())->mem2d, 128, (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx);
                 
 		return checkError("initBuffer");
 	};
@@ -667,19 +674,21 @@ public:
                 glUniformMatrix4fv (Uniform_ModelViewProjection, 1, GL_FALSE, &ModelViewProjection[0][0]);
                 glUniformMatrix4fv (Uniform_ModelView, 1, GL_FALSE, &ModelView[0][0]);
                 glm::vec3 eye = cameraPosition(); // eye / camera
-                //glm::vec3 sun = glm::vec3(1.0f,0.0f,-3.0f); // sun light direction world
                 glUniform3fv (Uniform_lightDirWorld, 1, &s->GLv_data.light_position[0][0]);
                 glUniform3fv (Uniform_eyePosWorld, 1, &eye.x); //s->GLv_data.light_position[1][0]);
 
                 // Light
-                glm::vec3 light_color = 1.5f*glm::vec3(s->GLv_data.surf_mat_color[0], s->GLv_data.surf_mat_color[1], s->GLv_data.surf_mat_color[2]);
+                //glm::vec3 light_color = 1.5f*glm::vec3(s->GLv_data.surf_mat_color[0], s->GLv_data.surf_mat_color[1], s->GLv_data.surf_mat_color[2]);
                 glUniform3fv (Uniform_sunColor, 1, &s->GLv_data.light_specular[0][0]); // = vec3(1.0, 1.0, 0.7);
-                glUniform3fv (Uniform_lightColor, 1, &light_color.x); // = vec3(1.0, 1.0, 0.7)*1.5;
+                glUniform3fv (Uniform_specularColor, 1, &s->GLv_data.surf_mat_specular[0]); // = vec3(1.0, 1.0, 0.7)*1.5;
+                glUniform3fv (Uniform_ambientColor, 1, &s->GLv_data.surf_mat_ambient[0]); // = vec3(1.0, 1.0, 0.7)*1.5;
+                glUniform3fv (Uniform_diffuseColor, 1, &s->GLv_data.surf_mat_diffuse[0]); // = vec3(1.0, 1.0, 0.7)*1.5;
                 glUniform3fv (Uniform_fogColor, 1, &s->GLv_data.fog_color[0]); // = vec3(0.7, 0.8, 1.0)*0.7;
 
-                glUniform1f  (Uniform_fogExp, s->GLv_data.fog_density); // = 0.1;
+                glUniform1f  (Uniform_fogExp, s->GLv_data.fog_density/100.); // = 0.1;
 
-                glUniform1f  (Uniform_shininess, s->GLv_data.surf_mat_shininess[0]/100.); // = 100.0;
+                glUniform1f  (Uniform_shininess, 4.*(1.00001-s->GLv_data.surf_mat_shininess[0]/100.));
+                glUniform1f  (Uniform_lightness, s->GLv_data.ColorContrast);
                 glUniform3fv (Uniform_ambientColor, 1, &s->GLv_data.light_global_ambient[0]); // = vec3(0.05, 0.05, 0.15 );
                 glUniform1f  (Uniform_wrap, 0.3); //&s->GLv_data.xxx); // = 0.3;
                 glUniform2f  (Uniform_delta, 2./s->XPM_x, 2./s->XPM_x);
@@ -688,6 +697,8 @@ public:
                 glUniform1f (Uniform_height_scale, s->GLv_data.hskl);
                 glUniform1f (Uniform_height_offset, s->GLv_data.slice_offset);
                 glUniform1f (Uniform_aspect, (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx);
+                
+                glUniform1i (Uniform_color_source, (int)s->GLv_data.shader_mode);
                 glUniform1f (Uniform_lod_factor, 4.0);
                 glUniform1f (Uniform_tess_level, s->GLv_data.tess_level);
                 
@@ -845,7 +856,7 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 	int i;
 	GLfloat val;
         
-	i = (k/QuenchFac) + (j/QuenchFac)*XPM_x + XPM_x*XPM_y*vi;
+	i = k + j*XPM_x + XPM_x*XPM_y*vi;
 	if (i >= (int)size) return;
 
         // check for zero range
@@ -876,7 +887,8 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
                 if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1)
                         surface_normal_z_buffer[i].w = -1.;
         }
-        
+
+        // normals are not recalculated by GPU based on actual scaled Z -- so here kind of obsolete -- clean up or leave?? TDB
         // shift Norm to 0 .. 1
         surface_normal_z_buffer[i].x *= 0.5; surface_normal_z_buffer[i].x += 0.5;
         surface_normal_z_buffer[i].y *= 0.5; surface_normal_z_buffer[i].x += 0.5;
@@ -954,27 +966,11 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 	val = (GLfloat) (GLv_data.transparency_offset + GLv_data.transparency * surface_normal_z_buffer[i].w);
 	surface_color_buffer[i].w = val > 1.? 1. : val < 0.? 0. : val;
 
-	surface_color_buffer[i].x = surface_normal_z_buffer[i].w;
-	surface_color_buffer[i].y = surface_normal_z_buffer[i].w;
-	surface_color_buffer[i].z = surface_normal_z_buffer[i].w;
-	surface_color_buffer[i].w = 1.;
-
-	// adjust slice height level
-	//surface_normal_z_buffer[i].w += (GLfloat)vi * GLv_data.slice_offset * (XPM_x+XPM_y)*0.5/XPM_v;
-
-#if 0
-        if (i%100==0)
-                g_message ("%6d [%d,%d,%d]: n=(%8f, %8f, %8f) z=%8f   c=(%4f, %4f, %4f, %4f)",
-                           i, k,j,vi,
-                           surface_normal_z_buffer[i].x, surface_normal_z_buffer[i].y, surface_normal_z_buffer[i].z,
-                           surface_normal_z_buffer[i].w,
-                           surface_color_buffer[i].x,
-                           surface_color_buffer[i].y,
-                           surface_color_buffer[i].z,
-                           surface_color_buffer[i].w
-                           );
-#endif   
-        //        std::cout << "PutPointMode OK!" << std::endl << std::flush;
+        if (XPM_v > 1){
+                // adjust slice height level, renormalize
+                surface_normal_z_buffer[i].w /= XPM_v;
+                surface_normal_z_buffer[i].w += (GLfloat)vi*GLv_data.slice_offset*0.5/XPM_v;
+        }
 }
 
 
@@ -986,7 +982,6 @@ void Surf3d::GLvarinit(){
 	scrwidth=500;
 	scrheight=500;
 	ZoomFac=1;
-        QuenchFac=1;
 	size=0;
         surface_normal_z_buffer = NULL;
 	surface_color_buffer = NULL;
@@ -1052,24 +1047,23 @@ void Surf3d::set_gl_data (){
 void Surf3d::create_surface_buffer(){ 
 	XSM_DEBUG (GL_DEBUG_L2, "Surf3d::create_surface_buffer");
 
-	QuenchFac = 1; //1 + (int) ((double) scan->mem2d->GetNx () / (double) scrwidth * 4. * GLv_data.preV);
-
 	if (v3dcontrol){
-		gchar *titel = g_strdup_printf ("MesaGL: Ch%d: %s Q%d %s", 
+		gchar *titel = g_strdup_printf ("GL: Ch%d: %s TF%d %s", 
 						ChanNo+1, data->ui.name, 
-						QuenchFac, scan->mem2d->GetEname());
+						(int)GLv_data.tess_level,
+                                                scan->mem2d->GetEname());
 		
 		v3dcontrol->SetTitle(titel);
 		g_free(titel);
 	}
 
-	XPM_x = scan->mem2d->GetNx()/QuenchFac;
-	XPM_y = scan->mem2d->GetNy()/QuenchFac;
+	XPM_x = scan->mem2d->GetNx();
+	XPM_y = scan->mem2d->GetNy();
 	XPM_v = scan->mem2d->GetNv();
 
 	size = XPM_x * XPM_y * XPM_v;
 
-	XSM_DEBUG_GP (GL_DEBUG_L3, "Surf3d::create_surface_buffer  ** QF=%d size = %d, %d, %d\n", QuenchFac,  XPM_x, XPM_y, XPM_v);
+	XSM_DEBUG_GP (GL_DEBUG_L3, "Surf3d::create_surface_buffer  **nXYV (%d, %d, %d)\n", XPM_x, XPM_y, XPM_v);
         
 	surface_normal_z_buffer = g_new (glm::vec4, size * sizeof(glm::vec4));
 	surface_color_buffer    = g_new (glm::vec4, size * sizeof(glm::vec4));
@@ -1082,8 +1076,8 @@ void Surf3d::create_surface_buffer(){
         // grab and prepare data buffers
         for(int v=0; v<scan->mem2d->GetNv(); ++v){
                 scan->mem2d->data->update_ranges (v);
-		for(int j=0; j<scan->mem2d->GetNy(); j+=QuenchFac)
-			for(int k=0; k<scan->mem2d->GetNx(); k+=QuenchFac)
+		for(int j=0; j<scan->mem2d->GetNy(); ++j)
+			for(int k=0; k<scan->mem2d->GetNx(); ++k)
 				PutPointMode (k,j,v);
         }
 	XSM_DEBUG (GL_DEBUG_L3, "Surf3d::create_surface_buffer  ** completed");
@@ -1343,8 +1337,8 @@ int Surf3d::update(int y1, int y2){
 //	int v = scan->mem2d->GetLayer();
 	for(int v=0; v<scan->mem2d->GetNv(); ++v){
                 scan->mem2d->data->update_ranges (v);
-		for(int j=y1; j < y2; j += QuenchFac)
-			for(int k=0; k < scan->mem2d->GetNx (); k+=QuenchFac)
+		for(int j=y1; j < y2; ++j)
+			for(int k=0; k < scan->mem2d->GetNx (); ++k)
 				PutPointMode (k,j,v);
 	}
 
@@ -1548,11 +1542,11 @@ void Surf3d::GLdrawsurface(int y_to_update, int refresh_all){
 	XSM_DEBUG (GL_DEBUG_L2, "GL:::GLdrawsurface y_to_update=" << y_to_update);
 
 	if (GLv_data.slice_plane_index[0] >= 0)
-		slice_pli[0] = GLv_data.slice_plane_index[0]/QuenchFac;
+		slice_pli[0] = GLv_data.slice_plane_index[0];
 	else
 		slice_pli[0] = GLv_data.slice_plane_index[0];
 	if (GLv_data.slice_plane_index[1] >= 0)
-		slice_pli[1] = GLv_data.slice_plane_index[1]/QuenchFac;
+		slice_pli[1] = GLv_data.slice_plane_index[1];
 	else
 		slice_pli[1] = GLv_data.slice_plane_index[1];
 	if (GLv_data.slice_plane_index[2] >= 0)
