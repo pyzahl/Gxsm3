@@ -325,10 +325,10 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	( "V3dControl.RenderOp/ShadingMode", "Fragment Shading Mode Selector", "0.0", GET_GLV_OFFSET (&GLvd_offset.shader_mode), 
 	  shader_mode_OptionsList, N_("Render Opt."),
 	  N_("Fragment Shading Mode:\n"
-	     "0: specular*sunColor+diffuse*color\n"
-	     "1: diffuse*color\n"
+	     "0: (ambient+specular+diffuse)*color\n"
+	     "1: (ambient+diffuse)*color\n"
 	     "2: diffuse\n"
-	     "3: specular\n"
+	     "3: (ambient+specular)*color\n"
 	     "4: color\n"
 	     "5: applyFog (specular+diffuse)*color, distance, viewDir)\n"
 	     "*** only in debug mode/adjustfragment shader! ***\n"

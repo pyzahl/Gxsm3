@@ -416,10 +416,12 @@ Used only in "Uniform/Material Color Mode".
     <key name="shadingmode" type="d">
       <default>0.0</default>
       <summary>Fragment Shading Mode (0..5):
-      0: (ambient+specular+diffuse)*color, 1: diffuse*color, 2: diffuse, 3: specular, 4: color, 5: applyFog (specular+diffuse)*color, distance, viewDir)
+      0,default: (ambient+specular+diffuse)*color
+      1: (ambient+diffuse)*color, 2: diffuse, 3: (ambient+specular)*color, 4: color, 5: applyFog (default)*color, distance, viewDir)
       </summary>
       <description>Fragment Shading Mode:
-      0: specular*sunColor+diffuse*color, 1: diffuse*color, 2: diffuse, 3: specular, 4: color, 5: applyFog (specular+diffuse)*color, distance, viewDir)
+      0,default: (ambient+specular+diffuse)*color
+      1: (ambient+diffuse)*color, 2: diffuse, 3: (ambient+specular)*color, 4: color, 5: applyFog (default)*color, distance, viewDir)
       higher numbers may be used for special fragment shader debuging.
       </description>
     </key>
