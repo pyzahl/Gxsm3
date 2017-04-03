@@ -38,16 +38,19 @@ uniform mat4 ModelView;
 uniform mat4 ModelViewProjection;
 uniform vec2 delta;
 
-float height(vec2 position)
-{
-        vec2 terraincoord = vec2 (position.x + 0.5, position.y/aspect + 0.5);
-        return height_scale * (texture(terrain, terraincoord).a-0.5) + height_offset;  
+vec2 terraincoord(vec2 position){
+        return vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swapped
+        // retufn vec2 (position.x + 0.5, position.y/aspect + 0.5); // normal
 }
 
-vec4 color(vec2 position)
+float height(vec2 tcoord)
 {
-        vec2 terraincoord = vec2 (position.x + 0.5, position.y/aspect + 0.5);
-        return texture (diffuse, terraincoord);
+        return height_scale * (texture(terrain, tcoord).a-0.5) + height_offset;  
+}
+
+vec4 color(vec2 tcoord)
+{
+        return texture (diffuse, tcoord);
 }
 
 void main()
@@ -61,20 +64,17 @@ void main()
 	vec4 a = mix(gl_in[1].gl_Position, gl_in[0].gl_Position, u);
 	vec4 b = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, u);
 	vec4 position = mix(a, b, v);
-        position.z = height (position.xy);
-
-#if CALCULATE_NORMAL
-        // calculate normal
-        vec3 pa = vec3(position.x + delta.x, position.y, height (position.xy + vec2 (delta.x, 0.)));
-        vec3 pb = vec3(position.x, position.y + delta.y, height (position.xy + vec2 (0., delta.y)));
-        Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
-#else
-        Out.Normal    = texture (terrain, terraincoord).xyz-vec3(0.5,0.5,0.5); // "unpack"
-#endif
         
+        vec2 tc = terraincoord (position.xz);
+        position.y = height (tc);
+
+        // calculate normal
+        vec3 pa = vec3(position.x + delta.x, height (terraincoord (position.xz + vec2 (delta.x, 0.))),  position.z);
+        vec3 pb = vec3(position.x, height (terraincoord (position.xz + vec2 (0., delta.y))), position.z + delta.y);
+
+        Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
         Out.Vertex    = vec3 (position.xyz);
         Out.VertexEye = vec3 (ModelView * vec4(position.xyz, 1));  // eye space
-	Out.Color     = color (position.xy);
-        
+	Out.Color     = color (tc);
 	gl_Position = ModelViewProjection * vec4(position.xyz, 1.0);
 }

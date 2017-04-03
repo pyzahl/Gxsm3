@@ -296,7 +296,6 @@ public:
         virtual void ZoomOut(){};
         virtual void setup_data_transformation();
 
-        gboolean GLdrawscene(GdkGLContext* context, int y_to_update=-1, int refresh_all=FALSE);
         static void GLupdate(void* data);
 
         void MouseControl (int mouse, double x, double y);
@@ -335,8 +334,9 @@ private:
 
         glm::vec4 *surface_normal_z_buffer;
         glm::vec4 *surface_color_buffer;
-        glm::vec3 ColorLookup[1024];
-
+        glm::vec3 ColorLookup[8192];
+        int maxcolors;
+        
 public:
         void create_surface_buffer ();
         void set_gl_data ();

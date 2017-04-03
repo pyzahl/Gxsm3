@@ -34,14 +34,14 @@
 
   <schema id="org.gnome.gxsm3.gl.v3dcontrol.view" path="/org/gnome/gxsm3/gl/v3dcontrol.view/">
     <key name="rotationx" type="d">
-      <default>120</default>
+      <default>0</default>
       <summary>Rotation Angle in X</summary>
       <description>
         Rotation Angle in X
       </description>
     </key>
     <key name="rotationy" type="d">
-      <default>90</default>
+      <default>-40</default>
       <summary>Rotation Angle in Y</summary>
       <description>
         Rotation Angle in Y
@@ -73,7 +73,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="dist" type="d">
-      <default>1.5</default>
+      <default>60.</default>
       <summary>Distance</summary>
       <description>
         Distance
@@ -87,7 +87,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="perspznear" type="d">
-      <default>10</default>
+      <default>0.1</default>
       <summary>Perspective: Z near distance (to center of surface)
 </summary>
       <description>
@@ -96,7 +96,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="hskl" type="d">
-      <default>1</default>
+      <default>0.1</default>
       <summary>Height Scaling (Z scale)</summary>
       <description>
         Height Scaling (Z scale)
@@ -166,7 +166,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="light0pos" type="ad">
-      <default>[1,1,1,1]</default>
+      <default>[-0.2,0.6,-1.0,0]</default>
       <summary>Light0: Position, relative to surface width (=1) [X, Y, Z, 1]</summary>
       <description>
         Light0: Position, relative to surface width (=1) [X, Y, Z, 1]
@@ -338,7 +338,7 @@ Used only in "Uniform/Material Color Mode".
       </description>
     </key>
     <key name="colorcontrast" type="d">
-      <default>1</default>
+      <default>2.5</default>
       <summary>Color Contrast: to scale color source</summary>
       <description>
         Color Contrast: to scale color source
@@ -426,7 +426,7 @@ Used only in "Uniform/Material Color Mode".
       </description>
     </key>
     <key name="tesslevel" type="d">
-      <default>32.0</default>
+      <default>8.0</default>
       <summary>Tesselation Level Max:
  32: normal, 1: min.
       </summary>
@@ -468,7 +468,7 @@ Note: you usually want to use the background (clear) color.
       </description>
     </key>
     <key name="fogdensity" type="d">
-      <default>0.8</default>
+      <default>0.4</default>
       <summary>Density of fog, see fog color help!
 Effect depends on distance to object and size of object.</summary>
       <description>

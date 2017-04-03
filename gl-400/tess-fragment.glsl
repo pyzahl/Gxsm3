@@ -38,6 +38,8 @@ uniform float fogExp; // = 0.1;
 
 uniform float shininess; // = 100.0;
 uniform float lightness;
+uniform vec4  color_offset;
+uniform float light_attenuation;
 
 uniform float wrap; // = 0.3;
 
@@ -88,16 +90,12 @@ vec4 shadeTerrain(vec3 vertex,
         vec3 waterColor = vec3(0.2, 0.4, 0.5 );
         vec3 treeColor = vec3(0.0, 0.2, 0.0 );
 
-        //vec3 noisePos = vertex.xyz + vec3(translate.x, 0.0, translate.y);
-        //vec3 noisePos = vertex.xyz;
-        //float nois = noise(noisePos.xz)*0.5+0.5;
-
-        float height = vertex.z*100.-50.; // y
+        float height = vertex.y*100.-50.;
 
         // snow
         float snowLine = 0.7;
         //float snowLine = 0.6 + nois*0.1;
-        float isSnow = smoothstep(snowLine, snowLine+0.1, height * (0.5+0.5*normal.z)); // y
+        float isSnow = smoothstep(snowLine, snowLine+0.1, height * (0.5+0.5*normal.y));
 #endif
         // Lambertian light model
 
@@ -119,8 +117,8 @@ vec4 shadeTerrain(vec3 vertex,
         // choose material color based on height and normal
 
         vec3 matColor;
-        matColor = mix(rockColor, grassColor, smoothstep(0.6, 0.8, normal.z)); // y
-        matColor = mix(matColor, brownColor, smoothstep(0.9, 1.0, normal.z )); // y
+        matColor = mix(rockColor, grassColor, smoothstep(0.6, 0.8, normal.y));
+        matColor = mix(matColor, brownColor, smoothstep(0.9, 1.0, normal.y ));
         // snow
         matColor = mix(matColor, snowColor, isSnow);
 
@@ -136,27 +134,39 @@ vec4 shadeTerrain(vec3 vertex,
         //return vec4(finalColor, 1.);
 #endif
 
+        vec3 nois = noise3(100.*vertex.xz)*0.5+vec3(0.5);
         float dist = length (eyePosWorld);
+
+        // if spot light -- not for far far away sun
+        //float dist_light = length (sunPos);
+        //float attenuation = 1.0 / (1.0 + light_attenuation * dist_light*dist_light);
+
         vec4 finalColor = vec4(lightness*(ambientColor+specular*specularColor+diffuse*diffuseColor)*color.xyz, color.a);
 
         switch (color_source){
-        case 1: return vec4(lightness*(ambientColor+diffuse*diffuseColor)*color.xyz, color.a);
-        case 2: return vec4(vec3(diffuse), 1.0);
-        case 3: return vec4(lightness*(ambientColor+specular*specularColor)*color.xyz, color.a);
-        case 4: return color;
+        case 1: return color_offset+vec4(lightness*(ambientColor+diffuse*diffuseColor)*color.xyz, color.a);
+        case 2: return color_offset+vec4(vec3(diffuse), 1.0);
+        case 3: return color_offset+vec4(lightness*(ambientColor+specular*specularColor)*color.xyz, color.a);
+        case 4: return color_offset+lightness*color;
         case 5:
-                finalColor = applyFog (finalColor, dist, viewDir);
+                finalColor = color_offset+applyFog (finalColor, dist, viewDir);
                 return finalColor;
+        case 6:
+                return color_offset+vec4 (mix (finalColor.xyz, nois, 0.2), color.a);
+        case 7:
+                return color_offset+vec4 (nois, color.a);
                 
+        case 8: return vec4(normal.y, 0.,0., 1.0);
+        case 9: return vec4(normal.y*0.5+0.5,0.,0., 1.0);
 #if 0
         case 11: return vec4(vec3(height/100.)*0.5+0.5, 1.0);
         case 12: return vec4(normal*0.5+0.5, 1.0);
         case 13: return specular*color;
-        case 14: return vec4(vec3(specular,normal.z,diffuse),1.0);
+        case 14: return vec4(vec3(specular,normal.y,diffuse),1.0);
         case 15: return vec4(vec3(dist/100.), 1.0);
         case 16: return vec4(matColor, 1.0);
 #endif
-        default: return finalColor; // 0 or any other value
+        default: return color_offset+finalColor; // 0 or any other value
         }
 
 #if 0

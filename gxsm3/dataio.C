@@ -25,9 +25,6 @@
 
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
-#define IMGMAXCOLORS 64
-
-
 #include <locale.h>
 #include <libintl.h>
 
