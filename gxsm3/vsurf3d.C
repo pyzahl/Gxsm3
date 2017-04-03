@@ -402,13 +402,15 @@ public:
                 surface_plane = NULL;
         };
         ~gl_400_primitive_tessellation(){
-                end ();
+                //end (); // too late, glarea reference is gone! 
+                if (surface_plane)
+                        delete surface_plane;
         };
 
 private:
         
         glm::vec3 cameraPosition() const {
-                return glm::vec3(0., this->DistanceCurrent.y, this->DistanceCurrent.x);
+                return glm::vec3(0.,  this->DistanceCurrent.y, this->DistanceCurrent.x);
         };
         glm::vec3 modelPosition() const {
                 return glm::vec3(this->TranslationCurrent.x, 0., this->TranslationCurrent.y);
@@ -607,7 +609,6 @@ public:
 
 	bool end() {
 		if (!Validated) return false;
-                Validated = false;
 
                 /* we need to ensure that the GdkGLContext is set before calling GL API */
                 gtk_gl_area_make_current (glarea);
@@ -794,7 +795,7 @@ public:
                 numy = ny;
                 numv = nv;
         };
-        
+
 private:
         bool Validated;
         Surf3d *s;
@@ -1039,6 +1040,8 @@ void Surf3d::GLupdate (void* data){
         
                 Surf3d *s = (Surf3d *) data;
 
+                s->check_dimension_changed ();
+
                 XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLUPDATE set color source" << std::flush);
                 s->ColorSrc();
 
@@ -1060,6 +1063,37 @@ void Surf3d::set_gl_data (){
                 gl_tess->set_surface_data (surface_normal_z_buffer, surface_color_buffer, XPM_x, XPM_y, XPM_v);
                 XSM_DEBUG (GL_DEBUG_L2, "Surf3d::set_gl_data OK." << std::flush);
         }
+}
+
+gboolean Surf3d::check_dimension_changed(){
+        if (XPM_x != scan->mem2d->GetNx() || XPM_y != scan->mem2d->GetNy() || XPM_v != scan->mem2d->GetNv()){
+                g_message ("Reshaping GL scene/surface");
+                if (gl_tess){
+                        g_message ("Calling gl_tess->end()");
+                        gl_tess->end ();
+
+                        g_message ("Recalculating buffers");
+                        set_gl_data ();
+        
+                        g_message ("Calling  gl_tess->begin()");
+                        if (! gl_tess->begin()){
+                                gchar *message = g_strdup_printf
+                                        ("FAILURE GL-TESS BEGIN/INIT failed:\n"
+                                         " --> GL VERSION requirements for GL 4.0 not satified?\n"
+                                         " --> GL GLSL program code error or not found/installed?");
+
+                                g_critical (message);
+                                gapp->warning (message);
+                                g_free (message);
+
+                                delete gl_tess;
+                                gl_tess = NULL;
+                        }
+                }
+                return true;
+        } else
+                return false;
+
 }
 
 void Surf3d::create_surface_buffer(){ 
@@ -1348,6 +1382,10 @@ void Surf3d::setup_data_transformation(){
 int Surf3d::update(int y1, int y2){
 	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::update y1 y2: " << y1 << "," << y2);
 
+        if (y1 == 0)
+                GLupdate (this);
+
+        
 	if (!scan || size == 0) return -1;
 
 	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::update trafo");

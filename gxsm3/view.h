@@ -340,6 +340,7 @@ private:
 public:
         void create_surface_buffer ();
         void set_gl_data ();
+        gboolean check_dimension_changed();
         
         gint XPM_x, XPM_y, XPM_v;
         size_t size;
