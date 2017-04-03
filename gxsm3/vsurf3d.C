@@ -158,14 +158,14 @@ namespace
 
 class base_plane{
 public:
-        base_plane (Mem2d *m=NULL, int w=128, double aspect=1.0, int o=0){
+        base_plane (Mem2d *m=NULL, int w=128, double aspect=1.0, GLfloat *box_color=NULL){
                 Validated = true;
                 BaseGridW = w;
                 BaseGridH = w; // adjusted by make_plane_vbo using aspect
                 ArrayBufferName = 0;
                 VertexArrayName = 0;
 
-                make_plane_vbo (m, aspect, o);
+                make_plane_vbo (m, aspect, box_color);
 
                 Validated = init_buffer ();
 
@@ -220,26 +220,26 @@ public:
 
                 return Validated && checkError("make_plane::init_vao");
         };
-        gboolean draw (){
+        gboolean draw (gboolean draw_box = false){
 		if (!Validated) return false;
                 
                 glBindVertexArray(VertexArrayName);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
                 glPatchParameteri(GL_PATCH_VERTICES, 4);
 
-                //if (s->GLv_data.TickFrameOptions[0]=='2' || s->GLv_data.TickFrameOptions[0]=='3') // surface with box
-                glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
-                //else
-                // glDrawElements(GL_PATCHES, IndicesCountSurface, GL_UNSIGNED_INT, 0); // surface only
+                if (draw_box)
+                        glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
+                else
+                        glDrawElements(GL_PATCHES, IndicesCountSurface, GL_UNSIGNED_INT, 0); // surface only
 
                 return Validated && checkError("make_plane::draw");
         };
         
         // make plane with box
-        void make_plane_vbo (Mem2d *mob=NULL, double aspect=1.0, int option=0){
+        void make_plane_vbo (Mem2d *mob=NULL, double aspect=1.0, GLfloat *box_color=NULL){
+                gboolean option = box_color != NULL;
+                
                 // Surface Object Vertices
-                option=0;
-
                 BaseGridH = (GLuint)round((double)BaseGridW * aspect);
                 
                 g_message ("mkplane -- vtx surf -- %s", option? "with box":"-/-");
@@ -254,46 +254,59 @@ public:
                 int offset;
                 // surface vertices
                 for (guint y=0; y<BaseGridH; ++y){
+                        gboolean edgeflag_y = y == 0 ? true : y == (BaseGridH-1)? true : false;
                         for (guint x=0; x<BaseGridW; ++x){
                                 offset = y*BaseGridW+x;
-                                glm::vec4 normal_z (0.0f,1.0f,0.0f,0.0f);
+                                gboolean edgeflag_x = x == 0 ? true : x == (BaseGridW-1)? true : false;
+                                glm::vec4 normal_z (edgeflag_x ? x==0 ? -1.0f:1.0f : 0.0f,
+                                                    edgeflag_x || edgeflag_y ? 0.0f : 2.0f,
+                                                    edgeflag_y ? y==0 ? -1.0f:1.0f : 0.0f,
+                                                    0.0f);
                                 double xd = x * s_factor;
                                 double yd = y * t_factor;
                                 double vd = 0.; // vi
+                                GLfloat z=0.;
+#if 1
                                 if (mob)
-                                        mob->GetDataPkt_vec_normal_4F (xd*mob->GetNx(), yd*mob->GetNy(), vd, &normal_z, 1.); //GLv_data.hskl);
+                                        z = (GLfloat)((mob->GetDataPkt((int)round(xd*(mob->GetNx()-1)), (int)round(yd*(mob->GetNy()-1)), vd) - mob->data->zmin) / mob->data->zrange);
+                                vertex[offset].Position = glm::vec3 (-0.5+xd, 101., -(0.5+yd)*aspect); // > y=100 => vertex z is taken from "terrain" height field 
+                                vertex[offset].Normals  = glm::vec3 (normal_z.x, normal_z.y, normal_z.z);
+                                vertex[offset].Color    = glm::vec4 (z, z, z, -1.0);
+#else
+                                if (mob)
+                                        mob->GetDataPkt_vec_normal_4F (xd*(mob->GetNx()-1), yd*(mob->GetNy()-1), vd, &normal_z, 1.); //GLv_data.hskl);
                                 //g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
                                 vertex[offset].Position = glm::vec3 (-0.5+xd, normal_z.w, -(0.5+yd)*aspect);
-                                vertex[offset].Normals  = glm::vec3 (normal_z.x, normal_z.z, normal_z.y);
-                                vertex[offset].Color    = glm::vec4 (normal_z.w, normal_z.w, normal_z.w, 1.0);
+                                vertex[offset].Normals  = glm::vec3 (normal_z.x, normal_z.y, normal_z.z);
+                                vertex[offset].Color    = glm::vec4 (normal_z.w, normal_z.w, normal_z.w, -1.0);
+#endif
+                                g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
                         }
                 }
 
-#if 0
                 if (option){
                         // box bottom z=0 vertices
-                        //g_message ("mkplane -- vtx box");
+                        g_message ("mkplane -- vtx box");
                         offset = BaseGridW*BaseGridH;
                         for (int s=0; s<4; ++s){
                                 int num = s%2 ? BaseGridW : BaseGridH;
-                                //g_message ("mkplane -- vtx s=%d",s);
+                                g_message ("mkplane -- vtx s=%d",s);
                                 glm::vec3 normal(s%2 ? 0.: s==1 ? 1.:-1.,
                                                  s%2 ? s==0 ? -1.:1. : 0.,
                                                  0.);
                                 for (int l=0; l<num; ++l){
                                         int x = s%2==0 ? l : s==1 ? BaseGridW-1:0;
                                         int y = s%2==0 ? s==0 ? 0:BaseGridH-1 : l;
-                                        //g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
+                                        g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
                                         double xd = x * s_factor;
                                         double yd = y * t_factor;
-                                        vertex[offset].Position = glm::vec3 (-0.5+xd, -1.0, -0.5+yd); // box z=0 base
+                                        vertex[offset].Position = glm::vec3 (-0.5+xd, -1.0, -(0.5+yd)*aspect); // box z=0 base
                                         vertex[offset].Normals  = normal; // fix corner normals!
-                                        vertex[offset].Color    = glm::vec4 (GLv_data.box_mat_color[0], GLv_data.box_mat_color[1], GLv_data.box_mat_color[2], GLv_data.box_mat_color[3]);
+                                        vertex[offset].Color    = glm::vec4(box_color[0], box_color[1], box_color[2], box_color[3]);
                                         ++offset;
                                 }
                         }
                 }
-#endif
                 g_message ("mkplane -- Vertex Count=%d", offset);
         
                 // Patch Indices
@@ -318,13 +331,13 @@ public:
                                 indices[ii++].indices.x = p4;
                         }
                 }
-#if 0
+
                 if (option){
                         g_message ("mkplane -- idx box");
                         // box patches
                         int pb0=BaseGridW*BaseGridH;
                         for (int s=0; s<4; ++s){
-                                //g_message ("mkplane -- idx s=%d",s);
+                                g_message ("mkplane -- idx s=%d",s);
                                 int num = s%2 ? i_width : i_height;
                                 for (int l=0; l<num; ++l){
                                         int x = s%2==0 ? l : s==1 ? BaseGridW-1:0;
@@ -333,23 +346,30 @@ public:
                                         int p2 = pb0+l;
                                         int p3 = p2+1;
                                         int p4 = p1+(s%2==0 ? 1:num);
-                                        //g_message ("mkplane idx -- x=%d y=%d  p: %d %d %d %d",x,y, p1,p2,p3,p4);
+                                        g_message ("mkplane idx -- x=%d y=%d  p: %d %d %d %d",x,y, p1,p2,p3,p4);
                                         indices[ii++].indices.x = p1;
                                         indices[ii++].indices.x = p2;
                                         indices[ii++].indices.x = p3;
                                         indices[ii++].indices.x = p4;
+                                        g_message ("  vertex[p1].Position = (%g %g %g)", vertex[p1].Position.x, vertex[p1].Position.y, vertex[p1].Position.z);
+                                        p1=p2;
+                                        g_message ("  vertex[p2].Position = (%g %g %g)", vertex[p1].Position.x, vertex[p1].Position.y, vertex[p1].Position.z);
+                                        p1=p3;
+                                        g_message ("  vertex[p3].Position = (%g %g %g)", vertex[p1].Position.x, vertex[p1].Position.y, vertex[p1].Position.z);
+                                        p1=p4;
+                                        g_message ("  vertex[p4].Position = (%g %g %g)", vertex[p1].Position.x, vertex[p1].Position.y, vertex[p1].Position.z);
                                 }
                                 pb0+=num;
                         }
                         g_message ("mkplane -- idx floor");
                         // box floor
-                        int pbf=pb0;
+                        int pbf=BaseGridW*BaseGridH;
                         indices[ii++].indices.x = pbf; pbf+=BaseGridW;
                         indices[ii++].indices.x = pbf; pbf+=BaseGridH;
                         indices[ii++].indices.x = pbf; pbf+=BaseGridW;
                         indices[ii++].indices.x = pbf;
+                        g_message ("mkplane floor idx -- p: %d %d %d %d", indices[ii-4].indices.x, indices[ii-3].indices.x, indices[ii-2].indices.x, indices[ii-1].indices.x);
                 }
-#endif
                 g_message ("mkplane -- Indices Count=%d of %d", ii, IndicesCount);
         };
 
@@ -491,7 +511,10 @@ private:
 	bool initBuffer() {
 		if (!Validated) return false;
 
-                surface_plane = new base_plane ((s->get_scan ())->mem2d, 128, (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx);
+                surface_plane = new base_plane ((s->get_scan ())->mem2d, 4,
+                                                (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx,
+                                                s->GLv_data.box_mat_color
+                                                );
                 
 		return checkError("initBuffer");
 	};
@@ -720,7 +743,7 @@ public:
                 glBindTexture(GL_TEXTURE_2D, TextureName[0]);
                 glBindTexture(GL_TEXTURE_2D, TextureName[1]);
 
-                surface_plane->draw ();
+                surface_plane->draw (s->GLv_data.TickFrameOptions[0]=='2' || s->GLv_data.TickFrameOptions[0]=='3'); // surface with box or plane surface only
 
 		return checkError("render");
                 

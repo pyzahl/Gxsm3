@@ -38,9 +38,13 @@ float height(vec2 position)
 
 void main()
 {
-        // always update Z from map -- so only the terrain sampler2D needs to be dynamic
-        vec3 position = vec3 (Position.x, height(Position.xz), Position.z);
-	gl_Position = vec4 (position, 1.0);
+        // always update Z from map if Position vertex.y is set to > 100 -- so only the terrain sampler2D needs to be dynamic
+        if (Position.y < 100.) // check if y (height) from vertex or heigth field texture
+                vec3 position = Position;
+        else
+                vec3 position = vec3 (Position.x, height(Position.xz), Position.z);
+        
+        gl_Position = vec4 (position, 1.0);
 	Out.Vertex = position;
 	Out.Normal = Normals;
 	Out.Color  = Color;
