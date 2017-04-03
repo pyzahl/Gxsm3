@@ -75,6 +75,12 @@ void main()
         Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
         Out.Vertex    = vec3 (position.xyz);
         Out.VertexEye = vec3 (ModelView * vec4(position.xyz, 1));  // eye space
-	Out.Color     = color (tc);
+
+        // check color source, choose from vertex if valid (0..1), else taken from "diffuse" texture
+        if (In.Color.a < 0.)
+                Out.Color     = color (tc);
+        else
+                Out.Color     = In.Color;
+                
 	gl_Position = ModelViewProjection * vec4(position.xyz, 1.0);
 }

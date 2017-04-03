@@ -273,8 +273,8 @@ void XSM_Hardware::ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_S
 		}while ((++i < MAX_SRCS_CHANNELS) ? Mob[i]!=NULL : FALSE);
 		y_current = yindex;
 	}
-}
 
+}
 
 void XSM_Hardware::Transform(double *x, double *y){
 	double xx;
