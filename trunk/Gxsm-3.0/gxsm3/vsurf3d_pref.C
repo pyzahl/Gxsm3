@@ -36,7 +36,7 @@ const gchar *ColorMode_OptionsList[]  = { "Material Color", "Terrain Colors", "P
 const gchar *ColorSrc_OptionsList[]   = { "Uniform", "Height", "X-Chan", NULL };
 const gchar *TickFrame_OptionsList[]  = { "0: Simple", "1: XYZ with Labels", "2: XYZ Box", "3: XYZ w L Box", NULL };
 
-const gchar *CScale_OptionsList[] = { "-2","2","0.001","0.1","4", NULL };
+const gchar *CScale_OptionsList[] = { "-3","3","0.001","0.1","4", NULL };
 const gchar *ColorContrast_OptionsList[] = { "0","2","0.001","0.1","4", NULL };
 const gchar *ColorOffset_OptionsList[]   = { "-1","1","0.01","0.1","3", NULL };
 
@@ -59,12 +59,12 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 // ============ View
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/RotationX", "Rotation X", "120", GET_GLV_OFFSET (&GLvd_offset.rot[0]), 
+	( "V3dControl.View/RotationX", "Rotation X", "0", GET_GLV_OFFSET (&GLvd_offset.rot[0]), 
 	  Rot_OptionsList, N_("View"),
 	  N_("Rotation Angle in X"), NULL
 		),
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/RotationY", "Rotation Y", "90", GET_GLV_OFFSET (&GLvd_offset.rot[1]), 
+	( "V3dControl.View/RotationY", "Rotation Y", "-40", GET_GLV_OFFSET (&GLvd_offset.rot[1]), 
 	  Rot_OptionsList, N_("View"),
 	  N_("Rotation Angle in Y"), NULL
 		),

@@ -150,6 +150,7 @@ namespace
 
         GLint Uniform_shininess(0); // = 100.0;
         GLint Uniform_lightness(0); // = 100.0;
+        GLint Uniform_color_offset(0); // = 100.0;
 	GLint Uniform_delta(0); // vec2 float -- for normal computation, should be 1/NX, 1/NY
         GLint Uniform_wrap(0); // = 0.3;
 
@@ -255,15 +256,15 @@ public:
                 for (guint y=0; y<BaseGridH; ++y){
                         for (guint x=0; x<BaseGridW; ++x){
                                 offset = y*BaseGridW+x;
-                                glm::vec4 normal_z (0.0f,0.0f,1.0f,0.0f);
+                                glm::vec4 normal_z (0.0f,1.0f,0.0f,0.0f);
                                 double xd = x * s_factor;
                                 double yd = y * t_factor;
                                 double vd = 0.; // vi
                                 if (mob)
                                         mob->GetDataPkt_vec_normal_4F (xd*mob->GetNx(), yd*mob->GetNy(), vd, &normal_z, 1.); //GLv_data.hskl);
                                 //g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
-                                vertex[offset].Position = glm::vec3 (-0.5+xd, -(0.5+yd)*aspect, normal_z.w);
-                                vertex[offset].Normals  = glm::vec3 (normal_z.x, normal_z.y, normal_z.z);
+                                vertex[offset].Position = glm::vec3 (-0.5+xd, normal_z.w, -(0.5+yd)*aspect);
+                                vertex[offset].Normals  = glm::vec3 (normal_z.x, normal_z.z, normal_z.y);
                                 vertex[offset].Color    = glm::vec4 (normal_z.w, normal_z.w, normal_z.w, 1.0);
                         }
                 }
@@ -285,7 +286,7 @@ public:
                                         //g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
                                         double xd = x * s_factor;
                                         double yd = y * t_factor;
-                                        vertex[offset].Position = glm::vec3 (-0.5+xd, -0.5+yd, -1.0); // box z=0 base
+                                        vertex[offset].Position = glm::vec3 (-0.5+xd, -1.0, -0.5+yd); // box z=0 base
                                         vertex[offset].Normals  = normal; // fix corner normals!
                                         vertex[offset].Color    = glm::vec4 (GLv_data.box_mat_color[0], GLv_data.box_mat_color[1], GLv_data.box_mat_color[2], GLv_data.box_mat_color[3]);
                                         ++offset;
@@ -389,11 +390,11 @@ public:
               	TranslationCurrent = TranslationOrigin;
                 Translation3axis = glm::vec3(0.0f,0.0f,0.0f);
 
-                DistanceOrigin  = glm::vec3(10., -70., 0.);
+                DistanceOrigin  = glm::vec3(-60., 0., 0.);
               	DistanceCurrent = DistanceOrigin;
 
 
-                RotationOrigin = glm::ivec2(0,0);
+                RotationOrigin = glm::vec2(0.75,0);
                 RotationCurrent = RotationOrigin;
                 Rotation3axis = glm::vec3(0.0f,0.0f,0.0f);
 
@@ -407,16 +408,16 @@ public:
 private:
         
         glm::vec3 cameraPosition() const {
-                return glm::vec3(0., this->DistanceCurrent.x, this->DistanceCurrent.y);
+                return glm::vec3(0., this->DistanceCurrent.y, this->DistanceCurrent.x);
         };
         glm::vec3 modelPosition() const {
-                return glm::vec3(this->TranslationCurrent.x, this->TranslationCurrent.y, 0.);
+                return glm::vec3(this->TranslationCurrent.x, 0., this->TranslationCurrent.y);
         };
         glm::mat4 modelView() const {
                 // rotate model 1st around it's origin
-                glm::mat4 ModelRotateX = glm::rotate(glm::mat4(1.0f), this->RotationCurrent.y, glm::vec3(1.f, 0.f, 0.f));
-                glm::mat4 ModelRotateY = glm::rotate(ModelRotateX, -this->RotationCurrent.x, glm::vec3(0.f, 1.f, 0.f));
-                glm::mat4 ModelRotateZ = glm::rotate(ModelRotateY, (this->Rotation3axis.z+(GLfloat)M_PI), glm::vec3(0.f, 0.f, 1.f));
+                glm::mat4 ModelRotateX = glm::rotate(glm::mat4(1.0f), -this->RotationCurrent.y, glm::vec3(1.f, 0.f, 0.f)); // X
+                glm::mat4 ModelRotateY = glm::rotate(ModelRotateX, this->RotationCurrent.x, glm::vec3(0.f, 0.f, 1.f)); // GL Z is Screen depth = surface Y
+                glm::mat4 ModelRotateZ = glm::rotate(ModelRotateY, this->Rotation3axis.z, glm::vec3(0.f, 1.f, 0.f)); // GL Y is Screen Y = surface Z (I hate it)
                 // then translate
                 glm::mat4 ModelTranslate = glm::translate(ModelRotateZ,  modelPosition());
                 // final ModelView
@@ -464,6 +465,7 @@ private:
 
                         Uniform_shininess     = glGetUniformLocation(ProgramName, "shininess"); // = 100.0;
                         Uniform_lightness     = glGetUniformLocation(ProgramName, "lightness"); // = 1.0;
+                        Uniform_color_offset  = glGetUniformLocation(ProgramName, "color_offset"); // = vec4(0,0,0,0)
                         Uniform_ambientColor  = glGetUniformLocation(ProgramName, "ambientColor"); // = vec3(0.05, 0.05, 0.15 );
                         Uniform_wrap          = glGetUniformLocation(ProgramName, "wrap"); // = 0.3;
                         Uniform_delta         = glGetUniformLocation(ProgramName, "delta"); //  1/nx,1/ny
@@ -532,7 +534,7 @@ private:
                 
 		return checkError("initTextures");
         };
-
+        
         static void GLMessageHandler (GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const GLvoid* userParam) { 
                 g_message ("Source : %d; Type: %d; ID : %d; Severity : %d; length : %d\n==> %s",
                            source, type, id, severity, length,
@@ -619,31 +621,43 @@ public:
 		return checkError("end");
 	};
 
+        // used for height mapping
+        bool updateTexture (GLint line, GLsizei num_lines=1) { 
+		if (!Validated) return false;
+
+                glTextureSubImage2D(TextureName[0], 0, 0, line, numx, num_lines, GL_RGBA, GL_FLOAT, &Surf3D_Color[line*numx]);
+                glTextureSubImage2D(TextureName[1], 0, 0, line, numx, num_lines, GL_RGBA, GL_FLOAT, &Surf3D_Normal_Z[line*numx]);
+
+		return checkError("initTextures");
+        };
+
 	bool render() {
 		if (!Validated) return false;
 
-                g_message ("Render: Camera at = (0, %g, %g),"
-                           " Translate = (%g, %g, 0),"
+                g_message ("Render (GL coord system): Camera at = (0, %g, %g),"
+                           " Translate = (%g, 0, %g),"
                            " Rotate = (%g, %g, %g),"
                            " Height-Scale = %g"
                            "",
-                           DistanceCurrent.x, DistanceCurrent.y,
+                           DistanceCurrent.y, DistanceCurrent.x,
                            TranslationCurrent.x, TranslationCurrent.y,
-                           RotationCurrent.x, RotationCurrent.y, Rotation3axis.z,
+                           RotationCurrent.y, Rotation3axis.z, RotationCurrent.x, 
                            s->GLv_data.hskl);
 
-                
-                glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
                 glEnable (GL_DEPTH_TEST);
+                glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 glPolygonMode (GL_FRONT_AND_BACK, s->GLv_data.Mesh ? GL_LINE : GL_FILL);
-                glShadeModel(s->GLv_data.Smooth ? GL_SMOOTH : GL_FLAT);
+                // glShadeModel(s->GLv_data.Smooth ? GL_SMOOTH : GL_FLAT); // depricated
 
-                if (s->GLv_data.Cull)
+                if (s->GLv_data.Cull){
                         glEnable (GL_CULL_FACE);
-                else
+                        glCullFace (GL_BACK);
+                } else {
                         glDisable (GL_CULL_FACE);
-
+                }
+                
                 if (s->GLv_data.Smooth)
                         ; //glEnable (GL_LINE_SMOOTH);
 
@@ -654,7 +668,7 @@ public:
                 glm::mat4 Projection = glm::perspective (glm::radians (s->GLv_data.fov/57.3f), aspect, s->GLv_data.Znear, s->GLv_data.Zfar);
                 glm::mat4 Camera = glm::lookAt (cameraPosition(), // cameraPosition, the position of your camera, in world space
                                                 glm::vec3(0,0,0), //cameraTarget, where you want to look at, in world space
-                                                glm::vec3(0,0,1) // upVector, probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
+                                                glm::vec3(0,1,0) // upVector, probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
                                                 );
 
 		glm::mat4 Model = glm::mat4(1.0f);
@@ -665,9 +679,6 @@ public:
                  * the GtkGLArea gets a new size allocation
                  */
                 // glViewport (0, 0, WindowSize.x, WindowSize.y);
-
-		//glClearBufferfv(GL_COLOR, 0, &glm::vec4(0.0f)[0]);
-                glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
 
 		glUseProgram (ProgramName);
                 // Projection
@@ -689,6 +700,7 @@ public:
 
                 glUniform1f  (Uniform_shininess, 4.*(1.00001-s->GLv_data.surf_mat_shininess[0]/100.));
                 glUniform1f  (Uniform_lightness, s->GLv_data.ColorContrast);
+                glUniform4f  (Uniform_color_offset, s->GLv_data.ColorOffset, s->GLv_data.ColorOffset, s->GLv_data.ColorOffset, s->GLv_data.transparency_offset);
                 glUniform3fv (Uniform_ambientColor, 1, &s->GLv_data.light_global_ambient[0]); // = vec3(0.05, 0.05, 0.15 );
                 glUniform1f  (Uniform_wrap, 0.3); //&s->GLv_data.xxx); // = 0.3;
                 glUniform2f  (Uniform_delta, 2./s->XPM_x, 2./s->XPM_x);
@@ -708,8 +720,10 @@ public:
                 glBindTexture(GL_TEXTURE_2D, TextureName[1]);
 
                 surface_plane->draw ();
+
+		return checkError("render");
                 
-		return true;
+		//return true;
 	};
 
         void resize (gint w, gint h){
@@ -880,14 +894,13 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 
         //scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F ((double)k,(double)j,(double)vi, &surface_normal_z_buffer[i]);
 	//scan->mem2d->GetDataPktVMode_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], 1./MAXCOLOR);
-
+#if 1
+        surface_color_buffer[i].x = 0.;
+        surface_color_buffer[i].y = 1.;
+        surface_color_buffer[i].z = 0.;
+        surface_normal_z_buffer[i].w = (scan->mem2d->GetDataPkt(k,j,vi)-scan->mem2d->data->zmin)/scan->mem2d->data->zrange;
+#else
 	scan->mem2d->GetDataPkt_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], 1.0, XPM_x*GLv_data.hskl/scan->mem2d->data->zrange);
-
-        if(0){
-                if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1)
-                        surface_normal_z_buffer[i].w = -1.;
-        }
-
         // normals are not recalculated by GPU based on actual scaled Z -- so here kind of obsolete -- clean up or leave?? TDB
         // shift Norm to 0 .. 1
         surface_normal_z_buffer[i].x *= 0.5; surface_normal_z_buffer[i].x += 0.5;
@@ -896,31 +909,35 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
         // normalize Z to 0 .. 1
         surface_normal_z_buffer[i].w -= scan->mem2d->data->zmin;
         surface_normal_z_buffer[i].w /= scan->mem2d->data->zrange;
-
+#endif
+        
+        if(0){
+                if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1)
+                        surface_normal_z_buffer[i].w = -1.;
+        }
         
 	if (GLv_data.ColorSrc[0] != 'U'){
 		switch (GLv_data.ColorSrc[0]){
 		case 'H': 
-			val = (GLfloat) (GLv_data.ColorOffset + GLv_data.ColorContrast * surface_normal_z_buffer[i].w);
+			val = (GLfloat) (surface_normal_z_buffer[i].w);
 			break;
 		case 'X': 
 			if (mem2d_x){
 				// map to index range of Chan-X, assumes scan range is the same.
 				int u = (int) (k * (double)mem2d_x->GetNx () / (double)scan->mem2d->GetNx ());
 				int v = (int) (j * (double)mem2d_x->GetNy () / (double)scan->mem2d->GetNy ());
-				val = (GLfloat) (GLv_data.ColorOffset + 
-						 GLv_data.ColorContrast * mem2d_x->GetDataVMode (u,v)/mem2d_x->GetDataRange ());
+				val = (GLfloat) (mem2d_x->GetDataVMode (u,v)/mem2d_x->GetDataRange ());
 			} else
-				val = 1.;
+				val = 0.5;
 			break;
 		default: 
-			val = 1.; 
+			val = 0.5; 
 			break;
 		}
 
 		switch (GLv_data.ColorMode[0]){
 		case 'T': // Terrain Color
-			calccolor(val*1024, surface_color_buffer[i]);
+			calccolor(val*maxcolors, surface_color_buffer[i]);
 			break;
 		case 'M': // Material Color
 			surface_color_buffer[i].x = GLv_data.surf_mat_color[0];
@@ -928,8 +945,8 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 			surface_color_buffer[i].z = GLv_data.surf_mat_color[2];
 			break;
 		case 'P': { // GXSM user Palette
-			int ci = (int)(val*1024);
-			ci = ci < 0 ? 0 : ci >= 1024 ? 1023 : ci;
+			int ci = (int)(val*maxcolors);
+			ci = ci < 0 ? 0 : ci >= maxcolors ? (maxcolors-1) : ci;
 			surface_color_buffer[i].x = ColorLookup[ci][0];
 			surface_color_buffer[i].y = ColorLookup[ci][1];
 			surface_color_buffer[i].z = ColorLookup[ci][2];
@@ -986,6 +1003,8 @@ void Surf3d::GLvarinit(){
         surface_normal_z_buffer = NULL;
 	surface_color_buffer = NULL;
 
+	ReadPalette (xsmres.Palette);
+
 // create preferences table from static table and replace pointers to
 // functions with callbacks of this instance
 	GnomeResEntryInfoType *res = v3dControl_pref_def_const;
@@ -1011,7 +1030,6 @@ void Surf3d::GLvarinit(){
 	gnome_res_set_destroy_on_close (v3dControl_pref_dlg, FALSE);
 	gnome_res_read_user_config (v3dControl_pref_dlg);
 	
-	ReadPalette (xsmres.Palette);
 }
 
 void Surf3d::GLupdate (void* data){
@@ -1244,6 +1262,7 @@ void Surf3d::GLModes(int n, int m){
 
 
 void Surf3d::ReadPalette(char *name){
+        maxcolors = 8192;
 	if (name){
 		std::ifstream cpal;
 		char pline[256];
@@ -1255,8 +1274,10 @@ void Surf3d::ReadPalette(char *name){
 			cpal >> nx >> ny;
 			cpal.getline(pline, 255);
 			cpal.getline(pline, 255);
-			
-			for (int i=0; i<1024; ++i){
+
+                        maxcolors = MIN(nx, 8192);
+
+			for (int i=0; i<maxcolors; ++i){
 				int r,g,b;
 				cpal >> r >> g >> b;
 				ColorLookup[i][0] = r/255.;
@@ -1267,10 +1288,9 @@ void Surf3d::ReadPalette(char *name){
 		}
 	}
 	// default grey and fallback mode:
-	for (int i=0; i<1024; ++i)
-		ColorLookup[i][0] =
-		ColorLookup[i][1] =
-		ColorLookup[i][2] = i/1024.;
+        maxcolors = 4096;
+	for (int i=0; i<maxcolors; ++i)
+		ColorLookup[i][0] = ColorLookup[i][1] = ColorLookup[i][2] = i/(double)maxcolors;
 }
 
 // height in [0..1] expected!
@@ -1322,7 +1342,7 @@ void Surf3d::calccolor(GLfloat height, glm::vec4 &c)
 
 void Surf3d::setup_data_transformation(){
 	scan->mem2d->SetDataPktMode (data->display.ViewFlg);
-	scan->mem2d->SetDataRange (0, 1024);
+	scan->mem2d->SetDataRange (0, maxcolors);
 }
 
 int Surf3d::update(int y1, int y2){
@@ -1342,9 +1362,12 @@ int Surf3d::update(int y1, int y2){
 				PutPointMode (k,j,v);
 	}
 
-        if (v3dcontrol)
+        if (v3dcontrol){
+                if (gl_tess)
+                        gl_tess->updateTexture (y1, y2-y1);
                 v3dcontrol->rerender_scene ();
-
+        }
+        
         XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::update done.");
 	return 0;
 }
@@ -1537,6 +1560,14 @@ void Surf3d::GLdrawGimmicks(){
 */
 
 void Surf3d::GLdrawsurface(int y_to_update, int refresh_all){
+
+        if (gl_tess){
+                if (refresh_all)
+                        gl_tess->updateTexture (0, XPM_y);
+                else
+                        gl_tess->updateTexture (y_to_update);
+        }
+        
 #if 0
 	int slice_pli[3];
 	XSM_DEBUG (GL_DEBUG_L2, "GL:::GLdrawsurface y_to_update=" << y_to_update);
@@ -1583,219 +1614,6 @@ void Surf3d::GLdrawsurface(int y_to_update, int refresh_all){
 }
 
 
-
-/* ::GLdrawscene
- * ======================================================================
- * (re)draw all: create/recall scene
- * - adjust scene settings
- * - create transform/rotate matrix
- * - draw surface
- * - draw extra stuff
- * - swap/flush buffer(s) to visual
- */
-
-// https://www.bassi.io/articles/2015/02/17/using-opengl-with-gtk/
-// http://gamedev.stackexchange.com/questions/34108/opengl-vbo-or-glbegin-glend
-// https://bcmpinc.wordpress.com/2015/08/15/starting-with-opengl-4-5/
-
-gboolean Surf3d::GLdrawscene(GdkGLContext *glcontext, int y_to_update, int refresh_all){
-	XSM_DEBUG_GP (GL_DEBUG_L2, "SURF3D:::GLdrawscene");
-
-	if(!v3dcontrol) return FALSE;
-        
-	XSM_DEBUG_GP (GL_DEBUG_L2, "SURF3D:::GLdrawscene set modes\n");
-
-        
-#if 0
-	if(GLv_data.Mesh)
-		glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-	else
-		glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-
-
-	if (GLv_data.Cull)
-		glEnable (GL_CULL_FACE);
-	else
-		glDisable (GL_CULL_FACE);
-
-	if (GLv_data.Smooth)
-		glShadeModel(GL_SMOOTH);
-	else
-		glShadeModel(GL_FLAT);
-
-	GLfloat light_position[4];
-	GLenum light_no[3] = { GL_LIGHT0, GL_LIGHT1, GL_LIGHT2 };
-	for (int i=0; i<3; ++i){
-		if ( GLv_data.light[i][1] == 'n' ){ // "On" / "Off" ?
-			copyvec4  (light_position, GLv_data.light_position[i]);
-			mulvecwf  (light_position, (GLfloat)XPM_x);
-			glLightfv (light_no[i], GL_POSITION, light_position);
-			glLightfv (light_no[i], GL_AMBIENT,  GLv_data.light_ambient[i]);
-			glLightfv (light_no[i], GL_SPECULAR, GLv_data.light_specular[i]);
-			glLightfv (light_no[i], GL_DIFFUSE,  GLv_data.light_diffuse[i]);
-			glEnable  (light_no[i]);
-		}
-		else
-			glDisable (light_no[i]);
-	}
-	glEnable (GL_LIGHTING);
-	glEnable (GL_DEPTH_TEST);
-
-/*	Specifies a lighting model parameter.
-                    GL_LIGHT_MODEL_AMBIENT,
-                    GL_LIGHT_MODEL_COLOR_CONTROL,
-                    GL_LIGHT_MODEL_LOCAL_VIEWER, and
-                    GL_LIGHT_MODEL_TWO_SIDE are accepted.
-*/              	
-	glLightModelf (GL_LIGHT_MODEL_TWO_SIDE, 1);	
-
-	if (GLv_data.Texture)
-		glEnable (GL_TEXTURE_2D);
-	else
-		glDisable (GL_TEXTURE_2D);
-		
-	if (GLv_data.Fog){
-		glEnable (GL_FOG);
-		glFogi (GL_FOG_MODE,GL_EXP2);
-		glFogfv (GL_FOG_COLOR, GLv_data.fog_color);
-		glFogf (GL_FOG_DENSITY, GLv_data.fog_density/XPM_x);
-	}
-	else
-		glDisable (GL_FOG);
-
-#endif
-        
-#if 0
-	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-	glPushMatrix ();
-
-	XSM_DEBUG_GP (GL_DEBUG_L2, "SURF3D:::GLdrawscene set camera");
-
-        
-	float x=XPM_x*GLv_data.dist;
-
-        look_at_GL (0., -x, 0.,  0., x+1., 0.,   0.0,0.0,1.0);
-		
-	int ox,oy,oz;
-	ox = (int)(GLv_data.trans[0]*XPM_x/2./100.);
-	oy = (int)(GLv_data.trans[1]*XPM_y/2./100.);
-	oz = (int)(GLv_data.trans[2]*(XPM_x+XPM_y)/4./100.);
-		
-	// setup scene in space
-	
-	glPushMatrix ();
-	glTranslatef ((float)ox,(float)oz,(float)oy);
-	
-	glRotatef (GLv_data.rot[0], 1.0, 0.0, 0.0);
-	glRotatef (GLv_data.rot[1], 0.0, 1.0, 0.0);
-	glRotatef (GLv_data.rot[2], 0.0, 0.0, 1.0);
-
-#endif
-        
-#if 0
-	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLdrawscene draw now...\n");
-	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLdrawscene ** DRAW TEST TRIANGLE\n");
-        // Draw the triangle !
-        //glClear (GL_COLOR_BUFFER_BIT);
-        glDrawArrays (GL_TRIANGLES, 0, 6); // Starting from vertex 0; 3 vertices total -> 2 triangle
-        //glutSwapBuffers ();
-        //glDisableVertexAttribArray (0);
-#endif
-#if 0
-        
-        // *******************************
-        
-	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLdrawscene ** done **\n");
-	GLdrawsurface (y_to_update, (glSurfaceListRange?(glSurfaceListRange[0]==0):0) || valid == 2 ? TRUE:refresh_all);
-
-	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLdrawscene draw gimmicks...");
-
-	if (GLv_data.Ticks)
-		GLdrawGimmicks ();
-
-	// data and lists are valid now!
-	valid = 1;
-
-#endif
-
-#if 0
-	glPopMatrix ();
-	glPopMatrix ();
-#endif
-	XSM_DEBUG_GP (GL_DEBUG_L2, "SURF3D:::GLdrawscene done.");
-	return TRUE;
-}
-
-#if 0
-void Surf3d::init_buffer_objects (GError **internal_error){
-	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::init_buffer_objects");
-
-        //    RGBA buffer as Normal XYZ, Z in vec4* surface_normal_z_buffer	
-
-        // ************** OPENGL 4.5 TEST
-        // An array of 3 vectors which represents 3 vertices
-        vec3 g_vertex_buffer_data[] = {
-                vec3 (-100.0f, -100.0f, 0.0f),
-                vec3 (100.0f, -100.0f, 0.0f),
-                vec3 (0.0f,  100.0f, 0.0f),
-                vec3 (-100.0f, -100.0f, 30.0f),
-                vec3 (100.0f, -100.0f, 30.0f),
-                vec3 (0.0f,  100.0f, 30.0f)
-        };
-
-        GLuint vao[1];
-        glGenVertexArrays (1, vao);
-        glBindVertexArray (vao[0]);
-
-        // This will identify our vertex buffer
-        GLuint vertexbuffer[1];
-        // Generate 1 buffer, put the resulting identifier in vertexbuffer
-	XSM_DEBUG_GP (GL_DEBUG_L2, "SURF3D:::GLdrawscene ** VB1\n");
-        glGenBuffers(1, vertexbuffer);
-
-        // The following commands will talk about our 'vertexbuffer' buffer
-	XSM_DEBUG_GP (GL_DEBUG_L2, "SURF3D:::GLdrawscene ** VB2\n");
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[1]);
-
-        // Give our vertices to OpenGL.
-	XSM_DEBUG_GP (GL_DEBUG_L2, "SURF3D:::GLdrawscene ** VB3\n");
-        glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
-	XSM_DEBUG_GP (GL_DEBUG_L2, "SURF3D:::GLdrawscene ** VA\n");
-
-        // init shader?? + use program
-        GLuint loc = glGetAttribLocation (program, "vPosition");
-        glEnableVertexAttribArray (loc);
-        glVertexAttribPointer (loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glClearColor (0.0, 0.0, 0.0, 1.0);
-
-        // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray (loc);
-        glVertexAttribPointer (
-                              0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-                              3,                  // size
-                              GL_FLOAT,           // type
-                              GL_FALSE,           // normalized?
-                              0,                  // stride
-                              (void*)0            // array buffer offset
-                              );
-
-	XSM_DEBUG_GP (GL_DEBUG_L2, "SURF3D:::GLdrawscene ** DRAW\n");
-}
-
-void Surf3d::init_shaders (GError **internal_error){
-	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::init_shaders");
-
-        program = load_shaders (
-                                "vs3d_gl_vertex_shader.glsl",
-                                "vs3d_gl_fragment_shader.glsl",
-                                "vs3d_gl_control_shader.glsl",
-                                "vs3d_gl_eval_shader.glsl"
-                                );
-
-}
-#endif
 
 void realize_vsurf3d_cb (GtkGLArea *area, Surf3d *s){
 	XSM_DEBUG (GL_DEBUG_L2, "GL:::REALIZE-EVENT");
@@ -1860,11 +1678,9 @@ render_vsurf3d_cb (GtkGLArea *area, GdkGLContext *context, Surf3d *s)
         
         XSM_DEBUG (GL_DEBUG_L2, "GL:::RENDER-EVENT -- execute GPU tesseleation");
 
-
         //s->gl_tess->set_rotation (s->GLv_data.rot);
         //s->gl_tess->get_translation (s->GLv_data.trans);
         return s->gl_tess->render ();
-        // return s->GLdrawscene (context);
 }
 
 
@@ -1878,16 +1694,13 @@ int Surf3d::draw(int zoomoverride){
 	}
 	
 	if ( !v3dcontrol )
-		v3dcontrol = new V3dControl ("3D GL-View", ChanNo, scan,
+		v3dcontrol = new V3dControl ("3D Surface View (using GL/GPU)", ChanNo, scan,
 					     G_CALLBACK (resize_vsurf3d_cb),
 					     G_CALLBACK (render_vsurf3d_cb),
                                              G_CALLBACK (realize_vsurf3d_cb),
 					     self);
 
         v3dcontrol->rerender_scene ();
-
-        //if (scan && self)
-        //        GLupdate (self);
         
 	return 0;
 }
@@ -1898,395 +1711,3 @@ void Surf3d::preferences(){
 	if (v3dControl_pref_dlg)
 		gnome_res_run_change_user_config (v3dControl_pref_dlg, "GL Scene Setup");
 }
-
-
-
-
-
-/*
-
-The terrain in this video is rendered from a 4096x4096 pixel heightmap, normalmap and texture. It consists of 128x128 patches, each of which can be divided up to 64 times. This gives a virtual triangle resolution of up to 67 million triangles.
-Since the GTX-460 has a performance of about 600 million triangles per second, if all triangles where put on screen the result would be around 10 frames per second.
-Using tessellation shaders and a LODing technique, I can get framerates between 360-500 FPS on this scene.
-
-Why GPU LODing?
-LODing has a long history and traditionally it was all done on the CPU and then pushed to the GPU. By far and large all traditional approaches to LODing of terrain have these things in common.
-They are complex and difficult to implement, for instance Overgrowth by Wolfire eschews the use of CPU LODing in favor of TINs.
-Noticable temporal and/or spatial artefacts
-Not compatible with TINs
-Shift load from the (very powerful) GPU to the CPU
-Rely on a lot of preprocessing
-By moving the level of detail implementation into the graphics card, these issues can be addressed much more satisfactory.
-New OpenGL Functionality
-Opengl 4 introduced three new pipeline stages between Vertex shading and Geometry shading
-Tessellation Control: Is Programmable. Decides how often a patch is subdivided.
-Tessellator: Is configurable. Takes the data from control and produces new primitives.
-Tessellation Evaluation: Is programmable. Receives the output of the tessellator, can modify each output vertex.
-It also introduced a couple of new primitives, the most important of which is GL_PATCHES which can have between 1 - 32 vertices per patch.
-Libraries
-I use a texture for the terrain color, a heightmap texture for the terrain elevation and a normalmap texture for normals. The terrain is generated with Lithosphere. For windowing, opengl context and input I use Pyglet and an abstraction library for advanced OpengGL usage: gletools.
-Setup
-// The normal and heightmap are baked together into a GL_RGBA32F texture where RGB is the normal and Alpha is the terrain height. With these textures bound and the shader program, a plane consisting of 128x128 quad patches is rendered using a Vertexbuffer object. The plane covers the world coordinates from 0,0,0 to 1,1,0. The Z axis in worldspace is assumed to be terrain elevation.
-Vertex Shader
-// For each vertex sent in a lookup into the terrain texture is made using x and y positions as texture coordinates. The obtained height is written to the z component of the resulting gl_Position.
-// -- glsl
-
-in vec4 position;
-uniform sampler2D terrain;
-
-void main(void){
-    vec2 texcoord = position.xy;
-    float height = texture(terrain, texcoord).a;
-    vec4 displaced = vec4(
-        position.x, position.y,
-        height, 1.0);
-    gl_Position = displaced;
-}
-
-Tessellation control shader
-Defines that this shader produces 4 vertices of output.
-glsl
-layout(vertices = 4) out;
-Accept three uniforms, the screen size in pixels, the modelview/projection matrix and a LOD factor
-glsl
-uniform vec2 screen_size;
-uniform mat4 mvp;
-uniform float lod_factor;
-
-// A helper function to project a world space vertex to device normal space -- glsl
-
-vec4 project(vec4 vertex){
-    vec4 result = mvp * vertex;
-    result /= result.w;
-    return result;
-}
-
-// This helper function converts a device normal space vector to screen space -- glsl
-
-vec2 screen_space(vec4 vertex){
-    return (clamp(vertex.xy, -1.3, 1.3)+1) * (screen_size*0.5);
-}
-
-// The LOD calculation as a function of distance in screen space -- glsl
-
-float level(vec2 v0, vec2 v1){
-     return clamp(distance(v0, v1)/lod_factor, 1, 64);
- }
-
-// To improve performance this function is used to test a vertex in device normal space against the view frustum -- glsl
-
-bool offscreen(vec4 vertex){
-    if(vertex.z < -0.5){
-        return true;
-    }   
-    return any(
-        lessThan(vertex.xy, vec2(-1.7)) ||
-        greaterThan(vertex.xy, vec2(1.7))
-    );  
-}
-
-// The main function is called for each vertex in the patch. gl_InvocationID identifies which vertex is being processed.
-// An estimate is made whether a primitive is on screen, and if not, all tessellation levels are set to zero which causes this patch to be skipped.
-// If the patch is on screen then each edge is subdivided such as to approximate the given lod_factor (in pixels per edge).
-// -- glsl
-
-void main(){
-     #define id gl_InvocationID
-     gl_out[id].gl_Position = gl_in[id].gl_Position;
-     if(id == 0){
-         vec4 v0 = project(gl_in[0].gl_Position);
-         vec4 v1 = project(gl_in[1].gl_Position);
-         vec4 v2 = project(gl_in[2].gl_Position);
-         vec4 v3 = project(gl_in[3].gl_Position);
-
-         if(all(bvec4(
-             offscreen(v0),
-             offscreen(v1),
-             offscreen(v2),
-             offscreen(v3)
-         ))){
-             gl_TessLevelInner[0] = 0;
-             gl_TessLevelInner[1] = 0;
-             gl_TessLevelOuter[0] = 0;
-             gl_TessLevelOuter[1] = 0;
-             gl_TessLevelOuter[2] = 0;
-             gl_TessLevelOuter[3] = 0;
-         }
-         else{
-             vec2 ss0 = screen_space(v0);
-             vec2 ss1 = screen_space(v1);
-             vec2 ss2 = screen_space(v2);
-             vec2 ss3 = screen_space(v3);
-
-             float e0 = level(ss1, ss2);
-             float e1 = level(ss0, ss1);
-             float e2 = level(ss3, ss0);
-             float e3 = level(ss2, ss3);
-
-             gl_TessLevelInner[0] = mix(e1, e2, 0.5);
-             gl_TessLevelInner[1] = mix(e0, e3, 0.5);
-             gl_TessLevelOuter[0] = e0;
-             gl_TessLevelOuter[1] = e1;
-             gl_TessLevelOuter[2] = e2;
-             gl_TessLevelOuter[3] = e3;
-         }
-     }
- }
-
-// The tessellation is split into the inner part (gl_TessLevelInner) which governs how often the inside of a patch is divided, and the outer part (glTessLevelOuter) which governs how often an edge is divided.
-The gl_TessLevel* and gl_InvocationID variables for quad sized patches correlate in the following way:
-gl_TessLevelInner[0] orientation corresponds to the edges identified by gl_TessLevelOuter[1] and glTessLevelOuter[2]
-gl_TessLevelInner[1] orientation corresponds to the edges identified by gl_TessLevelOuter[0] and glTessLevelOuter[3]
-gl_TessLevelOuter[0] corresponds to gl_InvocationID 1 and 2
-gl_TessLevelOuter[1] corresponds to gl_InvocationID 0 and 1
-gl_TessLevelOuter[2] corresponds to gl_InvocationID 3 and 0
-gl_TessLevelOuter[2] corresponds to gl_InvocationID 2 and 3
-Tessellation Evaluation Shader
-Controls the Tessellator, telling it to produce smoothly sliding divisions (determined by the tessellation levels) at odd spacings. fractional_even_spacing and equal_spacing is also available.
-glsl
-layout(quads, fractional_odd_spacing, ccw) in;
-It produces a texture coordinate and a depth for use in the fragment shader, and it samples the terrain map again.
-glsl
-out vec2 texcoord;
-out float depth;
-
-uniform sampler2D terrain;
-uniform mat4 mvp;
-The Evaluation main function is called once for each vertex of the tessellated output. The coordinate is given as UV vector relative to the positions of the patches control points.
-After the position calculation, the texcoord is used to make the lookup into the terrain heightmap. Again the obtained height is used as Z component in the resulting gl_Position.
-glsl
-void main(){
-    float u = gl_TessCoord.x;
-    float v = gl_TessCoord.y;
-
-    vec4 a = mix(gl_in[1].gl_Position, gl_in[0].gl_Position, u);
-    vec4 b = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, u);
-    vec4 position = mix(a, b, v);
-    texcoord = position.xy;
-    float height = texture(terrain, texcoord).a;
-    gl_Position = mvp * vec4(texcoord, height, 1.0);
-    depth = gl_Position.z;
-}
-
-A geometry shader stage is not required and the fragment shader is business as usual and you can look it up in the full source.
-Source Code
-This terrain LOD implementation is available in the gletools examples or you can view the application and shader source directly. I use a small preprocessor to split the shader source in its respective (vertex, control, evaluator, fragment) components and add the version tag for each.
-I cannot share the terrain data at this point because it is 400mb in size.
-Advantages
-The implementation is reasonably easy with about 120 lines of shading code.
-A good quality of tessellation can be achieved
-Instead of regularly divided meshes, TINs could just as easily be used
-Keeps all the load on the GPU
-No preprocessing required
-Issues and Limitations
-The current algorithm for selecting the LOD factor tends to select too few division on an edge when the view vector is collinear to a patches edge and the patch is near to the viewpoint. This leads to odd (but small) artifacts.
-A patch can be divided maximally by 64 further divisions per edge. Very large terrains would require a large number of input patches. This would lead to faraway patches being smaller then the desired primitive size, and near patches would be partially over tessellated.
-Loading larger terrains into vram is not feasible with the current approach.
-I do not have an ATI card, and I cannot comment if this code runs on it. It is largely unknown how many people as a gaming/creative professional audience would be able to use OpenGL 4 compatible hardware and drivers right now.
-Further Work
-A better measure for the LOD factor could be developed that both preserves screen-space even division, but takes into account edges with too few divisions.
-Multi stage GPU tessellation using transform and feedback buffers could be used. This would allow fine grained control over tessellation without producing massive amounts of patches.
-The technique of texture clipmapping/megatexturing could be used to hold texture data many times larger then the available VRAM
-Acknowledgements
-The Rastergrid blog has some very good entries on new opengl functionality and rendering techniques.
-These two entries by The Little Grasshopper where instrumental for me to understand tessellation shading.
-The Redbook and the Orangebook where valuable sources of reference information and I'm looking forward to see these books in OpenGL 4.1 updated version.
-Me
-
-Florian Boesch
-Born 1978
-I like writing software, toying with 3d things and reading science fiction.
-Living in Basel, Switzerland
-pyalot@gmail.com
-
-
-#version 400
-
-vertex:
-    in vec4 position;
-    uniform sampler2D terrain;
-    
-    void main(void){
-        vec2 texcoord = position.xy;
-        float height = texture(terrain, texcoord).a;
-        vec4 displaced = vec4(position.x, position.y, height, 1.0);
-        gl_Position = displaced;
-    }
-
-control:
-    layout(vertices = 4) out;
-
-    uniform vec2 screen_size;
-    uniform mat4 mvp;
-    uniform float lod_factor;
-    
-    bool offscreen(vec4 vertex){
-        if(vertex.z < -0.5){
-            return true;
-        }
-        return any(
-            lessThan(vertex.xy, vec2(-1.7)) ||
-            greaterThan(vertex.xy, vec2(1.7))
-        );
-    }
-    
-    vec4 project(vec4 vertex){
-        vec4 result = mvp * vertex;
-        result /= result.w;
-        return result;
-    }
-
-    vec2 screen_space(vec4 vertex){
-        return (clamp(vertex.xy, -1.3, 1.3)+1) * (screen_size*0.5);
-    }
-
-    float level(vec2 v0, vec2 v1){
-        return clamp(distance(v0, v1)/lod_factor, 1, 64);
-    }
-
-    void main(){
-        if(gl_InvocationID == 0){
-            vec4 v0 = project(gl_in[0].gl_Position);
-            vec4 v1 = project(gl_in[1].gl_Position);
-            vec4 v2 = project(gl_in[2].gl_Position);
-            vec4 v3 = project(gl_in[3].gl_Position);
-
-            if(all(bvec4(offscreen(v0), offscreen(v1), offscreen(v2), offscreen(v3)))){
-                gl_TessLevelInner[0] = 0;
-                gl_TessLevelInner[1] = 0;
-                gl_TessLevelOuter[0] = 0;
-                gl_TessLevelOuter[1] = 0;
-                gl_TessLevelOuter[2] = 0;
-                gl_TessLevelOuter[3] = 0;
-            }
-            else{
-                vec2 ss0 = screen_space(v0);
-                vec2 ss1 = screen_space(v1);
-                vec2 ss2 = screen_space(v2);
-                vec2 ss3 = screen_space(v3);
-
-                float e0 = level(ss1, ss2);
-                float e1 = level(ss0, ss1);
-                float e2 = level(ss3, ss0);
-                float e3 = level(ss2, ss3);
-
-                gl_TessLevelInner[0] = mix(e1, e2, 0.5);
-                gl_TessLevelInner[1] = mix(e0, e3, 0.5);
-                gl_TessLevelOuter[0] = e0;
-                gl_TessLevelOuter[1] = e1;
-                gl_TessLevelOuter[2] = e2;
-                gl_TessLevelOuter[3] = e3;
-            }
-        }
-        gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-    }
-
-eval:
-    layout(quads, fractional_odd_spacing, ccw) in;
-    out vec2 texcoord;
-    out float depth;
-
-    uniform sampler2D terrain;
-    uniform mat4 mvp;
-
-    void main(){
-        float u = gl_TessCoord.x;
-        float v = gl_TessCoord.y;
-
-        vec4 a = mix(gl_in[1].gl_Position, gl_in[0].gl_Position, u);
-        vec4 b = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, u);
-        vec4 position = mix(a, b, v);
-        texcoord = position.xy;
-        float height = texture(terrain, texcoord).a;
-        gl_Position = mvp * vec4(texcoord, height, 1.0);
-        depth = gl_Position.z;
-    }
-
-fragment:
-    in vec2 texcoord;
-    in float depth;
-    out vec4 fragment;
-
-    uniform sampler2D diffuse;
-    uniform sampler2D terrain;
-    uniform sampler2D noise_tile;
-
-    vec3 incident = normalize(vec3(1.0, 0.2, 0.5));
-    vec4 light = vec4(1.0, 0.95, 0.9, 1.0) * 1.1;
-
-    void main(){
-        vec3 normal = normalize(texture(terrain, texcoord).xyz);
-        vec4 color = texture(diffuse, texcoord);
-        float noise_factor = texture(noise_tile, texcoord*32).r+0.1;
-
-        float dot_surface_incident = max(0, dot(normal, incident));
-
-        color = color * light * noise_factor * (max(0.1, dot_surface_incident)+0.05)*1.5;
-        fragment = mix(color, color*0.5+vec4(0.5, 0.5, 0.5, 1.0), depth*2.0);
-    }
-
-//---
-
-from contextlib import nested
-import math
-
-import pyglet
-from pyglet.gl import *
-
-from gletools import ShaderProgram, Matrix, Texture, Sampler2D, DepthTest
-
-from util import View, make_plane
-
-config = Config(buffers=2, samples=4)
-window = pyglet.window.Window(config=config, fullscreen=True, vsync=False)
-view = View(window)
-
-size = 1024*4
-diffuse = Texture.raw_open('data/patches/snowy_mountains.diffuse', 
-    width=size, height=size, format=GL_RGBA32F,
-    mipmap=4, filter=GL_LINEAR_MIPMAP_LINEAR, clamp='st',
-    unit=GL_TEXTURE0,
-)
-terrain = Texture.raw_open('data/patches/snowy_mountains.terrain',
-    width=size, height=size, format=GL_RGBA32F,
-    unit=GL_TEXTURE1, clamp='st',
-)
-noise_tile = Texture.open('data/tilable_noise.png', 
-    mipmap=4, filter=GL_LINEAR_MIPMAP_LINEAR, unit=GL_TEXTURE2,
-)
-
-program = ShaderProgram.open('terrain.shader',
-    diffuse = Sampler2D(GL_TEXTURE0),
-    terrain = Sampler2D(GL_TEXTURE1),
-    noise_tile = Sampler2D(GL_TEXTURE2),
-    lod_factor = 4.0,
-)
-
-vbo = make_plane(128, 128)
-fps = pyglet.clock.ClockDisplay(color=(144.0/255.0,195.0/255.0,6.0/255.0,0.5))
-
-@window.event
-def on_draw():
-    window.clear()
-
-    model = Matrix().rotatex(-0.25).translate(-0.5, -0.5, 0.0)
-    projection = Matrix.perspective(window.width, window.height, 65, 0.0001, 100.0)
-    modelview = view.matrix * model
-
-    program.vars.mvp = projection * modelview
-    program.vars.screen_size = float(window.width), float(window.height)
-
-    with nested(DepthTest, diffuse, terrain, noise_tile, program):
-        glPatchParameteri(GL_PATCH_VERTICES, 4);
-        vbo.draw(GL_PATCHES)
-   
-    fps.draw()
-
-if __name__ == '__main__':
-    glEnable(GL_CULL_FACE)
-    glCullFace(GL_BACK)
-    glClearColor(1,1,1,1)
-    pyglet.app.run()
-
-
-*/
