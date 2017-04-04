@@ -19,6 +19,7 @@ in block
         vec3 Vertex;
         vec3 Normal;
         vec4 Color;
+        //	bool IsTerrain;
 } In[];
 
 out block {
@@ -26,6 +27,7 @@ out block {
         vec3 VertexEye;
         vec3 Normal;
         vec4 Color;
+        //	bool IsTerrain;
 } Out;
 
 
@@ -37,6 +39,15 @@ uniform float height_offset;
 uniform mat4 ModelView;
 uniform mat4 ModelViewProjection;
 uniform vec2 delta;
+
+#if 0
+vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
+{
+        vec4 a = mix(v0, v1, gl_TessCoord.x);
+        vec4 b = mix(v3, v2, gl_TessCoord.x);
+        return mix(a, b, gl_TessCoord.y);
+}
+#endif
 
 vec2 terraincoord(vec2 position){
         return vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swapped
@@ -64,7 +75,25 @@ void main()
 	vec4 a = mix(gl_in[1].gl_Position, gl_in[0].gl_Position, u);
 	vec4 b = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, u);
 	vec4 position = mix(a, b, v);
+
+#if 0
+        Out.IsTerrain = In[0].IsTerrain;
         
+        if (Out.IsTerrain){
+                vec2 tc = terraincoord (position.xz);
+                position.y = height (tc);
+
+                // calculate normal
+                vec3 pa = vec3(position.x + delta.x, height (terraincoord (position.xz + vec2 (delta.x, 0.))),  position.z);
+                vec3 pb = vec3(position.x, height (terraincoord (position.xz + vec2 (0., delta.y))), position.z + delta.y);
+
+                Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
+                Out.Color     = color (tc);
+        } else {
+                Out.Normal = normalize(In[0].Normal);
+                Out.Color = interpolate(In[0].Color, In[1].Color, In[2].Color, In[3].Color);
+        }
+#else
         vec2 tc = terraincoord (position.xz);
         position.y = height (tc);
 
@@ -73,14 +102,9 @@ void main()
         vec3 pb = vec3(position.x, height (terraincoord (position.xz + vec2 (0., delta.y))), position.z + delta.y);
 
         Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
+        Out.Color     = color (tc);
+#endif
         Out.Vertex    = vec3 (position.xyz);
         Out.VertexEye = vec3 (ModelView * vec4(position.xyz, 1));  // eye space
-
-        // check color source, choose from vertex if valid (0..1), else taken from "diffuse" texture
-        if (In.Color.a < 0.)
-                Out.Color     = color (tc);
-        else
-                Out.Color     = In.Color;
-                
-	gl_Position = ModelViewProjection * vec4(position.xyz, 1.0);
+        gl_Position = ModelViewProjection * vec4(position.xyz, 1.0);
 }

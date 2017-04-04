@@ -21,6 +21,7 @@ in block {
         vec3 VertexEye;
         vec3 Normal;
         vec4 Color;
+        //	bool IsTerrain;
 } In[];
 
 out block {
@@ -28,6 +29,7 @@ out block {
         vec3 VertexEye;
         vec3 Normal;
         vec4 Color;
+        //	bool IsTerrain;
 } Out;
 
 void main()
@@ -38,6 +40,7 @@ void main()
 		Out.Vertex = In[i].Vertex;
 		Out.Normal = In[i].Normal;
 		Out.Color = In[i].Color;
+		// Out.IsTerrain = In[i].IsTerrain;
 		EmitVertex();
 	}
 	EndPrimitive();

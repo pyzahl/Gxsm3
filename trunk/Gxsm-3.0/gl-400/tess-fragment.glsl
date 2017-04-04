@@ -17,6 +17,7 @@ in block {
         vec3 VertexEye;
         vec3 Normal;
         vec4 Color;
+        //        bool IsTerrain;
 } In;
 
 out vec4 FragColor;

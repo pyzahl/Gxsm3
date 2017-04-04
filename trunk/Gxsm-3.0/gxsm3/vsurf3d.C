@@ -275,12 +275,11 @@ public:
 #else
                                 if (mob)
                                         mob->GetDataPkt_vec_normal_4F (xd*(mob->GetNx()-1), yd*(mob->GetNy()-1), vd, &normal_z, 1.); //GLv_data.hskl);
-                                //g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
                                 vertex[offset].Position = glm::vec3 (-0.5+xd, normal_z.w, -(0.5+yd)*aspect);
                                 vertex[offset].Normals  = glm::vec3 (normal_z.x, normal_z.y, normal_z.z);
                                 vertex[offset].Color    = glm::vec4 (normal_z.w, normal_z.w, normal_z.w, -1.0);
 #endif
-                                g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
+                                //g_message ("mkplane vtx -- x=%d y=TEX z=%d  [%d]",x,y, offset);
                         }
                 }
 
@@ -290,14 +289,14 @@ public:
                         offset = BaseGridW*BaseGridH;
                         for (int s=0; s<4; ++s){
                                 int num = s%2 ? BaseGridW : BaseGridH;
-                                g_message ("mkplane -- vtx s=%d",s);
+                                //g_message ("mkplane -- vtx s=%d",s);
                                 glm::vec3 normal(s%2 ? 0.: s==1 ? 1.:-1.,
                                                  s%2 ? s==0 ? -1.:1. : 0.,
                                                  0.);
                                 for (int l=0; l<num; ++l){
                                         int x = s%2==0 ? l : s==1 ? BaseGridW-1:0;
                                         int y = s%2==0 ? s==0 ? 0:BaseGridH-1 : l;
-                                        g_message ("mkplane vtx -- x=%d y=%d   [%d]",x,y, offset);
+                                        //g_message ("mkplane box [%d] vtx -- x=%d y=-1 z=%d  [%d]",s, x,y, offset);
                                         double xd = x * s_factor;
                                         double yd = y * t_factor;
                                         vertex[offset].Position = glm::vec3 (-0.5+xd, -1.0, -(0.5+yd)*aspect); // box z=0 base
@@ -342,15 +341,16 @@ public:
                                 for (int l=0; l<num; ++l){
                                         int x = s%2==0 ? l : s==1 ? BaseGridW-1:0;
                                         int y = s%2==0 ? s==0 ? 0:BaseGridH-1 : l;
-                                        int p1 = x+y*BaseGridW;
-                                        int p2 = pb0+l;
+                                        int p1 = x+y*BaseGridW; // ok for ..x..
+                                        int p2 = pb0+l; //ok
                                         int p3 = p2+1;
-                                        int p4 = p1+(s%2==0 ? 1:num);
-                                        g_message ("mkplane idx -- x=%d y=%d  p: %d %d %d %d",x,y, p1,p2,p3,p4);
+                                        int p4 = p1+(s%2==0 ? 1:BaseGridW);
                                         indices[ii++].indices.x = p1;
                                         indices[ii++].indices.x = p2;
                                         indices[ii++].indices.x = p3;
                                         indices[ii++].indices.x = p4;
+#if 0
+                                        g_message ("mkplane idx [%d] -- x=%d y=%d  p1..4= %d %d %d %d",ii, x,y, p1,p2,p3,p4);
                                         g_message ("  vertex[p1].Position = (%g %g %g)", vertex[p1].Position.x, vertex[p1].Position.y, vertex[p1].Position.z);
                                         p1=p2;
                                         g_message ("  vertex[p2].Position = (%g %g %g)", vertex[p1].Position.x, vertex[p1].Position.y, vertex[p1].Position.z);
@@ -358,8 +358,9 @@ public:
                                         g_message ("  vertex[p3].Position = (%g %g %g)", vertex[p1].Position.x, vertex[p1].Position.y, vertex[p1].Position.z);
                                         p1=p4;
                                         g_message ("  vertex[p4].Position = (%g %g %g)", vertex[p1].Position.x, vertex[p1].Position.y, vertex[p1].Position.z);
+#endif
                                 }
-                                pb0+=num;
+                                pb0+=num+1;
                         }
                         g_message ("mkplane -- idx floor");
                         // box floor
@@ -368,7 +369,13 @@ public:
                         indices[ii++].indices.x = pbf; pbf+=BaseGridH;
                         indices[ii++].indices.x = pbf; pbf+=BaseGridW;
                         indices[ii++].indices.x = pbf;
-                        g_message ("mkplane floor idx -- p: %d %d %d %d", indices[ii-4].indices.x, indices[ii-3].indices.x, indices[ii-2].indices.x, indices[ii-1].indices.x);
+#if 0
+                        g_message ("mkplane floor idx [%d] -- p1..4: %d %d %d %d", ii, indices[ii-4].indices.x, indices[ii-3].indices.x, indices[ii-2].indices.x, indices[ii-1].indices.x);
+                        g_message ("  vertex[p1].Position = (%g %g %g)", vertex[indices[ii-4].indices.x].Position.x, vertex[indices[ii-4].indices.x].Position.y, vertex[indices[ii-4].indices.x].Position.z);
+                        g_message ("  vertex[p2].Position = (%g %g %g)", vertex[indices[ii-3].indices.x].Position.x, vertex[indices[ii-3].indices.x].Position.y, vertex[indices[ii-3].indices.x].Position.z);
+                        g_message ("  vertex[p3].Position = (%g %g %g)", vertex[indices[ii-2].indices.x].Position.x, vertex[indices[ii-2].indices.x].Position.y, vertex[indices[ii-2].indices.x].Position.z);
+                        g_message ("  vertex[p4].Position = (%g %g %g)", vertex[indices[ii-1].indices.x].Position.x, vertex[indices[ii-1].indices.x].Position.y, vertex[indices[ii-1].indices.x].Position.z);
+#endif
                 }
                 g_message ("mkplane -- Indices Count=%d of %d", ii, IndicesCount);
         };
@@ -511,7 +518,7 @@ private:
 	bool initBuffer() {
 		if (!Validated) return false;
 
-                surface_plane = new base_plane ((s->get_scan ())->mem2d, 4,
+                surface_plane = new base_plane ((s->get_scan ())->mem2d, 128, // 128,
                                                 (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx,
                                                 s->GLv_data.box_mat_color
                                                 );

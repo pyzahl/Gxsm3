@@ -20,6 +20,7 @@ in block
         vec3 Vertex;
         vec3 Normal;
         vec4 Color;
+        //        bool IsTerrain;
 } In[];
 
 out block
@@ -27,6 +28,7 @@ out block
         vec3 Vertex;
         vec3 Normal;
         vec4 Color;
+        //        bool IsTerrain;
 } Out[];
 
 #if 1
@@ -44,6 +46,7 @@ void main()
 	Out[gl_InvocationID].Vertex = In[gl_InvocationID].Vertex;
 	Out[gl_InvocationID].Normal = In[gl_InvocationID].Normal;
 	Out[gl_InvocationID].Color = In[gl_InvocationID].Color;
+        //	Out[gl_InvocationID].IsTerrain = In[gl_InvocationID].IsTerrain;
 }
 
 #else

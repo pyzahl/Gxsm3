@@ -319,7 +319,7 @@ Used only in "Uniform/Material Color Mode".
         <choice value='Palette Colors'/>
         <choice value='RGBA'/>
       </choices>
-      <default>'Material Color'</default>
+      <default>'Palette Colors'</default>
       <summary>Select Surface Coloring Mode.</summary>
       <description>
         Select Surface Coloring Mode.
@@ -331,14 +331,14 @@ Used only in "Uniform/Material Color Mode".
         <choice value='Height'/>
         <choice value='X-Chan'/>
       </choices>
-      <default>'Uniform'</default>
+      <default>'Height'</default>
       <summary>Select Surface Color Source.</summary>
       <description>
         Select Surface Color Source.
       </description>
     </key>
     <key name="colorcontrast" type="d">
-      <default>2.5</default>
+      <default>2.0</default>
       <summary>Color Contrast: to scale color source</summary>
       <description>
         Color Contrast: to scale color source

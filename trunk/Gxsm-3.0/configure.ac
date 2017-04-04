@@ -14,7 +14,7 @@ AC_INIT([gxsm3],
 	[gxsm3],
 	[http://gxsm.sf.net])
 
-AC_DEFINE_UNQUOTED(GXSM_VERSION_NAME, "Red-Force-One","GXSM version identifier screen name")
+AC_DEFINE_UNQUOTED(GXSM_VERSION_NAME, "Red-Force-One GPU-beta","GXSM version identifier screen name")
 AC_DEFINE_UNQUOTED(GXSM_WIDGET_PAD, 5, "default widget padding (replaces obsolete GNOME_PAD)")
 AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up")
 # AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup (M, NULL, NULL, NULL, NULL, E->button.button, E->button.time), "for gtk versions older than 3.22")

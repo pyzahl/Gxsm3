@@ -22,6 +22,7 @@ out block
         vec3 Vertex;
         vec3 Normal;
 	vec4 Color;
+//      bool IsTerrain;
 } Out;
 
 uniform sampler2D terrain;
@@ -39,13 +40,33 @@ float height(vec2 position)
 void main()
 {
         // always update Z from map if Position vertex.y is set to > 100 -- so only the terrain sampler2D needs to be dynamic
-        if (Position.y < 100.) // check if y (height) from vertex or heigth field texture
-                vec3 position = Position;
-        else
-                vec3 position = vec3 (Position.x, height(Position.xz), Position.z);
+        vec3 position = vec3 (Position.x, height(Position.xz), Position.z);
+        gl_Position = vec4 (position, 1.0);
+	Out.Vertex = position;
+	Out.Normal = Normals;
+	Out.Color  = Color;
+}
+
+#if 0
+float height_transform(float y)
+{
+        return height_scale * (y-0.5) + height_offset;  
+}
+
+void main()
+{
+        Out.IsTerrain = true;
+        vec3 position;
+        // always update Z from map if Position vertex.y is set to > 100 -- so only the terrain sampler2D needs to be dynamic
+        if (Position.y < 100.){ // check if y (height) from vertex or height field texture
+                Out.IsTerrain = false;
+                position = vec3 (Position.x, height_transform(Position.y), Position.z);
+        } else
+                position = vec3 (Position.x, height(Position.xz), Position.z);
         
         gl_Position = vec4 (position, 1.0);
 	Out.Vertex = position;
 	Out.Normal = Normals;
 	Out.Color  = Color;
 }
+#endif
