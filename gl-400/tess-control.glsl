@@ -20,7 +20,6 @@ in block
         vec3 Vertex;
         vec3 Normal;
         vec4 Color;
-        //        bool IsTerrain;
 } In[];
 
 out block
@@ -28,7 +27,6 @@ out block
         vec3 Vertex;
         vec3 Normal;
         vec4 Color;
-        //        bool IsTerrain;
 } Out[];
 
 #if 1
