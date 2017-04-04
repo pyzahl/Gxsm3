@@ -177,6 +177,7 @@ vec4 shadeTerrain(vec3 vertex, vec3 vertexEye,
 #endif
 }
 
+subroutine( shadeModelType )
 
 // vertex,... surface color
 vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye, 

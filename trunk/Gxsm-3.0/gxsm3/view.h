@@ -271,7 +271,7 @@ typedef struct{
 	float shader_mode;
         float tess_level;
         
-	gchar ColorMode[20];
+	gchar ShadeModel[20];
 	gchar ColorSrc[20];	
 
 	float ColorContrast, ColorOffset, ColorSat;
