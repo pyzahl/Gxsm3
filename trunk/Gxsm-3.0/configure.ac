@@ -599,7 +599,7 @@ AC_SUBST(plugindir)
 ###############################
 # only for memory debugging
 CFLAGS="-O0 -g"
-CXXFLAGS="-O0 -g"
+CXXFLAGS="-O0 -g -std=c++11"
 #OBJCFLAGS="-O0 -g"
 #LTCFLAGS="-O0 -g"
 
