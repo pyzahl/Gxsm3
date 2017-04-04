@@ -426,7 +426,7 @@ Used only in "Uniform/Material Color Mode".
       </description>
     </key>
     <key name="tesslevel" type="d">
-      <default>8.0</default>
+      <default>2.0</default>
       <summary>Tesselation Level Max:
  32: normal, 1: min.
       </summary>

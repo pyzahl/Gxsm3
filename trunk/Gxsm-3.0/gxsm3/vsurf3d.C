@@ -81,10 +81,10 @@ void surf3d_write_schema (){
 	gnome_res_destroy (gl_pref);
 }
 
-//#define __GXSM_PY_DEVEL
+#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -154,6 +154,9 @@ namespace
 	GLint Uniform_delta(0); // vec2 float -- for normal computation, should be 1/NX, 1/NY
         GLint Uniform_wrap(0); // = 0.3;
 
+        GLuint Uniform_shadeTerrain(0); // shader Function references
+        GLuint Uniform_shadeDebugMode(0);
+        GLuint Uniform_shadeLambertian(0);
 } //namespace
 
 class base_plane{
@@ -457,22 +460,22 @@ private:
 		if (Validated){
                         compiler Compiler;
 
-                        GLuint VertexShader     = Compiler.create(GL_VERTEX_SHADER, getDataDirectory() + SAMPLE_VERTEX_SHADER);
-                        GLuint ControlShader    = Compiler.create(GL_TESS_CONTROL_SHADER, getDataDirectory() + SAMPLE_CONTROL_SHADER);
-                        GLuint EvaluationShader = Compiler.create(GL_TESS_EVALUATION_SHADER, getDataDirectory() + SAMPLE_EVALUATION_SHADER);
-                        GLuint GeometryShader   = Compiler.create(GL_GEOMETRY_SHADER, getDataDirectory() + SAMPLE_GEOMETRY_SHADER);
-                        GLuint FragmentShader   = Compiler.create(GL_FRAGMENT_SHADER, getDataDirectory() + SAMPLE_FRAGMENT_SHADER);
+                        GLuint VertexShader     = Compiler.create (GL_VERTEX_SHADER, getDataDirectory() + SAMPLE_VERTEX_SHADER);
+                        GLuint ControlShader    = Compiler.create (GL_TESS_CONTROL_SHADER, getDataDirectory() + SAMPLE_CONTROL_SHADER);
+                        GLuint EvaluationShader = Compiler.create (GL_TESS_EVALUATION_SHADER, getDataDirectory() + SAMPLE_EVALUATION_SHADER);
+                        GLuint GeometryShader   = Compiler.create (GL_GEOMETRY_SHADER, getDataDirectory() + SAMPLE_GEOMETRY_SHADER);
+                        GLuint FragmentShader   = Compiler.create (GL_FRAGMENT_SHADER, getDataDirectory() + SAMPLE_FRAGMENT_SHADER);
 
                         if (!VertexShader || !ControlShader || !EvaluationShader || !GeometryShader || !FragmentShader)
                                 Validated = false;
                         else {
-                                ProgramName = glCreateProgram();
-                                glAttachShader(ProgramName, VertexShader);
-                                glAttachShader(ProgramName, ControlShader);
-                                glAttachShader(ProgramName, EvaluationShader);
-                                glAttachShader(ProgramName, GeometryShader);
-                                glAttachShader(ProgramName, FragmentShader);
-                                glLinkProgram(ProgramName);
+                                ProgramName = glCreateProgram ();
+                                glAttachShader (ProgramName, VertexShader);
+                                glAttachShader (ProgramName, ControlShader);
+                                glAttachShader (ProgramName, EvaluationShader);
+                                glAttachShader (ProgramName, GeometryShader);
+                                glAttachShader (ProgramName, FragmentShader);
+                                glLinkProgram (ProgramName);
                         }
                         
 			Validated = Validated && Compiler.check();
@@ -481,32 +484,40 @@ private:
 
 		if(Validated){
                         Uniform_ModelViewProjection = glGetUniformLocation(ProgramName, "ModelViewProjection"); // mat4 -- projection
-                        Uniform_ModelView     = glGetUniformLocation(ProgramName, "ModelView"); // mat4 -- projection
-                        Uniform_lightDirWorld = glGetUniformLocation(ProgramName, "lightDirWorld"); // vec3
-                        Uniform_eyePosWorld   = glGetUniformLocation(ProgramName, "eyePosWorld"); // vec3
-                        Uniform_sunColor      = glGetUniformLocation(ProgramName, "sunColor"); // = vec3(1.0, 1.0, 0.7);
-                        Uniform_specularColor = glGetUniformLocation(ProgramName, "specularColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
-                        Uniform_ambientColor  = glGetUniformLocation(ProgramName, "ambientColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
-                        Uniform_diffuseColor  = glGetUniformLocation(ProgramName, "diffuseColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
-                        Uniform_fogColor      = glGetUniformLocation(ProgramName, "fogColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
+                        Uniform_ModelView     = glGetUniformLocation (ProgramName, "ModelView"); // mat4 -- projection
+                        Uniform_lightDirWorld = glGetUniformLocation (ProgramName, "lightDirWorld"); // vec3
+                        Uniform_eyePosWorld   = glGetUniformLocation (ProgramName, "eyePosWorld"); // vec3
+                        Uniform_sunColor      = glGetUniformLocation (ProgramName, "sunColor"); // = vec3(1.0, 1.0, 0.7);
+                        Uniform_specularColor = glGetUniformLocation (ProgramName, "specularColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
+                        Uniform_ambientColor  = glGetUniformLocation (ProgramName, "ambientColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
+                        Uniform_diffuseColor  = glGetUniformLocation (ProgramName, "diffuseColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
+                        Uniform_fogColor      = glGetUniformLocation (ProgramName, "fogColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
 
-                        Uniform_fogExp        = glGetUniformLocation(ProgramName, "fogExp"); // = 0.1;
+                        Uniform_fogExp        = glGetUniformLocation (ProgramName, "fogExp"); // = 0.1;
 
-                        Uniform_shininess     = glGetUniformLocation(ProgramName, "shininess"); // = 100.0;
-                        Uniform_lightness     = glGetUniformLocation(ProgramName, "lightness"); // = 1.0;
-                        Uniform_color_offset  = glGetUniformLocation(ProgramName, "color_offset"); // = vec4(0,0,0,0)
-                        Uniform_ambientColor  = glGetUniformLocation(ProgramName, "ambientColor"); // = vec3(0.05, 0.05, 0.15 );
-                        Uniform_wrap          = glGetUniformLocation(ProgramName, "wrap"); // = 0.3;
-                        Uniform_delta         = glGetUniformLocation(ProgramName, "delta"); //  1/nx,1/ny
+                        Uniform_shininess     = glGetUniformLocation (ProgramName, "shininess"); // = 100.0;
+                        Uniform_lightness     = glGetUniformLocation (ProgramName, "lightness"); // = 1.0;
+                        Uniform_color_offset  = glGetUniformLocation (ProgramName, "color_offset"); // = vec4(0,0,0,0)
+                        Uniform_ambientColor  = glGetUniformLocation (ProgramName, "ambientColor"); // = vec3(0.05, 0.05, 0.15 );
+                        Uniform_wrap          = glGetUniformLocation (ProgramName, "wrap"); // = 0.3;
+                        Uniform_delta         = glGetUniformLocation (ProgramName, "delta"); //  1/nx,1/ny
 
-                        Uniform_height_scale  = glGetUniformLocation(ProgramName, "height_scale");  // float
-                        Uniform_height_offset = glGetUniformLocation(ProgramName, "height_offset");  // float
-                        Uniform_aspect        = glGetUniformLocation(ProgramName, "aspect");  // float
-                        Uniform_color_source  = glGetUniformLocation(ProgramName, "color_source");  // int
-                        Uniform_screen_size   = glGetUniformLocation(ProgramName, "screen_size"); // vec2
-                        Uniform_lod_factor    = glGetUniformLocation(ProgramName, "lod_factor");  // float
-                        Uniform_tess_level    = glGetUniformLocation(ProgramName, "tess_level");  // float
+                        Uniform_height_scale  = glGetUniformLocation (ProgramName, "height_scale");  // float
+                        Uniform_height_offset = glGetUniformLocation (ProgramName, "height_offset");  // float
+                        Uniform_aspect        = glGetUniformLocation (ProgramName, "aspect");  // float
+                        Uniform_color_source  = glGetUniformLocation (ProgramName, "color_source");  // int
+                        Uniform_screen_size   = glGetUniformLocation (ProgramName, "screen_size"); // vec2
+                        Uniform_lod_factor    = glGetUniformLocation (ProgramName, "lod_factor");  // float
+                        Uniform_tess_level    = glGetUniformLocation (ProgramName, "tess_level");  // float
+
                         checkError("initProgram -- get uniform variable references...");
+                        // get shaderFunction references
+                        // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
+                        Uniform_shadeTerrain    = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
+                        Uniform_shadeDebugMode  = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
+                        Uniform_shadeLambertian = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
+
+                        checkError("initProgram -- get uniform subroutine references...");
 		}
 
                 if (Validated)
@@ -750,6 +761,16 @@ public:
                 glBindTexture(GL_TEXTURE_2D, TextureName[0]);
                 glBindTexture(GL_TEXTURE_2D, TextureName[1]);
 
+                // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
+
+                checkError ("set Uniforms");
+                
+                //glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeTerrain);
+                //glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeDebugMode);
+                glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertian);
+
+                checkError ("set Uniforms Subroutines");
+                
                 surface_plane->draw (s->GLv_data.TickFrameOptions[0]=='2' || s->GLv_data.TickFrameOptions[0]=='3'); // surface with box or plane surface only
 
 		return checkError("render");
