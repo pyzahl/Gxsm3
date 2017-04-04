@@ -5,8 +5,6 @@
 
 #version 400 core
 
-#define USE_TERRAIN 0
-
 precision highp float;
 precision highp int;
 layout(std140, column_major) uniform;
@@ -22,9 +20,12 @@ in block {
 
 out vec4 FragColor;
 
-//uniform sampler2D diffuse;
-//uniform sampler2D terrain;
-//uniform sampler2D noise_tile;
+
+subroutine vec4 shadeModelType(vec3 vertex, vec3 vertexEye, 
+                               vec3 normal, vec4 color);
+
+subroutine uniform shadeModelType shadeModel;
+
 uniform mat4 ModelViewProjection;
 
 uniform vec3 lightDirWorld;
@@ -59,31 +60,41 @@ float linearstep(float a, float b, float x)
 #define smoothstep linearstep
 
 
-vec4 applyFog(vec4 col, float dist)
+// terrain defaults
+const vec3 CsunColor = vec3(1.0, 1.0, 0.7);
+const vec3 ClightColor = vec3(1.0, 1.0, 0.7)*1.5;
+const vec3 CfogColor = vec3(0.7, 0.8, 1.0)*0.7;
+const float CfogExp = 0.1;
+
+vec3 applyFog(vec3 col, float dist)
 {
-    float fogAmount = exp(-dist*fogExp);
-    return vec4( mix(fogColor, col.xyz, fogAmount), col.a);
+    float fogAmount = exp (-dist*fogExp);
+    return mix (fogColor, col.xyz, fogAmount);
 }
 
 // fog with scattering effect
 // http://www.iquilezles.org/www/articles/fog/fog.htm
-vec4 applyFog(vec4 col, float dist, vec3 viewDir)
+vec3 applyFog(vec3 col, float dist, vec3 viewDir)
 {
-        float fogAmount = exp(-dist*fogExp);
-        float sunAmount = max(dot(viewDir, lightDirWorld), 0.0);
-        sunAmount = pow(sunAmount, 32.0);
-        vec3 fogCol = mix(fogColor, sunColor, sunAmount);
-        return vec4 (mix(fogCol, col.xyz, fogAmount), col.a);
+        float fogAmount = exp (-dist*fogExp);
+        float sunAmount = max (dot(viewDir, lightDirWorld), 0.0);
+        sunAmount = pow (sunAmount, 32.0);
+        vec3 fogCol = mix (fogColor, sunColor, sunAmount);
+        return mix (fogCol, col.xyz, fogAmount);
 }
 
-// vertex,... surface color
-vec4 shadeTerrain(vec3 vertex,
-                  vec3 vertexEye, 
-                  vec3 normal,
-                  vec4 color
-                  )
+
+
+subroutine( shadeModelType )
+
+// terrain level shader
+vec4 shadeTerrain(vec3 vertex, vec3 vertexEye, 
+                  vec3 normal, vec4 color)
 {
-#if USE_TERRAIN
+        const float Cshininess = 100.0;
+        const vec3  CambientColor = vec3(0.05, 0.05, 0.15 );
+        const float Cwrap = 0.3;
+        
         vec3 rockColor = vec3(0.4, 0.4, 0.4 );
         vec3 snowColor = vec3(0.9, 0.9, 1.0 );
         vec3 grassColor = vec3(77.0 / 255.0, 100.0 / 255.0, 42.0 / 255.0 );
@@ -91,13 +102,19 @@ vec4 shadeTerrain(vec3 vertex,
         vec3 waterColor = vec3(0.2, 0.4, 0.5 );
         vec3 treeColor = vec3(0.0, 0.2, 0.0 );
 
-        float height = vertex.y*100.-50.;
+        //float height = vertex.y*100.-50.;
+  
+        //vec3 noisePos = vertex.xyz + vec3(translate.x, 0.0, translate.y);
+        vec3 noisePos = vertex.xyz;
+        float nois = length(noise2(noisePos.xz))*0.5+0.5;
+
+        float height = vertex.y;
 
         // snow
         float snowLine = 0.7;
         //float snowLine = 0.6 + nois*0.1;
         float isSnow = smoothstep(snowLine, snowLine+0.1, height * (0.5+0.5*normal.y));
-#endif
+
         // Lambertian light model
 
         // world-space
@@ -110,11 +127,12 @@ vec4 shadeTerrain(vec3 vertex,
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
 
-#if USE_TERRAIN
+#if 0
         // add some noise variation to colors
         grassColor = mix(grassColor*0.5, grassColor*1.5, nois);
         brownColor = mix(brownColor*0.25, brownColor*1.5, nois);
-
+#endif
+        
         // choose material color based on height and normal
 
         vec3 matColor;
@@ -133,44 +151,11 @@ vec4 shadeTerrain(vec3 vertex,
         //finalColor = applyFog(finalColor, dist);
         finalColor = applyFog(finalColor, dist, viewDir);
         //return vec4(finalColor, 1.);
-#endif
 
-        vec3 nois = noise3(100.*vertex.xz)*0.5+vec3(0.5);
-        float dist = length (eyePosWorld);
-
-        // if spot light -- not for far far away sun
-        //float dist_light = length (sunPos);
-        //float attenuation = 1.0 / (1.0 + light_attenuation * dist_light*dist_light);
-
-        vec4 finalColor = vec4(lightness*(ambientColor+specular*specularColor+diffuse*diffuseColor)*color.xyz, color.a);
-
-        switch (color_source){
-        case 1: return color_offset+vec4(lightness*(ambientColor+diffuse*diffuseColor)*color.xyz, color.a);
-        case 2: return color_offset+vec4(vec3(diffuse), 1.0);
-        case 3: return color_offset+vec4(lightness*(ambientColor+specular*specularColor)*color.xyz, color.a);
-        case 4: return color_offset+lightness*color;
-        case 5:
-                finalColor = color_offset+applyFog (finalColor, dist, viewDir);
-                return finalColor;
-        case 6:
-                return color_offset+vec4 (mix (finalColor.xyz, nois, 0.2), color.a);
-        case 7:
-                return color_offset+vec4 (nois, color.a);
-                
-        case 8: return vec4(normal.y, 0.,0., 1.0);
-        case 9: return vec4(normal.y*0.5+0.5,0.,0., 1.0);
-#if 0
-        case 11: return vec4(vec3(height/100.)*0.5+0.5, 1.0);
-        case 12: return vec4(normal*0.5+0.5, 1.0);
-        case 13: return specular*color;
-        case 14: return vec4(vec3(specular,normal.y,diffuse),1.0);
-        case 15: return vec4(vec3(dist/100.), 1.0);
-        case 16: return vec4(matColor, 1.0);
-#endif
-        default: return color_offset+finalColor; // 0 or any other value
-        }
+        return color_offset + vec4(lightness*finalColor, color.a);
 
 #if 0
+        // debug stuff
         //return vec4(vec3(specular,normal.z,diffuse),1.0);
         //return vec4(specular*sunColor+diffuse*specularColor, 1.); // digitalisch
         //return vec4(ambientColor*matColor, 1.); // digitalisch
@@ -192,10 +177,78 @@ vec4 shadeTerrain(vec3 vertex,
 #endif
 }
 
+
+// vertex,... surface color
+vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye, 
+                    vec3 normal, vec4 color)
+{
+        // Lambertian light model
+
+        // world-space
+        vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
+        vec3 h = normalize(-lightDirWorld + viewDir);
+        vec3 n = normalize(normal);
+
+        //float diffuse = saturate( dot(n, -lightDir));
+        float diffuse = saturate( (dot(n, -lightDirWorld) + wrap) / (1.0 + wrap));   // wrap
+        //float diffuse = dot(n, -lightDir)*0.5+0.5;
+        float specular = pow( saturate(dot(h, n)), shininess);
+
+        vec3 nois = noise3(100.*vertex.xz)*0.5+vec3(0.5);
+        float dist = length (eyePosWorld);
+
+        // if spot light -- not for far far away sun
+        //float dist_light = length (sunPos);
+        //float attenuation = 1.0 / (1.0 + light_attenuation * dist_light*dist_light);
+
+        vec3 finalColor = (ambientColor+specular*specularColor+diffuse*diffuseColor)*color.xyz;
+
+        switch (color_source){
+        case 1: return color_offset + vec4(lightness*(ambientColor+diffuse*diffuseColor)*color.xyz, color.a);
+        case 2: return color_offset + vec4(vec3(diffuse), 1.0);
+        case 3: return color_offset + vec4(lightness*(ambientColor+specular*specularColor)*color.xyz, color.a);
+        case 4: return color_offset + lightness*color;
+        case 5:
+                finalColor = applyFog (finalColor, dist, viewDir);
+                return color_offset + vec4(lightness*finalColor, color.a);
+        case 6:
+                return color_offset + vec4 (mix (finalColor.xyz, nois, 0.2), color.a);
+        case 7:
+                return color_offset + vec4 (nois, color.a);
+                
+        case 8: return vec4(normal.y, 0.,0., 1.0);
+        case 9: return vec4(normal.y*0.5+0.5,0.,0., 1.0);
+        case 12: return vec4(normal*0.5+0.5, 1.0);
+        case 13: return specular*color;
+        case 14: return vec4(vec3(specular,normal.y,diffuse),1.0);
+        case 15: return vec4(vec3(dist/100.), 1.0);
+        default: return color_offset + vec4(lightness*finalColor, color.a);
+        }
+}
+
+
+subroutine( shadeModelType )
+
+// Lambertian light model for surface
+vec4 shadeLambertian(vec3 vertex, vec3 vertexEye, 
+                     vec3 normal, vec4 color)
+{
+        // world-space
+        vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
+        vec3 h = normalize(-lightDirWorld + viewDir);
+        vec3 n = normalize(normal);
+
+        //float diffuse = saturate( dot(n, -lightDir));
+        float diffuse = saturate( (dot(n, -lightDirWorld) + wrap) / (1.0 + wrap));   // wrap
+        //float diffuse = dot(n, -lightDir)*0.5+0.5;
+        float specular = pow( saturate(dot(h, n)), shininess);
+
+        return color_offset + vec4(lightness*(ambientColor+specular*specularColor+diffuse*diffuseColor)*color.xyz, color.a);
+}
+
 void main()
 {
-        FragColor = shadeTerrain(In.Vertex,
-                                 In.VertexEye,
-                                 In.Normal,
-                                 In.Color);   // shade per pixel
+        // shade fragment, use model as selected via shaderFunction pointer
+        FragColor = shadeModel (In.Vertex, In.VertexEye,
+                                 In.Normal, In.Color);
 }
