@@ -765,10 +765,13 @@ public:
 
                 checkError ("set Uniforms");
                 
-                //glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeTerrain);
-                //glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeDebugMode);
-                glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertian);
-
+		switch (s->GLv_data.ShadeModel[0]){
+                case 'R':
+                case 'L': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertian); break;
+		case 'T': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeTerrain); break;
+		case 'D': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeDebugMode); break;
+                }
+                
                 checkError ("set Uniforms Subroutines");
                 
                 surface_plane->draw (s->GLv_data.TickFrameOptions[0]=='2' || s->GLv_data.TickFrameOptions[0]=='3'); // surface with box or plane surface only
@@ -987,16 +990,17 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 			break;
 		}
 
-		switch (GLv_data.ColorMode[0]){
+		switch (GLv_data.ShadeModel[0]){
 		case 'T': // Terrain Color
 			calccolor(val*maxcolors, surface_color_buffer[i]);
 			break;
-		case 'M': // Material Color
+		case 'F': // Material Color
 			surface_color_buffer[i].x = GLv_data.surf_mat_color[0];
 			surface_color_buffer[i].y = GLv_data.surf_mat_color[1];
 			surface_color_buffer[i].z = GLv_data.surf_mat_color[2];
 			break;
-		case 'P': { // GXSM user Palette
+                case 'D':
+		case 'L': { // GXSM user Palette
 			int ci = (int)(val*maxcolors);
 			ci = ci < 0 ? 0 : ci >= maxcolors ? (maxcolors-1) : ci;
 			surface_color_buffer[i].x = ColorLookup[ci][0];

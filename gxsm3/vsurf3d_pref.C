@@ -32,7 +32,12 @@ Surf3d_GLview_data GLvd_offset; // dummy
 const gchar *TrueFalse_OptionsList[]  = { "true", "false", NULL };
 const gchar *OnOff_OptionsList[]      = { "On", "Off", NULL };
 const gchar *XYZ_OptionsList[]        = { "X", "Y", "Z", "Volume", "Scatter", NULL };
-const gchar *ColorMode_OptionsList[]  = { "Material Color", "Terrain Colors", "Palette Colors", "RGBA", NULL };
+const gchar *ShadeModel_OptionsList[]  = { "Lambertian, use Palette",
+					   "Terrain",
+					   "Flat Material Color",
+					   "RGBA map, Lambertian",
+					   "Debug Shader",
+					   NULL };
 const gchar *ColorSrc_OptionsList[]   = { "Uniform", "Height", "X-Chan", NULL };
 const gchar *TickFrame_OptionsList[]  = { "0: Simple", "1: XYZ with Labels", "2: XYZ Box", "3: XYZ w L Box", NULL };
 
@@ -247,10 +252,10 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("Surface Material"), NULL),
 
 	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_STRING, "V3dControl.MatSurf/ColorMode", "Palette Colors",
-	  GET_GLV_OFFSET (&GLvd_offset.ColorMode[0]),
-	  ColorMode_OptionsList, N_("Surface Material"), 
-	  N_("Select Surface Coloring Mode.")
+	( GNOME_RES_STRING, "V3dControl.MatSurf/ShadeModel", "Lambertian, use Palette",
+	  GET_GLV_OFFSET (&GLvd_offset.ShadeModel[0]),
+	  ShadeModel_OptionsList, N_("Surface Material"), 
+	  N_("Select Surface Shading Mode.")
 		),
 	GNOME_RES_ENTRY_OPTION
 	( GNOME_RES_STRING, "V3dControl.MatSurf/ColorSrc", "Height", 

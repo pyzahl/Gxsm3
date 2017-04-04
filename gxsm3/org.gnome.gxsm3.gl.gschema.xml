@@ -312,17 +312,18 @@ Used only in "Uniform/Material Color Mode".
         Surface Shininess
       </description>
     </key>
-    <key name="colormode" type="s">
+    <key name="shademodel" type="s">
       <choices>
-        <choice value='Material Color'/>
-        <choice value='Terrain Colors'/>
-        <choice value='Palette Colors'/>
-        <choice value='RGBA'/>
+        <choice value='Lambertian, use Palette'/>
+        <choice value='Terrain'/>
+        <choice value='Flat Material Color'/>
+        <choice value='RGBA map, Lambertian'/>
+        <choice value='Debug Shader'/>
       </choices>
-      <default>'Palette Colors'</default>
-      <summary>Select Surface Coloring Mode.</summary>
+      <default>'Lambertian, use Palette'</default>
+      <summary>Select Surface Shading Mode.</summary>
       <description>
-        Select Surface Coloring Mode.
+        Select Surface Shading Mode.
       </description>
     </key>
     <key name="colorsrc" type="s">
