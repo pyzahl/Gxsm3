@@ -35,6 +35,9 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include "config.h"
 #include "gnome-res.h"
 
@@ -153,6 +156,14 @@ namespace
         GLint Uniform_color_offset(0); // = 100.0;
 	GLint Uniform_delta(0); // vec2 float -- for normal computation, should be 1/NX, 1/NY
         GLint Uniform_wrap(0); // = 0.3;
+
+        GLuint Uniform_vertexDirect(0); // vertex Function references
+        GLuint Uniform_vertexSurface(0);
+        GLuint Uniform_vertexHScaled(0);
+
+        GLuint Uniform_evaluationDirect(0); // evaluation Function references
+        GLuint Uniform_evaluationSurface(0);
+        GLuint Uniform_evaluationHScaled(0);
 
         GLuint Uniform_shadeTerrain(0); // shader Function references
         GLuint Uniform_shadeDebugMode(0);
@@ -399,6 +410,151 @@ private:
 	GLsizeiptr IndicesObjectSize;
 };
 
+class text_plane{
+public:
+        text_plane (){
+                Validated = true;
+                ArrayBufferName = 0;
+                VertexArrayName = 0;
+
+                if(FT_Init_FreeType(&ft)) {
+                        g_warning ("Could not init freetype library.");
+                }
+
+
+                if(FT_New_Face(ft, "FreeSans.ttf", 0, &face)) {
+                        g_warning ("Could not open font.");
+                }
+
+                FT_Set_Pixel_Sizes(face, 0, 48);
+                g = face->glyph;
+
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+                Validated = init_buffer ();
+                Validated = init_vao ();
+        };
+        ~text_plane (){
+		if (Validated){
+                        glDeleteTextures(1, &tex);
+                        glDeleteVertexArrays(1, &VertexArrayName);
+                        checkError("text_plane::~delete");
+                }
+        };
+        gboolean init_buffer (){
+                checkError("text_plane:: init_buffer");
+		if (!Validated) return false;
+
+                glActiveTexture(GL_TEXTURE2); // dedicated for text
+                glGenTextures(1, &tex);
+                glBindTexture(GL_TEXTURE_2D, tex);
+                glUniform1i (glGetUniformLocation (ProgramName, "text_tex"), 2);
+
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+                //GLuint vbo;
+                //glGenBuffers(1, &vbo);
+                //glEnableVertexAttribArray(attribute_coord);
+                //glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                //glVertexAttribPointer(attribute_coord, 4, GL_FLOAT, GL_FALSE, 0, 0);
+                //---
+                glGenBuffers(1, &ArrayBufferName);
+                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
+                //-->> glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_STATIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+                return Validated && checkError("text_plane:: init_buffer");
+        };
+        gboolean init_vao (){
+                g_message ("base_plane init_vao");
+                checkError("make_plane::init_vao");
+		if (!Validated) return false;
+
+                // Build a vertex array object
+                glGenVertexArrays(1, &VertexArrayName);
+                glBindVertexArray(VertexArrayName);
+
+                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
+                glVertexAttribPointer(semantic::attr::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(0));
+                glVertexAttribPointer(semantic::attr::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(sizeof(glm::vec3)));
+                glVertexAttribPointer(semantic::attr::COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(2*sizeof(glm::vec3)));
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+                glEnableVertexAttribArray(semantic::attr::POSITION);
+                glEnableVertexAttribArray(semantic::attr::NORMAL);
+                glEnableVertexAttribArray(semantic::attr::COLOR);
+                glBindVertexArray(0);
+
+                g_message ("text_plane init_vao end");
+
+                return Validated && checkError("make_plane::init_vao");
+        };
+        gboolean draw_text (const char *text, float x, float y, float sx, float sy) {
+ 		if (!Validated) return false;
+                const char *p;
+
+                for(p = text; *p; p++) {
+                        if(FT_Load_Char(face, *p, FT_LOAD_RENDER))
+                                continue;
+ 
+                        glActiveTexture(GL_TEXTURE2); // dedicated for text
+                        glTexImage2D(
+                                     GL_TEXTURE_2D,
+                                     0,
+                                     GL_RED,
+                                     g->bitmap.width,
+                                     g->bitmap.rows,
+                                     0,
+                                     GL_RED,
+                                     GL_UNSIGNED_BYTE,
+                                     g->bitmap.buffer
+                                     );
+ 
+                        float x2 = x + g->bitmap_left * sx;
+                        float y2 = -y - g->bitmap_top * sy;
+                        float w = g->bitmap.width * sx;
+                        float h = g->bitmap.rows * sy;
+ 
+                        GLfloat box[4][4] = {
+                                {x2,     -y2    , 0, 0},
+                                {x2 + w, -y2    , 1, 0},
+                                {x2,     -y2 - h, 0, 1},
+                                {x2 + w, -y2 - h, 1, 1},
+                        };
+ 
+                        glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
+                        glBufferData(GL_ARRAY_BUFFER, sizeof box, box, GL_DYNAMIC_DRAW);
+                        glBindBuffer(GL_ARRAY_BUFFER, 0);
+                        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+                        x += (g->advance.x/64) * sx;
+                        y += (g->advance.y/64) * sy;
+                }
+                return Validated && checkError("make_plane::draw");
+        };
+private:        
+        bool Validated;
+        FT_Library ft;
+        FT_Face face;
+        FT_GlyphSlot g;;
+        //glf::vertex_v3fn3fc4f *vertex;
+        GLuint tex;
+	GLuint ArrayBufferName;
+	GLuint VertexArrayName;
+	GLsizei VertexCount;
+	GLsizeiptr VertexObjectSize;
+	GLsizeiptr IndicesObjectSize;
+};
+
+
+
 // ------------------------------------------------------------
 // core GL configuration management
 // ------------------------------------------------------------
@@ -511,11 +667,20 @@ private:
                         Uniform_tess_level    = glGetUniformLocation (ProgramName, "tess_level");  // float
 
                         checkError("initProgram -- get uniform variable references...");
+
                         // get shaderFunction references
                         // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
-                        Uniform_shadeTerrain    = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
-                        Uniform_shadeDebugMode  = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
-                        Uniform_shadeLambertian = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
+                        Uniform_vertexDirect      = glGetSubroutineIndex (ProgramName, GL_VERTEX_SHADER, "vertexDirect" );
+                        Uniform_vertexSurface     = glGetSubroutineIndex (ProgramName, GL_VERTEX_SHADER, "vertexSurface" );
+                        Uniform_vertexHScaled     = glGetSubroutineIndex (ProgramName, GL_VERTEX_SHADER, "vertexHScaled" );
+
+                        Uniform_evaluationDirect  = glGetSubroutineIndex (ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationDirect" );
+                        Uniform_evaluationSurface = glGetSubroutineIndex (ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationSurface" );
+                        Uniform_evaluationHScaled = glGetSubroutineIndex (ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationHScaled" );
+
+                        Uniform_shadeTerrain      = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
+                        Uniform_shadeDebugMode    = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
+                        Uniform_shadeLambertian   = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
 
                         checkError("initProgram -- get uniform subroutine references...");
 		}
@@ -761,11 +926,15 @@ public:
                 glBindTexture(GL_TEXTURE_2D, TextureName[0]);
                 glBindTexture(GL_TEXTURE_2D, TextureName[1]);
 
+                checkError ("set Uniforms");
+
                 // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
 
-                checkError ("set Uniforms");
-                
-		switch (s->GLv_data.ShadeModel[0]){
+                // configure shaders for surface terrain mode tesselation and select final shading mode
+                glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexSurface);
+                glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 1, &Uniform_evaluationSurface);
+
+                switch (s->GLv_data.ShadeModel[0]){
                 case 'R':
                 case 'L': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertian); break;
 		case 'T': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeTerrain); break;
@@ -775,6 +944,7 @@ public:
                 checkError ("set Uniforms Subroutines");
                 
                 surface_plane->draw (s->GLv_data.TickFrameOptions[0]=='2' || s->GLv_data.TickFrameOptions[0]=='3'); // surface with box or plane surface only
+                glUniform1f (Uniform_tess_level, 1.);
 
 		return checkError("render");
                 

@@ -25,48 +25,47 @@ out block
 //      bool IsTerrain;
 } Out;
 
+subroutine vec3 vertexMode(vec3 vertex);
+
+subroutine uniform vertexModeType vertexMode;
+
 uniform sampler2D terrain;
 uniform float aspect;
 uniform float height_scale;
 uniform float height_offset;
 
-float height(vec2 position)
-{
-        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
-        //vec2 terraincoord = vec2 (position.x + 0.5, position.y/aspect + 0.5);
-        return height_scale * (texture(terrain, terraincoord).a-0.5) + height_offset;  
-}
-
-void main()
-{
-        // always update Z from map if Position vertex.y is set to > 100 -- so only the terrain sampler2D needs to be dynamic
-        vec3 position = vec3 (Position.x, height(Position.xz), Position.z);
-        gl_Position = vec4 (position, 1.0);
-	Out.Vertex = position;
-	Out.Normal = Normals;
-	Out.Color  = Color;
-}
-
-#if 0
 float height_transform(float y)
 {
         return height_scale * (y-0.5) + height_offset;  
 }
 
+float height(vec2 position)
+{
+        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
+        //vec2 terraincoord = vec2 (position.x + 0.5, position.y/aspect + 0.5);
+        return height_transform (texture (terrain, terraincoord).a);
+}
+
+
+subroutine( vertextModeType )
+vec3 vertexDirect(vec3 vertex){
+        return vertex;
+}
+
+subroutine( vertextModeType )
+vec3 vertexSurface(vec3 vertex){
+        return vec3 (vertex.x, height(vertex.xz), vertex.z);
+}
+
+subroutine( vertextModeType )
+vec3 vertexHScaled(vec3 vertex){
+        return vec3 (vertex.x, height_transform(vertex.y), vertex.z);
+}
+
 void main()
 {
-        Out.IsTerrain = true;
-        vec3 position;
-        // always update Z from map if Position vertex.y is set to > 100 -- so only the terrain sampler2D needs to be dynamic
-        if (Position.y < 100.){ // check if y (height) from vertex or height field texture
-                Out.IsTerrain = false;
-                position = vec3 (Position.x, height_transform(Position.y), Position.z);
-        } else
-                position = vec3 (Position.x, height(Position.xz), Position.z);
-        
-        gl_Position = vec4 (position, 1.0);
-	Out.Vertex = position;
+        Out.Vertex = vertexMode (Position);
+        gl_Position = vec4 (Out.Vertex, 1.0);
 	Out.Normal = Normals;
 	Out.Color  = Color;
 }
-#endif
