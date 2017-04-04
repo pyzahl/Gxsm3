@@ -28,9 +28,9 @@ out block {
         vec4 Color;
 } Out;
 
-subroutine vec4 evaluationMode();
+subroutine vec4 shadeModelType();
 
-subroutine uniform evaluationModeType evaluationMode;
+subroutine uniform shadeModelType evaluationMode;
 
 uniform sampler2D terrain;
 uniform sampler2D diffuse;
@@ -68,7 +68,7 @@ vec4 color(vec2 tcoord)
         return texture (diffuse, tcoord);
 }
 
-subroutine( evaluationtModeType )
+subroutine( shadeModelType )
 vec4 evaluationDirect(){
         //float u = gl_TessCoord.x;
 	//float v = gl_TessCoord.y;
@@ -90,7 +90,7 @@ vec4 evaluationDirect(){
         return position;
 }
 
-subroutine( evaluationtModeType )
+subroutine( shadeModelType )
 vec4 evaluationSurface(){
         float u = gl_TessCoord.x;
 	float v = gl_TessCoord.y;
@@ -108,10 +108,10 @@ vec4 evaluationSurface(){
         Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
         Out.Color     = color (tc);
 
-        return position
+        return position;
 }
 
-subroutine( evaluationtModeType )
+subroutine( shadeModelType )
 vec4 evaluationHScaled(){
         //float u = gl_TessCoord.x;
 	//float v = gl_TessCoord.y;

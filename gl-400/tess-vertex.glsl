@@ -22,12 +22,11 @@ out block
         vec3 Vertex;
         vec3 Normal;
 	vec4 Color;
-//      bool IsTerrain;
 } Out;
 
-subroutine vec3 vertexMode(vec3 vertex);
+subroutine vec3 shadeModelType(vec3 vertex);
 
-subroutine uniform vertexModeType vertexMode;
+subroutine uniform shadeModelType vertexMode;
 
 uniform sampler2D terrain;
 uniform float aspect;
@@ -47,17 +46,17 @@ float height(vec2 position)
 }
 
 
-subroutine( vertextModeType )
+subroutine( shadeModelType )
 vec3 vertexDirect(vec3 vertex){
         return vertex;
 }
 
-subroutine( vertextModeType )
+subroutine( shadeModelType )
 vec3 vertexSurface(vec3 vertex){
         return vec3 (vertex.x, height(vertex.xz), vertex.z);
 }
 
-subroutine( vertextModeType )
+subroutine( shadeModelType )
 vec3 vertexHScaled(vec3 vertex){
         return vec3 (vertex.x, height_transform(vertex.y), vertex.z);
 }
