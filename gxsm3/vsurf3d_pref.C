@@ -247,13 +247,13 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("Surface Material"), NULL),
 
 	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_STRING, "V3dControl.MatSurf/ColorMode", "Material Color",
+	( GNOME_RES_STRING, "V3dControl.MatSurf/ColorMode", "Palette Colors",
 	  GET_GLV_OFFSET (&GLvd_offset.ColorMode[0]),
 	  ColorMode_OptionsList, N_("Surface Material"), 
 	  N_("Select Surface Coloring Mode.")
 		),
 	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_STRING, "V3dControl.MatSurf/ColorSrc", "Uniform", 
+	( GNOME_RES_STRING, "V3dControl.MatSurf/ColorSrc", "Height", 
 	  GET_GLV_OFFSET (&GLvd_offset.ColorSrc[0]),
 	  ColorSrc_OptionsList, N_("Surface Material"), 
 	  N_("Select Surface Color Source.")
@@ -262,7 +262,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("Surface Material"), NULL),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.MatSurf/ColorContrast", "Color Contrast", "1", 
+	( "V3dControl.MatSurf/ColorContrast", "Color Contrast", "2", 
 	  GET_GLV_OFFSET (&GLvd_offset.ColorContrast), 
 	  CScale_OptionsList, N_("Surface Material"),
 	  N_("Color Contrast: to scale color source"), NULL
