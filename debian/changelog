@@ -1,3 +1,23 @@
+gxsm3 (3.43.0-0ubuntu2) xenial; urgency=medium
+
+  * set added cxxflag -std=c++11 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 02 Apr 2017 19:56:53 +0200
+
+gxsm3 (3.43.0-0ubuntu1) xenial; urgency=medium
+
+  * Percy fixed some code, references to buffer.* removed 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 02 Apr 2017 19:15:31 +0200
+
+gxsm3 (3.43.0-0ubuntu0) xenial; urgency=medium
+
+  * first release
+  * problems with libglm-dev (new dependency)
+  * parts of the original code are deactivated (vsurf3d.C and opl_framework.hcc)
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 01 Apr 2017 22:50:51 +0200
+
 gxsm3 (3.42.3-0ubuntu7) xenial; urgency=medium
 
   * just another try to autoadjust pathes, ... 
