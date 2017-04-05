@@ -35,6 +35,7 @@ uniform vec3 specularColor; // = vec3(1.0, 1.0, 0.7)*1.5;
 uniform vec3 ambientColor; // = vec3(1.0, 1.0, 0.7)*1.5;
 uniform vec3 diffuseColor; // = vec3(1.0, 1.0, 0.7)*1.5;
 uniform vec3 fogColor; // = vec3(0.7, 0.8, 1.0)*0.7;
+uniform vec4  materialColor;
 uniform float fogExp; // = 0.1;
 
 uniform float shininess; // = 100.0;
@@ -45,6 +46,11 @@ uniform float light_attenuation;
 uniform float wrap; // = 0.3;
 
 uniform int color_source;
+
+// text shading
+uniform sampler2D textTexture;
+uniform vec4 textColor;
+
 
 float saturate(float v) {
     return clamp( v, 0.0, 1.0);
@@ -83,10 +89,8 @@ vec3 applyFog(vec3 col, float dist, vec3 viewDir)
 }
 
 
-
-subroutine( shadeModelType )
-
 // terrain level shader
+subroutine( shadeModelType )
 vec4 shadeTerrain(vec3 vertex, vec3 vertexEye, 
                   vec3 normal, vec4 color)
 {
@@ -126,7 +130,7 @@ vec4 shadeTerrain(vec3 vertex, vec3 vertexEye,
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
 
-#if 0
+#if 1
         // add some noise variation to colors
         grassColor = mix(grassColor*0.5, grassColor*1.5, nois);
         brownColor = mix(brownColor*0.25, brownColor*1.5, nois);
@@ -176,9 +180,8 @@ vec4 shadeTerrain(vec3 vertex, vec3 vertexEye,
 #endif
 }
 
-subroutine( shadeModelType )
-
 // vertex,... surface color
+subroutine( shadeModelType )
 vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye, 
                     vec3 normal, vec4 color)
 {
@@ -227,9 +230,8 @@ vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye,
 }
 
 
-subroutine( shadeModelType )
-
 // Lambertian light model for surface
+subroutine( shadeModelType )
 vec4 shadeLambertian(vec3 vertex, vec3 vertexEye, 
                      vec3 normal, vec4 color)
 {
@@ -245,6 +247,34 @@ vec4 shadeLambertian(vec3 vertex, vec3 vertexEye,
 
         return color_offset + vec4(lightness*(ambientColor+specular*specularColor+diffuse*diffuseColor)*color.xyz, color.a);
 }
+
+// Lambertian light model for surface, use homogenious surface color = material_color
+subroutine( shadeModelType )
+vec4 shadeLambertianMaterialColor(vec3 vertex, vec3 vertexEye, 
+                                  vec3 normal, vec4 color)
+{
+        // world-space
+        vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
+        vec3 h = normalize(-lightDirWorld + viewDir);
+        vec3 n = normalize(normal);
+
+        //float diffuse = saturate( dot(n, -lightDir));
+        float diffuse = saturate( (dot(n, -lightDirWorld) + wrap) / (1.0 + wrap));   // wrap
+        //float diffuse = dot(n, -lightDir)*0.5+0.5;
+        float specular = pow( saturate(dot(h, n)), shininess);
+
+        return color_offset + vec4(lightness*(ambientColor+specular*specularColor+diffuse*diffuseColor)*materialColor.xyz, materialColor.a);
+}
+
+// simple text shader
+subroutine( shadeModelType )
+vec4 shadeText(vec3 vertex, vec3 vertexEye, 
+               vec3 normal, vec4 color)
+{
+        return vec4(1., 1., 1., texture2D(textTexture, normal.xy).r) * textColor;
+}
+
+
 
 void main()
 {
