@@ -86,8 +86,8 @@ void surf3d_write_schema (){
 
 //#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -132,8 +132,8 @@ namespace
         GLint Uniform_height_offset(0);
         GLint Uniform_aspect(0);
         GLint Uniform_color_source(0);
-        GLsizei const TextureCount(2);
-	GLuint TextureName[2];
+        GLsizei const TextureCount(3);
+	GLuint TextureName[3];
         
         // Model View and Projection
 	GLint Uniform_ModelViewProjection(0); // mat4
@@ -148,6 +148,8 @@ namespace
         GLint Uniform_ambientColor(0); // = vec3(1.0, 1.0, 0.7)*1.5;
         GLint Uniform_diffuseColor(0); // = vec3(1.0, 1.0, 0.7)*1.5;
         GLint Uniform_fogColor(0); // = vec3(0.7, 0.8, 1.0)*0.7;
+        GLint Uniform_materialColor(0); // vec4
+        GLint Uniform_textColor(0); // vec4
 
         GLint Uniform_fogExp(0); // = 0.1;
 
@@ -160,6 +162,7 @@ namespace
         GLuint Uniform_vertexDirect(0); // vertex Function references
         GLuint Uniform_vertexSurface(0);
         GLuint Uniform_vertexHScaled(0);
+        GLuint Uniform_vertexText(0);
 
         GLuint Uniform_evaluationDirect(0); // evaluation Function references
         GLuint Uniform_evaluationSurface(0);
@@ -168,6 +171,7 @@ namespace
         GLuint Uniform_shadeTerrain(0); // shader Function references
         GLuint Uniform_shadeDebugMode(0);
         GLuint Uniform_shadeLambertian(0);
+        GLuint Uniform_shadeText(0);
 } //namespace
 
 class base_plane{
@@ -417,12 +421,14 @@ public:
                 ArrayBufferName = 0;
                 VertexArrayName = 0;
 
+                g_message ("text_plane:: init object");
+
                 if(FT_Init_FreeType(&ft)) {
                         g_warning ("Could not init freetype library.");
                 }
 
-
-                if(FT_New_Face(ft, "FreeSans.ttf", 0, &face)) {
+                // fix me -- find out how to get path or install own??
+                if(FT_New_Face(ft, "/usr/share/fonts/truetype/freefont/FreeSans.ttf", 0, &face)) {
                         g_warning ("Could not open font.");
                 }
 
@@ -434,10 +440,13 @@ public:
 
                 Validated = init_buffer ();
                 Validated = init_vao ();
+
+                checkError("text_plane::init");
+                g_message ("text_plane:: init object completed");
         };
         ~text_plane (){
 		if (Validated){
-                        glDeleteTextures(1, &tex);
+                        // glDeleteTextures(1, &tex);
                         glDeleteVertexArrays(1, &VertexArrayName);
                         checkError("text_plane::~delete");
                 }
@@ -447,9 +456,10 @@ public:
 		if (!Validated) return false;
 
                 glActiveTexture(GL_TEXTURE2); // dedicated for text
-                glGenTextures(1, &tex);
-                glBindTexture(GL_TEXTURE_2D, tex);
-                glUniform1i (glGetUniformLocation (ProgramName, "text_tex"), 2);
+                //glGenTextures(1, &tex); // done globally
+                glBindTexture(GL_TEXTURE_2D, TextureName[2]);
+                tex = TextureName[2];
+                glUniform1i (glGetUniformLocation (ProgramName, "textTexture"), 2);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -458,6 +468,7 @@ public:
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
                 glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                glBindTexture(GL_TEXTURE_2D, 0);
 
                 //GLuint vbo;
                 //glGenBuffers(1, &vbo);
@@ -500,51 +511,74 @@ public:
  		if (!Validated) return false;
                 const char *p;
 
+                g_message ("text_plane::draw_text  %s", text);
+                
+                glBindVertexArray (VertexArrayName);
                 for(p = text; *p; p++) {
-                        if(FT_Load_Char(face, *p, FT_LOAD_RENDER))
+                        g_message ("text_plane::draw_text  '%c'", *p);
+                        if(FT_Load_Char (face, *p, FT_LOAD_RENDER))
                                 continue;
  
-                        glActiveTexture(GL_TEXTURE2); // dedicated for text
-                        glTexImage2D(
-                                     GL_TEXTURE_2D,
-                                     0,
-                                     GL_RED,
-                                     g->bitmap.width,
-                                     g->bitmap.rows,
-                                     0,
-                                     GL_RED,
-                                     GL_UNSIGNED_BYTE,
-                                     g->bitmap.buffer
-                                     );
+                        g_message ("text_plane::draw_text  activate texture 2");
+
+                        checkError("make_plane::draw enter");
+
+                        glActiveTexture (GL_TEXTURE2); // dedicated for text
+                        checkError("make_plane::draw actiavte texture 2");
+
+                        glTexImage2D (
+                                      GL_TEXTURE_2D,
+                                      0,
+                                      GL_RED,
+                                      g->bitmap.width,
+                                      g->bitmap.rows,
+                                      0,
+                                      GL_RED,
+                                      GL_UNSIGNED_BYTE,
+                                      g->bitmap.buffer
+                                      );
  
-                        float x2 = x + g->bitmap_left * sx;
-                        float y2 = -y - g->bitmap_top * sy;
-                        float w = g->bitmap.width * sx;
-                        float h = g->bitmap.rows * sy;
- 
-                        GLfloat box[4][4] = {
-                                {x2,     -y2    , 0, 0},
-                                {x2 + w, -y2    , 1, 0},
-                                {x2,     -y2 - h, 0, 1},
-                                {x2 + w, -y2 - h, 1, 1},
+                        float x2 =  x + sx * g->bitmap_left;
+                        float y2 = -y - sy * g->bitmap_top;
+                        float w = sx * g->bitmap.width;
+                        float h = sy * g->bitmap.rows;
+
+                        // have to use vertex_v3fn3fc4f for vertext array
+                        glf::vertex_v3fn3fc4f box[4] = {
+                                { glm::vec3(x2,     0, -y2),     glm::vec3(0, 0, 0), glm::vec4(0,0,0,0) },
+                                { glm::vec3(x2 + w, 0, -y2),     glm::vec3(1, 0, 0), glm::vec4(0,0,0,0) },
+                                { glm::vec3(x2,     0, -y2 - h), glm::vec3(0, 1, 0), glm::vec4(0,0,0,0) },
+                                { glm::vec3(x2 + w, 0, -y2 - h), glm::vec3(1, 1, 0), glm::vec4(0,0,0,0) }
                         };
- 
-                        glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                        glBufferData(GL_ARRAY_BUFFER, sizeof box, box, GL_DYNAMIC_DRAW);
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
-                        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+                        g_message ("text_plane::draw_text  bind arraybuffer");
+
+                        checkError("make_plane::draw prepare");
+                        
+                        glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
+                        glBufferData (GL_ARRAY_BUFFER, sizeof box, box, GL_DYNAMIC_DRAW);
+                        checkError ("text_plane::draw_text  set vertex array data dyn draw");
+
+                        g_message ("text_plane::draw_text  draw letter");
+                        glPatchParameteri(GL_PATCH_VERTICES, 4);
+                        glDrawArrays (GL_PATCHES, 0, 4);
+                        //glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
+                        checkError("text_plane::draw_text  draw arrays");
+                        glBindBuffer (GL_ARRAY_BUFFER, 0);
+
+                        checkError("text_plane::draw letter completed");
 
                         x += (g->advance.x/64) * sx;
                         y += (g->advance.y/64) * sy;
                 }
-                return Validated && checkError("make_plane::draw");
+                glBindVertexArray(0);
+                return Validated && checkError("text_plane::draw end");
         };
 private:        
         bool Validated;
         FT_Library ft;
         FT_Face face;
-        FT_GlyphSlot g;;
-        //glf::vertex_v3fn3fc4f *vertex;
+        FT_GlyphSlot g;
         GLuint tex;
 	GLuint ArrayBufferName;
 	GLuint VertexArrayName;
@@ -586,11 +620,14 @@ public:
 
                 WindowSize  = glm::ivec2(500, 500);
                 surface_plane = NULL;
+                text_vao = NULL;
         };
         ~gl_400_primitive_tessellation(){
                 //end (); // too late, glarea reference is gone! 
                 if (surface_plane)
                         delete surface_plane;
+                if (text_vao)
+                        delete text_vao;
         };
 
 private:
@@ -648,6 +685,8 @@ private:
                         Uniform_ambientColor  = glGetUniformLocation (ProgramName, "ambientColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
                         Uniform_diffuseColor  = glGetUniformLocation (ProgramName, "diffuseColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
                         Uniform_fogColor      = glGetUniformLocation (ProgramName, "fogColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
+                        Uniform_materialColor = glGetUniformLocation (ProgramName, "materialColor"); // vec4
+                        Uniform_textColor     = glGetUniformLocation (ProgramName, "textColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
 
                         Uniform_fogExp        = glGetUniformLocation (ProgramName, "fogExp"); // = 0.1;
 
@@ -673,6 +712,7 @@ private:
                         Uniform_vertexDirect      = glGetSubroutineIndex (ProgramName, GL_VERTEX_SHADER, "vertexDirect" );
                         Uniform_vertexSurface     = glGetSubroutineIndex (ProgramName, GL_VERTEX_SHADER, "vertexSurface" );
                         Uniform_vertexHScaled     = glGetSubroutineIndex (ProgramName, GL_VERTEX_SHADER, "vertexHScaled" );
+                        Uniform_vertexText        = glGetSubroutineIndex (ProgramName, GL_VERTEX_SHADER, "vertexText" );
 
                         Uniform_evaluationDirect  = glGetSubroutineIndex (ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationDirect" );
                         Uniform_evaluationSurface = glGetSubroutineIndex (ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationSurface" );
@@ -681,6 +721,7 @@ private:
                         Uniform_shadeTerrain      = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
                         Uniform_shadeDebugMode    = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
                         Uniform_shadeLambertian   = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
+                        Uniform_shadeText         = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeText" );
 
                         checkError("initProgram -- get uniform subroutine references...");
 		}
@@ -740,7 +781,15 @@ private:
 
                 glBindTexture(GL_TEXTURE_2D, 0);
                 
-		return checkError("initTextures");
+		checkError("initTextures");
+		if (!Validated) return false;
+
+#if 0
+                if (!text_vao)
+                        text_vao = new text_plane ();
+#endif
+
+		return checkError("initText Plane VAO");
         };
         
         static void GLMessageHandler (GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const GLvoid* userParam) { 
@@ -898,6 +947,7 @@ public:
                 // Light
                 //glm::vec3 light_color = 1.5f*glm::vec3(s->GLv_data.surf_mat_color[0], s->GLv_data.surf_mat_color[1], s->GLv_data.surf_mat_color[2]);
                 glUniform3fv (Uniform_sunColor, 1, &s->GLv_data.light_specular[0][0]); // = vec3(1.0, 1.0, 0.7);
+                glUniform4fv (Uniform_materialColor, 1, &s->GLv_data.surf_mat_color[0]); // vec4
                 glUniform3fv (Uniform_specularColor, 1, &s->GLv_data.surf_mat_specular[0]); // = vec3(1.0, 1.0, 0.7)*1.5;
                 glUniform3fv (Uniform_ambientColor, 1, &s->GLv_data.surf_mat_ambient[0]); // = vec3(1.0, 1.0, 0.7)*1.5;
                 glUniform3fv (Uniform_diffuseColor, 1, &s->GLv_data.surf_mat_diffuse[0]); // = vec3(1.0, 1.0, 0.7)*1.5;
@@ -926,7 +976,7 @@ public:
                 glBindTexture(GL_TEXTURE_2D, TextureName[0]);
                 glBindTexture(GL_TEXTURE_2D, TextureName[1]);
 
-                checkError ("set Uniforms");
+                checkError ("render -- set Uniforms");
 
                 // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
 
@@ -941,11 +991,21 @@ public:
 		case 'D': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeDebugMode); break;
                 }
                 
-                checkError ("set Uniforms Subroutines");
-                
                 surface_plane->draw (s->GLv_data.TickFrameOptions[0]=='2' || s->GLv_data.TickFrameOptions[0]=='3'); // surface with box or plane surface only
                 glUniform1f (Uniform_tess_level, 1.);
 
+#if 0
+                // setup for text
+                checkError ("render -- set Uniforms Subroutines for text");
+                glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexText);
+                glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 1, &Uniform_evaluationDirect);
+                glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeText);
+                glUniform4fv (Uniform_materialColor, 1, &s->GLv_data.box_mat_color[0]);
+                
+                checkError ("render -- draw text");
+                text_vao->draw_text ("GXSM-3.0 GL4.0 ES Text Test.", 1., 1., 0.1, 0.1);
+#endif
+                
 		return checkError("render");
                 
 		//return true;
@@ -1027,7 +1087,7 @@ private:
         int Major, Minor; // minimal version needed
 
         base_plane *surface_plane;
-        
+        text_plane *text_vao;
         glm::vec2 WindowSize;
 	glm::vec2 MouseOrigin;
 	glm::vec2 MouseCurrent;

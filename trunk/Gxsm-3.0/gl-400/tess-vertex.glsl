@@ -61,6 +61,11 @@ vec3 vertexHScaled(vec3 vertex){
         return vec3 (vertex.x, height_transform(vertex.y), vertex.z);
 }
 
+subroutine( shadeModelType )
+vec3 vertexText(vec3 vertex){
+        return vec3 (vertex.x, height_transform(vertex.y), vertex.z);
+}
+
 void main()
 {
         Out.Vertex = vertexMode (Position);
