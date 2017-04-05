@@ -44,7 +44,6 @@ void main()
 	Out[gl_InvocationID].Vertex = In[gl_InvocationID].Vertex;
 	Out[gl_InvocationID].Normal = In[gl_InvocationID].Normal;
 	Out[gl_InvocationID].Color = In[gl_InvocationID].Color;
-        //	Out[gl_InvocationID].IsTerrain = In[gl_InvocationID].IsTerrain;
 }
 
 #else
