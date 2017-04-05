@@ -86,8 +86,8 @@ void surf3d_write_schema (){
 
 //#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -117,14 +117,21 @@ std::string getBinaryDirectory()
 // ------------------------------------------------------------
 namespace
 {
-	std::string const SAMPLE_VERTEX_SHADER("tess-vertex.glsl");
-	std::string const SAMPLE_CONTROL_SHADER("tess-control.glsl");
-	std::string const SAMPLE_EVALUATION_SHADER("tess-evaluation.glsl");
-	std::string const SAMPLE_GEOMETRY_SHADER("tess-geometry.glsl");
-	std::string const SAMPLE_FRAGMENT_SHADER("tess-fragment.glsl");
+        // surface terrain mode tesselation shaders
+	std::string const TESSELATION_VERTEX_SHADER("tess-vertex.glsl");
+	std::string const TESSELATION_CONTROL_SHADER("tess-control.glsl");
+	std::string const TESSELATION_EVALUATION_SHADER("tess-evaluation.glsl");
+	std::string const TESSELATION_GEOMETRY_SHADER("tess-geometry.glsl");
+	std::string const TESSELATION_FRAGMENT_SHADER("tess-fragment.glsl");
+	GLuint Tesselation_ProgramName(0);
 
-	GLuint ProgramName(0);
+        // regular non tesselation shaders
+        std::string const S3D_VERTEX_SHADER("tess-vertex.glsl");
+	std::string const S3D_FRAGMENT_SHADER("tess-fragment.glsl");
+	// GLuint S3D_ProgramName(0);
 
+        // make UBO for tranformation, fragment/lights, geometry, textures
+        
 	GLint Uniform_screen_size(0); // vec2
 	GLint Uniform_tess_level(0); // float
 	GLint Uniform_lod_factor(0); // float
@@ -459,7 +466,7 @@ public:
                 //glGenTextures(1, &tex); // done globally
                 glBindTexture(GL_TEXTURE_2D, TextureName[2]);
                 tex = TextureName[2];
-                glUniform1i (glGetUniformLocation (ProgramName, "textTexture"), 2);
+                glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "textTexture"), 2);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -653,75 +660,75 @@ private:
 		if (Validated){
                         compiler Compiler;
 
-                        GLuint VertexShader     = Compiler.create (GL_VERTEX_SHADER, getDataDirectory() + SAMPLE_VERTEX_SHADER);
-                        GLuint ControlShader    = Compiler.create (GL_TESS_CONTROL_SHADER, getDataDirectory() + SAMPLE_CONTROL_SHADER);
-                        GLuint EvaluationShader = Compiler.create (GL_TESS_EVALUATION_SHADER, getDataDirectory() + SAMPLE_EVALUATION_SHADER);
-                        GLuint GeometryShader   = Compiler.create (GL_GEOMETRY_SHADER, getDataDirectory() + SAMPLE_GEOMETRY_SHADER);
-                        GLuint FragmentShader   = Compiler.create (GL_FRAGMENT_SHADER, getDataDirectory() + SAMPLE_FRAGMENT_SHADER);
+                        GLuint VertexShader     = Compiler.create (GL_VERTEX_SHADER, getDataDirectory() + TESSELATION_VERTEX_SHADER);
+                        GLuint ControlShader    = Compiler.create (GL_TESS_CONTROL_SHADER, getDataDirectory() + TESSELATION_CONTROL_SHADER);
+                        GLuint EvaluationShader = Compiler.create (GL_TESS_EVALUATION_SHADER, getDataDirectory() + TESSELATION_EVALUATION_SHADER);
+                        GLuint GeometryShader   = Compiler.create (GL_GEOMETRY_SHADER, getDataDirectory() + TESSELATION_GEOMETRY_SHADER);
+                        GLuint FragmentShader   = Compiler.create (GL_FRAGMENT_SHADER, getDataDirectory() + TESSELATION_FRAGMENT_SHADER);
 
                         if (!VertexShader || !ControlShader || !EvaluationShader || !GeometryShader || !FragmentShader)
                                 Validated = false;
                         else {
-                                ProgramName = glCreateProgram ();
-                                glAttachShader (ProgramName, VertexShader);
-                                glAttachShader (ProgramName, ControlShader);
-                                glAttachShader (ProgramName, EvaluationShader);
-                                glAttachShader (ProgramName, GeometryShader);
-                                glAttachShader (ProgramName, FragmentShader);
-                                glLinkProgram (ProgramName);
+                                Tesselation_ProgramName = glCreateProgram ();
+                                glAttachShader (Tesselation_ProgramName, VertexShader);
+                                glAttachShader (Tesselation_ProgramName, ControlShader);
+                                glAttachShader (Tesselation_ProgramName, EvaluationShader);
+                                glAttachShader (Tesselation_ProgramName, GeometryShader);
+                                glAttachShader (Tesselation_ProgramName, FragmentShader);
+                                glLinkProgram (Tesselation_ProgramName);
                         }
                         
 			Validated = Validated && Compiler.check();
-			Validated = Validated && Compiler.check_program(ProgramName);
+			Validated = Validated && Compiler.check_program(Tesselation_ProgramName);
 		}
 
 		if(Validated){
-                        Uniform_ModelViewProjection = glGetUniformLocation(ProgramName, "ModelViewProjection"); // mat4 -- projection
-                        Uniform_ModelView     = glGetUniformLocation (ProgramName, "ModelView"); // mat4 -- projection
-                        Uniform_lightDirWorld = glGetUniformLocation (ProgramName, "lightDirWorld"); // vec3
-                        Uniform_eyePosWorld   = glGetUniformLocation (ProgramName, "eyePosWorld"); // vec3
-                        Uniform_sunColor      = glGetUniformLocation (ProgramName, "sunColor"); // = vec3(1.0, 1.0, 0.7);
-                        Uniform_specularColor = glGetUniformLocation (ProgramName, "specularColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
-                        Uniform_ambientColor  = glGetUniformLocation (ProgramName, "ambientColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
-                        Uniform_diffuseColor  = glGetUniformLocation (ProgramName, "diffuseColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
-                        Uniform_fogColor      = glGetUniformLocation (ProgramName, "fogColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
-                        Uniform_materialColor = glGetUniformLocation (ProgramName, "materialColor"); // vec4
-                        Uniform_textColor     = glGetUniformLocation (ProgramName, "textColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
+                        Uniform_ModelViewProjection = glGetUniformLocation(Tesselation_ProgramName, "ModelViewProjection"); // mat4 -- projection
+                        Uniform_ModelView     = glGetUniformLocation (Tesselation_ProgramName, "ModelView"); // mat4 -- projection
+                        Uniform_lightDirWorld = glGetUniformLocation (Tesselation_ProgramName, "lightDirWorld"); // vec3
+                        Uniform_eyePosWorld   = glGetUniformLocation (Tesselation_ProgramName, "eyePosWorld"); // vec3
+                        Uniform_sunColor      = glGetUniformLocation (Tesselation_ProgramName, "sunColor"); // = vec3(1.0, 1.0, 0.7);
+                        Uniform_specularColor = glGetUniformLocation (Tesselation_ProgramName, "specularColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
+                        Uniform_ambientColor  = glGetUniformLocation (Tesselation_ProgramName, "ambientColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
+                        Uniform_diffuseColor  = glGetUniformLocation (Tesselation_ProgramName, "diffuseColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
+                        Uniform_fogColor      = glGetUniformLocation (Tesselation_ProgramName, "fogColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
+                        Uniform_materialColor = glGetUniformLocation (Tesselation_ProgramName, "materialColor"); // vec4
+                        Uniform_textColor     = glGetUniformLocation (Tesselation_ProgramName, "textColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
 
-                        Uniform_fogExp        = glGetUniformLocation (ProgramName, "fogExp"); // = 0.1;
+                        Uniform_fogExp        = glGetUniformLocation (Tesselation_ProgramName, "fogExp"); // = 0.1;
 
-                        Uniform_shininess     = glGetUniformLocation (ProgramName, "shininess"); // = 100.0;
-                        Uniform_lightness     = glGetUniformLocation (ProgramName, "lightness"); // = 1.0;
-                        Uniform_color_offset  = glGetUniformLocation (ProgramName, "color_offset"); // = vec4(0,0,0,0)
-                        Uniform_ambientColor  = glGetUniformLocation (ProgramName, "ambientColor"); // = vec3(0.05, 0.05, 0.15 );
-                        Uniform_wrap          = glGetUniformLocation (ProgramName, "wrap"); // = 0.3;
-                        Uniform_delta         = glGetUniformLocation (ProgramName, "delta"); //  1/nx,1/ny
+                        Uniform_shininess     = glGetUniformLocation (Tesselation_ProgramName, "shininess"); // = 100.0;
+                        Uniform_lightness     = glGetUniformLocation (Tesselation_ProgramName, "lightness"); // = 1.0;
+                        Uniform_color_offset  = glGetUniformLocation (Tesselation_ProgramName, "color_offset"); // = vec4(0,0,0,0)
+                        Uniform_ambientColor  = glGetUniformLocation (Tesselation_ProgramName, "ambientColor"); // = vec3(0.05, 0.05, 0.15 );
+                        Uniform_wrap          = glGetUniformLocation (Tesselation_ProgramName, "wrap"); // = 0.3;
+                        Uniform_delta         = glGetUniformLocation (Tesselation_ProgramName, "delta"); //  1/nx,1/ny
 
-                        Uniform_height_scale  = glGetUniformLocation (ProgramName, "height_scale");  // float
-                        Uniform_height_offset = glGetUniformLocation (ProgramName, "height_offset");  // float
-                        Uniform_aspect        = glGetUniformLocation (ProgramName, "aspect");  // float
-                        Uniform_color_source  = glGetUniformLocation (ProgramName, "color_source");  // int
-                        Uniform_screen_size   = glGetUniformLocation (ProgramName, "screen_size"); // vec2
-                        Uniform_lod_factor    = glGetUniformLocation (ProgramName, "lod_factor");  // float
-                        Uniform_tess_level    = glGetUniformLocation (ProgramName, "tess_level");  // float
+                        Uniform_height_scale  = glGetUniformLocation (Tesselation_ProgramName, "height_scale");  // float
+                        Uniform_height_offset = glGetUniformLocation (Tesselation_ProgramName, "height_offset");  // float
+                        Uniform_aspect        = glGetUniformLocation (Tesselation_ProgramName, "aspect");  // float
+                        Uniform_color_source  = glGetUniformLocation (Tesselation_ProgramName, "color_source");  // int
+                        Uniform_screen_size   = glGetUniformLocation (Tesselation_ProgramName, "screen_size"); // vec2
+                        Uniform_lod_factor    = glGetUniformLocation (Tesselation_ProgramName, "lod_factor");  // float
+                        Uniform_tess_level    = glGetUniformLocation (Tesselation_ProgramName, "tess_level");  // float
 
                         checkError("initProgram -- get uniform variable references...");
 
                         // get shaderFunction references
                         // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
-                        Uniform_vertexDirect      = glGetSubroutineIndex (ProgramName, GL_VERTEX_SHADER, "vertexDirect" );
-                        Uniform_vertexSurface     = glGetSubroutineIndex (ProgramName, GL_VERTEX_SHADER, "vertexSurface" );
-                        Uniform_vertexHScaled     = glGetSubroutineIndex (ProgramName, GL_VERTEX_SHADER, "vertexHScaled" );
-                        Uniform_vertexText        = glGetSubroutineIndex (ProgramName, GL_VERTEX_SHADER, "vertexText" );
+                        Uniform_vertexDirect      = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexDirect" );
+                        Uniform_vertexSurface     = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexSurface" );
+                        Uniform_vertexHScaled     = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexHScaled" );
+                        Uniform_vertexText        = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexText" );
 
-                        Uniform_evaluationDirect  = glGetSubroutineIndex (ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationDirect" );
-                        Uniform_evaluationSurface = glGetSubroutineIndex (ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationSurface" );
-                        Uniform_evaluationHScaled = glGetSubroutineIndex (ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationHScaled" );
+                        Uniform_evaluationDirect  = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationDirect" );
+                        Uniform_evaluationSurface = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationSurface" );
+                        Uniform_evaluationHScaled = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationHScaled" );
 
-                        Uniform_shadeTerrain      = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
-                        Uniform_shadeDebugMode    = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
-                        Uniform_shadeLambertian   = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
-                        Uniform_shadeText         = glGetSubroutineIndex (ProgramName, GL_FRAGMENT_SHADER, "shadeText" );
+                        Uniform_shadeTerrain      = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
+                        Uniform_shadeDebugMode    = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
+                        Uniform_shadeLambertian   = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
+                        Uniform_shadeText         = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeText" );
 
                         checkError("initProgram -- get uniform subroutine references...");
 		}
@@ -754,7 +761,7 @@ private:
 		if (!Validated) return false;
 
                 // sampler2D diffuse
-                glUseProgram (ProgramName);
+                glUseProgram (Tesselation_ProgramName);
 
                 glGenTextures(TextureCount, TextureName);
                 glActiveTexture(GL_TEXTURE0);
@@ -766,7 +773,7 @@ private:
                 //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 glGenerateMipmap(GL_TEXTURE_2D);
-                glUniform1i (glGetUniformLocation (ProgramName, "diffuse"), 0);
+                glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "diffuse"), 0);
 
                 // sampler2D terrain
                 glActiveTexture(GL_TEXTURE1);
@@ -777,7 +784,7 @@ private:
                 //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 glGenerateMipmap(GL_TEXTURE_2D);
-                glUniform1i (glGetUniformLocation (ProgramName, "terrain"), 1);
+                glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "terrain"), 1);
 
                 glBindTexture(GL_TEXTURE_2D, 0);
                 
@@ -872,7 +879,7 @@ public:
                         delete surface_plane;
                 
                 glDeleteTextures(TextureCount, TextureName);
-                glDeleteProgram(ProgramName);
+                glDeleteProgram(Tesselation_ProgramName);
 
 		return checkError("end");
 	};
@@ -936,7 +943,7 @@ public:
                  */
                 // glViewport (0, 0, WindowSize.x, WindowSize.y);
 
-		glUseProgram (ProgramName);
+		glUseProgram (Tesselation_ProgramName);
                 // Projection
                 glUniformMatrix4fv (Uniform_ModelViewProjection, 1, GL_FALSE, &ModelViewProjection[0][0]);
                 glUniformMatrix4fv (Uniform_ModelView, 1, GL_FALSE, &ModelView[0][0]);
