@@ -3,15 +3,11 @@
    -- tesselation (subdivision) control 
 */
 
-#version 400 core
+#include "g3d-allshader-uniforms.glsl"
 
-precision highp float;
-precision highp int;
-layout(std140, column_major) uniform;
 layout(vertices = 4) out;
 
 uniform vec2 screen_size;
-uniform mat4 ModelViewProjection;
 uniform float lod_factor;
 uniform float tess_level;
 

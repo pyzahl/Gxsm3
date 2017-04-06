@@ -1,0 +1,103 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+/*
+  GLOBAL INCLUDE FOR ALL SHADERS
+  DEFINES DEFAULT SETTINGS AND SHARED UNIFORMS
+*/
+
+#version 400 core
+
+precision highp float;
+precision highp int;
+layout(std140, column_major) uniform;
+
+uniform mat4 ModelView;
+uniform mat4 ModelViewProjection;
+
+uniform sampler2D terrain;
+uniform sampler2D diffuse;
+
+uniform float aspect;
+uniform float height_scale;
+uniform float height_offset;
+uniform vec2 delta;
+
+uniform vec3 lightDirWorld;
+uniform vec3 eyePosWorld;
+
+uniform vec3 sunColor; // = vec3(1.0, 1.0, 0.7);
+uniform vec3 specularColor; // = vec3(1.0, 1.0, 0.7)*1.5;
+uniform vec3 ambientColor; // = vec3(1.0, 1.0, 0.7)*1.5;
+uniform vec3 diffuseColor; // = vec3(1.0, 1.0, 0.7)*1.5;
+uniform vec3 fogColor; // = vec3(0.7, 0.8, 1.0)*0.7;
+uniform vec4  materialColor;
+uniform float fogExp; // = 0.1;
+
+uniform float shininess; // = 100.0;
+uniform float lightness;
+uniform vec4  color_offset;
+uniform float light_attenuation;
+
+uniform float wrap;
+uniform int debug_color_source;     // only for debug shader
+
+// text shading
+uniform sampler2D textTexture;
+uniform vec4 textColor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* END OF INCLUDE: KEEP THIS AT LINE 100 -- OFFSET FOR ERROR END GLSL INCLUDE */
