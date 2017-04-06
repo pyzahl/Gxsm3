@@ -87,6 +87,8 @@ extern gboolean CopyScan(MATHOPPARAMS);
 extern gboolean CropScan(MATHOPPARAMS);
 extern gboolean ZoomInScan(MATHOPPARAMS);
 extern gboolean ZoomOutScan(MATHOPPARAMS);
+extern gboolean StitchScans(MATHOPPARAMS);
+
 
 /* Background */
 extern gboolean BgLin1DScan(MATHOPPARAMS);

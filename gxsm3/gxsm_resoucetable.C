@@ -738,10 +738,6 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	( GNOME_RES_BOOL, "User/SaveWindowGeometry", "true", &xsmres.geomsave, TrueFalseList, N_("User"), 
 	  N_("bool: true=save window positions, false: do not")
 		),
-	GNOME_RES_ENTRY_AUTO_PATH_OPTION
-	( GNOME_RES_BOOL, "User/LoadAppendInTime", "true", &xsmres.load_append_in_time, TrueFalseList, N_("User"), 
-	  N_("bool: true=append scan to channel in time dim on load, false: replace")
-		),
 	GNOME_RES_ENTRY_ASK_PATH_OPTION
 	( GNOME_RES_STRING, "User/XYUnit","AA", &xsmres.Unit, UserXYUnitList, N_("User"),
 	  N_("XY Unit alias, choose one of: AA (" UTF8_ANGSTROEM "), nm, um (" UTF8_MU "m), mm, BZ, sec, V, 1")

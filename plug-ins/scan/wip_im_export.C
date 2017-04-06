@@ -167,7 +167,7 @@ class Wip_ImExportFile : public Dataio{
 public:
 	Wip_ImExportFile(Scan *s, const char *n); 
 	virtual ~Wip_ImExportFile();
-	virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+	virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
 	virtual FIO_STATUS Write();
         gint64 read_tag (gint64 start=8, gint64 stop=-1, WIP_data *wip_data=NULL, int level=0, GtkTreeIter *toplevel=NULL, int newlevel=1); 
         GtkTreeModel *create_and_fill_model (void);
@@ -737,7 +737,7 @@ Wip_ImExportFile::Wip_ImExportFile(Scan *s, const char *n) : Dataio(s,n){
 Wip_ImExportFile::~Wip_ImExportFile(){
 }
 
-FIO_STATUS Wip_ImExportFile::Read(gboolean append_in_time){
+FIO_STATUS Wip_ImExportFile::Read(xsm::open_mode mode){
 	FIO_STATUS ret;
 	gchar *fname=NULL;
 

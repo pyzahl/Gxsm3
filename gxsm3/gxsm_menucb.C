@@ -59,6 +59,28 @@ void App::file_open_in_new_window_callback (GSimpleAction *simple, GVariant *par
 	return;
 }
 
+void App::file_open_mode_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+	if(!gapp) return;
+
+        GVariant *old_state, *new_state;
+        
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
+                
+        if (!strcmp (g_variant_get_string (new_state, NULL), "replace")){
+                gapp->xsm->file_open_mode = xsm::open_mode::replace;
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "append-time")){
+                gapp->xsm->file_open_mode = xsm::open_mode::append_time;
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "stitch-2d")){
+                gapp->xsm->file_open_mode = xsm::open_mode::stitch_2d;
+        } else g_warning ("App::file_open_mode_callback -- unhandled action.");
+      
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+        
+	return;
+}
+
 void App::file_browse_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	if(!gapp) return;
 

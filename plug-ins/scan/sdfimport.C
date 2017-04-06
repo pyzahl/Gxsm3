@@ -196,13 +196,13 @@ static void sdfimport_cleanup(void)
 class SDFFile : public Dataio{
 public:
   SDFFile(Scan *s, const char *n) : Dataio(s,n){};
-  virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+  virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
   virtual FIO_STATUS Write(){ return FIO_OK; };
 private:
   int dummy;
 };
 
-FIO_STATUS SDFFile::Read(gboolean append_in_time){
+FIO_STATUS SDFFile::Read(xsm::open_mode mode){
 
   PI_DEBUG (DBG_L1, "***** Importing SDF-file. *****" );
 

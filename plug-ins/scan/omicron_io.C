@@ -262,7 +262,7 @@ static void omicron_io_cleanup(void)
 class Omicron_SPM_ImExportFile : public Dataio{
 public:
         Omicron_SPM_ImExportFile(Scan *s, const char *n) : Dataio(s,n){ };
-        virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+        virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
         virtual FIO_STATUS Write();
 private:
         // binary data read
@@ -277,7 +277,7 @@ private:
 
 
 // spm import
-FIO_STATUS Omicron_SPM_ImExportFile::Read(gboolean append_in_time){
+FIO_STATUS Omicron_SPM_ImExportFile::Read(xsm::open_mode mode){
 	FIO_STATUS ret = FIO_OK;
 	gchar *fdatname = (gchar*) name;
 	gchar *fparname=NULL;

@@ -313,13 +313,13 @@ static void png_im_export_cleanup(void)
 class PNG_ImExportFile : public Dataio{
 public:
 	PNG_ImExportFile(Scan *s, const char *n) : Dataio(s,n){; };
-	virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+	virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
 	virtual FIO_STATUS Write();
 private:
 	FIO_STATUS import_data(const char *fname, int index_value=0, int index_time=0);
 };
 
-FIO_STATUS PNG_ImExportFile::Read(gboolean append_in_time){
+FIO_STATUS PNG_ImExportFile::Read(xsm::open_mode mode){
 	FIO_STATUS ret;
 	gchar *fname=NULL;
 

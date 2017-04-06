@@ -97,6 +97,7 @@ static GActionEntry app_gxsm_action_entries[] = {
         { "file-open", App::file_open_callback, NULL, NULL, NULL },
         { "file-open-to-free-channel", App::file_open_in_new_window_callback, NULL, NULL, NULL },
         { "file-close", App::file_close_callback, NULL, NULL, NULL },
+        { "file-open-mode", App::file_open_mode_callback, "s", "'append-time'", NULL },
         { "autodisp", App::view_autodisp_callback,  NULL, NULL, NULL },
         { "plugins-reload", App::tools_plugin_reload_callback, NULL, NULL, NULL },
         { "plugins-info", App::tools_plugin_info_callback, NULL, NULL, NULL },

@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -23,7 +25,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+#pragma once
 
 #ifndef __XSMTYPES_H
 #define __XSMTYPES_H
@@ -70,6 +72,7 @@ class XSM_Hardware;
 #define G_NEWSIZE(X,N)            { g_free(X); X=g_new(gchar,N); }
 #define SUI_GFREEANDNEWCPY(X)     { G_FREE_STRDUP(X,t); }
 #define G_FREE_STRDUP_PRINTF(X,format,args...) { g_free(X); X=g_strdup_printf(format,##args); }
+
 
 typedef struct { int x,y; } Point2D;
 
@@ -174,7 +177,6 @@ typedef struct{
 	gchar AutosaveOverwritemode[8];
 	gint  LineProfileOrgMode;
 	gint  geomsave;
-	gint  load_append_in_time;
 	gint  datnullok;
 	gint  menutooltips;
 	gint  disableplugins;
@@ -477,6 +479,11 @@ public:
 		display.copy (sd.display);
 	};
 
+	double get_x_left_absolute (){ return s.x0-s.rx/2; };
+	double get_x_right_absolute (){ return s.x0+s.rx/2; };
+	double get_y_top_absolute (){ return s.y0+s.ry/2; };
+	double get_y_bottom_absolute (){ return s.y0-s.ry/2; };
+	
 	/* Save / Retrive Values from Rescource */
 	void SaveValues(gchar *SetName=NULL);
 	void LoadValues(XSM_Instrument *Inst, XSM_Hardware *hardware, gchar *SetName=NULL);

@@ -470,14 +470,14 @@ static void gmeyer_im_export_cleanup(void)
 class gmeyer_ImExportFile : public Dataio{
 public:
 	gmeyer_ImExportFile(Scan *s, const char *n) : Dataio(s,n){ };
-	virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+	virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
 	virtual FIO_STATUS Write();
 private:
 	FIO_STATUS import(const char *fname);
 };
 
 // Import GME SPM file
-FIO_STATUS gmeyer_ImExportFile::Read(gboolean append_in_time){
+FIO_STATUS gmeyer_ImExportFile::Read(xsm::open_mode mode){
 	FIO_STATUS ret;
 	gchar *fname=NULL;
 

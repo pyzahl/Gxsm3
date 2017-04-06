@@ -177,6 +177,8 @@ Xsm::Xsm(){
 	counter = 0;
 	subcounter = 0;
 
+        file_open_mode = xsm::open_mode::append_time; // default -- please keep matched to menu init
+        
 	data.ui.MakeUIdefaults();
 
 	data.Xunit      = NULL;

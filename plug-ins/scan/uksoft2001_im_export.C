@@ -436,7 +436,7 @@ class Uksoft2001_ImExportFile : public Dataio{
 public:
 	Uksoft2001_ImExportFile(Scan *s, const char *n); 
 	virtual ~Uksoft2001_ImExportFile();
-	virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+	virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
 	virtual FIO_STATUS Write();
 private:
 	FIO_STATUS import_data(const char *fname, int index_value=0, int index_time=0); 
@@ -454,7 +454,7 @@ Uksoft2001_ImExportFile::~Uksoft2001_ImExportFile(){
 	}
 }
 
-FIO_STATUS Uksoft2001_ImExportFile::Read(gboolean append_in_time){
+FIO_STATUS Uksoft2001_ImExportFile::Read(xsm::open_mode mode){
 	FIO_STATUS ret;
 	gchar *fname=NULL;
 

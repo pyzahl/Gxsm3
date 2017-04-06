@@ -360,6 +360,7 @@ int Surface::load(const char *rname){
 	std::ifstream f;
 	static gchar *path = NULL;
 	static double t0=0., t=0.; // Load Time Reference
+        xsm::open_mode open_mode = file_open_mode;
 
 	gchar *cname = NULL;
 	gchar *fname = NULL;
@@ -453,6 +454,8 @@ int Surface::load(const char *rname){
 	
 		// auto activate Channel or use active one
 		if(!ActiveScan){
+                        open_mode = xsm::open_mode::replace; // always replace if new
+                        
 			if((Ch=FindChan(ID_CH_M_OFF)) < 0){
 				gapp->SetStatus (ERR_SORRY, ERR_NOFREECHAN);
 				XSM_SHOW_ALERT (ERR_SORRY, ERR_NOFREECHAN, fname, 1);
@@ -465,8 +468,9 @@ int Surface::load(const char *rname){
 				return 1;
 			}
 		}
+		ActiveScan->CpyDataSet (data);
 
-		// zipped ? unzip it to /tmp/... !
+                // zipped ? unzip it to /tmp/... !
 		// depends on the avaibility of gzip and bzip2 for *.gz and *.bz2
 		// files respectively
 		if(!strncasecmp(fname+strlen(fname)-3,".gz",3) || 
@@ -535,38 +539,73 @@ int Surface::load(const char *rname){
 				return 0;
 			}
 		}
-		ActiveScan->CpyDataSet (data);
 		
-		Dataio *Dio = NULL;
-		
-		if (!strncasecmp (fname+strlen(fname)-3,".nc",3))
-			Dio = new NetCDF (ActiveScan, fname); // NetCDF File
-		
-		if (Dio){
-			Dio->Read (xsmres.load_append_in_time);
-			if(Dio->ioStatus ())
-				XSM_SHOW_ALERT (ERR_SORRY, Dio->ioStatus (), fname,1);
+		if (!strncasecmp (fname+strlen(fname)-3,".nc",3)){
+                        switch (open_mode){
+                        case xsm::open_mode::replace:
+                                {
+                                        Dataio *Dio = new NetCDF (ActiveScan, fname); // NetCDF File
+                                        Dio->Read (open_mode);
+                                        if(Dio->ioStatus ())
+                                                XSM_SHOW_ALERT (ERR_SORRY, Dio->ioStatus (), fname,1);
+                                        delete Dio;
+                                        ActiveScan->GetDataSet(data);
+                                }
+                                break;
+                        case xsm::open_mode::append_time:
+                                {
+                                        Dataio *Dio = new NetCDF (ActiveScan, fname); // NetCDF File
+                                        Dio->Read (open_mode);
+                                        if(Dio->ioStatus ())
+                                                XSM_SHOW_ALERT (ERR_SORRY, Dio->ioStatus (), fname,1);
 			
-			delete Dio;
+                                        delete Dio;
+
+                                        ActiveScan->GetDataSet(data);
+
+                                        if (!ActiveScan->TimeList) // reference to the first frame/image loaded
+                                                t0 = (double)ActiveScan->data.s.tStart;
+
+                                        t = (double)ActiveScan->data.s.tStart;
+                                        t -= t0;
+                                        gchar *fn = g_strrstr (fname, "/");
+                                        ActiveScan->mem2d->add_layer_information (new LayerInformation ("name", 0., fn ? (fn+1):fname));
+                                        ActiveScan->mem2d->add_layer_information (new LayerInformation ("t",t, "%.2f s"));
+                                        gapp->xsm->data.s.ntimes = ActiveScan->append_current_to_time_elements (-1, t);
+                                }
+                                break;
+                        case xsm::open_mode::stitch_2d:
+                                {
+                                        int current_channel = ActiveChannel;
+                                        int ch_tmp=FindChan(ID_CH_M_X);
+                                        if (ch_tmp < 0){
+                                                ch_tmp=FindChan(ID_CH_M_OFF);
+                                                if (ch_tmp < 0){
+                                                        gapp->SetStatus(N_("no tmp channel available"));
+                                                        return 0;
+                                                }
+                                        }
+                                        ActivateChannel (ch_tmp);
+                                        // NetCDF File, load in temp "X" channel for auto stitching into ActiveScan
+                                        Dataio *Dio = new NetCDF (scan[ch_tmp], fname);
+                                        Dio->Read (open_mode);
+                                        if(Dio->ioStatus ())
+                                                XSM_SHOW_ALERT (ERR_SORRY, Dio->ioStatus (), fname,1);
+                                        
+                                        delete Dio;
+                                        SetMode (ch_tmp, ID_CH_M_X);
+                                        SetMode (current_channel, ID_CH_M_ACTIVE);
+
+                                        StitchScans (scan[ch_tmp], scan[current_channel]);
+                                                
+                                        ActiveScan->GetDataSet(data);
+                                }
+                                break;
+                        }
 		}
 		ret = 0;
 	}
 
-	ActiveScan->GetDataSet(data);
-
-	// append in time if requested by option
-	if (xsmres.load_append_in_time) {
-		if (!ActiveScan->TimeList) // reference to the first frame/image loaded
-			t0 = (double)ActiveScan->data.s.tStart;
-
-		t = (double)ActiveScan->data.s.tStart;
-		t -= t0;
-		gchar *fn = g_strrstr (fname, "/");
-		ActiveScan->mem2d->add_layer_information (new LayerInformation ("name", 0., fn ? (fn+1):fname));
-		ActiveScan->mem2d->add_layer_information (new LayerInformation ("t",t, "%.2f s"));
-		gapp->xsm->data.s.ntimes = ActiveScan->append_current_to_time_elements (-1, t);
-	}
-	
 	// fname done.
 	g_free(fname);
 	
