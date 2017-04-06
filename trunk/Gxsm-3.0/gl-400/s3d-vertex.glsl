@@ -4,15 +4,11 @@
    https://learnopengl.com/#!Advanced-OpenGL/Advanced-GLSL
 */
 
-#version 400 core
+#include "g3d-allshader-uniforms.glsl"
 
 #define POSITION		0
 #define NORMALS			3
 #define COLOR			6
-
-precision highp float;
-precision highp int;
-layout(std140, column_major) uniform;
 
 layout(location = POSITION) in vec3 Position;
 layout(location = NORMALS) in vec3 Normals;
@@ -26,27 +22,29 @@ out block
 	vec4 Color;
 } Out;
 
-subroutine vec3 shadeModelType(vec3 vertex);
+subroutine vec3 shadeModelType(vec3 vertex, vec3 normal);
 
 subroutine uniform shadeModelType vertexMode;
 
-uniform sampler2D terrain;
-uniform float aspect;
-uniform float height_scale;
-uniform float height_offset;
-uniform mat4 ModelView;
-uniform mat4 ModelViewProjection;
-uniform vec2 delta;
 
 float height_transform(float y)
 {
         return height_scale * (y-0.5) + height_offset;  
 }
 
+vec2 terraincoord(vec2 position){
+        return vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swapped
+        // retufn vec2 (position.x + 0.5, position.y/aspect + 0.5); // normal
+}
+
 float height(vec2 position)
 {
-        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
-        return height_transform (texture (terrain, terraincoord).a);
+        return height_transform (texture (terrain, terraincoord(position)).a);
+}
+
+vec4 color(vec2 tcoord)
+{
+        return texture (diffuse, tcoord);
 }
 
 
@@ -73,7 +71,9 @@ vec3 vertexSurface(vec3 vertex, vec3 normal){
 }
 
 
-        
+subroutine( shadeModelType )
+vec3 vertexSurfaceDirect(vec3 vertex, vec3 normal){        
+	Out.Normal = normal;
         return vec3 (vertex.x, height(vertex.xz), vertex.z);
 }
 
@@ -93,6 +93,6 @@ void main()
 {
 	Out.Color  = Color;
         Out.Vertex = vertexMode (Position, Normals);
-        Out.VertexEye = vec3 (ModelView * vec4(position.xyz, 1));  // eye space
-        gl_Position = ModelViewProjection * vec4(position.xyz, 1.0);
+        Out.VertexEye = vec3 (ModelView * vec4(Position.xyz, 1));  // eye space
+        gl_Position = ModelViewProjection * vec4(Position.xyz, 1.0);
 }

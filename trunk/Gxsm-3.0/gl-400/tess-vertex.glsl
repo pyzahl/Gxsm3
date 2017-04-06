@@ -3,14 +3,12 @@
    -- vertex preparation -- pass though from given array 
 */
 
-#version 400 core
+#include "g3d-allshader-uniforms.glsl"
 
 #define POSITION		0
 #define NORMALS			3
 #define COLOR			6
 
-precision highp float;
-precision highp int;
 layout(std140, column_major) uniform;
 
 layout(location = POSITION) in vec3 Position;
@@ -27,11 +25,6 @@ out block
 subroutine vec3 shadeModelType(vec3 vertex);
 
 subroutine uniform shadeModelType vertexMode;
-
-uniform sampler2D terrain;
-uniform float aspect;
-uniform float height_scale;
-uniform float height_offset;
 
 float height_transform(float y)
 {

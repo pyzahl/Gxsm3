@@ -36,18 +36,23 @@ void compiler::commandline::parseArguments(std::string const & Arguments)
 	std::stringstream Stream(Arguments);
 	std::string Param;
 
+	fprintf (stdout, "compiler::commandline::parseArguments <%s>\n", Arguments.c_str());
+	
 	while(!Stream.eof())
 	{
 		Stream >> Param;
 
+		fprintf (stdout, "compiler::commandline::parseArguments Param:<%s>\n", Param.c_str());
 		std::size_t FoundDefine = Param.find("-D");
 		std::size_t FoundInclude = Param.find("-I");
 
-		if(FoundDefine != std::string::npos)
+		if(FoundDefine != std::string::npos){
+			fprintf (stdout, "compiler::commandline::parseArguments -D:<%s>\n", Param.substr(2, Param.size() - 2).c_str());
 			this->Defines.push_back(Param.substr(2, Param.size() - 2));
-		else if(FoundInclude != std::string::npos)
+		}else if(FoundInclude != std::string::npos){
+			fprintf (stdout, "compiler::commandline::parseArguments -I:<%s>\n", Param.substr(2, Param.size() - 2).c_str());
 			this->Includes.push_back(getDataDirectory() + Param.substr(2, Param.size() - 2));
-		else if(Param == "--define")
+		}else if(Param == "--define")
 		{
 			std::string Define;
 			Stream >> Define;
@@ -60,7 +65,9 @@ void compiler::commandline::parseArguments(std::string const & Arguments)
 		else if (Param == "--include")
 		{
 			std::string Include;
+
 			Stream >> Include;
+			fprintf (stdout, "compiler::commandline::parseArguments Include:<%s>\n", Include.c_str());
 			this->Includes.push_back(getDataDirectory() + Include);
 		}
 /*

@@ -3,14 +3,10 @@
    -- Z displacement at given tess level and normal calculations and projection 
 */
 
-#version 400 core
+#include "g3d-allshader-uniforms.glsl"
 
 #define CALCULATE_NORMAL 1
 
-
-precision highp float;
-precision highp int;
-layout(std140, column_major) uniform;
 layout(quads, equal_spacing, ccw) in; //equal_spacing fractional_even_spacing fractional_odd_spacing
 
 // WARNING in/out "blocks" are not part of namespace, members must be unique in code! Thumb Rule: use capital initials for In/Out.
@@ -32,14 +28,6 @@ subroutine vec4 shadeModelType();
 
 subroutine uniform shadeModelType evaluationMode;
 
-uniform sampler2D terrain;
-uniform sampler2D diffuse;
-uniform float aspect;
-uniform float height_scale;
-uniform float height_offset;
-uniform mat4 ModelView;
-uniform mat4 ModelViewProjection;
-uniform vec2 delta;
 
 vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
 {

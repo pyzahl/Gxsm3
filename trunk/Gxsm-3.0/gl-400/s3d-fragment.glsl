@@ -3,11 +3,7 @@
    non-tesselation -- color/light computation / Lambertian Reflection (Ambient+Diffuse+Specular)
 */
 
-#version 400 core
-
-precision highp float;
-precision highp int;
-layout(std140, column_major) uniform;
+#include "g3d-allshader-uniforms.glsl"
 
 // WARNING in/out "blocks" are not part of namespace, members must be unique in code! Thumb Rule: use capital initials for In/Out.
 in block {
@@ -24,32 +20,6 @@ subroutine vec4 shadeModelType(vec3 vertex, vec3 vertexEye,
                                vec3 normal, vec4 color);
 
 subroutine uniform shadeModelType shadeModel;
-
-uniform mat4 ModelViewProjection;
-
-uniform vec3 lightDirWorld;
-uniform vec3 eyePosWorld;
-
-uniform vec3 sunColor; // = vec3(1.0, 1.0, 0.7);
-uniform vec3 specularColor; // = vec3(1.0, 1.0, 0.7)*1.5;
-uniform vec3 ambientColor; // = vec3(1.0, 1.0, 0.7)*1.5;
-uniform vec3 diffuseColor; // = vec3(1.0, 1.0, 0.7)*1.5;
-uniform vec3 fogColor; // = vec3(0.7, 0.8, 1.0)*0.7;
-uniform vec4  materialColor;
-uniform float fogExp; // = 0.1;
-
-uniform float shininess; // = 100.0;
-uniform float lightness;
-uniform vec4  color_offset;
-uniform float light_attenuation;
-
-uniform float wrap; // = 0.3;
-
-uniform int color_source;
-
-// text shading
-uniform sampler2D textTexture;
-uniform vec4 textColor;
 
 
 float saturate(float v) {
@@ -126,7 +96,7 @@ vec4 shadeTerrain(vec3 vertex, vec3 vertexEye,
         vec3 n = normalize(normal);
 
         //float diffuse = saturate( dot(n, -lightDir));
-        float diffuse = saturate( (dot(n, -lightDirWorld) + wrap) / (1.0 + wrap));   // wrap
+        float diffuse = saturate( (dot(n, -lightDirWorld) + Cwrap) / (1.0 + Cwrap));   // wrap
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
 
@@ -206,7 +176,7 @@ vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye,
 
         vec3 finalColor = (ambientColor+specular*specularColor+diffuse*diffuseColor)*color.xyz;
 
-        switch (color_source){
+        switch (debug_color_source){
         case 1: return color_offset + vec4(lightness*(ambientColor+diffuse*diffuseColor)*color.xyz, color.a);
         case 2: return color_offset + vec4(vec3(diffuse), 1.0);
         case 3: return color_offset + vec4(lightness*(ambientColor+specular*specularColor)*color.xyz, color.a);

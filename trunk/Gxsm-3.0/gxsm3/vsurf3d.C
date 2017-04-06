@@ -86,8 +86,8 @@ void surf3d_write_schema (){
 
 //#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -117,6 +117,9 @@ std::string getBinaryDirectory()
 // ------------------------------------------------------------
 namespace
 {
+        // define global include file -- included by compiler
+	std::string const CMD_ARGS_FOR_SHADERS("");
+
         // surface terrain mode tesselation shaders
 	std::string const TESSELATION_VERTEX_SHADER("tess-vertex.glsl");
 	std::string const TESSELATION_CONTROL_SHADER("tess-control.glsl");
@@ -126,9 +129,9 @@ namespace
 	GLuint Tesselation_ProgramName(0);
 
         // regular non tesselation shaders
-        std::string const S3D_VERTEX_SHADER("tess-vertex.glsl");
-	std::string const S3D_FRAGMENT_SHADER("tess-fragment.glsl");
-	// GLuint S3D_ProgramName(0);
+        std::string const S3D_VERTEX_SHADER("s3d-vertex.glsl");
+	std::string const S3D_FRAGMENT_SHADER("s3d-fragment.glsl");
+	GLuint S3D_ProgramName(0);
 
         // make UBO for tranformation, fragment/lights, geometry, textures
         
@@ -659,12 +662,11 @@ private:
 	bool initProgram() {
 		if (Validated){
                         compiler Compiler;
-
-                        GLuint VertexShader     = Compiler.create (GL_VERTEX_SHADER, getDataDirectory() + TESSELATION_VERTEX_SHADER);
-                        GLuint ControlShader    = Compiler.create (GL_TESS_CONTROL_SHADER, getDataDirectory() + TESSELATION_CONTROL_SHADER);
-                        GLuint EvaluationShader = Compiler.create (GL_TESS_EVALUATION_SHADER, getDataDirectory() + TESSELATION_EVALUATION_SHADER);
-                        GLuint GeometryShader   = Compiler.create (GL_GEOMETRY_SHADER, getDataDirectory() + TESSELATION_GEOMETRY_SHADER);
-                        GLuint FragmentShader   = Compiler.create (GL_FRAGMENT_SHADER, getDataDirectory() + TESSELATION_FRAGMENT_SHADER);
+                        GLuint VertexShader     = Compiler.create (GL_VERTEX_SHADER, getDataDirectory() + TESSELATION_VERTEX_SHADER, CMD_ARGS_FOR_SHADERS);
+                        GLuint ControlShader    = Compiler.create (GL_TESS_CONTROL_SHADER, getDataDirectory() + TESSELATION_CONTROL_SHADER, CMD_ARGS_FOR_SHADERS);
+                        GLuint EvaluationShader = Compiler.create (GL_TESS_EVALUATION_SHADER, getDataDirectory() + TESSELATION_EVALUATION_SHADER, CMD_ARGS_FOR_SHADERS);
+                        GLuint GeometryShader   = Compiler.create (GL_GEOMETRY_SHADER, getDataDirectory() + TESSELATION_GEOMETRY_SHADER, CMD_ARGS_FOR_SHADERS);
+                        GLuint FragmentShader   = Compiler.create (GL_FRAGMENT_SHADER, getDataDirectory() + TESSELATION_FRAGMENT_SHADER, CMD_ARGS_FOR_SHADERS);
 
                         if (!VertexShader || !ControlShader || !EvaluationShader || !GeometryShader || !FragmentShader)
                                 Validated = false;
@@ -681,6 +683,26 @@ private:
 			Validated = Validated && Compiler.check();
 			Validated = Validated && Compiler.check_program(Tesselation_ProgramName);
 		}
+
+ 		if (Validated){
+                        compiler Compiler;
+                        GLuint VertexShader     = Compiler.create (GL_VERTEX_SHADER, getDataDirectory() + S3D_VERTEX_SHADER, CMD_ARGS_FOR_SHADERS);
+                        GLuint FragmentShader   = Compiler.create (GL_FRAGMENT_SHADER, getDataDirectory() + S3D_FRAGMENT_SHADER, CMD_ARGS_FOR_SHADERS);
+
+                        if (!VertexShader || !FragmentShader)
+                                Validated = false;
+                        else {
+                                S3D_ProgramName = glCreateProgram ();
+                                glAttachShader (S3D_ProgramName, VertexShader);
+                                glAttachShader (S3D_ProgramName, FragmentShader);
+                                glLinkProgram (S3D_ProgramName);
+                        }
+                        
+			Validated = Validated && Compiler.check();
+			Validated = Validated && Compiler.check_program(S3D_ProgramName);
+		}
+
+                
 
 		if(Validated){
                         Uniform_ModelViewProjection = glGetUniformLocation(Tesselation_ProgramName, "ModelViewProjection"); // mat4 -- projection
@@ -707,12 +729,12 @@ private:
                         Uniform_height_scale  = glGetUniformLocation (Tesselation_ProgramName, "height_scale");  // float
                         Uniform_height_offset = glGetUniformLocation (Tesselation_ProgramName, "height_offset");  // float
                         Uniform_aspect        = glGetUniformLocation (Tesselation_ProgramName, "aspect");  // float
-                        Uniform_color_source  = glGetUniformLocation (Tesselation_ProgramName, "color_source");  // int
+                        Uniform_color_source  = glGetUniformLocation (Tesselation_ProgramName, "debug_color_source");  // int
                         Uniform_screen_size   = glGetUniformLocation (Tesselation_ProgramName, "screen_size"); // vec2
                         Uniform_lod_factor    = glGetUniformLocation (Tesselation_ProgramName, "lod_factor");  // float
                         Uniform_tess_level    = glGetUniformLocation (Tesselation_ProgramName, "tess_level");  // float
 
-                        checkError("initProgram -- get uniform variable references...");
+                        checkError("initProgram -- Tesselation_ProgramName: get uniform variable references...");
 
                         // get shaderFunction references
                         // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
