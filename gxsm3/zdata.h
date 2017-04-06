@@ -191,6 +191,9 @@ public:
 	LineInfo *GetLi (int y) { return &Li[y+ny*vlayer]; };
 	LineInfo *Li;
 
+        void copy_ranges (ZData *z){
+                zmin=z->zmin, zmax=z->zmax, zcenter=z->zcenter, zrange=z->zrange;
+        };
 	void update_ranges (int iv, gboolean extend=false){
                 if (!extend)
                         zmin=zmax=Z (0,0,iv);
