@@ -148,6 +148,7 @@ glGenBuffers(1, &uboExampleBlock);
 glBindBuffer(GL_UNIFORM_BUFFER, uboExampleBlock);
 glBufferData(GL_UNIFORM_BUFFER, 152, NULL, GL_STATIC_DRAW); // allocate 150 bytes of memory
 glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 Now whenever we want to update or insert data into the buffer, we bind to uboExampleBlock and use glBufferSubData to update its memory. We only have to update this uniform buffer once, and all shaders that use this buffer now use its updated data. But, how does OpenGL know what uniform buffers correspond to which uniform blocks?
 
 In the OpenGL context there is a number of binding points defined where we can link a uniform buffer to. Once we created a uniform buffer we link it to one of those binding points and we also link the uniform block in the shader to the same binding point, effectively linking those to each other. The following diagram illustrates this:

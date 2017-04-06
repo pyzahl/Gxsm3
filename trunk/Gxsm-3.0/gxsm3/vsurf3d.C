@@ -84,7 +84,7 @@ void surf3d_write_schema (){
 	gnome_res_destroy (gl_pref);
 }
 
-//#define __GXSM_PY_DEVEL
+#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
 #define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
 //#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
@@ -138,37 +138,41 @@ namespace
 	GLint Uniform_screen_size(0); // vec2
 	GLint Uniform_tess_level(0); // float
 	GLint Uniform_lod_factor(0); // float
-        GLint Uniform_height_scale(0);
-        GLint Uniform_height_offset(0);
-        GLint Uniform_aspect(0);
-        GLint Uniform_color_source(0);
         GLsizei const TextureCount(3);
 	GLuint TextureName[3];
         
         // Model View and Projection
-	GLint Uniform_ModelViewProjection(0); // mat4
-	GLint Uniform_ModelView(0); // mat4
+        GLuint Uniform_ubo_list[3];
+        GLuint const ModelViewMat_block(0); // => 0
+        ubo::uniform_model_view Block_ModelViewMat(glm::mat4(1.),glm::mat4(1.));
 
-        // Lightening
-        GLint Uniform_lightDirWorld(0); // vec3
-        GLint Uniform_eyePosWorld(0);   // vec3
+        GLuint const SurfaceGeometry_block(1); // => 1
+        ubo::uniform_surface_geometry Block_SurfaceGeometry(1.,0.1,0., glm::vec2(0.1));
+        
+        GLuint const FragmentShading_block(2); // => 2
+        ubo::uniform_fragment_shading Block_FragmentShading
+        (
+         glm::vec4(-0.2,0.6,-1.0,0.0), // light dir
+         glm::vec4(0.,-1.,-70.,0.0), // eye/cam
 
-        GLint Uniform_sunColor(0); // = vec3(1.0, 1.0, 0.7);
-        GLint Uniform_specularColor(0); // = vec3(1.0, 1.0, 0.7)*1.5;
-        GLint Uniform_ambientColor(0); // = vec3(1.0, 1.0, 0.7)*1.5;
-        GLint Uniform_diffuseColor(0); // = vec3(1.0, 1.0, 0.7)*1.5;
-        GLint Uniform_fogColor(0); // = vec3(0.7, 0.8, 1.0)*0.7;
-        GLint Uniform_materialColor(0); // vec4
-        GLint Uniform_textColor(0); // vec4
+         glm::vec4(1.), // sun color
+         glm::vec4(1.), // spekular
+         glm::vec4(0.1), // ambient
+         glm::vec4(0.3), // diffuse
+         glm::vec4(0.5), // fog color
+         glm::vec4(1.0), // material color
+         glm::vec4(0.), // color offset
 
-        GLint Uniform_fogExp(0); // = 0.1;
+         0.01, // fog exp
 
-        GLint Uniform_shininess(0); // = 100.0;
-        GLint Uniform_lightness(0); // = 100.0;
-        GLint Uniform_color_offset(0); // = 100.0;
-	GLint Uniform_delta(0); // vec2 float -- for normal computation, should be 1/NX, 1/NY
-        GLint Uniform_wrap(0); // = 0.3;
+         20.0, // shinyness
+         1.5, // lightness
+         0., // attn.
 
+         0.3, // wrap
+         0 // debug
+         );
+        
         GLuint Uniform_vertexDirect(0); // vertex Function references
         GLuint Uniform_vertexSurface(0);
         GLuint Uniform_vertexHScaled(0);
@@ -570,9 +574,7 @@ public:
                         checkError ("text_plane::draw_text  set vertex array data dyn draw");
 
                         g_message ("text_plane::draw_text  draw letter");
-                        glPatchParameteri(GL_PATCH_VERTICES, 4);
-                        glDrawArrays (GL_PATCHES, 0, 4);
-                        //glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
+                        glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
                         checkError("text_plane::draw_text  draw arrays");
                         glBindBuffer (GL_ARRAY_BUFFER, 0);
 
@@ -705,31 +707,6 @@ private:
                 
 
 		if(Validated){
-                        Uniform_ModelViewProjection = glGetUniformLocation(Tesselation_ProgramName, "ModelViewProjection"); // mat4 -- projection
-                        Uniform_ModelView     = glGetUniformLocation (Tesselation_ProgramName, "ModelView"); // mat4 -- projection
-                        Uniform_lightDirWorld = glGetUniformLocation (Tesselation_ProgramName, "lightDirWorld"); // vec3
-                        Uniform_eyePosWorld   = glGetUniformLocation (Tesselation_ProgramName, "eyePosWorld"); // vec3
-                        Uniform_sunColor      = glGetUniformLocation (Tesselation_ProgramName, "sunColor"); // = vec3(1.0, 1.0, 0.7);
-                        Uniform_specularColor = glGetUniformLocation (Tesselation_ProgramName, "specularColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
-                        Uniform_ambientColor  = glGetUniformLocation (Tesselation_ProgramName, "ambientColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
-                        Uniform_diffuseColor  = glGetUniformLocation (Tesselation_ProgramName, "diffuseColor"); // = vec3(1.0, 1.0, 0.7)*1.5;
-                        Uniform_fogColor      = glGetUniformLocation (Tesselation_ProgramName, "fogColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
-                        Uniform_materialColor = glGetUniformLocation (Tesselation_ProgramName, "materialColor"); // vec4
-                        Uniform_textColor     = glGetUniformLocation (Tesselation_ProgramName, "textColor"); // = vec3(0.7, 0.8, 1.0)*0.7;
-
-                        Uniform_fogExp        = glGetUniformLocation (Tesselation_ProgramName, "fogExp"); // = 0.1;
-
-                        Uniform_shininess     = glGetUniformLocation (Tesselation_ProgramName, "shininess"); // = 100.0;
-                        Uniform_lightness     = glGetUniformLocation (Tesselation_ProgramName, "lightness"); // = 1.0;
-                        Uniform_color_offset  = glGetUniformLocation (Tesselation_ProgramName, "color_offset"); // = vec4(0,0,0,0)
-                        Uniform_ambientColor  = glGetUniformLocation (Tesselation_ProgramName, "ambientColor"); // = vec3(0.05, 0.05, 0.15 );
-                        Uniform_wrap          = glGetUniformLocation (Tesselation_ProgramName, "wrap"); // = 0.3;
-                        Uniform_delta         = glGetUniformLocation (Tesselation_ProgramName, "delta"); //  1/nx,1/ny
-
-                        Uniform_height_scale  = glGetUniformLocation (Tesselation_ProgramName, "height_scale");  // float
-                        Uniform_height_offset = glGetUniformLocation (Tesselation_ProgramName, "height_offset");  // float
-                        Uniform_aspect        = glGetUniformLocation (Tesselation_ProgramName, "aspect");  // float
-                        Uniform_color_source  = glGetUniformLocation (Tesselation_ProgramName, "debug_color_source");  // int
                         Uniform_screen_size   = glGetUniformLocation (Tesselation_ProgramName, "screen_size"); // vec2
                         Uniform_lod_factor    = glGetUniformLocation (Tesselation_ProgramName, "lod_factor");  // float
                         Uniform_tess_level    = glGetUniformLocation (Tesselation_ProgramName, "tess_level");  // float
@@ -761,9 +738,56 @@ private:
 		return Validated;
 	};
 
+        void updateModelViewM(){
+                glBindBuffer (GL_UNIFORM_BUFFER, Uniform_ubo_list[ModelViewMat_block]);
+                glBufferData (GL_UNIFORM_BUFFER, sizeof (ubo::uniform_model_view), &Block_ModelViewMat, GL_STATIC_DRAW);
+                glBindBuffer (GL_UNIFORM_BUFFER, 0);
+        };
+        
+        void updateSurfaceGeometry(){
+                glBindBuffer (GL_UNIFORM_BUFFER,  Uniform_ubo_list[SurfaceGeometry_block]);
+                glBufferData (GL_UNIFORM_BUFFER, sizeof (ubo::uniform_surface_geometry), &Block_SurfaceGeometry, GL_STATIC_DRAW);
+                glBindBuffer (GL_UNIFORM_BUFFER, 0);
+        };
+        
+        void updateFragmentShading(){
+                glBindBuffer (GL_UNIFORM_BUFFER,  Uniform_ubo_list[FragmentShading_block]);
+                glBufferData (GL_UNIFORM_BUFFER, sizeof (ubo::uniform_fragment_shading), &Block_FragmentShading, GL_STATIC_DRAW);
+                glBindBuffer (GL_UNIFORM_BUFFER, 0);
+        };
+        
 	bool initBuffer() {
 		if (!Validated) return false;
 
+                // setup common UBOs
+                
+                glGenBuffers(3, &Uniform_ubo_list[0]);
+                updateModelViewM ();
+                updateSurfaceGeometry ();
+                updateFragmentShading ();
+                
+                // interlink UBOs
+                GLuint uniformBlockIndexTesselationProg(0);
+
+                // TessProg, ... <= UBO Block 0 <= ModelViewMat  (ModelViewMat_block := 0)
+                uniformBlockIndexTesselationProg = glGetUniformBlockIndex (Tesselation_ProgramName, "ModelViewMatrices");
+                glUniformBlockBinding (Tesselation_ProgramName, uniformBlockIndexTesselationProg, ModelViewMat_block);
+                glBindBufferRange(GL_UNIFORM_BUFFER, ModelViewMat_block, Uniform_ubo_list[ModelViewMat_block], 0, sizeof(ubo::uniform_model_view));
+                g_message ("UBO[%d] (ModMat) = %d <=> %d", ModelViewMat_block, uniformBlockIndexTesselationProg, Uniform_ubo_list[ModelViewMat_block]);
+                
+                // TessProg, ... <= UBO Block 1 <= SurfaceGeometry  (SurfaceGeometry_block := 1)
+                uniformBlockIndexTesselationProg = glGetUniformBlockIndex (Tesselation_ProgramName, "SurfaceGeometry");
+                glUniformBlockBinding (Tesselation_ProgramName, uniformBlockIndexTesselationProg, SurfaceGeometry_block);
+                glBindBufferRange(GL_UNIFORM_BUFFER, SurfaceGeometry_block, Uniform_ubo_list[SurfaceGeometry_block], 0, sizeof(ubo::uniform_surface_geometry));
+                g_message ("UBO[%d] (SurfGemo) = %d <=> %d", SurfaceGeometry_block, uniformBlockIndexTesselationProg, Uniform_ubo_list[SurfaceGeometry_block]);
+
+                // TessProg, ... <= UBO Block 2 <=  FragmentShading (FragmentShading_block := 2)
+                uniformBlockIndexTesselationProg = glGetUniformBlockIndex (Tesselation_ProgramName, "FragmentShading");
+                glUniformBlockBinding (Tesselation_ProgramName, uniformBlockIndexTesselationProg, FragmentShading_block);
+                glBindBufferRange(GL_UNIFORM_BUFFER, FragmentShading_block, Uniform_ubo_list[FragmentShading_block], 0, sizeof(ubo::uniform_fragment_shading));
+                g_message ("UBO[%d] (FragShade) = %d <=> %d",  FragmentShading_block, uniformBlockIndexTesselationProg, Uniform_ubo_list[FragmentShading_block]);
+
+                // create surface base plane
                 surface_plane = new base_plane ((s->get_scan ())->mem2d, 128, // 128,
                                                 (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx,
                                                 s->GLv_data.box_mat_color
@@ -957,46 +981,52 @@ public:
                                                 );
 
 		glm::mat4 Model = glm::mat4(1.0f);
-		glm::mat4 ModelView = this->modelView() * Model;
-		glm::mat4 ModelViewProjection = Projection * Camera * ModelView;
+		Block_ModelViewMat.ModelView = this->modelView() * Model;
+		Block_ModelViewMat.ModelViewProjection = Projection * Camera * Block_ModelViewMat.ModelView;
 
                 /* clear the viewport; the viewport is automatically resized when
                  * the GtkGLArea gets a new size allocation
                  */
-                // glViewport (0, 0, WindowSize.x, WindowSize.y);
 
 		glUseProgram (Tesselation_ProgramName);
+
                 // Projection
-                glUniformMatrix4fv (Uniform_ModelViewProjection, 1, GL_FALSE, &ModelViewProjection[0][0]);
-                glUniformMatrix4fv (Uniform_ModelView, 1, GL_FALSE, &ModelView[0][0]);
-                glm::vec3 eye = cameraPosition(); // eye / camera
-                glUniform3fv (Uniform_lightDirWorld, 1, &s->GLv_data.light_position[0][0]);
-                glUniform3fv (Uniform_eyePosWorld, 1, &eye.x); //s->GLv_data.light_position[1][0]);
-
-                // Light
-                //glm::vec3 light_color = 1.5f*glm::vec3(s->GLv_data.surf_mat_color[0], s->GLv_data.surf_mat_color[1], s->GLv_data.surf_mat_color[2]);
-                glUniform3fv (Uniform_sunColor, 1, &s->GLv_data.light_specular[0][0]); // = vec3(1.0, 1.0, 0.7);
-                glUniform4fv (Uniform_materialColor, 1, &s->GLv_data.surf_mat_color[0]); // vec4
-                glUniform3fv (Uniform_specularColor, 1, &s->GLv_data.surf_mat_specular[0]); // = vec3(1.0, 1.0, 0.7)*1.5;
-                glUniform3fv (Uniform_ambientColor, 1, &s->GLv_data.surf_mat_ambient[0]); // = vec3(1.0, 1.0, 0.7)*1.5;
-                glUniform3fv (Uniform_diffuseColor, 1, &s->GLv_data.surf_mat_diffuse[0]); // = vec3(1.0, 1.0, 0.7)*1.5;
-                glUniform3fv (Uniform_fogColor, 1, &s->GLv_data.fog_color[0]); // = vec3(0.7, 0.8, 1.0)*0.7;
-
-                glUniform1f  (Uniform_fogExp, s->GLv_data.fog_density/100.); // = 0.1;
-
-                glUniform1f  (Uniform_shininess, 4.*(1.00001-s->GLv_data.surf_mat_shininess[0]/100.));
-                glUniform1f  (Uniform_lightness, s->GLv_data.ColorContrast);
-                glUniform4f  (Uniform_color_offset, s->GLv_data.ColorOffset, s->GLv_data.ColorOffset, s->GLv_data.ColorOffset, s->GLv_data.transparency_offset);
-                glUniform3fv (Uniform_ambientColor, 1, &s->GLv_data.light_global_ambient[0]); // = vec3(0.05, 0.05, 0.15 );
-                glUniform1f  (Uniform_wrap, 0.3); //&s->GLv_data.xxx); // = 0.3;
-                glUniform2f  (Uniform_delta, 2./s->XPM_x, 2./s->XPM_x);
+                updateModelViewM ();
 
                 // Geometry control
-                glUniform1f (Uniform_height_scale, s->GLv_data.hskl);
-                glUniform1f (Uniform_height_offset, s->GLv_data.slice_offset);
-                glUniform1f (Uniform_aspect, (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx);
+                Block_SurfaceGeometry.aspect = (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx;
+                Block_SurfaceGeometry.height_scale  = s->GLv_data.hskl;
+                Block_SurfaceGeometry.height_offset = s->GLv_data.slice_offset;
+                Block_SurfaceGeometry.delta = glm::vec2 (2./s->XPM_x, 2./s->XPM_x);
+                updateSurfaceGeometry ();
+
+                // Camera, Light and Shading
+#define MAKE_GLM_VEC3(V) glm::vec4(V[0],V[1],V[2],0)
+#define MAKE_GLM_VEC4(V) glm::vec4(V[0],V[1],V[2],V[3])
+#define MAKE_GLM_VEC4A(O,A) glm::vec4(O,O,O,A)
+                Block_FragmentShading.lightDirWorld = MAKE_GLM_VEC3(s->GLv_data.light_position[0]);
+                Block_FragmentShading.eyePosWorld   = glm::vec4(cameraPosition(),0);
+
+                Block_FragmentShading.sunColor      = MAKE_GLM_VEC3(s->GLv_data.light_specular[0]); // = vec3(1.0, 1.0, 0.7);
+                Block_FragmentShading.specularColor = MAKE_GLM_VEC3(s->GLv_data.surf_mat_specular); // = vec3(1.0, 1.0, 0.7)*1.5;
+                Block_FragmentShading.ambientColor  = MAKE_GLM_VEC3(s->GLv_data.light_global_ambient); // = vec3(0.05, 0.05, 0.15 );
+                //Block_FragmentShading.ambientColor  = MAKE_GLM_VEC3(s->GLv_data.surf_mat_ambient); // = vec3(1.0, 1.0, 0.7)*1.5;
+                Block_FragmentShading.diffuseColor  = MAKE_GLM_VEC3(s->GLv_data.surf_mat_diffuse); // = vec3(1.0, 1.0, 0.7)*1.5;
+                Block_FragmentShading.fogColor      = MAKE_GLM_VEC3(s->GLv_data.fog_color); // = vec3(0.7, 0.8, 1.0)*0.7;
+                Block_FragmentShading.materialColor = MAKE_GLM_VEC4(s->GLv_data.surf_mat_color); // vec4
+                Block_FragmentShading.color_offset  = MAKE_GLM_VEC4A(s->GLv_data.ColorOffset, s->GLv_data.transparency_offset);
+
+                Block_FragmentShading.fogExp = s->GLv_data.fog_density/100.; // = 0.1;
+
+                Block_FragmentShading.shininess = 4.*(1.00001-s->GLv_data.surf_mat_shininess[0]/100.);
+                Block_FragmentShading.lightness = s->GLv_data.ColorContrast;
+                Block_FragmentShading.light_attenuation = 0.;
+
+                Block_FragmentShading.wrap = 0.3; // = 0.3;
+                Block_FragmentShading.debug_color_source = (GLuint)s->GLv_data.shader_mode;
+                updateFragmentShading ();
                 
-                glUniform1i (Uniform_color_source, (int)s->GLv_data.shader_mode);
+                // Tesseleation control -- lod is not yet used
                 glUniform1f (Uniform_lod_factor, 4.0);
                 glUniform1f (Uniform_tess_level, s->GLv_data.tess_level);
                 
@@ -1005,7 +1035,7 @@ public:
                 glBindTexture(GL_TEXTURE_2D, TextureName[0]);
                 glBindTexture(GL_TEXTURE_2D, TextureName[1]);
 
-                checkError ("render -- set Uniforms");
+                checkError ("render -- set Uniforms, Blocks");
 
                 // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
 
@@ -1024,12 +1054,13 @@ public:
                 glUniform1f (Uniform_tess_level, 1.);
 
 #if 0
+                glUseProgram (S3D_ProgramName);
+
                 // setup for text
                 checkError ("render -- set Uniforms Subroutines for text");
                 glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexText);
-                glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 1, &Uniform_evaluationDirect);
                 glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeText);
-                glUniform4fv (Uniform_materialColor, 1, &s->GLv_data.box_mat_color[0]);
+                //glUniform4fv (Uniform_materialColor, 1, &s->GLv_data.box_mat_color[0]);
                 
                 checkError ("render -- draw text");
                 text_vao->draw_text ("GXSM-3.0 GL4.0 ES Text Test.", 1., 1., 0.1, 0.1);

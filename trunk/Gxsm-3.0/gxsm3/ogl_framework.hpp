@@ -6,6 +6,7 @@
 #include "compiler.hpp"
 #include "sementics.hpp"
 #include "vertex.hpp"
+#include "uniform_buffer_objects.hpp"
 #include "error.hpp"
 #include "caps.hpp"
 

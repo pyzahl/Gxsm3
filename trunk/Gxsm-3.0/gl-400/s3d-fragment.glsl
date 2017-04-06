@@ -250,5 +250,5 @@ void main()
 {
         // shade fragment, use model as selected via shaderFunction pointer
         FragColor = shadeModel (In.Vertex, In.VertexEye,
-                                 In.Normal, In.Color);
+                                In.Normal, In.Color);
 }
