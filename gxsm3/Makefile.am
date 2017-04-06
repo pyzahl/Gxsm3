@@ -56,6 +56,7 @@ vprofile.C \
 vsurf3d.C \
 ogl_framework.hpp \
 vertex.hpp \
+uniform_buffer_objects.hpp \
 caps.cpp caps.hpp \
 error.cpp error.hpp \
 compiler.cpp compiler.hpp \
