@@ -82,7 +82,7 @@ const char* Dataio::ioStatus(){
 #define NUM(array) (sizeof(array)/sizeof(array[0]))
 #define NC_GET_VARIABLE(VNAME, VAR) if(nc.get_var(VNAME)) nc.get_var(VNAME)->get(VAR)
 
-FIO_STATUS NetCDF::Read(gboolean append_in_time){
+FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 	int i;
 	// switching off error messages, this is potentially
 	// dangerous, because it may hide serious errors, OTOH
@@ -101,9 +101,12 @@ FIO_STATUS NetCDF::Read(gboolean append_in_time){
 	gapp->progress_info_set_bar_fraction (0., 1);
 	gapp->progress_info_set_bar_text (name, 1);
 
-	if (!append_in_time)
-		scan->free_time_elements ();
-
+	switch (mode){
+	case xsm::open_mode::replace: scan->free_time_elements (); break;
+	case xsm::open_mode::append_time: break;
+	case xsm::open_mode::stitch_2d: break;
+	}
+	
 	scan->data.ui.SetName (name);
 
 	NcVar *Data = NULL;

@@ -213,14 +213,14 @@ static void rhk_spm32_import_cleanup(void)
 class RHK_SPM32_ImportFile : public Dataio{
 public:
 	RHK_SPM32_ImportFile(Scan *s, const char *n) : Dataio(s,n){ };
-	virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+	virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
 	virtual FIO_STATUS Write();
 private:
 	FIO_STATUS import(const char *fname);
 };
 
 // sm2 import
-FIO_STATUS RHK_SPM32_ImportFile::Read(gboolean append_in_time){
+FIO_STATUS RHK_SPM32_ImportFile::Read(xsm::open_mode mode){
 	FIO_STATUS ret;
 	gchar *fname=NULL;
 

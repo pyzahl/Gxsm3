@@ -404,7 +404,103 @@ gboolean ZoomOutScan(MATHOPPARAMS){
 	return MATH_OK;
 }
 
-#if 0
+// Src, Dest
+gboolean StitchScans(MATHOPPARAMS){
+
+        double ox = Dest->data.get_x_right_absolute ();
+        double oy = Dest->data.get_y_top_absolute ();
+        Mem2d mtmp (Dest->mem2d, M2D_COPY);
+
+        // 1. evalute new origin and size
+        double left, bottom;
+        
+	double new_rx = fmax (Src->data.get_x_right_absolute (), Dest->data.get_x_right_absolute ())
+                - (left = fmin (Src->data.get_x_left_absolute (), Dest->data.get_x_left_absolute ()));
+
+	double new_ry = fmax (Src->data.get_y_top_absolute (), Dest->data.get_y_top_absolute ())
+                - (bottom = fmin (Src->data.get_y_bottom_absolute (), Dest->data.get_y_bottom_absolute ()));
+
+        // set new origin and range
+        Dest->data.s.x0 = left + new_rx/2;
+	Dest->data.s.y0 = bottom + new_ry/2;
+
+	Dest->data.s.rx = new_rx;
+	Dest->data.s.ry = new_ry;
+
+	Dest->data.s.dx = Src->data.s.dx; // copy
+	Dest->data.s.dy = Src->data.s.dy; // copy
+	Dest->data.s.dz = Src->data.s.dz; // fix, recompute Z if differs!
+        // rotation (alpha) -- don't care for now
+
+        // --> keep resolution of Src Scan
+        Dest->data.s.nx = std::max(Dest->mem2d->GetNx(), 1+(int)round(Dest->data.s.rx / Src->data.s.dx));
+	Dest->data.s.ny = std::max(Dest->mem2d->GetNy(), 1+(int)round(Dest->data.s.ry / Src->data.s.dy));
+
+        g_message ("Stitch: new size: (%g, %g)Ang : (%d, %d)px",
+                   Dest->data.s.rx, Dest->data.s.ry,
+                   Dest->data.s.nx, Dest->data.s.ny); 
+
+        // 2. resize in place
+	Dest->mem2d->Resize (Dest->data.s.nx, Dest->data.s.ny);
+        Dest->mem2d->data->MkXLookup (-Dest->data.s.rx/2, Dest->data.s.rx/2);
+
+	switch(Dest->data.orgmode){
+	case SCAN_ORG_MIDDLETOP:
+		Dest->mem2d->data->MkYLookup (0., -Dest->data.s.ry); break;
+	case SCAN_ORG_CENTER:
+		Dest->mem2d->data->MkYLookup (Dest->data.s.ry/2, -Dest->data.s.ry/2); break;
+	}
+        
+        // 3. stitch/blend
+        int ili, ilf, ici, icf;
+
+        Dest->World2Pixel (Src->data.get_x_left_absolute (), Src->data.get_y_top_absolute (), ici, ili);
+        Dest->World2Pixel (Src->data.get_x_right_absolute (), Src->data.get_y_bottom_absolute (), icf, ilf);
+
+        g_message ("Stitch: sub range: (%d, %d) - (%d, %d)", ici, ili, icf, ilf);
+
+        int mvtox, mvtoy;
+        Dest->World2Pixel (ox, oy, mvtox, mvtoy);
+
+        int nx2c = mtmp.GetNx ();
+        int ny2c = mtmp.GetNy ();
+        // auto adjust for rounding / limits
+        if (mvtox < 0) mvtox=0;
+        if (mvtoy < 0) mvtoy=0;
+        if (mvtox+nx2c >= Dest->mem2d->GetNx())
+            nx2c = Dest->mem2d->GetNx ()-mvtox-1;
+        if (mvtoy+ny2c >= Dest->mem2d->GetNy())
+            ny2c = Dest->mem2d->GetNy ()-mvtoy-1;
+
+        g_message ("Stitch: relocate original to: (%g, %g)Ang in [%g, %g * %g, %g]Ang => to (%d, %d)px {%d x %d}",
+                   ox, oy,
+                   Dest->data.get_x_left_absolute (), Dest->data.get_y_bottom_absolute (),
+                   Dest->data.get_x_right_absolute (), Dest->data.get_y_top_absolute (),
+                   mvtox, mvtoy, nx2c, ny2c);
+        g_message ("Stitch: max: (%d, %d)", mvtox+nx2c, mvtoy+ny2c);
+        Dest->mem2d->CopyFrom (&mtmp, 0,0, mvtox, mvtoy, nx2c, ny2c);
+        
+	for(int line = ili; line < ilf; line++)
+		for(int col = ici; col < icf; col++){
+                        double x,y;
+                        double ix,iy;
+                        Dest->Pixel2World (col, line, x,y);
+                        Src->World2Pixel (x,y, ix,iy);
+                        if (col < 0 || line < 0 || col >= Dest->mem2d->GetNx() || line >= Dest->mem2d->GetNy()){
+                                g_message ("WARNING: INDEX OUT OF RANGE [%d, %d] : %g, %g :=> %g %g", col, line, x,y, ix,iy);
+                                return MATH_SIZEERR;
+                        }
+			Dest->mem2d->PutDataPkt (Src->mem2d->GetDataPktInterpol (ix,iy), col, line);
+                }
+        
+        return MATH_OK;
+}
+
+
+
+
+#if 0  // --> turned into plugins
+
 // Copy Scan, do Line regresssion
 gboolean BgLin1DScan(MATHOPPARAMS){
 	int line, col;

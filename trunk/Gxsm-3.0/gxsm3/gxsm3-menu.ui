@@ -46,6 +46,26 @@
 	  <attribute name="label" translatable="yes">_Save</attribute>
 	  <attribute name="action">app.file-save</attribute>
 	</item>
+	<submenu>
+	  <attribute name="label" translatable="yes">Open Mode</attribute>
+	  <section>
+	    <item>
+	      <attribute name="label" translatable="yes">Replace</attribute>
+	      <attribute name="action">app.file-open-mode</attribute>
+	      <attribute name="target">replace</attribute>
+	    </item>
+	    <item>
+	      <attribute name="label" translatable="yes">Append in time</attribute>
+	      <attribute name="action">app.file-open-mode</attribute>
+	      <attribute name="target">append-time</attribute>
+	    </item>
+	    <item>
+	      <attribute name="label" translatable="yes">Stitch 2D</attribute>
+	      <attribute name="action">app.file-open-mode</attribute>
+	      <attribute name="target">stitch-2d</attribute>
+	    </item>
+	  </section>
+	</submenu>
       </section>
       <section>
 	<submenu>

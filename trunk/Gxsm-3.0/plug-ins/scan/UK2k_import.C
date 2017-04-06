@@ -217,7 +217,7 @@ static void UK2k_import_cleanup(void)
 class UK2k_ImExportFile : public Dataio{
  public:
   UK2k_ImExportFile(Scan *s, const char *n) : Dataio(s,n){ };
-  virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+  virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
   virtual FIO_STATUS Write();
  private:
   // Binary data read
@@ -227,7 +227,7 @@ class UK2k_ImExportFile : public Dataio{
 };
 
 // d2d import :=)
-FIO_STATUS UK2k_ImExportFile::Read(gboolean append_in_time){
+FIO_STATUS UK2k_ImExportFile::Read(xsm::open_mode mode){
 
 	FIO_STATUS ret = FIO_OK;
 	gchar *fdatname = (gchar*) name;

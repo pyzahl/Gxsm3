@@ -217,13 +217,13 @@ static void spa4_im_export_cleanup(void)
 class spa4_ImExportFile : public Dataio{
 public:
 	spa4_ImExportFile(Scan *s, const char *n) : Dataio(s,n){ };
-	virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+	virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
 	virtual FIO_STATUS Write();
 private:
 	FIO_STATUS import(const char *fname);
 };
 
-FIO_STATUS spa4_ImExportFile::Read(gboolean append_in_time){
+FIO_STATUS spa4_ImExportFile::Read(xsm::open_mode mode){
 	FIO_STATUS ret;
 	gchar *fname=NULL;
 

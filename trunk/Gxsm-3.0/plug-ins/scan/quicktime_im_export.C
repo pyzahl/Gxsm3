@@ -406,7 +406,7 @@ class Quicktime_ImExportFile : public Dataio{
 public:
 	Quicktime_ImExportFile(Scan *s, const char *n); 
 	virtual ~Quicktime_ImExportFile();
-	virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+	virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
 	virtual FIO_STATUS Write();
 private:
 };
@@ -417,7 +417,7 @@ Quicktime_ImExportFile::Quicktime_ImExportFile(Scan *s, const char *n) : Dataio(
 Quicktime_ImExportFile::~Quicktime_ImExportFile(){
 }
 
-FIO_STATUS Quicktime_ImExportFile::Read(gboolean append_in_time){
+FIO_STATUS Quicktime_ImExportFile::Read(xsm::open_mode mode){
 	FIO_STATUS ret;
 	gchar *fname=NULL;
 

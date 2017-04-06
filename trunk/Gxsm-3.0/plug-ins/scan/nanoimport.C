@@ -198,14 +198,14 @@ public:
 	NanoScopeFile(Scan *s, const char *n, int i=0) : Dataio(s,n){ imgindex=i; DIversion=0x00; };
 	void  SetIndex(int i){ imgindex=i; };
 	int   MultiImage(){ return DIversion < 0x04300000 ? 0:1; }
-	virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+	virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
 	virtual FIO_STATUS Write(){ return FIO_OK; };
 private:
 	int imgindex;
 	int DIversion;
 };
 
-FIO_STATUS NanoScopeFile::Read(gboolean append_in_time){
+FIO_STATUS NanoScopeFile::Read(xsm::open_mode mode){
 	size_t offset=0, length=0;
 	gchar *line=NULL;
 	double Zscale=1., Zmag=1.;

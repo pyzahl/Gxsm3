@@ -135,6 +135,7 @@ public:
         /* Menu - callbacks */
         static void file_open_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void file_open_in_new_window_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void file_open_mode_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void file_browse_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void file_set_datapath_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void file_set_probepath_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);

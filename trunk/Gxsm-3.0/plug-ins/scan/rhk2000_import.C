@@ -198,7 +198,7 @@ static void rhk200_im_export_cleanup(void)
 class rhk200_ImExportFile : public Dataio{
  public:
   rhk200_ImExportFile(Scan *s, const char *n) : Dataio(s,n){ };
-  virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+  virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
   virtual FIO_STATUS Write();
  private:
   bool topo;
@@ -328,7 +328,7 @@ int rhk200_ImExportFile::gettag(istream &is,string tag,string &val)
 }
 
 // d2d import :=)
-FIO_STATUS rhk200_ImExportFile::Read(gboolean append_in_time){
+FIO_STATUS rhk200_ImExportFile::Read(xsm::open_mode mode){
 	FIO_STATUS ret;
 	gchar *fname=NULL;
 

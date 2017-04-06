@@ -25,6 +25,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#pragma once
+
 #ifndef __XSM_H
 #define __XSM_H
 
@@ -44,28 +46,17 @@
 #include <glib.h>
 
 // Gxsm headers
-#ifndef __INSTRUMENT_H
 #include "instrument.h"
-#endif
-
-#ifndef __XSMHARD_H
 #include "xsmhard.h"
-#endif
-
-#ifndef __XSMTYPES_H
 #include "xsmtypes.h"
-#endif
-
-#ifndef __UNIT_H
+#include "action_id.h"
 #include "unit.h"
-#endif
-
-#ifndef __LIMITS_H
 #include "limits.h"
-#endif
+
 
 class gxsm_hwi_plugins;
 class App;
+
 
 class Xsm{
 public:
@@ -138,6 +129,8 @@ public:
 
         int    counter; /* File Counter */
         int    subcounter; /* second File Counter for enumerating autosaves */
+
+        xsm::open_mode file_open_mode;
 
         double mradius;  // radius for 2D convolution kernels
   

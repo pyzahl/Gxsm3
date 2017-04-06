@@ -54,7 +54,7 @@ class Dataio{
   virtual ~Dataio(){ free(name); };
   void SetName(const char *n){ free(name); name=strdup(n); }
 
-  virtual FIO_STATUS Read(gboolean append_in_time=FALSE)=0;
+  virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace)=0;
   virtual FIO_STATUS Write()=0;
   void SetScan(Scan *sc){ scan = sc; };
 
@@ -69,8 +69,8 @@ class Dataio{
 class NetCDF : public Dataio{
  public:
   NetCDF(Scan *s, const char *n) : Dataio(s,n){ };
-  virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
-  virtual FIO_STATUS Write();
+  virtual FIO_STATUS Read (xsm::open_mode mode=xsm::open_mode::replace);
+  virtual FIO_STATUS Write ();
 };
 
 

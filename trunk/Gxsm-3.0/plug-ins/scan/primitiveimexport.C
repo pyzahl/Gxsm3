@@ -382,7 +382,7 @@ static void primitive_im_export_cleanup(void)
 class PrimitiveImExportFile : public Dataio{
 public:
 	PrimitiveImExportFile(Scan *s, const char *n) : Dataio(s,n){ };
-	virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+	virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
 	virtual FIO_STATUS Write();
 private:
 	FIO_STATUS gnuRead(const char *fname, int index_value=0, int index_time=0);
@@ -402,7 +402,7 @@ typedef struct { unsigned char val[3]; } TGA_pix;
 
 
 // d2d import :=)
-FIO_STATUS PrimitiveImExportFile::Read(gboolean append_in_time){
+FIO_STATUS PrimitiveImExportFile::Read(xsm::open_mode mode){
         FIO_STATUS ret;
         gchar *fname=NULL;
 

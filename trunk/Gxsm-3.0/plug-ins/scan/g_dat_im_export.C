@@ -228,14 +228,14 @@ static void g_dat_im_export_cleanup(void)
 class  Gdat_ImExportFile : public Dataio{
 public:
 	 Gdat_ImExportFile(Scan *s, const char *n) : Dataio(s,n){  memset(&Kopf, 0, sizeof(Kopf)); };
-	virtual FIO_STATUS Read(gboolean append_in_time=FALSE);
+	virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
 	virtual FIO_STATUS Write();
 private:
 	FIO_STATUS import_data(const char *fname); 
 	HEADER Kopf;
 };
 
-FIO_STATUS Gdat_ImExportFile::Read(gboolean append_in_time){
+FIO_STATUS Gdat_ImExportFile::Read(xsm::open_mode mode){
 	FIO_STATUS ret;
 	gchar *fname=NULL;
 
