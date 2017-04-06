@@ -38,6 +38,22 @@ def wait_scan_pos():
 	gxsm.sleep(20)
 	return M
 
+def wait_move_pos():
+        scaction = 1
+        M = 0
+        while scaction > 0 and M > -2.:
+	        gxsm.sleep (10) # sleep 10/10 sec
+ 		M=gxsm.get ("dsp-fbs-motor")
+ 	      	svec=gxsm.rtquery ("s")
+		s = int(svec[0])
+		scaction = s&16
+	        if os.path.exists("remote.py-stop"):
+	        	M = -10.
+			break
+	print "FB: ", s&1, " Scan: ", s&(2+4), "  VP: ", s&8, "   Mov: ", s&16, " PLL: ", s&32, " **Motor=", M
+	gxsm.sleep(20)
+	return M
+
 # wait for scan finish or abort
 def wait_for_scan ():
         scaction = 1
@@ -235,6 +251,17 @@ def run_vp_simple (coords, num, ref_bias=1.8, ref_current=0.02,run_ref=0):
 			pause_tip_retract ()
 	gxsm.set ("dsp-LCK-AC-Bias-Amp","0.0")
 
+def run_survey (coords, num, bias=0.1, current=0.01):
+	for i in range(0, num):
+	        ox=coords[i][0]
+	        oy=coords[i][1]
+	        print "OffsetXY: ", ox, oy
+	        gxsm.set ("OffsetY","%f"%(oy))
+		wait_move_pos()
+	        gxsm.set ("OffsetX","%f"%(ox))
+		wait_move_pos()
+		run_ref_image (bias, current)
+
 
 def run_lm (coords, num, ff, ref_bias=2.35, ref_current=0.045):
 ##def run_vp (coords, num, ff, ref_bias=2.35, ref_current=0.045):
@@ -324,19 +351,20 @@ def chdcircle (m=10,n=400):
 
 #gxsm.save ()
 
-spnx = 12.
-stepx = 1.
+spnx = 2500.
+stepx = 1000.
 
-spny = 18.
-stepy = 1.
+spny = 2500.
+stepy = 1000.
 
 sxlist = np.arange (-spnx, spnx+stepx, stepx)
 sylist = np.arange (-spny, spny+stepy, stepy)
 
-len2 = np.size(sxlist) * np.size(sylist)
+position = [[0.,0.]]
+positions = 1
+len2 = np.size(sxlist) * np.size(sylist) * positions
 xy = np.arange(2.0*len2).reshape(len2,2)
 
-position = [[ -39., -17.0 ]]
 
 i=0
 for r in position:
@@ -348,18 +376,34 @@ for r in position:
         	        i=i+1           
 print len2
 print xy
-np.random.shuffle(xy)
+#np.random.shuffle(xy)
 print xy
 
+
+
 ###def run_vp (coords, num, ref_bias=2.35, ref_current=0.045, ff=0, run_ref=0, ref_bias_list=[0.1])
-run_vp_simple (xy, len2, 1.8, 0.02, 10)
+#run_vp_simple (xy, len2, 1.8, 0.02, 10)
+
+run_survey (xy, len2, 0.1, 0.01)
 
 print "STARTING NOW..."
+
+#freeze_Z()
+#gxsm.startscan ()
+#gxsm.waitscan ()
+#release_Z()
+
+#gxsm.set ("dsp-fbs-mx0-current-set","0.01")
+#gxsm.set ("dsp-adv-scan-speed-scan","50.0")
+#gxsm.set ("dsp-fbs-scan-fast-return","1")
+#gxsm.startscan ()
+
 
 # ACHTUNG: Clear/Expand Bias Warning Range - Warning Popup will block/terminate script execution
 
 #gxsm.set ("dsp-fbs-mx0-current-set","0.005")
-#terminate = run_set ([0.1, 0.05, 0.5, -0.1, -0.5, -1.0, -2.0, 0.1, 1.0, 2.0, 2.5, -2.5, 0.1])
+#terminate = run_set (np.arange(0.5, 3.3, 0.25 ))
+#terminate = run_set (np.arange(-0.5, -3.3, -0.25 ))
 #gxsm.set ("dsp-fbs-mx0-current-set","0.01")
 #terminate = run_set ([0.1, 0.05, 0.5, -0.1, -0.5, -1.0, -2.0, 0.1, 1.0, 2.0, 2.5, -2.5, 0.1])
 #gxsm.set ("dsp-fbs-mx0-current-set","0.02")
