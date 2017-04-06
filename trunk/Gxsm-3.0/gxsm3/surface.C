@@ -550,6 +550,7 @@ int Surface::load(const char *rname){
                                                 XSM_SHOW_ALERT (ERR_SORRY, Dio->ioStatus (), fname,1);
                                         delete Dio;
                                         ActiveScan->GetDataSet(data);
+                                        ActiveScan->mem2d->data->update_ranges (0);
                                 }
                                 break;
                         case xsm::open_mode::append_time:
@@ -571,6 +572,7 @@ int Surface::load(const char *rname){
                                         gchar *fn = g_strrstr (fname, "/");
                                         ActiveScan->mem2d->add_layer_information (new LayerInformation ("name", 0., fn ? (fn+1):fname));
                                         ActiveScan->mem2d->add_layer_information (new LayerInformation ("t",t, "%.2f s"));
+                                        ActiveScan->mem2d->data->update_ranges (0);
                                         gapp->xsm->data.s.ntimes = ActiveScan->append_current_to_time_elements (-1, t);
                                 }
                                 break;

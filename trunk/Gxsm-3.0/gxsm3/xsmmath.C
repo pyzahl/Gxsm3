@@ -407,7 +407,13 @@ gboolean ZoomOutScan(MATHOPPARAMS){
 // Src, Dest
 gboolean StitchScans(MATHOPPARAMS){
 
-        double ox = Dest->data.get_x_right_absolute ();
+        double dz_adjust = Dest->data.s.dz/Src->data.s.dz;
+        Src->mem2d->data->update_ranges (0);
+        double z_adjust = 0.;
+        //double z_adjust = -( Src->mem2d->data->zcenter*dz_adjust - Dest->mem2d->data->zcenter );
+        //if (z_adjust * Dest->data.s.dz > 1.);
+        
+        double ox = Dest->data.get_x_left_absolute ();
         double oy = Dest->data.get_y_top_absolute ();
         Mem2d mtmp (Dest->mem2d, M2D_COPY);
 
@@ -450,6 +456,10 @@ gboolean StitchScans(MATHOPPARAMS){
 	case SCAN_ORG_CENTER:
 		Dest->mem2d->data->MkYLookup (Dest->data.s.ry/2, -Dest->data.s.ry/2); break;
 	}
+
+        g_message ("Stitch: Dest->mem2d new size: (%d, %d)px",
+                   Dest->mem2d->GetNx (), Dest->mem2d->GetNy ());
+
         
         // 3. stitch/blend
         int ili, ilf, ici, icf;
@@ -459,20 +469,32 @@ gboolean StitchScans(MATHOPPARAMS){
 
         g_message ("Stitch: sub range: (%d, %d) - (%d, %d)", ici, ili, icf, ilf);
 
+        // move previous scan data to new origin
         int mvtox, mvtoy;
+        g_message ("Stitch: original origin: (%g, %g)Ang", ox, oy);
         Dest->World2Pixel (ox, oy, mvtox, mvtoy);
 
         int nx2c = mtmp.GetNx ();
         int ny2c = mtmp.GetNy ();
         // auto adjust for rounding / limits
+        g_message ("Stitch: relocate original to: (%g, %g)Ang in [%g, %g * %g, %g]Ang => to (%d, %d)px {%d x %d}",
+                   ox, oy,
+                   Dest->data.get_x_left_absolute (), Dest->data.get_y_bottom_absolute (),
+                   Dest->data.get_x_right_absolute (), Dest->data.get_y_top_absolute (),
+                   mvtox, mvtoy, nx2c, ny2c);
+        
         if (mvtox < 0) mvtox=0;
         if (mvtoy < 0) mvtoy=0;
-        if (mvtox+nx2c >= Dest->mem2d->GetNx())
-            nx2c = Dest->mem2d->GetNx ()-mvtox-1;
-        if (mvtoy+ny2c >= Dest->mem2d->GetNy())
-            ny2c = Dest->mem2d->GetNy ()-mvtoy-1;
+        if (mvtox+nx2c > Dest->mem2d->GetNx()){
+                nx2c = std::min (Dest->mem2d->GetNx ()-mvtox, mtmp.GetNx ());
+                g_message ("Adjusting limits nx2c: %d", nx2c);
+        }
+        if (mvtoy+ny2c > Dest->mem2d->GetNy()){
+                ny2c = std::min (Dest->mem2d->GetNy ()-mvtoy, mtmp.GetNy ());
+                g_message ("Adjusting limits ny2c: %d", ny2c);
+        }
 
-        g_message ("Stitch: relocate original to: (%g, %g)Ang in [%g, %g * %g, %g]Ang => to (%d, %d)px {%d x %d}",
+        g_message ("Stitch: relocate original to: (%g, %g)Ang in [%g, %g * %g, %g]Ang => to (%d, %d)px {%d x %d} -- limited",
                    ox, oy,
                    Dest->data.get_x_left_absolute (), Dest->data.get_y_bottom_absolute (),
                    Dest->data.get_x_right_absolute (), Dest->data.get_y_top_absolute (),
@@ -490,7 +512,7 @@ gboolean StitchScans(MATHOPPARAMS){
                                 g_message ("WARNING: INDEX OUT OF RANGE [%d, %d] : %g, %g :=> %g %g", col, line, x,y, ix,iy);
                                 return MATH_SIZEERR;
                         }
-			Dest->mem2d->PutDataPkt (Src->mem2d->GetDataPktInterpol (ix,iy), col, line);
+			Dest->mem2d->PutDataPkt (z_adjust + dz_adjust*Src->mem2d->GetDataPktInterpol (ix,iy), col, line);
                 }
         
         return MATH_OK;
