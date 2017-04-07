@@ -16,19 +16,42 @@ out block
         vec3 Vertex;
 } Out;
 
+
+
+subroutine float vertexModelType(vec2 position);
+
+subroutine uniform vertexModelType vertexModel;
+
+
 float height_transform(float y)
 {
         return height_scale * (y-0.5) + height_offset;  
 }
 
-float height(vec2 position)
+subroutine( vertexModelType )
+float height_direct(vec2 position)
 {
         vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
         return height_transform (texture (Surf3D_Z_Data, terraincoord).a);
 }
 
+subroutine( vertexModelType )
+float height_view_mode(vec2 position)
+{
+        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
+        return height_transform (texture (Surf3D_Z_Data, terraincoord).z);
+}
+
+subroutine( vertexModelType )
+float height_x_channel(vec2 position)
+{
+        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
+        return height_transform (texture (Surf3D_Z_Data, terraincoord).x);
+}
+
+
 void main()
 {
-        Out.Vertex = vec3 (PositionXZ.x, height(PositionXZ), PositionXZ.y);
+        Out.Vertex = vec3 (PositionXZ.x, vertexModel (PositionXZ), PositionXZ.y);
         gl_Position = vec4 (Out.Vertex, 1.0);
 }

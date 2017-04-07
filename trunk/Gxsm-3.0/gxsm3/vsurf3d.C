@@ -58,6 +58,14 @@
 
 #include "xsmdebug.h"
 
+//#define __GXSM_PY_DEVEL
+#ifdef __GXSM_PY_DEVEL
+//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+#endif
+
+
+
 // ------------------------------------------------------------
 // glm, gli, GL support includes
 // ------------------------------------------------------------
@@ -83,12 +91,6 @@ void surf3d_write_schema (){
 	
 	gnome_res_destroy (gl_pref);
 }
-
-//#define __GXSM_PY_DEVEL
-#ifdef __GXSM_PY_DEVEL
-//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
-#endif
 
 
 // ------------------------------------------------------------
@@ -174,12 +176,20 @@ namespace
          0 // debug
          );
 
+        GLuint Uniform_vertexDirect(0); // vertex Function references
+        GLuint Uniform_vertexViewMode(0);
+        GLuint Uniform_vertexXChannel(0);
+
+        GLuint Uniform_evaluationColorDirect(0); // evaluation Function references
+        GLuint Uniform_evaluationColorXChannel(0);
+        GLuint Uniform_evaluationColorViewMode(0);
+
         GLuint Uniform_shadeTerrain(0); // shader Function references
         GLuint Uniform_shadeDebugMode(0);
         GLuint Uniform_shadeLambertian(0);
         GLuint Uniform_shadeText(0);
 
-        GLuint Uniform_S3D_vertexDirect(0);
+        GLuint Uniform_S3D_vertexDirect(0); // vertex
         GLuint Uniform_S3D_vertexSurface(0);
         GLuint Uniform_S3D_vertexHScaled(0);
         GLuint Uniform_S3D_vertexText(0);
@@ -701,6 +711,14 @@ private:
                         // get shaderFunction references
                         // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
 
+                        Uniform_vertexDirect      = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "height_direct" );
+                        Uniform_vertexViewMode    = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "height_view_mode" );
+                        Uniform_vertexXChannel    = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "height_x_channel" );
+
+                        Uniform_evaluationColorDirect   = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "colorDirect" );
+                        Uniform_evaluationColorXChannel = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "colorXChannel" );
+                        Uniform_evaluationColorViewMode = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "colorViewMode" );
+
                         Uniform_shadeTerrain      = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
                         Uniform_shadeDebugMode    = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
                         Uniform_shadeLambertian   = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
@@ -1018,13 +1036,14 @@ public:
                 checkError ("render -- set Uniforms, Blocks");
 
                 // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
+                glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexDirect);
+                glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 1, &Uniform_evaluationColorDirect);
 
                 // configure shaders for surface terrain mode tesselation and select final shading mode
                 switch (s->GLv_data.ShadeModel[0]){
-                case 'R':
-                case 'L': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertian); break;
 		case 'T': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeTerrain); break;
 		case 'D': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeDebugMode); break;
+                default: glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertian); break;
                 }
                 
                 surface_plane->draw ();
