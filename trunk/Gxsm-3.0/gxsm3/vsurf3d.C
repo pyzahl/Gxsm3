@@ -84,10 +84,10 @@ void surf3d_write_schema (){
 	gnome_res_destroy (gl_pref);
 }
 
-#define __GXSM_PY_DEVEL
+//#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -175,12 +175,10 @@ namespace
         
         GLuint Uniform_vertexDirect(0); // vertex Function references
         GLuint Uniform_vertexSurface(0);
-        GLuint Uniform_vertexHScaled(0);
-        GLuint Uniform_vertexText(0);
+        //GLuint Uniform_vertexHScaled(0);
+        //GLuint Uniform_vertexText(0);
 
-        GLuint Uniform_evaluationDirect(0); // evaluation Function references
         GLuint Uniform_evaluationSurface(0);
-        GLuint Uniform_evaluationHScaled(0);
 
         GLuint Uniform_shadeTerrain(0); // shader Function references
         GLuint Uniform_shadeDebugMode(0);
@@ -238,49 +236,40 @@ public:
                 glBindVertexArray(VertexArrayName);
 
                 glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                glVertexAttribPointer(semantic::attr::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(0));
-                glVertexAttribPointer(semantic::attr::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(sizeof(glm::vec3)));
-                glVertexAttribPointer(semantic::attr::COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(2*sizeof(glm::vec3)));
+                glVertexAttribPointer(semantic::attr::POSITION, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), BUFFER_OFFSET(0));
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                 glEnableVertexAttribArray(semantic::attr::POSITION);
-                glEnableVertexAttribArray(semantic::attr::NORMAL);
-                glEnableVertexAttribArray(semantic::attr::COLOR);
                 glBindVertexArray(0);
 
                 g_message ("base_plane init_vao end");
 
                 return Validated && checkError("make_plane::init_vao");
         };
-        gboolean draw (gboolean draw_box = false){
+        gboolean draw (){
 		if (!Validated) return false;
                 
                 glBindVertexArray(VertexArrayName);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
                 glPatchParameteri(GL_PATCH_VERTICES, 4);
-
-                if (draw_box)
-                        glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
-                else
-                        glDrawElements(GL_PATCHES, IndicesCountSurface, GL_UNSIGNED_INT, 0); // surface only
+                glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
 
                 return Validated && checkError("make_plane::draw");
         };
         
         // make plane with box
         void make_plane_vbo (Mem2d *mob=NULL, double aspect=1.0, GLfloat *box_color=NULL){
-                gboolean option = box_color != NULL;
+                gboolean option = false; // box_color != NULL;
                 
                 // Surface Object Vertices
                 BaseGridH = (GLuint)round((double)BaseGridW * aspect);
                 
                 g_message ("mkplane -- vtx surf -- %s", option? "with box":"-/-");
                 VertexCount =  BaseGridW*BaseGridH + (option? 2*BaseGridW + 2*BaseGridH : 0);
-                VertexObjectSize = VertexCount * sizeof(glf::vertex_v3fn3fc4f);
-
+                VertexObjectSize = VertexCount * sizeof(glm::vec2);
                
                 g_message ("mkplane w=%d h=%d  nvertices=%d", BaseGridW, BaseGridH, VertexCount);
-                vertex = g_new (glf::vertex_v3fn3fc4f, VertexCount);
+                vertex = g_new (glm::vec2, VertexCount);
                 double s_factor = 1.0/(BaseGridW-1);
                 double t_factor = 1.0/(BaseGridH-1);
                 int offset;
@@ -296,25 +285,13 @@ public:
                                                     0.0f);
                                 double xd = x * s_factor;
                                 double yd = y * t_factor;
-                                double vd = 0.; // vi
-                                GLfloat z=0.;
-#if 1
-                                if (mob)
-                                        z = (GLfloat)((mob->GetDataPkt((int)round(xd*(mob->GetNx()-1)), (int)round(yd*(mob->GetNy()-1)), vd) - mob->data->zmin) / mob->data->zrange);
-                                vertex[offset].Position = glm::vec3 (-0.5+xd, 101., -(0.5+yd)*aspect); // > y=100 => vertex z is taken from "terrain" height field 
-                                vertex[offset].Normals  = glm::vec3 (normal_z.x, normal_z.y, normal_z.z);
-                                vertex[offset].Color    = glm::vec4 (z, z, z, -1.0);
-#else
-                                if (mob)
-                                        mob->GetDataPkt_vec_normal_4F (xd*(mob->GetNx()-1), yd*(mob->GetNy()-1), vd, &normal_z, 1.); //GLv_data.hskl);
-                                vertex[offset].Position = glm::vec3 (-0.5+xd, normal_z.w, -(0.5+yd)*aspect);
-                                vertex[offset].Normals  = glm::vec3 (normal_z.x, normal_z.y, normal_z.z);
-                                vertex[offset].Color    = glm::vec4 (normal_z.w, normal_z.w, normal_z.w, -1.0);
-#endif
+
+                                vertex[offset] = glm::vec2 (-0.5+xd, -(0.5+yd)*aspect);
                                 //g_message ("mkplane vtx -- x=%d y=TEX z=%d  [%d]",x,y, offset);
                         }
                 }
 
+#if 0
                 if (option){
                         // box bottom z=0 vertices
                         g_message ("mkplane -- vtx box");
@@ -338,13 +315,15 @@ public:
                                 }
                         }
                 }
+#endif
                 g_message ("mkplane -- Vertex Count=%d", offset);
         
                 // Patch Indices
                 int i_width = BaseGridW-1;
                 int i_height = BaseGridH-1;
-                IndicesCount = 4*(i_width*i_height + (option ? i_width*2 + i_height*2 + 1 : 0));
-                IndicesCountSurface = (((BaseGridW-1)*(BaseGridH-1))*4); // surface ony
+                //IndicesCount = 4*(i_width*i_height + (option ? i_width*2 + i_height*2 + 1 : 0));
+                IndicesCount = (((BaseGridW-1)*(BaseGridH-1))*4); // surface ony
+                //IndicesCountSurface = (((BaseGridW-1)*(BaseGridH-1))*4); // surface ony
                 IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
 
                 indices = g_new (glf::vertex_v1i, IndicesCount);
@@ -363,6 +342,7 @@ public:
                         }
                 }
 
+#if 0
                 if (option){
                         g_message ("mkplane -- idx box");
                         // box patches
@@ -409,12 +389,13 @@ public:
                         g_message ("  vertex[p4].Position = (%g %g %g)", vertex[indices[ii-1].indices.x].Position.x, vertex[indices[ii-1].indices.x].Position.y, vertex[indices[ii-1].indices.x].Position.z);
 #endif
                 }
+#endif
                 g_message ("mkplane -- Indices Count=%d of %d", ii, IndicesCount);
         };
 
 private:        
         bool Validated;
-        glf::vertex_v3fn3fc4f *vertex;
+        glm::vec2 *vertex;
         glf::vertex_v1i *indices;
         GLuint BaseGridW;
         GLuint BaseGridH;
@@ -423,7 +404,7 @@ private:
 	GLuint VertexArrayName;
 	GLsizei VertexCount;
 	GLsizei IndicesCount;
-        GLsizei IndicesCountSurface;
+        //GLsizei IndicesCountSurface;
 	GLsizeiptr VertexObjectSize;
 	GLsizeiptr IndicesObjectSize;
 };
@@ -717,12 +698,10 @@ private:
                         // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
                         Uniform_vertexDirect      = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexDirect" );
                         Uniform_vertexSurface     = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexSurface" );
-                        Uniform_vertexHScaled     = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexHScaled" );
-                        Uniform_vertexText        = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexText" );
+                        //Uniform_vertexHScaled     = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexHScaled" );
+                        //Uniform_vertexText        = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexText" );
 
-                        Uniform_evaluationDirect  = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationDirect" );
                         Uniform_evaluationSurface = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationSurface" );
-                        Uniform_evaluationHScaled = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationHScaled" );
 
                         Uniform_shadeTerrain      = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
                         Uniform_shadeDebugMode    = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
@@ -1050,7 +1029,7 @@ public:
 		case 'D': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeDebugMode); break;
                 }
                 
-                surface_plane->draw (s->GLv_data.TickFrameOptions[0]=='2' || s->GLv_data.TickFrameOptions[0]=='3'); // surface with box or plane surface only
+                surface_plane->draw (); //s->GLv_data.TickFrameOptions[0]=='2' || s->GLv_data.TickFrameOptions[0]=='3'); // surface with box or plane surface only
                 glUniform1f (Uniform_tess_level, 1.);
 
 #if 0
@@ -1255,10 +1234,10 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
         surface_normal_z_buffer[i].w -= scan->mem2d->data->zmin;
         surface_normal_z_buffer[i].w /= scan->mem2d->data->zrange;
 #endif
-        
-        if(0){
+
+        if (GLv_data.TickFrameOptions[0]=='2'){
                 if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1)
-                        surface_normal_z_buffer[i].w = -1.;
+                        surface_normal_z_buffer[i].w = 0.;
         }
         
 	if (GLv_data.ColorSrc[0] != 'U'){

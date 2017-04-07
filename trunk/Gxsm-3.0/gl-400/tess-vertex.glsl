@@ -11,18 +11,16 @@
 
 layout(std140, column_major) uniform;
 
-layout(location = POSITION) in vec3 Position;
-layout(location = NORMALS) in vec3 Normals;
-layout(location = COLOR) in vec4 Color;
+layout(location = POSITION) in vec2 Position;
 
 out block
 {
         vec3 Vertex;
-        vec3 Normal;
-	vec4 Color;
 } Out;
 
-subroutine vec3 shadeModelType(vec3 vertex);
+uniform float vertex_y;
+
+subroutine vec3 shadeModelType(vec2 vertex);
 
 subroutine uniform shadeModelType vertexMode;
 
@@ -40,29 +38,17 @@ float height(vec2 position)
 
 
 subroutine( shadeModelType )
-vec3 vertexDirect(vec3 vertex){
-        return vertex;
+vec3 vertexDirect(vec2 vertex){
+        return vec3 (vertex.x, vertex_y, vertex.y);
 }
 
 subroutine( shadeModelType )
-vec3 vertexSurface(vec3 vertex){
-        return vec3 (vertex.x, height(vertex.xz), vertex.z);
-}
-
-subroutine( shadeModelType )
-vec3 vertexHScaled(vec3 vertex){
-        return vec3 (vertex.x, height_transform(vertex.y), vertex.z);
-}
-
-subroutine( shadeModelType )
-vec3 vertexText(vec3 vertex){
-        return vec3 (vertex.x, height_transform(vertex.y), vertex.z);
+vec3 vertexSurface(vec2 vertex){
+        return vec3 (vertex.x, height(vertex.xy), vertex.y);
 }
 
 void main()
 {
         Out.Vertex = vertexMode (Position);
         gl_Position = vec4 (Out.Vertex, 1.0);
-	Out.Normal = Normals;
-	Out.Color  = Color;
 }

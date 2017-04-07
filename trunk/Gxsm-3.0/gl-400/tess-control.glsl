@@ -14,15 +14,11 @@ uniform float tess_level;
 in block
 {
         vec3 Vertex;
-        vec3 Normal;
-        vec4 Color;
 } In[];
 
 out block
 {
         vec3 Vertex;
-        vec3 Normal;
-        vec4 Color;
 } Out[];
 
 #if 1
@@ -38,8 +34,6 @@ void main()
 	gl_TessLevelOuter[3] = tess_level;
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 	Out[gl_InvocationID].Vertex = In[gl_InvocationID].Vertex;
-	Out[gl_InvocationID].Normal = In[gl_InvocationID].Normal;
-	Out[gl_InvocationID].Color = In[gl_InvocationID].Color;
 }
 
 #else
