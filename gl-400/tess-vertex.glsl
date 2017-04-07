@@ -24,7 +24,7 @@ float height_transform(float y)
 float height(vec2 position)
 {
         vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
-        return height_transform (texture (terrain, terraincoord).a);
+        return height_transform (texture (Surf3D_Z_Data, terraincoord).a);
 }
 
 void main()

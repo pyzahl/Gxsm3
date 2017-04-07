@@ -39,14 +39,16 @@ float height_transform(float y)
         return height_scale * (y-0.5) + height_offset;  
 }
 
-float height(vec2 terraincoord)
+vec4 height(vec2 terraincoord)
 {
-        return height_transform (texture (terrain, terraincoord).a);
+        vec4 zz = texture (Surf3D_Z_Data, terraincoord);
+        zz.z = height_transform (zz.a);
+        return zz;
 }
 
-vec4 color(vec2 tcoord)
+vec4 color(float z)
 {
-        return texture (diffuse, tcoord);
+        return texture (GXSM_Palette, 0.1*z);
 }
 
 void main()
@@ -58,14 +60,15 @@ void main()
 	vec4 b = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, u);
 	vec4 position = mix(a, b, v);
         vec2 tc = terraincoord (position.xz);
-        position.y = height (tc);
+        vec4 zz = height (tc);
+        position.y = zz.z;
 
         // calculate normal
-        vec3 pa = vec3(position.x + delta.x, height (terraincoord (position.xz + vec2 (delta.x, 0.))),  position.z);
-        vec3 pb = vec3(position.x, height (terraincoord (position.xz + vec2 (0., delta.y))), position.z + delta.y);
+        vec3 pa = vec3(position.x + delta.x, height (terraincoord (position.xz + vec2 (delta.x, 0.))).z,  position.z);
+        vec3 pb = vec3(position.x, height (terraincoord (position.xz + vec2 (0., delta.y))).z, position.z + delta.y);
 
         Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
-        Out.Color     = color (tc);
+        Out.Color     = color (zz.a);
 
         Out.Vertex    = vec3 (position.xyz);
         Out.VertexEye = vec3 (ModelView * vec4(position.xyz, 1));  // eye space

@@ -58,6 +58,8 @@ namespace ubo
                  GLfloat const & shininess,
                  GLfloat const & lightness,
                  GLfloat const & light_attenuation,
+                 GLfloat const & transparency,
+                 GLfloat const & transparency_offset,
                  GLfloat const & wrap,
                  GLuint const & debug_color_source
                  ) :
@@ -74,6 +76,8 @@ namespace ubo
                         shininess(shininess),
                         lightness(lightness),
                         light_attenuation(light_attenuation),
+                        transparency(transparency),
+                        transparency_offset(transparency_offset),
                         wrap(wrap),
                         debug_color_source(debug_color_source)
                 {}
@@ -90,6 +94,8 @@ namespace ubo
                 GLfloat shininess; // = 100.0;
                 GLfloat lightness;
                 GLfloat light_attenuation;
+                GLfloat transparency;
+                GLfloat transparency_offset;
                 GLfloat wrap;
                 GLuint debug_color_source;     // only for debug shader
         };

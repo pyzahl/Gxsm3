@@ -86,8 +86,8 @@ void surf3d_write_schema (){
 
 //#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -138,9 +138,9 @@ namespace
 	GLint Uniform_screen_size(0); // vec2
 	GLint Uniform_tess_level(0); // float
 	GLint Uniform_lod_factor(0); // float
-        GLsizei const TextureCount(3);
-	GLuint TextureName[3];
-        
+        GLsizei const TesselationTextureCount(2);
+	GLuint TesselationTextureName[2];
+
         // Model View and Projection
         GLuint Uniform_ubo_list[3];
         GLuint const ModelViewMat_block(0); // => 0
@@ -168,11 +168,12 @@ namespace
          20.0, // shinyness
          1.5, // lightness
          0., // attn.
-
+         1.0, 0.0, // transparency and offset
+         
          0.3, // wrap
          0 // debug
          );
-        
+
         GLuint Uniform_shadeTerrain(0); // shader Function references
         GLuint Uniform_shadeDebugMode(0);
         GLuint Uniform_shadeLambertian(0);
@@ -445,6 +446,7 @@ public:
 		if (Validated){
                         // glDeleteTextures(1, &tex);
                         glDeleteVertexArrays(1, &VertexArrayName);
+                        glDeleteTextures(1, &TextTextureName);
                         checkError("text_plane::~delete");
                 }
         };
@@ -452,10 +454,9 @@ public:
                 checkError("text_plane:: init_buffer");
 		if (!Validated) return false;
 
-                glActiveTexture(GL_TEXTURE2); // dedicated for text
-                //glGenTextures(1, &tex); // done globally
-                glBindTexture(GL_TEXTURE_2D, TextureName[2]);
-                tex = TextureName[2];
+                glActiveTexture(GL_TEXTURE0); // dedicated for text
+                glGenTextures(1, &TextTextureName); // done globally
+                glBindTexture(GL_TEXTURE_2D, TextTextureName);
                 glUniform1i (glGetUniformLocation (S3D_ProgramName, "textTexture"), 2);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -510,6 +511,7 @@ public:
                 g_message ("text_plane::draw_text  %s", text);
                 
                 glBindVertexArray (VertexArrayName);
+                glBindTexture(GL_TEXTURE_2D, TextTextureName);
                 for(const char *p = text; *p; p++) {
                         g_message ("text_plane::draw_text  '%c'", *p);
                         if(FT_Load_Char (face, *p, FT_LOAD_RENDER))
@@ -519,7 +521,7 @@ public:
 
                         checkError("make_plane::draw enter");
 
-                        glActiveTexture (GL_TEXTURE2); // dedicated for text
+                        glActiveTexture (GL_TEXTURE0); // dedicated for text
                         checkError("make_plane::draw actiavte texture 2");
 
                         glTexImage2D (
@@ -566,6 +568,7 @@ public:
                         y += (g->advance.y/64) * sy;
                 }
                 glBindVertexArray(0);
+                glBindTexture(GL_TEXTURE_2D, 0);
                 return Validated && checkError("text_plane::draw end");
         };
 private:        
@@ -573,9 +576,9 @@ private:
         FT_Library ft;
         FT_Face face;
         FT_GlyphSlot g;
-        GLuint tex;
 	GLuint ArrayBufferName;
 	GLuint VertexArrayName;
+        GLuint TextTextureName;
 	GLsizei VertexCount;
 	GLsizeiptr VertexObjectSize;
 	GLsizeiptr IndicesObjectSize;
@@ -739,6 +742,13 @@ private:
                 glBindBuffer (GL_UNIFORM_BUFFER, 0);
         };
         
+	void bind_block (GLuint program, GLuint block_id, const gchar* block_name, GLsizei block_size){
+                GLuint uniformBlockIndexProg = glGetUniformBlockIndex (program, block_name);
+                glUniformBlockBinding (program, uniformBlockIndexProg, block_id);
+                glBindBufferRange(GL_UNIFORM_BUFFER, block_id, Uniform_ubo_list[block_id], 0, block_size);
+                g_message ("UBO[%d] (%s) = %d <=> %d  {%u}", block_id,  block_name, uniformBlockIndexProg, Uniform_ubo_list[block_id], block_size);
+        };
+
 	bool initBuffer() {
 		if (!Validated) return false;
 
@@ -748,27 +758,11 @@ private:
                 updateModelViewM ();
                 updateSurfaceGeometry ();
                 updateFragmentShading ();
-                
+
                 // interlink UBOs
-                GLuint uniformBlockIndexTesselationProg(0);
-
-                // TessProg, ... <= UBO Block 0 <= ModelViewMat  (ModelViewMat_block := 0)
-                uniformBlockIndexTesselationProg = glGetUniformBlockIndex (Tesselation_ProgramName, "ModelViewMatrices");
-                glUniformBlockBinding (Tesselation_ProgramName, uniformBlockIndexTesselationProg, ModelViewMat_block);
-                glBindBufferRange(GL_UNIFORM_BUFFER, ModelViewMat_block, Uniform_ubo_list[ModelViewMat_block], 0, sizeof(ubo::uniform_model_view));
-                g_message ("UBO[%d] (ModMat) = %d <=> %d", ModelViewMat_block, uniformBlockIndexTesselationProg, Uniform_ubo_list[ModelViewMat_block]);
-                
-                // TessProg, ... <= UBO Block 1 <= SurfaceGeometry  (SurfaceGeometry_block := 1)
-                uniformBlockIndexTesselationProg = glGetUniformBlockIndex (Tesselation_ProgramName, "SurfaceGeometry");
-                glUniformBlockBinding (Tesselation_ProgramName, uniformBlockIndexTesselationProg, SurfaceGeometry_block);
-                glBindBufferRange(GL_UNIFORM_BUFFER, SurfaceGeometry_block, Uniform_ubo_list[SurfaceGeometry_block], 0, sizeof(ubo::uniform_surface_geometry));
-                g_message ("UBO[%d] (SurfGemo) = %d <=> %d", SurfaceGeometry_block, uniformBlockIndexTesselationProg, Uniform_ubo_list[SurfaceGeometry_block]);
-
-                // TessProg, ... <= UBO Block 2 <=  FragmentShading (FragmentShading_block := 2)
-                uniformBlockIndexTesselationProg = glGetUniformBlockIndex (Tesselation_ProgramName, "FragmentShading");
-                glUniformBlockBinding (Tesselation_ProgramName, uniformBlockIndexTesselationProg, FragmentShading_block);
-                glBindBufferRange(GL_UNIFORM_BUFFER, FragmentShading_block, Uniform_ubo_list[FragmentShading_block], 0, sizeof(ubo::uniform_fragment_shading));
-                g_message ("UBO[%d] (FragShade) = %d <=> %d",  FragmentShading_block, uniformBlockIndexTesselationProg, Uniform_ubo_list[FragmentShading_block]);
+                bind_block (Tesselation_ProgramName, ModelViewMat_block, "ModelViewMatrices", sizeof(ubo::uniform_model_view));
+                bind_block (Tesselation_ProgramName, SurfaceGeometry_block, "SurfaceGeometry", sizeof(ubo::uniform_surface_geometry));
+                bind_block (Tesselation_ProgramName, FragmentShading_block, "FragmentShading", sizeof(ubo::uniform_fragment_shading));
 
                 // create surface base plane
                 surface_plane = new base_plane ((s->get_scan ())->mem2d, 128, // 128,
@@ -792,28 +786,27 @@ private:
                 // sampler2D diffuse
                 glUseProgram (Tesselation_ProgramName);
 
-                glGenTextures(TextureCount, TextureName);
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, TextureName[0]);
+                glGenTextures (TesselationTextureCount, TesselationTextureName);
 
-                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Color);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glGenerateMipmap(GL_TEXTURE_2D);
-                glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "diffuse"), 0);
+                // sampler2D Surf3D_Z-Data vec4[][]
+                glActiveTexture (GL_TEXTURE0);
+                glBindTexture (GL_TEXTURE_2D, TesselationTextureName[0]);
 
-                // sampler2D terrain
+                glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA32F, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Z_Data);
+                glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glGenerateMipmap (GL_TEXTURE_2D);
+                glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "Surf3D_Z_Data"), 0);
+
+                // sampler1D GXSM_Palette vec4[][]
                 glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, TextureName[1]);
-                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Normal_Z);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glGenerateMipmap(GL_TEXTURE_2D);
-                glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "terrain"), 1);
+                glBindTexture(GL_TEXTURE_2D, TesselationTextureName[1]);
+
+                glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, GXSM_GPU_PALETTE_ENTRIES, 0, GL_RGBA, GL_FLOAT, Surf3D_Palette);
+                glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glGenerateMipmap(GL_TEXTURE_1D);
+                glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "GXSM_Palette"), 1);
 
                 glBindTexture(GL_TEXTURE_2D, 0);
                 
@@ -907,8 +900,9 @@ public:
                 if (surface_plane)
                         delete surface_plane;
                 
-                glDeleteTextures(TextureCount, TextureName);
+                glDeleteTextures(TesselationTextureCount, TesselationTextureName);
                 glDeleteProgram(Tesselation_ProgramName);
+                glDeleteProgram(S3D_ProgramName);
 
 		return checkError("end");
 	};
@@ -917,8 +911,8 @@ public:
         bool updateTexture (GLint line, GLsizei num_lines=1) { 
 		if (!Validated) return false;
 
-                glTextureSubImage2D(TextureName[0], 0, 0, line, numx, num_lines, GL_RGBA, GL_FLOAT, &Surf3D_Color[line*numx]);
-                glTextureSubImage2D(TextureName[1], 0, 0, line, numx, num_lines, GL_RGBA, GL_FLOAT, &Surf3D_Normal_Z[line*numx]);
+                glTextureSubImage2D(TesselationTextureName[0], 0, 0, line, numx, num_lines, GL_RGBA, GL_FLOAT, &Surf3D_Z_Data[line*numx]);
+                //glTextureSubImage1D(TesselationTextureName[1], 0, 0, GXSM_GPU_PALETTE_ENTRIES, GL_RGBA, GL_FLOAT, &Surf3D_Palette);
 
 		return checkError("initTextures");
         };
@@ -1005,18 +999,21 @@ public:
                 Block_FragmentShading.lightness = s->GLv_data.ColorContrast;
                 Block_FragmentShading.light_attenuation = 0.;
 
+                Block_FragmentShading.transparency        = s->GLv_data.transparency;
+                Block_FragmentShading.transparency_offset = s->GLv_data.transparency_offset;
+
                 Block_FragmentShading.wrap = 0.3; // = 0.3;
                 Block_FragmentShading.debug_color_source = (GLuint)s->GLv_data.shader_mode;
                 updateFragmentShading ();
-                
+
                 // Tesseleation control -- lod is not yet used
                 glUniform1f (Uniform_lod_factor, 4.0);
                 glUniform1f (Uniform_tess_level, s->GLv_data.tess_level);
                 
-                glEnableVertexAttribArray(TextureName[0]);
-                glEnableVertexAttribArray(TextureName[1]);
-                glBindTexture(GL_TEXTURE_2D, TextureName[0]);
-                glBindTexture(GL_TEXTURE_2D, TextureName[1]);
+                glEnableVertexAttribArray(TesselationTextureName[0]);
+                glEnableVertexAttribArray(TesselationTextureName[1]);
+                glBindTexture(GL_TEXTURE_2D, TesselationTextureName[0]);
+                glBindTexture(GL_TEXTURE_2D, TesselationTextureName[1]);
 
                 checkError ("render -- set Uniforms, Blocks");
 
@@ -1111,9 +1108,9 @@ public:
                 DistanceCurrent = DistanceOrigin = glm::vec3(DistanceCurrent.x, d[0], DistanceCurrent.z);
         };
 
-        void set_surface_data (glm::vec4 *data, glm::vec4 *color, int nx, int ny, int nv){
-                Surf3D_Normal_Z = data;
-                Surf3D_Color    = color;
+        void set_surface_data (glm::vec4 *data, glm::vec4 *palette, int nx, int ny, int nv){
+                Surf3D_Z_Data = data;
+                Surf3D_Palette = palette;
                 numx = nx;
                 numy = ny;
                 numv = nv;
@@ -1139,8 +1136,8 @@ private:
 	glm::vec3 Rotation3axis;
 	glm::vec3 Translation3axis;
 
-        glm::vec4 *Surf3D_Normal_Z;
-        glm::vec4 *Surf3D_Color;
+        glm::vec4 *Surf3D_Z_Data;
+        glm::vec4 *Surf3D_Palette;
 	int numx, numy, numv;
 };
 
@@ -1192,126 +1189,51 @@ void Surf3d::hide(){
 
 void inline Surf3d::PutPointMode(int k, int j, int vi){
 	int i;
-	GLfloat val;
+	GLfloat val, xval;
         
 	i = k + j*XPM_x + XPM_x*XPM_y*vi;
 	if (i >= (int)size) return;
 
         // check for zero range
         if (! (scan->mem2d->data->zrange > 0.)){
-                surface_normal_z_buffer[i].x=surface_normal_z_buffer[i].y=0.; surface_normal_z_buffer[i].z=1.;
-                surface_normal_z_buffer[i].w=0.;
-                surface_color_buffer[i].x = surface_normal_z_buffer[i].w;
-                surface_color_buffer[i].y = surface_normal_z_buffer[i].w;
-                surface_color_buffer[i].z = surface_normal_z_buffer[i].w;
-                surface_color_buffer[i].w = 1.;
+                surface_z_data_buffer[i].x=0.;
+                surface_z_data_buffer[i].y=0.;
+                surface_z_data_buffer[i].z=0.;
+                surface_z_data_buffer[i].w=0.;
                 return;
         }
 
-        
-	// mem2d:: inline void GetDataPkt_vec_normal_4F(int x, int y, int v, float *vec4){ 
-	// mem2d:: inline void GetDataPktVModeInterpol_vec_normal_4F(double x, double y, double v, float *vec4){ 
+        // W CHANNEL <= surface height raw 0..1 adjusted 
+        surface_z_data_buffer[i].w = (scan->mem2d->GetDataPkt(k,j,vi)-scan->mem2d->data->zmin)/scan->mem2d->data->zrange; // W component: Z=Height-value raw, scaled to 0..1
 
-        //if (i==0)
-        //        g_message ("Z Range: %f .. %f", scan->mem2d->data->zmin, scan->mem2d->data->zmax);
+        // Z CHANNEL <= surface height via view transform function
+        val = (scan->mem2d->GetDataVMode (k,j,vi)/scan->mem2d->GetDataRange ());
+        surface_z_data_buffer[i].z = val > 0. ? val <= 1. ? val : 1. : 0.; // Z via view transform function
 
+        // normal calculation on GPU based on height map -- obsolete now here
+	// scan->mem2d->GetDataPkt_vec_normal_4F (k,j,vi, &surface_z_data_buffer[i], 1.0, XPM_x*GLv_data.hskl/scan->mem2d->data->zrange);
 
-        //scan->mem2d->GetDataPktVModeInterpol_vec_normal_4F ((double)k,(double)j,(double)vi, &surface_normal_z_buffer[i]);
-	//scan->mem2d->GetDataPktVMode_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], 1./MAXCOLOR);
-#if 1
-        surface_color_buffer[i].x = 0.;
-        surface_color_buffer[i].y = 1.;
-        surface_color_buffer[i].z = 0.;
-        surface_normal_z_buffer[i].w = (scan->mem2d->GetDataPkt(k,j,vi)-scan->mem2d->data->zmin)/scan->mem2d->data->zrange;
-#else
-	scan->mem2d->GetDataPkt_vec_normal_4F (k,j,vi, &surface_normal_z_buffer[i], 1.0, XPM_x*GLv_data.hskl/scan->mem2d->data->zrange);
-        // normals are not recalculated by GPU based on actual scaled Z -- so here kind of obsolete -- clean up or leave?? TDB
-        // shift Norm to 0 .. 1
-        surface_normal_z_buffer[i].x *= 0.5; surface_normal_z_buffer[i].x += 0.5;
-        surface_normal_z_buffer[i].y *= 0.5; surface_normal_z_buffer[i].x += 0.5;
-        surface_normal_z_buffer[i].z *= 0.5; surface_normal_z_buffer[i].x += 0.5;
-        // normalize Z to 0 .. 1
-        surface_normal_z_buffer[i].w -= scan->mem2d->data->zmin;
-        surface_normal_z_buffer[i].w /= scan->mem2d->data->zrange;
-#endif
-
+        // push edges to zero?
         if (GLv_data.TickFrameOptions[0]=='2'){
                 if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1)
-                        surface_normal_z_buffer[i].w = 0.;
+                        surface_z_data_buffer[i].w = 0.;
         }
         
-	if (GLv_data.ColorSrc[0] != 'U'){
-		switch (GLv_data.ColorSrc[0]){
-		case 'H': 
-			val = (GLfloat) (surface_normal_z_buffer[i].w);
-			break;
-		case 'X': 
-			if (mem2d_x){
-				// map to index range of Chan-X, assumes scan range is the same.
-				int u = (int) (k * (double)mem2d_x->GetNx () / (double)scan->mem2d->GetNx ());
-				int v = (int) (j * (double)mem2d_x->GetNy () / (double)scan->mem2d->GetNy ());
-				val = (GLfloat) (mem2d_x->GetDataVMode (u,v)/mem2d_x->GetDataRange ());
-			} else
-				val = 0.5;
-			break;
-		default: 
-			val = 0.5; 
-			break;
-		}
-
-		switch (GLv_data.ShadeModel[0]){
-		case 'T': // Terrain Color
-			calccolor(val*maxcolors, surface_color_buffer[i]);
-			break;
-		case 'F': // Material Color
-			surface_color_buffer[i].x = GLv_data.surf_mat_color[0];
-			surface_color_buffer[i].y = GLv_data.surf_mat_color[1];
-			surface_color_buffer[i].z = GLv_data.surf_mat_color[2];
-			break;
-                case 'D':
-		case 'L': { // GXSM user Palette
-			int ci = (int)(val*maxcolors);
-			ci = ci < 0 ? 0 : ci >= maxcolors ? (maxcolors-1) : ci;
-			surface_color_buffer[i].x = ColorLookup[ci][0];
-			surface_color_buffer[i].y = ColorLookup[ci][1];
-			surface_color_buffer[i].z = ColorLookup[ci][2];
-		} break;
-		case 'R': // RGBA Color
-			switch (GLv_data.ColorSrc[0]){
-			case 'H': 
-				if (scan->mem2d->GetNv() == 4){
-					surface_color_buffer[i].x = scan->mem2d->GetDataPkt (k,j,0) / 255.;
-					surface_color_buffer[i].y = scan->mem2d->GetDataPkt (k,j,1) / 255.;
-					surface_color_buffer[i].z = scan->mem2d->GetDataPkt (k,j,2) / 255.;
-				}
-				break;
-			case 'X': 
-				if (mem2d_x){				
-					int u = (int) (k * (double)mem2d_x->GetNx () / (double)scan->mem2d->GetNx ());
-					int v = (int) (j * (double)mem2d_x->GetNy () / (double)scan->mem2d->GetNy ());
-					if (mem2d_x->GetNv() == 4){
-						surface_color_buffer[i].x = mem2d_x->GetDataPkt (u,v,0) / 255.;
-						surface_color_buffer[i].y = mem2d_x->GetDataPkt (u,v,1) / 255.;
-						surface_color_buffer[i].z = mem2d_x->GetDataPkt (u,v,2) / 255.;
-					}
-				}
-				break;
-			}
-			break;
-		}  
-		surface_color_buffer[i].x *= GLv_data.ColorSat;
-		surface_color_buffer[i].y *= GLv_data.ColorSat;
-		surface_color_buffer[i].z *= GLv_data.ColorSat;
-	}
-
-	// set transparency/alpha blending
-	val = (GLfloat) (GLv_data.transparency_offset + GLv_data.transparency * surface_normal_z_buffer[i].w);
-	surface_color_buffer[i].w = val > 1.? 1. : val < 0.? 0. : val;
+        // X CHANNEL <= UV-Map to index range of GXSM SCAN CHANNEL-X:
+        if (mem2d_x){
+                int u = (int) (k * (double)mem2d_x->GetNx () / (double)scan->mem2d->GetNx ());
+                int v = (int) (j * (double)mem2d_x->GetNy () / (double)scan->mem2d->GetNy ());
+                xval = (GLfloat) (mem2d_x->GetDataVMode (u,v)/mem2d_x->GetDataRange ());
+        } else {
+                xval = 0.5;
+        }
+        surface_z_data_buffer[i].x = xval > 0. ? xval <= 1. ? xval : 1. : 0.; // X-Channel val in X component
+        surface_z_data_buffer[i].y = 0.; // Y-Channel still available
 
         if (XPM_v > 1){
                 // adjust slice height level, renormalize
-                surface_normal_z_buffer[i].w /= XPM_v;
-                surface_normal_z_buffer[i].w += (GLfloat)vi*GLv_data.slice_offset*0.5/XPM_v;
+                surface_z_data_buffer[i].w /= XPM_v;
+                surface_z_data_buffer[i].w += (GLfloat)vi*GLv_data.slice_offset*0.5/XPM_v;
         }
 }
 
@@ -1325,9 +1247,8 @@ void Surf3d::GLvarinit(){
 	scrheight=500;
 	ZoomFac=1;
 	size=0;
-        surface_normal_z_buffer = NULL;
-	surface_color_buffer = NULL;
-
+        surface_z_data_buffer = NULL;
+        
 	ReadPalette (xsmres.Palette);
 
 // create preferences table from static table and replace pointers to
@@ -1384,7 +1305,7 @@ void Surf3d::set_gl_data (){
                 XSM_DEBUG (GL_DEBUG_L2, "Surf3d::set_gl_data." << std::flush);
                 delete_surface_buffer ();
                 create_surface_buffer ();
-                gl_tess->set_surface_data (surface_normal_z_buffer, surface_color_buffer, XPM_x, XPM_y, XPM_v);
+                gl_tess->set_surface_data (surface_z_data_buffer, ColorLookup, XPM_x, XPM_y, XPM_v);
                 XSM_DEBUG (GL_DEBUG_L2, "Surf3d::set_gl_data OK." << std::flush);
         }
 }
@@ -1441,8 +1362,7 @@ void Surf3d::create_surface_buffer(){
 
 	XSM_DEBUG_GP (GL_DEBUG_L3, "Surf3d::create_surface_buffer  **nXYV (%d, %d, %d)\n", XPM_x, XPM_y, XPM_v);
         
-	surface_normal_z_buffer = g_new (glm::vec4, size * sizeof(glm::vec4));
-	surface_color_buffer    = g_new (glm::vec4, size * sizeof(glm::vec4));
+	surface_z_data_buffer = g_new (glm::vec4, size * sizeof(glm::vec4));
 
 	XSM_DEBUG (GL_DEBUG_L3, "Surf3d::create_surface_buffer  ** g_new completed");
 
@@ -1457,36 +1377,17 @@ void Surf3d::create_surface_buffer(){
 				PutPointMode (k,j,v);
         }
 	XSM_DEBUG (GL_DEBUG_L3, "Surf3d::create_surface_buffer  ** completed");
-#if 0
-        // dump to file
-        gchar *fn = g_strdup_printf("gxsm_normal_z_%dx%d.terrain", XPM_x, XPM_y);
-        FILE* terrain = fopen(fn, "wb");
-        g_free (fn);
-        fwrite ((void*)surface_normal_z_buffer, sizeof(glm::vec4), (size_t)size, terrain);
-        fclose (terrain);
-
-        fn = g_strdup_printf("gxsm_color_rgb_%dx%d.diffuse", XPM_x, XPM_y);
-        FILE* diffuse = fopen(fn, "wb");
-        g_free (fn);
-        fwrite ((void*)surface_color_buffer, sizeof(glm::vec4), (size_t)size, diffuse);
-        fclose (diffuse);
-#endif   
 }
 
 void Surf3d::delete_surface_buffer(){ 
 	XSM_DEBUG (GL_DEBUG_L2, "SURF3D::delete_surface_buffer -- check for cleanup");
 
-	if (surface_normal_z_buffer){
+	if (surface_z_data_buffer){
                 XSM_DEBUG (GL_DEBUG_L2, "SURF3D::delete_surface_buffer -- g_free: normal_z_buffer");
-		g_free (surface_normal_z_buffer);
-                surface_normal_z_buffer = NULL;
+		g_free (surface_z_data_buffer);
+                surface_z_data_buffer = NULL;
         }
 
-	if (surface_color_buffer){
-                XSM_DEBUG (GL_DEBUG_L2, "SURF3D::delete_surface_buffer -- g_free: color_buffer");
-		g_free (surface_color_buffer);
-                surface_color_buffer = NULL;
-        }
 	size = 0;
 }
 

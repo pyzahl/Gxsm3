@@ -332,9 +332,9 @@ private:
         void printstring (void *font, char *string);
         void calccolor (float height, glm::vec4 &c);
 
-        glm::vec4 *surface_normal_z_buffer;
-        glm::vec4 *surface_color_buffer;
-        glm::vec3 ColorLookup[8192];
+#define GXSM_GPU_PALETTE_ENTRIES 8192
+        glm::vec4 *surface_z_data_buffer;
+        glm::vec4 ColorLookup[GXSM_GPU_PALETTE_ENTRIES];
         int maxcolors;
         
 public:
