@@ -22,6 +22,18 @@ out block {
         vec4 Color;
 } Out;
 
+
+
+subroutine vec4 colorModelType(vec4 zz);
+
+subroutine uniform colorModelType colorModel;
+
+
+float height_transform(float y)
+{
+        return height_scale * (y-0.5) + height_offset;  
+}
+
 vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
 {
         vec4 a = mix(v0, v1, gl_TessCoord.x);
@@ -34,11 +46,6 @@ vec2 terraincoord(vec2 position){
         // retufn vec2 (position.x + 0.5, position.y/aspect + 0.5); // normal
 }
 
-float height_transform(float y)
-{
-        return height_scale * (y-0.5) + height_offset;  
-}
-
 vec4 height(vec2 terraincoord)
 {
         vec4 zz = texture (Surf3D_Z_Data, terraincoord);
@@ -46,9 +53,22 @@ vec4 height(vec2 terraincoord)
         return zz;
 }
 
-vec4 color(float z)
+subroutine( colorModelType )
+vec4 colorDirect(vec4 zz)
 {
-        return texture (GXSM_Palette, 0.1*z);
+        return texture (GXSM_Palette, 0.1*zz.a);
+}
+
+subroutine( colorModelType )
+vec4 colorXChannel(vec4 zz)
+{
+        return texture (GXSM_Palette, 0.1*zz.x);
+}
+
+subroutine( colorModelType )
+vec4 colorViewModel(vec4 zz)
+{
+        return texture (GXSM_Palette, 0.1*zz.z);
 }
 
 void main()
@@ -68,7 +88,7 @@ void main()
         vec3 pb = vec3(position.x, height (terraincoord (position.xz + vec2 (0., delta.y))).z, position.z + delta.y);
 
         Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
-        Out.Color     = color (zz.a);
+        Out.Color     = colorModel (zz);
 
         Out.Vertex    = vec3 (position.xyz);
         Out.VertexEye = vec3 (ModelView * vec4(position.xyz, 1));  // eye space
