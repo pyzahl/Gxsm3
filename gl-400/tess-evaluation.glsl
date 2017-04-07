@@ -13,8 +13,6 @@ layout(quads, equal_spacing, ccw) in; //equal_spacing fractional_even_spacing fr
 in block
 {
         vec3 Vertex;
-        vec3 Normal;
-        vec4 Color;
 } In[];
 
 out block {
@@ -57,28 +55,6 @@ vec4 color(vec2 tcoord)
 }
 
 subroutine( shadeModelType )
-vec4 evaluationDirect(){
-        //float u = gl_TessCoord.x;
-	//float v = gl_TessCoord.y;
-
-        vec4 position = gl_in[0].gl_Position;
-        Out.Normal = In[0].Normal;
-        Out.Color  = In[0].Color;
-        if (gl_in.length > 1){
-                for(int i = 1; i < gl_in.length(); ++i){
-                        position += gl_in[i].gl_Position;
-                        Out.Normal += In[i].Normal;
-                        Out.Color  += In[i].Color;
-                }
-                position   /= gl_in.length ();
-                Out.Normal /= gl_in.length ();
-                Out.Color  /= gl_in.length ();
-        }
-
-        return position;
-}
-
-subroutine( shadeModelType )
 vec4 evaluationSurface(){
         float u = gl_TessCoord.x;
 	float v = gl_TessCoord.y;
@@ -98,31 +74,6 @@ vec4 evaluationSurface(){
 
         return position;
 }
-
-subroutine( shadeModelType )
-vec4 evaluationHScaled(){
-        //float u = gl_TessCoord.x;
-	//float v = gl_TessCoord.y;
-
-        vec4 position = gl_in[0].gl_Position;
-        Out.Normal = In[0].Normal;
-        Out.Color  = In[0].Color;
-        if (gl_in.length > 1){
-                for(int i = 1; i < gl_in.length(); ++i){
-                        position += gl_in[i].gl_Position;
-                        Out.Normal += In[i].Normal;
-                        Out.Color  += In[i].Color;
-                }
-                position   /= gl_in.length ();
-                Out.Normal /= gl_in.length ();
-                Out.Color  /= gl_in.length ();
-        }
-        position.y = height_transform (position.y);
-
-        return position;
-}
-
-
 
 void main()
 {	
