@@ -29,16 +29,16 @@ layout (std140) uniform SurfaceGeometry
 // Light and Shading
 layout (std140) uniform FragmentShading
 {
-        uniform vec3 lightDirWorld;
-        uniform vec3 eyePosWorld;
+        uniform vec4 lightDirWorld;
+        uniform vec4 eyePosWorld;
 
-        uniform vec3 sunColor; // = vec3(1.0, 1.0, 0.7);
-        uniform vec3 specularColor; // = vec3(1.0, 1.0, 0.7)*1.5;
-        uniform vec3 ambientColor; // = vec3(1.0, 1.0, 0.7)*1.5;
-        uniform vec3 diffuseColor; // = vec3(1.0, 1.0, 0.7)*1.5;
-        uniform vec3 fogColor; // = vec3(0.7, 0.8, 1.0)*0.7;
-        uniform vec4  materialColor;
-        uniform vec4  color_offset;
+        uniform vec4 sunColor; // = vec3(1.0, 1.0, 0.7);
+        uniform vec4 specularColor; // = vec3(1.0, 1.0, 0.7)*1.5;
+        uniform vec4 ambientColor; // = vec3(1.0, 1.0, 0.7)*1.5;
+        uniform vec4 diffuseColor; // = vec3(1.0, 1.0, 0.7)*1.5;
+        uniform vec4 fogColor; // = vec3(0.7, 0.8, 1.0)*0.7;
+        uniform vec4 materialColor;
+        uniform vec4 color_offset;
 
         uniform float fogExp; // = 0.1;
 
@@ -58,7 +58,6 @@ uniform sampler2D diffuse;
 // text shading
 uniform sampler2D textTexture;
 uniform vec4 textColor;
-
 
 
 

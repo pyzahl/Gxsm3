@@ -173,11 +173,6 @@ namespace
          0 // debug
          );
         
-        GLuint Uniform_vertexDirect(0); // vertex Function references
-        GLuint Uniform_vertexSurface(0);
-        //GLuint Uniform_vertexHScaled(0);
-        //GLuint Uniform_vertexText(0);
-
         GLuint Uniform_evaluationSurface(0);
 
         GLuint Uniform_shadeTerrain(0); // shader Function references
@@ -696,10 +691,6 @@ private:
 
                         // get shaderFunction references
                         // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
-                        Uniform_vertexDirect      = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexDirect" );
-                        Uniform_vertexSurface     = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexSurface" );
-                        //Uniform_vertexHScaled     = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexHScaled" );
-                        //Uniform_vertexText        = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertexText" );
 
                         Uniform_evaluationSurface = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationSurface" );
 
@@ -1019,9 +1010,6 @@ public:
                 // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
 
                 // configure shaders for surface terrain mode tesselation and select final shading mode
-                glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexSurface);
-                glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 1, &Uniform_evaluationSurface);
-
                 switch (s->GLv_data.ShadeModel[0]){
                 case 'R':
                 case 'L': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertian); break;
@@ -1037,8 +1025,8 @@ public:
 
                 // setup for text
                 checkError ("render -- set Uniforms Subroutines for text");
-                glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexText);
-                glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeText);
+                //glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexText);
+                //glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeText);
                 //glUniform4fv (Uniform_materialColor, 1, &s->GLv_data.box_mat_color[0]);
                 
                 checkError ("render -- draw text");
