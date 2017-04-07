@@ -22,11 +22,6 @@ out block {
         vec4 Color;
 } Out;
 
-subroutine vec4 shadeModelType();
-
-subroutine uniform shadeModelType evaluationMode;
-
-
 vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
 {
         vec4 a = mix(v0, v1, gl_TessCoord.x);
@@ -54,8 +49,8 @@ vec4 color(vec2 tcoord)
         return texture (diffuse, tcoord);
 }
 
-subroutine( shadeModelType )
-vec4 evaluationSurface(){
+void main()
+{	
         float u = gl_TessCoord.x;
 	float v = gl_TessCoord.y;
   
@@ -71,16 +66,6 @@ vec4 evaluationSurface(){
 
         Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
         Out.Color     = color (tc);
-
-        return position;
-}
-
-void main()
-{	
-        //gl_Position = interpolate(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_in[2].gl_Position, gl_in[3].gl_Position);
-	//Out.Color = interpolate(In[0].Color, In[1].Color, In[2].Color, In[3].Color);
-
-        vec4 position = evaluationMode ();
 
         Out.Vertex    = vec3 (position.xyz);
         Out.VertexEye = vec3 (ModelView * vec4(position.xyz, 1));  // eye space
