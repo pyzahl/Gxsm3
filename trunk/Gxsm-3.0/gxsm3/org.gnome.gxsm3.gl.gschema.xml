@@ -166,7 +166,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="light0pos" type="ad">
-      <default>[-0.2,0.6,-1.0,0]</default>
+      <default>[0.2,-1,0,1]</default>
       <summary>Light0: Position, relative to surface width (=1) [X, Y, Z, 1]</summary>
       <description>
         Light0: Position, relative to surface width (=1) [X, Y, Z, 1]
@@ -555,7 +555,7 @@ Note: smooth shading is much slower but looks also much better.
         <choice value='2: XYZ Box'/>
         <choice value='3: XYZ w L Box'/>
       </choices>
-      <default>'0: Simple'</default>
+      <default>'2: XYZ Box'</default>
       <summary>Tick Frame Options)</summary>
       <description>
         Tick Frame Options)
