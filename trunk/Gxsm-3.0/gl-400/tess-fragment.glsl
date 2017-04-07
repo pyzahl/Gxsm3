@@ -58,6 +58,13 @@ vec3 applyFog(vec3 col, float dist, vec3 viewDir)
 }
 
 
+vec3 map_xyz_values(vec2 position)
+{
+        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
+        return texture (Surf3D_Z_Data, terraincoord).xyz;
+}
+
+
 // terrain level shader
 subroutine( shadeModelType )
 vec4 shadeTerrain(vec3 vertex, vec3 vertexEye, 
@@ -124,7 +131,9 @@ vec4 shadeTerrain(vec3 vertex, vec3 vertexEye,
         finalColor = applyFog(finalColor, dist, viewDir);
         //return vec4(finalColor, 1.);
 
-        return color_offset + vec4(lightness*finalColor, color.a);
+        return vec4 (color_offset.xyz
+                     + lightness*finalColor,
+                     transparency_offset+transparency*color.a);
 
 #if 0
         // debug stuff
@@ -176,9 +185,13 @@ vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye,
         vec3 finalColor = (ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz;
 
         switch (debug_color_source){
-        case 1: return color_offset + vec4(lightness*(ambientColor.xyz+diffuse*diffuseColor.xyz)*color.xyz, color.a);
-        case 2: return color_offset + vec4(vec3(diffuse), 1.0);
-        case 3: return color_offset + vec4(lightness*(ambientColor.xyz+specular*specularColor.xyz)*color.xyz, color.a);
+        case 1: return vec4 (color_offset.xyz
+                             + lightness*(ambientColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
+                             transparency_offset+transparency*color.a);
+        case 2: return vec4 (color_offset.xyz + vec3(diffuse), 1.0);
+        case 3: return vec4 (color_offset.xyz
+                             + lightness*(ambientColor.xyz+specular*specularColor.xyz)*color.xyz,
+                             transparency_offset+transparency*color.a);
         case 4: return color_offset + lightness*color;
         case 5:
                 finalColor = applyFog (finalColor, dist, viewDir);
@@ -194,7 +207,9 @@ vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye,
         case 13: return specular*color;
         case 14: return vec4(vec3(specular,normal.y,diffuse),1.0);
         case 15: return vec4(vec3(dist/100.), 1.0);
-        default: return color_offset + vec4(lightness*finalColor, color.a);
+        default: return vec4 (color_offset.xyz
+                              + lightness*finalColor,
+                              transparency_offset+transparency*color.a);
         }
 }
 
@@ -214,7 +229,31 @@ vec4 shadeLambertian(vec3 vertex, vec3 vertexEye,
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
 
-        return color_offset + vec4(lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz, color.a);
+        return vec4 (color_offset.xyz
+                     + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
+                     transparency_offset+transparency*color.a);
+}
+
+// Lambertian light model for surface
+subroutine( shadeModelType )
+vec4 shadeLambertianXColor(vec3 vertex, vec3 vertexEye, 
+                           vec3 normal, vec4 color)
+{
+        // world-space
+        vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
+        vec3 h = normalize(-lightDirWorld.xyz + viewDir);
+        vec3 n = normalize(normal);
+
+        //float diffuse = saturate( dot(n, -lightDir));
+        float diffuse = saturate( (dot(n, -lightDirWorld.xyz) + wrap) / (1.0 + wrap));   // wrap
+        //float diffuse = dot(n, -lightDir)*0.5+0.5;
+        float specular = pow( saturate(dot(h, n)), shininess);
+
+        vec3 xyz_values = map_xyz_values (vertex.xz);
+        
+        return vec4 (color_offset.xyz
+                     + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
+                     transparency_offset+transparency*color.a);
 }
 
 // Lambertian light model for surface, use homogenious surface color = material_color
@@ -232,7 +271,9 @@ vec4 shadeLambertianMaterialColor(vec3 vertex, vec3 vertexEye,
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
 
-        return color_offset + vec4(lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*materialColor.xyz, materialColor.a);
+        return vec4 (color_offset.xyz
+                     + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*materialColor.xyz,
+                            transparency_offset+transparency*materialColor.a);
 }
 
 // simple text shader

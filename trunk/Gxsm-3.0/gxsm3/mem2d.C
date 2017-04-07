@@ -276,7 +276,7 @@ int TZData<ZTYP>::CopyFrom(ZData *src, int x, int y, int tox, int toy, int nx, i
 //	for(int i=0; i<ny; i++){
 //		for(int j=0; j<nx; j++)
 //			Z (src->Z(j+x,i+y), j+tox,i+toy);
-        g_message ("TZD::CopyFrom %d %d -> %d %d [%d x %d]", x,y, tox, toy, nx, ny);
+//        g_message ("TZD::CopyFrom %d %d -> %d %d [%d x %d]", x,y, tox, toy, nx, ny);
 	for(int i=0; i<ny; i++){
 		memcpy((void*)&Zdat[(toy++)*nv+vlayer][tox], src->GetPtr(x,y++), nx*sizeof(ZTYP));
 		Li[i+ny*vlayer].invalidate();

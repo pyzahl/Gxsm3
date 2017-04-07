@@ -46,22 +46,22 @@ layout (std140) uniform FragmentShading
         uniform float lightness;
         uniform float light_attenuation;
 
+        uniform float transparency;
+        uniform float transparency_offset;
+        
         uniform float wrap;
         uniform uint debug_color_source;     // only for debug shader
 };
 
-// Sampler2D
-uniform sampler2D terrain;
-uniform sampler2D diffuse;
+
+// Sampler2D for GXSM Surface_Z_Data : vec4[][]
+uniform sampler2D Surf3D_Z_Data;
+uniform sampler1D GXSM_Palette;
 
 
 // text shading
 uniform sampler2D textTexture;
 uniform vec4 textColor;
-
-
-
-
 
 
 

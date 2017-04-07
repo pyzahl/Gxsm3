@@ -39,12 +39,12 @@ vec2 terraincoord(vec2 position){
 
 float height(vec2 position)
 {
-        return height_transform (texture (terrain, terraincoord(position)).a);
+        return height_transform (texture (Surf3D_Z_Data, terraincoord(position)).a);
 }
 
-vec4 color(vec2 tcoord)
+vec4 color(float y)
 {
-        return texture (diffuse, tcoord);
+        return texture (GXSM_Palette, y);
 }
 
 
@@ -65,7 +65,7 @@ vec3 vertexSurface(vec3 vertex, vec3 normal){
         vec3 pb = vec3(position.x, height (terraincoord (position.xz + vec2 (0., delta.y))), position.z + delta.y);
 
         Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
-        Out.Color     = color (tc);
+        Out.Color     = color (position.y);
 
         return position;
 }
