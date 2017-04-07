@@ -173,12 +173,19 @@ namespace
          0 // debug
          );
         
-        GLuint Uniform_evaluationSurface(0);
-
         GLuint Uniform_shadeTerrain(0); // shader Function references
         GLuint Uniform_shadeDebugMode(0);
         GLuint Uniform_shadeLambertian(0);
         GLuint Uniform_shadeText(0);
+
+        GLuint Uniform_S3D_vertexDirect(0);
+        GLuint Uniform_S3D_vertexSurface(0);
+        GLuint Uniform_S3D_vertexHScaled(0);
+        GLuint Uniform_S3D_vertexText(0);
+
+        GLuint Uniform_S3D_shadeLambertian(0);
+        GLuint Uniform_S3D_shadeText(0);
+
 } //namespace
 
 class base_plane{
@@ -471,7 +478,7 @@ public:
                 //-->> glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_STATIC_DRAW);
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-                return Validated && checkError("text_plane:: init_buffer");
+                return Validated && checkError("text_plane:: init_buffer completed");
         };
         gboolean init_vao (){
                 g_message ("base_plane init_vao");
@@ -499,12 +506,11 @@ public:
         };
         gboolean draw_text (const char *text, float x, float y, float sx, float sy) {
  		if (!Validated) return false;
-                const char *p;
 
                 g_message ("text_plane::draw_text  %s", text);
                 
                 glBindVertexArray (VertexArrayName);
-                for(p = text; *p; p++) {
+                for(const char *p = text; *p; p++) {
                         g_message ("text_plane::draw_text  '%c'", *p);
                         if(FT_Load_Char (face, *p, FT_LOAD_RENDER))
                                 continue;
@@ -692,12 +698,19 @@ private:
                         // get shaderFunction references
                         // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
 
-                        Uniform_evaluationSurface = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "evaluationSurface" );
-
                         Uniform_shadeTerrain      = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
                         Uniform_shadeDebugMode    = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
                         Uniform_shadeLambertian   = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
                         Uniform_shadeText         = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeText" );
+
+                        Uniform_S3D_vertexDirect    = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexDirect" );
+                        Uniform_S3D_vertexSurface   = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexSurface" );
+                        Uniform_S3D_vertexHScaled   = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexHScaled" );
+                        Uniform_S3D_vertexText      = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexText" );
+
+                        Uniform_S3D_shadeLambertian = glGetSubroutineIndex (S3D_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
+                        Uniform_S3D_shadeText       = glGetSubroutineIndex (S3D_ProgramName, GL_FRAGMENT_SHADER, "shadeText" );
+
 
                         checkError("initProgram -- get uniform subroutine references...");
 		}
@@ -1017,20 +1030,19 @@ public:
 		case 'D': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeDebugMode); break;
                 }
                 
-                surface_plane->draw (); //s->GLv_data.TickFrameOptions[0]=='2' || s->GLv_data.TickFrameOptions[0]=='3'); // surface with box or plane surface only
-                glUniform1f (Uniform_tess_level, 1.);
+                surface_plane->draw ();
 
 #if 0
                 glUseProgram (S3D_ProgramName);
 
                 // setup for text
                 checkError ("render -- set Uniforms Subroutines for text");
-                //glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexText);
-                //glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeText);
+                glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_S3D_vertexText);
+                glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_S3D_shadeText);
                 //glUniform4fv (Uniform_materialColor, 1, &s->GLv_data.box_mat_color[0]);
                 
                 checkError ("render -- draw text");
-                text_vao->draw_text ("GXSM-3.0 GL4.0 ES Text Test.", 1., 1., 0.1, 0.1);
+                text_vao->draw_text ("GXSM-3.0", 1., 1., 0.1, 0.1);
 #endif
                 
 		return checkError("render");
