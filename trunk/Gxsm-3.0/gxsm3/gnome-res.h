@@ -94,6 +94,7 @@ extern "C" {
                 void (*changed_callback)(gpointer);  /* called if nonnull and entry changes */
                 gpointer moreinfo;      /* special future use, depends on type  */
                 GtkWidget *entry;       /* Edit Entry - internal use, init with NULL! */
+                GtkAdjustment *adjustment;  /* Adjustment - internal use, init with NULL! */
                 gchar *tmp;             /* temporary variable storage as text - internal use, init with NULL! */
         } GnomeResEntryInfoType;
 
@@ -101,7 +102,7 @@ extern "C" {
         /* Macros to simplify usage, do use at least the GNOME_RES_ENTRY_NAME macro! */
 
 #define GNOME_RES_ENTRY(type, edit_type, path, name, vdefault, var, options, option_text_format, option_data, group, comment, level, depend_func, changed_callback, moreinfo) \
-        { type, edit_type, path, name, vdefault, var, options, option_text_format, option_data, group, comment, level, depend_func, changed_callback, moreinfo, NULL, NULL }
+        { type, edit_type, path, name, vdefault, var, options, option_text_format, option_data, group, comment, level, depend_func, changed_callback, moreinfo, NULL, NULL, NULL }
 
 #define GNOME_RES_ENTRY_NAME(type, edit_type, path, name, vdefault, var, options, group, comment, level, depend_func, moreinfo) \
         GNOME_RES_ENTRY(type, edit_type, path, name, vdefault, var, options, NULL, NULL, group, comment, level, depend_func, NULL, moreinfo )
@@ -206,11 +207,16 @@ extern "C" {
                 GtkWidget *dialog;
                 int destroy_on_close;
                 int running;
+                int height;
+                gboolean block;
+                gboolean auto_apply;
                 void (*pref_apply_callback)(gpointer);
                 gpointer pref_apply_callback_data;
         } GnomeResPreferences;
 
         GnomeResPreferences *gnome_res_preferences_new (GnomeResEntryInfoType *res_def, const gchar *base_path);
+        void gnome_res_set_height (GnomeResPreferences *gnome_res_pref, int height);
+        void gnome_res_set_auto_apply (GnomeResPreferences *gnome_res_pref, gboolean autoapply);
         void gnome_res_set_ok_message (GnomeResPreferences *gnome_res_pref, const gchar *ok_msg);
         void gnome_res_set_apply_message (GnomeResPreferences *gnome_res_pref, const gchar *apply_msg);
         void gnome_res_set_apply_callback (GnomeResPreferences *self, void (*cb)(gpointer), gpointer data);
@@ -220,6 +226,7 @@ extern "C" {
 
         void gnome_res_read_user_config (GnomeResPreferences *gnome_res_pref);
         void gnome_res_write_user_config (GnomeResPreferences *gnome_res_pref);
+        void gnome_res_update_all (GnomeResPreferences *self);
 
         /*
          * generates a gschema "xsm file" in new allocated memory buffer returned, g_free when done with it.

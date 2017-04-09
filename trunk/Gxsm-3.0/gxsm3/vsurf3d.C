@@ -60,8 +60,8 @@
 
 //#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -176,19 +176,33 @@ namespace
          0 // debug
          );
 
-        GLuint Uniform_vertexDirect(0); // vertex Function references
+        // vertex shader Function references
+        GLuint Uniform_vertexFlat(0);
+        GLuint Uniform_vertexDirect(0);
         GLuint Uniform_vertexViewMode(0);
+        GLuint Uniform_vertexY(0);
         GLuint Uniform_vertexXChannel(0);
 
-        GLuint Uniform_evaluationColorDirect(0); // evaluation Function references
-        GLuint Uniform_evaluationColorXChannel(0);
+        //-- evaluation shader Function references
+        GLuint Uniform_evaluation_setup[2];
+        GLuint Uniform_evaluationVertexFlat(0); // Vertex == match Vertex Mode above 
+        GLuint Uniform_evaluationVertexDirect(0);
+        GLuint Uniform_evaluationVertexViewMode(0);
+        GLuint Uniform_evaluationVertexY(0);
+        GLuint Uniform_evaluationVertexXChannel(0);
+        GLuint Uniform_evaluationColorFlat(0); // Color
+        GLuint Uniform_evaluationColorDirect(0);
         GLuint Uniform_evaluationColorViewMode(0);
+        GLuint Uniform_evaluationColorXChannel(0);
+        GLuint Uniform_evaluationColorY(0);
 
-        GLuint Uniform_shadeTerrain(0); // shader Function references
+        // fragment shader Function references
+        GLuint Uniform_shadeTerrain(0);
         GLuint Uniform_shadeDebugMode(0);
         GLuint Uniform_shadeLambertian(0);
         GLuint Uniform_shadeText(0);
 
+        //
         GLuint Uniform_S3D_vertexDirect(0); // vertex
         GLuint Uniform_S3D_vertexSurface(0);
         GLuint Uniform_S3D_vertexHScaled(0);
@@ -711,13 +725,23 @@ private:
                         // get shaderFunction references
                         // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
 
-                        Uniform_vertexDirect      = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "height_direct" );
-                        Uniform_vertexViewMode    = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "height_view_mode" );
-                        Uniform_vertexXChannel    = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "height_x_channel" );
+                        Uniform_vertexFlat        = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertex_height_flat" );
+                        Uniform_vertexDirect      = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertex_height_direct" );
+                        Uniform_vertexViewMode    = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertex_height_z" );
+                        Uniform_vertexY           = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertex_height_y" );
+                        Uniform_vertexXChannel    = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertex_height_x" );
 
-                        Uniform_evaluationColorDirect   = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "colorDirect" );
-                        Uniform_evaluationColorXChannel = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "colorXChannel" );
-                        Uniform_evaluationColorViewMode = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "colorViewMode" );
+                        Uniform_evaluationVertexFlat     = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "height_flat" );
+                        Uniform_evaluationVertexDirect   = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "height_direct" );
+                        Uniform_evaluationVertexXChannel = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "height_z" );
+                        Uniform_evaluationVertexY        = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "height_y" );
+                        Uniform_evaluationVertexViewMode = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "height_x" );
+                        
+                        Uniform_evaluationColorFlat      = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "colorFlat" );
+                        Uniform_evaluationColorDirect    = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "colorDirect" );
+                        Uniform_evaluationColorViewMode  = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "colorViewMode" );
+                        Uniform_evaluationColorXChannel  = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "colorXChannel" );
+                        Uniform_evaluationColorY         = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "colorY" );
 
                         Uniform_shadeTerrain      = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
                         Uniform_shadeDebugMode    = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
@@ -1036,15 +1060,55 @@ public:
                 checkError ("render -- set Uniforms, Blocks");
 
                 // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
-                glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexDirect);
-                glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 1, &Uniform_evaluationColorDirect);
 
-                // configure shaders for surface terrain mode tesselation and select final shading mode
+                // configure shaders for surface rendering modes (using tesselation) and select final shading mode
+                // s->GLv_data.vertex_source[0] = 'D';
+                switch (s->GLv_data.vertex_source[0]){
+                case 'F': // Flat Vertex Height
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexFlat);
+                        Uniform_evaluation_setup[0] = Uniform_evaluationVertexFlat;
+                        break;
+                case 'D': // Direct Vertex Height
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexDirect);
+                        Uniform_evaluation_setup[0] = Uniform_evaluationVertexDirect;
+                        break;
+                case 'V': // View Mode Vertex Height
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexViewMode);
+                        Uniform_evaluation_setup[0] = Uniform_evaluationVertexViewMode;
+                        break;
+                case 'X': // X-Channel Direct Vertex Height
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexXChannel);
+                        Uniform_evaluation_setup[0] = Uniform_evaluationVertexXChannel;
+                        break;
+                case 'Y': // Y
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexY);
+                        Uniform_evaluation_setup[0] = Uniform_evaluationVertexY;
+                        break;
+                default: // fallback
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexDirect);
+                        Uniform_evaluation_setup[0] = Uniform_evaluationVertexDirect;
+                        break;
+                }
+                checkError ("render -- configure vertex_source");
+
+                switch (s->GLv_data.ColorSrc[0]){
+                case 'F': Uniform_evaluation_setup[1] = Uniform_evaluationColorFlat; break;
+                case 'D': Uniform_evaluation_setup[1] = Uniform_evaluationColorDirect; break; // Direct Height Color
+                case 'V': Uniform_evaluation_setup[1] = Uniform_evaluationColorViewMode; break; // View Mode Color
+                case 'X': Uniform_evaluation_setup[1] = Uniform_evaluationColorXChannel; break; // X-Channel Direct Height Color
+                case 'Y': Uniform_evaluation_setup[1] = Uniform_evaluationColorY; break; // X-Channel Direct Height Color
+                default:  Uniform_evaluation_setup[1] = Uniform_evaluationColorDirect; break; // direct -- fall back
+                }
+                glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 2, Uniform_evaluation_setup);
+
+                checkError ("render -- configure color_source");
+                
                 switch (s->GLv_data.ShadeModel[0]){
 		case 'T': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeTerrain); break;
 		case 'D': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeDebugMode); break;
                 default: glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertian); break;
                 }
+                checkError ("render -- configure shader");
                 
                 surface_plane->draw ();
 
@@ -1101,7 +1165,7 @@ public:
         void get_rotation (float *wxyz){
                 float dr = 180./M_PI;
                 wxyz[0] = dr*RotationCurrent.x;
-                wxyz[1] = dr*RotationCurrent.y;
+                wxyz[1] = -dr*RotationCurrent.y;
         };
         void set_rotation (float *wxyz){
                 float dr = M_PI/180.;
@@ -1226,18 +1290,12 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
         surface_z_data_buffer[i].w = (scan->mem2d->GetDataPkt(k,j,vi)-scan->mem2d->data->zmin)/scan->mem2d->data->zrange; // W component: Z=Height-value raw, scaled to 0..1
 
         // Z CHANNEL <= surface height via view transform function
-        val = (scan->mem2d->GetDataVMode (k,j,vi)/scan->mem2d->GetDataRange ());
-        surface_z_data_buffer[i].z = val > 0. ? val <= 1. ? val : 1. : 0.; // Z via view transform function
+        val = scan->mem2d->GetDataVMode (k,j,vi)/scan->mem2d->GetDataRange ();
+        surface_z_data_buffer[i].z = val >= 0. ? val <= 1. ? val : 1. : 0.; // Clamp Z via view transform function
 
         // normal calculation on GPU based on height map -- obsolete now here
 	// scan->mem2d->GetDataPkt_vec_normal_4F (k,j,vi, &surface_z_data_buffer[i], 1.0, XPM_x*GLv_data.hskl/scan->mem2d->data->zrange);
 
-        // push edges to zero?
-        if (GLv_data.TickFrameOptions[0]=='2'){
-                if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1)
-                        surface_z_data_buffer[i].w = 0.;
-        }
-        
         // X CHANNEL <= UV-Map to index range of GXSM SCAN CHANNEL-X:
         if (mem2d_x){
                 int u = (int) (k * (double)mem2d_x->GetNx () / (double)scan->mem2d->GetNx ());
@@ -1246,13 +1304,29 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
         } else {
                 xval = 0.5;
         }
-        surface_z_data_buffer[i].x = xval > 0. ? xval <= 1. ? xval : 1. : 0.; // X-Channel val in X component
-        surface_z_data_buffer[i].y = 0.; // Y-Channel still available
+        surface_z_data_buffer[i].x = xval >= 0. ? xval <= 1. ? xval : 1. : 0.; // X-Channel val in X component
+        surface_z_data_buffer[i].y = val; // Y-Channel still available
 
+        // push edges to zero?
+        if (GLv_data.TickFrameOptions[0]=='2' || GLv_data.TickFrameOptions[0]=='3' ){
+                if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1){
+                        surface_z_data_buffer[i].w = 0.;
+                        surface_z_data_buffer[i].x = 0.;
+                        surface_z_data_buffer[i].y = 0.;
+                        surface_z_data_buffer[i].z = 0.;
+                }
+        }
+        
         if (XPM_v > 1){
                 // adjust slice height level, renormalize
                 surface_z_data_buffer[i].w /= XPM_v;
                 surface_z_data_buffer[i].w += (GLfloat)vi*GLv_data.slice_offset*0.5/XPM_v;
+                surface_z_data_buffer[i].x /= XPM_v;
+                surface_z_data_buffer[i].x += (GLfloat)vi*GLv_data.slice_offset*0.5/XPM_v;
+                surface_z_data_buffer[i].y /= XPM_v;
+                surface_z_data_buffer[i].y += (GLfloat)vi*GLv_data.slice_offset*0.5/XPM_v;
+                surface_z_data_buffer[i].z /= XPM_v;
+                surface_z_data_buffer[i].z += (GLfloat)vi*GLv_data.slice_offset*0.5/XPM_v;
         }
 }
 
@@ -1293,6 +1367,8 @@ void Surf3d::GLvarinit(){
 	v3dControl_pref_dlg = gnome_res_preferences_new (v3dControl_pref_def, GXSM_RES_GL_PATH);
 	gnome_res_set_apply_callback (v3dControl_pref_dlg, GLupdate, (gpointer)this);
 	gnome_res_set_destroy_on_close (v3dControl_pref_dlg, FALSE);
+	gnome_res_set_auto_apply (v3dControl_pref_dlg, TRUE);
+	gnome_res_set_height (v3dControl_pref_dlg, 700);
 	gnome_res_read_user_config (v3dControl_pref_dlg);
 	
 }
@@ -1423,6 +1499,10 @@ void Surf3d::MouseControl (int mouse, double x, double y){
                 gl_tess->cursorPositionCallback(mouse, x, y);
                 gl_tess->get_rotation (GLv_data.rot);
                 gl_tess->get_translation (GLv_data.trans);
+                gl_tess->get_distance (&GLv_data.dist);
+                v3dControl_pref_dlg->block = TRUE;
+                gnome_res_update_all (v3dControl_pref_dlg);
+                v3dControl_pref_dlg->block = FALSE;
         }
 }
 
@@ -1488,15 +1568,23 @@ double Surf3d::Zoom(double x){
 	GLv_data.dist += x; 
         if (gl_tess)
                 gl_tess->set_distance (&GLv_data.dist);
-	if (v3dcontrol)
+	if (v3dcontrol){
                 v3dcontrol->rerender_scene ();
-
+                v3dControl_pref_dlg->block = TRUE;
+                gnome_res_update_all (v3dControl_pref_dlg);
+                v3dControl_pref_dlg->block = FALSE;
+        }
 	return GLv_data.dist; 
 }
 
 double Surf3d::HeightSkl(double x){ 
-	GLv_data.hskl += x; 
-	draw(); 
+	if (v3dcontrol){
+                GLv_data.hskl += x; 
+                v3dControl_pref_dlg->block = TRUE;
+                gnome_res_update_all (v3dControl_pref_dlg);
+                v3dControl_pref_dlg->block = FALSE;
+                draw();
+        }
 	return GLv_data.hskl; 
 }
 

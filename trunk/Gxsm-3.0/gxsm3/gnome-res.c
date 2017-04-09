@@ -77,18 +77,6 @@ static void gnome_res_new_user_druid_finished (GtkWidget *w, gpointer druid, gpo
 static void gnome_res_new_user_druid_cancel   (GtkWidget *w, gpointer druid, gpointer gp_self);
 #endif
 
-/* helper functions */
-/* g_free result!!! */
-gchar *gnome_res_get_resource_string_from_variable (GnomeResEntryInfoType *res);
-void gnome_res_make_resource_variable_edit_field   (GnomeResEntryInfoType *res, GtkWidget *grif, int col);
-
-/* private functions */
-void gnome_res_new_user_druid_construct            (GnomeResNewUserDruid *self);
-gint gnome_res_new_user_druid_construct_page       (GnomeResNewUserDruid *self);
-void gnome_res_new_user_druid_destroy_druidpages   (GnomeResNewUserDruid *self);
-
-#define GCONF_APP_PREFIX "/apps/gxsm3/preferences/default"
-
 GnomeResPreferences *gnome_res_preferences_new (GnomeResEntryInfoType *res_def, const gchar *base_path){
         GnomeResPreferences *self = g_new (GnomeResPreferences, 1);
         self->res_def = res_def;
@@ -98,12 +86,37 @@ GnomeResPreferences *gnome_res_preferences_new (GnomeResEntryInfoType *res_def, 
         self->pref_apply_message = NULL;
         self->dialog = NULL;
         self->running = FALSE;
+        self->height = PREF_CONFDLG_YSIZE;
+        self->auto_apply = FALSE;
+        self->block = FALSE;
         self->destroy_on_close = TRUE;
         self->pref_apply_callback = NULL;
         self->pref_apply_callback_data = NULL;
         return self;
 }
+        
+/* helper functions */
+/* g_free result!!! */
+gchar *gnome_res_get_resource_string_from_variable (GnomeResEntryInfoType *res);
+void gnome_res_make_resource_variable_edit_field   (GnomeResPreferences *self, GnomeResEntryInfoType *res, GtkWidget *grif, int col);
+void gnome_res_update_variable_edit_field (GnomeResPreferences *self, GnomeResEntryInfoType *res);
+        
 
+/* private functions */
+void gnome_res_new_user_druid_construct            (GnomeResNewUserDruid *self);
+gint gnome_res_new_user_druid_construct_page       (GnomeResNewUserDruid *self);
+void gnome_res_new_user_druid_destroy_druidpages   (GnomeResNewUserDruid *self);
+
+#define GCONF_APP_PREFIX "/apps/gxsm3/preferences/default"
+
+void gnome_res_set_height (GnomeResPreferences *self, int height){
+        self->height = height;
+}
+
+void gnome_res_set_auto_apply (GnomeResPreferences *self, gboolean autoapply){
+        self->auto_apply = autoapply;
+}
+        
 void gnome_res_destroy (GnomeResPreferences *self){
         DEBUG_VERBOSE ("gnome_res_destroy\n");
         if (self->running)
@@ -1018,6 +1031,9 @@ gchar *gnome_res_get_resource_string_from_variable (GnomeResEntryInfoType *res){
 }
 
 void gnome_res_adjustment_callback(GtkAdjustment *adj, GnomeResEntryInfoType *res){
+        GnomeResPreferences *self = (GnomeResPreferences*) g_object_get_data (G_OBJECT (adj), "nome-res-self");
+        if (self->block) return;
+        
         * ((float*) res->var) = (float) gtk_adjustment_get_value (adj);
 
         if (((GnomeResEntryInfoType *) res)->tmp) 
@@ -1059,7 +1075,7 @@ void gnome_res_fontchange_callback(GtkFontChooser *gfp, GnomeResEntryInfoType *r
 }
 
 
-void gnome_res_make_resource_variable_edit_field (GnomeResEntryInfoType *res, 
+void gnome_res_make_resource_variable_edit_field (GnomeResPreferences *self, GnomeResEntryInfoType *res, 
                                                   GtkWidget *grid, int col){
         GtkWidget *VarName;
         GtkWidget *variable=NULL;
@@ -1088,6 +1104,8 @@ void gnome_res_make_resource_variable_edit_field (GnomeResEntryInfoType *res,
                         GtkWidget *wid;
 			
                         wid = gtk_combo_box_text_new ();
+                        g_object_set_data (G_OBJECT (wid), "gnome-res-self", self);
+
                         gtk_widget_set_size_request (wid, PREF_OPT_USIZE, -1);
                         gtk_grid_attach (GTK_GRID (grid), wid, 1, col, 1, 1);
 			
@@ -1123,8 +1141,7 @@ void gnome_res_make_resource_variable_edit_field (GnomeResEntryInfoType *res,
         case GNOME_RES_EDIT_ENTRY:
                 {
                         gchar *resdata;
-                        variable = gtk_entry_new ();
-                        res->entry = variable;
+                        variable = (res->entry = gtk_entry_new ());
 			
                         resdata = gnome_res_get_resource_string_from_variable (res);
 			
@@ -1134,20 +1151,19 @@ void gnome_res_make_resource_variable_edit_field (GnomeResEntryInfoType *res,
                 break;
         case GNOME_RES_EDIT_VALSLIDER:
                 {
-                        GObject *adj = G_OBJECT (gtk_adjustment_new ( (gfloat) *((float*) (res->var)),
-                                                                      (gfloat) atof (res->options[0]), // lower
-                                                                      (gfloat) atof (res->options[1]), // upper
-                                                                      (gfloat) atof (res->options[2]), // step
-                                                                      (gfloat) atof (res->options[3]), // page inc
-                                                                      (gfloat) 0));                    // page size
-                        variable = gtk_scale_new (GTK_ORIENTATION_HORIZONTAL, GTK_ADJUSTMENT (adj));
+                        res->adjustment = gtk_adjustment_new ( (gfloat) *((float*) (res->var)),
+                                                               (gfloat) atof (res->options[0]), // lower
+                                                               (gfloat) atof (res->options[1]), // upper
+                                                               (gfloat) atof (res->options[2]), // step
+                                                               (gfloat) atof (res->options[3]), // page inc
+                                                               (gfloat) 0);                    // page size
+
+                        variable = gtk_scale_new (GTK_ORIENTATION_HORIZONTAL, res->adjustment);
                         gtk_scale_set_value_pos (GTK_SCALE (variable), GTK_POS_LEFT);
                         gtk_scale_set_digits (GTK_SCALE (variable), (gint) atoi (res->options[4]));
 
-                        // GTK3QQQ -- no replacement
-                        //			gtk_range_set_update_policy (GTK_RANGE (variable), GTK_UPDATE_DELAYED);
-			
-                        g_signal_connect (G_OBJECT (adj), "value_changed",
+                        g_object_set_data (G_OBJECT (res->adjustment), "nome-res-self", self);
+                        g_signal_connect (G_OBJECT (res->adjustment), "value_changed",
                                           G_CALLBACK (gnome_res_adjustment_callback), (gpointer) res);
                 }
                 break;
@@ -1181,12 +1197,39 @@ void gnome_res_make_resource_variable_edit_field (GnomeResEntryInfoType *res,
                 gtk_grid_attach (GTK_GRID (grid), variable,  1, col, 1, 1);
 }
 
+void gnome_res_update_variable_edit_field (GnomeResPreferences *self, GnomeResEntryInfoType *res){
+        switch (res->edit_type){
+        case GNOME_RES_EDIT_NO: break;
+        case GNOME_RES_EDIT_OPTIONS: break;
+        case GNOME_RES_EDIT_ENTRY:
+                if (res->entry){
+                        gchar *resdata = gnome_res_get_resource_string_from_variable (res);
+                        //g_message ("gnome_res_update_variable_edit_field entry %s", resdata);
+                        gtk_entry_set_text (GTK_ENTRY (res->entry), resdata);
+                        g_free (resdata);
+                }
+                break;
+        case GNOME_RES_EDIT_VALSLIDER:
+                if (res->adjustment){
+                        //g_message ("gnome_res_update_variable_edit_field adj %g", (gfloat) *((float*) (res->var)));
+                        gtk_adjustment_set_value (GTK_ADJUSTMENT (res->adjustment), (gfloat) *((float*) (res->var)));
+                }
+                break;
+        case GNOME_RES_EDIT_COLORSEL: break;
+        case GNOME_RES_EDIT_FONTSEL: break;
+        }
+}
 
 static void gnome_res_get_option_callback (GtkWidget *combo, gpointer res){
         if (((GnomeResEntryInfoType *) res)->tmp) 
                 g_free (((GnomeResEntryInfoType *) res)->tmp);
 
         ((GnomeResEntryInfoType *) res)->tmp = g_strdup (gtk_combo_box_get_active_id (GTK_COMBO_BOX (combo)));
+        GnomeResPreferences *self = (GnomeResPreferences *)g_object_get_data (G_OBJECT (combo), "gnome-res-self");
+        if (self->auto_apply && self->pref_apply_callback){
+                gnome_res_write_user_config (self);
+                (self->pref_apply_callback)(self->pref_apply_callback_data);
+        }
 }
 
 /*
@@ -1218,7 +1261,7 @@ void gnome_res_run_change_user_config (GnomeResPreferences *self, const gchar *d
         
         gtk_window_get_resizable (GTK_WINDOW (self->dialog));
         
-        gtk_widget_set_size_request  (self->dialog, PREF_CONFDLG_XSIZE, PREF_CONFDLG_YSIZE);
+        gtk_widget_set_size_request  (self->dialog, PREF_CONFDLG_XSIZE, self->height);
         
         notebook = gtk_notebook_new ();
         gtk_notebook_set_scrollable (GTK_NOTEBOOK (notebook), TRUE);
@@ -1252,7 +1295,7 @@ void gnome_res_run_change_user_config (GnomeResPreferences *self, const gchar *d
                         }
                         if (res->type == GNOME_RES_IGNORE_INFO) continue;
 			
-                        gnome_res_make_resource_variable_edit_field (res, grid, col);
+                        gnome_res_make_resource_variable_edit_field (self, res, grid, col);
 			
                         help = gtk_button_new_with_label (N_("Help"));
                         gtk_grid_attach (GTK_GRID (grid), help,  2, col++, 1, 1);
@@ -1272,6 +1315,34 @@ void gnome_res_run_change_user_config (GnomeResPreferences *self, const gchar *d
 
         g_object_set_data (G_OBJECT (self->dialog), "self", (gpointer) self);
         gtk_widget_show_all (self->dialog);
+}
+
+/*
+ * Automaticalls pareses resources and updates variables
+ */
+void gnome_res_update_all (GnomeResPreferences *self){
+        int pageno;
+	
+        GnomeResEntryInfoType *res;
+        const gchar *pagename;
+
+        if (!self->running) return;
+	
+        DEBUG_VERBOSE ("gnome_res_update_all\n");
+        
+        for (res = self->res_def, pageno=0; res->type != GNOME_RES_LAST; ++pageno){
+                if (res->type == GNOME_RES_FIRST) ++res;
+                DEBUG_VERBOSE ("ResEdit page=%d\n", pageno);
+                pagename = res->group;
+
+                for (; res->type != GNOME_RES_LAST && strcmp (res->group, pagename)==0; ++res){
+                        DEBUG_VERBOSE ("ResEdit res=%s\n", res->path);
+                        if (res->type == GNOME_RES_SEPARATOR) continue;
+                        if (res->type == GNOME_RES_IGNORE_INFO) continue;
+                        if (res->entry || res->adjustment)
+                                gnome_res_update_variable_edit_field (self, res);
+                }
+        }
 }
 
 
@@ -1481,7 +1552,7 @@ gint gnome_res_new_user_druid_construct_page (GnomeResNewUserDruid *self){
                                 // --------------
                                 hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				
-                                gnome_res_make_resource_variable_edit_field (res, hbox);
+                                gnome_res_make_resource_variable_edit_field (self, res, hbox);
 
                                 gtk_box_pack_start (GTK_BOX (vbox), hbox, PREF_IN_VBOX_PACK_MODE);
                         }

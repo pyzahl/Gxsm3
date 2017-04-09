@@ -223,7 +223,8 @@ typedef struct{
 	float tskl;
 	float slice_offset;
 
-	gchar slice_direction[8];
+	gchar vertex_source[30];
+	gchar slice_direction[30];
 	float slice_start_n[4];
 	float slice_plane_index[4];
 
@@ -263,7 +264,7 @@ typedef struct{
 	int Smooth;
 	int Ortho;
 	int Ticks;
-	gchar TickFrameOptions[16];
+	gchar TickFrameOptions[30];
 	int TransparentSlices;
 	float transparency;
 	float transparency_offset;
@@ -271,8 +272,8 @@ typedef struct{
 	float shader_mode;
         float tess_level;
         
-	gchar ShadeModel[20];
-	gchar ColorSrc[20];	
+	gchar ShadeModel[30];
+	gchar ColorSrc[30];	
 
 	float ColorContrast, ColorOffset, ColorSat;
 

@@ -1,4 +1,11 @@
 <schemalist>
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-vertex-source">
+    <value value="0" nick="Flat "/>
+    <value value="1" nick="Direct Height "/>
+    <value value="2" nick="View Mode Height "/>
+    <value value="3" nick="X-Channel "/>
+    <value value="4" nick="Y "/>
+  </enum>
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-slice-direction">
     <value value="0" nick="X "/>
     <value value="1" nick="Y "/>
@@ -10,16 +17,19 @@
     <value value="0" nick="On "/>
     <value value="1" nick="Off "/>
   </enum>
-  <enum id="org-gnome-gxsm3-gl-option-v3d-control-mat-surf-color-mode">
-    <value value="0" nick="Material Color "/>
-    <value value="1" nick="Terrain Colors "/>
-    <value value="2" nick="Palette Colors "/>
-    <value value="3" nick="RGBA "/>
-  </enum>
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-mat-surf-color-src">
-    <value value="0" nick="Uniform "/>
-    <value value="1" nick="Height "/>
-    <value value="2" nick="X-Chan "/>
+    <value value="0" nick="Flat "/>
+    <value value="1" nick="Direct Height "/>
+    <value value="2" nick="View Mode Height "/>
+    <value value="3" nick="X-Channel "/>
+    <value value="4" nick="Y "/>
+  </enum>
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-mat-surf-shade-model">
+    <value value="0" nick="Lambertian, use Palette "/>
+    <value value="1" nick="Terrain "/>
+    <value value="2" nick="Flat Material Color "/>
+    <value value="3" nick="RGBA map, Lambertian "/>
+    <value value="4" nick="Debug Shader "/>
   </enum>
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-render-op-fog">
     <value value="0" nick="true "/>
@@ -73,21 +83,21 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="dist" type="d">
-      <default>60.</default>
+      <default>10.0</default>
       <summary>Distance</summary>
       <description>
         Distance
       </description>
     </key>
     <key name="perspzfar" type="d">
-      <default>200</default>
+      <default>100</default>
       <summary>Perspective: Z far distance relative to surface width (=1))</summary>
       <description>
         Perspective: Z far distance relative to surface width (=1))
       </description>
     </key>
     <key name="perspznear" type="d">
-      <default>0.1</default>
+      <default>1</default>
       <summary>Perspective: Z near distance (to center of surface)
 </summary>
       <description>
@@ -96,7 +106,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="hskl" type="d">
-      <default>0.1</default>
+      <default>1</default>
       <summary>Height Scaling (Z scale)</summary>
       <description>
         Height Scaling (Z scale)
@@ -114,6 +124,20 @@ button and drag surface up/down!
       <summary>Volume Slice Offset Z</summary>
       <description>
         Volume Slice Offset Z
+      </description>
+    </key>
+    <key name="vertexsource" type="s">
+      <choices>
+        <choice value='Flat'/>
+        <choice value='Direct Height'/>
+        <choice value='View Mode Height'/>
+        <choice value='X-Channel'/>
+        <choice value='Y'/>
+      </choices>
+      <default>'Direct Height'</default>
+      <summary>Vertex/Geometry Height Source for Surface Model.)</summary>
+      <description>
+        Vertex/Geometry Height Source for Surface Model.)
       </description>
     </key>
     <key name="slicedirection" type="s">
@@ -166,7 +190,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="light0pos" type="ad">
-      <default>[0.2,-1,0,1]</default>
+      <default>[-0.1,-0.01,-0.7,1]</default>
       <summary>Light0: Position, relative to surface width (=1) [X, Y, Z, 1]</summary>
       <description>
         Light0: Position, relative to surface width (=1) [X, Y, Z, 1]
@@ -312,6 +336,20 @@ Used only in "Uniform/Material Color Mode".
         Surface Shininess
       </description>
     </key>
+    <key name="colorsrc" type="s">
+      <choices>
+        <choice value='Flat'/>
+        <choice value='Direct Height'/>
+        <choice value='View Mode Height'/>
+        <choice value='X-Channel'/>
+        <choice value='Y'/>
+      </choices>
+      <default>'Direct Height'</default>
+      <summary>Select Surface Color Source.</summary>
+      <description>
+        Select Surface Color Source.
+      </description>
+    </key>
     <key name="shademodel" type="s">
       <choices>
         <choice value='Lambertian, use Palette'/>
@@ -326,20 +364,8 @@ Used only in "Uniform/Material Color Mode".
         Select Surface Shading Mode.
       </description>
     </key>
-    <key name="colorsrc" type="s">
-      <choices>
-        <choice value='Uniform'/>
-        <choice value='Height'/>
-        <choice value='X-Chan'/>
-      </choices>
-      <default>'Height'</default>
-      <summary>Select Surface Color Source.</summary>
-      <description>
-        Select Surface Color Source.
-      </description>
-    </key>
     <key name="colorcontrast" type="d">
-      <default>2.0</default>
+      <default>2</default>
       <summary>Color Contrast: to scale color source</summary>
       <description>
         Color Contrast: to scale color source
@@ -416,23 +442,46 @@ Used only in "Uniform/Material Color Mode".
   <schema id="org.gnome.gxsm3.gl.v3dcontrol.renderop" path="/org/gnome/gxsm3/gl/v3dcontrol.renderop/">
     <key name="shadingmode" type="d">
       <default>0.0</default>
-      <summary>Fragment Shading Mode (0..5):
-      0,default: (ambient+specular+diffuse)*color
-      1: (ambient+diffuse)*color, 2: diffuse, 3: (ambient+specular)*color, 4: color, 5: applyFog (default)*color, distance, viewDir)
-      </summary>
-      <description>Fragment Shading Mode:
-      0,default: (ambient+specular+diffuse)*color
-      1: (ambient+diffuse)*color, 2: diffuse, 3: (ambient+specular)*color, 4: color, 5: applyFog (default)*color, distance, viewDir)
-      higher numbers may be used for special fragment shader debuging.
+      <summary>Fragment Shading Mode Selector for Debug Shader Only:
+0: (ambient+specular+diffuse)*color
+1: (ambient+diffuse)*color
+2: diffuse
+3: (ambient+specular)*color
+4: color
+5: applyFog (specular+diffuse)*color, distance, viewDir)
+*** only in debug mode/adjustfragment shader! ***
+*11: vec4(vec3(height/100.)*0.5+0.5, 1.0)
+*12: vec4(normal*0.5+0.5, 1.0)
+*13: specular*color
+*14: vec4(vec3(specular,normal.z,diffuse),1.0)
+*15: vec4(vec3(dist/100.), 1.0)
+*16: vec4(matColor, 1.0)
+</summary>
+      <description>
+        Fragment Shading Mode Selector for Debug Shader Only:
+0: (ambient+specular+diffuse)*color
+1: (ambient+diffuse)*color
+2: diffuse
+3: (ambient+specular)*color
+4: color
+5: applyFog (specular+diffuse)*color, distance, viewDir)
+*** only in debug mode/adjustfragment shader! ***
+*11: vec4(vec3(height/100.)*0.5+0.5, 1.0)
+*12: vec4(normal*0.5+0.5, 1.0)
+*13: specular*color
+*14: vec4(vec3(specular,normal.z,diffuse),1.0)
+*15: vec4(vec3(dist/100.), 1.0)
+*16: vec4(matColor, 1.0)
+
       </description>
     </key>
     <key name="tesslevel" type="d">
-      <default>2.0</default>
-      <summary>Tesselation Level Max:
- 32: normal, 1: min.
-      </summary>
+      <default>32.0</default>
+      <summary>Tesseletion Level Max:
+ 32: normal, 1: no tesselation</summary>
       <description>
-        Maximum Tesselation Level
+        Tesseletion Level Max:
+ 32: normal, 1: no tesselation
       </description>
     </key>
     <key name="clearcolor" type="ad">
@@ -469,7 +518,7 @@ Note: you usually want to use the background (clear) color.
       </description>
     </key>
     <key name="fogdensity" type="d">
-      <default>0.4</default>
+      <default>0.8</default>
       <summary>Density of fog, see fog color help!
 Effect depends on distance to object and size of object.</summary>
       <description>
@@ -555,7 +604,7 @@ Note: smooth shading is much slower but looks also much better.
         <choice value='2: XYZ Box'/>
         <choice value='3: XYZ w L Box'/>
       </choices>
-      <default>'2: XYZ Box'</default>
+      <default>'0: Simple'</default>
       <summary>Tick Frame Options)</summary>
       <description>
         Tick Frame Options)

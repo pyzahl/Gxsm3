@@ -29,24 +29,37 @@ float height_transform(float y)
 }
 
 subroutine( vertexModelType )
-float height_direct(vec2 position)
+float vertex_height_flat(vec2 position)
+{
+        return height_transform (0.5);
+}
+
+subroutine( vertexModelType )
+float vertex_height_direct(vec2 position)
 {
         vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
         return height_transform (texture (Surf3D_Z_Data, terraincoord).a);
 }
 
 subroutine( vertexModelType )
-float height_view_mode(vec2 position)
-{
-        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
-        return height_transform (texture (Surf3D_Z_Data, terraincoord).z);
-}
-
-subroutine( vertexModelType )
-float height_x_channel(vec2 position)
+float vertex_height_x(vec2 position)
 {
         vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
         return height_transform (texture (Surf3D_Z_Data, terraincoord).x);
+}
+
+subroutine( vertexModelType )
+float vertex_height_y(vec2 position)
+{
+        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
+        return height_transform (texture (Surf3D_Z_Data, terraincoord).y);
+}
+
+subroutine( vertexModelType )
+float vertex_height_z(vec2 position)
+{
+        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
+        return height_transform (texture (Surf3D_Z_Data, terraincoord).z);
 }
 
 
