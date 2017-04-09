@@ -58,7 +58,6 @@ layout (std140) uniform FragmentShading
 uniform sampler2D Surf3D_Z_Data;
 uniform sampler1D GXSM_Palette;
 
-
 // text shading
 uniform sampler2D textTexture;
 uniform vec4 textColor;
