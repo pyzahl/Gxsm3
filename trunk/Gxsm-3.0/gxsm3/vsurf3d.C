@@ -202,7 +202,7 @@ namespace
         GLuint Uniform_shadeLambertian(0);
         GLuint Uniform_shadeText(0);
 
-        //
+#if 0        //
         GLuint Uniform_S3D_vertexDirect(0); // vertex
         GLuint Uniform_S3D_vertexSurface(0);
         GLuint Uniform_S3D_vertexHScaled(0);
@@ -210,7 +210,7 @@ namespace
 
         GLuint Uniform_S3D_shadeLambertian(0);
         GLuint Uniform_S3D_shadeText(0);
-
+#endif
 } //namespace
 
 class base_plane{
@@ -460,49 +460,41 @@ public:
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-                Validated = init_buffer ();
                 Validated = init_vao ();
+                Validated = init_texture ();
 
                 checkError("text_plane::init");
                 g_message ("text_plane:: init object completed");
         };
         ~text_plane (){
 		if (Validated){
-                        // glDeleteTextures(1, &tex);
+                        glDeleteTextures(1, &TextTextureName);
                         glDeleteVertexArrays(1, &VertexArrayName);
                         glDeleteTextures(1, &TextTextureName);
                         checkError("text_plane::~delete");
                 }
         };
-        gboolean init_buffer (){
+        gboolean init_texture (){
                 checkError("text_plane:: init_buffer");
 		if (!Validated) return false;
 
-                glActiveTexture(GL_TEXTURE0); // dedicated for text
-                glGenTextures(1, &TextTextureName); // done globally
-                glBindTexture(GL_TEXTURE_2D, TextTextureName);
+                glUseProgram (S3D_ProgramName);
+
+                glActiveTexture (GL_TEXTURE2); // dedicated for text
+                glGenTextures (1, &TextTextureName); // done globally
+                glBindTexture (GL_TEXTURE_2D, TextTextureName);
                 glUniform1i (glGetUniformLocation (S3D_ProgramName, "textTexture"), 2);
 
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                glBindTexture(GL_TEXTURE_2D, 0);
-
-                //GLuint vbo;
-                //glGenBuffers(1, &vbo);
-                //glEnableVertexAttribArray(attribute_coord);
-                //glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                //glVertexAttribPointer(attribute_coord, 4, GL_FLOAT, GL_FALSE, 0, 0);
-                //---
-                glGenBuffers(1, &ArrayBufferName);
-                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                //-->> glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_STATIC_DRAW);
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-
+                glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+                glBindTexture (GL_TEXTURE_2D, 0);
+                
+               
                 return Validated && checkError("text_plane:: init_buffer completed");
         };
         gboolean init_vao (){
@@ -514,17 +506,17 @@ public:
                 glGenVertexArrays(1, &VertexArrayName);
                 glBindVertexArray(VertexArrayName);
 
-                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                glVertexAttribPointer(semantic::attr::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(0));
-                glVertexAttribPointer(semantic::attr::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(sizeof(glm::vec3)));
-                glVertexAttribPointer(semantic::attr::COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(glf::vertex_v3fn3fc4f), BUFFER_OFFSET(2*sizeof(glm::vec3)));
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-
+                glGenBuffers (1, &ArrayBufferName);
+                glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
+                // glEnableVertexAttribArray (0);
+                checkError("text_plane:: init_buffer **A");
+                glVertexAttribPointer(semantic::attr::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), BUFFER_OFFSET(0));
+                checkError("text_plane:: init_buffer **B");
+                glBindBuffer (GL_ARRAY_BUFFER, 0);
                 glEnableVertexAttribArray(semantic::attr::POSITION);
-                glEnableVertexAttribArray(semantic::attr::NORMAL);
-                glEnableVertexAttribArray(semantic::attr::COLOR);
-                glBindVertexArray(0);
+                checkError("text_plane:: init_buffer **C");
 
+                
                 g_message ("text_plane init_vao end");
 
                 return Validated && checkError("make_plane::init_vao");
@@ -534,8 +526,15 @@ public:
 
                 g_message ("text_plane::draw_text  %s", text);
                 
-                glBindVertexArray (VertexArrayName);
-                glBindTexture(GL_TEXTURE_2D, TextTextureName);
+                glUseProgram (S3D_ProgramName);
+
+                glUniform4f (glGetUniformLocation (S3D_ProgramName, "textColor"), 1,1,1,1);
+
+                glEnableVertexAttribArray (VertexArrayName);
+                glBindTexture (GL_TEXTURE_2D, TextTextureName);
+
+                checkError("make_plane::draw start");
+
                 for(const char *p = text; *p; p++) {
                         g_message ("text_plane::draw_text  '%c'", *p);
                         if(FT_Load_Char (face, *p, FT_LOAD_RENDER))
@@ -543,9 +542,6 @@ public:
  
                         g_message ("text_plane::draw_text  activate texture 2");
 
-                        checkError("make_plane::draw enter");
-
-                        glActiveTexture (GL_TEXTURE0); // dedicated for text
                         checkError("make_plane::draw actiavte texture 2");
 
                         glTexImage2D (
@@ -565,20 +561,19 @@ public:
                         float w = sx * g->bitmap.width;
                         float h = sy * g->bitmap.rows;
 
-                        // have to use vertex_v3fn3fc4f for vertext array
-                        glf::vertex_v3fn3fc4f box[4] = {
-                                { glm::vec3(x2,     0, -y2),     glm::vec3(0, 0, 0), glm::vec4(0,0,0,0) },
-                                { glm::vec3(x2 + w, 0, -y2),     glm::vec3(1, 0, 0), glm::vec4(0,0,0,0) },
-                                { glm::vec3(x2,     0, -y2 - h), glm::vec3(0, 1, 0), glm::vec4(0,0,0,0) },
-                                { glm::vec3(x2 + w, 0, -y2 - h), glm::vec3(1, 1, 0), glm::vec4(0,0,0,0) }
+                        GLfloat box[4][4] = {
+                                {x2,     -y2    , 0, 0},
+                                {x2 + w, -y2    , 1, 0},
+                                {x2,     -y2 - h, 0, 1},
+                                {x2 + w, -y2 - h, 1, 1},
                         };
-
+ 
                         g_message ("text_plane::draw_text  bind arraybuffer");
 
                         checkError("make_plane::draw prepare");
                         
                         glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
-                        glBufferData (GL_ARRAY_BUFFER, sizeof box, box, GL_DYNAMIC_DRAW);
+                        glBufferData (GL_ARRAY_BUFFER, sizeof (box), box, GL_DYNAMIC_DRAW);
                         checkError ("text_plane::draw_text  set vertex array data dyn draw");
 
                         g_message ("text_plane::draw_text  draw letter");
@@ -748,6 +743,7 @@ private:
                         Uniform_shadeLambertian   = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
                         Uniform_shadeText         = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeText" );
 
+#if 0
                         Uniform_S3D_vertexDirect    = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexDirect" );
                         Uniform_S3D_vertexSurface   = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexSurface" );
                         Uniform_S3D_vertexHScaled   = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexHScaled" );
@@ -755,7 +751,7 @@ private:
 
                         Uniform_S3D_shadeLambertian = glGetSubroutineIndex (S3D_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
                         Uniform_S3D_shadeText       = glGetSubroutineIndex (S3D_ProgramName, GL_FRAGMENT_SHADER, "shadeText" );
-
+#endif
 
                         checkError("initProgram -- get uniform subroutine references...");
 		}
@@ -1113,14 +1109,6 @@ public:
                 surface_plane->draw ();
 
 #if 0
-                glUseProgram (S3D_ProgramName);
-
-                // setup for text
-                checkError ("render -- set Uniforms Subroutines for text");
-                glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_S3D_vertexText);
-                glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_S3D_shadeText);
-                //glUniform4fv (Uniform_materialColor, 1, &s->GLv_data.box_mat_color[0]);
-                
                 checkError ("render -- draw text");
                 text_vao->draw_text ("GXSM-3.0", 1., 1., 0.1, 0.1);
 #endif
