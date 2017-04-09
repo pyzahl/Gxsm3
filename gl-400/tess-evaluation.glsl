@@ -22,10 +22,10 @@ out block {
         vec4 Color;
 } Out;
 
-
+subroutine float eval_vertexModelType(vec4 zz);
+subroutine uniform eval_vertexModelType eval_vertexModel;
 
 subroutine vec4 colorModelType(vec4 zz);
-
 subroutine uniform colorModelType colorModel;
 
 
@@ -46,11 +46,45 @@ vec2 terraincoord(vec2 position){
         // retufn vec2 (position.x + 0.5, position.y/aspect + 0.5); // normal
 }
 
-vec4 height(vec2 terraincoord)
+// == Height ===========================
+
+subroutine( eval_vertexModelType )
+float height_flat(vec4 zz)
 {
-        vec4 zz = texture (Surf3D_Z_Data, terraincoord);
-        zz.z = height_transform (zz.a);
-        return zz;
+        return height_transform (0.5);
+}
+
+subroutine( eval_vertexModelType )
+float height_direct(vec4 zz)
+{
+        return height_transform (zz.a);
+}
+
+subroutine( eval_vertexModelType )
+float height_x(vec4 zz)
+{
+        return height_transform (zz.x);
+}
+
+subroutine( eval_vertexModelType )
+float height_y(vec4 zz)
+{
+        return height_transform (zz.y);
+}
+
+subroutine( eval_vertexModelType )
+float height_z(vec4 zz)
+{
+        return height_transform (zz.z);
+}
+
+
+// == Color ==============================
+
+subroutine( colorModelType )
+vec4 colorFlat(vec4 zz)
+{
+        return texture (GXSM_Palette, 0.1*0.5);
 }
 
 subroutine( colorModelType )
@@ -60,15 +94,28 @@ vec4 colorDirect(vec4 zz)
 }
 
 subroutine( colorModelType )
+vec4 colorViewMode(vec4 zz)
+{
+        return texture (GXSM_Palette, 0.1*zz.z);
+}
+
+subroutine( colorModelType )
 vec4 colorXChannel(vec4 zz)
 {
         return texture (GXSM_Palette, 0.1*zz.x);
 }
 
 subroutine( colorModelType )
-vec4 colorViewModel(vec4 zz)
+vec4 colorY(vec4 zz)
 {
-        return texture (GXSM_Palette, 0.1*zz.z);
+        return texture (GXSM_Palette, 0.1*zz.y);
+}
+
+float height_at_delta(vec2 delta)
+{
+        vec2 tc = terraincoord (delta);
+        vec4 zz = texture (Surf3D_Z_Data, tc);
+        return eval_vertexModel (zz);
 }
 
 void main()
@@ -80,12 +127,12 @@ void main()
 	vec4 b = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, u);
 	vec4 position = mix(a, b, v);
         vec2 tc = terraincoord (position.xz);
-        vec4 zz = height (tc);
-        position.y = zz.z;
+        vec4 zz = texture (Surf3D_Z_Data, tc);
+        position.y = eval_vertexModel (zz);
 
         // calculate normal
-        vec3 pa = vec3(position.x + delta.x, height (terraincoord (position.xz + vec2 (delta.x, 0.))).z,  position.z);
-        vec3 pb = vec3(position.x, height (terraincoord (position.xz + vec2 (0., delta.y))).z, position.z + delta.y);
+        vec3 pa = vec3(position.x + delta.x, height_at_delta (position.xz + vec2 (delta.x, 0.)), position.z);
+        vec3 pb = vec3(position.x,           height_at_delta (position.xz + vec2 (0., delta.y)), position.z + delta.y);
 
         Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
         Out.Color     = colorModel (zz);

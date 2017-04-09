@@ -31,6 +31,7 @@ Surf3d_GLview_data GLvd_offset; // dummy
 
 const gchar *TrueFalse_OptionsList[]  = { "true", "false", NULL };
 const gchar *OnOff_OptionsList[]      = { "On", "Off", NULL };
+const gchar *VertexSrc_OptionsList[]  = { "Flat", "Direct Height", "View Mode Height", "X-Channel", "Y", NULL };
 const gchar *XYZ_OptionsList[]        = { "X", "Y", "Z", "Volume", "Scatter", NULL };
 const gchar *ShadeModel_OptionsList[]  = { "Lambertian, use Palette",
 					   "Terrain",
@@ -38,19 +39,19 @@ const gchar *ShadeModel_OptionsList[]  = { "Lambertian, use Palette",
 					   "RGBA map, Lambertian",
 					   "Debug Shader",
 					   NULL };
-const gchar *ColorSrc_OptionsList[]   = { "Uniform", "Height", "X-Chan", NULL };
+const gchar *ColorSrc_OptionsList[]   = { "Flat", "Direct Height", "View Mode Height", "X-Channel", "Y", NULL };
 const gchar *TickFrame_OptionsList[]  = { "0: Simple", "1: XYZ with Labels", "2: XYZ Box", "3: XYZ w L Box", NULL };
 
 const gchar *CScale_OptionsList[] = { "-3","3","0.001","0.1","4", NULL };
 const gchar *ColorContrast_OptionsList[] = { "0","2","0.001","0.1","4", NULL };
 const gchar *ColorOffset_OptionsList[]   = { "-1","1","0.01","0.1","3", NULL };
 
-const gchar *Rot_OptionsList[]   = {"-180","180","1","5","0",NULL };
-const gchar *FoV_OptionsList[]   = {"0","180","1","5","0",NULL };
+const gchar *Rot_OptionsList[]   = {"-180","180","1","1","0",NULL };
+const gchar *FoV_OptionsList[]   = {"0","180","1","1","0",NULL };
 const gchar *Dist_OptionsList[]  = {"0.1","1000","0.1","1","2",NULL };
 const gchar *PerspF_OptionsList[]  = {"10","1000","1","1","0",NULL };
 const gchar *PerspN_OptionsList[]  = {"0.1","100","1","1","2",NULL };
-const gchar *Hskl_OptionsList[]  = {"-10","10","0.001","0.01","3",NULL };
+const gchar *Hskl_OptionsList[]  = {"-10","10","0.0001","0.002","4",NULL };
 const gchar *Tskl_OptionsList[]  = {"0","20","0.1","1","1",NULL };
 const gchar *Slice_OptionsList[]  = {"-5","5","0.01","1","2",NULL };
 const gchar *Shininess_OptionsList[]  = {"0","100","0.1","1","1",NULL };
@@ -131,6 +132,12 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	( "V3dControl.View/SliceOffset", "Slice Offset", "1", GET_GLV_OFFSET (&GLvd_offset.slice_offset), 
 	  Slice_OptionsList, N_("View"),
 	  N_("Volume Slice Offset Z"), NULL
+		),
+
+	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_STRING, "V3dControl.View/VertexSource", "Direct Height", GET_GLV_OFFSET (&GLvd_offset.vertex_source[0]),
+	  VertexSrc_OptionsList, N_("View"), 
+	  N_("Vertex/Geometry Height Source for Surface Model.)")
 		),
 
 	GNOME_RES_ENTRY_OPTION
@@ -252,16 +259,16 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("Surface Material"), NULL),
 
 	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_STRING, "V3dControl.MatSurf/ColorSrc", "Direct Height", 
+	  GET_GLV_OFFSET (&GLvd_offset.ColorSrc[0]),
+	  ColorSrc_OptionsList, N_("Surface Material"), 
+	  N_("Select Surface Color Source.")
+		),
+	GNOME_RES_ENTRY_OPTION
 	( GNOME_RES_STRING, "V3dControl.MatSurf/ShadeModel", "Lambertian, use Palette",
 	  GET_GLV_OFFSET (&GLvd_offset.ShadeModel[0]),
 	  ShadeModel_OptionsList, N_("Surface Material"), 
 	  N_("Select Surface Shading Mode.")
-		),
-	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_STRING, "V3dControl.MatSurf/ColorSrc", "Height", 
-	  GET_GLV_OFFSET (&GLvd_offset.ColorSrc[0]),
-	  ColorSrc_OptionsList, N_("Surface Material"), 
-	  N_("Select Surface Color Source.")
 		),
 
 	GNOME_RES_ENTRY_SEPARATOR (N_("Surface Material"), NULL),
@@ -327,9 +334,9 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 // ============ Rendering Options
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.RenderOp/ShadingMode", "Fragment Shading Mode Selector", "0.0", GET_GLV_OFFSET (&GLvd_offset.shader_mode), 
+	( "V3dControl.RenderOp/ShadingMode", "Fragment Debug Shading Mode Selector", "0.0", GET_GLV_OFFSET (&GLvd_offset.shader_mode), 
 	  shader_mode_OptionsList, N_("Render Opt."),
-	  N_("Fragment Shading Mode:\n"
+	  N_("Fragment Shading Mode Selector for Debug Shader Only:\n"
 	     "0: (ambient+specular+diffuse)*color\n"
 	     "1: (ambient+diffuse)*color\n"
 	     "2: diffuse\n"
