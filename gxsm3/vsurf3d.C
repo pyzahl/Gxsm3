@@ -686,7 +686,7 @@ public:
 
                 double aspect = (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx;
 
-                TranslationOrigin  = glm::vec2(0, 1.0*aspect);
+                TranslationOrigin  = glm::vec2(0, 0*aspect);
               	TranslationCurrent = TranslationOrigin;
                 Translation3axis = glm::vec3(0.0f,0.0f,0.0f);
 
@@ -805,7 +805,6 @@ private:
                         Uniform_shadeTerrain      = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
                         Uniform_shadeDebugMode    = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
                         Uniform_shadeLambertian   = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
-                        Uniform_shadeText         = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeText" );
 
 #if 0
                         Uniform_S3D_vertexDirect    = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexDirect" );
