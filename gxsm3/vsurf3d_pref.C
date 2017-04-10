@@ -51,8 +51,8 @@ const gchar *FoV_OptionsList[]   = {"0","180","1","1","0",NULL };
 const gchar *Dist_OptionsList[]  = {"0.1","1000","0.1","1","2",NULL };
 const gchar *PerspF_OptionsList[]  = {"10","1000","1","1","0",NULL };
 const gchar *PerspN_OptionsList[]  = {"0.1","100","1","1","2",NULL };
-const gchar *Hskl_OptionsList[]  = {"-10","10","0.0001","0.002","4",NULL };
-const gchar *Tskl_OptionsList[]  = {"0","20","0.1","1","1",NULL };
+const gchar *Hskl_OptionsList[]  = {"-1","1","0.0001","0.002","4",NULL };
+const gchar *Tskl_OptionsList[]  = {"-10","10","0.01","0.01","1",NULL };
 const gchar *Slice_OptionsList[]  = {"-5","5","0.01","1","2",NULL };
 const gchar *Shininess_OptionsList[]  = {"0","100","0.1","1","1",NULL };
 const gchar *FogD_OptionsList[]  = {"0","100","0.001","0.01","2",NULL };
@@ -171,7 +171,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("Light0: switch On/Off")
 		),
 	GNOME_RES_ENTRY_FLOAT_VEC4
-	( "V3dControl.Light/Light0Pos", "Light0Pos", "-0.1 -0.01 -0.7 1", GET_GLV_OFFSET (&GLvd_offset.light_position[0]), N_("Light"),
+	( "V3dControl.Light/Light0Pos", "Light0Pos", "0.2 -1.0 0.0 1", GET_GLV_OFFSET (&GLvd_offset.light_position[0]), N_("Light"),
 	  N_("Light0: Position, relative to surface width (=1) [X, Y, Z, 1]"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
@@ -196,7 +196,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("Light1: switch On/Off")
 		),
 	GNOME_RES_ENTRY_FLOAT_VEC4
-	( "V3dControl.Light/Light1Pos", "Light1Pos", "-1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_position[1]), N_("Light"),
+	( "V3dControl.Light/Light1Pos", "Light1Pos", "0.5 0 -0.5 0", GET_GLV_OFFSET (&GLvd_offset.light_position[1]), N_("Light"),
 	  N_("Light1: Position, relative to surface width (=1) [X, Y, Z, 1]"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL

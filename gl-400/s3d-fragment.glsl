@@ -9,11 +9,13 @@ layout(std140, column_major) uniform;
 
 in block
 {
-        vec2 texcoord;
+        vec3 Vertex;
+        vec3 VertexEye;
+        vec2 TexCoord;
 } In;
 
 out vec4 FragColor;
 
 void main(void) {
-        FragColor = vec4(1, 1, 1, texture2D(textTexture, In.texcoord).r) * textColor;
+        FragColor = vec4(1, 1, 1, texture2D(textTexture, In.TexCoord).r) * textColor;
 }

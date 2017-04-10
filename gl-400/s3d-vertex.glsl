@@ -7,17 +7,29 @@
 #include "g3d-allshader-uniforms.glsl"
 
 #define POSITION		0
+#define TEXCOORD		1
 
 layout(std140, column_major) uniform;
 
-layout(location = POSITION) in vec4 Position;
+layout(location = POSITION) in vec4 position;
+layout(location = TEXCOORD) in vec2 texcoord;
 
 out block
 {
-        vec2 texcoord;
+        vec3 Vertex;
+        vec3 VertexEye;
+        vec2 TexCoord;
 } Out;
 
+float height_transform(float y)
+{
+        return height_scale * (y-0.5) + height_offset;  
+}
+
 void main(void) {
-        gl_Position = vec4(Position.xy, 0, 1);
-        Out.texcoord = Position.zw;
+        vec4 pos = vec4(position.x,  position.y, position.z-1, 1.);
+        Out.Vertex    = vec3 (pos.xyz);
+        Out.VertexEye = vec3 (ModelView * pos);  // eye space
+        Out.TexCoord = texcoord;
+        gl_Position = ModelViewProjection * pos;
 }
