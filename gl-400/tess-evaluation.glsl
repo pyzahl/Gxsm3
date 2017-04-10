@@ -42,8 +42,7 @@ vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
 }
 
 vec2 terraincoord(vec2 position){
-        return vec2 (0.5 - position.x, -(0.5 - (-position.y-1)/aspect)); // swapped
-        // retufn vec2 (position.x + 0.5, position.y/aspect + 0.5); // normal
+        return vec2 (0.5 - position.x, -(0.5 - (-position.y)/aspect)); // swapped
 }
 
 // == Height ===========================
