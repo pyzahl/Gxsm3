@@ -481,7 +481,6 @@ public:
 		if (Validated){
                         glDeleteTextures(1, &TextTextureName);
                         glDeleteVertexArrays(1, &VertexArrayName);
-                        glDeleteTextures(1, &TextTextureName);
                         checkError("text_plane::~delete");
                 }
         };
@@ -524,10 +523,10 @@ public:
 
                 return Validated && checkError("make_plane::init_vao");
         };
-        gboolean draw_text (const char *text, glm::vec3 pos, glm::vec3 ex, glm::vec3 ey) {
+        gboolean draw (const char *text, glm::vec3 pos, glm::vec3 ex, glm::vec3 ey) {
  		if (!Validated) return false;
 
-                //g_message ("text_plane::draw_text  %s", text);
+                //g_message ("text_plane::draw  %s", text);
 
                 GLfloat glyp_size = 48.;
                 
@@ -552,7 +551,6 @@ public:
                 checkError("make_plane::draw start");
 
                 for(const char *p = text; *p; p++) {
-                        //g_message ("text_plane::draw_text  '%c'", *p);
                         if(FT_Load_Char (face, *p, FT_LOAD_RENDER))
                                 continue;
 
@@ -611,6 +609,148 @@ private:
 	GLsizei VertexCount;
 	GLsizeiptr VertexObjectSize;
 	GLsizeiptr IndicesObjectSize;
+};
+
+class icosahedron{
+public:
+        icosahedron (){
+                Validated = true;
+                ArrayBufferName = 0;
+                VertexArrayName = 0;
+
+                g_message ("icosahedron:: init object");
+
+                Validated = init_vao ();
+                Validated = init_buffer ();
+                Validated = init_texture ();
+
+                checkError("icosahedron::init");
+                g_message ("icosahedron:: init object completed");
+        };
+        ~icosahedron (){
+		if (Validated){
+                        glDeleteVertexArrays(1, &VertexArrayName);
+                        glDeleteBuffers(1, &IndexBufferName);
+                        glDeleteBuffers(1, &ArrayBufferName);
+                        //glDeleteTextures(1, &TextTextureName);
+                        checkError("icosahedron::~delete");
+                }
+        };
+        gboolean init_buffer (){
+                checkError("make_plane:: init_buffer");
+		if (!Validated) return false;
+
+                //IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
+                const GLint Faces[] = {
+                        2, 1, 0,
+                        3, 2, 0,
+                        4, 3, 0,
+                        5, 4, 0,
+                        1, 5, 0,
+                        11, 6,  7,
+                        11, 7,  8,
+                        11, 8,  9,
+                        11, 9,  10,
+                        11, 10, 6,
+                        1, 2, 6,
+                        2, 3, 7,
+                        3, 4, 8,
+                        4, 5, 9,
+                        5, 1, 10,
+                        2,  7, 6,
+                        3,  8, 7,
+                        4,  9, 8,
+                        5, 10, 9,
+                        1, 6, 10 };
+
+                const glm::vec3 Verts[] = {
+                        glm::vec3 (0.000f,  0.000f,  1.000f),
+                        glm::vec3 (0.894f,  0.000f,  0.447f),
+                        glm::vec3 (0.276f,  0.851f,  0.447f),
+                        glm::vec3 (-0.724f,  0.526f,  0.447f),
+                        glm::vec3 (-0.724f, -0.526f,  0.447f),
+                        glm::vec3 (0.276f, -0.851f,  0.447f),
+                        glm::vec3 (0.724f,  0.526f, -0.447f),
+                        glm::vec3 (-0.276f,  0.851f, -0.447f),
+                        glm::vec3 (-0.894f,  0.000f, -0.447f),
+                        glm::vec3 (-0.276f, -0.851f, -0.447f),
+                        glm::vec3 (0.724f, -0.526f, -0.447f),
+                        glm::vec3 (0.000f,  0.000f, -1.000f)
+                };
+                VertexCount =  sizeof(Verts) / sizeof(Verts[0]);
+                IndicesCount = sizeof(Faces) / sizeof(Faces[0]);
+                
+                glGenBuffers(1, &ArrayBufferName);
+                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_STATIC_DRAW);
+                glEnableVertexAttribArray (semantic::s3d_text::POSITION);
+                glVertexAttribPointer (semantic::s3d_text::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+                glGenBuffers(1, &IndexBufferName);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Faces), Faces, GL_STATIC_DRAW);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+                return Validated && checkError("make_plane:: init_buffer");
+        };
+        gboolean init_texture (){
+                checkError("icosahedron:: init_texture");
+		if (!Validated) return false;
+
+                //glUseProgram (S3D_ProgramName);
+              
+                return Validated && checkError("text_plane:: init_buffer completed");
+        };
+        gboolean init_vao (){
+                g_message ("icosahedron init_vao");
+                checkError("icosahedron::init_vao");
+		if (!Validated) return false;
+
+                // Build a vertex array object
+                glGenVertexArrays(1, &VertexArrayName);
+                glBindVertexArray(VertexArrayName);
+
+                return Validated && checkError("make_plane::init_vao");
+        };
+        gboolean draw (glm::vec3 pos, glm::vec3 size) {
+ 		if (!Validated) return false;
+
+                glDisable (GL_CULL_FACE);
+                glEnable (GL_BLEND);
+                glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                
+                glUseProgram (S3D_ProgramName);
+
+                glUniform4f (glGetUniformLocation (S3D_ProgramName, "textColor"), 1,0.1,0.5,0.7);
+
+                //glBindTexture (GL_TEXTURE_2D, TextTextureName);
+
+                glBindVertexArray(VertexArrayName);
+                glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
+                glEnableVertexAttribArray (semantic::s3d_text::POSITION);
+                glEnableVertexAttribArray (semantic::s3d_text::TEXCOORD);
+
+                glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
+
+                glPatchParameteri(GL_PATCH_VERTICES, 16);       // tell OpenGL that every patch has 16 verts
+                glDrawArrays(GL_PATCHES, 0, VertexCount); // draw a bunch of patches
+
+                glBindBuffer (GL_ARRAY_BUFFER, 0);
+                glBindVertexArray(0);
+                //glBindTexture(GL_TEXTURE_2D, 0);
+
+                glDisable (GL_BLEND);
+                
+                return Validated && checkError("text_plane::draw end");
+        };
+private:        
+        bool Validated;
+	GLuint ArrayBufferName;
+	GLuint IndexBufferName;
+	GLuint VertexArrayName;
+	GLsizei VertexCount;
+	GLsizei IndicesCount;
 };
 
 
@@ -1119,15 +1259,15 @@ public:
 #define MAKE_GLM_VEC3X(V) glm::vec3(V[0],V[1],V[2])
                 if (s->GLv_data.light[2][1] == 'n'){
                         checkError ("render -- draw text");
-                        //text_vao->draw_text ("GXSM-3.0", MAKE_GLM_VEC3X(s->GLv_data.light_position[1]), glm::vec3 (0,1,0), glm::vec3 (-0.1, 0.1, 0.1));
+                        //text_vao->draw ("GXSM-3.0", MAKE_GLM_VEC3X(s->GLv_data.light_position[1]), glm::vec3 (0,1,0), glm::vec3 (-0.1, 0.1, 0.1));
                         glm::vec3 ex=glm::vec3 (0.1,0,0);
                         glm::vec3 ey=glm::vec3 (0,0.1,0);
                         glm::vec3 ez=glm::vec3 (0,0,0.1);
-                        text_vao->draw_text ("GXSM-3.0", glm::vec3(0.5, -0.1, -0.5), ex, ey);
-                        text_vao->draw_text ("x -->", glm::vec3(0, 0, -0.5), ex, ey);
-                        text_vao->draw_text ("<-- X top", glm::vec3(0, 0,  0.5), -ex, ey); 
-                        text_vao->draw_text ("y -->", glm::vec3(0.5, 0, 0), ez, ey);
-                        text_vao->draw_text ("Y right", glm::vec3(-0.5, 0, 0), -ez, ey);
+                        text_vao->draw ("GXSM-3.0", glm::vec3(0.5, -0.1, -0.5), ex, ey);
+                        text_vao->draw ("x -->", glm::vec3(0, 0, -0.5), ex, ey);
+                        text_vao->draw ("<-- X top", glm::vec3(0, 0,  0.5), -ex, ey); 
+                        text_vao->draw ("y -->", glm::vec3(0.5, 0, 0), ez, ey);
+                        text_vao->draw ("Y right", glm::vec3(-0.5, 0, 0), -ez, ey);
                 }
                 
 		return checkError("render");
