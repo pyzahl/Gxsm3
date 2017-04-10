@@ -28,6 +28,10 @@ float height_transform(float y)
         return height_scale * (y-0.5) + height_offset;  
 }
 
+vec2 terraincoord(vec2 position){
+        return vec2 (0.5 - position.x, -(0.5 - (-position.y-1)/aspect)); // swapped
+}
+
 subroutine( vertexModelType )
 float vertex_height_flat(vec2 position)
 {
@@ -37,34 +41,30 @@ float vertex_height_flat(vec2 position)
 subroutine( vertexModelType )
 float vertex_height_direct(vec2 position)
 {
-        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
-        return height_transform (texture (Surf3D_Z_Data, terraincoord).a);
+        return height_transform (texture (Surf3D_Z_Data, terraincoord(position)).a);
 }
 
 subroutine( vertexModelType )
 float vertex_height_x(vec2 position)
 {
-        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
-        return height_transform (texture (Surf3D_Z_Data, terraincoord).x);
+        return height_transform (texture (Surf3D_Z_Data, terraincoord(position)).x);
 }
 
 subroutine( vertexModelType )
 float vertex_height_y(vec2 position)
 {
-        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
-        return height_transform (texture (Surf3D_Z_Data, terraincoord).y);
+        return height_transform (texture (Surf3D_Z_Data, terraincoord(position)).y);
 }
 
 subroutine( vertexModelType )
 float vertex_height_z(vec2 position)
 {
-        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
-        return height_transform (texture (Surf3D_Z_Data, terraincoord).z);
+        return height_transform (texture (Surf3D_Z_Data, terraincoord(position)).z);
 }
 
 
 void main()
 {
-        Out.Vertex = vec3 (PositionXZ.x, vertexModel (PositionXZ), PositionXZ.y);
+        Out.Vertex = vec3 (PositionXZ.x, vertexModel (PositionXZ), -PositionXZ.y-1);
         gl_Position = vec4 (Out.Vertex, 1.0);
 }
