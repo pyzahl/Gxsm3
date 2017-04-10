@@ -234,6 +234,7 @@ public:
                         g_free (vertex);
                         glDeleteVertexArrays(1, &VertexArrayName);
                         glDeleteBuffers(1, &IndexBufferName);
+                        glDeleteBuffers(1, &ArrayBufferName);
                         checkError("make_plane::~delete");
                 }
         };
@@ -260,13 +261,13 @@ public:
 
                 // Build a vertex array object
                 glGenVertexArrays(1, &VertexArrayName);
+
                 glBindVertexArray(VertexArrayName);
-
                 glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                glVertexAttribPointer(semantic::attr::POSITION, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), BUFFER_OFFSET(0));
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-                glEnableVertexAttribArray(semantic::attr::POSITION);
+                glVertexAttribPointer(semantic::attr::POSITION, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), BUFFER_OFFSET(0));
+
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
                 glBindVertexArray(0);
 
                 g_message ("base_plane init_vao end");
@@ -276,10 +277,23 @@ public:
         gboolean draw (){
 		if (!Validated) return false;
                 
-                glBindVertexArray(VertexArrayName);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
-                glPatchParameteri(GL_PATCH_VERTICES, 4);
-                glDrawElements(GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
+                glBindVertexArray (VertexArrayName);
+                glEnableVertexAttribArray(semantic::attr::POSITION);
+
+                glEnableVertexAttribArray (TesselationTextureName[0]);
+                glEnableVertexAttribArray (TesselationTextureName[1]);
+                glBindTexture (GL_TEXTURE_2D, TesselationTextureName[0]);
+                glBindTexture (GL_TEXTURE_2D, TesselationTextureName[1]);
+
+                glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
+                glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
+                glPatchParameteri (GL_PATCH_VERTICES, 4);
+
+                glDrawElements (GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
+
+                glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+                glBindBuffer (GL_ARRAY_BUFFER, 0);
+                glBindVertexArray (0);
 
                 return Validated && checkError("make_plane::draw");
         };
@@ -454,11 +468,8 @@ public:
                         g_warning ("Could not open font.");
                 }
 
-                FT_Set_Pixel_Sizes(face, 0, 48);
+                FT_Set_Pixel_Sizes (face, 0, 48);
                 g = face->glyph;
-
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
                 Validated = init_vao ();
                 Validated = init_texture ();
@@ -493,7 +504,6 @@ public:
 
                 glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
                 glBindTexture (GL_TEXTURE_2D, 0);
-                
                
                 return Validated && checkError("text_plane:: init_buffer completed");
         };
@@ -508,41 +518,43 @@ public:
 
                 glGenBuffers (1, &ArrayBufferName);
                 glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
-                // glEnableVertexAttribArray (0);
-                checkError("text_plane:: init_buffer **A");
-                glVertexAttribPointer(semantic::attr::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), BUFFER_OFFSET(0));
-                checkError("text_plane:: init_buffer **B");
+                glVertexAttribPointer(semantic::s3d_text::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4)+sizeof(glm::vec2), BUFFER_OFFSET(0));
+                glVertexAttribPointer(semantic::s3d_text::TEXCOORD, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec4)+sizeof(glm::vec2), BUFFER_OFFSET(sizeof(glm::vec4)));
                 glBindBuffer (GL_ARRAY_BUFFER, 0);
-                glEnableVertexAttribArray(semantic::attr::POSITION);
-                checkError("text_plane:: init_buffer **C");
-
-                
-                g_message ("text_plane init_vao end");
 
                 return Validated && checkError("make_plane::init_vao");
         };
-        gboolean draw_text (const char *text, float x, float y, float sx, float sy) {
+        gboolean draw_text (const char *text, glm::vec3 pos, glm::vec3 ex, glm::vec3 ey) {
  		if (!Validated) return false;
 
-                g_message ("text_plane::draw_text  %s", text);
+                //g_message ("text_plane::draw_text  %s", text);
+
+                GLfloat glyp_size = 48.;
+                
+                ex /= -glyp_size;
+                ey /= glyp_size;
+                
+                glDisable (GL_CULL_FACE);
+                glEnable (GL_BLEND);
+                glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                 
                 glUseProgram (S3D_ProgramName);
 
-                glUniform4f (glGetUniformLocation (S3D_ProgramName, "textColor"), 1,1,1,1);
+                glUniform4f (glGetUniformLocation (S3D_ProgramName, "textColor"), 1,0.1,0.5,0.7);
 
-                glEnableVertexAttribArray (VertexArrayName);
                 glBindTexture (GL_TEXTURE_2D, TextTextureName);
+
+                glBindVertexArray(VertexArrayName);
+                glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
+                glEnableVertexAttribArray (semantic::s3d_text::POSITION);
+                glEnableVertexAttribArray (semantic::s3d_text::TEXCOORD);
 
                 checkError("make_plane::draw start");
 
                 for(const char *p = text; *p; p++) {
-                        g_message ("text_plane::draw_text  '%c'", *p);
+                        //g_message ("text_plane::draw_text  '%c'", *p);
                         if(FT_Load_Char (face, *p, FT_LOAD_RENDER))
                                 continue;
- 
-                        g_message ("text_plane::draw_text  activate texture 2");
-
-                        checkError("make_plane::draw actiavte texture 2");
 
                         glTexImage2D (
                                       GL_TEXTURE_2D,
@@ -555,39 +567,37 @@ public:
                                       GL_UNSIGNED_BYTE,
                                       g->bitmap.buffer
                                       );
- 
-                        float x2 =  x + sx * g->bitmap_left;
-                        float y2 = -y - sy * g->bitmap_top;
-                        float w = sx * g->bitmap.width;
-                        float h = sy * g->bitmap.rows;
 
-                        GLfloat box[4][4] = {
-                                {x2,     -y2    , 0, 0},
-                                {x2 + w, -y2    , 1, 0},
-                                {x2,     -y2 - h, 0, 1},
-                                {x2 + w, -y2 - h, 1, 1},
+                        //glm::mat4
+                        glm::vec3 pg = pos + (GLfloat)g->bitmap_left*ex + (GLfloat)g->bitmap_top*ey;
+                        GLfloat w = g->bitmap.width;
+                        GLfloat h = g->bitmap.rows;
+                        typedef struct {
+                                glm::vec4 p;
+                                glm::vec2 t;
+                        } glypvert;
+
+                        glypvert box[4] = { // X,Y,Z,r,  Tx,Ty
+                                { glm::vec4 (pg,               1), glm::vec2(0,0) },
+                                { glm::vec4 (pg + w*ex,        1), glm::vec2(1,0) },
+                                { glm::vec4 (pg - h*ey,        1), glm::vec2(0,1) },
+                                { glm::vec4 (pg + w*ex - h*ey, 1), glm::vec2(1,1) }
                         };
- 
-                        g_message ("text_plane::draw_text  bind arraybuffer");
 
-                        checkError("make_plane::draw prepare");
-                        
                         glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
                         glBufferData (GL_ARRAY_BUFFER, sizeof (box), box, GL_DYNAMIC_DRAW);
-                        checkError ("text_plane::draw_text  set vertex array data dyn draw");
 
-                        g_message ("text_plane::draw_text  draw letter");
                         glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
-                        checkError("text_plane::draw_text  draw arrays");
                         glBindBuffer (GL_ARRAY_BUFFER, 0);
 
-                        checkError("text_plane::draw letter completed");
-
-                        x += (g->advance.x/64) * sx;
-                        y += (g->advance.y/64) * sy;
+                        pos += (GLfloat)(g->advance.x/64)*ex + (GLfloat)(g->advance.y/64)*ey;
                 }
+                glBindBuffer (GL_ARRAY_BUFFER, 0);
                 glBindVertexArray(0);
                 glBindTexture(GL_TEXTURE_2D, 0);
+
+                glDisable (GL_BLEND);
+                
                 return Validated && checkError("text_plane::draw end");
         };
 private:        
@@ -802,6 +812,10 @@ private:
                 bind_block (Tesselation_ProgramName, SurfaceGeometry_block, "SurfaceGeometry", sizeof(ubo::uniform_surface_geometry));
                 bind_block (Tesselation_ProgramName, FragmentShading_block, "FragmentShading", sizeof(ubo::uniform_fragment_shading));
 
+                bind_block (S3D_ProgramName, ModelViewMat_block, "ModelViewMatrices", sizeof(ubo::uniform_model_view));
+                bind_block (S3D_ProgramName, SurfaceGeometry_block, "SurfaceGeometry", sizeof(ubo::uniform_surface_geometry));
+                bind_block (S3D_ProgramName, FragmentShading_block, "FragmentShading", sizeof(ubo::uniform_fragment_shading));
+                
                 // create surface base plane
                 surface_plane = new base_plane ((s->get_scan ())->mem2d, 128, // 128,
                                                 (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx,
@@ -851,10 +865,8 @@ private:
 		checkError("initTextures");
 		if (!Validated) return false;
 
-#if 0
                 if (!text_vao)
                         text_vao = new text_plane ();
-#endif
 
 		return checkError("initText Plane VAO");
         };
@@ -950,6 +962,7 @@ public:
 		if (!Validated) return false;
 
                 glTextureSubImage2D(TesselationTextureName[0], 0, 0, line, numx, num_lines, GL_RGBA, GL_FLOAT, &Surf3D_Z_Data[line*numx]);
+                // update palette -- only on request
                 //glTextureSubImage1D(TesselationTextureName[1], 0, 0, GXSM_GPU_PALETTE_ENTRIES, GL_RGBA, GL_FLOAT, &Surf3D_Palette);
 
 		return checkError("initTextures");
@@ -1048,11 +1061,6 @@ public:
                 glUniform1f (Uniform_lod_factor, 4.0);
                 glUniform1f (Uniform_tess_level, s->GLv_data.tess_level);
                 
-                glEnableVertexAttribArray(TesselationTextureName[0]);
-                glEnableVertexAttribArray(TesselationTextureName[1]);
-                glBindTexture(GL_TEXTURE_2D, TesselationTextureName[0]);
-                glBindTexture(GL_TEXTURE_2D, TesselationTextureName[1]);
-
                 checkError ("render -- set Uniforms, Blocks");
 
                 // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
@@ -1108,10 +1116,19 @@ public:
                 
                 surface_plane->draw ();
 
-#if 0
-                checkError ("render -- draw text");
-                text_vao->draw_text ("GXSM-3.0", 1., 1., 0.1, 0.1);
-#endif
+#define MAKE_GLM_VEC3X(V) glm::vec3(V[0],V[1],V[2])
+                if (s->GLv_data.light[2][1] == 'n'){
+                        checkError ("render -- draw text");
+                        //text_vao->draw_text ("GXSM-3.0", MAKE_GLM_VEC3X(s->GLv_data.light_position[1]), glm::vec3 (0,1,0), glm::vec3 (-0.1, 0.1, 0.1));
+                        glm::vec3 ex=glm::vec3 (0.1,0,0);
+                        glm::vec3 ey=glm::vec3 (0,0.1,0);
+                        glm::vec3 ez=glm::vec3 (0,0,0.1);
+                        text_vao->draw_text ("GXSM-3.0", glm::vec3(0.5, -0.1, -0.5), ex, ey);
+                        text_vao->draw_text ("x -->", glm::vec3(0, 0, -0.5), ex, ey);
+                        text_vao->draw_text ("<-- X top", glm::vec3(0, 0,  0.5), -ex, ey); 
+                        text_vao->draw_text ("y -->", glm::vec3(0.5, 0, 0), ez, ey);
+                        text_vao->draw_text ("Y right", glm::vec3(-0.5, 0, 0), -ez, ey);
+                }
                 
 		return checkError("render");
                 

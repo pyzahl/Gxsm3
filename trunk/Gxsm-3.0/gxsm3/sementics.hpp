@@ -4,6 +4,14 @@
 
 namespace semantic
 {
+        namespace s3d_text
+        {
+                enum type
+                        {
+                                POSITION = 0,
+                                TEXCOORD = 1
+                        };
+        };
 	namespace buffer
 	{
 		enum type
