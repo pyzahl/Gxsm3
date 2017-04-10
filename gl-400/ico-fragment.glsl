@@ -10,9 +10,8 @@ in vec3 gFacetNormal;
 in vec3 gTriDistance;
 in vec3 gPatchDistance;
 in float gPrimitive;
-uniform vec3 LightPosition;
-uniform vec3 DiffuseMaterial;
-uniform vec3 AmbientMaterial;
+
+//uniform vec3 LightPosition;
 
 float amplify(float d, float scale, float offset)
 {
@@ -25,9 +24,10 @@ float amplify(float d, float scale, float offset)
 void main()
 {
     vec3 N = normalize(gFacetNormal);
-    vec3 L = LightPosition;
+    //vec3 L = LightPosition;
+    vec3 L = eyePosWorld.xyz;
     float df = abs(dot(N, L));
-    vec3 color = AmbientMaterial + df * DiffuseMaterial;
+    vec3 color = ambientColor.xyz + df * diffuseColor.xyz;
 
     float d1 = min(min(gTriDistance.x, gTriDistance.y), gTriDistance.z);
     float d2 = min(min(gPatchDistance.x, gPatchDistance.y), gPatchDistance.z);
