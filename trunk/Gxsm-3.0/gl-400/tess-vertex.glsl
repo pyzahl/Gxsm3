@@ -29,7 +29,7 @@ float height_transform(float y)
 }
 
 vec2 terraincoord(vec2 position){
-        return vec2 (0.5 - position.x, -(0.5 - (-position.y-1)/aspect)); // swapped
+        return vec2 (0.5 - position.x, -(0.5 - (-position.y)/aspect)); // swapped
 }
 
 subroutine( vertexModelType )
@@ -65,6 +65,6 @@ float vertex_height_z(vec2 position)
 
 void main()
 {
-        Out.Vertex = vec3 (PositionXZ.x, vertexModel (PositionXZ), -PositionXZ.y-1);
+        Out.Vertex = vec3 (PositionXZ.x, vertexModel (PositionXZ), -PositionXZ.y);
         gl_Position = vec4 (Out.Vertex, 1.0);
 }

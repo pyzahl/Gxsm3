@@ -27,7 +27,7 @@ float height_transform(float y)
 }
 
 void main(void) {
-        vec4 pos = vec4(position.x,  position.y, position.z-1, 1.);
+        vec4 pos = vec4(position.x,  position.y, position.z, 1.);
         Out.Vertex    = vec3 (pos.xyz);
         Out.VertexEye = vec3 (ModelView * pos);  // eye space
         Out.TexCoord = texcoord;
