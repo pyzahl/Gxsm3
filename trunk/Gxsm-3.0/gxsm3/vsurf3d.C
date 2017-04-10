@@ -130,16 +130,23 @@ namespace
 	std::string const TESSELATION_FRAGMENT_SHADER("tess-fragment.glsl");
 	GLuint Tesselation_ProgramName(0);
 
-        // regular non tesselation shaders
+        // simple text shaders
         std::string const S3D_VERTEX_SHADER("s3d-vertex.glsl");
 	std::string const S3D_FRAGMENT_SHADER("s3d-fragment.glsl");
 	GLuint S3D_ProgramName(0);
 
+        // generic vertex tesselation shaders
+	std::string const ICO_TESS_VERTEX_SHADER("ico-vertex.glsl");
+	std::string const ICO_TESS_CONTROL_SHADER("ico-control.glsl");
+	std::string const ICO_TESS_EVALUATION_SHADER("ico-evaluation.glsl");
+	std::string const ICO_TESS_GEOMETRY_SHADER("ico-geometry.glsl");
+	std::string const ICO_TESS_FRAGMENT_SHADER("ico-fragment.glsl");
+	GLuint IcoTess_ProgramName(0);
         // make UBO for tranformation, fragment/lights, geometry, textures
         
-	GLint Uniform_screen_size(0); // vec2
-	GLint Uniform_tess_level(0); // float
-	GLint Uniform_lod_factor(0); // float
+	GLuint Uniform_screen_size(0); // vec2
+	GLuint Uniform_tess_level(0); // float
+	GLuint Uniform_lod_factor(0); // float
         GLsizei const TesselationTextureCount(2);
 	GLuint TesselationTextureName[2];
 
@@ -200,7 +207,6 @@ namespace
         GLuint Uniform_shadeTerrain(0);
         GLuint Uniform_shadeDebugMode(0);
         GLuint Uniform_shadeLambertian(0);
-        GLuint Uniform_shadeText(0);
 
 #if 0        //
         GLuint Uniform_S3D_vertexDirect(0); // vertex
@@ -211,6 +217,13 @@ namespace
         GLuint Uniform_S3D_shadeLambertian(0);
         GLuint Uniform_S3D_shadeText(0);
 #endif
+
+        GLuint Uniform_IcoTess_TessLevelInner(0);
+        GLuint Uniform_IcoTess_TessLevelOuter(0);
+
+        GLuint Uniform_TipPosition(0);
+        GLuint Uniform_TipColor(0);
+        
 } //namespace
 
 class base_plane{
@@ -244,11 +257,13 @@ public:
 
                 glGenBuffers(1, &ArrayBufferName);
                 glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
+                //glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_DYNAMIC_DRAW);
                 glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_STATIC_DRAW);
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                 glGenBuffers(1, &IndexBufferName);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
+                //glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndicesObjectSize, indices, GL_DYNAMIC_DRAW);
                 glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndicesObjectSize, indices, GL_STATIC_DRAW);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
@@ -772,6 +787,30 @@ private:
 			Validated = Validated && Compiler.check_program(S3D_ProgramName);
 		}
 
+		if (Validated){
+                        compiler Compiler;
+                        GLuint VertexShader     = Compiler.create (GL_VERTEX_SHADER, getDataDirectory() + ICO_TESS_VERTEX_SHADER, CMD_ARGS_FOR_SHADERS);
+                        GLuint ControlShader    = Compiler.create (GL_TESS_CONTROL_SHADER, getDataDirectory() + ICO_TESS_CONTROL_SHADER, CMD_ARGS_FOR_SHADERS);
+                        GLuint EvaluationShader = Compiler.create (GL_TESS_EVALUATION_SHADER, getDataDirectory() + ICO_TESS_EVALUATION_SHADER, CMD_ARGS_FOR_SHADERS);
+                        GLuint GeometryShader   = Compiler.create (GL_GEOMETRY_SHADER, getDataDirectory() + ICO_TESS_GEOMETRY_SHADER, CMD_ARGS_FOR_SHADERS);
+                        GLuint FragmentShader   = Compiler.create (GL_FRAGMENT_SHADER, getDataDirectory() + ICO_TESS_FRAGMENT_SHADER, CMD_ARGS_FOR_SHADERS);
+
+                        if (!VertexShader || !ControlShader || !EvaluationShader || !GeometryShader || !FragmentShader)
+                                Validated = false;
+                        else {
+                                IcoTess_ProgramName = glCreateProgram ();
+                                glAttachShader (IcoTess_ProgramName, VertexShader);
+                                glAttachShader (IcoTess_ProgramName, ControlShader);
+                                glAttachShader (IcoTess_ProgramName, EvaluationShader);
+                                glAttachShader (IcoTess_ProgramName, GeometryShader);
+                                glAttachShader (IcoTess_ProgramName, FragmentShader);
+                                glLinkProgram (IcoTess_ProgramName);
+                        }
+                        
+			Validated = Validated && Compiler.check();
+			Validated = Validated && Compiler.check_program(IcoTess_ProgramName);
+		}
+
                 
 
 		if(Validated){
@@ -780,6 +819,14 @@ private:
                         Uniform_tess_level    = glGetUniformLocation (Tesselation_ProgramName, "tess_level");  // float
 
                         checkError("initProgram -- Tesselation_ProgramName: get uniform variable references...");
+
+                        Uniform_IcoTess_TessLevelInner = glGetUniformLocation (IcoTess_ProgramName, "TessLevelInner");
+                        Uniform_IcoTess_TessLevelOuter = glGetUniformLocation (IcoTess_ProgramName, "TessLevelOuter");
+
+                        Uniform_TipPosition  = glGetUniformLocation (IcoTess_ProgramName, "TipPosition");
+                        Uniform_TipColor     = glGetUniformLocation (IcoTess_ProgramName, "TipColor");
+
+                        checkError("initProgram -- IcoTess_ProgramName: get uniform variable references...");
 
                         // get shaderFunction references
                         // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.

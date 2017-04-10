@@ -62,8 +62,9 @@ uniform sampler1D GXSM_Palette;
 uniform sampler2D textTexture;
 uniform vec4 textColor;
 
-
-
+// Tip
+uniform vec4 TipPosition;
+uniform vec4 TipColor;
 
 
 
