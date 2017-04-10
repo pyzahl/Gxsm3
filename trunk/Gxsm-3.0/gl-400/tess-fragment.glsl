@@ -276,15 +276,6 @@ vec4 shadeLambertianMaterialColor(vec3 vertex, vec3 vertexEye,
                             transparency_offset+transparency*materialColor.a);
 }
 
-// simple text shader
-subroutine( shadeModelType )
-vec4 shadeText(vec3 vertex, vec3 vertexEye, 
-               vec3 normal, vec4 color)
-{
-        return vec4(1., 1., 1., texture2D(textTexture, normal.xy).r) * textColor;
-}
-
-
 
 void main()
 {
