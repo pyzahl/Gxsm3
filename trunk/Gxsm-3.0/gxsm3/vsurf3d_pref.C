@@ -166,18 +166,19 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("Light"), NULL),
 
 	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_STRING, "V3dControl.Light/Light0", "On", GET_GLV_OFFSET (&GLvd_offset.light[0][0]),
+	( GNOME_RES_STRING, "V3dControl.Light/Sun", "On", GET_GLV_OFFSET (&GLvd_offset.light[0][0]),
 	  OnOff_OptionsList, N_("Light"), 
 	  N_("Light0: switch On/Off")
 		),
 	GNOME_RES_ENTRY_FLOAT_VEC4
-	( "V3dControl.Light/Light0Pos", "Light0Pos", "0.2 -1.0 0.0 1", GET_GLV_OFFSET (&GLvd_offset.light_position[0]), N_("Light"),
-	  N_("Light0: Position, relative to surface width (=1) [X, Y, Z, 1]"), NULL
+	( "V3dControl.Light/Light0Pos", "LightSunDirection", "-0.2 0.7 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_position[0]), N_("Light"),
+	  N_("Sun Light Direction (Incident Vector) [dX, dY, dZ, 1]"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.Light/Light0Spec", "Light0Spec", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_specular[0]), N_("Light"),
+	( "V3dControl.Light/Light0Spec", "LightSunColor", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_specular[0]), N_("Light"),
 	  N_("Light0: Specular Light Color [red, green, blue, alpha]"), NULL
 		),
+#if 0
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.Light/Light0Diff", "Light0Diff", "0.4 0.4 0.4 1", GET_GLV_OFFSET (&GLvd_offset.light_diffuse[0]), N_("Light"),
 	  N_("Light0: Diffuse Light Color [red, green, blue, alpha]"), NULL
@@ -186,23 +187,26 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	( "V3dControl.Light/Light0Amb", "Light0Amb", "0.1 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_ambient[0]), N_("Light"),
 	  N_("Light0: Ambient Light Color [red, green, blue, alpha]"), NULL
 		),
-
+#endif
 
 	GNOME_RES_ENTRY_SEPARATOR (N_("Light"), NULL),
 
 	GNOME_RES_ENTRY_AUTO_PATH_OPTION
-	( GNOME_RES_STRING, "V3dControl.Light/Light1", "On", GET_GLV_OFFSET (&GLvd_offset.light[1][0]),
+	( GNOME_RES_STRING, "V3dControl.Light/Labels", "On", GET_GLV_OFFSET (&GLvd_offset.light[1][0]),
 	  OnOff_OptionsList, N_("Light"), 
 	  N_("Light1: switch On/Off")
 		),
+#if 0
 	GNOME_RES_ENTRY_FLOAT_VEC4
 	( "V3dControl.Light/Light1Pos", "Light1Pos", "0.5 0 -0.5 0", GET_GLV_OFFSET (&GLvd_offset.light_position[1]), N_("Light"),
 	  N_("Light1: Position, relative to surface width (=1) [X, Y, Z, 1]"), NULL
 		),
+#endif
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.Light/Light1Spec", "Light1Spec", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_specular[1]), N_("Light"),
+	( "V3dControl.Light/LabelColor", "LabelColor", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_specular[1]), N_("Light"),
 	  N_("Light1: Specular Light Color [red, green, blue, alpha]"), NULL
 		),
+#if 0
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.Light/Light1Diff", "Light1Diff", "0.4 0.4 0.4 1", GET_GLV_OFFSET (&GLvd_offset.light_diffuse[1]), N_("Light"),
 	  N_("Light1: Diffuse Light Color [red, green, blue, alpha]"), NULL
@@ -211,37 +215,39 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	( "V3dControl.Light/Light1Amb", "Light1Amb", "0.1 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_ambient[1]), N_("Light"),
 	  N_("Light1: Ambient Light Color [red, green, blue, alpha]"), NULL
 		),
-
+#endif
 	GNOME_RES_ENTRY_SEPARATOR (N_("Light"), NULL),
 
 	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_STRING, "V3dControl.Light/Light2", "Off", GET_GLV_OFFSET (&GLvd_offset.light[2][0]),
+	( GNOME_RES_STRING, "V3dControl.Light/Tip", "Off", GET_GLV_OFFSET (&GLvd_offset.light[2][0]),
 	  OnOff_OptionsList, N_("Light"), 
 	  N_("Light2: switch On/Off")
 		),
 	GNOME_RES_ENTRY_FLOAT_VEC4
-	( "V3dControl.Light/Light2Pos", "Light2Pos", "1 1 1 0", GET_GLV_OFFSET (&GLvd_offset.light_position[2]), N_("Light"),
+	( "V3dControl.Light/TipGap", "TipGap", "1 1 1 0", GET_GLV_OFFSET (&GLvd_offset.light_position[2]), N_("Light"),
 	  N_("Light2: Position, relative to surface width (=1) [X, Y, Z, 0]"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.Light/Light2Spec", "Light2Spec", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_specular[2]), N_("Light"),
+	( "V3dControl.Light/TipColorPP", "TipColorPP", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_specular[2]), N_("Light"),
 	  N_("Light2: Specular Light Color [red, green, blue, alpha]"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.Light/Light2Diff", "Light2Diff", "0.1 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_diffuse[2]), N_("Light"),
+	( "V3dControl.Light/TipColorApx", "TipColorApx", "0.1 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_diffuse[2]), N_("Light"),
 	  N_("Light2: Diffuse Light Color [red, green, blue, alpha]"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.Light/Light2Amb", "Light2Amb", "0.1 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_ambient[2]), N_("Light"),
+	( "V3dControl.Light/TipColorXX", "TipColorXX", "0.1 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_ambient[2]), N_("Light"),
 	  N_("Light2: Ambient Light Color [red, green, blue, alpha]"), NULL
 		),
 
 // ============ Material Surface
 
+	#if 0
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.MatSurf/Ambient", "Ambient", "0.45 0.15 0.07 1", GET_GLV_OFFSET (&GLvd_offset.surf_mat_ambient), N_("Surface Material"),
 	  N_("Surface Ambient Color:\n Specify the ambient RGBA reflectance of the material.\nUsed only in \"Uniform/Material Color Mode\"."), NULL
 		),
+	#endif
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.MatSurf/Diffuse", "Diffuse", "0.6 0.2 0.1 1", GET_GLV_OFFSET (&GLvd_offset.surf_mat_diffuse), N_("Surface Material"),
 	  N_("Surface Diffuse Color:\n Specify the diffuse RGBA reflectance of the material.\nUsed only in \"Uniform/Material Color Mode\"."), NULL

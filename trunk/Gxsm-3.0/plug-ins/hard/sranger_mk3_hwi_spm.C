@@ -181,7 +181,16 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		return ok;
 	}
 
-	if (*property == 'f'){
+        // ZXY in Angstroem
+        if (*property == 'R'){
+                // ZXY Volts after Piezoamp -- without analog offset -> Dig -> ZXY in Angstroem
+		val1 = gapp->xsm->Inst->V2ZAng (gapp->xsm->Inst->VZ() * S_MONV (6));
+		val2 = gapp->xsm->Inst->V2XAng (gapp->xsm->Inst->VZ() * S_MONV (4));
+                val3 = gapp->xsm->Inst->V2YAng (gapp->xsm->Inst->VZ() * S_MONV (5));
+		return TRUE;
+        }
+
+        if (*property == 'f'){
 		// defaul assignment -- may be life adjusted.... FIX!!!
 		
                 // signal_id [12] = query_module_signal_input (12); // update real time -- TDB, expensive
