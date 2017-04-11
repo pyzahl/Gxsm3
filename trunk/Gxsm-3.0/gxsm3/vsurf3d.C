@@ -1253,11 +1253,15 @@ public:
                         checkError ("render -- draw ico");
                         glm::vec4 c=MAKE_GLM_VEC3(s->GLv_data.light_specular[2]);
 
-                        glm::vec4 r=glm::vec4 (0.,0.5,0., 0.2);
-                        ico_vao->draw (r,c,4);
+                        double r[3];
+                        s->GetXYZNormalized (r);
+                        g_message ("R=%g %g %g", r[0], r[1], r[2]);
+                        
+                        //glm::vec4 Ra=glm::vec4 (0.,0.7,0., 0.2);
+                        //ico_vao->draw (Ra,c,4);
 
-                        r=glm::vec4 (0.,0.3,0., 0.1);
-                        ico_vao->draw (r,c,4);
+                        glm::vec4 R=glm::vec4 (r[0],r[1],r[2], 0.1);
+                        ico_vao->draw (R,c,4);
                 }
                 
 #define MAKE_GLM_VEC3X(V) glm::vec3(V[0],V[1],V[2])
@@ -1421,6 +1425,29 @@ void Surf3d::hide(){
 	XSM_DEBUG (GL_DEBUG_L2, "Surf3d::hide");
 }
 
+
+double Surf3d::GetXYZNormalized(double *r){
+        double x,y,z, za; 
+        gapp->xsm->hardware->RTQuery ("zxy", z, x, y);
+        za = z;
+        z = gapp->xsm->Inst->VoltIn2Dig(z) / gapp->xsm->Inst->VZ();
+        z = (z-scan->mem2d->data->zmin)/scan->mem2d->data->zrange;
+        x = gapp->xsm->Inst->VoltIn2Dig(x) / gapp->xsm->Inst->VX();
+        y = gapp->xsm->Inst->VoltIn2Dig(y) / gapp->xsm->Inst->VY();
+        x = (x-scan->data.s.x0)/scan->data.s.rx;
+        y = (y-scan->data.s.y0)/scan->data.s.ry;
+        r[0] = x;
+        r[1] = y;
+        r[2] = z;
+        return za;
+}
+
+double Surf3d::GetCurrent(){
+        return 0.;
+}
+double Surf3d::GetForce(){
+        return 0.;
+}
 
 void inline Surf3d::PutPointMode(int k, int j, int vi){
 	int i;

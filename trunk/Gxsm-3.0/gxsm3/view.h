@@ -299,6 +299,9 @@ public:
 
         static void GLupdate(void* data);
 
+        double GetXYZNormalized(double *r);
+        double GetCurrent();
+        double GetForce();
         void MouseControl (int mouse, double x, double y);
         void Rotate(int n, double dphi);
         void RotateAbs(int n, double phi);
