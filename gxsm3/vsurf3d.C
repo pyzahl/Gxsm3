@@ -60,8 +60,8 @@
 
 //#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -220,6 +220,8 @@ namespace
 
         GLuint Uniform_IcoTess_TessLevelInner(0);
         GLuint Uniform_IcoTess_TessLevelOuter(0);
+        GLuint Uniform_IcoTess_IcoPositionS(0);
+        GLuint Uniform_IcoTess_IcoColor(0);
 
         GLuint Uniform_TipPosition(0);
         GLuint Uniform_TipColor(0);
@@ -294,7 +296,6 @@ public:
                 
                 glBindVertexArray (VertexArrayName);
                 glEnableVertexAttribArray(semantic::attr::POSITION);
-
                 glEnableVertexAttribArray (TesselationTextureName[0]);
                 glEnableVertexAttribArray (TesselationTextureName[1]);
                 glBindTexture (GL_TEXTURE_2D, TesselationTextureName[0]);
@@ -544,9 +545,12 @@ class icosahedron{
 public:
         icosahedron (){
                 Validated = true;
-                ArrayBufferName = 0;
                 VertexArrayName = 0;
+                ArrayBufferName = 0;
+                IndexBufferName = 0;
 
+                indices = NULL;
+                
                 g_message ("icosahedron:: init object");
 
                 Validated = init_vao ();
@@ -557,6 +561,7 @@ public:
                 g_message ("icosahedron:: init object completed");
         };
         ~icosahedron (){
+                g_free (indices);
 		if (Validated){
                         glDeleteVertexArrays(1, &VertexArrayName);
                         glDeleteBuffers(1, &IndexBufferName);
@@ -569,56 +574,68 @@ public:
                 checkError("make_plane:: init_buffer");
 		if (!Validated) return false;
 
-                //IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
-                const GLint Faces[] = {
+                VertexCount =  12;
+                IndicesCount = 3*20;
+                indices = g_new (glf::vertex_v1i, IndicesCount);
+ 
+                // 20 Faces
+                const int Faces[3*20] = {
                         2, 1, 0,
                         3, 2, 0,
                         4, 3, 0,
                         5, 4, 0,
                         1, 5, 0,
+                        
                         11, 6,  7,
                         11, 7,  8,
                         11, 8,  9,
                         11, 9,  10,
                         11, 10, 6,
+                        
                         1, 2, 6,
                         2, 3, 7,
                         3, 4, 8,
                         4, 5, 9,
                         5, 1, 10,
+                        
                         2,  7, 6,
                         3,  8, 7,
                         4,  9, 8,
                         5, 10, 9,
                         1, 6, 10 };
 
-                const glm::vec3 Verts[] = {
-                        glm::vec3 (0.000f,  0.000f,  1.000f),
-                        glm::vec3 (0.894f,  0.000f,  0.447f),
-                        glm::vec3 (0.276f,  0.851f,  0.447f),
-                        glm::vec3 (-0.724f,  0.526f,  0.447f),
-                        glm::vec3 (-0.724f, -0.526f,  0.447f),
-                        glm::vec3 (0.276f, -0.851f,  0.447f),
-                        glm::vec3 (0.724f,  0.526f, -0.447f),
-                        glm::vec3 (-0.276f,  0.851f, -0.447f),
-                        glm::vec3 (-0.894f,  0.000f, -0.447f),
-                        glm::vec3 (-0.276f, -0.851f, -0.447f),
-                        glm::vec3 (0.724f, -0.526f, -0.447f),
-                        glm::vec3 (0.000f,  0.000f, -1.000f)
+                // copy into for sure GL compatible memory
+                for (int i=0; i<IndicesCount; ++i)
+                        indices[i].indices.x = Faces[i];
+                
+                const glm::vec4 Verts[12] = {
+                        glm::vec4 (0.000f,  0.000f,  1.000f, 1),
+                        
+                        glm::vec4 (0.894f,  0.000f,  0.447f, 1),
+                        glm::vec4 (0.276f,  0.851f,  0.447f, 1),
+                        glm::vec4 (-0.724f,  0.526f,  0.447f, 1),
+                        glm::vec4 (-0.724f, -0.526f,  0.447f, 1),
+                        glm::vec4 (0.276f, -0.851f,  0.447f, 1),
+                        
+                        glm::vec4 (0.724f,  0.526f, -0.447f, 1),
+                        glm::vec4 (-0.276f,  0.851f, -0.447f, 1),
+                        glm::vec4 (-0.894f,  0.000f, -0.447f, 1),
+                        glm::vec4 (-0.276f, -0.851f, -0.447f, 1),
+                        glm::vec4 (0.724f, -0.526f, -0.447f, 1),
+                        
+                        glm::vec4 (0.000f,  0.000f, -1.000f, 1)
                 };
-                VertexCount =  sizeof(Verts) / sizeof(Verts[0]);
-                IndicesCount = sizeof(Faces) / sizeof(Faces[0]);
                 
                 glGenBuffers(1, &ArrayBufferName);
                 glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_STATIC_DRAW);
-                glEnableVertexAttribArray (semantic::s3d_text::POSITION);
-                glVertexAttribPointer (semantic::s3d_text::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
+                glBufferData(GL_ARRAY_BUFFER, VertexCount*sizeof(glm::vec4), Verts, GL_STATIC_DRAW);
+                glEnableVertexAttribArray (semantic::attr::POSITION);
+                glVertexAttribPointer (semantic::attr::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), BUFFER_OFFSET(0));
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                 glGenBuffers(1, &IndexBufferName);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Faces), Faces, GL_STATIC_DRAW);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndicesCount*sizeof(glf::vertex_v1i), indices, GL_STATIC_DRAW);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
                 return Validated && checkError("make_plane:: init_buffer");
@@ -642,38 +659,44 @@ public:
 
                 return Validated && checkError("make_plane::init_vao");
         };
-        gboolean draw (glm::vec3 pos, glm::vec3 size) {
+        // vec4: (x,y,z, scale)
+        gboolean draw (glm::vec4 pos_s, glm::vec4 color, gfloat tesslevel=2.) {
  		if (!Validated) return false;
 
-                glDisable (GL_CULL_FACE);
-                glEnable (GL_BLEND);
-                glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                
-                glUseProgram (S3D_ProgramName);
+                g_message ("icosahedron draw");
 
-                glUniform4f (glGetUniformLocation (S3D_ProgramName, "textColor"), 1,0.1,0.5,0.7);
+                //glDisable (GL_CULL_FACE);
+                //glEnable (GL_BLEND);
+                //glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                
+                glUseProgram (IcoTess_ProgramName);
+
+                glUniform1f (Uniform_IcoTess_TessLevelInner, tesslevel);
+                glUniform1f (Uniform_IcoTess_TessLevelOuter, tesslevel);  
+                glUniform4fv (Uniform_IcoTess_IcoPositionS, 1, &(pos_s.x));
+                glUniform4fv (Uniform_IcoTess_IcoColor, 1, &(color.x));
 
                 //glBindTexture (GL_TEXTURE_2D, TextTextureName);
 
-                glBindVertexArray(VertexArrayName);
+                glBindVertexArray (VertexArrayName); // VAO
                 glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
-                glEnableVertexAttribArray (semantic::s3d_text::POSITION);
-                glEnableVertexAttribArray (semantic::s3d_text::TEXCOORD);
+                glEnableVertexAttribArray (semantic::attr::POSITION);
+                glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
 
-                glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
-
-                glPatchParameteri(GL_PATCH_VERTICES, 16);       // tell OpenGL that every patch has 16 verts
-                glDrawArrays(GL_PATCHES, 0, VertexCount); // draw a bunch of patches
-
+                glPatchParameteri (GL_PATCH_VERTICES, 3);
+                glDrawElements (GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
+ 
+                glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
                 glBindBuffer (GL_ARRAY_BUFFER, 0);
-                glBindVertexArray(0);
-                //glBindTexture(GL_TEXTURE_2D, 0);
+                glBindVertexArray (0);
 
-                glDisable (GL_BLEND);
+                //glBindTexture(GL_TEXTURE_2D, 0);
+                //glDisable (GL_BLEND);
                 
-                return Validated && checkError("text_plane::draw end");
+                return Validated && checkError("icosahedron::draw end");
         };
-private:        
+private:
+        glf::vertex_v1i *indices;
         bool Validated;
 	GLuint ArrayBufferName;
 	GLuint IndexBufferName;
@@ -716,6 +739,7 @@ public:
                 WindowSize  = glm::ivec2(500, 500);
                 surface_plane = NULL;
                 text_vao = NULL;
+                ico_vao = NULL;
         };
         ~gl_400_primitive_tessellation(){
                 //end (); // too late, glarea reference is gone! 
@@ -723,6 +747,8 @@ public:
                         delete surface_plane;
                 if (text_vao)
                         delete text_vao;
+                if (ico_vao)
+                        delete ico_vao;
         };
 
 private:
@@ -822,6 +848,8 @@ private:
 
                         Uniform_IcoTess_TessLevelInner = glGetUniformLocation (IcoTess_ProgramName, "TessLevelInner");
                         Uniform_IcoTess_TessLevelOuter = glGetUniformLocation (IcoTess_ProgramName, "TessLevelOuter");
+                        Uniform_IcoTess_IcoPositionS   = glGetUniformLocation (IcoTess_ProgramName, "IcoPositionS");
+                        Uniform_IcoTess_IcoColor       = glGetUniformLocation (IcoTess_ProgramName, "IcoColor");
 
                         Uniform_TipPosition  = glGetUniformLocation (IcoTess_ProgramName, "TipPosition");
                         Uniform_TipColor     = glGetUniformLocation (IcoTess_ProgramName, "TipColor");
@@ -964,9 +992,14 @@ private:
 		checkError("initTextures");
 		if (!Validated) return false;
 
+#if 1
                 if (!text_vao)
                         text_vao = new text_plane ();
 
+                if (!ico_vao)
+                        ico_vao = new icosahedron ();
+#endif
+                
 		return checkError("initText Plane VAO");
         };
         
@@ -1080,9 +1113,9 @@ public:
                            RotationCurrent.y, Rotation3axis.z, RotationCurrent.x, 
                            s->GLv_data.hskl);
 
+                glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
                 glEnable (GL_DEPTH_TEST);
-                glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 glPolygonMode (GL_FRONT_AND_BACK, s->GLv_data.Mesh ? GL_LINE : GL_FILL);
                 // glShadeModel(s->GLv_data.Smooth ? GL_SMOOTH : GL_FLAT); // depricated
@@ -1124,7 +1157,7 @@ public:
                 Block_SurfaceGeometry.aspect = (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx;
                 Block_SurfaceGeometry.height_scale  = s->GLv_data.hskl;
                 Block_SurfaceGeometry.height_offset = 0.; // s->GLv_data.slice_offset;
-                Block_SurfaceGeometry.delta = glm::vec2 (2./s->XPM_x, 2./s->XPM_x);
+                Block_SurfaceGeometry.delta = glm::vec2 (1.0f/(s->XPM_x-1), 1.0f/(s->XPM_y-1));
                 updateSurfaceGeometry ();
 
                 // Camera, Light and Shading
@@ -1215,14 +1248,29 @@ public:
                 
                 surface_plane->draw ();
 
+
+                if (ico_vao && s->GLv_data.light[2][1] == 'n'){
+                        checkError ("render -- draw ico");
+                        glm::vec4 c=MAKE_GLM_VEC3(s->GLv_data.light_specular[2]);
+
+                        glm::vec4 r=glm::vec4 (0.,0.5,0., 0.2);
+                        ico_vao->draw (r,c,4);
+
+                        r=glm::vec4 (0.,0.3,0., 0.1);
+                        ico_vao->draw (r,c,4);
+                }
+                
 #define MAKE_GLM_VEC3X(V) glm::vec3(V[0],V[1],V[2])
-                if (s->GLv_data.light[2][1] == 'n'){
+                if (text_vao && s->GLv_data.light[1][1] == 'n'){
                         checkError ("render -- draw text");
                         //text_vao->draw ("GXSM-3.0", MAKE_GLM_VEC3X(s->GLv_data.light_position[1]), glm::vec3 (0,1,0), glm::vec3 (-0.1, 0.1, 0.1));
                         glm::vec3 ex=glm::vec3 (0.1,0,0);
                         glm::vec3 ey=glm::vec3 (0,0.1,0);
                         glm::vec3 ez=glm::vec3 (0,0,0.1);
-                        text_vao->draw ("GXSM-3.0", glm::vec3(0.5, -0.1, -0.5), ex, ey);
+                        text_vao->draw ("GXSM-3.0 GL4.0", glm::vec3(0.5, -0.1, -0.75), 1.25f*ex, 1.25f*ez);
+                        text_vao->draw ("X axis", glm::vec3(0, 0, -0.6), ex, ez);
+                        text_vao->draw ("Y axis", glm::vec3(0.53, 0, 0), -ez, ex);
+                        text_vao->draw ("Z axis", glm::vec3(0.53, 0, -0.6), -ey, 0.5f*(ex+ez));
                         text_vao->draw ("x -->", glm::vec3(0, 0, -0.5), ex, ey);
                         text_vao->draw ("<-- X top", glm::vec3(0, 0,  0.5), -ex, ey); 
                         text_vao->draw ("y -->", glm::vec3(0.5, 0, 0), ez, ey);
@@ -1230,8 +1278,6 @@ public:
                 }
                 
 		return checkError("render");
-                
-		//return true;
 	};
 
         void resize (gint w, gint h){
@@ -1311,6 +1357,8 @@ private:
 
         base_plane *surface_plane;
         text_plane *text_vao;
+        icosahedron *ico_vao;
+
         glm::vec2 WindowSize;
 	glm::vec2 MouseOrigin;
 	glm::vec2 MouseCurrent;
@@ -1847,10 +1895,6 @@ int Surf3d::update(int y1, int y2){
 }
 
 
-#define DrawOneLine(x1,y1,z1,x2,y2,z2) \
-                    glBegin(GL_LINES);  \
-                    glVertex3f((x1),(y1),(z1));   glVertex3f((x2),(y2),(z2)); \
-                    glEnd();
 
 /* 
  * Tickmarks and other stuff....

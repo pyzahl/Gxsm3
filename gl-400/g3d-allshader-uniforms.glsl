@@ -23,6 +23,7 @@ layout (std140) uniform SurfaceGeometry
         uniform float aspect;
         uniform float height_scale;
         uniform float height_offset;
+        uniform float dummy;
         uniform vec2 delta;
 };
 

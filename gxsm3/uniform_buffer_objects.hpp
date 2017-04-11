@@ -39,6 +39,7 @@ namespace ubo
                 GLfloat aspect;
                 GLfloat height_scale;
                 GLfloat height_offset;
+                GLfloat dummy;
                 glm::vec2 delta;
         };
 
