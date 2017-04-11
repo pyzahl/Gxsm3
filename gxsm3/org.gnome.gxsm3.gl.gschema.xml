@@ -13,7 +13,7 @@
     <value value="3" nick="Volume "/>
     <value value="4" nick="Scatter "/>
   </enum>
-  <enum id="org-gnome-gxsm3-gl-option-v3d-control-light-light0">
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-light-sun">
     <value value="0" nick="On "/>
     <value value="1" nick="Off "/>
   </enum>
@@ -178,7 +178,7 @@ button and drag surface up/down!
         Global Ambient Light [red, green, blue, alpha]
       </description>
     </key>
-    <key name="light0" type="s">
+    <key name="sun" type="s">
       <choices>
         <choice value='On'/>
         <choice value='Off'/>
@@ -190,10 +190,10 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="light0pos" type="ad">
-      <default>[-0.1,-0.01,-0.7,1]</default>
-      <summary>Light0: Position, relative to surface width (=1) [X, Y, Z, 1]</summary>
+      <default>[-0.2,0.7,0.1,1]</default>
+      <summary>Sun Light Direction (Incident Vector) [dX, dY, dZ, 1]</summary>
       <description>
-        Light0: Position, relative to surface width (=1) [X, Y, Z, 1]
+        Sun Light Direction (Incident Vector) [dX, dY, dZ, 1]
       </description>
     </key>
     <key name="light0spec" type="ad">
@@ -203,21 +203,7 @@ button and drag surface up/down!
         Light0: Specular Light Color [red, green, blue, alpha]
       </description>
     </key>
-    <key name="light0diff" type="ad">
-      <default>[0.4,0.4,0.4,1]</default>
-      <summary>Light0: Diffuse Light Color [red, green, blue, alpha]</summary>
-      <description>
-        Light0: Diffuse Light Color [red, green, blue, alpha]
-      </description>
-    </key>
-    <key name="light0amb" type="ad">
-      <default>[0.1,0.1,0.1,1]</default>
-      <summary>Light0: Ambient Light Color [red, green, blue, alpha]</summary>
-      <description>
-        Light0: Ambient Light Color [red, green, blue, alpha]
-      </description>
-    </key>
-    <key name="light1" type="s">
+    <key name="labels" type="s">
       <choices>
         <choice value='On'/>
         <choice value='Off'/>
@@ -228,35 +214,14 @@ button and drag surface up/down!
         Light1: switch On/Off
       </description>
     </key>
-    <key name="light1pos" type="ad">
-      <default>[-1,1,1,1]</default>
-      <summary>Light1: Position, relative to surface width (=1) [X, Y, Z, 1]</summary>
-      <description>
-        Light1: Position, relative to surface width (=1) [X, Y, Z, 1]
-      </description>
-    </key>
-    <key name="light1spec" type="ad">
+    <key name="labelcolor" type="ad">
       <default>[1,1,1,1]</default>
       <summary>Light1: Specular Light Color [red, green, blue, alpha]</summary>
       <description>
         Light1: Specular Light Color [red, green, blue, alpha]
       </description>
     </key>
-    <key name="light1diff" type="ad">
-      <default>[0.4,0.4,0.4,1]</default>
-      <summary>Light1: Diffuse Light Color [red, green, blue, alpha]</summary>
-      <description>
-        Light1: Diffuse Light Color [red, green, blue, alpha]
-      </description>
-    </key>
-    <key name="light1amb" type="ad">
-      <default>[0.1,0.1,0.1,1]</default>
-      <summary>Light1: Ambient Light Color [red, green, blue, alpha]</summary>
-      <description>
-        Light1: Ambient Light Color [red, green, blue, alpha]
-      </description>
-    </key>
-    <key name="light2" type="s">
+    <key name="tip" type="s">
       <choices>
         <choice value='On'/>
         <choice value='Off'/>
@@ -267,28 +232,28 @@ button and drag surface up/down!
         Light2: switch On/Off
       </description>
     </key>
-    <key name="light2pos" type="ad">
+    <key name="tipgap" type="ad">
       <default>[1,1,1,0]</default>
       <summary>Light2: Position, relative to surface width (=1) [X, Y, Z, 0]</summary>
       <description>
         Light2: Position, relative to surface width (=1) [X, Y, Z, 0]
       </description>
     </key>
-    <key name="light2spec" type="ad">
+    <key name="tipcolorpp" type="ad">
       <default>[1,1,1,1]</default>
       <summary>Light2: Specular Light Color [red, green, blue, alpha]</summary>
       <description>
         Light2: Specular Light Color [red, green, blue, alpha]
       </description>
     </key>
-    <key name="light2diff" type="ad">
+    <key name="tipcolorapx" type="ad">
       <default>[0.1,0.1,0.1,1]</default>
       <summary>Light2: Diffuse Light Color [red, green, blue, alpha]</summary>
       <description>
         Light2: Diffuse Light Color [red, green, blue, alpha]
       </description>
     </key>
-    <key name="light2amb" type="ad">
+    <key name="tipcolorxx" type="ad">
       <default>[0.1,0.1,0.1,1]</default>
       <summary>Light2: Ambient Light Color [red, green, blue, alpha]</summary>
       <description>
@@ -298,17 +263,6 @@ button and drag surface up/down!
   </schema>
 
   <schema id="org.gnome.gxsm3.gl.v3dcontrol.matsurf" path="/org/gnome/gxsm3/gl/v3dcontrol.matsurf/">
-    <key name="ambient" type="ad">
-      <default>[0.45,0.15,0.07,1]</default>
-      <summary>Surface Ambient Color:
- Specify the ambient RGBA reflectance of the material.
-Used only in "Uniform/Material Color Mode".</summary>
-      <description>
-        Surface Ambient Color:
- Specify the ambient RGBA reflectance of the material.
-Used only in "Uniform/Material Color Mode".
-      </description>
-    </key>
     <key name="diffuse" type="ad">
       <default>[0.6,0.2,0.1,1]</default>
       <summary>Surface Diffuse Color:

@@ -60,8 +60,8 @@
 
 //#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -1255,12 +1255,14 @@ public:
 
                         double r[3];
                         s->GetXYZNormalized (r);
-                        g_message ("R=%g %g %g", r[0], r[1], r[2]);
+                        g_message ("R=%g %g %g", r[0], r[1], s->GLv_data.light_position[2][0]-r[2]);
                         
                         //glm::vec4 Ra=glm::vec4 (0.,0.7,0., 0.2);
                         //ico_vao->draw (Ra,c,4);
 
-                        glm::vec4 R=glm::vec4 (r[0],r[1],r[2], 0.1);
+                        double scale[3];
+                        s->GetXYZScale (scale); // XY not to scale yet
+                        glm::vec4 R=glm::vec4 (r[0],  s->GLv_data.hskl * (s->GLv_data.light_position[2][0]+r[2]), r[1], 0.1); //3.2 / scale[0]); // GL coords XYZ: plane is XZ, Y is "up"
                         ico_vao->draw (R,c,4);
                 }
                 
@@ -1426,27 +1428,38 @@ void Surf3d::hide(){
 }
 
 
+void Surf3d::GetXYZScale (double *s){
+        s[0] = 1./scan->data.s.rx;
+        s[1] = 1./scan->data.s.ry;
+        s[2] = 1./gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
+}
+
+// XYZ ormalized to GL box +/- 0.5
 double Surf3d::GetXYZNormalized(double *r){
         double x,y,z, za; 
-        gapp->xsm->hardware->RTQuery ("zxy", z, x, y);
+        gapp->xsm->hardware->RTQuery ("R", z, x, y);
         za = z;
-        z = gapp->xsm->Inst->VoltIn2Dig(z) / gapp->xsm->Inst->VZ();
-        z = (z-scan->mem2d->data->zmin)/scan->mem2d->data->zrange;
-        x = gapp->xsm->Inst->VoltIn2Dig(x) / gapp->xsm->Inst->VX();
-        y = gapp->xsm->Inst->VoltIn2Dig(y) / gapp->xsm->Inst->VY();
-        x = (x-scan->data.s.x0)/scan->data.s.rx;
-        y = (y-scan->data.s.y0)/scan->data.s.ry;
+        //g_message ("GetXYZ RTQuery: Z=%f X=%f Y=%f", z,x,y);
+        z = (z - gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zmin)) / gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
+        x /= scan->data.s.rx; // Ang
+        y /= scan->data.s.ry;
         r[0] = x;
         r[1] = y;
         r[2] = z;
         return za;
 }
 
+// Current in nA
 double Surf3d::GetCurrent(){
-        return 0.;
+        double v1,v2,v3;
+        gapp->xsm->hardware->RTQuery ("f", v1, v2, v3);
+        return v2;
 }
+// dF in Hz
 double Surf3d::GetForce(){
-        return 0.;
+        double v1,v2,v3;
+        gapp->xsm->hardware->RTQuery ("f", v1, v2, v3);
+        return v1;
 }
 
 void inline Surf3d::PutPointMode(int k, int j, int vi){
