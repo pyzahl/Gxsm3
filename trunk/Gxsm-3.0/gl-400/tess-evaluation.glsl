@@ -5,8 +5,6 @@
 
 #include "g3d-allshader-uniforms.glsl"
 
-#define CALCULATE_NORMAL 1
-
 layout(quads, equal_spacing, ccw) in; //equal_spacing fractional_even_spacing fractional_odd_spacing
 
 // WARNING in/out "blocks" are not part of namespace, members must be unique in code! Thumb Rule: use capital initials for In/Out.
@@ -42,7 +40,7 @@ vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
 }
 
 vec2 terraincoord(vec2 position){
-        return vec2 (0.5 - position.x, -(0.5 - (-position.y)/aspect)); // swapped
+        return vec2 (0.5 - position.x, -(0.5 - (-position.y)/aspect));
 }
 
 // == Height ===========================

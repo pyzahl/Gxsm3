@@ -201,15 +201,19 @@ vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye,
         case 7:
                 return color_offset + vec4 (nois, color.a);
                 
-        case 8: return vec4(normal.y, 0.,0., 1.0);
-        case 9: return vec4(normal.y*0.5+0.5,0.,0., 1.0);
-        case 12: return vec4(normal*0.5+0.5, 1.0);
-        case 13: return specular*color;
-        case 14: return vec4(vec3(specular,normal.y,diffuse),1.0);
-        case 15: return vec4(vec3(dist/100.), 1.0);
+        case 8: return color_offset + lightness*color;
+        case 9: return color_offset + color;
+        case 10: return color_offset + vec4(normal*0.5+0.5, 1.0);
+        case 11: return color_offset + vec4(normal.y*0.5+0.5, 0.,0., 1.0);
+        case 12: return color_offset + vec4(normal.x*0.5+0.5, 0.,0., 1.0);
+        case 13: return color_offset + specular*color;
+        case 14: return color_offset + vec4(vec3(specular,normal.y,diffuse),1.0);
+        case 15: return color_offset + vec4(vec3(dist/100.), 1.0);
+        case 16: return color_offset + specular*lightness*vec4(1);
         default: return vec4 (color_offset.xyz
                               + lightness*finalColor,
-                              transparency_offset+transparency*color.a);
+                              transparency_offset);
+                // transparency_offset+transparency*color.a);
         }
 }
 
@@ -231,7 +235,8 @@ vec4 shadeLambertian(vec3 vertex, vec3 vertexEye,
 
         return vec4 (color_offset.xyz
                      + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
-                     transparency_offset+transparency*color.a);
+                     transparency_offset);
+        //                     transparency_offset+transparency*color.a);
 }
 
 // Lambertian light model for surface
@@ -253,7 +258,8 @@ vec4 shadeLambertianXColor(vec3 vertex, vec3 vertexEye,
         
         return vec4 (color_offset.xyz
                      + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
-                     transparency_offset+transparency*color.a);
+                     transparency_offset);
+        //                     transparency_offset+transparency*color.a);
 }
 
 // Lambertian light model for surface, use homogenious surface color = material_color
@@ -273,7 +279,8 @@ vec4 shadeLambertianMaterialColor(vec3 vertex, vec3 vertexEye,
 
         return vec4 (color_offset.xyz
                      + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*materialColor.xyz,
-                            transparency_offset+transparency*materialColor.a);
+                     transparency_offset);
+        //                     transparency_offset+transparency*materialColor.a);
 }
 
 
