@@ -71,7 +71,11 @@ public:
         void rerender_scene (){
                 gtk_gl_area_queue_render (GTK_GL_AREA (glarea));
         };
-
+        void start_auto_update(){
+                if (!au_timer)
+                        au_timer =  g_timeout_add (50, (GSourceFunc)  v3dview_timer_callback, this);
+        };
+        static gboolean v3dview_timer_callback (gpointer data);
         void SetTitle(char *title);
         void SetActive(int flg);
         void CheckOptions();
@@ -79,6 +83,7 @@ public:
         double(Surf3d::*WheelFkt)(double);
   
 private:
+        guint au_timer;
         int chno;
         Scan *scan;
         GtkWidget *glarea;

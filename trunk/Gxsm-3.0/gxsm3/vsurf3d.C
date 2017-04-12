@@ -1262,7 +1262,8 @@ public:
 
                         double scale[3];
                         s->GetXYZScale (scale); // XY not to scale yet
-                        glm::vec4 R=glm::vec4 (r[0],  s->GLv_data.hskl * (s->GLv_data.light_position[2][0]+r[2]), r[1], 0.1); //3.2 / scale[0]); // GL coords XYZ: plane is XZ, Y is "up"
+                        g_message ("Scale X/Z: %g   X%g Y%g Z%g Z/Hs%g ", scale[0]/(scale[2] / s->GLv_data.hskl), scale[0], scale[1], scale[2], scale[2] / s->GLv_data.hskl);
+                        glm::vec4 R=glm::vec4 (r[0], (s->GLv_data.light_position[2][0]+r[2]), r[1], 0.1); //3.2 / scale[0]); // GL coords XYZ: plane is XZ, Y is "up"
                         ico_vao->draw (R,c,4);
                 }
                 
@@ -1927,7 +1928,8 @@ int Surf3d::update(int y1, int y2){
         if (v3dcontrol){
                 if (gl_tess)
                         gl_tess->updateTexture (y1, y2-y1);
-                v3dcontrol->rerender_scene ();
+                v3dcontrol->start_auto_update();
+                //v3dcontrol->rerender_scene ();
         }
         
         XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::update done.");

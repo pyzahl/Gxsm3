@@ -156,6 +156,19 @@ void V3dControl::AppWindowInit(const gchar *title){
 	XSM_DEBUG(DBG_L2, "V3dControl::WidgetInit done." );
 }
 
+gboolean V3dControl::v3dview_timer_callback (gpointer data){
+        V3dControl *vc =  (V3dControl *) data;
+
+        if (vc->scan->is_scanning ()){
+                gtk_gl_area_queue_render (GTK_GL_AREA (vc->glarea));
+                return true;
+        } else {
+                vc->au_timer = 0;
+                return false;
+        }
+        
+}
+
 V3dControl::V3dControl (const char *title, int ChNo, Scan *sc, 
 			GCallback resize_event_cb,
 			GCallback render_event_cb,
@@ -168,7 +181,7 @@ V3dControl::V3dControl (const char *title, int ChNo, Scan *sc,
 	WheelFkt = &Surf3d::Zoom;
 	scan = sc;
 	chno=ChNo;
-
+        au_timer = 0;
 	AppWindowInit(title);
 	g_object_set_data  (G_OBJECT (window), "Ch", GINT_TO_POINTER (ChNo));
 	g_object_set_data  (G_OBJECT (window), "ChNo", GINT_TO_POINTER (ChNo+1));

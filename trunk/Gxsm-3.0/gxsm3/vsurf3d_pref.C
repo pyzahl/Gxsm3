@@ -102,7 +102,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/PerspZfar", "PerspZfar", "100", GET_GLV_OFFSET (&GLvd_offset.Zfar), 
+	( "V3dControl.View/PerspZfar", "PerspZfar", "500", GET_GLV_OFFSET (&GLvd_offset.Zfar), 
 	  PerspF_OptionsList, N_("View"),
 	  N_("Perspective: Z far distance relative to surface width (=1))"),
 	     NULL

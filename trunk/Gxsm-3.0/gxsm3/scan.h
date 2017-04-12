@@ -106,6 +106,7 @@ public:
 	
 	virtual void start(int l=0, double lv=0.);
 	virtual void stop(int StopFlg=FALSE, int line=0);
+	gboolean is_scanning() { return Running ? true : false; };
 	
 	void inc_refcount() { ++refcount; };
 	void dec_refcount() { --refcount; };
