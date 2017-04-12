@@ -16,8 +16,6 @@ out block
 
 uniform vec4 IcoPositionS;
 
-//    vPosition = IcoPositionS.xyz + IcoPositionS.w * Position.xyz;
-
 void main()
 {
     Out.vPosition = Position.xyz;

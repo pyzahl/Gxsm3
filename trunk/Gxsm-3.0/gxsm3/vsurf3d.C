@@ -220,7 +220,8 @@ namespace
 
         GLuint Uniform_IcoTess_TessLevelInner(0);
         GLuint Uniform_IcoTess_TessLevelOuter(0);
-        GLuint Uniform_IcoTess_IcoPositionS(0);
+        GLuint Uniform_IcoTess_IcoPosition(0);
+        GLuint Uniform_IcoTess_IcoScale(0);
         GLuint Uniform_IcoTess_IcoColor(0);
 
         GLuint Uniform_TipPosition(0);
@@ -660,7 +661,7 @@ public:
                 return Validated && checkError("make_plane::init_vao");
         };
         // vec4: (x,y,z, scale)
-        gboolean draw (glm::vec4 pos_s, glm::vec4 color, gfloat tesslevel=2.) {
+        gboolean draw (glm::vec4 pos, glm::vec4 scale, glm::vec4 color, gfloat tesslevel=2.) {
  		if (!Validated) return false;
 
                 g_message ("icosahedron draw");
@@ -673,7 +674,8 @@ public:
 
                 glUniform1f (Uniform_IcoTess_TessLevelInner, tesslevel);
                 glUniform1f (Uniform_IcoTess_TessLevelOuter, tesslevel);  
-                glUniform4fv (Uniform_IcoTess_IcoPositionS, 1, &(pos_s.x));
+                glUniform4fv (Uniform_IcoTess_IcoPosition, 1, &(pos.x));
+                glUniform4fv (Uniform_IcoTess_IcoScale, 1, &(scale.x));
                 glUniform4fv (Uniform_IcoTess_IcoColor, 1, &(color.x));
 
                 //glBindTexture (GL_TEXTURE_2D, TextTextureName);
@@ -848,7 +850,8 @@ private:
 
                         Uniform_IcoTess_TessLevelInner = glGetUniformLocation (IcoTess_ProgramName, "TessLevelInner");
                         Uniform_IcoTess_TessLevelOuter = glGetUniformLocation (IcoTess_ProgramName, "TessLevelOuter");
-                        Uniform_IcoTess_IcoPositionS   = glGetUniformLocation (IcoTess_ProgramName, "IcoPositionS");
+                        Uniform_IcoTess_IcoPosition    = glGetUniformLocation (IcoTess_ProgramName, "IcoPosition");
+                        Uniform_IcoTess_IcoScale       = glGetUniformLocation (IcoTess_ProgramName, "IcoScale");
                         Uniform_IcoTess_IcoColor       = glGetUniformLocation (IcoTess_ProgramName, "IcoColor");
 
                         Uniform_TipPosition  = glGetUniformLocation (IcoTess_ProgramName, "TipPosition");
@@ -943,6 +946,10 @@ private:
                 bind_block (S3D_ProgramName, ModelViewMat_block, "ModelViewMatrices", sizeof(ubo::uniform_model_view));
                 bind_block (S3D_ProgramName, SurfaceGeometry_block, "SurfaceGeometry", sizeof(ubo::uniform_surface_geometry));
                 bind_block (S3D_ProgramName, FragmentShading_block, "FragmentShading", sizeof(ubo::uniform_fragment_shading));
+
+                bind_block (IcoTess_ProgramName, ModelViewMat_block, "ModelViewMatrices", sizeof(ubo::uniform_model_view));
+                bind_block (IcoTess_ProgramName, SurfaceGeometry_block, "SurfaceGeometry", sizeof(ubo::uniform_surface_geometry));
+                bind_block (IcoTess_ProgramName, FragmentShading_block, "FragmentShading", sizeof(ubo::uniform_fragment_shading));
                 
                 // create surface base plane
                 surface_plane = new base_plane ((s->get_scan ())->mem2d, 128, // 128,
@@ -1250,21 +1257,25 @@ public:
 
 
                 if (ico_vao && s->GLv_data.light[2][1] == 'n'){
+#define MAKE_GLM_VEC4X(V,X) glm::vec4(V[0],V[2],V[1],X)
                         checkError ("render -- draw ico");
                         glm::vec4 c=MAKE_GLM_VEC3(s->GLv_data.light_specular[2]);
 
                         double r[3];
                         s->GetXYZNormalized (r);
-                        g_message ("R=%g %g %g", r[0], r[1], s->GLv_data.light_position[2][0]-r[2]);
                         
                         //glm::vec4 Ra=glm::vec4 (0.,0.7,0., 0.2);
                         //ico_vao->draw (Ra,c,4);
 
                         double scale[3];
                         s->GetXYZScale (scale); // XY not to scale yet
-                        g_message ("Scale X/Z: %g   X%g Y%g Z%g Z/Hs%g ", scale[0]/(scale[2] / s->GLv_data.hskl), scale[0], scale[1], scale[2], scale[2] / s->GLv_data.hskl);
-                        glm::vec4 R=glm::vec4 (r[0], (s->GLv_data.light_position[2][0]+r[2]), r[1], 0.1); //3.2 / scale[0]); // GL coords XYZ: plane is XZ, Y is "up"
-                        ico_vao->draw (R,c,4);
+                        glm::vec4 R = MAKE_GLM_VEC4X (r,1) + MAKE_GLM_VEC4X (s->GLv_data.light_position[2], 0);   // GL coords XYZ: plane is XZ, Y is "up"
+                        glm::vec4 S = 3.2f * glm::vec4 (scale[0], scale[2], scale[1], 1);
+                        //glm::vec4 S = glm::vec4 (0.1, 0.1, 0.1, 1);
+
+                        ico_vao->draw (R,S,c,4);
+                        g_message ("R = %g %g %g", R.x, R.y, R.z);
+                        g_message ("S = X/Z: %g   X%g Y%g Z%g", scale[0]/(scale[2] / s->GLv_data.hskl), S.x, S.y, S.z);
                 }
                 
 #define MAKE_GLM_VEC3X(V) glm::vec3(V[0],V[1],V[2])
