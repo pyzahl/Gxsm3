@@ -31,7 +31,7 @@ Surf3d_GLview_data GLvd_offset; // dummy
 
 const gchar *TrueFalse_OptionsList[]  = { "true", "false", NULL };
 const gchar *OnOff_OptionsList[]      = { "On", "Off", NULL };
-const gchar *ViewPreset_OptionsList[] = { "Top", "Front", "Left", "Right", "Areal View Front", "Scan: Auto Tip View", NULL };
+const gchar *ViewPreset_OptionsList[] = { "Manual", "Top", "Front", "Left", "Right", "Areal View Front", "Scan: Auto Tip View", NULL };
 
 const gchar *VertexSrc_OptionsList[]  = { "Flat", "Direct Height", "View Mode Height", "X-Channel", "Y", NULL };
 const gchar *XYZ_OptionsList[]        = { "X", "Y", "Z", "Volume", "Scatter", NULL };
@@ -50,7 +50,7 @@ const gchar *ColorOffset_OptionsList[]   = { "-1","1","0.01","0.1","3", NULL };
 
 const gchar *Rot_OptionsList[]   = {"-180","180","1","1","0",NULL };
 const gchar *FoV_OptionsList[]   = {"0","180","1","1","0",NULL };
-const gchar *Dist_OptionsList[]  = {"0","200","1","1","1",NULL };
+const gchar *Dist_OptionsList[]  = {"-200","200","1","1","1",NULL };
 const gchar *PerspF_OptionsList[]  = {"10","1000","1","1","0",NULL };
 const gchar *PerspN_OptionsList[]  = {"0.1","100","1","1","2",NULL };
 const gchar *Hskl_OptionsList[]  = {"-1","1","0.0001","0.002","4",NULL };

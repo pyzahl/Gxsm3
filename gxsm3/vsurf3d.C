@@ -345,7 +345,7 @@ public:
                 // Patch Indices
                 int i_width = BaseGridW-1;
                 int i_height = BaseGridH-1;
-                IndicesCount = (((BaseGridW-1)*(BaseGridH-1))*4);
+                IndicesCount = (((BaseGridW-1)*(BaseGridH-1))*4); // +4 -- plus close up botton patch (no workign w terrain)
                 IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
 
                 indices = g_new (glf::vertex_v1i, IndicesCount);
@@ -363,6 +363,10 @@ public:
                                 indices[ii++].indices.x = p4;
                         }
                 }
+                //indices[ii++].indices.x = 0;
+                //indices[ii++].indices.x = BaseGridW;
+                //indices[ii++].indices.x = BaseGridW*BaseGridH-1;
+                //indices[ii++].indices.x = BaseGridW*(BaseGridH-1)+1;
                 g_message ("mkplane -- Indices Count=%d of %d", ii, IndicesCount);
         };
 
@@ -1329,9 +1333,10 @@ public:
                 }
 
                 MouseCurrent = glm::ivec2(x, y);
-                DistanceCurrent    = mouse == 'M' ? DistanceOrigin + glm::vec3(glm::vec2((MouseCurrent - MouseOrigin)) / 10.f, 0) : DistanceOrigin;
-                TranslationCurrent = mouse == 'T' ? TranslationOrigin + (MouseCurrent - MouseOrigin) / 100.f : TranslationOrigin;
-                RotationCurrent    = mouse == 'R' ? RotationOrigin + glm::radians(MouseCurrent - MouseOrigin) : RotationOrigin;
+                glm::vec2 mouse_delta = glm::vec2(MouseCurrent - MouseOrigin);
+                DistanceCurrent    = mouse == 'M' ? DistanceOrigin + glm::vec3(mouse_delta.x, 0., mouse_delta.y)/10.0f : DistanceOrigin;
+                TranslationCurrent = mouse == 'T' ? TranslationOrigin + (mouse_delta / 100.0f) : TranslationOrigin;
+                RotationCurrent    = mouse == 'R' ? RotationOrigin + glm::radians(mouse_delta) : RotationOrigin;
         };
 
         void get_rotation (float *wxyz){
@@ -1518,7 +1523,7 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
         surface_z_data_buffer[i].y = val; // Y-Channel still available
 
         // push edges to zero?
-        if (GLv_data.TickFrameOptions[0]=='2' || GLv_data.TickFrameOptions[0]=='3' ){
+        if (1){ //GLv_data.TickFrameOptions[0]=='2' || GLv_data.TickFrameOptions[0]=='3' ){
                 if (k==0 || j==0 || k == XPM_x-1 || j == XPM_y-1){
                         surface_z_data_buffer[i].w = 0.;
                         surface_z_data_buffer[i].x = 0.;
@@ -1598,9 +1603,11 @@ void Surf3d::GLupdate (void* data){
 
                 XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLUPDATE rerender" << std::flush);
                 if (s->gl_tess){
-                        // *ViewPreset_OptionsList[] = { "Top", "Front", "Left", "Right", "Areal View Front", "Scan: Auto Tip View", NULL };
+                        // *ViewPreset_OptionsList[] = { "Manual", "Top", "Front", "Left", "Right", "Areal View Front", "Scan: Auto Tip View", NULL };
 
                         switch (s->GLv_data.view_preset[0]){
+                        case '*':
+                        case 'M' : break;
                         case 'T' :
                                 s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = -90; s->GLv_data.rot[2] = 0;
                                 s->GLv_data.trans[0] = s->GLv_data.trans[1] = s->GLv_data.trans[2] = 0.;
@@ -1630,7 +1637,6 @@ void Surf3d::GLupdate (void* data){
                                 s->GetXYZNormalized (s->GLv_data.trans);
                                 s->UpdateGLv_control();
                                 break;
-                        case '*': break;
                         default: break;
                         }
                         // g_message ("GLU: %s %g %g", s->GLv_data.view_preset, s->GLv_data.rot[0],s->GLv_data.rot[1]);
