@@ -50,7 +50,7 @@ const gchar *ColorOffset_OptionsList[]   = { "-1","1","0.01","0.1","3", NULL };
 
 const gchar *Rot_OptionsList[]   = {"-180","180","1","1","0",NULL };
 const gchar *FoV_OptionsList[]   = {"0","180","1","1","0",NULL };
-const gchar *Dist_OptionsList[]  = {"0.1","1000","0.1","1","2",NULL };
+const gchar *Dist_OptionsList[]  = {"0","200","1","1","1",NULL };
 const gchar *PerspF_OptionsList[]  = {"10","1000","1","1","0",NULL };
 const gchar *PerspN_OptionsList[]  = {"0.1","100","1","1","2",NULL };
 const gchar *Hskl_OptionsList[]  = {"-1","1","0.0001","0.002","4",NULL };
@@ -104,21 +104,27 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/Dist", "Distance", "10.0", GET_GLV_OFFSET (&GLvd_offset.dist), 
+	( "V3dControl.View/Distance", "Distance", "70.0", GET_GLV_OFFSET (&GLvd_offset.camera[1]), 
 	  Dist_OptionsList, N_("View"),
-	  N_("Distance"), NULL
+	  N_("Distance: Camera GL_Z Position (Distance from surface center in front)"), NULL
+		),
+
+	GNOME_RES_ENTRY_FLOATSLIDER
+	( "V3dControl.View/Elevation", "Elevation", "20.0", GET_GLV_OFFSET (&GLvd_offset.camera[2]), 
+	  Dist_OptionsList, N_("View"),
+	  N_("Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)"), NULL
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.View/PerspZfar", "PerspZfar", "500", GET_GLV_OFFSET (&GLvd_offset.Zfar), 
 	  PerspF_OptionsList, N_("View"),
-	  N_("Perspective: Z far distance relative to surface width (=1))"),
+	  N_("Perspective: Z far distance (3D Frustum/clipping default big (500))"),
 	     NULL
 		  ),
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/PerspZnear", "PerspZnear", "1", GET_GLV_OFFSET (&GLvd_offset.Znear), 
+	( "V3dControl.View/PerspZnear", "PerspZnear", "0.1", GET_GLV_OFFSET (&GLvd_offset.Znear), 
 	  PerspN_OptionsList, N_("View"),
-	  N_("Perspective: Z near distance (to center of surface)\n"),
+	  N_("Perspective: Z near distance (3D Frustum/clipping default small (0.1))\n"),
 	     NULL
 		  ),
 	  
