@@ -223,6 +223,7 @@ typedef struct{
 	float tskl;
 	float slice_offset;
 
+	gchar view_preset[30];
 	gchar vertex_source[30];
 	gchar slice_direction[30];
 	float slice_start_n[4];
@@ -299,11 +300,16 @@ public:
 
         static void GLupdate(void* data);
 
-        double GetXYZNormalized (double *r);
+        double GetXYZNormalized (float *r);
         double GetCurrent();
         double GetForce();
-        void GetXYZScale (double *s);
+        void GetXYZScale (float *s);
         void MouseControl (int mouse, double x, double y);
+        void UpdateGLv_control(){
+                v3dControl_pref_dlg->block = TRUE;
+                gnome_res_update_all (v3dControl_pref_dlg);
+                v3dControl_pref_dlg->block = FALSE;
+        };
         void Rotate(int n, double dphi);
         void RotateAbs(int n, double phi);
         double RotateX(double dphi);
