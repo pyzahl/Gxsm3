@@ -390,21 +390,25 @@ public:
 
                 g_message ("text_plane:: init object");
 
-                if(FT_Init_FreeType(&ft)) {
-                        g_warning ("Could not init freetype library.");
+                if (Validated && FT_Init_FreeType(&ft)) {
+                        g_warning ("Could not init freetype library. -- No GL text rendering.");
+                        Validated = false;
                 }
 
                 // fix me -- find out how to get path or install own??
-                if(FT_New_Face(ft, "/usr/share/fonts/truetype/freefont/FreeSans.ttf", 0, &face)) {
-                        g_warning ("Could not open font.");
+                if (Validated && FT_New_Face(ft, "/usr/share/fonts/truetype/freefont/FreeSans.ttf", 0, &face)) {
+                        g_warning ("Could not open font /usr/share/fonts/truetype/freefont/FreeSans.ttf. -- No GL text rendering.");
+                        Validated = false;
                 }
 
-                FT_Set_Pixel_Sizes (face, 0, 48);
-                g = face->glyph;
+                if (Validated){
+                        FT_Set_Pixel_Sizes (face, 0, 48);
+                        g = face->glyph;
 
-                Validated = init_vao ();
-                Validated = init_texture ();
-
+                        Validated = init_vao ();
+                        Validated = init_texture ();
+                }
+                
                 checkError("text_plane::init");
                 g_message ("text_plane:: init object completed");
         };
