@@ -454,7 +454,7 @@ public:
 
                 return Validated && checkError("make_plane::init_vao");
         };
-        gboolean draw (const char *text, glm::vec3 pos, glm::vec3 ex, glm::vec3 ey) {
+        gboolean draw (const char *text, glm::vec3 pos, glm::vec3 ex, glm::vec3 ey, glm::vec4 color=glm::vec4(1.0,0.1,0.5,0.7)) {
  		if (!Validated) return false;
 
                 //g_message ("text_plane::draw  %s", text);
@@ -470,7 +470,7 @@ public:
                 
                 glUseProgram (S3D_ProgramName);
 
-                glUniform4f (glGetUniformLocation (S3D_ProgramName, "textColor"), 1,0.1,0.5,0.7);
+                glUniform4fv (glGetUniformLocation (S3D_ProgramName, "textColor"), 1, &color.x);
 
                 glBindTexture (GL_TEXTURE_2D, TextTextureName);
 
@@ -756,7 +756,7 @@ public:
 private:
         
         glm::vec3 cameraPosition() const {
-                return glm::vec3(0.,  this->DistanceCurrent.y, this->DistanceCurrent.x);
+                return glm::vec3(this->DistanceCurrent.x, this->DistanceCurrent.y, this->DistanceCurrent.z);
         };
         glm::vec3 modelPosition() const {
                 return glm::vec3(this->TranslationCurrent.x, 0., this->TranslationCurrent.y);
@@ -1110,12 +1110,12 @@ public:
 	bool render() {
 		if (!Validated) return false;
 
-                g_message ("Render (GL coord system): Camera at = (0, %g, %g),"
+                g_message ("Render (GL coord system): Camera at = (%g, %g, %g),"
                            " Translate = (%g, 0, %g),"
                            " Rotate = (%g, %g, %g),"
                            " Height-Scale = %g"
                            "",
-                           DistanceCurrent.y, DistanceCurrent.x,
+                           DistanceCurrent.x, DistanceCurrent.y, DistanceCurrent.z,
                            TranslationCurrent.x, TranslationCurrent.y,
                            RotationCurrent.y, Rotation3axis.z, RotationCurrent.x, 
                            s->GLv_data.hskl);
@@ -1289,10 +1289,10 @@ public:
                         text_vao->draw ("X axis", glm::vec3(0, 0, -0.6), ex, ez);
                         text_vao->draw ("Y axis", glm::vec3(0.53, 0, 0), -ez, ex);
                         text_vao->draw ("Z axis", glm::vec3(0.53, 0, -0.6), -ey, 0.5f*(ex+ez));
-                        text_vao->draw ("x -->", glm::vec3(0, 0, -0.5), ex, ey);
-                        text_vao->draw ("<-- X top", glm::vec3(0, 0,  0.5), -ex, ey); 
-                        text_vao->draw ("y -->", glm::vec3(0.5, 0, 0), ez, ey);
-                        text_vao->draw ("Y right", glm::vec3(-0.5, 0, 0), -ez, ey);
+                        text_vao->draw ("front", glm::vec3(0, 0, -0.5), ex, ey);
+                        text_vao->draw ("top", glm::vec3(0, 0,  0.5), ex, ey); 
+                        text_vao->draw ("left", glm::vec3(0.5, 0, 0), ez, ey);
+                        text_vao->draw ("right", glm::vec3(-0.5, 0, 0), -ez, ey);
                 }
                 
 		return checkError("render");
@@ -1352,11 +1352,13 @@ public:
                 cursorPositionCallback('x',0,0);
                 //g_message ("Tx %f Ty %f", TranslationOrigin.x,TranslationOrigin.y);
         };
-        void get_distance (float *d){
-                d[0] = DistanceCurrent.y;
+        void get_camera (float *d){
+                d[0] = DistanceCurrent.x;
+                d[1] = -DistanceCurrent.y;
+                d[2] = -DistanceCurrent.z;
         };
-        void set_distance (float *d){
-                DistanceCurrent = DistanceOrigin = glm::vec3(DistanceCurrent.x, d[0], DistanceCurrent.z);
+        void set_camera (float *d){
+                DistanceCurrent = DistanceOrigin = glm::vec3(d[0], -d[1], -d[2]);
         };
 
         void set_surface_data (glm::vec4 *data, glm::vec4 *palette, int nx, int ny, int nv){
@@ -1545,6 +1547,7 @@ void Surf3d::GLvarinit(){
 	ZoomFac=1;
 	size=0;
         surface_z_data_buffer = NULL;
+        GLv_data.camera[0] = 0.; // fixed
         
 	ReadPalette (xsmres.Palette);
 
@@ -1629,6 +1632,7 @@ void Surf3d::GLupdate (void* data){
                         // g_message ("GLU: %s %g %g", s->GLv_data.view_preset, s->GLv_data.rot[0],s->GLv_data.rot[1]);
                         s->gl_tess->set_rotation (s->GLv_data.rot);
                         s->gl_tess->set_translation (s->GLv_data.trans);
+                        s->gl_tess->set_camera (s->GLv_data.camera);
                 }
                 if (s->v3dcontrol)
                         s->v3dcontrol->rerender_scene ();
@@ -1740,7 +1744,7 @@ void Surf3d::MouseControl (int mouse, double x, double y){
                 gl_tess->cursorPositionCallback(mouse, x, y);
                 gl_tess->get_rotation (GLv_data.rot);
                 gl_tess->get_translation (GLv_data.trans);
-                gl_tess->get_distance (&GLv_data.dist);
+                gl_tess->get_camera (GLv_data.camera);
                 UpdateGLv_control();
         }
 }
@@ -1804,16 +1808,16 @@ void Surf3d::Translate(int n, double delta){
 }
 
 double Surf3d::Zoom(double x){ 
-	GLv_data.dist += x; 
+	GLv_data.camera[1] += x; 
         if (gl_tess)
-                gl_tess->set_distance (&GLv_data.dist);
+                gl_tess->set_camera (GLv_data.camera);
 	if (v3dcontrol){
                 v3dcontrol->rerender_scene ();
                 v3dControl_pref_dlg->block = TRUE;
                 gnome_res_update_all (v3dControl_pref_dlg);
                 v3dControl_pref_dlg->block = FALSE;
         }
-	return GLv_data.dist; 
+	return GLv_data.camera[1]; 
 }
 
 double Surf3d::HeightSkl(double x){ 

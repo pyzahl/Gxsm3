@@ -105,11 +105,18 @@ button and drag surface up/down!
         Field of View
       </description>
     </key>
-    <key name="dist" type="d">
-      <default>10.0</default>
+    <key name="distance" type="d">
+      <default>70.0</default>
       <summary>Distance</summary>
       <description>
         Distance
+      </description>
+    </key>
+    <key name="elevation" type="d">
+      <default>20.0</default>
+      <summary>Elevation</summary>
+      <description>
+        Elevation
       </description>
     </key>
     <key name="perspzfar" type="d">
@@ -120,7 +127,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="perspznear" type="d">
-      <default>1</default>
+      <default>0.1</default>
       <summary>Perspective: Z near distance (to center of surface)
 </summary>
       <description>

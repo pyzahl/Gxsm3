@@ -215,7 +215,7 @@ typedef struct{
 	float trans[3];
 	float rot[3];
 	float fov;
-	float dist;
+	float camera[3];
 	float Zfar;
 	float Znear;
 
