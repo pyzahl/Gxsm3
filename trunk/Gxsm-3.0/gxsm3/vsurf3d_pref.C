@@ -31,6 +31,8 @@ Surf3d_GLview_data GLvd_offset; // dummy
 
 const gchar *TrueFalse_OptionsList[]  = { "true", "false", NULL };
 const gchar *OnOff_OptionsList[]      = { "On", "Off", NULL };
+const gchar *ViewPreset_OptionsList[] = { "Top", "Front", "Left", "Right", "Areal View Front", "Scan: Auto Tip View", NULL };
+
 const gchar *VertexSrc_OptionsList[]  = { "Flat", "Direct Height", "View Mode Height", "X-Channel", "Y", NULL };
 const gchar *XYZ_OptionsList[]        = { "X", "Y", "Z", "Volume", "Scatter", NULL };
 const gchar *ShadeModel_OptionsList[]  = { "Lambertian, use Palette",
@@ -79,6 +81,12 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  Rot_OptionsList, N_("View"),
 	  N_("Rotation Angle in Z"), NULL
 		),
+	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_STRING, "V3dControl.View/RotationPreset", "Areal View Front", GET_GLV_OFFSET (&GLvd_offset.view_preset[0]),
+	  ViewPreset_OptionsList, N_("View"), 
+	  N_("Predefined Views)")
+		),
+
 		
 	GNOME_RES_ENTRY_SEPARATOR (N_("View"), NULL),
 
@@ -360,7 +368,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  ),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.RenderOp/TessLevel", "Tesselation Level", "32.0", GET_GLV_OFFSET (&GLvd_offset.tess_level), 
+	( "V3dControl.RenderOp/TessLevel", "Tesselation Level", "12.0", GET_GLV_OFFSET (&GLvd_offset.tess_level), 
 	  tess_level_OptionsList, N_("Render Opt."),
 	  N_("Tesseletion Level Max:\n"
 	     " 32: normal, 1: no tesselation"), NULL
@@ -457,7 +465,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 		),
 
 	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_STRING, "V3dControl.RenderOp/TickFrameOptions", "0: Simple", GET_GLV_OFFSET (&GLvd_offset.TickFrameOptions[0]),
+	( GNOME_RES_STRING, "V3dControl.RenderOp/TickFrameOptions", "2: XYZ Box", GET_GLV_OFFSET (&GLvd_offset.TickFrameOptions[0]),
 	  TickFrame_OptionsList, N_("Render Opt."), 
 	  N_("Tick Frame Options)")
 		),

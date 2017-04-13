@@ -1,4 +1,12 @@
 <schemalist>
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-rotation-preset">
+    <value value="0" nick="Top "/>
+    <value value="1" nick="Front "/>
+    <value value="2" nick="Left "/>
+    <value value="3" nick="Right "/>
+    <value value="4" nick="Areal View Front "/>
+    <value value="5" nick="Scan: Auto Tip View "/>
+  </enum>
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-vertex-source">
     <value value="0" nick="Flat "/>
     <value value="1" nick="Direct Height "/>
@@ -64,6 +72,21 @@
         Rotation Angle in Z
       </description>
     </key>
+    <key name="rotationpreset" type="s">
+      <choices>
+        <choice value='Top'/>
+        <choice value='Front'/>
+        <choice value='Left'/>
+        <choice value='Right'/>
+        <choice value='Areal View Front'/>
+        <choice value='Scan: Auto Tip View'/>
+      </choices>
+      <default>'Areal View Front'</default>
+      <summary>Predefined Views)</summary>
+      <description>
+        Predefined Views)
+      </description>
+    </key>
     <key name="translation" type="ad">
       <default>[0,0,0]</default>
       <summary>set translations vector X, Y, Z
@@ -90,7 +113,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="perspzfar" type="d">
-      <default>100</default>
+      <default>500</default>
       <summary>Perspective: Z far distance relative to surface width (=1))</summary>
       <description>
         Perspective: Z far distance relative to surface width (=1))
@@ -430,7 +453,7 @@ Used only in "Uniform/Material Color Mode".
       </description>
     </key>
     <key name="tesslevel" type="d">
-      <default>32.0</default>
+      <default>12.0</default>
       <summary>Tesseletion Level Max:
  32: normal, 1: no tesselation</summary>
       <description>
@@ -558,7 +581,7 @@ Note: smooth shading is much slower but looks also much better.
         <choice value='2: XYZ Box'/>
         <choice value='3: XYZ w L Box'/>
       </choices>
-      <default>'0: Simple'</default>
+      <default>'2: XYZ Box'</default>
       <summary>Tick Frame Options)</summary>
       <description>
         Tick Frame Options)

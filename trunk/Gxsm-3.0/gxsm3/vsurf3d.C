@@ -1261,13 +1261,13 @@ public:
                         checkError ("render -- draw ico");
                         glm::vec4 c=MAKE_GLM_VEC3(s->GLv_data.light_specular[2]);
 
-                        double r[3];
+                        GLfloat r[3];
                         s->GetXYZNormalized (r);
                         
                         //glm::vec4 Ra=glm::vec4 (0.,0.7,0., 0.2);
                         //ico_vao->draw (Ra,c,4);
 
-                        double scale[3];
+                        GLfloat scale[3];
                         s->GetXYZScale (scale); // XY not to scale yet
                         glm::vec4 R = MAKE_GLM_VEC4X (r,1) + MAKE_GLM_VEC4X (s->GLv_data.light_position[2], 0);   // GL coords XYZ: plane is XZ, Y is "up"
                         glm::vec4 S = 3.2f * glm::vec4 (scale[0], scale[2], scale[1], 1);
@@ -1440,14 +1440,14 @@ void Surf3d::hide(){
 }
 
 
-void Surf3d::GetXYZScale (double *s){
+void Surf3d::GetXYZScale (float *s){
         s[0] = 1./scan->data.s.rx;
         s[1] = 1./scan->data.s.ry;
         s[2] = 1./gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
 }
 
 // XYZ ormalized to GL box +/- 0.5
-double Surf3d::GetXYZNormalized(double *r){
+double Surf3d::GetXYZNormalized(float *r){
         double x,y,z, za; 
         gapp->xsm->hardware->RTQuery ("R", z, x, y);
         za = z;
@@ -1590,9 +1590,46 @@ void Surf3d::GLupdate (void* data){
                 s->ColorSrc();
 
                 XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLUPDATE rerender" << std::flush);
-                if (s->gl_tess)
-                        s->gl_tess->set_rotation (s->GLv_data.rot);
+                if (s->gl_tess){
+                        // *ViewPreset_OptionsList[] = { "Top", "Front", "Left", "Right", "Areal View Front", "Scan: Auto Tip View", NULL };
 
+                        switch (s->GLv_data.view_preset[0]){
+                        case 'T' :
+                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = -90; s->GLv_data.rot[2] = 0; s->GLv_data.view_preset[0]='*';
+                                s->GLv_data.trans[0] = s->GLv_data.trans[1] = s->GLv_data.trans[2] = 0.;
+                                s->UpdateGLv_control();
+                                break;
+                        case 'F' :
+                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = 0; s->GLv_data.rot[2] = 0; s->GLv_data.view_preset[0]='*';
+                                s->GLv_data.trans[0] = s->GLv_data.trans[1] = s->GLv_data.trans[2] = 0.;
+                                s->UpdateGLv_control();
+                                break;
+                        case 'L' :
+                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = 0; s->GLv_data.rot[2] = 90.; s->GLv_data.view_preset[0]='*';
+                                s->GLv_data.trans[0] = s->GLv_data.trans[1] = s->GLv_data.trans[2] = 0.;
+                                s->UpdateGLv_control();
+                                break;
+                        case 'R' :
+                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = 0; s->GLv_data.rot[2] = -90.; s->GLv_data.view_preset[0]='*';
+                                s->GLv_data.trans[0] = s->GLv_data.trans[1] = s->GLv_data.trans[2] = 0.;
+                                s->UpdateGLv_control();
+                                break;
+                        case 'A' :
+                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = -40; s->GLv_data.rot[2] = 0.;
+                                s->GLv_data.trans[0] = s->GLv_data.trans[1] = s->GLv_data.trans[2] = 0.;
+                                s->UpdateGLv_control();
+                                break;
+                        case 'S':
+                                s->GetXYZNormalized (s->GLv_data.trans);
+                                s->UpdateGLv_control();
+                                break;
+                        case '*': break;
+                        default: break;
+                        }
+                        // g_message ("GLU: %s %g %g", s->GLv_data.view_preset, s->GLv_data.rot[0],s->GLv_data.rot[1]);
+                        s->gl_tess->set_rotation (s->GLv_data.rot);
+                        s->gl_tess->set_translation (s->GLv_data.trans);
+                }
                 if (s->v3dcontrol)
                         s->v3dcontrol->rerender_scene ();
         }
@@ -1704,9 +1741,7 @@ void Surf3d::MouseControl (int mouse, double x, double y){
                 gl_tess->get_rotation (GLv_data.rot);
                 gl_tess->get_translation (GLv_data.trans);
                 gl_tess->get_distance (&GLv_data.dist);
-                v3dControl_pref_dlg->block = TRUE;
-                gnome_res_update_all (v3dControl_pref_dlg);
-                v3dControl_pref_dlg->block = FALSE;
+                UpdateGLv_control();
         }
 }
 
