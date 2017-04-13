@@ -1595,29 +1595,29 @@ void Surf3d::GLupdate (void* data){
 
                         switch (s->GLv_data.view_preset[0]){
                         case 'T' :
-                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = -90; s->GLv_data.rot[2] = 0; s->GLv_data.view_preset[0]='*';
+                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = -90; s->GLv_data.rot[2] = 0;
                                 s->GLv_data.trans[0] = s->GLv_data.trans[1] = s->GLv_data.trans[2] = 0.;
-                                s->UpdateGLv_control();
+                                s->UpdateGLv_control(); s->GLv_data.view_preset[0]='*';
                                 break;
                         case 'F' :
-                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = 0; s->GLv_data.rot[2] = 0; s->GLv_data.view_preset[0]='*';
+                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = 0; s->GLv_data.rot[2] = 0;
                                 s->GLv_data.trans[0] = s->GLv_data.trans[1] = s->GLv_data.trans[2] = 0.;
-                                s->UpdateGLv_control();
+                                s->UpdateGLv_control(); s->GLv_data.view_preset[0]='*';
                                 break;
                         case 'L' :
-                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = 0; s->GLv_data.rot[2] = 90.; s->GLv_data.view_preset[0]='*';
+                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = 0; s->GLv_data.rot[2] = 90.;
                                 s->GLv_data.trans[0] = s->GLv_data.trans[1] = s->GLv_data.trans[2] = 0.;
-                                s->UpdateGLv_control();
+                                s->UpdateGLv_control(); s->GLv_data.view_preset[0]='*';
                                 break;
                         case 'R' :
-                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = 0; s->GLv_data.rot[2] = -90.; s->GLv_data.view_preset[0]='*';
+                                s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = 0; s->GLv_data.rot[2] = -90.;
                                 s->GLv_data.trans[0] = s->GLv_data.trans[1] = s->GLv_data.trans[2] = 0.;
-                                s->UpdateGLv_control();
+                                s->UpdateGLv_control(); s->GLv_data.view_preset[0]='*';
                                 break;
                         case 'A' :
                                 s->GLv_data.rot[0] = 0; s->GLv_data.rot[1] = -40; s->GLv_data.rot[2] = 0.;
                                 s->GLv_data.trans[0] = s->GLv_data.trans[1] = s->GLv_data.trans[2] = 0.;
-                                s->UpdateGLv_control();
+                                s->UpdateGLv_control();  s->GLv_data.view_preset[0]='*';
                                 break;
                         case 'S':
                                 s->GetXYZNormalized (s->GLv_data.trans);
