@@ -4,10 +4,12 @@
 #include "g3d-allshader-uniforms.glsl"
 
 #define POSITION		0
+#define LATTICE                 1
 
 layout(std140, column_major) uniform;
 
 layout(location = POSITION) in vec4 Position;
+layout(location = LATTICE)  in vec4 LatPos;
 
 out block
 {
@@ -18,5 +20,5 @@ uniform vec4 IcoPositionS;
 
 void main()
 {
-    Out.vPosition = Position.xyz;
+    Out.vPosition = LatPos.xyz+Position.xyz;
 }

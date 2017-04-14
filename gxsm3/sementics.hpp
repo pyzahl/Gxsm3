@@ -12,6 +12,14 @@ namespace semantic
                                 TEXCOORD = 1
                         };
         };
+        namespace ico
+        {
+                enum type
+                        {
+                                POSITION = 0,
+                                LATTICE = 1
+                        };
+        };
 	namespace buffer
 	{
 		enum type
