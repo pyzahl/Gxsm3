@@ -1141,15 +1141,20 @@ public:
 	bool render() {
 		if (!Validated) return false;
 
+                GLfloat GL_height_scale = s->GLv_data.hskl * (s->get_scan ())->data.s.rx / (s->get_scan ())->mem2d->data->zrange;
+                
                 g_message ("Render (GL coord system): Camera at = (%g, %g, %g),"
                            " Translate = (%g, 0, %g),"
-                           " Rotate = (%g, %g, %g),"
-                           " Height-Scale = %g"
+                           " Rotate = (%g, %g, %g)\n"
+                           "Geo: Height-Scale = %g  rx=%g ry=%g rz=%g rz*hskl=%g"
                            "",
                            DistanceCurrent.x, DistanceCurrent.y, DistanceCurrent.z,
                            TranslationCurrent.x, TranslationCurrent.y,
                            RotationCurrent.y, Rotation3axis.z, RotationCurrent.x, 
-                           s->GLv_data.hskl);
+                           s->GLv_data.hskl, (s->get_scan ())->data.s.rx, (s->get_scan ())->data.s.ry,
+                           (s->get_scan ())->mem2d->data->zrange,
+                           GL_height_scale
+                           );
 
                 glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
@@ -1193,7 +1198,8 @@ public:
 
                 // Geometry control
                 Block_SurfaceGeometry.aspect = (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx;
-                Block_SurfaceGeometry.height_scale  = s->GLv_data.hskl;
+                // setting GLv_data.hskl to 1 means same x,y and z scale.
+                Block_SurfaceGeometry.height_scale  = GL_height_scale;
                 Block_SurfaceGeometry.height_offset = 0.; // s->GLv_data.slice_offset;
                 Block_SurfaceGeometry.delta = glm::vec2 (1.0f/(s->XPM_x-1), 1.0f/(s->XPM_y-1));
                 updateSurfaceGeometry ();
@@ -1301,7 +1307,9 @@ public:
                         GLfloat scale[3];
                         s->GetXYZScale (scale); // XY not to scale yet
                         glm::vec4 R = MAKE_GLM_VEC4X (r,1) + MAKE_GLM_VEC4X (s->GLv_data.light_position[2], 0);   // GL coords XYZ: plane is XZ, Y is "up"
-                        glm::vec4 S = 3.2f * glm::vec4 (scale[0], scale[2], scale[1], 1);
+                        // GLfloat GL_height_scale = s->GLv_data.hskl * (s->get_scan ())->data.s.rx / (s->get_scan ())->mem2d->data->zrange;
+
+                        glm::vec4 S = 3.2f * 0.5f * glm::vec4 (scale[0], scale[2], scale[1], 1);
                         //glm::vec4 S = glm::vec4 (0.1, 0.1, 0.1, 1);
 
                         ico_vao->draw (R,S,c,4);
@@ -1477,7 +1485,7 @@ void Surf3d::hide(){
 void Surf3d::GetXYZScale (float *s){
         s[0] = 1./scan->data.s.rx;
         s[1] = 1./scan->data.s.ry;
-        s[2] = 1./gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
+        s[2] = 1./gapp->xsm->Inst->Dig2ZA (scan->data.s.dz);
 }
 
 // XYZ ormalized to GL box +/- 0.5
