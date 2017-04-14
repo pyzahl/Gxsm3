@@ -60,8 +60,8 @@
 
 //#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -575,6 +575,7 @@ public:
                         glDeleteVertexArrays(1, &VertexArrayName);
                         glDeleteBuffers(1, &IndexBufferName);
                         glDeleteBuffers(1, &ArrayBufferName);
+                        glDeleteBuffers(1, &LatticeBufferName);
                         //glDeleteTextures(1, &TextTextureName);
                         checkError("icosahedron::~delete");
                 }
@@ -583,6 +584,8 @@ public:
                 checkError("make_plane:: init_buffer");
 		if (!Validated) return false;
 
+                LatticeCount = 4;
+                
                 VertexCount =  12;
                 IndicesCount = 3*20;
                 indices = g_new (glf::vertex_v1i, IndicesCount);
@@ -638,8 +641,8 @@ public:
                 glGenBuffers(1, &ArrayBufferName);
                 glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
                 glBufferData(GL_ARRAY_BUFFER, VertexCount*sizeof(glm::vec4), Verts, GL_STATIC_DRAW);
-                glEnableVertexAttribArray (semantic::attr::POSITION);
-                glVertexAttribPointer (semantic::attr::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), BUFFER_OFFSET(0));
+                glEnableVertexAttribArray (semantic::ico::POSITION);
+                glVertexAttribPointer (semantic::ico::POSITION, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), BUFFER_OFFSET(0));
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                 glGenBuffers(1, &IndexBufferName);
@@ -647,6 +650,21 @@ public:
                 glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndicesCount*sizeof(glf::vertex_v1i), indices, GL_STATIC_DRAW);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
+                const glm::vec4 lattice[4] = {
+                        glm::vec4 ( 0.0f,  0.0f,  0.0f, 0),
+                        glm::vec4 ( 3.0f,  3.0f, -2.0f, 0),
+                        glm::vec4 (-3.0f,  3.0f, -2.0f, 0),
+                        glm::vec4 ( 0.0f,  3.0f,  3.0f, 0)
+                };
+                
+                glGenBuffers(1, &LatticeBufferName);
+                glBindBuffer(GL_ARRAY_BUFFER, LatticeBufferName);
+                glBufferData(GL_ARRAY_BUFFER, LatticeCount*sizeof(glm::vec4), lattice, GL_STATIC_DRAW);
+                glEnableVertexAttribArray (semantic::ico::LATTICE);
+                glVertexAttribPointer (semantic::ico::LATTICE, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), BUFFER_OFFSET(0));
+                glVertexAttribDivisor(semantic::ico::LATTICE, 1); // instancing
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+ 
                 return Validated && checkError("make_plane:: init_buffer");
         };
         gboolean init_texture (){
@@ -690,11 +708,14 @@ public:
 
                 glBindVertexArray (VertexArrayName); // VAO
                 glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
-                glEnableVertexAttribArray (semantic::attr::POSITION);
+                glBindBuffer (GL_ARRAY_BUFFER, LatticeBufferName);
+                glEnableVertexAttribArray (semantic::ico::POSITION);
+                glEnableVertexAttribArray (semantic::ico::LATTICE);
                 glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
 
                 glPatchParameteri (GL_PATCH_VERTICES, 3);
-                glDrawElements (GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
+                //glDrawElements (GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
+                glDrawElementsInstanced (GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0, 4);
  
                 glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
                 glBindBuffer (GL_ARRAY_BUFFER, 0);
@@ -711,6 +732,8 @@ private:
 	GLuint ArrayBufferName;
 	GLuint IndexBufferName;
 	GLuint VertexArrayName;
+	GLuint LatticeBufferName;
+	GLsizei LatticeCount;
 	GLsizei VertexCount;
 	GLsizei IndicesCount;
 };
