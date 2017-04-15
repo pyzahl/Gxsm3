@@ -58,7 +58,7 @@
 
 #include "xsmdebug.h"
 
-//#define __GXSM_PY_DEVEL
+#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
 #define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
 //#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
@@ -207,6 +207,9 @@ namespace
         GLuint Uniform_shadeTerrain(0);
         GLuint Uniform_shadeDebugMode(0);
         GLuint Uniform_shadeLambertian(0);
+        GLuint Uniform_shadeLambertianXColor(0);
+        GLuint Uniform_shadeLambertianMaterialColor(0);
+        GLuint Uniform_shadeLambertianMaterialColorFog(0);
 
 #if 0        //
         GLuint Uniform_S3D_vertexDirect(0); // vertex
@@ -914,6 +917,9 @@ private:
                         Uniform_shadeTerrain      = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
                         Uniform_shadeDebugMode    = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
                         Uniform_shadeLambertian   = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
+                        Uniform_shadeLambertianXColor  = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertianXColor" );
+                        Uniform_shadeLambertianMaterialColor = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertianMaterialColor" );
+                        Uniform_shadeLambertianMaterialColorFog = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertianMaterialColorFog" );
 
 #if 0
                         Uniform_S3D_vertexDirect    = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexDirect" );
@@ -1141,7 +1147,7 @@ public:
 	bool render() {
 		if (!Validated) return false;
 
-                GLfloat GL_height_scale = s->GLv_data.hskl * (s->get_scan ())->data.s.rx / (s->get_scan ())->mem2d->data->zrange;
+                GLfloat GL_height_scale = s->GLv_data.hskl/100.; // * (s->get_scan ())->data.s.rx / (s->get_scan ())->mem2d->data->zrange;
                 
                 g_message ("Render (GL coord system): Camera at = (%g, %g, %g),"
                            " Translate = (%g, 0, %g),"
@@ -1284,7 +1290,11 @@ public:
                 checkError ("render -- configure color_source");
                 
                 switch (s->GLv_data.ShadeModel[0]){
+                case 'L': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertian); break;
 		case 'T': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeTerrain); break;
+                case 'M': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertianMaterialColor); break;
+                case 'F': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertianMaterialColorFog); break;
+                case 'R': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertianXColor); break;
 		case 'D': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeDebugMode); break;
                 default: glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertian); break;
                 }
@@ -1481,6 +1491,74 @@ void Surf3d::hide(){
 	XSM_DEBUG (GL_DEBUG_L2, "Surf3d::hide");
 }
 
+#include "png.h"
+#include "writepng.h"    /* typedefs, common macros, public prototypes */
+
+void Surf3d::SaveImagePNG(GtkGLArea *glarea, const gchar *fname_png){
+	mainprog_info minfo;
+	unsigned char **rgb;
+        guint32 *pixel_data;
+
+        pixel_data = g_new (guint32, scrwidth*scrheight);
+        gtk_gl_area_make_current (glarea);
+        glReadPixels(0,0, scrwidth,scrheight,
+                     GL_BGRA, GL_UNSIGNED_INT_8_8_8_8,
+                     pixel_data);
+
+        minfo.gamma   = 2.2; // may use 2.2 ??
+        minfo.width   = scrwidth;
+        minfo.height  = scrheight;
+        minfo.modtime = time(NULL);
+        minfo.infile  = NULL;
+        
+        if (! (minfo.outfile = fopen(fname_png, "wb"))){
+                return;
+        }
+
+        rgb = new unsigned char* [minfo.height];
+        for (int i=0; i<minfo.height; rgb[i++] = new unsigned char[3*minfo.width]);
+
+        guint32 *rgba = pixel_data;
+        int k,j;
+        for (int i=minfo.height-1; i>=0; --i)
+                for (k=j=0; j<minfo.width; ++j, ++rgba){
+                        *(rgb[i] + k++) = (unsigned char)((*rgba>>24)&0xff);
+                        *(rgb[i] + k++) = (unsigned char)((*rgba>>16)&0xff);
+                        *(rgb[i] + k++) = (unsigned char)((*rgba>> 8)&0xff);
+                }
+
+        g_free (pixel_data);
+        
+        minfo.row_pointers = rgb;
+        minfo.title  = g_strdup ("GXSM-PNG-writer-via-glReadPixels-GL400-SCENE");
+        minfo.author = g_strdup ("GXSM/Percy Zahl");
+        minfo.desc   = g_strdup ("GXSM GL400 SCENE TO PNG export");
+        minfo.copyright = g_strdup ("GPL");
+        minfo.email   = g_strdup ("zahl@users.sourceforge.net");
+        minfo.url     = g_strdup ("http://gxsm.sf.net");
+        minfo.have_bg   = FALSE;
+        minfo.have_time = FALSE;
+        minfo.have_text = FALSE;
+        minfo.pnmtype   = 6; // TYPE_RGB
+        minfo.sample_depth = 8;
+        minfo.interlaced= FALSE;
+
+        writepng_init (&minfo);
+        writepng_encode_image (&minfo);
+        writepng_encode_finish (&minfo);
+        writepng_cleanup (&minfo);
+        fclose (minfo.outfile);
+
+        g_free (minfo.title);
+        g_free (minfo.author);
+        g_free (minfo.desc);
+        g_free (minfo.copyright);
+        g_free (minfo.email);
+        g_free (minfo.url);
+
+        for (int i=0; i<minfo.height; delete[] rgb[i++]);
+        delete[] rgb;
+}
 
 void Surf3d::GetXYZScale (float *s){
         s[0] = 1./scan->data.s.rx;

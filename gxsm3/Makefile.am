@@ -78,6 +78,8 @@ clip.c clip.h \
 monitor.C monitor.h \
 dataio.C dataio.h \
 meldungen.h \
+\
+writepng.C readpng.C writepng.h readpng.h \
 epsfutils.C epsfutils.h
 
 pixmapdir = $(datadir)/pixmaps
@@ -98,7 +100,7 @@ gxsm3_LDFLAGS = -export-dynamic $(GXSM3_LIBS)
 gxsm3_LDADD =  \
 	$(FFTW_LIBS) \
 	${libnetcdf_LIBS} \
-	-lGLEW -lGL -lz -lfreetype
+	-lpng -lGLEW -lGL -lz -lfreetype
 
 sysdir = $(datadir)/apps/System
 

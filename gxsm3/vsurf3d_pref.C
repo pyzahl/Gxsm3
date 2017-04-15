@@ -37,8 +37,9 @@ const gchar *VertexSrc_OptionsList[]  = { "Flat", "Direct Height", "View Mode He
 const gchar *XYZ_OptionsList[]        = { "X", "Y", "Z", "Volume", "Scatter", NULL };
 const gchar *ShadeModel_OptionsList[]  = { "Lambertian, use Palette",
 					   "Terrain",
-					   "Flat Material Color",
-					   "RGBA map, Lambertian",
+					   "Material Color",
+					   "Fog+Material Color",
+					   "X Color Lambertian",
 					   "Debug Shader",
 					   NULL };
 const gchar *ColorSrc_OptionsList[]   = { "Flat", "Direct Height", "View Mode Height", "X-Channel", "Y", NULL };
@@ -53,7 +54,7 @@ const gchar *FoV_OptionsList[]   = {"0","180","1","1","0",NULL };
 const gchar *Dist_OptionsList[]  = {"-200","200","1","1","1",NULL };
 const gchar *PerspF_OptionsList[]  = {"10","1000","1","1","0",NULL };
 const gchar *PerspN_OptionsList[]  = {"0.1","100","1","1","2",NULL };
-const gchar *Hskl_OptionsList[]  = {"-10","10","0.1","0.1","4",NULL };
+const gchar *Hskl_OptionsList[]  = {"-1000","1000","1.","2","4",NULL };
 const gchar *Tskl_OptionsList[]  = {"-10","10","0.01","0.01","1",NULL };
 const gchar *Slice_OptionsList[]  = {"-5","5","0.01","1","2",NULL };
 const gchar *Shininess_OptionsList[]  = {"0","100","0.1","1","1",NULL };
@@ -131,7 +132,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("View"), NULL),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/Hskl", "Height Skl", "1", GET_GLV_OFFSET (&GLvd_offset.hskl), 
+	( "V3dControl.View/Hskl", "Height Skl", "100", GET_GLV_OFFSET (&GLvd_offset.hskl), 
 	  Hskl_OptionsList, N_("View"),
 	  N_("Height Scaling (Z scale)"), NULL
 		),
@@ -256,25 +257,24 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 
 // ============ Material Surface
 
-	#if 0
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.MatSurf/Ambient", "Ambient", "0.45 0.15 0.07 1", GET_GLV_OFFSET (&GLvd_offset.surf_mat_ambient), N_("Surface Material"),
-	  N_("Surface Ambient Color:\n Specify the ambient RGBA reflectance of the material.\nUsed only in \"Uniform/Material Color Mode\"."), NULL
-		),
-	#endif
+	( "V3dControl.MatSurf/Color", "Color", "0.45 0.15 0.07 1", GET_GLV_OFFSET (&GLvd_offset.surf_mat_color), N_("Surface Material"),
+	  N_("Surface Material Color:\n Specify the material color for Flat Material Color Shader Mode."), NULL
+	  ),
+
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.MatSurf/Diffuse", "Diffuse", "0.6 0.2 0.1 1", GET_GLV_OFFSET (&GLvd_offset.surf_mat_diffuse), N_("Surface Material"),
 	  N_("Surface Diffuse Color:\n Specify the diffuse RGBA reflectance of the material.\nUsed only in \"Uniform/Material Color Mode\"."), NULL
-		),
+	  ),
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.MatSurf/Specular", "Specular", "1 1 0.3 1", GET_GLV_OFFSET (&GLvd_offset.surf_mat_specular), N_("Surface Material"),
 	  N_("Surface Specular Color:\n Specify the specular RGBA reflectance of the material."), NULL
-		),
+	  ),
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.MatSurf/Shininess", "Shininess", "7", GET_GLV_OFFSET (&GLvd_offset.surf_mat_shininess[0]), 
 	  Shininess_OptionsList, N_("Surface Material"),
 	  N_("Surface Shininess"), NULL
-		),
+	  ),
 
 	GNOME_RES_ENTRY_SEPARATOR (N_("Surface Material"), NULL),
 

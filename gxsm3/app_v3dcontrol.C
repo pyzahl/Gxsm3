@@ -90,7 +90,7 @@ static GActionEntry win_v3d_gxsm_action_entries[] = {
 	{ "view3d-open", V3dControl::view_file_openhere_callback, NULL, NULL, NULL },
 	{ "view3d-save-auto", V3dControl::view_file_save_callback, NULL, NULL, NULL },
 	{ "view3d-save-as", V3dControl::view_file_save_as_callback, NULL, NULL, NULL },
-	{ "view3d-save-as-image", V3dControl::view_file_save_callback, NULL, NULL, NULL },
+	{ "view3d-save-as-image", V3dControl::view_file_save_image_callback, NULL, NULL, NULL },
 	{ "view3d-close", V3dControl::view_file_kill_callback, NULL, NULL, NULL },
 	{ "view3d-configure", V3dControl::configure_callback, NULL, "false", NULL },
 };
@@ -441,10 +441,31 @@ void V3dControl::view_file_save_as_callback (GSimpleAction *action, GVariant *pa
 }
 
 void V3dControl::view_file_save_image_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
-        // V3dControl *vc = (V3dControl *) user_data;
-	XSM_DEBUG(DBG_L2, "Sorry, I'm working on!" );
-        //	((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->
-        //		save_to_image(imagename);
+        V3dControl *vc = (V3dControl *) user_data;
+
+	gchar *suggest = g_strdup_printf ("%s-GL3D.png", vc->scan->data.ui.originalname);
+        //gchar *name = g_path_get_basename (suggest);
+        gchar *path = g_path_get_dirname (suggest);
+        
+        GtkFileFilter *f0 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f0, "All");
+        gtk_file_filter_add_pattern (f0, "*");
+
+        GtkFileFilter *fpng = gtk_file_filter_new ();
+        gtk_file_filter_add_mime_type (fpng, "image/png");
+        gtk_file_filter_set_name (fpng, "Images");
+        gtk_file_filter_add_pattern (fpng, "*.png");
+
+        GtkFileFilter *filter[] = { fpng, f0, NULL };
+                
+        gchar *imgname = gapp->file_dialog_save ("Save GL 3D View as png file", path, suggest, filter);
+	g_free (suggest);
+
+	if (imgname == NULL || strlen(imgname) < 5) 
+		return;
+
+        ((Surf3d*)g_object_get_data (G_OBJECT (vc->glarea), "vdata"))->
+                SaveImagePNG (GTK_GL_AREA (vc->glarea), imgname);
 }
 
 void V3dControl::view_file_print_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){

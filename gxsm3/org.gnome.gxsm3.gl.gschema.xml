@@ -1,11 +1,12 @@
 <schemalist>
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-rotation-preset">
-    <value value="0" nick="Top "/>
-    <value value="1" nick="Front "/>
-    <value value="2" nick="Left "/>
-    <value value="3" nick="Right "/>
-    <value value="4" nick="Areal View Front "/>
-    <value value="5" nick="Scan: Auto Tip View "/>
+    <value value="0" nick="Manual "/>
+    <value value="1" nick="Top "/>
+    <value value="2" nick="Front "/>
+    <value value="3" nick="Left "/>
+    <value value="4" nick="Right "/>
+    <value value="5" nick="Areal View Front "/>
+    <value value="6" nick="Scan: Auto Tip View "/>
   </enum>
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-vertex-source">
     <value value="0" nick="Flat "/>
@@ -35,9 +36,10 @@
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-mat-surf-shade-model">
     <value value="0" nick="Lambertian, use Palette "/>
     <value value="1" nick="Terrain "/>
-    <value value="2" nick="Flat Material Color "/>
-    <value value="3" nick="RGBA map, Lambertian "/>
-    <value value="4" nick="Debug Shader "/>
+    <value value="2" nick="Material Color "/>
+    <value value="3" nick="Fog+Material Color "/>
+    <value value="4" nick="X Color Lambertian "/>
+    <value value="5" nick="Debug Shader "/>
   </enum>
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-render-op-fog">
     <value value="0" nick="true "/>
@@ -74,6 +76,7 @@
     </key>
     <key name="rotationpreset" type="s">
       <choices>
+        <choice value='Manual'/>
         <choice value='Top'/>
         <choice value='Front'/>
         <choice value='Left'/>
@@ -107,36 +110,36 @@ button and drag surface up/down!
     </key>
     <key name="distance" type="d">
       <default>70.0</default>
-      <summary>Distance</summary>
+      <summary>Distance: Camera GL_Z Position (Distance from surface center in front)</summary>
       <description>
-        Distance
+        Distance: Camera GL_Z Position (Distance from surface center in front)
       </description>
     </key>
     <key name="elevation" type="d">
       <default>20.0</default>
-      <summary>Elevation</summary>
+      <summary>Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)</summary>
       <description>
-        Elevation
+        Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)
       </description>
     </key>
     <key name="perspzfar" type="d">
       <default>500</default>
-      <summary>Perspective: Z far distance relative to surface width (=1))</summary>
+      <summary>Perspective: Z far distance (3D Frustum/clipping default big (500))</summary>
       <description>
-        Perspective: Z far distance relative to surface width (=1))
+        Perspective: Z far distance (3D Frustum/clipping default big (500))
       </description>
     </key>
     <key name="perspznear" type="d">
       <default>0.1</default>
-      <summary>Perspective: Z near distance (to center of surface)
+      <summary>Perspective: Z near distance (3D Frustum/clipping default small (0.1))
 </summary>
       <description>
-        Perspective: Z near distance (to center of surface)
+        Perspective: Z near distance (3D Frustum/clipping default small (0.1))
 
       </description>
     </key>
     <key name="hskl" type="d">
-      <default>1</default>
+      <default>100</default>
       <summary>Height Scaling (Z scale)</summary>
       <description>
         Height Scaling (Z scale)
@@ -293,6 +296,15 @@ button and drag surface up/down!
   </schema>
 
   <schema id="org.gnome.gxsm3.gl.v3dcontrol.matsurf" path="/org/gnome/gxsm3/gl/v3dcontrol.matsurf/">
+    <key name="color" type="ad">
+      <default>[0.45,0.15,0.07,1]</default>
+      <summary>Surface Material Color:
+ Specify the material color for Flat Material Color Shader Mode.</summary>
+      <description>
+        Surface Material Color:
+ Specify the material color for Flat Material Color Shader Mode.
+      </description>
+    </key>
     <key name="diffuse" type="ad">
       <default>[0.6,0.2,0.1,1]</default>
       <summary>Surface Diffuse Color:
@@ -338,8 +350,9 @@ Used only in "Uniform/Material Color Mode".
       <choices>
         <choice value='Lambertian, use Palette'/>
         <choice value='Terrain'/>
-        <choice value='Flat Material Color'/>
-        <choice value='RGBA map, Lambertian'/>
+        <choice value='Material Color'/>
+        <choice value='Fog+Material Color'/>
+        <choice value='X Color Lambertian'/>
         <choice value='Debug Shader'/>
       </choices>
       <default>'Lambertian, use Palette'</default>
