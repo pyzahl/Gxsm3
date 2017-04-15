@@ -300,6 +300,8 @@ public:
 
         static void GLupdate(void* data);
 
+        void SaveImagePNG(GtkGLArea *area, const gchar *fname_png); 
+        
         double GetXYZNormalized (float *r);
         double GetCurrent();
         double GetForce();

@@ -73,7 +73,7 @@ libquicktime_im_export_la_SOURCES = quicktime_im_export.C
 # note: /sw/lib is for fink on darwin, should not distrub otherwise
 libpng_im_export_la_LDFLAGS = -module -export-dynamic -avoid-version
 libpng_im_export_la_LIBADD = -L/sw/lib -lpng
-libpng_im_export_la_SOURCES = png_im_export.C writepng.h writepng.C readpng.h readpng.C
+libpng_im_export_la_SOURCES = png_im_export.C
 
 libconverter_la_LDFLAGS = -module -export-dynamic -avoid-version
 libconverter_la_SOURCES = converter.C

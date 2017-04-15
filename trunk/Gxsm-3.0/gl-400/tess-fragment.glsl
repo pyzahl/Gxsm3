@@ -283,6 +283,31 @@ vec4 shadeLambertianMaterialColor(vec3 vertex, vec3 vertexEye,
         //                     transparency_offset+transparency*materialColor.a);
 }
 
+// Lambertian light model for surface, use homogenious surface color = material_color
+subroutine( shadeModelType )
+vec4 shadeLambertianMaterialColorFog(vec3 vertex, vec3 vertexEye, 
+                                     vec3 normal, vec4 color)
+{
+        // world-space
+        vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
+        vec3 h = normalize(-lightDirWorld.xyz + viewDir);
+        vec3 n = normalize(normal);
+
+        //float diffuse = saturate( dot(n, -lightDir));
+        float diffuse = saturate( (dot(n, -lightDirWorld.xyz) + wrap) / (1.0 + wrap));   // wrap
+        //float diffuse = dot(n, -lightDir)*0.5+0.5;
+        float specular = pow( saturate(dot(h, n)), shininess);
+
+        vec3 finalColor = (ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*materialColor.xyz;
+
+        //float dist = length(vertexEye);
+        float dist = length(eyePosWorld.xyz);
+        //finalColor = applyFog(finalColor, dist);
+        finalColor = applyFog(finalColor, dist, viewDir);
+
+        return vec4 (color_offset.xyz + lightness*finalColor, transparency_offset);
+}
+
 
 void main()
 {
