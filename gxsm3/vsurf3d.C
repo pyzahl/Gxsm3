@@ -58,7 +58,7 @@
 
 #include "xsmdebug.h"
 
-#define __GXSM_PY_DEVEL
+//#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
 #define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
 //#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
