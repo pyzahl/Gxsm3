@@ -8,6 +8,10 @@
     <value value="5" nick="Areal View Front "/>
     <value value="6" nick="Scan: Auto Tip View "/>
   </enum>
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-heigh-scale-mode">
+    <value value="0" nick="Absolute Ang "/>
+    <value value="1" nick="Relative Range "/>
+  </enum>
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-vertex-source">
     <value value="0" nick="Flat "/>
     <value value="1" nick="Direct Height "/>
@@ -122,20 +126,15 @@ button and drag surface up/down!
         Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)
       </description>
     </key>
-    <key name="perspzfar" type="d">
-      <default>500</default>
-      <summary>Perspective: Z far distance (3D Frustum/clipping default big (500))</summary>
+    <key name="heighscalemode" type="s">
+      <choices>
+        <choice value='Absolute Ang'/>
+        <choice value='Relative Range'/>
+      </choices>
+      <default>'Relative Range'</default>
+      <summary>Height Scaling Mode)</summary>
       <description>
-        Perspective: Z far distance (3D Frustum/clipping default big (500))
-      </description>
-    </key>
-    <key name="perspznear" type="d">
-      <default>0.1</default>
-      <summary>Perspective: Z near distance (3D Frustum/clipping default small (0.1))
-</summary>
-      <description>
-        Perspective: Z near distance (3D Frustum/clipping default small (0.1))
-
+        Height Scaling Mode)
       </description>
     </key>
     <key name="hskl" type="d">

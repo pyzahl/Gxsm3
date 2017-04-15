@@ -100,7 +100,7 @@ gxsm3_LDFLAGS = -export-dynamic $(GXSM3_LIBS)
 gxsm3_LDADD =  \
 	$(FFTW_LIBS) \
 	${libnetcdf_LIBS} \
-	-lpng -lGLEW -lGL -lz -lfreetype
+	-lpng -lGLEW -lGL -lz -lfreetype -licuuc
 
 sysdir = $(datadir)/apps/System
 
