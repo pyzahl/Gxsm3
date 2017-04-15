@@ -35,8 +35,19 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 
+// C String
+#include <cstdio>
+#include <cstring>
+
+// FreeType headers
 #include <ft2build.h>
 #include FT_FREETYPE_H
+
+// ICU headers
+#include <unicode/ustring.h>
+
+// libpng support utils
+#include "writepng.h"    /* typedefs, common macros, public prototypes */
 
 #include "config.h"
 #include "gnome-res.h"
@@ -128,6 +139,7 @@ namespace
 	std::string const TESSELATION_EVALUATION_SHADER("tess-evaluation.glsl");
 	std::string const TESSELATION_GEOMETRY_SHADER("tess-geometry.glsl");
 	std::string const TESSELATION_FRAGMENT_SHADER("tess-fragment.glsl");
+        GLuint ProgramName_RefCount(0);
 	GLuint Tesselation_ProgramName(0);
 
         // simple text shaders
@@ -492,9 +504,37 @@ public:
 
                 checkError("make_plane::draw start");
 
-                for(const char *p = text; *p; p++) {
-                        if(FT_Load_Char (face, *p, FT_LOAD_RENDER))
+                // FreeType uses Unicode as glyph index; so we have to convert string from UTF8 to Unicode(UTF32)
+                int utf16_buf_size = strlen(text) + 1; // +1 for the last '\0'
+                std::unique_ptr<UChar[]> utf16_str(new UChar[utf16_buf_size]);
+                UErrorCode err = U_ZERO_ERROR;
+                int utf16_length;
+                u_strFromUTF8(utf16_str.get(), utf16_buf_size, &utf16_length, text, strlen(text), &err);
+                if (err != U_ZERO_ERROR) {
+                        fprintf(stderr, "u_strFromUTF8() failed: %s\n", u_errorName(err));
+                        return false;
+                }
+
+                int utf32_buf_size = utf16_length + 1; // +1 for the last '\0'
+                std::unique_ptr<UChar32[]> utf32_str(new UChar32[utf32_buf_size]);
+                int utf32_length;
+                u_strToUTF32(utf32_str.get(), utf32_buf_size, &utf32_length, utf16_str.get(), utf16_length, &err);
+                if (err != U_ZERO_ERROR) {
+                        fprintf(stderr, "u_strToUTF32() failed: %s\n", u_errorName(err));
+                        return false;
+                }
+
+                for (int i = 0; i < utf32_length; i++) {
+                        FT_UInt glyph_index = FT_Get_Char_Index(face, utf32_str[i]);
+                        if (FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER)){
+                                g_warning ("FT_Load_Glyph() failed for <%c>.\n", utf32_str[i]);
                                 continue;
+                        }
+                
+                        //                for(const char *p = text; *p; p++) {
+                        //                        
+                        //                        if(FT_Load_Char (face, *p, FT_LOAD_RENDER))
+                        //                                continue;
 
                         glTexImage2D (
                                       GL_TEXTURE_2D,
@@ -807,7 +847,19 @@ private:
         };
 
 	bool initProgram() {
-		if (Validated){
+
+                // load and init shader program if not yet created -- only once, may shared!
+#if 0
+                if (Validated && ProgramName_RefCount > 0){
+                        g_message ("Shader Program is already initiated.");
+                        ++ProgramName_RefCount;
+                        return Validated;
+                }
+                
+                g_message ("Loading, Compiling and Initializing Shader Programs.");
+#endif
+
+                if (Validated){
                         compiler Compiler;
                         GLuint VertexShader     = Compiler.create (GL_VERTEX_SHADER, getDataDirectory() + TESSELATION_VERTEX_SHADER, CMD_ARGS_FOR_SHADERS);
                         GLuint ControlShader    = Compiler.create (GL_TESS_CONTROL_SHADER, getDataDirectory() + TESSELATION_CONTROL_SHADER, CMD_ARGS_FOR_SHADERS);
@@ -825,6 +877,7 @@ private:
                                 glAttachShader (Tesselation_ProgramName, GeometryShader);
                                 glAttachShader (Tesselation_ProgramName, FragmentShader);
                                 glLinkProgram (Tesselation_ProgramName);
+                                ++ProgramName_RefCount;
                         }
                         
 			Validated = Validated && Compiler.check();
@@ -1127,9 +1180,21 @@ public:
                         delete surface_plane;
                 
                 glDeleteTextures(TesselationTextureCount, TesselationTextureName);
-                glDeleteProgram(Tesselation_ProgramName);
-                glDeleteProgram(S3D_ProgramName);
 
+                g_message ("end -- check for Shader Programs unload. %d", ProgramName_RefCount);
+
+                --ProgramName_RefCount;
+                if (ProgramName_RefCount == 0){
+                        g_message ("end -- unloading Shader Programs. %d", ProgramName_RefCount);
+                
+                        glDeleteProgram(Tesselation_ProgramName);
+                        glDeleteProgram(S3D_ProgramName);
+                        glDeleteProgram(IcoTess_ProgramName);
+
+                        Tesselation_ProgramName = 0;
+                        S3D_ProgramName = 0;
+                        IcoTess_ProgramName = 0;
+                }
 		return checkError("end");
 	};
 
@@ -1146,20 +1211,24 @@ public:
 
 	bool render() {
 		if (!Validated) return false;
+                GLfloat GL_height_scale = 1.;
 
-                GLfloat GL_height_scale = s->GLv_data.hskl/100.; // * (s->get_scan ())->data.s.rx / (s->get_scan ())->mem2d->data->zrange;
+                switch (s->GLv_data.height_scale_mode[0]){
+                case 'A': GL_height_scale = s->GLv_data.hskl
+                                * (s->get_scan ())->mem2d->data->zrange
+                                * (s->get_scan ())->data.s.dz
+                                / (s->get_scan ())->data.s.rx;
+                        break;
+                case 'R': GL_height_scale = s->GLv_data.hskl; break;
+                }
                 
-                g_message ("Render (GL coord system): Camera at = (%g, %g, %g),"
-                           " Translate = (%g, 0, %g),"
-                           " Rotate = (%g, %g, %g)\n"
-                           "Geo: Height-Scale = %g  rx=%g ry=%g rz=%g rz*hskl=%g"
+                g_message ("Render (GL coord system):\n"
+                           " Camera at = (%g, %g, %g)\n"
+                           " Look at Origin\n"
+                           " Translate = (%g, 0, %g)"
                            "",
                            DistanceCurrent.x, DistanceCurrent.y, DistanceCurrent.z,
-                           TranslationCurrent.x, TranslationCurrent.y,
-                           RotationCurrent.y, Rotation3axis.z, RotationCurrent.x, 
-                           s->GLv_data.hskl, (s->get_scan ())->data.s.rx, (s->get_scan ())->data.s.ry,
-                           (s->get_scan ())->mem2d->data->zrange,
-                           GL_height_scale
+                           TranslationCurrent.x, TranslationCurrent.y
                            );
 
                 glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1167,7 +1236,6 @@ public:
                 glEnable (GL_DEPTH_TEST);
 
                 glPolygonMode (GL_FRONT_AND_BACK, s->GLv_data.Mesh ? GL_LINE : GL_FILL);
-                // glShadeModel(s->GLv_data.Smooth ? GL_SMOOTH : GL_FLAT); // depricated
 
                 if (s->GLv_data.Cull){
                         glEnable (GL_CULL_FACE);
@@ -1175,15 +1243,10 @@ public:
                 } else {
                         glDisable (GL_CULL_FACE);
                 }
-                
-                if (s->GLv_data.Smooth)
-                        ; //glEnable (GL_LINE_SMOOTH);
 
-
-                // https://glm.g-truc.net/0.9.4/api/a00151.html
                 float aspect = WindowSize.x/WindowSize.y;
                 // GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f
-                glm::mat4 Projection = glm::perspective (glm::radians (s->GLv_data.fov/57.3f), aspect, s->GLv_data.Znear, s->GLv_data.Zfar);
+                glm::mat4 Projection = glm::perspective (glm::radians (s->GLv_data.fov/57.3f), aspect, 0.1f, 500.f); // near, far frustum
                 glm::mat4 Camera = glm::lookAt (cameraPosition(), // cameraPosition, the position of your camera, in world space
                                                 glm::vec3(0,0,0), //cameraTarget, where you want to look at, in world space
                                                 glm::vec3(0,1,0) // upVector, probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
@@ -1220,7 +1283,6 @@ public:
                 Block_FragmentShading.sunColor      = MAKE_GLM_VEC3(s->GLv_data.light_specular[0]); // = vec3(1.0, 1.0, 0.7);
                 Block_FragmentShading.specularColor = MAKE_GLM_VEC3(s->GLv_data.surf_mat_specular); // = vec3(1.0, 1.0, 0.7)*1.5;
                 Block_FragmentShading.ambientColor  = MAKE_GLM_VEC3(s->GLv_data.light_global_ambient); // = vec3(0.05, 0.05, 0.15 );
-                //Block_FragmentShading.ambientColor  = MAKE_GLM_VEC3(s->GLv_data.surf_mat_ambient); // = vec3(1.0, 1.0, 0.7)*1.5;
                 Block_FragmentShading.diffuseColor  = MAKE_GLM_VEC3(s->GLv_data.surf_mat_diffuse); // = vec3(1.0, 1.0, 0.7)*1.5;
                 Block_FragmentShading.fogColor      = MAKE_GLM_VEC3(s->GLv_data.fog_color); // = vec3(0.7, 0.8, 1.0)*0.7;
                 Block_FragmentShading.materialColor = MAKE_GLM_VEC4(s->GLv_data.surf_mat_color); // vec4
@@ -1248,7 +1310,6 @@ public:
                 // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
 
                 // configure shaders for surface rendering modes (using tesselation) and select final shading mode
-                // s->GLv_data.vertex_source[0] = 'D';
                 switch (s->GLv_data.vertex_source[0]){
                 case 'F': // Flat Vertex Height
                         glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, &Uniform_vertexFlat);
@@ -1302,7 +1363,8 @@ public:
                 
                 surface_plane->draw ();
 
-
+                // Gimmicks ========================================
+                // Ico
                 if (ico_vao && s->GLv_data.light[2][1] == 'n'){
 #define MAKE_GLM_VEC4X(V,X) glm::vec4(V[0],V[2],V[1],X)
                         checkError ("render -- draw ico");
@@ -1317,16 +1379,14 @@ public:
                         GLfloat scale[3];
                         s->GetXYZScale (scale); // XY not to scale yet
                         glm::vec4 R = MAKE_GLM_VEC4X (r,1) + MAKE_GLM_VEC4X (s->GLv_data.light_position[2], 0);   // GL coords XYZ: plane is XZ, Y is "up"
-                        // GLfloat GL_height_scale = s->GLv_data.hskl * (s->get_scan ())->data.s.rx / (s->get_scan ())->mem2d->data->zrange;
-
                         glm::vec4 S = 3.2f * 0.5f * glm::vec4 (scale[0], scale[2], scale[1], 1);
-                        //glm::vec4 S = glm::vec4 (0.1, 0.1, 0.1, 1);
 
                         ico_vao->draw (R,S,c,4);
                         g_message ("R = %g %g %g", R.x, R.y, R.z);
                         g_message ("S = X/Z: %g   X%g Y%g Z%g", scale[0]/(scale[2] / s->GLv_data.hskl), S.x, S.y, S.z);
                 }
-                
+
+                // Annotations, Labels, ...
 #define MAKE_GLM_VEC3X(V) glm::vec3(V[0],V[1],V[2])
                 if (text_vao && s->GLv_data.light[1][1] == 'n'){
                         checkError ("render -- draw text");
@@ -1334,10 +1394,33 @@ public:
                         glm::vec3 ex=glm::vec3 (0.1,0,0);
                         glm::vec3 ey=glm::vec3 (0,0.1,0);
                         glm::vec3 ez=glm::vec3 (0,0,0.1);
+                        glm::vec3 exz = 0.5f*(ex+ez);
+                        glm::vec3 eyz = -0.5f*(ex-ez);
                         text_vao->draw ("GXSM-3.0 GL4.0", glm::vec3(0.5, -0.1, -0.75), 1.25f*ex, 1.25f*ez);
-                        text_vao->draw ("X axis", glm::vec3(0, 0, -0.6), ex, ez);
-                        text_vao->draw ("Y axis", glm::vec3(0.53, 0, 0), -ez, ex);
-                        text_vao->draw ("Z axis", glm::vec3(0.53, 0, -0.6), -ey, 0.5f*(ex+ez));
+                        {
+                                text_vao->draw ("X axis", glm::vec3(0, 0, -0.6), ex, ez);
+                                gchar *tmp = g_strdup ((s->get_scan ())->data.Xunit->UsrString ((s->get_scan ())->data.s.rx));
+                                text_vao->draw (tmp, glm::vec3(0.5, 0, -0.6), ex, ez);
+                                g_free (tmp);
+                        }
+                        {
+                                text_vao->draw ("Y axis", glm::vec3(0.53, 0, 0), -ez, ex);
+                                gchar *tmp = g_strdup ((s->get_scan ())->data.Yunit->UsrString ((s->get_scan ())->data.s.ry));
+                                text_vao->draw (tmp, glm::vec3(0.53, 0, -0.5), -ez, ex);
+                                g_free (tmp);
+                        }
+                        {
+                                text_vao->draw ("Z axis", glm::vec3(0.53, 0, -0.6), -ey, 0.5f*(ex+ez));
+                                gchar *tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0));
+                                text_vao->draw (tmp, glm::vec3(-0.53, 0, -0.53), exz, eyz);
+                                g_free (tmp);
+                                tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0.5*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz));
+                                text_vao->draw (tmp, glm::vec3(-0.53, 0.5*GL_height_scale, -0.53), exz, eyz);
+                                g_free (tmp);
+                                tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0.5*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz/GL_height_scale));
+                                text_vao->draw (tmp, glm::vec3(-0.53, 0.5, -0.53), exz, eyz);
+                                g_free (tmp);
+                        }
                         text_vao->draw ("front", glm::vec3(0, 0, -0.5), ex, ey);
                         text_vao->draw ("top", glm::vec3(0, 0,  0.5), ex, ey); 
                         text_vao->draw ("left", glm::vec3(0.5, 0, 0), ez, ey);
@@ -1491,9 +1574,6 @@ void Surf3d::hide(){
 	XSM_DEBUG (GL_DEBUG_L2, "Surf3d::hide");
 }
 
-#include "png.h"
-#include "writepng.h"    /* typedefs, common macros, public prototypes */
-
 void Surf3d::SaveImagePNG(GtkGLArea *glarea, const gchar *fname_png){
 	mainprog_info minfo;
 	unsigned char **rgb;
@@ -1522,9 +1602,9 @@ void Surf3d::SaveImagePNG(GtkGLArea *glarea, const gchar *fname_png){
         int k,j;
         for (int i=minfo.height-1; i>=0; --i)
                 for (k=j=0; j<minfo.width; ++j, ++rgba){
-                        *(rgb[i] + k++) = (unsigned char)((*rgba>>24)&0xff);
-                        *(rgb[i] + k++) = (unsigned char)((*rgba>>16)&0xff);
                         *(rgb[i] + k++) = (unsigned char)((*rgba>> 8)&0xff);
+                        *(rgb[i] + k++) = (unsigned char)((*rgba>>16)&0xff);
+                        *(rgb[i] + k++) = (unsigned char)((*rgba>>24)&0xff);
                 }
 
         g_free (pixel_data);

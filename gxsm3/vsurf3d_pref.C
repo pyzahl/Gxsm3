@@ -52,9 +52,8 @@ const gchar *ColorOffset_OptionsList[]   = { "-1","1","0.01","0.1","3", NULL };
 const gchar *Rot_OptionsList[]   = {"-180","180","1","1","0",NULL };
 const gchar *FoV_OptionsList[]   = {"0","180","1","1","0",NULL };
 const gchar *Dist_OptionsList[]  = {"-200","200","1","1","1",NULL };
-const gchar *PerspF_OptionsList[]  = {"10","1000","1","1","0",NULL };
-const gchar *PerspN_OptionsList[]  = {"0.1","100","1","1","2",NULL };
-const gchar *Hskl_OptionsList[]  = {"-1000","1000","1.","2","4",NULL };
+const gchar *Hskl_mode_OptionsList[]     = { "Absolute Ang", "Relative Range", NULL };
+const gchar *Hskl_OptionsList[]  = {"-10","10","0.001","0.001","4",NULL };
 const gchar *Tskl_OptionsList[]  = {"-10","10","0.01","0.01","1",NULL };
 const gchar *Slice_OptionsList[]  = {"-5","5","0.01","1","2",NULL };
 const gchar *Shininess_OptionsList[]  = {"0","100","0.1","1","1",NULL };
@@ -115,24 +114,17 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  Dist_OptionsList, N_("View"),
 	  N_("Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)"), NULL
 		),
-
-	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/PerspZfar", "PerspZfar", "500", GET_GLV_OFFSET (&GLvd_offset.Zfar), 
-	  PerspF_OptionsList, N_("View"),
-	  N_("Perspective: Z far distance (3D Frustum/clipping default big (500))"),
-	     NULL
-		  ),
-	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/PerspZnear", "PerspZnear", "0.1", GET_GLV_OFFSET (&GLvd_offset.Znear), 
-	  PerspN_OptionsList, N_("View"),
-	  N_("Perspective: Z near distance (3D Frustum/clipping default small (0.1))\n"),
-	     NULL
-		  ),
-	  
+  
 	GNOME_RES_ENTRY_SEPARATOR (N_("View"), NULL),
 
+	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_STRING, "V3dControl.View/HeighScaleMode", "Relative Range", GET_GLV_OFFSET (&GLvd_offset.height_scale_mode[0]),
+	  Hskl_mode_OptionsList, N_("View"), 
+	  N_("Height Scaling Mode)")
+		),
+	
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/Hskl", "Height Skl", "100", GET_GLV_OFFSET (&GLvd_offset.hskl), 
+	( "V3dControl.View/Hskl", "Height Skl", "0.1", GET_GLV_OFFSET (&GLvd_offset.hskl), 
 	  Hskl_OptionsList, N_("View"),
 	  N_("Height Scaling (Z scale)"), NULL
 		),

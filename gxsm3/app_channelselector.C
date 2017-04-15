@@ -128,7 +128,7 @@ ChannelSelector::ChannelSelector (int ChAnz){
   
 	if (showPrevious == 1){
                 wid = gtk_button_new_with_label("Store");
-                gtk_grid_attach (GTK_GRID (v_grid), wid, 0,100, 2,1);
+                gtk_grid_attach (GTK_GRID (v_grid), wid, 1,100, 2,1);
                 g_signal_connect (G_OBJECT (wid), "clicked",
                                   G_CALLBACK (ChannelSelector::store_callback),
                                   this);
@@ -141,10 +141,10 @@ ChannelSelector::ChannelSelector (int ChAnz){
                         gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (dropDownMenu), g_strdup_printf ("%d",k), presets[k]);
                 
 		gtk_combo_box_set_active_id (GTK_COMBO_BOX (dropDownMenu), "0");
-                gtk_grid_attach (GTK_GRID (v_grid), dropDownMenu, 2,100, 2,1);
+                gtk_grid_attach (GTK_GRID (v_grid), dropDownMenu, 3,100, 2,1);
                 
                 wid = gtk_button_new_with_label("Restore");
-                gtk_grid_attach (GTK_GRID (v_grid), wid, 4,100, 2,1);
+                gtk_grid_attach (GTK_GRID (v_grid), wid, 5,100, 5,1);
                 gtk_widget_show(wid);
                 g_signal_connect (G_OBJECT (wid), "clicked",
                                   G_CALLBACK (ChannelSelector::restore_callback),

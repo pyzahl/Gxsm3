@@ -216,9 +216,8 @@ typedef struct{
 	float rot[3];
 	float fov;
 	float camera[3];
-	float Zfar;
-	float Znear;
 
+        gchar height_scale_mode[30];
 	float hskl;
 	float tskl;
 	float slice_offset;
