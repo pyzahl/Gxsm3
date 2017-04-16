@@ -107,7 +107,7 @@ sranger_mk3_hwi_spm::~sranger_mk3_hwi_spm(){
 #endif
 
 gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
-        const gint64 max_age = 50000; // 50ms
+        const gint64 max_age = 20000; // 20ms
         static gint64 time_of_last_reading = 0; // abs time in us
 	static gint init=FALSE; 
 	static SIGNAL_MONITOR_MK3 dsp_sig_mon;

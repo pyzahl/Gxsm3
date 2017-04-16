@@ -264,6 +264,7 @@ typedef struct{
 	int Smooth;
 	int Ortho;
 	int Ticks;
+        float probe_atoms;
 	gchar TickFrameOptions[30];
 	int TransparentSlices;
 	float transparency;
@@ -290,6 +291,7 @@ public:
         Surf3d(Scan *sc, int ChNo);
         virtual ~Surf3d();
 
+        void end_gl ();
         virtual void hide();
         virtual int draw(int zoomoverride=FALSE);
         virtual int update(int y1, int y2);

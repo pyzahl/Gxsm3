@@ -159,6 +159,9 @@ void V3dControl::AppWindowInit(const gchar *title){
 gboolean V3dControl::v3dview_timer_callback (gpointer data){
         V3dControl *vc =  (V3dControl *) data;
 
+        if (!vc->au_timer)
+                return false;
+        
         if (vc->scan->is_scanning ()){
                 gtk_gl_area_queue_render (GTK_GL_AREA (vc->glarea));
                 return true;
@@ -245,10 +248,20 @@ V3dControl::V3dControl (const char *title, int ChNo, Scan *sc,
 }
 
 V3dControl::~V3dControl (){
+        // remove timeout
+        if (au_timer){
+                g_source_remove (au_timer);
+                au_timer = 0;
+        }
+
+        // must terminate as long as glarea is exiting to clean up GL context
+        ((Surf3d*)g_object_get_data (G_OBJECT (glarea), "vdata"))->end_gl () ;
+        
 	XSM_DEBUG(DBG_L2, "~V3dControl in" );
 	gtk_widget_destroy (glarea);
 	XSM_DEBUG(DBG_L2, "~V3dControl out" );
 }
+
 
 void V3dControl::SetTitle(char *title){
 	gtk_window_set_title (GTK_WINDOW (window), title);

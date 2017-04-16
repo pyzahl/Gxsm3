@@ -138,7 +138,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="hskl" type="d">
-      <default>100</default>
+      <default>0.1</default>
       <summary>Height Scaling (Z scale)</summary>
       <description>
         Height Scaling (Z scale)
@@ -478,6 +478,13 @@ Used only in "Uniform/Material Color Mode".
       <description>
         Tesseletion Level Max:
  32: normal, 1: no tesselation
+      </description>
+    </key>
+    <key name="probeatoms" type="d">
+      <default>1000.0</default>
+      <summary># Probe Atoms</summary>
+      <description>
+        # Probe Atoms
       </description>
     </key>
     <key name="clearcolor" type="ad">

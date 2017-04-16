@@ -66,7 +66,7 @@ void main()
 
         FragColor = vec4 (color, 1.0);
 #else   
-        FragColor = vec4 (0.5*N+vec3(0.5),1);
-        //FragColor = shadeLambertian(In.gPosition, In.VertexEye, N, IcoColor);
+        //FragColor = vec4 (0.5*N+vec3(0.5),1);
+        FragColor = shadeLambertian(In.gPosition, In.VertexEye, N, IcoColor);
 #endif
 }

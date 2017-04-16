@@ -73,7 +73,7 @@ public:
         };
         void start_auto_update(){
                 if (!au_timer)
-                        au_timer =  g_timeout_add (50, (GSourceFunc)  v3dview_timer_callback, this);
+                        au_timer =  g_timeout_add (20, (GSourceFunc)  v3dview_timer_callback, this);
         };
         static gboolean v3dview_timer_callback (gpointer data);
         void SetTitle(char *title);
