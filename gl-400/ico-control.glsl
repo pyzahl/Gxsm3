@@ -13,16 +13,19 @@ uniform float TessLevelOuter;
 in block
 {
         vec3 vPosition;
+        vec3 vLatPos;
 } In[];
 
 out block
 {
         vec3 tcPosition;
+        vec3 tcLatPos;
 } Out[];
 
 void main()
 {
     Out[ID].tcPosition = In[ID].vPosition;
+    Out[ID].tcLatPos   = In[ID].vLatPos;
     if (ID == 0) {
         gl_TessLevelInner[0] = TessLevelInner;
         gl_TessLevelOuter[0] = TessLevelOuter;

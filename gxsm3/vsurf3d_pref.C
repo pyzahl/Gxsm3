@@ -60,6 +60,7 @@ const gchar *Shininess_OptionsList[]  = {"0","100","0.1","1","1",NULL };
 const gchar *FogD_OptionsList[]  = {"0","100","0.001","0.01","2",NULL };
 const gchar *shader_mode_OptionsList[]  = {"0","20","1","1","0",NULL };
 const gchar *tess_level_OptionsList[]  = {"1","64","1.0","1.0","1",NULL };
+const gchar *probe_atoms_OptionsList[]  = {"5","1000000","100.0","100.0","1",NULL };
 
 GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_FIRST_NAME("GXSM_V3DCONTROL_20030901000"),
@@ -370,6 +371,12 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  tess_level_OptionsList, N_("Render Opt."),
 	  N_("Tesseletion Level Max:\n"
 	     " 32: normal, 1: no tesselation"), NULL
+		),
+
+	GNOME_RES_ENTRY_FLOATSLIDER
+	( "V3dControl.RenderOp/ProbeAtoms", "Probe Atoms", "1000.0", GET_GLV_OFFSET (&GLvd_offset.probe_atoms), 
+	  probe_atoms_OptionsList, N_("Render Opt."),
+	  N_("# Probe Atoms"), NULL
 		),
 
 	GNOME_RES_ENTRY_SEPARATOR (N_("Render Opt."), NULL),

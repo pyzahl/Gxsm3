@@ -595,15 +595,16 @@ private:
 
 class icosahedron{
 public:
-        icosahedron (){
+        icosahedron (GLsizei na=5){
                 Validated = true;
                 VertexArrayName = 0;
                 ArrayBufferName = 0;
                 IndexBufferName = 0;
 
                 indices = NULL;
+                LatticeCount = na;
                 
-                g_message ("icosahedron:: init object");
+                g_message ("icosahedron:: init object count=%d", na);
 
                 Validated = init_vao ();
                 Validated = init_buffer ();
@@ -627,8 +628,6 @@ public:
                 checkError("make_plane:: init_buffer");
 		if (!Validated) return false;
 
-                LatticeCount = 4;
-                
                 VertexCount =  12;
                 IndicesCount = 3*20;
                 indices = g_new (glf::vertex_v1i, IndicesCount);
@@ -680,7 +679,7 @@ public:
                         
                         glm::vec4 (0.000f,  0.000f, -1.000f, 1)
                 };
-                
+
                 glGenBuffers(1, &ArrayBufferName);
                 glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
                 glBufferData(GL_ARRAY_BUFFER, VertexCount*sizeof(glm::vec4), Verts, GL_STATIC_DRAW);
@@ -692,20 +691,43 @@ public:
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
                 glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndicesCount*sizeof(glf::vertex_v1i), indices, GL_STATIC_DRAW);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-                const glm::vec4 lattice[4] = {
+                const GLfloat rr = 1.27805/1.6; // normalize to d=3.2
+                const GLfloat zz = 2.004/1.6;
+                const glm::vec4 BaseLattice[5] = {
                         glm::vec4 ( 0.0f,  0.0f,  0.0f, 0),
-                        glm::vec4 ( 3.0f,  3.0f, -2.0f, 0),
-                        glm::vec4 (-3.0f,  3.0f, -2.0f, 0),
-                        glm::vec4 ( 0.0f,  3.0f,  3.0f, 0)
+                        glm::vec4 ( 0.0f,    zz,  0.0f, 0),
+                        glm::vec4 ( -rr,  zz+rr,     rr, 0),
+                        glm::vec4 (  rr,  zz+rr,     rr, 0),
+                        glm::vec4 ( 0.0f, zz+rr,    -rr, 0)
                 };
-                
+                glm::vec4 *lattice = g_new (glm::vec4, LatticeCount);
+                for (int i=0; i<LatticeCount; ){
+                        if (i<5){
+                                lattice[i] = BaseLattice[i];
+                                ++i;
+                        }else{
+                                for (int layer=2; i<LatticeCount; ++layer)
+                                        for (int r=layer-2; r<=layer && i<LatticeCount; ++r)
+                                                for (int a=-r+layer%2; a<=r && i<LatticeCount; a+=2)
+                                                        for (int b=-r+layer%2; b<=r && i<LatticeCount; b+=2){
+                                                                int aabb = a*a + b*b;
+                                                                if (aabb <= layer*layer && aabb > (layer-1)*(layer-1)){
+                                                                        if (i<LatticeCount){
+                                                                                lattice[i] = glm::vec4(a*rr, zz+rr*layer, b*rr, 0);
+                                                                                // g_message ("Tip: [%d] %d :  %d %d", i, layer,a,b);
+                                                                        }
+                                                                        ++i;
+                                                                }
+                                                        }
+                        }
+                }
                 glGenBuffers(1, &LatticeBufferName);
                 glBindBuffer(GL_ARRAY_BUFFER, LatticeBufferName);
                 glBufferData(GL_ARRAY_BUFFER, LatticeCount*sizeof(glm::vec4), lattice, GL_STATIC_DRAW);
+                g_free (lattice);
                 glEnableVertexAttribArray (semantic::ico::LATTICE);
                 glVertexAttribPointer (semantic::ico::LATTICE, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), BUFFER_OFFSET(0));
-                glVertexAttribDivisor(semantic::ico::LATTICE, 1); // instancing
+                glVertexAttribDivisor (semantic::ico::LATTICE, 1); // instancing
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
  
                 return Validated && checkError("make_plane:: init_buffer");
@@ -752,13 +774,14 @@ public:
                 glBindVertexArray (VertexArrayName); // VAO
                 glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
                 glBindBuffer (GL_ARRAY_BUFFER, LatticeBufferName);
+                glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
                 glEnableVertexAttribArray (semantic::ico::POSITION);
                 glEnableVertexAttribArray (semantic::ico::LATTICE);
-                glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
+                glVertexAttribDivisor (semantic::ico::LATTICE, 1); // instancing
 
                 glPatchParameteri (GL_PATCH_VERTICES, 3);
                 //glDrawElements (GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
-                glDrawElementsInstanced (GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0, 4);
+                glDrawElementsInstanced (GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0, LatticeCount);
  
                 glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
                 glBindBuffer (GL_ARRAY_BUFFER, 0);
@@ -818,7 +841,7 @@ public:
                 ico_vao = NULL;
         };
         ~gl_400_primitive_tessellation(){
-                //end (); // too late, glarea reference is gone! 
+                //end(); // too late, glarea reference is gone! 
                 if (surface_plane)
                         delete surface_plane;
                 if (text_vao)
@@ -1094,7 +1117,7 @@ private:
                         text_vao = new text_plane ();
 
                 if (!ico_vao)
-                        ico_vao = new icosahedron ();
+                        ico_vao = new icosahedron ((GLsizei)s->GLv_data.probe_atoms);
 #endif
                 
 		return checkError("initText Plane VAO");
@@ -1383,7 +1406,7 @@ public:
 
                         ico_vao->draw (R,S,c,4);
                         g_message ("R = %g %g %g", R.x, R.y, R.z);
-                        g_message ("S = X/Z: %g   X%g Y%g Z%g", scale[0]/(scale[2] / s->GLv_data.hskl), S.x, S.y, S.z);
+                        g_message ("S = X%g Y%g Z%g   %g %g %g", S.x, S.y, S.z, scale[0], scale[1], scale[2]);
                 }
 
                 // Annotations, Labels, ...
@@ -1567,6 +1590,14 @@ Surf3d::~Surf3d(){
         g_free (v3dControl_pref_def);
 }
 
+void  Surf3d::end_gl () {
+#if 0
+        if (gl_tess)
+                delete gl_tess;
+        gl_tess = NULL;
+#endif
+}        
+
 void Surf3d::hide(){
 	if (v3dcontrol)
 		delete v3dcontrol;
@@ -1643,7 +1674,7 @@ void Surf3d::SaveImagePNG(GtkGLArea *glarea, const gchar *fname_png){
 void Surf3d::GetXYZScale (float *s){
         s[0] = 1./scan->data.s.rx;
         s[1] = 1./scan->data.s.ry;
-        s[2] = 1./gapp->xsm->Inst->Dig2ZA (scan->data.s.dz);
+        s[2] = 1./(scan->mem2d->data->zrange*scan->data.s.dz);
 }
 
 // XYZ ormalized to GL box +/- 0.5
@@ -1784,6 +1815,8 @@ void Surf3d::GLupdate (void* data){
         if (data){
         
                 Surf3d *s = (Surf3d *) data;
+                if (!s->gl_tess)
+                        return;
 
                 s->check_dimension_changed ();
 
