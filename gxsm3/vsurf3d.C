@@ -602,7 +602,9 @@ public:
                 IndexBufferName = 0;
 
                 indices = NULL;
-                LatticeCount = na;
+	        if (na > 1000000)
+	               na = 10000;
+	        LatticeCount = na;
                 
                 g_message ("icosahedron:: init object count=%d", na);
 
