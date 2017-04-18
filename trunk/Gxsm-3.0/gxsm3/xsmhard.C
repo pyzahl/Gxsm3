@@ -83,12 +83,6 @@ gint XSM_Hardware::RTQuery (const gchar *property, double &val1, double &val2, d
 		val1 = gapp->xsm->Inst->VZ() * gapp->xsm->Inst->Dig2VoltOut (sim_xyzS [2]/gapp->xsm->Inst->ZResolution());
                 val2 = gapp->xsm->Inst->VX() * gapp->xsm->Inst->Dig2VoltOut (sim_xyzS [0]/gapp->xsm->Inst->XResolution());
 		val3 = gapp->xsm->Inst->VY() * gapp->xsm->Inst->Dig2VoltOut (sim_xyzS [1]/gapp->xsm->Inst->YResolution());
-		
-		if (gapp->xsm->Inst->OffsetMode () == OFM_ANALOG_OFFSET_ADDING){
-                        //			val1 +=  gapp->xsm->Inst->VZ0() * gapp->xsm->Inst->Dig2VoltOut (sim_xyz0 [2]);
-			val2 +=  gapp->xsm->Inst->VX0() * gapp->xsm->Inst->Dig2VoltOut (sim_xyz0 [0]);
-			val3 +=  gapp->xsm->Inst->VY0() * gapp->xsm->Inst->Dig2VoltOut (sim_xyz0 [1]);
-		}
 		return TRUE;
 	}
 
@@ -228,8 +222,8 @@ void XSM_Hardware::MovetoXY(double x, double y){
 
 	XSM_DEBUG (DBG_L4, "HARD: MOVXY: " << rx << ", " << ry);
 
-	sim_xyzS[0] = gapp->xsm->Inst->X0Resolution()*sim_xyz0[0] + gapp->xsm->Inst->XResolution()*x;
-	sim_xyzS[1] = gapp->xsm->Inst->Y0Resolution()*sim_xyz0[1] + gapp->xsm->Inst->YResolution()*y;
+	sim_xyzS[0] = gapp->xsm->Inst->X0Resolution()*gapp->xsm->Inst->Dig2XA (sim_xyz0[0]) + gapp->xsm->Inst->XResolution()*x;
+	sim_xyzS[1] = gapp->xsm->Inst->Y0Resolution()*gapp->xsm->Inst->Dig2YA (sim_xyz0[1]) + gapp->xsm->Inst->YResolution()*y;
 
 	// g_message ("XSMHARD: MovetoXY: DA=[%g, %g] XY-Ang=[%g, %g] ",rx,ry, sim_xyzS[0],sim_xyzS[1]);
 
