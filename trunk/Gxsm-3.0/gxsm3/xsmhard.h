@@ -207,7 +207,7 @@ class XSM_Hardware{
 	gchar *AddStatusString;
 
  private:
-	double Simulate(double x, double y, int muxmode);
+	double Simulate (int muxmode);
 
 	double sim_xyzS[3];
 	double sim_xyz0[3];

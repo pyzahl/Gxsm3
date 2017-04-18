@@ -350,10 +350,11 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
                 for(int j=0; j<N_PRESETS; ++j)
                         pos_preset_box[i][j] = NULL;
 
-        
+#if 0 // disable auto terminate with no real hardware
 	if (xsmres.HardwareType[0] == 'n' && xsmres.HardwareType[1] == 'o')
 		return;
-
+#endif
+        
 	finish (FALSE);
 
 	AppWindowInit (N_("Pan View and OSD"));
@@ -690,16 +691,11 @@ void PanView :: tip_refresh()
 
 	if (!PanView_valid) return;
 
-        if (IS_NOCARD){
-		;
-	}
-	else{
-		// ** I'll fix this sub-routine to return the correct x/y/z volated including added offsets if used!
-		if (gapp->xsm->hardware)
-			gapp->xsm->hardware->RTQuery ("zxy", z, x, y); // get tip position in volts
-		else 
-			return;
-        }
+        // ** I'll fix this sub-routine to return the correct x/y/z volated including added offsets if used!
+        if (gapp->xsm->hardware)
+                gapp->xsm->hardware->RTQuery ("zxy", z, x, y); // get tip position in volts
+        else 
+                return;
 
 	// example for new cairo_item code to replace the code below:
 	if (tip_marker == NULL){

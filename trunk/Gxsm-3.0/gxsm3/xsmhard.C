@@ -64,6 +64,7 @@ XSM_Hardware::XSM_Hardware(){
 	SetSuspendWatches ();
         for (int i=0; i<3; ++i)
                 sim_xyzS [i] = 0., sim_xyz0 [i] = 0.;
+
         sim_mode = 0;
 }
 
@@ -75,10 +76,13 @@ XSM_Hardware::~XSM_Hardware(){
 
 gint XSM_Hardware::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
 
-        if (*property == 'z'){
-		val1 =  gapp->xsm->Inst->VZ() * gapp->xsm->Inst->Dig2VoltOut (sim_xyzS [2]);
-		val2 =  gapp->xsm->Inst->VX() * gapp->xsm->Inst->Dig2VoltOut (sim_xyzS [0]);
-		val3 =  gapp->xsm->Inst->VY() * gapp->xsm->Inst->Dig2VoltOut (sim_xyzS [1]);
+        // g_message ("XSM_Hardware::RTQuery: %s  xyz{ %g %g %g }", property, sim_xyzS [0], sim_xyzS [1], sim_xyzS [2]);
+        
+        if (*property == 'z'){ // "zxy"
+                Simulate (0);
+		val1 = gapp->xsm->Inst->VZ() * gapp->xsm->Inst->Dig2VoltOut (sim_xyzS [2]/gapp->xsm->Inst->ZResolution());
+                val2 = gapp->xsm->Inst->VX() * gapp->xsm->Inst->Dig2VoltOut (sim_xyzS [0]/gapp->xsm->Inst->XResolution());
+		val3 = gapp->xsm->Inst->VY() * gapp->xsm->Inst->Dig2VoltOut (sim_xyzS [1]/gapp->xsm->Inst->YResolution());
 		
 		if (gapp->xsm->Inst->OffsetMode () == OFM_ANALOG_OFFSET_ADDING){
                         //			val1 +=  gapp->xsm->Inst->VZ0() * gapp->xsm->Inst->Dig2VoltOut (sim_xyz0 [2]);
@@ -88,7 +92,7 @@ gint XSM_Hardware::RTQuery (const gchar *property, double &val1, double &val2, d
 		return TRUE;
 	}
 
-	if (*property == 'o' || *property == 'O'){
+	if (*property == 'o' || *property == 'O'){ // "O" z0,x0,y0
 		// read/convert and return offset
 		// NEED to request 'z' property first, then this is valid and up-to-date!!!!
 		if (gapp->xsm->Inst->OffsetMode () == OFM_ANALOG_OFFSET_ADDING){
@@ -104,8 +108,14 @@ gint XSM_Hardware::RTQuery (const gchar *property, double &val1, double &val2, d
 		return TRUE;
 	}
 
+        if (*property == 'f'){ // "f0I"  fo, Iav, Irms
+                //Simulate (1);
+		//val1 = sim_xyzS [2];
+                val1 = -5.;
+        }
+        
 	// DSP Status Indicators
-	if (*property == 's'){
+	if (*property == 's'){ // status
 
 		// Bit Coded Status:
 		// 1: FB watch
@@ -121,13 +131,11 @@ gint XSM_Hardware::RTQuery (const gchar *property, double &val1, double &val2, d
 
 		val2 = 0.50; // DSP Load
 		val3 = 0.75; // DSP Peak Load
-	
-                sim_mode = 1;
                 return TRUE;
 	}
 
 	// quasi GPIO monitor/mirror -- HIGH LEVEL!!!
-	if (*property == 'i'){
+	if (*property == 'i'){ // iomirror
                 val1 = (double)0x0003; // GPIO out
                 val2 = (double)0x0000; // GPIO in
                 val3 = (double)0x00FF; // GPIO dir;
@@ -178,10 +186,7 @@ void XSM_Hardware::SetOffset(double x, double y){
 	sim_xyz0[2] = 0.;
 	rotoffx = x; rotoffy = y;
 
-	sim_xyzS[0] = 0.;
-	sim_xyzS[1] = 0.;
-
-        sim_mode = 16;
+        sim_mode = 1 | 16;
 
 }
 
@@ -218,18 +223,23 @@ int XSM_Hardware::ScanDirection (int dir){
 
 void XSM_Hardware::MovetoXY(double x, double y){ 
 	rx = x; ry = y;
+
+        Transform(&x, &y);
+
 	XSM_DEBUG (DBG_L4, "HARD: MOVXY: " << rx << ", " << ry);
 
-	sim_xyzS[0] = x;
-	sim_xyzS[1] = y;
+	sim_xyzS[0] = gapp->xsm->Inst->X0Resolution()*sim_xyz0[0] + gapp->xsm->Inst->XResolution()*x;
+	sim_xyzS[1] = gapp->xsm->Inst->Y0Resolution()*sim_xyz0[1] + gapp->xsm->Inst->YResolution()*y;
 
-        sim_mode = 4;
+	// g_message ("XSMHARD: MovetoXY: DA=[%g, %g] XY-Ang=[%g, %g] ",rx,ry, sim_xyzS[0],sim_xyzS[1]);
+
+        sim_mode = 1 | 4;
 }
 
 /* -- surface simulation code -- */
 
 void XSM_Hardware::ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_SRCS_CHANNELS], int ixy_sub[4]){
-	double x,y;
+	double x0,y0, x,y;
 
 	XSM_DEBUG (DBG_L4, "Sim Yi=" << yindex << " MuxM=" << muxmode);
 
@@ -239,41 +249,29 @@ void XSM_Hardware::ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_S
 
 	Mem2d Line(Mob[0], Nx, 1);
 
-	if (yindex < 0){ // do HS Area Capture!
-		for(int j=0; j<Mob[0]->GetNy (); j++){
-			for(int i=0; i<Mob[0]->GetNx (); i++){
-				x = i*Dx*xdir + rx;
-				y = j*Dx + ry;
-				Transform(&x, &y);
-				Line.PutDataPkt(Simulate(x,y,muxmode), i, 0);
-			}
+        sim_mode = 1 | 2;
 
-			CallIdleFunc ();
-			
-			int i=0;
-			do{
-				//    Mob[i]->PutDataLine(yindex, (void*)dummy);
-			  Mob[i]->CopyFrom (&Line, 0, 0, ixy_sub[0], j, ixy_sub[1]>0 ? ixy_sub[1]:Nx);
-			}while ((++i < MAX_SRCS_CHANNELS) ? Mob[i]!=NULL : FALSE);
-		}
-	}else{
-		for(int i=0; i<Nx; i++){
-			x = i*Dx*xdir + rx;
-			y = ry;
-			Transform(&x, &y);
-			Line.PutDataPkt(Simulate(x,y,muxmode), i, 0);
-		}
+        x0 = rx;
+        y0 = ry;
+        for(int i=ixy_sub[0]; i < (ixy_sub[1]>0 ? ixy_sub[1]:Nx); i++){
+                x = x0 + i*Dx*xdir;
+                y = y0;
+                MovetoXY (x,y);
+                Line.PutDataPkt (gapp->xsm->Inst->ZA2Dig(Simulate (muxmode)), i, 0);
+                //g_message ("ScanLine Simulation: DA=[%g, %g] XY-Ang=[%g, %g] ",x,y, sim_xyzS[0],sim_xyzS[1]);
+        }
+        rx = x0;
+        ry = y0;
+        CallIdleFunc ();
 
-		CallIdleFunc ();
+        int i=0;
+        do{
+                //    Mob[i]->PutDataLine(yindex, (void*)dummy);
+                Mob[i]->CopyFrom (&Line, ixy_sub[0], 0, ixy_sub[0], yindex, ixy_sub[1]>0 ? ixy_sub[1]:Nx);
+        }while ((++i < MAX_SRCS_CHANNELS) ? Mob[i]!=NULL : FALSE);
+        y_current = yindex;
 
-		int i=0;
-		do{
-			//    Mob[i]->PutDataLine(yindex, (void*)dummy);
-			Mob[i]->CopyFrom (&Line, 0, 0, ixy_sub[0], yindex, ixy_sub[1]>0 ? ixy_sub[1]:Nx);
-		}while ((++i < MAX_SRCS_CHANNELS) ? Mob[i]!=NULL : FALSE);
-		y_current = yindex;
-	}
-
+        sim_mode = 1 | 0;
 }
 
 void XSM_Hardware::Transform(double *x, double *y){
@@ -326,11 +324,11 @@ double hexgrid_smooth(double *xy){
         double r[2];
         double r2=sqrt(2.);
         double a0 = (3.14/r2);
-        double zf = a0 / gapp->xsm->Inst->ZResolution();
+        double zf = a0/6;
 
         r[0]=xy[0]/a0*2*M_PI + norm_noise () * 2*gapp->xsm->Inst->XResolution();
         r[1]=xy[1]/a0*2*M_PI + norm_noise () * 2*gapp->xsm->Inst->YResolution();
-        return zf*sin(r[0])*cos(r[1]) + norm_noise () * 2*gapp->xsm->Inst->ZResolution();
+        return zf * Steps(xy[0], xy[1]) + zf*sin(r[0])*cos(r[1]) + norm_noise () * 2*gapp->xsm->Inst->ZResolution();
 
         // return xy[1]+xy[0];
         // return sin (r[0]+sin(r[1]*r2))*cos(r[1]+cos(r[0]*r2));
@@ -338,12 +336,16 @@ double hexgrid_smooth(double *xy){
 }
 
 // Dummy Bild
-double XSM_Hardware::Simulate(double x, double y, int muxmode){
-        // to Angstroem
-	sim_xyzS[0] = gapp->xsm->Inst->XResolution()*x;
-	sim_xyzS[1] = gapp->xsm->Inst->XResolution()*y;
-
+double XSM_Hardware::Simulate (int muxmode){
+        if (gapp->xsm->scan[10]){
+                double ix,iy;
+                gapp->xsm->scan[10]->World2Pixel  (sim_xyzS[0], sim_xyzS[1], ix,iy);
+                return sim_xyzS[2] =  gapp->xsm->scan[10]->data.s.dz * gapp->xsm->scan[10]->mem2d->GetDataPktInterpol (ix,iy);
+        }
+        
         if(IS_SPALEED_CTRL){
+                double x = sim_xyzS[0]/gapp->xsm->Inst->XResolution();
+                double y = sim_xyzS[1]/gapp->xsm->Inst->YResolution();
                 x/=32767./10;
                 y/=32767./10; // jetzt x,y in Volt am DA
                 sim_xyzS[2] = Lorenz(x,y)+Gaus(x,y)
