@@ -92,24 +92,6 @@ ChannelSelector::ChannelSelector (int ChAnz){
   
 	AppWindowInit (CHANNELSELECTOR_TITLE);
 
-#if 0
-        // add headers
-        wid = gtk_label_new ("Ch");
-	gtk_widget_show (wid);
-	gtk_grid_attach (GTK_GRID (v_grid), wid, 0, 0, 1, 1);
-
-	wid = gtk_label_new ("View");
-	gtk_widget_show (wid);
-	gtk_grid_attach (GTK_GRID (v_grid), wid, 1, 0, 2, 1);
-
-	wid = gtk_label_new ("Mode");
-	gtk_widget_show (wid);
-	gtk_grid_attach (GTK_GRID (v_grid), wid, 3, 0, 2, 1);
-
-	wid = gtk_label_new ("Dir");
-	gtk_widget_show (wid);
-	gtk_grid_attach (GTK_GRID (v_grid), wid, 5, 0, 1, 1);
-#endif
         ch_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT".gui.channelselector");
         int showPrevious = g_settings_get_boolean (ch_settings, "auto-restore") ? 1:0;
 
@@ -166,14 +148,14 @@ ChannelSelector::ChannelSelector (int ChAnz){
 		sprintf(txt,"% 2d", i);
 
 		wid = gtk_label_new (txt);
-		g_object_set_data  (G_OBJECT (wid), "ChNo", GINT_TO_POINTER (i-1));
+		g_object_set_data  (G_OBJECT (wid), "ChNo", GINT_TO_POINTER (i));
 		gapp->configure_drop_on_widget(wid);
 		gtk_grid_attach (GTK_GRID (v_grid), wid, 0, i, 1, 1);
 
 		/* View */
 		wid = gtk_combo_box_text_new ();
 		ChViewWidget[i-1] = wid;
-		g_object_set_data  (G_OBJECT (wid), "ChNo", GINT_TO_POINTER (i-1));
+		g_object_set_data  (G_OBJECT (wid), "ChNo", GINT_TO_POINTER (i));
 		gapp->configure_drop_on_widget(wid);
 		gtk_grid_attach (GTK_GRID (v_grid), wid, 1, i, 1, 1);
 
@@ -190,7 +172,7 @@ ChannelSelector::ChannelSelector (int ChAnz){
 		/* Mode */
 		wid = gtk_combo_box_text_new ();
 		ChModeWidget[i-1] = wid;
-		g_object_set_data  (G_OBJECT (wid), "ChNo", GINT_TO_POINTER (i-1));
+		g_object_set_data  (G_OBJECT (wid), "ChNo", GINT_TO_POINTER (i));
 		gapp->configure_drop_on_widget(wid);
 		gtk_grid_attach (GTK_GRID (v_grid), wid, 2, i, 1, 1);
 
@@ -248,7 +230,7 @@ ChannelSelector::ChannelSelector (int ChAnz){
 		/* Add Scan Directions */
 		wid = gtk_combo_box_text_new ();
 		ChSDirWidget[i-1] = wid;
-		g_object_set_data  (G_OBJECT (wid), "ChNo", GINT_TO_POINTER (i-1));
+		g_object_set_data  (G_OBJECT (wid), "ChNo", GINT_TO_POINTER (i));
 		gapp->configure_drop_on_widget(wid);
 		gtk_grid_attach (GTK_GRID (v_grid), wid, 3, i, 1, 1);
     
@@ -343,6 +325,10 @@ void ChannelSelector::choice_ChSDir_callback (GtkWidget *widget, void *data){
                 return;
             
         gint ch = GPOINTER_TO_INT (g_object_get_data  (G_OBJECT (widget), "ChNo"));
+        if (ch > 0)
+                ch--;
+        else
+                return;
 	gint i  = (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
 
         XSM_DEBUG_GP(DBG_L3, "ChannelSelector::choice_ChSDir: CH[%d] %d\n", ch, i);
@@ -357,6 +343,10 @@ void ChannelSelector::choice_ChView_callback (GtkWidget *widget, void *data){
                 return;
             
         gint ch = GPOINTER_TO_INT (g_object_get_data  (G_OBJECT (widget), "ChNo"));
+        if (ch > 0)
+                ch--;
+        else
+                return;
 	gint i  = (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
 
         XSM_DEBUG_GP(DBG_L3, "ChannelSelector::choice_ChView: CH[%d] %d\n", ch, i);
@@ -371,6 +361,10 @@ void ChannelSelector::choice_ChMode_callback (GtkWidget *widget, void *data){
                 return;
             
         gint ch = GPOINTER_TO_INT (g_object_get_data  (G_OBJECT (widget), "ChNo"));
+        if (ch > 0)
+                ch--;
+        else
+                return;
 	gint i  = (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
 
         XSM_DEBUG_GP(DBG_L1, "ChannelSelector::choice_ChMode: CH[%d] %d\n", ch, i+1);

@@ -193,10 +193,9 @@ void App::grab_url(const gchar *name)
 void App::process_one_filename (GtkWidget * widget, const gchar *filename)
 {
 	int ch = (int) GPOINTER_TO_INT (g_object_get_data  (G_OBJECT (widget), "ChNo"));
-	if(ch){
-		if(ch>0 && ch <= MAX_CHANNELS)
-			gapp->xsm->ActivateChannel( ch-1 );
-	}else
+	if (ch > 0 && ch <= MAX_CHANNELS)
+                gapp->xsm->ActivateChannel( ch-1 );
+        else
 		if(gapp->xsm->ActivateFreeChannel())
 			return;
 	
