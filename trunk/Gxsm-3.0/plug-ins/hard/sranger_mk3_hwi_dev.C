@@ -2152,7 +2152,7 @@ void sranger_mk3_hwi_dev::read_dsp_feedback (){
 void sranger_mk3_hwi_dev::write_dsp_feedback (
 		      double set_point[4], double factor[4], double gain[4], double level[4], int transform_mode[4],
 		      double IIR_I_crossover, double IIR_f0_max[4], double IIR_f0_min, double LOG_I_offset, int IIR_flag,
-		      double z_servo[3], double m_servo[3], double pllref){
+                      double setpoint_zpos, double z_servo[3], double m_servo[3], double pllref){
 
         SRANGER_DEBUG_SIG ( "---> sranger_mk3_hwi_dev::write_dsp_feedback --->");
   
@@ -2188,6 +2188,7 @@ void sranger_mk3_hwi_dev::write_dsp_feedback (
 		dsp_feedback_mixer.gain[i]     = float_2_sranger_q15 (gain[i]);
 		dsp_feedback_mixer.mode[i]     = transform_mode[i];
 		dsp_feedback_mixer.iir_ca_q15[i] = float_2_sranger_q15 (exp (-2.*M_PI*IIR_f0_max[i]/75000.));
+		dsp_feedback_mixer.Z_setpoint   = (int)(round((1<<16)*gapp->xsm->Inst->ZA2Dig (setpoint_zpos))); // new ZPos reference for FUZZY-LOG CONST HEIGHT MODE
                 SRANGER_DEBUG_SIG (
                                " DSP-setpoint[" << i << "] = " << dsp_feedback_mixer.setpoint[i]
                                );

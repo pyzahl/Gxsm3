@@ -346,7 +346,7 @@ class DSPControl : public AppBase{
         static int feedback_callback(GtkWidget *widget, DSPControl *dspc);
         static int spd_link_callback(GtkWidget *widget, DSPControl *dspc);
 	static guint refresh_zpos_readings(DSPControl *dspc);
-        static int zpos_adjuster_callback(GtkWidget *widget, DSPControl *dspc);
+        static int zpos_monitor_callback(GtkWidget *widget, DSPControl *dspc);
         static int IIR_callback(GtkWidget *widget, DSPControl *dspc);
         static int set_clr_mode_callback(GtkWidget *widget, gpointer mask);
         static int se_auto_trigger_callback(GtkWidget *widget, DSPControl *dspc);

@@ -2155,7 +2155,7 @@ void sranger_mk2_hwi_dev::read_dsp_feedback (){
 void sranger_mk2_hwi_dev::write_dsp_feedback (
 		double set_point[4], double set_point_factor[4], double gain[4], double level[4], int transform_mode[4],
 		double IIR_I_crossover, double IIR_f0_max[4], double IIR_f0_min, double LOG_I_offset, int IIR_flag,
-		double z_servo[3], double m_servo[3], double pllref){
+		double setpoint_zpos, double z_servo[3], double m_servo[3], double pllref){
 
 	for (int i=0; i<4; ++i){
 		if (i==0)

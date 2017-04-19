@@ -187,7 +187,7 @@ public:
 	virtual void write_dsp_feedback (
 		      double set_point[4], double factor[4], double gain[4], double level[4], int transform_mode[4],
 		      double IIR_I_crossover, double IIR_f0_max[4], double IIR_f0_min, double LOG_I_offset, int IIR_flag,
-		      double z_servo[3], double m_servo[3], double pllref=0.);
+		      double setpoint_zpos, double z_servo[3], double m_servo[3], double pllref=0.);
 	
 	void conv_dsp_analog ();
 	virtual void read_dsp_analog (); // bias

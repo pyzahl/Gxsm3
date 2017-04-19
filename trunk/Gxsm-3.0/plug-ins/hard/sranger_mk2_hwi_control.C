@@ -1004,6 +1004,7 @@ DSPControl::DSPControl () {
 	// init to "1V/V"
 	for (int i=0; i<4; ++i)
 		mix_unit2volt_factor[i] = 1.;
+	mix_unit2volt_factor[0] = gapp->xsm->Inst->nAmpere2V (1.);
 
 	// M-Servo Module
 	xrm.Get ("m_servo_cp", &m_servo[SERVO_CP], "0.0");
@@ -1614,14 +1615,18 @@ DSPControl::DSPControl () {
                                        G_CALLBACK (DSPControl::feedback_callback), this,
                                        dsp_state_mode, MD_PID);
 
-	dsp_bp->grid_add_check_button ("Z-Pos Adjuster", "Automatic Z-Scan-Pos Offset return to normal after probe. Normally better on.", 1,
-                                       G_CALLBACK (DSPControl::zpos_adjuster_callback), this,
+	dsp_bp->grid_add_check_button ("Z-Pos Monitor", "Z Position Monitor. Disable to set Z-Position Setpoint for const FUZZY-LOG-Z-CONTROL Constant Heigth Mode Operation.", 1,
+                                       G_CALLBACK (DSPControl::zpos_monitor_callback), this,
                                        dsp_state_mode, MD_ZPOS_ADJUSTER);
-        GtkWidget *vpzposadj_checkbutton = dsp_bp->button;
-        dsp_bp->grid_add_ec ("Z-Pos:", Angstroem, &zpos_ref, -100., 100., "6g", 0.01, 0.1, "adv-dsp-zpos-ref");
+        GtkWidget *zposmon_checkbutton = dsp_bp->button;
+        dsp_bp->set_input_width_chars (30);
+        dsp_bp->set_input_nx (2);
+        dsp_bp->grid_add_ec ("Z-Pos/Setpoint:", Angstroem, &zpos_ref, -100., 100., "6g", 0.01, 0.1, "adv-dsp-zpos-ref");
         ZPos_ec = dsp_bp->ec;
         zpos_control_list = g_slist_prepend (zpos_control_list, dsp_bp->ec);
                  
+        dsp_bp->set_input_width_chars ();
+        dsp_bp->set_input_nx ();
         dsp_bp->new_line ();
 
         dsp_bp->set_configure_list_mode_on ();
@@ -1824,9 +1829,9 @@ DSPControl::DSPControl () {
         dsp_bp->set_configure_list_mode_off ();
 
         dsp_bp->set_scale_nx (2);
-        dsp_bp->grid_add_ec_with_scale ("Slope X", Unity, &area_slope_x, -0.1, 0.1, "7g", 0.001, 0.01,  "adv-scan-slope-x"); slope_x_ec = dsp_bp->ec;
+        dsp_bp->grid_add_ec_with_scale ("Slope X", Unity, &area_slope_x, -0.2, 0.2, ".5f", 0.0001, 0.0001,  "adv-scan-slope-x"); slope_x_ec = dsp_bp->ec;
         dsp_bp->new_line ();
-        dsp_bp->grid_add_ec_with_scale ("Slope Y", Unity, &area_slope_y, -0.1, 0.1, "7g", 0.001, 0.01,  "adv-scan-slope-y"); slope_y_ec = dsp_bp->ec;
+        dsp_bp->grid_add_ec_with_scale ("Slope Y", Unity, &area_slope_y, -0.2, 0.2, ".5f", 0.0001, 0.0001,  "adv-scan-slope-y"); slope_y_ec = dsp_bp->ec;
         dsp_bp->set_scale_nx ();
         dsp_bp->new_line (0,2);
 
@@ -2910,7 +2915,7 @@ DSPControl::DSPControl () {
 	// save List away...
 	g_object_set_data( G_OBJECT (window), "DSP_EC_list", dsp_bp->get_ec_list_head ());
         g_object_set_data( G_OBJECT (multiIV_checkbutton), "DSP_multiIV_list", multi_IVsec_list);
-	g_object_set_data( G_OBJECT (vpzposadj_checkbutton), "DSP_zpos_control_list", zpos_control_list);
+	g_object_set_data( G_OBJECT (zposmon_checkbutton), "DSP_zpos_control_list", zpos_control_list);
 
         DSP_multiIV_callback (multiIV_checkbutton, this);
 
@@ -3546,12 +3551,12 @@ void DSPControl::updateDSP(int FbFlg){
 	if (DSPPACClass)
 		sranger_common_hwi->write_dsp_feedback (mix_set_point,  mix_unit2volt_factor, mix_gain, mix_level, mix_transform_mode,
 							IIR_I_crossover, IIR_f0_max, IIR_f0_min, LOG_I_offset, IIR_flag,
-							z_servo, m_servo,
+							zpos_ref, z_servo, m_servo,
 							DSPPACClass->pll.Reference[0]);
 	else
 		sranger_common_hwi->write_dsp_feedback (mix_set_point,  mix_unit2volt_factor, mix_gain, mix_level, mix_transform_mode,
 							IIR_I_crossover, IIR_f0_max, IIR_f0_min, LOG_I_offset, IIR_flag,
-							z_servo, m_servo);
+							zpos_ref, z_servo, m_servo);
 
 	// Update LDC?
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (LDC_status))){
@@ -3674,8 +3679,8 @@ void DSPControl::ChangedNotify(Param_Control* pcs, gpointer dspc){
 
 void DSPControl::update_zpos_readings(){
         double zp,a,b;
-        gapp->xsm->hardware->RTQuery ("Z", zp, a, b);
-        gchar *info = g_strdup_printf (" (%g Ang)", zp);
+        gapp->xsm->hardware->RTQuery ("z", zp, a, b);
+        gchar *info = g_strdup_printf (" (%g Ang)", gapp->xsm->Inst->V2ZAng(zp));
         ZPos_ec->set_info (info);
         ZPos_ec->Put_Value ();
         g_free (info);
@@ -3691,18 +3696,18 @@ guint DSPControl::refresh_zpos_readings(DSPControl *dspc){
 	return TRUE;
 }
 
-int DSPControl::zpos_adjuster_callback( GtkWidget *widget, DSPControl *dspc){
-        sranger_common_hwi->write_dsp_state (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)) ? MD_ZPOS_ADJUSTER:-MD_ZPOS_ADJUSTER);
+int DSPControl::zpos_monitor_callback( GtkWidget *widget, DSPControl *dspc){
+        // *** do not touch any more *** sranger_common_hwi->write_dsp_state (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)) ? MD_ZPOS_ADJUSTER:-MD_ZPOS_ADJUSTER);
         if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))){
-                g_slist_foreach ((GSList*)g_object_get_data (G_OBJECT (widget), "DSP_zpos_control_list"), (GFunc) App::freeze_ec, NULL);
+                //g_slist_foreach ((GSList*)g_object_get_data (G_OBJECT (widget), "DSP_zpos_control_list"), (GFunc) App::thaw_ec, NULL);
+                dspc->zpos_refresh_timer_id = g_timeout_add (200, (GSourceFunc)DSPControl::refresh_zpos_readings, dspc);
+        }else{
+                //g_slist_foreach ((GSList*)g_object_get_data (G_OBJECT (widget), "DSP_zpos_control_list"), (GFunc) App::freeze_ec, NULL);
 
                 if (dspc->zpos_refresh_timer_id){
                         g_source_remove (dspc->zpos_refresh_timer_id);
                         dspc->zpos_refresh_timer_id = 0;
                 }
-        }else{
-                g_slist_foreach ((GSList*)g_object_get_data (G_OBJECT (widget), "DSP_zpos_control_list"), (GFunc) App::thaw_ec, NULL);
-                dspc->zpos_refresh_timer_id = g_timeout_add (500, (GSourceFunc)DSPControl::refresh_zpos_readings, dspc);
         }
 }
 
@@ -4324,6 +4329,7 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
 	PI_DEBUG_GP (DBG_L3, "MIX-a\n");
 	// manage unit -- TDB
 	dspc->mix_unit2volt_factor[mix_ch] = 1.;
+	dspc->mix_unit2volt_factor[0] = gapp->xsm->Inst->nAmpere2V (1.);
 
 	double scale_extra = 256.;
 	if (!strncmp (sranger_common_hwi->dsp_signal_lookup_managed[signal].label, "In ", 3))
