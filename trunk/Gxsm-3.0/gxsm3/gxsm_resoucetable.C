@@ -58,6 +58,7 @@ extern GnomeResEntryInfoType xsm_res_def[];
 
 // Have to define option lists before:
 const gchar* TrueFalseList[]      = { "true", "false", NULL };
+const gchar* YesNoList[]      = { "yes", "no", NULL };
 const gchar* HardwareCardListCore[]   = { "no", NULL };
 #define MAX_HWI 32
 const gchar* HardwareCardList[MAX_HWI];
@@ -69,6 +70,7 @@ const gchar* UserZTypeList[]      = { "BYTE", "SHORT", "LONG", "ULONG", "LLONG",
 const gchar* PrbXunitsList[]      = { "1", "V", "AA", "nm", "um", "mm", "BZ", "sec", "amu", "a.u.", NULL };
 const gchar* PrbYunitsList[]      = { "1", "V", "AA", "nm", "um", "mm", "nA", "pA", "nN", "Hz", "Amp", "logAmp", "Events", "a.u.", NULL };
 const gchar* UserSliderTypeList[] = { "slider", "mover", NULL };
+const gchar* InstrumentZPolarityList[] = { "positive", "negative", NULL };
 const gchar* UserFileNameConventionList[] = { "digit", "alpha", "date-time", NULL };
 const gchar* UserAutosaveUnitList[] = { "percent", "lines", "seconds", NULL };
 const gchar* AnalogVXYZIndexList[]  = { "0", "1", "2", "3", "4", "5", "6", "7", "8", NULL };
@@ -197,6 +199,10 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	GNOME_RES_ENTRY_AUTO_PATH_OPTION
 	( GNOME_RES_BOOL, "Instrument/ScanOrgCenter", "true", &xsmres.ScanOrgCenter, TrueFalseList, N_("Inst-SPM"), 
 	  N_("bool: true=Offset is relative to center of scan, else center of top line")
+		),
+	GNOME_RES_ENTRY_AUTO_PATH_OPTION
+	( GNOME_RES_BOOL, "Instrument/ScannerZPolarity", "negative", &xsmres.ScannerZPolarity, InstrumentZPolarityList, N_("Inst-SPM"), 
+	  N_("MK3 only: select scanner Z polarity.")
 		),
 
 	// Analog defaults, Piezodrive

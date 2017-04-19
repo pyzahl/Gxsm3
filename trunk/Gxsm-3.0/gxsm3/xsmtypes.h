@@ -119,6 +119,7 @@ typedef struct{
 	float XPiezoAV,YPiezoAV,ZPiezoAV;
 	float XYZ_modulation_gains[3];
 	gint  ScanOrgCenter;
+	gint  ScannerZPolarity; // 1: pos, 0: neg (bool)
 	float XCalibVA,YCalibVA;
 	float Sensitivity;
 	float EnergyCalibVeV;

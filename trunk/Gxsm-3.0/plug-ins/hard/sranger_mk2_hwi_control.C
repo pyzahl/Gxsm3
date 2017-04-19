@@ -1732,6 +1732,39 @@ DSPControl::DSPControl () {
 			g_free (outconfig); outconfig = tmp;
 		}
 
+                // xsmres.ScannerZPolarity; // 1: pos, 0: neg (bool) -- adjust zpos_ref accordingly!
+                // fix me: make zpos_ref signum manual or automatic depending on Z_SERVO - CONTROL NEG/POS setting --> verify at start, ask for correction.
+                gboolean zpok;
+                do{
+                        zpok = false;
+                        g_message ("Checking Z Polarity, Signal found: %s", sranger_common_hwi->dsp_signal_lookup_managed[sranger_common_hwi->query_module_signal_input (DSP_SIGNAL_OUTMIX_CH5_INPUT_ID)].label);
+                        if (xsmres.ScannerZPolarity==0 && !strcmp (sranger_common_hwi->dsp_signal_lookup_managed[sranger_common_hwi->query_module_signal_input (DSP_SIGNAL_OUTMIX_CH5_INPUT_ID)].label, "Z Servo Neg")){
+                                zpok = true;
+                                g_message ("Checking Z Polarity (config=negative): OK");
+                        }
+                
+                        if (xsmres.ScannerZPolarity==1 && !strcmp (sranger_common_hwi->dsp_signal_lookup_managed[sranger_common_hwi->query_module_signal_input (DSP_SIGNAL_OUTMIX_CH5_INPUT_ID)].label, "Z Servo")){
+                                zpok = true;
+                                g_message ("Checking Z Polarity (config=positive): OK");
+                        }
+                        if (!zpok){
+                                g_warning ("DSP Z Polarity is not matching GXSM configuration. Please correct.");
+                                if (gapp->question_yes_no (N_("Instrument Scanner Z-Polarity Verification failed.\n"
+                                                              "DSP Scanner Z Polarity signal setup is not matching GXSM configuration in preferences.\n"
+                                                              "==> Critical Advise: Correct now?"),
+                                                           NULL,
+                                                           "<span foreground='red' size='large' weight='bold'>Critical Warning: %s</span>"
+                                                           )){
+                                        if (xsmres.ScannerZPolarity)
+                                                sranger_common_hwi->change_signal_input (sranger_common_hwi->lookup_signal_by_name("Z Servo"), DSP_SIGNAL_OUTMIX_CH5_INPUT_ID);
+                                        else
+                                                sranger_common_hwi->change_signal_input (sranger_common_hwi->lookup_signal_by_name("Z Servo Neg"), DSP_SIGNAL_OUTMIX_CH5_INPUT_ID);
+                                }
+                                else
+                                        zpok = true; // ignore on user request
+                        }
+                } while (!zpok);
+                
 		int ox=0,oy=0;
 		if (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[3][1]].label)
 			ox = !strcmp (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[3][1]].label, "X Offset") ? 1:0;
@@ -3548,16 +3581,17 @@ void DSPControl::updateDSP(int FbFlg){
 	case DSP_FB_OFF: sranger_common_hwi->ExecCmd(DSP_CMD_HALT); break;
 	}
 
-        // fix me: make zpos_ref signum manual or automatic depending on Z_SERVO - CONTROL NEG/POS setting
+	// xsmres.ScannerZPolarity; // 1: pos, 0: neg (bool) -- adjust zpos_ref accordingly!
+        // fix me: make zpos_ref signum manual or automatic depending on Z_SERVO - CONTROL NEG/POS setting --> verify at start, ask for correction.
 	if (DSPPACClass)
 		sranger_common_hwi->write_dsp_feedback (mix_set_point,  mix_unit2volt_factor, mix_gain, mix_level, mix_transform_mode,
 							IIR_I_crossover, IIR_f0_max, IIR_f0_min, LOG_I_offset, IIR_flag,
-							zpos_ref, z_servo, m_servo,
+							xsmres.ScannerZPolarity ? -zpos_ref:zpos_ref, z_servo, m_servo,
 							DSPPACClass->pll.Reference[0]);
 	else
 		sranger_common_hwi->write_dsp_feedback (mix_set_point,  mix_unit2volt_factor, mix_gain, mix_level, mix_transform_mode,
 							IIR_I_crossover, IIR_f0_max, IIR_f0_min, LOG_I_offset, IIR_flag,
-							zpos_ref, z_servo, m_servo);
+							xsmres.ScannerZPolarity ? -zpos_ref:zpos_ref, z_servo, m_servo);
 
 	// Update LDC?
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (LDC_status))){
