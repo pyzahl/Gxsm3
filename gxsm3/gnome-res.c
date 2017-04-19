@@ -416,12 +416,12 @@ gchar *gnome_res_write_gschema (GnomeResPreferences *self){
                                                     "      <default>%s</default>\n"
                                                     "      <summary>%s</summary>\n"
                                                     "      <description>\n"
-                                                    "        %s\n"
+                                                    "        %s GXSM OPTIONS=(%s, %s)\n"
                                                     "      </description>\n"
                                                     "    </key>\n",
                                                     gxml, key,
-                                                    (!strcasecmp (res->vdefault, "true") || !strcasecmp (res->vdefault, "yes")) ? "true" : "false",
-                                                    res->comment,
+                                                    (!strcasecmp (res->vdefault, "true") || !strcasecmp (res->vdefault, "yes") || !strcasecmp (res->vdefault, "positive")) ? "true" : "false",
+                                                    res->comment, res->options[0], res->options[1],
                                                     (gchar*) (res->moreinfo ? res->moreinfo : res->comment)
                                                     );
                         g_free (gxml); gxml = gxml_tmp;
@@ -672,14 +672,17 @@ void gnome_res_read_user_config (GnomeResPreferences *self){
                         if (BE_VERBOSE) g_print ("-BOOL-\n");
 
                         if (force_gxsm_defaults){
-                                GVariant *gvar_default = g_variant_new_boolean (!strcasecmp (res->vdefault, "true") || !strcasecmp (res->vdefault, "yes"));
+                                GVariant *gvar_default = g_variant_new_boolean (!strcasecmp (res->vdefault, "true")
+                                                                                || !strcasecmp (res->vdefault, "yes")
+                                                                                || !strcasecmp (res->vdefault, "positive"));
+
                                 g_settings_set_value (settings, key, gvar_default);
                                 //                                g_variant_unref (gvar_default);
                         }
                         * ((int*) (res->var)) = (int) g_variant_get_boolean (gvar);
 
                         if (0){ // error fall back
-                                * ((int*) (res->var)) = !strcasecmp (res->vdefault, "true") || !strcasecmp (res->vdefault, "yes");
+                                * ((int*) (res->var)) = !strcasecmp (res->vdefault, "true") || !strcasecmp (res->vdefault, "yes") || !strcasecmp (res->vdefault, "positive");
                                 if (BE_VERBOSE) g_print ("ERROR-FALLBACK ==== ResPath=%s = s[%s] sv=%s\n", respath, res->vdefault, (gchar*)res->var);
                         }
                         break;
@@ -844,9 +847,13 @@ void gnome_res_write_user_config (GnomeResPreferences *self){
                 switch (res->type){
                 case GNOME_RES_BOOL: 
                         if (res->entry)
-                                * ((int*) (res->var)) = strcasecmp (gtk_entry_get_text (GTK_ENTRY (res->entry)), "true") == 0;
+                                * ((int*) (res->var)) = (strcasecmp (gtk_entry_get_text (GTK_ENTRY (res->entry)), "true") == 0
+                                                         || strcasecmp (gtk_entry_get_text (GTK_ENTRY (res->entry)), "yes") == 0
+                                                         || strcasecmp (gtk_entry_get_text (GTK_ENTRY (res->entry)), "positive") == 0);
                         if (res->tmp)
-                                * ((int*) (res->var)) = strcasecmp (res->tmp, "true") == 0;
+                                * ((int*) (res->var)) = (strcasecmp (res->tmp, "true") == 0
+                                                         || strcasecmp (res->tmp, "yes") == 0
+                                                         || strcasecmp (res->tmp, "positive") == 0);
 
                         { 
                                 GVariant *gvar_default = g_variant_new_boolean ((* ((int*) (res->var)))?TRUE:FALSE);
@@ -1004,7 +1011,7 @@ gchar *gnome_res_get_resource_string_from_variable (GnomeResEntryInfoType *res){
 	
         switch (res->type){
         case GNOME_RES_BOOL: 
-                return g_strdup_printf ("%s", * ((int*) (res->var)) ? "true":"false");
+                return g_strdup_printf ("%s", * ((int*) (res->var)) ? res->options[0] : res->options[1]);
         case GNOME_RES_STRING: 
                 return g_strdup_printf ("%s", ((gchar*) (res->var)));
         case GNOME_RES_INT: 

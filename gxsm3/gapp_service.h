@@ -851,6 +851,7 @@ public:
                                  G_CALLBACK (gtk_widget_destroy),
                                  G_OBJECT (dialog));
 			gtk_widget_show (dialog);
+                        //gapp->monitorcontrol->LogEvent ("Warning", mld);
 		}
 	};
         static gint terminate_timeout_func (gpointer data);
@@ -883,9 +884,10 @@ public:
                                  G_CALLBACK (gtk_widget_destroy),
                                  G_OBJECT (dialog));
 			gtk_widget_show (dialog);
+                        //gapp->monitorcontrol->LogEvent ("Message", mld);
 		}
 	};
-	gboolean question_yes_no (const gchar *question, GtkWindow *pw=NULL){ // Yes / No ?
+	gboolean question_yes_no (const gchar *question, GtkWindow *pw=NULL, const gchar *format=NULL){ // Yes / No ?
 		GtkWindow *w = pw;
                 if (w == NULL)
 			w = window;
@@ -896,10 +898,11 @@ public:
                                  flags,
                                  GTK_MESSAGE_QUESTION,
                                  GTK_BUTTONS_YES_NO,
-                                 "<span foreground='blue' size='large' weight='bold'>%s</span>", question);
+                                 format ? format : "<span foreground='blue' size='large' weight='bold'>%s</span>", question);
                         
 			gint result = gtk_dialog_run (GTK_DIALOG (dialog));
 			gtk_widget_destroy (dialog);
+                        //gapp->monitorcontrol->LogEvent (question, result == GTK_RESPONSE_YES ? "User Response: YES" : "User Response: NO");
 			return result == GTK_RESPONSE_YES;
 		}
 		return TRUE;

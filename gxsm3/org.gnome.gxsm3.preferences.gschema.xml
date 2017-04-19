@@ -13,6 +13,10 @@
     <value value="0" nick="true "/>
     <value value="1" nick="false "/>
   </enum>
+  <enum id="org-gnome-gxsm3-preferences-option-instrument-scanner-z-polarity">
+    <value value="0" nick="positive "/>
+    <value value="1" nick="negative "/>
+  </enum>
   <enum id="org-gnome-gxsm3-preferences-option-analog-vx-default">
     <value value="0" nick="# 0 -> x 0"/>
     <value value="1" nick="# 1 -> x 0"/>
@@ -207,7 +211,14 @@
       <default>true</default>
       <summary>bool: true=Offset is relative to center of scan, else center of top line</summary>
       <description>
-        bool: true=Offset is relative to center of scan, else center of top line
+        true GXSM OPTIONS=(false, bool: true=Offset is relative to center of scan, else center of top line)
+      </description>
+    </key>
+    <key name="scannerzpolarity" type="b">
+      <default>false</default>
+      <summary>MK3 only: select scanner Z polarity.</summary>
+      <description>
+        positive GXSM OPTIONS=(negative, MK3 only: select scanner Z polarity.)
       </description>
     </key>
   </schema>
@@ -353,10 +364,10 @@ choose from:
  'DSP offset adding': false
  'Analog offset adding': true</summary>
       <description>
-        Offset adding modus for piezo amplifier:
+        true GXSM OPTIONS=(false, Offset adding modus for piezo amplifier:
 choose from:
  'DSP offset adding': false
- 'Analog offset adding': true
+ 'Analog offset adding': true)
       </description>
     </key>
     <key name="ampmodulationgains" type="ad">
@@ -1441,14 +1452,7 @@ choose from:
       <default>true</default>
       <summary>bool: true=save window positions, false: do not</summary>
       <description>
-        bool: true=save window positions, false: do not
-      </description>
-    </key>
-    <key name="loadappendintime" type="b">
-      <default>true</default>
-      <summary>bool: true=append scan to channel in time dim on load, false: replace</summary>
-      <description>
-        bool: true=append scan to channel in time dim on load, false: replace
+        true GXSM OPTIONS=(false, bool: true=save window positions, false: do not)
       </description>
     </key>
     <key name="xyunit" type="s">
@@ -1478,9 +1482,9 @@ choose from:
     </key>
     <key name="smarthistepsilon" type="d">
       <default>0.05</default>
-      <summary>Smart Histogram Epsilon for comress (pos)/expand(neg) range</summary>
+      <summary>Smart Histogram Epsilon for hitogram evaluanted range compression (positive) or expand (negative).</summary>
       <description>
-	Smart Histogram Epsilon for comress (pos)/expand(neg) range.
+        Smart Histogram Epsilon for hitogram evaluanted range compression (positive) or expand (negative).
       </description>
     </key>
     <key name="profileloglimit" type="d">
@@ -1759,14 +1763,14 @@ if zero no waiting for pending events.
       <default>true</default>
       <summary>Enable Menu Tooltips: true|false</summary>
       <description>
-        Enable Menu Tooltips: true|false
+        true GXSM OPTIONS=(false, Enable Menu Tooltips: true|false)
       </description>
     </key>
     <key name="acceptdatk0" type="b">
       <default>false</default>
       <summary>Accept Dat Kennung 0x000, Attention this is a safety hole if enabled !</summary>
       <description>
-        Accept Dat Kennung 0x000, Attention this is a safety hole if enabled !
+        true GXSM OPTIONS=(false, Accept Dat Kennung 0x000, Attention this is a safety hole if enabled !)
       </description>
     </key>
   </schema>
@@ -1776,7 +1780,7 @@ if zero no waiting for pending events.
       <default>true</default>
       <summary>Select here, if you want use layered (3d) scans.</summary>
       <description>
-        Select here, if you want use layered (3d) scans.
+        true GXSM OPTIONS=(false, Select here, if you want use layered (3d) scans.)
       </description>
     </key>
     <key name="handletype" type="s">
