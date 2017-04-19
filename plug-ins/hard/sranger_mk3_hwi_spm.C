@@ -472,6 +472,17 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 		dsp_aap.stop  = long_2_sranger_long(1);           /* Cancel   =WO */
 		lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_aap,  2*sizeof (gint32)); 
+                dsp_aap.mover_mode = AAP_MOVER_OFF; /* reset wave 0 and 1 outputs */
+		dsp_aap.piezo_steps = long_2_sranger_long(1);     /* max number of repetitions */
+		dsp_aap.u_piezo_amp = long_2_sranger_long(0); /* Amplitude, Peak2Peak */
+		dsp_aap.start = long_2_sranger_long(1);           /* Initiate =WO */
+		dsp_aap.stop  = long_2_sranger_long(0);           /* Cancel   =WO */
+		lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		sr_write (dsp, &dsp_aap,  2*sizeof (gint32)); 
+		dsp_aap.start = long_2_sranger_long(0);           /* Initiate =WO */
+		dsp_aap.stop  = long_2_sranger_long(1);           /* Cancel   =WO */
+		lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		sr_write (dsp, &dsp_aap,  2*sizeof (gint32)); 
 		break;
 	}
 	case DSP_CMD_AFM_MOV_XM: // manual move X-
