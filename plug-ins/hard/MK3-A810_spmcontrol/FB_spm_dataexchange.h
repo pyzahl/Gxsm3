@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* SRanger MK3 and Gxsm - Gnome X Scanning Microscopy Project
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -33,8 +35,6 @@
  */
 
 /* MK3 Note: all addresses and data are 32bit (LONG) */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #ifndef __MK3_FB_SPM_DATAEXCHANGE_H
 #define __MK3_FB_SPM_DATAEXCHANGE_H
@@ -123,9 +123,9 @@
 // -- otherwise you exactly need to know/be sure what you are doing --
 // -- odd things like changed data structures, etc.., could break data transfer --
 #define FB_SPM_SOFT_ID   0x00001002 /* FB_SPM sofware id */
-#define FB_SPM_VERSION   0x00003051 /* FB_SPM main Version, BCD: 00.00 */
-#define FB_SPM_DATE_YEAR 0x00002016 /* Date: Year/MM/DD, BCD */
-#define FB_SPM_DATE_MMDD 0x00000616 /* Date: Month/Day, BCD */
+#define FB_SPM_VERSION   0x00003052 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_DATE_YEAR 0x00002017 /* Date: Year/MM/DD, BCD */
+#define FB_SPM_DATE_MMDD 0x00000418 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Signal Master Evolved GXSM3B\n"\
@@ -387,7 +387,7 @@ typedef struct {
 	DSP_INT32 cb_Ic;              /**< 20 MIX0 adapt IIR filter cb_Ic = f_0,min/f_0,max * I_cross [32] */
 	DSP_INT32 I_cross;            /**< 21 MIX0 adapt IIR filter adapt: I_crossover */
 	DSP_INT32 I_offset;           /**< 22 MIX0 adapt I_offset, log start/characteristic */
-	DSP_INT32 align;
+        DSP_INT32 Z_setpoint;         /**< 23 Const Height Mode Z-Setpoint */
 	DSP_INT64 f_reference;        /**< 24 ALIGN 64!!! PAC f-setpoint/reference to be subtracted from APC F-EXEC to get the shift the FB works on */
 	DSP_INT32 exec;               /**  26 log computation of x -> lnx =WO */
 	DSP_INT32 x, lnx;             /**  27,28 individual setpoint for every signal RW */

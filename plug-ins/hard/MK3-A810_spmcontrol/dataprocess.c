@@ -629,10 +629,12 @@ void dataprocess()
 							tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.level[i] - feedback_mixer.setpoint[i]);
 						break;
 					case 11: // FUZZY LOG
-					        if (feedback_mixer.FB_IN_processed[i] > feedback_mixer.level[i]){
-						        feedback_mixer.lnx = calc_mix_log (feedback_mixer.FB_IN_processed[i] - feedback_mixer.level[i], 0);
-							tmp40 = (long long)(feedback_mixer.lnx - feedback_mixer.setpoint[i]);
-						}
+					        if (abs (feedback_mixer.FB_IN_processed[i]) > feedback_mixer.level[i]){
+                                                        feedback_mixer.lnx = calc_mix_log (feedback_mixer.FB_IN_processed[i], feedback_mixer.I_offset);
+                                                        tmp40 = (long long)(feedback_mixer.lnx - feedback_mixer.setpoint_log[i]);
+						} else {
+                                                        tmp40 = (long long)(z_servo.neg_control) - (long long)(feedback_mixer.Z_setpoint);
+                                                }
 						break;
 					default: break; // OFF
 					}
