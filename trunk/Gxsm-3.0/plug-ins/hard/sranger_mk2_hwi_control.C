@@ -1625,7 +1625,7 @@ DSPControl::DSPControl () {
         ZPos_ec = dsp_bp->ec;
         zpos_control_list = g_slist_prepend (zpos_control_list, dsp_bp->ec);
                  
-        dsp_bp->set_input_width_chars ();
+        dsp_bp->set_input_width_chars (12);
         dsp_bp->set_input_nx ();
         dsp_bp->new_line ();
 
@@ -3548,6 +3548,7 @@ void DSPControl::updateDSP(int FbFlg){
 	case DSP_FB_OFF: sranger_common_hwi->ExecCmd(DSP_CMD_HALT); break;
 	}
 
+        // fix me: make zpos_ref signum manual or automatic depending on Z_SERVO - CONTROL NEG/POS setting
 	if (DSPPACClass)
 		sranger_common_hwi->write_dsp_feedback (mix_set_point,  mix_unit2volt_factor, mix_gain, mix_level, mix_transform_mode,
 							IIR_I_crossover, IIR_f0_max, IIR_f0_min, LOG_I_offset, IIR_flag,
