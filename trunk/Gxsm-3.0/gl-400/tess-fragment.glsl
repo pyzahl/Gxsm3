@@ -210,6 +210,8 @@ vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye,
         case 14: return color_offset + vec4(vec3(specular,normal.y,diffuse),1.0);
         case 15: return color_offset + vec4(vec3(dist/100.), 1.0);
         case 16: return color_offset + specular*lightness*vec4(1);
+        case 17: return vec4(vec3(gl_FragCoord.z), 1.0f);
+
         default: return vec4 (color_offset.xyz
                               + lightness*finalColor,
                               transparency_offset);
