@@ -2168,8 +2168,9 @@ void sranger_mk2_hwi_dev::write_dsp_feedback (
 	}
 	// feedback settings
 	// Scale Regler Consts. with 1/VZ and convert to SR-Q15
-	dsp_feedback.cp = float_2_sranger_q15 (z_servo[1] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
-	dsp_feedback.ci = float_2_sranger_q15 (z_servo[2] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
+	// MK3 compatibility scaling user input CP,CI now x100
+	dsp_feedback.cp = float_2_sranger_q15 (0.01 * z_servo[1] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
+	dsp_feedback.ci = float_2_sranger_q15 (0.01 * z_servo[2] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
 
 	// IIR self adaptive filter parameters
 	double ca,cb;
