@@ -1256,9 +1256,21 @@ public:
                            TranslationCurrent.x, TranslationCurrent.y
                            );
 
+                // glEnable (GL_DEPTH_TEST);
+                // glDepthMask(GL_FALSE);  
+                // glDepthFunc(GL_LESS);  
+                glEnable(GL_DEPTH_TEST);
+                glDepthMask(GL_TRUE);
+                glDepthFunc(GL_LEQUAL);
+                //glDepthRange(0.0f, 1.0f);
+
+                //gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+
+                
                 glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                //glClearDepth(1.0f);
+
                 glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
-                glEnable (GL_DEPTH_TEST);
 
                 glPolygonMode (GL_FRONT_AND_BACK, s->GLv_data.Mesh ? GL_LINE : GL_FILL);
 
