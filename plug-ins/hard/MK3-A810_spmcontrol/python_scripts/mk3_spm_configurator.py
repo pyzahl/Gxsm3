@@ -668,7 +668,7 @@ class StepResponse():
 
 class TuneScope():
 
-    def __init__(self, parent, fc=29680.6, span=2., Fres=0.01, int_ms = 2000.):
+    def __init__(self, parent, fc=29874.0, span=50., Fres=0.1, int_ms = 80.):
 	Xsignal = parent.mk3spm.lookup_signal_by_name("PLL Res Amp LP")
 	Ysignal = parent.mk3spm.lookup_signal_by_name("PLL Res Ph LP")
 	label = "Tune Scope -- X: " + Xsignal[SIG_NAME] + "  Y: " + Ysignal[SIG_NAME]
@@ -695,7 +695,7 @@ class TuneScope():
 		self.ResPhase2F = zeros (self.points)
 		self.Fit      = zeros (self.points)
 		self.Freq     = zeros (self.points)
-		self.volumeSine  = 0.01
+		self.volumeSine  = 0.3
                 self.mode2f = 0
                 self.phase_prev1 = 0
                 self.phase_prev2 = 0
@@ -719,7 +719,7 @@ class TuneScope():
 		lab = gobject.new(gtk.Label, label="Ampl scale: V/div")
 		table.attach(lab, 0, 1, tr, tr+1)
 		self.Xscale = gtk.Entry()
-		self.Xscale.set_text("0.1")
+		self.Xscale.set_text("0.02")
 		table.attach(self.Xscale, 0, 1, tr+1, tr+2)
 		lab = gobject.new(gtk.Label, label="Phase scale: deg/Div")
 		table.attach(lab, 1, 2, tr, tr+1)
