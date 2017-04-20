@@ -69,10 +69,10 @@
 
 #include "xsmdebug.h"
 
-//#define __GXSM_PY_DEVEL
+#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -858,7 +858,7 @@ private:
                 return glm::vec3(this->DistanceCurrent.x, this->DistanceCurrent.y, this->DistanceCurrent.z);
         };
         glm::vec3 modelPosition() const {
-                return glm::vec3(this->TranslationCurrent.x, 0., this->TranslationCurrent.y);
+                return glm::vec3(this->TranslationCurrent.x, 0.0, this->TranslationCurrent.y);
         };
         glm::mat4 modelView() const {
                 // rotate model 1st around it's origin
@@ -1256,19 +1256,26 @@ public:
                            TranslationCurrent.x, TranslationCurrent.y
                            );
 
-                // glEnable (GL_DEPTH_TEST);
-                // glDepthMask(GL_FALSE);  
-                // glDepthFunc(GL_LESS);  
-                glEnable(GL_DEPTH_TEST);
-                glDepthMask(GL_TRUE);
-                glDepthFunc(GL_LEQUAL);
-                //glDepthRange(0.0f, 1.0f);
-
-                //gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-
+                if (s->GLv_data.Ortho){
+                }
+                
+                if (s->GLv_data.Texture){
+                        glDisable (GL_DEPTH_TEST);
+                } else {
+                        glEnable (GL_DEPTH_TEST);
+                        //glDepthMask(GL_FALSE);  
+                        glDepthMask(GL_TRUE);
+                        glDepthFunc (GL_LEQUAL);
+                        // glDepthFunc(GL_LESS);  
+                        //glDepthRange(0.0f, 1.0f);
+                        //gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+                }
+                
+                if (s->GLv_data.Emission){
+                        glClearDepth(1.0f);
+                }
                 
                 glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                //glClearDepth(1.0f);
 
                 glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
 
@@ -1283,7 +1290,7 @@ public:
 
                 float aspect = WindowSize.x/WindowSize.y;
                 // GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f
-                glm::mat4 Projection = glm::perspective (glm::radians (s->GLv_data.fov/57.3f), aspect, 0.1f, 500.f); // near, far frustum
+                glm::mat4 Projection = glm::perspective (glm::radians (s->GLv_data.fov/57.3f), aspect, 0.1f, 100.f); // near, far frustum
                 glm::mat4 Camera = glm::lookAt (cameraPosition(), // cameraPosition, the position of your camera, in world space
                                                 glm::vec3(0,0,0), //cameraTarget, where you want to look at, in world space
                                                 glm::vec3(0,1,0) // upVector, probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too

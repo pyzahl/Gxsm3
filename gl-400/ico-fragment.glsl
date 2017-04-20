@@ -46,9 +46,12 @@ vec4 shadeLambertian(vec3 vertex, vec3 vertexEye,
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
 
+        // return vec4(vec3(gl_FragCoord.z), 1.0f);
+
         return vec4 (color_offset.xyz
                      + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
                      1.);
+
 }
 
 void main()
