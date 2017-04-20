@@ -114,21 +114,23 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	(GNOME_RES_STRING, "Hardware/Card", "no", &xsmres.HardwareType, HardwareCardList, 
 	 N_("Hardware"),
 	 N_("Type of Hardware Interface, choice of: \n"
-	    " no: data analysis only (hardware disabled, simulation mode), \n"
+	    " no: data analysis mode (hardware disabled, simulation mode). \n"
+	    " Generic Hardware PlugIn (HwI) Selection: \n"
 	    " XXX:SPM (SPM comandset), \n"
 	    " XXX:SPA (SPA-LEED like), \n"
 	    " and others, \n"
+	    " SRanger:SPM (old SoftdB Signal Ranger DSP model MK1 (-STD/-SP2) -- obsolete, \n"
+	    " SRangerMK2:SPM (SoftdB Signal Ranger DSP model MK2 and MK3 autodetected, \n"
 	    " XXX:ccd: special ParPort CCD Cam. TC211 (CCD comandset)")
-		),
+         ),
 	GNOME_RES_ENTRY_ASK_PATH
-	( GNOME_RES_STRING, "Hardware/Device", "/dev/sranger0", &xsmres.DSPDev,
+	( GNOME_RES_STRING, "Hardware/Device", "/dev/sranger_mk2_0", &xsmres.DSPDev,
 	  N_("Hardware"),
-	  N_("Special Character Device used for (DSP)-Control,\n"
-	     " default for DSP cards: \"/dev/pcdsps/tms320\" (new with devfs),\n"
-	     " with Kernel 2.2.x modules use \"/dev/pcdsp\"\n"
-	     " for Signal Ranger SP2 (usb-sranger.o) use  \"/dev/sranger0\"\n"
-	     " ignored in case of HardwareType=no")
-		),
+	  N_("DSP Character Device Path for DSP based Hardware Interfaces:\n"
+	     " ignored in case of HardwareType=no\n"
+	     " old Signal Ranger SP2/STD use: /dev/sranger0\n"
+	     " Signal Ranger MK2 and MK3 specify the first device to start auto detecting: /dev/sranger_mk2_0\n")
+          ),
 	
 	GNOME_RES_ENTRY_INFOTEXT
 	( N_("Instrument"),
