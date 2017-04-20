@@ -65,7 +65,7 @@
       </description>
     </key>
     <key name="rotationy" type="d">
-      <default>-40</default>
+      <default>-90</default>
       <summary>Rotation Angle in Y</summary>
       <description>
         Rotation Angle in Y
@@ -88,7 +88,7 @@
         <choice value='Areal View Front'/>
         <choice value='Scan: Auto Tip View'/>
       </choices>
-      <default>'Areal View Front'</default>
+      <default>'Manual'</default>
       <summary>Predefined Views)</summary>
       <description>
         Predefined Views)
@@ -113,14 +113,14 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="distance" type="d">
-      <default>70.0</default>
+      <default>100.0</default>
       <summary>Distance: Camera GL_Z Position (Distance from surface center in front)</summary>
       <description>
         Distance: Camera GL_Z Position (Distance from surface center in front)
       </description>
     </key>
     <key name="elevation" type="d">
-      <default>20.0</default>
+      <default>50.0</default>
       <summary>Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)</summary>
       <description>
         Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)
@@ -131,14 +131,14 @@ button and drag surface up/down!
         <choice value='Absolute Ang'/>
         <choice value='Relative Range'/>
       </choices>
-      <default>'Relative Range'</default>
+      <default>'Absolute Ang'</default>
       <summary>Height Scaling Mode)</summary>
       <description>
         Height Scaling Mode)
       </description>
     </key>
     <key name="hskl" type="d">
-      <default>0.1</default>
+      <default>1.0</default>
       <summary>Height Scaling (Z scale)</summary>
       <description>
         Height Scaling (Z scale)
@@ -325,7 +325,7 @@ Used only in "Uniform/Material Color Mode".
       </description>
     </key>
     <key name="shininess" type="d">
-      <default>7</default>
+      <default>50</default>
       <summary>Surface Shininess</summary>
       <description>
         Surface Shininess
@@ -361,7 +361,7 @@ Used only in "Uniform/Material Color Mode".
       </description>
     </key>
     <key name="colorcontrast" type="d">
-      <default>2</default>
+      <default>0.5</default>
       <summary>Color Contrast: to scale color source</summary>
       <description>
         Color Contrast: to scale color source
@@ -498,7 +498,7 @@ Used only in "Uniform/Material Color Mode".
       <default>false</default>
       <summary>enable/disable fog</summary>
       <description>
-        enable/disable fog
+        true GXSM OPTIONS=(false, enable/disable fog)
       </description>
     </key>
     <key name="fogcolor" type="ad">
@@ -533,28 +533,28 @@ Effect depends on distance to object and size of object.
       <default>false</default>
       <summary>enable/disable texture (sorry not implemented today)</summary>
       <description>
-        enable/disable texture (sorry not implemented today)
+        true GXSM OPTIONS=(false, enable/disable texture (sorry not implemented today))
       </description>
     </key>
     <key name="mesh" type="b">
       <default>false</default>
       <summary>enable/disable mesh mode (use mesh or solid model)</summary>
       <description>
-        enable/disable mesh mode (use mesh or solid model)
+        true GXSM OPTIONS=(false, enable/disable mesh mode (use mesh or solid model))
       </description>
     </key>
     <key name="transparentslices" type="b">
       <default>false</default>
       <summary>enable/disable transparency for normal non voluem view/slices</summary>
       <description>
-        enable/disable transparency for normal non voluem view/slices
+        true GXSM OPTIONS=(false, enable/disable transparency for normal non voluem view/slices)
       </description>
     </key>
     <key name="emission" type="b">
       <default>false</default>
       <summary>enable/disable emission mode</summary>
       <description>
-        enable/disable emission mode
+        true GXSM OPTIONS=(false, enable/disable emission mode)
       </description>
     </key>
     <key name="cull" type="b">
@@ -563,9 +563,9 @@ Effect depends on distance to object and size of object.
 Note: if enabled you will not see your surface,
 if you are looking from below!</summary>
       <description>
-        enable/disable cull face mode (surface back is not drawn!)
+        true GXSM OPTIONS=(false, enable/disable cull face mode (surface back is not drawn!)
 Note: if enabled you will not see your surface,
-if you are looking from below!
+if you are looking from below!)
       </description>
     </key>
     <key name="smooth" type="b">
@@ -573,22 +573,22 @@ if you are looking from below!
       <summary>enable/disable Smooth Shading (GL color model is smooth or flat)
 Note: smooth shading is much slower but looks also much better.</summary>
       <description>
-        enable/disable Smooth Shading (GL color model is smooth or flat)
-Note: smooth shading is much slower but looks also much better.
+        true GXSM OPTIONS=(false, enable/disable Smooth Shading (GL color model is smooth or flat)
+Note: smooth shading is much slower but looks also much better.)
       </description>
     </key>
     <key name="ortho" type="b">
       <default>false</default>
       <summary>enable/disable ortho mode (not implemented)</summary>
       <description>
-        enable/disable ortho mode (not implemented)
+        true GXSM OPTIONS=(false, enable/disable ortho mode (not implemented))
       </description>
     </key>
     <key name="zeroplane" type="b">
       <default>true</default>
       <summary>enable/disable Zero Plane/Box</summary>
       <description>
-        enable/disable Zero Plane/Box
+        true GXSM OPTIONS=(false, enable/disable Zero Plane/Box)
       </description>
     </key>
     <key name="tickmarks" type="b">
@@ -596,8 +596,8 @@ Note: smooth shading is much slower but looks also much better.
       <summary>enable/disable 3D Tickmarks drawing
  (Note: not yet available!!)</summary>
       <description>
-        enable/disable 3D Tickmarks drawing
- (Note: not yet available!!)
+        true GXSM OPTIONS=(false, enable/disable 3D Tickmarks drawing
+ (Note: not yet available!!))
       </description>
     </key>
     <key name="tickframeoptions" type="s">

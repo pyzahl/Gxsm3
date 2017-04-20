@@ -66,7 +66,7 @@
 
   <schema id="org.gnome.gxsm3.gui.as" path="/org/gnome/gxsm3/gui/as/">
     <key name="auto-save" type="b">
-      <default>true</default>
+      <default>false</default>
       <summary>Indicates data should be auto-saved when a scan is finished</summary>
       <description>
 	Auto Save: Indicates data should be auto-saved when a scan is finished
@@ -156,7 +156,7 @@
 
   <schema id="org.gnome.gxsm3.gui.view" path="/org/gnome/gxsm3/gui/view/">
     <key name="sidepane-show" type="b">
-      <default>true</default>
+      <default>false</default>
       <summary>show/hide scan view information side pane</summary>
       <description>
 	true: show side pane, false: hide
