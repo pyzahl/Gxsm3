@@ -91,34 +91,40 @@
 
       <default>'no'</default>
       <summary>Type of Hardware Interface, choice of: 
- no: data analysis only (hardware disabled, simulation mode), 
+ no: data analysis mode (hardware disabled, simulation mode). 
+ Generic Hardware PlugIn (HwI) Selection: 
  XXX:SPM (SPM comandset), 
  XXX:SPA (SPA-LEED like), 
  and others, 
+ SRanger:SPM (old SoftdB Signal Ranger DSP model MK1 (-STD/-SP2) -- obsolete, 
+ SRangerMK2:SPM (SoftdB Signal Ranger DSP model MK2 and MK3 autodetected, 
  XXX:ccd: special ParPort CCD Cam. TC211 (CCD comandset)</summary>
       <description>
         Type of Hardware Interface, choice of: 
- no: data analysis only (hardware disabled, simulation mode), 
+ no: data analysis mode (hardware disabled, simulation mode). 
+ Generic Hardware PlugIn (HwI) Selection: 
  XXX:SPM (SPM comandset), 
  XXX:SPA (SPA-LEED like), 
  and others, 
+ SRanger:SPM (old SoftdB Signal Ranger DSP model MK1 (-STD/-SP2) -- obsolete, 
+ SRangerMK2:SPM (SoftdB Signal Ranger DSP model MK2 and MK3 autodetected, 
  XXX:ccd: special ParPort CCD Cam. TC211 (CCD comandset)
       </description>
     </key>
     <key name="device" type="s">
 
-      <default>'/dev/sranger0'</default>
-      <summary>Special Character Device used for (DSP)-Control,
- default for DSP cards: "/dev/pcdsps/tms320" (new with devfs),
- with Kernel 2.2.x modules use "/dev/pcdsp"
- for Signal Ranger SP2 (usb-sranger.o) use  "/dev/sranger0"
- ignored in case of HardwareType=no</summary>
-      <description>
-        Special Character Device used for (DSP)-Control,
- default for DSP cards: "/dev/pcdsps/tms320" (new with devfs),
- with Kernel 2.2.x modules use "/dev/pcdsp"
- for Signal Ranger SP2 (usb-sranger.o) use  "/dev/sranger0"
+      <default>'/dev/sranger_mk2_0'</default>
+      <summary>DSP Character Device Path for DSP based Hardware Interfaces:
  ignored in case of HardwareType=no
+ old Signal Ranger SP2/STD use: /dev/sranger0
+ Signal Ranger MK2 and MK3 specify the first device to start auto detecting: /dev/sranger_mk2_0
+</summary>
+      <description>
+        DSP Character Device Path for DSP based Hardware Interfaces:
+ ignored in case of HardwareType=no
+ old Signal Ranger SP2/STD use: /dev/sranger0
+ Signal Ranger MK2 and MK3 specify the first device to start auto detecting: /dev/sranger_mk2_0
+
       </description>
     </key>
   </schema>
