@@ -73,7 +73,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("Rotation Angle in X"), NULL
 		),
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/RotationY", "Rotation Y", "-40", GET_GLV_OFFSET (&GLvd_offset.rot[1]), 
+	( "V3dControl.View/RotationY", "Rotation Y", "-90", GET_GLV_OFFSET (&GLvd_offset.rot[1]), 
 	  Rot_OptionsList, N_("View"),
 	  N_("Rotation Angle in Y"), NULL
 		),
@@ -83,7 +83,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("Rotation Angle in Z"), NULL
 		),
 	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_STRING, "V3dControl.View/RotationPreset", "Areal View Front", GET_GLV_OFFSET (&GLvd_offset.view_preset[0]),
+	( GNOME_RES_STRING, "V3dControl.View/RotationPreset", "Manual", GET_GLV_OFFSET (&GLvd_offset.view_preset[0]),
 	  ViewPreset_OptionsList, N_("View"), 
 	  N_("Predefined Views)")
 		),
@@ -105,13 +105,13 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/Distance", "Distance", "70.0", GET_GLV_OFFSET (&GLvd_offset.camera[1]), 
+	( "V3dControl.View/Distance", "Distance", "100.0", GET_GLV_OFFSET (&GLvd_offset.camera[1]), 
 	  Dist_OptionsList, N_("View"),
 	  N_("Distance: Camera GL_Z Position (Distance from surface center in front)"), NULL
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/Elevation", "Elevation", "20.0", GET_GLV_OFFSET (&GLvd_offset.camera[2]), 
+	( "V3dControl.View/Elevation", "Elevation", "50.0", GET_GLV_OFFSET (&GLvd_offset.camera[2]), 
 	  Dist_OptionsList, N_("View"),
 	  N_("Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)"), NULL
 		),
@@ -119,13 +119,13 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("View"), NULL),
 
 	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_STRING, "V3dControl.View/HeighScaleMode", "Relative Range", GET_GLV_OFFSET (&GLvd_offset.height_scale_mode[0]),
+	( GNOME_RES_STRING, "V3dControl.View/HeighScaleMode", "Absolute Ang", GET_GLV_OFFSET (&GLvd_offset.height_scale_mode[0]),
 	  Hskl_mode_OptionsList, N_("View"), 
 	  N_("Height Scaling Mode)")
 		),
 	
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/Hskl", "Height Skl", "0.1", GET_GLV_OFFSET (&GLvd_offset.hskl), 
+	( "V3dControl.View/Hskl", "Height Skl", "1.0", GET_GLV_OFFSET (&GLvd_offset.hskl), 
 	  Hskl_OptionsList, N_("View"),
 	  N_("Height Scaling (Z scale)"), NULL
 		),
@@ -264,7 +264,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("Surface Specular Color:\n Specify the specular RGBA reflectance of the material."), NULL
 	  ),
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.MatSurf/Shininess", "Shininess", "7", GET_GLV_OFFSET (&GLvd_offset.surf_mat_shininess[0]), 
+	( "V3dControl.MatSurf/Shininess", "Shininess", "50", GET_GLV_OFFSET (&GLvd_offset.surf_mat_shininess[0]), 
 	  Shininess_OptionsList, N_("Surface Material"),
 	  N_("Surface Shininess"), NULL
 	  ),
@@ -287,7 +287,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("Surface Material"), NULL),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.MatSurf/ColorContrast", "Color Contrast", "2", 
+	( "V3dControl.MatSurf/ColorContrast", "Color Contrast", "0.5", 
 	  GET_GLV_OFFSET (&GLvd_offset.ColorContrast), 
 	  CScale_OptionsList, N_("Surface Material"),
 	  N_("Color Contrast: to scale color source"), NULL
