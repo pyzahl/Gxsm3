@@ -800,12 +800,20 @@ void Gtk_EntryControl::Set_Parameter(double Value=0., int flg=FALSE, int usr2bas
 	if (Set_FromValue (value)){ // preoceed only with updated and potential client if new value was accepted
                 update_value_in_settings ();
 
+                if ((c=(GtkWidget*)g_object_get_data( G_OBJECT (entry), "HasMaster"))){
+                        Gtk_EntryControl *master = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (c), "Gtk_EntryControl");
+                        g_object_set_data( G_OBJECT (c), "HasRatio", GUINT_TO_POINTER((guint)round(1000.*new_value/master->Get_dValue())));
+                }
+
+                
                 if((c=(GtkWidget*)g_object_get_data( G_OBJECT (entry), "HasClient")) && enable_client){
                         Gtk_EntryControl *cec = (Gtk_EntryControl *) g_object_get_data( G_OBJECT (c), "Gtk_EntryControl");
 
+                        gpointer data = g_object_get_data( G_OBJECT (entry), "HasRatio");
+                        double ratio = data ? (double)(GPOINTER_TO_UINT (data))/1000. : 1.0;
                         //                g_message ("Gtk_EntryControl::Set_Parameter update client with value=%g [%s]", value, cec->refname);
 
-                        if (cec->Set_FromValue (new_value)) // only if also this succeeded
+                        if (cec->Set_FromValue (ratio * new_value)) // only if also this succeeded
                                 cec->update_value_in_settings ();
                 }
                 if(ChangeNoticeFkt)
@@ -823,8 +831,16 @@ void Gtk_EntryControl::Set_NewValue (gboolean set_new_value){
 	Set_dValue(new_value);
 	Put_Value ();
 
+        if ((c=(GtkWidget*)g_object_get_data( G_OBJECT (entry), "HasMaster"))){
+                Gtk_EntryControl *master = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (c), "Gtk_EntryControl");
+                g_object_set_data( G_OBJECT (c), "HasRatio", GUINT_TO_POINTER((guint)round(1000.*new_value/master->Get_dValue())));
+        }
+        
+        gpointer data = g_object_get_data( G_OBJECT (entry), "HasRatio");
+        double ratio = data ? (double)(GPOINTER_TO_UINT (data))/1000. : 1.0;
+        
 	if((c=(GtkWidget*)g_object_get_data( G_OBJECT (entry), "HasClient")) && enable_client)
-		((Gtk_EntryControl *)g_object_get_data( G_OBJECT (c), "Gtk_EntryControl"))->Set_FromValue(new_value);
+		((Gtk_EntryControl *)g_object_get_data( G_OBJECT (c), "Gtk_EntryControl"))->Set_FromValue (ratio * new_value);
 
 	// The ChangeNoticeFkt commits the current value to the DSP
 	if(ChangeNoticeFkt) (*ChangeNoticeFkt)(this, FktData);
