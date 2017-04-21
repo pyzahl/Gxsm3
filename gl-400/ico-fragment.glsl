@@ -48,10 +48,51 @@ vec4 shadeLambertian(vec3 vertex, vec3 vertexEye,
 
         // return vec4(vec3(gl_FragCoord.z), 1.0f);
 
+#if 0
         return vec4 (color_offset.xyz
                      + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
                      1.);
+#else
 
+        vec3 finalColor = (ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz;
+        
+        switch (debug_color_source){
+        case 1: return vec4 (color_offset.xyz
+                             + lightness*(ambientColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
+                             transparency_offset+transparency*color.a);
+        case 2: return vec4 (color_offset.xyz + vec3(diffuse), 1.0);
+        case 3: return vec4 (color_offset.xyz
+                             + lightness*(ambientColor.xyz+specular*specularColor.xyz)*color.xyz,
+                             transparency_offset+transparency*color.a);
+        case 4: return color_offset + lightness*color;
+#if 0
+        case 5:
+                finalColor = applyFog (finalColor, dist, viewDir);
+                return color_offset + vec4(lightness*finalColor, color.a);
+        case 6:
+                return color_offset + vec4 (mix (finalColor.xyz, nois, 0.2), color.a);
+        case 7:
+                return color_offset + vec4 (nois, color.a);
+#endif           
+        case 8: return color_offset + lightness*color;
+        case 9: return color_offset + color;
+        case 10: return color_offset + vec4(normal*0.5+0.5, 1.0);
+        case 11: return color_offset + vec4(normal.y*0.5+0.5, 0.,0., 1.0);
+        case 12: return color_offset + vec4(normal.x*0.5+0.5, 0.,0., 1.0);
+        case 13: return color_offset + specular*color;
+        case 14: return color_offset + vec4(vec3(specular,normal.y,diffuse),1.0);
+                //case 15: return color_offset + vec4(vec3(dist/100.), 1.0);
+        case 16: return color_offset + specular*lightness*vec4(1);
+        case 17: return vec4(vec3(lightness*(gl_FragCoord.z+transparency_offset)), 1.0f);
+        case 18: return vec4(vec3(lightness*(gl_FragCoord.w+transparency_offset)), 1);
+        case 19: return vec4(lightness*gl_FragCoord.w+vec4(transparency_offset));
+        default: return vec4 (color_offset.xyz
+                              + lightness*finalColor,
+                              transparency_offset);
+                // transparency_offset+transparency*color.a);
+        }
+#endif
+        
 }
 
 void main()
