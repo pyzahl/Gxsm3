@@ -1313,6 +1313,23 @@ DSPControl::DSPControl () {
         dsp_bp->ec->set_log (PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE);
         dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
         dsp_bp->new_line ();
+
+        dsp_bp->set_input_width_chars (30);
+        dsp_bp->set_input_nx (2);
+        dsp_bp->grid_add_ec ("Z-Pos/Setpoint:", Angstroem, &zpos_ref, -100., 100., "6g", 0.01, 0.1, "adv-dsp-zpos-ref");
+        ZPos_ec = dsp_bp->ec;
+        zpos_control_list = g_slist_prepend (zpos_control_list, dsp_bp->ec);
+                 
+        dsp_bp->set_input_width_chars (12);
+        dsp_bp->set_input_nx ();
+
+	dsp_bp->grid_add_check_button ("Z-Pos Monitor", "Z Position Monitor. Disable to set Z-Position Setpoint for const FUZZY-LOG-Z-CONTROL Constant Heigth Mode Operation.", 1,
+                                       G_CALLBACK (DSPControl::zpos_monitor_callback), this,
+                                       0, MD_ZPOS_ADJUSTER);
+        GtkWidget *zposmon_checkbutton = dsp_bp->button;
+
+        dsp_bp->new_line ();
+
         dsp_bp->set_configure_list_mode_off ();
 
         // MIXER headers
@@ -1425,10 +1442,19 @@ DSPControl::DSPControl () {
 
         dsp_bp->set_label_width_chars (7);
         dsp_bp->set_input_width_chars (12);
-	dsp_bp->grid_add_ec_with_scale ("CP", Unity, &z_servo[SERVO_CP], 0., (DSPPACClass) ? 100.:1., "5g", 0.001, 0.01, "fbs-cp");
-        dsp_bp->new_line ();
-        dsp_bp->grid_add_ec_with_scale ("CI", Unity, &z_servo[SERVO_CI], 0., (DSPPACClass) ? 100.:1., "5g", 0.001, 0.01, "fbs-ci");
 
+        dsp_bp->set_configure_list_mode_on ();
+	dsp_bp->grid_add_ec_with_scale ("CP", Unity, &z_servo[SERVO_CP], 0., 200., "5g", 1.0, 0.1, "fbs-cp");
+        GtkWidget *ZServoCP = dsp_bp->input;
+        dsp_bp->new_line ();
+        dsp_bp->set_configure_list_mode_off ();
+        dsp_bp->grid_add_ec_with_scale ("CI", Unity, &z_servo[SERVO_CI], 0., 200., "5g", 1.0, 0.1, "fbs-ci");
+        GtkWidget *ZServoCI = dsp_bp->input;
+
+        g_object_set_data( G_OBJECT (ZServoCI), "HasClient", ZServoCP);
+        g_object_set_data( G_OBJECT (ZServoCP), "HasMaster", ZServoCI);
+        g_object_set_data( G_OBJECT (ZServoCI), "HasRatio", GUINT_TO_POINTER((guint)round(1000.*z_servo[SERVO_CP]/z_servo[SERVO_CI])));
+        
 	input_signal = NULL;
 	if (DSPPACClass) { // MK3
 		int sig_i = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_M_SERVO_INPUT_ID);
@@ -1614,20 +1640,6 @@ DSPControl::DSPControl () {
 	dsp_bp->grid_add_check_button ("Enable Feed Back Controller", "DSP feedback controller switch, normally on.", 1,
                                        G_CALLBACK (DSPControl::feedback_callback), this,
                                        dsp_state_mode, MD_PID);
-
-	dsp_bp->grid_add_check_button ("Z-Pos Monitor", "Z Position Monitor. Disable to set Z-Position Setpoint for const FUZZY-LOG-Z-CONTROL Constant Heigth Mode Operation.", 1,
-                                       G_CALLBACK (DSPControl::zpos_monitor_callback), this,
-                                       dsp_state_mode, MD_ZPOS_ADJUSTER);
-        GtkWidget *zposmon_checkbutton = dsp_bp->button;
-        dsp_bp->set_input_width_chars (30);
-        dsp_bp->set_input_nx (2);
-        dsp_bp->grid_add_ec ("Z-Pos/Setpoint:", Angstroem, &zpos_ref, -100., 100., "6g", 0.01, 0.1, "adv-dsp-zpos-ref");
-        ZPos_ec = dsp_bp->ec;
-        zpos_control_list = g_slist_prepend (zpos_control_list, dsp_bp->ec);
-                 
-        dsp_bp->set_input_width_chars (12);
-        dsp_bp->set_input_nx ();
-        dsp_bp->new_line ();
 
         dsp_bp->set_configure_list_mode_on ();
 	dsp_bp->grid_add_ec ("FrqRef", Frq, &frq_ref, 10000., 150000., "6g", 0.01, 0.1, "adv-dsp-freq-ref");
