@@ -857,8 +857,15 @@ private:
         glm::vec3 cameraPosition() const {
                 return glm::vec3(this->DistanceCurrent.x, this->DistanceCurrent.y, this->DistanceCurrent.z);
         };
+        glm::vec3 lookAtPosition() const {
+                return glm::vec3(0,0,0);
+                if (s->GLv_data.Ortho) return glm::vec3(0,0,0);
+                GLfloat r[3];
+                s->GetXYZNormalized (r);
+                return glm::vec3(r[0], r[2], r[1]);
+        };
         glm::vec3 modelPosition() const {
-                return glm::vec3(this->TranslationCurrent.x, 0.0, this->TranslationCurrent.y);
+                return glm::vec3(-this->TranslationCurrent.x, 0.0, -this->TranslationCurrent.y);
         };
         glm::mat4 modelView() const {
                 // rotate model 1st around it's origin
@@ -1290,12 +1297,15 @@ public:
 
                 float aspect = WindowSize.x/WindowSize.y;
                 // GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f
-                glm::mat4 Projection = glm::perspective (glm::radians (s->GLv_data.fov/57.3f), aspect, 0.1f, 100.f); // near, far frustum
+                glm::mat4 Projection = glm::perspective (glm::radians (s->GLv_data.fov/57.3f), aspect, 1.f, 1000.f); // near, far frustum
                 glm::mat4 Camera = glm::lookAt (cameraPosition(), // cameraPosition, the position of your camera, in world space
-                                                glm::vec3(0,0,0), //cameraTarget, where you want to look at, in world space
+                                                lookAtPosition(), //cameraTarget, where you want to look at, in world space
                                                 glm::vec3(0,1,0) // upVector, probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
                                                 );
 
+                // glm::mat4 glm::ortho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble near, GLdouble far);
+
+                
 		glm::mat4 Model = glm::mat4(1.0f);
 		Block_ModelViewMat.ModelView = this->modelView() * Model;
 		Block_ModelViewMat.ModelViewProjection = Projection * Camera * Block_ModelViewMat.ModelView;
