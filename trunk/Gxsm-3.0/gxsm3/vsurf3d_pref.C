@@ -32,6 +32,7 @@ Surf3d_GLview_data GLvd_offset; // dummy
 const gchar *TrueFalse_OptionsList[]  = { "true", "false", NULL };
 const gchar *OnOff_OptionsList[]      = { "On", "Off", NULL };
 const gchar *ViewPreset_OptionsList[] = { "Manual", "Top", "Front", "Left", "Right", "Areal View Front", "Scan: Auto Tip View", NULL };
+const gchar *LookAt_OptionsList[]     = { "Manual", "Tip", "Center", NULL };
 
 const gchar *VertexSrc_OptionsList[]  = { "Flat", "Direct Height", "View Mode Height", "X-Channel", "Y", NULL };
 const gchar *XYZ_OptionsList[]        = { "X", "Y", "Z", "Volume", "Scatter", NULL };
@@ -51,8 +52,9 @@ const gchar *ColorOffset_OptionsList[]   = { "-1","1","0.01","0.1","3", NULL };
 
 const gchar *Rot_OptionsList[]   = {"-180","180","1","1","0",NULL };
 const gchar *FoV_OptionsList[]   = {"0","180","1","1","0",NULL };
-const gchar *Dist_OptionsList[]  = {"-200","200","1","1","1",NULL };
-const gchar *Hskl_mode_OptionsList[]     = { "Absolute Ang", "Relative Range", NULL };
+const gchar *Frustum_OptionsList[] = {"0","1000","0.001","0.001","4",NULL };
+const gchar *Dist_OptionsList[]  = {"-200","200","0.1","0.1","1",NULL };
+const gchar *Hskl_mode_OptionsList[] = { "Absolute Ang", "Relative Range", NULL };
 const gchar *Hskl_OptionsList[]  = {"-20","20","0.001","0.001","4",NULL };
 const gchar *Tskl_OptionsList[]  = {"-10","10","0.01","0.01","1",NULL };
 const gchar *Slice_OptionsList[]  = {"-5","5","0.01","1","2",NULL };
@@ -87,7 +89,11 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  ViewPreset_OptionsList, N_("View"), 
 	  N_("Predefined Views)")
 		),
-
+	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_STRING, "V3dControl.View/LookAt", "Center", GET_GLV_OFFSET (&GLvd_offset.look_at[0]),
+	  LookAt_OptionsList, N_("View"), 
+	  N_("Predefined Look At Positions)")
+		),
 		
 	GNOME_RES_ENTRY_SEPARATOR (N_("View"), NULL),
 
@@ -99,19 +105,35 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/FoV", "FoV", "45.0", GET_GLV_OFFSET (&GLvd_offset.fov), 
+	( "V3dControl.View/FoV", "FoV", "55.0", GET_GLV_OFFSET (&GLvd_offset.fov), 
 	  FoV_OptionsList, N_("View"),
 	  N_("Field of View"), NULL
-		),
+	  ),
 
+#if 1
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/Distance", "Distance", "100.0", GET_GLV_OFFSET (&GLvd_offset.camera[1]), 
+	( "V3dControl.View/FrustumNear", "FrustumNear", "0.001", GET_GLV_OFFSET (&GLvd_offset.fnear), 
+	  Frustum_OptionsList, N_("View"),
+	  N_("Frustum Distance Near: Z-Buffer Near Cut Off"), NULL
+	  ),
+	
+	GNOME_RES_ENTRY_FLOATSLIDER
+	( "V3dControl.View/FrustumFar", "FrustumFar", "10.", GET_GLV_OFFSET (&GLvd_offset.ffar), 
+	  Frustum_OptionsList, N_("View"),
+	  N_("Frustum Distance Far: Z-Buffer Far Cut Off"), NULL
+	  ),
+
+#endif
+
+	
+	GNOME_RES_ENTRY_FLOATSLIDER
+	( "V3dControl.View/Distance", "Distance", "1.5", GET_GLV_OFFSET (&GLvd_offset.camera[1]), 
 	  Dist_OptionsList, N_("View"),
 	  N_("Distance: Camera GL_Z Position (Distance from surface center in front)"), NULL
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/Elevation", "Elevation", "50.0", GET_GLV_OFFSET (&GLvd_offset.camera[2]), 
+	( "V3dControl.View/Elevation", "Elevation", "1.0", GET_GLV_OFFSET (&GLvd_offset.camera[2]), 
 	  Dist_OptionsList, N_("View"),
 	  N_("Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)"), NULL
 		),

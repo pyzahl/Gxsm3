@@ -8,6 +8,11 @@
     <value value="5" nick="Areal View Front "/>
     <value value="6" nick="Scan: Auto Tip View "/>
   </enum>
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-look-at">
+    <value value="0" nick="Manual "/>
+    <value value="1" nick="Tip "/>
+    <value value="2" nick="Center "/>
+  </enum>
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-heigh-scale-mode">
     <value value="0" nick="Absolute Ang "/>
     <value value="1" nick="Relative Range "/>
@@ -94,6 +99,18 @@
         Predefined Views)
       </description>
     </key>
+    <key name="lookat" type="s">
+      <choices>
+        <choice value='Manual'/>
+        <choice value='Tip'/>
+        <choice value='Center'/>
+      </choices>
+      <default>'Center'</default>
+      <summary>Predefined Look At Positions)</summary>
+      <description>
+        Predefined Look At Positions)
+      </description>
+    </key>
     <key name="translation" type="ad">
       <default>[0,0,0]</default>
       <summary>set translations vector X, Y, Z
@@ -106,21 +123,35 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="fov" type="d">
-      <default>45.0</default>
+      <default>55.0</default>
       <summary>Field of View</summary>
       <description>
         Field of View
       </description>
     </key>
+    <key name="frustumnear" type="d">
+      <default>0.001</default>
+      <summary>Frustum Distance Near: Z-Buffer Near Cut Off</summary>
+      <description>
+        Frustum Distance Near: Z-Buffer Near Cut Off
+      </description>
+    </key>
+    <key name="frustumfar" type="d">
+      <default>10.</default>
+      <summary>Frustum Distance Far: Z-Buffer Far Cut Off</summary>
+      <description>
+        Frustum Distance Far: Z-Buffer Far Cut Off
+      </description>
+    </key>
     <key name="distance" type="d">
-      <default>100.0</default>
+      <default>1.5</default>
       <summary>Distance: Camera GL_Z Position (Distance from surface center in front)</summary>
       <description>
         Distance: Camera GL_Z Position (Distance from surface center in front)
       </description>
     </key>
     <key name="elevation" type="d">
-      <default>50.0</default>
+      <default>1.0</default>
       <summary>Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)</summary>
       <description>
         Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)

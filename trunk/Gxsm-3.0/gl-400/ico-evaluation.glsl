@@ -35,6 +35,7 @@ void main()
         Out.tePatchDistance = gl_TessCoord;
         Out.tePosition =  IcoPosition.xyz + IcoScale.xyz * (In[0].tcLatPos + normalize(p0 + p1 + p2));
         Out.tePosition.y = height_transform (Out.tePosition.y);
+        Out.tePosition.z *= aspect;
         Out.VertexEye   = (ModelView * vec4(Out.tePosition, 1)).xyz;  // eye space
         gl_Position = ModelViewProjection * vec4(Out.tePosition, 1);
 }

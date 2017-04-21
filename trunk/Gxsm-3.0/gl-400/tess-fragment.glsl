@@ -314,7 +314,12 @@ vec4 shadeLambertianMaterialColorFog(vec3 vertex, vec3 vertexEye,
 
 void main()
 {
-        // shade fragment, use model as selected via shaderFunction pointer
-        FragColor = shadeModel (In.Vertex, In.VertexEye,
-                                 In.Normal, In.Color);
+        if (gl_FrontFacing) {
+                // shade fragment, use model as selected via shaderFunction pointer
+                FragColor = shadeModel (In.Vertex, In.VertexEye,
+                                        In.Normal, In.Color);
+        } else {
+                FragColor = shadeLambertianMaterialColor (In.Vertex, In.VertexEye,
+                                                          In.Normal, In.Color);
+        }
 }
