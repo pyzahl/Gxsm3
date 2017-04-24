@@ -23,8 +23,8 @@ layout (std140) uniform SurfaceGeometry
         uniform float aspect;
         uniform float height_scale;
         uniform float height_offset;
-        uniform float dummy;
-        uniform vec2 delta;
+        uniform float plane_at;
+        uniform vec2 delta; // must align 4f
 };
 
 // Light and Shading

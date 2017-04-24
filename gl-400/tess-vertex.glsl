@@ -17,11 +17,11 @@ out block
 } Out;
 
 
-
 subroutine float vertexModelType(vec2 position);
-
 subroutine uniform vertexModelType vertexModel;
 
+subroutine vec3 vertexPlaneType(vec2 position);
+subroutine uniform vertexPlaneType vertexPlane;
 
 float height_transform(float y)
 {
@@ -62,9 +62,36 @@ float vertex_height_z(vec2 position)
         return height_transform (texture (Surf3D_Z_Data, terraincoord(position)).z);
 }
 
+subroutine( vertexModelType )
+float vertex_plane_at(vec2 position)
+{
+        return plane_at;
+}
+
+
+// Plane Default "XZ" -- normal terrain like surface representaion
+subroutine( vertexPlaneType )
+vec3 vertex_XZ_plane(vec2 posXZ)
+{
+        return vec3 (posXZ.x, vertexModel (posXZ), -posXZ.y);
+}
+
+subroutine( vertexPlaneType )
+vec3 vertex_XY_plane(vec2 posXZ)
+{
+        return vec3 (posXZ.x, -posXZ.y/aspect, vertexModel (posXZ));
+}
+
+subroutine( vertexPlaneType )
+vec3 vertex_ZY_plane(vec2 posXZ)
+{
+        return vec3 (vertexModel (posXZ), posXZ.x, -posXZ.y);
+}
+
 
 void main()
 {
-        Out.Vertex = vec3 (PositionXZ.x, vertexModel (PositionXZ), -PositionXZ.y);
+        Out.Vertex = vertexPlane (PositionXZ);
+        //        Out.Vertex = vec3 (PositionXZ.x, vertexModel (PositionXZ), -PositionXZ.y);
         gl_Position = vec4 (Out.Vertex, 1.0);
 }

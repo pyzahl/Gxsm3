@@ -26,6 +26,9 @@ subroutine uniform eval_vertexModelType eval_vertexModel;
 subroutine vec4 colorModelType(vec4 zz);
 subroutine uniform colorModelType colorModel;
 
+subroutine vec3 eval_vertexPlaneType(vec3 position);
+subroutine uniform eval_vertexPlaneType eval_vertexPlane;
+
 
 float height_transform(float y)
 {
@@ -48,7 +51,7 @@ vec2 terraincoord(vec2 position){
 subroutine( eval_vertexModelType )
 float height_flat(vec4 zz)
 {
-        return height_transform (0.5);
+        return height_transform (plane_at);
 }
 
 subroutine( eval_vertexModelType )
@@ -108,6 +111,28 @@ vec4 colorY(vec4 zz)
         return texture (GXSM_Palette, 0.1*zz.y);
 }
 
+
+// Plane Default "XZ" -- normal terrain like surface representaion
+subroutine( eval_vertexPlaneType )
+vec3 eval_vertex_XZ_plane(vec3 pos)
+{
+        return pos; // pos.xyz
+}
+
+subroutine( eval_vertexPlaneType )
+vec3 eval_vertex_XY_plane(vec3 pos)
+{
+        return pos.xzy;
+}
+
+subroutine( eval_vertexPlaneType )
+vec3 eval_vertex_ZY_plane(vec3 pos)
+{
+        return pos.yxz;
+}
+
+
+
 float height_at_delta(vec2 delta)
 {
         vec2 tc = terraincoord (delta);
@@ -123,6 +148,8 @@ void main()
 	vec4 a = mix(gl_in[1].gl_Position, gl_in[0].gl_Position, u);
 	vec4 b = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, u);
 	vec4 position = mix(a, b, v);
+        vec3 tmp = eval_vertexPlane (position.xyz);
+        position.xyz = tmp;
         vec2 tc = terraincoord (position.xz);
         vec4 zz = texture (Surf3D_Z_Data, tc);
         position.y = eval_vertexModel (zz);
@@ -156,12 +183,13 @@ void main()
         float dxdz = height_at_delta (position.xz - off.xz) - height_at_delta (position.xz + off.xz);
         float dydz = height_at_delta (position.xz - off.zy) - height_at_delta (position.xz + off.zy);
         // deduce terrain normal
-        Out.Normal = normalize (vec3(dxdz, 2*delta.x, dydz/aspect));
+        Out.Normal = eval_vertexPlane (normalize (vec3(dxdz, 2*delta.x, dydz/aspect)));
 #endif
+        
         
         Out.Color     = colorModel (zz);
 
-        Out.Vertex    = vec3 (position.xyz);
-        Out.VertexEye = vec3 (ModelView * vec4(position.xyz, 1));  // eye space
-        gl_Position = ModelViewProjection * vec4(position.xyz, 1.0);
+        Out.Vertex    = eval_vertexPlane (position.xyz);
+        Out.VertexEye = vec3 (ModelView * vec4(Out.Vertex, 1));  // eye space
+        gl_Position = ModelViewProjection * vec4(Out.Vertex, 1.0);
 }

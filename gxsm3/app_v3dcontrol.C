@@ -193,6 +193,7 @@ V3dControl::V3dControl (const char *title, int ChNo, Scan *sc,
         // gtk_window_set_default_size(GTK_WINDOW(window), 500, 500);
 
         glarea = gtk_gl_area_new ();
+        gtk_gl_area_set_has_depth_buffer (GTK_GL_AREA(glarea), true);
 
         // set required GL version (4.0)
         gtk_gl_area_set_required_version (GTK_GL_AREA(glarea), 4, 0);
