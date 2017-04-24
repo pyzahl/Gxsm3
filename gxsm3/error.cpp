@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cassert>
 
+#include "gxsm_app.h"
+
 bool checkError(const char* Title)
 {
 	int Error;
@@ -30,8 +32,16 @@ bool checkError(const char* Title)
 			ErrorString = "UNKNOWN";
 			break;
 		}
-		fprintf(stdout, "OpenGL Error(%s): %s\n", ErrorString.c_str(), Title);
-		assert(0);
+		
+		gchar *message = g_strdup_printf ("OpenGL Error (%s) at %s\n", ErrorString.c_str(), Title);
+		g_critical (message);
+		gapp->warning (message);
+		g_free (message);
+
+		if (0){
+			fprintf(stdout, "OpenGL Error(%s): %s\n", ErrorString.c_str(), Title);
+			assert(0);
+		}
 	}
 	return Error == GL_NO_ERROR;
 }

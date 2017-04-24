@@ -130,7 +130,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="frustumnear" type="d">
-      <default>0.001</default>
+      <default>0.01</default>
       <summary>Frustum Distance Near: Z-Buffer Near Cut Off</summary>
       <description>
         Frustum Distance Near: Z-Buffer Near Cut Off
@@ -509,6 +509,15 @@ Used only in "Uniform/Material Color Mode".
       <description>
         Tesseletion Level Max:
  32: normal, 1: no tesselation
+      </description>
+    </key>
+    <key name="baseplanegrid" type="d">
+      <default>128.0</default>
+      <summary>Base Plane Grid Size:
+ 128: default -- max via max tesselation is this number x 64</summary>
+      <description>
+        Base Plane Grid Size:
+ 128: default -- max via max tesselation is this number x 64
       </description>
     </key>
     <key name="probeatoms" type="d">

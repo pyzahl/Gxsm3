@@ -52,7 +52,7 @@ const gchar *ColorOffset_OptionsList[]   = { "-1","1","0.01","0.1","3", NULL };
 
 const gchar *Rot_OptionsList[]   = {"-180","180","1","1","0",NULL };
 const gchar *FoV_OptionsList[]   = {"0","180","1","1","0",NULL };
-const gchar *Frustum_OptionsList[] = {"0","1000","0.001","0.001","4",NULL };
+const gchar *Frustum_OptionsList[] = {"0","100","0.01","0.01","3",NULL };
 const gchar *Dist_OptionsList[]  = {"-200","200","0.1","0.1","1",NULL };
 const gchar *Hskl_mode_OptionsList[] = { "Absolute Ang", "Relative Range", NULL };
 const gchar *Hskl_OptionsList[]  = {"-20","20","0.001","0.001","4",NULL };
@@ -61,7 +61,8 @@ const gchar *Slice_OptionsList[]  = {"-5","5","0.01","1","2",NULL };
 const gchar *Shininess_OptionsList[]  = {"0","100","0.1","1","1",NULL };
 const gchar *FogD_OptionsList[]  = {"0","100","0.001","0.01","2",NULL };
 const gchar *shader_mode_OptionsList[]  = {"0","20","1","1","0",NULL };
-const gchar *tess_level_OptionsList[]  = {"1","64","1.0","1.0","1",NULL };
+const gchar *tess_level_OptionsList[]  = {"1","64","1.0","1.0","0",NULL };
+const gchar *base_grid_OptionsList[]  = {"8","512","1.0","1.0","0",NULL };
 const gchar *probe_atoms_OptionsList[]  = {"5","1000000","100.0","100.0","1",NULL };
 
 GnomeResEntryInfoType v3dControl_pref_def_const[] = {
@@ -112,7 +113,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 
 #if 1
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.View/FrustumNear", "FrustumNear", "0.001", GET_GLV_OFFSET (&GLvd_offset.fnear), 
+	( "V3dControl.View/FrustumNear", "FrustumNear", "0.01", GET_GLV_OFFSET (&GLvd_offset.fnear), 
 	  Frustum_OptionsList, N_("View"),
 	  N_("Frustum Distance Near: Z-Buffer Near Cut Off"), NULL
 	  ),
@@ -393,6 +394,13 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  tess_level_OptionsList, N_("Render Opt."),
 	  N_("Tesseletion Level Max:\n"
 	     " 32: normal, 1: no tesselation"), NULL
+		),
+
+	GNOME_RES_ENTRY_FLOATSLIDER
+	( "V3dControl.RenderOp/BasePlaneGrid", "Base Plane Grid", "128.0", GET_GLV_OFFSET (&GLvd_offset.base_plane_size), 
+	  base_grid_OptionsList, N_("Render Opt."),
+	  N_("Base Plane Grid Size:\n"
+	     " 128: default -- max via max tesselation is this number x 64"), NULL
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
