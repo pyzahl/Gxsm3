@@ -127,11 +127,38 @@ void main()
         vec4 zz = texture (Surf3D_Z_Data, tc);
         position.y = eval_vertexModel (zz);
 
-        // calculate normal
+#if 0
+#if 0
+        // handle side directly
+        if (tc.x < 0.0001)
+                Out.Normal = vec3 (-1,0,0);
+        else if (tc.x > 0.9999)
+                Out.Normal = vec3 (1,0,0);
+        else if (tc.y < 0.0001)
+                Out.Normal = vec3 (0,0,-1);
+        else if (tc.y > 0.9999)
+                Out.Normal = vec3 (0,0,1);
+        else {
+                // calculate normal
+                vec3 pa = vec3(position.x + delta.x, height_at_delta (position.xz + vec2 (delta.x, 0.)), position.z);
+                vec3 pb = vec3(position.x,           height_at_delta (position.xz + vec2 (0., delta.y)), position.z + delta.y);
+                Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
+        }
+#else
+        // always calculate normal
         vec3 pa = vec3(position.x + delta.x, height_at_delta (position.xz + vec2 (delta.x, 0.)), position.z);
         vec3 pb = vec3(position.x,           height_at_delta (position.xz + vec2 (0., delta.y)), position.z + delta.y);
-
         Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
+#endif
+#else
+        // calculate normal from neightbor heights
+        vec3 off = vec3 (delta.xy, 0.0);
+        float dxdz = height_at_delta (position.xz - off.xz) - height_at_delta (position.xz + off.xz);
+        float dydz = height_at_delta (position.xz - off.zy) - height_at_delta (position.xz + off.zy);
+        // deduce terrain normal
+        Out.Normal = normalize (vec3(dxdz, 2*delta.x, dydz/aspect));
+#endif
+        
         Out.Color     = colorModel (zz);
 
         Out.Vertex    = vec3 (position.xyz);

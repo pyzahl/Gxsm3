@@ -71,8 +71,8 @@
 
 //#define __GXSM_PY_DEVEL
 #ifdef __GXSM_PY_DEVEL
-//#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
-#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
+#define GLSL_DEV_DIR "/home/pzahl/SVN/Gxsm-3.0/gl-400/"
+//#define GLSL_DEV_DIR "/home/percy/SVN/Gxsm-3.0/gl-400/"
 #endif
 
 
@@ -1080,7 +1080,7 @@ private:
                 bind_block (IcoTess_ProgramName, FragmentShading_block, "FragmentShading", sizeof(ubo::uniform_fragment_shading));
                 
                 // create surface base plane
-                surface_plane = new base_plane ((s->get_scan ())->mem2d, 128, // 128,
+                surface_plane = new base_plane ((s->get_scan ())->mem2d, (int)s->GLv_data.base_plane_size,
                                                 (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx
                                                 );
                 
@@ -1330,7 +1330,7 @@ public:
                 // setting GLv_data.hskl to 1 means same x,y and z scale.
                 Block_SurfaceGeometry.height_scale  = GL_height_scale;
                 Block_SurfaceGeometry.height_offset = 0.; // s->GLv_data.slice_offset;
-                Block_SurfaceGeometry.delta = glm::vec2 (1.0f/(s->XPM_x-1), 1.0f/(s->XPM_y-1));
+                Block_SurfaceGeometry.delta = glm::vec2 (1.0f/(s->XPM_x-1), Block_SurfaceGeometry.aspect/(s->XPM_y-1));
                 updateSurfaceGeometry ();
 
                 // Camera, Light and Shading
@@ -1932,9 +1932,10 @@ gboolean Surf3d::check_dimension_changed(){
                         g_message ("Calling  gl_tess->begin()");
                         if (! gl_tess->begin()){
                                 gchar *message = g_strdup_printf
-                                        ("FAILURE GL-TESS BEGIN/INIT failed:\n"
+                                        ("FAILURE GL-TESS BEGIN/INIT failed at check_dimension_changed:\n"
                                          " --> GL VERSION requirements for GL 4.0 not satified?\n"
-                                         " --> GL GLSL program code error or not found/installed?");
+                                         " --> GLSL  program code error or not found/installed?\n"
+                                         "     check: %s for .glsl files.", getDataDirectory().c_str());
 
                                 g_critical (message);
                                 gapp->warning (message);
@@ -2511,9 +2512,10 @@ void realize_vsurf3d_cb (GtkGLArea *area, Surf3d *s){
         
 	if (! s->gl_tess->begin()){
                 gchar *message = g_strdup_printf
-                        ("FAILURE GL-TESS BEGIN/INIT failed:\n"
+                        ("FAILURE GL-TESS BEGIN/INIT failed at realize_vsurf3d_cb:\n"
                          " --> GL VERSION requirements for GL 4.0 not satified?\n"
-                         " --> GL GLSL program code error or not found/installed?");
+                         " --> GLSL  program code error or not found/installed?\n"
+                         "     check: %s for .glsl files.", getDataDirectory().c_str());
 
                 g_critical (message);
                 gapp->warning (message);
