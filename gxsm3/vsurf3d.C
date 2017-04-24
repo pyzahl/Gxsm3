@@ -1459,6 +1459,13 @@ public:
                 }
                 checkError ("render -- configure shader");
 
+                if (s->GLv_data.TransparentSlices){
+                        glEnable (GL_BLEND); 
+                        glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                } else {
+                        glDisable (GL_BLEND); 
+                }
+
                 switch (s->GLv_data.slice_direction[0]){
                 case 'Z':
                         glUniformSubroutinesuiv (GL_VERTEX_SHADER, 2, Uniform_vertex_setup);
@@ -1512,6 +1519,9 @@ public:
                         }
                         break;
                 }
+
+                glDisable (GL_BLEND); 
+
                 
                 // Gimmicks ========================================
                 // Ico
