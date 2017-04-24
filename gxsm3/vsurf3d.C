@@ -1588,7 +1588,7 @@ public:
 
         void cursorPositionCallback(int mouse, double x, double y){
                 if (mouse == 'Z'){ // incremental
-                        DistanceCurrent = (DistanceOrigin += glm::vec3(x, y, 0.));
+                        DistanceCurrent = (DistanceOrigin += 0.02f*glm::vec3(x, y, 0.));
                         return;
                 }
                 if (mouse == 'i'){
@@ -1610,9 +1610,9 @@ public:
 
                 MouseCurrent = glm::ivec2(x, y);
                 glm::vec2 mouse_delta = glm::vec2(MouseCurrent - MouseOrigin);
-                DistanceCurrent    = mouse == 'M' ? DistanceOrigin + glm::vec3(mouse_delta.x, 0., mouse_delta.y)/10.0f : DistanceOrigin;
-                TranslationCurrent = mouse == 'T' ? TranslationOrigin + (mouse_delta / 100.0f) : TranslationOrigin;
-                RotationCurrent    = mouse == 'R' ? RotationOrigin + glm::radians(mouse_delta) : RotationOrigin;
+                DistanceCurrent    = mouse == 'M' ? DistanceOrigin + glm::vec3(mouse_delta.x, 0., mouse_delta.y)/100.0f : DistanceOrigin;
+                TranslationCurrent = mouse == 'T' ? TranslationOrigin + (mouse_delta / 1000.0f) : TranslationOrigin;
+                RotationCurrent    = mouse == 'R' ? RotationOrigin + glm::radians(mouse_delta)/10.0f : RotationOrigin;
         };
 
         void get_rotation (float *wxyz){
@@ -2163,7 +2163,7 @@ double Surf3d::RotateZ(double dphi){
 }
 
 void Surf3d::Translate(int n, double delta){
-        GLv_data.trans[n] += delta;
+        GLv_data.trans[n] += 0.02*delta;
         if (gl_tess)
                 gl_tess->set_translation (GLv_data.trans);
 	if (v3dcontrol)
@@ -2171,7 +2171,7 @@ void Surf3d::Translate(int n, double delta){
 }
 
 double Surf3d::Zoom(double x){ 
-	GLv_data.camera[1] += x; 
+	GLv_data.camera[1] += 0.02*x; 
         if (gl_tess)
                 gl_tess->set_camera (GLv_data.camera);
 	if (v3dcontrol){
@@ -2185,7 +2185,7 @@ double Surf3d::Zoom(double x){
 
 double Surf3d::HeightSkl(double x){ 
 	if (v3dcontrol){
-                GLv_data.hskl += x; 
+                GLv_data.hskl += 0.02*x; 
                 v3dControl_pref_dlg->block = TRUE;
                 gnome_res_update_all (v3dControl_pref_dlg);
                 v3dControl_pref_dlg->block = FALSE;
