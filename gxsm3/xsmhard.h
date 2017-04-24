@@ -182,6 +182,7 @@ class XSM_Hardware{
 	void SetScanMode(int ssm=MEM_SET){ scanmode=ssm; };
 	int  FreeOldData(){ return (scanmode == MEM_SET); };
 	void Transform(double *x, double *y);
+	void invTransform(double *x, double *y);
 	void SetIdleFunc ( void (*ifunc)(gpointer), gpointer id){
 		idlefunc_data = id;
 		idlefunc = ifunc;
@@ -218,6 +219,8 @@ class XSM_Hardware{
 	double rx, ry, Dx, Dy;
 	double Alpha;
 	double rotmxx,rotmxy,rotmyx,rotmyy,rotoffx,rotoffy;
+
+	double irotmxx,irotmxy,irotmyx,irotmyy,irotoffx,irotoffy;
 
 	int    fast_scan; // X scale is sinodial
 	int    suspend_watches;

@@ -116,6 +116,9 @@ sranger_mk2_hwi_spm::~sranger_mk2_hwi_spm(){
 #define CONV_32(X) X = long_2_sranger_long (X)
 
 gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
+        const gint64 max_age = 50000; // 50ms
+        static gint64 time_of_last_xyz_reading = 0; // abs time in us
+        static gint64 time_of_last_fb_reading = 0; // abs time in us
 	static struct { DSP_INT x_offset, y_offset, z_offset, x_scan, y_scan, z_scan, bias, motor; } dsp_analog;
 	static struct { DSP_INT adc[8]; } dsp_analog_in;
 	static MOVE_OFFSET dsp_move;
@@ -125,7 +128,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 	static SPM_STATEMACHINE dsp_statemachine;
 	static gint ok=FALSE;
 
-	if (*property == 'z'){
+        if ( (*property == 'z' || *property == 'R' || *property == 'o') && (time_of_last_xyz_reading+max_age) < g_get_real_time () ){
 		// read/convert 3D tip positon
 		lseek (dsp_alternative, magic_data.AIC_out, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_read  (dsp_alternative, &dsp_analog, sizeof (dsp_analog));
@@ -137,6 +140,11 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		CONV_16 (dsp_analog.x_offset);
 		CONV_16 (dsp_analog.y_offset);
 		CONV_16 (dsp_analog.z_offset);
+
+                time_of_last_xyz_reading = g_get_real_time ();
+        }
+        
+	if (*property == 'z'){
 
 		val1 =  gapp->xsm->Inst->VZ() * gapp->xsm->Inst->Dig2VoltOut((double)dsp_analog.z_scan);
 		val2 =  gapp->xsm->Inst->VX() * gapp->xsm->Inst->Dig2VoltOut((double)dsp_analog.x_scan);
@@ -150,6 +158,14 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		ok=TRUE;
 		return TRUE;
 	}
+        // ZXY in Angstroem
+        if (*property == 'R'){
+                // ZXY Volts after Piezoamp -- without analog offset -> Dig -> ZXY in Angstroem
+		val1 = gapp->xsm->Inst->V2ZAng (gapp->xsm->Inst->VZ() * gapp->xsm->Inst->Dig2VoltOut((double)dsp_analog.z_scan));
+		val2 = gapp->xsm->Inst->V2XAng (gapp->xsm->Inst->VX() * gapp->xsm->Inst->Dig2VoltOut((double)dsp_analog.x_scan));
+                val3 = gapp->xsm->Inst->V2YAng (gapp->xsm->Inst->VY() * gapp->xsm->Inst->Dig2VoltOut((double)dsp_analog.y_scan));
+		return TRUE;
+        }
 
 	if (*property == 'o'){
 		// read/convert and return offset
@@ -188,8 +204,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		return ok;
 	}
 
-
-	if (*property == 'f'){
+        if ( (*property == 'f') && (time_of_last_fb_reading+max_age) < g_get_real_time () ){
 #if 0
 		lseek (dsp_alternative, magic_data.AIC_in, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		read  (dsp_alternative, &dsp_analog_in, sizeof (dsp_analog_in));
@@ -209,6 +224,10 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		CONV_32 (dsp_feedback_watch.I_rms);
 		CONV_16 (dsp_feedback_watch.watch);
 
+                time_of_last_fb_reading = g_get_real_time ();
+        }
+
+	if (*property == 'f'){
 		if (dsp_feedback_watch.q_factor15 > 0 && dsp_feedback_watch.I_cross > 0)
 			val1 = -log ((double)dsp_feedback_watch.q_factor15 / 32767.) / (2.*M_PI/75000.); // f0 in Hz
 		else
