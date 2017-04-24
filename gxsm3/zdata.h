@@ -203,7 +203,7 @@ public:
                                 if (zmin > z) zmin = z;
                                 if (zmax < z) zmax = z;
                         }
-                zrange  = zmax - zmin;
+                zrange  = 1. + zmax - zmin; // never < 1!
                 zcenter = zmin + 0.5*zrange;
 	};
 	double zmin, zmax, zcenter, zrange;;

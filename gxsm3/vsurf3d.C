@@ -871,16 +871,19 @@ private:
         glm::vec3 cameraPosition() const {
                 return glm::vec3(this->DistanceCurrent.x, this->DistanceCurrent.y, this->DistanceCurrent.z);
         };
-        glm::vec3 lookAtPosition() const {
+        glm::vec3 lookAtPosition(GLfloat GL_height_scale) const {
                 switch (s->GLv_data.look_at[0]){
                 case 'C': return glm::vec3(0,0,0);
                 case 'T':
                         {
                                 GLfloat r[3];
+#define MAKE_GLM_VEC3R(V) glm::vec3(V[0],V[2]*GL_height_scale,V[1])
                                 s->GetXYZNormalized (r);
-                                return glm::vec3(r[0], r[2], r[1]);
+                                glm::vec3 R = MAKE_GLM_VEC3R (r) + MAKE_GLM_VEC3R (s->GLv_data.light_position[2]);
+                                // GL coords XYZ: plane is XZ
+                                return R;
                         }
-                case 'M': return glm::vec3(0,0,-0.25);
+                case 'M': return glm::vec3(0,0,1.0);
                 }
                 return glm::vec3(0,0,0);
         };
@@ -1291,20 +1294,20 @@ public:
                         break;
                 case 'R': GL_height_scale = s->GLv_data.hskl; break;
                 }
-                
+                glm::vec3 look_at = lookAtPosition (GL_height_scale);
                 g_message ("Render (GL coord system):\n"
                            " Camera at = (%g, %g, %g)\n"
-                           " Look at Origin\n"
-                           " Translate = (%g, 0, %g)"
-                           "",
-                           DistanceCurrent.x, DistanceCurrent.y, DistanceCurrent.z,
-                           TranslationCurrent.x, TranslationCurrent.y
+                           " Look at   = (%g, %g, %g)\n"
+                           " Translate = (%g, 0, %g)\n"
+                           " GL_height_scale = %g",
+                           DistanceCurrent.x, DistanceCurrent.y, DistanceCurrent.z, // == CameraPositon
+                           look_at.x, look_at.y, look_at.z,
+                           TranslationCurrent.x, TranslationCurrent.y,
+                           GL_height_scale
                            );
 
 #if 0
-                if (s->GLv_data.Texture){
                         glDisable (GL_DEPTH_TEST);
-                } else {
                         glEnable (GL_DEPTH_TEST);
                         //glDepthMask(GL_FALSE);  
                         glDepthMask(GL_TRUE);
@@ -1312,15 +1315,10 @@ public:
                         // glDepthFunc(GL_LESS);  
                         //glDepthRange(0.0f, 1.0f);
                         //gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-                }
-                if (s->GLv_data.Emission){
-                        glClearDepth(1.0f);
-                }
 #endif           
                 
-                glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
                 glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+                glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
                 glPolygonMode (GL_FRONT_AND_BACK, s->GLv_data.Mesh ? GL_LINE : GL_FILL);
 
                 if (s->GLv_data.Cull){
@@ -1342,8 +1340,8 @@ public:
                         // GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f
                         Projection = glm::perspective (glm::radians (s->GLv_data.fov), aspect, s->GLv_data.fnear, s->GLv_data.ffar); // near, far frustum
                 }
-                glm::mat4 Camera = glm::lookAt (cameraPosition(), // cameraPosition, the position of your camera, in world space
-                                                lookAtPosition(), //cameraTarget, where you want to look at, in world space
+                glm::mat4 Camera = glm::lookAt (cameraPosition (), // cameraPosition, the position of your camera, in world space
+                                                look_at, //cameraTarget, where you want to look at, in world space
                                                 glm::vec3(0,1,0) // upVector, probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
                                                 );
                 
