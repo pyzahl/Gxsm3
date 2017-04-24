@@ -1809,12 +1809,13 @@ void Surf3d::GetXYZScale (float *s){
 double Surf3d::GetXYZNormalized(float *r){
         double x,y,z, za; 
         gapp->xsm->hardware->RTQuery ("R", z, x, y);
+        gapp->xsm->hardware->invTransform (&x, &y);
         za = z;
-        //g_message ("GetXYZ RTQuery: Z=%f X=%f Y=%f", z,x,y);
+        // g_message ("GetXYZ RTQuery: Z=%f X=%f Y=%f", z,x,y);
         z = (z - gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zmin)) / gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
         x /= scan->data.s.rx; // Ang
         y /= scan->data.s.ry;
-        r[0] = x;
+        r[0] = -x;
         r[1] = y;
         r[2] = z;
         return za;

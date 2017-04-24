@@ -86,6 +86,15 @@ gint XSM_Hardware::RTQuery (const gchar *property, double &val1, double &val2, d
 		return TRUE;
 	}
 
+        // ZXY in Angstroem
+        if (*property == 'R'){
+                // SimXYZ -> ZXY in Angstroem
+		val1 = sim_xyzS [2];
+		val2 = sim_xyzS [0];
+                val3 = sim_xyzS [1];
+		return TRUE;
+        }
+
 	if (*property == 'o' || *property == 'O'){ // "O" z0,x0,y0
 		// read/convert and return offset
 		// NEED to request 'z' property first, then this is valid and up-to-date!!!!
@@ -175,10 +184,9 @@ void XSM_Hardware::add_user_event_now (const gchar *message_id, const gchar *inf
 
 void XSM_Hardware::SetOffset(double x, double y){
 	XSM_DEBUG (DBG_L4, "HARD: Offset " << x << ", " << y);
-	sim_xyz0[0] = rotoffx;
-	sim_xyz0[1] = rotoffy;
+	sim_xyz0[0] = gapp->xsm->Inst->X0Resolution()*x;
+	sim_xyz0[1] = gapp->xsm->Inst->Y0Resolution()*y;
 	sim_xyz0[2] = 0.;
-	rotoffx = x; rotoffy = y;
 
         sim_mode = 1 | 16;
 
@@ -205,6 +213,9 @@ void XSM_Hardware::SetAlpha(double alpha){
 	Alpha=M_PI*alpha/180.;
 	rotmyy = rotmxx = cos(Alpha);
 	rotmyx = -(rotmxy = sin(Alpha));
+
+	irotmyy = irotmxx = cos(-Alpha);
+	irotmyx = -(irotmxy = sin(-Alpha));
 }
 
 int XSM_Hardware::ScanDirection (int dir){
@@ -222,8 +233,8 @@ void XSM_Hardware::MovetoXY(double x, double y){
 
 	XSM_DEBUG (DBG_L4, "HARD: MOVXY: " << rx << ", " << ry);
 
-	sim_xyzS[0] = gapp->xsm->Inst->X0Resolution()*gapp->xsm->Inst->Dig2XA (sim_xyz0[0]) + gapp->xsm->Inst->XResolution()*x;
-	sim_xyzS[1] = gapp->xsm->Inst->Y0Resolution()*gapp->xsm->Inst->Dig2YA (sim_xyz0[1]) + gapp->xsm->Inst->YResolution()*y;
+	sim_xyzS[0] = gapp->xsm->Inst->XResolution()*x;
+	sim_xyzS[1] = gapp->xsm->Inst->YResolution()*y;
 
 	// g_message ("XSMHARD: MovetoXY: DA=[%g, %g] XY-Ang=[%g, %g] ",rx,ry, sim_xyzS[0],sim_xyzS[1]);
 
@@ -265,6 +276,9 @@ void XSM_Hardware::ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_S
         }while ((++i < MAX_SRCS_CHANNELS) ? Mob[i]!=NULL : FALSE);
         y_current = yindex;
 
+        MovetoXY (0.,0.);
+        Simulate (muxmode);
+        
         sim_mode = 1 | 0;
 }
 
@@ -272,6 +286,15 @@ void XSM_Hardware::Transform(double *x, double *y){
 	double xx;
 	xx = *x*rotmxx + *y*rotmxy + rotoffx;
 	*y = *x*rotmyx + *y*rotmyy + rotoffy;
+	*x = xx;
+}
+
+void XSM_Hardware::invTransform(double *x, double *y){
+	double xx;
+        *x -= rotoffx;
+        *y -= rotoffy;
+	xx = *x*irotmxx + *y*irotmxy;
+	*y = *x*irotmyx + *y*irotmyy;
 	*x = xx;
 }
 
@@ -333,7 +356,7 @@ double hexgrid_smooth(double *xy){
 double XSM_Hardware::Simulate (int muxmode){
         if (gapp->xsm->scan[10]){
                 double ix,iy;
-                gapp->xsm->scan[10]->World2Pixel  (sim_xyzS[0], sim_xyzS[1], ix,iy);
+                gapp->xsm->scan[10]->World2Pixel  (sim_xyz0[0]+sim_xyzS[0], sim_xyz0[1]+sim_xyzS[1], ix,iy);
                 return sim_xyzS[2] =  gapp->xsm->scan[10]->data.s.dz * gapp->xsm->scan[10]->mem2d->GetDataPktInterpol (ix,iy);
         }
         
@@ -355,7 +378,11 @@ double XSM_Hardware::Simulate (int muxmode){
                         + Lorenz(x,y+5.0)+Gaus(x,y+5.0) 
                         + Ground() ;
         }else{
-                sim_xyzS[2] = hexgrid_smooth(sim_xyzS);
+                double xy[2];
+                xy[0] = sim_xyz0[0]+sim_xyzS[0];
+                xy[1] = sim_xyz0[1]+sim_xyzS[1];
+                
+                sim_xyzS[2] = hexgrid_smooth (xy);
                 //sim_xyzS[2] = 512.*(sin(M_PI*x*10.)*cos(M_PI*y*10.)
                 //                    + Steps(x,y)
                 //                    + Islands(x,y)
