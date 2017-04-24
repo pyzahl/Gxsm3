@@ -369,25 +369,11 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 
 // ============ Rendering Options
 
-	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.RenderOp/ShadingMode", "Fragment Debug Shading Mode Selector", "0.0", GET_GLV_OFFSET (&GLvd_offset.shader_mode), 
-	  shader_mode_OptionsList, N_("Render Opt."),
-	  N_("Fragment Shading Mode Selector for Debug Shader Only:\n"
-	     "0: (ambient+specular+diffuse)*color\n"
-	     "1: (ambient+diffuse)*color\n"
-	     "2: diffuse\n"
-	     "3: (ambient+specular)*color\n"
-	     "4: color\n"
-	     "5: applyFog (specular+diffuse)*color, distance, viewDir)\n"
-	     "*** only in debug mode/adjustfragment shader! ***\n"
-	     "*11: vec4(vec3(height/100.)*0.5+0.5, 1.0)\n"
-	     "*12: vec4(normal*0.5+0.5, 1.0)\n"
-	     "*13: specular*color\n"
-	     "*14: vec4(vec3(specular,normal.z,diffuse),1.0)\n"
-	     "*15: vec4(vec3(dist/100.), 1.0)\n"
-	     "*16: vec4(matColor, 1.0)\n"
-	     ), NULL
-	  ),
+	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_BOOL, "V3dControl.RenderOp/Ortho", "false", GET_GLV_OFFSET (&GLvd_offset.Ortho),
+	  TrueFalse_OptionsList, N_("Render Opt."), 
+	  N_("enable/disable orthographic vs. prespective projection.")
+		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.RenderOp/TessLevel", "Tesselation Level", "12.0", GET_GLV_OFFSET (&GLvd_offset.tess_level), 
@@ -409,7 +395,40 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("# Probe Atoms"), NULL
 		),
 
+	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_BOOL, "V3dControl.RenderOp/Mesh", "false", GET_GLV_OFFSET (&GLvd_offset.Mesh),
+	  TrueFalse_OptionsList, N_("Render Opt."), 
+	  N_("enable/disable mesh mode (use mesh or solid model)")
+		),
+
 	GNOME_RES_ENTRY_SEPARATOR (N_("Render Opt."), NULL),
+
+	GNOME_RES_ENTRY_FLOATSLIDER
+	( "V3dControl.RenderOp/ShadingMode", "Fragment Debug Shading Mode Selector", "0.0", GET_GLV_OFFSET (&GLvd_offset.shader_mode), 
+	  shader_mode_OptionsList, N_("Render Opt."),
+	  N_("Fragment Shading Mode Selector for Debug Shader:\n"
+	     "0: (ambient+specular+diffuse)*color\n"
+	     "1: (ambient+diffuse)*color\n"
+	     "2: diffuse\n"
+	     "3: (ambient+specular)*color\n"
+	     "4: color\n"
+	     "5: applyFog (specular+diffuse)*color, distance, viewDir)\n"
+	     "6: 0+mix noise\n"
+	     "7: color+noise\n"
+	     "8: color_offset + lightness*color\n"
+	     "9: color_offset + color\n"
+	     "10: color_offset + vec4(normal*0.5+0.5, 1.0)\n"
+	     "11: color_offset + vec4(normal.y*0.5+0.5, 0.,0., 1.0)\n"
+	     "12: color_offset + vec4(normal.x*0.5+0.5, 0.,0., 1.0)\n"
+	     "13: color_offset + specular*color\n"
+	     "14: color_offset + vec4(vec3(specular,normal.y,diffuse),1.0)\n"
+	     "15: color_offset + vec4(vec3(dist/100.), 1.0)\n"
+	     "16: color_offset + specular*lightness*vec4(1)\n"
+	     "17: vec4(vec3(lightness*(gl_FragCoord.z+transparency_offset)), 1.0f)\n"
+	     "18: vec4(vec3(lightness*(gl_FragCoord.w+transparency_offset)), 1)\n"
+	     "19: vec4(lightness*gl_FragCoord.w+vec4(transparency_offset))\n"
+	     ), NULL
+	  ),
 
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.RenderOp/ClearColor", "ClearColor", "0.6 0.7 0.7 1.0", GET_GLV_OFFSET (&GLvd_offset.clear_color), N_("Render Opt."),
@@ -443,17 +462,27 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("Render Opt."), NULL),
 
 	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_BOOL, "V3dControl.RenderOp/Cull", "false", GET_GLV_OFFSET (&GLvd_offset.Cull),
+	  TrueFalse_OptionsList, N_("Render Opt."), 
+	  N_("enable/disable cull face mode (surface back is not drawn!)\n"
+	     "Note: if enabled you will not see your surface,\n"
+	     "if you are looking from below!")
+		),
+
+#if 0
+	GNOME_RES_ENTRY_OPTION
 	( GNOME_RES_BOOL, "V3dControl.RenderOp/Tex", "false", GET_GLV_OFFSET (&GLvd_offset.Texture),
 	  TrueFalse_OptionsList, N_("Render Opt."), 
 	  N_("enable/disable texture (sorry not implemented today)")
 		),
-
 	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_BOOL, "V3dControl.RenderOp/Mesh", "false", GET_GLV_OFFSET (&GLvd_offset.Mesh),
+	( GNOME_RES_BOOL, "V3dControl.RenderOp/Smooth", "true", GET_GLV_OFFSET (&GLvd_offset.Smooth),
 	  TrueFalse_OptionsList, N_("Render Opt."), 
-	  N_("enable/disable mesh mode (use mesh or solid model)")
+	  N_("enable/disable Smooth Shading (GL color model is smooth or flat)\n"
+	     "Note: smooth shading is much slower but looks also much better.")
 		),
-
+#endif
+	
 	GNOME_RES_ENTRY_OPTION
 	( GNOME_RES_BOOL, "V3dControl.RenderOp/TransparentSlices", "false", GET_GLV_OFFSET (&GLvd_offset.TransparentSlices),
 	  TrueFalse_OptionsList, N_("Render Opt."), 
@@ -464,27 +493,6 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	( GNOME_RES_BOOL, "V3dControl.RenderOp/Emission", "false", GET_GLV_OFFSET (&GLvd_offset.Emission),
 	  TrueFalse_OptionsList, N_("Render Opt."), 
 	  N_("enable/disable emission mode")
-		),
-
-	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_BOOL, "V3dControl.RenderOp/Cull", "false", GET_GLV_OFFSET (&GLvd_offset.Cull),
-	  TrueFalse_OptionsList, N_("Render Opt."), 
-	  N_("enable/disable cull face mode (surface back is not drawn!)\n"
-	     "Note: if enabled you will not see your surface,\n"
-	     "if you are looking from below!")
-		),
-
-	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_BOOL, "V3dControl.RenderOp/Smooth", "true", GET_GLV_OFFSET (&GLvd_offset.Smooth),
-	  TrueFalse_OptionsList, N_("Render Opt."), 
-	  N_("enable/disable Smooth Shading (GL color model is smooth or flat)\n"
-	     "Note: smooth shading is much slower but looks also much better.")
-		),
-
-	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_BOOL, "V3dControl.RenderOp/Ortho", "false", GET_GLV_OFFSET (&GLvd_offset.Ortho),
-	  TrueFalse_OptionsList, N_("Render Opt."), 
-	  N_("enable/disable ortho mode (not implemented)")
 		),
 
 	GNOME_RES_ENTRY_OPTION
