@@ -1530,13 +1530,11 @@ public:
                         GLfloat r[3];
                         s->GetXYZNormalized (r);
                         
-                        //glm::vec4 Ra=glm::vec4 (0.,0.7,0., 0.2);
-                        //ico_vao->draw (Ra,c,4);
-
                         GLfloat scale[3];
-                        s->GetXYZScale (scale); // XY not to scale yet
-                        glm::vec4 R = MAKE_GLM_VEC4X (r,1) + MAKE_GLM_VEC4X (s->GLv_data.light_position[2], 0);   // GL coords XYZ: plane is XZ, Y is "up"
-                        glm::vec4 S = 3.2f * 0.5f * glm::vec4 (scale[0], scale[2], scale[1], 1);
+                        s->GetXYZScale (scale); // get scaling factors Ang to GL-XYZ unit box
+                        glm::vec4 as = glm::vec4 (scale[0], scale[2], scale[1], 1); // make vector
+                        glm::vec4 R = MAKE_GLM_VEC4X (r,1) + as * MAKE_GLM_VEC4X (s->GLv_data.light_position[2], 0);   // GL coords XYZ: plane is XZ, Y is "up"
+                        glm::vec4 S = s->GLv_data.light_position[2][3] * 0.5f * as;
 
                         ico_vao->draw (R,S,c,4);
                         g_message ("R = %g %g %g", R.x, R.y, R.z);

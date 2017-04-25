@@ -252,23 +252,23 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_OPTION
 	( GNOME_RES_STRING, "V3dControl.Light/Tip", "Off", GET_GLV_OFFSET (&GLvd_offset.light[2][0]),
 	  OnOff_OptionsList, N_("Light"), 
-	  N_("Light2: switch On/Off")
+	  N_("Light2: Tip display On/Off")
 		),
 	GNOME_RES_ENTRY_FLOAT_VEC4
-	( "V3dControl.Light/TipGap", "TipGap", "1 1 1 0", GET_GLV_OFFSET (&GLvd_offset.light_position[2]), N_("Light"),
-	  N_("Light2: Position, relative to surface width (=1) [X, Y, Z, 0]"), NULL
+	( "V3dControl.Light/TipGap", "TipGap", "0 0 4 3.2", GET_GLV_OFFSET (&GLvd_offset.light_position[2]), N_("Light"),
+	  N_("Light2: Tip Offset and Gap and scale [X-off, Y-off, Z-gap, scale]"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.Light/TipColorPP", "TipColorPP", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_specular[2]), N_("Light"),
-	  N_("Light2: Specular Light Color [red, green, blue, alpha]"), NULL
+	  N_("Light2: Tip Color"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.Light/TipColorApx", "TipColorApx", "0.1 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_diffuse[2]), N_("Light"),
-	  N_("Light2: Diffuse Light Color [red, green, blue, alpha]"), NULL
+	  N_("Light2: Tip Apex (n/a) color"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.Light/TipColorXX", "TipColorXX", "0.1 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_ambient[2]), N_("Light"),
-	  N_("Light2: Ambient Light Color [red, green, blue, alpha]"), NULL
+	  N_("Light2: Tip apex (n/a) color x [red, green, blue, alpha]"), NULL
 		),
 
 // ============ Material Surface
