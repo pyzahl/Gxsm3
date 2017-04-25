@@ -46,17 +46,15 @@ vec4 shadeLambertian(vec3 vertex, vec3 vertexEye,
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
 
-        // return vec4(vec3(gl_FragCoord.z), 1.0f);
+        vec3 finalColor = (ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz;
 
-#if 0
-        return vec4 (color_offset.xyz
-                     + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
-                     1.);
+#if 1
+        return vec4 (color_offset.xyz + lightness*finalColor, transparency_offset);
 #else
 
-        vec3 finalColor = (ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz;
         
         switch (debug_color_source){
+        case 0: return vec4 (color_offset.xyz + lightness*finalColor, transparency_offset);
         case 1: return vec4 (color_offset.xyz
                              + lightness*(ambientColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
                              transparency_offset+transparency*color.a);
@@ -81,7 +79,7 @@ vec4 shadeLambertian(vec3 vertex, vec3 vertexEye,
         case 12: return color_offset + vec4(normal.x*0.5+0.5, 0.,0., 1.0);
         case 13: return color_offset + specular*color;
         case 14: return color_offset + vec4(vec3(specular,normal.y,diffuse),1.0);
-                //case 15: return color_offset + vec4(vec3(dist/100.), 1.0);
+    //  case 15: return color_offset + vec4(vec3(dist/100.), 1.0);
         case 16: return color_offset + specular*lightness*vec4(1);
         case 17: return vec4(vec3(lightness*(gl_FragCoord.z+transparency_offset)), 1.0f);
         case 18: return vec4(vec3(lightness*(gl_FragCoord.w+transparency_offset)), 1);
@@ -89,7 +87,6 @@ vec4 shadeLambertian(vec3 vertex, vec3 vertexEye,
         default: return vec4 (color_offset.xyz
                               + lightness*finalColor,
                               transparency_offset);
-                // transparency_offset+transparency*color.a);
         }
 #endif
         
