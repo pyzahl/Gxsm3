@@ -50,7 +50,7 @@
     <value value="4" nick="X Color Lambertian "/>
     <value value="5" nick="Debug Shader "/>
   </enum>
-  <enum id="org-gnome-gxsm3-gl-option-v3d-control-render-op-fog">
+  <enum id="org-gnome-gxsm3-gl-option-v3d-control-render-op-ortho">
     <value value="0" nick="true "/>
     <value value="1" nick="false "/>
   </enum>
@@ -130,7 +130,7 @@ button and drag surface up/down!
       </description>
     </key>
     <key name="frustumnear" type="d">
-      <default>0.01</default>
+      <default>0.001</default>
       <summary>Frustum Distance Near: Z-Buffer Near Cut Off</summary>
       <description>
         Frustum Distance Near: Z-Buffer Near Cut Off
@@ -290,37 +290,37 @@ button and drag surface up/down!
         <choice value='Off'/>
       </choices>
       <default>'Off'</default>
-      <summary>Light2: switch On/Off</summary>
+      <summary>Light2: Tip display On/Off</summary>
       <description>
-        Light2: switch On/Off
+        Light2: Tip display On/Off
       </description>
     </key>
     <key name="tipgap" type="ad">
-      <default>[1,1,1,0]</default>
-      <summary>Light2: Position, relative to surface width (=1) [X, Y, Z, 0]</summary>
+      <default>[0,0,4,3.2]</default>
+      <summary>Light2: Tip Offset and Gap and scale [X-off, Y-off, Z-gap, scale]</summary>
       <description>
-        Light2: Position, relative to surface width (=1) [X, Y, Z, 0]
+        Light2: Tip Offset and Gap and scale [X-off, Y-off, Z-gap, scale]
       </description>
     </key>
     <key name="tipcolorpp" type="ad">
       <default>[1,1,1,1]</default>
-      <summary>Light2: Specular Light Color [red, green, blue, alpha]</summary>
+      <summary>Light2: Tip Color</summary>
       <description>
-        Light2: Specular Light Color [red, green, blue, alpha]
+        Light2: Tip Color
       </description>
     </key>
     <key name="tipcolorapx" type="ad">
       <default>[0.1,0.1,0.1,1]</default>
-      <summary>Light2: Diffuse Light Color [red, green, blue, alpha]</summary>
+      <summary>Light2: Tip Apex (n/a) color</summary>
       <description>
-        Light2: Diffuse Light Color [red, green, blue, alpha]
+        Light2: Tip Apex (n/a) color
       </description>
     </key>
     <key name="tipcolorxx" type="ad">
       <default>[0.1,0.1,0.1,1]</default>
-      <summary>Light2: Ambient Light Color [red, green, blue, alpha]</summary>
+      <summary>Light2: Tip apex (n/a) color x [red, green, blue, alpha]</summary>
       <description>
-        Light2: Ambient Light Color [red, green, blue, alpha]
+        Light2: Tip apex (n/a) color x [red, green, blue, alpha]
       </description>
     </key>
   </schema>
@@ -467,39 +467,11 @@ Used only in "Uniform/Material Color Mode".
   </schema>
 
   <schema id="org.gnome.gxsm3.gl.v3dcontrol.renderop" path="/org/gnome/gxsm3/gl/v3dcontrol.renderop/">
-    <key name="shadingmode" type="d">
-      <default>0.0</default>
-      <summary>Fragment Shading Mode Selector for Debug Shader Only:
-0: (ambient+specular+diffuse)*color
-1: (ambient+diffuse)*color
-2: diffuse
-3: (ambient+specular)*color
-4: color
-5: applyFog (specular+diffuse)*color, distance, viewDir)
-*** only in debug mode/adjustfragment shader! ***
-*11: vec4(vec3(height/100.)*0.5+0.5, 1.0)
-*12: vec4(normal*0.5+0.5, 1.0)
-*13: specular*color
-*14: vec4(vec3(specular,normal.z,diffuse),1.0)
-*15: vec4(vec3(dist/100.), 1.0)
-*16: vec4(matColor, 1.0)
-</summary>
+    <key name="ortho" type="b">
+      <default>false</default>
+      <summary>enable/disable orthographic vs. prespective projection.</summary>
       <description>
-        Fragment Shading Mode Selector for Debug Shader Only:
-0: (ambient+specular+diffuse)*color
-1: (ambient+diffuse)*color
-2: diffuse
-3: (ambient+specular)*color
-4: color
-5: applyFog (specular+diffuse)*color, distance, viewDir)
-*** only in debug mode/adjustfragment shader! ***
-*11: vec4(vec3(height/100.)*0.5+0.5, 1.0)
-*12: vec4(normal*0.5+0.5, 1.0)
-*13: specular*color
-*14: vec4(vec3(specular,normal.z,diffuse),1.0)
-*15: vec4(vec3(dist/100.), 1.0)
-*16: vec4(matColor, 1.0)
-
+        true GXSM OPTIONS=(false, enable/disable orthographic vs. prespective projection.)
       </description>
     </key>
     <key name="tesslevel" type="d">
@@ -525,6 +497,62 @@ Used only in "Uniform/Material Color Mode".
       <summary># Probe Atoms</summary>
       <description>
         # Probe Atoms
+      </description>
+    </key>
+    <key name="mesh" type="b">
+      <default>false</default>
+      <summary>enable/disable mesh mode (use mesh or solid model)</summary>
+      <description>
+        true GXSM OPTIONS=(false, enable/disable mesh mode (use mesh or solid model))
+      </description>
+    </key>
+    <key name="shadingmode" type="d">
+      <default>0.0</default>
+      <summary>Fragment Shading Mode Selector for Debug Shader:
+0: (ambient+specular+diffuse)*color
+1: (ambient+diffuse)*color
+2: diffuse
+3: (ambient+specular)*color
+4: color
+5: applyFog (specular+diffuse)*color, distance, viewDir)
+6: 0+mix noise
+7: color+noise
+8: color_offset + lightness*color
+9: color_offset + color
+10: color_offset + vec4(normal*0.5+0.5, 1.0)
+11: color_offset + vec4(normal.y*0.5+0.5, 0.,0., 1.0)
+12: color_offset + vec4(normal.x*0.5+0.5, 0.,0., 1.0)
+13: color_offset + specular*color
+14: color_offset + vec4(vec3(specular,normal.y,diffuse),1.0)
+15: color_offset + vec4(vec3(dist/100.), 1.0)
+16: color_offset + specular*lightness*vec4(1)
+17: vec4(vec3(lightness*(gl_FragCoord.z+transparency_offset)), 1.0f)
+18: vec4(vec3(lightness*(gl_FragCoord.w+transparency_offset)), 1)
+19: vec4(lightness*gl_FragCoord.w+vec4(transparency_offset))
+</summary>
+      <description>
+        Fragment Shading Mode Selector for Debug Shader:
+0: (ambient+specular+diffuse)*color
+1: (ambient+diffuse)*color
+2: diffuse
+3: (ambient+specular)*color
+4: color
+5: applyFog (specular+diffuse)*color, distance, viewDir)
+6: 0+mix noise
+7: color+noise
+8: color_offset + lightness*color
+9: color_offset + color
+10: color_offset + vec4(normal*0.5+0.5, 1.0)
+11: color_offset + vec4(normal.y*0.5+0.5, 0.,0., 1.0)
+12: color_offset + vec4(normal.x*0.5+0.5, 0.,0., 1.0)
+13: color_offset + specular*color
+14: color_offset + vec4(vec3(specular,normal.y,diffuse),1.0)
+15: color_offset + vec4(vec3(dist/100.), 1.0)
+16: color_offset + specular*lightness*vec4(1)
+17: vec4(vec3(lightness*(gl_FragCoord.z+transparency_offset)), 1.0f)
+18: vec4(vec3(lightness*(gl_FragCoord.w+transparency_offset)), 1)
+19: vec4(lightness*gl_FragCoord.w+vec4(transparency_offset))
+
       </description>
     </key>
     <key name="clearcolor" type="ad">
@@ -569,18 +597,15 @@ Effect depends on distance to object and size of object.</summary>
 Effect depends on distance to object and size of object.
       </description>
     </key>
-    <key name="tex" type="b">
+    <key name="cull" type="b">
       <default>false</default>
-      <summary>enable/disable texture (sorry not implemented today)</summary>
+      <summary>enable/disable cull face mode (surface back is not drawn!)
+Note: if enabled you will not see your surface,
+if you are looking from below!</summary>
       <description>
-        true GXSM OPTIONS=(false, enable/disable texture (sorry not implemented today))
-      </description>
-    </key>
-    <key name="mesh" type="b">
-      <default>false</default>
-      <summary>enable/disable mesh mode (use mesh or solid model)</summary>
-      <description>
-        true GXSM OPTIONS=(false, enable/disable mesh mode (use mesh or solid model))
+        true GXSM OPTIONS=(false, enable/disable cull face mode (surface back is not drawn!)
+Note: if enabled you will not see your surface,
+if you are looking from below!)
       </description>
     </key>
     <key name="transparentslices" type="b">
@@ -595,33 +620,6 @@ Effect depends on distance to object and size of object.
       <summary>enable/disable emission mode</summary>
       <description>
         true GXSM OPTIONS=(false, enable/disable emission mode)
-      </description>
-    </key>
-    <key name="cull" type="b">
-      <default>false</default>
-      <summary>enable/disable cull face mode (surface back is not drawn!)
-Note: if enabled you will not see your surface,
-if you are looking from below!</summary>
-      <description>
-        true GXSM OPTIONS=(false, enable/disable cull face mode (surface back is not drawn!)
-Note: if enabled you will not see your surface,
-if you are looking from below!)
-      </description>
-    </key>
-    <key name="smooth" type="b">
-      <default>true</default>
-      <summary>enable/disable Smooth Shading (GL color model is smooth or flat)
-Note: smooth shading is much slower but looks also much better.</summary>
-      <description>
-        true GXSM OPTIONS=(false, enable/disable Smooth Shading (GL color model is smooth or flat)
-Note: smooth shading is much slower but looks also much better.)
-      </description>
-    </key>
-    <key name="ortho" type="b">
-      <default>false</default>
-      <summary>enable/disable ortho mode (not implemented)</summary>
-      <description>
-        true GXSM OPTIONS=(false, enable/disable ortho mode (not implemented))
       </description>
     </key>
     <key name="zeroplane" type="b">
