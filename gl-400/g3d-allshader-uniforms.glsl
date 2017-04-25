@@ -58,6 +58,7 @@ layout (std140) uniform FragmentShading
 // Sampler2D for GXSM Surface_Z_Data : vec4[][]
 uniform sampler2D Surf3D_Z_Data;
 uniform sampler1D GXSM_Palette;
+uniform sampler3D Volume3D_Z_Data;
 
 // text shading
 uniform sampler2D textTexture;

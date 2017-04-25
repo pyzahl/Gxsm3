@@ -41,6 +41,7 @@ const gchar *ShadeModel_OptionsList[]  = { "Lambertian, use Palette",
 					   "Material Color",
 					   "Fog+Material Color",
 					   "X Color Lambertian",
+					   "Volume",
 					   "Debug Shader",
 					   NULL };
 const gchar *ColorSrc_OptionsList[]   = { "Flat", "Direct Height", "View Mode Height", "X-Channel", "Y", NULL };

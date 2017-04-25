@@ -48,7 +48,8 @@
     <value value="2" nick="Material Color "/>
     <value value="3" nick="Fog+Material Color "/>
     <value value="4" nick="X Color Lambertian "/>
-    <value value="5" nick="Debug Shader "/>
+    <value value="5" nick="Volume "/>
+    <value value="6" nick="Debug Shader "/>
   </enum>
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-render-op-ortho">
     <value value="0" nick="true "/>
@@ -383,6 +384,7 @@ Used only in "Uniform/Material Color Mode".
         <choice value='Material Color'/>
         <choice value='Fog+Material Color'/>
         <choice value='X Color Lambertian'/>
+        <choice value='Volume'/>
         <choice value='Debug Shader'/>
       </choices>
       <default>'Lambertian, use Palette'</default>
