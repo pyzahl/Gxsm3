@@ -127,6 +127,7 @@ std::string getBinaryDirectory()
 
 // ------------------------------------------------------------
 // GL 4.0 required -- GL 3D support with GPU tesselation
+// globally used shader program rescources
 // ------------------------------------------------------------
 namespace
 {
@@ -159,8 +160,6 @@ namespace
 	GLuint Uniform_screen_size(0); // vec2
 	GLuint Uniform_tess_level(0); // float
 	GLuint Uniform_lod_factor(0); // float
-        GLsizei const TesselationTextureCount(2);
-	GLuint TesselationTextureName[2];
 
         // Model View and Projection
         GLuint Uniform_ubo_list[3];
@@ -255,23 +254,26 @@ namespace
 
 class base_plane{
 public:
-        base_plane (Mem2d *m=NULL, int w=128, double aspect=1.0){
+        base_plane (int nx, int ny, int nv, glm::vec4 *displacement_data, glm::vec4 *palette_data, int w=128, double aspect=1.0){
                 Validated = true;
                 BaseGridW = w;
                 BaseGridH = w; // adjusted by make_plane_vbo using aspect
                 ArrayBufferName = 0;
                 VertexArrayName = 0;
-
-                make_plane_vbo (m, aspect);
+                TesselationTextureCount = 0;
+                numx = nx; numy = ny; numv = nv;
+                
+                make_plane_vbo (aspect);
 
                 Validated = init_buffer ();
-
                 Validated = init_vao ();
+                Validated = init_textures (displacement_data, palette_data);
         };
         ~base_plane (){
 		if (Validated){
                         g_free (indices);
                         g_free (vertex);
+                        glDeleteTextures(TesselationTextureCount, TesselationTextureName);
                         glDeleteVertexArrays(1, &VertexArrayName);
                         glDeleteBuffers(1, &IndexBufferName);
                         glDeleteBuffers(1, &ArrayBufferName);
@@ -316,6 +318,57 @@ public:
 
                 return Validated && checkError("make_plane::init_vao");
         };
+        gboolean init_textures(glm::vec4 *displacement_data, glm::vec4 *palette_data) {
+		if (!Validated) return false;
+
+                // sampler2D diffuse
+                glUseProgram (Tesselation_ProgramName);
+
+                TesselationTextureCount = 2;
+                glGenTextures (TesselationTextureCount, TesselationTextureName);
+
+                // sampler2D Surf3D_Z-Data vec4[][]
+                glActiveTexture (GL_TEXTURE0);
+                glBindTexture (GL_TEXTURE_2D, TesselationTextureName[0]);
+
+                glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA32F, numx, numy, 0, GL_RGBA, GL_FLOAT, displacement_data); // Surf3D_Zdata
+                glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glGenerateMipmap (GL_TEXTURE_2D);
+                glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "Surf3D_Z_Data"), 0);
+
+                // sampler1D GXSM_Palette vec4[][]
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, TesselationTextureName[1]);
+
+                glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, GXSM_GPU_PALETTE_ENTRIES, 0, GL_RGBA, GL_FLOAT, palette_data); // Surf3D_Palette
+                glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glGenerateMipmap(GL_TEXTURE_1D);
+                glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "GXSM_Palette"), 1);
+
+                glBindTexture(GL_TEXTURE_2D, 0);
+
+                return Validated && checkError("make_plane::init_textures");
+        };
+        // update height mapping data
+        gboolean update_displacement_data (glm::vec4 *displacement_data, GLint line, GLsizei num_lines=1) { 
+		if (!Validated) return false;
+
+                glTextureSubImage2D (TesselationTextureName[0], 0, 0, line, numx, num_lines, GL_RGBA, GL_FLOAT, &displacement_data[line*numx]);
+
+		return checkError("make_plane::update_textures displacement");
+        };
+        
+        // update palette lookup data
+        gboolean update_palette_lookup (glm::vec4 *palette_data) { 
+		if (!Validated) return false;
+
+                glTextureSubImage1D (TesselationTextureName[1], 0, 0, GXSM_GPU_PALETTE_ENTRIES, GL_RGBA, GL_FLOAT, &palette_data[0]);
+
+		return checkError("make_plane::update_texture palette");
+        };
+        
         gboolean draw (){
 		if (!Validated) return false;
                 
@@ -340,7 +393,7 @@ public:
         };
         
         // make plane
-        void make_plane_vbo (Mem2d *mob=NULL, double aspect=1.0){
+        void make_plane_vbo (double aspect=1.0){
                 // Surface Object Vertices
                 BaseGridH = (GLuint)round((double)BaseGridW * aspect);
                 
@@ -394,8 +447,9 @@ public:
                 g_message ("mkplane -- Indices Count=%d of %d", ii, IndicesCount);
         };
 
-private:        
+private:
         bool Validated;
+	int numx, numy, numv;
         glm::vec2 *vertex;
         glf::vertex_v1i *indices;
         GLuint BaseGridW;
@@ -407,6 +461,8 @@ private:
 	GLsizei IndicesCount;
 	GLsizeiptr VertexObjectSize;
 	GLsizeiptr IndicesObjectSize;
+        GLsizei TesselationTextureCount;
+	GLuint TesselationTextureName[2];
 };
 
 class text_plane{
@@ -820,14 +876,17 @@ private:
 // ------------------------------------------------------------
 // core GL configuration management
 // ------------------------------------------------------------
-class gl_400_primitive_tessellation{
+class gl_400_3D_visualization{
 public:
-        gl_400_primitive_tessellation (GtkGLArea *area, Surf3d *surf){
+        gl_400_3D_visualization (GtkGLArea *area, Surf3d *surf){
                 Validated = true;
                 glarea = area;
                 s = surf;
                 Major=4;
                 Minor=0;
+                numx = numy = numv = 0;
+                Surf3D_Z_Data = NULL;
+                Surf3D_Palette = NULL;
 
                 MouseOrigin  = glm::ivec2(0, 0);
                 MouseCurrent = glm::ivec2(0, 0);
@@ -848,18 +907,13 @@ public:
 
                 WindowSize  = glm::ivec2(500, 500);
                 surface_plane = NULL;
-                for (int i=0; i<6; ++i)
-                        volume_face[i] = NULL;
                 text_vao = NULL;
                 ico_vao = NULL;
         };
-        ~gl_400_primitive_tessellation(){
+        ~gl_400_3D_visualization(){
                 //end(); // too late, glarea reference is gone! 
                 if (surface_plane)
                         delete surface_plane;
-                for (int i=0; i<6; ++i)
-                        if (volume_face[i])
-                                delete volume_face[i];
                 if (text_vao)
                         delete text_vao;
                 if (ico_vao)
@@ -904,7 +958,7 @@ private:
 	bool initProgram() {
 
                 // load and init shader program if not yet created -- only once, may shared!
-#if 0
+#if 1
                 if (Validated && ProgramName_RefCount > 0){
                         g_message ("Shader Program is already initiated.");
                         ++ProgramName_RefCount;
@@ -1037,16 +1091,6 @@ private:
                         Uniform_shadeLambertianMaterialColor = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertianMaterialColor" );
                         Uniform_shadeLambertianMaterialColorFog = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertianMaterialColorFog" );
 
-#if 0
-                        Uniform_S3D_vertexDirect    = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexDirect" );
-                        Uniform_S3D_vertexSurface   = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexSurface" );
-                        Uniform_S3D_vertexHScaled   = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexHScaled" );
-                        Uniform_S3D_vertexText      = glGetSubroutineIndex (S3D_ProgramName, GL_VERTEX_SHADER, "vertexText" );
-
-                        Uniform_S3D_shadeLambertian = glGetSubroutineIndex (S3D_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertian" );
-                        Uniform_S3D_shadeText       = glGetSubroutineIndex (S3D_ProgramName, GL_FRAGMENT_SHADER, "shadeText" );
-#endif
-
                         checkError("initProgram -- get uniform subroutine references...");
 		}
 
@@ -1105,60 +1149,31 @@ private:
                 bind_block (IcoTess_ProgramName, FragmentShading_block, "FragmentShading", sizeof(ubo::uniform_fragment_shading));
                 
                 // create surface base plane
-                surface_plane = new base_plane ((s->get_scan ())->mem2d, (int)s->GLv_data.base_plane_size,
-                                                (s->get_scan ())->data.s.ry/(s->get_scan ())->data.s.rx
-                                                );
-                
+                if (numx > 0 && numy > 0 && numv > 0 && Surf3D_Z_Data && Surf3D_Palette){
+                        surface_plane = new base_plane (numx, numy, numv,
+                                                        Surf3D_Z_Data, Surf3D_Palette,
+                                                        (int)s->GLv_data.base_plane_size,
+                                                        (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx
+                                                        );
+                } else {
+                        Validated = false;
+                        g_warning ("initBuffer -- Uninitialized surface data.");
+                }
+
 		return checkError("initBuffer");
 	};
 
-	bool initVertexArray() {
-		if (!Validated) return false;
-                // base_plane takes care of this itself
-                return checkError("initVertexArray");
-	};
-
-
-        bool initTextures() {
+        bool initObjects() {
 		if (!Validated) return false;
 
-                // sampler2D diffuse
-                glUseProgram (Tesselation_ProgramName);
-
-                glGenTextures (TesselationTextureCount, TesselationTextureName);
-
-                // sampler2D Surf3D_Z-Data vec4[][]
-                glActiveTexture (GL_TEXTURE0);
-                glBindTexture (GL_TEXTURE_2D, TesselationTextureName[0]);
-
-                glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA32F, numx, numy, 0, GL_RGBA, GL_FLOAT, Surf3D_Z_Data);
-                glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glGenerateMipmap (GL_TEXTURE_2D);
-                glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "Surf3D_Z_Data"), 0);
-
-                // sampler1D GXSM_Palette vec4[][]
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, TesselationTextureName[1]);
-
-                glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, GXSM_GPU_PALETTE_ENTRIES, 0, GL_RGBA, GL_FLOAT, Surf3D_Palette);
-                glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glGenerateMipmap(GL_TEXTURE_1D);
-                glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "GXSM_Palette"), 1);
-
-                glBindTexture(GL_TEXTURE_2D, 0);
-                
-		checkError("initTextures");
+		checkError("initObjects");
 		if (!Validated) return false;
 
-#if 1
                 if (!text_vao)
                         text_vao = new text_plane ();
 
                 if (!ico_vao)
                         ico_vao = new icosahedron ((GLsizei)s->GLv_data.probe_atoms);
-#endif
                 
 		return checkError("initText Plane VAO");
         };
@@ -1223,11 +1238,7 @@ public:
                 if(Validated)
                         Validated = initBuffer();
                 if(Validated)
-                        Validated = initVertexArray();
-                if(Validated)
-                        Validated = initTextures();
-                //if(Validated)
-                //        Validated = initDebugOutput();
+                        Validated = initObjects();
                 
                 if (Validated)
                         return Validated && checkError("begin");
@@ -1245,15 +1256,7 @@ public:
                         delete surface_plane;
                         surface_plane = NULL;
                 }
-
-                for (int i=0; i<6; ++i)
-                        if (volume_face[i]){
-                                delete volume_face[i];
-                                volume_face[i] = NULL;
-                        }
-                
-                glDeleteTextures(TesselationTextureCount, TesselationTextureName);
-
+               
                 g_message ("end -- check for Shader Programs unload. %d", ProgramName_RefCount);
 
                 --ProgramName_RefCount;
@@ -1275,11 +1278,7 @@ public:
         bool updateTexture (GLint line, GLsizei num_lines=1) { 
 		if (!Validated) return false;
 
-                glTextureSubImage2D(TesselationTextureName[0], 0, 0, line, numx, num_lines, GL_RGBA, GL_FLOAT, &Surf3D_Z_Data[line*numx]);
-                // update palette -- only on request
-                //glTextureSubImage1D(TesselationTextureName[1], 0, 0, GXSM_GPU_PALETTE_ENTRIES, GL_RGBA, GL_FLOAT, &Surf3D_Palette);
-
-		return checkError("initTextures");
+                return surface_plane->update_displacement_data (Surf3D_Z_Data, line, num_lines);
         };
 
 	bool render() {
@@ -1331,16 +1330,14 @@ public:
                 float aspect = WindowSize.x/WindowSize.y;
                 glm::mat4 Projection;
                 if (s->GLv_data.Ortho){
-                        // glm::mat4 glm::ortho (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble near, GLdouble far);
                         GLfloat os=0.02;
                         Projection = glm::ortho (-os*s->GLv_data.fov, os*s->GLv_data.fov,
                                                  -os/aspect*s->GLv_data.fov, os/aspect*s->GLv_data.fov,
                                                  s->GLv_data.fnear, s->GLv_data.ffar);
                 } else {
-                        // GLfloat fov=45.0f, GLfloat near=0.1f, GLfloat far=100.0f
                         Projection = glm::perspective (glm::radians (s->GLv_data.fov), aspect, s->GLv_data.fnear, s->GLv_data.ffar); // near, far frustum
                 }
-                glm::mat4 Camera = glm::lookAt (cameraPosition (), // cameraPosition, the position of your camera, in world space
+                glm::mat4 Camera = glm::lookAt (look_at + cameraPosition (), // cameraPosition, the position of your camera, in world space
                                                 look_at, //cameraTarget, where you want to look at, in world space
                                                 glm::vec3(0,1,0) // upVector, probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
                                                 );
@@ -1669,7 +1666,6 @@ private:
         int Major, Minor; // minimal version needed
 
         base_plane *surface_plane;
-        base_plane *volume_face[6];
         text_plane *text_vao;
         icosahedron *ico_vao;
 
@@ -2609,7 +2605,7 @@ void realize_vsurf3d_cb (GtkGLArea *area, Surf3d *s){
         if (gtk_gl_area_get_error (area) != NULL)
                 return;
 
-        s->gl_tess = new gl_400_primitive_tessellation (area, s);
+        s->gl_tess = new gl_400_3D_visualization (area, s);
         s->set_gl_data ();
         
 	if (! s->gl_tess->begin()){

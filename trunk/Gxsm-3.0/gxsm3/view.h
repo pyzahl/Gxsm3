@@ -286,7 +286,7 @@ typedef struct{
 
 } Surf3d_GLview_data;
 
-class gl_400_primitive_tessellation;
+class gl_400_3D_visualization;
 
 class Surf3d  : public View{
 public:
@@ -366,7 +366,7 @@ public:
 
         Surf3d_GLview_data GLv_data;
 
-        gl_400_primitive_tessellation *gl_tess;
+        gl_400_3D_visualization *gl_tess;
         
 private:
         V3dControl *v3dcontrol;
