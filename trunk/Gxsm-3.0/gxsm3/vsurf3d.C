@@ -230,6 +230,7 @@ namespace
         GLuint Uniform_shadeLambertianXColor(0);
         GLuint Uniform_shadeLambertianMaterialColor(0);
         GLuint Uniform_shadeLambertianMaterialColorFog(0);
+        GLuint Uniform_shadeVolume(0);
 
 #if 0        //
         GLuint Uniform_S3D_vertexDirect(0); // vertex
@@ -323,8 +324,13 @@ public:
 
                 // sampler2D diffuse
                 glUseProgram (Tesselation_ProgramName);
-
-                TesselationTextureCount = 2;
+                TesselationTextureName[2] = 0;
+                
+                if (numv > 1)
+                        TesselationTextureCount = 3;
+                else
+                        TesselationTextureCount = 2;
+                
                 glGenTextures (TesselationTextureCount, TesselationTextureName);
 
                 // sampler2D Surf3D_Z-Data vec4[][]
@@ -339,7 +345,7 @@ public:
 
                 // sampler1D GXSM_Palette vec4[][]
                 glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, TesselationTextureName[1]);
+                glBindTexture(GL_TEXTURE_1D, TesselationTextureName[1]);
 
                 glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, GXSM_GPU_PALETTE_ENTRIES, 0, GL_RGBA, GL_FLOAT, palette_data); // Surf3D_Palette
                 glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -347,6 +353,18 @@ public:
                 glGenerateMipmap(GL_TEXTURE_1D);
                 glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "GXSM_Palette"), 1);
 
+                if (numv > 1){
+                        // sampler3D Surf3D_Z-Data vec4[][]
+                        glActiveTexture (GL_TEXTURE2);
+                        glBindTexture (GL_TEXTURE_3D, TesselationTextureName[2]);
+
+                        glTexImage3D (GL_TEXTURE_3D, 0, GL_RGBA32F, numx, numy, numv, 0, GL_RGBA, GL_FLOAT, displacement_data); // Surf3D_Zdata
+                        glTexParameteri (GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                        glTexParameteri (GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                        glGenerateMipmap (GL_TEXTURE_3D);
+                        glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "Volume3D_Z_Data"), 2);
+                }
+                // unbind
                 glBindTexture(GL_TEXTURE_2D, 0);
 
                 return Validated && checkError("make_plane::init_textures");
@@ -359,7 +377,17 @@ public:
 
 		return checkError("make_plane::update_textures displacement");
         };
-        
+
+        // update volume data
+        gboolean update_volume_data (glm::vec4 *displacement_data, GLint line, GLint v, GLsizei num_lines=1) { 
+		if (!Validated) return false;
+
+                if (numv > 1 && v < numv)
+                        glTextureSubImage3D (TesselationTextureName[2], 0,  0, line, v, numx, num_lines, 1, GL_RGBA, GL_FLOAT, &displacement_data[line*numx + numx*numy*v]);
+                
+		return checkError("make_plane::update_textures volume");
+        };
+
         // update palette lookup data
         gboolean update_palette_lookup (glm::vec4 *palette_data) { 
 		if (!Validated) return false;
@@ -373,16 +401,20 @@ public:
 		if (!Validated) return false;
                 
                 glBindVertexArray (VertexArrayName);
-                glEnableVertexAttribArray(semantic::attr::POSITION);
-                glEnableVertexAttribArray (TesselationTextureName[0]);
-                glEnableVertexAttribArray (TesselationTextureName[1]);
-                glBindTexture (GL_TEXTURE_2D, TesselationTextureName[0]);
-                glBindTexture (GL_TEXTURE_2D, TesselationTextureName[1]);
+                glEnableVertexAttribArray (semantic::attr::POSITION);
 
                 glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
                 glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, IndexBufferName);
                 glPatchParameteri (GL_PATCH_VERTICES, 4);
+                checkError("make_plane::draw bindbuff");
 
+                glBindTexture (GL_TEXTURE_2D, TesselationTextureName[0]);
+                glBindTexture (GL_TEXTURE_1D, TesselationTextureName[1]);
+                checkError("make_plane::draw tex0,1");
+                if (numv>1)
+                        glBindTexture(GL_TEXTURE_3D, TesselationTextureName[2]);
+                checkError("make_plane::draw tex2");
+                
                 glDrawElements (GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
 
                 glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -462,7 +494,7 @@ private:
 	GLsizeiptr VertexObjectSize;
 	GLsizeiptr IndicesObjectSize;
         GLsizei TesselationTextureCount;
-	GLuint TesselationTextureName[2];
+	GLuint TesselationTextureName[3];
 };
 
 class text_plane{
@@ -509,10 +541,10 @@ public:
 
                 glUseProgram (S3D_ProgramName);
 
-                glActiveTexture (GL_TEXTURE2); // dedicated for text
+                glActiveTexture (GL_TEXTURE3); // dedicated for text
                 glGenTextures (1, &TextTextureName); // done globally
                 glBindTexture (GL_TEXTURE_2D, TextTextureName);
-                glUniform1i (glGetUniformLocation (S3D_ProgramName, "textTexture"), 2);
+                glUniform1i (glGetUniformLocation (S3D_ProgramName, "textTexture"), 3);
 
                 glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -824,10 +856,6 @@ public:
 
                 g_message ("icosahedron draw");
 
-                //glDisable (GL_CULL_FACE);
-                //glEnable (GL_BLEND);
-                //glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                
                 glUseProgram (IcoTess_ProgramName);
 
                 glUniform1f (Uniform_IcoTess_TessLevelInner, tesslevel);
@@ -835,8 +863,6 @@ public:
                 glUniform4fv (Uniform_IcoTess_IcoPosition, 1, &(pos.x));
                 glUniform4fv (Uniform_IcoTess_IcoScale, 1, &(scale.x));
                 glUniform4fv (Uniform_IcoTess_IcoColor, 1, &(color.x));
-
-                //glBindTexture (GL_TEXTURE_2D, TextTextureName);
 
                 glBindVertexArray (VertexArrayName); // VAO
                 glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
@@ -847,16 +873,12 @@ public:
                 glVertexAttribDivisor (semantic::ico::LATTICE, 1); // instancing
 
                 glPatchParameteri (GL_PATCH_VERTICES, 3);
-                //glDrawElements (GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0);
                 glDrawElementsInstanced (GL_PATCHES, IndicesCount, GL_UNSIGNED_INT, 0, LatticeCount);
  
                 glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
                 glBindBuffer (GL_ARRAY_BUFFER, 0);
                 glBindVertexArray (0);
 
-                //glBindTexture(GL_TEXTURE_2D, 0);
-                //glDisable (GL_BLEND);
-                
                 return Validated && checkError("icosahedron::draw end");
         };
 private:
@@ -958,7 +980,7 @@ private:
 	bool initProgram() {
 
                 // load and init shader program if not yet created -- only once, may shared!
-#if 1
+#if 0
                 if (Validated && ProgramName_RefCount > 0){
                         g_message ("Shader Program is already initiated.");
                         ++ProgramName_RefCount;
@@ -1090,6 +1112,7 @@ private:
                         Uniform_shadeLambertianXColor  = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertianXColor" );
                         Uniform_shadeLambertianMaterialColor = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertianMaterialColor" );
                         Uniform_shadeLambertianMaterialColorFog = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeLambertianMaterialColorFog" );
+                        Uniform_shadeVolume       = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeVolume" );
 
                         checkError("initProgram -- get uniform subroutine references...");
 		}
@@ -1451,6 +1474,7 @@ public:
                 case 'M': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertianMaterialColor); break;
                 case 'F': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertianMaterialColorFog); break;
                 case 'R': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertianXColor); break;
+                case 'V': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeVolume); break;
 		case 'D': glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeDebugMode); break;
                 default: glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertian); break;
                 }

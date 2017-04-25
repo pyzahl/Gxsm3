@@ -311,6 +311,52 @@ vec4 shadeLambertianMaterialColorFog(vec3 vertex, vec3 vertexEye,
         return vec4 (color_offset.xyz + lightness*finalColor, transparency_offset);
 }
 
+#if 0
+vec2 terraincoord(vec2 position){
+        return vec2 (0.5 - position.x, -(0.5 - (-position.y)/aspect));
+}
+#endif
+
+vec3 volumecoord(vec3 position){  // aspect y?? aspect z??
+        return vec3 (0.5 - position.x,  0.5 - position.z, 0.5 - position.y);
+}
+
+// Volume shade model for 3D cube interior -- tracing eye vector
+subroutine( shadeModelType )
+vec4 shadeVolume(vec3 vertex, vec3 vertexEye, 
+                 vec3 normal, vec4 color)
+{
+        // world-space, vertex on face, trace via volume
+        vec3 viewDir = normalize (eyePosWorld.xyz - vertexEye);
+        //vec3 viewDir = vec3 (0,0,1);
+
+        int  num_volume_slices = 20;
+        float bias = 0.05;
+        vec4 sum = vec4(0);
+        //vec3 step = viewDir / num_volume_slices; // * 1.45
+        vec3 step = 0.05*viewDir;
+        vec3 vp = vertex;
+
+        vec4 col10;
+        vec4 col5;
+        
+        // ray march front to back
+        for(int i=0; i<num_volume_slices; i++) {
+                vec3 vc  = volumecoord (vp);
+                vec4 zz  = texture (Volume3D_Z_Data, vc);
+                vec4 col = texture (GXSM_Palette, zz.z); // zz.a
+                
+                sum += col*bias;
+                //col.rgb *= col.a;               // pre-multiply alpha
+                //sum = sum + col*(1.0 - sum.a);
+                vp += step;
+        }
+        sum.a = (sum.x+sum.y+sum.z)/3.;
+        //        sum /= num_volume_slices;
+
+        return sum;
+}
+
 
 void main()
 {
