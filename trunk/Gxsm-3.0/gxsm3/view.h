@@ -226,7 +226,6 @@ typedef struct{
 	gchar view_preset[30];
 	gchar look_at[30];
 	gchar vertex_source[30];
-	gchar slice_direction[30];
 	float slice_start_n[4];
 	float slice_plane_index[4];
 
