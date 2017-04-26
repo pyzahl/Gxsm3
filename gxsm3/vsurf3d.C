@@ -301,9 +301,8 @@ public:
         };
 
         gboolean update_vertex_buffer (){
-                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
-                //glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_DYNAMIC_DRAW);
-                glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_STATIC_DRAW);
+                glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
+                glBufferSubData (GL_ARRAY_BUFFER, 0, VertexObjectSize, vertex);
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
                 return Validated && checkError("make_plane:: update_vertex_buffer");
         };
@@ -1363,7 +1362,7 @@ public:
                 } else {
                         Projection = glm::perspective (glm::radians (s->GLv_data.fov), aspect, s->GLv_data.fnear, s->GLv_data.ffar); // near, far frustum
                 }
-                glm::mat4 Camera = glm::lookAt (look_at + cameraPosition (), // cameraPosition, the position of your camera, in world space
+                glm::mat4 Camera = glm::lookAt (look_at + camera_position, // cameraPosition, the position of your camera, in world space
                                                 look_at, //cameraTarget, where you want to look at, in world space
                                                 glm::vec3(0,1,0) // upVector, probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
                                                 );
@@ -1399,7 +1398,7 @@ public:
 #define MAKE_GLM_VEC4(V) glm::vec4(V[0],V[1],V[2],V[3])
 #define MAKE_GLM_VEC4A(O,A) glm::vec4(O,O,O,A)
                 Block_FragmentShading.lightDirWorld = MAKE_GLM_VEC3(s->GLv_data.light_position[0]);
-                Block_FragmentShading.eyePosWorld   = glm::vec4(cameraPosition(),0);
+                Block_FragmentShading.eyePosWorld   = glm::vec4(camera_position,0);
 
                 Block_FragmentShading.sunColor      = MAKE_GLM_VEC3(s->GLv_data.light_specular[0]); // = vec3(1.0, 1.0, 0.7);
                 Block_FragmentShading.specularColor = MAKE_GLM_VEC3(s->GLv_data.surf_mat_specular); // = vec3(1.0, 1.0, 0.7)*1.5;
