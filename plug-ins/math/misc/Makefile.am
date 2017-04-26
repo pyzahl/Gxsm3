@@ -2,6 +2,7 @@ libdir = $(plugindir)/math
 AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
 
 lib_LTLIBRARIES = libshape.la \
+	libmake_volume.la \
 	libfindlocmax.la \
 	libpsdadd.la \
 	libspectrocut.la \
@@ -10,6 +11,9 @@ lib_LTLIBRARIES = libshape.la \
 
 libfindlocmax_la_SOURCES = findlocmax.C
 libfindlocmax_la_LDFLAGS = -module -export-dynamic -avoid-version
+
+libmake_volume_la_SOURCES = make_volume.C
+libmake_volume_la_LDFLAGS = -module -export-dynamic -avoid-version
 
 libpsdadd_la_SOURCES = psdadd.C
 libpsdadd_la_LDFLAGS = -module -export-dynamic -avoid-version
