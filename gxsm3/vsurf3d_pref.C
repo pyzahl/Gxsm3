@@ -47,8 +47,8 @@ const gchar *ShadeModel_OptionsList[]  = { "Lambertian, use Palette",
 const gchar *ColorSrc_OptionsList[]   = { "Flat", "Direct Height", "View Mode Height", "X-Channel", "Y", NULL };
 const gchar *TickFrame_OptionsList[]  = { "0: Simple", "1: XYZ with Labels", "2: XYZ Box", "3: XYZ w L Box", NULL };
 
-const gchar *CScale_OptionsList[] = { "-3","3","0.001","0.1","4", NULL };
-const gchar *ColorContrast_OptionsList[] = { "0","2","0.001","0.1","4", NULL };
+const gchar *CScale_OptionsList[] = { "-2","2","0.01","0.01","4", NULL };
+const gchar *ColorContrast_OptionsList[] = { "0","2","0.01","0.01","4", NULL };
 const gchar *ColorOffset_OptionsList[]   = { "-1","1","0.01","0.1","3", NULL };
 
 const gchar *Rot_OptionsList[]   = {"-180","180","1","1","0",NULL };
@@ -179,8 +179,8 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 		),
 
 	GNOME_RES_ENTRY_FLOAT_VEC4
-	( "V3dControl.View/SliceLimiter", "SliceLimiter", "0 0 1 0", GET_GLV_OFFSET (&GLvd_offset.slice_start_n[0]), 
-	  N_("View"), N_("Slicing Control, set #num to 0 for all: [Start, #num, Step, Sep]"), NULL
+	( "V3dControl.View/SliceLimiter", "SliceLimiter", "0 1000 50 0", GET_GLV_OFFSET (&GLvd_offset.slice_start_n[0]), 
+	  N_("View"), N_("Slicing Control: 1000 slice plane cover full range [Start, Stop, Step, --]"), NULL
 		),
 
 	GNOME_RES_ENTRY_FLOAT_VEC4

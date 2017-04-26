@@ -22,17 +22,17 @@ subroutine uniform vertexModelType vertexModel;
 
 float height_transform(float y)
 {
-        return height_scale * (y-0.5) + height_offset;  
+        return height_scale * (y-cCenter.y) + height_offset;  
 }
 
 vec2 terraincoord(vec2 position){
-        return vec2 (0.5 - position.x, -(0.5 - (-position.y)/aspect));
+        return vec2 (cCenter.x - position.x, -(cCenter.y - (-position.y)/aspect));
 }
 
 subroutine( vertexModelType )
 float vertex_height_flat(vec2 position)
 {
-        return height_transform (0.5);
+        return height_transform (cCenter.z);
 }
 
 subroutine( vertexModelType )
