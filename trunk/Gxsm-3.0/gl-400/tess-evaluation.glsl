@@ -32,7 +32,7 @@ subroutine uniform eval_vertexPlaneType eval_vertexPlane;
 
 float height_transform(float y)
 {
-        return height_scale * (y-0.5) + height_offset;  
+        return height_scale * (y-cCenter.y) + height_offset;  
 }
 
 vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
@@ -43,7 +43,7 @@ vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
 }
 
 vec2 terraincoord(vec2 position){
-        return vec2 (0.5 - position.x, -(0.5 - (-position.y)/aspect));
+        return vec2 (cCenter.x - position.x, -(cCenter.y - (-position.y)/aspect));
 }
 
 // == Height ===========================
@@ -164,7 +164,7 @@ void main()
         // deduce terrain normal
         Out.Normal = eval_vertexPlane (normalize (vec3(dxdz, 2*delta.x, dydz/aspect)));
 
-        Out.Color     = colorModel (zz);
+        Out.Color     = colorModel (color_offset.x+zz);
 
         Out.Vertex    = eval_vertexPlane (position.xyz);
         Out.VertexEye = vec3 (ModelView * vec4(Out.Vertex, 1.0));  // eye space

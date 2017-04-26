@@ -60,7 +60,7 @@ vec3 applyFog(vec3 col, float dist, vec3 viewDir)
 
 vec3 map_xyz_values(vec2 position)
 {
-        vec2 terraincoord = vec2 (0.5 - position.x, 0.5 - position.y/aspect); // swap
+        vec2 terraincoord = vec2 (cCenter.x - position.x, cCenter.y - position.y/aspect); // swap
         return texture (Surf3D_Z_Data, terraincoord).xyz;
 }
 
@@ -297,14 +297,8 @@ vec4 shadeLambertianMaterialColorFog(vec3 vertex, vec3 vertexEye,
         return vec4 (lightness*finalColor, materialColor.a);
 }
 
-#if 0
-vec2 terraincoord(vec2 position){
-        return vec2 (0.5 - position.x, -(0.5 - (-position.y)/aspect));
-}
-#endif
-
 vec3 volumecoord(vec3 position){  // aspect y?? aspect z??
-        return vec3 (0.5 - position.x,  -(0.5 - (-position.z)/aspect), 0.5 - position.y);
+        return vec3 (cCenter.x - position.x,  -(cCenter.y - (-position.z)/aspect), cCenter.z - position.y);
 }
 
 // Volume shade model for 3D cube interior -- tracing eye vector
@@ -312,35 +306,16 @@ subroutine( shadeModelType )
 vec4 shadeVolume(vec3 vertex, vec3 vertexEye, 
                  vec3 normal, vec4 color)
 {
-#if 1
         vec3 vc  = volumecoord (vertex);
+        vec3 vcc = clamp (vc, -0.99, 0.99);
+        if (length (vc-vcc) > 0.001)
+                return vec4 (0.,0.,0.,0.);
+                
         vec4 zz  = texture (Volume3D_Z_Data, vc);
-
-        float value = clamp (zz.a, 0, 1);
-        return vec4 (vec3( texture (GXSM_Palette, value)), transparency_offset+value*transparency); // transparency_offset + transparency * xxx;
-#else
-        // world-space, vertex on face, trace via volume
-        vec3 viewDir = normalize (eyePosWorld.xyz - vertexEye); // vie direction in world space
-        vec4 modelViewDir = ViewAlignedModelView * vec4 (viewDir, 1.0); // in model space
-
-        int  num_volume_slices = 20;
-        vec3 step = modelViewDir.xyz / (1.45*num_volume_slices);
-        vec3 vp = vertex;
         
-        // ray march front to back
-        float sum = 0;
-        for(int i=0; i<num_volume_slices; i++) {
-                vec3 vc  = volumecoord (vp);
-                vec4 zz  = texture (Volume3D_Z_Data, vc);
-                sum += zz.a; // zz.a
-                vp += step;
-        }
-        float value = clamp (transparency * sum/num_volume_slices, 0, 1);
-        return vec4 (vec3(value), 1.); // transparency_offset + transparency * xxx;
-
-        //vec4 col = texture (GXSM_Palette, value);
-        //return vec4 (lightness*col.xyz, 1.); // transparency_offset + transparency * xxx;
-#endif
+        //float value = clamp (zz.a, 0, 1);
+        float value = clamp (zz.z, 0, 1);
+        return vec4 (lightness * vec3( texture (GXSM_Palette, color_offset.x+value)), transparency_offset+value*transparency);
 }
 
                 //col.rgb *= col.a;               // pre-multiply alpha

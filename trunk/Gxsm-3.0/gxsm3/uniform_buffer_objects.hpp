@@ -33,18 +33,21 @@ namespace ubo
                  GLfloat const & height_scale,
                  GLfloat const & height_offset,
                  GLfloat const & plane_at,
+                 glm::vec4 const & cCenter,
                  glm::vec2 const & delta
                  ) :
                         aspect(aspect),
                         height_scale(height_scale),
                         height_offset(height_offset),
                         plane_at(plane_at),
+                        cCenter(cCenter),
                         delta(delta)
                 {}
                 GLfloat aspect;
                 GLfloat height_scale;
                 GLfloat height_offset;                
                 GLfloat plane_at;
+                glm::vec2 cCenter;
                 glm::vec2 delta;
         };
 

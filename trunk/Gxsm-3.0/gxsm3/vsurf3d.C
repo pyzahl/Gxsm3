@@ -167,7 +167,7 @@ namespace
         ubo::uniform_model_view Block_ModelViewMat(glm::mat4(1.), glm::mat4(1.), glm::mat4(1.));
 
         GLuint const SurfaceGeometry_block(1); // => 1
-        ubo::uniform_surface_geometry Block_SurfaceGeometry(1.,0.1,0.,0., glm::vec2(0.1));
+        ubo::uniform_surface_geometry Block_SurfaceGeometry(1.,0.1,0.,0., glm::vec4 (0.5f,0.5f,0.5f,0.5f), glm::vec2(0.1f));
         
         GLuint const FragmentShading_block(2); // => 2
         ubo::uniform_fragment_shading Block_FragmentShading
@@ -260,6 +260,9 @@ public:
                 VertexArrayName = 0;
                 TesselationTextureCount = 0;
                 numx = nx; numy = ny; numv = nv;
+
+                vertex  = NULL;
+                indices = NULL;
                 
                 make_plane_vbo (aspect);
 
@@ -296,6 +299,15 @@ public:
 
                 return Validated && checkError("make_plane:: init_buffer");
         };
+
+        gboolean update_vertex_buffer (){
+                glBindBuffer(GL_ARRAY_BUFFER, ArrayBufferName);
+                //glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_DYNAMIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, VertexObjectSize, vertex, GL_STATIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                return Validated && checkError("make_plane:: update_vertex_buffer");
+        };
+        
         gboolean init_vao (){
                 g_message ("base_plane init_vao");
                 checkError("make_plane::init_vao");
@@ -422,7 +434,7 @@ public:
         };
         
         // make plane
-        void make_plane_vbo (double aspect=1.0){
+        void make_plane_vbo (double aspect=1.0, double oversize = 1.0){
                 // Surface Object Vertices
                 BaseGridH = (GLuint)round((double)BaseGridW * aspect);
                 
@@ -431,7 +443,8 @@ public:
                 VertexObjectSize = VertexCount * sizeof(glm::vec2);
                
                 g_message ("mkplane w=%d h=%d  nvertices=%d", BaseGridW, BaseGridH, VertexCount);
-                vertex = g_new (glm::vec2, VertexCount);
+                if (!vertex)
+                        vertex = g_new (glm::vec2, VertexCount);
                 double s_factor = 1.0/(BaseGridW-1);
                 double t_factor = 1.0/(BaseGridH-1);
                 int offset;
@@ -442,38 +455,36 @@ public:
                                 double xd = x * s_factor; // 0..1
                                 double yd = y * t_factor; // 0..1
 
-                                vertex[offset] = glm::vec2 (xd-0.5, (yd-0.5)*aspect);
+                                vertex[offset] = glm::vec2 (oversize * (xd-0.5), oversize * (yd-0.5)*aspect);
                                 //g_message ("mkplane vtx -- x=%d y=TEX z=%d  [%d]",x,y, offset);
                         }
                 }
                 g_message ("mkplane -- Vertex Count=%d", offset);
-        
-                // Patch Indices
-                int i_width = BaseGridW-1;
-                int i_height = BaseGridH-1;
-                IndicesCount = (((BaseGridW-1)*(BaseGridH-1))*4); // +4 -- plus close up botton patch (no workign w terrain)
-                IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
 
-                indices = g_new (glf::vertex_v1i, IndicesCount);
-                // surface patches
-                int ii=0;
-                for (int y=0; y<i_height; ++y){
-                        for (int x=0; x<i_width; ++x){
-                                int p1 = x+y*BaseGridW;
-                                int p2 = p1+BaseGridW;
-                                int p4 = p1+1;
-                                int p3 = p2+1;
-                                indices[ii++].indices.x = p1;
-                                indices[ii++].indices.x = p2;
-                                indices[ii++].indices.x = p3;
-                                indices[ii++].indices.x = p4;
+                if (!indices){
+                        // Patch Indices
+                        int i_width = BaseGridW-1;
+                        int i_height = BaseGridH-1;
+                        IndicesCount = (((BaseGridW-1)*(BaseGridH-1))*4); // +4 -- plus close up botton patch (no workign w terrain)
+                        IndicesObjectSize = IndicesCount * sizeof(glf::vertex_v1i);
+
+                        indices = g_new (glf::vertex_v1i, IndicesCount);
+                        // surface patches
+                        int ii=0;
+                        for (int y=0; y<i_height; ++y){
+                                for (int x=0; x<i_width; ++x){
+                                        int p1 = x+y*BaseGridW;
+                                        int p2 = p1+BaseGridW;
+                                        int p4 = p1+1;
+                                        int p3 = p2+1;
+                                        indices[ii++].indices.x = p1;
+                                        indices[ii++].indices.x = p2;
+                                        indices[ii++].indices.x = p3;
+                                        indices[ii++].indices.x = p4;
+                                }
                         }
+                        g_message ("mkplane -- Indices Count=%d of %d", ii, IndicesCount);
                 }
-                //indices[ii++].indices.x = 0;
-                //indices[ii++].indices.x = BaseGridW;
-                //indices[ii++].indices.x = BaseGridW*BaseGridH-1;
-                //indices[ii++].indices.x = BaseGridW*(BaseGridH-1)+1;
-                g_message ("mkplane -- Indices Count=%d of %d", ii, IndicesCount);
         };
 
 private:
@@ -904,6 +915,7 @@ public:
                 Major=4;
                 Minor=0;
                 numx = numy = numv = 0;
+                oversized_plane = false;
                 Surf3D_Z_Data = NULL;
                 Surf3D_Palette = NULL;
 
@@ -1310,28 +1322,25 @@ public:
                         break;
                 case 'R': GL_height_scale = s->GLv_data.hskl; break;
                 }
+
                 glm::vec3 look_at = lookAtPosition (GL_height_scale);
+                glm::vec3 camera_position = cameraPosition ();
+                
+                if (s->GLv_data.slice_direction[0] == 'V'){ // auto override x,y to align view planes for Volume Projection
+                        camera_position.x = 0.;
+                        camera_position.y = 0.;
+                }
+
                 g_message ("Render (GL coord system):\n"
                            " Camera at = (%g, %g, %g)\n"
                            " Look at   = (%g, %g, %g)\n"
                            " Translate = (%g, 0, %g)\n"
                            " GL_height_scale = %g",
-                           DistanceCurrent.x, DistanceCurrent.y, DistanceCurrent.z, // == CameraPositon
+                           camera_position.x, camera_position.y, camera_position.z,
                            look_at.x, look_at.y, look_at.z,
                            TranslationCurrent.x, TranslationCurrent.y,
                            GL_height_scale
                            );
-
-#if 0
-                        glDisable (GL_DEPTH_TEST);
-                        glEnable (GL_DEPTH_TEST);
-                        //glDepthMask(GL_FALSE);  
-                        glDepthMask(GL_TRUE);
-                        glDepthFunc (GL_LEQUAL);
-                        // glDepthFunc(GL_LESS);  
-                        //glDepthRange(0.0f, 1.0f);
-                        //gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-#endif           
                 
                 glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 glClearBufferfv (GL_COLOR, 0, s->GLv_data.clear_color);
@@ -1381,7 +1390,8 @@ public:
                 Block_SurfaceGeometry.height_scale  = GL_height_scale;
                 Block_SurfaceGeometry.height_offset = s->GLv_data.slice_offset;
                 Block_SurfaceGeometry.plane_at = 0.;
-                Block_SurfaceGeometry.delta = glm::vec2 (1.0f/(s->XPM_x-1), Block_SurfaceGeometry.aspect/(s->XPM_y-1));
+                Block_SurfaceGeometry.cCenter = glm::vec4 (0.5f, 0.5f, 0.5f, 0.5f);
+                Block_SurfaceGeometry.delta   = glm::vec2 (1.0f/(s->XPM_x-1), Block_SurfaceGeometry.aspect/(s->XPM_y-1));
                 updateSurfaceGeometry ();
 
                 // Camera, Light and Shading
@@ -1485,11 +1495,20 @@ public:
 
                 switch (s->GLv_data.slice_direction[0]){
                 case 'Z':
+                        if (oversized_plane){
+                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
+                                surface_plane->update_vertex_buffer ();
+                                oversized_plane = false;
+                        }
                         glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
                         surface_plane->draw ();
                         break;
                 case 'X':
-                        g_message ("GL-ZY-Plane");
+                        if (oversized_plane){
+                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
+                                surface_plane->update_vertex_buffer ();
+                                oversized_plane = false;
+                        }
                         Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
                         Block_SurfaceGeometry.plane_at = 0.5;
                         updateSurfaceGeometry ();
@@ -1499,7 +1518,11 @@ public:
                         surface_plane->draw ();
                         break;
                 case 'Y':
-                        g_message ("GL-XY-Plane");
+                        if (oversized_plane){
+                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
+                                surface_plane->update_vertex_buffer ();
+                                oversized_plane = false;
+                        }
                         Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
                         Block_SurfaceGeometry.plane_at = 0.5;
                         updateSurfaceGeometry ();
@@ -1509,6 +1532,11 @@ public:
                         surface_plane->draw ();
                         break;
                 case 'S':
+                        if (oversized_plane){
+                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
+                                surface_plane->update_vertex_buffer ();
+                                oversized_plane = false;
+                        }
                         Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
                         glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
                         for (int i=0; i<6; ++i){
@@ -1533,15 +1561,24 @@ public:
                         }
                         break;
                 case 'V':
+                        if (!oversized_plane){
+                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx, 1.45);
+                                surface_plane->update_vertex_buffer ();
+                                oversized_plane = true;
+                        }
                         Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
                         glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
-                        for (int i=0; i<20; ++i){
-                                Block_SurfaceGeometry.plane_at = 0.05f*i;
+                        glDisable (GL_DEPTH_TEST);
+                        for (int i=s->GLv_data.slice_start_n[0]; i<s->GLv_data.slice_start_n[1]; i += s->GLv_data.slice_start_n[2]){
+                                Block_SurfaceGeometry.plane_at = 0.001f*i;
+                                Block_SurfaceGeometry.cCenter = glm::vec4 (0.725f, 0.725f, 0.725f, 0.5f);
                                 updateSurfaceGeometry ();
+                                //if (s->GLv_data.slice_plane_index[0]);
                                 Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_Mplane;
                                 glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 3, Uniform_evaluation_setup);
                                 surface_plane->draw ();
                         }
+                        glEnable (GL_DEPTH_TEST);
                         break;
                 }
 
@@ -1691,6 +1728,7 @@ private:
         GtkGLArea *glarea;
         int Major, Minor; // minimal version needed
 
+        gboolean oversized_plane;
         base_plane *surface_plane;
         text_plane *text_vao;
         icosahedron *ico_vao;
