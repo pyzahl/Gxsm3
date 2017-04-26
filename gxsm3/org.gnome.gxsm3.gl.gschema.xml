@@ -20,16 +20,14 @@
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-vertex-source">
     <value value="0" nick="Flat "/>
     <value value="1" nick="Direct Height "/>
-    <value value="2" nick="View Mode Height "/>
-    <value value="3" nick="X-Channel "/>
-    <value value="4" nick="Y "/>
-  </enum>
-  <enum id="org-gnome-gxsm3-gl-option-v3d-control-view-slice-direction">
-    <value value="0" nick="X "/>
-    <value value="1" nick="Y "/>
-    <value value="2" nick="Z "/>
-    <value value="3" nick="Volume "/>
-    <value value="4" nick="Scatter "/>
+    <value value="2" nick="Mode View Height "/>
+    <value value="3" nick="Channel-X "/>
+    <value value="4" nick="y-data "/>
+    <value value="5" nick="X-Slice "/>
+    <value value="6" nick="Y-Slice "/>
+    <value value="7" nick="Z-Slice "/>
+    <value value="8" nick="Volume "/>
+    <value value="9" nick="Scatter "/>
   </enum>
   <enum id="org-gnome-gxsm3-gl-option-v3d-control-light-sun">
     <value value="0" nick="On "/>
@@ -194,35 +192,26 @@ button and drag surface up/down!
       <choices>
         <choice value='Flat'/>
         <choice value='Direct Height'/>
-        <choice value='View Mode Height'/>
-        <choice value='X-Channel'/>
-        <choice value='Y'/>
-      </choices>
-      <default>'Direct Height'</default>
-      <summary>Vertex/Geometry Height Source for Surface Model.)</summary>
-      <description>
-        Vertex/Geometry Height Source for Surface Model.)
-      </description>
-    </key>
-    <key name="slicedirection" type="s">
-      <choices>
-        <choice value='X'/>
-        <choice value='Y'/>
-        <choice value='Z'/>
+        <choice value='Mode View Height'/>
+        <choice value='Channel-X'/>
+        <choice value='y-data'/>
+        <choice value='X-Slice'/>
+        <choice value='Y-Slice'/>
+        <choice value='Z-Slice'/>
         <choice value='Volume'/>
         <choice value='Scatter'/>
       </choices>
-      <default>'Z'</default>
-      <summary>Slicing Direction X,Y or Z (Z is default surface plane)</summary>
+      <default>'Direct Height'</default>
+      <summary>Vertex/Geometry Height Source for Surface Model or Flat Slicing/Volumetric rendering.</summary>
       <description>
-        Slicing Direction X,Y or Z (Z is default surface plane)
+        Vertex/Geometry Height Source for Surface Model or Flat Slicing/Volumetric rendering.
       </description>
     </key>
     <key name="slicelimiter" type="ad">
-      <default>[0,0,1,0]</default>
-      <summary>Slicing Control, set #num to 0 for all: [Start, #num, Step, Sep]</summary>
+      <default>[0,1000,25,0]</default>
+      <summary>Slicing Control: 1000 slice plane cover full range [Start, Stop, Step, --]</summary>
       <description>
-        Slicing Control, set #num to 0 for all: [Start, #num, Step, Sep]
+        Slicing Control: 1000 slice plane cover full range [Start, Stop, Step, --]
       </description>
     </key>
     <key name="sliceplanes" type="ad">

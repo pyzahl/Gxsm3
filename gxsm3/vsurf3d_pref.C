@@ -34,8 +34,10 @@ const gchar *OnOff_OptionsList[]      = { "On", "Off", NULL };
 const gchar *ViewPreset_OptionsList[] = { "Manual", "Top", "Front", "Left", "Right", "Areal View Front", "Scan: Auto Tip View", NULL };
 const gchar *LookAt_OptionsList[]     = { "Manual", "Tip", "Center", NULL };
 
-const gchar *VertexSrc_OptionsList[]  = { "Flat", "Direct Height", "View Mode Height", "X-Channel", "Y", NULL };
-const gchar *XYZ_OptionsList[]        = { "X", "Y", "Z", "Volume", "Scatter", NULL };
+const gchar *VertexSrc_OptionsList[]  = { "Flat", "Direct Height", "Mode View Height", "Channel-X", "y-data",
+					  "X-Slice", "Y-Slice", "Z-Slice",
+					  "Volume", "Scatter",
+					  NULL };
 const gchar *ShadeModel_OptionsList[]  = { "Lambertian, use Palette",
 					   "Terrain",
 					   "Material Color",
@@ -169,17 +171,11 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_OPTION
 	( GNOME_RES_STRING, "V3dControl.View/VertexSource", "Direct Height", GET_GLV_OFFSET (&GLvd_offset.vertex_source[0]),
 	  VertexSrc_OptionsList, N_("View"), 
-	  N_("Vertex/Geometry Height Source for Surface Model.)")
-		),
-
-	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_STRING, "V3dControl.View/SliceDirection", "Z", GET_GLV_OFFSET (&GLvd_offset.slice_direction[0]),
-	  XYZ_OptionsList, N_("View"), 
-	  N_("Slicing Direction X,Y or Z (Z is default surface plane)")
+	  N_("Vertex/Geometry Height Source for Surface Model or Flat Slicing/Volumetric rendering.")
 		),
 
 	GNOME_RES_ENTRY_FLOAT_VEC4
-	( "V3dControl.View/SliceLimiter", "SliceLimiter", "0 1000 50 0", GET_GLV_OFFSET (&GLvd_offset.slice_start_n[0]), 
+	( "V3dControl.View/SliceLimiter", "SliceLimiter", "0 1000 25 0", GET_GLV_OFFSET (&GLvd_offset.slice_start_n[0]), 
 	  N_("View"), N_("Slicing Control: 1000 slice plane cover full range [Start, Stop, Step, --]"), NULL
 		),
 

@@ -367,6 +367,14 @@ public:
                         glBindTexture (GL_TEXTURE_3D, TesselationTextureName[2]);
 
                         glTexImage3D (GL_TEXTURE_3D, 0, GL_RGBA32F, numx, numy, numv, 0, GL_RGBA, GL_FLOAT, displacement_data); // Surf3D_Zdata
+
+                        // GL_REPEAT, GL_CLAMP_TO_EDGE, GL_MIRRORED_REPEAT, GL_CLAMP_TO_BORDER
+                        glm::vec4 outside_color = glm::vec4 (1.f,0.f,0.f,0.f);
+                        glTexParameterfv(GL_TEXTURE_3D, GL_TEXTURE_BORDER_COLOR, &(outside_color.x));
+                        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+                        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+                        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+
                         glTexParameteri (GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
                         glTexParameteri (GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                         glGenerateMipmap (GL_TEXTURE_3D);
@@ -1325,7 +1333,7 @@ public:
                 glm::vec3 look_at = lookAtPosition (GL_height_scale);
                 glm::vec3 camera_position = cameraPosition ();
                 
-                if (s->GLv_data.slice_direction[0] == 'V'){ // auto override x,y to align view planes for Volume Projection
+                if (s->GLv_data.vertex_source[0] == 'V'){ // auto override x,y to align view planes for Volume Projection
                         camera_position.x = 0.;
                         camera_position.y = 0.;
                 }
@@ -1432,29 +1440,29 @@ public:
                 // configure shaders for surface rendering modes (using tesselation) and select final shading mode
 
                 switch (s->GLv_data.vertex_source[0]){
-                case 'F': // Flat Vertex Height
+                case 'F': // Flat Vertex Height 0.5
                         Uniform_vertex_setup[0]     = Uniform_vertexFlat;
                         Uniform_evaluation_setup[0] = Uniform_evaluationVertexFlat;
                         break;
-                case 'D': // Direct Vertex Height
+                case 'D': // Direct Vertex Height .a
                         Uniform_vertex_setup[0]     = Uniform_vertexDirect;
                         Uniform_evaluation_setup[0] = Uniform_evaluationVertexDirect;
                         break;
-                case 'V': // View Mode Vertex Height
+                case 'M': // View Mode Vertex Height .z
                         Uniform_vertex_setup[0]     = Uniform_vertexViewMode;
                         Uniform_evaluation_setup[0] = Uniform_evaluationVertexViewMode;
                         break;
-                case 'X': // X-Channel Direct Vertex Height
+                case 'C': // X-Channel Direct Vertex Height .x
                         Uniform_vertex_setup[0]     = Uniform_vertexXChannel;
                         Uniform_evaluation_setup[0] = Uniform_evaluationVertexXChannel;
                         break;
-                case 'Y': // Y
+                case 'y': // "Y-Channel" .y
                         Uniform_vertex_setup[0]     = Uniform_vertexY;
                         Uniform_evaluation_setup[0] = Uniform_evaluationVertexY;
                         break;
-                default: // fallback
-                        Uniform_vertex_setup[0]     = Uniform_vertexDirect;
-                        Uniform_evaluation_setup[0] = Uniform_evaluationVertexDirect;
+                default: // other mode: slicing and volumetric rendering use "Flat Height"
+                        Uniform_vertex_setup[0]     = Uniform_vertexFlat;
+                        Uniform_evaluation_setup[0] = Uniform_evaluationVertexFlat;
                         break;
                 }
 
@@ -1492,16 +1500,7 @@ public:
                         glDisable (GL_BLEND); 
                 }
 
-                switch (s->GLv_data.slice_direction[0]){
-                case 'Z':
-                        if (oversized_plane){
-                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
-                                surface_plane->update_vertex_buffer ();
-                                oversized_plane = false;
-                        }
-                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
-                        surface_plane->draw ();
-                        break;
+                switch (s->GLv_data.vertex_source[0]){
                 case 'X':
                         if (oversized_plane){
                                 surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
@@ -1539,6 +1538,8 @@ public:
                         Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
                         glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
                         for (int i=0; i<6; ++i){
+                                Block_SurfaceGeometry.height_scale  = 1.0f;
+                                Block_SurfaceGeometry.height_offset = 0.0f;
                                 Block_SurfaceGeometry.plane_at = (i%2 == 0 ? 0.:1.);
                                 updateSurfaceGeometry ();
                                 switch (i){
@@ -1560,24 +1561,48 @@ public:
                         }
                         break;
                 case 'V':
-                        if (!oversized_plane){
-                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx, 1.45);
+                        {
+                                GLfloat r3  = 1.732f; // srqt(3)
+                                GLfloat r3c = r3/2; // srqt(3)/2
+
+                                // always use blending here
+                                glEnable (GL_BLEND); 
+                                glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                        
+                                if (!oversized_plane){
+                                        surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx, r3);
+                                        surface_plane->update_vertex_buffer ();
+                                        oversized_plane = true;
+                                }
+                        
+                                Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
+                                glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
+                                glDisable (GL_DEPTH_TEST);
+                        
+                                Block_SurfaceGeometry.height_scale  = 1.0f;
+                                Block_SurfaceGeometry.height_offset = 0.0f;
+                                Block_SurfaceGeometry.cCenter = glm::vec4 (r3c, r3c, r3c, 0.5f);
+                                for (int i=s->GLv_data.slice_start_n[0]; i<s->GLv_data.slice_start_n[1]; i += s->GLv_data.slice_start_n[2]){
+                                        Block_SurfaceGeometry.plane_at = 0.001f*i;
+                                        updateSurfaceGeometry ();
+                                        //if (s->GLv_data.slice_plane_index[0]);
+                                        Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_Mplane;
+                                        glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 3, Uniform_evaluation_setup);
+                                        surface_plane->draw ();
+                                }
+
+                                glEnable (GL_DEPTH_TEST);
+                        }
+                        break;
+                case 'Z':
+                default:
+                        if (oversized_plane){
+                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
                                 surface_plane->update_vertex_buffer ();
-                                oversized_plane = true;
+                                oversized_plane = false;
                         }
-                        Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
                         glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
-                        glDisable (GL_DEPTH_TEST);
-                        for (int i=s->GLv_data.slice_start_n[0]; i<s->GLv_data.slice_start_n[1]; i += s->GLv_data.slice_start_n[2]){
-                                Block_SurfaceGeometry.plane_at = 0.001f*i;
-                                Block_SurfaceGeometry.cCenter = glm::vec4 (0.725f, 0.725f, 0.725f, 0.5f);
-                                updateSurfaceGeometry ();
-                                //if (s->GLv_data.slice_plane_index[0]);
-                                Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_Mplane;
-                                glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 3, Uniform_evaluation_setup);
-                                surface_plane->draw ();
-                        }
-                        glEnable (GL_DEPTH_TEST);
+                        surface_plane->draw ();
                         break;
                 }
 
@@ -2129,8 +2154,11 @@ void Surf3d::create_surface_buffer(){
 
 	XSM_DEBUG (GL_DEBUG_L3, "Surf3d::create_surface_buffer  ** computing surface and normals");
         // grab and prepare data buffers
+        scan->mem2d->data->update_ranges (0);
+        for(int v=0; v<scan->mem2d->GetNv(); ++v)
+                scan->mem2d->data->update_ranges (v, true);
+        
         for(int v=0; v<scan->mem2d->GetNv(); ++v){
-                scan->mem2d->data->update_ranges (v);
 		for(int j=0; j<scan->mem2d->GetNy(); ++j)
 			for(int k=0; k<scan->mem2d->GetNx(); ++k)
 				PutPointMode (k,j,v);

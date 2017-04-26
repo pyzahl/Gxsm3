@@ -297,8 +297,8 @@ vec4 shadeLambertianMaterialColorFog(vec3 vertex, vec3 vertexEye,
         return vec4 (lightness*finalColor, materialColor.a);
 }
 
-vec3 volumecoord(vec3 position){  // aspect y?? aspect z??
-        return vec3 (0.5 - position.x,  position.z - 0.5, 0.5 - position.y);
+vec3 volumecoord(vec3 position){
+        return vec3 (0.5 - position.x,  0.5 - position.z, 0.5 - position.y);
 }
 
 // Volume shade model for 3D cube interior -- tracing eye vector
@@ -307,18 +307,27 @@ vec4 shadeVolume(vec3 vertex, vec3 vertexEye,
                  vec3 normal, vec4 color)
 {
         vec3 vertex_normalized = vec3 (vertex.xy, vertex.z/aspect);
+#if 0
         vec3 vcc = clamp (vertex_normalized, -0.5, 0.5);
         vec3 vc  = volumecoord (vcc);
-
         vec4 vout = vec4 (0.,0.,0.,0.);
         if (length (vertex_normalized-vcc) > 0.001)
                 return vec4 (1.,0.,0.,0.);
-                
         vec4 zz  = texture (Volume3D_Z_Data, vc);
-        
         //float value = clamp (zz.a, 0, 1);
         float value = clamp (zz.z, 0, 1);
         return vout + vec4 (lightness * vec3( texture (GXSM_Palette, color_offset.x+value)), transparency_offset+value*transparency);
+#else
+        vec3 vc  = volumecoord (vertex_normalized);
+        vec4 zz  = texture (Volume3D_Z_Data, vc);
+        //return vec4(vec3(zz.z), transparency_offset+zz.z*transparency);
+        
+        //float value = clamp (zz.a, 0, 1);
+        float value = clamp (zz.z, 0, 1);
+        if (zz.a == 0. && zz.x == 1.)
+                return vec4 (1.,0.,0.,0.);
+        return vec4 (lightness * vec3( texture (GXSM_Palette, color_offset.x+value)), transparency_offset+value*transparency);
+#endif
 }
 
 void main()
