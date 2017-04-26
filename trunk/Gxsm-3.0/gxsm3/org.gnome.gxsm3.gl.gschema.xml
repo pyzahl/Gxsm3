@@ -393,11 +393,11 @@ Used only in "Uniform/Material Color Mode".
         Select Surface Shading Mode.
       </description>
     </key>
-    <key name="colorcontrast" type="d">
-      <default>0.5</default>
-      <summary>Color Contrast: to scale color source</summary>
+    <key name="lightness" type="d">
+      <default>0.65</default>
+      <summary>Color Lightness or Exposure level</summary>
       <description>
-        Color Contrast: to scale color source
+        Color Lightness or Exposure level
       </description>
     </key>
     <key name="coloroffset" type="d">

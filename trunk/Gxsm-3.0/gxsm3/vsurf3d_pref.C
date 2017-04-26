@@ -58,7 +58,7 @@ const gchar *Dist_OptionsList[]  = {"-20","20","0.01","0.01","2",NULL };
 const gchar *Hskl_mode_OptionsList[] = { "Absolute Ang", "Relative Range", NULL };
 const gchar *Hskl_OptionsList[]  = {"-20","20","0.001","0.001","4",NULL };
 const gchar *Tskl_OptionsList[]  = {"-10","10","0.01","0.01","1",NULL };
-const gchar *Slice_OptionsList[]  = {"-5","5","0.01","1","2",NULL };
+const gchar *Slice_OptionsList[]  = {"-1","1","0.01","0.01","2",NULL };
 const gchar *Shininess_OptionsList[]  = {"0","100","0.1","1","1",NULL };
 const gchar *FogD_OptionsList[]  = {"0","100","0.001","0.01","2",NULL };
 const gchar *shader_mode_OptionsList[]  = {"0","20","1","1","0",NULL };
@@ -311,10 +311,10 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("Surface Material"), NULL),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.MatSurf/ColorContrast", "Color Contrast", "0.5", 
-	  GET_GLV_OFFSET (&GLvd_offset.ColorContrast), 
+	( "V3dControl.MatSurf/Lightness", "Lightness", "0.65", 
+	  GET_GLV_OFFSET (&GLvd_offset.Lightness), 
 	  CScale_OptionsList, N_("Surface Material"),
-	  N_("Color Contrast: to scale color source"), NULL
+	  N_("Color Lightness or Exposure level"), NULL
 		),
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.MatSurf/ColorOffset", "Color Offset", "0", 

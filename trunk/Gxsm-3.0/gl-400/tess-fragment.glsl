@@ -97,7 +97,7 @@ vec4 shadeTerrain(vec3 vertex, vec3 vertexEye,
         // Lambertian light model
 
         // world-space
-        vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
+        vec3 viewDir = normalize(eyePosWorld.xyz - vertexEye);
         vec3 h = normalize(-lightDirWorld.xyz + viewDir);
         vec3 n = normalize(normal);
 
@@ -131,9 +131,7 @@ vec4 shadeTerrain(vec3 vertex, vec3 vertexEye,
         finalColor = applyFog(finalColor, dist, viewDir);
         //return vec4(finalColor, 1.);
 
-        return vec4 (color_offset.xyz
-                     + lightness*finalColor,
-                     transparency_offset+transparency*color.a);
+        return vec4 (lightness*finalColor, 1.0);
 
 #if 0
         // debug stuff
@@ -166,7 +164,7 @@ vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye,
         // Lambertian light model
 
         // world-space
-        vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
+        vec3 viewDir = normalize(eyePosWorld.xyz - vertexEye);
         vec3 h = normalize(-lightDirWorld.xyz + viewDir);
         vec3 n = normalize(normal);
 
@@ -175,6 +173,10 @@ vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye,
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
 
+        vec3 SpecularColor = specular*specularColor.xyz;
+        vec3 DiffuseColor  = diffuse*diffuseColor.xyz;
+        vec3 LambertianColor = ambientColor.xyz + SpecularColor + DiffuseColor;
+
         vec3 nois = noise3(100.*vertex.xz)*0.5+vec3(0.5);
         float dist = length (eyePosWorld.xyz);
 
@@ -182,41 +184,29 @@ vec4 shadeDebugMode(vec3 vertex, vec3 vertexEye,
         //float dist_light = length (sunPos);
         //float attenuation = 1.0 / (1.0 + light_attenuation * dist_light*dist_light);
 
-        vec3 finalColor = (ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz;
+        vec3 finalColor = LambertianColor * color.xyz;
 
         switch (debug_color_source){
-        case 1: return vec4 (color_offset.xyz
-                             + lightness*(ambientColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
-                             transparency_offset+transparency*color.a);
-        case 2: return vec4 (color_offset.xyz + vec3(diffuse), 1.0);
-        case 3: return vec4 (color_offset.xyz
-                             + lightness*(ambientColor.xyz+specular*specularColor.xyz)*color.xyz,
-                             transparency_offset+transparency*color.a);
-        case 4: return color_offset + lightness*color;
-        case 5:
-                finalColor = applyFog (finalColor, dist, viewDir);
-                return color_offset + vec4(lightness*finalColor, color.a);
-        case 6:
-                return color_offset + vec4 (mix (finalColor.xyz, nois, 0.2), color.a);
-        case 7:
-                return color_offset + vec4 (nois, color.a);
-                
-        case 8: return color_offset + lightness*color;
-        case 9: return color_offset + color;
-        case 10: return color_offset + vec4(normal*0.5+0.5, 1.0);
-        case 11: return color_offset + vec4(normal.y*0.5+0.5, 0.,0., 1.0);
-        case 12: return color_offset + vec4(normal.x*0.5+0.5, 0.,0., 1.0);
-        case 13: return color_offset + specular*color;
-        case 14: return color_offset + vec4(vec3(specular,normal.y,diffuse),1.0);
-        case 15: return color_offset + vec4(vec3(dist/100.), 1.0);
-        case 16: return color_offset + specular*lightness*vec4(1);
+        case 1: return vec4 (lightness*DiffuseColor, 1.);
+        case 2: return vec4 (lightness*SpecularColor, 1.);
+        case 3: return vec4 (lightness*LambertianColor, 1.);
+        case 4: return lightness*color;
+        case 5: finalColor = applyFog (finalColor, dist, viewDir); return vec4(lightness*finalColor, 1.);
+        case 6: return vec4 (mix (finalColor.xyz, nois, 0.2), 1.);
+        case 7: return vec4 (nois, 1.);
+        case 8: return lightness*color;
+        case 9: return color;
+        case 10: return vec4(normal*0.5+0.5, 1.0);
+        case 11: return vec4(normal.y*0.5+0.5, 0.,0., 1.0);
+        case 12: return vec4(normal.x*0.5+0.5, 0.,0., 1.0);
+        case 13: return specular*color;
+        case 14: return vec4(vec3(specular,normal.y,diffuse),1.0);
+        case 15: return vec4(vec3(dist/100.), 1.0);
+        case 16: return specular*lightness*vec4(1);
         case 17: return vec4(vec3(lightness*(gl_FragCoord.z+transparency_offset)), 1.0f);
         case 18: return vec4(vec3(lightness*(gl_FragCoord.w+transparency_offset)), 1);
         case 19: return vec4(lightness*gl_FragCoord.w+vec4(transparency_offset));
-        default: return vec4 (color_offset.xyz
-                              + lightness*finalColor,
-                              transparency_offset);
-                // transparency_offset+transparency*color.a);
+        default: return vec4 (lightness*finalColor, 1.);
         }
 }
 
@@ -227,7 +217,7 @@ vec4 shadeLambertian(vec3 vertex, vec3 vertexEye,
                      vec3 normal, vec4 color)
 {
         // world-space
-        vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
+        vec3 viewDir = normalize(eyePosWorld.xyz - vertexEye);
         vec3 h = normalize(-lightDirWorld.xyz + viewDir);
         vec3 n = normalize(normal);
 
@@ -236,10 +226,9 @@ vec4 shadeLambertian(vec3 vertex, vec3 vertexEye,
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
 
-        return vec4 (color_offset.xyz
-                     + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
-                     transparency_offset);
-        //                     transparency_offset+transparency*color.a);
+        vec3 LambertianColor = ambientColor.xyz + specular*specularColor.xyz + diffuse*diffuseColor.xyz;
+
+        return vec4 (lightness*LambertianColor * color.xyz, materialColor.a);
 }
 
 // Lambertian light model for surface
@@ -248,7 +237,7 @@ vec4 shadeLambertianXColor(vec3 vertex, vec3 vertexEye,
                            vec3 normal, vec4 color)
 {
         // world-space
-        vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
+        vec3 viewDir = normalize(eyePosWorld.xyz - vertexEye);
         vec3 h = normalize(-lightDirWorld.xyz + viewDir);
         vec3 n = normalize(normal);
 
@@ -257,12 +246,11 @@ vec4 shadeLambertianXColor(vec3 vertex, vec3 vertexEye,
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
 
-        vec3 xyz_values = map_xyz_values (vertex.xz);
+        vec3 LambertianColor = ambientColor.xyz + specular*specularColor.xyz + diffuse*diffuseColor.xyz;
+
+        //vec3 xyz_values = map_xyz_values (vertex.xz);
         
-        return vec4 (color_offset.xyz
-                     + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*color.xyz,
-                     transparency_offset);
-        //                     transparency_offset+transparency*color.a);
+        return vec4 (lightness * LambertianColor * color.xyz, materialColor.a);
 }
 
 // Lambertian light model for surface, use homogenious surface color = material_color
@@ -271,19 +259,17 @@ vec4 shadeLambertianMaterialColor(vec3 vertex, vec3 vertexEye,
                                   vec3 normal, vec4 color)
 {
         // world-space
-        vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
+        vec3 viewDir = normalize(eyePosWorld.xyz - vertexEye);
         vec3 h = normalize(-lightDirWorld.xyz + viewDir);
         vec3 n = normalize(normal);
 
         //float diffuse = saturate( dot(n, -lightDir));
         float diffuse = saturate( (dot(n, -lightDirWorld.xyz) + wrap) / (1.0 + wrap));   // wrap
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
-        float specular = pow( saturate(dot(h, n)), shininess);
+        float specular = pow (saturate(dot(h, n)), shininess);
+        vec3 LambertianColor = ambientColor.xyz + specular*specularColor.xyz + diffuse*diffuseColor.xyz;
 
-        return vec4 (color_offset.xyz
-                     + lightness*(ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*materialColor.xyz,
-                     transparency_offset);
-        //                     transparency_offset+transparency*materialColor.a);
+        return vec4 (lightness * LambertianColor * materialColor.xyz, materialColor.a);
 }
 
 // Lambertian light model for surface, use homogenious surface color = material_color
@@ -292,7 +278,7 @@ vec4 shadeLambertianMaterialColorFog(vec3 vertex, vec3 vertexEye,
                                      vec3 normal, vec4 color)
 {
         // world-space
-        vec3 viewDir = normalize(eyePosWorld.xyz - vertex);
+        vec3 viewDir = normalize(eyePosWorld.xyz - vertexEye);
         vec3 h = normalize(-lightDirWorld.xyz + viewDir);
         vec3 n = normalize(normal);
 
@@ -300,15 +286,15 @@ vec4 shadeLambertianMaterialColorFog(vec3 vertex, vec3 vertexEye,
         float diffuse = saturate( (dot(n, -lightDirWorld.xyz) + wrap) / (1.0 + wrap));   // wrap
         //float diffuse = dot(n, -lightDir)*0.5+0.5;
         float specular = pow( saturate(dot(h, n)), shininess);
-
-        vec3 finalColor = (ambientColor.xyz+specular*specularColor.xyz+diffuse*diffuseColor.xyz)*materialColor.xyz;
+        vec3 LambertianColor = ambientColor.xyz + specular*specularColor.xyz + diffuse*diffuseColor.xyz;
+        vec3 finalColor = LambertianColor * materialColor.xyz;
 
         //float dist = length(vertexEye);
         float dist = length(eyePosWorld.xyz);
         //finalColor = applyFog(finalColor, dist);
         finalColor = applyFog(finalColor, dist, viewDir);
 
-        return vec4 (color_offset.xyz + lightness*finalColor, transparency_offset);
+        return vec4 (lightness*finalColor, materialColor.a);
 }
 
 #if 0
@@ -318,7 +304,7 @@ vec2 terraincoord(vec2 position){
 #endif
 
 vec3 volumecoord(vec3 position){  // aspect y?? aspect z??
-        return vec3 (0.5 - position.x,  0.5 - position.z, 0.5 - position.y);
+        return vec3 (0.5 - position.x,  -(0.5 - (-position.z)/aspect), 0.5 - position.y);
 }
 
 // Volume shade model for 3D cube interior -- tracing eye vector
@@ -326,37 +312,39 @@ subroutine( shadeModelType )
 vec4 shadeVolume(vec3 vertex, vec3 vertexEye, 
                  vec3 normal, vec4 color)
 {
+#if 1
+        vec3 vc  = volumecoord (vertex);
+        vec4 zz  = texture (Volume3D_Z_Data, vc);
+
+        float value = clamp (zz.a, 0, 1);
+        return vec4 (vec3( texture (GXSM_Palette, value)), transparency_offset+value*transparency); // transparency_offset + transparency * xxx;
+#else
         // world-space, vertex on face, trace via volume
-        vec3 viewDir = normalize (eyePosWorld.xyz - vertexEye);
-        //vec3 viewDir = vec3 (0,0,1);
+        vec3 viewDir = normalize (eyePosWorld.xyz - vertexEye); // vie direction in world space
+        vec4 modelViewDir = ViewAlignedModelView * vec4 (viewDir, 1.0); // in model space
 
         int  num_volume_slices = 20;
-        float bias = 0.05;
-        vec4 sum = vec4(0);
-        //vec3 step = viewDir / num_volume_slices; // * 1.45
-        vec3 step = 0.05*viewDir;
+        vec3 step = modelViewDir.xyz / (1.45*num_volume_slices);
         vec3 vp = vertex;
-
-        vec4 col10;
-        vec4 col5;
         
         // ray march front to back
+        float sum = 0;
         for(int i=0; i<num_volume_slices; i++) {
                 vec3 vc  = volumecoord (vp);
                 vec4 zz  = texture (Volume3D_Z_Data, vc);
-                vec4 col = texture (GXSM_Palette, zz.z); // zz.a
-                
-                sum += col*bias;
-                //col.rgb *= col.a;               // pre-multiply alpha
-                //sum = sum + col*(1.0 - sum.a);
+                sum += zz.a; // zz.a
                 vp += step;
         }
-        sum.a = (sum.x+sum.y+sum.z)/3.;
-        //        sum /= num_volume_slices;
+        float value = clamp (transparency * sum/num_volume_slices, 0, 1);
+        return vec4 (vec3(value), 1.); // transparency_offset + transparency * xxx;
 
-        return sum;
+        //vec4 col = texture (GXSM_Palette, value);
+        //return vec4 (lightness*col.xyz, 1.); // transparency_offset + transparency * xxx;
+#endif
 }
 
+                //col.rgb *= col.a;               // pre-multiply alpha
+                //sum = sum + col*(1.0 - sum.a);
 
 void main()
 {
@@ -365,7 +353,9 @@ void main()
                 FragColor = shadeModel (In.Vertex, In.VertexEye,
                                         In.Normal, In.Color);
         } else {
-                FragColor = shadeLambertianMaterialColor (In.Vertex, In.VertexEye,
-                                                          In.Normal, In.Color);
+                //FragColor = shadeLambertianMaterialColor (In.Vertex, In.VertexEye,
+                //                                          In.Normal, In.Color);
+                FragColor = shadeModel (In.Vertex, In.VertexEye,
+                                        In.Normal, materialColor);
         }
 }
