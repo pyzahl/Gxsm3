@@ -6,7 +6,7 @@
  * plugin_helper reports your answers as
 author		=Percy Zahl
 email	        	=zahl@users.sf.net
-pluginname		=abs_scan
+pluginname		=make_volume
 pluginmenuentry 	=Add X
 menupath		=Math/Arithmetic/
 entryplace		=Arithmetic
@@ -15,7 +15,7 @@ abouttext		=adds the active to X channel
 smallhelp		=add actibe and X
 longhelp		=This is a detailed help for my Plugin.
  * 
- * Gxsm Plugin Name: abs_scan.C
+ * Gxsm Plugin Name: make_volume.C
  * ========================================
  * 
  * Copyright (C) 1999 The Free Software Foundation
@@ -46,14 +46,14 @@ longhelp		=This is a detailed help for my Plugin.
  * All "% OptPlugInXXX" tags are optional and can be removed or commented in
  * --------------------------------------------------------------------------------
 % BeginPlugInDocuSection
-% PlugInDocuCaption: Absolute Value
-% PlugInName: abs_scan
+% PlugInDocuCaption: Absolute value
+% PlugInName: make_volume
 % PlugInAuthor: Percy Zahl
 % PlugInAuthorEmail: zahl@users.sf.net
 % PlugInMenuPath: Math/Arithmetic/Absoluet Value
 
 % PlugInDescription
-Takes the absolute value for the data.
+Takes the absoluet value.
 
 % PlugInUsage
 Call \GxsmMenu{Math/Arithmetic/Absolute Value}.
@@ -72,10 +72,10 @@ into a new created math channel. The result is of type \GxsmEmph{float}.
 #include "gxsm/plugin.h"
 
 // Plugin Prototypes
-static void abs_scan_init( void );
-static void abs_scan_about( void );
-static void abs_scan_configure( void );
-static void abs_scan_cleanup( void );
+static void make_volume_init( void );
+static void make_volume_about( void );
+static void make_volume_configure( void );
+static void make_volume_cleanup( void );
 
 // Define Type of math plugin here, only one line should be commented in!!
 #define GXSM_ONE_SRC_PLUGIN__DEF
@@ -84,14 +84,14 @@ static void abs_scan_cleanup( void );
 // Math-Run-Function, use only one of (automatically done :=)
 #ifdef GXSM_ONE_SRC_PLUGIN__DEF
 // "OneSrc" Prototype
- static gboolean abs_scan_run( Scan *Src, Scan *Dest );
+ static gboolean make_volume_run( Scan *Src, Scan *Dest );
 #else
 // "TwoSrc" Prototype
- static gboolean abs_scan_run( Scan *Src1, Scan *Src2, Scan *Dest );
+ static gboolean make_volume_run( Scan *Src1, Scan *Src2, Scan *Dest );
 #endif
 
 // Fill in the GxsmPlugin Description here
-GxsmPlugin abs_scan_pi = {
+GxsmPlugin make_volume_pi = {
   NULL,                   // filled in and used by Gxsm, don't touch !
   NULL,                   // filled in and used by Gxsm, don't touch !
   0,                      // filled in and used by Gxsm, don't touch !
@@ -100,7 +100,7 @@ GxsmPlugin abs_scan_pi = {
                           // just after init() is called !!!
   // ----------------------------------------------------------------------
   // Plugins Name, CodeStly is like: Name-M1S|M2S-BG|F1D|F2D|ST|TR|Misc
-  "abs_scan-"
+  "make_volume-"
 #ifdef GXSM_ONE_SRC_PLUGIN__DEF
   "M1S"
 #else
@@ -118,27 +118,27 @@ GxsmPlugin abs_scan_pi = {
   // Author(s)
   "Percy Zahl",
   // Menupath to position where it is appendet to
-  "math-arithmetic-section",
+  "math-misc-section",
   // Menuentry
-  N_("Absolute Value"),
+  N_("Make Volume"),
   // help text shown on menu
-  N_("Takes the absolute value"),
+  N_("Make a volume data set"),
   // more info...
-  "absolute value of data",
+  "make a test data set",
   NULL,          // error msg, plugin may put error status msg here later
   NULL,          // Plugin Status, managed by Gxsm, plugin may manipulate it too
   // init-function pointer, can be "NULL", 
   // called if present at plugin load
-  abs_scan_init,  
+  make_volume_init,  
   // query-function pointer, can be "NULL", 
   // called if present after plugin init to let plugin manage it install itself
   NULL, // query should be "NULL" for Gxsm-Math-Plugin !!!
   // about-function, can be "NULL"
   // can be called by "Plugin Details"
-  abs_scan_about,
+  make_volume_about,
   // configure-function, can be "NULL"
   // can be called by "Plugin Details"
-  abs_scan_configure,
+  make_volume_configure,
   // run-function, can be "NULL", if non-Zero and no query defined, 
   // it is called on menupath->"plugin"
   NULL, // run should be "NULL" for Gxsm-Math-Plugin !!!
@@ -147,31 +147,31 @@ GxsmPlugin abs_scan_pi = {
   NULL, // direct menu entry callback1 or NULL
   NULL, // direct menu entry callback2 or NULL
 
-  abs_scan_cleanup
+  make_volume_cleanup
 };
 
 // special math Plugin-Strucure, use
-// GxsmMathOneSrcPlugin abs_scan_m1s_pi -> "OneSrcMath"
-// GxsmMathTwoSrcPlugin abs_scan_m2s_pi -> "TwoSrcMath"
+// GxsmMathOneSrcPlugin make_volume_m1s_pi -> "OneSrcMath"
+// GxsmMathTwoSrcPlugin make_volume_m2s_pi -> "TwoSrcMath"
 #ifdef GXSM_ONE_SRC_PLUGIN__DEF
- GxsmMathOneSrcPlugin abs_scan_m1s_pi
+ GxsmMathOneSrcPlugin make_volume_m1s_pi
 #else
- GxsmMathTwoSrcPlugin abs_scan_m2s_pi
+ GxsmMathTwoSrcPlugin make_volume_m2s_pi
 #endif
  = {
    // math-function to run, see prototype(s) above!!
-   abs_scan_run
+   make_volume_run
  };
 
 // Text used in Aboutbox, please update!!
-static const char *about_text = N_("Gxsm abs_scan Plugin\n\n"
-                                   "takes the absolute value of the data");
+static const char *about_text = N_("Gxsm make_volume Plugin\n\n"
+                                   "makes a test volume data set");
 
 // Symbol "get_gxsm_plugin_info" is resolved by dlsym from Gxsm, used to get Plugin's info!! 
 // Essential Plugin Function!!
 GxsmPlugin *get_gxsm_plugin_info ( void ){ 
-  abs_scan_pi.description = g_strdup_printf(N_("Gxsm MathOneArg abs_scan plugin %s"), VERSION);
-  return &abs_scan_pi; 
+  make_volume_pi.description = g_strdup_printf(N_("Gxsm MathOneArg make_volume plugin %s"), VERSION);
+  return &make_volume_pi; 
 }
 
 // Symbol "get_gxsm_math_one|two_src_plugin_info" is resolved by dlsym from Gxsm, 
@@ -179,27 +179,27 @@ GxsmPlugin *get_gxsm_plugin_info ( void ){
 // Essential Plugin Function!!
 #ifdef GXSM_ONE_SRC_PLUGIN__DEF
 GxsmMathOneSrcPlugin *get_gxsm_math_one_src_plugin_info( void ) {
-  return &abs_scan_m1s_pi; 
+  return &make_volume_m1s_pi; 
 }
 #else
 GxsmMathTwoSrcPlugin *get_gxsm_math_two_src_plugin_info( void ) { 
-  return &abs_scan_m2s_pi; 
+  return &make_volume_m2s_pi; 
 }
 #endif
 
 /* Here we go... */
 // init-Function
-static void abs_scan_init(void)
+static void make_volume_init(void)
 {
-  PI_DEBUG (DBG_L2, "abs_scan Plugin Init");
+  PI_DEBUG (DBG_L2, "make_volume Plugin Init");
 }
 
 // about-Function
-static void abs_scan_about(void)
+static void make_volume_about(void)
 {
-  const gchar *authors[] = { abs_scan_pi.authors, NULL};
+  const gchar *authors[] = { make_volume_pi.authors, NULL};
   gtk_show_about_dialog (NULL, 
-			 "program-name",  abs_scan_pi.name,
+			 "program-name",  make_volume_pi.name,
 			 "version", VERSION,
 			 "license", GTK_LICENSE_GPL_3_0,
 			 "comments", about_text,
@@ -209,25 +209,40 @@ static void abs_scan_about(void)
 }
 
 // configure-Function
-static void abs_scan_configure(void)
+static void make_volume_configure(void)
 {
-  if(abs_scan_pi.app)
-    abs_scan_pi.app->message("abs_scan Plugin Configuration");
+  if(make_volume_pi.app)
+    make_volume_pi.app->message("make_volume Plugin Configuration");
 }
 
 // cleanup-Function
-static void abs_scan_cleanup(void)
+static void make_volume_cleanup(void)
 {
-  PI_DEBUG (DBG_L2, "abs_scan Plugin Cleanup");
+  PI_DEBUG (DBG_L2, "make_volume Plugin Cleanup");
+}
+
+double delta(double x, double a){
+        double xa = x/a;
+        return exp(-xa*xa) / (a * sqrt(M_PI));
 }
 
 // run-Function
-static gboolean abs_scan_run(Scan *Src, Scan *Dest)
+static gboolean make_volume_run(Scan *Src, Scan *Dest)
 {
+        double nx2 = Dest->mem2d->GetNx ()/2.;
+        double ny2 = Dest->mem2d->GetNy ()/2.;
+        double nv2 = Dest->mem2d->GetNv ()/2.;
+        double av  = (double)Dest->mem2d->GetNx () / Dest->mem2d->GetNv ();
+        
 	for(int v=0; v<Dest->mem2d->GetNv () && v<Src->mem2d->GetNv (); ++v)
 		for(int line=0; line<Dest->mem2d->GetNy (); ++line)
-                        for(int col=0; col<Dest->mem2d->GetNx (); ++col)
-				Dest->mem2d->PutDataPkt (fabs (Src->mem2d->GetDataPkt (col, line, v)), col, line, v);
+                        for(int col=0; col<Dest->mem2d->GetNx (); ++col){
+                                double x=col-nx2;
+                                double y=line-ny2;
+                                double z=v-nv2;
+                                double I=delta (x/10, 0.2) + delta (y/20, 0.3) + delta (av*z/20, 0.4);
+				Dest->mem2d->PutDataPkt (I, col, line, v);
+                        }
 	return MATH_OK;
 }
 
