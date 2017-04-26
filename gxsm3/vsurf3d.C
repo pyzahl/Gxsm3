@@ -164,7 +164,7 @@ namespace
         // Model View and Projection
         GLuint Uniform_ubo_list[3];
         GLuint const ModelViewMat_block(0); // => 0
-        ubo::uniform_model_view Block_ModelViewMat(glm::mat4(1.),glm::mat4(1.));
+        ubo::uniform_model_view Block_ModelViewMat(glm::mat4(1.), glm::mat4(1.), glm::mat4(1.));
 
         GLuint const SurfaceGeometry_block(1); // => 1
         ubo::uniform_surface_geometry Block_SurfaceGeometry(1.,0.1,0.,0., glm::vec2(0.1));
@@ -195,17 +195,13 @@ namespace
          );
 
         // vertex shader Function references
-        GLuint Uniform_vertex_setup[2];
+        GLuint Uniform_vertex_setup[1];
         GLuint Uniform_vertexFlat(0);
         GLuint Uniform_vertexDirect(0);
         GLuint Uniform_vertexViewMode(0);
         GLuint Uniform_vertexY(0);
         GLuint Uniform_vertexXChannel(0);
         GLuint Uniform_vertex_plane_at(0);
-
-        GLuint Uniform_vertex_XZplane(0);
-        GLuint Uniform_vertex_XYplane(0);
-        GLuint Uniform_vertex_ZYplane(0);
 
         //-- evaluation shader Function references
         GLuint Uniform_evaluation_setup[3];
@@ -222,6 +218,7 @@ namespace
         GLuint Uniform_evaluation_vertex_XZplane(0);
         GLuint Uniform_evaluation_vertex_XYplane(0);
         GLuint Uniform_evaluation_vertex_ZYplane(0);
+        GLuint Uniform_evaluation_vertex_Mplane(0);
 
         // fragment shader Function references
         GLuint Uniform_shadeTerrain(0);
@@ -1087,10 +1084,6 @@ private:
                         Uniform_vertexXChannel    = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertex_height_x" );
                         Uniform_vertex_plane_at   = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertex_plane_at" );
 
-                        Uniform_vertex_XZplane    = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertex_XZ_plane" );
-                        Uniform_vertex_XYplane    = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertex_XY_plane" );
-                        Uniform_vertex_ZYplane    = glGetSubroutineIndex (Tesselation_ProgramName, GL_VERTEX_SHADER, "vertex_ZY_plane" );
-                        
                         Uniform_evaluationVertexFlat      = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "height_flat" );
                         Uniform_evaluationVertexDirect    = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "height_direct" );
                         Uniform_evaluationVertexXChannel  = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "height_z" );
@@ -1105,6 +1098,7 @@ private:
                         Uniform_evaluation_vertex_XZplane = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "eval_vertex_XZ_plane" );
                         Uniform_evaluation_vertex_XYplane = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "eval_vertex_XY_plane" );
                         Uniform_evaluation_vertex_ZYplane = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "eval_vertex_ZY_plane" );
+                        Uniform_evaluation_vertex_Mplane = glGetSubroutineIndex (Tesselation_ProgramName, GL_TESS_EVALUATION_SHADER, "eval_vertex_M_plane" );
 
                         Uniform_shadeTerrain      = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeTerrain" );
                         Uniform_shadeDebugMode    = glGetSubroutineIndex (Tesselation_ProgramName, GL_FRAGMENT_SHADER, "shadeDebugMode" );
@@ -1367,8 +1361,11 @@ public:
                 
 		glm::mat4 Model = glm::mat4(1.0f);
 		Block_ModelViewMat.ModelView = this->modelView() * Model;
+                // camera - lookAt
+		//Block_ModelViewMat.ViewAlignedModelView = Camera * glm::mat4(1.0f); //glm::inverse (Block_ModelViewMat.ModelView);
+                Block_ModelViewMat.ViewAlignedModelView = glm::rotate ( glm::inverse (this->modelView()), glm::radians(90.0f), glm::vec3(1.f, 0.f, 0.f)) ; 
 		Block_ModelViewMat.ModelViewProjection = Projection * Camera * Block_ModelViewMat.ModelView;
-
+                        
                 /* clear the viewport; the viewport is automatically resized when
                  * the GtkGLArea gets a new size allocation
                  */
@@ -1382,7 +1379,7 @@ public:
                 Block_SurfaceGeometry.aspect = (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx;
                 // setting GLv_data.hskl to 1 means same x,y and z scale.
                 Block_SurfaceGeometry.height_scale  = GL_height_scale;
-                Block_SurfaceGeometry.height_offset = 0.; // s->GLv_data.slice_offset;
+                Block_SurfaceGeometry.height_offset = s->GLv_data.slice_offset;
                 Block_SurfaceGeometry.plane_at = 0.;
                 Block_SurfaceGeometry.delta = glm::vec2 (1.0f/(s->XPM_x-1), Block_SurfaceGeometry.aspect/(s->XPM_y-1));
                 updateSurfaceGeometry ();
@@ -1405,7 +1402,7 @@ public:
                 Block_FragmentShading.fogExp = s->GLv_data.fog_density/100.; // = 0.1;
 
                 Block_FragmentShading.shininess = 4.*(1.00001-s->GLv_data.surf_mat_shininess[0]/100.);
-                Block_FragmentShading.lightness = s->GLv_data.ColorContrast;
+                Block_FragmentShading.lightness = s->GLv_data.Lightness;
                 Block_FragmentShading.light_attenuation = 0.;
 
                 Block_FragmentShading.transparency        = s->GLv_data.transparency;
@@ -1451,7 +1448,6 @@ public:
                         Uniform_evaluation_setup[0] = Uniform_evaluationVertexDirect;
                         break;
                 }
-                Uniform_vertex_setup[1] = Uniform_vertex_XZplane;
 
                 checkError ("render -- configure vertex_source");
 
@@ -1489,7 +1485,7 @@ public:
 
                 switch (s->GLv_data.slice_direction[0]){
                 case 'Z':
-                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 2, Uniform_vertex_setup);
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
                         surface_plane->draw ();
                         break;
                 case 'X':
@@ -1497,9 +1493,8 @@ public:
                         Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
                         Block_SurfaceGeometry.plane_at = 0.5;
                         updateSurfaceGeometry ();
-                        Uniform_vertex_setup[1] = Uniform_vertex_ZYplane;
                         Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_ZYplane;
-                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 2, Uniform_vertex_setup);
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
                         glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 3, Uniform_evaluation_setup);
                         surface_plane->draw ();
                         break;
@@ -1508,33 +1503,42 @@ public:
                         Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
                         Block_SurfaceGeometry.plane_at = 0.5;
                         updateSurfaceGeometry ();
-                        Uniform_vertex_setup[1] = Uniform_vertex_XYplane;
                         Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_XYplane;
-                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 2, Uniform_vertex_setup);
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
                         glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 3, Uniform_evaluation_setup);
                         surface_plane->draw ();
                         break;
-                case 'V':
+                case 'S':
                         Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
                         for (int i=0; i<6; ++i){
-                                g_message ("GL-Volume-Face[%d]",i);
                                 Block_SurfaceGeometry.plane_at = (i%2 == 0 ? 0.:1.);
                                 updateSurfaceGeometry ();
                                 switch (i){
                                 case 0:
-                                case 1: Uniform_vertex_setup[1] = Uniform_vertex_XZplane;
+                                case 1:
                                         Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_XZplane;
                                         break;
                                 case 2:
-                                case 3: Uniform_vertex_setup[1] = Uniform_vertex_XYplane;
+                                case 3:
                                         Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_XYplane;
                                         break;
                                 case 4:
-                                case 5: Uniform_vertex_setup[1] = Uniform_vertex_ZYplane;
+                                case 5:
                                         Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_ZYplane;
                                         break;
                                 }
-                                glUniformSubroutinesuiv (GL_VERTEX_SHADER, 2, Uniform_vertex_setup);
+                                glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 3, Uniform_evaluation_setup);
+                                surface_plane->draw ();
+                        }
+                        break;
+                case 'V':
+                        Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
+                        for (int i=0; i<20; ++i){
+                                Block_SurfaceGeometry.plane_at = 0.05f*i;
+                                updateSurfaceGeometry ();
+                                Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_Mplane;
                                 glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 3, Uniform_evaluation_setup);
                                 surface_plane->draw ();
                         }
@@ -1907,18 +1911,6 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
                         surface_z_data_buffer[i].y = 0.;
                         surface_z_data_buffer[i].z = 0.;
                 }
-        }
-        
-        if (XPM_v > 1){
-                // adjust slice height level, renormalize
-                surface_z_data_buffer[i].w /= XPM_v;
-                surface_z_data_buffer[i].w += (GLfloat)vi*GLv_data.slice_offset*0.5/XPM_v;
-                surface_z_data_buffer[i].x /= XPM_v;
-                surface_z_data_buffer[i].x += (GLfloat)vi*GLv_data.slice_offset*0.5/XPM_v;
-                surface_z_data_buffer[i].y /= XPM_v;
-                surface_z_data_buffer[i].y += (GLfloat)vi*GLv_data.slice_offset*0.5/XPM_v;
-                surface_z_data_buffer[i].z /= XPM_v;
-                surface_z_data_buffer[i].z += (GLfloat)vi*GLv_data.slice_offset*0.5/XPM_v;
         }
 }
 

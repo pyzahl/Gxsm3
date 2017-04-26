@@ -97,7 +97,7 @@ GxsmPlugin findlocmax_pi = {
 	NULL,
 	0,
 	NULL,
-	"Findlocmax-M1S-Misc",
+	g_strdup("Findlocmax-M1S-Misc"),
 	"+SARLS",
 	NULL,
 	"Nobody?, PZ",

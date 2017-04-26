@@ -13,13 +13,16 @@ namespace ubo
 		uniform_model_view
 		(
                  glm::mat4 const & ModelView,
+                 glm::mat4 const & ViewAlignedModelView,
                  glm::mat4 const & ModelViewProjection
                  ) :
 			ModelView(ModelView),
+			ViewAlignedModelView(ViewAlignedModelView),
 			ModelViewProjection(ModelViewProjection)
 		{}
 
 		glm::mat4 ModelView;
+		glm::mat4 ViewAlignedModelView;
 		glm::mat4 ModelViewProjection;
 	};
         

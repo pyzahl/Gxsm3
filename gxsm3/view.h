@@ -279,7 +279,7 @@ typedef struct{
 	gchar ShadeModel[30];
 	gchar ColorSrc[30];	
 
-	float ColorContrast, ColorOffset, ColorSat;
+	float Lightness, ColorOffset, ColorSat;
 
 	int ZeroPlane;
 	int InstantUpdate;

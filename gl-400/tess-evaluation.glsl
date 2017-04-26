@@ -131,6 +131,11 @@ vec3 eval_vertex_ZY_plane(vec3 pos)
         return pos.yxz;
 }
 
+subroutine( eval_vertexPlaneType )
+vec3 eval_vertex_M_plane(vec3 pos)
+{
+        return vec3 (ViewAlignedModelView * vec4 (pos, 1.0));
+}
 
 
 float height_at_delta(vec2 delta)
@@ -148,48 +153,20 @@ void main()
 	vec4 a = mix(gl_in[1].gl_Position, gl_in[0].gl_Position, u);
 	vec4 b = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, u);
 	vec4 position = mix(a, b, v);
-        vec3 tmp = eval_vertexPlane (position.xyz);
-        position.xyz = tmp;
         vec2 tc = terraincoord (position.xz);
         vec4 zz = texture (Surf3D_Z_Data, tc);
         position.y = eval_vertexModel (zz);
 
-#if 0
-#if 0
-        // handle side directly
-        if (tc.x < 0.0001)
-                Out.Normal = vec3 (-1,0,0);
-        else if (tc.x > 0.9999)
-                Out.Normal = vec3 (1,0,0);
-        else if (tc.y < 0.0001)
-                Out.Normal = vec3 (0,0,-1);
-        else if (tc.y > 0.9999)
-                Out.Normal = vec3 (0,0,1);
-        else {
-                // calculate normal
-                vec3 pa = vec3(position.x + delta.x, height_at_delta (position.xz + vec2 (delta.x, 0.)), position.z);
-                vec3 pb = vec3(position.x,           height_at_delta (position.xz + vec2 (0., delta.y)), position.z + delta.y);
-                Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
-        }
-#else
-        // always calculate normal
-        vec3 pa = vec3(position.x + delta.x, height_at_delta (position.xz + vec2 (delta.x, 0.)), position.z);
-        vec3 pb = vec3(position.x,           height_at_delta (position.xz + vec2 (0., delta.y)), position.z + delta.y);
-        Out.Normal    = normalize(cross(pa-position.xyz, pb-position.xyz));
-#endif
-#else
         // calculate normal from neightbor heights
         vec3 off = vec3 (delta.xy, 0.0);
         float dxdz = height_at_delta (position.xz - off.xz) - height_at_delta (position.xz + off.xz);
         float dydz = height_at_delta (position.xz - off.zy) - height_at_delta (position.xz + off.zy);
         // deduce terrain normal
         Out.Normal = eval_vertexPlane (normalize (vec3(dxdz, 2*delta.x, dydz/aspect)));
-#endif
-        
-        
+
         Out.Color     = colorModel (zz);
 
         Out.Vertex    = eval_vertexPlane (position.xyz);
-        Out.VertexEye = vec3 (ModelView * vec4(Out.Vertex, 1));  // eye space
+        Out.VertexEye = vec3 (ModelView * vec4(Out.Vertex, 1.0));  // eye space
         gl_Position = ModelViewProjection * vec4(Out.Vertex, 1.0);
 }

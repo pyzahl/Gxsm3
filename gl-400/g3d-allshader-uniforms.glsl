@@ -14,6 +14,7 @@ layout(std140, column_major) uniform;
 layout (std140) uniform ModelViewMatrices
 {
         uniform mat4 ModelView;
+        uniform mat4 ViewAlignedModelView;
         uniform mat4 ModelViewProjection;
 };
 

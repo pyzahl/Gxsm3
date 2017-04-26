@@ -4,7 +4,8 @@ AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
 lib_LTLIBRARIES = libZ_limiter.la libmax.la libinvert_z.la \
 		  libdiv_scan.la libmul_scan.la \
 		  libsub_scan.la libadd_scan.la \
-		  liblog_z.la libZ_rescale.la libZ_usr_rescale.la
+		  liblog_z.la libZ_rescale.la libZ_usr_rescale.la \
+		  libabs_scan.la
 
 liblog_z_la_SOURCES = log_z.C
 liblog_z_la_LDFLAGS = -module -export-dynamic -avoid-version
@@ -35,3 +36,7 @@ libmax_la_LDFLAGS = -module -export-dynamic -avoid-version
 
 libZ_limiter_la_SOURCES = Z_limiter.C
 libZ_limiter_la_LDFLAGS = -module -export-dynamic -avoid-version
+
+libabs_scan_la_SOURCES = abs_scan.C
+libabs_scan_la_LDFLAGS = -module -export-dynamic -avoid-version
+
