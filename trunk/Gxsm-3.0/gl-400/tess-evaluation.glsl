@@ -84,31 +84,31 @@ float height_z(vec4 zz)
 subroutine( colorModelType )
 vec4 colorFlat(vec4 zz)
 {
-        return texture (GXSM_Palette, 0.1*0.5);
+        return texture (GXSM_Palette, 0.5);
 }
 
 subroutine( colorModelType )
 vec4 colorDirect(vec4 zz)
 {
-        return texture (GXSM_Palette, 0.1*zz.a);
+        return texture (GXSM_Palette, color_offset.x+color_offset.y*zz.a);
 }
 
 subroutine( colorModelType )
 vec4 colorViewMode(vec4 zz)
 {
-        return texture (GXSM_Palette, 0.1*zz.z);
+        return texture (GXSM_Palette, color_offset.x+color_offset.y*zz.z);
 }
 
 subroutine( colorModelType )
 vec4 colorXChannel(vec4 zz)
 {
-        return texture (GXSM_Palette, 0.1*zz.x);
+        return texture (GXSM_Palette, color_offset.x+color_offset.y*zz.x);
 }
 
 subroutine( colorModelType )
 vec4 colorY(vec4 zz)
 {
-        return texture (GXSM_Palette, 0.1*zz.y);
+        return texture (GXSM_Palette, color_offset.x+color_offset.y*zz.y);
 }
 
 
@@ -164,7 +164,7 @@ void main()
         // deduce terrain normal
         Out.Normal = eval_vertexPlane (normalize (vec3(dxdz, 2*delta.x, dydz/aspect.y)));
 
-        Out.Color     = colorModel (color_offset.x+zz);
+        Out.Color     = colorModel (zz);
 
         Out.Vertex    = eval_vertexPlane (position.xyz);
         Out.VertexEye = vec3 (ModelView * vec4(Out.Vertex, 1.0));  // eye space

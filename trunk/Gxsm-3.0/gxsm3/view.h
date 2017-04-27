@@ -354,7 +354,6 @@ private:
 #define GXSM_GPU_PALETTE_ENTRIES 8192
         glm::vec4 *surface_z_data_buffer;
         glm::vec4 ColorLookup[GXSM_GPU_PALETTE_ENTRIES];
-        int maxcolors;
         
 public:
         void create_surface_buffer ();
@@ -362,6 +361,7 @@ public:
         gboolean check_dimension_changed();
         
         gint XPM_x, XPM_y, XPM_v;
+        int maxcolors;
         size_t size;
         gint scrwidth;
         gint scrheight;

@@ -313,20 +313,20 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	( "V3dControl.MatSurf/Lightness", "Lightness", "0.65", 
 	  GET_GLV_OFFSET (&GLvd_offset.Lightness), 
 	  CScale_OptionsList, N_("Surface Material"),
-	  N_("Color Lightness or Exposure level"), NULL
+	  N_("Color Lightness or Exposure level -- for a typical light mix around 0.6"), NULL
 		),
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.MatSurf/ColorOffset", "Color Offset", "0", 
 	  GET_GLV_OFFSET (&GLvd_offset.ColorOffset), 
 	  CScale_OptionsList, N_("Surface Material"),
-	  N_("Color Contrast: shift color source"), NULL
+	  N_("Color Contrast: shift color source. Default=0"), NULL
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.MatSurf/ColorSaturation", "Color Saturation", "1", 
 	  GET_GLV_OFFSET (&GLvd_offset.ColorSat), 
 	  CScale_OptionsList, N_("Surface Material"),
-	  N_("Color Saturation, 1=normal"), NULL
+	  N_("Color Saturation, Default=1"), NULL
 		),
 	GNOME_RES_ENTRY_SEPARATOR (N_("Surface Material"), NULL),
 
@@ -334,13 +334,13 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	( "V3dControl.MatSurf/Transparency", "Transparency", "1", 
 	  GET_GLV_OFFSET (&GLvd_offset.transparency), 
 	  ColorContrast_OptionsList, N_("Surface Material"),
-	  N_("Volume Model Transparency"), NULL
+	  N_("Volume Model Transparency, Default=1"), NULL
 		),
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.MatSurf/TransparencyOffset", "Trans. Offset", "0", 
 	  GET_GLV_OFFSET (&GLvd_offset.transparency_offset), 
 	  CScale_OptionsList, N_("Surface Material"),
-	  N_("Volume Model Transparency Offset"), NULL
+	  N_("Volume Model Transparency Offset, Default=0"), NULL
 		),
 
 // ============ Annotations

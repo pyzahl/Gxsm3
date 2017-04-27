@@ -320,8 +320,10 @@ vec4 shadeVolume(vec3 vertex, vec3 vertexEye,
         if (zz.a == 0. && zz.x == 1.) // outside volume data cube?
                 return vec4 (1.,0.,0.,0.);
 
-        return vec4 (lightness * vec3( texture (GXSM_Palette, color_offset.x+value)),
+        return vec4 (lightness * vec3( texture (GXSM_Palette, clamp(color_offset.x+color_offset.y*value, 0., 1.))),
                      transparency_offset+value*transparency);
+        
+
 }
 
 void main()
