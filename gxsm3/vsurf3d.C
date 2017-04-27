@@ -253,7 +253,7 @@ namespace
 
 class base_plane{
 public:
-        base_plane (int nx, int ny, int nv, glm::vec4 *displacement_data, glm::vec4 *palette_data, int w=128, double aspect=1.0){
+        base_plane (int nx, int ny, int nv, glm::vec4 *displacement_data, glm::vec4 *palette_data, GLsizei num_pal_entries=GXSM_GPU_PALETTE_ENTRIES, int w=128, double aspect=1.0){
                 Validated = true;
                 BaseGridW = w;
                 BaseGridH = w; // adjusted by make_plane_vbo using aspect
@@ -269,7 +269,7 @@ public:
 
                 Validated = init_buffer ();
                 Validated = init_vao ();
-                Validated = init_textures (displacement_data, palette_data);
+                Validated = init_textures (displacement_data, palette_data, num_pal_entries);
         };
         ~base_plane (){
 		if (Validated){
@@ -328,7 +328,7 @@ public:
 
                 return Validated && checkError("make_plane::init_vao");
         };
-        gboolean init_textures(glm::vec4 *displacement_data, glm::vec4 *palette_data) {
+        gboolean init_textures(glm::vec4 *displacement_data, glm::vec4 *palette_data, GLsizei num_pal_entries=GXSM_GPU_PALETTE_ENTRIES) {
 		if (!Validated) return false;
 
                 // sampler2D diffuse
@@ -346,24 +346,27 @@ public:
                 glActiveTexture (GL_TEXTURE0);
                 glBindTexture (GL_TEXTURE_2D, TesselationTextureName[0]);
 
-                glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA32F, numx, numy, 0, GL_RGBA, GL_FLOAT, displacement_data); // Surf3D_Zdata
+                glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA32F, numx, numy, 0, GL_RGBA, GL_FLOAT, displacement_data); // Surf3D_Zdata -- 1st layer only
                 glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
                 glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glGenerateMipmap (GL_TEXTURE_2D);
                 glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "Surf3D_Z_Data"), 0);
 
                 // sampler1D GXSM_Palette vec4[][]
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_1D, TesselationTextureName[1]);
+                glActiveTexture (GL_TEXTURE1);
+                glBindTexture (GL_TEXTURE_1D, TesselationTextureName[1]);
 
-                glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, GXSM_GPU_PALETTE_ENTRIES, 0, GL_RGBA, GL_FLOAT, palette_data); // Surf3D_Palette
-                glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glGenerateMipmap(GL_TEXTURE_1D);
+                glTexImage1D (GL_TEXTURE_1D, 0, GL_RGBA32F, num_pal_entries, 0, GL_RGBA, GL_FLOAT, palette_data); // Surf3D_Palette
+                // GL_REPEAT, GL_CLAMP_TO_EDGE, GL_MIRRORED_REPEAT, GL_CLAMP_TO_BORDER
+                glTexParameteri (GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri (GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri (GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glGenerateMipmap (GL_TEXTURE_1D);
                 glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "GXSM_Palette"), 1);
 
                 if (numv > 1){
-                        // sampler3D Surf3D_Z-Data vec4[][]
+                        // sampler3D Volume3D_Z-Data vec4[][]
                         glActiveTexture (GL_TEXTURE2);
                         glBindTexture (GL_TEXTURE_3D, TesselationTextureName[2]);
 
@@ -371,10 +374,10 @@ public:
 
                         // GL_REPEAT, GL_CLAMP_TO_EDGE, GL_MIRRORED_REPEAT, GL_CLAMP_TO_BORDER
                         glm::vec4 outside_color = glm::vec4 (1.f,0.f,0.f,0.f);
-                        glTexParameterfv(GL_TEXTURE_3D, GL_TEXTURE_BORDER_COLOR, &(outside_color.x));
-                        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-                        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-                        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+                        glTexParameterfv (GL_TEXTURE_3D, GL_TEXTURE_BORDER_COLOR, &(outside_color.x));
+                        glTexParameteri (GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+                        glTexParameteri (GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+                        glTexParameteri (GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
 
                         glTexParameteri (GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
                         glTexParameteri (GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -382,7 +385,7 @@ public:
                         glUniform1i (glGetUniformLocation (Tesselation_ProgramName, "Volume3D_Z_Data"), 2);
                 }
                 // unbind
-                glBindTexture(GL_TEXTURE_2D, 0);
+                glBindTexture (GL_TEXTURE_2D, 0);
 
                 return Validated && checkError("make_plane::init_textures");
         };
@@ -406,10 +409,10 @@ public:
         };
 
         // update palette lookup data
-        gboolean update_palette_lookup (glm::vec4 *palette_data) { 
+        gboolean update_palette_lookup (glm::vec4 *palette_data, GLsizei num_pal_entries=GXSM_GPU_PALETTE_ENTRIES) { 
 		if (!Validated) return false;
 
-                glTextureSubImage1D (TesselationTextureName[1], 0, 0, GXSM_GPU_PALETTE_ENTRIES, GL_RGBA, GL_FLOAT, &palette_data[0]);
+                glTextureSubImage1D (TesselationTextureName[1], 0, 0, num_pal_entries, GL_RGBA, GL_FLOAT, &palette_data[0]);
 
 		return checkError("make_plane::update_texture palette");
         };
@@ -1188,7 +1191,7 @@ private:
                 // create surface base plane
                 if (numx > 0 && numy > 0 && numv > 0 && Surf3D_Z_Data && Surf3D_Palette){
                         surface_plane = new base_plane (numx, numy, numv,
-                                                        Surf3D_Z_Data, Surf3D_Palette,
+                                                        Surf3D_Z_Data, Surf3D_Palette, s->maxcolors,
                                                         (int)s->GLv_data.base_plane_size,
                                                         (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx
                                                         );
@@ -1419,7 +1422,7 @@ public:
                 Block_FragmentShading.fogColor      = MAKE_GLM_VEC3(s->GLv_data.fog_color); // = vec3(0.7, 0.8, 1.0)*0.7;
                 Block_FragmentShading.materialColor = MAKE_GLM_VEC4(s->GLv_data.surf_mat_color); // vec4
                 Block_FragmentShading.backsideColor = MAKE_GLM_VEC4(s->GLv_data.surf_mat_backside_color); // vec4
-                Block_FragmentShading.color_offset  = MAKE_GLM_VEC4A(s->GLv_data.ColorOffset, s->GLv_data.transparency_offset);
+                Block_FragmentShading.color_offset  = glm::vec4 (s->GLv_data.ColorOffset, s->GLv_data.ColorSat, 1., s->GLv_data.transparency_offset);
 
                 Block_FragmentShading.fogExp = s->GLv_data.fog_density/100.; // = 0.1;
 
@@ -2327,7 +2330,7 @@ void Surf3d::GLModes(int n, int m){
 
 
 void Surf3d::ReadPalette(char *name){
-        maxcolors = 8192;
+        maxcolors = GXSM_GPU_PALETTE_ENTRIES;
 	if (name){
 		std::ifstream cpal;
 		char pline[256];
