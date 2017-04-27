@@ -32,7 +32,7 @@
  * Chapter. Add a complete PlugIn documentation inbetween the Begin/End marks!
  * --------------------------------------------------------------------------------
 % BeginPlugInDocuSection
-% PlugInDocuCaption: UKSOFT/U-view Import
+% PlugInDocuCaption: UKSOFT/U-view Import (ELMITEC LEEM)
 % PlugInName: uksoft2001_im_Export
 % PlugInAuthor: Percy Zahl
 % PlugInAuthorEmail: zahl@users.sf.net
@@ -69,6 +69,7 @@ RuO2_CO_10mu_001_002.dat
 
 Select the first file and replace the relevant digits by a valid
 integer C format string identifier, i.e.:
+\GxsmNote{GTK3: use CTRL-L after selecting a file to allow (show the edit field) edit the file pattern!!}
 
 \begin{verbatim}
 RuO2_CO_10mu_%03d_%03d.dat
@@ -225,8 +226,8 @@ GxsmPlugin uksoft2001_im_export_pi = {
   NULL,
   "Percy Zahl",
   "file-import-section,file-export-section", // sep. im/export menuentry path by comma!
-  N_("UKSOFT,UKSOFT"), // menu entry (same for both)
-  N_("UKSOFT import,UKSOFT export"), // short help for menu entry
+  N_("UKSOFT-LEEM,UKSOFT-LEEM"), // menu entry (same for both)
+  N_("UKSOFT import (LOAD use CRTL-L to edit),UKSOFT export (SAVE)"), // short help for menu entry
   N_("UKSOFT 2001/UView import filter (Elimtec LEEM 2001-2016)."), // info
 // -- END EDIT --
   NULL,          // error msg, plugin may put error status msg here later
@@ -1186,7 +1187,29 @@ static void uksoft2001_im_export_filecheck_save_callback (gpointer data ){
 static void uksoft2001_im_export_import_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	gchar **help = g_strsplit (uksoft2001_im_export_pi.help, ",", 2);
 	gchar *dlgid = g_strconcat (uksoft2001_im_export_pi.name, "-import", NULL);
-	gchar *fn = gapp->file_dialog_load (help[0], NULL, file_mask, NULL);
+
+        GtkFileFilter *f0 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f0, "All");
+        gtk_file_filter_add_pattern (f0, "*");
+
+        GtkFileFilter *f3 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f3, "LEEM");
+        gtk_file_filter_add_pattern (f3, "*.dat");
+        gtk_file_filter_add_pattern (f3, "*.dav");
+
+        GtkFileFilter *f1 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f1, "LEEM Images");
+        gtk_file_filter_add_pattern (f1, "*.dat");
+        gtk_file_filter_add_pattern (f1, "*.DAT");
+
+        GtkFileFilter *f2 = gtk_file_filter_new ();
+        gtk_file_filter_set_name (f2, "LEEM Movies");
+        gtk_file_filter_add_pattern (f2, "*.dav");
+        gtk_file_filter_add_pattern (f2, "*.DAV");
+
+        GtkFileFilter *filter[] = { f3, f2, f1, f0, NULL };
+        
+        gchar *fn = gapp->file_dialog_load (help[0], NULL, file_mask, filter);
 	g_strfreev (help); 
 	g_free (dlgid);
 	if (fn){
