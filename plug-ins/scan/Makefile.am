@@ -20,6 +20,7 @@ lib_LTLIBRARIES = \
 	libquicktime_im_export.la \
 	libwip_im_export.la \
 	libv5d_export.la \
+	libbin_import.la \
 	librhk_spm32_import.la
 
 #	libexternal_converter.la
@@ -37,6 +38,9 @@ libWSxMio_la_SOURCES = WSxM_io.C WSxM_header.h WSxM_header.C
 
 libsdfimport_la_LDFLAGS = -module -export-dynamic -avoid-version
 libsdfimport_la_SOURCES = sdfimport.C
+
+libbin_import_la_LDFLAGS = -module -export-dynamic -avoid-version
+libbin_import_la_SOURCES = bin_import.C
 
 libprimitiveimexport_la_LDFLAGS = -module -export-dynamic -avoid-version
 libprimitiveimexport_la_SOURCES = primitiveimexport.C

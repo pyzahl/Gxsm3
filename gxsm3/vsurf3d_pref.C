@@ -49,9 +49,9 @@ const gchar *ShadeModel_OptionsList[]  = { "Lambertian, use Palette",
 const gchar *ColorSrc_OptionsList[]   = { "Flat", "Direct Height", "View Mode Height", "X-Channel", "Y", NULL };
 const gchar *TickFrame_OptionsList[]  = { "0: Simple", "1: XYZ with Labels", "2: XYZ Box", "3: XYZ w L Box", NULL };
 
-const gchar *CScale_OptionsList[] = { "-2","2","0.01","0.01","4", NULL };
-const gchar *ColorContrast_OptionsList[] = { "0","2","0.01","0.01","4", NULL };
-const gchar *ColorOffset_OptionsList[]   = { "-1","1","0.01","0.1","3", NULL };
+const gchar *CScale_OptionsList[] = { "-3","3","0.001","0.001","4", NULL };
+const gchar *ColorContrast_OptionsList[] = { "0","2","0.001","0.001","4", NULL };
+const gchar *ColorOffset_OptionsList[]   = { "-1","1","0.001","0.001","4", NULL };
 
 const gchar *Rot_OptionsList[]   = {"-180","180","1","1","0",NULL };
 const gchar *FoV_OptionsList[]   = {"0","180","1","1","0",NULL };

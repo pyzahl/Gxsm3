@@ -60,7 +60,7 @@ vec3 applyFog(vec3 col, float dist, vec3 viewDir)
 
 vec3 map_xyz_values(vec2 position)
 {
-        vec2 terraincoord = vec2 (cCenter.x - position.x, cCenter.y - position.y/aspect); // swap
+        vec2 terraincoord = vec2 (cCenter.x - position.x, cCenter.y - position.y/aspect.y); // swap
         return texture (Surf3D_Z_Data, terraincoord).xyz;
 }
 
@@ -308,7 +308,7 @@ subroutine( shadeModelType )
 vec4 shadeVolume(vec3 vertex, vec3 vertexEye, 
                  vec3 normal, vec4 color)
 {
-        vec3 vertex_normalized = vec3 (vertex.xy, vertex.z/aspect);
+        vec3 vertex_normalized = vec3 (vertex.xyz/aspect.xzy);
         vec3 vc  = volumecoord (vertex_normalized);
         vec4 zz  = texture (Volume3D_Z_Data, vc);
 
@@ -320,7 +320,8 @@ vec4 shadeVolume(vec3 vertex, vec3 vertexEye,
         if (zz.a == 0. && zz.x == 1.) // outside volume data cube?
                 return vec4 (1.,0.,0.,0.);
 
-        return vec4 (lightness * vec3( texture (GXSM_Palette, color_offset.x+value)), transparency_offset+value*transparency);
+        return vec4 (lightness * vec3( texture (GXSM_Palette, color_offset.x+value)),
+                     transparency_offset+value*transparency);
 }
 
 void main()

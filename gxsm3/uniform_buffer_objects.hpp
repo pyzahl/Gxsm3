@@ -29,7 +29,7 @@ namespace ubo
         struct uniform_surface_geometry{
                 uniform_surface_geometry
                 (
-                 GLfloat const & aspect,
+                 glm::vec4 const & aspect,
                  GLfloat const & height_scale,
                  GLfloat const & height_offset,
                  GLfloat const & plane_at,
@@ -43,7 +43,7 @@ namespace ubo
                         cCenter(cCenter),
                         delta(delta)
                 {}
-                GLfloat aspect;
+                glm::vec4 aspect;
                 GLfloat height_scale;
                 GLfloat height_offset;                
                 GLfloat plane_at;

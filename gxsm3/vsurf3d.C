@@ -167,7 +167,7 @@ namespace
         ubo::uniform_model_view Block_ModelViewMat(glm::mat4(1.), glm::mat4(1.), glm::mat4(1.));
 
         GLuint const SurfaceGeometry_block(1); // => 1
-        ubo::uniform_surface_geometry Block_SurfaceGeometry(1.,0.1,0.,0., glm::vec4 (0.5f,0.5f,0.5f,0.5f), glm::vec2(0.1f));
+        ubo::uniform_surface_geometry Block_SurfaceGeometry( glm::vec4 (1.f,1.f,1.f,1.f),0.1,0.,0., glm::vec4 (0.5f,0.5f,0.5f,0.5f), glm::vec2(0.1f));
         
         GLuint const FragmentShading_block(2); // => 2
         ubo::uniform_fragment_shading Block_FragmentShading
@@ -1393,13 +1393,16 @@ public:
                 updateModelViewM ();
 
                 // Geometry control
-                Block_SurfaceGeometry.aspect = (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx;
+                Block_SurfaceGeometry.aspect = glm::vec4 (1.0f,
+                                                          (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx,
+                                                          (s->get_scan ())->data.s.rz / (s->get_scan ())->data.s.rx,
+                                                          1.);
                 // setting GLv_data.hskl to 1 means same x,y and z scale.
                 Block_SurfaceGeometry.height_scale  = GL_height_scale;
                 Block_SurfaceGeometry.height_offset = s->GLv_data.slice_offset;
                 Block_SurfaceGeometry.plane_at = 0.;
                 Block_SurfaceGeometry.cCenter = glm::vec4 (0.5f, 0.5f, 0.5f, 0.5f);
-                Block_SurfaceGeometry.delta   = glm::vec2 (1.0f/(s->XPM_x-1), Block_SurfaceGeometry.aspect/(s->XPM_y-1));
+                Block_SurfaceGeometry.delta   = glm::vec2 (1.0f/(s->XPM_x-1), Block_SurfaceGeometry.aspect.y/(s->XPM_y-1));
                 updateSurfaceGeometry ();
 
                 // Camera, Light and Shading
