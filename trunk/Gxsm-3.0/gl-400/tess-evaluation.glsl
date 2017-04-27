@@ -43,7 +43,7 @@ vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
 }
 
 vec2 terraincoord(vec2 position){
-        return vec2 (cCenter.x - position.x, -(cCenter.y - (-position.y)/aspect));
+        return vec2 (cCenter.x - position.x, -(cCenter.y - (-position.y)/aspect.y));
 }
 
 // == Height ===========================
@@ -162,7 +162,7 @@ void main()
         float dxdz = height_at_delta (position.xz - off.xz) - height_at_delta (position.xz + off.xz);
         float dydz = height_at_delta (position.xz - off.zy) - height_at_delta (position.xz + off.zy);
         // deduce terrain normal
-        Out.Normal = eval_vertexPlane (normalize (vec3(dxdz, 2*delta.x, dydz/aspect)));
+        Out.Normal = eval_vertexPlane (normalize (vec3(dxdz, 2*delta.x, dydz/aspect.y)));
 
         Out.Color     = colorModel (color_offset.x+zz);
 

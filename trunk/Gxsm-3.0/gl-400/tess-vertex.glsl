@@ -26,7 +26,7 @@ float height_transform(float y)
 }
 
 vec2 terraincoord(vec2 position){
-        return vec2 (cCenter.x - position.x, -(cCenter.y - (-position.y)/aspect));
+        return vec2 (cCenter.x - position.x, -(cCenter.y - (-position.y)/aspect.y));
 }
 
 subroutine( vertexModelType )

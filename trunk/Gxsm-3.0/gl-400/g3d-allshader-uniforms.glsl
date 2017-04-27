@@ -21,7 +21,7 @@ layout (std140) uniform ModelViewMatrices
 // Geometry
 layout (std140) uniform SurfaceGeometry
 {
-        uniform float aspect;
+        uniform vec4  aspect;
         uniform float height_scale;
         uniform float height_offset;
         uniform float plane_at;
