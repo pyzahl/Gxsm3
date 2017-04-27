@@ -332,12 +332,12 @@ FIO_STATUS binary_ImExportFile::import(const char *fname){
 	// this is mandatory.
 	// initialize scan structure -- this is a minimum example
 	scan->data.s.ntimes  = 1;
-	scan->data.s.nvalues = h.dimensions_xyzb[2];
-	scan->data.s.nx = h.dimensions_xyzb[0];
-	scan->data.s.ny = h.dimensions_xyzb[1];
-	scan->data.s.dx = 1./extends_xyz[0]; // need Angstroems
-	scan->data.s.dy = 1./extends_xyz[1];
-	scan->data.s.dz = 1./extends_xyz[2];
+	scan->data.s.nx = h.dimensions_xyzb[1];
+	scan->data.s.ny = h.dimensions_xyzb[2];
+	scan->data.s.nvalues = h.dimensions_xyzb[0];
+	scan->data.s.dx = 1./extends_xyz[1]; // need Angstroems
+	scan->data.s.dy = 1./extends_xyz[2];
+	scan->data.s.dz = 1./extends_xyz[0];
 	scan->data.s.rx = scan->data.s.dx * scan->data.s.nx;
 	scan->data.s.ry = scan->data.s.dy * scan->data.s.ny;
 	scan->data.s.rz = scan->data.s.dz * scan->data.s.nvalues;
@@ -380,9 +380,9 @@ FIO_STATUS binary_ImExportFile::import(const char *fname){
 
         // convert data
         guint8 *p = data;
-        for (int col=0; col < scan->mem2d->GetNx (); ++col)
-                for (int row=0; row < scan->mem2d->GetNy (); ++row)
-                        for (int v=0; v < scan->mem2d->GetNv (); ++v)
+        for (int v=scan->mem2d->GetNv ()-1; v>=0; --v)
+                for (int col=0; col < scan->mem2d->GetNx (); ++col)
+                        for (int row=0; row < scan->mem2d->GetNy (); ++row)
                                 scan->mem2d->PutDataPkt ((double)*p++, col, row, v);
 
         g_free (data);
@@ -390,6 +390,7 @@ FIO_STATUS binary_ImExportFile::import(const char *fname){
 	scan->data.orgmode = SCAN_ORG_CENTER;
 	scan->mem2d->data->MkXLookup (-scan->data.s.rx/2., scan->data.s.rx/2.);
 	scan->mem2d->data->MkYLookup (scan->data.s.ry/2., -scan->data.s.ry/2.);
+	scan->mem2d->data->MkVLookup (scan->data.s.rz/2., -scan->data.s.rz/2.);
   
 	return FIO_OK; 
 }

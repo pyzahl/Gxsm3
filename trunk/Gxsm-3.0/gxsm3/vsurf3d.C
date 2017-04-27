@@ -1395,7 +1395,7 @@ public:
                 // Geometry control
                 Block_SurfaceGeometry.aspect = glm::vec4 (1.0f,
                                                           (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx,
-                                                          (s->get_scan ())->data.s.rz / (s->get_scan ())->data.s.rx,
+                                                           s->GLv_data.hskl*(s->get_scan ())->data.s.rz / (s->get_scan ())->data.s.rx,
                                                           1.);
                 // setting GLv_data.hskl to 1 means same x,y and z scale.
                 Block_SurfaceGeometry.height_scale  = GL_height_scale;
