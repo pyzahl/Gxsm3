@@ -62,7 +62,7 @@ float vertex_height_z(vec2 position)
 subroutine( vertexModelType )
 float vertex_plane_at(vec2 position)
 {
-        return plane_at;
+        return height_transform (plane_at);
 }
 
 void main()
