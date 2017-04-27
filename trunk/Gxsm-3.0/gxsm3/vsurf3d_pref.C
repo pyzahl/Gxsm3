@@ -76,12 +76,12 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.View/RotationX", "Rotation X", "0", GET_GLV_OFFSET (&GLvd_offset.rot[0]), 
 	  Rot_OptionsList, N_("View"),
-	  N_("Rotation Angle in X"), NULL
+	  N_("Rotation Angle in X [LMB + Mouse left/right]"), NULL
 		),
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.View/RotationY", "Rotation Y", "-90", GET_GLV_OFFSET (&GLvd_offset.rot[1]), 
 	  Rot_OptionsList, N_("View"),
-	  N_("Rotation Angle in Y"), NULL
+	  N_("Rotation Angle in Y [LMB + Mouse up/down]"), NULL
 		),
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.View/RotationZ", "Rotation Z", "0", GET_GLV_OFFSET (&GLvd_offset.rot[2]), 
@@ -91,12 +91,12 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_OPTION
 	( GNOME_RES_STRING, "V3dControl.View/RotationPreset", "Manual", GET_GLV_OFFSET (&GLvd_offset.view_preset[0]),
 	  ViewPreset_OptionsList, N_("View"), 
-	  N_("Predefined Views)")
+	  N_("Predefined Views.\nElevation and Distance referring to Top View Model Orientation.")
 		),
 	GNOME_RES_ENTRY_OPTION
 	( GNOME_RES_STRING, "V3dControl.View/LookAt", "Center", GET_GLV_OFFSET (&GLvd_offset.look_at[0]),
 	  LookAt_OptionsList, N_("View"), 
-	  N_("Predefined Look At Positions)")
+	  N_("Predefined Look-At Positions.")
 		),
 		
 	GNOME_RES_ENTRY_SEPARATOR (N_("View"), NULL),
@@ -104,8 +104,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_FLOAT_VEC3
 	( "V3dControl.View/Translation", "Translation", "0 0 0", GET_GLV_OFFSET (&GLvd_offset.trans), N_("View"),
 	  N_("set translations vector X, Y, Z\n"
-	     "additional hint: use middle mouse to\n"
-	     "button and drag surface up/down!"), NULL
+	     "[MMB + Mouse up/down/left/right]"), NULL
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
@@ -114,7 +113,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("Field of View"), NULL
 	  ),
 
-#if 1
+#if 0
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.View/FrustumNear", "FrustumNear", "0.001", GET_GLV_OFFSET (&GLvd_offset.fnear), 
 	  Frustum_OptionsList, N_("View"),
@@ -133,13 +132,13 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.View/Distance", "Distance", "1.5", GET_GLV_OFFSET (&GLvd_offset.camera[1]), 
 	  Dist_OptionsList, N_("View"),
-	  N_("Distance: Camera GL_Z Position (Distance from surface center in front)"), NULL
+	  N_("Distance: Camera GL_Z Position [also use Mouse Wheel] (Distance from surface center in front -- in top view rotation)"), NULL
 		),
 
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.View/Elevation", "Elevation", "1.0", GET_GLV_OFFSET (&GLvd_offset.camera[2]), 
 	  Dist_OptionsList, N_("View"),
-	  N_("Elevation: Camera GL-Y Position (surface normal axis, elevation above surface)"), NULL
+	  N_("Elevation: Camera GL-Y Position [RMB + Mouse up/dn] (surface normal axis, elevation above surface -- in top view rotation)"), NULL
 		),
   
 	GNOME_RES_ENTRY_SEPARATOR (N_("View"), NULL),
@@ -199,8 +198,8 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("Light0: switch On/Off")
 		),
 	GNOME_RES_ENTRY_FLOAT_VEC4
-	( "V3dControl.Light/Light0Pos", "LightSunDirection", "-0.2 0.7 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_position[0]), N_("Light"),
-	  N_("Sun Light Direction (Incident Vector) [dX, dY, dZ, 1]"), NULL
+	( "V3dControl.Light/Light0Dir", "LightSunDirection", "-0.2 -1.0 0.3 1", GET_GLV_OFFSET (&GLvd_offset.light_position[0]), N_("Light"),
+	  N_("Sun Light Direction (Incident Vector Model Space) [dX, dY, dZ, 1]"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.Light/Light0Spec", "LightSunColor", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_specular[0]), N_("Light"),
@@ -219,22 +218,23 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 
 	GNOME_RES_ENTRY_SEPARATOR (N_("Light"), NULL),
 
+#if 0
 	GNOME_RES_ENTRY_AUTO_PATH_OPTION
 	( GNOME_RES_STRING, "V3dControl.Light/Labels", "On", GET_GLV_OFFSET (&GLvd_offset.light[1][0]),
 	  OnOff_OptionsList, N_("Light"), 
 	  N_("Light1: switch On/Off")
 		),
-#if 0
+
 	GNOME_RES_ENTRY_FLOAT_VEC4
 	( "V3dControl.Light/Light1Pos", "Light1Pos", "0.5 0 -0.5 0", GET_GLV_OFFSET (&GLvd_offset.light_position[1]), N_("Light"),
 	  N_("Light1: Position, relative to surface width (=1) [X, Y, Z, 1]"), NULL
 		),
-#endif
+
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.Light/LabelColor", "LabelColor", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_specular[1]), N_("Light"),
-	  N_("Light1: Specular Light Color [red, green, blue, alpha]"), NULL
+	  N_("Light1: Label Color [red, green, blue, alpha]"), NULL
 		),
-#if 0
+
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.Light/Light1Diff", "Light1Diff", "0.4 0.4 0.4 1", GET_GLV_OFFSET (&GLvd_offset.light_diffuse[1]), N_("Light"),
 	  N_("Light1: Diffuse Light Color [red, green, blue, alpha]"), NULL
@@ -274,7 +274,10 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	( "V3dControl.MatSurf/Color", "Color", "0.45 0.15 0.07 1", GET_GLV_OFFSET (&GLvd_offset.surf_mat_color), N_("Surface Material"),
 	  N_("Surface Material Color:\n Specify the material color for Flat Material Color Shader Mode."), NULL
 	  ),
-
+	GNOME_RES_ENTRY_COLORSEL
+	( "V3dControl.MatSurf/BackSideColor", "BackSideColor", "0.6 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.surf_mat_backside_color), N_("Surface Material"),
+	  N_("Backside Surface Color"), NULL
+	  ),
 	GNOME_RES_ENTRY_COLORSEL
 	( "V3dControl.MatSurf/Diffuse", "Diffuse", "0.6 0.2 0.1 1", GET_GLV_OFFSET (&GLvd_offset.surf_mat_diffuse), N_("Surface Material"),
 	  N_("Surface Diffuse Color:\n Specify the diffuse RGBA reflectance of the material.\nUsed only in \"Uniform/Material Color Mode\"."), NULL
@@ -340,29 +343,41 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("Volume Model Transparency Offset"), NULL
 		),
 
-// ============ Zeroplane/Box Material
+// ============ Annotations
 
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.MatBox/Color", "Color", "0.6 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.box_mat_color), N_("Box Material"),
-	  N_("Box Color [red, green, blue, alpha]"), NULL
+	( "V3dControl.Annotations/ZeroPlaneColor", "ZeroPlaneColor", "0.6 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.anno_zero_plane_color), N_("Annotations"),
+	  N_("Zero/reference plane color"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.MatBox/Ambient", "Ambient", "0.6 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.box_mat_ambient), N_("Box Material"),
-	  N_("Box Ambient [red, green, blue, alpha]"), NULL
+	( "V3dControl.Annotations/TitleColor", "TitleColor", "1.0 0.1 0.5 0.7", GET_GLV_OFFSET (&GLvd_offset.anno_title_color), N_("Annotations"),
+	  N_("Title Color"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.MatBox/Specular", "Specular", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.box_mat_specular), N_("Box Material"),
-	  N_("Box Specular"), NULL
+	( "V3dControl.Annotations/LabelColor", "LabelColor", "1.0 0.1 0.5 0.7", GET_GLV_OFFSET (&GLvd_offset.anno_label_color), N_("Annotations"),
+	  N_("Label Color"), NULL
 		),
-	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.MatBox/Diffuse", "Diffuse", "0 0 0 1", GET_GLV_OFFSET (&GLvd_offset.box_mat_diffuse), N_("Box Material"),
-	  N_("Box Diffuse"), NULL
-		),
-	GNOME_RES_ENTRY_FLOATSLIDER
-	( "V3dControl.MatBox/Shininess", "Shininess", "20", GET_GLV_OFFSET (&GLvd_offset.box_mat_shininess[0]), 
-	  Shininess_OptionsList, N_("Box Material"),
-	  N_("Box Shininess"), NULL
-		),
+	GNOME_RES_ENTRY_ASK_PATH
+	( GNOME_RES_STRING, "V3dControl.Annotations/Title", "GXSM-3.0 GL4.0",  GET_GLV_OFFSET (&GLvd_offset.anno_title), N_("Annotations"),
+	  N_("Title text")
+          ),
+	GNOME_RES_ENTRY_ASK_PATH
+	( GNOME_RES_STRING, "V3dControl.Annotations/X-Axis", "X-axis",  GET_GLV_OFFSET (&GLvd_offset.anno_xaxis), N_("Annotations"),
+	  N_("Title X-axis")
+          ),
+	GNOME_RES_ENTRY_ASK_PATH
+	( GNOME_RES_STRING, "V3dControl.Annotations/Y-Axis", "Y-axis",  GET_GLV_OFFSET (&GLvd_offset.anno_yaxis), N_("Annotations"),
+	  N_("Title Y-axis")
+          ),
+	GNOME_RES_ENTRY_ASK_PATH
+	( GNOME_RES_STRING, "V3dControl.Annotations/Z-Axis", "Z-axis",  GET_GLV_OFFSET (&GLvd_offset.anno_zaxis), N_("Annotations"),
+	  N_("Title Z-axis")
+          ),
+	GNOME_RES_ENTRY_AUTO_PATH_OPTION
+	( GNOME_RES_STRING, "V3dControl..Annotations/Labels", "On", GET_GLV_OFFSET (&GLvd_offset.light[1][0]),
+	  OnOff_OptionsList, N_("Annotations"), 
+	  N_("Annotations: Labels On/Off")
+	),
 
 // ============ Rendering Options
 
@@ -403,27 +418,27 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.RenderOp/ShadingMode", "Fragment Debug Shading Mode Selector", "0.0", GET_GLV_OFFSET (&GLvd_offset.shader_mode), 
 	  shader_mode_OptionsList, N_("Render Opt."),
-	  N_("Fragment Shading Mode Selector for Debug Shader:\n"
-	     "0: (ambient+specular+diffuse)*color\n"
-	     "1: (ambient+diffuse)*color\n"
-	     "2: diffuse\n"
-	     "3: (ambient+specular)*color\n"
-	     "4: color\n"
-	     "5: applyFog (specular+diffuse)*color, distance, viewDir)\n"
-	     "6: 0+mix noise\n"
-	     "7: color+noise\n"
-	     "8: color_offset + lightness*color\n"
-	     "9: color_offset + color\n"
-	     "10: color_offset + vec4(normal*0.5+0.5, 1.0)\n"
-	     "11: color_offset + vec4(normal.y*0.5+0.5, 0.,0., 1.0)\n"
-	     "12: color_offset + vec4(normal.x*0.5+0.5, 0.,0., 1.0)\n"
-	     "13: color_offset + specular*color\n"
-	     "14: color_offset + vec4(vec3(specular,normal.y,diffuse),1.0)\n"
-	     "15: color_offset + vec4(vec3(dist/100.), 1.0)\n"
-	     "16: color_offset + specular*lightness*vec4(1)\n"
-	     "17: vec4(vec3(lightness*(gl_FragCoord.z+transparency_offset)), 1.0f)\n"
-	     "18: vec4(vec3(lightness*(gl_FragCoord.w+transparency_offset)), 1)\n"
-	     "19: vec4(lightness*gl_FragCoord.w+vec4(transparency_offset))\n"
+	  N_("Fragment Shading Mode Color Selector for Debug Shader:\n"
+	     " 1: return vec4 (lightness*DiffuseColor, 1.)\n"
+	     " 2: return vec4 (lightness*SpecularColor, 1.)\n"
+	     " 3: return vec4 (lightness*LambertianColor, 1.)\n"
+	     " 4: return lightness*color\n"
+	     " 5: finalColor = applyFog (finalColor, dist, viewDir); return vec4(lightness*finalColor, 1.)\n"
+	     " 6: return vec4 (mix (finalColor.xyz, nois, 0.2), 1.)\n"
+	     " 7: return vec4 (nois, 1.)\n"
+	     " 8: return lightness*color\n"
+	     " 9: return color\n"
+	     " 10: return vec4(normal*0.5+0.5, 1.0)\n"
+	     " 11: return vec4(normal.y*0.5+0.5, 0.,0., 1.0)\n"
+	     " 12: return vec4(normal.x*0.5+0.5, 0.,0., 1.0)\n"
+	     " 13: return specular*color\n"
+	     " 14: return vec4(vec3(specular,normal.y,diffuse),1.0)\n"
+	     " 15: return vec4(vec3(dist/100.), 1.0)\n"
+	     " 16: return specular*lightness*vec4(1)\n"
+	     " 17: return vec4(vec3(lightness*(gl_FragCoord.z+transparency_offset)), 1.0f)\n"
+	     " 18: return vec4(vec3(lightness*(gl_FragCoord.w+transparency_offset)), 1)\n"
+	     " 19: return vec4(lightness*gl_FragCoord.w+vec4(transparency_offset))\n"
+	     " default: return vec4 (lightness*finalColor, 1.)\n"
 	     ), NULL
 	  ),
 

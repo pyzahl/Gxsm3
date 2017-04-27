@@ -47,7 +47,7 @@ namespace ubo
                 GLfloat height_scale;
                 GLfloat height_offset;                
                 GLfloat plane_at;
-                glm::vec2 cCenter;
+                glm::vec4 cCenter;
                 glm::vec2 delta;
         };
 
@@ -62,6 +62,7 @@ namespace ubo
                  glm::vec4 const & diffuseColor,
                  glm::vec4 const & fogColor,
                  glm::vec4  const & materialColor,
+                 glm::vec4  const & backsideColor,
                  glm::vec4  const & color_offset,
                  GLfloat const & fogExp,
                  GLfloat const & shininess,
@@ -80,6 +81,7 @@ namespace ubo
                         diffuseColor(diffuseColor),
                         fogColor(fogColor),
                         materialColor(materialColor),
+                        backsideColor(backsideColor),
                         color_offset(color_offset),
                         fogExp(fogExp),
                         shininess(shininess),
@@ -98,6 +100,7 @@ namespace ubo
                 glm::vec4 diffuseColor; // = vec3(1.0, 1.0, 0.7)*1.5;
                 glm::vec4 fogColor; // = vec3(0.7, 0.8, 1.0)*0.7;
                 glm::vec4 materialColor;
+                glm::vec4 backsideColor;
                 glm::vec4 color_offset;
                 GLfloat fogExp; // = 0.1;
                 GLfloat shininess; // = 100.0;

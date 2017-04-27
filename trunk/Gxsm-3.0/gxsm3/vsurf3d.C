@@ -181,6 +181,7 @@ namespace
          glm::vec4(0.3), // diffuse
          glm::vec4(0.5), // fog color
          glm::vec4(1.0), // material color
+         glm::vec4(1.0), // backside color
          glm::vec4(0.), // color offset
 
          0.01, // fog exp
@@ -1414,6 +1415,7 @@ public:
                 Block_FragmentShading.diffuseColor  = MAKE_GLM_VEC3(s->GLv_data.surf_mat_diffuse); // = vec3(1.0, 1.0, 0.7)*1.5;
                 Block_FragmentShading.fogColor      = MAKE_GLM_VEC3(s->GLv_data.fog_color); // = vec3(0.7, 0.8, 1.0)*0.7;
                 Block_FragmentShading.materialColor = MAKE_GLM_VEC4(s->GLv_data.surf_mat_color); // vec4
+                Block_FragmentShading.backsideColor = MAKE_GLM_VEC4(s->GLv_data.surf_mat_backside_color); // vec4
                 Block_FragmentShading.color_offset  = MAKE_GLM_VEC4A(s->GLv_data.ColorOffset, s->GLv_data.transparency_offset);
 
                 Block_FragmentShading.fogExp = s->GLv_data.fog_density/100.; // = 0.1;
@@ -1640,35 +1642,37 @@ public:
                         glm::vec3 ez=glm::vec3 (0,0,0.1);
                         glm::vec3 exz = 0.5f*(ex+ez);
                         glm::vec3 eyz = -0.5f*(ex-ez);
-                        text_vao->draw ("GXSM-3.0 GL4.0", glm::vec3(0.5, -0.1, -0.75), 1.25f*ex, 1.25f*ez);
+                        glm::vec4 text_color = MAKE_GLM_VEC4 (s->GLv_data.anno_title_color);
+                        text_vao->draw (s->GLv_data.anno_title, glm::vec3(0.5, -0.1, -0.75), 1.25f*ex, 1.25f*ez, text_color);
+                        text_color = MAKE_GLM_VEC4 (s->GLv_data.anno_label_color);
                         {
-                                text_vao->draw ("X axis", glm::vec3(0, 0, -0.6), ex, ez);
+                                text_vao->draw (s->GLv_data.anno_xaxis, glm::vec3(0, 0, -0.6), ex, ez, text_color);
                                 gchar *tmp = g_strdup ((s->get_scan ())->data.Xunit->UsrString ((s->get_scan ())->data.s.rx));
-                                text_vao->draw (tmp, glm::vec3(0.5, 0, -0.6), ex, ez);
+                                text_vao->draw (tmp, glm::vec3(0.5, 0, -0.6), ex, ez, text_color);
                                 g_free (tmp);
                         }
                         {
-                                text_vao->draw ("Y axis", glm::vec3(0.53, 0, 0), -ez, ex);
+                                text_vao->draw (s->GLv_data.anno_yaxis, glm::vec3(0.53, 0, 0), -ez, ex, text_color);
                                 gchar *tmp = g_strdup ((s->get_scan ())->data.Yunit->UsrString ((s->get_scan ())->data.s.ry));
-                                text_vao->draw (tmp, glm::vec3(0.53, 0, -0.5), -ez, ex);
+                                text_vao->draw (tmp, glm::vec3(0.53, 0, -0.5), -ez, ex, text_color);
                                 g_free (tmp);
                         }
                         {
-                                text_vao->draw ("Z axis", glm::vec3(0.53, 0, -0.6), -ey, 0.5f*(ex+ez));
+                                text_vao->draw (s->GLv_data.anno_zaxis, glm::vec3(0.53, 0, -0.6), -ey, 0.5f*(ex+ez), text_color);
                                 gchar *tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0));
-                                text_vao->draw (tmp, glm::vec3(-0.53, 0, -0.53), exz, eyz);
+                                text_vao->draw (tmp, glm::vec3(-0.53, 0, -0.53), exz, eyz, text_color);
                                 g_free (tmp);
                                 tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0.5*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz));
-                                text_vao->draw (tmp, glm::vec3(-0.53, 0.5*GL_height_scale, -0.53), exz, eyz);
+                                text_vao->draw (tmp, glm::vec3(-0.53, 0.5*GL_height_scale, -0.53), exz, eyz, text_color);
                                 g_free (tmp);
                                 tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0.5*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz/GL_height_scale));
-                                text_vao->draw (tmp, glm::vec3(-0.53, 0.5, -0.53), exz, eyz);
+                                text_vao->draw (tmp, glm::vec3(-0.53, 0.5, -0.53), exz, eyz, text_color);
                                 g_free (tmp);
                         }
-                        text_vao->draw ("front", glm::vec3(0, 0, -0.5), ex, ey);
-                        text_vao->draw ("top", glm::vec3(0, 0,  0.5), ex, ey); 
-                        text_vao->draw ("left", glm::vec3(0.5, 0, 0), ez, ey);
-                        text_vao->draw ("right", glm::vec3(-0.5, 0, 0), -ez, ey);
+                        text_vao->draw ("front", glm::vec3(0, 0, -0.5), ex, ey, text_color);
+                        text_vao->draw ("top", glm::vec3(0, 0,  0.5), ex, ey, text_color); 
+                        text_vao->draw ("left", glm::vec3(0.5, 0, 0), ez, ey, text_color);
+                        text_vao->draw ("right", glm::vec3(-0.5, 0, 0), -ez, ey, text_color);
                 }
                 
 		return checkError("render");
@@ -1988,6 +1992,8 @@ void Surf3d::GLvarinit(){
 	size=0;
         surface_z_data_buffer = NULL;
         GLv_data.camera[0] = 0.; // fixed
+        GLv_data.fnear = 0.001;
+        GLv_data.ffar  = 10.0;
         
 	ReadPalette (xsmres.Palette);
 
@@ -2440,234 +2446,21 @@ int Surf3d::update(int y1, int y2){
  */
 
 void Surf3d::GLdrawGimmicks(){
-#if 0
-	// Variables for label-calculation
-	double totalsize;
-	double xt;
-	double mag;
-	double onetic;
-	double offset; 
-	double firststep; 
-	double side = 1.0; // default side for labels
-	GLfloat m[16],z;
-	int i, stellen;
-
-	char buf[80];
-	
-	// number of pixels = scan->mem2d->GetNx ()
-	double x1 = scan->mem2d->data->GetXLookup((int)0);
-	double y1 = scan->mem2d->data->GetYLookup((int)0);
-	double x2 = scan->mem2d->data->GetXLookup(  scan->mem2d->GetNx()-1);
-	double y2 = scan->mem2d->data->GetYLookup(  scan->mem2d->GetNy()-1);
-
-	XSM_DEBUG (GL_DEBUG_L2, "GL:::GLdrawGimmicks");
-	XSM_DEBUG_GP (GL_DEBUG_L2, "GL:::GLdrawGimmicks");
-
-	glDisable (GL_BLEND); 
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, GLv_data.box_mat_color);
-
-	if (GLv_data.Smooth)
-		glEnable (GL_LINE_SMOOTH);
-
-        // *** was disabled
-        glMaterialfv (GL_FRONT_AND_BACK, GL_EMISSION, GLv_data.box_mat_color);
-
-	glLineWidth(0.5);
-
-	if (GLv_data.TickFrameOptions[0]=='1' || GLv_data.TickFrameOptions[0]=='3'){
-		// labels at tips of axis, is only confusing
-		sprintf(buf,"(%f/%f)", x1, y1);
-		;//glRasterPos3f(-(XPM_x/2.0),0.0,-(XPM_y/2.0)); printstring(GLUT_BITMAP_HELVETICA_12, buf);
-		sprintf(buf,"(%f/%f)", x2, y1);
-		;//glRasterPos3f( (XPM_x/2.0),0.0,-(XPM_y/2.0)); printstring(GLUT_BITMAP_HELVETICA_12, buf);
-		sprintf(buf,"(%f/%f)", x1, y2);
-		;//glRasterPos3f(-(XPM_x/2.0),0.0, (XPM_y/2.0)); printstring(GLUT_BITMAP_HELVETICA_12, buf);
-		sprintf(buf,"(%f/%f)", x2, y2);
-		;//***************FIXME glRasterPos3f( (XPM_x/2.0),0.0, (XPM_y/2.0)); printstring(GLUT_BITMAP_HELVETICA_12, buf);
-	}
-			
-	glGetFloatv (GL_MODELVIEW_MATRIX, m);// Need this matrix for label side calcu.
-
-	// X axis
-	totalsize = (x2-x1);
-	xt = 0.0;
-	mag = log10(totalsize);
-	onetic = pow(10, int(mag));
-	offset = onetic*floor(x2/onetic); 
-	firststep =  XPM_x/2.0  - (x2-offset)/totalsize*XPM_x ;
-	
-	i = 0;
-	
-	if (onetic >= 1)
-		stellen = 0;
-	else
-		stellen = abs(int(mag+1));
-	
-	if (m[0] < 0) // put labels on other side
-		side = -1.0;
-	
-	while (offset-i*onetic > x1){
-		// There is something badly wrong with x-scaling,
-		// When you crop a region, you dont get new offsets.
-		xt = firststep - i*onetic/totalsize*XPM_x;
-		if (GLv_data.TickFrameOptions[0]=='1' || GLv_data.TickFrameOptions[0]=='3'){
-			sprintf(buf,"x=%.*f",stellen, offset-i*onetic);
-			;//glRasterPos3f(xt, 0.0, 1.1*side*XPM_y/2.0); printstring(GLUT_BITMAP_HELVETICA_12, buf);
-		}
-		DrawOneLine(xt, 0.0, 1.1*(side*XPM_y/2.0), xt, 0.0, (side*XPM_y/2.0));
-		i++;
-	}
-	
-	// Y axis
-	
-	totalsize = (y1-y2); // y1-y2 is positive.
-	xt = 0.0;
-	mag = log10(totalsize);
-	onetic = pow(10, int(mag));
-	offset = onetic*floor(y1/onetic); 
-	firststep = -XPM_y/2.0  + (y1-offset)/totalsize*XPM_y;
-	i = 0;
-	
-	if (onetic >= 1)
-			stellen = 0;
-	else
-			stellen = abs(int(mag+1));
-		
-	side = 1.0; // if matrix says so, change sides.
-	if (m[8] > 0)
-		side = -1.0;
-	
-	while (offset-i*onetic > y2){
-		xt = firststep + i*onetic/totalsize*XPM_y;
-		if (GLv_data.TickFrameOptions[0]=='1' || GLv_data.TickFrameOptions[0]=='3'){
-			sprintf(buf,"y=%.*f",stellen, offset-i*onetic);
-			;//glRasterPos3f(1.1*side*XPM_x/2.0 ,0.0, xt); printstring(GLUT_BITMAP_HELVETICA_12, buf);
-		}
-		DrawOneLine(1.1*(side*XPM_x/2.0), 0.0, xt, (side*XPM_x/2.0), 0.0, xt);
-		i++;
-	}
-
-	// Z axis
-	
-	z = fabs (GLv_data.slice_offset * (XPM_x+XPM_y)*0.5);
-	totalsize = fabs (XPM_v);
-	xt = 0.0;
-	mag = log10(totalsize);
-	onetic = pow(10, int(mag));
-	offset = onetic*floor(0./onetic); 
-	firststep = 0.;
-	i = 0;
-	
-	if (onetic >= 1)
-			stellen = 0;
-	else
-			stellen = abs(int(mag+1));
-		
-	side = 1.0; // if matrix says so, change sides.
-	if (m[8] > 0)
-		side = -1.0;
-	
-	if (GLv_data.TickFrameOptions[0]=='1' || GLv_data.TickFrameOptions[0]=='3')
-		while (i*onetic < XPM_v){
-			xt = i*onetic/totalsize*z;
-			sprintf(buf,"v=%.*f",stellen, i*onetic);
-			;//glRasterPos3f(1.1*side*XPM_x/2.0 ,xt, -XPM_y/2.0); printstring(GLUT_BITMAP_HELVETICA_12, buf);
-			DrawOneLine(1.1*side*XPM_x/2., xt, -XPM_y/2.0, side*XPM_x/2.0, xt, -XPM_y/2.0);
-			DrawOneLine(side*XPM_x/2.0, xt, -1.1*XPM_y/2.0, side*XPM_x/2., xt, -XPM_y/2.0);
-			i++;
-		}
-
-	// *** coordinate-axis ***
-        // **** was disabled
-	glColor4f(0.1,0.1,0.1,.7);
-
-	// how long should my z-axis be? Scale with h?
-	if (surface)
-		z = surface[0] + GLv_data.slice_offset * (XPM_x+XPM_y)*0.5;
-	else
-		z = GLv_data.slice_offset * (XPM_x+XPM_y)*0.5;
-
-
-	DrawOneLine(-XPM_x/2.0,-z/10.0, -XPM_y/2.0, -XPM_x/2.0,  z,-XPM_y/2.0);
-	
-	// Frame along x-y-Zero.
-	DrawOneLine(-XPM_x/2.0,0.0, -XPM_y/2.0, (XPM_x/2.0),0.0,-(XPM_y/2.0));
-	DrawOneLine(-XPM_x/2.0,0.0, -XPM_y/2.0, -(XPM_x/2.0),0.0, (XPM_y/2.0));
-
-	DrawOneLine(+XPM_x/2.0,0.0, +XPM_y/2.0, (XPM_x/2.0),0.0,-(XPM_y/2.0));
-	DrawOneLine(+XPM_x/2.0,0.0, +XPM_y/2.0, -(XPM_x/2.0),0.0, (XPM_y/2.0));
-
-	if (GLv_data.TickFrameOptions[0] == '2' || GLv_data.TickFrameOptions[0] == '3'){
-		DrawOneLine(XPM_x/2.0,0.0, -XPM_y/2.0, XPM_x/2.0,  z,-XPM_y/2.0);
-		DrawOneLine(-XPM_x/2.0,0.0, XPM_y/2.0, -XPM_x/2.0,  z,XPM_y/2.0);
-		DrawOneLine(XPM_x/2.0,0.0, XPM_y/2.0, XPM_x/2.0,  z,XPM_y/2.0);
-
-		DrawOneLine(-XPM_x/2.0,z, -XPM_y/2.0, (XPM_x/2.0),z,-(XPM_y/2.0));
-		DrawOneLine(-XPM_x/2.0,z, -XPM_y/2.0, -(XPM_x/2.0),z, (XPM_y/2.0));
-		DrawOneLine(+XPM_x/2.0,z, +XPM_y/2.0, (XPM_x/2.0),z,-(XPM_y/2.0));
-		DrawOneLine(+XPM_x/2.0,z, +XPM_y/2.0, -(XPM_x/2.0),z, (XPM_y/2.0));
-	}
-#endif
+        ;
 }
 
 
 /* 
-   Create Zero-pLane(s)
-   Tesselate surface into list of triangles andcalculate normals for light processing
+   Tesselate surface, ...
 */
 
 void Surf3d::GLdrawsurface(int y_to_update, int refresh_all){
-
         if (gl_tess){
                 if (refresh_all)
                         gl_tess->updateTexture (0, XPM_y);
                 else
                         gl_tess->updateTexture (y_to_update);
         }
-        
-#if 0
-	int slice_pli[3];
-	XSM_DEBUG (GL_DEBUG_L2, "GL:::GLdrawsurface y_to_update=" << y_to_update);
-
-	if (GLv_data.slice_plane_index[0] >= 0)
-		slice_pli[0] = GLv_data.slice_plane_index[0];
-	else
-		slice_pli[0] = GLv_data.slice_plane_index[0];
-	if (GLv_data.slice_plane_index[1] >= 0)
-		slice_pli[1] = GLv_data.slice_plane_index[1];
-	else
-		slice_pli[1] = GLv_data.slice_plane_index[1];
-	if (GLv_data.slice_plane_index[2] >= 0)
-		slice_pli[2] = GLv_data.slice_plane_index[2];
-	else
-		slice_pli[2] = GLv_data.slice_plane_index[2];
-
-        XSM_DEBUG_GP (GL_DEBUG_L2, "GL:::GLdrawsurface -- ZP, stuff,...");
-        
-        if (GLv_data.ZeroPlane){
-        }                
-
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, GLv_data.surf_mat_specular);
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, GLv_data.surf_mat_shininess);
-        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, GLv_data.surf_mat_diffuse);
-        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, GLv_data.surf_mat_ambient);
-        
-        if (GLv_data.TransparentSlices){
-                glEnable (GL_BLEND); 
-                glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        } else {
-                glDisable (GL_BLEND); 
-        }
-
-
-        
-        // add Volume "close-up" strips
-        if (((GLv_data.slice_direction[0] == 'Y' || GLv_data.slice_direction[0] == 'V' || slice_pli[1] >= 0) && vi < XPM_v-step2)) {
-        }
-        if (((GLv_data.slice_direction[0] == 'X' || GLv_data.slice_direction[0] == 'V' || slice_pli[0] >= 0) && vi < XPM_v-step2)) {
-	}
-        XSM_DEBUG_GP (GL_DEBUG_L2, "GL:::GLdrawsurface -- retesseration done.");
-#endif
 }
 
 
