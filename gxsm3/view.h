@@ -241,17 +241,20 @@ typedef struct{
 	float light_spot_exponent[3];
 
 	float surf_mat_color[4];
+	float surf_mat_backside_color[4];
 	float surf_mat_ambient[4];
 	float surf_mat_specular[4];
 	float surf_mat_diffuse[4];
 	float surf_mat_shininess[1];
 
-	float box_mat_color[4];
-	float box_mat_ambient[4];
-	float box_mat_specular[4];
-	float box_mat_diffuse[4];
-	float box_mat_shininess[1];
-
+	float anno_zero_plane_color[4];
+	float anno_title_color[4];
+	float anno_label_color[4];
+        gchar anno_title[60];
+        gchar anno_xaxis[60];
+        gchar anno_yaxis[60];
+        gchar anno_zaxis[60];
+        
 	int Fog;
 	float fog_color[4];
 	float fog_density;

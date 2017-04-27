@@ -41,6 +41,7 @@ layout (std140) uniform FragmentShading
         uniform vec4 diffuseColor; // = vec3(1.0, 1.0, 0.7)*1.5;
         uniform vec4 fogColor; // = vec3(0.7, 0.8, 1.0)*0.7;
         uniform vec4 materialColor;
+        uniform vec4 backsideColor;
         uniform vec4 color_offset;
 
         uniform float fogExp; // = 0.1;
