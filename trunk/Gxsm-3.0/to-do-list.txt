@@ -40,7 +40,6 @@ gtk_entry_get_attributes ()
 
 
 pending ports:
--> View 3D -- big job completed, all new. Basics are working again and it's awesome with NVida GPU engines!
 -> SR1?? ... pending/obsolete/outdated??:  port to Grid and new gxsm3 internal BuildParam helper: old SR-STD/SP2 GUI [old SR-STD HwI not availabe at this time for gxsm3]
 
 
@@ -61,6 +60,7 @@ pending minor issues/ideas:
 
 -------------------
 DONE:
+->\/ View 3D -- completed, just continue tweaking details -- big job completed, all new. Basics are working again and it's awesome with NVida GPU engines!
 ->\/ 3D GL 4.0 basic view re implemented.
 ->\/ 2D view: in SLS mode: make Red-Line work! -- working on this. isNew data control issue in LineInfo, must reset, etc. ==> done.
        ... SLS BotUp scandir leads to crash  -- TDB, do not use rigth now.
