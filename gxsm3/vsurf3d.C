@@ -647,11 +647,6 @@ public:
                                 continue;
                         }
                 
-                        //                for(const char *p = text; *p; p++) {
-                        //                        
-                        //                        if(FT_Load_Char (face, *p, FT_LOAD_RENDER))
-                        //                                continue;
-
                         glTexImage2D (
                                       GL_TEXTURE_2D,
                                       0,
@@ -664,7 +659,6 @@ public:
                                       g->bitmap.buffer
                                       );
 
-                        //glm::mat4
                         glm::vec3 pg = pos + (GLfloat)g->bitmap_left*ex + (GLfloat)g->bitmap_top*ey;
                         GLfloat w = g->bitmap.width;
                         GLfloat h = g->bitmap.rows;
@@ -926,7 +920,7 @@ public:
                 Major=4;
                 Minor=0;
                 numx = numy = numv = 0;
-                oversized_plane = false;
+                oversized_plane = 1.0;
                 Surf3D_Z_Data = NULL;
                 Surf3D_Palette = NULL;
 
@@ -1440,7 +1434,7 @@ public:
                 // Tesseleation control -- lod is not yet used
                 glUniform1f (Uniform_lod_factor, 4.0);
                 glUniform1f (Uniform_tess_level, s->GLv_data.tess_level);
-                
+               
                 checkError ("render -- set Uniforms, Blocks");
 
                 // Specifies the shader stage from which to query for subroutine uniform index. shadertype must be one of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER, GL_GEOMETRY_SHADER or GL_FRAGMENT_SHADER.
@@ -1501,6 +1495,7 @@ public:
                 }
                 checkError ("render -- configure shader");
 
+
                 if (s->GLv_data.TransparentSlices){
                         glEnable (GL_BLEND); 
                         glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1508,13 +1503,13 @@ public:
                         glDisable (GL_BLEND); 
                 }
 
+                if (s->GLv_data.vertex_source[0] != 'V' && oversized_plane > 1.01){
+                        surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
+                        surface_plane->update_vertex_buffer ();
+                        oversized_plane = 1.0;
+                }
                 switch (s->GLv_data.vertex_source[0]){
                 case 'X':
-                        if (oversized_plane){
-                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
-                                surface_plane->update_vertex_buffer ();
-                                oversized_plane = false;
-                        }
                         Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
                         Block_SurfaceGeometry.plane_at = 0.5;
                         updateSurfaceGeometry ();
@@ -1524,11 +1519,6 @@ public:
                         surface_plane->draw ();
                         break;
                 case 'Y':
-                        if (oversized_plane){
-                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
-                                surface_plane->update_vertex_buffer ();
-                                oversized_plane = false;
-                        }
                         Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
                         Block_SurfaceGeometry.plane_at = 0.5;
                         updateSurfaceGeometry ();
@@ -1538,11 +1528,6 @@ public:
                         surface_plane->draw ();
                         break;
                 case 'S':
-                        if (oversized_plane){
-                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
-                                surface_plane->update_vertex_buffer ();
-                                oversized_plane = false;
-                        }
                         Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
                         glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
                         for (int i=0; i<6; ++i){
@@ -1568,6 +1553,7 @@ public:
                                 surface_plane->draw ();
                         }
                         break;
+
                 case 'V':
                         {
                                 GLfloat r3  = 1.732f; // srqt(3)
@@ -1578,10 +1564,10 @@ public:
                                 glEnable (GL_BLEND); 
                                 glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                         
-                                if (!oversized_plane){
+                                if (oversized_plane < r3){
                                         surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx, r3);
                                         surface_plane->update_vertex_buffer ();
-                                        oversized_plane = true;
+                                        oversized_plane = r3;
                                 }
                         
                                 Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
@@ -1605,17 +1591,14 @@ public:
                         break;
                 case 'Z':
                 default:
-                        if (oversized_plane){
-                                surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx);
-                                surface_plane->update_vertex_buffer ();
-                                oversized_plane = false;
-                        }
                         glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
                         surface_plane->draw ();
                         break;
                 }
 
                 glDisable (GL_BLEND); 
+
+                checkError ("render -- done data plane(s)");
 
                 
                 // Gimmicks ========================================
@@ -1639,9 +1622,14 @@ public:
                         g_message ("S = X%g Y%g Z%g   %g %g %g", S.x, S.y, S.z, scale[0], scale[1], scale[2]);
                 }
 
+                checkError ("render -- done gimmick ico_vao (tip)");
+                
                 // Annotations, Labels, ...
 #define MAKE_GLM_VEC3X(V) glm::vec3(V[0],V[1],V[2])
-                if (text_vao && s->GLv_data.light[1][1] == 'n'){
+                if (text_vao && (s->GLv_data.anno_show_title[1] == 'n' ||
+                                 s->GLv_data.anno_show_axis_labels[1] == 'n' ||
+                                 s->GLv_data.anno_show_axis_dimensions[1] == 'n' ||
+                                 s->GLv_data.anno_show_bearings[1] == 'n')){
                         checkError ("render -- draw text");
                         //text_vao->draw ("GXSM-3.0", MAKE_GLM_VEC3X(s->GLv_data.light_position[1]), glm::vec3 (0,1,0), glm::vec3 (-0.1, 0.1, 0.1));
                         glm::vec3 ex=glm::vec3 (0.1,0,0);
@@ -1650,39 +1638,100 @@ public:
                         glm::vec3 exz = 0.5f*(ex+ez);
                         glm::vec3 eyz = -0.5f*(ex-ez);
                         glm::vec4 text_color = MAKE_GLM_VEC4 (s->GLv_data.anno_title_color);
-                        text_vao->draw (s->GLv_data.anno_title, glm::vec3(0.5, -0.1, -0.75), 1.25f*ex, 1.25f*ez, text_color);
+
+                        if (text_vao && s->GLv_data.anno_show_title[1] == 'n')
+                                text_vao->draw (s->GLv_data.anno_title, glm::vec3(0.5, -0.1, -0.75), 1.25f*ex, 1.25f*ez, text_color);
+
                         text_color = MAKE_GLM_VEC4 (s->GLv_data.anno_label_color);
                         {
-                                text_vao->draw (s->GLv_data.anno_xaxis, glm::vec3(0, 0, -0.6), ex, ez, text_color);
-                                gchar *tmp = g_strdup ((s->get_scan ())->data.Xunit->UsrString ((s->get_scan ())->data.s.rx));
-                                text_vao->draw (tmp, glm::vec3(0.5, 0, -0.6), ex, ez, text_color);
-                                g_free (tmp);
+                                if (text_vao && s->GLv_data.anno_show_axis_labels[1] == 'n')
+                                        text_vao->draw (s->GLv_data.anno_xaxis, glm::vec3(0, 0, -0.6), ex, ez, text_color);
+                                if (text_vao && s->GLv_data.anno_show_axis_dimensions[1] == 'n'){
+                                        gchar *tmp = g_strdup ((s->get_scan ())->data.Xunit->UsrString ((s->get_scan ())->data.s.rx));
+                                        text_vao->draw (tmp, glm::vec3(0.5, 0, -0.6), ex, ez, text_color);
+                                        g_free (tmp);
+                                }
                         }
                         {
-                                text_vao->draw (s->GLv_data.anno_yaxis, glm::vec3(0.53, 0, 0), -ez, ex, text_color);
-                                gchar *tmp = g_strdup ((s->get_scan ())->data.Yunit->UsrString ((s->get_scan ())->data.s.ry));
-                                text_vao->draw (tmp, glm::vec3(0.53, 0, -0.5), -ez, ex, text_color);
-                                g_free (tmp);
+                                if (text_vao && s->GLv_data.anno_show_axis_labels[1] == 'n')
+                                        text_vao->draw (s->GLv_data.anno_yaxis, glm::vec3(0.53, 0, 0), -ez, ex, text_color);
+                                if (text_vao && s->GLv_data.anno_show_axis_dimensions[1] == 'n'){
+                                        gchar *tmp = g_strdup ((s->get_scan ())->data.Yunit->UsrString ((s->get_scan ())->data.s.ry));
+                                        text_vao->draw (tmp, glm::vec3(0.53, 0, -0.5), -ez, ex, text_color);
+                                        g_free (tmp);
+                                }
                         }
                         {
-                                text_vao->draw (s->GLv_data.anno_zaxis, glm::vec3(0.53, 0, -0.6), -ey, 0.5f*(ex+ez), text_color);
-                                gchar *tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0));
-                                text_vao->draw (tmp, glm::vec3(-0.53, 0, -0.53), exz, eyz, text_color);
-                                g_free (tmp);
-                                tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0.5*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz));
-                                text_vao->draw (tmp, glm::vec3(-0.53, 0.5*GL_height_scale, -0.53), exz, eyz, text_color);
-                                g_free (tmp);
-                                tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0.5*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz/GL_height_scale));
-                                text_vao->draw (tmp, glm::vec3(-0.53, 0.5, -0.53), exz, eyz, text_color);
-                                g_free (tmp);
+                                if (text_vao && s->GLv_data.anno_show_axis_labels[1] == 'n')
+                                        text_vao->draw (s->GLv_data.anno_zaxis, glm::vec3(0.53, 0, -0.6), -ey, 0.5f*(ex+ez), text_color);
+                                if (text_vao && s->GLv_data.anno_show_axis_dimensions[1] == 'n'){
+                                        gchar *tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0));
+                                        text_vao->draw (tmp, glm::vec3(-0.53, 0, -0.53), exz, eyz, text_color);
+                                        g_free (tmp);
+                                        tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0.5*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz));
+                                        text_vao->draw (tmp, glm::vec3(-0.53, 0.5*GL_height_scale, -0.53), exz, eyz, text_color);
+                                        g_free (tmp);
+                                        tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0.5*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz/GL_height_scale));
+                                        text_vao->draw (tmp, glm::vec3(-0.53, 0.5, -0.53), exz, eyz, text_color);
+                                        g_free (tmp);
+                                }
                         }
-                        text_vao->draw ("front", glm::vec3(0, 0, -0.5), ex, ey, text_color);
-                        text_vao->draw ("top", glm::vec3(0, 0,  0.5), ex, ey, text_color); 
-                        text_vao->draw ("left", glm::vec3(0.5, 0, 0), ez, ey, text_color);
-                        text_vao->draw ("right", glm::vec3(-0.5, 0, 0), -ez, ey, text_color);
+                        if (text_vao && s->GLv_data.anno_show_bearings[1] == 'n'){
+                                text_vao->draw ("front", glm::vec3(0, 0, -0.5), ex, ey, text_color);
+                                text_vao->draw ("top", glm::vec3(0, 0,  0.5), ex, ey, text_color); 
+                                text_vao->draw ("left", glm::vec3(0.5, 0, 0), ez, ey, text_color);
+                                text_vao->draw ("right", glm::vec3(-0.5, 0, 0), -ez, ey, text_color);
+                        }
                 }
-                
-		return checkError("render");
+
+                checkError ("render -- done gimmick ico_vao (tip)");
+
+                // draw zero planes
+                if (s->GLv_data.anno_show_zero_planes[1] == 'n'){
+                        GLfloat r3  = 1.1f;
+                        GLfloat r3c = r3/2;
+                        glUseProgram (Tesselation_ProgramName);
+                        
+                        glDisable (GL_CULL_FACE);
+                        glEnable (GL_BLEND); 
+                        glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                        glEnable (GL_DEPTH_TEST);
+
+                        Block_FragmentShading.materialColor = MAKE_GLM_VEC4(s->GLv_data.anno_zero_plane_color); // vec4
+                        Block_FragmentShading.backsideColor = MAKE_GLM_VEC4(s->GLv_data.anno_zero_plane_color); // vec4
+                        updateFragmentShading ();                      
+                        
+                        Block_SurfaceGeometry.height_scale  = 1.0f;
+                        Block_SurfaceGeometry.height_offset = 0.01f;
+                        Block_SurfaceGeometry.plane_at = r3c;
+                        Block_SurfaceGeometry.cCenter = glm::vec4 (r3c, r3c, r3c, 0.5f);
+                        updateSurfaceGeometry ();
+
+                        surface_plane->make_plane_vbo ((s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx, r3);
+                        surface_plane->update_vertex_buffer ();
+                        oversized_plane = r3;
+                        
+                        Uniform_vertex_setup[0] = Uniform_vertex_plane_at;
+                        glUniformSubroutinesuiv (GL_VERTEX_SHADER, 1, Uniform_vertex_setup);
+                        glUniformSubroutinesuiv (GL_FRAGMENT_SHADER, 1, &Uniform_shadeLambertianMaterialColor);
+                        
+                        Uniform_evaluation_setup[0] = Uniform_evaluationVertexFlat;
+                        Uniform_evaluation_setup[1] = Uniform_evaluationColorFlat;
+
+                        Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_XZplane;
+                        glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 3, Uniform_evaluation_setup);
+                        surface_plane->draw ();
+
+                        Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_XYplane;
+                        glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 3, Uniform_evaluation_setup);
+                        surface_plane->draw ();
+
+                        Uniform_evaluation_setup[2] = Uniform_evaluation_vertex_ZYplane;
+                        glUniformSubroutinesuiv (GL_TESS_EVALUATION_SHADER, 3, Uniform_evaluation_setup);
+                        surface_plane->draw ();
+                }
+               
+		return checkError("render done -- zero planes. End render.");
 	};
 
         void resize (gint w, gint h){
@@ -1763,7 +1812,7 @@ private:
         GtkGLArea *glarea;
         int Major, Minor; // minimal version needed
 
-        gboolean oversized_plane;
+        gfloat oversized_plane;
         base_plane *surface_plane;
         text_plane *text_vao;
         icosahedron *ico_vao;
