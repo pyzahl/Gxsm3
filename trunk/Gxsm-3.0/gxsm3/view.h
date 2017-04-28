@@ -254,6 +254,11 @@ typedef struct{
         gchar anno_xaxis[60];
         gchar anno_yaxis[60];
         gchar anno_zaxis[60];
+	gchar anno_show_title[8];
+	gchar anno_show_axis_labels[8];
+	gchar anno_show_axis_dimensions[8];
+	gchar anno_show_bearings[8];
+	gchar anno_show_zero_planes[8];
         
 	int Fog;
 	float fog_color[4];

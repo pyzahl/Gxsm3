@@ -374,9 +374,29 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("Title Z-axis")
           ),
 	GNOME_RES_ENTRY_AUTO_PATH_OPTION
-	( GNOME_RES_STRING, "V3dControl..Annotations/Labels", "On", GET_GLV_OFFSET (&GLvd_offset.light[1][0]),
+	( GNOME_RES_STRING, "V3dControl.Annotations/ShowTitle", "On", GET_GLV_OFFSET (&GLvd_offset.anno_show_title[0]),
+	  OnOff_OptionsList, N_("Annotations"), 
+	  N_("Annotations: Title On/Off")
+	),
+	GNOME_RES_ENTRY_AUTO_PATH_OPTION
+	( GNOME_RES_STRING, "V3dControl.Annotations/ShowLabels", "On", GET_GLV_OFFSET (&GLvd_offset.anno_show_axis_labels[0]),
 	  OnOff_OptionsList, N_("Annotations"), 
 	  N_("Annotations: Labels On/Off")
+	),
+	GNOME_RES_ENTRY_AUTO_PATH_OPTION
+	( GNOME_RES_STRING, "V3dControl.Annotations/ShowDimensions", "On", GET_GLV_OFFSET (&GLvd_offset.anno_show_axis_dimensions[0]),
+	  OnOff_OptionsList, N_("Annotations"), 
+	  N_("Annotations: Dimensiones On/Off")
+	),
+	GNOME_RES_ENTRY_AUTO_PATH_OPTION
+	( GNOME_RES_STRING, "V3dControl.Annotations/ShowBearings", "On", GET_GLV_OFFSET (&GLvd_offset.anno_show_bearings[0]),
+	  OnOff_OptionsList, N_("Annotations"), 
+	  N_("Annotations: Bearings On/Off")
+	),
+	GNOME_RES_ENTRY_AUTO_PATH_OPTION
+	( GNOME_RES_STRING, "V3dControl.Annotations/ShowZeroPlanes", "On", GET_GLV_OFFSET (&GLvd_offset.anno_show_zero_planes[0]),
+	  OnOff_OptionsList, N_("Annotations"), 
+	  N_("Annotations: Zero/base plane/grid selections On/Off")
 	),
 
 // ============ Rendering Options
@@ -474,11 +494,22 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("Render Opt."), NULL),
 
 	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_BOOL, "V3dControl.RenderOp/Cull", "false", GET_GLV_OFFSET (&GLvd_offset.Cull),
+	( GNOME_RES_BOOL, "V3dControl.RenderOp/Cull", "true", GET_GLV_OFFSET (&GLvd_offset.Cull),
 	  TrueFalse_OptionsList, N_("Render Opt."), 
-	  N_("enable/disable cull face mode (surface back is not drawn!)\n"
+	  N_("enable/disable cull face mode (surface back side as invisible in top view is not drawn!)\n"
 	     "Note: if enabled you will not see your surface,\n"
-	     "if you are looking from below!")
+	     "if you are looking from below! Normally enable for speed and reduction of artifacts")
+		),
+
+	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_BOOL, "V3dControl.RenderOp/TransparentSlices", "false", GET_GLV_OFFSET (&GLvd_offset.TransparentSlices),
+	  TrueFalse_OptionsList, N_("Render Opt."), 
+	  N_("enable/disable transparency for normal non voluem view/slices")
+		),
+	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_BOOL, "V3dControl.RenderOp/Emission", "false", GET_GLV_OFFSET (&GLvd_offset.Emission),
+	  TrueFalse_OptionsList, N_("Render Opt."), 
+	  N_("enable/disable emission mode")
 		),
 
 #if 0
@@ -493,19 +524,8 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("enable/disable Smooth Shading (GL color model is smooth or flat)\n"
 	     "Note: smooth shading is much slower but looks also much better.")
 		),
-#endif
 	
-	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_BOOL, "V3dControl.RenderOp/TransparentSlices", "false", GET_GLV_OFFSET (&GLvd_offset.TransparentSlices),
-	  TrueFalse_OptionsList, N_("Render Opt."), 
-	  N_("enable/disable transparency for normal non voluem view/slices")
-		),
 
-	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_BOOL, "V3dControl.RenderOp/Emission", "false", GET_GLV_OFFSET (&GLvd_offset.Emission),
-	  TrueFalse_OptionsList, N_("Render Opt."), 
-	  N_("enable/disable emission mode")
-		),
 
 	GNOME_RES_ENTRY_OPTION
 	( GNOME_RES_BOOL, "V3dControl.RenderOp/ZeroPlane", "true", GET_GLV_OFFSET (&GLvd_offset.ZeroPlane),
@@ -524,6 +544,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  TickFrame_OptionsList, N_("Render Opt."), 
 	  N_("Tick Frame Options)")
 		),
+#endif
 
 	GNOME_RES_ENTRY_LAST
 };

@@ -53,12 +53,6 @@
     <value value="0" nick="true "/>
     <value value="1" nick="false "/>
   </enum>
-  <enum id="org-gnome-gxsm3-gl-option-v3d-control-render-op-tick-frame-options">
-    <value value="0" nick="0: Simple "/>
-    <value value="1" nick="1: XYZ with Labels "/>
-    <value value="2" nick="2: XYZ Box "/>
-    <value value="3" nick="3: XYZ w L Box "/>
-  </enum>
 
   <schema id="org.gnome.gxsm3.gl.v3dcontrol.view" path="/org/gnome/gxsm3/gl/v3dcontrol.view/">
     <key name="rotationx" type="d">
@@ -126,20 +120,6 @@ Elevation and Distance referring to Top View Model Orientation.
       <summary>Field of View</summary>
       <description>
         Field of View
-      </description>
-    </key>
-    <key name="frustumnear" type="d">
-      <default>0.001</default>
-      <summary>Frustum Distance Near: Z-Buffer Near Cut Off</summary>
-      <description>
-        Frustum Distance Near: Z-Buffer Near Cut Off
-      </description>
-    </key>
-    <key name="frustumfar" type="d">
-      <default>10.</default>
-      <summary>Frustum Distance Far: Z-Buffer Far Cut Off</summary>
-      <description>
-        Frustum Distance Far: Z-Buffer Far Cut Off
       </description>
     </key>
     <key name="distance" type="d">
@@ -373,37 +353,37 @@ Used only in "Uniform/Material Color Mode".
     </key>
     <key name="lightness" type="d">
       <default>0.65</default>
-      <summary>Color Lightness or Exposure level</summary>
+      <summary>Color Lightness or Exposure level -- for a typical light mix around 0.6</summary>
       <description>
-        Color Lightness or Exposure level
+        Color Lightness or Exposure level -- for a typical light mix around 0.6
       </description>
     </key>
     <key name="coloroffset" type="d">
       <default>0</default>
-      <summary>Color Contrast: shift color source</summary>
+      <summary>Color Contrast: shift color source. Default=0</summary>
       <description>
-        Color Contrast: shift color source
+        Color Contrast: shift color source. Default=0
       </description>
     </key>
     <key name="colorsaturation" type="d">
       <default>1</default>
-      <summary>Color Saturation, 1=normal</summary>
+      <summary>Color Saturation, Default=1</summary>
       <description>
-        Color Saturation, 1=normal
+        Color Saturation, Default=1
       </description>
     </key>
     <key name="transparency" type="d">
       <default>1</default>
-      <summary>Volume Model Transparency</summary>
+      <summary>Volume Model Transparency, Default=1</summary>
       <description>
-        Volume Model Transparency
+        Volume Model Transparency, Default=1
       </description>
     </key>
     <key name="transparencyoffset" type="d">
       <default>0</default>
-      <summary>Volume Model Transparency Offset</summary>
+      <summary>Volume Model Transparency Offset, Default=0</summary>
       <description>
-        Volume Model Transparency Offset
+        Volume Model Transparency Offset, Default=0
       </description>
     </key>
   </schema>
@@ -462,10 +442,18 @@ Used only in "Uniform/Material Color Mode".
         Title Z-axis
       </description>
     </key>
-  </schema>
-
-  <schema id="org.gnome.gxsm3.gl.v3dcontrol..annotations" path="/org/gnome/gxsm3/gl/v3dcontrol..annotations/">
-    <key name="labels" type="s">
+    <key name="showtitle" type="s">
+      <choices>
+        <choice value='On'/>
+        <choice value='Off'/>
+      </choices>
+      <default>'On'</default>
+      <summary>Annotations: Title On/Off</summary>
+      <description>
+        Annotations: Title On/Off
+      </description>
+    </key>
+    <key name="showlabels" type="s">
       <choices>
         <choice value='On'/>
         <choice value='Off'/>
@@ -474,6 +462,39 @@ Used only in "Uniform/Material Color Mode".
       <summary>Annotations: Labels On/Off</summary>
       <description>
         Annotations: Labels On/Off
+      </description>
+    </key>
+    <key name="showdimensions" type="s">
+      <choices>
+        <choice value='On'/>
+        <choice value='Off'/>
+      </choices>
+      <default>'On'</default>
+      <summary>Annotations: Dimensiones On/Off</summary>
+      <description>
+        Annotations: Dimensiones On/Off
+      </description>
+    </key>
+    <key name="showbearings" type="s">
+      <choices>
+        <choice value='On'/>
+        <choice value='Off'/>
+      </choices>
+      <default>'On'</default>
+      <summary>Annotations: Bearings On/Off</summary>
+      <description>
+        Annotations: Bearings On/Off
+      </description>
+    </key>
+    <key name="showzeroplanes" type="s">
+      <choices>
+        <choice value='On'/>
+        <choice value='Off'/>
+      </choices>
+      <default>'On'</default>
+      <summary>Annotations: Zero/base plane/grid selections On/Off</summary>
+      <description>
+        Annotations: Zero/base plane/grid selections On/Off
       </description>
     </key>
   </schema>
@@ -610,14 +631,14 @@ Effect depends on distance to object and size of object.
       </description>
     </key>
     <key name="cull" type="b">
-      <default>false</default>
-      <summary>enable/disable cull face mode (surface back is not drawn!)
+      <default>true</default>
+      <summary>enable/disable cull face mode (surface back side as invisible in top view is not drawn!)
 Note: if enabled you will not see your surface,
-if you are looking from below!</summary>
+if you are looking from below! Normally enable for speed and reduction of artifacts</summary>
       <description>
-        true GXSM OPTIONS=(false, enable/disable cull face mode (surface back is not drawn!)
+        true GXSM OPTIONS=(false, enable/disable cull face mode (surface back side as invisible in top view is not drawn!)
 Note: if enabled you will not see your surface,
-if you are looking from below!)
+if you are looking from below! Normally enable for speed and reduction of artifacts)
       </description>
     </key>
     <key name="transparentslices" type="b">
@@ -632,35 +653,6 @@ if you are looking from below!)
       <summary>enable/disable emission mode</summary>
       <description>
         true GXSM OPTIONS=(false, enable/disable emission mode)
-      </description>
-    </key>
-    <key name="zeroplane" type="b">
-      <default>true</default>
-      <summary>enable/disable Zero Plane/Box</summary>
-      <description>
-        true GXSM OPTIONS=(false, enable/disable Zero Plane/Box)
-      </description>
-    </key>
-    <key name="tickmarks" type="b">
-      <default>false</default>
-      <summary>enable/disable 3D Tickmarks drawing
- (Note: not yet available!!)</summary>
-      <description>
-        true GXSM OPTIONS=(false, enable/disable 3D Tickmarks drawing
- (Note: not yet available!!))
-      </description>
-    </key>
-    <key name="tickframeoptions" type="s">
-      <choices>
-        <choice value='0: Simple'/>
-        <choice value='1: XYZ with Labels'/>
-        <choice value='2: XYZ Box'/>
-        <choice value='3: XYZ w L Box'/>
-      </choices>
-      <default>'2: XYZ Box'</default>
-      <summary>Tick Frame Options)</summary>
-      <description>
-        Tick Frame Options)
       </description>
     </key>
   </schema>
