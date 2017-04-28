@@ -394,7 +394,7 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("Annotations: Bearings On/Off")
 	),
 	GNOME_RES_ENTRY_AUTO_PATH_OPTION
-	( GNOME_RES_STRING, "V3dControl.Annotations/ShowZeroPlanes", "On", GET_GLV_OFFSET (&GLvd_offset.anno_show_zero_planes[0]),
+	( GNOME_RES_STRING, "V3dControl.Annotations/ShowZeroPlanes", "Off", GET_GLV_OFFSET (&GLvd_offset.anno_show_zero_planes[0]),
 	  OnOff_OptionsList, N_("Annotations"), 
 	  N_("Annotations: Zero/base plane/grid selections On/Off")
 	),

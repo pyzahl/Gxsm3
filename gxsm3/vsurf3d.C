@@ -533,6 +533,9 @@ public:
                 // fix me -- find out how to get path or install own??
                 if (Validated && FT_New_Face(ft, "/usr/share/fonts/truetype/freefont/FreeSans.ttf", 0, &face)) {
                         g_warning ("Could not open font /usr/share/fonts/truetype/freefont/FreeSans.ttf. -- No GL text rendering.");
+                        gapp->warning ("Could not open font /usr/share/fonts/truetype/freefont/FreeSans.ttf.\n"
+                                       "No OpenGL text rendering via FreeType library.\n"
+                                       "Please install the 'fonts-freefont-ttf' package.");
                         Validated = false;
                 }
 

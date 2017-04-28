@@ -122,6 +122,20 @@ Elevation and Distance referring to Top View Model Orientation.
         Field of View
       </description>
     </key>
+    <key name="frustumnear" type="d">
+      <default>0.001</default>
+      <summary>Frustum Distance Near: Z-Buffer Near Cut Off</summary>
+      <description>
+        Frustum Distance Near: Z-Buffer Near Cut Off
+      </description>
+    </key>
+    <key name="frustumfar" type="d">
+      <default>10.</default>
+      <summary>Frustum Distance Far: Z-Buffer Far Cut Off</summary>
+      <description>
+        Frustum Distance Far: Z-Buffer Far Cut Off
+      </description>
+    </key>
     <key name="distance" type="d">
       <default>1.5</default>
       <summary>Distance: Camera GL_Z Position [also use Mouse Wheel] (Distance from surface center in front -- in top view rotation)</summary>
@@ -491,7 +505,7 @@ Used only in "Uniform/Material Color Mode".
         <choice value='On'/>
         <choice value='Off'/>
       </choices>
-      <default>'On'</default>
+      <default>'Off'</default>
       <summary>Annotations: Zero/base plane/grid selections On/Off</summary>
       <description>
         Annotations: Zero/base plane/grid selections On/Off
