@@ -43,10 +43,10 @@ case "$1" in
 	xdg-desktop-menu install --noupdate gxsm-gxsm.directory gxsm-doc.directory gxsm-manual.desktop sranger-manual.desktop gxsm-homepage.desktop gxsm-ventiotec.desktop gxsm-sranger.desktop gxsm-softdb.desktop 
 	echo "documentation-submenu added"	
 	xdg-desktop-menu forceupdate
-	value=`gsettings get com.canonical.Unity.Launcher favorites`
-	newvalue=`echo ${value} | sed s/^"\["/"\[\'application:\/\/gxsm-gxsm.desktop\', "/`
-	dbus-launch gsettings set com.canonical.Unity.Launcher favorites "$newvalue"
-	echo "added gxsm icon to unity toolbar"
+#	value=`gsettings get com.canonical.Unity.Launcher favorites`
+#	newvalue=`echo ${value} | sed s/^"\["/"\[\'application:\/\/gxsm-gxsm.desktop\', "/`
+#	dbus-launch gsettings set com.canonical.Unity.Launcher favorites "$newvalue"
+#	echo "added gxsm icon to unity toolbar"
 #	gxsmplugindir="/usr/lib/gxsm-plugins"
 #	if [ -d "$gxsmplugindir" ]; then 
 #  		if [ -L "$gxsmplugindir" ]; then

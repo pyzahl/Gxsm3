@@ -1,3 +1,9 @@
+gxsm3 (3.44.0-0ubuntu1) xenial; urgency=medium
+
+  * removing settings for unity toolbar 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 29 Apr 2017 23:01:26 +0200
+
 gxsm3 (3.44.0-0ubuntu0) xenial; urgency=medium
 
   * initial release of "Red-Force-3rd Dimension"

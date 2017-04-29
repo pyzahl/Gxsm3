@@ -102,7 +102,6 @@ Depends: 	${shlibs:Depends},
 		python-scipy, 
 		sed, 
 		subversion, 
-		unity-services, 
 		xdg-utils, 
 		xdot
 Suggests: sranger-modules-mk23-dkms, sranger-modules-std-dkms
