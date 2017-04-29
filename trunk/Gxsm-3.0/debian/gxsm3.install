@@ -1,6 +1,7 @@
 debian/Gxsm3-main.pdf usr/share/doc/gxsm3
 debian/sranger-main.pdf usr/share/doc/gxsm3
 pixmaps/gxsm-*.png usr/share/gxsm3/pixmaps
+icons/*svg /usr/share/gxsm3/icons
 debian/*.desktop usr/share/gxsm3/menu
 debian/*.directory usr/share/gxsm3/menu
 tools/*.py usr/bin
