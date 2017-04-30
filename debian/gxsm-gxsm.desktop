@@ -3,16 +3,21 @@
 [Desktop Entry]
 Encoding=UTF-8
 Value=1.0
-Name=GXSM
+Name=GXSM3
+Name[de]=GXSM3
 GenericName=Data acquisition and processing
-Comment=GXSM - startup in normal mode or rightclick
+Comment=Gnome X Scanning Microscopy and Data Analysis & Visualisation - normal mode
+Comment[de]=Gnome X Rastersonden Mikroskopie und Daten Analyse & Visualisation - normales Startup
 Exec=gxsm3 %F
 TryExec=gxsm3
-Icon=gxsm-app
-Terminal=1
+Icon=/usr/share/icons/hicolor/scalable/apps/gxsm3-icon.svg
+#Icon=gxsm-app
+Terminal=true
 Type=Application
+Categories=Gxsm;GTK;GNOME;Science
 X-AppInstall-Package=gxsm3
 X-GNOME-Settings-Panel=gxsm3
+MimeType=application/x-netcdf
 X-Ayatana-Desktop-Shortcuts=normal;no-hardware;gxsm_mkthree;sranger_mktwo;sranger_mkthree;sranger_mkthree_spd;gxsm_std;sranger_std;sranger_std_autoconf;update;initSR;manual_gxsm; manual_sranger;gxsm;sranger;ventiotec;softdb;gxsm_dsp;
 
 [normal Shortcut Group]

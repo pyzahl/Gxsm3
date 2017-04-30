@@ -1,3 +1,10 @@
+gxsm3 (3.44.0-0ubuntu2) xenial; urgency=medium
+
+  * improved integration into the gnome desktop
+  * update to new gxsm3 icon 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 30 Apr 2017 21:53:15 +0200
+
 gxsm3 (3.44.0-0ubuntu1) xenial; urgency=medium
 
   * removing settings for unity toolbar 

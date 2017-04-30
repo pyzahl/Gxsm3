@@ -11,3 +11,4 @@ Icon=gnome-mime-text-html.png
 Terminal=0
 Type=Application
 X-AppInstall-Package=gxsm3
+Categories=GxsmDoc;GTK;GNOME;Science

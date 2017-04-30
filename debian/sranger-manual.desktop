@@ -11,4 +11,5 @@ Comment=Opens the SRagner offline manual
 Exec=evince /usr/share/doc/gxsm3/sranger-main.pdf.gz
 Encoding=UTF-8
 Value=1.0
+Categories=GxsmDoc;GTK;GNOME;Science
 

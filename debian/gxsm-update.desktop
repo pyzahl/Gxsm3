@@ -1,14 +1,17 @@
 #!/usr/bin/env xdg-open
 
 [Desktop Entry]
-Name=GXSM updater
-Comment=Python script for updating Gxsm
+Name=GXSM3 updater
+Name[de]=GXSM3 Aktualisierungstools
+Comment=Python script for updating GXSM3 via apt or SVN
+Comment[de]=Python-Skritp um GXSM3 via apt oder SVN zu aktualisieren
 Exec=update_GXSM_SRanger.py
 Icon=update-manager
-Terminal=1
+Terminal=true
 Type=Application
 Encoding=UTF-8
 Value=1.0
 X-AppInstall-Package=gxsm3
 X-GNOME-Settings-Panel=gxsm3
+Categories=GxsmTools;GTK;GNOME;Science
 

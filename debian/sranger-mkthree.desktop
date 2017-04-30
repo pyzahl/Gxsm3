@@ -1,12 +1,14 @@
 #!/usr/bin/env xdg-open
 
 [Desktop Entry]
-Name=SRanger MK3Pro&A810 conf
+Name=SRanger MK3Pro&A810 configure
+Name[de]=SRanger MK3Pro&A810 Konfiguration
 Comment=Python script for configuration of the SR-MK3Pro&A810 boards
+Comment[de]=Python-Skript zur Konfiguration der SR-MK3Pro&A810-Karten
 Exec=mk3_spm_configurator.py
 Icon=gnome-mime-application-x-python-bytecode
-Terminal=1
+Terminal=true
 Type=Application
-Categories=Gxsm
-X-AppInstall-Package=sranger
+Categories=GxsmMK23;GTK;GNOME;Science
+X-AppInstall-Package=gxsm3
 

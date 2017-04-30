@@ -1,13 +1,20 @@
 #!/usr/bin/env xdg-open
 
 [Desktop Entry]
-Name=GXSM SR-MK2/3Pro
-Comment=GXSM with MK2/3Pro support
-Exec=gxsm3 "-h=SRangerMK2:SPM" "-d=/dev/sranger_mk2_0"
-Icon=gxsm-app
-Terminal=1
-Type=Application
 Encoding=UTF-8
 Value=1.0
+Name=GXSM3 SR-MK2/3Pro
+Name[de]=GXSM3 SR-MK2/3Pro
+GenericName=Data acquisition and processing
+Comment=GXSM3 with MK2/3Pro support
+Comment[de]=GXSM3 mit MK2/3Pro-Unterstützung
+Exec=gxsm3 "-h=SRangerMK2:SPM" "-d=/dev/sranger_mk2_0"
+TryExec=gxsm3
+Icon=/usr/share/icons/hicolor/scalable/apps/gxsm3-icon.svg
+#Icon=gxsm-app
+Terminal=true
+Type=Application
+Categories=GxsmMK23;GTK;GNOME;Science
 X-AppInstall-Package=gxsm3
-
+X-GNOME-Settings-Panel=gxsm3
+MimeType=application/x-netcdf

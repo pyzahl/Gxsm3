@@ -1,12 +1,14 @@
 #!/usr/bin/env xdg-open
 
 [Desktop Entry]
-Name=SRanger STD conf
+Name=SRanger STD/SP2 configuration
+Name[de]=SRanger STD/SP2 Konfiguration
 Comment=Python script for configuration of the SR-STD/SP2 boards
+Comment[de]=Python-Skript zur Konfiguration der SR-STD/SP2-Karten
 Exec=sr_spm_control.py
 Icon=gnome-mime-application-x-python-bytecode
-Terminal=1
+Terminal=true
 Type=Application
-Categories=Gxsm
-X-AppInstall-Package=sranger
+Categories=GxsmSTD;GTK;GNOME;Science
+X-AppInstall-Package=gxsm3
 
