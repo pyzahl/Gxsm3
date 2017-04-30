@@ -10,4 +10,5 @@ Type=Application
 X-AppInstall-Package=gxsm3
 Encoding=UTF-8
 Value=1.0
+Categories=GxsmDoc;GTK;GNOME;Science
 

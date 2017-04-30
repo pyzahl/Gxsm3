@@ -34,7 +34,7 @@ case "$1" in
 	echo "gxsm-folder icon added"
 
 	cd /usr/share/gxsm3/menu	
-	xdg-desktop-menu install --noupdate gxsm-gxsm.directory gxsm-gxsm.desktop gxsm-nohardware.desktop gxsm-update.desktop sranger-initsr.desktop
+	xdg-desktop-menu install --noupdate gxsm-gxsm.directory gxsm-gxsm.desktop gxsm-nohardware.desktop gxsm-update.desktop sranger-initsr.desktop gxsm-dsp.desktop
 	echo "gxsm-menu added"
 	xdg-desktop-menu install --noupdate gxsm-gxsm.directory gxsm-mktwothree.directory gxsm-mktwothree.desktop sranger-mktwo.desktop sranger-mkthree.desktop sranger-mkthree-spd.desktop
 	echo "mk23-submenu added"	
@@ -43,28 +43,32 @@ case "$1" in
 	xdg-desktop-menu install --noupdate gxsm-gxsm.directory gxsm-doc.directory gxsm-manual.desktop sranger-manual.desktop gxsm-homepage.desktop gxsm-ventiotec.desktop gxsm-sranger.desktop gxsm-softdb.desktop 
 	echo "documentation-submenu added"	
 	xdg-desktop-menu forceupdate
-#	value=`gsettings get com.canonical.Unity.Launcher favorites`
-#	newvalue=`echo ${value} | sed s/^"\["/"\[\'application:\/\/gxsm-gxsm.desktop\', "/`
-#	dbus-launch gsettings set com.canonical.Unity.Launcher favorites "$newvalue"
-#	echo "added gxsm icon to unity toolbar"
-#	gxsmplugindir="/usr/lib/gxsm-plugins"
-#	if [ -d "$gxsmplugindir" ]; then 
-#  		if [ -L "$gxsmplugindir" ]; then
-#    			# It is a symlink!
-#    			# Symbolic link specific commands go here.
-#    			rm "$gxsmplugindir"
-#			ln -s "/usr/lib/x86_64-linux-gnu/gxsm-plugins" "$gxsmplugindir" 
-#			echo "renewed link to gxsm-plugins"
-# 		else
-#    			# It's a directory!
-#    			# Directory command goes here.
-#    			echo "native x86 or amd64 system - folder exists"
-#  		fi
-#	else
-#		# neither link or folder
-#		ln -s "/usr/lib/x86_64-linux-gnu/gxsm-plugins" "$gxsmplugindir" 
-#		echo "amd64 system with x86 libs - created link to gxsm-plugins"
-#	fi
+	value=`gsettings get org.gnome.desktop.app-folders folder-children`
+	newvalue=`echo ${value} | sed s/^"\["/"\[\'GxsmDoc\', \'GxsmTools\', \'GxsmSTD\', \'GxsmMK23\', "/`
+	dbus-launch gsettings set org.gnome.desktop.app-folders folder-children "$newvalue"
+
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmDoc/ name "gxsm-doc.directory"
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmDoc/ translate true
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmDoc/ apps "['gxsm-manual.desktop','sranger-manual.desktop','gxsm-homepage.desktop', 'gxsm-ventiotec.desktop', 'gxsm-sranger.desktop', 'gxsm-softdb.desktop']"
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmDoc/ categories "['GxsmDoc']"
+	
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmTools/ name "gxsm-gxsm.directory"
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmTools/ translate true
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmTools/ apps "['gxsm-dsp.desktop','gxsm-update.desktop','sranger-initsr.desktop']"
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmTools/ categories "['GxsmTools']"
+
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmSTD/ name "gxsm-std.directory"
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmSTD/ translate true
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmSTD/ apps "['gxsm-std.desktop','sranger-std.desktop','sranger-std_auto.desktop']"
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmSTD/ categories "['GxsmSTD']"
+
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmMK23/ name "gxsm-mktwothree.directory"
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmMK23/ translate true
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmMK23/ apps "['gxsm-mktwothree.desktop','sranger-mktwo.desktop','sranger-mkthree.desktop', 'sranger-mkthree-spd.desktop']"
+	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmMK23/ categories "['GxsmMK23']"
+
+
+	echo "added gxsm icons to gnome activities toolbar"
 	cd    
 	;;
 

@@ -1,6 +1,10 @@
 [Desktop Entry]
-Type=Directory
-Name=SR STD/SP2
-Icon=gxsm-folder
 Encoding=UTF-8
 Value=1.0
+Type=Directory
+Name=GXSM (SR STD/SP2)
+Name[de]=GXSM (SR STD/SP2)
+Comment=Scripts related to the SR STD/SP2 hardware
+Comment[de]=Skripte für die SR STD/SP2-Hardware
+Icon=gxsm-folder
+
