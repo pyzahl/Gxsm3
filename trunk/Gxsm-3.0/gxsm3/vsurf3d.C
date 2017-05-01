@@ -867,7 +867,7 @@ public:
                 return Validated && checkError("make_plane::init_vao");
         };
         // vec4: (x,y,z, scale)
-        gboolean draw (glm::vec4 pos, glm::vec4 scale, glm::vec4 color, gfloat tesslevel=2.) {
+        gboolean draw (glm::vec4 pos, glm::vec4 scale, glm::vec4 color[4], gfloat tesslevel=2.) {
  		if (!Validated) return false;
 
                 g_message ("icosahedron draw");
@@ -878,7 +878,7 @@ public:
                 glUniform1f (Uniform_IcoTess_TessLevelOuter, tesslevel);  
                 glUniform4fv (Uniform_IcoTess_IcoPosition, 1, &(pos.x));
                 glUniform4fv (Uniform_IcoTess_IcoScale, 1, &(scale.x));
-                glUniform4fv (Uniform_IcoTess_IcoColor, 1, &(color.x));
+                glUniform4fv (Uniform_IcoTess_IcoColor, 4, &(color[0].x));
 
                 glBindVertexArray (VertexArrayName); // VAO
                 glBindBuffer (GL_ARRAY_BUFFER, ArrayBufferName);
@@ -1606,23 +1606,34 @@ public:
                 
                 // Gimmicks ========================================
                 // Ico
-                if (ico_vao && s->GLv_data.light[2][1] == 'n'){
+                if (ico_vao && s->GLv_data.tip_display[1] == 'n'){
 #define MAKE_GLM_VEC4X(V,X) glm::vec4(V[0],V[2],V[1],X)
                         checkError ("render -- draw ico");
-                        glm::vec4 c=MAKE_GLM_VEC3(s->GLv_data.light_specular[2]);
+                        glm::vec4 c[4] = {
+                                MAKE_GLM_VEC3(s->GLv_data.tip_colors[0]),
+                                MAKE_GLM_VEC3(s->GLv_data.tip_colors[1]),
+                                MAKE_GLM_VEC3(s->GLv_data.tip_colors[2]),
+                                MAKE_GLM_VEC3(s->GLv_data.tip_colors[3])
+                        };
 
                         GLfloat r[3];
                         s->GetXYZNormalized (r);
-                        
-                        GLfloat scale[3];
-                        s->GetXYZScale (scale); // get scaling factors Ang to GL-XYZ unit box
+                        // scale from scan
+                        GLfloat scale[3] =  {
+                                1.0f/(GLfloat)s->get_scan()->data.s.rx,
+                                1.0f/(GLfloat)s->get_scan()->data.s.ry,
+                                1.0f/(GLfloat)(s->get_scan()->mem2d->data->zrange * s->get_scan()->data.s.dz)
+                        };
+                        // scale from instrument/live
+                        if (s->GLv_data.tip_geometry[1][3] > 1)
+                                s->GetXYZScale (scale); // get scaling factors Ang to GL-XYZ unit box
                         glm::vec4 as = glm::vec4 (scale[0], scale[2], scale[1], 1); // make vector
-                        glm::vec4 R = MAKE_GLM_VEC4X (r,1) + as * MAKE_GLM_VEC4X (s->GLv_data.light_position[2], 0);   // GL coords XYZ: plane is XZ, Y is "up"
-                        glm::vec4 S = s->GLv_data.light_position[2][3] * 0.5f * as;
+                        glm::vec4 R  = MAKE_GLM_VEC4X (r,1) + as * MAKE_GLM_VEC4X (s->GLv_data.tip_geometry[0], 0);   // GL coords XYZ: plane is XZ, Y is "up"
+                        glm::vec4 S  = s->GLv_data.tip_geometry[0][3] * 0.5f * MAKE_GLM_VEC4X (s->GLv_data.tip_geometry[1], 1) * as;
 
                         ico_vao->draw (R,S,c,4);
-                        g_message ("R = %g %g %g", R.x, R.y, R.z);
-                        g_message ("S = X%g Y%g Z%g   %g %g %g", S.x, S.y, S.z, scale[0], scale[1], scale[2]);
+                        g_message ("Actual Tip Position = %g %g %g", R.x, R.y, R.z);
+                        g_message ("Actual Tip Scale    = X%g Y%g Z%g   %g %g %g", S.x, S.y, S.z, scale[0], scale[1], scale[2]);
                 }
 
                 checkError ("render -- done gimmick ico_vao (tip)");
@@ -1634,7 +1645,6 @@ public:
                                  s->GLv_data.anno_show_axis_dimensions[1] == 'n' ||
                                  s->GLv_data.anno_show_bearings[1] == 'n')){
                         checkError ("render -- draw text");
-                        //text_vao->draw ("GXSM-3.0", MAKE_GLM_VEC3X(s->GLv_data.light_position[1]), glm::vec3 (0,1,0), glm::vec3 (-0.1, 0.1, 0.1));
                         glm::vec3 ex=glm::vec3 (0.1,0,0);
                         glm::vec3 ey=glm::vec3 (0,0.1,0);
                         glm::vec3 ez=glm::vec3 (0,0,0.1);
@@ -2052,7 +2062,7 @@ void Surf3d::GLvarinit(){
         surface_z_data_buffer = NULL;
         GLv_data.camera[0] = 0.; // fixed
         GLv_data.fnear = 0.001;
-        GLv_data.ffar  = 10.0;
+        GLv_data.ffar  = 100.0;
         
 	ReadPalette (xsmres.Palette);
 

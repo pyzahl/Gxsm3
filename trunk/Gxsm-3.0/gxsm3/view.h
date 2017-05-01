@@ -240,6 +240,10 @@ typedef struct{
 	float light_spot_cutoff[3];
 	float light_spot_exponent[3];
 
+        gchar tip_display[8];
+        float tip_geometry[2][4];
+        float tip_colors[4][4];
+        
 	float surf_mat_color[4];
 	float surf_mat_backside_color[4];
 	float surf_mat_ambient[4];

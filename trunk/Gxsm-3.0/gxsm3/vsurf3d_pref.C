@@ -130,6 +130,12 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 
 	
 	GNOME_RES_ENTRY_FLOATSLIDER
+	( "V3dControl.View/Shift", "Shift", "0.0", GET_GLV_OFFSET (&GLvd_offset.camera[0]), 
+	  Dist_OptionsList, N_("View"),
+	  N_("Shift: Camera GL_X Position (Shift to left/right from surface center -- in top view rotation)"), NULL
+		),
+
+	GNOME_RES_ENTRY_FLOATSLIDER
 	( "V3dControl.View/Distance", "Distance", "1.5", GET_GLV_OFFSET (&GLvd_offset.camera[1]), 
 	  Dist_OptionsList, N_("View"),
 	  N_("Distance: Camera GL_Z Position [also use Mouse Wheel] (Distance from surface center in front -- in top view rotation)"), NULL
@@ -178,11 +184,12 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("View"), N_("Slicing Control: 1000 slice plane cover full range [Start, Stop, Step, --]"), NULL
 		),
 
+#if 0
 	GNOME_RES_ENTRY_FLOAT_VEC4
 	( "V3dControl.View/SlicePlanes", "SlicePlanes", "-1 -1 -1 0", GET_GLV_OFFSET (&GLvd_offset.slice_plane_index[0]), 
 	  N_("View"), N_("Slice Plane to add, set to -1 for off, else index [X, Y, Z, mode]"), NULL
 		),
-
+#endif
 // ============ Light
 
 	GNOME_RES_ENTRY_COLORSEL
@@ -247,25 +254,33 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_SEPARATOR (N_("Light"), NULL),
 
 	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_STRING, "V3dControl.Light/Tip", "Off", GET_GLV_OFFSET (&GLvd_offset.light[2][0]),
+	( GNOME_RES_STRING, "V3dControl.Light/Tip", "Off", GET_GLV_OFFSET (&GLvd_offset.tip_display),
 	  OnOff_OptionsList, N_("Light"), 
-	  N_("Light2: Tip display On/Off")
+	  N_("Tip display On/Off")
 		),
 	GNOME_RES_ENTRY_FLOAT_VEC4
-	( "V3dControl.Light/TipGap", "TipGap", "0 0 4 3.2", GET_GLV_OFFSET (&GLvd_offset.light_position[2]), N_("Light"),
-	  N_("Light2: Tip Offset and Gap and scale [X-off, Y-off, Z-gap, scale]"), NULL
+	( "V3dControl.Light/TipPos", "TipPos", "0 0 4 3.2", GET_GLV_OFFSET (&GLvd_offset.tip_geometry[0]), N_("Light"),
+	  N_("Tip Position and Gap and scale [X-off, Y-off, Z-gap, scale]"), NULL
+		),
+	GNOME_RES_ENTRY_FLOAT_VEC4
+	( "V3dControl.Light/TipASR", "TipASR", "1 1 1 0", GET_GLV_OFFSET (&GLvd_offset.tip_geometry[1]), N_("Light"),
+	  N_("Tip Atoms Aspect Ratio vs X [X, Y, Z, 0]"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.Light/TipColorPP", "TipColorPP", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.light_specular[2]), N_("Light"),
-	  N_("Light2: Tip Color"), NULL
+	( "V3dControl.Light/TipColorFA", "TipColorFA", "1 0 0 1", GET_GLV_OFFSET (&GLvd_offset.tip_colors[0]), N_("Light"),
+	  N_("Tip Color Front Atom"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.Light/TipColorApx", "TipColorApx", "0.1 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_diffuse[2]), N_("Light"),
-	  N_("Light2: Tip Apex (n/a) color"), NULL
+	( "V3dControl.Light/TipColorFA1", "TipColorFA2", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.tip_colors[1]), N_("Light"),
+	  N_("Tip Color Front Atom 2 opt"), NULL
 		),
 	GNOME_RES_ENTRY_COLORSEL
-	( "V3dControl.Light/TipColorXX", "TipColorXX", "0.1 0.1 0.1 1", GET_GLV_OFFSET (&GLvd_offset.light_ambient[2]), N_("Light"),
-	  N_("Light2: Tip apex (n/a) color x [red, green, blue, alpha]"), NULL
+	( "V3dControl.Light/TipColorFA2", "TipColorFA3", "1 1 1 1", GET_GLV_OFFSET (&GLvd_offset.tip_colors[2]), N_("Light"),
+	  N_("Tip Color Front Atom 3 opt"), NULL
+		),
+	GNOME_RES_ENTRY_COLORSEL
+	( "V3dControl.Light/TipColorAP", "TipColorAP", "0.5 0.5 0.5 1", GET_GLV_OFFSET (&GLvd_offset.tip_colors[3]), N_("Light"),
+	  N_("Tip Color Apex"), NULL
 		),
 
 // ============ Material Surface

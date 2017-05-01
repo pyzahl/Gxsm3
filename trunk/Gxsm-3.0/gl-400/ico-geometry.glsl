@@ -10,46 +10,51 @@ layout(triangle_strip, max_vertices = 3) out;
 
 in block
 {
-        vec3 tePosition;
-        vec3 tePatchDistance;
+        vec3 Position;
+        vec3 PatchDistance;
         vec3 VertexEye;
+        vec3 LatPos;
 } In[3];
 
 out block
 {
-        vec3 gPosition;
-        vec3 gFacetNormal;
-        vec3 gPatchDistance;
-        vec3 gTriDistance;
+        vec3 Position;
+        vec3 FacetNormal;
+        vec3 PatchDistance;
+        vec3 TriDistance;
         vec3 VertexEye;
+        vec3 LatPos;
 } Out;
 
 
 void main()
 {
-    vec3 A = In[2].tePosition - In[0].tePosition;
-    vec3 B = In[1].tePosition - In[0].tePosition;
-    Out.gFacetNormal = (ModelViewProjection * vec4(normalize(cross(A, B)),1)).xyz;
+    vec3 A = In[2].Position - In[0].Position;
+    vec3 B = In[1].Position - In[0].Position;
+    Out.FacetNormal = (ModelViewProjection * vec4(normalize(cross(A, B)),1)).xyz;
     
     Out.VertexEye = In[0].VertexEye;
-    Out.gPosition = gl_in[0].gl_Position.xyz;
-    Out.gPatchDistance = In[0].tePatchDistance;
-    Out.gTriDistance = vec3(1, 0, 0);
+    Out.Position = gl_in[0].gl_Position.xyz;
+    Out.PatchDistance = In[0].PatchDistance;
+    Out.TriDistance = vec3(1, 0, 0);
     gl_Position = gl_in[0].gl_Position;
+    Out.LatPos = In[0].LatPos;
     EmitVertex();
 
     Out.VertexEye = In[1].VertexEye;
-    Out.gPosition = gl_in[1].gl_Position.xyz;
-    Out.gPatchDistance = In[1].tePatchDistance;
-    Out.gTriDistance = vec3(0, 1, 0);
+    Out.Position = gl_in[1].gl_Position.xyz;
+    Out.PatchDistance = In[1].PatchDistance;
+    Out.TriDistance = vec3(0, 1, 0);
     gl_Position = gl_in[1].gl_Position;
+    Out.LatPos = In[1].LatPos;
     EmitVertex();
 
     Out.VertexEye = In[2].VertexEye;
-    Out.gPosition = gl_in[2].gl_Position.xyz;
-    Out.gPatchDistance = In[2].tePatchDistance;
-    Out.gTriDistance = vec3(0, 0, 1);
+    Out.Position = gl_in[2].gl_Position.xyz;
+    Out.PatchDistance = In[2].PatchDistance;
+    Out.TriDistance = vec3(0, 0, 1);
     gl_Position = gl_in[2].gl_Position;
+    Out.LatPos = In[2].LatPos;
     EmitVertex();
 
     EndPrimitive();

@@ -13,14 +13,14 @@ layout(location = LATTICE)  in vec4 LatPos;
 
 out block
 {
-        vec3 vPosition;
-        vec3 vLatPos;
+        vec3 Position;
+        vec3 LatPos;
 } Out;
 
 uniform vec4 IcoPositionS;
 
 void main()
 {
-    Out.vPosition = Position.xyz;
-    Out.vLatPos = LatPos.xyz;
+    Out.Position = Position.xyz;
+    Out.LatPos = LatPos.xyz;
 }
