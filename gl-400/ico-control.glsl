@@ -1,5 +1,5 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-/* Ico-TessControl */
+/* Ico-TessControl stage 2 */
 
 #include "g3d-allshader-uniforms.glsl"
 
@@ -12,20 +12,20 @@ uniform float TessLevelOuter;
 
 in block
 {
-        vec3 vPosition;
-        vec3 vLatPos;
+        vec3 Position;
+        vec3 LatPos;
 } In[];
 
 out block
 {
-        vec3 tcPosition;
-        vec3 tcLatPos;
+        vec3 Position;
+        vec3 LatPos;
 } Out[];
 
 void main()
 {
-    Out[ID].tcPosition = In[ID].vPosition;
-    Out[ID].tcLatPos   = In[ID].vLatPos;
+    Out[ID].Position = In[ID].Position;
+    Out[ID].LatPos   = In[ID].LatPos;
     if (ID == 0) {
         gl_TessLevelInner[0] = TessLevelInner;
         gl_TessLevelOuter[0] = TessLevelOuter;

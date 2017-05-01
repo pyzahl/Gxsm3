@@ -7,18 +7,19 @@ layout(std140, column_major) uniform;
 
 in block
 {
-        vec3 gPosition;
-        vec3 gFacetNormal;
-        vec3 gPatchDistance;
-        vec3 gTriDistance;
+        vec3 Position;
+        vec3 FacetNormal;
+        vec3 PatchDistance;
+        vec3 TriDistance;
         vec3 VertexEye;
+        vec3 LatPos;
 } In;
 
 out vec4 FragColor;
 
 in float gPrimitive;
 
-uniform vec4 IcoColor;
+uniform vec4 IcoColor[4];
 
 vec4 shadeLambertian(vec3 vertex, vec3 vertexEye, 
                      vec3 normal, vec4 color)
@@ -71,6 +72,9 @@ vec4 shadeLambertian(vec3 vertex, vec3 vertexEye,
 
 void main()
 {
-        vec3 N = normalize(In.gFacetNormal);
-        FragColor = shadeLambertian(In.gPosition, In.VertexEye, N, IcoColor);
+        vec3 N = normalize(In.FacetNormal);
+        int i=0;
+        if (In.LatPos.y > 0.1)
+                i=3;
+        FragColor = shadeLambertian(In.Position, In.VertexEye, N, IcoColor[i]);
 }

@@ -122,18 +122,11 @@ Elevation and Distance referring to Top View Model Orientation.
         Field of View
       </description>
     </key>
-    <key name="frustumnear" type="d">
-      <default>0.001</default>
-      <summary>Frustum Distance Near: Z-Buffer Near Cut Off</summary>
+    <key name="shift" type="d">
+      <default>0.0</default>
+      <summary>Shift: Camera GL_X Position (Shift to left/right from surface center -- in top view rotation)</summary>
       <description>
-        Frustum Distance Near: Z-Buffer Near Cut Off
-      </description>
-    </key>
-    <key name="frustumfar" type="d">
-      <default>10.</default>
-      <summary>Frustum Distance Far: Z-Buffer Far Cut Off</summary>
-      <description>
-        Frustum Distance Far: Z-Buffer Far Cut Off
+        Shift: Camera GL_X Position (Shift to left/right from surface center -- in top view rotation)
       </description>
     </key>
     <key name="distance" type="d">
@@ -208,13 +201,6 @@ Elevation and Distance referring to Top View Model Orientation.
         Slicing Control: 1000 slice plane cover full range [Start, Stop, Step, --]
       </description>
     </key>
-    <key name="sliceplanes" type="ad">
-      <default>[-1,-1,-1,0]</default>
-      <summary>Slice Plane to add, set to -1 for off, else index [X, Y, Z, mode]</summary>
-      <description>
-        Slice Plane to add, set to -1 for off, else index [X, Y, Z, mode]
-      </description>
-    </key>
   </schema>
 
   <schema id="org.gnome.gxsm3.gl.v3dcontrol.light" path="/org/gnome/gxsm3/gl/v3dcontrol.light/">
@@ -256,37 +242,51 @@ Elevation and Distance referring to Top View Model Orientation.
         <choice value='Off'/>
       </choices>
       <default>'Off'</default>
-      <summary>Light2: Tip display On/Off</summary>
+      <summary>Tip display On/Off</summary>
       <description>
-        Light2: Tip display On/Off
+        Tip display On/Off
       </description>
     </key>
-    <key name="tipgap" type="ad">
+    <key name="tippos" type="ad">
       <default>[0,0,4,3.2]</default>
-      <summary>Light2: Tip Offset and Gap and scale [X-off, Y-off, Z-gap, scale]</summary>
+      <summary>Tip Position and Gap and scale [X-off, Y-off, Z-gap, scale]</summary>
       <description>
-        Light2: Tip Offset and Gap and scale [X-off, Y-off, Z-gap, scale]
+        Tip Position and Gap and scale [X-off, Y-off, Z-gap, scale]
       </description>
     </key>
-    <key name="tipcolorpp" type="ad">
+    <key name="tipasr" type="ad">
+      <default>[1,1,1,0]</default>
+      <summary>Tip Atoms Aspect Ratio vs X [X, Y, Z, 0]</summary>
+      <description>
+        Tip Atoms Aspect Ratio vs X [X, Y, Z, 0]
+      </description>
+    </key>
+    <key name="tipcolorfa" type="ad">
       <default>[1,1,1,1]</default>
-      <summary>Light2: Tip Color</summary>
+      <summary>Tip Color Front Atom</summary>
       <description>
-        Light2: Tip Color
+        Tip Color Front Atom
       </description>
     </key>
-    <key name="tipcolorapx" type="ad">
-      <default>[0.1,0.1,0.1,1]</default>
-      <summary>Light2: Tip Apex (n/a) color</summary>
+    <key name="tipcolorfa1" type="ad">
+      <default>[1,1,1,1]</default>
+      <summary>Tip Color Front Atom 2 opt</summary>
       <description>
-        Light2: Tip Apex (n/a) color
+        Tip Color Front Atom 2 opt
       </description>
     </key>
-    <key name="tipcolorxx" type="ad">
-      <default>[0.1,0.1,0.1,1]</default>
-      <summary>Light2: Tip apex (n/a) color x [red, green, blue, alpha]</summary>
+    <key name="tipcolorfa2" type="ad">
+      <default>[1,1,1,1]</default>
+      <summary>Tip Color Front Atom 3 opt</summary>
       <description>
-        Light2: Tip apex (n/a) color x [red, green, blue, alpha]
+        Tip Color Front Atom 3 opt
+      </description>
+    </key>
+    <key name="tipcolorap" type="ad">
+      <default>[1,1,1,1]</default>
+      <summary>Tip Color Apex</summary>
+      <description>
+        Tip Color Apex
       </description>
     </key>
   </schema>
