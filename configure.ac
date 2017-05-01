@@ -709,28 +709,10 @@ YELP_HELP_INIT
 # Vala
 #VAPIGEN_CHECK([0.25.1])
 
-if test "$os_osx" = "yes"; then
-	os_menus_ui=menus-osx.ui
-	os_style_css=gxsm3-style-osx.css
-else
-	os_menus_ui=menus-default.ui
-	os_style_css=
-
-	OS_DEPENDENT_RESOURCE_FILES='<file preprocess="xml-stripblanks">gtk/menus-traditional.ui</file>'
-fi
-
-if test "x$os_style_css" != "x"; then
-	OS_DEPENDENT_RESOURCE_FILES+="<file>css/gxsm3-style-os.css</file>"
-	AC_CONFIG_LINKS(gxsm3/resources/css/gxsm3-style-os.css:gxsm3/resources/css/$os_style_css)
-fi
-
-AC_SUBST(OS_DEPENDENT_RESOURCE_FILES)
-AC_CONFIG_LINKS(gxsm3/resources/gtk/menus.ui:gxsm3/resources/gtk/$os_menus_ui)
 
 AC_CONFIG_FILES([
 Makefile
 gxsm3/Makefile
-gxsm3/resources/gxsm3.gresource.xml
 plug-ins/Makefile
 plug-ins/common/Makefile
 plug-ins/control/Makefile
@@ -753,11 +735,8 @@ tools/Makefile
 thumbnailers/Makefile
 pixmaps/Makefile
 icons/Makefile
-data/org.gnome.gxsm3.desktop.in
-data/gxsm3.pc
-data/org.gnome.gxsm3.gschema.xml
 po/Makefile.in
-osx/bundle/data/Info.plist])
+])
 
 AC_OUTPUT
 

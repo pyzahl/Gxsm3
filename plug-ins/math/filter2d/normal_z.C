@@ -47,19 +47,17 @@ longhelp		=Gausian normal_z
  * All "% OptPlugInXXX" tags are optional and can be removed or commented in
  * --------------------------------------------------------------------------------
 % BeginPlugInDocuSection
-% PlugInDocuCaption: Normal_Z
+% PlugInDocuCaption: Normal Z
 % PlugInName: normal_z
 % PlugInAuthor: Percy Zahl
 % PlugInAuthorEmail: zahl@users.sf.net
-% PlugInMenuPath: Math/Filter 2D/Normal_Z
+% PlugInMenuPath: Math/Filter 2D/Normal Z
 
 % PlugInDescription
-A 2D Gausian normal_z is calculated via convolution with a Gaus-Kernel:
-
-\[ K_{ij} = 4*e^{-\frac{i^2+j^2}{r^2}} \]
+Z Normal component is calculated.
 
 % PlugInUsage
-Call \GxsmMenu{Math/Filter 2D/Normal_Z}.
+Call \GxsmMenu{Math/Filter 2D/Normal Z}.
 
 % OptPlugInSources
 The active channel is used as data source.
@@ -69,8 +67,6 @@ The computation result is placed into an existing math channel, else
 into a new created math channel.
 
 % OptPlugInHints
-Alternative: Use the Fourier-Filter methods Gaus-Stop/Pass for huge
-convolutions, it's faster!
 
 % EndPlugInDocuSection
  * -------------------------------------------------------------------------------- 

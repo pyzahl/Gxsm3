@@ -1,5 +1,0 @@
-[org.gnome.desktop.interface]
-monospace-font-name = 'Menlo 12'
-
-[org.gnome.gxsm3.preferences.editor]
-editor-font = 'Menlo 12'
