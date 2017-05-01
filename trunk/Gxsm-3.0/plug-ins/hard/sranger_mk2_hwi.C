@@ -931,8 +931,7 @@ application and step response test tools not directly provided via the
 The actual readings of the two banks of each 8 AD and DA converters
 provided by the A810 expansion board can be monitored via the A810
 AD/DA Monitor App as shown in Fig\ref{fig:MK3-spm-configurator-A810-mon}.
-\GxsmScreenShotS{MK3-spm-configurator-A810-mon}{A810 AD/DA
-  Monitor}{0.2}
+\GxsmScreenShotS{MK3-spm-configurator-A810-mon}{A810 AD/DA Monitor}{0.2}
 
 A subset of all signals can be configured via the Signal-Monitor for
 watching. In general for testing and debugging any signal can be

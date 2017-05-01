@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.gnome.gxsm3
-Exec=@bindir@/gxsm3 --gapplication-service

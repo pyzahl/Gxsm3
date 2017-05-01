@@ -49,3 +49,10 @@ install-icons:
 	done
 
 install-data-local: install-icons
+
+
+# gsettings_SCHEMAS is a list of all the schemas you want to install
+gsettings_SCHEMAS = org.gnome.desktop.gxsm3.gschema.xml 
+
+# include the appropriate makefile rules for schema handling
+@GSETTINGS_RULES@
