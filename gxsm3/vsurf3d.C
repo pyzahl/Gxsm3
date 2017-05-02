@@ -1318,6 +1318,13 @@ public:
                 return surface_plane->update_displacement_data (Surf3D_Z_Data, line, num_lines);
         };
 
+        gfloat z_world_to_normalized (double zw, GLfloat GL_hs=1.0f) {
+                return zw/(GL_hs*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz);
+        };
+        double z_normalized_to_world (double zn, GLfloat GL_hs=1.0f) {
+                return zn/GL_hs*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz;
+        };
+        
 	bool render() {
 		if (!Validated) return false;
                 GLfloat GL_height_scale = 1.;
@@ -1606,8 +1613,9 @@ public:
                 
                 // Gimmicks ========================================
                 // Ico
+                GLfloat tz=0.;
                 if (ico_vao && s->GLv_data.tip_display[1] == 'n'){
-#define MAKE_GLM_VEC4X(V,X) glm::vec4(V[0],V[2],V[1],X)
+#define MAKE_GLM_VEC4XS(V,X) glm::vec4(V[0],V[2],V[1],X)
                         checkError ("render -- draw ico");
                         glm::vec4 c[4] = {
                                 MAKE_GLM_VEC3(s->GLv_data.tip_colors[0]),
@@ -1617,23 +1625,30 @@ public:
                         };
 
                         GLfloat r[3];
-                        s->GetXYZNormalized (r);
+                        double z = s->GetXYZNormalized (r);
                         // scale from scan
                         GLfloat scale[3] =  {
                                 1.0f/(GLfloat)s->get_scan()->data.s.rx,
                                 1.0f/(GLfloat)s->get_scan()->data.s.ry,
-                                1.0f/(GLfloat)(s->get_scan()->mem2d->data->zrange * s->get_scan()->data.s.dz)
-                        };
+                                1.0f
+                        }; // GL_height_scale * (s->get_scan()->mem2d->data->zrange * s->get_scan()->data.s.dz)
+                        switch (s->GLv_data.height_scale_mode[0]){
+                        case 'x': scale[2] = 0.5f/(GLfloat)(s->get_scan()->mem2d->data->zrange * s->get_scan()->data.s.dz); break;
+                        case 'A': scale[2] = 0.5f/(GLfloat)(s->get_scan()->mem2d->data->zrange); break;
+                        case 'R': scale[2] = 0.5f/GL_height_scale; break;
+                        }
                         // scale from instrument/live
                         if (s->GLv_data.tip_geometry[1][3] > 1)
                                 s->GetXYZScale (scale); // get scaling factors Ang to GL-XYZ unit box
-                        glm::vec4 as = glm::vec4 (scale[0], scale[2], scale[1], 1); // make vector
-                        glm::vec4 R  = MAKE_GLM_VEC4X (r,1) + as * MAKE_GLM_VEC4X (s->GLv_data.tip_geometry[0], 0);   // GL coords XYZ: plane is XZ, Y is "up"
-                        glm::vec4 S  = s->GLv_data.tip_geometry[0][3] * 0.5f * MAKE_GLM_VEC4X (s->GLv_data.tip_geometry[1], 1) * as;
+                        
+                        glm::vec4 as       = MAKE_GLM_VEC4XS (scale, 1); // make vector
+                        glm::vec4 tip_pos  = MAKE_GLM_VEC4XS (r,1) + as * MAKE_GLM_VEC4XS (s->GLv_data.tip_geometry[0], 0);   // GL coords XYZ: plane is XZ, Y is "up"
+                        glm::vec4 tip_scaling = s->GLv_data.tip_geometry[0][3] * 0.5f * MAKE_GLM_VEC4XS (s->GLv_data.tip_geometry[1], 1) * as;
 
-                        ico_vao->draw (R,S,c,4);
-                        g_message ("Actual Tip Position = %g %g %g", R.x, R.y, R.z);
-                        g_message ("Actual Tip Scale    = X%g Y%g Z%g   %g %g %g", S.x, S.y, S.z, scale[0], scale[1], scale[2]);
+                        ico_vao->draw (tip_pos,tip_scaling,c,4);
+                        tz=tip_pos.y=z_world_to_normalized ((z + s->GLv_data.tip_geometry[0][2]), GL_height_scale);
+                        g_message ("Actual Tip Position = %g %g %g  r.z=%g  tz=%g  z=%g", tip_pos.x, tip_pos.y, tip_pos.z, r[2], tz , z);
+                        g_message ("Actual Tip Scale    = X%g Y%g Z%g   %g %g %g", tip_scaling.x, tip_scaling.y, tip_scaling.z, scale[0], scale[1], scale[2]);
                 }
 
                 checkError ("render -- done gimmick ico_vao (tip)");
@@ -1681,11 +1696,25 @@ public:
                                         gchar *tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0));
                                         text_vao->draw (tmp, glm::vec3(-0.53, 0, -0.53), exz, eyz, text_color);
                                         g_free (tmp);
-                                        tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0.5*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz));
+                                        // Z-box upper
+                                        tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (z_normalized_to_world (0.5, GL_height_scale)));
+                                        text_vao->draw (tmp, glm::vec3(-0.53, 0.5, -0.53), exz, eyz, text_color);
+                                        g_free (tmp);
+                                        // Z-surface upper
+                                        tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (z_normalized_to_world (0.5*GL_height_scale, GL_height_scale)));
                                         text_vao->draw (tmp, glm::vec3(-0.53, 0.5*GL_height_scale, -0.53), exz, eyz, text_color);
                                         g_free (tmp);
-                                        tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (0.5*(s->get_scan ())->mem2d->data->zrange*(s->get_scan ())->data.s.dz/GL_height_scale));
-                                        text_vao->draw (tmp, glm::vec3(-0.53, 0.5, -0.53), exz, eyz, text_color);
+                                        // Z-surface lower
+                                        tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (z_normalized_to_world (-0.5*GL_height_scale, GL_height_scale)));
+                                        text_vao->draw (tmp, glm::vec3(-0.53, -0.5*GL_height_scale, -0.53), exz, eyz, text_color);
+                                        g_free (tmp);
+                                        // Z-box lower
+                                        tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (z_normalized_to_world (-0.5, GL_height_scale)));
+                                        text_vao->draw (tmp, glm::vec3(-0.53, -0.5, -0.53), exz, eyz, text_color);
+                                        g_free (tmp);
+                                        // Z-tip
+                                        tmp = g_strdup ((s->get_scan ())->data.Zunit->UsrString (z_normalized_to_world (tz, GL_height_scale)));
+                                        text_vao->draw (tmp, glm::vec3(-0.53, tz, -0.53), exz, eyz, text_color);
                                         g_free (tmp);
                                 }
                         }
@@ -1977,9 +2006,9 @@ double Surf3d::GetXYZNormalized(float *r){
         double x,y,z, za; 
         gapp->xsm->hardware->RTQuery ("R", z, x, y);
         gapp->xsm->hardware->invTransform (&x, &y);
-        za = z;
+        za = z-gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zmin);
         // g_message ("GetXYZ RTQuery: Z=%f X=%f Y=%f", z,x,y);
-        z = (z - gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zmin)) / gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
+        z = za / gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
         x /= scan->data.s.rx; // Ang
         y /= scan->data.s.ry;
         r[0] = -x;
