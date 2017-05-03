@@ -555,6 +555,12 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 		),
 
 	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_BOOL, "V3dControl.RenderOp/ZeroOld", "true", GET_GLV_OFFSET (&GLvd_offset.ZeroOld),
+	  TrueFalse_OptionsList, N_("Render Opt."), 
+	  N_("enable/disable clear (zero) olddata in life scan update -- only good for top-down scan!)")
+		),
+
+	GNOME_RES_ENTRY_OPTION
 	( GNOME_RES_STRING, "V3dControl.RenderOp/TickFrameOptions", "2: XYZ Box", GET_GLV_OFFSET (&GLvd_offset.TickFrameOptions[0]),
 	  TickFrame_OptionsList, N_("Render Opt."), 
 	  N_("Tick Frame Options)")

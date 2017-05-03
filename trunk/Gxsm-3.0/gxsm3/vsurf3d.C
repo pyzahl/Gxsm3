@@ -2249,8 +2249,10 @@ void Surf3d::create_surface_buffer(){
 	size = XPM_x * XPM_y * XPM_v;
 
 	XSM_DEBUG_GP (GL_DEBUG_L3, "Surf3d::create_surface_buffer  **nXYV (%d, %d, %d)\n", XPM_x, XPM_y, XPM_v);
-        
-	surface_z_data_buffer = g_new (glm::vec4, size * sizeof(glm::vec4));
+
+        // renew if exisits
+        g_free (surface_z_data_buffer);
+        surface_z_data_buffer = g_new (glm::vec4, size * sizeof(glm::vec4));
 
 	XSM_DEBUG (GL_DEBUG_L3, "Surf3d::create_surface_buffer  ** g_new completed");
 
@@ -2517,10 +2519,27 @@ int Surf3d::update(int y1, int y2){
 	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::update trafo");
 	setup_data_transformation();
 
+        if (GLv_data.ZeroOld && y1 == 0){
+                for(int v=0; v<scan->mem2d->GetNv(); ++v)
+                        for(int j=y2; j < scan->mem2d->GetNy (); ++j)
+                                for(int k=0; k < scan->mem2d->GetNx (); ++k){
+                                        int i = k + j*XPM_x + XPM_x*XPM_y*v;
+                                        surface_z_data_buffer[i].x=0.;
+                                        surface_z_data_buffer[i].y=0.;
+                                        surface_z_data_buffer[i].z=0.;
+                                        surface_z_data_buffer[i].w=0.;
+                                }
+                if (gl_tess)
+                        gl_tess->updateTexture (0, scan->mem2d->GetNy ());
+        }
 	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::update data");
 //	int v = scan->mem2d->GetLayer();
 	for(int v=0; v<scan->mem2d->GetNv(); ++v){
-                scan->mem2d->data->update_ranges (v);
+                if (scan->mem2d->data->update_ranges (v)){
+                        // ranges changes, need to recalculate all
+                        y1=0;
+                        if (!GLv_data.ZeroOld) y2=scan->mem2d->GetNy();
+                }
 		for(int j=y1; j < y2; ++j)
 			for(int k=0; k < scan->mem2d->GetNx (); ++k)
 				PutPointMode (k,j,v);
