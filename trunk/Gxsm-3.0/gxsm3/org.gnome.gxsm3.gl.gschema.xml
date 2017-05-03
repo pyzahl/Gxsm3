@@ -262,7 +262,7 @@ Elevation and Distance referring to Top View Model Orientation.
       </description>
     </key>
     <key name="tipcolorfa" type="ad">
-      <default>[1,1,1,1]</default>
+      <default>[1,0,0,1]</default>
       <summary>Tip Color Front Atom</summary>
       <description>
         Tip Color Front Atom
@@ -283,7 +283,7 @@ Elevation and Distance referring to Top View Model Orientation.
       </description>
     </key>
     <key name="tipcolorap" type="ad">
-      <default>[1,1,1,1]</default>
+      <default>[0.5,0.5,0.5,1]</default>
       <summary>Tip Color Apex</summary>
       <description>
         Tip Color Apex
@@ -667,6 +667,13 @@ if you are looking from below! Normally enable for speed and reduction of artifa
       <summary>enable/disable emission mode</summary>
       <description>
         true GXSM OPTIONS=(false, enable/disable emission mode)
+      </description>
+    </key>
+    <key name="zeroold" type="b">
+      <default>true</default>
+      <summary>enable/disable clear (zero) olddata in life scan update -- only good for top-down scan!)</summary>
+      <description>
+        true GXSM OPTIONS=(false, enable/disable clear (zero) olddata in life scan update -- only good for top-down scan!))
       </description>
     </key>
   </schema>

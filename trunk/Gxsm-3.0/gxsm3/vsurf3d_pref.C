@@ -527,6 +527,12 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  N_("enable/disable emission mode")
 		),
 
+	GNOME_RES_ENTRY_OPTION
+	( GNOME_RES_BOOL, "V3dControl.RenderOp/ZeroOld", "true", GET_GLV_OFFSET (&GLvd_offset.ZeroOld),
+	  TrueFalse_OptionsList, N_("Render Opt."), 
+	  N_("enable/disable clear (zero) olddata in life scan update -- only good for top-down scan!)")
+		),
+
 #if 0
 	GNOME_RES_ENTRY_OPTION
 	( GNOME_RES_BOOL, "V3dControl.RenderOp/Tex", "false", GET_GLV_OFFSET (&GLvd_offset.Texture),
@@ -552,12 +558,6 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	( GNOME_RES_BOOL, "V3dControl.RenderOp/Tickmarks", "false", GET_GLV_OFFSET (&GLvd_offset.Ticks),
 	  TrueFalse_OptionsList, N_("Render Opt."), 
 	  N_("enable/disable 3D Tickmarks drawing\n (Note: not yet available!!)")
-		),
-
-	GNOME_RES_ENTRY_OPTION
-	( GNOME_RES_BOOL, "V3dControl.RenderOp/ZeroOld", "true", GET_GLV_OFFSET (&GLvd_offset.ZeroOld),
-	  TrueFalse_OptionsList, N_("Render Opt."), 
-	  N_("enable/disable clear (zero) olddata in life scan update -- only good for top-down scan!)")
 		),
 
 	GNOME_RES_ENTRY_OPTION
