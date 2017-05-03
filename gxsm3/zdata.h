@@ -194,7 +194,9 @@ public:
         void copy_ranges (ZData *z){
                 zmin=z->zmin, zmax=z->zmax, zcenter=z->zcenter, zrange=z->zrange;
         };
-	void update_ranges (int iv, gboolean extend=false){
+	gboolean update_ranges (int iv, gboolean extend=false){
+                double last_min = zmin;
+                double last_range = zrange;
                 if (!extend)
                         zmin=zmax=Z (0,0,iv);
                 for (int ix=0; ix<nx; ++ix)
@@ -205,6 +207,8 @@ public:
                         }
                 zrange  = 1. + zmax - zmin; // never < 1!
                 zcenter = zmin + 0.5*zrange;
+                double eps = zrange/100.;
+                return (fabs(last_min-zmin) > eps || fabs(last_range-zrange) > eps);
 	};
 	double zmin, zmax, zcenter, zrange;;
 	

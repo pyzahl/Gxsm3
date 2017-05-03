@@ -277,6 +277,7 @@ typedef struct{
 	int Smooth;
 	int Ortho;
 	int Ticks;
+        int ZeroOld;
         float probe_atoms;
 	gchar TickFrameOptions[30];
 	int TransparentSlices;
