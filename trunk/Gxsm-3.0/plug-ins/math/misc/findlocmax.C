@@ -1,8 +1,10 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
  * 
- * Gxsm Plugin Name: dummy.C
+ * Gxsm Plugin Name: findlocmax.C
  * ========================================
  * 
  * Copyright (C) 1999 The Free Software Foundation
@@ -98,7 +100,7 @@ GxsmPlugin findlocmax_pi = {
 	0,
 	NULL,
 	g_strdup("Findlocmax-M1S-Misc"),
-	"+SARLS",
+	NULL,
 	NULL,
 	"Nobody?, PZ",
 	"math-misc-section",
@@ -162,11 +164,132 @@ static void findlocmax_cleanup(void)
 	PI_DEBUG (DBG_L2, "Findlocmax Plugin Cleanup");
 }
 
-static gboolean findlocmax_run(Scan *Src, Scan *Dest)
-{
-	findlocmax_pi.app->message("Sorry Findlocmax Plugin is buggy, fix it! PZ");
-	return MATH_OK;
 
+static void cancel_callback (GtkWidget *widget, int *status){
+	*status = 1; 
+}
+
+void ChangeValue (GtkComboBox* Combo,  gchararray *string){
+	GtkTreeIter iter;
+	GtkTreeModel *model;
+	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (Combo), &iter);
+	model = gtk_combo_box_get_model (GTK_COMBO_BOX (Combo));
+        if (*string){
+                g_free (*string); *string=NULL;
+        }
+	gtk_tree_model_get (model, &iter, 0, &(*string), -1);
+        std::cout << *string << std::endl;
+}
+
+void ChangeEntry (GtkEntry* entry,  gchararray *string){
+        const gchar *ctxt = gtk_entry_get_text (GTK_ENTRY (entry));
+        if (*string)
+                g_free (*string);
+        *string = g_strdup (ctxt);
+        std::cout << *string << std::endl;
+}
+        
+void xyz_file_set (GtkFileChooserButton *chooser,  gchar **string){
+        *string = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));    
+        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (g_object_get_data (G_OBJECT (chooser), "COMBO")), *string, *string);
+        std::cout << *string << std::endl;
+}
+
+void ChangeIndex (GtkSpinButton *spinner, double *index){
+	*index = gtk_spin_button_get_value (spinner);
+
+	std::cout << "Change Index: " << ((int)*index) << std::endl;
+}
+
+
+
+class flm_setup : public AppBase{
+public:
+	flm_setup (double &kx, double &ky, double &kz,
+                   double &trs,
+		   gchararray *mode,
+		   gchararray *peak_output_file,
+		   double &max_threads
+                ){
+
+		GtkWidget *dialog;
+                GtkWidget *choice;
+                GtkWidget *chooser;
+
+                //UnitObj *meVA    = new UnitObj("meV/" UTF8_ANGSTROEM, "meV/" UTF8_ANGSTROEM );
+
+                GtkDialogFlags flags =  (GtkDialogFlags) (GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT);
+                dialog = gtk_dialog_new_with_buttons (N_("Find Local Max Kernel Setup"),
+                                                      GTK_WINDOW (gapp->get_app_window ()),
+                                                      flags,
+                                                      _("_OK"),
+                                                      GTK_RESPONSE_ACCEPT,
+                                                      _("_Cancel"),
+                                                      GTK_RESPONSE_REJECT,
+                                                      NULL);
+                BuildParam bp;
+                gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
+                bp.set_error_text ("Value not allowed.");
+                bp.input_nx = 5;
+
+		bp.grid_add_ec_with_scale ("kx",   gapp->xsm->Unity, &kx,    0.,   100., ".0f", 1.,  4.);
+                bp.new_line ();
+		bp.grid_add_ec_with_scale ("ky",   gapp->xsm->Unity, &ky,    0.,   100., ".0f", 1.,  4.);
+                bp.new_line ();
+		bp.grid_add_ec_with_scale ("kz",   gapp->xsm->Unity, &kz,    0.,   100., ".0f", 1.,  4.);
+                bp.new_line ();
+		bp.grid_add_ec_with_scale ("treshold", gapp->xsm->Unity, &trs, 0., 1e10, ".3f", 1.,  4.);
+                bp.new_line ();
+		
+                bp.grid_add_label ("Mode", NULL, 1, 1.0);
+		choice = gtk_combo_box_text_new ();
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Box", "Box");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Sphere", "Sphere");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "SARLS", "SARLS");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*mode));
+		bp.grid_add_widget (choice, 5);
+
+                bp.new_line ();
+                chooser = gtk_file_chooser_button_new (_("Peak Output File"), GTK_FILE_CHOOSER_ACTION_SAVE);
+                GtkFileFilter *xyz_filter = gtk_file_filter_new ();
+                gtk_file_filter_set_name (xyz_filter, "XYZ");
+                gtk_file_filter_add_pattern (xyz_filter, "*.xyz");
+                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), xyz_filter);
+                GtkFileFilter *all_filter = gtk_file_filter_new ();
+                gtk_file_filter_set_name (all_filter, "All");
+                gtk_file_filter_add_pattern (all_filter, "*");
+                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), all_filter);
+
+                g_object_set_data (G_OBJECT (chooser), "COMBO", choice);
+		g_signal_connect (G_OBJECT (chooser), "file-set", G_CALLBACK (xyz_file_set), &(*peak_output_file));
+		gtk_widget_show (chooser);
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 0);
+		bp.grid_add_widget (chooser, 5);
+                bp.new_line ();
+
+		bp.grid_add_ec_with_scale ("Max Thread #",   gapp->xsm->Unity, &max_threads,    1.,   64., ".0f", 1.,  4.);
+                bp.new_line ();
+                        
+                gtk_widget_show_all (dialog);
+                
+		gint r=gtk_dialog_run(GTK_DIALOG(dialog));
+		gtk_widget_destroy (dialog);
+              
+                //delete meVA;
+
+                if (r == GTK_RESPONSE_REJECT){
+                        *mode = g_strdup ("NONE");
+                }
+        }
+
+	~flm_setup () {};
+};
+
+
+
+
+int SARLS_findlocmax_run(Scan *Src, Scan *Dest)
+{
 	/* Suche lokaler Maxima im Fokusbereich (Kasten mit 10µm*10µm) */
 	/* Version 0.2 ML  (23/11/98)                                  */
 
@@ -252,5 +375,49 @@ static gboolean findlocmax_run(Scan *Src, Scan *Dest)
 			if (Dest->mem2d->GetDataPkt(col, line)!=0)     
 				f << col << " " << line << " " << Dest->mem2d->GetDataPkt(col, line) << endl;     
 	f.close();
+}
+
+inline int imin (int x, int y) { return x < y ? x : y; }
+inline int imax (int x, int y) { return x > y ? x : y; }
+
+void multi_dim_flm (Scan *Src, Scan *Dest, double kxyz[3], double trs, int maxthreads){
+        int kxr=(int)kxyz[0];
+        int kyr=(int)kxyz[1];
+        int kvr=(int)kxyz[2];
+        for (int v=0; v<Dest->mem2d->GetNv (); ++v){
+                g_message ("FLM: processing v=%d",v);
+                for (int c=0; c<Dest->mem2d->GetNx (); ++c)
+                        for (int l=0; l<Dest->mem2d->GetNy (); ++l){
+                                double max = 0.;
+                                for (int kv=imax (0,v-kvr); kv<=imin (Dest->mem2d->GetNv ()-1, v+kvr); ++kv)
+                                        for (int kx=imax (0,l-kxr); kx<=imin (Dest->mem2d->GetNx ()-1, l+kxr); ++kx)
+                                                for (int ky=imax (0,c-kyr); ky<=imin (Dest->mem2d->GetNy ()-1, c+kyr); ++ky){
+                                                        double kval = Src->mem2d->GetDataPkt (kx, ky, kv);
+                                                        if (max < kval)
+                                                                max = kval;
+                                                }
+                                double val = Src->mem2d->GetDataPkt (c,l,v);
+                                if (max - val < trs)
+                                        Dest->mem2d->PutDataPkt (val, c,l,v);
+                                else
+                                        Dest->mem2d->PutDataPkt (0., c,l,v);
+                        }
+        }
+}
+
+static gboolean findlocmax_run(Scan *Src, Scan *Dest)
+{
+        double kxyz[3] = { 4.,4.,4. };
+        gchararray mode=NULL;
+        gchararray outfile=NULL;
+        double maxthreads=1.;
+        double trs=1.;
+        flm_setup (kxyz[0], kxyz[1], kxyz[2], trs, &mode, &outfile, maxthreads);
+
+        if (mode[0] == 'S')
+                SARLS_findlocmax_run (Src, Dest);
+        else
+                multi_dim_flm (Src, Dest, kxyz, trs, (int)maxthreads);
+        
 	return MATH_OK;
 }

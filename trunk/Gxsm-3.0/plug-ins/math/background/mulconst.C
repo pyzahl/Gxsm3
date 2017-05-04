@@ -4,7 +4,7 @@
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
  *
- * Gxsm Plugin Name: subconst.C
+ * Gxsm Plugin Name: mulconst.C
  * ========================================
  * 
  * Copyright (C) 1999 The Free Software Foundation
@@ -35,17 +35,17 @@
  * All "% OptPlugInXXX" tags are optional
  * --------------------------------------------------------------------------------
 % BeginPlugInDocuSection
-% PlugInDocuCaption: Sub Const Background correction
-% PlugInName: subconst
+% PlugInDocuCaption: Multiply Const Background correction
+% PlugInName: mulconst
 % PlugInAuthor: Percy Zahl
 % PlugInAuthorEmail: zahl@users.sf.net
-% PlugInMenuPath: Math/Background/Sub Const
+% PlugInMenuPath: Math/Background/Multiply Const
 
 % PlugInDescription
-Subtracts a constant value form data.
+Multiply multi dim data (only apply to selected range!) with factor.
 
 % PlugInUsage
-Call \GxsmMenu{Math/Background/Sub Const} and give the value when prompted.
+Call \GxsmMenu{Math/Background/Multiply Const} and give the value when prompted.
 
 % OptPlugInSources
 The active channel is used as data source.
@@ -64,10 +64,10 @@ into a new created math channel.
 #include "gxsm/plugin.h"
 
 // Plugin Prototypes
-static void subconst_init( void );
-static void subconst_about( void );
-static void subconst_configure( void );
-static void subconst_cleanup( void );
+static void mulconst_init( void );
+static void mulconst_about( void );
+static void mulconst_configure( void );
+static void mulconst_cleanup( void );
 
 // Define Type of math plugin here, only one line should be commented in!!
 #define GXSM_ONE_SRC_PLUGIN__DEF
@@ -76,14 +76,14 @@ static void subconst_cleanup( void );
 // Math-Run-Function, use only one of (automatically done :=)
 #ifdef GXSM_ONE_SRC_PLUGIN__DEF
 // "OneSrc" Prototype
- static gboolean subconst_run( Scan *Src, Scan *Dest );
+ static gboolean mulconst_run( Scan *Src, Scan *Dest );
 #else
 // "TwoSrc" Prototype
- static gboolean subconst_run( Scan *Src1, Scan *Src2, Scan *Dest );
+ static gboolean mulconst_run( Scan *Src1, Scan *Src2, Scan *Dest );
 #endif
 
 // Fill in the GxsmPlugin Description here
-GxsmPlugin subconst_pi = {
+GxsmPlugin mulconst_pi = {
   NULL,                   // filled in and used by Gxsm, don't touch !
   NULL,                   // filled in and used by Gxsm, don't touch !
   0,                      // filled in and used by Gxsm, don't touch !
@@ -92,7 +92,7 @@ GxsmPlugin subconst_pi = {
                           // just after init() is called !!!
   // ----------------------------------------------------------------------
   // Plugins Name, CodeStly is like: Name-M1S|M2S-BG|F1D|F2D|ST|TR|Misc
-  "subconst-"
+  "mulconst-"
 #ifdef GXSM_ONE_SRC_PLUGIN__DEF
   "M1S"
 #else
@@ -112,25 +112,25 @@ GxsmPlugin subconst_pi = {
   // Menupath to position where it is appendet to
   "math-background-section",
   // Menuentry
-  N_("Sub Const"),
+  N_("Multiply Const"),
   // help text shown on menu
-  N_("Subtract Constant value from data."),
+  N_("Multidim Multiply data with Factor"),
   // more info...
   "Aubtracts a constant form Data.",
   NULL,          // error msg, plugin may put error status msg here later
   NULL,          // Plugin Status, managed by Gxsm, plugin may manipulate it too
   // init-function pointer, can be "NULL", 
   // called if present at plugin load
-  subconst_init,  
+  mulconst_init,  
   // query-function pointer, can be "NULL", 
   // called if present after plugin init to let plugin manage it install itself
   NULL, // query should be "NULL" for Gxsm-Math-Plugin !!!
   // about-function, can be "NULL"
   // can be called by "Plugin Details"
-  subconst_about,
+  mulconst_about,
   // configure-function, can be "NULL"
   // can be called by "Plugin Details"
-  subconst_configure,
+  mulconst_configure,
   // run-function, can be "NULL", if non-Zero and no query defined, 
   // it is called on menupath->"plugin"
   NULL, // run should be "NULL" for Gxsm-Math-Plugin !!!
@@ -139,26 +139,26 @@ GxsmPlugin subconst_pi = {
   NULL, // direct menu entry callback1 or NULL
   NULL, // direct menu entry callback2 or NULL
 
-  subconst_cleanup
+  mulconst_cleanup
 };
 
 // special math Plugin-Strucure, use
-// GxsmMathOneSrcPlugin subconst_m1s_pi -> "OneSrcMath"
-// GxsmMathTwoSrcPlugin subconst_m2s_pi -> "TwoSrcMath"
+// GxsmMathOneSrcPlugin mulconst_m1s_pi -> "OneSrcMath"
+// GxsmMathTwoSrcPlugin mulconst_m2s_pi -> "TwoSrcMath"
 #ifdef GXSM_ONE_SRC_PLUGIN__DEF
- GxsmMathOneSrcPlugin subconst_m1s_pi
+ GxsmMathOneSrcPlugin mulconst_m1s_pi
 #else
- GxsmMathTwoSrcPlugin subconst_m2s_pi
+ GxsmMathTwoSrcPlugin mulconst_m2s_pi
 #endif
  = {
    // math-function to run, see prototype(s) above!!
-   subconst_run
+   mulconst_run
  };
 
 // Text used in Aboutbox, please update!!
 static const char *about_text = N_("Gxsm Sub Const Plugin\n\n"
-                                   "This Plugin does a simple offset subtratcion from data:\n"
-				   "data <= data - const;"
+                                   "This Plugin does a simple scaling of the data -- in a selected dimension range:\n"
+				   "data = data * factor;"
 	);
 
 double ConstLast = 0.;
@@ -167,8 +167,8 @@ double constval = 0.;
 // Symbol "get_gxsm_plugin_info" is resolved by dlsym from Gxsm, used to get Plugin's info!! 
 // Essential Plugin Function!!
 GxsmPlugin *get_gxsm_plugin_info ( void ){ 
-  subconst_pi.description = g_strdup_printf(N_("Gxsm MathOneArg subconst plugin %s"), VERSION);
-  return &subconst_pi; 
+  mulconst_pi.description = g_strdup_printf(N_("Gxsm MathOneArg mulconst plugin %s"), VERSION);
+  return &mulconst_pi; 
 }
 
 // Symbol "get_gxsm_math_one|two_src_plugin_info" is resolved by dlsym from Gxsm, 
@@ -176,27 +176,27 @@ GxsmPlugin *get_gxsm_plugin_info ( void ){
 // Essential Plugin Function!!
 #ifdef GXSM_ONE_SRC_PLUGIN__DEF
 GxsmMathOneSrcPlugin *get_gxsm_math_one_src_plugin_info( void ) {
-  return &subconst_m1s_pi; 
+  return &mulconst_m1s_pi; 
 }
 #else
 GxsmMathTwoSrcPlugin *get_gxsm_math_two_src_plugin_info( void ) { 
-  return &subconst_m2s_pi; 
+  return &mulconst_m2s_pi; 
 }
 #endif
 
 /* Here we go... */
 // init-Function
-static void subconst_init(void)
+static void mulconst_init(void)
 {
-  PI_DEBUG (DBG_L2, "subconst Plugin Init");
+  PI_DEBUG (DBG_L2, "mulconst Plugin Init");
 }
 
 // about-Function
-static void subconst_about(void)
+static void mulconst_about(void)
 {
-  const gchar *authors[] = { subconst_pi.authors, NULL};
+  const gchar *authors[] = { mulconst_pi.authors, NULL};
   gtk_show_about_dialog (NULL, 
-			 "program-name",  subconst_pi.name,
+			 "program-name",  mulconst_pi.name,
 			 "version", VERSION,
 			 "license", GTK_LICENSE_GPL_3_0,
 			 "comments", about_text,
@@ -206,16 +206,16 @@ static void subconst_about(void)
 }
 
 // configure-Function
-static void subconst_configure(void)
+static void mulconst_configure(void)
 {
-  if(subconst_pi.app)
-    subconst_pi.app->message("subconst Plugin Configuration");
+  if(mulconst_pi.app)
+    mulconst_pi.app->message("mulconst Plugin Configuration");
 }
 
 // cleanup-Function
-static void subconst_cleanup(void)
+static void mulconst_cleanup(void)
 {
-  PI_DEBUG (DBG_L2, "subconst Plugin Cleanup");
+  PI_DEBUG (DBG_L2, "mulconst Plugin Cleanup");
 }
 
 double TransformFkt (double val, double parameter){
@@ -224,19 +224,19 @@ double TransformFkt (double val, double parameter){
 
 // run-Function
 #ifdef GXSM_ONE_SRC_PLUGIN__DEF
- static gboolean subconst_run(Scan *Src, Scan *Dest)
+ static gboolean mulconst_run(Scan *Src, Scan *Dest)
 #else
- static gboolean subconst_run(Scan *Src1, Scan *Src2, Scan *Dest)
+ static gboolean mulconst_run(Scan *Src1, Scan *Src2, Scan *Dest)
 #endif
 {
 	int line, col;
 	double hi,lo;
 	constval = ConstLast;
 	
-	subconst_pi.app->ValueRequest 
+	mulconst_pi.app->ValueRequest 
 	  ( "Enter offset to remove", "const", 
 	    "I need the const value.",
-	    subconst_pi.app->xsm->Unity, 
+	    mulconst_pi.app->xsm->Unity, 
 	    -1e100, 1e100, "8g", &constval
 	    );
 	ConstLast = constval;
@@ -254,10 +254,10 @@ double TransformFkt (double val, double parameter){
 			tf=Src->number_of_time_elements ()-1;
 			if (tf < 0) tf = 0;
 			vf=Src->mem2d->GetNv ()-1;
-			gapp->setup_multidimensional_data_copy ("Multidimensional SubConst", Src, ti, tf, vi, vf);
+			gapp->setup_multidimensional_data_copy ("Multidimensional Mulconst", Src, ti, tf, vi, vf);
 		} while (ti > tf || vi > vf);
 
-		gapp->progress_info_new ("Multidimenssional SubConst", 2);
+		gapp->progress_info_new ("Multidimenssional Mulconst", 2);
 		gapp->progress_info_set_bar_fraction (0., 1);
 		gapp->progress_info_set_bar_fraction (0., 2);
 		gapp->progress_info_set_bar_text ("Time", 1);
@@ -271,7 +271,7 @@ double TransformFkt (double val, double parameter){
 			gapp->progress_info_set_bar_fraction ((gdouble)(time_index-ti)/(gdouble)ntimes_tmp, 1);
 
                 Dest->mem2d->copy (m);
-                Dest->mem2d->data->add (-constval/Src->data.s.dz, vi, vf);
+                Dest->mem2d->data->mul (constval, vi, vf);
 		Dest->append_current_to_time_elements (time_index-ti, m->get_frame_time ());
 	}
 

@@ -376,8 +376,9 @@ void TZData<ZTYP>::NcGet(NcVar *ncfield, int time_index){
 }
 
 template <class ZTYP> 
-void TZData<ZTYP>::norm (double mag){
-        for(int v=0; v<nv; ++v){
+void TZData<ZTYP>::norm (double mag, int vi, int vf){
+        if (vf<vi) vf=nv;
+        for(int v=vi; v<vf; ++v){
                 double sum=0.;
                 for(int y=0; y<ny; y++)
                         for(int x=0; x<nx; x++)
@@ -387,8 +388,9 @@ void TZData<ZTYP>::norm (double mag){
 }
 
 template <class ZTYP> 
-void TZData<ZTYP>::add (double c){
-        for(int v=0; v<nv; ++v){
+void TZData<ZTYP>::add (double c, int vi, int vf){
+        if (vf<vi) vf=nv;
+        for(int v=vi; v<vf; ++v){
                 for(int y=0; y<ny; y++)
                         for(int x=0; x<nx; x++){
                                 double tmp = (double)Zdat[y*nv+v][x];
@@ -398,8 +400,9 @@ void TZData<ZTYP>::add (double c){
 }
 
 template <class ZTYP> 
-void TZData<ZTYP>::mul (double f){
-        for(int v=0; v<nv; ++v){
+void TZData<ZTYP>::mul (double f, int vi, int vf){
+        if (vf<vi) vf=nv;
+        for(int v=vi; v<vf; ++v){
                 for(int y=0; y<ny; y++)
                         for(int x=0; x<nx; x++){
                                 double tmp = (double)Zdat[y*nv+v][x];
