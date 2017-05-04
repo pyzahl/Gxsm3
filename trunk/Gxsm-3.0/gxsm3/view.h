@@ -319,10 +319,10 @@ public:
 
         void SaveImagePNG(GtkGLArea *area, const gchar *fname_png); 
         
-        double GetXYZNormalized (float *r);
+        double GetXYZNormalized (float *r, gboolean z_scale_abs=false);
         double GetCurrent();
         double GetForce();
-        void GetXYZScale (float *s);
+        void GetXYZScale (float *s, gboolean z_scale_abs=false);
         void MouseControl (int mouse, double x, double y);
         void UpdateGLv_control(){
                 v3dControl_pref_dlg->block = TRUE;
