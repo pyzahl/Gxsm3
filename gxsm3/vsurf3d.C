@@ -1331,12 +1331,23 @@ public:
                 GLfloat GL_height_scale = 1.;
                 
                 switch (s->GLv_data.height_scale_mode[0]){
-                case 'A': GL_height_scale = s->GLv_data.hskl
+                case 'A':
+                        GL_height_scale = s->GLv_data.hskl
                                 * (s->get_scan ())->mem2d->data->zrange
                                 * (s->get_scan ())->data.s.dz
                                 / (s->get_scan ())->data.s.rx;
+                        Block_SurfaceGeometry.aspect = glm::vec4 (1.0f,
+                                                                  (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx,
+                                                                  s->GLv_data.hskl/GL_height_scale,
+                                                                  1.);
                         break;
-                case 'R': GL_height_scale = s->GLv_data.hskl; break;
+                case 'R':
+                        GL_height_scale = s->GLv_data.hskl;
+                        Block_SurfaceGeometry.aspect = glm::vec4 (1.0f,
+                                                                  (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx,
+                                                                  1.,
+                                                                  1.);
+                        break;
                 }
 
                 glm::vec3 look_at = lookAtPosition ();
@@ -1401,10 +1412,11 @@ public:
                 updateModelViewM ();
 
                 // Geometry control
-                Block_SurfaceGeometry.aspect = glm::vec4 (1.0f,
-                                                          (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx,
-                                                           s->GLv_data.hskl*(s->get_scan ())->data.s.rz / (s->get_scan ())->data.s.rx,
-                                                          1.);
+                if (s->GLv_data.vertex_source[0] == 'V')
+                        Block_SurfaceGeometry.aspect = glm::vec4 (1.0f,
+                                                                  (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx,
+                                                                  GL_height_scale*(s->get_scan ())->data.s.rz / (s->get_scan ())->data.s.rx,
+                                                                  1.);
                 // setting GLv_data.hskl to 1 means same x,y and z scale.
                 Block_SurfaceGeometry.height_scale  = GL_height_scale;
                 Block_SurfaceGeometry.height_offset = s->GLv_data.slice_offset;
@@ -1990,9 +2002,9 @@ void Surf3d::GetXYZScale (float *s, gboolean z_scale_abs){
         s[0] = 1./scan->data.s.rx;
         s[1] = 1./scan->data.s.ry;
         if (z_scale_abs)
-                s[2] = 1./(scan->mem2d->data->zrange*scan->data.s.rx); // normalize to x scale
+                s[2] = s[0]; // normalize to x scale
         else
-                s[2] = 1./gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
+                s[2] = 1./(scan->data.s.dz * scan->mem2d->data->zrange); // relative normalize to zrange
 }
 
 // XYZ ormalized to GL box +/- 0.5
@@ -2000,7 +2012,8 @@ double Surf3d::GetXYZNormalized(float *r, gboolean z_scale_abs){
         double x,y,z, zmin; 
         gapp->xsm->hardware->RTQuery ("R", z, x, y); // in Ang, absolute
         gapp->xsm->hardware->invTransform (&x, &y);
-        zmin = gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zmin);
+        zmin = scan->data.s.dz * scan->mem2d->data->zmin;
+        // zmin = gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zmin);
         // g_message ("GetXYZ RTQuery: Z=%f X=%f Y=%f", z,x,y);
         x /= scan->data.s.rx; // Ang
         y /= scan->data.s.ry;
@@ -2009,7 +2022,8 @@ double Surf3d::GetXYZNormalized(float *r, gboolean z_scale_abs){
         if (z_scale_abs)
                 r[2] = (z-zmin) / scan->data.s.rx; // normalize to x scale
         else
-                r[2] = (z-zmin) / gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
+                r[2] = (z-zmin) / (scan->data.s.dz * scan->mem2d->data->zrange);
+                // r[2] = (z-zmin) / gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
         return z;
 }
 
