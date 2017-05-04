@@ -964,17 +964,17 @@ private:
         glm::vec3 cameraPosition() const {
                 return glm::vec3(this->DistanceCurrent.x, this->DistanceCurrent.y, this->DistanceCurrent.z);
         };
-        glm::vec3 lookAtPosition(GLfloat GL_height_scale) const {
+        glm::vec3 lookAtPosition() const {
                 switch (s->GLv_data.look_at[0]){
                 case 'C': return glm::vec3(0,0,0);
                 case 'T':
                         {
                                 GLfloat r[3];
-#define MAKE_GLM_VEC3R(V) glm::vec3(V[0],V[2]*GL_height_scale,V[1])
-                                s->GetXYZNormalized (r);
-                                glm::vec3 R = MAKE_GLM_VEC3R (r) + MAKE_GLM_VEC3R (s->GLv_data.light_position[2]);
+#define MAKE_GLM_VEC4R(V) glm::vec4(V[0],V[2],V[1],1.0f)
+                                s->GetXYZNormalized (r, s->GLv_data.height_scale_mode[0] == 'A');
+                                glm::vec4 R = MAKE_GLM_VEC4R (r) * modelView();
                                 // GL coords XYZ: plane is XZ
-                                return R;
+                                return glm::vec3 (R);
                         }
                 case 'M': return glm::vec3(0,0,1.0);
                 }
@@ -1329,7 +1329,7 @@ public:
 	bool render() {
 		if (!Validated) return false;
                 GLfloat GL_height_scale = 1.;
-
+                
                 switch (s->GLv_data.height_scale_mode[0]){
                 case 'A': GL_height_scale = s->GLv_data.hskl
                                 * (s->get_scan ())->mem2d->data->zrange
@@ -1339,7 +1339,7 @@ public:
                 case 'R': GL_height_scale = s->GLv_data.hskl; break;
                 }
 
-                glm::vec3 look_at = lookAtPosition (GL_height_scale);
+                glm::vec3 look_at = lookAtPosition ();
                 glm::vec3 camera_position = cameraPosition ();
                 
                 if (s->GLv_data.vertex_source[0] == 'V'){ // auto override x,y to align view planes for Volume Projection
@@ -1626,30 +1626,20 @@ public:
                         };
 
                         GLfloat r[3];
-                        double z = s->GetXYZNormalized (r);
-                        // scale from scan
-                        GLfloat scale[3] =  {
-                                1.0f/(GLfloat)s->get_scan()->data.s.rx,
-                                1.0f/(GLfloat)s->get_scan()->data.s.ry,
-                                1.0f
-                        }; // GL_height_scale * (s->get_scan()->mem2d->data->zrange * s->get_scan()->data.s.dz)
-                        switch (s->GLv_data.height_scale_mode[0]){
-                        case 'x': scale[2] = 0.5f/(GLfloat)(s->get_scan()->mem2d->data->zrange * s->get_scan()->data.s.dz); break;
-                        case 'A': scale[2] = 0.5f/(GLfloat)(s->get_scan()->mem2d->data->zrange); break;
-                        case 'R': scale[2] = 0.5f/GL_height_scale; break;
-                        }
-                        // scale from instrument/live
-                        if (s->GLv_data.tip_geometry[1][3] > 1)
-                                s->GetXYZScale (scale); // get scaling factors Ang to GL-XYZ unit box
+                        GLfloat scale[3];
+                        // get tip position
+                        double zabs = s->GetXYZNormalized (r, s->GLv_data.height_scale_mode[0] == 'A');
+                        // get scale
+                        s->GetXYZScale (scale, s->GLv_data.height_scale_mode[0] == 'A'); // get scaling factors Ang to GL-XYZ unit box
                         
                         glm::vec4 as       = MAKE_GLM_VEC4XS (scale, 1); // make vector
                         glm::vec4 tip_pos  = MAKE_GLM_VEC4XS (r,1) + as * MAKE_GLM_VEC4XS (s->GLv_data.tip_geometry[0], 0);   // GL coords XYZ: plane is XZ, Y is "up"
                         glm::vec4 tip_scaling = s->GLv_data.tip_geometry[0][3] * 0.5f * MAKE_GLM_VEC4XS (s->GLv_data.tip_geometry[1], 1) * as;
 
-                        ico_vao->draw (tip_pos,tip_scaling,c,4);
-                        tz=tip_pos.y=z_world_to_normalized ((z + s->GLv_data.tip_geometry[0][2]), GL_height_scale);
-                        g_message ("Actual Tip Position = %g %g %g  r.z=%g  tz=%g  z=%g", tip_pos.x, tip_pos.y, tip_pos.z, r[2], tz , z);
-                        g_message ("Actual Tip Scale    = X%g Y%g Z%g   %g %g %g", tip_scaling.x, tip_scaling.y, tip_scaling.z, scale[0], scale[1], scale[2]);
+                        ico_vao->draw (tip_pos, tip_scaling, c, 4);
+                        tz=tip_pos.y;
+                        g_message ("Actual Tip Position = %g %g %g  r.z=%g  z_rel[A]=%g  z_abs[A]=%g", tip_pos.x, tip_pos.y, tip_pos.z, r[2], tz , zabs);
+                        g_message ("Actual Tip Scale    = X%g Y%g Z%g   scale: %g %g %g", tip_scaling.x, tip_scaling.y, tip_scaling.z, scale[0], scale[1], scale[2]);
                 }
 
                 checkError ("render -- done gimmick ico_vao (tip)");
@@ -1996,26 +1986,31 @@ void Surf3d::SaveImagePNG(GtkGLArea *glarea, const gchar *fname_png){
         delete[] rgb;
 }
 
-void Surf3d::GetXYZScale (float *s){
+void Surf3d::GetXYZScale (float *s, gboolean z_scale_abs){
         s[0] = 1./scan->data.s.rx;
         s[1] = 1./scan->data.s.ry;
-        s[2] = 1./(scan->mem2d->data->zrange*scan->data.s.dz);
+        if (z_scale_abs)
+                s[2] = 1./(scan->mem2d->data->zrange*scan->data.s.rx); // normalize to x scale
+        else
+                s[2] = 1./gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
 }
 
 // XYZ ormalized to GL box +/- 0.5
-double Surf3d::GetXYZNormalized(float *r){
-        double x,y,z, za; 
-        gapp->xsm->hardware->RTQuery ("R", z, x, y);
+double Surf3d::GetXYZNormalized(float *r, gboolean z_scale_abs){
+        double x,y,z, zmin; 
+        gapp->xsm->hardware->RTQuery ("R", z, x, y); // in Ang, absolute
         gapp->xsm->hardware->invTransform (&x, &y);
-        za = z-gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zmin);
+        zmin = gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zmin);
         // g_message ("GetXYZ RTQuery: Z=%f X=%f Y=%f", z,x,y);
-        z = za / gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
         x /= scan->data.s.rx; // Ang
         y /= scan->data.s.ry;
         r[0] = -x;
         r[1] = y;
-        r[2] = z;
-        return za;
+        if (z_scale_abs)
+                r[2] = (z-zmin) / scan->data.s.rx; // normalize to x scale
+        else
+                r[2] = (z-zmin) / gapp->xsm->Inst->Dig2ZA (scan->mem2d->data->zrange);
+        return z;
 }
 
 // Current in nA
@@ -2172,7 +2167,7 @@ void Surf3d::GLupdate (void* data){
                                 s->UpdateGLv_control();  s->GLv_data.view_preset[0]='*';
                                 break;
                         case 'S':
-                                s->GetXYZNormalized (s->GLv_data.trans);
+                                s->GetXYZNormalized (s->GLv_data.trans, s->GLv_data.height_scale_mode[0] == 'A');
                                 s->UpdateGLv_control();
                                 break;
                         default: break;
