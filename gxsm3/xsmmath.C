@@ -183,6 +183,7 @@ gboolean CopyScan(MATHOPPARAMS){
 							} else {
 								std::cout << "Adding Data.    tv:[" << time_index << ", " << v << "], to add[" << tmp_ti << ", " << tmp_v <<  "]" << std::endl;
 								Dest->mem2d->data->ZFrameAddDataFrom (ms->data);
+                                                                Dest->mem2d->data->SetVLookup (v, (double)v);
 							}
 						}
 					}

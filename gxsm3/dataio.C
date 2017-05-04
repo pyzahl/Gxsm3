@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -22,8 +24,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #include <locale.h>
 #include <libintl.h>
@@ -277,8 +277,13 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 		  
 			XSM_DEBUG(DBG_L2, "getting array..." );
 			nc.get_var("value")->get (valuearr, scan->data.s.nvalues);
+			double va0=0.;
+                        gboolean make_vai=false;
 			for(i=0; i<scan->data.s.nvalues; i++){
-				scan->mem2d->data->SetVLookup(i, valuearr[i]);
+                                if (i==1 && va0==valuearr[0])
+                                        make_vai=true;
+                                va0=valuearr[i];
+				scan->mem2d->data->SetVLookup(i, make_vai ? (double)i : valuearr[i]);
 				XSM_DEBUG_PLAIN (DBG_L3, valuearr[i] << " ");
 			}
 		  

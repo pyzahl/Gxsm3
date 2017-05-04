@@ -3,7 +3,7 @@ AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
 
 lib_LTLIBRARIES = libtimescalefft.la libremovelineshifts.la libplane_regression.la libwaterlevel.la \
 	libpass_cc.la libstop_ccr.la libplane_max_prop.la libparabolregress.la libbg_z_drift.la \
-	libbggamma.la libsubconst.la \
+	libbggamma.la libsubconst.la libmulconst.la \
 	libplane3pkt.la liblineregression.la
 
 liblineregression_la_SOURCES = lineregression.C
@@ -17,6 +17,9 @@ libbggamma_la_LDFLAGS = -module -export-dynamic -avoid-version
 
 libsubconst_la_SOURCES = subconst.C
 libsubconst_la_LDFLAGS = -module -export-dynamic -avoid-version
+
+libmulconst_la_SOURCES = mulconst.C
+libmulconst_la_LDFLAGS = -module -export-dynamic -avoid-version
 
 libbg_z_drift_la_SOURCES = bg_z_drift.C
 libbg_z_drift_la_LDFLAGS = -module -export-dynamic -avoid-version

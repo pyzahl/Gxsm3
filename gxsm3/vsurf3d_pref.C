@@ -52,6 +52,7 @@ const gchar *TickFrame_OptionsList[]  = { "0: Simple", "1: XYZ with Labels", "2:
 const gchar *CScale_OptionsList[] = { "-3","3","0.001","0.001","4", NULL };
 const gchar *ColorContrast_OptionsList[] = { "0","2","0.001","0.001","4", NULL };
 const gchar *ColorOffset_OptionsList[]   = { "-1","1","0.001","0.001","4", NULL };
+const gchar *LOD_OptionsList[]  = {"0","64","1","1","0",NULL };
 
 const gchar *Rot_OptionsList[]   = {"-180","180","1","1","0",NULL };
 const gchar *FoV_OptionsList[]   = {"0","180","1","1","0",NULL };
@@ -357,6 +358,14 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	  CScale_OptionsList, N_("Surface Material"),
 	  N_("Volume Model Transparency Offset, Default=0"), NULL
 		),
+#if 0
+	GNOME_RES_ENTRY_FLOATSLIDER
+	( "V3dControl.MatSurf/LOD", "Level of Detail", "0", 
+	  GET_GLV_OFFSET (&GLvd_offset.tex3d_lod), 
+	  LOD_OptionsList, N_("Surface Material"),
+	  N_("Volume Texture Level of Detail (LOD), Default=0"), NULL
+		),
+#endif
 
 // ============ Annotations
 

@@ -653,7 +653,7 @@ FIO_STATUS Uksoft2001_ImExportFile::import_data(const char *fname, int index_val
 				uks_imageheader_gev5.size    = swap_u16(uks_imageheader_gev5.size);
 				uks_imageheader_gev5.version = swap_u16(uks_imageheader_gev5.version);
 				uks_imageheader_gev5.imagetime = swap_u64(uks_imageheader_gev5.imagetime);
-				uks_imageheader_gev5.spin    = swap_u16(uks_imageheader_gev5.spin);
+			uks_imageheader_gev5.spin    = swap_u16(uks_imageheader_gev5.spin);
 				uks_imageheader_gev5.LEEMdataVersion = swap_u16(uks_imageheader_gev5.LEEMdataVersion);
 			}
 		} else {
@@ -1059,6 +1059,8 @@ FIO_STATUS Uksoft2001_ImExportFile::import_data(const char *fname, int index_val
 
 		g_string_append_printf (FileList, "%s: %18.0f us, %5.1f V, IlDfxy: %5.2f mA, %5.2f mA, %6.1f C, %4g Torr, %g um\n", fname, ImageTime, StartVoltage, IllumDeflX, IllumDeflY, Temperatur, Pressure11, FieldOfView);
 		scan->mem2d->SetLayer(index_value);
+                scan->mem2d->data->SetVLookup (index_value, start_value+index_value*(step_value>0. ? step_value: 1.));
+
 		scan->data.ui.SetComment (FileList->str);
 
 		scan->mem2d->DataRead(f, -1); // bot to top

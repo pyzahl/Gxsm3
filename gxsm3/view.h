@@ -286,6 +286,7 @@ typedef struct{
 	
 	float shader_mode;
         float tess_level;
+        float tex3d_lod;
         float base_plane_size;
         
 	gchar ShadeModel[30];

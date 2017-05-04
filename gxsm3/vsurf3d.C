@@ -253,7 +253,7 @@ namespace
 
 class base_plane{
 public:
-        base_plane (int nx, int ny, int nv, glm::vec4 *displacement_data, glm::vec4 *palette_data, GLsizei num_pal_entries=GXSM_GPU_PALETTE_ENTRIES, int w=128, double aspect=1.0){
+        base_plane (int nx, int ny, int nv, glm::vec4 *displacement_data, glm::vec4 *palette_data, GLsizei num_pal_entries=GXSM_GPU_PALETTE_ENTRIES, int w=128, double aspect=1.0, GLint lod=0){
                 Validated = true;
                 BaseGridW = w;
                 BaseGridH = w; // adjusted by make_plane_vbo using aspect
@@ -269,7 +269,7 @@ public:
 
                 Validated = init_buffer ();
                 Validated = init_vao ();
-                Validated = init_textures (displacement_data, palette_data, num_pal_entries);
+                Validated = init_textures (displacement_data, palette_data, num_pal_entries, lod);
         };
         ~base_plane (){
 		if (Validated){
@@ -328,7 +328,7 @@ public:
 
                 return Validated && checkError("make_plane::init_vao");
         };
-        gboolean init_textures(glm::vec4 *displacement_data, glm::vec4 *palette_data, GLsizei num_pal_entries=GXSM_GPU_PALETTE_ENTRIES) {
+        gboolean init_textures(glm::vec4 *displacement_data, glm::vec4 *palette_data, GLsizei num_pal_entries=GXSM_GPU_PALETTE_ENTRIES, GLint lod=0) {
 		if (!Validated) return false;
 
                 // sampler2D diffuse
@@ -370,7 +370,7 @@ public:
                         glActiveTexture (GL_TEXTURE2);
                         glBindTexture (GL_TEXTURE_3D, TesselationTextureName[2]);
 
-                        glTexImage3D (GL_TEXTURE_3D, 0, GL_RGBA32F, numx, numy, numv, 0, GL_RGBA, GL_FLOAT, displacement_data); // Surf3D_Zdata
+                        glTexImage3D (GL_TEXTURE_3D, lod, GL_RGBA32F, numx, numy, numv, 0, GL_RGBA, GL_FLOAT, displacement_data); // Surf3D_Zdata
 
                         // GL_REPEAT, GL_CLAMP_TO_EDGE, GL_MIRRORED_REPEAT, GL_CLAMP_TO_BORDER
                         glm::vec4 outside_color = glm::vec4 (1.f,0.f,0.f,0.f);
@@ -1190,7 +1190,8 @@ private:
                         surface_plane = new base_plane (numx, numy, numv,
                                                         Surf3D_Z_Data, Surf3D_Palette, s->maxcolors,
                                                         (int)s->GLv_data.base_plane_size,
-                                                        (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx
+                                                        (s->get_scan ())->data.s.ry / (s->get_scan ())->data.s.rx,
+                                                        0 // (GLint)s->GLv_data.tex3d_lod
                                                         );
                 } else {
                         Validated = false;
