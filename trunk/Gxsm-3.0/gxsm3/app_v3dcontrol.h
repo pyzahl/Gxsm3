@@ -42,6 +42,7 @@ public:
         virtual void AppWindowInit(const gchar *title);
 
         static void configure_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+        static void timer_update_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void view_file_openhere_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void view_file_save_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void view_file_save_as_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
@@ -71,9 +72,13 @@ public:
         void rerender_scene (){
                 gtk_gl_area_queue_render (GTK_GL_AREA (glarea));
         };
-        void start_auto_update(){
+        void start_auto_update (gboolean override=false){
+                auto_update_mode = override;
                 if (!au_timer)
                         au_timer =  g_timeout_add (20, (GSourceFunc)  v3dview_timer_callback, this);
+        };
+        void stop_auto_update (gboolean override=false){
+                auto_update_mode = override;
         };
         static gboolean v3dview_timer_callback (gpointer data);
         void SetTitle(char *title);
@@ -83,6 +88,7 @@ public:
         double(Surf3d::*WheelFkt)(double);
   
 private:
+        gboolean auto_update_mode;
         guint au_timer;
         int chno;
         Scan *scan;
