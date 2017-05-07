@@ -962,7 +962,8 @@ public:
 private:
         
         glm::vec3 cameraPosition() const {
-                return glm::vec3(this->DistanceCurrent.x, this->DistanceCurrent.y, this->DistanceCurrent.z);
+                glm::vec3 R = lookAtPosition() + this->DistanceCurrent;
+                return R;
         };
         glm::vec3 lookAtPosition() const {
                 switch (s->GLv_data.look_at[0]){
@@ -970,28 +971,30 @@ private:
                 case 'T':
                         {
                                 GLfloat r[3];
-#define MAKE_GLM_VEC4R(V) glm::vec4(V[0],V[2],V[1],1.0f)
                                 s->GetXYZNormalized (r, s->GLv_data.height_scale_mode[0] == 'A');
-                                glm::vec4 R = MAKE_GLM_VEC4R (r) * modelView();
-                                // GL coords XYZ: plane is XZ
-                                return glm::vec3 (R);
+                                glm::vec3 R = glm::vec3 (glm::vec4 (r[0], r[2], r[1], 1.0f) * glm::inverse (this->modelView()));
+                                //glm::vec3 R = glm::vec3 (glm::vec4 (glm::vec3 (r[0], r[2], r[1]) + modelPosition(), 1.0f) * modelView());
+                                return R;
                         }
                 case 'M': return glm::vec3(0,0,1.0);
                 }
                 return glm::vec3(0,0,0);
         };
+#if 0
         glm::vec3 modelPosition() const {
                 return glm::vec3(-this->TranslationCurrent.x, 0.0, -this->TranslationCurrent.y);
         };
+#endif
         glm::mat4 modelView() const {
                 // rotate model 1st around it's origin
                 glm::mat4 ModelRotateX = glm::rotate(glm::mat4(1.0f), -this->RotationCurrent.y, glm::vec3(1.f, 0.f, 0.f)); // X
                 glm::mat4 ModelRotateY = glm::rotate(ModelRotateX, this->RotationCurrent.x, glm::vec3(0.f, 0.f, 1.f)); // GL Z is Screen depth = surface Y
                 glm::mat4 ModelRotateZ = glm::rotate(ModelRotateY, this->Rotation3axis.z, glm::vec3(0.f, 1.f, 0.f)); // GL Y is Screen Y = surface Z (I hate it)
+                return ModelRotateZ;
                 // then translate
-                glm::mat4 ModelTranslate = glm::translate(ModelRotateZ,  modelPosition());
+                //glm::mat4 ModelTranslate = glm::translate(ModelRotateZ,  modelPosition());
                 // final ModelView
-                return ModelTranslate;
+                //return ModelTranslate;
         };
 
 	bool initProgram() {
@@ -1390,7 +1393,7 @@ public:
                 } else {
                         Projection = glm::perspective (glm::radians (s->GLv_data.fov), aspect, s->GLv_data.fnear, s->GLv_data.ffar); // near, far frustum
                 }
-                glm::mat4 Camera = glm::lookAt (look_at + camera_position, // cameraPosition, the position of your camera, in world space
+                glm::mat4 Camera = glm::lookAt (camera_position, // cameraPosition, the position of your camera, in world space
                                                 look_at, //cameraTarget, where you want to look at, in world space
                                                 glm::vec3(0,1,0) // upVector, probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
                                                 );

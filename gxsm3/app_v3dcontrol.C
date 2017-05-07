@@ -44,7 +44,6 @@
 #include "app_profile.h"
 #include "app_vobj.h"
 #include "app_v3dcontrol.h"
-#include "app_v3dpopupdef.h"
 
 #include <gtk/gtk.h>
 
@@ -77,6 +76,30 @@ void V3dControl::configure_callback (GSimpleAction *action, GVariant *parameter,
 	}
 }
 
+void V3dControl::timer_update_callback (GSimpleAction *action, GVariant *parameter, 
+                                     gpointer user_data){
+        V3dControl *vc = (V3dControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+                
+        g_print ("Toggle action %s activated, state changes from %d to %d\n",
+                 g_action_get_name (G_ACTION (action)),
+                 g_variant_get_boolean (old_state),
+                 g_variant_get_boolean (new_state));
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+	if (g_variant_get_boolean (new_state)){
+                g_print ("auto timer update on.\n");
+                vc->start_auto_update (true);
+	} else {
+                vc->stop_auto_update ();
+        }
+}
+
 static GActionEntry win_v3d_gxsm_action_entries[] = {
 	{ "view3d-activate", V3dControl::Activate_callback, NULL, NULL, NULL },
 	{ "view3d-autodisp", V3dControl::AutoDisp_callback, NULL, NULL, NULL },
@@ -93,6 +116,7 @@ static GActionEntry win_v3d_gxsm_action_entries[] = {
 	{ "view3d-save-as-image", V3dControl::view_file_save_image_callback, NULL, NULL, NULL },
 	{ "view3d-close", V3dControl::view_file_kill_callback, NULL, NULL, NULL },
 	{ "view3d-configure", V3dControl::configure_callback, NULL, "false", NULL },
+	{ "view3d-auto-update", V3dControl::timer_update_callback, NULL, "false", NULL },
 };
 
 // V3dControl
@@ -121,17 +145,10 @@ void V3dControl::AppWindowInit(const gchar *title){
 
         // attach popup file menu button --------------------------------
         GtkWidget *header_menu_button = gtk_menu_button_new ();
-        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("document-open-symbolic", tmp_toolbar_icon_size));
+        gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("emblem-system-symbolic", tmp_toolbar_icon_size));
         gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), file_menu);
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
         gtk_widget_show (header_menu_button);
-
-        // attach execute action buttons --------------------------------
-        GtkWidget *header_action_button = gtk_button_new ();
-        gtk_button_set_image (GTK_BUTTON (header_action_button), gtk_image_new_from_icon_name ("system-run-symbolic", tmp_toolbar_icon_size));
-        gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_action_button);
-        gtk_widget_show (header_action_button);
-        //	g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::run_file), this);
 
         gtk_window_set_title (GTK_WINDOW (window), title);
         gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
@@ -162,7 +179,7 @@ gboolean V3dControl::v3dview_timer_callback (gpointer data){
         if (!vc->au_timer)
                 return false;
         
-        if (vc->scan->is_scanning ()){
+        if (vc->scan->is_scanning () || vc->auto_update_mode){
                 gtk_gl_area_queue_render (GTK_GL_AREA (vc->glarea));
                 return true;
         } else {
