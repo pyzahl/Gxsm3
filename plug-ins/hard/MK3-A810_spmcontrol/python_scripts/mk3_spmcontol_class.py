@@ -1348,7 +1348,12 @@ class SPMcontrol():
                 # print mod_input_config
                 for mod in mod_input_config:
                         print mod
-			self.change_signal_input (0,  mod['signal'], mod['mod_inp'][0], lambda:mod['offset'])
+                        if mod['signal'][0] == 0 and mod['signal'][1] == 0 and mod['signal'][2] == 0 and mod['signal'][3] == 'DISABLED':
+                                print hex(mod['signal'][0]), " : ", "DISABLED*", " [p=0] ==> ", mod['signal'][1],mod['signal'][3]
+                                self.disable_signal_input(0,  mod['signal'], mod['mod_inp'][0], lambda:mod['offset'])
+                        else:
+                                self.change_signal_input (0,  mod['signal'], mod['mod_inp'][0], lambda:mod['offset'])
+                        print ("\n---------\n")
                 
                 print "RESTORING**USER_SIGNAL_ARRAY VALUES:"
                 # print user_array_data
