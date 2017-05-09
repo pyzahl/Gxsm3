@@ -3230,6 +3230,14 @@ void DSPControl::save_values (NcFile *ncf){
 	ncv=sranger_mk2_hwi_ncaddvar (ncf, MK2ID"motor", "V", "SRanger: auxillary/motor control Voltage", "Motor", motor);
 	ncv->add_att ("label", "Motor");
 
+	ncv=sranger_mk2_hwi_ncaddvar (ncf, MK2ID"z_setpoint", "A", "SRanger: auxillary/Z setpoint", "Z Set Point", zpos_ref);
+	ncv->add_att ("label", "Z Setpoint");
+
+	if (DSPPACClass) { // MK3
+                ncv=sranger_mk2_hwi_ncaddvar (ncf, MK2ID"pll_reference", "Hz", "SRanger: PAC/PLL reference freq.", "PLL Reference", DSPPACClass->pll.Reference[0]);
+                ncv->add_att ("label", "PLL Reference");
+        }
+        
 	ncv=sranger_mk2_hwi_ncaddvar (ncf, MK2ID"mix0_set_point", "nA", "SRanger: Mix0: Current set point", "Current Setpt.", mix_set_point[0]);
 	ncv->add_att ("label", "Current");
 	ncv=sranger_mk2_hwi_ncaddvar (ncf, MK2ID"mix1_set_point", "Hz", "SRanger: Mix1: Voltage set point", "Voltage Setpt.", mix_set_point[1]);
@@ -3587,6 +3595,7 @@ void DSPControl::updateDSP(int FbFlg){
 	gapp->xsm->data.s.Bias = bias;
 	gapp->xsm->data.s.SetPoint = mix_set_point[1];
 	gapp->xsm->data.s.Current = mix_set_point[0];
+	gapp->xsm->data.s.SetPoint = zpos_ref;
 
 	switch(FbFlg){
 	case DSP_FB_ON: sranger_common_hwi->ExecCmd(DSP_CMD_START); break;
