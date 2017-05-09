@@ -295,6 +295,7 @@ typedef struct{
 	double Bias;               /* some Bias (if applicable) [V], set to < -9.999e10 if not relevant */
 	double Current;            /* some Curren (if applicable) [nA], set to < -9.999e10 if not relevant */
 	double SetPoint;           /* some AFM SetPoint (if applicable) [V], set to < -9.999e10 if not relevant */
+	double ZSetPoint;          /* some Z-SetPoint (if applicable) [A] */
 
 // real time window of scan frame
 	time_t tStart, tEnd;       /* Scan Start and end time, [UNIX time] */
