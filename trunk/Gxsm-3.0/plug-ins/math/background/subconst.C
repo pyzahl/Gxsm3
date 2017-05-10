@@ -264,6 +264,8 @@ double TransformFkt (double val, double parameter){
 		gapp->progress_info_set_bar_text ("Value", 2);
 	}
 
+        g_message ("SubConst: c=%g / dz=%g => %g", constval, Src->data.s.dz, constval/Src->data.s.dz);
+        
 	int ntimes_tmp = tf-ti+1;
 	for (int time_index=ti; time_index <= tf; ++time_index){
 		Mem2d *m = Src->mem2d_time_element (time_index);
