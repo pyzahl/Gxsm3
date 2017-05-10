@@ -283,6 +283,18 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 //		mover_param.MOV_waveform[mover_param.MOV_wave_len-1] = sranger_common_hwi->int_2_sranger_int((short)round(SR_VFAC*amp*(1)));
 //		break;
 --------------------------------------------------------------------------------------------------------------------------------------------------*/
+	case MOV_WAVE_KOALA:
+		int i=0;
+		for (; i <= mover_param.MOV_wave_len/6; ++i){
+			mover_param.MOV_waveform[i] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/n)));
+		}
+		for (; i <= mover_param.MOV_wave_len/2; ++i){
+			mover_param.MOV_waveform[i] = ((short)round (SR_VFAC*amp));
+		}
+		for (; i < mover_param.MOV_wave_len; ++i){
+			mover_param.MOV_waveform[i] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/n-M_PI)));
+		}
+		break;
 	break;
 	
 	}
@@ -642,6 +654,16 @@ void DSPMoverControl::create_folder (){
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 			
+			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: KOALA"), 2); //arbitrary waveform
+			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
+			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_KOALA));
+ 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
+ 					    G_CALLBACK (DSPMoverControl::config_mode), this);
+ 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
+ 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
+
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_KOALA) ? 1:0);
+                        mov_bp->new_line ();
 			// Pulses are generated as arbitrary wave forms (stm, 08.10.2010)
 			// positive pluse: base line is zero, pulse as height given by amplitude
 			// ratio between on/off: 1:1
@@ -695,6 +717,7 @@ void DSPMoverControl::create_folder (){
                                                      "Else wave form is output on [X,Y] or [X0,Y0] with phase.");
 
 // ==================================================
+                        radiobutton = NULL; // start new radiobuttion group
                         mov_bp->pop_grid ();
 			mov_bp->new_grid_with_frame ("Output on");
 

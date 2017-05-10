@@ -50,8 +50,8 @@ hardware close and specific settings and controls for feedback,
 scanning, all kind of probing (spectroscopy and manipulations) and
 coarse motion control including the auto approach
 controller. Invisible for the user it interacts with the SRanger DSP,
-manages all DSP parameters and data streaming for scan and probe.  The
-newer MK3 (mark 3) DSP provides more computing power and a 32bit
+manages all DSP parameters and data streaming for scan and probe. The
+newer MK3-Pro (mark 3) DSP provides more computing power and a 32bit
 architecture and is capable of running a software PLL on top of the
 standart A810 architecture and a PLL optimized A810 module what is
 fully compatible but provided a more precise (stabilized) frequency
@@ -60,10 +60,10 @@ reference for higher PAC/PLL precision.
 \GxsmNote{THIS PLUGIN IS DERIVED FROM THE ORIGINAL SR MODULE AND IT
   STARTS WITH EXACTLY THE SAME FEATURES. THIS DOCUMENT SECTION IS
   STILL WRITING IN PROGRESS.  We assume by now that the SR-MK2 or MK3-Pro is
-  equiped with the Analog-810 (MK2-A810 SPM Controller), this is the new SPM
-  dedicated analog module GXSM will supports best starting in 2009 (official
-  introduction: Feb-2009) on. Main differenes/upgrades are 75/150kHz loop,
-  high stability and precision AD/DA, lowest possible loop delays
+  equiped with the Analog-810 (MK2-A810 or MK3-PLL SPM Controller), this is 
+  the new SPM dedicated analog module GXSM will supports best starting in 2009
+  (official introduction: Feb-2009) on. Main differenes/upgrades are 75/150kHz
+  loop, high stability and precision AD/DA, lowest possible loop delays
   (less than 5 samples total), no hardware FIR/IIR or oversampling any
   longer on any channel.}
 
@@ -101,7 +101,7 @@ to the MK3 subsection for deviations from the MK2 interface and setup.}
     up timers for data processing interrupt subroutine (ISR) and enters the
     never ending idle loop, which implements a state machine.}
 
-\GxsmGraphic{mixer}{0.33}{ Schematic diagram of the new DSP feedback with four signal
+\GxsmGraphic{mixer}{0.33}{Schematic diagram of the new DSP feedback with four signal
     source mixer. The input signals are transformed as requested
     (TR$_i$: linear/logarithmic/fuzzy) and the error signal $\Delta_i$
     is computed for every channel $i$ using individual set points. The
@@ -310,11 +310,18 @@ all scan parameters of the digital vector scan generator like speed.
 \end{description}
 
 \GxsmHint{Good conservative start values for the feedback loop gains
-  CP and CI are 0.004 for both. Typically they can be increased up to
-  0.01, depending on the the system, tip and sample. In general CP can
-  be about 150\% of CI to gain more stability with same CI. The
-  feedback transfer is 1:1 (error to output per loop) if all gains,
-  CP, CI are set to one in linear mode.}
+  CP and CI (on a MK2-A810 system, 32 bit internal handling) are 0.004 
+  for both. Typically they can be increased up to 0.01, depending on the
+  the system, tip and sample. \\
+  The MK3Pro-A810 handels the feedback 
+  internally with 64 bit. Therefore, the values for the feedback are 
+  roughly a factor of 256 higher than for a MK2 based system. Good 
+  standard values for the Mk3Pro-A810 based system will be between 20 
+  and 40. A meaningfull maximum is 256. CP = 100 (MK3Pro-A810) results 
+  in 1 mV change per 1 V error signal.\\
+  In general CP can be about 150\% of CI to gain more 
+  stability with same CI. The feedback transfer is 1:1 (error to output
+  per loop) if all gains, CP and CI, are set to one in linear mode.}
 
 
 % OptPlugInSection: Trigger -- Multi-Volt and -Current Control
@@ -529,7 +536,7 @@ Informations about the check options can be found in STS.
 
 
 
-% OptPlugInSubSection: Lateral Manipulation  (LM)
+% OptPlugInSubSection: Lateral Manipulation (LM)
 With LM a lateral manipulation of the tip/sample is possible.
 But also the Z-dimension can be manipulated at the same time if dZ set to a non zero value.
 
@@ -719,7 +726,7 @@ to be displayed even if X or Y is checked.}
 \index{Signal Ranger MK2/3 Auto Approach}
 \index{Signal Ranger MK2/3 Coarse Motions}
 \label{pi:A810-mover}
-GXSM with the SRanger also provides ramp like signal generation for
+GXSM with the SRanger also provides signal generation for
 slip-stick type slider/mover motions which are often used for coarse
 positioning aud tip approach. Set
 \GxsmPref{User}{User/SliderControlType} to \GxsmEntry{mover} to get
@@ -733,10 +740,24 @@ configured on the \GxsmEntry{Config} folder.
 
 To configure the mover output signal type and channles select the "Config" tab. Select the "Curve Mode", normally a simple Sawtooth will do it.
 Then select the output configuration meeting your needs best. The MK3 "Signal Master" allows fully custom
-assignment of the generic "X" and "Y" mover actions to any available output channel. See below "Wave[0,1] out on" and fig.\ref{fig:SR-MK3-DSP-MoverConfig}.
+assignment of the generic "X" and "Y" mover actions to any available output channel. See below "Wave[0,1] out on" and fig.\ref{fig:SR-DSP-MoverConfig}.
 
-\GxsmScreenShot{SR-DSP-MoverConfig}{GXSM SR DSP configuration of SRanger (MK2) inertial mover driver wave generatot engine.}
-\GxsmScreenShot{SR-MK3-DSP-MoverConfig}{GXSM SR DSP configuration of SRanger (MK3) inertial mover driver wave generator engine.}
+\GxsmScreenShot{SR-DSP-MoverConfig}{GXSM SR DSP configuration of SRanger (MK2/3Pro) inertial mover driver wave generate engine.}
+
+More complex wave forms are available such as:
+\begin{description}
+\item[Wave: Sawtooth] Just a simple linear ramp and then a jump back to the initial value.
+\item[Wave: Sine] For testing and maybe some inch worm drive.
+\item[Wave: Cyclo, Cyclo+, Cyclo-, Inv Cyclo+, Inv Cyclo-] A cycloidal wave function (see \\ http://dx.doi.org/10.1063/1.1141450) should provide an even more abrupt change of the motion direction than the jump of the sawtooth and therefore work with lower amplitudes (or at lower temperatures) better. Depending on the option choosen, the signal is just limited to positive or negative values.
+\item[Wave: KOALA] Intendet to be used with a KOALA drive (see http://dx.doi.org/10.1063/1.3681444). This wave form will require signal at two output channels with a phase shift of $\pi$. The wave form is shown in figure \ref{fig:KOALAWave}.
+\begin{figure}[h!]
+\center { \fighalf{SR-DSP-Mover-Koala}}
+\caption{Wave form used to operate a KOALA drive STM.}
+\label{fig:KOALAWave}
+\end{figure}
+ 
+\item[Pulse: positive] Uses an analog channel to generate a simple on/off pulse similar to the GPIOs but you can controll the voltage range.
+\end{description}
 
 % OptPlugInSubSection: Autoapproach
 
@@ -782,16 +803,13 @@ There are used these three signals:
 \item[Clock] Each pulse means one step.
 \end{description}
 
-\GxsmScreenShot{SR-DSP-MoverConfig}{GXSM SR DSP configuration of SRanger inertial driver engine.}
-
 \GxsmScreenShot{stepperMotorPulses}{Pulses used for control of stepper motor.}
 \GxsmScreenShot{SR-DSP-Mover-StepperMotor}{Stepper motor control tab.}
-It is also possible, besides the manual mode, use the automatic approach. Typical values for GPIO settings are in
-the fig.\ref{fig:SR-DSP-MoverConfig}.
+It is also possible, besides the manual mode, use the automatic approach. 
 
 \GxsmHint{Beware:MK2-A810 operates with 3.3V logic!}
 
-\GxsmNote{For easy stepper motor control via MK2-A810 use stepper motor controller L297.}
+\GxsmNote{For easy stepper motor control via MK2/MK3Pro-A810 use stepper motor controller L297.}
 
 \clearpage
 
@@ -848,11 +866,13 @@ more data channels/signals -- to manage a huge expansion of the ``signal
 space''. See also the development background story about all this up front
 in the \Gxsm\ preface \ref{pre-signalrevolution}.
 
-Signals are simply variables and connections are made simply via 
-pointing the input to the source variable -- as simple as this -- ``signals''
-are ``hot plug-gable'' -- but beware, it is just like pulling a plug on your
-rack and plugging it in else where -- so depending what you plug,
-better secure the tip or probe before doing so! Got me?
+Signals on the DSP are simply speaking just variables. Therefore, 
+it is easy to maniplate them by connecting them to different 
+source channels (i.e. ADC0-ADC7) or output channels
+(i.e. DAC0-DAC7). In this view, they are ``hot plug-able'' like a 
+physical wire in your rack. They can be pulled from one 
+connector and plug into another. But be aware, you have to know
+what you do. Secure the tip before trying new connections! Got me?
 
 \GxsmScreenShotS{signal-graph}{Signal Graph for typical STM operation, as created by the tool and graphviz from the actual life DSP configuration.}{0.13}
 %%\begin{figure}[hbt]
@@ -931,7 +951,8 @@ application and step response test tools not directly provided via the
 The actual readings of the two banks of each 8 AD and DA converters
 provided by the A810 expansion board can be monitored via the A810
 AD/DA Monitor App as shown in Fig\ref{fig:MK3-spm-configurator-A810-mon}.
-\GxsmScreenShotS{MK3-spm-configurator-A810-mon}{A810 AD/DA Monitor}{0.2}
+\GxsmScreenShotS{MK3-spm-configurator-A810-mon}{A810 AD/DA
+  Monitor}{0.2}
 
 A subset of all signals can be configured via the Signal-Monitor for
 watching. In general for testing and debugging any signal can be
@@ -1049,10 +1070,10 @@ SI32 & 1 & feedback\_mixer.iir\_signal[3] &  IIR32 3 &  V &  DSP32Qs15dot16TO\_V
 {
 \tiny
 \ctable[
-	caption={ MK3 DSP Signal Description continued. With \\
-		  {\small DSP32Qs15dot0TO\_Volt } := {$10/32767$}, \\
-		  {\small DSP32Qs23dot8TO\_Volt } := {$10/(32767 * 2^8)$}, \\
-		  {\small DSP32Qs15dot16TO\_Volt} := {$10/(32767 * 2^{16})$}\ and \\
+	caption={ MK3 DSP Signal Description continued. With \newline
+		  {\small DSP32Qs15dot0TO\_Volt } := {$10/32767$}, \newline
+		  {\small DSP32Qs23dot8TO\_Volt } := {$10/(32767 * 2^8)$}, \newline
+		  {\small DSP32Qs15dot16TO\_Volt} := {$10/(32767 * 2^{16})$}\ and \newline
 		  {\small CPN(N) } := $2^N-1$
 	},
 	label={tab:DSPsignalscontcont},
@@ -1339,7 +1360,7 @@ to watch with the scope via the Patch Rack and assign to ``SCOPE\_SIGNAL1/2\_INP
 \GxsmScreenShotS{MK3-spm-configurator-2-signal-patchrack-PLL-scope}{Example
   Signal Patch Configuration for PLL view}{0.2}
 
-\item Then select the phase detector time constant ``TauPAC'' -- set
+\item Then select the phase detector time constant ``TauPAC'' -- set it
   to 20 $\mu$s or faster.  {\bf Referring to the PLL manual ``4.1 Phase
     Detector Time Cst (s)'':} This control adjusts the time constant
   of the phase detector. We suggest keeping time constant to $20 \mu$s
@@ -1355,15 +1376,15 @@ to watch with the scope via the Patch Rack and assign to ``SCOPE\_SIGNAL1/2\_INP
   via ``Q'' from resulting in stable control loop conditions, so you
   have to manually tweak those.
 
-\item Then turn on the PAC Processing, check the check box. Or toggle
+\item Then turn on the PAC Processing by activating the check box. Or toggle
   to restart with changed time constant!
 
 \item Operational ranges setup. This defines the range mapping and
   actual sensitivities for excitation frequency, resonator phase,
   excitation and resonator amplitudes.  Set the phase range to $360$
-  \degree ($\pm180$ \degree) for tuning. Select reasonable ranges for
-  amplitudes matching your system needs.
-  \GxsmScreenShotS{MK3-Gxsm-PLL-Control-op}{PAC/PLL initial operation
+  \degree ($\pm180$ \degree) for tuning (see Fig. \ref{fig:PAC_PLL}). 
+  Select reasonable ranges for amplitudes matching your system needs.
+  \GxsmScreenShotS{MK3-Gxsm-PLL-Control-op}{\label{fig:PAC_PLL}PAC/PLL initial operation
     boundary setup example. Time constant set to 20 $\mu$s here, PAC
     processing enabled.}{0.5}
 
@@ -1396,8 +1417,9 @@ to watch with the scope via the Patch Rack and assign to ``SCOPE\_SIGNAL1/2\_INP
       currently the scope max block size/count is about 2000. Hi-level
       Python issue. The DSP has storage for up to 1e6-1 value
       pairs.}
-  \GxsmScreenShotS{MK3-spm-configurator-6-scope-PACsig}{Oscillocpe app
-    for viewing PLL operation.}{0.2}
+  \GxsmScreenShotS{MK3-spm-configurator-6-scope-PACsig}{Oscilloscope app
+    for viewing PLL operation. Use AC coupling for both channels so that 
+    you can enlarge the signals in a convient way.}{0.2}
 
 \item Re run the tune tool with phase set to initial detected value
   (relative to the initial reference set to zero! Keep in mind any
