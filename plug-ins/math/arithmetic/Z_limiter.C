@@ -258,11 +258,12 @@ static void Z_limiter_cleanup(void)
 
 	Src->mem2d->HiLo (&hi, &lo, 0, &p[0], &p[1], 1);
 
-	for(int line=0; line < Dest->mem2d->GetNy (); line++)
-		for(int col=0; col < Dest->mem2d->GetNx (); col++){
-			z = Src->mem2d->GetDataPkt (line, col);
-			Dest->mem2d->PutDataPkt (z > hi ? hi : z < lo ? lo : z, line, col);
-		}
+	for(int v=0; v < Dest->mem2d->GetNv (); v++)
+		for(int line=0; line < Dest->mem2d->GetNy (); line++)
+			for(int col=0; col < Dest->mem2d->GetNx (); col++){
+				z = Src->mem2d->GetDataPkt (line, col, v);
+				Dest->mem2d->PutDataPkt (z > hi ? hi : z < lo ? lo : z, line, col, v);
+			}
 
 	return MATH_OK;
 }

@@ -237,10 +237,11 @@ static gboolean log_z_run(Scan *Src, Scan *Dest)
 	Src->mem2d->HiLo(&hi, &lo, FALSE);
 	if(hi-lo < 1.) return MATH_OK;
 
-	for(line=0; line<Dest->data.s.ny; line++)
-		for(col=0; col<Dest->data.s.nx; col++)
-			Dest->mem2d->PutDataPkt (log (Src->mem2d->GetDataPkt (col, line)-lo+1.),
-						 col, line);
+	for(int v=0; v < Dest->mem2d->GetNv (); v++)
+		for(line=0; line<Dest->data.s.ny; line++)
+			for(col=0; col<Dest->data.s.nx; col++)
+				Dest->mem2d->PutDataPkt (log (Src->mem2d->GetDataPkt (col, line, v)-lo+1.),
+							 col, line, v);
 	return MATH_OK;
 }
 
