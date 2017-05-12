@@ -2945,6 +2945,10 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
         UnitObj *tmp_unit =  gapp->xsm->MakeUnit ("AA", "Z");
 	Dest->data.SetTimeUnit (tmp_unit);
         delete tmp_unit;
+
+        tmp_unit =  gapp->xsm->MakeUnit ("Hz", "Frq. Shift");
+	Dest->data.SetZUnit (tmp_unit);
+        delete tmp_unit;
         
         info_stream << "dz = " << dz << " Ang\n";
         info_stream << " z = [" << zi << ", " << zf << "] Ang\n";
