@@ -591,7 +591,7 @@ fmt_servo = "<lllLlllll"
 
 i_analog = 9
 fmt_analog_write_bm = "<ll"
-fmt_analog = "<llLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLllllllllllllllllLLLLllll"
+fmt_analog = "<llLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLllllllllllllllllllllLLLLllll"
 [
 	ii_analog_bias,
 	ii_analog_motor,
@@ -645,6 +645,26 @@ fmt_analog = "<llLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLllllllllllll
 	ii_analog_out09bp,
 	ii_analog_out09afp,
 	ii_analog_out09bfp,
+	ii_analog_out10p,
+	ii_analog_out10ap,
+	ii_analog_out10bp,
+	ii_analog_out10afp,
+	ii_analog_out10bfp,
+	ii_analog_out11p,
+	ii_analog_out11ap,
+	ii_analog_out11bp,
+	ii_analog_out11afp,
+	ii_analog_out11bfp,
+	ii_analog_out12p,
+	ii_analog_out12ap,
+	ii_analog_out12bp,
+	ii_analog_out12afp,
+	ii_analog_out12bfp,
+	ii_analog_out13p,
+	ii_analog_out13ap,
+	ii_analog_out13bp,
+	ii_analog_out13afp,
+	ii_analog_out13bfp,
 	ii_analog_avg_input,
 	ii_analog_avg_signal,
 	ii_analog_rms_signal,
@@ -653,6 +673,10 @@ fmt_analog = "<llLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLllllllllllll
 	ii_analog_vnull,
 	ii_analog_wave0,
 	ii_analog_wave1,
+	ii_analog_wave2,
+	ii_analog_wave3,
+	ii_analog_wave4,
+	ii_analog_wave5,
 	ii_analog_in0,
 	ii_analog_in1,
 	ii_analog_in2,
@@ -669,7 +693,7 @@ fmt_analog = "<llLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLllllllllllll
 	ii_analog_counter1,
 	ii_analog_gatetime0,
 	ii_analog_gatetime1
-] = range (0,76)
+] = range (0,100)
 
 num_monitor_signals = NUM_MONITOR_SIGNALS
 i_signal_monitor = 10
@@ -838,35 +862,40 @@ fmt_probe_vector = "<llLLLLLLlllllllll"
 ] = range (0,17)
 
 i_autoapp = 17
-fmt_autoapp = "<llllllllllLLllllllllllllll"
+fmt_autoapp = "<llllllllllllllllllLLlllllllllll"
 [
 	ii_autoapp_start,
 	ii_autoapp_stop,
 	ii_autoapp_mover_mode,
-	ii_autoapp_wave_outX,
-	ii_autoapp_wave_outY,
-	ii_autoapp_piezo_steps,
+	ii_autoapp_max_wave_cycles,
+	ii_autoapp_wave_length,
+	ii_autoapp_n_wave_channels,
+	ii_autoapp_wave_speed,
 	ii_autoapp_n_wait,
-	ii_autoapp_u_piezo_max,
-	ii_autoapp_u_piezo_amp,
-	ii_autoapp_piezo_speed,
+	ii_autoapp_channel_mapping0,
+	ii_autoapp_channel_mapping1,
+	ii_autoapp_channel_mapping2,
+	ii_autoapp_channel_mapping3,
+	ii_autoapp_channel_mapping4,
+	ii_autoapp_channel_mapping5,
+	ii_autoapp_axis,
+	ii_autoapp_dir,
+	ii_autoapp_ci_retract,
+	ii_autoapp_dum,
 	ii_autoapp_n_wait_fin,
 	ii_autoapp_fin_cnt,
 	ii_autoapp_mv_count,
-	ii_autoapp_mv_dir,
 	ii_autoapp_mv_step_count,
-	ii_autoapp_u_piezo,
 	ii_autoapp_step_next,
 	ii_autoapp_tip_mode,
 	ii_autoapp_delay_cnt,
-	ii_autoapp_ci_mult,
 	ii_autoapp_cp,
 	ii_autoapp_ci,
 	ii_autoapp_count_axis0,
 	ii_autoapp_count_axis1,
 	ii_autoapp_count_axis2,
 	ii_autoapp_pflg
-] = range (0,26)
+] = range (0,31)
 
 i_datafifo = 18
 fmt_datafifo_write = "<ll"
@@ -1686,29 +1715,33 @@ class SPMcontrol():
                 vx = self.SPM_SCAN[ii_scan_cfs_dx]*75000./(65536.*32767.)*10.0
                 xs = self.SPM_SCAN[ii_scan_cfs_dx]/(65536.*32767.)*self.SPM_SCAN[ii_scan_dnx]*10.0
                 print ("Scan-Control:\n"
-                      + " nx_pre:%03d" %(self.SPM_SCAN[ii_scan_nx_pre])+ ", fastreturn:%03d" %(self.SPM_SCAN[ii_scan_fast_return])
-                      + " nx:%05d" %(self.SPM_SCAN[ii_scan_nx]) + ", ny:%05d" %(self.SPM_SCAN[ii_scan_ny]) + "\n"
-                      + " fs_dx:%d" %(self.SPM_SCAN[ii_scan_fs_dx]) + ", y:%d" %(self.SPM_SCAN[ii_scan_fs_dy]) + "\n"
-                + " cfs_dx:%d" %(self.SPM_SCAN[ii_scan_cfs_dx]) + ",y:%d" %(self.SPM_SCAN[ii_scan_cfs_dy]) + "\n"
-                      + " dnx:%d" %(self.SPM_SCAN[ii_scan_dnx]) + ", y:%d" %(self.SPM_SCAN[ii_scan_dny]) + "\n"
-                      + " X speed calc [V/s]: %f" %vx + "  in A @ 10 A/V G1: %f\n" %(vx*10)
-                      + " X step size [V]...: %f" %xs + "  in A @ 10 A/V G1: %f\n" %(xs*10)
-                      + " num_steps_mmove_xy:%d" %(self.SPM_SCAN[ii_scan_num_steps_move_xy]) + "\n"
-                      + " fm_dx:%d" %(self.SPM_SCAN[ii_scan_fm_dx]) + ",y:%d" %(self.SPM_SCAN[ii_scan_fm_dy]) + ",zxy:%d" %(self.SPM_SCAN[ii_scan_fm_dzxy])
-                      + " fm_dzy:%d" %(self.SPM_SCAN[ii_scan_fm_dz0_xy_vecX]) + ",y:%d" %(self.SPM_SCAN[ii_scan_fm_dz0_xy_vecY]) + "\n"
-                      + " SRCSXP: %08x" %(self.SPM_SCAN[ii_scan_srcs_xp]) + " XM: %08x" %(self.SPM_SCAN[ii_scan_srcs_xm]) + " XP2 %08x" %(self.SPM_SCAN[ii_scan_srcs_2nd_xp])
-                      + " XM2 %08x" %(self.SPM_SCAN[ii_scan_srcs_2nd_xm]) + " 2ndOffxp %d" %(self.SPM_SCAN[ii_scan_Zoff_2nd_xp]) + ", xm %d\n" %(self.SPM_SCAN[ii_scan_Zoff_2nd_xm])
-                      + " Sc0-Xpos:%d" %(self.SPM_SCAN[ii_scan_xyz_vecX]) + ",Y:%d" %(self.SPM_SCAN[ii_scan_xyz_vecY]) + ",Z:%d\n" %(self.SPM_SCAN[ii_scan_xyz_vecZ])
-                      + " Rot-Xpos:%d" %(self.SPM_SCAN[ii_scan_xy_r_vecX]) + ",Y:%d" %(self.SPM_SCAN[ii_scan_xy_r_vecY])
-                      + "\nAuto-App: cX%d" %(self.AUTOAPP_WATCH[ii_autoapp_wave_outX]) + ", cY:%d" %(self.AUTOAPP_WATCH[ii_autoapp_wave_outY])
-                      + "\nWave Counts: Axis012 (%d" %(self.AUTOAPP_WATCH[ii_autoapp_count_axis0]) 
-		       + ", %d" %(self.AUTOAPP_WATCH[ii_autoapp_count_axis1])
-		       + ", %d" %(self.AUTOAPP_WATCH[ii_autoapp_count_axis2]) + ")"
-                      + "\nMove-Control:\n"
-                      + "M: Xnew:%d" %(self.SPM_MOVE[ii_move_xy_new_vecX]) + ",Ynew:%d" %(self.SPM_MOVE[ii_move_xy_new_vecY]) + ",fdx:%d" %(self.SPM_MOVE[ii_move_f_d_xyz_vecX]) + ",fdy:%d\n" %(self.SPM_MOVE[ii_move_f_d_xyz_vecY])
-                      + "M: Xpos:%d" %(self.SPM_MOVE[ii_move_xyz_vecX]) + ",Ypos:%d" %(self.SPM_MOVE[ii_move_xyz_vecY]) + ",steps:%d" %(self.SPM_MOVE[ii_move_num_steps]) + ",pflg:%d\n" %(self.SPM_MOVE[ii_move_pflg])
-                      + "\n fm_dz0_xy: %8.4f" %(self.SPM_SCAN[ii_scan_fm_dz0_xy_vecX]/q31) + ", y:%8.4f" %(self.SPM_SCAN[ii_scan_fm_dz0_xy_vecY]/q31) + ", zoff-xyslope:%8.4f" %(self.SPM_SCAN[ii_z_offset_xyslope]/q31) + "\n"
-                      + "\n VPS Z-adj-offset: %8.4f" %(self.PROBE[ii_probe_Zpos]/q31) + "\n"
+                       + " nx_pre:%03d" %(self.SPM_SCAN[ii_scan_nx_pre])+ ", fastreturn:%03d" %(self.SPM_SCAN[ii_scan_fast_return])
+                       + " nx:%05d" %(self.SPM_SCAN[ii_scan_nx]) + ", ny:%05d" %(self.SPM_SCAN[ii_scan_ny]) + "\n"
+                       + " fs_dx:%d" %(self.SPM_SCAN[ii_scan_fs_dx]) + ", y:%d" %(self.SPM_SCAN[ii_scan_fs_dy]) + "\n"
+                       + " cfs_dx:%d" %(self.SPM_SCAN[ii_scan_cfs_dx]) + ",y:%d" %(self.SPM_SCAN[ii_scan_cfs_dy]) + "\n"
+                       + " dnx:%d" %(self.SPM_SCAN[ii_scan_dnx]) + ", y:%d" %(self.SPM_SCAN[ii_scan_dny]) + "\n"
+                       + " X speed calc [V/s]: %f" %vx + "  in A @ 10 A/V G1: %f\n" %(vx*10)
+                       + " X step size [V]...: %f" %xs + "  in A @ 10 A/V G1: %f\n" %(xs*10)
+                       + " num_steps_mmove_xy:%d" %(self.SPM_SCAN[ii_scan_num_steps_move_xy]) + "\n"
+                       + " fm_dx:%d" %(self.SPM_SCAN[ii_scan_fm_dx]) + ",y:%d" %(self.SPM_SCAN[ii_scan_fm_dy]) + ",zxy:%d" %(self.SPM_SCAN[ii_scan_fm_dzxy])
+                       + " fm_dzy:%d" %(self.SPM_SCAN[ii_scan_fm_dz0_xy_vecX]) + ",y:%d" %(self.SPM_SCAN[ii_scan_fm_dz0_xy_vecY]) + "\n"
+                       + " SRCSXP: %08x" %(self.SPM_SCAN[ii_scan_srcs_xp]) + " XM: %08x" %(self.SPM_SCAN[ii_scan_srcs_xm]) + " XP2 %08x" %(self.SPM_SCAN[ii_scan_srcs_2nd_xp])
+                       + " XM2 %08x" %(self.SPM_SCAN[ii_scan_srcs_2nd_xm]) + " 2ndOffxp %d" %(self.SPM_SCAN[ii_scan_Zoff_2nd_xp]) + ", xm %d\n" %(self.SPM_SCAN[ii_scan_Zoff_2nd_xm])
+                       + " Sc0-Xpos:%d" %(self.SPM_SCAN[ii_scan_xyz_vecX]) + ",Y:%d" %(self.SPM_SCAN[ii_scan_xyz_vecY]) + ",Z:%d\n" %(self.SPM_SCAN[ii_scan_xyz_vecZ])
+                       + " Rot-Xpos:%d" %(self.SPM_SCAN[ii_scan_xy_r_vecX]) + ",Y:%d" %(self.SPM_SCAN[ii_scan_xy_r_vecY])
+                       + "\nZ-Servo: CI=%d" %(self.Z_SERVO[ii_servo_ci]) + ", CP=%d" %(self.Z_SERVO[ii_servo_cp]) + ", delta=%d" %(self.Z_SERVO[ii_servo_delta]) + ", control=%d" %(self.Z_SERVO[ii_servo_control])
+                       + "\nAuto-App/Wave[%d]"  %(self.AUTOAPP_WATCH[ii_autoapp_tip_mode]) + ": max#=%d" %(self.AUTOAPP_WATCH[ii_autoapp_max_wave_cycles]) +  ", w#=%d" %(self.AUTOAPP_WATCH[ii_autoapp_wave_length]) + " #ch=%d" %(self.AUTOAPP_WATCH[ii_autoapp_n_wave_channels]) + ", cX%d" %(self.AUTOAPP_WATCH[ii_autoapp_channel_mapping0]) + ", cY:%d" %(self.AUTOAPP_WATCH[ii_autoapp_channel_mapping1])
+                       + "\nWave Counts: axis=%d" %(self.AUTOAPP_WATCH[ii_autoapp_axis]) + " dir=%d" %(self.AUTOAPP_WATCH[ii_autoapp_dir]) 
+                       + ", Axis0=%d" %(self.AUTOAPP_WATCH[ii_autoapp_count_axis0]) 
+		       + ", Axis1=%d" %(self.AUTOAPP_WATCH[ii_autoapp_count_axis1])
+		       + ", Axis2=%d" %(self.AUTOAPP_WATCH[ii_autoapp_count_axis2])
+		       + ", cur mv_count=%d" %(self.AUTOAPP_WATCH[ii_autoapp_mv_count]) + ", ci_retract=%d" %(self.AUTOAPP_WATCH[ii_autoapp_ci_retract])
+                       + ")"
+                       + "\nMove-Control:\n"
+                       + "M: Xnew:%d" %(self.SPM_MOVE[ii_move_xy_new_vecX]) + ",Ynew:%d" %(self.SPM_MOVE[ii_move_xy_new_vecY]) + ",fdx:%d" %(self.SPM_MOVE[ii_move_f_d_xyz_vecX]) + ",fdy:%d\n" %(self.SPM_MOVE[ii_move_f_d_xyz_vecY])
+                       + "M: Xpos:%d" %(self.SPM_MOVE[ii_move_xyz_vecX]) + ",Ypos:%d" %(self.SPM_MOVE[ii_move_xyz_vecY]) + ",steps:%d" %(self.SPM_MOVE[ii_move_num_steps]) + ",pflg:%d\n" %(self.SPM_MOVE[ii_move_pflg])
+                       + "\n fm_dz0_xy: %8.4f" %(self.SPM_SCAN[ii_scan_fm_dz0_xy_vecX]/q31) + ", y:%8.4f" %(self.SPM_SCAN[ii_scan_fm_dz0_xy_vecY]/q31) + ", zoff-xyslope:%8.4f" %(self.SPM_SCAN[ii_scan_z_offset_xyslope]/q31) + "\n"
+                       + "\n VPS Z-adj-offset: %8.4f" %(self.PROBE[ii_probe_Zpos]/q31) + "\n"
                 )
                 return 1       
 

@@ -230,27 +230,27 @@ PROBE            probe = {
 
 /* Init autoapproach */
 AUTOAPPROACH     autoapp = {
-		0,    //	autoapp.start = 0;
-		0,    //	autoapp.stop  = 0;
-		0,    //	autoapp.mover_mode  = 0;
-		6,    //	autoapp.piezo_steps = 6;
-		2,    //	autoapp.n_wait      = 2;
-		8000,    //	autoapp.u_piezo_max = 8000;
-		16000,   //	autoapp.u_piezo_amp = 16000;
-		2,    //	autoapp.piezo_speed = 2;
-		10000, //       autoapp.n_wait_fin
-		0,    //        autoapp.fin_cnt
-		0,    //	autoapp.mv_count    = 0;
-		0,    //	autoapp.mv_dir      = 0;
-		0,    //	autoapp.mv_step_count = 0;
-		0,    //	autoapp.u_piezo   = 0;
-		0,    //	autoapp.step_next = 0;
-		0,    //	autoapp.tip_mode  = 0;
-		0,    //	autoapp.delay_cnt = 0;
-		20,   //	autoapp.ci_mult   = 20;
-		0,    //	autoapp.cp        = 0;
-		0,    //	autoapp.ci        = 0;
-		0     //	autoapp.pflg      = 0;
+	0,     // start;           /**<0 Initiate =WO */
+	0,     // stop;            /**<1 Cancel   =WO */
+	0,     // mover_mode;      /**<2 Mover mode, see below */
+	0,     // max_wave_cycles; /**<3 max number of repetitions */
+	0,     // wave_length;     /**<4 total number of samples per wave cycle for all channels (must be multipe of n_waves_channels)  */
+	0,     // n_wave_channels; /**<5 number of wave form channel to play simulatneously (1 to max 6)*/
+	1,     // wave_speed;      /**<6 number of samples per wave cycle */
+	1,     // n_wait;          /**<7 delay inbetween cycels */
+	{ 3,4,0,0,0,0 }, // channel_mapping[6]; /** 8,9,10,11,12,13 -- may include the flag "ch | AAP_MOVER_SIGNAL_ADD"  */
+	0,     // axis;            /** axis id (0,1,2) for optional step count */
+	0,     // dir;             /** direction for count +/-1 */
+	10000L,     // NG   n_wait_fin;      /**<14 # cycles to wait and check (run FB) before finish auto app. */
+	0L,     // NG   fin_cnt;         /**< tmp count for auto fin. */
+	0,     // mv_count;        /**< "time axis" */
+	0,     // mv_step_count;   /**< step counter */
+	0,     // tip_mode;        /**< Tip mode, used by auto approach */
+	0,     // delay_cnt;       /**< Delay count */
+	0,     // ci_retract;      /**< retract CI (inverted normal, may be bigger) */
+	0,     // cp, ci;          /**< temporary used */
+	0,     // count_axis[3];   /**< axis step counter */
+	0     // pflg;            /**< process active flag =RO */
 };
 
 CR_OUT_PULSE      CR_out_pulse = {

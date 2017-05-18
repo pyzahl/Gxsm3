@@ -340,7 +340,7 @@ void dataprocess()
 	/* FEEDBACK */
 	long long tmp40 = 0; // 40bit
 	long long FB_mixer_delta = 0; // 40bit
-	int i;
+	int i,k;
 
 	/* Update Idle Time */
 	TSCReadSecond ();
@@ -758,10 +758,23 @@ void dataprocess()
                 else
                         run_autoapp ();
 		
-		if (autoapp.mover_mode & (AAP_MOVER_XYOFFSET | AAP_MOVER_XYSCAN |  AAP_MOVER_XXOFFSET | AAP_MOVER_XYMOTOR | AAP_MOVER_ZSCANADD)){
+		if (autoapp.mover_mode & AAP_MOVER_WAVE_PLAY){
+                        for (i=0; i<autoapp.n_wave_channels; ++i){
+                                k = autoapp.channel_mapping[i] & 7;
+
+                                // wave output computation
+                                compute_analog_wave_out (k, &analog.out[8+k]);
+
+                                // --- adding is to be configure via signals for MK3!
+                                //if (autoapp.channel_mapping[i] & AAP_MOVER_SIGNAL_ADD)
+                                //        AIC_OUT (k) = _sadd (AIC_OUT (k), analog.out[k]);
+                                //else
+                                //        AIC_OUT (k) = analog.out[k];
+                        }
+
 			// wave output computation
-			compute_analog_wave_out (autoapp.wave_out_channel[0], &analog.out[8]);
-			compute_analog_wave_out (autoapp.wave_out_channel[1], &analog.out[9]);
+			//compute_analog_wave_out (autoapp.wave_out_channel[0], &analog.out[8]);
+			//compute_analog_wave_out (autoapp.wave_out_channel[1], &analog.out[9]);
 		}
         } else 
                 /* Run CoolRunner Out puls(es) task ? */

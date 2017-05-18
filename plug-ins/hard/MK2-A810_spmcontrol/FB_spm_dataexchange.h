@@ -113,9 +113,9 @@
 // -- otherwise you exactly need to know/be sure what you are doing --
 // -- odd things like changed data structures, etc.., could break data transfer --
 #define FB_SPM_SOFT_ID   0x1001 /* FB_SPM sofware id */
-#define FB_SPM_VERSION   0x2032 /* FB_SPM main Version, BCD: 00.00 */
-#define FB_SPM_DATE_YEAR 0x2016 /* Date: Year, BCD */
-#define FB_SPM_DATE_MMDD 0x0615 /* Date: Month/Day, BCD */
+#define FB_SPM_VERSION   0x2033 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_DATE_YEAR 0x2017 /* Date: Year, BCD */
+#define FB_SPM_DATE_MMDD 0x0517 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Lednice-Battenkill Worrier 2013\n"\
@@ -124,7 +124,7 @@
 	"SCAN: Yes, Pause/Resume: Yes, FastRet: Yes, 2nd-Zoff-scan AKTIVE, Z[16], AIC0-7[16], dIdV/ddIdV/LckI0/Count[32]! AIC_INT: " FB_SPM_FEATURES_AIC_AS_INT "\n" \
 	"Z0-SLOPE-COMPENSATION: " FB_SPM_FEATURES_DSP_Z0_SLOPE_COMPENSATION "\n" \
 	"Scan and Offset: vector moves\n Z0-Plan-Off: Yes\n" \
-	"MOVER,APP+ChanSelect: Yes, AAP GPIO pulse: Yes and general GPIO, IW/phase: Yes\n"\
+	"MOVER: GENERIC MULTI CHANNEL WAVE PLAY, AAP GPIO pulse: Yes and general GPIO\n"\
 	"VPROBE: Yes, AIC0-7\nVPROBE-AICdnxINT: " FB_SPM_FEATURES_AIC_INT "\nACPROBE: Yes\nACPROBE2ND: Yes\nACphiQ19\n VP-TRACK: Yes\n VP_LIM: Yes\n"\
 	"VPROBE-Program-Loops: " FB_SPM_FEATURES_VECTOR_PRG " with TRK, LIM feature\n"\
 	"Universal Recorder16/32: Yes, GPIO: Yes\n"\
@@ -519,45 +519,37 @@ typedef struct{
 
 /** Auto Approach and Slider/Mover Parameters */
 typedef struct{
-	DSP_INT     start;           /**< Initiate =WO */
-	DSP_INT     stop;            /**< Cancel   =WO */
-	DSP_INT     mover_mode;      /**< Mover mode, one off AAP_MOVER_..., see above */
-	DSP_INT     piezo_steps;     /**< max number of repetitions */
-	DSP_INT     n_wait;          /**< delay inbetween cycels */
-	DSP_INT     u_piezo_max;     /**< Amplitude, Peak or length of waveform table */
-	DSP_INT     u_piezo_amp;     /**< Amplitude, Peak2Peak or phase offset for IW mode*/
-	DSP_INT     piezo_speed;     /**< Speed */
-	DSP_ULONG   n_wait_fin;      /**< # cycles to wait and check (run FB) before finish auto app. */
+	DSP_INT     start;           /**<0 Initiate =WO */
+	DSP_INT     stop;            /**<1 Cancel   =WO */
+	DSP_INT     mover_mode;      /**<2 Mover mode, see below */
+	DSP_INT     max_wave_cycles; /**<3 max number of repetitions */
+	DSP_INT     wave_length;     /**<4 total number of samples per wave cycle for all channels (must be multipe of n_waves_channels)  */
+	DSP_INT     n_wave_channels; /**<5 number of wave form channel to play simulatneously (1 to max 6)*/
+	DSP_INT     wave_speed;      /**<6 number of samples per wave cycle */
+	DSP_INT     n_wait;          /**<7 delay inbetween cycels */
+	DSP_INT     channel_mapping[6]; /** 8,9,10,11,12,13 -- may include the flag "ch | AAP_MOVER_SIGNAL_ADD"  */
+	DSP_INT     axis;            /**<14 axis id (0,1,2) for optional step count */
+	DSP_INT     dir;             /**<15 direction for count +/-1 */
+	DSP_INT     ci_retract;      /**<16 retract CI (inverted normal, may be bigger) */
+	DSP_INT     dum;             /**<17 retract CI (inverted normal, may be bigger) */
+	DSP_ULONG   n_wait_fin;      /**<18 # cycles to wait and check (run FB) before finish auto app. */
 	DSP_ULONG   fin_cnt;         /**< tmp count for auto fin. */
 	DSP_INT     mv_count;        /**< "time axis" */
-	DSP_INT     mv_dir;          /**< "time direction" */
 	DSP_INT     mv_step_count;   /**< step counter */
-	DSP_INT     u_piezo;         /**< Current Piezo Voltage */
-	DSP_INT     step_next;       /**< used for motor (optional) */
 	DSP_INT     tip_mode;        /**< Tip mode, used by auto approach */
 	DSP_INT     delay_cnt;       /**< Delay count */
-	DSP_INT     ci_mult;         /**< retract speedup factor */
 	DSP_INT     cp, ci;          /**< temporary used */
+	DSP_INT     count_axis[3];   /**< axis step counter */
 	DSP_INT     pflg;            /**< process active flag =RO */
 } AUTOAPPROACH;
-#define MAX_WRITE_AUTOAPPROACH 10
+#define MAX_WRITE_AUTOAPPROACH 16
 
-#define AAP_MOVER_OFF           0 /**< all off */
-#define AAP_MOVER_XP_AUTO_APP   1 /**< run in auto approach, uses "XP" for approach or other dirs if set (set mask like AAP_MOVER_XP_AUTO_APP |  AAP_MOVER_[[XY][PM]|WAVE]) */
-#define AAP_MOVER_XP            2 /**< manuell XP (+, positive dir, ramp on X offset) steps */
-#define AAP_MOVER_XM            4 /**< manuell XM (-, negative dir, ramp on X offset) steps */
-#define AAP_MOVER_YP            6 /**< manuell YP (+, positive dir, ramp on Y offset) steps */
-#define AAP_MOVER_YM            8 /**< manuell YM (-, negative dir, ramp on Y offset) steps */
-#define AAP_MOVER_DIRMMSK  0x000e /**< mask for direction and wave mode */
-#define AAP_MOVER_WAVE     0x0010 /**< run waveform in buffer @ 0x5000 (sharing EXTERN_DATA_FIFO_ADDRESS) */
-#define AAP_MOVER_PULSE    0x0020 /**< run CR puls -- future mode, !!!not yet implemented!!! */
-#define AAP_MOVER_XYOFFSET 0x1000 /**< set this bit if XY offset outputs to be used */
-#define AAP_MOVER_XYSCAN   0x2000 /**< set this bit if XY scan outputs to be used */
-#define AAP_MOVER_XYMOTOR  0x4000 /**< set this bit if Motor output (X only) is to be used */
-#define AAP_MOVER_XXOFFSET 0x8000 /**< set this bit if Motor output (X only on X0=Y0=X-signal) is to be used */
-#define AAP_MOVER_ZSCANADD 0x0800 /**< set this bit if signal should be added to Z */
-#define AAP_MOVER_IWMODE   0x0100 /**< InchWorm drive mode (fwd/rev via _XP/XM on X0/Y0), 120deg phase */
-
+/** MOVER MODES **/
+#define AAP_MOVER_STOP          0 /**< cancel wave play/auto -- all off */
+#define AAP_MOVER_AUTO_APP      1 /**< set this flag to run wave play in auto approach mode */
+#define AAP_MOVER_WAVE_PLAY     2 /**< run wave play */
+#define AAP_MOVER_PULSE         4 /**< GPIO - -experimental */
+#define AAP_MOVER_SIGNAL_ADD    0x100 /**< wave play, channel falg indicating "add to channel" mode */
 
 /** CR_out_puls */
 typedef struct{

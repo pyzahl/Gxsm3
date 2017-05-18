@@ -142,12 +142,16 @@ ANALOG_VALUES    analog = {
 	  OUT_MOD_INIT,
 
 	  OUT_MOD_INIT,
+	  OUT_MOD_INIT,
+	  OUT_MOD_INIT,
+	  OUT_MOD_INIT,
+	  OUT_MOD_INIT,
 	  OUT_MOD_INIT },
 	//-----------------
 	0,0,0, // input for avg and rms
 	//-----------------
 	0, 0, 0, // biasadj, noise, null
-	{ 0,0 }, // wave
+	{ 0,0,0, 0,0,0 }, // wave
 	//-----------------
 	{ 0,0,0,0,  0,0,0,0 }, // in 0..7
 	{ NULL,NULL,NULL,NULL }, // to be initialized
@@ -305,25 +309,26 @@ AUTOAPPROACH     autoapp = {
 		0,    //	autoapp.start = 0;
 		0,    //	autoapp.stop  = 0;
 		0,    //	autoapp.mover_mode  = 0;
-		{ 3,4 }, // default out on XY-SCAN !!
-		6,    //	autoapp.piezo_steps = 6;
-		2,    //	autoapp.n_wait      = 2;
-		8000,    //	autoapp.u_piezo_max = 8000;
-		16000,   //	autoapp.u_piezo_amp = 16000;
-		2,    //	autoapp.piezo_speed = 2;
+		0,     // max_wave_cycles; /**<3 max number of repetitions */
+		0,     // wave_length;     /**<4 total number of samples per wave cycle for all channels (must be multipe of n_waves_channels)  */
+		0,     // n_wave_channels; /**<5 number of wave form channel to play simulatneously (1 to max 6)*/
+		1,     // wave_speed;      /**<6 number of samples per wave cycle */
+		1,     // n_wait;          /**<7 delay inbetween cycels */
+		{ 3,4,0,0,0,0 }, // channel_mapping[6]; /** 8,9,10,11,12,13 -- may include the flag "ch | AAP_MOVER_SIGNAL_ADD"  */
+		0,     // axis;            /** axis id (0,1,2) for optional step count */
+		0,     // dir;             /** direction for count +/-1 */
+		0,     // ci_retract
+		0,     // dum
 		10000, //       autoapp.n_wait_fin
 		0,    //        autoapp.fin_cnt
 		0,    //	autoapp.mv_count    = 0;
-		0,    //	autoapp.mv_dir      = 0;
 		0,    //	autoapp.mv_step_count = 0;
-		0,    //	autoapp.u_piezo   = 0;
 		0,    //	autoapp.step_next = 0;
 		0,    //	autoapp.tip_mode  = 0;
 		0,    //	autoapp.delay_cnt = 0;
-		20,   //	autoapp.ci_mult   = 20;
 		0,    //	autoapp.cp        = 0;
 		0,    //	autoapp.ci        = 0;
-		0,0,0, //       autoapp.count_axis[3]
+		{ 0,0,0 }, //       autoapp.count_axis[3]
 		0     //	autoapp.pflg      = 0;
 };
 
@@ -507,7 +512,7 @@ PLL_LOOKUP PLL_lookup = {
 #pragma CODE_SECTION(setup_default_signal_configuration, ".text:slow")
 void setup_default_signal_configuration(){
 	int i;
-	for (i=0; i<10; ++i){ // make default zero value pointer sane state
+	for (i=0; i<14; ++i){ // make default zero value pointer sane state
 		analog.out[i].p       = &analog.vnull; // default "null"
 		analog.out[i].add_a_p = &analog.vnull; // default "null"
 		analog.out[i].sub_b_p = &analog.vnull; // default "null"
@@ -543,8 +548,8 @@ void setup_default_signal_configuration(){
 	analog.out[7].p       = &analog.motor;        // default Motor control output
 
 	// setup wave channels -- redirected via probe out index
-	analog.out[8].p       = &analog.wave[0];      // wave[0] out destination
-	analog.out[9].p       = &analog.wave[1];      // wave[1] out destination
+	for (i=0; i<6; ++i)
+		analog.out[8+i].p = &analog.wave[i];      // wave[n] out destination
 
 	// setup RMS module input
 	analog.avg_input      = &analog.in[0];  // old choice: &feedback_mixer.FB_IN_processed[0];
