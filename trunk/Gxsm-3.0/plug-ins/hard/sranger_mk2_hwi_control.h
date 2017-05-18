@@ -192,7 +192,7 @@ typedef struct{
 	int wave_out_channel[2];
 	int wave_out_channel_dsp[2];
 	int MOV_wave_len;
-	int MOV_speed_fac;
+	int MOV_wave_speed_fac;
 	short MOV_waveform[MOV_MAXWAVELEN];
 	double final_delay;
 	double max_settling_time;

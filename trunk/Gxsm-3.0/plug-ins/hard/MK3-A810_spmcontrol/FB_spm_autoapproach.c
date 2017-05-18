@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* SRanger and Gxsm - Gnome X Scanning Microscopy Project
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -25,8 +27,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #include "g_intrinsics.h"
 #include "FB_spm_dataexchange.h"
@@ -63,7 +63,6 @@ void init_autoapp (){
 
 	// init mover
 	autoapp.mv_count = 0; 
-	autoapp.mv_dir   = 0; 
 	autoapp.mv_step_count = 0;
 	waveptr = prbdf; // using probe buffer!
 
@@ -71,7 +70,7 @@ void init_autoapp (){
 	autoapp.fin_cnt = autoapp.n_wait_fin;
 	autoapp.tip_mode = TIP_ZPiezoMax;
 
-	tmp_s = autoapp.piezo_speed;
+	tmp_s = 0;
 
 	// enable job
 	autoapp.pflg = 1;
@@ -104,70 +103,40 @@ void stop_autoapp (){
 
 
 // generate mover ramp signal (parabel sections)
-#pragma CODE_SECTION(run_mover, ".text:slow")
-void run_mover (){
-	int axis=0;
-	int dir=0;
-	tmp_i = autoapp.mv_count;
-	// waveform mode or default simple parabulum mode?
-	if (autoapp.mover_mode & AAP_MOVER_WAVE){
-		switch (autoapp.mover_mode & AAP_MOVER_DIRMMSK) {
-		case AAP_MOVER_XP:
-			axis=0; dir=1;
-			if (autoapp.mover_mode & AAP_MOVER_IWMODE){ // IW mode fwd
-				analog.wave[0] = waveptr[tmp_i];
-				tmp_i += autoapp.u_piezo_amp;  // this is the phase offset in IW mode!
-				if (tmp_i >= autoapp.u_piezo_max) // u_piezo_max is wave len in all wave modes
-					tmp_i -= autoapp.u_piezo_max;
-				analog.wave[1] = waveptr[tmp_i];
-			} else
-				analog.wave[0] = waveptr[tmp_i]; 
-			break;
-		case AAP_MOVER_XM:
-			axis=0; dir=-1;
-			if (autoapp.mover_mode & AAP_MOVER_IWMODE){ // IW mode rev
-				analog.wave[0] = waveptr[autoapp.u_piezo_max-tmp_i-1];
-				tmp_i += autoapp.u_piezo_amp;  // this is the phase offset in IW mode!
-				if (tmp_i >= autoapp.u_piezo_max)
-					tmp_i -= autoapp.u_piezo_max;
-				analog.wave[1] = waveptr[autoapp.u_piezo_max-tmp_i-1];
-			} else
-				analog.wave[0] = -waveptr[tmp_i]; 
-			break;
-		case AAP_MOVER_YP: 
-			axis=1; dir=1;
-			analog.wave[1] = waveptr[tmp_i]; break;
-		case AAP_MOVER_YM: 
-			axis=1; dir=-1;
-			analog.wave[1] = -waveptr[tmp_i]; break;
-		case AAP_MOVER_OFF: 
-			analog.wave[0] = 0; analog.wave[1] = 0; break;
-		default: break;
+#pragma CODE_SECTION(run_wave_play, ".text:slow")
+
+// generate mover/coarse motion signals from wave forms -- analog.out[] are used to define mapping
+// ==> final signal distribution to OUT-channels as requested later in data process.
+// ==> overrides XYZ-0 and -Scan signals if engaged as configured!
+void run_wave_play (){
+        // play multi channel wave form?
+	if (autoapp.mover_mode & AAP_MOVER_WAVE_PLAY){
+                ++tmp_s;
+		if (tmp_s == 1){ // set waves to next values
+                        for (tmp_i=0; tmp_i<autoapp.n_wave_channels; ++tmp_i, autoapp.mv_count++)
+                                analog.wave[autoapp.channel_mapping[tmp_i] & 7] = waveptr[autoapp.mv_count];
+                } else { // hold waves, check hold complete
+                        if (tmp_s >= autoapp.wave_speed)
+                                tmp_s = 0; // start over next
+                        else // hold, do nothing
+                                return;
 		}
-		--tmp_s;
-		if (tmp_s <= 0){ // slow down factor
-			autoapp.mv_count++;
-			tmp_s = autoapp.piezo_speed;
-		} else return;
-		if (autoapp.mv_count >= autoapp.u_piezo_max) // check if wave len exeeded, done.
-			autoapp.mv_count = 0;
-	}
+                
+		if (autoapp.mv_count >= autoapp.wave_length) // check if wave len exeeded, done.
+			autoapp.mv_count = 0; // wave cycle completed
+	} // else ... may be GPIO, ... modes
 
-	// final rep counter check
+	// final rep counter check, wave cycle completed?
         if (!autoapp.mv_count){
-		autoapp.mv_dir=0;
                 ++autoapp.mv_step_count;
-
-		if (autoapp.mover_mode & AAP_MOVER_XP_AUTO_APP) 
-			axis=2;
-		autoapp.count_axis[axis] += dir;
+		autoapp.count_axis[autoapp.axis] += autoapp.dir;
 
 		// all steps done?
-                if(autoapp.mv_step_count >= autoapp.piezo_steps){
-			analog.wave[0] = 0;
-			analog.wave[1] = 0;
+                if(autoapp.mv_step_count >= autoapp.max_wave_cycles){
+			//analog.wave[0] = 0;
+			//analog.wave[1] = 0;
 
-			if (autoapp.mover_mode & AAP_MOVER_XP_AUTO_APP)
+			if (autoapp.mover_mode & AAP_MOVER_AUTO_APP)
 				autoapp.tip_mode = TIP_Delay_2; // proceed with next approach cycle
 			else
 				autoapp.pflg = 0; // done, max number steps exceeded
@@ -218,7 +187,7 @@ void run_tip_app (){
 						
 			// reprogramm for reverse direction!!!
 			z_servo.cp = 0;
-			z_servo.ci *= -autoapp.ci_mult;
+			z_servo.ci = -app_ci_signum*autoapp.ci_retract;
 		} else {
 			// check progress
 			if ( app_ci_signum*z_servo.neg_control < -VAL_EXTEND ){ // retracted?
@@ -239,8 +208,8 @@ void run_tip_app (){
                 if( ! autoapp.delay_cnt-- ){
 			// mover parameter init
 			autoapp.mv_count = 0; 
-			autoapp.mv_dir   = 0; 
 			autoapp.mv_step_count = 0;
+                        tmp_s = 0;
 			// setup for TIP_Delay_2
 			autoapp.delay_cnt = autoapp.n_wait;
 			// next state
@@ -249,19 +218,19 @@ void run_tip_app (){
                 break;
         case TIP_ZSteps:
 		// Run coarse approach steps with mover or using GPIO pulse -- must be pre-configured!!!
-		// If mover steps are done, TIP_Delay_2 state is selected within run_mover ()
+		// If mover steps are done, TIP_Delay_2 state is selected within run_wave_play ()
 		if (autoapp.mover_mode & AAP_MOVER_PULSE)
 			if (CR_out_pulse.pflg){
-				run_CR_out_pulse (); // run pules job, will self terminate and rest it's pflg
+				run_CR_out_pulse (); // run pulse job, will self terminate and rest it's pflg
 				if (!CR_out_pulse.pflg) // check if pulse job done ?
-					if (autoapp.mover_mode & AAP_MOVER_XP_AUTO_APP) // double check if we not got canceled
+					if (autoapp.mover_mode & AAP_MOVER_AUTO_APP) // double check if we not got canceled
 						autoapp.tip_mode = TIP_Delay_2; // proceed with next approach cycle
 					else
 						autoapp.pflg = 0; // done, max number steps exceeded
 			} else
 				init_CR_out_pulse (); // initiate pulse job
 		else
-			run_mover (); // run mover job, will self terminate and initiate next state
+			run_wave_play (); // run mover job, will self terminate and initiate next state
 		break;
         case TIP_Delay_2:
 		// small delay
@@ -276,8 +245,8 @@ void run_tip_app (){
 
 #pragma CODE_SECTION(run_autoapp, ".text:slow")
 void run_autoapp (){
-	if (autoapp.mover_mode & AAP_MOVER_XP_AUTO_APP)
+	if (autoapp.mover_mode & AAP_MOVER_AUTO_APP)
 		run_tip_app (); 
 	else
-		run_mover ();
+		run_wave_play ();
 }

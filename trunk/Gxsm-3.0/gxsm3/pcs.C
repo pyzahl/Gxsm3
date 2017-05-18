@@ -881,6 +881,8 @@ gboolean Gtk_EntryControl::ShowVerifySet (const char *header, const char *text){
 	if (!text || !header) 
 		return false;
 
+        XSM_DEBUG_GP (DBG_L2, "ShowVerifySet Dialog: [%s] => %s: %s", refname, header, text);
+
 	++total_message_count_int;
 	if (++total_message_count > 6){
 		g_warning ("Repeting Messag(es) '%s' suppressed. count: %d", text, total_message_count);
@@ -901,7 +903,7 @@ gboolean Gtk_EntryControl::ShowVerifySet (const char *header, const char *text){
                 
         gtk_message_dialog_format_secondary_markup
                 (GTK_MESSAGE_DIALOG (dialog),
-                 "%s", text);
+                 "%s for %s", text, refname);
 
         gtk_widget_show (dialog);
         gint result = gtk_dialog_run (GTK_DIALOG (dialog));

@@ -193,33 +193,51 @@ DSPMoverControl::DSPMoverControl ()
 void DSPMoverControl::create_waveform (double amp, double duration){
 #define SR_VFAC    (32767./10.00) // A810 max Volt out is 10V
 
-	gint space_len = (int)round ( DSPControlClass->frq_ref*2.* mover_param.Wave_space*1e-3); 
+        gint channels = 1; // fixed single (one) channel assuption for testing !!!
+	gint space_len = channels * (gint)round ( DSPControlClass->frq_ref*2.* mover_param.Wave_space*1e-3); 
 
-	mover_param.MOV_wave_len = (int)round ( DSPControlClass->frq_ref*2.*duration*1e-3);
-	mover_param.MOV_speed_fac = 1;
+	mover_param.MOV_wave_len = channels * (gint)round (DSPControlClass->frq_ref*2.*fabs (duration)*1e-3);
+	mover_param.MOV_wave_speed_fac = 1;
 
-	while (mover_param.MOV_wave_len/mover_param.MOV_speed_fac >= MOV_MAXWAVELEN)
-		++mover_param.MOV_speed_fac;
+	while (mover_param.MOV_wave_len/mover_param.MOV_wave_speed_fac >= MOV_MAXWAVELEN)
+		++mover_param.MOV_wave_speed_fac;
 
-	mover_param.MOV_wave_len /= mover_param.MOV_speed_fac;
-	space_len /= mover_param.MOV_speed_fac;
+	mover_param.MOV_wave_len /= mover_param.MOV_wave_speed_fac;
+	space_len /= mover_param.MOV_wave_speed_fac;
 
-	if (mover_param.MOV_wave_len < 2)
-		mover_param.MOV_wave_len = 2;
+	if (mover_param.MOV_wave_len < 2*channels)
+		mover_param.MOV_wave_len = 2*channels;
 
+	PI_DEBUG_GP (DBG_L2, "DSPMoverControl::create_waveform (total samples, all %d channels): %d x %d, p=%g ms A=%g V",
+                     channels,
+                     mover_param.MOV_wave_len + space_len,
+                     mover_param.MOV_wave_speed_fac,
+                     duration, amp
+                     );
+        
 
-	PI_DEBUG (DBG_L2, "DSPMoverControl::create_waveform:" << mover_param.MOV_wave_len);
-
-
-	double n = (double)mover_param.MOV_wave_len;
+	double n = (double)mover_param.MOV_wave_len / channels;
 	double n2 = n/2.;
 	double t=0.;
 	
 	switch (mover_param.MOV_waveform_id){
 	case MOV_WAVE_SAWTOOTH:
-		for (int i=0; i < mover_param.MOV_wave_len; ++i)
-			mover_param.MOV_waveform[i] = ((short)round (SR_VFAC*amp*((double)i-n2)/n2));
+                PI_DEBUG_GP (DBG_L2, " ** SAWTOOTH\n");
+                if (duration > 0) // wave for forward direction
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels){
+                                mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp*(double)(i<n2? i : i-n)/n2);
+                                // mover_param.MOV_waveform[i+1] = (short)...;
+                                // ... must create all channels
+                        }
+                else // wave for reverse direction
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels){
+                                mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp*(double)(i<n2? -i : n-i)/n2);
+                                // mover_param.MOV_waveform[i+1] = (short)...;
+                                // ... must create all channels
+                        }
 		break;
+#if 0
+                // ... to be adjusted for new wave play mode
 	case MOV_WAVE_SINE:
 		for (int i=0; i < mover_param.MOV_wave_len; ++i)
 			mover_param.MOV_waveform[i] = ((short)round (SR_VFAC*amp*sin ((double)i*2.*M_PI/n)));
@@ -295,13 +313,14 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 			mover_param.MOV_waveform[i] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/n-M_PI)));
 		}
 		break;
-	break;
-	
+#endif
 	}
 
-	
-	for (int i = mover_param.MOV_wave_len; i < mover_param.MOV_wave_len+space_len; ++i)
-		mover_param.MOV_waveform[i] = mover_param.MOV_waveform[0];
+        
+	// terminate with spacing using 1st sample
+	for (int i = mover_param.MOV_wave_len; i < mover_param.MOV_wave_len+space_len; i += channels)
+                for (int k=0; k < channels; ++k)
+                        mover_param.MOV_waveform[i+k] = mover_param.MOV_waveform[k];
 
 	mover_param.MOV_wave_len += space_len;
 	

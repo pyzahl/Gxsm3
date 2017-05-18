@@ -424,40 +424,43 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 	}
 	case DSP_CMD_APPROCH_MOV_XP: // auto approch "Mover"
 	{
-		if (DSPMoverClass->mover_param.MOV_mode & AAP_MOVER_WAVE){
-			// scale waveform
-			// download waveform
-			DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
-			lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-			sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
-		}
+                PI_DEBUG_GP (DBG_L2, "MOVER: Wave Command AutoApp\n");
 		static AUTOAPPROACH_MK3 dsp_aap;
 		dsp_aap.start = long_2_sranger_long(1);           /* Initiate =WO */
 		dsp_aap.stop  = long_2_sranger_long(0);           /* Cancel   =WO */
 
-		// configure wave[0,1] out channel destination
-		dsp_aap.wave_out_channel[0] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[0]);
-		dsp_aap.wave_out_channel[1] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[1]);
-
-		dsp_aap.mover_mode = long_2_sranger_long (AAP_MOVER_XP_AUTO_APP | AAP_MOVER_XP | 
-							DSPMoverClass->mover_param.MOV_mode |
-							DSPMoverClass->mover_param.MOV_output |
-							(DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0)
-			);
-		dsp_aap.piezo_steps = long_2_sranger_long((int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
-		dsp_aap.n_wait      = long_2_sranger_long((int)(DSPControlClass->frq_ref*1e-3*DSPMoverClass->mover_param.final_delay));                     /* delay inbetween cycels */
-		dsp_aap.n_wait_fin  = long_2_sranger_long((int)(DSPControlClass->frq_ref*1e-3*DSPMoverClass->mover_param.max_settling_time));                     /* delay inbetween cycels */
-		dsp_aap.u_piezo_amp = long_2_sranger_long((int)(32767*DSPMoverClass->mover_param.AFM_Amp/5)); /* Amplitude, Peak2Peak */
 		if (DSPMoverClass->mover_param.MOV_mode & AAP_MOVER_WAVE){
-			dsp_aap.u_piezo_max = long_2_sranger_long(DSPMoverClass->mover_param.MOV_wave_len); /* Length of Waveform*/
-			dsp_aap.piezo_speed = long_2_sranger_long(DSPMoverClass->mover_param.MOV_speed_fac); /* slow down factor */
-			if (DSPMoverClass->mover_param.inch_worm_phase > 0.)
-				dsp_aap.u_piezo_amp = long_2_sranger_long((int)((double)DSPMoverClass->mover_param.MOV_wave_len * DSPMoverClass->mover_param.inch_worm_phase/360.));
-		}else{
-			dsp_aap.u_piezo_max = long_2_sranger_long((int)(32767*DSPMoverClass->mover_param.AFM_Amp/5)/2); /* Amplitude, Peak */
-			dsp_aap.piezo_speed = (int)DSPMoverClass->mover_param.AFM_Speed;     /* Speed */
-			dsp_aap.piezo_speed = long_2_sranger_long(dsp_aap.piezo_speed >= 1 ? dsp_aap.piezo_speed : 1);
+			// create and download waveforms
+			DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
+			lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+			sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
 		}
+                
+                // wave play setup for auto approach
+		// configure wave[0,1,...] out channel destination
+		dsp_aap.n_wave_channels    = long_2_sranger_long (1); /* number wave channels -- up top 6, must match wave data */
+		dsp_aap.channel_mapping[0] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[0]);
+		// ... [5] (configure all channels!)
+
+		dsp_aap.mover_mode = long_2_sranger_long (AAP_MOVER_AUTO_APP | AAP_MOVER_WAVE_PLAY);
+                //DSPMoverClass->mover_param.MOV_mode 
+		//DSPMoverClass->mover_param.MOV_output 
+                //DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0
+
+		dsp_aap.max_wave_cycles = long_2_sranger_long ((int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
+		dsp_aap.wave_length     = long_2_sranger_long (DSPMoverClass->mover_param.MOV_wave_len); /* Length of Waveform -- total count all samples/channels */
+		dsp_aap.wave_speed      = long_2_sranger_long (DSPMoverClass->mover_param.MOV_wave_speed_fac);     /* Wave Speed (hold number per step) */
+
+                // auto app parameters
+		dsp_aap.ci_retract  = float_2_sranger_q31 (0.01 * DSPControlClass->z_servo[SERVO_CI] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ()); // CI setting for reversing Z (retract)
+
+                //**** dsp_feedback.ci = float_2_sranger_q31 (0.01 * z_servo[SERVO_CI] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
+                dsp_aap.n_wait      = long_2_sranger_long((int)(DSPControlClass->frq_ref*1e-3*DSPMoverClass->mover_param.final_delay));                     /* delay inbetween cycels */
+		dsp_aap.n_wait_fin  = long_2_sranger_long((int)(DSPControlClass->frq_ref*1e-3*DSPMoverClass->mover_param.max_settling_time));                     /* delay inbetween cycels */
+                // counter setup -- optional, not essential for stepping, only for keeping a count for up to 3 axis
+		dsp_aap.axis = int_2_sranger_int (2); // arbitrary assignmet for counter: 2=Z axis
+		dsp_aap.dir  = int_2_sranger_int (1); // arbitrary direction, assume +1 for approaching direction -- only for counter increment/decement
+
 		// std::cout << "Auto-Steps: " << dsp_aap.piezo_steps << " Amp=" << DSPMoverClass->mover_param.AFM_Amp << std::endl;
 		lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_aap,  MAX_WRITE_AUTOAPPROACH<<1); 
@@ -468,13 +471,13 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 	case DSP_CMD_CLR_PA: // Stop all
 	{
 		static AUTOAPPROACH_MK3 dsp_aap;
-                dsp_aap.mover_mode = AAP_MOVER_OFF; /* reset wave 0 and 1 outputs */
+                dsp_aap.mover_mode = AAP_MOVER_STOP; /* reset wave 0 and 1 outputs */
 		dsp_aap.start = long_2_sranger_long(0);           /* Initiate =WO */
 		dsp_aap.stop  = long_2_sranger_long(1);           /* Cancel   =WO */
 		lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_aap,  2*sizeof (gint32)); 
 #if 0
-                dsp_aap.mover_mode = AAP_MOVER_OFF; /* reset wave 0 and 1 outputs */
+                dsp_aap.mover_mode = AAP_MOVER_STOP; /* reset wave 0 and 1 outputs */
 		dsp_aap.piezo_steps = long_2_sranger_long(1);     /* max number of repetitions */
 		dsp_aap.u_piezo_amp = long_2_sranger_long(0); /* Amplitude, Peak2Peak */
 		dsp_aap.start = long_2_sranger_long(1);           /* Initiate =WO */
@@ -493,49 +496,65 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 	case DSP_CMD_AFM_MOV_YM: // manual move Y-
 	case DSP_CMD_AFM_MOV_YP: // manual move Y+
 	{
-		if (DSPMoverClass->mover_param.MOV_mode & AAP_MOVER_WAVE){
-			// download waveform
-			// scale waveform
-			DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
-			lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-			sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
-		}
+                PI_DEBUG_GP (DBG_L2, "MOVER: Wave Command %d\n", Cmd);
+
 		static AUTOAPPROACH_MK3 dsp_aap;
 		dsp_aap.start = long_2_sranger_long(1);           /* Initiate =WO */
 		dsp_aap.stop  = long_2_sranger_long(0);           /* Cancel   =WO */
+		dsp_aap.n_wait_fin  = long_2_sranger_long (0);    /* just clear, olny autoapp */
+                dsp_aap.ci_retract  = float_2_sranger_q31 (0);    /* just clear, olny autoapp */
 
-		// configure wave[0,0] out channel destination
-		dsp_aap.wave_out_channel[0] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel[0]);
-		dsp_aap.wave_out_channel[1] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel[1]);
-
-		switch (Cmd){
-		case DSP_CMD_AFM_MOV_XM: dsp_aap.mover_mode = AAP_MOVER_XM; break;
-		case DSP_CMD_AFM_MOV_XP: dsp_aap.mover_mode = AAP_MOVER_XP; break;
-		case DSP_CMD_AFM_MOV_YM: dsp_aap.mover_mode = AAP_MOVER_YM; break;
-		case DSP_CMD_AFM_MOV_YP: dsp_aap.mover_mode = AAP_MOVER_YP; break;
-		}
-
-		dsp_aap.mover_mode = long_2_sranger_long(
-			dsp_aap.mover_mode |
-			DSPMoverClass->mover_param.MOV_mode | 
-			DSPMoverClass->mover_param.MOV_output |
-			(DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0)
-			);
-
-		dsp_aap.piezo_steps = long_2_sranger_long((int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
-		dsp_aap.n_wait      = long_2_sranger_long(2);                         /* delay inbetween cycels */
-		dsp_aap.u_piezo_amp = long_2_sranger_long((int)(32767*DSPMoverClass->mover_param.AFM_Amp/5)); /* Amplitude, Peak2Peak */
 		if (DSPMoverClass->mover_param.MOV_mode & AAP_MOVER_WAVE){
-			dsp_aap.u_piezo_max = long_2_sranger_long(DSPMoverClass->mover_param.MOV_wave_len); /* Length of Waveform*/
-			dsp_aap.piezo_speed = long_2_sranger_long(DSPMoverClass->mover_param.MOV_speed_fac); /* slow down factor */
-			if (DSPMoverClass->mover_param.inch_worm_phase > 0.)
-				dsp_aap.u_piezo_amp = long_2_sranger_long((int)((double)DSPMoverClass->mover_param.MOV_wave_len * DSPMoverClass->mover_param.inch_worm_phase/360.));
-		}else{
-			dsp_aap.u_piezo_max = long_2_sranger_long((int)(32767*DSPMoverClass->mover_param.AFM_Amp/5)/2); /* Amplitude, Peak */
-			dsp_aap.piezo_speed = (int)DSPMoverClass->mover_param.AFM_Speed;     /* Speed */
-			dsp_aap.piezo_speed = long_2_sranger_long(dsp_aap.piezo_speed >= 1 ? dsp_aap.piezo_speed : 1);
+			// create and download waveform(s) to DSP
+                        switch (Cmd){
+                        case DSP_CMD_AFM_MOV_XM:
+                        case DSP_CMD_AFM_MOV_YM:
+                                dsp_aap.dir  = int_2_sranger_int (-1); // arbitrary direction, assume -1 "left/up"
+                                DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, -DSPMoverClass->mover_param.AFM_Speed);
+                                break;
+                        case DSP_CMD_AFM_MOV_XP:
+                        case DSP_CMD_AFM_MOV_YP:
+                                dsp_aap.dir  = int_2_sranger_int (1); // arbitrary direction, assume +1 "rigth/down"
+                                DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
+                                break;
+                        }
+			lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+			sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
 		}
-		// std::cout << "MOV-Steps: " << dsp_aap.piezo_steps << " Amp=" << DSPMoverClass->mover_param.AFM_Amp << "   ENTRY:" << DSPMoverClass->mover_param.AFM_Steps << std::endl;
+
+                // wave play setup for auto approach
+		// configure wave[0,1,...] out channel destination/mappings. Single wave channel here.
+		dsp_aap.n_wave_channels    = long_2_sranger_long (1); /* number wave channels -- up top 6, must match wave data */
+                switch (Cmd){
+                case DSP_CMD_AFM_MOV_XM:
+                case DSP_CMD_AFM_MOV_XP:
+                        dsp_aap.axis = int_2_sranger_int (0); // arbitrary assignmet for counter: 0=X axis  *** note so far also used in "rot" and auto folder for L/R buttons -- fixme!
+                        dsp_aap.channel_mapping[0] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[0]);
+                        break;
+                case DSP_CMD_AFM_MOV_YM:
+                case DSP_CMD_AFM_MOV_YP:
+                        dsp_aap.axis = int_2_sranger_int (1); // arbitrary assignmet for counter: 1=Y axis
+                        dsp_aap.channel_mapping[0] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[1]);
+                        break;
+                }
+		// ... [0..5] (configure all needed channels!)
+
+		dsp_aap.mover_mode = long_2_sranger_long (AAP_MOVER_WAVE_PLAY);
+                //DSPMoverClass->mover_param.MOV_mode 
+		//DSPMoverClass->mover_param.MOV_output 
+                //DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0
+
+		dsp_aap.max_wave_cycles = long_2_sranger_long ((int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
+		dsp_aap.wave_length     = long_2_sranger_long (DSPMoverClass->mover_param.MOV_wave_len); /* Length of Waveform -- total count all samples/channels */
+		dsp_aap.wave_speed      = long_2_sranger_long (DSPMoverClass->mover_param.MOV_wave_speed_fac);     /* Wave Speed (hold number per step) */
+
+                // counter setup -- optional, not essential for stepping, only for keeping a count for up to 3 axis
+                // setup above!
+		// dsp_aap.axis = int_2_sranger_int (2); // arbitrary assignmet for counter: 2=Z axis
+		// dsp_aap.dir  = int_2_sranger_int (1); // arbitrary direction, assume +1 for approaching direction -- only for counter increment/decrement
+
+		dsp_aap.n_wait      = long_2_sranger_long (2);                         /* delay inbetween cycels */
+
 		lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_aap,  MAX_WRITE_AUTOAPPROACH<<1); 
 		break;

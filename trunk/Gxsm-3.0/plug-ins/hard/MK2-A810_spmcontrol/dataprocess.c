@@ -253,7 +253,7 @@ inline void run_Zpos_adjust (){
 
 interrupt void dataprocess()
 {
-	int i;
+	int i, k;
 	asm_read_time ();
 
 	/* Load DataTime */
@@ -588,24 +588,14 @@ interrupt void dataprocess()
 			autoapp.pflg = 0;
 		else
 			run_autoapp ();
-
-		if (autoapp.mover_mode & AAP_MOVER_XYOFFSET){
-			AIC_OUT(0) = analog.out[ANALOG_X0_AUX]; /* X Offset */
-			AIC_OUT(1) = analog.out[ANALOG_Y0_AUX]; /* Y Offset */
-		} else if (autoapp.mover_mode & AAP_MOVER_XYSCAN){
-			AIC_OUT(3) = analog.out[ANALOG_X0_AUX]; /* X Scan */
-			AIC_OUT(4) = analog.out[ANALOG_Y0_AUX]; /* Y Scan */
-		} else if (autoapp.mover_mode & AAP_MOVER_XXOFFSET){
-			AIC_OUT(3) = analog.out[ANALOG_X0_AUX]; /* X Offset */
-			AIC_OUT(4) = analog.out[ANALOG_X0_AUX]; /* Y Offset */
-		} else if (autoapp.mover_mode & AAP_MOVER_XYMOTOR){
-			AIC_OUT(7) = analog.out[ANALOG_X0_AUX]; /* X on Motor */
-		} else if (autoapp.mover_mode & AAP_MOVER_ZSCANADD){
-			/* add to Z -- waveform needs t obe shifeted correctly to take care of offset and Z-polarity */
-			AIC_OUT(5) = _sadd (AIC_OUT(5), analog.out[ANALOG_X0_AUX]);
-			// } else if (autoapp.mover_mode & AAP_MOVER_PULSE){ /* no action needed here */
-			// ;
-		} // else no output !!
+		
+		for (i=0; i<autoapp.n_wave_channels; ++i){
+			k = autoapp.channel_mapping[i] & 7;
+			if (autoapp.channel_mapping[i] & AAP_MOVER_SIGNAL_ADD)
+				AIC_OUT (k) = _sadd (AIC_OUT (k), analog.out[k]);
+			else
+				AIC_OUT (k) = analog.out[k];
+		}
 	} else 
 		/* Run CoolRunner Out puls(es) task ? */
 		if (CR_out_pulse.pflg)

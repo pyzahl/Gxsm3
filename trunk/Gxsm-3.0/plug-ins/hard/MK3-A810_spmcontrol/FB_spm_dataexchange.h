@@ -123,9 +123,9 @@
 // -- otherwise you exactly need to know/be sure what you are doing --
 // -- odd things like changed data structures, etc.., could break data transfer --
 #define FB_SPM_SOFT_ID   0x00001002 /* FB_SPM sofware id */
-#define FB_SPM_VERSION   0x00003052 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_VERSION   0x00003053 /* FB_SPM main Version, BCD: 00.00 */
 #define FB_SPM_DATE_YEAR 0x00002017 /* Date: Year/MM/DD, BCD */
-#define FB_SPM_DATE_MMDD 0x00000418 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00000517 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Signal Master Evolved GXSM3B\n"\
@@ -624,25 +624,26 @@ typedef struct{
 
 /** Auto Approach and Slider/Mover Parameters */
 typedef struct{
-	DSP_INT32     start;           /**< Initiate =WO */
-	DSP_INT32     stop;            /**< Cancel   =WO */
-	DSP_INT32     mover_mode;      /**< Mover mode, one off AAP_MOVER_..., see above */
-	DSP_INT32     wave_out_channel[2];  /** wave[X/Y]: coarse motion signals -- output channel mapping INDEX 0..7, data is computed via out[8,9] mixing */
-	DSP_INT32     piezo_steps;     /**< max number of repetitions */
-	DSP_INT32     n_wait;          /**< delay inbetween cycels */
-	DSP_INT32     u_piezo_max;     /**< Amplitude, Peak or length of waveform table */
-	DSP_INT32     u_piezo_amp;     /**< Amplitude, Peak2Peak or phase offset for IW mode*/
-	DSP_INT32     piezo_speed;     /**< Speed */
-        DSP_UINT32    n_wait_fin;      /**< # cycles to wait and check (run FB) before finish auto app. */
+	DSP_INT32     start;           /**<0 Initiate =WO */
+	DSP_INT32     stop;            /**<1 Cancel   =WO */
+	DSP_INT32     mover_mode;      /**<2 Mover mode, one off AAP_MOVER_..., see above */
+	DSP_INT32     max_wave_cycles; /**<3 max number of repetitions */
+	DSP_INT32     wave_length;     /**<4 total number of samples per wave cycle for all channels (must be multipe of n_waves_channels)  */
+	DSP_INT32     n_wave_channels; /**<5 number of wave form channel to play simulatneously (1 to max 6)*/
+	DSP_INT32     wave_speed;      /**<6 number of samples per wave cycle */
+	DSP_INT32     n_wait;          /**<7 delay inbetween cycels */
+	DSP_INT32     channel_mapping[6]; /** 8,9,10,11,12,13 -- may include the flag "ch | AAP_MOVER_SIGNAL_ADD"  */
+	DSP_INT32     axis;            /**<14 axis id (0,1,2) for optional step count */
+	DSP_INT32     dir;             /**<15 direction for count +/-1 */
+	DSP_INT32     ci_retract;      /**<16 retract ci (inverted and may be bigger than normal) */
+        DSP_INT32     dum;             /**<17 */
+        DSP_UINT32    n_wait_fin;      /**<18 # cycles to wait and check (run FB) before finish auto app. */
         DSP_UINT32    fin_cnt;         /**< tmp count for auto fin. */
  	DSP_INT32     mv_count;        /**< "time axis" */
-	DSP_INT32     mv_dir;          /**< "time direction" */
 	DSP_INT32     mv_step_count;   /**< step counter */
-	DSP_INT32     u_piezo;         /**< Current Piezo Voltage */
 	DSP_INT32     step_next;       /**< used for motor (optional) */
 	DSP_INT32     tip_mode;        /**< Tip mode, used by auto approach */
 	DSP_INT32     delay_cnt;       /**< Delay count */
-	DSP_INT32     ci_mult;         /**< retract speedup factor */
 	DSP_INT32     cp, ci;          /**< temporary used */
 	DSP_INT32     count_axis[3];   /**< */
 	DSP_INT32     pflg;            /**< process active flag =RO */
@@ -651,23 +652,14 @@ typedef struct{
 #else
 } AUTOAPPROACH_MK3;
 #endif
-#define MAX_WRITE_AUTOAPPROACH (2*11)
+#define MAX_WRITE_AUTOAPPROACH (2*17)
 
-#define AAP_MOVER_OFF           0 /**< all off */
-#define AAP_MOVER_XP_AUTO_APP   1 /**< run in auto approach, uses "XP" for approach or other dirs if set (set mask like AAP_MOVER_XP_AUTO_APP |  AAP_MOVER_[[XY][PM]|WAVE]) */
-#define AAP_MOVER_XP            2 /**< manuell XP (+, positive dir, ramp on X offset) steps */
-#define AAP_MOVER_XM            4 /**< manuell XM (-, negative dir, ramp on X offset) steps */
-#define AAP_MOVER_YP            6 /**< manuell YP (+, positive dir, ramp on Y offset) steps */
-#define AAP_MOVER_YM            8 /**< manuell YM (-, negative dir, ramp on Y offset) steps */
-#define AAP_MOVER_DIRMMSK  0x000e /**< mask for direction and wave mode */
-#define AAP_MOVER_WAVE     0x0010 /**< run waveform in buffer @ 0x5000 (sharing EXTERN_DATA_FIFO_ADDRESS) */
-#define AAP_MOVER_PULSE    0x0020 /**< run CR puls -- future mode, !!!not yet implemented!!! */
-#define AAP_MOVER_XYOFFSET 0x1000 /**< set this bit if XY offset outputs to be used */
-#define AAP_MOVER_XYSCAN   0x2000 /**< set this bit if XY scan outputs to be used */
-#define AAP_MOVER_XYMOTOR  0x4000 /**< set this bit if Motor output (X only) is to be used */
-#define AAP_MOVER_XXOFFSET 0x8000 /**< set this bit if Motor output (X only on X0=Y0=X-signal) is to be used */
-#define AAP_MOVER_ZSCANADD 0x0800 /**< set this bit if signal should be added to Z */
-#define AAP_MOVER_IWMODE   0x0100 /**< InchWorm drive mode (fwd/rev via _XP/XM on X0/Y0), 120deg phase */
+/** MOVER MODES **/
+#define AAP_MOVER_STOP          0 /**< cancel wave play/auto -- all off */
+#define AAP_MOVER_AUTO_APP      1 /**< set this flag to run wave play in auto approach mode */
+#define AAP_MOVER_WAVE_PLAY     2 /**< run wave play */
+#define AAP_MOVER_PULSE         4 /**< GPIO -- experimental */
+#define AAP_MOVER_SIGNAL_ADD    0x100 /**< wave play, channel falg indicating "add to channel" mode */
 
 #define DSOSZI_RUN          1
 #define DSOSZI_ONESHOT      2
@@ -786,7 +778,7 @@ typedef struct{
 /**  --- controls, generated, constant signals **/
 	DSP_INT32    bias, motor;   /**< RW life mapped, these are commanded by Gxsm HwI **/
 /**  --- DA out processing **/
-	OUT_MIXER    out[10];        /** output module for each channel 0..7 and 8,9 special mapping for wave-X/Y output mode */
+	OUT_MIXER    out[14];        /** output module for each channel 0..7 and 8,9..14 mappings for wave-channels */
 /**  --- IN signal processing **/
 	DSP_INT32_P  avg_input;
 	DSP_INT32    avg_signal;
@@ -794,7 +786,7 @@ typedef struct{
 /**  --- **/
 	DSP_INT32    bias_adjust;   /** RO smoothly following bias **/
 	DSP_INT32    noise, vnull;  /** RO noise generator, null value **/
-	DSP_INT32    wave[2];       /** wave[X/Y]: coarse motion signals */
+	DSP_INT32    wave[6];       /** wave[X/Y/...] siganls for mapping (coarse motion/mover/etc. ) */
 /**  --- AD input mirror 32bit **/
         DSP_INT32    in[8];         /** HR data IN[0..7] (Q15.16) after IIR processing, there used as Q15.0 */
         DSP_INT32_P  diff_in_p[4];  /** ==ptr to analog.vnull or pointer in[0..7] data to be subtracted from channel to create up to 4 digital differential inputs like [0-4], [1-5], [2-6], [3-7] **/

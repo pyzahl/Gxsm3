@@ -2225,13 +2225,13 @@ void sranger_mk3_hwi_dev::write_dsp_feedback (
 	// Scale Regler Consts. with 1/VZ and convert to SR-Q15
 	
 	// NOTE:  CP, CI-DSP max at gain "1" = 1 in Q32 -- arb. div/100 for max assumed gain of 100.
-	dsp_z_servo.cp = float_2_sranger_q31 (0.01 * z_servo[1] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
-	dsp_z_servo.ci = float_2_sranger_q31 (0.01 * z_servo[2] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
+	dsp_z_servo.cp = float_2_sranger_q31 (0.01 * z_servo[SERVO_CP] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
+	dsp_z_servo.ci = float_2_sranger_q31 (0.01 * z_servo[SERVO_CI] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
 
 	// Motor Servo:
 	dsp_m_servo.setpoint = float_2_sranger_q31 (256.*gapp->xsm->Inst->VoltIn2Dig (m_servo[0]));
-	dsp_m_servo.cp = float_2_sranger_q31 (0.01 * m_servo[1]);
-	dsp_m_servo.ci = float_2_sranger_q31 (0.01 * m_servo[2]);
+	dsp_m_servo.cp = float_2_sranger_q31 (0.01 * m_servo[SERVO_CP]);
+	dsp_m_servo.ci = float_2_sranger_q31 (0.01 * m_servo[SERVO_CI]);
 
 
 	// from PC to DSP
