@@ -4,8 +4,8 @@ dnl Process this file with autoconf to produc a configure script.
 AC_PREREQ(2.63.2)
 
 m4_define(gxsm3_major_version, 3)
-m4_define(gxsm3_minor_version, 44)
-m4_define(gxsm3_micro_version, 0)
+m4_define(gxsm3_minor_version, 45)
+m4_define(gxsm3_micro_version, 10)
 m4_define(gxsm3_version, gxsm3_major_version.gxsm3_minor_version.gxsm3_micro_version)
 
 AC_INIT([gxsm3],
@@ -14,7 +14,7 @@ AC_INIT([gxsm3],
 	[gxsm3],
 	[http://gxsm.sf.net])
 
-AC_DEFINE_UNQUOTED(GXSM_VERSION_NAME, "Red-Force-3rd Dimension","GXSM version identifier screen name")
+AC_DEFINE_UNQUOTED(GXSM_VERSION_NAME, "Red-Force-3D * Experimental Wave","GXSM version identifier screen name")
 AC_DEFINE_UNQUOTED(GXSM_WIDGET_PAD, 5, "default widget padding (replaces obsolete GNOME_PAD)")
 AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up")
 # AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup (M, NULL, NULL, NULL, NULL, E->button.button, E->button.time), "for gtk versions older than 3.22")

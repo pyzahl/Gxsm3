@@ -600,7 +600,7 @@ void DSPMoverControl::create_folder (){
 		if (i==7){ // configure tab
 			GtkWidget *radiobutton;
 			
-                        mov_bp->new_grid_with_frame ("Output Configuration");
+                        mov_bp->new_grid_with_frame ("Output Configuration\nWARNING: Experimental new DSP Wave Generator\nSawtooth only rigth now");
 			mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
                         mov_bp->new_grid_with_frame ("Curve Mode");
