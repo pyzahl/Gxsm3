@@ -200,6 +200,8 @@ typedef struct{
 	double Wave_space;
         int GPIO_on, GPIO_off, GPIO_reset, GPIO_scan, GPIO_tmp1, GPIO_tmp2, GPIO_direction;
 	double GPIO_delay;
+        int axis_counts[DSP_AFMMOV_MODES][3];
+        int axis_counts_ref[DSP_AFMMOV_MODES][3];
 } Mover_Param;
 
 typedef enum { PV_MODE_NONE, PV_MODE_IV, PV_MODE_FZ, PV_MODE_PL, PV_MODE_LP, PV_MODE_SP, PV_MODE_TS, PV_MODE_LM, PV_MODE_AC, PV_MODE_AX, PV_MODE_TK, PV_MODE_ABORT } pv_mode;
@@ -909,6 +911,7 @@ public:
         
 	void update();
 	void updateDSP(int sliderno=-1);
+        void updateAxisCounts (GtkWidget* w, int idx, int cmd);
 	static void ExecCmd(int cmd);
 	static void ChangedNotify(Param_Control* pcs, gpointer data);
 	static void ChangedWaveOut(Param_Control* pcs, gpointer data);
@@ -917,7 +920,7 @@ public:
 	static int config_output (GtkWidget *widget, DSPMoverControl *dspc);
 	static int CmdAction(GtkWidget *widget, DSPMoverControl *dspc);
 	static int StopAction(GtkWidget *widget, DSPMoverControl *dspc);
-
+        
 	static void configure_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
         static void show_tab_to_configure (GtkWidget* w, gpointer data){

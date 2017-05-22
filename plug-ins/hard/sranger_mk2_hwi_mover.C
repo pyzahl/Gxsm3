@@ -134,14 +134,19 @@ DSPMoverControl::DSPMoverControl ()
 
         for (int i=0; i< DSP_AFMMOV_MODES; ++i){
                 gchar *id=g_strdup_printf ("AFM_usrAmp%d", i);
-                xrm.Get(id, &mover_param.AFM_usrAmp[0], "1.0"); g_free (id);
+                xrm.Get(id, &mover_param.AFM_usrAmp[i], "1.0"); g_free (id);
                 id=g_strdup_printf ("AFM_usrSpeed%d", i);
-                xrm.Get(id, &mover_param.AFM_usrSpeed[0], "3"); g_free (id);
+                xrm.Get(id, &mover_param.AFM_usrSpeed[i], "3"); g_free (id);
                 id=g_strdup_printf ("AFM_usrSteps%d", i);
-                xrm.Get(id, &mover_param.AFM_usrSteps[0], "10"); g_free (id);
+                xrm.Get(id, &mover_param.AFM_usrSteps[i], "10"); g_free (id);
                 id=g_strdup_printf ("AFM_GPIO_setting%d", i);
-                xrm.Get(id, &mover_param.AFM_GPIO_usr_setting[0], "0"); g_free (id);
+                xrm.Get(id, &mover_param.AFM_GPIO_usr_setting[i], "0"); g_free (id);
+
+                mover_param.axis_counts[i][0] = 0;
+                mover_param.axis_counts[i][1] = 0;
+                mover_param.axis_counts[i][2] = 0;
         }
+
 	xrm.Get("MOV_output", &mover_param.MOV_output, "0");
 	xrm.Get("MOV_waveform_id", &mover_param.MOV_waveform_id, "0");
 	xrm.Get("MOV_wave0_out_channel", &mover_param.wave_out_channel[0], "3");
@@ -508,8 +513,10 @@ void DSPMoverControl::create_folder (){
         mov_bp->set_input_width_chars (10);
         mov_bp->set_no_spin ();
         
-	for(itab=i=0; MoverNames[i]; ++i){
-		if (gapp->xsm->Inst->OffsetMode() != OFM_ANALOG_OFFSET_ADDING && i == 5) continue;
+	for(itab=i=0; MoverNames[i]; ++i){                
+                Gtk_EntryControl *ec_axis[3];
+
+                if (gapp->xsm->Inst->OffsetMode() != OFM_ANALOG_OFFSET_ADDING && i == 5) continue;
 		if (IS_SLIDER_CTRL && i < 4 ) continue;
 		PI_DEBUG (DBG_L2, "DSPMoverControl::Mover:" << MoverNames[i]);
 
@@ -529,16 +536,18 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
   			mov_bp->grid_add_ec ("Adjust Goto", Ang, &Z0_goto, -1e6, 1e6, "8.1f", 10., 100., "goto");
                         mov_bp->set_configure_list_mode_off ();
-                        mov_bp->new_line ();
 
+                        mov_bp->pop_grid ();
+                        mov_bp->new_line ();
                         mov_bp->new_grid_with_frame ("Direction & Action Control");
+                        
 			// ========================================
 			// Direction Buttons
-			mov_bp->set_xy (1,11); mov_bp->grid_add_label ("Z+");
-			mov_bp->set_xy (1,13); mov_bp->grid_add_label ("Z-");
-			mov_bp->set_xy (5,11); mov_bp->grid_add_label ("Auto Adj.");
-			mov_bp->set_xy (5,12); mov_bp->grid_add_label ("Center");
-			mov_bp->set_xy (5,13); mov_bp->grid_add_label ("Goto");
+			mov_bp->set_xy (1,11); mov_bp->grid_add_label (" Z+ ");
+			mov_bp->set_xy (1,13); mov_bp->grid_add_label (" Z- ");
+			mov_bp->set_xy (5,11); mov_bp->grid_add_label (" Auto Adj. ");
+			mov_bp->set_xy (5,12); mov_bp->grid_add_label (" Center ");
+			mov_bp->set_xy (5,13); mov_bp->grid_add_label (" Goto ");
 
 			// STOP
                         mov_bp->set_xy (3,12);  mov_bp->grid_add_widget (button=gtk_button_new_from_icon_name ("process-stopall-symbolic", GTK_ICON_SIZE_BUTTON));
@@ -547,6 +556,8 @@ void DSPMoverControl::create_folder (){
 			g_signal_connect ( G_OBJECT (button), "pressed",
                                            G_CALLBACK (DSPMoverControl::CmdAction),
                                            this);
+                        
+
 			// UP arrow (back)
 			mov_bp->set_xy (3,11);  mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-backward-symbolic", GTK_ICON_SIZE_BUTTON));
 			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_Z0_P));
@@ -887,6 +898,9 @@ void DSPMoverControl::create_folder (){
                 mov_bp->pop_grid ();
                 mov_bp->new_line ();
                 mov_bp->new_grid_with_frame ("Direction & Action Control");
+                mov_bp->set_xy (10,1); mov_bp->grid_add_ec ("  X=", Unity, &mover_param.axis_counts[i][0], -9999999, 9999999, ".0f", "axis-X"); ec_axis[0] = mov_bp->ec;
+                mov_bp->set_xy (10,2); mov_bp->grid_add_ec ("  Y=", Unity, &mover_param.axis_counts[i][1], -9999999, 9999999, ".0f", "axis-Y"); ec_axis[1] = mov_bp->ec;
+                mov_bp->set_xy (10,3); mov_bp->grid_add_ec ("  Z=", Unity, &mover_param.axis_counts[i][2], -9999999, 9999999, ".0f", "axis-Z"); ec_axis[2] = mov_bp->ec;
 
 		// ========================================
 		// Direction Buttons
@@ -894,6 +908,9 @@ void DSPMoverControl::create_folder (){
 		if( IS_MOVER_CTRL ){
 			// STOP
 			mov_bp->set_xy (3,2); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("process-stopall-symbolic", GTK_ICON_SIZE_BUTTON));
+                        g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
 			g_signal_connect (G_OBJECT (button), "pressed",
 					    G_CALLBACK (DSPMoverControl::StopAction),
 					    this);
@@ -901,6 +918,9 @@ void DSPMoverControl::create_folder (){
 			mov_bp->set_xy (3,1); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-backward-symbolic", GTK_ICON_SIZE_BUTTON));
 			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_YP));
 			g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                        g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
 			g_signal_connect (G_OBJECT (button), "pressed",
 					    G_CALLBACK (DSPMoverControl::CmdAction),
 					    this);
@@ -941,6 +961,9 @@ void DSPMoverControl::create_folder (){
                                 mov_bp->set_xy (2,2); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-left-symbolic", GTK_ICON_SIZE_BUTTON));
 				g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_XM));
 				g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                                g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
 				g_signal_connect (G_OBJECT (button), "pressed",
 						    G_CALLBACK (DSPMoverControl::CmdAction),
 						    this);
@@ -966,6 +989,9 @@ void DSPMoverControl::create_folder (){
                                 mov_bp->set_xy (4,2); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("media-seek-forward-symbolic", GTK_ICON_SIZE_BUTTON));
 				g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_XP));
 				g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                                g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
 				g_signal_connect (G_OBJECT (button), "pressed",
 						    G_CALLBACK (DSPMoverControl::CmdAction),
 						    this);
@@ -993,6 +1019,9 @@ void DSPMoverControl::create_folder (){
                         mov_bp->set_xy (3,3); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-forward-symbolic", GTK_ICON_SIZE_BUTTON));
 			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_YM));
 			g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                        g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
 			g_signal_connect (G_OBJECT (button), "pressed",
 					    G_CALLBACK (DSPMoverControl::CmdAction),
 					    this);
@@ -1029,6 +1058,9 @@ void DSPMoverControl::create_folder (){
 				g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_APPROCH));
 
 			g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                        g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
 			g_signal_connect (G_OBJECT (button), "pressed",
 					    G_CALLBACK (DSPMoverControl::CmdAction),
 					    this);
@@ -1049,6 +1081,9 @@ void DSPMoverControl::create_folder (){
 
 			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_CLR_PA));
 			g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                        g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
 			g_signal_connect (G_OBJECT (button), "pressed",
 					    G_CALLBACK (DSPMoverControl::CmdAction),
 					    this);
@@ -1081,6 +1116,9 @@ void DSPMoverControl::create_folder (){
                         mov_bp->set_xy (6,2); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("approach-symbolic", GTK_ICON_SIZE_BUTTON));
 			gtk_widget_set_tooltip_text (button, "Start Auto Approaching. GPIO [Rot, Coarse Mode]");
 			g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                        g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
 			g_signal_connect ( G_OBJECT (button), "pressed",
                                            G_CALLBACK (DSPMoverControl::CmdAction),
                                            this);
@@ -1106,6 +1144,9 @@ void DSPMoverControl::create_folder (){
 			gtk_widget_set_tooltip_text (button, "Stop Auto Approaching.");
 			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_CLR_PA));
 			g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                        g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                        g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
 			g_signal_connect ( G_OBJECT (button), "pressed",
                                            G_CALLBACK (DSPMoverControl::CmdAction),
                                            this);
@@ -1256,6 +1297,34 @@ int DSPMoverControl::config_output(GtkWidget *widget, DSPMoverControl *dspc){
 	((DSPMoverControl*)dspc)->updateDSP(200);
 }
 
+void DSPMoverControl::updateAxisCounts (GtkWidget* w, int idx, int cmd){
+        if (idx >=0 && idx < DSP_AFMMOV_MODES){
+                Gtk_EntryControl *eaxis[3];
+                eaxis[0] = (Gtk_EntryControl*) g_object_get_data( G_OBJECT (w), "AXIS-X");
+                eaxis[1] = (Gtk_EntryControl*) g_object_get_data( G_OBJECT (w), "AXIS-Y");
+                eaxis[2] = (Gtk_EntryControl*) g_object_get_data( G_OBJECT (w), "AXIS-Z");
+
+                if (eaxis[0] && eaxis[1] && eaxis[2]){
+                        double axis[3];
+                        gchar *info;
+                        sranger_common_hwi->RTQuery ("A", axis[0], axis[1], axis[2]);
+                        // g_message ("DSPMoverControl::updateAxisCounts idx=%d cmd=%d  [%g, %g, %g]", idx, cmd,  axis[0], axis[1], axis[2]);
+                        for (int i=0; i<3; ++i){
+                                if (cmd == 0){
+                                        // relative counts pre tab
+                                        mover_param.axis_counts[idx][i] += (int)axis[i] - mover_param.axis_counts_ref[idx][i];
+                                        eaxis[i]->Put_Value ();
+                                } else {
+                                        mover_param.axis_counts_ref[idx][i] = (int)axis[i];
+                                }
+                                info = g_strdup_printf (" [%.0f]", axis[i]);
+                                eaxis[i]->set_info (info);
+                                g_free (info);
+                        }
+                }
+        }
+}
+
 int DSPMoverControl::CmdAction(GtkWidget *widget, DSPMoverControl *dspc){
 	int idx=-1;
 	int cmd;
@@ -1274,8 +1343,12 @@ int DSPMoverControl::CmdAction(GtkWidget *widget, DSPMoverControl *dspc){
 		dspc->updateDSP(idx);
 	}
 
+        
 	cmd = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "DSP_cmd"));
-	if(cmd>0){
+
+        dspc->updateAxisCounts (widget, idx, cmd);
+
+        if(cmd>0){
 		dspc->ExecCmd(DSP_CMD_GPIO_SETUP);
 		dspc->ExecCmd(cmd);
 	}
@@ -1291,6 +1364,8 @@ int DSPMoverControl::StopAction(GtkWidget *widget, DSPMoverControl *dspc){
 		dspc->ExecCmd(DSP_CMD_Z0_STOP);
 	else
 		dspc->ExecCmd(DSP_CMD_CLR_PA);
+
+        dspc->updateAxisCounts (widget, idx, 0);
 
 	return 0;
 }

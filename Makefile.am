@@ -1,4 +1,4 @@
-SUBDIRS = gxsm3 plug-ins gl-400 palette thumbnailers tools pixmaps icons profileplot 
+SUBDIRS = gxsm3 plug-ins gl-400 palette thumbnailers tools pixmaps icons profileplot data
 
 # data
 # po commented out, see discussion in the forums.
@@ -6,6 +6,20 @@ SUBDIRS = gxsm3 plug-ins gl-400 palette thumbnailers tools pixmaps icons profile
 # man_MANS = man/gxsm2.1 man/vpdata2ascii.1 man/nctopng.1 man/gmetopng.1 man/rhkspm32topng.1 man/scalatopng.1
 
 EXTRA_DIST = gxsm3.desktop
+
+desktopdir = $(datadir)/applications
+#desktop_in_files = gxsm3.desktop.in.in
+#desktop_DATA 	 = $(desktop_in_files:.desktop.in.in=.desktop)
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = gxsm3$(GUCHARMAP_API_PC_VERSION).pc
+
+#desktop-file-validate: $(desktop_DATA)
+#	for f in $^; do \
+#		$(DESKTOP_FILE_VALIDATE) $$f; \
+#	done
+
+#check-local: desktop-file-validate
 
 Applicationdir = $(datadir)/applications
 gxsmdatadir = $(datadir)/gxsm3/data
@@ -52,7 +66,7 @@ install-data-local: install-icons
 
 
 # gsettings_SCHEMAS is a list of all the schemas you want to install
-gsettings_SCHEMAS = org.gnome.desktop.gxsm3.gschema.xml 
-
+#gsettings_SCHEMAS = org.gnome.desktop.gxsm3.gschema.xml 
 # include the appropriate makefile rules for schema handling
-@GSETTINGS_RULES@
+#@GSETTINGS_RULES@
+

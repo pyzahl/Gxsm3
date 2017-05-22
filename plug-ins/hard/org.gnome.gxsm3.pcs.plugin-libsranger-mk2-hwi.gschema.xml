@@ -1021,6 +1021,24 @@
       <description>pcs0000, PCS Remote-ID: 'dspmover-xy-gpio', Default/U: 0000 h    , Adjustment PCS Name: 'dspmover-xy-gpio' </description>
     </key>
 
+    <key name="dspmover-xy-axis-x" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-xy-axis-X', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-xy-axis-X', Default/U: 0      , Adjustment PCS Name: 'dspmover-xy-axis-X' </description>
+    </key>
+
+    <key name="dspmover-xy-axis-y" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-xy-axis-Y', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-xy-axis-Y', Default/U: 0      , Adjustment PCS Name: 'dspmover-xy-axis-Y' </description>
+    </key>
+
+    <key name="dspmover-xy-axis-z" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-xy-axis-Z', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-xy-axis-Z', Default/U: 0      , Adjustment PCS Name: 'dspmover-xy-axis-Z' </description>
+    </key>
+
     <key name="dspmover-rot-max-steps" type="d">
       <default>2</default>
       <summary>PCS Remote-ID: 'dspmover-rot-max-steps', Default/U:    2       </summary>
@@ -1043,6 +1061,24 @@
       <default>0</default>
       <summary>PCS Remote-ID: 'dspmover-rot-gpio', Default/U: 0000 h     </summary>
       <description>pcs0000, PCS Remote-ID: 'dspmover-rot-gpio', Default/U: 0000 h    , Adjustment PCS Name: 'dspmover-rot-gpio' </description>
+    </key>
+
+    <key name="dspmover-rot-axis-x" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-rot-axis-X', Default/U: 0      </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-rot-axis-X', Default/U: 0     , Adjustment PCS Name: 'dspmover-rot-axis-X' </description>
+    </key>
+
+    <key name="dspmover-rot-axis-y" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-rot-axis-Y', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-rot-axis-Y', Default/U: 0      , Adjustment PCS Name: 'dspmover-rot-axis-Y' </description>
+    </key>
+
+    <key name="dspmover-rot-axis-z" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-rot-axis-Z', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-rot-axis-Z', Default/U: 0      , Adjustment PCS Name: 'dspmover-rot-axis-Z' </description>
     </key>
 
     <key name="dspmover-psd-max-steps" type="d">
@@ -1069,6 +1105,24 @@
       <description>pcs0000, PCS Remote-ID: 'dspmover-psd-gpio', Default/U: 0000 h    , Adjustment PCS Name: 'dspmover-psd-gpio' </description>
     </key>
 
+    <key name="dspmover-psd-axis-x" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-psd-axis-X', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-psd-axis-X', Default/U: 0      , Adjustment PCS Name: 'dspmover-psd-axis-X' </description>
+    </key>
+
+    <key name="dspmover-psd-axis-y" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-psd-axis-Y', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-psd-axis-Y', Default/U: 0      , Adjustment PCS Name: 'dspmover-psd-axis-Y' </description>
+    </key>
+
+    <key name="dspmover-psd-axis-z" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-psd-axis-Z', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-psd-axis-Z', Default/U: 0      , Adjustment PCS Name: 'dspmover-psd-axis-Z' </description>
+    </key>
+
     <key name="dspmover-lens-max-steps" type="d">
       <default>100</default>
       <summary>PCS Remote-ID: 'dspmover-lens-max-steps', Default/U:  100       </summary>
@@ -1091,6 +1145,24 @@
       <default>0</default>
       <summary>PCS Remote-ID: 'dspmover-lens-gpio', Default/U: 0000 h     </summary>
       <description>pcs0000, PCS Remote-ID: 'dspmover-lens-gpio', Default/U: 0000 h    , Adjustment PCS Name: 'dspmover-lens-gpio' </description>
+    </key>
+
+    <key name="dspmover-lens-axis-x" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-lens-axis-X', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-lens-axis-X', Default/U: 0      , Adjustment PCS Name: 'dspmover-lens-axis-X' </description>
+    </key>
+
+    <key name="dspmover-lens-axis-y" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-lens-axis-Y', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-lens-axis-Y', Default/U: 0      , Adjustment PCS Name: 'dspmover-lens-axis-Y' </description>
+    </key>
+
+    <key name="dspmover-lens-axis-z" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-lens-axis-Z', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-lens-axis-Z', Default/U: 0      , Adjustment PCS Name: 'dspmover-lens-axis-Z' </description>
     </key>
 
     <key name="dspmover-auto-max-steps" type="d">
@@ -1117,6 +1189,24 @@
       <description>pcs0000, PCS Remote-ID: 'dspmover-auto-gpio', Default/U: 0000 h    , Adjustment PCS Name: 'dspmover-auto-gpio' </description>
     </key>
 
+    <key name="dspmover-auto-axis-x" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-auto-axis-X', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-auto-axis-X', Default/U: 0      , Adjustment PCS Name: 'dspmover-auto-axis-X' </description>
+    </key>
+
+    <key name="dspmover-auto-axis-y" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-auto-axis-Y', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-auto-axis-Y', Default/U: 0      , Adjustment PCS Name: 'dspmover-auto-axis-Y' </description>
+    </key>
+
+    <key name="dspmover-auto-axis-z" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-auto-axis-Z', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-auto-axis-Z', Default/U: 0      , Adjustment PCS Name: 'dspmover-auto-axis-Z' </description>
+    </key>
+
     <key name="dspmover-z0-speed" type="d">
       <default>500</default>
       <summary>PCS Remote-ID: 'dspmover-z0-speed', Default/U: 500.0 Å/s     </summary>
@@ -1135,6 +1225,24 @@
       <description>pcs0000, PCS Remote-ID: 'dspmover-z0-goto', Default/U:      0.0 Å    , Adjustment PCS Name: 'dspmover-z0-goto' </description>
     </key>
 
+    <key name="dspmover-z0-axis-x" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-z0-axis-X', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-z0-axis-X', Default/U: 0      , Adjustment PCS Name: 'dspmover-z0-axis-X' </description>
+    </key>
+
+    <key name="dspmover-z0-axis-y" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-z0-axis-Y', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-z0-axis-Y', Default/U: 0     , Adjustment PCS Name: 'dspmover-z0-axis-Y' </description>
+    </key>
+
+    <key name="dspmover-z0-axis-z" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-z0-axis-Z', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-z0-axis-Z', Default/U: 0      , Adjustment PCS Name: 'dspmover-z0-axis-Z' </description>
+    </key>
+    
     <key name="dspmover-sm-max-steps" type="d">
       <default>5</default>
       <summary>PCS Remote-ID: 'dspmover-sm-max-steps', Default/U:    5       </summary>
