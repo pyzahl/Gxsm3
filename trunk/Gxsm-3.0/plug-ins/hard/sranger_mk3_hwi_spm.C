@@ -106,6 +106,19 @@ sranger_mk3_hwi_spm::~sranger_mk3_hwi_spm(){
 #define CONV_32(X) 
 #endif
 
+/*
+ Real-Time Query of DSP signals/values, auto buffered
+ Propertiy hash:      return val1, val2, val3:
+ "z" :                ZS, XS, YS  with offset!! -- in volts after piezo amplifier
+ "o" :                Z0, X0, Y0  offset -- in volts after piezo amplifier
+ "R" :                expected Z, X, Y -- in Angstroem/base unit
+ "f" :                dFreq, I-avg, I-RMS
+ "s" :                DSP Statemachine Status Bits, DSP load, DSP load peak
+ "Z" :                probe Z Position
+ "i" :                GPIO (high level speudo monitor)
+ "A" :                Mover/Wave axis counts 0,1,2 (X/Y/Z)
+ */
+
 gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
         const gint64 max_age = 20000; // 20ms
         static gint64 time_of_last_reading = 0; // abs time in us
@@ -118,9 +131,17 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 	static MOVE_OFFSET_MK3 dsp_move;
 	static AUTOAPPROACH_MK3 dsp_autoapp;
         
-	static gint         signal_monitor_index[] = { 0,       1,       2,       3,       4,       5,       6,       11,              12,               13,              14,               16,         17,         18,       -1 };
+	static gint         signal_monitor_index[] = { 0, 1, 2, 3,   4, 5, 6,
+                                                       11, 12, 13, 14,
+                                                       16, 17, 18,
+                                                       19, 20, 21,
+                                                       -1 };
 	// ------------------------------------ Current, ..                        X-Scan   Y-Scan   Z-Scan
-	static const gchar *signal_monitor_setup[] = { "MIX IN 0", "MIX IN 1", "MIX IN 2", "MIX IN 3", "Out 3", "Out 4", "Out 5", "Z Servo Watch", "PLL Exci Frq LP", "signal AVG-256", "signal RMS-256", "X Offset", "Y Offset", "Z Offset", NULL };
+	static const gchar *signal_monitor_setup[] = { "MIX IN 0", "MIX IN 1", "MIX IN 2", "MIX IN 3", "Out 3", "Out 4", "Out 5",
+                                                       "Z Servo Watch", "PLL Exci Frq LP", "signal AVG-256", "signal RMS-256",
+                                                       "X Offset", "Y Offset", "Z Offset",
+                                                       "Count Axis 0", "Count Axis 1", "Count Axis 2",
+                                                       NULL };
 	static gint   signal_id[NUM_MONITOR_SIGNALS];
 
 	if (!init){ // setup signal monitor
@@ -308,6 +329,15 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		val3 = (double)gpio3_monitor_dir;
 	}
 
+        if (*property == 'A'){
+                // Wave/Mover Axis Counts
+		val1 = S_MON (19);
+		val2 = S_MON (20);
+                val3 = S_MON (21);
+		return TRUE;
+        }
+
+        
 //	printf ("ZXY: %g %g %g\n", val1, val2, val3);
 
 //	val1 =  (double)dsp_analog_out.z_scan;
