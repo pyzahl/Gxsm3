@@ -115,6 +115,19 @@ sranger_mk2_hwi_spm::~sranger_mk2_hwi_spm(){
 #define CONV_U16(X) X = uint_2_sranger_uint (X)
 #define CONV_32(X) X = long_2_sranger_long (X)
 
+/*
+ Real-Time Query of DSP signals/values, auto buffered for z,o,R
+ Propertiy hash:      return val1, val2, val3:
+ "z" :                ZS, XS, YS  with offset!! -- in volts after piezo amplifier
+ "o" :                Z0, X0, Y0  offset -- in volts after piezo amplifier
+ "R" :                expected Z, X, Y -- in Angstroem/base unit
+ "f" :                dFreq, I-avg, I-RMS
+ "s" :                DSP Statemachine Status Bits, DSP load, DSP load peak
+ "Z" :                probe Z Position
+ "i" :                GPIO (high level speudo monitor)
+ "A" :                Mover/Wave axis counts 0,1,2 (X/Y/Z)
+ */
+
 gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
         const gint64 max_age = 50000; // 50ms
         static gint64 time_of_last_xyz_reading = 0; // abs time in us
@@ -126,8 +139,10 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 	static PROBE dsp_probe;
 	static SPM_PI_FEEDBACK dsp_feedback_watch;
 	static SPM_STATEMACHINE dsp_statemachine;
+        static AUTOAPPROACH dsp_aap;
 	static gint ok=FALSE;
 
+        // auto buffered
         if ( (*property == 'z' || *property == 'R' || *property == 'o') && (time_of_last_xyz_reading+max_age) < g_get_real_time () ){
 		// read/convert 3D tip positon
 		lseek (dsp_alternative, magic_data.AIC_out, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
@@ -183,6 +198,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		return ok;
 	}
 
+        // unbuffered
 	if (*property == 'O'){
 		// read HR offset move position
 		lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
@@ -204,6 +220,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		return ok;
 	}
 
+        // unbuffered
         if ( (*property == 'f') && (time_of_last_fb_reading+max_age) < g_get_real_time () ){
 #if 0
 		lseek (dsp_alternative, magic_data.AIC_in, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
@@ -308,6 +325,19 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		val3 = (double)gpio_monitor_dir;
 	}
 
+        // unbuffered, so far only user input/button press triggered, no need to buffer
+        if ( *property == 'A' ){    // ... && (time_of_last_xyz_reading+max_age) < g_get_real_time () ){
+                // read DSP level wave/mover axis counts
+		lseek (dsp_alternative, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		sr_read  (dsp_alternative, &dsp_aap, sizeof (dsp_aap));
+		CONV_16 (dsp_aap.count_axis[0]);
+		CONV_16 (dsp_aap.count_axis[1]);
+		CONV_16 (dsp_aap.count_axis[2]);
+                val1 = (double)dsp_aap.count_axis[0];
+                val2 = (double)dsp_aap.count_axis[1];
+                val3 = (double)dsp_aap.count_axis[2];
+        }
+        
 //	printf ("ZXY: %g %g %g\n", val1, val2, val3);
 
 //	val1 =  (double)dsp_analog.z_scan;

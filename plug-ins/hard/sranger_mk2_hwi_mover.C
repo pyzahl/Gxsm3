@@ -198,6 +198,7 @@ DSPMoverControl::DSPMoverControl ()
 void DSPMoverControl::create_waveform (double amp, double duration){
 #define SR_VFAC    (32767./10.00) // A810 max Volt out is 10V
 
+        double pointing = duration > 0. ? 1. : -1;
         gint channels = 1; // fixed single (one) channel assuption for testing !!!
 	gint space_len = channels * (gint)round ( DSPControlClass->frq_ref*2.* mover_param.Wave_space*1e-3); 
 
@@ -228,44 +229,50 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 	switch (mover_param.MOV_waveform_id){
 	case MOV_WAVE_SAWTOOTH:
                 PI_DEBUG_GP (DBG_L2, " ** SAWTOOTH\n");
-                if (duration > 0) // wave for forward direction
+                if (pointing > 0) // wave for forward direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels){
-                                mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp*(double)(i<n2? i : i-n)/n2);
-                                // mover_param.MOV_waveform[i+1] = (short)...;
-                                // ... must create all channels
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(i<n2? i : i-n)/n2);
                         }
                 else // wave for reverse direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels){
-                                mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp*(double)(i<n2? -i : n-i)/n2);
-                                // mover_param.MOV_waveform[i+1] = (short)...;
-                                // ... must create all channels
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(i<n2? -i : n-i)/n2);
                         }
 		break;
-#if 0
                 // ... to be adjusted for new wave play mode
 	case MOV_WAVE_SINE:
-		for (int i=0; i < mover_param.MOV_wave_len; ++i)
-			mover_param.MOV_waveform[i] = ((short)round (SR_VFAC*amp*sin ((double)i*2.*M_PI/n)));
+                if (pointing > 0) // wave for forward direction
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels)
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*2.0*M_PI/channels + (double)i*2.*M_PI/n)));
+                else
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels)
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*2.0*M_PI/channels - (double)i*2.*M_PI/n)));
 		break;
 	case MOV_WAVE_CYCLO:
 	case MOV_WAVE_CYCLO_PL:
 	case MOV_WAVE_CYCLO_MI:
 		t=0.;
-		for (int i=0; i < mover_param.MOV_wave_len; ++i){
-			double dt = 1./(mover_param.MOV_wave_len - 1);
+		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
+			double dt = pointing/(n - 1);
 			double a = 1.;
 			switch (mover_param.MOV_waveform_id){
 			case MOV_WAVE_CYCLO_PL:
-				mover_param.MOV_waveform[i] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t)) * (-1) ));
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t)) * (-1) ));
 				t += dt;
 				break;	
 			case MOV_WAVE_CYCLO_MI:
-				mover_param.MOV_waveform[i] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t) - 1 ) * (-1) ));
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t) - 1 ) * (-1) ));
 				t += dt;
 				break;
 			default:
 				dt = M_PI/2./(mover_param.MOV_wave_len - 1.)*2;
-				mover_param.MOV_waveform[i] = ((short)round(SR_VFAC*amp*(a * (1.-cos (t)))));
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*(a * (1.-cos (t)))));
 				if (i < (mover_param.MOV_wave_len/2))
 					t += dt;
 				else
@@ -277,23 +284,26 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 	case MOV_WAVE_CYCLO_IPL:
 	case MOV_WAVE_CYCLO_IMI:
 		t=0.;
-		for (int i=0; i < mover_param.MOV_wave_len; ++i){
-			double dt = 1./(mover_param.MOV_wave_len - 1.);
+		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
+			double dt = pointing/(n - 1.);
 			double a = 1.;
 			switch (mover_param.MOV_waveform_id){
 			case MOV_WAVE_CYCLO_IPL:
-				mover_param.MOV_waveform[i] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t) - 1 ) * (1) ));
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t) - 1 ) * (1) ));
 				break;	
 			case MOV_WAVE_CYCLO_IMI:
-				mover_param.MOV_waveform[i] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t)) * (1) ));
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t)) * (1) ));
 				break;
 			}
 			t += dt;
 		}
 		break;
 	case MOV_WAVE_PULSE_P:
-		for (int i=0; i < mover_param.MOV_wave_len; ++i){
-			mover_param.MOV_waveform[i] = ((short)round(SR_VFAC*amp*(round((double)i/mover_param.MOV_wave_len)))); 
+		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
+                        for (int k=0; k<channels; ++k)
+                                mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*(round((double)i/mover_param.MOV_wave_len)))); 
 		}
 		break;
 /* ------------------------------------------------------------------------------------------------------------------------------------------------
@@ -306,6 +316,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 //		mover_param.MOV_waveform[mover_param.MOV_wave_len-1] = sranger_common_hwi->int_2_sranger_int((short)round(SR_VFAC*amp*(1)));
 //		break;
 --------------------------------------------------------------------------------------------------------------------------------------------------*/
+#if 0
 	case MOV_WAVE_KOALA:
 		int i=0;
 		for (; i <= mover_param.MOV_wave_len/6; ++i){
