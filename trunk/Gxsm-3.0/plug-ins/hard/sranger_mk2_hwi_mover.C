@@ -222,57 +222,76 @@ void DSPMoverControl::create_waveform (double amp, double duration){
                      );
         
 
+        int    imax = mover_param.MOV_wave_len-channels;
 	double n = (double)mover_param.MOV_wave_len / channels;
 	double n2 = n/2.;
 	double t=0.;
-	
+
+        double phase = mover_param.inch_worm_phase/360.;
+        int   iphase = (int)(phase*n);
+        
 	switch (mover_param.MOV_waveform_id){
 	case MOV_WAVE_SAWTOOTH:
                 PI_DEBUG_GP (DBG_L2, " ** SAWTOOTH\n");
                 if (pointing > 0) // wave for forward direction
-                        for (int i=0; i < mover_param.MOV_wave_len; i += channels){
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(i<n2? i : i-n)/n2);
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(t<n2? t : t-n)/n2);
                         }
                 else // wave for reverse direction
-                        for (int i=0; i < mover_param.MOV_wave_len; i += channels){
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(i<n2? -i : n-i)/n2);
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(t<n2? -t : n-t)/n2);
                         }
 		break;
                 // ... to be adjusted for new wave play mode
 	case MOV_WAVE_SINE:
                 if (pointing > 0) // wave for forward direction
-                        for (int i=0; i < mover_param.MOV_wave_len; i += channels)
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*2.0*M_PI/channels + (double)i*2.*M_PI/n)));
+                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*2.0*M_PI/channels + (double)t*2.*M_PI/n)));
                 else
-                        for (int i=0; i < mover_param.MOV_wave_len; i += channels)
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*2.0*M_PI/channels - (double)i*2.*M_PI/n)));
+                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*2.0*M_PI/channels - (double)t*2.*M_PI/n)));
 		break;
 	case MOV_WAVE_CYCLO:
 	case MOV_WAVE_CYCLO_PL:
 	case MOV_WAVE_CYCLO_MI:
-		t=0.;
 		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
 			double dt = pointing/(n - 1);
 			double a = 1.;
 			switch (mover_param.MOV_waveform_id){
 			case MOV_WAVE_CYCLO_PL:
-                                for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t)) * (-1) ));
+                                for (int k=0; k<channels; ++k){
+                                        short v = (short)round(SR_VFAC*amp*a*(t*t*t*t));
+                                        
+                                        if (pointing > 0) // wave for forward direction 
+                                                mover_param.MOV_waveform[i+k] = v;
+                                        else
+                                                mover_param.MOV_waveform[imax-i+k] = v;
+                                }
 				t += dt;
 				break;	
 			case MOV_WAVE_CYCLO_MI:
-                                for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t) - 1 ) * (-1) ));
+                                for (int k=0; k<channels; ++k){
+                                        short v = (short)round(-SR_VFAC*amp*a*(t*t*t*t));
+                                        if (pointing > 0) // wave for forward direction 
+                                                mover_param.MOV_waveform[i+k] = v;
+                                        else
+                                                mover_param.MOV_waveform[imax-i+k] = v;
+                                }
 				t += dt;
 				break;
 			default:
 				dt = M_PI/2./(mover_param.MOV_wave_len - 1.)*2;
-                                for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*(a * (1.-cos (t)))));
+                                for (int k=0; k<channels; ++k){
+                                        short v = (short)round(SR_VFAC*amp*(a * (1.-cos (t))));
+                                        if (pointing > 0) // wave for forward direction 
+                                                mover_param.MOV_waveform[i+k] = v;
+                                        else
+                                                mover_param.MOV_waveform[imax-i+k] = v;
+                                }
 				if (i < (mover_param.MOV_wave_len/2))
 					t += dt;
 				else
@@ -283,28 +302,41 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 		break;
 	case MOV_WAVE_CYCLO_IPL:
 	case MOV_WAVE_CYCLO_IMI:
-		t=0.;
 		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
 			double dt = pointing/(n - 1.);
 			double a = 1.;
 			switch (mover_param.MOV_waveform_id){
 			case MOV_WAVE_CYCLO_IPL:
-                                for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t) - 1 ) * (1) ));
+                                for (int k=0; k<channels; ++k){
+                                        short v = (short)round (SR_VFAC*amp*a*( (t*t*t*t) - 1 ));
+                                        if (pointing > 0) // wave for forward direction 
+                                                mover_param.MOV_waveform[i+k] = v;
+                                        else
+                                                mover_param.MOV_waveform[imax-i+k] = v;
+                                }
 				break;	
 			case MOV_WAVE_CYCLO_IMI:
-                                for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*a*( (t*t*t*t)) * (1) ));
+                                for (int k=0; k<channels; ++k){
+                                        short v = (short)round (SR_VFAC*amp*a*( (t*t*t*t)));
+                                        if (pointing > 0) // wave for forward direction 
+                                                mover_param.MOV_waveform[i+k] = v;
+                                        else
+                                                mover_param.MOV_waveform[imax-i+k] = v;
+                                }
 				break;
 			}
 			t += dt;
 		}
 		break;
+
 	case MOV_WAVE_PULSE_P:
-		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
-                        for (int k=0; k<channels; ++k)
-                                mover_param.MOV_waveform[i+k] = ((short)round(SR_VFAC*amp*(round((double)i/mover_param.MOV_wave_len)))); 
-		}
+                for (int i=0; i < mover_param.MOV_wave_len; i += channels){
+                        double x = (double)i/mover_param.MOV_wave_len;
+                        for (int k=0; k<channels; ++k){
+                                double xx = x+k*phase;
+                                mover_param.MOV_waveform[i+k] = (short)round(SR_VFAC*amp*(round(xx - floor(xx))));
+                        }
+                }
 		break;
 /* ------------------------------------------------------------------------------------------------------------------------------------------------
 // Code for negative pulse, but not usefull yet as output voltage is set to zero after pulse sequence. (stm, 08.10.2010)
