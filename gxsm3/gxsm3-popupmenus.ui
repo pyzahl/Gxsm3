@@ -362,6 +362,16 @@
 		<attribute name="action">win.show-legend-item</attribute>
 		<attribute name="target">z-scale-bar-values</attribute>
 	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">X Bar1 + Z Scale Bar and Values</attribute>
+		<attribute name="action">win.show-legend-item</attribute>
+		<attribute name="target">x-bar1-z-scale-bar-values</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">X Bar2 + Z Scale Bar and Values</attribute>
+		<attribute name="action">win.show-legend-item</attribute>
+		<attribute name="target">x-bar2-z-scale-bar-values</attribute>
+	      </item>
 	    </section>
 	  </submenu>
 	  <item>
