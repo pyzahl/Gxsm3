@@ -1370,6 +1370,7 @@ void DSPMoverControl::updateAxisCounts (GtkWidget* w, int idx, int cmd){
                                         // relative counts pre tab
                                         mover_param.axis_counts[idx][i] += (int)axis[i] - mover_param.axis_counts_ref[idx][i];
                                         eaxis[i]->Put_Value ();
+                                        mover_param.axis_counts_ref[idx][i] = (int)axis[i];
                                 } else {
                                         mover_param.axis_counts_ref[idx][i] = (int)axis[i];
                                 }
