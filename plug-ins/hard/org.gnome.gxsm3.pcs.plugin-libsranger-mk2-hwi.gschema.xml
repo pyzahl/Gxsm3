@@ -1267,6 +1267,24 @@
       <description>pcs0000, PCS Remote-ID: 'dspmover-sm-gpio', Default/U: 0000 h    , Adjustment PCS Name: 'dspmover-sm-gpio' </description>
     </key>
 
+    <key name="dspmover-sm-axis-x" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-sm-axis-X', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-sm-axis-X', Default/U: 0      , Adjustment PCS Name: 'dspmover-sm-axis-X' </description>
+    </key>
+
+    <key name="dspmover-sm-axis-y" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-sm-axis-Y', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-sm-axis-Y', Default/U: 0      , Adjustment PCS Name: 'dspmover-sm-axis-Y' </description>
+    </key>
+
+    <key name="dspmover-sm-axis-z" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-sm-axis-Z', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-sm-axis-Z', Default/U: 0      , Adjustment PCS Name: 'dspmover-sm-axis-Z' </description>
+    </key>
+    
     <key name="dspmover-config-wave-space" type="d">
       <default>0</default>
       <summary>PCS Remote-ID: 'dspmover-config-Wave-Space', Default/U: 0.000 ms     </summary>
