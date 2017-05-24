@@ -123,9 +123,9 @@
 // -- otherwise you exactly need to know/be sure what you are doing --
 // -- odd things like changed data structures, etc.., could break data transfer --
 #define FB_SPM_SOFT_ID   0x00001002 /* FB_SPM sofware id */
-#define FB_SPM_VERSION   0x00003053 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_VERSION   0x00003054 /* FB_SPM main Version, BCD: 00.00 */
 #define FB_SPM_DATE_YEAR 0x00002017 /* Date: Year/MM/DD, BCD */
-#define FB_SPM_DATE_MMDD 0x00000517 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00000524 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Signal Master Evolved GXSM3B\n"\
@@ -786,7 +786,7 @@ typedef struct{
 /**  --- **/
 	DSP_INT32    bias_adjust;   /** RO smoothly following bias **/
 	DSP_INT32    noise, vnull;  /** RO noise generator, null value **/
-	DSP_INT32    wave[6];       /** wave[X/Y/...] siganls for mapping (coarse motion/mover/etc. ) */
+	DSP_INT32    wave[6];       /** wave[X/Y/...] signals for mapping (coarse motion/mover/etc. ) */
 /**  --- AD input mirror 32bit **/
         DSP_INT32    in[8];         /** HR data IN[0..7] (Q15.16) after IIR processing, there used as Q15.0 */
         DSP_INT32_P  diff_in_p[4];  /** ==ptr to analog.vnull or pointer in[0..7] data to be subtracted from channel to create up to 4 digital differential inputs like [0-4], [1-5], [2-6], [3-7] **/
