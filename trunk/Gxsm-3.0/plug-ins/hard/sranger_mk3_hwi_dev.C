@@ -3653,9 +3653,12 @@ int sranger_mk3_hwi_dev::read_signal_lookup (){
                                 PI_DEBUG_PLAIN (DBG_L2,
                                                 "Sig[" << i << "]: ptr=" << dsp_signal_lookup_managed[i].p 
                                                 << "identical with Sig[" << k << "]: ptr=" << dsp_signal_lookup_managed[k].p 
-                                                << " ==> ERROR IN SIGNAL TABLE <== GXSM is aborting here, suspicious DSP data.\n"
+                                                << " ==> POSSIBLE ERROR IN SIGNAL TABLE <== GXSM is aborting here, suspicious DSP data.\n"
                                                 );
-				exit (-1);
+                                g_warning ("DSP SIGNAL TABLE finding: Sig[%d] '%s': ptr=%x is identical with Sig[%d] '%s': ptr=%x",
+                                           i, dsp_signal_lookup_managed[i].label, dsp_signal_lookup_managed[i].p,
+                                           k, dsp_signal_lookup_managed[k].label, dsp_signal_lookup_managed[k].p);
+				// exit (-1);
 			}
 	}
 	return 0;

@@ -783,6 +783,14 @@ void adjust_signal_input (){
 		case DSP_SIGNAL_OUTMIX_CH8_ADD_A_INPUT_ID:  analog.out[8].add_a_p = sig_mon.act_address_signal; break;
 		case DSP_SIGNAL_OUTMIX_CH9_INPUT_ID:        analog.out[9].p = sig_mon.act_address_signal; break;
 		case DSP_SIGNAL_OUTMIX_CH9_ADD_A_INPUT_ID:  analog.out[9].add_a_p = sig_mon.act_address_signal; break;
+		case DSP_SIGNAL_OUTMIX_CH10_INPUT_ID:       analog.out[10].p = sig_mon.act_address_signal; break;
+		case DSP_SIGNAL_OUTMIX_CH10_ADD_A_INPUT_ID: analog.out[10].add_a_p = sig_mon.act_address_signal; break;
+		case DSP_SIGNAL_OUTMIX_CH11_INPUT_ID:       analog.out[11].p = sig_mon.act_address_signal; break;
+		case DSP_SIGNAL_OUTMIX_CH11_ADD_A_INPUT_ID: analog.out[11].add_a_p = sig_mon.act_address_signal; break;
+		case DSP_SIGNAL_OUTMIX_CH12_INPUT_ID:       analog.out[12].p = sig_mon.act_address_signal; break;
+		case DSP_SIGNAL_OUTMIX_CH12_ADD_A_INPUT_ID: analog.out[12].add_a_p = sig_mon.act_address_signal; break;
+		case DSP_SIGNAL_OUTMIX_CH13_INPUT_ID:       analog.out[13].p = sig_mon.act_address_signal; break;
+		case DSP_SIGNAL_OUTMIX_CH13_ADD_A_INPUT_ID: analog.out[13].add_a_p = sig_mon.act_address_signal; break;
 
 		case DSP_SIGNAL_ANALOG_AVG_INPUT_ID:        analog.avg_input = sig_mon.act_address_signal; break;
 		case DSP_SIGNAL_SCOPE_SIGNAL1_INPUT_ID:     pSignal1 = sig_mon.act_address_signal; break;
@@ -893,6 +901,14 @@ void query_signal_input (){
 		case DSP_SIGNAL_OUTMIX_CH8_ADD_A_INPUT_ID: sig_mon.act_address_signal =  analog.out[8].add_a_p; break;
 		case DSP_SIGNAL_OUTMIX_CH9_INPUT_ID: sig_mon.act_address_signal =        analog.out[9].p; break;
 		case DSP_SIGNAL_OUTMIX_CH9_ADD_A_INPUT_ID: sig_mon.act_address_signal =  analog.out[9].add_a_p; break;
+		case DSP_SIGNAL_OUTMIX_CH10_INPUT_ID: sig_mon.act_address_signal =       analog.out[10].p; break;
+		case DSP_SIGNAL_OUTMIX_CH10_ADD_A_INPUT_ID: sig_mon.act_address_signal = analog.out[10].add_a_p; break;
+		case DSP_SIGNAL_OUTMIX_CH11_INPUT_ID: sig_mon.act_address_signal =       analog.out[11].p; break;
+		case DSP_SIGNAL_OUTMIX_CH11_ADD_A_INPUT_ID: sig_mon.act_address_signal = analog.out[11].add_a_p; break;
+		case DSP_SIGNAL_OUTMIX_CH12_INPUT_ID: sig_mon.act_address_signal =       analog.out[12].p; break;
+		case DSP_SIGNAL_OUTMIX_CH12_ADD_A_INPUT_ID: sig_mon.act_address_signal = analog.out[12].add_a_p; break;
+		case DSP_SIGNAL_OUTMIX_CH13_INPUT_ID: sig_mon.act_address_signal =       analog.out[13].p; break;
+		case DSP_SIGNAL_OUTMIX_CH13_ADD_A_INPUT_ID: sig_mon.act_address_signal = analog.out[13].add_a_p; break;
 
 		case DSP_SIGNAL_ANALOG_AVG_INPUT_ID:    sig_mon.act_address_signal = analog.avg_input; break;
 		case DSP_SIGNAL_SCOPE_SIGNAL1_INPUT_ID: sig_mon.act_address_signal = pSignal1; break;

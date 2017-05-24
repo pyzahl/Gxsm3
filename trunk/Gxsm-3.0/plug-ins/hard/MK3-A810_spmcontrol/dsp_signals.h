@@ -146,6 +146,14 @@
 #define DSP_SIGNAL_OUTMIX_CH8_ADD_A_INPUT_ID  (DSP_SIGNAL_OUTMIX_CH8_INPUT_ID+1)
 #define DSP_SIGNAL_OUTMIX_CH9_INPUT_ID        (DSP_SIGNAL_OUTMIX_CH8_ADD_A_INPUT_ID+1)
 #define DSP_SIGNAL_OUTMIX_CH9_ADD_A_INPUT_ID  (DSP_SIGNAL_OUTMIX_CH9_INPUT_ID+1)
+#define DSP_SIGNAL_OUTMIX_CH10_INPUT_ID       (DSP_SIGNAL_OUTMIX_CH9_ADD_A_INPUT_ID+1)
+#define DSP_SIGNAL_OUTMIX_CH10_ADD_A_INPUT_ID (DSP_SIGNAL_OUTMIX_CH10_INPUT_ID+1)
+#define DSP_SIGNAL_OUTMIX_CH11_INPUT_ID       (DSP_SIGNAL_OUTMIX_CH10_ADD_A_INPUT_ID+1)
+#define DSP_SIGNAL_OUTMIX_CH11_ADD_A_INPUT_ID (DSP_SIGNAL_OUTMIX_CH11_INPUT_ID+1)
+#define DSP_SIGNAL_OUTMIX_CH12_INPUT_ID       (DSP_SIGNAL_OUTMIX_CH11_ADD_A_INPUT_ID+1)
+#define DSP_SIGNAL_OUTMIX_CH12_ADD_A_INPUT_ID (DSP_SIGNAL_OUTMIX_CH12_INPUT_ID+1)
+#define DSP_SIGNAL_OUTMIX_CH13_INPUT_ID       (DSP_SIGNAL_OUTMIX_CH12_ADD_A_INPUT_ID+1)
+#define DSP_SIGNAL_OUTMIX_CH13_ADD_A_INPUT_ID (DSP_SIGNAL_OUTMIX_CH13_INPUT_ID+1)
 
 #define DSP_SIGNAL_BASE_BLOCK_D_ID             0x4000
 #define DSP_SIGNAL_ANALOG_AVG_INPUT_ID        (DSP_SIGNAL_BASE_BLOCK_D_ID+1)
@@ -192,8 +200,8 @@
 
 #define FB_SPM_FLASHBLOCK_IDENTIFICATION_A  0x10aa
 #define FB_SPM_FLASHBLOCK_IDENTIFICATION_B  0x0001
-#define FB_SPM_SIGNAL_LIST_VERSION          0x0006
-#define FB_SPM_SIGNAL_INPUT_VERSION         0x0004
+#define FB_SPM_SIGNAL_LIST_VERSION          0x0007
+#define FB_SPM_SIGNAL_INPUT_VERSION         0x0005
 
 #define MAX_INPUT_NUMBER_LIMIT              0x100  // just a safey limit for FLASH storage
 
@@ -269,8 +277,8 @@ DSP_SIG dsp_signal_lookup[NUM_SIGNALS] = {
 	MAKE_DSP_SIG_ENTRY (move.xyz_vec[i_Y], "Y Offset",         "V", DSP32Qs15dot16TO_Volt, "Scan", "Offset Move generator: Y-Offset signal"), // 	DSP_SIG vec_XYZ_move[1];
 	MAKE_DSP_SIG_ENTRY (move.xyz_vec[i_Z], "Z Offset",         "V", DSP32Qs15dot16TO_Volt, "Scan", "Offset Move generator: Z-Offset signal"), // 	DSP_SIG vec_XYZ_move[2];
 	MAKE_DSP_SIG_ENTRY (move.xyz_gain,     "XYZ Offset Gains", "X",                     1, "Scan", "XYZ Offset Gains: bitcoded -/8/8/8 (0..255)x -- not yet used and fixed set to 10x (0x000a0a0a)"), // 	DSP_SIG Offset XYZ_gain
-        MAKE_DSP_SIG_ENTRY (analog.wave[0], "Wave X", "V", DSP32Qs15dot0TO_Volt, "Coarse", "Wave generator: Wave-X (coarse motions)"), // 	DSP_SIG Wave X (coarse wave form out "X");
-        MAKE_DSP_SIG_ENTRY (analog.wave[1], "Wave Y", "V", DSP32Qs15dot0TO_Volt, "Coarse", "Wave generator: Wave-Y (coarse motions)"), // 	DSP_SIG Wave Y (coarse wave form out "Y");
+        MAKE_DSP_SIG_ENTRY (analog.wave[0], "Wave X", "V", DSP32Qs15dot0TO_Volt, "Coarse", "Wave generator: Wave-X (=WaveCh0 (coarse motions)"), // 	DSP_SIG Wave X (coarse wave form out "X");
+        MAKE_DSP_SIG_ENTRY_VECTOR (6, analog.wave[0], "WaveCh", "V", DSP32Qs15dot0TO_Volt, "Coarse", "Wave generator: Wave-Y (coarse motions)"), // 	DSP_SIG Wave X,Y,...=WaveCh0..5 (coarse wave form out "Y");
         MAKE_DSP_SIG_ENTRY (autoapp.count_axis[0], "Count Axis 0", "1",     1, "Coarse", "Coarse Step Counter Axis 0 (X)"), // 	DSP_SIG Count Axis [0]
         MAKE_DSP_SIG_ENTRY (autoapp.count_axis[1], "Count Axis 1", "1",     1, "Coarse", "Coarse Step Counter Axis 1 (Y)"), // 	DSP_SIG Count Axis [1]
         MAKE_DSP_SIG_ENTRY (autoapp.count_axis[2], "Count Axis 2", "1",     1, "Coarse", "Coarse Step Counter Axis 2 (Z)"), // 	DSP_SIG Count Axis [2]

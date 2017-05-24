@@ -79,6 +79,8 @@ void init_autoapp (){
 // stop all mover/approach actions, cleanup
 #pragma CODE_SECTION(stop_autoapp, ".text:slow")
 void stop_autoapp (){
+        int tmp_i;
+        
 	autoapp.start = 0;
 	autoapp.stop  = 0;
 
@@ -87,6 +89,9 @@ void stop_autoapp (){
 		z_servo.cp = autoapp.cp;
 		z_servo.ci = autoapp.ci;
 	}
+
+        for (tmp_i=0; tmp_i<autoapp.n_wave_channels; ++tmp_i, autoapp.mv_count++)
+                analog.wave[autoapp.channel_mapping[tmp_i] & 7] = 0;
 
 	// enable FB
 	if(!(state.mode & MD_PID))
