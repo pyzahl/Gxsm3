@@ -161,6 +161,7 @@ void Param_Control::Init(){
 	ShowMessage_flag=0;
         suspend_settings_update = false;
 	set_log (PARAM_CONTROL_LOG_MODE_OFF);
+        set_logscale_min (); // set default
 
         // GSettings 
         pc_head = NULL; 
@@ -623,6 +624,12 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
 //		return;
 //	} // cleanup!
 
+        if (gpcs->log_mode < 0){
+                gpcs->log_mode = -gpcs->log_mode;
+                return;
+        }
+        g_message ("adj-cb %g", gtk_adjustment_get_value (adj));
+        
 	switch (gpcs->log_mode){
 	case PARAM_CONTROL_LOG_MODE_OFF:
                 //                g_message ("Gtk_EntryControl::adjustment_callback ->  gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE) val=%g new_adj_val=%g [%s]", gpcs->Get_dValue (), gtk_adjustment_get_value (adj), gpcs->get_refname ());
@@ -677,6 +684,61 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                                 l=gpcs->vMin;
                                 r=gpcs->vMax;
                         }
+                        gpcs->calc_adj_log_gain ();
+                        gpcs->Set_Parameter (gpcs->adj_to_value (v), TRUE, FALSE);
+                        g_message ("adj-cb... log %g -> %g", v, gpcs->adj_to_value (v));
+        
+                        if (l != 0. && r != 0.){
+                                if (gpcs->opt_scale){
+                                        gtk_scale_clear_marks (GTK_SCALE (gpcs->opt_scale));
+                                        gtk_scale_add_mark (GTK_SCALE (gpcs->opt_scale), 0, GTK_POS_BOTTOM, "0");
+                                        double Lab0 = pow (10., floor (log10 (gpcs->log_min)));
+                                        double MaxLab = fabs(l);
+                                        for (int s=-1; s<=1; s+=2) {
+                                                double l10 = Lab0;
+                                                double Lab = l10;
+                                                double signum = s;
+                                                for (int i=1; Lab<MaxLab; Lab+=l10, ++i){
+                                                        if (Lab > 9.999*l10){ l10=Lab=10.*l10; i=1; }
+                                                        double v = gpcs->value_to_adj (signum * Lab);
+                                                        if (v>0 || v<0){
+                                                                if (i!=5 && i!=1){ 
+                                                                        gtk_scale_add_mark (GTK_SCALE (gpcs->opt_scale), v, GTK_POS_BOTTOM, NULL);
+                                                                }
+                                                                else{
+                                                                        gchar *tmp = g_strdup_printf ("<span size=\"x-small\">%g%s</span>",
+                                                                                                      signum*(Lab<0.1? 1000.*Lab : Lab),
+                                                                                                      (Lab<0.1 ? "m":""));
+                                                                        //g_message ("%d: %s %g %g @adv= %g", i, tmp, signum, Lab, v);
+                                                                        gtk_scale_add_mark (GTK_SCALE (gpcs->opt_scale), v, GTK_POS_BOTTOM, tmp);
+                                                                        g_free (tmp);
+                                                                }
+                                                        }
+                                                }
+                                                MaxLab = fabs(r);
+                                        }
+                                }
+                        }
+                }
+                else{
+                        double  v=gtk_adjustment_get_value (adj);
+                        double al=gtk_adjustment_get_lower (adj);
+                        double au=gtk_adjustment_get_upper (adj);
+                        double l,r;
+                        l=r=0.;
+                        // value inside "Warn" Range, auto adjust
+                        if (al < gpcs->vMin_warn && au > gpcs->vMax_warn && v > gpcs->vMin_warn && v < gpcs->vMax_warn){
+                                gtk_adjustment_set_upper (adj, gpcs->vMax_warn), gtk_adjustment_set_lower (adj, gpcs->vMin_warn);
+                                l=gpcs->vMin_warn;
+                                r=gpcs->vMax_warn;
+                        }
+                        // value at edge(s) and Warn Range active, switch back to full scale
+                        if (fabs (al-gpcs->vMin_warn) < 1e-6 && fabs (au-gpcs->vMax_warn) < 1e-6
+                            && (fabs (v-gpcs->vMin_warn) < 1e-6 || fabs (v-gpcs->vMax_warn) < 1e-6)){
+                                gtk_adjustment_set_upper (adj, gpcs->vMax), gtk_adjustment_set_lower (adj, gpcs->vMin);
+                                l=gpcs->vMin;
+                                r=gpcs->vMax;
+                        }
                         if (l != 0. && r != 0.){
                                 if (gpcs->opt_scale){
                                         gtk_scale_clear_marks (GTK_SCALE (gpcs->opt_scale));
@@ -694,8 +756,8 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                                         }
                                 }
                         }
+                        gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE);
                 }
-                gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE);
         } break;
         default:
                 gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE);
@@ -706,8 +768,9 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
 void Gtk_EntryControl::Put_Value(){
 	gchar *txt = Get_UsrString ();
 	gtk_entry_set_text (GTK_ENTRY (entry), txt);
+        g_message ("put_value usrs='%s'", txt);
         g_free (txt);
-
+        
 	if (color) {
                 // g_message ("Entry %s has warning color set.", refname);
                 PangoAttrList *prev_attrs = gtk_entry_get_attributes (GTK_ENTRY (entry));
@@ -754,6 +817,7 @@ void Gtk_EntryControl::Put_Value(){
                                    << "]: bv=" << value
                                    << " av=" << v
                                    );
+                        log_mode = -log_mode; // skip self callback
 			gtk_adjustment_set_value(GTK_ADJUSTMENT(adj), v);
 //			gtk_adjustment_set_value(GTK_ADJUSTMENT(adj), unit->Usr2Base(Get_dValue()));
 
@@ -767,7 +831,19 @@ void Gtk_EntryControl::Put_Value(){
                                    );
 
 		} break;
+                case PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE:
+                        if (vMax_warn < 1e110){ // warn set other than default (off)?
+                                calc_adj_log_gain ();
+                                log_mode = -log_mode; // skip self callback
+                                gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), value_to_adj (unit->Usr2Base (Get_dValue ())));
+                                g_message ("put-value w adj... log uv:%g -> adjv:%g", unit->Usr2Base (Get_dValue ()),value_to_adj (unit->Usr2Base (Get_dValue ())));
+                        } else {
+                                log_mode = -log_mode; // skip self callback
+                                gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), unit->Usr2Base (Get_dValue()));
+                        }
+                        break;
                 default: // PARAM_CONTROL_LOG_MODE_AUTO_RANGING, PARAM_CONTROL_LOG_MODE_OFF
+                        log_mode = -log_mode; // skip self callback
 			gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), unit->Usr2Base (Get_dValue()));
                         break;
                 }
@@ -804,7 +880,6 @@ void Gtk_EntryControl::Set_Parameter(double Value=0., int flg=FALSE, int usr2bas
                         Gtk_EntryControl *master = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (c), "Gtk_EntryControl");
                         g_object_set_data( G_OBJECT (c), "HasRatio", GUINT_TO_POINTER((guint)round(1000.*new_value/master->Get_dValue())));
                 }
-
                 
                 if((c=(GtkWidget*)g_object_get_data( G_OBJECT (entry), "HasClient")) && enable_client){
                         Gtk_EntryControl *cec = (Gtk_EntryControl *) g_object_get_data( G_OBJECT (c), "Gtk_EntryControl");
@@ -1261,6 +1336,16 @@ ec_gtk_spin_button_sci_output (GtkSpinButton *spin_button)
                 Gtk_EntryControl *ec = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (spin_button), "Gtk_EntryControl");
                 if (ec){
                         gchar *buf = ec->Get_UsrString();
+                        g_message ("spin output: %s", buf);
+
+                        //gchar *err = NULL;
+                        //double new_val = g_strtod (buf, &err);
+                        //g_free (buf);
+                        //ec->calc_adj_log_gain ();
+                        //new_val = (gdouble)ec->adj_to_value (ec->Convert2Base (new_val));
+                        //buf = g_strdup_printf ("%g", new_val);
+                        g_message ("spin output adj: %s", buf);
+                        
                         if (strcmp (buf, gtk_entry_get_text (GTK_ENTRY (spin_button))))
                                 gtk_entry_set_text (GTK_ENTRY (spin_button), buf);
                         g_free (buf);
@@ -1280,9 +1365,15 @@ ec_gtk_spin_button_sci_input (GtkSpinButton *spin_button,
 			       gdouble       *new_val)
 {
 	gchar *err = NULL;
+        Gtk_EntryControl *ec = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (spin_button), "Gtk_EntryControl");
 	*new_val = g_strtod (gtk_entry_get_text (GTK_ENTRY (spin_button)), &err);
-	*new_val = (gdouble)(((Gtk_EntryControl *)g_object_get_data( G_OBJECT (spin_button), "Gtk_EntryControl"))->Convert2Base (*new_val));
+        g_message ("spin input: v=%g", *new_val);
+        //ec->calc_adj_log_gain ();
+        //ec->value_to_adj (ec->Convert2Base (*new_val));
 
+	*new_val = (gdouble)ec->Convert2Base (*new_val);
+        g_message (" --> %g", *new_val);
+        
 	if (*err)
 		return GTK_INPUT_ERROR;
 	else

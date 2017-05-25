@@ -468,9 +468,17 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
                 
                 // wave play setup for auto approach
 		// configure wave[0,1,...] out channel destination
-		dsp_aap.n_wave_channels    = long_2_sranger_long (1); /* number wave channels -- up top 6, must match wave data */
-		dsp_aap.channel_mapping[0] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[0]);
-		// ... [5] (configure all channels!)
+
+                int channels=1;
+                switch (DSPMoverClass->mover_param.MOV_waveform_id){
+                case MOV_WAVE_SINE: channels = 3; break;
+                case MOV_WAVE_KOALA: channels = 2; break;
+                default: channels = 1; break;
+                }
+                
+		dsp_aap.n_wave_channels    = long_2_sranger_long (channels); /* number wave channels -- up top 6, must match wave data */
+                for (int i=0; i<channels; ++i)
+                        dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[i]);
 
 		dsp_aap.mover_mode = long_2_sranger_long (AAP_MOVER_AUTO_APP | AAP_MOVER_WAVE_PLAY);
                 //DSPMoverClass->mover_param.MOV_mode 
@@ -552,14 +560,23 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 			sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
 		}
 
+                int channels=1;
+                switch (DSPMoverClass->mover_param.MOV_waveform_id){
+                case MOV_WAVE_SINE: channels = 3; break;
+                case MOV_WAVE_KOALA: channels = 2; break;
+                default: channels = 1; break;
+                }
+                
+		dsp_aap.n_wave_channels    = long_2_sranger_long (channels); /* number wave channels -- up top 6, must match wave data */
+
                 // wave play setup for auto approach
 		// configure wave[0,1,...] out channel destination/mappings. Single wave channel here.
-		dsp_aap.n_wave_channels    = long_2_sranger_long (1); /* number wave channels -- up top 6, must match wave data */
                 switch (Cmd){
                 case DSP_CMD_AFM_MOV_XM:
                 case DSP_CMD_AFM_MOV_XP:
                         dsp_aap.axis = int_2_sranger_int (0); // arbitrary assignmet for counter: 0=X axis  *** note so far also used in "rot" and auto folder for L/R buttons -- fixme!
-                        dsp_aap.channel_mapping[0] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[0]);
+                        for (int i=0; i<channels; ++i)
+                                dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[i]);
                         break;
                 case DSP_CMD_AFM_MOV_YM:
                 case DSP_CMD_AFM_MOV_YP:

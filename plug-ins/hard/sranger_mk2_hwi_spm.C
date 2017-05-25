@@ -416,10 +416,17 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 		dsp_aap.start = int_2_sranger_int(1);           /* Initiate =WO */
 		dsp_aap.stop  = int_2_sranger_int(0);           /* Cancel   =WO */
 
+                gint channels = 1;
+                switch (DSPMoverClass->mover_param.MOV_waveform_id){
+                case MOV_WAVE_SINE: channels = 3; break;
+                case MOV_WAVE_KOALA: channels = 2; break;
+                default: channels = 1; break;
+                }
                 // wave play setup for auto approach
 		// configure wave[0,1,...] out channel destination
-		dsp_aap.n_wave_channels    = int_2_sranger_int (1); /* number wave channels -- up top 6, must match wave data */
-		dsp_aap.channel_mapping[0] = int_2_sranger_int (DSPMoverClass->mover_param.wave_out_channel_dsp[0]);
+		dsp_aap.n_wave_channels    = int_2_sranger_int (channels); /* number wave channels -- up top 6, must match wave data */
+                for (int i=0; i<channels; ++i) // multi channel wave -- test on "X"
+                        dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[i]);
 		// ... [5] (configure all channels!)
 
 		dsp_aap.mover_mode = int_2_sranger_int (AAP_MOVER_AUTO_APP | AAP_MOVER_WAVE_PLAY);
@@ -486,14 +493,21 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 			sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
 		}
                 
+                gint channels = 1;
+                switch (DSPMoverClass->mover_param.MOV_waveform_id){
+                case MOV_WAVE_SINE: channels = 3; break;
+                case MOV_WAVE_KOALA: channels = 2; break;
+                default: channels = 1; break;
+                }
                 // wave play setup for auto approach
 		// configure wave[0,1,...] out channel destination
-		dsp_aap.n_wave_channels    = int_2_sranger_int (1); /* number wave channels -- up top 6, must match wave data */
+		dsp_aap.n_wave_channels    = int_2_sranger_int (channels); /* number wave channels -- up top 6, must match wave data */
                 switch (Cmd){
                 case DSP_CMD_AFM_MOV_XM:
                 case DSP_CMD_AFM_MOV_XP:
                         dsp_aap.axis = int_2_sranger_int (0); // arbitrary assignmet for counter: 0=X axis        
-                        dsp_aap.channel_mapping[0] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[0]);
+                        for (int i=0; i<channels; ++i) // multi channel wave -- test on "X"
+                                dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[i]);
                         break;
                 case DSP_CMD_AFM_MOV_YM:
                 case DSP_CMD_AFM_MOV_YP:
