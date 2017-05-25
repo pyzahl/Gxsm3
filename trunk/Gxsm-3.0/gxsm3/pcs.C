@@ -624,11 +624,9 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
 //		return;
 //	} // cleanup!
 
-        if (gpcs->log_mode < 0){
-                gpcs->log_mode = -gpcs->log_mode;
-                return;
-        }
-        g_message ("adj-cb %g", gtk_adjustment_get_value (adj));
+        //g_message ("PCS:adj-cb.  : %g  LGM=%d", gtk_adjustment_get_value (adj), gpcs->log_mode);
+
+        if (gpcs->log_mode < 0) return;
         
 	switch (gpcs->log_mode){
 	case PARAM_CONTROL_LOG_MODE_OFF:
@@ -664,7 +662,7 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
 	    gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE);
 	    } break;
 	case PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE: { // vMin_warn
-                if (gpcs->vMax_warn < 1e110){ // warn set other than default (off)?
+                if (gpcs->page10 > 10.){ // warn set other than default (off)?
                         double  v=gtk_adjustment_get_value (adj);
                         double al=gtk_adjustment_get_lower (adj);
                         double au=gtk_adjustment_get_upper (adj);
@@ -686,7 +684,7 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                         }
                         gpcs->calc_adj_log_gain ();
                         gpcs->Set_Parameter (gpcs->adj_to_value (v), TRUE, FALSE);
-                        g_message ("adj-cb... log %g -> %g", v, gpcs->adj_to_value (v));
+                        //g_message ("PCS:adj-cb.. : log_mode_auto_dual set paramerter %g -> val=%g", v, gpcs->adj_to_value (v));
         
                         if (l != 0. && r != 0.){
                                 if (gpcs->opt_scale){
@@ -763,12 +761,23 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                 gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE);
                 break;
 	}
+        //g_message ("PCS:adj-cb.... end.");
 }
 
 void Gtk_EntryControl::Put_Value(){
 	gchar *txt = Get_UsrString ();
-	gtk_entry_set_text (GTK_ENTRY (entry), txt);
-        g_message ("put_value usrs='%s'", txt);
+
+        if (af_update_handler_id[0]){
+                g_signal_handler_block (G_OBJECT (entry), af_update_handler_id[0]);
+                g_signal_handler_block (G_OBJECT (entry), af_update_handler_id[1]);
+        }
+        if (ec_io_handler_id[0]){
+                g_signal_handler_block (G_OBJECT (entry), ec_io_handler_id[0]);
+                g_signal_handler_block (G_OBJECT (entry), ec_io_handler_id[1]);
+        }
+
+        gtk_entry_set_text (GTK_ENTRY (entry), txt);
+        //g_message ("PCS:put_value usrs='%s'", txt);
         g_free (txt);
         
 	if (color) {
@@ -806,18 +815,22 @@ void Gtk_EntryControl::Put_Value(){
 #endif
         
 	if(adj){
+                // skip self callbacks while reconfiguring
+                g_signal_handler_block (G_OBJECT (adj), adjcb_handler_id);
+
 		switch (log_mode){
                 case PARAM_CONTROL_LOG_MODE_LOG: {
 			double value = unit->Usr2Base (Get_dValue ());
 			double scale = fabs (gtk_adjustment_get_upper (GTK_ADJUSTMENT(adj))) / (pow (2.,fabs(gtk_adjustment_get_upper (GTK_ADJUSTMENT(adj))))-1.);
 			double v = log (1. + fabs(value) / scale) / log (2.);
+
+                     
 			gtk_adjustment_set_lower (GTK_ADJUSTMENT (adj), 0.);
                         XSM_DEBUG (DBG_L5,
                                    "put adj[" << (gtk_adjustment_get_upper (GTK_ADJUSTMENT(adj)))
                                    << "]: bv=" << value
                                    << " av=" << v
                                    );
-                        log_mode = -log_mode; // skip self callback
 			gtk_adjustment_set_value(GTK_ADJUSTMENT(adj), v);
 //			gtk_adjustment_set_value(GTK_ADJUSTMENT(adj), unit->Usr2Base(Get_dValue()));
 
@@ -832,22 +845,31 @@ void Gtk_EntryControl::Put_Value(){
 
 		} break;
                 case PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE:
-                        if (vMax_warn < 1e110){ // warn set other than default (off)?
+                        if (page10 > 10.){ // use log?
                                 calc_adj_log_gain ();
-                                log_mode = -log_mode; // skip self callback
                                 gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), value_to_adj (unit->Usr2Base (Get_dValue ())));
-                                g_message ("put-value w adj... log uv:%g -> adjv:%g", unit->Usr2Base (Get_dValue ()),value_to_adj (unit->Usr2Base (Get_dValue ())));
+                                //g_message ("PCS:put-value w adj... log uv:%g -> adjv:%g", unit->Usr2Base (Get_dValue ()),value_to_adj (unit->Usr2Base (Get_dValue ())));
                         } else {
-                                log_mode = -log_mode; // skip self callback
                                 gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), unit->Usr2Base (Get_dValue()));
                         }
                         break;
                 default: // PARAM_CONTROL_LOG_MODE_AUTO_RANGING, PARAM_CONTROL_LOG_MODE_OFF
-                        log_mode = -log_mode; // skip self callback
 			gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), unit->Usr2Base (Get_dValue()));
                         break;
                 }
+
+                g_signal_handler_unblock (G_OBJECT (adj), adjcb_handler_id);
 	}
+
+        if (ec_io_handler_id[0]){
+                g_signal_handler_unblock (G_OBJECT (entry), ec_io_handler_id[1]);
+                g_signal_handler_unblock (G_OBJECT (entry), ec_io_handler_id[0]);
+        }
+
+        if (af_update_handler_id[0]){
+                g_signal_handler_unblock (G_OBJECT (entry), af_update_handler_id[0]);
+                g_signal_handler_unblock (G_OBJECT (entry), af_update_handler_id[1]);
+        }
 }
 
 void Gtk_EntryControl::Set_Parameter(double Value=0., int flg=FALSE, int usr2base=FALSE){
@@ -1001,7 +1023,7 @@ gint Gtk_EntryControl::update_callback(GtkEditable *editable, void *data){
                 if (p){
 #if 0 // enable to monitor updates
                         gchar *tmp;
-                        g_message ("Gtk_EntryControl::update_callback txt={%s} pcs=%s", p, tmp=current_object->get_refname ());
+                        //g_message ("Gtk_EntryControl::update_callback txt={%s} pcs=%s", p, tmp=current_object->get_refname ());
                         g_free (tmp);
                         double x=atof (p);
                         current_object->Set_Parameter (x, FALSE, FALSE);
@@ -1073,7 +1095,7 @@ void Gtk_EntryControl::pcs_adjustment_configure (){
                 bp.grid_add_ec ("Step [B1]", unit, &step, -EC_INF, EC_INF, "8g"); bp.new_line ();
                 bp.grid_add_ec ("Page [B2]", unit, &page, -EC_INF, EC_INF, "8g"); bp.new_line ();
                 bp.grid_add_ec ("Pg10 [B3]", unit, &page10, -EC_INF, EC_INF, "8g"); bp.new_line ();
-                bp.grid_add_ec ("Progressive", unity, &progressive, 0., 1., "g"); bp.new_line ();
+                bp.grid_add_ec ("Progressive", unity, &progressive, 0., 10., "g"); bp.new_line ();
         }
         gtk_widget_show_all (dialog);
         
@@ -1319,7 +1341,7 @@ void Gtk_EntryControl::put_pcs_configuartion (){
 
 	if (GTK_IS_SPIN_BUTTON (entry)){
 		gtk_spin_button_configure (GTK_SPIN_BUTTON (entry), 
-                                           GTK_ADJUSTMENT (adj), progressive, 0);	
+                                           GTK_ADJUSTMENT (adj), progressive, step < 0.1 ? (int)(floor(-log(step))+1) : 0);	
 		gtk_spin_button_set_increments (GTK_SPIN_BUTTON (entry),
                                                 step, page);
 	}
@@ -1336,7 +1358,7 @@ ec_gtk_spin_button_sci_output (GtkSpinButton *spin_button)
                 Gtk_EntryControl *ec = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (spin_button), "Gtk_EntryControl");
                 if (ec){
                         gchar *buf = ec->Get_UsrString();
-                        g_message ("spin output: %s", buf);
+                        //g_message ("spin output.  : %s", buf);
 
                         //gchar *err = NULL;
                         //double new_val = g_strtod (buf, &err);
@@ -1344,10 +1366,12 @@ ec_gtk_spin_button_sci_output (GtkSpinButton *spin_button)
                         //ec->calc_adj_log_gain ();
                         //new_val = (gdouble)ec->adj_to_value (ec->Convert2Base (new_val));
                         //buf = g_strdup_printf ("%g", new_val);
-                        g_message ("spin output adj: %s", buf);
                         
-                        if (strcmp (buf, gtk_entry_get_text (GTK_ENTRY (spin_button))))
+                        if (strcmp (buf, gtk_entry_get_text (GTK_ENTRY (spin_button)))){
+                                //g_message ("spin output.. : %s", buf);
                                 gtk_entry_set_text (GTK_ENTRY (spin_button), buf);
+                                return TRUE;
+                        }
                         g_free (buf);
                         return TRUE;
                 } else {
@@ -1367,12 +1391,12 @@ ec_gtk_spin_button_sci_input (GtkSpinButton *spin_button,
 	gchar *err = NULL;
         Gtk_EntryControl *ec = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (spin_button), "Gtk_EntryControl");
 	*new_val = g_strtod (gtk_entry_get_text (GTK_ENTRY (spin_button)), &err);
-        g_message ("spin input: v=%g", *new_val);
+        //g_message ("spin input.  : v=%g", *new_val);
         //ec->calc_adj_log_gain ();
         //ec->value_to_adj (ec->Convert2Base (*new_val));
 
 	*new_val = (gdouble)ec->Convert2Base (*new_val);
-        g_message (" --> %g", *new_val);
+        //g_message ("spin input.. : --> %g", *new_val);
         
 	if (*err)
 		return GTK_INPUT_ERROR;
@@ -1409,9 +1433,12 @@ ec_pcs_populate_popup (GtkEntry *entry, GtkMenu *menu, Gtk_EntryControl* gpcs){
 }
 
 void Gtk_EntryControl::InitRegisterCb(double AdjStep, double AdjPage, double AdjProg){
+        af_update_handler_id[0] = af_update_handler_id[1] = 0;
+        ec_io_handler_id[0] = ec_io_handler_id[1] = 0;
+        adjcb_handler_id = 0;
 	adj=NULL;
 	enable_client = TRUE;
-
+        
 	page10 = 10.*AdjPage;
 	page   = AdjPage;
 	step   = AdjStep;
@@ -1428,13 +1455,13 @@ void Gtk_EntryControl::InitRegisterCb(double AdjStep, double AdjPage, double Adj
         XSM_DEBUG (DBG_L8, "InitRegisterCb -- connect...");
         
 	g_object_set_data( G_OBJECT (entry), "Gtk_EntryControl", this);
-	g_signal_connect (G_OBJECT (entry), "activate",
-                          G_CALLBACK (&Gtk_EntryControl::update_callback),
-                          (gpointer) NULL);
-	g_signal_connect (G_OBJECT (entry), "focus_out_event",
-                          G_CALLBACK (&Gtk_EntryControl::update_callback),
-                          (gpointer) NULL);
-
+        af_update_handler_id[0] = g_signal_connect (G_OBJECT (entry), "activate",
+                                                    G_CALLBACK (&Gtk_EntryControl::update_callback),
+                                                    (gpointer) NULL);
+        af_update_handler_id[1] = g_signal_connect (G_OBJECT (entry), "focus_out_event",
+                                                    G_CALLBACK (&Gtk_EntryControl::update_callback),
+                                                    (gpointer) NULL);
+        
         XSM_DEBUG (DBG_L8, "InitRegisterCb -- AdjSetup?");
 	if(fabs (AdjStep) > 1e-22 && get_count () <= 1){ // only master
                 XSM_DEBUG (DBG_L8, "InitRegisterCb -- hookup config menuitem");
@@ -1443,18 +1470,18 @@ void Gtk_EntryControl::InitRegisterCb(double AdjStep, double AdjPage, double Adj
                                   (gpointer) this);
                 
                 adj = gtk_adjustment_new( Get_dValue (), vMin, vMax, step, page, 0);
-		g_signal_connect (G_OBJECT (adj), "value_changed",
-                                  G_CALLBACK (Gtk_EntryControl::adjustment_callback), this);
+                adjcb_handler_id = g_signal_connect (G_OBJECT (adj), "value_changed",
+                                                     G_CALLBACK (Gtk_EntryControl::adjustment_callback), this);
 
 		if (GTK_IS_SPIN_BUTTON (entry)){
-			g_signal_connect (G_OBJECT (entry), "output",
-                                          G_CALLBACK (&ec_gtk_spin_button_sci_output),
-                                          (gpointer) NULL);
-			g_signal_connect (G_OBJECT (entry), "input",
-                                          G_CALLBACK (&ec_gtk_spin_button_sci_input),
-                                          (gpointer) NULL);
+			ec_io_handler_id[0] = g_signal_connect (G_OBJECT (entry), "output",
+                                                                G_CALLBACK (&ec_gtk_spin_button_sci_output),
+                                                                (gpointer) NULL);
+			ec_io_handler_id[1] = g_signal_connect (G_OBJECT (entry), "input",
+                                                                G_CALLBACK (&ec_gtk_spin_button_sci_input),
+                                                                (gpointer) NULL);
                         gtk_spin_button_configure (GTK_SPIN_BUTTON (entry), 
-                                                   GTK_ADJUSTMENT (adj), progressive, 0);	
+                                                   GTK_ADJUSTMENT (adj), progressive, step < 0.1 ? (int)(floor(-log(step))+1) : 0);
 		}
 	}
         XSM_DEBUG (DBG_L8, "InitRegisterCb -- done.");

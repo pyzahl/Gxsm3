@@ -295,6 +295,8 @@ class Gtk_EntryControl : public Param_Control{
         double value_to_adj (double v) {
                 if (log_mode && adj){
                         double signum = v >= 0.? 1.:-1.;
+                        if (fabs (v) < log_min)
+                                return  0.;
                         return signum * log10 (fabs (v/log_min)) / gain;
                 }
                 return (v);
@@ -371,8 +373,9 @@ class Gtk_EntryControl : public Param_Control{
 	GtkWidget *entry, *extra, *opt_scale;
         Scale_Ticks *ticks;
 	GtkAdjustment *adj;
+        gulong adjcb_handler_id, ec_io_handler_id[2], af_update_handler_id[2];
 	gint enable_client;
-
+        
 	double page10, page, step, progressive;
 	gint show_adj:1;
 	gint show_scale:1;
