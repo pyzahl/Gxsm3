@@ -200,6 +200,7 @@ typedef struct{
 	gchar RedLineHistoryColors[1024];
 	gchar BlueLineHistoryColors[1024];
 	gint  RedLineWidth;
+        gboolean gxsm3_ready;
 } XSMRESOURCES;
 
 #define IS_FILENAME_CONVENTION_DIGIT  (!strncasecmp(xsmres.FileNameConvention,"digit",5))
