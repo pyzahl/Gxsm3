@@ -1373,8 +1373,6 @@ DSPControl::DSPControl () {
                 dsp_bp->grid_add_ec_with_scale (NULL, mixer_unit[ch], &mix_set_point[ch], 0.0, 50., "5g", 0.001, 0.01, mixer_remote_id_set[ch]);
                 dsp_bp->ec->set_log (PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE);
                 dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
-
-                dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
                 dsp_bp->ec->set_logscale_min (1e-4);
                 gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
 

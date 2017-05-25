@@ -53,6 +53,7 @@ good starting point.
 #include "gxsm/plugin.h"
 #include "gapp_service.h"
 #include "gnome-res.h"
+#include "glbvars.h"
 
 #define EC_INF 1e133
 
@@ -955,22 +956,27 @@ void Gtk_EntryControl::ShowInfo (const char *header, const char *text){
 		return;
 	}
 
-        GtkWidget *toplevel = gtk_widget_get_toplevel (entry);  // try to get the underlying window as parent for dialog
-        GtkWindow *ww = NULL;
-        if (gtk_widget_is_toplevel (toplevel))
-                ww = GTK_WINDOW (toplevel);
-        GtkWidget *dialog = gtk_message_dialog_new_with_markup
-                (ww,
-                 GTK_DIALOG_DESTROY_WITH_PARENT,
-                 GTK_MESSAGE_INFO,
-                 GTK_BUTTONS_CLOSE,
-                 "<span foreground='green' size='large' weight='bold'>%s</span>\n%s", header, text);
+	if (xsmres.gxsm3_ready){
+        
+                GtkWidget *toplevel = gtk_widget_get_toplevel (entry);  // try to get the underlying window as parent for dialog
+                GtkWindow *ww = NULL;
+                if (gtk_widget_is_toplevel (toplevel))
+                        ww = GTK_WINDOW (toplevel);
+                GtkWidget *dialog = gtk_message_dialog_new_with_markup
+                        (ww,
+                         GTK_DIALOG_DESTROY_WITH_PARENT,
+                         GTK_MESSAGE_INFO,
+                         GTK_BUTTONS_CLOSE,
+                         "<span foreground='green' size='large' weight='bold'>%s</span>\n%s", header, text);
 	
-        g_signal_connect_swapped (G_OBJECT (dialog), "response",
-                                  G_CALLBACK (gtk_widget_destroy),
-                                  G_OBJECT (dialog));
-        gtk_widget_show (dialog);
-
+                g_signal_connect_swapped (G_OBJECT (dialog), "response",
+                                          G_CALLBACK (gtk_widget_destroy),
+                                          G_OBJECT (dialog));
+                gtk_widget_show (dialog);
+        } else {
+                g_warning ("WHILE GXSM3 STARTUP: %s %s --> auto continue.", header, text);
+        }
+        
         --total_message_count;
 }
 
@@ -987,24 +993,31 @@ gboolean Gtk_EntryControl::ShowVerifySet (const char *header, const char *text){
 		return false;
 	}
 
-        GtkWidget *toplevel = gtk_widget_get_toplevel (entry);  // try to get the underlying window as parent for dialog
-        GtkWindow *ww = NULL;
-        if (gtk_widget_is_toplevel (toplevel))
-                ww = GTK_WINDOW (toplevel);
-        GtkWidget *dialog = gtk_message_dialog_new_with_markup
-                (ww,
-                 GTK_DIALOG_DESTROY_WITH_PARENT,
-                 GTK_MESSAGE_INFO,
-                 GTK_BUTTONS_YES_NO,
-                 "<span foreground='red' size='large' weight='bold'>%s</span>", header);
+        gint result = GTK_RESPONSE_NO; 
+	if (xsmres.gxsm3_ready){
+        
+                GtkWidget *toplevel = gtk_widget_get_toplevel (entry);  // try to get the underlying window as parent for dialog
+                GtkWindow *ww = NULL;
+                if (gtk_widget_is_toplevel (toplevel))
+                        ww = GTK_WINDOW (toplevel);
+                GtkWidget *dialog = gtk_message_dialog_new_with_markup
+                        (ww,
+                         GTK_DIALOG_DESTROY_WITH_PARENT,
+                         GTK_MESSAGE_INFO,
+                         GTK_BUTTONS_YES_NO,
+                         "<span foreground='red' size='large' weight='bold'>%s</span>", header);
                 
-        gtk_message_dialog_format_secondary_markup
-                (GTK_MESSAGE_DIALOG (dialog),
-                 "%s for %s", text, refname);
+                gtk_message_dialog_format_secondary_markup
+                        (GTK_MESSAGE_DIALOG (dialog),
+                         "%s for %s", text, refname);
 
-        gtk_widget_show (dialog);
-        gint result = gtk_dialog_run (GTK_DIALOG (dialog));
-        gtk_widget_destroy (dialog);
+                gtk_widget_show (dialog);
+                result = gtk_dialog_run (GTK_DIALOG (dialog));
+                gtk_widget_destroy (dialog);
+
+        } else {
+                g_warning ("WHILE GXSM3 STARTUP:  %s %s --> auto answer with 'NO'.", header, text);
+        }
         --total_message_count;
 
         switch (result){

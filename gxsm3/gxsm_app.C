@@ -309,6 +309,8 @@ void App::AppWindowInit(const gchar *title){
 void App::build_gxsm (Gxsm3appWindow *win){
         //        const gchar *quit_accels[2] = { "<Ctrl>Q", NULL };
 
+	xsmres.gxsm3_ready = false;
+        
         XSM_DEBUG(DBG_L2, "App::build_gxsm_1" );
 
         pcs_set_current_gschema_group ("core");
@@ -454,8 +456,10 @@ void App::build_gxsm (Gxsm3appWindow *win){
 
         // monitorcontrol->LogEvent ("Hardware Information", xsm->hardware->get_info ());
 
+	xsmres.gxsm3_ready = true;
         SetStatus(N_("Ready."));
-      
+
+        
         /* Update all fields */
         XSM_DEBUG (DBG_L2, "App::build_gxsm - update all entries");
         spm_update_all (-xsm->data.display.ViewFlg);
