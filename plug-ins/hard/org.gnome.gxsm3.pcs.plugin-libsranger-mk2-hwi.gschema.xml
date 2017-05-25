@@ -283,6 +283,24 @@
       <description>pcs0000, PCS Remote-ID: 'dsp-fbs-ci', Default/U:    20      , Adjustment PCS Name: 'dsp-fbs-ci' </description>
     </key>
 
+    <key name="dsp-fbs-motor-setpoint" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dsp-fbs-motor-setpoint', Default/U: 0 V     </summary>
+      <description>pcs0000, PCS Remote-ID: 'dsp-fbs-motor-setpoint', Default/U: 0 V    , Adjustment PCS Name: 'dsp-fbs-motor-setpoint' </description>
+    </key>
+
+    <key name="dsp-fbs-motor-cp" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dsp-fbs-motor-cp', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dsp-fbs-motor-cp', Default/U: 0      , Adjustment PCS Name: 'dsp-fbs-motor-cp' </description>
+    </key>
+
+    <key name="dsp-fbs-motor-ci" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dsp-fbs-motor-ci', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dsp-fbs-motor-ci', Default/U: 0      , Adjustment PCS Name: 'dsp-fbs-motor-ci' </description>
+    </key>
+    
     <key name="dsp-fbs-scan-speed-move" type="d">
       <default>2000</default>
       <summary>PCS Remote-ID: 'dsp-fbs-scan-speed-move', Default/U:  2000 Å/s     </summary>
