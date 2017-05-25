@@ -230,6 +230,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
         
 
         int    imax = mover_param.MOV_wave_len-channels;
+        int    imax1 = mover_param.MOV_wave_len-channels;
 	double kn = (double)mover_param.MOV_wave_len;
 	double n = kn / channels;
 	double n2 = n/2.;
@@ -363,23 +364,23 @@ void DSPMoverControl::create_waveform (double amp, double duration){
                         for (; i <= mover_param.MOV_wave_len/6; i += channels)
                                 for (int k=0; k<channels; ++k)
                                         if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[(iphase*k+i)%imax + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
+                                                mover_param.MOV_waveform[((iphase*k+i)%imax1) + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
                                         else
-                                                mover_param.MOV_waveform[(imax-(iphase*k+i))%imax + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
+                                                mover_param.MOV_waveform[imax-((iphase*k+i)%imax1) + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
                 
                         for (; i <= mover_param.MOV_wave_len/2; i += channels)
                                 for (int k=0; k<channels; ++k)
                                         if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[(iphase*k+i)%imax + k] = ((short)round (SR_VFAC*amp));
+                                                mover_param.MOV_waveform[((iphase*k+i)%imax1) + k] = ((short)round (SR_VFAC*amp));
                                         else
-                                                mover_param.MOV_waveform[(imax-(iphase*k+i))%imax + k] = ((short)round (SR_VFAC*amp));
+                                                mover_param.MOV_waveform[imax-((iphase*k+i)%imax1) + k] = ((short)round (SR_VFAC*amp));
 
                         for (; i < mover_param.MOV_wave_len; i += channels)
                                 for (int k=0; k<channels; ++k)
                                         if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[(iphase*k+i)%imax + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
+                                                mover_param.MOV_waveform[((iphase*k+i)%imax1) + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
                                         else
-                                                mover_param.MOV_waveform[(imax-(iphase*k+i))%imax + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
+                                                mover_param.MOV_waveform[imax-((iphase*k+i)%imax1) + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
                 }
 		break;
 	}
