@@ -1306,12 +1306,16 @@ DSPControl::DSPControl () {
         dsp_bp->grid_add_ec_with_scale ("Bias", Volt, &bias, -10., 10., "5g", 0.001, 0.01, "fbs-bias");
         dsp_bp->ec->set_log (PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE);
         dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
+        dsp_bp->ec->set_logscale_min (1e-3);
+        gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
         dsp_bp->new_line ();
 
         dsp_bp->set_configure_list_mode_on ();
         dsp_bp->grid_add_ec_with_scale ("Motor", Volt, &motor, -10., 10., "5g", 0.001, 0.01, "fbs-motor");
         dsp_bp->ec->set_log (PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE);
         dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
+        dsp_bp->ec->set_logscale_min (1e-3);
+        gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
         dsp_bp->new_line ();
 
         dsp_bp->set_input_width_chars (30);
@@ -1369,6 +1373,11 @@ DSPControl::DSPControl () {
                 dsp_bp->grid_add_ec_with_scale (NULL, mixer_unit[ch], &mix_set_point[ch], 0.0, 50., "5g", 0.001, 0.01, mixer_remote_id_set[ch]);
                 dsp_bp->ec->set_log (PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE);
                 dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
+
+                dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
+                dsp_bp->ec->set_logscale_min (1e-4);
+                gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
+
                 // dsp_bp->add_to_configure_hide_list (dsp_bp->scale);
                 dsp_bp->set_input_width_chars (10);
                 dsp_bp->set_configure_list_mode_on ();
@@ -1875,8 +1884,11 @@ DSPControl::DSPControl () {
 
         dsp_bp->set_scale_nx (2);
         dsp_bp->grid_add_ec_with_scale ("Slope X", Unity, &area_slope_x, -0.2, 0.2, ".5f", 0.0001, 0.0001,  "adv-scan-slope-x"); slope_x_ec = dsp_bp->ec;
+        gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
         dsp_bp->new_line ();
+
         dsp_bp->grid_add_ec_with_scale ("Slope Y", Unity, &area_slope_y, -0.2, 0.2, ".5f", 0.0001, 0.0001,  "adv-scan-slope-y"); slope_y_ec = dsp_bp->ec;
+        gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
         dsp_bp->set_scale_nx ();
         dsp_bp->new_line (0,2);
 

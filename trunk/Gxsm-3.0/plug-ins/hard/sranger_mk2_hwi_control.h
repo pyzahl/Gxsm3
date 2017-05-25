@@ -189,8 +189,8 @@ typedef struct{
 #define MOV_WAVE_KOALA    11
 #define MOV_WAVE_LAST     12
 	int MOV_output, MOV_mode, MOV_waveform_id;
-	int wave_out_channel[2];
-	int wave_out_channel_dsp[2];
+	int wave_out_channel[6];
+	int wave_out_channel_dsp[6];
 	int MOV_wave_len;
 	int MOV_wave_speed_fac;
 	short MOV_waveform[MOV_MAXWAVELEN];

@@ -200,8 +200,15 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 
         double pointing = duration > 0. ? 1. : -1;
         gint channels = 1; // fixed single (one) channel assuption for testing !!!
-	gint space_len = channels * (gint)round ( DSPControlClass->frq_ref*2.* mover_param.Wave_space*1e-3); 
 
+        switch (mover_param.MOV_waveform_id){
+	case MOV_WAVE_SINE: channels = 3; break;
+	case MOV_WAVE_KOALA: channels = 2; break;
+        default: channels = 1; break;
+        }
+
+	gint space_len = channels * (gint)round ( DSPControlClass->frq_ref*2.* mover_param.Wave_space*1e-3); 
+        
 	mover_param.MOV_wave_len = channels * (gint)round (DSPControlClass->frq_ref*2.*fabs (duration)*1e-3);
 	mover_param.MOV_wave_speed_fac = 1;
 
@@ -229,7 +236,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 	double t=0.;
 
         double phase = mover_param.inch_worm_phase/360.;
-        int   iphase = (int)(phase*n);
+        int   iphase = (int)(phase*kn);
         
 	switch (mover_param.MOV_waveform_id){
 	case MOV_WAVE_SAWTOOTH:
@@ -356,23 +363,23 @@ void DSPMoverControl::create_waveform (double amp, double duration){
                         for (; i <= mover_param.MOV_wave_len/6; i += channels)
                                 for (int k=0; k<channels; ++k)
                                         if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
+                                                mover_param.MOV_waveform[(iphase*k+i)%imax + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
                                         else
-                                                mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
+                                                mover_param.MOV_waveform[(imax-(iphase*k+i))%imax + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
                 
                         for (; i <= mover_param.MOV_wave_len/2; i += channels)
                                 for (int k=0; k<channels; ++k)
                                         if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp));
+                                                mover_param.MOV_waveform[(iphase*k+i)%imax + k] = ((short)round (SR_VFAC*amp));
                                         else
-                                                mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp));
+                                                mover_param.MOV_waveform[(imax-(iphase*k+i))%imax + k] = ((short)round (SR_VFAC*amp));
 
                         for (; i < mover_param.MOV_wave_len; i += channels)
                                 for (int k=0; k<channels; ++k)
                                         if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
+                                                mover_param.MOV_waveform[(iphase*k+i)%imax + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
                                         else
-                                                mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
+                                                mover_param.MOV_waveform[(imax-(iphase*k+i))%imax + k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
                 }
 		break;
 	}
@@ -827,6 +834,26 @@ void DSPMoverControl::create_folder (){
 				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH9 to Channel 0-7");
                                 mov_bp->new_line ();
 
+				mov_bp->grid_add_ec ("OUTMIX10 to Ch", Unity, &mover_param.wave_out_channel[2], 0.,7., ".0f","wave-out10-ch");
+				g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_CH", GINT_TO_POINTER (2));
+				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH10 to Channel 0-7");
+                                mov_bp->new_line ();
+
+				mov_bp->grid_add_ec ("OUTMIX11 to Ch", Unity, &mover_param.wave_out_channel[3], 0.,7., ".0f","wave-out11-ch");
+				g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_CH", GINT_TO_POINTER (3));
+				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH11 to Channel 0-7");
+                                mov_bp->new_line ();
+
+				mov_bp->grid_add_ec ("OUTMIX12 to Ch", Unity, &mover_param.wave_out_channel[4], 0.,7., ".0f","wave-out12-ch");
+				g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_CH", GINT_TO_POINTER (4));
+				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH12 to Channel 0-7");
+                                mov_bp->new_line ();
+
+				mov_bp->grid_add_ec ("OUTMIX13 to Ch", Unity, &mover_param.wave_out_channel[5], 0.,7., ".0f","wave-out13-ch");
+				g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_CH", GINT_TO_POINTER (5));
+				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH13 to Channel 0-7");
+                                mov_bp->new_line ();
+
                                 mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 			}
 
@@ -1247,8 +1274,8 @@ void DSPMoverControl::updateDSP(int sliderno){
 		if (sliderno == 200){
 			switch (mover_param.MOV_output){
 			case AAP_MOVER_XXOFFSET:
-				mover_param.wave_out_channel_dsp[0]=mover_param.wave_out_channel[0];
-				mover_param.wave_out_channel_dsp[1]=mover_param.wave_out_channel[1];
+                                for (int i=0; i<6; ++i)
+                                        mover_param.wave_out_channel_dsp[i]=mover_param.wave_out_channel[i];
 				break;
 			case AAP_MOVER_XYSCAN: // use pre defined basic settings
 				mover_param.wave_out_channel_dsp[0]=3;

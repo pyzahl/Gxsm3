@@ -1309,6 +1309,30 @@
       <description>pcs0000, PCS Remote-ID: 'dspmover-config-wave-out9-ch', Default/U: 4      , Adjustment PCS Name: 'dspmover-config-wave-out9-ch' </description>
     </key>
 
+    <key name="dspmover-config-wave-out10-ch" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-config-wave-out10-ch', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-config-wave-out10-ch', Default/U: 0      , Adjustment PCS Name: 'dspmover-config-wave-out10-ch' </description>
+    </key>
+
+    <key name="dspmover-config-wave-out11-ch" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-config-wave-out11-ch', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-config-wave-out11-ch', Default/U: 0      , Adjustment PCS Name: 'dspmover-config-wave-out11-ch' </description>
+    </key>
+
+    <key name="dspmover-config-wave-out12-ch" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-config-wave-out12-ch', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-config-wave-out12-ch', Default/U: 0      , Adjustment PCS Name: 'dspmover-config-wave-out12-ch' </description>
+    </key>
+
+    <key name="dspmover-config-wave-out13-ch" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-config-wave-out13-ch', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-config-wave-out13-ch', Default/U: 0      , Adjustment PCS Name: 'dspmover-config-wave-out13-ch' </description>
+    </key>
+
     <key name="dspmover-config-gpio-on" type="d">
       <default>0</default>
       <summary>PCS Remote-ID: 'dspmover-config-GPIO-on', Default/U: 0000 h     </summary>

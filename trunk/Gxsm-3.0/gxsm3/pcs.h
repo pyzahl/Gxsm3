@@ -98,6 +98,7 @@ class Param_Control{
 	void set_exclude(double V_ex_lo = 1e111, double V_ex_hi = 1e111);
 	void set_info (const gchar* Info);
 	void set_log (int b) { log_mode = b; };
+
 	virtual void update_limits() {};
 	void changeUnit(UnitObj *U){ unit = U; };
 	void changeUnit_hold_usr_value(UnitObj *U){ 
@@ -165,6 +166,7 @@ class Param_Control{
         const gchar *get_gsettings_key() { return gsettings_key;  };
 
         void set_suspend_settings_update (gboolean x=true) { suspend_settings_update = x; };
+        void set_logscale_min(double eps=1e-4) { log_min = eps; };
         
  protected:
 	UnitObj *unit;
@@ -180,6 +182,7 @@ class Param_Control{
 	gchar *prec;
 	gchar *info;
 	int   log_mode;
+        double log_min;
 	//Warning types: 1 = max/min limit
 	//               2 = exclude range
 	double new_value;	//in the case of a warning this value keeps the current input
@@ -271,6 +274,32 @@ class Gtk_EntryControl : public Param_Control{
 	static int quit_callback(gpointer ec_object, gpointer dialog);
 	virtual void Set_NewValue (gboolean set_new_value);
 
+        void calc_adj_log_gain (){
+                if (adj){
+                        double dec_l = log10 (fabs (gtk_adjustment_get_lower (adj)/log_min));
+                        double dec_r = log10 (fabs (gtk_adjustment_get_upper (adj)/log_min));
+                        double dec   = dec_l > dec_r ? dec_l : dec_r;
+                        // log_min=0.1 .. 1 .. 10 .. 100=upper
+                        //         10^0   ^1   ^2    ^3        ~> 0 ... log10(upper/log_min)
+                        gain  = dec / (dec_l > dec_r ? fabs (gtk_adjustment_get_lower (adj)) : fabs (gtk_adjustment_get_upper (adj)));
+                }
+        };        
+        double adj_to_value (double av) {
+                if (log_mode && adj){
+                        double signum = av >= 0.? 1.:-1.;
+                        return signum * log_min * pow (10., fabs (gain*av));
+                }
+                return (av);
+        };
+
+        double value_to_adj (double v) {
+                if (log_mode && adj){
+                        double signum = v >= 0.? 1.:-1.;
+                        return signum * log10 (fabs (v/log_min)) / gain;
+                }
+                return (v);
+        };
+        
 	GtkAdjustment* GetAdjustment(){ return adj; };
 	void SetExtraWidget(GtkWidget *e){ extra = e; };
 
@@ -350,6 +379,8 @@ class Gtk_EntryControl : public Param_Control{
 	gint show_extra:1;
 
         gint ticks_scale_mode;
+
+        double gain;
 };
 
 
