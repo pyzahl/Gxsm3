@@ -170,8 +170,8 @@ public:
 									
 		id = g_strdup_printf ("%d", MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "FUZZY"); g_free (id); 
 		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-FUZZY"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "FUZZY-LOG"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-FUZZY-LOG"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "CZ-FUZZY-LOG"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-CZ-FUZZY-LOG"); g_free (id); 
 		
 		if (preset == MM_OFF) 
 			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 0); 
@@ -1327,11 +1327,15 @@ DSPControl::DSPControl () {
         dsp_bp->set_input_width_chars (12);
         dsp_bp->set_input_nx ();
 
-	dsp_bp->grid_add_check_button ("Z-Pos Monitor", "Z Position Monitor. Disable to set Z-Position Setpoint for const FUZZY-LOG-Z-CONTROL Constant Heigth Mode Operation.", 1,
+	dsp_bp->grid_add_check_button ("Z-Pos Monitor",
+                                       "Z Position Monitor. Disable to set Z-Position Setpoint for const height mode. "
+                                       "Switch Transfer to CZ-FUZZY-LOG for Z-CONTROL Constant Heigth Mode Operation with current compliance given by Fuzzy-Level. "
+                                       "Slow down feedback to minimize instabilities. "
+                                       "Set Current setpoint a notch below compliance level.",
+                                       1,
                                        G_CALLBACK (DSPControl::zpos_monitor_callback), this,
                                        0, MD_ZPOS_ADJUSTER);
         GtkWidget *zposmon_checkbutton = dsp_bp->button;
-
         dsp_bp->new_line ();
 
         dsp_bp->set_configure_list_mode_off ();
