@@ -374,19 +374,32 @@ for r in position:
         	        xy[i][0] = x + r[0]
         	        xy[i][1] = y + r[1]
         	        i=i+1           
-print len2
-print xy
+#print len2
+#print xy
 #np.random.shuffle(xy)
-print xy
+#print xy
 
 
 
 ###def run_vp (coords, num, ref_bias=2.35, ref_current=0.045, ff=0, run_ref=0, ref_bias_list=[0.1])
 #run_vp_simple (xy, len2, 1.8, 0.02, 10)
 
-run_survey (xy, len2, 0.1, 0.01)
+#run_survey (xy, len2, 0.1, 0.01)
 
 print "STARTING NOW..."
+
+#terminate = run_set ([0.03, 0.05, 0.1, 0.2, 0.5, 1.0, 1.5, 2.0])
+
+for z in np.arange(-18.1, -20.0, -0.1):
+	print z
+	gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%z )
+	gxsm.startscan ()
+	gxsm.waitscan ()
+
+
+z=-16
+gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%z )
+
 
 #freeze_Z()
 #gxsm.startscan ()
