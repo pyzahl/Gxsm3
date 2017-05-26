@@ -161,7 +161,7 @@ void Param_Control::Init(){
 	info=NULL;
 	ShowMessage_flag=0;
         suspend_settings_update = false;
-	set_log (PARAM_CONTROL_LOG_MODE_OFF);
+	set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LINEAR);
         set_logscale_min (); // set default
 
         // GSettings 
@@ -616,84 +616,75 @@ void  Gtk_EntryControl::init_pcs_via_list (){
        }
 }
 
+double pcs_mag_base (double v, const gchar** pfx, double fac=10., int magshift=0) {
+        int mi;
+        static const gchar  *prefix[]    = { "a",  "f",   "p",   "n", UTF8_MU,   "m", "", "k", "M", "G", "T"  };
+        //                            a:0    f:1    p:2    n:3    mu:4    m:5   1:6 k:7  M:8  G:9  T:10
+        const double magnitude[]  = { 1e-18, 1e-15, 1e-12, 1e-9,  1e-6,   1e-3, 1., 1e3, 1e6, 1e9, 1e12 };
+        double x = fac*v;
+        if (fabs (x) < 1e-22){
+                mi=6;
+        } else {
+                double m = fabs (x*1e-3);
+                for (mi=0; mi<=10; ++mi)
+                        if (m < magnitude[mi])
+                                break;
+                if (mi>10)
+                        mi=10;
+        }
+        // g_print ("set_mag_get_base:: %g [x=%g]:[mi=%d]{%g}\n", v, x, mi, magnitude[mi]);
+        mi +=  magshift;
+        if (mi >= 0 && mi <= 10)
+                *pfx = prefix[mi];
+        else
+                *pfx = "?";
+        
+        return x/magnitude[mi]/fac;
+}
+
+
+
 void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl *gpcs){
-//	static GTimer* changed_delay = NULL;
 	if (!adj) return;
-//	if (!adj && changed_delay) { 
-//		g_timer_destroy (changed_delay); 
-//		changed_delay = NULL; 
-//		return;
-//	} // cleanup!
 
         //g_message ("PCS:adj-cb.  : %g  LGM=%d", gtk_adjustment_get_value (adj), gpcs->log_mode);
 
-        if (gpcs->log_mode < 0) return;
-        
-	switch (gpcs->log_mode){
-	case PARAM_CONTROL_LOG_MODE_OFF:
-                //                g_message ("Gtk_EntryControl::adjustment_callback ->  gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE) val=%g new_adj_val=%g [%s]", gpcs->Get_dValue (), gtk_adjustment_get_value (adj), gpcs->get_refname ());
-                gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE);
-                break;
-	case PARAM_CONTROL_LOG_MODE_LOG: {
-		double value  = gpcs->Get_dValue ();
-		double signum = value >= 0.? 1.:-1.;
-		double scale = fabs (gtk_adjustment_get_upper (adj)) / (pow (2.,fabs (gtk_adjustment_get_upper (adj)))-1.);
-		double a = signum * scale * (pow (2.,fabs(gtk_adjustment_get_value (adj)))-1.);
-		XSM_DEBUG (DBG_L6,
-                           "Gtk_EntryControl::adjustment_callback -- get adj[" << (gtk_adjustment_get_upper (adj))
-                           << "]: bv (ist)=" << value
-                           << " av(adj read)=" << (gtk_adjustment_get_value (adj))
-                           << " av2bv(new set)=" << a
-                           );
-		gpcs->Set_Parameter(a, TRUE, FALSE);
-//		gpcs->Set_Parameter(adj->value, TRUE, FALSE);
-	} break;
-	case PARAM_CONTROL_LOG_MODE_AUTO_RANGING: {
-                if (fabs (gtk_adjustment_get_value (adj)) < 0.5 && gtk_adjustment_get_upper (adj) > 1.0){
-                        gtk_adjustment_set_upper (adj, 1.0), gtk_adjustment_set_lower (adj,-1.0);
-                } else if (fabs (gtk_adjustment_get_value (adj)) < 4.0 && gtk_adjustment_get_upper (adj) > 3.0){
-		        gtk_adjustment_set_upper (adj, 3.0), gtk_adjustment_set_lower (adj, -3.0);
-		}
-		if (fabs (gtk_adjustment_get_value (adj)) > 0.99 && gtk_adjustment_get_upper (adj) < 3.0){
-		        gtk_adjustment_set_upper (adj, 3.0), gtk_adjustment_set_lower (adj, -3.0);
-		  } else if (fabs (gtk_adjustment_get_value (adj)) > 2.99 && gtk_adjustment_get_upper (adj) < gpcs->vMax){
-		        gtk_adjustment_set_upper (adj, gpcs->vMax), gtk_adjustment_set_lower (adj, gpcs->vMin);
-		    }
-		    //		vMin
-	    gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE);
-	    } break;
-	case PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE: { // vMin_warn
-                if (gpcs->page10 > 10.){ // warn set other than default (off)?
-                        double  v=gtk_adjustment_get_value (adj);
-                        double al=gtk_adjustment_get_lower (adj);
-                        double au=gtk_adjustment_get_upper (adj);
+        double  v=gtk_adjustment_get_value (adj);
 
-                        double l,r;
-                        l=r=0.;
-                        // value inside "Warn" Range, auto adjust
-                        if (al < gpcs->vMin_warn && au > gpcs->vMax_warn && v > gpcs->vMin_warn && v < gpcs->vMax_warn){
-                                gtk_adjustment_set_upper (adj, gpcs->vMax_warn), gtk_adjustment_set_lower (adj, gpcs->vMin_warn);
-                                l=gpcs->vMin_warn;
-                                r=gpcs->vMax_warn;
-                        }
-                        // value at edge(s) and Warn Range active, switch back to full scale
-                        if (fabs (al-gpcs->vMin_warn) < 1e-6 && fabs (au-gpcs->vMax_warn) < 1e-6
-                            && (fabs (v-gpcs->vMin_warn) < 1e-6 || fabs (v-gpcs->vMax_warn) < 1e-6)){
-                                gtk_adjustment_set_upper (adj, gpcs->vMax), gtk_adjustment_set_lower (adj, gpcs->vMin);
-                                l=gpcs->vMin;
-                                r=gpcs->vMax;
-                        }
-                        gpcs->calc_adj_log_gain ();
-                        gpcs->Set_Parameter (gpcs->adj_to_value (v), TRUE, FALSE);
-                        //g_message ("PCS:adj-cb.. : log_mode_auto_dual set paramerter %g -> val=%g", v, gpcs->adj_to_value (v));
-        
-                        if (l != 0. && r != 0.){
+        if (gpcs->adj_mode & PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE){
+                double al=gtk_adjustment_get_lower (adj);
+                double au=gtk_adjustment_get_upper (adj);
+
+                // value inside "Warn" Range, auto adjust
+                if (al < gpcs->vMin_warn && au > gpcs->vMax_warn && v > gpcs->vMin_warn && v < gpcs->vMax_warn)
+                        gtk_adjustment_set_upper (adj, gpcs->vMax_warn), gtk_adjustment_set_lower (adj, gpcs->vMin_warn);
+
+                // value at edge(s) and Warn Range active, switch back to full scale
+                if (fabs (al-gpcs->vMin_warn) < 1e-6 && fabs (au-gpcs->vMax_warn) < 1e-6
+                    && (fabs (v-gpcs->vMin_warn) < 1e-6 || fabs (v-gpcs->vMax_warn) < 1e-6))
+                        gtk_adjustment_set_upper (adj, gpcs->vMax), gtk_adjustment_set_lower (adj, gpcs->vMin);
+        }
+
+	if (gpcs->adj_mode & PARAM_CONTROL_ADJUSTMENT_LOG_MODE_MASK){
+                // LOG ADJUSTMENT MODE
+                gpcs->calc_adj_log_gain ();
+                gpcs->Set_Parameter (gpcs->adj_to_value (v), TRUE, FALSE);
+                //g_message ("PCS:adj-cb.. : log_mode_auto_dual set paramerter %g -> val=%g", v, gpcs->adj_to_value (v));
+ 
+                if (gpcs->adj_mode & PARAM_CONTROL_ADJUSTMENT_ADD_MARKS){
+                        double l=gtk_adjustment_get_lower (adj);
+                        double r=gtk_adjustment_get_upper (adj);
+
+                        if (gpcs->adj_current_limits[0] != l || gpcs->adj_current_limits[1] != r){
+                                gpcs->adj_current_limits[0] = l;
+                                gpcs->adj_current_limits[1] = r;
+
                                 if (gpcs->opt_scale){
                                         gtk_scale_clear_marks (GTK_SCALE (gpcs->opt_scale));
                                         gtk_scale_add_mark (GTK_SCALE (gpcs->opt_scale), 0, GTK_POS_BOTTOM, "0");
                                         double Lab0 = pow (10., floor (log10 (gpcs->log_min)));
-                                        double MaxLab = fabs(l);
-                                        for (int s=-1; s<=1; s+=2) {
+                                        double MaxLab = fabs(r);
+                                        for (int s = (gpcs->adj_mode & PARAM_CONTROL_ADJUSTMENT_LOG_SYM) ? -1 : 1; s<=1; s+=2) {
                                                 double l10 = Lab0;
                                                 double Lab = l10;
                                                 double signum = s;
@@ -705,9 +696,9 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                                                                         gtk_scale_add_mark (GTK_SCALE (gpcs->opt_scale), v, GTK_POS_BOTTOM, NULL);
                                                                 }
                                                                 else{
-                                                                        gchar *tmp = g_strdup_printf ("<span size=\"x-small\">%g%s</span>",
-                                                                                                      signum*(Lab<0.1? 1000.*Lab : Lab),
-                                                                                                      (Lab<0.1 ? "m":""));
+                                                                        const gchar *pfx=NULL;
+                                                                        double lp = pcs_mag_base (Lab, &pfx, 10., 0);
+                                                                        gchar *tmp = g_strdup_printf ("<span size=\"x-small\">%g%s</span>", signum*lp, pfx);
                                                                         //g_message ("%d: %s %g %g @adv= %g", i, tmp, signum, Lab, v);
                                                                         gtk_scale_add_mark (GTK_SCALE (gpcs->opt_scale), v, GTK_POS_BOTTOM, tmp);
                                                                         g_free (tmp);
@@ -719,26 +710,20 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                                 }
                         }
                 }
-                else{
-                        double  v=gtk_adjustment_get_value (adj);
-                        double al=gtk_adjustment_get_lower (adj);
-                        double au=gtk_adjustment_get_upper (adj);
-                        double l,r;
-                        l=r=0.;
-                        // value inside "Warn" Range, auto adjust
-                        if (al < gpcs->vMin_warn && au > gpcs->vMax_warn && v > gpcs->vMin_warn && v < gpcs->vMax_warn){
-                                gtk_adjustment_set_upper (adj, gpcs->vMax_warn), gtk_adjustment_set_lower (adj, gpcs->vMin_warn);
-                                l=gpcs->vMin_warn;
-                                r=gpcs->vMax_warn;
-                        }
-                        // value at edge(s) and Warn Range active, switch back to full scale
-                        if (fabs (al-gpcs->vMin_warn) < 1e-6 && fabs (au-gpcs->vMax_warn) < 1e-6
-                            && (fabs (v-gpcs->vMin_warn) < 1e-6 || fabs (v-gpcs->vMax_warn) < 1e-6)){
-                                gtk_adjustment_set_upper (adj, gpcs->vMax), gtk_adjustment_set_lower (adj, gpcs->vMin);
-                                l=gpcs->vMin;
-                                r=gpcs->vMax;
-                        }
-                        if (l != 0. && r != 0.){
+        } else {
+                // LINEAR ADJUSTMENT MODE
+                //g_message ("Gtk_EntryControl::adjustment_callback ->  gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE) val=%g new_adj_val=%g [%s]", gpcs->Get_dValue (), gtk_adjustment_get_value (adj), gpcs->get_refname ());
+
+                gpcs->Set_Parameter (v, TRUE, FALSE);
+
+                if (gpcs->adj_mode & PARAM_CONTROL_ADJUSTMENT_ADD_MARKS){
+                        double l=gtk_adjustment_get_lower (adj);
+                        double r=gtk_adjustment_get_upper (adj);
+
+                        if (gpcs->adj_current_limits[0] != l ||  gpcs->adj_current_limits[1] != r){
+                                gpcs->adj_current_limits[0] = l;
+                                gpcs->adj_current_limits[1] = r;
+
                                 if (gpcs->opt_scale){
                                         gtk_scale_clear_marks (GTK_SCALE (gpcs->opt_scale));
                                         double tic_w = r-l;
@@ -747,7 +732,9 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                                         for(double x=AutoNext (tic_0, d_tic); x < r; x += d_tic){
                                                 if (fabs(x/d_tic) < 1e-3)
                                                         x=0.;
-                                                gchar *tmp = g_strdup_printf("<span size=\"x-small\">%g</span>", x);
+                                                const gchar *pfx=NULL;
+                                                double lp = pcs_mag_base (x, &pfx, 10., 0);
+                                                gchar *tmp = g_strdup_printf ("<span size=\"x-small\">%g%s</span>", lp, pfx);
                                                 gtk_scale_add_mark (GTK_SCALE (gpcs->opt_scale), x, GTK_POS_BOTTOM, tmp);
                                                 g_free (tmp);
                                                 if (x+d_tic/2 < r)
@@ -755,13 +742,9 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                                         }
                                 }
                         }
-                        gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE);
                 }
-        } break;
-        default:
-                gpcs->Set_Parameter (gtk_adjustment_get_value (adj), TRUE, FALSE);
-                break;
-	}
+        }
+
         //g_message ("PCS:adj-cb.... end.");
 }
 
@@ -819,44 +802,12 @@ void Gtk_EntryControl::Put_Value(){
                 // skip self callbacks while reconfiguring
                 g_signal_handler_block (G_OBJECT (adj), adjcb_handler_id);
 
-		switch (log_mode){
-                case PARAM_CONTROL_LOG_MODE_LOG: {
-			double value = unit->Usr2Base (Get_dValue ());
-			double scale = fabs (gtk_adjustment_get_upper (GTK_ADJUSTMENT(adj))) / (pow (2.,fabs(gtk_adjustment_get_upper (GTK_ADJUSTMENT(adj))))-1.);
-			double v = log (1. + fabs(value) / scale) / log (2.);
-
-                     
-			gtk_adjustment_set_lower (GTK_ADJUSTMENT (adj), 0.);
-                        XSM_DEBUG (DBG_L5,
-                                   "put adj[" << (gtk_adjustment_get_upper (GTK_ADJUSTMENT(adj)))
-                                   << "]: bv=" << value
-                                   << " av=" << v
-                                   );
-			gtk_adjustment_set_value(GTK_ADJUSTMENT(adj), v);
-//			gtk_adjustment_set_value(GTK_ADJUSTMENT(adj), unit->Usr2Base(Get_dValue()));
-
-			double a = scale * (pow (2.,fabs(value))-1.);
-                        XSM_DEBUG (DBG_L5,
-                                   "Compute Fwd (" << value << ") = " << a
-                                   );
-			v = log (1. + fabs(a) / scale) / log (2.);
-                        XSM_DEBUG (DBG_L5,
-                                   "Compute Rev (" << a << ") = " << v
-                                   );
-
-		} break;
-                case PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE:
-                        if (page10 > 10.){ // use log?
-                                calc_adj_log_gain ();
-                                gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), value_to_adj (unit->Usr2Base (Get_dValue ())));
-                                //g_message ("PCS:put-value w adj... log uv:%g -> adjv:%g", unit->Usr2Base (Get_dValue ()),value_to_adj (unit->Usr2Base (Get_dValue ())));
-                        } else {
-                                gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), unit->Usr2Base (Get_dValue()));
-                        }
-                        break;
-                default: // PARAM_CONTROL_LOG_MODE_AUTO_RANGING, PARAM_CONTROL_LOG_MODE_OFF
-			gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), unit->Usr2Base (Get_dValue()));
-                        break;
+                if (adj_mode & PARAM_CONTROL_ADJUSTMENT_LOG_MODE_MASK){
+                        calc_adj_log_gain ();
+                        gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), value_to_adj (unit->Usr2Base (Get_dValue ())));
+                        //g_message ("PCS:put-value w adj... log uv:%g -> adjv:%g", unit->Usr2Base (Get_dValue ()),value_to_adj (unit->Usr2Base (Get_dValue ())));
+                } else {
+                        gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), unit->Usr2Base (Get_dValue()));
                 }
 
                 g_signal_handler_unblock (G_OBJECT (adj), adjcb_handler_id);
