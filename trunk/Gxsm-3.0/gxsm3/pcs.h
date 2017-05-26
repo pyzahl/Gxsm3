@@ -77,10 +77,13 @@ private:
 
 class Param_Control;
 
-#define PARAM_CONTROL_LOG_MODE_OFF              0  // normal scale
-#define PARAM_CONTROL_LOG_MODE_AUTO_RANGING     1  // auto scale limits adjusting on magnitude
-#define PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE  2  // dual range scale limits auto adjusting between full range and "warn" range
-#define PARAM_CONTROL_LOG_MODE_LOG              3  // full range, log
+#define PARAM_CONTROL_ADJUSTMENT_LINEAR         0  // plain linear scale
+#define PARAM_CONTROL_ADJUSTMENT_LOG            1  // log scale, log_min = +lower-limit ... +upper-limit
+#define PARAM_CONTROL_ADJUSTMENT_LOG_SYM        2  // log scale, -upper-limit .. +/-log_min=lower_limit (=0) .. +upper_limit
+#define PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE     4  // auto dual ranging -- defined by warning limits
+#define PARAM_CONTROL_ADJUSTMENT_ADD_MARKS      8  // add tick marks
+
+#define PARAM_CONTROL_ADJUSTMENT_LOG_MODE_MASK  (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_LOG_SYM)
 
 // Objekt fuer Parameter Ein/Ausgabeberwachung und Formatierung
 class Param_Control{
@@ -97,7 +100,14 @@ class Param_Control{
 	void setMin(double VMi, double Vmin_warn = -1e111, const gchar* w_color=NULL);
 	void set_exclude(double V_ex_lo = 1e111, double V_ex_hi = 1e111);
 	void set_info (const gchar* Info);
-	void set_log (int b) { log_mode = b; };
+	void set_adjustment_mode (int m, int magprefixshift = 0) {
+                mag_prefix_shift = magprefixshift;
+                // reset limits
+                adj_current_limits[0]=0.;
+                adj_current_limits[1]=0.;
+                // set new mode
+                adj_mode = m;
+        };
 
 	virtual void update_limits() {};
 	void changeUnit(UnitObj *U){ unit = U; };
@@ -181,8 +191,10 @@ class Param_Control{
 	gchar *refname;
 	gchar *prec;
 	gchar *info;
-	int   log_mode;
+	int   mag_prefix_shift;
+	int   adj_mode;
         double log_min;
+        double adj_current_limits[2];
 	//Warning types: 1 = max/min limit
 	//               2 = exclude range
 	double new_value;	//in the case of a warning this value keeps the current input
@@ -285,7 +297,7 @@ class Gtk_EntryControl : public Param_Control{
                 }
         };        
         double adj_to_value (double av) {
-                if (log_mode && adj){
+                if ((adj_mode & PARAM_CONTROL_ADJUSTMENT_LOG_MODE_MASK) && adj){
                         double signum = av >= 0.? 1.:-1.;
                         return signum * log_min * pow (10., fabs (gain*av));
                 }
@@ -293,7 +305,7 @@ class Gtk_EntryControl : public Param_Control{
         };
 
         double value_to_adj (double v) {
-                if (log_mode && adj){
+                if ((adj_mode & PARAM_CONTROL_ADJUSTMENT_LOG_MODE_MASK) && adj){
                         double signum = v >= 0.? 1.:-1.;
                         if (fabs (v) < log_min)
                                 return  0.;
@@ -367,7 +379,7 @@ class Gtk_EntryControl : public Param_Control{
         virtual void get_init_value_from_settings (int array_flag=false);
         virtual void update_value_in_settings (int array_flag=false);
 
- private:
+private:
 	void InitRegisterCb(double AdjStep, double AdjPage, double AdjProg);
 
 	GtkWidget *entry, *extra, *opt_scale;

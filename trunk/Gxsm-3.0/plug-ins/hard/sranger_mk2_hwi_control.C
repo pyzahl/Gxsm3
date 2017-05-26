@@ -1303,16 +1303,16 @@ DSPControl::DSPControl () {
         dsp_bp->start (); // start on grid top and use widget grid attach nx=4
         dsp_bp->set_scale_nx (4); // set scale width to 4
         dsp_bp->set_input_width_chars (10);
-        dsp_bp->grid_add_ec_with_scale ("Bias", Volt, &bias, -10., 10., "5g", 0.001, 0.01, "fbs-bias");
-        dsp_bp->ec->set_log (PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE);
+        dsp_bp->grid_add_ec_with_scale ("Bias", Volt, &bias, -10., 10., "4g", 0.001, 0.01, "fbs-bias");
+        dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_LOG_SYM | PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
         dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
         dsp_bp->ec->set_logscale_min (1e-3);
         gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
         dsp_bp->new_line ();
 
         dsp_bp->set_configure_list_mode_on ();
-        dsp_bp->grid_add_ec_with_scale ("Motor", Volt, &motor, -10., 10., "5g", 0.001, 0.01, "fbs-motor");
-        dsp_bp->ec->set_log (PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE);
+        dsp_bp->grid_add_ec_with_scale ("Motor", Volt, &motor, -10., 10., "4g", 0.001, 0.01, "fbs-motor");
+        dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LINEAR | PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
         dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
         dsp_bp->ec->set_logscale_min (1e-3);
         gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
@@ -1374,8 +1374,8 @@ DSPControl::DSPControl () {
                 } else {
                         dsp_bp->grid_add_label (mixer_channel_label[ch]);
                 }
-                dsp_bp->grid_add_ec_with_scale (NULL, mixer_unit[ch], &mix_set_point[ch], 0.0, 50., "5g", 0.001, 0.01, mixer_remote_id_set[ch]);
-                dsp_bp->ec->set_log (PARAM_CONTROL_LOG_MODE_AUTO_DUAL_RANGE);
+                dsp_bp->grid_add_ec_with_scale (NULL, mixer_unit[ch], &mix_set_point[ch], 0.0, 50., "4g", 0.001, 0.01, mixer_remote_id_set[ch]);
+                dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
                 dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
                 dsp_bp->ec->set_logscale_min (1e-4);
                 gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
