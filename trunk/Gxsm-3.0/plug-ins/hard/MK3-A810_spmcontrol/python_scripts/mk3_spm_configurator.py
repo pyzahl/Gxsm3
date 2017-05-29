@@ -560,8 +560,6 @@ class SignalScope():
 				self.run_button.set_label("RUN")
 			else:
 				self.restart_func ()
-				self.run = gtk.TRUE
-				self.run_button.set_label("STOP")
 
                                 [Xsignal, Xdata, Offset] = parent.mk3spm.query_module_signal_input(DSP_SIGNAL_SCOPE_SIGNAL1_INPUT_ID)
                                 [Ysignal, Ydata, Offset] = parent.mk3spm.query_module_signal_input(DSP_SIGNAL_SCOPE_SIGNAL2_INPUT_ID)
@@ -570,13 +568,16 @@ class SignalScope():
                                 period = int(2.*self.block_length/150.)
 				if period < timeout_min_recorder:
 					period = timeout_min_recorder
-				gobject.timeout_add (period, update_scope, scope, Xsignal, Ysignal, Xscale.get_text, Yscale.get_text, Xoff.get_text, Yoff.get_text, Samples.get_text, labx0.set_text, laby0.set_text)
+
 				if self.mode < 2: 
+				        self.run_button.set_label("STOP")
 					self.run = gtk.TRUE
 				else:
-					self.run_button.set_label("WAITING")
+					self.run_button.set_label("ARMED")
+			                parent.mk3spm.set_recorder (self.block_length, self.trigger, self.trigger_level)
 					self.run = gtk.FALSE
 
+				gobject.timeout_add (period, update_scope, scope, Xsignal, Ysignal, Xscale.get_text, Yscale.get_text, Xoff.get_text, Yoff.get_text, Samples.get_text, labx0.set_text, laby0.set_text)
 
 		def toggle_trigger (b):
 			if self.trigger == 0:
@@ -594,18 +595,22 @@ class SignalScope():
 		def toggle_mode (b):
 			if self.mode == 0:
 				self.mode = 1
-				self.mode_button.set_label("M: Auto")
+				self.ss = 0
+				self.mode_button.set_label("T-Auto")
 			else:
 				if self.mode == 1:
 					self.mode = 2
-					self.mode_button.set_label("M: Normal")
+					self.ss = 0
+					self.mode_button.set_label("T-Normal")
 				else:
 					if self.mode == 2:
 						self.mode = 3
-						self.mode_button.set_label("M: Single")
+						self.ss = 1
+						self.mode_button.set_label("T-Single")
 					else:
 						self.mode = 0
-						self.mode_button.set_label("M: Free")
+						self.ss = 0
+						self.mode_button.set_label("T-Free")
 
 		self.run_button = gtk.Button("STOP")
 #		self.run_button.set_use_stock(gtk.TRUE)
