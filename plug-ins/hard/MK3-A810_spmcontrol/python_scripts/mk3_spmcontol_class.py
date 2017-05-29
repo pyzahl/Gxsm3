@@ -1073,7 +1073,7 @@ fmt_hr_mask = "<llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll
 i_recorder = 25
 fmt_recorder = "<lllLLLLL"
 [
-	ii_recorder_starmt,
+	ii_recorder_start,
 	ii_recorder_stop,
 	ii_recorder_pflg,
 	ii_pSignal1,
@@ -1955,9 +1955,23 @@ class SPMcontrol():
 	###define SRANGER_MK23_SEEK_IO_SPACE    4 // default mode
 
 	def set_recorder(self, n, trigger=0, trigger_level=0):
-		self.write_o(i_recorder, ii_recorder_stop, struct.pack ("<ll", round(trigger_level), trigger))
+                print "set_recorder:",  n, trigger, trigger_level
+		self.write_o(i_recorder, ii_recorder_stop, struct.pack ("<ll", int(round(trigger_level)), int(trigger)))
 		self.write_parameter(self.RECORDER_VARS[ii_blcklen], struct.pack ("<l", n-1), 1)
 
+		sr = open (self.sr_dev_path, "wb")
+	        os.lseek (sr.fileno(), self.magic[i_recorder], 0)
+		os.write (sr.fileno(), struct.pack ("<lll", 0, int(round(trigger_level)), int(trigger)))
+                sr.close ()
+	
+		sr = open (self.sr_dev_path, "rw")
+		os.lseek (sr.fileno(), self.magic[i_recorder], 0)
+		tmp = struct.unpack (fmt_recorder, os.read (sr.fileno(), struct.calcsize (fmt_recorder)))
+                print "verify:", tmp
+
+                sr.close ()
+                
+                
 	def check_recorder_ready(self):
 		sr = open (self.sr_dev_path, "rb")
 		os.lseek (sr.fileno(), self.RECORDER_VARS[ii_blcklen], 1)
