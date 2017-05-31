@@ -402,6 +402,10 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 	}
 	case DSP_CMD_APPROCH_MOV_XP: // auto approch "Mover"
 	{
+		static AUTOAPPROACH dsp_aap;
+		dsp_aap.start = int_2_sranger_int(1);           /* Initiate =WO */
+		dsp_aap.stop  = int_2_sranger_int(0);           /* Cancel   =WO */
+
 		if (DSPMoverClass->mover_param.MOV_mode & AAP_MOVER_WAVE){
 			// create, convert and download waveform(s) to DSP
 			DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
@@ -412,9 +416,6 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 			lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 			sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
 		}
-		static AUTOAPPROACH dsp_aap;
-		dsp_aap.start = int_2_sranger_int(1);           /* Initiate =WO */
-		dsp_aap.stop  = int_2_sranger_int(0);           /* Cancel   =WO */
 
                 gint channels = 1;
                 switch (DSPMoverClass->mover_param.MOV_waveform_id){
@@ -423,6 +424,11 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
                 default: channels = 1; break;
                 }
                 // wave play setup for auto approach
+
+                // counter setup -- optional, not essential for stepping, only for keeping a count for up to 3 axis
+		dsp_aap.dir  = int_2_sranger_int (1); // arbitrary direction, assume +1 for approaching direction -- only for counter increment/decement
+                dsp_aap.axis = int_2_sranger_int (2); // arbitrary assignmet for counter: 2=Z axis        
+
 		// configure wave[0,1,...] out channel destination
 		dsp_aap.n_wave_channels    = int_2_sranger_int (channels); /* number wave channels -- up top 6, must match wave data */
                 for (int i=0; i<channels; ++i) // multi channel wave -- test on "X"
@@ -443,9 +449,6 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
                 //**** dsp_feedback.ci = float_2_sranger_q15 (0.01 * z_servo[SERVO_CI] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
                 dsp_aap.n_wait      = int_2_sranger_int((int)(DSPControlClass->frq_ref*1e-3*DSPMoverClass->mover_param.final_delay));                     /* delay inbetween cycels */
 		dsp_aap.n_wait_fin  = long_2_sranger_long((int)(DSPControlClass->frq_ref*1e-3*DSPMoverClass->mover_param.max_settling_time));                     /* delay inbetween cycels */
-                // counter setup -- optional, not essential for stepping, only for keeping a count for up to 3 axis
-		dsp_aap.axis = int_2_sranger_int (2); // arbitrary assignmet for counter: 2=Z axis
-		dsp_aap.dir  = int_2_sranger_int (1); // arbitrary direction, assume +1 for approaching direction -- only for counter increment/decement
 
                 lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_aap,  MAX_WRITE_AUTOAPPROACH<<1); 
