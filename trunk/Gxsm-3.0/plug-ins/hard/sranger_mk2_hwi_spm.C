@@ -445,7 +445,7 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 		dsp_aap.wave_speed      = int_2_sranger_int (DSPMoverClass->mover_param.MOV_wave_speed_fac);     /* Wave Speed (hold number per step) */
 
                 // auto app parameters
-		dsp_aap.ci_retract  = float_2_sranger_q15 (0.1 * DSPControlClass->z_servo[SERVO_CI] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ()); // CI setting for reversing Z (retract)
+		dsp_aap.ci_retract  = float_2_sranger_q15 (0.1 * DSPMoverClass->mover_param.retract_ci / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ()); // CI setting for reversing Z (retract)
                 //**** dsp_feedback.ci = float_2_sranger_q15 (0.01 * z_servo[SERVO_CI] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
                 dsp_aap.n_wait      = int_2_sranger_int((int)(DSPControlClass->frq_ref*1e-3*DSPMoverClass->mover_param.final_delay));                     /* delay inbetween cycels */
 		dsp_aap.n_wait_fin  = long_2_sranger_long((int)(DSPControlClass->frq_ref*1e-3*DSPMoverClass->mover_param.max_settling_time));                     /* delay inbetween cycels */
