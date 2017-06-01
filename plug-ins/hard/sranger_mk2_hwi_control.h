@@ -196,6 +196,7 @@ typedef struct{
 	short MOV_waveform[MOV_MAXWAVELEN];
 	double final_delay;
 	double max_settling_time;
+        double retract_ci;
 	double inch_worm_phase;
 	double Wave_space;
         int GPIO_on, GPIO_off, GPIO_reset, GPIO_scan, GPIO_tmp1, GPIO_tmp2, GPIO_direction;
