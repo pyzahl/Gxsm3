@@ -804,32 +804,15 @@ void DSPMoverControl::create_folder (){
 			gtk_widget_set_tooltip_text (mov_bp->input, "Wave form spacing ");
                         mov_bp->new_line ();
 
-			mov_bp->grid_add_ec ("IW Phase", Phase, &mover_param.inch_worm_phase, 0., 360., "3.0f", 1., 60., "IW-Phase");
+			mov_bp->grid_add_ec ("Phase", Phase, &mover_param.inch_worm_phase, 0., 360., "3.0f", 1., 60., "IW-Phase");
 			gtk_widget_set_tooltip_text (mov_bp->input,
-                                                     "For Inch Worm mode set > 0 to specify phase.\n"
-                                                     "Set this to Zero (0) for regular output separated by X|Y modes.\n"
-                                                     "Else wave form is output on [X,Y] or [X0,Y0] with phase.");
-
-                        // ==== auto
+                                                     "Generic Phase value mnay be used by custom wave form generation.\n"
+                                                     "Used by KOALA, ..\n");
                         mov_bp->pop_grid ();
-                        mov_bp->new_line ();
 
-                        mov_bp->new_grid_with_frame ("Auto Approach Timings and IW Phase");
-
-			mov_bp->grid_add_ec("Delay", Time, &mover_param.final_delay, 0., 430., "4.1f", 1., 10., "Auto-App-Delay");
-			gtk_widget_set_tooltip_text (mov_bp->input, "Auto Approach Delay: IVC recovery delay after step series\nfired for auto approach.");
-
-                        mov_bp->new_line ();
-			mov_bp->grid_add_ec("Max Settling Time", Time, &mover_param.max_settling_time, 0., 10000., "6.1f", 1., 10., "Auto-App-Max-Settling-Time");
-			gtk_widget_set_tooltip_text (mov_bp->input, "Auto Approach Max Settlings Time: max allowed time to settle for feedback\nbefore declaring it to be finished.\n(max allowed time/cycle for FB-delta>0)");
-
-                        mov_bp->new_line ();
-			mov_bp->grid_add_ec("Retract CI", Unity, &mover_param.retract_ci, 0., 500., "5.1f", 1., 10., "Auto-App-Retract-CI");
-			gtk_widget_set_tooltip_text (mov_bp->input, "Auto Approach Retract CI: Feeback CI used in inverse mode for retract tip, start with regular CI");
-
-                        // ==================================================
+                        
+                        // ======================================== Wave Output Setup ========================================
                         radiobutton = NULL; // start new radiobuttion group
-                        mov_bp->pop_grid ();
 			mov_bp->new_grid_with_frame ("Output on");
 
 			if (DSPPACClass){
@@ -918,7 +901,32 @@ void DSPMoverControl::create_folder (){
    			g_signal_connect (G_OBJECT (radiobutton), "clicked",
                                           G_CALLBACK (DSPMoverControl::config_output), this);
                         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton),  (mover_param.MOV_output == AAP_MOVER_PULSE) ? 1:0);
+
+                        mov_bp->pop_grid ();
+
+                        
+                        // ======================================== Auto Approach Timings ========================================
                         mov_bp->new_line ();
+
+                        mov_bp->new_grid_with_frame ("Auto Approach Timings");
+
+			mov_bp->grid_add_ec("Delay", Time, &mover_param.final_delay, 0., 430., "4.1f", 1., 10., "Auto-App-Delay");
+			gtk_widget_set_tooltip_text (mov_bp->input, "Auto Approach Delay: IVC recovery delay after step series\nfired for auto approach.");
+
+                        mov_bp->new_line ();
+			mov_bp->grid_add_ec("Max Settling Time", Time, &mover_param.max_settling_time, 0., 10000., "6.1f", 1., 10., "Auto-App-Max-Settling-Time");
+			gtk_widget_set_tooltip_text (mov_bp->input, "Auto Approach Max Settlings Time: max allowed time to settle for feedback\nbefore declaring it to be finished.\n(max allowed time/cycle for FB-delta>0)");
+
+                        mov_bp->new_line ();
+			mov_bp->grid_add_ec("Retract CI", Unity, &mover_param.retract_ci, 0., 500., "5.1f", 1., 10., "Auto-App-Retract-CI");
+			gtk_widget_set_tooltip_text (mov_bp->input, "Auto Approach Retract CI: Feeback CI used in inverse mode for retract tip, start with regular CI");
+
+                        mov_bp->pop_grid ();
+
+
+                        // ======================================== GPIO ========================================
+                        //mov_bp->new_line ();
+			mov_bp->new_grid_with_frame ("GPIO Configuration");
 
 			mov_bp->grid_add_ec ("GPIO Pon", Hex, &mover_param.GPIO_on, 0x0000, 0xffff, "04X", "GPIO-on");
 			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_on", GINT_TO_POINTER (i));
