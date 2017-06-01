@@ -1405,10 +1405,16 @@
       <description>pcs0000, PCS Remote-ID: 'dspmover-config-Auto-App-Delay', Default/U: 50.0 ms    , Adjustment PCS Name: 'dspmover-config-Auto-App-Delay' </description>
     </key>
 
-    <key name="dspmover-config-auto-app-max-setting-time" type="d">
+    <key name="dspmover-config-auto-app-max-settling-time" type="d">
       <default>1000</default>
-      <summary>PCS Remote-ID: 'dspmover-config-Auto-App-Max-Setting-Time', Default/U: 1000.0 ms     </summary>
-      <description>pcs0000, PCS Remote-ID: 'dspmover-config-Auto-App-Max-Setting-Time', Default/U: 1000.0 ms    , Adjustment PCS Name: 'dspmover-config-Auto-App-Max-Setting-Time' </description>
+      <summary>PCS Remote-ID: 'dspmover-config-Auto-App-Max-Settling-Time', Default/U: 1000.0 ms     </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-config-Auto-App-Max-Settling-Time', Default/U: 1000.0 ms    , Adjustment PCS Name: 'dspmover-config-Auto-App-Max-Settling-Time' </description>
+    </key>
+
+    <key name="dspmover-config-auto-app-retract-ci" type="d">
+      <default>150</default>
+      <summary>PCS Remote-ID: 'dspmover-config-Auto-App-Retract-CI', Default/U: 150.0     </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-config-Auto-App-Retract-CI', Default/U: 150    , Adjustment PCS Name: 'dspmover-config-Auto-App-Retract-CI' </description>
     </key>
   </schema>
 
