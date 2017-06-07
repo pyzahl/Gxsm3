@@ -1189,16 +1189,17 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                 double bar_len;
                 double bar_width=16.;
                 double bar_d=5.;
-
+                double ap=wx/wy;
+                
                 // x-bar
                 cairo_save (cr);
-                cairo_scale (cr, wx/400., wy/400.);
+                cairo_scale (cr, wx/400., ap*wy/400.);
                 cairo_set_line_width (cr, 3.);
                 cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, 0.66);
-                cairo_rectangle (cr, 0.,0., 400., 400.);
+                cairo_rectangle (cr, 0.,0., 400., ap/400.);
                 cairo_stroke(cr);
                 
-                cairo_translate (cr, 30., 370.);
+                cairo_translate (cr, 30., 400./ap-30.);
 
                 if (vc->legend_items_code[2] == 'x'){ // ==??x?bar
                         double r,g,b;
@@ -1227,13 +1228,9 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                 // z-color-bar
                 bar_len=140.;
                 cairo_save (cr);
-                cairo_scale (cr, wx/400., wy/400.);
-                cairo_set_line_width (cr, 3.);
-                cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, 0.66);
-                cairo_rectangle (cr, 0.,0., 400., 400.);
-                cairo_stroke(cr);
+                cairo_scale (cr, wx/400., ap*wy/400.);
                 
-                cairo_translate (cr, 250., 370.);
+                cairo_translate (cr, 250., 400./ap-30.);
                 if (vc->legend_items_code[0] == 'z'){ // ==z???bar
                         double r,g,b;
                         gint bars = bar_len/bar_d;
