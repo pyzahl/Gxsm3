@@ -736,7 +736,6 @@ thumbnailers/Makefile
 pixmaps/Makefile
 icons/Makefile
 po/Makefile.in
-gxsm3.pc
 data/Makefile
 ])
 
