@@ -1322,20 +1322,11 @@ ec_gtk_spin_button_sci_output (GtkSpinButton *spin_button)
                 Gtk_EntryControl *ec = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (spin_button), "Gtk_EntryControl");
                 if (ec){
                         gchar *buf = ec->Get_UsrString();
-                        //g_message ("spin output.  : %s", buf);
-
-                        //gchar *err = NULL;
-                        //double new_val = g_strtod (buf, &err);
-                        //g_free (buf);
-                        //ec->calc_adj_log_gain ();
-                        //new_val = (gdouble)ec->adj_to_value (ec->Convert2Base (new_val));
-                        //buf = g_strdup_printf ("%g", new_val);
+                        // g_message ("spin_button_sci_output: usr_string={%s} spin_button={%s} dval=%g", buf, gtk_entry_get_text (GTK_ENTRY (spin_button)), ec->Get_dValue());
                         
-                        if (strcmp (buf, gtk_entry_get_text (GTK_ENTRY (spin_button)))){
-                                //g_message ("spin output.. : %s", buf);
+                        if (strcmp (buf, gtk_entry_get_text (GTK_ENTRY (spin_button))))
                                 gtk_entry_set_text (GTK_ENTRY (spin_button), buf);
-                                return TRUE;
-                        }
+                        
                         g_free (buf);
                         return TRUE;
                 } else {
@@ -1355,12 +1346,12 @@ ec_gtk_spin_button_sci_input (GtkSpinButton *spin_button,
 	gchar *err = NULL;
         Gtk_EntryControl *ec = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (spin_button), "Gtk_EntryControl");
 	*new_val = g_strtod (gtk_entry_get_text (GTK_ENTRY (spin_button)), &err);
-        //g_message ("spin input.  : v=%g", *new_val);
-        //ec->calc_adj_log_gain ();
-        //ec->value_to_adj (ec->Convert2Base (*new_val));
+        // g_message ("spin input.  : v=%g", *new_val);
 
 	*new_val = (gdouble)ec->Convert2Base (*new_val);
-        //g_message ("spin input.. : --> %g", *new_val);
+        // g_message ("spin input.. : --> %g", *new_val);
+
+        //gtk_spin_button_set_value (spin_button,  ec->Get_dValue());
         
 	if (*err)
 		return GTK_INPUT_ERROR;
@@ -1445,7 +1436,7 @@ void Gtk_EntryControl::InitRegisterCb(double AdjStep, double AdjPage, double Adj
                                                                 G_CALLBACK (&ec_gtk_spin_button_sci_input),
                                                                 (gpointer) NULL);
                         gtk_spin_button_configure (GTK_SPIN_BUTTON (entry), 
-                                                   GTK_ADJUSTMENT (adj), progressive, step < 0.1 ? (int)(floor(-log(step))+1) : 0);
+                                                   GTK_ADJUSTMENT (adj), progressive, step < 1.0 ? (int)(floor(-log(step))+1) : 1);
 		}
 	}
         XSM_DEBUG (DBG_L8, "InitRegisterCb -- done.");
