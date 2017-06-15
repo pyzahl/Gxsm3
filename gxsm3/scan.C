@@ -609,8 +609,8 @@ void Scan::start(int l, double lv){
 	mem2d->add_layer_information (new LayerInformation ("Frame-Start",ctime(&t))); // Date for frame start (now)
 	mem2d->add_layer_information (new LayerInformation ("X-size original", data.s.rx, "Rx: %5.1f \303\205"));
 	mem2d->add_layer_information (new LayerInformation ("Y-size original", data.s.ry, "Ry: %5.1f \303\205"));
-	mem2d->add_layer_information (new LayerInformation ("SetPoint", gapp->xsm->data.s.SetPoint, "%5.2f V"));
-	mem2d->add_layer_information (new LayerInformation ("ZSetPoint", gapp->xsm->data.s.ZSetPoint, "%5.2f  \303\205"));
+	mem2d->add_layer_information (new LayerInformation ("SetPoint", data.s.SetPoint, "%5.2f V"));
+	mem2d->add_layer_information (new LayerInformation ("ZSetPoint XXX", data.s.ZSetPoint, "%5.2f  \303\205"));
 
 	Running = 1;
 }
