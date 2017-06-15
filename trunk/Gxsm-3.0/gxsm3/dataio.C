@@ -334,8 +334,10 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 			scan->mem2d->add_layer_information (new LayerInformation ("Y-size", scan->data.s.ry, "Ry: %5.1f \303\205"));
 			if (IS_AFM_CTRL)
 				scan->mem2d->add_layer_information (new LayerInformation ("SetPoint", scan->data.s.SetPoint, "%5.2f V"));
-			else
+			else{
 				scan->mem2d->add_layer_information (new LayerInformation ("Current", scan->data.s.Current, "%5.2f nA"));
+                                scan->mem2d->add_layer_information (new LayerInformation ("Current", gapp->xsm->data.s.Current*1000, "%5.1f pA"));
+                        }
 		}
 
 		if (ntimes_tmp > 1){ // do not do this if only one time dim.
@@ -527,6 +529,13 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 	NC_GET_VARIABLE ("sranger_hwi_bias", &scan->data.s.Bias);
         NC_GET_VARIABLE ("sranger_hwi_voltage_set_point", &scan->data.s.SetPoint);
         NC_GET_VARIABLE ("sranger_hwi_current_set_point", &scan->data.s.Current);
+        NC_GET_VARIABLE ("sranger_mk2_hwi_mix0_set_point", &scan->data.s.Current);
+        NC_GET_VARIABLE ("sranger_mk2_hwi_z_setpoint", &scan->data.s.ZSetPoint);
+        scan->mem2d->add_layer_information (new LayerInformation ("CZ SetPoint", scan->data.s.ZSetPoint, "%5.2f  \303\205"));
+
+        //NC_GET_VARIABLE ("sranger_mk2_hwi_motor", &scan->data.s.motor);
+        //NC_GET_VARIABLE ("sranger_mk2_hwi_pll_reference", &scan->data.s.pllref);
+
 #endif
 	gapp->progress_info_set_bar_text ("Finishing", 2);
 	gapp->progress_info_set_bar_fraction (1., 1);

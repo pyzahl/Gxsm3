@@ -2015,6 +2015,8 @@ double calculate_apex_probe_and_probe_model_forces (LJ_calc_params *param, const
                 sub_from_vec (R, P);  // R := R_atom - P
                 // if (norm_vec (R) < R_LJF_cutoff){ // generating atrifacts
                 //g_message ("calculate_apex_probe_and_probe_model_forces:: lj_force[%d]",n);
+                //g_message ("m[%d]=%d",n, m[n].N);
+                //g_message ("LJp-AB0=%g, LJp_AB1=%g",param->model->LJp_AB_lookup[m[n].N][0], param->model->LJp_AB_lookup[m[n].N][1]);
                 lj_force(R, param->model->LJp_AB_lookup[m[n].N][0], param->model->LJp_AB_lookup[m[n].N][1], F);
                 add_to_vec (param->Fljsum, F);
                 if (param->model->options & MODE_COULOMB){
