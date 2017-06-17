@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-profileplotdir = $(datadir)/gxsm/profileplot
+profileplotdir = $(datadir)/gxsm3/profileplot
 
 profileplot_SCRIPTS = \
 gxsmplot1d-1.gri.sh \
