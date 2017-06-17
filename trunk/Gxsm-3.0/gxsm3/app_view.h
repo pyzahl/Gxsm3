@@ -292,7 +292,8 @@ private:
         GtkWidget* osd_entry[OSD_MAX];
         VObPoint* osd_item[OSD_MAX];
         int osd_item_enable[OSD_MAX];
-
+        int osd_item_active_count;
+        
         guint active_event_num_channels;
         guint active_event_num_events;
         GtkWidget* active_event_xchan;

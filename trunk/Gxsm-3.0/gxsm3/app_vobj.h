@@ -273,6 +273,7 @@ class VObject{
 	gboolean get_profile_series_pg2d () { return plot_g2d; };
 
 	void set_osd_style (gboolean flg);
+	gboolean get_osd_style () { return label_osd_style; };
 
 	void destroy_properties_bp ();
         
@@ -323,7 +324,7 @@ class VObject{
 	double touched_xy[2];
 
 	ScanEvent *scan_event;
-	gboolean label_osd_stye;
+	gboolean label_osd_style;
 
 	GdkRGBA custom_element_color;
 	GdkRGBA custom_element_b_color;

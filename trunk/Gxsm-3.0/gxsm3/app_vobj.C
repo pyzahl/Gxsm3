@@ -65,11 +65,11 @@ inline guint32 RGBAColor (float c[4]) {
 VObject *current_vobject2 = NULL;
 
 void VObject::set_osd_style (gboolean flg){
-	label_osd_stye = flg;
+	label_osd_style = flg;
 
 	if (custom_label_font)
 		g_free (custom_label_font);
-	custom_label_font = g_strdup (label_osd_stye? xsmres.OSDFont : xsmres.ObjectLabFont);
+	custom_label_font = g_strdup (label_osd_style? xsmres.OSDFont : xsmres.ObjectLabFont);
         copy_xsmres_to_GdkRGBA (custom_label_color, xsmres.ObjectLabColor);
 }
 
@@ -88,7 +88,7 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pfl
 	scan_event=NULL;
 	lock=false;
 	id=0;
-	label_osd_stye = FALSE;
+	label_osd_style = FALSE;
         set_custom_label_anchor (CAIRO_ANCHOR_N);
 
         dragging_active = false;
@@ -105,8 +105,8 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pfl
 	space_time_from_0 = TRUE;
 	space_time_until_00 = TRUE;
 
-	custom_label_font = g_strdup (label_osd_stye? xsmres.OSDFont : xsmres.ObjectLabFont);
-        copy_xsmres_to_GdkRGBA (custom_label_color, label_osd_stye? xsmres.OSDColor : xsmres.ObjectLabColor);
+	custom_label_font = g_strdup (label_osd_style? xsmres.OSDFont : xsmres.ObjectLabFont);
+        copy_xsmres_to_GdkRGBA (custom_label_color, label_osd_style? xsmres.OSDColor : xsmres.ObjectLabColor);
 	copy_xsmres_to_GdkRGBA (custom_element_color, xsmres.ObjectElmColor);
 	copy_xsmres_to_GdkRGBA (custom_element_b_color, xsmres.ObjectElmColor);
 	custom_element_b_color.alpha = 1.;
@@ -393,9 +393,11 @@ void VObject::SetUpPos(VOBJ_COORD_MODE cmode, int node){
 void VObject::draw (cairo_t *cr){
         if (show_flag){ // master show/hide for all
                 //  g_print ("vobj::draw %s at %g %g\n", name, xy[0], xy[1]);
-                for(int i=0; i<np+6; i++)
-                        if (abl[i]) 
-                                abl[i]->draw (cr);
+                if (!label_osd_style)
+                        for(int i=0; i<np+6; i++)
+                                if (abl[i]) 
+                                        abl[i]->draw (cr);
+                
                 if (object_label){
                         object_label->draw (cr);
                         // object_label->print ();
@@ -1109,9 +1111,15 @@ void VObject::show_label(gboolean flg){
 		if (!object_label)
 			object_label = new cairo_item_text ();
 
-                object_label->set_text (xy[0] + label_offset_xy[0]*get_marker_scale (), 
-                                 xy[1] + label_offset_xy[1]*get_marker_scale (),
-                                 text);
+                if (label_osd_style)
+                        object_label->set_text (xy[0] + label_offset_xy[0]*vinfo->sc->mem2d->GetNx()/2+vinfo->sc->mem2d->GetNx()/2,
+                                                xy[1] + label_offset_xy[1]*vinfo->sc->mem2d->GetNy()/2+vinfo->sc->mem2d->GetNy()/2,
+                                                text);
+                else
+                        object_label->set_text (xy[0] + label_offset_xy[0]*get_marker_scale (), 
+                                                xy[1] + label_offset_xy[1]*get_marker_scale (),
+                                                text);
+                
                 object_label->set_anchor (label_anchor);
                 object_label->set_pango_font (custom_label_font);
                 object_label->set_stroke_rgba (&custom_label_color);
