@@ -2560,7 +2560,7 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                         for(sum=0., i=0; i<=tms; ++i){
                                 data->SetPtr(0,i);
                                 x.data->SetPtr(jj,i+ii);
-                                for(j=0; j<tns; j++)
+                                for(j=0; j<=tns; j++)
                                         sum += x.data->GetNext() * data->GetNext();
                         }
 #ifdef __INT_SF2
