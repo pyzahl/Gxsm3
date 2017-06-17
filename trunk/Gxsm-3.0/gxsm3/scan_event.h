@@ -62,7 +62,7 @@ class ScanEvent;
 
 class EventEntry{
 public:
-	EventEntry (const gchar *Name, time_t Time);
+	EventEntry (const gchar *Name, time_t Time, const gchar *file_name=NULL);
 	virtual ~EventEntry ();
 
 	virtual void add (double *value) {};
@@ -74,6 +74,7 @@ public:
 	virtual void print () {};
 	virtual void save (std::ofstream *file) {};
 
+	gchar* file_source_name () { return fsrc_name; };
 	gchar* description () { return name; };
 	gchar description_id () { return name[0]; };
 	gint description_id_match (const gchar *filter) { 
@@ -86,12 +87,13 @@ public:
 protected:
 	gchar *name;
 	time_t time;
+        gchar *fsrc_name;
 private:
 };
 
 class ProbeEntry : public EventEntry{
 public:
-	ProbeEntry (const gchar *Name, time_t Time, GPtrArray *Labels, GPtrArray *Unitssymbols, int Chunk_size);
+	ProbeEntry (const gchar *Name, time_t Time, GPtrArray *Labels, GPtrArray *Unitssymbols, int Chunk_size, const gchar *file_name=NULL);
 	ProbeEntry (const gchar *Name, NcFile *ncf, int p_index, NcVar* &evdata_var, NcVar* &evcoords_var, ScanEvent* &se, int num, int &count, ProbeEntry *pe=NULL);
 	virtual ~ProbeEntry ();
 	virtual void add (double *value){ g_array_append_vals (data, (gconstpointer)value, chunk_size); ++num_sets; };
