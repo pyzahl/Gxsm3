@@ -152,8 +152,8 @@ int Scan::append_current_to_time_elements (int index, double t, Mem2d* other){
 	tes->mem2d->set_frame_time (t);
 	tes->mem2d->set_t_index(index); // only here and only!
 	tes->refcount = 0;
-	tes->sdata = NULL;
-//	tes->sdata = copy of data;
+	tes->sdata = new SCAN_DATA;
+	tes->sdata->copy (data);
 
 	TimeList = g_list_append (TimeList, tes);
 
@@ -184,8 +184,8 @@ int Scan::prepend_current_to_time_elements (int index, double t, Mem2d* other){
 	tes->mem2d->set_frame_time (t);
 	tes->mem2d->set_t_index(index); // set only here and only and by reindex!
 	tes->refcount = 0;
-	tes->sdata = NULL;
-//	tes->sdata = copy of data;
+	tes->sdata = new SCAN_DATA;
+	tes->sdata->copy (data);
 
 	TimeList = g_list_prepend (TimeList, tes);
 
@@ -207,6 +207,49 @@ void Scan::reindex_time_elements (){
 	}
 }
 
+// sorting tools
+gint compare_time_list_elements_by_index (TimeElementOfScan *a, TimeElementOfScan *b) {
+	if (a->mem2d->get_t_index () < b->mem2d->get_t_index ()) return -1;
+	if (a->mem2d->get_t_index () > b->mem2d->get_t_index ()) return 1;
+        return 0;
+}
+void Scan::sort_time_elements_by_index (){
+ 	if (TimeList)
+                TimeList = g_list_sort (TimeList,  GCompareFunc (compare_time_list_elements_by_index)); 
+}
+                        
+gint compare_time_list_elements_by_time (TimeElementOfScan *a, TimeElementOfScan *b) {
+	if (a->mem2d->get_frame_time () < b->mem2d->get_frame_time ()) return -1;
+	if (a->mem2d->get_frame_time () > b->mem2d->get_frame_time ()) return 1;
+        return 0;
+}
+void Scan::sort_time_elements_by_time (){
+ 	if (TimeList)
+                TimeList = g_list_sort (TimeList,  GCompareFunc (compare_time_list_elements_by_time)); 
+}
+                        
+gint compare_time_list_elements_by_bias (TimeElementOfScan *a, TimeElementOfScan *b) {
+        // g_message ("Sorting: %s %g <> %s %g", a->sdata->ui.name, a->sdata->s.Bias, b->sdata->ui.name, b->sdata->s.Bias);
+	if (a->sdata->s.Bias < b->sdata->s.Bias) return -1;
+	if (a->sdata->s.Bias > b->sdata->s.Bias) return 1;
+        return 0;
+}
+void Scan::sort_time_elements_by_bias (){
+ 	if (TimeList)
+                TimeList = g_list_sort (TimeList,  GCompareFunc (compare_time_list_elements_by_bias));
+}
+
+gint compare_time_list_elements_by_zsetpoint (TimeElementOfScan *a, TimeElementOfScan *b) {
+	if (a->sdata->s.ZSetPoint < b->sdata->s.ZSetPoint) return -1;
+	if (a->sdata->s.ZSetPoint > b->sdata->s.ZSetPoint) return 1;
+        return 0;
+}
+void Scan::sort_time_elements_by_zsetpoint (){
+ 	if (TimeList)
+                TimeList = g_list_sort (TimeList,  GCompareFunc (compare_time_list_elements_by_zsetpoint));
+}
+
+// list management
 int Scan::remove_time_element (int index){
 	return 0; // to be completed.
 }

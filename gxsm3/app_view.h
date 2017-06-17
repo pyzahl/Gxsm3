@@ -102,6 +102,8 @@ public:
         static void indicators_remove_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         void events_update ();
 
+        static void sort_time_elements_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+
         static void Activate_window_callback (GtkWindow *window, gpointer user_data);
         static void Activate_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void SetOff_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
