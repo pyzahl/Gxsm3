@@ -561,6 +561,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
         XSM_DEBUG_GP (DBG_L4, "************** OSD n_stores=%d: [ %d, %d, %d..]\n", (int)n_stores, array[0]?0:1, array[1]?0:1, array[2]?0:1);
         
+        osd_item_active_count = 0;
 	for (gsize i=0; i<OSD_MAX; ++i){
 		osd_entry[i] = NULL;
 		osd_item[i] = NULL;
@@ -3512,6 +3513,10 @@ void ViewControl::indicators_remove_callback (GSimpleAction *simple, GVariant *p
 void ViewControl::obj_remove_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	ViewControl *vc = (ViewControl *) user_data;
 	VObject *vo = (VObject*)g_object_get_data (G_OBJECT (vc->canvas), "VObject");
+
+        if (vo->get_osd_style ())
+                return;
+        
 	vc->scan->PktVal=0;
 	vc->remove_obj(vo, vc);
 	vc->gobjlist = g_slist_remove((GSList*) vc->gobjlist, vo);
@@ -3759,33 +3764,18 @@ void ViewControl::osd_toggle_callback (GtkWidget *widget, ViewControl *vc){
         gint pos = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (widget), "OSD_POS"));
 	if (pos >= OSD_MAX) return;
 	vc->osd_item_enable[pos] = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+        gchar *ly_info = vc->scan->mem2d->get_layer_information (pos);
 	if (vc->osd_item_enable[pos]){
-		gchar *ly_info = vc->scan->mem2d->get_layer_information (pos);
 		if (ly_info){
-			double x,y;
-			//gchar *varx = g_strdup_printf ("osd_x%02d", pos);
-			//gchar *vary = g_strdup_printf ("osd_y%02d", pos);
 			vc->set_osd (ly_info, pos);
-			vc->osd_item[pos] -> show_label (true);
-			vc->osd_item[pos] -> obj_get_xy_i (0, x, y);
-			x-=vc->scan->data.s.x0; x /= vc->scan->data.s.rx/2; // make relative
-			y-=vc->scan->data.s.y0; y /= vc->scan->data.s.ry/2;
-                        g_message ("OSD[%d] %s (%g, %g) = show",pos, ly_info, x,y);
-			g_free (ly_info);
-                        // gsettings!!!
-                        // ==> <key name="osd-position" type="a(iii)">
-                        //			xrm.Put (varx, x);
-                        //			xrm.Put (vary, -y);
-                        //			xrm.Put (flag, vc->osd_item_enable[pos]);
-			//g_free (varx);
-			//g_free (vary);
+                        vc->osd_item[pos]->show_label (true);
 		}
 	} else {
 		if (vc->osd_item[pos]){
-			vc->osd_item[pos] -> show_label (false);
-                        //xrm.Put (flag, vc->osd_item_enable[pos]);
+                        vc->osd_item[pos] -> show_label (false);
 		}
 	}
+        g_free (ly_info);
 
         for (gsize i=0; i<n_stores; ++i)
                 array[i] = vc->osd_item_enable[i] ? true : false;
@@ -3813,39 +3803,23 @@ void ViewControl::set_osd (gchar *osd_text, int pos){
 				osd_item[pos] -> set_spacetime (spt);
 				osd_item[pos] -> show_label (true);
 			}else{
-                                //	XsmRescourceManager xrm("App_View_OSD");
-				double xy[2];
-                                double x;
-				//gchar *varx = g_strdup_printf ("osd_x%02d", pos);
-				//gchar *vary = g_strdup_printf ("osd_y%02d", pos);
-                                // gsettings!!!
-                                // ==> <key name="osd-position" type="a(iii)">
-                                //				xrm.Get (varx, &xy[0], "10."); // relative to size now: +/-1 for left/right
-                                //				xrm.Get (vary, &xy[1], "10.");
-                                xy[0] = 10.; // relative to size now: +/-1 for left/right
-                                xy[1] = 10.;
-				//g_free (varx);
-				//g_free (vary);
-				if (fabs (xy[0]) > 1. || fabs (xy[1]) > 1.){
-					xy[0] =  2.*((pos%2)-0.5) * 0.9; // left or right
-					xy[1] = -2.*(((pos/2)%2)-0.5) * (0.9 - (0.1*((pos/4)%4)));
-				}
-                                x=xy[0];
-                                //xy[0] *= 0.7;
-                                //xy[1] *= 0.7;
-				xy[0] *= scan->data.s.rx/2; xy[0]+=scan->data.s.x0;
-				xy[1] *= scan->data.s.ry/2; xy[1]+=scan->data.s.y0;
-				osd_item[pos] = new VObPoint (canvas, xy, scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, ot, 0.);
-				xy[0]=xy[1]=0.;
+				double xy[2] = {0.,0.};
+				osd_item[pos] = new VObPoint (canvas, xy, scan->Pkt2d, FALSE, VOBJ_COORD_RELATIV, ot, 0.);
+                                osd_item_active_count++;
+                                xy[0] =  2.*((osd_item_active_count%2)-0.5) * 0.9; // left or right
+                                xy[1] = -2.*(((osd_item_active_count/2)%2)-0.5) * (0.9 - (0.1*((osd_item_active_count/4)%4)));
+                                int anchor  = xy[0] < 0.5 ? -1:1;
+                                g_message ("set OSD (new): OSD[%d] %s (%g, %g) = show",pos, ot,  xy[0],xy[1]);
 				osd_item[pos] -> set_osd_style (true);
+                                osd_item[pos] -> set_custom_label_anchor (anchor < 0 ? CAIRO_ANCHOR_W : CAIRO_ANCHOR_E);
 				osd_item[pos] -> set_label_offset (xy);
-                                osd_item[pos] -> set_custom_label_anchor (x < 0.5 ? CAIRO_ANCHOR_W : CAIRO_ANCHOR_E);
 				osd_item[pos] -> show_label (true);
 
 			}
 		else{
-			if (osd_item[pos])
+			if (osd_item[pos]){
 				osd_item[pos] -> show_label (false);
+                        }
 		}
 	}
 	g_free (ot);
