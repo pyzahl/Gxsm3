@@ -498,6 +498,37 @@
 	  <attribute name="action">win.remove-all-trails</attribute>
 	</item>
       </submenu>
+      <submenu>
+	<attribute name="label" translatable="yes">Sort</attribute>
+	<section>
+	  <attribute name="id">view-sort-time-elements-section</attribute>
+	  <item>
+	    <attribute name="label" translatable="yes">by Index</attribute>
+	    <attribute name="action">win.sort-time-elements</attribute>
+	    <attribute name="target">index</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">by Time</attribute>
+	    <attribute name="action">win.sort-time-elements</attribute>
+	    <attribute name="target">time</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">by Bias</attribute>
+	    <attribute name="action">win.sort-time-elements</attribute>
+	    <attribute name="target">bias</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">by ZSetPoint</attribute>
+	    <attribute name="action">win.sort-time-elements</attribute>
+	    <attribute name="target">zsetpoint</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">do Re-Index</attribute>
+	    <attribute name="action">win.sort-time-elements</attribute>
+	    <attribute name="target">reindex</attribute>
+	  </item>
+	</section>
+      </submenu>
     </section>
   </menu>
   <!-- ************************************************** -->

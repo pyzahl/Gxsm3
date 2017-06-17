@@ -154,7 +154,8 @@ static GActionEntry win_view_popup_entries[] = {
         { "show-event-lables", ViewControl::events_labels_callback, NULL, NULL, NULL },
         { "events-verbose", ViewControl::events_verbose_callback, NULL, NULL, NULL },
         { "remove-all-events", ViewControl::events_remove_callback, NULL, NULL, NULL },
-        { "remove-all-trails", ViewControl::indicators_remove_callback, NULL, NULL, NULL }
+        { "remove-all-trails", ViewControl::indicators_remove_callback, NULL, NULL, NULL },
+        { "sort-time-elements", ViewControl::sort_time_elements_callback, "s", "'index'", NULL }
 };
 
 static GActionEntry win_object_popup_entries[] = {
@@ -3060,6 +3061,37 @@ void ViewControl::view_tool_mvprop_radius_radio_callback (GSimpleAction *action,
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
 }
+
+void ViewControl::sort_time_elements_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data) { 
+        ViewControl *vc = (ViewControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
+                
+        XSM_DEBUG_GP (DBG_L1, "OBJECT-MODE Radio action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
+
+        if (!strcmp (g_variant_get_string (new_state, NULL), "index")){
+                vc->scan->sort_time_elements_by_index ();
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "time")){
+                vc->scan->sort_time_elements_by_time ();
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "bias")){
+                vc->scan->sort_time_elements_by_bias ();
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "zsetpoint")){
+                vc->scan->sort_time_elements_by_zsetpoint ();
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "reindex")){
+                vc->scan->reindex_time_elements ();
+        } else {
+                ; // not handled
+        }
+                
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+}
+
 
 // ---------------
 

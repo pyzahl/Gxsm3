@@ -320,14 +320,17 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 
 		delete [] dimsy;
 
-		scan->mem2d->remove_layer_information ();
+                // try sranger (old)
+                NC_GET_VARIABLE ("sranger_hwi_bias", &scan->data.s.Bias);
+                NC_GET_VARIABLE ("sranger_hwi_voltage_set_point", &scan->data.s.SetPoint);
+                NC_GET_VARIABLE ("sranger_hwi_current_set_point", &scan->data.s.Current);
+
+                // read back layer informations
+                scan->mem2d->remove_layer_information ();
 
 		if (ncv_d && ncv_f && ncv_fo && ncv_v)
 			scan->mem2d->add_layer_information (ncv_d, ncv_f, ncv_fo, ncv_v, time_index);
 		else {
-			NC_GET_VARIABLE ("sranger_hwi_bias", &scan->data.s.Bias);
-			NC_GET_VARIABLE ("sranger_hwi_voltage_set_point", &scan->data.s.SetPoint);
-			NC_GET_VARIABLE ("sranger_hwi_current_set_point", &scan->data.s.Current);
 			scan->mem2d->add_layer_information (new LayerInformation ("Bias", scan->data.s.Bias, "%5.2f V"));
 			scan->mem2d->add_layer_information (new LayerInformation (scan->data.ui.dateofscan));
 			scan->mem2d->add_layer_information (new LayerInformation ("X-size", scan->data.s.rx, "Rx: %5.1f \303\205"));
@@ -525,12 +528,16 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 	gapp->progress_info_set_bar_text ("Plugin Data", 2);
 	gapp->SignalCDFLoadEventToPlugins (&nc);
 	
-	// try to recover some common defaults data and add to OSD
+	// try to recover some common defaults data and add to OSD (old sranger)
 	NC_GET_VARIABLE ("sranger_hwi_bias", &scan->data.s.Bias);
         NC_GET_VARIABLE ("sranger_hwi_voltage_set_point", &scan->data.s.SetPoint);
         NC_GET_VARIABLE ("sranger_hwi_current_set_point", &scan->data.s.Current);
+
+        // mk2/3 try to recover
+	NC_GET_VARIABLE ("sranger_mk2_hwi_bias", &scan->data.s.Bias);
         NC_GET_VARIABLE ("sranger_mk2_hwi_mix0_set_point", &scan->data.s.Current);
         NC_GET_VARIABLE ("sranger_mk2_hwi_z_setpoint", &scan->data.s.ZSetPoint);
+
         scan->mem2d->add_layer_information (new LayerInformation ("CZ SetPoint", scan->data.s.ZSetPoint, "%5.2f  \303\205"));
 
         //NC_GET_VARIABLE ("sranger_mk2_hwi_motor", &scan->data.s.motor);
