@@ -561,7 +561,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
         XSM_DEBUG_GP (DBG_L4, "************** OSD n_stores=%d: [ %d, %d, %d..]\n", (int)n_stores, array[0]?0:1, array[1]?0:1, array[2]?0:1);
         
-        osd_item_active_count = 0;
+        osd_item_active_count = 1; // start with 2 (top) (positions 0,1 interfering with legend
 	for (gsize i=0; i<OSD_MAX; ++i){
 		osd_entry[i] = NULL;
 		osd_item[i] = NULL;
