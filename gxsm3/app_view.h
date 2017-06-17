@@ -283,7 +283,7 @@ private:
         GtkWidget* tog_user_events;
         GtkWidget* control_box;
 
-        GtkWidget* pe_info[4];
+        GtkWidget* pe_info[5];
         GtkWidget* ue_info[10];
 
 #define OSD_MAX 20

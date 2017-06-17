@@ -792,6 +792,12 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	gtk_grid_attach (GTK_GRID (grid), pe_info[ii], x++, y, 1,1); 
         x=1, ++y;
 
+	pe_info[++ii] = gtk_entry_new ();
+	SETUP_ENTRY(pe_info[ii], "---");
+	gtk_grid_attach (GTK_GRID (grid), gtk_label_new ("Src:"), x++, y, 1,1); 
+	gtk_grid_attach (GTK_GRID (grid), pe_info[ii], x++, y, 1,1); 
+        x=1, ++y;
+
         // ==================================================
 	frame_param = gtk_frame_new (N_("Plot & Selection Control"));
 	gtk_grid_attach (GTK_GRID (base_grid), frame_param, 1,2, 1,1);
@@ -1507,6 +1513,7 @@ void ViewControl::update_event_panel (ScanEvent *se){
 		txt = g_strdup_printf ("%.2f " UTF8_ANGSTROEM " [%.1f px]", y, iy);
 		gtk_entry_set_text (GTK_ENTRY (pe_info[1]), txt);
 		g_free (txt);
+		gtk_entry_set_text (GTK_ENTRY (pe_info[4]), ee->file_source_name ());
 		for (guint i=0; i<active_event_num_channels; ++i){
 			gchar *txt = g_strdup_printf ("%s [%s]", pe->get_label (i), pe->get_unit_symbol (i)); 
 			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_xchan), "xchan", txt);	

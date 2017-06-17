@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -23,8 +25,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-
 #include <locale.h>
 #include <libintl.h>
 
@@ -42,10 +42,13 @@
  * Class: EventEntry
  */
 
-EventEntry::EventEntry (const gchar *Name, time_t Time){ 
+EventEntry::EventEntry (const gchar *Name, time_t Time, const gchar *file_name){ 
 	XSM_DEBUG (DBG_L6, "EventEntry::EventEntry");
+	fsrc_name = NULL;
 	name = g_strdup (Name);
 	time = Time;
+	if (file_name)
+                fsrc_name = g_strdup (file_name);
 }
  
 EventEntry::~EventEntry (){ 
@@ -57,7 +60,7 @@ time_t EventEntry::get_time () { return time; };
 
 gchar* EventEntry::get_str_time () { return NULL; };
 
-ProbeEntry::ProbeEntry (const gchar *Name, time_t Time, GPtrArray *Labels, GPtrArray *Unitssymbols, int Chunk_size) : EventEntry (Name, Time){ 
+ProbeEntry::ProbeEntry (const gchar *Name, time_t Time, GPtrArray *Labels, GPtrArray *Unitssymbols, int Chunk_size, const gchar *file_name) : EventEntry (Name, Time, file_name){ 
 	XSM_DEBUG (DBG_L6, "ProbeEntry::ProbeEntry");
 	chunk_size = Chunk_size;
 	data = g_array_new (FALSE, TRUE, sizeof (double));

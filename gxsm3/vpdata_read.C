@@ -304,7 +304,10 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
                                                 if (! strcmp (token[2], "Block-Start-Index")){
                                                         g_print ("num_sets=%d, [2]=Block-Start-Index [0]=%s [1]=%s\n", num_sets, token[0], token[1]);
                                                         // [2]=Block-Start-Index [0]="Time (ms)" [1]="Bias (V)"
-                                                        break;
+                                                        if (! strcmp (token[0], "Time (ms)") && ! strcmp (token[1], "Bias (V)")){
+                                                                g_print ("skipping copies of \"%s\" and \"%s\".\n", token[0], token[1]);
+                                                                break;
+                                                        }
                                                 }
                                         }
                                 }
@@ -437,7 +440,7 @@ int vpdata_read (const gchar *fname, Scan *active_scan){
 			ProbeEntry *pe = NULL;
 			if (active_scan){
 				se = new ScanEvent (MainOffsetX0 + svXS[0], MainOffsetY0 + svYS[0], 0,0, svZS[0]);
-				pe = new ProbeEntry ("Probe", svtime[0], glabarray, gsymarray, num_sets);
+				pe = new ProbeEntry ("Probe", svtime[0], glabarray, gsymarray, num_sets, fname);
 				active_scan->mem2d->AttachScanEvent (se);
 			}
 
