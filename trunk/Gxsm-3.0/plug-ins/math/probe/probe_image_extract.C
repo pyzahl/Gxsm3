@@ -177,7 +177,7 @@ gint check_probe (ProbeEntry *a, ProbeEntry *b, char *Source2){
 	//if (! 
 //	std::cout << "check probe: chunk_size=" << b->get_chunk_size () << std::endl;
 	for (int j=0; j<b->get_chunk_size (); j++){
-//		std::cout << j << " : " << b->get_label (j) << std::endl;
+	  //		std::cout << j << " : " << b->get_label (j) << std::endl;
 		if (! strcmp (Source2, b->get_label (j))) return j;
 	}
 
@@ -226,6 +226,7 @@ public:
 						  "LockIn0", "LockIn1stA", "LockIn1stB", "LockIn2ndA", "LockIn2ndB",
 						  "In_0", "In_1", "In_2", "In_3", "In_4", "In_5", "In_6", "In_7",
 						  "Counter_0", "Counter_1",
+						  "PLL_Exci_Frq", "PLL_Exci_Frq_LP", "PLL_Exci_Amp", "PLL_Exci_Amp_LP",
 						  NULL};
 	
 		dialog = gtk_dialog_new_with_buttons (N_("Settings"),
