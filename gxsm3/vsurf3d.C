@@ -2045,7 +2045,7 @@ double Surf3d::GetForce(){
 
 void inline Surf3d::PutPointMode(int k, int j, int vi){
 	int i;
-	GLfloat val, xval;
+	GLfloat val; //, xval;
         
 	i = k + j*XPM_x + XPM_x*XPM_y*vi;
 	if (i >= (int)size) return;
@@ -2070,14 +2070,22 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
 	// scan->mem2d->GetDataPkt_vec_normal_4F (k,j,vi, &surface_z_data_buffer[i], 1.0, XPM_x*GLv_data.hskl/scan->mem2d->data->zrange);
 
         // X CHANNEL <= UV-Map to index range of GXSM SCAN CHANNEL-X:
+
         if (mem2d_x){
-                int u = (int) (k * (double)mem2d_x->GetNx () / (double)scan->mem2d->GetNx ());
-                int v = (int) (j * (double)mem2d_x->GetNy () / (double)scan->mem2d->GetNy ());
-                xval = (GLfloat) (mem2d_x->GetDataVMode (u,v)/mem2d_x->GetDataRange ());
+                if (mem2d_x->GetNx () == scan->mem2d->GetNx () &&
+                    mem2d_x->GetNy () == scan->mem2d->GetNy () &&
+                    mem2d_x->GetNv () == scan->mem2d->GetNv ())
+                        surface_z_data_buffer[i].x = (GLfloat) ((mem2d_x->GetDataPkt(k,j,vi)-mem2d_x->data->zmin)/mem2d_x->data->zrange);
+                else {
+                        int u = (int) (k * (double)mem2d_x->GetNx () / (double)scan->mem2d->GetNx ());
+                        int v = (int) (j * (double)mem2d_x->GetNy () / (double)scan->mem2d->GetNy ());
+                        int w = (int) (vi * (double)mem2d_x->GetNv () / (double)scan->mem2d->GetNv ());
+                        surface_z_data_buffer[i].x = (GLfloat) (mem2d_x->GetDataPkt (u,v, w)/mem2d_x->GetDataRange ());
+                }
         } else {
-                xval = 0.5;
+                surface_z_data_buffer[i].x = 0.5;
         }
-        surface_z_data_buffer[i].x = xval >= 0. ? xval <= 1. ? xval : 1. : 0.; // X-Channel val in X component
+
         surface_z_data_buffer[i].y = val; // Y-Channel still available
 
         // push edges to zero?
@@ -2147,9 +2155,6 @@ void Surf3d::GLupdate (void* data){
                         return;
 
                 s->check_dimension_changed ();
-
-                XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLUPDATE set color source" << std::flush);
-                s->ColorSrc();
 
                 XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLUPDATE rerender" << std::flush);
                 if (s->gl_tess){
@@ -2255,6 +2260,16 @@ void Surf3d::create_surface_buffer(){
 		g_free(titel);
 	}
 
+        mem2d_x=NULL;
+        int ChSrcX=gapp->xsm->FindChan (ID_CH_M_X);
+        if (ChSrcX >= 0){
+                if(gapp->xsm->scan[ChSrcX])
+                        mem2d_x = gapp->xsm->scan[ChSrcX]->mem2d;
+
+        } else
+                if(gapp->xsm->scan[0])
+                        mem2d_x = gapp->xsm->scan[0]->mem2d;
+
 	XPM_x = scan->mem2d->GetNx();
 	XPM_y = scan->mem2d->GetNy();
 	XPM_v = scan->mem2d->GetNv();
@@ -2273,6 +2288,9 @@ void Surf3d::create_surface_buffer(){
 
 	XSM_DEBUG (GL_DEBUG_L3, "Surf3d::create_surface_buffer  ** computing surface and normals");
         // grab and prepare data buffers
+        if (gapp->xsm->scan[0])
+                gapp->xsm->scan[0]->mem2d->data->update_ranges (0);
+
         scan->mem2d->data->update_ranges (0);
         for(int v=0; v<scan->mem2d->GetNv(); ++v)
                 scan->mem2d->data->update_ranges (v, true);
@@ -2398,24 +2416,6 @@ double Surf3d::HeightSkl(double x){
 }
 
 void Surf3d::ColorSrc(){
-	mem2d_x=NULL;
-	switch (GLv_data.ColorSrc[0]){
-	case 'U': // Uniform Coloring
-		draw();
-		break;
-	case 'X':  // from Channel X
-		int ChSrc2;
-		if ((ChSrc2=gapp->xsm->FindChan (ID_CH_M_X))>=0){
-			if(gapp->xsm->scan[ChSrc2]){
-				mem2d_x = gapp->xsm->scan[ChSrc2]->mem2d;
-				draw (); // automatically maps to chan-x index range, assumes same size - user should know...
-			}else{ XSM_SHOW_ALERT(ERR_SORRY, ERR_NO2SRC, HINT_MAKESRC2,1); }
-		}else{ XSM_SHOW_ALERT(ERR_SORRY, ERR_NO2SRC, HINT_MAKESRC2,1); }
-		break;
-	case 'H': // from Height
-		draw();
-		break;
-	}  
 }
 
 void Surf3d::GLModes(int n, int m){
@@ -2548,6 +2548,8 @@ int Surf3d::update(int y1, int y2){
 	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::update data");
 //	int v = scan->mem2d->GetLayer();
 	for(int v=0; v<scan->mem2d->GetNv(); ++v){
+                if (mem2d_x)
+                        mem2d_x->data->update_ranges (v);
                 if (scan->mem2d->data->update_ranges (v)){
                         // ranges changes, need to recalculate all
                         y1=0;
