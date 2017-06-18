@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -262,9 +264,9 @@ static void removelineshifts_cleanup(void)
 // run-Function
 static gboolean removelineshifts_run(Scan *Src, Scan *Dest)
 {
-	double avg, avg_prev1, avg_prev2, avg_delta1, avg_delta2, Z_adjust;
+	double avg, avg_prev, avg_delta, Z_adjust;
 	int nx,ny;
-	int x1,x2,y1,y2;
+	int x1,x2,y1,y2,dx;
 	double threashold = 10.;
 
 	ZData  *SrcZ, *DestZ;
@@ -272,7 +274,7 @@ static gboolean removelineshifts_run(Scan *Src, Scan *Dest)
 	nx=Dest->mem2d->GetNx();
 	ny=Dest->mem2d->GetNy();
 	
-	x1=0; x2=nx; y1=y2=0;
+	x1=0; x2=nx; y1=0; y2=ny;
 	
 	
 	int ti=0; 
@@ -298,7 +300,7 @@ static gboolean removelineshifts_run(Scan *Src, Scan *Dest)
 		gapp->progress_info_set_bar_text ("Value", 2);
 	}
 
-	gapp->ValueRequest("Z shift threashold", "Level", "Set threashold [Ang]",
+	gapp->ValueRequest("Z shift threashold", "Level", "Set threashold [raw]",
 			   gapp->xsm->Unity, -1e4, 1e4, ".2f", &threashold);
 		
 	if (Src->number_of_object () > 0){
@@ -323,8 +325,16 @@ static gboolean removelineshifts_run(Scan *Src, Scan *Dest)
 			y1 = y2;
 			y2 = tmp;
 		}
+                if (x1 < 0) x1=0;
+                if (x2 > nx) x2=nx;
+                if (y1 < 0) y1=0;
+                if (y2 > ny) y2=ny;
 	}
+        dx = x2-x1;
 
+        g_message ("X: %d .. %d ->  dx = %d", x1,x2,dx);
+        g_message ("Y: %d .. %d ", y1,y2);
+        
 	int ntimes_tmp = tf-ti+1;
 	for (int time_index=ti; time_index <= tf; ++time_index){
 		Mem2d *m = Src->mem2d_time_element (time_index);
@@ -341,32 +351,38 @@ static gboolean removelineshifts_run(Scan *Src, Scan *Dest)
 			DestZ = Dest->mem2d->data;
 			
 			Z_adjust = 0.;
-			avg_prev1 = 0.;
-			avg_prev2 = 0.;
 			
+                        g_message ("avg_start = %g", avg_prev);
 			for (int line = y1; line < ny; line++) {
-				avg = 0.;
-				SrcZ->SetPtr(0,line);
-
 				if (line < y2){
-					for (int col = x1; col < x2; col++)
-						avg += SrcZ->GetNext();
-				
-					avg /= (x2-x1);
-					avg_delta1 = avg - avg_prev1;
-					avg_delta2 = avg_prev1 - avg_prev2;
-					if ( fabs (avg_delta2 - avg_delta1) > threashold) // 2nd order check
-						Z_adjust += avg_delta1;
 
-					avg_prev2 = avg_prev1;
-					avg_prev1 = avg;
+                                        avg_prev = 0.;
+                                        if (line > 0){
+                                                DestZ->SetPtr(x1,line-1);
+                                                for (int i = 0; i < dx; ++i)
+                                                        avg_prev += DestZ->GetNext();
+                                                avg_prev /= dx;
+                                        }
+                                        
+                                        avg = 0.;
+                                        SrcZ->SetPtr (x1,line);
+					for (int i = 0; i < dx; ++i)
+						avg += SrcZ->GetNext();
+                                        avg /= dx;
+
+					avg_delta = avg - avg_prev;
+                                        // g_message ("avg[%d] = %g dd=%g", line, avg, avg_delta);
+
+					if ( fabs (avg_delta) > threashold) // 2nd order check
+						Z_adjust = avg_delta;
+
 				}
 				SrcZ->SetPtr(0,line);
 				DestZ->SetPtr(0,line);
 				
 				for (int col = 0; col < nx; col++)
-					DestZ->SetNext(SrcZ->GetNext() - Z_adjust);
-			}
+                                        DestZ->SetNext ( SrcZ->GetNext() - Z_adjust);
+                        }
 		}
 		Dest->append_current_to_time_elements (time_index-ti, m->get_frame_time ());
 	}
