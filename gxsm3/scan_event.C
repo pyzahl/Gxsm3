@@ -54,6 +54,8 @@ EventEntry::EventEntry (const gchar *Name, time_t Time, const gchar *file_name){
 EventEntry::~EventEntry (){ 
 	XSM_DEBUG (DBG_L6, "EventEntry::~EventEntry");
 	g_free (name);
+        if (fsrc_name)
+                g_free (fsrc_name);
 }
 
 time_t EventEntry::get_time () { return time; };
