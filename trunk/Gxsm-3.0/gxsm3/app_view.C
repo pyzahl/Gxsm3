@@ -148,7 +148,8 @@ static GActionEntry win_view_popup_entries[] = {
         { "set-marker-group", ViewControl::view_tool_marker_group_radio_callback, "s", "'red'", NULL },
         { "set-local-radius", ViewControl::view_tool_mvprop_radius_radio_callback, "s", "'10'", NULL },
         { "move-all-objects-loc-max", ViewControl::view_tool_all2locmax_callback, NULL, NULL, NULL },
-        { "remove-all-objects", ViewControl::view_tool_removeall_callback, NULL, NULL, NULL },
+        { "remove-all-objects", ViewControl::view_tool_remove_all_callback, NULL, NULL, NULL },
+        { "remove-active-object", ViewControl::view_tool_remove_active_callback, NULL, NULL, NULL },
         //        { "show-probe-events", ViewControl::events_probe_callback, NULL, NULL, NULL },
         //        { "show-user-events", ViewControl::events_user_callback, NULL, NULL, NULL },
         { "show-event-lables", ViewControl::events_labels_callback, NULL, NULL, NULL },
@@ -176,14 +177,13 @@ static GActionEntry win_object_popup_entries[] = {
         { "add-polyline-node", ViewControl::obj_addnode_callback, NULL, NULL, NULL },
         { "delete-polyline-node", ViewControl::obj_delnode_callback, NULL, NULL, NULL },
         { "use-event-data", ViewControl::obj_event_use_callback, NULL, NULL, NULL },
-        { "open-event", ViewControl::obj_event_open_callback, NULL, NULL, NULL },
+        { "event-remove", ViewControl::obj_event_remove_callback, NULL, NULL, NULL },
         { "save-event", ViewControl::obj_event_save_callback, NULL, NULL, NULL },
         { "object-properties", ViewControl::obj_properties_callback, NULL, NULL, NULL },
         { "get-coordinates-offset", ViewControl::obj_setoffset_callback, NULL, NULL, NULL }
 };
 
-
-VObject *current_vobject = NULL;
+VObject *global_current_vobject = NULL;
 
 class NcDumpToWidget : public NcFile{
 public:
@@ -533,6 +533,8 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	GtkWidget *label5;
 	GtkWidget *label6;
 
+
+        current_vobject = NULL;
         destruction_in_progress = false;
         tip_follow_flag = false;
         legend_items_code = NULL;
@@ -1349,8 +1351,8 @@ void ViewControl::SetTitle(const gchar *title, const gchar *subtitle){
 }
 
 void get_obj_coords_wrapper(int i, double &x, double &y){
-	if (current_vobject)
-		current_vobject->obj_get_xy_i (i,x,y);
+	if (global_current_vobject)
+		global_current_vobject->obj_get_xy_i (i,x,y);
 }
 
 void ViewControl::AddObject(VObject *vo){
@@ -1367,6 +1369,7 @@ void ViewControl::AddObject(VObject *vo){
 
 	vo->set_marker_scale (xsmres.HandleSize/100.);
 	current_vobject = NULL;
+        global_current_vobject = current_vobject;
 }
 
 // -- Manage Indicator Objects
@@ -1435,12 +1438,18 @@ void ViewControl::add_event_obj(ScanEvent *se, ViewControl *vc)
 	}
 }
 
-void ViewControl::RemoveEventObjects(){
+void ViewControl::RemoveEventObjects (VObject *vo){
 // unsets object flag and delete obj!
-        if (geventlist){
+        g_message ("ViewControl::RemoveEventObjects: %s ", vo? "single":"all");
+        if (geventlist && !vo){
                 g_slist_foreach((GSList*) geventlist, (GFunc) ViewControl::unflag_scan_event_and_remove_obj, this); 
                 g_slist_free(geventlist);
                 geventlist = NULL;
+        } else {
+                if (vo){
+                        geventlist = g_slist_remove ((GSList*) geventlist, vo);
+                        unflag_scan_event_and_remove_obj (vo, this);
+                }
         }
 	active_event = NULL; 
 }
@@ -1515,7 +1524,7 @@ void ViewControl::update_event_panel (ScanEvent *se){
 		txt = g_strdup_printf ("%.2f " UTF8_ANGSTROEM " [%.1f px]", y, iy);
 		gtk_entry_set_text (GTK_ENTRY (pe_info[1]), txt);
 		g_free (txt);
-		gtk_entry_set_text (GTK_ENTRY (pe_info[4]), ee->file_source_name ());
+		gtk_entry_set_text (GTK_ENTRY (pe_info[4]), ee->file_source_name () ? ee->file_source_name () : "N/A");
 		for (guint i=0; i<active_event_num_channels; ++i){
 			gchar *txt = g_strdup_printf ("%s [%s]", pe->get_label (i), pe->get_unit_symbol (i)); 
 			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_xchan), "xchan", txt);	
@@ -2821,11 +2830,26 @@ void ViewControl::view_tool_all2locmax_callback (GSimpleAction *simple, GVariant
 	vc->MoveAllObjects2LocMax();
 }
 
-void ViewControl::view_tool_removeall_callback (GSimpleAction *simple, GVariant *parameter, 
+void ViewControl::view_tool_remove_all_callback (GSimpleAction *simple, GVariant *parameter, 
                                                 gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
 	vc->RemoveObjects();
 	vc->scan->PktVal=0;
+}
+
+void ViewControl::view_tool_remove_active_callback (GSimpleAction *simple, GVariant *parameter, 
+                                                gpointer user_data){
+        ViewControl *vc = (ViewControl *) user_data;
+        if (vc->current_vobject){
+                if (vc->current_vobject->get_osd_style ())
+                        return;
+                
+                vc->scan->PktVal=0;
+                vc->gobjlist = g_slist_remove((GSList*) vc->gobjlist, vc->current_vobject);
+                vc->remove_obj (vc->current_vobject, vc);
+                vc->current_vobject = NULL;
+                global_current_vobject = vc->current_vobject;
+        }
 }
 
 void ViewControl::view_tool_labels_callback (GSimpleAction *action, GVariant *parameter, 
@@ -3518,8 +3542,8 @@ void ViewControl::obj_remove_callback (GSimpleAction *simple, GVariant *paramete
                 return;
         
 	vc->scan->PktVal=0;
-	vc->remove_obj(vo, vc);
 	vc->gobjlist = g_slist_remove((GSList*) vc->gobjlist, vo);
+	vc->remove_obj(vo, vc);
 }
 
 void ViewControl::obj_properties_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
@@ -3652,9 +3676,11 @@ void ViewControl::obj_event_use_callback (GSimpleAction *simple, GVariant *param
 			(vo->get_scan_event())->print ();
 }
 
-void ViewControl::obj_event_open_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-	// ViewControl *vc = (ViewControl *) user_data;
-	// VObject *vo = (VObject*)g_object_get_data (G_OBJECT (vc->canvas), "VObject");
+void ViewControl::obj_event_remove_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
+	ViewControl *vc = (ViewControl *) user_data;
+	VObject *vo = (VObject*)g_object_get_data (G_OBJECT (vc->canvas), "VObject");
+        if (vo)
+                vc->RemoveEventObjects (vo);
 }
 
 

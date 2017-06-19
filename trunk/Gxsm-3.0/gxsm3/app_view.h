@@ -56,7 +56,8 @@ public:
         static void view_edit_crop_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_edit_zoomin_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_edit_zoomout_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-        static void view_tool_removeall_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void view_tool_remove_all_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void view_tool_remove_active_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_tool_mvprop_radius_radio_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void view_tool_all2locmax_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_object_mode_radio_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
@@ -135,8 +136,8 @@ public:
         static void obj_addnode_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void obj_delnode_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void obj_event_use_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-        static void obj_event_open_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void obj_event_save_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void obj_event_remove_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
 
         static void check_obj_event(VObject *vo, ViewControl *vc){ 
@@ -194,6 +195,7 @@ public:
 
         void DrawObjects(cairo_t *cr);
         void UpdateObjects();
+
         void AddObject(VObject *vo);
         void MoveAllObjects2LocMax();
         void CheckAllObjectsLabels (int flg=-1);
@@ -206,7 +208,7 @@ public:
 
         void SetEventFilter(const gchar *filter, gint pos);
         void RescanEventObjects();
-        void RemoveEventObjects();
+        void RemoveEventObjects(VObject *vo=NULL);
         static void add_event_obj(ScanEvent *se, ViewControl *vc);
 
         void SetEventLabels(int mode);
@@ -262,6 +264,8 @@ private:
         GSList  *gindicatorlist;
         GtkWidget *v_popup_menu;
         GActionGroup *view_action_group;
+
+        VObject *current_vobject;
 
         GtkWidget *side_pane_control;
         GtkWidget *gridnet;

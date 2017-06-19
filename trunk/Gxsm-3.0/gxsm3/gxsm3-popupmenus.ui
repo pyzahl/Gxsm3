@@ -462,6 +462,10 @@
 	    <attribute name="label" translatable="yes">Remove all</attribute>
 	    <attribute name="action">win.remove-all-objects</attribute>
 	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">Remove active</attribute>
+	    <attribute name="action">win.remove-active-object</attribute>
+	  </item>
 	</section>
       </submenu>
       <submenu>
@@ -535,10 +539,6 @@
   <!-- OBJECTS 1Point CONTEXT MENU -->
   <menu id="vobj-ctx-menu-1p">
     <item>
-      <attribute name="label" translatable="yes">Remove</attribute>
-      <attribute name="action">win.remove-point-object</attribute>
-    </item>
-    <item>
       <attribute name="label" translatable="yes">Properties</attribute>
       <attribute name="action">win.open-object-properties-dialog</attribute>
     </item>
@@ -558,14 +558,14 @@
       <attribute name="label" translatable="yes">Dump</attribute>
       <attribute name="action">win.dump-object-properties</attribute>
     </item>
+    <item>
+      <attribute name="label" translatable="yes">Remove</attribute>
+      <attribute name="action">win.remove-point-object</attribute>
+    </item>
   </menu>
   <!-- ************************************************** -->
   <!-- OBJECTS 2Points CONTEXT MENU -->
   <menu id="vobj-ctx-menu-2p">
-    <item>
-      <attribute name="label" translatable="yes">Remove</attribute>
-      <attribute name="action">win.remove-line-object</attribute>
-    </item>
     <item>
       <attribute name="label" translatable="yes">Properties</attribute>
       <attribute name="action">win.object-properties</attribute>
@@ -586,14 +586,14 @@
       <attribute name="label" translatable="yes">Dump</attribute>
       <attribute name="action">win.dump-object-properties</attribute>
     </item>
-  </menu>
-  <!-- ************************************************** -->
-  <!-- OBJECTS NPoints CONTEXT MENU -->
-  <menu id="vobj-ctx-menu-np">
     <item>
       <attribute name="label" translatable="yes">Remove</attribute>
       <attribute name="action">win.remove-line-object</attribute>
     </item>
+  </menu>
+  <!-- ************************************************** -->
+  <!-- OBJECTS NPoints CONTEXT MENU -->
+  <menu id="vobj-ctx-menu-np">
     <item>
       <attribute name="label" translatable="yes">Properties</attribute>
       <attribute name="action">win.object-properties</attribute>
@@ -610,22 +610,14 @@
       <attribute name="label" translatable="yes">Dump</attribute>
       <attribute name="action">win.dump-object-properties</attribute>
     </item>
+    <item>
+      <attribute name="label" translatable="yes">Remove</attribute>
+      <attribute name="action">win.remove-line-object</attribute>
+    </item>
   </menu>
   <!-- ************************************************** -->
   <!-- EVENT OBJECTS CONTEXT MENU -->
   <menu id="vobj-ctx-menu-event">
-    <item>
-      <attribute name="label" translatable="yes">Dump Event</attribute>
-      <attribute name="action">win.use-event-data</attribute>
-    </item>
-    <item>
-      <attribute name="label" translatable="yes">Open Event</attribute>
-      <attribute name="action">win.open-event</attribute>
-    </item>
-    <item>
-      <attribute name="label" translatable="yes">Save Event</attribute>
-      <attribute name="action">win.save-event</attribute>
-    </item>
     <item>
       <attribute name="label" translatable="yes">Properties</attribute>
       <attribute name="action">win.object-properties</attribute>
@@ -633,6 +625,18 @@
     <item>
       <attribute name="label" translatable="yes">Set current Offset to Point</attribute>
       <attribute name="action">win.get-coordinates-offset</attribute>
+    </item>
+    <item>
+      <attribute name="label" translatable="yes">Save Event</attribute>
+      <attribute name="action">win.save-event</attribute>
+    </item>
+    <item>
+      <attribute name="label" translatable="yes">Dump Event</attribute>
+      <attribute name="action">win.use-event-data</attribute>
+    </item>
+    <item>
+      <attribute name="label" translatable="yes">Remove Event</attribute>
+      <attribute name="action">win.event-remove</attribute>
     </item>
   </menu>
   <!-- ************************************************** -->
