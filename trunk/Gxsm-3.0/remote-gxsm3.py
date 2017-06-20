@@ -351,11 +351,11 @@ def chdcircle (m=10,n=400):
 
 #gxsm.save ()
 
-spnx = 2500.
-stepx = 1000.
+spnx = 100.
+stepx = 2.
 
-spny = 2500.
-stepy = 1000.
+spny = 100.
+stepy = 2.
 
 sxlist = np.arange (-spnx, spnx+stepx, stepx)
 sylist = np.arange (-spny, spny+stepy, stepy)
@@ -390,11 +390,17 @@ print "STARTING NOW..."
 
 #terminate = run_set ([0.03, 0.05, 0.1, 0.2, 0.5, 1.0, 1.5, 2.0])
 
-for z in np.arange(-18.1, -20.0, -0.1):
-	print z
-	gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%z )
-	gxsm.startscan ()
-	gxsm.waitscan ()
+
+for r in xy:
+	gxsm.moveto_scan_xy (r[0],r[1])
+	gxsm.sleep(1)
+
+
+#for z in np.arange(-18.1, -20.0, -0.1):
+#	print z
+#	gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%z )
+#	gxsm.startscan ()
+#	gxsm.waitscan ()
 
 
 z=-16

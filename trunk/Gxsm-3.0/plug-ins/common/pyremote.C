@@ -910,7 +910,6 @@ static PyObject* remote_get(PyObject *self, PyObject *args)
 	return Py_BuildValue("f", ra.qvalue);
 }
 
-
 static PyObject* remote_set(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Setting ");
@@ -988,6 +987,37 @@ static PyObject* remote_y_current(PyObject *self, PyObject *args)
 
 	return Py_BuildValue("i", y);
 }
+
+static PyObject* remote_moveto_scan_xy(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Moveto Scan XY ");
+	remote_args ra;
+	double x, y;
+        
+	if (!PyArg_ParseTuple(args, "dd", &x, &y))
+		return Py_BuildValue("i", -1);
+
+	PI_DEBUG(DBG_L2, x << ", " << y );
+
+        if (x >= -gapp->xsm->data.s.rx/2 && x <= gapp->xsm->data.s.rx/2 &&
+            y >= -gapp->xsm->data.s.ry/2 && y <= gapp->xsm->data.s.ry/2){
+        
+                gapp->xsm->data.s.sx = x;
+                gapp->xsm->data.s.sy = y;
+
+                gapp->xsm->hardware->MovetoXY
+                        (R2INT(gapp->xsm->Inst->XA2Dig(gapp->xsm->data.s.sx)),
+                         R2INT(gapp->xsm->Inst->YA2Dig(gapp->xsm->data.s.sy)));
+
+                gapp->spm_update_all ();
+        
+                return Py_BuildValue("i", 0);
+        } else {
+                g_warning ("PyRemote: Set Scan XY: requested position (%g, %g) Ang out of current scan range.", x,y);
+                return Py_BuildValue("i", -1);
+        }
+}
+
 
 ///////////////////////////////////////////////////////////////
 // BLOCK II
@@ -1656,6 +1686,7 @@ static PyMethodDef EmbMethods[] = {
 	{"action", remote_action, METH_VARARGS, "Action."},
 	{"rtquery", remote_rtquery, METH_VARARGS, "RTQuery."},
 	{"y_current", remote_y_current, METH_VARARGS, "RTQuery Current Scanline."},
+	{"moveto_scan_xy", remote_moveto_scan_xy, METH_VARARGS, "Set tip position to Scan-XY."},
 
 	// BLOCK II
 	{"createscan", remote_createscan, METH_VARARGS, "Create Scan."},
@@ -2602,7 +2633,8 @@ void  py_gxsm_console::write_example_file(void)
 		"    gxsm.set (\"OffsetY\", \"0\")\n"
 		"    gxsm.action (\"DSP_CMD_AUTOAPP\")\n"
 		"    gxsm.sleep (10)\n"
-		"    gxsm.startscan ()\n";
+		"    #gxsm.startscan ()\n"
+	        "    gxsm.moveto_scan_xy (100.,50.)\n";
 	example_file.close();
 }
 
