@@ -86,16 +86,14 @@ start_y0=gxsm.get ("OffsetY")
 
 # ref point (0,0)
 def goto_refpoint():
-	gxsm.set ("ScanX","0")
-        gxsm.set ("ScanY","0")
-#	time.sleep(1)
-	gxsm.sleep(40)
+        gxsm.moveto_scan_xy (sx, sy)
+	wait_scan_pos()
+	time.sleep(1)
 
 def goto_point(x,y, s=40):
 	xd=x+0.1
-	gxsm.set ("ScanX","%f"%xd)
-	gxsm.set ("ScanX","%f"%x)
-        gxsm.set ("ScanY","%f"%y)
+        gxsm.moveto_scan_xy (sx, sy)
+	wait_scan_pos()
 	gxsm.sleep(s)
 
 def freeze_Z():
@@ -168,9 +166,8 @@ def run_vp_test_print (coords, num):
 	        sy=coords[i][1]
 # force offset and set scan coords
 	        print "ScanXY: ", sx, sy
-	        gxsm.set ("ScanX","%f"%(sx))
-	        gxsm.set ("ScanY","%f"%(sy))
-	        gxsm.sleep (10)
+	        gxsm.moveto_scan_xy (sx, sy)
+		wait_scan_pos()
 
 
 def run_vp (coords, num, ref_bias=1.8, ref_current=0.02, ff=0, run_ref=0, ref_bias_list=[0.1]):
@@ -198,9 +195,8 @@ def run_vp (coords, num, ref_bias=1.8, ref_current=0.02, ff=0, run_ref=0, ref_bi
 	        gxsm.set ("OffsetY","%f"%(start_y0))
 	        gxsm.sleep (20)
 	        print "ScanXY: ", sx, sy
-	        gxsm.set ("ScanX","%f"%(sx))
-	        gxsm.set ("ScanY","%f"%(sy))
-	        gxsm.sleep (20)
+	        gxsm.moveto_scan_xy (sx, sy)
+		wait_scan_pos()
 		gxsm.set ("dsp-fbs-bias","%f"%(ref_bias))
 		gxsm.set ("dsp-fbs-mx0-current-set","%f"%(ref_current))
  	        print "Zzzz"
@@ -220,7 +216,7 @@ def run_vp (coords, num, ref_bias=1.8, ref_current=0.02, ff=0, run_ref=0, ref_bi
 		if M < -0.9:
 			pause_tip_retract ()
 
-def run_vp_simple (coords, num, ref_bias=1.8, ref_current=0.02,run_ref=0):
+def run_iv_simple (coords, num, ref_bias=1.8, ref_current=0.02,run_ref=0):
 	gxsm.set ("dsp-fbs-bias","%f"%(ref_bias))
 	gxsm.set ("dsp-LCK-AC-Bias-Amp","0.03")
 	gxsm.set ("dsp-fbs-mx0-current-set","%f"%(ref_current))
@@ -236,9 +232,7 @@ def run_vp_simple (coords, num, ref_bias=1.8, ref_current=0.02,run_ref=0):
 	        sy=coords[i][1]
 # force offset and set scan coords
 	        print "ScanXY: ", sx, sy
-	        gxsm.set ("ScanY","%f"%(sy))
-		wait_scan_pos()
-	        gxsm.set ("ScanX","%f"%(sx))
+	        gxsm.moveto_scan_xy (sx, sy)
 		wait_scan_pos()
 	        print "VP Execute #", i, " of ", len2, " (", (100.*float(i)/len2), "%)"
 	        gxsm.action ("DSP_VP_IV_EXECUTE")
@@ -250,6 +244,18 @@ def run_vp_simple (coords, num, ref_bias=1.8, ref_current=0.02,run_ref=0):
 		if M < -0.9:
 			pause_tip_retract ()
 	gxsm.set ("dsp-LCK-AC-Bias-Amp","0.0")
+
+def run_lm_simple (coords, num, ref_bias=0.1, ref_current=0.01,run_ref=0):
+	for i in range(0, num):
+	        gxsm.moveto_scan_xy (coords[i][0],coords[i][1])
+		wait_scan_pos()
+	        gxsm.action ("DSP_VP_LM_EXECUTE")
+	        M = wait_for_vp ()
+	        if M < -3:
+	                terminate = 1
+	                break
+		if M < -0.9:
+			pause_tip_retract ()
 
 def run_survey (coords, num, bias=0.1, current=0.01):
 	for i in range(0, num):
@@ -264,38 +270,17 @@ def run_survey (coords, num, bias=0.1, current=0.01):
 
 
 def run_lm (coords, num, ff, ref_bias=2.35, ref_current=0.045):
-##def run_vp (coords, num, ff, ref_bias=2.35, ref_current=0.045):
-#       x0=gxsm.get ("OffsetX")
-#	y0=gxsm.get ("OffsetY")
 	for i in range(0, num):
 #		if i % 100 == 0:
 #			if ff:
 #			        release_Z ()
 #			gxsm.set ("dsp-LCK-AC-Bias-Amp","0")    
-###			run_ref_image (0.25)
-#			run_ref_image (0.5)
-#			run_ref_image (2.35)
-#			run_ref_image (2.60)
-#			run_ref_image (-1.0)
-
-#		gxsm.set ("dsp-LCK-AC-Bias-Amp","0.015")    
-###		gxsm.set ("dsp-fbs-bias","%f"%(ref_bias))
-###		gxsm.set ("dsp-fbs-mx0-current-set","%f"%(ref_current))
-#        	if ff:
-#	        	goto_refpoint ()
-#		        freeze_Z ()             
-
+#			run_ref_image (0.25)
 	        sx=coords[i][0]
 	        sy=coords[i][1]
-# force offset and set scan coords
-#	        gxsm.set ("OffsetX","%f"%(start_x0))
-#	        gxsm.set ("OffsetY","%f"%(start_y0))
-#	        gxsm.sleep (20)
 	        print "ScanXY: ", sx, sy
-#	        gxsm.set ("ScanX","%f"%(sx))
-#	        gxsm.set ("ScanY","%f"%(sy))
-	        gxsm.set ("ScanX","%f"%(sx))
-	        gxsm.set ("ScanY","%f"%(sy))
+	        gxsm.moveto_scan_xy (sx, sy)
+		wait_scan_pos()
 	        print "Zzzz"
 	        gxsm.sleep (40)
 	        print "VP Execute #", i, " of ", len2, " (", (100.*float(i)/len2), "%)"
@@ -351,16 +336,24 @@ def chdcircle (m=10,n=400):
 
 #gxsm.save ()
 
-spnx = 100.
-stepx = 2.
+#survey mode
+#spnx = 2500.
+#stepx = 1000.
 
-spny = 100.
-stepy = 2.
+#spny = 2500.
+#stepy = 1000.
+
+# STS gird
+spnx = 12.0
+stepx = 1.0
+
+spny = 12.0
+stepy = 1.0
 
 sxlist = np.arange (-spnx, spnx+stepx, stepx)
 sylist = np.arange (-spny, spny+stepy, stepy)
 
-position = [[0.,0.]]
+position = [[0.0,0.0]]
 positions = 1
 len2 = np.size(sxlist) * np.size(sylist) * positions
 xy = np.arange(2.0*len2).reshape(len2,2)
@@ -377,34 +370,47 @@ for r in position:
 #print len2
 #print xy
 #np.random.shuffle(xy)
-#print xy
+print xy
 
 
-
-###def run_vp (coords, num, ref_bias=2.35, ref_current=0.045, ff=0, run_ref=0, ref_bias_list=[0.1])
-#run_vp_simple (xy, len2, 1.8, 0.02, 10)
-
-#run_survey (xy, len2, 0.1, 0.01)
+#gxsm.set ("dsp-IV-Start00", 2.2)
+#gxsm.set ("dsp-IV-End00", -1.7)
 
 print "STARTING NOW..."
 
-#terminate = run_set ([0.03, 0.05, 0.1, 0.2, 0.5, 1.0, 1.5, 2.0])
+
+###def run_vp (coords, num, ref_bias=2.35, ref_current=0.045, ff=0, run_ref=0, ref_bias_list=[0.1])
+#run_iv_simple (xy, len2, 0.5, 0.03, 0)
+#run_lm_simple (xy, len2, 0.05, 0.02, 10)
+
+#run_survey (xy, len2, 0.1, 0.01)
 
 
-for r in xy:
-	gxsm.moveto_scan_xy (r[0],r[1])
-	gxsm.sleep(1)
+##terminate = run_set ([0.05, 0.1, 0.2, 0.5, -0.1, -0.2, -0.5, 1.0, 1.5, -1.0, -1.5, 2.0, -2.0, 2.5, 0.1, 0.1])
+#terminate = run_set (np.arange(0.02, 0.1, 0.02 ))
+#terminate = run_set (np.arange(0.1, 1.2, 0.1 ))
+#terminate = run_set (np.arange(-0.02, -0.1, -0.02 ))
+#terminate = run_set (np.arange(-0.1, -1.2, -0.1 ))
+#terminate = run_set (np.arange(-1.1, -2.5, -0.1 ))
+#terminate = run_set (np.arange(2.5, 3.1, 0.2 ))
+#terminate = run_set (np.arange(-2.5, -3.1, -0.2 ))
+
+run_lm_simple (xy, len2, 0.04, 0.02, 10)
+
+zi=-10.5
+for z in np.arange(zi, zi-2.2, -0.1):
+	print z
+	gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%z )
+##	b=0.1
+##	gxsm.set ("dsp-fbs-bias","%f"%b)
+	gxsm.startscan ()
+	gxsm.waitscan ()
+
+run_lm_simple (xy, len2, 0.04, 0.02, 10)
 
 
-#for z in np.arange(-18.1, -20.0, -0.1):
-#	print z
-#	gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%z )
-#	gxsm.startscan ()
-#	gxsm.waitscan ()
-
-
-z=-16
-gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%z )
+zstandby=zi+50
+gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%zstandby )
 
 
 #freeze_Z()
