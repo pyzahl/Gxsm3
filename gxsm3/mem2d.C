@@ -2433,15 +2433,57 @@ MemDigiFilter::MemDigiFilter(double Xms, double Xns, int M, int N):Mem2d(2*N+1, 
         XSM_DEBUG (DBG_L4, "MemDigiFilter: " << n << " " << m << " " << xms << " " << xns);
 }
 
+typedef struct{
+        ZData *kernel;
+        ZData *In;
+        ZData *Dest;
+        int line_i, line_f, line_inc;
+        int ns, ms;
+        double scalefac;
+        int job;
+        int *status;
+        double progress;
+} Mem2d_Digi_Filter_Convolve_Job_Env;
+
+gpointer mem2d_digi_filter_convolve_thread (void *env){
+        Mem2d_Digi_Filter_Convolve_Job_Env* job = (Mem2d_Digi_Filter_Convolve_Job_Env*)env;
+
+        for(int ii=job->line_i; ii<job->line_f; ii+=job->line_inc){
+                job->progress = (double)ii/job->line_f;
+                for(int jj=0; jj<job->Dest->GetNx(); ++jj){
+                        const int tms = 2*job->ms;
+                        const int tns = 2*job->ns;
+                        double sum = 0.;
+      
+                        for(int i=0; i<=tms; ++i)
+                                for(int j=0; j<=tns; j++)
+                                        sum +=  job->In->Z (jj+j, i+ii) * job->kernel->Z (j,i);
+
+                        job->Dest->Z (sum/job->scalefac, jj,ii);
+                }
+                if (*(job->status)){
+                        job->job = -2; // aborted
+                        return NULL;
+                }
+        }
+        
+        job->job = -1;
+        return NULL;
+}
+
+static void cancel_callback (void *widget, int *status);
+static void cancel_callback (void *widget, int *status){
+	*status = 1; 
+}
+
 gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         int i0=0;
         int i, j;
-        int ii, jj;
         double scalefac, scalefaca;
         int mm, nn;
         int ms=m, ns=n;
         gboolean again = FALSE;
-  
+    
         XSM_DEBUG (DBG_L2, "MemDigiFilter::Convolve: create kernel");
         // create the convolution kernel
         do{
@@ -2542,7 +2584,11 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         if (Dest->GetNv () == 1)
                 Dest->Resize(nn,mm);
 
+
         // do convolution !
+
+#if 0   // old single cpu convole code, using incremetal ZData access
+        // -- note: this is NOT thread save, pointer stored/adjusted in zdata, only single access at a time!
         gint pcent=0;
         for(ii=0; ii<mm; ++ii){
                 if(pcent < 100*ii/mm ){
@@ -2573,6 +2619,62 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                 }
         }
         SET_PROGRESS(0);
-        XSM_DEBUG (DBG_L6, "done.");
+
+#else
+        // new threadded convole code
+        
+        int max_jobs = g_get_num_processors (); // default concurrency for multi threadded computation, # CPU's/cores
+
+        if (max_jobs > 2)
+                max_jobs--;
+                
+        // do convolution, thread up convolute jobs !
+        Mem2d_Digi_Filter_Convolve_Job_Env job[max_jobs];
+        GThread* tpi[max_jobs];
+        int stop_flag = 0;
+        
+        for (int jobno=0; jobno < max_jobs && jobno < Dest->GetNy (); ++jobno){
+                // std::cout << "Job #" << jobno << std::endl;
+                job[jobno].kernel = data;
+                job[jobno].In     = x.data;
+                job[jobno].Dest   = Dest->data;
+                job[jobno].line_i = jobno;
+                job[jobno].line_inc = max_jobs;
+                job[jobno].line_f = Dest->GetNy ();
+                job[jobno].scalefac = scalefac;
+                job[jobno].ms = ms;
+                job[jobno].ns = ns;
+                job[jobno].job = jobno+1;
+                job[jobno].progress = 0.;
+                job[jobno].status = &stop_flag;               
+                tpi[jobno] = g_thread_new ("mem2d_digi_filter_convolve_thread", mem2d_digi_filter_convolve_thread, &job[jobno]);
+        }
+        // std::cout << "Waiting for all threads to complete." << std::endl;
+        gapp->check_events ();
+        
+        gapp->progress_info_new ("DigiFilter Convolute", 1+(int)max_jobs, GCallback (cancel_callback), &stop_flag, false);
+        
+        for (int running=1; running;){
+                running=0;
+                for (int jobno=0; jobno < max_jobs; ++jobno){
+                        if (job[jobno].job >= 0)
+                                running++;
+                        gapp->progress_info_set_bar_fraction (job[jobno].progress, jobno+2);
+                        gchar *info = g_strdup_printf ("ConvJob %d", jobno+1);
+                        gapp->progress_info_set_bar_text (info, jobno+2);
+                        g_free (info);
+                        gapp->check_events ();
+                }
+        }
+        
+        for (int jobno=0; jobno < max_jobs; ++jobno)
+                if (tpi[jobno])
+                        g_thread_join (tpi[jobno]);
+
+        gapp->progress_info_close ();
+        
+#endif
+        
         return TRUE;  
 }
+
