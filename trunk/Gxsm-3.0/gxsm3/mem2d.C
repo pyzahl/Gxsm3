@@ -2483,7 +2483,14 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         int mm, nn;
         int ms=m, ns=n;
         gboolean again = FALSE;
-    
+        int stop_flag = 0;
+        int max_jobs = g_get_num_processors (); // default concurrency for multi threadded computation, # CPU's/cores
+        
+        gapp->progress_info_new ("DigiFilter Convolute", 1+(int)max_jobs, GCallback (cancel_callback), &stop_flag, false);
+        gapp->progress_info_set_bar_fraction (0.1, 2);
+        gapp->progress_info_set_bar_text ("Setup", 2);
+        gapp->check_events ();
+        
         XSM_DEBUG (DBG_L2, "MemDigiFilter::Convolve: create kernel");
         // create the convolution kernel
         do{
@@ -2513,7 +2520,10 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                 if(ring_n < n)	{again = TRUE; ns = ring_n;}
         }while(again);
         XSM_DEBUG (DBG_L6, "MemDigiFilter::Scaleing done.");
-  
+
+        gapp->progress_info_set_bar_fraction (0.3, 2);
+        gapp->check_events ();
+        
         if(Src->data->GetNx()<1 && Src->data->GetNy()<1)
                 return FALSE;
  
@@ -2533,13 +2543,18 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                         x.data->Z(Src->data->Z(i0,i),   j,      i+ms); // data[i+ms][j]       = Src->data[i][0];
                         x.data->Z(Src->data->Z(nn-1,i),j+ns+nn,i+ms); // data[i+ms][j+ns+nn] = Src->data[i][nn-1];
                 }
-  
+
+        gapp->progress_info_set_bar_fraction (0.4, 2);
+        gapp->check_events ();
+
         // edge top / bottom
         for(i=0;i<ms;i++){
                 x.data->CopyFrom(Src->data, 0,0, ns,i ,nn);
                 x.data->CopyFrom(Src->data, 0,mm-1, ns,i+mm+ms ,nn);
-        }
-  
+        } 
+        gapp->progress_info_set_bar_fraction (0.5, 2);
+        gapp->check_events ();
+
         // corners
         for(i=0;i<ms;i++)
                 for(j=0;j<ns;j++){
@@ -2548,6 +2563,8 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                         x.data->Z(Src->data->Z(i0,mm-1), j,mm+ms+i);
                         x.data->Z(Src->data->Z(nn-1,mm-1), nn+ns+j,mm+ms+i);
                 }
+        gapp->progress_info_set_bar_fraction (0.8, 2);
+        gapp->check_events ();
   
 #ifdef SAVECONVOLKERN
         // save Kernel to /tmp/convolkern.dbl
@@ -2587,93 +2604,83 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
 
         // do convolution !
 
-#if 0   // old single cpu convole code, using incremetal ZData access
-        // -- note: this is NOT thread save, pointer stored/adjusted in zdata, only single access at a time!
-        gint pcent=0;
-        for(ii=0; ii<mm; ++ii){
-                if(pcent < 100*ii/mm ){
-                        SET_PROGRESS((gfloat)ii/(gfloat)mm);
-                }
+        if (max_jobs < 2){
 
-                for(jj=0; jj<nn; ++jj){
-                        const int tms = 2*ms;
-                        const int tns = 2*ns;
-#ifdef __INT_SF2
-                        const int sf2 = (int)scalefac/2;
-#endif
-                        double sum;
-      
-                        for(sum=0., i=0; i<=tms; ++i){
-                                data->SetPtr(0,i);
-                                x.data->SetPtr(jj,i+ii);
-                                for(j=0; j<=tns; j++)
-                                        sum += x.data->GetNext() * data->GetNext();
+                gapp->progress_info_set_bar_text ("Convolution", 2);
+
+                // old single cpu convole code, using incremetal ZData access
+                // -- note: this is NOT thread save, pointer stored/adjusted in zdata, only single access at a time!
+                gint pcent=0;
+                for(int ii=0; ii<mm; ++ii){
+                        if(pcent < 100*ii/mm ){
+                                gapp->progress_info_set_bar_fraction ((gfloat)ii/(gfloat)mm, 2);
+                                //SET_PROGRESS((gfloat)ii/(gfloat)mm);
+                                if (stop_flag)
+                                        break;
                         }
-#ifdef __INT_SF2
-                        Dest->data->Z(sum>0. ? ((sum+sf2)/scalefac) :
-                                      -((-sum+sf2)/scalefac),
-                                      jj,ii);
-#else
-                        Dest->data->Z(sum/scalefac, jj,ii);
-#endif
+
+                        for(int jj=0; jj<nn; ++jj){
+                                const int tms = 2*ms;
+                                const int tns = 2*ns;
+                                double sum;
+      
+                                for(sum=0., i=0; i<=tms; ++i){
+                                        data->SetPtr(0,i);
+                                        x.data->SetPtr(jj,i+ii);
+                                        for(j=0; j<=tns; j++)
+                                                sum += x.data->GetNext() * data->GetNext();
+                                }
+                                Dest->data->Z(sum/scalefac, jj,ii);
+                        }
                 }
-        }
-        SET_PROGRESS(0);
+        } else {
+                // new threadded convole code
+                if (max_jobs > 3)
+                        max_jobs--; // leave one
 
-#else
-        // new threadded convole code
+                // do convolution, thread up convolute jobs !
+                Mem2d_Digi_Filter_Convolve_Job_Env job[max_jobs];
+                GThread* tpi[max_jobs];
         
-        int max_jobs = g_get_num_processors (); // default concurrency for multi threadded computation, # CPU's/cores
-
-        if (max_jobs > 2)
-                max_jobs--;
-                
-        // do convolution, thread up convolute jobs !
-        Mem2d_Digi_Filter_Convolve_Job_Env job[max_jobs];
-        GThread* tpi[max_jobs];
-        int stop_flag = 0;
-        
-        for (int jobno=0; jobno < max_jobs && jobno < Dest->GetNy (); ++jobno){
-                // std::cout << "Job #" << jobno << std::endl;
-                job[jobno].kernel = data;
-                job[jobno].In     = x.data;
-                job[jobno].Dest   = Dest->data;
-                job[jobno].line_i = jobno;
-                job[jobno].line_inc = max_jobs;
-                job[jobno].line_f = Dest->GetNy ();
-                job[jobno].scalefac = scalefac;
-                job[jobno].ms = ms;
-                job[jobno].ns = ns;
-                job[jobno].job = jobno+1;
-                job[jobno].progress = 0.;
-                job[jobno].status = &stop_flag;               
-                tpi[jobno] = g_thread_new ("mem2d_digi_filter_convolve_thread", mem2d_digi_filter_convolve_thread, &job[jobno]);
-        }
-        // std::cout << "Waiting for all threads to complete." << std::endl;
-        gapp->check_events ();
-        
-        gapp->progress_info_new ("DigiFilter Convolute", 1+(int)max_jobs, GCallback (cancel_callback), &stop_flag, false);
-        
-        for (int running=1; running;){
-                running=0;
-                for (int jobno=0; jobno < max_jobs; ++jobno){
-                        if (job[jobno].job >= 0)
-                                running++;
-                        gapp->progress_info_set_bar_fraction (job[jobno].progress, jobno+2);
-                        gchar *info = g_strdup_printf ("ConvJob %d", jobno+1);
-                        gapp->progress_info_set_bar_text (info, jobno+2);
-                        g_free (info);
-                        gapp->check_events ();
+                for (int jobno=0; jobno < max_jobs && jobno < Dest->GetNy (); ++jobno){
+                        // std::cout << "Job #" << jobno << std::endl;
+                        job[jobno].kernel = data;
+                        job[jobno].In     = x.data;
+                        job[jobno].Dest   = Dest->data;
+                        job[jobno].line_i = jobno;
+                        job[jobno].line_inc = max_jobs;
+                        job[jobno].line_f = Dest->GetNy ();
+                        job[jobno].scalefac = scalefac;
+                        job[jobno].ms = ms;
+                        job[jobno].ns = ns;
+                        job[jobno].job = jobno+1;
+                        job[jobno].progress = 0.;
+                        job[jobno].status = &stop_flag;               
+                        tpi[jobno] = g_thread_new ("mem2d_digi_filter_convolve_thread", mem2d_digi_filter_convolve_thread, &job[jobno]);
                 }
+                // std::cout << "Waiting for all threads to complete." << std::endl;
+                gapp->check_events ();
+        
+                for (int running=1; running;){
+                        running=0;
+                        for (int jobno=0; jobno < max_jobs; ++jobno){
+                                if (job[jobno].job >= 0)
+                                        running++;
+                                gapp->progress_info_set_bar_fraction (job[jobno].progress, jobno+2);
+                                gchar *info = g_strdup_printf ("ConvJob %d", jobno+1);
+                                gapp->progress_info_set_bar_text (info, jobno+2);
+                                g_free (info);
+                                gapp->check_events ();
+                        }
+                }
+        
+                for (int jobno=0; jobno < max_jobs; ++jobno)
+                        if (tpi[jobno])
+                                g_thread_join (tpi[jobno]);
+
         }
         
-        for (int jobno=0; jobno < max_jobs; ++jobno)
-                if (tpi[jobno])
-                        g_thread_join (tpi[jobno]);
-
         gapp->progress_info_close ();
-        
-#endif
         
         return TRUE;  
 }
