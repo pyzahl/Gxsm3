@@ -2442,11 +2442,24 @@ DSPControl::DSPControl () {
 		gchar *stolab = g_strdup_printf ("STO %s", keys[i]);
 		gchar *rcllab = g_strdup_printf ("RCL %s", keys[i]);
 		gchar *memolab = g_strdup_printf ("M %s", keys[i]);             
-                
+                remote_action_cb *ra = NULL;
+                gchar *help = NULL;
+                        
                 dsp_bp->set_xy (i+1, 10);
-                dsp_bp->grid_add_button (N_(stolab), NULL, 1,
+                // add button with remote support for program recall
+                ra = g_new( remote_action_cb, 1);
+                ra -> cmd = g_strdup_printf("DSP_VP_STO_%s", keys[i]);
+                help = g_strconcat ("Remote example: action (", ra->cmd, ")", NULL); 
+                dsp_bp->grid_add_button (N_(stolab), help, 1,
                                          G_CALLBACK (callback_LM_store_vp), this,
                                          "key", gckey);
+                g_free (help);
+                ra -> RemoteCb = (void (*)(GtkWidget*, void*))callback_LM_store_vp;
+                ra -> widget = dsp_bp->button;
+                ra -> data = this;
+                gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+                PI_DEBUG (DBG_L2, "Adding new Remote Cmd: " << ra->cmd ); 
+
                 // CSS
                 //                if (gdk_rgba_parse (&rgba, "tomato"))
                 //                        gtk_widget_override_background_color ( GTK_WIDGET (dsp_bp->button), GTK_STATE_FLAG_PRELIGHT, &rgba);
@@ -2454,9 +2467,9 @@ DSPControl::DSPControl () {
                 dsp_bp->set_xy (i+1, 11);
 
                 // add button with remote support for program recall
-                remote_action_cb *ra = g_new( remote_action_cb, 1);
+                ra = g_new( remote_action_cb, 1);
                 ra -> cmd = g_strdup_printf("DSP_VP_RCL_%s", keys[i]);
-                gchar *help = g_strconcat ("Remote example: action (", ra->cmd, ")", NULL); 
+                help = g_strconcat ("Remote example: action (", ra->cmd, ")", NULL); 
                 dsp_bp->grid_add_button (N_(rcllab), help, 1,
                                          G_CALLBACK (callback_LM_restore_vp), this,
                                          "key", gckey);
