@@ -400,7 +400,7 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 		sr_write (dsp, &dsp_state, MAX_WRITE_SPM_STATEMACHINE<<1); 
 		break;
 	}
-	case DSP_CMD_APPROCH_MOV_XP: // auto approch "Mover"
+	case DSP_CMD_APPROCH_MOV_XP: // auto approach "Mover"
 	{
 		static AUTOAPPROACH dsp_aap;
 		dsp_aap.start = int_2_sranger_int(1);           /* Initiate =WO */

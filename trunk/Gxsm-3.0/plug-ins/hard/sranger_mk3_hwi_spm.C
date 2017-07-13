@@ -471,6 +471,7 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 
                 int channels=1;
                 switch (DSPMoverClass->mover_param.MOV_waveform_id){
+                case MOV_WAVE_BESOCKE:
                 case MOV_WAVE_SINE: channels = 3; break;
                 case MOV_WAVE_KOALA: channels = 2; break;
                 default: channels = 1; break;
@@ -562,6 +563,7 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 
                 int channels=1;
                 switch (DSPMoverClass->mover_param.MOV_waveform_id){
+                case MOV_WAVE_BESOCKE:
                 case MOV_WAVE_SINE: channels = 3; break;
                 case MOV_WAVE_KOALA: channels = 2; break;
                 default: channels = 1; break;

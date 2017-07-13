@@ -187,7 +187,8 @@ typedef struct{
 #define MOV_WAVE_USER      9
 #define MOV_WAVE_USER_TTL 10
 #define MOV_WAVE_KOALA    11
-#define MOV_WAVE_LAST     12
+#define MOV_WAVE_BESOCKE  12
+#define MOV_WAVE_LAST     13
 	int MOV_output, MOV_mode, MOV_waveform_id;
 	int wave_out_channel[6];
 	int wave_out_channel_dsp[6];
@@ -199,6 +200,9 @@ typedef struct{
         double retract_ci;
 	double inch_worm_phase;
 	double Wave_space;
+        double z_Rate;
+        double time_delay_1;
+        double time_delay_2;
         int GPIO_on, GPIO_off, GPIO_reset, GPIO_scan, GPIO_tmp1, GPIO_tmp2, GPIO_direction;
 	double GPIO_delay;
         int axis_counts[DSP_AFMMOV_MODES][3];
@@ -921,6 +925,7 @@ public:
 	static int config_output (GtkWidget *widget, DSPMoverControl *dspc);
 	static int CmdAction(GtkWidget *widget, DSPMoverControl *dspc);
 	static int StopAction(GtkWidget *widget, DSPMoverControl *dspc);
+        static int RampspeedUpdate(GtkWidget *widget, DSPMoverControl *dspc);
         
 	static void configure_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
@@ -942,7 +947,8 @@ public:
 
         GtkWidget *mc_popup_menu;
         GActionGroup *mc_action_group;
-        
+        GtkWidget *mc_rampspeed_label;        
+
 private:
 	void create_folder();
 	GSettings *hwi_settings;
