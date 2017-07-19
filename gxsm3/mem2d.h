@@ -385,6 +385,7 @@ public:
 	static void evl_remove(gpointer entry, gpointer from);
 	void RemoveScanEvents ();
 	GSList* ReportScanEvents (GFunc report_obj_func, gpointer gp, double *xy=NULL, double distance=0., int number=0);
+	GSList* ReportScanEventsXasc ();
 	void AttachScanEvent (ScanEvent *se);
 	int WriteScanEvents (NcFile *ncf);
 	int LoadScanEvents (NcFile *ncf);
