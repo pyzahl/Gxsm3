@@ -827,6 +827,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "active", "Active");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "visible", "Visible");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all", "All");
+	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all project on x", "All Project on X");
  	gtk_combo_box_set_active (GTK_COMBO_BOX (select_events_by), 0);
 
         x=1, ++y;
@@ -1607,19 +1608,29 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 				gchar* txt = g_strdup_printf ("All probe events shown: %s", pe->get_label (yi));
 				vc->EventPlot->SetTitle (txt);
 				g_free (txt);
+			}else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3){
+				gchar* txt = g_strdup_printf ("All probe projected on X: %s", pe->get_label (yi));
+				vc->EventPlot->SetTitle (txt);
+				g_free (txt);
 			}else
 				vc->EventPlot->SetTitle (pe->get_label (yi));
 		}
 		
 //		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (vc->tog_average))){
 
-		if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 0){
+                // cleanup
+                if (!vc->EventPlot->scan1d->view){
+                        delete vc->EventPlot->scan1d->view;
+                        vc->EventPlot->scan1d->view = NULL;
+                }
+                
+                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 0){ // active
 			vc->EventPlot->RemoveScans ();
 			vc->EventPlot->scan1d->mem2d->Resize (nn, 1);
 			vc->EventPlot->AddScan (vc->EventPlot->scan1d, 0);
 		        for(int i = 0; i < nn; i++)
 			        vc->EventPlot->SetPoint (i, pe->get (i, xi), pe->get (i, yi));
-		} else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 1){
+		} else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 1){ // visible
 			vc->EventPlot->RemoveScans ();
 			vc->EventPlot->scan1d->mem2d->Resize (nn, 1);
 			vc->EventPlot->AddScan (vc->EventPlot->scan1d, 0);
@@ -1650,8 +1661,8 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 			        for(int i = 0; i < nn; i++)
 				        vc->EventPlot->MulPoint (i, 1./((double)count));
 
-		} else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 2){
-			GSList* all = vc->scan->mem2d->ReportScanEvents (NULL, NULL, vc->CursorXYVt, 0., 0);
+		} else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 2){ // all
+			GSList* all = vc->scan->mem2d->ReportScanEventsXasc ();
 			GSList* ev = all;
 			int i=0;
 			int count=0;
@@ -1692,6 +1703,66 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 				}
 				ev = g_slist_next (ev);
 			}
+			g_slist_free (all);
+		} else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3){ // project on X
+			GSList* all = vc->scan->mem2d->ReportScanEventsXasc ();
+			GSList* ev = all;
+			int count=0;
+			while (ev){
+				ScanEvent *sen = (ScanEvent*) ev->data;
+                                EventEntry *een = (EventEntry*) sen->event_list->data;
+                                if (een->description_id () == 'P')
+                                        count++;
+				ev = g_slist_next (ev);
+			}
+			vc->EventPlot->RemoveScans ();
+                        // auto decimate
+                        int nn_dec=1;
+                        if (nn > 2*count)
+                                nn_dec = nn/count;
+                        int num_nn_dec = nn/nn_dec+1;
+			vc->EventPlot->scan1d->mem2d->Resize (count, num_nn_dec);
+                        int i_dec=0;
+                        g_message ("count %d, nn %d, nn_dec %d, num_nn_dec %d", count, nn, nn_dec, num_nn_dec);
+                        for(int i = 0; i < nn && i_dec < num_nn_dec; i+=nn_dec, ++i_dec){
+                                ev = all;
+                                //g_message ("AddScan %d %d", i, i_dec);
+                                vc->EventPlot->AddScan (vc->EventPlot->scan1d, i_dec);
+                                int ecount=0;
+                                while (ev){
+                                        ScanEvent *sen = (ScanEvent*) ev->data;
+                                        double px, py;
+                                        sen->get_position (px, py);
+                                        //g_message ("ScanEvenPos: %g %g", px,py);
+
+                                        EventEntry *een = (EventEntry*) sen->event_list->data;
+                                        if (een->description_id () == 'P'){
+                                                ProbeEntry* pen = (ProbeEntry*) een;
+                                                double value = 0.;
+                                                int nn_sum=0;
+                                                for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum)
+                                                        value += pen->get (ii, yi);
+                                                value /= nn_sum;
+                                                if (value > 100.)
+                                                        value *= 4.65675e-09 / 4.44674e-05;
+                                                //g_message ("SetPoint: %d %g %d", ecount, value, i_dec);
+                                                if (ecount < count){
+                                                        vc->EventPlot->SetPoint (ecount, value, i_dec);
+                                                        vc->EventPlot->scan1d->mem2d->data->SetXLookup (ecount, px);
+                                                        vc->EventPlot->scan1d->mem2d->data->SetYLookup (i_dec, pe->get (i, xi));
+                                                } else {
+                                                        g_message ("count out of range: %d %d", ecount, count);
+                                                }
+                                                ++ecount;
+					}
+                                        ev = g_slist_next (ev);
+				}
+			}
+                        if (!vc->EventPlot->scan1d->view){
+                                vc->EventPlot->scan1d->view = new Grey2D (vc->EventPlot->scan1d);
+                                vc->EventPlot->scan1d->SetVM (SCAN_V_DIRECT);
+                                //vc->EventPlot->scan1d->AutoDisplay (0.,1.,1,0.05);
+                        }
 			g_slist_free (all);
 		}
 		else{
