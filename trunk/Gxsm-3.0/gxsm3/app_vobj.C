@@ -654,7 +654,7 @@ void VObject::build_properties_view (gboolean add){
                                           G_CALLBACK (colorchange_callback), this);
                         properties_bp->grid_add_widget (cpick, 2);
 
-                        showlabel_checkbutton = gtk_check_button_new_with_label( N_("Show Label"));
+                        showlabel_checkbutton = gtk_check_button_new_with_label( N_("On"));
                         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (showlabel_checkbutton), object_label ? TRUE:FALSE);
                         properties_bp->grid_add_widget (showlabel_checkbutton, 2);
                         g_signal_connect (G_OBJECT (showlabel_checkbutton), "clicked",
@@ -700,7 +700,10 @@ void VObject::build_properties_view (gboolean add){
 
                 properties_bp->new_line ();
 
-                gchar *tmp = g_strdup_printf ("Show SpcT[%d:%d]:", space_time_now[1], space_time_now[0]);
+                properties_bp->set_label_width_chars (15);
+                properties_bp->set_input_width_chars (15);
+
+                gchar *tmp = g_strdup_printf ("Show SpcT[%d:%d]", space_time_now[1], space_time_now[0]);
                 properties_bp->grid_add_ec (tmp, Unity, &space_time_on[1], -1, 1000, ".0f");
                 properties_bp->grid_add_ec (NULL,  Unity, &space_time_on[0], -1, 1000, ".0f");
                 g_free (tmp);
