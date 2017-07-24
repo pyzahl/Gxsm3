@@ -95,7 +95,7 @@ using namespace std;
 
 #define SETUP_LABEL(LAB) \
 	do {\
-		gtk_widget_set_size_request (LAB, 150, -1); \
+                gtk_label_set_xalign (GTK_LABEL (LAB), 1.0); \
 		gtk_widget_show (LAB); \
 	}while(0)
 
@@ -236,6 +236,8 @@ public:
                 
                 gtk_label_set_ellipsize (l, PANGO_ELLIPSIZE_START); // or.._END
                 gtk_label_set_width_chars (l, 20);
+                gtk_label_set_xalign (l, 1.0);
+
                 gtk_widget_set_tooltip_text (tog, varname);
 
 		gtk_widget_show (tog);
@@ -520,25 +522,22 @@ void ViewControl::setup_side_pane (gboolean show){
 	}
 }
 
+void ViewControl::display_changed_callback (Param_Control *pc, gpointer vc){
+        ((ViewControl*)vc)->scan->set_display ();
+        // ((ViewControl*)vc)->scan->SetVM();
+}
+
 ViewControl::ViewControl (char *title, int nx, int ny, 
 			  int ChNo, Scan *sc, 
 			  int ZoomFac, int QuenchFac){
 	GtkWidget *statusbar;
 	GtkWidget *scrollarea;
 	GtkWidget *base_grid, *grid, *frame_param;
-	GtkWidget *label;
         int x,y,ii;
         
-	GtkWidget *notebook1;
-	GtkWidget *scrolledwindow1;
-	GtkWidget *label1;
-	GtkWidget *scrolledwindow2;
-	GtkWidget *label2;
-	GtkWidget *label3;
-	GtkWidget *label4;
-	GtkWidget *label5;
-	GtkWidget *label6;
-
+	GtkWidget *label;
+	GtkWidget *notebook;
+	GtkWidget *scrolledwindow;
 
         current_vobject = NULL;
         destruction_in_progress = false;
@@ -693,66 +692,104 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
 	// -- Side-Info-Pane Notebook --
         // ==================================================
-	notebook1 = gtk_notebook_new ();
-	gtk_widget_show (notebook1);
-	gtk_notebook_set_tab_pos (GTK_NOTEBOOK (notebook1), GTK_POS_RIGHT);
-	gtk_notebook_set_scrollable (GTK_NOTEBOOK (notebook1), TRUE);
-	gtk_notebook_popup_enable (GTK_NOTEBOOK (notebook1));
+        gint notebook_tab_index=0;
+	notebook = gtk_notebook_new ();
+	gtk_widget_show (notebook);
+	gtk_notebook_set_tab_pos (GTK_NOTEBOOK (notebook), GTK_POS_RIGHT);
+	gtk_notebook_set_scrollable (GTK_NOTEBOOK (notebook), TRUE);
+	gtk_notebook_popup_enable (GTK_NOTEBOOK (notebook));
 
-	gtk_paned_pack2 (GTK_PANED (hpaned), notebook1, TRUE, FALSE);   // place scrollarea for Scan Image Gnome-Canvas
+	gtk_paned_pack2 (GTK_PANED (hpaned), notebook, TRUE, FALSE);   // place scrollarea for Scan Image Gnome-Canvas
 
-	sidepane = notebook1;
+	sidepane = notebook;
 
 	//if (show_side_pane)
         //  gtk_widget_show (sidepane);
 
 
-	// -- Info Tab
+	// -- View / Display Scaling Parameter Tab
+        // ==================================================
+        view_bp = new BuildParam ();
+        gtk_container_add (GTK_CONTAINER (notebook), view_bp->grid);
+
+	label = gtk_label_new (N_("View"));
+	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
+	gtk_label_set_angle (GTK_LABEL (label), 90);
+
+        view_bp->set_default_ec_change_notice_fkt  (display_changed_callback, this);
+        // Display scaling controls
+        if (!strncasecmp(xsmres.InstrumentType, "CCD",3)){
+                // Display -- Hi-Low
+                // g_object_set_data( G_OBJECT (view_bp->grid), "SPM_EC_VRangeZ", view_bp->ec);
+                view_bp->grid_add_ec ("CCD high", scan->data.CPSUnit, &scan->data.display.cpshigh,
+                                   0., 5000., ".0f", 1., 100., NULL);
+                //"CPShigh");
+
+                view_bp->new_line ();
+                
+                // g_object_set_data( G_OBJECT (input), "Adjustment_PCS_Name", (void*)("SPA-CPS-Low"));
+                view_bp->grid_add_ec ("CCD low", scan->data.CPSUnit, &scan->data.display.cpslow,
+                                   0., 5000., ".0f", 1., 100., NULL);
+                //"CPSlow");
+        } else {
+                // Display -- Range auto center
+                //                g_object_set_data( G_OBJECT (input), "Adjustment_PCS_Name", (void*)("SPM-VRangeZ"));
+                view_bp->grid_add_ec ("V Range Z", scan->data.Zunit, &scan->data.display.vrange_z,
+                                   -5000., 5000., ".3g", 0.1, 5., NULL);
+                //"VRangeZ");
+                g_object_set_data( G_OBJECT (view_bp->grid), "SPM_EC_VRangeZ", view_bp->ec);
+
+                view_bp->new_line ();
+
+                // g_object_set_data( G_OBJECT (input), "Adjustment_PCS_Name", (void*)("SPM-VOffsetZ"));
+                view_bp->grid_add_ec ("V Offset Z", scan->data.Zunit, &scan->data.display.voffset_z,
+                                   -5000., 5000., ".3g", 0.2, 2.,NULL);
+                //"VOffsetZ");
+                g_object_set_data( G_OBJECT (view_bp->grid), "SPM_EC_VOffsetZ", view_bp->ec);
+        }
+        
+        // -- Info Tab
         // ==================================================
 	XSM_DEBUG (DBG_L2,  "VC::VC Info-Tab" );
 
-	scrolledwindow1 = gtk_scrolled_window_new (NULL, NULL);
-        //	gtk_widget_show (scrolledwindow1);
-	gtk_container_add (GTK_CONTAINER (notebook1), scrolledwindow1);
-	gtk_widget_set_size_request (scrolledwindow1, 250, -1);
-	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow1), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-	tab_info = scrolledwindow1;
+	scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
+	gtk_container_add (GTK_CONTAINER (notebook), scrolledwindow);
+	//gtk_widget_set_size_request (scrolledwindow, 250, -1);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	tab_info = scrolledwindow;
 
-	label1 = gtk_label_new (N_("Info"));
-	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 0), label1);
-	gtk_label_set_justify (GTK_LABEL (label1), GTK_JUSTIFY_CENTER);
-	gtk_label_set_angle (GTK_LABEL (label1), 90);
+	label = gtk_label_new (N_("Info"));
+	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
+	gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_CENTER);
+	gtk_label_set_angle (GTK_LABEL (label), 90);
 
 	// -- NC raw Tab
         // ==================================================
 	XSM_DEBUG (DBG_L2,  "VC::VC NetCDF full view-Tab" );
 
-	scrolledwindow2 = gtk_scrolled_window_new (NULL, NULL);
-        //	gtk_widget_show (scrolledwindow2);
-	gtk_container_add (GTK_CONTAINER (notebook1), scrolledwindow2);
-	gtk_widget_set_size_request (scrolledwindow2, 250, -1);
-	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow2), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-	tab_ncraw = scrolledwindow2;
+	scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
+	gtk_container_add (GTK_CONTAINER (notebook), scrolledwindow);
+	gtk_widget_set_size_request (scrolledwindow, 250, -1);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	tab_ncraw = scrolledwindow;
 
-        //	if (show_side_pane){
         NcDumpToWidget ncdump (scan->data.ui.name);
         ncdump.dump (tab_ncraw, tab_info);
-        //}
 
         // ==================================================
-	label2 = gtk_label_new (N_("NetCDF"));
-	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 1), label2);
-	gtk_label_set_use_markup (GTK_LABEL (label2), TRUE);
-	gtk_label_set_angle (GTK_LABEL (label2), 90);
+	label = gtk_label_new (N_("NetCDF"));
+	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
+	gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
+	gtk_label_set_angle (GTK_LABEL (label), 90);
 
 	// -- Probe Events Tab
         // ==================================================
 	base_grid = gtk_grid_new ();
-	gtk_container_add (GTK_CONTAINER (notebook1), base_grid);
+	gtk_container_add (GTK_CONTAINER (notebook), base_grid);
 
-	label3 = gtk_label_new (N_("Probe Events"));
-	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 2), label3);
-	gtk_label_set_angle (GTK_LABEL (label3), 90);
+	label = gtk_label_new (N_("Probe Events"));
+	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
+	gtk_label_set_angle (GTK_LABEL (label), 90);
 
 	//     Events Control ----------------------------------------
 	XSM_DEBUG (DBG_L2,  "VC::VC EVCtrl-Tab" );
@@ -895,11 +932,11 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	// -- User Events Tab
         // ==================================================
 	base_grid = gtk_grid_new ();
-	gtk_container_add (GTK_CONTAINER (notebook1), base_grid);
+	gtk_container_add (GTK_CONTAINER (notebook), base_grid);
 
-	label4 = gtk_label_new (N_("User Events"));
-	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 3), label4);
-	gtk_label_set_angle (GTK_LABEL (label4), 90);
+	label = gtk_label_new (N_("User Events"));
+	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
+	gtk_label_set_angle (GTK_LABEL (label), 90);
 
 	frame_param = gtk_frame_new (N_("User Events"));
 	grid = gtk_grid_new ();
@@ -924,11 +961,11 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	// -- Objects Tab
         // ==================================================
 	base_grid = gtk_grid_new ();
-	gtk_container_add (GTK_CONTAINER (notebook1), base_grid);
+	gtk_container_add (GTK_CONTAINER (notebook), base_grid);
 
-	label5 = gtk_label_new (N_("Objects"));
-	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 4), label5);
-	gtk_label_set_angle (GTK_LABEL (label5), 90);
+	label = gtk_label_new (N_("Objects"));
+	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
+	gtk_label_set_angle (GTK_LABEL (label), 90);
 
         side_pane_tab_objects = base_grid;
 
@@ -946,13 +983,13 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	 * the vertical. */
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrollarea_sp),
 					GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-	gtk_container_add (GTK_CONTAINER (notebook1), scrollarea_sp);
+	gtk_container_add (GTK_CONTAINER (notebook), scrollarea_sp);
 	base_grid = gtk_grid_new ();
 	gtk_container_add (GTK_CONTAINER (scrollarea_sp), base_grid);
 
-	label6 = gtk_label_new (N_("OSD"));
-	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 5), label6);
-	gtk_label_set_angle (GTK_LABEL (label6), 90);
+	label = gtk_label_new (N_("OSD"));
+	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
+	gtk_label_set_angle (GTK_LABEL (label), 90);
         
         grid = gtk_grid_new ();
 	gtk_grid_attach (GTK_GRID (base_grid), grid, 1,1, 1,1);
@@ -1022,6 +1059,8 @@ ViewControl::~ViewControl (){
 
 	RemoveIndicators();
 
+        delete view_bp; // new20170724
+        
 	delete ximg;
 	delete vinfo;
 
@@ -2013,9 +2052,15 @@ void ViewControl::Activate_callback (GSimpleAction *simple, GVariant *parameter,
 void ViewControl::AutoDisp_callback (GSimpleAction *simple, GVariant *parameter, 
                                      gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
-	if (vc->chno < 0) return;
+
+#if 1
+        vc->scan->auto_display ();
+        g_slist_foreach (vc->view_bp->get_ec_list_head (), (GFunc) App::update_ec, NULL);
+#else
+        if (vc->chno < 0) return;
 	gapp->xsm->ActivateChannel(vc->chno);
 	gapp->xsm->AutoDisplay();
+#endif
 }
 
 void ViewControl::SetOff_callback (GSimpleAction *simple, GVariant *parameter, 
@@ -3269,9 +3314,10 @@ void ViewControl::view_view_x_linearize_callback (GSimpleAction *action, GVarian
 	} else {
 		vc->scan->x_linearize (FALSE);
 	}
-	if (vc->chno < 0) return;
-	gapp->xsm->ActivateChannel(vc->chno);
-	gapp->xsm->AutoDisplay();
+	//if (vc->chno < 0) return;
+	//gapp->xsm->ActivateChannel(vc->chno);
+	//gapp->xsm->AutoDisplay();
+        vc->scan->set_display ();
 }
 
 void ViewControl::view_view_attach_redline_callback (GSimpleAction *action, GVariant *parameter, 
@@ -3419,11 +3465,10 @@ void ViewControl::view_view_color_callback (GSimpleAction *action, GVariant *par
 		vc->scan->view->color_mode (DEFAULT_GREY);
 //		CLR_FLAG(gapp->xsm->ZoomFlg, VIEW_PALETTE);
 //		CLR_FLAG(gapp->xsm->ZoomFlg, VIEW_COLOR);
-	}
-	if (vc->chno < 0) return;
-	gapp->xsm->ActivateChannel(vc->chno);
-	gapp->xsm->AutoDisplay();
-	gapp->xsm->AutoDisplay();
+	} 
+// 	if (vc->chno < 0) return;
+	vc->scan->set_display();
+	vc->scan->set_display();
 }
 
 void ViewControl::view_view_color_rgb_callback (GSimpleAction *action, GVariant *parameter, 

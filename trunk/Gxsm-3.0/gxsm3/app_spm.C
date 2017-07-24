@@ -55,20 +55,6 @@ void cbbasename( GtkWidget *widget, App *ap ){
         // ap->as_setdata();
 }
 
-void cb_display_changed( Param_Control* pcs, void *ap ){
-        XSM_DEBUG(DBG_L3, "cb_display_changed");
-        ((App*)ap)->xsm->SetVM();
-}
-
-void cb_display_changed_hilo( Param_Control* pcs, void *ap ){
-        XSM_DEBUG(DBG_L3, "cb_display_changed_hilo");
-        Scan *sc;
-        if( (sc=((App*)ap)->xsm->ActiveScan) )
-                ((App*)ap)->xsm->AutoDisplay( ((App*)ap)->xsm->data.display.GetCntHigh(),
-                                              ((App*)ap)->xsm->data.display.GetCntLow()
-                                              );
-}
-
 void cb_setmode( GtkWidget *widget, int data ){
         XSM_DEBUG(DBG_L3, "cb_setmode");
         if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) 
@@ -725,6 +711,7 @@ GtkWidget* App::create_spm_control (){
 
         spm_bp->set_no_spin (false);
 
+        #if 0
         // Display scaling controls
         if (!strncasecmp(xsmres.InstrumentType, "CCD",3)){
                 // Display -- Hi-Low
@@ -758,6 +745,7 @@ GtkWidget* App::create_spm_control (){
                                      "VOffsetZ");
                 g_object_set_data( G_OBJECT (grid), "SPM_EC_VOffsetZ", spm_bp->ec);
         }
+        #endif
 
         spm_bp->pop_grid ();
         

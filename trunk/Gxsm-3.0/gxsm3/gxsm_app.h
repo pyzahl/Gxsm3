@@ -147,12 +147,8 @@ public:
         static void file_close_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void file_quit_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
-        static void edit_crop_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-        static void edit_copy_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-  
         static void action_toolbar_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
-        static void view_autodisp_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_autozoom_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_tolerant_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_zoom_in_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);

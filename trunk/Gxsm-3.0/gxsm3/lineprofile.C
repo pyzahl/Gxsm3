@@ -722,7 +722,7 @@ int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
 				scan1d->SetVM (SCAN_V_DIRECT);
 			}
 			scan1d->SetVM ();
-			scan1d->AutoDisplay ();
+			scan1d->auto_display ();
 		} else {
 			if (scan1d->view){
 				delete scan1d->view;
@@ -774,7 +774,7 @@ int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
 				scan1d->SetVM (SCAN_V_DIRECT);
 			}
 			scan1d->SetVM ();
-			scan1d->AutoDisplay ();
+			scan1d->auto_display ();
 		} else {
 			if (scan1d->view){
 				delete scan1d->view;

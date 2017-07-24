@@ -1346,7 +1346,7 @@ static PyObject* remote_export(PyObject *self, PyObject *args)
 static PyObject* remote_autodisplay(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Autodisplay");
-	gapp->xsm->AutoDisplay();
+	gapp->xsm->ActiveScan->auto_display();
 	return Py_BuildValue("i", 0);
 }
 

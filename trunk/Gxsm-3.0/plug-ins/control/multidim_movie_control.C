@@ -355,7 +355,7 @@ void Multidim_Movie_Control::l_play (GtkWidget *w, Multidim_Movie_Control *mmc){
 		App::spm_select_layer (NULL, gapp);
 		if (mmc->frame_delay > 0.){
 			if ( gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (mmc->contineous_autodisp)))
-				gapp->xsm->AutoDisplay ();
+				gapp->xsm->ActiveScan->auto_display ();
 			else
 				gapp->spm_update_all ();
 			mmc->update ();
@@ -414,7 +414,7 @@ void Multidim_Movie_Control::t_play (GtkWidget *w, Multidim_Movie_Control *mmc){
 		App::spm_select_time (NULL, gapp);
 		if (mmc->frame_delay > 0.){
 			if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (mmc->contineous_autodisp)))
-			        gapp->xsm->AutoDisplay ();
+			        gapp->xsm->ActiveScan->auto_display ();
 			else
 				gapp->spm_update_all ();
 			mmc->update ();

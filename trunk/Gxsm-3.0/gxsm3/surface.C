@@ -154,14 +154,6 @@ int Surface::SetView(int Channel, int choice){
 	return 0;
 }
 
-void Surface::AutoDisplay(double hi, double lo){
-	if (ActiveScan){
-		ActiveScan->AutoDisplay(hi, lo, xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);	
-		SetVM ();
-		gapp->spm_update_all ();
-	}
-}
-
 int Surface::SetVM (int mode){
 	//  XSM_DEBUG (DBG_L2, "Surface::SetVM m:" << mode << " rdf:" << redrawflg);
 	if (mode)
@@ -613,15 +605,16 @@ int Surface::load(const char *rname){
 	
 	// refresh all Parameter and draw Scan
 	gapp->spm_update_all();
-	ActiveScan->draw();
 
 	if (xsmres.LoadDelay>0){
 		clock_t t=clock()+xsmres.LoadDelay*CLOCKS_PER_SEC/10;
-		gapp->xsm->AutoDisplay();
+		ActiveScan->auto_display ();
 		do {
 			gapp->check_events();
 		} while(t < clock());
-	}
+	} else {
+                ActiveScan->draw();
+        }
 	return ret; 
 }
 
