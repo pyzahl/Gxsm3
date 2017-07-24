@@ -863,7 +863,7 @@ static void omicron_io_filecheck_load_callback (gpointer data){
       
                         // Now update gxsm main window data fields
                         gapp->xsm->ActiveScan->GetDataSet(gapp->xsm->data);
-                        gapp->xsm->AutoDisplay ();
+                        gapp->xsm->ActiveScan->auto_display ();
                         gapp->spm_update_all();
                         dst->draw();
                 }

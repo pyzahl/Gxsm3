@@ -159,20 +159,6 @@ void App::file_quit_callback (GSimpleAction *simple, GVariant *parameter, gpoint
 	}
 }
 
-/* Edit ================================================== */
-
-void App::edit_crop_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-	if(!gapp) return;
-	gapp->xsm->MathOperation(CropScan);
-	return;
-}
-
-void App::edit_copy_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-	if(!gapp) return;
-	gapp->xsm->MathOperation(CopyScan);
-	return;
-}
-
 /* Action ================================================== */
 
 
@@ -186,24 +172,6 @@ void App::action_toolbar_callback (GSimpleAction *simple, GVariant *parameter, g
 
         gapp->signal_emit_toolbar_action (action, simple);
         return;
-}
-
-/* View ================================================== */
-
-void App::view_autodisp_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-	if(!gapp) return;
-	gapp->xsm->AutoDisplay();
-	return;
-}
-
-void App::view_zoom_in_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-	gapp->xsm->MathOperation(ZoomInScan);
-	return;
-}
-
-void App::view_zoom_out_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
-	gapp->xsm->MathOperation(ZoomOutScan);
-	return;
 }
 
 /* Math, Filter, ... ================================================== */

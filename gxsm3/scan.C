@@ -342,40 +342,130 @@ void Scan::realloc_pkt2d(int n){
 	}
 }
 
-void Scan::AutoDisplay(double hi, double lo, int Delta, double sm_eps){
+void Scan::determine_display (int Delta, double sm_eps){
+        double hi,lo;
+        int success = FALSE;
+        int n_obj = number_of_object ();
+        Point2D p[2];
+        hi=lo=0.;
+
+	if (view)
+		view->setup_data_transformation();
+
+        while (n_obj--){
+                scan_object_data *obj_data = get_object_data (n_obj);
+		
+                if (strncmp (obj_data->get_name (), "Rectangle", 9) )
+                        continue; // only points are used!
+
+                if (obj_data->get_num_points () != 2) 
+                        continue; // sth. is weired!
+
+                double x,y; x=y=0.;
+                obj_data->get_xy_pixel (0, x, y);
+                p[0].x = (int)x; p[0].y = (int)y;
+                obj_data->get_xy_pixel (1, x, y);
+                p[1].x = (int)x; p[1].y = (int)y;
+
+                success = TRUE;
+                break;
+        }
+
+        if (success){
+                if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
+                        mem2d->AutoHistogrammEvalMode (&Pkt2d[0], &Pkt2d[1], Delta, sm_eps);
+                else{
+                        if (data.display.ViewFlg & SCAN_V_LOG){
+                                mem2d->HiLo (&hi, &lo, FALSE, &Pkt2d[0], &Pkt2d[1], Delta);
+                                mem2d->SetHiLo (hi, lo);
+                        } else
+                                mem2d->HiLoMod (&p[0], &p[1], Delta);
+                }
+        } else {
+                if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
+                        mem2d->AutoHistogrammEvalMode (NULL, NULL, Delta, sm_eps);
+                else{
+                        if (data.display.ViewFlg & SCAN_V_LOG){
+                                mem2d->HiLo (&hi, &lo, FALSE, NULL, NULL, Delta);
+                                mem2d->SetHiLo (hi, lo);
+                        } else
+                                mem2d->HiLoMod (NULL, NULL, Delta);
+                }
+        }
+
+}
+
+void Scan::auto_display (){
+        double hi,lo;
+        // determine ranges on selection(s)
+        determine_display (xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);
+
+        // update view parameters automatically from selected range(s)
+        mem2d->GetZHiLo (&hi, &lo);
+        data.display.vrange_z = (hi-lo)*data.s.dz;
+        data.display.voffset_z = 0.;
+
+        // calculate contrast and bright
+        mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
+
+        draw ();
+}
+
+void Scan::set_display (){
+        // determine ranges on selection(s)
+        determine_display (xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);
+
+        // recompute from vrange/offset
+        mem2d->SetDataVRangeZ (data.display.vrange_z, 
+                               data.display.voffset_z,
+                               data.s.dz);
+
+        // calculate contrast and bright
+        mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
+
+        draw ();
+}
+
+#if 0
+void Scan::AutoDisplay (doule hi, double lo, int Delta, double sm_eps){
+
+
         GXSM_LOG_ANY_ACTION ("AutoDisp_callback", "in");
 
 	if (hi == 0. && lo == 0.){
 		SetVM (-2, NULL, Delta, sm_eps);
 
 		// step 2: calculate contrast and bright from Zmin, Zrange
-		mem2d->AutoDataSkl (&vdata->display.contrast, &vdata->display.bright);
-		// store high and low in vdata
-		mem2d->GetZHiLo (&vdata->display.cpshigh, &vdata->display.cpslow);
+		mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
+		// store high and low in data
+		mem2d->GetZHiLo (&data.display.cpshigh, &data.display.cpslow);
 		// calculate Vrange in Units
-		double signum = vdata->display.vrange_z > 0. ? 1.:-1.;
-		vdata->display.vrange_z = signum * (1e-100+fabs (vdata->s.dz * mem2d->GetZRange ()));
-		vdata->display.voffset_z = 0.;
+		double signum = data.display.vrange_z > 0. ? 1.:-1.;
+		data.display.vrange_z = signum * (1e-100+fabs (data.s.dz * mem2d->GetZRange ()));
+		data.display.voffset_z = 0.;
 		// only neede by SPALEED
-		vdata->display.cpshigh /= vdata->display.cnttime; // correct to CPS now!
-		vdata->display.cpslow  /= vdata->display.cnttime;
+		data.display.cpshigh /= data.display.cnttime; // correct to CPS now!
+		data.display.cpslow  /= data.display.cnttime;
 
 	} else {
 
 		mem2d->SetHiLo (hi, lo);
-		mem2d->AutoDataSkl (&vdata->display.contrast, &vdata->display.bright);
-		mem2d->GetZHiLo (&vdata->display.cpshigh, &vdata->display.cpslow);
-		vdata->display.vrange_z = vdata->s.dz * fabs (mem2d->GetZRange ())
-			* (vdata->display.vrange_z > 0. ? 1.:-1.);
-		vdata->display.voffset_z = 0.;
-		vdata->display.cpshigh /= vdata->display.cnttime; // correct to CPS now!
-		vdata->display.cpslow  /= vdata->display.cnttime;
+		mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
+		mem2d->GetZHiLo (&data.display.cpshigh, &data.display.cpslow);
+		data.display.vrange_z = data.s.dz * fabs (mem2d->GetZRange ())
+			* (data.display.vrange_z > 0. ? 1.:-1.);
+		data.display.voffset_z = 0.;
+		data.display.cpshigh /= data.display.cnttime; // correct to CPS now!
+		data.display.cpslow  /= data.display.cnttime;
 	}
 
-	data.GetDisplay_Param(*vdata);
+        if (vdata)
+                vdata->GetDisplay_Param (data);
 
         GXSM_LOG_ANY_ACTION ("AutoDisp_callback", "out");
 }
+#endif
+
 
 int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta, double sm_eps){
 	if (vflg > 0)

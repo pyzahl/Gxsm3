@@ -662,7 +662,7 @@ FIO_STATUS PNG_ImExportFile::Write(){
 			PI_DEBUG (DBG_L2, "VFlg:    " << scan->data.display.ViewFlg );
 
                         if (strstr (name, "autodisp"))
-                                scan->AutoDisplay (0.,0.,1);
+                                scan->auto_display ();
 
 			// Set View-Mode Data Range and auto adapt Vcontrast/Bright
 			m->SetDataRange(0, maxcol);

@@ -182,6 +182,8 @@ public:
 
         static gboolean canvas_draw_callback (GtkWidget *widget, cairo_t *cr, ViewControl *vc);
 
+        static void display_changed_callback (Param_Control *pc, gpointer vc);
+        
         void setup_side_pane (gboolean show);
         void tip_follow_control (gboolean follow);
         gboolean tip_follow_mode () { return tip_follow_flag; };
@@ -259,6 +261,7 @@ private:
         ProfileControl *EventPlot;
 
         ViewInfo *vinfo;
+        BuildParam *view_bp;
         GSList  *gobjlist;
         GSList  *geventlist;
         GSList  *gindicatorlist;

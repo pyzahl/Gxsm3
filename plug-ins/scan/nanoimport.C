@@ -566,7 +566,7 @@ static void nano_import_filecheck_load_callback (gpointer data){
 			}
 			if(i==0) ret0 = ret;
 			gapp->xsm->ActiveScan->GetDataSet(gapp->xsm->data);
-			gapp->xsm->AutoDisplay ();
+			gapp->xsm->ActiveScan->auto_display ();
 			gapp->spm_update_all();
 			dst->draw();
 			dst=NULL;
@@ -586,7 +586,7 @@ static void nano_import_filecheck_load_callback (gpointer data){
 			// Now update
 
 			gapp->xsm->ActiveScan->GetDataSet(gapp->xsm->data);
-			gapp->xsm->AutoDisplay ();
+			gapp->xsm->ActiveScan->auto_display ();
 			gapp->spm_update_all();
 			dst->draw();
 		}
@@ -618,7 +618,7 @@ static void nanoimport_run(GtkWidget *w, void *data)
 			break; 
 		}
 		gapp->xsm->ActiveScan->GetDataSet(gapp->xsm->data);
-		gapp->xsm->AutoDisplay ();
+		gapp->xsm->ActiveScan->auto_display ();
 		gapp->spm_update_all();
 		dst->draw();
 		dst=NULL;

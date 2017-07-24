@@ -78,8 +78,6 @@ public:
   int  ActivateChannel(int NewActiveChannel);
   int  FindChan(int fid, int start=0);
 
-  void AutoDisplay(double hi=0., double lo=0.);
-
   void CleanupProfiles();
   int AddProfile(gchar *filename);
   int AddProfile(ProfileControl *pc);

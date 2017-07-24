@@ -641,7 +641,7 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
 				App::spm_select_layer (NULL, gapp);
 				App::spm_select_time (NULL, gapp);
 				if (conti_autodisp_mode)
-					gapp->xsm->AutoDisplay ();
+					gapp->xsm->ActiveScan->auto_display ();
 				gapp->check_events ();
 // GTK3QQQ
 //				gdk_pixbuf_get_from_drawable (OSD_pixbuf, GDK_DRAWABLE (wid_canvas), NULL, 0,0,0,0, nx,ny);
