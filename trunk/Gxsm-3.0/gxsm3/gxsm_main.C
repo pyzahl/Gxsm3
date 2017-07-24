@@ -67,6 +67,9 @@ gboolean generate_pcs_gschema = false;
 gboolean generate_pcs_adj_gschema = false;
 gchar *current_pcs_gschema_path_group = NULL;
 
+gboolean gxsm_build_self_test_script = false;
+
+
 /* True if parsing determined that all the work is already done.  */
 int just_exit = 0;
 
@@ -138,6 +141,11 @@ static const GOptionEntry gxsm_options[] =
 	/* New instance */
 	{ "new-instance", 's', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &gxsm_new_instance,
           N_("Start a new instance of gxsm3 -- not yet functional, use different user account via ssh -X... for now."), NULL
+	},
+
+	/* Build self test python script */
+	{ "build-self-test-script", 'T', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &gxsm_build_self_test_script,
+          N_("Build gxsm3 self test pyremote script."), NULL
 	},
 
 	{ NULL }

@@ -231,7 +231,13 @@ public:
                 // XsmRescourceManager xrm("App_View_NCraw");
                 // gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tog), xrm.GetBool (varname, FALSE) ? 1:0);
 		g_signal_connect (tog, "toggled", G_CALLBACK(NcDumpToWidget::varshow_toggel_cb), g_strdup(varname));
-		gtk_widget_set_size_request (tog, 150, -1);
+
+                GtkLabel *l=GTK_LABEL (g_list_first (gtk_container_get_children (GTK_CONTAINER (tog)))->data);
+                
+                gtk_label_set_ellipsize (l, PANGO_ELLIPSIZE_START); // or.._END
+                gtk_label_set_width_chars (l, 20);
+                gtk_widget_set_tooltip_text (tog, varname);
+
 		gtk_widget_show (tog);
 	};
 
