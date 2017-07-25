@@ -427,9 +427,9 @@ void Scan::set_display (){
         mem2d->GetZHiLo (&hi, &lo);
         data.display.z_low  = 0.5*((hi+lo)*data.s.dz - data.display.vrange_z);
         data.display.z_high = data.display.z_low + data.display.vrange_z;
+
         // calculate contrast and bright
         mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
-        //->update_view_panel ();
         draw ();
 }
 
