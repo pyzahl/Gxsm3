@@ -160,7 +160,7 @@ Xsm::Xsm(){
 	if(IS_SPALEED_CTRL) /* XSM Instrument anlegen */
 		Inst = new SPALEED_Instrument(xsmres, 
 					      &data.s.Energy, 
-					      &data.display.cnttime, 
+					      &data.s.GateTime, 
 					      &ModeFlg);
 	else
 		Inst = new XSM_Instrument(xsmres);
@@ -572,44 +572,7 @@ void SCAN_DATA::SetTimeUnit(UnitObj *u){
 
 /* Save / Retrive Values from Rescource */
 void SCAN_DATA::SaveValues(gchar *SetName){
-	XsmRescourceManager xrm("Values", SetName);
-	xrm.Put("XSMVersion", PACKAGE "-" VERSION);
-	xrm.Put("XSMBuild", COMPILEDBYNAME);
-
-	xrm.Put("s.ntimes", s.ntimes);
-	xrm.Put("s.values", s.nvalues);
-	xrm.Put("s.nx", s.nx);
-	xrm.Put("s.ny", s.ny);
-
-	xrm.Put("s.rx", s.rx);
-	xrm.Put("s.ry", s.ry);
-	xrm.Put("s.rz", s.rz);
-	xrm.Put("s.dx", s.dx);
-	xrm.Put("s.dy", s.dy);
-	xrm.Put("s.dz", s.dz);
-	xrm.Put("s.dl", s.dl);
-
-	xrm.Put("s.alpha", s.alpha);
-	xrm.Put("s.x0", s.x0);
-	xrm.Put("s.y0", s.y0);
-	xrm.Put("s.SPA_OrgX", s.SPA_OrgX);
-	xrm.Put("s.SPA_OrgY", s.SPA_OrgY);
-
-	xrm.Put("s.Bias", s.Bias);
-	xrm.Put("s.Current", s.Current);
-	xrm.Put("s.SetPoint", s.SetPoint);
-	xrm.Put("s.Energy", s.Energy);
-	xrm.Put("s.GateTime", s.GateTime);
-
-	xrm.Put("display.ViewFlg", display.ViewFlg);
-	xrm.Put("display.contrast", display.contrast);
-	xrm.Put("display.bright", display.bright);
-	xrm.Put("display.cpshigh", display.cpshigh);
-	xrm.Put("display.cpslow", display.cpslow);
-	xrm.Put("display.vrange_z", display.vrange_z);
-	xrm.Put("display.voffset_z", display.voffset_z);
-	xrm.Put("display.vframe", display.vframe);
-	xrm.Put("display.vlayer", display.vlayer);
+        // obsolete -- dbust, instant now via pcs
 };
 
 void SCAN_DATA::LoadValues(XSM_Instrument *Inst, XSM_Hardware *hardware, gchar *SetName){
@@ -678,8 +641,8 @@ void SCAN_DATA::LoadValues(XSM_Instrument *Inst, XSM_Hardware *hardware, gchar *
 	g_free(defaultval);
 	xrm.Get("display.contrast", &display.contrast, "0.5");
 	xrm.Get("display.bright", &display.bright, "32.0");
-	xrm.Get("display.cpshigh", &display.cpshigh, "1e6");
-	xrm.Get("display.cpslow", &display.cpslow, "0.0");
+	xrm.Get("display.z_high", &display.z_high, "1e6");
+	xrm.Get("display.z_low", &display.z_low, "0.0");
 	xrm.Get("display.vrange_z", &display.vrange_z, "25.0");
 	xrm.Get("display.voffset_z", &display.voffset_z, "0.0");
 	xrm.Get("display.vframe", &display.vframe, "0");

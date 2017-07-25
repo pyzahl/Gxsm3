@@ -122,6 +122,7 @@ public:
 	void determine_display(int Delta=4, double sm_eps=0.05);
 	void auto_display();
 	void set_display();
+	void set_display_hl();
 	int SetVM(int vflg=0, SCAN_DATA *src=NULL, int Delta=4, double sm_eps=0.05);
 	int GetVM(){ return VFlg; };
 	void Activate();

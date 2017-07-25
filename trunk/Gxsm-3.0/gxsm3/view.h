@@ -108,7 +108,7 @@ public:
         virtual gpointer grab_OSD_canvas(){ return NULL; };
 
         virtual void color_mode(COLORMODE cm){ cmode = cm; };
-
+        
         Scan* get_scan() { return scan; };
         
         int ZoomFac;

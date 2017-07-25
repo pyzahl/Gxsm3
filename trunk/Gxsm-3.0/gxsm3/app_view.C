@@ -522,9 +522,14 @@ void ViewControl::setup_side_pane (gboolean show){
 	}
 }
 
-void ViewControl::display_changed_callback (Param_Control *pc, gpointer vc){
+void ViewControl::display_changed_hl_callback (Param_Control *pc, gpointer vc){
+        ((ViewControl*)vc)->scan->set_display_hl ();
+        ((ViewControl*)vc)->update_view_panel ();
+}
+
+void ViewControl::display_changed_vr_callback (Param_Control *pc, gpointer vc){
         ((ViewControl*)vc)->scan->set_display ();
-        // ((ViewControl*)vc)->scan->SetVM();
+        ((ViewControl*)vc)->update_view_panel ();
 }
 
 ViewControl::ViewControl (char *title, int nx, int ny, 
@@ -716,37 +721,26 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
 	gtk_label_set_angle (GTK_LABEL (label), 90);
 
-        view_bp->set_default_ec_change_notice_fkt  (display_changed_callback, this);
         // Display scaling controls
-        if (!strncasecmp(xsmres.InstrumentType, "CCD",3)){
-                // Display -- Hi-Low
-                // g_object_set_data( G_OBJECT (view_bp->grid), "SPM_EC_VRangeZ", view_bp->ec);
-                view_bp->grid_add_ec ("CCD high", scan->data.CPSUnit, &scan->data.display.cpshigh,
-                                   0., 5000., ".0f", 1., 100., NULL);
-                //"CPShigh");
 
-                view_bp->new_line ();
+        // Display -- Hi-Low
+        view_bp->set_default_ec_change_notice_fkt  (display_changed_hl_callback, this);
+        view_bp->grid_add_ec ("V Range Z high", scan->data.Zunit, &scan->data.display.z_high,
+                              -5000., 5000., ".3f", 1., 100., NULL);
+        view_bp->new_line ();
                 
-                // g_object_set_data( G_OBJECT (input), "Adjustment_PCS_Name", (void*)("SPA-CPS-Low"));
-                view_bp->grid_add_ec ("CCD low", scan->data.CPSUnit, &scan->data.display.cpslow,
-                                   0., 5000., ".0f", 1., 100., NULL);
-                //"CPSlow");
-        } else {
-                // Display -- Range auto center
-                //                g_object_set_data( G_OBJECT (input), "Adjustment_PCS_Name", (void*)("SPM-VRangeZ"));
-                view_bp->grid_add_ec ("V Range Z", scan->data.Zunit, &scan->data.display.vrange_z,
-                                   -5000., 5000., ".3g", 0.1, 5., NULL);
-                //"VRangeZ");
-                g_object_set_data( G_OBJECT (view_bp->grid), "SPM_EC_VRangeZ", view_bp->ec);
+        view_bp->grid_add_ec ("V Range Z low", scan->data.Zunit, &scan->data.display.z_low,
+                              -5000., 5000., ".3f", 1., 100., NULL);
+        view_bp->new_line ();
+        
+        // Display -- Range auto center
+        view_bp->set_default_ec_change_notice_fkt  (display_changed_vr_callback, this);
+        view_bp->grid_add_ec ("V Range Z", scan->data.Zunit, &scan->data.display.vrange_z,
+                              -5000., 5000., ".3g", 0.1, 5., NULL);        //"VRangeZ");
+        view_bp->new_line ();
 
-                view_bp->new_line ();
-
-                // g_object_set_data( G_OBJECT (input), "Adjustment_PCS_Name", (void*)("SPM-VOffsetZ"));
-                view_bp->grid_add_ec ("V Offset Z", scan->data.Zunit, &scan->data.display.voffset_z,
-                                   -5000., 5000., ".3g", 0.2, 2.,NULL);
-                //"VOffsetZ");
-                g_object_set_data( G_OBJECT (view_bp->grid), "SPM_EC_VOffsetZ", view_bp->ec);
-        }
+        view_bp->grid_add_ec ("V Offset Z", scan->data.Zunit, &scan->data.display.voffset_z,
+                              -5000., 5000., ".3g", 0.2, 2.,NULL);        //"VOffsetZ");
         
         // -- Info Tab
         // ==================================================
@@ -2038,6 +2032,8 @@ void ViewControl::CheckOptions(){
 
 void ViewControl::Activate_window_callback (GtkWindow *window, gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
+        ((ViewControl*)vc)->update_view_panel ();
+
 	if (vc->chno < 0) return;
 	gapp->xsm->ActivateChannel (vc->chno);
 }
@@ -2045,6 +2041,8 @@ void ViewControl::Activate_window_callback (GtkWindow *window, gpointer user_dat
 void ViewControl::Activate_callback (GSimpleAction *simple, GVariant *parameter,
                                      gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
+        ((ViewControl*)vc)->update_view_panel ();
+
 	if (vc->chno < 0) return;
 	gapp->xsm->ActivateChannel(vc->chno);
 }
@@ -2053,14 +2051,8 @@ void ViewControl::AutoDisp_callback (GSimpleAction *simple, GVariant *parameter,
                                      gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
 
-#if 1
         vc->scan->auto_display ();
-        g_slist_foreach (vc->view_bp->get_ec_list_head (), (GFunc) App::update_ec, NULL);
-#else
-        if (vc->chno < 0) return;
-	gapp->xsm->ActivateChannel(vc->chno);
-	gapp->xsm->AutoDisplay();
-#endif
+        vc->update_view_panel ();
 }
 
 void ViewControl::SetOff_callback (GSimpleAction *simple, GVariant *parameter, 

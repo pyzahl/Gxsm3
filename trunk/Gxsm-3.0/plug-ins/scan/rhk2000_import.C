@@ -583,9 +583,8 @@ FIO_STATUS rhk200_ImExportFile::rhkRead(const char *fname){
 	scan->mem2d->data->MkXLookup(scan->data.s.x0+scan->data.s.rx/2., scan->data.s.x0-scan->data.s.rx/2.);
 
 	// be nice and reset this to some defined state
-	scan->data.display.cpshigh       = 1e3;
-	scan->data.display.cpslow        = 1.;
-	scan->data.display.cnttime       = 1.;
+	scan->data.display.z_high       = 1e3;
+	scan->data.display.z_low        = 1.;
 
 	// set the default view parameters
 	scan->data.display.bright = 32.;

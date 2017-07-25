@@ -182,7 +182,12 @@ public:
 
         static gboolean canvas_draw_callback (GtkWidget *widget, cairo_t *cr, ViewControl *vc);
 
-        static void display_changed_callback (Param_Control *pc, gpointer vc);
+        static void display_changed_hl_callback (Param_Control *pc, gpointer vc);
+        static void display_changed_vr_callback (Param_Control *pc, gpointer vc);
+
+        void update_view_panel (){
+                g_slist_foreach (view_bp->get_ec_list_head (), (GFunc) App::update_ec, NULL);
+        };
         
         void setup_side_pane (gboolean show);
         void tip_follow_control (gboolean follow);
