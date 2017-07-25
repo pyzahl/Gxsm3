@@ -186,6 +186,7 @@ public:
         static void display_changed_vr_callback (Param_Control *pc, gpointer vc);
 
         void update_view_panel (){
+                // g_message ("vc->update_view_panel");
                 g_slist_foreach (view_bp->get_ec_list_head (), (GFunc) App::update_ec, NULL);
         };
         

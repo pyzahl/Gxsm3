@@ -1337,6 +1337,10 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                  
                 vc->RedLine->cairo_draw_profile_only_callback (cr, vc->RedLine);
         }
+
+        // update view ranges
+        vc->update_view_panel ();
+
         
         //	XSM_DEBUG (DBG_L2,  "ViewControl:::canvas_draw_callback ********************** SCAN PAINT * DONE. *********************" );
 
@@ -2032,7 +2036,6 @@ void ViewControl::CheckOptions(){
 
 void ViewControl::Activate_window_callback (GtkWindow *window, gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
-        ((ViewControl*)vc)->update_view_panel ();
 
 	if (vc->chno < 0) return;
 	gapp->xsm->ActivateChannel (vc->chno);
@@ -2041,7 +2044,6 @@ void ViewControl::Activate_window_callback (GtkWindow *window, gpointer user_dat
 void ViewControl::Activate_callback (GSimpleAction *simple, GVariant *parameter,
                                      gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
-        ((ViewControl*)vc)->update_view_panel ();
 
 	if (vc->chno < 0) return;
 	gapp->xsm->ActivateChannel(vc->chno);
@@ -2052,7 +2054,6 @@ void ViewControl::AutoDisp_callback (GSimpleAction *simple, GVariant *parameter,
         ViewControl *vc = (ViewControl *) user_data;
 
         vc->scan->auto_display ();
-        vc->update_view_panel ();
 }
 
 void ViewControl::SetOff_callback (GSimpleAction *simple, GVariant *parameter, 
