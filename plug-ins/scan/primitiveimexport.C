@@ -790,9 +790,8 @@ FIO_STATUS PrimitiveImExportFile::gnuRead(const char *fname, int index_value, in
 		scan->mem2d->data->MkXLookup(-scan->data.s.rx/2., scan->data.s.rx/2.);
 		scan->mem2d->data->MkYLookup(scan->data.s.ry/2., -scan->data.s.ry/2.);
 	}
-	scan->data.display.cpshigh       = 1e3;
-	scan->data.display.cpslow        = 1.;
-	scan->data.display.cnttime       = 1.;
+	scan->data.display.z_high       = 1e3;
+	scan->data.display.z_low        = 1.;
   
 	switch(ft){
 	case BYTFIL: case PGMFIL:
@@ -840,10 +839,8 @@ FIO_STATUS PrimitiveImExportFile::d2dRead(const char *fname, int index_value, in
 	scan->data.s.dy = scan->data.s.ry / scan->data.s.ny;
 	scan->data.s.alpha = spa4header.Alpha  ;
 	scan->data.s.GateTime   = spa4header.GateTime*1e-3;
-	scan->data.display.cnttime = spa4header.GateTime*1e-3;;
-	scan->data.s.dz = 1./scan->data.display.cnttime;
-	scan->data.display.cpshigh         = spa4header.CpsHigh;
-	scan->data.display.cpslow          = spa4header.CpsLow;
+	scan->data.display.z_high         = spa4header.CpsHigh;
+	scan->data.display.z_low          = spa4header.CpsLow;
 	scan->data.s.Energy     = spa4header.Energy ;
 	//  spa->data.s.Focus1 = spa4header.Focus1 ;
 	//  spa->data.s.Current = spa4header.Current;

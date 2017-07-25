@@ -494,24 +494,27 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 	if(nc.get_var("energy"  )) nc.get_var("energy"  )->get(&scan->data.s.Energy);
 	if(nc.get_var("gatetime")){
 		nc.get_var("gatetime")->get(&scan->data.s.GateTime );
-		scan->data.display.cnttime = scan->data.s.GateTime;
-		scan->data.s.dz = 1./scan->data.display.cnttime;
+		scan->data.s.dz = 1./scan->data.s.GateTime;
 	}
-	if(nc.get_var("cnttime")){
-		nc.get_var("cnttime")->get(&scan->data.display.cnttime);
-		scan->data.s.dz = 1./scan->data.display.cnttime;
+	if(nc.get_var("cnttime")){ // overrides above
+		nc.get_var("cnttime")->get(&scan->data.s.GateTime);
+		scan->data.s.dz = 1./scan->data.s.GateTime;
 	}
 	if(nc.get_var("cnt_high" )){
-		nc.get_var("cnt_high" )->get(&scan->data.display.cpshigh);
-		scan->data.display.cpshigh /= scan->data.display.cnttime;
+		nc.get_var("cnt_high" )->get(&scan->data.display.z_high);
 	}
-	if(nc.get_var("cps_high" )) nc.get_var("cps_high" )->get(&scan->data.display.cpshigh);
+	if(nc.get_var("z_high" )){
+		nc.get_var("z_high" )->get(&scan->data.display.z_high);
+	}
+	if(nc.get_var("cps_high" )) nc.get_var("cps_high" )->get(&scan->data.display.z_high);
 
 	if(nc.get_var("cnt_low"  )){
-		nc.get_var("cnt_low"  )->get(&scan->data.display.cpslow);
-		scan->data.display.cpslow /= scan->data.display.cnttime;
+		nc.get_var("cnt_low"  )->get(&scan->data.display.z_low);
 	}
-	if(nc.get_var("cps_low" )) nc.get_var("cps_low" )->get(&scan->data.display.cpslow);
+	if(nc.get_var("z_low"  )){
+		nc.get_var("z_low"  )->get(&scan->data.display.z_low);
+	}
+	if(nc.get_var("cps_low" )) nc.get_var("cps_low" )->get(&scan->data.display.z_low);
 
 	if(nc.get_var("spa_orgx"  )) nc.get_var("spa_orgx"  )->get(&scan->data.s.SPA_OrgX);
 	if(nc.get_var("spa_orgy"  )) nc.get_var("spa_orgy"  )->get(&scan->data.s.SPA_OrgY);
@@ -784,9 +787,8 @@ FIO_STATUS NetCDF::Write(){
 	// only for LEED like Instruments
 	NcVar* energy   = NULL;
 	NcVar* gatetime = NULL;
-	NcVar* cnttime  = NULL;
-	NcVar* cpshigh  = NULL;
-	NcVar* cpslow   = NULL;
+	NcVar* z_high  = NULL;
+	NcVar* z_low   = NULL;
 	NcVar* spaorgx  = NULL;
 	NcVar* spaorgy  = NULL;
   
@@ -797,14 +799,11 @@ FIO_STATUS NetCDF::Write(){
 		gatetime = nc.add_var("gatetime", ncDouble);
 		gatetime->add_att("unit", "s");
 
-		cnttime = nc.add_var("cnttime", ncDouble);
-		cnttime->add_att("unit", "s");
+		z_high  = nc.add_var("cps_high", ncDouble);
+		z_high->add_att("unit", "CPS or raw Z");
 
-		cpshigh  = nc.add_var("cps_high", ncDouble);
-		cpshigh->add_att("unit", "CPS");
-
-		cpslow   = nc.add_var("cps_low", ncDouble);
-		cpslow->add_att("unit", "CPS");
+		z_low   = nc.add_var("cps_low", ncDouble);
+		z_low->add_att("unit", "CPS or raw Z");
 
 		spaorgx  = nc.add_var("spa_orgx", ncDouble);
 		spaorgx->add_att("unit", "V");
@@ -936,9 +935,8 @@ FIO_STATUS NetCDF::Write(){
 	// only if needed
 	if(energy   ) energy  ->put( &scan->data.s.Energy );
 	if(gatetime ) gatetime->put( &scan->data.s.GateTime );
-	if(cnttime  ) cnttime ->put( &scan->data.display.cnttime);
-	if(cpshigh  ) cpshigh ->put( &scan->data.display.cpshigh );
-	if(cpslow   ) cpslow  ->put( &scan->data.display.cpslow );
+	if(z_high  ) z_high ->put( &scan->data.display.z_high );
+	if(z_low   ) z_low  ->put( &scan->data.display.z_low );
 	if(spaorgx  ) spaorgx ->put( &scan->data.s.SPA_OrgX );
 	if(spaorgy  ) spaorgy ->put( &scan->data.s.SPA_OrgY );
 

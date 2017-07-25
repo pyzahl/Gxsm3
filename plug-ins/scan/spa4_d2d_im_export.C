@@ -343,9 +343,8 @@ FIO_STATUS spa4_ImExportFile::import(const char *fname){
 	scan->data.s.Energy   = d2d.Energy;
 	scan->data.s.SPA_OrgX     = 0.;
 	scan->data.s.SPA_OrgY     = 0.;
-	scan->data.display.cpshigh       = d2d.CpsHigh;
-	scan->data.display.cpslow        = d2d.CpsLow;
-	scan->data.display.cnttime       = d2d.GateTime;
+	scan->data.display.z_high       = d2d.CpsHigh;
+	scan->data.display.z_low        = d2d.CpsLow;
 
 	// set the default view parameters
 	scan->data.display.bright = 32.;

@@ -373,9 +373,8 @@ FIO_STATUS ascii_ImExportFile::import(const char *fname){
 	scan->data.s.alpha = 0.;
 
 	// be nice and reset this to some defined state
-	scan->data.display.cpshigh       = 0.;
-	scan->data.display.cpslow        = 0.;
-	scan->data.display.cnttime       = 0.;
+	scan->data.display.z_high       = 0.;
+	scan->data.display.z_low        = 0.;
 
 	// set the default view parameters
 	scan->data.display.bright = 32.;

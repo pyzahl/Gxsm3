@@ -236,9 +236,8 @@ public:
 	void copy(Display_Param &src){
 		contrast = src.contrast;
 		bright   = src.bright;
-		cpshigh  = src.cpshigh;
-		cpslow   = src.cpslow;
-		cnttime  = src.cnttime;
+		z_high   = src.z_high;
+		z_low    = src.z_low;
 		vrange_z = src.vrange_z;
 		voffset_z= src.voffset_z;
 		vframe   = src.vframe;
@@ -250,17 +249,15 @@ public:
 		return x*contrast+bright;
 	};
 	double ContrastBright_from_HiLow(double range = 64.){
-		contrast = (cpshigh-cpslow)*cnttime/range;
-		bright   = range/2. - GetCntLow();
+		contrast = (z_high-z_low)/range;
+		bright   = range/2. - z_low;
 		return 0.;
 	};
-	double GetCntHigh(){ return cpshigh*cnttime; };
-	double GetCntLow(){ return cpslow*cnttime; };
 
 	double contrast, bright;            /* for Scaling by Contrast/Bright */
 	double vrange_z;                    /* for Scaling by Range and Offset from "Z-Center" */
 	double voffset_z;                   /* for Scaling by Range and Offset from "Z-Center" */
-	double cpshigh, cpslow, cnttime;    /* for Scaling by CPShi/low */
+	double z_high, z_low;               /* for Scaling by high and low */
 	int    vframe;                      /* Frame (in Time dimension) to view */
 	int    vlayer;                      /* Layer (in Value dimension) to view */
 
@@ -448,7 +445,7 @@ public:
 	UnitObj *CPSUnit, *EnergyUnit;
 
 	void UpdateUnits(){
-		display.cnttime = s.GateTime;
+		//display.cnttime = s.GateTime;
 		//    CPSUnit->Change(display.cnttime); ... now dz is used !
 	};
 

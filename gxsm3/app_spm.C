@@ -432,8 +432,6 @@ void App::spa_show_scan_time(){
 
 void App::spa_gate_check(Param_Control* pcs, gpointer app){
         App *a = (App*)app;
-        a->xsm->data.display.cnttime  = a->xsm->data.s.GateTime;
-
         ((App*)app)->xsm->hardware->SetUserParam (10, "GATETIME", a->xsm->data.s.GateTime);
 
         //  a->xsm->CPSHiLoUnit->Change(a->xsm->data.display.cnttime); // only for hi/lo

@@ -400,9 +400,8 @@ FIO_STATUS UK2k_ImExportFile::spmReadPar(const gchar *fname, const gchar *fsuffi
   scan->data.s.alpha = 0;
 
   // be nice and reset this to some defined state
-  scan->data.display.cpshigh       = 1e3;
-  scan->data.display.cpslow        = 1.;
-  scan->data.display.cnttime       = 1.;
+  scan->data.display.z_high       = 1e3;
+  scan->data.display.z_low        = 1.;
 
   scan->data.display.bright = 0.;
   scan->data.display.vrange_z = 256.;

@@ -1029,10 +1029,8 @@ FIO_STATUS Uksoft2001_ImExportFile::import_data(const char *fname, int index_val
 			scan->data.display.voffset_z = 0.;
 
 			scan->data.s.GateTime   = 1.;
-			scan->data.display.cnttime = 1.;
-			scan->data.s.dz = 1./scan->data.display.cnttime;
-			scan->data.display.cpshigh         = 4096.;
-			scan->data.display.cpslow          = 0.;
+			scan->data.display.z_high         = 4096.;
+			scan->data.display.z_low          = 0.;
   
 			scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, max_index_value, ZD_SHORT);
 			scan->data.orgmode = SCAN_ORG_CENTER;

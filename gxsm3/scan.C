@@ -82,7 +82,7 @@ Scan::Scan(int vtype, int vflg, int ChNo, SCAN_DATA *vd, ZD_TYPE mtyp){
 	objects_id = 0;
 	objects_list = NULL;
 	realloc_pkt2d(16);
-	vdata = vd;
+	vdata = vd ? vd : &gapp->xsm->data;
 	mem2d = new Mem2d(1,1,mtyp); // MemObj. anlegen
 	if(vd)
 		data.CpUnits(*vdata);
@@ -404,14 +404,18 @@ void Scan::auto_display (){
         mem2d->GetZHiLo (&hi, &lo);
         data.display.vrange_z = (hi-lo)*data.s.dz;
         data.display.voffset_z = 0.;
-
+        data.display.z_low  = 0.5*((hi+lo)*data.s.dz - data.display.vrange_z);
+        data.display.z_high = data.display.z_low + data.display.vrange_z;
+        
         // calculate contrast and bright
         mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
 
         draw ();
 }
 
+// from VRange centered on high..low
 void Scan::set_display (){
+        double hi,lo;
         // determine ranges on selection(s)
         determine_display (xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);
 
@@ -420,184 +424,55 @@ void Scan::set_display (){
                                data.display.voffset_z,
                                data.s.dz);
 
+        mem2d->GetZHiLo (&hi, &lo);
+        data.display.z_low  = 0.5*((hi+lo)*data.s.dz - data.display.vrange_z);
+        data.display.z_high = data.display.z_low + data.display.vrange_z;
+        // calculate contrast and bright
+        mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
+        //->update_view_panel ();
+        draw ();
+}
+
+// from High..Low
+void Scan::set_display_hl (){
+        double hi,lo;
+        // determine ranges on selection(s)
+        determine_display (xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);
+        mem2d->GetZHiLo (&hi, &lo);
+
+        // set hi low
+        mem2d->SetHiLo (data.display.z_high/data.s.dz, data.display.z_low/data.s.dz);
+
+        // update view parameters
+        data.display.vrange_z = (data.display.z_high - data.display.z_low);
+        // data.display.voffset_z = 0.5*(hi + lo)*data.s.dz - data.display.z_low + 0.5*data.display.vrange_z;
+        data.display.voffset_z = data.display.z_low + 0.5*data.display.vrange_z - 0.5*(hi + lo)*data.s.dz;
+
         // calculate contrast and bright
         mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
 
         draw ();
 }
 
-#if 0
-void Scan::AutoDisplay (doule hi, double lo, int Delta, double sm_eps){
-
-
-        GXSM_LOG_ANY_ACTION ("AutoDisp_callback", "in");
-
-	if (hi == 0. && lo == 0.){
-		SetVM (-2, NULL, Delta, sm_eps);
-
-		// step 2: calculate contrast and bright from Zmin, Zrange
-		mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
-		// store high and low in data
-		mem2d->GetZHiLo (&data.display.cpshigh, &data.display.cpslow);
-		// calculate Vrange in Units
-		double signum = data.display.vrange_z > 0. ? 1.:-1.;
-		data.display.vrange_z = signum * (1e-100+fabs (data.s.dz * mem2d->GetZRange ()));
-		data.display.voffset_z = 0.;
-		// only neede by SPALEED
-		data.display.cpshigh /= data.display.cnttime; // correct to CPS now!
-		data.display.cpslow  /= data.display.cnttime;
-
-	} else {
-
-		mem2d->SetHiLo (hi, lo);
-		mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
-		mem2d->GetZHiLo (&data.display.cpshigh, &data.display.cpslow);
-		data.display.vrange_z = data.s.dz * fabs (mem2d->GetZRange ())
-			* (data.display.vrange_z > 0. ? 1.:-1.);
-		data.display.voffset_z = 0.;
-		data.display.cpshigh /= data.display.cnttime; // correct to CPS now!
-		data.display.cpslow  /= data.display.cnttime;
-	}
-
-        if (vdata)
-                vdata->GetDisplay_Param (data);
-
-        GXSM_LOG_ANY_ACTION ("AutoDisp_callback", "out");
-}
-#endif
-
-
 int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta, double sm_eps){
 	if (vflg > 0)
 		data.display.ViewFlg=vflg;
 
-	if (view)
-		view->setup_data_transformation();
-
 	if (src)
 		data.GetDisplay_Param (*src);
 
-	if (IS_SPALEED_CTRL || (!strncasecmp(xsmres.InstrumentType, "CCD",3))){
-		if (vflg == -2){
-			int success = FALSE;
-			int n_obj = number_of_object ();
-			Point2D p[2];
-			while (n_obj--){
-				scan_object_data *obj_data = get_object_data (n_obj);
-		
-				if (strncmp (obj_data->get_name (), "Rectangle", 9) )
-					continue; // only points are used!
-				
-				if (obj_data->get_num_points () != 2) 
-					continue; // sth. is weired!
+        determine_display (xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);
 
-				double x,y; x=y=0.;
-				obj_data->get_xy_pixel (0, x, y);
-				p[0].x = (int)x; p[0].y = (int)y;
-				obj_data->get_xy_pixel (1, x, y);
-				p[1].x = (int)x; p[1].y = (int)y;
-
-				success = TRUE;
-				break;
-			}
-			if (success){
-				if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
-					mem2d->AutoHistogrammEvalMode (&Pkt2d[0], &Pkt2d[1], Delta, sm_eps);
-				else{
-					if (data.display.ViewFlg & SCAN_V_LOG){
-						double hi,lo;
-						mem2d->HiLo (&hi, &lo, FALSE, &Pkt2d[0], &Pkt2d[1], Delta);
-						mem2d->SetHiLo (hi, lo);
-					} else
-						mem2d->HiLoMod (&p[0], &p[1], Delta);
-				}
-			} else {
-				if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
-					mem2d->AutoHistogrammEvalMode (NULL, NULL, Delta, sm_eps);
-				else{
-					if (data.display.ViewFlg & SCAN_V_LOG){
-						double hi,lo;
-						mem2d->HiLo (&hi, &lo, FALSE, NULL, NULL, Delta);
-						mem2d->SetHiLo (hi, lo);
-					} else
-						mem2d->HiLoMod (NULL, NULL, Delta);
-				}
-			}
-			mem2d->AutoDataSkl (&vdata->display.contrast, &vdata->display.bright);
-			// store high and low in vdata
-			mem2d->GetZHiLo (&vdata->display.cpshigh, &vdata->display.cpslow);
-			
-			// calculate Vrange in Units
-			vdata->display.vrange_z = fabs (vdata->s.dz * mem2d->GetZRange ())
-				* (vdata->display.vrange_z > 0. ? 1.:-1.);
-			vdata->display.voffset_z = 0.;
-			// only neede by SPALEED
-			vdata->display.cpshigh /= vdata->display.cnttime; // correct to CPS now!
-			vdata->display.cpslow  /= vdata->display.cnttime;
-			data.GetDisplay_Param(*vdata);
-		}
-		mem2d->SetHiLo(data.display.GetCntHigh(), data.display.GetCntLow());
-		mem2d->AutoDataSkl(&data.display.contrast, &data.display.bright);
-	}else{
-		int success = FALSE;
-		int n_obj = number_of_object ();
-		Point2D p[2];
-		while (n_obj--){
-			scan_object_data *obj_data = get_object_data (n_obj);
-		
-			if (strncmp (obj_data->get_name (), "Rectangle", 9) )
-				continue; // only points are used!
-
-			if (obj_data->get_num_points () != 2) 
-				continue; // sth. is weired!
-
-			double x,y; x=y=0.;
-			obj_data->get_xy_pixel (0, x, y);
-			p[0].x = (int)x; p[0].y = (int)y;
-			obj_data->get_xy_pixel (1, x, y);
-			p[1].x = (int)x; p[1].y = (int)y;
-
-			success = TRUE;
-			break;
-		}
-		if (success){
-                        if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
-				mem2d->AutoHistogrammEvalMode (&Pkt2d[0], &Pkt2d[1], Delta, sm_eps);
-			else{
-				if (data.display.ViewFlg & SCAN_V_LOG){
-					double hi,lo;
-					mem2d->HiLo (&hi, &lo, FALSE, &Pkt2d[0], &Pkt2d[1], Delta);
-					mem2d->SetHiLo (hi, lo);
-				} else
-					mem2d->HiLoMod (&p[0], &p[1], Delta);
-			}
-		} else {
-                        if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
-				mem2d->AutoHistogrammEvalMode (NULL, NULL, Delta, sm_eps);
-			else{
-				if (data.display.ViewFlg & SCAN_V_LOG){
-					double hi,lo;
-					mem2d->HiLo (&hi, &lo, FALSE, NULL, NULL, Delta);
-					mem2d->SetHiLo (hi, lo);
-				} else
-					mem2d->HiLoMod (NULL, NULL, Delta);
-			}
-		}
-		
-		if (vflg >= 0) {
-			// step 2: adjust to user settings, 
-			//         offset is relative to data average
-			mem2d->SetDataVRangeZ (data.display.vrange_z, 
-					       data.display.voffset_z,
-					       data.s.dz);
-			// calculate contrast and bright
-			mem2d->AutoDataSkl(&data.display.contrast, &data.display.bright);
-		}
-	}
-
-	if (vflg >= 0)
+	if (vflg >= 0){
+                // recompute from vrange/offset
+                mem2d->SetDataVRangeZ (data.display.vrange_z, 
+                                       data.display.voffset_z,
+                                       data.s.dz);
+                
+                // calculate contrast and bright
+                mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
 		draw ();
-
+        }
 	return 0;
 }
 
