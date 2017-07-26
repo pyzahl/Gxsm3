@@ -1098,7 +1098,7 @@ void Surface::GetFromMem2d(Mem2d *m){
 
 
 	ActiveScan->data.copy (data);
-	ActiveScan->data.GetDisplay_Param (data);
+	//ActiveScan->data.GetDisplay_Param (data);
 	ActiveScan->data.GetUser_Info (data);
 	ActiveScan->data.GetScan_Param (data);
 	ActiveScan->data.CpUnits (data);

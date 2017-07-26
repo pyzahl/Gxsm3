@@ -292,7 +292,7 @@ gxsm3_app_startup (GApplication *app)
 	add_accelerator (app, "win.object-mode::point", "F6");
 	add_accelerator (app, "win.object-mode::line-show", "F7");
 	add_accelerator (app, "win.remove-all-objects", "F12");
-	add_accelerator (app, "win.event-remove", "delete");
+	add_accelerator (app, "win.event-remove", "F11"); // delete key is a problem to use
 
 	add_accelerator (app, "win.side-pane", "F9");
 
