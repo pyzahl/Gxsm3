@@ -458,9 +458,11 @@ int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta, double sm_eps){
 	if (vflg > 0)
 		data.display.ViewFlg=vflg;
 
+#if 0
 	if (src)
 		data.GetDisplay_Param (*src);
-
+#endif
+        
         determine_display (xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);
 
 	if (vflg >= 0){
@@ -539,11 +541,13 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
 // **		data.GetDSP_Param(*vdata);
 		data.UpdateUnits();
 //    XSM_DEBUG (DBG_L2, "Scan:Create, viewdata:" << " c:" << data.display.contrast << " vdata:" << vdata->s.nx << "x" << vdata->s.ny);
-		
+
+#if 0
 		if(State == IS_FRESH){ // nur falls neu, sonst beibehalten
 			data.GetDisplay_Param(*vdata);
 // **			data.GetLayer_Param(*vdata);
 		}
+#endif
 	}
 	
 	data.ui.SetName("noname");

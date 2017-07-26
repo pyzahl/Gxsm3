@@ -230,7 +230,7 @@ typedef struct{
 
 class Display_Param{
 public:
-	Display_Param(){ vframe = 0; vlayer = 0; };
+	Display_Param(){ vframe =  vlayer = 0; contrast=1.; bright=0.; z_high=z_low=0.; vrange_z=10.; voffset_z=0.; ViewFlg=1; };
 	~Display_Param(){};
 
 	void copy(Display_Param &src){
@@ -476,7 +476,7 @@ public:
 		CpUnits (sd);
 		memcpy (&s, &sd.s, sizeof (Scan_Param));
 		ui.copy (sd.ui);
-		display.copy (sd.display);
+		//display.copy (sd.display);
 	};
 
 	double get_x_left_absolute (){ return s.x0-s.rx/2; };
