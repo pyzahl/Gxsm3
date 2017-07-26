@@ -110,12 +110,14 @@ class Param_Control{
         };
 
 	virtual void update_limits() {};
-	void changeUnit(UnitObj *U){ unit = U; };
+	void changeUnit(UnitObj *U){ delete unit; unit = U->Copy(); };
 	void changeUnit_hold_usr_value(UnitObj *U){ 
 		double valusr = unit->Base2Usr(Get_dValue());
-		unit = U;
+                delete unit;
+		unit = U->Copy();
 		Set_FromUsrValue(valusr);
 	};
+        const gchar* get_unit_symbol() { return unit->Symbol(); };
 	virtual void Set_NewValue (gboolean set_new_value) {};
 	void Val(double *V);
 	void Val(unsigned long *V);

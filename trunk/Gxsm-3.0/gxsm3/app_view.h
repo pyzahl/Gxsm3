@@ -185,9 +185,18 @@ public:
         static void display_changed_hl_callback (Param_Control *pc, gpointer vc);
         static void display_changed_vr_callback (Param_Control *pc, gpointer vc);
 
+        static void update_ec(Gtk_EntryControl* ec, UnitObj *u){
+                ec->Put_Value();
+                if (u){
+                        if (strcmp (u->Symbol (), ec->get_unit_symbol())){
+                                // g_message ("uvp-uec-unit change: %s", u->Symbol());
+                                ec->changeUnit(u);
+                        }
+                }
+        };
+
         void update_view_panel (){
-                // g_message ("vc->update_view_panel");
-                g_slist_foreach (view_bp->get_ec_list_head (), (GFunc) App::update_ec, NULL);
+                g_slist_foreach (view_bp->get_ec_list_head (), (GFunc) ViewControl::update_ec, scan->data.Zunit);
         };
         
         void setup_side_pane (gboolean show);
