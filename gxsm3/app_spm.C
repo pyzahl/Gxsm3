@@ -826,13 +826,6 @@ void App::spm_update_all(int Vflg){
 		
                 gapp->xsm->data.UpdateUnits();
 
-                // Update Units in VRange/Offset_Z entry
-                if (g_object_get_data( G_OBJECT (spm_control), "SPM_EC_VRangeZ"))
-                        ((Gtk_EntryControl*)g_object_get_data( G_OBJECT (spm_control), "SPM_EC_VRangeZ"))->changeUnit(gapp->xsm->data.Zunit);
-
-                if (g_object_get_data( G_OBJECT (spm_control), "SPM_EC_VOffsetZ"))
-                        ((Gtk_EntryControl*)g_object_get_data( G_OBJECT (spm_control), "SPM_EC_VOffsetZ"))->changeUnit(gapp->xsm->data.Zunit);
-
                 g_slist_foreach (
                                  (GSList*)g_object_get_data (
                                                              G_OBJECT (spm_control), "SPM_EC_list"),
