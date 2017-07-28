@@ -63,12 +63,12 @@ public:
         gchar *makeXYinfo(double x, double y, Point2D *p=NULL); // X,Y
         gchar *makedXdYinfo(double xy1[2], double xy2[2]); // dX, dY
         gchar *makeXYZinfo(double x, double y, Point2D *p=NULL); // Point: X,Y,Z
-        gchar *makeZinfo(double data_z, const gchar *new_prec=NULL){
+        gchar *makeZinfo(double data_z, const gchar *new_prec=NULL, double sub=0.){
                 UnitObj *u = Uz();
                 UnitObj tmp(*u);
                 if (new_prec)
                         tmp.ChangePrec (new_prec);
-                return tmp.UsrString (data_z*(pixelmode ? 1. : sc->data.s.dz)); 
+                return tmp.UsrString (data_z*(pixelmode ? 1. : sc->data.s.dz) - sub); 
         };
         
         void Angstroem2W(double &x, double &y);

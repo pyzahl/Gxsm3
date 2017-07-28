@@ -291,10 +291,12 @@ typedef struct{
 	double Energy;             /* Energy (if applicable) [eV], set to negative if not relevant */
 	double GateTime;           /* GateTime (if applicable) [ms], set to negative if not relevant */
 	double Bias;               /* some Bias (if applicable) [V], set to < -9.999e10 if not relevant */
+        double Motor;              /* generic "Motor" (auxillary) Voltage */
 	double Current;            /* some Curren (if applicable) [nA], set to < -9.999e10 if not relevant */
 	double SetPoint;           /* some AFM SetPoint (if applicable) [V], set to < -9.999e10 if not relevant */
 	double ZSetPoint;          /* some Z-SetPoint (if applicable) [A] */
-
+        double pllref;             /* pllreference freq. in Hz as set */
+        
 // real time window of scan frame
 	time_t tStart, tEnd;       /* Scan Start and end time, [UNIX time] */
 	int    iyEnd, xdir, ydir;  /* last line valid/stopped if while scan, else last line, x,y scan direction -- managed by spmconacontrol */
