@@ -1258,8 +1258,11 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                         vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol()-1), r,g,b);
                         if (vc->legend_items_code[3] == '1')
                                 cairo_set_source_rgb (cr, r,g,b);
-                        else
+                        else if (vc->legend_items_code[3] == '2')
                                 cairo_set_source_rgba (cr, r,g,b, 0.5);
+                        else if (vc->legend_items_code[3] == '3')
+                                cairo_set_source_rgba (cr, r,g,b, 0.5);
+                        else cairo_set_source_rgb (cr, r,g,b);
                         cairo_rectangle (cr, 0., 0., bar_len, bar_width);
                         cairo_fill (cr);
 
@@ -1299,9 +1302,16 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                 if (vc->legend_items_code[1] == 'v'){ // ==zv??bar
                         double r,g,b;
                         double data_zhi, data_zlo;
+                        double sub=0.;
+
+                        if (vc->legend_items_code[3] == '3')
+                                sub = vc->scan->data.s.pllref;
+
+                        g_message ("Legend Sub=%g",sub);
+                        
                         vc->scan->mem2d->GetZHiLo (&data_zhi, &data_zlo);
 
-                        gchar *reading_low = vc->vinfo->makeZinfo (data_zlo, ".2f");
+                        gchar *reading_low = vc->vinfo->makeZinfo (data_zlo, ".2f", sub);
                         cairo_item_text val_low (bar_d, bar_width/2, reading_low);
                         vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol() * (bar_len-0.5*bar_d)/bar_len), r,g,b);
                         val_low.set_position (bar_d, bar_width/2);
@@ -1311,7 +1321,7 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                         val_low.draw (cr);
                         g_free (reading_low);
 
-                        gchar *reading_hi = vc->vinfo->makeZinfo (data_zhi, ".2f");
+                        gchar *reading_hi = vc->vinfo->makeZinfo (data_zhi, ".2f", sub);
                         cairo_item_text val_hi (bar_width-bar_d, bar_width/2, reading_hi);
                         vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol() * (0.5*bar_d)/bar_len), r,g,b);
                         val_hi.set_position (bar_len-bar_d, bar_width/2);
@@ -3003,6 +3013,8 @@ void ViewControl::view_tool_legend_radio_callback (GSimpleAction *action, GVaria
                 vc->legend_items_code = "zvx1bar";
         } else if (!strcmp (g_variant_get_string (new_state, NULL), "x-bar2-z-scale-bar-values")){
                 vc->legend_items_code = "zvx2bar";
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "x-bar3-z-scale-bar-values-pllref")){
+                vc->legend_items_code = "zvx3bar";
         } else { // fallback
                 vc->legend_items_code = NULL;
         }

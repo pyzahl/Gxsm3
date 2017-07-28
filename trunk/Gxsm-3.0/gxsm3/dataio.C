@@ -453,8 +453,10 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 
 	scan->data.display.vrange_z = Contrast_to_VRangeZ (scan->data.display.contrast, scan->data.s.dz);
 
-//#define MINIMAL_READ_NC
+        //#define MINIMAL_READ_NC
 #ifndef MINIMAL_READ_NC
+        //g_message ("NetCDF read optional informations");
+
         NcVar *comment = nc.get_var("comment"); 
 	G_NEWSIZE(scan->data.ui.comment, 1+comment->get_dim(0)->size());
 	memset (scan->data.ui.comment, 0, 1+comment->get_dim(0)->size());
@@ -543,9 +545,11 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 
         scan->mem2d->add_layer_information (new LayerInformation ("CZ SetPoint", scan->data.s.ZSetPoint, "%5.2f  \303\205"));
 
-        //NC_GET_VARIABLE ("sranger_mk2_hwi_motor", &scan->data.s.motor);
-        //NC_GET_VARIABLE ("sranger_mk2_hwi_pll_reference", &scan->data.s.pllref);
+        NC_GET_VARIABLE ("sranger_mk2_hwi_motor", &scan->data.s.Motor);
+        NC_GET_VARIABLE ("sranger_mk2_hwi_pll_reference", &scan->data.s.pllref);
 
+        //g_message ("NetCDF read: sranger_mk2_hwi_pll_reference = %g Hz", scan->data.s.pllref);
+        
 #endif
 	gapp->progress_info_set_bar_text ("Finishing", 2);
 	gapp->progress_info_set_bar_fraction (1., 1);

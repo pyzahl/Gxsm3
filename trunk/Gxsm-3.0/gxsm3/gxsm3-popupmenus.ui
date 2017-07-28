@@ -372,6 +372,11 @@
 		<attribute name="action">win.show-legend-item</attribute>
 		<attribute name="target">x-bar2-z-scale-bar-values</attribute>
 	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">X Bar3 + Z Scale Bar and Values-pllref</attribute>
+		<attribute name="action">win.show-legend-item</attribute>
+		<attribute name="target">x-bar3-z-scale-bar-values-pllref</attribute>
+	      </item>
 	    </section>
 	  </submenu>
 	  <item>
