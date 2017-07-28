@@ -55,6 +55,35 @@ void cbbasename( GtkWidget *widget, App *ap ){
         // ap->as_setdata();
 }
 
+
+void make_freeze_selected (){
+        if (G_IS_OBJECT (gapp->spm_control)){
+                if (gapp->xsm->IsMode (MODE_SETRANGE)){
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Rx"))->Freeze ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Rx"))->Freeze ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Ry"))->Freeze ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Stx"))->Thaw ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Sty"))->Thaw ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Pnx"))->Thaw ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Pny"))->Thaw ();
+                } else if (gapp->xsm->IsMode (MODE_SETSTEPS)){
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Rx"))->Thaw ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Ry"))->Thaw ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Stx"))->Freeze ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Sty"))->Freeze ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Pnx"))->Thaw ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Pny"))->Thaw ();
+                } else if (gapp->xsm->IsMode (MODE_SETPOINTS)){
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Rx"))->Thaw ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Ry"))->Thaw ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Stx"))->Thaw ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Sty"))->Thaw ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Pnx"))->Freeze ();
+                        ((Gtk_EntryControl*)g_object_get_data (G_OBJECT (gapp->spm_control), "EC_Pny"))->Freeze ();
+                }
+        }
+}
+
 void cb_setmode( GtkWidget *widget, int data ){
         XSM_DEBUG(DBG_L3, "cb_setmode");
         if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) 
@@ -67,6 +96,8 @@ void cb_setmode( GtkWidget *widget, int data ){
                 gapp->spa_SeV_unit_switch_check();
                 gapp->spm_update_all();
         }
+
+        make_freeze_selected ();
 }
 
 void App::spm_range_check(Param_Control* pcs, gpointer app){
@@ -531,7 +562,8 @@ GtkWidget* App::create_spm_control (){
                                        "RangeY");
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Ry", spm_bp->ec);
-
+	spm_bp->grid_add_radio_button ("", "Calculate Range from Steps and Points",
+                                       G_CALLBACK (cb_setmode), (gpointer)MODE_SETRANGE, true);
         spm_bp->new_line ();
         
         inputMS = spm_bp->grid_add_ec ("Steps XY", xsm->X_Unit, &xsm->data.s.dx,
@@ -553,7 +585,10 @@ GtkWidget* App::create_spm_control (){
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Sty", spm_bp->ec);
         spm_bp->ec->setMin (0., xsm->YStepMin(), "red"); 
-
+	spm_bp->grid_add_radio_button ("", "Calculate Step Size from Range and Points",
+                                       G_CALLBACK (cb_setmode), (gpointer)MODE_SETSTEPS);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (spm_bp->radiobutton), true);
+        
         spm_bp->new_line ();
 
         inputMN = spm_bp->grid_add_ec ("Points XY", xsm->Unity, &xsm->data.s.nx,
@@ -569,6 +604,8 @@ GtkWidget* App::create_spm_control (){
                                        "PointsY");
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Pny", spm_bp->ec);
+	spm_bp->grid_add_radio_button ("", "Calculate Points from Steps and Range",
+                                       G_CALLBACK (cb_setmode), (gpointer)MODE_SETPOINTS);
 	
         XSM_DEBUG(DBG_L5, "setting up interconnects for range fields");
 	
@@ -746,6 +783,7 @@ GtkWidget* App::create_spm_control (){
         #endif
 
         spm_bp->pop_grid ();
+#if 0
         
         // --------------------------------------------------
         // Range automatism control... Calc: Range,Points,Steps
@@ -761,7 +799,7 @@ GtkWidget* App::create_spm_control (){
                                        G_CALLBACK (cb_setmode), (gpointer)MODE_SETPOINTS);
 	
         spm_bp->pop_grid ();
-        
+
         // View Mode Radiobuttons
         // --------------------------------------------------
         spm_bp->set_xy (10,2);
@@ -803,7 +841,8 @@ GtkWidget* App::create_spm_control (){
         g_object_set_data( G_OBJECT (grid), "periodicbutton", spm_bp->radiobutton);
 
         spm_bp->pop_grid ();
-
+#endif
+        
         // save lists away...
         g_object_set_data( G_OBJECT (grid), "SPM_EC_list", spm_bp->get_ec_list_head ());
         g_object_set_data( G_OBJECT (grid), "SPM_SCANFIX_EC_list", EC_ScanFix_list);
@@ -886,6 +925,7 @@ void App::spm_thaw_scanparam(int subset){
                                                       G_OBJECT (spm_control), 
                                                       subset == 0?"SPM_SCANFIX_EC_list":"SPM_OFFSETFIX_EC_list"),
                          (GFunc) App::thaw_ec, NULL);
+        make_freeze_selected ();
 }
 
 GtkWidget* App::create_spa_control (){
