@@ -672,17 +672,20 @@ public:
 	MyGnomeTools(){ };
 	virtual ~MyGnomeTools(){ };
 
+//#if 0
 	/* My helper functions used for App Creation Stuff */
 	// setup a nice input field
 
 	// new gtk3.x grid based input
 	static GtkWidget* mygtk_grid_add_input(const char* labeltxt, GtkWidget* grid, int &x, int &y, int nx=1, GtkWidget* opt_label_widget=NULL, GSList **l=NULL);
-	// input with spinbuttons
-	static GtkWidget* mygtk_grid_add_spin_input(const gchar *labeltxt, GtkWidget *grid, int &x, int &y, int nx=1, GtkWidget *opt_label_widget=NULL, GSList **l=NULL);
+
 	// add a scale widget for quick mouse adjustment an wheel usage
 	static GtkWidget* SetupScale(GtkAdjustment *adj, GtkWidget *grid, int &x, int &y, int nx=1);
 
+        // input with spinbuttons
+	static GtkWidget* mygtk_grid_add_spin_input(const gchar *labeltxt, GtkWidget *grid, int &x, int &y, int nx=1, GtkWidget *opt_label_widget=NULL, GSList **l=NULL);
 #if 0
+
 	//  old and depricated, use "mygtk_add_input grid version"
 	static GtkWidget* mygtk_create_input(const char* labeltxt, GtkWidget* vbox, 
 					     GtkWidget* &hbox, 

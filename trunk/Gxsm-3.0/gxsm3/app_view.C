@@ -510,7 +510,7 @@ void ViewControl::setup_side_pane (gboolean show){
 	if (show){
 		gtk_widget_show (sidepane);
 		side_panel_width = 300;
-                gtk_widget_set_size_request (hpaned, usx + side_panel_width, usy);
+                //gtk_widget_set_size_request (hpaned, usx + side_panel_width, usy);
                 gtk_paned_set_position (GTK_PANED (hpaned), usx);
 		NcDumpToWidget ncdump (scan->data.ui.name);
 		ncdump.dump (tab_ncraw, tab_info);
@@ -518,7 +518,7 @@ void ViewControl::setup_side_pane (gboolean show){
 	else{
 		gtk_widget_hide (sidepane);
 		side_panel_width = 0;
-                gtk_widget_set_size_request (hpaned, usx + side_panel_width, usy);
+                //gtk_widget_set_size_request (hpaned, usx + side_panel_width, usy);
 	}
 }
 
@@ -537,7 +537,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 			  int ZoomFac, int QuenchFac){
 	GtkWidget *statusbar;
 	GtkWidget *scrollarea;
-	GtkWidget *base_grid, *grid, *frame_param;
+	GtkWidget *base_grid, *grid;
         int x,y,ii;
         
 	GtkWidget *label;
@@ -722,24 +722,25 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	gtk_label_set_angle (GTK_LABEL (label), 90);
 
         // Display scaling controls
-
+        view_bp->new_grid_with_frame ("Color View Ranges",1,1);
+        
         // Display -- Hi-Low
         view_bp->set_default_ec_change_notice_fkt  (display_changed_hl_callback, this);
-        view_bp->grid_add_ec ("V Range Z high", scan->data.Zunit, &scan->data.display.z_high,
+        view_bp->grid_add_ec ("High Limit", scan->data.Zunit, &scan->data.display.z_high,
                               -5000., 5000., ".3f", 1., 100., NULL);
         view_bp->new_line ();
                 
-        view_bp->grid_add_ec ("V Range Z low", scan->data.Zunit, &scan->data.display.z_low,
+        view_bp->grid_add_ec ("Low Limit", scan->data.Zunit, &scan->data.display.z_low,
                               -5000., 5000., ".3f", 1., 100., NULL);
         view_bp->new_line ();
         
         // Display -- Range auto center
         view_bp->set_default_ec_change_notice_fkt  (display_changed_vr_callback, this);
-        view_bp->grid_add_ec ("V Range Z", scan->data.Zunit, &scan->data.display.vrange_z,
+        view_bp->grid_add_ec ("Max. Range", scan->data.Zunit, &scan->data.display.vrange_z,
                               -5000., 5000., ".3g", 0.1, 5., NULL);        //"VRangeZ");
         view_bp->new_line ();
 
-        view_bp->grid_add_ec ("V Offset Z", scan->data.Zunit, &scan->data.display.voffset_z,
+        view_bp->grid_add_ec ("rel. Offset", scan->data.Zunit, &scan->data.display.voffset_z,
                               -5000., 5000., ".3g", 0.2, 2.,NULL);        //"VOffsetZ");
         
         // -- Info Tab
@@ -763,7 +764,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
 	scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
 	gtk_container_add (GTK_CONTAINER (notebook), scrolledwindow);
-	gtk_widget_set_size_request (scrolledwindow, 250, -1);
+	//gtk_widget_set_size_request (scrolledwindow, 250, -1);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 	tab_ncraw = scrolledwindow;
 
@@ -778,14 +779,14 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
 	// -- Probe Events Tab
         // ==================================================
-	base_grid = gtk_grid_new ();
-	gtk_container_add (GTK_CONTAINER (notebook), base_grid);
+        pe_bp = new BuildParam ();
+        gtk_container_add (GTK_CONTAINER (notebook), pe_bp->grid);
 
 	label = gtk_label_new (N_("Probe Events"));
 	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
 	gtk_label_set_angle (GTK_LABEL (label), 90);
 
-	//     Events Control ----------------------------------------
+        //     Events Control ----------------------------------------
 	XSM_DEBUG (DBG_L2,  "VC::VC EVCtrl-Tab" );
 
         // gsettings!!!
@@ -797,59 +798,61 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         xrm.Get ("MaxNumberEventsCursorRadius", &MaxNumberEvents, "300");
         xrm.Get ("ArrowSize", &ArrowSize, "35.");
 
-	frame_param = gtk_frame_new (N_("Probe Events"));
-	gtk_grid_attach (GTK_GRID (base_grid), frame_param, 1,1, 1,1);
-	grid = gtk_grid_new ();
-	gtk_container_add (GTK_CONTAINER (frame_param), grid);
-        x=y=1;
+        pe_bp->new_grid_with_frame (N_("Probe Events"), 1, 1);
+        pe_bp->set_no_spin ();
+        pe_bp->set_input_nx (1);
+        pe_bp->set_input_width_chars (12);
 
-	APP_SELECTOR (active_event_list, "Type");
- 	ADD_TOGGLE (tog_probe_events, "Show", 0);
- 	g_signal_connect (tog_probe_events, "toggled", G_CALLBACK (ViewControl:: events_probe_callback), this);
+        tog_probe_events = pe_bp->grid_add_check_button ("Show", NULL, 1, G_CALLBACK (ViewControl:: events_probe_callback), this);
+        pe_bp->new_line ();
 
-        x=1, ++y;
+        pe_bp->grid_add_label ("Type");
+        pe_bp->grid_add_widget (active_event_list = gtk_combo_box_text_new ());
+        pe_bp->new_line ();
 
-	pe_info[ii=0] = gtk_entry_new ();
+        ii=0;
+        pe_bp->grid_add_label ("X");
+        pe_bp->grid_add_widget (pe_info[ii] = gtk_entry_new ());
 	SETUP_ENTRY(pe_info[ii], "---");
-	gtk_grid_attach (GTK_GRID (grid), gtk_label_new ("X:"), x++, y, 1,1); 
-	gtk_grid_attach (GTK_GRID (grid), pe_info[ii], x++, y, 1,1); 
-        x=1, ++y; 
+        pe_bp->new_line ();
+        ii++;
 
-	pe_info[++ii] = gtk_entry_new ();
+        pe_bp->grid_add_label ("Y");
+        pe_bp->grid_add_widget (pe_info[ii] = gtk_entry_new ());
 	SETUP_ENTRY(pe_info[ii], "---");
-	gtk_grid_attach (GTK_GRID (grid), gtk_label_new ("Y:"), x++, y, 1,1); 
-	gtk_grid_attach (GTK_GRID (grid), pe_info[ii], x++, y, 1,1); 
-        x=1, ++y;
+        pe_bp->new_line ();
+        ii++;
 
-	pe_info[++ii] = gtk_entry_new ();
+        pe_bp->grid_add_label ("Z");
+        pe_bp->grid_add_widget (pe_info[ii] = gtk_entry_new ());
 	SETUP_ENTRY(pe_info[ii], "---");
-	gtk_grid_attach (GTK_GRID (grid), gtk_label_new ("Z:"), x++, y, 1,1); 
-	gtk_grid_attach (GTK_GRID (grid), pe_info[ii], x++, y, 1,1); 
-        x=1, ++y;
+        pe_bp->new_line ();
+        ii++;
 
-	pe_info[++ii] = gtk_entry_new ();
+        pe_bp->grid_add_label ("t");
+        pe_bp->grid_add_widget (pe_info[ii] = gtk_entry_new ());
 	SETUP_ENTRY(pe_info[ii], "---");
-	gtk_grid_attach (GTK_GRID (grid), gtk_label_new ("t:"), x++, y, 1,1); 
-	gtk_grid_attach (GTK_GRID (grid), pe_info[ii], x++, y, 1,1); 
-        x=1, ++y;
+        pe_bp->new_line ();
+        ii++;
 
-	pe_info[++ii] = gtk_entry_new ();
+        pe_bp->grid_add_label ("Src");
+        pe_bp->grid_add_widget (pe_info[ii] = gtk_entry_new ());
 	SETUP_ENTRY(pe_info[ii], "---");
-	gtk_grid_attach (GTK_GRID (grid), gtk_label_new ("Src:"), x++, y, 1,1); 
-	gtk_grid_attach (GTK_GRID (grid), pe_info[ii], x++, y, 1,1); 
-        x=1, ++y;
+        pe_bp->new_line ();
+        ii++;
+
+        pe_bp->pop_grid ();
+        pe_bp->new_line ();
 
         // ==================================================
-	frame_param = gtk_frame_new (N_("Plot & Selection Control"));
-	gtk_grid_attach (GTK_GRID (base_grid), frame_param, 1,2, 1,1);
-	grid = gtk_grid_new ();
-	gtk_container_add (GTK_CONTAINER (frame_param), grid);
-        x=y=1;
+        pe_bp->new_grid_with_frame (N_("Plot & Selection Control"), 1, 1);
+        pe_bp->grid_add_label ("X");
+        pe_bp->grid_add_widget (active_event_xchan = gtk_combo_box_text_new ());
+        pe_bp->new_line ();
 
-	APP_SELECTOR (active_event_xchan, "X");
-        x=1, ++y;
-	APP_SELECTOR (active_event_ychan, "Y");
-        x=1, ++y;
+        pe_bp->grid_add_label ("Y");
+        pe_bp->grid_add_widget (active_event_ychan = gtk_combo_box_text_new ());
+        pe_bp->new_line ();
 
 //	gtk_combo_box_text_append (GTK_COMBO_BOX (active_event_list), "---");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_xchan), "XCH-index", "Index");
@@ -860,96 +863,71 @@ ViewControl::ViewControl (char *title, int nx, int ny,
  	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_xchan), 0);
  	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ychan), 0);
 
-	APP_SELECTOR (select_events_by, "Plot");
+        pe_bp->grid_add_label ("Plot");
+        pe_bp->grid_add_widget (select_events_by = gtk_combo_box_text_new ());
+        pe_bp->new_line ();
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "active", "Active");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "visible", "Visible");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all", "All");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all project on x", "All Project on X");
  	gtk_combo_box_set_active (GTK_COMBO_BOX (select_events_by), 0);
 
-        x=1, ++y;
-	GtkWidget* button = gtk_button_new_with_label(N_("Go!"));
-	gtk_grid_attach (GTK_GRID (grid), button, x++, y, 1,1);
-	g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (ViewControl:: obj_event_plot_callback), this);
+        pe_bp->grid_add_button ("Go!", "Update plot", 1, G_CALLBACK (ViewControl:: obj_event_plot_callback), this);
+        tog_plot = pe_bp->grid_add_check_button ("On Click", "Update plot on event clicked", 1, G_CALLBACK (ViewControl:: obj_event_plot_callback), this);
+        pe_bp->new_line ();
 
-	XSM_DEBUG (DBG_L2,  "VC::VC EVCtrl-Tab c" );
+        gtk_widget_set_tooltip_text (
+                                     pe_bp->grid_add_ec (N_("Radius"), gapp->xsm->LenUnit ? gapp->xsm->LenUnit : gapp->xsm->X_Unit, &CursorRadius, 0., 1000000., ".1f", 10., 100., NULL),
+                                     N_("Click middle button to choose center for area of interest and update.")
+                                     );
+        pe_bp->new_line ();
 
-	ADD_TOGGLE (tog_plot, "On Click", 0);
-//	ADD_TOGGLE (tog_average, "All Avg.", 0);
+        gtk_widget_set_tooltip_text (
+                                     pe_bp->grid_add_ec (N_("Number"), gapp->xsm->Unity, &MaxNumberEvents, 0, 25000, ".0f"),
+                                     N_("Click middle button to choose center for area of interest and update.")
+                                     );
+        pe_bp->new_line ();
 
-	XSM_DEBUG (DBG_L2,  "VC::VC EVCtrl-Tab cc: LU" << gapp->xsm->LenUnit );
+        gtk_widget_set_tooltip_text (
+                                     pe_bp->grid_add_ec (N_("Arrow-Size"), gapp->xsm->Unity, &ArrowSize, 0., 200., ".1f", 1., 10., NULL),
+                                     N_("Click middle button to choose center for area of interest and update.")
+                                     );
 
-	XSM_DEBUG (DBG_L2,  "VC::VC EVCtrl-Tab cc: LU" << gapp->xsm->LenUnit );
-
-        // !!!!!!!!!!!!! PORT EVENTSTAB TO BUILD_PARAM !!!!!!!!!!!!!
-        x=1, ++y;
-        {
-                GtkWidget *input = mygtk_grid_add_spin_input (N_("Radius"), grid, x, y);
-                // g_object_set_data (G_OBJECT (input), "Adjustment_PCS_Name", (void*)(VIEW_PREFIX LABEL));
-                ec_radius = new Gtk_EntryControl (gapp->xsm->LenUnit ? gapp->xsm->LenUnit : gapp->xsm->X_Unit,
-                                                  OUT_OF_RANGE,
-                                                  &CursorRadius, 0., 1000000., ".1f", input, 10., 100.);
-	}
-
-        x=1, ++y;
-        {
-                GtkWidget *input = mygtk_grid_add_spin_input (N_("Number"), grid, x, y);
-                ec_number = new Gtk_EntryControl (gapp->xsm->Unity,
-                                                  OUT_OF_RANGE,
-                                                  &MaxNumberEvents, 0., 25000., ".0f", input, 1., 10.);
-	}
-        x=1, ++y;
-        {
-                GtkWidget *input = mygtk_grid_add_spin_input (N_("Arrow-Size"), grid, x, y);
-                ec_arrowsize = new Gtk_EntryControl (gapp->xsm->Unity,
-                                                     OUT_OF_RANGE,
-                                                     &ArrowSize, 0., 200., ".1f", input, 1., 10.);
-	}
-        x=1, ++y;
-	gtk_grid_attach (GTK_GRID (grid), gtk_label_new (N_("* click middle button to choose area of interest")), x++, y, 4,1); 
+        pe_bp->pop_grid ();
+        pe_bp->new_line ();
 
         // ==================================================
-        frame_param = gtk_frame_new (N_("Export Data"));
-	gtk_grid_attach (GTK_GRID (base_grid), frame_param, 1,3, 1,1);
-	grid = gtk_grid_new ();
-	gtk_container_add (GTK_CONTAINER (frame_param), grid);
-        x=y=1;
-
-	button = gtk_button_new_with_label(N_("Dump to stdout"));
-	gtk_grid_attach (GTK_GRID (grid), button, x++,y, 1,1);
-	g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (ViewControl:: obj_event_dump_callback), this);
-
-        x=1, ++y;
-	gtk_grid_attach (GTK_GRID (grid), gtk_label_new(N_("Note: To export or save data shown, please use the\nplot window, popup menu file or print to xmgrace.")), x++, y, 2,1);
+        pe_bp->new_grid_with_frame (N_("Export Data"), 1, 1);
+        pe_bp->grid_add_button (N_("Dump to stdout"),
+                                N_("Note: To export or save raw data shown, please use the\nplot window, popup menu file or print to xmgrace."),
+                                1,
+                                G_CALLBACK (ViewControl:: obj_event_dump_callback), this);
 
         
 	// -- User Events Tab
         // ==================================================
-	base_grid = gtk_grid_new ();
-	gtk_container_add (GTK_CONTAINER (notebook), base_grid);
+        ue_bp = new BuildParam ();
+        gtk_container_add (GTK_CONTAINER (notebook), ue_bp->grid);
 
 	label = gtk_label_new (N_("User Events"));
 	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
 	gtk_label_set_angle (GTK_LABEL (label), 90);
 
-	frame_param = gtk_frame_new (N_("User Events"));
-	grid = gtk_grid_new ();
-	gtk_grid_attach (GTK_GRID (base_grid), frame_param, 1,1, 1,1);
-	gtk_container_add (GTK_CONTAINER (frame_param), grid);
-        x=y=1;
+        ue_bp->new_grid_with_frame (N_("User Events"), 1, 1);
+        ue_bp->set_no_spin ();
+        ue_bp->set_input_nx (1);
+        ue_bp->set_input_width_chars (12);
 
- 	ADD_TOGGLE (tog_user_events, "Show", 0);
- 	g_signal_connect (tog_user_events, "toggled", G_CALLBACK (ViewControl:: events_user_callback), this);
-        x=1, ++y;
+        tog_probe_events = ue_bp->grid_add_check_button ("Show", NULL, 1, G_CALLBACK (ViewControl:: events_user_callback), this);
+        ue_bp->new_line ();
 
         const gchar *ue_what[] = { "Type", "X", "Y", "Z", "time", "What", "...", "...", "...", "...", NULL };
         
 	for (int i=0; ue_what[i] && i<10; ++i){
-                ue_info[i] = gtk_entry_new ();
+                ue_bp->grid_add_label (ue_what[i]);
+                ue_bp->grid_add_widget (ue_info[i] = gtk_entry_new ());
                 SETUP_ENTRY(ue_info[i], "---");
-                gtk_grid_attach (GTK_GRID (grid), gtk_label_new (ue_what[i]), x++, y, 1,1); 
-                gtk_grid_attach (GTK_GRID (grid), ue_info[i], x++, y, 1,1); 
-                x=1, ++y;
+                ue_bp->new_line ();
         }
 
 	// -- Objects Tab
@@ -1053,15 +1031,13 @@ ViewControl::~ViewControl (){
 
 	RemoveIndicators();
 
-        delete view_bp; // new20170724
+        delete view_bp;
+        delete pe_bp;
+        delete ue_bp;
         
 	delete ximg;
 	delete vinfo;
 
-        delete ec_radius;
-        delete ec_number;
-        delete ec_arrowsize;
-        
         g_clear_object (&view_settings);
 }
 
@@ -1385,8 +1361,8 @@ void ViewControl::Resize (char *title, int nx, int ny,
         
 	// refit image object into canvas
 	XSM_DEBUG (DBG_L2,  "VC::RESIZE setting window default size: " << usx << ", "<< usy );
-        gtk_widget_set_size_request (canvas, rulewidth+(nx+2*border), rulewidth+(ny+2*border));
-        gtk_widget_set_size_request (hpaned, usx+2*border+2*rulewidth+side_panel_width, usy);
+        //gtk_widget_set_size_request (canvas, rulewidth+(nx+2*border), rulewidth+(ny+2*border));
+        //gtk_widget_set_size_request (hpaned, usx+2*border+2*rulewidth+side_panel_width, usy);
 	gtk_paned_set_position (GTK_PANED (hpaned), usx+2*border+2*rulewidth);
 
         gtk_window_resize (GTK_WINDOW (window), usx+2*border+2*rulewidth+side_panel_width, usy);
@@ -1751,7 +1727,7 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 						for(int i = 0; i < nn; i++)
 						        vc->EventPlot->SetPoint (i, pen->get (i, yi), count);
 						
-						++count;
+                                                ++count;
 					}
 				}
 				ev = g_slist_next (ev);
