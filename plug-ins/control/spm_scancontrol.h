@@ -38,6 +38,13 @@ typedef enum { SCAN_LINESCAN, SCAN_FRAMECAPTURE } SCAN_DT_TYPE;
 
 class MultiVoltEntry : public AppBase{
 public:
+	MultiVoltEntry (BuildParam *bp, UnitObj *Volt, int i, double v=0.) { 
+		value = v; 
+		index = i;
+		label = g_strdup_printf ("V%03d", index);
+                bp->grid_add_ec (N_(label), Volt, &value,  -1e6, 1e6, "6.3f", 0.1, 0.5, NULL, i);
+                ec=bp->ec;
+	};
 	MultiVoltEntry (GtkWidget *grid, UnitObj *Volt, int i, double v) { 
 		int x,y;
 		x=1, y=i;

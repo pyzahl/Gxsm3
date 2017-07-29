@@ -277,6 +277,8 @@ private:
 
         ViewInfo *vinfo;
         BuildParam *view_bp;
+        BuildParam *pe_bp;
+        BuildParam *ue_bp;
         GSList  *gobjlist;
         GSList  *geventlist;
         GSList  *gindicatorlist;

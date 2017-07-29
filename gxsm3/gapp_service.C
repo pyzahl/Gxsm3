@@ -112,6 +112,9 @@ GMenuModel *MyGnomeTools::find_extension_point_section (GMenuModel  *model,
         return section;
 }
 
+//#if 0
+// >>>>>>>>>>>> ************* START ALL OBSOLETE BELOW !!!!!!!!!!!!!!!!!!!!!!
+
 GtkWidget* MyGnomeTools::mygtk_grid_add_input(const gchar* labeltxt, GtkWidget* grid, int  &x, int &y, int nx, GtkWidget *opt_label_widget, GSList **l){
         GtkWidget *label, *entry;
 
@@ -183,11 +186,8 @@ GtkWidget* MyGnomeTools::mygtk_grid_add_spin_input (const gchar *labeltxt, GtkWi
   
 	return spin;
 }
-
-
-
-// >>>>>>>>>>>> ************* START ALL OBSOLETE BELOW !!!!!!!!!!!!!!!!!!!!!!
 #if 0
+
 GtkWidget* MyGnomeTools::mygtk_create_input(const gchar* labeltxt,
 					    GtkWidget* vbox,
 					    GtkWidget* &hbox, 

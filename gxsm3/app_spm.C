@@ -537,9 +537,10 @@ GtkWidget* App::create_spm_control (){
 
         XSM_DEBUG(DBG_L3, "creating SPM control");
 
-        spm_bp->new_grid_with_frame ("Scan Parameter", 3, 4);
+        spm_bp->new_grid_with_frame ("Scan Parameter", 1, 1);
         spm_bp->set_no_spin ();
         spm_bp->set_input_nx (3);
+        spm_bp->set_input_width_chars (12);
         // spm_bp->set_label_width_chars (13);
         spm_bp->set_default_ec_change_notice_fkt (App::spm_range_check, this);
         
@@ -551,21 +552,25 @@ GtkWidget* App::create_spm_control (){
                                        xsm->AktUnit->prec1,
                                        0.,0.,
                                        "RangeX");
+        gtk_widget_set_hexpand (spm_bp->input, TRUE);
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Rx", spm_bp->ec);
 
+        spm_bp->set_input_nx (2);
         inputCR = spm_bp->grid_add_ec (NULL, xsm->Y_Unit, &xsm->data.s.ry,
                                        0., // xsm->XRangeMin(),
                                        xsm->YRangeMax(), 
                                        xsm->AktUnit->prec1,
                                        0.,0.,
                                        "RangeY");
+        gtk_widget_set_hexpand (spm_bp->input, TRUE);
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Ry", spm_bp->ec);
 	spm_bp->grid_add_radio_button ("", "Calculate Range from Steps and Points",
                                        G_CALLBACK (cb_setmode), (gpointer)MODE_SETRANGE, true);
         spm_bp->new_line ();
         
+        spm_bp->set_input_nx (3);
         inputMS = spm_bp->grid_add_ec ("Steps XY", xsm->X_Unit, &xsm->data.s.dx,
                                        0., // xsm->XstepsMin(),
                                        xsm->XStepMax(), 
@@ -576,6 +581,7 @@ GtkWidget* App::create_spm_control (){
         g_object_set_data( G_OBJECT (grid), "EC_Stx", spm_bp->ec);
         spm_bp->ec->setMin (0., xsm->XStepMin(), "red"); 
 
+        spm_bp->set_input_nx (2);
         inputCS = spm_bp->grid_add_ec (NULL, xsm->Y_Unit, &xsm->data.s.dy,
                                        0., // xsm->YStepsMin(),
                                        xsm->YStepMax(), 
@@ -591,6 +597,7 @@ GtkWidget* App::create_spm_control (){
         
         spm_bp->new_line ();
 
+        spm_bp->set_input_nx (3);
         inputMN = spm_bp->grid_add_ec ("Points XY", xsm->Unity, &xsm->data.s.nx,
                                        xsm->XMinPoints ()<2.? 2.:xsm->XMinPoints (), xsm->XMaxPoints (), 
                                        ".0f",
@@ -598,6 +605,7 @@ GtkWidget* App::create_spm_control (){
         EC_ScanFix_list = g_slist_prepend (EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Pnx", spm_bp->ec);
         
+        spm_bp->set_input_nx (2);
         inputCN = spm_bp->grid_add_ec (NULL, xsm->Unity, &xsm->data.s.ny,
                                        xsm->YMinPoints()<2.? 2.:xsm->YMinPoints (), xsm->YMaxPoints(), 
                                        ".0f",
@@ -624,6 +632,7 @@ GtkWidget* App::create_spm_control (){
         spm_bp->new_line ();
 
         // Scan Offset -- always in non rotated coordinate system
+        spm_bp->set_input_nx (3);
         spm_bp->set_default_ec_change_notice_fkt  (App::spm_offset_check, this);
         spm_bp->grid_add_ec ("Offset XY", xsm->X_Unit, &xsm->data.s.x0,
                              xsm->XOffsetMin(), xsm->XOffsetMax(),
@@ -666,6 +675,7 @@ GtkWidget* App::create_spm_control (){
 
         // Rotation
         spm_bp->set_no_spin (false);
+        spm_bp->set_input_width_chars (5);
         spm_bp->set_default_ec_change_notice_fkt  (App::spm_offset_check, this);
         //        g_object_set_data( G_OBJECT (input), "Adjustment_PCS_Name", (void*)("SPM-Rotation"));
         spm_bp->grid_add_ec ("Rotation", xsm->ArcUnit, &xsm->data.s.alpha,
@@ -677,7 +687,7 @@ GtkWidget* App::create_spm_control (){
                 ("Move to Origin", "Move to Origin (Zero Offset)", 1,
                  G_CALLBACK (App::offset_to_preset_callback), this);
         g_object_set_data (G_OBJECT(preset_button), "preset_xy", NULL);
-        GtkWidget *offset_lock = spm_bp->grid_add_lock_button ("Lock/Unlock Move to Origin Button\nand PanView Preset Move to Actions", false);
+        GtkWidget *offset_lock = spm_bp->grid_add_lock_button ("Lock/Unlock Move to Origin Button\nand PanView Preset Move to Actions", false, 2);
         g_object_set_data (G_OBJECT(grid), "offset_lock_button", offset_lock);
         
         spm_bp->new_line ();
@@ -705,7 +715,7 @@ GtkWidget* App::create_spm_control (){
         EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
 
         // spm_bp->set_label_width_chars (10);
-        spm_bp->grid_add_label ("-.--#");
+        spm_bp->grid_add_label ("-.--#", NULL, 2);
         g_object_set_data (G_OBJECT (grid), "LayerSelectValue", spm_bp->label);
         // spm_bp->set_label_width_chars (13);
 
@@ -735,7 +745,7 @@ GtkWidget* App::create_spm_control (){
         EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
 
         // spm_bp->set_label_width_chars (10);
-        spm_bp->grid_add_label ("-.--#");
+        spm_bp->grid_add_label ("-.--#", NULL, 2);
         g_object_set_data( G_OBJECT (grid), "TimeSelectValue", spm_bp->label);
         // spm_bp->set_label_width_chars (13);
 	
@@ -1339,7 +1349,7 @@ GtkWidget* App::create_as_control (){
         as_bp->new_grid_with_frame ("File/Autosave", 3, 4);
         as_bp->set_no_spin ();
         as_bp->grid_add_input(N_("Basename"));
-        as_bp->set_input_width_chars (14);
+        as_bp->set_input_width_chars (10);
         gtk_widget_set_hexpand (as_bp->input, TRUE);
         g_object_set_data( refob, "basename", as_bp->input);
 
@@ -1415,7 +1425,7 @@ GtkWidget* App::create_ui_control (){
         GtkWidget *scrolled_window = gtk_scrolled_window_new (NULL, NULL);
         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
         gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled_window), GTK_SHADOW_IN);
-        gtk_widget_set_size_request (scrolled_window, 200, 60);
+        //gtk_widget_set_size_request (scrolled_window, 200, 60);
         gtk_widget_set_hexpand (scrolled_window, TRUE);
         gtk_widget_set_vexpand (scrolled_window, TRUE);
 
@@ -1437,7 +1447,7 @@ GtkWidget* App::create_ui_control (){
         ui_bp->new_line ();
 
         ui_bp->grid_add_input(N_("Date of Scan"));
-        ui_bp->set_input_width_chars (16);
+        ui_bp->set_input_width_chars (24);
         gtk_widget_set_hexpand (ui_bp->input, TRUE);
         g_object_set_data (refob, "dateofscan", ui_bp->input);
         gtk_editable_set_editable(GTK_EDITABLE (ui_bp->input), FALSE);

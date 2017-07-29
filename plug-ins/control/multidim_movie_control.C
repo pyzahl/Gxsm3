@@ -236,6 +236,7 @@ Multidim_Movie_Control::Multidim_Movie_Control ()
 	Time     = new UnitObj("ms","ms");
 
 	AppWindowInit(N_("Multi Dimensional Movie Control"));
+        //bp = new BuildParam ();
 
 	grid = gtk_grid_new ();
 
