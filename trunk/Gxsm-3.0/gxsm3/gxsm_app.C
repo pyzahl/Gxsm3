@@ -70,9 +70,11 @@ static GXSM_ACTION_INFO main_actions[] = {
 	GXSM_TOOLBAR_ACTION_ENTRY ("Start Movie", "scan-movie", "Repeat scanning the surface and store in time dimension",
                                    App::action_toolbar_callback, "Toolbar_Scan_Movie",
                                    "camera-video-symbolic"),
+#if 0
 	GXSM_TOOLBAR_ACTION_ENTRY ("Pause Scan", "scan-pause", "Pause a running scan",
                                    App::action_toolbar_callback, "Toolbar_Scan_Pause",
                                    "media-playback-pause-symbolic"),
+#endif
 	GXSM_TOOLBAR_ACTION_ENTRY ("Stop Scan", "scan-stop", "Stop a running scan",
                                    App::action_toolbar_callback, "Toolbar_Scan_Stop",
                                    "process-stop-symbolic"),

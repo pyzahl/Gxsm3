@@ -1338,8 +1338,8 @@ GtkWidget* App::create_as_control (){
         GObject *refob = G_OBJECT (as_bp->grid);
         as_bp->new_grid_with_frame ("File/Autosave", 3, 4);
         as_bp->set_no_spin ();
-        as_bp->grid_add_input(N_("Basename/#"));
-        as_bp->set_input_width_chars (20);
+        as_bp->grid_add_input(N_("Basename"));
+        as_bp->set_input_width_chars (14);
         gtk_widget_set_hexpand (as_bp->input, TRUE);
         g_object_set_data( refob, "basename", as_bp->input);
 
@@ -1352,7 +1352,7 @@ GtkWidget* App::create_as_control (){
                          G_SETTINGS_BIND_DEFAULT);
 
         
-        as_bp->set_input_width_chars (8);
+        as_bp->set_input_width_chars (6);
         as_bp->grid_add_ec ("#", xsm->Unity, &xsm->counter,
                             0, 99999, "05.0f", "auto-save-counter-i");
 
@@ -1369,7 +1369,7 @@ GtkWidget* App::create_as_control (){
 
         as_bp->new_line ();
 
-        as_bp->grid_add_input (N_("Originalname"), 5);
+        as_bp->grid_add_input (N_("Original"), 5);
         gtk_widget_set_hexpand (as_bp->input, TRUE);
         g_object_set_data (refob, "originalname", as_bp->input);
         gtk_editable_set_editable (GTK_EDITABLE (as_bp->input), FALSE);
@@ -1406,56 +1406,47 @@ void App::as_setdata(){
 }
 
 GtkWidget* App::create_ui_control (){
-        //  GSList *EC_list=NULL;
+        BuildParam *ui_bp = new BuildParam ();
+        GObject *refob = G_OBJECT (ui_bp->grid);
+        ui_bp->new_grid_with_frame ("User Info & Comment", 3, 4);
+        ui_bp->set_no_spin ();
 
-        GtkWidget *grid;
-        GtkWidget *frame;
-        GtkWidget *text, *input;
-        GtkWidget *scrolled_window;
-        int x,y;
-        
-        frame = gtk_frame_new (N_("User Info & Comment"));
-        gtk_frame_set_label_align (GTK_FRAME (frame), 0.02, 0.5);
-        grid = gtk_grid_new ();
-        gtk_container_add (GTK_CONTAINER (frame), grid);
+        GtkWidget *text = gtk_text_view_new ();
+        GtkWidget *scrolled_window = gtk_scrolled_window_new (NULL, NULL);
+        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+        gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled_window), GTK_SHADOW_IN);
+        gtk_widget_set_size_request (scrolled_window, 200, 60);
+        gtk_widget_set_hexpand (scrolled_window, TRUE);
+        gtk_widget_set_vexpand (scrolled_window, TRUE);
 
-        x=y=1;
-
-        text = gtk_text_view_new ();
+        gtk_container_add (GTK_CONTAINER (scrolled_window), GTK_WIDGET (text)) ;
+        ui_bp->grid_add_widget (scrolled_window, 2,1);
 
 #if 0
         g_settings_bind (as_settings, "user-info-comment",
                          G_OBJECT (text), "text",
                          G_SETTINGS_BIND_SET);
 #endif
-        
-        scrolled_window = gtk_scrolled_window_new (NULL, NULL);
-        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-        gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled_window), GTK_SHADOW_IN);
-        gtk_widget_set_size_request (scrolled_window, 360, 70);
-        gtk_widget_set_hexpand (scrolled_window, TRUE);
-        gtk_widget_set_vexpand (scrolled_window, TRUE);
-
-        gtk_container_add (GTK_CONTAINER (scrolled_window), GTK_WIDGET (text)) ;
-        gtk_grid_attach (GTK_GRID (grid), scrolled_window, x,y, 4,1);
 
         GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text));
         gtk_text_buffer_set_text (buffer, N_("Hey here is no comment yet!"), -1);
-        g_object_set_data( G_OBJECT (frame), "comment", buffer);
+        g_object_set_data (refob, "comment", buffer);
         //	g_signal_connect (G_OBJECT (buffer), "changed",
         //			    G_CALLBACK (cbtext), this);
 
-        x=1,++y;
-        input = mygtk_grid_add_input(N_("Date of Scan"), grid, x,y, 3);
-        g_object_set_data( G_OBJECT (frame), "dateofscan", input);
-        gtk_editable_set_editable(GTK_EDITABLE (input), FALSE);
-	
-	
-        //  EC_list = g_slist_prepend( EC_list, &Rx);
-        //  g_object_set_data( G_OBJECT (frame), "UI_EC_list", EC_list);
-	
-        gtk_widget_show_all (frame);
-        return(frame);
+        ui_bp->new_line ();
+
+        ui_bp->grid_add_input(N_("Date of Scan"));
+        ui_bp->set_input_width_chars (16);
+        gtk_widget_set_hexpand (ui_bp->input, TRUE);
+        g_object_set_data (refob, "dateofscan", ui_bp->input);
+        gtk_editable_set_editable(GTK_EDITABLE (ui_bp->input), FALSE);
+
+        ui_bp->show_all ();
+        g_object_set_data (refob, "UI_BP", ui_bp);
+        ui_bp->pop_grid ();
+
+        return (ui_bp->grid);
 }
 
 void App::ui_update(){
