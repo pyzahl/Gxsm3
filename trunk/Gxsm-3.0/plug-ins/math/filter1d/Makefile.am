@@ -2,7 +2,8 @@ libdir = $(plugindir)/math
 AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
 
 lib_LTLIBRARIES = liblinear_stat_diff.la libkoehler.la libdiff.la \
-	librepair_cs.la libtimedomfftfilter.la libdespike1d.la
+	librepair_cs.la libtimedomfftfilter.la libdespike1d.la \
+	libft1d.la
 
 libdespike1d_la_SOURCES = despike1d.C
 libdespike1d_la_LDFLAGS = -module -export-dynamic -avoid-version
@@ -22,3 +23,5 @@ liblinear_stat_diff_la_LDFLAGS = -module -export-dynamic -avoid-version
 libtimedomfftfilter_la_SOURCES = timedomfftfilter.C
 libtimedomfftfilter_la_LDFLAGS = -module -export-dynamic -avoid-version
 
+libft1d_la_SOURCES = ft1d.C
+libft1d_la_LDFLAGS = -module -export-dynamic -avoid-version
