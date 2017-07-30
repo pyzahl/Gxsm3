@@ -510,7 +510,7 @@ void ViewControl::setup_side_pane (gboolean show){
 	if (show){
 		gtk_widget_show (sidepane);
 		side_panel_width = 300;
-                //gtk_widget_set_size_request (hpaned, usx + side_panel_width, usy);
+                gtk_widget_set_size_request (hpaned, usx + side_panel_width, usy);
                 gtk_paned_set_position (GTK_PANED (hpaned), usx);
 		NcDumpToWidget ncdump (scan->data.ui.name);
 		ncdump.dump (tab_ncraw, tab_info);
@@ -518,7 +518,7 @@ void ViewControl::setup_side_pane (gboolean show){
 	else{
 		gtk_widget_hide (sidepane);
 		side_panel_width = 0;
-                //gtk_widget_set_size_request (hpaned, usx + side_panel_width, usy);
+                gtk_widget_set_size_request (hpaned, usx + side_panel_width, usy);
 	}
 }
 
@@ -749,7 +749,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
 	scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
 	gtk_container_add (GTK_CONTAINER (notebook), scrolledwindow);
-	//gtk_widget_set_size_request (scrolledwindow, 250, -1);
+	gtk_widget_set_size_request (scrolledwindow, 250, -1);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 	tab_info = scrolledwindow;
 
@@ -764,7 +764,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
 	scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
 	gtk_container_add (GTK_CONTAINER (notebook), scrolledwindow);
-	//gtk_widget_set_size_request (scrolledwindow, 250, -1);
+	gtk_widget_set_size_request (scrolledwindow, 250, -1);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 	tab_ncraw = scrolledwindow;
 
@@ -1361,8 +1361,8 @@ void ViewControl::Resize (char *title, int nx, int ny,
         
 	// refit image object into canvas
 	XSM_DEBUG (DBG_L2,  "VC::RESIZE setting window default size: " << usx << ", "<< usy );
-        //gtk_widget_set_size_request (canvas, rulewidth+(nx+2*border), rulewidth+(ny+2*border));
-        //gtk_widget_set_size_request (hpaned, usx+2*border+2*rulewidth+side_panel_width, usy);
+        gtk_widget_set_size_request (canvas, rulewidth+(nx+2*border), rulewidth+(ny+2*border));
+        gtk_widget_set_size_request (hpaned, usx+2*border+2*rulewidth+side_panel_width, usy);
 	gtk_paned_set_position (GTK_PANED (hpaned), usx+2*border+2*rulewidth);
 
         gtk_window_resize (GTK_WINDOW (window), usx+2*border+2*rulewidth+side_panel_width, usy);
