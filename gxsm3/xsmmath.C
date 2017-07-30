@@ -961,7 +961,6 @@ gboolean F1D_LogPowerSpec(MATHOPPARAMS)
  
 	// compute 1D fourier transform for every row
 	for (int line = 0; line < Src->mem2d->GetNy(); line++) {
-                g_message ("line=%d",line);
 		Src->mem2d->data->SetPtr(0, line);
     
 		// prepare image row data for fftw
@@ -970,7 +969,6 @@ gboolean F1D_LogPowerSpec(MATHOPPARAMS)
 
 		// compute transform
 		fftw_execute (plan);
-                g_message ("fft done for line %d",line);
 
 		// convert complex data to image row
 		// scale data to 16Bit integer
