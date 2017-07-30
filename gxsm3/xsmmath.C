@@ -935,11 +935,6 @@ gboolean F1D_LogPowerSpec(MATHOPPARAMS)
 {
 	XSM_DEBUG (DBG_L3, "F1D LogPowerSpec");
 
-	ZData  *SrcZ, *DestZ;
-
-	SrcZ  =  Src->mem2d->data;
-	DestZ = Dest->mem2d->data;
-
 	XSM_DEBUG (DBG_L3, "F1D LogPowerSpec: using libfftw");
 
 	// get memory for complex data
@@ -955,6 +950,7 @@ gboolean F1D_LogPowerSpec(MATHOPPARAMS)
 
 	Dest->mem2d->Resize (Src->mem2d->GetNx()/2, Src->mem2d->GetNy(), ZD_DOUBLE);
 	Dest->data.s.nx = Dest->mem2d->GetNx();
+	Dest->data.s.ny = Dest->mem2d->GetNy();
 	Dest->data.s.x0 = 0.;
 	Dest->data.s.y0 = 0.;
 	Dest->data.s.rx = Src->data.s.rx/2.;
@@ -965,23 +961,25 @@ gboolean F1D_LogPowerSpec(MATHOPPARAMS)
  
 	// compute 1D fourier transform for every row
 	for (int line = 0; line < Src->mem2d->GetNy(); line++) {
-		SrcZ ->SetPtr(0, line);
+                g_message ("line=%d",line);
+		Src->mem2d->data->SetPtr(0, line);
     
 		// prepare image row data for fftw
 		for (int col = 0; col < Src->mem2d->GetNx(); col++)
-			in[col] = SrcZ->GetNext();
+			in[col] = Src->mem2d->data->GetNext();
 
 		// compute transform
 		fftw_execute (plan);
+                g_message ("fft done for line %d",line);
 
 		// convert complex data to image row
 		// scale data to 16Bit integer
 		// reorder data that freq 0 is in the middle and positive freq go to the right
 
-		DestZ->SetPtr(0, line);
+		Dest->mem2d->data->SetPtr(0, line);
 
-		for (int col = Src->mem2d->GetNx()/2-1; col >= 0; --col)
-			DestZ->SetNext ( ZEROVALUE + ( c_re(out[col])*c_re(out[col]) + 
+		for (int col = Dest->mem2d->GetNx()-1; col >= 0; --col)
+			Dest->mem2d->data->SetNext ( ZEROVALUE + ( c_re(out[col])*c_re(out[col]) + 
 						       c_im(out[col])*c_im(out[col]) ));
 	}
 
