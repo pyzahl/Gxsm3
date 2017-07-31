@@ -854,14 +854,20 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         pe_bp->grid_add_widget (active_event_ychan = gtk_combo_box_text_new ());
         pe_bp->new_line ();
 
+        pe_bp->grid_add_label ("YN");
+        pe_bp->grid_add_widget (active_event_ynchan = gtk_combo_box_text_new ());
+        pe_bp->new_line ();
+
 //	gtk_combo_box_text_append (GTK_COMBO_BOX (active_event_list), "---");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_xchan), "XCH-index", "Index");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_ychan), "YCH-index", "Index");
+	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_ynchan), "YNCH-index", "Index");
 	active_event_num_channels = 0;
 	active_event_num_events = 0;
  	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_list), 0);
  	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_xchan), 0);
  	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ychan), 0);
+ 	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ynchan), 0);
 
         pe_bp->grid_add_label ("Plot");
         pe_bp->grid_add_widget (select_events_by = gtk_combo_box_text_new ());
@@ -871,6 +877,13 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all", "All");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all project on x", "All Project on X");
  	gtk_combo_box_set_active (GTK_COMBO_BOX (select_events_by), 0);
+
+        pe_bp->grid_add_label ("Formula");
+        pe_bp->grid_add_widget (plot_formula = gtk_combo_box_text_new ());
+        pe_bp->new_line ();
+	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (plot_formula), "YvX", "Y(X)");
+	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (plot_formula), "YvXnorm", "Y(X)/(YN(X)/X)");
+ 	gtk_combo_box_set_active (GTK_COMBO_BOX (plot_formula), 0);
 
         pe_bp->grid_add_button ("Go!", "Update plot", 1, G_CALLBACK (ViewControl:: obj_event_plot_callback), this);
         tog_plot = pe_bp->grid_add_check_button ("On Click", "Update plot on event clicked", 1, G_CALLBACK (ViewControl:: obj_event_plot_callback), this);
@@ -1497,7 +1510,7 @@ void ViewControl::SetEventLabels(int mode){
 }
 
 void ViewControl::update_event_panel (ScanEvent *se){
-	gint xi,yi;
+	gint xi,yi,yni;
 
 	if (!se){
 		active_event = NULL; 
@@ -1510,13 +1523,16 @@ void ViewControl::update_event_panel (ScanEvent *se){
         
 	xi = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_xchan));
 	yi = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_ychan));
+	yni = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_ynchan));
 
 	while (active_event_num_events)
 		gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (active_event_list), active_event_num_events--);
 
 	while (active_event_num_channels){
 		gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (active_event_xchan), active_event_num_channels);
-		gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (active_event_ychan), active_event_num_channels--);
+		gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (active_event_ychan), active_event_num_channels);
+		gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (active_event_ynchan), active_event_num_channels);
+		--active_event_num_channels;
 	}
 	active_event_num_channels = 0;
 	active_event_num_events = active_event->get_event_count();
@@ -1559,6 +1575,7 @@ void ViewControl::update_event_panel (ScanEvent *se){
 			gchar *txt = g_strdup_printf ("%s [%s]", pe->get_label (i), pe->get_unit_symbol (i)); 
 			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_xchan), "xchan", txt);	
 			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_ychan), "ychan", txt);	
+			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_ynchan), "ynchan", txt);	
 			g_free (txt);
 		}
 	}
@@ -1586,6 +1603,7 @@ void ViewControl::update_event_panel (ScanEvent *se){
 
 	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_xchan), xi);
 	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ychan), yi);
+	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ynchan), yni);
 
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (tog_plot)))
 		obj_event_plot_callback (NULL, this);
@@ -1602,12 +1620,13 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 
 	if (ee->description_id () == 'P'){
 		ProbeEntry* pe = (ProbeEntry*) ee;
-		gint xi,yi,nn;
+		gint xi,yi,yni,nn;
 		double xmin, xmax, x;
 
 		nn = pe->get_num_sets ();
 		xi = gtk_combo_box_get_active (GTK_COMBO_BOX (vc->active_event_xchan)) - 1;
 		yi = gtk_combo_box_get_active (GTK_COMBO_BOX (vc->active_event_ychan)) - 1;
+		yni = gtk_combo_box_get_active (GTK_COMBO_BOX (vc->active_event_ynchan)) - 1;
 
 		UnitObj *UXaxis = new UnitObj(pe->get_unit_symbol (xi), " ", "g", pe->get_label (xi));
 		UnitObj *UYaxis = new UnitObj(pe->get_unit_symbol (yi), " ", "g", pe->get_label (yi));
@@ -1652,13 +1671,23 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                         delete vc->EventPlot->scan1d->view;
                         vc->EventPlot->scan1d->view = NULL;
                 }
+
+                double eps=1e-2;
                 
                 if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 0){ // active
 			vc->EventPlot->RemoveScans ();
 			vc->EventPlot->scan1d->mem2d->Resize (nn, 1);
 			vc->EventPlot->AddScan (vc->EventPlot->scan1d, 0);
-		        for(int i = 0; i < nn; i++)
-			        vc->EventPlot->SetPoint (i, pe->get (i, xi), pe->get (i, yi));
+                        if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
+                                for(int i = 0; i < nn; i++)
+                                        vc->EventPlot->SetPoint (i, pe->get (i, xi), pe->get (i, yi));
+                        else
+                                for(int i = 0; i < nn; i++){
+                                        double q = pe->get (i, yni)/pe->get (i, xi);
+                                        if (fabs(pe->get (i, xi)) < eps || fabs (q) < eps)
+                                                q=1.;
+                                        vc->EventPlot->SetPoint (i, pe->get (i, xi), pe->get (i, yi)/q);
+                                }
 		} else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 1){ // visible
 			vc->EventPlot->RemoveScans ();
 			vc->EventPlot->scan1d->mem2d->Resize (nn, 1);
@@ -1677,9 +1706,17 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 							break;
 						
 						
-						for(int i = 0; i < nn; i++)
-							vc->EventPlot->AddPoint (i, pen->get (i, yi));
-						
+                                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
+                                                        for(int i = 0; i < nn; i++)
+                                                                vc->EventPlot->AddPoint (i, pen->get (i, yi), count);
+						else
+                                                        for(int i = 0; i < nn; i++){
+                                                                double q = pen->get (i, yni)/pen->get (i, xi);
+                                                                if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
+                                                                        q=1.;
+                                                                vc->EventPlot->AddPoint (i, pen->get (i, yi)/q, count);
+                                                        }
+                                                        
 						++count;
 					}
 				}
@@ -1724,8 +1761,16 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 						
 						vc->EventPlot->AddScan (vc->EventPlot->scan1d, count);
 
-						for(int i = 0; i < nn; i++)
-						        vc->EventPlot->SetPoint (i, pen->get (i, yi), count);
+                                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
+                                                        for(int i = 0; i < nn; i++)
+                                                                vc->EventPlot->SetPoint (i, pen->get (i, yi), count);
+                                                else
+                                                        for(int i = 0; i < nn; i++){
+                                                                double q = pen->get (i, yni)/pen->get (i, xi);
+                                                                if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
+                                                                        q=1.;
+                                                                vc->EventPlot->SetPoint (i, pen->get (i, yi)/q, count);
+                                                        }
 						
                                                 ++count;
 					}
@@ -1769,8 +1814,18 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                                                 ProbeEntry* pen = (ProbeEntry*) een;
                                                 double value = 0.;
                                                 int nn_sum=0;
-                                                for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum)
-                                                        value += pen->get (ii, yi);
+
+                                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
+                                                        for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum)
+                                                                value += pen->get (ii, yi);
+						else
+                                                        for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum){
+                                                                double q = pen->get (i, yni)/pen->get (i, xi);
+                                                                if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
+                                                                        q=1.;
+                                                                value += pen->get (ii, yi)/q;
+                                                        }
+
                                                 value /= nn_sum;
                                                 if (value > 100.)
                                                         value *= 4.65675e-09 / 4.44674e-05;
