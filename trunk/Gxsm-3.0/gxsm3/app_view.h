@@ -322,8 +322,10 @@ private:
         guint active_event_num_events;
         GtkWidget* active_event_xchan;
         GtkWidget* active_event_ychan;
+        GtkWidget* active_event_ynchan;
         GtkWidget* active_event_list;
         GtkWidget* select_events_by;
+        GtkWidget* plot_formula;
         GtkWidget* control_box_event_xysel;
 
         ScanEvent* active_event;
