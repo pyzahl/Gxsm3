@@ -737,7 +737,7 @@ void DSPMoverControl::create_folder (){
 	gtk_widget_show (notebook);
 	gtk_grid_attach (GTK_GRID (v_grid), notebook, 1,1, 1,1);
 
-	const char *MoverNames[] = { "X&Y", "Rot", "PSD", "Lens", "Auto", "SM", "Z0", "Config", NULL};
+	const char *MoverNames[] = { "XY", "Rot", "PSD", "Lens", "Auto", "SM", "Z0", "Config", NULL};
 	const char *mover_tab_key[] = { "mover-tab-xy", "mover-tab-rot", "mover-tab-psd", "mover-tab-lens", "mover-tab-auto", "mover-tab-sm", "mover-tab-z0", "mover-tab-config", NULL};
 	const char *pcs_tab_remote_key_prefix[] = { "dspmover-xy-", "dspmover-rot-", "dspmover-psd-", "dspmover-lens-", "dspmover-auto-", "dspmover-sm-", "dspmover-z0-", "dspmover-config-", NULL};
 
@@ -793,8 +793,18 @@ void DSPMoverControl::create_folder (){
                                            G_CALLBACK (DSPMoverControl::CmdAction),
                                            this);
                         
+			{ // remote hook
+				remote_action_cb *ra = g_new( remote_action_cb, 1);
+				ra -> cmd = g_strdup_printf("DSP_CMD_STOP_Z0");
+				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+				ra -> widget = button;
+				ra -> data = this;
+				gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+				gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+				gtk_widget_set_tooltip_text (button, help);
+			}
 
-			// UP arrow (back)
+                        // UP arrow (back)
 			mov_bp->set_xy (3,11);  mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-backward-symbolic", GTK_ICON_SIZE_BUTTON));
 			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_Z0_P));
 			g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (99));
@@ -807,6 +817,18 @@ void DSPMoverControl::create_folder (){
 			g_signal_connect( G_OBJECT(v_grid), "key_press_event", 
                                           G_CALLBACK(create_window_key_press_event_lcb), this);
 
+			{ // remote hook
+				remote_action_cb *ra = g_new( remote_action_cb, 1);
+				ra -> cmd = g_strdup_printf("DSP_CMD_UP_Z0");
+				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+				ra -> widget = button;
+				ra -> data = this;
+				gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+				gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+				gtk_widget_set_tooltip_text (button, help);
+			}
+
+
 			// DOWN arrow (forward)
 			mov_bp->set_xy (3,13);  mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-forward-symbolic", GTK_ICON_SIZE_BUTTON));
 			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_Z0_M));
@@ -818,6 +840,17 @@ void DSPMoverControl::create_folder (){
                                            G_CALLBACK (DSPMoverControl::StopAction),
                                            this);
 
+			{ // remote hook
+				remote_action_cb *ra = g_new( remote_action_cb, 1);
+				ra -> cmd = g_strdup_printf("DSP_CMD_DOWN_Z0");
+				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+				ra -> widget = button;
+				ra -> data = this;
+				gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+				gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+				gtk_widget_set_tooltip_text (button, help);
+			}
+
                         // approach (connect, disconnect)
 			mov_bp->set_xy (6,11);  mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("goto-center-symbolic", GTK_ICON_SIZE_BUTTON));
 			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_Z0_AUTO));
@@ -825,6 +858,17 @@ void DSPMoverControl::create_folder (){
 			g_signal_connect ( G_OBJECT (button), "pressed",
                                            G_CALLBACK (DSPMoverControl::CmdAction),
                                            this);
+			{ // remote hook
+				remote_action_cb *ra = g_new( remote_action_cb, 1);
+				ra -> cmd = g_strdup_printf("DSP_CMD_AUTOCENTER_Z0");
+				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+				ra -> widget = button;
+				ra -> data = this;
+				gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+				gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+				gtk_widget_set_tooltip_text (button, help);
+			}
+
 
 			mov_bp->set_xy (6,12);  mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("goto-home-symbolic", GTK_ICON_SIZE_BUTTON));
 			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_Z0_CENTER));
@@ -832,6 +876,17 @@ void DSPMoverControl::create_folder (){
 			g_signal_connect ( G_OBJECT (button), "pressed",
                                            G_CALLBACK (DSPMoverControl::CmdAction),
                                            this);
+			{ // remote hook
+				remote_action_cb *ra = g_new( remote_action_cb, 1);
+				ra -> cmd = g_strdup_printf("DSP_CMD_HOME_Z0");
+				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+				ra -> widget = button;
+				ra -> data = this;
+				gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+				gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+				gtk_widget_set_tooltip_text (button, help);
+			}
+
 
                         mov_bp->set_xy (6,13);  mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("goto-position-symbolic", GTK_ICON_SIZE_BUTTON));
 			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_Z0_GOTO));
@@ -839,7 +894,19 @@ void DSPMoverControl::create_folder (){
 			g_signal_connect ( G_OBJECT (button), "pressed",
                                            G_CALLBACK (DSPMoverControl::CmdAction),
                                            this);
+			{ // remote hook
+				remote_action_cb *ra = g_new( remote_action_cb, 1);
+				ra -> cmd = g_strdup_printf("DSP_CMD_GOTO_Z0");
+				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+				ra -> widget = button;
+				ra -> data = this;
+				gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+				gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+				gtk_widget_set_tooltip_text (button, help);
+			}
 
+
+                        
 			mov_bp->notebook_tab_show_all ();
 			continue;
 		}
@@ -1253,7 +1320,7 @@ void DSPMoverControl::create_folder (){
 			*/
 			{ // pyremote hook
 				remote_action_cb *ra = g_new( remote_action_cb, 1);
-				ra -> cmd = g_strdup_printf("DSP_CMD_MOV-YP_%d",i);
+				ra -> cmd = g_strdup_printf("DSP_CMD_MOV-YP_%s",MoverNames[i]);
 				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
 				ra -> widget = button;
 				ra -> data = this;
@@ -1292,7 +1359,7 @@ void DSPMoverControl::create_folder (){
 						    this);
 				{ // pyremote hook
 					remote_action_cb *ra = g_new( remote_action_cb, 1);
-					ra -> cmd = g_strdup_printf("DSP_CMD_MOV-XM_%d",i);
+					ra -> cmd = g_strdup_printf("DSP_CMD_MOV-XM_%s",MoverNames[i]);
 					ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
 					ra -> widget = button;
 					ra -> data = this;
@@ -1321,7 +1388,7 @@ void DSPMoverControl::create_folder (){
 
 				{ // pyremote hook
 					remote_action_cb *ra = g_new( remote_action_cb, 1);
-					ra -> cmd = g_strdup_printf("DSP_CMD_MOV-XP_%d",i);
+					ra -> cmd = g_strdup_printf("DSP_CMD_MOV-XP_%s",MoverNames[i]);
 					ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
 					ra -> widget = button;
 					ra -> data = this;
@@ -1350,7 +1417,7 @@ void DSPMoverControl::create_folder (){
 					    this);
 			{ // pyremote hook
 				remote_action_cb *ra = g_new( remote_action_cb, 1);
-				ra -> cmd = g_strdup_printf("DSP_CMD_MOV-YM_%d",i);
+                                ra -> cmd = g_strdup_printf("DSP_CMD_MOV-YM_%s",MoverNames[i]);
 				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
 				ra -> widget = button;
 				ra -> data = this;
@@ -1451,7 +1518,7 @@ void DSPMoverControl::create_folder (){
       
 			{ // remote hook
 				remote_action_cb *ra = g_new( remote_action_cb, 1);
-				ra -> cmd = g_strdup_printf("DSP_CMD_AUTOAPP");
+				ra -> cmd = g_strdup_printf("DSP_CMD_AUTOAPP_STEPPER");
 				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
 				ra -> widget = button;
 				ra -> data = this;
@@ -1473,7 +1540,7 @@ void DSPMoverControl::create_folder (){
       
 			{ // remote hook
 				remote_action_cb *ra = g_new( remote_action_cb, 1);
-				ra -> cmd = g_strdup_printf("DSP_CMD_STOPALL");
+				ra -> cmd = g_strdup_printf("DSP_CMD_STOPALL_STEPPER");
 				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
 				ra -> widget = button;
 				ra -> data = this;
