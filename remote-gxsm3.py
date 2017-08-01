@@ -80,8 +80,8 @@ def z0_retract():
 	z0 = svec[0]
      	print "Retarct ** Offset Z0 = ", z0
 	gxsm.logev ('Remote Z0 Retract')
-	gxsm.action ("DSP_CMD_GOTO_Z0")
 	while z0 > -160.:
+		gxsm.action ("DSP_CMD_GOTO_Z0")
 		gxsm.sleep (10)
 	     	svec=gxsm.rtquery ("o")
 	     	z0 = svec[0]
@@ -99,8 +99,8 @@ def z0_approach():
 	z0 = svec[0]
      	print "Approach ** Offset Z0 = ", z0
 	gxsm.logev ('Remote Z0 Approach')
-	gxsm.action ("DSP_CMD_AUTOCENTER_Z0")
 	while z0 < 180. and not z_in_range_check ():
+		gxsm.action ("DSP_CMD_AUTOCENTER_Z0")
 		gxsm.sleep (10)
 	     	svec=gxsm.rtquery ("o")
 	     	z0 = svec[0]
