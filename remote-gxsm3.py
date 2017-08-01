@@ -72,6 +72,57 @@ def wait_for_scan ():
 	return M
 
 
+
+# Coarse Z0/Offset Tools/Approach custom
+def z0_retract():
+	gxsm.set ("dspmover-z0-speed","1000")
+     	svec=gxsm.rtquery ("o")
+	z0 = svec[0]
+     	print "Retarct ** Offset Z0 = ", z0
+	gxsm.action ("DSP_CMD_GOTO_Z0")
+	while z0 > -160.:
+		gxsm.sleep (10)
+	     	svec=gxsm.rtquery ("o")
+	     	z0 = svec[0]
+	     	svec=gxsm.rtquery ("z")
+	     	print "Z0=", z0, svec
+
+def z0_approach():
+	gxsm.set ("dspmover-z0-speed","600")
+     	svec=gxsm.rtquery ("o")
+	z0 = svec[0]
+     	print "Approach ** Offset Z0 = ", z0
+	gxsm.action ("DSP_CMD_AUTOCENTER_Z0")
+	while z0 < 180.:
+		gxsm.sleep (10)
+	     	svec=gxsm.rtquery ("o")
+	     	z0 = svec[0]
+	     	svec=gxsm.rtquery ("z")
+	     	print "Z0=", z0, svec
+	return svec[0]
+
+def z_in_range_check ():
+    	svec=gxsm.rtquery ("z")
+     	print "ZXYS=", svec
+	return svec[0] > -15
+
+def autoapproach_via_z0():
+	count=0
+	gxsm.logev ('Remote Auto Approach start')
+	while not z_in_range_check():
+		z0_retract ()
+		gxsm.sleep (20)
+		gxsm.logev ('Remote Auto Approach XP-Auto Steps')
+		gxsm.action ("DSP_CMD_MOV-XP_Auto")
+		gxsm.sleep (20)
+		zs=z0_approach ()
+		count=count+1
+		gxsm.logev ('Remote Auto Approach #' + str(count) + ' ZS=' + str (zs))
+		
+	gxsm.set ("dspmover-z0-speed","400")
+	gxsm.logev('Remote Auto Approach completed')
+
+
 # store current CP, CI
 bias=gxsm.get ("dsp-fbs-bias")
 motor=gxsm.get ("dsp-fbs-motor")
@@ -216,7 +267,7 @@ def run_vp (coords, num, ref_bias=1.8, ref_current=0.02, ff=0, run_ref=0, ref_bi
 		if M < -0.9:
 			pause_tip_retract ()
 
-def run_iv_simple (coords, num, ref_bias=1.8, ref_current=0.02,run_ref=0):
+def run_iv_simple (coords, num, ref_bias=0.1, ref_current=0.01,run_ref=0):
 	gxsm.set ("dsp-fbs-bias","%f"%(ref_bias))
 	gxsm.set ("dsp-LCK-AC-Bias-Amp","0.03")
 	gxsm.set ("dsp-fbs-mx0-current-set","%f"%(ref_current))
@@ -224,7 +275,7 @@ def run_iv_simple (coords, num, ref_bias=1.8, ref_current=0.02,run_ref=0):
 	for i in range(0, num):
 		if run_ref > 0 and i % run_ref == 0:
 			gxsm.set ("dsp-LCK-AC-Bias-Amp","0")
-			run_ref_image (0.2, 0.01)
+			run_ref_image (0.1, 0.03)
 			gxsm.set ("dsp-LCK-AC-Bias-Amp","%f"%i_ac_bias_amp)    
 			gxsm.set ("dsp-fbs-bias","%f"%(ref_bias))
 			gxsm.set ("dsp-fbs-mx0-current-set","%f"%(ref_current))
@@ -344,17 +395,18 @@ def chdcircle (m=10,n=400):
 #stepy = 1000.
 
 # STS gird
-spnx = 12.0
+spnx = 25.0
 stepx = 1.0
 
-spny = 12.0
-stepy = 1.0
+spny = -4.0
+stepy = -2.0
 
 sxlist = np.arange (-spnx, spnx+stepx, stepx)
 sylist = np.arange (-spny, spny+stepy, stepy)
 
-position = [[0.0,0.0]]
-positions = 1
+position = [[90.0,4.0], [-70.0,4.0], [0.0,128.]]
+positions = 3
+
 len2 = np.size(sxlist) * np.size(sylist) * positions
 xy = np.arange(2.0*len2).reshape(len2,2)
 
@@ -372,22 +424,29 @@ for r in position:
 #np.random.shuffle(xy)
 print xy
 
+gxsm.logev('Remote Execute')
+#gxsm.logev(str(xy))
+#gxsm.logev(str(np.size(xy)/2))
 
 #gxsm.set ("dsp-IV-Start00", 2.2)
 #gxsm.set ("dsp-IV-End00", -1.7)
 
 print "STARTING NOW..."
 
+autoapproach_via_z0()
 
 ###def run_vp (coords, num, ref_bias=2.35, ref_current=0.045, ff=0, run_ref=0, ref_bias_list=[0.1])
-#run_iv_simple (xy, len2, 0.5, 0.03, 0)
+
+#run_iv_simple (xy, len2, 0.4, 0.050, 51)
+
 #run_lm_simple (xy, len2, 0.05, 0.02, 10)
 
 #run_survey (xy, len2, 0.1, 0.01)
 
 
 ##terminate = run_set ([0.05, 0.1, 0.2, 0.5, -0.1, -0.2, -0.5, 1.0, 1.5, -1.0, -1.5, 2.0, -2.0, 2.5, 0.1, 0.1])
-#terminate = run_set (np.arange(0.02, 0.1, 0.02 ))
+#terminate = run_set (np.arange(0.1, 1.5, 0.1 ))
+#terminate = run_set (np.arange(-0.1, -1.5, -0.1 ))
 #terminate = run_set (np.arange(0.1, 1.2, 0.1 ))
 #terminate = run_set (np.arange(-0.02, -0.1, -0.02 ))
 #terminate = run_set (np.arange(-0.1, -1.2, -0.1 ))
@@ -395,22 +454,37 @@ print "STARTING NOW..."
 #terminate = run_set (np.arange(2.5, 3.1, 0.2 ))
 #terminate = run_set (np.arange(-2.5, -3.1, -0.2 ))
 
-run_lm_simple (xy, len2, 0.04, 0.02, 10)
+#run_lm_simple (xy, len2, 0.04, 0.02, 10)
 
-zi=-10.5
-for z in np.arange(zi, zi-2.2, -0.1):
-	print z
-	gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%z )
+
+# Force Map Procedure -- assuming to use CZ-FUZZY-LOG feedback mixer ch0 transfer
+zi=-10.5  # initial z -- typically the Z "on top" of the object of interest at 10pA and 100mV, and for sure a leveled in scan 
+
+#gxsm.set ("dsp-fbs-bias","0.05")
+#gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%zi )
+#gxsm.set ("dsp-fbs-mx0-current-level","0.200")
+#gxsm.set ("dsp-fbs-mx0-current-set","0.190")
+#gxsm.set ("dsp-adv-scan-fast-return","5")
+#gxsm.set ("dsp-fbs-scan-speed-scan","8")
+
+#for z in np.arange(zi, zi-2.2, -0.1):
+#	print z
+#	gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%z )
 ##	b=0.1
 ##	gxsm.set ("dsp-fbs-bias","%f"%b)
-	gxsm.startscan ()
-	gxsm.waitscan ()
+#	gxsm.startscan ()
+#	gxsm.waitscan ()
 
-run_lm_simple (xy, len2, 0.04, 0.02, 10)
+#run_lm_simple (xy, len2, 0.04, 0.02, 10)
 
 
-zstandby=zi+50
-gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%zstandby )
+#zstandby=zi+50
+#gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%zstandby )
+#gxsm.set ("dsp-fbs-bias","0.1")
+#gxsm.set ("dsp-fbs-mx0-current-level","0.0")
+#gxsm.set ("dsp-fbs-mx0-current-set","0.01")
+#gxsm.set ("dsp-adv-scan-fast-return","1")
+#gxsm.set ("dsp-fbs-scan-speed-scan","500")
 
 
 #freeze_Z()
