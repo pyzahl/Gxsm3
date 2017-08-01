@@ -76,9 +76,10 @@ def wait_for_scan ():
 # Coarse Z0/Offset Tools/Approach custom
 def z0_retract():
 	gxsm.set ("dspmover-z0-speed","1000")
-     	svec=gxsm.rtquery ("o")
+     	svec=gxsm.rtquery ("o")  ## in HV volts
 	z0 = svec[0]
      	print "Retarct ** Offset Z0 = ", z0
+	gxsm.logev ('Remote Z0 Retract')
 	gxsm.action ("DSP_CMD_GOTO_Z0")
 	while z0 > -160.:
 		gxsm.sleep (10)
@@ -87,24 +88,25 @@ def z0_retract():
 	     	svec=gxsm.rtquery ("z")
 	     	print "Z0=", z0, svec
 
+def z_in_range_check ():
+    	svec=gxsm.rtquery ("z") ## in HV Volts
+     	print "ZXYS=", svec
+	return svec[0] > -15
+
 def z0_approach():
 	gxsm.set ("dspmover-z0-speed","600")
-     	svec=gxsm.rtquery ("o")
+     	svec=gxsm.rtquery ("o") ## in HV Volts
 	z0 = svec[0]
      	print "Approach ** Offset Z0 = ", z0
+	gxsm.logev ('Remote Z0 Approach')
 	gxsm.action ("DSP_CMD_AUTOCENTER_Z0")
-	while z0 < 180.:
+	while z0 < 180. and not z_in_range_check ():
 		gxsm.sleep (10)
 	     	svec=gxsm.rtquery ("o")
 	     	z0 = svec[0]
 	     	svec=gxsm.rtquery ("z")
 	     	print "Z0=", z0, svec
 	return svec[0]
-
-def z_in_range_check ():
-    	svec=gxsm.rtquery ("z")
-     	print "ZXYS=", svec
-	return svec[0] > -15
 
 def autoapproach_via_z0():
 	count=0
