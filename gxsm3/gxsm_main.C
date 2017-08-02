@@ -302,6 +302,10 @@ gxsm3_app_startup (GApplication *app)
 
 	add_accelerator (app, "win.gear-menu", "F10");
 
+	add_accelerator (app, "win.action::sf1", "<Shift>F1");
+	add_accelerator (app, "win.action::sf2", "<Shift>F2");
+	add_accelerator (app, "win.action::sf3", "<Shift>F3");
+	add_accelerator (app, "win.action::sf4", "<Shift>F4");
  
         XSM_DEBUG(DBG_L1, "GXSM: create core application ============ gapp = new App ()");
 

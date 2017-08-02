@@ -3998,6 +3998,10 @@ int DSPControl::Probing_exec_IV_callback( GtkWidget *widget, DSPControl *dspc){
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
 
+        gchar *tmp = g_strdup ("vp-sts-initial");
+        gapp->SignalRemoteActionToPlugins (&tmp);
+        g_free (tmp);
+      
         dspc->write_dsp_probe (0, PV_MODE_NONE);
 
 	if (dspc->IV_auto_flags & FLAG_AUTO_GLOCK){
@@ -4068,6 +4072,10 @@ int DSPControl::Probing_exec_PL_callback( GtkWidget *widget, DSPControl *dspc){
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
 
+        gchar *tmp = g_strdup ("vp-pl-initial");
+        gapp->SignalRemoteActionToPlugins (&tmp);
+        g_free (tmp);
+      
         dspc->write_dsp_probe (0, PV_MODE_NONE);
 
 	if (dspc->PL_auto_flags & FLAG_AUTO_GLOCK){
@@ -4213,6 +4221,10 @@ int DSPControl::Probing_exec_LM_callback( GtkWidget *widget, DSPControl *dspc){
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
 
+        gchar *tmp = g_strdup ("vp-gvp-initial");
+        gapp->SignalRemoteActionToPlugins (&tmp);
+        g_free (tmp);
+      
         dspc->write_dsp_probe (0, PV_MODE_NONE);
 
 	if (dspc->LM_auto_flags & FLAG_AUTO_GLOCK){

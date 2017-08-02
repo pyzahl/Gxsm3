@@ -19,6 +19,69 @@
 	<attribute name="label" translatable="yes">Save _as...</attribute>
 	<attribute name="action">win.pyfile-save-as</attribute>
       </item>
+      <submenu>
+	<attribute name="label" translatable="yes">Gxsm Action Sets</attribute>
+	<section>
+	  <attribute name="id">plugin-pyremote-file-action-sets-section</attribute>
+	  <submenu>
+	    <attribute name="label" translatable="yes">Scan Action Sets</attribute>
+	    <section>
+	      <attribute name="id">plugin-pyremote-file-action-sets-scan-section</attribute>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F1 (default)</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf1</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F2</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf2</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F3</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf3</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F4</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf4</attribute>
+	      </item>
+	    </section>
+	  </submenu>
+	  <submenu>
+	    <attribute name="label" translatable="yes">VP Action Sets</attribute>
+	    <section>
+	      <attribute name="id">plugin-pyremote-file-action-sets-vp-section</attribute>
+	      <item>
+		<attribute name="label" translatable="yes">VP-STS-initial</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">vp-sts-initial</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">VP-PL-initial</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">vp-pl-initial</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">VP-GVP-initial</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">vp-gvp-initial</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">VP-GVPA-initial</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">vp-gvpa-initial</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">VP-GVPB-initial</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">vp-gvpb-initial</attribute>
+	      </item>
+	    </section>
+	  </submenu>
+	</section>
+      </submenu>
       <item>
 	<attribute name="label" translatable="yes">Configure</attribute>
 	<attribute name="action">win.pyremote-configure</attribute>

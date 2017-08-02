@@ -151,8 +151,6 @@ App::App(GApplication *g_app)
 	PluginRemoteAction = NULL;
 
 	PluginCallGetNCInfo = NULL;
-	PluginCallPrinter = NULL;
-	PluginCallMkicons = NULL;
   
 	// Application Gxsm
         nodestroy = TRUE;
@@ -630,15 +628,7 @@ void App::ConnectPluginToGetNCInfoEvent( void (*cbfkt)(gchar *filename ) ){
 	PluginCallGetNCInfo = cbfkt;
 }
 
-void App::ConnectPluginToPrinterEvent( void (*cbfkt)(GtkWidget*, void*) ){
-	PluginCallPrinter = cbfkt;
-}
-
-void App::ConnectPluginToMkiconsEvent( void (*cbfkt)(GtkWidget*, void*) ){
-	PluginCallMkicons = cbfkt;
-}
-
-void App::ConnectPluginToRemoteAction( void (*cbfkt)(gpointer, gchar*) ){
+void App::ConnectPluginToRemoteAction( void (*cbfkt)(gpointer) ){
 	PluginRemoteAction = g_list_prepend(PluginRemoteAction, (gpointer) cbfkt);
 }
 
@@ -679,8 +669,6 @@ void App::reload_gxsm_plugins( gint killflag ){
 	}
 
 	PluginCallGetNCInfo = NULL;
-	PluginCallPrinter = NULL;
-	PluginCallMkicons = NULL;
         
 	if( !GxsmPlugins && killflag ){
 		XSM_DEBUG(DBG_L2, "no GXSM plugins found, done." );

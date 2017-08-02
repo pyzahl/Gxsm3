@@ -156,7 +156,8 @@ static GActionEntry win_view_popup_entries[] = {
         { "events-verbose", ViewControl::events_verbose_callback, NULL, NULL, NULL },
         { "remove-all-events", ViewControl::events_remove_callback, NULL, NULL, NULL },
         { "remove-all-trails", ViewControl::indicators_remove_callback, NULL, NULL, NULL },
-        { "sort-time-elements", ViewControl::sort_time_elements_callback, "s", "'index'", NULL }
+        { "sort-time-elements", ViewControl::sort_time_elements_callback, "s", "'index'", NULL },
+        { "action", ViewControl::action_callback, "s", "'sf1'", NULL }
 };
 
 static GActionEntry win_object_popup_entries[] = {
@@ -3271,6 +3272,27 @@ void ViewControl::sort_time_elements_callback (GSimpleAction *action, GVariant *
                 ; // not handled
         }
                 
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+}
+
+void ViewControl::action_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data) { 
+        // ViewControl *vc = (ViewControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
+                
+        XSM_DEBUG_GP (DBG_L1, "OBJECT-MODE Radio action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
+
+        g_message ("Action: %s", g_variant_get_string (new_state, NULL));
+        gchar *tmp = g_strdup (g_variant_get_string (new_state, NULL));
+        gapp->SignalRemoteActionToPlugins (&tmp);
+        g_free (tmp);
+        
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
 }

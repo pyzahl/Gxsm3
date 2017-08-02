@@ -343,16 +343,14 @@ public:
         void ConnectPluginToCDFSaveEvent( void (*cbfkt)(gpointer) ); // => NcFile *ncf
         void ConnectPluginToLoadFileEvent( void (*cbfkt)(gpointer) ); // => gchar **filename
         void ConnectPluginToSaveFileEvent( void (*cbfkt)(gpointer) ); // => gchar **filename
-        void ConnectPluginToRemoteAction( void (*cbfkt)(gpointer, gchar*) );
+        void ConnectPluginToRemoteAction( void (*cbfkt)(gpointer) );
 
         void RegisterPluginToolbarButton (GObject *b, const gchar* ToolbarButtonName){ 
                 g_object_set_data (G_OBJECT (app_window), ToolbarButtonName, b);
         };
 
         void ConnectPluginToGetNCInfoEvent (void (*cbfkt)(gchar *filename ) );
-        void ConnectPluginToPrinterEvent ( void (*cbfkt)(GtkWidget*, void*) );
-        void ConnectPluginToMkiconsEvent ( void (*cbfkt)(GtkWidget*, void*) );
-
+        
         void PutPluginData (gchar *data){
                 if (DataStack)
                         g_free (DataStack);
@@ -454,8 +452,6 @@ protected:
         GList *PluginRemoteAction;
 
         void (*PluginCallGetNCInfo)(gchar*);
-        void (*PluginCallPrinter)(GtkWidget*, void*);
-        void (*PluginCallMkicons)(GtkWidget*, void*);
 
 private:
         /* Gxsm Application */

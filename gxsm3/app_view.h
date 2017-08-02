@@ -105,6 +105,8 @@ public:
 
         static void sort_time_elements_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
 
+        static void action_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+
         static void Activate_window_callback (GtkWindow *window, gpointer user_data);
         static void Activate_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void SetOff_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
