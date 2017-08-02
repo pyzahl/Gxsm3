@@ -739,11 +739,66 @@ public:
         static void clear_output(GtkToolButton *btn, gpointer user_data);
         // static gboolean check_func(PyObject *m, gchar *name, gchar *filename);
 
+        void run_action_script (const gchar *name){
+                gchar *output, *tmp_script;
+                gchar* path = g_strconcat (g_get_home_dir (), "/.gxsm3/pyaction", NULL);
+                gchar* tmp_script_filename = g_strconcat (path, "/", name, ".py", NULL);
+                g_free (path);
+                if (g_file_test (tmp_script_filename, G_FILE_TEST_EXISTS)){
+                        GError *err = NULL;
+                        if (!g_file_get_contents(tmp_script_filename,
+                                                 &tmp_script,
+                                                 NULL,
+                                                 &err)) {
+                                gchar *message = g_strdup_printf("Cannot read content of file "
+                                                                 "'%s': %s",
+                                                                 tmp_script_filename,
+                                                                 err->message);
+                                append(message);
+                                gapp->warning (message);
+                                g_free(message);
+                        }
+                        output = run_command(tmp_script, Py_file_input);
+                        g_free(tmp_script);
+                        append(output);
+                } else {
+                        gchar *message = g_strdup_printf("Action script %s not yet defined.\nPlease define action script using the python console.", tmp_script_filename);
+                        g_message (message);
+                        append(message);
+                        gapp->warning (message);
+                        g_free(message);
+                }
+                g_free (tmp_script_filename);
+        };
+        
         void set_script_filename (const gchar *name = NULL){
                 if (name){
                         if (script_filename)
                                 g_free (script_filename);
-                        script_filename = g_strdup (name);
+                        if (strstr (name, ".py")){
+                                script_filename = g_strdup (name);
+                        } else {
+                                gchar* path = g_strconcat (g_get_home_dir (), "/.gxsm3/pyaction", NULL);
+                                // attempt to create folder if not exiting
+                                if (!g_file_test (path, G_FILE_TEST_IS_DIR)){
+                                        g_message ("creating action script folder %s", path);
+                                        g_mkdir_with_parents (path, 0777);
+                                }
+                                script_filename = g_strconcat (path, "/", name, ".py", NULL);
+                                g_free (path);
+                                if (!g_file_test (script_filename, G_FILE_TEST_EXISTS)){
+                                        g_message ("creating sample action script folder %s", script_filename);
+                                        // make sample
+                                        std::ofstream example_file;
+                                        example_file.open(script_filename);
+                                        example_file << "# Example python action script file " << script_filename << " was created.\n"
+                                                "# - see the Gxsm3 manual for more information\n"
+                                                "gxsm.set (\"dsp-fbs-bias\",\"0.1\") # set Bias to 0.1V\n"
+                                                "gxsm.set (\"dsp-fbs-mx0-current-set\",\"0.01\") # Set Current Setpoint to 0.01nA\n"
+                                                "# gxsm.sleep (2)  # sleep for 2/10s\n";
+                                        example_file.close();
+                                }
+                        }
                 }
                 if (script_filename)
                         gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), script_filename);
@@ -2250,58 +2305,102 @@ void py_gxsm_console::open_file_callback (GSimpleAction *action, GVariant *param
 	GtkFileFilter *filter = gtk_file_filter_new();
 	GtkTextBuffer *console_file_buf;
 	GtkTextView *textview;
+        GVariant *old_state=NULL, *new_state=NULL;
 
-	gtk_file_filter_add_mime_type(filter, "text/x-python");
-	gtk_file_filter_add_pattern(filter, "*.py");
+        old_state = g_action_get_state (G_ACTION (action));
+        if (parameter){
+                new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
+                
+                XSM_DEBUG_GP (DBG_L1, "py_gxsm_console open_file action %s activated, state changes from %s to %s\n",
+                              g_action_get_name (G_ACTION (action)),
+                              g_variant_get_string (old_state, NULL),
+                              g_variant_get_string (new_state, NULL));
+        }
+        if (! new_state){
 
-	file_chooser = gtk_file_chooser_dialog_new(N_("Open Python script"),
-                                                   pygc->window,
-                                                   GTK_FILE_CHOOSER_ACTION_OPEN,
-                                                   N_("_Cancel"), GTK_RESPONSE_CANCEL,
-                                                   N_("_Open"), GTK_RESPONSE_ACCEPT,
-                                                   NULL);
-	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(file_chooser), filter);
-	if (!pygc-> query_filename ||
-	    gtk_dialog_run(GTK_DIALOG(file_chooser)) == GTK_RESPONSE_ACCEPT) {
-		gchar *file_content;
-		GError *err = NULL;
+                gtk_file_filter_add_mime_type(filter, "text/x-python");
+                gtk_file_filter_add_pattern(filter, "*.py");
 
-		if (pygc->query_filename) {
-                        pygc->set_script_filename (gtk_file_chooser_get_filename
-                                                   (GTK_FILE_CHOOSER(file_chooser)));
-		}
-		else {
-			/* this is a bit of a kludge, so i want to ensure that using the set
-			   filename is chosen explicitly each time*/
-			pygc->query_filename = true;
-		}
-		if (!g_file_get_contents(pygc->script_filename,
-					 &file_content,
-					 NULL,
-					 &err)) {
-			gchar *message = g_strdup_printf("Cannot read content of file "
-							 "'%s': %s",
-							 pygc->script_filename,
-							 err->message);
-			g_clear_error(&err);
-			pygc->append(message);
-			pygc->fail = true;
-			g_free(message);
+                file_chooser = gtk_file_chooser_dialog_new(N_("Open Python script"),
+                                                           pygc->window,
+                                                           GTK_FILE_CHOOSER_ACTION_OPEN,
+                                                           N_("_Cancel"), GTK_RESPONSE_CANCEL,
+                                                           N_("_Open"), GTK_RESPONSE_ACCEPT,
+                                                           NULL);
+                gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(file_chooser), filter);
+                if (!pygc-> query_filename ||
+                    gtk_dialog_run(GTK_DIALOG(file_chooser)) == GTK_RESPONSE_ACCEPT) {
+                        gchar *file_content;
+                        GError *err = NULL;
+
+                        if (pygc->query_filename) {
+                                pygc->set_script_filename (gtk_file_chooser_get_filename
+                                                           (GTK_FILE_CHOOSER(file_chooser)));
+                        }
+                        else {
+                                /* this is a bit of a kludge, so i want to ensure that using the set
+                                   filename is chosen explicitly each time*/
+                                pygc->query_filename = true;
+                        }
+                        if (!g_file_get_contents(pygc->script_filename,
+                                                 &file_content,
+                                                 NULL,
+                                                 &err)) {
+                                gchar *message = g_strdup_printf("Cannot read content of file "
+                                                                 "'%s': %s",
+                                                                 pygc->script_filename,
+                                                                 err->message);
+                                g_clear_error(&err);
+                                pygc->append(message);
+                                pygc->fail = true;
+                                g_free(message);
+                                pygc->set_script_filename (NULL);
+                        }
+                        else {
+                                pygc->fix_eols_to_unix(file_content);
+
+                                // read string which contain last command output
+                                textview = GTK_TEXT_VIEW(pygc->console_file_content);
+                                console_file_buf = gtk_text_view_get_buffer(textview);
+                                // append input line
+                                gtk_text_buffer_set_text(console_file_buf, file_content, -1);
+                                g_free(file_content);
+                                pygc->fail = false;
+                        }
+                }
+                gtk_widget_destroy(GTK_WIDGET(file_chooser));
+        } else {
+                gchar *file_content;
+                GError *err = NULL;
+                pygc->set_script_filename (g_variant_get_string (new_state, NULL));
+                if (!g_file_get_contents(pygc->script_filename,
+                                         &file_content,
+                                         NULL,
+                                         &err)) {
+                        gchar *message = g_strdup_printf("Cannot read content of file "
+                                                         "'%s': %s",
+                                                         pygc->script_filename,
+                                                         err->message);
+                        g_clear_error(&err);
+                        pygc->append(message);
+                        pygc->fail = true;
+                        g_free(message);
                         pygc->set_script_filename (NULL);
-		}
-		else {
-			pygc->fix_eols_to_unix(file_content);
+                }
+                else {
+                        pygc->fix_eols_to_unix(file_content);
 
-			// read string which contain last command output
-			textview = GTK_TEXT_VIEW(pygc->console_file_content);
-			console_file_buf = gtk_text_view_get_buffer(textview);
-			// append input line
-			gtk_text_buffer_set_text(console_file_buf, file_content, -1);
-			g_free(file_content);
-			pygc->fail = false;
-		}
-	}
-	gtk_widget_destroy(GTK_WIDGET(file_chooser));
+                        // read string which contain last command output
+                        textview = GTK_TEXT_VIEW(pygc->console_file_content);
+                        console_file_buf = gtk_text_view_get_buffer(textview);
+                        // append input line
+                        gtk_text_buffer_set_text(console_file_buf, file_content, -1);
+                        g_free(file_content);
+                        pygc->fail = false;
+                }
+                g_simple_action_set_state (action, new_state);
+                g_variant_unref (old_state);
+        }
 }
 
 void py_gxsm_console::save_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data)
@@ -2378,7 +2477,7 @@ void py_gxsm_console::configure_callback (GSimpleAction *action, GVariant *param
 
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
-
+        
 	if (g_variant_get_boolean (new_state)){
 		;
 	}
@@ -2388,6 +2487,9 @@ static GActionEntry win_py_gxsm_action_entries[] = {
 	{ "pyfile-open", py_gxsm_console::open_file_callback, NULL, NULL, NULL },
 	{ "pyfile-save", py_gxsm_console::save_file_callback, NULL, NULL, NULL },
 	{ "pyfile-save-as", py_gxsm_console::save_file_as_callback, NULL, NULL, NULL },
+
+	{ "pyfile-action-use", py_gxsm_console::open_file_callback, "s", "'sf1'", NULL },
+
 	{ "pyremote-configure", py_gxsm_console::configure_callback, NULL, NULL, NULL },
 };
 
@@ -2723,6 +2825,11 @@ void py_gxsm_console::command_execute(GtkEntry *entry, gpointer user_data)
 
 // -------------------------------------------------- GXSM PLUGIN INTERFACE
 
+static void run_action_script_callback (gpointer data){
+        const gchar *name = *(gchar**)data;
+        py_gxsm_remote_console->run_action_script (name);
+}
+
 // init-Function
 static void pyremote_init(void)
 {
@@ -2735,10 +2842,13 @@ static void pyremote_init(void)
 		setenv("PYTHONPATH", ".", 0);
 	}
 
-	if (!py_gxsm_remote_console)
+	if (!py_gxsm_remote_console){
 		py_gxsm_remote_console = new py_gxsm_console ();
 	
-	py_gxsm_remote_console->run();
+                gapp->ConnectPluginToRemoteAction (run_action_script_callback);
+        }
+
+        py_gxsm_remote_console->run();
 }
 
 

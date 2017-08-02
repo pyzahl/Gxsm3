@@ -538,6 +538,32 @@
 	  </item>
 	</section>
       </submenu>
+      <submenu>
+	<attribute name="label" translatable="yes">Actions</attribute>
+	<section>
+	  <attribute name="id">view-action-section</attribute>
+	  <item>
+	    <attribute name="label" translatable="yes">SF1</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf1</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">SF2</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf2</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">SF3</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf3</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">SF4</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf4</attribute>
+	  </item>
+	</section>
+      </submenu>
     </section>
   </menu>
   <!-- ************************************************** -->
