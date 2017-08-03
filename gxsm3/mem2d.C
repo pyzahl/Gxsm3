@@ -716,6 +716,16 @@ gint compare_events_xpos (ScanEvent *a, ScanEvent *b){
 	return 0;
 }
 
+gint compare_events_ypos (ScanEvent *a, ScanEvent *b){
+	double ax,ay;
+        a->get_position (ax, ay);
+	double bx,by;
+        b->get_position (bx, by);
+	if (ay < by) return -1;
+	if (ay > by) return 1;
+	return 0;
+}
+
 gint compare_user_entry_messageid (UserEntry *a, UserEntry *b) {
 	return g_strcmp0 (a->message_id, b->message_id);
 }
@@ -750,6 +760,12 @@ GSList* Mem2d::ReportScanEvents (GFunc report_obj_func, gpointer gp, double *xy,
 GSList* Mem2d::ReportScanEventsXasc (){
         GSList *ev_sort = g_slist_copy (scan_event_list);
         ev_sort = g_slist_sort (ev_sort, GCompareFunc (compare_events_xpos));
+        return ev_sort;
+}
+
+GSList* Mem2d::ReportScanEventsYasc (){
+        GSList *ev_sort = g_slist_copy (scan_event_list);
+        ev_sort = g_slist_sort (ev_sort, GCompareFunc (compare_events_ypos));
         return ev_sort;
 }
 

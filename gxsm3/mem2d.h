@@ -386,6 +386,7 @@ public:
 	void RemoveScanEvents ();
 	GSList* ReportScanEvents (GFunc report_obj_func, gpointer gp, double *xy=NULL, double distance=0., int number=0);
 	GSList* ReportScanEventsXasc ();
+	GSList* ReportScanEventsYasc ();
 	void AttachScanEvent (ScanEvent *se);
 	int WriteScanEvents (NcFile *ncf);
 	int LoadScanEvents (NcFile *ncf);
