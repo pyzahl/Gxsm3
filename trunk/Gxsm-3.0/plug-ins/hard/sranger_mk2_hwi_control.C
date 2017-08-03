@@ -317,7 +317,9 @@ public:
                                       const gchar *control_id) {                                                            
 
                 new_grid_with_frame ("Probe Controller");
+                new_grid ();
                 gtk_grid_set_column_homogeneous (GTK_GRID (grid), TRUE);
+                gtk_widget_set_hexpand (grid, TRUE);
                 
                 // ==================================================
                 set_configure_list_mode_on ();
@@ -354,8 +356,15 @@ public:
                                                GCallback (auto_cb), cb_data, auto_flags, FLAG_AUTO_RUN_INITSCRIPT);
                 set_configure_list_mode_off ();
                 // ==================================================
+                GtkWidget *tmp = grid;
+                pop_grid ();
+                grid_add_widget (tmp);
                                                                         
                 new_line ();
+
+                new_grid ();
+                gtk_grid_set_column_homogeneous (GTK_GRID (grid), TRUE);
+                gtk_widget_set_hexpand (grid, TRUE);
                 
                 remote_action_cb *ra = g_new( remote_action_cb, 1);     
                 ra -> cmd = g_strdup_printf("DSP_VP_%s_EXECUTE", control_id); 
@@ -397,6 +406,9 @@ public:
                 set_configure_list_mode_off ();
                 // ==================================================
 
+                tmp = grid;
+                pop_grid ();
+                grid_add_widget (tmp);
                 pop_grid ();
 	};
 
