@@ -1,5 +1,4 @@
 import array
-#import Numeric
 import math
 import numpy as np
 from numpy.random import shuffle
@@ -73,14 +72,14 @@ def wait_for_scan ():
 
 
 
-# Coarse Z0/Offset Tools/Approach custom
+# Coarse Z0/Offset Tools/Approach custom -- customize/check on boundary range limits here
 def z0_retract():
 	gxsm.set ("dspmover-z0-speed","1000")
      	svec=gxsm.rtquery ("o")  ## in HV volts
 	z0 = svec[0]
      	print "Retarct ** Offset Z0 = ", z0
 	gxsm.logev ('Remote Z0 Retract')
-	while z0 > -160.:
+	while z0 > -160.:  # limit check in HV volts for completion
 		gxsm.action ("DSP_CMD_GOTO_Z0")
 		gxsm.sleep (10)
 	     	svec=gxsm.rtquery ("o")
@@ -99,7 +98,7 @@ def z0_approach():
 	z0 = svec[0]
      	print "Approach ** Offset Z0 = ", z0
 	gxsm.logev ('Remote Z0 Approach')
-	while z0 < 180. and not z_in_range_check ():
+	while z0 < 180. and not z_in_range_check ():    # limit check in HV volts for completion
 		gxsm.action ("DSP_CMD_AUTOCENTER_Z0")
 		gxsm.sleep (10)
 	     	svec=gxsm.rtquery ("o")
@@ -389,6 +388,8 @@ def chdcircle (m=10,n=400):
 
 #gxsm.save ()
 
+################ GRID GENERATION -- ADJUST ###############
+
 #survey mode
 #spnx = 2500.
 #stepx = 1000.
@@ -406,8 +407,9 @@ stepy = -2.0
 sxlist = np.arange (-spnx, spnx+stepx, stepx)
 sylist = np.arange (-spny, spny+stepy, stepy)
 
+## posiiton list where to run grid(s)
 position = [[90.0,4.0], [-70.0,4.0], [0.0,128.]]
-positions = 3
+positions = 3  # match to number positions above
 
 len2 = np.size(sxlist) * np.size(sylist) * positions
 xy = np.arange(2.0*len2).reshape(len2,2)
@@ -424,9 +426,9 @@ for r in position:
 #print len2
 #print xy
 #np.random.shuffle(xy)
-print xy
+#print xy
 
-gxsm.logev('Remote Execute')
+gxsm.logev('Remote Execute -- Starting job now')
 #gxsm.logev(str(xy))
 #gxsm.logev(str(np.size(xy)/2))
 
@@ -435,11 +437,13 @@ gxsm.logev('Remote Execute')
 
 print "STARTING NOW..."
 
+##### job scratch area -- default is no action #####
+
 #autoapproach_via_z0()
 
 ###def run_vp (coords, num, ref_bias=2.35, ref_current=0.045, ff=0, run_ref=0, ref_bias_list=[0.1])
 
-run_iv_simple (xy, len2, 0.4, 0.050, 51)
+#run_iv_simple (xy, len2, 0.4, 0.050, 51)
 
 #run_lm_simple (xy, len2, 0.05, 0.02, 10)
 
@@ -460,7 +464,7 @@ run_iv_simple (xy, len2, 0.4, 0.050, 51)
 
 
 # Force Map Procedure -- assuming to use CZ-FUZZY-LOG feedback mixer ch0 transfer
-zi=-10.5  # initial z -- typically the Z "on top" of the object of interest at 10pA and 100mV, and for sure a leveled in scan 
+#zi=-10.5  # initial z -- typically the Z "on top" of the object of interest at 10pA and 100mV, and for sure a leveled in scan 
 
 #gxsm.set ("dsp-fbs-bias","0.05")
 #gxsm.set ("dsp-adv-dsp-zpos-ref","%f"%zi )
