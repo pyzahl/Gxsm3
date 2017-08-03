@@ -46,7 +46,7 @@ typedef enum {
 	NOTEBOOK_TAB_LPC,
 	NOTEBOOK_TAB_SP,
 	NOTEBOOK_TAB_TS,
-	NOTEBOOK_TAB_LM,
+	NOTEBOOK_TAB_GVP,
 	NOTEBOOK_TAB_TK,
 	NOTEBOOK_TAB_LOCKIN,
 	NOTEBOOK_TAB_AX,
@@ -209,7 +209,7 @@ typedef struct{
         int axis_counts_ref[DSP_AFMMOV_MODES][3];
 } Mover_Param;
 
-typedef enum { PV_MODE_NONE, PV_MODE_IV, PV_MODE_FZ, PV_MODE_PL, PV_MODE_LP, PV_MODE_SP, PV_MODE_TS, PV_MODE_LM, PV_MODE_AC, PV_MODE_AX, PV_MODE_TK, PV_MODE_ABORT } pv_mode;
+typedef enum { PV_MODE_NONE, PV_MODE_IV, PV_MODE_FZ, PV_MODE_PL, PV_MODE_LP, PV_MODE_SP, PV_MODE_TS, PV_MODE_GVP, PV_MODE_AC, PV_MODE_AX, PV_MODE_TK, PV_MODE_ABORT } pv_mode;
 typedef enum { MAKE_VEC_FLAG_NORMAL=0, MAKE_VEC_FLAG_VHOLD=1, MAKE_VEC_FLAG_RAMP=2, MAKE_VEC_FLAG_END=4 } make_vector_flags;
 
 
@@ -303,6 +303,7 @@ class DSPControl : public AppBase{
 #define FLAG_AUTO_SAVE   0x01 // auto save
 #define FLAG_AUTO_PLOT   0x02 // auto plot
 #define FLAG_AUTO_GLOCK  0x04 // auto graph lock
+#define FLAG_AUTO_RUN_INITSCRIPT  0x08 // auto run init script
 
  public:
         DSPControl ();
@@ -385,8 +386,8 @@ class DSPControl : public AppBase{
 	static int Probing_write_SP_callback(GtkWidget *widget, DSPControl *dspc);
 	static int Probing_exec_TS_callback(GtkWidget *widget, DSPControl *dspc);
 	static int Probing_write_TS_callback(GtkWidget *widget, DSPControl *dspc);
-	static int Probing_exec_LM_callback(GtkWidget *widget, DSPControl *dspc);
-	static int Probing_write_LM_callback(GtkWidget *widget, DSPControl *dspc);
+	static int Probing_exec_GVP_callback(GtkWidget *widget, DSPControl *dspc);
+	static int Probing_write_GVP_callback(GtkWidget *widget, DSPControl *dspc);
 	static int Probing_exec_TK_callback(GtkWidget *widget, DSPControl *dspc);
 	static int Probing_write_TK_callback(GtkWidget *widget, DSPControl *dspc);
 	static int Probing_exec_AX_callback(GtkWidget *widget, DSPControl *dspc);
@@ -413,13 +414,13 @@ class DSPControl : public AppBase{
 	static int callback_change_SP_auto_flags (GtkWidget *widget, DSPControl *dspc);
 	static int callback_change_TS_option_flags (GtkWidget *widget, DSPControl *dspc);
 	static int callback_change_TS_auto_flags (GtkWidget *widget, DSPControl *dspc);
-	static int callback_change_LM_vpc_option_flags (GtkWidget *widget, DSPControl *dspc);
-	static int callback_update_LM_vpc_option_checkbox (GtkWidget *widget, DSPControl *dspc);
-	static int callback_change_LM_option_flags (GtkWidget *widget, DSPControl *dspc);
-	static int callback_change_LM_auto_flags (GtkWidget *widget, DSPControl *dspc);
-	static int callback_edit_LMVP (GtkWidget *widget, DSPControl *dspc);
-	static int callback_LM_store_vp (GtkWidget *widget, DSPControl *dspc);
-	static int callback_LM_restore_vp (GtkWidget *widget, DSPControl *dspc);
+	static int callback_change_GVP_vpc_option_flags (GtkWidget *widget, DSPControl *dspc);
+	static int callback_update_GVP_vpc_option_checkbox (GtkWidget *widget, DSPControl *dspc);
+	static int callback_change_GVP_option_flags (GtkWidget *widget, DSPControl *dspc);
+	static int callback_change_GVP_auto_flags (GtkWidget *widget, DSPControl *dspc);
+	static int callback_edit_GVP (GtkWidget *widget, DSPControl *dspc);
+	static int callback_GVP_store_vp (GtkWidget *widget, DSPControl *dspc);
+	static int callback_GVP_restore_vp (GtkWidget *widget, DSPControl *dspc);
 	static int callback_change_TK_ref(GtkWidget *widget, DSPControl *dspc);
 	static int callback_change_FZ_ref(GtkWidget *widget, DSPControl *dspc);
 	static int callback_change_TK_option_flags (GtkWidget *widget, DSPControl *dspc);
@@ -753,26 +754,26 @@ class DSPControl : public AppBase{
 	GtkWidget *TS_status;
 	guint64    TS_glock_data[6];
 
-	// LM (Lateral Manipulation)
-#define LM_GPIO_KEYCODE    57
-#define LM_GPIO_KEYCODE_S "57"
-#define N_LM_VECTORS 45 // 50 vectors max total, need a few extra for controls and finish.
-	double LM_du[N_LM_VECTORS], LM_dx[N_LM_VECTORS], LM_dy[N_LM_VECTORS], LM_dz[N_LM_VECTORS], LM_dsig[N_LM_VECTORS], LM_ts[N_LM_VECTORS], LM_final_delay;
-	gint32 LM_points[N_LM_VECTORS];
-	gint32 LM_opt[N_LM_VECTORS];   // options
-	gint32 LM_data[N_LM_VECTORS];  // GPIO data
-	gint32 LM_vnrep[N_LM_VECTORS]; // Vector N repetitions
-	gint32 LM_vpcjr[N_LM_VECTORS]; // VPC jump relative length
-	int    LM_repetitions;
-	int    LM_GPIO_lock;
-	guint64    LM_option_flags;
-	guint64    LM_auto_flags;
+	// GVP (General Vector Probe)
+#define GVP_GPIO_KEYCODE    57
+#define GVP_GPIO_KEYCODE_S "57"
+#define N_GVP_VECTORS 45 // 50 vectors max total, need a few extra for controls and finish.
+	double GVP_du[N_GVP_VECTORS], GVP_dx[N_GVP_VECTORS], GVP_dy[N_GVP_VECTORS], GVP_dz[N_GVP_VECTORS], GVP_dsig[N_GVP_VECTORS], GVP_ts[N_GVP_VECTORS], GVP_final_delay;
+	gint32 GVP_points[N_GVP_VECTORS];
+	gint32 GVP_opt[N_GVP_VECTORS];   // options
+	gint32 GVP_data[N_GVP_VECTORS];  // GPIO data
+	gint32 GVP_vnrep[N_GVP_VECTORS]; // Vector N repetitions
+	gint32 GVP_vpcjr[N_GVP_VECTORS]; // VPC jump relative length
+	int    GVP_repetitions;
+	int    GVP_GPIO_lock;
+	guint64    GVP_option_flags;
+	guint64    GVP_auto_flags;
 	GtkWidget *VPprogram[10];
-	GtkWidget *LM_status;
-	guint64    LM_glock_data[6];
-	gchar  LM_key[8];
-	void LM_store_vp (const gchar *key);
-	void LM_restore_vp (const gchar *key);
+	GtkWidget *GVP_status;
+	guint64    GVP_glock_data[6];
+	gchar  GVP_key[8];
+	void GVP_store_vp (const gchar *key);
+	void GVP_restore_vp (const gchar *key);
 
 	// TK (Track Mode)
 	double TK_r, TK_r2, TK_speed, TK_delay;

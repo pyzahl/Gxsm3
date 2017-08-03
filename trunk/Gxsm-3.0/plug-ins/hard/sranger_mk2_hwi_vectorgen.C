@@ -1076,43 +1076,43 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 		break;
 
 
-	case PV_MODE_LM: // ------------ Special Vector Setup for LM (lat/vert manipulation)
+	case PV_MODE_GVP: // ------------ Special Vector Setup for GVP (general vector probe)
                 g_free (vp_exec_mode_name); vp_exec_mode_name = g_strdup ("VP: Vector Program");
-		options      = (LM_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
-                        | (LM_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
-		ramp_sources = LM_option_flags & FLAG_SHOW_RAMP ? vis_Source : 0x000;
+		options      = (GVP_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
+                        | (GVP_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
+		ramp_sources = GVP_option_flags & FLAG_SHOW_RAMP ? vis_Source : 0x000;
 
 		// setup vector program
 		{
-			long double vpd[N_LM_VECTORS];
+			long double vpd[N_GVP_VECTORS];
 			int k=0;
-			for (k=0; k<N_LM_VECTORS; ++k){
+			for (k=0; k<N_GVP_VECTORS; ++k){
 				vpd[k] = vp_duration;
-				int lmopt = LM_opt[k];
-				if (LM_ts[k] <= 0. && LM_points[k] == 0) 
+				int lmopt = GVP_opt[k];
+				if (GVP_ts[k] <= 0. && GVP_points[k] == 0) 
 					break;
-				if (LM_GPIO_lock != LM_GPIO_KEYCODE) // arbitrary positive 4 digit key code
+				if (GVP_GPIO_lock != GVP_GPIO_KEYCODE) // arbitrary positive 4 digit key code
 					lmopt &= ~VP_GPIO_SET;  // remove VP_GPIO_SET flag!
 
-				// invert FB flag LM_opt bit VP_FEEDBACK_HOLD is set is FB=ON, VP-options require it to be SET for FB-HOLD!! Invert this bit now HERE:
-				lmopt = (lmopt & ~VP_FEEDBACK_HOLD) | (LM_opt[k] & VP_FEEDBACK_HOLD ? 0 : VP_FEEDBACK_HOLD);
+				// invert FB flag GVP_opt bit VP_FEEDBACK_HOLD is set is FB=ON, VP-options require it to be SET for FB-HOLD!! Invert this bit now HERE:
+				lmopt = (lmopt & ~VP_FEEDBACK_HOLD) | (GVP_opt[k] & VP_FEEDBACK_HOLD ? 0 : VP_FEEDBACK_HOLD);
 
 				// override FB on/off option flag here (1 = FB on, 0 = FB off):
-				options = (LM_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0) | (lmopt) | ((LM_data[k]&0xff) << 16);
-				if (LM_vnrep[k] < 1)
-					LM_vnrep[k] = 1;
-				if (LM_vpcjr[k] < -vector_index || LM_vpcjr[k] > 0) // origin of VP, no forward jump
-					LM_vpcjr[k] = -vector_index; // defaults to start
-				make_UZXYramp_vector (LM_du[k], LM_dz[k], LM_dx[k], LM_dy[k], LM_dsig[k], 0., LM_points[k], LM_vnrep[k]-1, LM_vpcjr[k], LM_ts[k], vis_Source, options, vp_duration, MAKE_VEC_FLAG_NORMAL);
+				options = (GVP_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0) | (lmopt) | ((GVP_data[k]&0xff) << 16);
+				if (GVP_vnrep[k] < 1)
+					GVP_vnrep[k] = 1;
+				if (GVP_vpcjr[k] < -vector_index || GVP_vpcjr[k] > 0) // origin of VP, no forward jump
+					GVP_vpcjr[k] = -vector_index; // defaults to start
+				make_UZXYramp_vector (GVP_du[k], GVP_dz[k], GVP_dx[k], GVP_dy[k], GVP_dsig[k], 0., GVP_points[k], GVP_vnrep[k]-1, GVP_vpcjr[k], GVP_ts[k], vis_Source, options, vp_duration, MAKE_VEC_FLAG_NORMAL);
 				write_dsp_vector (vector_index++);
-				if (LM_vnrep[k]-1 > 0)	
-					vp_duration +=	(LM_vnrep[k]-1)*(vp_duration - vpd[k+LM_vpcjr[k]]);
+				if (GVP_vnrep[k]-1 > 0)	
+					vp_duration +=	(GVP_vnrep[k]-1)*(vp_duration - vpd[k+GVP_vpcjr[k]]);
 			}
 		}
 
-		options      = (LM_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
-                        | (LM_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
-		make_delay_vector (LM_final_delay, ramp_sources, options, vp_duration, MAKE_VEC_FLAG_END);
+		options      = (GVP_option_flags & FLAG_FB_ON     ? 0      : VP_FEEDBACK_HOLD)
+                        | (GVP_option_flags & FLAG_INTEGRATE ? VP_AIC_INTEGRATE : 0);
+		make_delay_vector (GVP_final_delay, ramp_sources, options, vp_duration, MAKE_VEC_FLAG_END);
 		write_dsp_vector (vector_index++);
 
 		append_null_vector (options, vector_index);
@@ -1120,8 +1120,8 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 		sranger_common_hwi->probe_time_estimate = (int)vp_duration; // used for timeout check
 
 		info = g_strdup_printf ("T=%.2f ms", 1e3*(double)vp_duration/frq_ref);
-		if (LM_status)
-                        gtk_entry_set_text (GTK_ENTRY (LM_status), info);
+		if (GVP_status)
+                        gtk_entry_set_text (GTK_ENTRY (GVP_status), info);
 		break;
 
 	case PV_MODE_TK: // ------------ Special Vector Setup for TK (Tracking)
