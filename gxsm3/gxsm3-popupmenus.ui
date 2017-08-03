@@ -562,6 +562,11 @@
 	    <attribute name="action">win.action</attribute>
 	    <attribute name="target">sf4</attribute>
 	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">SF5</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf5</attribute>
+	  </item>
 	</section>
       </submenu>
     </section>
