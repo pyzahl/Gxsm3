@@ -147,8 +147,19 @@
     <key name="probe-lm-vector-program-matrix" type="a{sv}">
      <default>{}</default>
       <summary>
+	Current Program and Memos for Vector Program stores. (old/compatibility, obsolete)
+	Dict of columns { du, dx, dy, dz, ts, pn, op, da, vn, vp } each vector has N_GVP_VECTORS x ( 1 + N*stores )
+      </summary>
+      <description>
+	data
+      </description>
+    </key>
+    
+    <key name="probe-gvp-vector-program-matrix" type="a{sv}">
+     <default>{}</default>
+      <summary>
 	Current Program and Memos for Vector Program stores.
-	Dict of columns { du, dx, dy, dz, ts, pn, op, da, vn, vp } each vector has N_LM_VECTORS x ( 1 + N*stores )
+	Dict of columns { du, dx, dy, dz, ts, pn, op, da, vn, vp } each vector has N_GVP_VECTORS x ( 1 + N*stores )
       </summary>
       <description>
 	data
@@ -235,11 +246,11 @@
 	GUI simplification option: Indicates tab TS to be showed
       </description>
     </key>
-    <key name="tab-lm" type="b">
+    <key name="tab-gvp" type="b">
       <default>true</default>
-      <summary>Indicates if tab LM (LatMan / generic Vector Probe) to be showed</summary>
+      <summary>Indicates if tab GVP (generic Vector Probe) to be showed</summary>
       <description>
-	GUI simplification option: Indicates tab lm (LatMan / generic vector probe) to be showed
+	GUI simplification option: Indicates tab gvp (generic vector probe) to be showed
       </description>
     </key>
     <key name="tab-tk" type="b">

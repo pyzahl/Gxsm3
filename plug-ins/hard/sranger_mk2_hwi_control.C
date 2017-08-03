@@ -72,8 +72,8 @@ extern DSPPACControl *DSPPACClass;
 #define A_SOURCE_MSK 0x40000000 // select for Avg plotting
 #define S_SOURCE_MSK 0x80000000 // select for Sec plotting
 
-#define LMVP_SHIFT_UP  1
-#define LMVP_SHIFT_DN -1
+#define GVP_SHIFT_UP  1
+#define GVP_SHIFT_DN -1
 
 #define REMOTE_PREFIX "dsp-"
 
@@ -349,6 +349,9 @@ public:
                 grid_add_check_button_guint64 ("GLock", "Lock Data/Graphs Configuration.\n"
                                                "(recommended to check after setup and one test run)", 1,
                                                GCallback (auto_cb), cb_data, auto_flags, FLAG_AUTO_GLOCK); 
+                grid_add_check_button_guint64 ("Run Init Script", "Run Init Script before VP execution.\n"
+                                               "(use only if init script (see python console, Actions Scripts) for VP-mode is created and reviewed, you can configure any initial condtions like bias, setpoint for example.)", 1,
+                                               GCallback (auto_cb), cb_data, auto_flags, FLAG_AUTO_RUN_INITSCRIPT);
                 set_configure_list_mode_off ();
                 // ==================================================
                                                                         
@@ -900,7 +903,7 @@ DSPControl::DSPControl () {
 			probe_pc_matrix[i][j] = NULL;
 
 	IV_status = NULL;
-	LM_status = NULL;
+	GVP_status = NULL;
 	FZ_status = NULL;
 
 	write_vector_mode=PV_MODE_NONE;
@@ -1166,13 +1169,13 @@ DSPControl::DSPControl () {
 
         get_tab_settings ("TS", TS_option_flags, TS_auto_flags, TS_glock_data);
 
-	// LM
-        LM_restore_vp ("LM_set_last"); // last in view
+	// GVP
+        GVP_restore_vp ("LM_set_last"); // last in view
 
-	xrm.Get ("Probing_LM_GPIO_lock", &LM_GPIO_lock, LM_GPIO_KEYCODE_S);
-	xrm.Get ("Probing_LM_final_delay", &LM_final_delay,"0.01");
+	xrm.Get ("Probing_LM_GPIO_lock", &GVP_GPIO_lock, GVP_GPIO_KEYCODE_S);
+	xrm.Get ("Probing_LM_final_delay", &GVP_final_delay,"0.01");
 
-        get_tab_settings ("LM", LM_option_flags, LM_auto_flags, LM_glock_data);
+        get_tab_settings ("LM", GVP_option_flags, GVP_auto_flags, GVP_glock_data);
 
 	// TK
 	xrm.Get ("Probing_TK_r", &TK_r,"2.0");
@@ -2253,14 +2256,14 @@ DSPControl::DSPControl () {
         dsp_bp->notebook_tab_show_all ();
         dsp_bp->pop_grid ();
 
-// ==== Folder: LatMan (lateral manipulation) "LM" -- now renamed into VP (Vecotr Program) setup ========================================
+// ==== Folder: LatMan (lateral manipulation) "GVP" -- now renamed into VP (Vecotr Program) setup ========================================
         dsp_bp->new_grid ();
-        dsp_bp->start_notebook_tab ("VP", "tab-lm", NOTEBOOK_TAB_LM, hwi_settings);
+        dsp_bp->start_notebook_tab ("GVP", "tab-gvp", NOTEBOOK_TAB_GVP, hwi_settings);
 
 	// add item to auto-probe-menu
 	{
-                gchar *id = g_strdup_printf ("%d", PV_MODE_LM);
-                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (auto_probe_menu), id, N_("LM-Raster"));
+                gchar *id = g_strdup_printf ("%d", PV_MODE_GVP);
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (auto_probe_menu), id, N_("GVP-Raster"));
                 g_free (id);
         }
 
@@ -2268,7 +2271,7 @@ DSPControl::DSPControl () {
         PI_DEBUG (DBG_L4, "DSPC----TAB-VP ------------------------------- ");
 
  	dsp_bp->new_grid_with_frame ("Generic Vector Program (VP) Probe and Manipulation");
- 	// g_print ("================== TAB 'LM' ============= Generic Vector Program (VP) Probe and Manipulation\n");
+ 	// g_print ("================== TAB 'GVP' ============= Generic Vector Program (VP) Probe and Manipulation\n");
 
 	// ----- VP Program Vectors Headings
 	// ------------------------------------- divided view
@@ -2290,12 +2293,12 @@ DSPControl::DSPControl () {
         dsp_bp->set_no_spin ();
         
         dsp_bp->grid_add_label ("Vec[PC]", "Vector Program Counter");
-        dsp_bp->grid_add_label ("LM-dU", "vec-du");
-        dsp_bp->grid_add_label ("LM-dX", "vec-dx (default or mapped)");
-        dsp_bp->grid_add_label ("LM-dY", "vec-dy (default or mapped)");
-        dsp_bp->grid_add_label ("LM-dZ", "vec-dz");
+        dsp_bp->grid_add_label ("VP-dU", "vec-du");
+        dsp_bp->grid_add_label ("VP-dX", "vec-dx (default or mapped)");
+        dsp_bp->grid_add_label ("VP-dY", "vec-dy (default or mapped)");
+        dsp_bp->grid_add_label ("VP-dZ", "vec-dz");
         dsp_bp->set_configure_list_mode_on ();
-        dsp_bp->grid_add_label ("LM-dSig", "vec-dSignal mapped");
+        dsp_bp->grid_add_label ("VP-dSig", "vec-dSignal mapped");
         dsp_bp->set_configure_list_mode_off ();
         dsp_bp->grid_add_label ("time", "total time for VP section");
         dsp_bp->grid_add_label ("points", "points (# vectors to add)");
@@ -2315,77 +2318,77 @@ DSPControl::DSPControl () {
         
 	GSList *EC_vpc_opt_list=NULL;
         Gtk_EntryControl *ec_iter[12];
-	for (int k=0; k < N_LM_VECTORS; ++k) {
+	for (int k=0; k < N_GVP_VECTORS; ++k) {
 		gchar *tmpl = g_strdup_printf ("vec[%02d]", k); 
 
-                // g_print ("LM-DEBUG:: %s -[%d]------> LMdu=%g, ... points=%d,.. opt=%8x\n", tmpl, k, LM_du[k], LM_points[k],  LM_opt[k]);
+                // g_print ("GVP-DEBUG:: %s -[%d]------> GVPdu=%g, ... points=%d,.. opt=%8x\n", tmpl, k, GVP_du[k], GVP_points[k],  GVP_opt[k]);
 
 		dsp_bp->grid_add_label (tmpl, "Vector PC");
-		dsp_bp->grid_add_ec (NULL,      Volt, &LM_du[k], -10.0,   10.0,   "6.4g", 1., 10., "lm-du", k); 
-                if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+		dsp_bp->grid_add_ec (NULL,      Volt, &GVP_du[k], -10.0,   10.0,   "6.4g", 1., 10., "gvp-du", k); 
+                if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
-		dsp_bp->grid_add_ec (NULL, Angstroem, &LM_dx[k], -1000.0, 1000.0, "6.4g", 1., 10., "lm-dx", k); 
-                if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+		dsp_bp->grid_add_ec (NULL, Angstroem, &GVP_dx[k], -1000.0, 1000.0, "6.4g", 1., 10., "gvp-dx", k); 
+                if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
-		dsp_bp->grid_add_ec (NULL, Angstroem, &LM_dy[k], -1000.0, 1000.0, "6.4g", 1., 10., "lm-dy", k); 
-                if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+		dsp_bp->grid_add_ec (NULL, Angstroem, &GVP_dy[k], -1000.0, 1000.0, "6.4g", 1., 10., "gvp-dy", k); 
+                if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
-		dsp_bp->grid_add_ec (NULL, Angstroem, &LM_dz[k], -1000.0, 1000.0, "6.4g", 1., 10., "lm-dz", k); 
-                if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+		dsp_bp->grid_add_ec (NULL, Angstroem, &GVP_dz[k], -1000.0, 1000.0, "6.4g", 1., 10., "gvp-dz", k); 
+                if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
                 dsp_bp->set_configure_list_mode_on (); // === advanced ===========================================
-		dsp_bp->grid_add_ec (NULL,    Volt, &LM_dsig[k], -1000.0, 1000.0, "6.4g",1., 10., "lm-dsig", k); 
-                if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+		dsp_bp->grid_add_ec (NULL,    Volt, &GVP_dsig[k], -1000.0, 1000.0, "6.4g",1., 10., "gvp-dsig", k); 
+                if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
                 dsp_bp->set_configure_list_mode_off (); // ========================================================
 
-		dsp_bp->grid_add_ec (NULL,      Time, &LM_ts[k], 0., 10000.0,     "5.4g", 1., 10., "lm-dt", k); 
-                if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+		dsp_bp->grid_add_ec (NULL,      Time, &GVP_ts[k], 0., 10000.0,     "5.4g", 1., 10., "gvp-dt", k); 
+                if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
-		dsp_bp->grid_add_ec (NULL,      Unity, &LM_points[k], 0, 4000,  "5g", "lm-n", k); 
-                if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+		dsp_bp->grid_add_ec (NULL,      Unity, &GVP_points[k], 0, 4000,  "5g", "gvp-n", k); 
+                if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
 
-		//note:  VP_FEEDBACK_HOLD is only the mask, this bit in LM_opt is set to ONE for FEEBACK=ON !! Ot is inveretd while vector generation ONLY.
+		//note:  VP_FEEDBACK_HOLD is only the mask, this bit in GVP_opt is set to ONE for FEEBACK=ON !! Ot is inveretd while vector generation ONLY.
 		dsp_bp->grid_add_check_button ("", NULL, 1,
-                                               GCallback (callback_change_LM_vpc_option_flags), this,
-                                               LM_opt[k], VP_FEEDBACK_HOLD);
+                                               GCallback (callback_change_GVP_vpc_option_flags), this,
+                                               GVP_opt[k], VP_FEEDBACK_HOLD);
                 EC_vpc_opt_list = g_slist_prepend( EC_vpc_opt_list, dsp_bp->button);
                 g_object_set_data (G_OBJECT (dsp_bp->button), "VPC", GINT_TO_POINTER (k));
 
                 dsp_bp->set_configure_list_mode_on (); // ================ advanced section
 
                 dsp_bp->grid_add_check_button ("", NULL, 1,
-                                               GCallback (callback_change_LM_vpc_option_flags), this,
-                                               LM_opt[k], VP_GPIO_SET);
+                                               GCallback (callback_change_GVP_vpc_option_flags), this,
+                                               GVP_opt[k], VP_GPIO_SET);
                 EC_vpc_opt_list = g_slist_prepend( EC_vpc_opt_list, dsp_bp->button);
                 g_object_set_data (G_OBJECT (dsp_bp->button), "VPC", GINT_TO_POINTER (k));
 
                 dsp_bp->grid_add_check_button ("", NULL, 1,
-                                               GCallback (callback_change_LM_vpc_option_flags), this,
-                                               LM_opt[k], VP_GPIO_READ);
+                                               GCallback (callback_change_GVP_vpc_option_flags), this,
+                                               GVP_opt[k], VP_GPIO_READ);
                 EC_vpc_opt_list = g_slist_prepend( EC_vpc_opt_list, dsp_bp->button);
                 g_object_set_data (G_OBJECT (dsp_bp->button), "VPC", GINT_TO_POINTER (k));
 
                 dsp_bp->grid_add_check_button ("", NULL, 1,
-                                               GCallback (callback_change_LM_vpc_option_flags), this,
-                                               LM_opt[k], VP_TRIGGER_P);
+                                               GCallback (callback_change_GVP_vpc_option_flags), this,
+                                               GVP_opt[k], VP_TRIGGER_P);
                 EC_vpc_opt_list = g_slist_prepend( EC_vpc_opt_list, dsp_bp->button);
                 g_object_set_data (G_OBJECT (dsp_bp->button), "VPC", GINT_TO_POINTER (k));
 
                 dsp_bp->grid_add_check_button ("", NULL, 1,
-                                               GCallback (callback_change_LM_vpc_option_flags), this,
-                                               LM_opt[k], VP_TRIGGER_N);
+                                               GCallback (callback_change_GVP_vpc_option_flags), this,
+                                               GVP_opt[k], VP_TRIGGER_N);
                 EC_vpc_opt_list = g_slist_prepend( EC_vpc_opt_list, dsp_bp->button);
                 g_object_set_data (G_OBJECT (dsp_bp->button), "VPC", GINT_TO_POINTER (k));
 
-		dsp_bp->grid_add_ec (NULL, Hex,   &LM_data[k],   0, 0xffff,  "04X", "lm-data", k); 
-                if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+		dsp_bp->grid_add_ec (NULL, Hex,   &GVP_data[k],   0, 0xffff,  "04X", "gvp-data", k); 
+                if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
-		dsp_bp->grid_add_ec (NULL, Unity, &LM_vnrep[k], 0., 32000.,  ".0f", "lm-nrep", k); 
-                if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+		dsp_bp->grid_add_ec (NULL, Unity, &GVP_vnrep[k], 0., 32000.,  ".0f", "gvp-nrep", k); 
+                if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
-		dsp_bp->grid_add_ec (NULL, Unity, &LM_vpcjr[k], -50.,   0.,  ".0f", "lm-pcjr", k); 
-                if (k == (N_LM_VECTORS-1)) dsp_bp->init_ec_array ();
+		dsp_bp->grid_add_ec (NULL, Unity, &GVP_vpcjr[k], -50.,   0.,  ".0f", "gvp-pcjr", k); 
+                if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
                 dsp_bp->set_configure_list_mode_off (); // ==================================
 
@@ -2394,26 +2397,26 @@ DSPControl::DSPControl () {
                         dsp_bp->grid_add_widget (button=gtk_button_new_from_icon_name ("arrow-up-symbolic", GTK_ICON_SIZE_BUTTON));
                         gtk_widget_set_tooltip_text (button, "Shift VP up here");
                         g_object_set_data (G_OBJECT(button), "VPC", GINT_TO_POINTER (k));
-                        g_object_set_data (G_OBJECT(button), "ARROW", GINT_TO_POINTER (LMVP_SHIFT_UP));
+                        g_object_set_data (G_OBJECT(button), "ARROW", GINT_TO_POINTER (GVP_SHIFT_UP));
 			g_signal_connect ( G_OBJECT (button), "clicked",
-                                           G_CALLBACK (callback_edit_LMVP),
+                                           G_CALLBACK (callback_edit_GVP),
                                            this);
 		} else {
                         dsp_bp->grid_add_widget (button=gtk_button_new_from_icon_name ("view-more-symbolic", GTK_ICON_SIZE_BUTTON));
                         gtk_widget_set_tooltip_text (button, "Toggle VP Flow Chart");
                         g_object_set_data (G_OBJECT(button), "VPC", GINT_TO_POINTER (k));
-                        g_object_set_data (G_OBJECT(button), "ARROW", GINT_TO_POINTER (LMVP_SHIFT_UP));
+                        g_object_set_data (G_OBJECT(button), "ARROW", GINT_TO_POINTER (GVP_SHIFT_UP));
 			g_signal_connect ( G_OBJECT (button), "clicked",
-                                           G_CALLBACK (callback_edit_LMVP),
+                                           G_CALLBACK (callback_edit_GVP),
                                            this);
                 }
-		if (k < N_LM_VECTORS-1){
+		if (k < N_GVP_VECTORS-1){
                         dsp_bp->grid_add_widget (button=gtk_button_new_from_icon_name ("arrow-down-symbolic", GTK_ICON_SIZE_BUTTON));
                         gtk_widget_set_tooltip_text (button, "Shift VP down here");
                         g_object_set_data (G_OBJECT(button), "VPC", GINT_TO_POINTER (k));
-                        g_object_set_data (G_OBJECT(button), "ARROW", GINT_TO_POINTER (LMVP_SHIFT_DN));
+                        g_object_set_data (G_OBJECT(button), "ARROW", GINT_TO_POINTER (GVP_SHIFT_DN));
 			g_signal_connect ( G_OBJECT (button), "clicked",
-                                           G_CALLBACK (callback_edit_LMVP),
+                                           G_CALLBACK (callback_edit_GVP),
                                            this);
 		}
 		g_free (tmpl);
@@ -2451,10 +2454,10 @@ DSPControl::DSPControl () {
                 ra -> cmd = g_strdup_printf("DSP_VP_STO_%s", keys[i]);
                 help = g_strconcat ("Remote example: action (", ra->cmd, ")", NULL); 
                 dsp_bp->grid_add_button (N_(stolab), help, 1,
-                                         G_CALLBACK (callback_LM_store_vp), this,
+                                         G_CALLBACK (callback_GVP_store_vp), this,
                                          "key", gckey);
                 g_free (help);
-                ra -> RemoteCb = (void (*)(GtkWidget*, void*))callback_LM_store_vp;
+                ra -> RemoteCb = (void (*)(GtkWidget*, void*))callback_GVP_store_vp;
                 ra -> widget = dsp_bp->button;
                 ra -> data = this;
                 gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
@@ -2471,10 +2474,10 @@ DSPControl::DSPControl () {
                 ra -> cmd = g_strdup_printf("DSP_VP_RCL_%s", keys[i]);
                 help = g_strconcat ("Remote example: action (", ra->cmd, ")", NULL); 
                 dsp_bp->grid_add_button (N_(rcllab), help, 1,
-                                         G_CALLBACK (callback_LM_restore_vp), this,
+                                         G_CALLBACK (callback_GVP_restore_vp), this,
                                          "key", gckey);
                 g_free (help);
-                ra -> RemoteCb = (void (*)(GtkWidget*, void*))callback_LM_restore_vp;
+                ra -> RemoteCb = (void (*)(GtkWidget*, void*))callback_GVP_restore_vp;
                 ra -> widget = dsp_bp->button;
                 ra -> data = this;
                 gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
@@ -2486,7 +2489,7 @@ DSPControl::DSPControl () {
 #if 0 // may adda memo/info button
                 dsp_bp->set_xy (i+2, 11);
                 dsp_bp->grid_add_button (N_(memolab), memolab, 1,
-                                         G_CALLBACK (callback_LM_memo_vp), this,
+                                         G_CALLBACK (callback_GVP_memo_vp), this,
                                          "key", gckey);
 #endif
 	}
@@ -2498,26 +2501,26 @@ DSPControl::DSPControl () {
 
 	dsp_bp->new_grid_with_frame ("VP Finish Settings and Status");
         dsp_bp->set_configure_list_mode_on ();
-	dsp_bp->grid_add_ec ("LM-Final-Delay", Time, &LM_final_delay, 0., 1., "5.3g", 0.001, 0.01, "LM-Final-Delay");
+	dsp_bp->grid_add_ec ("GVP-Final-Delay", Time, &GVP_final_delay, 0., 1., "5.3g", 0.001, 0.01, "GVP-Final-Delay");
 	dsp_bp->grid_add_label ("GPIO key", "Key code to enable GPIO set operations.\n(GPIO manipulation is locked out if not set right.)");
-	dsp_bp->grid_add_ec (LM_GPIO_KEYCODE_S, Unity, &LM_GPIO_lock, 0, 9999, "04.0f", "LM-GPIO-Lock-" LM_GPIO_KEYCODE_S);
+	dsp_bp->grid_add_ec (GVP_GPIO_KEYCODE_S, Unity, &GVP_GPIO_lock, 0, 9999, "04.0f", "GVP-GPIO-Lock-" GVP_GPIO_KEYCODE_S);
         dsp_bp->new_line ();
         dsp_bp->set_configure_list_mode_off ();
 
-	LM_status = dsp_bp->grid_add_probe_status ("Status");
+	GVP_status = dsp_bp->grid_add_probe_status ("Status");
 
         dsp_bp->pop_grid ();
         dsp_bp->new_line ();
 
         dsp_bp->grid_add_probe_controls (FALSE,
-                                         LM_option_flags, GCallback (callback_change_LM_option_flags),
-                                         LM_auto_flags,  GCallback (callback_change_LM_auto_flags),
-                                         GCallback (DSPControl::Probing_exec_LM_callback),
-                                         GCallback (DSPControl::Probing_write_LM_callback),
+                                         GVP_option_flags, GCallback (callback_change_GVP_option_flags),
+                                         GVP_auto_flags,  GCallback (callback_change_GVP_auto_flags),
+                                         GCallback (DSPControl::Probing_exec_GVP_callback),
+                                         GCallback (DSPControl::Probing_write_GVP_callback),
                                          GCallback (DSPControl::Probing_graph_callback),
                                          GCallback (DSPControl::Probing_abort_callback),
                                          this,
-                                         "LM");
+                                         "GVP");
         dsp_bp->notebook_tab_show_all ();
         dsp_bp->pop_grid ();
 
@@ -3080,40 +3083,41 @@ void DSPControl::store_values (){
         set_tab_settings ("LP", LP_option_flags, LP_auto_flags, LP_glock_data);
         set_tab_settings ("SP", SP_option_flags, SP_auto_flags, SP_glock_data);
         set_tab_settings ("TS", TS_option_flags, TS_auto_flags, TS_glock_data);
-        set_tab_settings ("LM", LM_option_flags, LM_auto_flags, LM_glock_data);
+        set_tab_settings ("GVP", GVP_option_flags, GVP_auto_flags, GVP_glock_data);
         set_tab_settings ("TK", TK_option_flags, TK_auto_flags, TK_glock_data);
         set_tab_settings ("AX", AX_option_flags, AX_auto_flags, AX_glock_data);
         set_tab_settings ("AB", ABORT_option_flags, ABORT_auto_flags, ABORT_glock_data);
 
-        LM_store_vp ("LM_set_last"); // last in view
+        GVP_store_vp ("LM_set_last"); // last in view
         // g_message ("DSPControl::store_values complete.");
 }
 
-void DSPControl::LM_store_vp (const gchar *key){
-	// g_message ("LM-VP store memo key=%s", key);
-	PI_DEBUG_GP (DBG_L2, "LM-VP store to memo %s\n", key);
-        GVariant *v = g_settings_get_value (hwi_settings, "probe-lm-vector-program-matrix");
+void DSPControl::GVP_store_vp (const gchar *key){
+	// g_message ("GVP-VP store memo key=%s", key);
+	PI_DEBUG_GP (DBG_L2, "GVP-VP store to memo %s\n", key);
+        GVariant *v = g_settings_get_value (hwi_settings, "probe-gvp-vector-program-matrix");
+        //GVariant *v = g_settings_get_value (hwi_settings, "probe-lm-vector-program-matrix");
         GVariantDict *dict = g_variant_dict_new (v);
         if (!dict){
-                PI_DEBUG_GP (DBG_L2, "ERROR: DSPControl::LM_store_vp -- can't read dictionary 'probe-lm-vector-program-matrix' a{sv}.\n");
+                PI_DEBUG_GP (DBG_L2, "ERROR: DSPControl::GVP_store_vp -- can't read dictionary 'probe-gvp-vector-program-matrix' a{sv}.\n");
                 return;
         }
 
         gint32 vp_program_length;
-        for (vp_program_length=0; LM_points[vp_program_length] > 0; ++vp_program_length);
+        for (vp_program_length=0; GVP_points[vp_program_length] > 0; ++vp_program_length);
                 
-        gsize    n = MIN (vp_program_length+1, N_LM_VECTORS);
-        GVariant *pc_array_du = g_variant_new_fixed_array (g_variant_type_new ("d"), LM_du, n, sizeof (double));
-        GVariant *pc_array_dx = g_variant_new_fixed_array (g_variant_type_new ("d"), LM_dx, n, sizeof (double));
-        GVariant *pc_array_dy = g_variant_new_fixed_array (g_variant_type_new ("d"), LM_dy, n, sizeof (double));
-        GVariant *pc_array_dz = g_variant_new_fixed_array (g_variant_type_new ("d"), LM_dz, n, sizeof (double));
-        GVariant *pc_array_ds = g_variant_new_fixed_array (g_variant_type_new ("d"), LM_dsig, n, sizeof (double));
-        GVariant *pc_array_ts = g_variant_new_fixed_array (g_variant_type_new ("d"), LM_ts, n, sizeof (double));
-        GVariant *pc_array_pn = g_variant_new_fixed_array (g_variant_type_new ("i"), LM_points, n, sizeof (gint32));
-        GVariant *pc_array_op = g_variant_new_fixed_array (g_variant_type_new ("i"), LM_opt, n, sizeof (gint32));
-        GVariant *pc_array_da = g_variant_new_fixed_array (g_variant_type_new ("i"), LM_data, n, sizeof (gint32));
-        GVariant *pc_array_vn = g_variant_new_fixed_array (g_variant_type_new ("i"), LM_vnrep, n, sizeof (gint32));
-        GVariant *pc_array_vp = g_variant_new_fixed_array (g_variant_type_new ("i"), LM_vpcjr, n, sizeof (gint32));
+        gsize    n = MIN (vp_program_length+1, N_GVP_VECTORS);
+        GVariant *pc_array_du = g_variant_new_fixed_array (g_variant_type_new ("d"), GVP_du, n, sizeof (double));
+        GVariant *pc_array_dx = g_variant_new_fixed_array (g_variant_type_new ("d"), GVP_dx, n, sizeof (double));
+        GVariant *pc_array_dy = g_variant_new_fixed_array (g_variant_type_new ("d"), GVP_dy, n, sizeof (double));
+        GVariant *pc_array_dz = g_variant_new_fixed_array (g_variant_type_new ("d"), GVP_dz, n, sizeof (double));
+        GVariant *pc_array_ds = g_variant_new_fixed_array (g_variant_type_new ("d"), GVP_dsig, n, sizeof (double));
+        GVariant *pc_array_ts = g_variant_new_fixed_array (g_variant_type_new ("d"), GVP_ts, n, sizeof (double));
+        GVariant *pc_array_pn = g_variant_new_fixed_array (g_variant_type_new ("i"), GVP_points, n, sizeof (gint32));
+        GVariant *pc_array_op = g_variant_new_fixed_array (g_variant_type_new ("i"), GVP_opt, n, sizeof (gint32));
+        GVariant *pc_array_da = g_variant_new_fixed_array (g_variant_type_new ("i"), GVP_data, n, sizeof (gint32));
+        GVariant *pc_array_vn = g_variant_new_fixed_array (g_variant_type_new ("i"), GVP_vnrep, n, sizeof (gint32));
+        GVariant *pc_array_vp = g_variant_new_fixed_array (g_variant_type_new ("i"), GVP_vpcjr, n, sizeof (gint32));
 
         GVariant *pc_array[] = { pc_array_du, pc_array_dx, pc_array_dy, pc_array_dz, pc_array_ds, pc_array_ts,
                                  pc_array_pn, pc_array_op, pc_array_da, pc_array_vn, pc_array_vp,
@@ -3123,11 +3127,11 @@ void DSPControl::LM_store_vp (const gchar *key){
         for (int i=0; vckey[i] && pc_array[i]; ++i){
                 gchar *m_vckey = g_strdup_printf ("%s-%s", vckey[i], key);
 
-                // g_print ("LM store: %s = %s\n", m_vckey, g_variant_print (pc_array[i], true));
+                // g_print ("GVP store: %s = %s\n", m_vckey, g_variant_print (pc_array[i], true));
 
                 if (g_variant_dict_contains (dict, m_vckey)){
                         if (!g_variant_dict_remove (dict, m_vckey)){
-                                PI_DEBUG_GP (DBG_L2, "ERROR: DSPControl::LM_store_vp -- key '%s' found, but removal failed.\n", m_vckey);
+                                PI_DEBUG_GP (DBG_L2, "ERROR: DSPControl::GVP_store_vp -- key '%s' found, but removal failed.\n", m_vckey);
                                 g_free (m_vckey);
                                 return;
                         }
@@ -3137,7 +3141,8 @@ void DSPControl::LM_store_vp (const gchar *key){
         }
 
         GVariant *probe_vector_program_matrix = g_variant_dict_end (dict);
-        g_settings_set_value (hwi_settings, "probe-lm-vector-program-matrix", probe_vector_program_matrix);
+        g_settings_set_value (hwi_settings, "probe-gvp-vector-program-matrix", probe_vector_program_matrix);
+        //g_settings_set_value (hwi_settings, "probe-lm-vector-program-matrix", probe_vector_program_matrix);
 
         // all g_variants created here are "consumed" by the "set" calls, if I try to unref, it cause random crashes.
         //g_variant_unref (probe_vector_program_matrix);
@@ -3147,67 +3152,68 @@ void DSPControl::LM_store_vp (const gchar *key){
         //                g_variant_unref (pc_array[i]);
 }
 
-void DSPControl::LM_restore_vp (const gchar *key){
-	// g_message ("LM-VP restore memo key=%s", key);
-	PI_DEBUG_GP (DBG_L2, "LM-VP restore to memo %s\n", key);
-        GVariant *v = g_settings_get_value (hwi_settings, "probe-lm-vector-program-matrix");
+void DSPControl::GVP_restore_vp (const gchar *key){
+	// g_message ("GVP-VP restore memo key=%s", key);
+	PI_DEBUG_GP (DBG_L2, "GVP-VP restore to memo %s\n", key);
+        GVariant *v = g_settings_get_value (hwi_settings, "probe-gvp-vector-program-matrix");
+        //GVariant *v = g_settings_get_value (hwi_settings, "probe-lm-vector-program-matrix");
         GVariantDict *dict = g_variant_dict_new (v);
         if (!dict){
-                PI_DEBUG_GP (DBG_L2, "ERROR: DSPControl::LM_restore_vp -- can't read dictionary 'probe-lm-vector-program-matrix' a{sv}.\n");
+                PI_DEBUG_GP (DBG_L2, "ERROR: DSPControl::GVP_restore_vp -- can't read dictionary 'probe-gvp-vector-program-matrix' a{sv}.\n");
                 return;
         }
-        gsize  n; // == N_LM_VECTORS;
+        gsize  n; // == N_GVP_VECTORS;
         GVariant *vd[6];
         GVariant *vi[5];
         double *pc_array_d[6];
         gint32 *pc_array_i[5];
         const gchar *vckey_d[] = { "du", "dx", "dy", "dz", "ds", "ts", NULL };
         const gchar *vckey_i[] = { "pn", "op", "da", "vn", "vp", NULL };
-        double *LMd[] = { LM_du, LM_dx, LM_dy, LM_dz, LM_dsig, LM_ts, NULL };
-        gint32 *LMi[] = { LM_points, LM_opt, LM_data, LM_vnrep, LM_vpcjr, NULL };
+        double *GVPd[] = { GVP_du, GVP_dx, GVP_dy, GVP_dz, GVP_dsig, GVP_ts, NULL };
+        gint32 *GVPi[] = { GVP_points, GVP_opt, GVP_data, GVP_vnrep, GVP_vpcjr, NULL };
         gint32 vp_program_length=0;
         
         for (int i=0; vckey_i[i]; ++i){
                 gchar *m_vckey = g_strdup_printf ("%s-%s", vckey_i[i], key);
-                for (int k=0; k<N_LM_VECTORS; ++k) LMi[i][k]=0; // zero init vector
+                for (int k=0; k<N_GVP_VECTORS; ++k) GVPi[i][k]=0; // zero init vector
                 if ((vi[i] = g_variant_dict_lookup_value (dict, m_vckey, ((const GVariantType *) "ai"))) == NULL){
-                        PI_DEBUG_GP (DBG_L2, "GXSM DCONF: DSPControl::LM_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
-                        // g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
+                        PI_DEBUG_GP (DBG_L2, "GXSM DCONF: DSPControl::GVP_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
+                        // g_warning ("GXSM DCONF: DSPControl::GVP_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
                         g_free (m_vckey);
                         continue;
                 }
-                // g_print ("LM restore: %s = %s\n", m_vckey, g_variant_print (vi[i], true));
+                // g_print ("GVP restore: %s = %s\n", m_vckey, g_variant_print (vi[i], true));
 
                 pc_array_i[i] = (gint32*) g_variant_get_fixed_array (vi[i], &n, sizeof (gint32));
                 if (i==0) // actual length of this vector should fit all others -- verify
                         vp_program_length=n;
                 else
                         if (n != vp_program_length)
-                                g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_i '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
-                // g_assert_cmpint (n, ==, N_LM_VECTORS);
-                for (int k=0; k<n && k<N_LM_VECTORS; ++k)
-                        LMi[i][k]=pc_array_i[i][k];
+                                g_warning ("GXSM DCONF: DSPControl::GVP_restore_vp -- key_i '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
+                // g_assert_cmpint (n, ==, N_GVP_VECTORS);
+                for (int k=0; k<n && k<N_GVP_VECTORS; ++k)
+                        GVPi[i][k]=pc_array_i[i][k];
                 g_free (m_vckey);
                 g_variant_unref (vi[i]);
         }                        
 
         for (int i=0; vckey_d[i]; ++i){
                 gchar *m_vckey = g_strdup_printf ("%s-%s", vckey_d[i], key);
-                for (int k=0; k<N_LM_VECTORS; ++k) LMd[i][k]=0.; // zero init vector
+                for (int k=0; k<N_GVP_VECTORS; ++k) GVPd[i][k]=0.; // zero init vector
                 if ((vd[i] = g_variant_dict_lookup_value (dict, m_vckey, ((const GVariantType *) "ad"))) == NULL){
-                        PI_DEBUG_GP (DBG_L2, "GXSM DCONF: DSPControl::LM_restore_vp -- key_d '%s' memo not found. Setting to Zero.", m_vckey);
-                        // g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_d '%s' memo not found. Setting to Zero.", m_vckey);
+                        PI_DEBUG_GP (DBG_L2, "GXSM DCONF: DSPControl::GVP_restore_vp -- key_d '%s' memo not found. Setting to Zero.", m_vckey);
+                        // g_warning ("GXSM DCONF: DSPControl::GVP_restore_vp -- key_d '%s' memo not found. Setting to Zero.", m_vckey);
                         g_free (m_vckey);
                         continue;
                 }
-                // g_print ("LM restore: %s = %s\n", m_vckey, g_variant_print (vd[i], true));
+                // g_print ("GVP restore: %s = %s\n", m_vckey, g_variant_print (vd[i], true));
 
                 pc_array_d[i] = (double*) g_variant_get_fixed_array (vd[i], &n, sizeof (double));
-                //g_assert_cmpint (n, ==, N_LM_VECTORS);
+                //g_assert_cmpint (n, ==, N_GVP_VECTORS);
                 if (n != vp_program_length)
-                        g_warning ("GXSM DCONF: DSPControl::LM_restore_vp -- key_d '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
-                for (int k=0; k<vp_program_length && k<N_LM_VECTORS; ++k)
-                        LMd[i][k]=pc_array_d[i][k];
+                        g_warning ("GXSM DCONF: DSPControl::GVP_restore_vp -- key_d '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
+                for (int k=0; k<vp_program_length && k<N_GVP_VECTORS; ++k)
+                        GVPd[i][k]=pc_array_d[i][k];
                 g_free (m_vckey);
                 g_variant_unref (vd[i]);
         }                        
@@ -3476,7 +3482,7 @@ void DSPControl::update(){
 	g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "DSP_EC_list"),
 			(GFunc) App::update_ec, NULL);
 	g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "DSP_VPC_OPTIONS_list"),
-			(GFunc) callback_update_LM_vpc_option_checkbox, this);
+			(GFunc) callback_update_GVP_vpc_option_checkbox, this);
 }
 
 
@@ -3998,10 +4004,12 @@ int DSPControl::Probing_exec_IV_callback( GtkWidget *widget, DSPControl *dspc){
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
 
-        gchar *tmp = g_strdup ("vp-sts-initial");
-        gapp->SignalRemoteActionToPlugins (&tmp);
-        g_free (tmp);
-      
+        if (dspc->IV_auto_flags & FLAG_AUTO_RUN_INITSCRIPT){
+                gchar *tmp = g_strdup ("vp-sts-initial");
+                gapp->SignalRemoteActionToPlugins (&tmp);
+                g_free (tmp);
+        }
+        
         dspc->write_dsp_probe (0, PV_MODE_NONE);
 
 	if (dspc->IV_auto_flags & FLAG_AUTO_GLOCK){
@@ -4035,6 +4043,12 @@ int DSPControl::Probing_write_IV_callback( GtkWidget *widget, DSPControl *dspc){
 int DSPControl::Probing_exec_FZ_callback( GtkWidget *widget, DSPControl *dspc){
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
+
+        if (dspc->FZ_auto_flags & FLAG_AUTO_RUN_INITSCRIPT){
+                gchar *tmp = g_strdup ("vp-fz-initial");
+                gapp->SignalRemoteActionToPlugins (&tmp);
+                g_free (tmp);
+        }
 
         dspc->write_dsp_probe (0, PV_MODE_NONE);
 
@@ -4072,10 +4086,12 @@ int DSPControl::Probing_exec_PL_callback( GtkWidget *widget, DSPControl *dspc){
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
 
-        gchar *tmp = g_strdup ("vp-pl-initial");
-        gapp->SignalRemoteActionToPlugins (&tmp);
-        g_free (tmp);
-      
+        if (dspc->PL_auto_flags & FLAG_AUTO_RUN_INITSCRIPT){
+                gchar *tmp = g_strdup ("vp-pl-initial");
+                gapp->SignalRemoteActionToPlugins (&tmp);
+                g_free (tmp);
+        }
+        
         dspc->write_dsp_probe (0, PV_MODE_NONE);
 
 	if (dspc->PL_auto_flags & FLAG_AUTO_GLOCK){
@@ -4112,6 +4128,12 @@ int DSPControl::Probing_write_PL_callback( GtkWidget *widget, DSPControl *dspc){
 int DSPControl::Probing_exec_LP_callback( GtkWidget *widget, DSPControl *dspc){
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
+
+        if (dspc->LP_auto_flags & FLAG_AUTO_RUN_INITSCRIPT){
+                gchar *tmp = g_strdup ("vp-lp-initial");
+                gapp->SignalRemoteActionToPlugins (&tmp);
+                g_free (tmp);
+        }
 
 	dspc->write_dsp_probe (0, PV_MODE_NONE);
 	
@@ -4185,6 +4207,12 @@ int DSPControl::Probing_exec_TS_callback( GtkWidget *widget, DSPControl *dspc){
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
 
+        if (dspc->TS_auto_flags & FLAG_AUTO_RUN_INITSCRIPT){
+                gchar *tmp = g_strdup ("vp-ts-initial");
+                gapp->SignalRemoteActionToPlugins (&tmp);
+                g_free (tmp);
+        }
+
         dspc->write_dsp_probe (0, PV_MODE_NONE);
 
 	if (dspc->TS_auto_flags & FLAG_AUTO_GLOCK){
@@ -4215,45 +4243,47 @@ int DSPControl::Probing_write_TS_callback( GtkWidget *widget, DSPControl *dspc){
         dspc->write_dsp_probe (0, PV_MODE_TS);
 }
 
-// LM
+// GVP
 
-int DSPControl::Probing_exec_LM_callback( GtkWidget *widget, DSPControl *dspc){
+int DSPControl::Probing_exec_GVP_callback( GtkWidget *widget, DSPControl *dspc){
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
 
-        gchar *tmp = g_strdup ("vp-gvp-initial");
-        gapp->SignalRemoteActionToPlugins (&tmp);
-        g_free (tmp);
+        if (dspc->GVP_auto_flags & FLAG_AUTO_RUN_INITSCRIPT){
+                gchar *tmp = g_strdup ("vp-gvp-initial");
+                gapp->SignalRemoteActionToPlugins (&tmp);
+                g_free (tmp);
+        }
       
         dspc->write_dsp_probe (0, PV_MODE_NONE);
 
-	if (dspc->LM_auto_flags & FLAG_AUTO_GLOCK){
-		dspc->vis_Source  = dspc->LM_glock_data[0];
-		dspc->vis_XSource = dspc->LM_glock_data[1];
-		dspc->vis_PSource = dspc->LM_glock_data[2];
-		dspc->vis_XJoin   = dspc->LM_glock_data[3];
-		dspc->vis_PlotAvg = dspc->LM_glock_data[4];
-		dspc->vis_PlotSec = dspc->LM_glock_data[5];
+	if (dspc->GVP_auto_flags & FLAG_AUTO_GLOCK){
+		dspc->vis_Source  = dspc->GVP_glock_data[0];
+		dspc->vis_XSource = dspc->GVP_glock_data[1];
+		dspc->vis_PSource = dspc->GVP_glock_data[2];
+		dspc->vis_XJoin   = dspc->GVP_glock_data[3];
+		dspc->vis_PlotAvg = dspc->GVP_glock_data[4];
+		dspc->vis_PlotSec = dspc->GVP_glock_data[5];
 	} else {
-		dspc->vis_Source = dspc->LM_glock_data[0] = dspc->Source ;
-		dspc->vis_XSource= dspc->LM_glock_data[1] = dspc->XSource;
-		dspc->vis_PSource= dspc->LM_glock_data[2] = dspc->PSource;
-		dspc->vis_XJoin  = dspc->LM_glock_data[3] = dspc->XJoin  ;
-		dspc->vis_PlotAvg= dspc->LM_glock_data[4] = dspc->PlotAvg;
-		dspc->vis_PlotSec= dspc->LM_glock_data[5] = dspc->PlotSec;
+		dspc->vis_Source = dspc->GVP_glock_data[0] = dspc->Source ;
+		dspc->vis_XSource= dspc->GVP_glock_data[1] = dspc->XSource;
+		dspc->vis_PSource= dspc->GVP_glock_data[2] = dspc->PSource;
+		dspc->vis_XJoin  = dspc->GVP_glock_data[3] = dspc->XJoin  ;
+		dspc->vis_PlotAvg= dspc->GVP_glock_data[4] = dspc->PlotAvg;
+		dspc->vis_PlotSec= dspc->GVP_glock_data[5] = dspc->PlotSec;
 	}
 
-	dspc->current_auto_flags = dspc->LM_auto_flags;
+	dspc->current_auto_flags = dspc->GVP_auto_flags;
 
 	dspc->probe_trigger_single_shot = 1;
-	dspc->write_dsp_probe (1, PV_MODE_LM); // Exec FZ probing here
+	dspc->write_dsp_probe (1, PV_MODE_GVP); // Exec FZ probing here
 	sranger_common_hwi->start_fifo_read (0, 0,0,0,0, NULL,NULL,NULL,NULL);
 
 	return 0;
 }
 
-int DSPControl::Probing_write_LM_callback( GtkWidget *widget, DSPControl *dspc){
-        dspc->write_dsp_probe (0, PV_MODE_LM);
+int DSPControl::Probing_write_GVP_callback( GtkWidget *widget, DSPControl *dspc){
+        dspc->write_dsp_probe (0, PV_MODE_GVP);
 }
 
 // TK
@@ -4261,6 +4291,12 @@ int DSPControl::Probing_write_LM_callback( GtkWidget *widget, DSPControl *dspc){
 int DSPControl::Probing_exec_TK_callback( GtkWidget *widget, DSPControl *dspc){
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
+
+        if (dspc->TK_auto_flags & FLAG_AUTO_RUN_INITSCRIPT){
+                gchar *tmp = g_strdup ("vp-tk-initial");
+                gapp->SignalRemoteActionToPlugins (&tmp);
+                g_free (tmp);
+        }
 
         dspc->write_dsp_probe (0, PV_MODE_NONE);
 
@@ -4300,6 +4336,12 @@ int DSPControl::Probing_write_TK_callback( GtkWidget *widget, DSPControl *dspc){
 int DSPControl::Probing_exec_AX_callback( GtkWidget *widget, DSPControl *dspc){
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
+
+        if (dspc->AX_auto_flags & FLAG_AUTO_RUN_INITSCRIPT){
+                gchar *tmp = g_strdup ("vp-ax-initial");
+                gapp->SignalRemoteActionToPlugins (&tmp);
+                g_free (tmp);
+        }
 
         dspc->write_dsp_probe (0, PV_MODE_NONE);
 
@@ -4924,44 +4966,46 @@ int DSPControl::callback_change_TS_auto_flags (GtkWidget *widget, DSPControl *ds
 }
 
 
-int DSPControl::callback_change_LM_option_flags (GtkWidget *widget, DSPControl *dspc){
+int DSPControl::callback_change_GVP_option_flags (GtkWidget *widget, DSPControl *dspc){
         //        PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
 	guint64 msk = (guint64) GPOINTER_TO_UINT (g_object_get_data(G_OBJECT(widget), "Bit_Mask"));
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
-		dspc->LM_option_flags = (dspc->LM_option_flags & (~msk)) | msk;
+		dspc->GVP_option_flags = (dspc->GVP_option_flags & (~msk)) | msk;
 	else
-		dspc->LM_option_flags &= ~msk;
+		dspc->GVP_option_flags &= ~msk;
 
-	if (dspc->write_vector_mode == PV_MODE_LM)
-		dspc->raster_auto_flags = dspc->LM_auto_flags;
+	if (dspc->write_vector_mode == PV_MODE_GVP)
+		dspc->raster_auto_flags = dspc->GVP_auto_flags;
 
-        dspc->set_tab_settings ("LM", dspc->LM_option_flags, dspc->LM_auto_flags, dspc->LM_glock_data);
-        dspc->LM_store_vp ("LM_set_last"); // last in view
+        dspc->set_tab_settings ("LM", dspc->GVP_option_flags, dspc->GVP_auto_flags, dspc->GVP_glock_data);
+        dspc->set_tab_settings ("GVP", dspc->GVP_option_flags, dspc->GVP_auto_flags, dspc->GVP_glock_data);
+        dspc->GVP_store_vp ("LM_set_last"); // last in view
+        dspc->GVP_store_vp ("GVP_set_last"); // last in view
 }
 
-int DSPControl::callback_change_LM_vpc_option_flags (GtkWidget *widget, DSPControl *dspc){
+int DSPControl::callback_change_GVP_vpc_option_flags (GtkWidget *widget, DSPControl *dspc){
         //        PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
 	int  k = GPOINTER_TO_INT (g_object_get_data(G_OBJECT(widget), "VPC"));
 	guint64 msk = (guint64) GPOINTER_TO_UINT (g_object_get_data(G_OBJECT(widget), "Bit_Mask"));
 
 	if( gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
-		dspc->LM_opt[k] = (dspc->LM_opt[k] & (~msk)) | msk;
+		dspc->GVP_opt[k] = (dspc->GVP_opt[k] & (~msk)) | msk;
 	else
-		dspc->LM_opt[k] &= ~msk;
+		dspc->GVP_opt[k] &= ~msk;
 
-        dspc->set_tab_settings ("LM", dspc->LM_option_flags, dspc->LM_auto_flags, dspc->LM_glock_data);
+        dspc->set_tab_settings ("LM", dspc->GVP_option_flags, dspc->GVP_auto_flags, dspc->GVP_glock_data);
 }
 
-int DSPControl::callback_update_LM_vpc_option_checkbox (GtkWidget *widget, DSPControl *dspc){
+int DSPControl::callback_update_GVP_vpc_option_checkbox (GtkWidget *widget, DSPControl *dspc){
         //        PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
 	int  k   = GPOINTER_TO_INT (g_object_get_data(G_OBJECT(widget), "VPC"));
 	guint64 msk = (guint64) GPOINTER_TO_UINT (g_object_get_data(G_OBJECT(widget), "Bit_Mask"));
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(widget), (dspc->LM_opt[k] & msk) ? 1:0);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(widget), (dspc->GVP_opt[k] & msk) ? 1:0);
 
-        dspc->set_tab_settings ("LM", dspc->LM_option_flags, dspc->LM_auto_flags, dspc->LM_glock_data);
+        dspc->set_tab_settings ("LM", dspc->GVP_option_flags, dspc->GVP_auto_flags, dspc->GVP_glock_data);
 }
 
-int DSPControl::callback_edit_LMVP (GtkWidget *widget, DSPControl *dspc){
+int DSPControl::callback_edit_GVP (GtkWidget *widget, DSPControl *dspc){
         //        PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
         int x=1, y=10;
 	int ki = GPOINTER_TO_INT (g_object_get_data(G_OBJECT(widget), "VPC"));
@@ -4978,10 +5022,10 @@ int DSPControl::callback_edit_LMVP (GtkWidget *widget, DSPControl *dspc){
 					dspc->VPprogram[j] = NULL;
 				}
 		} else
-			for (int k=0; k<N_LM_VECTORS && cw < 10; ++k){
-				if (dspc->LM_vpcjr[k] < 0){
+			for (int k=0; k<N_GVP_VECTORS && cw < 10; ++k){
+				if (dspc->GVP_vpcjr[k] < 0){
 					int kf=k;
-					int ki=k+dspc->LM_vpcjr[k];
+					int ki=k+dspc->GVP_vpcjr[k];
 					if (kf >= 0){
                                                 // fix!! todo
 						//** ADD_BUTTON_GRID ("arrow-up-symbolic", "Loop",   dspc->VPprogram[0], x+0, y+ki+1, 1, kf-ki+2, -2, NULL, NULL, dspc->VPprogram[cw]);
@@ -4993,55 +5037,55 @@ int DSPControl::callback_edit_LMVP (GtkWidget *widget, DSPControl *dspc){
 		return 0;
 	}
 
-	if (a == LMVP_SHIFT_UP && ki >= 1 && ki < N_LM_VECTORS)
-		for (int k=ki-1; k < N_LM_VECTORS-1; ++k){
+	if (a == GVP_SHIFT_UP && ki >= 1 && ki < N_GVP_VECTORS)
+		for (int k=ki-1; k < N_GVP_VECTORS-1; ++k){
 			int ks = k+1;
-			dspc->LM_du[k] = dspc->LM_du[ks];
-			dspc->LM_dx[k] = dspc->LM_dx[ks];
-			dspc->LM_dy[k] = dspc->LM_dy[ks];
-			dspc->LM_dz[k] = dspc->LM_dz[ks];
-			dspc->LM_dsig[k] = dspc->LM_dsig[ks];
-			dspc->LM_ts[k]  = dspc->LM_ts[ks];
-			dspc->LM_points[k] = dspc->LM_points[ks];
-			dspc->LM_opt[k] = dspc->LM_opt[ks];
-			dspc->LM_vnrep[k] = dspc->LM_vnrep[ks];
-			dspc->LM_vpcjr[k] = dspc->LM_vpcjr[ks];
+			dspc->GVP_du[k] = dspc->GVP_du[ks];
+			dspc->GVP_dx[k] = dspc->GVP_dx[ks];
+			dspc->GVP_dy[k] = dspc->GVP_dy[ks];
+			dspc->GVP_dz[k] = dspc->GVP_dz[ks];
+			dspc->GVP_dsig[k] = dspc->GVP_dsig[ks];
+			dspc->GVP_ts[k]  = dspc->GVP_ts[ks];
+			dspc->GVP_points[k] = dspc->GVP_points[ks];
+			dspc->GVP_opt[k] = dspc->GVP_opt[ks];
+			dspc->GVP_vnrep[k] = dspc->GVP_vnrep[ks];
+			dspc->GVP_vpcjr[k] = dspc->GVP_vpcjr[ks];
 		} 
-	else if (a == LMVP_SHIFT_DN && ki >= 0 && ki < N_LM_VECTORS-2)
-		for (int k=N_LM_VECTORS-1; k > ki; --k){
+	else if (a == GVP_SHIFT_DN && ki >= 0 && ki < N_GVP_VECTORS-2)
+		for (int k=N_GVP_VECTORS-1; k > ki; --k){
 			int ks = k-1;
-			dspc->LM_du[k] = dspc->LM_du[ks];
-			dspc->LM_dx[k] = dspc->LM_dx[ks];
-			dspc->LM_dy[k] = dspc->LM_dy[ks];
-			dspc->LM_dz[k] = dspc->LM_dz[ks];
-			dspc->LM_dsig[k] = dspc->LM_dsig[ks];
-			dspc->LM_ts[k]  = dspc->LM_ts[ks];
-			dspc->LM_points[k] = dspc->LM_points[ks];
-			dspc->LM_opt[k] = dspc->LM_opt[ks];
-			dspc->LM_vnrep[k] = dspc->LM_vnrep[ks];
-			dspc->LM_vpcjr[k] = dspc->LM_vpcjr[ks];
+			dspc->GVP_du[k] = dspc->GVP_du[ks];
+			dspc->GVP_dx[k] = dspc->GVP_dx[ks];
+			dspc->GVP_dy[k] = dspc->GVP_dy[ks];
+			dspc->GVP_dz[k] = dspc->GVP_dz[ks];
+			dspc->GVP_dsig[k] = dspc->GVP_dsig[ks];
+			dspc->GVP_ts[k]  = dspc->GVP_ts[ks];
+			dspc->GVP_points[k] = dspc->GVP_points[ks];
+			dspc->GVP_opt[k] = dspc->GVP_opt[ks];
+			dspc->GVP_vnrep[k] = dspc->GVP_vnrep[ks];
+			dspc->GVP_vpcjr[k] = dspc->GVP_vpcjr[ks];
 		}
 	dspc->update ();
 }
 
-int DSPControl::callback_LM_store_vp (GtkWidget *widget, DSPControl *dspc){
+int DSPControl::callback_GVP_store_vp (GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
-	dspc->LM_store_vp ((const gchar*)g_object_get_data(G_OBJECT(widget), "key"));
+	dspc->GVP_store_vp ((const gchar*)g_object_get_data(G_OBJECT(widget), "key"));
 }
-int DSPControl::callback_LM_restore_vp (GtkWidget *widget, DSPControl *dspc){
+int DSPControl::callback_GVP_restore_vp (GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
-	dspc->LM_restore_vp ((const gchar*)g_object_get_data(G_OBJECT(widget), "key"));
+	dspc->GVP_restore_vp ((const gchar*)g_object_get_data(G_OBJECT(widget), "key"));
 }
 
-int DSPControl::callback_change_LM_auto_flags (GtkWidget *widget, DSPControl *dspc){
+int DSPControl::callback_change_GVP_auto_flags (GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
 	guint64 msk = (guint64) GPOINTER_TO_UINT (g_object_get_data(G_OBJECT(widget), "Bit_Mask"));
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
-		dspc->LM_auto_flags = (dspc->LM_auto_flags & (~msk)) | msk;
+		dspc->GVP_auto_flags = (dspc->GVP_auto_flags & (~msk)) | msk;
 	else
-		dspc->LM_auto_flags &= ~msk;
+		dspc->GVP_auto_flags &= ~msk;
 
-        dspc->set_tab_settings ("LM", dspc->LM_option_flags, dspc->LM_auto_flags, dspc->LM_glock_data);
+        dspc->set_tab_settings ("LM", dspc->GVP_option_flags, dspc->GVP_auto_flags, dspc->GVP_glock_data);
 }
 
 int DSPControl::callback_change_TK_ref(GtkWidget *widget, DSPControl *dspc){

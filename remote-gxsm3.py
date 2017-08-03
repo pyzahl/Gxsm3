@@ -435,11 +435,11 @@ gxsm.logev('Remote Execute')
 
 print "STARTING NOW..."
 
-autoapproach_via_z0()
+#autoapproach_via_z0()
 
 ###def run_vp (coords, num, ref_bias=2.35, ref_current=0.045, ff=0, run_ref=0, ref_bias_list=[0.1])
 
-#run_iv_simple (xy, len2, 0.4, 0.050, 51)
+run_iv_simple (xy, len2, 0.4, 0.050, 51)
 
 #run_lm_simple (xy, len2, 0.05, 0.02, 10)
 

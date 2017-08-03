@@ -20,11 +20,11 @@
 	<attribute name="action">win.pyfile-save-as</attribute>
       </item>
       <submenu>
-	<attribute name="label" translatable="yes">Gxsm Action Sets</attribute>
+	<attribute name="label" translatable="yes">Action Scripts</attribute>
 	<section>
 	  <attribute name="id">plugin-pyremote-file-action-sets-section</attribute>
 	  <submenu>
-	    <attribute name="label" translatable="yes">Scan Action Sets</attribute>
+	    <attribute name="label" translatable="yes">Scan Action Scripts</attribute>
 	    <section>
 	      <attribute name="id">plugin-pyremote-file-action-sets-scan-section</attribute>
 	      <item>
@@ -47,16 +47,46 @@
 		<attribute name="action">win.pyfile-action-use</attribute>
 		<attribute name="target">sf4</attribute>
 	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F5</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf5</attribute>
+	      </item>
 	    </section>
 	  </submenu>
 	  <submenu>
-	    <attribute name="label" translatable="yes">VP Action Sets</attribute>
+	    <attribute name="label" translatable="yes">VP Init Action Scripts</attribute>
 	    <section>
 	      <attribute name="id">plugin-pyremote-file-action-sets-vp-section</attribute>
 	      <item>
 		<attribute name="label" translatable="yes">VP-STS-initial</attribute>
 		<attribute name="action">win.pyfile-action-use</attribute>
 		<attribute name="target">vp-sts-initial</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">VP-FZ-initial</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">vp-fz-initial</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">VP-TS-initial</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">vp-ts-initial</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">VP-TK-initial</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">vp-tk-initial</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">VP-AX-initial</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">vp-ax-initial</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">VP-LP-initial</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">vp-lp-initial</attribute>
 	      </item>
 	      <item>
 		<attribute name="label" translatable="yes">VP-PL-initial</attribute>
@@ -67,16 +97,6 @@
 		<attribute name="label" translatable="yes">VP-GVP-initial</attribute>
 		<attribute name="action">win.pyfile-action-use</attribute>
 		<attribute name="target">vp-gvp-initial</attribute>
-	      </item>
-	      <item>
-		<attribute name="label" translatable="yes">VP-GVPA-initial</attribute>
-		<attribute name="action">win.pyfile-action-use</attribute>
-		<attribute name="target">vp-gvpa-initial</attribute>
-	      </item>
-	      <item>
-		<attribute name="label" translatable="yes">VP-GVPB-initial</attribute>
-		<attribute name="action">win.pyfile-action-use</attribute>
-		<attribute name="target">vp-gvpb-initial</attribute>
 	      </item>
 	    </section>
 	  </submenu>
