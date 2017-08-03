@@ -595,6 +595,8 @@ to the community. The GXSM-Forums always welcome input.
 
 #include "gxsm_app.h"
 
+#include "gxsm3-script.h"
+
       // Fill in the GxsmPlugin Description here
 GxsmPlugin pyremote_pi = {
 	  NULL,                   // filled in and used by Gxsm, don't touch !
@@ -788,16 +790,25 @@ public:
                                 script_filename = g_strconcat (path, "/", name, ".py", NULL);
                                 g_free (path);
                                 if (!g_file_test (script_filename, G_FILE_TEST_EXISTS)){
-                                        g_message ("creating sample action script folder %s", script_filename);
-                                        // make sample
-                                        std::ofstream example_file;
-                                        example_file.open(script_filename);
-                                        example_file << "# Example python action script file " << script_filename << " was created.\n"
-                                                "# - see the Gxsm3 manual for more information\n"
-                                                "gxsm.set (\"dsp-fbs-bias\",\"0.1\") # set Bias to 0.1V\n"
-                                                "gxsm.set (\"dsp-fbs-mx0-current-set\",\"0.01\") # Set Current Setpoint to 0.01nA\n"
-                                                "# gxsm.sleep (2)  # sleep for 2/10s\n";
-                                        example_file.close();
+                                        if (strstr (script_filename, "gxsm3-script")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Example python gxsm3 script file " << script_filename << " was created.\n"
+                                                        "# - see the Gxsm3 manual for more information\n";
+                                                example_file.write ((const char*)remote_gxsm3_py, remote_gxsm3_py_len);
+                                                example_file.close();
+                                        } else {
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Example python action script file " << script_filename << " was created.\n"
+                                                        "# - see the Gxsm3 manual for more information\n"
+                                                        "gxsm.set (\"dsp-fbs-bias\",\"0.1\") # set Bias to 0.1V\n"
+                                                        "gxsm.set (\"dsp-fbs-mx0-current-set\",\"0.01\") # Set Current Setpoint to 0.01nA\n"
+                                                        "# gxsm.sleep (2)  # sleep for 2/10s\n";
+                                                example_file.close();
+                                        }
                                 }
                         }
                 }
@@ -2720,7 +2731,8 @@ void  py_gxsm_console::write_example_file(void)
 	std::ofstream example_file;
 	example_file.open(example_filename);
 	example_file << "\n#Since no default file / script was found, here are some\n"
-		"# things you can do with the python interface\n"
+		"# things you can do with the python interface.\n"
+		"# You can also create the more extensive default/example tools collection: File->Use default.\n"
 		"# - see the manual for more information\n"
 		"# Execute to try these\n"
 		"c = gxsm.get(\"script-control\")\n"

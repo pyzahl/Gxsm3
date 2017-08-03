@@ -8,7 +8,12 @@
     <section>
       <attribute name="id">plugin-pyremote-file-section</attribute>
       <item>
-	<attribute name="label" translatable="yes">_Open here</attribute>
+	<attribute name="label" translatable="yes">Use default</attribute>
+	<attribute name="action">win.pyfile-action-use</attribute>
+	<attribute name="target">gxsm3-script</attribute>
+      </item>
+      <item>
+	<attribute name="label" translatable="yes">_Open</attribute>
 	<attribute name="action">win.pyfile-open</attribute>
       </item>
       <item>
