@@ -877,6 +877,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "visible", "Visible");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all", "All");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all project on x", "All Project on X");
+	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all project on y", "All Project on Y");
  	gtk_combo_box_set_active (GTK_COMBO_BOX (select_events_by), 0);
 
         pe_bp->grid_add_label ("Formula");
@@ -1661,6 +1662,10 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 				gchar* txt = g_strdup_printf ("All probe projected on X: %s", pe->get_label (yi));
 				vc->EventPlot->SetTitle (txt);
 				g_free (txt);
+			}else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 4){
+				gchar* txt = g_strdup_printf ("All probe projected on Y: %s", pe->get_label (yi));
+				vc->EventPlot->SetTitle (txt);
+				g_free (txt);
 			}else
 				vc->EventPlot->SetTitle (pe->get_label (yi));
 		}
@@ -1779,8 +1784,12 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 				ev = g_slist_next (ev);
 			}
 			g_slist_free (all);
-		} else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3){ // project on X
-			GSList* all = vc->scan->mem2d->ReportScanEventsXasc ();
+		} else if (
+                           gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3
+                           || gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 4
+                            ){ // project on X or Y
+			GSList* all = gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3 ?
+                                vc->scan->mem2d->ReportScanEventsXasc () : vc->scan->mem2d->ReportScanEventsYasc ();
 			GSList* ev = all;
 			int count=0;
 			while (ev){
@@ -1806,8 +1815,13 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                                 int ecount=0;
                                 while (ev){
                                         ScanEvent *sen = (ScanEvent*) ev->data;
-                                        double px, py;
+                                        double px, py, proj_coord;
                                         sen->get_position (px, py);
+                                        if (gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3)
+                                                proj_coord = px;
+                                        else
+                                                proj_coord = py;
+                                        
                                         //g_message ("ScanEvenPos: %g %g", px,py);
 
                                         EventEntry *een = (EventEntry*) sen->event_list->data;
@@ -1828,12 +1842,12 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                                                         }
 
                                                 value /= nn_sum;
-                                                if (value > 100.)
+                                                if (value > 100.) // patch for ch possible mismatch info -- uncomment later!
                                                         value *= 4.65675e-09 / 4.44674e-05;
                                                 //g_message ("SetPoint: %d %g %d", ecount, value, i_dec);
                                                 if (ecount < count){
                                                         vc->EventPlot->SetPoint (ecount, value, i_dec);
-                                                        vc->EventPlot->scan1d->mem2d->data->SetXLookup (ecount, px);
+                                                        vc->EventPlot->scan1d->mem2d->data->SetXLookup (ecount, proj_coord);
                                                         vc->EventPlot->scan1d->mem2d->data->SetYLookup (i_dec, pe->get (i, xi));
                                                 } else {
                                                         g_message ("count out of range: %d %d", ecount, count);
