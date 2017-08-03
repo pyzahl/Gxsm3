@@ -725,6 +725,7 @@ public:
         void append(gchar *msg);
 
         static void open_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+        static void open_action_script_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void save_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void save_file_as_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void configure_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
@@ -2305,74 +2306,33 @@ void py_gxsm_console::open_file_callback (GSimpleAction *action, GVariant *param
 	GtkFileFilter *filter = gtk_file_filter_new();
 	GtkTextBuffer *console_file_buf;
 	GtkTextView *textview;
-        GVariant *old_state=NULL, *new_state=NULL;
 
-        old_state = g_action_get_state (G_ACTION (action));
-        if (parameter){
-                new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
-                
-                XSM_DEBUG_GP (DBG_L1, "py_gxsm_console open_file action %s activated, state changes from %s to %s\n",
-                              g_action_get_name (G_ACTION (action)),
-                              g_variant_get_string (old_state, NULL),
-                              g_variant_get_string (new_state, NULL));
-        }
-        if (! new_state){
+        gtk_file_filter_add_mime_type(filter, "text/x-python");
+        gtk_file_filter_add_pattern(filter, "*.py");
 
-                gtk_file_filter_add_mime_type(filter, "text/x-python");
-                gtk_file_filter_add_pattern(filter, "*.py");
+        file_chooser = gtk_file_chooser_dialog_new(N_("Open Python script"),
+                                                   pygc->window,
+                                                   GTK_FILE_CHOOSER_ACTION_OPEN,
+                                                   N_("_Cancel"), GTK_RESPONSE_CANCEL,
+                                                   N_("_Open"), GTK_RESPONSE_ACCEPT,
+                                                   NULL);
 
-                file_chooser = gtk_file_chooser_dialog_new(N_("Open Python script"),
-                                                           pygc->window,
-                                                           GTK_FILE_CHOOSER_ACTION_OPEN,
-                                                           N_("_Cancel"), GTK_RESPONSE_CANCEL,
-                                                           N_("_Open"), GTK_RESPONSE_ACCEPT,
-                                                           NULL);
-                gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(file_chooser), filter);
-                if (!pygc-> query_filename ||
-                    gtk_dialog_run(GTK_DIALOG(file_chooser)) == GTK_RESPONSE_ACCEPT) {
-                        gchar *file_content;
-                        GError *err = NULL;
+        gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(file_chooser), filter);
 
-                        if (pygc->query_filename) {
-                                pygc->set_script_filename (gtk_file_chooser_get_filename
-                                                           (GTK_FILE_CHOOSER(file_chooser)));
-                        }
-                        else {
-                                /* this is a bit of a kludge, so i want to ensure that using the set
-                                   filename is chosen explicitly each time*/
-                                pygc->query_filename = true;
-                        }
-                        if (!g_file_get_contents(pygc->script_filename,
-                                                 &file_content,
-                                                 NULL,
-                                                 &err)) {
-                                gchar *message = g_strdup_printf("Cannot read content of file "
-                                                                 "'%s': %s",
-                                                                 pygc->script_filename,
-                                                                 err->message);
-                                g_clear_error(&err);
-                                pygc->append(message);
-                                pygc->fail = true;
-                                g_free(message);
-                                pygc->set_script_filename (NULL);
-                        }
-                        else {
-                                pygc->fix_eols_to_unix(file_content);
-
-                                // read string which contain last command output
-                                textview = GTK_TEXT_VIEW(pygc->console_file_content);
-                                console_file_buf = gtk_text_view_get_buffer(textview);
-                                // append input line
-                                gtk_text_buffer_set_text(console_file_buf, file_content, -1);
-                                g_free(file_content);
-                                pygc->fail = false;
-                        }
-                }
-                gtk_widget_destroy(GTK_WIDGET(file_chooser));
-        } else {
+        if (!pygc-> query_filename ||
+            gtk_dialog_run(GTK_DIALOG(file_chooser)) == GTK_RESPONSE_ACCEPT) {
                 gchar *file_content;
                 GError *err = NULL;
-                pygc->set_script_filename (g_variant_get_string (new_state, NULL));
+
+                if (pygc->query_filename) {
+                        pygc->set_script_filename (gtk_file_chooser_get_filename
+                                                   (GTK_FILE_CHOOSER(file_chooser)));
+                }
+                else {
+                        /* this is a bit of a kludge, so i want to ensure that using the set
+                           filename is chosen explicitly each time*/
+                        pygc->query_filename = true;
+                }
                 if (!g_file_get_contents(pygc->script_filename,
                                          &file_content,
                                          NULL,
@@ -2398,9 +2358,56 @@ void py_gxsm_console::open_file_callback (GSimpleAction *action, GVariant *param
                         g_free(file_content);
                         pygc->fail = false;
                 }
-                g_simple_action_set_state (action, new_state);
-                g_variant_unref (old_state);
         }
+        gtk_widget_destroy(GTK_WIDGET(file_chooser));
+}
+
+void py_gxsm_console::open_action_script_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{
+	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+	GtkWidget *file_chooser;
+	GtkTextBuffer *console_file_buf;
+	GtkTextView *textview;
+        GVariant *old_state=NULL, *new_state=NULL;
+        gchar *file_content;
+        GError *err = NULL;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
+                
+        XSM_DEBUG_GP (DBG_L1, "py_gxsm_console open_file action %s activated, state changes from %s to %s\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_string (old_state, NULL),
+                      g_variant_get_string (new_state, NULL));
+
+        pygc->set_script_filename (g_variant_get_string (new_state, NULL));
+        if (!g_file_get_contents(pygc->script_filename,
+                                 &file_content,
+                                 NULL,
+                                 &err)) {
+                gchar *message = g_strdup_printf("Cannot read content of file "
+                                                 "'%s': %s",
+                                                 pygc->script_filename,
+                                                 err->message);
+                g_clear_error(&err);
+                pygc->append(message);
+                pygc->fail = true;
+                g_free(message);
+                pygc->set_script_filename (NULL);
+        }
+        else {
+                pygc->fix_eols_to_unix(file_content);
+
+                // read string which contain last command output
+                textview = GTK_TEXT_VIEW(pygc->console_file_content);
+                console_file_buf = gtk_text_view_get_buffer(textview);
+                // append input line
+                gtk_text_buffer_set_text(console_file_buf, file_content, -1);
+                g_free(file_content);
+                pygc->fail = false;
+        }
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
 }
 
 void py_gxsm_console::save_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data)
@@ -2488,7 +2495,7 @@ static GActionEntry win_py_gxsm_action_entries[] = {
 	{ "pyfile-save", py_gxsm_console::save_file_callback, NULL, NULL, NULL },
 	{ "pyfile-save-as", py_gxsm_console::save_file_as_callback, NULL, NULL, NULL },
 
-	{ "pyfile-action-use", py_gxsm_console::open_file_callback, "s", "'sf1'", NULL },
+	{ "pyfile-action-use", py_gxsm_console::open_action_script_callback, "s", "'sf1'", NULL },
 
 	{ "pyremote-configure", py_gxsm_console::configure_callback, NULL, NULL, NULL },
 };
