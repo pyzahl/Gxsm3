@@ -111,6 +111,11 @@
 	<attribute name="label" translatable="yes">Configure</attribute>
 	<attribute name="action">win.pyremote-configure</attribute>
       </item>
+      <item>
+	<attribute name="label" translatable="yes">Use help</attribute>
+	<attribute name="action">win.pyfile-action-use</attribute>
+	<attribute name="target">gxsm3-help</attribute>
+      </item>
     </section>
   </menu>
 
