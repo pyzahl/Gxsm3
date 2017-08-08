@@ -1472,8 +1472,11 @@ static PyObject* remote_export(PyObject *self, PyObject *args)
 static PyObject* remote_autodisplay(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Autodisplay");
-	gapp->xsm->ActiveScan->auto_display();
-	return Py_BuildValue("i", 0);
+        if (gapp->xsm->ActiveScan)
+                gapp->xsm->ActiveScan->auto_display();
+        else
+                return Py_BuildValue("i", -1);
+        return Py_BuildValue("i", 0);
 }
 
 static PyObject* remote_chmodea(PyObject *self, PyObject *args)
@@ -1648,7 +1651,7 @@ static PyObject* remote_echo(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s", &line1))
 		return Py_BuildValue("i", -1);
 	/*Change the Debuglevel to: print always.*/
-	PI_DEBUG(DBG_EVER, line1 );
+        g_message (line1);
 	return Py_BuildValue("i", 0);
 }
 
@@ -1676,8 +1679,9 @@ static PyObject* remote_add_layer_information(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "sl", &info, &layer))
 		return Py_BuildValue("i", -1);
 	PI_DEBUG(DBG_L2, info << " to layer info, lv=" << layer );
-	if(info && layer>=0 && layer<gapp->xsm->GetActiveScan() -> mem2d->GetNv())
-		gapp->xsm->GetActiveScan() -> mem2d->add_layer_information ((int)layer, new LayerInformation (info));
+        if (gapp->xsm->ActiveScan)
+                if(info && layer>=0 && layer<gapp->xsm->GetActiveScan() -> mem2d->GetNv())
+                        gapp->xsm->GetActiveScan() -> mem2d->add_layer_information ((int)layer, new LayerInformation (info));
 	return Py_BuildValue("i", 0);
 }
 
@@ -1818,10 +1822,10 @@ static PyMethodDef EmbMethods[] = {
 	{"units", remote_units, METH_VARARGS, "UnitS."},
 
 	// BLOCK VI
-	{"echo", remote_echo, METH_VARARGS, "Echo. "},
-	{"logev", remote_logev, METH_VARARGS, "Write string to Gxsm system log file and log monitor: gxsm.logev ('hello gxsm') "},
+	{"echo", remote_echo, METH_VARARGS, "Echo string to terminal. gxsm.echo('hello gxsm to terminal') "},
+	{"logev", remote_logev, METH_VARARGS, "Write string to Gxsm system log file and log monitor: gxsm.logev ('hello gxsm to logfile/monitor') "},
 	{"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation."}, 
-	{"da0", remote_da0, METH_VARARGS, "Da0. "},
+	{"da0", remote_da0, METH_VARARGS, "Da0. -- N/A for SRanger"},
 	{"signal_emit", remote_signal_emit, METH_VARARGS, "Action-String. "},
 	{"sleep", remote_sleep, METH_VARARGS, "Sleep N/10s: gxsm.sleep (N) "},
 
