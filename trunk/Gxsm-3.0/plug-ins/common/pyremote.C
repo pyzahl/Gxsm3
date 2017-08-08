@@ -69,7 +69,7 @@ The result will look like this:
 'chmodem', 'chmoden', 'chmodeno', 'chmodex',
 'chview1d', 'chview2d', 'chview3d', 'da0', 'direct',
 'echo', 'gnuexport', 'gnuimport', 'load', 'log',
-'logev', 'menupath', 'quick', 'save', 'saveas',
+'logev', 'quick', 'save', 'saveas',
 'scaninit', 'scanline', 'scanupdate', 'scanylookup',
 'set', 'sleep', 'startscan', 'stopscan', 'unitbz',
 'unitev', 'units', 'unitvolt', 'waitscan', 'createscan']
@@ -130,6 +130,7 @@ Others\\
 \texttt{set(S,S)}       &  Set parameter to value.\\
 \texttt{get(S)}         &  Get parameter, returns floating point value in current user unit .\\
 \texttt{gets(S)}         &  Get parameter, returns string with user unit.\\
+\texttt{action(S)}         &  Initiate Action (S): trigger menu actions and button-press events (refer to GUI tooltips in buttons and menu action list below).\\
 \texttt{rtquery(S)}     &  Ask current HwI to run RTQuery with parameter S, return vector of three values depening on query.\\
 \texttt{y\_current()}    &  Ask current HwI to run RTQuery what shall return the actual scanline of a scan in progress, undefined return otherwise.\\
 \texttt{echo(S)  }  &       Print S to console.\\
@@ -137,7 +138,6 @@ Others\\
 \texttt{sleep(N) }  &       Sleep N/10 seconds.\\
 \texttt{add\_layerinformation(S,N)   }  &       Add Layerinformation string S to active scan, layer N.\ \
 \texttt{da0(X)   }  &       Set Analog Output channel 0 to X Volt. (not implemented).\\
-\texttt{menupath(S)}  &       Activate Menuentry 'S'\\
 \end{tabular}
 
 % OptPlugInSubSection: The set-command
@@ -252,7 +252,7 @@ by Nanonis.
 
 Any plugin, that has a menuentry can be
 executed via the
-\GxsmTT{menupath}-command. Several of them, however, open a dialog and ask
+\GxsmTT{menupath}-action command. Several of them, however, open a dialog and ask
 for a specific parameter, e.g. the diff-PI in \GxsmMenu{Math/Filter1D}.
 This can become annoying, when you want to batch process a greater number
 of files. To execute a PI non-interactively it is possible to
@@ -795,8 +795,50 @@ public:
                                                 std::ofstream example_file;
                                                 example_file.open(script_filename);
                                                 example_file << "# Example python gxsm3 script file " << script_filename << " was created.\n"
-                                                        "# - see the Gxsm3 manual for more information\n";
+                                                        "# this is the gxsm developer test and work script - see the Gxsm3 manual for more information\n";
                                                 example_file.write ((const char*)remote_gxsm3_py, remote_gxsm3_py_len);
+                                                example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-help")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Remote Help script file " << script_filename << " was created.\n";
+                                                example_file << "############################################################################\n";
+                                                example_file << "#\n";
+                                                example_file << "# PLEASE EXECUTE ME TO PRINT THE GXSM3 PYTHON REMOTE COMMAND HELP LIST !!\n";
+                                                example_file << "#\n";
+                                                example_file << "############################################################################\n";
+                                                example_file <<
+                                                        "S='***'\n"
+                                                        "s='--------------------------------------------------------------------------------'\n"
+                                                        "print (S)\n"
+                                                        "print ('(1) Gxsm3 python remote console -- gxsm.help on build in commands')\n"
+                                                        "print (s)\n"
+                                                        "for h in gxsm.help ():\n"
+                                                        "	print h\n"
+                                                        "print ('*')\n"
+                                                        "\n"
+                                                        "print (s)\n"
+                                                        "print ('(2) Gxsm3 python remote console -- help on reference names')\n"
+                                                        "print ('  used for gxsm.set and get, gets commands.')\n"
+                                                        "print ('  Hint: hover the pointer over any get/set enabled Gxsm entry to see it`s ref-name!')\n"
+                                                        "print ('  Example: gxsm.set (\"dsp-fbs-bias\", \"1.0\")')\n"
+                                                        "print (s)\n"
+                                                        "\n"
+                                                        "for h in gxsm.list_refnames ():\n"
+                                                        "	print h\n"
+                                                        "print ('*')\n"
+                                                        "\n"
+                                                        "print (s)\n"
+                                                        "print ('(3) Gxsm3 python remote console -- help on action names used for gxsm.action command')\n"
+                                                        "print ('  Hint: hover the pointer over any Gxsm Action enabled Button to see it`s action-name!')\n"
+                                                        "print ('  Example: gxsm.action (\"DSP_CMD_GOTO_Z0\")')\n"
+                                                        "print (s)\n"
+                                                        "	\n"
+                                                        "for h in gxsm.list_actions ():\n"
+                                                        "	print h\n"
+                                                        "print ('*')\n"
+                                                        ;
                                                 example_file.close();
                                         } else {
                                                 // make sample
@@ -889,6 +931,8 @@ static void CbAction_ra(remote_action_cb* ra, gpointer arglist){
 		}
 };
 
+static PyObject* remote_help(PyObject *self, PyObject *args);
+
 /* This function will build and return a python tuple
    that contains all the objects (string name) that
    you can 'set' and 'get'.
@@ -903,19 +947,34 @@ static void CbAction_ra(remote_action_cb* ra, gpointer arglist){
    when no hardware is attached.
 
 */
-static PyObject* remote_list(PyObject *self, PyObject *args)
+static PyObject* remote_listr(PyObject *self, PyObject *args)
 {
 	int slen = g_slist_length( gapp->RemoteEntryList ); // How many entries?
 
 	// This will be our return object with as many slots as input list has:
 	PyObject *ret = PyTuple_New(slen);
 	GSList* tmp = gapp->RemoteEntryList;
-	for (int n=0; n<slen; n++)
-		{
-			Gtk_EntryControl* ec = (Gtk_EntryControl*)tmp->data; // Look at data item in GSList.
-			PyTuple_SetItem(ret, n, PyString_FromString(ec->get_refname())); // Add Refname to Return-list
-			tmp = g_slist_next(tmp);
-		}
+	for (int n=0; n<slen; n++){
+                Gtk_EntryControl* ec = (Gtk_EntryControl*)tmp->data; // Look at data item in GSList.
+                PyTuple_SetItem(ret, n, PyString_FromString(ec->get_refname())); // Add Refname to Return-list
+                tmp = g_slist_next(tmp);
+        }
+
+	return ret;
+}
+
+static PyObject* remote_lista(PyObject *self, PyObject *args)
+{
+	int slen = g_slist_length( gapp->RemoteActionList ); // How many entries?
+
+	// This will be our return object with as many slots as input list has:
+	PyObject *ret = PyTuple_New(slen);
+	GSList* tmp = gapp->RemoteActionList;
+	for (int n=0; n<slen; n++){
+                remote_action_cb* ra = (remote_action_cb*)tmp->data; // Look at data item in GSList.
+                PyTuple_SetItem(ret, n, PyString_FromString(ra->cmd)); // Add Refname to Return-list
+                tmp = g_slist_next(tmp);
+        }
 
 	return ret;
 }
@@ -1577,7 +1636,6 @@ static PyObject* remote_units(PyObject *self, PyObject *args)
 // echo S      DONE
 // logev S      DONE
 // da0 X      DONE, commented out
-// menupath S      DONE
 // signal S      DONE
 // more actions by plugins S  NYI
 ///////////////////////////////////////////////////////////////
@@ -1665,53 +1723,6 @@ static PyObject* remote_signal_emit(PyObject *self, PyObject *args)
         }
 }
 
-static PyObject* remote_menupath(PyObject *self, PyObject *args)
-{
-
-	PI_DEBUG(DBG_L2, "pyremote: Searching menupath ");
-	gchar *menu1;
-	if (!PyArg_ParseTuple(args, "s", &menu1)) {
-		return Py_BuildValue("i", -1);
-	}
-	PI_DEBUG(DBG_L2, menu1 );
-
-	g_print ("remote_menupath %s -- exec needs to be ported to GTK3 -- please use signal_emit.\n", menu1);
-
-        // gtk_application_get_app_menu ()
-        // simply emit signal for action -- no menu path
-        // g_signal_emit_by_name (gapp->getApp (), menu1);
-        
-	// GTK3QQQ MENU
-#if 0
-	GtkWidget *menushell;
-	GtkWidget *menuitem;
-	gint pos;
-	menushell = gnome_app_find_menu_pos (gapp->gxsmmenu, menu1, &pos);
-	--pos;
-	if(!menushell) {
-		return 0;
-	}
-	PI_DEBUG(DBG_L2, "pyremote: Menu Shell Found: " << pos << " Item=" << menushell);
-
-	menuitem = (GtkWidget*)g_list_nth_data(GTK_MENU_SHELL (menushell) -> children, pos);
-
-	if (!menuitem) {
-		return 0;
-	}
-	PI_DEBUG(DBG_L2, "pyremote: Menu Item Found: " << menuitem);
-
-	GdkEvent event;
-	gint return_val;
-	gtk_signal_emit (G_OBJECT(GTK_MENU_ITEM (menuitem) ),
-			 gtk_signal_lookup ("activate", G_OBJECT_TYPE (G_OBJECT(menuitem))),
-			 &event, &return_val);
-
-	//    PI_DEBUG(DBG_L2, "pyremote: Signal emitted to pos " << pos << " ! ret=" << return_val);
-
-#endif
-	
-	return Py_BuildValue("i", 0);
-}
 
 /* Taken from somewhere*/
 static gboolean busy_sleep;
@@ -1743,17 +1754,29 @@ static PyObject* remote_sleep(PyObject *self, PyObject *args)
 }
 
 ///////////////////////////////////////////////////////////
+/*
+PyMethodDef
+Structure used to describe a method of an extension type. This structure has four fields:
+
+Field	C Type	Meaning
+ml_name	char *	name of the method
+ml_meth	PyCFunction	pointer to the C implementation
+ml_flags	int	flag bits indicating how the call should be constructed
+ml_doc	char *	points to the contents of the docstring
+*/
 
 static PyMethodDef EmbMethods[] = {
 	// BLOCK I
-	{"set", remote_set, METH_VARARGS, "Set."},
-	{"get", remote_get, METH_VARARGS, "Get."},
-	{"gets", remote_gets, METH_VARARGS, "Get string."},
-	{"list", remote_list, METH_VARARGS, "List."},
-	{"action", remote_action, METH_VARARGS, "Action."},
-	{"rtquery", remote_rtquery, METH_VARARGS, "RTQuery."},
-	{"y_current", remote_y_current, METH_VARARGS, "RTQuery Current Scanline."},
-	{"moveto_scan_xy", remote_moveto_scan_xy, METH_VARARGS, "Set tip position to Scan-XY."},
+	{"help", remote_help, METH_VARARGS, "List Gxsm methods: print gxsm.help ()"},
+	{"set", remote_set, METH_VARARGS, "Set Gxsm entry value, see list_refnames: gxsm.set ('refname','value as string')"},
+	{"get", remote_get, METH_VARARGS, "Get Gxsm entry as value, see list_refnames. gxsm.get ('refname')"},
+	{"gets", remote_gets, METH_VARARGS, "Get Gxsm entry as string. gxsm.gets ('refname')"},
+	{"list_refnames", remote_listr, METH_VARARGS, "List all available Gxsm entry refnames (Better: pointer hover over Gxsm-Entry to see tooltip with ref-name). print gxsm.list_refnames ()"},
+	{"action", remote_action, METH_VARARGS, "Trigger Gxsm action (menu action or button signal), see list_actions: gxsm.action('action')"},
+	{"list_actions", remote_lista, METH_VARARGS, "List all available Gxsm actions (Better: pointer hover over Gxsm-Button to see tooltip with action-name): print gxsm.list_actions ()"},
+	{"rtquery", remote_rtquery, METH_VARARGS, "Gxsm hardware Real-Time-Query: svec[3] = gxsm.rtquery('X|Y|Z|xy|zxy|o|f|s|i|U') "},
+        {"y_current", remote_y_current, METH_VARARGS, "RTQuery Current Scanline."},
+	{"moveto_scan_xy", remote_moveto_scan_xy, METH_VARARGS, "Set tip position to Scan-XY: gxsm.moveto_scan_xy (x,y)"},
 
 	// BLOCK II
 	{"createscan", remote_createscan, METH_VARARGS, "Create Scan."},
@@ -1796,15 +1819,29 @@ static PyMethodDef EmbMethods[] = {
 
 	// BLOCK VI
 	{"echo", remote_echo, METH_VARARGS, "Echo. "},
-	{"logev", remote_logev, METH_VARARGS, "Logev. "},
+	{"logev", remote_logev, METH_VARARGS, "Write string to Gxsm system log file and log monitor: gxsm.logev ('hello gxsm') "},
 	{"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation."}, 
 	{"da0", remote_da0, METH_VARARGS, "Da0. "},
 	{"signal_emit", remote_signal_emit, METH_VARARGS, "Action-String. "},
-	{"menupath", remote_menupath, METH_VARARGS, "Menupath. "},
-	{"sleep", remote_sleep, METH_VARARGS, "Sleep. "},
+	{"sleep", remote_sleep, METH_VARARGS, "Sleep N/10s: gxsm.sleep (N) "},
 
 	{NULL, NULL, 0, NULL}
 };
+
+static PyObject* remote_help(PyObject *self, PyObject *args)
+{
+        gint entries;
+	for (entries=0; EmbMethods[entries].ml_name != NULL; entries++);
+	PyObject *ret = PyTuple_New(entries);
+	for (int n=0; n < entries; n++){
+                gchar *tmp = g_strdup_printf ("gxsm.%s : %s", EmbMethods[n].ml_name, EmbMethods[n].ml_doc);
+                PyTuple_SetItem(ret, n, PyString_FromString (tmp)); // Add Refname to Return-list
+                g_free (tmp);
+        }
+
+	return ret;
+}
+
 
 
 int ok_button_callback( GtkWidget *widget, gpointer data)
@@ -2270,7 +2307,7 @@ void py_gxsm_console::run_file(GtkToolButton *btn, gpointer user_data)
 	console_file_buf = gtk_text_view_get_buffer(textview);
 
 	file_info_line
-		= g_strdup_printf(N_(">>> Running file content of below textfield\n"));
+		= g_strdup_printf(N_(">>> Executing script now.\n"));
 
 	pygc->append(file_info_line);
 
