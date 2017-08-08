@@ -1267,18 +1267,19 @@ void DSPMoverControl::create_folder (){
                         g_object_set_data( G_OBJECT (mov_bp->input), "MoverNo", GINT_TO_POINTER (i));
                         gtk_widget_set_tooltip_text (mov_bp->input, "GPIO setting used to engage this tab mode.");
 
-                        gchar rampspeedstr[100];
-                        sprintf(rampspeedstr,"BESOCKE rampspeed: ---- V/ms  ");
-
-                        mov_bp->grid_add_label (rampspeedstr);
-                        mc_rampspeed_label = GTK_WIDGET(mov_bp->label);
-
-                        mov_bp->grid_add_widget (mov_bp->button = gtk_button_new_from_icon_name ("view-refresh-symbolic", GTK_ICON_SIZE_BUTTON));
-                        g_object_set_data( G_OBJECT (mov_bp->button), "MoverNo", GINT_TO_POINTER (i));  
-                        g_signal_connect (G_OBJECT (mov_bp->button), "pressed",
-					    G_CALLBACK (DSPMoverControl::RampspeedUpdate),
-					    this);
-
+                        if (i ==4){
+                                gchar rampspeedstr[100];
+                                sprintf(rampspeedstr,"BESOCKE rampspeed: ---- V/ms  ");
+        
+                                mov_bp->grid_add_label (rampspeedstr);
+                                mc_rampspeed_label = GTK_WIDGET(mov_bp->label);
+        
+                                mov_bp->grid_add_widget (mov_bp->button = gtk_button_new_from_icon_name ("view-refresh-symbolic", GTK_ICON_SIZE_BUTTON));
+                                g_object_set_data( G_OBJECT (mov_bp->button), "MoverNo", GINT_TO_POINTER (i));  
+                                g_signal_connect (G_OBJECT (mov_bp->button), "pressed",
+	        				    G_CALLBACK (DSPMoverControl::RampspeedUpdate),
+	        				    this);
+                        }
                         mov_bp->set_configure_list_mode_off ();
                 }
 
@@ -1343,7 +1344,7 @@ void DSPMoverControl::create_folder (){
                                 mov_bp->set_xy (1,3); mov_bp->grid_add_label ("Y-");
 			}
 
-			if (i!=6) {
+			if (i!=6 && i!=4) {
 				// LEFT
                                 mov_bp->set_xy (2,2); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-left-symbolic", GTK_ICON_SIZE_BUTTON));
 				g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_XM));
@@ -1397,6 +1398,60 @@ void DSPMoverControl::create_folder (){
 					gtk_widget_set_tooltip_text (button, help);
 				}
 			}
+                        else if (i==4){
+                                // LEFT
+                                mov_bp->set_xy (2,2); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-left-symbolic", GTK_ICON_SIZE_BUTTON));
+				g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_ZM));
+				g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                                g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
+				g_signal_connect (G_OBJECT (button), "pressed",
+						    G_CALLBACK (DSPMoverControl::CmdAction),
+						    this);
+				g_signal_connect (G_OBJECT (button), "released",
+						    G_CALLBACK (DSPMoverControl::StopAction),
+						    this);
+				{ // pyremote hook
+					remote_action_cb *ra = g_new( remote_action_cb, 1);
+					ra -> cmd = g_strdup_printf("DSP_CMD_MOV-ZM_%s",MoverNames[i]);
+					ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+					ra -> widget = button;
+					ra -> data = this;
+					gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+					gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+					gtk_widget_set_tooltip_text (button, help);
+				}
+	//      gtk_widget_add_accelerator (button, "pressed", accel_group,
+	//                                  GDK_F1+4*i, (GdkModifierType)0,
+	//                                  GTK_ACCEL_VISIBLE);
+
+				// RIGHT
+                                //                                button = gtk_button_new_from_icon_name ("seek-right-symbolic", GTK_ICON_SIZE_BUTTON);
+                                mov_bp->set_xy (4,2); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("media-seek-forward-symbolic", GTK_ICON_SIZE_BUTTON));
+				g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_ZP));
+				g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                                g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
+				g_signal_connect (G_OBJECT (button), "pressed",
+						    G_CALLBACK (DSPMoverControl::CmdAction),
+						    this);
+				g_signal_connect (G_OBJECT (button), "released",
+						    G_CALLBACK (DSPMoverControl::StopAction),
+						    this);
+
+				{ // pyremote hook
+					remote_action_cb *ra = g_new( remote_action_cb, 1);
+					ra -> cmd = g_strdup_printf("DSP_CMD_MOV-ZP_%s",MoverNames[i]);
+					ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+					ra -> widget = button;
+					ra -> data = this;
+					gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+					gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+					gtk_widget_set_tooltip_text (button, help);
+				}
+                        }
 // gtk_widget_get_toplevel()
 //      gtk_widget_add_accelerator (button, "pressed", accel_group,
 //                                  GDK_F1+4*i, (GdkModifierType)0,

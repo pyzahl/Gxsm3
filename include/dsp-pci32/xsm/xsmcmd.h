@@ -96,6 +96,8 @@
 #define DSP_CMD_AFM_MOV_XM		0x62	/* Linsenmover in X- */
 #define DSP_CMD_AFM_MOV_YP		0x63	/* Linsenmover in Y+ */
 #define DSP_CMD_AFM_MOV_YM		0x64	/* Linsenmover in Y- */
+#define DSP_CMD_AFM_MOV_ZP		0x65	/* Linsenmover in Z+ */
+#define DSP_CMD_AFM_MOV_ZM		0x66	/* Linsenmover in Z- */
 
 
 #define DSP_CMD_CLR_PA			0x70	/* Port PA = 0x00 setzten */
