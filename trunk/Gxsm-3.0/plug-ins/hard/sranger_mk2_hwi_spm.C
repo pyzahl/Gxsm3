@@ -419,6 +419,7 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 
                 gint channels = 1;
                 switch (DSPMoverClass->mover_param.MOV_waveform_id){
+                case MOV_WAVE_BESOCKE:
                 case MOV_WAVE_SINE: channels = 3; break;
                 case MOV_WAVE_KOALA: channels = 2; break;
                 default: channels = 1; break;
@@ -469,6 +470,8 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 	case DSP_CMD_AFM_MOV_XP: // manual move X+
 	case DSP_CMD_AFM_MOV_YM: // manual move Y-
 	case DSP_CMD_AFM_MOV_YP: // manual move Y+
+        case DSP_CMD_AFM_MOV_ZM: // manual move Z-
+        case DSP_CMD_AFM_MOV_ZP: // manual move Z+
 	{
 		static AUTOAPPROACH dsp_aap;
 		dsp_aap.start = int_2_sranger_int(1);           /* Initiate =WO */
@@ -479,11 +482,13 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
                         switch (Cmd){
                         case DSP_CMD_AFM_MOV_XM:
                         case DSP_CMD_AFM_MOV_YM:
+                        case DSP_CMD_AFM_MOV_ZM:
                                 dsp_aap.dir  = int_2_sranger_int (-1); // arbitrary direction, assume -1 "left/down"
                                 DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, -DSPMoverClass->mover_param.AFM_Speed);
                                 break;
                         case DSP_CMD_AFM_MOV_XP:
                         case DSP_CMD_AFM_MOV_YP:
+                        case DSP_CMD_AFM_MOV_ZP:
                                 dsp_aap.dir  = int_2_sranger_int (1); // arbitrary direction, assume +1 "right/up"
                                 DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
                                 break;
@@ -498,6 +503,7 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
                 
                 gint channels = 1;
                 switch (DSPMoverClass->mover_param.MOV_waveform_id){
+                case MOV_WAVE_BESOCKE:
                 case MOV_WAVE_SINE: channels = 3; break;
                 case MOV_WAVE_KOALA: channels = 2; break;
                 default: channels = 1; break;
@@ -508,16 +514,23 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
                 switch (Cmd){
                 case DSP_CMD_AFM_MOV_XM:
                 case DSP_CMD_AFM_MOV_XP:
-                        dsp_aap.axis = int_2_sranger_int (0); // arbitrary assignmet for counter: 0=X axis        
+                        dsp_aap.axis = int_2_sranger_int (0); // arbitrary assignment for counter: 0=X axis        
                         for (int i=0; i<channels; ++i) // multi channel wave -- test on "X"
                                 dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[i]);
                         break;
                 case DSP_CMD_AFM_MOV_YM:
                 case DSP_CMD_AFM_MOV_YP:
-                        dsp_aap.axis = int_2_sranger_int (1); // arbitrary assignmet for counter: 1=Y axis        
-                        dsp_aap.channel_mapping[0] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[1]);
+                        dsp_aap.axis = int_2_sranger_int (1); // arbitrary assignment for counter: 1=Y axis        
+                        for (int i=0; i<channels; ++i)
+                                dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[i]);
+                        break;                
+                case DSP_CMD_AFM_MOV_ZM:
+                case DSP_CMD_AFM_MOV_ZP:
+                        dsp_aap.axis = int_2_sranger_int (2); // arbitrary assignment for counter: 2=Z axis      
+                        for (int i=0; i<channels; ++i) 
+                                dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[i]);
                         break;
-                }
+		}
 		// ... [0..5] (configure all needed channels!)
 
 		dsp_aap.mover_mode = int_2_sranger_int (AAP_MOVER_WAVE_PLAY);

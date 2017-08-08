@@ -486,7 +486,7 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 		//DSPMoverClass->mover_param.MOV_output 
                 //DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0
 
-		dsp_aap.max_wave_cycles = long_2_sranger_long ((int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
+		dsp_aap.max_wave_cycles = long_2_sranger_long (2*(int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
 		dsp_aap.wave_length     = long_2_sranger_long (DSPMoverClass->mover_param.MOV_wave_len); /* Length of Waveform -- total count all samples/channels */
 		dsp_aap.wave_speed      = long_2_sranger_long (DSPMoverClass->mover_param.MOV_wave_speed_fac);     /* Wave Speed (hold number per step) */
 
@@ -534,6 +534,8 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 	case DSP_CMD_AFM_MOV_XP: // manual move X+
 	case DSP_CMD_AFM_MOV_YM: // manual move Y-
 	case DSP_CMD_AFM_MOV_YP: // manual move Y+
+	case DSP_CMD_AFM_MOV_ZM: // manual move Z-
+        case DSP_CMD_AFM_MOV_ZP: // manual move Z+
 	{
                 PI_DEBUG_GP (DBG_L2, "MOVER: Wave Command %d\n", Cmd);
 
@@ -548,11 +550,13 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
                         switch (Cmd){
                         case DSP_CMD_AFM_MOV_XM:
                         case DSP_CMD_AFM_MOV_YM:
+			case DSP_CMD_AFM_MOV_ZM:
                                 dsp_aap.dir  = int_2_sranger_int (-1); // arbitrary direction, assume -1 "left/up"
                                 DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, -DSPMoverClass->mover_param.AFM_Speed);
                                 break;
                         case DSP_CMD_AFM_MOV_XP:
                         case DSP_CMD_AFM_MOV_YP:
+			case DSP_CMD_AFM_MOV_ZP:
                                 dsp_aap.dir  = int_2_sranger_int (1); // arbitrary direction, assume +1 "rigth/down"
                                 DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
                                 break;
@@ -576,14 +580,21 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
                 switch (Cmd){
                 case DSP_CMD_AFM_MOV_XM:
                 case DSP_CMD_AFM_MOV_XP:
-                        dsp_aap.axis = int_2_sranger_int (0); // arbitrary assignmet for counter: 0=X axis  *** note so far also used in "rot" and auto folder for L/R buttons -- fixme!
+                        dsp_aap.axis = int_2_sranger_int (0); // arbitrary assignment for counter: 0=X axis  *** note so far also used in "rot" and auto folder for L/R buttons -- fixme!
                         for (int i=0; i<channels; ++i)
                                 dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[i]);
                         break;
                 case DSP_CMD_AFM_MOV_YM:
                 case DSP_CMD_AFM_MOV_YP:
-                        dsp_aap.axis = int_2_sranger_int (1); // arbitrary assignmet for counter: 1=Y axis
-                        dsp_aap.channel_mapping[0] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[1]);
+                        dsp_aap.axis = int_2_sranger_int (1); // arbitrary assignment for counter: 1=Y axis
+                        for (int i=0; i<channels; ++i)
+                                dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[i]);
+                        break;
+		case DSP_CMD_AFM_MOV_ZM:
+                case DSP_CMD_AFM_MOV_ZP:
+                        dsp_aap.axis = int_2_sranger_int (2); // arbitrary assignment for counter: 2=Z axis      
+                        for (int i=0; i<channels; ++i)
+                                dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[i]);
                         break;
                 }
 		// ... [0..5] (configure all needed channels!)
