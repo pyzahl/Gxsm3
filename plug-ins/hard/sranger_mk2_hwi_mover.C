@@ -155,7 +155,7 @@ DSPMoverControl::DSPMoverControl ()
 	xrm.Get("AUTO_final_delay", &mover_param.final_delay, "50");
 	xrm.Get("AUTO_max_settling_time", &mover_param.max_settling_time, "1000");
 	xrm.Get("InchWorm_phase", &mover_param.inch_worm_phase, "0");
-
+        
         xrm.Get("timedelay_2", &mover_param.time_delay_2, "0.09");
         xrm.Get("timedelay_1", &mover_param.time_delay_1, "0.09");
         xrm.Get("z_Rate", &mover_param.z_Rate, "0.1");
@@ -201,6 +201,9 @@ DSPMoverControl::DSPMoverControl ()
 void DSPMoverControl::create_waveform (double amp, double duration){
 #define SR_VFAC    (32767./10.00) // A810 max Volt out is 10V
 
+        for (int i=0; i < MOV_MAXWAVELEN; ++i)
+		mover_param.MOV_waveform[i] = (short)0;
+
         double pointing = duration > 0. ? 1. : -1;
         gint channels = 1; // fixed single (one) channel assuption for testing !!!
 
@@ -231,13 +234,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
                      mover_param.MOV_wave_len + space_len,
                      mover_param.MOV_wave_speed_fac,
                      duration, amp
-                     );
-        
-        /*double newrampspeed=(amp/2)/((duration - 2*mover_param.time_delay_1 - mover_param.time_delay_2)/2);
-        gchar newrampspeedstr[100];
-        sprintf(newrampspeedstr,"BESOCKE rampspeed: %.2f V/ms  ",newrampspeed);
-        gtk_label_set_text(GTK_LABEL(mc_rampspeed_label), g_strdup(newrampspeedstr));*/
-        
+                     );        
 
         int    imax = mover_param.MOV_wave_len-channels;
         int    imax1 = mover_param.MOV_wave_len-channels;
@@ -369,191 +366,117 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 --------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 	case MOV_WAVE_KOALA:
-                {
-                        int i=0;
-                        for (; i <= mover_param.MOV_wave_len/6; i += channels)
-                                for (int k=0; k<channels; ++k)
-                                        if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
-                                        else
-                                                mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
+                {             
+                int i=0;
+                for (; i <= mover_param.MOV_wave_len/6; i += channels)
+                        for (int k=0; k<channels; ++k)
+                                if (pointing > 0) // wave for forward direction 
+                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
+                                else
+                                        mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
                 
-                        for (; i <= mover_param.MOV_wave_len/2; i += channels)
-                                for (int k=0; k<channels; ++k)
-                                        if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp));
-                                        else
-                                                mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp));
+                for (; i <= mover_param.MOV_wave_len/2; i += channels)
+                        for (int k=0; k<channels; ++k)
+                                if (pointing > 0) // wave for forward direction 
+                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp));
+                                else
+                                        mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp));
 
-                        for (; i < mover_param.MOV_wave_len; i += channels)
-                                for (int k=0; k<channels; ++k)
-                                        if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
-                                        else
-                                                mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
+                for (; i < mover_param.MOV_wave_len; i += channels)
+                        for (int k=0; k<channels; ++k)
+                                if (pointing > 0) // wave for forward direction 
+                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
+                                else
+                                        mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
                 }
 		break;
         
 	case MOV_WAVE_BESOCKE:
-               {
+                {
+                double pduration;               //positive duration
 
-                        int XY=1;            //XY=1...X/Y         XY=0...electrode
+                if (pointing > 0)
+                        pduration=duration;
+                else
+                        pduration=(-1)*duration;
+                        
+                int j=0;
+                double t3=(pduration - 2*mover_param.time_delay_1 - mover_param.time_delay_2)/2;        //time of the pitch in ms
+                double a=pduration/t3;                                                                //1/a is part of the ramp of the total time
+                double b=pduration/mover_param.time_delay_1;                                          //1/b is part of the delay at max and min of the total time
+                double c=pduration/mover_param.time_delay_2;                                          //1/c is part of the additional delay in the x signal of the total time
 
+                double R=mover_param.z_Rate;           //rate of the amplitude of the pure x signal as z signal
+                        
 
-                        double pduration;               //positive duration
+                PI_DEBUG_GP (DBG_L2, "case BESOCKE t1=%f  t2=%f  pduration=%f  amp=%f  z-Rate=%f  MOV_wave_len=%d \n", 
+                                mover_param.time_delay_1, 
+                                mover_param.time_delay_2, 
+                                pduration, 
+                                amp,
+                                mover_param.z_Rate,
+                                mover_param.MOV_wave_len);
 
-                        if (pointing > 0)
-                                pduration=duration;
+                int i=0;
+                for (; i <= (int) ((double)mover_param.MOV_wave_len/a); i += channels)
+                {
+                        mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp/2*(double)i/((double)mover_param.MOV_wave_len/a));
+                                                
+                        if (amp >= 0)
+                                mover_param.MOV_waveform[i+2] = (short)round (R*2*(-1)*(mover_param.MOV_waveform[i]));
                         else
-                                pduration=(-1)*duration;
-                        
-                        int j=0;
-                        double t3=(pduration - 2*mover_param.time_delay_1 - mover_param.time_delay_2)/2;        //time of the pitch in ms
-                        double a=pduration/t3;                                                                //1/a is part of the ramp of the total time
-                        double b=pduration/mover_param.time_delay_1;                                          //1/b is part of the delay at max and min of the total time
-                        double c=pduration/mover_param.time_delay_2;                                          //1/c is part of the additional delay in the x signal of the total time
-
-                        double R=mover_param.z_Rate;           //rate of the amplitude of the pure x signal as z signal
-                        
-
-                        PI_DEBUG_GP (DBG_L2, "case BESOCKE t1=%f  t2=%f  pduration=%f  amp=%f  z-Rate=%f  MOV_wave_len=%d \n", 
-                                        mover_param.time_delay_1, 
-                                        mover_param.time_delay_2, 
-                                        pduration, 
-                                        amp,
-                                        mover_param.z_Rate,
-                                        mover_param.MOV_wave_len);
-
-
-                        if (pointing > 0) // wave for forward direction
-                        {
-                                int i=0;
-                                for (; i <= (int) ((double)mover_param.MOV_wave_len/a); i += channels)
-                                {
-                                        mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp/2*(double)i/((double)mover_param.MOV_wave_len/a));
-                                        
-                                        if (amp >= 0)
-                                                mover_param.MOV_waveform[i+1] = (short)round (R*2*(-1)*(mover_param.MOV_waveform[i]));
-                                        else
-                                                mover_param.MOV_waveform[i+1] = (short)round (R*2*(mover_param.MOV_waveform[i]));
-
-                                        mover_param.MOV_waveform[i+2] = (short)round ((-1)*(mover_param.MOV_waveform[i]));
-                                }
-
-                                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+((double)mover_param.MOV_wave_len/b)); i += channels)
-                                {
-                                        mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
-                                        
-                                        mover_param.MOV_waveform[i+1] = (short)round (mover_param.MOV_waveform[i+1-channels]);
-
-                                        mover_param.MOV_waveform[i+2] = (short)round ((-1)*(mover_param.MOV_waveform[i]));
-                                }
-
-                                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+((double)mover_param.MOV_wave_len/b)+((double)mover_param.MOV_wave_len/c)); i += channels)
-                                {
-                                        mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
-                                        
-                                        mover_param.MOV_waveform[i+1] = (short)round (mover_param.MOV_waveform[1]);
-
-                                        mover_param.MOV_waveform[i+2] = (short)round ((-1)*(mover_param.MOV_waveform[i]));
-                                }
-
-                                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+2*((double)mover_param.MOV_wave_len/b)+((double)mover_param.MOV_wave_len/c)); i += channels)
-                                {
-                                        if (j==0){
-                                        mover_param.MOV_waveform[i] = (short)round ((-1)*(mover_param.MOV_waveform[i-channels]));
-                                        ++j;
-                                        }
-                                        else{
-                                        mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
-                                        }
-                                        
-                                        mover_param.MOV_waveform[i+1] = (short)round (mover_param.MOV_waveform[1]);
-
-                                        mover_param.MOV_waveform[i+2] = (short)round ((-1)*(mover_param.MOV_waveform[i]));
-                                }
-
-                                for (; i < mover_param.MOV_wave_len; i += channels)
-                                {
-                                        mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp/2*(double)(i-mover_param.MOV_wave_len)/((double)mover_param.MOV_wave_len/a));
-                                        
-                                        mover_param.MOV_waveform[i+1] = (short)round (mover_param.MOV_waveform[1]);
-
-                                        mover_param.MOV_waveform[i+2] = (short)round ((-1)*(mover_param.MOV_waveform[i]));
-                                }
-                        }
-                        
-                        else
-                        {
-                                int i=0;
-                                for (; i <= (int) ((double)mover_param.MOV_wave_len/a); i += channels)
-                                {
-                                        mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp/2*(-1)*(double)i/((double)mover_param.MOV_wave_len/a));
-                                        
-                                        if (amp >= 0)
-                                                mover_param.MOV_waveform[i+1] = (short)round (R*2*(mover_param.MOV_waveform[i]));
-                                        else
-                                                mover_param.MOV_waveform[i+1] = (short)round (R*2*(-1)*(mover_param.MOV_waveform[i]));
-
-                                        mover_param.MOV_waveform[i+2] = (short)round ((-1)*(mover_param.MOV_waveform[i]));
-                                }
-
-                                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+((double)mover_param.MOV_wave_len/b)); i += channels)
-                                {
-                                        mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
-                                        
-                                        mover_param.MOV_waveform[i+1] = (short)round (mover_param.MOV_waveform[i+1-channels]);
-
-                                        mover_param.MOV_waveform[i+2] = (short)round ((-1)*(mover_param.MOV_waveform[i]));
-                                }
-
-                                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+((double)mover_param.MOV_wave_len/b)+((double)mover_param.MOV_wave_len/c)); i += channels)
-                                {
-                                        mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
-                                        
-                                        mover_param.MOV_waveform[i+1] = (short)round (mover_param.MOV_waveform[1]);
-
-                                        mover_param.MOV_waveform[i+2] = (short)round ((-1)*(mover_param.MOV_waveform[i]));
-                                }
-
-                                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+2*((double)mover_param.MOV_wave_len/b)+((double)mover_param.MOV_wave_len/c)); i += channels)
-                                {
-                                        if (j==0){
-                                        mover_param.MOV_waveform[i] = (short)round ((-1)*(mover_param.MOV_waveform[i-channels]));
-                                        ++j;
-                                        }
-                                        else{
-                                        mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
-                                        }
-                                        
-                                        mover_param.MOV_waveform[i+1] = (short)round (mover_param.MOV_waveform[1]);
-
-                                        mover_param.MOV_waveform[i+2] = (short)round ((-1)*(mover_param.MOV_waveform[i]));
-                                }
-
-                                for (; i < mover_param.MOV_wave_len; i += channels)
-                                {
-                                        mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp/2*(-1)*(double)(i-mover_param.MOV_wave_len)/((double)mover_param.MOV_wave_len/a));
-                                        
-                                        mover_param.MOV_waveform[i+1] = (short)round (mover_param.MOV_waveform[1]);
-
-                                        mover_param.MOV_waveform[i+2] = (short)round ((-1)*(mover_param.MOV_waveform[i]));
-                                }
-                        }
-                        
-                        if (XY == 1)            // adding the z Signal to the original x and y Signal
-                        {
-                                int i=0;
-                                for (; i < mover_param.MOV_wave_len; i += channels)             
-                                {
-                                        mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i] + mover_param.MOV_waveform[i+1]);
-        
-                                        mover_param.MOV_waveform[i+1] = (short)round (mover_param.MOV_waveform[i+1]);
-        
-                                        mover_param.MOV_waveform[i+2] = (short)round (mover_param.MOV_waveform[i+2] + mover_param.MOV_waveform[i+1]);
-                                }
-                         }     
+                                mover_param.MOV_waveform[i+2] = (short)round (R*2*(mover_param.MOV_waveform[i]));
                 }
+        
+                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+((double)mover_param.MOV_wave_len/b)); i += channels)
+                {
+                        mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
+                                                
+                        mover_param.MOV_waveform[i+2] = (short)round (mover_param.MOV_waveform[i+2-channels]);
+                }
+        
+                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+((double)mover_param.MOV_wave_len/b)+((double)mover_param.MOV_wave_len/c)); i += channels)
+                {
+                        mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
+                }
+        
+                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+2*((double)mover_param.MOV_wave_len/b)+((double)mover_param.MOV_wave_len/c)); i += channels)
+                {
+                        if (j==0){
+                                mover_param.MOV_waveform[i] = (short)round ((-1)*(mover_param.MOV_waveform[i-channels]));
+                                ++j;
+                        }
+                        else{
+                                mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
+                        }
+                }
+        
+                for (; i < mover_param.MOV_wave_len; i += channels)
+                {
+                        mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp/2*(double)(i-mover_param.MOV_wave_len)/((double)mover_param.MOV_wave_len/a));
+                }
+
+                
+                if (mover_param.MOV_angle < (-180.)) mover_param.MOV_angle=(-180.);                 //cases for Z-direction
+                else if (mover_param.MOV_angle > (180.)) mover_param.MOV_angle=(0.);
+
+                double cosinus=cos(mover_param.MOV_angle*M_PI/180);
+                double sinus=sin(mover_param.MOV_angle*M_PI/180);
+                i=0;
+                for (; i < mover_param.MOV_wave_len; i += channels)
+                {
+                        short mov = mover_param.MOV_waveform[i];
+                        short jump = mover_param.MOV_waveform[i+2];
+                        
+                        mover_param.MOV_waveform[i] = (short)round (cosinus*mov + sinus*(-1)*mov/2 + jump);
+                        mover_param.MOV_waveform[i+1] = (short)round (sinus*mov + jump);
+                        mover_param.MOV_waveform[i+2] = (short)round (cosinus*(-1)*mov + sinus*(-1)*mov/2 + jump);
+                }
+                                
+                /*Now Ch0 ... X+
+                      Ch1 ... Y+
+                      Ch2 --- X-*/ 
+                }   
 		break;
         }
 
@@ -570,6 +493,13 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 
 
 DSPMoverControl::~DSPMoverControl (){
+        PI_DEBUG_GP (DBG_L2, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1mover_param.MOV_mode=%d  mover_param.MOV_waveform_id=%d \n", 
+                                mover_param.MOV_mode, 
+                                mover_param.MOV_waveform_id);
+        
+        XsmRescourceManager xrm("sranger_mk2_hwi_control");        
+        xrm.Put("MOV_mode", mover_param.MOV_mode);
+        xrm.Put("MOV_waveform_id", mover_param.MOV_waveform_id);
 	this_mover_control=NULL;
 
 	delete Length;
@@ -934,7 +864,9 @@ void DSPMoverControl::create_folder (){
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
 			
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_SAWTOOTH) ? 1:0);
+			if(mover_param.MOV_waveform_id == 0)
+			        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_SAWTOOTH) ? 1:0);
+
                         mov_bp->new_line ();
 
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Sine"), 2); // arbitrary waveform
@@ -945,7 +877,8 @@ void DSPMoverControl::create_folder (){
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
 			
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_SINE) ? 1:0);
+			if(mover_param.MOV_waveform_id == 1)
+                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_SINE) ? 1:0);
                         mov_bp->new_line ();
 
 
@@ -1004,7 +937,7 @@ void DSPMoverControl::create_folder (){
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 			
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: KOALA"), 2); //arbitrary waveform
+			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Koala"), 2); //arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_KOALA));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -1012,11 +945,12 @@ void DSPMoverControl::create_folder (){
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
 
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_KOALA) ? 1:0);
+			if(mover_param.MOV_waveform_id == 11)
+                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_KOALA) ? 1:0);
                         mov_bp->new_line ();
 
 
-                        mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: BESOCKE"), 2); //arbitrary waveform
+                        mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Besocke"), 2); //arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_BESOCKE));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -1024,20 +958,21 @@ void DSPMoverControl::create_folder (){
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
 
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_BESOCKE) ? 1:0);
+                        if(mover_param.MOV_waveform_id == 12)
+			        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_BESOCKE) ? 1:0);
                         mov_bp->new_line ();
 
                                                              
                         mov_bp->set_configure_list_mode_on ();
-                        mov_bp->grid_add_ec ("BESOCKE z-Rate", Unity, &mover_param.z_Rate, 0., 1., ".2f", 0.01, 0.1, "z-Rate");
+                        mov_bp->grid_add_ec ("Besocke z-Rate", Unity, &mover_param.z_Rate, 0., 1., ".2f", 0.01, 0.1, "z-Rate");
                         gtk_widget_set_tooltip_text (mov_bp->input, "Rate of the z-Jump of the amplitude");
                         mov_bp->new_line ();
 
-                        mov_bp->grid_add_ec ("BESOCKE t1", Time, &mover_param.time_delay_1, 0., 1., ".3f", 0.001, 0.01, "timedelay-1");
+                        mov_bp->grid_add_ec ("Besocke t1", Time, &mover_param.time_delay_1, 0., 1., ".3f", 0.001, 0.01, "timedelay-1");
                         gtk_widget_set_tooltip_text (mov_bp->input, "Time delay of the Signals for soothing the tip");
                         mov_bp->new_line ();
 
-                        mov_bp->grid_add_ec ("BESOCKE t2", Time, &mover_param.time_delay_2, 0., 1., ".3f", 0.001, 0.01, "timedelay-2");
+                        mov_bp->grid_add_ec ("Besocke t2", Time, &mover_param.time_delay_2, 0., 1., ".3f", 0.001, 0.01, "timedelay-2");
                         gtk_widget_set_tooltip_text (mov_bp->input, "Added time delay during the z-Jump");
                         mov_bp->new_line ();
                         mov_bp->set_configure_list_mode_off ();
@@ -1054,8 +989,11 @@ void DSPMoverControl::create_folder (){
  					    G_CALLBACK (DSPMoverControl::config_mode), this);
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_PULSE_P) ? 1:0);
+
+			if(mover_param.MOV_waveform_id == 7)
+                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_PULSE_P) ? 1:0);
                         mov_bp->new_line ();
+                       
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------------
 // Code for negative pulse, but not usefull yet as output voltage is set to zero after pulse sequence. (stm, 08.10.2010)
@@ -1082,8 +1020,7 @@ void DSPMoverControl::create_folder (){
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_mode), this);
 			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_PULSE) ? 1:0);
-                        
-                                       
+                                                             
                         mov_bp->pop_grid ();
 
                         
@@ -1269,7 +1206,7 @@ void DSPMoverControl::create_folder (){
 
                         if (i ==4){
                                 gchar rampspeedstr[100];
-                                sprintf(rampspeedstr,"BESOCKE rampspeed: ---- V/ms  ");
+                                sprintf(rampspeedstr,"Besocke rampspeed: ---- V/ms  ");
         
                                 mov_bp->grid_add_label (rampspeedstr);
                                 mc_rampspeed_label = GTK_WIDGET(mov_bp->label);
@@ -1302,44 +1239,80 @@ void DSPMoverControl::create_folder (){
 			g_signal_connect (G_OBJECT (button), "pressed",
 					    G_CALLBACK (DSPMoverControl::StopAction),
 					    this);
-                        // UP
-			mov_bp->set_xy (3,1); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-backward-symbolic", GTK_ICON_SIZE_BUTTON));
-			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_YP));
-			g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
-                        g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
-                        g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
-                        g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
-			g_signal_connect (G_OBJECT (button), "pressed",
-					    G_CALLBACK (DSPMoverControl::CmdAction),
-					    this);
-			g_signal_connect (G_OBJECT (button), "released",
-					    G_CALLBACK (DSPMoverControl::StopAction),
-					    this);
-			/*
-			g_signal_connect(G_OBJECT(v_grid *** box), "key_press_event", 
-					   G_CALLBACK(create_window_key_press_event_lcb), this);
-			*/
-			{ // pyremote hook
-				remote_action_cb *ra = g_new( remote_action_cb, 1);
-				ra -> cmd = g_strdup_printf("DSP_CMD_MOV-YP_%s",MoverNames[i]);
-				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
-				ra -> widget = button;
-				ra -> data = this;
-				gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
-				gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
-				gtk_widget_set_tooltip_text (button, help);
-			}
+                        if (i!=4)
+                        {
+                                // UP
+	        		mov_bp->set_xy (3,1); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-backward-symbolic", GTK_ICON_SIZE_BUTTON));
+	        		g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_YP));
+	        		g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                                g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
+	        		g_signal_connect (G_OBJECT (button), "pressed",
+	        				    G_CALLBACK (DSPMoverControl::CmdAction),
+	        				    this);
+	        		g_signal_connect (G_OBJECT (button), "released",
+	        				    G_CALLBACK (DSPMoverControl::StopAction),
+	        				    this);
+	        		/*
+	        		g_signal_connect(G_OBJECT(v_grid *** box), "key_press_event", 
+	        				   G_CALLBACK(create_window_key_press_event_lcb), this);
+	        		*/
+	        		{ // pyremote hook
+	        			remote_action_cb *ra = g_new( remote_action_cb, 1);
+	        			ra -> cmd = g_strdup_printf("DSP_CMD_MOV-YP_%s",MoverNames[i]);
+	        			ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+	        			ra -> widget = button;
+	        			ra -> data = this;
+	        			gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+	        			gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+	        			gtk_widget_set_tooltip_text (button, help);
+	        		}
+                        }
+//      gtk_widget_add_accelerator (button, "pressed", accel_group,
+//                                  GDK_F3+4*i, (GdkModifierType)0,
+//                                  GTK_ACCEL_VISIBLE);
+                        else
+                        {
+                                // UP
+	        		mov_bp->set_xy (3,1); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-backward-symbolic", GTK_ICON_SIZE_BUTTON));
+	        		g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_ZP));
+	        		g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                                g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
+	        		g_signal_connect (G_OBJECT (button), "pressed",
+	        				    G_CALLBACK (DSPMoverControl::CmdAction),
+	        				    this);
+	        		g_signal_connect (G_OBJECT (button), "released",
+	        				    G_CALLBACK (DSPMoverControl::StopAction),
+	        				    this);
+	        		/*
+	        		g_signal_connect(G_OBJECT(v_grid *** box), "key_press_event", 
+	        				   G_CALLBACK(create_window_key_press_event_lcb), this);
+	        		*/
+	        		{ // pyremote hook
+	        			remote_action_cb *ra = g_new( remote_action_cb, 1);
+	        			ra -> cmd = g_strdup_printf("DSP_CMD_MOV-ZP_%s",MoverNames[i]);
+	        			ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+	        			ra -> widget = button;
+	        			ra -> data = this;
+	        			gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+	        			gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+	        			gtk_widget_set_tooltip_text (button, help);
+	        		}
+                        }
 
 //      gtk_widget_add_accelerator (button, "pressed", accel_group,
 //                                  GDK_F3+4*i, (GdkModifierType)0,
 //                                  GTK_ACCEL_VISIBLE);
       
-			if (i == 6){
+			if (i == 6 || i == 4){
                                 mov_bp->set_xy (1,1); mov_bp->grid_add_label ("Z+");
                                 mov_bp->set_xy (1,3); mov_bp->grid_add_label ("Z-");
 			} else {
-                                mov_bp->set_xy (1,2); mov_bp->grid_add_label (i==4 ? "Z-":"X-");
-                                mov_bp->set_xy (5,2); mov_bp->grid_add_label (i==4 ? "Z+":"X+");
+                                mov_bp->set_xy (1,2); mov_bp->grid_add_label ("X-");
+                                mov_bp->set_xy (5,2); mov_bp->grid_add_label ("X+");
                                 mov_bp->set_xy (1,1); mov_bp->grid_add_label ("Y+");
                                 mov_bp->set_xy (1,3); mov_bp->grid_add_label ("Y-");
 			}
@@ -1398,88 +1371,67 @@ void DSPMoverControl::create_folder (){
 					gtk_widget_set_tooltip_text (button, help);
 				}
 			}
-                        else if (i==4){
-                                // LEFT
-                                mov_bp->set_xy (2,2); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-left-symbolic", GTK_ICON_SIZE_BUTTON));
-				g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_ZM));
-				g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
-                                g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
-                                g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
-                                g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
-				g_signal_connect (G_OBJECT (button), "pressed",
-						    G_CALLBACK (DSPMoverControl::CmdAction),
-						    this);
-				g_signal_connect (G_OBJECT (button), "released",
-						    G_CALLBACK (DSPMoverControl::StopAction),
-						    this);
-				{ // pyremote hook
-					remote_action_cb *ra = g_new( remote_action_cb, 1);
-					ra -> cmd = g_strdup_printf("DSP_CMD_MOV-ZM_%s",MoverNames[i]);
-					ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
-					ra -> widget = button;
-					ra -> data = this;
-					gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
-					gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
-					gtk_widget_set_tooltip_text (button, help);
-				}
-	//      gtk_widget_add_accelerator (button, "pressed", accel_group,
-	//                                  GDK_F1+4*i, (GdkModifierType)0,
-	//                                  GTK_ACCEL_VISIBLE);
-
-				// RIGHT
-                                //                                button = gtk_button_new_from_icon_name ("seek-right-symbolic", GTK_ICON_SIZE_BUTTON);
-                                mov_bp->set_xy (4,2); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("media-seek-forward-symbolic", GTK_ICON_SIZE_BUTTON));
-				g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_ZP));
-				g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
-                                g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
-                                g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
-                                g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
-				g_signal_connect (G_OBJECT (button), "pressed",
-						    G_CALLBACK (DSPMoverControl::CmdAction),
-						    this);
-				g_signal_connect (G_OBJECT (button), "released",
-						    G_CALLBACK (DSPMoverControl::StopAction),
-						    this);
-
-				{ // pyremote hook
-					remote_action_cb *ra = g_new( remote_action_cb, 1);
-					ra -> cmd = g_strdup_printf("DSP_CMD_MOV-ZP_%s",MoverNames[i]);
-					ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
-					ra -> widget = button;
-					ra -> data = this;
-					gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
-					gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
-					gtk_widget_set_tooltip_text (button, help);
-				}
-                        }
+                        
 // gtk_widget_get_toplevel()
 //      gtk_widget_add_accelerator (button, "pressed", accel_group,
 //                                  GDK_F1+4*i, (GdkModifierType)0,
 //                                  GTK_ACCEL_VISIBLE);
 
-			// DOWN
-                        mov_bp->set_xy (3,3); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-forward-symbolic", GTK_ICON_SIZE_BUTTON));
-			g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_YM));
-			g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
-                        g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
-                        g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
-                        g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
-			g_signal_connect (G_OBJECT (button), "pressed",
-					    G_CALLBACK (DSPMoverControl::CmdAction),
-					    this);
-			g_signal_connect (G_OBJECT (button), "released",
-					    G_CALLBACK (DSPMoverControl::StopAction),
-					    this);
-			{ // pyremote hook
-				remote_action_cb *ra = g_new( remote_action_cb, 1);
-                                ra -> cmd = g_strdup_printf("DSP_CMD_MOV-YM_%s",MoverNames[i]);
-				ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
-				ra -> widget = button;
-				ra -> data = this;
-				gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
-				gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
-				gtk_widget_set_tooltip_text (button, help);
-			}
+                        if (i!=4)
+                        {
+        			// DOWN
+                                mov_bp->set_xy (3,3); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-forward-symbolic", GTK_ICON_SIZE_BUTTON));
+	        		g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_YM));
+	        		g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                                g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
+	        		g_signal_connect (G_OBJECT (button), "pressed",
+	        				    G_CALLBACK (DSPMoverControl::CmdAction),
+	        				    this);
+	        		g_signal_connect (G_OBJECT (button), "released",
+	        				    G_CALLBACK (DSPMoverControl::StopAction),
+	        				    this);
+	        		{ // pyremote hook
+	        			remote_action_cb *ra = g_new( remote_action_cb, 1);
+                                        ra -> cmd = g_strdup_printf("DSP_CMD_MOV-YM_%s",MoverNames[i]);
+	        			ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+	        			ra -> widget = button;
+	        			ra -> data = this;
+	        			gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+	        			gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+	        			gtk_widget_set_tooltip_text (button, help);
+	        		}
+                        }
+//      gtk_widget_add_accelerator (button, "pressed", accel_group,
+//                                  GDK_F2+4*i, (GdkModifierType)0,
+//                                  GTK_ACCEL_VISIBLE);
+                        else
+                        {
+        			// DOWN
+                                mov_bp->set_xy (3,3); mov_bp->grid_add_widget (button = gtk_button_new_from_icon_name ("seek-forward-symbolic", GTK_ICON_SIZE_BUTTON));
+	        		g_object_set_data( G_OBJECT (button), "DSP_cmd", GINT_TO_POINTER (DSP_CMD_AFM_MOV_ZM));
+	        		g_object_set_data( G_OBJECT (button), "MoverNo", GINT_TO_POINTER (i));
+                                g_object_set_data( G_OBJECT (button), "AXIS-X", ec_axis[0]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Y", ec_axis[1]);
+                                g_object_set_data( G_OBJECT (button), "AXIS-Z", ec_axis[2]);
+	        		g_signal_connect (G_OBJECT (button), "pressed",
+	        				    G_CALLBACK (DSPMoverControl::CmdAction),
+	        				    this);
+	        		g_signal_connect (G_OBJECT (button), "released",
+	        				    G_CALLBACK (DSPMoverControl::StopAction),
+	        				    this);
+	        		{ // pyremote hook
+	        			remote_action_cb *ra = g_new( remote_action_cb, 1);
+                                        ra -> cmd = g_strdup_printf("DSP_CMD_MOV-ZM_%s",MoverNames[i]);
+	        			ra -> RemoteCb = (void (*)(GtkWidget*, void*))DSPMoverControl::CmdAction;
+	        			ra -> widget = button;
+	        			ra -> data = this;
+	        			gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+	        			gchar *help = g_strconcat ("Remote example: action (\"", ra->cmd, "\"", NULL);
+	        			gtk_widget_set_tooltip_text (button, help);
+	        		}
+                        }
 //      gtk_widget_add_accelerator (button, "pressed", accel_group,
 //                                  GDK_F2+4*i, (GdkModifierType)0,
 //                                  GTK_ACCEL_VISIBLE);
@@ -1771,7 +1723,7 @@ void DSPMoverControl::updateAxisCounts (GtkWidget* w, int idx, int cmd){
 int DSPMoverControl::CmdAction(GtkWidget *widget, DSPMoverControl *dspc){
 	int idx=-1;
 	int cmd;
-	PI_DEBUG (DBG_L2, "MoverCrtl::CmdAction " );
+	PI_DEBUG (DBG_L2, "MoverCrtl::CmdAction " ); 
 
 	// make sure to update wave output configuration settings
 	dspc->updateDSP(200);
@@ -1788,6 +1740,29 @@ int DSPMoverControl::CmdAction(GtkWidget *widget, DSPMoverControl *dspc){
 
         
 	cmd = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "DSP_cmd"));
+
+        switch (cmd){
+        case DSP_CMD_AFM_MOV_XM:
+                dspc->mover_param.MOV_angle = 180.;
+                break;
+        case DSP_CMD_AFM_MOV_XP:
+                dspc->mover_param.MOV_angle = 0.;
+                break;
+        case DSP_CMD_AFM_MOV_YM:
+                dspc->mover_param.MOV_angle = (-90.);
+                break;
+        case DSP_CMD_AFM_MOV_YP:
+                dspc->mover_param.MOV_angle = 90.;
+                break;
+        case DSP_CMD_AFM_MOV_ZM:
+                dspc->mover_param.MOV_angle = (-200.);
+                break;
+        case DSP_CMD_AFM_MOV_ZP:
+        default:
+                dspc->mover_param.MOV_angle = 200.;
+                break;
+        }
+        
 
         dspc->updateAxisCounts (widget, idx, cmd);
 
@@ -1827,7 +1802,7 @@ int DSPMoverControl::RampspeedUpdate(GtkWidget *widget, DSPMoverControl *dspc){
 
         double newrampspeed=(dspc->mover_param.AFM_Amp/2)/((dspc->mover_param.AFM_Speed - 2*dspc->mover_param.time_delay_1 - dspc->mover_param.time_delay_2)/2);
         gchar newrampspeedstr[100];
-        sprintf(newrampspeedstr,"BESOCKE rampspeed: %.2f V/ms  ",newrampspeed);
+        sprintf(newrampspeedstr,"Besocke rampspeed: %.2f V/ms  ",newrampspeed);
         gtk_label_set_text(GTK_LABEL(dspc->mc_rampspeed_label), g_strdup(newrampspeedstr));
 
         return 0;

@@ -538,6 +538,7 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
         case DSP_CMD_AFM_MOV_ZP: // manual move Z+
 	{
                 PI_DEBUG_GP (DBG_L2, "MOVER: Wave Command %d\n", Cmd);
+                
 
 		static AUTOAPPROACH_MK3 dsp_aap;
 		dsp_aap.start = long_2_sranger_long(1);           /* Initiate =WO */
@@ -604,7 +605,11 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 		//DSPMoverClass->mover_param.MOV_output 
                 //DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0
 
-		dsp_aap.max_wave_cycles = long_2_sranger_long ((int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
+                PI_DEBUG_GP (DBG_L2, "max steps=%f \n", 
+                                        DSPMoverClass->mover_param.AFM_Steps);
+		dsp_aap.max_wave_cycles = long_2_sranger_long (2*(int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
+                PI_DEBUG_GP (DBG_L2, "max steps converted for dsp=%d \n", 
+                                        dsp_aap.max_wave_cycles);
 		dsp_aap.wave_length     = long_2_sranger_long (DSPMoverClass->mover_param.MOV_wave_len); /* Length of Waveform -- total count all samples/channels */
 		dsp_aap.wave_speed      = long_2_sranger_long (DSPMoverClass->mover_param.MOV_wave_speed_fac);     /* Wave Speed (hold number per step) */
 

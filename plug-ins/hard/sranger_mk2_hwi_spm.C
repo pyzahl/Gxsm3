@@ -441,7 +441,7 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 		//DSPMoverClass->mover_param.MOV_output 
                 //DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0
 
-		dsp_aap.max_wave_cycles = int_2_sranger_int ((int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
+		dsp_aap.max_wave_cycles = int_2_sranger_int (2*(int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
 		dsp_aap.wave_length     = int_2_sranger_int (DSPMoverClass->mover_param.MOV_wave_len); /* Length of Waveform -- total count all samples/channels */
 		dsp_aap.wave_speed      = int_2_sranger_int (DSPMoverClass->mover_param.MOV_wave_speed_fac);     /* Wave Speed (hold number per step) */
 
@@ -538,7 +538,7 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 		//DSPMoverClass->mover_param.MOV_output 
                 //DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0
 
-		dsp_aap.max_wave_cycles = int_2_sranger_int ((int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
+		dsp_aap.max_wave_cycles = int_2_sranger_int (2*(int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
 		dsp_aap.wave_length     = int_2_sranger_int (DSPMoverClass->mover_param.MOV_wave_len); /* Length of Waveform -- total count all samples/channels */
 		dsp_aap.wave_speed      = int_2_sranger_int (DSPMoverClass->mover_param.MOV_wave_speed_fac);     /* Wave Speed (hold number per step) */
 
