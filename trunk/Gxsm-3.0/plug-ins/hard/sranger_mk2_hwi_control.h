@@ -195,6 +195,7 @@ typedef struct{
 	int MOV_wave_len;
 	int MOV_wave_speed_fac;
 	short MOV_waveform[MOV_MAXWAVELEN];
+        double MOV_angle;          //0° -> X-direction      90° -> Y-direction                   [(-180)°; 180°] -> xy-plane         <(-180): (-Z)-direction        >180°:(+Z)-direction
 	double final_delay;
 	double max_settling_time;
         double retract_ci;
