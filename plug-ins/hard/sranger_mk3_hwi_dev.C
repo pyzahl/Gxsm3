@@ -3474,8 +3474,8 @@ behavior of the controller.
 
 		// 0: Excitation Frequency
 		// 1: Resonator Phase
-		// 2: Excitation Amplitude
-		// 3: Resonator Amplitude
+		// 2: Excitation Amplitude (according to doc) [3] !! ???
+		// 3: Resonator Amplitude (according to doc) [2]
 		double factor2dsp[4] = { CPN(29)*2.*M_PI/150000.,
 					 CPN(29)*M_PI/180., 
 					 CPN(29)/10., 

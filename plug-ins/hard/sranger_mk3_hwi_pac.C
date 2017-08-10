@@ -344,6 +344,7 @@ void DSPPACControl::create_folder (){
 	GSList *EC_phase_freeze_list=NULL;
 
 	GtkWidget *frame_param, *wid, *menu, *menuitem;
+        gint    clip_index;
 
 	AppWindowInit("Phase/Amplitude Convergent Detector Control");
 
@@ -363,33 +364,35 @@ void DSPPACControl::create_folder (){
 
         // **************************************************
         //----- EXCITATION: [0]
+        clip_index=0;
+        
 	pac_bp->new_grid_with_frame ("Excitation Freq.");
 
         pac_bp->set_pcs_remote_prefix ("dsp-pac-exci-freq-");
         
-	pac_bp->grid_add_ec ("Ref.", Hz, &pll.Reference[0], 0., 75000., "11.5f", 0.1, 100., "ref");
+	pac_bp->grid_add_ec ("Ref.", Hz, &pll.Reference[clip_index], 0., 75000., "11.5f", 0.1, 100., "ref");
         pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Reference Freq.");
 	EC_FRQ_list = g_slist_prepend( EC_FRQ_list, pac_bp->ec);
         pac_bp->new_line();
         
 	pac_bp->grid_add_button ("Set Ranges", NULL, 2);
-	g_object_set_data(G_OBJECT (pac_bp->button), "CLIP_index", GINT_TO_POINTER (0));
+	g_object_set_data(G_OBJECT (pac_bp->button), "CLIP_index", GINT_TO_POINTER (clip_index));
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (SetClipping_callback), this);
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Range", Hz, &pll.Range[0], 0., 75000., "11.5f", 1., 100., "range");
+	pac_bp->grid_add_ec ("Range", Hz, &pll.Range[clip_index], 0., 75000., "11.5f", 1., 100., "range");
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Freq. Range");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Min.", Hz, &pll.ClipMin[0], 0., 75000., "11.5f", 1., 10., "min");
+	pac_bp->grid_add_ec ("Min.", Hz, &pll.ClipMin[clip_index], 0., 75000., "11.5f", 1., 10., "min");
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Min. Freq. (abs)");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Max.", Hz, &pll.ClipMax[0], 0., 75000., "11.5f", 1., 10., "max");
+	pac_bp->grid_add_ec ("Max.", Hz, &pll.ClipMax[clip_index], 0., 75000., "11.5f", 1., 10., "max");
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Max. Freq. (abs)");
@@ -409,32 +412,33 @@ void DSPPACControl::create_folder (){
         
         // **************************************************
         //----- PHASE: [1]
+        clip_index=1;
 	pac_bp->new_grid_with_frame ("Resonator Phase");
 
         pac_bp->set_pcs_remote_prefix ("dsp-pac-res-phase-");
 
-	pac_bp->grid_add_ec ("Ref.", Deg, &pll.Reference[1], -180., 180., "11.4f", 0.1, 5., "ref");
+	pac_bp->grid_add_ec ("Ref.", Deg, &pll.Reference[clip_index], -180., 180., "11.4f", 0.1, 5., "ref");
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Reference Phase. (setpoint Phase)");
         pac_bp->new_line();
         
 	pac_bp->grid_add_button ("Set Ranges", NULL, 2);
-	g_object_set_data(G_OBJECT (pac_bp->button), "CLIP_index", GINT_TO_POINTER (1));
+	g_object_set_data(G_OBJECT (pac_bp->button), "CLIP_index", GINT_TO_POINTER (clip_index));
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (SetClipping_callback), this);
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Range", Deg, &pll.Range[1], 0., 360., "11.5f", 1., 30., "range");
+	pac_bp->grid_add_ec ("Range", Deg, &pll.Range[clip_index], 0., 360., "11.5f", 1., 30., "range");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Phase. Range");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Min.", Deg, &pll.ClipMin[1], -180., 180., "11.5f", 1., 30., "min");
+	pac_bp->grid_add_ec ("Min.", Deg, &pll.ClipMin[clip_index], -180., 180., "11.5f", 1., 30., "min");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Min. Phase. (rel)");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Max.", Deg, &pll.ClipMax[1], -180., 180., "11.5f", 1., 30., "max");
+	pac_bp->grid_add_ec ("Max.", Deg, &pll.ClipMax[clip_index], -180., 180., "11.5f", 1., 30., "max");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Max. Phase. (rel)");
@@ -455,33 +459,34 @@ void DSPPACControl::create_folder (){
         pac_bp->pop_grid ();
 
         // **************************************************
-        //----- EXCI-AMP: [3]
+        //----- EXCI-AMP: [3] doc is wrong, it is NOT 3!
+        clip_index=3; // see above note
         pac_bp->new_grid_with_frame ("Excitation Amp.");
 
         pac_bp->set_pcs_remote_prefix ("dsp-pac-exci-amp-");
 
-	pac_bp->grid_add_ec ("Ref.", Volt, &pll.Reference[2], 0., 10., "11.5f", 0.1, 1.0, "ref");
+	pac_bp->grid_add_ec ("Ref.", Volt, &pll.Reference[clip_index], 0., 10., "11.5f", 0.1, 1.0, "ref");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Exitation Ref (Volume Sine)");
         pac_bp->new_line();
  
 	pac_bp->grid_add_button ("Set Ranges", NULL, 2);
-	g_object_set_data(G_OBJECT (pac_bp->button), "CLIP_index", GINT_TO_POINTER (2));
+	g_object_set_data(G_OBJECT (pac_bp->button), "CLIP_index", GINT_TO_POINTER (clip_index));
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (SetClipping_callback), this);
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Range", Volt, &pll.Range[2], -10., 10., "11.5f", 0.1, 1., "range");
+	pac_bp->grid_add_ec ("Range", Volt, &pll.Range[clip_index], -10., 10., "11.5f", 0.1, 1., "range");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Amp. Range");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Min.", Volt, &pll.ClipMin[2], -10., 10., "11.5f", 0.1, 1., "min");
+	pac_bp->grid_add_ec ("Min.", Volt, &pll.ClipMin[clip_index], -10., 10., "11.5f", 0.1, 1., "min");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Min. Amp. (abs)");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Max.", Volt, &pll.ClipMax[2], -10., 10., "11.5f", 0.1, 1., "max");
+	pac_bp->grid_add_ec ("Max.", Volt, &pll.ClipMax[clip_index], -10., 10., "11.5f", 0.1, 1., "max");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Max. Amp. (abs)");
@@ -503,32 +508,33 @@ void DSPPACControl::create_folder (){
         pac_bp->pop_grid ();
 
         // **************************************************
-        //----- RES-AMP: [2]
+        //----- RES-AMP: [2] // doc is wrong, it is NOT 3!
+        clip_index=2;
 	pac_bp->new_grid_with_frame ("Resonator Amp.");
         pac_bp->set_pcs_remote_prefix ("dsp-pac-res-amp-");
 
-	pac_bp->grid_add_ec ("Ref.", Volt, &pll.Reference[3], 0., 10., "7.5f", 1e-3, 0.1, "ref");
+	pac_bp->grid_add_ec ("Ref.", Volt, &pll.Reference[clip_index], 0., 10., "7.5f", 1e-3, 0.1, "ref");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Reference Amp. (setpoint Amp)");
         pac_bp->new_line ();
         
 	pac_bp->grid_add_button ("Set Ranges", NULL, 2);
-	g_object_set_data(G_OBJECT (pac_bp->button), "CLIP_index", GINT_TO_POINTER (3));
+	g_object_set_data(G_OBJECT (pac_bp->button), "CLIP_index", GINT_TO_POINTER (clip_index));
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (SetClipping_callback), this);
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Range", Volt, &pll.Range[3], 0., 10., "11.5f", 0.1, 1., "range");
+	pac_bp->grid_add_ec ("Range", Volt, &pll.Range[clip_index], 0., 10., "11.5f", 0.1, 1., "range");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Freq. Range");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Min.", Volt, &pll.ClipMin[3], 0., 10., "11.5f", 0.1, 1., "min");
+	pac_bp->grid_add_ec ("Min.", Volt, &pll.ClipMin[clip_index], 0., 10., "11.5f", 0.1, 1., "min");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Min. Freq. (abs)");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Max.", Volt, &pll.ClipMax[3], 0., 10., "11.5f", 0.1, 1., "max");
+	pac_bp->grid_add_ec ("Max.", Volt, &pll.ClipMax[clip_index], 0., 10., "11.5f", 0.1, 1., "max");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Max. Freq. (abs)");
