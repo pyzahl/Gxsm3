@@ -372,6 +372,7 @@ class SignalScope():
 		v = gobject.new(gtk.VBox(spacing=0))
 
 		scope = Oscilloscope( gobject.new(gtk.Label), v, "XT", label)
+                scope.set_wide (True)
 		scope.show()
 		scope.set_chinfo([Xsignal[SIG_NAME], Ysignal[SIG_NAME]])
 		win.add(v)

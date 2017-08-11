@@ -75,12 +75,32 @@ class Scope(gtk.DrawingArea):
       
         self.par = parent
         super(Scope, self).__init__()
- 
-        self.set_size_request(550, 600)
-	if os.path.isfile("scope-frame.png"):
+        self.set_wide (False)
+        self.connect("expose-event", self.expose)
+
+    def set_wide(self, w):
+        self.wide = w
+        if (self.wide):
+            self.xcenter = 525
+            self.xw=20.0
+            self.set_size_request(1050, 600)
+	    if os.path.isfile("scope-frame-wide.png"):
+		imagefile="scope-frame-wide.png"
+	    elif os.path.isfile("/usr/share/gxsm3/pixmaps/scope-frame-wide.png"):
+		imagefile="/usr/share/gxsm3/pixmaps/scope-frame-wide.png"
+            else:
+		imagefile="/usr/share/gxsm/pixmaps/scope-frame-wide.png"
+        else:
+            self.xcenter = 275
+            self.xw=10.0
+            self.set_size_request(550, 600)
+	    if os.path.isfile("scope-frame.png"):
 		imagefile="scope-frame.png"
-	else:
+	    elif os.path.isfile("/usr/share/gxsm3/pixmaps/scope-frame.png"):
+		imagefile="/usr/share/gxsm3/pixmaps/scope-frame.png"
+            else:
 		imagefile="/usr/share/gxsm/pixmaps/scope-frame.png"
+
         self.vuscopesurface = cairo.ImageSurface.create_from_png(imagefile)
         cr = cairo.Context (self.vuscopesurface)
         cr.set_source_surface(self.vuscopesurface, 0,0)  
@@ -90,21 +110,22 @@ class Scope(gtk.DrawingArea):
 
         # center of screen is 0,0
         # full scale is +/-10
-        cr.translate (275, 275)
+        cr.translate (self.xcenter, 275)
         cr.scale (25., 25.)
 
         # ticks -10 .. 0 .. +10
         cr.set_source_rgba(0.27, 0.48, 0.69, 0.25) # TICKS
         cr.set_line_width(0.03)
 
-        ticks = arange(-10,11,1)
+        ticks = arange(-self.xw,self.xw+1,1)
         for tx in ticks:
             cr.move_to (tx, -10.)
             cr.line_to (tx, 10.)
             cr.stroke()
+        ticks = arange(-10,11,1)
         for ty in ticks:
-            cr.move_to (-10., ty)
-            cr.line_to (10., ty)
+            cr.move_to (-self.xw, ty)
+            cr.line_to (self.xw, ty)
             cr.stroke()
 
         cr.set_source_rgba(0.37, 0.58, 0.79, 0.35) # ZERO AXIS
@@ -112,14 +133,13 @@ class Scope(gtk.DrawingArea):
         cr.move_to (0., -10.)
         cr.line_to (0., 10.)
         cr.stroke()
-        cr.move_to (-10., 0.)
-        cr.line_to (10., 0.)
+        cr.move_to (-self.xw, 0.)
+        cr.line_to (self.xw, 0.)
         cr.stroke()
         
         cr.restore ()
-
-        self.connect("expose-event", self.expose)
-
+        
+        
     def expose(self, widget, event):
         cr = widget.window.cairo_create()
         cr.set_source_surface (self.vuscopesurface)
@@ -132,13 +152,13 @@ class Scope(gtk.DrawingArea):
          
         # center of screen is 0,0
         # full scale is +/-10
-        cr.translate (275, 275)
+        cr.translate (self.xcenter, 275)
         cr.scale (25., 25.)
         cr.set_line_width(0.04)
         
         alpha = 0.85
-        dx = 20. / size(self.par.Xdata)
-        x = -10.
+        dx = (2*self.xw) / size(self.par.Xdata)
+        x = -self.xw
         cr.set_source_rgba(1., 0.925, 0., alpha) # YELLOW
         yp = self.par.Xdata[0]
         for y in self.par.Xdata:
@@ -149,8 +169,8 @@ class Scope(gtk.DrawingArea):
             cr.stroke()
         
         if size(self.par.Ydata) > 1:
-            dx = 20. / size(self.par.Ydata)
-            x = -10.
+            dx = (2*self.xw) / size(self.par.Ydata)
+            x = -self.xw
             cr.set_source_rgba(1., 0.075, 0., alpha) # RED
             yp = self.par.Ydata[0]
             for y in self.par.Ydata:
@@ -161,8 +181,8 @@ class Scope(gtk.DrawingArea):
                 cr.stroke()
 
         if size(self.par.Zdata) > 1:
-            dx = 20. / size(self.par.Zdata)
-            x = -10.
+            dx = (2*self.xw) / size(self.par.Zdata)
+            x = -self.xw
             cr.set_source_rgba(0., 1., 0., alpha) # GREEN
             yp = self.par.Zdata[0]
             for y in self.par.Zdata:
@@ -173,8 +193,8 @@ class Scope(gtk.DrawingArea):
                 cr.stroke()
 
         if size(self.par.Udata) > 1:
-            dx = 20. / size(self.par.Udata)
-            x = -10.
+            dx = (2*self.xw) / size(self.par.Udata)
+            x = -self.xw
             cr.set_source_rgba(0., 1., 1., alpha) # Cyan
             yp = self.par.Udata[0]
             for y in self.par.Udata:
@@ -185,8 +205,8 @@ class Scope(gtk.DrawingArea):
                 cr.stroke()
 
         if size(self.par.Vdata) > 1:
-            dx = 20. / size(self.par.Vdata)
-            x = -10.
+            dx = (2*self.xw) / size(self.par.Vdata)
+            x = -self.xw
             cr.set_source_rgba(0.4, 0.4, 1., alpha) # light Blue
             yp = self.par.Vdata[0]
             for y in self.par.Vdata:
@@ -207,12 +227,21 @@ class Scope(gtk.DrawingArea):
 
         cr.restore ()
 
-        x0=25
-        x1=150
-        x2=250
-        x3=350
-        x4=450
-        x5=525
+        if (self.wide):
+            x0=25
+            x1=150
+            x2=250
+            x3=750
+            x4=850
+            x5=1025
+        else:
+            x0=25
+            x1=150
+            x2=250
+            x3=350
+            x4=450
+            x5=525
+            
         ylineOS0 = 45
         yline1 = 560
         yline2 = 575
@@ -313,6 +342,9 @@ class Oscilloscope(gtk.Label):
         vb.pack_start(self.scope, False, False, 0)
         vb.show_all()
         self.show_all()
+
+    def set_wide (self, w):
+        self.scope.set_wide(w)
         
     def set_data (self, Xd, Yd, Zd=zeros(0), XYd=[zeros(0), zeros(0)]):
         self.Xdata = Xd
