@@ -372,7 +372,7 @@ class SignalScope():
 		v = gobject.new(gtk.VBox(spacing=0))
 
 		scope = Oscilloscope( gobject.new(gtk.Label), v, "XT", label)
-                scope.set_wide (True)
+                #scope.set_wide (True)
 		scope.show()
 		scope.set_chinfo([Xsignal[SIG_NAME], Ysignal[SIG_NAME]])
 		win.add(v)
@@ -1060,7 +1060,10 @@ class TuneScope():
 					"CH2: (Phase)":"%.1f deg/div"%yscale_div, 
 					"Freq.: ": "%g Hz/div"%(self.Fspan/20.)
 					})
-			x = 20.*self.pos/self.points - 10 + 0.1
+                        if scope.get_wide ():
+			        x = 40.*self.pos/self.points - 20 + 0.1
+                        else:
+			        x = 20.*self.pos/self.points - 10 + 0.1
 			y = -(cur_a- self.xoff) / xscale_div + 0.25
 #			scope.set_data (xd, yd, fd, array([[x,y],[x, y-0.5]]))
                         scope.set_data_with_uv (xd, yd, fd, ud, vd, array([[x,y],[x, y-0.5]]))

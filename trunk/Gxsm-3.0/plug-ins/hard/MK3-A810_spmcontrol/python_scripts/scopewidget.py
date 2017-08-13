@@ -75,8 +75,51 @@ class Scope(gtk.DrawingArea):
       
         self.par = parent
         super(Scope, self).__init__()
+        self.set_ftX (0)
+        self.set_ftY (0)
         self.set_wide (False)
+        self.set_xy (False)
+        self.set_fade (0.0)
+        self.set_points (False)
         self.connect("expose-event", self.expose)
+        self.set_events(gtk.gdk.BUTTON_PRESS_MASK)
+        self.connect('button-press-event', self.on_drawing_area_button_press)
+
+    def on_drawing_area_button_press(self, widget, event):
+        print event.x, ' ', event.y
+        # Mode toggle buttons
+        if event.x > 50 and event.x < 110:
+            if event.y > 550 and event.y < 570: 
+                self.set_wide (not self.wide)
+            if event.y > 570 and event.y < 590: 
+                self.set_xy (not self.xy)
+        elif event.x > 110 and event.x < 150:
+            if event.y > 550 and event.y < 570: 
+                self.set_fade (self.fade+0.1)
+            if event.y > 570 and event.y < 590: 
+                self.set_points (not self.points)
+        elif event.x > 150 and event.x < 200:
+            if event.y > 550 and event.y < 570: 
+                self.set_ftX (self.ftX+1)
+            if event.y > 570 and event.y < 590: 
+                self.set_ftY (self.ftY+1)
+            
+    def set_ftX(self, ft):
+        self.ftX = ft%3
+    def set_ftY(self, ft):
+        self.ftY = ft%3
+
+    def set_xy(self, xy):
+        self.xy = xy
+
+    def set_fade(self, f):
+        if f > 1.:
+            self.fade = 0.0
+        else:
+            self.fade = f
+
+    def set_points(self, p):
+        self.points = p
 
     def set_wide(self, w):
         self.wide = w
@@ -138,8 +181,51 @@ class Scope(gtk.DrawingArea):
         cr.stroke()
         
         cr.restore ()
+
+    def get_wide(self):
+        return self.wide
+
         
-        
+    def plot_xt(self, cr, ydata, lwp, r,g,b,a):
+            cr.set_source_rgba (r,g,b,a)
+            dx = (2*self.xw) / size(ydata)
+            x = -self.xw
+            if self.points:
+                for y in ydata:
+                    cr.move_to(x, y)
+                    cr.line_to(x+lwp, y)
+                    cr.stroke()
+                    x = x+dx
+            else:
+                yp = ydata[0]
+                for y in ydata:
+                    cr.move_to(x, yp)
+                    x = x+dx
+                    yp = y
+                    cr.line_to(x, y)
+                    cr.stroke()
+
+    def plot_xy(self, cr, xydata, lwp, r,g,b,a):
+            alpha=a
+            if self.points:
+                for xy in xydata:
+                    cr.set_source_rgba (r,g,b,alpha)
+                    if alpha > 0.01:
+                        alpha = alpha - self.fade/200
+                    cr.move_to (xy[0], xy[1])
+                    cr.line_to (xy[0]+lwp, xy[1])
+                    cr.stroke ()
+            else:
+                xyp = xydata[0]
+                for xy in xydata:
+                    cr.set_source_rgba (r,g,b,alpha)
+                    if alpha > 0.01:
+                        alpha = alpha - self.fade/200
+                    cr.move_to (xyp[0], xyp[1])
+                    cr.line_to (xy[0], xy[1])
+                    cr.stroke ()
+                    xyp=xy
+
     def expose(self, widget, event):
         cr = widget.window.cairo_create()
         cr.set_source_surface (self.vuscopesurface)
@@ -154,89 +240,55 @@ class Scope(gtk.DrawingArea):
         # full scale is +/-10
         cr.translate (self.xcenter, 275)
         cr.scale (25., 25.)
-        cr.set_line_width(0.04)
+        lwp = 0.1
+        if self.points:
+            cr.set_line_width(lwp)
+        else:
+            cr.set_line_width(0.04)
         
         alpha = 0.85
-        dx = (2*self.xw) / size(self.par.Xdata)
-        x = -self.xw
-        cr.set_source_rgba(1., 0.925, 0., alpha) # YELLOW
-        yp = self.par.Xdata[0]
-        for y in self.par.Xdata:
-            cr.move_to(x, yp)
-            x = x+dx
-            yp = y
-            cr.line_to(x, y)
-            cr.stroke()
-        
-        if size(self.par.Ydata) > 1:
-            dx = (2*self.xw) / size(self.par.Ydata)
-            x = -self.xw
-            cr.set_source_rgba(1., 0.075, 0., alpha) # RED
-            yp = self.par.Ydata[0]
-            for y in self.par.Ydata:
-                cr.move_to(x, yp)
-                x = x+dx
-                yp = y
-                cr.line_to(x, y)
-                cr.stroke()
 
+        nx=size(self.par.Xdata)/2
+        ny=size(self.par.Xdata)/2
+        if self.xy and nx > 2 and nx == ny:
+            xydata = column_stack((self.par.Xdata, self.par.Ydata))
+            self.plot_xy (cr, xydata, lwp, 1., 0.925, 0., alpha) # YELLOW
+        else:
+            if self.ftX < 2:
+                self.plot_xt (cr, self.par.Xdata, lwp, 1., 0.925, 0., alpha) # YELLOW
+            if self.ftX:
+                self.plot_xt (cr, -abs(fft.rfft(self.par.Xdata))/nx, lwp, 1., 0.925, 0., alpha-0.2) # YELLOW
+            
+            if size(self.par.Ydata) > 1:
+                if self.ftY < 2:
+                    self.plot_xt (cr, self.par.Ydata, lwp, 1., 0.075, 0., alpha) # RED
+                if self.ftY:
+                    self.plot_xt (cr, -abs(fft.rfft(self.par.Ydata))/ny, lwp, 1., 0.075, 0., alpha-0.2) # RED
+                    
         if size(self.par.Zdata) > 1:
-            dx = (2*self.xw) / size(self.par.Zdata)
-            x = -self.xw
-            cr.set_source_rgba(0., 1., 0., alpha) # GREEN
-            yp = self.par.Zdata[0]
-            for y in self.par.Zdata:
-                cr.move_to(x, yp)
-                x = x+dx
-                yp = y
-                cr.line_to(x, y)
-                cr.stroke()
+            self.plot_xt (cr, self.par.Zdata, lwp, 0., 1., 0., alpha) # GREEN
 
         if size(self.par.Udata) > 1:
-            dx = (2*self.xw) / size(self.par.Udata)
-            x = -self.xw
-            cr.set_source_rgba(0., 1., 1., alpha) # Cyan
-            yp = self.par.Udata[0]
-            for y in self.par.Udata:
-                cr.move_to(x, yp)
-                x = x+dx
-                yp = y
-                cr.line_to(x, y)
-                cr.stroke()
+            self.plot_xt (cr, self.par.Udata, lwp, 0., 1., 1., alpha) # Cyan
 
         if size(self.par.Vdata) > 1:
-            dx = (2*self.xw) / size(self.par.Vdata)
-            x = -self.xw
-            cr.set_source_rgba(0.4, 0.4, 1., alpha) # light Blue
-            yp = self.par.Vdata[0]
-            for y in self.par.Vdata:
-                cr.move_to(x, yp)
-                x = x+dx
-                yp = y
-                cr.line_to(x, y)
-                cr.stroke()
+            self.plot_xt (cr, self.par.Vdata, lwp, 0.4, 0.4, 1., alpha) # light Blue
 
         if size (self.par.XYdata[0]) > 1:
-            cr.set_source_rgba (0., 1., 0., alpha) # GREEN
-            xyp = self.par.XYdata[0]
-            for xy in self.par.XYdata:
-                cr.move_to (xyp[0], xyp[1])
-                cr.line_to (xy[0], xy[1])
-                cr.stroke ()
-                xyp=xy
+            self.plot_xy (cr, self.par.XYdata, lwp, 0., 1., 0., alpha) # GREEN
 
         cr.restore ()
 
         if (self.wide):
             x0=25
-            x1=150
-            x2=250
+            x1=250
+            x2=350
             x3=750
             x4=850
             x5=1025
         else:
             x0=25
-            x1=150
+            x1=220
             x2=250
             x3=350
             x4=450
@@ -299,6 +351,27 @@ class Scope(gtk.DrawingArea):
         cr.text_path(reading)
         cr.stroke()
 
+        # Settings
+        reading = "fade: %g"%self.fade
+        cr.move_to(x1, yline2)
+        cr.text_path(reading)
+        cr.stroke()
+        if self.xy:
+            reading = "mode: X-Y"
+        else:
+            reading = "mode: X-t"
+            if self.ftX:
+                reading = reading + " + FT(X)-Frq"
+            if self.ftY:
+                reading = reading + " + FT(Y)-Frq"
+        if self.points:
+            reading = reading + ", points"
+        else:
+            reading = reading + ", vector"
+        cr.move_to(x1, yline3)
+        cr.text_path(reading)
+        cr.stroke()
+
         # CH1: (X-sig) scale/div
         y=yline1
         for s in self.par.scale.keys():
@@ -345,6 +418,9 @@ class Oscilloscope(gtk.Label):
 
     def set_wide (self, w):
         self.scope.set_wide(w)
+        
+    def get_wide (self):
+        return self.scope.get_wide()
         
     def set_data (self, Xd, Yd, Zd=zeros(0), XYd=[zeros(0), zeros(0)]):
         self.Xdata = Xd
