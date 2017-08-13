@@ -249,9 +249,9 @@ class SignalScope():
 					yd = yd * 0. # ZERO/OFF
 
 				scope.set_scale ( { 
-						"CH1:": "%.2f"%xscale_div + " %s/div"%Xsignal[SIG_UNIT],
-						"CH2:": "%.1f"%yscale_div + " %s/div"%Xsignal[SIG_UNIT],
-						"Timebase:": "%g ms/div"%(nraw/150./20.) 
+						"CH1:": "%.2f"%xscale_div + " %s"%Xsignal[SIG_UNIT],
+						"CH2:": "%.1f"%yscale_div + " %s"%Xsignal[SIG_UNIT],
+						"Timebase:": "%g ms"%(nraw/150./20.) 
 						})
 				
 				scope.set_data (xd, yd)
@@ -718,8 +718,8 @@ class TuneScope():
 			vd = -(self.ResPhase2F - self.yoff) / yscale_div
 
                         scope.set_scale ( { 
-					"CH1: (Ampl.)":"%.2f mV/dev"%xscale_div, 
-					"CH2: (Phase)":"%.1f deg/div"%yscale_div, 
+					"CH1: (Ampl.)":"%g mV"%xscale_div, 
+					"CH2: (Phase)":"%g deg"%yscale_div, 
 					"Freq.: ": "%g Hz/div"%(self.Fspan/20.)
 					})
 			x = 20.*self.pos/self.points - 10 + 0.1
@@ -939,9 +939,9 @@ class SignalPlotter():
 				m2off = 0
                                 
                         scope.set_scale ( { 
-					"XY1: (Tap1)":"%.2f mV/dev"%m1scale_div, 
-					"XY2: (Tap2)":"%.2f mV/div"%m2scale_div, 
-					"time: ": "%g s/div"%(self.span/20.)
+					"XY1: (Tap1)":"%g mV"%m1scale_div, 
+					"XY2: (Tap2)":"%g mV"%m2scale_div, 
+					"time: ": "%g s"%(self.span/20.)
 					})
 
                         ### def set_data (self, Xd, Yd, Zd=zeros(0), XYd=[zeros(0), zeros(0)]):
