@@ -372,7 +372,7 @@ class SignalScope():
 		v = gobject.new(gtk.VBox(spacing=0))
 
 		scope = Oscilloscope( gobject.new(gtk.Label), v, "XT", label)
-                #scope.set_wide (True)
+                scope.scope.set_wide (True)
 		scope.show()
 		scope.set_chinfo([Xsignal[SIG_NAME], Ysignal[SIG_NAME]])
 		win.add(v)
@@ -715,6 +715,9 @@ class TuneScope():
 		scope.set_scale ( { Xsignal[SIG_UNIT]: "mV", Ysignal[SIG_UNIT]: "deg", "Freq." : "Hz" })
 		scope.set_chinfo(["Res Ampl LP","Res Phase LP","Model","Res Ampl 2F","Res Phase 2F"])
 		win.add(v)
+                scope.scope.set_wide (True)
+                scope.scope.set_dBX (True)
+                scope.scope.set_dBZ (True)
 
 		table = gtk.Table(4, 2)
 		table.set_row_spacings(5)
@@ -722,7 +725,7 @@ class TuneScope():
 		v.pack_start (table)
 
 		tr=0
-		lab = gobject.new(gtk.Label, label="Ampl scale: V/div")
+		lab = gobject.new(gtk.Label, label="Ampl scale: V/div or 0 dB")
 		table.attach(lab, 0, 1, tr, tr+1)
 		self.Xscale = gtk.Entry()
 		self.Xscale.set_text("0.02")
