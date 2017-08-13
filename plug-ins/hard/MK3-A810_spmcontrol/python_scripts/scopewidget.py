@@ -117,8 +117,11 @@ class Scope(gtk.DrawingArea):
                 self.set_dBX (not self.dBX)
             if event.y > 570 and event.y < 590: 
                 self.set_dBY (not self.dBY)
-        self.display_info = 300
-	gobject.timeout_add (20, self.info_fade)
+        if self.display_info > 0:
+            self.display_info = 300
+        else:
+            self.display_info = 300
+	    gobject.timeout_add (20, self.info_fade)
             
     def set_dBX(self, db):
         self.dBX = db
