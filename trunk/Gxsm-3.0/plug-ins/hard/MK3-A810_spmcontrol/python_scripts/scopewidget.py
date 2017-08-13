@@ -77,6 +77,9 @@ class Scope(gtk.DrawingArea):
         super(Scope, self).__init__()
         self.set_dBX (False)
         self.set_dBY (False)
+        self.set_dBZ (False)
+        self.set_dBU (False)
+        self.set_dBV (False)
         self.set_ftX (0)
         self.set_ftY (0)
         self.set_wide (False)
@@ -117,6 +120,12 @@ class Scope(gtk.DrawingArea):
                 self.set_dBX (not self.dBX)
             if event.y > 570 and event.y < 590: 
                 self.set_dBY (not self.dBY)
+            if event.y > 530 and event.y < 550: 
+                self.set_dBZ (not self.dBZ)
+            if event.y > 510 and event.y < 530: 
+                self.set_dBU (not self.dBU)
+            if event.y > 490 and event.y < 510: 
+                self.set_dBV (not self.dBV)
         if self.display_info > 0:
             self.display_info = 300
         else:
@@ -127,6 +136,12 @@ class Scope(gtk.DrawingArea):
         self.dBX = db
     def set_dBY(self, db):
         self.dBY = db
+    def set_dBZ(self, db):
+        self.dBZ = db
+    def set_dBU(self, db):
+        self.dBU = db
+    def set_dBV(self, db):
+        self.dBV = db
 
     def set_ftX(self, ft):
         self.ftX = ft%3
@@ -314,6 +329,24 @@ class Scope(gtk.DrawingArea):
             cr.text_path(reading)
             cr.stroke()
 
+            if self.dBZ:
+                reading = "dB Z"
+                cr.move_to(188, yb-60)
+                cr.text_path(reading)
+                cr.stroke()
+
+            if self.dBU:
+                reading = "dB U"
+                cr.move_to(188, yb-80)
+                cr.text_path(reading)
+                cr.stroke()
+
+            if self.dBV:
+                reading = "dB V"
+                cr.move_to(188, yb-100)
+                cr.text_path(reading)
+                cr.stroke()
+
     def expose(self, widget, event):
         cr = widget.window.cairo_create()
         cr.set_source_surface (self.vuscopesurface)
@@ -373,13 +406,22 @@ class Scope(gtk.DrawingArea):
                         self.plot_xt (cr, -abs(fft.rfft(self.par.Ydata))/ny, lwp, 1., 0.075, 0., alpha-0.2) # RED
                     
         if size(self.par.Zdata) > 1:
-            self.plot_xt (cr, self.par.Zdata, lwp, 0., 1., 0., alpha) # GREEN
+            if self.dBZ: # 10 dB / div
+                self.plot_xt (cr, -2.*log(abs(self.par.Zdata)), lwp, 0., 1., 0., alpha) # GREEN
+            else:
+                self.plot_xt (cr, self.par.Zdata, lwp, 0., 1., 0., alpha) # GREEN
 
         if size(self.par.Udata) > 1:
-            self.plot_xt (cr, self.par.Udata, lwp, 0., 1., 1., alpha) # Cyan
+            if self.dBU: # 10 dB / div
+                self.plot_xt (cr, -2.*log(abs(self.par.Udata)), lwp, 0., 1., 1., alpha) # Cyan
+            else:
+                self.plot_xt (cr, self.par.Udata, lwp, 0., 1., 1., alpha) # Cyan
 
         if size(self.par.Vdata) > 1:
-            self.plot_xt (cr, self.par.Vdata, lwp, 0.4, 0.4, 1., alpha) # light Blue
+            if self.dBV: # 10 dB / div
+                self.plot_xt (cr, -2.*log(abs(self.par.Vdata)), lwp, 0.4, 0.4, 1., alpha) # light Blue
+            else:
+                self.plot_xt (cr, self.par.Vdata, lwp, 0.4, 0.4, 1., alpha) # light Blue
 
         if size (self.par.XYdata[0]) > 1:
             self.plot_xy (cr, self.par.XYdata, lwp, 0., 1., 0., alpha) # GREEN
@@ -510,9 +552,6 @@ class Oscilloscope(gtk.Label):
         vb.show_all()
         self.show_all()
 
-    def set_wide (self, w):
-        self.scope.set_wide(w)
-        
     def get_wide (self):
         return self.scope.get_wide()
         
