@@ -1955,7 +1955,7 @@ class SPMcontrol():
 	###define SRANGER_MK23_SEEK_IO_SPACE    4 // default mode
 
 	def set_recorder(self, n, trigger=0, trigger_level=0):
-                print "set_recorder:",  n, trigger, trigger_level
+                #print "set_recorder:",  n, trigger, trigger_level
 		self.write_o(i_recorder, ii_recorder_stop, struct.pack ("<ll", int(round(trigger_level)), int(trigger)))
 		self.write_parameter(self.RECORDER_VARS[ii_blcklen], struct.pack ("<l", n-1), 1)
 
@@ -1967,7 +1967,7 @@ class SPMcontrol():
 		sr = open (self.sr_dev_path, "rw")
 		os.lseek (sr.fileno(), self.magic[i_recorder], 0)
 		tmp = struct.unpack (fmt_recorder, os.read (sr.fileno(), struct.calcsize (fmt_recorder)))
-                print "verify:", tmp
+                #print "verify:", tmp
 
                 sr.close ()
                 
