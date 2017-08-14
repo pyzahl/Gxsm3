@@ -147,6 +147,8 @@ DSPMoverControl::DSPMoverControl ()
                 mover_param.axis_counts[i][2] = 0;
         }
 
+        mover_param.wave_out_channel_XY_select[0] = -1;
+        mover_param.wave_out_channel_XY_select[1] = -1;
 	xrm.Get("MOV_output", &mover_param.MOV_output, "0");
 	xrm.Get("MOV_waveform_id", &mover_param.MOV_waveform_id, "0");
 	xrm.Get("MOV_wave0_out_channel", &mover_param.wave_out_channel[0], "3");
@@ -1069,6 +1071,17 @@ void DSPMoverControl::create_folder (){
 				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH13 to Channel 0-7");
                                 mov_bp->new_line ();
 
+                                // out channel selection for wave[0] override via XP,M/YP,M
+				mov_bp->grid_add_ec ("XDIR to Ch", Unity, &mover_param.wave_out_channel_XY_select[0], -1.,7., ".0f","wave-out-xdir-ch");
+				//g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_X_CH", GINT_TO_POINTER (0));
+				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave 0 for X DIR to Channel 0-7");
+                                mov_bp->new_line ();
+				mov_bp->grid_add_ec ("YDIR to Ch", Unity, &mover_param.wave_out_channel_XY_select[1], -1.,7., ".0f","wave-out-ydir-ch");
+				//g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT__Y_CH", GINT_TO_POINTER (0));
+				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave 0 for Y DIR to Channel 0-7");
+                                mov_bp->new_line ();
+
+                                
                                 mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 			}
 
@@ -1742,6 +1755,20 @@ int DSPMoverControl::CmdAction(GtkWidget *widget, DSPMoverControl *dspc){
         
 	cmd = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "DSP_cmd"));
 
+#if 1
+        if (dspc->mover_param.wave_out_channel_XY_select[0]>=0 && dspc->mover_param.wave_out_channel_XY_select[1]>=0){
+                switch (cmd){
+                case DSP_CMD_AFM_MOV_YP:
+                case DSP_CMD_AFM_MOV_YM:
+                        dspc->mover_param.wave_out_channel_dsp[0]=dspc->mover_param.wave_out_channel_XY_select[1];
+                        break;
+                default:
+                        dspc->mover_param.wave_out_channel_dsp[0]=dspc->mover_param.wave_out_channel_XY_select[0];
+                        break;
+                }
+                g_message ("Wave OUT on CH %d ",dspc->mover_param.wave_out_channel_dsp[0]);
+        }
+#endif
         switch (cmd){
         case DSP_CMD_AFM_MOV_XM:
                 dspc->mover_param.MOV_angle = 180.;
