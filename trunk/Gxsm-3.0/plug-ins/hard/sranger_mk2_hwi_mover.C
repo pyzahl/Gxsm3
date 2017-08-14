@@ -147,12 +147,13 @@ DSPMoverControl::DSPMoverControl ()
                 mover_param.axis_counts[i][2] = 0;
         }
 
-        mover_param.wave_out_channel_XY_select[0] = -1;
-        mover_param.wave_out_channel_XY_select[1] = -1;
-	xrm.Get("MOV_output", &mover_param.MOV_output, "0");
+        mover_param.wave_out_channels_used=6;
+	for (int k=0; k<mover_param.wave_out_channels_used; ++k)
+                mover_param.wave_out_channel_xy[k][0]=mover_param.wave_out_channel_xy[k][1]=0;
+        mover_param.wave_out_channel_xy[0][0]=3, mover_param.wave_out_channel_xy[0][1]=4;
+
+        xrm.Get("MOV_output", &mover_param.MOV_output, "0");
 	xrm.Get("MOV_waveform_id", &mover_param.MOV_waveform_id, "0");
-	xrm.Get("MOV_wave0_out_channel", &mover_param.wave_out_channel[0], "3");
-	xrm.Get("MOV_wave1_out_channel", &mover_param.wave_out_channel[1], "4");
 	xrm.Get("MOV_mode", &mover_param.MOV_mode, "0");
 	xrm.Get("AUTO_final_delay", &mover_param.final_delay, "50");
 	xrm.Get("AUTO_max_settling_time", &mover_param.max_settling_time, "1000");
@@ -1029,105 +1030,25 @@ void DSPMoverControl::create_folder (){
                         
                         // ======================================== Wave Output Setup ========================================
                         radiobutton = NULL; // start new radiobuttion group
-			mov_bp->new_grid_with_frame ("Output on");
+			mov_bp->new_grid_with_frame ("Wave-N for X:Y to Channel mapping");
 
-			if (DSPPACClass){
-			        mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label (NULL, "Wave[0,1] out on:"), 2);
-				g_object_set_data (G_OBJECT (radiobutton), "OutputMask", GINT_TO_POINTER (AAP_MOVER_XXOFFSET));
-				g_signal_connect (G_OBJECT (radiobutton), "clicked",
-						    G_CALLBACK (DSPMoverControl::config_output), this);
-				
-				gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_output == AAP_MOVER_XXOFFSET) ? 1:0);
-                                mov_bp->new_line ();
+                        mov_bp->new_line ();
 
-                                mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedWaveOut, this);
-				mov_bp->grid_add_ec ("OUTMIX8 to Ch", Unity, &mover_param.wave_out_channel[0], 0, 7, ".0f", "wave-out8-ch");
-				g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_CH", GINT_TO_POINTER (0));
-				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH8 to Channel 0-7");
+                        for (int k=0; k<6; ++k){
+                                gchar *wchlab= g_strdup_printf("Wave-%d X", k);
+                                gchar *wchid = g_strdup_printf("wave-out%d-ch-x", k);
+                                mov_bp->grid_add_ec (wchlab, Unity, &mover_param.wave_out_channel_xy[k][0], 0, 7, ".0f", wchid);
+                                gtk_widget_set_tooltip_text (mov_bp->input, "map Wave N on OUTMIX_CH8..8+N to Channel 0-7 for X direction move action");
+                                g_free (wchid);
+                                wchid = g_strdup_printf("wave-out%d-ch-y", k);
+                                mov_bp->grid_add_ec ("Y", Unity, &mover_param.wave_out_channel_xy[k][1], 0, 7, ".0f", wchid);
+                                gtk_widget_set_tooltip_text (mov_bp->input, "map Wave N on OUTMIX_CH8..8+N to Channel 0-7 for Y direction move action");
+                                g_free (wchlab);
+                                g_free (wchid);
                                 mov_bp->new_line ();
-				
-				mov_bp->grid_add_ec ("OUTMIX9 to Ch", Unity, &mover_param.wave_out_channel[1], 0.,7., ".0f","wave-out9-ch");
-				g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_CH", GINT_TO_POINTER (1));
-				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH9 to Channel 0-7");
-                                mov_bp->new_line ();
-
-				mov_bp->grid_add_ec ("OUTMIX10 to Ch", Unity, &mover_param.wave_out_channel[2], 0.,7., ".0f","wave-out10-ch");
-				g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_CH", GINT_TO_POINTER (2));
-				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH10 to Channel 0-7");
-                                mov_bp->new_line ();
-
-				mov_bp->grid_add_ec ("OUTMIX11 to Ch", Unity, &mover_param.wave_out_channel[3], 0.,7., ".0f","wave-out11-ch");
-				g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_CH", GINT_TO_POINTER (3));
-				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH11 to Channel 0-7");
-                                mov_bp->new_line ();
-
-				mov_bp->grid_add_ec ("OUTMIX12 to Ch", Unity, &mover_param.wave_out_channel[4], 0.,7., ".0f","wave-out12-ch");
-				g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_CH", GINT_TO_POINTER (4));
-				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH12 to Channel 0-7");
-                                mov_bp->new_line ();
-
-				mov_bp->grid_add_ec ("OUTMIX13 to Ch", Unity, &mover_param.wave_out_channel[5], 0.,7., ".0f","wave-out13-ch");
-				g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_CH", GINT_TO_POINTER (5));
-				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave [0,1] on OUTMIX_CH13 to Channel 0-7");
-                                mov_bp->new_line ();
-
-                                // out channel selection for wave[0] override via XP,M/YP,M
-				mov_bp->grid_add_ec ("XDIR to Ch", Unity, &mover_param.wave_out_channel_XY_select[0], -1.,7., ".0f","wave-out-xdir-ch");
-				//g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT_X_CH", GINT_TO_POINTER (0));
-				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave 0 for X DIR to Channel 0-7");
-                                mov_bp->new_line ();
-				mov_bp->grid_add_ec ("YDIR to Ch", Unity, &mover_param.wave_out_channel_XY_select[1], -1.,7., ".0f","wave-out-ydir-ch");
-				//g_object_set_data( G_OBJECT (mov_bp->input), "WAVE_OUT__Y_CH", GINT_TO_POINTER (0));
-				gtk_widget_set_tooltip_text (mov_bp->input, "map Wave 0 for Y DIR to Channel 0-7");
-                                mov_bp->new_line ();
-
+                        }
                                 
-                                mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
-			}
-
-                        // get default => radio/check link
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "XY-Scan CH[3,4]=Wave[0,1]"), 2);
-			g_object_set_data (G_OBJECT (radiobutton), "OutputMask", GINT_TO_POINTER (AAP_MOVER_XYSCAN));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
-                                          G_CALLBACK (DSPMoverControl::config_output), this);
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_output == AAP_MOVER_XYSCAN) ? 1:0);
-                        mov_bp->new_line ();
-
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "XY-Offset CH[0,1]=Wave[0,1]"), 2);
-			g_object_set_data (G_OBJECT (radiobutton), "OutputMask", GINT_TO_POINTER (AAP_MOVER_XYOFFSET));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
-                                          G_CALLBACK (DSPMoverControl::config_output), this);
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_output == AAP_MOVER_XYOFFSET) ? 1:0);
-                        mov_bp->new_line ();
-			
-			if (!DSPPACClass){
-				mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "XY-Offset* CH[0,1]=Wave[0,0]"), 2);
-				g_object_set_data (G_OBJECT (radiobutton), "OutputMask", GINT_TO_POINTER (AAP_MOVER_XXOFFSET));
-				g_signal_connect (G_OBJECT (radiobutton), "clicked",
-						    G_CALLBACK (DSPMoverControl::config_output), this);
-				gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_output == AAP_MOVER_XXOFFSET) ? 1:0);
-                                mov_bp->new_line ();
-
-				mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "X-Motor CH[7]=Wave[0]"), 2);
-				g_object_set_data (G_OBJECT (radiobutton), "OutputMask", GINT_TO_POINTER (AAP_MOVER_XYMOTOR));
-				g_signal_connect (G_OBJECT (radiobutton), "clicked",
-						    G_CALLBACK (DSPMoverControl::config_output), this);
-				gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_output == AAP_MOVER_XYMOTOR) ? 1:0);
-                                mov_bp->new_line ();
-				
-				mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "X-Z-Scan Add CH[5]=Wave[0]+Z Servo"), 2);
-				g_object_set_data (G_OBJECT (radiobutton), "OutputMask", GINT_TO_POINTER (AAP_MOVER_ZSCANADD));
-				g_signal_connect (G_OBJECT (radiobutton), "clicked",
-                                                  G_CALLBACK (DSPMoverControl::config_output), this);
-				gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_output == AAP_MOVER_ZSCANADD) ? 1:0);
-                                mov_bp->new_line ();
-			}
- 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "GPIO Pulse"), 2);
-// 			gtk_widget_set_sensitive (radiobutton, FALSE);
-  			g_object_set_data (G_OBJECT (radiobutton), "OutputMask", GINT_TO_POINTER (AAP_MOVER_PULSE));
-   			g_signal_connect (G_OBJECT (radiobutton), "clicked",
-                                          G_CALLBACK (DSPMoverControl::config_output), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton),  (mover_param.MOV_output == AAP_MOVER_PULSE) ? 1:0);
+                        mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
                         mov_bp->pop_grid ();
 
@@ -1595,25 +1516,6 @@ void DSPMoverControl::update(){
 void DSPMoverControl::updateDSP(int sliderno){
 	PI_DEBUG (DBG_L2, "Hallo DSP ! Mover No:" << sliderno );
 
-	if (DSPPACClass){
-		if (sliderno == 200){
-			switch (mover_param.MOV_output){
-			case AAP_MOVER_XXOFFSET:
-                                for (int i=0; i<6; ++i)
-                                        mover_param.wave_out_channel_dsp[i]=mover_param.wave_out_channel[i];
-				break;
-			case AAP_MOVER_XYSCAN: // use pre defined basic settings
-				mover_param.wave_out_channel_dsp[0]=3;
-				mover_param.wave_out_channel_dsp[1]=4;
-				break;
-			case AAP_MOVER_XYOFFSET:
-				mover_param.wave_out_channel_dsp[0]=0;
-				mover_param.wave_out_channel_dsp[1]=1;
-				break;
-			}
-			return;
-		}
-	}
 	if (sliderno == 100){
 	        // auto offset ZERO
 		sranger_common_hwi->SetOffset (0,0); // set
@@ -1698,13 +1600,6 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
 		dspc->mover_param.MOV_waveform_id = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "CurveId"));                
 }
 
-int DSPMoverControl::config_output(GtkWidget *widget, DSPMoverControl *dspc){
-	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) 
-		dspc->mover_param.MOV_output = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "OutputMask")); 
-
-	((DSPMoverControl*)dspc)->updateDSP(200);
-}
-
 void DSPMoverControl::updateAxisCounts (GtkWidget* w, int idx, int cmd){
         if (idx >=0 && idx < DSP_AFMMOV_MODES){
                 Gtk_EntryControl *eaxis[3];
@@ -1739,15 +1634,12 @@ int DSPMoverControl::CmdAction(GtkWidget *widget, DSPMoverControl *dspc){
 	int cmd;
 	PI_DEBUG (DBG_L2, "MoverCrtl::CmdAction " ); 
 
-	// make sure to update wave output configuration settings
-	dspc->updateDSP(200);
-
 	if(IS_MOVER_CTRL)
 	{
 		idx = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "MoverNo"));
 	}
 
-	if (idx < 10 || idx == 100 || idx == 200)
+	if (idx < 10 || idx == 100)
 	{
 		dspc->updateDSP(idx);
 	}
@@ -1755,20 +1647,19 @@ int DSPMoverControl::CmdAction(GtkWidget *widget, DSPMoverControl *dspc){
         
 	cmd = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "DSP_cmd"));
 
-#if 1
-        if (dspc->mover_param.wave_out_channel_XY_select[0]>=0 && dspc->mover_param.wave_out_channel_XY_select[1]>=0){
+        for (int k=0; k<dspc->mover_param.wave_out_channels_used; ++k){
                 switch (cmd){
                 case DSP_CMD_AFM_MOV_YP:
                 case DSP_CMD_AFM_MOV_YM:
-                        dspc->mover_param.wave_out_channel_dsp[0]=dspc->mover_param.wave_out_channel_XY_select[1];
+                        dspc->mover_param.wave_out_channel_dsp[k] = dspc->mover_param.wave_out_channel_xy[k][1];
                         break;
                 default:
-                        dspc->mover_param.wave_out_channel_dsp[0]=dspc->mover_param.wave_out_channel_XY_select[0];
+                        dspc->mover_param.wave_out_channel_dsp[k] = dspc->mover_param.wave_out_channel_xy[k][0];
                         break;
                 }
-                g_message ("Wave OUT on CH %d ",dspc->mover_param.wave_out_channel_dsp[0]);
+                g_message ("Wave0 OUT on CH %d ",dspc->mover_param.wave_out_channel_dsp[0]);
         }
-#endif
+
         switch (cmd){
         case DSP_CMD_AFM_MOV_XM:
                 dspc->mover_param.MOV_angle = 180.;
@@ -1846,16 +1737,6 @@ void DSPMoverControl::ChangedNotify(Param_Control* pcs, gpointer dspc){
 		idx = GPOINTER_TO_INT(pcs->GetEntryData("MoverNo"));
 
         ((DSPMoverControl*)dspc)->updateDSP(idx);
-}
-
-void DSPMoverControl::ChangedWaveOut(Param_Control* pcs, gpointer dspc){
-	int idx = GPOINTER_TO_INT(pcs->GetEntryData("WAVE_OUT_CH"));
-
-	PI_DEBUG (DBG_L2, "DSPMoverControl::ChangedWaveOut WAVE[" << idx << "] = CH "
-                  << ((DSPMoverControl*)dspc)->mover_param.wave_out_channel[idx]
-                  );
-
-	((DSPMoverControl*)dspc)->updateDSP(200);
 }
 
 void DSPMoverControl::ExecCmd(int cmd){
