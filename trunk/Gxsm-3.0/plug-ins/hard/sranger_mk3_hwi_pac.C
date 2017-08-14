@@ -189,6 +189,11 @@ DSPPACControl::DSPPACControl ()
 	PI_DEBUG_GP (DBG_L3, "DSPPACControl::DSPPACControl -- Controller-Amplitude\n");
 	if (coldstart) xrm.Get("PAC_ctrlmode_Amp", &pll.ctrlmode_Amp, "0.");
 	xrm.Get("PAC_setpoint_Amp", &pll.setpoint_Amp, "0.");
+        pll.ctrlmode_Amp_adaptive = 0;
+        pll.ctrlmode_Amp_adaptive_delta = 0.15;
+        pll.ctrlmode_Amp_adaptive_ratio = 50.;
+        pll.ctrlmode_Amp_adaptive_max = 20.;
+
 	pll.corrmax_Amp = 0.;
 	pll.corrmin_Amp = 0.;
 	xrm.Get("PAC_signum_cp_Amp", &pll.signum_cp_Amp, "1.");
@@ -736,7 +741,7 @@ void DSPPACControl::create_folder (){
         pac_bp->new_line ();
 
 
-	pac_bp->grid_add_ec ("BW-Amp", Hz, &pll.auto_set_BW_Amp, 0.1, 50., "11.5f", 1., 1., "am-bw-set");
+	pac_bp->grid_add_ec ("BW-Amp", Hz, &pll.auto_set_BW_Amp, 0.01, 100., "11.5f", 1., 1., "am-bw-set");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerAmpAutoSet, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Auto set CP,CI for Amplitude controller from bandwidth");
         pac_bp->new_line ();
@@ -756,11 +761,35 @@ void DSPPACControl::create_folder (){
 	pac_bp->ec->Freeze ();
         pac_bp->new_line ();
 
-	pac_bp->grid_add_check_button ("Amplitude Feedback Switch", NULL, 2);
-	g_object_set_data(G_OBJECT (pac_bp->button), "CONTROLLER_ID", 0); // 0 is AMPLITUDE SWITCH
+	pac_bp->grid_add_check_button ("Amplitude Feedback", NULL, 2);
+	g_object_set_data(G_OBJECT (pac_bp->button), "CONTROLLER_ID", GINT_TO_POINTER (0)); // 0 is AMPLITUDE SWITCH
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (pac_bp->button), pll.ctrlmode_Amp ? 1:0);
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked",
                           G_CALLBACK (DSPPACControl::controller_callback), this);
+        pac_bp->new_line ();
+
+	pac_bp->grid_add_check_button ("Adaptive Mode (experimental)", NULL, 2);
+	g_object_set_data(G_OBJECT (pac_bp->button), "CONTROLLER_ID", GINT_TO_POINTER (200)); // 0 is AMPLITUDE ADAPTIVE SWITCH
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (pac_bp->button), pll.ctrlmode_Amp_adaptive ? 1:0);
+        // _delta,ratio,max
+	g_signal_connect (G_OBJECT (pac_bp->button), "clicked",
+                          G_CALLBACK (DSPPACControl::controller_callback), this);
+        pac_bp->new_line ();
+        
+        pac_bp->set_configure_hide_list_b_mode_on ();
+	pac_bp->grid_add_ec ("Ada-delta", Unity, &pll.ctrlmode_Amp_adaptive_delta, 0., 1., ".5f", 0.01, 0.01);
+	gtk_widget_set_tooltip_text (pac_bp->input, "Adaptive threashold, relative to setpoint");
+        pac_bp->new_line ();
+
+	pac_bp->grid_add_ec ("Ada-ratio", Unity, &pll.ctrlmode_Amp_adaptive_ratio, 0., 1000., ".1f", 1., 1.);
+	gtk_widget_set_tooltip_text (pac_bp->input, "Adaptive threashold, relative to setpoint");
+        pac_bp->new_line ();
+
+	pac_bp->grid_add_ec ("Ada-max", dB, &pll.ctrlmode_Amp_adaptive_max, 0., 30., ".1f", 1., 1.);
+	gtk_widget_set_tooltip_text (pac_bp->input, "Adaptive threashold, relative to setpoint");
+
+        pac_bp->set_configure_hide_list_b_mode_off ();
+	g_object_set_data(G_OBJECT (pac_bp->button), "ADA-LIST", pac_bp->get_configure_hide_list_b_head ()); // 0 is AMPLITUDE ADAPTIVE SWITCH
 
         pac_bp->pop_grid ();
         
@@ -804,7 +833,7 @@ void DSPPACControl::create_folder (){
 	gtk_widget_set_tooltip_text (pac_bp->input, "Auto set CP,CI for Phase controller from bandwidth");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_check_button ("Phase Feedback Switch", NULL, 2);
+	pac_bp->grid_add_check_button ("Phase Feedback", NULL, 2);
 	// read currect FB (MD_PID) state
 	g_object_set_data(G_OBJECT (pac_bp->button), "CONTROLLER_ID", GINT_TO_POINTER (10)); // 10 is PHASE CONTROLLER SWITCH
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (pac_bp->button), pll.ctrlmode_Phase ? 1:0);
@@ -842,11 +871,34 @@ guint DSPPACControl::refresh_readings(DSPPACControl *dspc){
 }
 
 void DSPPACControl::update_readings(){
+        static gint is_fast = -1;
+        double tmp[2];
 	sranger_common_hwi->read_pll( pll, PLL_READINGS);
 	g_slist_foreach
 		( (GSList*) g_object_get_data( G_OBJECT (window), "PAC_EC_READINGS_list"),
 		  (GFunc) App::update_ec, NULL
 			);
+        if (pll.ctrlmode_Amp_adaptive){
+                double delta = fabs (pll.Filter64Out[F64_ResAmpLP] - pll.setpoint_Amp) / pll.setpoint_Amp;
+                if (is_fast<1 && delta > 1.25*pll.ctrlmode_Amp_adaptive_delta){ // make fast
+                        tmp[0] = pll.cp_gain_Amp;
+                        tmp[1] = pll.ci_gain_Amp;
+                        double adjust = fabs(delta) *1.2*pll.ctrlmode_Amp_adaptive_ratio;
+                        if (adjust > pll.ctrlmode_Amp_adaptive_max)
+                                adjust = pll.ctrlmode_Amp_adaptive_max;
+                        pll.cp_gain_Amp += adjust;
+                        pll.ci_gain_Amp += adjust;
+                        g_message ("AM-ADA-FFF: %g %g d=%g (%g)",  pll.cp_gain_Amp, pll.ci_gain_Amp, delta, pll.Filter64Out[F64_ResAmpLP]);
+                        sranger_common_hwi->write_pll (pll, PLL_CONTROLLER_AMPLITUDE);
+                        pll.cp_gain_Amp = tmp[0];
+                        pll.ci_gain_Amp = tmp[1];
+                        is_fast = 1;
+                } else if (is_fast > 0 && delta < 0.75*pll.ctrlmode_Amp_adaptive_ratio){ // make slow
+                                sranger_common_hwi->write_pll (pll, PLL_CONTROLLER_AMPLITUDE);
+                                g_message ("AM-ADA-REG: %g %g d=%g (%g)",  pll.cp_gain_Amp, pll.ci_gain_Amp, delta, pll.Filter64Out[F64_ResAmpLP]);
+                                is_fast = 0;
+                }
+        }
 }
 
 void DSPPACControl::update(){
@@ -982,6 +1034,18 @@ int DSPPACControl::controller_callback (GtkWidget *widget, DSPPACControl *dspc){
 
 	        sranger_common_hwi->write_dsp_state((gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) ? MD_PLL:-MD_PLL);
 		break;
+        case 200: // Ampl Ctrl Adaptive
+	        if (((DSPPACControl*)dspc)->pll.ctrlmode_Amp_adaptive = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                        g_slist_foreach
+				( (GSList*) g_object_get_data( G_OBJECT (widget), "ADA-LIST"),
+				  (GFunc) gtk_widget_show, NULL
+                                  );
+                else
+                        g_slist_foreach
+				( (GSList*) g_object_get_data( G_OBJECT (widget), "ADA-LIST"),
+				  (GFunc) gtk_widget_hide, NULL
+                                  );
+                break;
 	}
 }
 
