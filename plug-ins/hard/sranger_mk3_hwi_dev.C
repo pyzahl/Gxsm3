@@ -3413,6 +3413,10 @@ behavior of the controller.
 			PAC_DEBUGL1_PRINT ("SR-MK3-HwI-PAC:: TURN OFF -- write_pll AMPLITUDE FB: %d\n", pll.ctrlmode_Amp);
 			pll_old.ctrlmode_Amp = 0;
 			write_pll_variable32 (dsp_pll.ctrlmode_Amp, pll.ctrlmode_Amp);
+
+                        // reset (20170814) sugget by Alex
+                        write_pll_variable32 (dsp_pll.amp_estimation, 0);
+
 		}
 		write_pll_variable32 (dsp_pll.setpoint_Amp, CPN(29)*pll.setpoint_Amp/10.);
 
