@@ -190,8 +190,8 @@ typedef struct{
 #define MOV_WAVE_BESOCKE  12
 #define MOV_WAVE_LAST     13
 	int MOV_output, MOV_mode, MOV_waveform_id;
-        int wave_out_channel_XY_select[2];
-	int wave_out_channel[6];
+        int wave_out_channels_used;
+	int wave_out_channel_xy[6][2];
 	int wave_out_channel_dsp[6];
 	int MOV_wave_len;
 	int MOV_wave_speed_fac;
