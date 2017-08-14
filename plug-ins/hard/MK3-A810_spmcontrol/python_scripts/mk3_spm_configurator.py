@@ -460,12 +460,12 @@ class SignalScope():
 					xd = mean(xd[:end].reshape(-1, ss), 1)
 					yd = mean(yd[:end].reshape(-1, ss), 1)
 					scope.set_info(["sub sampling: %d"%n + " by %d"%ss,
-							"T = %g ms"%(n/150.)
-							])
+							"T = %g ms"%(n/150.),
+							mode])
 				else:
 					scope.set_info([
-							"T = %g ms"%(n/150.)
-							])
+							"T = %g ms"%(n/150.),
+                                                        mode])
 
 				# change number samples?
 				try:
@@ -546,9 +546,6 @@ class SignalScope():
 
 			return self.run
 
-		def set_restart_callback (func):
-			self.restart_func = func
-			
 		def stop_update_scope (win, event=None):
 			print "STOP, hide."
 			win.hide()
@@ -637,6 +634,9 @@ class SignalScope():
 		
 	parent.wins[name].show_all()
 
+    def set_restart_callback (self, func):
+	self.restart_func = func
+			
     def nop (self):
         return 0
 			
@@ -650,7 +650,7 @@ class StepResponse():
 
 		self.value = value
 		self.setup (value)
-		self.scope = SignalScope(self, " Step Response: "+mode, 1)
+		self.scope = SignalScope(parent, " Step Response: "+mode, 1)
 		self.scope.set_restart_callback (self.setup)
 
 	def setup(self, value=0.):
