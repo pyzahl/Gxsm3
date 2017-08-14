@@ -286,6 +286,11 @@ typedef struct{
 	double  tune_freq[3]; // start, stop, step
 	double  tune_integration_time;
 
+        gint32  ctrlmode_Amp_adaptive;
+        double  ctrlmode_Amp_adaptive_delta;
+        double  ctrlmode_Amp_adaptive_ratio;
+        double  ctrlmode_Amp_adaptive_max;
+
 } PAC_control;
 
 class DSP_GUI_Builder;

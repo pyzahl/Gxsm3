@@ -649,7 +649,8 @@ void DSPMoverControl::create_folder (){
 	GtkWidget *MoverCrtl;
 	GtkWidget *button, *img, *lab;
 	GtkAccelGroup *accel_group=NULL;
-
+        //Gtk_EntryControl *ec_phase;
+ 
         PI_DEBUG (DBG_L2, "DSPMoverControl::create_folder");
 
 	if( IS_MOVER_CTRL ){
@@ -886,7 +887,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->grid_add_ec ("Phase", Phase, &mover_param.inch_worm_phase, 0., 360., "3.0f", 1., 60., "IW-Phase");
 	                gtk_widget_set_tooltip_text (mov_bp->input,
                                                      "Generic Phase value may be used by custom wave form generation.\n"
-                                                     "Used by KOALA, ..\n");
+                                                     "Used by Sine and Pulse\n");
                         mov_bp->new_line ();
                         mov_bp->set_configure_list_mode_off ();
 
