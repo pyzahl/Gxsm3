@@ -139,6 +139,8 @@ class BuildParam{
                 configure_list = NULL;
                 configure_hide_list_active = FALSE;
                 configure_hide_list = NULL;
+                configure_hide_list_b_active = FALSE;
+                configure_hide_list_b = NULL;
                 remote_prefix = NULL;
                 error_text = NULL;
                 set_pcs_remote_prefix (""); // ""
@@ -161,6 +163,8 @@ class BuildParam{
                                 configure_list = g_slist_prepend (configure_list, w);
                         if (configure_hide_list_active)
                                 configure_hide_list = g_slist_prepend (configure_hide_list, w);
+                        if (configure_hide_list_b_active)
+                                configure_hide_list_b = g_slist_prepend (configure_hide_list_b, w);
                 }
                 x+=wwx;
       };
@@ -590,6 +594,14 @@ class BuildParam{
                 configure_hide_list = g_slist_prepend (configure_hide_list, w);
         };
 
+        void set_configure_hide_list_b_head (GSList *cl=NULL) { configure_hide_list_b = cl; };
+        void set_configure_hide_list_b_mode_off () { configure_hide_list_b_active = FALSE; };
+        void set_configure_hide_list_b_mode_on () { configure_hide_list_b_active = TRUE; };
+        GSList *get_configure_hide_list_b_head () { return configure_hide_list_b; };
+        void add_to_configure_hide_list_b (GtkWidget *w){
+                configure_hide_list_b = g_slist_prepend (configure_hide_list_b, w);
+        };
+
         // only one level so far! May use GSLists if needed later...
         void push_grid() {
                 grid_push=grid; xy_push[0]=x; xy_push[1]=y; xy_push[2]=wx; xy_push[3]=wy;
@@ -638,6 +650,8 @@ class BuildParam{
         GSList *configure_list;
         gboolean configure_hide_list_active;
         GSList *configure_hide_list;
+        gboolean configure_hide_list_b_active;
+        GSList *configure_hide_list_b;
 
         gchar *remote_prefix;
         gchar *error_text;
