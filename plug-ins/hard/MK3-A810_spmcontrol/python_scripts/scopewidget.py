@@ -90,6 +90,11 @@ class Scope(gtk.DrawingArea):
         self.set_events(gtk.gdk.BUTTON_PRESS_MASK)
         self.connect('button-press-event', self.on_drawing_area_button_press)
         self.display_info = 300
+        self.set_flash ("Starting...")
+        
+    def set_flash (self, message):
+        self.flash_message = message
+        self.display_info = 300
 	gobject.timeout_add (20, self.info_fade)
         
     def info_fade(self):
@@ -347,6 +352,13 @@ class Scope(gtk.DrawingArea):
                 cr.text_path(reading)
                 cr.stroke()
 
+            if len (self.flash_message) > 0:
+                cr.move_to(25, 25)
+                cr.text_path(self.flash_message)
+                cr.stroke()
+        else:
+            self.flash_message = ""
+                
     def expose(self, widget, event):
         cr = widget.window.cairo_create()
         cr.set_source_surface (self.vuscopesurface)
@@ -573,6 +585,9 @@ class Oscilloscope(gtk.Label):
 
     def set_info (self, infolist):
         self.info = infolist
+        
+    def set_flash (self, message):
+        self.scope.set_flash (message)
         
     def set_chinfo (self, infolist):
         self.chinfo = infolist

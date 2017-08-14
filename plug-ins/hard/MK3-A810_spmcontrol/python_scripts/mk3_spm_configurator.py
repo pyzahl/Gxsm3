@@ -449,6 +449,7 @@ class SignalScope():
                                         else:
                                                 save("mk3_recorder_xdata", xd)
                                                 save("mk3_recorder_ydata", yd)
+                                                scope.set_flash ("Saved: mk3_recorder_[xy]data")
 
 				# auto subsample if big
 				nss = n
@@ -897,6 +898,7 @@ class TuneScope():
                         save("mk3_tune_ResPhase", self.ResPhase)
                         save("mk3_tune_ResPhase2F", self.ResPhase2F)
                         save("mk3_tune_ResAmp2F", self.ResAmp2F)
+                        scope.set_flash ("Saved: mk3_tune_*")
 
 
 		self.peakvalue = 0
@@ -1172,6 +1174,8 @@ class SignalPlotter():
 		scope = Oscilloscope( gobject.new(gtk.Label), v, "XT", label)
 		scope.set_scale ( { Xsignal[SIG_UNIT]: "mV", Ysignal[SIG_UNIT]: "deg", "time" : "s" })
 		scope.set_chinfo(["MON1","MON2","MON3","MON4"])
+		scope.set_info(["to select CH1..4 taps","select Signals via Signal Monitor for:"," t, CH1..4 as Mon" + str(self.monitor_taps)])
+
 		win.add(v)
 
 		table = gtk.Table(4, 2)
@@ -1180,46 +1184,80 @@ class SignalPlotter():
 		v.pack_start (table)
 
 		tr=0
+                c=0
 		lab = gobject.new(gtk.Label, label="CH1 scale: V/div")
-		table.attach(lab, 0, 1, tr, tr+1)
+		table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
 		self.M1scale = gtk.Entry()
-		self.M1scale.set_text("0.5")
-		table.attach(self.M1scale, 0, 1, tr+1, tr+2)
+		self.M1scale.set_text("1.0")
+		table.attach(self.M1scale, c, c+1, tr, tr+1)
+                tr=tr+1
 
 		lab = gobject.new(gtk.Label, label="CH2 scale: V/Div")
-		table.attach(lab, 1, 2, tr, tr+1)
+		table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
 		self.M2scale = gtk.Entry()
-		self.M2scale.set_text("0.5")
-		table.attach(self.M2scale, 1, 2, tr+1, tr+2)
+		self.M2scale.set_text("1.0")
+		table.attach(self.M2scale, c, c+1, tr, tr+1)
+                tr=tr+1
 
-		lab = gobject.new(gtk.Label, label="Span [s]:")
-		table.attach(lab, 3, 4, tr, tr+1)
-		self.Span = gtk.Entry()
-		self.Span.set_text("%g"%self.span)
-		table.attach(self.Span, 3, 4, tr+1, tr+2)
+		lab = gobject.new(gtk.Label, label="CH3 scale: V/Div")
+		table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.M3scale = gtk.Entry()
+		self.M3scale.set_text("1.0")
+		table.attach(self.M3scale, c, c+1, tr, tr+1)
+                tr=tr+1
+                
+		lab = gobject.new(gtk.Label, label="CH4 scale: V/Div")
+		table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.M4scale = gtk.Entry()
+		self.M4scale.set_text("1.0")
+		table.attach(self.M4scale, c, c+1, tr, tr+1)
+                tr=tr+1
 
-
-		tr = tr+2
+		tr = 0
+                c = 1
 		self.labx0 = gobject.new(gtk.Label, label="CH1 off:")
-		table.attach(self.labx0, 0, 1, tr, tr+1)
+		table.attach(self.labx0, c, c+1, tr, tr+1)
+                tr=tr+1
 		self.M1off = gtk.Entry()
 		self.M1off.set_text("0")
-		table.attach(self.M1off, 0, 1, tr+1, tr+2)
+		table.attach(self.M1off, c, c+1, tr, tr+1)
+                tr=tr+1
 
 		self.laby0 = gobject.new(gtk.Label, label="CH2 off:")
-		table.attach(self.laby0, 1, 2, tr, tr+1)
+		table.attach(self.laby0, c, c+1, tr, tr+1)
+                tr=tr+1
 		self.M2off = gtk.Entry()
 		self.M2off.set_text("0")
-		table.attach(self.M2off, 1, 2, tr+1, tr+2)
+		table.attach(self.M2off, c, c+1, tr, tr+1)
+                tr=tr+1
 
+		self.laby0 = gobject.new(gtk.Label, label="CH3 off:")
+		table.attach(self.laby0, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.M3off = gtk.Entry()
+		self.M3off.set_text("0")
+		table.attach(self.M3off, c, c+1, tr, tr+1)
+                tr=tr+1
+
+		self.laby0 = gobject.new(gtk.Label, label="CH4 off:")
+		table.attach(self.laby0, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.M4off = gtk.Entry()
+		self.M4off.set_text("0")
+		table.attach(self.M4off, c, c+1, tr, tr+1)
+                tr=tr+1
+                
+                c=0
 		lab = gobject.new(gtk.Label, label="Interval [s]:")
-		table.attach(lab, 3, 4, tr, tr+1)
+		table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
 		self.Il = gtk.Entry()
 		self.Il.set_text("%d"%self.span)
-		table.attach(self.Il, 3, 4, tr+1, tr+2)
-
-#		self.M2F = gtk.CheckButton ("Mode 1F+2F")
-#		table.attach(self.M2F, 0, 1, tr+2, tr+3)
+		table.attach(self.Il, c, c+1, tr, tr+1)
 
 		self.xdc = 0.
 		self.ydc = 0.
@@ -1236,6 +1274,7 @@ class SignalPlotter():
                                 save ("plotter_t2-"+str(self.t0), self.Tap2)
                                 save ("plotter_t3-"+str(self.t0), self.Tap3)
                                 save ("plotter_t4-"+str(self.t0), self.Tap4)
+                                scope.set_flash ("Saved: plotter_t#-"+str(self.t0))
                                 # auto loop
                                 self.t0 = parent.mk3spm.get_monitor_data (self.monitor_taps[0])
                                 
@@ -1273,6 +1312,16 @@ class SignalPlotter():
 				m2scale_div = 1
 
 			try:
+				m3scale_div = float(self.M3scale.get_text())
+			except ValueError:
+				m3scale_div = 1
+
+			try:
+				m4scale_div = float(self.M4scale.get_text())
+			except ValueError:
+				m4scale_div = 1
+
+			try:
 				m1off = float(self.M1off.get_text())
 			except ValueError:
 				m1off = 0
@@ -1281,6 +1330,16 @@ class SignalPlotter():
 				m2off = float(self.M2off.get_text())
 			except ValueError:
 				m2off = 0
+                                
+			try:
+				m3off = float(self.M3off.get_text())
+			except ValueError:
+				m3off = 0
+                                
+			try:
+				m4off = float(self.M4off.get_text())
+			except ValueError:
+				m4off = 0
                                 
                         scope.set_scale ( { 
 					"XY1: (Tap1)":"%g mV"%m1scale_div, 
@@ -1296,8 +1355,8 @@ class SignalPlotter():
                         td = -10. + 20. * self.Time/self.span
                         t1 = -(self.Tap1 - m1off) / m1scale_div
                         t2 = -(self.Tap2 - m2off) / m2scale_div 
-                        t3 = -(self.Tap3 - m2off) / m2scale_div 
-                        t4 = -(self.Tap4 - m2off) / m2scale_div 
+                        t3 = -(self.Tap3 - m3off) / m3scale_div 
+                        t4 = -(self.Tap4 - m4off) / m4scale_div 
                         #scope.set_data (zeros(0), zeros(0), zeros(0), XYd=[td, t1])
                         #scope.set_data (t1, t2, zeros(0), XYd=[td, t1])
                         scope.set_data_with_uv (t1, t2, t3, t4)
@@ -1313,6 +1372,7 @@ class SignalPlotter():
                         save ("plotter_t2-"+str(self.t0), self.Tap2)
                         save ("plotter_t3-"+str(self.t0), self.Tap3)
                         save ("plotter_t4-"+str(self.t0), self.Tap4)
+                        scope.set_flash ("Saved: plotter_t#-"+str(self.t0))
 			return True
 
 		def toggle_run_plotter (b):
@@ -1324,6 +1384,7 @@ class SignalPlotter():
                                 save ("plotter_t2-"+str(self.t0), self.Tap2)
                                 save ("plotter_t3-"+str(self.t0), self.Tap3)
                                 save ("plotter_t4-"+str(self.t0), self.Tap4)
+                                scope.set_flash ("Saved: plotter_t#-"+str(self.t0))
 			else:
 				self.run = gtk.TRUE
 				self.run_button.set_label("STOP PLOTTER")
@@ -1341,7 +1402,7 @@ class SignalPlotter():
 
 		self.run_button = gtk.Button("STOP TUNE")
 		self.run_button.connect("clicked", toggle_run_plotter)
-		table.attach(self.run_button, 3, 4, tr+2, tr+3)
+		table.attach(self.run_button, 1, 2, tr, tr+1)
 
 		self.run = gtk.FALSE
 		win.connect("delete_event", stop_update_plotter)
