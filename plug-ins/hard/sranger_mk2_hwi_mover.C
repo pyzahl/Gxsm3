@@ -861,6 +861,7 @@ void DSPMoverControl::create_folder (){
 
 
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label (NULL, "Wave: Sawtooth"), 2); // arbitrary waveform
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_SAWTOOTH));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -875,6 +876,7 @@ void DSPMoverControl::create_folder (){
 
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Sine"), 2); // arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (3));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_SINE));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_mode), this);
@@ -896,6 +898,7 @@ void DSPMoverControl::create_folder (){
 
 
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo"), 2); // arbitrary waveform
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -906,6 +909,7 @@ void DSPMoverControl::create_folder (){
 			
 // ==
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo+"), 2); // arbitrary waveform
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_PL));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -915,6 +919,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo-"), 2); // arbitrary waveform
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_MI));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -924,6 +929,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cyclo+"), 2); // arbitrary waveform
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IPL));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -933,6 +939,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cyclo-"), 2); // arbitrary waveform
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IMI));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -942,6 +949,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Koala"), 2); //arbitrary waveform
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (6));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_KOALA));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -955,6 +963,7 @@ void DSPMoverControl::create_folder (){
 
 
                         mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Besocke"), 2); //arbitrary waveform
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (6));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_BESOCKE));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -987,6 +996,7 @@ void DSPMoverControl::create_folder (){
 			// ratio between on/off: 1:1
 			// total time = ton + toff
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Pulse: positive"), 2); // arbitrary waveform
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_PULSE_P));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -1020,6 +1030,7 @@ void DSPMoverControl::create_folder (){
 // ==
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "(none) GPIO Pulse"), 2);
 // 			gtk_widget_set_sensitive (radiobutton, FALSE);
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (0));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_PULSE));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_mode), this);
@@ -1034,6 +1045,7 @@ void DSPMoverControl::create_folder (){
 
                         mov_bp->new_line ();
 
+                        mov_bp->set_configure_hide_list_b_mode_on ();
                         for (int k=0; k<6; ++k){
                                 gchar *wchlab= g_strdup_printf("Wave-%d X", k);
                                 gchar *wchid = g_strdup_printf("wave-out%d-ch-x", k);
@@ -1047,6 +1059,8 @@ void DSPMoverControl::create_folder (){
                                 g_free (wchid);
                                 mov_bp->new_line ();
                         }
+                        mov_bp->set_configure_hide_list_b_mode_off ();
+                        // g_object_set_data(G_OBJECT (mov_bp->button), "WAVE-CHXY-LIST", mov_bp->get_configure_hide_list_b_head ());
                                 
                         mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
@@ -1598,6 +1612,27 @@ int DSPMoverControl::config_mode(GtkWidget *widget, DSPMoverControl *dspc){
 int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
 		dspc->mover_param.MOV_waveform_id = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "CurveId"));                
+
+        gint nw = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "NumWaves"));  
+	GSList *wc = dspc->mov_bp->get_configure_hide_list_b_head ();
+
+        if (!wc) return 0;
+        if (!g_slist_nth_data (wc, 4*6-1)) return 0;
+
+        int i=4*6;
+        for (int k=0; k<nw; ++k){
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i));
+        }
+        for (int k=nw; k<6; ++k){
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i));
+        }
+        return 1;
 }
 
 void DSPMoverControl::updateAxisCounts (GtkWidget* w, int idx, int cmd){
