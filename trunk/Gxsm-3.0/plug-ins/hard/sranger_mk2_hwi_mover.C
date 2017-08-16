@@ -495,11 +495,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 }
 
 
-DSPMoverControl::~DSPMoverControl (){
-        PI_DEBUG_GP (DBG_L2, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1mover_param.MOV_mode=%d  mover_param.MOV_waveform_id=%d \n", 
-                                mover_param.MOV_mode, 
-                                mover_param.MOV_waveform_id);
-        
+DSPMoverControl::~DSPMoverControl (){        
         XsmRescourceManager xrm("sranger_mk2_hwi_control");        
         xrm.Put("MOV_mode", mover_param.MOV_mode);
         xrm.Put("MOV_waveform_id", mover_param.MOV_waveform_id);
@@ -888,13 +884,13 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 
 
-	                mov_bp->set_configure_list_mode_on ();
+	                mov_bp->set_configure_hide_list_b_mode_on ();
                         mov_bp->grid_add_ec ("Phase", Phase, &mover_param.inch_worm_phase, 0., 360., "3.0f", 1., 60., "IW-Phase");
 	                gtk_widget_set_tooltip_text (mov_bp->input,
                                                      "Generic Phase value may be used by custom wave form generation.\n"
                                                      "Used by Sine and Pulse\n");
                         mov_bp->new_line ();
-                        mov_bp->set_configure_list_mode_off ();
+                        mov_bp->set_configure_hide_list_b_mode_off ();;
 
 
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo"), 2); // arbitrary waveform
@@ -949,7 +945,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Koala"), 2); //arbitrary waveform
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (6));
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (2));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_KOALA));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -963,7 +959,7 @@ void DSPMoverControl::create_folder (){
 
 
                         mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Besocke"), 2); //arbitrary waveform
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (6));
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (3));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_BESOCKE));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -976,7 +972,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 
                                                              
-                        mov_bp->set_configure_list_mode_on ();
+                        mov_bp->set_configure_hide_list_b_mode_on ();
                         mov_bp->grid_add_ec ("Besocke z-Rate", Unity, &mover_param.z_Rate, 0., 1., ".2f", 0.01, 0.1, "z-Rate");
                         gtk_widget_set_tooltip_text (mov_bp->input, "Rate of the z-Jump of the amplitude");
                         mov_bp->new_line ();
@@ -988,7 +984,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->grid_add_ec ("Besocke t2", Time, &mover_param.time_delay_2, 0., 1., ".3f", 0.001, 0.01, "timedelay-2");
                         gtk_widget_set_tooltip_text (mov_bp->input, "Added time delay during the z-Jump");
                         mov_bp->new_line ();
-                        mov_bp->set_configure_list_mode_off ();
+                        mov_bp->set_configure_hide_list_b_mode_off ();
 
 
 			// Pulses are generated as arbitrary wave forms (stm, 08.10.2010)
@@ -1615,6 +1611,40 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
 
         gint nw = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "NumWaves"));  
 	GSList *wc = dspc->mov_bp->get_configure_hide_list_b_head ();
+
+        if (dspc->mover_param.MOV_waveform_id == 1)
+        {
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 24));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 25));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 26));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 27));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 28));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 29));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 30));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 31));
+        }                
+        else if (dspc->mover_param.MOV_waveform_id == 12)
+        {
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 24));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 25));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 26));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 27));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 28));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 29));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 30));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 31));
+        }
+        else
+        {
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 24));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 25));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 26));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 27));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 28));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 29));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 30));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 31));
+        }        
 
         if (!wc) return 0;
         if (!g_slist_nth_data (wc, 4*6-1)) return 0;
