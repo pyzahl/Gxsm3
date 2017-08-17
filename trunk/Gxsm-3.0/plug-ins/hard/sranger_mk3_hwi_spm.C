@@ -480,7 +480,7 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 		dsp_aap.n_wave_channels    = long_2_sranger_long (channels); /* number wave channels -- up top 6, must match wave data */
                 for (int i=0; i<channels; ++i)
                         dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_dsp[i]);
-
+			
 		dsp_aap.mover_mode = long_2_sranger_long (AAP_MOVER_AUTO_APP | AAP_MOVER_WAVE_PLAY);
                 //DSPMoverClass->mover_param.MOV_mode 
 		//DSPMoverClass->mover_param.MOV_output 

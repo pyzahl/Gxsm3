@@ -755,7 +755,13 @@ More complex wave forms are available such as:
 \caption{Wave form used to operate a KOALA drive STM.}
 \label{fig:KOALAWave}
 \end{figure}
- 
+\item[Wave: Besocke] Intendet to be used with a Besocke style STM (see https://doi.org/10.1016/0039-6028(87)90151-8): 3 piezos walk up and down a ramp. In this particular case, the piezos have three segments at their outer side (u, v, w) and ground contact on their inner electrode. This coarse motion will require signals at three output channels. These signals vary for different directions of movement, but the idea behind is the wave form shown in figure \ref{fig:BESOCKEWave}. By an additional analog switch (controlled by GPIO) one can change between xy motion (translation) and z motion (rotation).
+The time delay between the points A and B and also between D and E is named Besocke t1, the time delay between B and C is Besocke t2. These delays are both variable in the interface. As the amplitude the whole space from C to D is taken and with Besocke z-Rate, which can also be varied in the interface, you can decide how big the jump should be in relation to the amplitude.
+\begin{figure}[h!]
+\center { \fighalf{SR-DSP-Mover-Besocke}}
+\caption{Basic wave form used for Besocke drive STM.}
+\label{fig:BESOCKEWave}
+\end{figure}
 \item[Pulse: positive] Uses an analog channel to generate a simple on/off pulse similar to the GPIOs but you can controll the voltage range.
 \end{description}
 

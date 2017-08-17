@@ -542,6 +542,7 @@ guint16 sranger_mk2_hwi_dev::uint_2_sranger_uint (guint16 x){
 }
 
 gint32 sranger_mk2_hwi_dev::long_2_sranger_long (gint32 x){
+#if 0
 	if (swap_flg){
 		swap (&x);
 		return x;
@@ -567,6 +568,9 @@ gint32 sranger_mk2_hwi_dev::long_2_sranger_long (gint32 x){
 		return x;
 	} else
 		return x;
+#else
+	return x;
+#endif
 }
 
 
