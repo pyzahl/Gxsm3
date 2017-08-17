@@ -844,7 +844,7 @@ void DSPMoverControl::create_folder (){
 		if (i==7){ // configure tab
 			GtkWidget *radiobutton;
 			
-                        mov_bp->new_grid_with_frame ("Output Configuration\nWARNING: Experimental new DSP Wave Generator\nSawtooth only rigth now");
+                        mov_bp->new_grid_with_frame ("Output Configuration");
 			mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
                         mov_bp->new_grid_with_frame ("Curve Mode");
@@ -973,7 +973,7 @@ void DSPMoverControl::create_folder (){
 
                                                              
                         mov_bp->set_configure_hide_list_b_mode_on ();
-                        mov_bp->grid_add_ec ("Besocke z-Rate", Unity, &mover_param.z_Rate, 0., 1., ".2f", 0.01, 0.1, "z-Rate");
+                        mov_bp->grid_add_ec ("Besocke z-rate", Unity, &mover_param.z_Rate, 0., 1., ".2f", 0.01, 0.1, "z-Rate");
                         gtk_widget_set_tooltip_text (mov_bp->input, "Rate of the z-Jump of the amplitude");
                         mov_bp->new_line ();
 
