@@ -1327,7 +1327,6 @@
       <description>Configuration for GXSM Entry with ID 'dspmover-config-timedelay-2'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
-
     <key name="dspmover-config-wave-out0-ch-x" type="ad">
       <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out0-ch-x' </summary>
@@ -1338,6 +1337,12 @@
       <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out0-ch-y' </summary>
       <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out0-ch-y'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
+    <key name="dspmover-config-wave-out0-ch-z" type="ad">
+      <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out0-ch-z' </summary>
+      <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out0-ch-z'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
     <key name="dspmover-config-wave-out1-ch-x" type="ad">
@@ -1352,6 +1357,12 @@
       <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out1-ch-y'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
+    <key name="dspmover-config-wave-out1-ch-z" type="ad">
+      <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out1-ch-z' </summary>
+      <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out1-ch-z'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
     <key name="dspmover-config-wave-out2-ch-x" type="ad">
       <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out2-ch-x' </summary>
@@ -1362,6 +1373,12 @@
       <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out2-ch-y' </summary>
       <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out2-ch-y'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
+    <key name="dspmover-config-wave-out2-ch-z" type="ad">
+      <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out2-ch-z' </summary>
+      <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out2-ch-z'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
     <key name="dspmover-config-wave-out3-ch-x" type="ad">
@@ -1376,6 +1393,12 @@
       <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out3-ch-y'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
+    <key name="dspmover-config-wave-out3-ch-z" type="ad">
+      <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out3-ch-z' </summary>
+      <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out3-ch-z'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
     <key name="dspmover-config-wave-out4-ch-x" type="ad">
       <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out4-ch-x' </summary>
@@ -1388,6 +1411,12 @@
       <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out4-ch-y'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
+    <key name="dspmover-config-wave-out4-ch-z" type="ad">
+      <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out4-ch-z' </summary>
+      <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out4-ch-z'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
     <key name="dspmover-config-wave-out5-ch-x" type="ad">
       <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out5-ch-x' </summary>
@@ -1398,6 +1427,12 @@
       <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out5-ch-y' </summary>
       <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out5-ch-y'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
+    <key name="dspmover-config-wave-out5-ch-z" type="ad">
+      <default>[7, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-out5-ch-z' </summary>
+      <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-out5-ch-z'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
     
     <key name="dspmover-config-gpio-on" type="ad">
