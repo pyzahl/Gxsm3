@@ -149,8 +149,9 @@ DSPMoverControl::DSPMoverControl ()
 
         mover_param.wave_out_channels_used=6;
 	for (int k=0; k<mover_param.wave_out_channels_used; ++k)
-                mover_param.wave_out_channel_xy[k][0]=mover_param.wave_out_channel_xy[k][1]=0;
-        mover_param.wave_out_channel_xy[0][0]=3, mover_param.wave_out_channel_xy[0][1]=4;
+                mover_param.wave_out_channel_xyz[k][0]=mover_param.wave_out_channel_xyz[k][1]=mover_param.wave_out_channel_xyz[k][2]=0;
+
+        mover_param.wave_out_channel_xyz[0][0]=3, mover_param.wave_out_channel_xyz[0][1]=4, mover_param.wave_out_channel_xyz[0][2]=3;
 
         xrm.Get("MOV_output", &mover_param.MOV_output, "0");
 	xrm.Get("MOV_waveform_id", &mover_param.MOV_waveform_id, "0");
@@ -1045,14 +1046,18 @@ void DSPMoverControl::create_folder (){
                         for (int k=0; k<6; ++k){
                                 gchar *wchlab= g_strdup_printf("Wave-%d X", k);
                                 gchar *wchid = g_strdup_printf("wave-out%d-ch-x", k);
-                                mov_bp->grid_add_ec (wchlab, Unity, &mover_param.wave_out_channel_xy[k][0], 0, 7, ".0f", wchid);
+                                mov_bp->grid_add_ec (wchlab, Unity, &mover_param.wave_out_channel_xyz[k][0], 0, 7, ".0f", wchid);
                                 gtk_widget_set_tooltip_text (mov_bp->input, "map Wave N on OUTMIX_CH8..8+N to Channel 0-7 for X direction move action");
                                 g_free (wchid);
                                 wchid = g_strdup_printf("wave-out%d-ch-y", k);
-                                mov_bp->grid_add_ec ("Y", Unity, &mover_param.wave_out_channel_xy[k][1], 0, 7, ".0f", wchid);
+                                mov_bp->grid_add_ec ("Y", Unity, &mover_param.wave_out_channel_xyz[k][1], 0, 7, ".0f", wchid);
                                 gtk_widget_set_tooltip_text (mov_bp->input, "map Wave N on OUTMIX_CH8..8+N to Channel 0-7 for Y direction move action");
-                                g_free (wchlab);
                                 g_free (wchid);
+                                wchid = g_strdup_printf("wave-out%d-ch-z", k);
+                                mov_bp->grid_add_ec ("Z", Unity, &mover_param.wave_out_channel_xyz[k][2], 0, 7, ".0f", wchid);
+                                gtk_widget_set_tooltip_text (mov_bp->input, "map Wave N on OUTMIX_CH8..8+N to Channel 0-7 for Z direction move action");
+                                g_free (wchid);
+                                g_free (wchlab);
                                 mov_bp->new_line ();
                         }
                         mov_bp->set_configure_hide_list_b_mode_off ();
@@ -1612,56 +1617,56 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
         gint nw = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "NumWaves"));  
 	GSList *wc = dspc->mov_bp->get_configure_hide_list_b_head ();
 
+        if (!wc) return 0;
+        int i=6*6; // 6 widgets x 6 wave channels max
+        if (!g_slist_nth_data (wc, i-1)) return 0;
+
+        for (int k=0; k<nw; ++k)
+                for (int q=0; q<6; ++q)
+                        gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i));
+        for (int k=nw; k<6; ++k)
+                for (int q=0; q<6; ++q)
+                        gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i));
+
+#if 1
+        int q = -24+6*6;
+        // this is very very bad idea and non portable for any GUI changes....
+        // now starts at i  (=6*6) and not 4*6 any more... you fix that -- suggestion: may use separated list....
         if (dspc->mover_param.MOV_waveform_id == 1)
         {
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 24));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 25));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 26));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 27));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 28));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 29));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 30));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 31));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 24+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 25+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 26+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 27+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 28+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 29+q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 30+q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 31+q));
         }                
         else if (dspc->mover_param.MOV_waveform_id == 12)
         {
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 24));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 25));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 26));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 27));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 28));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 29));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 30));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 31));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 24+q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 25+q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 26+q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 27+q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 28+q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 29+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 30+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 31+q));
         }
         else
         {
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 24));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 25));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 26));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 27));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 28));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 29));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 30));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 31));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 24+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 25+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 26+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 27+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 28+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 29+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 30+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 31+q));
         }        
+#endif
 
-        if (!wc) return 0;
-        if (!g_slist_nth_data (wc, 4*6-1)) return 0;
-
-        int i=4*6;
-        for (int k=0; k<nw; ++k){
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i));
-        }
-        for (int k=nw; k<6; ++k){
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i));
-        }
         return 1;
 }
 
@@ -1711,19 +1716,6 @@ int DSPMoverControl::CmdAction(GtkWidget *widget, DSPMoverControl *dspc){
 
         
 	cmd = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "DSP_cmd"));
-
-        for (int k=0; k<dspc->mover_param.wave_out_channels_used; ++k){
-                switch (cmd){
-                case DSP_CMD_AFM_MOV_YP:
-                case DSP_CMD_AFM_MOV_YM:
-                        dspc->mover_param.wave_out_channel_dsp[k] = dspc->mover_param.wave_out_channel_xy[k][1];
-                        break;
-                default:
-                        dspc->mover_param.wave_out_channel_dsp[k] = dspc->mover_param.wave_out_channel_xy[k][0];
-                        break;
-                }
-                g_message ("Wave0 OUT on CH %d ",dspc->mover_param.wave_out_channel_dsp[0]);
-        }
 
         switch (cmd){
         case DSP_CMD_AFM_MOV_XM:
