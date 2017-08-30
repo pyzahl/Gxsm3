@@ -186,6 +186,7 @@ public:
 
         static void display_changed_hl_callback (Param_Control *pc, gpointer vc);
         static void display_changed_vr_callback (Param_Control *pc, gpointer vc);
+        static void display_changed_sh_callback (Param_Control *pc, gpointer vc);
 
         static void update_ec(Gtk_EntryControl* ec, UnitObj *u){
                 ec->Put_Value();

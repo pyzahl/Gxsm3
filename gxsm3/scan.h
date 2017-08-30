@@ -123,6 +123,7 @@ public:
 	void auto_display();
 	void set_display();
 	void set_display_hl();
+	void set_display_shift();
 	int SetVM(int vflg=0, SCAN_DATA *src=NULL, int Delta=4, double sm_eps=0.05);
 	int GetVM(){ return VFlg; };
 	void Activate();
@@ -198,7 +199,9 @@ public:
 	void x_linearize (int f) { X_linearize=f; };
 	int x_linearize () { return X_linearize; };
 
- private: 
+ private:
+	double t0_ref;
+	
 	int VFlg;
 	int ChanNo;
 	int State;

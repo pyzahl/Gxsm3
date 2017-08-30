@@ -143,6 +143,7 @@ int Scan::append_current_to_time_elements (int index, double t, Mem2d* other){
 		} else {
 			index = 0;
 			tes->index = 0;
+                        t0_ref = t; // set ref time
 		}
 
 	if (other)
@@ -150,6 +151,7 @@ int Scan::append_current_to_time_elements (int index, double t, Mem2d* other){
 	else
 		tes->mem2d = new Mem2d (mem2d, M2D_COPY);
 	tes->mem2d->set_frame_time (t);
+	tes->mem2d->set_frame_time (t0_ref, 1);
 	tes->mem2d->set_t_index(index); // only here and only!
 	tes->refcount = 0;
 	tes->sdata = new SCAN_DATA;
@@ -410,6 +412,12 @@ void Scan::auto_display (){
         // calculate contrast and bright
         mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
 
+        draw ();
+}
+
+// from VRange centered on high..low
+void Scan::set_display_shift (){
+        mem2d->set_px_shift (data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
         draw ();
 }
 

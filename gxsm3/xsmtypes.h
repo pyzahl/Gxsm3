@@ -230,7 +230,7 @@ typedef struct{
 
 class Display_Param{
 public:
-	Display_Param(){ vframe =  vlayer = 0; contrast=1.; bright=0.; z_high=z_low=0.; vrange_z=10.; voffset_z=0.; ViewFlg=1; };
+	Display_Param(){ vframe =  vlayer = 0; contrast=1.; bright=0.; z_high=z_low=0.; vrange_z=10.; voffset_z=0.; ViewFlg=1; px_shift_xy[0]=px_shift_xy[1]=0.; px_shift_xy[2]=5e-5; };
 	~Display_Param(){};
 
 	void copy(Display_Param &src){
@@ -243,6 +243,9 @@ public:
 		vframe   = src.vframe;
 		vlayer   = src.vlayer;
 		ViewFlg  = src.ViewFlg;
+                px_shift_xy[0] = src.px_shift_xy[0];
+                px_shift_xy[1] = src.px_shift_xy[1];
+                px_shift_xy[2] = src.px_shift_xy[2];
 	};
 
 	double ContrastBrightFkt(double x){
@@ -262,6 +265,7 @@ public:
 	int    vlayer;                      /* Layer (in Value dimension) to view */
 
 	int    ViewFlg;                     /* View Mode */
+        double px_shift_xy[3];              /* experimental pixel shift x,y, tau / sec */
 };
 
 

@@ -27,6 +27,7 @@
 
 #include <locale.h>
 #include <libintl.h>
+#include <math.h>
 
 #include <config.h>
 
@@ -1056,6 +1057,7 @@ void Mem2d::Mdelete(){
 
 void Mem2d::Init(){
 	SetDataPktMode(SCAN_V_DIRECT);
+        set_px_shift ();
 	Mod = MEM_SET;
 	SetDataRange(0, 1024);
 	SetDataSkl(0.1, 32.);
@@ -1604,8 +1606,20 @@ ZVIEW_TYPE Mem2d::ZHorizontal(int &x, int &y){
 	return MEM2D_RANGE_CHECK (MEM2D_LINEAR_SCALE (GetDataPktHorizont (x,y)));
 }
 
+inline int clamp (int u, int min, int max){
+        return u < min ? min : u > max ? max : u;
+}
+
 ZVIEW_TYPE Mem2d::GetDataVMode(int x, int y){
-	return((ZVIEW_TYPE)(this->*ZVFkt)(x,y));
+        if (fabs (pxdxdt) + fabs(pxdydt) > 0.){
+                double dt = get_frame_time (0) - get_frame_time (1); 
+                double creepfactor = pxtau > 0. ? (1. - expf (-pxtau*dt)) : dt;
+                if (x==0 && y==0)
+                        g_message ("creepfactor (dt=%g s) = %g", dt, creepfactor);
+                x = clamp (x + round (creepfactor * pxdxdt), 0, GetNx ()-1);
+                y = clamp (y + round (creepfactor * pxdydt), 0, GetNy ()-1);
+        }
+        return ((ZVIEW_TYPE)(this->*ZVFkt)(x,y));
 }
 
 ZVIEW_TYPE Mem2d::GetDataVMode(int x, int y, int v){
