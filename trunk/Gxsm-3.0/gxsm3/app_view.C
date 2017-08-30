@@ -533,6 +533,10 @@ void ViewControl::display_changed_vr_callback (Param_Control *pc, gpointer vc){
         ((ViewControl*)vc)->update_view_panel ();
 }
 
+void ViewControl::display_changed_sh_callback (Param_Control *pc, gpointer vc){
+        ((ViewControl*)vc)->scan->set_display_shift ();
+}
+
 ViewControl::ViewControl (char *title, int nx, int ny, 
 			  int ChNo, Scan *sc, 
 			  int ZoomFac, int QuenchFac){
@@ -728,21 +732,39 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         // Display -- Hi-Low
         view_bp->set_default_ec_change_notice_fkt  (display_changed_hl_callback, this);
         view_bp->grid_add_ec ("High Limit", scan->data.Zunit, &scan->data.display.z_high,
-                              -5000., 5000., ".3f", 1., 100., NULL);
+                              -5000000., 5000000., ".3f", 1., 100., NULL);
         view_bp->new_line ();
                 
         view_bp->grid_add_ec ("Low Limit", scan->data.Zunit, &scan->data.display.z_low,
-                              -5000., 5000., ".3f", 1., 100., NULL);
+                              -5000000., 5000000., ".3f", 1., 100., NULL);
         view_bp->new_line ();
         
         // Display -- Range auto center
         view_bp->set_default_ec_change_notice_fkt  (display_changed_vr_callback, this);
         view_bp->grid_add_ec ("Max. Range", scan->data.Zunit, &scan->data.display.vrange_z,
-                              -5000., 5000., ".3g", 0.1, 5., NULL);        //"VRangeZ");
+                              -5000000., 5000000., ".3g", 0.1, 5., NULL);        //"VRangeZ");
         view_bp->new_line ();
 
         view_bp->grid_add_ec ("rel. Offset", scan->data.Zunit, &scan->data.display.voffset_z,
-                              -5000., 5000., ".3g", 0.2, 2.,NULL);        //"VOffsetZ");
+                              -5000000., 5000000., ".3g", 0.1, 5.,NULL);        //"VOffsetZ");
+        
+        view_bp->new_line ();
+
+        // Display -- Pixel Shift -- shift_x/y = creepfactor * shift_x/y_value
+        // creepfactor = tau > 0. ? (1. - expf (-tau*dt)) : dt;
+
+        view_bp->set_default_ec_change_notice_fkt  (display_changed_sh_callback, this);
+        view_bp->grid_add_ec ("X shift", scan->data.Xunit, &scan->data.display.px_shift_xy[0],
+                              -5000000., 5000000., "8g", 1., 1., NULL);
+        view_bp->new_line ();
+
+        view_bp->grid_add_ec ("Y shift", scan->data.Yunit, &scan->data.display.px_shift_xy[1],
+                              -5000000., 5000000., "8g", 1., 1.,NULL);
+        
+        view_bp->new_line ();
+
+        view_bp->grid_add_ec ("Tau/s", gapp->xsm->Unity, &scan->data.display.px_shift_xy[2],
+                              -5000000., 5000000., "8g", 0.00001, 0.00001,NULL);
         
         // -- Info Tab
         // ==================================================

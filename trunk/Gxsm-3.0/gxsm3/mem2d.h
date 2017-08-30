@@ -340,7 +340,12 @@ public:
 	inline ZVIEW_TYPE ZDifferential(int &x, int &y);
 	inline ZVIEW_TYPE ZHorizontal(int &x, int &y);
 
-
+        void set_px_shift (double new_pxdxdt=0., double new_pxdydt=0., double new_pxtau=1.) {
+                pxdxdt = new_pxdxdt;
+                pxdydt = new_pxdydt;
+                pxtau  = new_pxtau;
+        };
+        
 	void SetDataPktMode(int mode);
 	void SetDataRange(ZVIEW_TYPE Min, ZVIEW_TYPE Max);
 	double GetDataRange() { return  (ZVmax-ZVmin); };
@@ -432,6 +437,10 @@ private:
 	double Zcontrast, Zbright;
 	double plane_mx, plane_my, plane_z0;
 
+        double pxdxdt;
+        double pxdydt;
+        double pxtau;
+        
 	/* Data handling stuff */
 	ZD_TYPE  zdtyp;
 	int  data_valid;
