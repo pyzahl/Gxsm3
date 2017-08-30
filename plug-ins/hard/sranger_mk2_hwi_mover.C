@@ -1043,6 +1043,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 
                         mov_bp->set_configure_hide_list_b_mode_on ();
+                        mov_bp->set_input_width_chars (3);
                         for (int k=0; k<6; ++k){
                                 gchar *wchlab= g_strdup_printf("Wave-%d X", k);
                                 gchar *wchid = g_strdup_printf("wave-out%d-ch-x", k);
@@ -1066,7 +1067,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
                         mov_bp->pop_grid ();
-
+                        mov_bp->set_input_width_chars (10);
                         
                         // ======================================== Auto Approach Timings ========================================
                         mov_bp->new_line ();
@@ -1628,12 +1629,10 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
                 for (int q=0; q<6; ++q)
                         gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i));
 
-#if 1
         int q = -24+6*6;
         // this is very very bad idea and non portable for any GUI changes....
         // now starts at i  (=6*6) and not 4*6 any more... you fix that -- suggestion: may use separated list....
-        if (dspc->mover_param.MOV_waveform_id == 1)
-        {
+        if (dspc->mover_param.MOV_waveform_id == 1) {
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 24+q));
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 25+q));
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 26+q));
@@ -1642,9 +1641,7 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 29+q));
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 30+q));
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 31+q));
-        }                
-        else if (dspc->mover_param.MOV_waveform_id == 12)
-        {
+        } else if (dspc->mover_param.MOV_waveform_id == 12) {
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 24+q));
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 25+q));
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 26+q));
@@ -1653,9 +1650,7 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 29+q));
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 30+q));
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 31+q));
-        }
-        else
-        {
+        } else {
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 24+q));
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 25+q));
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 26+q));
@@ -1665,7 +1660,6 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 30+q));
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 31+q));
         }        
-#endif
 
         return 1;
 }
