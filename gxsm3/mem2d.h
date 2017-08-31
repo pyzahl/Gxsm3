@@ -340,10 +340,10 @@ public:
 	inline ZVIEW_TYPE ZDifferential(int &x, int &y);
 	inline ZVIEW_TYPE ZHorizontal(int &x, int &y);
 
-        void set_px_shift (double new_pxdxdt=0., double new_pxdydt=0., double new_pxtau=1.) {
-                pxdxdt = new_pxdxdt;
-                pxdydt = new_pxdydt;
-                pxtau  = new_pxtau;
+        void set_px_shift (double pxdxdt=0., double pxdydt=0., double pxtau=0.) {
+                double dt = get_frame_time (0) - get_frame_time (1); 
+                if (data)
+                        data->set_shift (pxtau > 0. ? 1. - exp (-pxtau*dt) : pxtau, pxdxdt, pxdydt);
         };
         
 	void SetDataPktMode(int mode);
@@ -437,10 +437,6 @@ private:
 	double Zcontrast, Zbright;
 	double plane_mx, plane_my, plane_z0;
 
-        double pxdxdt;
-        double pxdydt;
-        double pxtau;
-        
 	/* Data handling stuff */
 	ZD_TYPE  zdtyp;
 	int  data_valid;
