@@ -70,6 +70,9 @@ ZData::ZData(int Nx, int Ny, int Nv){
         memset (Xlookup, 0, Nx);
         memset (Ylookup, 0, Ny);
         memset (Vlookup, 0, Nv);
+        creepfactor    = 0.;
+        pixshift_dt[0] = 0.;
+        pixshift_dt[1] = 0.;
 }
  
 ZData::~ZData(){ 
@@ -133,6 +136,12 @@ void ZData::ZPutDataSetDest(int ixy_sub[4])
                            << cp_ixy_sub[0] << ", " << cp_ixy_sub[1] << ", " 
                            << cp_ixy_sub[2] << ", " << cp_ixy_sub[3]);
         } 
+};
+
+void  ZData::set_shift (double cf_dt, double pixs_xdt, double pixs_ydt) {
+        pixshift_dt[0] = pixs_xdt;
+        pixshift_dt[1] = pixs_ydt;
+        creepfactor    = cf_dt;
 };
 
 /*
@@ -1040,6 +1049,7 @@ void Mem2d::Mnew(int Nx, int Ny, int Nv, ZD_TYPE type){
 		break;
 	}
 	L_info_new ();
+        set_px_shift ();
 }
 
 /* Speicher für 2D Daten freigeben */
@@ -1057,7 +1067,6 @@ void Mem2d::Mdelete(){
 
 void Mem2d::Init(){
 	SetDataPktMode(SCAN_V_DIRECT);
-        set_px_shift ();
 	Mod = MEM_SET;
 	SetDataRange(0, 1024);
 	SetDataSkl(0.1, 32.);
@@ -1611,14 +1620,6 @@ inline int clamp (int u, int min, int max){
 }
 
 ZVIEW_TYPE Mem2d::GetDataVMode(int x, int y){
-        if (fabs (pxdxdt) + fabs(pxdydt) > 0.){
-                double dt = get_frame_time (0) - get_frame_time (1); 
-                double creepfactor = pxtau > 0. ? (1. - expf (-pxtau*dt)) : dt;
-                if (x==0 && y==0)
-                        g_message ("creepfactor (dt=%g s) = %g", dt, creepfactor);
-                x = clamp (x + round (creepfactor * pxdxdt), 0, GetNx ()-1);
-                y = clamp (y + round (creepfactor * pxdydt), 0, GetNy ()-1);
-        }
         return ((ZVIEW_TYPE)(this->*ZVFkt)(x,y));
 }
 
