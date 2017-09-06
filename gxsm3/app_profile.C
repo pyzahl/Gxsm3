@@ -1463,7 +1463,7 @@ void ProfileControl::update_elem(ProfileElement *pe, ProfileControl *pc){
 // sc==NULL => jump to Line line in last scan
 gint ProfileControl::NewData_redprofile(Scan* sc, int redblue){
 	if (lock){
-//		std::cout << "ProfileControl::NewData *** Locked: Update Overload *** skipping. - exit." << std::endl;
+                g_message ("ProfileControl::NewData_redprofile *** Object is Locked, skipping.");
 		return TRUE; // auto load balancing, low priority
 	}
 	// lock object
@@ -1504,7 +1504,7 @@ gint ProfileControl::NewData(Scan* sc, int line, int cpyscan, VObject *vo, gbool
 	gchar *txt;
 
 	if (lock){
-//		std::cout << "ProfileControl::NewData *** Locked: Update Overload *** skipping. - exit." << std::endl;
+		g_message ("ProfileControl::NewData *** Object is Locked, skipping.");
 		return TRUE; // auto load balancing, low priority
 	}
 	// lock object
@@ -1972,7 +1972,7 @@ gint ProfileControl::updateTics (gboolean force)
 void ProfileControl::UpdateArea ()
 {
 	if (lock){
-		std::cout <<  "ProfileControl::UpdateArea -- scans are locked -- skipping." << std::endl;
+		g_message ("ProfileControl::UpdateArea -- scans/profile draw is locked/busy: skipping update.");
 		return; // avoid attempts to draw while scan data is updated
 	}
 

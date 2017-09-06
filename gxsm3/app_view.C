@@ -1320,7 +1320,7 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                         if (vc->legend_items_code[3] == '3')
                                 sub = vc->scan->data.s.pllref;
 
-                        g_message ("Legend Sub=%g",sub);
+                        // g_message ("Legend Sub=%g",sub);
                         
                         vc->scan->mem2d->GetZHiLo (&data_zhi, &data_zlo);
 
