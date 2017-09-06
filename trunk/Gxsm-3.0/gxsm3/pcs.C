@@ -163,7 +163,8 @@ void Param_Control::Init(){
         suspend_settings_update = false;
 	set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LINEAR);
         set_logscale_min (); // set default
-
+        set_logscale_magshift (); // set default
+        
         // GSettings 
         pc_head = NULL; 
         pc_next = NULL;
@@ -639,7 +640,7 @@ double pcs_mag_base (double v, const gchar** pfx, double fac=10., int magshift=0
         else
                 *pfx = "?";
         
-        return x/magnitude[mi]/fac;
+        return x/magnitude[mi-magshift]/fac;
 }
 
 
@@ -697,7 +698,7 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                                                                 }
                                                                 else{
                                                                         const gchar *pfx=NULL;
-                                                                        double lp = pcs_mag_base (Lab, &pfx, 10., 0);
+                                                                        double lp = pcs_mag_base (Lab, &pfx, 10., gpcs->log_mag_shift);
                                                                         gchar *tmp = g_strdup_printf ("<span size=\"x-small\">%g%s</span>", signum*lp, pfx);
                                                                         //g_message ("%d: %s %g %g @adv= %g", i, tmp, signum, Lab, v);
                                                                         gtk_scale_add_mark (GTK_SCALE (gpcs->opt_scale), v, GTK_POS_BOTTOM, tmp);
@@ -733,7 +734,7 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                                                 if (fabs(x/d_tic) < 1e-3)
                                                         x=0.;
                                                 const gchar *pfx=NULL;
-                                                double lp = pcs_mag_base (x, &pfx, 10., 0);
+                                                double lp = pcs_mag_base (x, &pfx, 10., gpcs->log_mag_shift);
                                                 gchar *tmp = g_strdup_printf ("<span size=\"x-small\">%g%s</span>", lp, pfx);
                                                 gtk_scale_add_mark (GTK_SCALE (gpcs->opt_scale), x, GTK_POS_BOTTOM, tmp);
                                                 g_free (tmp);

@@ -179,6 +179,7 @@ class Param_Control{
 
         void set_suspend_settings_update (gboolean x=true) { suspend_settings_update = x; };
         void set_logscale_min(double eps=1e-4) { log_min = eps; };
+        void set_logscale_magshift(int msh=0) { log_mag_shift = msh; };
         
  protected:
 	UnitObj *unit;
@@ -195,6 +196,7 @@ class Param_Control{
 	gchar *info;
 	int   mag_prefix_shift;
 	int   adj_mode;
+        int log_mag_shift;
         double log_min;
         double adj_current_limits[2];
 	//Warning types: 1 = max/min limit
