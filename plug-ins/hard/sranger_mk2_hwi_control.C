@@ -1394,6 +1394,7 @@ DSPControl::DSPControl () {
                 dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
                 dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
                 dsp_bp->ec->set_logscale_min (1e-4);
+                dsp_bp->ec->set_logscale_magshift (-3);
                 gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
 
                 // dsp_bp->add_to_configure_hide_list (dsp_bp->scale);
