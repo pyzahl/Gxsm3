@@ -71,6 +71,16 @@ public:
                 return tmp.UsrString (data_z*(pixelmode ? 1. : sc->data.s.dz) - sub); 
         };
         
+        // convert X,Y (view, mouse) to image index
+        void XYview2pixel(double x, double y, Point2D *p){
+                double mx = x*Qfac, xx;
+                double my = y*Qfac, yy;
+                xx = R2INT(mx); xx=MIN(sc->mem2d->GetNx()-1, MAX(0,xx));
+                yy = R2INT(my); yy=MIN(sc->mem2d->GetNy()-1, MAX(0,yy));
+                p->x = R2INT(xx);
+                p->y = R2INT(yy);
+        };
+
         void Angstroem2W(double &x, double &y);
         void W2Angstroem(double &x, double &y);
         double AngstroemXRel2W(double x);

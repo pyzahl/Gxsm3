@@ -548,6 +548,7 @@ public:
 
         virtual void draw (cairo_t* cr, double alpha=0.0, gboolean tr=true);
         void print () { g_message ("cairo_item_text: >%s< %s %g is %s", t, font_face, font_size, show_flag?"On":"Off"); };
+        const gchar* get_text (gboolean sh=false) { return (show_flag||sh) ? t : "---"; };
 private:
         gchar *t;
         gchar *font_face;
