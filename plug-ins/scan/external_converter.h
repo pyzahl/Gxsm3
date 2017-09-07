@@ -77,9 +77,9 @@ public:
 	static void overwrite_target_click(GtkWidget* dialog, gpointer userdata);
 
 	void run();
-	static void dlg_clicked(GnomeDialog * dialog, gint button_number, external_converter_Control *mic);
+	static void dlg_clicked(GtkDialog * dialog, gint button_number, external_converter_Control *mic);
 	external_converter_Data *frontenddata;
-	GtkWidget *SrcFile, *DestinationPath, *DestinationSuffix, *ConverterPath, *ConverterOptions;
+	GtkWidget *SourcePath, *DestPath, *DestSuffix, *ConverterPath, *ConverterOptions;
 };
 
 class external_converter {

@@ -159,8 +159,10 @@ static void external_converter_configure(void)
 static void external_converter_cleanup(void)
 {
   PI_DEBUG(DBG_L2,"External Converter Plugin Cleanup");
+#if 0
   gnome_app_remove_menus (GNOME_APP (external_converter_pi.app->getApp()),
 			  N_("Tools/External Converter"), 1);
+# endif
 }
 
 
@@ -290,8 +292,6 @@ void external_converter::ConvertDir(external_converter_Data* work_it, const gcha
 					}
 
 					++m_converted;
-//					std::cout << std::endl << "Converting file " << m_converted << ": "
-//						<< source_name << std::endl;
 					std::cout << std::endl << "Converting file " << m_converted << std::endl;
 					char command[1000];
 					snprintf(command, 1000, "%s %s \"%s\" \"%s\"", work_it->converterPath,work_it->converterOptions,
@@ -346,167 +346,123 @@ void external_converter_Control::run()
   	GtkWidget *variable;
   	GtkWidget *help;
   	GtkWidget *hbox;
-  	GtkWidget *table;
-  
-  DlgStart();
-  dialog = gnome_dialog_new(N_("External Converter"), N_("Convert"), GNOME_STOCK_BUTTON_CANCEL, NULL); 
+  	GtkWidget *vbox;
 
-   gnome_dialog_set_close(GNOME_DIALOG(dialog), FALSE);
-   gnome_dialog_close_hides(GNOME_DIALOG(dialog), FALSE);
-   gnome_dialog_set_default(GNOME_DIALOG(dialog), 3);      
+	// create dialog window
+  	GtkDialogFlags flags = GTK_DIALOG_MODAL;	 
+  	dialog = gtk_dialog_new_with_buttons(N_("External Converter"),NULL, flags, N_("Convert"), GTK_RESPONSE_CANCEL, NULL); 
 
-
-        table = gtk_table_new(7,3,FALSE);
-	gtk_widget_show (table);
-
-	gtk_box_pack_start(GTK_BOX(GNOME_DIALOG(dialog)->vbox), table, TRUE, TRUE, GXSM_WIDGET_PAD);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))),
+		       vbox, TRUE, TRUE, GXSM_WIDGET_PAD);
 
 	// Create entry for source file
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
-	VarName = gtk_label_new (N_("Source File/Path"));
-	gtk_widget_show (VarName);
+	VarName = gtk_label_new (N_("Source Path"));
 	gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-	gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
+    gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
+    gtk_widget_set_size_request(VarName, 100, -1);
+	   gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
 	
-	SrcFile = variable = gnome_file_entry_new( NULL, "Choose the source file");
-	gnome_file_entry_set_default_path( GNOME_FILE_ENTRY ( variable ), frontenddata->sourceFile);
-	gnome_file_entry_set_directory_entry(GNOME_FILE_ENTRY (variable), FALSE);
-	gnome_file_entry_set_filename (GNOME_FILE_ENTRY (variable), frontenddata->sourceFile);
-	gtk_widget_show(variable);
+	SourcePath = gtk_file_chooser_button_new("source folder", GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);	
+	gtk_file_chooser_set_current_folder ( GTK_FILE_CHOOSER (SourcePath), frontenddata->sourceFile);
+	gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(SourcePath), TRUE, TRUE, 0);
+		
+	// Create widget for destination path
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
-	gtk_widget_set_size_request(variable,400,-1);
-	gtk_table_attach_defaults(GTK_TABLE(table),VarName,0,1,0,1);		
-	gtk_table_attach_defaults(GTK_TABLE(table),variable,1,3,0,1);		
+	VarName = gtk_label_new (N_("Destination Path"));
+	gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
+    gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
+    gtk_widget_set_size_request(VarName, 100, -1);
+   gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
+
+	DestPath = gtk_file_chooser_button_new("destination folder",GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
+	gtk_file_chooser_set_current_folder ( GTK_FILE_CHOOSER (DestPath), frontenddata->destFile);
+	gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(DestPath), TRUE, TRUE, 0);
 
 
 	// Create entry for destination path
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
-
-	VarName = gtk_label_new (N_("Destination Path"));
-	gtk_widget_show (VarName);
+	VarName = gtk_label_new (N_("Converter Path"));
 	gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-	gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
+    gtk_widget_set_size_request(VarName, 100, -1);
+   gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
 
-	DestinationPath = variable = gnome_file_entry_new( NULL, "Choose the destination directory");
-	gnome_file_entry_set_default_path( GNOME_FILE_ENTRY ( variable ), frontenddata->destFile);
-	gnome_file_entry_set_directory_entry(GNOME_FILE_ENTRY (variable), TRUE);
-	gnome_file_entry_set_filename (GNOME_FILE_ENTRY (variable), frontenddata->destFile);
-	gtk_widget_show(variable);
+	ConverterPath = gtk_file_chooser_button_new("path to external converter",GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
+	gtk_file_chooser_set_current_folder ( GTK_FILE_CHOOSER (DestPath), frontenddata->converterPath);
+	gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(ConverterPath), TRUE, TRUE, 0);
 
-	gtk_widget_set_size_request(variable,400,-1);
-	gtk_table_attach_defaults(GTK_TABLE(table),VarName,0,1,1,2);		
-	gtk_table_attach_defaults(GTK_TABLE(table),variable,1,3,1,2);		
+	// Create widget for destination mask
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
-
-
-  VarName = gtk_label_new (N_("Suffix of Destination"));
-  gtk_widget_show (VarName);
+  VarName = gtk_label_new (N_("Suffix"));
   gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-  gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-  gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
+    gtk_widget_set_size_request(VarName, 100, -1);
+   gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
 
-  DestinationSuffix = variable = gtk_entry_new ();
-  gtk_widget_show (variable);
-  gtk_entry_set_text (GTK_ENTRY (variable), frontenddata->writeFormat);
+  DestSuffix = gtk_entry_new ();
+  gtk_box_pack_start(GTK_BOX(hbox), DestSuffix, TRUE, TRUE, 0);
+  gtk_entry_set_text (GTK_ENTRY (DestSuffix), frontenddata->writeFormat);
 
   help = gtk_button_new_with_label (N_("Help"));
-  gtk_widget_show (help);
+   gtk_box_pack_start(GTK_BOX(hbox), help, TRUE, TRUE, 0);
   g_signal_connect (G_OBJECT (help), "clicked", G_CALLBACK (show_info_callback),(void*)(N_("Enter the file format suffix without any special characters.")));
 
-	g_signal_connect(G_OBJECT(dialog), "clicked", G_CALLBACK(external_converter_Control::dlg_clicked), this);
-	gtk_table_attach_defaults(GTK_TABLE(table),VarName,0,1,2,3);		
-	gtk_table_attach(GTK_TABLE(table),variable,1,2,2,3,GTK_FILL,GTK_FILL,0,0);		
-	gtk_table_attach(GTK_TABLE(table),help,2,3,2,3,GTK_FILL,GTK_FILL,0,0);		
-	gtk_widget_set_size_request(variable,297,-1);
 
-
-	// Create entry for converter
-
-	VarName = gtk_label_new (N_("Path to Converter"));
-	gtk_widget_show (VarName);
-	gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-	gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
-
-	ConverterPath = variable = gnome_file_entry_new( NULL, "Choose the path to the external converter");
-	gnome_file_entry_set_default_path( GNOME_FILE_ENTRY ( variable ), frontenddata->destFile);
-	gnome_file_entry_set_directory_entry(GNOME_FILE_ENTRY (variable), FALSE);
-	gnome_file_entry_set_filename (GNOME_FILE_ENTRY (variable), frontenddata->converterPath);
-	gtk_widget_show(variable);
 	g_signal_connect(G_OBJECT(dialog), "clicked",G_CALLBACK(external_converter_Control::dlg_clicked),this);
 
-
-
-	gtk_table_attach_defaults(GTK_TABLE(table),VarName,0,1,3,4);		
-	gtk_table_attach_defaults(GTK_TABLE(table),variable,1,3,3,4);		
-
-
+// Create widget for converter options
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
 	VarName = gtk_label_new (N_("Converter Options"));
-	gtk_widget_show (VarName);
-	gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-	gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
+    gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
+    gtk_widget_set_size_request(VarName, 100, -1);
+   gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
 
-	ConverterOptions = variable = gtk_entry_new ();
-	gtk_widget_show (variable);
-	gtk_entry_set_text (GTK_ENTRY (variable), frontenddata->converterOptions);
+	ConverterOptions = gtk_entry_new ();
+  gtk_box_pack_start(GTK_BOX(hbox), ConverterOptions, TRUE, TRUE, 0);
+	gtk_entry_set_text (GTK_ENTRY (ConverterOptions), frontenddata->converterOptions);
 
 	help = gtk_button_new_with_label (N_("Help"));
-	gtk_widget_show (help);
+   gtk_box_pack_start(GTK_BOX(hbox), help, TRUE, TRUE, 0);
 	g_signal_connect (G_OBJECT (help), "clicked", G_CALLBACK (show_info_callback),(void*)(N_("Enter options for the external converter.")));
 
-	g_signal_connect(G_OBJECT(dialog), "clicked", G_CALLBACK(external_converter_Control::dlg_clicked), this);
 
 
-	gtk_table_attach_defaults(GTK_TABLE(table),VarName,0,1,4,5);		
-	gtk_table_attach(GTK_TABLE(table),variable,1,2,4,5,GTK_FILL,GTK_FILL,0,0);		
-	gtk_table_attach(GTK_TABLE(table),help,2,3,4,5,GTK_FILL,GTK_FILL,0,0);		
-	gtk_widget_set_size_request(variable,297,-1);
-
-
-	gtk_table_set_col_spacings(GTK_TABLE(table),6);
-	gtk_table_set_row_spacings(GTK_TABLE(table),6);
-
-
-
+/*
 	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	gtk_widget_show(hbox);
-
-	gtk_table_attach(GTK_TABLE(table),hbox,0,3,5,6,GTK_FILL,GTK_FILL,0,0);		
+	
 
 	GtkWidget* toggle_recursive = gtk_check_button_new_with_label("Recursive");
 	
 	gtk_box_pack_start(GTK_BOX (hbox), toggle_recursive, TRUE, TRUE, 0);
-	gtk_widget_show(toggle_recursive);
 	GtkWidget* toggle_overwrite_target = gtk_check_button_new_with_label("Overwrite Target File");
 	g_signal_connect(G_OBJECT(toggle_recursive), "clicked",
 		G_CALLBACK(external_converter_Control::recursive_click),
 		this);
   
 	gtk_box_pack_start(GTK_BOX (hbox), toggle_overwrite_target, TRUE, TRUE, 0);
-	gtk_widget_show(toggle_overwrite_target);
 	g_signal_connect(G_OBJECT(toggle_overwrite_target), "clicked",
 		G_CALLBACK(external_converter_Control::overwrite_target_click),
 		this);
   
 	GtkWidget* toggle_create_subdirs = gtk_check_button_new_with_label("Create sub-directories");
 	gtk_box_pack_start(GTK_BOX (hbox), toggle_create_subdirs, TRUE, TRUE, 0);
-	gtk_widget_show(toggle_create_subdirs);
 	g_signal_connect(G_OBJECT(toggle_create_subdirs), "clicked",
 		G_CALLBACK(external_converter_Control::create_subdirs_click),
 		this);
 
+*/
 
-	gtk_table_set_row_spacing(GTK_TABLE(table),4,12);
-
-
-
-
-
-	gtk_widget_show(dialog);
+    gtk_widget_show_all(dialog);
 }
 
 void external_converter_Control::recursive_click(GtkWidget* widget, gpointer userdata)
@@ -529,31 +485,31 @@ void external_converter_Control::create_subdirs_click(GtkWidget* widget, gpointe
 
 
 
-void external_converter_Control::dlg_clicked(GnomeDialog * dialog, gint button_number, external_converter_Control *mic){
+void external_converter_Control::dlg_clicked(GtkDialog * dialog, gint button_number, external_converter_Control *mic){
 
 	g_free(mic->frontenddata->sourceFile); 
-	mic->frontenddata->sourceFile = g_strdup(gnome_file_entry_get_full_path(GNOME_FILE_ENTRY (mic->SrcFile),TRUE));
+	mic->frontenddata->sourceFile = g_strdup(gtk_file_chooser_get_uri(GTK_FILE_CHOOSER(mic->SourcePath)));
 	if(mic->frontenddata->sourceFile == NULL && !button_number)
 		if(file_error(GTK_WINDOW(dialog),"Source file does not exist",NULL)){
-			gnome_dialog_close(dialog);
+			gtk_widget_destroy(GTK_WIDGET(dialog));
 			goto finish;
 		}
 	g_free(mic->frontenddata->destFile); 
-	mic->frontenddata->destFile = g_strdup(gnome_file_entry_get_full_path(GNOME_FILE_ENTRY (mic->DestinationPath),FALSE));
+	mic->frontenddata->destFile = g_strdup(gtk_file_chooser_get_uri(GTK_FILE_CHOOSER(mic->DestPath)));
 	if(access(mic->frontenddata->destFile,F_OK) && !button_number)
 		if(file_error(GTK_WINDOW(dialog),"Destination Folder does not exist",mic->frontenddata->destFile)){
-			gnome_dialog_close(dialog); 
+			gtk_widget_destroy(GTK_WIDGET(dialog)); 
 			goto finish;
 		}
 
 	g_free(mic->frontenddata->writeFormat);
-	mic->frontenddata->writeFormat = g_strdup(gtk_entry_get_text (GTK_ENTRY (mic->DestinationSuffix)));	
+	mic->frontenddata->writeFormat = g_strdup(gtk_entry_get_text (GTK_ENTRY (mic->DestSuffix)));	
 
 	g_free(mic->frontenddata->converterPath); 
-	mic->frontenddata->converterPath = g_strdup(gnome_file_entry_get_full_path(GNOME_FILE_ENTRY (mic->ConverterPath),FALSE));
+	mic->frontenddata->converterPath = g_strdup(gtk_file_chooser_get_uri(GTK_FILE_CHOOSER(mic->ConverterPath)));
 	if(access(mic->frontenddata->converterPath,F_OK) && !button_number)
 		if(file_error(GTK_WINDOW(dialog),"Converter does not exist",NULL)){
-			gnome_dialog_close(dialog); 
+			gtk_widget_destroy(GTK_WIDGET(dialog)); 
 			goto finish;
 		}
 	
@@ -561,7 +517,7 @@ void external_converter_Control::dlg_clicked(GnomeDialog * dialog, gint button_n
 	mic->frontenddata->converterOptions = g_strdup(gtk_entry_get_text (GTK_ENTRY (mic->ConverterOptions)));	
 
   switch(button_number){
-  case 0:	{gnome_dialog_close(dialog);
+  case 0:	{gtk_widget_destroy(GTK_WIDGET(dialog));
 		//show_info_callback(NULL, N_("Converting ..."));
 	struct stat file_stat;
 	int len=0;
@@ -607,7 +563,7 @@ void external_converter_Control::dlg_clicked(GnomeDialog * dialog, gint button_n
 		}
    break;}
 
-   case 1:	{gnome_dialog_close(dialog); 
+   case 1:	{gtk_widget_destroy(GTK_WIDGET(dialog)); 
 				break;}
 	}
 finish:

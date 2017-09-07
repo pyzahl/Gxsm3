@@ -206,6 +206,7 @@ converter::converter():m_converted(0)
 
 void converter::concatenate_dirs(gchar * target, const gchar * add)
 {
+  PI_DEBUG(DBG_L2,"concatenate dirs");
   /** assure that the directories are delimited with / */
     int len = strlen(target);
     if (len > 0 && target[len - 1] != '/')
@@ -229,6 +230,7 @@ void converter::create_full_path(gchar * target,
 
     if (file)
 	concatenate_dirs(target, file);
+  PI_DEBUG(DBG_L2,g_strdup(target));
 }
 
 
@@ -411,6 +413,7 @@ gint converter::writeFromCh(gint Ch, gchar * fname)
 /** Generates the full path to the target file */
 gchar *converter::strParse(gchar * name, converterData * check)
 {
+        PI_DEBUG(DBG_L2,"str parse");
   /** copy the argument */
     int len = strlen(name);
     gchar *fname = strdup(name);
@@ -478,7 +481,8 @@ void
     GtkWidget *variable;
     GtkWidget *help;
 
-    GtkDialogFlags flags = GTK_DIALOG_MODAL;	// | GTK_DIALOG_DESTROY_WITH_PARENT;
+        // create dialog window
+    GtkDialogFlags flags = GTK_DIALOG_MODAL;
     dialog = gtk_dialog_new_with_buttons("Converter",
 					 NULL,
 					 flags,
@@ -488,18 +492,12 @@ void
 					 GTK_RESPONSE_CANCEL, NULL);
 
 
-    //  gint result = gtk_dialog_run (GTK_DIALOG (dialog));
-    //  gtk_widget_destroy (dialog);
-    //  return result == GTK_RESPONSE_YES ? 1 : 0;
-
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))),
+		       vbox, TRUE, TRUE, GXSM_WIDGET_PAD);
     gtk_widget_show(vbox);
 
-    gtk_box_pack_start(GTK_BOX
-		       (gtk_dialog_get_content_area(GTK_DIALOG(dialog))),
-		       vbox, TRUE, TRUE, GXSM_WIDGET_PAD);
-
-
+       // create widget for source file
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_show(hbox);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
@@ -508,19 +506,13 @@ void
     gtk_widget_set_size_request(VarName, 100, -1);
     gtk_widget_show(VarName);
     gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-    //gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-    //gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
     gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
 
     SrcDir_button =
-	gtk_file_chooser_button_new("source folder",
-				    GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
-    //  gnome_file_entry_set_default_path( GNOME_FILE_ENTRY ( variable ), topdata->sourceDir);
-    //  gnome_file_entry_set_directory_entry(GNOME_FILE_ENTRY (variable), TRUE);
-    //  gnome_file_entry_set_filename (GNOME_FILE_ENTRY (variable), topdata->sourceDir);
-    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(SrcDir_button), TRUE,
-		       TRUE, 0);
+	gtk_file_chooser_button_new("source folder", GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
+    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(SrcDir_button), TRUE, TRUE, 0);
 
+       // create widget for file mask
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_show(hbox);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
@@ -529,13 +521,11 @@ void
     gtk_widget_set_size_request(VarName, 100, -1);
     gtk_widget_show(VarName);
     gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-    // gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-    // gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
     gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
-
-    SrcMask = variable = gtk_entry_new();
-    gtk_box_pack_start(GTK_BOX(hbox), variable, TRUE, TRUE, 0);
-    gtk_entry_set_text(GTK_ENTRY(variable), topdata->convFilter);
+    
+    SrcMask = gtk_entry_new();
+    gtk_box_pack_start(GTK_BOX(hbox), SrcMask, TRUE, TRUE, 0);
+    gtk_entry_set_text(GTK_ENTRY(SrcMask), topdata->convFilter);
 
     help = gtk_button_new_with_label(N_("Help"));
     gtk_widget_show(help);
@@ -544,23 +534,18 @@ void
 		     G_CALLBACK(show_info_callback),
 		     (void
 		      *) (N_("Select subset of files via wildcard.")));
-
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
-    VarName = gtk_label_new(N_("Destination Path"));
+        // create widget for destination path    
+        VarName = gtk_label_new(N_("Destination Path"));
     gtk_widget_set_size_request(VarName, 100, -1);
     gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-    // gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-    // gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
     gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
 
     DestDir_button =
 	gtk_file_chooser_button_new("target folder",
 				    GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
-    //  gnome_file_entry_set_default_path( GNOME_FILE_ENTRY ( variable ), topdata->destDir);
-    //  gnome_file_entry_set_directory_entry(GNOME_FILE_ENTRY (variable), TRUE);
-    //  gnome_file_entry_set_filename (GNOME_FILE_ENTRY (variable), topdata->destDir);
     gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(DestDir_button), TRUE,
 		       TRUE, 0);
 
@@ -572,14 +557,12 @@ void
     gtk_widget_set_size_request(VarName, 100, -1);
     gtk_widget_show(VarName);
     gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
-    // gtk_misc_set_alignment (GTK_MISC (VarName), 0.0, 0.5);
-    // gtk_misc_set_padding (GTK_MISC (VarName), 5, 0);
     gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
 
-    DestMask = variable = gtk_entry_new();
+    DestMask = gtk_entry_new();
     gtk_widget_show(variable);
-    gtk_box_pack_start(GTK_BOX(hbox), variable, TRUE, TRUE, 0);
-    gtk_entry_set_text(GTK_ENTRY(variable), topdata->writeFormat);
+    gtk_box_pack_start(GTK_BOX(hbox), DestMask, TRUE, TRUE, 0);
+    gtk_entry_set_text(GTK_ENTRY(DestMask), topdata->writeFormat);
 
     help = gtk_button_new_with_label(N_("Help"));
     gtk_widget_show(help);
