@@ -668,6 +668,10 @@ int LineProfile1D::SetData_redprofile(Scan *sc, int redblue){
 
 // need to copy lines for multiple "red lines" with history
 int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
+        Point2D p2d[2];
+        vo->obj_get_xy_i_pixel2d (0, &p2d[0]);
+        vo->obj_get_xy_i_pixel2d (1, &p2d[1]);
+
 	//  XSMDEBUG("LineProfile1D::SetData");
 
 	if(! private_scan1d){ // need new scan?
@@ -686,14 +690,14 @@ int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
 
 	switch (vo ? vo->obj_type_id () : 0){
 	case O_POINT:
-		if (sc->PktVal == 1){
+		if (vo->obj_num_points () == 1){
 			if (vo->get_profile_path_dimension () == MEM2D_DIM_LAYER){ // Plot Data over Value (Layer dim is 3) as Series in times
 				int nt = sc->number_of_time_elements ();
 				if (vo->get_profile_series_all () && nt > 1)
 					for (int t=0; t<nt; ++t)
-						scan1d->mem2d->GetLayerDataLineFrom (&sc->Pkt2d[0], sc->mem2d_time_element (t), &sc->data, &scan1d->data, vo->get_profile_path_width()/2., t);
+						scan1d->mem2d->GetLayerDataLineFrom (&p2d[0], sc->mem2d_time_element (t), &sc->data, &scan1d->data, vo->get_profile_path_width()/2., t);
 				else
-					scan1d->mem2d->GetLayerDataLineFrom (&sc->Pkt2d[0], sc->mem2d, &sc->data, &scan1d->data, vo->get_profile_path_width()/2.);
+					scan1d->mem2d->GetLayerDataLineFrom (&p2d[0], sc->mem2d, &sc->data, &scan1d->data, vo->get_profile_path_width()/2.);
 
 			} else if (vo->get_profile_series_dimension () == MEM2D_DIM_TIME){ // Plot Data over Time (Time dim is 4) as Series in Values (layer)
 				int nt = sc->number_of_time_elements ();
@@ -703,14 +707,14 @@ int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
 				if (vo->get_profile_series_all () && nt > 1)
                                         for (int t=vo->get_profile_series_limit (0); t<tend; ++t){
                                                 sc->mem2d_time_element (t) -> SetLayer (sc->mem2d->GetLayer ());
-                                                scan1d->mem2d->GetLayerDataLineFrom (&sc->Pkt2d[0], sc->mem2d_time_element (t), &sc->data,  &scan1d->data, 
+                                                scan1d->mem2d->GetLayerDataLineFrom (&p2d[0], sc->mem2d_time_element (t), &sc->data,  &scan1d->data, 
                                                                                      vo->get_profile_path_width()/2., t, TRUE);
                                         }
                                 else{
                                         if (nt > 1)
                                                 for (int t=vo->get_profile_series_limit (0); t<tend; ++t){
                                                         sc->mem2d_time_element (t) -> SetLayer (sc->mem2d->GetLayer ());
-                                                        scan1d->mem2d->GetLayerDataLineFrom (&sc->Pkt2d[0], sc->mem2d_time_element(t), &sc->data,  &scan1d->data, 
+                                                        scan1d->mem2d->GetLayerDataLineFrom (&p2d[0], sc->mem2d_time_element(t), &sc->data,  &scan1d->data, 
                                                                                              vo->get_profile_path_width()/2., t, TRUE, sc->mem2d_time_element (t)->GetLayer());
                                                 }
                                 }
@@ -733,12 +737,12 @@ int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
 		return 0;
 
 	case O_CIRCLE:
-		if (sc->PktVal == 2)
-			scan1d->mem2d->GetArcDataLineFrom (&sc->Pkt2d[0], &sc->Pkt2d[1], sc->mem2d, &scan1d->data, vo->get_profile_path_width());
+		if (vo->obj_num_points () == 2)
+			scan1d->mem2d->GetArcDataLineFrom (&p2d[0], &p2d[1], sc->mem2d, &scan1d->data, vo->get_profile_path_width());
 		return 0;
 
 	case O_LINE:
-		if (sc->PktVal == 2){
+		if (vo->obj_num_points () == 2){
 			int nt = sc->number_of_time_elements ();
                         int tstart = vo->get_profile_series_limit (0);
                         int tend   = vo->get_profile_series_limit (1);
@@ -748,7 +752,7 @@ int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
 			    && (vo->get_profile_series_dimension () == MEM2D_DIM_TIME || vo->get_profile_path_dimension () == MEM2D_DIM_TIME))
                                 for (int t=tstart; t<tend; ++t){
 					sc->mem2d_time_element (t) -> SetLayer (sc->mem2d->GetLayer ());
-					scan1d->mem2d->GetDataLineFrom (&sc->Pkt2d[0], &sc->Pkt2d[1], sc->mem2d_time_element (t), &sc->data, &scan1d->data,
+					scan1d->mem2d->GetDataLineFrom (&p2d[0], &p2d[1], sc->mem2d_time_element (t), &sc->data, &scan1d->data,
 									(GETLINEORGMODE)xsmres.LineProfileOrgMode, 
 									vo->get_profile_path_width(),
 									vo->get_profile_path_step(),
@@ -758,7 +762,7 @@ int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
 									t, tend-tstart, append);
 				}
 			else
-				scan1d->mem2d->GetDataLineFrom (&sc->Pkt2d[0], &sc->Pkt2d[1], sc->mem2d, &sc->data,  &scan1d->data,
+				scan1d->mem2d->GetDataLineFrom (&p2d[0], &p2d[1], sc->mem2d, &sc->data,  &scan1d->data,
 								(GETLINEORGMODE)xsmres.LineProfileOrgMode,
 								vo->get_profile_path_width(),
 								vo->get_profile_path_step(),

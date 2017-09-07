@@ -255,7 +255,11 @@ class VObject{
 			}
 		} 
 	};
-
+        void obj_get_xy_i_pixel2d (int i, Point2D *p){
+                if (i>=0 && i<np)
+                        vinfo->XYview2pixel (xy[2*i], xy[2*i+1], p); 
+        };
+        
 	// profile
 	void   set_profile_path_width (double w=1.) { path_width = w; };
 	double get_profile_path_width () { return path_width; };
