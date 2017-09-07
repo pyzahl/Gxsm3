@@ -40,69 +40,74 @@
 
 #include "batch.h"
 
-#define MAX_PATH 1024 // maximum path-length
-#define EXT_SEP '.'     //Suffix seperator
+#define MAX_PATH 1024		// maximum path-length
+#define EXT_SEP '.'		//Suffix seperator
 
 class converterData {
 
-public:
-	  converterData(const gchar *src, const gchar *dst, const gchar *conv, const gchar *write);
-	 ~converterData();	
+  public:
+    converterData(const gchar * src, const gchar * dst, const gchar * conv,
+		  const gchar * write);
+    ~converterData();
 
     gchar *sourceDir;
-	gchar *destDir;
-	gchar *convFilter;
+    gchar *destDir;
+    gchar *convFilter;
     gchar *writeFormat;
-	bool m_recursive;
-	bool m_overwrite_target;
-	bool m_create_subdirs;
+    bool m_recursive;
+    bool m_overwrite_target;
+    bool m_create_subdirs;
 };
 
 
 class converter {
 
-public:
-  	converter();
- 	~converter();
-   
+  public:
+    converter();
+    ~converter();
+
 	/** current_dir parameter is set to a value not equal 0 in case
 		of recursive traversal of directory tree */
-  void ConvertDir(converterData *work_it, const gchar* current_dir);
-  void DoConvert(gchar *pathname,gchar *outputname);    
-  gint  readToAct(gchar *fname);  
-  gint  writeFromCh(gint Ch, gchar *fname);	
-  
-  	
-private:
-	int m_converted;
-	
-	gchar*strParse(gchar *fname, converterData *check);
-	gchar retStr[MAX_PATH];
+    void ConvertDir(converterData * work_it, const gchar * current_dir);
+    void DoConvert(gchar * pathname, gchar * outputname);
+    gint readToAct(gchar * fname);
+    gint writeFromCh(gint Ch, gchar * fname);
+
+
+  private:
+    int m_converted;
+
+    gchar *strParse(gchar * fname, converterData * check);
+    gchar retStr[MAX_PATH];
 	/** Concatenate path parts and make sure, that the path in the
 		target array is already terminated with a '/' */
-	static void concatenate_dirs(gchar* target, const gchar* add);
+    static void concatenate_dirs(gchar * target, const gchar * add);
 	/** Copy the name of the full path to the target array, which
 		must be big enough. file and current_dir do not need
 		to be set. */
-	static void create_full_path(gchar* target,
-		const gchar* source_directory, const gchar* current_dir,
-		const gchar* file); 
-	static void replace_suffix(gchar* target, gchar* new_suffix);
+    static void create_full_path(gchar * target,
+				 const gchar * source_directory,
+				 const gchar * current_dir,
+				 const gchar * file);
+    static void replace_suffix(gchar * target, gchar * new_suffix);
 };
 
-class converterControl : public DlgBase{	
-public:
+class converterControl:public DlgBase {
+  public:
 
     converterControl();
-   ~converterControl();
+    ~converterControl();
 
-	void run();
-	static void dlg_clicked(GtkDialog * dialog, gint button_number, converterControl *mic);
-	static void recursive_click(GtkWidget* dialog, gpointer userdata);
-	static void create_subdirs_click(GtkWidget* dialog, gpointer userdata);
-	static void overwrite_target_click(GtkWidget* dialog, gpointer userdata);
-  
-	converterData *topdata;
-	GtkWidget *SrcMask, *DestMask;
-	GtkWidget *SrcDir_button, *DestDir_button;
+    void run();
+    static void dlg_clicked(GtkDialog * dialog, gint button_number,
+			    converterControl * mic);
+    static void recursive_click(GtkWidget * dialog, gpointer userdata);
+    static void create_subdirs_click(GtkWidget * dialog,
+				     gpointer userdata);
+    static void overwrite_target_click(GtkWidget * dialog,
+				       gpointer userdata);
+
+    converterData *topdata;
+    GtkWidget *SrcMask, *DestMask;
+    GtkWidget *SrcDir_button, *DestDir_button;
 };
