@@ -390,7 +390,7 @@ void VObject::SetUpPos(VOBJ_COORD_MODE cmode, int node){
 }
 
 void VObject::draw (cairo_t *cr){
-        g_message ("DBG: VObject::draw name=%s, label=%s, show=%d, osd=%d", name, object_label ? object_label->get_text() : "N/A", show_flag, label_osd_style);
+        // g_message ("DBG: VObject::draw name=%s, label=%s, show=%d, osd=%d", name, object_label ? object_label->get_text() : "N/A", show_flag, label_osd_style);
         if (show_flag){ // master show/hide for all
                 //  g_print ("vobj::draw %s at %g %g\n", name, xy[0], xy[1]);
                 if (!label_osd_style)
@@ -419,7 +419,7 @@ void VObject::draw (cairo_t *cr){
                         selected_bbox->draw (cr);
                 
                 if (profile){
-                        profile->show();
+                        //profile->show();
                         profile->NewData(vinfo->sc, this);
                 }
 
