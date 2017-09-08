@@ -53,7 +53,7 @@ public:
 
         gchar *sourceDir;
 	gchar *destDir;
-	gchar *convFilter;
+	gchar *convBin;
         gchar *writeFormat;
 	bool m_recursive;
 	bool m_overwrite_target;
@@ -62,7 +62,6 @@ public:
 	gchar *sourceFile;
 	gchar *destFile;
 //	gchar *destSuffix;
-	gchar *converterPath;
 	gchar *converterOptions;
 };
 
@@ -79,7 +78,7 @@ public:
 	void run();
 	static void dlg_clicked(GtkDialog * dialog, gint button_number, external_converter_Control *mic);
 	external_converter_Data *frontenddata;
-	GtkWidget *SourcePath, *DestPath, *DestSuffix, *ConverterPath, *ConverterOptions;
+	GtkWidget *SourcePath, *DestPath, *DestSuffix, *ConverterBin, *ConverterOptions;
 };
 
 class external_converter {
