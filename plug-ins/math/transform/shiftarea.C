@@ -243,17 +243,17 @@ static void shiftarea_cleanup(void)
 
   int x1, x2, top, bottom, hshift, vshift;
   MOUSERECT msr;
-  MkMausSelect(Src->Pkt2d, &msr, Src->mem2d->GetNx(), Src->mem2d->GetNy());
+  MkMausSelect (Src, &msr, Src->mem2d->GetNx(), Src->mem2d->GetNy());
 
   if( msr.xSize  < 1 || msr.ySize < 1){
-    return MATH_SELECTIONERR;
+	  return MATH_SELECTIONERR;
   }
-  else{
-    x1     = Src->Pkt2d[0].x;
-    x2     = Src->Pkt2d[1].x;
-    top    = msr.yTop;
-    bottom = msr.yBottom;
-  }
+
+  x1     = msr.xLeft;
+  x2     = msr.xRight;
+  top    = msr.yTop;
+  bottom = msr.yBottom;
+  
   // PI_DEBUG (DBG_L2, "Plugin Shiftarea: " << x1 << " " << x2 << " " <<top << " " <<bottom << endl;
 
   vshift = bottom - top;

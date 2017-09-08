@@ -39,30 +39,18 @@
 #include "gxsm_app.h"
 #include "app_vinfo.h"
 
+#include "scan_object_data.h"
+
 #include "cairo_item.h"
 
-// this is the type of the current active object...
-// we need to get rid of this...
-typedef enum { 
-        O_NONE,
-        O_POINT,
-        O_LINE,
-        O_RECTANGLE,
-        O_POLYLINE,
-        O_PARABEL,
-        O_CIRCLE,
-        O_TRACE,
-        O_EVENT,
-        O_KSYS
-} V_OBJECT_TYPE;
 
 class ProfileControl;
 
 typedef enum { VOBJ_COORD_FROM_MOUSE, VOBJ_COORD_ABSOLUT, VOBJ_COORD_RELATIV } VOBJ_COORD_MODE;
 
-class VObject{
+class VObject : public scan_object_data{
  public:
-	VObject (GtkWidget *canvas, double *xy0, int npkt, Point2D *P2d, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
+	VObject (GtkWidget *canvas, double *xy0, int npkt, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
 	virtual ~VObject ();
 
 	virtual gboolean check_event(GdkEvent *event, double xy[2]);
@@ -240,26 +228,7 @@ class VObject{
 			return NULL; 
 		} else return text; 
 	};
-	int obj_num_points () { return np; };
-	void obj_get_xy_i (int i, double &x, double &y) { 
-		if (i>=0) { // default (i=0...np) is Angstroems -- conveniance hack
-			if (i<np){ 
-				x=xy[2*i]; y=xy[2*i+1]; 
-				vinfo->W2Angstroem (x,y);
-			}
-		} else { // but -1, ... -np-1 is in pixels!
-			i = -i-1;
-			if (i<np){ 
-				x=xy[2*i] * vinfo->GetQfac (); 
-				y=xy[2*i+1] * vinfo->GetQfac (); 
-			}
-		} 
-	};
-        void obj_get_xy_i_pixel2d (int i, Point2D *p){
-                if (i>=0 && i<np)
-                        vinfo->XYview2pixel (xy[2*i], xy[2*i+1], p); 
-        };
-        
+
 	// profile
 	void   set_profile_path_width (double w=1.) { path_width = w; };
 	double get_profile_path_width () { return path_width; };
@@ -284,7 +253,36 @@ class VObject{
 	GtkWidget *canvas;
 	GSimpleActionGroup *gs_action_group;
 
+
+        // scan_object_data implementation
+        virtual gchar *get_name () { return name; };
+        virtual gchar *get_text () { return text; };
+        virtual gint get_num_points () { return np; };
+        virtual gint get_id () { return id; };
+	virtual void get_xy_i (int i, double &x, double &y) { 
+		if (i>=0) { // default (i=0...np) is Angstroems -- conveniance hack
+			if (i<np){ 
+				x=xy[2*i]; y=xy[2*i+1]; 
+				vinfo->W2Angstroem (x,y);
+			}
+		} else { // but -1, ... -np-1 is in pixels!
+			i = -i-1;
+			if (i<np){ 
+				x=xy[2*i] * vinfo->GetQfac (); 
+				y=xy[2*i+1] * vinfo->GetQfac (); 
+			}
+		} 
+	};
+        virtual void get_xy_i_pixel2d (int i, Point2D *p){
+                if (i>=0 && i<np)
+                        vinfo->XYview2pixel (xy[2*i], xy[2*i+1], p); 
+        };
+        
  protected:
+	gchar *name;
+	gchar *text;
+	int np;
+
 	UnitObj *Pixel;
 	UnitObj *Unity;
 	BuildParam *properties_bp;
@@ -303,14 +301,9 @@ class VObject{
 	gint grid_multiples;
 	gint grid_size;
 
-	gchar *name;
-	gchar *text;
-
-	int np;
 	double marker_scale;
 	double label_offset_xy[2];
 	double *xy;
-	Point2D  *p2d;
 	cairo_item **abl;
 	cairo_item_text *object_label;
         int label_anchor;
@@ -352,7 +345,7 @@ class VObject{
 
 class VObPoint : public VObject{
  public:
-	VObPoint(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
+	VObPoint(GtkWidget *canvas, double *xy0, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
 	virtual ~VObPoint();
 
 	virtual void draw_extra(cairo_t *cr);
@@ -371,7 +364,7 @@ class VObPoint : public VObject{
 
 class VObLine : public VObject{
  public:
-	VObLine(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
+	VObLine(GtkWidget *canvas, double *xy0, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
 	virtual ~VObLine();
 	virtual void AddNode();
 
@@ -383,7 +376,7 @@ class VObLine : public VObject{
 
 class VObPolyLine : public VObject{
  public:
-	VObPolyLine(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
+	VObPolyLine(GtkWidget *canvas, double *xy0, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
 	virtual ~VObPolyLine();
 	virtual void AddNode();
 	virtual void DelNode();
@@ -393,7 +386,7 @@ class VObPolyLine : public VObject{
 
 class VObTrace : public VObject{
  public:
-	VObTrace(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
+	VObTrace(GtkWidget *canvas, double *xy0, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
 	virtual ~VObTrace();
 	virtual void Change(double *xy0);
 
@@ -405,7 +398,7 @@ class VObTrace : public VObject{
 
 class VObKsys : public VObject{
  public:
-	VObKsys(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
+	VObKsys(GtkWidget *canvas, double *xy0, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
 	virtual ~VObKsys();
 
 	virtual void Update();
@@ -429,7 +422,7 @@ class VObKsys : public VObject{
 
 class VObParabel : public VObject{
  public:
-	VObParabel(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
+	VObParabel(GtkWidget *canvas, double *xy0, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
 	virtual ~VObParabel();
 
 	virtual void Update();
@@ -439,7 +432,7 @@ class VObParabel : public VObject{
 
 class VObRectangle : public VObject{
  public:
-	VObRectangle(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
+	VObRectangle(GtkWidget *canvas, double *xy0, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
 	virtual void SetUpScan();
 	virtual ~VObRectangle();
 	virtual void Update();
@@ -448,7 +441,7 @@ class VObRectangle : public VObject{
 
 class VObCircle : public VObject{
  public:
-	VObCircle(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
+	VObCircle(GtkWidget *canvas, double *xy0, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
 	virtual ~VObCircle();
 
 	double Radius(){
@@ -460,7 +453,7 @@ class VObCircle : public VObject{
 
 class VObEvent : public VObject{
  public:
-	VObEvent(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double marker_scale=0.4);
+	VObEvent(GtkWidget *canvas, double *xy0, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double marker_scale=0.4);
 	virtual ~VObEvent();
 	
 	virtual void Update();

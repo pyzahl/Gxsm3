@@ -64,7 +64,7 @@ gchar *ViewInfo::makeXinfo(double x){
 	return Ux()->UsrString (sc->GetWorldX ((int)x)); // only relative mode!
 }
 
-gchar *ViewInfo::makeDXYinfo (double xy1a[2], double xy2a[2], Point2D *p1, Point2D *p2, double factor){
+gchar *ViewInfo::makeDXYinfo (double xy1a[2], double xy2a[2], double factor){
 	double xy1[2], xy2[2], dx, dy;
 	gchar  *infostring = NULL;
 	memcpy (xy1, xy1a, sizeof(xy1));
@@ -77,15 +77,6 @@ gchar *ViewInfo::makeDXYinfo (double xy1a[2], double xy2a[2], Point2D *p1, Point
 				      (double)sc->mem2d->GetNx()-1, (double)sc->mem2d->GetNy()-1)
 	    != NotClipped)
 		infostring = g_strdup (", line was clipped! ");
-
-	if(p1){
-		p1->x = R2INT(xy1[0]);
-		p1->y = R2INT(xy1[1]);
-	}
-	if(p2){
-		p2->x = R2INT(xy2[0]);
-		p2->y = R2INT(xy2[1]);
-	}
 
 	if(pixelmode){
 		dx = xy2[0]-xy1[0];
@@ -157,15 +148,11 @@ gchar *ViewInfo::makeA2info(double xy1a[2], double xy2a[2]){
 	return Ux()->UsrStringSqr (dx*dy);
 }
 
-gchar *ViewInfo::makeXYinfo(double x, double y, Point2D *p){ 
+gchar *ViewInfo::makeXYinfo(double x, double y){ 
 	double mx = x*Qfac, xx;
 	double my = y*Qfac, yy;
 	xx = R2INT(mx); xx=MIN(sc->mem2d->GetNx()-1, MAX(0,xx));
 	yy = R2INT(my); yy=MIN(sc->mem2d->GetNy()-1, MAX(0,yy));
-	if(p){
-		p->x = R2INT(xx);
-		p->y = R2INT(yy);
-	}
 	
 	if(!pixelmode)
 		sc->Pixel2World ((int)xx, (int)yy, mx, my, sc_mode);
@@ -210,17 +197,14 @@ gchar *ViewInfo::makedXdYinfo(double xy1a[2], double xy2a[2]){
 	return pxy;
 }
 
-gchar *ViewInfo::makeXYZinfo(double x, double y, Point2D *p){ 
+gchar *ViewInfo::makeXYZinfo(double x, double y){ 
 	double mx = x*Qfac, xx;
 	double my = y*Qfac, yy;
 	gchar *us = NULL;
 	gchar *pt = NULL;
 	xx = R2INT(mx); xx=MIN(sc->mem2d->GetNx()-1, MAX(0,xx));
 	yy = R2INT(my); yy=MIN(sc->mem2d->GetNy()-1, MAX(0,yy));
-	if(p){
-		p->x = R2INT(xx);
-		p->y = R2INT(yy);
-	}
+
 	int ix=(int)xx, iy=(int)yy;
 
 	if(!pixelmode)

@@ -72,11 +72,6 @@ int Profiles::update(int y1, int y2){
 
   scan->mem2d->SetDataPktMode(data->display.ViewFlg);
 
-  //  scan->Pkt2d[0].x=0;
-  //  scan->Pkt2d[0].y=y1;
-  //  scan->Pkt2d[1].x=mem2d->GetNx()-1;
-  //  scan->Pkt2d[1].y=y1;
-
   profile->NewData(scan, y1, FALSE);
 
   //  profile->UpdateArea();

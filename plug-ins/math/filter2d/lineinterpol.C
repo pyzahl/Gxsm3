@@ -234,7 +234,7 @@ double TransformFkt (double val, double range){
 	
         MOUSERECT msr;
 	
-        MkMausSelect(Src->Pkt2d, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+        MkMausSelect (Src, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
 	
         if( msr.xSize  < 1)
                 return MATH_SELECTIONERR;

@@ -1417,11 +1417,6 @@ void ViewControl::SetTitle(const gchar *title, const gchar *subtitle){
         CheckOptions();
 }
 
-void get_obj_coords_wrapper(int i, double &x, double &y){
-	if (global_current_vobject)
-		global_current_vobject->obj_get_xy_i (i,x,y);
-}
-
 void ViewControl::AddObject(VObject *vo){
 	gobjlist = g_slist_prepend (gobjlist, vo);
 	vo->Update ();
@@ -1430,9 +1425,7 @@ void ViewControl::AddObject(VObject *vo){
 		return;
 	}
 	current_vobject = vo;
-	vo->obj_id (scan->add_object (vo->obj_name (), vo->obj_text (),
-				      vo->obj_num_points (),
-				      get_obj_coords_wrapper));
+	vo->obj_id (scan->add_object (vo));
 
 	vo->set_marker_scale (xsmres.HandleSize/100.);
 	current_vobject = NULL;
@@ -1443,10 +1436,7 @@ void ViewControl::AddObject(VObject *vo){
 void ViewControl::AddIndicator(VObject *vo){
 	gindicatorlist = g_slist_prepend (gindicatorlist, vo);
 	vo->Update ();
-	vo->obj_id (scan->add_object (vo->obj_name (), vo->obj_text (),
-				      vo->obj_num_points (),
-				      get_obj_coords_wrapper));
-
+	vo->obj_id (scan->add_object (vo));
 	vo->set_marker_scale (xsmres.HandleSize/100.);
 }
 
@@ -1490,7 +1480,7 @@ void ViewControl::add_event_obj(ScanEvent *se, ViewControl *vc)
 // 			return;
 
 	se->get_position (xy[0], xy[1]);
-	VObEvent *voe = new VObEvent (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, NULL, vc->ArrowSize/100.);
+	VObEvent *voe = new VObEvent (vc->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, NULL, vc->ArrowSize/100.);
 	voe->set_scan_event (se);
 	gchar *obn = g_strconcat ("Ev-", ((EventEntry*)(se->event_list->data))->description(), NULL);
 	voe->set_obj_name (obn);
@@ -1940,7 +1930,6 @@ void ViewControl::RemoveObjects(){
 	g_slist_foreach((GSList*) gobjlist, (GFunc) ViewControl::remove_obj, this);
 	g_slist_free(gobjlist);
 	gobjlist = NULL;
-	scan->PktVal=0;
 
         for (gsize i=0; i<OSD_MAX; ++i)
 		if (osd_item[i]){
@@ -2032,7 +2021,7 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
 		case 2: // Show XYZ display
                         // g_print ("BUTTON_PRESS image-pixel XY: %g, %g\n", mouse_pix_xy[0], mouse_pix_xy[1]);
 			{
-                                gchar *mld = vc->vinfo->makeXYZinfo (mouse_pix_xy[0], mouse_pix_xy[1], NULL);
+                                gchar *mld = vc->vinfo->makeXYZinfo (mouse_pix_xy[0], mouse_pix_xy[1]);
                                 coordpopup = gtk_window_new (GTK_WINDOW_POPUP);
                                 gtk_window_set_position (GTK_WINDOW (coordpopup), GTK_WIN_POS_MOUSE);
                                 GtkWidget *frame;
@@ -2067,7 +2056,7 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
 	case GDK_MOTION_NOTIFY:
                 // g_print ("MOTION XY: %g, %g\n", event->button.x, event->button.y);
 		if (dragging && (event->motion.state & GDK_BUTTON2_MASK)){
-			gchar *mld = vc->vinfo->makeXYZinfo (mouse_pix_xy[0], mouse_pix_xy[1], NULL);
+			gchar *mld = vc->vinfo->makeXYZinfo (mouse_pix_xy[0], mouse_pix_xy[1]);
 			gtk_label_set_text (GTK_LABEL (coordlab), mld);
 			g_free(mld);
 		}
@@ -2612,7 +2601,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
                                 xy[3] = xy[1];
                                 XSM_DEBUG(DBG_L2, "Adding Circle@xy:" << xy[0] << ", " << xy[1]
                                           << " : " << xy[2] << ", " << xy[3] );
-                                vc->AddObject (vo = new VObCircle (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, 0.));
+                                vc->AddObject (vo = new VObCircle (vc->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, 0.));
                                 vo->set_obj_name ("Circle:Atom");
                                 vo->set_custom_label_font ("Sans 6");
                                 vo->set_custom_label_color (atom_color);
@@ -2672,7 +2661,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			   lab = g_strdup_printf ("T%05.0f:%.3fms:Z=%gA", arr[0], arr[1], arr[5]);
 //			   lab = g_strdup_printf ("T%05.0f", arr[0]);
 			   std::cout << " => " << lab << std::endl;
-			   vc->AddObject (vo = new VObPoint (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
+			   vc->AddObject (vo = new VObPoint (vc->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
 			   g_free (lab); lab=NULL;
 //			   vo->set_obj_name ("Trl");
 			   vo->set_obj_name ("*Marker:yellow");
@@ -2696,7 +2685,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			lab = GetLabelInfo (vc->objloadstream, &f, &mas, c, spc, sp00, &s);
 			GetXAngYAng (vc->objloadstream, xy, TRUE);
 			XSM_DEBUG(DBG_L2, "Adding Point@xy:" << xy[0] << ", " << xy[1] );
-			vc->AddObject (vo = new VObPoint (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
+			vc->AddObject (vo = new VObPoint (vc->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
 			vo->set_obj_name (nm);
 			vo->set_custom_label_font (f);
 			vo->set_custom_label_color (c);
@@ -2720,7 +2709,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			
 			XSM_DEBUG(DBG_L2, "Adding Line@xy:" << xy[0] << ", " << xy[1]
 			     << " : " << xy[2] << ", " << xy[3] );
-			vc->AddObject (vo = new VObLine (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
+			vc->AddObject (vo = new VObLine (vc->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
 			if (n>2){
 				for (i=2; i<n && i < 7; ++i)
 					vo->insert_node (&xy[2*i]);
@@ -2754,7 +2743,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			GetXAngYAng (vc->objloadstream, xy+2, FALSE);
 			XSM_DEBUG(DBG_L2, "Adding Rectangle@xy:" << xy[0] << ", " << xy[1]
 			     << " : " << xy[2] << ", " << xy[3] );
-			vc->AddObject (vo = new VObRectangle (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
+			vc->AddObject (vo = new VObRectangle (vc->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
 			vo->set_custom_label_font (f);
 			vo->set_custom_label_color (c);
 			vo->set_custom_element_color (ec);
@@ -2774,7 +2763,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			GetXAngYAng (vc->objloadstream, xy+2, FALSE);
 			XSM_DEBUG(DBG_L2, "Adding Circle@xy:" << xy[0] << ", " << xy[1]
 			     << " : " << xy[2] << ", " << xy[3] );
-			vc->AddObject (vo = new VObCircle (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
+			vc->AddObject (vo = new VObCircle (vc->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
 			vo->set_custom_label_font (f);
 			vo->set_custom_label_color (c);
 			vo->set_custom_element_color (ec);
@@ -2795,7 +2784,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			GetXAngYAng (vc->objloadstream, xy+4, FALSE);
 			XSM_DEBUG(DBG_L2, "Adding Ksys@xy:" << xy[0] << ", " << xy[1]
 			     << " : " << xy[2] << ", " << xy[3] );
-			vc->AddObject (vo = new VObKsys (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
+			vc->AddObject (vo = new VObKsys (vc->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
 			vo->set_custom_label_font (f);
 			vo->set_custom_label_color (c);
 			vo->set_custom_element_color (ec);
@@ -3027,7 +3016,6 @@ void ViewControl::view_tool_remove_all_callback (GSimpleAction *simple, GVariant
                                                 gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
 	vc->RemoveObjects();
-	vc->scan->PktVal=0;
 }
 
 void ViewControl::view_tool_remove_active_callback (GSimpleAction *simple, GVariant *parameter, 
@@ -3037,7 +3025,6 @@ void ViewControl::view_tool_remove_active_callback (GSimpleAction *simple, GVari
                 if (vc->current_vobject->get_osd_style ())
                         return;
                 
-                vc->scan->PktVal=0;
                 vc->gobjlist = g_slist_remove((GSList*) vc->gobjlist, vc->current_vobject);
                 vc->remove_obj (vc->current_vobject, vc);
                 vc->current_vobject = NULL;
@@ -3146,22 +3133,21 @@ void ViewControl::SetMarkerGroup (const gchar *mgcolor){
 
 // ---------------
 
-#define MAKE_VOB_DEFAULTS(TYPE)  new TYPE(vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_FROM_MOUSE, NULL, OB_MARKER_SCALE)
-#define MAKE_VOB_DEFAULTS_WMS(TYPE, MS)  new TYPE(vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_FROM_MOUSE, NULL, MS)
-#define MAKE_VOB_DEFAULTS_SHOW(TYPE)  new TYPE(vc->canvas, xy, vc->scan->Pkt2d, TRUE, VOBJ_COORD_FROM_MOUSE, NULL, OB_MARKER_SCALE)
+#define MAKE_VOB_DEFAULTS(TYPE)  new TYPE(vc->canvas, xy, FALSE, VOBJ_COORD_FROM_MOUSE, NULL, OB_MARKER_SCALE)
+#define MAKE_VOB_DEFAULTS_WMS(TYPE, MS)  new TYPE(vc->canvas, xy, FALSE, VOBJ_COORD_FROM_MOUSE, NULL, MS)
+#define MAKE_VOB_DEFAULTS_SHOW(TYPE)  new TYPE(vc->canvas, xy, TRUE, VOBJ_COORD_FROM_MOUSE, NULL, OB_MARKER_SCALE)
 
 void ViewControl::view_tool_addpoint (GtkWidget *widget, ViewControl *vc){
 	double xy[2] = {0.,0.};
         VObPoint* p;
 	vc->AddObject (p=MAKE_VOB_DEFAULTS (VObPoint));
-	vc->scan->PktVal=1;
         p->follow_on();
 }
 void ViewControl::view_tool_addmarker (GtkWidget *widget, ViewControl *vc){
 	double xy[2] = {0.,0.};
 	gchar *mgn = vc->MakeMarkerLabel ();
 	VObPoint *vp;
-	vc->AddObject (vp = new VObPoint (vc->canvas, xy, vc->scan->Pkt2d, FALSE, VOBJ_COORD_FROM_MOUSE, mgn, 0.5));
+	vc->AddObject (vp = new VObPoint (vc->canvas, xy, FALSE, VOBJ_COORD_FROM_MOUSE, mgn, 0.5));
 	g_free (mgn);
 	switch (vc->marker_group){
 		case 0: vp->set_obj_name ("*Marker:red"); break;
@@ -3171,53 +3157,42 @@ void ViewControl::view_tool_addmarker (GtkWidget *widget, ViewControl *vc){
 		case 4: vp->set_obj_name ("*Marker:magenta"); break;
 		case 5: vp->set_obj_name ("*Marker:cyan"); break;
 	}
-	vc->scan->PktVal=1;
 }
 void ViewControl::view_tool_addshowpoint (GtkWidget *widget, ViewControl *vc){
 	double xy[2] = {0.,0.};
 	vc->AddObject (MAKE_VOB_DEFAULTS_SHOW (VObPoint));
-	vc->scan->PktVal=1;
 }
 void ViewControl::view_tool_addline (GtkWidget *widget, ViewControl *vc){
 	double xy[4] = {0.,0.,15.,15.};
 	vc->AddObject (MAKE_VOB_DEFAULTS (VObLine));
-	vc->scan->PktVal=2;
 }
 void ViewControl::view_tool_addpolyline (GtkWidget *widget, ViewControl *vc){
 	double xy[13] = {6., 0.,0., 10.,10., 20.,20., 30.,30., 40.,40., 50.,50. };
-	vc->scan->realloc_pkt2d (6);
 	vc->AddObject (MAKE_VOB_DEFAULTS (VObPolyLine));
-	vc->scan->PktVal=6;
 }
 void ViewControl::view_tool_addksys (GtkWidget *widget, ViewControl *vc){
 	double xy[6] = {60.,0.,0.,0.,0.,60.};
 	vc->AddObject (MAKE_VOB_DEFAULTS_WMS (VObKsys, 4.));
-	vc->scan->PktVal=3;
 }
 void ViewControl::view_tool_addparabel (GtkWidget *widget, ViewControl *vc){
 	double xy[6] = {0.,0.,25.,30.,50.,50.};
-	vc->AddObject(new VObParabel(vc->canvas, xy, vc->scan->Pkt2d));
-	vc->scan->PktVal=3;
+	vc->AddObject(new VObParabel(vc->canvas, xy));
 }
 void ViewControl::view_tool_addshowline (GtkWidget *widget, ViewControl *vc){
 	double xy[4] = {0.,0.,15.,15.};
 	vc->AddObject (MAKE_VOB_DEFAULTS_SHOW (VObLine));
-	vc->scan->PktVal=2;
 }
 void ViewControl::view_tool_addrectangle (GtkWidget *widget, ViewControl *vc){
 	double xy[4] = {0.,0.,15.,15.};
 	vc->AddObject (MAKE_VOB_DEFAULTS (VObRectangle));
-	vc->scan->PktVal=2;
 }
 void ViewControl::view_tool_addcircle (GtkWidget *widget, ViewControl *vc){
 	double xy[4] = {0.,0.,15.,15.};
 	vc->AddObject (MAKE_VOB_DEFAULTS (VObCircle));
-	vc->scan->PktVal=2;
 }
 void ViewControl::view_tool_addshowcircle (GtkWidget *widget, ViewControl *vc){
 	double xy[4] = {0.,0.,15.,15.};
 	vc->AddObject (MAKE_VOB_DEFAULTS_SHOW (VObCircle));
-	vc->scan->PktVal=2;
 }
 
 void ViewControl::view_object_mode_radio_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data) { 
@@ -3757,7 +3732,6 @@ void ViewControl::obj_remove_callback (GSimpleAction *simple, GVariant *paramete
         if (vo->get_osd_style ())
                 return;
         
-	vc->scan->PktVal=0;
 	vc->gobjlist = g_slist_remove((GSList*) vc->gobjlist, vo);
 	vc->remove_obj(vo, vc);
 }
@@ -3771,7 +3745,7 @@ void ViewControl::obj_properties_callback (GSimpleAction *simple, GVariant *para
 void ViewControl::obj_dump_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	ViewControl *vc = (ViewControl *) user_data;
 	VObject *vo = (VObject*)g_object_get_data (G_OBJECT (vc->canvas), "VObject");
-	vc->scan->dump_object_data (vc->scan->find_object (vo->obj_id ()));
+	vo->dump ();
 }
 
 void ViewControl::obj_reset_counter_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
@@ -3946,7 +3920,7 @@ void ViewControl::update_trace (double *xy, int len){
 	if (v_trace){
 		v_trace->Change (nxy);
 	}else{
-		v_trace = new VObTrace(canvas, nxy, scan->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, "Tip Trace");
+		v_trace = new VObTrace(canvas, nxy, FALSE, VOBJ_COORD_ABSOLUT, "Tip Trace");
 	}
 	delete[] nxy;
 	v_trace->Update ();
@@ -4046,7 +4020,7 @@ void ViewControl::set_osd (gchar *osd_text, int pos){
 				osd_item[pos] -> show_label (true);
 			}else{
 				double xy[2] = {0.,0.};
-				osd_item[pos] = new VObPoint (canvas, xy, scan->Pkt2d, FALSE, VOBJ_COORD_RELATIV, ot, 0.);
+				osd_item[pos] = new VObPoint (canvas, xy, FALSE, VOBJ_COORD_RELATIV, ot, 0.);
                                 osd_item_active_count++;
                                 xy[0] =  2.*((osd_item_active_count%2)-0.5) * 0.9; // left or right
                                 xy[1] = -2.*(((osd_item_active_count/2)%2)-0.5) * (0.9 - (0.1*((osd_item_active_count/4)%4)));

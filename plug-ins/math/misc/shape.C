@@ -264,8 +264,8 @@ void intersection (dseg *s1, dseg *s2, dvec &p){
      int k=0;
      for (int i=0; i<n_obj; i++)
              if (!strncmp ((Src->get_object_data (i))->get_name (), "Line", 4) ){
-		     (Src->get_object_data (i))->get_xy (0, p1[k].x, p1[k].y);
-		     (Src->get_object_data (i))->get_xy (1, p2[k].x, p2[k].y);
+		     (Src->get_object_data (i))->get_xy_i (0, p1[k].x, p1[k].y);
+		     (Src->get_object_data (i))->get_xy_i (1, p2[k].x, p2[k].y);
 		     // convert to pixels
 		     Point2D p;
 		     Src->World2Pixel (p1[k].x, p1[k].y, p.x, p.y);

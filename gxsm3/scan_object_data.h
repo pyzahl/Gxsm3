@@ -36,7 +36,20 @@
  *  Coordinate access function type.
  */
 
-typedef void (*scan_object_ixy_func)  (int, double&, double&);
+// this is the type of the current active object...
+// we need to get rid of this...
+typedef enum { 
+        O_NONE,
+        O_POINT,
+        O_LINE,
+        O_RECTANGLE,
+        O_POLYLINE,
+        O_PARABEL,
+        O_CIRCLE,
+        O_TRACE,
+        O_EVENT,
+        O_KSYS
+} V_OBJECT_TYPE;
 
 /**
  *  scan_object_data:
@@ -48,33 +61,15 @@ typedef void (*scan_object_ixy_func)  (int, double&, double&);
  *  @f_ixy: Pointer to function #scan_object_ixy_func, which provides access 
  *  to the object coodrinates.
  *
- *  Constructor of class scan_object_data.
+ *  Constructor of class scan_object_data. Pure virtual base class.
  */
 
 class scan_object_data{
 public:
-	scan_object_data(int _id,
-			 const gchar *_name, 
-			 const gchar *_text,
-			 int _np, 
-			 scan_object_ixy_func f_ixy){
+	scan_object_data (){
                 GXSM_REF_OBJECT (GXSM_GRC_MEM2D_SCO);
-		id = _id;
-		np = _np;
-		xy = new double[np*2];
-		ixy = new double[np*2];
-		for (int i=0; i<np; ++i){
-			(*f_ixy)(i, xy[2*i], xy[2*i+1]);
-			(*f_ixy)(-i-1, ixy[2*i], ixy[2*i+1]);
-		}
-		name = g_strdup (_name);
-		text = g_strdup (_text);
 	};
-	~scan_object_data(){
-		delete [] xy;
-		delete [] ixy;
-		g_free (name);
-		g_free (text);
+	virtual ~scan_object_data (){
                 GXSM_UNREF_OBJECT (GXSM_GRC_MEM2D_SCO);
 	};
 
@@ -85,39 +80,20 @@ public:
  */
 	void dump(){
 		XSM_DEBUG (DBG_L2, 
-			  "Objectid = " << id << std::endl
-			  << "Name = " << name << std::endl
-			  << "Text = " << text << std::endl
-			  << "NumP = " << np );
-		for (int i=0; i<np; ++i)
-			XSM_DEBUG (DBG_L2, "P[" << i << "] = Ang:("
-				  << xy[i*2] << ", " 
-				  << xy[i*2+1] << "), Pix:(" 
-				  << ixy[i*2] << ", " 
-				  << ixy[i*2+1] << ")" 
-				);
+                           "Objectid = " << get_id () << std::endl
+                           << "Name = " << get_name () << std::endl
+                           << "Text = " << get_text () << std::endl
+                           << "NumP = " << get_num_points () );
+
+		for (int i=0; i < get_num_points (); ++i){
+                        Point2D p2d;
+                        double xy[2];
+                        get_xy_i (i, xy[0], xy[1]);
+                        get_xy_i_pixel2d (i, &p2d);
+                        g_message ("P[%d] = [%g, %g]A = [%d, %d]px", i, xy[0], xy[1], p2d.x, p2d.y);
+                }
 	};
 
-/**
- *  update:
- *  @_name: new object name.
- *  @_text: new object text.
- *  @f_ixy: coordinate update function.
- *
- *  Updates the object data set.
- */
-	void update (const gchar *_name, 
-		     const gchar *_text,
-		     scan_object_ixy_func f_ixy){
-		for (int i=0; i<np; ++i){
-			(*f_ixy)(i, xy[2*i], xy[2*i+1]);
-			(*f_ixy)(-i-1, ixy[2*i], ixy[2*i+1]);
-		}
-		g_free (name);
-		name = g_strdup (_name);
-		g_free (text);
-		text = g_strdup (_text); 
-	};
 
 /**
  *  get_xy:
@@ -129,27 +105,32 @@ public:
  */
 
 	double distance (scan_object_data *other, int i=0) {
-		double dx = other->xy[2*i]  - xy[2*i];
-		double dy = other->xy[2*i+1]- xy[2*i+1];
-		return sqrt(dx*dx+dy*dy); 
+                double xy[2];
+                double oxy[2];
+                get_xy_i (i, xy[0], xy[1]);
+                other->get_xy_i (i, oxy[0], oxy[1]);
+
+		double dx = oxy[0] - xy[0];
+		double dy = oxy[1] - xy[1];
+                
+		return sqrt (dx*dx+dy*dy); 
 	};
 
-	void get_xy (int i, double &x, double &y) { 
-		if (i<np) { x=xy[2*i]; y=xy[2*i+1]; } 
-	};
  
-	void get_xy_pixel (int i, double &x, double &y) { 
-		if (i<np) { x=ixy[2*i]; y=ixy[2*i+1]; } 
+	void get_xy_i_pixel (int i, double &x, double &y) { 
+                Point2D p2d;
+                get_xy_i_pixel2d (i, &p2d);
+		x=p2d.x; y=p2d.y;
 	}; 
 
-/**
+ /**
  *  get_name:
  *
  *  Get the objects name.
  *
  *  Returns: pointer to name, do not modifiy!
  */
-	gchar *get_name () { return name; };
+	virtual gchar *get_name ()=0;
 
 /**
  *  get_text:
@@ -158,7 +139,7 @@ public:
  *
  *  Returns: pointer to text, do not modifiy!
  */
-	gchar *get_text () { return text; };
+	virtual gchar *get_text ()=0;
 
 /**
  *  get_num_points:
@@ -167,7 +148,7 @@ public:
  *
  *  Returns: number of points.
  */
-	int get_num_points () { return np; };
+	virtual gint get_num_points ()=0;
 
 /**
  *  get_id:
@@ -176,15 +157,23 @@ public:
  *
  *  Returns: object id.
  */
-	int get_id () { return id; };
+	virtual gint get_id ()=0;
 
-private:	
-	int id;
-	gchar *name;
-	gchar *text;
-	int np;
-	double *xy;
-	double *ixy;
+
+/**
+ *  get_xy_i:
+ *
+ *  Get the objects i-th point xy coordinate in absolute Angstroems (xy base unit).
+ */
+	virtual void get_xy_i (int i, double &x, double &y)=0;
+
+/**
+ *  get_id:
+ *
+ *  Get the objects i-th point xy coordinate in pixels in Point2D struct.
+ */
+        virtual void get_xy_i_pixel2d (int i, Point2D *p)=0;
+
 };
 
 #endif

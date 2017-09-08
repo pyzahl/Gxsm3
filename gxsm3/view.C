@@ -122,9 +122,7 @@ void View::update_mxyz_from_points (){
 			continue; // sth. is weired!
 
 		// get real world coordinates of point
-		double x,y;
-		obj_data->get_xy_pixel (0, x, y); // get point 0 coordinates in pixels!!
-		p[i].x = (int)x; p[i].y = (int)y;
+		obj_data->get_xy_i_pixel2d (0, &p[i]); // get point 0 coordinates in pixels!!
 		++i;
 	}		
 
@@ -336,10 +334,9 @@ int Grey2D::update(int y1, int y2){
 void Grey2D::add_object(int type, gpointer data){
         if (viewcontrol){
                 double *xy = (double*) data;
-                scan -> realloc_pkt2d ((int)xy[0]);
                 viewcontrol -> AddObject(
                                          new VObPolyLine (viewcontrol->GetCanvas(),
-                                                          xy, scan->Pkt2d,
+                                                          xy,
                                                           FALSE, VOBJ_COORD_ABSOLUT)
                                          );
         }

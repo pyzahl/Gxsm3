@@ -191,7 +191,7 @@ static gboolean plane3pkt_run(Scan *Src, Scan *Dest)
 				
 				// get real world coordinates of point
 				double x,y;
-				obj_data->get_xy_pixel (0, x, y);
+				obj_data->get_xy_i_pixel (0, x, y);
 				p[i].x = (int)x; p[i].y = (int)y;
 				++i;
 		}		

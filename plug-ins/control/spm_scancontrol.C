@@ -926,8 +926,8 @@ static void spm_scancontrol_set_subscan_callback (GtkWidget *w, void *data){
 
                                 // get real world coordinates of rectangle
                                 double x0,y0,x1,y1;
-                                obj_data->get_xy (0, x0, y0);
-                                obj_data->get_xy (1, x1, y1);
+                                obj_data->get_xy_i (0, x0, y0);
+                                obj_data->get_xy_i (1, x1, y1);
                                 
                                 // convert to pixels
                                 gapp->xsm->GetActiveScan () -> World2Pixel (x0, y0, p[0].x, p[0].y);

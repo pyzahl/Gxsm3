@@ -47,11 +47,8 @@ Scan::Scan(Scan *scanmaster){
 	TimeList = NULL;
 	refcount=0;
 	Running = 0;
-	Pkt2d = NULL;
-	numpkt2d = 0;
 	objects_id = 0;
 	objects_list = NULL;
-	realloc_pkt2d(16);
 	vdata = scanmaster->vdata;;
 	mem2d = new Mem2d(1,1,scanmaster->mem2d->GetTyp()); // MemObj. anlegen
 	if (vdata)
@@ -77,11 +74,8 @@ Scan::Scan(int vtype, int vflg, int ChNo, SCAN_DATA *vd, ZD_TYPE mtyp){
 	mem2d_refcount = 0;
 	refcount = 0;
 	Running  = 0;
-	Pkt2d    = NULL;
-	numpkt2d = 0;
 	objects_id = 0;
 	objects_list = NULL;
-	realloc_pkt2d(16);
 	vdata = vd ? vd : &gapp->xsm->data;
 	mem2d = new Mem2d(1,1,mtyp); // MemObj. anlegen
 	if(vd)
@@ -114,7 +108,6 @@ Scan::~Scan(){
 
 	delete mem2d; // MemObj. löschen
 
-	delete[] Pkt2d; 
 	destroy_all_objects ();
         GXSM_UNREF_OBJECT (GXSM_GRC_SCANOBJ);
         GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_SCANOBJ, "destructor");
@@ -300,90 +293,64 @@ int Scan::get_current_time_element (){
 }
 
 
-int Scan::add_object (const gchar *name, const gchar *text,
-		     int np, void (*f_xyi)(int, double&, double&)){
-	scan_object_data *sod = new scan_object_data (++objects_id, name, text, np, f_xyi); 
+int Scan::add_object (scan_object_data *sod){
+	//scan_object_data *sod = new scan_object_data (++objects_id, name, text, np, f_xyi); 
 	objects_list = g_slist_prepend (objects_list, sod);
 	return sod->get_id ();
 }
 
-void Scan::update_object (int id, 
-			  const gchar *name, const gchar *text,
-			  void (*f_xyi)(int, double&, double&)){
-	((scan_object_data*) g_slist_nth_data(objects_list, find_object (id))) -> update (name, text, f_xyi); 
-}
-
-int Scan::find_object (int id){
-	for(unsigned int i=0; i< g_slist_length(objects_list); i++)
-		if (((scan_object_data*) g_slist_nth_data(objects_list, i)) -> get_id () == id)
-			return (int)i;
+int Scan::del_object (scan_object_data *sod){
+        objects_list = g_slist_remove((GSList*) objects_list, sod);
+        delete sod;
 	return -1;
 }
 
-int Scan::del_object (int id){
-	for(unsigned int i=0; i< g_slist_length(objects_list); i++){
-		scan_object_data* sod = (scan_object_data*) g_slist_nth_data(objects_list, i);
-		if (sod->get_id() == id){
-			objects_list = g_slist_remove((GSList*) objects_list, sod);
-			delete sod;
-			return 0;
-		}
-	}
-	return -1;
-}
+void delete_sod (scan_object_data *sod, gpointer data){ delete sod; }
 
-
-
-void Scan::realloc_pkt2d(int n){
-	if (numpkt2d < n){
-		if (Pkt2d)
-			delete[] Pkt2d;
-		Pkt2d = new Point2D[numpkt2d = n];
-		XSM_DEBUG(DBG_L2, "Scan::realloc_pkt2d: n=" << n );
-		for (int i=0; i<n; ++i)
-			Pkt2d[i].x = Pkt2d[i].y = 0;
-		XSM_DEBUG(DBG_L2, "Scan::realloc_pkt2d done." );
-	}
+void Scan::destroy_all_objects (){
+        g_slist_foreach (objects_list, (GFunc) delete_sod, NULL);
+        g_slist_free (objects_list);
+        //for (int i=0; i<=objects_id; ++i) del_object (i);
 }
 
 void Scan::determine_display (int Delta, double sm_eps){
         double hi,lo;
         int success = FALSE;
         int n_obj = number_of_object ();
-        Point2D p[2];
+        Point2D Pkt2d[2];
         hi=lo=0.;
 
 	if (view)
 		view->setup_data_transformation();
 
         while (n_obj--){
-                scan_object_data *obj_data = get_object_data (n_obj);
+                scan_object_data *scan_obj = get_object_data (n_obj);
 		
-                if (strncmp (obj_data->get_name (), "Rectangle", 9) )
+                if (strncmp (scan_obj->get_name (), "Rectangle", 9) )
                         continue; // only points are used!
 
-                if (obj_data->get_num_points () != 2) 
+                if (scan_obj->get_num_points () != 2) 
                         continue; // sth. is weired!
 
-                double x,y; x=y=0.;
-                obj_data->get_xy_pixel (0, x, y);
-                p[0].x = (int)x; p[0].y = (int)y;
-                obj_data->get_xy_pixel (1, x, y);
-                p[1].x = (int)x; p[1].y = (int)y;
+		//objects[i]->get_xy (0, x, y);
+                //r = objects[i]->distance(objects[i-1]);
 
+                
+                scan_obj->get_xy_i_pixel2d (0, &Pkt2d[0]);
+                scan_obj->get_xy_i_pixel2d (1, &Pkt2d[1]);
                 success = TRUE;
                 break;
         }
 
         if (success){
-                if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
+                if(data.display.ViewFlg & SCAN_V_SCALE_SMART){
                         mem2d->AutoHistogrammEvalMode (&Pkt2d[0], &Pkt2d[1], Delta, sm_eps);
-                else{
+                }else{
                         if (data.display.ViewFlg & SCAN_V_LOG){
                                 mem2d->HiLo (&hi, &lo, FALSE, &Pkt2d[0], &Pkt2d[1], Delta);
                                 mem2d->SetHiLo (hi, lo);
                         } else
-                                mem2d->HiLoMod (&p[0], &p[1], Delta);
+                                mem2d->HiLoMod (&Pkt2d[0], &Pkt2d[1], Delta);
                 }
         } else {
                 if(data.display.ViewFlg & SCAN_V_SCALE_SMART)

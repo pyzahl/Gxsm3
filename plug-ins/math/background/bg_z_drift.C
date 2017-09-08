@@ -247,7 +247,7 @@ static gboolean bg_z_drift_run(Scan *Src, Scan *Dest)
 	double py;
 	MOUSERECT msr;
 
-	MkMausSelect(Src->Pkt2d, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+	MkMausSelect (Src, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
 
 	if( msr.xSize  < 1 || msr.ySize < 1)
 		return MATH_SELECTIONERR;

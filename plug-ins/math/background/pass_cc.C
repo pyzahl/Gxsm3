@@ -255,8 +255,8 @@ static gboolean pass_cc_run(Scan *Src, Scan *Dest)
 
 		// get real world coordinates of rectangle
 		double x0,y0,x1,y1;
-		obj_data->get_xy (0, x0, y0);
-		obj_data->get_xy (1, x1, y1);
+		obj_data->get_xy_i (0, x0, y0);
+		obj_data->get_xy_i (1, x1, y1);
 
 		// convert to pixels
 		Point2D p[2];
@@ -265,8 +265,8 @@ static gboolean pass_cc_run(Scan *Src, Scan *Dest)
 
 		// make selection, assure top/bottom and limits!
 		MOUSERECT msr, msrPktSym;
-		MkMausSelect(p, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
-		MkMausSelect(p, &msrPktSym, Dest->mem2d->GetNx(), Dest->mem2d->GetNy()); // copy
+		MkMausSelectP (p, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+		MkMausSelectP (p, &msrPktSym, Dest->mem2d->GetNx(), Dest->mem2d->GetNy()); // copy
 		
 		if (msr.xSize < 1 || msr.ySize < 1)
 			continue; // size is weired!

@@ -73,7 +73,7 @@ void VObject::set_osd_style (gboolean flg){
         copy_xsmres_to_GdkRGBA (custom_label_color, xsmres.ObjectLabColor);
 }
 
-VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale){
+VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale){
         GXSM_REF_OBJECT (GXSM_GRC_VOBJ);
 	static int obj_count = 0;
 	static int event_count = 0;
@@ -115,7 +115,6 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, Point2D *P2d, int pfl
 	custom_element_b_color.blue  *= 0.66;
 
 	type_id=O_NONE;
-	p2d = P2d;
 	set_marker_scale (Marker_scale);
 	canvas = Canvas;
 	statusbar = (GtkWidget*)g_object_get_data (G_OBJECT (canvas), "statusbar");
@@ -419,6 +418,11 @@ void VObject::draw (cairo_t *cr){
                 if (selected_bbox) 
                         selected_bbox->draw (cr);
                 
+                if (profile){
+                        profile->show();
+                        profile->NewData(vinfo->sc, this);
+                }
+
                 draw_extra (cr);
         }
 }
@@ -485,11 +489,6 @@ void VObject::set_color_to_custom (gfloat fillcolor[4], gfloat outlinecolor[4]){
         }
 }
 
-void get_obj_coords_wrapper2(int i, double &x, double &y){
-	if (current_vobject2)
-		current_vobject2->obj_get_xy_i (i,x,y);
-}
-
 void VObject::Activate (){
         //        g_message ("app_vobj.C: VObject::Activate  canvas=0x%x", canvas);
         if (!G_IS_OBJECT (canvas)){
@@ -506,16 +505,6 @@ void VObject::Activate (){
         }
 	set_color_to_active();
 
-	if (current_vobject2){
-                PI_DEBUG_GP_ERROR (DBG_L1, "app_vobj.C: VObject::Activate  ERROR, recursive call dismissed.");
-		return;
-	}
-	if (id){
-		current_vobject2 = this;
-		Scan *sc = ((Scan*)g_object_get_data (G_OBJECT (canvas), "Scan"));
-		if (sc) sc->update_object (id, name, text, get_obj_coords_wrapper2);
-		current_vobject2 = NULL;
-	}
         // update properties view for this object
         build_properties_view ();
 }
@@ -1311,8 +1300,8 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
 	return true;
 }
 
-VObPoint::VObPoint(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale)
-	: VObject(canvas, xy0, 1, P2d, pflg, cmode, lab, Marker_scale){
+VObPoint::VObPoint(GtkWidget *canvas, double *xy0, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale)
+	: VObject(canvas, xy0, 1, pflg, cmode, lab, Marker_scale){
 	if(name) g_free(name);
 	name = g_strdup("Point");
 	obj_type_id (O_POINT);
@@ -1323,7 +1312,7 @@ VObPoint::VObPoint(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_
 void VObPoint::Update(){
 	gchar *s1;
 	gchar *mld = g_strconcat("Point: ",
-				 s1=vinfo->makeXYZinfo(xy[0],xy[1], &p2d[0]),
+				 s1=vinfo->makeXYZinfo(xy[0],xy[1]),
 				 NULL);
 	g_free(s1);
 
@@ -1331,7 +1320,7 @@ void VObPoint::Update(){
         
         gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
-	vinfo->sc->PktVal=1;
+	//vinfo->sc->PktVal=1;
 
 	if (get_profile_path_width () > 1){
 		double r = get_profile_path_width ()/2.;
@@ -1356,19 +1345,18 @@ void VObPoint::Update(){
         if (abl[1])
                 abl[1]->queue_update (canvas);
 
+#if 0
+        if (profile){
+                profile->show();
+                profile->NewData(vinfo->sc, this);
+        }
+#endif
         //	if (follow)
         //		update_scanposition ();
 
         if (follow)
                 if (((ViewControl*)g_object_get_data (G_OBJECT (canvas), "ViewControl"))->tip_follow_mode ())
                         update_scanposition ();
-
-	if (profile){
-		profile->show();
-		profile->NewData(vinfo->sc, this);
-	}
-	else
-		gapp->xsm->MausMode(MPOINT);
 
 	Activate ();
 	g_free(mld);
@@ -1502,8 +1490,8 @@ void VObPoint::update_scanposition(){
 }
 
 
-VObLine::VObLine(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
-	: VObject(canvas, xy0, 2, P2d, pflg, cmode, lab, Marker_scale){
+VObLine::VObLine(GtkWidget *canvas, double *xy0, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
+	: VObject(canvas, xy0, 2, pflg, cmode, lab, Marker_scale){
 	if(name) g_free(name);
 	name = g_strdup("Line");
 	obj_type_id (O_LINE);
@@ -1537,7 +1525,7 @@ void VObLine::Update(){
 					   ": ",
 					   s2=vinfo->makedXdYinfo(xy+segment*2,xy+segment*2+2),
 					   "|=",
-					   s3=vinfo->makeDXYinfo(xy+segment*2,xy+segment*2+2, &p2d[0], &p2d[1]), ", ", phitxt,
+					   s3=vinfo->makeDXYinfo(xy+segment*2,xy+segment*2+2), ", ", phitxt,
 					   NULL);
 		g_free (mld);
 		mld = mld_s;
@@ -1566,12 +1554,11 @@ void VObLine::Update(){
 		if(profile){
 			profile->register_cursor_update_func (NULL);
 			profile->show();
-
+#if 0
 			profile->NewData(vinfo->sc, this, segment>0?TRUE:FALSE);
 			profile->register_cursor_update_func (this);
+#endif
 		}
-		else
-			gapp->xsm->MausMode(MLINE);
 
 		// show Width / Area / Cursor Markers?
 		if(profile){
@@ -1743,14 +1730,14 @@ void VObLine::Update(){
 
         gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
-	vinfo->sc->PktVal=2;
+	//vinfo->sc->PktVal=2;
 
 	g_free(mld);
 	Activate ();
 }
 
-VObPolyLine::VObPolyLine(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
-	: VObject(canvas, &xy0[1], (int) xy0[0], P2d, pflg, cmode, lab, Marker_scale){
+VObPolyLine::VObPolyLine(GtkWidget *canvas, double *xy0, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
+	: VObject(canvas, &xy0[1], (int) xy0[0], pflg, cmode, lab, Marker_scale){
 	if(name) g_free(name);
 	name = g_strdup("PolyLine");
 	obj_type_id (O_POLYLINE);
@@ -1785,7 +1772,7 @@ void VObPolyLine::DelNode(){
 void VObPolyLine::Update(){
 	gchar *s1, *s2, *s3;
 	gchar *mld = g_strconcat("PolyLine: |",
-				 s1=vinfo->makeXYinfo(xy[0],xy[1], &p2d[0]),
+				 s1=vinfo->makeXYinfo(xy[0],xy[1]),
 				 ":..: ",
 				 s2=vinfo->makedXdYinfo(xy,xy+2*(np-1)),
 				 "|=",
@@ -1794,7 +1781,7 @@ void VObPolyLine::Update(){
 	g_free(s3); g_free(s2); g_free(s1);
 
 	for( int i=0; i<np; ++i){
-		g_free (vinfo->makeXYinfo (xy[2*i],xy[1+2*i], &p2d[i]));
+		g_free (vinfo->makeXYinfo (xy[2*i],xy[1+2*i]));
 		abl[np]->set_xy (i, xy[2*i], xy[1+2*i]);
 	}
 
@@ -1802,14 +1789,14 @@ void VObPolyLine::Update(){
 
         gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
-	vinfo->sc->PktVal=np;
+	//vinfo->sc->PktVal=np;
 	g_free(mld);
 
 	Activate ();
 }
 
-VObTrace::VObTrace(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
-	: VObject(canvas, &xy0[1], 1, P2d, pflg, cmode, lab, Marker_scale){
+VObTrace::VObTrace(GtkWidget *canvas, double *xy0, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
+	: VObject(canvas, &xy0[1], 1, pflg, cmode, lab, Marker_scale){
 	if(name) g_free(name);
 	name = g_strdup("Trace");
 	obj_type_id (O_TRACE);
@@ -1847,7 +1834,7 @@ void VObTrace::Change(double *xy0){
 void VObTrace::Update(){
 	gchar *s1;
 	gchar *mld = g_strconcat("Tracehead: ",
-				 s1=vinfo->makeXYinfo(xy[0],xy[1], &p2d[0]),
+				 s1=vinfo->makeXYinfo(xy[0],xy[1]),
 				 NULL);
 	g_free(s1);
 
@@ -1858,7 +1845,7 @@ void VObTrace::Update(){
 
         gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
-	vinfo->sc->PktVal=np;
+	//vinfo->sc->PktVal=np;
 	g_free(mld);
 
 	Activate ();
@@ -1866,8 +1853,8 @@ void VObTrace::Update(){
 
 
 
-VObKsys::VObKsys(GtkWidget *_canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
-	: VObject(_canvas, xy0, 3, P2d, pflg, cmode, lab, Marker_scale){
+VObKsys::VObKsys(GtkWidget *_canvas, double *xy0, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
+	: VObject(_canvas, xy0, 3, pflg, cmode, lab, Marker_scale){
 
 	XSM_DEBUG (DBG_L3,  "VObKsys::VObKsys - adding Ksys" );
 	name = g_strdup("Ksys");
@@ -2204,10 +2191,10 @@ void VObKsys::Update(){
 	gchar *phi = g_strdup_printf("phi=%g" UTF8_DEGREE, Phi()-Phi(xy[2]-xy[4], xy[3]-xy[5]));
 	gchar *rot = g_strdup_printf("rot=%g" UTF8_DEGREE, Phi());
 	gchar *e1, *e2;
-	e1 = vinfo->makeDXYinfo(xy,xy+2, &p2d[0], &p2d[1], 1./grid_multiples);		/* length of unit vector 1 */
-	e2 = vinfo->makeDXYinfo(xy+4,xy+2, &p2d[0], &p2d[1], 1./grid_multiples);	/* length of unit vector 2 */
+	e1 = vinfo->makeDXYinfo(xy,xy+2, 1./grid_multiples);		/* length of unit vector 1 */
+	e2 = vinfo->makeDXYinfo(xy+4,xy+2, 1./grid_multiples);	/* length of unit vector 2 */
 	gchar *mld = g_strconcat("Line: o:",
-				 s1=vinfo->makeXYinfo(xy[2],xy[3], &p2d[1]), 
+				 s1=vinfo->makeXYinfo(xy[2],xy[3]), 
 				 ", ",
 				 rot,
 				 ", ",
@@ -2216,8 +2203,8 @@ void VObKsys::Update(){
 				 "e2=", e2,
 				 NULL);
 	g_free(s1);
-	g_free(vinfo->makeXYinfo(xy[0],xy[1], &p2d[0]));
-	g_free(vinfo->makeXYinfo(xy[4],xy[5], &p2d[2]));
+	g_free(vinfo->makeXYinfo(xy[0],xy[1]));
+	g_free(vinfo->makeXYinfo(xy[4],xy[5]));
 
 	abl[np]->set_xy (0, xy[0], xy[1]);
 	abl[np]->set_xy (1, xy[2], xy[3]);
@@ -2229,7 +2216,7 @@ void VObKsys::Update(){
   
         update_label ();
 
-	vinfo->sc->PktVal=3;
+	//vinfo->sc->PktVal=3;
 
         gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
@@ -2247,8 +2234,8 @@ void VObKsys::Update(){
 	Activate ();
 }
 
-VObParabel::VObParabel(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
-	: VObject(canvas, xy0, 3, P2d, pflg, cmode, lab, Marker_scale){
+VObParabel::VObParabel(GtkWidget *canvas, double *xy0, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
+	: VObject(canvas, xy0, 3, pflg, cmode, lab, Marker_scale){
 	if(name) g_free(name);
 	name = g_strdup("Parabel");
 	obj_type_id (O_PARABEL);
@@ -2274,11 +2261,11 @@ void VObParabel::Update(){
 	gchar *s1, *s2, *s3, *s4;
 	gchar *sphi = g_strdup_printf("phi=%g" UTF8_DEGREE, phi=Phi());
 	gchar *mld = g_strconcat("Line: |",
-				 s1=vinfo->makeXYinfo(xy[0],xy[1], &p2d[0]),
+				 s1=vinfo->makeXYinfo(xy[0],xy[1]),
 				 ",",
-				 s2=vinfo->makeXYinfo(xy[2],xy[3], &p2d[1]),
+				 s2=vinfo->makeXYinfo(xy[2],xy[3]),
 				 ",",
-				 s3=vinfo->makeXYinfo(xy[4],xy[5], &p2d[2]),
+				 s3=vinfo->makeXYinfo(xy[4],xy[5]),
 				 "|=",
 				 s4=vinfo->makeXinfo(Dist()), ", ", sphi,
 				 NULL);
@@ -2306,7 +2293,6 @@ void VObParabel::Update(){
         abl[np]->set_fill_rgba (&custom_element_color);
         abl[np]->queue_update (canvas);
 
-	vinfo->sc->PktVal=3;
         gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 
@@ -2324,8 +2310,8 @@ void VObParabel::Update(){
 	Activate ();
 }
 
-VObRectangle::VObRectangle(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
-	: VObject(canvas, xy0, 2, P2d, pflg, cmode, lab, Marker_scale){
+VObRectangle::VObRectangle(GtkWidget *canvas, double *xy0, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
+	: VObject(canvas, xy0, 2, pflg, cmode, lab, Marker_scale){
 	if(name) g_free(name);
 	name = g_strdup("Rectangle");
 	obj_type_id (O_RECTANGLE);
@@ -2342,14 +2328,14 @@ VObRectangle::~VObRectangle(){};
 void VObRectangle::Update(){
 	gchar *s1, *s2, *s3;
 	gchar *mld = g_strconcat("Rect: ",
-				 s1=vinfo->makeXYinfo(xy[0],xy[1], &p2d[0]),
+				 s1=vinfo->makeXYinfo(xy[0],xy[1]),
 				 "-",
 				 s2=vinfo->makedXdYinfo(xy,xy+2),
 				 " A=",
 				 s3=vinfo->makeA2info(xy,xy+2),
 				 NULL);
 	g_free(s3); g_free(s2); g_free(s1);
-	g_free(vinfo->makeXYinfo(xy[2],xy[3], &p2d[1]));
+	g_free(vinfo->makeXYinfo(xy[2],xy[3]));
         abl[np]->set_xy (0, xy[0], xy[1]);
         abl[np]->set_xy (1, xy[2], xy[3]);
         abl[np]->set_stroke_rgba (&custom_element_color);
@@ -2365,7 +2351,7 @@ void VObRectangle::Update(){
                 
         gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
-	vinfo->sc->PktVal=2;
+	//vinfo->sc->PktVal=2;
 
 	gapp->xsm->MausMode(MRECTANGLE);
 	g_free(mld);
@@ -2419,8 +2405,8 @@ void VObRectangle::SetUpScan()
 	gapp->spm_update_all();
 }
 
-VObCircle::VObCircle(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
-	: VObject(canvas, xy0, 2, P2d, pflg, cmode, lab, Marker_scale){
+VObCircle::VObCircle(GtkWidget *canvas, double *xy0, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double Marker_scale) 
+	: VObject(canvas, xy0, 2, pflg, cmode, lab, Marker_scale){
 	if(name) g_free(name);
 	name = g_strdup("Circle");
 	obj_type_id (O_CIRCLE);
@@ -2439,12 +2425,12 @@ VObCircle::~VObCircle(){};
 void VObCircle::Update(){
 	gchar *s1, *s2;
 	gchar *mld = g_strconcat("Circle: ",
-				 s1=vinfo->makeXYinfo(xy[0],xy[1], &p2d[0]),
+				 s1=vinfo->makeXYinfo(xy[0],xy[1]),
 				 ", r=",
 				 s2=vinfo->makeDXYinfo(xy, xy+2),
 				 NULL);
 	g_free(s2); g_free(s1);
-	g_free(vinfo->makeXYinfo(xy[2],xy[3], &p2d[1]));
+	g_free(vinfo->makeXYinfo(xy[2],xy[3]));
 
         double dx = xy[0] - xy[2];
         double dy = xy[1] - xy[3];
@@ -2458,7 +2444,7 @@ void VObCircle::Update(){
 
         gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
-	vinfo->sc->PktVal=2;
+	//vinfo->sc->PktVal=2;
 
 	if (profile){
 		profile->show();
@@ -2472,8 +2458,8 @@ void VObCircle::Update(){
 }
 
 
-VObEvent::VObEvent(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double marker_scale)
-	: VObject(canvas, xy0, 0, P2d, pflg, cmode, lab, marker_scale){
+VObEvent::VObEvent(GtkWidget *canvas, double *xy0, int pflg, VOBJ_COORD_MODE cmode, const gchar *lab, double marker_scale)
+	: VObject(canvas, xy0, 0, pflg, cmode, lab, marker_scale){
 	set_obj_name ("Event");
 	obj_type_id (O_EVENT);
 	lock_object (true);
@@ -2483,12 +2469,12 @@ VObEvent::VObEvent(GtkWidget *canvas, double *xy0, Point2D *P2d, int pflg, VOBJ_
 void VObEvent::Update(){
 	gchar *s1;
 	gchar *mld = g_strconcat("Event: ",
-				 s1=vinfo->makeXYZinfo(xy[0],xy[1], &p2d[0]),
+				 s1=vinfo->makeXYZinfo(xy[0],xy[1]),
 				 NULL);
 	g_free(s1);
         gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
-	vinfo->sc->PktVal=1;
+	//vinfo->sc->PktVal=1;
 
 	if (vinfo->sc->view)
 		vinfo->sc->view->update_event_info (scan_event);

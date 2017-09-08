@@ -319,7 +319,7 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
                                   << xy[0] << ", " << xy[1]
                                   << " [" << jp << "," << ip << "] ==> " << peak << std::endl;
                         gchar *lab = g_strdup_printf ("Center");
-                        (Src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((Src->view->Get_ViewControl ())->canvas, xy, Src->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, 1.));
+                        (Src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((Src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, 1.));
                         vo->set_obj_name (marker_group[i_marker_group]);
                         vo->set_custom_label_font ("Sans Bold 12");
                         vo->set_custom_label_color (c);

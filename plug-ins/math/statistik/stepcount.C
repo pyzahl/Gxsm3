@@ -243,7 +243,7 @@ static void stepcount_cleanup(void)
   int left, right, top, bottom;
 
   MOUSERECT msr;
-  MkMausSelect(Src->Pkt2d, &msr, Src->mem2d->GetNx(), Src->mem2d->GetNy());
+  MkMausSelect (Src, &msr, Src->mem2d->GetNx(), Src->mem2d->GetNy());
 
   if( msr.xSize  < 1 || msr.ySize < 1){
     left   = 0;

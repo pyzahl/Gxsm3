@@ -5,7 +5,7 @@ AC_PREREQ(2.63.2)
 
 m4_define(gxsm3_major_version, 3)
 m4_define(gxsm3_minor_version, 46)
-m4_define(gxsm3_micro_version, 1)
+m4_define(gxsm3_micro_version, 2)
 m4_define(gxsm3_version, gxsm3_major_version.gxsm3_minor_version.gxsm3_micro_version)
 
 AC_INIT([gxsm3],

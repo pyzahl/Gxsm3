@@ -300,7 +300,7 @@ static gboolean baseinfo_run(Scan *Src)
         double unitmincol, unitminline, unitmaxcol, unitmaxline; 
         double area, average, unitarea;
         MOUSERECT msr;
-        MkMausSelect(Src->Pkt2d, &msr, Src->mem2d->GetNx(), Src->mem2d->GetNy());
+        MkMausSelect (Src, &msr, Src->mem2d->GetNx(), Src->mem2d->GetNy());
 
         if( msr.xSize  < 1 || msr.ySize < 1){
                 left   = 0; 

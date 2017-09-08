@@ -209,7 +209,7 @@ int build_marker_list(Scan *Src, scan_object_data **&objects, const gchar *type)
 		
 		double x,y,r;
 		// get real world coordinates of point
-		objects[i]->get_xy (0, x, y);
+		objects[i]->get_xy_i (0, x, y);
 
 		if (i>0)
 			r = objects[i]->distance(objects[i-1]);

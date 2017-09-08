@@ -308,9 +308,9 @@ static gboolean removelineshifts_run(Scan *Src, Scan *Dest)
 		if( Src->get_object_data (0) -> get_num_points () == 2){
 			double x=0.;
 			double y=0.;
-			Src->get_object_data (0) -> get_xy (0, x, y);
+			Src->get_object_data (0) -> get_xy_i (0, x, y);
 			Src->World2Pixel (x,y, x1,y1);
-			Src->get_object_data (0) -> get_xy (1, x, y);
+			Src->get_object_data (0) -> get_xy_i (1, x, y);
 			Src->World2Pixel (x,y, x2,y2);
 			XSM_DEBUG(DBG_L2, "got x range " << x1 << " .. " << x2 );
 		}
