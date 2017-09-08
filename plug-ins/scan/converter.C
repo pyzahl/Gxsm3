@@ -495,16 +495,13 @@ void
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))),
 		       vbox, TRUE, TRUE, GXSM_WIDGET_PAD);
-    gtk_widget_show(vbox);
 
        // create widget for source file
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_show(hbox);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
     VarName = gtk_label_new(N_("Source Path"));
     gtk_widget_set_size_request(VarName, 100, -1);
-    gtk_widget_show(VarName);
     gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
     gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
 
@@ -514,12 +511,10 @@ void
 
        // create widget for file mask
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_show(hbox);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
     VarName = gtk_label_new(N_("Selection Mask"));
     gtk_widget_set_size_request(VarName, 100, -1);
-    gtk_widget_show(VarName);
     gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
     gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
     
@@ -528,7 +523,6 @@ void
     gtk_entry_set_text(GTK_ENTRY(SrcMask), topdata->convFilter);
 
     help = gtk_button_new_with_label(N_("Help"));
-    gtk_widget_show(help);
     gtk_box_pack_start(GTK_BOX(hbox), help, TRUE, TRUE, 0);
     g_signal_connect(G_OBJECT(help), "clicked",
 		     G_CALLBACK(show_info_callback),
@@ -538,7 +532,7 @@ void
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
         // create widget for destination path    
-        VarName = gtk_label_new(N_("Destination Path"));
+    VarName = gtk_label_new(N_("Destination Path"));
     gtk_widget_set_size_request(VarName, 100, -1);
     gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
     gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
@@ -550,22 +544,18 @@ void
 		       TRUE, 0);
 
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_show(hbox);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
     VarName = gtk_label_new(N_("Format"));
     gtk_widget_set_size_request(VarName, 100, -1);
-    gtk_widget_show(VarName);
     gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
     gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
 
     DestMask = gtk_entry_new();
-    gtk_widget_show(variable);
     gtk_box_pack_start(GTK_BOX(hbox), DestMask, TRUE, TRUE, 0);
     gtk_entry_set_text(GTK_ENTRY(DestMask), topdata->writeFormat);
 
     help = gtk_button_new_with_label(N_("Help"));
-    gtk_widget_show(help);
     gtk_box_pack_start(GTK_BOX(hbox), help, TRUE, TRUE, 0);
     g_signal_connect(G_OBJECT(help), "clicked",
 		     G_CALLBACK(show_info_callback),
@@ -574,13 +564,11 @@ void
 			  ("Enter the file format suffix without any special characters")));
 
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_show(hbox);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
     GtkWidget *toggle_recursive =
 	gtk_check_button_new_with_label("Recursive");
 
     gtk_box_pack_start(GTK_BOX(hbox), toggle_recursive, TRUE, TRUE, 0);
-    gtk_widget_show(toggle_recursive);
     GtkWidget *toggle_overwrite_target =
 	gtk_check_button_new_with_label("Overwrite Target File");
     g_signal_connect(G_OBJECT(toggle_recursive), "clicked",
@@ -588,7 +576,6 @@ void
 
     gtk_box_pack_start(GTK_BOX(hbox), toggle_overwrite_target, TRUE, TRUE,
 		       0);
-    gtk_widget_show(toggle_overwrite_target);
     g_signal_connect(G_OBJECT(toggle_overwrite_target), "clicked",
 		     G_CALLBACK(converterControl::overwrite_target_click),
 		     this);
@@ -597,7 +584,6 @@ void
 	gtk_check_button_new_with_label("Create sub-directories");
     gtk_box_pack_start(GTK_BOX(hbox), toggle_create_subdirs, TRUE, TRUE,
 		       0);
-    gtk_widget_show(toggle_create_subdirs);
     g_signal_connect(G_OBJECT(toggle_create_subdirs), "clicked",
 		     G_CALLBACK(converterControl::create_subdirs_click),
 		     this);
@@ -608,8 +594,6 @@ void
 	gtk_widget_destroy(dialog);
 	return;
     }
-
-    converter converter_obj;
 
     g_free(topdata->sourceDir);
     topdata->sourceDir =
@@ -639,6 +623,7 @@ void
 	g_strdup(gtk_entry_get_text(GTK_ENTRY(DestMask)));
 
     show_info_callback(NULL, N_("Converting ..."));
+    converter converter_obj;    
     converter_obj.ConvertDir(topdata, 0);
 
     PI_DEBUG(DBG_L2,
