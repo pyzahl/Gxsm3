@@ -317,8 +317,8 @@ static gboolean plane_regression_run(Scan *Src, Scan *Dest)
                                         continue; // sth. is weired!
 		
                                 double x,y;
-                                obj_data->get_xy_pixel (0, xRight, yBottom);
-                                obj_data->get_xy_pixel (1, xLeft, yTop);
+                                obj_data->get_xy_i_pixel (0, xRight, yBottom);
+                                obj_data->get_xy_i_pixel (1, xLeft, yTop);
                                 if (xRight < xLeft){
                                         x = xRight;
                                         xRight = xLeft;

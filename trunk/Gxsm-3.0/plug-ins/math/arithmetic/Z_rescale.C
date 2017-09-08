@@ -251,9 +251,9 @@ static gboolean Z_rescale_run(Scan *Src, Scan *Dest)
 			continue; // sth. is weired!
 		
 		double x,y;
-		obj_data->get_xy_pixel (0, x, y);
+		obj_data->get_xy_i_pixel (0, x, y);
 		p[0].x = (int)x; p[0].y = (int)y;
-		obj_data->get_xy_pixel (1, x, y);
+		obj_data->get_xy_i_pixel (1, x, y);
 		p[1].x = (int)x; p[1].y = (int)y;
 		
 		success = TRUE;

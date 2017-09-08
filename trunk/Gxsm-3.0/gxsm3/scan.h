@@ -128,7 +128,7 @@ public:
 	int GetVM(){ return VFlg; };
 	void Activate();
 
-	void realloc_pkt2d(int n);
+	//void realloc_pkt2d(int n);
 	
 	/* Data */
 	GList *TimeList; /* List multiple of Scan-Data elements (always a copy) */
@@ -179,16 +179,12 @@ public:
 		return y;
 	};
 
-	Point2D *Pkt2d;
-	int     PktVal;
+	// Point2D *Pkt2d;
+	// int     PktVal;
 	
-	int add_object (const gchar *name, const gchar *text,
-		       int np, void (*f_ixy)(int, double &, double &));
-	void update_object (int id, const gchar *name, const gchar *text,
-			    void (*f_ixy)(int, double &, double &));
-	int del_object (int id);
-	int find_object (int id);
-	void destroy_all_objects () { for (int i=0; i<=objects_id; ++i) del_object (i); };
+	int add_object (scan_object_data *sod);
+	int del_object (scan_object_data *sod);
+	void destroy_all_objects ();
 
 	unsigned int number_of_object () { return g_slist_length(objects_list); };
 	scan_object_data* get_object_data (int i) { return (scan_object_data*) g_slist_nth_data(objects_list, i); };
@@ -206,7 +202,7 @@ public:
 	int ChanNo;
 	int State;
 	int Running;
-	int numpkt2d;
+	//int numpkt2d;
 	int refcount;
 	int X_linearize;
 

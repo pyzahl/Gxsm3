@@ -57,12 +57,12 @@ public:
         
         
         gchar *makeXinfo(double x); // X only
-        gchar *makeDXYinfo(double xy1[2], double xy2[2], Point2D *p1=NULL, Point2D *p2=NULL, double factor=1.); // Delta X, w clipping, opt. scaleing w factor of user number
+        gchar *makeDXYinfo(double xy1[2], double xy2[2], double factor=1.); // Delta X, w clipping, opt. scaleing w factor of user number
         gchar *makeDnXYinfo(double *xy, int n); // length of polyline, n nodes
         gchar *makeA2info(double xy1[2], double xy2[2]); // Area XY1-XY2
-        gchar *makeXYinfo(double x, double y, Point2D *p=NULL); // X,Y
+        gchar *makeXYinfo(double x, double y); // X,Y
         gchar *makedXdYinfo(double xy1[2], double xy2[2]); // dX, dY
-        gchar *makeXYZinfo(double x, double y, Point2D *p=NULL); // Point: X,Y,Z
+        gchar *makeXYZinfo(double x, double y); // Point: X,Y,Z
         gchar *makeZinfo(double data_z, const gchar *new_prec=NULL, double sub=0.){
                 UnitObj *u = Uz();
                 UnitObj tmp(*u);

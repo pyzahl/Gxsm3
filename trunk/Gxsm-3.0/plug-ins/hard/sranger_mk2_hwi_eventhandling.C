@@ -1098,7 +1098,7 @@ void DSPControl::dump_probe_hdr(){
 							vc->RemoveIndicators ();
 						else
 							vp_trail[vp_trail_n-1]->set_color_to_custom (color_gray, color_yellow);
-						vc->AddIndicator (vp = new VObEvent (vc->GetCanvas (), xy, NULL, FALSE, VOBJ_COORD_ABSOLUT, info, 0.25));
+						vc->AddIndicator (vp = new VObEvent (vc->GetCanvas (), xy, FALSE, VOBJ_COORD_ABSOLUT, info, 0.25));
 						vp->set_marker_scale (0.25);
 						vp->set_obj_name ("*Trailpoint");
 						vp_trail[vp_trail_n] = vp;

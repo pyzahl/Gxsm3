@@ -35,14 +35,15 @@
 #include "regress.h"
 
 
-void MkMausSelect(Point2D *List, MOUSERECT *msel, int mx, int my){
-	msel->xLeft   = MAX(0, MIN( MIN(List[0].x, List[1].x), mx));
-	msel->xRight  = MAX(0, MIN( MAX(List[0].x, List[1].x), mx));
+void MkMausSelectP(Point2D *Pkt2d, MOUSERECT *msel, int mx, int my){
+        // order,clip,calc ranges,..
+        msel->xLeft   = MAX(0, MIN( MIN(Pkt2d[0].x, Pkt2d[1].x), mx));
+	msel->xRight  = MAX(0, MIN( MAX(Pkt2d[0].x, Pkt2d[1].x), mx));
 	msel->xSize   = msel->xRight - msel->xLeft;
 	msel->xRatio  = (double)msel->xSize / (double)mx;
 
-	msel->yTop    = MAX(0, MIN( MIN(List[0].y, List[1].y), my));
-	msel->yBottom = MAX(0, MIN( MAX(List[0].y, List[1].y), my));
+	msel->yTop    = MAX(0, MIN( MIN(Pkt2d[0].y, Pkt2d[1].y), my));
+	msel->yBottom = MAX(0, MIN( MAX(Pkt2d[0].y, Pkt2d[1].y), my));
 	msel->ySize   = msel->yBottom - msel->yTop;
 	msel->yRatio  = (double)msel->ySize / (double)my;
 
@@ -53,11 +54,61 @@ void MkMausSelect(Point2D *List, MOUSERECT *msel, int mx, int my){
 
 	msel->Area    = msel->xSize * msel->ySize;
 	msel->Radius2 = (msel->xSize)*(msel->xSize) + (msel->ySize)*(msel->ySize);
-	msel->xCenter = List[0].x;
-	msel->yCenter = List[0].y;
+	msel->xCenter = msel->xLeft + msel->xSize/2;
+	msel->yCenter = msel->yTop  + msel->ySize/2;
 
 	XSM_DEBUG (DBG_L3, "MkMausSelect: (" << msel->xLeft << ", " << msel->yBottom << ")-(" << msel->xRight  << ", " << msel->yTop << ")"); 
 	XSM_DEBUG (DBG_L3, "MkMausSelect Size: (" << msel->xSize << ", " << msel->ySize << ")");
+}
+
+gint MkMausSelect(Scan *sc, MOUSERECT *msel, int mx, int my){
+        // convenience wrapper to get corners/area of current/last rectangle object
+
+        int success = FALSE;
+        int n_obj = sc->number_of_object ();
+        Point2D Pkt2d[2];
+
+        while (n_obj--){
+                scan_object_data *scan_obj = sc->get_object_data (n_obj);
+		
+                if (strncmp (scan_obj->get_name (), "Rectangle", 9) )
+                        continue; // only points are used!
+
+                if (scan_obj->get_num_points () != 2) 
+                        continue; // check, must have two coordinates
+
+                scan_obj->get_xy_i_pixel2d (0, &Pkt2d[0]);
+                scan_obj->get_xy_i_pixel2d (1, &Pkt2d[1]);
+                success = TRUE;
+                break;
+        }
+
+        if (!success) return success;
+        
+        msel->xLeft   = MAX(0, MIN( MIN(Pkt2d[0].x, Pkt2d[1].x), mx));
+	msel->xRight  = MAX(0, MIN( MAX(Pkt2d[0].x, Pkt2d[1].x), mx));
+	msel->xSize   = msel->xRight - msel->xLeft;
+	msel->xRatio  = (double)msel->xSize / (double)mx;
+
+	msel->yTop    = MAX(0, MIN( MIN(Pkt2d[0].y, Pkt2d[1].y), my));
+	msel->yBottom = MAX(0, MIN( MAX(Pkt2d[0].y, Pkt2d[1].y), my));
+	msel->ySize   = msel->yBottom - msel->yTop;
+	msel->yRatio  = (double)msel->ySize / (double)my;
+
+	if(msel->ySize > 0)
+		msel->Aspect  = (double)msel->xSize / (double)msel->ySize;
+	else
+		msel->Aspect  = 0.;
+
+	msel->Area    = msel->xSize * msel->ySize;
+	msel->Radius2 = (msel->xSize)*(msel->xSize) + (msel->ySize)*(msel->ySize);
+	msel->xCenter = msel->xLeft + msel->xSize/2;
+	msel->yCenter = msel->yTop  + msel->ySize/2;
+
+	XSM_DEBUG (DBG_L3, "MkMausSelect: (" << msel->xLeft << ", " << msel->yBottom << ")-(" << msel->xRight  << ", " << msel->yTop << ")"); 
+	XSM_DEBUG (DBG_L3, "MkMausSelect Size: (" << msel->xSize << ", " << msel->ySize << ")");
+
+        return success;
 }
 
 //
@@ -207,7 +258,7 @@ gboolean CropScan(MATHOPPARAMS){
 	XSM_DEBUG (DBG_L3, "Crop Scan");
 
 	Dest->data.copy (Src->data);
-	MkMausSelect(Src->Pkt2d, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+	MkMausSelect (Src, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
     
 	if( msr.xSize  < 1 || msr.ySize < 1){
 		XSM_DEBUG (DBG_L3, "Crop:" << msr.xSize << " " << msr.ySize);
@@ -343,7 +394,7 @@ gboolean ZoomInScan(MATHOPPARAMS){
 	MOUSERECT msr;
 	double FXY, facx, facy;
 
-	MkMausSelect(Src->Pkt2d, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+	MkMausSelect (Src, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
 
 	if( msr.xSize  < 1 || msr.ySize < 1)
 		return MATH_SELECTIONERR;
@@ -1005,7 +1056,7 @@ gboolean F2D_RemoveRect(MATHOPPARAMS)
 
 	// get selection
 	MOUSERECT msr;
-	MkMausSelect(Src->Pkt2d, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+	MkMausSelect (Src, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
 
 	// check for valid selection
 	if( msr.xSize  < 1 || msr.yBottom > Src->mem2d->GetNy() || msr.yTop < 0)
@@ -1122,7 +1173,7 @@ extern gboolean F2D_LineInterpol(MATHOPPARAMS)
 	
 	MOUSERECT msr;
 	
-	MkMausSelect(Src->Pkt2d, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+	MkMausSelect (Src, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
 	
 	if( msr.xSize  < 1)
 		return MATH_SELECTIONERR;
@@ -1402,7 +1453,7 @@ gboolean SpkWindow1D(MATH2OPPARAMS, fftw_complex *dat, int line){
 // filter kernel "Gauss Stopp"
 gboolean SpkGaussStop1D(MATH2OPPARAMS, fftw_complex *dat, int line){
 	MOUSERECT msr;
-	MkMausSelect(Src2->Pkt2d, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+	MkMausSelect (Src2, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
 
 	if( msr.xSize  < 1 || msr.ySize < 1)
 		return MATH_SELECTIONERR;
@@ -1423,7 +1474,7 @@ gboolean SpkGaussStop1D(MATH2OPPARAMS, fftw_complex *dat, int line){
 // filter kernel "Gauss Pass"
 gboolean SpkGaussPass1D(MATH2OPPARAMS, fftw_complex *dat, int line){
 	MOUSERECT msr;
-	MkMausSelect(Src2->Pkt2d, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+	MkMausSelect (Src2, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
 
 	if( msr.xSize  < 1 || msr.ySize < 1)
 		return MATH_SELECTIONERR;
@@ -1607,7 +1658,7 @@ gboolean F2D_iftXft(MATH2OPPARAMS){
 // filter kernel "Gauss Stopp"
 gboolean SpkGaussStop(MATH2OPPARAMS, fftw_complex *dat){
 	MOUSERECT msr;
-	MkMausSelect(Src2->Pkt2d, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+	MkMausSelect (Src2, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
 
 	if( msr.xSize  < 1 || msr.ySize < 1)
 		return MATH_SELECTIONERR;
@@ -1640,7 +1691,7 @@ gboolean F2D_FT_GaussStop(MATH2OPPARAMS)
 // filter kernel "Gauss Pass"
 gboolean SpkGaussPass(MATH2OPPARAMS, fftw_complex *dat){
 	MOUSERECT msr;
-	MkMausSelect(Src2->Pkt2d, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+	MkMausSelect (Src2, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
 
 	if( msr.xSize  < 1 || msr.ySize < 1)
 		return MATH_SELECTIONERR;

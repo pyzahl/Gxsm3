@@ -252,8 +252,8 @@ static gboolean opencvmatch_run(Scan *Src, Scan *Dest)
 			continue; // sth. is weired!
 		
 		// get real world coordinates of point
-		obj->get_xy_pixel (0, x1, y1);
-		obj->get_xy_pixel (1, x2, y2);
+		obj->get_xy_i_pixel (0, x1, y1);
+		obj->get_xy_i_pixel (1, x2, y2);
 		break;
 	}
 
@@ -368,7 +368,7 @@ static gboolean opencvmatch_run(Scan *Src, Scan *Dest)
 					//					Src->Pixel2World (j, i, xy[0], xy[1]);
 					//					std::cout << "Add Marker at " << i << "," << j << std::endl;
 					gchar *lab = g_strdup_printf ("M%05d",++count);
-					(Src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((Src->view->Get_ViewControl ())->canvas, xy, Src->Pkt2d, FALSE, VOBJ_COORD_ABSOLUT, lab, 1.));
+					(Src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((Src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, 1.));
 					vo->set_obj_name (marker_group[i_marker_group]);
 					vo->set_custom_label_font ("Sans Bold 12");
 					vo->set_custom_label_color (c);

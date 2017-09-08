@@ -480,9 +480,6 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 	if(nc.get_var("vrange_z")) nc.get_var("vrange_z")->get(&scan->data.display.vrange_z);
 	if(nc.get_var("voffset_z")) nc.get_var("voffset_z")->get(&scan->data.display.voffset_z);
 
-	// invalidate maker points
-	scan->PktVal=0;
-
 	if(nc.get_var("basename")){
 		int len;
 		G_NEWSIZE(scan->data.ui.originalname, len=nc.get_var("basename")->get_dim(0)->size());

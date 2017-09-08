@@ -78,7 +78,8 @@ typedef struct {
   double xCenter, yCenter;   // and middle point coords.
 } MOUSERECT;
 
-extern void MkMausSelect(Point2D *List, MOUSERECT *msel, int mx, int my);
+extern void MkMausSelectP (Point2D *pkt2d, MOUSERECT *msel, int mx, int my);
+extern gint MkMausSelect (Scan *sc, MOUSERECT *msel, int mx, int my);
 gboolean F2D_ift_ft(MATH2OPPARAMS, gboolean (*spkfkt)(MATH2OPPARAMS, fftw_complex *dat));
 
 

@@ -162,13 +162,11 @@ public:
         static void obj_label_on(VObject *vo, ViewControl *vc){ vo->show_label(true); };
         static void obj_label_off(VObject *vo, ViewControl *vc){ vo->show_label(false); };
         static void remove_obj(VObject *vo, ViewControl *vc){ 
-                vc->scan->del_object (vo->obj_id ());
-                delete vo; 
+                vc->scan->del_object (vo);
         };
         static void unflag_scan_event_and_remove_obj(VObject *vo, ViewControl *vc){ 
                 vo->get_scan_event () -> flag = FALSE;
-                vc->scan->del_object (vo->obj_id ());
-                delete vo; 
+                vc->scan->del_object (vo);
         };
         static void draw_obj(VObject *vo, cairo_t *cr){ vo->draw (cr);  };
         static void activate_obj(VObject *vo, ViewControl *vc){ vo->set_color_to_active();  };

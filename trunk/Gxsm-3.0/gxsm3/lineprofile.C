@@ -669,8 +669,8 @@ int LineProfile1D::SetData_redprofile(Scan *sc, int redblue){
 // need to copy lines for multiple "red lines" with history
 int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
         Point2D p2d[2];
-        vo->obj_get_xy_i_pixel2d (0, &p2d[0]);
-        vo->obj_get_xy_i_pixel2d (1, &p2d[1]);
+        vo->get_xy_i_pixel2d (0, &p2d[0]);
+        vo->get_xy_i_pixel2d (1, &p2d[1]);
 
 	//  XSMDEBUG("LineProfile1D::SetData");
 
@@ -690,7 +690,7 @@ int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
 
 	switch (vo ? vo->obj_type_id () : 0){
 	case O_POINT:
-		if (vo->obj_num_points () == 1){
+		if (vo->get_num_points () == 1){
 			if (vo->get_profile_path_dimension () == MEM2D_DIM_LAYER){ // Plot Data over Value (Layer dim is 3) as Series in times
 				int nt = sc->number_of_time_elements ();
 				if (vo->get_profile_series_all () && nt > 1)
@@ -737,12 +737,12 @@ int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
 		return 0;
 
 	case O_CIRCLE:
-		if (vo->obj_num_points () == 2)
+		if (vo->get_num_points () == 2)
 			scan1d->mem2d->GetArcDataLineFrom (&p2d[0], &p2d[1], sc->mem2d, &scan1d->data, vo->get_profile_path_width());
 		return 0;
 
 	case O_LINE:
-		if (vo->obj_num_points () == 2){
+		if (vo->get_num_points () == 2){
 			int nt = sc->number_of_time_elements ();
                         int tstart = vo->get_profile_series_limit (0);
                         int tend   = vo->get_profile_series_limit (1);

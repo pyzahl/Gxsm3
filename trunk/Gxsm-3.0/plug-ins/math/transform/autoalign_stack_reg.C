@@ -313,9 +313,9 @@ void  StackReg::run (Scan *Src, Scan *Dest) {
 		double x1,y1,x2,y2;
 		double x=0.;
 		double y=0.;
-		obj_data -> get_xy (0, x, y);
+		obj_data -> get_xy_i (0, x, y);
 		Src->World2Pixel (x,y, x1,y1);
-		obj_data -> get_xy (1, x, y);
+		obj_data -> get_xy_i (1, x, y);
 		Src->World2Pixel (x,y, x2,y2);
 
 		x_0 = x1 < x2 ? x1:x2;

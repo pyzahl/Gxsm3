@@ -431,8 +431,8 @@ double* compute_background_data (Scan* Src, int *matrix, ProbeEntry* peDefault, 
 
 		// get real world coordinates of rectangle
 		double x0,y0,x1,y1;
-		obj_data->get_xy (0, x0, y0);
-		obj_data->get_xy (1, x1, y1);
+		obj_data->get_xy_i (0, x0, y0);
+		obj_data->get_xy_i (1, x1, y1);
 
 		// convert to pixels
 		Point2D p[2];

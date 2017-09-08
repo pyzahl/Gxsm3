@@ -170,14 +170,14 @@ static gboolean rotate_run(Scan *Src, Scan *Dest)
 	cphi = cos(phi);
 	sphi = sin(phi);
 
-	MkMausSelect(Src->Pkt2d, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
+	gint success = MkMausSelect (Src, &msr, Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
 	  
 	int snx =  Src->mem2d->GetNx ();
 	int sny =  Src->mem2d->GetNy ();
 
 	std::cout << "Rot: Src[" << snx << ", " << sny << ", v=" << Src->mem2d->GetLayer () << ", t=" << Src->mem2d->get_t_index () << "]" << std::endl;
 
-	if( Src->PktVal < 2  || msr.xSize  < 1 || msr.ySize < 1){ // all or use selection area only?
+	if( !success || msr.xSize  < 1 || msr.ySize < 1){ // all or use selection area only?
 		nx2 =  snx/2;
 		ny2 =  sny/2;
 		int xy[4][2];
