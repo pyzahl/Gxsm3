@@ -418,10 +418,8 @@ void VObject::draw (cairo_t *cr){
                 if (selected_bbox) 
                         selected_bbox->draw (cr);
                 
-                if (profile){
-                        //profile->show();
-                        profile->NewData(vinfo->sc, this);
-                }
+                if (profile)
+                        profile->NewData (vinfo->sc, this);
 
                 draw_extra (cr);
         }
@@ -900,8 +898,8 @@ void VObject::properties(){
 	--space_time_off[0];
 	--space_time_off[1];
         
-	if (profile)
-		profile->NewData(vinfo->sc, this);
+        //**	if (profile)
+        //**		profile->NewData (vinfo->sc, this);
 
 	remake_node_markers ();
 }
@@ -1553,11 +1551,9 @@ void VObLine::Update(){
 
 		if(profile){
 			profile->register_cursor_update_func (NULL);
-			profile->show();
-#if 0
-			profile->NewData(vinfo->sc, this, segment>0?TRUE:FALSE);
+                        //** profile->show();
+			//** profile->NewData (vinfo->sc, this, segment>0?TRUE:FALSE);
 			profile->register_cursor_update_func (this);
-#endif
 		}
 
 		// show Width / Area / Cursor Markers?
@@ -2221,11 +2217,9 @@ void VObKsys::Update(){
         gtk_statusbar_remove_all (GTK_STATUSBAR (statusbar), statusid);
 	gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusid, mld);
 	if(profile){
-		profile->show();
-		profile->NewData(vinfo->sc, this);
+                //**		profile->show();
+                //**		profile->NewData(vinfo->sc, this);
 	}
-	else
-		gapp->xsm->MausMode(MPOLYLINE);
 
 	g_free(mld);
 	g_free(phi);
@@ -2299,11 +2293,9 @@ void VObParabel::Update(){
         update_label ();
 
 	if(profile){
-		profile->show();
-		profile->NewData(vinfo->sc, this);
+                //**		profile->show();
+                //**		profile->NewData(vinfo->sc, this);
 	}
-	else
-		gapp->xsm->MausMode (MPARABEL);
 	g_free(mld);
 
 
@@ -2447,11 +2439,9 @@ void VObCircle::Update(){
 	//vinfo->sc->PktVal=2;
 
 	if (profile){
-		profile->show();
-		profile->NewData(vinfo->sc, this);
+                //**		profile->show();
+                //**		profile->NewData(vinfo->sc, this);
 	}
-	else
-		gapp->xsm->MausMode (MCIRCLE);
 
 	g_free(mld);
 	Activate ();
