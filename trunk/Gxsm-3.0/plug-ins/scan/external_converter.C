@@ -154,8 +154,8 @@ static void external_converter_about(void)
 static void external_converter_configure(void)
 {
     if (external_converter_pi.app)
-	external_converter_pi.app->
-	    message("External Converter Plugin Configuration");
+	external_converter_pi.
+	    app->message("External Converter Plugin Configuration");
 }
 
 //
@@ -177,8 +177,9 @@ static void external_convert_callback(GSimpleAction * simple,
 				      gpointer user_data)
 {
     external_converter_Control *Popup = new external_converter_Control();
+    PI_DEBUG(DBG_L2, "External Converter dialog will open");
     Popup->run();
-    PI_DEBUG(DBG_L2, "External Converter dialog opened");
+    PI_DEBUG(DBG_L2, "External Converter dialog has returned");
 }
 
 
@@ -196,12 +197,14 @@ external_converter::external_converter():m_converted(0)
 
 void external_converter::concatenate_dirs(gchar * target,
 					  const gchar * add)
-{
+{	
 	/** assure that the directories are delimited with / */
     int len = strlen(target);
     if (len > 0 && target[len - 1] != '/')
 	strcat(target, "/");
-    strcat(target, add);
+    if (strncmp(target,add,(strlen(target)<strlen(add)?strlen(target):strlen(add))-1)!=0)
+    	strcat(target, add);
+return;
 }
 
 
@@ -211,7 +214,10 @@ void external_converter::create_full_path(gchar * target,
 					  const gchar * file)
 {
     if (source_directory)
-	strcpy(target, source_directory);
+	if (strncmp(source_directory, "file://",7)==0)
+		sprintf(target, "%s",source_directory+7);
+        else	
+		sprintf(target, "%s",source_directory);
     else
 	*target = '\0';
 
@@ -220,11 +226,14 @@ void external_converter::create_full_path(gchar * target,
 
     if (file)
 	concatenate_dirs(target, file);
+    PI_DEBUG(DBG_L2, "target is now:"<<target);
+return;
 }
 
 
 void external_converter::replace_suffix(gchar * target, gchar * new_suffix)
 {
+    PI_DEBUG(DBG_L2, "replace_suffix");
     int len = strlen(target);
 
     for (int i = len - 1; i > -1; --i) {
@@ -240,9 +249,10 @@ void external_converter::replace_suffix(gchar * target, gchar * new_suffix)
 void external_converter::ConvertDir(external_converter_Data * work_it,
 				    const gchar * current_dir)
 {
+    PI_DEBUG(DBG_L2, "ConvertDir:"<<current_dir);
     gchar source_dir[MAX_PATH];
 
-    create_full_path(source_dir, work_it->sourceDir, current_dir, 0);
+    create_full_path(source_dir, work_it->sourceDir, NULL, NULL);
 
     DIR *dir = opendir(source_dir);
     if (dir) {
@@ -254,12 +264,15 @@ void external_converter::ConvertDir(external_converter_Data * work_it,
 	while ((current_file = readdir(dir))) {
 	    create_full_path(source_name, work_it->sourceDir, current_dir,
 			     current_file->d_name);
+/*
 	    if (lstat(source_name, &file_stat) != -1) {
 		// go recursively in case of directories
 		if (S_ISDIR(file_stat.st_mode)
 		    && *current_file->d_name != '.') {
 		    if (work_it->m_recursive) {
+			PI_DEBUG(DBG_L2,"enter subdir");
 			if (work_it->m_create_subdirs) {
+				PI_DEBUG(DBG_L2,"create subdir");
 			    create_full_path(target_name, work_it->destDir,
 					     current_dir,
 					     current_file->d_name);
@@ -272,13 +285,9 @@ void external_converter::ConvertDir(external_converter_Data * work_it,
 					  | S_IXUSR | S_IRGRP | S_IWGRP |
 					  S_IXGRP)
 				    == -1) {
-				    std::
-					cout <<
-					"Could not create directory " <<
-					target_name << std::endl;
+				    PI_DEBUG(DBG_L2,"Could not create directory "<<target_name);
 				} else
-				    std::cout << "Create directory "
-					<< target_name << std::endl;
+				    PI_DEBUG(DBG_L2,"Create directory "<< target_name);
 			}
 			create_full_path(source_name, 0, current_dir,
 					 current_file->d_name);
@@ -294,38 +303,37 @@ void external_converter::ConvertDir(external_converter_Data * work_it,
 		    create_full_path(source_name, work_it->sourceDir,
 				     current_dir, current_file->d_name);
 		    create_full_path(target_name, work_it->destDir,
-				     work_it->
-				     m_create_subdirs ? current_dir : 0,
+				     work_it->m_create_subdirs ?
+				     current_dir : 0,
 				     current_file->d_name);
+			PI_DEBUG(DBG_L2,"just testing");
 		    replace_suffix(target_name, work_it->writeFormat);
 
 		    if (!work_it->m_overwrite_target
 			&& lstat(target_name, &file_stat) != -1) {
-			std::cout << target_name << " already exists!"
-			    << std::endl;
+			PI_DEBUG(DBG_L2,target_name << " already exists!");
 			continue;
 		    }
 
 		    ++m_converted;
-		    std::cout << std::
-			endl << "Converting file " << m_converted << std::
-			endl;
+		    PI_DEBUG(DBG_L2,"Converting file " << m_converted);
 		    char command[1000];
 		    snprintf(command, 1000, "%s %s \"%s\" \"%s\"",
 			     work_it->convBin,
 			     work_it->converterOptions, source_name,
 			     target_name);
-		    printf("command: %s\n", command);
+		    PI_DEBUG(DBG_L2,"command: "<<command);
 		    int errornum = 0;
 		    errornum = system(command);
 		    if (errornum != 0)
-			printf("Error! %i \n", errornum);
+			PI_DEBUG(DBG_L2,"Error! "<<errornum);
 		}
-	    }
+	    }*/
 	}
     }
-
+PI_DEBUG(DBG_L2,"dir done");
     closedir(dir);
+return;
 }
 
 
@@ -344,6 +352,7 @@ gint file_error(GtkWindow * window, const gchar * err_msg,
 
 external_converter_Control::external_converter_Control()
 {
+    PI_DEBUG(DBG_L2, "Generating external_converter_control object!");
     frontenddata =
 	new external_converter_Data(getenv("PWD"), getenv("PWD"), "*.nc",
 				    "top");
@@ -351,21 +360,22 @@ external_converter_Control::external_converter_Control()
 			    "external_converter");
     xrm.Get("SourceFile", &frontenddata->sourceFile, getenv("PWD"));
     xrm.Get("DestFile", &frontenddata->destFile, getenv("PWD"));
-    xrm.Get("DestSuffix", &frontenddata->writeFormat, ".txt");
-    xrm.Get("convBin", &frontenddata->convBin,
-	    "/usr/local/bin/converter");
-    xrm.Get("ConverterOptions", &frontenddata->converterOptions, "PWD");
+    xrm.Get("DestSuffix", &frontenddata->writeFormat, ".top");
+    xrm.Get("convBin", &frontenddata->convBin, "/usr/local/bin/nc2top");
+    xrm.Get("ConverterOptions", &frontenddata->converterOptions, "-v");
 }
 
 
 external_converter_Control::~external_converter_Control()
 {
+    PI_DEBUG(DBG_L2, "Deleting external_converter_control object!");
     delete frontenddata;
 }
 
 
 void external_converter_Control::run()
 {
+    PI_DEBUG(DBG_L2, "run");
     GtkWidget *dialog;
     GtkWidget *VarName;
     GtkWidget *variable;
@@ -377,7 +387,7 @@ void external_converter_Control::run()
     GtkDialogFlags flags = GTK_DIALOG_MODAL;
     dialog =
 	gtk_dialog_new_with_buttons(N_("External Converter"), NULL, flags,
-				    N_("Convert"), GTK_RESPONSE_CANCEL,
+				    N_("Convert"), GTK_RESPONSE_ACCEPT,N_("Cancel"),GTK_RESPONSE_CANCEL,
 				    NULL);
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -433,11 +443,12 @@ void external_converter_Control::run()
     ConverterBin =
 	gtk_file_chooser_button_new("external converter",
 				    GTK_FILE_CHOOSER_ACTION_OPEN);
-	// neet do fix that frontenddata->convBin is set as default file name !!!	
-	//gtk_file_chooser_set_current_folder_file (GTK_FILE_CHOOSER(ConverterBin), "/user/bin");
-    	//gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER(ConverterBin), "nc2top");    
-	gtk_file_chooser_set_file(GTK_FILE_CHOOSER(ConverterBin),g_file_parse_name("/user/bin/nc2top"),NULL);
-	
+    // neet do fix that frontenddata->convBin is set as default file name !!!       
+    //gtk_file_chooser_set_current_folder_file (GTK_FILE_CHOOSER(ConverterBin), "/user/bin");
+    //gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER(ConverterBin), "nc2top");    
+    gtk_file_chooser_set_file(GTK_FILE_CHOOSER(ConverterBin),
+			      g_file_parse_name("/usr/local/bin/nc2top"), NULL);
+
     gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(ConverterBin), TRUE,
 		       TRUE, 0);
 
@@ -457,7 +468,7 @@ void external_converter_Control::run()
     help = gtk_button_new_with_label(N_("Help"));
     gtk_box_pack_start(GTK_BOX(hbox), help, TRUE, TRUE, 0);
     g_signal_connect(G_OBJECT(help), "clicked",
-		     G_CALLBACK(show_info_callback),
+		     G_CALLBACK(show_info_callback)),
 		     (void
 		      *) (N_
 			  ("Enter the file format suffix without any special characters.")));
@@ -498,66 +509,83 @@ void external_converter_Control::run()
 	gtk_check_button_new_with_label("Recursive");
     gtk_box_pack_start(GTK_BOX(hbox), toggle_recursive, TRUE, TRUE, 0);
     g_signal_connect(G_OBJECT(toggle_recursive), "clicked",
-		     G_CALLBACK(external_converter_Control::
-				recursive_click), this);
+		     G_CALLBACK
+		     (external_converter_Control::recursive_click), this);
 
     GtkWidget *toggle_overwrite_target =
 	gtk_check_button_new_with_label("Overwrite Target File");
     gtk_box_pack_start(GTK_BOX(hbox), toggle_overwrite_target, TRUE, TRUE,
 		       0);
     g_signal_connect(G_OBJECT(toggle_overwrite_target), "clicked",
-		     G_CALLBACK(external_converter_Control::
-				overwrite_target_click), this);
+		     G_CALLBACK
+		     (external_converter_Control::overwrite_target_click),
+		     this);
 
     GtkWidget *toggle_create_subdirs =
 	gtk_check_button_new_with_label("Create sub-directories");
     gtk_box_pack_start(GTK_BOX(hbox), toggle_create_subdirs, TRUE, TRUE,
 		       0);
     g_signal_connect(G_OBJECT(toggle_create_subdirs), "clicked",
-		     G_CALLBACK(external_converter_Control::
-				create_subdirs_click), this);
-	// show all widgets and start dialog
+		     G_CALLBACK
+		     (external_converter_Control::create_subdirs_click),
+		     this);
+    // show all widgets and start dialog
     gtk_widget_show_all(dialog);
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_CANCEL) {
+    PI_DEBUG(DBG_L2, "cancel was pressed, no conversion done.");
 	gtk_widget_destroy(dialog);
 	return;
-    }
-
+    } else {
+	PI_DEBUG(DBG_L2, "convert was pressed, now checking parameter");
 // get data from widgets (after closing dialog window)
-	g_free(frontenddata->sourceDir);
-    	frontenddata->sourceDir = g_strdup(gtk_file_chooser_get_uri(GTK_FILE_CHOOSER(SourcePath)));
-	if (access(frontenddata->sourceDir, F_OK)) {
-		gtk_widget_destroy(dialog);
-		return;
-    	}
+    g_free(frontenddata->sourceDir);
+    frontenddata->sourceDir =
+	g_strdup(gtk_file_chooser_get_uri(GTK_FILE_CHOOSER(SourcePath)));
+/*    if (access(frontenddata->sourceDir, F_OK)) {
+	gtk_widget_destroy(dialog);
+	PI_DEBUG(DBG_L2, "failed to access source dir");
+	return;
+    }
+*/
 
-	g_free(frontenddata->destDir);
-    	frontenddata->destDir = g_strdup(gtk_file_chooser_get_uri(GTK_FILE_CHOOSER(DestPath)));
-	if (access(frontenddata->destDir, F_OK)) {
-		gtk_widget_destroy(dialog);
-		return;
-    	}
+    g_free(frontenddata->destDir);
+    frontenddata->destDir =
+	g_strdup(gtk_file_chooser_get_uri(GTK_FILE_CHOOSER(DestPath)));
+/*    if (access(frontenddata->destDir, F_OK)) {
+	gtk_widget_destroy(dialog);
+	PI_DEBUG(DBG_L2, "failed to access destination dir");
+	return;
+    }
+*/
+    g_free(frontenddata->writeFormat);
+    frontenddata->writeFormat =
+	g_strdup(gtk_entry_get_text(GTK_ENTRY(DestSuffix)));
 
-	g_free(frontenddata->writeFormat);
-    	frontenddata->writeFormat =
-		g_strdup(gtk_entry_get_text(GTK_ENTRY(DestSuffix)));
-
-	g_free(frontenddata->convBin);
-	frontenddata->convBin = g_strdup(g_file_get_parse_name (gtk_file_chooser_get_file(GTK_FILE_CHOOSER(ConverterBin))));
-	if (access(frontenddata->convBin, F_OK)) {
-		gtk_widget_destroy(dialog);
-		return;
-    	}
-
-	g_free(frontenddata->converterOptions);
-    	frontenddata->writeFormat =
-		g_strdup(gtk_entry_get_text(GTK_ENTRY(ConverterOptions)));
-	
+    g_free(frontenddata->convBin);
+    frontenddata->convBin =
+	g_strdup(g_file_get_parse_name
+		 (gtk_file_chooser_get_file
+		  (GTK_FILE_CHOOSER(ConverterBin))));
+/*    if (access(frontenddata->convBin, F_OK)) {
+	gtk_widget_destroy(dialog);
+	PI_DEBUG(DBG_L2, "failed to access converter binary");
+	return;
+    }
+*/
+    g_free(frontenddata->converterOptions);
+    frontenddata->writeFormat =
+	g_strdup(gtk_entry_get_text(GTK_ENTRY(ConverterOptions)));
+    PI_DEBUG(DBG_L2, "parameter okay");
+    external_converter converter_obj;
+    converter_obj.ConvertDir(frontenddata,getenv("PWD"));	
+    return;
+}
 }
 
 void external_converter_Control::recursive_click(GtkWidget * widget,
 						 gpointer userdata)
 {
+    PI_DEBUG(DBG_L2, "recursive_click");
     ((external_converter_Control *) userdata)->frontenddata->m_recursive =
 	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 }
@@ -566,8 +594,9 @@ void external_converter_Control::recursive_click(GtkWidget * widget,
 void external_converter_Control::overwrite_target_click(GtkWidget * widget,
 							gpointer userdata)
 {
-    ((external_converter_Control *) userdata)->frontenddata->
-	m_overwrite_target =
+    PI_DEBUG(DBG_L2, "overwrite_target_click");
+    ((external_converter_Control *) userdata)->
+	frontenddata->m_overwrite_target =
 	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
@@ -575,8 +604,9 @@ void external_converter_Control::overwrite_target_click(GtkWidget * widget,
 void external_converter_Control::create_subdirs_click(GtkWidget * widget,
 						      gpointer userdata)
 {
-    ((external_converter_Control *) userdata)->frontenddata->
-	m_create_subdirs =
+    PI_DEBUG(DBG_L2, "create_subdirs_click");
+    ((external_converter_Control *) userdata)->
+	frontenddata->m_create_subdirs =
 	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
@@ -588,7 +618,7 @@ void external_converter_Control::dlg_clicked(GtkDialog * dialog,
 					     external_converter_Control *
 					     mic)
 {
-
+    PI_DEBUG(DBG_L2, "dlg_clicked");
     g_free(mic->frontenddata->sourceFile);
     mic->frontenddata->sourceFile =
 	g_strdup(gtk_file_chooser_get_uri
@@ -662,7 +692,7 @@ void external_converter_Control::dlg_clicked(GtkDialog * dialog,
 			strcat(mic->frontenddata->destFile, "/");
 		}
 
-		printf("Starting conversion\n");
+		PI_DEBUG(DBG_L2,"Starting conversion");
 		//check if input file is a file or directory
 		snprintf(command, 1000, "%s %s \"%s\" \"%s%s.%s\" &",
 			 mic->frontenddata->convBin,
@@ -670,17 +700,15 @@ void external_converter_Control::dlg_clicked(GtkDialog * dialog,
 			 mic->frontenddata->sourceFile,
 			 mic->frontenddata->destFile, buffer,
 			 mic->frontenddata->writeFormat);
-		printf("Command:%s\n", command);
+		PI_DEBUG(DBG_L2,"Command:%s\n"<<command);
 		system(command);
 	    } else {
 		//directory
 		mic->frontenddata->sourceDir =
 		    mic->frontenddata->sourceFile;
 		mic->frontenddata->destDir = mic->frontenddata->destFile;
-		external_converter *converter_obj;
-		converter_obj = new external_converter();
-
-		converter_obj->ConvertDir(mic->frontenddata, 0);
+		external_converter converter_obj;
+		converter_obj.ConvertDir(mic->frontenddata, 0);
 	    }
 	    break;
 	}
@@ -700,6 +728,7 @@ void external_converter_Control::dlg_clicked(GtkDialog * dialog,
     xrm.Put("ConverterOptions", mic->frontenddata->converterOptions);
 
     mic->DlgDone();
+return;
 
 }
 
