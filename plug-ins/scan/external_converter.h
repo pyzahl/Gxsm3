@@ -41,74 +41,81 @@
 #include "batch.h"
 
 
-#define MAX_PATH 1024 // maximum path-length
-#define EXT_SEP '.'     //Suffix seperator
+#define MAX_PATH 1024		// maximum path-length
+#define EXT_SEP '.'		//Suffix seperator
 
 class external_converter_Data {
 
-public:
-	~external_converter_Data();	
+  public:
+    ~external_converter_Data();
 
-	  external_converter_Data(const gchar *src, const gchar *dst, const gchar *conv, const gchar *write);
+    external_converter_Data(const gchar * src, const gchar * dst,
+			    const gchar * conv, const gchar * write);
 
-        gchar *sourceDir;
-	gchar *destDir;
-	gchar *convBin;
-        gchar *writeFormat;
-	bool m_recursive;
-	bool m_overwrite_target;
-	bool m_create_subdirs;
+    gchar *sourceDir;
+    gchar *destDir;
+    gchar *convBin;
+    gchar *writeFormat;
+    bool m_recursive;
+    bool m_overwrite_target;
+    bool m_create_subdirs;
 
-	gchar *sourceFile;
-	gchar *destFile;
-//	gchar *destSuffix;
-	gchar *converterOptions;
+    gchar *sourceFile;
+    gchar *destFile;
+//      gchar *destSuffix;
+    gchar *converterOptions;
 };
 
-class external_converter_Control : public DlgBase{	
-public:
+class external_converter_Control:public DlgBase {
+  public:
 
     external_converter_Control();
-   ~external_converter_Control();
+    ~external_converter_Control();
 
-	static void recursive_click(GtkWidget* dialog, gpointer userdata);
-	static void create_subdirs_click(GtkWidget* dialog, gpointer userdata);
-	static void overwrite_target_click(GtkWidget* dialog, gpointer userdata);
+    static void recursive_click(GtkWidget * dialog, gpointer userdata);
+    static void create_subdirs_click(GtkWidget * dialog,
+				     gpointer userdata);
+    static void overwrite_target_click(GtkWidget * dialog,
+				       gpointer userdata);
 
-	void run();
-	static void dlg_clicked(GtkDialog * dialog, gint button_number, external_converter_Control *mic);
-	external_converter_Data *frontenddata;
-	GtkWidget *SourcePath, *DestPath, *DestSuffix, *ConverterBin, *ConverterOptions;
+    void run();
+    static void dlg_clicked(GtkDialog * dialog, gint button_number,
+			    external_converter_Control * mic);
+    external_converter_Data *frontenddata;
+    GtkWidget *SourcePath, *DestPath, *DestSuffix, *ConverterBin,
+	*ConverterOptions;
 };
 
 class external_converter {
 
-public:
-  	external_converter();
- 	~external_converter();
-   
+  public:
+    external_converter();
+    ~external_converter();
+
 	/** current_dir parameter is set to a value not equal 0 in case
 		of recursive traversal of directory tree */
-  void ConvertDir(external_converter_Data *work_it, const gchar* current_dir);
+    void ConvertDir(external_converter_Data * work_it,
+		    const gchar * current_dir);
 //  gint  readToAct(gchar *fname);  
-//  gint  writeFromCh(gint Ch, gchar *fname);	
-  
-  	
-private:
-	int m_converted;
-	
-	gchar*strParse(gchar *fname, external_converter_Data *check);
-	gchar retStr[MAX_PATH];
+//  gint  writeFromCh(gint Ch, gchar *fname);   
+
+
+  private:
+    int m_converted;
+
+    gchar *strParse(gchar * fname, external_converter_Data * check);
+    gchar retStr[MAX_PATH];
 	/** Concatenate path parts and make sure, that the path in the
 		target array is already terminated with a '/' */
-	static void concatenate_dirs(gchar* target, const gchar* add);
+    static void concatenate_dirs(gchar * target, const gchar * add);
 	/** Copy the name of the full path to the target array, which
 		must be big enough. file and current_dir do not need
 		to be set. */
-	static void create_full_path(gchar* target,
-		const gchar* source_directory, const gchar* current_dir,
-		const gchar* file); 
-	static void replace_suffix(gchar* target, gchar* new_suffix);
+    static void create_full_path(gchar * target,
+				 const gchar * source_directory,
+				 const gchar * current_dir,
+				 const gchar * file);
+    static void replace_suffix(gchar * target, gchar * new_suffix);
 };
 
 void replacebracket(char *string);

@@ -187,8 +187,9 @@ converter_convert_callback(GSimpleAction * simple, GVariant * parameter,
 			   gpointer user_data)
 {
     converterControl *Popup = new converterControl();
+    PI_DEBUG(DBG_L2, "converter dialog will open");    
     Popup->run();
-    PI_DEBUG(DBG_L2, "converter dialog opened");
+    PI_DEBUG(DBG_L2, "converter dialog has closed");
 }
 
 
@@ -206,7 +207,7 @@ converter::converter():m_converted(0)
 
 void converter::concatenate_dirs(gchar * target, const gchar * add)
 {
-  PI_DEBUG(DBG_L2,"concatenate dirs");
+    PI_DEBUG(DBG_L2, "concatenate dirs");
   /** assure that the directories are delimited with / */
     int len = strlen(target);
     if (len > 0 && target[len - 1] != '/')
@@ -230,7 +231,7 @@ void converter::create_full_path(gchar * target,
 
     if (file)
 	concatenate_dirs(target, file);
-  PI_DEBUG(DBG_L2,g_strdup(target));
+    PI_DEBUG(DBG_L2, g_strdup(target));
 }
 
 
@@ -413,7 +414,7 @@ gint converter::writeFromCh(gint Ch, gchar * fname)
 /** Generates the full path to the target file */
 gchar *converter::strParse(gchar * name, converterData * check)
 {
-        PI_DEBUG(DBG_L2,"str parse");
+    PI_DEBUG(DBG_L2, "str parse");
   /** copy the argument */
     int len = strlen(name);
     gchar *fname = strdup(name);
@@ -481,7 +482,7 @@ void
     GtkWidget *variable;
     GtkWidget *help;
 
-        // create dialog window
+    // create dialog window
     GtkDialogFlags flags = GTK_DIALOG_MODAL;
     dialog = gtk_dialog_new_with_buttons("Converter",
 					 NULL,
@@ -493,10 +494,11 @@ void
 
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))),
+    gtk_box_pack_start(GTK_BOX
+		       (gtk_dialog_get_content_area(GTK_DIALOG(dialog))),
 		       vbox, TRUE, TRUE, GXSM_WIDGET_PAD);
 
-       // create widget for source file
+    // create widget for source file
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
@@ -506,10 +508,12 @@ void
     gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
 
     SrcDir_button =
-	gtk_file_chooser_button_new("source folder", GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
-    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(SrcDir_button), TRUE, TRUE, 0);
+	gtk_file_chooser_button_new("source folder",
+				    GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
+    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(SrcDir_button), TRUE,
+		       TRUE, 0);
 
-       // create widget for file mask
+    // create widget for file mask
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
@@ -517,7 +521,7 @@ void
     gtk_widget_set_size_request(VarName, 100, -1);
     gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
     gtk_box_pack_start(GTK_BOX(hbox), VarName, TRUE, TRUE, 0);
-    
+
     SrcMask = gtk_entry_new();
     gtk_box_pack_start(GTK_BOX(hbox), SrcMask, TRUE, TRUE, 0);
     gtk_entry_set_text(GTK_ENTRY(SrcMask), topdata->convFilter);
@@ -531,7 +535,7 @@ void
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
-        // create widget for destination path    
+    // create widget for destination path    
     VarName = gtk_label_new(N_("Destination Path"));
     gtk_widget_set_size_request(VarName, 100, -1);
     gtk_label_set_justify(GTK_LABEL(VarName), GTK_JUSTIFY_LEFT);
@@ -623,15 +627,14 @@ void
 	g_strdup(gtk_entry_get_text(GTK_ENTRY(DestMask)));
 
     show_info_callback(NULL, N_("Converting ..."));
-    converter converter_obj;    
+    converter converter_obj;
     converter_obj.ConvertDir(topdata, 0);
 
     PI_DEBUG(DBG_L2,
 	     "Running with the following options: \n\tSource path=" <<
-	     topdata->
-	     sourceDir << "\n\tInput filer=" << topdata->convFilter <<
-	     "\n\tdestination path=" << topdata->destDir <<
-	     "\n\tOutput filter=" << topdata->writeFormat);
+	     topdata->sourceDir << "\n\tInput filer=" << topdata->
+	     convFilter << "\n\tdestination path=" << topdata->
+	     destDir << "\n\tOutput filter=" << topdata->writeFormat);
 
     XsmRescourceManager xrm("FilePathSelectionHistory", "Converter");
     xrm.Put("SourcePath", topdata->sourceDir);
@@ -640,6 +643,7 @@ void
     xrm.Put("OutputFilter", topdata->writeFormat);
 
     gtk_widget_destroy(dialog);
+    return;
 }
 
 
