@@ -282,15 +282,19 @@ void TZData<ZTYP>::ZPutDataLine(int y, void *src, int mode){
 }
 
 template <class ZTYP> 
-int TZData<ZTYP>::CopyFrom(ZData *src, int x, int y, int tox, int toy, int nx, int ny){
-//	for(int i=0; i<ny; i++){
-//		for(int j=0; j<nx; j++)
-//			Z (src->Z(j+x,i+y), j+tox,i+toy);
-//        g_message ("TZD::CopyFrom %d %d -> %d %d [%d x %d]", x,y, tox, toy, nx, ny);
-	for(int i=0; i<ny; i++){
-		memcpy((void*)&Zdat[(toy++)*nv+vlayer][tox], src->GetPtr(x,y++), nx*sizeof(ZTYP));
-		Li[i+ny*vlayer].invalidate();
-	}
+int TZData<ZTYP>::CopyFrom(ZData *src, int x, int y, int tox, int toy, int nx, int ny, gboolean observe_shift){
+//      g_message ("TZD::CopyFrom %d %d -> %d %d [%d x %d]", x,y, tox, toy, nx, ny);
+        if (observe_shift)
+        	for(int i=0; i<ny; i++){
+                        for(int j=0; j<nx; j++)
+                                Z (src->Z(j+x,i+y), j+tox,i+toy);
+                        Li[i+ny*vlayer].invalidate();
+                }
+        else
+                for(int i=0; i<ny; i++){
+                        memcpy((void*)&Zdat[(toy++)*nv+vlayer][tox], src->GetPtr(x,y++), nx*sizeof(ZTYP));
+                        Li[i+ny*vlayer].invalidate();
+                }
 
 //	int it = nx/2;
 //	std::cout << "TZD-CpyF " << it << "," << it << ",vd" << vlayer << ",vs" << src->GetLayer() << " Verify Src=" << src->Z(it,it)  << " Dst=" << Z(it,it) << std::endl;
@@ -385,6 +389,7 @@ void TZData<ZTYP>::NcGet(NcVar *ncfield, int time_index){
 	}
 }
 
+// in place operations
 template <class ZTYP> 
 void TZData<ZTYP>::norm (double mag, int vi, int vf){
         if (vf<vi) vf=nv-1;
@@ -668,7 +673,7 @@ Mem2d::~Mem2d(){
  *  nx,ny: size of xy subregion
  *  vi,vf: layer subset (value) initial and final layer to copy
  */
-void Mem2d::copy(Mem2d *m, int x0, int y0, int vi, int vf, int nx, int ny){
+void Mem2d::copy(Mem2d *m, int x0, int y0, int vi, int vf, int nx, int ny, gboolean observe_shift){
 	int ly=m->data->GetLayer();
 	int lnum;
 	XSM_DEBUG (DBG_L6,"Mem2d::copy full, all layers #" << m->GetNv() << " current layer src:" << ly << " t_index src: "<< m->t_index);
@@ -684,11 +689,19 @@ void Mem2d::copy(Mem2d *m, int x0, int y0, int vi, int vf, int nx, int ny){
 		
 	lnum = vf-vi+1;
 	Resize (nx, ny, lnum, m->GetTyp());
-	for(int v=vi; v<=vf; ++v){
-		m->data->SetLayer(v);
-		SetLayer(v-vi);
-		CopyFrom(m, x0,y0, 0,0, nx,ny);
-	}
+
+        if (observe_shift && m->data->is_shift ())
+                for(int v=vi; v<=vf; ++v)
+                        for(int y=0; y<ny; ++y)
+                                for(int x=0; x<nx; ++x)
+                                        data->Z (m->data->Z (x+x0,y+y0,v), x,y,v-vi);
+        else
+                for(int v=vi; v<=vf; ++v){
+                        m->data->SetLayer(v);
+                        SetLayer(v-vi);
+                        CopyFrom(m, x0,y0, 0,0, nx,ny);
+                }
+
 	m->data->SetLayer(ly);
 	SetLayer(ly-vi < lnum ? ly-vi > 0? ly-vi : 0 : lnum-1);
 	data->CopyLookups(m->data,  x0, y0, vi);
@@ -2581,7 +2594,7 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         // *** WORKINGMARKER *** 11/2/1999 PZ ***
         // fill the central part of the x matrix with the data
         XSM_DEBUG (DBG_L6, "Mem2dDigi: " << ns << " " << ms << " " << nn << " " << mm);
-        x.data->CopyFrom(Src->data, 0,0, ns,ms ,nn,mm); // !!!!!!!!!!!! tot
+        x.data->CopyFrom(Src->data, 0,0, ns,ms ,nn,mm, true); // !!!!!!!!!!!! total scan and observe shift
   
         // now fill edges and corners with copies of edge data
         // edge left / right
@@ -2594,10 +2607,10 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         gapp->progress_info_set_bar_fraction (0.4, 2);
         gapp->check_events ();
 
-        // edge top / bottom
+        // edge top / bottom and oberserve shift
         for(i=0;i<ms;i++){
-                x.data->CopyFrom(Src->data, 0,0, ns,i ,nn);
-                x.data->CopyFrom(Src->data, 0,mm-1, ns,i+mm+ms ,nn);
+                x.data->CopyFrom(Src->data, 0,0, ns,i ,nn, -1, true);
+                x.data->CopyFrom(Src->data, 0,mm-1, ns,i+mm+ms ,nn, -1, true);
         } 
         gapp->progress_info_set_bar_fraction (0.5, 2);
         gapp->check_events ();
