@@ -731,40 +731,58 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         
         // Display -- Hi-Low
         view_bp->set_default_ec_change_notice_fkt  (display_changed_hl_callback, this);
-        view_bp->grid_add_ec ("High Limit", scan->data.Zunit, &scan->data.display.z_high,
-                              -5000000., 5000000., ".3f", 1., 100., NULL);
+        gtk_widget_set_tooltip_text (
+                                     view_bp->grid_add_ec ("High Limit", scan->data.Zunit, &scan->data.display.z_high,
+                                                           -5000000., 5000000., ".3f", 1., 100., NULL),
+                                     N_("Lock View Range to high-low limits."));
         view_bp->new_line ();
                 
-        view_bp->grid_add_ec ("Low Limit", scan->data.Zunit, &scan->data.display.z_low,
-                              -5000000., 5000000., ".3f", 1., 100., NULL);
+        gtk_widget_set_tooltip_text (
+                                     view_bp->grid_add_ec ("Low Limit", scan->data.Zunit, &scan->data.display.z_low,
+                                                           -5000000., 5000000., ".3f", 1., 100., NULL),
+                                     N_("Lock View Range to high-low limits."));
         view_bp->new_line ();
         
         // Display -- Range auto center
         view_bp->set_default_ec_change_notice_fkt  (display_changed_vr_callback, this);
-        view_bp->grid_add_ec ("Max. Range", scan->data.Zunit, &scan->data.display.vrange_z,
-                              -5000000., 5000000., ".3g", 0.1, 5., NULL);        //"VRangeZ");
+        gtk_widget_set_tooltip_text (
+                                     view_bp->grid_add_ec ("Max. Range", scan->data.Zunit, &scan->data.display.vrange_z,
+                                                           -5000000., 5000000., ".3g", 0.1, 5., NULL),
+                                     N_("Auto View Limits from Range and Offset."));
+        view_bp->new_line ();
+        gtk_widget_set_tooltip_text (
+                                     view_bp->grid_add_ec ("rel. Offset", scan->data.Zunit, &scan->data.display.voffset_z,
+                                                           -5000000., 5000000., ".3g", 0.1, 5.,NULL),
+                                     N_("Auto View Limits from Range and Offset."));
+        
+        view_bp->pop_grid ();
         view_bp->new_line ();
 
-        view_bp->grid_add_ec ("rel. Offset", scan->data.Zunit, &scan->data.display.voffset_z,
-                              -5000000., 5000000., ".3g", 0.1, 5.,NULL);        //"VOffsetZ");
-        
-        view_bp->new_line ();
+        // ==================================================
+        view_bp->new_grid_with_frame (N_("Dift Compensation (exp model)"), 1, 1);
 
         // Display -- Pixel Shift -- shift_x/y = creepfactor * shift_x/y_value
         // creepfactor = tau > 0. ? (1. - expf (-tau*dt)) : dt;
 
         view_bp->set_default_ec_change_notice_fkt  (display_changed_sh_callback, this);
-        view_bp->grid_add_ec ("X shift", scan->data.Xunit, &scan->data.display.px_shift_xy[0],
-                              -5000000., 5000000., "8g", 1., 1., NULL);
+        gtk_widget_set_tooltip_text (
+                                     view_bp->grid_add_ec ("Shift X", scan->data.Xunit, &scan->data.display.px_shift_xy[0],
+                                                           -5000000., 5000000., "8g", 1., 1., NULL),
+                                     N_("image-shift_x,y = (1. - exp (-tau*dt)) * shift_x,y"));
+                                     
         view_bp->new_line ();
 
-        view_bp->grid_add_ec ("Y shift", scan->data.Yunit, &scan->data.display.px_shift_xy[1],
-                              -5000000., 5000000., "8g", 1., 1.,NULL);
+        gtk_widget_set_tooltip_text (
+                                     view_bp->grid_add_ec ("Shift Y", scan->data.Yunit, &scan->data.display.px_shift_xy[1],
+                                                           -5000000., 5000000., "8g", 1., 1.,NULL),
+                                     N_("image-shift_x,y = (1. - exp (-tau*dt)) * shift_x,y"));
         
         view_bp->new_line ();
 
-        view_bp->grid_add_ec ("Tau/s", gapp->xsm->Unity, &scan->data.display.px_shift_xy[2],
-                              -5000000., 5000000., "8g", 0.00001, 0.00001,NULL);
+        gtk_widget_set_tooltip_text (
+                                     view_bp->grid_add_ec ("Tau", gapp->xsm->Unity, &scan->data.display.px_shift_xy[2],
+                                                           -5000000., 5000000., "8g", 0.00001, 0.00001,NULL),
+                                     N_("image-shift_x,y = (1. - exp (-tau*dt)) * shift_x,y"));
         
         // -- Info Tab
         // ==================================================
@@ -915,20 +933,17 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
         gtk_widget_set_tooltip_text (
                                      pe_bp->grid_add_ec (N_("Radius"), gapp->xsm->LenUnit ? gapp->xsm->LenUnit : gapp->xsm->X_Unit, &CursorRadius, 0., 1000000., ".1f", 10., 100., NULL),
-                                     N_("Click middle button to choose center for area of interest and update.")
-                                     );
+                                     N_("Click middle button to choose center for area of interest and update."));
         pe_bp->new_line ();
 
         gtk_widget_set_tooltip_text (
                                      pe_bp->grid_add_ec (N_("Number"), gapp->xsm->Unity, &MaxNumberEvents, 0, 25000, ".0f"),
-                                     N_("Click middle button to choose center for area of interest and update.")
-                                     );
+                                     N_("Click middle button to choose center for area of interest and update."));
         pe_bp->new_line ();
 
         gtk_widget_set_tooltip_text (
                                      pe_bp->grid_add_ec (N_("Arrow-Size"), gapp->xsm->Unity, &ArrowSize, 0., 200., ".1f", 1., 10., NULL),
-                                     N_("Click middle button to choose center for area of interest and update.")
-                                     );
+                                     N_("Click middle button to choose center for area of interest and update."));
 
         pe_bp->pop_grid ();
         pe_bp->new_line ();
