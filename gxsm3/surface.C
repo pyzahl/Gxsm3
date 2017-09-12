@@ -169,6 +169,7 @@ int Surface::GetVM (){
         return data.display.ViewFlg;
 }
 
+// ScanMode signum: scan dir
 int Surface::SetSDir(int Channel, int choice){
 	if(Channel < 0 || Channel >= MAX_CHANNELS) return -1;
 	if(abs(ChannelScanMode[Channel]) == ID_CH_M_OFF) return -1;
@@ -191,6 +192,7 @@ int Surface::SetSDir(int Channel, int choice){
 	return 0;
 }
 
+// keep signum (scan dir)!
 int Surface::SetMode(int Channel, int choice, int force){
         // int lastmode;
 	XSM_DEBUG (DBG_L2, "Surface::SetMode: " << Channel << " " << choice);
@@ -209,6 +211,9 @@ int Surface::SetMode(int Channel, int choice, int force){
 			if (ChannelMode[Channel] == ID_CH_M_ACTIVE)
 				ActiveScan = NULL;
 			ChannelMode[Channel] = choice;
+                        if (    ChannelScanMode[Channel] == ID_CH_M_MATH
+                            || -ChannelScanMode[Channel] == ID_CH_M_MATH) // new 20170912, fixed MATH channel assignments issue
+                                SET_CHANNEL_SCAN_MODE(ChannelScanMode[Channel], choice);
 		}
 		else{
 			gapp->channelselector->SetMode(Channel, ID_CH_M_OFF);
