@@ -467,25 +467,6 @@ int Scan::SetVM(int vflg, SCAN_DATA *src, int Delta, double sm_eps){
 		data.display.ViewFlg=vflg;
 
         set_display ();
-        
-#if 0
-	if (src)
-		data.GetDisplay_Param (*src);
-#endif
-#if 0        
-        determine_display (xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);
-
-	if (vflg >= 0){
-                // recompute from vrange/offset
-                mem2d->SetDataVRangeZ (data.display.vrange_z, 
-                                       data.display.voffset_z,
-                                       data.s.dz);
-                
-                // calculate contrast and bright
-                mem2d->AutoDataSkl (&data.display.contrast, &data.display.bright);
-		draw ();
-        }
-#endif
 	return 0;
 }
 
