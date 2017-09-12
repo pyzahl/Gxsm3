@@ -230,7 +230,7 @@ typedef struct{
 
 class Display_Param{
 public:
-	Display_Param(){ vframe =  vlayer = 0; contrast=1.; bright=0.; z_high=z_low=0.; vrange_z=10.; voffset_z=0.; ViewFlg=1; px_shift_xy[0]=px_shift_xy[1]=0.; px_shift_xy[2]=5e-5; };
+	Display_Param(){ vframe =  vlayer = 0; contrast=1.; bright=0.; z_high=z_low=0.; vrange_z=10.; voffset_z=0.; ViewFlg=1; px_shift_xy[0]=px_shift_xy[1]=0.; px_shift_xy[2]=5e-5; use_high_low = 0; };
 	~Display_Param(){};
 
 	void copy(Display_Param &src){
@@ -238,6 +238,7 @@ public:
 		bright   = src.bright;
 		z_high   = src.z_high;
 		z_low    = src.z_low;
+                use_high_low = src.use_high_low;
 		vrange_z = src.vrange_z;
 		voffset_z= src.voffset_z;
 		vframe   = src.vframe;
@@ -261,6 +262,7 @@ public:
 	double vrange_z;                    /* for Scaling by Range and Offset from "Z-Center" */
 	double voffset_z;                   /* for Scaling by Range and Offset from "Z-Center" */
 	double z_high, z_low;               /* for Scaling by high and low */
+        gint   use_high_low;                /* 0: undetermined, 1: true, -1: false */
 	int    vframe;                      /* Frame (in Time dimension) to view */
 	int    vlayer;                      /* Layer (in Value dimension) to view */
 

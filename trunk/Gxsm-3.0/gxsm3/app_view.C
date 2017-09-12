@@ -524,12 +524,12 @@ void ViewControl::setup_side_pane (gboolean show){
 }
 
 void ViewControl::display_changed_hl_callback (Param_Control *pc, gpointer vc){
-        ((ViewControl*)vc)->scan->set_display_hl ();
+        ((ViewControl*)vc)->scan->set_display_hl (1);
         ((ViewControl*)vc)->update_view_panel ();
 }
 
 void ViewControl::display_changed_vr_callback (Param_Control *pc, gpointer vc){
-        ((ViewControl*)vc)->scan->set_display ();
+        ((ViewControl*)vc)->scan->set_display (-1);
         ((ViewControl*)vc)->update_view_panel ();
 }
 
