@@ -319,7 +319,7 @@ gboolean CropScan(MATHOPPARAMS){
 		for (int time_index=ti; time_index <= tf; ++time_index){
 			Mem2d *m = Src->mem2d_time_element (time_index);
 			gapp->progress_info_set_bar_fraction ((gdouble)(time_index-ti)/(gdouble)ntimes_tmp, 1);
-			Dest->mem2d->copy(m, xyc[0], xyc[1], vi, vf, xyc[2]-xyc[0]+1, xyc[3]-xyc[1]+1);
+			Dest->mem2d->copy(m, xyc[0], xyc[1], vi, vf, xyc[2]-xyc[0]+1, xyc[3]-xyc[1]+1, true);
 
 			if (gapp->xsm->MausMode() == MCIRCLE){ // crop circle
 				double r2 = Radius * Radius;
