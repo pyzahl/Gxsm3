@@ -2660,8 +2660,7 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         //
         if (Dest->GetNv () == 1)
                 Dest->Resize(nn,mm);
-
-
+      
         // do convolution !
 
         if (max_jobs < 2){
@@ -2739,9 +2738,12 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                                 g_thread_join (tpi[jobno]);
 
         }
+
+        Dest->data->CopyLookups (Src->data);
+        Dest->copy_layer_information (Src);
         
         gapp->progress_info_close ();
-        
+     
         return TRUE;  
 }
 
