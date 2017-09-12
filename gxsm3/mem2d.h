@@ -148,7 +148,7 @@ public:
 	Mem2d(Mem2d *m, int Nx, int Ny, int Nv=1);
 	virtual ~Mem2d();
 
-	void copy(Mem2d *m, int x0=-1, int y0=-1, int vi=-1, int vf=-1, int nx=-1, int ny=-1);
+	void copy(Mem2d *m, int x0=-1, int y0=-1, int vi=-1, int vf=-1, int nx=-1, int ny=-1, gboolean observe_shift=false);
 
 	size_t      GetEsz(){return data->Zsize();};
 	ZD_TYPE     GetTyp(){return zdtyp;};
@@ -185,13 +185,13 @@ public:
 		data->ZPutDataLine16dot16(y, src, mode); 
 		data->Li[y].invalidate();
 	};
-	inline void CopyFrom(Mem2d *src, int x, int y, int tox, int toy, int nx, int ny=1){
-		data->CopyFrom(src->data, x,y, tox,toy, nx,ny);
+	inline void CopyFrom(Mem2d *src, int x, int y, int tox, int toy, int nx, int ny=1, gboolean observe_shift=false){
+		data->CopyFrom(src->data, x,y, tox,toy, nx,ny, observe_shift);
 	};
-	inline void ConvertFrom(Mem2d *src, int x, int y, int tox, int toy, int nx, int ny=1, int rev_y=0){
+	inline void ConvertFrom(Mem2d *src, int x, int y, int tox, int toy, int nx, int ny=1, int rev_y=0, gboolean observe_shift=false){
 		// no conversion
 		if (GetTyp() == src->GetTyp()){
-			data->CopyFrom(src->data, x,y, tox,toy, nx,ny);
+			data->CopyFrom(src->data, x,y, tox,toy, nx,ny, observe_shift);
 			return;
 		}
 		// special conversions

@@ -386,7 +386,10 @@ void Scan::auto_display (){
 
 // from VRange centered on high..low
 void Scan::set_display_shift (){
-        mem2d->set_px_shift (data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+        if (data.display.px_shift_xy[0] == 0. && data.display.px_shift_xy[1] == 0.)
+                mem2d->set_px_shift ();
+        else
+                mem2d->set_px_shift (data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
 
 	int nte = number_of_time_elements ();
 	for (int i=0; i<nte; ++i){

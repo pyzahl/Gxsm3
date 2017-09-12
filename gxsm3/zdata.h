@@ -155,7 +155,7 @@ public:
 	virtual void           AddNext(double z)=0;
 	virtual void           SetThis(double z)=0;  // Island-Labeling MB
 
-	virtual int            CopyFrom(ZData *src, int x, int y, int tox, int toy, int nx, int ny=1)=0;
+	virtual int            CopyFrom(ZData *src, int x, int y, int tox, int toy, int nx, int ny=1, gboolean observe_shift=false)=0;
 	virtual void           set_all_Z (double z, int v=-1, int x0=0, int y0=0, int xs=0, int ys=0)=0;
 
 	virtual void*           GetPtr(int x, int y)=0;
@@ -213,6 +213,7 @@ public:
 	double zmin, zmax, zcenter, zrange;
 
         void set_shift (double cf_dt=0., double pixs_xdt=0., double pixs_ydt=0.);
+        gboolean is_shift () { return creepfactor == 0. ? false : true; };
         double creepfactor, pixshift_dt[2];
         
         inline int clampx (int x) { return x < 0 ? 0 : x >= nx ? nx-1 : x; };
@@ -320,7 +321,7 @@ public:
 	// Rectangular Copy
 	// Copy Src-Rect(x,y - x+nx,y+ny) to Dest-Rect(tox,toy - tox+nx, toy+ny)
 	// Achtung: TYPEN muessen passen !!!!!!
-	int  CopyFrom(ZData *src, int x, int y, int tox, int toy, int nx, int ny=1);
+	int  CopyFrom(ZData *src, int x, int y, int tox, int toy, int nx, int ny=1, gboolean observe_shift=false);
 	inline void* GetPtr(int x, int y){ return (void*)&Zdat[y*nv+vlayer][x]; };
 
 	inline ZTYP* GetPtr(int x, int y, ZTYP z){ return &Zdat[y*nv+vlayer][x]; };

@@ -215,7 +215,7 @@ gboolean CopyScan(MATHOPPARAMS){
 		for (int time_index=ti; time_index <= tf; ++time_index){
 			Mem2d *m = Src->mem2d_time_element (time_index);
 			gapp->progress_info_set_bar_fraction ((gdouble)(time_index-ti)/(gdouble)ntimes_tmp, 1);
-			Dest->mem2d->copy(m, -1, -1, vi, vf);
+			Dest->mem2d->copy(m, -1, -1, vi, vf, -1, -1, true);
 			if (tnadd > 1 || vnadd > 1){
 				for (int time_index_ahead = time_index; time_index_ahead < time_index+tnadd; ++time_index_ahead){
 					// simply limit to end, to preseve statistics
