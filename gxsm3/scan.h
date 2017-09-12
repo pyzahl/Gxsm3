@@ -121,8 +121,8 @@ public:
 
 	void determine_display(int Delta=4, double sm_eps=0.05);
 	void auto_display();
-	void set_display();
-	void set_display_hl();
+	void set_display (gint lock=0);
+	void set_display_hl (gint lock=0);
 	void set_display_shift();
 	int SetVM(int vflg=0, SCAN_DATA *src=NULL, int Delta=4, double sm_eps=0.05);
 	int GetVM(){ return VFlg; };

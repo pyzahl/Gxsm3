@@ -258,7 +258,7 @@ private:
         gboolean destruction_in_progress;
         gboolean tip_follow_flag;
         gboolean attach_redline_flag;
-
+        
         void (*AddObjFkt)(GtkWidget*, ViewControl*);
         int (*ZoomQFkt)(int, int, Grey2D*);
         Grey2D *ZQFktData;
