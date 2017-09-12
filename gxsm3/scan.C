@@ -320,7 +320,7 @@ void Scan::determine_display (int Delta, double sm_eps){
         Point2D Pkt2d[2];
         hi=lo=0.;
 
-        g_message ("--> Scan::determin_display");
+        //g_message ("--> Scan::determin_display");
 
 	if (view)
 		view->setup_data_transformation();
@@ -371,7 +371,7 @@ void Scan::determine_display (int Delta, double sm_eps){
 void Scan::auto_display (){
         double hi,lo;
 
-        g_message ("--> Scan::auto_display");
+        //g_message ("--> Scan::auto_display");
 
         // determine ranges on selection(s)
         determine_display (xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);
@@ -391,7 +391,7 @@ void Scan::auto_display (){
 
 // from VRange centered on high..low
 void Scan::set_display_shift (){
-        g_message ("--> Scan::set_display_shift");
+        //g_message ("--> Scan::set_display_shift");
 
         if (data.display.px_shift_xy[0] == 0. && data.display.px_shift_xy[1] == 0.)
                 mem2d->set_px_shift ();
@@ -414,7 +414,7 @@ void Scan::set_display (gint lock){
         if (data.display.use_high_low > 0)
                 set_display_hl ();
         else {
-                g_message ("--> Scan::set_display, determine");
+                //g_message ("--> Scan::set_display, determine");
                 double hi,lo;
                 // determine ranges on selection(s)
                 determine_display (xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);
@@ -442,7 +442,7 @@ void Scan::set_display_hl (gint lock){
         if (lock)
                 data.display.use_high_low = lock;
 
-        g_message ("--> Scan::set_display_hl, determine");
+        //g_message ("--> Scan::set_display_hl, determine");
         
         // determine ranges on selection(s)
         determine_display (xsmres.HiLoDelta, (double)xsmres.SmartHistEpsilon);
@@ -512,7 +512,7 @@ int Scan::SetView(int vtype){
 }
 
 int Scan::draw(int y1, int y2){
-        g_message ("--> Scan::draw");
+        //g_message ("--> Scan::draw");
 	if (view){
 		mem2d->SetDataSkl (data.display.contrast, data.display.bright);
 		//    XSMDEBUGLVL(8,"Scan::draw");

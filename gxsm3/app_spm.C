@@ -540,8 +540,10 @@ GtkWidget* App::create_spm_control (){
         spm_bp->new_grid_with_frame ("Scan Parameter", 1, 1);
         spm_bp->set_no_spin ();
         spm_bp->set_input_nx (3);
-        spm_bp->set_input_width_chars (12);
-        // spm_bp->set_label_width_chars (13);
+        #define SPM_MAIN_LWLC 10
+        #define SPM_MAIN_LWIC 10
+        spm_bp->set_label_width_chars (SPM_MAIN_LWLC);
+        spm_bp->set_input_width_chars (SPM_MAIN_LWIC);
         spm_bp->set_default_ec_change_notice_fkt (App::spm_range_check, this);
         
         // Range controls
@@ -714,10 +716,10 @@ GtkWidget* App::create_spm_control (){
         g_object_set_data( G_OBJECT (grid), "LayerSelectSpin", spm_bp->input);
         EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
 
-        // spm_bp->set_label_width_chars (10);
+        spm_bp->set_label_width_chars (SPM_MAIN_LWIC);
         spm_bp->grid_add_label ("-.--#", NULL, 2);
         g_object_set_data (G_OBJECT (grid), "LayerSelectValue", spm_bp->label);
-        // spm_bp->set_label_width_chars (13);
+        spm_bp->set_label_width_chars (SPM_MAIN_LWLC);
 
         spm_bp->new_line ();
 
@@ -744,10 +746,10 @@ GtkWidget* App::create_spm_control (){
         g_object_set_data( G_OBJECT (grid), "TimeSelectSpin", spm_bp->input);
         EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
 
-        // spm_bp->set_label_width_chars (10);
+        spm_bp->set_label_width_chars (SPM_MAIN_LWIC);
         spm_bp->grid_add_label ("-.--#", NULL, 2);
         g_object_set_data( G_OBJECT (grid), "TimeSelectValue", spm_bp->label);
-        // spm_bp->set_label_width_chars (13);
+        spm_bp->set_label_width_chars (SPM_MAIN_LWLC);
 	
         spm_bp->set_default_ec_change_notice_fkt  (NULL, this);
 	
