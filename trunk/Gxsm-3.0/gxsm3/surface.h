@@ -101,6 +101,8 @@ public:
   Scan* GetMasterScan();
   void SetMasterScan(Scan *ms);
 
+  Scan *GetScanChannel (int ch) { if (ch >=0 && ch < MAX_CHANNELS) return scan[ch]; else return NULL; };
+  
   /* Data */
 
   int  ActiveChannel;

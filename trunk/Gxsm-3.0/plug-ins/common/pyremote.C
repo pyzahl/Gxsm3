@@ -225,14 +225,14 @@ show some pretty landscape.
 
 \begin{alltt}
 import array   # for array
-import Numeric # for fromfunction
+import numpy # for fromfunction
 import math    # for sin
 
 def dist(x,y):
-   return ((Numeric.sin((x-50)/15.0) + Numeric.sin((y-50)/15.0))*100)
+   return ((numpy.sin((x-50)/15.0) + numpy.sin((y-50)/15.0))*100)
 
-m = Numeric.fromfunction(dist, (100,100))
-n = Numeric.ravel(m) # make 1-d
+m = numpy.fromfunction(dist, (100,100))
+n = numpy.ravel(m) # make 1-d
 p = n.tolist()       # convert to list
 
 examplearray = array.array('l', p) #
@@ -1172,61 +1172,75 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
 	long* pbuf;
 	int blen, i;
 
-	long sizex, sizey, rangex, rangey;
+        long ch;
+	long sizex, sizey;
+	double rangex, rangey;
 
-	if(!PyArg_ParseTuple(args, "llllO", &sizex, &sizey, &rangex, &rangey, &the_array))
-		return 0;
-	if(PyObject_AsWriteBuffer(the_array, (void**)&pbuf, (Py_ssize_t*)&blen))
-		return 0;
+	if(!PyArg_ParseTuple(args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &the_array))
+		return Py_BuildValue("i", -1);
+
+        g_message ("Create Scan: %d x %d  size %g x %g Ang from python array",sizex, sizey, rangex, rangey);
+        
+        if(PyObject_AsWriteBuffer(the_array, (void**)&pbuf, (Py_ssize_t*)&blen))
+		return Py_BuildValue("i", -1);
 	blen /= sizeof(long);
 
 	if ( blen != sizex*sizey ) {
-		// Wrong number of arguments in List
-		//return Py_BuildValue("i", -1);
-		return 0;
+                g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", blen, sizex*sizey);
+		return Py_BuildValue("i", -1);
 	}
+        g_message ("Create Scan: array len=%d OK.", blen);
+        
 
 	/*for(i=0; i<blen; ++i)
 	  pbuf[i] += 1;*/
 
-	Scan *dst;
-	gapp->xsm->ActivateFreeChannel();
-	dst = gapp->xsm->GetActiveScan();
+	//Scan *dst;
+	//gapp->xsm->ActivateFreeChannel();
+	//dst = gapp->xsm->GetActiveScan();
+	Scan *dst = gapp->xsm->GetScanChannel (ch);
+        if (dst){
+        
+                dst->data.s.nx = sizex;
+                dst->data.s.ny = sizey;
+                dst->data.s.nvalues = 1;
+                dst->data.s.ntimes = 1;
+                dst->data.s.dx = rangex/(sizex-1);
+                dst->data.s.dy = rangey/(sizey-1);
+                dst->data.s.dz = 1;
+                dst->data.s.rx = rangex;
+                dst->data.s.ry = rangey;
 
-	dst->data.s.nx = sizex;
-	dst->data.s.ny = sizey;
-	dst->data.s.dx = 1; // unit?
-	dst->data.s.dy = 1; // unit?
-	dst->data.s.dz = 1;
-	dst->data.s.rx = rangex;
-	dst->data.s.ry = rangey;
+                dst->data.s.x0 = 0.;
+                dst->data.s.y0 = 0.;
+                //  dst->data.s.alpha = 0.;
 
-	dst->data.s.x0 = 0.;
-	dst->data.s.y0 = 0.;
-	//  dst->data.s.alpha = 0.;
+                dst->data.ui.SetUser ("User");
 
-	dst->data.ui.SetUser ("User");
+                gchar *tmp=g_strconcat ("PyCreate ",
+                                        NULL);
+                dst->data.ui.SetComment (tmp);
+                g_free (tmp);
 
-	gchar *tmp=g_strconcat ("PyCreate ",
-				NULL);
-	dst->data.ui.SetComment (tmp);
-	g_free (tmp);
+                dst->create ();
+                dst->mem2d->Resize (dst->data.s.nx, dst->data.s.ny, dst->data.s.nvalues);
 
-	dst->mem2d->Resize (dst->data.s.nx, dst->data.s.ny);
-
-	/*Read*/
-	for(gint i=0; i<dst->mem2d->GetNy(); i++){
-                for(gint j=0; j<dst->mem2d->GetNx(); j++){
-                        dst->mem2d->data->Z( (double) pbuf[i+sizex*j], j, i);
+                /*Read*/
+                for(gint i=0; i<dst->mem2d->GetNy(); i++){
+                        for(gint j=0; j<dst->mem2d->GetNx(); j++){
+                                dst->mem2d->data->Z( (double) pbuf[j+sizex*i], j, i);
+                        }
                 }
-        }
-	dst->data.orgmode = SCAN_ORG_CENTER;
-	dst->mem2d->data->MkXLookup (-dst->data.s.rx/2., dst->data.s.rx/2.);
-	dst->mem2d->data->MkYLookup (-dst->data.s.ry/2., dst->data.s.ry/2.);
-	gapp->spm_update_all();
-	dst->draw();
-	dst=NULL;
-	return Py_BuildValue("i", 0);
+                dst->data.orgmode = SCAN_ORG_CENTER;
+                dst->mem2d->data->MkXLookup (-dst->data.s.rx/2., dst->data.s.rx/2.);
+                dst->mem2d->data->MkYLookup (-dst->data.s.ry/2., dst->data.s.ry/2.);
+
+                gapp->spm_update_all();
+                dst->draw();
+
+                return Py_BuildValue("i", 0);
+        } else
+                return Py_BuildValue("i", -1);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -1240,56 +1254,112 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
 	float *pbuf;
 	int blen, i;
 
-	long sizex, sizey, rangex, rangey;
+        long ch;
+	long sizex, sizey;
+	double rangex, rangey;
 
-	if (!PyArg_ParseTuple (args, "llllO", &sizex, &sizey, &rangex, &rangey, &the_array))
+	if (!PyArg_ParseTuple (args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &the_array))
 		return 0;
+
+        g_message ("Create Scan Float: %d x %d  size %g x %g Ang from python array",sizex, sizey, rangex, rangey);
+
 	if (PyObject_AsWriteBuffer(the_array, (void **) &pbuf, (Py_ssize_t*)&blen))
-		return 0;
+		return Py_BuildValue("i", -1);
 	blen /= sizeof(float);
 
 	if (blen != sizex * sizey) {
-		return 0;
+                g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", blen, sizex*sizey);
+		return Py_BuildValue("i", -1);
 	}
+        g_message ("Create Scan: array len=%d OK.", blen);
 
-	Scan *dst;
-	gapp->xsm->ActivateFreeChannel();
-	dst = gapp->xsm->GetActiveScan();
+	//Scan *dst;
+	//gapp->xsm->ActivateFreeChannel();
+	//dst = gapp->xsm->GetActiveScan();
 
-	dst->data.s.nx = sizex;
-	dst->data.s.ny = sizey;
-	dst->data.s.dx = 1;  // unit?
-	dst->data.s.dy = 1;  // unit?
-	dst->data.s.dz = 1;
-	dst->data.s.rx = rangex;
-	dst->data.s.ry = rangey;
+	Scan *dst = gapp->xsm->GetScanChannel (ch);
+        if (dst){
+        
+                dst->data.s.nx = sizex;
+                dst->data.s.ny = sizey;
+                dst->data.s.nvalues = 1;
+                dst->data.s.ntimes = 1;
+                dst->data.s.dx = rangex/(sizex-1);
+                dst->data.s.dy = rangey/(sizey-1);
+                dst->data.s.dz = 1;
+                dst->data.s.rx = rangex;
+                dst->data.s.ry = rangey;
 
-	dst->data.s.x0 = 0.;
-	dst->data.s.y0 = 0.;
+                dst->data.s.x0 = 0.;
+                dst->data.s.y0 = 0.;
 
-	dst->data.ui.SetUser("User");
+                dst->data.ui.SetUser("User");
 
-	gchar *tmp = g_strconcat("PyCreate ", pbuf[0], NULL);
-	dst->data.ui.SetComment(tmp);
-	g_free(tmp);
+                gchar *tmp = g_strconcat("PyCreate ", pbuf[0], NULL);
+                dst->data.ui.SetComment(tmp);
+                g_free(tmp);
 
-	dst->mem2d->Resize(dst->data.s.nx, dst->data.s.ny, ZD_FLOAT);
+                dst->create ();
+                dst->mem2d->Resize(dst->data.s.nx, dst->data.s.ny, ZD_FLOAT);
 
-	/*Read */
-	for (gint i = 0; i < dst->mem2d->GetNy(); i++) {
-		for (gint j = 0; j < dst->mem2d->GetNx(); j++) {
-			dst->mem2d->data->Z((float) pbuf[i + sizex * j], j,
-					    i);
-		}
-	}
-	dst->data.orgmode = SCAN_ORG_CENTER;
-	dst->mem2d->data->MkXLookup(-dst->data.s.rx / 2.,
-				    dst->data.s.rx / 2.);
-	dst->mem2d->data->MkYLookup(-dst->data.s.ry / 2.,
-				    dst->data.s.ry / 2.);
-	gapp->spm_update_all();
-	dst->draw();
-	dst = NULL;
+                /*Read */
+                for (gint i = 0; i < dst->mem2d->GetNy(); i++) {
+                        for (gint j = 0; j < dst->mem2d->GetNx(); j++) {
+                                dst->mem2d->data->Z((float) pbuf[j + sizex * i], j, i);
+                        }
+                }
+                dst->data.orgmode = SCAN_ORG_CENTER;
+                dst->mem2d->data->MkXLookup(-dst->data.s.rx / 2.,
+                                            dst->data.s.rx / 2.);
+                dst->mem2d->data->MkYLookup(-dst->data.s.ry / 2.,
+                                            dst->data.s.ry / 2.);
+                gapp->spm_update_all();
+                dst->draw();
+                dst = NULL;
+                return Py_BuildValue("i", 0);
+        } else
+                return Py_BuildValue("i", -1);
+}
+
+
+static PyObject* remote_getdatapkt(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:getdatapkt");
+
+	long ch;
+        double x, y, v, t;
+        
+	if (!PyArg_ParseTuple (args, "ldddd", &ch, &x, &y, &v, &t))
+		return Py_BuildValue("d", 0.);
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src)
+                return Py_BuildValue("d", src->mem2d->GetDataPktInterpol (x,y,v));
+        else
+		return Py_BuildValue("d", 0.);
+}
+
+static PyObject* remote_putdatapkt(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: putdatapkt");
+	long ch;
+        long x, y, v, t;
+        double value;
+        
+	if (!PyArg_ParseTuple (args, "dlllll", &value, &ch, &x, &y, &v, &t))
+		return Py_BuildValue("i", -1);
+
+	Scan *dst = gapp->xsm->GetScanChannel (ch);
+        if (dst){
+                dst->mem2d->PutDataPkt (value, x,y,v);
+                return Py_BuildValue("i", 0);
+        } else
+		return Py_BuildValue("i", -1);
+}
+
+static PyObject* remote_getslice(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: getslice");
 	return Py_BuildValue("i", 0);
 }
 
@@ -1783,8 +1853,12 @@ static PyMethodDef EmbMethods[] = {
 	{"moveto_scan_xy", remote_moveto_scan_xy, METH_VARARGS, "Set tip position to Scan-XY: gxsm.moveto_scan_xy (x,y)"},
 
 	// BLOCK II
-	{"createscan", remote_createscan, METH_VARARGS, "Create Scan."},
-	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float."},
+	{"createscan", remote_createscan, METH_VARARGS, "Create Scan int: gxsm.createscan (nx,ny pixels, rx,ry in A, array.array('l', [...]))"},
+	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float: gxsm.createscan (nx,ny pixels, rx,ry in A, array.array('f', [...]))"},
+
+	{"get_data_pkt", remote_getdatapkt, METH_VARARGS, "Get Data Value at point: value=gxsm.get_data_pkt (ch, x, y, v, t)"},
+	{"put_data_pkt", remote_putdatapkt, METH_VARARGS, "Put Data Value to point: gxsm.put_data_pkt (value, ch, x, y, v, t)"},
+	{"get_slice", remote_getslice, METH_VARARGS, "Get Slice/Image: [nx,ny,array]=gxsm.get_slice (ch, v, t)"},
 
 	{"startscan", remote_startscan, METH_VARARGS, "Start Scan."},
 	{"stopscan", remote_stopscan, METH_VARARGS, "Stop Scan."},
