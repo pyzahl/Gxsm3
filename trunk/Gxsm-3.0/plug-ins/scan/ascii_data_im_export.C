@@ -462,6 +462,7 @@ FIO_STATUS ascii_ImExportFile::import(const char *fname){
 
 
 FIO_STATUS ascii_ImExportFile::Write(){
+#if 0
 	GtkWidget *dialog = gtk_message_dialog_new (NULL,
 						    GTK_DIALOG_DESTROY_WITH_PARENT,
 						    GTK_MESSAGE_INFO,
@@ -470,7 +471,7 @@ FIO_STATUS ascii_ImExportFile::Write(){
 						    );
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
-
+#endif
 	const gchar *fname;
 	ofstream f;
 
