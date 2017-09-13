@@ -1139,7 +1139,7 @@ class TuneScope():
 
 class SignalPlotter():
 	# X: 7=time, plotting Monitor Taps 20,21,0,1
-    def __init__(self, parent, length = 300., taps=[7,20,21,0,1]):
+    def __init__(self, parent, length = 300., taps=[7,20,21,0,1], samplesperpage=2000):
         self.monitor_taps = taps
         [value, uv1, Xsignal] = parent.mk3spm.get_monitor_signal (self.monitor_taps[1])
         [value, uv2, Ysignal] = parent.mk3spm.get_monitor_signal (self.monitor_taps[2])
@@ -1161,7 +1161,7 @@ class SignalPlotter():
 
 		self.pos      = 0
                 self.span     = length
-		self.points   = 2000
+		self.points   = samplesperpage
 		self.dt       = self.span/self.points
 		self.Time = zeros (self.points)
 		self.Tap1 = zeros (self.points)
@@ -1174,7 +1174,8 @@ class SignalPlotter():
 		scope = Oscilloscope( gobject.new(gtk.Label), v, "XT", label)
 		scope.set_scale ( { Xsignal[SIG_UNIT]: "mV", Ysignal[SIG_UNIT]: "deg", "time" : "s" })
 		scope.set_chinfo(["MON1","MON2","MON3","MON4"])
-		scope.set_info(["to select CH1..4 taps","select Signals via Signal Monitor for:"," t, CH1..4 as Mon" + str(self.monitor_taps)])
+		#scope.set_info(["to select CH1..4 taps","select Signals via Signal Monitor for:"," t, CH1..4 as Mon" + str(self.monitor_taps)])
+                scope.set_flash ("configure CH1..4 via Signal Monitor: t, CH1..4:=" + str(self.monitor_taps))
 
 		win.add(v)
 
@@ -1185,7 +1186,8 @@ class SignalPlotter():
 
 		tr=0
                 c=0
-		lab = gobject.new(gtk.Label, label="CH1 scale: V/div")
+		lab = gobject.new(gtk.Label, label="CH1: %s"%Xsignal[SIG_NAME] + ", Scale in %s/div"%Xsignal[SIG_UNIT])
+
 		table.attach(lab, c, c+1, tr, tr+1)
                 tr=tr+1
 		self.M1scale = gtk.Entry()
@@ -1193,7 +1195,7 @@ class SignalPlotter():
 		table.attach(self.M1scale, c, c+1, tr, tr+1)
                 tr=tr+1
 
-		lab = gobject.new(gtk.Label, label="CH2 scale: V/Div")
+		lab = gobject.new(gtk.Label, label="CH2: %s"%Ysignal[SIG_NAME] + ", Scale in %s/div"%Ysignal[SIG_UNIT])
 		table.attach(lab, c, c+1, tr, tr+1)
                 tr=tr+1
 		self.M2scale = gtk.Entry()
@@ -1201,7 +1203,7 @@ class SignalPlotter():
 		table.attach(self.M2scale, c, c+1, tr, tr+1)
                 tr=tr+1
 
-		lab = gobject.new(gtk.Label, label="CH3 scale: V/Div")
+		lab = gobject.new(gtk.Label, label="CH3: %s"%Usignal[SIG_NAME] + ", Scale in %s/div"%Usignal[SIG_UNIT])
 		table.attach(lab, c, c+1, tr, tr+1)
                 tr=tr+1
 		self.M3scale = gtk.Entry()
@@ -1209,7 +1211,7 @@ class SignalPlotter():
 		table.attach(self.M3scale, c, c+1, tr, tr+1)
                 tr=tr+1
                 
-		lab = gobject.new(gtk.Label, label="CH4 scale: V/Div")
+		lab = gobject.new(gtk.Label, label="CH4: %s"%Vsignal[SIG_NAME] + ", Scale in %s/div"%Vsignal[SIG_UNIT])
 		table.attach(lab, c, c+1, tr, tr+1)
                 tr=tr+1
 		self.M4scale = gtk.Entry()
@@ -1219,7 +1221,7 @@ class SignalPlotter():
 
 		tr = 0
                 c = 1
-		self.labx0 = gobject.new(gtk.Label, label="CH1 off:")
+		self.labx0 = gobject.new(gtk.Label, label="Offset in %s/div"%Xsignal[SIG_UNIT])
 		table.attach(self.labx0, c, c+1, tr, tr+1)
                 tr=tr+1
 		self.M1off = gtk.Entry()
@@ -1227,7 +1229,7 @@ class SignalPlotter():
 		table.attach(self.M1off, c, c+1, tr, tr+1)
                 tr=tr+1
 
-		self.laby0 = gobject.new(gtk.Label, label="CH2 off:")
+		self.laby0 = gobject.new(gtk.Label, label="Offset in %s/div"%Ysignal[SIG_UNIT])
 		table.attach(self.laby0, c, c+1, tr, tr+1)
                 tr=tr+1
 		self.M2off = gtk.Entry()
@@ -1235,7 +1237,7 @@ class SignalPlotter():
 		table.attach(self.M2off, c, c+1, tr, tr+1)
                 tr=tr+1
 
-		self.laby0 = gobject.new(gtk.Label, label="CH3 off:")
+		self.laby0 = gobject.new(gtk.Label, label="Offset in %s/div"%Usignal[SIG_UNIT])
 		table.attach(self.laby0, c, c+1, tr, tr+1)
                 tr=tr+1
 		self.M3off = gtk.Entry()
@@ -1243,7 +1245,7 @@ class SignalPlotter():
 		table.attach(self.M3off, c, c+1, tr, tr+1)
                 tr=tr+1
 
-		self.laby0 = gobject.new(gtk.Label, label="CH4 off:")
+		self.laby0 = gobject.new(gtk.Label, label="Offset in %s/div"%Vsignal[SIG_UNIT])
 		table.attach(self.laby0, c, c+1, tr, tr+1)
                 tr=tr+1
 		self.M4off = gtk.Entry()
@@ -1252,7 +1254,7 @@ class SignalPlotter():
                 tr=tr+1
                 
                 c=0
-		lab = gobject.new(gtk.Label, label="Interval [s]:")
+		lab = gobject.new(gtk.Label, label="Page length in s \n per "+str(self.points)+" samples")
 		table.attach(lab, c, c+1, tr, tr+1)
                 tr=tr+1
 		self.Il = gtk.Entry()
@@ -1398,7 +1400,6 @@ class SignalPlotter():
                                 self.Tap3 = zeros (self.points)
                                 self.Tap4 = zeros (self.points)
 				gobject.timeout_add (int (self.dt*1000.), update_plotter)
-
 
 		self.run_button = gtk.Button("STOP TUNE")
 		self.run_button.connect("clicked", toggle_run_plotter)
@@ -1640,6 +1641,10 @@ class Mk3_Configurator:
 	    kao = SignalScope (self)
 
     def create_signalplotter_app (self, _button):
+            ##### SignalPlotter __init__ (self, parent, length = 300., taps=[7,20,21,0,1], samplesperpage=2000):
+
+            ## may customize defaults using this line:
+	    ## sigplotter = SignalPlotter (self, 300, [7,20,21,0,1], 2000)
 	    sigplotter = SignalPlotter (self)
 	
     def create_PLL_tune_app (self, _button):
