@@ -479,6 +479,10 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
 
 	if (name == NULL) return FIO_NO_NAME;
 
+	if (strncmp(name+strlen(name)-4,".mov",4))
+		return FIO_NOT_RESPONSIBLE_FOR_THAT_FILE;
+
+        
 	nx = scan->mem2d->GetNx ();
 	ny = scan->mem2d->GetNy ();
 

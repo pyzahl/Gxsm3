@@ -391,16 +391,6 @@ FIO_STATUS spa4_ImExportFile::import(const char *fname){
 
 
 FIO_STATUS spa4_ImExportFile::Write(){
-	GtkWidget *dialog = gtk_message_dialog_new (NULL,
-						    GTK_DIALOG_DESTROY_WITH_PARENT,
-						    GTK_MESSAGE_INFO,
-						    GTK_BUTTONS_OK,
-						    N_("Sorry, not yet implemented.")
-						    );
-	gtk_dialog_run (GTK_DIALOG (dialog));
-	gtk_widget_destroy (dialog);
-
-#if 0
 	gchar tmp[0x4004];
 	const gchar *fname;
 	ofstream f;
@@ -418,7 +408,19 @@ FIO_STATUS spa4_ImExportFile::Write(){
 		return FIO_NOT_RESPONSIBLE_FOR_THAT_FILE;
 
 
-	f.open(name, ios::out);
+        GtkWidget *dialog = gtk_message_dialog_new (NULL,
+						    GTK_DIALOG_DESTROY_WITH_PARENT,
+						    GTK_MESSAGE_INFO,
+						    GTK_BUTTONS_OK,
+						    N_("Sorry, not yet implemented.")
+						    );
+	gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_destroy (dialog);
+        return FIO_NOT_RESPONSIBLE_FOR_THAT_FILE;
+
+#if 0
+
+        f.open(name, ios::out);
 	if (!f.good())
 	        return status=FIO_OPEN_ERR;
 
