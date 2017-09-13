@@ -37,15 +37,16 @@
 
 void MkMausSelectP(Point2D *Pkt2d, MOUSERECT *msel, int mx, int my){
         // order,clip,calc ranges,..
+        mx--; my--;
         msel->xLeft   = MAX(0, MIN( MIN(Pkt2d[0].x, Pkt2d[1].x), mx));
 	msel->xRight  = MAX(0, MIN( MAX(Pkt2d[0].x, Pkt2d[1].x), mx));
-	msel->xSize   = msel->xRight - msel->xLeft;
-	msel->xRatio  = (double)msel->xSize / (double)mx;
+	msel->xSize   = msel->xRight - msel->xLeft + 1;
+	msel->xRatio  = (double)msel->xSize / (double)(mx+1);
 
 	msel->yTop    = MAX(0, MIN( MIN(Pkt2d[0].y, Pkt2d[1].y), my));
 	msel->yBottom = MAX(0, MIN( MAX(Pkt2d[0].y, Pkt2d[1].y), my));
-	msel->ySize   = msel->yBottom - msel->yTop;
-	msel->yRatio  = (double)msel->ySize / (double)my;
+	msel->ySize   = msel->yBottom - msel->yTop + 1;
+	msel->yRatio  = (double)msel->ySize / (double)(my+1);
 
 	if(msel->ySize > 0)
 		msel->Aspect  = (double)msel->xSize / (double)msel->ySize;
@@ -68,6 +69,7 @@ gint MkMausSelect(Scan *sc, MOUSERECT *msel, int mx, int my){
         int n_obj = sc->number_of_object ();
         Point2D Pkt2d[2];
 
+        mx--; my--;
         while (n_obj--){
                 scan_object_data *scan_obj = sc->get_object_data (n_obj);
 		
@@ -87,13 +89,13 @@ gint MkMausSelect(Scan *sc, MOUSERECT *msel, int mx, int my){
         
         msel->xLeft   = MAX(0, MIN( MIN(Pkt2d[0].x, Pkt2d[1].x), mx));
 	msel->xRight  = MAX(0, MIN( MAX(Pkt2d[0].x, Pkt2d[1].x), mx));
-	msel->xSize   = msel->xRight - msel->xLeft;
-	msel->xRatio  = (double)msel->xSize / (double)mx;
+	msel->xSize   = msel->xRight - msel->xLeft + 1;
+	msel->xRatio  = (double)msel->xSize / (double)(mx+1);
 
 	msel->yTop    = MAX(0, MIN( MIN(Pkt2d[0].y, Pkt2d[1].y), my));
 	msel->yBottom = MAX(0, MIN( MAX(Pkt2d[0].y, Pkt2d[1].y), my));
-	msel->ySize   = msel->yBottom - msel->yTop;
-	msel->yRatio  = (double)msel->ySize / (double)my;
+	msel->ySize   = msel->yBottom - msel->yTop + 1;
+	msel->yRatio  = (double)msel->ySize / (double)(my+1);
 
 	if(msel->ySize > 0)
 		msel->Aspect  = (double)msel->xSize / (double)msel->ySize;
@@ -282,6 +284,13 @@ gboolean CropScan(MATHOPPARAMS){
     
 	Dest->mem2d->Resize(Dest->data.s.nx, Dest->data.s.ny);
 
+        g_message ("CROP: SRC(%d,%d, %d, %d)",
+                   Src->data.s.nx, Src->data.s.ny, Src->data.s.nvalues, Src->data.s.ntimes);
+        g_message ("CROP: NEW(%d,%d) = from [(%d,%d) : (%d,%d)]",
+                   Dest->data.s.nx, Dest->data.s.ny,
+                   msr.xLeft, msr.yTop,
+                   msr.xRight, msr.yBottom);
+        
 	if (Src->data.s.ntimes == 1 && Src->mem2d->GetNv () == 1){
 		Dest->mem2d->CopyFrom(Src->mem2d, msr.xLeft,msr.yTop, 0,0, Dest->data.s.nx, Dest->data.s.ny);
 	} else {
@@ -300,8 +309,8 @@ gboolean CropScan(MATHOPPARAMS){
 		} else {
 			xyc[0] = msr.xLeft;
 			xyc[1] = msr.yTop;
-			xyc[2] = xyc[0]+Dest->data.s.nx;
-			xyc[3] = xyc[1]+Dest->data.s.ny;
+			xyc[2] = msr.xRight;
+			xyc[3] = msr.yBottom;
 		}
 		do {
 			ti=vi=0;
