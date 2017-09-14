@@ -1333,7 +1333,6 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
                 dst->data.ui.SetComment(tmp);
                 g_free(tmp);
 
-                dst->create ();
                 dst->mem2d->Resize(dst->data.s.nx, dst->data.s.ny, ZD_FLOAT);
 
                 /*Read */
