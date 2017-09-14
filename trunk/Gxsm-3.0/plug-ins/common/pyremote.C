@@ -2004,7 +2004,7 @@ static PyMethodDef EmbMethods[] = {
 	{"echo", remote_echo, METH_VARARGS, "Echo string to terminal. gxsm.echo('hello gxsm to terminal') "},
 	{"logev", remote_logev, METH_VARARGS, "Write string to Gxsm system log file and log monitor: gxsm.logev ('hello gxsm to logfile/monitor') "},
 	{"progress", remote_progress_info, METH_VARARGS, "Show/update gxsm progress info. fraction<0 init, 0..1 progress, >1 close: gxsm.progress ('Calculating...', fraction) "},
-	{"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation to active scan. gxsm.add_layerinformation("Text",ch)"}, 
+	{"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation to active scan. gxsm.add_layerinformation('Text',ch)"}, 
 	{"da0", remote_da0, METH_VARARGS, "Da0. -- N/A for SRanger"},
 	{"signal_emit", remote_signal_emit, METH_VARARGS, "Action-String. "},
 	{"sleep", remote_sleep, METH_VARARGS, "Sleep N/10s: gxsm.sleep (N) "},
