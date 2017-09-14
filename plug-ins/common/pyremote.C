@@ -1172,7 +1172,7 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
 	double rangex, rangey;
 	PyObject *obj;
 
-	if(!PyArg_ParseTuple(args, "llllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj))
+	if(!PyArg_ParseTuple(args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj))
 		return Py_BuildValue("i", -1);
 
         g_message ("Create Scan: %d x %d  size %g x %g Ang from python array",sizex, sizey, rangex, rangey);
