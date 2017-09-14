@@ -1817,6 +1817,31 @@ static PyObject* remote_logev(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", 0);
 }
 
+static PyObject* remote_progress_info(PyObject *self, PyObject *args)
+{
+
+	PI_DEBUG(DBG_L2, "pyremote: progress_info");
+        double d;
+	gchar* info;
+	if (!PyArg_ParseTuple(args, "sd", &info, &d))
+		return Py_BuildValue("i", -1);
+	if(info){
+                if (d < 0.)
+                        gapp->progress_info_new (info, 1);
+                else {
+                        gapp->progress_info_set_bar_fraction (d, 1);
+                        gapp->progress_info_set_bar_text (info, 1);
+                }
+                if (d > 1.){
+                        gapp->progress_info_close ();
+                }
+	}else{
+                return Py_BuildValue("i", -1);
+	}
+	return Py_BuildValue("i", 0);
+}
+
+
 static PyObject* remote_add_layer_information(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: add_layer_information to active scan channel");
@@ -1978,7 +2003,8 @@ static PyMethodDef EmbMethods[] = {
 	// BLOCK VI
 	{"echo", remote_echo, METH_VARARGS, "Echo string to terminal. gxsm.echo('hello gxsm to terminal') "},
 	{"logev", remote_logev, METH_VARARGS, "Write string to Gxsm system log file and log monitor: gxsm.logev ('hello gxsm to logfile/monitor') "},
-	{"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation."}, 
+	{"progress", remote_progress_info, METH_VARARGS, "Show/update gxsm progress info. fraction<0 init, 0..1 progress, >1 close: gxsm.progress ('Calculating...', fraction) "},
+	{"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation to active scan. gxsm.add_layerinformation("Text",ch)"}, 
 	{"da0", remote_da0, METH_VARARGS, "Da0. -- N/A for SRanger"},
 	{"signal_emit", remote_signal_emit, METH_VARARGS, "Action-String. "},
 	{"sleep", remote_sleep, METH_VARARGS, "Sleep N/10s: gxsm.sleep (N) "},
