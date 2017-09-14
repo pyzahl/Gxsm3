@@ -1167,33 +1167,42 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Creating scan");
 
-	/////
-	PyObject *the_array;
-	long* pbuf;
-	int blen, i;
-
         long ch;
 	long sizex, sizey;
 	double rangex, rangey;
+	PyObject *obj;
 
-	if(!PyArg_ParseTuple(args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &the_array))
+	if(!PyArg_ParseTuple(args, "llllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj))
 		return Py_BuildValue("i", -1);
 
         g_message ("Create Scan: %d x %d  size %g x %g Ang from python array",sizex, sizey, rangex, rangey);
-        
-        if(PyObject_AsWriteBuffer(the_array, (void**)&pbuf, (Py_ssize_t*)&blen))
-		return Py_BuildValue("i", -1);
-	blen /= sizeof(long);
 
-	if ( blen != sizex*sizey ) {
-                g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", blen, sizex*sizey);
+        Py_buffer view;
+        gboolean rf=false;
+        if (PyObject_CheckBuffer (obj)){
+                if (PyObject_GetBuffer (obj, &view, PyBUF_SIMPLE))
+                        return Py_BuildValue ("i", -1);
+                rf=true;
+        } else {
+                g_message ("PyObject_CheckBuffer(obj) -- failed -- trying old style");
+                //return Py_BuildValue("i", -1);
+                if (PyObject_CheckReadBuffer (obj)){
+                        if(PyObject_AsReadBuffer (obj, (const void**)&view.buf, &view.len)){
+                                g_message ("PyObject_AsReadBuffer(obj) (old) -- failed");
+                                return Py_BuildValue ("i", -1);
+                        }
+                } else {
+                        g_message ("PyObject_CheckReadBuffer(obj) (old) -- failed, exit");
+                        return Py_BuildValue ("i", -1);
+                }
+        }
+
+	if ( view.len / sizeof(long) != sizex*sizey ) {
+                g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", view.len / sizeof(long), sizex*sizey);
 		return Py_BuildValue("i", -1);
 	}
-        g_message ("Create Scan: array len=%d OK.", blen);
+        g_message ("Create Scan: array len=%d OK.", view.len / sizeof(long));
         
-
-	/*for(i=0; i<blen; ++i)
-	  pbuf[i] += 1;*/
 
 	//Scan *dst;
 	//gapp->xsm->ActivateFreeChannel();
@@ -1213,7 +1222,7 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
 
                 dst->data.s.x0 = 0.;
                 dst->data.s.y0 = 0.;
-                //  dst->data.s.alpha = 0.;
+                dst->data.s.alpha = 0.;
 
                 dst->data.ui.SetUser ("User");
 
@@ -1222,15 +1231,17 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
                 dst->data.ui.SetComment (tmp);
                 g_free (tmp);
 
-                dst->create ();
+                g_message ("Resize");
                 dst->mem2d->Resize (dst->data.s.nx, dst->data.s.ny, dst->data.s.nvalues);
 
+                g_message ("Convert Data");
                 /*Read*/
-                for(gint i=0; i<dst->mem2d->GetNy(); i++){
-                        for(gint j=0; j<dst->mem2d->GetNx(); j++){
-                                dst->mem2d->data->Z( (double) pbuf[j+sizex*i], j, i);
-                        }
-                }
+
+                long *buf = (long*)view.buf;
+                
+                for(gint i=0; i<dst->mem2d->GetNy(); i++)
+                        for(gint j=0; j<dst->mem2d->GetNx(); j++)
+                                dst->mem2d->data->Z( (double)buf[j+sizex*i], j, i);
                 dst->data.orgmode = SCAN_ORG_CENTER;
                 dst->mem2d->data->MkXLookup (-dst->data.s.rx/2., dst->data.s.rx/2.);
                 dst->mem2d->data->MkYLookup (-dst->data.s.ry/2., dst->data.s.ry/2.);
@@ -1238,9 +1249,16 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
                 gapp->spm_update_all();
                 dst->draw();
 
+                if (rf)
+                        PyBuffer_Release (&view);
+
                 return Py_BuildValue("i", 0);
-        } else
-                return Py_BuildValue("i", -1);
+        }
+
+        if (rf)
+                PyBuffer_Release (&view);
+
+        return Py_BuildValue("i", -1);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -1249,30 +1267,46 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Creating scanf");
 
-	//
-	PyObject *the_array;
-	float *pbuf;
-	int blen, i;
+	PyObject *obj;
 
         long ch;
 	long sizex, sizey;
 	double rangex, rangey;
 
-	if (!PyArg_ParseTuple (args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &the_array))
+	if (!PyArg_ParseTuple (args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj))
 		return 0;
 
         g_message ("Create Scan Float: %d x %d  size %g x %g Ang from python array",sizex, sizey, rangex, rangey);
 
-	if (PyObject_AsWriteBuffer(the_array, (void **) &pbuf, (Py_ssize_t*)&blen))
-		return Py_BuildValue("i", -1);
-	blen /= sizeof(float);
+        Py_buffer view;
+        gboolean rf=false;
 
-	if (blen != sizex * sizey) {
-                g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", blen, sizex*sizey);
+        if (PyObject_CheckBuffer (obj)){
+                if (PyObject_GetBuffer (obj, &view, PyBUF_SIMPLE))
+                        return Py_BuildValue ("i", -1);
+                rf=true;
+        } else {
+                g_message ("PyObject_CheckBuffer(obj) -- failed -- trying old style");
+                //return Py_BuildValue("i", -1);
+                if (PyObject_CheckReadBuffer (obj)){
+                        if(PyObject_AsReadBuffer (obj, (const void**)&view.buf, &view.len)){
+                                g_message ("PyObject_AsReadBuffer(obj) (old) -- failed");
+                                return Py_BuildValue ("i", -1);
+                        }
+                } else {
+                        g_message ("PyObject_CheckReadBuffer(obj) (old) -- failed, exit");
+                        return Py_BuildValue ("i", -1);
+                }
+        }
+
+	if ( view.len / sizeof(float) != sizex*sizey ) {
+                g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", view.len / sizeof(float), sizex*sizey);
 		return Py_BuildValue("i", -1);
 	}
-        g_message ("Create Scan: array len=%d OK.", blen);
-
+        g_message ("Create Scan: array len=%d OK.", view.len / sizeof(float));
+        
+	//if (PyObject_AsWriteBuffer(the_array, (void **) &pbuf, (Py_ssize_t*)&blen))
+	//	return Py_BuildValue("i", -1);
 	//Scan *dst;
 	//gapp->xsm->ActivateFreeChannel();
 	//dst = gapp->xsm->GetActiveScan();
@@ -1295,7 +1329,7 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
 
                 dst->data.ui.SetUser("User");
 
-                gchar *tmp = g_strconcat("PyCreate ", pbuf[0], NULL);
+                gchar *tmp = g_strconcat("PyCreate ", NULL);
                 dst->data.ui.SetComment(tmp);
                 g_free(tmp);
 
@@ -1303,11 +1337,11 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
                 dst->mem2d->Resize(dst->data.s.nx, dst->data.s.ny, ZD_FLOAT);
 
                 /*Read */
-                for (gint i = 0; i < dst->mem2d->GetNy(); i++) {
-                        for (gint j = 0; j < dst->mem2d->GetNx(); j++) {
-                                dst->mem2d->data->Z((float) pbuf[j + sizex * i], j, i);
-                        }
-                }
+                float *buf = (float*)view.buf;
+                for (gint i = 0; i < dst->mem2d->GetNy(); i++)
+                        for (gint j = 0; j < dst->mem2d->GetNx(); j++)
+                                dst->mem2d->data->Z(buf[j + sizex * i], j, i);
+
                 dst->data.orgmode = SCAN_ORG_CENTER;
                 dst->mem2d->data->MkXLookup(-dst->data.s.rx / 2.,
                                             dst->data.s.rx / 2.);
@@ -1316,9 +1350,17 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
                 gapp->spm_update_all();
                 dst->draw();
                 dst = NULL;
+
+                if (rf)
+                        PyBuffer_Release (&view);
+
                 return Py_BuildValue("i", 0);
-        } else
-                return Py_BuildValue("i", -1);
+        }
+        
+        if (rf)
+                PyBuffer_Release (&view);
+
+        return Py_BuildValue("i", -1);
 }
 
 
@@ -1357,9 +1399,27 @@ static PyObject* remote_putdatapkt(PyObject *self, PyObject *args)
 		return Py_BuildValue("i", -1);
 }
 
+//{"get_slice", remote_getslice, METH_VARARGS, "Get Slice/Image: [nx,ny,array]=gxsm.get_slice (ch, v, t)"},
+
 static PyObject* remote_getslice(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: getslice");
+	long ch,v,t;
+
+	PyObject *obj;
+        
+	if (!PyArg_ParseTuple (args, "lll", &ch, &v, &t))
+		return Py_BuildValue("i", -1);
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src){
+                g_message ("remote_getslice -- Complete Me!! N/A");
+
+                //src->mem2d->GetDataPkt (x,y,v);
+                return Py_BuildValue("i", 0);
+        } else
+		return Py_BuildValue("i", -1);
+
 	return Py_BuildValue("i", 0);
 }
 
@@ -1853,8 +1913,8 @@ static PyMethodDef EmbMethods[] = {
 	{"moveto_scan_xy", remote_moveto_scan_xy, METH_VARARGS, "Set tip position to Scan-XY: gxsm.moveto_scan_xy (x,y)"},
 
 	// BLOCK II
-	{"createscan", remote_createscan, METH_VARARGS, "Create Scan int: gxsm.createscan (nx,ny pixels, rx,ry in A, array.array('l', [...]))"},
-	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float: gxsm.createscan (nx,ny pixels, rx,ry in A, array.array('f', [...]))"},
+	{"createscan", remote_createscan, METH_VARARGS, "Create Scan int: gxsm.createscan (ch,nx,ny pixels, rx,ry in A, array.array('l', [...]))"},
+	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float: gxsm.createscan (ch,nx,ny pixels, rx,ry in A, array.array('f', [...]))"},
 
 	{"get_data_pkt", remote_getdatapkt, METH_VARARGS, "Get Data Value at point: value=gxsm.get_data_pkt (ch, x, y, v, t)"},
 	{"put_data_pkt", remote_putdatapkt, METH_VARARGS, "Put Data Value to point: gxsm.put_data_pkt (value, ch, x, y, v, t)"},
