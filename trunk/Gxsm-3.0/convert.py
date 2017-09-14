@@ -9,6 +9,6 @@ files.sort()
 for f in files:
 	fin = inputDir+"/"+f
 	print ("Reading: ", fin)
-	gxsm.load (fin,1)
+	gxsm.load (0, fin)
 	fout = outputDir+"/"+os.path.splitext(f)[0]+".top"
-	print ("Exporting: ", fout, " ret=", gxsm.gnuexport (fout, 1))
+	print ("Exporting: ", fout, " ret=", gxsm.export (0, fout))

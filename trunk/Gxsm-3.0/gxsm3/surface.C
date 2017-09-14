@@ -289,8 +289,12 @@ int Surface::ActivateFreeChannel(){
 
 int Surface::ActivateChannel(int NewActiveChannel){
 	int Ch;
-	//  XSM_DEBUG (DBG_L2, "Surface::ActivateChannel #" << NewActiveChannel);
-	ActiveChannel=NewActiveChannel;
+        XSM_DEBUG (DBG_L2, "Surface::ActivateChannel #" << NewActiveChannel);
+
+        if (NewActiveChannel < 0 || NewActiveChannel >= MAX_CHANNELS)
+                return -1;
+        
+        ActiveChannel=NewActiveChannel;
 	if(ActiveScan)
 		ActiveScan->draw(1,0);
 	ActiveScan = NULL;
@@ -318,7 +322,7 @@ int Surface::ActivateChannel(int NewActiveChannel){
 	// Fehler ?
 	if(!scan[ActiveChannel]){
 		XSM_SHOW_ALERT(ERR_SORRY, ERR_NOMEM,"",1);
-		return 1;
+		return -1;
 	}
 
 	// Set ActiveScan
