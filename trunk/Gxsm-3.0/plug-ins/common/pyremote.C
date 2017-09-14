@@ -1362,6 +1362,53 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
         return Py_BuildValue("i", -1);
 }
 
+static PyObject* remote_getgeometry(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:getgeometry");
+
+	long ch;
+
+	if (!PyArg_ParseTuple (args, "l", &ch))
+		return Py_BuildValue("ddddd", 0., 0., 0., 0., 0.);
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src)
+                return Py_BuildValue("ddddd", src->data.s.rx, src->data.s.ry, src->data.s.x0, src->data.s.y0, src->data.s.alpha);
+        else
+		return Py_BuildValue("ddddd", 0., 0., 0., 0., 0.);
+}
+
+static PyObject* remote_getdifferentials(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:getdifferentials");
+
+	long ch;
+
+	if (!PyArg_ParseTuple (args, "l", &ch))
+		return Py_BuildValue("dddd", 0., 0., 0., 0.);
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src)
+                return Py_BuildValue("dddd", src->data.s.dx, src->data.s.dy, src->data.s.dz, src->data.s.dl);
+        else
+		return Py_BuildValue("dddd", 0., 0., 0., 0.);
+}
+
+static PyObject* remote_getdimensions(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:getdimensions");
+
+	long ch;
+
+	if (!PyArg_ParseTuple (args, "l", &ch))
+		return Py_BuildValue("llll", -1, -1, -1, -1);
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src)
+                return Py_BuildValue("llll", src->mem2d->GetNx (), src->mem2d->GetNy (), src->mem2d->GetNv (), src->number_of_time_elements ());
+        else
+		return Py_BuildValue("llll", -1, -1, -1, -1);
+}
 
 static PyObject* remote_getdatapkt(PyObject *self, PyObject *args)
 {
@@ -1886,6 +1933,9 @@ static PyMethodDef EmbMethods[] = {
 	{"createscan", remote_createscan, METH_VARARGS, "Create Scan int: gxsm.createscan (ch,nx,ny pixels, rx,ry in A, array.array('l', [...]))"},
 	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float: gxsm.createscan (ch,nx,ny pixels, rx,ry in A, array.array('f', [...]))"},
 
+	{"get_geometry", remote_getgeometry, METH_VARARGS, "Get Scan Geometry: [rx,ry,x0,y0,alpha]=gxsm.get_geometry (ch)"},
+	{"get_differentials", remote_getdifferentials, METH_VARARGS, "Get Scan Scaling: [dx,dy,dz,dl]=gxsm.get_differentials (ch)"},
+	{"get_dimensions", remote_getdimensions, METH_VARARGS, "Get Scan Dimensions: [nx,ny,nv,nt]=gxsm.get_dimensions (ch)"},
 	{"get_data_pkt", remote_getdatapkt, METH_VARARGS, "Get Data Value at point: value=gxsm.get_data_pkt (ch, x, y, v, t)"},
 	{"put_data_pkt", remote_putdatapkt, METH_VARARGS, "Put Data Value to point: gxsm.put_data_pkt (value, ch, x, y, v, t)"},
 	{"get_slice", remote_getslice, METH_VARARGS, "Get Slice/Image: [nx,ny,array]=gxsm.get_slice (ch, v, t)"},
