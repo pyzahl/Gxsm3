@@ -1515,8 +1515,6 @@ static PyObject* remote_scanline(PyObject *self, PyObject *args)
 static PyObject* remote_save(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Save");
-	//gapp->xsm->save (TRUE);
-	//                              auto  all
 	gapp->xsm->save(MANUAL_SAVE_AS, NULL, -1, TRUE);
 	return Py_BuildValue("i", 0);
 }
@@ -1524,61 +1522,56 @@ static PyObject* remote_save(PyObject *self, PyObject *args)
 static PyObject* remote_saveas(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Save As ");
-	gchar* zeile;
+	gchar* fname = NULL;
 	long channel = 0;
-	if (!PyArg_ParseTuple(args, "sl", &zeile, &channel))
+	if (!PyArg_ParseTuple(args, "ls", &channel, &fname))
 		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2, zeile << " to Channel " << channel );
-	if(zeile && channel){
-		gapp->xsm->save(MANUAL_SAVE_AS, zeile, channel, TRUE);
-		//gapp->xsm->save(TRUE, zeile, channel);
-	}
+	if (fname){
+		gapp->xsm->save (MANUAL_SAVE_AS, fname, channel, TRUE);
+		//gapp->xsm->save(TRUE, fname, channel);
+	} else return Py_BuildValue("i", -1);
 	return Py_BuildValue("i", 0);
 }
 
 static PyObject* remote_load(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Loading ");
-	gchar* zeile;
+	gchar* fname = NULL;
 	long channel = 0;
-	if (!PyArg_ParseTuple(args, "si", &zeile, &channel))
-		return Py_BuildValue("i", -1);;
-	PI_DEBUG(DBG_L2, zeile << " to Channel " << channel );
-	if(zeile && channel){
-		gapp->xsm->ActivateChannel( channel );
-		gapp->xsm->load( zeile );
-	}
+	if (!PyArg_ParseTuple(args, "ls", &channel, &fname))
+		return Py_BuildValue("i", -1);
+	if (fname){
+		gapp->xsm->ActivateChannel (channel);
+		gapp->xsm->load (fname);
+	} else return Py_BuildValue("i", -1);
 	return Py_BuildValue("i", 0);
 }
 
 static PyObject* remote_import(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Importing ");
-	gchar* zeile;
+	gchar* fname = NULL;
 	long channel = 0;
-	if (!PyArg_ParseTuple(args, "sl", &zeile, &channel))
+	if (!PyArg_ParseTuple(args, "ls", &channel, &fname))
 		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2,  zeile << " to Channel " << channel);
-	if(zeile && channel){
-		gapp->xsm->ActivateChannel( channel );
-		gapp->xsm->load( zeile );
-	}
+	if (fname){
+		gapp->xsm->ActivateChannel (channel);
+		gapp->xsm->load (fname);
+	} else return Py_BuildValue("i", -1);
 	return Py_BuildValue("i", 0);
 }
 
 static PyObject* remote_export(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Exporting ");
-	gchar* zeile;
+	gchar* fname = NULL;
 	long channel = 0;
-	if (!PyArg_ParseTuple(args, "sl", &zeile, &channel))
+	if (!PyArg_ParseTuple(args, "ls", &channel, &fname))
 		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2, zeile << " to Channel " << channel);
-	if(zeile && channel){
-		gapp->xsm->ActivateChannel( channel );
-		gapp->xsm->gnuexport( zeile );
-	}
-
+	if (fname){
+		gapp->xsm->ActivateChannel (channel);
+		gapp->xsm->gnuexport (fname);
+	} else return Py_BuildValue("i", -1);
 	return Py_BuildValue("i", 0);
 }
 
@@ -1614,10 +1607,8 @@ static PyObject* remote_chmodea(PyObject *self, PyObject *args)
 	long channel = 0;
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2,  channel);
-	if (channel)
-		gapp->xsm->ActivateChannel( channel );
-	return Py_BuildValue("i", 0);
+	return Py_BuildValue ("i", gapp->xsm->ActivateChannel ((int)channel));
+
 }
 
 static PyObject* remote_chmodex(PyObject *self, PyObject *args)
@@ -1626,10 +1617,7 @@ static PyObject* remote_chmodex(PyObject *self, PyObject *args)
 	long channel = 0;
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2, channel );
-	if (channel)
-		gapp->xsm->SetMode( channel, ID_CH_M_X );
-	return Py_BuildValue("i", 0);
+	return Py_BuildValue ("i", gapp->xsm->SetMode ((int)channel, ID_CH_M_X));
 }
 
 static PyObject* remote_chmodem(PyObject *self, PyObject *args)
@@ -1639,9 +1627,7 @@ static PyObject* remote_chmodem(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
 	PI_DEBUG(DBG_L2,  channel );
-	if (channel)
-		gapp->xsm->SetMode( channel, ID_CH_M_MATH );
-	return Py_BuildValue("i", 0);
+	return Py_BuildValue ("i", gapp->xsm->SetMode ((int)channel, ID_CH_M_MATH));
 }
 
 static PyObject* remote_chmoden(PyObject *self, PyObject *args)
@@ -1651,10 +1637,7 @@ static PyObject* remote_chmoden(PyObject *self, PyObject *args)
 	long mode = 0;
 	if (!PyArg_ParseTuple(args, "ll", &channel, &mode))
 		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2, channel << " to " << mode );
-	if (channel && mode)
-		gapp->xsm->SetMode(channel, ID_CH_M_X+mode);
-	return Py_BuildValue("i", 0);
+        return Py_BuildValue ("i", gapp->xsm->SetMode ((int)channel, ID_CH_M_X+mode));
 }
 
 static PyObject* remote_chmodeno(PyObject *self, PyObject *args)
@@ -1663,46 +1646,34 @@ static PyObject* remote_chmodeno(PyObject *self, PyObject *args)
 	long channel = 0;
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2, channel );
-	if (channel)
-		gapp->xsm->SetView( channel, ID_CH_V_NO );
-	return Py_BuildValue("i", 0);
+	return Py_BuildValue ("i", gapp->xsm->SetView ((int)channel, ID_CH_V_NO));
 }
 
 static PyObject* remote_chview1d(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Chview 1d.");
-	long channel;
+	long channel = 0;
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2, channel );
-	if (channel)
-		gapp->xsm->SetView( channel, ID_CH_V_PROFILE );
-	return Py_BuildValue("i", 0);
+	return Py_BuildValue ("i", gapp->xsm->SetView (channel, ID_CH_V_PROFILE));
 }
 
 static PyObject* remote_chview2d(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Chview 2d");
-	long channel;
+	long channel = 0;
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2, channel );
-	if (channel)
-		gapp->xsm->SetView( channel, ID_CH_V_GREY );
-	return Py_BuildValue("i", 0);
+	return Py_BuildValue ("i", gapp->xsm->SetView ((int)channel, ID_CH_V_GREY));
 }
 
 static PyObject* remote_chview3d(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Chview 3d.");
-	long channel;
+	long channel = 0;
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2, channel );
-	if (channel)
-		gapp->xsm->SetView( channel, ID_CH_V_SURFACE );
-	return Py_BuildValue("i", 0);
+	return Py_BuildValue ("i", gapp->xsm->SetView ((int)channel, ID_CH_V_SURFACE));
 }
 
 static PyObject* remote_quick(PyObject *self, PyObject *args)
@@ -1818,7 +1789,7 @@ static PyObject* remote_da0(PyObject *self, PyObject *args)
 {
 
 	PI_DEBUG(DBG_L2, "pyremote: da0 ");
-	double channel;
+	double channel = 0;
 	if (!PyArg_ParseTuple(args, "d", &channel))
 		return Py_BuildValue("i", -1);
 	if (channel){
@@ -1928,22 +1899,22 @@ static PyMethodDef EmbMethods[] = {
 	{"scanline", remote_scanline, METH_VARARGS, "Scan line."},
 
 	// BLOCK III
-	{"save", remote_save, METH_VARARGS, "Save."},
-	{"saveas", remote_saveas, METH_VARARGS, "Save As."},
-	{"load", remote_load, METH_VARARGS, "Load."},
-	{"gnuexport", remote_export, METH_VARARGS, "Export."},
-	{"gnuimport", remote_import, METH_VARARGS, "Import."},
+	{"save", remote_save, METH_VARARGS, "Save: Auto Save Scans: gxsm.save ()"},
+	{"saveas", remote_saveas, METH_VARARGS, "Save File As: gxsm.saveas (ch, 'path/fname.nc')"},
+	{"load", remote_load, METH_VARARGS, "Load File: gxsm.load (ch, 'path/fname.nc')"},
+	{"export", remote_export, METH_VARARGS, "Export scan: gxsm.export (ch, 'path/fname.nc')"},
+	{"import", remote_import, METH_VARARGS, "Import scan: gxsm.import (ch, 'path/fname.nc')"},
 
 	// BLOCK IV
 	{"autodisplay", remote_autodisplay, METH_VARARGS, "Autodisplay."},
-	{"chmodea", remote_chmodea, METH_VARARGS, "Chmode A."},
-	{"chmodex", remote_chmodex, METH_VARARGS, "Chmode X."},
-	{"chmodem", remote_chmodem, METH_VARARGS, "Chmode M."},
-	{"chmoden", remote_chmoden, METH_VARARGS, "Chmode N."},
-	{"chmodeno", remote_chmodeno, METH_VARARGS, "Chmode No."},
-	{"chview1d", remote_chview1d, METH_VARARGS, "Chview 1d."},
-	{"chview2d", remote_chview2d, METH_VARARGS, "Chview 2d."},
-	{"chview3d", remote_chview3d, METH_VARARGS, "Chview 3d."},
+	{"chmodea", remote_chmodea, METH_VARARGS, "Set Ch Mode to A: gxsm.chmodea (ch)"},
+	{"chmodex", remote_chmodex, METH_VARARGS, "Set Ch Mode to X: gxsm.chmodex (ch)"},
+	{"chmodem", remote_chmodem, METH_VARARGS, "Set Ch Mode to MATH: gxsm.chmodem (ch)"},
+	{"chmoden", remote_chmoden, METH_VARARGS, "Set Ch Mode to Data Channel <X+N>: gxsm.chmoden (ch,n)"},
+	{"chmodeno", remote_chmodeno, METH_VARARGS, "Set View Mode to No: gxsm.chmodeno (ch)"},
+	{"chview1d", remote_chview1d, METH_VARARGS, "Set View Mode to 1D: gxsm.chmode1d (ch)"},
+	{"chview2d", remote_chview2d, METH_VARARGS, "Set View Mode to 2D: gxsm.chmode2d (ch)"},
+	{"chview3d", remote_chview3d, METH_VARARGS, "Set View Mode to 3D: gxsm.chmode3d (ch)"},
 	{"quick", remote_quick, METH_VARARGS, "Quick."},
 	{"direct", remote_direct, METH_VARARGS, "Direct."},
 	{"log", remote_log, METH_VARARGS, "Log."},

@@ -13,4 +13,7 @@ n = numpy.ravel(m) # make 1-d
 examplearray = array.array('f', n.astype(float)) 
 #print examplearray
 
+gxsm.chmodea (0)
 gxsm.createscanf (0,N, N, 1000, 1000, examplearray)
+gxsm.direct ()
+gxsm.autodisplay ()
