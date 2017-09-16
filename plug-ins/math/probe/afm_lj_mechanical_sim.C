@@ -1116,6 +1116,7 @@ public:
                         }
         }
 
+        void set_fzmax (double mfz) { fzmax = mfz; };
         void scale_charge (double factor) {
                 for (int pos=0; pos<size && model[pos].N > 0; ++pos)
                         model[pos].xyzc[3] *= factor;
@@ -1186,6 +1187,7 @@ public:
 
         int options;
 
+        double fzmax;
         double sensor_f0_k0[3];
         double probe_flex[3];
 private:
@@ -1495,7 +1497,7 @@ void ChangeIndex (GtkSpinButton *spinner, double *index){
 
 class Dialog : public AppBase{
 public:
-	Dialog (double &zi, double &zf, double &dz, double &precision, double &maxiter,
+	Dialog (double &zi, double &zf, double &dz, double &precision, double &maxiter, double &fzmax,
                 double sensor_f0_k0[2], double probe_flex[3],
                 gchararray *model_selected, gchararray *model_filter, gchararray *model_filter_param,
                 gchararray *calc_mode_selected, gchararray *calc_options_selected,
@@ -1517,6 +1519,7 @@ public:
                 UnitObj *meVA    = new UnitObj("meV/" UTF8_ANGSTROEM, "meV/" UTF8_ANGSTROEM );
                 UnitObj *pcharge = new UnitObj("e", "e");
                 UnitObj *hertz = new UnitObj("Hz", "Hz");
+                UnitObj *pnewton = new UnitObj("pA", "pN");
                 UnitObj *stiffness = new UnitObj("N/m", "N/m");
 
                 GtkDialogFlags flags =  (GtkDialogFlags) (GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT);
@@ -1531,12 +1534,15 @@ public:
                 BuildParam bp;
                 gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
                 bp.set_error_text ("Value not allowed.");
-                bp.input_nx = 5;
-                bp.grid_add_ec_with_scale ("Z initial",   gapp->xsm->Z_Unit, &zi,     0.,   100., ".2f", 0.1,  1.); bp.new_line ();
-		bp.grid_add_ec_with_scale ("Z-final",     gapp->xsm->Z_Unit, &zf,     0.,   100., ".2f", 0.1,  1.); bp.new_line ();
-                bp.grid_add_ec_with_scale ("Z step",      gapp->xsm->Z_Unit, &dz,     0.,    10., ".3f", 0.1,  1.); bp.new_line ();
-                bp.grid_add_ec_with_scale ("NL-OPT precision", meVA, &precision,   0.,     1., "g", 0.00001,  0.0001); bp.new_line ();
-                bp.grid_add_ec_with_scale ("NL-OPT maxiter",   gapp->xsm->Unity, &maxiter,     0.,  1000., "g", 1.,  10.); bp.new_line ();
+                bp.input_nx = 1;
+                bp.grid_add_ec ("Z initial",   gapp->xsm->Z_Unit, &zi,     0.,   100., ".2f", 0.1,  1.);
+		bp.grid_add_ec ("Z-final",     gapp->xsm->Z_Unit, &zf,     0.,   100., ".2f", 0.1,  1.);
+                bp.grid_add_ec ("Z step",      gapp->xsm->Z_Unit, &dz,     0.,    10., ".3f", 0.1,  1.);
+                bp.new_line ();
+                bp.grid_add_ec ("NL-OPT precision", meVA, &precision,   0.,     1., "g", 0.00001,  0.0001);
+                bp.grid_add_ec ("NL-OPT maxiter",   gapp->xsm->Unity, &maxiter,     0.,  1000., "g", 1.,  10.);
+                bp.grid_add_ec ("Max. FZ",   pnewton, &fzmax,     0.,  10000., "g", 1.,  10.);
+                bp.new_line ();
 
                 bp.input_nx = 1;
                 bp.grid_add_ec ("Sensor res freq.",   hertz, &sensor_f0_k0[0],     1.,  1e7, "g", 1.,  10.);
@@ -1670,6 +1676,7 @@ public:
                 delete meVA;
                 delete pcharge;
                 delete hertz;
+                delete pnewton;
                 delete stiffness;
 
                 if (r == GTK_RESPONSE_REJECT){
@@ -2259,6 +2266,9 @@ double lj_residual_interpol_force (unsigned int n, const double *Popt, double *g
 void z_sader_run (Mem2d *m[3], int col, int line, double z, xyzc_model *model){
         double Fz[3], Fz_fix[3], Pz[3];
         double dz;
+        if (m[1]->GetDataPkt (col, line, PROBE_NLOPT_ITER_L) < 0)
+                return;
+
         for (int i=0; i<3; ++i){
                 Fz[i]     = m[i]->GetDataPkt (col, line, APEX_FZ_L) * 1e-12; // now in Newton
                 Fz_fix[i] = m[i]->GetDataPkt (col, line, APEX_FZ_FIXED_L) * 1e-12; // now in Newton
@@ -2432,6 +2442,16 @@ void z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, dou
                 // copy_vec (Popt, param.A); Popt[2] -= pdz;
         //}
 
+        if (m_prev){ // continue tracing? Abort if fzmax reached.
+                if (fabs(m_prev->GetDataPkt (col, line, APEX_FZ_L)) > model->fzmax){
+                        // copy and return
+                        for (int k=FREQ_SHIFT_L; k<N_LAYERS; ++k)
+                                m->PutDataPkt (m_prev->GetDataPkt (col, line, k), col, line, k);
+                        m->PutDataPkt (-1., col, line, PROBE_NLOPT_ITER_L); // -1 : not calculated any more
+                        return;
+                }
+        }
+        
         double lb[3];
         double ub[3];
         double hrl[3];
@@ -2901,6 +2921,7 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
         double sensor_f0_k0[3] = {29000., 1800., 0. };  // Hz, N/m
         double probe_flex[3] = { 0.5, 0.5, 20. }; // probe stiffness x,y,z potential N/m
         double maxiter=0.; // default (0=none) nl-opt optional max iter limit
+        double fzmax=1000.;
         double max_threads=g_get_num_processors (); // default concurrency for multi threadded computation, # CPU's/cores
         int calc_mode = 0; // MODE_NO_OPT; // default: no opt (static)
         int calc_opt  = 0; // MODE_L_J | MODE_PROBE_SPRING; // default L-J only, no statics (coulomb), spring tip probe model
@@ -2919,7 +2940,7 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
         double initial_probe_below_apex=4.0;  // 3.67;
         double probe_charge = -0.05;
         gchararray progress_detail = NULL;
-        Dialog *dlg = new Dialog (zi, zf, dz, precision, maxiter,
+        Dialog *dlg = new Dialog (zi, zf, dz, precision, maxiter, fzmax,
                                   sensor_f0_k0, probe_flex,
                                   &model_name, &model_filter, &model_filter_param,
                                   &cmode, &copt,
@@ -3010,6 +3031,7 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
                 info_stream << "Probe = fallback Oxigen default\n";
                 model->make_probe ();
         }
+        model->set_fzmax (fzmax);
         model->scale_charge (charge_scaling);
         info_stream << "Model Charge Scaling = " << charge_scaling << "\n";
         
