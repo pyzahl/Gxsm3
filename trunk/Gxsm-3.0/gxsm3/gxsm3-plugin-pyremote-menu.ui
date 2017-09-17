@@ -105,6 +105,38 @@
 	      </item>
 	    </section>
 	  </submenu>
+	  <submenu>
+	    <attribute name="label" translatable="yes">Data Analysis Script Templates</attribute>
+	    <section>
+	      <attribute name="id">plugin-pyremote-file-data-analysis-section</attribute>
+	      <item>
+		<attribute name="label" translatable="yes">Data Access</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">gxsm3-data-access-template</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">CF Extract Simple</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">gxsm3-data-cfextract-simple</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">CF Extract Data</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">gxsm3-data-cfextract-data</attribute>
+	      </item>
+	    </section>
+	  </submenu>
+	  <submenu>
+	    <attribute name="label" translatable="yes">Animation Scripts</attribute>
+	    <section>
+	      <attribute name="id">plugin-pyremote-file-animation-section</attribute>
+	      <item>
+		<attribute name="label" translatable="yes">Animate 3D View</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">gxsm3-3d-animate</attribute>
+	      </item>
+	    </section>
+	  </submenu>
 	</section>
       </submenu>
       <item>

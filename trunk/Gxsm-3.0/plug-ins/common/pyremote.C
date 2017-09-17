@@ -560,6 +560,7 @@ to the community. The GXSM-Forums always welcome input.
 
 #include "config.h"
 #include "pyremote.h"
+#include "pyscript_templates.h"
 #include "gxsm/plugin.h"
 #include "gxsm/gnome-res.h"
 
@@ -804,43 +805,36 @@ public:
                                                 // make sample
                                                 std::ofstream example_file;
                                                 example_file.open(script_filename);
-                                                example_file << "# Gxsm Python Remote Help script file " << script_filename << " was created.\n";
-                                                example_file << "############################################################################\n";
-                                                example_file << "#\n";
-                                                example_file << "# PLEASE EXECUTE ME TO PRINT THE GXSM3 PYTHON REMOTE COMMAND HELP LIST !!\n";
-                                                example_file << "#\n";
-                                                example_file << "############################################################################\n";
-                                                example_file <<
-                                                        "S='***'\n"
-                                                        "s='--------------------------------------------------------------------------------'\n"
-                                                        "print (S)\n"
-                                                        "print ('(1) Gxsm3 python remote console -- gxsm.help on build in commands')\n"
-                                                        "print (s)\n"
-                                                        "for h in gxsm.help ():\n"
-                                                        "	print h\n"
-                                                        "print ('*')\n"
-                                                        "\n"
-                                                        "print (s)\n"
-                                                        "print ('(2) Gxsm3 python remote console -- help on reference names')\n"
-                                                        "print ('  used for gxsm.set and get, gets commands.')\n"
-                                                        "print ('  Hint: hover the pointer over any get/set enabled Gxsm entry to see it`s ref-name!')\n"
-                                                        "print ('  Example: gxsm.set (\"dsp-fbs-bias\", \"1.0\")')\n"
-                                                        "print (s)\n"
-                                                        "\n"
-                                                        "for h in gxsm.list_refnames ():\n"
-                                                        "	print h\n"
-                                                        "print ('*')\n"
-                                                        "\n"
-                                                        "print (s)\n"
-                                                        "print ('(3) Gxsm3 python remote console -- help on action names used for gxsm.action command')\n"
-                                                        "print ('  Hint: hover the pointer over any Gxsm Action enabled Button to see it`s action-name!')\n"
-                                                        "print ('  Example: gxsm.action (\"DSP_CMD_GOTO_Z0\")')\n"
-                                                        "print (s)\n"
-                                                        "	\n"
-                                                        "for h in gxsm.list_actions ():\n"
-                                                        "	print h\n"
-                                                        "print ('*')\n"
-                                                        ;
+                                                example_file << "# Gxsm Python Script file " << script_filename << " was created.\n";
+                                                example_file << template_help;
+                                                example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-data-access-template")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Script file " << script_filename << " was created.\n";
+                                                example_file << template_data_access;
+                                                example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-data-cfextract-simple")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Script file " << script_filename << " was created.\n";
+                                                example_file << template_data_cfextract_simple;
+                                                example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-data-cfextract-data")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Script file " << script_filename << " was created.\n";
+                                                example_file << template_data_cfextract_data;
+                                                example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-3d-animate")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Surface3D/GL Animation Example script file " << script_filename << " was created.\n\n";
+                                                example_file << template_animate;
                                                 example_file.close();
                                         } else {
                                                 // make sample
