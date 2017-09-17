@@ -2149,7 +2149,7 @@ void Surf3d::GLvarinit(){
 }
 
 void Surf3d::GLupdate (void* data){
-        static double rprev=0.;
+        static float prev_index=0.;
         XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLUPDATE" << std::flush);
 
         if (data){
@@ -2206,14 +2206,14 @@ void Surf3d::GLupdate (void* data){
                 if (s->v3dcontrol)
                         s->v3dcontrol->rerender_scene ();
 
-                // quick hack
-                if (s->GLv_data.rot[2] > 360. && fabs(s->GLv_data.rot[2]-rprev) > 0.01){
-                        rprev = s->GLv_data.rot[2];
-                        gchar *tmp = g_strdup_printf ("/tmp/GXSM3TMP-gl3f-zrot%05.1f.png", rprev);
-                        g_message (" Rotate Save: %s", tmp);
+                // automated output file generation, control fields via python remote console to generate movie!
+                if (s->GLv_data.animation_index > 0. && s->GLv_data.animation_index > prev_index){
+                        gchar *tmp = g_strdup_printf (s->GLv_data.animation_file, s->GLv_data.animation_index);
+                        g_message ("Frame Output: %s", tmp);
                         s->SaveImagePNG (GTK_GL_AREA (s->v3dcontrol->get_glarea ()), tmp);
                         g_free (tmp);
                 }
+                prev_index = s->GLv_data.animation_index;
         }
 
 

@@ -68,6 +68,7 @@ const gchar *shader_mode_OptionsList[]  = {"0","20","1","1","0",NULL };
 const gchar *tess_level_OptionsList[]  = {"1","64","1.0","1.0","0",NULL };
 const gchar *base_grid_OptionsList[]  = {"8","512","1.0","1.0","0",NULL };
 const gchar *probe_atoms_OptionsList[]  = {"5","1000000","100.0","100.0","1",NULL };
+const gchar *Animation_Index_OptionsList[]   = {"0","10000","1","1","0",NULL };
 
 GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	GNOME_RES_ENTRY_FIRST_NAME("GXSM_V3DCONTROL_20030901000"),
@@ -540,6 +541,18 @@ GnomeResEntryInfoType v3dControl_pref_def_const[] = {
 	( GNOME_RES_BOOL, "V3dControl.RenderOp/ZeroOld", "true", GET_GLV_OFFSET (&GLvd_offset.ZeroOld),
 	  TrueFalse_OptionsList, N_("Render Opt."), 
 	  N_("enable/disable clear (zero) olddata in life scan update -- only good for top-down scan!)")
+		),
+
+	GNOME_RES_ENTRY_STRING
+	( "V3dControl.RenderOp/AnimationFile", "/tmp/gxsm-movie-frame%05.0f.png", GET_GLV_OFFSET (&GLvd_offset.animation_file),
+	  N_("Render Opt."), 
+	  N_("Animation output file, must be like '/tmp/MovieFrame%05.0f.png' to indicate the index or time formatting!\n")
+	     ),
+
+	GNOME_RES_ENTRY_FLOATSLIDER
+	( "V3dControl.RenderOp/AnimationIndex", "Animation Index", "0", GET_GLV_OFFSET (&GLvd_offset.animation_index), 
+	  Animation_Index_OptionsList, N_("Render Opt."),
+	  N_("Animation index, set to 0 to disable, if >0 at every increment a file is saved."), NULL
 		),
 
 #if 0

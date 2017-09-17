@@ -683,6 +683,23 @@ if you are looking from below! Normally enable for speed and reduction of artifa
         true GXSM OPTIONS=(false, enable/disable clear (zero) olddata in life scan update -- only good for top-down scan!))
       </description>
     </key>
+    <key name="animationfile" type="s">
+
+      <default>'/tmp/gxsm-movie-frame%05.0f.png'</default>
+      <summary>Animation output file, must be like '/tmp/MovieFrame%05.0f.png' to indicate the index or time formatting!
+      </summary>
+      <description>
+        Animation output file, must be like '/tmp/MovieFrame%05.0f.png' to indicate the index or time formatting!
+
+      </description>
+    </key>
+    <key name="animationindex" type="d">
+      <default>0</default>
+      <summary>Animation index, set to 0 to disable, if >0 at every increment a file is saved.</summary>
+      <description>
+        Animation index, set to 0 to disable, if >0 at every increment a file is saved.
+      </description>
+    </key>
   </schema>
 </schemalist>
 

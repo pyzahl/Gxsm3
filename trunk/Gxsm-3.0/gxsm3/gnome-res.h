@@ -119,6 +119,9 @@ extern "C" {
 #define GNOME_RES_ENTRY_FLOATSLIDER(path, name, vdefault, var, options, group, comment, changed_callback) \
         GNOME_RES_ENTRY(GNOME_RES_FLOAT, GNOME_RES_EDIT_VALSLIDER, path, name, vdefault, var, options, NULL, NULL, group, comment, GNOME_RES_LEVEL_AUTO, NULL, changed_callback, NULL)
 
+#define GNOME_RES_ENTRY_STRING(path, vdefault, var, group, comment) \
+        GNOME_RES_ENTRY(GNOME_RES_STRING, GNOME_RES_EDIT_ENTRY, path, NULL, vdefault, var, NULL, NULL, NULL, group, comment, GNOME_RES_LEVEL_AUTO, NULL, NULL, NULL )
+
 #define GNOME_RES_ENTRY_COLORSEL(path, name, vdefault, var, group, comment, changed_callback) \
         GNOME_RES_ENTRY(GNOME_RES_FLOAT_VEC4, GNOME_RES_EDIT_COLORSEL, path, name, vdefault, var, NULL, NULL, NULL, group, comment, GNOME_RES_LEVEL_AUTO, NULL, changed_callback, NULL)
 
