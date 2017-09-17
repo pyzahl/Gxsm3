@@ -344,11 +344,20 @@ print ("update displays completed.")
 const gchar *template_animate = R"V0G0N(
 # Set a channel to Surface 3D view mode, remote will only apply to the current active GL Scen Setup/Control.
 
-start=-120 # Let's start at Z rotation = -120
-for phi in range(start,start+360,1):
-	gxsm.set("rotationz",str(phi)) # adjust Z rotation (or any of the 3D view settings)
-	gxsm.set("animationindex",str(phi-start+1)) # this will save the frame on every new index value!
+ti=0 # start at t-initial = 0
+tf=200 # assume dt = 1 about 1/10s
+
+phii=-120.0
+phif=70.0
+
+fovi=60.0
+fovf=20.0
+for t in range(ti, tf,1):
+	gxsm.set("rotationz",str(phii+(phif-phii)*t/tf)) # adjust Z rotation (or any of the 3D view settings)
+	gxsm.set("fov",str(fovi+(fovf-fovi)*t/tf)) # adjust Z rotation (or any of the 3D view settings)
+	gxsm.set("animationindex",str(t+1)) # this will save the frame on every new index value!
 	gxsm.sleep(0.01) # give GXSM a moment to update displays...
+	#gxsm.sleep(1) # give GXSM a moment to update displays...
 )V0G0N";
 
 
