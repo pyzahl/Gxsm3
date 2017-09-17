@@ -1912,6 +1912,9 @@ Surf3d::~Surf3d(){
                 delete gl_tess;
 
         self = NULL;
+
+        gapp->remove_configure_object_from_remote_list (v3dControl_pref_dlg);
+
         if (v3dControl_pref_dlg)
                 gnome_res_destroy (v3dControl_pref_dlg);
         hide();
@@ -2142,11 +2145,12 @@ void Surf3d::GLvarinit(){
 	gnome_res_set_auto_apply (v3dControl_pref_dlg, TRUE);
 	gnome_res_set_height (v3dControl_pref_dlg, 700);
 	gnome_res_read_user_config (v3dControl_pref_dlg);
-	
+        gapp->add_configure_object_to_remote_list (v3dControl_pref_dlg);
 }
 
 void Surf3d::GLupdate (void* data){
-	XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLUPDATE" << std::flush);
+        static double rprev=0.;
+        XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLUPDATE" << std::flush);
 
         if (data){
         
@@ -2201,7 +2205,19 @@ void Surf3d::GLupdate (void* data){
                 }
                 if (s->v3dcontrol)
                         s->v3dcontrol->rerender_scene ();
+
+                // quick hack
+                if (s->GLv_data.rot[2] > 360. && fabs(s->GLv_data.rot[2]-rprev) > 0.01){
+                        rprev = s->GLv_data.rot[2];
+                        gchar *tmp = g_strdup_printf ("/tmp/GXSM3TMP-gl3f-zrot%05.1f.png", rprev);
+                        g_message (" Rotate Save: %s", tmp);
+                        s->SaveImagePNG (GTK_GL_AREA (s->v3dcontrol->get_glarea ()), tmp);
+                        g_free (tmp);
+                }
         }
+
+
+        
         XSM_DEBUG (GL_DEBUG_L2, "SURF3D:::GLUPDATE done." << std::flush);
 }
 

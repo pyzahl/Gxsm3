@@ -323,12 +323,20 @@ public:
         /* List of remotely acessable entrys */
         GSList *RemoteEntryList;
         GSList *RemoteActionList;
+        GSList *RemoteConfigureList;
 
         GSList *gxsm_app_windows_list;
         
         /* Remote */
         RemoteControl *remotecontrol;
 
+        void add_configure_object_to_remote_list (GnomeResPreferences *grp){
+                RemoteConfigureList = g_slist_prepend (RemoteConfigureList, grp);
+        };
+        void remove_configure_object_from_remote_list (GnomeResPreferences *grp){
+                RemoteConfigureList = g_slist_remove (RemoteConfigureList, grp);
+        };
+        
         /* Gxsm PlugIns management and app menu support */  
 	GxsmMenuExtension *gxsm_app_extend_menu (const gchar *extension_point, const gchar *menu_entry_text, const gchar *action);
 

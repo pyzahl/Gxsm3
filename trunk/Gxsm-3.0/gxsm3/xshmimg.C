@@ -143,14 +143,16 @@ void ShmImage2D::MkPalette(const char *name){
 void ShmImage2D::saveimage(gchar *name){
 }
 
-void ShmImage2D::draw_callback (cairo_t *cr){
+void ShmImage2D::draw_callback (cairo_t *cr, gboolean draw_red_line){
 	gdk_cairo_set_source_pixbuf (cr, gdk_pixbuf, 0., 0.);
 	cairo_paint(cr);
-	cairo_set_line_width (cr, ZoomFac);
-	cairo_set_source_rgb (cr, 1.0, 0.0, 0.0); // red
-	cairo_move_to (cr, red_line_points[0], red_line_points[1]);
-	cairo_line_to (cr, red_line_points[2], red_line_points[3]);
-	cairo_stroke (cr);
+        if (draw_red_line){
+                cairo_set_line_width (cr, ZoomFac);
+                cairo_set_source_rgb (cr, 1.0, 0.0, 0.0); // red
+                cairo_move_to (cr, red_line_points[0], red_line_points[1]);
+                cairo_line_to (cr, red_line_points[2], red_line_points[3]);
+                cairo_stroke (cr);
+        }
 }
 
 void ShmImage2D::ShowPic (){ 
