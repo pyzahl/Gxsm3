@@ -297,6 +297,9 @@ typedef struct{
 	int ZeroPlane;
 	int InstantUpdate;
 
+        float animation_index;
+        gchar animation_file[256];
+
 } Surf3d_GLview_data;
 
 class gl_400_3D_visualization;
