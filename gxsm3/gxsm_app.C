@@ -137,6 +137,7 @@ App::App(GApplication *g_app)
 	// Remote Control Lists
         RemoteEntryList  = NULL;  
         RemoteActionList = NULL;  
+        RemoteConfigureList = NULL;
 	remotecontrol    = NULL;
 
 	// Plungin Interface, Plugin Events

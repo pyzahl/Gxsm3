@@ -27,6 +27,7 @@
 #define __GNOME_RES_H__
 
 #include <gtk/gtk.h>
+#include "remoteargs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,7 +98,6 @@ extern "C" {
                 GtkAdjustment *adjustment;  /* Adjustment - internal use, init with NULL! */
                 gchar *tmp;             /* temporary variable storage as text - internal use, init with NULL! */
         } GnomeResEntryInfoType;
-
 
         /* Macros to simplify usage, do use at least the GNOME_RES_ENTRY_NAME macro! */
 
@@ -272,6 +272,7 @@ extern "C" {
         GnomeResDruidFinishType gnome_res_new_user_druid_run_druids (GnomeResNewUserDruid *self);
         void gnome_res_new_user_druid_destroy (GnomeResNewUserDruid *self);
 
+        gboolean gnome_res_check_remote_command (GnomeResPreferences *self, remote_args* data);
 
 /* key/path convertsion utils */
         gchar **get_path_name (const gchar *pathname);

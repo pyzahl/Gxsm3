@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -23,8 +25,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-
 #ifndef REMOTE__H
 #define REMOTE__H
 
@@ -35,6 +35,8 @@
 #define REMO_QUIT                3
 
 #define CMDFKTARGS gchar **arglist, gpointer data
+
+#include "remoteargs.h"
 
 enum REMOTE_TYP { REMO_ACTION, REMO_MENUACTION, REMO_SETENTRY, REMO_CBACTION, REMO_ENDLIST };
 

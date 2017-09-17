@@ -561,6 +561,8 @@ to the community. The GXSM-Forums always welcome input.
 #include "config.h"
 #include "pyremote.h"
 #include "gxsm/plugin.h"
+#include "gxsm/gnome-res.h"
+
 
 #if defined HAVE_PYTHON2_7_PYTHON_H
 #    include <python2.7/Python.h>
@@ -920,6 +922,11 @@ static void Check_ec(Gtk_EntryControl* ec, remote_args* ra){
 	ec->CheckRemoteCmd (ra);
 };
 
+static void Check_conf(GnomeResPreferences* grp, remote_args* ra){
+        if (grp && ra)
+                gnome_res_check_remote_command (grp, ra);
+};
+
 static void CbAction_ra(remote_action_cb* ra, gpointer arglist){
 	if(ra->cmd && ((gchar**)arglist)[1])
 		if(! strcmp(((gchar**)arglist)[1], ra->cmd)){
@@ -1051,7 +1058,11 @@ static PyObject* remote_set(PyObject *self, PyObject *args)
 	gchar *list[] = { (char *)"set", parameter, value, NULL };
 	ra.arglist = list;
 
-	g_slist_foreach(gapp->RemoteEntryList, (GFunc) Check_ec, (gpointer)&ra);
+        // check PCS entries
+	g_slist_foreach (gapp->RemoteEntryList, (GFunc) Check_ec, (gpointer)&ra);
+
+        // check current active/open CONFIGURE elements
+	g_slist_foreach (gapp->RemoteConfigureList, (GFunc) Check_conf, (gpointer)&ra);
 
 	return Py_BuildValue("i", 0);
 }
@@ -1920,11 +1931,11 @@ void sleep_ms(int ms)
 static PyObject* remote_sleep(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Sleep ");
-	long l;
-	if (!PyArg_ParseTuple(args, "l", &l))
+	double d;
+	if (!PyArg_ParseTuple(args, "d", &d))
 		return Py_BuildValue("i", -1);
-	if (l){
-		sleep_ms(l*100);
+	if (d>0.){
+		sleep_ms((int)(round(d*100)));
 	}
 	return Py_BuildValue("i", 0);
 }

@@ -72,6 +72,9 @@ public:
         void rerender_scene (){
                 gtk_gl_area_queue_render (GTK_GL_AREA (glarea));
         };
+
+        GtkGLArea* get_glarea () { return GTK_GL_AREA (glarea); };
+                
         void start_auto_update (gboolean override=false){
                 auto_update_mode = override;
                 if (!au_timer)

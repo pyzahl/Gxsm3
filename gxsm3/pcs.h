@@ -51,7 +51,7 @@ good starting point.
 
 #include "gxsm_conf.h"
 #include "unit.h"
-
+#include "remoteargs.h"
 
 extern gboolean generate_pcs_gschema;
 extern gboolean generate_pcs_adj_gschema;
@@ -59,12 +59,6 @@ extern gchar *generate_pcs_gschema_path_add;
 
 extern const gchar* pcs_get_current_gschema_group ();
 extern void pcs_set_current_gschema_group (const gchar *group);
-
-
-typedef struct {
-	gchar **arglist;
-	double qvalue;
-} remote_args;
 
 class Scale_Ticks {
         Scale_Ticks() {};

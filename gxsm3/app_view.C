@@ -2925,7 +2925,7 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
 
         // 1) draw Frame -- not here
         // 2) draw Image and red line via ShmImage2D
-	vc->ximg->draw_callback (cr);
+	vc->ximg->draw_callback (cr, widget ? true:false);
 
         // 3) draw Objects and Events
         vc->DrawObjects (cr);

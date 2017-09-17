@@ -1037,6 +1037,52 @@ gchar *gnome_res_get_resource_string_from_variable (GnomeResEntryInfoType *res){
         return g_strdup ("Illegal Ressource Type");
 }
 
+
+/*
+ * Write data back to resource file
+ * note: do not call yourself, proper settings of entry and tmp is required!
+ */
+
+gboolean gnome_res_check_remote_command (GnomeResPreferences *self, remote_args* data){
+        if (data){
+                if (data->arglist[0] && data->arglist[1]){
+                        for (GnomeResEntryInfoType *res = self->res_def; res->type != GNOME_RES_LAST; ++res){
+                                if (res->type == GNOME_RES_FIRST) ++res;
+                                if (res->type == GNOME_RES_IGNORE_INFO) continue;
+                                if (res->path == NULL) continue;
+                
+                                gchar** path_name = get_path_name (res->path);
+                                //gchar* respath = path_name[0];
+                                gchar* key = gschema_key_translate (path_name[1], -1);
+                                float value;
+                                
+                                if(data->arglist[1] && data->arglist[2]){
+                                        if(! strcmp(data->arglist[1], key)){
+                                                switch (res->edit_type){
+                                                case GNOME_RES_EDIT_NO: return FALSE;
+                                                case GNOME_RES_EDIT_OPTIONS: return FALSE;
+                                                case GNOME_RES_EDIT_VALSLIDER:
+                                                        * ((float*) res->var) = value = (float) atof(data->arglist[2]); //gtk_adjustment_get_value (adj);
+                                                        if (((GnomeResEntryInfoType *) res)->tmp) 
+                                                                g_free (((GnomeResEntryInfoType *) res)->tmp);
+                                                        ((GnomeResEntryInfoType *) res)->tmp = g_strdup_printf ("%g", value);
+                                                        if (res->changed_callback)
+                                                                (*res->changed_callback)(res->moreinfo);
+                                                        return TRUE;
+                                                        break;
+                                                case GNOME_RES_EDIT_COLORSEL: return FALSE;
+                                                case GNOME_RES_EDIT_FONTSEL: return FALSE;
+                                                default: return FALSE;
+                                                }
+                                        }
+                                }
+			}
+                }
+        }
+        return FALSE;
+}
+
+        
 void gnome_res_adjustment_callback(GtkAdjustment *adj, GnomeResEntryInfoType *res){
         GnomeResPreferences *self = (GnomeResPreferences*) g_object_get_data (G_OBJECT (adj), "nome-res-self");
         if (self->block) return;
@@ -1102,6 +1148,12 @@ void gnome_res_make_resource_variable_edit_field (GnomeResPreferences *self, Gno
 	
         res->entry = NULL;
         res->tmp   = NULL;
+
+        gchar** path_name = get_path_name (res->path);
+        //gchar* respath = path_name[0];
+        gchar* key = gschema_key_translate (path_name[1], -1);
+        
+        gtk_widget_set_tooltip_text (VarName, key); // PyRemote gxsm.set key
 
         switch (res->edit_type){
         case GNOME_RES_EDIT_NO: break;
