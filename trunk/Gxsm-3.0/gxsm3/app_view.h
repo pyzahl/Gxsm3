@@ -252,6 +252,9 @@ public:
 
         GtkWidget *canvas;
         GtkWidget *side_pane_tab_objects;
+
+        inline int get_npx () { return npx; }
+        inline int get_npy () { return npy; }
         
 private:
         GSettings *view_settings;
