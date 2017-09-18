@@ -2918,20 +2918,6 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
         //        cairo_scale (cr, IMAGE_DPI/72.0, IMAGE_DPI/72.0);
 
         canvas_draw_callback (NULL, cr, vc); // call with widget=NULL assumed external rendering and omits drawing active frame
-#if 0        
-        double zf = vc->vinfo->GetZfac();
-        cairo_scale (cr, zf, zf);
-        cairo_save (cr);
-
-        // 1) draw Frame -- not here
-        // 2) draw Image and red line via ShmImage2D
-	vc->ximg->draw_callback (cr, widget ? true:false);
-
-        // 3) draw Objects and Events
-        vc->DrawObjects (cr);
-
-        cairo_restore (cr);
-#endif
         
         status = cairo_status(cr);
         if (status)
