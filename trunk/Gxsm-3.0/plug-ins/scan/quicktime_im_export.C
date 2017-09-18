@@ -71,6 +71,7 @@ This seams to depend on the system and libquicktime version used, so please try 
 #include "gxsm/xsmtypes.h"
 #include "gxsm/glbvars.h"
 #include "gxsm/gapp_service.h"
+#include "gxsm/app_view.h"
 
 // custom includes go here
 #include "lqt/quicktime.h"
@@ -155,7 +156,7 @@ double step_time=1.;
 
 double frame_rate=15.;
 
-int qt_quality = 85;
+int qt_quality = 95;
 int qt_codec = 0;
 gchar *qt_video_codec = NULL;
 
@@ -467,24 +468,17 @@ FIO_STATUS Quicktime_ImExportFile::Read(xsm::open_mode mode){
 //	return status=FIO_NOT_RESPONSIBLE_FOR_THAT_FILE;
 }
 
+// http://libquicktime.sourceforge.net/doc/apiref/group__codec__registry.html
 FIO_STATUS Quicktime_ImExportFile::Write(){
 	quicktime_t *qtfile;
-	gint nx,ny;
-	GtkWidget *wid_canvas = NULL;
-	GdkPixbuf* OSD_pixbuf = NULL;
-	gint w,h;
-	unsigned char palette_rgb[1024][3];
-	int maxcol=256;
-
+        // get access to Scan ViewControl
+        ViewControl* vc = scan->view->Get_ViewControl();
+        if (!vc) return FIO_NO_NAME;
 
 	if (name == NULL) return FIO_NO_NAME;
 
 	if (strncmp(name+strlen(name)-4,".mov",4))
 		return FIO_NOT_RESPONSIBLE_FOR_THAT_FILE;
-
-        
-	nx = scan->mem2d->GetNx ();
-	ny = scan->mem2d->GetNy ();
 
 	file_dim=0;
 	file_dim |= FILE_ASKDIM;
@@ -525,44 +519,27 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
 	file_dim |= FILE_DECODE;
 	quicktime_im_export_configure ();
 
-// check if scan has an valid view we can grab from, else fallback to plain export
-
-	if (OSD_grab_mode && (!scan->view->grab_OSD_canvas()))
-		OSD_grab_mode = FALSE; 
-	else
-		wid_canvas = (GtkWidget*)(scan->view->grab_OSD_canvas());
-
-	if (wid_canvas && OSD_grab_mode){
-                w = gdk_window_get_width (GDK_WINDOW (wid_canvas));
-                h = gdk_window_get_height (GDK_WINDOW (wid_canvas));
-		cout << "OSD canvas widget ready to grab from OK. Size: " << w <<", "<< h << endl;
-		nx = w; ny = h; // now size as big as the canvas widget is
-	} else	if (OSD_grab_mode){
-		OSD_grab_mode = FALSE; 
-		cout << "OSD canvas widget not accessible (NULL) -- using fall back mode to non OSD" << endl;
-	}
-
 // and open the qtfile in write mode:
 
-	if ((qtfile = quicktime_open(name, 0, 1)) == 0)
+	if ((qtfile = quicktime_open (name, 0, 1)) == 0)
 		return FIO_NO_NAME;
 
 // Immediately after opening the file, set up some tracks to write with these commands:
 
-	cout << "quicktime_set_video [" << qt_video_codec << "]" << endl;
-	quicktime_set_video(qtfile, 1, nx, ny, frame_rate, qt_video_codec);
+	//cout << "quicktime_set_video [" << qt_video_codec << "]" << endl;
+	//quicktime_set_video (qtfile, 1, vc->get_npx (), vc->get_npy (), frame_rate, qt_video_codec);
 
 // To set a jpeg compression quality of 80, for example, do the following:
 
 	cout << "quicktime_set_parameter quality[" << qt_quality << "]" << endl;
 	gchar *jq = g_strdup ("jpeg_quality");
-	quicktime_set_parameter(qtfile, jq, &qt_quality);
+	quicktime_set_parameter (qtfile, jq, &qt_quality);
 	g_free (jq);
 
 // setup and check Encoding video is supported
 
 	cout << "check for video support... " << endl;
-	if ( quicktime_supported_video(qtfile, 0) == 0 ){
+	if ( quicktime_supported_video (qtfile, 0) == 0 ){
 		quicktime_close (qtfile);
 		cout << "Codec not supported" << endl;
 		return  FIO_NO_NAME; // Codec not supported
@@ -570,7 +547,7 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
 	cout << "OK." << endl;
 
 	cout << "check for color model RGB888 support... " << endl;
-	if ( quicktime_writes_cmodel(qtfile, BC_RGB888, 0) == 0){
+	if ( quicktime_writes_cmodel (qtfile, BC_RGB888, 0) == 0){
 		quicktime_close (qtfile);
 		cout << "Color Model RGB888 not supported" << endl;
 		return  FIO_NO_NAME; // Color model not supported
@@ -578,100 +555,73 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
 	cout << "OK." << endl;
 
 	cout << "Setting color model." << endl;
-	quicktime_set_cmodel(qtfile, BC_RGB888);
+	quicktime_set_cmodel(qtfile, BC_RGBA8888);
 
+        gapp->progress_info_new ("QT Export", 2);
+        gapp->progress_info_set_bar_text ("Time", 1);
+        gapp->progress_info_set_bar_text ("Layer", 2);
 
-	if (!OSD_grab_mode){
-		int cval;
-		ifstream cpal;
-		char pline[256];
-		int r,g,b, pnx, pny;
-		double val;
-		int ival;
-	  
-		gapp->progress_info_new ("QT Export", 2);
-		gapp->progress_info_set_bar_text ("Time", 1);
-		gapp->progress_info_set_bar_text ("Layer", 2);
+        //const lqt_codec_info_t *qt_vc_info = lqt_get_video_codec_info (int index)
 
-	  
-		cout << "Setting up custom palette." << endl;
+        lqt_codec_info_t** qvc = lqt_find_video_codec	(qt_video_codec, 1);
 
-		// make default 256 grey level palette
-		for (cval=0; cval<maxcol; ++cval)
-			palette_rgb[cval][2] = palette_rgb[cval][1] = palette_rgb[cval][0] = cval * 255 / maxcol; 
-	  
-		// if view palette active, check and replace by it
-		if (gapp->xsm->ZoomFlg & VIEW_PALETTE){
-			cpal.open(xsmres.Palette, ios::in);
-			if(cpal.good()){
-				cpal.getline(pline, 255);
-				cpal.getline(pline, 255);
-				cpal >> pnx >> pny;
-				cpal.getline(pline, 255);
-				cpal.getline(pline, 255);
-				
-				for(maxcol=min(pnx, 1024), cval=0; cval<maxcol; ++cval){
-					cpal >> r >> g >> b ;
-					palette_rgb[cval][0] = r;
-					palette_rgb[cval][1] = g;
-					palette_rgb[cval][2] = b;
-				}
-				cpal.close();
-			}
-		}
-	}
-
-	cout << "Setting up pixbuf" << endl;
-	OSD_pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, FALSE, 8, nx,ny);
-	if (!OSD_pixbuf){
-		cout << "Error allocating pixbuf - exiting" << endl;
+        if (lqt_add_video_track (qtfile, vc->get_npx (), vc->get_npy (), 30000, (int)round(30000./frame_rate), qvc[0])){
 		quicktime_close (qtfile);
-		return  FIO_NO_NAME; // Error Pixbuf
-	}
-
-	guchar **row_pointers = new guchar* [ny];
-	gint rowstride = gdk_pixbuf_get_rowstride (OSD_pixbuf);
-	guchar *pixels = gdk_pixbuf_get_pixels (OSD_pixbuf);
-	for (int i=0; i<ny; ++i) row_pointers[i] = pixels + i*rowstride;
-
-	cout << "Composing Video..." << endl;
-	int frame = 0;
+		cout << "Add track failed." << endl;
+		return  FIO_NO_NAME; // Add Track error
+        }
+        /*
+          int lqt_add_video_track (
+                quicktime_t * 	file,
+                int 	frame_w,
+                int 	frame_h,
+                int 	frame_duration,
+                int 	timescale,
+                lqt_codec_info_t * 	codec_info	 
+                )
+        */
+        
+        guchar **row_pointers = new guchar* [vc->get_npy ()];
+        int stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, vc->get_npx ()); // width
+        unsigned char *data = (unsigned char*) malloc (stride * vc->get_npy ()); // height
+        for (int i=0; i<vc->get_npy (); ++i) row_pointers[i] = data + i*stride;
+        
+        cout << "Composing Video..." << endl;
+        int frame = 0;
 	for (int time_index=offset_index_time; time_index<=max_index_time; ++time_index){
 		for (int value_index=offset_index_value; value_index<=max_index_value; ++value_index){
 
-			if (OSD_grab_mode){
-				gapp->xsm->data.display.vlayer = value_index;
-				gapp->xsm->data.display.vframe = time_index;
-				App::spm_select_layer (NULL, gapp);
-				App::spm_select_time (NULL, gapp);
-				if (conti_autodisp_mode)
-					gapp->xsm->ActiveScan->auto_display ();
-				gapp->check_events ();
-// GTK3QQQ
-//				gdk_pixbuf_get_from_drawable (OSD_pixbuf, GDK_DRAWABLE (wid_canvas), NULL, 0,0,0,0, nx,ny);
-			} else {
+                        // select frame, auto scale
+                        gapp->xsm->data.display.vlayer = value_index;
+                        gapp->xsm->data.display.vframe = time_index;
+                        App::spm_select_layer (NULL, gapp);
+                        App::spm_select_time (NULL, gapp);
+                        if (conti_autodisp_mode)
+                                gapp->xsm->ActiveScan->auto_display ();
+                        gapp->check_events ();
+                        
+                        gapp->progress_info_set_bar_fraction ((gdouble)time_index/(gdouble)max_index_time, 1);
+                        gapp->progress_info_set_bar_fraction ((gdouble)value_index/(gdouble)max_index_value, 2);
 
-				gapp->progress_info_set_bar_fraction ((gdouble)time_index/(gdouble)max_index_time, 1);
-				gapp->progress_info_set_bar_fraction ((gdouble)value_index/(gdouble)max_index_value, 2);
-
-				// Set View-Mode Data Range and auto adapt Vcontrast/Bright
-				scan->mem2d_time_element (time_index)->SetDataRange(0, maxcol);
-//				scan->mem2d_time_element (time_index)->AutoDataSkl(NULL, NULL);
-				scan->mem2d_time_element (time_index)->SetLayer (value_index);
-				
-				// use GetDataVMode to use the current set View-Mode (Direct, Quick, ...)
-
-				int k,j;
-				for (int i=0; i<ny; ++i)
-					for (k=j=0; j<nx; ++j){
-						double val = scan->mem2d_time_element (time_index)->GetDataVMode (j,i);
-						int ival = (int)((val >= maxcol ? maxcol-1 : val < 0 ? 0 : val) + .5);
-						
-						*(row_pointers[i] + k++) = (unsigned char)palette_rgb[ival][0];
-						*(row_pointers[i] + k++) = (unsigned char)palette_rgb[ival][1];
-						*(row_pointers[i] + k++) = (unsigned char)palette_rgb[ival][2];
-					}
-			}
+                        // Set View-Mode Data Range and auto adapt Vcontrast/Bright
+                        //scan->mem2d_time_element (time_index)->SetDataRange(0, maxcol);
+                        // scan->mem2d_time_element (time_index)->AutoDataSkl(NULL, NULL);
+                        //scan->mem2d_time_element (time_index)->SetLayer (value_index);
+                        
+                        cairo_surface_t *surface = cairo_image_surface_create_for_data (data, CAIRO_FORMAT_RGB24,
+                                                                                        vc->get_npx (), vc->get_npy (), // width, height
+                                                                       stride);
+                        cairo_t *cr = cairo_create (surface);
+       
+                        // call draw with widget=NULL assumed external rendering and omits drawing active frame
+                        vc->canvas_draw_callback (NULL, cr, vc);
+        
+                        cairo_status_t cstatus = cairo_status(cr);
+                        if (cstatus)
+                                printf("CAIRO STATUS: %s\n", cairo_status_to_string (cstatus));
+                        
+                        cairo_destroy (cr);
+                        cairo_surface_destroy (surface);
 
 			quicktime_insert_keyframe(qtfile, frame++, 0);
 			if ( quicktime_encode_video(qtfile, row_pointers, 0) != 0){
@@ -679,15 +629,12 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
 				cout << "Encode of Video Frame failed" << endl;
 				return  FIO_NO_NAME; // Encode failed
 			}
-
 		}
 	}
+        delete[] row_pointers;
 
 	cout << "Video job done. Cleaning up." << endl;
-	delete[] row_pointers;
 
-	g_object_unref (OSD_pixbuf);
-	  
 	if (!OSD_grab_mode)
 		gapp->progress_info_close ();
 
