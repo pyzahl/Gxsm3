@@ -286,16 +286,19 @@ static void quicktime_im_export_configure(void)
 
 			// query list of codecs for AUDIO=0, VIDEO=1, ENCODE, DECODE
 			ci_list = lqt_query_registry(0, 1, (file_dim & FILE_DECODE) ? 0:1, (file_dim & FILE_DECODE) ? 1:0);
-			for (lqt_codec_info_t **ci=ci_list; *ci; ++ci){
+                        int i=0;
+			for (lqt_codec_info_t **ci=ci_list; *ci; ++ci, ++i){
 				gchar *info=NULL;
 				cout << "LQT_VIDEO_CODEC [" << (*ci)->name << "]: " << (*ci)->long_name << endl;
 				cout << "Description: " << (*ci)->description << endl;
 				info = g_strdup_printf ("%s [%s]", (*ci)->long_name, (*ci)->name);
 				gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (codec_sel), info, info);
+                                if ( strcmp ( (*ci)->name, "mjpa") == 0)
+                                        qt_codec = i;
 				g_free (info);
 			}
 			gtk_combo_box_set_active (GTK_COMBO_BOX (codec_sel), qt_codec);
-                        bp.grid_add_widget (codec_sel); bp.new_line ();
+                        bp.grid_add_widget (codec_sel,2); bp.new_line ();
 
 			if (file_dim & FILE_DECODE){
 				bp.grid_add_ec ("Quality [%]", quicktime_im_export_pi.app->xsm->Unity, &qt_quality, 0., 100., ".0f"); bp.new_line ();
@@ -327,17 +330,19 @@ static void quicktime_im_export_configure(void)
 		gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON (cont_autodisp_flg), conti_autodisp_mode);
 		bp.grid_add_widget (cont_autodisp_flg); bp.new_line ();
 
+#if 0
 	        OSD_grab_flg = gtk_check_button_new_with_label(N_("Scan/OSD life grab mode"));
 		gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON (OSD_grab_flg), OSD_grab_mode);
 		bp.grid_add_widget (OSD_grab_flg); bp.new_line ();
 
 		bp.grid_add_label ("Note: Keep the Scan/OSD window on top!");
-
+#endif
 		gtk_widget_show_all (dialog);
 		gtk_dialog_run (GTK_DIALOG(dialog));
 
 		if (OSD_grab_flg)
 		        OSD_grab_mode = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (OSD_grab_flg));
+
 		if (cont_autodisp_flg)
 		  conti_autodisp_mode = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (cont_autodisp_flg));
 
@@ -585,13 +590,14 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
 	for (int time_index=offset_index_time; time_index<=max_index_time; ++time_index){
 		for (int layer_index=offset_index_value; layer_index<=max_index_value; ++layer_index){
 
-#if 1                        
                         // select frame, auto scale
                         gapp->xsm->data.display.vlayer = layer_index;
                         gapp->xsm->data.display.vframe = time_index;
                         App::spm_select_layer (NULL, gapp);
                         App::spm_select_time (NULL, gapp);
-#endif
+
+                        if (conti_autodisp_mode)
+                                gapp->xsm->ActiveScan->auto_display ();
 
                         gapp->check_events ();
                         
@@ -599,9 +605,6 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
                         gapp->progress_info_set_bar_fraction ((gdouble)layer_index/(gdouble)max_index_value, 2);
 
                         scan->mem2d_time_element (time_index)->SetLayer (layer_index);
-
-                        if (conti_autodisp_mode)
-                                gapp->xsm->ActiveScan->auto_display ();
                         
                         cairo_surface_t *surface = cairo_image_surface_create_for_data (data, CAIRO_FORMAT_RGB24,
                                                                                         vc->get_npx (), vc->get_npy (), // width, height
