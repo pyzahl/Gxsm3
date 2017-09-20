@@ -68,7 +68,7 @@ The result will look like this:
 ['__doc__', '__name__', 'autodisplay', 'chmodea',
 'chmodem', 'chmoden', 'chmodeno', 'chmodex',
 'chview1d', 'chview2d', 'chview3d', 'da0', 'direct',
-'echo', 'gnuexport', 'gnuimport', 'load', 'log',
+'echo', 'export', 'import', 'load', 'log',
 'logev', 'quick', 'save', 'saveas',
 'scaninit', 'scanline', 'scanupdate', 'scanylookup',
 'set', 'sleep', 'startscan', 'stopscan', 'unitbz',
@@ -103,8 +103,8 @@ File operation\\
 \texttt{save() }  &       Save all.\\
 \texttt{saveas(S,N) }    &       Save channel N with filename S.\\
 \texttt{load(S,N)   }    &       Load file S to channel N.\\
-\texttt{gnuimport(S,N) } &       Import file S to channel N.\\
-\texttt{gnuexport(S,N) } &       Export channel N to file S.\\ \hline
+\texttt{import(S,N) } &       Import file S to channel N.\\
+\texttt{export(S,N) } &       Export channel N to file S.\\ \hline
 Channel operation\\
 \texttt{chmodea(N)}      &       Set channel(N) as active.\\
 \texttt{chmodex(N)}      &       Set channel(N) to X.\\
@@ -597,6 +597,7 @@ to the community. The GXSM-Forums always welcome input.
 #include "pcs.h"
 
 #include "gxsm_app.h"
+#include "gxsm/app_view.h"
 
 #include "gxsm3-script.h"
 
@@ -836,6 +837,13 @@ public:
                                                 example_file << "# Gxsm Python Surface3D/GL Animation Example script file " << script_filename << " was created.\n\n";
                                                 example_file << template_animate;
                                                 example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-movie-export")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Script for Multi layer/time series Drawing Export " << script_filename << " was created.\n\n";
+                                                example_file << template_movie_drawing_export;
+                                                example_file.close();
                                         } else {
                                                 // make sample
                                                 std::ofstream example_file;
@@ -881,35 +889,8 @@ private:
 
 
 ///////////////////////////////////////////////////////////////
-// BLOCK I
-// grep AddEntry2RemoteList src/*.C
-// ACAmp
-// ACFrq
-// ACPhase
-// CPShigh
-// CPSlow
-// Energy
-// Gatetime
-// Layers
-// LengthX
-// LengthY
-// Offset00X
-// Offset00Y
-// OffsetX
-// OffsetY
-// PointsX
-// PointsY
-// RangeX
-// RangeY
-// Rotation
-// StepsX
-// StepsY
-// SubSmp
-// VOffsetZ
-// VRangeZ
-// ValueEnd
-// ValueStart
-// nAvg
+// BLOCK I -- generic, help, get/set data, actions
+///////////////////////////////////////////////////////////////
 
 /* stolen from app_remote.C */
 static void Check_ec(Gtk_EntryControl* ec, remote_args* ra){
@@ -1151,14 +1132,7 @@ static PyObject* remote_moveto_scan_xy(PyObject *self, PyObject *args)
 
 
 ///////////////////////////////////////////////////////////////
-// BLOCK II
-// startscan .    DONE
-// stopscan .    DONE
-// waitscan    DONE is commented out in app_remote
-// initscan .    DONE
-// scanupdate .   DONE
-// setylookup N,X  DONE
-// scanline  N,N,N  DONE
+// BLOCK II -- scan actions
 ///////////////////////////////////////////////////////////////
 
 static PyObject* remote_startscan(PyObject *self, PyObject *args)
@@ -1555,13 +1529,7 @@ static PyObject* remote_scanline(PyObject *self, PyObject *args)
 }
 
 ///////////////////////////////////////////////////////////////
-// BLOCK III
-// save  .      DONE
-// saveas S,N       DONE
-// load  S,N      DONE
-// gnuimport S,N    DONE
-// gnuexport S,N    DONE
-// renamed import and export to avoid nameclash in python.
+// BLOCK III  -- file IO
 ///////////////////////////////////////////////////////////////
 
 static PyObject* remote_save(PyObject *self, PyObject *args)
@@ -1627,21 +1595,60 @@ static PyObject* remote_export(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", 0);
 }
 
+static PyObject* remote_save_drawing (PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: save drawing ");
+	gchar* fname = NULL;
+	long channel = 0;
+        long time_index = 0;
+        long layer_index = 0;
+        
+	if (!PyArg_ParseTuple(args, "llls", &channel, &time_index, &layer_index, &fname))
+		return Py_BuildValue("i", -1);
+
+        if (fname){
+		gapp->xsm->ActivateChannel (channel);
+                ViewControl* vc = gapp->xsm->GetActiveScan()->view->Get_ViewControl();
+
+                if (!vc) return Py_BuildValue("i", -1);
+                
+                gapp->xsm->data.display.vlayer = layer_index;
+                gapp->xsm->data.display.vframe = time_index;
+                App::spm_select_layer (NULL, gapp);
+                App::spm_select_time (NULL, gapp);
+                
+                gapp->xsm->GetActiveScan()->mem2d_time_element (time_index)->SetLayer (layer_index);
+                vc->view_file_save_drawing (fname);
+                
+	} else return Py_BuildValue("i", -1);
+	return Py_BuildValue("i", 0);
+}
+
 ///////////////////////////////////////////////////////////////
 // BLOCK IV
-// autodisp .      DONE
-// chmodea N      DONE
-// chmodex N      DONE
-// chmodem N      DONE
-// chmoden N,N      DONE
-// chmodeno N      DONE
-// chview1d N      DONE
-// chview2d N      DONE
-// chview3d N      DONE
-// quick .      DONE
-// direct .      DONE
-// log .      DONE
 ///////////////////////////////////////////////////////////////
+
+static PyObject* remote_set_view_indices (PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: save drawing ");
+	long channel = 0;
+        long time_index = 0;
+        long layer_index = 0;
+        
+	if (!PyArg_ParseTuple(args, "lll", &channel, &time_index, &layer_index))
+		return Py_BuildValue("i", -1);
+
+        gapp->xsm->ActivateChannel (channel);
+
+        gapp->xsm->data.display.vlayer = layer_index;
+        gapp->xsm->data.display.vframe = time_index;
+        App::spm_select_layer (NULL, gapp);
+        App::spm_select_time (NULL, gapp);
+
+        gapp->xsm->GetActiveScan()->mem2d_time_element (time_index)->SetLayer (layer_index);
+	return Py_BuildValue("i", 0);
+}
+
 
 static PyObject* remote_autodisplay(PyObject *self, PyObject *args)
 {
@@ -1984,9 +1991,11 @@ static PyMethodDef EmbMethods[] = {
 	{"load", remote_load, METH_VARARGS, "Load File: gxsm.load (ch, 'path/fname.nc')"},
 	{"export", remote_export, METH_VARARGS, "Export scan: gxsm.export (ch, 'path/fname.nc')"},
 	{"import", remote_import, METH_VARARGS, "Import scan: gxsm.import (ch, 'path/fname.nc')"},
+	{"save_drawing", remote_save_drawing, METH_VARARGS, "Save Drawing to file: gxsm.save_drawing (ch, time, layer, 'path/fname.png|pdf|svg')"},
 
 	// BLOCK IV
-	{"autodisplay", remote_autodisplay, METH_VARARGS, "Autodisplay."},
+	{"set_view_indices", remote_set_view_indices, METH_VARARGS, "Set Ch view time and layer indices: gxsm.set_view_indices (ch, time, layer)"},
+	{"autodisplay", remote_autodisplay, METH_VARARGS, "Autodisplay active channel: gxsm.autodisplay ()"},
 	{"chmodea", remote_chmodea, METH_VARARGS, "Set Ch Mode to A: gxsm.chmodea (ch)"},
 	{"chmodex", remote_chmodex, METH_VARARGS, "Set Ch Mode to X: gxsm.chmodex (ch)"},
 	{"chmodem", remote_chmodem, METH_VARARGS, "Set Ch Mode to MATH: gxsm.chmodem (ch)"},

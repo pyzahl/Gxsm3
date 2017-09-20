@@ -2821,6 +2821,47 @@ void ViewControl::view_file_save_as_callback (GSimpleAction *simple, GVariant *p
 	gapp->xsm->save(MANUAL_SAVE_AS, NULL, vc->chno);
 }
 
+void ViewControl::view_file_save_drawing (const gchar* imgname){
+        cairo_surface_t *surface;
+        cairo_t *cr;
+        cairo_status_t status;
+        int png=0;
+
+	if (g_strrstr (imgname,".svg")){
+                surface = cairo_svg_surface_create (imgname, (double)npx, (double)npy);
+                cairo_svg_surface_restrict_to_version (surface, CAIRO_SVG_VERSION_1_2);
+        } else if (g_strrstr (imgname,".pdf")){
+                surface = cairo_pdf_surface_create (imgname, (double)npx, (double)npy);
+        } else {
+                surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, npx, npy);
+                png=1;
+        }
+
+        cr = cairo_create (surface);
+        //        cairo_scale (cr, IMAGE_DPI/72.0, IMAGE_DPI/72.0);
+
+        canvas_draw_callback (NULL, cr, this); // call with widget=NULL assumed external rendering and omits drawing active frame
+        
+        status = cairo_status(cr);
+        if (status)
+                printf("%s\n", cairo_status_to_string (status));
+        
+        cairo_destroy (cr);
+
+	if (png){
+                // g_message ("Cairo save scan view to png: '%s'\n", imgname);
+                status = cairo_surface_write_to_png (surface, imgname);
+                if (status)
+                        printf("%s\n", cairo_status_to_string (status));
+        } else {
+                cairo_surface_flush (surface);
+                cairo_surface_finish (surface);
+                // g_message ("Cairo save scan view to svg/pdf: '%s'\n", imgname);
+        }
+        
+        cairo_surface_destroy (surface);
+}
+
 void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant *parameter, 
                                                 gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
@@ -2855,10 +2896,6 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
                 g_free (path);
         }
         
-        cairo_surface_t *surface;
-        cairo_t *cr;
-        cairo_status_t status;
-        
         GtkFileFilter *f0 = gtk_file_filter_new ();
         gtk_file_filter_set_name (f0, "All");
         gtk_file_filter_add_pattern (f0, "*");
@@ -2887,56 +2924,7 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
 	if (imgname == NULL || strlen(imgname) < 5) 
 		return;
 
-        int png=0;
-
-	if (g_strrstr (imgname,".svg")){
-#if 1
-#ifdef CAIRO_HAS_SVG_SURFACE
-                surface = cairo_svg_surface_create (imgname, (double)vc->npx, (double)vc->npy);
-                cairo_svg_surface_restrict_to_version (surface, CAIRO_SVG_VERSION_1_2);
-#else
-                g_message ("Sorry -- CAIRO_HAS_SVG_SURFACE not defined/not available.\n");
-                return;
-#endif
-        } else if (g_strrstr (imgname,".pdf")){
-#ifdef CAIRO_HAS_PDF_SURFACE
-                surface = cairo_pdf_surface_create (imgname, (double)vc->npx, (double)vc->npy);
-#else
-                g_message ("Sorry -- CAIRO_HAS_PDF_SURFACE not defined/not available.\n");
-                return;
-#endif
-#else
-                g_message ("Sorry -- CAIRO SVG/PDF_SURFACE is not available.\n");
-                return;
-#endif
-        } else {
-                surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, vc->npx, vc->npy);
-                png=1;
-        }
-
-        cr = cairo_create (surface);
-        //        cairo_scale (cr, IMAGE_DPI/72.0, IMAGE_DPI/72.0);
-
-        canvas_draw_callback (NULL, cr, vc); // call with widget=NULL assumed external rendering and omits drawing active frame
-        
-        status = cairo_status(cr);
-        if (status)
-                printf("%s\n", cairo_status_to_string (status));
-        
-        cairo_destroy (cr);
-
-	if (png){
-                g_message ("Cairo save scan view to png: '%s'\n", imgname);
-                status = cairo_surface_write_to_png (surface, imgname);
-                if (status)
-                        printf("%s\n", cairo_status_to_string (status));
-        } else {
-                cairo_surface_flush (surface);
-                cairo_surface_finish (surface);
-                g_message ("Cairo save scan view to svg/pdf: '%s'\n", imgname);
-        }
-        
-        cairo_surface_destroy (surface);
+        vc->view_file_save_drawing (imgname);
 }
 
 void ViewControl::view_file_getinfo_callback (GSimpleAction *simple, GVariant *parameter, 

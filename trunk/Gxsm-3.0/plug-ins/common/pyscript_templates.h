@@ -361,6 +361,25 @@ for t in range(ti, tf,1):
 )V0G0N";
 
 
+const gchar *template_movie_drawing_export = R"V0G0N(
+# Save Drawing (many layers/times) as png image file series (via Cairo)
+
+ch=0 # scratch channel used
+output_filebasename = "/tmp/test" # export file path and file name base, a count is added
+
+#gxsm.load (ch, "my_multilayer_or_time_data_file.nc") # or pre load manually in channel 1 and leave this commented out
+
+[nx,ny,nv,nt]=gxsm.get_dimensions (ch)
+for time in range (0,nt):
+        # gxsm.set ("TimeSelect", str(time)) ## will also work as a generic example using entry set controls
+	for layer in range (0,nv):
+		print (time, layer);
+		# gxsm.set ("LayerSelect", str(layer)) ## will also work as a generic example using entry set controls
+		gxsm.set_view_indices (ch, time, layer) ## build in directly set both for ch is more efficient
+		# gxsm.autodisplay () ## if you like, uncomment this, else manually set high/low limitis in viewcontrol to keep fixed
+		gxsm.sleep(0.1) # give gxsm a moment to update
+		gxsm.save_drawing (ch, time, layer, output_filebasename+'_T%d'%time+'_L%d.png'%layer )
+)V0G0N";
 
 /*
 const gchar *template_name = R"V0G0N(
