@@ -1257,7 +1257,7 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
         }
 
         // 2) draw image and red line via ShmImage2D
-	vc->ximg->draw_callback (cr);
+	vc->ximg->draw_callback (cr, widget ? true:false);
 
         // 3) draw legend items if eneabled
         if (vc->legend_items_code){
