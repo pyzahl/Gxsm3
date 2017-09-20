@@ -25,14 +25,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-
-#ifndef __REMOTEARGS_H
-#define __REMOTEARGS_H
-
+#ifndef __REMOTEARGS_H__
+#define __REMOTEARGS_H__
 
 typedef struct {
-        gchar **arglist;
-        double qvalue;
+	gchar **arglist;
+	double qvalue;
 } remote_args;
 
-#endif
+#endif /* __REMOTEARGS_H__ */
