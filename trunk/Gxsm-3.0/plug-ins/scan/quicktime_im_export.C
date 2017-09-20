@@ -543,7 +543,7 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
 	g_message ("lqt_add_video_track %d x %d, ts=%d, fd=%d, codec: %s",  vc->get_npx (), vc->get_npy (), timescale, frame_duration, qt_video_codec);
         lqt_codec_info_t **lqt_codec = lqt_find_video_codec (qt_video_codec, 1); // firts on in list/configured -- for now
 
-        if (lqt_add_video_track (qtfile, vc->get_npx (), vc->get_npy (),  timescale, frame_duration, *lqt_codec)){
+        if (lqt_add_video_track (qtfile, vc->get_npx (), vc->get_npy (), frame_duration, timescale, *lqt_codec)){
 		quicktime_close (qtfile);
 		cout << "Add track failed." << endl;
 		return  FIO_NO_NAME; // Add Track error
