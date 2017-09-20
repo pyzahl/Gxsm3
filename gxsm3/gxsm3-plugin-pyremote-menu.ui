@@ -135,6 +135,11 @@
 		<attribute name="action">win.pyfile-action-use</attribute>
 		<attribute name="target">gxsm3-3d-animate</attribute>
 	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Movie Export</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">gxsm3-movie-export</attribute>
+	      </item>
 	    </section>
 	  </submenu>
 	</section>

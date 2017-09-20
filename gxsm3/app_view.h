@@ -196,6 +196,8 @@ public:
                 }
         };
 
+        void view_file_save_drawing (const gchar* imgname); // save current view as png, pdf, svg auto detected by file name extension
+        
         void update_view_panel (){
                 g_slist_foreach (view_bp->get_ec_list_head (), (GFunc) ViewControl::update_ec, scan->data.Zunit);
         };

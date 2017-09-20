@@ -585,14 +585,13 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
 	for (int time_index=offset_index_time; time_index<=max_index_time; ++time_index){
 		for (int layer_index=offset_index_value; layer_index<=max_index_value; ++layer_index){
 
+#if 1                        
                         // select frame, auto scale
                         gapp->xsm->data.display.vlayer = layer_index;
                         gapp->xsm->data.display.vframe = time_index;
                         App::spm_select_layer (NULL, gapp);
                         App::spm_select_time (NULL, gapp);
-
-                        if (conti_autodisp_mode)
-                                gapp->xsm->ActiveScan->auto_display ();
+#endif
 
                         gapp->check_events ();
                         
@@ -600,6 +599,9 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
                         gapp->progress_info_set_bar_fraction ((gdouble)layer_index/(gdouble)max_index_value, 2);
 
                         scan->mem2d_time_element (time_index)->SetLayer (layer_index);
+
+                        if (conti_autodisp_mode)
+                                gapp->xsm->ActiveScan->auto_display ();
                         
                         cairo_surface_t *surface = cairo_image_surface_create_for_data (data, CAIRO_FORMAT_RGB24,
                                                                                         vc->get_npx (), vc->get_npy (), // width, height
