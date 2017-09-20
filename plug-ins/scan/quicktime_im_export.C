@@ -519,43 +519,44 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
 	file_dim |= FILE_DECODE;
 	quicktime_im_export_configure ();
 
-// and open the qtfile in write mode:
+        // and open the qtfile in write mode for video encoding
 
 	if ((qtfile = quicktime_open (name, 0, 1)) == 0)
 		return FIO_NO_NAME;
 
-// Immediately after opening the file, set up some tracks to write with these commands:
+        /*
+        lqt_codec_info_t** lqt_find_video_codec	(	char * 	fourcc,
+                                                        int 	encode	 
+                                                        )	
+        int lqt_add_video_track	(	quicktime_t * 	file,
+                                        int 	frame_w,
+                                        int 	frame_h,
+                                        int 	frame_duration,
+                                        int 	timescale,
+                                        lqt_codec_info_t * 	codec_info	 
+                                        )			
+        */
 
-	//cout << "quicktime_set_video [" << qt_video_codec << "]" << endl;
-	//quicktime_set_video (qtfile, 1, vc->get_npx (), vc->get_npy (), frame_rate, qt_video_codec);
+        const int timescale = 30000;
+        int frame_duration = (int)round((double)timescale/frame_rate);
 
-// To set a jpeg compression quality of 80, for example, do the following:
+	g_message ("lqt_add_video_track %d x %d, ts=%d, fd=%d, codec: %s",  vc->get_npx (), vc->get_npy (), timescale, frame_duration, qt_video_codec);
+        lqt_codec_info_t **lqt_codec = lqt_find_video_codec (qt_video_codec, 1); // firts on in list/configured -- for now
 
-	cout << "quicktime_set_parameter quality[" << qt_quality << "]" << endl;
-	gchar *jq = g_strdup ("jpeg_quality");
-	quicktime_set_parameter (qtfile, jq, &qt_quality);
-	g_free (jq);
-
-// setup and check Encoding video is supported
-
-	cout << "check for video support... " << endl;
-	if ( quicktime_supported_video (qtfile, 0) == 0 ){
+        if (lqt_add_video_track (qtfile, vc->get_npx (), vc->get_npy (),  timescale, frame_duration, *lqt_codec)){
 		quicktime_close (qtfile);
-		cout << "Codec not supported" << endl;
-		return  FIO_NO_NAME; // Codec not supported
-	}
-	cout << "OK." << endl;
+		cout << "Add track failed." << endl;
+		return  FIO_NO_NAME; // Add Track error
+        }
 
-	cout << "check for color model RGB888 support... " << endl;
-	if ( quicktime_writes_cmodel (qtfile, BC_RGB888, 0) == 0){
-		quicktime_close (qtfile);
-		cout << "Color Model RGB888 not supported" << endl;
-		return  FIO_NO_NAME; // Color model not supported
-	}
-	cout << "OK." << endl;
+        // void lqt_set_video_parameter (quicktime_t *file, int track, const char *key, const void *value)
+	g_message ("lqt_set_video_parameter jpeg_quality to %d", qt_quality);
+	lqt_set_video_parameter (qtfile, 0, "jpeg_quality", &qt_quality);
 
-	cout << "Setting color model." << endl;
-	quicktime_set_cmodel(qtfile, BC_RGBA8888);
+        // void lqt_set_cmodel (quicktime_t *file, int track, int colormodel)
+        g_message ("lqt_set_cmodel to BGRA8888");
+        lqt_set_cmodel (qtfile, 0, BC_RGBA8888); // RGBA 32bit
+        //lqt_set_cmodel (qtfile, 0, BC_BGR8888);  // BGRX 32bit
 
         gapp->progress_info_new ("QT Export", 2);
         gapp->progress_info_set_bar_text ("Time", 1);
@@ -563,13 +564,6 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
 
         //const lqt_codec_info_t *qt_vc_info = lqt_get_video_codec_info (int index)
 
-        lqt_codec_info_t** qvc = lqt_find_video_codec	(qt_video_codec, 1);
-
-        if (lqt_add_video_track (qtfile, vc->get_npx (), vc->get_npy (), 30000, (int)round(30000./frame_rate), qvc[0])){
-		quicktime_close (qtfile);
-		cout << "Add track failed." << endl;
-		return  FIO_NO_NAME; // Add Track error
-        }
         /*
           int lqt_add_video_track (
                 quicktime_t * 	file,
@@ -581,36 +575,35 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
                 )
         */
         
-        guchar **row_pointers = new guchar* [vc->get_npy ()];
-        int stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, vc->get_npx ()); // width
-        unsigned char *data = (unsigned char*) malloc (stride * vc->get_npy ()); // height
+        guchar **row_pointers = g_new0 (guchar*, vc->get_npy ());
+        int stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, vc->get_npx ()); // ARGB32 or RBG24 : both 32bit wide, width
+        unsigned char *data = g_new0 (unsigned char, stride * vc->get_npy ()); // stride * height
         for (int i=0; i<vc->get_npy (); ++i) row_pointers[i] = data + i*stride;
         
-        cout << "Composing Video..." << endl;
-        int frame = 0;
+        g_message ("Encoding Video.");
+        gint64 time_tic = 0;
 	for (int time_index=offset_index_time; time_index<=max_index_time; ++time_index){
-		for (int value_index=offset_index_value; value_index<=max_index_value; ++value_index){
+		for (int layer_index=offset_index_value; layer_index<=max_index_value; ++layer_index){
 
                         // select frame, auto scale
-                        gapp->xsm->data.display.vlayer = value_index;
+                        gapp->xsm->data.display.vlayer = layer_index;
                         gapp->xsm->data.display.vframe = time_index;
                         App::spm_select_layer (NULL, gapp);
                         App::spm_select_time (NULL, gapp);
+
                         if (conti_autodisp_mode)
                                 gapp->xsm->ActiveScan->auto_display ();
+
                         gapp->check_events ();
                         
                         gapp->progress_info_set_bar_fraction ((gdouble)time_index/(gdouble)max_index_time, 1);
-                        gapp->progress_info_set_bar_fraction ((gdouble)value_index/(gdouble)max_index_value, 2);
+                        gapp->progress_info_set_bar_fraction ((gdouble)layer_index/(gdouble)max_index_value, 2);
 
-                        // Set View-Mode Data Range and auto adapt Vcontrast/Bright
-                        //scan->mem2d_time_element (time_index)->SetDataRange(0, maxcol);
-                        // scan->mem2d_time_element (time_index)->AutoDataSkl(NULL, NULL);
-                        //scan->mem2d_time_element (time_index)->SetLayer (value_index);
+                        scan->mem2d_time_element (time_index)->SetLayer (layer_index);
                         
                         cairo_surface_t *surface = cairo_image_surface_create_for_data (data, CAIRO_FORMAT_RGB24,
                                                                                         vc->get_npx (), vc->get_npy (), // width, height
-                                                                       stride);
+                                                                                        stride);
                         cairo_t *cr = cairo_create (surface);
        
                         // call draw with widget=NULL assumed external rendering and omits drawing active frame
@@ -623,24 +616,34 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
                         cairo_destroy (cr);
                         cairo_surface_destroy (surface);
 
-			quicktime_insert_keyframe(qtfile, frame++, 0);
-			if ( quicktime_encode_video(qtfile, row_pointers, 0) != 0){
+                        // fix fucked up RGB byte order
+                        for (int k=0; k < (stride * vc->get_npy ()); k+=4){
+                                unsigned char x=data[k];
+                                data[k] = data[k+2];
+                                data[k+2] = x;
+                        }
+
+                        // The framerate is passed as a rational number (timescale/frame_duration). E.g. for an NTSC stream, you'll choose timescale = 30000 and frame_duration = 1001. To set up multiple video tracks with different formats and/or codecs, use lqt_add_video_track .
+                        // time:	Timestamp of the frame in timescale tics
+
+                        g_message ("[%04d,%04d] Encoding Frame at %08d", time_index, layer_index, time_tic);
+			if ( lqt_encode_video(qtfile, row_pointers, 0, time_tic) != 0){
 				quicktime_close (qtfile);
 				cout << "Encode of Video Frame failed" << endl;
 				return  FIO_NO_NAME; // Encode failed
 			}
+                        time_tic += frame_duration;
 		}
 	}
-        delete[] row_pointers;
-
-	cout << "Video job done. Cleaning up." << endl;
+        
+	g_message ("Video encoding complete. Cleaning up.");
+	quicktime_close (qtfile);
+        g_free (row_pointers);
+        g_free (data);
 
 	if (!OSD_grab_mode)
 		gapp->progress_info_close ();
 
-	quicktime_close (qtfile);
-
-	cout << "Finished." << endl;
 	return status=FIO_OK; 
 }
 
@@ -733,178 +736,3 @@ static void quicktime_im_export_export_callback (GSimpleAction *simple, GVariant
                 g_free (fn);
 	}
 }
-
-
-
-
-
-
-
-
-/***************** QuickTime Write HowTo *******************/
-
-#if 0
-
-// Step 1: Open the file
-// *********************
-// The first step in any Quicktime operation is to open the file. Include the Quicktime header:
-
-
-// create a quicktime pointer:
-
-quicktime_t *qtfile;
-
-// and open the file in read or write mode:
-
-if ((qtfile = quicktime_open(name, 0, 1)) == 0)
-	return FIO_NO_NAME;
-
-// Argument 1 is the path to a file. Argument 2 is a flag for read access. Argument 3 is a flag for write access. You can specify read or write access by setting these flags. Never specify read and write.
-
-// quicktime_open returns a NULL if the file couldn't be opened or the format couldn't be recognized. Now you can do all sorts of operations on the file.
-
-// When you're done using the file, call
-// quicktime_close(quicktime_t *file);
-
-//***************
-  // WRITING VIDEO
-  //***************
-
-    // Immediately after opening the file, set up some tracks to write with these commands:
-
-    // (do not call for no audio!) quicktime_set_audio(quicktime_t *file, int channels, long sample_rate, int bits, char *compressor);
-
-  cout << "quicktime_set_video [" << qt_video_codec << "]" << endl;
-quicktime_set_video(qtfile, 1, nx, ny, frame_rate, qt_video_codec);
-
-// --> make a codec list <-- http://libquicktime.sourceforge.net/doc/apiref/group__video__codecs.html#ga5
-
-// If you intend to use the library's built-in compression routines specify a compressor #define from quicktime.h as the compressor argument. If you want to write your own compression routine, specify any 4 byte identifier you want but don't expect the library to handle compression. The compressor applies to all tracks of the same media type, for sanity reasons.
-
-// Once these routines are called you can optionally call
-
-//*** void quicktime_set_parameter(quicktime_t *file, char *key, void *value);
-
-// to set compression parameters for the codecs. Each parameter for a codec consists of a unique string and a pointer to a value. The string is unique to the codec and the parameter. The value is in a specific data type recognized by the parameter.
-
-// To set a jpeg compression quality of 80, for example, do the following:
-
-//	int quality = 80;
-cout << "quicktime_set_parameter quality[" << qt_quality << "]" << endl;
-quicktime_set_parameter(qtfile, "jpeg_quality", &qt_quality);
-
-// The data type of the value depends on the parameter. Currently the best way to determine what parameters and value data types a particular codec supports is to look at the codec's source code. A better way may become available in the future.
-
-// If you don't call quicktime_set_parameter the codecs will use default parameters.
-
-
-// Encoding video
-//------------------
-//The library generates compressed video frames from a frame buffer of any colormodel in colormodels.h. First use
-
-cout << "check for video support... " << endl;
-if ( quicktime_supported_video(qtfile, 0) == 0 ){
-	quicktime_close (qtfile);
-	cout << "Codec not supported" << endl;
-	return  FIO_NO_NAME; // Codec not supported
-}
-cout << "OK." << endl;
-
-// to find out if the codec for the track is in the library. This returns 1 if it is and 0 if it isn't supported. Then use
-
-cout << "check for colro model RGB888 support... " << endl;
-if ( quicktime_writes_cmodel(qtfile, BC_RGB888, 0) == 0){
-	quicktime_close (qtfile);
-	cout << "Color Model RGB888 not supported" << endl;
-	return  FIO_NO_NAME; // Color model not supported
-}
-cout << "OK." << endl;
-
-// To query the library for a colormodel which doesn't require downsampling to drive the codec. colormodels.h contains a set of colormodel #defines which supply the colormodel argument. The function returns True or False depending on whether the colormodel argument is optimum. When a colormodel doesn't require downsampling it returns 1. Then call
-
-cout << "Setting color model." << endl;
-quicktime_set_cmodel(qtfile, BC_RGB888);
-
-// to set the colormodel your frame buffer is in. Finally call
-
-
-cout << "Allocating scratch memory." << endl;
-// 	  unsigned char **row_pointers = lqt_rows_alloc ( nx, ny, BC_RGB888, 0, 0);
-unsigned char **row_pointers = new unsigned char* [ny];
-for (int i=0; i<ny; row_pointers[i++] = new unsigned char[3*nx]);
-
-
-GtkWidget *wid_canvas = NULL;
-GdkPixbuf* OSD_pixbuf = NULL;
-gint w,h;
-if (!scan->view->grab_OSD_canvas()) 
-	OSD_grab_mode = FALSE; 
-else
-	wid_canvas = (GtkWidget*)(scan->view->grab_OSD_canvas());
-
-if (wid_canvas){
-	gdk_window_get_size (wid_canvas->window, &w, &h);
-	OSD_pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, FALSE, 24, w,h);
-}
-	  
-cout << "Composing Video..." << endl;
-int frame = 0;
-for (int time_index=offset_index_time; time_index<=max_index_time; ++time_index){
-	for (int value_index=offset_index_value; value_index<=max_index_value; ++value_index){
-
-		if (OSD_grab_mode){
-			gapp->xsm->data.display.vlayer = value_index;
-			gapp->xsm->data.display.vframe = time_index;
-			App::spm_select_layer (NULL, gapp);
-			App::spm_select_time (NULL, gapp);
-			if (conti_autodisp_mode)
-				gapp->xsm->AutoDisplay ();
-			gapp->check_events ();
-
-			gdk_pixbuf_get_from_drawable (OSD_pixbuf, wid_canvas->window, NULL, 0,0,0,0, w,h);
-		}
-
-		gapp->progress_info_set_bar_fraction ((gdouble)time_index/(gdouble)max_index_time, 1);
-		gapp->progress_info_set_bar_fraction ((gdouble)value_index/(gdouble)max_index_value, 2);
-
-		// Set View-Mode Data Range and auto adapt Vcontrast/Bright
-		scan->mem2d_time_element (time_index)->SetDataRange(0, maxcol);
-//			scan->mem2d_time_element (time_index)->AutoDataSkl(NULL, NULL);
-		scan->mem2d_time_element (time_index)->SetLayer (value_index);
-
-		// use GetDataVMode to use the current set View-Mode (Direct, Quick, ...)
-
-		int k,j;
-		for (int i=0; i<ny; ++i)
-			for (k=j=0; j<nx; ++j){
-				double val = scan->mem2d_time_element (time_index)->GetDataVMode (j,i);
-				int ival = (int)((val >= maxcol ? maxcol-1 : val < 0 ? 0 : val) + .5);
-					
-				*(row_pointers[i] + k++) = (unsigned char)palette_rgb[ival][0];
-				*(row_pointers[i] + k++) = (unsigned char)palette_rgb[ival][1];
-				*(row_pointers[i] + k++) = (unsigned char)palette_rgb[ival][2];
-			}
-
-		quicktime_insert_keyframe(qtfile, frame++, 0);
-		if ( quicktime_encode_video(qtfile, row_pointers, 0) != 0){
-			quicktime_close (qtfile);
-			cout << "Encode of Video Frame failed" << endl;
-			return  FIO_NO_NAME; // Encode failed
-		}
-
-	}
-}
-
-cout << "Video job done. Cleaning up." << endl;
-//	  lqt_rows_free (row_pointers);
-for (int i=0; i<ny; delete[] row_pointers[i++]);
-delete[] row_pointers;
-	  
-gapp->progress_info_close ();
-
-// to compress the frame pointed to by **row_pointers, write it at the current position of the track and advance the current position. The return value is always 1 for failure and 0 for success. The row pointers must point to rows stored in the colormodel. Planar colormodels use only the first 3 row pointers, each pointing to one of the planes.
-
-quicktime_close (qtfile);
-
-
-#endif
