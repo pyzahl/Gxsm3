@@ -596,15 +596,15 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
                         App::spm_select_layer (NULL, gapp);
                         App::spm_select_time (NULL, gapp);
 
-                        if (conti_autodisp_mode)
-                                gapp->xsm->ActiveScan->auto_display ();
-
                         gapp->check_events ();
-                        
+
                         gapp->progress_info_set_bar_fraction ((gdouble)time_index/(gdouble)max_index_time, 1);
                         gapp->progress_info_set_bar_fraction ((gdouble)layer_index/(gdouble)max_index_value, 2);
 
                         scan->mem2d_time_element (time_index)->SetLayer (layer_index);
+                        
+                        if (conti_autodisp_mode)
+                                gapp->xsm->ActiveScan->auto_display ();
                         
                         cairo_surface_t *surface = cairo_image_surface_create_for_data (data, CAIRO_FORMAT_RGB24,
                                                                                         vc->get_npx (), vc->get_npy (), // width, height
