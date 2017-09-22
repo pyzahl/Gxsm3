@@ -1147,14 +1147,17 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
 	PI_DEBUG(DBG_L2, "pyremote: Creating scan");
 
         long ch;
-	long sizex, sizey;
+	long sizex, sizey, sizev;
 	double rangex, rangey;
 	PyObject *obj;
 
-	if(!PyArg_ParseTuple(args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj))
-		return Py_BuildValue("i", -1);
-
-        g_message ("Create Scan: %d x %d  size %g x %g Ang from python array",sizex, sizey, rangex, rangey);
+        sizev=1; // try xyv
+	if(!PyArg_ParseTuple(args, "llllddO", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj)){
+                //sizev=1;
+                //if(!PyArg_ParseTuple(args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj)) // try xy only
+                        return Py_BuildValue("i", -1);
+        }
+        g_message ("Create Scan: %d x %d [x %d], size %g x %g Ang from python array",sizex, sizey, sizev, rangex, rangey);
 
         Py_buffer view;
         gboolean rf=false;
@@ -1176,10 +1179,10 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
                 }
         }
 
-	if ( view.len / sizeof(long) != sizex*sizey ) {
+        if ( view.len / sizeof(long) != sizex*sizey*sizev ) {
                 g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", view.len / sizeof(long), sizex*sizey);
-		return Py_BuildValue("i", -1);
-	}
+                return Py_BuildValue("i", -1);
+        }
         g_message ("Create Scan: array len=%d OK.", view.len / sizeof(long));
         
 
@@ -1191,7 +1194,7 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
         
                 dst->data.s.nx = sizex;
                 dst->data.s.ny = sizey;
-                dst->data.s.nvalues = 1;
+                dst->data.s.nvalues = sizev;
                 dst->data.s.ntimes = 1;
                 dst->data.s.dx = rangex/(sizex-1);
                 dst->data.s.dy = rangey/(sizey-1);
@@ -1217,13 +1220,18 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
                 /*Read*/
 
                 long *buf = (long*)view.buf;
+
+                long stridex = sizex;
+                long strideyx = stridex*sizey;
                 
-                for(gint i=0; i<dst->mem2d->GetNy(); i++)
-                        for(gint j=0; j<dst->mem2d->GetNx(); j++)
-                                dst->mem2d->data->Z( (double)buf[j+sizex*i], j, i);
+                for(gint v=0; v<dst->mem2d->GetNv(); v++)
+                        for(gint i=0; i<dst->mem2d->GetNy(); i++)
+                                for(gint j=0; j<dst->mem2d->GetNx(); j++)
+                                        dst->mem2d->data->Z( (double)buf[j+stridex*i+strideyx*v], j, i, v);
                 dst->data.orgmode = SCAN_ORG_CENTER;
                 dst->mem2d->data->MkXLookup (-dst->data.s.rx/2., dst->data.s.rx/2.);
                 dst->mem2d->data->MkYLookup (-dst->data.s.ry/2., dst->data.s.ry/2.);
+                dst->mem2d->data->MkVLookup (0, dst->data.s.nvalues-1);
 
                 gapp->spm_update_all();
                 dst->draw();
@@ -1249,13 +1257,16 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
 	PyObject *obj;
 
         long ch;
-	long sizex, sizey;
+	long sizex, sizey, sizev;
 	double rangex, rangey;
 
-	if (!PyArg_ParseTuple (args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj))
-		return 0;
-
-        g_message ("Create Scan Float: %d x %d  size %g x %g Ang from python array",sizex, sizey, rangex, rangey);
+        sizev=1; // try xyv
+	if(!PyArg_ParseTuple(args, "llllddO", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj)){
+                //sizev=1;
+                //if(!PyArg_ParseTuple(args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj)) // try xy only
+                        return Py_BuildValue("i", -1);
+        }
+        g_message ("Create Scan Float: %d x %d [x %d], size %g x %g Ang from python array",sizex, sizey, sizev, rangex, rangey);
 
         Py_buffer view;
         gboolean rf=false;
@@ -1278,7 +1289,7 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
                 }
         }
 
-	if ( view.len / sizeof(float) != sizex*sizey ) {
+	if ( view.len / sizeof(float) != sizex*sizey*sizev ) {
                 g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", view.len / sizeof(float), sizex*sizey);
 		return Py_BuildValue("i", -1);
 	}
@@ -1295,7 +1306,7 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
         
                 dst->data.s.nx = sizex;
                 dst->data.s.ny = sizey;
-                dst->data.s.nvalues = 1;
+                dst->data.s.nvalues = sizev;
                 dst->data.s.ntimes = 1;
                 dst->data.s.dx = rangex/(sizex-1);
                 dst->data.s.dy = rangey/(sizey-1);
@@ -1312,19 +1323,23 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
                 dst->data.ui.SetComment(tmp);
                 g_free(tmp);
 
-                dst->mem2d->Resize(dst->data.s.nx, dst->data.s.ny, ZD_FLOAT);
+                dst->mem2d->Resize(dst->data.s.nx, dst->data.s.ny, dst->data.s.nvalues, ZD_FLOAT);
 
                 /*Read */
                 float *buf = (float*)view.buf;
-                for (gint i = 0; i < dst->mem2d->GetNy(); i++)
-                        for (gint j = 0; j < dst->mem2d->GetNx(); j++)
-                                dst->mem2d->data->Z(buf[j + sizex * i], j, i);
+                long stridex = sizex;
+                long strideyx = stridex*sizey;
+                for(gint v=0; v<dst->mem2d->GetNv(); v++)
+                        for (gint i = 0; i < dst->mem2d->GetNy(); i++)
+                                for (gint j = 0; j < dst->mem2d->GetNx(); j++)
+                                        dst->mem2d->data->Z(buf[j + stridex * i + strideyx * v], j, i, v);
 
                 dst->data.orgmode = SCAN_ORG_CENTER;
                 dst->mem2d->data->MkXLookup(-dst->data.s.rx / 2.,
                                             dst->data.s.rx / 2.);
                 dst->mem2d->data->MkYLookup(-dst->data.s.ry / 2.,
                                             dst->data.s.ry / 2.);
+                dst->mem2d->data->MkVLookup (0, dst->data.s.nvalues-1);
                 gapp->spm_update_all();
                 dst->draw();
                 dst = NULL;
@@ -1967,8 +1982,8 @@ static PyMethodDef EmbMethods[] = {
 	{"moveto_scan_xy", remote_moveto_scan_xy, METH_VARARGS, "Set tip position to Scan-XY: gxsm.moveto_scan_xy (x,y)"},
 
 	// BLOCK II
-	{"createscan", remote_createscan, METH_VARARGS, "Create Scan int: gxsm.createscan (ch,nx,ny pixels, rx,ry in A, array.array('l', [...]))"},
-	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float: gxsm.createscan (ch,nx,ny pixels, rx,ry in A, array.array('f', [...]))"},
+	{"createscan", remote_createscan, METH_VARARGS, "Create Scan int: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('l', [...]))"},
+	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('f', [...]))"},
 
 	{"get_geometry", remote_getgeometry, METH_VARARGS, "Get Scan Geometry: [rx,ry,x0,y0,alpha]=gxsm.get_geometry (ch)"},
 	{"get_differentials", remote_getdifferentials, METH_VARARGS, "Get Scan Scaling: [dx,dy,dz,dl]=gxsm.get_differentials (ch)"},
