@@ -231,7 +231,7 @@ mem2d = array.array('f', n.astype(float))
 
 # CH2 : activate ch 2 and create scan with resulting image data from memory2d
 gxsm.chmodea (2)
-gxsm.createscanf (2,dims[0],dims[1], geo[0], geo[1], mem2d)
+gxsm.createscanf (2,dims[0],dims[1],1, geo[0], geo[1], mem2d)
 gxsm.add_layerinformation ("@ "+str(flv)+" Hz",10)
 
 # be nice and auto update/autodisp
@@ -329,7 +329,7 @@ mem2d = array.array('f', n.astype(float))
 
 # CH2 : activate ch 2 and create scan with resulting image data from memory2d
 gxsm.chmodea (2)
-gxsm.createscanf (2,dims[0],dims[1], geo[0], geo[1], mem2d)
+gxsm.createscanf (2,dims[0],dims[1],1, geo[0], geo[1], mem2d)
 gxsm.add_layerinformation ("@ "+str(flv)+" Hz",10)
 
 # be nice and auto update/autodisp
