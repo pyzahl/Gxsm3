@@ -1463,6 +1463,75 @@ static PyObject* remote_getslice(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", 0);
 }
 
+
+static PyObject* remote_getobject(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:getobject");
+
+	long ch, nth;
+        
+	if (!PyArg_ParseTuple (args, "ll", &ch, &nth))
+		return Py_BuildValue("s", "Invalid Parameters. [ll]: ch, nth");
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src){
+                int n_obj = src->number_of_object ();
+                if (nth < n_obj){
+                        scan_object_data *obj_data = src->get_object_data (nth);
+                        double xy[6] = {0.,0., 0.,0., 0.,0.};
+                        obj_data->get_xy_i_pixel (0, xy[0], xy[1]);
+                        if (obj_data->get_num_points () > 1){
+                                obj_data->get_xy_i_pixel (1, xy[2], xy[3]);
+                                if (obj_data->get_num_points () > 2){
+                                        obj_data->get_xy_i_pixel (2, xy[4], xy[5]);
+                                        return Py_BuildValue("sdddddd", obj_data->get_name (), xy[0], xy[1], xy[2], xy[3], xy[4], xy[5]);
+                                } else
+                                        return Py_BuildValue("sdddd", obj_data->get_name (), xy[0], xy[1], xy[2], xy[3]);
+                        } else
+                                return Py_BuildValue("sdd", obj_data->get_name (), xy[0], xy[1]);
+                }
+        }
+        return Py_BuildValue("s", "None");
+}
+
+
+static PyObject* remote_addmobject(PyObject *self, PyObject *args)
+{
+	const gchar *marker_group[] = { 
+		"*Marker:red", "*Marker:green", "*Marker:blue", "*Marker:yellow", "*Marker:cyan", "*Marker:magenta",  
+		NULL };
+	PI_DEBUG(DBG_L2, "pyremote:putobject");
+
+	long ch,grp,x,y;
+        gchar *id;
+        
+	if (!PyArg_ParseTuple (args, "lslll", &ch, &id, &grp, &x, &y))
+		return Py_BuildValue("s", "Invalid Parameters. [ll]: ch, nth");
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (grp < 0 || grp > 6) grp=0; // silently set 0 if out of range
+        
+        if (src->view->Get_ViewControl ()){
+                VObject *vo;
+                double xy[2];
+                gfloat c[4] = { 1.,0.,0.,1.};
+                int spc[2][2] = {{0,0},{0,0}};
+                int sp00[2] = {1,1};
+                int s = 0;
+                src->Pixel2World ((int)round(x), (int)round(y), xy[0], xy[1]);
+                gchar *lab = g_strdup_printf ("M%s",id);
+                (src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, 1.));
+                vo->set_obj_name (marker_group[grp]);
+                vo->set_custom_label_font ("Sans Bold 12");
+                vo->set_custom_label_color (c);
+                vo->set_on_spacetime  (sp00[0] ? FALSE:TRUE, spc[0]);
+                vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
+                vo->show_label (s);
+                vo->remake_node_markers ();
+        }
+        return Py_BuildValue("i", 0);
+}
+
 static PyObject* remote_stopscan(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Stopping scan");
@@ -1991,7 +2060,9 @@ static PyMethodDef EmbMethods[] = {
 	{"get_data_pkt", remote_getdatapkt, METH_VARARGS, "Get Data Value at point: value=gxsm.get_data_pkt (ch, x, y, v, t)"},
 	{"put_data_pkt", remote_putdatapkt, METH_VARARGS, "Put Data Value to point: gxsm.put_data_pkt (value, ch, x, y, v, t)"},
 	{"get_slice", remote_getslice, METH_VARARGS, "Get Slice/Image: [nx,ny,array]=gxsm.get_slice (ch, v, t)"},
-
+	{"get_object", remote_getobject, METH_VARARGS, "Get Object Coordinates: [type, x,y,..]=gxsm.get_object (ch, n)"},
+	{"add_marker_object", remote_addmobject, METH_VARARGS, "Put Marker Object at Coordinates: gxsm.add_marker_object (ch, label, mgrp=0..5, x,y)"},
+        
 	{"startscan", remote_startscan, METH_VARARGS, "Start Scan."},
 	{"stopscan", remote_stopscan, METH_VARARGS, "Stop Scan."},
 	{"waitscan", remote_waitscan, METH_VARARGS, "Wait Scan."},
