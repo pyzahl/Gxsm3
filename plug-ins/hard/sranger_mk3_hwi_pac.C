@@ -781,7 +781,7 @@ void DSPPACControl::create_folder (){
 	gtk_widget_set_tooltip_text (pac_bp->input, "Adaptive threashold, relative to setpoint");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Ada-ratio", Unity, &pll.ctrlmode_Amp_adaptive_ratio, 0., 1000., ".1f", 1., 1.);
+	pac_bp->grid_add_ec ("Ada-ratio", Unity, &pll.ctrlmode_Amp_adaptive_ratio, -1., 1000., ".1f", 1., 1.);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Adaptive threashold, relative to setpoint");
         pac_bp->new_line ();
 
@@ -871,6 +871,7 @@ guint DSPPACControl::refresh_readings(DSPPACControl *dspc){
 }
 
 void DSPPACControl::update_readings(){
+        static double ref=-1.;
         static gint is_fast = -1;
         double tmp[2];
 	sranger_common_hwi->read_pll( pll, PLL_READINGS);
@@ -879,26 +880,38 @@ void DSPPACControl::update_readings(){
 		  (GFunc) App::update_ec, NULL
 			);
         if (pll.ctrlmode_Amp_adaptive){
-                double delta = fabs (pll.Filter64Out[F64_ResAmpLP] - pll.setpoint_Amp) / pll.setpoint_Amp;
-                if (is_fast<1 && delta > 1.25*pll.ctrlmode_Amp_adaptive_delta){ // make fast
-                        tmp[0] = pll.cp_gain_Amp;
-                        tmp[1] = pll.ci_gain_Amp;
-                        double adjust = fabs(delta) *1.2*pll.ctrlmode_Amp_adaptive_ratio;
-                        if (adjust > pll.ctrlmode_Amp_adaptive_max)
-                                adjust = pll.ctrlmode_Amp_adaptive_max;
-                        pll.cp_gain_Amp += adjust;
-                        pll.ci_gain_Amp += adjust;
-                        g_message ("AM-ADA-FFF: %g %g d=%g (%g)",  pll.cp_gain_Amp, pll.ci_gain_Amp, delta, pll.Filter64Out[F64_ResAmpLP]);
-                        sranger_common_hwi->write_pll (pll, PLL_CONTROLLER_AMPLITUDE);
-                        pll.cp_gain_Amp = tmp[0];
-                        pll.ci_gain_Amp = tmp[1];
-                        is_fast = 1;
-                } else if (is_fast > 0 && delta < 0.75*pll.ctrlmode_Amp_adaptive_ratio){ // make slow
+                if (pll.ctrlmode_Amp_adaptive_ratio < 0.){
+                        for (int i=0; i<5; ++i){
+                                if (is_fast)
+                                        pll.setpoint_Amp = ref*(1.+fabs(pll.ctrlmode_Amp_adaptive_ratio));
+                                else
+                                        pll.setpoint_Amp = ref*(1.-fabs(pll.ctrlmode_Amp_adaptive_ratio));
+                                is_fast = is_fast ? 0:-1;
+                                sranger_common_hwi->write_pll (pll, PLL_CONTROLLER_AMPLITUDE);
+                        }
+                } else {
+                        double delta = fabs (pll.Filter64Out[F64_ResAmpLP] - pll.setpoint_Amp) / pll.setpoint_Amp;
+                        if (is_fast<1 && delta > 1.25*pll.ctrlmode_Amp_adaptive_delta){ // make fast
+                                tmp[0] = pll.cp_gain_Amp;
+                                tmp[1] = pll.ci_gain_Amp;
+                                double adjust = fabs(delta) *1.2*pll.ctrlmode_Amp_adaptive_ratio;
+                                if (adjust > pll.ctrlmode_Amp_adaptive_max)
+                                        adjust = pll.ctrlmode_Amp_adaptive_max;
+                                pll.cp_gain_Amp += adjust;
+                                pll.ci_gain_Amp += adjust;
+                                g_message ("AM-ADA-FFF: %g %g d=%g (%g)",  pll.cp_gain_Amp, pll.ci_gain_Amp, delta, pll.Filter64Out[F64_ResAmpLP]);
+                                sranger_common_hwi->write_pll (pll, PLL_CONTROLLER_AMPLITUDE);
+                                pll.cp_gain_Amp = tmp[0];
+                                pll.ci_gain_Amp = tmp[1];
+                                is_fast = 1;
+                        } else if (is_fast > 0 && delta < 0.75*pll.ctrlmode_Amp_adaptive_ratio){ // make slow
                                 sranger_common_hwi->write_pll (pll, PLL_CONTROLLER_AMPLITUDE);
                                 g_message ("AM-ADA-REG: %g %g d=%g (%g)",  pll.cp_gain_Amp, pll.ci_gain_Amp, delta, pll.Filter64Out[F64_ResAmpLP]);
                                 is_fast = 0;
+                        }
                 }
-        }
+        } else
+                ref = pll.setpoint_Amp;
 }
 
 void DSPPACControl::update(){
