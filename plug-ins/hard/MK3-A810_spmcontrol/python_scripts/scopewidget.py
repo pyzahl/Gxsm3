@@ -86,6 +86,7 @@ class Scope(gtk.DrawingArea):
         self.set_xy (False)
         self.set_fade (0.0)
         self.set_points (False)
+        self.set_markers (10,10)
         self.connect("expose-event", self.expose)
         self.set_events(gtk.gdk.BUTTON_PRESS_MASK)
         self.connect('button-press-event', self.on_drawing_area_button_press)
@@ -102,6 +103,10 @@ class Scope(gtk.DrawingArea):
             self.display_info = self.display_info-1
 	    gobject.timeout_add (20, self.info_fade)
             
+    def set_markers (self, mx=0, my=0):
+        self.Xmarkers = mx
+        self.Ymarkers = my
+        
     def on_drawing_area_button_press(self, widget, event):
         # print event.x, ' ', event.y
         # Mode toggle buttons
@@ -270,6 +275,52 @@ class Scope(gtk.DrawingArea):
                     cr.stroke ()
                     xyp=xy
 
+    def plot_markers(self, cr, data, markers, r, g, b, a, ylog=False):
+        if markers > 0:
+            cr.select_font_face("Droid Sans") #, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+            cr.set_font_size(0.5)
+            np=50
+            #            if data.size > 512:
+            #                q=int(data.size/256)
+            #                peaks = q*sort(argpartition (-decimate(data, q,'fir'), np))
+            #            else:
+            peaks_tmp = argpartition (-data, np)
+            peaks = peaks_tmp[:np]
+            dx = (2*self.xw) / size(data)
+            x_peaks = -self.xw+dx*(1+peaks)
+            f_peaks = 75000.*peaks/size(data)
+            pcount=0
+            for x, f, peak in zip(x_peaks, f_peaks, peaks):
+                if peak < 10 or peak > size(data)-10:
+                    continue
+                if data[peak] < amax(data[(peak-10):(peak+10)]):
+                    continue
+                pcount=pcount+1
+                if pcount > markers:
+                    break
+                cr.set_source_rgba (r,g,b,a)
+                if ylog:
+                    y = -2*log(data[peak])
+                else:
+                    y = -data[peak]
+                cr.move_to (x, y)
+                s=0.1
+                cr.line_to (x-s, y-s)
+                cr.line_to (x+s, y-s)
+                cr.line_to (x, y)
+                cr.stroke ()
+                cr.set_source_rgba(r,g,b,a)
+                reading = "%g Hz"%f
+                (rx, ry, width, height, dx, dy) = cr.text_extents(reading)
+                cr.move_to(x-width/2, y-1.2*s-2.5*height)
+                cr.text_path(reading)
+                cr.stroke()
+                reading = "%g"%data[peak]
+                (rx, ry, width, height, dx, dy) = cr.text_extents(reading)
+                cr.move_to(x-width/2, y-1.2*s-height)
+                cr.text_path(reading)
+                cr.stroke()
+                    
     def draw_buttons(self, cr):
         if self.display_info > 0:
 
@@ -400,11 +451,14 @@ class Scope(gtk.DrawingArea):
                 else:
                     self.plot_xt (cr, self.par.Xdata, lwp, 1., 0.925, 0., alpha) # YELLOW
             if self.ftX:
+                Xdata_rft = abs(fft.rfft(self.par.Xdata))/nx
                 if self.dBX:
-                    self.plot_xt (cr, -2.*log(abs(fft.rfft(self.par.Xdata))/nx), lwp, 1., 0.925, 0., alpha-0.2) # YELLOW
+                    self.plot_xt (cr, -2.*log(Xdata_rft), lwp, 1., 0.925, 0., alpha-0.2) # YELLOW
+                    self.plot_markers (cr, Xdata_rft, self.Xmarkers, 1., 0.925, 0., alpha-0.2, True)
                 else:
-                    self.plot_xt (cr, -abs(fft.rfft(self.par.Xdata))/nx, lwp, 1., 0.925, 0., alpha-0.2) # YELLOW
-            
+                    self.plot_xt (cr, -Xdata_rft, lwp, 1., 0.925, 0., alpha-0.2) # YELLOW
+                    self.plot_markers (cr, Xdata_rft, self.Xmarkers, 1., 0.925, 0., alpha-0.2)
+
             if size(self.par.Ydata) > 1:
                 if self.ftY < 2:
                     if self.dBY: # 10 dB / div
@@ -412,10 +466,13 @@ class Scope(gtk.DrawingArea):
                     else:
                         self.plot_xt (cr, self.par.Ydata, lwp, 1., 0.075, 0., alpha) # RED
                 if self.ftY:
+                    Ydata_rft = abs(fft.rfft(self.par.Ydata))/ny
                     if self.dBY:
-                        self.plot_xt (cr, -2.*log(abs(fft.rfft(self.par.Ydata))/ny), lwp, 1., 0.075, 0., alpha-0.2) # RED
+                        self.plot_xt (cr, -2.*log(Ydata_rft), lwp, 1., 0.075, 0., alpha-0.2) # RED
+                        self.plot_markers (cr, Ydata_rft, self.Ymarkers, 1., 0.075, 0., alpha-0.2, True)
                     else:
-                        self.plot_xt (cr, -abs(fft.rfft(self.par.Ydata))/ny, lwp, 1., 0.075, 0., alpha-0.2) # RED
+                        self.plot_xt (cr, -Ydata_rft, lwp, 1., 0.075, 0., alpha-0.2) # RED
+                        self.plot_markers (cr, Ydata_rft, self.Ymarkers, 1., 0.075, 0., alpha-0.2)
                     
         if size(self.par.Zdata) > 1:
             if self.dBZ: # 10 dB / div
@@ -591,6 +648,9 @@ class Oscilloscope(gtk.Label):
         
     def set_chinfo (self, infolist):
         self.chinfo = infolist
+
+    def set_markers (self, nmarkersx, nmarkersy):
+        self.scope.set_markers (nmarkesx, nmarkersy)
         
     def set_scale (self, s):
         self.scale = s
