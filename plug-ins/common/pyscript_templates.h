@@ -381,6 +381,24 @@ for time in range (0,nt):
 		gxsm.save_drawing (ch, time, layer, output_filebasename+'_T%d'%time+'_L%d.png'%layer )
 )V0G0N";
 
+const gchar *template_watchdog = R"V0G0N(
+# Watch dog script. Watching via RTQuery system parameters:
+# for example dF and if abs(dF) > limit DSP_CMD_STOPALL is issued (cancel auto approch, etc.)
+
+limit = 15.
+df=0.
+while abs(df) < limit: 
+	gxsm.sleep (10)
+	fvec=gxsm.rtquery ("f")
+	df = fvec[0]
+	print "dF=",df
+	gxsm.logev("Watchdog dF=%gHz"%df)
+
+gxsm.action ("DSP_CMD_STOPALL")
+gxsm.logev("Watchdog DSP_CMD_STOPALL ACTION as of dF=%gHz"%df)
+print("Watchdog Abort")
+)V0G0N";
+
 /*
 const gchar *template_name = R"V0G0N(
 ...py script ...
