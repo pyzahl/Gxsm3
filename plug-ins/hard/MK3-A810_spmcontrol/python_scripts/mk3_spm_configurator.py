@@ -454,19 +454,22 @@ class SignalScope():
 				# auto subsample if big
 				nss = n
 				nraw = n
-				if n > 4096:
-					ss = int(n/2048)
+				if n > 8192:
+                                        ### CHECK DOWN SAMPLING METHODE BELOW, SEAMS TO DROP POINTS EVEN IF MULTIPE OF 2
+					ss = int(n/8192)
 					end =  ss * int(len(xd)/ss)
 					nss = (int)(n/ss)
 					xd = mean(xd[:end].reshape(-1, ss), 1)
 					yd = mean(yd[:end].reshape(-1, ss), 1)
-					scope.set_info(["sub sampling: %d"%n + " by %d"%ss,
+					scope.set_info(["sub sampling: %d"%n + " by %d"%ss + " [nss=%d"%nss + ",end=%d]"%end,
 							"T = %g ms"%(n/150.),
 							mode])
+                                        scope.set_subsample_factor(ss)
 				else:
 					scope.set_info([
 							"T = %g ms"%(n/150.),
                                                         mode])
+                                        scope.set_subsample_factor(1)
 
 				# change number samples?
 				try:
@@ -704,8 +707,10 @@ class TuneScope():
 		self.Freq     = zeros (self.points)
 		self.volumeSine  = 0.3
                 self.mode2f = 0
-                self.phase_prev1 = 0
-                self.phase_prev2 = 0
+                self.phase_prev1 = 0.
+                self.phase_prev2 = 0.
+                self.phase_center = 0.
+                self.phase_center2 = 0.
                 
 		def Frequency (position):
 			return self.Fc - self.Fspan/2. + position * self.Fstep
@@ -924,9 +929,9 @@ class TuneScope():
 
 			# full phase unwrap
                         if self.mode2f == 0:
-                                pre_ph = self.phase_prev1
+                                pre_ph = self.phase_center
                         else:
-                                pre_ph = self.phase_prev2
+                                pre_ph = self.phase_center2
                         
                         # P_UnWrapped(i)=P(i)-Floor(((P(i)-P(i-1))/2Pi)+0.5)*2Pi
 
@@ -970,8 +975,24 @@ class TuneScope():
 				self.run_button.set_label("RESTART")
                                 if self.peakvalue > 0.:
                                         run_fit (1000./self.peakvalue, Frequency (self.peakindex), 20000.)
+                                self.mode2f = 1
 				parent.mk3spm.adjust_PLL_sine (self.volumeSine, self.fitresults["f0"], self.mode2f)
+                                time.sleep (0.2)
+			        cur_ph = Filter64Out[iii_PLL_F64_ResPhaseLP] * Ysignal[SIG_D2U]
+				while cur_ph <= -180:
+					cur_ph += 360
+				while cur_ph >= 180:
+					cur_ph -= 360
+				self.phase_center2 = cur_ph
                                 self.mode2f = 0
+				parent.mk3spm.adjust_PLL_sine (self.volumeSine, self.fitresults["f0"], self.mode2f)
+                                time.sleep (0.2)
+			        cur_ph = Filter64Out[iii_PLL_F64_ResPhaseLP] * Ysignal[SIG_D2U]
+				while cur_ph <= -180:
+					cur_ph += 360
+				while cur_ph >= 180:
+					cur_ph -= 360
+				self.phase_center = cur_ph
 				self.pos = -10
 			else:
 				self.Fstep   = self.Fspan/(self.points-1)

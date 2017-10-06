@@ -92,6 +92,11 @@ class Scope(gtk.DrawingArea):
         self.connect('button-press-event', self.on_drawing_area_button_press)
         self.display_info = 300
         self.set_flash ("Starting...")
+        self.set_subsample_factor()
+
+        
+    def set_subsample_factor(self, sf=1):
+        self.ss_fac=sf
         
     def set_flash (self, message):
         self.flash_message = message
@@ -288,7 +293,7 @@ class Scope(gtk.DrawingArea):
             peaks = peaks_tmp[:np]
             dx = (2*self.xw) / size(data)
             x_peaks = -self.xw+dx*(1+peaks)
-            f_peaks = 75000.*peaks/size(data)
+            f_peaks = 75000.*peaks/size(data) #*self.ss_fac
             pcount=0
             for x, f, peak in zip(x_peaks, f_peaks, peaks):
                 if peak < 10 or peak > size(data)-10:
@@ -657,6 +662,9 @@ class Oscilloscope(gtk.Label):
         
     def set_label (self, str):
         self.label = str
+
+    def set_subsample_factor(self, sf):
+        self.scope.set_subsample_factor(sf)
 
     def queue_draw (self):
         self.scope.queue_draw()
