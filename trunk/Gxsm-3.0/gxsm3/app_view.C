@@ -1193,7 +1193,8 @@ void ViewControl::AppWindowInit(const gchar *title){
         //        GtkStyleContext *context = gtk_widget_get_style_context (header_menu_button);
         //        gtk_style_context_add_class(context, ".view-headerbar-tip-follow");
 
-
+        // Scan Start/Stop button -- testing, do not like it. May enable via #if 1.
+#if 0  
         header_menu_button = gtk_toggle_button_new ();
         gtk_button_set_image (GTK_BUTTON (header_menu_button), gtk_image_new_from_icon_name ("system-run-symbolic", tmp_toolbar_icon_size));
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
@@ -1202,6 +1203,8 @@ void ViewControl::AppWindowInit(const gchar *title){
 	gtk_widget_set_tooltip_text (header_menu_button, N_("Start/Stop Scan"));
         g_signal_connect (G_OBJECT (header_menu_button), "toggled",
                           G_CALLBACK (ViewControl::scan_start_stop_callback), this);
+#endif
+
         XSM_DEBUG (DBG_L2,  "VC::VC setup titlbar" );
 
         gtk_window_set_title (GTK_WINDOW (window), title);
