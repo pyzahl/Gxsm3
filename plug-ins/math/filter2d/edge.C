@@ -267,6 +267,18 @@ public:
 	};
 };
 
+class MemGaussKrn : public MemDigiFilter{
+public:
+	MemGaussKrn (double xms, double xns, int m, int n):MemDigiFilter (xms, xns, m, n){};
+	virtual gboolean CalcKernel (){
+		int i,j;
+		for (i= -m; i<=m; i++)
+			for (j = -n; j<=n; j++)
+				data->Z (rint (4*exp (-(i*i)/(xms*xms) -(j*j)/(xns*xns))), j+n, i+m); 
+		return 0;
+	};
+};
+
 void setup_multidimensional_data_copy (const gchar *title, Scan *src, int &ti, int &tf, int &vi, int &vf, int *crop_window_xy=NULL, gboolean crop=FALSE){
 	UnitObj *Pixel = new UnitObj("Pix","Pix");
 	UnitObj *Unity = new UnitObj(" "," ");
@@ -327,8 +339,6 @@ static gboolean edge_run___for_all_vt(Scan *Src, Scan *Dest)
 	int    s = 1+(int)(r + .9); // calc. approx Matrix Radius
 	MemEdgeKrn krn(r,r, s,s); // Setup Kernelobject
 
-
-
 	int ti=0; 
 	int tf=0;
 	int vi=0;
@@ -388,6 +398,8 @@ static gboolean edge_run___for_all_vt(Scan *Src, Scan *Dest)
 // run-Function -- may gets called for all layers and time if multi dim scan data is present!
 static gboolean edge_run(Scan *Src, Scan *Dest)
 {
+	edge_run_radius(Src, Dest);
+	return MATH_OK;
 
 // check for multi dim calls, make sure not to ask user for paramters for every layer or time step!
 	if (((Src ? Src->mem2d->get_t_index ():0) == 0 && (Src ? Src->mem2d->GetLayer ():0) == 0) || !edge_kernel) {
@@ -416,14 +428,42 @@ static gboolean edge_run_radius(Scan *Src, Scan *Dest)
 {
 	// equals edge-run except ValueRequest
 	double r = 5.0;    // Get Radius
-	gapp->ValueRequest("2D Convol. Filter Size", "Radius", "Edge kernel size: s = 1+radius  LoG detect sigma=r/2",
+	gapp->ValueRequest("2D Convol. Filter Setup", "Radius", "Edge kernel size: s = 1+radius  LoG detect sigma=r/2",
 			   gapp->xsm->Unity, 0., Src->mem2d->GetNx()/10., ".0f", &r);
 
+	double r_adaptive_min = r;    // Get Radius
+	gapp->ValueRequest("2D Convol. Filter Setup", "Radius Adaptive Min", "Edge kernel size: s = 1+radius  LoG detect sigma=r/2",
+			   gapp->xsm->Unity, 0., Src->mem2d->GetNx()/10., ".0f", &r_adaptive_min);
+
+	double adaptive_threashold = 0.1;    // Get Radius
+	gapp->ValueRequest("2D Convol. Filter Setup", "Threashold", "adaptive threashold",
+			   gapp->xsm->Unity, 0., Src->mem2d->GetNx()/10., ".0f", &adaptive_threashold);
+
 	int    s = 1+(int)(r + .9); // calc. approx Matrix Radius
-	MemEdgeKrn krn(r,r, s,s); // Setup Kernelobject
+	MemEdgeKrn krn (r,r, s,s); // Setup Kernelobject
+	krn.Convolve (Src->mem2d, Dest->mem2d); // Do calculation of Kernel and then do convolution
 
-	krn.Convolve(Src->mem2d, Dest->mem2d); // Do calculation of Kernel and then do convolution
+	if (adaptive_threashold > 0.){
+		adaptive_threashold /= Src->data.s.dz;
+#if 0
+		int    sa = 1+(int)(r_adaptive_min + .9); // calc. approx Matrix Radius
+		MemEdgeKrn krn_a (r_adaptive_min,r_adaptive_min, sa,sa); // Setup Kernelobject
+		Mem2d ma (Dest->mem2d);
+		krn_a.Convolve (Src->mem2d, &ma); // Do calculation of Kernel and then do convolution
+#endif
+		Mem2d mg (Dest->mem2d);
+		MemGaussKrn gauss_kernel(r,r, s,s); // calc. convol kernel
+		gauss_kernel.Convolve(Src->mem2d, &mg); // Do calculation of Kernel and then do convolution
 
+		for(int v=0; v<Dest->mem2d->GetNv () && v<Src->mem2d->GetNv (); ++v)
+			for(int line=0; line<Dest->mem2d->GetNy (); ++line)
+				for(int col=0; col<Dest->mem2d->GetNx (); ++col)
+					if (fabs (Src->mem2d->GetDataPkt (col, line, v) - mg.GetDataPkt (col, line, v)) < adaptive_threashold){
+						g_message ("adad=%g",Src->mem2d->GetDataPkt (col, line, v) - mg.GetDataPkt (col, line, v));
+						Dest->mem2d->PutDataPkt (mg.GetDataPkt (col, line, v), col, line, v);
+					}
+	}
+	
 	return MATH_OK;
 }
 
