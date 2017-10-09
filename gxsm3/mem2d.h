@@ -468,12 +468,26 @@ public:
 
 class MemDigiFilter : public Mem2d{
 public:
-	MemDigiFilter(double Xms, double Xns, int M, int N);
+	MemDigiFilter(double Xms, double Xns, int M, int N, MemDigiFilter *adaptive_kernel=NULL, double adaptive_threashold=0.);
 	gboolean Convolve(Mem2d *Src, Mem2d *Dest);
-	virtual gboolean CalcKernel(){ return 0; };
+	virtual gboolean CalcKernel (){ return 0; };
+
+        void MakeKernelNormalized ();
+        void InitializeKernel (){
+                if (kernel_initialized) return;
+                MakeKernelNormalized ();
+                kernel_initialized = TRUE;
+        };
+        void set_kname (const gchar *id) { kname = id; };
+        
 protected:
+        MemDigiFilter *adaptive_kernel_test;
+        double adaptive_threashold_test;
 	int    m,n;
 	double xms,xns;
+        double scalefac;
+        gboolean kernel_initialized;
+        const gchar *kname;
 };
 
 #endif

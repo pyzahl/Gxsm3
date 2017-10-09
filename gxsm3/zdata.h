@@ -180,6 +180,7 @@ public:
 	virtual void NcGet(NcVar *ncfield, int time_index=0)=0;
 
 	virtual void norm (double mag=1., int vi=0, int vf=-1)=0;
+	virtual void mabs_norm (double mag=1., int vi=0, int vf=-1)=0;
 	virtual void add (double c=1., int vi=0, int vf=-1)=0;
 	virtual void mul (double f=1., int vi=0, int vf=-1)=0;
 	
@@ -330,6 +331,7 @@ public:
 	void NcGet(NcVar *ncfield, int time_index=0);
 
 	void norm (double mag=1., int vi=0, int vf=-1);
+	void mabs_norm (double mag=1., int vi=0, int vf=-1);
 	void add (double c=1., int vi=0, int vf=-1);
 	void mul (double f=1., int vi=0, int vf=-1);
 

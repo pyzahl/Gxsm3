@@ -260,9 +260,10 @@ public:
 	MemSmoothKrn (double xms, double xns, int m, int n):MemDigiFilter (xms, xns, m, n){};
 	virtual gboolean CalcKernel (){
 		int i,j;
+		g_message ("Calculating Gauss Smooth Kernel");
 		for (i= -m; i<=m; i++)
 			for (j = -n; j<=n; j++)
-				data->Z (rint (4*exp (-(i*i)/(xms*xms) -(j*j)/(xns*xns))), j+n, i+m); 
+				data->Z (4*exp (-(i*i)/(xms*xms) -(j*j)/(xns*xns)), j+n, i+m); 
 		return 0;
 	};
 };

@@ -1019,6 +1019,10 @@ public:
 			  UnitObj *u, double minv, double maxv, const gchar *vfmt,
 			  double *value);
 
+        void ValueRequestList (const gchar *title,
+                          const gchar *label[], const gchar *infotxt[], 
+                          UnitObj *uobj[], double minv[], double maxv[], const gchar *vfmt[],
+                          double *value[]);
   
 	// Progress Dialog
 	GtkWidget* progress_info_new (const gchar *title=NULL, gint levels=1, GCallback cancel_cb=NULL, gpointer data=NULL, gboolean modal=false);
