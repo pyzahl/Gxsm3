@@ -262,11 +262,12 @@ public:
 		int i,j;
 		int q=GetLayer ();
 		double sig2=(xms-q)*(xns-q)/4.; // set sigmal to "r/2"
-		g_message ("Calculating Edge (Laplace of Gauss) Kernel sigma=%g",sqrt(sig2));
-                if (sig2 < 0.5){
+                if (xms-q <=0 || xns-4 <=0 || sig2 < 0.5){
+                        g_message ("Calculating Edge (Laplace of Gauss) Kernel sigma=0 (delta kern)");
                         data->Z (1.0, n, m);
                         return 0;
                 }
+		g_message ("Calculating Edge (Laplace of Gauss) Kernel sigma=%g",sqrt(sig2));
 		for (i= -m+q; i<=m-q; i++)
                         for (j = -n+q; j<=n-q; j++){
                                 double r2 = j*j+i*i;
