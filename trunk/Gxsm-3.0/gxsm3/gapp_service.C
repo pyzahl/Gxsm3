@@ -746,6 +746,34 @@ void GnomeAppService::ValueRequest(const gchar *title, const gchar *label, const
 	gtk_widget_destroy (dialog);
 }
 
+// label list must be NULL terminated array.
+void GnomeAppService::ValueRequestList (const gchar *title,
+                                        const gchar *label[], const gchar *infotxt[], 
+                                        UnitObj *uobj[], double minv[], double maxv[], const gchar *vfmt[],
+                                        double *value[]){
+
+	GtkWidget *dialog = gtk_dialog_new_with_buttons (N_(title),
+							 window,
+							 (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+							 _("_OK"), GTK_RESPONSE_ACCEPT,
+							 NULL);
+       
+        BuildParam bp;
+
+	gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
+
+        for (; *label; ++label, ++infotxt, ++uobj, ++minv, ++maxv, ++vfmt, ++value){
+                bp.grid_add_ec (*infotxt, *uobj, *value, *minv, *maxv, *vfmt, 0.1, 1.0);
+                bp.new_line ();
+        }
+	bp.show_all ();
+
+	gtk_widget_show(dialog);
+
+	gtk_dialog_run(GTK_DIALOG(dialog));
+	gtk_widget_destroy (dialog);
+}
+
 
 gint GnomeAppService::terminate_timeout_func (gpointer data){
         gchar *m  = (gchar*)g_object_get_data (G_OBJECT (data), "SM");

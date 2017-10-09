@@ -2936,8 +2936,20 @@ void ViewControl::view_file_getinfo_callback (GSimpleAction *simple, GVariant *p
 	if (vc->chno < 0) return;
 
 	gapp->xsm->ActivateChannel(vc->chno);
-	XSM_DEBUG(DBG_L2, gapp->xsm->ActiveScan->data.ui.name );
-	gapp->CallGetNCInfoPlugin (gapp->xsm->ActiveScan->data.ui.name);
+	XSM_DEBUG(DBG_L2, vc->scan->data.ui.name );
+	gapp->CallGetNCInfoPlugin (vc->scan->data.ui.name);
+
+        g_print ("Basic Scan Info and Data\n");
+        g_print ("Dimensions: Nx=%d Ny=%d Nv=%d Nt=%d", vc->scan->mem2d->GetNx (), vc->scan->mem2d->GetNy (), vc->scan->mem2d->GetNv (), vc->scan->number_of_time_elements ());
+        for (int v=0; v<vc->scan->mem2d->GetNv (); ++v){
+                g_print ("Data Layer=%d = [\n", v);
+                for (int y=0; y<vc->scan->mem2d->GetNy () && y<20; ++y){
+                        for (int x=0; x<vc->scan->mem2d->GetNx () && x<20; ++x)
+                                g_print ("%+10f, ", vc->scan->mem2d->GetDataPkt (x,y,v));
+                        g_print (" ..],\n");
+                }
+                g_print ("..],\n");
+        }
 }
 
 void ViewControl::view_file_print_callback (GSimpleAction *simple, GVariant *parameter, 

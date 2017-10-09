@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -184,7 +186,9 @@ GxsmMathOneSrcPlugin *get_gxsm_math_one_src_for_all_vt_plugin_info( void ) {
 /* Here we go... */
 
 double       edge_radius = 5.;
+double       adaptive_threashold = 0.;
 class MemEdgeKrn *edge_kernel=NULL;
+class MemAdaptiveTestKrn *ada_kernel=NULL;
 
 
 // init-Function
@@ -253,16 +257,21 @@ static void edge_cleanup(void)
 
 class MemEdgeKrn : public MemDigiFilter{
 public:
-	MemEdgeKrn (double xms, double xns, int m, int n):MemDigiFilter (xms, xns, m, n){};
+	MemEdgeKrn (double xms, double xns, int m, int n, MemDigiFilter *adaptive_kernel=NULL, double adaptive_threashold=0.):MemDigiFilter (xms, xns, m, n, adaptive_kernel, adaptive_threashold){};
 	virtual gboolean CalcKernel (){
 		int i,j;
-		double sig2=xms*xns/4.; // set sigmal to "r/2"
-		for (i= -m; i<=m; i++)
-                        for (j = -n; j<=n; j++){
+		int q=GetLayer ();
+		double sig2=(xms-q)*(xns-q)/4.; // set sigmal to "r/2"
+		g_message ("Calculating Edge (Laplace of Gauss) Kernel sigma=%g",sqrt(sig2));
+                if (sig2 < 0.5){
+                        data->Z (1.0, n, m);
+                        return 0;
+                }
+		for (i= -m+q; i<=m-q; i++)
+                        for (j = -n+q; j<=n-q; j++){
                                 double r2 = j*j+i*i;
                                 data->Z ((1.-r2/(2.*sig2))/(M_PI*sig2*sig2) * exp (-r2/(2*sig2)), j+n, i+m);
                         }
-		data->norm ();
 		return 0;
 	};
 };
@@ -272,9 +281,42 @@ public:
 	MemGaussKrn (double xms, double xns, int m, int n):MemDigiFilter (xms, xns, m, n){};
 	virtual gboolean CalcKernel (){
 		int i,j;
-		for (i= -m; i<=m; i++)
-			for (j = -n; j<=n; j++)
-				data->Z (rint (4*exp (-(i*i)/(xms*xms) -(j*j)/(xns*xns))), j+n, i+m); 
+		int q=GetLayer ();
+		double m2 = (xms-q);
+		double n2 = (xns-q);
+		m2 *= m2; n2 *= n2;
+		g_message ("Calculating Gauss Kernel");
+		for (i= -m+q; i<=m-q; i++)
+			for (j = -n+q; j<=n-q; j++)
+				data->Z (4*exp (-(i*i)/m2 -(j*j)/n2), j+n, i+m); 
+		return 0;
+	};
+};
+
+class MemAdaptiveTestKrn : public MemDigiFilter{
+public:
+	MemAdaptiveTestKrn (double xms, double xns, int m, int n):MemDigiFilter (xms, xns, m, n, NULL, 1.){};
+	virtual gboolean CalcKernel (){
+		int i,j;
+		int q=GetLayer ();
+		double m2 = (xms-q);
+		double n2 = (xns-q);
+		m2 *= m2; n2 *= n2;
+                double rmn2 = m2+n2;
+                if (xms-q-1 < 1 && xns-q-1 < 1){
+                        data->Z (1., n, m);
+                        return 0;
+                }
+		double m2t = (xms-q-1);
+		double n2t = (xns-q-1);
+		m2t *= m2t; n2t *= n2t;
+                double rt2 = m2t+n2t;
+		g_message ("Calculating Adaptive Test Kernel");
+		for (i= -m+q; i<=m-q; i++)
+			for (j = -n+q; j<=n-q; j++){
+                                int r2 = i*i + j*j;
+                                data->Z (4*exp (-(r2-rt2)/rmn2), j+n, i+m);
+                        }
 		return 0;
 	};
 };
@@ -398,20 +440,45 @@ static gboolean edge_run___for_all_vt(Scan *Src, Scan *Dest)
 // run-Function -- may gets called for all layers and time if multi dim scan data is present!
 static gboolean edge_run(Scan *Src, Scan *Dest)
 {
-	edge_run_radius(Src, Dest);
-	return MATH_OK;
+  //	edge_run_radius(Src, Dest);
+  //	return MATH_OK;
 
 // check for multi dim calls, make sure not to ask user for paramters for every layer or time step!
-	if (((Src ? Src->mem2d->get_t_index ():0) == 0 && (Src ? Src->mem2d->GetLayer ():0) == 0) || !edge_kernel) {
-		double r = edge_radius;    // Get Radius
-		gapp->ValueRequest("2D Convol. Filter Size", "Radius", "Edge kernel size: s = 1+radius  LoG detect sigma=r/2",
-				   gapp->xsm->Unity, 0., Src->mem2d->GetNx()/10., ".0f", &r);
-		edge_radius = r;
+        int ask=1;
+        if (Src->mem2d->GetNv () > 1) ask = 0;
+	if (ask || ((Src ? Src->mem2d->get_t_index ():0) == 0 && (Src ? Src->mem2d->GetLayer ():0) == 0) || !edge_kernel || !ada_kernel) {
+
+                const gchar* config_label[3] = { "Radius", "Adaptive Threashold", NULL };
+                const gchar* config_info[2]  = { "Edge Kernel Radius. Convol Matrix[2R+2, 2R+1]", "Adaptive Threashold Value" };
+                UnitObj *config_units[2] { gapp->xsm->Unity,  gapp->xsm->data.Zunit };
+                double config_minv[2] = { 0., -1e10 };
+                double config_maxv[2] = { Src->mem2d->GetNx()/10., 1e10 };
+                const gchar* config_fmt[2]  = { ".0f", "g" };
+                double *config_values[2] = { &edge_radius, &adaptive_threashold };    // Radius, Adaptive Threashold
+
+                gapp->ValueRequestList ("Edge Filter Configuration",
+                                        config_label, config_info, config_units,
+                                        config_minv, config_maxv, config_fmt,
+                                        config_values
+                                        );
 		if (edge_kernel)
 			free (edge_kernel);
 
-		int    s = 1+(int)(r + .9); // calc. approx Matrix Radius
-		edge_kernel = new MemEdgeKrn (r,r, s,s); // calc. convol kernel
+		if (ada_kernel)
+			free (ada_kernel);
+
+                g_message ("Setup MemAdaptiveTestKrn");
+		int    s = 1+(int)(edge_radius + .9); // calc. approx Matrix Radius
+		ada_kernel = new MemAdaptiveTestKrn (edge_radius,edge_radius, s,s); // calc. convol adaptive test kernel
+                ada_kernel->set_kname ("gxsm_edge_ada_kernel");
+                ada_kernel->InitializeKernel ();
+
+                g_message ("Setup MemAdaptiveCoreKrn");
+		edge_kernel = new MemEdgeKrn (edge_radius,edge_radius, s,s, ada_kernel, adaptive_threashold/Src->data.s.dz); // calc. convol kernel
+                edge_kernel->set_kname ("gxsm_edge_edge_log_kernel");
+                edge_kernel->InitializeKernel ();
+ 
+                g_message ("Setup Kernel Completed, Executing Convolve");
 
 		if (!Src || !Dest)
 			return 0;

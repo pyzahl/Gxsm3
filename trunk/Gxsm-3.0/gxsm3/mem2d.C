@@ -44,8 +44,8 @@
 // #define	XSM_DEBUG(A,B) std::cout << B << std::endl
 
 
-//#define SAVECONVOLKERN
-#define SAVECONVOLSRC
+#define SAVECONVOLKERN
+//#define SAVECONVOLSRC
 
 const char *ZD_name[] = { "I", "Byte", "Short", "Long", "ULong", "LLong",
 		    "Float", "Double", "Complex", "RGBA", "Event"
@@ -398,7 +398,23 @@ void TZData<ZTYP>::norm (double mag, int vi, int vf){
                 for(int y=0; y<ny; y++)
                         for(int x=0; x<nx; x++)
                                 sum += Zdat[y*nv+v][x];
-                mul (mag/sum);
+                mul (mag/sum, v,v);
+        }
+}
+
+template <class ZTYP> 
+void TZData<ZTYP>::mabs_norm (double mag, int vi, int vf){
+        if (vf<vi) vf=nv-1;
+        for(int v=vi; v<=vf; ++v){
+                double sum=0.;
+                double asum=0.;
+                for(int y=0; y<ny; y++)
+                        for(int x=0; x<nx; x++){
+                                asum += fabs (Zdat[y*nv+v][x]);
+                                sum += Zdat[y*nv+v][x];
+                        }
+                sum =  sum!=0. ? fabs (sum) : (asum+1.)/2.;
+                mul (mag/sum, v, v);
         }
 }
 
@@ -2487,23 +2503,48 @@ int Mem2d::SetDataValid(){ return data_valid=1; }
 
 // MemDigiFilter - public Mem2d
 
-MemDigiFilter::MemDigiFilter(double Xms, double Xns, int M, int N):Mem2d(2*N+1, 2*M+1, ZD_DOUBLE){
+MemDigiFilter::MemDigiFilter(double Xms, double Xns, int M, int N, MemDigiFilter *adaptive_kernel, double adaptive_threashold):Mem2d(2*N+1, 2*M+1, ZD_DOUBLE){
         xms=Xms, xns=Xns;
         n=N, m=M;
+        adaptive_kernel_test = adaptive_kernel;
+        adaptive_threashold_test = adaptive_threashold;
+
+        XSM_DEBUG (DBG_L2, "MemDigiFilter::Convolve: create kernel");
+        kernel_initialized = FALSE;
+        kname = "gxsm_convolution_kernel";
+        
         XSM_DEBUG (DBG_L4, "MemDigiFilter: " << n << " " << m << " " << xms << " " << xns);
 }
 
 typedef struct{
         ZData *kernel;
+        ZData *adaptive_kernel;
         ZData *In;
         ZData *Dest;
         int line_i, line_f, line_inc;
         int ns, ms;
-        double scalefac;
+        double adaptive_threashold;
         int job;
         int *status;
         double progress;
 } Mem2d_Digi_Filter_Convolve_Job_Env;
+
+inline double mem2d_digi_filter_convolve_point_kernel (int ii, int jj, Mem2d_Digi_Filter_Convolve_Job_Env* job, ZData *kern, int q=0){
+        static int bail=0;
+        const int tms = 2*job->ms;
+        const int tns = 2*job->ns;
+        double sum = 0.;
+        if (ii==0 && jj==0) bail=0;
+        if (q >= kern->GetNv()){
+                if (bail++ < 30)
+                        g_warning ("ADAPTIVE CONVOLUTION ERROR: mem2d_digi_filter_convolve_point_kernel called with q=%d but kernNv=%d",q, kern->GetNv());
+                return 0.;
+        }
+        for (int i=0; i<=tms; ++i)
+                for(int j=0; j<=tns; j++)
+                        sum +=  job->In->Z (jj+j, i+ii) * kern->Z (j,i,q);
+        return sum;
+}                        
 
 gpointer mem2d_digi_filter_convolve_thread (void *env){
         Mem2d_Digi_Filter_Convolve_Job_Env* job = (Mem2d_Digi_Filter_Convolve_Job_Env*)env;
@@ -2511,15 +2552,22 @@ gpointer mem2d_digi_filter_convolve_thread (void *env){
         for(int ii=job->line_i; ii<job->line_f; ii+=job->line_inc){
                 job->progress = (double)ii/job->line_f;
                 for(int jj=0; jj<job->Dest->GetNx(); ++jj){
-                        const int tms = 2*job->ms;
-                        const int tns = 2*job->ns;
-                        double sum = 0.;
-      
-                        for(int i=0; i<=tms; ++i)
-                                for(int j=0; j<=tns; j++)
-                                        sum +=  job->In->Z (jj+j, i+ii) * job->kernel->Z (j,i);
-
-                        job->Dest->Z (sum/job->scalefac, jj,ii);
+                        if (job->adaptive_kernel && job->adaptive_threashold > 0.){
+                                double test_sum = 0.;
+                                double data_sum = 0.;
+                                int q=job->kernel->GetNv ();
+                                int qq;
+                                for (qq=0; qq<q; ++qq){
+                                        test_sum = mem2d_digi_filter_convolve_point_kernel (ii, jj, job, job->adaptive_kernel, qq);
+                                        data_sum = mem2d_digi_filter_convolve_point_kernel (ii, jj, job, job->kernel, qq);
+                                        if (fabs (test_sum - data_sum) > job->adaptive_threashold)
+                                                break;
+                                }
+                                //job->Dest->Z ((double)qq,  jj,ii);
+                                //job->Dest->Z (test_sum - data_sum,  jj,ii);
+                                job->Dest->Z (data_sum,  jj,ii);
+                        } else
+                                job->Dest->Z (mem2d_digi_filter_convolve_point_kernel (ii, jj, job, job->kernel),  jj,ii);
                 }
                 if (*(job->status)){
                         job->job = -2; // aborted
@@ -2536,13 +2584,87 @@ static void cancel_callback (void *widget, int *status){
 	*status = 1; 
 }
 
+void MemDigiFilter::MakeKernelNormalized (){
+        int ms=m, ns=n;
+        int q=0;
+
+        g_message ("Base Kernel Size: %d, %d", 2*ns+1, 2*ms+1);
+        Resize(2*ns+1, 2*ms+1, ZD_DOUBLE);
+        g_message ("Calculating Kernel for Level %d", q);
+        SetLayer (q);
+        CalcKernel();
+#if 0
+        int i, j;
+        gboolean again = FALSE;
+        do{
+                int ring_m, ring_n;
+                // (Re)Calc Kernel ... xms, xns, ms, ns
+                XSM_DEBUG (DBG_L6, "R " << (2*ms+1) << " " << (2*ns+1));
+                n=ns; m=ms;
+                
+                g_message ("Base Kernel Size: %d, %d", 2*ns+1, 2*ms+1);
+                Resize(2*ns+1, 2*ms+1, ZD_DOUBLE);
+                XSM_DEBUG (DBG_L6, "MemDigiFilter::Resize done.");
+
+                CalcKernel();
+                XSM_DEBUG (DBG_L6, "MemDigiFilter::CalcKernel done.");
+
+                
+                // check for zero kernel elements on "ring", if all zero, reduct size to minimum needed for non-zero elements in ring
+                for(ring_m=ring_n=-1, i=0; i<2*ms+1; i++)
+                        for(j=0; j<2*ns+1; j++){
+                                int tmp_ring_m = abs(i-m);
+                                int tmp_ring_n = abs(j-n);
+                                if(data->Z(j,i)!=0. && ring_m<tmp_ring_m)
+                                        ring_m = tmp_ring_m;
+                                if(data->Z(j,i)!=0. && ring_n<tmp_ring_n)
+                                        ring_n = tmp_ring_n;
+                        }
+                again = FALSE;
+                if(ring_m < m)	{again = TRUE; ms = ring_m;}
+                if(ring_n < n)	{again = TRUE; ns = ring_n;}
+        }while(again);
+#endif
+        
+        if (adaptive_kernel_test || adaptive_threashold_test > 0.){
+                q=ms > ns ? ns : ms;
+                g_message ("Resize Kernel to: %d, %d, %d", 2*ns+1, 2*ms+1, q+1);
+                Resize(2*ns+1, 2*ms+1, q+1, ZD_DOUBLE);
+                for (int qq=1; qq<=q; qq++){
+                        g_message ("Calculating Kernel for Level %d", qq);
+                        SetLayer (qq);
+                        CalcKernel ();
+                }
+        }
+        data->mabs_norm (1., 0,q);
+        SetLayer (0);
+
+#ifdef SAVECONVOLKERN
+        for (int qq=0; qq<q; ++qq){
+                // save Kernel to /tmp/convolkern.dbl
+                std::ofstream fk;
+                gchar *fkn=g_strdup_printf ("/tmp/%s%02d.dbl", kname, qq);
+                g_message ("Kernel saved to: %s", fkn);
+                fk.open(fkn, std::ios::out);
+                g_free (fkn);
+                struct { short nx,ny; } fkh; 
+                fkh.nx=data->GetNx();
+                fkh.ny=data->GetNy();
+                SetLayer (qq);
+                fk.write((const char*)&fkh, sizeof(fkh));
+                DataWrite(fk);
+                fk.close();
+        }
+        SetLayer (0);
+#endif
+
+}
+
 gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         int i0=0;
         int i, j;
-        double scalefac, scalefaca;
-        int mm, nn;
-        int ms=m, ns=n;
-        gboolean again = FALSE;
+        int mm=Src->data->GetNy(), nn=Src->data->GetNx(); // Src size
+        int ms=m, ns=n; // kernel size
         int stop_flag = 0;
         int max_jobs = g_get_num_processors (); // default concurrency for multi threadded computation, # CPU's/cores
         
@@ -2550,37 +2672,9 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         gapp->progress_info_set_bar_fraction (0.1, 2);
         gapp->progress_info_set_bar_text ("Setup", 2);
         gapp->check_events ();
-        
-        XSM_DEBUG (DBG_L2, "MemDigiFilter::Convolve: create kernel");
-        // create the convolution kernel
-        do{
-                int ring_m, ring_n;
-                // (Re)Calc Kernel ... xms, xns, ms, ns
-                XSM_DEBUG (DBG_L6, "R " << (2*ms+1) << " " << (2*ns+1));
-                n=ns; m=ms;
-                Resize(2*ns+1, 2*ms+1, ZD_DOUBLE);
-                XSM_DEBUG (DBG_L6, "MemDigiFilter::Resize done.");
-                CalcKernel();
-                XSM_DEBUG (DBG_L6, "MemDigiFilter::CalcKernel done.");
-                for(ring_m=ring_n=-1, scalefaca=scalefac=0., i=0; i<2*ms+1; i++)
-                        for(j=0; j<2*ns+1; j++){
-                                int tmp_ring_m = abs(i-m);
-                                int tmp_ring_n = abs(j-n);
-                                scalefaca += fabs(data->Z(j,i));
-                                scalefac  += data->Z(j,i);
-                                if(data->Z(j,i)!=0. && ring_m<tmp_ring_m)
-                                        ring_m = tmp_ring_m;
-                                if(data->Z(j,i)!=0. && ring_n<tmp_ring_n)
-                                        ring_n = tmp_ring_n;
-                        }
-                scalefac = scalefac!=0. ? fabs(scalefac) : (scalefaca+1.)/2.;
-    
-                again = FALSE;
-                if(ring_m < m)	{again = TRUE; ms = ring_m;}
-                if(ring_n < n)	{again = TRUE; ns = ring_n;}
-        }while(again);
-        XSM_DEBUG (DBG_L6, "MemDigiFilter::Scaleing done.");
 
+        InitializeKernel ();
+        
         gapp->progress_info_set_bar_fraction (0.3, 2);
         gapp->check_events ();
         
@@ -2588,13 +2682,12 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                 return FALSE;
  
         XSM_DEBUG (DBG_L6, "Prep Larger Src: " << (Src->data->GetNx() + 2*ns) << " " << (Src->data->GetNy() + 2*ms));
-        // mm * nn is now size of Src:
-        Mem2d x((nn=Src->data->GetNx()) + 2*ns, (mm=Src->data->GetNy()) + 2*ms, Src->GetTyp());
+        Mem2d x(nn + 2*ns, mm + 2*ms, Src->GetTyp()); // Plus Border: add kernel size left and right
  
         // *** WORKINGMARKER *** 11/2/1999 PZ ***
         // fill the central part of the x matrix with the data
         XSM_DEBUG (DBG_L6, "Mem2dDigi: " << ns << " " << ms << " " << nn << " " << mm);
-        x.data->CopyFrom(Src->data, 0,0, ns,ms ,nn,mm, true); // !!!!!!!!!!!! total scan and observe shift
+        x.data->CopyFrom(Src->data, 0,0, ns,ms ,nn,mm, true); // total scan and observe shift
   
         // now fill edges and corners with copies of edge data
         // edge left / right
@@ -2625,18 +2718,7 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                 }
         gapp->progress_info_set_bar_fraction (0.8, 2);
         gapp->check_events ();
-  
-#ifdef SAVECONVOLKERN
-        // save Kernel to /tmp/convolkern.dbl
-        std::ofstream fk;
-        fk.open("/tmp/convolkern.dbl", ios::out|ios::bin);
-        struct { short nx,ny; } fkh; 
-        fkh.nx=data->GetNx();
-        fkh.ny=data->GetNy();
-        fk.write((void*)&fkh, sizeof(fkh));
-        DataWrite(fk);
-        fk.close();
-#endif
+
 #ifdef SAVECONVOLSRC
         // save datasrc with added bounds to /tmp/convolsrc.xxx
         std::ofstream fk;
@@ -2656,7 +2738,7 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                 fk.close();
         }
 #endif
-
+        
         //
         if (Dest->GetNv () == 1)
                 Dest->Resize(nn,mm);
@@ -2689,7 +2771,6 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                                         for(j=0; j<=tns; j++)
                                                 sum += x.data->GetNext() * data->GetNext();
                                 }
-                                Dest->data->Z(sum/scalefac, jj,ii);
                         }
                 }
         } else {
@@ -2704,12 +2785,13 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                 for (int jobno=0; jobno < max_jobs && jobno < Dest->GetNy (); ++jobno){
                         // std::cout << "Job #" << jobno << std::endl;
                         job[jobno].kernel = data;
+                        job[jobno].adaptive_kernel = adaptive_kernel_test ? adaptive_kernel_test->data : NULL;
+                        job[jobno].adaptive_threashold = adaptive_threashold_test;
                         job[jobno].In     = x.data;
                         job[jobno].Dest   = Dest->data;
                         job[jobno].line_i = jobno;
                         job[jobno].line_inc = max_jobs;
                         job[jobno].line_f = Dest->GetNy ();
-                        job[jobno].scalefac = scalefac;
                         job[jobno].ms = ms;
                         job[jobno].ns = ns;
                         job[jobno].job = jobno+1;
