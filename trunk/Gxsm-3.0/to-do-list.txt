@@ -28,9 +28,18 @@ percy@ltncafm:~$ sed -n -e 's/^.*\(VmSize: \)/\1/p' Ev_Jan2017.log | awk '{print
 current work in progress, evaluating while working with it, optimizing, new ideas:
 -> DSP Control (MK3 HwI):
    ... LM (VP Prog tab): color buttons, figure out how (CSS!), add description/memo field for ABC... programs?, simple mode: eliminate RHS fields?? => dynamic CSS
-   ... chain CP/CI 100/120% option
-   ... read/sync V-XYZ from Smart-Piezo-Drive via USB link automatically!
+   ... read/sync V-XYZ from Smart-Piezo-Drive via USB link automatically! -- create manual access for/via pyremote for gains (GXSM and SPD-HV)!
 ->     ...auto time unit adjust [ms, s, ..] depending on range -- may be...
+
+minor pending bug-fixes:
+-> fix PCS / Entry control updated in log mode -- at times wrong number displayed
+-> check on reason for eventaully wrong unit's conversion gathered from DSP signal table ?!??!
+
+short term to-do:
+-> pyremote console, make console output updatre some how life, need a pipe, etc. for tarcking output??? So far only get post completion. Workaround: use gxsm.logev to log to gxsm logfile/monitor
+-> Need for safe multi thredded DSP/signalhandling:
+   Mutex implementation on kernel module level.
+    Idea: implement access control "regions" via ioctl on intyermediate "high-level" (non DSP, but kernel module shared rescource management)
 
 ==> figure out how to set/change entry text color
 pango_attr_foreground_new ()
@@ -60,6 +69,8 @@ pending minor issues/ideas:
 
 -------------------
 DONE:
+-> DSP Control (MK3 HwI):
+   ... chain CP/CI 100/120% option -- done.
 ->\/ View 3D -- completed, just continue tweaking details -- big job completed, all new. Basics are working again and it's awesome with NVida GPU engines!
 ->\/ 3D GL 4.0 basic view re implemented.
 ->\/ 2D view: in SLS mode: make Red-Line work! -- working on this. isNew data control issue in LineInfo, must reset, etc. ==> done.
