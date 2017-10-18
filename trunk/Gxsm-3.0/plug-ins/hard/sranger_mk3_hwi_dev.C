@@ -3599,13 +3599,13 @@ int sranger_mk3_hwi_dev::query_module_signal_input(gint32 input_id){
         // must protect write/read pairs from eventual multitasking/job interleaves
 	lseek (dsp, magic_data.signal_monitor, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
         ret =  ioctl (dsp, SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO, (unsigned long)&mode);
-        g_message ("sranger_mk3_hwi_dev::query_module_signal_input: SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO ret=%d mode=%d ", ret, mode);
+        //g_message ("sranger_mk3_hwi_dev::query_module_signal_input: SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO ret=%d mode=%d ", ret, mode);
         
         //	lseek (dsp, magic_data.signal_monitor, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC | SRANGER_MK23_SEEK_EXCLUSIVE_AUTO);
 	sr_write (dsp, &sm, sizeof (sm)); 
 
         ret =  ioctl (dsp, SRANGER_MK23_IOCTL_QUERY_EXCLUSIVE_MODE, (unsigned long)&mode);
-        g_message ("sranger_mk3_hwi_dev::query_module_signal_input: (post write) EXCLUSIVE_AUTO ret=%d mode=%d ", ret, mode);
+        //g_message ("sranger_mk3_hwi_dev::query_module_signal_input: (post write) EXCLUSIVE_AUTO ret=%d mode=%d ", ret, mode);
 
 	usleep (10000);
 
@@ -3614,7 +3614,7 @@ int sranger_mk3_hwi_dev::query_module_signal_input(gint32 input_id){
 	sr_read (dsp, &sm, sizeof (sm)); 
 
         ret =  ioctl (dsp, SRANGER_MK23_IOCTL_QUERY_EXCLUSIVE_MODE, (unsigned long)&mode);
-        g_message ("sranger_mk3_hwi_dev::query_module_signal_input: (post read) EXCLUSIVE_AUTO ret=%d mode=%d ", ret, mode);
+        //g_message ("sranger_mk3_hwi_dev::query_module_signal_input: (post read) EXCLUSIVE_AUTO ret=%d mode=%d ", ret, mode);
 
 	CONV_32 (sm.mindex);
 	CONV_32 (sm.signal_id);     

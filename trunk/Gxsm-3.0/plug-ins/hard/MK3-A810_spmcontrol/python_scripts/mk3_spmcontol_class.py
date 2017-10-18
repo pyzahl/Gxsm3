@@ -1431,6 +1431,13 @@ class SPMcontrol():
 		sr.close ()
 		return data
 
+        def set_exclusive_auto (self, s):
+                #C  #define SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO        102
+                #C  ret =  ioctl (dsp, SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO, (unsigned long)&mode);
+                return struct.unpack ('i', fcntl.ioctl (s.fileno(), 102,  # SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO
+                                                        struct.pack('i', 0)))[0]
+
+        
         ## packed data example:    struct.pack ("<llLL", _input_id, _signal[SIG_INDEX],0,0)
         def write(self, magic_id, packeddata, mode=0):
 		sr = open (self.sr_dev_path, "wb")
@@ -1917,11 +1924,21 @@ class SPMcontrol():
                 
         def query_module_signal_input(self, _input_id, nullok=0):
 		fmt = "<llLL"
-		self.write (i_signal_monitor, struct.pack (fmt, _input_id, -1,0,0), 0) # 8 -- does not work w python :(
+                srw = open (self.sr_dev_path, "wb")
+                os.lseek (srw.fileno(), self.magic[i_signal_monitor], 0)
+                self.set_exclusive_auto (srw)
+                os.write (srw.fileno(),  struct.pack (fmt, _input_id, -1,0,0))
+		### self.write (i_signal_monitor, struct.pack (fmt, _input_id, -1,0,0), 0) # 8 -- does not work w python :(
 		#	print "Query Signal Input ID (mindex) %d:"%_input_id
 		
 		time.sleep(0.01)
-		data = self.read(i_signal_monitor, fmt)
+                sr = open (self.sr_dev_path, "rb")
+                os.lseek (sr.fileno(), self.magic[i_signal_monitor], 0)
+                self.set_exclusive_auto (sr)
+		data = struct.unpack (fmt, os.read (sr.fileno(), struct.calcsize (fmt)))
+                sr.close ()
+                srw.close ()
+
                 # print data
 		[signal,offset] = self.lookup_signal_by_ptr (data[3], nullok)
 		#	print signal
