@@ -2558,10 +2558,12 @@ gpointer mem2d_digi_filter_convolve_thread (void *env){
                                 int q=job->kernel->GetNv ();
                                 int qq;
                                 for (qq=0; qq<q; ++qq){
-                                        test_sum = mem2d_digi_filter_convolve_point_kernel (ii, jj, job, job->adaptive_kernel, qq);
+                                        test_sum = mem2d_digi_filter_convolve_point_kernel (ii, jj, job, job->adaptive_kernel, qq); // 0 or qq -- testing
                                         data_sum = mem2d_digi_filter_convolve_point_kernel (ii, jj, job, job->kernel, qq);
-                                        if (fabs (test_sum - data_sum) > job->adaptive_threashold)
+                                        if (fabs (test_sum - data_sum) > job->adaptive_threashold){
+                                                data_sum = job->In->Z (data_sum,  jj,ii);
                                                 break;
+                                        }
                                 }
                                 //job->Dest->Z ((double)qq,  jj,ii);
                                 //job->Dest->Z (test_sum - data_sum,  jj,ii);
