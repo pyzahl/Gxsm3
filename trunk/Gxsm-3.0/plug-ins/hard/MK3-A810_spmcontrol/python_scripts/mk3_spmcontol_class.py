@@ -40,6 +40,10 @@ from numpy import *
 
 import pickle
 
+SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO       = 102
+SRANGER_MK23_IOCTL_SET_EXCLUSIVE_UNLIMITED  = 103
+
+
 NUM_MONITOR_SIGNALS = 30
 PHASE_FACTOR_Q19 = 2913   # /* (1<<15)*SPECT_SIN_LEN/360/(1<<5) */
 
@@ -1419,17 +1423,34 @@ class SPMcontrol():
 		os.lseek (srfileno, self.magic[magic_id]+offset, mode)
 		return struct.unpack (fmt, os.read (srfileno, struct.calcsize (fmt)))
 
-        def read(self, magic_id, fmt, mode=0):
+        def read(self, magic_id, fmt, mode=0, exclusive=0):
 		sr = open( self.sr_dev_path, "rb")
+                self.set_exclusive_mode (sr, exclusive)
 		data = self.readf( sr.fileno(), magic_id, fmt, mode)
 		sr.close ()
 		return data
 
-        def read_o(self, magic_id, offset, fmt, mode=0):
+        def read_o(self, magic_id, offset, fmt, mode=0, exclusive=0):
 		sr = open( self.sr_dev_path, "rb")
+                self.set_exclusive_mode (sr, exclusive)
 		data = self.readf( sr.fileno(), magic_id, fmt, mode, offset)
 		sr.close ()
 		return data
+
+        # EXCLUSICE ACCESS CONTROLS via ioctl
+        #####################################
+        # define SRANGER_MK23_IOCTL_QUERY_EXCLUSIVE_MODE      100
+        # define SRANGER_MK23_IOCTL_CLR_EXCLUSIVE_MODE        101
+        # define SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO        102
+        # define SRANGER_MK23_IOCTL_SET_EXCLUSIVE_UNLIMITED   103
+
+        def query_exclusive_mode (self, s):
+                return struct.unpack ('i', fcntl.ioctl (s.fileno(), 100,  # SRANGER_MK23_IOCTL_QUERY_EXCLUSIVE_MODE
+                                                        struct.pack('i', 0)))[0]
+
+        def clr_exclusive_mode (self, s):
+                return struct.unpack ('i', fcntl.ioctl (s.fileno(), 101,  # SRANGER_MK23_IOCTL_CLR_EXCLUSIVE_MODE
+                                                        struct.pack('i', 0)))[0]
 
         def set_exclusive_auto (self, s):
                 #C  #define SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO        102
@@ -1437,17 +1458,31 @@ class SPMcontrol():
                 return struct.unpack ('i', fcntl.ioctl (s.fileno(), 102,  # SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO
                                                         struct.pack('i', 0)))[0]
 
+        def set_exclusive_unlimited (self, s):
+                return struct.unpack ('i', fcntl.ioctl (s.fileno(), 103,  # SRANGER_MK23_IOCTL_SET_EXCLUSIVE_UNLIMITED
+                                                        struct.pack('i', 0)))[0]
+
+        def set_exclusive_mode (self, s, mode):
+                if mode == SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO:
+                        self.set_exclusive_auto (s)
+                elif mode == SRANGER_MK23_IOCTL_SET_EXCLUSIVE_UNLIMITED:
+                        self.set_exclusive_unlimited (s)
+
+        
+        ##########
         
         ## packed data example:    struct.pack ("<llLL", _input_id, _signal[SIG_INDEX],0,0)
-        def write(self, magic_id, packeddata, mode=0):
+        def write(self, magic_id, packeddata, mode=0, exclusive=0):
 		sr = open (self.sr_dev_path, "wb")
 		os.lseek (sr.fileno(), self.magic[magic_id], mode)
+                self.set_exclusive_mode (sr, exclusive)
 		os.write (sr.fileno(), packeddata)
 		sr.close ()
 
-        def write_o(self, magic_id, offset, packeddata, mode=0):
+        def write_o(self, magic_id, offset, packeddata, mode=0, exclusive=0):
 		sr = open (self.sr_dev_path, "wb")
 		os.lseek (sr.fileno(), self.magic[magic_id]+offset, mode)
+                self.set_exclusive_mode (sr, exclusive)
 		os.write (sr.fileno(), packeddata)
 		sr.close ()
 
@@ -1923,27 +1958,17 @@ class SPMcontrol():
 		return 1
                 
         def query_module_signal_input(self, _input_id, nullok=0):
-		fmt = "<llLL"
-                srw = open (self.sr_dev_path, "wb")
-                os.lseek (srw.fileno(), self.magic[i_signal_monitor], 0)
-                self.set_exclusive_auto (srw)
-                os.write (srw.fileno(),  struct.pack (fmt, _input_id, -1,0,0))
-		### self.write (i_signal_monitor, struct.pack (fmt, _input_id, -1,0,0), 0) # 8 -- does not work w python :(
-		#	print "Query Signal Input ID (mindex) %d:"%_input_id
-		
-		time.sleep(0.01)
-                sr = open (self.sr_dev_path, "rb")
-                os.lseek (sr.fileno(), self.magic[i_signal_monitor], 0)
-                self.set_exclusive_auto (sr)
-		data = struct.unpack (fmt, os.read (sr.fileno(), struct.calcsize (fmt)))
-                sr.close ()
-                srw.close ()
-
+                fmt = "<llLL"
+                self.write (i_signal_monitor, struct.pack (fmt, _input_id, -1,0,0), 0, SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO)
+                #       print "Query Signal Input ID (mindex) %d:"%_input_id
+                
+                time.sleep(0.01)
+                data = self.read(i_signal_monitor, fmt, 0, SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO)
                 # print data
-		[signal,offset] = self.lookup_signal_by_ptr (data[3], nullok)
-		#	print signal
-		return signal, data, offset
-    
+                [signal,offset] = self.lookup_signal_by_ptr (data[3], nullok)
+                #       print signal
+                return signal, data, offset
+      
 	def adjust_statemachine_flag(self, mask, flag):
 		if flag:
 			self.write_o (i_statemachine, 0, struct.pack (fmt_statemachine_w, mask))
