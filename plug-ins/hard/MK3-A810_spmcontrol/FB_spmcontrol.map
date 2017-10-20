@@ -1,7 +1,7 @@
 ******************************************************************************
                TMS320C6x Linker Unix v7.0.4                    
 ******************************************************************************
->> Linked Wed May 24 10:07:58 2017
+>> Linked Fri Oct 20 14:26:39 2017
 
 OUTPUT FILE NAME:   <FB_spmcontrol.out>
 ENTRY POINT SYMBOL: "_c_int00"  address: 10e0e7a0
@@ -14,7 +14,7 @@ MEMORY CONFIGURATION
   L2RAM                 10800000   00020000  00009100  00016f00  RWIX
   L1PRAM_Vector         10e080a0   00000160  00000160  00000000  R  X
   L1PRAM_Kernel         10e08200   00000e00  00000000  00000e00  R  X
-  L1PRAM                10e09000   00007000  00006f60  000000a0  R  X
+  L1PRAM                10e09000   00007000  00006fc0  00000040  R  X
   L1DRAM_MailBox        10f04000   0000020c  00000000  0000020c  RWI 
   L1DRAM                10f0420c   0000fcf4  00005512  0000a7e2  RWI 
   L1DRAM_M              10f13f00   00000100  00000078  00000088  RWI 
@@ -109,8 +109,8 @@ FIFO_DATA
                   10e0e980    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_run_area_scan)
 
 .text:fast_PLL 
-*          0    10e0e9a0    000015c0     
-                  10e0e9a0    000015c0     PAC_pll.lib : SR3PRO_PLLAPI.obj (.text:fast_PLL)
+*          0    10e0e9a0    00001620     
+                  10e0e9a0    00001620     PAC_pll.lib : SR3PRO_PLLAPI.obj (.text:fast_PLL)
 
 .data      0    10f0420c    00000000     UNINITIALIZED
 
@@ -314,7 +314,7 @@ address    name
 10f05f60   _CoeffTan_1
 10f05f88   _CoeffTan_1High
 10f05f70   _CoeffTan_1Low
-10e0f954   _DataprocessPLL
+10e0f9a4   _DataprocessPLL
 10e0ec80   _DelayForRef
 10f06270   _FB_ReadAddress
 10f06274   _FB_WriteAddress
@@ -346,8 +346,8 @@ address    name
 10f0971c   _MinTime
 10f096f6   _Mode2F
 10809004   _OutputSignalSetUp_HL
-10e0f864   _PICorrector
-10e0f74c   _PICorrectorAmp
+10e0f8b4   _PICorrector
+10e0f7a0   _PICorrectorAmp
 10f09640   _PI_Phase_Out
 807a1200   _PLL_lookup
 10f05c7c   _PRB_ACPhIdxA
@@ -396,7 +396,7 @@ address    name
 803d0900   _Signal2
 10f06078   _SignalToFilter
 10f096d8   _SineOut0
-10e0f534   _SineSDB
+10e0f580   _SineSDB
 10e0f430   _SquareRoot_SDB
 10808b4c   _StartPLL
 10e0e480   _TSCInit
@@ -758,10 +758,10 @@ address    name
 10e0ee20   _computephase_amp
 10e0f1e4   _computeDeltas
 10e0f430   _SquareRoot_SDB
-10e0f534   _SineSDB
-10e0f74c   _PICorrectorAmp
-10e0f864   _PICorrector
-10e0f954   _DataprocessPLL
+10e0f580   _SineSDB
+10e0f7a0   _PICorrectorAmp
+10e0f8b4   _PICorrector
+10e0f9a4   _DataprocessPLL
 10f0420c   .data
 10f0420c   ___data__
 10f0420c   ___edata__
