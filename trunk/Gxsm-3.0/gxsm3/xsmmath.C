@@ -561,9 +561,30 @@ gboolean StitchScans(MATHOPPARAMS){
                    Dest->data.get_x_right_absolute (), Dest->data.get_y_top_absolute (),
                    mvtox, mvtoy, nx2c, ny2c);
         g_message ("Stitch: max: (%d, %d)", mvtox+nx2c, mvtoy+ny2c);
+        Dest->mem2d->SetData (0., 0,0, nx2c, ny2c);
         Dest->mem2d->CopyFrom (&mtmp, 0,0, mvtox, mvtoy, nx2c, ny2c);
         
-	for(int line = ili; line < ilf; line++)
+        z_adjust = 0.;
+        int count;
+        for(int line = ili; line < ilf; line++)
+		for(int col = ici; col < icf; col++){
+                        double x,y;
+                        double ix,iy;
+                        Dest->Pixel2World (col, line, x,y);
+                        Src->World2Pixel (x,y, ix,iy);
+                        if (col < 0 || line < 0 || col >= Dest->mem2d->GetNx() || line >= Dest->mem2d->GetNy()){
+                                g_message ("WARNING: INDEX OUT OF RANGE [%d, %d] : %g, %g :=> %g %g", col, line, x,y, ix,iy);
+                                return MATH_SIZEERR;
+                        }
+                        if (Dest->mem2d->GetDataPkt (col, line) != 0.){
+                                z_adjust += Dest->mem2d->GetDataPkt (col, line) - dz_adjust*Src->mem2d->GetDataPktInterpol (ix,iy);
+                                count++;
+                        }
+                }
+        z_adjust /= count;
+
+        
+        for(int line = ili; line < ilf; line++)
 		for(int col = ici; col < icf; col++){
                         double x,y;
                         double ix,iy;
