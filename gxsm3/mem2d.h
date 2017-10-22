@@ -185,6 +185,11 @@ public:
 		data->ZPutDataLine16dot16(y, src, mode); 
 		data->Li[y].invalidate();
 	};
+	inline void SetData (double value, int x0, int y0, int nx, int ny){
+                for(int y=y0; y<ny && y<y0+ny; ++y)
+                        for(int x=x0; x<nx && x<x0+nx; ++x)
+                                data->Z (value, x,y);
+        };
 	inline void CopyFrom(Mem2d *src, int x, int y, int tox, int toy, int nx, int ny=1, gboolean observe_shift=false){
 		data->CopyFrom(src->data, x,y, tox,toy, nx,ny, observe_shift);
 	};
