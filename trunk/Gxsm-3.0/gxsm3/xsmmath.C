@@ -565,7 +565,7 @@ gboolean StitchScans(MATHOPPARAMS){
         Dest->mem2d->CopyFrom (&mtmp, 0,0, mvtox, mvtoy, nx2c, ny2c);
         
         z_adjust = 0.;
-        int count;
+        int count = 0;
         for(int line = ili; line < ilf; line++)
 		for(int col = ici; col < icf; col++){
                         double x,y;
@@ -581,7 +581,8 @@ gboolean StitchScans(MATHOPPARAMS){
                                 count++;
                         }
                 }
-        z_adjust /= count;
+        if (count > 1)
+                z_adjust /= count;
 
         
         for(int line = ili; line < ilf; line++)
