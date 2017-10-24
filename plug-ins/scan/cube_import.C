@@ -233,7 +233,7 @@ FIO_STATUS cube_ImExportFile::Read(xsm::open_mode mode){
 	// name should have at least 4 chars: ".ext"
 	if (fname == NULL || strlen(fname) < 4)
 		return  FIO_NOT_RESPONSIBLE_FOR_THAT_FILE;
- 
+
 	// check for file exists and is OK !
 	// else open File Dlg
 	ifstream f;
@@ -263,48 +263,74 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
 	ifstream f;
 	GString *FileList=NULL;
 
+	if (strncasecmp(fname+strlen(fname)-5,".cube",5) && strncasecmp(fname+strlen(fname)-5,".CUBE",5)){
+		f.close ();
+		return status=FIO_NOT_RESPONSIBLE_FOR_THAT_FILE;
+	}
+
 	f.open(name, ios::in);
 	if (!f.good())
 	        return status=FIO_OPEN_ERR;
 	
+        g_message ("Importing from cube data file.\n");
 	FileList = g_string_new ("Imported by GXSM from cube data file.\n");
 
         // skip first 2 lines
         f.getline (line, maxcharsperline);
 	g_string_append (FileList, line);
+	g_string_append (FileList, "\n");
 
         f.getline (line, maxcharsperline);
 	g_string_append (FileList, line);
+	g_string_append (FileList, "\n");
 
         // # atoms, origin
         {
                 f.getline (line, maxcharsperline);
+                g_message (line);
                 g_string_append (FileList, line);
-                gchar **record = g_strsplit (line, " \t,", 4);
+                g_string_append (FileList, "\n");
+                gchar **record = g_strsplit_set (line, " \t,", 4);
                 gchar **token  = record;
+                while (!*token && !token) ++token;
                 atoms = atoi (*token++);
                 for (int i=0; *token && i<3; ++token, ++i)
                         origin[i] = atof(*token);
+                g_strfreev (record);
+                if (!f.good())
+                        return status=FIO_OPEN_ERR;
         }
         for (int k=0; k<3; ++k){
                 f.getline (line, maxcharsperline);
+                g_message (line);
                 g_string_append (FileList, line);
-                gchar **record = g_strsplit (line, " \t,", 4);
+                g_string_append (FileList, "\n");
+                gchar **record = g_strsplit_set (line, " \t,", 4);
                 gchar **token  = record;
+                while (!*token && !token) ++token;
                 dims[k] = atoi (*token++);
                 for (int i=0; *token && i<3; ++token, ++i)
                         voxels[k][i] = atof(*token);
+                g_strfreev (record);
+                if (!f.good())
+                        return status=FIO_OPEN_ERR;
         }
         // read and skip atoms
         for (int k=0; k<atoms; ++k){
                 f.getline (line, maxcharsperline);
+                g_message (line);
                 g_string_append (FileList, line);
-                gchar **record = g_strsplit (line, " \t,", 4);
+                g_string_append (FileList, "\n");
+                gchar **record = g_strsplit_set (line, " \t,", 5);
                 gchar **token  = record;
+                while (!*token && !token) ++token;
                 int atom_number = atoi (*token++);
                 double t_atom_xyz[4];
                 for (int i=0; *token && i<4; ++token, ++i)
                         t_atom_xyz[i] = atof(*token);
+                g_strfreev (record);
+                if (!f.good())
+                        return status=FIO_OPEN_ERR;
         }
 
 
@@ -379,18 +405,27 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
                 for (int ix=0; ix<dims[0]; ix++) {
                         for (int iy=0; iy<dims[1]; iy++) {
                                 for (int iz=0; iz<dims[2]; iz++) {
-                                        if (!token){
+                                        while (!token){
+                                                if (!f.good())
+                                                        return status=FIO_OPEN_ERR;
                                                 f.getline (line, maxcharsperline);
-                                                record = g_strsplit (line, " \t,", 4);
+                                                // g_message ("VData: %s", line);
+                                                record = g_strsplit_set (line, " \t,", 100);
                                                 token  = record;
+                                                while (!*token && !token) ++token;
                                         }
-                                        if (!token)
-                                                break;
+                                        // g_message ("V[%d][%d][%d]=>%s<",ix,iy,iz,*token);
                                         double value = atof (*token++);
                                         scan->mem2d->PutDataPkt (value, ix, iy, iz);
+                                        if (strlen (*token) < 1){
+                                                g_strfreev (record);
+                                                record = token = NULL;
+                                        }
                                 }
                         }
                 }
+                if (record)
+                        g_strfreev (record);
         }
                 
         f.close ();
