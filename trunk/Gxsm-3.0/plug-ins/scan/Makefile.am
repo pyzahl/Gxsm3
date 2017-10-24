@@ -21,6 +21,7 @@ lib_LTLIBRARIES = \
 	libwip_im_export.la \
 	libv5d_export.la \
 	libbin_import.la \
+	libcube_import.la \
 	librhk_spm32_import.la
 
 #	libexternal_converter.la
@@ -41,6 +42,9 @@ libsdfimport_la_SOURCES = sdfimport.C
 
 libbin_import_la_LDFLAGS = -module -export-dynamic -avoid-version
 libbin_import_la_SOURCES = bin_import.C
+
+libcube_import_la_LDFLAGS = -module -export-dynamic -avoid-version
+libcube_import_la_SOURCES = cube_import.C
 
 libprimitiveimexport_la_LDFLAGS = -module -export-dynamic -avoid-version
 libprimitiveimexport_la_SOURCES = primitiveimexport.C
