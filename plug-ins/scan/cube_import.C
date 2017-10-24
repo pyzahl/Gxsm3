@@ -72,6 +72,8 @@ Only import direction is implemented.
  * -------------------------------------------------------------------------------- 
  */
 
+#include <iostream>
+#include <iomanip>
 #include <gtk/gtk.h>
 #include "config.h"
 #include "gxsm/plugin.h"
@@ -450,15 +452,16 @@ FIO_STATUS cube_ImExportFile::Write(){
 	if (fname == NULL) return FIO_NO_NAME;
 
 	// check if we like to handle this
-	if (strncmp(fname+strlen(fname)-4,".asc",4))
+	if (strncmp(fname+strlen(fname)-5,".cube",5))
 		return FIO_NOT_RESPONSIBLE_FOR_THAT_FILE;
 
 	f.open(name, ios::out);
 	if (!f.good())
 	        return status=FIO_OPEN_ERR;
-
+        // << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << std::setfill( '0' ) << value
         f << "GXSM Cube FILE" << std::endl;
-        f << "# ------------" << std::endl;
+        f << "# ------------ dummy atoms, atom positions/objects are not supported ----" << std::endl;
+        f << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << std::setfill( '0' );
         f << "3    0.000000    0.000000    0.000000" << std::endl;
         f << scan->mem2d->GetNx () << "    " << scan->data.s.dx << "    0.000000    0.000000" << std::endl;
         f << scan->mem2d->GetNy () << "    0.000000    " << scan->data.s.dy << "    0.000000" << std::endl;
@@ -474,7 +477,9 @@ FIO_STATUS cube_ImExportFile::Write(){
                                 if (val % 6 == 5)
                                         f << std::endl;
                         }
+                        f << std::endl;
                 }
+                f << std::endl;
 	}
 
 	f.close ();
