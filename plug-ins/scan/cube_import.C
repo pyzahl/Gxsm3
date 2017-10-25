@@ -286,55 +286,68 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
 	g_string_append (FileList, line);
 	g_string_append (FileList, "\n");
 
+#define SKIP_EMPTY(T) { while (*T) if (strlen (*T) < 1) ++T; else break; if (!*T) { f.close(); return status=FIO_NOT_RESPONSIBLE_FOR_THAT_FILE; }}
+        
         // # atoms, origin
         {
                 f.getline (line, maxcharsperline);
                 g_message (line);
                 g_string_append (FileList, line);
                 g_string_append (FileList, "\n");
-                gchar **record = g_strsplit_set (line, " \t,", 4);
+                gchar **record = g_strsplit_set (line, " \t,", 200);
                 gchar **token  = record;
-                while (!*token && !token) ++token;
+                SKIP_EMPTY (token);
                 atoms = atoi (*token++);
-                for (int i=0; *token && i<3; ++token, ++i)
+                for (int i=0; *token && i<3; ++token, ++i){
+                        SKIP_EMPTY (token);
                         origin[i] = atof(*token);
+                }
                 g_strfreev (record);
                 if (!f.good())
                         return status=FIO_OPEN_ERR;
         }
+        g_message ("Reading cube file, %d atoms", atoms);
         for (int k=0; k<3; ++k){
                 f.getline (line, maxcharsperline);
                 g_message (line);
                 g_string_append (FileList, line);
                 g_string_append (FileList, "\n");
-                gchar **record = g_strsplit_set (line, " \t,", 4);
+                gchar **record = g_strsplit_set (line, " \t,", 200);
                 gchar **token  = record;
-                while (!*token && !token) ++token;
+                SKIP_EMPTY (token);
                 dims[k] = atoi (*token++);
-                for (int i=0; *token && i<3; ++token, ++i)
+                for (int i=0; *token && i<3; ++token, ++i){
+                        SKIP_EMPTY (token);
                         voxels[k][i] = atof(*token);
+                }
+                g_message ("Voxel[%d] %g", k, voxels[k][k]);
                 g_strfreev (record);
                 if (!f.good())
                         return status=FIO_OPEN_ERR;
         }
+        g_message ("Reading cube file, %d atoms, reading Nxyz", atoms);
         // read and skip atoms
         for (int k=0; k<atoms; ++k){
                 f.getline (line, maxcharsperline);
                 g_message (line);
                 g_string_append (FileList, line);
                 g_string_append (FileList, "\n");
-                gchar **record = g_strsplit_set (line, " \t,", 5);
+                gchar **record = g_strsplit_set (line, " \t,", 200);
                 gchar **token  = record;
-                while (!*token && !token) ++token;
+                SKIP_EMPTY (token);
                 int atom_number = atoi (*token++);
                 double t_atom_xyz[4];
-                for (int i=0; *token && i<4; ++token, ++i)
+                for (int i=0; *token && i<4; ++token, ++i){
+                        SKIP_EMPTY (token);
                         t_atom_xyz[i] = atof(*token);
+                }
+                //g_message ("Atom[%d] %g", k, t_atom_xyz[0]);
                 g_strfreev (record);
                 if (!f.good())
                         return status=FIO_OPEN_ERR;
         }
 
+        g_message ("Reading cube file scan setup %d x %d x %d", dims[0], dims[1], dims[2]);
 
 	time_t t; // Scan - Startzeit eintragen 
 	time(&t);
@@ -400,6 +413,7 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
         // Read Img Data.
         scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, scan->data.s.nvalues, ZD_FLOAT);
 
+        g_message ("Reading cube file voxel data %d x %d x %d", dims[0], dims[1], dims[2]);
         // read volume data
         {
                 gchar **record = NULL;
@@ -411,18 +425,32 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
                                                 if (!f.good())
                                                         return status=FIO_OPEN_ERR;
                                                 f.getline (line, maxcharsperline);
-                                                // g_message ("VData: %s", line);
+                                                if (ix>47)
+                                                        g_message ("VData: %s", line);
                                                 record = g_strsplit_set (line, " \t,", 100);
                                                 token  = record;
-                                                while (!*token && !token) ++token;
+                                                SKIP_EMPTY (token);
+                                                if (!*token){
+                                                        g_strfreev (record);
+                                                        record = token = NULL;
+                                                }
                                         }
-                                        // g_message ("V[%d][%d][%d]=>%s<",ix,iy,iz,*token);
+                                        if (ix>47)
+                                                g_message ("V[%d][%d][%d]=>%s<",ix,iy,iz,*token);
                                         double value = atof (*token++);
                                         scan->mem2d->PutDataPkt (value, ix, iy, iz);
-                                        if (strlen (*token) < 1){
+                                        if (*token){
+                                                if (strlen (*token) < 1){
+                                                        g_strfreev (record);
+                                                        record = token = NULL;
+                                                }
+                                        }
+                                        else{
+                                                g_message ("token=%s", *token);
                                                 g_strfreev (record);
                                                 record = token = NULL;
                                         }
+                                                        
                                 }
                         }
                 }
@@ -461,7 +489,7 @@ FIO_STATUS cube_ImExportFile::Write(){
         // << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << std::setfill( '0' ) << value
         f << "GXSM Cube FILE" << std::endl;
         f << "# ------------ dummy atoms, atom positions/objects are not supported ----" << std::endl;
-        f << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << std::setfill( '0' );
+        f << std::setw( 11 ) << std::setprecision( 6 ) << std::setfill( '0' );
         f << "3    0.000000    0.000000    0.000000" << std::endl;
         f << scan->mem2d->GetNx () << "    " << scan->data.s.dx << "    0.000000    0.000000" << std::endl;
         f << scan->mem2d->GetNy () << "    0.000000    " << scan->data.s.dy << "    0.000000" << std::endl;
