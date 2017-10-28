@@ -45,6 +45,7 @@ extern DATA_FIFO_EXTERN probe_datafifo;
 extern MOVE_OFFSET      move;
 extern AREA_SCAN        scan;
 extern CR_GENERIC_IO    CR_generic_io;
+extern DATA_SYNC_IO     data_sync_io;
 
 // #define SPECT_SIN_LEN_7    128                   /* sine table length, must be a power of 2 */
 // #define SPECT_SIN_LEN_P2     7
@@ -775,6 +776,11 @@ void store_probe_data_srcs ()
 		probe_datafifo.buffer_l = (DSP_INT32_P) probe_datafifo.buffer_base;
 		probe_datafifo.w_position = 0;
 	}
+
+	// update sync info
+        //data_sync_io.xyit[2]=probe.ix;
+        //data_sync_io.xyti[3]=state.DSP_time;
+        //data_sync_io.tick=1;
 }
 
 #pragma CODE_SECTION(buffer_probe_section_end_data_srcs, ".text:slow")

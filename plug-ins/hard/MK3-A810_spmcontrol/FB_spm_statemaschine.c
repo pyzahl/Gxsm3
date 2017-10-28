@@ -51,6 +51,7 @@ extern CR_GENERIC_IO    CR_generic_io;
 extern SIGNAL_MONITOR   sig_mon;
 extern A810_CONFIG      a810_config;
 extern PLL_LOOKUP       PLL_lookup;
+extern DATA_SYNC_IO     data_sync_io;
 
 extern int PRB_AIC_data_sum[9];
 
@@ -177,7 +178,7 @@ void dsp_idle_loop (void){
 			init_CR_out_pulse ();
 		if (CR_out_pulse.stop)
 			stop_CR_out_pulse ();
-
+		
 		/* Do CoolRunner generic IO ? */
 		if (CR_generic_io.start){
 			switch (CR_generic_io.start){
@@ -189,6 +190,18 @@ void dsp_idle_loop (void){
 			CR_generic_io.start=0;
 		}
 
+		if (data_sync_io.pflg || (CR_generic_io.gpio_direction_bits & 0x0100))
+			if (data_sync_io.tick){
+				data_sync_io.gpiow_bits =
+					(CR_generic_io.gpio_data_out & 0xff)
+					| ((data_sync_io.xyit[0] & 1)<<8)
+					| ((data_sync_io.xyit[1] & 1)<<9)
+					| ((data_sync_io.xyit[2] & 1)<<10);
+				WR_GPIO (GPIO_Data_0, &data_sync_io.gpiow_bits, 1); // write port
+				data_sync_io.tick=0;
+				//data_sync_io.last_xyt[0] = data_sync_io.xyt[0];
+			}
+		
 #ifdef USE_PLL_API
 		/* PAC/PLL controls */
 		if (PLL_lookup.start){

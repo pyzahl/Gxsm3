@@ -249,15 +249,12 @@ AREA_SCAN        scan = {
 		0     //	scan.pflg = 0;
 };
 
-SCAN_EVENT_TRIGGER scan_event_trigger = {
-	{ -1,-1,-1,-1, // xp bias
-	  -1,-1,-1,-1 }, // set
-	{ -1,-1,-1,-1, // xm bias
-	  -1,-1,-1,-1 }, // set
-	{ 0,0,0,0,     // biases
-	  0,0,0,0 },
-	{ 0,0,0,0,     // setpoints
-	  0,0,0,0 },
+DATA_SYNC_IO data_sync_io = {
+	{0,0,0,0},
+	{0,0,0,0},
+	0,0,
+	0,
+	0,
 	0 // pflg
 };
 
@@ -491,7 +488,9 @@ PLL_LOOKUP PLL_lookup = {
 //  Mode2F
 	(DSP_UINTA)(&Mode2F),
 
-	0
+	0,
+	-1, {0,0},
+	{0,0,0,0}
 };
 #endif
 
@@ -1085,7 +1084,7 @@ void fill_magic()
 	magic.autoapproach = (DSP_UINTA)(&autoapp);
 	magic.datafifo     = (DSP_UINTA)(&datafifo);
 	magic.probedatafifo= (DSP_UINTA)(&probe_datafifo);
-	magic.scan_event_trigger= (DSP_UINTA)(&scan_event_trigger);
+	magic.data_sync_io = (DSP_UINTA)(&data_sync_io);
 	magic.CR_out_puls  = (DSP_UINTA)(&CR_out_pulse);
 	magic.CR_generic_io= (DSP_UINTA)(&CR_generic_io);
 	magic.hr_mask      = (DSP_UINTA)(&sigma_delta_hr_mask);

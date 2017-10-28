@@ -47,9 +47,10 @@ extern PROBE            probe;
 extern DATA_FIFO        datafifo;
 extern DATA_FIFO        probe_datafifo;
 extern CR_GENERIC_IO    CR_generic_io;
-extern SCAN_EVENT_TRIGGER scan_event_trigger;
+extern DATA_SYNC_IO     data_sync_io;
 #ifdef WATCH_ENABLE
 extern WATCH            watch;
+extern SPM_STATEMACHINE state;
 #endif
 
 /* THIS IS DOUBLE USED !!! NO PROBE WHILE USED OF Z_DATA_BUFFER !!! */
@@ -335,17 +336,12 @@ void push_area_scan_data (unsigned long srcs){
 	// auto clear now including counter0
 	clear_summing_data ();
 	analog.counter[0] = 0L;
-}
 
-void check_scan_event_trigger (short trig_i[8], short bias_setpoint[8]){
-	int i;
-	for (i=0; i<8; ++i)
-		if (scan.ix == trig_i[i]){
-			if (i<4)
-				analog.out[ANALOG_BIAS] = bias_setpoint [i];
-			else
-				feedback_mixer.setpoint[0] = bias_setpoint [i];
-		}
+	// update sync info
+        data_sync_io.xyit[0]=scan.ix;
+        data_sync_io.xyit[1]=scan.iy;
+        data_sync_io.xyit[3]=state.DSP_time;
+        data_sync_io.tick=1;
 }
 
 void run_area_scan (){
@@ -374,8 +370,6 @@ void run_area_scan (){
 						AS_ip = scan.dnx_probe;
 					}
 				}
-				if (scan_event_trigger.pflg)
-					check_scan_event_trigger (scan_event_trigger.trig_i_xp, scan_event_trigger.xp_bias_setpoint);
 
 				scan.iix  = scan.dnx-1;
 				
@@ -418,8 +412,6 @@ void run_area_scan (){
 							AS_ip = scan.dnx_probe;
 						}
 					}
-					if (scan_event_trigger.pflg)
-						check_scan_event_trigger (scan_event_trigger.trig_i_xm, scan_event_trigger.xm_bias_setpoint);
 					
 					scan.iix   = scan.dnx-1;
 					

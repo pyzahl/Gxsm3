@@ -48,6 +48,7 @@ extern AUTOAPPROACH     autoapp;
 extern CR_OUT_PULSE     CR_out_pulse;
 extern CR_GENERIC_IO    CR_generic_io;
 extern A810_CONFIG      a810_config;
+extern DATA_SYNC_IO     data_sync_io;
 
 extern	void asm_calc_mix_log ();
 
@@ -160,6 +161,19 @@ void dsp_idle_loop (void){
 			}
 			CR_generic_io.start=0;
 		}
+
+		if (data_sync_io.pflg || (CR_generic_io.gpio_direction_bits & 0x0100))
+			if (data_sync_io.tick){
+				data_sync_io.gpiow_bits =
+					(CR_generic_io.gpio_data_out & 0xff)
+					| ((data_sync_io.xyit[0] & 1)<<8)
+					| ((data_sync_io.xyit[1] & 1)<<9)
+					| ((data_sync_io.xyit[2] & 1)<<10);
+				WR_GPIO (GPIO_Data_0, &data_sync_io.gpiow_bits, 1); // write port
+				data_sync_io.tick=0;
+				//data_sync_io.last_xyt[0] = data_sync_io.xyt[0];
+			}
+		
 
 #ifdef AIC_STOPMODE_ENABLE
 

@@ -52,7 +52,7 @@ extern PROBE            probe;
 extern DATA_FIFO        datafifo;
 extern DATA_FIFO        probe_datafifo;
 extern CR_GENERIC_IO    CR_generic_io;
-extern SCAN_EVENT_TRIGGER scan_event_trigger;
+extern DATA_SYNC_IO     data_sync_io;
 
 /* THIS IS DOUBLE USED !!! NO PROBE WHILE USED OF Z_DATA_BUFFER !!! */
 extern DSP_INT16      prbdf[];
@@ -441,18 +441,12 @@ void push_area_scan_data (DSP_UINT32 srcs){
 	clear_summing_data ();
 	analog.counter[0] = 0;
 	analog.counter[1] = 0;
-}
 
-#pragma CODE_SECTION(check_scan_event_trigger, ".text:slow")
-void check_scan_event_trigger (int trig_i[8], int bias_setpoint[8]){
-	int i;
-	for (i=0; i<8; ++i)
-		if (scan.ix == trig_i[i]){
-			if (i<4)
-				analog.bias = bias_setpoint [i];
-			else
-				feedback_mixer.setpoint[0] = bias_setpoint [i];
-		}
+	// update sync info
+        data_sync_io.xyit[0]=scan.ix;
+        data_sync_io.xyit[1]=scan.iy;
+        data_sync_io.xyit[3]=state.DSP_time;
+        data_sync_io.tick=1;
 }
 
 // TESTING IF SLOW WORKS HERE *****!!!!!!!!!!
@@ -477,9 +471,6 @@ void run_area_scan (){
 						AS_ip = scan.dnx_probe;
 					}
 				}
-				if (scan_event_trigger.pflg)
-					check_scan_event_trigger (scan_event_trigger.trig_i_xp, scan_event_trigger.xp_bias_setpoint);
-
 				scan.iix  = scan.dnx-1;
 				
 				if (AS_ch2nd_constheight_enabled){
@@ -523,9 +514,6 @@ void run_area_scan (){
 						}
 					}
 #endif
-					if (scan_event_trigger.pflg)
-						check_scan_event_trigger (scan_event_trigger.trig_i_xm, scan_event_trigger.xm_bias_setpoint);
-					
 					scan.iix   = scan.dnx-1;
 					
 					if (AS_ch2nd_constheight_enabled){
