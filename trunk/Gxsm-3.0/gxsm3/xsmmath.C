@@ -561,6 +561,7 @@ gboolean StitchScans(MATHOPPARAMS){
                    Dest->data.get_x_right_absolute (), Dest->data.get_y_top_absolute (),
                    mvtox, mvtoy, nx2c, ny2c);
         g_message ("Stitch: max: (%d, %d)", mvtox+nx2c, mvtoy+ny2c);
+        
         Dest->mem2d->SetData (0., 0,0, nx2c, ny2c);
         Dest->mem2d->CopyFrom (&mtmp, 0,0, mvtox, mvtoy, nx2c, ny2c);
         

@@ -43,6 +43,7 @@ extern DATA_FIFO_EXTERN probe_datafifo;
 extern MOVE_OFFSET      move;
 extern AREA_SCAN        scan;
 extern CR_GENERIC_IO    CR_generic_io;
+extern DATA_SYNC_IO     data_sync_io;
 
 ioport   unsigned int Port0;  /*CPLD port*/
 ioport   unsigned int Port1;  /*CPLD port*/
@@ -529,6 +530,11 @@ void store_probe_data_srcs ()
 		probe_datafifo.buffer_l = (DSP_LONG*) probe_datafifo.buffer_base;
 		probe_datafifo.w_position = 0;
 	}
+
+	// update sync info
+        //data_sync_io.xyit[2]=probe.ix;
+        //data_sync_io.xyti[3]=state.DSP_time;
+        //data_sync_io.tick=1;
 }
 
 

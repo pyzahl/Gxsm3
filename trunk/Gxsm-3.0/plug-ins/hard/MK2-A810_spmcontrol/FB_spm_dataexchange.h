@@ -115,7 +115,7 @@
 #define FB_SPM_SOFT_ID   0x1001 /* FB_SPM sofware id */
 #define FB_SPM_VERSION   0x2033 /* FB_SPM main Version, BCD: 00.00 */
 #define FB_SPM_DATE_YEAR 0x2017 /* Date: Year, BCD */
-#define FB_SPM_DATE_MMDD 0x0517 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x1027 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Lednice-Battenkill Worrier 2013\n"\
@@ -238,7 +238,7 @@ typedef struct {
 	DSP_UINT autoapproach;  /**< 14: Address of autoapproch struct =RO */
 	DSP_UINT datafifo;      /**< 15: Address of datafifo struct =RO */
 	DSP_UINT probedatafifo; /**< 16: Address of probe datafifo struct =RO */
-	DSP_UINT scan_event_trigger;/**< 17: Address of scan_event_trigger struct =RO */
+	DSP_UINT data_sync_io;  /**< 17: Address of data_sync_io struct =RO */
 	DSP_UINT feedback_mixer; /**< 18: Address of DFM FUZZY mix control parameter struct =RO */
 	DSP_UINT CR_out_puls;   /**< 19: Address of CoolRunner IO Out Puls action struct =RO */
 	DSP_UINT external;      /**< 20: Address of external control struct =RO */
@@ -420,17 +420,18 @@ typedef struct{
 } AREA_SCAN;
 #define MAX_WRITE_SCAN 47
 
-
-/** Trigger for reoccurring x-pos auto events */
+/** Data Sync Control */
 
 typedef struct{
-	DSP_INT trig_i_xp[8]; // 4x for bias, 4x for setpoint, == -1: off
-	DSP_INT trig_i_xm[8];
-	DSP_INT xp_bias_setpoint[8]; // 4x bias, 4x setpoint
-	DSP_INT xm_bias_setpoint[8];
+	DSP_INT xyit[4];
+	DSP_INT last_xyit[4];
+        DSP_IINT gpiow_bits; // tmp data, mixed with generic gpio data
+        DSP_IINT gpior_bits; // dummy
+        DSP_INT config;
+	DSP_INT tick;
 	DSP_INT pflg;
-} SCAN_EVENT_TRIGGER;
-#define MAX_WRITE_SCAN_EVENT_TRIGGER 33
+} DATA_SYNC_IO;
+#define MAX_WRITE_DATA_SYNC_IO (0)
 
 /** Vector Probe Control structure and Probe actions definition vector, one Element of a Vector Program:
  *

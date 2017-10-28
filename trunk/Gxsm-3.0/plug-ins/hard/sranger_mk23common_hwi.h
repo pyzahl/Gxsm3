@@ -114,9 +114,6 @@ public:
 
 	virtual void set_ldc (double dxdt=0., double dydt=0., double dzdt=0.) {};
 
-	virtual int scan_event_trigger () {};
-	
-
 	int is_scanning() { return ScanningFlg; };
 	virtual	int start_fifo_read (int y_start, 
 			     int num_srcs0, int num_srcs1, int num_srcs2, int num_srcs3, 
@@ -145,10 +142,6 @@ public:
 	virtual void write_dsp_scan () {};
 	virtual void recalculate_dsp_scan_speed_parameters () {};
 	virtual void recalculate_dsp_scan_slope_parameters () {};
-
- 	
-	virtual void read_dsp_scan_event_trigger (int &pflg, int i_xp[], int i_xm[], double sp_xp[], double sp_xm[]) {};
-	virtual void write_dsp_scan_event_trigger (int &pflg, int i_xp[], int i_xm[], double sp_xp[], double sp_xm[]) {};
  	
 	virtual void read_dsp_lockin (double AC_amp[4], double &AC_frq, double &AC_phaseA, double &AC_phaseB, gint32 &AC_lockin_avg_cycels) {};
 	virtual void write_dsp_lockin_probe_final (double AC_amp[4], double &AC_frq, double AC_phaseA, double AC_phaseB,

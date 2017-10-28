@@ -186,15 +186,12 @@ AREA_SCAN        scan = {
 		0     //	scan.pflg = 0;
 };
 
-SCAN_EVENT_TRIGGER scan_event_trigger = {
-	-1,-1,-1,-1, // xp bias
-	-1,-1,-1,-1, // xm
-	-1,-1,-1,-1, // xp setpoint
-	-1,-1,-1,-1, // xm
-	0,0,0,0,     // biases
-	0,0,0,0,
-	0,0,0,0,     // setpoints
-	0,0,0,0,
+DATA_SYNC_IO data_sync_io = {
+	{0,0,0,0},
+	{0,0,0,0},
+	0,0,
+	0,
+	0,
 	0 // pflg
 };
 
@@ -353,7 +350,7 @@ void main()
 	magic.autoapproach = (DSP_UINT)(&autoapp);
 	magic.datafifo     = (DSP_UINT)(&datafifo);
 	magic.probedatafifo= (DSP_UINT)(&probe_datafifo);
-	magic.scan_event_trigger= (DSP_UINT)(&scan_event_trigger);
+	magic.data_sync_io  =(DSP_UINT)(&data_sync_io);
 	magic.feedback_mixer = (DSP_UINT)(&feedback_mixer);
 	magic.CR_out_puls  = (DSP_UINT)(&CR_out_pulse);
 	magic.external     = (DSP_UINT)(&external);

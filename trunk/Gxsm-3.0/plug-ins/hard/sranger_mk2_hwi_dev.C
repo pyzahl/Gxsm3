@@ -319,7 +319,7 @@ sranger_mk2_hwi_dev::sranger_mk2_hwi_dev(){
 					swap (&magic_data.autoapproach);
 					swap (&magic_data.datafifo);
 					swap (&magic_data.probedatafifo);
-					swap (&magic_data.scan_event_trigger);
+					swap (&magic_data.data_sync_io);
 					swap (&magic_data.feedback_mixer);
 					swap (&magic_data.CR_out_puls);
 					swap (&magic_data.external);
@@ -2364,82 +2364,6 @@ void sranger_mk2_hwi_dev::write_dsp_scan (){
 	conv_dsp_scan ();
 }
 
-
-
-void sranger_mk2_hwi_dev::conv_dsp_scan_event_trigger (){
-	for (int i=0; i<8; ++i){
-		CONV_16 (dsp_scan_event_trigger.trig_i_xp[i]);
-		CONV_16 (dsp_scan_event_trigger.trig_i_xm[i]);
-		CONV_16 (dsp_scan_event_trigger.xp_bias_setpoint[i]);
-		CONV_16 (dsp_scan_event_trigger.xm_bias_setpoint[i]);
-	}
-	CONV_16 (dsp_scan_event_trigger.pflg);
-}
-
-void sranger_mk2_hwi_dev::read_dsp_scan_event_trigger (int &pflg, int i_xp[], int i_xm[], double sp_xp[], double sp_xm[]) {
-	lseek (dsp, magic_data.scan_event_trigger, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-	sr_read  (dsp, &dsp_scan_event_trigger, sizeof (dsp_scan_event_trigger)); 
-
-	// from DSP to PC
-	conv_dsp_scan_event_trigger ();
-
-	pflg = dsp_scan_event_trigger.pflg;
-	for (int i=0; i<8; ++i){
-		i_xp[i] = dsp_scan_event_trigger.trig_i_xp[i];
-		i_xm[i] = dsp_scan_event_trigger.trig_i_xm[i];
-		if (i<4){
-			sp_xp[i] = gapp->xsm->Inst->V2BiasV (gapp->xsm->Inst->Dig2VoltOut (dsp_scan_event_trigger.xp_bias_setpoint[i]));
-			sp_xm[i] = gapp->xsm->Inst->V2BiasV (gapp->xsm->Inst->Dig2VoltOut (dsp_scan_event_trigger.xm_bias_setpoint[i]));
-		} else {
-			if (IS_AFM_CTRL){ // AFM (linear)
-				if (strncmp (xsmres.daqZunit[0], "nN", 2) == 0)
-					;
-				else if (strncmp (xsmres.daqZunit[0], "Hz", 2) == 0)
-					;
-				else
-					;
-			} else {// STM (log)
-				double f = gapp->xsm->Inst->nAmpere2V (1.);
-				sp_xp[i] = gapp->xsm->Inst->Dig2VoltIn (dsp_scan_event_trigger.xp_bias_setpoint[i]) / f;
-				sp_xm[i] = gapp->xsm->Inst->Dig2VoltIn (dsp_scan_event_trigger.xm_bias_setpoint[i]) / f;
-			}
-		}
-	}
-}
-
-void sranger_mk2_hwi_dev::write_dsp_scan_event_trigger (int &pflg, int i_xp[], int i_xm[], double sp_xp[], double sp_xm[]) {
-	dsp_scan_event_trigger.pflg = pflg;
-	for (int i=0; i<8; ++i){
-		dsp_scan_event_trigger.trig_i_xp[i] = i_xp[i];
-		dsp_scan_event_trigger.trig_i_xm[i] = i_xm[i];
-		if (i<4){
-			dsp_scan_event_trigger.xp_bias_setpoint[i] = (DSP_INT) round (gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (sp_xp[i])));
-			dsp_scan_event_trigger.xm_bias_setpoint[i] = (DSP_INT) round (gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (sp_xm[i])));
-		} else {
-			if (IS_AFM_CTRL){ // AFM (linear)
-				if (strncmp (xsmres.daqZunit[0], "nN", 2) == 0)
-					;
-				else if (strncmp (xsmres.daqZunit[0], "Hz", 2) == 0)
-					;
-				else
-					;
-			} else {// STM (log)
-				dsp_scan_event_trigger.xp_bias_setpoint[i] = (int) (gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->nAmpere2V (sp_xp[i])));
-				dsp_scan_event_trigger.xm_bias_setpoint[i] = (int) (gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->nAmpere2V (sp_xm[i])));
-			}
-		}
-	}
-
-	// from PC to DSP
-	conv_dsp_scan_event_trigger ();
-
-	lseek (dsp, magic_data.scan_event_trigger, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-	sr_write (dsp, &dsp_scan_event_trigger, MAX_WRITE_SCAN_EVENT_TRIGGER<<1); 
-
-	// from DSP to PC
-	conv_dsp_scan_event_trigger ();
-}
- 
 
 void sranger_mk2_hwi_dev::conv_dsp_probe (){
 	CONV_16 (dsp_probe.start);

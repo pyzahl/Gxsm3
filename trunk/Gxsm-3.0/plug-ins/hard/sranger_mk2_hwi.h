@@ -206,10 +206,6 @@ public:
 	virtual void recalculate_dsp_scan_speed_parameters ();
 	virtual void recalculate_dsp_scan_slope_parameters ();
 
-	void  conv_dsp_scan_event_trigger ();
-	virtual void  read_dsp_scan_event_trigger (int &pflg, int i_xp[], int i_xm[], double sp_xp[], double sp_xm[]);
-	virtual void write_dsp_scan_event_trigger (int &pflg, int i_xp[], int i_xm[], double sp_xp[], double sp_xm[]);
- 	
 	void conv_dsp_probe ();
 	virtual void read_dsp_lockin (double *AC_amp, double &AC_frq, double &AC_phaseA, double &AC_phaseB, gint32 &AC_lockin_avg_cycels);
 	virtual void write_dsp_lockin_probe_final (double AC_amp[4], double &AC_frq, double AC_phaseA, double AC_phaseB, gint32 AC_lockin_avg_cycels, double VP_lim_val[2], double noise_amp, int start=0);
@@ -264,7 +260,7 @@ protected:
 	FEEDBACK_MIXER   dsp_feedback_mixer;
 	ANALOG_VALUES    dsp_analog;
 	AREA_SCAN        dsp_scan;
-	SCAN_EVENT_TRIGGER dsp_scan_event_trigger;
+	DATA_SYNC_IO     dsp_data_sync_io;
 	PROBE            dsp_probe;
 	DATA_FIFO        dsp_fifo;
 	CR_OUT_PULSE     dsp_cr_out_pulse;  // IO puls engine

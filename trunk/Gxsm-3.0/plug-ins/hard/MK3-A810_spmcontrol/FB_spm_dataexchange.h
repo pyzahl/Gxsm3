@@ -125,7 +125,7 @@
 #define FB_SPM_SOFT_ID   0x00001002 /* FB_SPM sofware id */
 #define FB_SPM_VERSION   0x00003055 /* FB_SPM main Version, BCD: 00.00 */
 #define FB_SPM_DATE_YEAR 0x00002017 /* Date: Year/MM/DD, BCD */
-#define FB_SPM_DATE_MMDD 0x00001020 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00001027 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Signal Master Evolved GXSM3B\n"\
@@ -265,7 +265,7 @@ typedef struct {
 	DSP_UINTA autoapproach;  /**< 17: Address of autoapproch struct =RO */
 	DSP_UINTA datafifo;      /**< 18: Address of datafifo struct =RO */
 	DSP_UINTA probedatafifo; /**< 19: Address of probe datafifo struct =RO */
-	DSP_UINTA scan_event_trigger;/**< 20: Address of scan_event_trigger struct =RO */
+	DSP_UINTA data_sync_io;  /**< 20: Address of data_sync_io struct =RO */
 	DSP_UINTA CR_out_puls;   /**< 21: Address of CoolRunner IO Out Puls action struct =RO */
 	DSP_UINTA CR_generic_io; /**< 22: Address of CR_generic_io struct =RO */
 	DSP_UINTA a810_config;   /**< 23: Address of a810_config struct =RO */
@@ -488,20 +488,22 @@ typedef struct{
 #define MAX_WRITE_SCAN (2*31)
 
 
-/** Trigger for reoccurring x-pos auto events */
+/** Data Sync Control */
 
 typedef struct{
-	DSP_INT32 trig_i_xp[8]; // 4x for bias, 4x for setpoint, == -1: off
-	DSP_INT32 trig_i_xm[8];
-	DSP_INT32 xp_bias_setpoint[8]; // 4x bias, 4x setpoint
-	DSP_INT32 xm_bias_setpoint[8];
+	DSP_INT32 xyit[4];
+	DSP_INT32 last_xyit[4];
+        DSP_UINT16 gpiow_bits; // tmp data, mixed with generic gpio data
+        DSP_UINT16 gpior_bits; // dummy
+        DSP_INT32 config;
+	DSP_INT32 tick;
 	DSP_INT32 pflg;
 #ifdef DSP_CC
-} SCAN_EVENT_TRIGGER;
+} DATA_SYNC_IO;
 #else
-} SCAN_EVENT_TRIGGER_MK3;
+} DATA_SYNC_IO_MK3;
 #endif
-#define MAX_WRITE_SCAN_EVENT_TRIGGER (2*4*8)
+#define MAX_WRITE_DATA_SYNC_IO (0)
 
 /** Vector Probe Control structure and Probe actions definition vector, one Element of a Vector Program:
  *
@@ -917,6 +919,11 @@ typedef struct{
 	DSP_UINTA Mode2F; 
 
 	DSP_INT32 pac_lib_status;
+
+// Trigger handling additions for recorder
+        DSP_INT32 blcklen_trigger; // set this to use real time trigger/delayed recorder start
+        DSP_INT32 signal_trigger_level[2];
+        DSP_INT32 action[4]; // additional actions -- TDB
 } PLL_LOOKUP;
 
 /** SPM Signal/Data Magics **/

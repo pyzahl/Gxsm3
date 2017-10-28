@@ -938,8 +938,6 @@ DSPControl::DSPControl () {
 	DSP_vpdata_ij[0]=2; // DSP level VP data acccess indexing, global
 	DSP_vpdata_ij[1]=0;
 
-	sranger_common_hwi->read_dsp_scan_event_trigger (trigger_pflg, trigger_i_xp, trigger_i_xm, trigger_bias_setpoint_xp, trigger_bias_setpoint_xm);
-
 	XsmRescourceManager xrm("sranger_mk2_hwi_control");
         xrm.Get ("frq_ref", &frq_ref, "75000.0");
 	xrm.Get ("bias", &bias, "0.5");
@@ -3775,7 +3773,7 @@ void DSPControl::update_trigger(gboolean flg){
 		trigger_pflg=0;
 		g_slist_foreach (dsp_bp->get_freeze_list_head (), (GFunc) App::thaw_ec, NULL);
 	}	
-	sranger_common_hwi->write_dsp_scan_event_trigger (trigger_pflg, trigger_i_xp, trigger_i_xm, trigger_bias_setpoint_xp, trigger_bias_setpoint_xm);
+        // deleted trigger update -- obsoleted, removed DSP function
 }
 
 

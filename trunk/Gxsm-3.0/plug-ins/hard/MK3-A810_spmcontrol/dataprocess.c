@@ -329,6 +329,32 @@ inline void compute_analog_wave_out (int ch, OUT_MIXER *out){
 	AIC_OUT(ch) = out->s;
 }
 
+inline void check_trigger_levels(){
+#if 0 // running very low on DSP FAST RAM space
+        if (PLL_lookup.pflg > 0){ // pos trigger on level ".stop"
+                if (pSignal1[0] < (PLL_lookup.stop-2))
+                        PLL_lookup.pflg = 2;
+                else if (PLL_lookup.pflg > 1)
+                        if (pSignal1[0] > PLL_lookup.stop)
+                                PLL_lookup.pflg = 0; // go!
+        } else { // else neg trigger on level ".stop"
+                if (pSignal1[0] > (PLL_lookup.stop+2))
+                        PLL_lookup.pflg = -2;
+                else if (PLL_lookup.pflg < -1)
+                        if (pSignal1[0] < PLL_lookup.stop)
+                                PLL_lookup.pflg = 0; // go!
+        }
+#else // only pos trigger
+        if (pSignal1[0] < (PLL_lookup.stop-2))
+                PLL_lookup.pflg = 2;
+        else if (PLL_lookup.pflg > 1)
+                if (pSignal1[0] > PLL_lookup.stop)
+                                PLL_lookup.pflg = 0; // go!
+#endif
+        if (!PLL_lookup.pflg && PLL_lookup.blcklen_trigger != -1)
+                blcklen = PLL_lookup.blcklen_trigger; // now activate recording!
+}
+
 /* This is ISR is called on each new sample.  The "mode"/statevariable
  * should be initialized with AIC_OFFSET_COMPENSATION before starting
  * the AIC/DMA isr, this assures the correct offset initialization and
@@ -361,6 +387,9 @@ void dataprocess()
 #ifdef USE_PLL_API
         if (state.mode & MD_PLL){
 		max_out_ch = 7;
+		if (PLL_lookup.blcklen_trigger != -1){
+                        check_trigger_levels();
+                }
 		DataprocessPLL();
 
 		// Amplitude Controller Patch to handle negative amplitude big step responses
@@ -376,27 +405,14 @@ void dataprocess()
 		
 	} else {
 		max_out_ch = 8; // it's down to 7 when PLL is active -- else PLL output signal is overwritten
-		if (blcklen != -1){
+		if (blcklen != -1 || PLL_lookup.blcklen_trigger != -1){
 			if (PLL_lookup.pflg == 0){ // ==0 : no trigger or go after trigger event
 				Signal1[blcklen] = pSignal1[0];
 				Signal2[blcklen] = pSignal2[0];
 				blcklen--;
 			} else { // manage trigger -- ONLY IF PLL OFF AVAILABLE
-				if (PLL_lookup.pflg > 0){ // pos trigger on level ".stop"
-					if (pSignal1[0] < (PLL_lookup.stop-2))
-						PLL_lookup.pflg = 2;
-					else if (PLL_lookup.pflg > 1)
-						if (pSignal1[0] > PLL_lookup.stop)
-							PLL_lookup.pflg = 0; // go!
-				} else { // else neg trigger on level ".stop"
-					if (pSignal1[0] > (PLL_lookup.stop+2))
-						PLL_lookup.pflg = -2;
-					else if (PLL_lookup.pflg < -1)
-						if (pSignal1[0] < PLL_lookup.stop)
-							PLL_lookup.pflg = 0; // go!
-				}
-			}
-
+                                check_trigger_levels();
+                        }
 		} 
 	}
 #endif
