@@ -1,3 +1,4 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 /* SRanger and Gxsm - Gnome X Scanning Microscopy Project
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -26,8 +27,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-
 #include "FB_spm_dataexchange.h"
 #include "dataprocess.h"
 #include "ReadWrite_GPIO.h"
@@ -36,6 +35,7 @@ extern SPM_STATEMACHINE state;
 extern ANALOG_VALUES    analog;
 extern AUTOAPPROACH     autoapp;
 extern CR_OUT_PULSE     CR_out_pulse;
+extern CR_GENERIC_IO    CR_generic_io;
 
 #pragma CODE_SECTION(init_CR_out_pulse, ".text:slow")
 #pragma CODE_SECTION(stop_CR_out_pulse, ".text:slow")
@@ -63,7 +63,8 @@ void init_CR_out_pulse (){
 // stop all mover/approach actions, cleanup
 #pragma CODE_SECTION(stop_CR_out_pulse, ".text:slow")
 void stop_CR_out_pulse (){
-	WR_GPIO (GPIO_Data_0, &CR_out_pulse.reset_bcode, 1);
+        CR_generic_io.gpio_data_out = CR_out_pulse.reset_bcode;
+        //WR_GPIO (GPIO_Data_0, &CR_out_pulse.reset_bcode, 1);
 	CR_out_pulse.stop  = 0;
 	CR_out_pulse.pflg  = 0;
 }
@@ -72,11 +73,13 @@ void stop_CR_out_pulse (){
 void run_CR_out_pulse (){
 	if (CR_out_pulse.i_per == 0)
 //		Port[CR_out_pulse.io_address] = CR_out_pulse.on_bcode;
-		WR_GPIO (GPIO_Data_0, &CR_out_pulse.on_bcode, 1);
+                CR_generic_io.gpio_data_out = CR_out_pulse.on_bcode;
+              //WR_GPIO (GPIO_Data_0, &CR_out_pulse.on_bcode, 1);
 
 	if (CR_out_pulse.i_per == CR_out_pulse.duration)
 //		Port[CR_out_pulse.io_address] = CR_out_pulse.off_bcode;
-		WR_GPIO (GPIO_Data_0, &CR_out_pulse.off_bcode, 1);
+                CR_generic_io.gpio_data_out = CR_out_pulse.off_bcode;
+              //WR_GPIO (GPIO_Data_0, &CR_out_pulse.off_bcode, 1);
 
 	if (CR_out_pulse.i_per++ == CR_out_pulse.period){
 		CR_out_pulse.i_per = 0;	

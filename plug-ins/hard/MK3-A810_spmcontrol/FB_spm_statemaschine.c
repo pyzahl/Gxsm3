@@ -161,7 +161,8 @@ void dsp_idle_loop (void){
 				i =  (probe.vector->options & VP_GPIO_MSK) >> 16;
 				if (probe.gpio_setting != i){ // update GPIO!
 					CR_generic_io.gpio_data_out = (DSP_UINT16)i;
-					WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_out, 1);
+					WRITE_GPIO_0 (CR_generic_io.gpio_data_out);
+					//WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_out, 1);
 					probe.gpio_setting = i;
 				}
 			}
@@ -179,17 +180,20 @@ void dsp_idle_loop (void){
 		if (CR_out_pulse.stop)
 			stop_CR_out_pulse ();
 		
-		/* Do CoolRunner generic IO ? */
+		/* Control GPIO pins ? */
 		if (CR_generic_io.start){
 			switch (CR_generic_io.start){
-			case 1: WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_out, 1); break; // write port
-			case 2: WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_in, 0); break; // read port
-			case 3: WR_GPIO (GPIO_Dir_0, &CR_generic_io.gpio_direction_bits, 1); break; // reconfigure port
+			case 1: WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_out, 1); break; // write port (0..15 back of the box)
+			case 2: WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_in, 0); break; // read port (0..15 back of the box)
+			case 3: WR_GPIO (GPIO_Dir_0, &CR_generic_io.gpio_direction_bits, 1); break; // reconfigure port back of the box
+			case 10: GPIO_CLR_DATA23 = (CR_generic_io.gpio_direction_bits&0x00E0)<<16; break; // CLR DSP GP pins 53/54/55
+			case 11: GPIO_SET_DATA23 = (CR_generic_io.gpio_direction_bits&0x00E0)<<16; break; // SET DSP GP pins 53/54/55
 			default: break;
 			}
 			CR_generic_io.start=0;
 		}
 
+#if 0 // now at end of dtata process
 		if (data_sync_io.pflg || (CR_generic_io.gpio_direction_bits & 0x0100))
 			if (data_sync_io.tick){
 				data_sync_io.gpiow_bits =
@@ -201,7 +205,7 @@ void dsp_idle_loop (void){
 				data_sync_io.tick=0;
 				//data_sync_io.last_xyt[0] = data_sync_io.xyt[0];
 			}
-		
+#endif		
 #ifdef USE_PLL_API
 		/* PAC/PLL controls */
 		if (PLL_lookup.start){

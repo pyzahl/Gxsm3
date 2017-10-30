@@ -1704,6 +1704,7 @@ class SPMcontrol():
 		GPIO_control = self.read (i_generic_io, fmt_generic_io)
 		print "GENERIC-IO  (GPIO) control record:"
 		print GPIO_control
+                return GPIO_control[3]
 
         def configure_gpio(self, GPIO_direction_bits = 0xFFFF):
                 self.write (i_generic_io, struct.pack ("<llHHH", 3,0, GPIO_direction_bits, 0,0) , mode=1)
@@ -1712,6 +1713,15 @@ class SPMcontrol():
                 self.write (i_generic_io, struct.pack ("<llHHH", 1,0, GPIO_direction_bits, 0, data) , mode=1)
                 # self.write (i_generic_io, struct.pack (fmt_generic_io, 0, 0, 255, 288, 32, 32, 0, 0, 0, 0, 0, 0, 22328, 0, 0))
 
+	def clr_dsp_gpio(self, junk, data = 0x00E0):
+                print ("CLR DSP GP=%x"%data)
+                self.write (i_generic_io, struct.pack ("<llHHH", 10,0, data,0,0) , mode=1)
+
+	def set_dsp_gpio(self, junk, data = 0x00E0):
+                print ("SET DSP GP=%x"%data)
+                self.write (i_generic_io, struct.pack ("<llHHH", 11,0, data,0,0) , mode=1)
+
+                
         ##### duration, period given in ms
         ##### must configure GPIO direction bits mask before!
         def execute_pulse(self, direction, duration, period, number=1, on_bcode=1, off_bcode=0, reset_bcode=0, gpio_port=0):

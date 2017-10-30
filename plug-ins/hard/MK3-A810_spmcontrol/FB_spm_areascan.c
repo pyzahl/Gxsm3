@@ -33,6 +33,7 @@
 #include "dataprocess.h"
 
 #include "PAC_pll.h"
+#include "ReadWrite_GPIO.h"
 
 /* compensate for X AIC pipe delay and add user "nx_pre" amount */
 #define PIPE_LEN (5+scan.nx_pre)
@@ -441,12 +442,6 @@ void push_area_scan_data (DSP_UINT32 srcs){
 	clear_summing_data ();
 	analog.counter[0] = 0;
 	analog.counter[1] = 0;
-
-	// update sync info
-        data_sync_io.xyit[0]=scan.ix;
-        data_sync_io.xyit[1]=scan.iy;
-        data_sync_io.xyit[3]=state.DSP_time;
-        data_sync_io.tick=1;
 }
 
 // TESTING IF SLOW WORKS HERE *****!!!!!!!!!!
@@ -464,6 +459,11 @@ void run_area_scan (){
 		scan.xyz_vec[i_X] = _SADD32 (scan.xyz_vec[i_X], scan.cfs_dx); // this is with SAT!!
 		if (!scan.iix--){
 			if (scan.ix--){
+                                if (scan.ix&1)
+                                        SET_DSP_GP53;
+                                else
+                                        CLR_DSP_GP53;
+                                
 				if (AS_ip >= 0 && (AS_jp == 0 || scan.raster_a) && (scan.dnx_probe > 0)){
 					if (! --AS_ip){ // trigger probing process ?
 						if (!probe.pflg) // assure last prb job is done!!
@@ -505,6 +505,11 @@ void run_area_scan (){
 			scan.xyz_vec[i_X] = _SSUB32 (scan.xyz_vec[i_X], scan.cfs_dx);
 			if (!scan.iix--){
 				if (scan.ix--){
+                                        if (scan.ix&1)
+                                                SET_DSP_GP53;
+                                        else
+                                                CLR_DSP_GP53;
+                                        
 #if 0
 					if (AS_ip >= 0 && AS_jp == 0 && (scan.dnx_probe > 0)){
 						if (! --AS_ip){ // trigger probing process ?
@@ -568,6 +573,10 @@ void run_area_scan (){
 		}
 		else{
 			if (scan.iy--){
+                                if (scan.iy&1)
+                                        SET_DSP_GP54;
+                                else
+                                        CLR_DSP_GP54;
 				if (AS_jp >= 0){
 					if (scan.raster_a){
 						AS_ip = AS_kp;
@@ -643,6 +652,7 @@ void run_area_scan (){
 // fast scan with X ramp mode as perfect harmonic Sine wave, no gizmos like LockIn, 2nd-line or probe.
 // CHECK SineSDB for compatibility with new 1F2F PAC PLL lib
 // with 2f: void SineSDB(int *cr, int *ci, int *cr2, int *ci2, int deltasRe, int deltasIm)
+#pragma CODE_SECTION(run_area_scan_fast, ".text:slow")
 void run_area_scan_fast (){
 	if (scan.sstate != AS_MOVE_XY){
 	  //	SineSDB (&AS_cr, &AS_ci, AS_deltasRe, AS_deltasIm); // must match scan "speed" settings to be in sync. ==> N=n*dnx*2+dny
@@ -656,6 +666,11 @@ void run_area_scan_fast (){
 //		scan.xyz_vec[i_X] = _SADD32 (scan.xyz_vec[i_X], scan.cfs_dx); // this is with SAT!!
 		if (!scan.iix--){
 			if (scan.ix--){
+                                if (scan.ix&1)
+                                        SET_DSP_GP53;
+                                else
+                                        CLR_DSP_GP53;
+                                
 				scan.iix    = AS_sdnx-1;
 				push_area_scan_data (scan.srcs_xp); // get XP data here!
 			}
@@ -675,6 +690,11 @@ void run_area_scan_fast (){
 //		scan.xyz_vec[i_X] = _SSUB32 (scan.xyz_vec[i_X], scan.cfs_dx);
 		if (!scan.iix--){
 			if (scan.ix--){
+                                if (scan.ix&1)
+                                        SET_DSP_GP53;
+                                else
+                                        CLR_DSP_GP53;
+                                
 				scan.iix   = AS_sdnx-1;
 				push_area_scan_data (scan.srcs_xm); // get XM data here!
 			}
@@ -699,6 +719,10 @@ void run_area_scan_fast (){
 		}
 		else{
 			if (scan.iy--){
+                                if (scan.iy&1)
+                                        SET_DSP_GP54;
+                                else
+                                        CLR_DSP_GP54;
 				scan.ix     = scan.nx;
 				scan.iix    = AS_sdnx = scan.dnx; // in fast sin mode only speed update in line basis possible due to non-linear steps
 				scan.sstate = AS_SCAN_XP;

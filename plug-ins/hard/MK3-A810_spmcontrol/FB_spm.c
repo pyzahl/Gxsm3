@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* SRanger and Gxsm - Gnome X Scanning Microscopy Project
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -25,8 +27,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 /*
  * code derived of the PCI32 TMS320C32 DSP code "xsm.c, ..." and the SRanger FB_Demo.c
@@ -251,9 +251,7 @@ AREA_SCAN        scan = {
 
 DATA_SYNC_IO data_sync_io = {
 	{0,0,0,0},
-	{0,0,0,0},
 	0,0,
-	0,
 	0,
 	0 // pflg
 };
@@ -1136,7 +1134,7 @@ void stop_Analog810_HL()
 *  pll_mult        <- 27: 28x Multiplier * 24.576MHz Clk = 688.128 MHz     *
 *                                                                          *
 * ------------------------------------------------------------------------  */
-#pragma CODE_SECTION(main, ".text:slow")
+#pragma CODE_SECTION(enablePll1, ".text:slow")
 void enablePll1( Uint16 pll_mult )
 {
    volatile Uint32* pll_ctl    = ( volatile Uint32* )&PLL1_PLLCTL;
@@ -1231,7 +1229,7 @@ void enablePll1( Uint16 pll_mult )
 
 }
 
-#pragma CODE_SECTION(main, ".text:slow")
+#pragma CODE_SECTION(dsp_688MHz, ".text:slow")
 void dsp_688MHz(){ // turbo speed
 	enablePll1( 27 );    // [DSP @ 24.576 * 28 :  688.128 MHz][Core @ 1.20V]
 
@@ -1255,7 +1253,7 @@ void dsp_688MHz(){ // turbo speed
 	FLASH_BASE_PTR8 = FLASH_RESET;
 }
 
-#pragma CODE_SECTION(main, ".text:slow")
+#pragma CODE_SECTION(dsp_590MHz, ".text:slow")
 void dsp_590MHz(){ // normal speed -- as set at boot
 	enablePll1( 23 );       // [DSP @ 24.576 * 24 :  589.824MHz][Core @ 1.20V]
 
@@ -1277,16 +1275,37 @@ void dsp_590MHz(){ // normal speed -- as set at boot
 	FLASH_BASE_PTR8 = FLASH_RESET;
 }
 
+#pragma CODE_SECTION(configure_DSP_GP_PINS, ".text:slow")
+void configure_DSP_GP_PINS()
+{
+        // from Alex
+        // Put bits 20 and 21 at 00 to select the GPIO mode for both TINP1L/URXD1/GP[56] and TOUT1L/UTXD1/GP[55]
+        // (see page 92/243 of SPRS347C.pdf)
+        CFG_PINMUX1=CFG_PINMUX1 & ~0x00300000;
+        // Then, you will have to select the direction for GP(53,54,55):
+        GPIO_DIR23=GPIO_DIR23 & ~0x00E00000; // Set GP54,54,55 in output mode (see page 20/41 of SPRUEM8A.pdf)
+
+        //After that, you can use either GPIO_SET_DATA23 or GPIO_CLR_DATA23 register to clear or to set the GP53,54,55:
+        // E = 1110 = 2+4+8, 55: 8=1000, 54: 4=0100, 53: 2=0010 
+        //GPIO_SET_DATA23=0x00E00000; // Set GP53,54,55 at 1 (this line is executed in 3 CPU cycles)
+        //GPIO_CLR_DATA23=0x00E00000; // Clear GP53,54,55 at 1 (this line is executed in 3 CPU cycles)
+
+        // All registers: CFG_PINMUX1,GPIO_DIR23,GPIO_SET_DATA23 and GPIO_CLR_DATA23 are in the SR3_Reg.h.
+}
+
 #pragma CODE_SECTION(main, ".text:slow")
 void main()
 {
+        /* setup DSP GP pins 53,54,55 (MK3_Pro JP7) used for external syncing for data scan/probe data clocking */
+        configure_DSP_GP_PINS ();
+        
 #ifdef USE_PLL_API
 	/* setup PLL */
 	pSignal1 = &InputFiltered;
 	pSignal2 = &Filter64Out[0];
 	blcklen = 2096-1;
 
-	PLL_lookup.pac_lib_status = StartPLL(4,7);
+	PLL_lookup.pac_lib_status = StartPLL (4,7);
 #endif
 
 	fill_magic ();
