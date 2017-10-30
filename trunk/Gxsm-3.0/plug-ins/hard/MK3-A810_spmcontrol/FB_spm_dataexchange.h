@@ -122,7 +122,7 @@
 #define FB_SPM_SOFT_ID   0x00001002 /* FB_SPM sofware id */
 #define FB_SPM_VERSION   0x00003055 /* FB_SPM main Version, BCD: 00.00 */
 #define FB_SPM_DATE_YEAR 0x00002017 /* Date: Year/MM/DD, BCD */
-#define FB_SPM_DATE_MMDD 0x00001029 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00001030 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Signal Master Evolved GXSM3B\n"\

@@ -1282,6 +1282,9 @@ void configure_DSP_GP_PINS()
         // Put bits 20 and 21 at 00 to select the GPIO mode for both TINP1L/URXD1/GP[56] and TOUT1L/UTXD1/GP[55]
         // (see page 92/243 of SPRS347C.pdf)
         CFG_PINMUX1=CFG_PINMUX1 & ~0x00300000;
+        // Since the GP(55) shares the pin with the UART1 and the Timer1, we have to power up the Timer1 block like that:
+        CFG_VDD3P3V_PWDN &= ~0x00000200; // Power up UART1 (Timer1 block)
+        
         // Then, you will have to select the direction for GP(53,54,55):
         GPIO_DIR23=GPIO_DIR23 & ~0x00E00000; // Set GP54,54,55 in output mode (see page 20/41 of SPRUEM8A.pdf)
 
