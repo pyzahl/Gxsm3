@@ -159,6 +159,7 @@ extern CR_OUT_PULSE     CR_out_pulse;
 extern CR_GENERIC_IO    CR_generic_io;
 extern SIGNAL_MONITOR   sig_mon;
 extern PLL_LOOKUP       PLL_lookup;
+extern DATA_SYNC_IO     data_sync_io;
 
 extern int AS_ch2nd_constheight_enabled; /* const H mode flg of areascan process */
 extern struct aicregdef    aicreg;
@@ -217,6 +218,7 @@ unsigned int mul32(int *restrict x, int *restrict y,  int *restrict r, unsigned 
 # include "mul32.h"
 #endif
 
+#ifdef NOISE_ENABLE
 #pragma CODE_SECTION(generate_nextlongrand, ".text:slow")
 void generate_nextlongrand (){
       DSP_INT32 lo, hi;
@@ -235,6 +237,7 @@ void generate_nextlongrand (){
       }
       randomnum = (DSP_INT32)lo;
 }
+#endif
 
 /* #define AIC_OUT(N) iobuf.mout[N] */
 /* smoothly adjust bias - make sure |analog_bias| < 32766-BIAS_ADJUST_STEP !!  */
@@ -420,10 +423,11 @@ void dataprocess()
 // ============================================================
 // PROCESS MODULE: NOISE GENERATOR (RANDOM NUMBER)
 // ============================================================
+#ifdef NOISE_ENABLE
 	// update noise source
 	generate_nextlongrand ();
 	analog.noise = randomnum;
-
+#endif
 // ============================================================
 // PROCESS MODULE: ANALOG_IN
 // ============================================================
@@ -810,7 +814,19 @@ void dataprocess()
 // END OF DATA PROCESSING TASKS -- final time keeping
 // ************************************************************
 
-	/* -- end of all data processing, preformance statistics update now -- */
+// ============================================================
+// UPDATE SYNC GPIO BITS FOR EXTERNAL SCAN ADN PROBE DATA SYNCING
+// ============================================================
+#if 0   // trouble some, causes eventually crash -- too slow??
+        data_sync_io.gpiow_bits =
+                (CR_generic_io.gpio_data_out & 0xff)
+                | ((scan.ix & 1)<<8)
+                | ((scan.iy & 1)<<9)
+                | ((probe.ix & 1)<<10);
+        WR_GPIO (GPIO_Data_0, &data_sync_io.gpiow_bits, 1); // write port
+#endif
+        
+/* -- end of all data processing, preformance statistics update now -- */
 	
 //-****	asm_read_time ();
 

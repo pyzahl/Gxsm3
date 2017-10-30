@@ -12,4 +12,22 @@
 	
 ___________________________________________________________________________*/     
 
+// A810 GPIO (on back of controller bits 0...15 via address GPIO_Data_0
 extern void WR_GPIO(int address, short *data, int W_R);
+
+#define WRITE_GPIO_0(X) *(volatile unsigned short*)(GPIO_Data_0) = (X)
+#define READ_GPIO_0()  (*(volatile unsigned short*)(GPIO_Data_0))
+
+// DSP GPIO (internal MK3-Pro, JP7):
+// GPIO_SET_DATA23 or GPIO_CLR_DATA23 register to clear or to set the GP53,54,55:
+// E = 1110 = 2+4+8, 55: 8=1000, 54: 4=0100, 53: 2=0010 
+
+#define SET_DSP_GP53 GPIO_SET_DATA23=0x00200000
+#define SET_DSP_GP54 GPIO_SET_DATA23=0x00400000
+#define SET_DSP_GP55 GPIO_SET_DATA23=0x00800000
+
+#define CLR_DSP_GP53 GPIO_CLR_DATA23=0x00200000
+#define CLR_DSP_GP54 GPIO_CLR_DATA23=0x00400000
+#define CLR_DSP_GP55 GPIO_CLR_DATA23=0x00800000
+
+

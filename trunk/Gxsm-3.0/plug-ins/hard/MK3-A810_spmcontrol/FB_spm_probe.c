@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* SRanger and Gxsm - Gnome X Scanning Microscopy Project
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -26,11 +28,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-
 #include "g_intrinsics.h"
 #include "FB_spm_dataexchange.h"
 #include "dataprocess.h"
+#include "ReadWrite_GPIO.h"
 
 /* compensate for X AIC pipe delay */
 #define PIPE_LEN (5)
@@ -776,11 +777,6 @@ void store_probe_data_srcs ()
 		probe_datafifo.buffer_l = (DSP_INT32_P) probe_datafifo.buffer_base;
 		probe_datafifo.w_position = 0;
 	}
-
-	// update sync info
-        //data_sync_io.xyit[2]=probe.ix;
-        //data_sync_io.xyti[3]=state.DSP_time;
-        //data_sync_io.tick=1;
 }
 
 #pragma CODE_SECTION(buffer_probe_section_end_data_srcs, ".text:slow")
@@ -852,12 +848,6 @@ void next_section (){
         probe.ix = probe.vector->n; // load total steps per section = # vec to add
         probe.iix = probe.vector->dnx; // do dnx steps to take data until next point!
 
-#if 0 // NOT HERE ANY MORE!!
-        if (probe.vector->srcs & 0x0004){ // if Counter channel requested, restart counter/timer now
-                analog.counter[0] = 0;
-                analog.counter[1] = 0;
-        }
-#endif
 }
 
 // manage conditional vector tracking mode -- atom/feature tracking
@@ -950,6 +940,10 @@ void run_one_time_step(){
 
         if (! probe.iix-- || probe.lix){
                 if (probe.ix--){
+                        if (probe.ix&1)
+                                SET_DSP_GP55;
+                        else
+                                CLR_DSP_GP55;
                         store_probe_data_srcs ();
                         if (!probe.ix){
                                 // Special VP Track Mode Vector Set?
@@ -1005,8 +999,6 @@ void run_probe (){
 			run_one_time_step ();
 			add_probe_vector ();
 		}
-//		run_lockin (); --> dataprocess controlled now
-
 	} else {
 		PRB_lockin_restart_flg = 1;
 

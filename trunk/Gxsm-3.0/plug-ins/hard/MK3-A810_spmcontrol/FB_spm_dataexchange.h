@@ -114,10 +114,7 @@
 # define FB_SPM_FEATURES_DSP_Z0_SLOPE_COMPENSATION "No"
 #endif
 
-
-/** Define to enable Watch Vars -- dbg purpose only */
-#define WATCH_ENABLE
-
+//#define NOISE_ENABLE
 
 // these are checked/compared with the Gxsm-build and must match!
 // -- otherwise you exactly need to know/be sure what you are doing --
@@ -125,7 +122,7 @@
 #define FB_SPM_SOFT_ID   0x00001002 /* FB_SPM sofware id */
 #define FB_SPM_VERSION   0x00003055 /* FB_SPM main Version, BCD: 00.00 */
 #define FB_SPM_DATE_YEAR 0x00002017 /* Date: Year/MM/DD, BCD */
-#define FB_SPM_DATE_MMDD 0x00001027 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00001029 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Signal Master Evolved GXSM3B\n"\
@@ -492,10 +489,8 @@ typedef struct{
 
 typedef struct{
 	DSP_INT32 xyit[4];
-	DSP_INT32 last_xyit[4];
         DSP_UINT16 gpiow_bits; // tmp data, mixed with generic gpio data
         DSP_UINT16 gpior_bits; // dummy
-        DSP_INT32 config;
 	DSP_INT32 tick;
 	DSP_INT32 pflg;
 #ifdef DSP_CC
