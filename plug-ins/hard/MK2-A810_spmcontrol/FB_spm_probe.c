@@ -532,9 +532,9 @@ void store_probe_data_srcs ()
 	}
 
 	// update sync info
-        //data_sync_io.xyit[2]=probe.ix;
+        data_sync_io.xyit[2]=probe.ix;
         //data_sync_io.xyti[3]=state.DSP_time;
-        //data_sync_io.tick=1;
+        data_sync_io.tick=1;
 }
 
 
