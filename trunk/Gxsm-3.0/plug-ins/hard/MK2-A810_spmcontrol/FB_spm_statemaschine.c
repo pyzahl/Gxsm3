@@ -162,7 +162,7 @@ void dsp_idle_loop (void){
 			CR_generic_io.start=0;
 		}
 
-		if (data_sync_io.pflg || (CR_generic_io.gpio_direction_bits & 0x0100))
+		if (data_sync_io.pflg) //  || (CR_generic_io.gpio_direction_bits & 0x0100))
 			if (data_sync_io.tick){
 				data_sync_io.gpiow_bits =
 					(CR_generic_io.gpio_data_out & 0xff)

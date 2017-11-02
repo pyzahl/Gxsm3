@@ -340,7 +340,7 @@ void push_area_scan_data (unsigned long srcs){
 	// update sync info
         data_sync_io.xyit[0]=scan.ix;
         data_sync_io.xyit[1]=scan.iy;
-        data_sync_io.xyit[3]=state.DSP_time;
+        // data_sync_io.xyit[3]=state.DSP_time;
         data_sync_io.tick=1;
 }
 
