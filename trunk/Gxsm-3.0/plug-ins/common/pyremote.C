@@ -712,6 +712,8 @@ public:
 	py_gxsm_console (){
                 script_filename = NULL;
                 gui_ready = false;
+                user_script_running = 0;
+                action_script_running = 0;
                 initialize ();
         };
 	virtual ~py_gxsm_console ();
@@ -728,7 +730,7 @@ public:
         PyObject* create_environment(const gchar *filename, gboolean show_errors);
 
         char* run_command(const gchar *cmd, int mode);
-        void append(gchar *msg);
+        void append (const gchar *msg);
 
         static void open_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void open_action_script_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
@@ -761,13 +763,26 @@ public:
                                                                  "'%s': %s",
                                                                  tmp_script_filename,
                                                                  err->message);
-                                append(message);
+                                append (message);
                                 gapp->warning (message);
                                 g_free(message);
                         }
+                        gchar *tmp = g_strdup_printf ("%s #jobs[%d]+1", N_("\n>>> Executing action script: "), action_script_running);
+                        append (tmp);
+                        g_free (tmp);
+                        append (name);
+                        append (" => ");
+                        append (tmp_script_filename);
+                        // append (tmp_script);
+                        append ("\n");
+                        action_script_running++;
                         output = run_command(tmp_script, Py_file_input);
-                        g_free(tmp_script);
-                        append(output);
+                        --action_script_running;
+                        g_free (tmp_script);
+                        append (output);
+                        append (N_("\n<<< Action script finished: "));
+                        append (name);
+                        append ("\n");
                 } else {
                         gchar *message = g_strdup_printf("Action script %s not yet defined.\nPlease define action script using the python console.", tmp_script_filename);
                         g_message (message);
@@ -876,7 +891,9 @@ public:
 
 private:
         gboolean gui_ready;
-
+        gint user_script_running;
+        gint action_script_running;
+        
         GSettings *gsettings;
         GtkWidget *file_menu;
 
@@ -2518,9 +2535,15 @@ void py_gxsm_console::kill(GtkToggleButton *btn, gpointer user_data)
 {
 	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
 
-	//Py_AddPendingCall(-1);
-	PI_DEBUG (DBG_L2,  "trying to kill interpreter");
-	PyErr_SetInterrupt();
+        if (pygc->user_script_running > 0){
+                pygc->append (N_("\n*** SCRIPT KILL: Setting PyErr Interrupt to abort script.\n"));
+        
+                //Py_AddPendingCall(-1);
+                PI_DEBUG (DBG_L2,  "trying to kill interpreter");
+                PyErr_SetInterrupt();
+        } else {
+                pygc->append (N_("\n*** SCRIPT KILL: No user script is currently running.\n"));
+        }
 }
 
 char* py_gxsm_console::run_command(const gchar *cmd, int mode)
@@ -2547,7 +2570,7 @@ char* py_gxsm_console::run_command(const gchar *cmd, int mode)
 						      "_stderr_redir_string"));
 }
 
-void py_gxsm_console::append(gchar *msg)
+void py_gxsm_console::append (const gchar *msg)
 {
 	GtkTextBuffer *console_buf;
 	GtkTextIter start_iter, end_iter;
@@ -2556,7 +2579,7 @@ void py_gxsm_console::append(gchar *msg)
 	GtkTextMark *end_mark;
 
 	if (!msg) {
-		g_warning("No message to append.");
+		g_warning("No message to append");
 		return;
 	}
 
@@ -2592,22 +2615,29 @@ void py_gxsm_console::run_file(GtkToolButton *btn, gpointer user_data)
 	GtkTextView *textview;
 	GtkTextBuffer *console_file_buf;
 	GtkTextIter start_iter, end_iter;
-	gchar *output, *file_info_line, *script;
+	gchar *output, *script;
 
 	textview = GTK_TEXT_VIEW(pygc->console_file_content);
 	console_file_buf = gtk_text_view_get_buffer(textview);
 
-	file_info_line
-		= g_strdup_printf(N_(">>> Executing script now.\n"));
+        gchar *tmp = g_strdup_printf ("%s #jobs[%d]+1", N_("\n>>> Checking for user script execution... \n"), pygc->user_script_running);
+        pygc->append (tmp);
+        g_free (tmp);
 
-	pygc->append(file_info_line);
-
-	gtk_text_buffer_get_bounds(console_file_buf, &start_iter, &end_iter);
-	script = gtk_text_buffer_get_text(console_file_buf,
-					  &start_iter, &end_iter, FALSE);
-	output = pygc->run_command(script, Py_file_input);
-	g_free(script);
-	pygc->append(output);
+        if (pygc->user_script_running > 0){
+                pygc->append (N_("\n*** STOP -- User script is currently running. No recursive execution allowed for this console.\n"));
+        } else {
+                gtk_text_buffer_get_bounds(console_file_buf, &start_iter, &end_iter);
+                script = gtk_text_buffer_get_text(console_file_buf,
+                                                  &start_iter, &end_iter, FALSE);
+                pygc->append (N_("\n>>> Executing script now.\n"));
+                pygc->user_script_running++;
+                output = pygc->run_command (script, Py_file_input);
+                --pygc->user_script_running;
+                pygc->append(output);
+                pygc->append (N_("\n<<< User script finished.\n"));
+                g_free(script);
+        }
 }
 
 void py_gxsm_console::fix_eols_to_unix(gchar *text)
