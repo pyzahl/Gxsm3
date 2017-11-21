@@ -385,18 +385,149 @@ const gchar *template_watchdog = R"V0G0N(
 # Watch dog script. Watching via RTQuery system parameters:
 # for example dF and if abs(dF) > limit DSP_CMD_STOPALL is issued (cancel auto approch, etc.)
 
-limit = 15.
-df=0.
-while abs(df) < limit: 
-	gxsm.sleep (10)
-	fvec=gxsm.rtquery ("f")
-	df = fvec[0]
-	print "dF=",df
-	gxsm.logev("Watchdog dF=%gHz"%df)
+# Watch dog script. Watching via RTQuery system parameters:
+# for example dF and if abs(dF) > limit DSP_CMD_STOPALL is issued (cancel auto approch, etc.)
 
-gxsm.action ("DSP_CMD_STOPALL")
-gxsm.logev("Watchdog DSP_CMD_STOPALL ACTION as of dF=%gHz"%df)
-print("Watchdog Abort")
+def z0_goto(set_z0=0, speed=400):
+        gxsm.set ("dspmover-z0-goto","%g"%set_z0)
+        gxsm.set ("dspmover-z0-speed","%g"%speed)
+        gxsm.action ("DSP_CMD_GOTO_Z0")
+        svec=gxsm.rtquery ("o")  ## in HV volts
+        z0 = svec[0]
+        print "Retarct ** Offset Z0 = ", z0
+        gxsm.logev ('Remote Z0 Retract')
+        gxsm.sleep (30)
+#       
+#       while abs(z0-set_z0) > 1.:
+#               gxsm.action ("DSP_CMD_GOTO_Z0")
+#               gxsm.sleep (200)
+#               svec=gxsm.rtquery ("o")
+#               z0 = svec[0]
+#               svec=gxsm.rtquery ("z")
+#               print "Z0=", z0, svec
+        return z0
+
+# Coarse Z0/Offset Tools/Approach custom
+def xxz0_retract():
+        z0_goto(-160)
+
+def z0_retract():
+        gxsm.set ("dspmover-z0-speed","1000")
+        svec=gxsm.rtquery ("o")  ## in HV volts
+        z0 = svec[0]
+        print "Retarct ** Offset Z0 = ", z0
+        gxsm.logev ('Remote Z0 Retract')
+        while z0 > -160.:
+                gxsm.action ("DSP_CMD_GOTO_Z0")
+                gxsm.sleep (10)
+                svec=gxsm.rtquery ("o")
+                z0 = svec[0]
+                svec=gxsm.rtquery ("z")
+                print "Z0=", z0, svec
+
+def z_in_range_check ():
+        svec=gxsm.rtquery ("z") ## in HV Volts
+        print "ZXYS=", svec
+        return svec[0] > -15
+
+def z0_approach():
+        gxsm.set ("dspmover-z0-speed","600")
+        svec=gxsm.rtquery ("o") ## in HV Volts
+        z0 = svec[0]
+        print "Approach ** Offset Z0 = ", z0
+        gxsm.logev ('Remote Z0 Approach')
+        while z0 < 180. and not z_in_range_check ():
+                gxsm.action ("DSP_CMD_AUTOCENTER_Z0")
+                gxsm.sleep (10)
+                svec=gxsm.rtquery ("o")
+                z0 = svec[0]
+                svec=gxsm.rtquery ("z")
+                print "Z0=", z0, svec
+                sc = gxsm.get ("script-control")
+                if sc < 1:
+                        break
+        return svec[0]
+
+def autoapproach_via_z0():
+        gxsm.set ("dspmover-z0-goto","-1600")
+        count=0
+        gxsm.logev ('Remote Auto Approach start')
+        while not z_in_range_check():
+                z0_retract ()
+                gxsm.sleep (20)
+                gxsm.logev ('Remote Auto Approach XP-Auto Steps')
+                gxsm.action ("DSP_CMD_MOV-ZP_Auto")
+                gxsm.sleep (20)
+                zs=z0_approach ()
+                count=count+1
+                gxsm.logev ('Remote Auto Approach #' + str(count) + ' ZS=' + str (zs))
+                sc = gxsm.get ("script-control")
+                if sc < 1:
+                        break
+                
+        gxsm.set ("dspmover-z0-speed","400")
+        gxsm.logev('Remote Auto Approach completed')
+
+
+def watch_dog_run(limit=25):
+        gxsm.action ("DSP_CMD_AUTOAPP")
+        df=0.
+        while abs(df) < limit: 
+                gxsm.sleep (10)
+                fvec=gxsm.rtquery ("f")
+                df = fvec[0]
+                print "dF=",df
+                gxsm.logev("Watchdog dF=%gHz"%df)
+                sc = gxsm.get ("script-control")
+                if sc < 1:
+                        break
+
+        gxsm.action ("DSP_CMD_STOPALL")
+        gxsm.logev("Watchdog DSP_CMD_STOPALL ACTION as of dF=%gHz"%df)
+        return df
+
+def watch_dog_df_autoapp():
+        df_abort = 25
+        df=0.
+        z0_goto (300,400)
+        svec=gxsm.rtquery ("o") ## in HV Volts
+        z0 = svec[0]
+        print "Approach ** Offset Z0 = ", z0
+        gxsm.logev ('Remote Z0 Approach')
+        while z0 < 180. and not z_in_range_check () and abs(df) < df_abort:
+                df = watch_dog_run (df_abort)
+                gxsm.sleep (200)
+                sc = gxsm.get ("script-control")
+                if sc < 1:
+                        break
+
+        return svec[0]
+
+def test_rt_param_query ():
+        gxsm.sleep (200)
+        fvec=gxsm.rtquery ("f")
+        df = fvec[0]
+        print "dF=",df
+        zvec=gxsm.rtquery ("z")
+        print 'Zvec=', zvec
+        zvec=gxsm.rtquery ("z0")
+        print 'Z0vec=', zvec
+        gxsm.logev("Watchdog Check dF=%gHz" %df + " zvec=%g A" %zvec[0])
+        print("Watchdog Abort")
+
+
+#autoapproach_via_z0()
+
+watch_dog_df_autoapp()
+
+## FINISH DEFAULTS
+
+print ("Finished/Aborted.")
+
+gxsm.set ("dspmover-z0-goto","-1600")
+gxsm.set ("dspmover-z0-speed","400")
+
+
 )V0G0N";
 
 /*
