@@ -75,6 +75,7 @@ class Scope(gtk.DrawingArea):
       
         self.par = parent
         super(Scope, self).__init__()
+        self.set_lambda_frqmap ()
         self.set_dBX (False)
         self.set_dBY (False)
         self.set_dBZ (False)
@@ -141,11 +142,24 @@ class Scope(gtk.DrawingArea):
                 self.set_dBU (not self.dBU)
             if event.y > 490 and event.y < 510: 
                 self.set_dBV (not self.dBV)
+        elif event.x > 220 and event.x < 250:
+            if event.y > 550 and event.y < 570: 
+                self.set_lambda_frqmap (True)
+            if event.y > 570 and event.y < 590: 
+                self.set_lambda_frqmap (False)
+
         if self.display_info > 0:
             self.display_info = 300
         else:
             self.display_info = 300
 	    gobject.timeout_add (20, self.info_fade)
+            
+    def set_lambda_frqmap (self, fmaplog=False):
+        if fmaplog:
+            lwf = 2.*self.xw / log (2.*self.xw)
+            self.lambda_frqmap =  lambda x: lwf*log(self.xw+x)-self.xw
+        else:
+            self.lambda_frqmap =  lambda x: x
             
     def set_dBX(self, db):
         self.dBX = db
@@ -239,24 +253,23 @@ class Scope(gtk.DrawingArea):
     def get_wide(self):
         return self.wide
 
-        
-    def plot_xt(self, cr, ydata, lwp, r,g,b,a):
+    def plot_xt(self, cr, ydata, lwp, r,g,b,a, xmap = lambda x: x):
             cr.set_source_rgba (r,g,b,a)
             dx = (2*self.xw) / size(ydata)
             x = -self.xw
             if self.points:
                 for y in ydata:
-                    cr.move_to(x, y)
-                    cr.line_to(x+lwp, y)
+                    cr.move_to(xmap(x), y)
+                    cr.line_to(xmap(x)+lwp, y)
                     cr.stroke()
                     x = x+dx
             else:
                 yp = ydata[0]
                 for y in ydata:
-                    cr.move_to(x, yp)
+                    cr.move_to(xmap(x), yp)
                     x = x+dx
                     yp = y
-                    cr.line_to(x, y)
+                    cr.line_to(xmap(x), y)
                     cr.stroke()
 
     def plot_xy(self, cr, xydata, lwp, r,g,b,a):
@@ -280,7 +293,7 @@ class Scope(gtk.DrawingArea):
                     cr.stroke ()
                     xyp=xy
 
-    def plot_markers(self, cr, data, markers, r, g, b, a, ylog=False):
+    def plot_markers(self, cr, data, markers, r, g, b, a, ylog=False, xmap = lambda x: x):
         if markers > 0:
             cr.select_font_face("Droid Sans") #, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
             cr.set_font_size(0.5)
@@ -293,7 +306,7 @@ class Scope(gtk.DrawingArea):
             peaks = peaks_tmp[:np]
             dx = (2*self.xw) / size(data)
             x_peaks = -self.xw+dx*(1+peaks)
-            f_peaks = 75000.*peaks/size(data) #*self.ss_fac
+            f_peaks = 75000.*peaks/size(data)/self.ss_fac
             pcount=0
             for x, f, peak in zip(x_peaks, f_peaks, peaks):
                 if peak < 10 or peak > size(data)-10:
@@ -308,21 +321,23 @@ class Scope(gtk.DrawingArea):
                     y = -2*log(data[peak])
                 else:
                     y = -data[peak]
-                cr.move_to (x, y)
+
+                xx = xmap(x)
+                cr.move_to (xx, y)
                 s=0.1
-                cr.line_to (x-s, y-s)
-                cr.line_to (x+s, y-s)
-                cr.line_to (x, y)
+                cr.line_to (xx-s, y-s)
+                cr.line_to (xx+s, y-s)
+                cr.line_to (xx, y)
                 cr.stroke ()
                 cr.set_source_rgba(r,g,b,a)
                 reading = "%g Hz"%f
                 (rx, ry, width, height, dx, dy) = cr.text_extents(reading)
-                cr.move_to(x-width/2, y-1.2*s-2.5*height)
+                cr.move_to(xx-width/2, y-1.2*s-2.5*height)
                 cr.text_path(reading)
                 cr.stroke()
                 reading = "%g"%data[peak]
                 (rx, ry, width, height, dx, dy) = cr.text_extents(reading)
-                cr.move_to(x-width/2, y-1.2*s-height)
+                cr.move_to(xx-width/2, y-1.2*s-height)
                 cr.text_path(reading)
                 cr.stroke()
                     
@@ -458,8 +473,8 @@ class Scope(gtk.DrawingArea):
             if self.ftX:
                 Xdata_rft = abs(fft.rfft(self.par.Xdata))/nx
                 if self.dBX:
-                    self.plot_xt (cr, -2.*log(Xdata_rft), lwp, 1., 0.925, 0., alpha-0.2) # YELLOW
-                    self.plot_markers (cr, Xdata_rft, self.Xmarkers, 1., 0.925, 0., alpha-0.2, True)
+                    self.plot_xt (cr, -2.*log(Xdata_rft), lwp, 1., 0.925, 0., alpha-0.2, self.lambda_frqmap) # YELLOW
+                    self.plot_markers (cr, Xdata_rft, self.Xmarkers, 1., 0.925, 0., alpha-0.2, True,  self.lambda_frqmap)
                 else:
                     self.plot_xt (cr, -Xdata_rft, lwp, 1., 0.925, 0., alpha-0.2) # YELLOW
                     self.plot_markers (cr, Xdata_rft, self.Xmarkers, 1., 0.925, 0., alpha-0.2)
@@ -473,8 +488,8 @@ class Scope(gtk.DrawingArea):
                 if self.ftY:
                     Ydata_rft = abs(fft.rfft(self.par.Ydata))/ny
                     if self.dBY:
-                        self.plot_xt (cr, -2.*log(Ydata_rft), lwp, 1., 0.075, 0., alpha-0.2) # RED
-                        self.plot_markers (cr, Ydata_rft, self.Ymarkers, 1., 0.075, 0., alpha-0.2, True)
+                        self.plot_xt (cr, -2.*log(Ydata_rft), lwp, 1., 0.075, 0., alpha-0.2, self.lambda_frqmap) # RED
+                        self.plot_markers (cr, Ydata_rft, self.Ymarkers, 1., 0.075, 0., alpha-0.2, True, self.lambda_frqmap)
                     else:
                         self.plot_xt (cr, -Ydata_rft, lwp, 1., 0.075, 0., alpha-0.2) # RED
                         self.plot_markers (cr, Ydata_rft, self.Ymarkers, 1., 0.075, 0., alpha-0.2)
