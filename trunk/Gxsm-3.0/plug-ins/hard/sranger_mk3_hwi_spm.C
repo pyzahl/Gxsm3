@@ -932,6 +932,31 @@ void sranger_mk3_hwi_spm::ResumeScan2D(){
 //	ScanningFlg=1;
 }
 
+
+void sranger_mk3_hwi_spm::UpdateScanGainMirror (){
+	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+	sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
+        // Update XYZ Scan Gains: bitcoded -/8/8/8 (0..255)x -- not yet used and fixed set to 10x (0x000a0a0a) -- also:	DSP_SIG Offset XYZ_gain
+        dsp_scan.xyz_gain = long_2_sranger_long ((long)( 0
+                                                         | ((((long)round(gapp->xsm->Inst->VX()))&0xff) << 16)
+                                                         | ((((long)round(gapp->xsm->Inst->VY()))&0xff) << 8)
+                                                         | ((((long)round(gapp->xsm->Inst->VZ()))&0xff))));
+
+	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+	sr_write (dsp, &dsp_scan, (MAX_WRITE_SCAN)<<1);
+
+        lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+	sr_read (dsp, &dsp_move, sizeof (dsp_move)); 
+        // Update XYZ Offset Gains: bitcoded -/8/8/8 (0..255)x -- not yet used and fixed set to 10x (0x000a0a0a) -- also:	DSP_SIG Offset XYZ_gain
+        dsp_move.xyz_gain = long_2_sranger_long ((long)( 0
+                                                         | ((((long)round(gapp->xsm->Inst->VX0()))&0xff) << 16)
+                                                         | ((((long)round(gapp->xsm->Inst->VY0()))&0xff) << 8)
+                                                         | ((((long)round(gapp->xsm->Inst->VZ0()))&0xff))));
+
+	lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+	sr_write (dsp, &dsp_move, MAX_WRITE_MOVE<<1);
+}
+
 // this does almost the same as the XSM_Hardware base class would do, 
 // but you may want to do sth. yourself here
 void sranger_mk3_hwi_spm::SetOffset(double x, double y){
@@ -942,6 +967,7 @@ void sranger_mk3_hwi_spm::SetOffset(double x, double y){
 
 	if (DSPControlClass->ldc_flag) return; // ignore if any LDC (Linear Offset Compensation is in active!) 
 
+        double vs=gapp->xsm->Inst->VX()+gapp->xsm->Inst->VY()+gapp->xsm->Inst->VZ();
 	if (old_x == x && old_y == y) return;
 
 	SRANGER_DEBUG("SetOffset: " << x << ", " << y);
@@ -998,6 +1024,9 @@ void sranger_mk3_hwi_spm::MovetoXY(double x, double y){
                         tip_pos[0] =  x * Q16;
                         tip_pos[1] =  y * Q16;
 			tip_to_origin (tip_pos[0], tip_pos[1]);
+
+                        if ((fabs(x) + fabs(y)) < 4.)
+                                UpdateScanGainMirror ();
 		}
 	}
 }
