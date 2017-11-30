@@ -1597,6 +1597,8 @@ DSPControl::DSPControl () {
                                  G_SETTINGS_BIND_DEFAULT);
                 g_free (tmpkey);
 
+                VXYZS0Gain[j] = wid; // store for remote access/manipulation
+
 #if 0
                 // obsoleted now, settings bound above
 		switch(j){

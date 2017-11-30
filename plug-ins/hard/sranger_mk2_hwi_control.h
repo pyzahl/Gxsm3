@@ -633,7 +633,12 @@ class DSPControl : public AppBase{
 	int pre_points;           //!< pre point before scan line data is taken (experimental)
 	int scan_forward_slow_down; //!<  additional scan forward slow down =1 normally
 	
-	// -- linear drift correction --
+        GtkWidget *VXYZS0Gain[6];
+        double AdjustGain (int channel, int index) {
+                gtk_combo_box_set_active (GTK_COMBO_BOX (VXYZS0Gain[channel]), index);
+        };
+        
+        // -- linear drift correction --
 	double dxdt, dydt, dzdt;  //!< linear drift correction speeds in Ang/s
 	int    ldc_flag;          //! LDC status at last update
 	GtkWidget *LDC_status;    //!< linear drift correction flag (on/off)

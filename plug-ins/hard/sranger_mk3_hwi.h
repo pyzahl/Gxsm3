@@ -317,6 +317,7 @@ class sranger_mk3_hwi_spm : public sranger_mk3_hwi_dev{
 	virtual gint RTQuery (const gchar *property, double &val1, double &val2, double &val3);
 	virtual gint RTQuery (const gchar *property, gchar **val);
 
+	virtual void UpdateScanGainMirror ();
 	virtual void SetOffset(double x, double y);
 	virtual void MovetoXY (double x, double y);
 	/* perform a delta move XYZ aktion within the scan-coordinate system (rotated by alpha) with limits */

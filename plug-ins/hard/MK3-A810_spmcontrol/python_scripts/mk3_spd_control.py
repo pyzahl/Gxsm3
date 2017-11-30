@@ -130,6 +130,9 @@ class gxsm_link():
 		self.count = -1
 		self.offset_ctrl = oc
 		self.mk3spm = SPMcontrol ()
+                self.gain_code_last=0
+                self.gains = [ 0,0,0 ]
+                self.gxsm_gain_control_link = False
 		if self.mk3spm.status ():
 			self.mk3spm.read_configurations ()
 		# setup monitor for link:
@@ -141,7 +144,7 @@ class gxsm_link():
 			z0 = self.mk3spm.lookup_signal_by_name ("Z Offset")
 			self.z0tap = NUM_MONITOR_SIGNALS-2
 			gains = self.mk3spm.lookup_signal_by_name ("XYZ Scan Gain")
-			self.gaintap = NUM_MONITOR_SIGNALS-1
+			self.gaintap = 10
 			self.mk3spm.change_signal_input (0, x0, DSP_SIGNAL_MONITOR_INPUT_BASE_ID+self.x0tap)
 			self.mk3spm.change_signal_input (0, y0, DSP_SIGNAL_MONITOR_INPUT_BASE_ID+self.y0tap)
 			self.mk3spm.change_signal_input (0, z0, DSP_SIGNAL_MONITOR_INPUT_BASE_ID+self.z0tap)
@@ -163,7 +166,15 @@ class gxsm_link():
 			if Z0_invert_status:
 				v[2] = -v[2];
 			self.offset_ctrl.write_t_vector_var(v)
-	    #   print "Number of ticks since 12:00am, January 1, 1970:", ticks, " #", count, v
+                        if self.gxsm_gain_control_link:
+                                gc = self.mk3spm.get_monitor_data (self.gaintap)
+                                if gc != self.gain_code_last:
+                                        self.gain_code_last = gc
+                                        self.gains = [ (gc&0xff0000)>>16, (gc&0xff00)>>8, gc&0xff ]
+                                        print ("Adjust Gains XYZ: ", self.gains)
+                                        self.offset_ctrl.adjust_gains (self.gains)
+                                        
+	#   print "Number of ticks since 12:00am, January 1, 1970:", ticks, " #", count, v
 	    
 	def start (self):
 		self.count = 0
@@ -174,6 +185,13 @@ class gxsm_link():
 	def stop (self):
 		self.count = -1
 
+	def enable_gain_control (self):
+                self.gxsm_gain_control_link = True;
+
+	def disable_gain_control (self):
+                self.gxsm_gain_control_link = False;
+
+                
 	def status (self):
 		return self.mk3spm.status ()
 
@@ -295,9 +313,47 @@ def write_p_vector(button, epX0, epY0, epZ0):
 	epY0.set_text("%12.3f" %(scaleO[1]*HV1_configuration[ii_config_preset_Y0]))
 	epZ0.set_text("%12.3f" %(scaleO[2]*HV1_configuration[ii_config_preset_Z0]))
 
+def hv1_adjust(_object, _value, _identifier):
+	value = _value
+	index = _identifier
+	if index >= ii_config_preset_X0 and index < ii_config_dum:
+		sr = open (sr_spd_dev_path, "wb")
+		os.lseek (sr.fileno(), CONFIGURATION_VECTOR_ADDRESS + 2*index, 1)
+		os.write (sr.fileno(), struct.pack ("<h", value))
+		sr.close ()
+
+	read_back ()
+	return 1
+
+
+def goto_presets():
+	global HV1_configuration
+
+	tX0 = HV1_configuration[ii_config_preset_X0]
+	tY0 = HV1_configuration[ii_config_preset_Y0]
+	tZ0 = HV1_configuration[ii_config_preset_Z0]
+
+	print "goto presets:"
+	print tX0, tY0, tZ0
+
+	sr = open (sr_spd_dev_path, "wb")
+	os.lseek (sr.fileno(), CONFIGURATION_VECTOR_ADDRESS + 2*ii_config_target_X0, 1)
+	os.write (sr.fileno(), struct.pack ("<hhh", tX0, tY0, tZ0))
+	sr.close ()
+
+	read_back ()
+
+#	etX0.set_text("%12.3f" %(scaleO[0]*HV1_configuration[ii_config_target_X0]))
+#	etY0.set_text("%12.3f" %(scaleO[1]*HV1_configuration[ii_config_target_Y0]))
+#	etZ0.set_text("%12.3f" %(scaleO[2]*HV1_configuration[ii_config_target_Z0]))
+
+
+
+        
 class offset_vector():
-    def __init__(self, etv):
+    def __init__(self, etv, gsv):
         self.etvec = etv
+        self.gsvec = gsv
         
     def write_t_vector(self, button):
         global HV1_configuration
@@ -335,40 +391,18 @@ class offset_vector():
         for i in range (0,3):
             self.etvec[i].set_text("%12.3f" %(scaleO[i]*HV1_configuration[ii_config_target_X0+i]))
 
+    def adjust_gains (self, gains):
+            #chan = ["gain_X", "gain_Y", "gain_Z"]
+            ii   = [ii_config_gain_X, ii_config_gain_Y, ii_config_gain_Z]
+            gain = [1, 2, 5, 10, 20]
+            for ci in range(0,3):
+	            for i in range(0,5):
+                            if gains[ci] == gain[i]:
+                                    print ("setting gain[%d]"%ci+" to %dx"%gain[i])
+			            hv1_adjust (0, i, ii[ci])
+			            self.gsvec[ci].set_active (i)
 
 
-def hv1_adjust(_object, _value, _identifier):
-	value = _value
-	index = _identifier
-	if index >= ii_config_preset_X0 and index < ii_config_dum:
-		sr = open (sr_spd_dev_path, "wb")
-		os.lseek (sr.fileno(), CONFIGURATION_VECTOR_ADDRESS + 2*index, 1)
-		os.write (sr.fileno(), struct.pack ("<h", value))
-		sr.close ()
-
-	read_back ()
-	return 1
-
-def goto_presets():
-	global HV1_configuration
-
-	tX0 = HV1_configuration[ii_config_preset_X0]
-	tY0 = HV1_configuration[ii_config_preset_Y0]
-	tZ0 = HV1_configuration[ii_config_preset_Z0]
-
-	print "goto presets:"
-	print tX0, tY0, tZ0
-
-	sr = open (sr_spd_dev_path, "wb")
-	os.lseek (sr.fileno(), CONFIGURATION_VECTOR_ADDRESS + 2*ii_config_target_X0, 1)
-	os.write (sr.fileno(), struct.pack ("<hhh", tX0, tY0, tZ0))
-	sr.close ()
-
-	read_back ()
-
-#	etX0.set_text("%12.3f" %(scaleO[0]*HV1_configuration[ii_config_target_X0]))
-#	etY0.set_text("%12.3f" %(scaleO[1]*HV1_configuration[ii_config_target_Y0]))
-#	etZ0.set_text("%12.3f" %(scaleO[2]*HV1_configuration[ii_config_target_Z0]))
 
 
 class drift_compensation():
@@ -439,6 +473,13 @@ def toggle_gxsm_link (w, gl):
 		gl.stop ()
 		GXSM_Link_status = FALSE
 		print "GXSM Link disabled"
+	
+def toggle_gxsm_gain_link (w, gl):
+	global GXSM_Link_status
+	if w.get_active():
+		gl.enable_gain_control ()
+	else:
+		gl.disable_gain_control ()
 	
 def toggle_Z0_invert (w):
 	global Z0_invert_status
@@ -576,12 +617,9 @@ def create_hv1_app():
                     table.attach(eo[i], 1+i, 2+i, tr, tr+1)
                     eo[i].show()
 
-                offset_control = offset_vector(eo)
-
-		button = gtk.Button(stock='gtk-apply')
-		button.connect("clicked", offset_control.write_t_vector)
-		button.show()
-		table.attach(button, 4, 5, tr, tr+1)
+		oabutton = gtk.Button(stock='gtk-apply')
+		oabutton.show()
+		table.attach(oabutton, 4, 5, tr, tr+1)
 
 # Drift Compensation Setup
 		tr = tr+1
@@ -597,10 +635,6 @@ def create_hv1_app():
                     ed[i].set_text("%12.3f " %(scaleO[i]*HV1_driftcomp[i]) ) # + unit[i] + "/s")
                     table.attach(ed[i], 1+i, 2+i, tr, tr+1)
                     setup_list.append (ed[i])
-
-                dc_control = drift_compensation (ed, offset_control)
-
-		GxsmLink = gxsm_link(offset_control)
 
 
 		lab = gobject.new(gtk.Label, label= unit[0] + "/s")
@@ -643,9 +677,11 @@ def create_hv1_app():
 		chan = ["bw_X", "bw_Y", "bw_Z"]
 		ii   = [ii_config_bw_X, ii_config_bw_Y, ii_config_bw_Z]
 		bw   = ["50 kHz", "10 kHz", "1 kHz"]
+                gain_select = []
 		for ci in range(0,3):
 			opt = gtk.OptionMenu()
 			menu = gtk.Menu()
+                        gain_select.append (menu);
 			for i in range(0,3):
 				item = make_menu_item(bw[i], make_menu_item, hv1_adjust, i, ii[ci])
 				menu.append(item)
@@ -678,6 +714,17 @@ def create_hv1_app():
 		separator = gobject.new(gtk.HSeparator())
 		separator.show()
 		table.attach(separator, 0, 5, tr, tr+1)
+
+# Link controls
+
+
+                offset_control = offset_vector(eo, gain_select)
+		oabutton.connect("clicked", offset_control.write_t_vector)
+                dc_control = drift_compensation (ed, offset_control)
+		GxsmLink = gxsm_link(offset_control)
+
+
+
 # Closing ---
 
 		box2 = gobject.new(gtk.HBox(spacing=10))
@@ -691,7 +738,7 @@ def create_hv1_app():
 #		button.set_flags(gtk.CAN_DEFAULT)
 		Label=button.get_children()[0]
 		Label=Label.get_children()[0].get_children()[1]
-		Label=Label.set_label('Emergency STOP (GOTO Presets)')
+		Label=Label.set_label('Emergency STOP')
 		button.show()
 		box2.pack_start(button)
 
@@ -713,6 +760,13 @@ def create_hv1_app():
 		box2.pack_start(check_button)
 		check_button.show()
 		check_button.set_sensitive (GxsmLink.status ())	
+
+		check_button = gtk.CheckButton("GXSM Gains")
+		check_button.set_active(False)
+		check_button.connect('toggled', toggle_gxsm_gain_link, GxsmLink)
+		box2.pack_start(check_button)
+		check_button.show()
+		check_button.set_sensitive (GxsmLink.status ())
 
 		check_button = gtk.CheckButton("Z0 inv.")
 		check_button.set_active(False)
