@@ -1024,9 +1024,6 @@ void sranger_mk3_hwi_spm::MovetoXY(double x, double y){
                         tip_pos[0] =  x * Q16;
                         tip_pos[1] =  y * Q16;
 			tip_to_origin (tip_pos[0], tip_pos[1]);
-
-                        if ((fabs(x) + fabs(y)) < 4.)
-                                UpdateScanGainMirror ();
 		}
 	}
 }

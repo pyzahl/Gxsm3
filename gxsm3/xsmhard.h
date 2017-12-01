@@ -120,6 +120,8 @@ class XSM_Hardware{
 	 * Generic scan parameters and scanhead controls
 	 * All integer values are in DAC units
 	 */
+	/* tell hardware about GXSM set XYZ-Scan and -Offset gains */
+	virtual void UpdateScanGainMirror () {};
 
 	/* set scan offset, HwI should move detector to this position, absolute coordinates, not rotated */
 	virtual void SetOffset(double x, double y);
