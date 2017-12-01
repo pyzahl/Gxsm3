@@ -4798,6 +4798,10 @@ int DSPControl::choice_Ampl_callback (GtkWidget *widget, DSPControl *dspc){
 	PI_DEBUG (DBG_L2, "Ampl: Ch=" << j << " i=" << i );
 	sranger_mk2_hwi_pi.app->spm_range_check(NULL, sranger_mk2_hwi_pi.app);
 	dspc->updateDSP();
+        
+	sranger_common_hwi->UpdateScanGainMirror ();
+
+        
 	return 0;
 }
 
