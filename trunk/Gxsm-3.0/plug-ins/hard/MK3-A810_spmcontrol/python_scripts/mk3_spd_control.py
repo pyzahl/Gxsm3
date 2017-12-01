@@ -353,7 +353,7 @@ def goto_presets():
 class offset_vector():
     def __init__(self, etv, gsv):
         self.etvec = etv
-        self.gsvec = gsv
+        self.gainselectmenuvec = gsv
         
     def write_t_vector(self, button):
         global HV1_configuration
@@ -400,9 +400,7 @@ class offset_vector():
                             if gains[ci] == gain[i]:
                                     print ("setting gain[%d]"%ci+" to %dx"%gain[i])
 			            hv1_adjust (0, i, ii[ci])
-			            self.gsvec[ci].set_active (i)
-
-
+			            self.gainselectmenuvec[ci](i)
 
 
 class drift_compensation():
@@ -653,6 +651,7 @@ def create_hv1_app():
 		chan = ["gain_X", "gain_Y", "gain_Z"]
 		ii   = [ii_config_gain_X, ii_config_gain_Y, ii_config_gain_Z]
 		gain = [" 1x", " 2x", " 5x", "10x", "20x"]
+                gain_select = []
 		for ci in range(0,3):
 			opt = gtk.OptionMenu()
 			menu = gtk.Menu()
@@ -660,6 +659,7 @@ def create_hv1_app():
 				item = make_menu_item(gain[i], make_menu_item, hv1_adjust, i, ii[ci])
 				menu.append(item)
 			menu.set_active(HV1_configuration[ii[ci]])
+                        gain_select.append (menu.set_active);
 			opt.set_menu(menu)
 			opt.show()
 			table.attach(opt, 1+ci, 2+ci, tr, tr+1)
@@ -677,11 +677,9 @@ def create_hv1_app():
 		chan = ["bw_X", "bw_Y", "bw_Z"]
 		ii   = [ii_config_bw_X, ii_config_bw_Y, ii_config_bw_Z]
 		bw   = ["50 kHz", "10 kHz", "1 kHz"]
-                gain_select = []
 		for ci in range(0,3):
 			opt = gtk.OptionMenu()
 			menu = gtk.Menu()
-                        gain_select.append (menu);
 			for i in range(0,3):
 				item = make_menu_item(bw[i], make_menu_item, hv1_adjust, i, ii[ci])
 				menu.append(item)
