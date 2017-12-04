@@ -360,6 +360,10 @@ class offset_vector():
         tX = [0,0,0]
         for i in range (0,3):
             tX[i] = int (float (self.etvec[i].get_text ()) / scaleO[i]);
+            if tX[i] > 32766:
+                    tX[i] = 32766
+            if tX[i] < -32766:
+                    tX[i] = -32766
 
 #        print (tX)
 
@@ -378,7 +382,11 @@ class offset_vector():
         tX = [0,0,0]
         for i in range (0,3):
             tX[i] = int (tvec[i] / scaleO[i]);
-
+            if tX[i] > 32766:
+                    tX[i] = 32766
+            if tX[i] < -32766:
+                    tX[i] = -32766
+            
 #        print (tX)
 
         sr = open (sr_spd_dev_path, "wb")
