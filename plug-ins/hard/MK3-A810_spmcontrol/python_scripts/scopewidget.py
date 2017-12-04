@@ -156,8 +156,8 @@ class Scope(gtk.DrawingArea):
             
     def set_lambda_frqmap (self, fmaplog=False):
         if fmaplog:
-            lwf = 2.*self.xw / log (2.*self.xw)
-            self.lambda_frqmap =  lambda x: lwf*log(self.xw+x)-self.xw
+            lwf = 2.*self.xw / log (1+2.*self.xw)
+            self.lambda_frqmap =  lambda x: lwf*log(1+self.xw+x)-self.xw
         else:
             self.lambda_frqmap =  lambda x: x
             
