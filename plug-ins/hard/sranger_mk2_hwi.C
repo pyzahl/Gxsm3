@@ -1367,12 +1367,12 @@ to watch with the scope via the Patch Rack and assign to ``SCOPE\_SIGNAL1/2\_INP
   Signal Patch Configuration for PLL view}{0.2}
 
 \item Then select the phase detector time constant ``TauPAC'' -- set it
-  to 20 $\mu$s or faster.  {\bf Referring to the PLL manual ``4.1 Phase
+  to 20 $\mu$s or faster.  \textbf{Referring to the PLL manual ``4.1 Phase
     Detector Time Cst (s)'':} This control adjusts the time constant
   of the phase detector. We suggest keeping time constant to $20 \mu$s
   (fast set-up), which allows a bandwidth of about $8$ kHz. Note that
   the auto-adjustment functions for the PI gains of both controllers
-  (amplitude and phase) automatically\footnote{This is {\bf not} the
+  (amplitude and phase) automatically\footnote{This is \textbf{not} the
     case for the Gxsm control and to use the auto gain adjustments
     you must set TauPAC manually to 20 $\mu$s.} set the time constant
   to 20us.  This way, the bandwidth of the controller is only limited
