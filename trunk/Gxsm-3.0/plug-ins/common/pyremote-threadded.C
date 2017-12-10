@@ -311,7 +311,7 @@ executed by a call of the \GxsmTT{action}-command. It is
 DSP Peak Find Plugin Commandset for the SPA-LEED peak finder:\\
 
 \begin{tabular}{lllll}
-\Mcol{Commands Plugin \filename{DSP Peak Find}:}\\ \\ \hline  
+\multicolumn{5}{c}{Commands Plugin \filename{DSP Peak Find}:}\\ \\ \hline  
 Cmd & Arg. & \multicolumn{2}{l}{Values} & Description\\ \hline
 \hline
 action & DSPPeakFind\_XY0\_1 &&& Get fitted XY Position\\

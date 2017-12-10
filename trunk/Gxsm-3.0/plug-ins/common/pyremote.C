@@ -136,7 +136,7 @@ Others\\
 \texttt{echo(S)  }  &       Print S to console.\\
 \texttt{logev(S) }  &       Print S to logfile.\\
 \texttt{sleep(N) }  &       Sleep N/10 seconds.\\
-\texttt{add\_layerinformation(S,N)   }  &       Add Layerinformation string S to active scan, layer N.\ \
+\texttt{add\_layerinformation(S,N)   }  &       Add Layerinformation string S to active scan, layer N.\\
 \texttt{da0(X)   }  &       Set Analog Output channel 0 to X Volt. (not implemented).\\
 \end{tabular}
 
@@ -449,7 +449,7 @@ executed by a call of the \GxsmTT{action}-command. It is
 DSP Peak Find Plugin Commandset for the SPA-LEED peak finder:\\
 
 \begin{tabular}{lllll}
-\Mcol{Commands Plugin \filename{DSP Peak Find}:}\\ \\ \hline
+\multicolumn{5}{c}{Commands Plugin \filename{DSP Peak Find}:}\\ \\ \hline
 Cmd & Arg. & \multicolumn{2}{l}{Values} & Description\\ \hline
 \hline
 action & DSPPeakFind\_XY0\_1 &&& Get fitted XY Position\\
