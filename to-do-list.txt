@@ -33,7 +33,9 @@ current work in progress, evaluating while working with it, optimizing, new idea
 
 minor pending bug-fixes:
 -> fix PCS / Entry control updated in log mode -- at times wrong number displayed
--> check on reason for eventaully wrong unit's conversion gathered from DSP signal table ?!??!
+-> auto update slope settings on DSP with xyz gain changes
+-> check on reason for eventaully wrong unit's/odd scaling conversion gathered from DSP signal table ?!??!
+-> verify DSP mutex behavior at extreme conditions
 
 short term to-do:
 -> pyremote console, make console output updatre some how life, need a pipe, etc. for tarcking output??? So far only get post completion. Workaround: use gxsm.logev to log to gxsm logfile/monitor
