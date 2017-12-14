@@ -52,7 +52,7 @@
 #define EXTERNAL_EN_MOTOR  7
 #define EXTERNAL_EN_PHASE  8
 #define EXTERNAL_PID       9
-
+#define EXTERNAL_FEEDBACK_ADD 10 
 
 
 /* external functions */

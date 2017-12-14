@@ -130,8 +130,10 @@ sranger_mk2_hwi_spm::~sranger_mk2_hwi_spm(){
 
 gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
         const gint64 max_age = 50000; // 50ms
+        const gint64 max_age_as = 250000; // 250ms
         static gint64 time_of_last_xyz_reading = 0; // abs time in us
         static gint64 time_of_last_fb_reading = 0; // abs time in us
+        static gint64 time_of_last_as_reading = 0; // abs time in us
 	static struct { DSP_INT x_offset, y_offset, z_offset, x_scan, y_scan, z_scan, bias, motor; } dsp_analog;
 	static struct { DSP_INT adc[8]; } dsp_analog_in;
 	static MOVE_OFFSET dsp_move;
@@ -139,7 +141,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 	static PROBE dsp_probe;
 	static SPM_PI_FEEDBACK dsp_feedback_watch;
 	static SPM_STATEMACHINE dsp_statemachine;
-        static AUTOAPPROACH dsp_aap;
+        static AUTOAPPROACH dsp_autoapp;
 	static gint ok=FALSE;
 
         // auto buffered
@@ -156,6 +158,17 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		CONV_16 (dsp_analog.y_offset);
 		CONV_16 (dsp_analog.z_offset);
 
+                time_of_last_xyz_reading = g_get_real_time ();
+        }
+
+        if ( (*property == 'A' || *property =='s') && (time_of_last_as_reading+max_age_as) < g_get_real_time () ){
+                // read DSP level wave/mover axis counts
+		lseek (dsp_alternative, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		sr_read  (dsp_alternative, &dsp_autoapp, sizeof (dsp_autoapp));
+		CONV_16 (dsp_autoapp.pflg);
+		CONV_16 (dsp_autoapp.count_axis[0]);
+		CONV_16 (dsp_autoapp.count_axis[1]);
+		CONV_16 (dsp_autoapp.count_axis[2]);
                 time_of_last_xyz_reading = g_get_real_time ();
         }
         
@@ -257,7 +270,6 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 
 	// DSP Status Indicators
 	if (*property == 's'){
-		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		lseek (dsp, magic_data.statemachine, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_read  (dsp, &dsp_statemachine, sizeof (dsp_statemachine)); 
 		CONV_16 (dsp_statemachine.mode);
@@ -266,7 +278,8 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		CONV_16 (dsp_statemachine.DataProcessTime_Peak);
 		CONV_16 (dsp_statemachine.IdleTime_Peak);
 
-		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan)); 
+		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+ 		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan)); 
 		CONV_16 (dsp_scan.pflg);
 
 		lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
@@ -286,6 +299,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 				+ (( dsp_scan.pflg & 3) << 1)
 				+ ((dsp_probe.pflg & 1) << 3)
 				+ (( dsp_move.pflg & 1) << 4)
+				+ (( dsp_autoapp.pflg & 1) << 7)
 			);
 
 // "  DSP Load: %.1f" %(100.*SPM_STATEMACHINE[ii_statemachine_DataProcessTime]/(SPM_STATEMACHINE[ii_statemachine_DataProcessTime]+SPM_STATEMACHINE[ii_statemachine_IdleTime]))
@@ -325,17 +339,10 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		val3 = (double)gpio_monitor_dir;
 	}
 
-        // unbuffered, so far only user input/button press triggered, no need to buffer
-        if ( *property == 'A' ){    // ... && (time_of_last_xyz_reading+max_age) < g_get_real_time () ){
-                // read DSP level wave/mover axis counts
-		lseek (dsp_alternative, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-		sr_read  (dsp_alternative, &dsp_aap, sizeof (dsp_aap));
-		CONV_16 (dsp_aap.count_axis[0]);
-		CONV_16 (dsp_aap.count_axis[1]);
-		CONV_16 (dsp_aap.count_axis[2]);
-                val1 = (double)dsp_aap.count_axis[0];
-                val2 = (double)dsp_aap.count_axis[1];
-                val3 = (double)dsp_aap.count_axis[2];
+        if ( *property == 'A' ){
+                val1 = (double)dsp_autoapp.count_axis[0];
+                val2 = (double)dsp_autoapp.count_axis[1];
+                val3 = (double)dsp_autoapp.count_axis[2];
         }
         
 //	printf ("ZXY: %g %g %g\n", val1, val2, val3);
@@ -406,16 +413,14 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 		dsp_aap.start = int_2_sranger_int(1);           /* Initiate =WO */
 		dsp_aap.stop  = int_2_sranger_int(0);           /* Cancel   =WO */
 
-		if (DSPMoverClass->mover_param.MOV_mode & AAP_MOVER_WAVE){
-			// create, convert and download waveform(s) to DSP
-			DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
-
-			for (int i=0; i<DSPMoverClass->mover_param.MOV_wave_len; ++i)
-				DSPMoverClass->mover_param.MOV_waveform[i] = int_2_sranger_int (DSPMoverClass->mover_param.MOV_waveform[i]);
-
-			lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-			sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
-		}
+                // create, convert and download waveform(s) to DSP
+                DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
+                
+                for (int i=0; i<DSPMoverClass->mover_param.MOV_wave_len; ++i)
+                        DSPMoverClass->mover_param.MOV_waveform[i] = int_2_sranger_int (DSPMoverClass->mover_param.MOV_waveform[i]);
+                
+                lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
 
                 gint channels = 1;
                 switch (DSPMoverClass->mover_param.MOV_waveform_id){
@@ -437,16 +442,14 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
       		// ... [5] (configure all channels!)
 
 		dsp_aap.mover_mode = int_2_sranger_int (AAP_MOVER_AUTO_APP | AAP_MOVER_WAVE_PLAY);
-                //DSPMoverClass->mover_param.MOV_mode 
-		//DSPMoverClass->mover_param.MOV_output 
-                //DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0
 
 		dsp_aap.max_wave_cycles = int_2_sranger_int (2*(int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
 		dsp_aap.wave_length     = int_2_sranger_int (DSPMoverClass->mover_param.MOV_wave_len); /* Length of Waveform -- total count all samples/channels */
 		dsp_aap.wave_speed      = int_2_sranger_int (DSPMoverClass->mover_param.MOV_wave_speed_fac);     /* Wave Speed (hold number per step) */
 
                 // auto app parameters
-		dsp_aap.ci_retract  = float_2_sranger_q15 (0.1 * DSPMoverClass->mover_param.retract_ci / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ()); // CI setting for reversing Z (retract)
+		dsp_aap.ci_retract  = float_2_sranger_q15 (0.01 * DSPMoverClass->mover_param.retract_ci / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ()); // CI setting for reversing Z (retract)
+                g_print ("CI-RETRACT (DSP) %x",	dsp_aap.ci_retract);
                 //**** dsp_feedback.ci = float_2_sranger_q15 (0.01 * z_servo[SERVO_CI] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
                 dsp_aap.n_wait      = int_2_sranger_int((int)(DSPControlClass->frq_ref*1e-3*DSPMoverClass->mover_param.final_delay));                     /* delay inbetween cycels */
 		dsp_aap.n_wait_fin  = long_2_sranger_long((int)(DSPControlClass->frq_ref*1e-3*DSPMoverClass->mover_param.max_settling_time));                     /* delay inbetween cycels */
@@ -477,29 +480,27 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 		dsp_aap.start = int_2_sranger_int(1);           /* Initiate =WO */
 		dsp_aap.stop  = int_2_sranger_int(0);           /* Cancel   =WO */
 
-		if (DSPMoverClass->mover_param.MOV_mode & AAP_MOVER_WAVE){
-			// create, convert and download waveform(s) to DSP
-                        switch (Cmd){
-                        case DSP_CMD_AFM_MOV_XM:
-                        case DSP_CMD_AFM_MOV_YM:
-                        case DSP_CMD_AFM_MOV_ZM:
-                                dsp_aap.dir  = int_2_sranger_int (-1); // arbitrary direction, assume -1 "left/down"
-                                DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, -DSPMoverClass->mover_param.AFM_Speed);
-                                break;
-                        case DSP_CMD_AFM_MOV_XP:
-                        case DSP_CMD_AFM_MOV_YP:
-                        case DSP_CMD_AFM_MOV_ZP:
-                                dsp_aap.dir  = int_2_sranger_int (1); // arbitrary direction, assume +1 "right/up"
-                                DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
-                                break;
-                        }
-			
-			for (int i=0; i<DSPMoverClass->mover_param.MOV_wave_len; ++i)
-				DSPMoverClass->mover_param.MOV_waveform[i] = int_2_sranger_int (DSPMoverClass->mover_param.MOV_waveform[i]);
-
-			lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-			sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
-		}
+                // create, convert and download waveform(s) to DSP
+                switch (Cmd){
+                case DSP_CMD_AFM_MOV_XM:
+                case DSP_CMD_AFM_MOV_YM:
+                case DSP_CMD_AFM_MOV_ZM:
+                        dsp_aap.dir  = int_2_sranger_int (-1); // arbitrary direction, assume -1 "left/down"
+                        DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, -DSPMoverClass->mover_param.AFM_Speed);
+                        break;
+                case DSP_CMD_AFM_MOV_XP:
+                case DSP_CMD_AFM_MOV_YP:
+                case DSP_CMD_AFM_MOV_ZP:
+                        dsp_aap.dir  = int_2_sranger_int (1); // arbitrary direction, assume +1 "right/up"
+                        DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
+                        break;
+                }
+		
+                for (int i=0; i<DSPMoverClass->mover_param.MOV_wave_len; ++i)
+                        DSPMoverClass->mover_param.MOV_waveform[i] = int_2_sranger_int (DSPMoverClass->mover_param.MOV_waveform[i]);
+                
+                lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
                 
                 gint channels = 1;
                 switch (DSPMoverClass->mover_param.MOV_waveform_id){
@@ -534,9 +535,6 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 		// ... [0..5] (configure all needed channels!)
 
 		dsp_aap.mover_mode = int_2_sranger_int (AAP_MOVER_WAVE_PLAY);
-                //DSPMoverClass->mover_param.MOV_mode 
-		//DSPMoverClass->mover_param.MOV_output 
-                //DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0
 
 		dsp_aap.max_wave_cycles = int_2_sranger_int (2*(int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
 		dsp_aap.wave_length     = int_2_sranger_int (DSPMoverClass->mover_param.MOV_wave_len); /* Length of Waveform -- total count all samples/channels */

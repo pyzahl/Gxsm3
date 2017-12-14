@@ -459,12 +459,10 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 		dsp_aap.start = long_2_sranger_long(1);           /* Initiate =WO */
 		dsp_aap.stop  = long_2_sranger_long(0);           /* Cancel   =WO */
 
-		if (DSPMoverClass->mover_param.MOV_mode & AAP_MOVER_WAVE){
-			// create and download waveforms
-			DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
-			lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-			sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
-		}
+                // create and download waveforms
+                DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
+                lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
                 
                 // wave play setup for auto approach
 		// configure wave[0,1,...] out channel destination
@@ -546,25 +544,23 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 		dsp_aap.n_wait_fin  = long_2_sranger_long (0);    /* just clear, olny autoapp */
                 dsp_aap.ci_retract  = float_2_sranger_q31 (0);    /* just clear, olny autoapp */
 
-		if (DSPMoverClass->mover_param.MOV_mode & AAP_MOVER_WAVE){
-			// create and download waveform(s) to DSP
-                        switch (Cmd){
-                        case DSP_CMD_AFM_MOV_XM:
-                        case DSP_CMD_AFM_MOV_YM:
-			case DSP_CMD_AFM_MOV_ZM:
-                                dsp_aap.dir  = int_2_sranger_int (-1); // arbitrary direction, assume -1 "left/up"
-                                DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, -DSPMoverClass->mover_param.AFM_Speed);
-                                break;
-                        case DSP_CMD_AFM_MOV_XP:
-                        case DSP_CMD_AFM_MOV_YP:
-			case DSP_CMD_AFM_MOV_ZP:
-                                dsp_aap.dir  = int_2_sranger_int (1); // arbitrary direction, assume +1 "rigth/down"
-                                DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
-                                break;
-                        }
-			lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-			sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
-		}
+                // create and download waveform(s) to DSP
+                switch (Cmd){
+                case DSP_CMD_AFM_MOV_XM:
+                case DSP_CMD_AFM_MOV_YM:
+                case DSP_CMD_AFM_MOV_ZM:
+                        dsp_aap.dir  = int_2_sranger_int (-1); // arbitrary direction, assume -1 "left/up"
+                        DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, -DSPMoverClass->mover_param.AFM_Speed);
+                        break;
+                case DSP_CMD_AFM_MOV_XP:
+                case DSP_CMD_AFM_MOV_YP:
+                case DSP_CMD_AFM_MOV_ZP:
+                        dsp_aap.dir  = int_2_sranger_int (1); // arbitrary direction, assume +1 "rigth/down"
+                        DSPMoverClass->create_waveform (DSPMoverClass->mover_param.AFM_Amp, DSPMoverClass->mover_param.AFM_Speed);
+                        break;
+                }
+                lseek (dsp, wave_form_address, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_write (dsp, &DSPMoverClass->mover_param.MOV_waveform[0], DSPMoverClass->mover_param.MOV_wave_len<<1); 
 
                 int channels=1;
                 switch (DSPMoverClass->mover_param.MOV_waveform_id){
@@ -601,9 +597,6 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 		// ... [0..5] (configure all needed channels!)
 
 		dsp_aap.mover_mode = long_2_sranger_long (AAP_MOVER_WAVE_PLAY);
-                //DSPMoverClass->mover_param.MOV_mode 
-		//DSPMoverClass->mover_param.MOV_output 
-                //DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0
 
                 PI_DEBUG_GP (DBG_L2, "max steps=%f \n", 
                                         DSPMoverClass->mover_param.AFM_Steps);

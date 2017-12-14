@@ -88,7 +88,7 @@ i_move = 12
 fmt_move = "<hhlllllllllh"
 
 i_probe = 13
-fmt_probe = "hhhhhhhhllllllll"
+fmt_probe = "<hhhhhhhhllllllll"
 ii_probe_ACamp = 2
 ii_probe_ACfrq = 3
 ii_probe_ACphaseA = 4
@@ -97,6 +97,31 @@ ii_probe_ACnAve = 6
 ii_probe_ACix = 7
 ii_probe_time = 8
 
+i_autoapp = 14
+fmt_autoapp = "<hhhhhhhhhhhhhhhhhhLLhhhhhhhhhh"
+ii_autoapp_start = 0
+ii_autoapp_stop = 1
+ii_autoapp_mover_mode = 2 #      /**<2 Mover mode, see below */
+ii_autoapp_max_wave_cycles = 3 # /**<3 max number of repetitions */
+ii_autoapp_wave_length = 4 #     /**<4 total number of samples per wave cycle for all channels (must be multipe of n_waves_channels)  */
+ii_autoapp_n_wave_channels = 5 # /**<5 number of wave form channel to play simulatneously (1 to max 6)*/
+ii_autoapp_wave_speed = 6 #      /**<6 number of samples per wave cycle */
+ii_autoapp_n_wait = 7 #          /**<7 delay inbetween cycels */
+ii_autoapp_channel_mapping0 = 8 # [6] 8..13 /** 8,9,10,11,12,13 -- may include the flag "ch | AAP_MOVER_SIGNAL_ADD"  */
+ii_autoapp_axis = 14 #            /**<14 axis id (0,1,2) for optional step count */
+ii_autoapp_dir = 15 #             /**<15 direction for count +/-1 */
+ii_autoapp_ci_retract = 16 #      /**<16 retract CI (inverted normal, may be bigger) */
+ii_autoapp_dum = 17 #             /**<17 retract CI (inverted normal, may be bigger) */
+ii_autoapp_n_wait_fin = 18 #  LL    /**<18 # cycles to wait and check (run FB) before finish auto app. */
+ii_autoapp_fin_cnt = 19 #     LL    /**< tmp count for auto fin. */
+ii_autoapp_mv_count = 20 #        /**< "time axis" */
+ii_autoapp_mv_step_count = 21 #   /**< step counter */
+ii_autoapp_tip_mode = 22 #        /**< Tip mode, used by auto approach */
+ii_autoapp_delay_cnt = 23 #       /**< Delay count */
+ii_autoapp_cp = 24 #          /**< temporary used */
+ii_autoapp_ci = 25 #          /**< temporary used */
+ii_autoapp_count_axis0 = 26 # [3]  /**< axis step counter */
+ii_autoapp_pflg = 29 #            /**< process active flag =RO */
 
 i_feedback_mixer = 18
 fmt_feedback_mixer = "<hhhhhhhhhhhhhhhhhhhhlhhhh"
@@ -133,6 +158,7 @@ global EXT_CONTROL       # at magic[20]
 global SPM_SCAN          # at magic[11]
 global SPM_MOVE          # at magic[12]
 global SPM_PROBE         # at magic[13]
+global AUTOAPP           # at magic[14]
 global WATCH             # at magic[23]
 global WATCHL16
 global WATCHL17
@@ -749,6 +775,8 @@ def create_settings_edit(_button):
 	        menu.append(item)
 	        item = make_menu_item("PRB Phase->M", make_menu_item, ext_FB_control, 8, "ext_value")
 	        menu.append(item)
+	        item = make_menu_item("Ext Feeback Add: OUT7=Z_DSP+IN7", make_menu_item, ext_FB_control, 10, "ext_value")
+	        menu.append(item)
 	        #item = make_menu_item("Source 3", make_menu_item, ext_FB_control, 2, "ext_value")
 	        #menu.append(item)
 		menu.set_active(EXT_CONTROL[2])
@@ -1233,8 +1261,15 @@ def check_dsp_scan(_set):
 	      + "SRCSXP: %08x" %(SPM_SCAN[10]) + " XM: %08x" %(SPM_SCAN[11]) + " XP2 %08x" %(SPM_SCAN[12]) + " XM2 %08x" %(SPM_SCAN[13]) + " 2ndOff %d" %(SPM_SCAN[24]) + ", %d\n" %(SPM_SCAN[25])
 	      + "LN_SET0: %06d" %(MIXER_FB[22]) + " SET0 %06d\n" %(MIXER_FB[12])
 	      + "MX-delta: %012d" %(MIXER_delta) + " G4 %06d" %(MIXER_FB[7]) + " .x %06d" %(MIXER_FB[17]) + " setpoint  %06d" %(MIXER_FB[15])
-#	      + "W32: %08d" %(WATCHL16) + " %08d" %(WATCHL17) + " %08d" %(WATCH[16+2]) + " %08d" %(WATCH[16+3])
+	      + "\nAAP_mode: %d" %(AUTOAPP[ii_autoapp_mover_mode]) +  " AAP_mwc %d" %(AUTOAPP[ii_autoapp_max_wave_cycles])
+	      + "\nAAP_tipmode: %d" %(AUTOAPP[ii_autoapp_tip_mode]) +  " AAP_pflg %d" %(AUTOAPP[ii_autoapp_pflg]) 
+	      + "\nAAP counts: %d" %(AUTOAPP[ii_autoapp_count_axis0]) + ", %d" %(AUTOAPP[ii_autoapp_count_axis0+1]) + ", %d" %(AUTOAPP[ii_autoapp_count_axis0+1]) +
+              "\n"
+              
+              #	      + "W32: %08d" %(WATCHL16) + " %08d" %(WATCHL17) + " %08d" %(WATCH[16+2]) + " %08d" %(WATCH[16+3])
 	      )
+        # print AUTOAPP;
+        
 	return 1
 
 def check_dsp_ratemeter(_c1set, _c2set):
@@ -2743,6 +2778,7 @@ def get_status():
 	global SPM_SCAN
 	global SPM_MOVE
 	global SPM_PROBE
+	global AUTOAPP
 	global CR_COUNTER
 	global AIC_in_buffer
 	global AIC_out_buffer
@@ -2781,6 +2817,9 @@ def get_status():
 
 	os.lseek (sr.fileno(), magic[i_probe], 0)
 	SPM_PROBE = struct.unpack (fmt_probe, os.read (sr.fileno(), struct.calcsize (fmt_probe)))
+
+	os.lseek (sr.fileno(), magic[i_autoapp], 0)
+	AUTOAPP = struct.unpack (fmt_autoapp, os.read (sr.fileno(), struct.calcsize (fmt_autoapp)))
 
 	os.lseek (sr.fileno(), magic[i_AIC_in], 0)
 	AIC_in_buffer = struct.unpack (fmt_AIC_in, os.read (sr.fileno(), struct.calcsize (fmt_AIC_in)))

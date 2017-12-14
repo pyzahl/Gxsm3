@@ -113,9 +113,9 @@
 // -- otherwise you exactly need to know/be sure what you are doing --
 // -- odd things like changed data structures, etc.., could break data transfer --
 #define FB_SPM_SOFT_ID   0x1001 /* FB_SPM sofware id */
-#define FB_SPM_VERSION   0x2033 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_VERSION   0x2035 /* FB_SPM main Version, BCD: 00.00 */
 #define FB_SPM_DATE_YEAR 0x2017 /* Date: Year, BCD */
-#define FB_SPM_DATE_MMDD 0x1027 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x1214 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Lednice-Battenkill Worrier 2013\n"\
@@ -543,7 +543,7 @@ typedef struct{
 	DSP_INT     count_axis[3];   /**< axis step counter */
 	DSP_INT     pflg;            /**< process active flag =RO */
 } AUTOAPPROACH;
-#define MAX_WRITE_AUTOAPPROACH 16
+#define MAX_WRITE_AUTOAPPROACH 17
 
 /** MOVER MODES **/
 #define AAP_MOVER_STOP          0 /**< cancel wave play/auto -- all off */

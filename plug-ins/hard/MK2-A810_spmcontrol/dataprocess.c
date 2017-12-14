@@ -447,64 +447,6 @@ interrupt void dataprocess()
 		}
 	}
 
-	/* external watch task ? -- pass variable out on channel 7 -- no FIR */
-	if (state.mode & MD_WATCH)
-	{
-		switch(external.watch_value){
-			//default: AIC_OUT(7) = 0;
-#ifdef EN_CODE_EXTERNAL_FEEDBACK_CTRL
-		case EXTERNAL_FEEDBACK:
-			AIC_OUT(7) = _sadd(feedback_hold * _ssub(external.watch_max, external.watch_min), external.watch_min);
-			break;
-			// AIC_OUT(7) = feedback_hold * (external.watch_max - external.watch_min) + external.watch_min;
-#endif
-		case EXTERNAL_OFFSET_X:
-			AIC_OUT(7) = analog.out[ANALOG_X0_AUX];
-			break;
-#if 0
-		case EXTERNAL_LOG:
-			AIC_OUT(7) = feedback_mixer.lnx;
-			break;
-#endif
-#if 0
-		case EXTERNAL_DELTA:
-			AIC_OUT(7) = feedback.delta;
-			break;
-#endif
-		case EXTERNAL_PRB_SINE:
-			AIC_OUT(7) = PRB_ref1stA;
-			break;
-		case EXTERNAL_PRB_PHASE:
-			AIC_OUT(7) = PRB_modindex > (probe.LockInRefSinLenA>>1) ? 16384 : 0;
-			break;
-		case EXTERNAL_BIAS_ADD:
-			AIC_OUT(6) = _lsshl (_smac (probe.Upos, AIC_IN(7), probe.AC_amp), -16);
-			break;
-		case EXTERNAL_EN_MOTOR:
-			AIC_OUT(7) = analog.out[ANALOG_MOTOR];
-			break;
-//#define EN_CODE_EXTERNAL_FB2
-#ifdef EN_CODE_EXTERNAL_FB2
-// note: may break things here... max code size exceeded eventually depending on other code sections enabled
-		case EXTERNAL_EN_PHASE:
-			AIC_OUT(7) = _sadd (_lsshl (PRB_ACPhaseA32, -16), analog.out[ANALOG_MOTOR]);
-			break;
-		case EXTERNAL_PID:
-			// run 2nd PID feedback in AIC 7 in/out
-			tmpsum = AIC_IN(7);
-			tmpsum = _ssub (external.fb2_set, tmpsum);
-			external.fb2_delta2 = _ssub (external.fb2_delta, tmpsum);
-			external.fb2_delta  = tmpsum;
-			tmpsum = external.fb2_i_sum = _smac (external.fb2_i_sum, external.fb2_ci, external.fb2_delta);
-			tmpsum = _smac (tmpsum, external.fb2_cp, external.fb2_delta);
-			tmpsum = _smac (tmpsum, external.fb2_cd, external.fb2_delta2);
-			HR_OUT (7, tmpsum);
-			break;
-#endif
-		}
-	}
-	else AIC_OUT(7) = 0;
-
 
 // NOW OUTPUT HR SIGNALS ON XYZ-Offset and XYZ-Scan -- do not touch Bias OUT(6) and Motor OUT(7) here -- handled directly previously.
 // note: OUT(0-5) get overridden below by coarse/mover actions if requeste!!!
@@ -575,6 +517,71 @@ interrupt void dataprocess()
 
 // ========== END HR processing ================
 
+
+	// any special external task/watch/etc. ? -- pass variable out on channel 7 -- no FIR */
+	if (state.mode & MD_WATCH)
+	{
+		switch(external.watch_value){
+			//default: AIC_OUT(7) = 0;
+#ifdef EN_CODE_EXTERNAL_FEEDBACK_CTRL
+		case EXTERNAL_FEEDBACK:
+			AIC_OUT(7) = _sadd(feedback_hold * _ssub(external.watch_max, external.watch_min), external.watch_min);
+			break;
+			// AIC_OUT(7) = feedback_hold * (external.watch_max - external.watch_min) + external.watch_min;
+#endif
+		case EXTERNAL_OFFSET_X:
+			AIC_OUT(7) = analog.out[ANALOG_X0_AUX];
+			break;
+#if 0
+		case EXTERNAL_LOG:
+			AIC_OUT(7) = feedback_mixer.lnx;
+			break;
+#endif
+#if 0
+		case EXTERNAL_DELTA:
+			AIC_OUT(7) = feedback.delta;
+			break;
+#endif
+		case EXTERNAL_PRB_SINE:
+			AIC_OUT(7) = PRB_ref1stA;
+			break;
+		case EXTERNAL_PRB_PHASE:
+			AIC_OUT(7) = PRB_modindex > (probe.LockInRefSinLenA>>1) ? 16384 : 0;
+			break;
+		case EXTERNAL_BIAS_ADD:
+			AIC_OUT(6) = _lsshl (_smac (probe.Upos, AIC_IN(7), probe.AC_amp), -16);
+			break;
+		case EXTERNAL_FEEDBACK_ADD:
+			AIC_OUT(7) = _sadd (AIC_OUT(5), AIC_IN(7));
+			break;
+		case EXTERNAL_EN_MOTOR:
+			AIC_OUT(7) = analog.out[ANALOG_MOTOR];
+			break;
+//#define EN_CODE_EXTERNAL_FB2
+#ifdef EN_CODE_EXTERNAL_FB2
+// note: may break things here... max code size exceeded eventually depending on other code sections enabled
+		case EXTERNAL_EN_PHASE:
+			AIC_OUT(7) = _sadd (_lsshl (PRB_ACPhaseA32, -16), analog.out[ANALOG_MOTOR]);
+			break;
+		case EXTERNAL_PID:
+			// run 2nd PID feedback in AIC 7 in/out
+			tmpsum = AIC_IN(7);
+			tmpsum = _ssub (external.fb2_set, tmpsum);
+			external.fb2_delta2 = _ssub (external.fb2_delta, tmpsum);
+			external.fb2_delta  = tmpsum;
+			tmpsum = external.fb2_i_sum = _smac (external.fb2_i_sum, external.fb2_ci, external.fb2_delta);
+			tmpsum = _smac (tmpsum, external.fb2_cp, external.fb2_delta);
+			tmpsum = _smac (tmpsum, external.fb2_cd, external.fb2_delta2);
+			HR_OUT (7, tmpsum);
+			break;
+#endif
+		}
+	}
+	else AIC_OUT(7) = 0;
+
+
+
+	
 // Auxillary outputs, option, coarse moves overrides, etc.
 
 	if (state.mode & MD_NOISE){
