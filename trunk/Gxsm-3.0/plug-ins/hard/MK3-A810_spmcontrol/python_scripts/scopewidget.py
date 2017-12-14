@@ -94,6 +94,8 @@ class Scope(gtk.DrawingArea):
         self.display_info = 300
         self.set_flash ("Starting...")
         self.set_subsample_factor()
+        self.Xdata_rft = zeros(2)
+        self.Ydata_rft = zeros(2)
 
         
     def set_subsample_factor(self, sf=1):
@@ -471,13 +473,17 @@ class Scope(gtk.DrawingArea):
                 else:
                     self.plot_xt (cr, self.par.Xdata, lwp, 1., 0.925, 0., alpha) # YELLOW
             if self.ftX:
-                Xdata_rft = abs(fft.rfft(self.par.Xdata))/nx
-                if self.dBX:
-                    self.plot_xt (cr, -2.*log(Xdata_rft), lwp, 1., 0.925, 0., alpha-0.2, self.lambda_frqmap) # YELLOW
-                    self.plot_markers (cr, Xdata_rft, self.Xmarkers, 1., 0.925, 0., alpha-0.2, True,  self.lambda_frqmap)
+                Xdata_rft_new = abs(fft.rfft(self.par.Xdata))/nx
+                if self.Xdata_rft.size != Xdata_rft_new.size:
+                    self.Xdata_rft = Xdata_rft_new
                 else:
-                    self.plot_xt (cr, -Xdata_rft, lwp, 1., 0.925, 0., alpha-0.2) # YELLOW
-                    self.plot_markers (cr, Xdata_rft, self.Xmarkers, 1., 0.925, 0., alpha-0.2)
+                    self.Xdata_rft = self.Xdata_rft*0.1 + Xdata_rft_new*0.9
+                if self.dBX:
+                    self.plot_xt (cr, -2.*log(self.Xdata_rft), lwp, 1., 0.925, 0., alpha-0.2, self.lambda_frqmap) # YELLOW
+                    self.plot_markers (cr, self.Xdata_rft, self.Xmarkers, 1., 0.925, 0., alpha-0.2, True,  self.lambda_frqmap)
+                else:
+                    self.plot_xt (cr, -self.Xdata_rft, lwp, 1., 0.925, 0., alpha-0.2) # YELLOW
+                    self.plot_markers (cr, self.Xdata_rft, self.Xmarkers, 1., 0.925, 0., alpha-0.2)
 
             if size(self.par.Ydata) > 1:
                 if self.ftY < 2:
@@ -519,14 +525,14 @@ class Scope(gtk.DrawingArea):
 
         if (self.wide):
             x0=25
-            x1=220
+            x1=260
             x2=350
             x3=750
             x4=850
             x5=1025
         else:
             x0=25
-            x1=220
+            x1=260
             x2=320
             x3=350
             x4=450
@@ -649,6 +655,20 @@ class Oscilloscope(gtk.Label):
         self.Ydata = Yd
         self.Zdata = Zd
         self.XYdata = XYd
+        self.scope.queue_draw()
+
+    def avg_data (self, Xd, Yd, Zd=zeros(0), XYd=[zeros(0), zeros(0)]):
+        if self.Xdata.size != Xd:
+            self.Xdata = Xd
+            self.Ydata = Yd
+            self.Zdata = Zd
+            self.XYdata = XYd
+        else:
+            self.Xdata = self.Xdata*0.9 + Xd*0.1
+            self.Ydata = self.Ydata*0.9 + Yd*0.1
+            self.Zdata = Zd
+            self.XYdata = XYd
+            
         self.scope.queue_draw()
 
     def set_data_with_uv (self, Xd, Yd, Zd=zeros(0), Ud=zeros(0), Vd=zeros(0), XYd=[zeros(0), zeros(0)]):
