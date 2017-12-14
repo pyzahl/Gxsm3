@@ -155,7 +155,6 @@ DSPMoverControl::DSPMoverControl ()
 
         xrm.Get("MOV_output", &mover_param.MOV_output, "0");
 	xrm.Get("MOV_waveform_id", &mover_param.MOV_waveform_id, "0");
-	xrm.Get("MOV_mode", &mover_param.MOV_mode, "0");
 	xrm.Get("AUTO_final_delay", &mover_param.final_delay, "50");
 	xrm.Get("AUTO_max_settling_time", &mover_param.max_settling_time, "1000");
 	xrm.Get("InchWorm_phase", &mover_param.inch_worm_phase, "0");
@@ -498,7 +497,6 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 
 DSPMoverControl::~DSPMoverControl (){        
         XsmRescourceManager xrm("sranger_mk2_hwi_control");        
-        xrm.Put("MOV_mode", mover_param.MOV_mode);
         xrm.Put("MOV_waveform_id", mover_param.MOV_waveform_id);
 	this_mover_control=NULL;
 
@@ -859,29 +857,23 @@ void DSPMoverControl::create_folder (){
 
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label (NULL, "Wave: Sawtooth"), 2); // arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_SAWTOOTH));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_mode), this);
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
 			
 			if(mover_param.MOV_waveform_id == 0)
-			        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_SAWTOOTH) ? 1:0);
+			        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_SAWTOOTH ? 1:0);
 
                         mov_bp->new_line ();
 
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Sine"), 2); // arbitrary waveform
-			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (3));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_SINE));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_mode), this);
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
 			
 			if(mover_param.MOV_waveform_id == 1)
-                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_SINE) ? 1:0);
+                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_SINE ? 1:0);
                         mov_bp->new_line ();
 
 
@@ -896,10 +888,7 @@ void DSPMoverControl::create_folder (){
 
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo"), 2); // arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_mode), this);
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
@@ -907,69 +896,51 @@ void DSPMoverControl::create_folder (){
 // ==
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo+"), 2); // arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_PL));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_mode), this);
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo-"), 2); // arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_MI));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_mode), this);
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cyclo+"), 2); // arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IPL));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_mode), this);
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cyclo-"), 2); // arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IMI));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_mode), this);
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Koala"), 2); //arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (2));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_KOALA));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_mode), this);
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
 
 			if(mover_param.MOV_waveform_id == 11)
-                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_KOALA) ? 1:0);
+                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_KOALA ? 1:0);
                         mov_bp->new_line ();
 
 
                         mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Besocke"), 2); //arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (3));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_BESOCKE));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_mode), this);
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
 
                         if(mover_param.MOV_waveform_id == 12)
-			        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_BESOCKE) ? 1:0);
+			        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_BESOCKE ? 1:0);
                         mov_bp->new_line ();
 
                                                              
@@ -994,15 +965,12 @@ void DSPMoverControl::create_folder (){
 			// total time = ton + toff
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Pulse: positive"), 2); // arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_PULSE_P));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_mode), this);
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
 
 			if(mover_param.MOV_waveform_id == 7)
-                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_PULSE_P) ? 1:0);
+                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_PULSE_P ? 1:0);
                         mov_bp->new_line ();
                        
 
@@ -1015,10 +983,7 @@ void DSPMoverControl::create_folder (){
 			// radiobutton = gtk_radio_button_new_with_label (radiogroup, "Pulse: negative"); // arbitrary waveform
 			// gtk_box_pack_start (GTK_BOX (vbox_param2), radiobutton, FALSE, FALSE, 0);
 			// gtk_widget_show (radiobutton);
-			// g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_WAVE));
 			// g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_PULSE_M));
- 			// g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 			//		    G_CALLBACK (DSPMoverControl::config_mode), this);
  			// g_signal_connect (G_OBJECT (radiobutton), "clicked",
  			//		    G_CALLBACK (DSPMoverControl::config_waveform), this);
 			// radiogroup = gtk_radio_button_group (GTK_RADIO_BUTTON (radiobutton));
@@ -1028,10 +993,7 @@ void DSPMoverControl::create_folder (){
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "(none) GPIO Pulse"), 2);
 // 			gtk_widget_set_sensitive (radiobutton, FALSE);
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (0));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveMask", GINT_TO_POINTER (AAP_MOVER_PULSE));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_mode), this);
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_PULSE) ? 1:0);
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_GPIO ? 1:0);
                                                              
                         mov_bp->pop_grid ();
 
@@ -1606,10 +1568,6 @@ void DSPMoverControl::updateDSP(int sliderno){
         g_settings_set_int (hwi_settings, "mover-gpio-last", mover_param.AFM_GPIO_setting);
 }
 
-int DSPMoverControl::config_mode(GtkWidget *widget, DSPMoverControl *dspc){
-	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
-		dspc->mover_param.MOV_mode = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "CurveMask"));
-}
 
 int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))

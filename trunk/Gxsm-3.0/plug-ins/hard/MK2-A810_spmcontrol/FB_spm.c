@@ -235,18 +235,18 @@ AUTOAPPROACH     autoapp = {
 	0,     // n_wave_channels; /**<5 number of wave form channel to play simulatneously (1 to max 6)*/
 	1,     // wave_speed;      /**<6 number of samples per wave cycle */
 	1,     // n_wait;          /**<7 delay inbetween cycels */
-	{ 3,4,0,0,0,0 }, // channel_mapping[6]; /** 8,9,10,11,12,13 -- may include the flag "ch | AAP_MOVER_SIGNAL_ADD"  */
+	{3,4,0,0,0,0}, // channel_mapping[6]; /** 8,9,10,11,12,13 -- may include the flag "ch | AAP_MOVER_SIGNAL_ADD"  */
 	0,     // axis;            /** axis id (0,1,2) for optional step count */
 	0,     // dir;             /** direction for count +/-1 */
+	0,0,   // ci_retract, dum
 	10000L,     // NG   n_wait_fin;      /**<14 # cycles to wait and check (run FB) before finish auto app. */
 	0L,     // NG   fin_cnt;         /**< tmp count for auto fin. */
 	0,     // mv_count;        /**< "time axis" */
 	0,     // mv_step_count;   /**< step counter */
 	0,     // tip_mode;        /**< Tip mode, used by auto approach */
 	0,     // delay_cnt;       /**< Delay count */
-	0,     // ci_retract;      /**< retract CI (inverted normal, may be bigger) */
 	0,     // cp, ci;          /**< temporary used */
-	0,     // count_axis[3];   /**< axis step counter */
+        0,0,0 ,     // count_axis[3];   /**< axis step counters */
 	0     // pflg;            /**< process active flag =RO */
 };
 

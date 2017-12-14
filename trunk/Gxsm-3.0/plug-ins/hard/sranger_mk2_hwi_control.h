@@ -139,23 +139,6 @@ typedef struct{
 #define VP_RESET_COUNTER_1 0x20000000
 #define VP_NODATA_RESERVED 0x80000000
 
-/** MOVER MASKS **/
-#define AAP_MOVER_OFF           0 /**< all off */
-#define AAP_MOVER_XP_AUTO_APP   1 /**< run in auto approach, uses "XP" for approach or other dirs if set (set mask like AAP_MOVER_XP_AUTO_APP |  AAP_MOVER_[[XY][PM]|WAVE]) */
-#define AAP_MOVER_XP            2 /**< manuell XP (+, positive dir, ramp on X offset) steps */
-#define AAP_MOVER_XM            4 /**< manuell XM (-, negative dir, ramp on X offset) steps */
-#define AAP_MOVER_YP            6 /**< manuell YP (+, positive dir, ramp on Y offset) steps */
-#define AAP_MOVER_YM            8 /**< manuell YM (-, negative dir, ramp on Y offset) steps */
-#define AAP_MOVER_DIRMMSK  0x000e /**< mask for direction and wave mode */
-#define AAP_MOVER_WAVE     0x0010 /**< run waveform in buffer @ 0x5000 (sharing EXTERN_DATA_FIFO_ADDRESS) */
-#define AAP_MOVER_PULSE    0x0020 /**< run CR puls -- future mode, !!!not yet implemented!!! */
-#define AAP_MOVER_XYOFFSET 0x1000 /**< set this bit if XY offset outputs to be used */
-#define AAP_MOVER_XYSCAN   0x2000 /**< set this bit if XY scan outputs to be used */
-#define AAP_MOVER_XYMOTOR  0x4000 /**< set this bit if Motor output (X only) is to be used */
-#define AAP_MOVER_XXOFFSET 0x8000 /**< set this bit if X-Offset output (X only) is to be used */
-#define AAP_MOVER_ZSCANADD 0x0800 /**< set this bit if signal should be added to Z */
-#define AAP_MOVER_IWMODE   0x0100 /**< InchWorm drive mode (fwd/rev via _XP/XM on X0/Y0), 120deg phase */
-
 typedef union {
         struct { unsigned char ch, x, y, z; } s;
         unsigned long   l;
@@ -188,8 +171,13 @@ typedef struct{
 #define MOV_WAVE_USER_TTL 10
 #define MOV_WAVE_KOALA    11
 #define MOV_WAVE_BESOCKE  12
-#define MOV_WAVE_LAST     13
-	int MOV_output, MOV_mode, MOV_waveform_id;
+#define MOV_WAVE_PULSE    13
+#define MOV_WAVE_GPIO     14
+#define MOV_WAVE_LAST     15
+
+#define MOV_AUTO_APP_MODE 0x0100
+        
+	int MOV_output, MOV_waveform_id;
         int wave_out_channels_used;
 	int wave_out_channel_xyz[6][3];
 	int MOV_wave_len;
@@ -932,7 +920,6 @@ public:
 	static void ExecCmd(int cmd);
 	static void ChangedNotify(Param_Control* pcs, gpointer data);
 	static void ChangedWaveOut(Param_Control* pcs, gpointer data);
-	static int config_mode (GtkWidget *widget, DSPMoverControl *dspc);
 	static int config_waveform (GtkWidget *widget, DSPMoverControl *dspc);
 	static int config_output (GtkWidget *widget, DSPMoverControl *dspc);
 	static int CmdAction(GtkWidget *widget, DSPMoverControl *dspc);
