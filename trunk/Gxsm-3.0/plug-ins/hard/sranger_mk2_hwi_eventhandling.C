@@ -363,6 +363,10 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 		XSM_DEBUG_PG("DBG-M VIS c6");
 		g_free (title);
 		XSM_DEBUG_PG("DBG-M VIS cx");
+
+                pc->SetData_dz (1.); // force dz=1.
+                // g_message ("PC data.s.dz[%s]=%g", ylab, pc->GetData_dz ());
+                
 	} else {	
 		XSM_DEBUG_PG("DBG-M VIS u1");
 		XSM_DEBUG_PG ("Probing_graph_callback Visualization -- add/update pc" );

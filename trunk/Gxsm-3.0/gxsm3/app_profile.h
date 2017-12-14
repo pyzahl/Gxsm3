@@ -139,6 +139,9 @@ class ProfileElement{
 			return g_strdup("out of scan !");
 	};
 
+        double GetData_dz () { return scan->data.s.dz; };
+        double SetData_dz (double dz) { return scan->data.s.dz = dz; };
+        
 	double GetValue(int i){
 		if(i<n && i>=0){
 			if(psd_scan)
@@ -338,6 +341,9 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	void RemoveScans();
 
 	void SetActive(int flg);
+
+        double GetData_dz () { return last_pe->GetData_dz (); };
+        double SetData_dz (double dz) { return last_pe->SetData_dz (dz); };
 
 	void SetYrange(double y1, double y2);
 	void SetXrange(double x1, double x2);
