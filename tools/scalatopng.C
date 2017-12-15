@@ -185,7 +185,7 @@ public:
 		
 		// check for known file types
 		// accepting topography forward (*.tf?) and backward (*.tb?) files
-		if ( g_strncasecmp (fsuffix,".tf", 3) != 0 && g_strncasecmp (fsuffix,".tb", 3) != 0 ){
+		if ( g_ascii_strncasecmp (fsuffix,".tf", 3) != 0 && g_ascii_strncasecmp (fsuffix,".tb", 3) != 0 ){
 			state = SCALA_FILE_NOT_VALID;
 			return;
 		}
@@ -206,11 +206,11 @@ public:
 			parstream.getline (linebuf, 100);		
 			
 			// orig. scan size: onx
-			if ( g_strncasecmp (linebuf, "Image Size in X", 15) == 0)
+			if ( g_ascii_strncasecmp (linebuf, "Image Size in X", 15) == 0)
 				sscanf (linebuf, "%*[^0-9]%d", &onx);
 			
 			// orig. scan size: ony
-			if ( g_strncasecmp (linebuf, "Image Size in Y", 15) == 0)
+			if ( g_ascii_strncasecmp (linebuf, "Image Size in Y", 15) == 0)
 				sscanf (linebuf, "%*[^0-9]%d", &ony);
 		}
 		

@@ -60,7 +60,7 @@ using namespace std;
 # define WORDS_BIGENDIAN 0
 #endif
 
-typedef enum RHK_SPM32_STATUS { SPM32_READ_OK, SPM32_OPEN_FAILED, SPM32_FILE_NOT_VALID };
+enum RHK_SPM32_STATUS { SPM32_READ_OK, SPM32_OPEN_FAILED, SPM32_FILE_NOT_VALID };
 
 #define THUMB_X 96 // Thumbnail max X size
 #define THUMB_Y 91 // Thumbnail max Y size

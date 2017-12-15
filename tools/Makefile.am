@@ -2,8 +2,9 @@
 #
 
 DEFS = @DEFS@ \
-        -Wall \
-        -DCOMPILEDBYNAME=\""$(USER)@`hostname`, `date`"\"
+        -Wall
+
+# -DCOMPILEDBYNAME=\""$(USER)@`hostname`, `date`"\"
 
 AM_CPPFLAGS = -I.. -I$(includedir) `pkg-config --cflags glib-2.0`
 

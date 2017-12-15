@@ -30,7 +30,7 @@ bool verbose=0; // 0 no output (default), 1 output
 
 using namespace std;
 
-typedef struct UnitsTable{ 
+struct UnitsTable{ 
   const char *alias; const char *s; const char *pss; const double fac; const char *prec1; const char *prec2; 
 };
 
