@@ -99,6 +99,7 @@ typedef struct{
  ** may be some time a dynamic lookup...
  **/
 
+#ifndef MD_IDLE
 /** definitions used for statemaschine controls **/
 #define MD_IDLE         0x0000  /**< all zero means ready, no idle task (scan,move,probe,approch,...) is running */
 #define MD_HR           0x0001  /**< High Res mode enable (Sigma-Delta resolution enhancement via bit0 for Z) */
@@ -138,6 +139,7 @@ typedef struct{
 #define VP_RESET_COUNTER_0 0x10000000
 #define VP_RESET_COUNTER_1 0x20000000
 #define VP_NODATA_RESERVED 0x80000000
+#endif
 
 typedef union {
         struct { unsigned char ch, x, y, z; } s;
