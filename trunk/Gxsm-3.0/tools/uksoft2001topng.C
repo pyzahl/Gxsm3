@@ -314,7 +314,7 @@ public:
 		if (!strncasecmp (file_name+strlen(file_name)-4,".dav", 4)){
 			video=1;
 			max_index_value = 1;
-			g_print ("UKSOFT 2001 CCD Video Import\n");
+			g_print ("UKSOFT 2001 CCD Video Import [%d]\n", max_index_value);
 			uks_fileheader.NrImages = max_index_time;
 			skip = step_index_time-1;
 		}
@@ -469,6 +469,10 @@ public:
 							if (FieldOfView < 0.1){ // some files are messed up w FOV=0, assume 10um.
 								FieldOfView = 10.;
 								FOV_assumed = 1;
+								PRINT_HDR_INFO ("UKS-IH: LEEMdata[" << (int)(ld->source)
+										<< "] FOV assumed: " << FOV_assumed						
+										<< " FOV set to: " << FieldOfView
+										);
 							}
 							ld_ptr += l + sizeof(float);
 							break;

@@ -179,7 +179,8 @@ public:
 	gme_image (const gchar *file_name, int thumb, int new_x, int x_off, int y_off, int width) {
 		ifstream f;
 		gchar line[0x4000];
-		int chan=1, channels=1;
+		// int chan=1;
+		int channels=1;
 
 		x0 = x_off; y0 = y_off;
 
@@ -214,8 +215,10 @@ public:
 				onx = atoi (&line[14]);
 			if (strncmp (line, "Num.Y / Num.Y=", 14) == 0)
 				ony = atoi (&line[14]);
+#if 0 // do not need
 			if (strncmp (line, "Chan(1,2,4) / Chan(1,2,4)=", 26) == 0)
 				chan = atoi (&line[26]);
+#endif
 			if (strncmp (line, "CHMode / CHMode=", 16) == 0)
 				; // = atof (&line[0]);
 			if (strncmp (line, "Channels / Channels=", 20) == 0)
@@ -284,7 +287,7 @@ public:
 			// start of gzdata
 			f.seekg (0x4000, ios::beg);
 			f.read ((char*) zbuf, nb);
-			g_print ("GME32Z-Import: deflating Z data [%d] : zuffer-size:%g data-size:%g ratio:%g \% \n", 
+			g_print ("GME32Z-Import: deflating Z data [%d] : zuffer-size: %g data-size: %g ratio: %g ", 
 				 uncompress ((Bytef *) buf, &nb, (Bytef *) zbuf, znb),
 				 (double)znb, (double)nb, (double)znb/(double)nb*100.);
 			g_free (zbuf);
