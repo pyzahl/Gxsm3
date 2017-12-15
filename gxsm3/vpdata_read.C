@@ -118,6 +118,7 @@ void vpdata_add_pc (ProfileControl* &pc, const gchar *title, gint numx,
 		pc->scan1d->mem2d->Resize (numx, join_same_x ? nas:1);
 		pc->SetTitle (title);
 		pc->set_ys_label (0, ylab);
+                pc->SetData_dz (1.); // force dz=1.
 	} else {	
                 if (vpdata_gr_matrix_view)
                         pc->set_pc_matrix_size (num_active_xmaps, num_active_sources);
@@ -135,6 +136,7 @@ void vpdata_add_pc (ProfileControl* &pc, const gchar *title, gint numx,
 		pc->scan1d->data.s.nvalues=1;
 		pc->scan1d->data.s.ntimes=1;
 		pc->SetXrange (xmin, xmax);
+                pc->SetData_dz (1.); // force dz=1.
 
 		if (join_same_x && si >= pc->get_scount ()){
 			pc->AddLine (si);
