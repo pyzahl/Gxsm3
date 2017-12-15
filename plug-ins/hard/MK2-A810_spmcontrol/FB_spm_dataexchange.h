@@ -70,6 +70,9 @@
 
 /** DSP-Soft Identification */
 
+#ifdef FB_SPM_MAGIC_ADR
+#undef FB_SPM_MAGIC_ADR
+#endif
 #define FB_SPM_MAGIC_ADR 0x5000    /**< Magic struct is at this fixed addess in external SRAM */
 #define FB_SPM_MAGIC     0xEE01
 
@@ -478,6 +481,9 @@ typedef struct{
 #define VP_LIMITER_UP    0x100 // Limit if > value
 #define VP_LIMITER_DN    0x200 // Limit if < value
 #define VP_LIMIT_SRC     0xC0 // Limiter "Value" source code bit mask 0x40+0x80  00: Z (IN0), 01: I (IN1), 10: (IN2), 11: (IN3)
+#ifdef VP_GPIO_MSK
+#undef VP_GPIO_MSK
+#endif
 #define VP_GPIO_MSK      0xff0000
 #define VP_NODATA_RESERVED 0x80000000
 

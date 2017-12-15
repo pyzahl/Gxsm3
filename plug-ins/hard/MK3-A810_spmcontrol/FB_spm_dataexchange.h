@@ -69,10 +69,19 @@
 
 /** DSP-Soft Identification */
 
+#ifdef FB_SPM_MAGIC_ADR
+#undef FB_SPM_MAGIC_ADR
+#endif
 #define FB_SPM_MAGIC_ADR  0x10F13F00 /**< Magic struct is at this fixed addess in external SRAM */
+#ifdef FB_SPM_MAGIC
+#undef FB_SPM_MAGIC
+#endif
 #define FB_SPM_MAGIC      0x3202EE01
 
 /* GXSM SPM CONTROL FLASH SECTOR */
+#ifdef SPM_CONTROL_FLASH_SECTOR_ADDRESS
+#undef SPM_CONTROL_FLASH_SECTOR_ADDRESS
+#endif
 #define SPM_CONTROL_FLASH_SECTOR_ADDRESS  0x420A0000
 
 /* Features Description */
@@ -119,12 +128,27 @@
 // these are checked/compared with the Gxsm-build and must match!
 // -- otherwise you exactly need to know/be sure what you are doing --
 // -- odd things like changed data structures, etc.., could break data transfer --
+#ifdef FB_SPM_SOFT_ID
+#undef FB_SPM_SOFT_ID
+#endif
 #define FB_SPM_SOFT_ID   0x00001002 /* FB_SPM sofware id */
+#ifdef FB_SPM_VERSION
+#undef FB_SPM_VERSION
+#endif
 #define FB_SPM_VERSION   0x00003055 /* FB_SPM main Version, BCD: 00.00 */
+#ifdef FB_SPM_DATE_YEAR
+#undef FB_SPM_DATE_YEAR
+#endif
 #define FB_SPM_DATE_YEAR 0x00002017 /* Date: Year/MM/DD, BCD */
+#ifdef FB_SPM_DATE_MMDD
+#undef FB_SPM_DATE_MMDD
+#endif
 #define FB_SPM_DATE_MMDD 0x00001030 /* Date: Month/Day, BCD */
 
-#define FB_SPM_FEATURES     \
+#ifdef FB_SPM_FEATURES
+#undef FB_SPM_FEATURES
+#endif
+#define FB_SPM_FEATURES                                 \
 	"Version: Signal Master Evolved GXSM3B\n"\
 	"MK3Pro-A810/PLL+PAC Platform:\n\n" \
 	"Signal Management/Routing, Signal Matrix support\n"\
@@ -177,6 +201,9 @@ typedef guint64  DSP_UINT64;
 # define DSP_INT16_P     DSP_INT16*
 # define DSP_INT32_P     DSP_INT32*
 #else
+ #ifdef PROBE_VECTOR_P
+ #undef PROBE_VECTOR_P
+ #endif
 # define PROBE_VECTOR_P  DSP_UINT32
 # define DSP_INT16_P     DSP_UINT32
 # define DSP_INT32_P     DSP_UINT32
@@ -194,7 +221,14 @@ typedef guint64  DSP_UINT64;
 #endif
 
 /* virtual 32bit -- actual 16.16 -- may use HR output mode */
+#ifdef VOLT2DAC
+#undef VOLT2DAC
+#endif
 #define VOLT2DAC(U) (DSP_INT32)((U)*32767./U_DA_MAX*(1<<16))
+
+#ifdef DAC2VOLT
+#undef DAC2VOLT
+#endif
 #define DAC2VOLT(R) (DSP_INT32)((R)*U_AD_MAX/(32767.*(1<<16)))
 
 /**
@@ -277,6 +311,9 @@ typedef struct {
 #else
 } SPM_MAGIC_DATA_LOCATIONS_MK3;
 #endif
+#ifdef MAX_WRITE_SPM_MAGIC_DATA_LOCATIONS
+#undef MAX_WRITE_SPM_MAGIC_DATA_LOCATIONS
+#endif
 #define MAX_WRITE_SPM_MAGIC_DATA_LOCATIONS 0
 
 /**
@@ -302,6 +339,9 @@ typedef struct {
 #else
 } SPM_STATEMACHINE_MK3;
 #endif
+#ifdef MAX_WRITE_SPM_STATEMACHINE
+#undef MAX_WRITE_SPM_STATEMACHINE
+#endif
 #define MAX_WRITE_SPM_STATEMACHINE (2*2)
 
 /** 
@@ -318,6 +358,9 @@ typedef struct {
 } A810_CONFIG;
 #else
 } A810_CONFIG_MK3;
+#ifdef MAX_WRITE_A810_CONFIG
+#undef MAX_WRITE_A810_CONFIG
+#endif
 #endif
 #define MAX_WRITE_A810_CONFIG (3*2)
 
@@ -340,6 +383,9 @@ typedef struct {
 } SERVO;
 #else
 } SERVO_MK3;
+#ifdef MAX_WRITE_SERVO
+#undef MAX_WRITE_SERVO
+#endif
 #endif
 #define MAX_WRITE_SERVO (2*4)
 
@@ -365,6 +411,12 @@ typedef struct {
 } SCO;
 #else
 } SCO_MK3;
+#ifdef NUM_SCO
+#undef NUM_SCO
+#endif
+#ifdef MAX_WRITE_SCO
+#undef MAX_WRITE_SCO
+#endif
 #endif
 #define MAX_WRITE_SCO (2*4)
 #define NUM_SCO_S 2
@@ -401,6 +453,9 @@ typedef struct {
  } FEEDBACK_MIXER;
 #else
 } FEEDBACK_MIXER_MK3;
+#ifdef MAX_WRITE_FEEDBACK_MIXER
+#undef MAX_WRITE_FEEDBACK_MIXER
+#endif
 #endif
 #define MAX_WRITE_FEEDBACK_MIXER (2*(5*4 + 4))
 
@@ -434,6 +489,9 @@ typedef struct{
 } MOVE_OFFSET;
 #else
 } MOVE_OFFSET_MK3;
+#ifdef MAX_WRITE_MOVE
+#undef MAX_WRITE_MOVE
+#endif
 #endif
 #define MAX_WRITE_MOVE (2*9)
 
@@ -481,6 +539,9 @@ typedef struct{
 } AREA_SCAN;
 #else
 } AREA_SCAN_MK3;
+#ifdef MAX_WRITE_SCAN
+#undef MAX_WRITE_SCAN
+#endif
 #endif
 #define MAX_WRITE_SCAN (2*31)
 
@@ -497,6 +558,9 @@ typedef struct{
 } DATA_SYNC_IO;
 #else
 } DATA_SYNC_IO_MK3;
+#ifdef MAX_WRITE_DATA_SYNC_IO
+#undef MAX_WRITE_DATA_SYNC_IO
+#endif
 #endif
 #define MAX_WRITE_DATA_SYNC_IO (0)
 
@@ -534,6 +598,9 @@ typedef struct{
 } PROBE_VECTOR;
 #else
 } PROBE_VECTOR_MK3;
+#ifdef SIZE_OF_PROBE_VECTOR
+#undef SIZE_OF_PROBE_VECTOR
+#endif
 #endif
 #define SIZE_OF_PROBE_VECTOR (2*17)
 
@@ -549,6 +616,9 @@ typedef struct{
 #define VP_LIMITER_UP    0x100 // Limit if > value
 #define VP_LIMITER_DN    0x200 // Limit if < value
 #define VP_LIMITER_MODE  0xC0  // Limiter mode code bit mask 0x40+0x80  00: hold, 01: abort with vector forward branch (postive) PCJR
+#ifdef VP_GPIO_MSK
+#undef VP_GPIO_MSK
+#endif
 #define VP_GPIO_MSK        0x00ff0000 // GPIO 8bit mask (lower only)
 #define VP_TRIGGER_P       0x01000000 // GPIO/signal trigger flag on pos edge -- release VP on "data & mask" or time end/out of section 
 #define VP_TRIGGER_N       0x02000000 // GPIO/signal trigger flag on neg edge -- release VP on "data & mask" or time end/out of section 
@@ -615,6 +685,9 @@ typedef struct{
 } PROBE;
 #else
 } PROBE_MK3;
+#ifdef MAX_WRITE_PROBE
+#undef MAX_WRITE_PROBE
+#endif
 #endif
 #define MAX_WRITE_PROBE (2*(13))
 
@@ -648,6 +721,9 @@ typedef struct{
 } AUTOAPPROACH;
 #else
 } AUTOAPPROACH_MK3;
+#ifdef MAX_WRITE_AUTOAPPROACH
+#undef MAX_WRITE_AUTOAPPROACH
+#endif
 #endif
 #define MAX_WRITE_AUTOAPPROACH (2*17)
 
@@ -691,6 +767,9 @@ typedef struct{
 } CR_OUT_PULSE;
 #else
 } CR_OUT_PULSE_MK3;
+#ifdef MAX_WRITE_CR_OUT_PULS
+#undef MAX_WRITE_CR_OUT_PULS
+#endif
 #endif
 #define MAX_WRITE_CR_OUT_PULS 14
 
@@ -718,6 +797,9 @@ typedef struct{
 } CR_GENERIC_IO;
 #else
 } CR_GENERIC_IO_MK3;
+#endif
+#ifdef MAX_WRITE_CR_GENERIC_IO
+#undef MAX_WRITE_CR_GENERIC_IO
 #endif
 #define MAX_WRITE_CR_GENERIC_IO 14
 
@@ -795,6 +877,12 @@ typedef struct{
 } ANALOG_VALUES;
 #else
 } ANALOG_VALUES_MK3;
+#ifdef MAX_WRITE_ANALOG_CONTROL
+#undef MAX_WRITE_ANALOG_CONTROL
+#endif
+#ifdef MAX_WRITE_ANALOG_FULL
+#undef MAX_WRITE_ANALOG_FULL
+#endif
 #endif
 #define MAX_WRITE_ANALOG_CONTROL (2*2)
 #define MAX_WRITE_ANALOG_FULL (2*(2+8*5+1))
@@ -817,13 +905,25 @@ typedef struct{
 } DATA_FIFO;
 #else
 } DATA_FIFO_MK3;
+#ifdef MAX_WRITE_DATA_FIFO
+#undef MAX_WRITE_DATA_FIFO
+#endif
+#ifdef MAX_WRITE_DATA_FIFO_SETUP
+#undef MAX_WRITE_DATA_FIFO_SETUP
+#endif
 #endif
 #define MAX_WRITE_DATA_FIFO (2*1)
 #define MAX_WRITE_DATA_FIFO_SETUP (2*4)
 
 
 // must match size declaration in CMD_SR3.cmd linker file -- attention def in CMD file is in BYTES, this here is in WORD size!!!
+#ifdef	EXTERN_PROBEDATAFIFO_LENGTH
+#undef	EXTERN_PROBEDATAFIFO_LENGTH
+#endif
 #define	EXTERN_PROBEDATAFIFO_LENGTH 0x1780   // 0x2800 BYTES
+#ifdef EXTERN_PROBEDATA_MAX_LEFT
+#undef EXTERN_PROBEDATA_MAX_LEFT
+#endif
 #define EXTERN_PROBEDATA_MAX_LEFT   0x0040
 
 
@@ -843,6 +943,12 @@ typedef struct{
 } DATA_FIFO_EXTERN;
 #else
 } DATA_FIFO_EXTERN_MK3;
+#ifdef MAX_WRITE_DATA_FIFO_EXTERN
+#undef MAX_WRITE_DATA_FIFO_EXTERN
+#endif
+#ifdef MAX_WRITE_DATA_FIFO_EXTERN_SETUP
+#undef MAX_WRITE_DATA_FIFO_EXTERN_SETUP
+#endif
 #endif
 #define MAX_WRITE_DATA_FIFO_EXTERN (2*1)
 #define MAX_WRITE_DATA_FIFO_EXTERN_SETUP (2*6)
@@ -947,4 +1053,4 @@ typedef struct{
 
 /* READ ONLY */
 
-#endif
+#endif /* __MK3_FB_SPM_DATAEXCHANGE_H */
