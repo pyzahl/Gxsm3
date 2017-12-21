@@ -199,6 +199,20 @@ DSPMoverControl::DSPMoverControl ()
 	sranger_mk2_hwi_pi.app->ConnectPluginToStopScanEvent (DSPMoverControl_Thaw_callback);
 }
 
+short koala_func (double amplitude, double phi){
+        // 1/6 ... 1/2 ... 1
+        if (phi > 3.*M_PI)
+                phi -= 3.*M_PI;
+        if (phi < 0.)
+                phi += 3.*M_PI;
+        if (phi < 3.*M_PI/6.)
+                return (short)round (amplitude * sin (phi));
+        else if (phi < 3.*M_PI/2.)
+                return (short)round (amplitude);
+        else
+                return (short)round (amplitude * sin (phi-M_PI));
+}
+
 // duration in ms
 // amp in V SR out (+/-2.05V max)
 void DSPMoverControl::create_waveform (double amp, double duration){
@@ -371,13 +385,19 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 	case MOV_WAVE_KOALA:
                 {             
                 int i=0;
+                for (; i <= mover_param.MOV_wave_len; i += channels)
+                        for (int k=0; k<channels; ++k)
+                                if (pointing > 0) // wave for forward direction 
+                                        mover_param.MOV_waveform[i+k]      = koala_func (SR_VFAC*amp, (double)i*3.*M_PI/kn + 2*k*M_PI);
+                                else
+                                        mover_param.MOV_waveform[imax-i+k] = koala_func (SR_VFAC*amp, (double)i*3.*M_PI/kn + 2*k*M_PI);
+#if 0
                 for (; i <= mover_param.MOV_wave_len/6; i += channels)
                         for (int k=0; k<channels; ++k)
                                 if (pointing > 0) // wave for forward direction 
-                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
+                                        mover_param.MOV_waveform[i+k]      = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
                                 else
                                         mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
-                
                 for (; i <= mover_param.MOV_wave_len/2; i += channels)
                         for (int k=0; k<channels; ++k)
                                 if (pointing > 0) // wave for forward direction 
@@ -391,6 +411,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
                                         mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
                                 else
                                         mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
+#endif
                 }
 		break;
         
