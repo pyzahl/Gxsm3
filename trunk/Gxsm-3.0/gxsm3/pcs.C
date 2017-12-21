@@ -683,6 +683,7 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                                 if (gpcs->opt_scale){
                                         gtk_scale_clear_marks (GTK_SCALE (gpcs->opt_scale));
                                         gtk_scale_add_mark (GTK_SCALE (gpcs->opt_scale), 0, GTK_POS_BOTTOM, "0");
+
                                         double Lab0 = pow (10., floor (log10 (gpcs->log_min)));
                                         double MaxLab = fabs(r);
                                         for (int s = (gpcs->adj_mode & PARAM_CONTROL_ADJUSTMENT_LOG_SYM) ? -1 : 1; s<=1; s+=2) {
