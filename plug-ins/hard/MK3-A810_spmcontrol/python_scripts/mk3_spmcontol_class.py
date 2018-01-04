@@ -1423,16 +1423,14 @@ class SPMcontrol():
 		os.lseek (srfileno, self.magic[magic_id]+offset, mode)
 		return struct.unpack (fmt, os.read (srfileno, struct.calcsize (fmt)))
 
-        def read(self, magic_id, fmt, mode=0, exclusive=0):
+        def read(self, magic_id, fmt, mode=0):
 		sr = open( self.sr_dev_path, "rb")
-                self.set_exclusive_mode (sr, exclusive)
 		data = self.readf( sr.fileno(), magic_id, fmt, mode)
 		sr.close ()
 		return data
 
-        def read_o(self, magic_id, offset, fmt, mode=0, exclusive=0):
+        def read_o(self, magic_id, offset, fmt, mode=0):
 		sr = open( self.sr_dev_path, "rb")
-                self.set_exclusive_mode (sr, exclusive)
 		data = self.readf( sr.fileno(), magic_id, fmt, mode, offset)
 		sr.close ()
 		return data
@@ -1444,38 +1442,42 @@ class SPMcontrol():
         # define SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO        102
         # define SRANGER_MK23_IOCTL_SET_EXCLUSIVE_UNLIMITED   103
 
-        def query_exclusive_mode (self, s):
-                return struct.unpack ('i', fcntl.ioctl (s.fileno(), 100,  # SRANGER_MK23_IOCTL_QUERY_EXCLUSIVE_MODE
+        def query_exclusive_mode (self, fd):
+                return struct.unpack ('i', fcntl.ioctl (fd, 100,  # SRANGER_MK23_IOCTL_QUERY_EXCLUSIVE_MODE
                                                         struct.pack('i', 0)))[0]
 
-        def clr_exclusive_mode (self, s):
-                return struct.unpack ('i', fcntl.ioctl (s.fileno(), 101,  # SRANGER_MK23_IOCTL_CLR_EXCLUSIVE_MODE
+        def clr_exclusive_mode (self, fd):
+                return struct.unpack ('i', fcntl.ioctl (fd, 101,  # SRANGER_MK23_IOCTL_CLR_EXCLUSIVE_MODE
                                                         struct.pack('i', 0)))[0]
 
-        def set_exclusive_auto (self, s):
+        def set_exclusive_auto (self, fd):
                 #C  #define SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO        102
                 #C  ret =  ioctl (dsp, SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO, (unsigned long)&mode);
-                return struct.unpack ('i', fcntl.ioctl (s.fileno(), 102,  # SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO
+                return struct.unpack ('i', fcntl.ioctl (fd, 102,  # SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO
                                                         struct.pack('i', 0)))[0]
 
-        def set_exclusive_unlimited (self, s):
-                return struct.unpack ('i', fcntl.ioctl (s.fileno(), 103,  # SRANGER_MK23_IOCTL_SET_EXCLUSIVE_UNLIMITED
+        def set_exclusive_unlimited (self, fd):
+                return struct.unpack ('i', fcntl.ioctl (fd, 103,  # SRANGER_MK23_IOCTL_SET_EXCLUSIVE_UNLIMITED
                                                         struct.pack('i', 0)))[0]
 
-        def set_exclusive_mode (self, s, mode):
+        def set_exclusive_mode (self, fd, mode):
                 if mode == SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO:
-                        self.set_exclusive_auto (s)
+                        self.set_exclusive_auto (fd)
                 elif mode == SRANGER_MK23_IOCTL_SET_EXCLUSIVE_UNLIMITED:
-                        self.set_exclusive_unlimited (s)
+                        self.set_exclusive_unlimited (fd)
 
         
         ##########
         
         ## packed data example:    struct.pack ("<llLL", _input_id, _signal[SIG_INDEX],0,0)
-        def write(self, magic_id, packeddata, mode=0, exclusive=0):
+        def writef(self, srfileno, magic_id, packeddata, mode=0, exclusive=0):
+		os.lseek (srfileno, self.magic[magic_id], mode)
+                self.set_exclusive_mode (srfileno, exclusive)
+		os.write (srfileno, packeddata)
+
+        def write(self, magic_id, packeddata, mode=0):
 		sr = open (self.sr_dev_path, "wb")
 		os.lseek (sr.fileno(), self.magic[magic_id], mode)
-                self.set_exclusive_mode (sr, exclusive)
 		os.write (sr.fileno(), packeddata)
 		sr.close ()
 
@@ -1866,11 +1868,13 @@ class SPMcontrol():
 		fmt = "<llLL"
 		sr = open (self.sr_dev_path, "wb")
 		os.lseek (sr.fileno(), self.magic[i_signal_monitor], 0)
+                set_exclusive_auto (sr.fileno())
 		if voffset > 0 and voffset < _signal[SIG_DIM]:
 			os.write (sr.fileno(), struct.pack (fmt, _input_id, _signal[SIG_INDEX]+(voffset<<16),0,0))
 		else:
 			os.write (sr.fileno(), struct.pack (fmt, _input_id, _signal[SIG_INDEX],0,0))
 			voffset=0
+                clr_exclusive_auto (sr.fileno())
 		sr.close ()
 		print "Signal Input ID (mindex) %d"%_input_id+" change request to signal id %d"%_signal[SIG_INDEX]+" Voff:[%d]"%voffset+"\n ==> "+str(_signal)
 		# check on updates (units mixer)
@@ -1969,12 +1973,17 @@ class SPMcontrol():
                 
         def query_module_signal_input(self, _input_id, nullok=0):
                 fmt = "<llLL"
-                self.write (i_signal_monitor, struct.pack (fmt, _input_id, -1,0,0), 0, SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO)
+		sr = open (self.sr_dev_path, "wb+")
+                fd = sr.fileno ()
+                
+                self.writef (fd, i_signal_monitor, struct.pack (fmt, _input_id, -1,0,0), 0, SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO)
                 #       print "Query Signal Input ID (mindex) %d:"%_input_id
                 
                 time.sleep(0.01)
-                data = self.read(i_signal_monitor, fmt, 0, SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO)
-                # print data
+
+                data = self.readf (fd, i_signal_monitor, fmt, 0)
+
+                sr.close ()
                 [signal,offset] = self.lookup_signal_by_ptr (data[3], nullok)
                 #       print signal
                 return signal, data, offset
