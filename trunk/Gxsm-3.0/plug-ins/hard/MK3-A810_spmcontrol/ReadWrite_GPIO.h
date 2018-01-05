@@ -13,7 +13,7 @@
 ___________________________________________________________________________*/     
 
 // A810 GPIO (on back of controller bits 0...15 via address GPIO_Data_0
-extern void WR_GPIO(int address, short *data, int W_R);
+extern void WR_GPIO(int address, unsigned short *data, int W_R);
 
 #define WRITE_GPIO_0(X) *(volatile unsigned short*)(GPIO_Data_0) = (X)
 #define READ_GPIO_0()  (*(volatile unsigned short*)(GPIO_Data_0))

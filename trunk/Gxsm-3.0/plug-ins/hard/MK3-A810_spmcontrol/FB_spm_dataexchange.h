@@ -135,15 +135,15 @@
 #ifdef FB_SPM_VERSION
 #undef FB_SPM_VERSION
 #endif
-#define FB_SPM_VERSION   0x00003055 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_VERSION   0x00003056 /* FB_SPM main Version, BCD: 00.00 */
 #ifdef FB_SPM_DATE_YEAR
 #undef FB_SPM_DATE_YEAR
 #endif
-#define FB_SPM_DATE_YEAR 0x00002017 /* Date: Year/MM/DD, BCD */
+#define FB_SPM_DATE_YEAR 0x00002018 /* Date: Year/MM/DD, BCD */
 #ifdef FB_SPM_DATE_MMDD
 #undef FB_SPM_DATE_MMDD
 #endif
-#define FB_SPM_DATE_MMDD 0x00001030 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00000104 /* Date: Month/Day, BCD */
 
 #ifdef FB_SPM_FEATURES
 #undef FB_SPM_FEATURES

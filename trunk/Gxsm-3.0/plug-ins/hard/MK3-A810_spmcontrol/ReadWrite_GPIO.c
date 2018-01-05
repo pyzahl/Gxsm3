@@ -15,5 +15,3 @@ void WR_GPIO(int address, unsigned short *data, int W_R){
 	else
 		*data = *(volatile unsigned short*)(address);
 }
-					
-									
