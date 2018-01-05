@@ -1703,6 +1703,8 @@ class SPMcontrol():
 		return [self.AIC_in_buffer, self.AIC_out_buffer]
 
 	def read_gpio(self,dum=0):
+                self.write (i_generic_io, struct.pack ("<ll", 2,0) , mode=1)
+		time.sleep(0.2)
 		GPIO_control = self.read (i_generic_io, fmt_generic_io)
 		print "GENERIC-IO  (GPIO) control record:"
 		print GPIO_control
@@ -1712,7 +1714,18 @@ class SPMcontrol():
                 self.write (i_generic_io, struct.pack ("<llHHH", 3,0, GPIO_direction_bits, 0,0) , mode=1)
 
 	def write_gpio(self, data = 0x0000, GPIO_direction_bits = 0xFFFF):
-                self.write (i_generic_io, struct.pack ("<llHHH", 1,0, GPIO_direction_bits, 0, data) , mode=1)
+                self.write (i_generic_io, struct.pack ("<llHHH", 3,0, 0x000F, 0, 0x03) , mode=1)
+		time.sleep(0.2)
+                for i in range (0,16):
+                        self.write (i_generic_io, struct.pack ("<llHHH", 1,0, 0x0f, 0, i) , mode=1)
+		        time.sleep(1)
+                        self.write (i_generic_io, struct.pack ("<ll", 2,0) , mode=1)
+		        time.sleep(0.2)
+		        GPIO_control = self.read (i_generic_io, fmt_generic_io)
+		        print i, GPIO_control
+                self.write (i_generic_io, struct.pack ("<llHHH", 1,0, 0x000F, 0, 0x03) , mode=1)
+		time.sleep(1)
+                #self.write (i_generic_io, struct.pack ("<llHHH", 1,0, GPIO_direction_bits, 0, data) , mode=1)
                 # self.write (i_generic_io, struct.pack (fmt_generic_io, 0, 0, 255, 288, 32, 32, 0, 0, 0, 0, 0, 0, 22328, 0, 0))
 
 	def clr_dsp_gpio(self, junk, data = 0x00E0):
