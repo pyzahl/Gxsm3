@@ -1275,6 +1275,7 @@ void dsp_590MHz(){ // normal speed -- as set at boot
 	FLASH_BASE_PTR8 = FLASH_RESET;
 }
 
+#if 1
 #pragma CODE_SECTION(configure_DSP_GP_PINS, ".text:slow")
 void configure_DSP_GP_PINS()
 {
@@ -1295,6 +1296,7 @@ void configure_DSP_GP_PINS()
 
         // All registers: CFG_PINMUX1,GPIO_DIR23,GPIO_SET_DATA23 and GPIO_CLR_DATA23 are in the SR3_Reg.h.
 }
+#endif
 
 #pragma CODE_SECTION(main, ".text:slow")
 void main()

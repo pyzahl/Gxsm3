@@ -695,16 +695,18 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 			lseek (dsp, magic_data.CR_out_puls, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 			sr_write (dsp, &dsp_puls, MAX_WRITE_CR_OUT_PULS<<1); 
 
+                        // GPIO UPDATE
 
-			dsp_gpio.start = long_2_sranger_long(2); // READ GPIO
+			dsp_gpio.start = long_2_sranger_long(2); // READ GPIO COMMAND
 			dsp_gpio.stop  = long_2_sranger_long(0);
 			lseek (dsp, magic_data.CR_generic_io, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 			sr_write (dsp, &dsp_gpio, 4<<1); 
 
-			lseek (dsp, magic_data.CR_generic_io, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-			sr_read (dsp, &dsp_gpio, sizeof (dsp_gpio)); 
+                        usleep ((useconds_t) (1000) ); // give some time to read.
 
-			// WARNING: fix me !! issue w signed/unsigned bit 16 will not work rigth!!
+			lseek (dsp, magic_data.CR_generic_io, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+			sr_read (dsp, &dsp_gpio, sizeof (dsp_gpio));  // READ BACK
+
 			CONV_U16 (dsp_gpio.gpio_data_out);
 			CONV_U16 (dsp_gpio.gpio_data_in);
 			CONV_U16 (dsp_gpio.gpio_direction_bits);
@@ -712,7 +714,11 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 			gpio3_monitor_in  = dsp_gpio.gpio_data_in  & (~DSPMoverClass->mover_param.GPIO_direction);
 			gpio3_monitor_dir = dsp_gpio.gpio_direction_bits;
 
-			if (dsp_gpio.gpio_data_out != (DSPMoverClass->mover_param.GPIO_reset | DSPMoverClass->mover_param.AFM_GPIO_setting)) {
+                        g_message ("Checking for GPIO changes...");
+                        g_message ("dsp_gpio.gpio_data_out                      = %02X", dsp_gpio.gpio_data_out);
+                        g_message ("DSPMoverClass->mover_param.GPIO_reset       = %02X", DSPMoverClass->mover_param.GPIO_reset);
+                        g_message ("DSPMoverClass->mover_param.AFM_GPIO_setting = %02X", DSPMoverClass->mover_param.AFM_GPIO_setting);
+			if (1 || dsp_gpio.gpio_data_out != (DSPMoverClass->mover_param.GPIO_reset | DSPMoverClass->mover_param.AFM_GPIO_setting)) {
 
 				// std::cout << "GPIO ist   = " << std::hex << dsp_gpio.gpio_data_out << " ::M= " << gpio3_monitor_out << std::dec << std::endl;
 				// std::cout << "GPIO update= " << std::hex << DSPMoverClass->mover_param.AFM_GPIO_setting << std::dec << std::endl;
@@ -727,6 +733,8 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 				lseek (dsp, magic_data.CR_generic_io, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 				sr_write (dsp, &dsp_gpio, 8<<1); 
 
+                                g_message ("GPIO: Direction Setup => %02x", dsp_gpio.gpio_direction_bits);
+                                
 				usleep ((useconds_t) (5000) ); // give some time to settle IO/Relais/etc...
 				
 				dsp_gpio.start = long_2_sranger_long (1); // WRITE GPIO
@@ -739,6 +747,8 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 				lseek (dsp, magic_data.CR_generic_io, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 				sr_write (dsp, &dsp_gpio, 8<<1); 
 
+                                g_message ("GPIO: Pins          => %02x", dsp_gpio.gpio_data_out);
+                                
 				CONV_U16 (dsp_gpio.gpio_data_out);
 				gpio3_monitor_out = dsp_gpio.gpio_data_out;
 

@@ -1,7 +1,7 @@
 ******************************************************************************
                TMS320C6x Linker Unix v7.0.4                    
 ******************************************************************************
->> Linked Thu Jan  4 21:40:10 2018
+>> Linked Fri Jan  5 11:35:02 2018
 
 OUTPUT FILE NAME:   <FB_spmcontrol.out>
 ENTRY POINT SYMBOL: "_c_int00"  address: 10e0dc20
@@ -11,12 +11,12 @@ MEMORY CONFIGURATION
 
          name            origin    length      used     unused   attr    fill
 ----------------------  --------  ---------  --------  --------  ----  --------
-  L2RAM                 10800000   00020000  00009e40  000161c0  RWIX
+  L2RAM                 10800000   00020000  00009e60  000161a0  RWIX
   L1PRAM_Vector         10e080a0   00000160  00000160  00000000  R  X
   L1PRAM_Kernel         10e08200   00000e00  00000000  00000e00  R  X
   L1PRAM                10e09000   00007000  00006460  00000ba0  R  X
   L1DRAM_MailBox        10f04000   0000020c  00000000  0000020c  RWI 
-  L1DRAM                10f0420c   0000fcf4  000054c6  0000a82e  RWI 
+  L1DRAM                10f0420c   0000fcf4  000054da  0000a81a  RWI 
   L1DRAM_M              10f13f00   00000100  00000078  00000088  RWI 
   L1DRAM_V              10f14000   00001000  00000044  00000fbc  RWI 
   L1DRAM_F              10f15000   00002f00  00000002  00002efe  RWI 
@@ -35,36 +35,36 @@ SECTION ALLOCATION MAP
 section   page    origin      length       input sections
 --------  ----  ----------  ----------   ----------------
 .text:slow 
-*          0    10800000    00007740     
+*          0    10800000    00007760     
                   10800000    00003220     FB_spm.obj (.text:slow)
                   10803220    00001a60     FB_spm_areascan.obj (.text:slow)
                   10804c80    00001680     FB_spm_probe.obj (.text:slow)
-                  10806300    00000960     FB_spm_statemaschine.obj (.text:slow)
-                  10806c60    00000640     FB_spm_autoapproach.obj (.text:slow)
-                  108072a0    000001c0     SR3_flash_support.obj (.text:slow)
-                  10807460    00000120     FB_spm_CoolRunner_puls.obj (.text:slow)
-                  10807580    00000020     ReadWrite_GPIO.obj (.text:slow)
-                  108075a0    00000020     FB_spm_offsetmove.obj ($Tramp$L$PI$$_init_offset_move)
-                  108075c0    00000020     spm_log.obj ($Tramp$L$PI$$_calc_mix_log)
-                  108075e0    00000020     rts64plus.lib : imath64.obj ($Tramp$L$PI$$__divlli)
-                  10807600    00000020                   : divi.obj ($Tramp$L$PI$$__divi)
-                  10807620    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_push_area_scan_data)
-                  10807640    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_integrate_as_data_srcs)
-                  10807660    00000020     PAC_pll.lib : SR3PRO_PLLAPI.obj ($Tramp$L$PI$$_SineSDB)
-                  10807680    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_bz_push)
-                  108076a0    00000020     timerasm.obj ($Tramp$L$PI$$_wait)
-                  108076c0    00000020     timerasm.obj ($Tramp$L$PI$$_TSCReadFirst)
-                  108076e0    00000020     timerasm.obj ($Tramp$L$PI$$_TSCInit)
-                  10807700    00000020     SR3PRO_A810Driver.lib : SR3PRO_A810_Main.obj ($Tramp$L$PI$$_start_Analog810)
-                  10807720    00000020                           : SR3PRO_A810_Main.obj ($Tramp$L$PI$$_stop_Analog810)
+                  10806300    00000980     FB_spm_statemaschine.obj (.text:slow)
+                  10806c80    00000640     FB_spm_autoapproach.obj (.text:slow)
+                  108072c0    000001c0     SR3_flash_support.obj (.text:slow)
+                  10807480    00000120     FB_spm_CoolRunner_puls.obj (.text:slow)
+                  108075a0    00000020     ReadWrite_GPIO.obj (.text:slow)
+                  108075c0    00000020     FB_spm_offsetmove.obj ($Tramp$L$PI$$_init_offset_move)
+                  108075e0    00000020     spm_log.obj ($Tramp$L$PI$$_calc_mix_log)
+                  10807600    00000020     rts64plus.lib : imath64.obj ($Tramp$L$PI$$__divlli)
+                  10807620    00000020                   : divi.obj ($Tramp$L$PI$$__divi)
+                  10807640    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_push_area_scan_data)
+                  10807660    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_integrate_as_data_srcs)
+                  10807680    00000020     PAC_pll.lib : SR3PRO_PLLAPI.obj ($Tramp$L$PI$$_SineSDB)
+                  108076a0    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_bz_push)
+                  108076c0    00000020     timerasm.obj ($Tramp$L$PI$$_wait)
+                  108076e0    00000020     timerasm.obj ($Tramp$L$PI$$_TSCReadFirst)
+                  10807700    00000020     timerasm.obj ($Tramp$L$PI$$_TSCInit)
+                  10807720    00000020     SR3PRO_A810Driver.lib : SR3PRO_A810_Main.obj ($Tramp$L$PI$$_start_Analog810)
+                  10807740    00000020                           : SR3PRO_A810_Main.obj ($Tramp$L$PI$$_stop_Analog810)
 
 FIFO_DATA 
-*          0    10807740    00002040     UNINITIALIZED
-                  10807740    00002040     FB_spm.obj (FIFO_DATA)
+*          0    10807760    00002040     UNINITIALIZED
+                  10807760    00002040     FB_spm.obj (FIFO_DATA)
 
 .text:slow_PLL 
-*          0    10809780    000006c0     
-                  10809780    000006c0     PAC_pll.lib : SR3PRO_PLLAPI.obj (.text:slow_PLL)
+*          0    108097a0    000006c0     
+                  108097a0    000006c0     PAC_pll.lib : SR3PRO_PLLAPI.obj (.text:slow_PLL)
 
 .vectors   0    10e080a0    00000160     
                   10e080a0    00000160     vector.obj (.vectors)
@@ -158,19 +158,19 @@ FIFO_DATA
                   10f08150    00000008     rts64plus.lib : boot.obj (.stack)
                   10f08158    00000ff8     --HOLE--
 
-.switch    0    10f09150    00000434     
+.switch    0    10f09150    00000448     
                   10f09150    000001f4     FB_spm.obj (.switch:_adjust_signal_input)
                   10f09344    00000160     FB_spm.obj (.switch:_query_signal_input)
-                  10f094a4    00000074     FB_spm_statemaschine.obj (.switch:_dsp_idle_loop)
-                  10f09518    0000002c     dataprocess.obj (.switch:_dataprocess)
-                  10f09544    0000001c     FB_spm_areascan.obj (.switch:_run_area_scan)
-                  10f09560    00000014     FB_spm_autoapproach.obj (.switch:_run_tip_app)
-                  10f09574    00000010     FB_spm_areascan.obj (.switch:_run_area_scan_fast)
+                  10f094a4    00000088     FB_spm_statemaschine.obj (.switch:_dsp_idle_loop)
+                  10f0952c    0000002c     dataprocess.obj (.switch:_dataprocess)
+                  10f09558    0000001c     FB_spm_areascan.obj (.switch:_run_area_scan)
+                  10f09574    00000014     FB_spm_autoapproach.obj (.switch:_run_tip_app)
+                  10f09588    00000010     FB_spm_areascan.obj (.switch:_run_area_scan_fast)
 
-.bss       0    10f09588    00000156     UNINITIALIZED
-                  10f09588    00000140     PAC_pll.lib : SR3PRO_PLLAPI.obj (.bss)
-                  10f096c8    00000010     timerasm.obj (.bss)
-                  10f096d8    00000006     SR3PRO_A810Driver.lib : SR3PRO_A810_Main.obj (.bss)
+.bss       0    10f09598    00000156     UNINITIALIZED
+                  10f09598    00000140     PAC_pll.lib : SR3PRO_PLLAPI.obj (.bss)
+                  10f096d8    00000010     timerasm.obj (.bss)
+                  10f096e8    00000006     SR3PRO_A810Driver.lib : SR3PRO_A810_Main.obj (.bss)
 
 MAGIC      0    10f13f00    00000078     UNINITIALIZED
                   10f13f00    00000078     FB_spm.obj (MAGIC)
@@ -203,27 +203,27 @@ $.text:slow:FB_spm_probe.obj$0xc20  $Tramp$L$PI$$_next_section
 $.text:slow:FB_spm_probe.obj$0x0  $Tramp$L$PI$$_store_probe_data_srcs
    10804c80     10e0dde0     10e0ac84   FB_spm_probe.obj (.text)
 $.text:slow:ReadWrite_GPIO.obj$0x0  $Tramp$L$PI$$_WR_GPIO
-   10807580     10e0de00     10e0ab24   FB_spm_probe.obj (.text)
+   108075a0     10e0de00     10e0ab24   FB_spm_probe.obj (.text)
 $.text:slow:FB_spm_autoapproach.obj$0x588  $Tramp$L$PI$$_run_autoapp
-   108071e8     10e0de20     10e0a688   dataprocess.obj (.text)
+   10807208     10e0de20     10e0a688   dataprocess.obj (.text)
 $.text:slow:FB_spm_CoolRunner_puls.obj$0x30  $Tramp$L$PI$$_run_CR_out_pulse
-   10807490     10e0de40     10e0a654   dataprocess.obj (.text)
+   108074b0     10e0de40     10e0a654   dataprocess.obj (.text)
 $.text:slow:FB_spm_areascan.obj$0x68  $Tramp$L$PI$$_run_area_scan_fast
    10803288     10e0de60     10e09aa0   dataprocess.obj (.text)
 $.text:slow:FB_spm_areascan.obj$0x7a0  $Tramp$L$PI$$_run_area_scan
    108039c0     10e0de80     10e09a08   dataprocess.obj (.text)
 $.text:FB_spm_offsetmove.obj$0x260  $Tramp$L$PI$$_init_offset_move
-   10e0ce00     108075a0     108064f8   FB_spm_statemaschine.obj (.text:slow)
+   10e0ce00     108075c0     108064f8   FB_spm_statemaschine.obj (.text:slow)
 $.text:spm_log.obj$0x0    $Tramp$L$PI$$_calc_mix_log
-   10e0dd60     108075c0     108063b8   FB_spm_statemaschine.obj (.text:slow)
+   10e0dd60     108075e0     108063b8   FB_spm_statemaschine.obj (.text:slow)
                              1080642c   FB_spm_statemaschine.obj (.text:slow)
 $.text:__divlli:rts64plus.lib<imath64.obj>$0x0  $Tramp$L$PI$$__divlli
-   10e0d460     108075e0     10805830   FB_spm_probe.obj (.text:slow)
+   10e0d460     10807600     10805830   FB_spm_probe.obj (.text:slow)
                              1080584c   FB_spm_probe.obj (.text:slow)
                              1080598c   FB_spm_probe.obj (.text:slow)
                              108059b0   FB_spm_probe.obj (.text:slow)
 $.text:__divi:rts64plus.lib<divi.obj>$0x0  $Tramp$L$PI$$__divi
-   10e0d6a0     10807600     10804f34   FB_spm_probe.obj (.text:slow)
+   10e0d6a0     10807620     10804f34   FB_spm_probe.obj (.text:slow)
                              10804fc4   FB_spm_probe.obj (.text:slow)
                              10805014   FB_spm_probe.obj (.text:slow)
                              10805060   FB_spm_probe.obj (.text:slow)
@@ -233,7 +233,7 @@ $.text:__divi:rts64plus.lib<divi.obj>$0x0  $Tramp$L$PI$$__divi
                              10805194   FB_spm_probe.obj (.text:slow)
                              108051ec   FB_spm_probe.obj (.text:slow)
 $.text:FB_spm_areascan.obj$0x820  $Tramp$L$PI$$_push_area_scan_data
-   10e0c140     10807620     108034a0   FB_spm_areascan.obj (.text:slow)
+   10e0c140     10807640     108034a0   FB_spm_areascan.obj (.text:slow)
                              108036e4   FB_spm_areascan.obj (.text:slow)
                              10803fc8   FB_spm_areascan.obj (.text:slow)
                              10804004   FB_spm_areascan.obj (.text:slow)
@@ -242,13 +242,13 @@ $.text:FB_spm_areascan.obj$0x820  $Tramp$L$PI$$_push_area_scan_data
                              10804778   FB_spm_areascan.obj (.text:slow)
                              108047ac   FB_spm_areascan.obj (.text:slow)
 $.text:FB_spm_areascan.obj$0x0  $Tramp$L$PI$$_integrate_as_data_srcs
-   10e0b920     10807640     108033d4   FB_spm_areascan.obj (.text:slow)
+   10e0b920     10807660     108033d4   FB_spm_areascan.obj (.text:slow)
                              10803648   FB_spm_areascan.obj (.text:slow)
                              10803d84   FB_spm_areascan.obj (.text:slow)
 $.text:fast_PLL:PAC_pll.lib<SR3PRO_PLLAPI.obj>$0xb84  $Tramp$L$PI$$_SineSDB
-   10e0ea24     10807660     10803318   FB_spm_areascan.obj (.text:slow)
+   10e0ea24     10807680     10803318   FB_spm_areascan.obj (.text:slow)
 $.text:FB_spm_areascan.obj$0x174  $Tramp$L$PI$$_bz_push
-   10e0ba94     10807680     10803228   FB_spm_areascan.obj (.text:slow)
+   10e0ba94     108076a0     10803228   FB_spm_areascan.obj (.text:slow)
                              1080326c   FB_spm_areascan.obj (.text:slow)
                              10803808   FB_spm_areascan.obj (.text:slow)
                              10803838   FB_spm_areascan.obj (.text:slow)
@@ -257,7 +257,7 @@ $.text:FB_spm_areascan.obj$0x174  $Tramp$L$PI$$_bz_push
                              10803cb4   FB_spm_areascan.obj (.text:slow)
                              10803ce8   FB_spm_areascan.obj (.text:slow)
 $.text:timerasm.obj$0x0   $Tramp$L$PI$$_wait
-   10e0d860     108076a0     10802de4   FB_spm.obj (.text:slow)
+   10e0d860     108076c0     10802de4   FB_spm.obj (.text:slow)
                              10802e28   FB_spm.obj (.text:slow)
                              10802e90   FB_spm.obj (.text:slow)
                              10802ec8   FB_spm.obj (.text:slow)
@@ -273,31 +273,31 @@ $.text:timerasm.obj$0x0   $Tramp$L$PI$$_wait
                              108031ac   FB_spm.obj (.text:slow)
                              108031c4   FB_spm.obj (.text:slow)
 $.text:timerasm.obj$0x20  $Tramp$L$PI$$_TSCReadFirst
-   10e0d880     108076c0     10802d90   FB_spm.obj (.text:slow)
+   10e0d880     108076e0     10802d90   FB_spm.obj (.text:slow)
 $.text:timerasm.obj$0xa0  $Tramp$L$PI$$_TSCInit
-   10e0d900     108076e0     10802cf4   FB_spm.obj (.text:slow)
+   10e0d900     10807700     10802cf4   FB_spm.obj (.text:slow)
 $.text:SR3PRO_A810Driver.lib<SR3PRO_A810_Main.obj>$0x22c  $Tramp$L$PI$$_start_Analog810
-   10e0c80c     10807700     10800a88   FB_spm.obj (.text:slow)
+   10e0c80c     10807720     10800a88   FB_spm.obj (.text:slow)
                              10802d30   FB_spm.obj (.text:slow)
-                             10806c0c   FB_spm_statemaschine.obj (.text:slow)
-                             10806c30   FB_spm_statemaschine.obj (.text:slow)
+                             10806c2c   FB_spm_statemaschine.obj (.text:slow)
+                             10806c50   FB_spm_statemaschine.obj (.text:slow)
 $.text:SR3PRO_A810Driver.lib<SR3PRO_A810_Main.obj>$0x0  $Tramp$L$PI$$_stop_Analog810
-   10e0c5e0     10807720     10800a68   FB_spm.obj (.text:slow)
-                             10806bf4   FB_spm_statemaschine.obj (.text:slow)
-                             10806bf8   FB_spm_statemaschine.obj (.text:slow)
+   10e0c5e0     10807740     10800a68   FB_spm.obj (.text:slow)
+                             10806c14   FB_spm_statemaschine.obj (.text:slow)
+                             10806c18   FB_spm_statemaschine.obj (.text:slow)
 
 
 GLOBAL SYMBOLS: SORTED ALPHABETICALLY BY Name 
 
 address    name
 --------   ----
-10f09588   $bss
-10f09588   .bss
+10f09598   $bss
+10f09598   .bss
 10f0420c   .data
 10e09000   .text
 10e0dd40   C$$EXIT
 10f05bf0   _AC_tab_inc
-10f096da   _ADCRange
+10f096ea   _ADCRange
 10f061b8   _AIC_stop_mode
 10f060a8   _AS_AIC_data_sum
 10f060f0   _AS_AIC_num_samples
@@ -317,13 +317,13 @@ address    name
 10f060a0   _AS_offset
 10f06088   _AS_sdnx
 10f04f8c   _AbsIn
-10f0964c   _AmpCorrOut
+10f0965c   _AmpCorrOut
 10f06178   _CH0
 10f06188   _CH1
 10f06198   _CH2
 10f05694   _CR_generic_io
 10f05668   _CR_out_pulse
-10809df4   _ChangeFreqHL
+10809e14   _ChangeFreqHL
 10f05fa0   _ClipMax
 10f05f90   _ClipMin
 10f061c0   _CoeffLog
@@ -336,36 +336,36 @@ address    name
 10f06208   _FB_ReadAddress
 10f0620c   _FB_WriteAddress
 10f06020   _Filter64Out
-10f096d8   _FreqDiv
+10f096e8   _FreqDiv
 10f05ee8   _GPIO_subsample
 10f05fb0   _GainOutput
 10f04210   _IdleTimeTmp
 10e0c60c   _InitDMA
-10f09688   _InputFiltered
+10f09698   _InputFiltered
 10f05f38   _InputRef1
 10f06030   _InputRef1_2
 10f05f50   _InputRef2
 10f06048   _InputRef2_2
-10809dac   _LMSResponse_HL
-10f09698   _LPSelect_Amp
-10f09694   _LPSelect_Phase
+10809dcc   _LMSResponse_HL
+10f096a8   _LPSelect_Amp
+10f096a4   _LPSelect_Phase
 10e0d080   _LogFunctionASM
-10f0967c   _MaskDC64
-10f09684   _MaskDC64_2
-10f096d0   _MaxTime
-10f096cc   _MeasuredTime
-10f095e8   _MemDC
-10f095f0   _MemDCCOS
-10f096c4   _MemDCCOS2
-10f095ec   _MemDCSIN
-10f096c0   _MemDCSIN2
+10f0968c   _MaskDC64
+10f09694   _MaskDC64_2
+10f096e0   _MaxTime
+10f096dc   _MeasuredTime
+10f095f8   _MemDC
+10f09600   _MemDCCOS
+10f096d4   _MemDCCOS2
+10f095fc   _MemDCSIN
+10f096d0   _MemDCSIN2
 10f05ff0   _MemLL
-10f096d4   _MinTime
-10f096ae   _Mode2F
-10809d44   _OutputSignalSetUp_HL
+10f096e4   _MinTime
+10f096be   _Mode2F
+10809d64   _OutputSignalSetUp_HL
 10e0ed54   _PICorrector
 10e0ec40   _PICorrectorAmp
-10f095f8   _PI_Phase_Out
+10f09608   _PI_Phase_Out
 807a1200   _PLL_lookup
 10f05c14   _PRB_ACPhIdxA
 10f05c18   _PRB_ACPhIdxB
@@ -404,7 +404,7 @@ address    name
 10f04f88   _Q15
 10f04f84   _Q15L
 10f04f80   _Q30
-10f096dc   _QEP_ON
+10f096ec   _QEP_ON
 10f06170   _QEP_cnt
 10f04f58   _QEP_cnt_old
 10e0c954   _SR3A810ISR
@@ -412,24 +412,24 @@ address    name
 80000000   _Signal1
 803d0900   _Signal2
 10f06010   _SignalToFilter
-10f09690   _SineOut0
+10f096a0   _SineOut0
 10e0ea24   _SineSDB
 10e0e930   _SquareRoot_SDB
-1080988c   _StartPLL
+108098ac   _StartPLL
 10e0d900   _TSCInit
 10e0d880   _TSCReadFirst
 10e0d8a0   _TSCReadSecond
-10f095e0   _Tau_PAC
-10f09670   _TemLL
-10809804   _TestAmpPIResp_HL
-108073a8   _TestFlash_HL
-10809780   _TestPhasePIResp_HL
-10f096c8   _TimerTemp
+10f095f0   _Tau_PAC
+10f09680   _TemLL
+10809824   _TestAmpPIResp_HL
+108073c8   _TestFlash_HL
+108097a0   _TestPhasePIResp_HL
+10f096d8   _TimerTemp
 10f05d68   _VP_sec_count
 10f05da8   _VP_sec_end_buffer
 10f05d58   _VP_sec_int0
 10f05d60   _VP_sec_int1
-10807580   _WR_GPIO
+108075a0   _WR_GPIO
 10f06148   _Z_data_buffer
 10f09150   __STACK_END
 00001000   __STACK_SIZE
@@ -439,12 +439,12 @@ ffffffff   ___TI_pprof_out_hndl
 ffffffff   ___TI_prof_data_size
 ffffffff   ___TI_prof_data_start
 ffffffff   ___binit__
-10f09588   ___bss__
+10f09598   ___bss__
 ffffffff   ___c_args__
 10f06218   ___cinit__
 10f0420c   ___data__
 10f0420c   ___edata__
-10f096de   ___end__
+10f096ee   ___end__
 10e0dea0   ___etext__
 ffffffff   ___pinit__
 10e09000   ___text__
@@ -467,20 +467,20 @@ ffffffff   ___pinit__
 10f08150   __stack
 10e0dbc0   __subcull
 10f06214   __unlock
-10f095d0   _a
-10f096b8   _a2
+10f095e0   _a
+10f096c8   _a2
 10f05000   _a810_config
 10e0dd40   _abort
 10e0af20   _add_probe_vector
 10800cd4   _adjust_signal_input
-10f095c8   _amp
-10f09630   _amp_estimation
+10f095d8   _amp
+10f09640   _amp_estimation
 10f05168   _analog
 10f061e0   _app_ci_signum
 10f055ec   _autoapp
-10f095d4   _b
-10f096bc   _b2
-10f09590   _blcklen
+10f095e4   _b
+10f096cc   _b2
+10f095a0   _blcklen
 10f04f94   _blcklen_mem
 10805788   _buffer_probe_section_end_data_srcs
 10f06140   _bz_byte_pos
@@ -490,60 +490,60 @@ ffffffff   ___pinit__
 10f06144   _bz_push_mode
 10e0dc20   _c_int00
 10e0dd60   _calc_mix_log
-10f09598   _ci1
-10f096b4   _ci2
+10f095a8   _ci1
+10f096c4   _ci2
 10e0aa30   _clear_probe_data_srcs
 10e0c0e8   _clear_summing_data
 10e0e6e4   _computeDeltas
 10e0e320   _computephase_amp
 108026d0   _configure_DSP_GP_PINS
-10f09640   _corrmax_Amp
-10f09628   _corrmax_Phase
-10f09638   _corrmin_Amp
-10f09620   _corrmin_Phase
-10f09594   _cr1
-10f096b0   _cr2
-10f09634   _ctrlmode_Amp
-10f09618   _ctrlmode_Phase
-10f095bc   _dI
-10f095c0   _dR
-10f095e4   _d_mu_e
+10f09650   _corrmax_Amp
+10f09638   _corrmax_Phase
+10f09648   _corrmin_Amp
+10f09630   _corrmin_Phase
+10f095a4   _cr1
+10f096c0   _cr2
+10f09644   _ctrlmode_Amp
+10f09628   _ctrlmode_Phase
+10f095cc   _dI
+10f095d0   _dR
+10f095f4   _d_mu_e
 10f04e44   _d_tmp
 10f054fc   _data_sync_io
-10807740   _datafifo
+10807760   _datafifo
 10e09060   _dataprocess
-10f096a8   _delayRef
-10f095a8   _deltaImT
-10f095a4   _deltaReT
-10f095a0   _deltasIm1
-10f0959c   _deltasRe1
-10f095b8   _dephasecorr
+10f096b8   _delayRef
+10f095b8   _deltaImT
+10f095b4   _deltaReT
+10f095b0   _deltasIm1
+10f095ac   _deltasRe1
+10f095c8   _dephasecorr
 10803090   _dsp_590MHz
 10802f08   _dsp_688MHz
 10806300   _dsp_idle_loop
 807a12c8   _dsp_signal_lookup
 10802dac   _enablePll1
-10f0969c   _errorMAC
-10f09658   _errorPI_Amp
-10f09604   _errorPI_Phase
-10f095dc   _errordet
+10f096ac   _errorMAC
+10f09668   _errorPI_Amp
+10f09614   _errorPI_Phase
+10f095ec   _errordet
 10e0d780   _exit
 10f04f74   _feedback_hold
 10f05088   _feedback_mixer
 1080270c   _fill_magic
 10803220   _finish_area_scan
-10807348   _flash_erase
-1080732c   _flash_read16
-108072f4   _flash_seek
-108072a0   _flash_write16
+10807368   _flash_erase
+1080734c   _flash_read16
+10807314   _flash_seek
+108072c0   _flash_write16
 10f04f68   _gate_cnt
 10f04f70   _gate_cnt_1
 10f04f6c   _gate_cnt_multiplier
-10f09654   _icoef_Amp
-10f09600   _icoef_Phase
-10807534   _init_CR_out_pulse
+10f09664   _icoef_Amp
+10f09610   _icoef_Phase
+10807554   _init_CR_out_pulse
 108048e8   _init_area_scan
-10807210   _init_autoapp
+10807230   _init_autoapp
 10805f00   _init_lockin
 10e0ce00   _init_offset_move
 108061e4   _init_probe
@@ -551,19 +551,19 @@ ffffffff   ___pinit__
 10805ea8   _init_probe_module
 10e0b920   _integrate_as_data_srcs
 10e0a8a4   _integrate_probe_data_srcs
-10f096a4   _ioING
-10f096a0   _ioOUTG
+10f096b4   _ioING
+10f096b0   _ioOUTG
 10f06150   _iobuf
 10f06200   _ldc_wait
-10f095b0   _limitHighTan
-10f095b4   _limitLowTan
+10f095c0   _limitHighTan
+10f095c4   _limitLowTan
 10e0dcc0   _llabs
 10f05374   _m_servo
 10f13f00   _magic
 108028b0   _main
 10f04e3c   _max_out_ch
-10f09660   _memI_Amp
-10f09608   _memI_Phase
+10f09670   _memI_Amp
+10f09618   _memI_Phase
 10e0d9e0   _memcpy
 10f061a8   _mix_setpoint_old
 10f04fa8   _mm_vec
@@ -573,22 +573,22 @@ ffffffff   ___pinit__
 10805b80   _next_track_vector
 10f05fc0   _offsetDisplay
 10f05fd0   _outmix_display
-10f09588   _pSignal1
-10f0958c   _pSignal2
-10f09650   _pcoef_Amp
-10f095fc   _pcoef_Phase
-10f095c4   _phase
+10f09598   _pSignal1
+10f0959c   _pSignal2
+10f09660   _pcoef_Amp
+10f0960c   _pcoef_Phase
+10f095d4   _phase
 10e0e1c8   _phasedetect
 10e0dea0   _phasedetect2
 10f04f78   _pipi
-10f09610   _pout
-10f09668   _poutAmp
+10f09620   _pout
+10f09678   _poutAmp
 10f15000   _prbdf
 10f14000   _prbvh
-10f095d8   _predict
+10f095e8   _predict
 10f05518   _probe
 108055f4   _probe_append_header_and_positionvector
-10809758   _probe_datafifo
+10809778   _probe_datafifo
 10805ea4   _probe_restore
 10805ea0   _probe_store
 10e0c140   _push_area_scan_data
@@ -602,28 +602,28 @@ ffffffff   ___pinit__
 10f04228   _rmssum
 10f04220   _rmssum2
 10f05fe0   _rndOut
-10807490   _run_CR_out_pulse
+108074b0   _run_CR_out_pulse
 108039c0   _run_area_scan
 10803288   _run_area_scan_fast
-108071e8   _run_autoapp
+10807208   _run_autoapp
 10e0b374   _run_lockin
 10e0cba0   _run_offset_move
 10e0aaa4   _run_one_time_step
 10e0b060   _run_probe
-10806eb8   _run_tip_app
-10806d20   _run_wave_play
+10806ed8   _run_tip_app
+10806d40   _run_wave_play
 10f04e40   _s_xymult
 10f0542c   _scan
 10f04f7c   _scnt
 10f05398   _sco_s
 10f04f50   _sdt
 10f04f54   _sdt_16
-10f09648   _setpoint_Amp
-10f0968c   _setpoint_Phase
+10f09658   _setpoint_Amp
+10f0969c   _setpoint_Phase
 10f061a0   _setpoint_old
 10800aa4   _setup_default_signal_configuration
-10f09678   _shftDC64
-10f09680   _shftDC64_2
+10f09688   _shftDC64
+10f09690   _shftDC64_2
 10f056c8   _sig_mon
 10f04e50   _sigma_delta_hr_mask
 10f04e38   _sigma_delta_index
@@ -633,20 +633,20 @@ ffffffff   ___pinit__
 10f04fc8   _state
 10e0c5e0   _stop_Analog810
 10800a64   _stop_Analog810_HL
-10807460   _stop_CR_out_pulse
-10806c60   _stop_autoapp
+10807480   _stop_CR_out_pulse
+10806c80   _stop_autoapp
 108055dc   _stop_lockin
 1080574c   _stop_probe
 10800810   _store_configuration_to_flash
 10804c80   _store_probe_data_srcs
-10f095f4   _targetPhase
-10f096ac   _testcodePLL
+10f09604   _targetPhase
+10f096bc   _testcodePLL
 10f04e48   _tmp_hrbits
 10f061e4   _tmp_i
 10f061e8   _tmp_s
 10f04218   _tmpsum
 10f05008   _user_input_signal_array
-10f095ac   _volumeSine
+10f095bc   _volumeSine
 10e0d860   _wait
 10e0a820   _wait_for_trigger
 10f061ec   _waveptr
@@ -655,7 +655,7 @@ ffffffff   ___pinit__
 ffffffff   binit
 10f06218   cinit
 10f0420c   edata
-10f096de   end
+10f096ee   end
 10e0dea0   etext
 ffffffff   pinit
 
@@ -698,28 +698,28 @@ address    name
 10805f00   _init_lockin
 108061e4   _init_probe
 10806300   _dsp_idle_loop
-10806c60   _stop_autoapp
-10806d20   _run_wave_play
-10806eb8   _run_tip_app
-108071e8   _run_autoapp
-10807210   _init_autoapp
-108072a0   _flash_write16
-108072f4   _flash_seek
-1080732c   _flash_read16
-10807348   _flash_erase
-108073a8   _TestFlash_HL
-10807460   _stop_CR_out_pulse
-10807490   _run_CR_out_pulse
-10807534   _init_CR_out_pulse
-10807580   _WR_GPIO
-10807740   _datafifo
-10809758   _probe_datafifo
-10809780   _TestPhasePIResp_HL
-10809804   _TestAmpPIResp_HL
-1080988c   _StartPLL
-10809d44   _OutputSignalSetUp_HL
-10809dac   _LMSResponse_HL
-10809df4   _ChangeFreqHL
+10806c80   _stop_autoapp
+10806d40   _run_wave_play
+10806ed8   _run_tip_app
+10807208   _run_autoapp
+10807230   _init_autoapp
+108072c0   _flash_write16
+10807314   _flash_seek
+1080734c   _flash_read16
+10807368   _flash_erase
+108073c8   _TestFlash_HL
+10807480   _stop_CR_out_pulse
+108074b0   _run_CR_out_pulse
+10807554   _init_CR_out_pulse
+108075a0   _WR_GPIO
+10807760   _datafifo
+10809778   _probe_datafifo
+108097a0   _TestPhasePIResp_HL
+10809824   _TestAmpPIResp_HL
+108098ac   _StartPLL
+10809d64   _OutputSignalSetUp_HL
+10809dcc   _LMSResponse_HL
+10809e14   _ChangeFreqHL
 10e09000   .text
 10e09000   ___text__
 10e09000   _mul32
@@ -935,87 +935,87 @@ address    name
 10f06218   cinit
 10f08150   __stack
 10f09150   __STACK_END
-10f09588   $bss
-10f09588   .bss
-10f09588   ___bss__
-10f09588   _pSignal1
-10f0958c   _pSignal2
-10f09590   _blcklen
-10f09594   _cr1
-10f09598   _ci1
-10f0959c   _deltasRe1
-10f095a0   _deltasIm1
-10f095a4   _deltaReT
-10f095a8   _deltaImT
-10f095ac   _volumeSine
-10f095b0   _limitHighTan
-10f095b4   _limitLowTan
-10f095b8   _dephasecorr
-10f095bc   _dI
-10f095c0   _dR
-10f095c4   _phase
-10f095c8   _amp
-10f095d0   _a
-10f095d4   _b
-10f095d8   _predict
-10f095dc   _errordet
-10f095e0   _Tau_PAC
-10f095e4   _d_mu_e
-10f095e8   _MemDC
-10f095ec   _MemDCSIN
-10f095f0   _MemDCCOS
-10f095f4   _targetPhase
-10f095f8   _PI_Phase_Out
-10f095fc   _pcoef_Phase
-10f09600   _icoef_Phase
-10f09604   _errorPI_Phase
-10f09608   _memI_Phase
-10f09610   _pout
-10f09618   _ctrlmode_Phase
-10f09620   _corrmin_Phase
-10f09628   _corrmax_Phase
-10f09630   _amp_estimation
-10f09634   _ctrlmode_Amp
-10f09638   _corrmin_Amp
-10f09640   _corrmax_Amp
-10f09648   _setpoint_Amp
-10f0964c   _AmpCorrOut
-10f09650   _pcoef_Amp
-10f09654   _icoef_Amp
-10f09658   _errorPI_Amp
-10f09660   _memI_Amp
-10f09668   _poutAmp
-10f09670   _TemLL
-10f09678   _shftDC64
-10f0967c   _MaskDC64
-10f09680   _shftDC64_2
-10f09684   _MaskDC64_2
-10f09688   _InputFiltered
-10f0968c   _setpoint_Phase
-10f09690   _SineOut0
-10f09694   _LPSelect_Phase
-10f09698   _LPSelect_Amp
-10f0969c   _errorMAC
-10f096a0   _ioOUTG
-10f096a4   _ioING
-10f096a8   _delayRef
-10f096ac   _testcodePLL
-10f096ae   _Mode2F
-10f096b0   _cr2
-10f096b4   _ci2
-10f096b8   _a2
-10f096bc   _b2
-10f096c0   _MemDCSIN2
-10f096c4   _MemDCCOS2
-10f096c8   _TimerTemp
-10f096cc   _MeasuredTime
-10f096d0   _MaxTime
-10f096d4   _MinTime
-10f096d8   _FreqDiv
-10f096da   _ADCRange
-10f096dc   _QEP_ON
-10f096de   ___end__
-10f096de   end
+10f09598   $bss
+10f09598   .bss
+10f09598   ___bss__
+10f09598   _pSignal1
+10f0959c   _pSignal2
+10f095a0   _blcklen
+10f095a4   _cr1
+10f095a8   _ci1
+10f095ac   _deltasRe1
+10f095b0   _deltasIm1
+10f095b4   _deltaReT
+10f095b8   _deltaImT
+10f095bc   _volumeSine
+10f095c0   _limitHighTan
+10f095c4   _limitLowTan
+10f095c8   _dephasecorr
+10f095cc   _dI
+10f095d0   _dR
+10f095d4   _phase
+10f095d8   _amp
+10f095e0   _a
+10f095e4   _b
+10f095e8   _predict
+10f095ec   _errordet
+10f095f0   _Tau_PAC
+10f095f4   _d_mu_e
+10f095f8   _MemDC
+10f095fc   _MemDCSIN
+10f09600   _MemDCCOS
+10f09604   _targetPhase
+10f09608   _PI_Phase_Out
+10f0960c   _pcoef_Phase
+10f09610   _icoef_Phase
+10f09614   _errorPI_Phase
+10f09618   _memI_Phase
+10f09620   _pout
+10f09628   _ctrlmode_Phase
+10f09630   _corrmin_Phase
+10f09638   _corrmax_Phase
+10f09640   _amp_estimation
+10f09644   _ctrlmode_Amp
+10f09648   _corrmin_Amp
+10f09650   _corrmax_Amp
+10f09658   _setpoint_Amp
+10f0965c   _AmpCorrOut
+10f09660   _pcoef_Amp
+10f09664   _icoef_Amp
+10f09668   _errorPI_Amp
+10f09670   _memI_Amp
+10f09678   _poutAmp
+10f09680   _TemLL
+10f09688   _shftDC64
+10f0968c   _MaskDC64
+10f09690   _shftDC64_2
+10f09694   _MaskDC64_2
+10f09698   _InputFiltered
+10f0969c   _setpoint_Phase
+10f096a0   _SineOut0
+10f096a4   _LPSelect_Phase
+10f096a8   _LPSelect_Amp
+10f096ac   _errorMAC
+10f096b0   _ioOUTG
+10f096b4   _ioING
+10f096b8   _delayRef
+10f096bc   _testcodePLL
+10f096be   _Mode2F
+10f096c0   _cr2
+10f096c4   _ci2
+10f096c8   _a2
+10f096cc   _b2
+10f096d0   _MemDCSIN2
+10f096d4   _MemDCCOS2
+10f096d8   _TimerTemp
+10f096dc   _MeasuredTime
+10f096e0   _MaxTime
+10f096e4   _MinTime
+10f096e8   _FreqDiv
+10f096ea   _ADCRange
+10f096ec   _QEP_ON
+10f096ee   ___end__
+10f096ee   end
 10f13f00   _magic
 10f14000   _prbvh
 10f15000   _prbdf
