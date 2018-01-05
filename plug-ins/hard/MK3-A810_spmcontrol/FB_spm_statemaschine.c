@@ -188,6 +188,12 @@ void dsp_idle_loop (void){
 			case 3: WR_GPIO (GPIO_Dir_0, &CR_generic_io.gpio_direction_bits, 1); break; // reconfigure port back of the box
 			case 10: GPIO_CLR_DATA23 = (CR_generic_io.gpio_direction_bits&0x00E0)<<16; break; // CLR DSP GP pins 53/54/55
 			case 11: GPIO_SET_DATA23 = (CR_generic_io.gpio_direction_bits&0x00E0)<<16; break; // SET DSP GP pins 53/54/55
+			case 20: CLR_DSP_GP53; break;
+			case 21: SET_DSP_GP53; break;
+			case 22: CLR_DSP_GP54; break;
+			case 23: SET_DSP_GP54; break;
+			case 24: CLR_DSP_GP55; break;
+			case 25: SET_DSP_GP55; break;
 			default: break;
 			}
 			CR_generic_io.start=0;
