@@ -257,7 +257,7 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
                         // for(int i=0, ix=0, iy=1; i < n; ix+=2, iy+=2, ++i){
                         for(int i=0; k < n_dec; ++k, i+=dec_len){
                                 int ii = i + dec_len/2;
-                                double y=0.;
+                                double y=s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy) * s->data.s.dz);
                                 for (int m=0; m<dec_len; ++m){
                                         v = y =  lpo*v + lpn * s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i+m,yy) * s->data.s.dz);
                                 }
