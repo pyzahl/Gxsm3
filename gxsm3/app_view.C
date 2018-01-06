@@ -1709,6 +1709,7 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                 }
 
                 double eps=1e-2;
+                vc->EventPlot->SetData_dz (1.);
                 
                 if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 0){ // active
 			vc->EventPlot->RemoveScans ();
