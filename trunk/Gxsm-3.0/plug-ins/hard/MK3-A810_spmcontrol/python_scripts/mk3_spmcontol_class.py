@@ -1171,6 +1171,7 @@ def dum_null ():
 class SPMcontrol():
 
 	def __init__(self, start_dev_id=0):
+                self.start=1
 		self.sr_dev_index = start_dev_id
 		self.sr_dev_base  = "/dev/sranger_mk2_"
 		self.sr_dev_path  = "/dev/sranger_mk2_0"
@@ -1508,6 +1509,13 @@ class SPMcontrol():
 		self.SPM_STATEMACHINE =  self.readf( sr.fileno(), i_statemachine,  fmt_statemachine)
 
 		self.SPM_SCAN =  self.readf( sr.fileno(), i_scan,  fmt_scan)
+                if self.start < 2:
+                        self.SPM_SCAN_LAST = self.SPM_SCAN
+                self.start = self.start+1
+#                if self.SPM_SCAN != self.SPM_SCAN_LAST:
+#                        print self.SPM_SCAN
+#                        self.check_dsp_scan()
+                self.SPM_SCAN_LAST = self.SPM_SCAN
 		self.SPM_MOVE =  self.readf( sr.fileno(), i_move,  fmt_move)
 		self.PROBE    =  self.readf( sr.fileno(), i_probe,  fmt_probe_read)
 		self.AIC_in_buffer   =  self.readf( sr.fileno(), i_AIC_in,  fmt_AIC_in)
