@@ -721,6 +721,7 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 		}
 	}
 
+        f.precision (12);
 	f << "# view via: xmgrace -graph 0 -pexec 'title \"GXSM Vector Probe Data: " << fntmp << "\"' -block " << fntmp  << " -bxy 2:4 ..." << std::endl;
 	f << "# GXSM Vector Probe Data :: VPVersion=00.02 vdate=20070227" << std::endl;
 	f << "# Date                   :: date=" << ctime(&t) << "#" << std::endl;
@@ -785,7 +786,8 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 
 	f << "#C " << std::endl;
 	f << "#C Data Table             :: data=" << std::endl;
-
+        f.precision (12);
+        f << std::scientific;
 	for (int i = -1; i < dspc->current_probe_data_index; i++){
 		if (i == -1)
 			f << "#C Index" << separator;
