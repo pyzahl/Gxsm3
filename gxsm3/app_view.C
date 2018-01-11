@@ -1677,8 +1677,10 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 			g_free (title);
 		} else {
 			vc->EventPlot->SetXrange (xmin, xmax);
-			vc->EventPlot->SetXlabel (pe->get_label (xi));
-			vc->EventPlot->SetYlabel (pe->get_label (yi));
+                        //			vc->EventPlot->SetXlabel (pe->get_label (xi));
+                        //			vc->EventPlot->SetYlabel (pe->get_label (yi));
+			vc->EventPlot->SetXlabel (UXaxis->MakeLongLabel ());
+			vc->EventPlot->SetYlabel (UYaxis->MakeLongLabel ());
 //			if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (vc->tog_average))){
 			if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 1){
 				gchar* txt = g_strdup_printf ("Average of all probe events shown: %s", pe->get_label (yi));

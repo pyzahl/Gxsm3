@@ -728,6 +728,10 @@ void Mem2d::copy(Mem2d *m, int x0, int y0, int vi, int vf, int nx, int ny, gbool
 }
 
 void Mem2d::evl_remove(gpointer entry, gpointer from){
+        if(debug_level > 2){
+                g_message ("Removing Event:");
+                ((ScanEvent*)entry) -> print ();
+        }
 	delete (ScanEvent*)entry;
 }
 
