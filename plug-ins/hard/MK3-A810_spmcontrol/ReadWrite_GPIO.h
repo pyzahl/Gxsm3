@@ -22,8 +22,7 @@ extern void WR_GPIO(int address, unsigned short *data, int W_R);
 // GPIO_SET_DATA23 or GPIO_CLR_DATA23 register to clear or to set the GP53,54,55:
 // E = 1110 = 2+4+8, 55: 8=1000, 54: 4=0100, 53: 2=0010 
 
-#if 1
-
+#if 0
 #define SET_DSP_GP53 GPIO_SET_DATA23=0x00200000
 #define SET_DSP_GP54 GPIO_SET_DATA23=0x00400000
 #define SET_DSP_GP55 GPIO_SET_DATA23=0x00800000
@@ -35,7 +34,7 @@ extern void WR_GPIO(int address, unsigned short *data, int W_R);
 #else
 
 #define SET_DSP_GP53
-#define SET_DSP_GP54
+#define SET_DSP_GP54 
 #define SET_DSP_GP55
 
 #define CLR_DSP_GP53

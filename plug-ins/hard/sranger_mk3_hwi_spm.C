@@ -399,7 +399,8 @@ gint sranger_mk3_hwi_spm::SetUserParam (gint n, const gchar *id, double value){
 
 void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 	static int wave_form_address=0;
-
+        static int last_GPIO_BITS=99999;
+        
 	// query wave form buffer -- shared w probe fifo!!! 
 	if (!wave_form_address){
 		static DATA_FIFO_EXTERN_MK3 fifo;
@@ -702,7 +703,7 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 			lseek (dsp, magic_data.CR_generic_io, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 			sr_write (dsp, &dsp_gpio, 4<<1); 
 
-                        usleep ((useconds_t) (1000) ); // give some time to read.
+                        usleep ((useconds_t) (500) ); // give some time to read.
 
 			lseek (dsp, magic_data.CR_generic_io, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 			sr_read (dsp, &dsp_gpio, sizeof (dsp_gpio));  // READ BACK
@@ -718,7 +719,9 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
                         g_message ("dsp_gpio.gpio_data_out                      = %02X", dsp_gpio.gpio_data_out);
                         g_message ("DSPMoverClass->mover_param.GPIO_reset       = %02X", DSPMoverClass->mover_param.GPIO_reset);
                         g_message ("DSPMoverClass->mover_param.AFM_GPIO_setting = %02X", DSPMoverClass->mover_param.AFM_GPIO_setting);
-			if (1 || dsp_gpio.gpio_data_out != (DSPMoverClass->mover_param.GPIO_reset | DSPMoverClass->mover_param.AFM_GPIO_setting)) {
+
+			if (last_GPIO_BITS != DSPMoverClass->mover_param.AFM_GPIO_setting || dsp_gpio.gpio_data_out != (DSPMoverClass->mover_param.GPIO_reset | DSPMoverClass->mover_param.AFM_GPIO_setting)) {
+                                last_GPIO_BITS=DSPMoverClass->mover_param.AFM_GPIO_setting;
 
 				// std::cout << "GPIO ist   = " << std::hex << dsp_gpio.gpio_data_out << " ::M= " << gpio3_monitor_out << std::dec << std::endl;
 				// std::cout << "GPIO update= " << std::hex << DSPMoverClass->mover_param.AFM_GPIO_setting << std::dec << std::endl;
@@ -735,7 +738,7 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 
                                 g_message ("GPIO: Direction Setup => %02x", dsp_gpio.gpio_direction_bits);
                                 
-				usleep ((useconds_t) (5000) ); // give some time to settle IO/Relais/etc...
+				usleep ((useconds_t) (1000) ); // give some time to settle IO/Relais/etc...
 				
 				dsp_gpio.start = long_2_sranger_long (1); // WRITE GPIO
 				dsp_gpio.stop  = long_2_sranger_long (0);

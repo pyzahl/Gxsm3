@@ -207,6 +207,7 @@ public:
 	void conv_dsp_vector ();
 	virtual void read_dsp_vector (int index, PROBE_VECTOR_GENERIC *__dsp_vector);
 	virtual void write_dsp_vector (int index, PROBE_VECTOR_GENERIC *__dsp_vector);
+	virtual void write_dsp_abort_probe ();
 
 	int read_pll_symbols ();
 	double read_pll_variable32 (gint64 address);
