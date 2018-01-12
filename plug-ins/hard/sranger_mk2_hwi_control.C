@@ -3684,10 +3684,8 @@ void DSPControl::updateDSP(int FbFlg){
 		ldc_flag = 0;
 	}
 
-
-	// do not touch if Auto Trigger is enabled and is Scanning
-	if (!(trigger_pflg && dsp_scan_pflg)) 
-		sranger_common_hwi->write_dsp_analog (bias, motor);
+        // Update Bias, Motor in Analog section
+        sranger_common_hwi->write_dsp_analog (bias, motor);
 
 	int addflag=FALSE;
 	if (fabs (ue_bias - bias) > 1e-6){
