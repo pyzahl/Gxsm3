@@ -150,6 +150,7 @@ public:
 
 	virtual void read_dsp_vector (int index, PROBE_VECTOR_GENERIC *__dsp_vector) {};
 	virtual void write_dsp_vector (int index, PROBE_VECTOR_GENERIC *__dsp_vector) {};
+	virtual void write_dsp_abort_probe () {};
 	
 	virtual int check_pac () { return -1; }; // returns 0 if PAC/PLL capability available, else -1
 	virtual int read_pll (PAC_control &pll, PLL_GROUP group=PLL_ALL) { return -1; };

@@ -869,6 +869,8 @@ protected:
 	void read_dsp_vector (int index);
 	void write_dsp_vector (int index);
 
+	void write_dsp_abort_probe ();
+
 private:
 	#define MAX_PV 50
 	PROBE_VECTOR_GENERIC     dsp_vector_list[MAX_PV]; // copy for GXSM internal use only

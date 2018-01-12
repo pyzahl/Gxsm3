@@ -149,3 +149,238 @@ DSP Code Road-Map:
 
 =========================
 END.
+
+-- problem after 400 spectra and several weeks running
+
+
+[549711.992305] perf: interrupt took too long (6154 > 6151), lowering kernel.perf_event_max_sample_rate to 32500
+[557519.836117] INFO: task gxsm3:2256 blocked for more than 120 seconds.
+[557519.836125]       Tainted: P           OE   4.9.0-2-amd64 #1
+[557519.836127] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[557519.836130] gxsm3           D    0  2256   1887 0x00000000
+[557519.836135]  ffff9e15d676c000 0000000000000000 ffff9e159ed86080 ffff9e15df3181c0
+[557519.836139]  ffff9e15db42c0c0 ffffb2d706c2fce0 ffffffffa6df6233 0000000100000000
+[557519.836143]  0000000000000000 ffff9e15df3181c0 0000000100000000 ffff9e159ed86080
+[557519.836147] Call Trace:
+[557519.836157]  [<ffffffffa6df6233>] ? __schedule+0x233/0x6d0
+[557519.836162]  [<ffffffffa6df6702>] ? schedule+0x32/0x80
+[557519.836164]  [<ffffffffa6df9ad3>] ? schedule_timeout+0x243/0x310
+[557519.836167]  [<ffffffffa6df85f7>] ? __down+0x77/0xc0
+[557519.836172]  [<ffffffffa68c0632>] ? up+0x12/0x60
+[557519.836175]  [<ffffffffa68c060b>] ? down+0x3b/0x50
+[557519.836182]  [<ffffffffc13fa5ee>] ? sranger_mk2_write+0x6e/0xb5f [usb_sranger_mk23]
+[557519.836188]  [<ffffffffa69b3871>] ? handle_mm_fault+0xf81/0x13b0
+[557519.836191]  [<ffffffffa6a1600f>] ? do_vfs_ioctl+0x9f/0x600
+[557519.836195]  [<ffffffffa6a01ee0>] ? vfs_write+0xb0/0x190
+[557519.836198]  [<ffffffffa6a032c2>] ? SyS_write+0x52/0xc0
+[557519.836200]  [<ffffffffa6a165cd>] ? SyS_ioctl+0x5d/0x80
+[557519.836203]  [<ffffffffa6dfaebb>] ? system_call_fast_compare_end+0xc/0x9b
+[557519.836207] INFO: task gxsm3:8242 blocked for more than 120 seconds.
+[557519.836210]       Tainted: P           OE   4.9.0-2-amd64 #1
+[557519.836211] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[557519.836213] gxsm3           D    0  8242   1887 0x00000000
+[557519.836216]  ffff9e15d676c000 0000000000000000 ffff9e123e053100 ffff9e15df3581c0
+[557519.836220]  ffff9e15db432100 ffffb2d70fe97ce0 ffffffffa6df6233 000000000000062d
+[557519.836223]  0000000000000037 ffff9e15df3581c0 ffffffffc0406e62 ffff9e123e053100
+[557519.836227] Call Trace:
+[557519.836231]  [<ffffffffa6df6233>] ? __schedule+0x233/0x6d0
+[557519.836257]  [<ffffffffc0406e62>] ? ext4_da_write_end+0x142/0x2c0 [ext4]
+[557519.836261]  [<ffffffffa6df6702>] ? schedule+0x32/0x80
+[557519.836263]  [<ffffffffa6df9ad3>] ? schedule_timeout+0x243/0x310
+[557519.836266]  [<ffffffffa6df85f7>] ? __down+0x77/0xc0
+[557519.836270]  [<ffffffffa6a46a00>] ? inotify_handle_event+0xa0/0x150
+[557519.836273]  [<ffffffffa68c0632>] ? up+0x12/0x60
+[557519.836276]  [<ffffffffa68c060b>] ? down+0x3b/0x50
+[557519.836280]  [<ffffffffc13fa5ee>] ? sranger_mk2_write+0x6e/0xb5f [usb_sranger_mk23]
+[557519.836282]  [<ffffffffa6b59698>] ? strncpy_from_user+0x48/0x160
+[557519.836285]  [<ffffffffa6a072dd>] ? cp_new_stat+0x14d/0x180
+[557519.836287]  [<ffffffffa6a1600f>] ? do_vfs_ioctl+0x9f/0x600
+[557519.836290]  [<ffffffffa6a01ee0>] ? vfs_write+0xb0/0x190
+[557519.836293]  [<ffffffffa6a032c2>] ? SyS_write+0x52/0xc0
+[557519.836295]  [<ffffffffa6a165cd>] ? SyS_ioctl+0x5d/0x80
+[557519.836298]  [<ffffffffa6dfaebb>] ? system_call_fast_compare_end+0xc/0x9b
+[557519.836304] INFO: task python:2498 blocked for more than 120 seconds.
+[557519.836306]       Tainted: P           OE   4.9.0-2-amd64 #1
+[557519.836307] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[557519.836309] python          D    0  2498   2497 0x00000000
+[557519.836311]  ffff9e15d651c000 0000000000000000 ffff9e15af228140 ffff9e15df3581c0
+[557519.836315]  ffff9e15db432100 ffffb2d70670fce0 ffffffffa6df6233 00000000bf5f157b
+[557519.836318]  00000000bf5f157b ffff9e15df3581c0 ffffffffa6a1a408 ffff9e15af228140
+[557519.836321] Call Trace:
+[557519.836325]  [<ffffffffa6df6233>] ? __schedule+0x233/0x6d0
+[557519.836329]  [<ffffffffa6a1a408>] ? dput+0xc8/0x250
+[557519.836332]  [<ffffffffa6df6702>] ? schedule+0x32/0x80
+[557519.836334]  [<ffffffffa6df9ad3>] ? schedule_timeout+0x243/0x310
+[557519.836337]  [<ffffffffa6a10dde>] ? path_openat+0x74e/0x1410
+[557519.836340]  [<ffffffffa6df85f7>] ? __down+0x77/0xc0
+[557519.836343]  [<ffffffffa68c0632>] ? up+0x12/0x60
+[557519.836346]  [<ffffffffa68c060b>] ? down+0x3b/0x50
+[557519.836349]  [<ffffffffc13fa5ee>] ? sranger_mk2_write+0x6e/0xb5f [usb_sranger_mk23]
+[557519.836351]  [<ffffffffa6a072dd>] ? cp_new_stat+0x14d/0x180
+[557519.836353]  [<ffffffffa6a1600f>] ? do_vfs_ioctl+0x9f/0x600
+[557519.836355]  [<ffffffffa6a01ee0>] ? vfs_write+0xb0/0x190
+[557519.836358]  [<ffffffffa6a032c2>] ? SyS_write+0x52/0xc0
+[557519.836360]  [<ffffffffa6a165e4>] ? SyS_ioctl+0x74/0x80
+[557519.836363]  [<ffffffffa6dfaebb>] ? system_call_fast_compare_end+0xc/0x9b
+[557640.668139] INFO: task gxsm3:2256 blocked for more than 120 seconds.
+[557640.668146]       Tainted: P           OE   4.9.0-2-amd64 #1
+[557640.668148] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[557640.668151] gxsm3           D    0  2256   1887 0x00000000
+[557640.668156]  ffff9e15d676c000 0000000000000000 ffff9e159ed86080 ffff9e15df3181c0
+[557640.668160]  ffff9e15db42c0c0 ffffb2d706c2fce0 ffffffffa6df6233 0000000100000000
+[557640.668163]  0000000000000000 ffff9e15df3181c0 0000000100000000 ffff9e159ed86080
+[557640.668167] Call Trace:
+[557640.668179]  [<ffffffffa6df6233>] ? __schedule+0x233/0x6d0
+[557640.668183]  [<ffffffffa6df6702>] ? schedule+0x32/0x80
+[557640.668186]  [<ffffffffa6df9ad3>] ? schedule_timeout+0x243/0x310
+[557640.668189]  [<ffffffffa6df85f7>] ? __down+0x77/0xc0
+[557640.668194]  [<ffffffffa68c0632>] ? up+0x12/0x60
+[557640.668197]  [<ffffffffa68c060b>] ? down+0x3b/0x50
+[557640.668204]  [<ffffffffc13fa5ee>] ? sranger_mk2_write+0x6e/0xb5f [usb_sranger_mk23]
+[557640.668210]  [<ffffffffa69b3871>] ? handle_mm_fault+0xf81/0x13b0
+[557640.668213]  [<ffffffffa6a1600f>] ? do_vfs_ioctl+0x9f/0x600
+[557640.668217]  [<ffffffffa6a01ee0>] ? vfs_write+0xb0/0x190
+[557640.668220]  [<ffffffffa6a032c2>] ? SyS_write+0x52/0xc0
+[557640.668222]  [<ffffffffa6a165cd>] ? SyS_ioctl+0x5d/0x80
+[557640.668226]  [<ffffffffa6dfaebb>] ? system_call_fast_compare_end+0xc/0x9b
+[557640.668230] INFO: task gxsm3:8242 blocked for more than 120 seconds.
+[557640.668233]       Tainted: P           OE   4.9.0-2-amd64 #1
+[557640.668234] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[557640.668236] gxsm3           D    0  8242   1887 0x00000000
+[557640.668239]  ffff9e15d676c000 0000000000000000 ffff9e123e053100 ffff9e15df3581c0
+[557640.668243]  ffff9e15db432100 ffffb2d70fe97ce0 ffffffffa6df6233 000000000000062d
+[557640.668246]  0000000000000037 ffff9e15df3581c0 ffffffffc0406e62 ffff9e123e053100
+[557640.668250] Call Trace:
+[557640.668254]  [<ffffffffa6df6233>] ? __schedule+0x233/0x6d0
+[557640.668284]  [<ffffffffc0406e62>] ? ext4_da_write_end+0x142/0x2c0 [ext4]
+[557640.668288]  [<ffffffffa6df6702>] ? schedule+0x32/0x80
+[557640.668291]  [<ffffffffa6df9ad3>] ? schedule_timeout+0x243/0x310
+[557640.668293]  [<ffffffffa6df85f7>] ? __down+0x77/0xc0
+[557640.668300]  [<ffffffffa6a46a00>] ? inotify_handle_event+0xa0/0x150
+[557640.668303]  [<ffffffffa68c0632>] ? up+0x12/0x60
+[557640.668306]  [<ffffffffa68c060b>] ? down+0x3b/0x50
+[557640.668310]  [<ffffffffc13fa5ee>] ? sranger_mk2_write+0x6e/0xb5f [usb_sranger_mk23]
+[557640.668312]  [<ffffffffa6b59698>] ? strncpy_from_user+0x48/0x160
+[557640.668315]  [<ffffffffa6a072dd>] ? cp_new_stat+0x14d/0x180
+[557640.668317]  [<ffffffffa6a1600f>] ? do_vfs_ioctl+0x9f/0x600
+[557640.668320]  [<ffffffffa6a01ee0>] ? vfs_write+0xb0/0x190
+[557640.668323]  [<ffffffffa6a032c2>] ? SyS_write+0x52/0xc0
+[557640.668325]  [<ffffffffa6a165cd>] ? SyS_ioctl+0x5d/0x80
+[557640.668328]  [<ffffffffa6dfaebb>] ? system_call_fast_compare_end+0xc/0x9b
+[557640.668334] INFO: task python:2498 blocked for more than 120 seconds.
+[557640.668336]       Tainted: P           OE   4.9.0-2-amd64 #1
+[557640.668337] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[557640.668339] python          D    0  2498   2497 0x00000000
+[557640.668342]  ffff9e15d651c000 0000000000000000 ffff9e15af228140 ffff9e15df3581c0
+[557640.668345]  ffff9e15db432100 ffffb2d70670fce0 ffffffffa6df6233 00000000bf5f157b
+[557640.668348]  00000000bf5f157b ffff9e15df3581c0 ffffffffa6a1a408 ffff9e15af228140
+[557640.668352] Call Trace:
+[557640.668356]  [<ffffffffa6df6233>] ? __schedule+0x233/0x6d0
+[557640.668359]  [<ffffffffa6a1a408>] ? dput+0xc8/0x250
+[557640.668363]  [<ffffffffa6df6702>] ? schedule+0x32/0x80
+[557640.668365]  [<ffffffffa6df9ad3>] ? schedule_timeout+0x243/0x310
+[557640.668369]  [<ffffffffa6a10dde>] ? path_openat+0x74e/0x1410
+[557640.668371]  [<ffffffffa6df85f7>] ? __down+0x77/0xc0
+[557640.668375]  [<ffffffffa68c0632>] ? up+0x12/0x60
+[557640.668378]  [<ffffffffa68c060b>] ? down+0x3b/0x50
+[557640.668381]  [<ffffffffc13fa5ee>] ? sranger_mk2_write+0x6e/0xb5f [usb_sranger_mk23]
+[557640.668383]  [<ffffffffa6a072dd>] ? cp_new_stat+0x14d/0x180
+[557640.668385]  [<ffffffffa6a1600f>] ? do_vfs_ioctl+0x9f/0x600
+[557640.668388]  [<ffffffffa6a01ee0>] ? vfs_write+0xb0/0x190
+[557640.668391]  [<ffffffffa6a032c2>] ? SyS_write+0x52/0xc0
+[557640.668392]  [<ffffffffa6a165e4>] ? SyS_ioctl+0x74/0x80
+[557640.668395]  [<ffffffffa6dfaebb>] ? system_call_fast_compare_end+0xc/0x9b
+[557761.500154] INFO: task gxsm3:2256 blocked for more than 120 seconds.
+[557761.500161]       Tainted: P           OE   4.9.0-2-amd64 #1
+[557761.500163] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[557761.500166] gxsm3           D    0  2256   1887 0x00000000
+[557761.500171]  ffff9e15d676c000 0000000000000000 ffff9e159ed86080 ffff9e15df3181c0
+[557761.500175]  ffff9e15db42c0c0 ffffb2d706c2fce0 ffffffffa6df6233 0000000100000000
+[557761.500179]  0000000000000000 ffff9e15df3181c0 0000000100000000 ffff9e159ed86080
+[557761.500182] Call Trace:
+[557761.500195]  [<ffffffffa6df6233>] ? __schedule+0x233/0x6d0
+[557761.500199]  [<ffffffffa6df6702>] ? schedule+0x32/0x80
+[557761.500202]  [<ffffffffa6df9ad3>] ? schedule_timeout+0x243/0x310
+[557761.500205]  [<ffffffffa6df85f7>] ? __down+0x77/0xc0
+[557761.500210]  [<ffffffffa68c0632>] ? up+0x12/0x60
+[557761.500213]  [<ffffffffa68c060b>] ? down+0x3b/0x50
+[557761.500220]  [<ffffffffc13fa5ee>] ? sranger_mk2_write+0x6e/0xb5f [usb_sranger_mk23]
+[557761.500226]  [<ffffffffa69b3871>] ? handle_mm_fault+0xf81/0x13b0
+[557761.500230]  [<ffffffffa6a1600f>] ? do_vfs_ioctl+0x9f/0x600
+[557761.500234]  [<ffffffffa6a01ee0>] ? vfs_write+0xb0/0x190
+[557761.500237]  [<ffffffffa6a032c2>] ? SyS_write+0x52/0xc0
+[557761.500239]  [<ffffffffa6a165cd>] ? SyS_ioctl+0x5d/0x80
+[557761.500243]  [<ffffffffa6dfaebb>] ? system_call_fast_compare_end+0xc/0x9b
+[557761.500247] INFO: task gxsm3:8242 blocked for more than 120 seconds.
+[557761.500250]       Tainted: P           OE   4.9.0-2-amd64 #1
+[557761.500251] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[557761.500253] gxsm3           D    0  8242   1887 0x00000000
+[557761.500256]  ffff9e15d676c000 0000000000000000 ffff9e123e053100 ffff9e15df3581c0
+[557761.500260]  ffff9e15db432100 ffffb2d70fe97ce0 ffffffffa6df6233 000000000000062d
+[557761.500263]  0000000000000037 ffff9e15df3581c0 ffffffffc0406e62 ffff9e123e053100
+[557761.500267] Call Trace:
+[557761.500271]  [<ffffffffa6df6233>] ? __schedule+0x233/0x6d0
+[557761.500303]  [<ffffffffc0406e62>] ? ext4_da_write_end+0x142/0x2c0 [ext4]
+[557761.500307]  [<ffffffffa6df6702>] ? schedule+0x32/0x80
+[557761.500309]  [<ffffffffa6df9ad3>] ? schedule_timeout+0x243/0x310
+[557761.500312]  [<ffffffffa6df85f7>] ? __down+0x77/0xc0
+[557761.500319]  [<ffffffffa6a46a00>] ? inotify_handle_event+0xa0/0x150
+[557761.500322]  [<ffffffffa68c0632>] ? up+0x12/0x60
+[557761.500325]  [<ffffffffa68c060b>] ? down+0x3b/0x50
+[557761.500329]  [<ffffffffc13fa5ee>] ? sranger_mk2_write+0x6e/0xb5f [usb_sranger_mk23]
+[557761.500331]  [<ffffffffa6b59698>] ? strncpy_from_user+0x48/0x160
+[557761.500334]  [<ffffffffa6a072dd>] ? cp_new_stat+0x14d/0x180
+[557761.500336]  [<ffffffffa6a1600f>] ? do_vfs_ioctl+0x9f/0x600
+[557761.500339]  [<ffffffffa6a01ee0>] ? vfs_write+0xb0/0x190
+[557761.500342]  [<ffffffffa6a032c2>] ? SyS_write+0x52/0xc0
+[557761.500344]  [<ffffffffa6a165cd>] ? SyS_ioctl+0x5d/0x80
+[557761.500347]  [<ffffffffa6dfaebb>] ? system_call_fast_compare_end+0xc/0x9b
+[557761.500353] INFO: task python:2498 blocked for more than 120 seconds.
+[557761.500355]       Tainted: P           OE   4.9.0-2-amd64 #1
+[557761.500357] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[557761.500358] python          D    0  2498   2497 0x00000000
+[557761.500361]  ffff9e15d651c000 0000000000000000 ffff9e15af228140 ffff9e15df3581c0
+[557761.500364]  ffff9e15db432100 ffffb2d70670fce0 ffffffffa6df6233 00000000bf5f157b
+[557761.500367]  00000000bf5f157b ffff9e15df3581c0 ffffffffa6a1a408 ffff9e15af228140
+[557761.500371] Call Trace:
+[557761.500375]  [<ffffffffa6df6233>] ? __schedule+0x233/0x6d0
+[557761.500378]  [<ffffffffa6a1a408>] ? dput+0xc8/0x250
+[557761.500382]  [<ffffffffa6df6702>] ? schedule+0x32/0x80
+[557761.500384]  [<ffffffffa6df9ad3>] ? schedule_timeout+0x243/0x310
+[557761.500388]  [<ffffffffa6a10dde>] ? path_openat+0x74e/0x1410
+[557761.500390]  [<ffffffffa6df85f7>] ? __down+0x77/0xc0
+[557761.500394]  [<ffffffffa68c0632>] ? up+0x12/0x60
+[557761.500397]  [<ffffffffa68c060b>] ? down+0x3b/0x50
+[557761.500400]  [<ffffffffc13fa5ee>] ? sranger_mk2_write+0x6e/0xb5f [usb_sranger_mk23]
+[557761.500402]  [<ffffffffa6a072dd>] ? cp_new_stat+0x14d/0x180
+[557761.500404]  [<ffffffffa6a1600f>] ? do_vfs_ioctl+0x9f/0x600
+[557761.500407]  [<ffffffffa6a01ee0>] ? vfs_write+0xb0/0x190
+[557761.500410]  [<ffffffffa6a032c2>] ? SyS_write+0x52/0xc0
+[557761.500412]  [<ffffffffa6a165e4>] ? SyS_ioctl+0x74/0x80
+[557761.500414]  [<ffffffffa6dfaebb>] ? system_call_fast_compare_end+0xc/0x9b
+[557882.332140] INFO: task gxsm3:2256 blocked for more than 120 seconds.
+[557882.332146]       Tainted: P           OE   4.9.0-2-amd64 #1
+[557882.332148] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[557882.332151] gxsm3           D    0  2256   1887 0x00000000
+[557882.332156]  ffff9e15d676c000 0000000000000000 ffff9e159ed86080 ffff9e15df3181c0
+[557882.332160]  ffff9e15db42c0c0 ffffb2d706c2fce0 ffffffffa6df6233 0000000100000000
+[557882.332164]  0000000000000000 ffff9e15df3181c0 0000000100000000 ffff9e159ed86080
+[557882.332167] Call Trace:
+[557882.332179]  [<ffffffffa6df6233>] ? __schedule+0x233/0x6d0
+[557882.332183]  [<ffffffffa6df6702>] ? schedule+0x32/0x80
+[557882.332186]  [<ffffffffa6df9ad3>] ? schedule_timeout+0x243/0x310
+[557882.332189]  [<ffffffffa6df85f7>] ? __down+0x77/0xc0
+[557882.332194]  [<ffffffffa68c0632>] ? up+0x12/0x60
+[557882.332197]  [<ffffffffa68c060b>] ? down+0x3b/0x50
+[557882.332204]  [<ffffffffc13fa5ee>] ? sranger_mk2_write+0x6e/0xb5f [usb_sranger_mk23]
+[557882.332211]  [<ffffffffa69b3871>] ? handle_mm_fault+0xf81/0x13b0
+[557882.332214]  [<ffffffffa6a1600f>] ? do_vfs_ioctl+0x9f/0x600
+[557882.332218]  [<ffffffffa6a01ee0>] ? vfs_write+0xb0/0x190
+[557882.332221]  [<ffffffffa6a032c2>] ? SyS_write+0x52/0xc0
+[557882.332223]  [<ffffffffa6a165cd>] ? SyS_ioctl+0x5d/0x80
+[557882.332227]  [<ffffffffa6dfaebb>] ? system_call_fast_compare_end+0xc/0x9b
+root@ltncafm:/home/percy# killall -9 gxsm3
+root@ltncafm:/home/percy# killall -9 gxsm3
+root@ltncafm:/home/percy# 
+root@ltncafm:/home/percy# 
+root@ltncafm:/home/percy# 

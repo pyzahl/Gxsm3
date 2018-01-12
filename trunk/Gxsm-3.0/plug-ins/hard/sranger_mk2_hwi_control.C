@@ -4396,8 +4396,11 @@ int DSPControl::Probing_exec_ABORT_callback( GtkWidget *widget, DSPControl *dspc
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
 
-        dspc->write_dsp_probe (0, PV_MODE_NONE);
+	dspc->write_dsp_abort_probe (); // force probe abort
+        
+        dspc->write_dsp_probe (0, PV_MODE_NONE); // clear vector code
 
+#if 0
 	dspc->current_auto_flags = dspc->ABORT_auto_flags;
 
 	if (dspc->ABORT_auto_flags & FLAG_AUTO_GLOCK){
@@ -4419,7 +4422,7 @@ int DSPControl::Probing_exec_ABORT_callback( GtkWidget *widget, DSPControl *dspc
 	dspc->probe_trigger_single_shot = 1;
 	dspc->write_dsp_probe (1, PV_MODE_ABORT); // Exec ABORT VP probe now
 	sranger_common_hwi->start_fifo_read (0, 0,0,0,0, NULL,NULL,NULL,NULL);
-
+#endif 
 	return 0;
 }
 

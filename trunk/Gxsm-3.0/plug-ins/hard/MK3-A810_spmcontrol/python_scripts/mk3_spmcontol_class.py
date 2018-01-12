@@ -724,7 +724,7 @@ ii_signal_monitor_p_first = 4
 ii_signal_monitor_first = 4 + num_monitor_signals
 
 i_scan = 14
-fmt_scan = "<llllllllllllllllllllllllllllllllllllllllllLLLLll"
+fmt_scan = "<lllllllllllllllllllllllllllllllllllllllllllLLLLll"
 #               ss rot  npab srcs nxy fs n fm dxny Zo fmz  XYZ
 #	fmt = "<hh hhhh hhhh llll hh  ll l lll hh hh ll lll ll hhhh hh" [38]
 #	fmt = "<hhhhhhhhhhllllhhllllllhhhhlllllllhhhhhh"
@@ -759,6 +759,7 @@ fmt_scan = "<llllllllllllllllllllllllllllllllllllllllllLLLLll"
 	ii_scan_fm_dz0_xy_vecY,
 	ii_scan_z_slope_max,
 	ii_scan_fast_return,
+	ii_scan_xyz_gain,
 	ii_scan_xyz_vecX,
 	ii_scan_xyz_vecY,
 	ii_scan_xyz_vecZ,
@@ -779,7 +780,7 @@ fmt_scan = "<llllllllllllllllllllllllllllllllllllllllllLLLLll"
 	ii_scan_P_src_input3,
 	ii_scan_sstate,
 	ii_scan_pflg
-] = range (0,50)
+] = range (0,51)
 
 i_move = 15
 fmt_move = "<llllllllllll"
@@ -1512,9 +1513,9 @@ class SPMcontrol():
                 if self.start < 2:
                         self.SPM_SCAN_LAST = self.SPM_SCAN
                 self.start = self.start+1
-#                if self.SPM_SCAN != self.SPM_SCAN_LAST:
-#                        print self.SPM_SCAN
-#                        self.check_dsp_scan()
+                if self.SPM_SCAN != self.SPM_SCAN_LAST:
+                        print self.SPM_SCAN
+                        self.check_dsp_scan()
                 self.SPM_SCAN_LAST = self.SPM_SCAN
 		self.SPM_MOVE =  self.readf( sr.fileno(), i_move,  fmt_move)
 		self.PROBE    =  self.readf( sr.fileno(), i_probe,  fmt_probe_read)

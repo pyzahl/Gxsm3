@@ -409,6 +409,7 @@ class DSPControl : public AppBase{
         void conv_dsp_vector ();
 	void read_dsp_vector (int index);
 	void write_dsp_vector (int index);
+	void write_dsp_abort_probe ();
 
  private:
 	SPM_STATEMACHINE dsp_state;

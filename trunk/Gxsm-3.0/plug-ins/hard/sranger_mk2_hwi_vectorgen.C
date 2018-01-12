@@ -1399,3 +1399,8 @@ void DSPControl::read_dsp_vector (int index){
 }
 
 
+void DSPControl::write_dsp_abort_probe (){
+        if (!sranger_common_hwi) return; 
+	sranger_common_hwi->write_dsp_abort_probe ();
+}
+

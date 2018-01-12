@@ -1302,7 +1302,7 @@ void configure_DSP_GP_PINS()
 void main()
 {
         /* setup DSP GP pins 53,54,55 (MK3_Pro JP7) used for external syncing for data scan/probe data clocking */
-        configure_DSP_GP_PINS ();
+        //        configure_DSP_GP_PINS ();
         
 #ifdef USE_PLL_API
 	/* setup PLL */

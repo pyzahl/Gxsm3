@@ -2733,6 +2733,18 @@ void sranger_mk3_hwi_dev::read_dsp_vector (int index, PROBE_VECTOR_GENERIC *__ds
 }
 
 
+void sranger_mk3_hwi_dev::write_dsp_abort_probe () {
+	PROBE_MK3 dsp_probe;
+	dsp_probe.start = 0;
+	dsp_probe.stop  = 1;
+        CONV_32 (dsp_probe.start);
+        CONV_32 (dsp_probe.stop);
+        lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+        sr_write (dsp, &dsp_probe,  (2*2)<<1); 
+        usleep ((useconds_t) (5000) ); // give some time to abort
+}
+
+
 int sranger_mk3_hwi_dev::read_pll_symbols (){
 
 	PI_DEBUG_GP (DBG_L4, "sranger_mk3_hwi_dev::read_pll_symbols\n");
