@@ -367,7 +367,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
                         double x = (double)i/mover_param.MOV_wave_len;
                         for (int k=0; k<channels; ++k){
                                 double xx = x+k*phase;
-                                mover_param.MOV_waveform[i+k] = (short)round(SR_VFAC*amp*(round(xx - floor(xx))));
+                                mover_param.MOV_waveform[i+k] = (short)round(SR_VFAC*pointing*amp*(round(xx - floor(xx))));
                         }
                 }
 		break;
