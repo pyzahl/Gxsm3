@@ -43,7 +43,7 @@
 
 #include "epsfutils.h"
 
-#include "vpdata_read.C"
+#include "vpdata_read.h"
 
 #include "app_view.h"
 
