@@ -1893,13 +1893,23 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                                 vc->EventPlot[l]->RemoveScans ();
                                 // auto decimate
                                 int nn_dec=1;
-                                if (nn > 2*count)
-                                        nn_dec = nn/count;
-                                int num_nn_dec = nn/nn_dec+1;
-                                vc->EventPlot[l]->scan1d->mem2d->Resize (count, num_nn_dec);
+                                int nn_mul=1;
+
+                                int minnn = count < 250 ? 250:count;
+                                if (nn > 2*minnn)
+                                        nn_dec = nn/minnn;
+                                int num_nn = nn/nn_dec+1;
+                                if (count < minnn)
+                                        nn_mul = minnn/count;
+
+                                int num_count = count;
+                                if (num_count < minnn)
+                                        num_count = count*nn_mul+1;
+                                
+                                vc->EventPlot[l]->scan1d->mem2d->Resize (num_count, num_nn);
                                 int i_dec=0;
-                                g_message ("count %d, nn %d, nn_dec %d, num_nn_dec %d", count, nn, nn_dec, num_nn_dec);
-                                for(int i = 0; i < nn && i_dec < num_nn_dec; i+=nn_dec, ++i_dec){
+                                g_message ("num_count %d, nn %d, [Y nn_dec %d, X nn_mul %d] num_nn %d", num_count, nn, nn_dec, nn_mul, num_nn);
+                                for(int i = 0; i < nn && i_dec < num_nn; i+=nn_dec, ++i_dec){
                                         ev = all;
                                         //g_message ("AddScan %d %d", i, i_dec);
                                         vc->EventPlot[l]->AddScan (vc->EventPlot[l]->scan1d, i_dec);
@@ -1933,17 +1943,21 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                                                                 }
 
                                                         value /= nn_sum;
+
                                                         if (value > 100.) // patch for ch possible mismatch info -- uncomment later!
                                                                 value *= 4.65675e-09 / 4.44674e-05;
+
                                                         //g_message ("SetPoint: %d %g %d", ecount, value, i_dec);
-                                                        if (ecount < count){
-                                                                vc->EventPlot[l]->SetPoint (ecount, value, i_dec);
-                                                                vc->EventPlot[l]->scan1d->mem2d->data->SetXLookup (ecount, proj_coord);
-                                                                vc->EventPlot[l]->scan1d->mem2d->data->SetYLookup (i_dec, pe->get (i, xi));
-                                                        } else {
-                                                                g_message ("count out of range: %d %d", ecount, count);
+                                                        for (int pm=0; pm < nn_mul; ++pm){
+                                                                if (ecount < num_count){
+                                                                        vc->EventPlot[l]->SetPoint (ecount, value, i_dec);
+                                                                        vc->EventPlot[l]->scan1d->mem2d->data->SetXLookup (ecount, proj_coord);
+                                                                        vc->EventPlot[l]->scan1d->mem2d->data->SetYLookup (i_dec, pe->get (i, xi));
+                                                                } else {
+                                                                        g_message ("count out of range: %d %d", ecount, num_count);
+                                                                }
+                                                                ++ecount;
                                                         }
-                                                        ++ecount;
                                                 }
                                                 ev = g_slist_next (ev);
                                         }
