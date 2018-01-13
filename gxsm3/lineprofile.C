@@ -798,15 +798,15 @@ double LineProfile1D::GetPoint(int n, int s) {
 	if (scan1d) return scan1d->mem2d->GetDataPkt (n,s); 
 	else return 0.; 
 }
-void LineProfile1D::SetPoint(int n, double y, int s) { if (scan1d) scan1d->mem2d->PutDataPkt (y, n, s); }
+void LineProfile1D::SetPoint(int n, double y, int s) { if (scan1d) scan1d->mem2d->data->ZSave (y, n, s); }
 void LineProfile1D::SetPoint(int n, double x, double y, int s) { 
 	if (scan1d) { 
 		scan1d->mem2d->PutDataPkt (y, n, s);
 		scan1d->mem2d->data->SetXLookup (n, x);   
 	} 
 }
-void LineProfile1D::AddPoint(int n, double a, int s) { if (scan1d) scan1d->mem2d->data->Zadd (a, n, s); }
-void LineProfile1D::MulPoint(int n, double f, int s) { if (scan1d) scan1d->mem2d->data->Zmul (f, n, s); }
+void LineProfile1D::AddPoint(int n, double a, int s) { if (scan1d) scan1d->mem2d->data->ZaddSave (a, n, s); }
+void LineProfile1D::MulPoint(int n, double f, int s) { if (scan1d) scan1d->mem2d->data->ZmulSave (f, n, s); }
 
 
 // END

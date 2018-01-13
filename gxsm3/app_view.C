@@ -50,6 +50,7 @@
 #include "app_vobj.h"
 #include "app_vinfo.h"
 #include "app_view.h"
+#include "app_vpdata_view.h"
 
 #include <sstream>
 using namespace std;
@@ -588,7 +589,8 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	}
 
 	RedLine  = NULL;
-	EventPlot = NULL;
+        for (int l=0; l<4; ++l) EventPlot[l] = NULL;
+	EventGraphView = NULL;
 	v_trace  = NULL;
 	AddObjFkt = ViewControl::view_tool_addrectangle;
 	ZoomQFkt = NULL;
@@ -849,6 +851,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
         pe_bp->grid_add_label ("Type");
         pe_bp->grid_add_widget (active_event_list = gtk_combo_box_text_new ());
+ 	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_list), 0);
         pe_bp->new_line ();
 
         ii=0;
@@ -889,25 +892,27 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         pe_bp->new_grid_with_frame (N_("Plot & Selection Control"), 1, 1);
         pe_bp->grid_add_label ("X");
         pe_bp->grid_add_widget (active_event_xchan = gtk_combo_box_text_new ());
+	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_xchan), "XCH-index", "Index");
+ 	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_xchan), 0);
         pe_bp->new_line ();
 
-        pe_bp->grid_add_label ("Y");
-        pe_bp->grid_add_widget (active_event_ychan = gtk_combo_box_text_new ());
-        pe_bp->new_line ();
-
+        for (int l=0; l<4; ++l){
+                gchar *ynl=g_strdup_printf("Y%d",l+1);
+                pe_bp->grid_add_label (ynl);
+                g_free (ynl);
+                pe_bp->grid_add_widget (active_event_ychan[l] = gtk_combo_box_text_new ());
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_ychan[l]), "YCH-index", "Index");
+                gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ychan[l]), 0);
+                pe_bp->new_line ();
+        }
+        
         pe_bp->grid_add_label ("YN");
         pe_bp->grid_add_widget (active_event_ynchan = gtk_combo_box_text_new ());
         pe_bp->new_line ();
 
-//	gtk_combo_box_text_append (GTK_COMBO_BOX (active_event_list), "---");
-	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_xchan), "XCH-index", "Index");
-	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_ychan), "YCH-index", "Index");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_ynchan), "YNCH-index", "Index");
 	active_event_num_channels = 0;
 	active_event_num_events = 0;
- 	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_list), 0);
- 	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_xchan), 0);
- 	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ychan), 0);
  	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ynchan), 0);
 
         pe_bp->grid_add_label ("Plot");
@@ -1073,10 +1078,13 @@ ViewControl::~ViewControl (){
 	if(RedLine)
 		delete RedLine;
 
-	if (EventPlot)
-		delete EventPlot;
+        for (int l=0; l<4; ++l)
+                if (EventPlot[l])
+                        delete EventPlot[l];
 
-	
+        if (EventGraphView)
+                delete EventGraphView;
+        
 	remove_trace ();
 
 	RemoveEventObjects ();
@@ -1542,7 +1550,7 @@ void ViewControl::SetEventLabels(int mode){
 }
 
 void ViewControl::update_event_panel (ScanEvent *se){
-	gint xi,yi,yni;
+	gint xi,yi[4],yni;
 
 	if (!se){
 		active_event = NULL; 
@@ -1554,7 +1562,8 @@ void ViewControl::update_event_panel (ScanEvent *se){
         //        g_message ("ViewControl::update_event_panel");
         
 	xi = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_xchan));
-	yi = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_ychan));
+        for (int l=0; l<4; ++l)
+                yi[l] = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_ychan[l]));
 	yni = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_ynchan));
 
 	while (active_event_num_events)
@@ -1562,7 +1571,8 @@ void ViewControl::update_event_panel (ScanEvent *se){
 
 	while (active_event_num_channels){
 		gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (active_event_xchan), active_event_num_channels);
-		gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (active_event_ychan), active_event_num_channels);
+                for (int l=0; l<4; ++l)
+                        gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (active_event_ychan[l]), active_event_num_channels);
 		gtk_combo_box_text_remove (GTK_COMBO_BOX_TEXT (active_event_ynchan), active_event_num_channels);
 		--active_event_num_channels;
 	}
@@ -1606,7 +1616,8 @@ void ViewControl::update_event_panel (ScanEvent *se){
 		for (guint i=0; i<active_event_num_channels; ++i){
 			gchar *txt = g_strdup_printf ("%s [%s]", pe->get_label (i), pe->get_unit_symbol (i)); 
 			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_xchan), "xchan", txt);	
-			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_ychan), "ychan", txt);	
+                        for (int l=0; l<4; ++l)
+                                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_ychan[l]), "ychan", txt);	
 			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (active_event_ynchan), "ynchan", txt);	
 			g_free (txt);
 		}
@@ -1634,7 +1645,8 @@ void ViewControl::update_event_panel (ScanEvent *se){
 	}
 
 	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_xchan), xi);
-	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ychan), yi);
+        for (int l=0; l<4; ++l)
+                gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ychan[l]), yi[l]);
 	gtk_combo_box_set_active (GTK_COMBO_BOX (active_event_ynchan), yni);
 
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (tog_plot)))
@@ -1652,16 +1664,16 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 
 	if (ee->description_id () == 'P'){
 		ProbeEntry* pe = (ProbeEntry*) ee;
-		gint xi,yi,yni,nn;
+		gint xi,yi[4],yni,nn;
 		double xmin, xmax, x;
 
 		nn = pe->get_num_sets ();
 		xi = gtk_combo_box_get_active (GTK_COMBO_BOX (vc->active_event_xchan)) - 1;
-		yi = gtk_combo_box_get_active (GTK_COMBO_BOX (vc->active_event_ychan)) - 1;
+                for (int l=0; l<4; ++l)
+                        yi[l] = gtk_combo_box_get_active (GTK_COMBO_BOX (vc->active_event_ychan[l])) - 1;
 		yni = gtk_combo_box_get_active (GTK_COMBO_BOX (vc->active_event_ynchan)) - 1;
 
 		UnitObj *UXaxis = new UnitObj(pe->get_unit_symbol (xi), " ", "g", pe->get_label (xi));
-		UnitObj *UYaxis = new UnitObj(pe->get_unit_symbol (yi), " ", "g", pe->get_label (yi));
 		
 		// find min and max X limit
 		xmin = xmax = pe->get (0, xi);
@@ -1671,242 +1683,282 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 			if (x < xmin) xmin = x;
 		}
 
-		if (!vc->EventPlot){
-			gchar   *title  = g_strdup_printf ("Probe Event");
-			vc->EventPlot = new ProfileControl (title, nn, UXaxis, UYaxis, xmin, xmax, "EventPlot");
-			g_free (title);
-		} else {
-			vc->EventPlot->SetXrange (xmin, xmax);
-                        //			vc->EventPlot->SetXlabel (pe->get_label (xi));
-                        //			vc->EventPlot->SetYlabel (pe->get_label (yi));
-			vc->EventPlot->SetXlabel (UXaxis->MakeLongLabel ());
-			vc->EventPlot->SetYlabel (UYaxis->MakeLongLabel ());
-//			if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (vc->tog_average))){
-			if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 1){
-				gchar* txt = g_strdup_printf ("Average of all probe events shown: %s", pe->get_label (yi));
-				vc->EventPlot->SetTitle (txt);
-				g_free (txt);
-			}else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 2){
-				gchar* txt = g_strdup_printf ("All probe events shown: %s", pe->get_label (yi));
-				vc->EventPlot->SetTitle (txt);
-				g_free (txt);
-			}else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3){
-				gchar* txt = g_strdup_printf ("All probe projected on X: %s", pe->get_label (yi));
-				vc->EventPlot->SetTitle (txt);
-				g_free (txt);
-			}else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 4){
-				gchar* txt = g_strdup_printf ("All probe projected on Y: %s", pe->get_label (yi));
-				vc->EventPlot->SetTitle (txt);
-				g_free (txt);
-			}else
-				vc->EventPlot->SetTitle (pe->get_label (yi));
-		}
-		
-//		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (vc->tog_average))){
-
-                // cleanup
-                if (!vc->EventPlot->scan1d->view){
-                        delete vc->EventPlot->scan1d->view;
-                        vc->EventPlot->scan1d->view = NULL;
-                }
-
-                double eps=1e-2;
-                vc->EventPlot->SetData_dz (1.);
+                int num_plots=1;
+                for (int l=1; l<4; ++l)
+                        if (yi[l] > 0)
+                                num_plots++;
                 
-                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 0){ // active
-			vc->EventPlot->RemoveScans ();
-			vc->EventPlot->scan1d->mem2d->Resize (nn, 1);
-			vc->EventPlot->AddScan (vc->EventPlot->scan1d, 0);
-                        if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
-                                for(int i = 0; i < nn; i++)
-                                        vc->EventPlot->SetPoint (i, pe->get (i, xi), pe->get (i, yi));
+                if (!vc->EventGraphView)
+                        vc->EventGraphView = new app_vpdata_view (1, num_plots);
+                else
+                        vc->EventGraphView->init_vpdata_view (1, num_plots);
+
+                for (int l=0; l<num_plots; ++l){
+                        UnitObj *UYaxis = new UnitObj(pe->get_unit_symbol (yi[l]), " ", "g", pe->get_label (yi[l]));
+		
+                        gchar   *title = NULL;
+                        if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 1)
+                                title = g_strdup_printf ("Average of all probe events shown: %s", pe->get_label (yi[l]));
+                        else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 2)
+                                title = g_strdup_printf ("All probe events shown: %s", pe->get_label (yi[l]));
+                        else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3)
+                                title = g_strdup_printf ("All probe projected on X: %s", pe->get_label (yi[l]));
+                        else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 4)
+                                title = g_strdup_printf ("All probe projected on Y: %s", pe->get_label (yi[l]));
                         else
-                                for(int i = 0; i < nn; i++){
-                                        double q = pe->get (i, yni)/pe->get (i, xi);
-                                        if (fabs(pe->get (i, xi)) < eps || fabs (q) < eps)
-                                                q=1.;
-                                        vc->EventPlot->SetPoint (i, pe->get (i, xi), pe->get (i, yi)/q);
-                                }
-		} else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 1){ // visible
-			vc->EventPlot->RemoveScans ();
-			vc->EventPlot->scan1d->mem2d->Resize (nn, 1);
-			vc->EventPlot->AddScan (vc->EventPlot->scan1d, 0);
-			GSList* all = vc->scan->mem2d->ReportScanEvents (NULL, NULL, vc->CursorXYVt, 0., 0);
-			GSList* ev = all;
-			int i=0;
-			int count=0;
-			while (ev){
-				ScanEvent *sen = (ScanEvent*) ev->data;
-				if (sen != vc->active_event){
-					EventEntry *een = (EventEntry*) sen->event_list->data;
-					if (een->description_id () == 'P'){
-						ProbeEntry* pen = (ProbeEntry*) een;
-						if (++i > vc->MaxNumberEvents || ((ScanEvent*)(ev->data))->distance (vc->CursorXYVt) > vc->CursorRadius)
-							break;
-						
-						
-                                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
-                                                        for(int i = 0; i < nn; i++)
-                                                                vc->EventPlot->AddPoint (i, pen->get (i, yi), count);
-						else
-                                                        for(int i = 0; i < nn; i++){
-                                                                double q = pen->get (i, yni)/pen->get (i, xi);
-                                                                if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
-                                                                        q=1.;
-                                                                vc->EventPlot->AddPoint (i, pen->get (i, yi)/q, count);
-                                                        }
-                                                        
-						++count;
-					}
-				}
-				ev = g_slist_next (ev);
-			}
-			g_slist_free (all);
-			if (count > 0)
-			        for(int i = 0; i < nn; i++)
-				        vc->EventPlot->MulPoint (i, 1./((double)count));
+                                title = g_strdup (pe->get_label (yi[l]));
 
-		} else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 2){ // all
-			GSList* all = vc->scan->mem2d->ReportScanEventsXasc ();
-			GSList* ev = all;
-			int i=0;
-			int count=0;
-			while (ev){
-				ScanEvent *sen = (ScanEvent*) ev->data;
-				if (sen != vc->active_event){
-					EventEntry *een = (EventEntry*) sen->event_list->data;
-					if (een->description_id () == 'P'){
-						if (++i > vc->MaxNumberEvents || ((ScanEvent*)(ev->data))->distance (vc->CursorXYVt) > vc->CursorRadius)
-							break;
-						count++;
-					}
-				}
-				ev = g_slist_next (ev);
-			}
-			vc->EventPlot->RemoveScans ();
-			vc->EventPlot->scan1d->mem2d->Resize (nn, count);
-			vc->EventPlot->scan1d->mem2d->data->MkYLookup (1, count);
-			count=0;
-			i=0;
-			ev = all;
-			while (ev){
-				ScanEvent *sen = (ScanEvent*) ev->data;
-				if (sen != vc->active_event){
-					EventEntry *een = (EventEntry*) sen->event_list->data;
-					if (een->description_id () == 'P'){
-						ProbeEntry* pen = (ProbeEntry*) een;
-						if (++i > vc->MaxNumberEvents || ((ScanEvent*)(ev->data))->distance (vc->CursorXYVt) > vc->CursorRadius)
-							break;
-						
-						vc->EventPlot->AddScan (vc->EventPlot->scan1d, count);
+                        int count = 1;
+                        vc->EventGraphView->vpdata_add_pc (vc->EventPlot[l], title, nn,
+                                                           UXaxis->MakeLongLabel (), UXaxis,
+                                                           UYaxis->MakeLongLabel (), UYaxis,
+                                                           xmin, xmax,
+                                                           0, count, true,
+                                                           1, l, 1, num_plots);
+                        g_free (title);
 
-                                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
-                                                        for(int i = 0; i < nn; i++)
-                                                                vc->EventPlot->SetPoint (i, pen->get (i, yi), count);
-                                                else
-                                                        for(int i = 0; i < nn; i++){
-                                                                double q = pen->get (i, yni)/pen->get (i, xi);
-                                                                if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
-                                                                        q=1.;
-                                                                vc->EventPlot->SetPoint (i, pen->get (i, yi)/q, count);
-                                                        }
-						
-                                                ++count;
-					}
-				}
-				ev = g_slist_next (ev);
-			}
-			g_slist_free (all);
-		} else if (
-                           gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3
-                           || gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 4
-                            ){ // project on X or Y
-			GSList* all = gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3 ?
-                                vc->scan->mem2d->ReportScanEventsXasc () : vc->scan->mem2d->ReportScanEventsYasc ();
-			GSList* ev = all;
-			int count=0;
-			while (ev){
-				ScanEvent *sen = (ScanEvent*) ev->data;
-                                EventEntry *een = (EventEntry*) sen->event_list->data;
-                                if (een->description_id () == 'P')
-                                        count++;
-				ev = g_slist_next (ev);
-			}
-			vc->EventPlot->RemoveScans ();
-                        // auto decimate
-                        int nn_dec=1;
-                        if (nn > 2*count)
-                                nn_dec = nn/count;
-                        int num_nn_dec = nn/nn_dec+1;
-			vc->EventPlot->scan1d->mem2d->Resize (count, num_nn_dec);
-                        int i_dec=0;
-                        g_message ("count %d, nn %d, nn_dec %d, num_nn_dec %d", count, nn, nn_dec, num_nn_dec);
-                        for(int i = 0; i < nn && i_dec < num_nn_dec; i+=nn_dec, ++i_dec){
-                                ev = all;
-                                //g_message ("AddScan %d %d", i, i_dec);
-                                vc->EventPlot->AddScan (vc->EventPlot->scan1d, i_dec);
-                                int ecount=0;
+#if 0
+                        if (!vc->EventPlot[l]){
+                                gchar   *title  = g_strdup_printf ("ProbeEventY%d",l);
+                                vc->EventPlot[l] = new ProfileControl (title, nn, UXaxis, UYaxis, xmin, xmax, title);
+                                g_free (title);
+                        } else {
+                                vc->EventPlot[l]->SetXrange (xmin, xmax);
+                                //			vc->EventPlot->SetXlabel (pe->get_label (xi));
+                                //			vc->EventPlot->SetYlabel (pe->get_label (yi[0]));
+                                vc->EventPlot[l]->SetXlabel (UXaxis->MakeLongLabel ());
+                                vc->EventPlot[l]->SetYlabel (UYaxis->MakeLongLabel ());
+                                //			if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (vc->tog_average))){
+                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 1){
+                                        gchar* txt = g_strdup_printf ("Average of all probe events shown: %s", pe->get_label (yi[l]));
+                                        vc->EventPlot[l]->SetTitle (txt);
+                                        g_free (txt);
+                                }else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 2){
+                                        gchar* txt = g_strdup_printf ("All probe events shown: %s", pe->get_label (yi[l]));
+                                        vc->EventPlot[l]->SetTitle (txt);
+                                        g_free (txt);
+                                }else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3){
+                                        gchar* txt = g_strdup_printf ("All probe projected on X: %s", pe->get_label (yi[l]));
+                                        vc->EventPlot[l]->SetTitle (txt);
+                                        g_free (txt);
+                                }else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 4){
+                                        gchar* txt = g_strdup_printf ("All probe projected on Y: %s", pe->get_label (yi[l]));
+                                        vc->EventPlot[l]->SetTitle (txt);
+                                        g_free (txt);
+                                }else
+                                        vc->EventPlot[l]->SetTitle (pe->get_label (yi[l]));
+                        }
+		
+                        //		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (vc->tog_average))){
+#endif
+                        // cleanup
+                        if (!vc->EventPlot[l]->scan1d->view){
+                                delete vc->EventPlot[l]->scan1d->view;
+                                vc->EventPlot[l]->scan1d->view = NULL;
+                        }
+
+                        double eps=1e-2;
+                        vc->EventPlot[l]->SetData_dz (1.);
+                
+                        if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 0){ // active
+                                vc->EventPlot[l]->RemoveScans ();
+                                vc->EventPlot[l]->scan1d->mem2d->Resize (nn, 1);
+                                vc->EventPlot[l]->AddScan (vc->EventPlot[l]->scan1d, 0);
+                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
+                                        for(int i = 0; i < nn; i++)
+                                                vc->EventPlot[l]->SetPoint (i, pe->get (i, xi), pe->get (i, yi[l]));
+                                else
+                                        for(int i = 0; i < nn; i++){
+                                                double q = pe->get (i, yni)/pe->get (i, xi);
+                                                if (fabs(pe->get (i, xi)) < eps || fabs (q) < eps)
+                                                        q=1.;
+                                                vc->EventPlot[l]->SetPoint (i, pe->get (i, xi), pe->get (i, yi[l])/q);
+                                        }
+                        } else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 1){ // visible
+                                vc->EventPlot[l]->RemoveScans ();
+                                vc->EventPlot[l]->scan1d->mem2d->Resize (nn, 1);
+                                vc->EventPlot[l]->AddScan (vc->EventPlot[l]->scan1d, 0);
+
+
+                                
+                                
+
+                                GSList* all = vc->scan->mem2d->ReportScanEvents (NULL, NULL, vc->CursorXYVt, 0., 0);
+                                GSList* ev = all;
+                                int i=0;
+                                int count=0;
                                 while (ev){
                                         ScanEvent *sen = (ScanEvent*) ev->data;
-                                        double px, py, proj_coord;
-                                        sen->get_position (px, py);
-                                        if (gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3)
-                                                proj_coord = px;
-                                        else
-                                                proj_coord = py;
-                                        
-                                        //g_message ("ScanEvenPos: %g %g", px,py);
-
-                                        EventEntry *een = (EventEntry*) sen->event_list->data;
-                                        if (een->description_id () == 'P'){
-                                                ProbeEntry* pen = (ProbeEntry*) een;
-                                                double value = 0.;
-                                                int nn_sum=0;
-
-                                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
-                                                        for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum)
-                                                                value += pen->get (ii, yi);
-						else
-                                                        for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum){
-                                                                double q = pen->get (i, yni)/pen->get (i, xi);
-                                                                if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
-                                                                        q=1.;
-                                                                value += pen->get (ii, yi)/q;
-                                                        }
-
-                                                value /= nn_sum;
-                                                if (value > 100.) // patch for ch possible mismatch info -- uncomment later!
-                                                        value *= 4.65675e-09 / 4.44674e-05;
-                                                //g_message ("SetPoint: %d %g %d", ecount, value, i_dec);
-                                                if (ecount < count){
-                                                        vc->EventPlot->SetPoint (ecount, value, i_dec);
-                                                        vc->EventPlot->scan1d->mem2d->data->SetXLookup (ecount, proj_coord);
-                                                        vc->EventPlot->scan1d->mem2d->data->SetYLookup (i_dec, pe->get (i, xi));
-                                                } else {
-                                                        g_message ("count out of range: %d %d", ecount, count);
+                                        if (sen != vc->active_event){
+                                                EventEntry *een = (EventEntry*) sen->event_list->data;
+                                                if (een->description_id () == 'P'){
+                                                        ProbeEntry* pen = (ProbeEntry*) een;
+                                                        if (++i > vc->MaxNumberEvents || ((ScanEvent*)(ev->data))->distance (vc->CursorXYVt) > vc->CursorRadius)
+                                                                break;
+						
+						
+                                                        if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
+                                                                for(int i = 0; i < nn; i++)
+                                                                        vc->EventPlot[l]->AddPoint (i, pen->get (i, yi[l]), count);
+                                                        else
+                                                                for(int i = 0; i < nn; i++){
+                                                                        double q = pen->get (i, yni)/pen->get (i, xi);
+                                                                        if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
+                                                                                q=1.;
+                                                                        vc->EventPlot[l]->AddPoint (i, pen->get (i, yi[l])/q, count);
+                                                                }
+                                                        
+                                                        ++count;
                                                 }
-                                                ++ecount;
-					}
+                                        }
                                         ev = g_slist_next (ev);
-				}
-			}
-                        if (!vc->EventPlot->scan1d->view){
-                                vc->EventPlot->scan1d->view = new Grey2D (vc->EventPlot->scan1d);
-                                vc->EventPlot->scan1d->SetVM (SCAN_V_DIRECT);
-                                //vc->EventPlot->scan1d->AutoDisplay (0.,1.,1,0.05);
-                        }
-			g_slist_free (all);
-		}
-		else{
-			for(int i = 0; i < nn; i++)
-				vc->EventPlot->SetPoint (i, pe->get (i, xi), pe->get (i, yi));
-		}
+                                }
+                                g_slist_free (all);
+                                if (count > 0)
+                                        for(int i = 0; i < nn; i++)
+                                                vc->EventPlot[l]->MulPoint (i, 1./((double)count));
 
-                // CHECK --- OBSOLETE ????
-                //		vc->EventPlot->drawScans ();
-                vc->EventPlot->UpdateArea ();
-                //		vc->EventPlot->show ();
-	}
+                        } else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 2){ // all
+                                GSList* all = vc->scan->mem2d->ReportScanEventsXasc ();
+                                GSList* ev = all;
+                                int i=0;
+                                int count=0;
+                                while (ev){
+                                        ScanEvent *sen = (ScanEvent*) ev->data;
+                                        if (sen != vc->active_event){
+                                                EventEntry *een = (EventEntry*) sen->event_list->data;
+                                                if (een->description_id () == 'P'){
+                                                        if (++i > vc->MaxNumberEvents || ((ScanEvent*)(ev->data))->distance (vc->CursorXYVt) > vc->CursorRadius)
+                                                                break;
+                                                        count++;
+                                                }
+                                        }
+                                        ev = g_slist_next (ev);
+                                }
+                                vc->EventPlot[l]->RemoveScans ();
+                                vc->EventPlot[l]->scan1d->mem2d->Resize (nn, count);
+                                vc->EventPlot[l]->scan1d->mem2d->data->MkYLookup (1, count);
+                                count=0;
+                                i=0;
+                                ev = all;
+                                while (ev){
+                                        ScanEvent *sen = (ScanEvent*) ev->data;
+                                        if (sen != vc->active_event){
+                                                EventEntry *een = (EventEntry*) sen->event_list->data;
+                                                if (een->description_id () == 'P'){
+                                                        ProbeEntry* pen = (ProbeEntry*) een;
+                                                        if (++i > vc->MaxNumberEvents || ((ScanEvent*)(ev->data))->distance (vc->CursorXYVt) > vc->CursorRadius)
+                                                                break;
+						
+                                                        vc->EventPlot[l]->AddScan (vc->EventPlot[l]->scan1d, count);
+
+                                                        if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
+                                                                for(int i = 0; i < nn; i++)
+                                                                        vc->EventPlot[l]->SetPoint (i, pen->get (i, yi[l]), count);
+                                                        else
+                                                                for(int i = 0; i < nn; i++){
+                                                                        double q = pen->get (i, yni)/pen->get (i, xi);
+                                                                        if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
+                                                                                q=1.;
+                                                                        vc->EventPlot[l]->SetPoint (i, pen->get (i, yi[l])/q, count);
+                                                                }
+						
+                                                        ++count;
+                                                }
+                                        }
+                                        ev = g_slist_next (ev);
+                                }
+                                g_slist_free (all);
+                        } else if (
+                                   gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3
+                                   || gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 4
+                                   ){ // project on X or Y
+                                GSList* all = gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3 ?
+                                        vc->scan->mem2d->ReportScanEventsXasc () : vc->scan->mem2d->ReportScanEventsYasc ();
+                                GSList* ev = all;
+                                int count=0;
+                                while (ev){
+                                        ScanEvent *sen = (ScanEvent*) ev->data;
+                                        EventEntry *een = (EventEntry*) sen->event_list->data;
+                                        if (een->description_id () == 'P')
+                                                count++;
+                                        ev = g_slist_next (ev);
+                                }
+                                vc->EventPlot[l]->RemoveScans ();
+                                // auto decimate
+                                int nn_dec=1;
+                                if (nn > 2*count)
+                                        nn_dec = nn/count;
+                                int num_nn_dec = nn/nn_dec+1;
+                                vc->EventPlot[l]->scan1d->mem2d->Resize (count, num_nn_dec);
+                                int i_dec=0;
+                                g_message ("count %d, nn %d, nn_dec %d, num_nn_dec %d", count, nn, nn_dec, num_nn_dec);
+                                for(int i = 0; i < nn && i_dec < num_nn_dec; i+=nn_dec, ++i_dec){
+                                        ev = all;
+                                        //g_message ("AddScan %d %d", i, i_dec);
+                                        vc->EventPlot[l]->AddScan (vc->EventPlot[l]->scan1d, i_dec);
+                                        int ecount=0;
+                                        while (ev){
+                                                ScanEvent *sen = (ScanEvent*) ev->data;
+                                                double px, py, proj_coord;
+                                                sen->get_position (px, py);
+                                                if (gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 3)
+                                                        proj_coord = px;
+                                                else
+                                                        proj_coord = py;
+                                        
+                                                //g_message ("ScanEvenPos: %g %g", px,py);
+
+                                                EventEntry *een = (EventEntry*) sen->event_list->data;
+                                                if (een->description_id () == 'P'){
+                                                        ProbeEntry* pen = (ProbeEntry*) een;
+                                                        double value = 0.;
+                                                        int nn_sum=0;
+
+                                                        if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
+                                                                for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum)
+                                                                        value += pen->get (ii, yi[l]);
+                                                        else
+                                                                for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum){
+                                                                        double q = pen->get (i, yni)/pen->get (i, xi);
+                                                                        if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
+                                                                                q=1.;
+                                                                        value += pen->get (ii, yi[l])/q;
+                                                                }
+
+                                                        value /= nn_sum;
+                                                        if (value > 100.) // patch for ch possible mismatch info -- uncomment later!
+                                                                value *= 4.65675e-09 / 4.44674e-05;
+                                                        //g_message ("SetPoint: %d %g %d", ecount, value, i_dec);
+                                                        if (ecount < count){
+                                                                vc->EventPlot[l]->SetPoint (ecount, value, i_dec);
+                                                                vc->EventPlot[l]->scan1d->mem2d->data->SetXLookup (ecount, proj_coord);
+                                                                vc->EventPlot[l]->scan1d->mem2d->data->SetYLookup (i_dec, pe->get (i, xi));
+                                                        } else {
+                                                                g_message ("count out of range: %d %d", ecount, count);
+                                                        }
+                                                        ++ecount;
+                                                }
+                                                ev = g_slist_next (ev);
+                                        }
+                                }
+                                if (!vc->EventPlot[l]->scan1d->view){
+                                        vc->EventPlot[l]->scan1d->view = new Grey2D (vc->EventPlot[l]->scan1d);
+                                        vc->EventPlot[l]->scan1d->SetVM (SCAN_V_DIRECT);
+                                        //vc->EventPlot[l]->scan1d->AutoDisplay (0.,1.,1,0.05);
+                                }
+                                g_slist_free (all);
+                        }
+                        else{
+                                for(int i = 0; i < nn; i++)
+                                        vc->EventPlot[l]->SetPoint (i, pe->get (i, xi), pe->get (i, yi[l]));
+                        }
+                        // CHECK --- OBSOLETE ????
+                        //		vc->EventPlot[l]->drawScans ();
+                        vc->EventPlot[l]->UpdateArea ();
+                        //		vc->EventPlot[l]->show ();
+                }
+        }
 }
 
 void ViewControl::DrawObjects(cairo_t *cr){

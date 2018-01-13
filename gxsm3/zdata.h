@@ -110,11 +110,14 @@ public:
 	virtual double Z(int x, int y)=0;
 	virtual double Z(int x, int y, int v)=0;
 	virtual double Z(double z, int x, int y)=0;
+	virtual double ZSave(double z, int x, int y)=0;
 	virtual double Z(double z, int x, int y, int v)=0;
 	virtual double Z(double vx, double vy)=0;
 	virtual double Z(double z, double vx, double vy)=0;
 	virtual void   Zadd(double z, int x, int y)=0;
+	virtual void   ZaddSave(double z, int x, int y)=0;
 	virtual void   Zmul(double z, int x, int y)=0;
+	virtual void   ZmulSave(double z, int x, int y)=0;
 	virtual void   Zdiv(double z, int x, int y)=0;
 
 	virtual void ZFrameAddDataFrom(ZData *src)=0;
@@ -252,11 +255,14 @@ public:
                 else return (double)Zdat[clampy(y + round (creepfactor*pixshift_dt[1]))*nv+v][clampx(x + round (creepfactor*pixshift_dt[0]))];
         };
 	inline double Z(double z, int x, int y){ return (double)(Zdat[y*nv+vlayer][x]=(ZTYP)z); };
+	inline double ZSave(double z, int x, int y){  if (x>=0 && x < nx && y >= 0 && y < ny) return (double)(Zdat[y*nv+vlayer][x]=(ZTYP)z); else return 0.; };
 	inline double Z(double z, int x, int y, int v){ return (double)(Zdat[y*nv+v][x]=(ZTYP)z); };
 	inline double Z(double vx, double vy);
 	inline double Z(double z, double vx, double vy);
 	inline void Zadd(double z, int x, int y){ Zdat[y*nv+vlayer][x]+=(ZTYP)z; };
+	inline void ZaddSave(double z, int x, int y){ if (x>=0 && x < nx && y >= 0 && y < ny) Zdat[y*nv+vlayer][x]+=(ZTYP)z; };
 	inline void Zmul(double z, int x, int y){ Zdat[y*nv+vlayer][x]*=(ZTYP)z; };
+	inline void ZmulSave(double z, int x, int y){ if (x>=0 && x < nx && y >= 0 && y < ny) Zdat[y*nv+vlayer][x]*=(ZTYP)z; };
 	inline void Zdiv(double z, int x, int y){ Zdat[y*nv+vlayer][x]/=(ZTYP)z; };
 
 	void ZFrameAddDataFrom(ZData *src);

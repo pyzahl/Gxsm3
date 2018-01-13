@@ -33,6 +33,7 @@
 
 class Mem2d;
 class ViewControl;
+class app_vpdata_view;
 
 class ViewControl : public AppBase{
 public:
@@ -284,7 +285,8 @@ private:
         int local_radius;
         Scan *scan;
         ProfileControl *RedLine;
-        ProfileControl *EventPlot;
+        ProfileControl *EventPlot[4];
+        app_vpdata_view *EventGraphView;
 
         ViewInfo *vinfo;
         BuildParam *view_bp;
@@ -332,7 +334,7 @@ private:
         guint active_event_num_channels;
         guint active_event_num_events;
         GtkWidget* active_event_xchan;
-        GtkWidget* active_event_ychan;
+        GtkWidget* active_event_ychan[4];
         GtkWidget* active_event_ynchan;
         GtkWidget* active_event_list;
         GtkWidget* select_events_by;

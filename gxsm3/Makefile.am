@@ -34,6 +34,7 @@ app_monitor.C \
 app_profile.C app_profile.h app_profilepopupdef.h \
 app_v3dcontrol.C app_v3dcontrol.h app_v3dpopupdef.h \
 lineprofile.C lineprofile.h \
+vpdata_read.C vpdata_read.h app_vpdata_view.h \
 unit.h \
 pcs.C pcs.h \
 \

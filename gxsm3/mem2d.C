@@ -187,17 +187,19 @@ int TZData<ZTYP>::Resize(int Nx, int Ny, int Nv){
 				Zdat = new ZTYP*[Ny*Nv];
 				for(int i=0; i<Ny; i++){
 					for(int v=0; v<Nv; ++v){
-						Zdat[i*Nv+v] = new ZTYP[Nx];
-						if(!Zdat[i*Nv+v]){
+                                                int q=i*Nv+v;
+						Zdat[q] = new ZTYP[Nx];
+						if(!Zdat[q]){
 							Ny=i-1;
 							XSM_DEBUG_ERROR (DBG_L1, "No Mem in Mem2d:New" );
 							return 0;
 						}
 						if(Nx > nx || i >= ny || v >= nv)
-							memset(Zdat[i*Nv+v], 0, sizeof(ZTYP)*Nx);
-						if(i < ny && v < nv){
-							memcpy(Zdat[i*Nv+v], Zdold[i*nv+v], sizeof(ZTYP)*(Nx < nx ? Nx : nx));
-							delete [] Zdold[i*nv+v];
+							memset(Zdat[q], 0, sizeof(ZTYP)*Nx);
+						if(i < ny && v < nv && Zdold[i*nv+v]){
+							memcpy(Zdat[q], Zdold[q], sizeof(ZTYP)*(Nx < nx ? Nx : nx));
+							//delete [] Zdold[q];
+                                                        //Zdold[q] = NULL;
 						}
 					}
 				}
