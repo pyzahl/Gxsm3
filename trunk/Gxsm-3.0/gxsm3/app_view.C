@@ -1693,6 +1693,12 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                 else
                         vc->EventGraphView->init_vpdata_view (1, num_plots);
 
+                for (int l=num_plots; l<4; ++l){
+                        if (vc->EventPlot[l]){
+                                delete vc->EventPlot[l];
+                                vc->EventPlot[l] = NULL;
+                        }
+                }
                 for (int l=0; l<num_plots; ++l){
                         UnitObj *UYaxis = new UnitObj(pe->get_unit_symbol (yi[l]), " ", "g", pe->get_label (yi[l]));
 		
