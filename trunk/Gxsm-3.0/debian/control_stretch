@@ -1,0 +1,99 @@
+Source:		gxsm3
+Section:	science
+Priority:	optional
+Maintainer:	Thorsten Wagner <stm@users.sf.net>
+Build-Depends: 	autotools-dev, 
+		debhelper (>= 10), 	
+		fonts-freefont-ttf, 
+		freeglut3-dev,
+		gnome-common,
+		gsettings-desktop-schemas-dev, 
+		gtk-doc-tools, 
+		intltool, 
+		libfftw3-dev, 
+		libgail-3-dev, 
+		libgl1-mesa-dev,
+		libglew-dev,
+		libglm-dev,
+		libgnomeui-dev, 
+		libgtk-3-0, 
+		libgtksourceview-3.0-dev, 
+		libgtksourceviewmm-3.0-dev, 
+		libnetcdf-cxx-legacy-dev, 
+		libnetcdf-dev, 
+		libnlopt-dev,
+		libopencv-core-dev, 
+		libopencv-features2d-dev, 
+		libopencv-highgui-dev, 
+		libopencv-objdetect-dev, 
+		libquicktime-dev,
+		python-gobject-2-dev, 
+		subversion, 
+		yelp-tools
+Standards-Version: 4.0.0
+Homepage: http://gxsm.sf.net
+#Vcs-Git: svn.code.sf.net/p/gxsm/svn/trunk/Gxsm-3.0
+#Vcs-Browser:  http://svn.code.sf.net/p/gxsm/svn/trunk/Gxsm-3.0
+
+Package:	gxsm3
+Architecture: 	any
+Multi-Arch: 	same
+Pre-Depends:	${misc:Pre-Depends}
+Depends: 	${shlibs:Depends}, 
+		${misc:Depends}, 
+		bash, 
+		devscripts, 
+		eog,
+		fonts-freefont-ttf,
+		freeglut3, 
+		gnome,
+		gnome-devel, 
+		gnome-icon-theme,
+		gsettings-desktop-schemas,
+		gtk-doc-tools, 
+		intltool, 
+		libfftw3-bin,
+		libgail-3-0, 
+		libgl1-mesa-glx,
+		libgl1-mesa-dri,
+		libglew2.0,
+		libgnomeui-0, 
+		libgnomeui-common,		
+		libgtk-3-0, 
+		libgtksourceview-3.0-common,
+		libgtksourceview-3.0-1, 
+		libgtksourceviewmm-3.0-0v5, 
+		libnetcdf-c++4,
+		libnlopt0,
+		libopencv-core2.4v5, 
+		libopencv-features2d2.4v5,
+		libopencv-highgui2.4-deb0, 
+		libopencv-objdetect2.4v5, 
+		libquicktime2,
+		libxdot4, 
+		python-gobject-2, 
+		yelp-tools 
+Suggests: sranger-modules-mk23-dkms, sranger-modules-std-dkms
+Replaces: sranger (<< 0.0.2 )
+Breaks: sranger (<< 0.0.2 )
+Description: Multi-channel data acquisition via STM/AFM
+ GXSM -- Gnome X Scanning Microscopy.
+ .
+ Gxsm is a powerful graphical interface for any kind of 2D
+ and 3D (multilayered 2D mode) data acquisition methods, 
+ especially designed for SPM and SPA-LEED, which are used 
+ in surface science. It includes methods for 2D data (of 
+ various types: byte, short, long, double) visualization 
+ and manipulation. We are currently using it for STM, AFM, 
+ SARLS, and SPA-LEED.
+ .
+ Gxsm is powerful, it is easy to extend via plug-ins, it is
+ unlimited in data size... and it is a free and open source 
+ software hosted by SourceForge! It is based on the Linux 
+ Gtk+/Gnome development environment.
+ .
+ More details on http://gxsm.sf.net and 
+ http://sranger.sf.net or in 
+ J. Vac. Sci. Technol. B 28, C4E39 (2010) 
+ (doi:10.1116/1.3374719)
+
