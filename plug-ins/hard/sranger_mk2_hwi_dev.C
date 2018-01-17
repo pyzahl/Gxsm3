@@ -2578,10 +2578,10 @@ void sranger_mk2_hwi_dev::write_dsp_abort_probe () {
 	PROBE dsp_probe;
 	dsp_probe.start = 0;
 	dsp_probe.stop  = 1;
-        CONV_32 (dsp_probe.start);
-        CONV_32 (dsp_probe.stop);
+        CONV_16 (dsp_probe.start);
+        CONV_16 (dsp_probe.stop);
         lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-        sr_write (dsp, &dsp_probe,  (2*2)<<1); 
+        sr_write (dsp, &dsp_probe,  (2)<<1); 
         usleep ((useconds_t) (5000) ); // give some time to abort
 }
 

@@ -3932,7 +3932,7 @@ int DSPControl::fast_scan_callback(GtkWidget *widget, DSPControl *dspc){
 	return 0;
 }
 
-int DSPControl::check_vp_in_progress (){
+int DSPControl::check_vp_in_progress (const gchar *extra_info){
 	double a,b,c;
         PI_DEBUG_GP (DBG_L4, "%s \n",__FUNCTION__);
 	sranger_common_hwi->RTQuery ("s", a,b,c);
@@ -3949,11 +3949,17 @@ int DSPControl::check_vp_in_progress (){
                                                                  GTK_RESPONSE_REJECT,
 								 NULL);
 
-		gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area (GTK_DIALOG(dialog))), 
-				   gtk_label_new (N_("Vector Probe in progress.\n"
-						    "Cancel request and wait or force restart (OK)?\n"
-						    "Warning: overriding this this may lead to unpredicatble results.")), 
-				   TRUE, TRUE, GXSM_WIDGET_PAD);
+                if (extra_info)
+                        gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area (GTK_DIALOG(dialog))), 
+                                           gtk_label_new (N_(extra_info)), 
+                                           TRUE, TRUE, GXSM_WIDGET_PAD);
+                
+                else
+                        gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area (GTK_DIALOG(dialog))), 
+                                           gtk_label_new (N_("Vector Probe in progress.\n"
+                                                             "Cancel request and wait or force restart (OK)?\n"
+                                                             "Warning: overriding this this may lead to unpredicatble results.")), 
+                                           TRUE, TRUE, GXSM_WIDGET_PAD);
                 
 		gtk_widget_show_all (dialog);
 
@@ -4391,7 +4397,13 @@ int DSPControl::Probing_write_AX_callback( GtkWidget *widget, DSPControl *dspc){
 
 // for TESTING and DEBUGGIG only
 int DSPControl::Probing_exec_ABORT_callback( GtkWidget *widget, DSPControl *dspc){
-	if (dspc->check_vp_in_progress ()) 
+	if (dspc->check_vp_in_progress ("GVP ABORT REQUESTED:\n"
+                                        "Interrupting a Vector Program in progress will\n"
+                                        "leave the DSP in any state of that moment:\n\n"
+                                        "OK: Bias, Z, will auto recover."
+                                        "Eventually not OK: current Feedback State will stay!"
+                                        " -> check/fix manually!"
+                                        "Current data stream will get corrupted.")) 
 		return -1;
 
 	dspc->write_dsp_abort_probe (); // force probe abort

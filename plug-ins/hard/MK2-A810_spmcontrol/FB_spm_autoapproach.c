@@ -205,11 +205,11 @@ void run_tip_app (){
         case TIP_ZSteps:
 		// Run coarse approach steps using wave play -- must be pre-configured!!!
 		// If mover steps are done, TIP_Delay_2 state is selected within run_wave_play ()
-		if (autoapp.mover_mode & AAP_MOVER_WAVE_PLAY)
+		if (autoapp.mover_mode & AAP_MOVER_PULSE)
 			if (CR_out_pulse.pflg){
 				run_CR_out_pulse (); // run pules job, will self terminate and rest it's pflg
 				if (!CR_out_pulse.pflg) // check if pulse job done ?
-					if (autoapp.mover_mode & AAP_MOVER_AUTO_APP) // double check if we not got canceled
+					if (autoapp.mover_mode & AAP_MOVER_PULSE) // double check if we not got canceled
 						autoapp.tip_mode = TIP_Delay_2; // proceed with next approach cycle
 					else
 						autoapp.pflg = 0; // done, max number steps exceeded

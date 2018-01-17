@@ -117,8 +117,8 @@
 // -- odd things like changed data structures, etc.., could break data transfer --
 #define FB_SPM_SOFT_ID   0x1001 /* FB_SPM sofware id */
 #define FB_SPM_VERSION   0x2035 /* FB_SPM main Version, BCD: 00.00 */
-#define FB_SPM_DATE_YEAR 0x2017 /* Date: Year, BCD */
-#define FB_SPM_DATE_MMDD 0x1214 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_YEAR 0x2018 /* Date: Year, BCD */
+#define FB_SPM_DATE_MMDD 0x0117 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Lednice-Battenkill Worrier 2013\n"\
