@@ -362,25 +362,30 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 		}
 		break;
 
-	case MOV_WAVE_PULSE_P:
+	case MOV_WAVE_STEP:
                 for (int i=0; i < mover_param.MOV_wave_len; i += channels){
                         double x = (double)i/mover_param.MOV_wave_len;
                         for (int k=0; k<channels; ++k){
                                 double xx = x+k*phase;
-                                mover_param.MOV_waveform[i+k] = (short)round(SR_VFAC*pointing*amp*(round(xx - floor(xx))));
+                                if (i==0 || i ==  mover_param.MOV_wave_len-1)
+                                        mover_param.MOV_waveform[i+k] = 0;
+                                else
+                                        mover_param.MOV_waveform[i+k] = (short)round(SR_VFAC*pointing*amp*(round(xx - floor(xx))));
                         }
                 }
 		break;
-/* ------------------------------------------------------------------------------------------------------------------------------------------------
-// Code for negative pulse, but not usefull yet as output voltage is set to zero after pulse sequence. (stm, 08.10.2010)
-//-------------------------------------------------------------------------------------------------------------------------------------------------
-//	case MOV_WAVE_PULSE_M:
-//		for (int i=0; i < mover_param.MOV_wave_len; ++i){
-//			mover_param.MOV_waveform[i] = sranger_common_hwi->int_2_sranger_int((short)round(SR_VFAC*amp*(1-round((double)i/mover_param.MOV_wave_len)))); 
-//		}
-//		mover_param.MOV_waveform[mover_param.MOV_wave_len-1] = sranger_common_hwi->int_2_sranger_int((short)round(SR_VFAC*amp*(1)));
-//		break;
---------------------------------------------------------------------------------------------------------------------------------------------------*/
+	case MOV_WAVE_PULSE:
+                for (int i=0; i < mover_param.MOV_wave_len; i += channels){
+                        double x = (double)i/mover_param.MOV_wave_len;
+                        for (int k=0; k<channels; ++k){
+                                double xx = x+k*phase;
+                                if (i==0 || i ==  mover_param.MOV_wave_len-1)
+                                        mover_param.MOV_waveform[i+k] = 0;
+                                else
+                                        mover_param.MOV_waveform[i+k] = (short)round(SR_VFAC*amp*(round(xx - floor(xx))));
+                        }
+                }
+		break;
 
 	case MOV_WAVE_KOALA:
                 {             
@@ -881,9 +886,7 @@ void DSPMoverControl::create_folder (){
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_SAWTOOTH));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-			
-			if(mover_param.MOV_waveform_id == 0)
-			        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_SAWTOOTH ? 1:0);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_SAWTOOTH ? 1:0);
 
                         mov_bp->new_line ();
 
@@ -892,9 +895,7 @@ void DSPMoverControl::create_folder (){
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_SINE));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-			
-			if(mover_param.MOV_waveform_id == 1)
-                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_SINE ? 1:0);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_SINE ? 1:0);
                         mov_bp->new_line ();
 
 
@@ -912,6 +913,7 @@ void DSPMoverControl::create_folder (){
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO ? 1:0);
                         mov_bp->new_line ();
 			
 // ==
@@ -920,6 +922,7 @@ void DSPMoverControl::create_folder (){
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_PL));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_PL ? 1:0);
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo-"), 2); // arbitrary waveform
@@ -927,6 +930,7 @@ void DSPMoverControl::create_folder (){
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_MI));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_MI ? 1:0);
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cyclo+"), 2); // arbitrary waveform
@@ -934,6 +938,7 @@ void DSPMoverControl::create_folder (){
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IPL));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_IPL ? 1:0);
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cyclo-"), 2); // arbitrary waveform
@@ -941,6 +946,7 @@ void DSPMoverControl::create_folder (){
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IMI));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_IMI ? 1:0);
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Koala"), 2); //arbitrary waveform
@@ -948,9 +954,7 @@ void DSPMoverControl::create_folder (){
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_KOALA));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-
-			if(mover_param.MOV_waveform_id == 11)
-                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_KOALA ? 1:0);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_KOALA ? 1:0);
                         mov_bp->new_line ();
 
 
@@ -959,9 +963,7 @@ void DSPMoverControl::create_folder (){
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_BESOCKE));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-
-                        if(mover_param.MOV_waveform_id == 12)
-			        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_BESOCKE ? 1:0);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_BESOCKE ? 1:0);
                         mov_bp->new_line ();
 
                                                              
@@ -984,16 +986,20 @@ void DSPMoverControl::create_folder (){
 			// positive pluse: base line is zero, pulse as height given by amplitude
 			// ratio between on/off: 1:1
 			// total time = ton + toff
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Pulse: positive"), 2); // arbitrary waveform
+			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Step"), 2); // arbitrary waveform
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_PULSE_P));
+			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_STEP));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-
-			if(mover_param.MOV_waveform_id == 7)
-                                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_PULSE_P ? 1:0);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_STEP ? 1:0);
                         mov_bp->new_line ();
                        
+			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Pulse"), 2); // arbitrary waveform
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
+			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_PULSE));
+ 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
+ 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_PULSE ? 1:0);
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------------
 // Code for negative pulse, but not usefull yet as output voltage is set to zero after pulse sequence. (stm, 08.10.2010)

@@ -167,13 +167,13 @@ typedef struct{
 #define MOV_WAVE_CYCLO_MI  4
 #define MOV_WAVE_CYCLO_IPL 5
 #define MOV_WAVE_CYCLO_IMI 6
-#define MOV_WAVE_PULSE_P   7
-#define MOV_WAVE_PULSE_M   8
+#define MOV_WAVE_STEP      7
+#define MOV_WAVE_PULSE     8
 #define MOV_WAVE_USER      9
 #define MOV_WAVE_USER_TTL 10
 #define MOV_WAVE_KOALA    11
 #define MOV_WAVE_BESOCKE  12
-#define MOV_WAVE_PULSE    13
+#define MOV_WAVE_PULSEX   13
 #define MOV_WAVE_GPIO     14
 #define MOV_WAVE_LAST     15
 
@@ -534,7 +534,7 @@ class DSPControl : public AppBase{
 	static void free_probedata_array_set (GArray** garr, DSPControl *dc);
 	void free_probedata_arrays ();
 
-	int check_vp_in_progress ();
+	int check_vp_in_progress (const gchar *extra_info=NULL);
 
 	void add_probedata(double data[13]);
 	void add_probevector();

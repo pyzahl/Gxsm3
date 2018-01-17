@@ -477,7 +477,11 @@ int DSPControl::Probing_graph_callback( GtkWidget *widget, DSPControl *dspc, int
 // abort probe and stop fifo read, plot data until then
 int DSPControl::Probing_abort_callback( GtkWidget *widget, DSPControl *dspc){
 	dspc->Probing_graph_callback (widget, dspc);
-	// can not simply cancle DSP vector gen, as this would leave it in an undefined state of all effected outputs
+
+	// can not simply cancel a DSP vector program in progress -- well can, but: this leaves it in an undefined state of all effected outputs incl.
+	// ==> feedback state ON or OFF. SO AFTER THAT -- CHEC and eventually manually recover settings!
+	// but aborting on your request
+	dspc->Probing_exec_ABORT_callback (widget, dspc);
 }
 
 
