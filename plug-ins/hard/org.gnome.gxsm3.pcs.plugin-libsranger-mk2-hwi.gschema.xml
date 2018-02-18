@@ -1315,22 +1315,22 @@
       <description>pcs0000, PCS Remote-ID: 'dspmover-config-IW-Phase', Default/U:   0 °    , Adjustment PCS Name: 'dspmover-config-IW-Phase' </description>
     </key>
 
-    <key name="dspmover-config-z-rate" type="d">
+    <key name="dspmover-config-besocke-z-jump-ratio" type="d">
       <default>0.1</default>
-      <summary>PCS Remote-ID: 'dspmover-config-z-rate', Default/U:   0.10       </summary>
-      <description>pcs0000, PCS Remote-ID: 'dspmover-config-z-rate', Default/U:   0.10     , Adjustment PCS Name: 'dspmover-config-z-rate' </description>
+      <summary>PCS Remote-ID: 'dspmover-config-besocke-z-jump-ratio', Default/U:   0.10       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-config-besocke-z-jump-ratio', Default/U:   0.10     , Adjustment PCS Name: 'dspmover-config-z-jump-ratio' </description>
     </key>
 
-    <key name="dspmover-config-timedelay-1" type="d">
+    <key name="dspmover-config-besocke-t1" type="d">
       <default>0.09</default>
-      <summary>PCS Remote-ID: 'dspmover-config-timedelay-1', Default/U:   0.090      </summary>
-      <description>pcs0000, PCS Remote-ID: 'dspmover-config-timedelay-1', Default/U:   0.090     , Adjustment PCS Name: 'dspmover-config-timedelay-1' </description>
+      <summary>PCS Remote-ID: 'dspmover-config-besocke-t1', Default/U:   0.090      </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-config-besocke-t1', Default/U:   0.090     , Adjustment PCS Name: 'dspmover-config-besocke-t1' </description>
     </key>
 
-    <key name="dspmover-config-timedelay-2" type="d">
+    <key name="dspmover-config-besocke-t2" type="d">
       <default>0.09</default>
-      <summary>PCS Remote-ID: 'dspmover-config-timedelay-2', Default/U:   0.090      </summary>
-      <description>pcs0000, PCS Remote-ID: 'dspmover-config-timedelay-2', Default/U:   0.090     , Adjustment PCS Name: 'dspmover-config-timedelay-2' </description>
+      <summary>PCS Remote-ID: 'dspmover-config-besocke-t2', Default/U:   0.090      </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-config-besocke-t2', Default/U:   0.090     , Adjustment PCS Name: 'dspmover-config-besocke-t2' </description>
     </key>
 
     <key name="dspmover-config-wave-out0-ch-x" type="d">

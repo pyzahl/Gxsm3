@@ -438,7 +438,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
                 double R=mover_param.z_Rate;           //rate of the amplitude of the pure x signal as z signal
                         
 
-                PI_DEBUG_GP (DBG_L2, "case BESOCKE t1=%f  t2=%f  pduration=%f  amp=%f  z-Rate=%f  MOV_wave_len=%d \n", 
+                PI_DEBUG_GP (DBG_L2, "case BESOCKE t1=%f (settling time) t2=%f (period of fall) pduration=%f  amp=%f  z-Rate=%f  MOV_wave_len=%d \n", 
                                 mover_param.time_delay_1, 
                                 mover_param.time_delay_2, 
                                 pduration, 
@@ -872,7 +872,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_grid_with_frame ("Output Configuration");
 			mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
-                        mov_bp->new_grid_with_frame ("Curve Mode");
+                        mov_bp->new_grid_with_frame ("Waveform selection");
                         
 
                         mov_bp->grid_add_ec ("Space", Time, &mover_param.Wave_space, 0., 1000., ".3f", 1., 10., "Wave-Space");
@@ -968,16 +968,16 @@ void DSPMoverControl::create_folder (){
 
                                                              
                         mov_bp->set_configure_hide_list_b_mode_on ();
-                        mov_bp->grid_add_ec ("Besocke z-rate", Unity, &mover_param.z_Rate, 0., 1., ".2f", 0.01, 0.1, "z-Rate");
+                        mov_bp->grid_add_ec ("z-jump/xy-amplitude", Unity, &mover_param.z_Rate, 0., 1., ".2f", 0.01, 0.1, "besocke-z-jump-ratio");
                         gtk_widget_set_tooltip_text (mov_bp->input, "Rate of the z-Jump of the amplitude");
                         mov_bp->new_line ();
 
-                        mov_bp->grid_add_ec ("Besocke t1", Time, &mover_param.time_delay_1, 0., 1., ".3f", 0.001, 0.01, "timedelay-1");
-                        gtk_widget_set_tooltip_text (mov_bp->input, "Time delay of the Signals for soothing the tip");
+                        mov_bp->grid_add_ec ("settling time t1", Time, &mover_param.time_delay_1, 0., 1., ".3f", 0.001, 0.01, "besocke-t1");
+                        gtk_widget_set_tooltip_text (mov_bp->input, "Time delay of the signals to settle the tip before and after the z-jump");
                         mov_bp->new_line ();
 
-                        mov_bp->grid_add_ec ("Besocke t2", Time, &mover_param.time_delay_2, 0., 1., ".3f", 0.001, 0.01, "timedelay-2");
-                        gtk_widget_set_tooltip_text (mov_bp->input, "Added time delay during the z-Jump");
+                        mov_bp->grid_add_ec ("period of fall t2", Time, &mover_param.time_delay_2, 0., 1., ".3f", 0.001, 0.01, "besocke-t2");
+                        gtk_widget_set_tooltip_text (mov_bp->input, "Added time delay for the z-jump");
                         mov_bp->new_line ();
                         mov_bp->set_configure_hide_list_b_mode_off ();
 

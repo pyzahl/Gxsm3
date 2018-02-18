@@ -1,3 +1,9 @@
+gxsm3 (3.47.1-0debian0) stretch; urgency=medium
+
+  * test on debian
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 18 Feb 2018 18:58:08 +0100
+
 gxsm3 (3.47.0-0ubuntu1) xenial; urgency=medium
 
   * testrelease of GXSM3-3.47.0 on xenial

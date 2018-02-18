@@ -755,8 +755,11 @@ More complex wave forms are available such as:
 \caption{Wave form used to operate a KOALA drive STM.}
 \label{fig:KOALAWave}
 \end{figure}
-\item[Wave: Besocke] Intendet to be used with a Besocke style STM (see https://doi.org/10.1016/0039-6028(87)90151-8): 3 piezos walk up and down a ramp. In this particular case, the piezos have three segments at their outer side (u, v, w) and ground contact on their inner electrode. This coarse motion will require signals at three output channels. These signals vary for different directions of movement, but the idea behind is the wave form shown in figure \ref{fig:BESOCKEWave}. By an additional analog switch (controlled by GPIO) one can change between xy motion (translation) and z motion (rotation).
-The time delay between the points A and B and also between D and E is named Besocke t1, the time delay between B and C is Besocke t2. These delays are both variable in the interface. As the amplitude the whole space from C to D is taken and with Besocke z-Rate, which can also be varied in the interface, you can decide how big the jump should be in relation to the amplitude.
+\item[Wave: Besocke] Intendet to be used with a Besocke style STM (see https://doi.org/10.1016/0039-6028(87)90151-8): 3 piezos walk up and down a ramp. In this particular case, the piezos have three segments at their outer side (u, v, w). This coarse motion will require signals at three output channels. These signals vary for different directions of movement. The fundamental waveform is shown in Fig.~\ref{fig:BESOCKEWave}. By an additional analog switch, which can be controlled by the GPIO ports, one can change between xy motion (translation) and z motion (rotation). The switch either routes to the equivalent segments of the piezo the same signal (rotation) or projections on the three segments according to the 120$^\circ$ rotation between the three piezos (translation).
+
+The time delay between the points A and B and also between D and E is named `settling time t1', the time delay between B and C is `period of fall t2'. t2 should be shorter than the actual time for the scan head to fall back onto the ramp. If the z-jump corresponds to about $\Delta h= 1\,\mu$m, the period of fall can be estimated according to the uniformly accelerated fall to be $t2=\sqrt{\frac{\Delta h}{g}}\approx 0.44\,$ms. 
+
+These delays are both variable in the interface. The slip-stick amplitude is given by the voltage difference between C to D. The amplitude of the z-jump is defined as relative ratio to this value.
 \begin{figure}[h!]
 \center { \fighalf{SR-DSP-Mover-Besocke}}
 \caption{Basic wave form used for Besocke drive STM.}
