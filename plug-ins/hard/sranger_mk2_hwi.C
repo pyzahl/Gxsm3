@@ -87,7 +87,7 @@ to the MK3 subsection for deviations from the MK2 interface and setup.}
 
 %The \GxsmEntry{SR DSP Control} Dialog is divided into several sections:
 %1) Feedback & Scan: This folder contains all necessary options regarding feedback and scan.
-%2) Trigger: For Multi-Volt and Current imaging
+%2) Trigger: For Multi-Volt and Current imaging % removed mode???
 %3) Advanced: Different settings for advanced features of the Signal Ranger.
 %4) STS: Parameter for dI/dV spectroscopy can be defined here.
 %5) FZ: In this section information about force - distance curves can be set.
@@ -96,19 +96,19 @@ to the MK3 subsection for deviations from the MK2 interface and setup.}
 %8) AX: Auxiliary
 %9) Graphs: Choose sources and decide how to plot them.
 
-\GxsmGraphic{Gxsm-SR-MK2-DSP-Block}{0.285}{Schematic diagram of the
+\GxsmGraphic{SR-DSP-MK3-DSP-Block}{0.285}{Schematic diagram of the
     DSP code topology: Startup section configures the DSP system, sets
     up timers for data processing interrupt subroutine (ISR) and enters the
     never ending idle loop, which implements a state machine.}
 
-\GxsmGraphic{mixer}{0.33}{Schematic diagram of the new DSP feedback with four signal
+\GxsmGraphic{SR-DSP-MK3-mixer}{0.33}{Schematic diagram of the new DSP feedback with four signal
     source mixer. The input signals are transformed as requested
     (TR$_i$: linear/logarithmic/fuzzy) and the error signal $\Delta_i$
     is computed for every channel $i$ using individual set points. The
     sum of previously with gain $G_i$ scaled delta signals is computed
     and feed into the feedback algorithm $FB$ as $\Delta$.}
 %
-\GxsmGraphic{IIR-plot-q}{0.35}{Life IIR performance demonstration in Gxsm
+\GxsmGraphic{SR-DSP-MK3-IIR-plot-q}{0.35}{Life IIR performance demonstration in Gxsm
     self-test configuration. A stair
     case like current input signal starting at $3.6\:$pA noise level
     assuming $1\:$V/nA (or a $\times 10^9$ gain)
@@ -118,7 +118,7 @@ to the MK3 subsection for deviations from the MK2 interface and setup.}
     (via Z-mon (red)) and the real-time $q$ (blue) is recorded.
     IIR settings used:
     $f_{\mbox{\tiny min}} = 50\:\mbox{Hz}$, $f_{\mbox{\tiny max}} =
-    20\:\mbox{kHz}$, $\mbox{I}_c = 500\:\mbox{pA}$. }
+    20\:\mbox{kHz}$, $\mbox{I}_c = 500\:\mbox{pA}$.}
 %
 New: The A810 DSP code implements a high resolution (HR) mode for
 the DAC. This increases the bit resolution of selected output
@@ -156,7 +156,7 @@ configuration and allows up to four signals (provided on ADC0$\dots$3)
 to be user configurable as feedback sources using linear or
 logarithmic signal transformations and even can be mixed and weighted
 in different ways via the gains $G_i$ as illustrated in Fig.
-\ref{fig:mixer}. It also includes a special ``FUZZY'' mix mode for
+\ref{fig:SR-DSP-MK3-mixer}. It also includes a special ``FUZZY'' mix mode for
 signal level depended enabling of a particular chanqnel only if its
 signal is beyond a given level; only the ``amount beyond'' is used for
 $\Delta_i$ computation.
@@ -217,7 +217,7 @@ computed on the DSP according to:
 
 \[ \tilde{\mbox{I}}_n = q \tilde{\mbox{I}}_{n-1} + (1-q) \mbox{I}_n \]
 
-Fig. \ref{fig:IIR-plot-q} illustrates the IIR filter response to a
+Fig. \ref{fig:SR-DSP-MK3-IIR-plot-q} illustrates the IIR filter response to a
 logarithmic steepening stair case test input signal. This is a live
 IIR performance demonstration utilizing the Gxsm Vector Probe Engine
 itself and having Gxsm and the MK2-A810 set up in a
@@ -260,8 +260,8 @@ feedback and scan.  Here the feedback parameters and tunneling/force
 settings are adjusted. The second purpose of this control panel is the adjustment of
 all scan parameters of the digital vector scan generator like speed.
 
-\GxsmScreenShot{A810-DSP-Control-FB}{GXSM MK2-A810 DSP Control window: Feedback and Scan Control page}
-\GxsmScreenShot{A810-DSP-Control-Advanced}{GXSM MK2-A810 DSP Control window: Advanced settings page}
+\GxsmScreenShotW{SR-DSP-MK3-DSP-Feedback-Scan}{GXSM3 MK3-PLL/A810 DSP Control window: Feedback and Scan Control page with activated configuration mode and internal offset-adding}{0.9\textwidth}
+\GxsmScreenShotW{SR-DSP-MK3-DSP-Advanced}{GXSM3 MK3-PLL/A810 DSP Control window: Advanced settings page with activated configuration mode}{0.9\textwidth}
 
 \begin{description}
 
@@ -323,39 +323,39 @@ all scan parameters of the digital vector scan generator like speed.
   stability with same CI. The feedback transfer is 1:1 (error to output
   per loop) if all gains, CP and CI, are set to one in linear mode.}
 
-
-% OptPlugInSection: Trigger -- Multi-Volt and -Current Control
-
-It is possible to trigger automatic changes of Bias or
-Current-Setpoint while scanning at up to four given X indices each, for
-Bias and Current for forward and backward scan direction.
-
+% removed mode ???
+%% OptPlugInSection: Trigger -- Multi-Volt and -Current Control
+%
+%It is possible to trigger automatic changes of Bias or
+%Current-Setpoint while scanning at up to four given X indices each, for
+%Bias and Current for forward and backward scan direction.
+%
 % +/-4 DAC / cycle: 75000*4*10/32767=
-If the index given is reached, the DSP will trigger a bias or
-current-setpoint change. The bias is never changed instantly, but is
-ramped with an fixed speed of (92 V/s @ 10V max. Bias) from that
-position to the new value. The index is actually down-counted to zero
-for each scan line, thus index 0 means the last point of every scan
-line.
-
-The first line sets up the trigger points for X-forward (Xm) and
-X-backward (Xp) for bias changes: Index-Xp, new Bias, Index-Xm, new
-Bias.  The second to fourth line does the same in an equivalent
-way. The next frame sets up the similar task for changes of the current
-setpoint. Any Index never reached will just never trigger, thus an
-index of -1 will disable it.
-
-To enable or updated the trigger data table, toggle/enable the Trigger
-Enable check-box. At startup, GXSM will always read the current DSP
-persistent trigger table and trigger-enable state.
-
-While the trigger is enabled, the Bias and Current settings are
-locked. Any attempts to change it (i.e. the slider) will temporary
-enforce your setting until the next trigger hits.
-
-You can turn the Trigger feature on or off at any time.
-
-\GxsmScreenShot{SR-DSP-Control-Trigger}{Trigger Control window}
+%If the index given is reached, the DSP will trigger a bias or
+%current-setpoint change. The bias is never changed instantly, but is
+%ramped with an fixed speed of (92 V/s @ 10V max. Bias) from that
+%position to the new value. The index is actually down-counted to zero
+%for each scan line, thus index 0 means the last point of every scan
+%line.
+%
+%The first line sets up the trigger points for X-forward (Xm) and
+%X-backward (Xp) for bias changes: Index-Xp, new Bias, Index-Xm, new
+%Bias.  The second to fourth line does the same in an equivalent
+%way. The next frame sets up the similar task for changes of the current
+%setpoint. Any Index never reached will just never trigger, thus an
+%index of -1 will disable it.
+%
+%To enable or updated the trigger data table, toggle/enable the Trigger
+%Enable check-box. At startup, GXSM will always read the current DSP
+%persistent trigger table and trigger-enable state.
+%
+%While the trigger is enabled, the Bias and Current settings are
+%locked. Any attempts to change it (i.e. the slider) will temporary
+%enforce your setting until the next trigger hits.
+%
+%You can turn the Trigger feature on or off at any time.
+%
+%\GxsmScreenShot{SR-DSP-Control-Trigger}{Trigger Control window}
 
 % OptPlugInSection: Advanced Feedback and Probe Control
 
@@ -410,8 +410,8 @@ different tools.
 \index{Signal Ranger MK2/3 Manipulation}
 \index{Signal Ranger MK2/3 Vector Probe}
 
-\GxsmScreenShot{A810-DSP-Control-Advanced-Raster}{Advanced setup with Raster enabled}
-\GxsmScreenShot{A810-DSP-Control-STS}{STS folder}
+\GxsmScreenShotW{SR-DSP-MK3-DSP-Advanced-Raster}{Advanced setup with Raster enabled}{0.9\textwidth}
+\GxsmScreenShotW{SR-DSP-MK3-DSP-STS}{STS tab of the MK3 DSP control}{0.9\textwidth}
 
 This is the dialog for scanning tunneling spectroscopy (STS). Sources
 can be chosen in the Graphs Folder (Please have a look at the Graphs
@@ -511,7 +511,7 @@ Manipulation in general is controlled or forced top motion in one or
 more dimensions for any desired purpose.
 This is the dialog for distance spectroscopy and forced Z/tip manipulation.
 
-\GxsmScreenShotDual{SR-DSP-Control-Z}{GXSM SR DSP Control window, left: Z manipulation}{SR-DSP-Control-LM}{LM, lateral and Z manipulation -- unchanged}
+\GxsmScreenShotW{SR-DSP-MK3-DSP-Z}{GXSM SR DSP Control window, tab Z manipulation}{0.9\textwidth}
 
 \begin{description}
 \item[Z-Start-End] These are the start and the end values of the spectrum in
@@ -561,12 +561,12 @@ Informations about the check options can be found in STS.
 There are several possibilities to prepare or manipulate a tip or locale surface area. One is to dip the
 tip into the sample in a controlled manner, another option is applying a charge pulse or both combined.
 
-\GxsmScreenShot{A810-DSP-Control-PL}{GXSM SR DSP Control window: PL mode setup}
-\GxsmScreenShot{A810-DSP-Control-PL-demo}{GXSM SR DSP Control window: PL mode - demo setup with PanView showing Z adjusted to 4.7$\:$\AA\ for testing.}
-\GxsmScreenShot{A810-DSP-Control-PL-plot-demo}{GXSM SR DSP Control window: PL mode - demo plot in self-test mode (Bias loop back to current)}
-\GxsmScreenShot{A810-DSP-Control-Graphs-PLdemo}{GXSM SR DSP Control window: PL mode - demo Graphs configuration}
-\GxsmScreenShot{A810-DSP-Control-PL-demo3x}{GXSM SR DSP Control window: PL mode - demo for repetions}
-\GxsmScreenShot{A810-DSP-Control-PL-plot-demo3x}{GXSM SR DSP Control window: PL mode - demo for repetitions}
+\GxsmScreenShotW{SR-DSP-MK3-DSP-PL}{GXSM SR DSP Control window: PL mode setup}{0.9\textwidth}
+\GxsmScreenShot{A810-DSP-Control-PL-demo}{GXSM2 SR DSP Control window: PL mode - demo setup with PanView showing Z adjusted to 4.7$\:$\AA\ for testing.}
+\GxsmScreenShot{A810-DSP-Control-PL-plot-demo}{GXSM2 SR DSP Control window: PL mode - demo plot in self-test mode (Bias loop back to current)}
+\GxsmScreenShot{A810-DSP-Control-Graphs-PLdemo}{GXSM2 SR DSP Control window: PL mode - demo Graphs configuration}
+\GxsmScreenShot{A810-DSP-Control-PL-demo3x}{GXSM2 SR DSP Control window: PL mode - demo for repetions}
+\GxsmScreenShot{A810-DSP-Control-PL-plot-demo3x}{GXSM2 SR DSP Control window: PL mode - demo for repetitions}
 
 \clearpage
 
@@ -623,7 +623,7 @@ Phase-B/2nd order (LockIn2ndB).
 
 \GxsmNote{Please always select LockIn0 for STS.}
 
-\GxsmScreenShot{A810-DSP-Control-LockIn}{GXSM SR DSP Control window: Lock-In settings}
+\GxsmScreenShotW{SR-DSP-MK3-DSP-LockIn}{GXSM SR DSP Control window: Lock-In settings and enabled configuration mode.}{0.9\textwidth}
 
 \begin{description}
 \item[AC-Amplitude] The amplitude of the overlaid Lock-In AC voltage.
@@ -687,7 +687,7 @@ Information about the check options can be found in STS.
 
 % OptPlugInSubSection: Auxiliary Probe Control
 
-\GxsmScreenShot{SR-DSP-Control-AX}{GXSM SR DSP Control window: AX (Auxiliary) settings}
+\GxsmScreenShotW{SR-DSP-MK3-DSP-AX}{GXSM SR DSP Control window: AX (Auxiliary) settings}{0.9\textwidth}
 
 This folder can be used for control and data acquisition from several
 kind of simple instruments like a QMA or Auger/CMA.
@@ -708,18 +708,12 @@ buffer. Saving the buffer will automatically save all activated
 sources.  Additionally it is possible to define a source as to be
 displayed. 
 
-
-\GxsmScreenShot{A810-DSP-Control-Graphs}{GXSM SR DSP Control window, Graphs page: Plot and Data sources setup.}
-
+\GxsmScreenShotW{SR-DSP-MK3-DSP-Graphs}{GXSM SR DSP Control window, Graphs page: Plot and Data sources setup.}{0.9\textwidth}
 
 \GxsmHint{Beware: If a channel is not marked as a Source there will be no data
 to be displayed even if X or Y is checked.}
 
-
 \clearpage
-
-
-
 
 % OptPlugInSection: SR-DSP Mover and Approach Control
 \index{Signal Ranger MK2/3 Mover}
@@ -740,31 +734,23 @@ configured on the \GxsmEntry{Config} folder.
 
 To configure the mover output signal type and channles select the "Config" tab. Select the "Curve Mode", normally a simple Sawtooth will do it.
 Then select the output configuration meeting your needs best. The MK3 "Signal Master" allows fully custom
-assignment of the generic "X" and "Y" mover actions to any available output channel. See below "Wave[0,1] out on" and fig.\ref{fig:SR-DSP-MoverConfig}.
+assignment of the generic "X" and "Y" mover actions to any available output channel. See below "Wave[0,1] out on" and Fig.~\ref{fig:screenshot:SR-DSP-MK3-Mover-Config}.
 
-\GxsmScreenShot{SR-DSP-MoverConfig}{GXSM SR DSP configuration of SRanger (MK2/3Pro) inertial mover driver wave generate engine.}
+\GxsmScreenShot{SR-DSP-MK3-Mover-config}{GXSM SR DSP configuration of SRanger (MK2/3Pro) inertial mover driver wave generate engine.}
 
 More complex wave forms are available such as:
 \begin{description}
 \item[Wave: Sawtooth] Just a simple linear ramp and then a jump back to the initial value.
 \item[Wave: Sine] For testing and maybe some inch worm drive.
 \item[Wave: Cyclo, Cyclo+, Cyclo-, Inv Cyclo+, Inv Cyclo-] A cycloidal wave function (see \\ http://dx.doi.org/10.1063/1.1141450) should provide an even more abrupt change of the motion direction than the jump of the sawtooth and therefore work with lower amplitudes (or at lower temperatures) better. Depending on the option choosen, the signal is just limited to positive or negative values.
-\item[Wave: KOALA] Intendet to be used with a KOALA drive (see http://dx.doi.org/10.1063/1.3681444). This wave form will require signal at two output channels with a phase shift of $\pi$. The wave form is shown in figure \ref{fig:KOALAWave}.
-\begin{figure}[h!]
-\center { \fighalf{SR-DSP-Mover-Koala}}
-\caption{Wave form used to operate a KOALA drive STM.}
-\label{fig:KOALAWave}
-\end{figure}
-\item[Wave: Besocke] Intendet to be used with a Besocke style STM (see https://doi.org/10.1016/0039-6028(87)90151-8): 3 piezos walk up and down a ramp. In this particular case, the piezos have three segments at their outer side (u, v, w). This coarse motion will require signals at three output channels. These signals vary for different directions of movement. The fundamental waveform is shown in Fig.~\ref{fig:BESOCKEWave}. By an additional analog switch, which can be controlled by the GPIO ports, one can change between xy motion (translation) and z motion (rotation). The switch either routes to the equivalent segments of the piezo the same signal (rotation) or projections on the three segments according to the 120$^\circ$ rotation between the three piezos (translation).
+\item[Wave: KOALA] Intendet to be used with a KOALA drive (see http://dx.doi.org/10.1063/1.3681444). This wave form will require signal at two output channels with a phase shift of $\pi$. The wave form is shown in figure \ref{fig:SR-DSP-MK3-Mover-Koala-waveform}.
+\GxsmGraphic{SR-DSP-MK3-Mover-Koala-waveform}{2}{Wave form used to operate a KOALA drive STM.}
+\item[Wave: Besocke] Intendet to be used with a Besocke style STM (see https://doi.org/10.1016/0039-6028(87)90151-8): 3 piezos walk up and down a ramp. In this particular case, the piezos have three segments at their outer side (u, v, w). This coarse motion will require signals at three output channels. These signals vary for different directions of movement. The fundamental waveform is shown in Fig.~\ref{fig:SR-DSP-MK3-Mover-Besocke-waveform}. By an additional analog switch, which can be controlled by the GPIO ports, one can change between xy motion (translation) and z motion (rotation). The switch either routes to the equivalent segments of the piezo the same signal (rotation) or projections on the three segments according to the 120$^\circ$ rotation between the three piezos (translation).
 
 The time delay between the points A and B and also between D and E is named `settling time t1', the time delay between B and C is `period of fall t2'. t2 should be shorter than the actual time for the scan head to fall back onto the ramp. If the z-jump corresponds to about $\Delta h= 1\,\mu$m, the period of fall can be estimated according to the uniformly accelerated fall to be $t2=\sqrt{\frac{\Delta h}{g}}\approx 0.44\,$ms. 
 
 These delays are both variable in the interface. The slip-stick amplitude is given by the voltage difference between C to D. The amplitude of the z-jump is defined as relative ratio to this value.
-\begin{figure}[h!]
-\center { \fighalf{SR-DSP-Mover-Besocke}}
-\caption{Basic wave form used for Besocke drive STM.}
-\label{fig:BESOCKEWave}
-\end{figure}
+\GxsmGraphic{SR-DSP-MK3-Mover-Besocke-waveform}{0.5}{Basic wave form used for Besocke drive STM.}
 \item[Pulse: positive] Uses an analog channel to generate a simple on/off pulse similar to the GPIOs but you can controll the voltage range.
 \end{description}
 
@@ -780,7 +766,7 @@ In config tab is possible to set:
 \begin{description}
 \item[Wave(0,1) out on] select the actual physical output channels used to output Wave X/Y vector. The defaults are: OUTMIX8 to Ch3 (normally X-Scan) and 9 to Ch4 (normally Y-Scan).
 You may alternatively also choose the pre set options below.
-\item[GPIO Pon] Sets ports as logic 1 or 0 in point $e$ - at the beginning of each pulse (picture \ref{fig:SR-DSP-AutoApproach}).
+\item[GPIO Pon] Sets ports as logic 1 or 0 in point $e$ - at the beginning of each pulse (see Fig.~\ref{fig:SR-DSP-MK3-Mover-AutoApproach}).
 \item[GPIO Poff] Sets ports in point $f$ -at the end of each pulse.
 \item[GPIO Preset] Sets ports in point $g$ - at the end of each pulse set.
 \item[GPIO XY-scan] Sets ports while scanning.
@@ -794,33 +780,33 @@ You may alternatively also choose the pre set options below.
 Autoapproach is stopped, when measure signal reaches setpoint value. This value
 is set in SR DSP Control window (SCurrent value).
 
-\GxsmScreenShot{SR-DSP-AutoApproach}{Autoapproach signals. $Z_s$ is scannig signal in Z axis.}
+\GxsmGraphics{SR-DSP-MK3-DSP-AutoApproach}{Autoapproach signals. $Z_s$ is scannig signal in Z axis.}
 
 In all tabs there is possible to set number of pulses in each step (input field \GxsmEntry{Max. Steps}).
-In the figure \ref{fig:SR-DSP-AutoApproach} marked with letter $a$. Length of each step ($c$) is determined by input field \GxsmEntry{Duration}.
+In the figure \ref{fig:SR-DSP-MK3-Mover-AutoApproach} marked with letter $a$. Length of each step ($c$) is determined by input field \GxsmEntry{Duration}.
 
-% OptPlugInSubSection: Stepper motor tab
-
-This tab is used for control macro approach, which can be realised by stepper motor. 
-Approach motor is controlled by pulses on GPIO ports (in the fig. \ref{fig:stepperMotorPulses})
-
-There are used these three signals:
-
-\begin{description}
-\item[Enable] Turn on the stepper motor. If is set to 0, no current is flowing (it can rotate freely).
-\item[Direction] Sets direction of motor rotation. If is set to 1, it will rotate CCW.
-\item[Clock] Each pulse means one step.
-\end{description}
-
-\GxsmScreenShot{stepperMotorPulses}{Pulses used for control of stepper motor.}
-\GxsmScreenShot{SR-DSP-Mover-StepperMotor}{Stepper motor control tab.}
-It is also possible, besides the manual mode, use the automatic approach. 
-
-\GxsmHint{Beware:MK2-A810 operates with 3.3V logic!}
-
-\GxsmNote{For easy stepper motor control via MK2/MK3Pro-A810 use stepper motor controller L297.}
-
-\clearpage
+%% OptPlugInSubSection: Stepper motor tab
+%
+%This tab is used for control macro approach, which can be realised by stepper motor. 
+%Approach motor is controlled by pulses on GPIO ports (in the fig. \ref%{fig:screenshot:stepperMotorPulses})
+%
+%There are used these three signals:
+%
+%\begin{description}
+%\item[Enable] Turn on the stepper motor. If is set to 0, no current is flowing (it can rotate freely).
+%\item[Direction] Sets direction of motor rotation. If is set to 1, it will rotate CCW.
+%\item[Clock] Each pulse means one step.
+%\end{description}
+%
+%\GxsmScreenShot{stepperMotorPulses}{Pulses used for control of stepper motor.}
+%\GxsmScreenShot{SR-DSP-Mover-StepperMotor}{Stepper motor control tab.}
+%It is also possible, besides the manual mode, use the automatic approach. 
+%
+%\GxsmHint{Beware:MK2-A810 operates with 3.3V logic!}
+%
+%\GxsmNote{For easy stepper motor control via MK2/MK3Pro-A810 use stepper motor controller L297.}
+%
+%\clearpage
 
 % OptPlugInSection: SR-DSP Phase/Amplitude Convergent Detector (PAC) Control
 \label{pi:A810-PAC}
@@ -884,11 +870,6 @@ connector and plug into another. But be aware, you have to know
 what you do. Secure the tip before trying new connections! Got me?
 
 \GxsmScreenShotS{signal-graph}{Signal Graph for typical STM operation, as created by the tool and graphviz from the actual life DSP configuration.}{0.13}
-%%\begin{figure}[hbt]
-%%    \center \includesvg[scale=0.5]{signal-graph}
-%%    \caption{Signal Graph for typical STM operation, as created by the tool and graphviz.}
-%%    \label{fig:signal-graph}
-%%\end{figure}
 
 A typical STM configuration will look like the mostly default
 configuration as shown in Fig.\ref{fig:signal-graph}. This life signal
@@ -1391,9 +1372,9 @@ to watch with the scope via the Patch Rack and assign to ``SCOPE\_SIGNAL1/2\_INP
 \item Operational ranges setup. This defines the range mapping and
   actual sensitivities for excitation frequency, resonator phase,
   excitation and resonator amplitudes.  Set the phase range to $360$
-  \degree ($\pm180$ \degree) for tuning (see Fig. \ref{fig:PAC_PLL}). 
+  \degree ($\pm180$ \degree) for tuning (see Fig. \ref{fig:screenshot:MK3-Gxsm-PLL-Control-op}). 
   Select reasonable ranges for amplitudes matching your system needs.
-  \GxsmScreenShotS{MK3-Gxsm-PLL-Control-op}{\label{fig:PAC_PLL}PAC/PLL initial operation
+  \GxsmScreenShotS{MK3-Gxsm-PLL-Control-op}{PAC/PLL initial operation
     boundary setup example. Time constant set to 20 $\mu$s here, PAC
     processing enabled.}{0.5}
 
@@ -1496,14 +1477,6 @@ Few MK3-Pro related notes on LockIn updates:
 \GxsmScreenShotS{MK3-DSP-Control-Graphs-LM}{Graphs example for VP-LM}{0.2}
 
 \clearpage
-
-
-\GxsmScreenShotS{MK3-Mover-Config}{Mover Configuration}{0.2}
-
-\clearpage
-
-
-
 
 % OptPlugInSection: Optional MK3-Pro-SmartPiezoDrive with Gxsm Link
 \index{Signal Ranger MK3-Smart Piezo Drive}
