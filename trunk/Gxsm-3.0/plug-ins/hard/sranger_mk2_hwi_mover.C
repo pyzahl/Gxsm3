@@ -882,6 +882,7 @@ void DSPMoverControl::create_folder (){
 
 
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label (NULL, "Wave: Sawtooth"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a sawtooth signal.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_SAWTOOTH));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -891,6 +892,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Sine"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Generation of generic sinudal waveforms, which exhibit a phase shift. Just for testing.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (3));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_SINE));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -909,6 +911,7 @@ void DSPMoverControl::create_folder (){
 
 
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - full range");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -918,6 +921,7 @@ void DSPMoverControl::create_folder (){
 			
 // ==
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo+"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - positive values.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_PL));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -926,6 +930,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo-"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - negative values.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_MI));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -934,6 +939,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cyclo+"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - positve values.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IPL));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -942,6 +948,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cyclo-"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - negative values.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IMI));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -950,6 +957,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Koala"), 2); //arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for Koala type STM heads.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (2));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_KOALA));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -959,6 +967,7 @@ void DSPMoverControl::create_folder (){
 
 
                         mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Besocke"), 2); //arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for bettle type STM heads with 3fold segmented piezos for the coarse approach without inner z-electrode.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (3));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_BESOCKE));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -969,7 +978,7 @@ void DSPMoverControl::create_folder (){
                                                              
                         mov_bp->set_configure_hide_list_b_mode_on ();
                         mov_bp->grid_add_ec ("z-jump/xy-amplitude", Unity, &mover_param.z_Rate, 0., 1., ".2f", 0.01, 0.1, "besocke-z-jump-ratio");
-                        gtk_widget_set_tooltip_text (mov_bp->input, "Rate of the z-Jump of the amplitude");
+                        gtk_widget_set_tooltip_text (mov_bp->input, "Relative amplitude of the z-jump in respect to the amplitude of the xy-slide");
                         mov_bp->new_line ();
 
                         mov_bp->grid_add_ec ("settling time t1", Time, &mover_param.time_delay_1, 0., 1., ".3f", 0.001, 0.01, "besocke-t1");
@@ -977,7 +986,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 
                         mov_bp->grid_add_ec ("period of fall t2", Time, &mover_param.time_delay_2, 0., 1., ".3f", 0.001, 0.01, "besocke-t2");
-                        gtk_widget_set_tooltip_text (mov_bp->input, "Added time delay for the z-jump");
+                        gtk_widget_set_tooltip_text (mov_bp->input, "Time between the z-jump and the xy-slide.");
                         mov_bp->new_line ();
                         mov_bp->set_configure_hide_list_b_mode_off ();
 
@@ -987,6 +996,7 @@ void DSPMoverControl::create_folder (){
 			// ratio between on/off: 1:1
 			// total time = ton + toff
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Step"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for step function.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_STEP));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -995,11 +1005,13 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
                        
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Pulse"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for arbitrary rectangular pulses.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_PULSE));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
                         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_PULSE ? 1:0);
+                        mov_bp->new_line ();
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------------
 // Code for negative pulse, but not usefull yet as output voltage is set to zero after pulse sequence. (stm, 08.10.2010)
@@ -1027,25 +1039,26 @@ void DSPMoverControl::create_folder (){
                         
                         // ======================================== Wave Output Setup ========================================
                         radiobutton = NULL; // start new radiobuttion group
-			mov_bp->new_grid_with_frame ("Wave-N for X:Y to Channel mapping");
+			mov_bp->new_grid_with_frame ("#wave/direction(xyz)->DAC(0-6)");
+                        gtk_widget_set_tooltip_text (mov_bp->frame,"rows: waveform, columns: direction, cells: output channel; channel 7 does not work as it is overwritten by another signal."); 
 
                         mov_bp->new_line ();
 
                         mov_bp->set_configure_hide_list_b_mode_on ();
                         mov_bp->set_input_width_chars (3);
                         for (int k=0; k<6; ++k){
-                                gchar *wchlab= g_strdup_printf("Wave-%d X", k);
+                                gchar *wchlab= g_strdup_printf("Wave %d: X", k);
                                 gchar *wchid = g_strdup_printf("wave-out%d-ch-x", k);
                                 mov_bp->grid_add_ec (wchlab, Unity, &mover_param.wave_out_channel_xyz[k][0], 0, 7, ".0f", wchid);
-                                gtk_widget_set_tooltip_text (mov_bp->input, "map Wave N on OUTMIX_CH8..8+N to Channel 0-7 for X direction move action");
+                                gtk_widget_set_tooltip_text (mov_bp->input, "map wave N onto DAC channel 0-6 for X direction move action");
                                 g_free (wchid);
                                 wchid = g_strdup_printf("wave-out%d-ch-y", k);
                                 mov_bp->grid_add_ec ("Y", Unity, &mover_param.wave_out_channel_xyz[k][1], 0, 7, ".0f", wchid);
-                                gtk_widget_set_tooltip_text (mov_bp->input, "map Wave N on OUTMIX_CH8..8+N to Channel 0-7 for Y direction move action");
+                                gtk_widget_set_tooltip_text (mov_bp->input, "map wave N onto DAC channel 0-6 for Y direction move action");
                                 g_free (wchid);
                                 wchid = g_strdup_printf("wave-out%d-ch-z", k);
                                 mov_bp->grid_add_ec ("Z", Unity, &mover_param.wave_out_channel_xyz[k][2], 0, 7, ".0f", wchid);
-                                gtk_widget_set_tooltip_text (mov_bp->input, "map Wave N on OUTMIX_CH8..8+N to Channel 0-7 for Z direction move action");
+                                gtk_widget_set_tooltip_text (mov_bp->input, "map wave N onto DAC channel 0-6 for Z direction move action");
                                 g_free (wchid);
                                 g_free (wchlab);
                                 mov_bp->new_line ();
