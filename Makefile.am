@@ -27,7 +27,6 @@ gxsmdatadir = $(datadir)/gxsm3/data
 #ac_default_prefix = /usr
 ac_default_prefix = /usr/local/gxsm
 
-
 #the application icon
 appicondir=$(datadir)/icons/hicolor/scalable/apps
 appicon_DATA=icons/gxsm3-icon.svg

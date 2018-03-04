@@ -187,6 +187,7 @@ GxsmMathOneSrcPlugin *get_gxsm_math_one_src_for_all_vt_plugin_info( void ) {
 
 double       edge_radius = 5.;
 double       adaptive_threashold = 0.;
+double       zero_replace_value = -1.;
 class MemEdgeKrn *edge_kernel=NULL;
 class MemAdaptiveTestKrn *ada_kernel=NULL;
 
@@ -411,6 +412,9 @@ static gboolean edge_run___for_all_vt(Scan *Src, Scan *Dest)
 		if (multidim)
 			gapp->progress_info_set_bar_fraction ((gdouble)(time_index-ti)/(gdouble)ntimes_tmp, 1);
 
+                // testing
+                m->data->replace (0., zero_replace_value);
+                
 		Dest->mem2d->Resize (m->GetNx (), m->GetNy (), vf-vi+1, m->GetTyp());
 		for (int v_index = vi; v_index <= vf; ++v_index){
 			m->SetLayer (v_index);
@@ -449,13 +453,13 @@ static gboolean edge_run(Scan *Src, Scan *Dest)
         if (Src->mem2d->GetNv () > 1) ask = 0;
 	if (ask || ((Src ? Src->mem2d->get_t_index ():0) == 0 && (Src ? Src->mem2d->GetLayer ():0) == 0) || !edge_kernel || !ada_kernel) {
 
-                const gchar* config_label[3] = { "Radius", "Adaptive Threashold", NULL };
-                const gchar* config_info[2]  = { "Edge Kernel Radius. Convol Matrix[2R+2, 2R+1]", "Adaptive Threashold Value" };
-                UnitObj *config_units[2] { gapp->xsm->Unity,  gapp->xsm->data.Zunit };
-                double config_minv[2] = { 0., -1e10 };
-                double config_maxv[2] = { Src->mem2d->GetNx()/10., 1e10 };
-                const gchar* config_fmt[2]  = { ".0f", "g" };
-                double *config_values[2] = { &edge_radius, &adaptive_threashold };    // Radius, Adaptive Threashold
+                const gchar* config_label[4] = { "Radius", "Adaptive Threashold", "Background f0", NULL };
+                const gchar* config_info[3]  = { "Edge Kernel Radius. Convol Matrix[2R+2, 2R+1]", "Adaptive Threashold Value", "Replace Background (0) by f0" };
+                UnitObj *config_units[3] { gapp->xsm->Unity,  gapp->xsm->data.Zunit, gapp->xsm->data.Zunit };
+                double config_minv[3] = { 0., -1e10, 0. };
+                double config_maxv[3] = { Src->mem2d->GetNx()/10., 1e10, 1e8 };
+                const gchar* config_fmt[3]  = { ".0f", "g", "g" };
+                double *config_values[3] = { &edge_radius, &adaptive_threashold, &zero_replace_value };    // Radius, Adaptive Threashold
 
                 gapp->ValueRequestList ("Edge Filter Configuration",
                                         config_label, config_info, config_units,
@@ -468,6 +472,9 @@ static gboolean edge_run(Scan *Src, Scan *Dest)
 		if (ada_kernel)
 			free (ada_kernel);
 
+                //if (zero_replace_value != 0.)
+                        Src->mem2d->data->replace (0., zero_replace_value/Src->data.s.dz, 0.01);
+                
                 g_message ("Setup MemAdaptiveTestKrn");
 		int    s = 1+(int)(edge_radius + .9); // calc. approx Matrix Radius
 		ada_kernel = new MemAdaptiveTestKrn (edge_radius,edge_radius, s,s); // calc. convol adaptive test kernel
@@ -507,6 +514,10 @@ static gboolean edge_run_radius(Scan *Src, Scan *Dest)
 	gapp->ValueRequest("2D Convol. Filter Setup", "Threashold", "adaptive threashold",
 			   gapp->xsm->Unity, 0., Src->mem2d->GetNx()/10., ".0f", &adaptive_threashold);
 
+        if (zero_replace_value > 0.)
+                Src->mem2d->data->replace (0., zero_replace_value, 0.01);
+
+        
 	int    s = 1+(int)(r + .9); // calc. approx Matrix Radius
 	MemEdgeKrn krn (r,r, s,s); // Setup Kernelobject
 	krn.Convolve (Src->mem2d, Dest->mem2d); // Do calculation of Kernel and then do convolution
