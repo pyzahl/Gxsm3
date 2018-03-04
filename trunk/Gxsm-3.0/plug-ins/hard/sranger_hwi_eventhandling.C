@@ -520,7 +520,7 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 	if (gapp->xsm->MasterScan){
 		gapp->xsm->MasterScan->World2Pixel (gapp->xsm->data.s.x0, gapp->xsm->data.s.y0, ix, iy, SCAN_COORD_ABSOLUTE);
 	}
-
+	f << std::setprecision(12)
 	f << "# view via: xmgrace -graph 0 -pexec 'title \"GXSM Vector Probe Data: " << fntmp << "\"' -block " << fntmp  << " -bxy 2:4 ..." << std::endl;
 	f << "# GXSM Vector Probe Data :: VPVersion=00.02 vdate=20070227" << std::endl;
 	f << "# Date                   :: date=" << ctime(&t) << "#" << std::endl;

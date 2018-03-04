@@ -186,6 +186,7 @@ public:
 	virtual void mabs_norm (double mag=1., int vi=0, int vf=-1)=0;
 	virtual void add (double c=1., int vi=0, int vf=-1)=0;
 	virtual void mul (double f=1., int vi=0, int vf=-1)=0;
+	virtual void replace (double zi, double zf, double eps=0.0, int vi=0, int vf=-1)=0;
 	
 	void SetLayer(int l){ vlayer=l; };
 	void SetLayerDataPut(int l){ vlayer_put=l; };
@@ -340,6 +341,7 @@ public:
 	void mabs_norm (double mag=1., int vi=0, int vf=-1);
 	void add (double c=1., int vi=0, int vf=-1);
 	void mul (double f=1., int vi=0, int vf=-1);
+	void replace (double zi, double zf, double eps=0.0, int vi=0, int vf=-1);
 
 protected:
 	ZTYP **Zdat;

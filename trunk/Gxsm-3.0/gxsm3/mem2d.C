@@ -444,6 +444,32 @@ void TZData<ZTYP>::mul (double f, int vi, int vf){
         }
 }
 
+template <class ZTYP> 
+void TZData<ZTYP>::replace (double zi, double zf, double eps, int vi, int vf){
+        double zfr = zf;
+        double zfl = zf;
+        if (vf<vi) vf=nv-1;
+        for(int v=vi; v<=vf; ++v){
+                for(int y=0; y<ny; y++)
+                        for(int x=0; x<nx; x++){
+                                double tmp = (double)Zdat[y*nv+v][x];
+                                if (fabs(tmp - zi) <= eps){
+                                        if (zf < 0.){
+                                                zfr = zfl = 0.;
+                                                int xx;
+                                                for(xx=x; xx<nx && fabs((double)Zdat[y*nv+v][xx] - zi) <= eps; xx++);
+                                                if (xx<nx)
+                                                        zfr = (double)Zdat[y*nv+v][xx];
+                                                for(xx=x; xx>=0 && fabs((double)Zdat[y*nv+v][xx] - zi) <= eps; xx--);
+                                                if (xx >= 0)
+                                                        zfl = (double)Zdat[y*nv+v][xx];
+                                                zfr = zfr > zfl ? zfr : zfl;
+                                        }
+                                        Zdat[y*nv+v][x] = (ZTYP)(zfr);
+                                }
+                        }
+        }
+}
 
 /*
  * Layer Information
@@ -2634,7 +2660,7 @@ void MemDigiFilter::MakeKernelNormalized (){
         }while(again);
 #endif
         
-        if (adaptive_kernel_test || adaptive_threashold_test > 0.){
+        if (adaptive_kernel_test && adaptive_threashold_test > 0.){
                 q=ms > ns ? ns : ms;
                 g_message ("Resize Kernel to: %d, %d, %d", 2*ns+1, 2*ms+1, q+1);
                 Resize(2*ns+1, 2*ms+1, q+1, ZD_DOUBLE);
