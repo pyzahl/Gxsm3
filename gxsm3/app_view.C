@@ -822,8 +822,13 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 
 	// -- Probe Events Tab
         // ==================================================
+
         pe_bp = new BuildParam ();
-        gtk_container_add (GTK_CONTAINER (notebook), pe_bp->grid);
+	scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
+	gtk_widget_set_size_request (scrolledwindow, 250, -1);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+        gtk_container_add (GTK_CONTAINER (notebook), scrolledwindow);
+        gtk_container_add (GTK_CONTAINER (scrolledwindow), pe_bp->grid);
 
 	label = gtk_label_new (N_("Probe Events"));
 	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
@@ -964,7 +969,11 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	// -- User Events Tab
         // ==================================================
         ue_bp = new BuildParam ();
-        gtk_container_add (GTK_CONTAINER (notebook), ue_bp->grid);
+	scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
+	gtk_widget_set_size_request (scrolledwindow, 250, -1);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+        gtk_container_add (GTK_CONTAINER (notebook), scrolledwindow);
+        gtk_container_add (GTK_CONTAINER (scrolledwindow), ue_bp->grid);
 
 	label = gtk_label_new (N_("User Events"));
 	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
@@ -990,7 +999,11 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	// -- Objects Tab
         // ==================================================
 	base_grid = gtk_grid_new ();
-	gtk_container_add (GTK_CONTAINER (notebook), base_grid);
+	scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
+	gtk_widget_set_size_request (scrolledwindow, 250, -1);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+        gtk_container_add (GTK_CONTAINER (notebook), scrolledwindow);
+        gtk_container_add (GTK_CONTAINER (scrolledwindow), base_grid);
 
 	label = gtk_label_new (N_("Objects"));
 	gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook), notebook_tab_index++), label);
