@@ -138,7 +138,10 @@ sranger_mk2_hwi_dev::sranger_mk2_hwi_dev(){
 	if (strrchr (xsmres.DSPDev, '_') != NULL)
 		srdev_index_start = atoi ( strrchr (xsmres.DSPDev, '_')+1); // start at given device, keep looking for higher numbers
 	while (srdev_index_start >= 0 && srdev_index_start < 8) {
-	        sprintf (xsmres.DSPDev,"/dev/sranger_mk2_%d", srdev_index_start); // override
+                if (!strcmp (xsmres.DSPDev, "/dev/shm/sranger_mk3emu"))
+                        srdev_index_start = 8; // no more, try just this
+                else
+		        sprintf (xsmres.DSPDev,"/dev/sranger_mk2_%d", srdev_index_start); // override
 		PI_DEBUG_GP (DBG_L1, "Looking for MK2 with runnign GXSM compatible FB_spmcontrol DSP code starting at %s\n", xsmres.DSPDev);
 	  
 		if((dsp = open (xsmres.DSPDev, O_RDWR)) <= 0){

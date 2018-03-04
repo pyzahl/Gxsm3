@@ -158,7 +158,10 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 
 	gint srdev_index_start = atoi ( strrchr (xsmres.DSPDev, '_')+1); // start at given device, keep looking for higher numbers
 	while (srdev_index_start >= 0 && srdev_index_start < 8) {
-	        sprintf (xsmres.DSPDev,"/dev/sranger_mk2_%d", srdev_index_start); // override
+                if (!strcmp (xsmres.DSPDev, "/dev/shm/sranger_mk3emu"))
+                        srdev_index_start = 8; // no more, try just this
+                else
+                        sprintf (xsmres.DSPDev,"/dev/sranger_mk2_%d", srdev_index_start); // override
                 PI_DEBUG_GP (DBG_L1, " -> Looking for MK3 up and running GXSM compatible FB_spmcontrol DSP code starting at %s.\n", xsmres.DSPDev);
 	  
 		if((dsp = open (xsmres.DSPDev, O_RDWR)) <= 0){
@@ -191,30 +194,35 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 		}
 		else{
 		        int ret;
-			unsigned int vendor, product;
-			if ((ret=ioctl(dsp, SRANGER_MK2_IOCTL_VENDOR, (unsigned long)&vendor)) < 0){
-			        SRANGER_ERROR(strerror(ret) << " cannot query VENDOR" << std::endl
-					      << "Device: " << xsmres.DSPDev);
-				g_free (productid);
-				productid=g_strdup_printf ("Device used: %s\n Start 'gxsm3 -h no' to correct the problem.", xsmres.DSPDev);
-				gapp->alert (N_("Unkonwn Hardware"), N_("Query Vendor ID failed."), productid, 1);
-				PI_DEBUG_GP (DBG_L4, "HWI-DEV-MK3-E02-- unkown hardware, vendor ID mismatch.\n");
-				close (dsp);
-				dsp = 0;
-				exit (-1);
-				return;
-			}
-			if ((ret=ioctl(dsp, SRANGER_MK2_IOCTL_PRODUCT, (unsigned long)&product)) < 0){
-			        SRANGER_ERROR(strerror(ret) << " cannot query PRODUCT" << std::endl
-					      << "Device: " << xsmres.DSPDev);
-				g_free (productid);
-				productid=g_strdup_printf ("Device used: %s\n Start 'gxsm3 -h no' to correct the problem.", xsmres.DSPDev);
-				gapp->alert (N_("Unkonwn Hardware"), N_("Query Product ID failed."), productid, 1);
-				PI_DEBUG_GP (DBG_L4, "HWI-DEV-MK3-E03-- unkown hardware, product ID mismatch.\n");
-				close (dsp);
-				dsp = 0;
-				return;
-			}
+			unsigned int vendor=0, product=0;
+                        if (!strcmp (xsmres.DSPDev, "/dev/shm/sranger_mk3emu")){
+                                vendor  = 0x1612;
+                                product = 0xf103;
+                        } else {
+                                if ((ret=ioctl(dsp, SRANGER_MK2_IOCTL_VENDOR, (unsigned long)&vendor)) < 0){
+                                        SRANGER_ERROR(strerror(ret) << " cannot query VENDOR" << std::endl
+                                                      << "Device: " << xsmres.DSPDev);
+                                        g_free (productid);
+                                        productid=g_strdup_printf ("Device used: %s\n Start 'gxsm3 -h no' to correct the problem.", xsmres.DSPDev);
+                                        gapp->alert (N_("Unkonwn Hardware"), N_("Query Vendor ID failed."), productid, 1);
+                                        PI_DEBUG_GP (DBG_L4, "HWI-DEV-MK3-E02-- unkown hardware, vendor ID mismatch.\n");
+                                        close (dsp);
+                                        dsp = 0;
+                                        exit (-1);
+                                        return;
+                                }
+                                if ((ret=ioctl(dsp, SRANGER_MK2_IOCTL_PRODUCT, (unsigned long)&product)) < 0){
+                                        SRANGER_ERROR(strerror(ret) << " cannot query PRODUCT" << std::endl
+                                                      << "Device: " << xsmres.DSPDev);
+                                        g_free (productid);
+                                        productid=g_strdup_printf ("Device used: %s\n Start 'gxsm3 -h no' to correct the problem.", xsmres.DSPDev);
+                                        gapp->alert (N_("Unkonwn Hardware"), N_("Query Product ID failed."), productid, 1);
+                                        PI_DEBUG_GP (DBG_L4, "HWI-DEV-MK3-E03-- unkown hardware, product ID mismatch.\n");
+                                        close (dsp);
+                                        dsp = 0;
+                                        return;
+                                }
+                        }
 			if (vendor == 0x0a59 || vendor == 0x1612){
 			        g_free (productid);
 				if (vendor == 0x0a59 && product == 0x0101){
@@ -255,6 +263,11 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 					PI_DEBUG_GP (DBG_L4, "HWI-DEV-MK3-I03-- SR-MK3-NG 1612:0103 found -- OK, taking it.\n");
 					target = SR_HWI_TARGET_C55;
 					sranger_mark_id = 3;
+				}else if (vendor == 0x1612 && product == 0xf103){
+				        productid=g_strdup ("Vendor/Product: GXSM3-EMU, Signal Ranger MK3 EMU (1612:F103)");
+					PI_DEBUG_GP (DBG_L4, "HWI-DEV-MK3-SHMEMU-I03-- SR-MK3-NG-EMU 1612:F103 found -- OK, taking it.\n");
+					target = SR_HWI_TARGET_C55;
+					sranger_mark_id = 3;
 				}else{
 				        productid=g_strdup ("Vendor/Product: B.Paillard, unkown version!");
 					gapp->alert (N_("Unkonwn Hardware detected"), N_("No Signal Ranger found."), productid, 1);
@@ -265,8 +278,22 @@ sranger_mk3_hwi_dev::sranger_mk3_hwi_dev(){
 				}
 				
 				PI_DEBUG_GP (DBG_L4, "HWI-DEV-MK3-I** reading DSP magic informations and code version.\n");
+
+
 				// now read magic struct data
-				lseek (dsp, FB_SPM_MAGIC_ADR, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                if (product == 0xf103){ // shm dsp emu (mmapped emulator)
+                                        gapp->monitorcontrol->LogEvent ("HWI-DEV-MK3 DSP-ENGINE","MMAPPED DSP EMULATOR IDENTIFIED");
+                                        PI_DEBUG_GP (DBG_L4, "HWI-DEV-MK3 DSP-ENGINE: MMAPPED DSP EMULATOR IDENTIFIED");
+                                        // DSP EMU MAGIC IS MAPPED TO BEGINNING (adr=0) OF DSP MMAPPER BUFFER 
+                                        lseek (dsp, 0, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+				} else {
+                                        gapp->monitorcontrol->LogEvent ("HWI-DEV-MK3 DSP-ENGINE","USB DEVICE MAPPED TI DSP");
+                                        PI_DEBUG_GP (DBG_L4, "HWI-DEV-MK3 DSP-ENGINE: USB DEVICE MAPPED TI DSP");
+                                        lseek (dsp, FB_SPM_MAGIC_ADR, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                }
+                                
+                                // now read magic struct data
+				//lseek (dsp, FB_SPM_MAGIC_ADR, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 				sr_read (dsp, &magic_data, sizeof (magic_data)); 
 				swap_flg = 0;
 				PI_DEBUG_GP (DBG_L4, "HWI-DEV-MK3-I*CPU* DSP-MAGIC  : %08x   [M:%08x]\n", magic_data.magic, FB_SPM_MAGIC);
