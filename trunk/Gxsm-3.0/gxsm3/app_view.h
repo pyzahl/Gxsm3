@@ -122,6 +122,8 @@ public:
         static void obj_reset_counter_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void obj_show_counter_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
+        static void obj_event_add_ref_probe_callback (GtkWidget *widget, gpointer user_data);
+        static void obj_event_clear_ref_probe_callback (GtkWidget *widget, gpointer user_data);
         static void obj_event_plot_callback (GtkWidget *widget, gpointer user_data);
         static void obj_event_dump_callback (GtkWidget *widget, gpointer user_data);
 
@@ -295,6 +297,7 @@ private:
         GSList  *gobjlist;
         GSList  *geventlist;
         GSList  *gindicatorlist;
+        GSList  *greference_eventlist;
         GtkWidget *v_popup_menu;
         GActionGroup *view_action_group;
 
@@ -310,6 +313,7 @@ private:
         double ActiveFrameWidth; // 8 at zoomfac 1, 0 for inactive.
         double CursorXYVt[4];
         double CursorRadius;
+        double ReferenceWeight;
         gint   MaxNumberEvents;
         double ArrowSize;
         Gtk_EntryControl* ec_zoom;
