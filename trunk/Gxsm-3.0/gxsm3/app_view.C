@@ -1921,9 +1921,24 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
 						
                                                         vc->EventPlot[l]->AddScan (vc->EventPlot[l]->scan1d, count);
 
-                                                        if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
-                                                                for(int i = 0; i < nn; i++)
-                                                                        vc->EventPlot[l]->SetPoint (i, pen->get (i, yi[l]), count);
+                                                        if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0){
+                                                                if (vc->greference_eventlist){
+                                                                        for(int i = 0; i < nn; i++){
+                                                                                double yr=0.;
+                                                                                int rn=0;
+                                                                                GSList* ref = vc->greference_eventlist;
+                                                                                do {
+                                                                                        ProbeEntry* ref_pe = (ProbeEntry*) ref->data;
+                                                                                        yr += ref_pe->get (i, yi[l]);
+                                                                                        ++rn;
+                                                                                } while ((ref=ref->next));
+                                                                                yr /= rn; yr *= vc->ReferenceWeight;
+                                                                                vc->EventPlot[l]->SetPoint (i, pen->get (i, yi[l]) - yr, count);
+                                                                        }
+                                                                } else
+                                                                        for(int i = 0; i < nn; i++)
+                                                                                vc->EventPlot[l]->SetPoint (i, pen->get (i, yi[l]), count);
+                                                        }
                                                         else
                                                                 for(int i = 0; i < nn; i++){
                                                                         double q = pen->get (i, yni)/pen->get (i, xi);
