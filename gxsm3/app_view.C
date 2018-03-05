@@ -569,6 +569,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	geventlist = NULL;
 	event_filter = NULL;
 	gindicatorlist = NULL;
+        greference_eventlist = NULL;
 
 	guchar *array;
         gsize n_stores=0;
@@ -842,6 +843,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         //  <key name="view-max-number-events" type="d"> 
         //  <key name="view-arrow-size" type="d">
 	XsmRescourceManager xrm("App_View");
+        ReferenceWeight = 1.0;
         xrm.Get ("CursorRadius", &CursorRadius, "10000.");
         xrm.Get ("MaxNumberEventsCursorRadius", &MaxNumberEvents, "300");
         xrm.Get ("ArrowSize", &ArrowSize, "35.");
@@ -940,7 +942,14 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         pe_bp->grid_add_button ("Go!", "Update plot", 1, G_CALLBACK (ViewControl:: obj_event_plot_callback), this);
         tog_plot = pe_bp->grid_add_check_button ("On Click", "Update plot on event clicked", 1, G_CALLBACK (ViewControl:: obj_event_plot_callback), this);
         pe_bp->new_line ();
+        pe_bp->grid_add_button ("Add Reference", "Add Active Probe to Reference data set list", 1, G_CALLBACK (ViewControl:: obj_event_add_ref_probe_callback), this);
+        pe_bp->grid_add_button ("Clear Reference", "Clear Reference data set list", 1, G_CALLBACK (ViewControl:: obj_event_clear_ref_probe_callback), this);
+        pe_bp->new_line ();
 
+        gtk_widget_set_tooltip_text (
+                                     pe_bp->grid_add_ec (N_("Ref-Weight"), gapp->xsm->Unity, &ReferenceWeight, -100., 100., ".3f", 1., 10., NULL),
+                                     N_("Reference Weight (scaling factor)."));
+        pe_bp->new_line ();
         gtk_widget_set_tooltip_text (
                                      pe_bp->grid_add_ec (N_("Radius"), gapp->xsm->LenUnit ? gapp->xsm->LenUnit : gapp->xsm->X_Unit, &CursorRadius, 0., 1000000., ".1f", 10., 100., NULL),
                                      N_("Click middle button to choose center for area of interest and update."));
@@ -1537,6 +1546,11 @@ void ViewControl::add_event_obj(ScanEvent *se, ViewControl *vc)
 void ViewControl::RemoveEventObjects (VObject *vo){
 // unsets object flag and delete obj!
         g_message ("ViewControl::RemoveEventObjects: %s ", vo? "single":"all");
+
+        if (greference_eventlist){
+                g_slist_free (greference_eventlist);
+                greference_eventlist = NULL;
+        }
         if (geventlist && !vo){
                 g_slist_foreach((GSList*) geventlist, (GFunc) ViewControl::unflag_scan_event_and_remove_obj, this); 
                 g_slist_free(geventlist);
@@ -1668,6 +1682,27 @@ void ViewControl::update_event_panel (ScanEvent *se){
 // 	i = gtk_combo_box_get_active (GTK_COMBO_BOX (active_event_xchan));
 }
 
+void  ViewControl::obj_event_add_ref_probe_callback (GtkWidget* widget, 
+                                                     gpointer user_data){
+        ViewControl *vc = (ViewControl *) user_data;
+	if (!vc->active_event) return;
+
+	EventEntry *ee = (EventEntry*) vc->active_event->event_list->data;
+
+	if (ee->description_id () == 'P')
+                vc->greference_eventlist = g_slist_prepend (vc->greference_eventlist, ee);
+
+}
+
+void  ViewControl::obj_event_clear_ref_probe_callback (GtkWidget* widget, 
+                                                       gpointer user_data){
+        ViewControl *vc = (ViewControl *) user_data;
+        if (vc->greference_eventlist){
+                g_slist_free (vc->greference_eventlist);
+                vc->greference_eventlist = NULL;
+        }
+}
+
 void  ViewControl::obj_event_plot_callback (GtkWidget* widget, 
                                             gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
@@ -1783,16 +1818,31 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                                 vc->EventPlot[l]->RemoveScans ();
                                 vc->EventPlot[l]->scan1d->mem2d->Resize (nn, 1);
                                 vc->EventPlot[l]->AddScan (vc->EventPlot[l]->scan1d, 0);
-                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
-                                        for(int i = 0; i < nn; i++)
-                                                vc->EventPlot[l]->SetPoint (i, pe->get (i, xi), pe->get (i, yi[l]));
-                                else
+                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0){
+                                        if (vc->greference_eventlist){
+                                                for(int i = 0; i < nn; i++){
+                                                        double yr=0.;
+                                                        int rn=0;
+                                                        GSList* ref = vc->greference_eventlist;
+                                                        do {
+                                                                ProbeEntry* ref_pe = (ProbeEntry*) ref->data;
+                                                                yr += ref_pe->get (i, yi[l]);
+                                                                ++rn;
+                                                        } while ((ref=ref->next));
+                                                        yr /= rn; yr *= vc->ReferenceWeight;
+                                                        vc->EventPlot[l]->SetPoint (i, pe->get (i, xi), pe->get (i, yi[l]) - yr);
+                                                }
+                                        } else
+                                                for(int i = 0; i < nn; i++)
+                                                        vc->EventPlot[l]->SetPoint (i, pe->get (i, xi), pe->get (i, yi[l]));
+                                }else{
                                         for(int i = 0; i < nn; i++){
                                                 double q = pe->get (i, yni)/pe->get (i, xi);
                                                 if (fabs(pe->get (i, xi)) < eps || fabs (q) < eps)
                                                         q=1.;
                                                 vc->EventPlot[l]->SetPoint (i, pe->get (i, xi), pe->get (i, yi[l])/q);
                                         }
+                                }
                         } else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 1){ // visible
                                 vc->EventPlot[l]->RemoveScans ();
                                 vc->EventPlot[l]->scan1d->mem2d->Resize (nn, 1);
