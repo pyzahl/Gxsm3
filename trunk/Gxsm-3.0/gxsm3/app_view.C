@@ -1894,13 +1894,16 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                                 int count=0;
                                 while (ev){
                                         ScanEvent *sen = (ScanEvent*) ev->data;
-                                        if (sen != vc->active_event){
-                                                EventEntry *een = (EventEntry*) sen->event_list->data;
-                                                if (een->description_id () == 'P'){
-                                                        if (++i > vc->MaxNumberEvents || ((ScanEvent*)(ev->data))->distance (vc->CursorXYVt) > vc->CursorRadius)
-                                                                break;
-                                                        count++;
+                                        EventEntry *een = (EventEntry*) sen->event_list->data;
+                                        if (een->description_id () == 'P'){
+                                                if (count > vc->MaxNumberEvents)
+                                                        break;
+                                                
+                                                if (((ScanEvent*)(ev->data))->distance (vc->CursorXYVt) > vc->CursorRadius){
+                                                        ev = g_slist_next (ev);
+                                                        continue;
                                                 }
+                                                count++;
                                         }
                                         ev = g_slist_next (ev);
                                 }
@@ -1912,43 +1915,45 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                                 ev = all;
                                 while (ev){
                                         ScanEvent *sen = (ScanEvent*) ev->data;
-                                        if (sen != vc->active_event){
-                                                EventEntry *een = (EventEntry*) sen->event_list->data;
-                                                if (een->description_id () == 'P'){
-                                                        ProbeEntry* pen = (ProbeEntry*) een;
-                                                        if (++i > vc->MaxNumberEvents || ((ScanEvent*)(ev->data))->distance (vc->CursorXYVt) > vc->CursorRadius)
-                                                                break;
-						
-                                                        vc->EventPlot[l]->AddScan (vc->EventPlot[l]->scan1d, count);
-
-                                                        if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0){
-                                                                if (vc->greference_eventlist){
-                                                                        for(int i = 0; i < nn; i++){
-                                                                                double yr=0.;
-                                                                                int rn=0;
-                                                                                GSList* ref = vc->greference_eventlist;
-                                                                                do {
-                                                                                        ProbeEntry* ref_pe = (ProbeEntry*) ref->data;
-                                                                                        yr += ref_pe->get (i, yi[l]);
-                                                                                        ++rn;
-                                                                                } while ((ref=ref->next));
-                                                                                yr /= rn; yr *= vc->ReferenceWeight;
-                                                                                vc->EventPlot[l]->SetPoint (i, pen->get (i, yi[l]) - yr, count);
-                                                                        }
-                                                                } else
-                                                                        for(int i = 0; i < nn; i++)
-                                                                                vc->EventPlot[l]->SetPoint (i, pen->get (i, yi[l]), count);
-                                                        }
-                                                        else
-                                                                for(int i = 0; i < nn; i++){
-                                                                        double q = pen->get (i, yni)/pen->get (i, xi);
-                                                                        if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
-                                                                                q=1.;
-                                                                        vc->EventPlot[l]->SetPoint (i, pen->get (i, yi[l])/q, count);
-                                                                }
-						
-                                                        ++count;
+                                        EventEntry *een = (EventEntry*) sen->event_list->data;
+                                        if (een->description_id () == 'P'){
+                                                ProbeEntry* pen = (ProbeEntry*) een;
+                                                if (++i > vc->MaxNumberEvents)
+                                                        break;
+                                                if (((ScanEvent*)(ev->data))->distance (vc->CursorXYVt) > vc->CursorRadius){
+                                                        ev = g_slist_next (ev);
+                                                        continue;
                                                 }
+
+                                                vc->EventPlot[l]->AddScan (vc->EventPlot[l]->scan1d, count);
+
+                                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0){
+                                                        if (vc->greference_eventlist){
+                                                                for(int i = 0; i < nn; i++){
+                                                                        double yr=0.;
+                                                                        int rn=0;
+                                                                        GSList* ref = vc->greference_eventlist;
+                                                                        do {
+                                                                                ProbeEntry* ref_pe = (ProbeEntry*) ref->data;
+                                                                                yr += ref_pe->get (i, yi[l]);
+                                                                                ++rn;
+                                                                        } while ((ref=ref->next));
+                                                                        yr /= rn; yr *= vc->ReferenceWeight;
+                                                                        vc->EventPlot[l]->SetPoint (i, pen->get (i, yi[l]) - yr, count);
+                                                                }
+                                                        } else
+                                                                for(int i = 0; i < nn; i++)
+                                                                        vc->EventPlot[l]->SetPoint (i, pen->get (i, yi[l]), count);
+                                                }
+                                                else
+                                                        for(int i = 0; i < nn; i++){
+                                                                double q = pen->get (i, yni)/pen->get (i, xi);
+                                                                if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
+                                                                        q=1.;
+                                                                vc->EventPlot[l]->SetPoint (i, pen->get (i, yi[l])/q, count);
+                                                        }
+						
+                                                ++count;
                                         }
                                         ev = g_slist_next (ev);
                                 }
