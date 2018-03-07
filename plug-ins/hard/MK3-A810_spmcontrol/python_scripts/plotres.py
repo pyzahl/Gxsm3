@@ -10,6 +10,8 @@ amp1f   = np.load ("mk3_tune_ResAmp.npy")
 phase2f = np.load ("mk3_tune_ResPhase2F.npy")
 phase1f = np.load ("mk3_tune_ResPhase.npy")
 
+phase1f = np.where (phase1f < -180,phase1f + 360, phase1f)
+
 fig, (ax0, ax1) = plt.subplots(nrows=2, sharex=True)
 
 ax0.set_title ('Resonator Phase')

@@ -678,7 +678,7 @@ class StepResponse():
 
 class TuneScope():
 
-    def __init__(self, parent, fc=29874.0, span=50., Fres=0.1, int_ms = 80.):
+    def __init__(self, parent, fc=30760.0, span=100., Fres=0.1, int_ms = 100.):
 	Xsignal = parent.mk3spm.lookup_signal_by_name("PLL Res Amp LP")
 	Ysignal = parent.mk3spm.lookup_signal_by_name("PLL Res Ph LP")
 	label = "Tune Scope -- X: " + Xsignal[SIG_NAME] + "  Y: " + Ysignal[SIG_NAME]
@@ -936,10 +936,10 @@ class TuneScope():
                         # P_UnWrapped(i)=P(i)-Floor(((P(i)-P(i-1))/2Pi)+0.5)*2Pi
 
 			if cur_ph - pre_ph > 180.:
-                                cur_ph = cur_ph - 360.
+                                cur_ph = cur_ph - 180. # 360
 				print "Ph UnWrap pos=", cur_ph
 			if cur_ph - pre_ph < -180.:
-                                cur_ph = cur_ph + 360.
+                                cur_ph = cur_ph + 180. # 360
 				print "Ph UnWrap neg=", cur_ph
 
 			if self.pos >= 0 and self.pos < self.points:
