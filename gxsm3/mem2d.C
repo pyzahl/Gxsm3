@@ -197,8 +197,8 @@ int TZData<ZTYP>::Resize(int Nx, int Ny, int Nv){
 						if(Nx > nx || i >= ny || v >= nv)
 							memset(Zdat[q], 0, sizeof(ZTYP)*Nx);
 						if(i < ny && v < nv && Zdold[i*nv+v]){
-							memcpy(Zdat[q], Zdold[q], sizeof(ZTYP)*(Nx < nx ? Nx : nx));
-							//delete [] Zdold[q];
+                                                        memcpy (Zdat[q], Zdold[i*nv+v], sizeof(ZTYP)*(Nx < nx ? Nx : nx));
+							//delete [] Zdold[q]; // obsolete
                                                         //Zdold[q] = NULL;
 						}
 					}
