@@ -2726,7 +2726,7 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         // now fill edges and corners with copies of edge data
         // edge left / right
         for(i=0;i<mm;i++)
-                for(j=0;j<ns;j++){   
+                for(j=0;j<ns;j++){
                         x.data->Z(Src->data->Z(i0,i),   j,      i+ms); // data[i+ms][j]       = Src->data[i][0];
                         x.data->Z(Src->data->Z(nn-1,i),j+ns+nn,i+ms); // data[i+ms][j+ns+nn] = Src->data[i][nn-1];
                 }
@@ -2736,9 +2736,12 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
 
         // edge top / bottom and oberserve shift
         for(i=0;i<ms;i++){
-                x.data->CopyFrom(Src->data, 0,0, ns,i ,nn, -1, true);
-                x.data->CopyFrom(Src->data, 0,mm-1, ns,i+mm+ms ,nn, -1, true);
+                g_message ("Convol Top/Bot extend: i=%d ns=%d nn=%d mm=%d",i, ns, nn, mm);
+                x.data->CopyFrom(Src->data, 0,0, ns,i ,nn, 1, true);
+                x.data->CopyFrom(Src->data, 0,mm-2, ns,i+mm+ms ,nn, 1, true);
         } 
+        x.data->CopyFrom(Src->data, 0,mm-2, ns,mm+ms-1 ,nn, 1, true);
+        
         gapp->progress_info_set_bar_fraction (0.5, 2);
         gapp->check_events ();
 
@@ -2753,16 +2756,19 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         gapp->progress_info_set_bar_fraction (0.8, 2);
         gapp->check_events ();
 
-#ifdef SAVECONVOLSRC
+// #define SAVECONVOLSRC
+#ifdef  SAVECONVOLSRC
         // save datasrc with added bounds to /tmp/convolsrc.xxx
         std::ofstream fk;
         switch(x.GetTyp()){
         case ZD_BYTE: fk.open("/tmp/convolsrc.byt", std::ios::out); break;
         case ZD_SHORT: fk.open("/tmp/convolsrc.sht", std::ios::out); break;
         case ZD_LONG: fk.open("/tmp/convolsrc.lng", std::ios::out); break;
+        case ZD_FLOAT: fk.open("/tmp/convolsrc.flt", std::ios::out); break;
         case ZD_DOUBLE: fk.open("/tmp/convolsrc.dbl", std::ios::out); break;
         default: break;
         }
+
         if(fk.good()){
                 struct { short nx,ny; } fkh; 
                 fkh.nx=x.data->GetNx();
@@ -2770,6 +2776,7 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                 fk.write((const char*)&fkh, sizeof(fkh));
                 x.DataWrite(fk);
                 fk.close();
+                g_message ("Saved tmp convolution src /tmp/covolsrc.flt/dbl/...");
         }
 #endif
         
