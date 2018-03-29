@@ -679,6 +679,9 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
 	CursorsIdx[0]=0;
 	CursorsIdx[1]=0;
 
+        BBox = NULL;
+        bbox_mode = 0;
+        
 	last_pe = NULL;
 	scount=0;
 	statusheight = 30;
@@ -897,6 +900,7 @@ ProfileControl::~ProfileControl ()
                 UNREF_DELETE_CAIRO_ITEM (Cursor[id][0], canvas);
                 UNREF_DELETE_CAIRO_ITEM (Cursor[id][1], canvas);
         }
+        UNREF_DELETE_CAIRO_ITEM (BBox, canvas);
         for(int i=0; i<PC_XTN; i++) if (Xtics[i]) { UNREF_DELETE_CAIRO_ITEM (Xtics[i], canvas); }
 	for(int i=0; i<PC_YTN; i++)  if (Ytics[i]) { UNREF_DELETE_CAIRO_ITEM (Ytics[i], canvas); }
         for(int i=0; i<PC_XLN; i++)  if (Xlabels[i]) { UNREF_DELETE_CAIRO_ITEM (Xlabels[i], canvas); }
@@ -1106,7 +1110,10 @@ gboolean ProfileControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, P
                         pc->Cursor[id][0]->draw (cr);
                         pc->Cursor[id][1]->draw (cr);
                 }
-        
+
+        if (pc->BBox)
+                pc->BBox->draw (cr);
+                
         return FALSE;
 }
 

@@ -1206,9 +1206,9 @@ void ViewControl::AppWindowInit(const gchar *title){
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), side_pane_control);
         gtk_widget_show (side_pane_control);
 	gtk_widget_set_tooltip_text (side_pane_control, N_("Show Side Info/Control Pane"));
-        g_settings_bind (view_settings, "sidepane-show",
-                         G_OBJECT (side_pane_control), "active",
-                         G_SETTINGS_BIND_DEFAULT);
+        //        g_settings_bind (view_settings, "sidepane-show",
+        //                         G_OBJECT (side_pane_control), "active",
+        //                         G_SETTINGS_BIND_DEFAULT);
         g_signal_connect (G_OBJECT (side_pane_control), "toggled",
                           G_CALLBACK (ViewControl::side_pane_callback), this);
         

@@ -508,7 +508,9 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	cairo_item      **LegendSym;
 	cairo_item_text **LegendText;
 	cairo_item       *Cursor[2][2];
-
+        cairo_item      *BBox;
+        int bbox_mode;
+        
 	gchar *ys_legend_label_list[PC_LEGEND_ITEMS_MAX];
 	int num_legend;
 
