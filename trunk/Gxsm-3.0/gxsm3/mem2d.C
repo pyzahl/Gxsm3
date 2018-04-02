@@ -1793,10 +1793,15 @@ double Mem2d::GetZRange(){
 	return Zrange;
 }
 
-void Mem2d::SetHiLo(double hi, double lo){
-	Zmin=lo;
-	Zmax=hi;
-	Zrange=Zmax-Zmin;
+void Mem2d::SetHiLo(double hi, double lo, gboolean expand){
+        if (expand){
+                Zmin = MIN (lo, Zmin);
+                Zmax = MAX (hi, Zmax);
+        } else {
+                Zmin = lo;
+                Zmax = hi;
+        }
+	Zrange = Zmax-Zmin;
 }
 
 void Mem2d::AutoDataSkl(double *contrast, double *bright){
@@ -2441,7 +2446,7 @@ void Mem2d::AutoHistogrammEvalMode (Point2D *p1, Point2D *p2, int delta, double 
 }
 
 
-void Mem2d::HiLoMod(Point2D *p1, Point2D *p2, int Delta){
+void Mem2d::HiLoMod(Point2D *p1, Point2D *p2, int Delta, gboolean expand){
 	int i,j,i1,i2, j1,j2;
 	double p, hi, lo;
 	
@@ -2476,9 +2481,7 @@ void Mem2d::HiLoMod(Point2D *p1, Point2D *p2, int Delta){
 					if(lo > p) lo = p;
 			}
 	}
-	Zmin=lo;
-	Zmax=hi;
-	Zrange=Zmax-Zmin;
+        SetHiLo (hi, lo, expand);
 	XSM_DEBUG (DBG_L6, "Mem2d::HiLoMod  Zmin=" << Zmin << " Zmax=" << Zmax);
 }
 

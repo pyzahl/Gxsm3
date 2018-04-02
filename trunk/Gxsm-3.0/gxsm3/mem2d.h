@@ -354,7 +354,7 @@ public:
 	void SetDataPktMode(int mode);
 	void SetDataRange(ZVIEW_TYPE Min, ZVIEW_TYPE Max);
 	double GetDataRange() { return  (ZVmax-ZVmin); };
-	void SetHiLo(double hi, double lo);
+	void SetHiLo(double hi, double lo, gboolean expand=false);
 	void SetDataSkl(double contrast, double bright){ Zcontrast=contrast; Zbright=bright; };
 	void SetDataVRangeZ(double VRangeZ, double VOffsetZ, double dz);
 	void SetZHiLitRange(double HiLit_low, double HiLit_hi) { ZHiLit_low = HiLit_low;  ZHiLit_hi = HiLit_hi; };
@@ -369,7 +369,7 @@ public:
 	int  GetArcDataLineFrom(Point2D *center, Point2D *radius, Mem2d *Mob, SCAN_DATA *sdata, double dr=0.);
 	int  GetLayerDataLineFrom(Point2D *start, Mem2d *Mob, SCAN_DATA *sdata_src, SCAN_DATA *sdata_dest, double pr=0., int iy=0, int transpose=FALSE, int v=-1);
 
-	void HiLoMod(Point2D *p1=NULL, Point2D *p2=NULL, int Delta=4);
+	void HiLoMod(Point2D *p1=NULL, Point2D *p2=NULL, int Delta=4, gboolean expand=false);
 	void HiLo(double *hi, double *lo, int LinReg=FALSE, Point2D *p1=0, Point2D *p2=0, int Delta=4);
 	void GetZHiLo(double *hi, double *lo);
 	double GetZRange();

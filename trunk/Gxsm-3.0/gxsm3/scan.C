@@ -315,7 +315,7 @@ void Scan::destroy_all_objects (){
 
 void Scan::determine_display (int Delta, double sm_eps){
         double hi,lo;
-        int success = FALSE;
+        gboolean success = false;
         int n_obj = number_of_object ();
         Point2D Pkt2d[2];
         hi=lo=0.;
@@ -340,21 +340,21 @@ void Scan::determine_display (int Delta, double sm_eps){
                 
                 scan_obj->get_xy_i_pixel2d (0, &Pkt2d[0]);
                 scan_obj->get_xy_i_pixel2d (1, &Pkt2d[1]);
-                success = TRUE;
-                break;
-        }
 
-        if (success){
                 if(data.display.ViewFlg & SCAN_V_SCALE_SMART){
                         mem2d->AutoHistogrammEvalMode (&Pkt2d[0], &Pkt2d[1], Delta, sm_eps);
                 }else{
                         if (data.display.ViewFlg & SCAN_V_LOG){
                                 mem2d->HiLo (&hi, &lo, FALSE, &Pkt2d[0], &Pkt2d[1], Delta);
-                                mem2d->SetHiLo (hi, lo);
+                                mem2d->SetHiLo (hi, lo, success);
                         } else
-                                mem2d->HiLoMod (&Pkt2d[0], &Pkt2d[1], Delta);
+                                mem2d->HiLoMod (&Pkt2d[0], &Pkt2d[1], Delta, success);
                 }
-        } else {
+
+                success = true;
+        }
+
+        if (!success){
                 if(data.display.ViewFlg & SCAN_V_SCALE_SMART)
                         mem2d->AutoHistogrammEvalMode (NULL, NULL, Delta, sm_eps);
                 else{
@@ -365,7 +365,6 @@ void Scan::determine_display (int Delta, double sm_eps){
                                 mem2d->HiLoMod (NULL, NULL, Delta);
                 }
         }
-
 }
 
 void Scan::auto_display (){
