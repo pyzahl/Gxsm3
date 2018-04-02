@@ -18,9 +18,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/packing.hpp>
 #include <glm/gtc/round.hpp>
-#include <glm/gtx/color_space.hpp>
-#include <glm/gtx/integer.hpp>
-#include <glm/gtx/fast_trigonometry.hpp>
+//#include <glm/gtx/color_space.hpp>
+//#include <glm/gtx/integer.hpp>
+//#include <glm/gtx/fast_trigonometry.hpp>
 
 #include <memory>
 #include <array>

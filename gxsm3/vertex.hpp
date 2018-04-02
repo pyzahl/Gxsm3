@@ -13,12 +13,14 @@ namespace glf
 	{
 		vertex_v1i
 		(
-			glm::highp_uvec1_t const & indices
+                 //			glm::highp_uvec1_t const & indices
+			glm::highp_u32vec1 const & indices
 		) :
 			indices(indices)
 		{}
 
-                glm::highp_uvec1_t indices;
+                //glm::highp_uvec1_t indices;
+                glm::highp_u32vec1 indices;
 	};
 	struct vertex_v4f
 	{
