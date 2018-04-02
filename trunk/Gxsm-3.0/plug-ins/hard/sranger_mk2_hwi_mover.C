@@ -228,6 +228,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
         case MOV_WAVE_BESOCKE:
 	case MOV_WAVE_SINE: channels = 3; break;
 	case MOV_WAVE_KOALA: channels = 2; break;
+        case MOV_WAVE_STEPPERMOTOR: channels = 2; break;
         default: channels = 1; break;
         }
 
@@ -333,6 +334,8 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 			}
 		}
 		break;
+// removed inverse cycloidic waveforms as the are not used by anyone. (stm, 2.4.2018)
+#if 0
 	case MOV_WAVE_CYCLO_IPL:
 	case MOV_WAVE_CYCLO_IMI:
 		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
@@ -361,7 +364,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 			t += dt;
 		}
 		break;
-
+#endif
 	case MOV_WAVE_STEP:
                 for (int i=0; i < mover_param.MOV_wave_len; i += channels){
                         double x = (double)i/mover_param.MOV_wave_len;
@@ -396,93 +399,79 @@ void DSPMoverControl::create_waveform (double amp, double duration){
                                         mover_param.MOV_waveform[i+k]      = koala_func (SR_VFAC*amp, (double)i*3.*M_PI/kn + 2*k*M_PI);
                                 else
                                         mover_param.MOV_waveform[imax-i+k] = koala_func (SR_VFAC*amp, (double)i*3.*M_PI/kn + 2*k*M_PI);
-#if 0
-                for (; i <= mover_param.MOV_wave_len/6; i += channels)
-                        for (int k=0; k<channels; ++k)
-                                if (pointing > 0) // wave for forward direction 
-                                        mover_param.MOV_waveform[i+k]      = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
-                                else
-                                        mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn)));
-                for (; i <= mover_param.MOV_wave_len/2; i += channels)
-                        for (int k=0; k<channels; ++k)
-                                if (pointing > 0) // wave for forward direction 
-                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp));
-                                else
-                                        mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp));
-
-                for (; i < mover_param.MOV_wave_len; i += channels)
-                        for (int k=0; k<channels; ++k)
-                                if (pointing > 0) // wave for forward direction 
-                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
-                                else
-                                        mover_param.MOV_waveform[imax-i+k] = ((short)round (SR_VFAC*amp*sin ((double)i*3.*M_PI/kn-M_PI)));
-#endif
                 }
 		break;
         
 	case MOV_WAVE_BESOCKE:
                 {
-                double pduration;               //positive duration
+                double pduration;               // positive duration of the waveform
+                double tramp ;                  // duration of ramps before and after the jump
+                // calculate time in ms for ramps                 
+                pduration = duration ? duration : (-1)*duration;
+                if (pduration > 2*mover_param.time_delay_1+mover_param.time_delay_2) {
+                        PI_DEBUG_GP (DBG_L2,"duration is longer than expected delay times");
+                        tramp=(pduration - 2*mover_param.time_delay_1 - mover_param.time_delay_2)/2;
+                } else {
+                        // do not allow for negative times!
+                        PI_DEBUG_GP (DBG_L2,"duration is too short");
+                        tramp=pduration/2;
+                        mover_param.time_delay_1 = 0;
+                        mover_param.time_delay_2 = 0;                
+                }
 
-                if (pointing > 0)
-                        pduration=duration;
-                else
-                        pduration=(-1)*duration;
+                // define individual time steps within the signal
+                int besocke_step_a; // steps until end of first ramp                
+                besocke_step_a = (int) round((double) tramp / pduration * mover_param.MOV_wave_len);
+                int besocke_step_b; // (total number of) steps to wait before z-jump
+                besocke_step_b = besocke_step_a + (int) round((double) mover_param.time_delay_1 / pduration * mover_param.MOV_wave_len);
+                int besocke_step_c; // (total number of) steps to wait after z-jump, before xy-motion
+                besocke_step_c = besocke_step_b + (int) round((double) mover_param.time_delay_2 / pduration * mover_param.MOV_wave_len);
+                int besocke_step_d; // (total number of) steps to wait after xy-motion, before final ramp
+                besocke_step_d = besocke_step_c + (int) round((double) mover_param.time_delay_1 / pduration * mover_param.MOV_wave_len);
+
+                double R=mover_param.z_Rate;           //ratio between z-jump and xy-motion
                         
-                int j=0;
-                double t3=(pduration - 2*mover_param.time_delay_1 - mover_param.time_delay_2)/2;        //time of the pitch in ms
-                double a=pduration/t3;                                                                //1/a is part of the ramp of the total time
-                double b=pduration/mover_param.time_delay_1;                                          //1/b is part of the delay at max and min of the total time
-                double c=pduration/mover_param.time_delay_2;                                          //1/c is part of the additional delay in the x signal of the total time
 
-                double R=mover_param.z_Rate;           //rate of the amplitude of the pure x signal as z signal
-                        
-
-                PI_DEBUG_GP (DBG_L2, "case BESOCKE t1=%f (settling time) t2=%f (period of fall) pduration=%f  amp=%f  z-Rate=%f  MOV_wave_len=%d \n", 
+                PI_DEBUG_GP (DBG_L2, "case BESOCKE t0=%f (ramp time) t1=%f (settling time) t2=%f (period of fall) pduration=%f  amp=%f  z-Rate=%f  MOV_wave_len=%d \n", 
+                                tramp,                                
                                 mover_param.time_delay_1, 
                                 mover_param.time_delay_2, 
                                 pduration, 
                                 amp,
                                 mover_param.z_Rate,
                                 mover_param.MOV_wave_len);
-
-                int i=0;
-                for (; i <= (int) ((double)mover_param.MOV_wave_len/a); i += channels)
-                {
-                        mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp/2*(double)i/((double)mover_param.MOV_wave_len/a));
-                                                
-                        if (amp >= 0)
-                                mover_param.MOV_waveform[i+2] = (short)round (R*2*(-1)*(mover_param.MOV_waveform[i]));
-                        else
-                                mover_param.MOV_waveform[i+2] = (short)round (R*2*(mover_param.MOV_waveform[i]));
-                }
-        
-                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+((double)mover_param.MOV_wave_len/b)); i += channels)
-                {
-                        mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
-                                                
-                        mover_param.MOV_waveform[i+2] = (short)round (mover_param.MOV_waveform[i+2-channels]);
-                }
-        
-                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+((double)mover_param.MOV_wave_len/b)+((double)mover_param.MOV_wave_len/c)); i += channels)
-                {
-                        mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
-                }
-        
-                for (; i <= (int) (((double)mover_param.MOV_wave_len/a)+2*((double)mover_param.MOV_wave_len/b)+((double)mover_param.MOV_wave_len/c)); i += channels)
-                {
-                        if (j==0){
-                                mover_param.MOV_waveform[i] = (short)round ((-1)*(mover_param.MOV_waveform[i-channels]));
-                                ++j;
+                PI_DEBUG_GP (DBG_L2,"step_a %d step_b %d step_c %d step_d %d", besocke_step_a, besocke_step_b, besocke_step_c, besocke_step_d); 
+ 
+                // generate fundamental waveforms xy and z
+                for (int i = 0; i <= mover_param.MOV_wave_len; i += channels){
+                        if (i <= besocke_step_a){ // first ramp
+                                // xy signal stored in channel #1                                        
+                                mover_param.MOV_waveform[i] = (short)round(SR_VFAC*amp/2.0*((double)i/(double)besocke_step_a));
+                                // z signal stored in channel #3                
+                                mover_param.MOV_waveform[i+2] = (short)round((-1.0)*SR_VFAC*abs(amp)*R*((double)i/(double)besocke_step_a));  
+                                // channel #2 only set for debuggin
+                                //mover_param.MOV_waveform[i+1] = (short)round(SR_VFAC*(1.0)*amp);              
                         }
-                        else{
-                                mover_param.MOV_waveform[i] = (short)round (mover_param.MOV_waveform[i-channels]);
+                        if (besocke_step_a < i && i <= besocke_step_b) { // first delay, set constant values
+                                mover_param.MOV_waveform[i] = (short)round(SR_VFAC*amp/2.0);
+                                mover_param.MOV_waveform[i+2] = (short)round((-1.0)*SR_VFAC*abs(amp)*R);
+                                //mover_param.MOV_waveform[i+1] = (short)round(SR_VFAC*(1.0)*amp);
                         }
-                }
-        
-                for (; i < mover_param.MOV_wave_len; i += channels)
-                {
-                        mover_param.MOV_waveform[i] = (short)round (SR_VFAC*amp/2*(double)(i-mover_param.MOV_wave_len)/((double)mover_param.MOV_wave_len/a));
+                        if (besocke_step_b < i && i <= besocke_step_c) { // second delay, z-jump, constant values
+                                mover_param.MOV_waveform[i] = (short)round(SR_VFAC*amp/2.0);
+                                mover_param.MOV_waveform[i+2] = (short) 0.0;
+                                //mover_param.MOV_waveform[i+1] = (short)round(SR_VFAC*(1.0)*amp);
+                        }
+                        if (besocke_step_c < i && i <= besocke_step_d) { // third delay, xy-jump, constant values
+                                mover_param.MOV_waveform[i] = (short)round((-1.0)*SR_VFAC*amp/2.0);
+                                mover_param.MOV_waveform[i+2] = (short) 0.0;
+                                //mover_param.MOV_waveform[i+1] = (short)round(SR_VFAC*(-1.0)*amp);
+                        }
+                        if (besocke_step_d < i) { // last ramp
+                                mover_param.MOV_waveform[i] = (-1.0)*mover_param.MOV_waveform[mover_param.MOV_wave_len-i];
+                                mover_param.MOV_waveform[i+2] = (short) 0.0;
+                                //mover_param.MOV_waveform[i+1] = (short)round(SR_VFAC*(-1.0)*amp);
+                        }
                 }
 
                 
@@ -491,15 +480,25 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 
                 double cosinus=cos(mover_param.MOV_angle*M_PI/180);
                 double sinus=sin(mover_param.MOV_angle*M_PI/180);
-                i=0;
-                for (; i < mover_param.MOV_wave_len; i += channels)
+                
+                for (int i=0; i < mover_param.MOV_wave_len; i += channels)
                 {
                         short mov = mover_param.MOV_waveform[i];
                         short jump = mover_param.MOV_waveform[i+2];
-                        
-                        mover_param.MOV_waveform[i] = (short)round (cosinus*mov + sinus*(-1)*mov/2 + jump);
-                        mover_param.MOV_waveform[i+1] = (short)round (sinus*mov + jump);
-                        mover_param.MOV_waveform[i+2] = (short)round (cosinus*(-1)*mov + sinus*(-1)*mov/2 + jump);
+                        // make sure that values stay within limits of short integer                        
+                        long temp;
+                        temp = (long) round (cosinus*mov + sinus*(-1)*mov/2 + jump);
+                        temp = temp > SHRT_MAX ? SHRT_MAX : temp;
+                        temp = temp < SHRT_MIN ? SHRT_MIN : temp;
+                        mover_param.MOV_waveform[i] = (short) temp;
+                        temp = (long) round (sinus*mov + jump);
+                        temp = temp > SHRT_MAX ? SHRT_MAX : temp;
+                        temp = temp < SHRT_MIN ? SHRT_MIN : temp;
+                        mover_param.MOV_waveform[i+1] = (short) temp;
+                        temp = (long) round (cosinus*(-1)*mov + sinus*(-1)*mov/2 + jump);
+                        temp = temp > SHRT_MAX ? SHRT_MAX : temp;
+                        temp = temp < SHRT_MIN ? SHRT_MIN : temp;
+                        mover_param.MOV_waveform[i+2] = (short) temp;
                 }
                                 
                 /*Now Ch0 ... X+
@@ -910,7 +909,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->set_configure_hide_list_b_mode_off ();;
 
 
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo"), 2); // arbitrary waveform
+			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cycloid"), 2); // arbitrary waveform
                         gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - full range");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO));
@@ -920,8 +919,8 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
 			
 // ==
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo+"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - positive values.");
+			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cycloid+"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a positively accelarating signal and finally jump to zero.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_PL));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
@@ -929,16 +928,18 @@ void DSPMoverControl::create_folder (){
                         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_PL ? 1:0);
                         mov_bp->new_line ();
 			
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cyclo-"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - negative values.");
+			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cycloid-"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a negatively accelarating signal and finally jump to zero.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_MI));
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
                         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_MI ? 1:0);
                         mov_bp->new_line ();
-			
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cyclo+"), 2); // arbitrary waveform
+
+// removed inverse cycloidic waveforms as the are not used by anyone. (stm, 2.4.2018)
+#if 0			
+			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cycloid+"), 2); // arbitrary waveform
                         gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - positve values.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IPL));
@@ -947,7 +948,7 @@ void DSPMoverControl::create_folder (){
                         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_IPL ? 1:0);
                         mov_bp->new_line ();
 			
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cyclo-"), 2); // arbitrary waveform
+			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cycloid-"), 2); // arbitrary waveform
                         gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - negative values.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
 			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IMI));
@@ -955,7 +956,7 @@ void DSPMoverControl::create_folder (){
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
                         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_IMI ? 1:0);
                         mov_bp->new_line ();
-			
+#endif			
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Koala"), 2); //arbitrary waveform
                         gtk_widget_set_tooltip_text(radiobutton, "Support for Koala type STM heads.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (2));
@@ -1002,6 +1003,15 @@ void DSPMoverControl::create_folder (){
  			g_signal_connect (G_OBJECT (radiobutton), "clicked",
  					    G_CALLBACK (DSPMoverControl::config_waveform), this);
                         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_STEP ? 1:0);
+                        mov_bp->new_line ();
+
+			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Stepper motor"), 2); // arbitrary waveform
+                        gtk_widget_set_tooltip_text(radiobutton, "Support for stepper motor (2 channel).");
+			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
+			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_STEPPERMOTOR));
+ 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
+ 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_STEPPERMOTOR ? 1:0);
                         mov_bp->new_line ();
                        
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Pulse"), 2); // arbitrary waveform
