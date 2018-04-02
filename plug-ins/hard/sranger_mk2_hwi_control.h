@@ -175,7 +175,8 @@ typedef struct{
 #define MOV_WAVE_BESOCKE  12
 #define MOV_WAVE_PULSEX   13
 #define MOV_WAVE_GPIO     14
-#define MOV_WAVE_LAST     15
+#define MOV_WAVE_STEPPERMOTOR 15
+#define MOV_WAVE_LAST     16
 
 #define MOV_AUTO_APP_MODE 0x0100
         
