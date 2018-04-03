@@ -63,6 +63,30 @@ extern sranger_common_hwi_dev *sranger_common_hwi; // instance of the HwI derive
 DSPMoverControl *this_mover_control=NULL;	 
 extern DSPPACControl *DSPPACClass;
 
+typedef struct {
+        int curve_id;
+        const char* wave_form_label;
+        const char* tool_tip_info;
+        int num_waves;
+} WAVE_FORM_CONFIG_OPTIONS;
+
+static WAVE_FORM_CONFIG_OPTIONS wave_form_options[] = {
+        { MOV_WAVE_SAWTOOTH, "Sawtooth", "Support for stick-slip motion based on a sawtooth signal.", 1 },
+        { MOV_WAVE_SINE, "Sine", "Generation of generic sinudal waveforms, which exhibit a phase shift. For demonstration.", 1 },
+        { MOV_WAVE_CYCLO, "Cycloide", "Support for stick-slip motion based on a cycloidic signal - full range", 1 },
+        { MOV_WAVE_CYCLO_PL, "Cycloide+", "Support for stick-slip motion based on a positively accelarating signal and finally jump to zero.", 1 },
+        { MOV_WAVE_CYCLO_MI, "Cycloide-", "Support for stick-slip motion based on a negatively accelarating signal and finally jump to zero.", 1 },
+        //{ MOV_WAVE_CYCLO_IPL, "Cycloide-", "", 1 },
+        //{ MOV_WAVE_CYCLO_IMI, "Cycloide-", "", 1 },
+        { MOV_WAVE_KOALA, "Koala", "Support for Koala type STM heads.", 2 },
+        { MOV_WAVE_BESOCKE, "Besocke", "Support for bettle type STM heads with 3fold segmented piezos for the coarse approach without inner z-electrode.", 3 },
+        { MOV_WAVE_PULSE, "Pulse",	 "Support for arbitrary rectangular pulses.", 1 },
+        { MOV_WAVE_STEP, "Stepfunc", "Support for step function.", 1 },
+        { MOV_WAVE_STEPPERMOTOR, "Stepper Motor", "Support for stepper motor (2 channel).", 1 },
+        { MOV_WAVE_GPIO, "(none) GPIO Mode", "Custom GPIO", 0 },
+        { -1, NULL, NULL, 0 },
+};
+
 
 class MOV_GUI_Builder : public BuildParam{
 public:
@@ -871,15 +895,55 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_grid_with_frame ("Output Configuration");
 			mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
+
                         mov_bp->new_grid_with_frame ("Waveform selection");
-                        
 
                         mov_bp->grid_add_ec ("Space", Time, &mover_param.Wave_space, 0., 1000., ".3f", 1., 10., "Wave-Space");
 			g_object_set_data( G_OBJECT (mov_bp->input), "Wavespace ", GINT_TO_POINTER (i));
 			gtk_widget_set_tooltip_text (mov_bp->input, "Wave form spacing ");
                         mov_bp->new_line ();
 
+                        GtkWidget *cbx;
+                        mov_bp->grid_add_widget (cbx = gtk_combo_box_text_new ());
+                        mov_bp->new_line ();
+                        // fill with options
+                        for(int j=0; wave_form_options[j].wave_form_label; j++)
+                                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbx), NULL, wave_form_options[j].wave_form_label);
 
+                        /* connect with signal-handler if selected */
+                        g_signal_connect (G_OBJECT (cbx), "changed", G_CALLBACK (DSPMoverControl::config_waveform), this);
+
+                        for(int j=0; wave_form_options[j].wave_form_label; j++)
+                                if (mover_param.MOV_waveform_id == wave_form_options[j].curve_id){
+                                        gtk_combo_box_set_active (GTK_COMBO_BOX (cbx), j);
+                                        break;
+                                }
+                        // config options, managed -- moved here
+	                mov_bp->set_configure_hide_list_b_mode_on ();
+                        mov_bp->grid_add_ec ("Phase", Phase, &mover_param.inch_worm_phase, 0., 360., "3.0f", 1., 60., "IW-Phase");
+	                gtk_widget_set_tooltip_text (mov_bp->input,
+                                                     "Generic Phase value may be used by custom wave form generation.\n"
+                                                     "Used by Sine and Pulse\n");
+                        mov_bp->new_line ();
+                        mov_bp->set_configure_hide_list_b_mode_off ();;
+
+                        mov_bp->set_configure_hide_list_b_mode_on ();
+                        mov_bp->grid_add_ec ("z-jump/xy-amplitude", Unity, &mover_param.z_Rate, 0., 1., ".2f", 0.01, 0.1, "besocke-z-jump-ratio");
+                        gtk_widget_set_tooltip_text (mov_bp->input, "Relative amplitude of the z-jump in respect to the amplitude of the xy-slide");
+                        mov_bp->new_line ();
+
+                        mov_bp->grid_add_ec ("settling time t1", Time, &mover_param.time_delay_1, 0., 1., ".3f", 0.001, 0.01, "besocke-t1");
+                        gtk_widget_set_tooltip_text (mov_bp->input, "Time delay of the signals to settle the tip before and after the z-jump");
+                        mov_bp->new_line ();
+
+                        mov_bp->grid_add_ec ("period of fall t2", Time, &mover_param.time_delay_2, 0., 1., ".3f", 0.001, 0.01, "besocke-t2");
+                        gtk_widget_set_tooltip_text (mov_bp->input, "Time between the z-jump and the xy-slide.");
+                        mov_bp->new_line ();
+                        mov_bp->set_configure_hide_list_b_mode_off ();
+
+
+
+#if 0                        
 			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label (NULL, "Wave: Sawtooth"), 2); // arbitrary waveform
                         gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a sawtooth signal.");
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
@@ -1043,7 +1107,9 @@ void DSPMoverControl::create_folder (){
 // 			gtk_widget_set_sensitive (radiobutton, FALSE);
 			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (0));
 			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_GPIO ? 1:0);
-                                                             
+
+#endif
+                        
                         mov_bp->pop_grid ();
 
                         
@@ -1078,6 +1144,26 @@ void DSPMoverControl::create_folder (){
                                 
                         mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
+                        mov_bp->set_input_width_chars (8);
+                        mov_bp->set_configure_hide_list_b_mode_on ();
+			mov_bp->grid_add_ec ("GPIO Pon", Hex, &mover_param.GPIO_on, 0x0000, 0xffff, "04X", "GPIO-on");
+			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_on", GINT_TO_POINTER (i));
+			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO setting for Pulses >High<.\nNote: Added bits to GPIO setting for each tab.");
+                        mov_bp->new_line ();
+                        
+			mov_bp->grid_add_ec ("GPIO Poff", Hex, &mover_param.GPIO_off, 0x0000, 0xffff, "04X", "GPIO-off"); 
+			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_off", GINT_TO_POINTER (i));
+			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO setting for Pulses >Low<.\nNote: Added bits to GPIO setting for each tab.");
+                        mov_bp->new_line ();
+                        
+			mov_bp->grid_add_ec ("GPIO Preset", Hex, &mover_param.GPIO_reset, 0x0000, 0xffff, "04X", "GPIO-reset");
+			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_reset", GINT_TO_POINTER (i));
+			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO setting after Pulses are done.\nNote: Added bits to GPIO setting for each tab.");
+                        mov_bp->new_line ();
+                        mov_bp->set_configure_hide_list_b_mode_off ();
+
+
+                        
                         mov_bp->pop_grid ();
                         mov_bp->set_input_width_chars (10);
                         
@@ -1103,21 +1189,6 @@ void DSPMoverControl::create_folder (){
                         // ======================================== GPIO ========================================
                         //mov_bp->new_line ();
 			mov_bp->new_grid_with_frame ("GPIO Configuration");
-
-			mov_bp->grid_add_ec ("GPIO Pon", Hex, &mover_param.GPIO_on, 0x0000, 0xffff, "04X", "GPIO-on");
-			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_on", GINT_TO_POINTER (i));
-			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO setting for Pulses >High<.\nNote: Added bits to GPIO setting for each tab.");
-                        mov_bp->new_line ();
-                        
-			mov_bp->grid_add_ec ("GPIO Poff", Hex, &mover_param.GPIO_off, 0x0000, 0xffff, "04X", "GPIO-off"); 
-			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_off", GINT_TO_POINTER (i));
-			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO setting for Pulses >Low<.\nNote: Added bits to GPIO setting for each tab.");
-                        mov_bp->new_line ();
-                        
-			mov_bp->grid_add_ec ("GPIO Preset", Hex, &mover_param.GPIO_reset, 0x0000, 0xffff, "04X", "GPIO-reset");
-			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_reset", GINT_TO_POINTER (i));
-			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO setting after Pulses are done.\nNote: Added bits to GPIO setting for each tab.");
-                        mov_bp->new_line ();
 
 			mov_bp->grid_add_ec ("GPIO XY-scan", Hex, &mover_param.GPIO_scan, 0x0000, 0xffff, "04X", "GPIO-scan"); 
                         g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_scan", GINT_TO_POINTER (i));
@@ -1146,6 +1217,9 @@ void DSPMoverControl::create_folder (){
                         mov_bp->pop_grid ();
 
 			mov_bp->notebook_tab_show_all ();
+
+                        config_waveform (cbx, this); // force update
+
 			continue;
 		}
 
@@ -1620,10 +1694,16 @@ void DSPMoverControl::updateDSP(int sliderno){
 
 
 int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
-	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
-		dspc->mover_param.MOV_waveform_id = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "CurveId"));                
+	//if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+	//	dspc->mover_param.MOV_waveform_id = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "CurveId"));                
+        if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) == -1)
+                return 0;
 
-        gint nw = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "NumWaves"));  
+ 	dspc->mover_param.MOV_waveform_id = wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].curve_id;
+
+        //g_message ("Selected Wave Form %d -> %d", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)), dspc->mover_param.MOV_waveform_id);
+        
+        gint nw = wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].num_waves;
 	GSList *wc = dspc->mov_bp->get_configure_hide_list_b_head ();
 
         if (!wc) return 0;
@@ -1632,41 +1712,72 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
 
         for (int k=0; k<nw; ++k)
                 for (int q=0; q<6; ++q)
-                        gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i));
+                        gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i+6));
         for (int k=nw; k<6; ++k)
                 for (int q=0; q<6; ++q)
-                        gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i));
+                        gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i+6));
 
-        int q = -24+6*6;
-        // this is very very bad idea and non portable for any GUI changes....
-        // now starts at i  (=6*6) and not 4*6 any more... you fix that -- suggestion: may use separated list....
-        if (dspc->mover_param.MOV_waveform_id == 1) {
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 24+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 25+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 26+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 27+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 28+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 29+q));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 30+q));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 31+q));
-        } else if (dspc->mover_param.MOV_waveform_id == 12) {
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 24+q));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 25+q));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 26+q));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 27+q));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 28+q));
-                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 29+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 30+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 31+q));
+        int q = 2*3 + 6*6; // 3 GPIO + 6x6 WXYZ
+        if (dspc->mover_param.MOV_waveform_id == MOV_WAVE_SINE) {
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 0)); //GPIO Preset
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 1)); //GPIO L..
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 2)); //GPIO Poff
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 3)); //GPIO L..
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 4)); //GPIO Pon
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 5)); //GPIO L..
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc,   q)); //Besocke pt2
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 1+q)); //L
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 2+q)); //Besocke pt1
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 3+q)); //L
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 4+q)); //Besocke zj-xza
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 5+q)); //L
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 6+q)); //Phase
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 7+q)); //Phase L
+        } else if (dspc->mover_param.MOV_waveform_id == MOV_WAVE_BESOCKE) {
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 0));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 1));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 2));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 3));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 4));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 5));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc,   q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 1+q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 2+q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 3+q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 4+q));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 5+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 6+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 7+q));
+        } else if (dspc->mover_param.MOV_waveform_id == MOV_WAVE_GPIO) {
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 0));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 1));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 2));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 3));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 4));
+                gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 5));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc,   q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 1+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 2+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 3+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 4+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 5+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 6+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 7+q));
         } else {
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 24+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 25+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 26+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 27+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 28+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 29+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 30+q));
-                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 31+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 0));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 1));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 2));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 3));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 4));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 5));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc,   q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 1+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 2+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 3+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 4+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 5+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 6+q));
+                gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 7+q));
         }        
 
         return 1;
