@@ -454,7 +454,7 @@ void TZData<ZTYP>::replace (double zi, double zf, double eps, int vi, int vf){
                         for(int x=0; x<nx; x++){
                                 double tmp = (double)Zdat[y*nv+v][x];
                                 if (fabs(tmp - zi) <= eps){
-                                        if (zf < 0.){
+                                        if (zf < -1e8){
                                                 zfr = zfl = 0.;
                                                 int xx;
                                                 for(xx=x; xx<nx && fabs((double)Zdat[y*nv+v][xx] - zi) <= eps; xx++);
@@ -463,6 +463,16 @@ void TZData<ZTYP>::replace (double zi, double zf, double eps, int vi, int vf){
                                                 for(xx=x; xx>=0 && fabs((double)Zdat[y*nv+v][xx] - zi) <= eps; xx--);
                                                 if (xx >= 0)
                                                         zfl = (double)Zdat[y*nv+v][xx];
+                                                // need to try y seek?
+                                                if (zfr == 0. && zfl == 0.){
+                                                        int yy;
+                                                        for(yy=y; yy<ny && fabs((double)Zdat[yy*nv+v][x] - zi) <= eps; yy++);
+                                                        if (yy<ny)
+                                                                zfr = (double)Zdat[yy*nv+v][x];
+                                                        for(yy=y; yy>=0 && fabs((double)Zdat[yy*nv+v][x] - zi) <= eps; yy--);
+                                                        if (yy >= 0)
+                                                                zfl = (double)Zdat[yy*nv+v][x];
+                                                }
                                                 zfr = zfr > zfl ? zfr : zfl;
                                         }
                                         Zdat[y*nv+v][x] = (ZTYP)(zfr);

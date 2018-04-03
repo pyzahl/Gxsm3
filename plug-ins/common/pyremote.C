@@ -1503,16 +1503,20 @@ static PyObject* remote_getobject(PyObject *self, PyObject *args)
                 if (nth < n_obj){
                         scan_object_data *obj_data = src->get_object_data (nth);
                         double xy[6] = {0.,0., 0.,0., 0.,0.};
-                        obj_data->get_xy_i_pixel (0, xy[0], xy[1]);
-                        if (obj_data->get_num_points () > 1){
-                                obj_data->get_xy_i_pixel (1, xy[2], xy[3]);
-                                if (obj_data->get_num_points () > 2){
-                                        obj_data->get_xy_i_pixel (2, xy[4], xy[5]);
-                                        return Py_BuildValue("sdddddd", obj_data->get_name (), xy[0], xy[1], xy[2], xy[3], xy[4], xy[5]);
+                        if (obj_data){
+                                obj_data->get_xy_i_pixel (0, xy[0], xy[1]);
+                                if (obj_data->get_num_points () > 1){
+                                        obj_data->get_xy_i_pixel (1, xy[2], xy[3]);
+                                        if (obj_data->get_num_points () > 2){
+                                                obj_data->get_xy_i_pixel (2, xy[4], xy[5]);
+                                                return Py_BuildValue("sdddddd", obj_data->get_name (), xy[0], xy[1], xy[2], xy[3], xy[4], xy[5]);
+                                        } else
+                                                return Py_BuildValue("sdddd", obj_data->get_name (), xy[0], xy[1], xy[2], xy[3]);
                                 } else
-                                        return Py_BuildValue("sdddd", obj_data->get_name (), xy[0], xy[1], xy[2], xy[3]);
-                        } else
-                                return Py_BuildValue("sdd", obj_data->get_name (), xy[0], xy[1]);
+                                        return Py_BuildValue("sdd", obj_data->get_name (), xy[0], xy[1]);
+                        }
+                        else
+                                return Py_BuildValue("sdd", "None", 0, 0);                        
                 }
         }
         return Py_BuildValue("s", "None");
