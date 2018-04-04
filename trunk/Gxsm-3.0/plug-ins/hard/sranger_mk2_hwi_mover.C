@@ -76,12 +76,18 @@ static WAVE_FORM_CONFIG_OPTIONS wave_form_options[] = {
         { MOV_WAVE_CYCLO, "Cycloide", "Support for stick-slip motion based on a cycloidic signal - full range", 1 },
         { MOV_WAVE_CYCLO_PL, "Cycloide+", "Support for stick-slip motion based on a positively accelarating signal and finally jump to zero.", 1 },
         { MOV_WAVE_CYCLO_MI, "Cycloide-", "Support for stick-slip motion based on a negatively accelarating signal and finally jump to zero.", 1 },
-        //{ MOV_WAVE_CYCLO_IPL, "Cycloide-", "", 1 },
-        //{ MOV_WAVE_CYCLO_IMI, "Cycloide-", "", 1 },
+        //{ MOV_WAVE_CYCLO_IPL, "Inv. Cycloide+", "Support for stick-slip motion based on a cycloidic signal, inverted - positve values.", 1 },
+        //{ MOV_WAVE_CYCLO_IMI, "Inv. Cycloide-", "Support for stick-slip motion based on a cycloidic signal, inverted - negative values.", 1 },
         { MOV_WAVE_KOALA, "Koala", "Support for Koala type STM heads.", 2 },
         { MOV_WAVE_BESOCKE, "Besocke", "Support for bettle type STM heads with 3fold segmented piezos for the coarse approach without inner z-electrode.", 3 },
         { MOV_WAVE_PULSE, "Pulse",	 "Support for arbitrary rectangular pulses.", 1 },
+
         { MOV_WAVE_STEP, "Stepfunc", "Support for step function.", 1 },
+        // Pulses are generated as arbitrary wave forms (stm, 08.10.2010)
+        // positive pluse: base line is zero, pulse as height given by amplitude
+        // ratio between on/off: 1:1
+        // total time = ton + toff
+
         { MOV_WAVE_STEPPERMOTOR, "Stepper Motor", "Support for stepper motor (2 channel).", 1 },
         { MOV_WAVE_GPIO, "(none) GPIO Mode", "Custom GPIO", 0 },
         { -1, NULL, NULL, 0 },
@@ -710,7 +716,7 @@ void DSPMoverControl::create_folder (){
         
 	// ========================================
 	notebook = gtk_notebook_new ();
-        // gtk_notebook_set_scrollable (GTK_NOTEBOOK (notebook), TRUE);
+        gtk_notebook_set_scrollable (GTK_NOTEBOOK (notebook), TRUE);
 
 	gtk_widget_show (notebook);
 	gtk_grid_attach (GTK_GRID (v_grid), notebook, 1,1, 1,1);
@@ -889,7 +895,8 @@ void DSPMoverControl::create_folder (){
 			continue;
 		}
 
-		if (i==7){ // configure tab
+                // ================================================== CONFIG TAB
+		if (i==7){ // config tab
 			GtkWidget *radiobutton;
 			
                         mov_bp->new_grid_with_frame ("Output Configuration");
@@ -941,178 +948,10 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_line ();
                         mov_bp->set_configure_hide_list_b_mode_off ();
 
-
-
-#if 0                        
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label (NULL, "Wave: Sawtooth"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a sawtooth signal.");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_SAWTOOTH));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_SAWTOOTH ? 1:0);
-
-                        mov_bp->new_line ();
-
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Sine"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Generation of generic sinudal waveforms, which exhibit a phase shift. Just for testing.");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (3));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_SINE));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_SINE ? 1:0);
-                        mov_bp->new_line ();
-
-
-	                mov_bp->set_configure_hide_list_b_mode_on ();
-                        mov_bp->grid_add_ec ("Phase", Phase, &mover_param.inch_worm_phase, 0., 360., "3.0f", 1., 60., "IW-Phase");
-	                gtk_widget_set_tooltip_text (mov_bp->input,
-                                                     "Generic Phase value may be used by custom wave form generation.\n"
-                                                     "Used by Sine and Pulse\n");
-                        mov_bp->new_line ();
-                        mov_bp->set_configure_hide_list_b_mode_off ();;
-
-
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cycloid"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - full range");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO ? 1:0);
-                        mov_bp->new_line ();
-			
-// ==
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cycloid+"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a positively accelarating signal and finally jump to zero.");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_PL));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_PL ? 1:0);
-                        mov_bp->new_line ();
-			
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Cycloid-"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a negatively accelarating signal and finally jump to zero.");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_MI));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_MI ? 1:0);
-                        mov_bp->new_line ();
-
-// removed inverse cycloidic waveforms as the are not used by anyone. (stm, 2.4.2018)
-#if 0			
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cycloid+"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - positve values.");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IPL));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_IPL ? 1:0);
-                        mov_bp->new_line ();
-			
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Inv Cycloid-"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for stick-slip motion based on a cycloidic signal - negative values.");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_CYCLO_IMI));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_CYCLO_IMI ? 1:0);
-                        mov_bp->new_line ();
-#endif			
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Koala"), 2); //arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for Koala type STM heads.");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (2));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_KOALA));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_KOALA ? 1:0);
-                        mov_bp->new_line ();
-
-
-                        mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Wave: Besocke"), 2); //arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for bettle type STM heads with 3fold segmented piezos for the coarse approach without inner z-electrode.");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (3));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_BESOCKE));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_BESOCKE ? 1:0);
-                        mov_bp->new_line ();
-
-                                                             
-                        mov_bp->set_configure_hide_list_b_mode_on ();
-                        mov_bp->grid_add_ec ("z-jump/xy-amplitude", Unity, &mover_param.z_Rate, 0., 1., ".2f", 0.01, 0.1, "besocke-z-jump-ratio");
-                        gtk_widget_set_tooltip_text (mov_bp->input, "Relative amplitude of the z-jump in respect to the amplitude of the xy-slide");
-                        mov_bp->new_line ();
-
-                        mov_bp->grid_add_ec ("settling time t1", Time, &mover_param.time_delay_1, 0., 1., ".3f", 0.001, 0.01, "besocke-t1");
-                        gtk_widget_set_tooltip_text (mov_bp->input, "Time delay of the signals to settle the tip before and after the z-jump");
-                        mov_bp->new_line ();
-
-                        mov_bp->grid_add_ec ("period of fall t2", Time, &mover_param.time_delay_2, 0., 1., ".3f", 0.001, 0.01, "besocke-t2");
-                        gtk_widget_set_tooltip_text (mov_bp->input, "Time between the z-jump and the xy-slide.");
-                        mov_bp->new_line ();
-                        mov_bp->set_configure_hide_list_b_mode_off ();
-
-
-			// Pulses are generated as arbitrary wave forms (stm, 08.10.2010)
-			// positive pluse: base line is zero, pulse as height given by amplitude
-			// ratio between on/off: 1:1
-			// total time = ton + toff
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Step"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for step function.");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_STEP));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_STEP ? 1:0);
-                        mov_bp->new_line ();
-
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Stepper motor"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for stepper motor (2 channel).");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_STEPPERMOTOR));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_STEPPERMOTOR ? 1:0);
-                        mov_bp->new_line ();
-                       
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "Pulse"), 2); // arbitrary waveform
-                        gtk_widget_set_tooltip_text(radiobutton, "Support for arbitrary rectangular pulses.");
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (1));
-			g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_PULSE));
- 			g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 					    G_CALLBACK (DSPMoverControl::config_waveform), this);
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_PULSE ? 1:0);
-                        mov_bp->new_line ();
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------------
-// Code for negative pulse, but not usefull yet as output voltage is set to zero after pulse sequence. (stm, 08.10.2010)
-//-------------------------------------------------------------------------------------------------------------------------------------------------
-			// negative pluse: base line is equal to amplitude, pulse are given by zero amplitude
-			// ratio between on/off: 1:1
-			// total time = ton + toff
-			// radiobutton = gtk_radio_button_new_with_label (radiogroup, "Pulse: negative"); // arbitrary waveform
-			// gtk_box_pack_start (GTK_BOX (vbox_param2), radiobutton, FALSE, FALSE, 0);
-			// gtk_widget_show (radiobutton);
-			// g_object_set_data (G_OBJECT (radiobutton), "CurveId", GINT_TO_POINTER (MOV_WAVE_PULSE_M));
- 			// g_signal_connect (G_OBJECT (radiobutton), "clicked",
- 			//		    G_CALLBACK (DSPMoverControl::config_waveform), this);
-			// radiogroup = gtk_radio_button_group (GTK_RADIO_BUTTON (radiobutton));
-			// gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), (mover_param.MOV_mode == AAP_MOVER_WAVE && mover_param.MOV_waveform_id == MOV_WAVE_PULSE_M) ? 1:0);
------------------------------------------------------------------------------------------------------------------------------------------------*/
-// ==
-			mov_bp->grid_add_widget (radiobutton = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (radiobutton), "(none) GPIO Pulse"), 2);
-// 			gtk_widget_set_sensitive (radiobutton, FALSE);
-			g_object_set_data (G_OBJECT (radiobutton), "NumWaves", GINT_TO_POINTER (0));
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobutton), mover_param.MOV_waveform_id == MOV_WAVE_GPIO ? 1:0);
-
-#endif
-                        
                         mov_bp->pop_grid ();
-
                         
+                        // ===
+                        mov_bp->new_line ();
                         // ======================================== Wave Output Setup ========================================
                         radiobutton = NULL; // start new radiobuttion group
 			mov_bp->new_grid_with_frame ("#wave/direction(xyz)->DAC(0-6)");
@@ -1167,6 +1006,7 @@ void DSPMoverControl::create_folder (){
                         mov_bp->pop_grid ();
                         mov_bp->set_input_width_chars (10);
                         
+#if 0 // moved to Auto-App-Tab where it's applying only!
                         // ======================================== Auto Approach Timings ========================================
                         mov_bp->new_line ();
 
@@ -1184,8 +1024,10 @@ void DSPMoverControl::create_folder (){
 			gtk_widget_set_tooltip_text (mov_bp->input, "Auto Approach Retract CI: Feeback CI used in inverse mode for retract tip, start with regular CI");
 
                         mov_bp->pop_grid ();
+#endif
 
-
+                        // =================
+                        mov_bp->new_line ();
                         // ======================================== GPIO ========================================
                         //mov_bp->new_line ();
 			mov_bp->new_grid_with_frame ("GPIO Configuration");
@@ -1227,29 +1069,45 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_grid_with_frame ("Mover Timing");
                         mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
-                        mov_bp->grid_add_ec ("Max. Steps", Unity, &mover_param.AFM_usrSteps[i], 1., 5000., "4.0f", 1., 10., "max-steps"); mov_bp->new_line ();
+                        mov_bp->grid_add_ec ("Max. Steps", Unity, &mover_param.AFM_usrSteps[i], 1., 5000., "4.0f", 1., 10., "max-steps"); //mov_bp->new_line ();
                         g_object_set_data( G_OBJECT (mov_bp->input), "MoverNo", GINT_TO_POINTER (i));
                         
                         mov_bp->set_configure_list_mode_on ();
                         mov_bp->grid_add_ec ("Amplitude", Volt, &mover_param.AFM_usrAmp[i], -20., 20., "5.2f", 0.1, 1., "amplitude"); mov_bp->new_line ();
                         g_object_set_data( G_OBJECT (mov_bp->input), "MoverNo", GINT_TO_POINTER (i));
 
-                        mov_bp->grid_add_ec ("Duration", Time, &mover_param.AFM_usrSpeed[i], 0.1, 110., "4.3f", 0.1, 1., "duration"); mov_bp->new_line ();
+                        mov_bp->grid_add_ec ("Duration", Time, &mover_param.AFM_usrSpeed[i], 0.1, 110., "4.3f", 0.1, 1., "duration"); //mov_bp->new_line ();
                         g_object_set_data( G_OBJECT (mov_bp->input), "MoverNo", GINT_TO_POINTER (i));
 
                         mov_bp->grid_add_ec ("GPIO", Hex, &mover_param.AFM_GPIO_usr_setting[i], 0, 0xffff, "04X", "gpio"); mov_bp->new_line ();
                         g_object_set_data( G_OBJECT (mov_bp->input), "MoverNo", GINT_TO_POINTER (i));
                         gtk_widget_set_tooltip_text (mov_bp->input, "GPIO setting used to engage this tab mode.");
 
+                        // Auto Tab Extra Options
                         if (i ==4){
-                                gchar rampspeedstr[100];
-                                sprintf(rampspeedstr,"Besocke rampspeed: ---- V/ms  ");
-        
-                                mov_bp->grid_add_label (rampspeedstr);
+                                mov_bp->set_pcs_remote_prefix (pcs_tab_remote_key_prefix[7]); // override for those to keep it in config schema
+
+                                mov_bp->grid_add_ec("Delay", Time, &mover_param.final_delay, 0., 430., "4.1f", 1., 10., "Auto-App-Delay");
+                                gtk_widget_set_tooltip_text (mov_bp->input, "Auto Approach Delay: IVC recovery delay after step series\nfired for auto approach.");
+                                //mov_bp->new_line ();
+
+                                mov_bp->grid_add_ec("Settle Time", Time, &mover_param.max_settling_time, 0., 10000., "6.1f", 1., 10., "Auto-App-Max-Settling-Time");
+                                gtk_widget_set_tooltip_text (mov_bp->input, "Auto Approach Max Settlings Time: max allowed time to settle for feedback\nbefore declaring it to be finished.\n(max allowed time/cycle for FB-delta>0)");
+                                mov_bp->new_line ();
+
+                                mov_bp->grid_add_ec("Retract CI", Unity, &mover_param.retract_ci, 0., 500., "5.1f", 1., 10., "Auto-App-Retract-CI");
+                                gtk_widget_set_tooltip_text (mov_bp->input, "Auto Approach Retract CI: Feeback CI used in inverse mode for retract tip, start with regular CI");
+                                //mov_bp->new_line ();
+
+                                mov_bp->set_pcs_remote_prefix (pcs_tab_remote_key_prefix[i]); // restore
+
+                                mov_bp->grid_add_label ("---- V/ms");
                                 mc_rampspeed_label = GTK_WIDGET(mov_bp->label);
+                                gtk_widget_set_tooltip_text (mov_bp->label, "Besocke Ramp Speed -- press update button to recalculate.");
         
                                 mov_bp->grid_add_widget (mov_bp->button = gtk_button_new_from_icon_name ("view-refresh-symbolic", GTK_ICON_SIZE_BUTTON));
                                 g_object_set_data( G_OBJECT (mov_bp->button), "MoverNo", GINT_TO_POINTER (i));  
+                                gtk_widget_set_tooltip_text (mov_bp->button, "Besocke Ramp Speed -- press update button to recalculate.");
                                 g_signal_connect (G_OBJECT (mov_bp->button), "pressed",
 	        				    G_CALLBACK (DSPMoverControl::RampspeedUpdate),
 	        				    this);
@@ -1889,10 +1747,12 @@ int DSPMoverControl::RampspeedUpdate(GtkWidget *widget, DSPMoverControl *dspc){
                                         dspc->mover_param.AFM_Amp,
                                         idx);
 
-        double newrampspeed=(dspc->mover_param.AFM_Amp/2)/((dspc->mover_param.AFM_Speed - 2*dspc->mover_param.time_delay_1 - dspc->mover_param.time_delay_2)/2);
-        gchar newrampspeedstr[100];
-        sprintf(newrampspeedstr,"Besocke rampspeed: %.2f V/ms  ",newrampspeed);
-        gtk_label_set_text(GTK_LABEL(dspc->mc_rampspeed_label), g_strdup(newrampspeedstr));
+        // new besocke ramp speed
+        gchar *tmp = g_strdup_printf ("%.2f V/ms",
+                                      (dspc->mover_param.AFM_Amp/2)
+                                      / ((dspc->mover_param.AFM_Speed - 2*dspc->mover_param.time_delay_1 - dspc->mover_param.time_delay_2)/2));
+        gtk_label_set_text (GTK_LABEL(dspc->mc_rampspeed_label), tmp);
+        g_free (tmp);
 
         return 0;
 }
