@@ -749,10 +749,11 @@ void DSPMoverControl::create_folder (){
                         mov_bp->new_grid_with_frame ("Z-Offset Control");
 			mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
+  			mov_bp->grid_add_ec ("Adjust Range", Ang, &Z0_adjust, 1., 50000., "4.0f", 10., 100., "range");
+                        mov_bp->new_line ();
+
                         mov_bp->set_configure_list_mode_on ();
   			mov_bp->grid_add_ec ("Adjust Speed", Speed, &Z0_speed, 0.1, 5000., "4.1f", 10., 100., "speed");
-                        mov_bp->new_line ();
-  			mov_bp->grid_add_ec ("Adjust Range", Ang, &Z0_adjust, 1., 50000., "4.0f", 10., 100., "range");
                         mov_bp->new_line ();
   			mov_bp->grid_add_ec ("Adjust Goto", Ang, &Z0_goto, -1e6, 1e6, "8.1f", 10., 100., "goto");
                         mov_bp->set_configure_list_mode_off ();
