@@ -717,6 +717,7 @@ void DSPMoverControl::create_folder (){
 	// ========================================
 	notebook = gtk_notebook_new ();
         gtk_notebook_set_scrollable (GTK_NOTEBOOK (notebook), TRUE);
+        gtk_notebook_popup_enable (GTK_NOTEBOOK (notebook));
 
 	gtk_widget_show (notebook);
 	gtk_grid_attach (GTK_GRID (v_grid), notebook, 1,1, 1,1);
