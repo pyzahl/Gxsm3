@@ -72,7 +72,7 @@ typedef struct {
 
 static WAVE_FORM_CONFIG_OPTIONS wave_form_options[] = {
         { MOV_WAVE_SAWTOOTH, "Sawtooth", "Support for stick-slip motion based on a sawtooth signal.", 1 },
-        { MOV_WAVE_SINE, "Sine", "Generation of generic sinudal waveforms, which exhibit a phase shift. For demonstration.", 1 },
+        { MOV_WAVE_SINE, "Sine", "Generation of generic sinudal waveforms, which exhibit a phase shift. For demonstration.", 3 },
         { MOV_WAVE_CYCLO, "Cycloide", "Support for stick-slip motion based on a cycloidic signal - full range", 1 },
         { MOV_WAVE_CYCLO_PL, "Cycloide+", "Support for stick-slip motion based on a positively accelarating signal and finally jump to zero.", 1 },
         { MOV_WAVE_CYCLO_MI, "Cycloide-", "Support for stick-slip motion based on a negatively accelarating signal and finally jump to zero.", 1 },
@@ -255,7 +255,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
         gint channels = 1; // fixed single (one) channel assuption for testing !!!
 
         switch (mover_param.MOV_waveform_id){
-        case MOV_WAVE_BESOCKE:
+        case MOV_WAVE_BESOCKE: channels = 3; break; // better readable this way and safer, one line for each.
 	case MOV_WAVE_SINE: channels = 3; break;
 	case MOV_WAVE_KOALA: channels = 2; break;
         case MOV_WAVE_STEPPERMOTOR: channels = 2; break;
