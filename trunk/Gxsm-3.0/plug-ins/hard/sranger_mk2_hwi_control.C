@@ -1293,7 +1293,7 @@ DSPControl::DSPControl () {
 	// update some from DSP -- new!!
 	sranger_common_hwi->read_dsp_feedback ();
 
-        // initialize GXSM DSP GUI builder
+        // initialize GXSM3 DSP GUI builder
         dsp_bp = new DSP_GUI_Builder ();
         dsp_bp->set_pcs_remote_prefix (REMOTE_PREFIX);
 
@@ -1788,9 +1788,9 @@ DSPControl::DSPControl () {
                                 g_message ("Checking Z Polarity (config=positive): OK");
                         }
                         if (!zpok){
-                                g_warning ("DSP Z Polarity is not matching GXSM configuration. Please correct.");
+                                g_warning ("DSP Z Polarity is not matching GXSM3 configuration. Please correct.");
                                 if (gapp->question_yes_no (N_("Instrument Scanner Z-Polarity Verification failed.\n"
-                                                              "DSP Scanner Z Polarity signal setup is not matching GXSM configuration in preferences.\n"
+                                                              "DSP Scanner Z Polarity signal setup is not matching GXSM3 configuration in preferences.\n"
                                                               "==> Critical Advise: Correct now?"),
                                                            NULL,
                                                            "<span foreground='red' size='large' weight='bold'>Critical Warning: %s</span>"
@@ -1813,9 +1813,9 @@ DSPControl::DSPControl () {
 
 		int dsp_offset_adding = ox && oy;
 
-		// verify DSP configuration with gxsm settings compatibility as good as possible (may be OK as more complicated special OK scenario possible)
-		if ( (   gapp->xsm->Inst->OffsetMode() == OFM_ANALOG_OFFSET_ADDING &&  dsp_offset_adding) // GXSM  expects external/analog but DSP SET TO ADD OFFSETS?
-		     || (gapp->xsm->Inst->OffsetMode() != OFM_ANALOG_OFFSET_ADDING && !dsp_offset_adding) // GXSM expects internal DSP but DSP SET NOT TO ADD OFFSETS?
+		// verify DSP configuration with GXSM3 settings compatibility as good as possible (may be OK as more complicated special OK scenario possible)
+		if ( (   gapp->xsm->Inst->OffsetMode() == OFM_ANALOG_OFFSET_ADDING &&  dsp_offset_adding) // GXSM3  expects external/analog but DSP SET TO ADD OFFSETS?
+		     || (gapp->xsm->Inst->OffsetMode() != OFM_ANALOG_OFFSET_ADDING && !dsp_offset_adding) // GXSM3 expects internal DSP but DSP SET NOT TO ADD OFFSETS?
 		     || !ns[3][2] // suspicious if any one set (custom/unsual) -- just as a warning check and cause message!
 		     || sranger_common_hwi->dsp_signal_lookup_managed[ch_si[3][3]].label
 		     || sranger_common_hwi->dsp_signal_lookup_managed[ch_si[3][4]].label
@@ -1826,14 +1826,14 @@ DSPControl::DSPControl () {
 
 
 			gchar *msg = g_strdup_printf ("Please verify your desired configuration:"
-						      "\nEventual GXSM2 / DSP Offset Adding mode conflict:"
+						      "\nEventual GXSM3 / DSP Offset Adding mode conflict:"
 						      "\n =>  %s"
 						      "\n  and"
 						      "\n =>  %s"
 						      "\nPlease review."
 						      "\n ================================================== \n"
 						      "%s"
-						      "\nSet Gxsm Preferences as desired to avoid this message or ignore if OK/custom.",
+						      "\nSet GXSM3 Preferences as desired to avoid this message or ignore if OK/custom.",
 						      gapp->xsm->Inst->OffsetMode() == OFM_ANALOG_OFFSET_ADDING ?
 						      "Analog/AnalogOffsetAddig = TRUE: Analog OUT0/1 (X/Y Offset signal) are to be used externally or digitally via GXSM-Link to SPD"
 						      : "Analog/AnalogOffsetAddig = FALSE: internal (DSP) X/Y Offset signals should be added digitally to X/Y Scan Rot.",
@@ -1843,13 +1843,13 @@ DSPControl::DSPControl () {
 						      outconfig
 						      );
 
-			gapp->alert (N_("Warning"), N_("GXSM2->InstSPM Offset settings verification with DSP settings failed"), msg, 1);
-                        gapp->monitorcontrol->LogEvent ("GXSM startup MK3 DSP signal verification", "WARNING SITUATION FOUND!");
+			gapp->alert (N_("Warning"), N_("GXSM3->InstSPM Offset settings verification with DSP settings failed"), msg, 1);
+                        gapp->monitorcontrol->LogEvent ("GXSM3 startup MK3 DSP signal verification", "WARNING SITUATION FOUND!");
                         gapp->monitorcontrol->LogEvent ("WARNING", msg);
 			g_free (msg);
 		} else {
 			gapp->message (N_(outconfig));
-                        gapp->monitorcontrol->LogEvent ("GXSM startup MK3 DSP signal verification", "NORMAL");
+                        gapp->monitorcontrol->LogEvent ("GXSM3 startup MK3 DSP signal verification", "NORMAL");
                         gapp->monitorcontrol->LogEvent ("INFORMATION", outconfig);
                 }
                 
@@ -1860,18 +1860,18 @@ DSPControl::DSPControl () {
 		   || gapp->xsm->Inst->OffsetMode() != OFM_ANALOG_OFFSET_ADDING && (dsp_state_mode & MD_OFFSETADDING ? 0:1)
 		   ) {
 		gchar *msg = g_strdup_printf ("Please check and adjust:"
-					      "\nGXSM2 is set for Offset Adding: %s"
+					      "\nGXSM3 is set for Offset Adding: %s"
 					      "\nMK2-A810 DSP is configured for: %s"
 					      "\nSee DSP Control->Advanced Folder for DSP reconfiguration of this,"
-					      "\nelse set Gxsm Preferences as desired..",
+					      "\nelse set GXSM3 Preferences as desired..",
 					      gapp->xsm->Inst->OffsetMode() == OFM_ANALOG_OFFSET_ADDING ? "Analog via DAC0/1":"digital (DSP), offset outputs not used!",
 					      dsp_state_mode & MD_OFFSETADDING ? "digital adding":"external/analog adding of ADC0/1_o to ADC3/4_s" );
-		gapp->alert (N_("Warning"), N_("GXSM2->InstSPM Offset settings verification with DSP settings failed"), msg, 1);
-                gapp->monitorcontrol->LogEvent ("GXSM startup MK2 DSP configuration verification", "WARNING SITUATION FOUND!");
+		gapp->alert (N_("Warning"), N_("GXSM3->InstSPM Offset settings verification with DSP settings failed"), msg, 1);
+                gapp->monitorcontrol->LogEvent ("GXSM3 startup MK2 DSP configuration verification", "WARNING SITUATION FOUND!");
                 gapp->monitorcontrol->LogEvent ("WARNING", msg);
 		g_free (msg);
 	} else {
-                gapp->monitorcontrol->LogEvent ("GXSM startup MK2 DSP configuration verification", "NORMAL");
+                gapp->monitorcontrol->LogEvent ("GXSM3 startup MK2 DSP configuration verification", "NORMAL");
         }
 
 	// ========================================
@@ -3190,8 +3190,8 @@ void DSPControl::GVP_restore_vp (const gchar *key){
                 gchar *m_vckey = g_strdup_printf ("%s-%s", vckey_i[i], key);
                 for (int k=0; k<N_GVP_VECTORS; ++k) GVPi[i][k]=0; // zero init vector
                 if ((vi[i] = g_variant_dict_lookup_value (dict, m_vckey, ((const GVariantType *) "ai"))) == NULL){
-                        PI_DEBUG_GP (DBG_L2, "GXSM DCONF: DSPControl::GVP_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
-                        // g_warning ("GXSM DCONF: DSPControl::GVP_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
+                        PI_DEBUG_GP (DBG_L2, "GXSM3 DCONF: DSPControl::GVP_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
+                        // g_warning ("GXSM3 DCONF: DSPControl::GVP_restore_vp -- key_i '%s' memo not found. Setting to Zero.\n", m_vckey);
                         g_free (m_vckey);
                         continue;
                 }
@@ -3202,7 +3202,7 @@ void DSPControl::GVP_restore_vp (const gchar *key){
                         vp_program_length=n;
                 else
                         if (n != vp_program_length)
-                                g_warning ("GXSM DCONF: DSPControl::GVP_restore_vp -- key_i '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
+                                g_warning ("GXSM3 DCONF: DSPControl::GVP_restore_vp -- key_i '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
                 // g_assert_cmpint (n, ==, N_GVP_VECTORS);
                 for (int k=0; k<n && k<N_GVP_VECTORS; ++k)
                         GVPi[i][k]=pc_array_i[i][k];
@@ -3214,8 +3214,8 @@ void DSPControl::GVP_restore_vp (const gchar *key){
                 gchar *m_vckey = g_strdup_printf ("%s-%s", vckey_d[i], key);
                 for (int k=0; k<N_GVP_VECTORS; ++k) GVPd[i][k]=0.; // zero init vector
                 if ((vd[i] = g_variant_dict_lookup_value (dict, m_vckey, ((const GVariantType *) "ad"))) == NULL){
-                        PI_DEBUG_GP (DBG_L2, "GXSM DCONF: DSPControl::GVP_restore_vp -- key_d '%s' memo not found. Setting to Zero.", m_vckey);
-                        // g_warning ("GXSM DCONF: DSPControl::GVP_restore_vp -- key_d '%s' memo not found. Setting to Zero.", m_vckey);
+                        PI_DEBUG_GP (DBG_L2, "GXSM3 DCONF: DSPControl::GVP_restore_vp -- key_d '%s' memo not found. Setting to Zero.", m_vckey);
+                        // g_warning ("GXSM3 DCONF: DSPControl::GVP_restore_vp -- key_d '%s' memo not found. Setting to Zero.", m_vckey);
                         g_free (m_vckey);
                         continue;
                 }
@@ -3224,7 +3224,7 @@ void DSPControl::GVP_restore_vp (const gchar *key){
                 pc_array_d[i] = (double*) g_variant_get_fixed_array (vd[i], &n, sizeof (double));
                 //g_assert_cmpint (n, ==, N_GVP_VECTORS);
                 if (n != vp_program_length)
-                        g_warning ("GXSM DCONF: DSPControl::GVP_restore_vp -- key_d '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
+                        g_warning ("GXSM3 DCONF: DSPControl::GVP_restore_vp -- key_d '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
                 for (int k=0; k<vp_program_length && k<N_GVP_VECTORS; ++k)
                         GVPd[i][k]=pc_array_d[i][k];
                 g_free (m_vckey);
@@ -3650,7 +3650,7 @@ void DSPControl::updateDSP(int FbFlg){
                 return;
         }
         
-// mirror basic parameters to GXSM main -- obsolete this soon?
+// mirror basic parameters to GXSM3 main -- obsolete this soon?
 	gapp->xsm->data.s.Bias = bias;
 	gapp->xsm->data.s.SetPoint = mix_set_point[1];
 	gapp->xsm->data.s.Current = mix_set_point[0];
