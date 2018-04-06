@@ -345,6 +345,8 @@ int DSPMoverControl::create_waveform (double amp, double duration){
 				t += dt;
 				break;
 			default:
+                                if (i == mover_param.MOV_wave_len/2)
+                                        amp = -amp; // jump
 				dt = M_PI/2./(mover_param.MOV_wave_len - 1.)*2;
                                 for (int k=0; k<channels; ++k){
                                         short v = (short)round(SR_VFAC*amp*(a * (1.-cos (t))));
