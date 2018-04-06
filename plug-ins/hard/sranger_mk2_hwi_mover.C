@@ -323,6 +323,9 @@ int DSPMoverControl::create_waveform (double amp, double duration){
 	case MOV_WAVE_CYCLO:
 	case MOV_WAVE_CYCLO_PL:
 	case MOV_WAVE_CYCLO_MI:
+                if (pointing < 0)
+                        amp = -amp; // invert
+                
 		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
 			double dt = pointing/(n - 1);
 			double a = 1.;
@@ -330,21 +333,14 @@ int DSPMoverControl::create_waveform (double amp, double duration){
 			case MOV_WAVE_CYCLO_PL:
                                 for (int k=0; k<channels; ++k){
                                         short v = (short)round(SR_VFAC*amp*a*(t*t*t*t));
-                                        
-                                        if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[i+k] = v;
-                                        else
-                                                mover_param.MOV_waveform[imax-i+k] = v;
+                                        mover_param.MOV_waveform[i+k] = v;
                                 }
 				t += dt;
 				break;	
 			case MOV_WAVE_CYCLO_MI:
                                 for (int k=0; k<channels; ++k){
                                         short v = (short)round(-SR_VFAC*amp*a*(t*t*t*t));
-                                        if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[i+k] = v;
-                                        else
-                                                mover_param.MOV_waveform[imax-i+k] = v;
+                                        mover_param.MOV_waveform[i+k] = v;
                                 }
 				t += dt;
 				break;
@@ -352,10 +348,7 @@ int DSPMoverControl::create_waveform (double amp, double duration){
 				dt = M_PI/2./(mover_param.MOV_wave_len - 1.)*2;
                                 for (int k=0; k<channels; ++k){
                                         short v = (short)round(SR_VFAC*amp*(a * (1.-cos (t))));
-                                        if (pointing > 0) // wave for forward direction 
-                                                mover_param.MOV_waveform[i+k] = v;
-                                        else
-                                                mover_param.MOV_waveform[imax-i+k] = v;
+                                        mover_param.MOV_waveform[i+k] = v;
                                 }
 				if (i < (mover_param.MOV_wave_len/2))
 					t += dt;
@@ -473,6 +466,9 @@ int DSPMoverControl::create_waveform (double amp, double duration){
                                 mover_param.MOV_wave_len);
                 PI_DEBUG_GP (DBG_L2,"step_a %d step_b %d step_c %d step_d %d", besocke_step_a, besocke_step_b, besocke_step_c, besocke_step_d); 
  
+                if (pointing < 0)
+                        amp = -amp; // invert
+
                 // generate fundamental waveforms xy and z
                 for (int i = 0; i <= mover_param.MOV_wave_len; i += channels){
                         if (i <= besocke_step_a){ // first ramp
