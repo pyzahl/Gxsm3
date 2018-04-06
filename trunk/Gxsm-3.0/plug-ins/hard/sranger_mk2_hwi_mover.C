@@ -468,8 +468,8 @@ int DSPMoverControl::create_waveform (double amp, double duration){
                                 mover_param.MOV_wave_len);
                 PI_DEBUG_GP (DBG_L2,"step_a %d step_b %d step_c %d step_d %d", besocke_step_a, besocke_step_b, besocke_step_c, besocke_step_d); 
  
-                if (pointing < 0)
-                        amp = -amp; // invert
+                //if (pointing < 0)
+                //     amp = -amp; // invert
 
                 // generate fundamental waveforms xy and z
                 for (int i = 0; i <= mover_param.MOV_wave_len; i += channels){
