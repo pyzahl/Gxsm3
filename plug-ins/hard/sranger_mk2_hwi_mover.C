@@ -88,7 +88,7 @@ static WAVE_FORM_CONFIG_OPTIONS wave_form_options[] = {
         // ratio between on/off: 1:1
         // total time = ton + toff
 
-        { MOV_WAVE_STEPPERMOTOR, "Stepper Motor", "Support for stepper motor (2 channel).", 1 },
+        { MOV_WAVE_STEPPERMOTOR, "Stepper Motor", "Support for stepper motor (2 channel).", 2 },
         { MOV_WAVE_GPIO, "(none) GPIO Mode", "Custom GPIO", 0 },
         { -1, NULL, NULL, 0 },
 };
@@ -105,6 +105,8 @@ public:
         void start_notebook_tab (GtkWidget *notebook, const gchar *name, const gchar *settings_name,
                                  GSettings *settings) {
                 new_grid (); tg=grid;
+                gtk_widget_set_hexpand (grid, TRUE);
+                gtk_widget_set_vexpand (grid, TRUE);
                 grid_add_check_button("Configuration: Enable This");
                 g_object_set_data (G_OBJECT (button), "TabGrid", grid);
                 config_checkbutton_list = g_slist_append (config_checkbutton_list, button);
@@ -245,22 +247,21 @@ short koala_func (double amplitude, double phi){
 
 // duration in ms
 // amp in V SR out (+/-2.05V max)
-void DSPMoverControl::create_waveform (double amp, double duration){
+int DSPMoverControl::create_waveform (double amp, double duration){
 #define SR_VFAC    (32767./10.00) // A810 max Volt out is 10V
 
         for (int i=0; i < MOV_MAXWAVELEN; ++i)
 		mover_param.MOV_waveform[i] = (short)0;
 
         double pointing = duration > 0. ? 1. : -1;
-        gint channels = 1; // fixed single (one) channel assuption for testing !!!
+        gint channels = 1;
 
-        switch (mover_param.MOV_waveform_id){
-        case MOV_WAVE_BESOCKE: channels = 3; break; // better readable this way and safer, one line for each.
-	case MOV_WAVE_SINE: channels = 3; break;
-	case MOV_WAVE_KOALA: channels = 2; break;
-        case MOV_WAVE_STEPPERMOTOR: channels = 2; break;
-        default: channels = 1; break;
-        }
+        // lookup num waves to compute
+        for(int j=0; wave_form_options[j].wave_form_label; j++)
+                if (mover_param.MOV_waveform_id == wave_form_options[j].curve_id){
+                        channels = wave_form_options[j].num_waves;
+                        break;
+                }
 
 	gint space_len = channels * (gint)round ( DSPControlClass->frq_ref* mover_param.Wave_space*1e-3); 
         PI_DEBUG_GP(DBG_L2, "DSPMoverControl::create_waveform (frq_ref, %f\n)", DSPControlClass->frq_ref);       
@@ -546,7 +547,7 @@ void DSPMoverControl::create_waveform (double amp, double duration){
 
 	mover_param.MOV_wave_len += space_len;
 	
-
+        return channels;
 }
 
 
@@ -658,6 +659,7 @@ void DSPMoverControl::AppWindowInit(const gchar *title){
                                   this);
         
                 v_grid = gtk_grid_new ();
+
                 gtk_container_add (GTK_CONTAINER (window), v_grid);
                 g_object_set_data (G_OBJECT (window), "v_grid", v_grid); // was "vbox"
 
@@ -899,22 +901,13 @@ void DSPMoverControl::create_folder (){
 
                 // ================================================== CONFIG TAB
 		if (i==7){ // config tab
-			GtkWidget *radiobutton;
-			
                         mov_bp->new_grid_with_frame ("Output Configuration");
 			mov_bp->set_default_ec_change_notice_fkt (DSPMoverControl::ChangedNotify, this);
 
-
                         mov_bp->new_grid_with_frame ("Waveform selection");
-
-                        mov_bp->grid_add_ec ("Space", Time, &mover_param.Wave_space, 0., 1000., ".3f", 1., 10., "Wave-Space");
-			g_object_set_data( G_OBJECT (mov_bp->input), "Wavespace ", GINT_TO_POINTER (i));
-			gtk_widget_set_tooltip_text (mov_bp->input, "Wave form spacing ");
-                        mov_bp->new_line ();
 
                         GtkWidget *cbx;
                         mov_bp->grid_add_widget (cbx = gtk_combo_box_text_new ());
-                        mov_bp->new_line ();
                         // fill with options
                         for(int j=0; wave_form_options[j].wave_form_label; j++)
                                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbx), NULL, wave_form_options[j].wave_form_label);
@@ -927,6 +920,13 @@ void DSPMoverControl::create_folder (){
                                         gtk_combo_box_set_active (GTK_COMBO_BOX (cbx), j);
                                         break;
                                 }
+                        mov_bp->new_line ();
+
+                        mov_bp->grid_add_ec ("Space", Time, &mover_param.Wave_space, 0., 1000., ".3f", 1., 10., "Wave-Space");
+			g_object_set_data( G_OBJECT (mov_bp->input), "Wavespace ", GINT_TO_POINTER (i));
+			gtk_widget_set_tooltip_text (mov_bp->input, "Wave form spacing ");
+                        mov_bp->new_line ();
+
                         // config options, managed -- moved here
 	                mov_bp->set_configure_hide_list_b_mode_on ();
                         mov_bp->grid_add_ec ("Phase", Phase, &mover_param.inch_worm_phase, 0., 360., "3.0f", 1., 60., "IW-Phase");
@@ -955,7 +955,6 @@ void DSPMoverControl::create_folder (){
                         // ===
                         mov_bp->new_line ();
                         // ======================================== Wave Output Setup ========================================
-                        radiobutton = NULL; // start new radiobuttion group
 			mov_bp->new_grid_with_frame ("#wave/direction(xyz)->DAC(0-6)");
                         gtk_widget_set_tooltip_text (mov_bp->frame,"rows: waveform, columns: direction, cells: output channel; channel 7 does not work as it is overwritten by another signal."); 
 
@@ -978,6 +977,10 @@ void DSPMoverControl::create_folder (){
                                 gtk_widget_set_tooltip_text (mov_bp->input, "map wave N onto DAC channel 0-6 for Z direction move action");
                                 g_free (wchid);
                                 g_free (wchlab);
+
+                                GtkWidget *wave_preview = gtk_image_new_from_surface (NULL);
+                                mov_bp->grid_add_widget (wave_preview);
+
                                 mov_bp->new_line ();
                         }
                         mov_bp->set_configure_hide_list_b_mode_off ();
@@ -1560,6 +1563,7 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
                 return 0;
 
  	dspc->mover_param.MOV_waveform_id = wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].curve_id;
+        gtk_widget_set_tooltip_text (widget, wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].tool_tip_info);
 
         //g_message ("Selected Wave Form %d -> %d", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)), dspc->mover_param.MOV_waveform_id);
         
@@ -1567,17 +1571,20 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
 	GSList *wc = dspc->mov_bp->get_configure_hide_list_b_head ();
 
         if (!wc) return 0;
-        int i=6*6; // 6 widgets x 6 wave channels max
+        int i=7*6; // 7 widgets x 6 wave channels max
         if (!g_slist_nth_data (wc, i-1)) return 0;
 
-        for (int k=0; k<nw; ++k)
-                for (int q=0; q<6; ++q)
+        // 6 lines for waves. 7 widgets: Wave N: X, ###, Y, ###, Z, ###, wave-icon
+        for (int k=0; k<nw; ++k){
+                dspc->draw_waveform_preview ((GtkWidget*) g_slist_nth_data (wc, i-1), k); // wave icon
+                for (int q=0; q<7; ++q)
                         gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i+6));
+        }
         for (int k=nw; k<6; ++k)
-                for (int q=0; q<6; ++q)
+                for (int q=0; q<7; ++q)
                         gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i+6));
 
-        int q = 2*3 + 6*6; // 3 GPIO + 6x6 WXYZ
+        int q = 2*3 + 7*6; // 3 GPIO + 6x6 WXYZ
         if (dspc->mover_param.MOV_waveform_id == MOV_WAVE_SINE) {
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 0)); //GPIO Preset
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 1)); //GPIO L..
@@ -1641,6 +1648,37 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
         }        
 
         return 1;
+}
+
+gboolean DSPMoverControl::draw_waveform_preview (GtkWidget *widget, int wn){
+        int nch = create_waveform (1.,1.); // preview params only, full scale, 1ms equiv. points -- Fwd. -->
+        int n =  mover_param.MOV_wave_len/nch; // samples/ch
+        cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, n+2, 34);
+        
+        cairo_t *cr = cairo_create (surface);
+        cairo_translate (cr, 1., 17.);
+        cairo_scale (cr, 1., 1.);
+        double yr=16./SR_VFAC;
+        cairo_save (cr);
+
+        cairo_item_path *wave = new cairo_item_path (n);
+        wave->set_line_width (2.0);
+        wave->set_stroke_rgba (CAIRO_COLOR_RED);
+        for (int k=0; k<n; ++k) wave->set_xy_fast (k,k,yr*mover_param.MOV_waveform[k*nch+wn]);
+        wave->draw (cr);
+
+        nch = create_waveform (1.,-1.); // preview params only, full scale, 1ms equiv. points -- Rev. <--
+        wave->set_stroke_rgba (CAIRO_COLOR_BLUE);
+        for (int k=0; k<n; ++k) wave->set_xy_fast (k,k,yr*mover_param.MOV_waveform[k*nch+wn]);
+        wave->draw (cr);
+
+        delete wave;
+
+        cairo_destroy (cr);
+        
+        gtk_image_set_from_surface (GTK_IMAGE (widget), surface);
+
+        return true;
 }
 
 void DSPMoverControl::updateAxisCounts (GtkWidget* w, int idx, int cmd){
