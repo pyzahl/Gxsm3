@@ -1037,27 +1037,25 @@ void DSPMoverControl::create_folder (){
                         //mov_bp->new_line ();
 			mov_bp->new_grid_with_frame ("GPIO Configuration");
 
-			mov_bp->grid_add_ec ("GPIO XY-scan", Hex, &mover_param.GPIO_scan, 0x0000, 0xffff, "04X", "GPIO-scan"); 
+			mov_bp->grid_add_ec ("IO-dir", Hex, &mover_param.GPIO_direction, 0x0000, 0xffff, "04X", "GPIO-direction");
+			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_direction", GINT_TO_POINTER (i));
+			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO direction (in/out) configuration\nWARNING: DO NOT TOUCH IF UNSURE.\nPut 0 for all inputs (safe), but no action (will also disable use of GPIO).");
+
+			mov_bp->grid_add_ec ("XY-scan", Hex, &mover_param.GPIO_scan, 0x0000, 0xffff, "04X", "GPIO-scan"); 
                         g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_scan", GINT_TO_POINTER (i));
 			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO setting for regular XY-scan mode [XY, Main].");
                         mov_bp->new_line ();
 
-			mov_bp->grid_add_ec ("GPIO tmp1", Hex, &mover_param.GPIO_tmp1, 0x0000, 0xffff, "04X", "GPIO-tmp1");
+			mov_bp->grid_add_ec ("tmp1", Hex, &mover_param.GPIO_tmp1, 0x0000, 0xffff, "04X", "GPIO-tmp1");
 			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_tmp1", GINT_TO_POINTER (i));
 			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO intermediate setting 1 for switching to XY-scan mode [XY, Main].");
-                        mov_bp->new_line ();
 
-			mov_bp->grid_add_ec ("GPIO tmp2", Hex, &mover_param.GPIO_tmp2, 0x0000, 0xffff, "04X", "GPIO-tmp2");
+			mov_bp->grid_add_ec ("tmp2", Hex, &mover_param.GPIO_tmp2, 0x0000, 0xffff, "04X", "GPIO-tmp2");
 			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_tmp2", GINT_TO_POINTER (i));
 			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO intermediate setting 2 for switching to XY-scan mode [XY, Main].");
                         mov_bp->new_line ();
 
-			mov_bp->grid_add_ec ("GPIO direction", Hex, &mover_param.GPIO_direction, 0x0000, 0xffff, "04X", "GPIO-direction");
-			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_direction", GINT_TO_POINTER (i));
-			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO direction (in/out) configuration\nWARNING: DO NOT TOUCH IF UNSURE.\nPut 0 for all inputs (safe), but no action (will also disable use of GPIO).");
-                        mov_bp->new_line ();
-
-			mov_bp->grid_add_ec ("GPIO delay", Time, &mover_param.GPIO_delay, 0.,1000., ".1f", 1., 10., "GPIO-delay"); 
+			mov_bp->grid_add_ec ("SW delay", Time, &mover_param.GPIO_delay, 0.,1000., ".1f", 1., 10., "GPIO-delay"); 
 			g_object_set_data( G_OBJECT (mov_bp->input), "GPIO_delay", GINT_TO_POINTER (i));
 			gtk_widget_set_tooltip_text (mov_bp->input, "GPIO delay: delay in milliseconds after switching bits.");
 
