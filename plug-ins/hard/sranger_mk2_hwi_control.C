@@ -1738,7 +1738,10 @@ DSPControl::DSPControl () {
 				ch_si[outn][om] = sranger_common_hwi->query_module_signal_input (iid++);
                                 if (ch_si[outn][om] < 0) // DISABLED?
                                         continue;
-                                
+                                if (ch_si[outn][om] >= NUM_SIGNALS){ // ERROR
+                                        g_warning ("%s\nCH_SI[ OUTn=%d, Om=%d] = %d is invalid.", outn, om, ch_si[outn][om]);
+                                        continue;
+                                }
 				if (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][om]].label && om<3) // and test for Null-Signal
 					ns[outn][om] = !strcmp (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][om]].label, "Null-Signal") ? 1:0;
 				else
@@ -1757,7 +1760,8 @@ DSPControl::DSPControl () {
 						       sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][1]].label,
 						       sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][3]].label
 						       );
-			else
+			else  // DBG::: ??? #8  0x00007fffc76e2572 in sranger_mk2_hwi_query () at sranger_mk2_hwi.C:1794 -- invalid params/bad pointer below eventually ?!?!
+
 				tmp = g_strdup_printf ("%s + %s", outconfig, sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][1]].label);
 			g_free (outconfig); outconfig = tmp;
 
