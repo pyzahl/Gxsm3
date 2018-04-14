@@ -2570,8 +2570,7 @@ char* py_gxsm_console::run_command(const gchar *cmd, int mode)
 		   dictionary,
 		   dictionary);
 
-	return PyString_AsString(PyDict_GetItemString(dictionary,
-						      "_stderr_redir_string"));
+        return PyString_AsString(PyDict_GetItemString(dictionary, "_stderr_redir_string"));
 }
 
 void py_gxsm_console::append (const gchar *msg)

@@ -567,6 +567,41 @@
 	    <attribute name="action">win.action</attribute>
 	    <attribute name="target">sf5</attribute>
 	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">SF6</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf6</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">SF7</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf7</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">SF8</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf8</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">SF9</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf9</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">SF10</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf10</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">SF11</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf11</attribute>
+	  </item>
+	  <item>
+	    <attribute name="label" translatable="yes">SF12</attribute>
+	    <attribute name="action">win.action</attribute>
+	    <attribute name="target">sf12</attribute>
+	  </item>
 	</section>
       </submenu>
     </section>
