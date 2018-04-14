@@ -384,3 +384,20 @@ root@ltncafm:/home/percy# killall -9 gxsm3
 root@ltncafm:/home/percy# 
 root@ltncafm:/home/percy# 
 root@ltncafm:/home/percy# 
+
+
+
+ ** CURRENT MK3 OUTMIX CONFIGURATION ** 
+ OUT[0] : DISABLED + \xe0!\x88֧U + LockIn Ref * AC Ampl
+ OUT[1] := SCO1 Out + In 0 - Null-Signal
+ OUT[2] := Z Offset + Z Offset from XY Slope - Null-Signal
+ OUT[3] := X Scan Rot + Null-Signal - Null-Signal
+ OUT[4] := Y Scan Rot + Null-Signal - Null-Signal
+ OUT[5] := Z Servo + LockIn Ref * AC Ampl Aux - VP Z pos
+ OUT[6] := VP Bias + Null-Signal + LockIn Ref * Null-Signal
+ OUT[7] := Motor + Null-Signal - Null-Signal
+ Set GXSM3 Preferences as desired to avoid this message or ignore if
+OK/custom.'
+
+(gxsm3:21039): Gtk-CRITICAL **: gtk_text_buffer_emit_insert: assertion
+'g_utf8_validate (text, len, NULL)' failed

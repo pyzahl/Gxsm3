@@ -57,6 +57,41 @@
 		<attribute name="action">win.pyfile-action-use</attribute>
 		<attribute name="target">sf5</attribute>
 	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F6</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf6</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F7</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf7</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F8</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf8</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F9</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf9</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F10</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf10</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F11</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf11</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Shift-F12</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">sf12</attribute>
+	      </item>
 	    </section>
 	  </submenu>
 	  <submenu>
