@@ -1740,6 +1740,7 @@ DSPControl::DSPControl () {
                                         continue;
                                 if (ch_si[outn][om] >= NUM_SIGNALS){ // ERROR
                                         g_warning ("%s\nCH_SI[ OUTn=%d, Om=%d] = %d is invalid.", outn, om, ch_si[outn][om]);
+                                        ch_si[outn][om] = NUM_SIGNALS+1; // POINT TO END SIGNAL FOR SAFETY
                                         continue;
                                 }
 				if (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][om]].label && om<3) // and test for Null-Signal
@@ -1755,24 +1756,29 @@ DSPControl::DSPControl () {
 			g_free (outconfig); outconfig = tmp;
 
                         // if (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][3]].label) // SMAC_A ?
-                        if (ch_si[outn][3] >= 0) // SMAC_A ?
+                        if (ch_si[outn][3] >= 0 && ch_si[outn][1] >= 0 && ch_si[outn][3] < NUM_SIGNALS && ch_si[outn][1] < NUM_SIGNALS) // SMAC_A ?
 				tmp = g_strdup_printf ("%s + %s * %s", outconfig, 
 						       sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][1]].label,
 						       sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][3]].label
 						       );
 			else  // DBG::: ??? #8  0x00007fffc76e2572 in sranger_mk2_hwi_query () at sranger_mk2_hwi.C:1794 -- invalid params/bad pointer below eventually ?!?!
-
-				tmp = g_strdup_printf ("%s + %s", outconfig, sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][1]].label);
+                                if (ch_si[outn][1] >= 0 && ch_si[outn][1] < NUM_SIGNALS)
+                                        tmp = g_strdup_printf ("%s + %s", outconfig, sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][1]].label);
+                                else
+                                        tmp = g_strdup_printf ("%s + SIGNAL-READ-ERROR[3,1?]", outconfig);
 			g_free (outconfig); outconfig = tmp;
 
 			// if (sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][4]].label) // SMAC_B ?
-			if (ch_si[outn][4] >= 0) // SMAC_B ?
+			if (ch_si[outn][4] >= 0 && ch_si[outn][4] < NUM_SIGNALS) // SMAC_B ?
 				tmp = g_strdup_printf ("%s + %s * %s", outconfig, 
 						       sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][2]].label,
 						       sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][4]].label
 						       );
 			else
-				tmp = g_strdup_printf ("%s - %s", outconfig, sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][2]].label);
+                                if (ch_si[outn][2] >= 0 && ch_si[outn][2] < NUM_SIGNALS)
+                                        tmp = g_strdup_printf ("%s - %s", outconfig, sranger_common_hwi->dsp_signal_lookup_managed[ch_si[outn][2]].label);
+                                else
+                                        tmp = g_strdup_printf ("%s - SIGNAL-READ-ERROR[4,2?]", outconfig);
 			g_free (outconfig); outconfig = tmp;
 		}
 
