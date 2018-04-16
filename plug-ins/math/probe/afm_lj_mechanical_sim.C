@@ -95,6 +95,53 @@ The PlugIn configurator...
  * -------------------------------------------------------------------------------- 
  */
 
+/*
+FIRE
+==========
+Settings
+
+Default parameters of FIRE algorithm are good for most of the cases and it is not necessary to set them manually. The only parameter which should be set in fireball.in is time step dt = 0.5 - 1.0 femtosecond.
+
+In case you want to try your luck and play with the parameters of algorithm it is optionally possible to provide file 'FIRE.optional' of the folowing format (with default parameters as examples):
+
+1.1  ! FIRE_finc   ... increment time step if dot(f,v) is positive
+0.5  ! FIRE_fdec   ... decrement time step if dot(f,v) is negative
+0.1  ! FIRE_acoef0 ... coefficient of skier force update 
+0.99 ! FIRE_falpha ... decrementarion of skier force compoenent acoef if projection dot(f,v) is positive
+5    ! FIRE_Nmin   ... currently not used
+4.0  ! FIRE_mass   ... mass of atoms  
+Pseudo Code
+
+Evaluate force
+Evaluate projection of force to velocity vf = dot(v,f); vv = dot(v,v); ff = dot(f,f);
+
+if (vf<0)
+ v=0
+ FIRE_dt = FIRE_dt * FIRE_fdec
+ FIRE_acoef = FIRE_acoef0
+
+else if ( vf>0 )
+
+ cF = FIRE_acoef * sqrt(vv/ff)
+ cV = 1 - FIRE_acoef
+ v = cV * v + cF * f
+ FIRE_dt = min( FIRE_dt * FIRE_finc, FIRE_dtmax )
+ FIRE_acoef = FIRE_acoef * FIRE_falpha
+
+MD step using leap-frog
+ v = v + (dt/FIRE_mass) * f
+ position = position + FIRE_dt * v
+
+References
+
+Bitzek, E., Koskinen, P., Gähler, F., Moseler, M. & Gumbsch, P. Structural relaxation made simple. Phys. Rev. Lett. 97, 170201 (2006).
+Eidel, B., Stukowski, A. & Schröder, J. Energy-Minimization in Atomic-to-Continuum Scale-Bridging Methods. Pamm 11, 509–510 (2011).
+FIRE: Fast Inertial Relaxation Engine for Optimization on All Scales
+
+
+
+ */
+
 #include <gtk/gtk.h>
 #include <glib.h>
 #include <math.h>
@@ -2016,7 +2063,7 @@ double calculate_apex_probe_and_probe_model_forces (LJ_calc_params *param, const
         set_vec (param->Fljsum, 0.);
         set_vec (param->Fcsum, 0.);
         set_vec (param->Fsum, 0.);
-        for (int n=0; m[n].N > 0; ++n){
+        for (int n=0; n < param->model->get_size (); ++n){
                 copy_vec (R, m[n].xyzc);
                 // cAab (&mol[n][5], LPp_p, AB); // LJ params atom <-> probe
                 sub_from_vec (R, P);  // R := R_atom - P
@@ -2409,10 +2456,126 @@ void z_probe_ctis_run (Scan *Dest, Mem2d *work, int col, int line, double z, xyz
 
 }
 
+int fire_handle=0;
+#define FDBG 0
+
+class fire_opt {
+public:
+        fire_opt (double dt_init, double dt_max){
+                fh = fire_handle++;
+                finc = 1.1;    //  ! FIRE_finc   ... increment time step if dot(f,v) is positive
+                fdec = 0.5;    //  ! FIRE_fdec   ... decrement time step if dot(f,v) is negative
+                acoef0 = 0.1;  //  ! FIRE_acoef0 ... coefficient of skier force update 
+                falpha = 0.99; //  ! FIRE_falpha ... decrementarion of skier force compoenent acoef if projection dot(f,v) is positive
+                Nmin = 5;      //  ! FIRE_Nmin   ... currently not used
+                mass = 4.0;    //  ! FIRE_mass   ... mass of atoms          
+                set_vec (v, 0.);
+                acoef=0.;
+                dt = dt_init;
+                dtmax = dt_max;
+        };
+        ~fire_opt (){
+        };
+
+        int run (double res_force, double Popt[3], void *data, int mode=0, int nmax=1000){
+                while (--nmax > 0 && step (Popt, data, mode) > res_force);
+                return nmax;
+        };
+        
+        double step (const double *Popt, void *data, int mode=0){
+                LJ_calc_params *param = (LJ_calc_params*)(data);
+                
+                // Evaluate force
+                if (mode == 0)
+                        param->Fz = calculate_apex_probe_and_probe_model_forces (param, Popt);
+                else
+                        param->Fz = calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (param, Popt);
+
+                // copy_vec (param->Popt, Popt);
+                param->residual_force_mag = norm_vec (param->Fsum);
+
+                if (FDBG && fh==0) g_message   ("FIRE: #=%d  dt=%g", param->count, dt);
+                if (FDBG && fh==0) g_print_vec ("FIRE: Fsum", param->Fsum);
+                
+                // Evaluate projection of force to velocity vf = dot(v,f); vv = dot(v,v); ff = dot(f,f);
+                double vf = dot_prod (v, param->Fsum);
+                double vv = dot_prod (v, v);
+                double ff = dot_prod (param->Fsum, param->Fsum);
+                if (FDBG && fh==0) g_message   ("FIRE: vf=%g vv=%g ff=%g", vf, vv, ff);
+
+                if (FDBG && fh==0) g_print_vec ("FIRE: vi=", v);
+                if (FDBG && fh==0) g_print_vec ("FIRE: Ai", param->A);
+                
+                if (vf <= 0.){ // >
+                        set_vec (v, 0.);
+                        dt *= fdec;
+                        acoef = acoef0;
+                } else {
+                        cF = acoef * sqrt(vv/ff);
+                        cV = 1.0 - acoef;
+                        
+                        //v = cV * v + cF * f;
+                        mul_vec_scalar (v, cV);
+                        double tmpf[3];
+                        copy_vec (tmpf, param->Fsum);
+                        mul_vec_scalar (tmpf, cF);
+                        add_to_vec (v, tmpf);
+                        double tmp = dt * finc;
+                        if (tmp < dtmax)
+                                dt = tmp;
+                        else
+                                dt = dtmax;
+                        acoef *= falpha;
+                }
+                
+                // MD step using leap-frog
+                // v += dt/mass * f;
+                double dv[3];
+                copy_vec (dv, param->Fsum);
+                mul_vec_scalar (dv, dt/mass);
+                add_to_vec (v, dv);
+                if (FDBG && fh==0) g_print_vec ("FIRE: dv", dv);
+                
+                // r += dt*v;
+                double dr[3];
+                copy_vec (dr, v);
+                mul_vec_scalar (dr, dt);
+                add_to_vec (param->A, dr);
+                if (FDBG && fh==0) g_print_vec ("FIRE: dr", dr);
+
+                if (FDBG && fh==0) g_print_vec ("FIRE: vf", v);
+                if (FDBG && fh==0) g_print_vec ("FIRE: Af", param->A);
+
+                param->count++;
+
+                //if (FDBG && fh==0) if (param->count > 160) exit (0);
+                
+                return (param->residual_force_mag);
+        };
+
+        int fh;
+        double dtmax;
+        double finc;   // = 1.1;     ! FIRE_finc   ... increment time step if dot(f,v) is positive
+        double fdec;   // = 0.5;     ! FIRE_fdec   ... decrement time step if dot(f,v) is negative
+        double acoef0; // = 0.1;     ! FIRE_acoef0 ... coefficient of skier force update 
+        double falpha; // = 0.99;    ! FIRE_falpha ... decrementarion of skier force compoenent acoef if projection dot(f,v) is positive
+        int Nmin;      // = 5;       ! FIRE_Nmin   ... currently not used
+        double mass;   // = 4.0;     ! FIRE_mass   ... mass of atoms          
+
+private:
+        double dt, acoef, cF, cV;
+        double v[3];
+};
+
+//#define USE_NLOPT
+#define USE_FIRE
+
 // full tip/probe force relaxation
 void z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, double z, double dz, double precision, int maxiter, xyzc_model *model){
         Mem2d *m = work;
+#ifdef USE_NLOPT
         nlopt_opt opt;
+#endif
         LJ_calc_params param;
         double Popt[3];
         double Fres, Fz, Fc, Flj;
@@ -2459,6 +2622,7 @@ void z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, dou
         copy_vec (lb, Popt); sub_from_vec (lb, hrl);
         copy_vec (ub, Popt); add_to_vec (ub, hrl);
 
+#ifdef USE_NLOPT
         opt = nlopt_create (NLOPT_LN_COBYLA, 3); /* algorithm and dimensionality */
         // opt = nlopt_create (NLOPT_LD_MMA, 3); /* algorithm and dimensionality -- needs derivative !! */
         nlopt_set_lower_bounds (opt, lb);
@@ -2478,10 +2642,18 @@ void z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, dou
         // terminate via
         // nlopt_force_stop(opt);
 
-        if (nlopt_optimize (opt, Popt, &Fres) < 0) {
+        if (nlopt_optimize (opt, Popt, &Fres) < 0){
                 lj_residual_force (0, Popt, NULL, &param); 
                 printf("nlopt failed at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], Fres);
         }
+#else
+        fire_opt fire (0.05, 10.0);
+        if (fire.run (precision, Popt, &param) <= 0)
+        {
+                lj_residual_force (0, Popt, NULL, &param); 
+                printf("nlopt failed at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], norm_vec (param.Fsum));
+        }
+#endif
         else {
                 
                 // double check result ???
@@ -2511,13 +2683,17 @@ void z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, dou
                         printf("found minimum at Popt(%g,%g,%g) = %0.10g\n", Popt[0], Popt[1], Popt[2], Fres);
         }
 
+#ifdef USE_NLOPT
         nlopt_destroy (opt);
+#endif
 }
 
 // full tip/probe force relaxation, use precomputed interpolated force field
 void ipf_z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, double z, double dz, double precision, int maxiter, xyzc_model *model){
         Mem2d *m = work;
+#ifdef USE_NLOPT
         nlopt_opt opt;
+#endif
         LJ_calc_params param;
         double Popt[3];
         double Fres, Fz, Fc, Flj;
@@ -2547,7 +2723,9 @@ void ipf_z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line,
         Dest->Pixel2World (work->GetNx ()-1, 1, ub[0], ub[1]); // all coordinates in Angstroems
         ub[2] =  param.z0+param.dz;
 
+#ifdef USE_NLOPT
 #define OPT_ON
+#endif
 #ifdef OPT_ON
         //opt = nlopt_create (NLOPT_LN_COBYLA, 3); /* algorithm and dimensionality */
         opt = nlopt_create (NLOPT_LD_MMA, 3); /* algorithm and dimensionality -- needs derivative !! */
@@ -2572,19 +2750,21 @@ void ipf_z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line,
         // nlopt_force_stop(opt);
         if (nlopt_optimize (opt, Popt, &Fres) < 0) {
 #else
-        if (1) {
+        //if (1) {
+        fire_opt fire (0.05, 10.0);
+        if (fire.run (precision, Popt, &param) <= 0) {
 #endif
-                double grad[3];
+                //double grad[3];
                 //                lj_residual_force (0, Popt, NULL, &param); 
                 //                printf("nlopt failed after #%d iteration [L-J full:] at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.count, param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], Fres);
-                lj_residual_interpol_force (0, Popt, grad, &param); 
+                //lj_residual_interpol_force (0, Popt, grad, &param); 
                 m->PutDataPkt (Popt[0], col, line, PROBE_X_L);
                 m->PutDataPkt (Popt[1], col, line, PROBE_Y_L);
                 m->PutDataPkt (Popt[2], col, line, PROBE_Z_L);
 
-                m->PutDataPkt (param.grad[0], col, line, PROBE_FCX_FIELD_L); // test, final gradient store
-                m->PutDataPkt (param.grad[1], col, line, PROBE_FCY_FIELD_L);
-                m->PutDataPkt (param.grad[2], col, line, PROBE_FCZ_FIELD_L);
+                //m->PutDataPkt (param.grad[0], col, line, PROBE_FCX_FIELD_L); // test, final gradient store
+                //m->PutDataPkt (param.grad[1], col, line, PROBE_FCY_FIELD_L);
+                //m->PutDataPkt (param.grad[2], col, line, PROBE_FCZ_FIELD_L);
         }
 #ifdef OPT_ON
         else 
@@ -2595,9 +2775,9 @@ void ipf_z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line,
                 m->PutDataPkt (Popt[1], col, line, PROBE_Y_L);
                 m->PutDataPkt (Popt[2], col, line, PROBE_Z_L);
 
-                m->PutDataPkt (param.grad[0], col, line, PROBE_FCX_FIELD_L); // test, final gradient store
-                m->PutDataPkt (param.grad[1], col, line, PROBE_FCY_FIELD_L);
-                m->PutDataPkt (param.grad[2], col, line, PROBE_FCZ_FIELD_L);
+                //m->PutDataPkt (param.grad[0], col, line, PROBE_FCX_FIELD_L); // test, final gradient store
+                //m->PutDataPkt (param.grad[1], col, line, PROBE_FCY_FIELD_L);
+                //m->PutDataPkt (param.grad[2], col, line, PROBE_FCZ_FIELD_L);
 #if 0
                 std::cout << "LJ-INTERPOL-F [" << col << "," << line << "] Popt=" << Popt[0] << ", " << Popt[1] << ", " << Popt[2]
                           << " Fsum_inter=[" << param.Fsum[0] 
