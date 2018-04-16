@@ -1527,8 +1527,8 @@ double Mem2d::GetDataPktInterpol(double x, double y, int v, double t, Scan *sct,
         if (fabs (dt) > 0.)
                 tid = (t-t0)/dt;
         else{
-                double ti0 = sct->retrieve_time_element (0);
-                double tin = sct->retrieve_time_element (tiN-1);
+                double ti0 = sct->mem2d_time_element (0) -> get_frame_time (); // sct->retrieve_time_element (0); // slow
+                double tin = sct->mem2d_time_element (tiN-1) -> get_frame_time ();  // sct->retrieve_time_element (tiN-1);
                 dt = (tin - ti0) / tiN;
                 t0 = ti0;
                 tid = (t-t0)/dt; // assume linear time scale fixed spacing

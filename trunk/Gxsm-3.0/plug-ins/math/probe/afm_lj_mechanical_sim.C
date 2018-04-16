@@ -2049,7 +2049,7 @@ double calculate_apex_probe_and_probe_model_forces (LJ_calc_params *param, const
 #define dI_G_VEC_L(X,I) ((int)(X)+3*i)
 
 // same as above, but using precomuted L-J and Coulomb force fields for model
-double calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (LJ_calc_params *param, const double P[3], LJ_calc_params grad_param[3]=NULL, double eps=0.05){
+double calculate_apex_probe_and_probe_model_forces_interpolated (LJ_calc_params *param, const double P[3]){
         double R[4];
         double F[3];
         double AB[3];
@@ -2086,7 +2086,7 @@ double calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (LJ_cal
         // Fcsum: F-Coulomb on Probe
         set_vec (param->Fsum, 0.);
         
-        // replaced sum over model with interpolated force field
+        // replaced sum over model with interpolated force field of force at P[] (probe particle) position in force volume
         double dix, diy, diz;
         param->scan->World2Pixel (P[0], P[1], dix, diy);
         diz = P[2] + param->model->get_probe_dz (); // compensate!
@@ -2115,88 +2115,6 @@ double calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (LJ_cal
         double Fz_probe = param->Fsum[2];
         add_to_vec (param->Fsum, param->Fa);
 
-
-#ifdef PROBE_GRAD_INTER
-        if (grad_param){
-                double Pg[4], Rg[4]; // xyzc
-                double Fg[3], Fag_l[3], Fag_r[3];
-                double tmp_vec[3];
-                double tmp_field_vec[3];
-                double eps2 = 1./(2.*eps);
-                for (int i=0; i<3; ++i){ // calc gradient matrix, @dx, @dy, @dz... aka dI...
-                        // force gradient probe to apex part -- calculate real F L-J + Coulomb
-                        
-                        copy_vec (Rg, R); Rg[i] -= eps; // R := A-P;  P +/- eps for grad  ==> P+eps
-
-                        // Force on Probe to Tipapex -- L-J force componet
-                        if (param->model->options & MODE_PROBE_L_J)
-                                // cAab(LJp_ta, LJp_p, AB); // LJ params tipapex <-> probe
-                                lj_force(Rg, param->model->LJp_AB_lookup[0][0], param->model->LJp_AB_lookup[0][1], Fag_l);    // R:= A-P
-                         else 
-                                set_vec (Fag_l, 0.);
-                        
-                        // Force on Probe to Tipapex -- coulomb force componet
-                        if (param->model->options & MODE_PROBE_COULOMB){
-                                coulomb_force (Rg, p[1].xyzc[3], p[0].xyzc[3], Fg); // q1, q2 -> qP, qA, R:= A-P
-                                add_to_vec (Fag_l, Fg);
-                        }
-
-                        // Force on Probe to Tipapex -- flex force componet
-                        if (param->model->options & MODE_PROBE_SPRING){
-                                probe_flex_force (Rg, Fg, NULL, param->model);
-                                add_to_vec (Fag_l, Fg);
-                        }
-                        // --------------------------------------------------------
-                        copy_vec (Rg, R); Rg[i] += eps; // P-eps
-
-                        if (param->model->options & MODE_PROBE_L_J)
-                                // cAab(LJp_ta, LJp_p, AB); // LJ params tipapex <-> probe
-                                lj_force(Rg, param->model->LJp_AB_lookup[0][0], param->model->LJp_AB_lookup[0][1], Fag_r);    // R:= A-P
-                         else 
-                                set_vec (Fag_r, 0.);
-                        
-                        // Force on Probe to Tipapex -- coulomb force componet
-                        if (param->model->options & MODE_PROBE_COULOMB){
-                                coulomb_force (Rg, p[1].xyzc[3], p[0].xyzc[3], Fg); // q1, q2 -> qP, qA, R:= A-P
-                                add_to_vec (Fag_r, Fg);
-                        }
-
-                        // Force on Probe to Tipapex -- flex force componet
-                        if (param->model->options & MODE_PROBE_SPRING){
-                                probe_flex_force (Rg, Fg, NULL, param->model);
-                                add_to_vec (Fag_r, Fg);
-                        }
-
-                        // ========================================================
-                        
-                        // differentiate, normalize
-                        sub_from_vec (Fag_l, Fag_r); // = F(P+eps) - F(P-eps)
-                        mul_vec_scalar (Fag_l, eps2);  // = dF(P+/-eps) / 2eps
-
-                        //                        std::cout << " GRADIENT d_"<<i<<" : ";
-                        //                        print_vec ("grad F probe--apex", Fag);
-                        
-                        // force gradient dI-FX/Y/Z to Probe at P -- interpolated Model force gradient part (L-J + Coulomb)
-                        set_vec (grad_param[i].Fsum, 0.);
-                        //                        print_vec ("Probe @", P);
-
-                        grad_param[i].Fljsum[0] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFX_L, i), diz, param->scan, param->dz, param->z0);
-                        grad_param[i].Fljsum[1] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFY_L, i), diz, param->scan, param->dz, param->z0);
-                        grad_param[i].Fljsum[2] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFZ_L, i), diz, param->scan, param->dz, param->z0);
-                        add_to_vec (grad_param[i].Fsum, grad_param[i].Fljsum);
-
-                        if (param->model->options & MODE_COULOMB){
-                                grad_param[i].Fcsum[0] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFCX_L, i), diz, param->scan, param->dz, param->z0);
-                                grad_param[i].Fcsum[1] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFCY_L, i), diz, param->scan, param->dz, param->z0);
-                                grad_param[i].Fcsum[2] = param->scan->mem2d->GetDataPktInterpol (dix, diy, dI_G_VEC_L(PROBE_dxFCZ_L, i), diz, param->scan, param->dz, param->z0);
-                                add_to_vec (grad_param[i].Fsum, grad_param[i].Fcsum);
-                        }
-                        //                        print_vec ("grad F-probe-field", grad_param[i].Fljsum);
-                        add_to_vec (grad_param[i].Fsum, Fag_l);
-                        //                        print_vec ("grad F-sum", grad_param[i].Fsum);
-                }
-        }
-#endif   
         return Fz_probe;
 }
 
@@ -2246,17 +2164,8 @@ double lj_residual_force (unsigned int n, const double *Popt, double *grad, void
 // NL-OPT min function, provides gradient if requested - both from force fields, interpolated
 double lj_residual_interpol_force (unsigned int n, const double *Popt, double *grad, void *data){
         LJ_calc_params *param = (LJ_calc_params*)(data);
-        LJ_calc_params gparam[3];
         
-        if (grad){
-                param->Fz = calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (param, Popt, gparam, 0.05);
-                param->grad[0] = grad[0] = norm_vec (gparam[0].Fsum);
-                param->grad[1] = grad[1] = norm_vec (gparam[1].Fsum);
-                param->grad[2] = grad[2] = norm_vec (gparam[2].Fsum);
-                //                std::cout << "LJrif grad=" << grad[0] << ", " << grad[1] << ", " << grad[2] << std::endl;
-        } else  {
-                param->Fz = calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (param, Popt);
-        }
+        param->Fz = calculate_apex_probe_and_probe_model_forces_interpolated (param, Popt);
         
         param->residual_force_mag = norm_vec (param->Fsum);
 
@@ -2490,7 +2399,7 @@ public:
                 if (mode == 0)
                         param->Fz = calculate_apex_probe_and_probe_model_forces (param, Popt);
                 else
-                        param->Fz = calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (param, Popt);
+                        param->Fz = calculate_apex_probe_and_probe_model_forces_interpolated (param, Popt);
 
                 // copy_vec (param->Popt, Popt);
                 param->residual_force_mag = norm_vec (param->Fsum);
@@ -2568,8 +2477,8 @@ private:
         double v[3];
 };
 
-//#define USE_NLOPT
-#define USE_FIRE
+//#define USE_NLOPT // old approach -- slow...
+#define USE_FIRE // new, see above class, simple and "fire" fast :)
 
 // full tip/probe force relaxation
 void z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, double z, double dz, double precision, int maxiter, xyzc_model *model){
@@ -2655,9 +2564,9 @@ void z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, dou
                 g_message ("FIRE: OPT failed at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], norm_vec (param.Fsum));
         }
 #endif
-        else
+        //else
                 // double check result ???
-                lj_residual_force(0, Popt, NULL, &param);
+                // lj_residual_force(0, Popt, NULL, &param);
         // store Position, ...
         for (int i=0; i<3; ++i){
                 m->PutDataPkt (Popt[i], col, line, VEC_L(PROBE_X_L, i));
@@ -2690,100 +2599,61 @@ void z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, dou
 // full tip/probe force relaxation, use precomputed interpolated force field
 void ipf_z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, double z, double dz, double precision, int maxiter, xyzc_model *model){
         Mem2d *m = work;
-#ifdef USE_NLOPT
-        nlopt_opt opt;
-#endif
         LJ_calc_params param;
         double Popt[3];
         double Fres, Fz, Fc, Flj;
 
-        model->get_sim_zinfo (param.z0, param.zf, param.dz);
-        param.count  = 0;
-        param.scan = Dest;
         param.model  = model;
-        
+        param.scan = Dest;
+        param.count  = 0;
         param.A[2] = z;
         Dest->Pixel2World (col, line, param.A[0], param.A[1]); // all coordinates in Angstroems
 
         // compute fixed scenario for reference
         copy_vec (Popt, param.A); Popt[2] += model->get_probe_dz ();
 
+        Fz = calculate_apex_probe_and_probe_model_forces (&param, Popt);
+        Fc = norm_vec (param.Fcsum);
+        Flj = norm_vec (param.Fljsum);
+        m->PutDataPkt (Fz, col, line, APEX_FZ_FIXED_L); // Unit: pN
+        m->PutDataPkt (Fc, col, line, APEX_F_COULOMB_FIXED_L); // Unit: pN
+        m->PutDataPkt (Flj, col, line, APEX_F_LJ_FIXED_L); // Unit: pN
+
         // start / continue probe tracing
-        if (m_prev){ // continue tracing
+        if (m_prev){ // continue tracing, just put us "dz" lower from previous found probe position as start 
                 Popt[0] = m_prev->GetDataPkt (col, line, PROBE_X_L);
                 Popt[1] = m_prev->GetDataPkt (col, line, PROBE_Y_L);
                 Popt[2] = m_prev->GetDataPkt (col, line, PROBE_Z_L) - dz;
         }
-
-        // force field bounds, must stay within
+        
+        if (m_prev){ // continue tracing? Abort if fzmax reached.
+                if (fabs(m_prev->GetDataPkt (col, line, APEX_FZ_L)) > model->fzmax){
+                        // copy and return
+                        for (int k=FREQ_SHIFT_L; k<N_LAYERS; ++k)
+                                m->PutDataPkt (m_prev->GetDataPkt (col, line, k), col, line, k);
+                        m->PutDataPkt (-1., col, line, PROBE_NLOPT_ITER_L); // -1 : not calculated any more
+                        return;
+                }
+        }
+        
         double lb[3];
         double ub[3];
-        Dest->Pixel2World (1, work->GetNy ()-1, lb[0], lb[1]); // all coordinates in Angstroems
-        lb[2] =  param.zf+param.dz;
-        Dest->Pixel2World (work->GetNx ()-1, 1, ub[0], ub[1]); // all coordinates in Angstroems
-        ub[2] =  param.z0+param.dz;
+        double hrl[3];
+        set_vec (hrl, 5.); // 4.
+        copy_vec (lb, Popt); sub_from_vec (lb, hrl);
+        copy_vec (ub, Popt); add_to_vec (ub, hrl);
 
-#ifdef USE_NLOPT
-#define OPT_ON
-#endif
-#ifdef OPT_ON
-        //opt = nlopt_create (NLOPT_LN_COBYLA, 3); /* algorithm and dimensionality */
-        opt = nlopt_create (NLOPT_LD_MMA, 3); /* algorithm and dimensionality -- needs derivative !! */
-
-        nlopt_set_lower_bounds (opt, lb);
-        //        print_vec ("Set Lower bound", lb);
-        nlopt_set_upper_bounds (opt, ub);
-        //        print_vec ("Set Upper bound", ub);
-
-        nlopt_set_min_objective (opt, lj_residual_interpol_force, &param);
-
-        //        nlopt_set_xtol_rel (opt, precision);
-        if (precision > 0.)
-                nlopt_set_xtol_abs1 (opt, precision);
-        if (maxiter > 0)
-                nlopt_set_maxeval(opt, maxiter);
-
-        double dx[3] = { 0.05, 0.05, 0.0025 };
-        nlopt_set_initial_step(opt, dx);
-
-        // terminate via
-        // nlopt_force_stop(opt);
-        if (nlopt_optimize (opt, Popt, &Fres) < 0) {
-#else
-        //if (1) {
-                fire_opt fire (0.05, 10.0);
-                if (fire.run (precision, Popt, &param, 1) <= 0) { // mode=1 use interpolated field
-#endif
-                //double grad[3];
-                //lj_residual_force (0, Popt, NULL, &param); 
-                //lj_residual_interpol_force (0, Popt, grad, &param); 
-                //lj_residual_interpol_force (0, Popt, NULL, &param); 
-                g_message ("FIRE OPT failed after #%d iteration [L-J full:] at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.count, param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], Fres);
+        fire_opt fire (0.05, 10.0);
+        if (fire.run (precision, Popt, &param, 1) <= 0) { // mode=1 use interpolated field
+                lj_residual_force (0, Popt, NULL, &param); 
+                g_message ("FIRE INTER: OPT failed at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], norm_vec (param.Fsum));
         }
-        //else
-                // double check result
-                // lj_residual_force(0, Popt, NULL, &param);
-                //lj_residual_interpol_force (0, Popt, NULL, &param); 
 
-        m->PutDataPkt (Popt[0], col, line, PROBE_X_L);
-        m->PutDataPkt (Popt[1], col, line, PROBE_Y_L);
-        m->PutDataPkt (Popt[2], col, line, PROBE_Z_L);
-
-        //m->PutDataPkt (param.grad[0], col, line, PROBE_FCX_FIELD_L); // test, final gradient store
-        //m->PutDataPkt (param.grad[1], col, line, PROBE_FCY_FIELD_L);
-        //m->PutDataPkt (param.grad[2], col, line, PROBE_FCZ_FIELD_L);
-#if 0
-        std::cout << "LJ-INTERPOL-F [" << col << "," << line << "] Popt=" << Popt[0] << ", " << Popt[1] << ", " << Popt[2]
-                  << " Fsum_inter=[" << param.Fsum[0] 
-                  << ", " << param.Fsum[1] 
-                  << ", " << param.Fsum[2] 
-                  << "] #" << param.count
-                  << std::endl;
-#endif
-
-        m->PutDataPkt (param.Fsum[0], col, line, PROBE_FX_L);
-        m->PutDataPkt (param.Fsum[1], col, line, PROBE_FY_L);
-        m->PutDataPkt (param.Fsum[2], col, line, PROBE_FZ_L);
+        // store Position, ...
+        for (int i=0; i<3; ++i){
+                m->PutDataPkt (Popt[i], col, line, VEC_L(PROBE_X_L, i));
+        }
+        
         m->PutDataPkt (Fres, col, line, PROBE_FNORM_L);
         // Force "Fz" in meV * 1e-10m / (1e-10m)^2 =  1.6021766e-12 kg m / s^2 ~=~ 1.6e-12 N = 1.6 pN
         m->PutDataPkt (1.6022 * param.Fz, col, line, APEX_FZ_L); // Unit: pN
@@ -2795,13 +2665,6 @@ void ipf_z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line,
         m->PutDataPkt (Flj, col, line, APEX_F_LJ_L); // Unit: pN
 
         m->PutDataPkt ((double)param.count, col, line, PROBE_NLOPT_ITER_L); // # iterations
-                
-        if (0)
-                printf("found minimum at Popt(%g,%g,%g) = %0.10g\n", Popt[0], Popt[1], Popt[2], Fres);
-
-#ifdef OPT_ON
-        nlopt_destroy (opt);
-#endif
 }
 
 
