@@ -95,53 +95,6 @@ The PlugIn configurator...
  * -------------------------------------------------------------------------------- 
  */
 
-/*
-FIRE
-==========
-Settings
-
-Default parameters of FIRE algorithm are good for most of the cases and it is not necessary to set them manually. The only parameter which should be set in fireball.in is time step dt = 0.5 - 1.0 femtosecond.
-
-In case you want to try your luck and play with the parameters of algorithm it is optionally possible to provide file 'FIRE.optional' of the folowing format (with default parameters as examples):
-
-1.1  ! FIRE_finc   ... increment time step if dot(f,v) is positive
-0.5  ! FIRE_fdec   ... decrement time step if dot(f,v) is negative
-0.1  ! FIRE_acoef0 ... coefficient of skier force update 
-0.99 ! FIRE_falpha ... decrementarion of skier force compoenent acoef if projection dot(f,v) is positive
-5    ! FIRE_Nmin   ... currently not used
-4.0  ! FIRE_mass   ... mass of atoms  
-Pseudo Code
-
-Evaluate force
-Evaluate projection of force to velocity vf = dot(v,f); vv = dot(v,v); ff = dot(f,f);
-
-if (vf<0)
- v=0
- FIRE_dt = FIRE_dt * FIRE_fdec
- FIRE_acoef = FIRE_acoef0
-
-else if ( vf>0 )
-
- cF = FIRE_acoef * sqrt(vv/ff)
- cV = 1 - FIRE_acoef
- v = cV * v + cF * f
- FIRE_dt = min( FIRE_dt * FIRE_finc, FIRE_dtmax )
- FIRE_acoef = FIRE_acoef * FIRE_falpha
-
-MD step using leap-frog
- v = v + (dt/FIRE_mass) * f
- position = position + FIRE_dt * v
-
-References
-
-Bitzek, E., Koskinen, P., Gähler, F., Moseler, M. & Gumbsch, P. Structural relaxation made simple. Phys. Rev. Lett. 97, 170201 (2006).
-Eidel, B., Stukowski, A. & Schröder, J. Energy-Minimization in Atomic-to-Continuum Scale-Bridging Methods. Pamm 11, 509–510 (2011).
-FIRE: Fast Inertial Relaxation Engine for Optimization on All Scales
-
-
-
- */
-
 #include <gtk/gtk.h>
 #include <glib.h>
 #include <math.h>
@@ -338,6 +291,7 @@ typedef enum {
         PROBE_FLX_FIELD_L,
         PROBE_FLY_FIELD_L,
         PROBE_FLZ_FIELD_L,
+#ifdef PROBE_GRAD_INTER
         PROBE_dxFX_L,
         PROBE_dxFY_L,
         PROBE_dxFZ_L,
@@ -356,6 +310,7 @@ typedef enum {
         PROBE_dzFCX_L,
         PROBE_dzFCY_L,
         PROBE_dzFCZ_L,
+#endif
         PROBE_FX_L,
         PROBE_FY_L,
         PROBE_FZ_L,
@@ -2161,6 +2116,7 @@ double calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (LJ_cal
         add_to_vec (param->Fsum, param->Fa);
 
 
+#ifdef PROBE_GRAD_INTER
         if (grad_param){
                 double Pg[4], Rg[4]; // xyzc
                 double Fg[3], Fag_l[3], Fag_r[3];
@@ -2240,7 +2196,7 @@ double calculate_apex_probe_and_probe_model_forces_interpolated_and_grad (LJ_cal
                         //                        print_vec ("grad F-sum", grad_param[i].Fsum);
                 }
         }
-        
+#endif   
         return Fz_probe;
 }
 
@@ -2372,6 +2328,7 @@ void z_probe_simple_force_run (Scan *Dest, Mem2d *work, int col, int line, doubl
         // single pass fixed mode
         work->PutDataPkt (1, col, line, PROBE_NLOPT_ITER_L); // # iterations
 
+#ifdef PROBE_GRAD_INTER
         if (gradflag){
                 LJ_calc_params param_d[2];
                 copy_vec (param_d[0].A, param.A);
@@ -2405,6 +2362,7 @@ void z_probe_simple_force_run (Scan *Dest, Mem2d *work, int col, int line, doubl
                         work->PutDataPkt (param_d[1].Fcsum[2],  col, line, dI_G_VEC_L(PROBE_dxFCZ_L, i));
                 }
         }
+#endif
 }
 
 // template/trial test, todo
@@ -2459,6 +2417,49 @@ void z_probe_ctis_run (Scan *Dest, Mem2d *work, int col, int line, double z, xyz
 int fire_handle=0;
 #define FDBG 0
 
+/*
+FIRE
+==========
+Settings
+
+Default parameters of FIRE algorithm are good for most of the cases and it is not necessary to set them manually. The only parameter which should be set in fireball.in is time step dt = 0.5 - 1.0 femtosecond.
+
+In case you want to try your luck and play with the parameters of algorithm it is optionally possible to provide file 'FIRE.optional' of the folowing format (with default parameters as examples):
+
+1.1  ! FIRE_finc   ... increment time step if dot(f,v) is positive
+0.5  ! FIRE_fdec   ... decrement time step if dot(f,v) is negative
+0.1  ! FIRE_acoef0 ... coefficient of skier force update 
+0.99 ! FIRE_falpha ... decrementarion of skier force compoenent acoef if projection dot(f,v) is positive
+5    ! FIRE_Nmin   ... currently not used
+4.0  ! FIRE_mass   ... mass of atoms  
+Pseudo Code
+
+Evaluate force
+Evaluate projection of force to velocity vf = dot(v,f); vv = dot(v,v); ff = dot(f,f);
+
+if (vf<0)
+ v=0
+ FIRE_dt = FIRE_dt * FIRE_fdec
+ FIRE_acoef = FIRE_acoef0
+
+else if ( vf>0 )
+
+ cF = FIRE_acoef * sqrt(vv/ff)
+ cV = 1 - FIRE_acoef
+ v = cV * v + cF * f
+ FIRE_dt = min( FIRE_dt * FIRE_finc, FIRE_dtmax )
+ FIRE_acoef = FIRE_acoef * FIRE_falpha
+
+MD step using leap-frog
+ v = v + (dt/FIRE_mass) * f
+ position = position + FIRE_dt * v
+
+References
+
+Bitzek, E., Koskinen, P., Gähler, F., Moseler, M. & Gumbsch, P. Structural relaxation made simple. Phys. Rev. Lett. 97, 170201 (2006).
+Eidel, B., Stukowski, A. & Schröder, J. Energy-Minimization in Atomic-to-Continuum Scale-Bridging Methods. Pamm 11, 509–510 (2011).
+FIRE: Fast Inertial Relaxation Engine for Optimization on All Scales
+ */
 class fire_opt {
 public:
         fire_opt (double dt_init, double dt_max){
@@ -2482,7 +2483,7 @@ public:
                 return nmax;
         };
         
-        double step (const double *Popt, void *data, int mode=0){
+        double step (double Popt[3], void *data, int mode=0){
                 LJ_calc_params *param = (LJ_calc_params*)(data);
                 
                 // Evaluate force
@@ -2504,8 +2505,9 @@ public:
                 if (FDBG && fh==0) g_message   ("FIRE: vf=%g vv=%g ff=%g", vf, vv, ff);
 
                 if (FDBG && fh==0) g_print_vec ("FIRE: vi=", v);
-                if (FDBG && fh==0) g_print_vec ("FIRE: Ai", param->A);
-                
+                if (FDBG && fh==0) g_print_vec ("FIRE: A", param->A);
+                if (FDBG && fh==0) g_print_vec ("FIRE: Popti", Popt);
+ 
                 if (vf <= 0.){ // >
                         set_vec (v, 0.);
                         dt *= fdec;
@@ -2539,16 +2541,15 @@ public:
                 // r += dt*v;
                 double dr[3];
                 copy_vec (dr, v);
-                mul_vec_scalar (dr, dt);
-                add_to_vec (param->A, dr);
+                mul_vec_scalar (dr, -dt);
+                add_to_vec (Popt, dr);
                 if (FDBG && fh==0) g_print_vec ("FIRE: dr", dr);
-
                 if (FDBG && fh==0) g_print_vec ("FIRE: vf", v);
-                if (FDBG && fh==0) g_print_vec ("FIRE: Af", param->A);
+                if (FDBG && fh==0) g_print_vec ("FIRE: Poptf", Popt);
 
                 param->count++;
 
-                //if (FDBG && fh==0) if (param->count > 160) exit (0);
+                if (FDBG && fh==0) if (param->count > 160) exit (0);
                 
                 return (param->residual_force_mag);
         };
@@ -2648,40 +2649,38 @@ void z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line, dou
         }
 #else
         fire_opt fire (0.05, 10.0);
-        if (fire.run (precision, Popt, &param) <= 0)
+        if (fire.run (precision, Popt, &param) <= 0) // default mode 0: calc. LJ directly
         {
                 lj_residual_force (0, Popt, NULL, &param); 
-                printf("nlopt failed at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], norm_vec (param.Fsum));
+                g_message ("FIRE: OPT failed at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], norm_vec (param.Fsum));
         }
 #endif
-        else {
-                
+        else
                 // double check result ???
                 lj_residual_force(0, Popt, NULL, &param);
-                // store Position, ...
-                for (int i=0; i<3; ++i){
-                        m->PutDataPkt (Popt[i], col, line, VEC_L(PROBE_X_L, i));
-                        m->PutDataPkt (param.Fljsum[i], col, line, VEC_L(PROBE_FX_FIELD_L, i));
-                        m->PutDataPkt (param.Fcsum[i], col, line, VEC_L(PROBE_FCX_FIELD_L, i));
-                        m->PutDataPkt (param.Fa_flex[i], col, line, VEC_L(PROBE_FFX_FIELD_L, i));
-                        m->PutDataPkt (param.Fa_lj[i], col, line, VEC_L(PROBE_FLX_FIELD_L, i));
-                        m->PutDataPkt (param.Fsum[i], col, line, VEC_L(PROBE_FX_L, i));
-                }
-                m->PutDataPkt (Fres, col, line, PROBE_FNORM_L);
-                // Force "Fz" in meV * 1e-10m / (1e-10m)^2 =  1.6021766e-12 kg m / s^2 ~=~ 1.6e-12 N = 1.6 pN
-                m->PutDataPkt (1.6022 * param.Fz, col, line, APEX_FZ_L); // Unit: pN
-
-                // Coulomb contribution
-                Fc = norm_vec (param.Fcsum);
-                m->PutDataPkt (Fc, col, line, APEX_F_COULOMB_L); // Unit: pN
-                Flj = norm_vec (param.Fljsum);
-                m->PutDataPkt (Flj, col, line, APEX_F_LJ_L); // Unit: pN
-
-                m->PutDataPkt ((double)param.count, col, line, PROBE_NLOPT_ITER_L); // # iterations
-              
-                if (0)
-                        printf("found minimum at Popt(%g,%g,%g) = %0.10g\n", Popt[0], Popt[1], Popt[2], Fres);
+        // store Position, ...
+        for (int i=0; i<3; ++i){
+                m->PutDataPkt (Popt[i], col, line, VEC_L(PROBE_X_L, i));
+                m->PutDataPkt (param.Fljsum[i], col, line, VEC_L(PROBE_FX_FIELD_L, i));
+                m->PutDataPkt (param.Fcsum[i], col, line, VEC_L(PROBE_FCX_FIELD_L, i));
+                m->PutDataPkt (param.Fa_flex[i], col, line, VEC_L(PROBE_FFX_FIELD_L, i));
+                m->PutDataPkt (param.Fa_lj[i], col, line, VEC_L(PROBE_FLX_FIELD_L, i));
+                m->PutDataPkt (param.Fsum[i], col, line, VEC_L(PROBE_FX_L, i));
         }
+        m->PutDataPkt (Fres, col, line, PROBE_FNORM_L);
+        // Force "Fz" in meV * 1e-10m / (1e-10m)^2 =  1.6021766e-12 kg m / s^2 ~=~ 1.6e-12 N = 1.6 pN
+        m->PutDataPkt (1.6022 * param.Fz, col, line, APEX_FZ_L); // Unit: pN
+
+        // Coulomb contribution
+        Fc = norm_vec (param.Fcsum);
+        m->PutDataPkt (Fc, col, line, APEX_F_COULOMB_L); // Unit: pN
+        Flj = norm_vec (param.Fljsum);
+        m->PutDataPkt (Flj, col, line, APEX_F_LJ_L); // Unit: pN
+
+        m->PutDataPkt ((double)param.count, col, line, PROBE_NLOPT_ITER_L); // # iterations
+              
+        if (0)
+                printf("found minimum at Popt(%g,%g,%g) = %0.10g\n", Popt[0], Popt[1], Popt[2], Fres);
 
 #ifdef USE_NLOPT
         nlopt_destroy (opt);
@@ -2699,6 +2698,7 @@ void ipf_z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line,
         double Fres, Fz, Fc, Flj;
 
         model->get_sim_zinfo (param.z0, param.zf, param.dz);
+        param.count  = 0;
         param.scan = Dest;
         param.model  = model;
         
@@ -2751,62 +2751,53 @@ void ipf_z_probe_run (Scan *Dest, Mem2d *work, Mem2d *m_prev, int col, int line,
         if (nlopt_optimize (opt, Popt, &Fres) < 0) {
 #else
         //if (1) {
-        fire_opt fire (0.05, 10.0);
-        if (fire.run (precision, Popt, &param) <= 0) {
+                fire_opt fire (0.05, 10.0);
+                if (fire.run (precision, Popt, &param, 1) <= 0) { // mode=1 use interpolated field
 #endif
                 //double grad[3];
-                //                lj_residual_force (0, Popt, NULL, &param); 
-                //                printf("nlopt failed after #%d iteration [L-J full:] at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.count, param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], Fres);
+                //lj_residual_force (0, Popt, NULL, &param); 
                 //lj_residual_interpol_force (0, Popt, grad, &param); 
-                m->PutDataPkt (Popt[0], col, line, PROBE_X_L);
-                m->PutDataPkt (Popt[1], col, line, PROBE_Y_L);
-                m->PutDataPkt (Popt[2], col, line, PROBE_Z_L);
-
-                //m->PutDataPkt (param.grad[0], col, line, PROBE_FCX_FIELD_L); // test, final gradient store
-                //m->PutDataPkt (param.grad[1], col, line, PROBE_FCY_FIELD_L);
-                //m->PutDataPkt (param.grad[2], col, line, PROBE_FCZ_FIELD_L);
+                //lj_residual_interpol_force (0, Popt, NULL, &param); 
+                g_message ("FIRE OPT failed after #%d iteration [L-J full:] at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g!\n", param.count, param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], Fres);
         }
-#ifdef OPT_ON
-        else 
-#endif
-        {
-                //                printf("nlopt failed after #%d iteration [L-J interpol:] at A=(%g, %g, %g) Popt(%g, %g, %g) = %0.10g  Grad(%g, %g, %g)!\n", param.count, param.A[0], param.A[1], param.A[2], Popt[0], Popt[1], Popt[2], Fres, grad[0], grad[1], grad[2]);
-                m->PutDataPkt (Popt[0], col, line, PROBE_X_L);
-                m->PutDataPkt (Popt[1], col, line, PROBE_Y_L);
-                m->PutDataPkt (Popt[2], col, line, PROBE_Z_L);
-
-                //m->PutDataPkt (param.grad[0], col, line, PROBE_FCX_FIELD_L); // test, final gradient store
-                //m->PutDataPkt (param.grad[1], col, line, PROBE_FCY_FIELD_L);
-                //m->PutDataPkt (param.grad[2], col, line, PROBE_FCZ_FIELD_L);
-#if 0
-                std::cout << "LJ-INTERPOL-F [" << col << "," << line << "] Popt=" << Popt[0] << ", " << Popt[1] << ", " << Popt[2]
-                          << " Fsum_inter=[" << param.Fsum[0] 
-                          << ", " << param.Fsum[1] 
-                          << ", " << param.Fsum[2] 
-                          << "] #" << param.count
-                          << std::endl;
-#endif
-
-                // double check result ???
+        //else
+                // double check result
                 // lj_residual_force(0, Popt, NULL, &param);
-                m->PutDataPkt (param.Fsum[0], col, line, PROBE_FX_L);
-                m->PutDataPkt (param.Fsum[1], col, line, PROBE_FY_L);
-                m->PutDataPkt (param.Fsum[2], col, line, PROBE_FZ_L);
-                m->PutDataPkt (Fres, col, line, PROBE_FNORM_L);
-                // Force "Fz" in meV * 1e-10m / (1e-10m)^2 =  1.6021766e-12 kg m / s^2 ~=~ 1.6e-12 N = 1.6 pN
-                m->PutDataPkt (1.6022 * param.Fz, col, line, APEX_FZ_L); // Unit: pN
+                //lj_residual_interpol_force (0, Popt, NULL, &param); 
 
-                // Coulomb contribution
-                Fc = norm_vec (param.Fcsum);
-                m->PutDataPkt (Fc, col, line, APEX_F_COULOMB_L); // Unit: pN
-                Flj = norm_vec (param.Fljsum);
-                m->PutDataPkt (Flj, col, line, APEX_F_LJ_L); // Unit: pN
+        m->PutDataPkt (Popt[0], col, line, PROBE_X_L);
+        m->PutDataPkt (Popt[1], col, line, PROBE_Y_L);
+        m->PutDataPkt (Popt[2], col, line, PROBE_Z_L);
 
-                m->PutDataPkt ((double)param.count, col, line, PROBE_NLOPT_ITER_L); // # iterations
+        //m->PutDataPkt (param.grad[0], col, line, PROBE_FCX_FIELD_L); // test, final gradient store
+        //m->PutDataPkt (param.grad[1], col, line, PROBE_FCY_FIELD_L);
+        //m->PutDataPkt (param.grad[2], col, line, PROBE_FCZ_FIELD_L);
+#if 0
+        std::cout << "LJ-INTERPOL-F [" << col << "," << line << "] Popt=" << Popt[0] << ", " << Popt[1] << ", " << Popt[2]
+                  << " Fsum_inter=[" << param.Fsum[0] 
+                  << ", " << param.Fsum[1] 
+                  << ", " << param.Fsum[2] 
+                  << "] #" << param.count
+                  << std::endl;
+#endif
+
+        m->PutDataPkt (param.Fsum[0], col, line, PROBE_FX_L);
+        m->PutDataPkt (param.Fsum[1], col, line, PROBE_FY_L);
+        m->PutDataPkt (param.Fsum[2], col, line, PROBE_FZ_L);
+        m->PutDataPkt (Fres, col, line, PROBE_FNORM_L);
+        // Force "Fz" in meV * 1e-10m / (1e-10m)^2 =  1.6021766e-12 kg m / s^2 ~=~ 1.6e-12 N = 1.6 pN
+        m->PutDataPkt (1.6022 * param.Fz, col, line, APEX_FZ_L); // Unit: pN
+
+        // Coulomb contribution
+        Fc = norm_vec (param.Fcsum);
+        m->PutDataPkt (Fc, col, line, APEX_F_COULOMB_L); // Unit: pN
+        Flj = norm_vec (param.Fljsum);
+        m->PutDataPkt (Flj, col, line, APEX_F_LJ_L); // Unit: pN
+
+        m->PutDataPkt ((double)param.count, col, line, PROBE_NLOPT_ITER_L); // # iterations
                 
-                if (0)
-                        printf("found minimum at Popt(%g,%g,%g) = %0.10g\n", Popt[0], Popt[1], Popt[2], Fres);
-        }
+        if (0)
+                printf("found minimum at Popt(%g,%g,%g) = %0.10g\n", Popt[0], Popt[1], Popt[2], Fres);
 
 #ifdef OPT_ON
         nlopt_destroy (opt);
@@ -3093,9 +3084,9 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
         xyzc_model *xyzc_model_filter = NULL;
 	int stop_flag = 0;			// set to 1 to stop the plugin
 
-        double zi=18.;  // default Z-start (upper box bound)
+        double zi=12.;  // default Z-start (upper box bound)
         double zf=8.;   // default Z-end (lower box bound)
-        double dz=0.05; // default z slice width
+        double dz=0.1; // default z slice width
         double charge_scaling=1.; // default charge scaling for model xyzc -- if c given
         double precision=1e-6; // nl-opt precision
         double sensor_f0_k0[3] = {29000., 1800., 0. };  // Hz, N/m
@@ -3321,6 +3312,7 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
                 Dest->mem2d->SetLayer (PROBE_FLX_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FLX FIELD [pN]", (double)z, "z=%06.3fA"));
                 Dest->mem2d->SetLayer (PROBE_FLY_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FLY FIELD [pN]", (double)z, "z=%06.3fA"));
                 Dest->mem2d->SetLayer (PROBE_FLZ_FIELD_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FLZ FIELD [pN]", (double)z, "z=%06.3fA"));
+#ifdef PROBE_GRAD_INTER
                 Dest->mem2d->SetLayer (PROBE_dxFX_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dxFX [pN]", (double)z, "z=%06.3fA"));
                 Dest->mem2d->SetLayer (PROBE_dxFY_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dxFY [pN]", (double)z, "z=%06.3fA"));
                 Dest->mem2d->SetLayer (PROBE_dxFZ_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dxFZ [pN]", (double)z, "z=%06.3fA"));
@@ -3339,6 +3331,7 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
                 Dest->mem2d->SetLayer (PROBE_dzFCX_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dzFCX [pN]", (double)z, "z=%06.3fA"));
                 Dest->mem2d->SetLayer (PROBE_dzFCY_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dzFCY [pN]", (double)z, "z=%06.3fA"));
                 Dest->mem2d->SetLayer (PROBE_dzFCZ_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE dzFCZ [pN]", (double)z, "z=%06.3fA"));
+#endif
                 Dest->mem2d->SetLayer (PROBE_FX_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FX [pN]", (double)z, "z=%06.3fA"));
                 Dest->mem2d->SetLayer (PROBE_FY_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FY [pN]", (double)z, "z=%06.3fA"));
                 Dest->mem2d->SetLayer (PROBE_FZ_L);    Dest->mem2d->add_layer_information (new LayerInformation ("PROBE FZ [pN]", (double)z, "z=%06.3fA"));
@@ -3350,7 +3343,7 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
                 
                 // set progress info
                 gapp->progress_info_set_bar_fraction ((z-zf)/(zi-zf), 1);
-                info = g_strdup_printf ("pass1 Z=%g " UTF8_ANGSTROEM, z);
+                info = g_strdup_printf ("pass1 ff Z=%g " UTF8_ANGSTROEM, z);
                 gapp->progress_info_set_bar_text (info, 1);
                 g_free (info);
 
