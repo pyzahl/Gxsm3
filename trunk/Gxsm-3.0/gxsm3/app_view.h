@@ -75,6 +75,7 @@ public:
         static void view_tool_addshowline (GtkWidget *widget, ViewControl *vc);
         static void view_tool_labels_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_tool_legend_radio_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void view_tool_legend_position_radio_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_tool_marker_group_radio_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         //
         static void view_view_set_view_mode_radio_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
@@ -283,6 +284,7 @@ private:
         int usx,usy,side_panel_width;
 
         const gchar *legend_items_code;
+        int legend_position_code;
         
         int local_radius;
         Scan *scan;
