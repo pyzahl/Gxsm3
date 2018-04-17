@@ -56,6 +56,21 @@ inline void copy_vec4 (double u[4], const double *v){
 #endif
 }
 
+inline void max_vec_elements (double u[3], const double *a, const double *b){
+	for (int i=0; i<3; ++i)
+		u[i] = a[i] > b[i] ? a[i]:b[i];
+}
+
+inline void min_vec_elements (double u[3], const double *a, const double *b){
+	for (int i=0; i<3; ++i)
+		u[i] = a[i] < b[i] ? a[i]:b[i];
+}
+
+inline void middle_vec_elements (double u[3], const double *a, const double *b){
+	for (int i=0; i<3; ++i)
+		u[i] = 0.5 * (a[i] + b[i]);
+}
+ 
 inline double dot_prod (const double v1[3], const double v2[3]){
 	return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
 }
