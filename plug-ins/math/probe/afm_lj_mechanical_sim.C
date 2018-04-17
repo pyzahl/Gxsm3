@@ -327,6 +327,8 @@ typedef struct {
         const gchar* name; // Element name
         double LJp[2];  // L-J Parameters { eps_a, r_a  } epsilon[meV], radius [A]
         double Phi; // Workfunction [eV]
+        double certainty; // certainty about parameters
+        const char* comment; // comment on data source
 } Element;
 
 // I(d) = C  e V exp (-2 d sqrt (2me Phi) / hbar )
@@ -460,45 +462,134 @@ Note: Number of row = proton number of the element!!
 2.0000	0.0100000000	117	Uus				
 2.0000	0.0100000000	118	Uuo			
 
+
+
+
  */
 // incomplete table:
 // Z (#Proton), Element Name, L-J parameters: E0 [meV], r0 [Ang] 
 Element Elements[] {
-        {  0, "Apex",{ 1000.0    ,   2.0000  }, 1. }, // arbitrary rigid tip apex, paper *
-        {  1,  "H",  {  0.6808054,   1.4870  }, 1. }, // paper / PP-Hapala *
-        {  2, "He",  {  0.9453220,   1.4815  }, 1. }, // PP-Hapala
-        {  3, "Li",  { 10.0      ,   2.000   }, 2.9  },  // PP-Hapala
-        {  4, "Be",  { 10.0      ,   2.000   }, 0. },
-        {  5,  "B",  {  3.7292520,   2.080   }, 0. },  // PP-Hapala
-        {  6,  "C",  {  3.7292524,   1.9080  }, 4.81 }, // paper *
-        {  7,  "N",  {  7.3719   ,   1.7800  }, 1. },  // PP-Hapala
-        {  8,  "O",  {  9.106314 ,   1.6612  }, 1. }, // paper *
-        {  9,  "F",  {  2.6451670,   1.75    }, 0. },  // PP-Hapala
-        { 10, "Ne",  {  3.642526 ,   1.5435  }, 0. }, // Ascroft M
-        { 11, "Na",  { 10.00     ,   2.000   }, 0. },
-        { 12, "Mg",  { 10.00     ,   2.000   }, 0. },
-        { 13, "Al",  { 10.00     ,   2.100   }, 4.28 },  // L-J values guessed
-        { 14, "Si",  { 25.4899514,   1.9     }, 0. },
-        { 15,  "P",  {  8.67268  ,   2.1     }, 0. },
-        { 16,  "S",  { 10.84085  ,   2.000   }, 0. },
-        { 17, "Cl",  { 11.491301 ,   1.948   }, 0. },
-        { 18, "Ar",  { 12.341224 ,   1.8805  }, 0. }, // Ascroft M
-        { 22, "Ti",  { 10.00     ,   2.100  }, 4.6  },  // L-J values guessed
-        { 24, "Cr",  { 10.00     ,   2.100  }, 4.6  },  // L-J values guessed
-        { 28, "Ni",  { 10.00     ,   2.100  }, 4.65 },  // L-J values guessed
-        { 29, "Cu",  { 10.00     ,   2.100  }, 4.65 },  // L-J values guessed
-        { 30, "Sn",  { 15.50     ,   2.100  }, 4.42 },  // L-J values guessed
-        { 32, "Ge",  { 25.50     ,   2.100  }, 4.65 },  // L-J values guessed
-        { 35, "Br",  { 13.8762880,   2.2200 }, 4.00 },  // 2.2200	0.0138762880	35	Br			
-        { 42, "Mo",  { 15.50     ,   2.100  }, 4.37 },  // L-J values guessed
-        { 47, "Ag",  { 15.50     ,   2.100  }, 4.26 },  // L-J values guessed
-        { 54, "Xe",  { 24.3442128,   2.1815 }, 1. },    // paper *
-        { 55, "Cs",  { 15.50 ,    2.100  }, 2.14 },  // L-J values guessed
-        { 74,  "W",  { 25.50 ,    2.100  }, 4.5  },  // L-J values guessed
-        { 78, "Pt",  { 25.50 ,    2.100  }, 4.5  },  // L-J values guessed
-        { 79, "Au",  { 25.50 ,    2.100  }, 5.1  },  // L-J values guessed
-        { 82, "Pb",  { 25.50 ,    2.100  }, 4.25 },  // L-J values guessed
-        { -1, "END.",{ -1.00 ,   -1.00  }, 0. }
+        {   0, "Apex",{ 1000.0    ,   2.0000  }, 1. , 1.0,	"arbitrary rigid tip apex, paper *" }, 
+        {   1,  "H",  {  0.6808054,   1.4870  }, 1. , 1.0,	"paper / PP-Hapala *" }, 
+        {   2, "He",  {  0.9453220,   1.4815  }, 1. , 1.0,	"PP-Hapala" }, 
+	{   3, "Li",  { 10.0      ,   2.000   }, 2.9 , 0.0,	"PP-Hapala" },  
+        {   4, "Be",  { 10.0      ,   2.000   }, 0. ,  0.0,	"dummy L-J values" },  
+        {   5,  "B",  {  3.7292520,   2.080   }, 0. , 1.0,	"PP-Hapala" },   
+        {   6,  "C",  {  3.7292524,   1.9080  }, 4.81 , 1.0,	"paper *" }, 
+        {   7,  "N",  {  7.3719   ,   1.7800  }, 1. , 1.0,	"PP-Hapala" },  
+        {   8,  "O",  {  9.106314 ,   1.6612  }, 1. , 1.0,	"paper *" },  
+        {   9,  "F",  {  2.6451670,   1.75    }, 0. , 1.0,	"PP-Hapala" },  
+        {  10, "Ne",  {  3.642526 ,   1.5435  }, 0. , 1.0,	"Ascroft M" },  
+        {  11, "Na",  { 10.00     ,   2.000   }, 0. , 0.0,	"L-J values estimated" },  
+        {  12, "Mg",  { 10.00     ,   2.000   }, 0. , 0.0,	"L-J values estimated" },  
+        {  13, "Al",  { 10.00     ,   2.100   }, 4.28 , 0.0,	"L-J values estimated" },  
+        {  14, "Si",  { 25.4899514,   1.9     }, 0. , 0.5, "L-J values estimated" },  
+        {  15,  "P",  {  8.67268  ,   2.1     }, 0. , 1.0,	"L-J values estimated" },  
+        {  16,  "S",  { 10.84085  ,   2.000   }, 0. , 1.0,	"L-J values estimated" },  
+        {  17, "Cl",  { 11.491301 ,   1.948   }, 0. , 1.0,	"L-J values estimated" },  
+        {  18, "Ar",  { 12.341224 ,   1.8805  }, 0. , 1.0,	"Ascroft M" },  
+        {  19,  "K",  { 10.00     ,   2.0     }, 0. , 0.0,	"L-J values estimated" },  
+        {  20, "Ca",  { 10.00     ,   2.0     }, 0. , 0.0,	"L-J values estimated" },  
+        {  21, "Sc",  { 10.00     ,   2.0     }, 0. , 0.0,	"L-J values estimated" },  
+        {  22, "Ti",  { 10.00     ,   2.100  }, 4.6  , 0.0,	"L-J values estimated" },  
+        {  23, "V",   { 10.00     ,   2.100  }, 4.6  , 0.0,	"L-J values estimated" },  
+        {  24, "Cr",  { 10.00     ,   2.100  }, 4.6  , 0.0,	"L-J values estimated" },  
+        {  25, "Mn",  { 10.00     ,   2.100  }, 4.6  , 0.0,	"L-J values estimated" },  
+        {  26, "Fe",  { 10.00     ,   2.100  }, 4.6  , 0.0,	"L-J values estimated" },  
+        {  27, "Co",  { 10.00     ,   2.100  }, 4.6  , 0.0,	"L-J values estimated" },  
+        {  28, "Ni",  { 10.00     ,   2.100  }, 4.65 , 0.0,	"L-J values estimated" },  
+        {  29, "Cu",  { 10.00     ,   2.100  }, 4.65 , 0.0,	"L-J values estimated" },  
+        {  30, "Sn",  { 15.50     ,   2.100  }, 4.42 , 0.0,	"L-J values estimated" },  
+        {  31, "Ga",  { 15.50     ,   2.100  }, 4.42 , 0.0,	"L-J values estimated" },  
+        {  32, "Ge",  { 25.50     ,   2.1    }, 4.65 , 0.0,	"L-J values estimated" },  
+        {  33, "As",  { 10.00     ,   2.1    }, 0. , 0.0,	"L-J values estimated" },    
+        {  34, "Se",  { 10.00     ,   2.1    }, 0. , 0.0,	"L-J values estimated" },    
+        {  35, "Br",  { 13.8762880,   2.2200 }, 4.00 , 1.0,	"PP-Hapala" },  
+        {  36, "Kr",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  37, "Rb",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  38, "Sr",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  39,  "Y",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  40, "Zr",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  41, "Nb",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  42, "Mo",  { 15.50    , 2.100  }, 4.37 , 1.0,	"L-J values estimated **" },  
+        {  43, "Tc",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  44, "Ru",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  45, "Rh",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  46, "Pd",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  47, "Ag",  { 15.50     , 2.100  }, 4.26 , 1.0,	"L-J values estimated **" },  
+        {  48, "Cd",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  49, "In",  { 10.00     , 2.0    }, 0. , 0.0,		"L-J values estimated" }, 
+        {  50, "Sn",  { 10.00     , 2.0    }, 0. , 0.0, 	"L-J values estimated" }, 
+        {  51, "Sb",  { 10.00     , 2.0    }, 0. , 0.0, 	"L-J values estimated" }, 
+        {  52, "Te",  { 10.00     , 2.0    }, 0. , 0.0, 	"L-J values estimated" }, 
+        {  53, "I",   { 17.345360 , 2.3500 }, 0. , 1.0, 	"PP-Hapala" }, 
+        {  54, "Xe",  { 24.3442128, 2.1815 }, 1. , 1.0, 	"paper *" },    
+        {  55, "Cs",  { 15.50,    2.100  }, 2.14 , 1.0, 	"L-J values estimated" },  
+	{  56, "Ba",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  57, "La",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  58, "Ce",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  59, "Pr",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  60, "Nd",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  61, "Pm",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  62, "Sm",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  63, "Eu",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  64, "Gd",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  65, "Tb",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  66, "Dy",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  67, "Ho",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  68, "Er",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  69, "Tm",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  70, "Yb",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  71, "Lu",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  72, "Hf",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  73, "Ta",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+        {  74,  "W",  { 25.50 ,    2.100 }, 4.5  , 0.8, "L-J values estimated" },  
+	{  75, "Re",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  76, "Os",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  77, "Ir",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+        {  78, "Pt",  { 25.50 ,    2.100 }, 4.5  , 0.5, "L-J values estimated" },  
+        {  79, "Au",  { 25.50 ,    2.100 }, 5.1  , 0.5, "L-J values estimated" },  
+	{  80, "Hg",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  81, "Tl",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+        {  82, "Pb",  { 25.50 ,    2.100 }, 4.25 , 0.5, "L-J values estimated" },  
+	{  83, "Bi",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  84, "Po",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  85, "At",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  86, "Rn",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  87, "Fr",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  88, "Ra",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  89, "Ac",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  90, "Th",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  91, "Pa",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  92,  "U",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  93, "Np",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  94, "Pu",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  95, "Am",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  96, "Cm",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  97, "Bk",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  98, "Cf",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{  99, "Es",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 100, "Fm",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 101, "Md",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 102, "No",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 103, "Lr",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 104, "Rf",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 105, "Db",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 106, "Sg",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 107, "Bh",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 108, "Hs",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 109, "Mt",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 110, "Ds",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 111, "Rg",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 112, "Cn",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 113, "Uut", { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 114, "Fl",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 115, "Uup", { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 116, "Lv",  { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 117, "Uus", { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 118, "Uuo", { 10.00,    2.0    }, 0. , 0.0, "guessed dummy values" }, 
+	{ 119, "UuX", { 10.00,    2.0    }, 0. , 0.0, "DUMMY PLACE HOLDER VALUES" }, 
+        {  -1, "END.",{ -1.00 ,   -1.00  }, 0. , 1.0, "END MARK" }  // END MARK
 };
 
 #define GLOBAL_R_CUTOFF 4.0
@@ -641,16 +732,25 @@ public:
                                         
                                                 // find Element
                                                 //std::cout << "Searching for " << *token << std::endl;
+                                                int eln=-1;
                                                 for (int n=0; Elements[n].N >= 0; ++n){
                                                         // std::cout << "comparing N=" << n << ": >" << Elements[n].name << "< with >" << *token << "<" << std::endl;
                                                         if (! strcmp (g_strstrip(*token), Elements[n].name)){
                                                                 atom_entry->N=Elements[n].N;
+                                                                eln=n;
                                                                 break;
                                                         }
                                                 }
                                         
-                                                if (atom_entry->N == 0){
-                                                        std::cout << "ERROR: Unkown Element L-J Parameters for >" << *token << "<" << std::endl;
+                                                if (atom_entry->N == 0 || eln < 1){
+                                                        g_warning ("XYZ File/Model Contains Unkown L-J Parameters for Element [%s]. Using UuX DUMMY entry.", *token);
+                                                        atom_entry->N = 119; // dummy Element
+                                                        continue; // try to continue
+                                                } else if (Elements[eln].certainty < 0.999){
+                                                        g_warning ("XYZ File/Model Contains Element with uncertain (%g) L-J Parameters: [%s] => %s, LJ: Eo=%g meV, ro=%g Ang (%s).",
+                                                                   Elements[eln].certainty, *token,
+                                                                   Elements[eln].name, Elements[eln].LJp[0], Elements[eln].LJp[1], Elements[eln].comment
+                                                                   );
                                                         continue; // try to continue
                                                 }
                                                 //std::cout << "N=" << atom_entry->N << std::endl;
@@ -1214,8 +1314,8 @@ public:
         Model_item *probe;
 
         // Lookup Tables
-        double LJp_AB_lookup[108][2]; // [0] AB: Probe - Apex, [1...n] Probe - Atom-n
-        double WorkF_lookup[108]; // WorkFunc Loookup
+        double LJp_AB_lookup[122][2]; // [0] AB: Probe - Apex, [1...n] Probe - Atom-n
+        double WorkF_lookup[122]; // WorkFunc Loookup
 
         int options;
 
