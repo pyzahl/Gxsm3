@@ -144,6 +144,7 @@ static GActionEntry win_view_popup_entries[] = {
         { "object-mode", ViewControl::view_object_mode_radio_callback, "s", "'rectangle'", NULL },
         { "show-object-lables", ViewControl::view_tool_labels_callback, NULL, "false", NULL },
         { "show-legend-item", ViewControl::view_tool_legend_radio_callback, "s", "'off'", NULL },
+        { "show-legend-position", ViewControl::view_tool_legend_position_radio_callback, "s", "'over'", NULL },
         { "reset-object-counter", ViewControl::obj_reset_counter_callback, NULL, NULL, NULL },
         { "show-object-counter", ViewControl::obj_show_counter_callback, NULL, NULL, NULL },
         { "set-marker-group", ViewControl::view_tool_marker_group_radio_callback, "s", "'red'", NULL },
@@ -554,6 +555,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         destruction_in_progress = false;
         tip_follow_flag = false;
         legend_items_code = NULL;
+        legend_position_code = 'o';
         view_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT ".gui.view");
  
 	XSM_DEBUG (DBG_L2, "ViewControl::ViewControl");
@@ -1302,49 +1304,18 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                 double bar_d=5.;
                 double ap=wx/wy;
                 
-                // x-bar
+                // z-range-color-bar
                 cairo_save (cr);
                 cairo_scale (cr, wx/400., ap*wy/400.);
-                cairo_set_line_width (cr, 3.);
-                cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, 0.66);
-                cairo_rectangle (cr, 0.,0., 400., ap/400.);
-                cairo_stroke(cr);
                 
-                cairo_translate (cr, 30., 400./ap-30.);
-
-                if (vc->legend_items_code[2] == 'x'){ // ==??x?bar
-                        double r,g,b;
-                        double bar_len_ang = AutoSkl (vc->scan->data.s.rx / 4.);
-                        bar_len = bar_len_ang / vc->scan->data.s.rx * 400.;
-                        vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol()-1), r,g,b);
-                        if (vc->legend_items_code[3] == '1')
-                                cairo_set_source_rgb (cr, r,g,b);
-                        else if (vc->legend_items_code[3] == '2')
-                                cairo_set_source_rgba (cr, r,g,b, 0.5);
-                        else if (vc->legend_items_code[3] == '3')
-                                cairo_set_source_rgba (cr, r,g,b, 0.5);
-                        else cairo_set_source_rgb (cr, r,g,b);
-                        cairo_rectangle (cr, 0., 0., bar_len, bar_width);
-                        cairo_fill (cr);
-
-                        gchar *bar_width_reading = vc->vinfo->Ux()->UsrString (bar_len_ang);
-                        cairo_item_text val_item (bar_d, bar_width/2, bar_width_reading);
-                        vc->ximg->get_rgb_from_colortable (0, r,g,b);
-                        val_item.set_position (bar_d, bar_width/2);
-                        val_item.set_stroke_rgba (r,g,b, 1.0);
-                        val_item.set_font_face_size ("Ununtu", bar_width*0.8);
-                        val_item.set_anchor (CAIRO_ANCHOR_W);
-                        val_item.draw (cr);
-                        g_free (bar_width_reading);
+                if (vc->legend_position_code == 'o'){
+                        cairo_translate (cr, 250., 400./ap-30.);
+                        bar_len=140.;
+                } else {
+                        cairo_translate (cr, 0., 400./ap+5.);
+                        bar_len=400.;
                 }
-                cairo_restore (cr);
-
-                // z-color-bar
-                bar_len=140.;
-                cairo_save (cr);
-                cairo_scale (cr, wx/400., ap*wy/400.);
                 
-                cairo_translate (cr, 250., 400./ap-30.);
                 if (vc->legend_items_code[0] == 'z'){ // ==z???bar
                         double r,g,b;
                         gint bars = bar_len/bar_d;
@@ -1391,9 +1362,67 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                         val_hi.set_anchor (CAIRO_ANCHOR_E);
                         val_hi.draw (cr);
                         g_free (reading_hi);
+
+                        if (vc->legend_position_code == 'b'){
+                                gchar *reading_info = g_strdup (vc->vinfo->Uz()->Label ());
+                                cairo_item_text info (bar_width-bar_d, bar_width/2, reading_info);
+                                vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol() * (0.5*bar_d)/bar_len), r,g,b);
+                                info.set_position (bar_len/2, bar_width/2);
+                                info.set_stroke_rgba (r,g,b, 1.0);
+                                info.set_font_face_size ("Sans Regular", bar_width*0.8);
+                                info.set_anchor (CAIRO_ANCHOR_E);
+                                info.draw (cr);
+                                g_free (reading_info);
+                        }
                 }
                 // ...
 
+                cairo_restore (cr);
+                
+                // scale-bar
+                cairo_save (cr);
+                cairo_scale (cr, wx/400., ap*wy/400.);
+                //cairo_set_line_width (cr, 3.);
+                //cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, 0.66);
+                //cairo_rectangle (cr, 0.,0., 400., ap/400.);
+                //cairo_stroke(cr);
+                
+                if (vc->legend_position_code == 'o')
+                        cairo_translate (cr, 30., 400./ap-30.);
+                else
+                        cairo_translate (cr, 30., 400./ap-20.);
+
+                if (vc->legend_items_code[2] == 'x'){ // ==??x?bar
+                        double r,g,b;
+                        double bar_len_ang = AutoSkl (vc->scan->data.s.rx / 4.);
+                        bar_len = bar_len_ang / vc->scan->data.s.rx * 400.;
+                        vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol()-1), r,g,b);
+                        if (vc->legend_items_code[3] == '1')
+                                cairo_set_source_rgb (cr, r,g,b);
+                        else if (vc->legend_items_code[3] == '2')
+                                cairo_set_source_rgba (cr, r,g,b, 0.5);
+                        else if (vc->legend_items_code[3] == '3')
+                                cairo_set_source_rgba (cr, r,g,b, 0.5);
+                        else cairo_set_source_rgb (cr, r,g,b);
+                        if (vc->legend_position_code == 'o')
+                                cairo_rectangle (cr, 0., 0., bar_len, bar_width);
+                        else
+                                cairo_rectangle (cr, 0., 0.+(0.5-0.2)*bar_width, bar_len, 0.4*bar_width);
+                        cairo_fill (cr);
+
+                        gchar *bar_width_reading = vc->vinfo->Ux()->UsrString (bar_len_ang);
+                        cairo_item_text val_item (bar_d, bar_width/2, bar_width_reading);
+                        vc->ximg->get_rgb_from_colortable (0, r,g,b);
+                        if (vc->legend_position_code == 'o')
+                                val_item.set_position (bar_d, bar_width/2);
+                        else
+                                val_item.set_position (bar_len+bar_d, bar_width/2);
+                        val_item.set_stroke_rgba (r,g,b, 1.0);
+                        val_item.set_font_face_size ("Ununtu", bar_width*0.8);
+                        val_item.set_anchor (CAIRO_ANCHOR_W);
+                        val_item.draw (cr);
+                        g_free (bar_width_reading);
+                }
                 cairo_restore (cr);
         }
         
@@ -3215,11 +3244,6 @@ void ViewControl::view_tool_legend_radio_callback (GSimpleAction *action, GVaria
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
                 
-        XSM_DEBUG_GP (DBG_L1, "ZOOM-FIX Radio action %s activated, state changes from %s to %s\n",
-                      g_action_get_name (G_ACTION (action)),
-                      g_variant_get_string (old_state, NULL),
-                      g_variant_get_string (new_state, NULL));
-
         if (!strcmp (g_variant_get_string (new_state, NULL), "off")){
                 vc->legend_items_code = NULL;
         } else if (!strcmp (g_variant_get_string (new_state, NULL), "z-scale-bar")){
@@ -3234,6 +3258,25 @@ void ViewControl::view_tool_legend_radio_callback (GSimpleAction *action, GVaria
                 vc->legend_items_code = "zvx3bar";
         } else { // fallback
                 vc->legend_items_code = NULL;
+        }
+        
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+}
+
+void ViewControl::view_tool_legend_position_radio_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        ViewControl *vc = (ViewControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_string (g_variant_get_string (parameter, NULL));
+                
+        if (!strcmp (g_variant_get_string (new_state, NULL), "over")){
+                vc->legend_position_code = 'o';
+        } else if (!strcmp (g_variant_get_string (new_state, NULL), "below")){
+                vc->legend_position_code = 'b';
+        } else { // fallback
+                vc->legend_position_code = 'o';
         }
         
         g_simple_action_set_state (action, new_state);

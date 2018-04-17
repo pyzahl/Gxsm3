@@ -377,6 +377,17 @@
 		<attribute name="action">win.show-legend-item</attribute>
 		<attribute name="target">x-bar3-z-scale-bar-values-pllref</attribute>
 	      </item>
+	      <attribute name="id">view-objects-legend-section</attribute>
+	      <item>
+		<attribute name="label" translatable="yes">Overlay</attribute>
+		<attribute name="action">win.show-legend-position</attribute>
+		<attribute name="target">over</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Below</attribute>
+		<attribute name="action">win.show-legend-position</attribute>
+		<attribute name="target">below</attribute>
+	      </item>
 	    </section>
 	  </submenu>
 	  <item>
