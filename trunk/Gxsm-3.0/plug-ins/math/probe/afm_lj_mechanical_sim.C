@@ -575,11 +575,11 @@ public:
         };
 
         // read from xyz file
-        xyzc_model (gchararray xyzc_file){
+        xyzc_model (gchararray xyzc_file, int option='c'){ // c: auto_center
                 std::ifstream f;
                 Model_item *atom_entry;
                 gchar xyzc_line[1024];
-                
+                               
                 size = 0;
                 probe = NULL;
                 model = NULL;
@@ -662,6 +662,13 @@ public:
                                                 ++j;
                                         }
                                 }
+                                if (count == 0){
+                                        copy_vec (xyz_max, atom_entry->xyzc);
+                                        copy_vec (xyz_min, atom_entry->xyzc);
+                                }  else {
+                                        max_vec_elements (xyz_max, xyz_max, atom_entry->xyzc);
+                                        min_vec_elements (xyz_min, xyz_min, atom_entry->xyzc);
+                                }
                                 //std::cout << std::endl;
                                 if (atom_entry->N > 0)
                                         put_atom (atom_entry, count++);
@@ -669,6 +676,11 @@ public:
                         }
                 }
                 f.close ();
+                middle_vec_elements (xyz_center_top, xyz_min, xyz_max);
+                xyz_center_top[2] = xyz_max[2] + 1.0; // move top mosrt atom to Z=-1A
+                if (option == 'c')
+                        for (int i=0; i<size && model[i].N > 0; ++i)
+                                sub_from_vec (model[i].xyzc, xyz_center_top);
         };
 
         // custom model filter function
@@ -993,6 +1005,23 @@ public:
                 if (probe) delete[] probe;
         };
         
+        void auto_center_top_model (){
+                // recompute center-top
+                for (int i=0; i<size && model[i].N > 0; ++i){
+                        if (i == 0){
+                                copy_vec (xyz_max, model[i].xyzc);
+                                copy_vec (xyz_min, model[i].xyzc);
+                        }  else {
+                                max_vec_elements (xyz_max, xyz_max, model[i].xyzc);
+                                min_vec_elements (xyz_min, xyz_min, model[i].xyzc);
+                        }
+                }
+                middle_vec_elements (xyz_center_top, xyz_min, xyz_max);
+                xyz_center_top[2] = xyz_max[2] + 1.0; // move top mosrt atom to Z=-1A
+                for (int i=0; i<size && model[i].N > 0; ++i)
+                        sub_from_vec (model[i].xyzc, xyz_center_top);
+        };
+        
         void make_probe(int N=8, double q=-0.100, double dz=3.132){ // 3.661
                 if (probe) delete[] probe;
                 probe = new Model_item[2+5];
@@ -1195,6 +1224,11 @@ public:
 private:
         int size;
         double sim_z0, sim_zf, sim_dz;
+
+        // orininal xyz limits and center-top
+        double xyz_min[3];
+        double xyz_max[3];
+        double xyz_center_top[3];
 
         double TrMat[3][3];
 };
@@ -1613,7 +1647,7 @@ public:
                 // gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "CTIS", "CTIS");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "NONE", "NONE/Abort");
 		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*calc_mode_selected));
-		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 0);
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 1);
 		bp.grid_add_widget (choice, 15);
                 bp.new_line ();
 
@@ -1622,7 +1656,7 @@ public:
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J Model", "L-J Model");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J+Coulomb Model", "L-J+Coulomb Model");
 		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*calc_options_selected));
-		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 0);
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 1);
 		bp.grid_add_widget (choice, 15);
                 bp.new_line ();
 
@@ -1647,7 +1681,7 @@ public:
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J + Spring", "L-J + Spring");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "L-J + Coulomb + Spring", "L-J + Coulomb + Spring");
 		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*probe_model));
-		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 1);
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 4);
 		bp.grid_add_widget (choice, 15);
                 bp.new_line ();
 
@@ -2947,8 +2981,8 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
         xyzc_model *xyzc_model_filter = NULL;
 	int stop_flag = 0;			// set to 1 to stop the plugin
 
-        double zi=12.;  // default Z-start (upper box bound)
-        double zf=8.;   // default Z-end (lower box bound)
+        double zi=8.;  // default Z-start (upper box bound)
+        double zf=4.5;   // default Z-end (lower box bound)
         double dz=0.1; // default z slice width
         double charge_scaling=1.; // default charge scaling for model xyzc -- if c given
         double precision=1e-6; // nl-opt precision
@@ -2957,8 +2991,8 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
         double maxiter=0.; // default (0=none) nl-opt optional max iter limit
         double fzmax=1000.;
         double max_threads=g_get_num_processors (); // default concurrency for multi threadded computation, # CPU's/cores
-        int calc_mode = 0; // MODE_NO_OPT; // default: no opt (static)
-        int calc_opt  = 0; // MODE_L_J | MODE_PROBE_SPRING; // default L-J only, no statics (coulomb), spring tip probe model
+        int calc_mode = MODE_NL_OPT; // MODE_NO_OPT; // default: no opt (static)
+        int calc_opt  = MODE_L_J | MODE_COULOMB | MODE_PROBE_L_J | MODE_PROBE_COULOMB | MODE_PROBE_SPRING; // MODE_L_J | MODE_PROBE_SPRING; // default L-J only, no statics (coulomb), spring tip probe model
         
 	PI_DEBUG (DBG_L2, "Afm_Mechanical_Sim Scan");
         std::cout << "AFM Mechanical Scan Simulation" << std::endl << std::flush;
