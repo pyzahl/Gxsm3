@@ -403,6 +403,17 @@ int DSPMoverControl::create_waveform (double amp, double duration){
                         }
                 }
 		break;
+	case MOV_WAVE_STEPPERMOTOR:
+               PI_DEBUG_GP (DBG_L2, "case StepperMotor amp=%f  pointing=%f  MOV_wave_len=%d \n", 
+                                amp,
+                                pointing,
+                                mover_param.MOV_wave_len);
+                for (int i=0; i < mover_param.MOV_wave_len; i += channels){
+                        double x = 2.0*M_PI*(double)i/(double)(mover_param.MOV_wave_len)/(double)(channels);
+                        mover_param.MOV_waveform[i] = (short)round(SR_VFAC*amp*(round(sin(x))));
+                        mover_param.MOV_waveform[i+1] = (short)round(SR_VFAC*amp*(round(sin(x+(double)(pointing)*M_PI/4.0))));
+                }
+		break;
 	case MOV_WAVE_PULSE:
                 for (int i=0; i < mover_param.MOV_wave_len; i += channels){
                         double x = (double)i/mover_param.MOV_wave_len;
@@ -432,36 +443,39 @@ int DSPMoverControl::create_waveform (double amp, double duration){
                 {
                 double pduration;               // positive duration of the waveform
                 double tramp ;                  // duration of ramps before and after the jump
+                double tt1 = mover_param.time_delay_1;
+                double tt2 = mover_param.time_delay_2;        
+                        
                 // calculate time in ms for ramps                 
-                pduration = duration ? duration : (-1)*duration;
-                if (pduration > 2*mover_param.time_delay_1+mover_param.time_delay_2) {
+                pduration = abs(duration);
+                if (pduration > 2*abs(tt1)+abs(tt2)) {
                         PI_DEBUG_GP (DBG_L2,"duration is longer than expected delay times");
-                        tramp=(pduration - 2*mover_param.time_delay_1 - mover_param.time_delay_2)/2;
+                        tramp=(pduration - 2*abs(tt1) - abs(tt2))/2;
                 } else {
                         // do not allow for negative times!
                         PI_DEBUG_GP (DBG_L2,"duration is too short");
                         tramp=pduration/2;
-                        mover_param.time_delay_1 = 0;
-                        mover_param.time_delay_2 = 0;                
+                        tt1 = 0;
+                        tt2 = 0;                
                 }
 
                 // define individual time steps within the signal
                 int besocke_step_a; // steps until end of first ramp                
                 besocke_step_a = (int) round((double) tramp / pduration * mover_param.MOV_wave_len);
                 int besocke_step_b; // (total number of) steps to wait before z-jump
-                besocke_step_b = besocke_step_a + (int) round((double) mover_param.time_delay_1 / pduration * mover_param.MOV_wave_len);
+                besocke_step_b = besocke_step_a + (int) round((double) tt1 / pduration * mover_param.MOV_wave_len);
                 int besocke_step_c; // (total number of) steps to wait after z-jump, before xy-motion
-                besocke_step_c = besocke_step_b + (int) round((double) mover_param.time_delay_2 / pduration * mover_param.MOV_wave_len);
+                besocke_step_c = besocke_step_b + (int) round((double) tt2 / pduration * mover_param.MOV_wave_len);
                 int besocke_step_d; // (total number of) steps to wait after xy-motion, before final ramp
-                besocke_step_d = besocke_step_c + (int) round((double) mover_param.time_delay_1 / pduration * mover_param.MOV_wave_len);
+                besocke_step_d = besocke_step_c + (int) round((double) tt1 / pduration * mover_param.MOV_wave_len);
 
                 double R=mover_param.z_Rate;           //ratio between z-jump and xy-motion
                         
 
                 PI_DEBUG_GP (DBG_L2, "case BESOCKE t0=%f (ramp time) t1=%f (settling time) t2=%f (period of fall) pduration=%f  amp=%f  z-Rate=%f  MOV_wave_len=%d \n", 
                                 tramp,                                
-                                mover_param.time_delay_1, 
-                                mover_param.time_delay_2, 
+                                tt1, 
+                                tt2, 
                                 pduration, 
                                 amp,
                                 mover_param.z_Rate,
