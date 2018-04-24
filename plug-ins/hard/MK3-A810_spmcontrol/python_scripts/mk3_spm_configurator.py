@@ -45,6 +45,7 @@ from numpy import *
 import math
 import re
 
+import pickle
 import pydot
 #import xdot
 from scipy.optimize import leastsq
@@ -97,7 +98,7 @@ class Visualize():
 						      style="filled",
 						      color="lightgrey",
 						      label = "Node Types:")
-		c = moduleg ["NodeTypes"];
+		c = moduleg ["NodeTypes"]
 		graph.add_subgraph (c)
 		c.add_node ( pydot.Node( "Process Flow", style="filled", fillcolor="lightskyblue") )
 		c.add_node ( pydot.Node( "Signal Source", style="filled", fillcolor="green") )
@@ -114,7 +115,7 @@ class Visualize():
 						      style="filled",
 						      color="lightgrey",
 						      label = mod)
-			c = moduleg [mod];
+			c = moduleg [mod]
 			print "AddSubgraph: "+mod
 			graph.add_subgraph (c)
 			signaln [mod] = pydot.Node( mod, style="filled", fillcolor="lightskyblue")
@@ -139,7 +140,7 @@ class Visualize():
 #				c.add_node( signaln ["record_IN"] )
 
 		for mod in mod_conf.keys():
-			c = moduleg [mod];
+			c = moduleg [mod]
 			for mod_inp in mod_conf[mod]:
 				[signal, data, offset] = parent.mk3spm.query_module_signal_input(mod_inp[0])
 				# Null-Signal -- omit node connections, shade node
@@ -702,6 +703,7 @@ class TuneScope():
 		self.ResAmp   = ones (self.points)
 		self.ResAmp2F = ones (self.points)
 		self.ResPhase = zeros (self.points)
+		self.ResPhasePAC = zeros (self.points)
 		self.ResPhase2F = zeros (self.points)
 		self.Fit      = zeros (self.points)
 		self.Freq     = zeros (self.points)
@@ -793,6 +795,17 @@ class TuneScope():
 		self.ydc = 0.
 
 		self.fitresults = { "A":0., "f0": 32768., "Q": 0. }
+
+                self.pk_data_fname = "data_last_tune_result"
+
+                try:
+                        with open (self.pk_data_fname, 'rb') as f:
+                                self.last_tune = pickle.load (f)
+                except IOError:
+                        self.last_tune  = { "f0":30760, "p0": 0.0 } # default on no previous results data
+                        
+                print self.last_tune
+                
 		self.fitinfo = ["", "", ""]
 		self.resmodel = ""
 
@@ -881,6 +894,15 @@ class TuneScope():
 				print self.fitinfo[i]
 			print
 
+                        self.last_tune["f0"] = self.fitresults["f0"]
+                        self.last_tune["p0"] = self.ResPhasePAC[int(round((self.fitresults["f0"]-self.Fc-self.Fspan/2)/self.Fstep))]
+                        print self.last_tune
+                        
+                        with open (self.pk_data_fname, 'wb') as f:
+                                pickle.dump (self.last_tune, f, pickle.HIGHEST_PROTOCOL)
+
+
+                        
 			print "Correlation matrix"
 			# correlation matrix close to gnuplot
 			print "               ",
@@ -897,6 +919,7 @@ class TuneScope():
 #			print "----------------- Final:"
 #			print self.Fit
 
+
                         save("mk3_tune_Freq", self.Freq)
                         save("mk3_tune_Fit", self.Fit)
                         save("mk3_tune_ResAmp", self.ResAmp)
@@ -912,41 +935,52 @@ class TuneScope():
 		def update_tune(set_data, Xsignal, Ysignal):
 			Filter64Out = parent.mk3spm.read_PLL_Filter64Out ()
 			cur_a = Filter64Out[iii_PLL_F64_ResAmpLP] * Xsignal[SIG_D2U]
-			cur_ph = Filter64Out[iii_PLL_F64_ResPhaseLP] * Ysignal[SIG_D2U]
+			cur_ph_pac = Filter64Out[iii_PLL_F64_ResPhaseLP] * Ysignal[SIG_D2U]
+                        cur_ph = cur_ph_pac
+                        #cur_ph = cur_ph_pac - self.last_tune["p0"] # center with last phase a res, then unwrap
 			print self.pos, Filter64Out, cur_a, cur_ph, self.phase_prev1, self.points
-			
-			# init phase 29681.6
+
 			if self.pos < 0:
-				while cur_ph <= -180:
-					cur_ph += 360
-				while cur_ph >= 180:
-					cur_ph -= 360
+                                self.pre_ph = cur_ph_pac
+                        cur_ph = cur_ph - math.floor(((cur_ph - self.pre_ph)/360.0)+0.5)*360.;
+                        self.pre_ph = cur_ph_pac
+			
+#			# init phase 29681.6
+#			if self.pos < 0:
+#				while cur_ph <= -180:
+#					cur_ph += 360
+#				while cur_ph >= 180:
+#					cur_ph -= 360
+#
+#				if self.mode2f == 0:
+#					self.phase_prev1 = cur_ph
+#				else:
+#					self.phase_prev2 = cur_ph
+#
+#			# full phase unwrap
+#                      if self.mode2f == 0:
+#                             pre_ph = self.phase_center
+#                      else:
+#                             pre_ph = self.phase_center2
+#                    
+#                      # P_UnWrapped(i)=P(i)-Floor(((P(i)-P(i-1))/2Pi)+0.5)*2Pi
+#
+#			if cur_ph - pre_ph > 180.:
+#                              cur_ph = cur_ph - 180. # 360
+#				print "Ph UnWrap pos=", cur_ph
+#			if cur_ph - pre_ph < -180.:
+#                               cur_ph = cur_ph + 180. # 360
+#				print "Ph UnWrap neg=", cur_ph
 
-				if self.mode2f == 0:
-					self.phase_prev1 = cur_ph
-				else:
-					self.phase_prev2 = cur_ph
-
-			# full phase unwrap
-                        if self.mode2f == 0:
-                                pre_ph = self.phase_center
-                        else:
-                                pre_ph = self.phase_center2
                         
-                        # P_UnWrapped(i)=P(i)-Floor(((P(i)-P(i-1))/2Pi)+0.5)*2Pi
 
-			if cur_ph - pre_ph > 180.:
-                                cur_ph = cur_ph - 180. # 360
-				print "Ph UnWrap pos=", cur_ph
-			if cur_ph - pre_ph < -180.:
-                                cur_ph = cur_ph + 180. # 360
-				print "Ph UnWrap neg=", cur_ph
-
+                                
 			if self.pos >= 0 and self.pos < self.points:
 				self.Freq[self.pos]     = self.FSineHz
                                 if self.mode2f == 0:
                                         self.ResAmp[self.pos]   = cur_a
                                         self.ResPhase[self.pos] = cur_ph
+                                        self.ResPhasePAC[self.pos] = cur_ph_pac
                                         self.phase_prev1 = cur_ph
                                 
                                         if self.peakvalue < cur_a:
@@ -988,6 +1022,7 @@ class TuneScope():
 				parent.mk3spm.adjust_PLL_sine (self.volumeSine, self.fitresults["f0"], self.mode2f)
                                 time.sleep (0.2)
 			        cur_ph = Filter64Out[iii_PLL_F64_ResPhaseLP] * Ysignal[SIG_D2U]
+
 				while cur_ph <= -180:
 					cur_ph += 360
 				while cur_ph >= 180:
@@ -1003,7 +1038,7 @@ class TuneScope():
 				scope.set_info(["tuning at %.3f Hz"%self.FSineHz + " [%d]"%self.pos,
 						"cur peak at: %.3f Hz"%Frequency (self.peakindex),
 						"Res Amp: %g V"%cur_a + " [ %g V]"%self.peakvalue,
-						"Phase: %3.1f deg"%self.phase_prev1 + " [ %3.1f deg]"%self.phase_prev2,
+						"Phase: %3.1f deg"%cur_ph_pac + " [ %3.1f deg]"%self.last_tune["p0"],
 						"Vol. Sine: %.3f V"%self.volumeSine,"","","","","",
 						self.resmodel,
 						self.fitinfo[0],self.fitinfo[1],self.fitinfo[2]
@@ -1768,7 +1803,7 @@ class Mk3_Configurator:
                     self.fsens.set_text(str(fsv/self.sco_sensQ))
                     grid.add (self.fsens)
 
-                    self.sco_read (0);
+                    self.sco_read (0)
                     
                     bset = gtk.Button(stock='set')
                     bset.connect("clicked", self.scoset)
