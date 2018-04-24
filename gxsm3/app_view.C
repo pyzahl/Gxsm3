@@ -1312,7 +1312,7 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                         cairo_translate (cr, 250., 400./ap-30.);
                         bar_len=140.;
                 } else {
-                        cairo_translate (cr, 0., 400./ap+5.);
+                        cairo_translate (cr, 0., 400./ap+0.);
                         bar_len=400.;
                 }
                 
@@ -1412,11 +1412,13 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
 
                         gchar *bar_width_reading = vc->vinfo->Ux()->UsrString (bar_len_ang);
                         cairo_item_text val_item (bar_d, bar_width/2, bar_width_reading);
-                        vc->ximg->get_rgb_from_colortable (0, r,g,b);
-                        if (vc->legend_position_code == 'o')
+                        if (vc->legend_position_code == 'o'){
+                                vc->ximg->get_rgb_from_colortable (0, r,g,b);
                                 val_item.set_position (bar_d, bar_width/2);
-                        else
+                        } else {
+                                vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol()-1), r,g,b);
                                 val_item.set_position (bar_len+bar_d, bar_width/2);
+                        }
                         val_item.set_stroke_rgba (r,g,b, 1.0);
                         val_item.set_font_face_size ("Ununtu", bar_width*0.8);
                         val_item.set_anchor (CAIRO_ANCHOR_W);
@@ -3017,13 +3019,17 @@ void ViewControl::view_file_save_drawing (const gchar* imgname){
         cairo_status_t status;
         int png=0;
 
+        double add_y_space = 0.;
+        if (legend_position_code == 'b')
+                add_y_space = npy*18./400+1;
+        
 	if (g_strrstr (imgname,".svg")){
-                surface = cairo_svg_surface_create (imgname, (double)npx, (double)npy);
+                surface = cairo_svg_surface_create (imgname, (double)npx, (double)npy+add_y_space);
                 cairo_svg_surface_restrict_to_version (surface, CAIRO_SVG_VERSION_1_2);
         } else if (g_strrstr (imgname,".pdf")){
-                surface = cairo_pdf_surface_create (imgname, (double)npx, (double)npy);
+                surface = cairo_pdf_surface_create (imgname, (double)npx, (double)npy+add_y_space);
         } else {
-                surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, npx, npy);
+                surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, npx, npy+add_y_space);
                 png=1;
         }
 
