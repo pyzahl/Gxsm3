@@ -1765,6 +1765,7 @@ public:
 		choice = gtk_combo_box_text_new ();
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Copper", "Copper probe");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Oxigen", "Oxigen terminated probe (CO like)");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Bromium", "Bromium terminated probe");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Xenon",  "Xenon terminated probe");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Carbon", "Carbon terminated probe");
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Tungston", "Tungston terminated probe");
@@ -1948,6 +1949,7 @@ public:
                 ADD_LINE (label, choice);
 		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Copper probe");
 		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Oxigen terminated probe (CO like)");
+		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Bromium terminated probe");
 		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Xenon terminated probe");
 		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Carbon terminated probe");
 		gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (choice), "Tungston terminated probe");
@@ -3186,6 +3188,8 @@ static gboolean afm_lj_mechanical_sim_run(Scan *Src, Scan *Dest)
                         model->make_probe (8, probe_charge, initial_probe_below_apex);
                 else if (!strncmp (probe_type, "Xenon", 5))
                         model->make_probe (54, probe_charge, initial_probe_below_apex);
+                else if (!strncmp (probe_type, "Bromium", 7))
+                        model->make_probe (35, probe_charge, initial_probe_below_apex);
                 else if (!strncmp (probe_type, "Carbon", 6))
                         model->make_probe (6, probe_charge, initial_probe_below_apex);
                 else if (!strncmp (probe_type, "Tungsten", 8))
