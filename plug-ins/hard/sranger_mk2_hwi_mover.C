@@ -245,6 +245,22 @@ short koala_func (double amplitude, double phi){
                 return (short)round (amplitude * sin (phi-M_PI));
 }
 
+short steppermotor_func (double amplitude, double phi){
+        while (phi > 2.*M_PI)
+                phi -= 2.*M_PI;
+        while (phi < 0.)
+                phi += 2.*M_PI;
+        if (phi < M_PI/2.0)
+                return (short)(round(amplitude));
+        else if (phi < M_PI*0.75)
+                return (short)(round(0.0));
+        else if (phi < M_PI*1.5)
+                return (short)(round(-amplitude));
+        else if (phi < M_PI*1.75)
+                return (short)(round (0.0));
+        else return (short)(round(amplitude));
+}
+
 // duration in ms
 // amp in V SR out (+/-2.05V max)
 int DSPMoverControl::create_waveform (double amp, double duration){
@@ -253,7 +269,7 @@ int DSPMoverControl::create_waveform (double amp, double duration){
         for (int i=0; i < MOV_MAXWAVELEN; ++i)
 		mover_param.MOV_waveform[i] = (short)0;
 
-        double pointing = duration > 0. ? 1. : -1;
+        double pointing = duration > 0. ? 1. : -1.;
         gint channels = 1;
 
         // lookup num waves to compute
@@ -282,7 +298,8 @@ int DSPMoverControl::create_waveform (double amp, double duration){
                      channels,
                      mover_param.MOV_wave_len + space_len,
                      mover_param.MOV_wave_speed_fac,
-                     duration, amp
+                     duration, 
+                     amp
                      );        
 
         int    imax = mover_param.MOV_wave_len-channels;
@@ -325,22 +342,28 @@ int DSPMoverControl::create_waveform (double amp, double duration){
 	case MOV_WAVE_CYCLO_MI:
                 if (pointing < 0)
                         amp = -amp; // invert
-                
-		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
-			double dt = pointing/(n - 1);
-			double a = 1.;
+ 		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
+			double dt = 1./(n - 1);
 			switch (mover_param.MOV_waveform_id){
 			case MOV_WAVE_CYCLO_PL:
                                 for (int k=0; k<channels; ++k){
-                                        short v = (short)round(SR_VFAC*amp*a*(t*t*t*t));
-                                        mover_param.MOV_waveform[i+k] = v;
+                                short v = 0;
+                                if(pointing > 0)
+                                        v = (short)round(SR_VFAC*amp*(t*t*t*t));
+                                else
+                                        v = (short)round(-SR_VFAC*amp*(1.-t*t*t*t));
+                                mover_param.MOV_waveform[i+k] = v;
                                 }
 				t += dt;
 				break;	
 			case MOV_WAVE_CYCLO_MI:
                                 for (int k=0; k<channels; ++k){
-                                        short v = (short)round(-SR_VFAC*amp*a*(t*t*t*t));
-                                        mover_param.MOV_waveform[i+k] = v;
+                                short v = 0;                                
+                                if(pointing > 0)
+                                        v = (short)round(-SR_VFAC*amp*(t*t*t*t));
+                                else
+                                        v = (short)round(SR_VFAC*amp*(1.-t*t*t*t));
+                                mover_param.MOV_waveform[i+k] = v;
                                 }
 				t += dt;
 				break;
@@ -349,7 +372,7 @@ int DSPMoverControl::create_waveform (double amp, double duration){
                                         amp = -amp; // jump
 				dt = M_PI/2./(mover_param.MOV_wave_len - 1.)*2;
                                 for (int k=0; k<channels; ++k){
-                                        short v = (short)round(SR_VFAC*amp*(a * (1.-cos (t))));
+                                        short v = (short)round(SR_VFAC*amp*( (1.-cos (t))));
                                         mover_param.MOV_waveform[i+k] = v;
                                 }
 				if (i < (mover_param.MOV_wave_len/2))
@@ -404,16 +427,26 @@ int DSPMoverControl::create_waveform (double amp, double duration){
                 }
 		break;
 	case MOV_WAVE_STEPPERMOTOR:
-               PI_DEBUG_GP (DBG_L2, "case StepperMotor amp=%f  pointing=%f  MOV_wave_len=%d \n", 
+               PI_DEBUG_GP (DBG_L2, "case StepperMotor channel=%d amp=%f pointing=%f MOV_wave_len=%d \n",
+                                channels,
                                 amp,
                                 pointing,
                                 mover_param.MOV_wave_len);
                 for (int i=0; i < mover_param.MOV_wave_len; i += channels){
-                        double x = 2.0*M_PI*(double)i/(double)(mover_param.MOV_wave_len)/(double)(channels);
-                        mover_param.MOV_waveform[i] = (short)round(SR_VFAC*amp*(round(sin(x))));
-                        mover_param.MOV_waveform[i+1] = (short)round(SR_VFAC*amp*(round(sin(x+(double)(pointing)*M_PI/4.0))));
+                        double x = (double)2.*M_PI*i/mover_param.MOV_wave_len;
+                        for (int k=0; k<channels; ++k){                        
+                                if (i ==  mover_param.MOV_wave_len-1){
+                                // just make sure that there is not voltage at the end of the pulses
+                                        mover_param.MOV_waveform[i+k] = (short) (0.0);
+                                } else {
+                                        mover_param.MOV_waveform[i+k] = steppermotor_func(SR_VFAC*amp, x+k*pointing*M_PI/4.0);
+                                        PI_DEBUG_GP (DBG_L2, "case i=%d, x=%f, wave=%d \n",
+                                i+k,x,mover_param.MOV_waveform[i+k]);
+                                }
+                        }
                 }
 		break;
+
 	case MOV_WAVE_PULSE:
                 for (int i=0; i < mover_param.MOV_wave_len; i += channels){
                         double x = (double)i/mover_param.MOV_wave_len;
@@ -480,7 +513,7 @@ int DSPMoverControl::create_waveform (double amp, double duration){
                                 amp,
                                 mover_param.z_Rate,
                                 mover_param.MOV_wave_len);
-                PI_DEBUG_GP (DBG_L2,"step_a %d step_b %d step_c %d step_d %d", besocke_step_a, besocke_step_b, besocke_step_c, besocke_step_d); 
+                PI_DEBUG_GP (DBG_L2,"step_a %d step_b %d step_c %d step_d %d\n", besocke_step_a, besocke_step_b, besocke_step_c, besocke_step_d); 
  
                 //if (pointing < 0)
                 //     amp = -amp; // invert
