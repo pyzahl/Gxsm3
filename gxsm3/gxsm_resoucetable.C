@@ -794,12 +794,13 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	  N_("Delay after loading file in 1/10s:\n"
 	     "if zero no waiting for pending events.")
 	  ),
-	GNOME_RES_ENTRY_FLOAT_VEC3
-	( "User/LoadCorrectXYZ", "CorrectXYZ", "1.0 1.0 1.0", &xsmres.LoadCorrectXYZ, N_("User"),
-	  N_("set NC file load XYZ scale correction factor vector [Xs, Ys, Zs]. Default: no change, set to [1,1,1].\n"
-	     "XYZ scale correction factor vector [Xs, Ys, Zs] is applied to scan scale (dx,dy,dz) at NC-file load time once.\n"
+	GNOME_RES_ENTRY_FLOAT_VEC4
+	( "User/LoadCorrectXYZ", "CorrectXYZ", "1.0 1.0 1.0 1.0", &xsmres.LoadCorrectXYZ, N_("User"),
+	  N_("set NC file load XYZ scale correction factor vector [Xs, Ys, ZsTopo, Zs*]. Default: no change, set to [1,1,1,1].\n"
+             "ZsTopo -- applies to Z of Topo dedicated data, Zs* to every thing else -- strongly advised to leave that at 1."
+	     "XYZ scale correction factor vector [Xs, Ys, ZsTopo, Zs*]] is applied to scan scale (dx,dy,dz, rx,..) at NC-file load time once.\n"
              "This may be used to correct slight piezo calibartion deviations or temperature related scalings.\n"
-             "Never stored only on the fly ap[plied atlaod time."
+             "Only on the fly applied at scan laod time. But you may save the file again, then it's applied."
              ), NULL
         ),
 
