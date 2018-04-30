@@ -440,7 +440,22 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 		delete unit_att;
 		unit_att = NULL;
 	}
-	nc.get_var("rangez")->get(&scan->data.s.rz); scan->data.s.rz *= xsmres.LoadCorrectXYZ[2];
+
+        double LoadCorrectZ = 1.0;
+        g_message ("NetCDF GXSM data type: %s", scan->data.ui.type);
+        if (g_strrstr (scan->data.ui.type, "Topo"))
+                LoadCorrectZ = xsmres.LoadCorrectXYZ[2];
+        else
+                LoadCorrectZ = xsmres.LoadCorrectXYZ[3];
+
+        if (fabs (xsmres.LoadCorrectXYZ[0] - 1.0) > 0.001)
+                g_message ("User NetCDF Load Correct X scaling is set to %g.", xsmres.LoadCorrectXYZ[0]);
+        if (fabs (xsmres.LoadCorrectXYZ[1] - 1.0) > 0.001)
+                g_message ("User NetCDF Load Correct Y scaling is set to %g.", xsmres.LoadCorrectXYZ[1]);
+        if (fabs (LoadCorrectZ - 1.0) > 0.001)
+                g_message ("User NetCDF Load Correct Z scaling is set to %g.", LoadCorrectZ);
+        
+	nc.get_var("rangez")->get(&scan->data.s.rz); scan->data.s.rz *= LoadCorrectZ;
 	if ((unit_att = nc.get_var("rangez")->get_att("unit"))){
 		if ((label_att = nc.get_var("rangez")->get_att("label"))){
 			NcValues *unit  = unit_att->values();
@@ -459,7 +474,7 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 
 	nc.get_var("dx")->get(&scan->data.s.dx); scan->data.s.dx *= xsmres.LoadCorrectXYZ[0];
 	nc.get_var("dy")->get(&scan->data.s.dy); scan->data.s.dy *= xsmres.LoadCorrectXYZ[1];
-	nc.get_var("dz")->get(&scan->data.s.dz); scan->data.s.dz *= xsmres.LoadCorrectXYZ[2];
+	nc.get_var("dz")->get(&scan->data.s.dz); scan->data.s.dz *= LoadCorrectZ;
 	nc.get_var("offsetx")->get(&scan->data.s.x0); scan->data.s.x0 *= xsmres.LoadCorrectXYZ[0];
 	nc.get_var("offsety")->get(&scan->data.s.y0); scan->data.s.y0 *= xsmres.LoadCorrectXYZ[1];
 	nc.get_var("alpha")->get(&scan->data.s.alpha);
@@ -477,6 +492,11 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 	G_NEWSIZE(scan->data.ui.comment, 1+comment->get_dim(0)->size());
 	memset (scan->data.ui.comment, 0, 1+comment->get_dim(0)->size());
 	comment->get(scan->data.ui.comment, comment->get_dim(0)->size());
+
+        NcVar *type = nc.get_var("type"); 
+	G_NEWSIZE(scan->data.ui.type, 1+type->get_dim(0)->size());
+	memset (scan->data.ui.type, 0, 1+type->get_dim(0)->size());
+	type->get(scan->data.ui.type, type->get_dim(0)->size());
 
         NcVar *username = nc.get_var("username"); 
 	G_NEWSIZE(scan->data.ui.user, username->get_dim(0)->size());
