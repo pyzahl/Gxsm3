@@ -82,6 +82,12 @@ const char* Dataio::ioStatus(){
 #define NUM(array) (sizeof(array)/sizeof(array[0]))
 #define NC_GET_VARIABLE(VNAME, VAR) if(nc.get_var(VNAME)) nc.get_var(VNAME)->get(VAR)
 
+// NEW 20180430PY
+// =====================================================================================
+// set scaling, apply load time scale correction -- as set in preferences
+// make sure to set/keep this to 1.0,1.0,1.0 if NOT intending to adjust scan XYZ scale!
+// applied to XYZ dimension, offset, scale/differentials and XY lookup
+
 FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 	int i;
 	// switching off error messages, this is potentially
@@ -306,7 +312,7 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 
 		nc.get_var("dimx")->get(dimsx, dimxd->size());
 		for(i=0; i<dimxd->size(); i++)
-			scan->mem2d->data->SetXLookup(i, dimsx[i]-Xoff);
+			scan->mem2d->data->SetXLookup(i, (dimsx[i]-Xoff) * xsmres.LoadCorrectXYZ[0]);
 
 		delete [] dimsx;
 
@@ -316,7 +322,7 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 
 		nc.get_var("dimy")->get(dimsy, dimyd->size());
 		for(i=0; i<dimyd->size(); i++)
-			scan->mem2d->data->SetYLookup(i, dimsy[i]-Yoff);
+			scan->mem2d->data->SetYLookup(i, (dimsy[i]-Yoff) * xsmres.LoadCorrectXYZ[1]);
 
 		delete [] dimsy;
 
@@ -331,6 +337,15 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 		if (ncv_d && ncv_f && ncv_fo && ncv_v)
 			scan->mem2d->add_layer_information (ncv_d, ncv_f, ncv_fo, ncv_v, time_index);
 		else {
+                        nc.get_var("rangex")->get(&scan->data.s.rx); scan->data.s.rx *= xsmres.LoadCorrectXYZ[0];
+                        nc.get_var("rangey")->get(&scan->data.s.ry); scan->data.s.ry *= xsmres.LoadCorrectXYZ[1];
+                        NC_GET_VARIABLE ("sranger_hwi_bias", &scan->data.s.Bias);
+                        NC_GET_VARIABLE ("sranger_hwi_voltage_set_point", &scan->data.s.SetPoint);
+                        NC_GET_VARIABLE ("sranger_hwi_current_set_point", &scan->data.s.Current);
+                        // mk2/3 try also
+                        NC_GET_VARIABLE ("sranger_mk2_hwi_bias", &scan->data.s.Bias);
+                        NC_GET_VARIABLE ("sranger_mk2_hwi_mix0_set_point", &scan->data.s.Current);
+                        NC_GET_VARIABLE ("sranger_mk2_hwi_z_setpoint", &scan->data.s.ZSetPoint);
 			scan->mem2d->add_layer_information (new LayerInformation ("Bias", scan->data.s.Bias, "%5.2f V"));
 			scan->mem2d->add_layer_information (new LayerInformation (scan->data.ui.dateofscan));
 			scan->mem2d->add_layer_information (new LayerInformation ("X-size", scan->data.s.rx, "Rx: %5.1f \303\205"));
@@ -392,11 +407,6 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 		delete unit_att;
 		unit_att = NULL;
 	}
-
-        // NEW 20180430PY
-        // set scaling, apply load time scale correction -- as set in preferences
-        // make sure to set/keep this to 1.0,1.0,1.0 if NOT intending to adjust scan XYZ scale!
-        // applioed to XYZ dimension, offset, scale/differentials
 
 	nc.get_var("rangex")->get(&scan->data.s.rx); scan->data.s.rx *= xsmres.LoadCorrectXYZ[0];
 	if ((unit_att = nc.get_var("rangex")->get_att("unit"))){
