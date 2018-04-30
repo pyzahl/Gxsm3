@@ -1551,6 +1551,17 @@ if zero no waiting for pending events.</summary>
 if zero no waiting for pending events.
       </description>
     </key>
+    <key name="loadcorrectxyz" type="ad">
+      <default>[1,1,1]</default>
+      <summary>set file load XYZ scale correction factor vector for [X, Y, Z]</summary>
+      <description>
+        set NC file load XYZ scale correction factor vector [Xs, Ys, Zs]. Default: no change, set to [1,1,1].
+	XYZ scale correction factor vector [Xs, Ys, Zs] is applied to scan scale (dx,dy,dz) at NetCDF-file load time once.
+        This may be used to correct slight piezo calibartion deviations or temperature related scalings.
+        Not stored only in original file, but applied on the fly at load time to scan data set.
+	Note: But saving this data set again, will keep the adjustment!
+      </description>
+    </key>
     <key name="slidercontroltype" type="s">
       <choices>
         <choice value='slider'/>

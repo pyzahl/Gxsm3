@@ -393,7 +393,12 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 		unit_att = NULL;
 	}
 
-	nc.get_var("rangex")->get(&scan->data.s.rx);
+        // NEW 20180430PY
+        // set scaling, apply load time scale correction -- as set in preferences
+        // make sure to set/keep this to 1.0,1.0,1.0 if NOT intending to adjust scan XYZ scale!
+        // applioed to XYZ dimension, offset, scale/differentials
+
+	nc.get_var("rangex")->get(&scan->data.s.rx); scan->data.s.rx *= xsmres.LoadCorrectXYZ[0];
 	if ((unit_att = nc.get_var("rangex")->get_att("unit"))){
 		if ((label_att = nc.get_var("rangex")->get_att("label"))){
 			NcValues *unit  = unit_att->values();
@@ -409,7 +414,7 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 		delete unit_att;
 		unit_att = NULL;
 	}
-	nc.get_var("rangey")->get(&scan->data.s.ry);
+	nc.get_var("rangey")->get(&scan->data.s.ry); scan->data.s.ry *= xsmres.LoadCorrectXYZ[1];
 	if ((unit_att = nc.get_var("rangey")->get_att("unit"))){
 		if ((label_att = nc.get_var("rangey")->get_att("label"))){
 			NcValues *unit  = unit_att->values();
@@ -425,7 +430,7 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 		delete unit_att;
 		unit_att = NULL;
 	}
-	nc.get_var("rangez")->get(&scan->data.s.rz);
+	nc.get_var("rangez")->get(&scan->data.s.rz); scan->data.s.rz *= xsmres.LoadCorrectXYZ[2];
 	if ((unit_att = nc.get_var("rangez")->get_att("unit"))){
 		if ((label_att = nc.get_var("rangez")->get_att("label"))){
 			NcValues *unit  = unit_att->values();
@@ -441,11 +446,12 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 		delete unit_att;
 		unit_att = NULL;
 	}
-	nc.get_var("dx")->get(&scan->data.s.dx);
-	nc.get_var("dy")->get(&scan->data.s.dy);
-	nc.get_var("dz")->get(&scan->data.s.dz);
-	nc.get_var("offsetx")->get(&scan->data.s.x0);
-	nc.get_var("offsety")->get(&scan->data.s.y0);
+
+	nc.get_var("dx")->get(&scan->data.s.dx); scan->data.s.dx *= xsmres.LoadCorrectXYZ[0];
+	nc.get_var("dy")->get(&scan->data.s.dy); scan->data.s.dy *= xsmres.LoadCorrectXYZ[1];
+	nc.get_var("dz")->get(&scan->data.s.dz); scan->data.s.dz *= xsmres.LoadCorrectXYZ[2];
+	nc.get_var("offsetx")->get(&scan->data.s.x0); scan->data.s.x0 *= xsmres.LoadCorrectXYZ[0];
+	nc.get_var("offsety")->get(&scan->data.s.y0); scan->data.s.y0 *= xsmres.LoadCorrectXYZ[1];
 	nc.get_var("alpha")->get(&scan->data.s.alpha);
 
 	nc.get_var("contrast")->get(&scan->data.display.contrast);

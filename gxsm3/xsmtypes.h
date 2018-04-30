@@ -197,6 +197,7 @@ typedef struct{
 	gchar OSDFont[STRSIZE];
 	float OSDColor[4];
 	gint  LoadDelay;
+        float LoadCorrectXYZ[4];
 	gchar RedLineHistoryColors[1024];
 	gchar BlueLineHistoryColors[1024];
 	gint  RedLineWidth;

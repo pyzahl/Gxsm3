@@ -794,6 +794,15 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	  N_("Delay after loading file in 1/10s:\n"
 	     "if zero no waiting for pending events.")
 	  ),
+	GNOME_RES_ENTRY_FLOAT_VEC3
+	( "User/LoadCorrectXYZ", "CorrectXYZ", "1.0 1.0 1.0", &xsmres.LoadCorrectXYZ, N_("User"),
+	  N_("set NC file load XYZ scale correction factor vector [Xs, Ys, Zs]. Default: no change, set to [1,1,1].\n"
+	     "XYZ scale correction factor vector [Xs, Ys, Zs] is applied to scan scale (dx,dy,dz) at NC-file load time once.\n"
+             "This may be used to correct slight piezo calibartion deviations or temperature related scalings.\n"
+             "Never stored only on the fly ap[plied atlaod time."
+             ), NULL
+        ),
+
 
 	GNOME_RES_ENTRY_SEPARATOR (N_("User"), NULL),
 
