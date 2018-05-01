@@ -441,12 +441,24 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 		unit_att = NULL;
 	}
 
+        // Check Z daya type via Z label
         double LoadCorrectZ = 1.0;
         g_message ("NetCDF GXSM data type: %s", scan->data.ui.type);
-        if (g_strrstr (scan->data.ui.type, "Topo"))
-                LoadCorrectZ = xsmres.LoadCorrectXYZ[2];
-        else
-                LoadCorrectZ = xsmres.LoadCorrectXYZ[3];
+	if ((unit_att = Data->get_att("ZLabel"))){
+                NcValues *label = unit_att->values();
+
+                g_message ("User NetCDF Load Correct Z scaling check type: Data is '%s'.", label->as_string(0));
+
+                if (!strcmp (label->as_string(0), "Z"))
+                        LoadCorrectZ = xsmres.LoadCorrectXYZ[2];
+                else
+                        LoadCorrectZ = xsmres.LoadCorrectXYZ[3];
+                
+                delete label;
+		delete unit_att;
+		unit_att = NULL;
+	}
+
 
         if (fabs (xsmres.LoadCorrectXYZ[0] - 1.0) > 0.001)
                 g_message ("User NetCDF Load Correct X scaling is set to %g.", xsmres.LoadCorrectXYZ[0]);
