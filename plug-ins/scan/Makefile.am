@@ -86,8 +86,8 @@ libpng_im_export_la_SOURCES = png_im_export.C
 libconverter_la_LDFLAGS = -module -export-dynamic -avoid-version
 libconverter_la_SOURCES = converter.C
 
-#libexternal_converter_la_LDFLAGS = -module -export-dynamic -avoid-version
-#libexternal_converter_la_SOURCES = external_converter.C external_converter.h
+libexternal_converter_la_LDFLAGS = -module -export-dynamic -avoid-version
+libexternal_converter_la_SOURCES = external_converter.C external_converter.h
 
 librhk2000_import_la_LDFLAGS = -module -export-dynamic -avoid-version
 librhk2000_import_la_SOURCES = rhk2000_import.C

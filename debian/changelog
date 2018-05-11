@@ -1,3 +1,27 @@
+gxsm3 (3.47.1-0ubuntu4) bionic; urgency=medium
+
+  * release for Ubuntu 18.04 LTS
+
+ -- Thorsten Wagner <stm@users.sf.net>  Fri, 11 May 2018 22:06:58 +0200
+
+gxsm3 (3.47.1-0ubuntu3) xenial; urgency=medium
+
+  * updated autoapproach 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Thu, 26 Apr 2018 22:38:04 +0200
+
+gxsm3 (3.47.1-0ubuntu2) xenial; urgency=medium
+
+  * update requested by Ramon
+
+ -- Thorsten Wagner <stm@users.sf.net>  Fri, 09 Feb 2018 08:04:23 +0100
+
+gxsm3 (3.47.1-0ubuntu0) xenial; urgency=medium
+
+  * bug fix for MK2 boards
+
+ -- Thorsten Wagner <stm@users.sf.net>  Fri, 15 Dec 2017 09:16:04 +0100
+
 gxsm3 (3.47.1-0debian0) stretch; urgency=medium
 
   * test on debian
