@@ -280,7 +280,7 @@ static gboolean minzlayer_run(Scan *Src, Scan *Dest)
 
 	double rxy = 1.;    // Get Radius
 	double rv  = 1.;    // Get Radius
-	double threshold = 0.9; // Workfunction threshold
+	double threshold = 2.0; // Workfunction threshold
 
 		
 	gapp->ValueRequest ("MINZxt Filter Size", "Radius in XY Dim", "Smooth kernel size: s = 1+radius",
@@ -290,7 +290,7 @@ static gboolean minzlayer_run(Scan *Src, Scan *Dest)
 //			    gapp->xsm->Unity, 0., Src->mem2d->GetNv()/10., ".0f", &rv);
 	
 	gapp->ValueRequest ("MINZxt Filter Thres", "Workfunc. threshold 0..1", "Threshold",
-			    gapp->xsm->Unity, 0., 1., ".3f", &threshold);
+			    gapp->xsm->Unity, 0., 5., ".3f", &threshold);
 
 	Dest->data.s.dz=1.; //Src->data.s.dz;
 

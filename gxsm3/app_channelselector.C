@@ -138,10 +138,16 @@ ChannelSelector::ChannelSelector (int ChAnz){
         // new grid in scrolled container
         v_grid = gtk_grid_new ();
 	gtk_container_add(GTK_CONTAINER(scrollarea), v_grid);
-        gtk_grid_attach (GTK_GRID (v_grid), gtk_label_new ("Ch"),   0, 0, 1, 1);
-        gtk_grid_attach (GTK_GRID (v_grid), gtk_label_new ("View"), 1, 0, 1, 1);
-        gtk_grid_attach (GTK_GRID (v_grid), gtk_label_new ("Mode"), 2, 0, 1, 1);
-        gtk_grid_attach (GTK_GRID (v_grid), gtk_label_new ("Dir"),  3, 0, 1, 1);
+        gtk_grid_attach (GTK_GRID (v_grid), wid=gtk_label_new ("Ch"),   0, 0, 1, 1);
+	gtk_widget_set_tooltip_text (wid, N_("Channel Number"));
+        gtk_grid_attach (GTK_GRID (v_grid), wid=gtk_label_new ("View"), 1, 0, 1, 1);
+	gtk_widget_set_tooltip_text (wid, N_("Scan View Mode"));
+        gtk_grid_attach (GTK_GRID (v_grid), wid=gtk_label_new ("Mode"), 2, 0, 1, 1);
+	gtk_widget_set_tooltip_text (wid, N_("Scan Mode/Data Source"));
+        gtk_grid_attach (GTK_GRID (v_grid), wid=gtk_label_new ("Dir"),  3, 0, 1, 1);
+	gtk_widget_set_tooltip_text (wid, N_("Scan Direction"));
+        gtk_grid_attach (GTK_GRID (v_grid), wid=gtk_label_new ("AS"),  4, 0, 1, 1);
+	gtk_widget_set_tooltip_text (wid, N_("Auto save enable\nfor scan data sources only."));
 
         // create channels and add to grid
         for(i=1; i<=ChAnz; i++){
@@ -223,9 +229,9 @@ ChannelSelector::ChannelSelector (int ChAnz){
 				xsmres.daqchno[k]=999;
 			//			std::cout << "Channelselector create: CH" << (l-1) << " DAQSRC[" << k << "]: " << xsmres.daqsrc[k] << std::endl;
 		}
-                g_signal_connect(G_OBJECT (wid), "changed",
-                                 G_CALLBACK (ChannelSelector::choice_ChMode_callback),
-                                 NULL);
+                g_signal_connect (G_OBJECT (wid), "changed",
+                                  G_CALLBACK (ChannelSelector::choice_ChMode_callback),
+                                  NULL);
 
 		/* Add Scan Directions */
 		wid = gtk_combo_box_text_new ();
@@ -243,6 +249,15 @@ ChannelSelector::ChannelSelector (int ChAnz){
                                   NULL),
 		gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
 
+
+		wid = gtk_check_button_new ();
+		g_object_set_data  (G_OBJECT (wid), "ChNo", GINT_TO_POINTER (i));
+		gapp->configure_drop_on_widget(wid);
+		gtk_grid_attach (GTK_GRID (v_grid), wid, 4, i, 1, 1);
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (wid), true);
+                //                g_signal_connect (G_OBJECT (wid), "toggled",
+                //                                  G_CALLBACK (ChannelSelector::choice_ChMode_callback),
+                //                                  NULL);        
 	}
         gtk_widget_show_all (v_grid);
 
