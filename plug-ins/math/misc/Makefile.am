@@ -4,6 +4,7 @@ AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
 lib_LTLIBRARIES = libshape.la \
 	libmake_volume.la \
 	libfindlocmax.la \
+	libminzlayer.la \
 	libpsdadd.la \
 	libspectrocut.la \
 	liblayersmooth.la \
@@ -11,6 +12,9 @@ lib_LTLIBRARIES = libshape.la \
 
 libfindlocmax_la_SOURCES = findlocmax.C
 libfindlocmax_la_LDFLAGS = -module -export-dynamic -avoid-version
+
+libminzlayer_la_SOURCES = minzlayer.C
+libminzlayer_la_LDFLAGS = -module -export-dynamic -avoid-version
 
 libmake_volume_la_SOURCES = make_volume.C
 libmake_volume_la_LDFLAGS = -module -export-dynamic -avoid-version

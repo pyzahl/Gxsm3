@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -118,7 +120,9 @@ typedef struct{
 	int norm_i[2];
 	double* bg_array;
 	double radius;
+        double remap[4];
 	gchar *Source2;	
+        int iSource1;
 	ProbeEntry* defaultprobe;
 	int *matrix;
 	int *status;
@@ -126,6 +130,7 @@ typedef struct{
 	int job;
 	int progress;
 	int verbose_level;
+        double *cache;
 } Probe_Interpolate_Job_Env;
 
 GxsmPlugin *get_gxsm_plugin_info ( void ){ 
@@ -201,7 +206,7 @@ void pe_ChangeIndex (GtkSpinButton *spinner, double *index){
 
 class Dialog : public AppBase{
 public:
-	Dialog (ProbeEntry* defaultprobe, gchar **Source1, gchar **Source2, double *index, double *qc, double *ref_i, double norm_i[2], double *bg_sub, double *verbose_level, double NSets){
+  Dialog (ProbeEntry* defaultprobe, gchar **Source1, gchar **Source2, double *index, double *qc, double *ref_i, double norm_i[2], double *bg_sub, double *verbose_level, double remap[4], double NSets){
 
 		GtkWidget *dialog;
 		GtkWidget *source1_combo;
@@ -284,6 +289,10 @@ public:
 		bp.grid_add_ec_with_scale ("Ref. Index2 for Normalization:\n-1 (non) 0..N-1",   Unity, &(norm_i[1]), -1., NSets, ".0f", 1.0,  1.); bp.new_line ();
 		bp.grid_add_ec_with_scale ("\nFlag Backgound RefSpec Subtract:\n0 (non) 1 use all rectangle selecttions as ref.", 
    				                                                                Unity, &(*bg_sub),    0.,    1., ".0f", 0.1,  1.); bp.new_line ();
+		bp.grid_add_ec_with_scale ("\nRemap from:", Unity, &(remap[0]), -1e10, 1e10, "g", 0.01,  1.); bp.new_line ();
+		bp.grid_add_ec_with_scale ("\nRemap to:",   Unity, &(remap[1]), -1e10, 1e10, "g", 0.01,  1.); bp.new_line ();
+		bp.grid_add_ec_with_scale ("\nRemap step:", Unity, &(remap[2]), -1e10, 1e10, "g", 0.01,  1.); bp.new_line ();
+		bp.grid_add_ec_with_scale ("\nRemap default:", Unity, &(remap[3]), -1e10, 1e10, "g", 0.01,  1.); bp.new_line ();
 		bp.grid_add_ec_with_scale ("\nVerbose Level 0..10", Unity, &(*verbose_level), 0., 10., ".0f", 1.0,  1.); bp.new_line ();
 
 		gtk_widget_show_all (dialog);
@@ -328,7 +337,7 @@ gpointer probe_interpolate_thread (void *env){
 			job->progress++;
 
 			found_a_vector = 0;		// number of vectors found in the given perimeter round (xi,yi)
-			for (int i=0; i<job->numsets; i++) avgvalues[i] = avgnorm = 0.;	// initialises avg vectors and the calibration value
+			for (int i=0; i<job->numsets; i++) avgvalues[i] = avgnorm = 0;	// initialises avg vectors and the calibration value
 
 			if ( (xmin = xi - (int)job->radius) < 0) xmin = 0;
 			if ( (xmax = xi + (int)job->radius) > Nx) xmax = Nx;
@@ -342,24 +351,56 @@ gpointer probe_interpolate_thread (void *env){
 						ProbeEntry* pe = (ProbeEntry*) ((ScanEvent*) g_slist_nth_data (job->Src->mem2d->scan_event_list, pe_number))->event_list->data;	
 						jSource2 = check_probe(job->defaultprobe, pe, job->Source2);
 						weighting = exp(-((double)((xpos-xi)*(xpos-xi)+(ypos-yi)*(ypos-yi))/sigma));
-						if ( (jSource2 >= 0) & (weighting > 0.) ){
+						if ( (jSource2 >= 0) && (weighting > 0.) ){
 							// double norm = exp(-sqrt((double)((xpos-xi)*(xpos-xi)+(ypos-yi)*(ypos-yi))/smoothness));
 							avgnorm += weighting;
-							for (int zi=0; zi < job->numsets; zi++){
-								double bg = 0.;
-								if (job->bg_array)
-									bg = job->bg_array[zi];
-								if (job->ref_i >= 0 && job->ref_i < job->numsets){
-									double x = pe->get(zi, jSource2) - bg - pe->get(job->ref_i, jSource2);
-									if (job->norm_i[0] >= 0 && job->norm_i[0] < job->numsets)
-										x /= pe->get(job->norm_i[0], jSource2);
-									avgvalues[zi] += weighting * x;
-								} else if (job->norm_i[0] >= 0 && job->norm_i[0] < job->numsets)
-									avgvalues[zi] += weighting * (pe->get(zi, jSource2) - bg) / pe->get(job->norm_i[0], jSource2);
-								else
-									avgvalues[zi] += weighting * (pe->get(zi, jSource2) - bg);
-							}
-							found_a_vector++;
+                                                        if (fabs (job->remap[2]) > 0.){
+                                                                int numsets = job->defaultprobe->get_num_sets ();
+                                                                for (int zri=0; zri < job->numsets; zri++){
+                                                                        double zavg;
+                                                                        if (job->cache[job->numsets*pe_number+zri] < 0.){
+                                                                                zavg = job->remap[3];
+                                                                                int    n_zavg = 0;
+                                                                                double zr_low = job->remap[0] +  ((double)zri-0.5) * job->remap[2];
+                                                                                double zr_hi  = job->remap[0] +  ((double)zri+0.5) * job->remap[2];
+                                                                                for (int zi=0; zi < numsets; zi++){
+                                                                                        double pzv = job->defaultprobe->get (zi, job->iSource1);
+                                                                                        //g_message ("pzv=%g [%g:%g]",pzv,zr_low, zr_hi);
+                                                                                        if (pzv >= zr_low && pzv <= zr_hi){
+                                                                                                if (n_zavg == 0)
+                                                                                                        zavg = pe->get(zi, jSource2);
+                                                                                                else
+                                                                                                        zavg += pe->get(zi, jSource2);
+                                                                                                ++n_zavg;
+                                                                                        }
+                                                                                }
+                                                                                if (n_zavg > 0)
+                                                                                        zavg /= n_zavg;
+                                                                                job->cache[job->numsets*pe_number+zri] = zavg;
+                                                                                // g_message ("cache[%d]=%g [%g:%g] #%d",job->numsets*pe_number+zri, zavg,zr_low, zr_hi, n_zavg);
+                                                                        } else {
+                                                                                zavg = job->cache[job->numsets*pe_number+zri];
+                                                                        }
+                                                                        avgvalues[zri] += weighting * zavg;
+                                                                        found_a_vector++;
+                                                                }
+                                                        } else {
+                                                                for (int zi=0; zi < job->numsets; zi++){
+                                                                        double bg = 0.;
+                                                                        if (job->bg_array)
+                                                                                bg = job->bg_array[zi];
+                                                                        if (job->ref_i >= 0 && job->ref_i < job->numsets){
+                                                                                double x = pe->get(zi, jSource2) - bg - pe->get(job->ref_i, jSource2);
+                                                                                if (job->norm_i[0] >= 0 && job->norm_i[0] < job->numsets)
+                                                                                        x /= pe->get(job->norm_i[0], jSource2);
+                                                                                avgvalues[zi] += weighting * x;
+                                                                        } else if (job->norm_i[0] >= 0 && job->norm_i[0] < job->numsets)
+                                                                                avgvalues[zi] += weighting * (pe->get(zi, jSource2) - bg) / pe->get(job->norm_i[0], jSource2);
+                                                                        else
+                                                                                avgvalues[zi] += weighting * (pe->get(zi, jSource2) - bg);
+                                                                }
+                                                                found_a_vector++;
+                                                        }
 						}
 					}
 			
@@ -371,7 +412,7 @@ gpointer probe_interpolate_thread (void *env){
 					  << "Avgnorm: " << avgnorm << std::endl;
 			if (found_a_vector == 0){
 				for (int zi=0; zi<job->numsets; zi++){
-					job->Dest->mem2d->PutDataPkt ( 0., xi, yi, zi);
+					job->Dest->mem2d->PutDataPkt ( job->remap[3], xi, yi, zi);
 				}
 				job->dead_pixel++;
 				if (job->verbose_level > 2)
@@ -495,6 +536,9 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 	int iSource2 = -1;		// -1 means no channel to map -> break
 	int Nx = Src->mem2d->GetNx ();	// total Number of points in x
 	int Ny = Src->mem2d->GetNy ();	// total Number of points in y
+	double remap[4] = {0., 0., 0., 0.};
+        double remap_dv = 0.;
+        double *cache=NULL;
 	int vb;
 
 	GSList *ProbeEventList = g_slist_find_custom (Src->mem2d->scan_event_list, NULL, (GCompareFunc)find_probe);
@@ -509,7 +553,7 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 	for (int k=0; k<2; ++k)
 		norm_i[k] = (norm_i[k] < -1 || norm_i[k] >= NSets) ? -1. : norm_i[k];
 	
-        Dialog *dlg = new Dialog (defaultprobe, &Source1, &Source2, &index, &qc, &ref_i, norm_i, &bg_sub, &verbose_level, NSets);  // Asks for channels to use
+        Dialog *dlg = new Dialog (defaultprobe, &Source1, &Source2, &index, &qc, &ref_i, norm_i, &bg_sub, &verbose_level, remap, NSets);  // Asks for channels to use
 	vb = (int)verbose_level;
 
 	// if no valid channel is found for Source1, we will use a numerator #
@@ -519,8 +563,8 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 	PI_DEBUG (DBG_L2, "ref-i: " << ref_i << std::endl);
 	PI_DEBUG (DBG_L2, "norm-i0: " << norm_i[0] << std::endl);
 	PI_DEBUG (DBG_L2, "norm-i1: " << norm_i[1] << std::endl);
-	
-	if (vb)
+
+	if (vb){
 		std::cout << "Requested data remapping for" << std::endl 
 			  << "Source1 = " << Source1  << std::endl 
 			  << "Source2 = " << Source2  << std::endl 
@@ -531,7 +575,8 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 			  << "norm-i1  = " << norm_i[1] << std::endl
 			  << "bg_sub  = " << bg_sub << std::endl
 			  << std::endl;
-
+                g_message ("Remapping on: #=%d %g..%g [%g] {%g}",  Dest->data.s.nvalues, remap[0],remap[1],remap[2],remap[3]);
+        }
 	
 	for (int j=0; j<defaultprobe->get_chunk_size (); j++){
 		if (vb > 1)
@@ -541,13 +586,26 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 	}
 	if (iSource2 < 0) return MATH_OK;  // No valid channel found for Source2, so stop at this point
 
-	numsets = defaultprobe->get_num_sets ();             // #points of a probe = #layers
-	Dest->mem2d->Resize(Dest->mem2d->GetNx (), Dest->mem2d->GetNy (), numsets, ZD_FLOAT);
-	Dest->mem2d->data->MkVLookup(0., (double)numsets);
-	Dest->data.s.nvalues=numsets;
-	Dest->data.s.ntimes=1;
-	Dest->data.s.dz=1.;
-	
+
+	if (fabs (remap[2]) > 0.){
+                remap_dv = remap[1]-remap[0];
+                Dest->data.s.nvalues = 1+fabs (remap_dv) / fabs (remap[2]);
+                Dest->data.s.ntimes=1;
+                Dest->data.s.dz=1.; //Src->data.s.dz;
+                //remap[3] /= Src->data.s.dz; 
+                numsets = Dest->data.s.nvalues;        // #points of a probe = #layers
+                Dest->mem2d->Resize(Dest->mem2d->GetNx (), Dest->mem2d->GetNy (), numsets, ZD_FLOAT);
+                Dest->mem2d->data->MkVLookup(remap[0],remap[1]);
+                g_message ("Remapping on: #=%d %g..%g [%g] {%g}",  Dest->data.s.nvalues, remap[0],remap[1],remap[2],remap[3]);
+	} else {
+                numsets = defaultprobe->get_num_sets ();             // #points of a probe = #layers
+                Dest->mem2d->Resize(Dest->mem2d->GetNx (), Dest->mem2d->GetNy (), numsets, ZD_FLOAT);
+                Dest->mem2d->data->MkVLookup(0., (double)numsets);
+                Dest->data.s.nvalues=numsets;
+                Dest->data.s.ntimes=1;
+                Dest->data.s.dz=1.;
+	}
+        
 	gchar *s12tmp = g_strdup_printf ("Src: %s:%s", Source1, Source2);
 	Dest->mem2d->add_layer_information (new LayerInformation (s12tmp));
 	g_free (s12tmp);
@@ -576,11 +634,13 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 		Dest->data.SetVUnit (NUnit);
 		delete NUnit;
 		for (int n=0; n<numsets; n++){
-			Dest->mem2d->data->SetVLookup(n, defaultprobe->get (n, iSource1));
+                        double lval;
+                        if (fabs (remap[2]) > 0.)
+                                Dest->mem2d->data->SetVLookup(n, lval = remap[0]+n*remap[2]);
+                        else
+                                Dest->mem2d->data->SetVLookup(n, lval = defaultprobe->get (n, iSource1));
 			Dest->mem2d->SetLayer (n);
-			Dest->mem2d->add_layer_information (
-				new LayerInformation (defaultprobe->get_label (iSource1), 
-						      defaultprobe->get (n, iSource1), "%.4f V"));
+			Dest->mem2d->add_layer_information (new LayerInformation (defaultprobe->get_label (iSource1), lval, "%.4f V"));
 		}
 	}		
 
@@ -724,6 +784,13 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 
 	std::cout << "PI:run ** spaning thread jobs for interpolation." << std::endl;
 
+	if (fabs (remap[2]) > 0.){
+                // setup cache
+                int csize = numsets * g_slist_length (Src->mem2d->scan_event_list);
+                        cache = g_new0 (double,  csize);
+                for (int k=0; k<csize; ++k)
+                        cache[k] = -1.;
+        }
 	// to be threadded:
 	//	for (int yi=0; yi < Ny; yi++)...
 	int col_per_job = Nx / (MAX_JOB-1);
@@ -732,8 +799,10 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 	for (int jobno=0; jobno < MAX_JOB; ++jobno){
 		interpolate_job[jobno].Src  = Src;
 		interpolate_job[jobno].Dest = Dest;
+		interpolate_job[jobno].cache = cache;
 		interpolate_job[jobno].defaultprobe = defaultprobe;
 		interpolate_job[jobno].Source2 = Source2;
+		interpolate_job[jobno].iSource1 = iSource1;
 		interpolate_job[jobno].y_i = 0;
 		interpolate_job[jobno].y_f = Ny;
 		interpolate_job[jobno].x_i = xi;
@@ -744,6 +813,10 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 		interpolate_job[jobno].ref_i = (int)ref_i;
 		interpolate_job[jobno].norm_i[0] = (int)norm_i[0];
 		interpolate_job[jobno].norm_i[1] = (int)norm_i[1];
+		interpolate_job[jobno].remap[0] = remap[0];
+		interpolate_job[jobno].remap[1] = remap[1];
+		interpolate_job[jobno].remap[2] = remap[2];
+		interpolate_job[jobno].remap[3] = remap[3];
 		interpolate_job[jobno].bg_array = bg_array;
 		interpolate_job[jobno].radius = radius;
 		interpolate_job[jobno].matrix = matrix;
@@ -784,6 +857,8 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 	std::cout << "PI:run ** cleaning up." << std::endl;
 
 	delete [] matrix;
+        if (cache)
+                g_free (cache);
 	gapp->progress_info_close ();
 	return MATH_OK;
 }
