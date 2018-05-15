@@ -57,6 +57,15 @@ static const char* choice_ChMode[] =
 		0
 	};
 
+static const char* choice_ChModeExternalData[] =
+	{ 
+		"DataExt0",
+		"DataExt1",
+		"DataExt2",
+		"DataExt3",
+		0
+	};
+
 static const char* choice_ChSDir[] =
 	{ 
 		"->",
@@ -229,6 +238,11 @@ ChannelSelector::ChannelSelector (int ChAnz){
 				xsmres.daqchno[k]=999;
 			//			std::cout << "Channelselector create: CH" << (l-1) << " DAQSRC[" << k << "]: " << xsmres.daqsrc[k] << std::endl;
 		}
+
+		for(j=0; choice_ChModeExternalData[j]; j++)
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), NULL, choice_ChModeExternalData[j]);
+                
+
                 g_signal_connect (G_OBJECT (wid), "changed",
                                   G_CALLBACK (ChannelSelector::choice_ChMode_callback),
                                   NULL);
@@ -255,9 +269,9 @@ ChannelSelector::ChannelSelector (int ChAnz){
 		gapp->configure_drop_on_widget(wid);
 		gtk_grid_attach (GTK_GRID (v_grid), wid, 4, i, 1, 1);
                 gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (wid), true);
-                //                g_signal_connect (G_OBJECT (wid), "toggled",
-                //                                  G_CALLBACK (ChannelSelector::choice_ChMode_callback),
-                //                                  NULL);        
+                g_signal_connect (G_OBJECT (wid), "toggled",
+                                  G_CALLBACK (ChannelSelector::choice_ChAS_callback),
+                                  NULL);        
 	}
         gtk_widget_show_all (v_grid);
 
@@ -385,6 +399,17 @@ void ChannelSelector::choice_ChMode_callback (GtkWidget *widget, void *data){
         XSM_DEBUG_GP(DBG_L1, "ChannelSelector::choice_ChMode: CH[%d] %d\n", ch, i+1);
 
 	gapp->xsm->SetMode (ch, i+1); // ID_CH_M_OFF := 1 is first valid mode id
+	return;
+}
+
+void ChannelSelector::choice_ChAS_callback (GtkWidget *widget, void *data){
+        gint ch = GPOINTER_TO_INT (g_object_get_data  (G_OBJECT (widget), "ChNo"));
+        if (ch > 0)
+                ch--;
+        else
+                return;
+
+        gapp->xsm->SetChannelASflg (ch, gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)) ? 1:0);
 	return;
 }
 
