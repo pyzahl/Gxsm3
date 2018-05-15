@@ -198,6 +198,8 @@ public:
 	void set_subscan_information (int ssi[4]) { for (int i=0; i<4; ++i) ixy_sub[i]=ssi[i]; };
 	void get_subscan_information (int ssi[4]) { for (int i=0; i<4; ++i) ssi[i]=ixy_sub[i]; };
 	
+	int ixy_sub[4]; // sub scan information [int xs, int xn, int ys, int yn]
+
  private:
 	double t0_ref;
 	
@@ -208,7 +210,6 @@ public:
 	//int numpkt2d;
 	int refcount;
 	int X_linearize;
-	int ixy_sub[4]; // sub scan information [int xs, int xn, int ys, int yn]
 	
 	int     objects_id;
 	GSList  *objects_list;

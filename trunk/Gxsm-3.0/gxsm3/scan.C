@@ -63,6 +63,7 @@ Scan::Scan(Scan *scanmaster){
 	VFlg  = scanmaster->VFlg;
 	ChanNo= scanmaster->ChanNo;
 	X_linearize=scanmaster->X_linearize;
+        for(int i=0; i<4; ++i) ixy_sub[i]=0;
 	State = IS_FRESH;
 }
 
@@ -96,6 +97,7 @@ Scan::Scan(int vtype, int vflg, int ChNo, SCAN_DATA *vd, ZD_TYPE mtyp){
 		SetView(vtype);
 	SetVM(vflg, vdata);
 	X_linearize=FALSE;
+        for(int i=0; i<4; ++i) ixy_sub[i]=0;
 }
 
 Scan::~Scan(){

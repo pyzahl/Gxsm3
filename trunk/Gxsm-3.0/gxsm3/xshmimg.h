@@ -68,7 +68,7 @@ public:
 
         void draw_callback (cairo_t *cr, gboolean draw_red_line=true);
         void ShowPic ();
-        void ShowSubPic (int xs, int ys, int w, int h);
+        void ShowSubPic (int xs, int ys, int w, int h, int ytop=0, int yn=0);
         void update_bbox (int y1, int y2);
         void set_translate_offset (gint x, gint y) { tr_xy[0]=x+x0; tr_xy[1]=y+y0; };
 
@@ -84,6 +84,7 @@ private:
         unsigned long ULColorTable[IMGMAXCOLORENTRYS+2+HILITCOLORENTRYS];
 
         double red_line_points[4];
+        double red_box_extends[4];
         GdkPixbuf *gdk_pixbuf;
         GtkWidget *imgarea;
         cairo_surface_t *cs_image_layer;
