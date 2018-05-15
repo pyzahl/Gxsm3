@@ -152,6 +152,17 @@ void ShmImage2D::draw_callback (cairo_t *cr, gboolean draw_red_line){
                 cairo_move_to (cr, red_line_points[0], red_line_points[1]);
                 cairo_line_to (cr, red_line_points[2], red_line_points[3]);
                 cairo_stroke (cr);
+
+                if (red_box_extends[3] > 0){
+                        cairo_set_line_width (cr, 1.5*ZoomFac);
+                        cairo_set_source_rgba (cr, 1.0, 1.0, 0.0, 0.5); // yellow alpha 50%
+                        cairo_move_to (cr, red_box_extends[0], red_box_extends[2]);
+                        cairo_line_to (cr, red_box_extends[0]+red_box_extends[1], red_box_extends[2]);
+                        cairo_line_to (cr, red_box_extends[0]+red_box_extends[1], red_box_extends[2]+red_box_extends[3]);
+                        cairo_line_to (cr, red_box_extends[0], red_box_extends[2]+red_box_extends[3]);
+                        cairo_line_to (cr, red_box_extends[0], red_box_extends[2]);
+                        cairo_stroke (cr);
+                }
         }
 }
 
@@ -160,14 +171,19 @@ void ShmImage2D::ShowPic (){
         gtk_widget_queue_draw (imgarea);
 }
 
-void ShmImage2D::ShowSubPic (int xs, int ys, int w, int h){ 
+void ShmImage2D::ShowSubPic (int xs, int ys, int w, int h, int ytop, int yn){ 
 	xs*=ZoomFac; ys*=ZoomFac;
 	w*=ZoomFac; h*=ZoomFac;
 	if (xs >= width || ys >= height || w > width || h > height)
 		return;
 
+	red_line_points[0] = xs; red_line_points[2] = xs+w;
 	red_line_points[1] = red_line_points[3] = ys+y0 + .5*ZoomFac;
-
+        red_box_extends[0]=xs;
+        red_box_extends[1]=w;
+        red_box_extends[2]=ytop*ZoomFac;
+        red_box_extends[3]=yn*ZoomFac;
+        
 	// gtk_widget_queue_draw_area (imgarea, tr_xy[0], tr_xy[1]+ys*ZoomFac-1, tr_xy[0]+width-1, tr_xy[1]+(ys+1)*ZoomFac+1);
         gtk_widget_queue_draw (imgarea);
 }

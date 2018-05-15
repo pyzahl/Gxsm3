@@ -314,8 +314,11 @@ int Grey2D::update(int y1, int y2){
 						XImg->PutPixel ((unsigned long)(k/QuenchFac),(unsigned long)(j/QuenchFac),
 								m->GetDataVMode (k,j));
 			}
-		
-		XImg->ShowSubPic(0,y1/QuenchFac,nx/QuenchFac,(y2+QuenchFac-y1-1)/QuenchFac);
+
+		if (scan->ixy_sub[1]>0)
+                        XImg->ShowSubPic(scan->ixy_sub[0]/QuenchFac, y1/QuenchFac,scan->ixy_sub[1]/QuenchFac,(y2+QuenchFac-y1-1)/QuenchFac, scan->ixy_sub[2]/QuenchFac, scan->ixy_sub[3]/QuenchFac);
+                else
+                        XImg->ShowSubPic(0, y1/QuenchFac,nx/QuenchFac,(y2+QuenchFac-y1-1)/QuenchFac);
 	}
 	
 	// Show Red Line ...
