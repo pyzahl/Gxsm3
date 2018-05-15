@@ -36,7 +36,7 @@
 #define MAX_SRCS_CHANNELS 11
 
 /* Anzahl Channels */
-#define MAX_CHANNELS 18
+#define MAX_CHANNELS 30
 
 #define DUMMYMIN  -1e30
 #define DUMMYMAX   1e30
