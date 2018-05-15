@@ -81,6 +81,7 @@ Surface::Surface() : Xsm(){
 		ChannelView[i] = ID_CH_V_GREY;
 		ChannelMode[i] = ID_CH_M_OFF;
 		ChannelScanMode[i] = ID_CH_M_OFF;
+                ChannelASflag[i] = 1;
 	}
 	SetRedraw();
 }
@@ -743,7 +744,7 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
 
 		for(si=0; si<(CHMAX-1); si++) // remove duplicates
 			for(ii=si+1; ii<CHMAX; ii++)
-				if(Ch[ii] == Ch[si]) 
+				if(Ch[ii] == Ch[si] || !ChannelASflag[Ch[ii]]) // new 20180514
 					Ch[ii] = -1;
 
 		for(ii=si=0; si<CHMAX; si++)

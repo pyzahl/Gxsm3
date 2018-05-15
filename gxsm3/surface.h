@@ -73,6 +73,8 @@ public:
   void SetRedraw(int flg=TRUE){ redrawflg=flg; };
   int  SetVM(int mode=0);
   int  GetVM();
+  void SetChannelASflg (int ch, int x) { if (ch >=0 && ch < MAX_CHANNELS) ChannelASflag[ch] = x; };
+  int  GetChannelASflg (int ch) { if (ch >=0 && ch < MAX_CHANNELS) return ChannelASflag[ch]; else return -1; };
   Scan* NewScan(int vtype, int vflg, int ChNo, SCAN_DATA *vd);
   int  ActivateFreeChannel();
   int  ActivateChannel(int NewActiveChannel);
@@ -110,6 +112,7 @@ public:
   int  ChannelMode[MAX_CHANNELS];
   int  ChannelScanMode[MAX_CHANNELS];
   int  ChannelView[MAX_CHANNELS];
+  int  ChannelASflag[MAX_CHANNELS];
   Scan *scan[MAX_CHANNELS];
   Scan *ActiveScan;
   Scan *MasterScan;

@@ -89,6 +89,7 @@ public:
         static void choice_ChView_callback (GtkWidget *widget, void *data);
         static void choice_ChMode_callback (GtkWidget *widget, void *data);
         static void choice_ChSDir_callback (GtkWidget *widget, void *data);
+        static void choice_ChAS_callback (GtkWidget *widget, void *data);
         static void restore_callback (GtkWidget *widget, ChannelSelector *cs);
         static void store_callback (GtkWidget *widget, ChannelSelector *cs); 
 
