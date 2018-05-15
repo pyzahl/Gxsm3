@@ -1641,11 +1641,15 @@ void SPM_ScanControl::set_subscan (int xs, int xn, int ys, int yn){
                   << "             [" << sls_config[2] << ", " << sls_config[3] << "]]" << std::endl);
 
 	// Setup Copy Mode in mem2d...
-	for (GSList* tmp = xp_scan_list; tmp; tmp = g_slist_next (tmp))
+	for (GSList* tmp = xp_scan_list; tmp; tmp = g_slist_next (tmp)){
+		((Scan*)tmp->data) -> set_subscan_information (sls_config);
 		((Scan*)tmp->data) -> mem2d->data->ZPutDataSetDest (sls_config);
-	
-	for (GSList* tmp = xm_scan_list; tmp; tmp = g_slist_next (tmp))
+	}
+        
+        for (GSList* tmp = xm_scan_list; tmp; tmp = g_slist_next (tmp)){
+		((Scan*)tmp->data) -> set_subscan_information (sls_config);
 		((Scan*)tmp->data) -> mem2d->data->ZPutDataSetDest (sls_config);
+        }
 }	
 
 int SPM_ScanControl::do_scan (int l){
