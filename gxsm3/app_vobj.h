@@ -300,7 +300,8 @@ class VObject : public scan_object_data{
 	double grid_base;
 	gint grid_multiples;
 	gint grid_size;
-
+        double m_parameter[4];
+        
 	double marker_scale;
 	double label_offset_xy[2];
 	double *xy;
@@ -405,19 +406,26 @@ class VObKsys : public VObject{
 	virtual void draw_extra(cairo_t *cr) {
 	  if (atoms) atoms->draw (cr);
 	  if (lines) lines->draw (cr);
-	  if (bounds) bounds->draw (cr);
+	  if (bonds) bonds->draw (cr);
+          if (info)
+                  for(int i=0; i<n_info; ++i)
+                          if (info[i]) info[i]->draw (cr);
 	};
-
+        void print_xyz (double x, double y);
+        void add_bond_len (double x1, double y1, double x2, double y2, cairo_item_text **cit);
+        
  private:
 	void calc_grid();
 	void destroy_atoms();
 	void update_grid();
 	cairo_item_segments *lines;
 	cairo_item_circle *atoms;
-	cairo_item_segments *bounds;
+	cairo_item_segments *bonds;
+	cairo_item_text **info;
 	gint n_atoms;
 	gint n_lines;
-	gint n_bounds;
+	gint n_bonds;
+	gint n_info;
 };
 
 class VObParabel : public VObject{

@@ -98,7 +98,8 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, int pflg, VOBJ_COORD_
 	grid_mode = 2;
 	grid_aspect=1.0;
 	grid_base=1.0;
-
+        for (int i=0; i<4; ++i) m_parameter[i]=0.0;
+        
 	space_time_now[0]=space_time_now[1]=0;
 	space_time_on[0]=space_time_on[1]=0;
 	space_time_off[0]=space_time_off[1]=0;
@@ -817,6 +818,7 @@ void VObject::build_properties_view (gboolean add){
                         gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-100-lines+circ","Grid: (100) Lines + Circles");    // 11
                         gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-hexas","Grid: (111) Hexas");    // 12
                         gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-hexash","Grid: (111) Hexas-H");    // 13
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (grid_plot), "grid-111-coronene","Grid: (111) Coronene");    // 14
                         gtk_combo_box_set_active (GTK_COMBO_BOX (grid_plot), grid_mode);
                         properties_bp->grid_add_widget (grid_plot, 10);
                         g_signal_connect (G_OBJECT (grid_plot), "changed",
@@ -830,6 +832,13 @@ void VObject::build_properties_view (gboolean add){
                         properties_bp->new_line ();
 
                         properties_bp->grid_add_ec ("Grid Aspect", Unity, &grid_aspect, 0., 2., ".4f");
+                        properties_bp->new_line ();
+
+                        properties_bp->grid_add_ec ("Par 1,2", Unity, &m_parameter[0], -100., 100., ".4f");
+                        properties_bp->grid_add_ec (NULL, Unity, &m_parameter[1], -100., 100., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("Par 3,4", Unity, &m_parameter[2], -100., 100., ".4f");
+                        properties_bp->grid_add_ec (NULL, Unity, &m_parameter[3], -100., 100., ".4f");
                         properties_bp->new_line ();
                 }
 
@@ -1859,10 +1868,12 @@ VObKsys::VObKsys(GtkWidget *_canvas, double *xy0, int pflg, VOBJ_COORD_MODE cmod
 	abl[3] = new cairo_item_path (3);
 	atoms = NULL;
 	lines = NULL;
-	bounds = NULL;
+	bonds = NULL;
+	info  = NULL;
 	n_atoms = 0;
 	n_lines = 0;
-	n_bounds = 0;
+	n_bonds = 0;
+	n_info  = 0;
 	grid_mode = 6;
 
 	custom_element_b_color.red=200./255.;
@@ -1907,12 +1918,22 @@ void VObKsys::destroy_atoms(){
                 lines = NULL;
         }
 
-        if (bounds){
-                bounds->hide ();
-                bounds->queue_update (canvas);
-                delete bounds;
-                n_bounds = 0;
-                bounds = NULL;
+        if (bonds){
+                bonds->hide ();
+                bonds->queue_update (canvas);
+                delete bonds;
+                n_bonds = 0;
+                bonds = NULL;
+        }
+        if (info){
+                for (int i=0; i<n_info; ++i){
+                        info[i]->hide ();
+                        info[i]->queue_update (canvas);
+                        delete info[i];
+                }
+                g_free (info);
+                n_info = 0;
+                info = NULL;
         }
 }
 
@@ -1922,6 +1943,32 @@ void VObKsys::destroy_atoms(){
 	grid_size = 1;
 	grid_mode = 1;
 */
+
+void VObKsys::print_xyz (double x, double y){
+        vinfo->W2Angstroem (x,y);
+        g_print (" C %g %g 0\n",x,y);
+}
+
+void VObKsys::add_bond_len (double x1, double y1, double x2, double y2, cairo_item_text **cit){
+        double dx,dy,bl,x,y;
+        x = 0.5*(x1+x2);
+        y = 0.5*(y1+y2);
+
+        vinfo->W2Angstroem (x1,y1);
+        vinfo->W2Angstroem (x2,y2);
+        dx=x2-x1; dy=y2-y1; bl=sqrt(dx*dx+dy*dy);
+        gchar *txt = g_strdup_printf ("%.1f pm",bl*100.);
+
+        if (*cit)
+                (*cit)->set_text (x,y,txt);
+        else{
+                *cit = new cairo_item_text (x,y,txt);
+                (*cit)->set_font_face_size ("Ununtu", 6.);
+                (*cit)->set_stroke_rgba (CAIRO_COLOR_CYAN);
+        }
+        // g_print ("(%g,%g -- %g,%g) %s\n",x1,y1, x2,y2, txt);
+        g_free(txt);
+}
 
 void VObKsys::calc_grid(){
 	const int gm = grid_mode;
@@ -1940,89 +1987,176 @@ void VObKsys::calc_grid(){
 	ry[0] = (xy[2]-xy[4])/gridfactor;
 	ry[1] = (xy[3]-xy[5])/gridfactor;
 
-        if (gm == 12 || gm == 13){
-                if (gm == 12)
-                        nl = 6*num_grid_lines;
-                else
-                        nl = 12*num_grid_lines;
-                
-                if (bounds && nl != n_bounds){
-                        bounds->queue_update (canvas);
-                        delete bounds;
-                        n_bounds = 0;
-                        bounds = NULL;
-                }
+        if (gm >= 12){ // core molecules
+                if (gm == 14) {  // Coronene core
+                        nl = 2*6*7;
+                        if (bonds && nl != n_bonds){
+                                bonds->queue_update (canvas);
+                                delete bonds;
+                                n_bonds = 0;
+                                bonds = NULL;
+                        }
+                        if (bonds == NULL){
+                                n_bonds = nl;
+                                bonds = new cairo_item_segments (n_bonds);
+                                bonds->set_stroke_rgba (&custom_element_b_color);
+                                bonds->set_fill_rgba (0.,0.,0.,0.);
+                                bonds->set_line_width (OBJECT_LINE_WIDTH);
+                        }
 
-		if (bounds == NULL){
-                        n_bounds = nl;
-                        bounds = new cairo_item_segments (n_bounds);
-                        bounds->set_stroke_rgba (&custom_element_b_color);
-                        bounds->set_fill_rgba (0.,0.,0.,0.);
-                        bounds->set_line_width (OBJECT_LINE_WIDTH);
-		}
-
-		j=0;
-
-                k=-2; l=-1; qvl=109./139.;
-                for (int ir=0; ir<num_grid_lines/2; ++ir){
-                        if (gm == 13){
-                                q=-1; v=-1; q*=qvl; v*=qvl;
-                                bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                                bounds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
+                        if (n_info == 0 || info == NULL){
+                                n_info = 4;
+                                info = g_new0 (cairo_item_text*, n_info);
                         }
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        ++k; 
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        if (gm == 13){
-                                q=0; v=-1; q*=qvl; v*=qvl;
-                                bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                                bounds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
+                        j=0;
+                        g_message ("**Updating Coronene Ksys Object**%s, %s (%g,%g)**", name, text, xy[2], xy[3]);
+                        for (int phii=0; phii<6; ++phii){
+                                double ri = sqrt(rx[0]*rx[0]+rx[1]*rx[1]);
+                                double ro = 2.*sqrt(ry[0]*ry[0]+ry[1]*ry[1]);
+                                double re = (2.5+m_parameter[0])*sqrt(ry[0]*ry[0]+ry[1]*ry[1]);
+                                double rh = (3.0+m_parameter[1])*sqrt(ry[0]*ry[0]+ry[1]*ry[1]);
+                                double s0=sin (phii*60./180.*M_PI);
+                                double c0=cos (phii*60./180.*M_PI);
+                                double s1=sin ((phii+1)*60./180.*M_PI);
+                                double c1=cos ((phii+1)*60./180.*M_PI);
+                                double s2=sin ((phii*60.+30.-8.-m_parameter[2])/180.*M_PI);
+                                double c2=cos ((phii*60.+30.-8.-m_parameter[2])/180.*M_PI);
+                                double s3=sin ((phii*60.+30.+8.+m_parameter[2])/180.*M_PI);
+                                double c3=cos ((phii*60.+30.+8.+m_parameter[2])/180.*M_PI);
+                                double sh2=sin ((phii*60.+30.-10.-m_parameter[3])/180.*M_PI);
+                                double ch2=cos ((phii*60.+30.-10.-m_parameter[3])/180.*M_PI);
+                                double sh3=sin ((phii*60.+30.+10.+m_parameter[3])/180.*M_PI);
+                                double ch3=cos ((phii*60.+30.+10.+m_parameter[3])/180.*M_PI);
+                                // inner ring
+                                double x1,x2,y1,y2;
+                                bonds->set_xy (j++, x1=xy[2] + c0*rx[0] + s0*rx[1], y1=xy[3] + c0*rx[1] - s0*rx[0]);
+                                bonds->set_xy (j++, x2=xy[2] + c1*rx[0] + s1*rx[1], y2=xy[3] + c1*rx[1] - s1*rx[0]);
+                                if (phii==0) add_bond_len (x1,y1, x2, y2, &info[0]);
+                                print_xyz (x2, y2);
+                                // spoke
+                                bonds->set_xy (j++, x1=xy[2] + c0*rx[0] + s0*rx[1], y1=xy[3] + c0*rx[1] - s0*rx[0]);
+                                bonds->set_xy (j++, x2=xy[2] + ro*(c0*rx[0] + s0*rx[1])/ri, y2=xy[3] + ro*(c0*rx[1] - s0*rx[0])/ri);
+                                 if (phii==0) add_bond_len (x1,y1, x2, y2, &info[1]);
+                                // spoke - outher segment
+                                bonds->set_xy (j++, x1=xy[2] + ro*(c0*rx[0] + s0*rx[1])/ri, y1=xy[3] + ro*(c0*rx[1] - s0*rx[0])/ri);
+                                bonds->set_xy (j++, x2=xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, y2=xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
+                                 if (phii==0) add_bond_len (x1,y1, x2, y2, &info[2]);
+                                print_xyz (x2, y2);
+                                // outher segment
+                                bonds->set_xy (j++, x1=xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, y1=xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
+                                bonds->set_xy (j++, x2=xy[2] + re*(c3*rx[0] + s3*rx[1])/ri, y2=xy[3] + re*(c3*rx[1] - s3*rx[0])/ri);
+                                 if (phii==0) add_bond_len (x1,y1, x2, y2, &info[3]);
+                                print_xyz (x2, y2);
+                                // outher segment - spoke next
+                                bonds->set_xy (j++, x1=xy[2] + re*(c3*rx[0] + s3*rx[1])/ri, y1=xy[3] + re*(c3*rx[1] - s3*rx[0])/ri);
+                                bonds->set_xy (j++, x2=xy[2] + ro*(c1*rx[0] + s1*rx[1])/ri, y2=xy[3] + ro*(c1*rx[1] - s1*rx[0])/ri);
+                                print_xyz (x2, y2);
+                                // H's
+                                bonds->set_xy (j++, xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
+                                bonds->set_xy (j++, xy[2] + rh*(ch2*rx[0] + sh2*rx[1])/ri, xy[3] + rh*(ch2*rx[1] - sh2*rx[0])/ri);
+                                bonds->set_xy (j++, xy[2] + re*(c3*rx[0] + s3*rx[1])/ri, xy[3] + re*(c3*rx[1] - s3*rx[0])/ri);
+                                bonds->set_xy (j++, xy[2] + rh*(ch3*rx[0] + sh3*rx[1])/ri, xy[3] + rh*(ch3*rx[1] - sh3*rx[0])/ri);
                         }
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        ++k; ++l;
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        if (gm == 13){
-                                q=1; v=0; q*=qvl; v*=qvl;
-                                bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                                bounds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
-                        }
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        ++l;
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        if (gm == 13){
-                                q=1; v=1; q*=qvl; v*=qvl;
-                                bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                                bounds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
-                        }
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        --k;
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        if (gm == 13){
-                                q=0; v=1; q*=qvl; v*=qvl;
-                                bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                                bounds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
-                        }
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        --k; --l;
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        if (gm == 13){
-                                q=-1; v=0; q*=qvl; v*=qvl;
-                                bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                                bounds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
-                        }
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        --l;
-                        bounds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
-                        ++k; ++k; ++l;
-                }
                         
-                bounds->show ();
-                bounds->set_stroke_rgba (&custom_element_b_color);
-                bounds->queue_update (canvas);
+                        bonds->show ();
+                        bonds->set_stroke_rgba (&custom_element_b_color);
+                        bonds->queue_update (canvas);
+                        for (int i=0; i<n_info; ++i){
+                                info[i]->show ();
+                                info[i]->queue_update (canvas);
+                        }
+                } else {
+                        if (info){
+                                for (int i=0; i<n_info; ++i){
+                                        info[i]->hide ();
+                                        info[i]->queue_update (canvas);
+                                }
+                        }
+                }
+                if (gm == 12 || gm == 13){ // Pentacene like linear array of hexas w / wo H
+                        if (gm == 12)
+                                nl = 6*num_grid_lines;
+                        else
+                                nl = 12*num_grid_lines;
+                
+                        if (bonds && nl != n_bonds){
+                                bonds->queue_update (canvas);
+                                delete bonds;
+                                n_bonds = 0;
+                                bonds = NULL;
+                        }
+
+                        if (bonds == NULL){
+                                n_bonds = nl;
+                                bonds = new cairo_item_segments (n_bonds);
+                                bonds->set_stroke_rgba (&custom_element_b_color);
+                                bonds->set_fill_rgba (0.,0.,0.,0.);
+                                bonds->set_line_width (OBJECT_LINE_WIDTH);
+                        }
+
+                        j=0;
+
+                        k=-2; l=-1; qvl=109./139.;
+                        for (int ir=0; ir<num_grid_lines/2; ++ir){
+                                if (gm == 13){
+                                        q=-1; v=-1; q*=qvl; v*=qvl;
+                                        bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                        bonds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
+                                }
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                ++k; 
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                if (gm == 13){
+                                        q=0; v=-1; q*=qvl; v*=qvl;
+                                        bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                        bonds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
+                                }
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                ++k; ++l;
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                if (gm == 13){
+                                        q=1; v=0; q*=qvl; v*=qvl;
+                                        bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                        bonds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
+                                }
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                ++l;
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                if (gm == 13){
+                                        q=1; v=1; q*=qvl; v*=qvl;
+                                        bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                        bonds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
+                                }
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                --k;
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                if (gm == 13){
+                                        q=0; v=1; q*=qvl; v*=qvl;
+                                        bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                        bonds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
+                                }
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                --k; --l;
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                if (gm == 13){
+                                        q=-1; v=0; q*=qvl; v*=qvl;
+                                        bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                        bonds->set_xy (j++, xy[2] + (k+q)*rx[0] + (l+v)*ry[0], xy[3] + (k+q)*rx[1] + (l+v)*ry[1]);
+                                }
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                --l;
+                                bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                ++k; ++k; ++l;
+                        }
+                        
+                        bonds->show ();
+                        bonds->set_stroke_rgba (&custom_element_b_color);
+                        bonds->queue_update (canvas);
+                }
         } else {
-                if (bounds){
-                           bounds->hide ();
-                           bounds->queue_update (canvas);
+                if (bonds){
+                           bonds->hide ();
+                           bonds->queue_update (canvas);
                 }
         }
         
@@ -2143,9 +2277,10 @@ void VObKsys::Update(){
 		phi=M_PI*phi/180;
 		double c=cos(phi);
 		double s=sin(phi);
-		xy[4] = xy[2] + grid_aspect * (dx*c + dy*s);
-		xy[5] = xy[3] + grid_aspect * (dy*c - dx*s);
 
+                xy[4] = xy[2] + grid_aspect * (dx*c + dy*s);
+                xy[5] = xy[3] + grid_aspect * (dy*c - dx*s);
+                
 		node_marker(abl[2], &xy[4], 2);
 	}
 
