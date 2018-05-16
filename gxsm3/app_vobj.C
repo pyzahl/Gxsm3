@@ -2012,9 +2012,12 @@ void VObKsys::calc_grid(){
                         g_message ("**Updating Coronene Ksys Object**%s, %s (%g,%g)**", name, text, xy[2], xy[3]);
                         for (int phii=0; phii<6; ++phii){
                                 double ri = sqrt(rx[0]*rx[0]+rx[1]*rx[1]);
+                                double x,y;
+                                x=3*rx[0]+ry[0]/grid_aspect;
+                                y=3*rx[1]+ry[1]/grid_aspect;
                                 double ro = 2.*sqrt(ry[0]*ry[0]+ry[1]*ry[1]);
-                                double re = (2.5+m_parameter[0])*sqrt(ry[0]*ry[0]+ry[1]*ry[1]);
-                                double rh = (3.0+m_parameter[1])*sqrt(ry[0]*ry[0]+ry[1]*ry[1]);
+                                double re = (grid_aspect+m_parameter[0])*sqrt(x*x+y*y); //(ry[0]*ry[0]+ry[1]*ry[1]);
+                                double rh = (0.2+grid_aspect+m_parameter[1])*sqrt(x*x+y*y); //(ry[0]*ry[0]+ry[1]*ry[1]);
                                 double s0=sin (phii*60./180.*M_PI);
                                 double c0=cos (phii*60./180.*M_PI);
                                 double s1=sin ((phii+1)*60./180.*M_PI);
