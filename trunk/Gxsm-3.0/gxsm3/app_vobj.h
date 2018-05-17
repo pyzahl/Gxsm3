@@ -413,6 +413,7 @@ class VObKsys : public VObject{
 	};
         void print_xyz (double x, double y);
         void add_bond_len (double x1, double y1, double x2, double y2, cairo_item_text **cit);
+        double score_bond (double x1, double y1, double x2, double y2, int n);
         
  private:
 	void calc_grid();

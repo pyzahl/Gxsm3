@@ -70,7 +70,15 @@ public:
                         tmp.ChangePrec (new_prec);
                 return tmp.UsrString (data_z*(pixelmode ? 1. : sc->data.s.dz) - sub); 
         };
-        
+        double getZ(double x, double y){ 
+                double mx = x*Qfac, xx;
+                double my = y*Qfac, yy;
+                xx = R2INT(mx); xx=MIN(sc->mem2d->GetNx()-1, MAX(0,xx));
+                yy = R2INT(my); yy=MIN(sc->mem2d->GetNy()-1, MAX(0,yy));
+                int ix=(int)xx, iy=(int)yy;
+                return sc->mem2d->GetDataPkt(ix,iy)*sc->data.s.dz - sc->data.s.pllref;
+        };
+      
         // convert X,Y (view, mouse) to image index
         void XYview2pixel(double x, double y, Point2D *p){
                 double mx = x*Qfac, xx;
