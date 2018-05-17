@@ -1954,10 +1954,14 @@ void VObKsys::add_bond_len (double x1, double y1, double x2, double y2, cairo_it
         x = 0.5*(x1+x2);
         y = 0.5*(y1+y2);
 
+        double score=0;
+        if (grid_size > 1)
+                score=score_bond (x1,y1, x2, y2, grid_size);
+ 
         vinfo->W2Angstroem (x1,y1);
         vinfo->W2Angstroem (x2,y2);
         dx=x2-x1; dy=y2-y1; bl=sqrt(dx*dx+dy*dy);
-        gchar *txt = g_strdup_printf ("%.1f pm",bl*100.);
+        gchar *txt = grid_size > 1 ? g_strdup_printf ("%.3f Hz",score) : g_strdup_printf ("%.1f pm",bl*100.);
 
         if (*cit)
                 (*cit)->set_text (x,y,txt);
@@ -1968,6 +1972,17 @@ void VObKsys::add_bond_len (double x1, double y1, double x2, double y2, cairo_it
         }
         // g_print ("(%g,%g -- %g,%g) %s\n",x1,y1, x2,y2, txt);
         g_free(txt);
+}
+
+double VObKsys::score_bond (double x1, double y1, double x2, double y2, int n){
+        double score=0.;
+        double dx = x2-x1;
+        double dy = y2-y1;
+        int norm=0;
+        for (double l=0.0; l<=1.001; l+=1.0/(n-1), ++norm){
+                score += vinfo->getZ (x1+l*dx, y1+l*dy);
+        }
+        return score/norm;
 }
 
 void VObKsys::calc_grid(){
@@ -1989,6 +2004,7 @@ void VObKsys::calc_grid(){
 
         if (gm >= 12){ // core molecules
                 if (gm == 14) {  // Coronene core
+                        double score = 0.;
                         nl = 2*6*7;
                         if (bonds && nl != n_bonds){
                                 bonds->queue_update (canvas);
@@ -2034,25 +2050,30 @@ void VObKsys::calc_grid(){
                                 double x1,x2,y1,y2;
                                 bonds->set_xy (j++, x1=xy[2] + c0*rx[0] + s0*rx[1], y1=xy[3] + c0*rx[1] - s0*rx[0]);
                                 bonds->set_xy (j++, x2=xy[2] + c1*rx[0] + s1*rx[1], y2=xy[3] + c1*rx[1] - s1*rx[0]);
+                                if (grid_size>1) score += score_bond (x1,y1, x2, y2, grid_size);
                                 if (phii==0) add_bond_len (x1,y1, x2, y2, &info[0]);
                                 print_xyz (x2, y2);
                                 // spoke
                                 bonds->set_xy (j++, x1=xy[2] + c0*rx[0] + s0*rx[1], y1=xy[3] + c0*rx[1] - s0*rx[0]);
                                 bonds->set_xy (j++, x2=xy[2] + ro*(c0*rx[0] + s0*rx[1])/ri, y2=xy[3] + ro*(c0*rx[1] - s0*rx[0])/ri);
-                                 if (phii==0) add_bond_len (x1,y1, x2, y2, &info[1]);
+                                if (grid_size>1) score += score_bond (x1,y1, x2, y2, grid_size);
+                                if (phii==0) add_bond_len (x1,y1, x2, y2, &info[1]);
                                 // spoke - outher segment
                                 bonds->set_xy (j++, x1=xy[2] + ro*(c0*rx[0] + s0*rx[1])/ri, y1=xy[3] + ro*(c0*rx[1] - s0*rx[0])/ri);
                                 bonds->set_xy (j++, x2=xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, y2=xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
-                                 if (phii==0) add_bond_len (x1,y1, x2, y2, &info[2]);
+                                if (grid_size>1) score += score_bond (x1,y1, x2, y2, grid_size);
+                                if (phii==0) add_bond_len (x1,y1, x2, y2, &info[2]);
                                 print_xyz (x2, y2);
                                 // outher segment
                                 bonds->set_xy (j++, x1=xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, y1=xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
                                 bonds->set_xy (j++, x2=xy[2] + re*(c3*rx[0] + s3*rx[1])/ri, y2=xy[3] + re*(c3*rx[1] - s3*rx[0])/ri);
-                                 if (phii==0) add_bond_len (x1,y1, x2, y2, &info[3]);
+                                if (grid_size>1) score += score_bond (x1,y1, x2, y2, grid_size);
+                                if (phii==0) add_bond_len (x1,y1, x2, y2, &info[3]);
                                 print_xyz (x2, y2);
                                 // outher segment - spoke next
                                 bonds->set_xy (j++, x1=xy[2] + re*(c3*rx[0] + s3*rx[1])/ri, y1=xy[3] + re*(c3*rx[1] - s3*rx[0])/ri);
                                 bonds->set_xy (j++, x2=xy[2] + ro*(c1*rx[0] + s1*rx[1])/ri, y2=xy[3] + ro*(c1*rx[1] - s1*rx[0])/ri);
+                                if (grid_size>1) score += score_bond (x1,y1, x2, y2, grid_size);
                                 print_xyz (x2, y2);
                                 // H's
                                 bonds->set_xy (j++, xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
@@ -2060,6 +2081,7 @@ void VObKsys::calc_grid(){
                                 bonds->set_xy (j++, xy[2] + re*(c3*rx[0] + s3*rx[1])/ri, xy[3] + re*(c3*rx[1] - s3*rx[0])/ri);
                                 bonds->set_xy (j++, xy[2] + rh*(ch3*rx[0] + sh3*rx[1])/ri, xy[3] + rh*(ch3*rx[1] - sh3*rx[0])/ri);
                         }
+                        if (grid_size>1) g_message ("Score = %.3f Hz", score/(5*6));
                         
                         bonds->show ();
                         bonds->set_stroke_rgba (&custom_element_b_color);

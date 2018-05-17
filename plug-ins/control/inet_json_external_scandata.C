@@ -38,7 +38,7 @@
 % PlugInName: inet_json_external_scandata
 % PlugInAuthor: Percy Zahl
 % PlugInAuthorEmail: zahl@users.sf.net
-% PlugInMenuPath: windows-sectionInet JSON Scan External Data
+% PlugInMenuPath: windows-section Inet JSON Scan External Data
 RP data streaming
 
 % PlugInDescription
@@ -76,7 +76,7 @@ static void inet_json_external_scandata_configure (void); // Configure plugIn, c
 static void inet_json_external_scandata_cleanup (void); // called on PlugIn unload, should cleanup PlugIn rescources
 
 // other PlugIn Functions and Callbacks (connected to Buttons, Toolbar, Menu)
-static void inet_json_external_scandata_show_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data); // show ScanControl Window
+static void inet_json_external_scandata_show_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 static void inet_json_external_scandata_SaveValues_callback ( gpointer );
 
 // Fill in the GxsmPlugin Description here -- see also: Gxsm/src/plugin.h
@@ -95,7 +95,7 @@ GxsmPlugin inet_json_external_scandata_pi = {
 	g_strdup ("Inet JSON Scan Source"),
 	"Percy Zahl",
 	"windows-section", // Menu-path/section
-	N_("Inet JSON External Scan Data"), // Menu Entry
+	N_("Inet JSON RP"), // Menu Entry
 	N_("Open Inet JSON External Scan Data Control Window"),
 	"Inet JSON External Scan Data Control Window", // help text
 	NULL,          // error msg, plugin may put error status msg here later
