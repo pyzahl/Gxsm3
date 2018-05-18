@@ -44,12 +44,28 @@ public:
 	void update(); // window update (inputs, etc. -- here currently not really necessary)
 
 	GtkWidget *remote_param;
+        static void connect_cb (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
+        static void read_cb (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void write_cb (GtkWidget *widget, Inet_Json_External_Scandata *self);
+
+        void status_append (const gchar *msg);
+      
 private:
         BuildParam *bp;
-	UnitObj *Unity; // Unit "1"
+
+        GtkWidget *input_rpaddress;
+        GtkWidget *text_status;
+
+        UnitObj *Unity; // Unit "1"
 	
 	GSList*   SPMC_RemoteEntryList;
+
+
+        /* Socket Connection */
+        GSocketConnection *connection;
+        GSocketClient *client;
+        GError *error;
 
 public:
 };

@@ -57,6 +57,8 @@ RP data streaming
 
 
 #include <gtk/gtk.h>
+#include <gio/gio.h>
+
 #include "config.h"
 #include "gxsm/plugin.h"
 
@@ -218,14 +220,22 @@ static void inet_json_external_scandata_show_callback(GSimpleAction *simple, GVa
 
 Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 {
-        GtkWidget *textinput;
+        GtkWidget *tmp;
 	
 	GSList *EC_list=NULL;
 	GSList **RemoteEntryList = new GSList *;
 	*RemoteEntryList = NULL;
 
-	XsmRescourceManager xrm("InetJsonScanControl");
+        input_rpaddress = NULL;
+        text_status = NULL;
 
+        /* create a new connection, init */
+
+        error = NULL;
+        connection = NULL;
+        client = g_socket_client_new();
+
+        
 	PI_DEBUG (DBG_L2, "inet_json_external_scandata Plugin : building interface" );
 
 	Unity    = new UnitObj(" "," ");
@@ -238,9 +248,26 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         //bp->set_default_ec_change_notice_fkt (VObject::ec_properties_changed, this);
 
         bp->new_grid_with_frame ("Inet Setup");
-        textinput = bp->grid_add_input ("RP URL");
-        gtk_entry_set_text (GTK_ENTRY (textinput), "http://rp-f05603.local/pacpll/?type=run");
+        input_rpaddress = bp->grid_add_input ("RedPitaya Address");
+        //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "http://rp-f05603.local/pacpll/?type=run");
+        gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "130.199.243.200");
 
+        tmp =bp->grid_add_check_button ( N_("Connect"), "Check to initiate connection, uncheck to close connection.", 1,
+                                         G_CALLBACK (Inet_Json_External_Scandata::connect_cb), this);
+        
+        bp->new_line ();
+        tmp=bp->grid_add_button ( N_("Read"), "TEST READ", 1,
+                                  G_CALLBACK (Inet_Json_External_Scandata::read_cb), this);
+        tmp=bp->grid_add_button ( N_("Write"), "TEST WRITE", 1,
+                                  G_CALLBACK (Inet_Json_External_Scandata::write_cb), this);
+
+        bp->new_line ();
+        text_status = gtk_text_view_new ();
+ 	gtk_text_view_set_editable (GTK_TEXT_VIEW (text_status), FALSE);
+        //gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (text_status), GTK_WRAP_WORD_CHAR);
+
+        bp->grid_add_widget (text_status, 3);
+        
         bp->pop_grid ();
         bp->new_line ();
 
@@ -249,7 +276,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         // save List away...
 	//g_object_set_data( G_OBJECT (window), "INETJSONSCANCONTROL_EC_list", EC_list);
 
-        set_window_geometry ("inet-json-rp-control");
+        set_window_geometry ("inet-json-rp-control"); // needs rescoure entry and defines window menu entry as geometry is managed
 }
 
 Inet_Json_External_Scandata::~Inet_Json_External_Scandata (){
@@ -261,6 +288,133 @@ void Inet_Json_External_Scandata::update(){
 		g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "INETJSONSCANCONTROL_EC_list"),
 				(GFunc) App::update_ec, NULL);
 }
+
+void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        if (!self->text_status) return;
+        if (!self->input_rpaddress) return;
+
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))){
+
+                /* connect to the host */
+                self->connection = g_socket_client_connect_to_host (self->client,
+                                                                    gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)), //(gchar*)"localhost",
+                                                                    80, /* port HTTP */
+                                                                    NULL,
+                                                                    &self->error);
+
+                if (self->error != NULL)
+                        {
+                                g_warning (self->error->message);
+                                self->status_append ("ERROR:\n");
+                                self->status_append (self->error->message);
+                                self->status_append ("\n");
+                        }
+                else
+                        {
+                                g_message ("Connection to");
+                                g_message (gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)));
+                                g_message ("established.\n");
+                                self->status_append ("Connection to ");
+                                self->status_append (gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)));
+                                self->status_append (" established.\n");
+                        }
+        } else {
+                /* close connection */
+                //self->connection = g_socket_client_connect_finish (self->connection,
+                //                                                  GAsyncResult *result,
+                //                                                   &self->error);
+                if (g_io_stream_close ( G_IO_STREAM (self->connection), //GIOStream *stream,
+                                       NULL,
+                                        &self->error)){
+                        self->status_append ("Connection closed.\n");
+                } else {
+                        self->status_append ("ERROR: Closing connection failed.\n");
+                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), true);
+                }
+
+                if (self->error != NULL) {
+                        g_warning (self->error->message);
+                        self->status_append ("ERROR:\n");
+                        self->status_append (self->error->message);
+                        self->status_append ("\n");
+                } else {
+                        g_message ("Connection closed.");
+                }
+        }
+}
+
+void Inet_Json_External_Scandata::read_cb (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        GInputStream * istream = g_io_stream_get_input_stream (G_IO_STREAM (self->connection));
+        gchar buffer[4096]; for (int i=0; i<4096; ++i) buffer[i]=0;
+        gssize num = g_input_stream_read (istream,
+                                          (void *)buffer,
+                                          100,
+                                          NULL,
+                                          &self->error);   
+        if (self->error != NULL) {
+                g_warning (self->error->message);
+                self->status_append (self->error->message);
+        } else {
+                self->status_append (buffer);  
+        }
+}
+
+void Inet_Json_External_Scandata::write_cb (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        GOutputStream * ostream = g_io_stream_get_output_stream (G_IO_STREAM (self->connection));
+        const gchar *buffer="Hello RedPitaya!";
+        g_output_stream_write  (ostream,
+                                (void*)buffer, /* your message goes here */
+                                strlen (buffer), /* length of your message */
+                                NULL,
+                                &self->error);
+        if (self->error != NULL) {
+                g_warning (self->error->message);
+                self->status_append (self->error->message);
+        }else {
+                self->status_append ("Write OK: '");  
+                self->status_append (buffer);  
+                self->status_append ("'\n");  
+        }
+}
+
+
+void Inet_Json_External_Scandata::status_append (const gchar *msg){
+
+	GtkTextBuffer *console_buf;
+	GtkTextIter start_iter, end_iter;
+	GtkTextView *textview;
+	GString *output;
+	GtkTextMark *end_mark;
+
+	if (!msg) {
+		g_warning("No message to append");
+		return;
+	}
+
+	// read string which contain last command output
+	console_buf = gtk_text_view_get_buffer (GTK_TEXT_VIEW(text_status));
+	gtk_text_buffer_get_bounds (console_buf, &start_iter, &end_iter);
+
+	// get output widget content
+	output = g_string_new (gtk_text_buffer_get_text (console_buf,
+                                                         &start_iter, &end_iter,
+                                                         FALSE));
+
+	// append input line
+	output = g_string_append (output, msg);
+	gtk_text_buffer_set_text (console_buf, output->str, -1);
+	g_string_free (output, TRUE);
+
+	// scroll to end
+	gtk_text_buffer_get_end_iter (console_buf, &end_iter);
+	end_mark = gtk_text_buffer_create_mark (console_buf, "cursor", &end_iter,
+                                                FALSE);
+	g_object_ref (end_mark);
+	gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (text_status),
+                                      end_mark, 0.0, FALSE, 0.0, 0.0);
+	g_object_unref (end_mark);
+}
+
 
 // Menu Call Back Fkte
 #if 0
