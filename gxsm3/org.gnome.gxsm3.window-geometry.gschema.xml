@@ -48,6 +48,16 @@
       <summary>show/hide state, option, X,Y, H,W</summary>
       <description>geometry</description>
     </key>
+    <key name="view-scan2d-5" type="ai">
+      <default>[0,0, 0,0,0,0]</default>
+      <summary>show/hide state, option, X,Y, H,W</summary>
+      <description>geometry</description>
+    </key>
+    <key name="view-scan2d-6" type="ai">
+      <default>[0,0, 0,0,0,0]</default>
+      <summary>show/hide state, option, X,Y, H,W</summary>
+      <description>geometry</description>
+    </key>
     <key name="view-profile" type="ai">
       <default>[0,0, 0,0,0,0]</default>
       <summary>show/hide state, option, X,Y, H,W</summary>
@@ -139,6 +149,11 @@
       <description>geometry</description>
     </key>
     <key name="dsp-pac-control" type="ai">
+      <default>[0,0, 0,0,0,0]</default>
+      <summary>show/hide state, option, X,Y, H,W</summary>
+      <description>geometry</description>
+    </key>
+    <key name="inet-json-rp-control" type="ai">
       <default>[0,0, 0,0,0,0]</default>
       <summary>show/hide state, option, X,Y, H,W</summary>
       <description>geometry</description>
