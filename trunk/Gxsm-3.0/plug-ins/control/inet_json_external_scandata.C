@@ -85,17 +85,12 @@ GxsmPlugin inet_json_external_scandata_pi = {
 	NULL,                   // filled in and used by Gxsm, don't touch !
 	0,                      // filled in and used by Gxsm, don't touch !
 	NULL,                   // The Gxsm-App Class Ref.pointer (called "gapp" in Gxsm) is 
-	// filled in here by Gxsm on Plugin load, 
-	// just after init() is called !!!
 	"Inet_Json_External_Scandata",
-	//  "-rhkspmHARD +spmHARD +STM +AFM +SARLS +SNOM",                // PlugIn's Categorie, set to NULL for all, I just don't want this always to be loaded!
-	//"+ALL +noHARD +Demo-HwI:SPMHARD +SRanger:SPMHARD +SRangerMK2:SPMHARD +SRangerTest:SPMHARD +Innovative_DSP:SPMHARD +Innovative_DSP:SPAHARD +TC211-CCDHARD +video4linuxHARD +Comedi:SPMHARD +kmdsp:SPMHARD -LAN_RHK:SPMHARD",
 	NULL,
-  // Description, is shown by PluginViewer (Plugin: listplugin, Tools->Plugin Details)
-	g_strdup ("Inet JSON Scan Source"),
+	NULL,
 	"Percy Zahl",
 	"windows-section", // Menu-path/section
-	N_("Inet JSON RP"), // Menu Entry
+	N_("Inet JSON RP"), // Menu Entry -- overridden my set-window-geometry() call automatism
 	N_("Open Inet JSON External Scan Data Control Window"),
 	"Inet JSON External Scan Data Control Window", // help text
 	NULL,          // error msg, plugin may put error status msg here later
@@ -254,7 +249,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         // save List away...
 	//g_object_set_data( G_OBJECT (window), "INETJSONSCANCONTROL_EC_list", EC_list);
 
-        set_window_geometry ("spm-scan-control");
+        set_window_geometry ("inet-json-rp-control");
 }
 
 Inet_Json_External_Scandata::~Inet_Json_External_Scandata (){

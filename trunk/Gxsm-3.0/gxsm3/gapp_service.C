@@ -982,9 +982,9 @@ int AppBase::set_window_geometry (const gchar *key, gint index, gboolean add_to_
         }
         
         XSM_DEBUG_GP (DBG_L9, "AppBase::set_window_geometry and append '%s' to Windows Menu\n", key);
-        if (index >= 0 && index <= 4) // limit for now
+        if (index >= 0 && index <= 6) // limit for now
                 window_key = g_strdup_printf ("%s-%d", key, index);
-        else if (index > 4)
+        else if (index > 6)
                 return -1; // do not handle at this time.
         else
                 window_key = g_strdup (key);
