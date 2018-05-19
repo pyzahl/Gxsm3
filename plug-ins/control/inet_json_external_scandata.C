@@ -58,6 +58,8 @@ RP data streaming
 
 #include <gtk/gtk.h>
 #include <gio/gio.h>
+#include <libsoup/soup.h>
+#include <zlib.h>
 
 #include "config.h"
 #include "gxsm/plugin.h"
@@ -231,10 +233,14 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
         /* create a new connection, init */
 
-        error = NULL;
-        connection = NULL;
-        client = g_socket_client_new();
+	listener=NULL;
+        port=9002;
 
+	session=NULL;
+	msg=NULL;
+	client=NULL;
+	client_error=NULL;
+	error=NULL;
         
 	PI_DEBUG (DBG_L2, "inet_json_external_scandata Plugin : building interface" );
 
@@ -247,26 +253,38 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_no_spin (true);
         //bp->set_default_ec_change_notice_fkt (VObject::ec_properties_changed, this);
 
-        bp->new_grid_with_frame ("Inet Setup");
-        input_rpaddress = bp->grid_add_input ("RedPitaya Address");
-        //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "http://rp-f05603.local/pacpll/?type=run");
-        gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "130.199.243.200");
+        bp->new_grid_with_frame ("RedPitaya Web Socket Address for JSON talk");
 
+        bp->set_input_width_chars (40);
+        input_rpaddress = bp->grid_add_input ("RedPitaya Address");
+        //  "ws://rp-f05603.local:9002/"
+        //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "http://rp-f05603.local/pacpll/?type=run");
+        //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "130.199.243.200");
+        gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "192.168.1.10");
+        
         tmp =bp->grid_add_check_button ( N_("Connect"), "Check to initiate connection, uncheck to close connection.", 1,
                                          G_CALLBACK (Inet_Json_External_Scandata::connect_cb), this);
         
         bp->new_line ();
-        tmp=bp->grid_add_button ( N_("Read"), "TEST READ", 1,
-                                  G_CALLBACK (Inet_Json_External_Scandata::read_cb), this);
+        //tmp=bp->grid_add_button ( N_("Read"), "TEST READ", 1,
+        //                          G_CALLBACK (Inet_Json_External_Scandata::read_cb), this);
         tmp=bp->grid_add_button ( N_("Write"), "TEST WRITE", 1,
                                   G_CALLBACK (Inet_Json_External_Scandata::write_cb), this);
 
         bp->new_line ();
+
         text_status = gtk_text_view_new ();
  	gtk_text_view_set_editable (GTK_TEXT_VIEW (text_status), FALSE);
         //gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (text_status), GTK_WRAP_WORD_CHAR);
+        GtkWidget *scrolled_window = gtk_scrolled_window_new (NULL, NULL);
+        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+        gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled_window), GTK_SHADOW_IN);
+        //gtk_widget_set_size_request (scrolled_window, 200, 60);
+        gtk_widget_set_hexpand (scrolled_window, TRUE);
+        gtk_widget_set_vexpand (scrolled_window, TRUE);
+        gtk_container_add (GTK_CONTAINER (scrolled_window), GTK_WIDGET (text_status)) ;
+        bp->grid_add_widget (scrolled_window, 3);
 
-        bp->grid_add_widget (text_status, 3);
         
         bp->pop_grid ();
         bp->new_line ();
@@ -289,102 +307,407 @@ void Inet_Json_External_Scandata::update(){
 				(GFunc) App::update_ec, NULL);
 }
 
+#if 0 // JavaScript Client Code
+
+    APP.startApp = function() {
+
+    // App configuration
+    APP.config = {};
+    APP.config.app_id = 'pacpll';
+    APP.config.app_url = '/bazaar?start=' + APP.config.app_id + '?' + location.search.substr(1);
+    APP.config.socket_url = 'ws://' + window.location.hostname + ':9002';
+
+        $.get(APP.config.app_url)
+            .done(function(dresult) {
+                if (dresult.status == 'OK') {
+                    APP.connectWebSocket();
+                } else if (dresult.status == 'ERROR') {
+                    console.log(dresult.reason ? dresult.reason : 'Could not start the application (ERR1)');
+                    APP.startApp();
+                } else {
+                    console.log('Could not start the application (ERR2)');
+                    APP.startApp();
+                }
+            })
+            .fail(function() {
+                console.log('Could not start the application (ERR3)');
+                APP.startApp();
+            });
+    };
+
+
+
+    APP.connectWebSocket = function() {
+
+        //Create WebSocket
+        if (window.WebSocket) {
+            APP.ws = new WebSocket(APP.config.socket_url);
+            APP.ws.binaryType = "arraybuffer";
+        } else if (window.MozWebSocket) {
+            APP.ws = new MozWebSocket(APP.config.socket_url);
+            APP.ws.binaryType = "arraybuffer";
+        } else {
+            console.log('Browser does not support WebSocket');
+        }
+
+
+        // Define WebSocket event listeners
+        if (APP.ws) {
+
+            APP.ws.onopen = function() {
+                $('#hello_message').text("GXSM3 Red Pitaya PACPLL Webinterface");
+                console.log('Socket opened');   
+		
+		APP.params.local = {};
+                setTimeout(APP.loadParams, 20);
+
+                // Set initial parameters
+		// NOTE: server is crashing/aborting if any paramert is out of range, JSON names do not match, invaling vars assigned, invalid HTML id's, etc. etc.!!!
+                APP.setPactau();
+                APP.setFrequency();
+                APP.setVolume();
+                APP.setOperation();
+                APP.setPACVerbose();
+
+		APP.setTransportDecimation();
+		APP.setTransportMode();
+		APP.setTransportCh3();
+		APP.setTransportCh4();
+		APP.setTransportCh5();
+                APP.setGain1();
+                APP.setGain2();
+                APP.setGain3();
+                APP.setGain4();
+                APP.setGain5();
+		APP.setShrCh1();
+		APP.setShrCh2();
+
+		console.log('WS open, send init params done.');
+            };
+
+            APP.ws.onclose = function() {
+                console.log('Socket closed');
+            };
+
+            APP.ws.onerror = function(ev) {
+                $('#hello_message').text("Connection error");
+                console.log('Websocket error: ', ev);         
+            };
+
+            APP.ws.onmessage = function(ev) {
+                //console.log('Message recieved');
+
+                //Capture signals
+                if (APP.processing) {
+                    return;
+                }
+                APP.processing = true;
+
+                try {
+                    var data = new Uint8Array(ev.data);
+		    APP.compressed_data += data.length;
+                    var inflate = pako.inflate(data);
+                    var text = String.fromCharCode.apply(null, new Uint8Array(inflate));
+		    APP.decompressed_data += text.length;
+                    var receive = JSON.parse(text);
+
+                    if (receive.parameters) {
+			//console.log ("**ws received parameters");
+			//console.log (receive.parameters);
+
+                        APP.parameterStack.push (receive.parameters);
+                        if ((Object.keys(APP.params.orig).length == 0) && (Object.keys(receive.parameters).length == 0)) {
+                            APP.params.local['in_command'] = { value: 'send_all_params' };
+                            APP.ws.send(JSON.stringify({ parameters: APP.params.local }));
+                            APP.params.local = {};
+                        } else {
+                            APP.parameterStack.push(receive.parameters);
+                        }
+                    }
+
+                    if (receive.signals) {
+                        APP.signalStack.push(receive.signals);
+                    }
+                    APP.processing = false;
+                } catch (e) {
+                    APP.processing = false;
+                    console.log(e);
+                } finally {
+                    APP.processing = false;
+                }
+            };
+        }
+    };
+#endif
+
+#if 0
+client_connect (Test *test,
+		const char *origin, // NULL
+		const char **protocols, // NULL
+		GAsyncReadyCallback callback, // got_client_connection
+		gpointer user_data)
+{
+	char *url;
+
+	if (!test->session)
+		test->session = soup_test_session_new (SOUP_TYPE_SESSION, NULL);
+
+	url = g_strdup_printf ("ws://127.0.0.1:%u/unix", test->port);
+	test->msg = soup_message_new ("GET", url);
+	g_free (url);
+
+	soup_session_websocket_connect_async (test->session, test->msg,
+					      origin, (char **) protocols,
+					      NULL, callback, user_data);
+}
+static void
+got_client_connection (GObject *object,
+		       GAsyncResult *result,
+		       gpointer user_data)
+{
+	Test *test = user_data;
+
+	test->client = soup_session_websocket_connect_finish (SOUP_SESSION (object),
+							      result, &test->client_error);
+}
+static void
+test_send_client_to_server (Test *test,
+                            gconstpointer data)
+{
+	GBytes *received = NULL;
+	const char *contents;
+	gsize len;
+
+	g_signal_connect (test->server, "message", G_CALLBACK (on_text_message), &received);
+
+	soup_websocket_connection_send_text (test->client, TEST_STRING);
+
+	WAIT_UNTIL (received != NULL);
+
+	/* Received messages should be null terminated (outside of len) */
+	contents = g_bytes_get_data (received, &len);
+	g_assert_cmpstr (contents, ==, TEST_STRING);
+	g_assert_cmpint (len, ==, strlen (TEST_STRING));
+
+	g_bytes_unref (received);
+}
+#endif
+
 void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_External_Scandata *self){
         if (!self->text_status) return;
         if (!self->input_rpaddress) return;
+        g_message (gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)));
 
+
+        // App configuration
+        // APP.config.app_id = 'pacpll';
+        // APP.config.app_url = '/bazaar?start=' + APP.config.app_id + '?' + location.search.substr(1);
+        // APP.config.socket_url = 'ws://' + window.location.hostname + ':9002';
+        
         if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))){
+                self->status_append ("Connecting to RedPitaya...\n");
 
-                /* connect to the host */
-                self->connection = g_socket_client_connect_to_host (self->client,
-                                                                    gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)), //(gchar*)"localhost",
-                                                                    80, /* port HTTP */
-                                                                    NULL,
-                                                                    &self->error);
+                // new soup session
+                self->session = soup_session_new ();
 
-                if (self->error != NULL)
-                        {
-                                g_warning (self->error->message);
-                                self->status_append ("ERROR:\n");
-                                self->status_append (self->error->message);
-                                self->status_append ("\n");
-                        }
-                else
-                        {
-                                g_message ("Connection to");
-                                g_message (gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)));
-                                g_message ("established.\n");
-                                self->status_append ("Connection to ");
-                                self->status_append (gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)));
-                                self->status_append (" established.\n");
-                        }
-        } else {
-                /* close connection */
-                //self->connection = g_socket_client_connect_finish (self->connection,
-                //                                                  GAsyncResult *result,
-                //                                                   &self->error);
-                if (g_io_stream_close ( G_IO_STREAM (self->connection), //GIOStream *stream,
-                                       NULL,
-                                        &self->error)){
-                        self->status_append ("Connection closed.\n");
-                } else {
-                        self->status_append ("ERROR: Closing connection failed.\n");
-                        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), true);
-                }
+                // request to fire up RedPitaya PACPLLL NGNIX server
+                gchar *urlstart = g_strdup_printf ("http://%s/bazaar?start=pacpll", gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)));
+                self->status_append ("1. Requesting NGNIX RedPitaya PACPLL Server Startup:\n");
+                self->status_append (urlstart);
+                self->status_append ("\n ");
+                self->msg = soup_message_new ("GET", urlstart);
+                g_free (urlstart);
+                GInputStream *istream = soup_session_send (self->session, self->msg, NULL, &self->error);
 
                 if (self->error != NULL) {
                         g_warning (self->error->message);
-                        self->status_append ("ERROR:\n");
                         self->status_append (self->error->message);
-                        self->status_append ("\n");
+                        self->status_append ("\n ");
+                        return;
                 } else {
-                        g_message ("Connection closed.");
+                        gchar *buffer = g_new0 (gchar, 100);
+                        gssize num = g_input_stream_read (istream,
+                                                          (void *)buffer,
+                                                          100,
+                                                          NULL,
+                                                          &self->error);   
+                        if (self->error != NULL) {
+                                g_warning (self->error->message);
+                                self->status_append (self->error->message);
+                                self->status_append ("\n ");
+                                g_free (buffer);
+                                return;
+                        } else {
+                                self->status_append ("Response: ");
+                                self->status_append (buffer);
+                                self->status_append ("\n ");
+                        }
+                        g_free (buffer);
                 }
+
+                // then connect to NGNIX WebSocket on RP
+                self->status_append ("2. Connecting to NGNIX RedPitaya PACPLL WebSocket...\n");
+                gchar *url = g_strdup_printf ("ws://%s:%u", gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)), self->port);
+                self->status_append (url);
+                self->status_append ("\n");
+                g_message ("Connecting to: %s", url);
+                
+                self->msg = soup_message_new ("GET", url);
+                g_free (url);
+                g_message ("soup_message_new - OK");
+                soup_session_websocket_connect_async (self->session, self->msg, // SoupSession *session, SoupMessage *msg,
+                                                      NULL, NULL, // const char *origin, char **protocols,
+                                                      NULL, Inet_Json_External_Scandata::got_client_connection, self); // GCancellable *cancellable, GAsyncReadyCallback callback, gpointer user_data
+                g_message ("soup_session_websocket_connect_async - OK");
+        } else {
+                // tear down connection
+                self->status_append ("Dissconnecting...\n ");
+
+                //g_clear_object (&self->listener);
+                g_clear_object (&self->client);
+                g_clear_error (&self->client_error);
+                g_clear_error (&self->error);
         }
 }
 
-void Inet_Json_External_Scandata::read_cb (GtkWidget *widget, Inet_Json_External_Scandata *self){
-        GInputStream * istream = g_io_stream_get_input_stream (G_IO_STREAM (self->connection));
-        gchar buffer[4096]; for (int i=0; i<4096; ++i) buffer[i]=0;
-        gssize num = g_input_stream_read (istream,
-                                          (void *)buffer,
-                                          100,
-                                          NULL,
-                                          &self->error);   
-        if (self->error != NULL) {
-                g_warning (self->error->message);
-                self->status_append (self->error->message);
+void Inet_Json_External_Scandata::got_client_connection (GObject *object, GAsyncResult *result, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+        g_message ("got_client_connection");
+
+	self->client = soup_session_websocket_connect_finish (SOUP_SESSION (object), result, &self->client_error);
+        if (self->client_error != NULL) {
+                self->status_append ("Connection failed: ");
+                self->status_append (self->client_error->message);
+                self->status_append ("\n");
+                g_message (self->client_error->message);
         } else {
-                self->status_append (buffer);  
+                self->status_append ("RedPitaya WebSocket Connected!\n ");
+		g_signal_connect(self->client, "closed",  G_CALLBACK(Inet_Json_External_Scandata::on_closed),  self);
+		g_signal_connect(self->client, "message", G_CALLBACK(Inet_Json_External_Scandata::on_message), self);
+		//g_signal_connect(connection, "closing", G_CALLBACK(on_closing_send_message), message);
+                //self->JSON_raw_input_stream = soup_websocket_connection_get_io_stream (self->client);
         }
 }
+
+void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
+                                             SoupWebsocketDataType type,
+                                             GBytes *message,
+                                             gpointer user_data)
+{
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+	gconstpointer contents;
+	gsize len;
+        gchar *tmp;
+        
+        self->status_append ("WebSocket message received.\n");
+        g_message ("WebSocket message received.\n");
+        
+	if (type == SOUP_WEBSOCKET_DATA_TEXT) {
+		contents = g_bytes_get_data (message, &len);
+		self->status_append ("WEBSOCKET_DATA_TEXT\n");
+		self->status_append ((gchar*)contents);
+		self->status_append ("\n");
+                g_message ((gchar*)contents);
+	} else if (type == SOUP_WEBSOCKET_DATA_BINARY) {
+		contents = g_bytes_get_data (message, &len);
+
+                tmp = g_strdup_printf ("NGNIX JSON ZBytes: %d\n", len);
+                g_message (tmp);
+                self->status_append (tmp);
+                g_free (tmp);
+
+#if 0
+                // dump to file
+                FILE *f;
+                f = fopen ("/tmp/gxsm-rp-json.gz","wb");
+                fwrite (contents, len, 1, f);
+                fclose (f);
+                // -----------
+                //$ pzahl@phenom:~$ zcat /tmp/gxsm-rp-json.gz 
+                //{"parameters":{"DC_OFFSET":{"value":-18.508743,"min":-1000,"max":1000,"access_mode":0,"fpga_update":0},"CPU_LOAD":{"value":5.660378,"min":0,"max":100,"access_mode":0,"fpga_update":0},"COUNTER":{"value":4,"min":0,"max":1000000000000,"access_mode":0,"fpga_update":0}}}pzahl@phenom:~$ 
+                //$ pzahl@phenom:~$ file /tmp/gxsm-rp-json.gz 
+                // /tmp/gxsm-rp-json.gz: gzip compressed data, max speed, from FAT filesystem (MS-DOS, OS/2, NT)
+                // GZIP:  zlib.MAX_WBITS|16
+#endif
+                self->status_append ("Uncompressing...\n");
+                gsize size=len*10+1000;
+                gchar *json_buffer = g_new0 (gchar, size);
+
+                // inflate buffer into json_buffer
+                z_stream zInfo ={0};
+                zInfo.total_in  = zInfo.avail_in  = len;
+                zInfo.total_out = zInfo.avail_out = size;
+                zInfo.next_in  = (Bytef*)contents;
+                zInfo.next_out = (Bytef*)json_buffer;
+      
+                int ret= -1;
+                ret = inflateInit2 (&zInfo, MAX_WBITS + 16);
+                if ( ret == Z_OK ) {
+                        ret = inflate( &zInfo, Z_FINISH );     // zlib function
+                        // inflate() returns
+                        // Z_OK if some progress has been made (more input processed or more output produced),
+                        // Z_STREAM_END if the end of the compressed data has been reached and all uncompressed output has been produced,
+                        // Z_NEED_DICT if a preset dictionary is needed at this point,
+                        // Z_DATA_ERROR if the input data was corrupted (input stream not conforming to the zlib format or incorrect check value, in which case strm->msg points to a string with a more specific error),
+                        // Z_STREAM_ERROR if the stream structure was inconsistent (for example next_in or next_out was Z_NULL, or the state was inadvertently written over by the application),
+                        // Z_MEM_ERROR if there was not enough memory,
+                        // Z_BUF_ERROR if no progress was possible or if there was not enough room in the output buffer when Z_FINISH is used. Note that Z_BUF_ERROR is not fatal, and inflate() can be called again with more input and more output space to continue decompressing. If
+                        // Z_DATA_ERROR is returned, the application may then call inflateSync() to look for a good compression block if a partial recovery of the data is to be attempted. 
+                        switch ( ret ){
+                        case Z_STREAM_END:
+                                tmp = g_strdup_printf ("Z_STREAM_END total = %d\n",zInfo.total_out); break;
+                        case Z_OK:
+                                tmp = g_strdup_printf ("Z_OK, total = %d\n",zInfo.total_out); break;
+                        case Z_NEED_DICT:
+                                tmp = g_strdup_printf ("Z_NEED_DICT, total = %d\n",zInfo.total_out); break;
+                        case Z_DATA_ERROR:
+                                self->status_append (zInfo.msg);
+                                tmp = g_strdup_printf ("\nZ_DATA_ERROR, total = %d\n",zInfo.total_out);
+                                break;
+                        case Z_STREAM_ERROR:
+                                tmp = g_strdup_printf ("Z_STREAM_ERROR, total = %d\n",zInfo.total_out); break;
+                        case Z_MEM_ERROR:
+                                tmp = g_strdup_printf ("Z_MEM_ERROR, total = %d\n",zInfo.total_out); break;
+                        case Z_BUF_ERROR:
+                                tmp = g_strdup_printf ("Z_BUF_ERROR, total = %d\n",zInfo.total_out); break;
+                        default:
+                                tmp = g_strdup_printf ("ERROR ?? inflate result = %d  [%d]\n",ret,zInfo.total_out); break;
+                        }
+                        self->status_append (tmp);
+                        g_free (tmp);
+                }
+                inflateEnd( &zInfo );   // zlib function
+                self->status_append (json_buffer);
+                self->status_append ("\n");
+                g_free (json_buffer);
+        }
+
+	g_bytes_unref (message);
+}
+
+void Inet_Json_External_Scandata::on_closed (SoupWebsocketConnection *ws, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+        self->status_append ("WebSocket connection externally closed.\n");
+}
+
+
+
+
 
 void Inet_Json_External_Scandata::write_cb (GtkWidget *widget, Inet_Json_External_Scandata *self){
-        GOutputStream * ostream = g_io_stream_get_output_stream (G_IO_STREAM (self->connection));
-        const gchar *buffer="Hello RedPitaya!";
-        g_output_stream_write  (ostream,
-                                (void*)buffer, /* your message goes here */
-                                strlen (buffer), /* length of your message */
-                                NULL,
-                                &self->error);
-        if (self->error != NULL) {
-                g_warning (self->error->message);
-                self->status_append (self->error->message);
-        }else {
-                self->status_append ("Write OK: '");  
-                self->status_append (buffer);  
-                self->status_append ("'\n");  
-        }
+        //soup_websocket_connection_send_text (self->client, "text");
+        //soup_websocket_connection_send_binary (self->client, gconstpointer data, gsize length);
 }
 
 
 void Inet_Json_External_Scandata::status_append (const gchar *msg){
 
 	GtkTextBuffer *console_buf;
-	GtkTextIter start_iter, end_iter;
 	GtkTextView *textview;
 	GString *output;
 	GtkTextMark *end_mark;
+        GtkTextIter start_iter, end_trim_iter, end_iter;
+        gint lines, max_lines=1000;
 
 	if (!msg) {
 		g_warning("No message to append");
@@ -405,6 +728,13 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 	gtk_text_buffer_set_text (console_buf, output->str, -1);
 	g_string_free (output, TRUE);
 
+        gtk_text_buffer_get_start_iter (console_buf, &start_iter);
+        lines = gtk_text_buffer_get_line_count (console_buf);
+        if (lines > max_lines){
+                gtk_text_buffer_get_iter_at_line_index (console_buf, &end_trim_iter, lines-max_lines, 0);
+                gtk_text_buffer_delete (console_buf,  &start_iter,  &end_trim_iter);
+        }
+        
 	// scroll to end
 	gtk_text_buffer_get_end_iter (console_buf, &end_iter);
 	end_mark = gtk_text_buffer_create_mark (console_buf, "cursor", &end_iter,
@@ -415,11 +745,3 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 	g_object_unref (end_mark);
 }
 
-
-// Menu Call Back Fkte
-#if 0
-/* stolen from app_remote.C */
-static void via_remote_list_Check_ec(Gtk_EntryControl* ec, remote_args* ra){
-	ec->CheckRemoteCmd (ra);
-};
-#endif
