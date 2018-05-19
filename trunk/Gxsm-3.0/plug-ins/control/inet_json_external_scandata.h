@@ -45,12 +45,17 @@ public:
 
 	GtkWidget *remote_param;
         static void connect_cb (GtkWidget *widget, Inet_Json_External_Scandata *self);
-
-        static void read_cb (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void got_client_connection (GObject *object, GAsyncResult *result, gpointer user_data);
+        static void on_message(SoupWebsocketConnection *ws,
+                               SoupWebsocketDataType type,
+                               GBytes *message,
+                               gpointer user_data);
+        static void on_closed (SoupWebsocketConnection *ws, gpointer user_data);
+        
         static void write_cb (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
         void status_append (const gchar *msg);
-      
+        
 private:
         BuildParam *bp;
 
@@ -61,11 +66,19 @@ private:
 	
 	GSList*   SPMC_RemoteEntryList;
 
-
         /* Socket Connection */
-        GSocketConnection *connection;
-        GSocketClient *client;
-        GError *error;
+	GSocket *listener;
+	gushort port;
+
+	SoupSession *session;
+	SoupMessage *msg;
+	SoupWebsocketConnection *client;
+        GIOStream *JSON_raw_input_stream;
+	GError *client_error;
+	GError *error;
+
+
+	GMutex mutex;
 
 public:
 };
