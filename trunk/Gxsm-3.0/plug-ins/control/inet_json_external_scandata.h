@@ -751,8 +751,8 @@ private:
         GtkWidget *text_status;
 
         gint debug_level; 
-        UnitObj *Unity; // Unit "1"
-	
+        UnitObj *Unity, *Hz, *Deg, *VoltDeg, *Volt, *VoltHz, *dB, *mVolt, *Time, *uTime;
+
 	GSList*   SPMC_RemoteEntryList;
 
         /* Socket Connection */
