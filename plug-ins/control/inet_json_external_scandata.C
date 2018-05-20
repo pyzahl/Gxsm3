@@ -228,6 +228,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	GSList **RemoteEntryList = new GSList *;
 	*RemoteEntryList = NULL;
 
+        debug_level = 1;
         input_rpaddress = NULL;
         text_status = NULL;
 
@@ -262,8 +263,14 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "130.199.243.200");
         gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "192.168.1.10");
         
-        tmp =bp->grid_add_check_button ( N_("Connect"), "Check to initiate connection, uncheck to close connection.", 1,
-                                         G_CALLBACK (Inet_Json_External_Scandata::connect_cb), this);
+        bp->grid_add_check_button ( N_("Connect"), "Check to initiate connection, uncheck to close connection.", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::connect_cb), this);
+        bp->grid_add_check_button ( N_("Debug"), "Enable debugging LV1.", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::dbg_l1), this);
+        bp->grid_add_check_button ( N_("+"), "Debug LV2", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::dbg_l2), this);
+        bp->grid_add_check_button ( N_("++"), "Debug LV4", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::dbg_l4), this);
         
         bp->new_line ();
         //tmp=bp->grid_add_button ( N_("Read"), "TEST READ", 1,
@@ -307,197 +314,29 @@ void Inet_Json_External_Scandata::update(){
 				(GFunc) App::update_ec, NULL);
 }
 
-#if 0 // JavaScript Client Code
-
-    APP.startApp = function() {
-
-    // App configuration
-    APP.config = {};
-    APP.config.app_id = 'pacpll';
-    APP.config.app_url = '/bazaar?start=' + APP.config.app_id + '?' + location.search.substr(1);
-    APP.config.socket_url = 'ws://' + window.location.hostname + ':9002';
-
-        $.get(APP.config.app_url)
-            .done(function(dresult) {
-                if (dresult.status == 'OK') {
-                    APP.connectWebSocket();
-                } else if (dresult.status == 'ERROR') {
-                    console.log(dresult.reason ? dresult.reason : 'Could not start the application (ERR1)');
-                    APP.startApp();
-                } else {
-                    console.log('Could not start the application (ERR2)');
-                    APP.startApp();
-                }
-            })
-            .fail(function() {
-                console.log('Could not start the application (ERR3)');
-                APP.startApp();
-            });
-    };
-
-
-
-    APP.connectWebSocket = function() {
-
-        //Create WebSocket
-        if (window.WebSocket) {
-            APP.ws = new WebSocket(APP.config.socket_url);
-            APP.ws.binaryType = "arraybuffer";
-        } else if (window.MozWebSocket) {
-            APP.ws = new MozWebSocket(APP.config.socket_url);
-            APP.ws.binaryType = "arraybuffer";
-        } else {
-            console.log('Browser does not support WebSocket');
-        }
-
-
-        // Define WebSocket event listeners
-        if (APP.ws) {
-
-            APP.ws.onopen = function() {
-                $('#hello_message').text("GXSM3 Red Pitaya PACPLL Webinterface");
-                console.log('Socket opened');   
-		
-		APP.params.local = {};
-                setTimeout(APP.loadParams, 20);
-
-                // Set initial parameters
-		// NOTE: server is crashing/aborting if any paramert is out of range, JSON names do not match, invaling vars assigned, invalid HTML id's, etc. etc.!!!
-                APP.setPactau();
-                APP.setFrequency();
-                APP.setVolume();
-                APP.setOperation();
-                APP.setPACVerbose();
-
-		APP.setTransportDecimation();
-		APP.setTransportMode();
-		APP.setTransportCh3();
-		APP.setTransportCh4();
-		APP.setTransportCh5();
-                APP.setGain1();
-                APP.setGain2();
-                APP.setGain3();
-                APP.setGain4();
-                APP.setGain5();
-		APP.setShrCh1();
-		APP.setShrCh2();
-
-		console.log('WS open, send init params done.');
-            };
-
-            APP.ws.onclose = function() {
-                console.log('Socket closed');
-            };
-
-            APP.ws.onerror = function(ev) {
-                $('#hello_message').text("Connection error");
-                console.log('Websocket error: ', ev);         
-            };
-
-            APP.ws.onmessage = function(ev) {
-                //console.log('Message recieved');
-
-                //Capture signals
-                if (APP.processing) {
-                    return;
-                }
-                APP.processing = true;
-
-                try {
-                    var data = new Uint8Array(ev.data);
-		    APP.compressed_data += data.length;
-                    var inflate = pako.inflate(data);
-                    var text = String.fromCharCode.apply(null, new Uint8Array(inflate));
-		    APP.decompressed_data += text.length;
-                    var receive = JSON.parse(text);
-
-                    if (receive.parameters) {
-			//console.log ("**ws received parameters");
-			//console.log (receive.parameters);
-
-                        APP.parameterStack.push (receive.parameters);
-                        if ((Object.keys(APP.params.orig).length == 0) && (Object.keys(receive.parameters).length == 0)) {
-                            APP.params.local['in_command'] = { value: 'send_all_params' };
-                            APP.ws.send(JSON.stringify({ parameters: APP.params.local }));
-                            APP.params.local = {};
-                        } else {
-                            APP.parameterStack.push(receive.parameters);
-                        }
-                    }
-
-                    if (receive.signals) {
-                        APP.signalStack.push(receive.signals);
-                    }
-                    APP.processing = false;
-                } catch (e) {
-                    APP.processing = false;
-                    console.log(e);
-                } finally {
-                    APP.processing = false;
-                }
-            };
-        }
-    };
-#endif
-
-#if 0
-client_connect (Test *test,
-		const char *origin, // NULL
-		const char **protocols, // NULL
-		GAsyncReadyCallback callback, // got_client_connection
-		gpointer user_data)
-{
-	char *url;
-
-	if (!test->session)
-		test->session = soup_test_session_new (SOUP_TYPE_SESSION, NULL);
-
-	url = g_strdup_printf ("ws://127.0.0.1:%u/unix", test->port);
-	test->msg = soup_message_new ("GET", url);
-	g_free (url);
-
-	soup_session_websocket_connect_async (test->session, test->msg,
-					      origin, (char **) protocols,
-					      NULL, callback, user_data);
+void Inet_Json_External_Scandata::dbg_l1 (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                self->debug_level |= 1;
+        else
+                self->debug_level &= ~1;
 }
-static void
-got_client_connection (GObject *object,
-		       GAsyncResult *result,
-		       gpointer user_data)
-{
-	Test *test = user_data;
-
-	test->client = soup_session_websocket_connect_finish (SOUP_SESSION (object),
-							      result, &test->client_error);
+void Inet_Json_External_Scandata::dbg_l2 (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                self->debug_level |= 2;
+        else
+                self->debug_level &= ~2;
 }
-static void
-test_send_client_to_server (Test *test,
-                            gconstpointer data)
-{
-	GBytes *received = NULL;
-	const char *contents;
-	gsize len;
-
-	g_signal_connect (test->server, "message", G_CALLBACK (on_text_message), &received);
-
-	soup_websocket_connection_send_text (test->client, TEST_STRING);
-
-	WAIT_UNTIL (received != NULL);
-
-	/* Received messages should be null terminated (outside of len) */
-	contents = g_bytes_get_data (received, &len);
-	g_assert_cmpstr (contents, ==, TEST_STRING);
-	g_assert_cmpint (len, ==, strlen (TEST_STRING));
-
-	g_bytes_unref (received);
+void Inet_Json_External_Scandata::dbg_l4 (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                self->debug_level |= 4;
+        else
+                self->debug_level &= ~4;
 }
-#endif
 
 void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_External_Scandata *self){
         if (!self->text_status) return;
         if (!self->input_rpaddress) return;
-        g_message (gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)));
-
+        self->debug_log (gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)));
 
         // App configuration
         // APP.config.app_id = 'pacpll';
@@ -599,8 +438,7 @@ void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
 	gsize len;
         gchar *tmp;
         
-        self->status_append ("WebSocket message received.\n");
-        g_message ("WebSocket message received.\n");
+        self->debug_log ("WebSocket message received.");
         
 	if (type == SOUP_WEBSOCKET_DATA_TEXT) {
 		contents = g_bytes_get_data (message, &len);
@@ -611,9 +449,8 @@ void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
 	} else if (type == SOUP_WEBSOCKET_DATA_BINARY) {
 		contents = g_bytes_get_data (message, &len);
 
-                tmp = g_strdup_printf ("NGNIX JSON ZBytes: %d\n", len);
-                g_message (tmp);
-                self->status_append (tmp);
+                tmp = g_strdup_printf ("WEBSOCKET_DATA_BINARY NGNIX JSON ZBytes: %d", len);
+                self->debug_log (tmp);
                 g_free (tmp);
 
 #if 0
@@ -629,8 +466,8 @@ void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
                 // /tmp/gxsm-rp-json.gz: gzip compressed data, max speed, from FAT filesystem (MS-DOS, OS/2, NT)
                 // GZIP:  zlib.MAX_WBITS|16
 #endif
-                self->status_append ("Uncompressing...\n");
-                gsize size=len*10+1000;
+                self->debug_log ("Uncompressing...");
+                gsize size=len*100+1000;
                 gchar *json_buffer = g_new0 (gchar, size);
 
                 // inflate buffer into json_buffer
@@ -655,30 +492,38 @@ void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
                         // Z_DATA_ERROR is returned, the application may then call inflateSync() to look for a good compression block if a partial recovery of the data is to be attempted. 
                         switch ( ret ){
                         case Z_STREAM_END:
-                                tmp = g_strdup_printf ("Z_STREAM_END total = %d\n",zInfo.total_out); break;
+                                tmp = NULL;
+                                if (self->debug_level > 2)
+                                        tmp = g_strdup_printf ("Z_STREAM_END out = %d, in = %d, ratio=%g\n",zInfo.total_out, zInfo.total_in, (double)zInfo.total_out / (double)zInfo.total_in);
+                                break;
                         case Z_OK:
-                                tmp = g_strdup_printf ("Z_OK, total = %d\n",zInfo.total_out); break;
+                                tmp = g_strdup_printf ("Z_OK out = %d, in = %d\n",zInfo.total_out, zInfo.total_in); break;
                         case Z_NEED_DICT:
-                                tmp = g_strdup_printf ("Z_NEED_DICT, total = %d\n",zInfo.total_out); break;
+                                tmp = g_strdup_printf ("Z_NEED_DICT out = %d, in = %d\n",zInfo.total_out, zInfo.total_in); break;
                         case Z_DATA_ERROR:
                                 self->status_append (zInfo.msg);
-                                tmp = g_strdup_printf ("\nZ_DATA_ERROR, total = %d\n",zInfo.total_out);
+                                tmp = g_strdup_printf ("\nZ_DATA_ERROR out = %d, in = %d\n",zInfo.total_out, zInfo.total_in); break; 
                                 break;
                         case Z_STREAM_ERROR:
-                                tmp = g_strdup_printf ("Z_STREAM_ERROR, total = %d\n",zInfo.total_out); break;
+                                tmp = g_strdup_printf ("Z_STREAM_ERROR out = %d\n",zInfo.total_out); break;
                         case Z_MEM_ERROR:
-                                tmp = g_strdup_printf ("Z_MEM_ERROR, total = %d\n",zInfo.total_out); break;
+                                tmp = g_strdup_printf ("Z_MEM_ERROR out = %d, in = %d\n",zInfo.total_out, zInfo.total_in); break;
                         case Z_BUF_ERROR:
-                                tmp = g_strdup_printf ("Z_BUF_ERROR, total = %d\n",zInfo.total_out); break;
+                                tmp = g_strdup_printf ("Z_BUF_ERROR out = %d, in = %d  ratio=%g\n",zInfo.total_out, zInfo.total_in, (double)zInfo.total_out / (double)zInfo.total_in); break;
                         default:
-                                tmp = g_strdup_printf ("ERROR ?? inflate result = %d  [%d]\n",ret,zInfo.total_out); break;
+                                tmp = g_strdup_printf ("ERROR ?? inflate result = %d,  out = %d, in = %d\n",ret,zInfo.total_out, zInfo.total_in); break;
                         }
                         self->status_append (tmp);
                         g_free (tmp);
                 }
                 inflateEnd( &zInfo );   // zlib function
-                self->status_append (json_buffer);
-                self->status_append ("\n");
+                if (self->debug_level > 0){
+                        self->status_append (json_buffer);
+                        self->status_append ("\n");
+                }
+
+                self->json_parse_message (json_buffer);
+
                 g_free (json_buffer);
         }
 
@@ -690,6 +535,37 @@ void Inet_Json_External_Scandata::on_closed (SoupWebsocketConnection *ws, gpoint
         self->status_append ("WebSocket connection externally closed.\n");
 }
 
+void Inet_Json_External_Scandata::json_parse_message (const char *json_string){
+        jsmn_parser p;
+        jsmntok_t tok[5000]; /* We expect no more than 5000 tokens, signal array is 1024 */
+
+        // typial data messages:
+        // {"signals":{"SIGNAL_CH3":{"size":1024,"value":[0,0,...,0.543632,0.550415]},"SIGNAL_CH4":{"size":1024,"value":[0,0,... ,-94.156487]},"SIGNAL_CH5":{"size":1024,"value":[0,0,.. ,-91.376022,-94.156487]}}}
+        // {"parameters":{"DC_OFFSET":{"value":-18.591045,"min":-1000,"max":1000,"access_mode":0,"fpga_update":0},"COUNTER":{"value":2.4,"min":0,"max":1000000000000,"access_mode":0,"fpga_update":0}}}
+
+        jsmn_init(&p);
+        int ret = jsmn_parse(&p, json_string, strlen(json_string), tok, sizeof(tok)/sizeof(tok[0]));
+        if (ret < 0) {
+                g_warning ("JSON PARSER:  Failed to parse JSON: %d\n", ret);
+                return;
+        }
+        /* Assume the top-level element is an object */
+        if (ret < 1 || tok[0].type != JSMN_OBJECT) {
+                g_warning("JSON PARSER:  Object expected\n");
+                return;
+        }
+
+#if 0
+        json_dump (json_string, tok, p.toknext, 0);
+#endif
+#if 1
+        json_fetch (json_string, tok, p.toknext, 0);
+        dump_parameters ();
+#endif
+
+
+
+}
 
 
 
@@ -697,6 +573,9 @@ void Inet_Json_External_Scandata::on_closed (SoupWebsocketConnection *ws, gpoint
 void Inet_Json_External_Scandata::write_cb (GtkWidget *widget, Inet_Json_External_Scandata *self){
         //soup_websocket_connection_send_text (self->client, "text");
         //soup_websocket_connection_send_binary (self->client, gconstpointer data, gsize length);
+
+        soup_websocket_connection_send_text (self->client, "{ \"parameters\":{\"GAIN1\":{\"value\":200.0}}}");
+        
 }
 
 
@@ -707,10 +586,11 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 	GString *output;
 	GtkTextMark *end_mark;
         GtkTextIter start_iter, end_trim_iter, end_iter;
-        gint lines, max_lines=1000;
+        gint lines, max_lines=20*debug_level;
 
 	if (!msg) {
-		g_warning("No message to append");
+		if (debug_level > 4)
+                        g_warning("No message to append");
 		return;
 	}
 

@@ -21,7 +21,7 @@ libspm_scancontrol_la_LDFLAGS = -module -export-dynamic -avoid-version
 libspm_scancontrol_la_SOURCES = spm_scancontrol.C
 
 libinet_json_external_scandata_la_LDFLAGS = -module -export-dynamic -avoid-version
-libinet_json_external_scandata_la_SOURCES = inet_json_external_scandata.C
+libinet_json_external_scandata_la_SOURCES = inet_json_external_scandata.C jsmn.c jsmn.h
 
 libmultidim_movie_control_la_LDFLAGS = -module -export-dynamic -avoid-version
 libmultidim_movie_control_la_SOURCES = multidim_movie_control.C
