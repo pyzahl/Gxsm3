@@ -246,6 +246,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	PI_DEBUG (DBG_L2, "inet_json_external_scandata Plugin : building interface" );
 
 	Unity    = new UnitObj(" "," ");
+	Hz       = new UnitObj("Hz","Hz");
+	Deg      = new UnitObj(UTF8_DEGREE,"deg");
+	VoltDeg  = new UnitObj("V/" UTF8_DEGREE, "V/deg");
+	Volt     = new UnitObj("V","V");
+	VoltHz   = new UnitObj("mV/Hz","mV/Hz");
+	dB       = new UnitObj("dB","dB");
+	mVolt    = new UnitObj("mV","mV");
+	Time     = new UnitObj("s","s");
+	uTime    = new LinUnit(UTF8_MU "s", "us", "Time", 1e-6);
 
         // Window Title
 	AppWindowInit("Inet JSON External Scan Data Control for RP");
@@ -253,6 +262,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp = new BuildParam (v_grid);
         bp->set_no_spin (true);
         //bp->set_default_ec_change_notice_fkt (VObject::ec_properties_changed, this);
+
+        bp->new_grid_with_frame ("RedPitaya PACPLL");
+
+  	bp->grid_add_ec ("Tau PAC", Time, &pacpll_parameters.pactau, 0.0, 63.0, "g", 0.1, 1., "tau");
+	//bp->set_ec_change_notice_fkt (DSPPACControl::Changed_TauPAC, this);
+	//gtk_widget_set_tooltip_text (pac_bp->input, "Tau PAC");
+      
+        bp->pop_grid ();
+        bp->new_line ();
 
         bp->new_grid_with_frame ("RedPitaya Web Socket Address for JSON talk");
 
@@ -305,7 +323,16 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 }
 
 Inet_Json_External_Scandata::~Inet_Json_External_Scandata (){
-       	delete Unity;
+	delete uTime;
+	delete Time;
+	delete mVolt;
+	delete dB;
+	delete VoltHz;
+	delete Volt;
+	delete VoltDeg;
+	delete Deg;
+	delete Hz;
+	delete Unity;
 }
 
 void Inet_Json_External_Scandata::update(){
@@ -338,11 +365,6 @@ void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_Exter
         if (!self->input_rpaddress) return;
         self->debug_log (gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)));
 
-        // App configuration
-        // APP.config.app_id = 'pacpll';
-        // APP.config.app_url = '/bazaar?start=' + APP.config.app_id + '?' + location.search.substr(1);
-        // APP.config.socket_url = 'ws://' + window.location.hostname + ':9002';
-        
         if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))){
                 self->status_append ("Connecting to RedPitaya...\n");
 

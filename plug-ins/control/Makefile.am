@@ -74,7 +74,9 @@ libmultidim_movie_control_la_SOURCES = multidim_movie_control.C
 
 # gsettings_SCHEMAS is a list of all the schemas you want to install
 gsettings_SCHEMAS = \
-	org.gnome.gxsm3.pcs.plugin-libspm-scancontrol.gschema.xml
+	org.gnome.gxsm3.pcs.plugin-libspm-scancontrol.gschema.xml \
+	org.gnome.gxsm3.pcsadjustments.plugin-libinet-json-external-scandata.gschema.xml \
+	org.gnome.gxsm3.pcs.plugin-libinet-json-external-scandata.gschema.xml
 
 # include the appropriate makefile rules for schema handling
 @GSETTINGS_RULES@

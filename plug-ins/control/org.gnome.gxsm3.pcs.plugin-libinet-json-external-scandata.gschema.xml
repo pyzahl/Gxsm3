@@ -1,0 +1,12 @@
+<schemalist>
+  <schema id="org.gnome.gxsm3.pcs.plugin-libinet-json-external-scandata" path="/org/gnome/gxsm3/pcs/plugin-libinet-json-external-scandata/">
+
+    <key name="tau" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'tau', Default/U: 0 s     </summary>
+      <description>pcs0000, PCS Remote-ID: 'tau', Default/U: 0 s    , Adjustment PCS Name: 'tau' </description>
+    </key>
+  </schema>
+
+</schemalist>
+
