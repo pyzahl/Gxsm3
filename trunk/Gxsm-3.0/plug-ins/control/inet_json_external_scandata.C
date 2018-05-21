@@ -234,6 +234,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         input_rpaddress = NULL;
         text_status = NULL;
 
+        ch_freq = -1;
+        ch_ampl = -1;
+
         block_message = 0;
         
         /* create a new connection, init */
@@ -560,6 +563,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	g_object_set_data( G_OBJECT (window), "PAC_EC_READINGS_list", EC_R_list);
 
         set_window_geometry ("inet-json-rp-control"); // needs rescoure entry and defines window menu entry as geometry is managed
+
+        // hookup to scan start and stop
+        inet_json_external_scandata_pi.app->ConnectPluginToStartScanEvent (Inet_Json_External_Scandata::scan_start_callback);
+        inet_json_external_scandata_pi.app->ConnectPluginToStopScanEvent (Inet_Json_External_Scandata::scan_stop_callback);
 }
 
 Inet_Json_External_Scandata::~Inet_Json_External_Scandata (){
@@ -574,6 +581,89 @@ Inet_Json_External_Scandata::~Inet_Json_External_Scandata (){
 	delete Hz;
 	delete Unity;
 }
+
+void Inet_Json_External_Scandata::scan_start_callback (gpointer user_data){
+        //Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+        Inet_Json_External_Scandata *self = inet_json_external_scandata;
+        self->ch_freq = -1;
+        self->ch_ampl = -1;
+        g_message ("Inet_Json_External_Scandata::scan_start_callback");
+        if ((self->ch_freq=gapp->xsm->FindChan(xsmres.extchno[0])) >= 0)
+                self->setup_scan (self->ch_freq, "X+", "Ext1-Freq", "Hz", "Freq", 1.0);
+        if ((self->ch_ampl=gapp->xsm->FindChan(xsmres.extchno[1])) >= 0)
+                self->setup_scan (self->ch_ampl, "X+", "Ext1-Ampl", "V", "Ampl", 1.0);
+}
+
+void Inet_Json_External_Scandata::scan_stop_callback (gpointer user_data){
+        //Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+        Inet_Json_External_Scandata *self = inet_json_external_scandata;
+        self->ch_freq = -1;
+        self->ch_ampl = -1;
+        g_message ("Inet_Json_External_Scandata::scan_stop_callback");
+}
+
+int Inet_Json_External_Scandata::setup_scan (int ch, 
+				 const gchar *titleprefix, 
+				 const gchar *name,
+				 const gchar *unit,
+				 const gchar *label,
+				 double d2u
+	){
+	// did this scan already exists?
+	if ( ! gapp->xsm->scan[ch]){ // make a new one ?
+		gapp->xsm->scan[ch] = gapp->xsm->NewScan (gapp->xsm->ChannelView[ch], 
+							  gapp->xsm->data.display.ViewFlg, 
+							  ch, 
+							  &gapp->xsm->data);
+		// Error ?
+		if (!gapp->xsm->scan[ch]){
+			XSM_SHOW_ALERT (ERR_SORRY, ERR_NOMEM,"",1);
+			return FALSE;
+		}
+	}
+
+
+	Mem2d *m=gapp->xsm->scan[ch]->mem2d;
+        m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_DOUBLE, false); // multilayerinfo=clean
+	
+	// Setup correct Z unit
+	UnitObj *u = gapp->xsm->MakeUnit (unit, label);
+	gapp->xsm->scan[ch]->data.SetZUnit (u);
+	delete u;
+		
+        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan ());
+
+	// setup dz from instrument definition or propagated via signal definition
+	if (fabs (d2u) > 0.)
+		gapp->xsm->scan[ch]->data.s.dz = d2u;
+	else
+		gapp->xsm->scan[ch]->data.s.dz = gapp->xsm->Inst->ZResolution (unit);
+	
+	// set scan title, name, ... and draw it!
+
+	gchar *scantitle = NULL;
+	if (!gapp->xsm->GetMasterScan ()){
+		gapp->xsm->SetMasterScan (gapp->xsm->scan[ch]);
+		scantitle = g_strdup_printf ("M %s %s", titleprefix, name);
+	} else {
+		scantitle = g_strdup_printf ("%s %s", titleprefix, name);
+	}
+	gapp->xsm->scan[ch]->data.ui.SetName (scantitle);
+	gapp->xsm->scan[ch]->data.ui.SetOriginalName ("unknown");
+	gapp->xsm->scan[ch]->data.ui.SetTitle (scantitle);
+	gapp->xsm->scan[ch]->data.ui.SetType (scantitle);
+	gapp->xsm->scan[ch]->data.s.xdir = strchr (titleprefix, '-') ? -1.:1.;
+	gapp->xsm->scan[ch]->data.s.ydir = gapp->xsm->data.s.ydir;
+
+	PI_DEBUG (DBG_L2, "setup_scan[" << ch << " ]: scantitle done: " << gapp->xsm->scan[ch]->data.ui.type ); 
+
+	g_free (scantitle);
+	gapp->xsm->scan[ch]->draw ();
+
+	return 0;
+}
+
+
 
 void Inet_Json_External_Scandata::parameter_changed (Param_Control* pcs, gpointer user_data){
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
@@ -915,9 +1005,8 @@ void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
                 g_free (json_buffer);
                 
                 self->update_monitoring_parameters();
-
-                if (self->run_scope)
-                        self->update_graph ();
+                self->update_graph ();
+                self->stream_data ();
         }
 
 	g_bytes_unref (message);
@@ -1030,58 +1119,68 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 	g_object_unref (end_mark);
 }
 
+void Inet_Json_External_Scandata::stream_data (){
+        if (ch_freq >= 0){
+        }
+        if (ch_ampl >= 0){
+        }
+}
 
 void Inet_Json_External_Scandata::update_graph (){
         int n=1024;
         int h=256;
+        if (!run_scope)
+                h=2;
         double xs = 0.5;
         double yr = h/2;
         cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, n/2, h);
         cairo_t *cr = cairo_create (surface);
-        cairo_translate (cr, 0., yr);
-        cairo_scale (cr, 1., 1.);
-        cairo_save (cr);
-        cairo_item_rectangle *paper = new cairo_item_rectangle (0., -128., 512., 128.);
-        paper->set_line_width (0.2);
-        paper->set_stroke_rgba (CAIRO_COLOR_GREY1);
-        paper->set_fill_rgba (CAIRO_COLOR_BLACK);
-        paper->draw (cr);
-        delete paper;
+        if (run_scope){
+                cairo_translate (cr, 0., yr);
+                cairo_scale (cr, 1., 1.);
+                cairo_save (cr);
+                cairo_item_rectangle *paper = new cairo_item_rectangle (0., -128., 512., 128.);
+                paper->set_line_width (0.2);
+                paper->set_stroke_rgba (CAIRO_COLOR_GREY1);
+                paper->set_fill_rgba (CAIRO_COLOR_BLACK);
+                paper->draw (cr);
+                delete paper;
 
-        double avg=0.;
-        char *valuestring;
-        cairo_item_text *reading = new cairo_item_text ();
-        reading->set_font_face_size ("Ununtu", 12.);
-        reading->set_anchor (CAIRO_ANCHOR_W);
-        cairo_item_path *wave = new cairo_item_path (n);
-        wave->set_line_width (1.0);
-        CAIRO_BASIC_COLOR_IDS color[] = { CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_CYAN_ID, CAIRO_COLOR_YELLOW_ID, CAIRO_COLOR_BLUE_ID };
-        double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5 };
-        double min,max,s;
-        for (int ch=0; ch<5; ++ch){
-                wave->set_stroke_rgba (BasicColors[color[ch]]);
-                min=max=signal[ch][512];
-                for (int k=0; k<n; ++k){
-                        s=signal[ch][k];
-                        if (s>max) max=s;
-                        if (s<min) min=s;
-                        wave->set_xy_fast (k,xs*k,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s/100.);
+                double avg=0.;
+                char *valuestring;
+                cairo_item_text *reading = new cairo_item_text ();
+                reading->set_font_face_size ("Ununtu", 12.);
+                reading->set_anchor (CAIRO_ANCHOR_W);
+                cairo_item_path *wave = new cairo_item_path (n);
+                wave->set_line_width (1.0);
+                CAIRO_BASIC_COLOR_IDS color[] = { CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_CYAN_ID, CAIRO_COLOR_YELLOW_ID, CAIRO_COLOR_BLUE_ID };
+                double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5 };
+                double min,max,s;
+                for (int ch=0; ch<5; ++ch){
+                        wave->set_stroke_rgba (BasicColors[color[ch]]);
+                        min=max=signal[ch][512];
+                        for (int k=0; k<n; ++k){
+                                s=signal[ch][k];
+                                if (s>max) max=s;
+                                if (s<min) min=s;
+                                wave->set_xy_fast (k,xs*k,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s/100.);
+                        }
+                        if (gain_scale[ch] < 0.)
+                                gain_scale[ch] = 100. / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
+                        wave->draw (cr);
+
+                        for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg /= 100.;
+                        valuestring = g_strdup_printf ("Ch%d %12.5f [x %g]", ch+1, avg/100., gain_scale[ch]);
+                        reading->set_stroke_rgba (BasicColors[color[ch]]);
+                        reading->set_text (10, -(110-14*ch), valuestring);
+                        g_free (valuestring);
+                        reading->draw (cr);
                 }
-                if (gain_scale[ch] < 0.)
-                        gain_scale[ch] = 100. / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
-                wave->draw (cr);
-
-                for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg /= 100.;
-                valuestring = g_strdup_printf ("Ch%d %12.5f [x %g]", ch+1, avg/100., gain_scale[ch]);
-                reading->set_stroke_rgba (BasicColors[color[ch]]);
-                reading->set_text (10, -(110-14*ch), valuestring);
-                g_free (valuestring);
-                reading->draw (cr);
+                delete wave;
+                delete reading;
         }
-        delete wave;
-        delete reading;
-
         cairo_destroy (cr);
         
         gtk_image_set_from_surface (GTK_IMAGE (signal_graph), surface);
+        //cairo_surface_finish (surface);
 }

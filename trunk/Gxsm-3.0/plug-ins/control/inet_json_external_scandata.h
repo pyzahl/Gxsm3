@@ -167,6 +167,15 @@ public:
 
         Inet_Json_External_Scandata(); // create window and setup it contents, connect buttons, register cb's...
 	virtual ~Inet_Json_External_Scandata(); // unregister cb's
+        int setup_scan (int ch, 
+                        const gchar *titleprefix, 
+                        const gchar *name,
+                        const gchar *unit,
+                        const gchar *label,
+                        double d2u
+                        );
+	static void scan_start_callback (gpointer user_data);
+	static void scan_stop_callback (gpointer user_data);
 
 	static void parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void amplitude_gain_changed (Param_Control* pcs, gpointer user_data);
@@ -190,6 +199,8 @@ public:
         void update_monitoring_parameters ();
 
         void update_graph ();
+
+        void stream_data ();
         
 	GtkWidget *remote_param;
         static void connect_cb (GtkWidget *widget, Inet_Json_External_Scandata *self);
@@ -350,6 +361,9 @@ public:
         };
         
 private:
+        int ch_freq;
+        int ch_ampl;
+
         PACPLL_parameters parameters;
         PACPLL_signals signals;
 

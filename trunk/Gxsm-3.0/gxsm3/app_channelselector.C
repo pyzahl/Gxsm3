@@ -239,9 +239,11 @@ ChannelSelector::ChannelSelector (int ChAnz){
 			//			std::cout << "Channelselector create: CH" << (l-1) << " DAQSRC[" << k << "]: " << xsmres.daqsrc[k] << std::endl;
 		}
 
-		for(j=0; choice_ChModeExternalData[j]; j++)
+		for(j=0; choice_ChModeExternalData[j]; j++){
                         gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), NULL, choice_ChModeExternalData[j]);
-                
+                        ++l;
+                        xsmres.extchno[j]=l;
+                }
 
                 g_signal_connect (G_OBJECT (wid), "changed",
                                   G_CALLBACK (ChannelSelector::choice_ChMode_callback),

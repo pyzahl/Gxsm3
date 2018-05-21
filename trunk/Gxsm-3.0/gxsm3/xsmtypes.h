@@ -150,6 +150,7 @@ typedef struct{
 	gchar daqZlabel[DAQCHMAX][CHLABELLEN];
 	double daqZd2u[DAQCHMAX];
 	int  daqdefault;
+	gchar extchno[4];
 	//
 	gchar *UnitCmd;
 	gchar Unit[8];
