@@ -463,6 +463,32 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
 	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
 
+        // Scop Auto Set Modes
+	wid = gtk_combo_box_text_new ();
+        g_signal_connect (G_OBJECT (wid), "changed",
+                          G_CALLBACK (Inet_Json_External_Scandata::choice_auto_set_callback),
+                          this);
+        bp->grid_add_widget (wid);
+
+	const gchar *auto_set_modes[] = {
+                "Auto Set CH1",
+                "Auto Set CH2",
+                "Auto Set CH3",
+                "Auto Set CH4",
+                "Auto Set CH5",
+                "Default All=0.1",
+                "Default All=1",
+                "Default All=10",
+                "Manual",
+                NULL };
+   
+	// Init choicelist
+	for(int i=0; auto_set_modes[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), auto_set_modes[i], auto_set_modes[i]);
+
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 6);
+
+        
         bp->new_line ();
 
         // GPIO monitor selections -- full set, experimental
@@ -587,6 +613,19 @@ void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, 
 
 void Inet_Json_External_Scandata::choice_transport_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->write_parameter ("TRANSPORT_MODE", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+}
+
+void Inet_Json_External_Scandata::choice_auto_set_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        int m=gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+        if (m>=0 && m<5)
+                self->gain_scale[m] = -1.; // recalculate
+        else {
+                m -= 5;
+                double s[] = { 0.1, 1.0, 10.0 };
+                if (m < 3) 
+                        for (int i=0; i<5; ++i)
+                                self->gain_scale[i] = s[m]; // Fixed
+        }
 }
 
 void Inet_Json_External_Scandata::choice_transport_ch3_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -1002,24 +1041,40 @@ void Inet_Json_External_Scandata::update_graph (){
         cairo_translate (cr, 0., yr);
         cairo_scale (cr, 1., 1.);
         cairo_save (cr);
+        cairo_item_rectangle *paper = new cairo_item_rectangle (0., -128., 512., 128.);
+        paper->set_line_width (0.2);
+        paper->set_stroke_rgba (CAIRO_COLOR_GREY1);
+        paper->set_fill_rgba (CAIRO_COLOR_BLACK);
+        paper->draw (cr);
+        delete paper;
 
         double avg=0.;
         char *valuestring;
         cairo_item_text *reading = new cairo_item_text ();
         reading->set_font_face_size ("Ununtu", 12.);
+        reading->set_anchor (CAIRO_ANCHOR_W);
         cairo_item_path *wave = new cairo_item_path (n);
         wave->set_line_width (1.0);
         CAIRO_BASIC_COLOR_IDS color[] = { CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_CYAN_ID, CAIRO_COLOR_YELLOW_ID, CAIRO_COLOR_BLUE_ID };
         double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5 };
+        double min,max,s;
         for (int ch=0; ch<5; ++ch){
                 wave->set_stroke_rgba (BasicColors[color[ch]]);
-                for (int k=0; k<n; ++k) wave->set_xy_fast (k,xs*k,-yr*signal[ch][k]/100.);
+                min=max=signal[ch][512];
+                for (int k=0; k<n; ++k){
+                        s=signal[ch][k];
+                        if (s>max) max=s;
+                        if (s<min) min=s;
+                        wave->set_xy_fast (k,xs*k,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s/100.);
+                }
+                if (gain_scale[ch] < 0.)
+                        gain_scale[ch] = 100. / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
                 wave->draw (cr);
 
                 for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg /= 100.;
-                valuestring = g_strdup_printf ("CH%d %12.5f", ch, avg*10.);
+                valuestring = g_strdup_printf ("Ch%d %12.5f [x %g]", ch+1, avg/100., gain_scale[ch]);
                 reading->set_stroke_rgba (BasicColors[color[ch]]);
-                reading->set_text (400, -(110-14*ch), valuestring);
+                reading->set_text (10, -(110-14*ch), valuestring);
                 g_free (valuestring);
                 reading->draw (cr);
         }
