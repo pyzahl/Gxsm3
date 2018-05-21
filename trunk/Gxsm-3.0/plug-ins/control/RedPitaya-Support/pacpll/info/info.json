@@ -1,0 +1,7 @@
+{
+    "name": "PACPLL",
+    "version": "0.00-00",
+    "revision": "000000",
+    "description": "Phase Amplitude Controller and PLL for Red Pitaya"
+}
+
