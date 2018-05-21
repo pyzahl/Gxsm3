@@ -223,15 +223,19 @@ static void inet_json_external_scandata_show_callback(GSimpleAction *simple, GVa
 Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 {
         GtkWidget *tmp;
+        GtkWidget *wid;
 	
 	GSList *EC_list=NULL;
 	GSList **RemoteEntryList = new GSList *;
 	*RemoteEntryList = NULL;
+	GSList *EC_R_list=NULL;
 
         debug_level = 1;
         input_rpaddress = NULL;
         text_status = NULL;
 
+        block_message = 0;
+        
         /* create a new connection, init */
 
 	listener=NULL;
@@ -250,32 +254,127 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	Deg      = new UnitObj(UTF8_DEGREE,"deg");
 	VoltDeg  = new UnitObj("V/" UTF8_DEGREE, "V/deg");
 	Volt     = new UnitObj("V","V");
+	mVolt     = new UnitObj("mV","mV");
 	VoltHz   = new UnitObj("mV/Hz","mV/Hz");
 	dB       = new UnitObj("dB","dB");
-	mVolt    = new UnitObj("mV","mV");
 	Time     = new UnitObj("s","s");
 	uTime    = new LinUnit(UTF8_MU "s", "us", "Time", 1e-6);
 
         // Window Title
-	AppWindowInit("Inet JSON External Scan Data Control for RP");
+	AppWindowInit("Inet JSON External Scan Data Control for High Speed RedPitaya PACPLL");
 
         bp = new BuildParam (v_grid);
         bp->set_no_spin (true);
-        //bp->set_default_ec_change_notice_fkt (VObject::ec_properties_changed, this);
 
-        bp->new_grid_with_frame ("RedPitaya PACPLL");
+        bp->set_pcs_remote_prefix ("rp-pacpll-");
 
-  	bp->grid_add_ec ("Tau PAC", Time, &pacpll_parameters.pactau, 0.0, 63.0, "g", 0.1, 1., "tau");
-	//bp->set_ec_change_notice_fkt (DSPPACControl::Changed_TauPAC, this);
-	//gtk_widget_set_tooltip_text (pac_bp->input, "Tau PAC");
-      
-        bp->pop_grid ();
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::parameter_changed, this);
+        bp->set_input_width_chars (16);
+
+        bp->new_grid_with_frame ("RedPitaya PAC Setup");
+        bp->grid_add_ec ("Reading", Hz, &parameters.dds_frequency_monitor, 0.0, 25e6, "g", 0.1, 1., "DDS-FREQ-MONITOR");
+        EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
+        bp->ec->Freeze ();
         bp->new_line ();
+        bp->grid_add_ec ("Offset", mVolt, &parameters.dc_offset, -1.0, 1.0, "g", 0.1, 1., "DC-OFFSET");
+        EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
+        bp->ec->Freeze ();
+        bp->new_line ();
+        parameters.pactau = 0.0002;
+        parameters.frequency = 32768.0;
+        parameters.volume = 0.1;
+  	bp->grid_add_ec ("Tau PAC", Time, &parameters.pactau, 0.0, 63.0, "g", 0.1, 1., "PACTAU");
+        bp->new_line ();
+        bp->set_no_spin (false);
+        bp->set_input_width_chars (10);
+  	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency, 0.0, 20e6, "g", 0.1, 100., "FREQUENCY");
+        bp->new_line ();
+  	bp->grid_add_ec ("Volume", Volt, &parameters.volume, 0.0, 1.0, "g", 0.01, 0.1, "VOLUME");
+        bp->new_line ();
+        bp->set_no_spin (true);
+        bp->set_input_width_chars (16);
+        parameters.tune_dfreq = 0.1;
+        parameters.tune_span = 50.0;
+  	bp->grid_add_ec ("Tune dFreq", Hz, &parameters.tune_dfreq, 1e-4, 1e3, "g", 0.01, 0.1, "TUNE-DFREQ");
+        bp->new_line ();
+  	bp->grid_add_ec ("Tune Span", Hz, &parameters.tune_span, 0.0, 1e6, "g", 0.1, 10., "TUNE-SPAN");
 
-        bp->new_grid_with_frame ("RedPitaya Web Socket Address for JSON talk");
+        bp->pop_grid ();
 
-        bp->set_input_width_chars (40);
+        bp->new_grid_with_frame ("Amplitude Controller");
+        bp->grid_add_ec ("Reading", Volt, &parameters.volume_monitor, -1.0, 1.0, "g", 0.1, 1., "VOLUME-MONITOR");
+        EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
+        bp->ec->Freeze ();
+        bp->new_line ();
+        parameters.amplitude_fb_setpoint = 0.02;
+        parameters.amplitude_fb_cp_db = -50.;
+        parameters.amplitude_fb_ci_db = -60.;
+        parameters.exec_fb_upper = 0.2;
+        parameters.exec_fb_lower = -0.1;
+        bp->set_no_spin (false);
+        bp->set_input_width_chars (8);
+
+        bp->grid_add_ec ("Setpoint", Volt, &parameters.amplitude_fb_setpoint, 0.0, 1.0, "g", 0.1, 1.0, "AMPLITUDE-FB-SETPOINT");
+        bp->new_line ();
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::amplitude_gain_changed, this);
+        bp->grid_add_ec ("CP gain", dB, &parameters.amplitude_fb_cp_db, -200.0, 200.0, "g", 0.1, 1.0, "AMPLITUDE-FB-CP");
+        bp->new_line ();
+        bp->grid_add_ec ("CI gain", dB, &parameters.amplitude_fb_ci_db, -200.0, 200.0, "g", 0.1, 1.0, "AMPLITUDE-FB-CI");
+        bp->new_line ();
+        bp->set_no_spin (true);
+        bp->set_input_width_chars (16);
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::parameter_changed, this);
+        bp->grid_add_ec ("Upper Limit", Volt, &parameters.exec_fb_upper, 0.0, 1.0, "g", 0.1, 1.0, "EXEC-FB-UPPER");
+        bp->new_line ();
+        bp->grid_add_ec ("Lower Limit", Volt, &parameters.exec_fb_lower, -1.0, 1.0, "g", 0.1, 1.0, "EXEC-FB-LOWER");
+        bp->new_line ();
+        bp->grid_add_check_button ( N_("Enable"), "Enable Amplitude Controller", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::amplitude_controller), this);
+        bp->grid_add_check_button ( N_("Invert"), "Invert Amplitude Controller Gain", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::amplitude_controller_invert), this);
+
+
+        bp->pop_grid ();
+
+        bp->new_grid_with_frame ("Phase Controller");
+        bp->grid_add_ec ("Reading", Deg, &parameters.phase_monitor, -1.0, 1.0, "g", 0.1, 1., "PHASE-MONITOR");
+        EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
+        bp->ec->Freeze ();
+        bp->new_line ();
+        parameters.phase_fb_setpoint = 50.;
+        parameters.phase_fb_cp_db = -180.;
+        parameters.phase_fb_ci_db = -180.;
+        parameters.freq_fb_upper = 33000.;
+        parameters.freq_fb_lower = 30000.;
+        bp->set_no_spin (false);
+        bp->set_input_width_chars (8);
+        bp->grid_add_ec ("Setpoint", Deg, &parameters.phase_fb_setpoint, -180.0, 180.0, "g", 0.1, 1.0, "PHASE-FB-SETPOINT");
+        bp->new_line ();
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::phase_gain_changed, this);
+        bp->grid_add_ec ("CP gain", dB, &parameters.phase_fb_cp_db, -200.0, 200.0, "g", 0.1, 1.0, "PHASE-FB-CP");
+        bp->new_line ();
+        bp->grid_add_ec ("CI gain", dB, &parameters.phase_fb_ci_db, -200.0, 200.0, "g", 0.1, 1.0, "PHASE-FB-CI");
+        bp->new_line ();
+        bp->set_no_spin (true);
+        bp->set_input_width_chars (16);
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::parameter_changed, this);
+        bp->grid_add_ec ("Upper Limit", Deg, &parameters.freq_fb_upper, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-UPPER");
+        bp->new_line ();
+        bp->grid_add_ec ("Lower Limit", Deg, &parameters.freq_fb_lower, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-LOWER");
+        bp->new_line ();
+        bp->grid_add_check_button ( N_("Enable"), "Enable Phase Controller", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::phase_controller), this);
+        bp->grid_add_check_button ( N_("Invert"), "Invert Phase Controller Gain", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::amplitude_controller_invert), this);
+
+        bp->pop_grid ();
+
+        bp->new_line ();
+        bp->new_grid_with_frame ("RedPitaya Web Socket Address for JSON talk", 10);
+
+        bp->set_input_width_chars (25);
         input_rpaddress = bp->grid_add_input ("RedPitaya Address");
+        gtk_widget_set_tooltip_text (input_rpaddress, "RedPitaya IP Address like rp-f05603.local or 130.199.123.123");
         //  "ws://rp-f05603.local:9002/"
         //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "http://rp-f05603.local/pacpll/?type=run");
         //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "130.199.243.200");
@@ -283,6 +382,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         
         bp->grid_add_check_button ( N_("Connect"), "Check to initiate connection, uncheck to close connection.", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::connect_cb), this);
+        bp->grid_add_check_button ( N_("Scope"), "Enable Scope", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::enable_scope), this);
         bp->grid_add_check_button ( N_("Debug"), "Enable debugging LV1.", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::dbg_l1), this);
         bp->grid_add_check_button ( N_("+"), "Debug LV2", 1,
@@ -290,11 +391,11 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->grid_add_check_button ( N_("++"), "Debug LV4", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::dbg_l4), this);
         
-        bp->new_line ();
+        //bp->new_line ();
         //tmp=bp->grid_add_button ( N_("Read"), "TEST READ", 1,
         //                          G_CALLBACK (Inet_Json_External_Scandata::read_cb), this);
-        tmp=bp->grid_add_button ( N_("Write"), "TEST WRITE", 1,
-                                  G_CALLBACK (Inet_Json_External_Scandata::write_cb), this);
+        //tmp=bp->grid_add_button ( N_("Write"), "TEST WRITE", 1,
+        //                          G_CALLBACK (Inet_Json_External_Scandata::write_cb), this);
 
         bp->new_line ();
 
@@ -308,16 +409,129 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         gtk_widget_set_hexpand (scrolled_window, TRUE);
         gtk_widget_set_vexpand (scrolled_window, TRUE);
         gtk_container_add (GTK_CONTAINER (scrolled_window), GTK_WIDGET (text_status)) ;
-        bp->grid_add_widget (scrolled_window, 3);
+        bp->grid_add_widget (scrolled_window, 10);
 
         
         bp->pop_grid ();
         bp->new_line ();
 
+        // OPERATION MODE
+	wid = gtk_combo_box_text_new ();
+        g_signal_connect (G_OBJECT (wid), "changed",
+                          G_CALLBACK (Inet_Json_External_Scandata::choice_operation_callback),
+                          this);
+        bp->grid_add_widget (wid);
+
+        const gchar *operation_modes[] = {
+                "MANUAL",
+                "MEASURE DC_OFFSET",
+                "RUN SCOPE",
+                "INIT BRAM TRANSPORT",
+                "START BRAM TRANSPORT",
+                "READ BRAM",
+                "TUNE",
+                NULL };
+
+        // Init choicelist
+	for(int i=0; operation_modes[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), operation_modes[i], operation_modes[i]);
+
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 2);
+
+        // BRAM TRANSPORT MODE BLOCK S1,S2
+	wid = gtk_combo_box_text_new ();
+        g_signal_connect (G_OBJECT (wid), "changed",
+                          G_CALLBACK (Inet_Json_External_Scandata::choice_transport_callback),
+                          this);
+        bp->grid_add_widget (wid);
+
+	const gchar *transport_modes[] = {
+                "0: IN1, IN2",
+                "1: PHASE, AMPL",
+                "2: IN1, AMPL (AC)",
+                "3: IN2, PHASE (AC)",
+                "4: Exec,Freq",
+                "5: FIR Ampl,Phase",
+                "6: RP DIGITAL IN 0,1 counts",
+                "7: RESET Counts",
+                "8: RESET",
+                NULL };
+   
+	// Init choicelist
+	for(int i=0; transport_modes[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), transport_modes[i], transport_modes[i]);
+
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
+
+        bp->new_line ();
+
+        // GPIO monitor selections -- full set, experimental
+	const gchar *monitor_modes_gpio[] = {
+                "LMS Amplitude from A,B",
+                "LMS Phase from A,B",
+                "LMS A",
+                "LMS B",
+                "FPGA CORDIC Amplitude Monitor",
+                "FPGA CORDIC Phase Monitor",
+                "FIR passed CORDIC Amplitude Monitor",
+                "FIR passed CORDIC Phase Monitor",
+                "LMS X",
+                "LMS Y",
+                "LMS M (LMS Input Signal)",
+                "LMS M1 (LMS Input Signal-DC)",
+                "Phase from X,Y",
+                NULL };
+
+        // CH3 from GPIO MONITOR</p>
+	wid = gtk_combo_box_text_new ();
+        g_signal_connect (G_OBJECT (wid), "changed",
+                          G_CALLBACK (Inet_Json_External_Scandata::choice_transport_ch3_callback),
+                          this);
+        bp->grid_add_widget (wid);
+
+	// Init choicelist
+	for(int i=0; monitor_modes_gpio[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), monitor_modes_gpio[i], monitor_modes_gpio[i]);
+
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
+
+        // CH4 from GPIO MONITOR</p>
+	wid = gtk_combo_box_text_new ();
+        g_signal_connect (G_OBJECT (wid), "changed",
+                          G_CALLBACK (Inet_Json_External_Scandata::choice_transport_ch4_callback),
+                          this);
+        bp->grid_add_widget (wid);
+
+	// Init choicelist
+	for(int i=0; monitor_modes_gpio[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), monitor_modes_gpio[i], monitor_modes_gpio[i]);
+
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 1);
+
+        // CH5 from GPIO MONITOR</p>
+	wid = gtk_combo_box_text_new ();
+        g_signal_connect (G_OBJECT (wid), "changed",
+                          G_CALLBACK (Inet_Json_External_Scandata::choice_transport_ch5_callback),
+                          this);
+        bp->grid_add_widget (wid);
+
+	// Init choicelist
+	for(int i=0; monitor_modes_gpio[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), monitor_modes_gpio[i], monitor_modes_gpio[i]);
+
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 5);
+
+                                     
+        bp->new_line ();
+        signal_graph = gtk_image_new_from_surface (NULL);
+        bp->grid_add_widget (signal_graph, 10);
+        
         bp->show_all ();
  
         // save List away...
 	//g_object_set_data( G_OBJECT (window), "INETJSONSCANCONTROL_EC_list", EC_list);
+
+	g_object_set_data( G_OBJECT (window), "PAC_EC_READINGS_list", EC_R_list);
 
         set_window_geometry ("inet-json-rp-control"); // needs rescoure entry and defines window menu entry as geometry is managed
 }
@@ -325,20 +539,132 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 Inet_Json_External_Scandata::~Inet_Json_External_Scandata (){
 	delete uTime;
 	delete Time;
-	delete mVolt;
 	delete dB;
 	delete VoltHz;
 	delete Volt;
+	delete mVolt;
 	delete VoltDeg;
 	delete Deg;
 	delete Hz;
 	delete Unity;
 }
 
+void Inet_Json_External_Scandata::parameter_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+
+        self->write_parameter ("PACTAU", self->parameters.pactau);
+        self->write_parameter ("FREQUENCY", self->parameters.frequency);
+        self->write_parameter ("VOLUME", self->parameters.volume);
+        self->write_parameter ("TUNE-DFREQ", self->parameters.tune_dfreq);
+        self->write_parameter ("TUNE-SPAN", self->parameters.tune_span);
+        self->write_parameter ("AMPLITUDE-FB-SETPOINT", self->parameters.amplitude_fb_setpoint);
+        self->write_parameter ("EXEC-FB-UPPER", self->parameters.exec_fb_upper);
+        self->write_parameter ("EXEC-FB-LOWER", self->parameters.exec_fb_lower);
+        self->write_parameter ("PHASE-FB-SETPOINT", self->parameters.phase_fb_setpoint);
+        self->write_parameter ("FREQ-FB-UPPER", self->parameters.freq_fb_upper);
+        self->write_parameter ("FREQ-FB-LOWER", self->parameters.freq_fb_lower);
+        //self->write_parameter ("", self->parameters.);
+}
+
+void Inet_Json_External_Scandata::set_gain_defaults (){
+        write_parameter ("GAIN1", 100.);
+        write_parameter ("SHR_CH1", 0.);
+        write_parameter ("GAIN2", 100.);
+        write_parameter ("SHR_CH1", 0.);
+        write_parameter ("GAIN3", 100.);
+        write_parameter ("GAIN4", 100.);
+        write_parameter ("SHR_CH34", 0.);
+        write_parameter ("GAIN5", 100.);
+        write_parameter ("PACVERBOSE", 0);
+        write_parameter ("TRANSPORT_DECIMATION", 2);
+        write_parameter ("TRANSPORT_MODE", 0);
+        write_parameter ("OPERATION", 2);
+}
+
+void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("OPERATION", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+}
+
+void Inet_Json_External_Scandata::choice_transport_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("TRANSPORT_MODE", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+}
+
+void Inet_Json_External_Scandata::choice_transport_ch3_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("TRANSPORT_CH3", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+}
+
+void Inet_Json_External_Scandata::choice_transport_ch4_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("TRANSPORT_CH4", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+}
+
+void Inet_Json_External_Scandata::choice_transport_ch5_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("TRANSPORT_CH5", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+}
+
+void Inet_Json_External_Scandata::amplitude_gain_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+        self->write_parameter ("AMPLITUDE_FB_CP",
+                               self->parameters.amplitude_fb_cp = self->parameters.amplitude_fb_invert
+                               * pow (10., self->parameters.amplitude_fb_cp_db/20.));
+        self->write_parameter ("AMPLITUDE_FB_CI",
+                               self->parameters.amplitude_fb_ci = self->parameters.amplitude_fb_invert
+                               * pow (10., self->parameters.amplitude_fb_ci_db/20.));
+}
+
+void Inet_Json_External_Scandata::amplitude_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->parameters.amplitude_fb_invert = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)) ? -1.:1.;
+        self->amplitude_gain_changed (NULL, self);
+}
+
+void Inet_Json_External_Scandata::amplitude_controller (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("AMPLITUDE_CONTROLLER", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        self->parameters.amplitude_controller = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+}
+
+void Inet_Json_External_Scandata::phase_gain_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+        self->write_parameter ("PHASE_FB_CP",
+                               self->parameters.phase_fb_cp = self->parameters.phase_fb_invert
+                               * pow (10., self->parameters.phase_fb_cp_db/20.));
+        self->write_parameter ("PHASE_FB_CI",
+                               self->parameters.phase_fb_ci = self->parameters.phase_fb_invert
+                               * pow (10., self->parameters.phase_fb_ci_db/20.));
+}
+
+void Inet_Json_External_Scandata::phase_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->parameters.phase_fb_invert = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)) ? -1.:1.;
+        self->phase_gain_changed (NULL, self);
+}
+
+void Inet_Json_External_Scandata::phase_controller (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("PHASE_CONTROLLER", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        self->parameters.phase_controller = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+}
+
 void Inet_Json_External_Scandata::update(){
 	if (G_IS_OBJECT (window))
 		g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "INETJSONSCANCONTROL_EC_list"),
 				(GFunc) App::update_ec, NULL);
+}
+
+void Inet_Json_External_Scandata::update_monitoring_parameters(){
+
+        // mirror global parameters to private
+        parameters.dds_frequency_monitor = pacpll_parameters.dds_frequency_monitor;
+        parameters.dc_offset = pacpll_parameters.dc_offset;
+        parameters.volume_monitor = pacpll_parameters.volume_monitor;
+        parameters.phase_monitor = pacpll_parameters.phase_monitor;
+        parameters.cpu_load = pacpll_parameters.cpu_load;
+        parameters.free_ram = pacpll_parameters.free_ram;
+        parameters.counter = pacpll_parameters.counter;
+
+        if (G_IS_OBJECT (window))
+		g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "PAC_EC_READINGS_list"),
+				(GFunc) App::update_ec, NULL);
+}
+
+void Inet_Json_External_Scandata::enable_scope (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->run_scope = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
 }
 
 void Inet_Json_External_Scandata::dbg_l1 (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -446,7 +772,8 @@ void Inet_Json_External_Scandata::got_client_connection (GObject *object, GAsync
 		g_signal_connect(self->client, "closed",  G_CALLBACK(Inet_Json_External_Scandata::on_closed),  self);
 		g_signal_connect(self->client, "message", G_CALLBACK(Inet_Json_External_Scandata::on_message), self);
 		//g_signal_connect(connection, "closing", G_CALLBACK(on_closing_send_message), message);
-                //self->JSON_raw_input_stream = soup_websocket_connection_get_io_stream (self->client);
+                self->set_gain_defaults ();
+
         }
 }
 
@@ -547,6 +874,11 @@ void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
                 self->json_parse_message (json_buffer);
 
                 g_free (json_buffer);
+                
+                self->update_monitoring_parameters();
+
+                if (self->run_scope)
+                        self->update_graph ();
         }
 
 	g_bytes_unref (message);
@@ -559,7 +891,7 @@ void Inet_Json_External_Scandata::on_closed (SoupWebsocketConnection *ws, gpoint
 
 void Inet_Json_External_Scandata::json_parse_message (const char *json_string){
         jsmn_parser p;
-        jsmntok_t tok[5000]; /* We expect no more than 5000 tokens, signal array is 1024 */
+        jsmntok_t tok[10000]; /* We expect no more than 5000 tokens, signal array is 1024 * 5*/
 
         // typial data messages:
         // {"signals":{"SIGNAL_CH3":{"size":1024,"value":[0,0,...,0.543632,0.550415]},"SIGNAL_CH4":{"size":1024,"value":[0,0,... ,-94.156487]},"SIGNAL_CH5":{"size":1024,"value":[0,0,.. ,-91.376022,-94.156487]}}}
@@ -568,7 +900,7 @@ void Inet_Json_External_Scandata::json_parse_message (const char *json_string){
         jsmn_init(&p);
         int ret = jsmn_parse(&p, json_string, strlen(json_string), tok, sizeof(tok)/sizeof(tok[0]));
         if (ret < 0) {
-                g_warning ("JSON PARSER:  Failed to parse JSON: %d\n", ret);
+                g_warning ("JSON PARSER:  Failed to parse JSON: %d\n%s\n", ret, json_string);
                 return;
         }
         /* Assume the top-level element is an object */
@@ -580,24 +912,36 @@ void Inet_Json_External_Scandata::json_parse_message (const char *json_string){
 #if 0
         json_dump (json_string, tok, p.toknext, 0);
 #endif
-#if 1
+
         json_fetch (json_string, tok, p.toknext, 0);
-        dump_parameters ();
-#endif
-
-
-
+        if  (debug_level > 1)
+                dump_parameters ();
 }
 
 
 
-
-void Inet_Json_External_Scandata::write_cb (GtkWidget *widget, Inet_Json_External_Scandata *self){
+void Inet_Json_External_Scandata::write_parameter (const gchar *paramater_id, double value){
         //soup_websocket_connection_send_text (self->client, "text");
         //soup_websocket_connection_send_binary (self->client, gconstpointer data, gsize length);
+        //soup_websocket_connection_send_text (client, "{ \"parameters\":{\"GAIN1\":{\"value\":200.0}}}");
 
-        soup_websocket_connection_send_text (self->client, "{ \"parameters\":{\"GAIN1\":{\"value\":200.0}}}");
-        
+        if (client){
+                gchar *json_string = g_strdup_printf ("{ \"parameters\":{\"%s\":{\"value\":%12g}}}", paramater_id, value);
+                soup_websocket_connection_send_text (client, json_string);
+                if  (debug_level > 1)
+                        g_print (json_string);
+                g_free (json_string);
+        }
+}
+
+void Inet_Json_External_Scandata::write_parameter (const gchar *paramater_id, int value){
+        if (client){
+                gchar *json_string = g_strdup_printf ("{ \"parameters\":{\"%s\":{\"value\":%d}}}", paramater_id, value);
+                soup_websocket_connection_send_text (client, json_string);
+                if  (debug_level > 1)
+                        g_print (json_string);
+                g_free (json_string);
+        }
 }
 
 
@@ -647,3 +991,42 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 	g_object_unref (end_mark);
 }
 
+
+void Inet_Json_External_Scandata::update_graph (){
+        int n=1024;
+        int h=256;
+        double xs = 0.5;
+        double yr = h/2;
+        cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, n/2, h);
+        cairo_t *cr = cairo_create (surface);
+        cairo_translate (cr, 0., yr);
+        cairo_scale (cr, 1., 1.);
+        cairo_save (cr);
+
+        double avg=0.;
+        char *valuestring;
+        cairo_item_text *reading = new cairo_item_text ();
+        reading->set_font_face_size ("Ununtu", 12.);
+        cairo_item_path *wave = new cairo_item_path (n);
+        wave->set_line_width (1.0);
+        CAIRO_BASIC_COLOR_IDS color[] = { CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_CYAN_ID, CAIRO_COLOR_YELLOW_ID, CAIRO_COLOR_BLUE_ID };
+        double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5 };
+        for (int ch=0; ch<5; ++ch){
+                wave->set_stroke_rgba (BasicColors[color[ch]]);
+                for (int k=0; k<n; ++k) wave->set_xy_fast (k,xs*k,-yr*signal[ch][k]/100.);
+                wave->draw (cr);
+
+                for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg /= 100.;
+                valuestring = g_strdup_printf ("CH%d %12.5f", ch, avg*10.);
+                reading->set_stroke_rgba (BasicColors[color[ch]]);
+                reading->set_text (400, -(110-14*ch), valuestring);
+                g_free (valuestring);
+                reading->draw (cr);
+        }
+        delete wave;
+        delete reading;
+
+        cairo_destroy (cr);
+        
+        gtk_image_set_from_surface (GTK_IMAGE (signal_graph), surface);
+}

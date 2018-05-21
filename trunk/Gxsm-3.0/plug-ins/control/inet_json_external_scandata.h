@@ -49,6 +49,7 @@ struct PACPLL_parameters {
         double dc_offset;
         double dds_frequency_monitor;
         double volume_monitor;
+        double phase_monitor;
         double cpu_load;
         double free_ram;
         double counter;
@@ -72,17 +73,22 @@ struct PACPLL_parameters {
         double transport_ch4;
         double transport_ch5;
         double tune_dfreq;
-        double tune_fspan;
-        double tune_frequency;
+        double tune_span;
         double amplitude_fb_setpoint;
+        double amplitude_fb_invert;
         double amplitude_fb_cp;
         double amplitude_fb_ci;
+        double amplitude_fb_cp_db;
+        double amplitude_fb_ci_db;
         double exec_fb_upper;
         double exec_fb_lower;
         double amplitude_controller;
         double phase_fb_setpoint;
+        double phase_fb_invert;
         double phase_fb_cp;
         double phase_fb_ci;
+        double phase_fb_cp_db;
+        double phase_fb_ci_db;
         double freq_fb_upper;
         double freq_fb_lower;
         double phase_controller;
@@ -107,6 +113,7 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "FREE_RAM", &pacpll_parameters.free_ram, true },
         { "DDS_FREQ_MONITOR", &pacpll_parameters.dds_frequency_monitor, true },
         { "VOLUME_MONITOR", &pacpll_parameters.volume_monitor, true },
+        { "PHASE_MONITOR", &pacpll_parameters.phase_monitor, true },
 
         { "GAIN1", &pacpll_parameters.gain1, false },
         { "SHR_CH1", &pacpll_parameters.shr_ch1, false },
@@ -127,8 +134,7 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "TRANSPORT_CH4", &pacpll_parameters.transport_ch4, false },
         { "TRANSPORT_CH5", &pacpll_parameters.transport_ch5, false },
         { "TUNE_DFREQ", &pacpll_parameters.tune_dfreq, false },
-        { "TUNE_SPAN", &pacpll_parameters.tune_fspan, false },
-        { "FREQUENCY", &pacpll_parameters.tune_frequency, false },
+        { "TUNE_SPAN", &pacpll_parameters.tune_span, false },
         { "AMPLITUDE_FB_SETPOINT", &pacpll_parameters.amplitude_fb_setpoint, false },
         { "AMPLITUDE_FB_CP", &pacpll_parameters.amplitude_fb_cp, false },
         { "AMPLITUDE_FB_CI", &pacpll_parameters.amplitude_fb_ci, false },
@@ -151,425 +157,8 @@ JSON_signal PACPLL_JSON_signals[] = {
         { "SIGNAL_CH3", 1024, pacpll_signals.signal_ch3 },
         { "SIGNAL_CH4", 1024, pacpll_signals.signal_ch4 },
         { "SIGNAL_CH5", 1024, pacpll_signals.signal_ch5 },
-        { NULL, NULL }
+        { NULL, 0, NULL }
 };
-
-#if 0
-
-    //Set gain
-    APP.setGain1 = function() {
-
-        APP.gain1 = $('#gain1_set').val();
-
-        var local = {};
-        local['GAIN1'] = { value: APP.gain1 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#gain1_value').text(APP.gain1);
-
-    };
-
-    APP.setShrCh1 = function() {
-
-        APP.shr_ch1 = $('#shr_ch1_set').val();
-
-        var local = {};
-        local['SHR_CH1'] = { value: APP.shr_ch1 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#shr_ch1_value').text(APP.shr_ch1);
-
-    };
-
-    //Set gain
-    APP.setGain2 = function() {
-
-        APP.gain2 = $('#gain2_set').val();
-
-        var local = {};
-        local['GAIN2'] = { value: APP.gain2 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#gain2_value').text(APP.gain2);
-
-    };
-    
-    APP.setShrCh2 = function() {
-
-        APP.shr_ch2 = $('#shr_ch2_set').val();
-
-        var local = {};
-        local['SHR_CH2'] = { value: APP.shr_ch2 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#shr_ch2_value').text(APP.shr_ch2);
-
-    };
-
-    APP.setShrCh34 = function() {
-
-        APP.shr_ch34 = $('#shr_ch34_set').val();
-
-        var local = {};
-        local['SHR_CH34'] = { value: APP.shr_ch34 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#shr_ch34_value').text(APP.shr_ch34);
-
-    };
-
-    //Set gain
-    APP.setGain3 = function() {
-
-        APP.gain3 = $('#gain3_set').val();
-
-        var local = {};
-        local['GAIN3'] = { value: APP.gain3 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#gain3_value').text(APP.gain3);
-
-    };
-
-    //Set gain
-    APP.setGain4 = function() {
-
-        APP.gain4 = $('#gain4_set').val();
-
-        var local = {};
-        local['GAIN4'] = { value: APP.gain4 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#gain4_value').text(APP.gain4);
-
-    };
-
-    //Set gain
-    APP.setGain5 = function() {
-
-        APP.gain5 = $('#gain5_set').val();
-
-        var local = {};
-        local['GAIN5'] = { value: APP.gain5 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#gain5_value').text(APP.gain5);
-
-    };
-
-    // Set pactau
-    APP.setPactau = function() {
-
-        APP.pactau = $('#pactau_set').val();
-
-        var local = {};
-        local['PACTAU'] = { value: APP.pactau };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#pactau_value').text(APP.pactau);
-
-    };
-
-    // Set frequency
-    APP.setFrequency = function() {
-
-        APP.frequency = $('#frequency_set').val();
-
-        var local = {};
-        local['FREQUENCY'] = { value: APP.frequency };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#frequency_value').text(APP.frequency);
-
-    };
-
-    // Set volume
-    APP.setVolume = function() {
-
-        APP.volume = $('#volume_set').val();
-	var volt = APP.volume/1000.;
-	
-        var local = {};
-        local['VOLUME'] = { value: volt };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#volume_value').text(APP.volume);
-
-    };
-
-    // Set operation
-    APP.setOperation = function() {
-
-        APP.operation = $('#operation_set').val();
-
-        console.log('Set OP to ' + APP.operation);
-
-        var local = {};
-        local['OPERATION'] = { value: APP.operation };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-    };
-
-    // Set pacverbose
-    APP.setPACVerbose = function() {
-
-        APP.pacverbose = $('#pacverbose_set').val();
-
-        var local = {};
-        local['PACVERBOSE'] = { value: APP.pacverbose };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#pacverbose_value').text(APP.pacverbose);
-    };
-
-    APP.setTransportDecimation = function() {
-
-        APP.TransportDecimation = $('#decimation_set').val();
-
-        var local = {};
-        local['TRANSPORT_DECIMATION'] = { value: APP.TransportDecimation };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#decimation_value').text(APP.TransportDecimation);
-    };
-    
-    APP.setTransportMode = function() {
-
-
-        APP.transport_mode = $('#transport_mode_set').val();
-
-        var local = {};
-        local['TRANSPORT_MODE'] = { value: APP.transport_mode };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#transport_mode_value').text(APP.transport_mode);
-    };
-    
-    APP.setTransportCh3 = function() {
-	
-        APP.transport_ch3 = $('#transport_ch3_set').val();
-
-        var local = {};
-        local['TRANSPORT_CH3'] = { value: APP.transport_ch3 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#transport_ch3_value').text(APP.transport_ch3);
-    };
-    
-    APP.setTransportCh4 = function() {
-
-        APP.transport_ch4 = $('#transport_ch4_set').val();
-
-        var local = {};
-        local['TRANSPORT_CH4'] = { value: APP.transport_ch4 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#transport_ch4_value').text(APP.transport_ch4);
-    };
-
-    APP.setTransportCh5 = function() {
-
-        APP.transport_ch5 = $('#transport_ch5_set').val();
-
-        var local = {};
-        local['TRANSPORT_CH5'] = { value: APP.transport_ch5 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#transport_ch5_value').text(APP.transport_ch5);
-    };
-
-    
-    APP.setTunedf = function() {
-	APP.dfreq = $('#df_set').val();
-        var local = {};
-        local['TUNE_DFREQ'] = { value: APP.dfreq };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#df_value').text(APP.dfreq);
-    };
-    
-    APP.setTunefs = function() {
-	APP.fspan = $('#frequency_span_set').val();
-	APP.tune_f = APP.frequency-APP.fspan/2;
-
-        var local = {};
-        local['TUNE_SPAN'] = { value: APP.fspan };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#frequency_span_value').text(APP.fspan);
-    };
-    
-    // Tune in next freq
-    APP.tuneNext = function() {
-	APP.tune_f += 1.0*APP.dfreq;
-	
-	if (APP.tune_f > 1.0*APP.frequency+APP.fspan/2){
-	    APP.dfreq = -Math.abs (1.0*APP.dfreq);
-	    APP.tune_f = 1.0*APP.frequency + 1.0*APP.fspan/2;
-            $('#df_value').text(APP.dfreq);
-	}
-	if (APP.tune_f < 1.0*APP.frequency-APP.fspan/2){
-	    APP.dfreq = Math.abs (1.0*APP.dfreq);
-	    APP.tune_f = 1.0*APP.frequency - 1.0*APP.fspan/2;
-            $('#df_value').text(APP.dfreq);
-	}
-	
-        var local = {};
-        local['FREQUENCY'] = { value: APP.tune_f };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-	
-        $('#frequency_value').text(APP.tune_f);
-    };
-    
-
-
-
-    // Set Ampl Controller
-    APP.setAMPLITUDE_FB_SETPOINT = function() {
-
-        APP.AMPLITUDE_FB_SETPOINT = $('#ampl_setpoint_set').val(); // mV
-
-        var local = {};
-        local['AMPLITUDE_FB_SETPOINT'] = { value: APP.AMPLITUDE_FB_SETPOINT };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#ampl_setpoint_value').text(APP.AMPLITUDE_FB_SETPOINT);
-
-    };
-
-    APP.setAMPLITUDE_FB_CP = function() {
-
-        //write_pll_variable32 (dsp_pll.icoef_Amp, pll.signum_ci_Amp * CPN(29)*pow (10.,pll.ci_gain_Amp/20.));
-        // = ISign * CPN(29)*pow(10.,Igain/20.);
-		
-        //write_pll_variable32 (dsp_pll.pcoef_Amp, pll.signum_cp_Amp * CPN(29)*pow (10.,pll.cp_gain_Amp/20.));
-        // = PSign * CPN(29)*pow(10.,Pgain/20.);
-
-        APP.AMPLITUDE_FB_CP = ($('#ampl_cp_gain_inv').is(':checked')?-1:1) * Math.pow(10.,$('#ampl_cp_gain_set').val()/20);
-        console.log('AMPL FB CP = ' + $('#ampl_cp_gain_set') + ' => ' + APP.AMPLITUDE_FB_CP);
-
-        var local = {};
-        local['AMPLITUDE_FB_CP'] = { value: APP.AMPLITUDE_FB_CP };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#ampl_cp_gain_value').text(APP.AMPLITUDE_FB_CP);
-
-    };
-
-    APP.setAMPLITUDE_FB_CI = function() {
-
-        APP.AMPLITUDE_FB_CI = ($('#ampl_ci_gain_inv').is(':checked')?-1:1) * Math.pow(10.,$('#ampl_ci_gain_set').val()/20);
-
-        var local = {};
-        local['AMPLITUDE_FB_CI'] = { value: APP.AMPLITUDE_FB_CI };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#ampl_ci_gain_value').text(APP.AMPLITUDE_FB_CI);
-
-    };
-
-    APP.setEXEC_FB_UPPER = function() {
-
-        APP.EXEC_FB_UPPER = $('#exec_upper_set').val();
-
-        var local = {};
-        local['EXEC_FB_UPPER'] = { value: APP.EXEC_FB_UPPER };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#exec_upper_value').text(APP.EXEC_FB_UPPER);
-
-    };
-
-    APP.setEXEC_FB_LOWER = function() {
-
-        APP.EXEC_FB_LOWER = $('#exec_lower_set').val();
-
-        var local = {};
-        local['EXEC_FB_LOWER'] = { value: APP.EXEC_FB_LOWER };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#exec_lower_value').text(APP.EXEC_FB_LOWER);
-
-    };
-
-    APP.setAmplLoopControl = function() {
-	APP.AMPLITUDE_CONTROL = $("#ampl_control_on").is(':checked');
-        console.log('Amplitude Loop Control: ', APP.AMPLITUDE_CONTROL);
-        var local = {};
-        local['AMPLITUDE_CONTROLLER'] = { value: APP.AMPLITUDE_CONTROL };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-    };
-    
-    // Set Phase Controller 
-    APP.setPHASE_FB_SETPOINT = function() {
-
-        APP.PHASE_FB_SETPOINT = $('#phase_setpoint_set').val();
-
-        var local = {};
-        local['PHASE_FB_SETPOINT'] = { value: APP.PHASE_FB_SETPOINT };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#phase_setpoint_value').text(APP.PHASE_FB_SETPOINT);
-
-    };
-
-    APP.setPHASE_FB_CP = function() {
-
-        APP.PHASE_FB_CP = ($('#phase_cp_gain_inv').is(':checked')?-1:1) * Math.pow(10.,$('#phase_cp_gain_set').val()/20);
-
-        var local = {};
-        local['PHASE_FB_CP'] = { value: APP.PHASE_FB_CP };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#phase_cp_gain_value').text(APP.PHASE_FB_CP);
-
-    };
-
-    APP.setPHASE_FB_CI = function() {
-
-        APP.PHASE_FB_CI = ($('#phase_ci_gain_inv').is(':checked') ? -1:1) * Math.pow(10.,$('#phase_ci_gain_set').val()/20);
-
-        var local = {};
-        local['PHASE_FB_CI'] = { value: APP.PHASE_FB_CI };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#phase_ci_gain_value').text(APP.PHASE_FB_CI);
-
-    };
-
-    APP.setFREQ_FB_UPPER = function() {
-
-        APP.FREQ_FB_UPPER = $('#exec_upper_set').val();
-
-        var local = {};
-        local['FREQ_FB_UPPER'] = { value: APP.FREQ_FB_UPPER };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#exec_upper_value').text(APP.FREQ_FB_UPPER);
-
-    };
-
-    APP.setFREQ_FB_LOWER = function() {
-
-        APP.FREQ_FB_LOWER = $('#exec_lower_set').val();
-
-        var local = {};
-        local['FREQ_FB_LOWER'] = { value: APP.FREQ_FB_LOWER };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#exec_lower_value').text(APP.FREQ_FB_LOWER);
-
-    };
-
-    APP.setPhaseLoopControl = function() {
-	APP.PHASE_CONTROL = $("#phase_control_on").is(':checked');
-        console.log('Phase Loop Control: ', APP.PHASE_CONTROL);
-        var local = {};
-        local['PHASE_CONTROLLER'] = { value: APP.PHASE_CONTROL };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-    };
-    
-#endif
-
 
 // Scan Control Class based on AppBase
 // -> AppBase provides a GtkWindow and some window handling basics used by Gxsm
@@ -578,11 +167,31 @@ public:
 
         Inet_Json_External_Scandata(); // create window and setup it contents, connect buttons, register cb's...
 	virtual ~Inet_Json_External_Scandata(); // unregister cb's
-	
-	void update(); // window update (inputs, etc. -- here currently not really necessary)
 
+	static void parameter_changed (Param_Control* pcs, gpointer user_data);
+	static void amplitude_gain_changed (Param_Control* pcs, gpointer user_data);
+        static void amplitude_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void amplitude_controller (GtkWidget *widget, Inet_Json_External_Scandata *self);
+	static void phase_gain_changed (Param_Control* pcs, gpointer user_data);
+        static void phase_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void phase_controller (GtkWidget *widget, Inet_Json_External_Scandata *self);
+
+        static void choice_operation_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void choice_transport_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void choice_transport_ch3_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void choice_transport_ch4_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void choice_transport_ch5_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+
+	void set_gain_defaults ();
+        
+	void update (); // window update (inputs, etc. -- here currently not really necessary)
+        void update_monitoring_parameters ();
+
+        void update_graph ();
+        
 	GtkWidget *remote_param;
         static void connect_cb (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void enable_scope (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void dbg_l1 (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void dbg_l2 (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void dbg_l4 (GtkWidget *widget, Inet_Json_External_Scandata *self);
@@ -593,15 +202,9 @@ public:
                                gpointer user_data);
         static void on_closed (SoupWebsocketConnection *ws, gpointer user_data);
         
-        static void write_cb (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        void write_parameter (const gchar *paramater_id, double value);
+        void write_parameter (const gchar *paramater_id, int value);
 
-        static int jsoneq (const char *json, jsmntok_t *tok, const char *s) {
-                if (tok->type == JSMN_STRING && (int) strlen(s) == tok->end - tok->start &&
-                    strncmp(json + tok->start, s, tok->end - tok->start) == 0) {
-                        return 0;
-                }
-                return -1;
-        };
         static int json_dump(const char *js, jsmntok_t *t, size_t count, int indent) {
                 int i, j, k;
                 if (count == 0) {
@@ -745,13 +348,19 @@ public:
         };
         
 private:
+        PACPLL_parameters parameters;
+        PACPLL_signals signals;
+
         BuildParam *bp;
+
+        gboolean run_scope;
+        GtkWidget *signal_graph;
        
         GtkWidget *input_rpaddress;
         GtkWidget *text_status;
 
         gint debug_level; 
-        UnitObj *Unity, *Hz, *Deg, *VoltDeg, *Volt, *VoltHz, *dB, *mVolt, *Time, *uTime;
+        UnitObj *Unity, *Hz, *Deg, *VoltDeg, *Volt, *mVolt, *VoltHz, *dB, *Time, *uTime;
 
 	GSList*   SPMC_RemoteEntryList;
 
@@ -766,6 +375,7 @@ private:
 	GError *client_error;
 	GError *error;
 
+        int block_message;
 
 	GMutex mutex;
 
