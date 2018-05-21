@@ -14,9 +14,9 @@
     </key>
 
     <key name="rp-pacpll-pactau" type="d">
-      <default>0.0002</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 0.0002 s     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 0.0002 s    , Adjustment PCS Name: 'rp-pacpll-PACTAU' </description>
+      <default>200</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 2e+08 µs     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 2e+08 µs    , Adjustment PCS Name: 'rp-pacpll-PACTAU' </description>
     </key>
 
     <key name="rp-pacpll-frequency" type="d">
@@ -26,9 +26,9 @@
     </key>
 
     <key name="rp-pacpll-volume" type="d">
-      <default>0.1</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-VOLUME', Default/U: 0.1 V     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-VOLUME', Default/U: 0.1 V    , Adjustment PCS Name: 'rp-pacpll-VOLUME' </description>
+      <default>300</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-VOLUME', Default/U: 300 mV     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-VOLUME', Default/U: 300 mV    , Adjustment PCS Name: 'rp-pacpll-VOLUME' </description>
     </key>
 
     <key name="rp-pacpll-tune-dfreq" type="d">
@@ -45,14 +45,14 @@
 
     <key name="rp-pacpll-volume-monitor" type="d">
       <default>0</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-VOLUME-MONITOR', Default/U: 0 V     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-VOLUME-MONITOR', Default/U: 0 V    , Adjustment PCS Name: 'rp-pacpll-VOLUME-MONITOR' </description>
+      <summary>PCS Remote-ID: 'rp-pacpll-VOLUME-MONITOR', Default/U: 0 mV     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-VOLUME-MONITOR', Default/U: 0 mV    , Adjustment PCS Name: 'rp-pacpll-VOLUME-MONITOR' </description>
     </key>
 
     <key name="rp-pacpll-amplitude-fb-setpoint" type="d">
-      <default>0.02</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-SETPOINT', Default/U: 0.02 V     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-SETPOINT', Default/U: 0.02 V    , Adjustment PCS Name: 'rp-pacpll-AMPLITUDE-FB-SETPOINT' </description>
+      <default>100</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-SETPOINT', Default/U: 100 mV     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-SETPOINT', Default/U: 100 mV    , Adjustment PCS Name: 'rp-pacpll-AMPLITUDE-FB-SETPOINT' </description>
     </key>
 
     <key name="rp-pacpll-amplitude-fb-cp" type="d">
@@ -68,15 +68,15 @@
     </key>
 
     <key name="rp-pacpll-exec-fb-upper" type="d">
-      <default>0.2</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-EXEC-FB-UPPER', Default/U: 0.2 V     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-EXEC-FB-UPPER', Default/U: 0.2 V    , Adjustment PCS Name: 'rp-pacpll-EXEC-FB-UPPER' </description>
+      <default>200</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-EXEC-FB-UPPER', Default/U: 200 mV     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-EXEC-FB-UPPER', Default/U: 200 mV    , Adjustment PCS Name: 'rp-pacpll-EXEC-FB-UPPER' </description>
     </key>
 
     <key name="rp-pacpll-exec-fb-lower" type="d">
-      <default>-0.1</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-EXEC-FB-LOWER', Default/U: -0.1 V     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-EXEC-FB-LOWER', Default/U: -0.1 V    , Adjustment PCS Name: 'rp-pacpll-EXEC-FB-LOWER' </description>
+      <default>-100</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-EXEC-FB-LOWER', Default/U: -100 mV     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-EXEC-FB-LOWER', Default/U: -100 mV    , Adjustment PCS Name: 'rp-pacpll-EXEC-FB-LOWER' </description>
     </key>
 
     <key name="rp-pacpll-phase-monitor" type="d">
@@ -105,14 +105,14 @@
 
     <key name="rp-pacpll-freq-fb-upper" type="d">
       <default>33000</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-FREQ-FB-UPPER', Default/U: 33000 °     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-FREQ-FB-UPPER', Default/U: 33000 °    , Adjustment PCS Name: 'rp-pacpll-FREQ-FB-UPPER' </description>
+      <summary>PCS Remote-ID: 'rp-pacpll-FREQ-FB-UPPER', Default/U: 33000 Hz     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-FREQ-FB-UPPER', Default/U: 33000 Hz    , Adjustment PCS Name: 'rp-pacpll-FREQ-FB-UPPER' </description>
     </key>
 
     <key name="rp-pacpll-freq-fb-lower" type="d">
       <default>30000</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-FREQ-FB-LOWER', Default/U: 30000 °     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-FREQ-FB-LOWER', Default/U: 30000 °    , Adjustment PCS Name: 'rp-pacpll-FREQ-FB-LOWER' </description>
+      <summary>PCS Remote-ID: 'rp-pacpll-FREQ-FB-LOWER', Default/U: 30000 Hz     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-FREQ-FB-LOWER', Default/U: 30000 Hz    , Adjustment PCS Name: 'rp-pacpll-FREQ-FB-LOWER' </description>
     </key>
   </schema>
 
