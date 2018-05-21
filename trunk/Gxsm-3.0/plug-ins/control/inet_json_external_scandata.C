@@ -282,20 +282,20 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
-        bp->grid_add_ec ("Offset", mVolt, &parameters.dc_offset, -1.0, 1.0, "g", 0.1, 1., "DC-OFFSET");
+        bp->grid_add_ec ("Offset", mVolt, &parameters.dc_offset, -1000.0, 1000.0, "g", 0.1, 1., "DC-OFFSET");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
-        parameters.pactau = 0.0002;
-        parameters.frequency = 32768.0;
-        parameters.volume = 0.1;
-  	bp->grid_add_ec ("Tau PAC", Time, &parameters.pactau, 0.0, 63.0, "g", 0.1, 1., "PACTAU");
+        parameters.pactau = 200.0; // us
+        parameters.frequency = 32768.0; // Hz
+        parameters.volume = 300.0; // mV
+  	bp->grid_add_ec ("Tau PAC", uTime, &parameters.pactau, 0.0, 63e6, "g", 0.1, 1., "PACTAU");
         bp->new_line ();
         bp->set_no_spin (false);
         bp->set_input_width_chars (10);
   	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency, 0.0, 20e6, "g", 0.1, 100., "FREQUENCY");
         bp->new_line ();
-  	bp->grid_add_ec ("Volume", Volt, &parameters.volume, 0.0, 1.0, "g", 0.01, 0.1, "VOLUME");
+  	bp->grid_add_ec ("Volume", mVolt, &parameters.volume, 0.0, 1000.0, "g", 1.0, 10.0, "VOLUME");
         bp->new_line ();
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
@@ -312,15 +312,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
-        parameters.amplitude_fb_setpoint = 0.02;
+        parameters.amplitude_fb_setpoint = 100.0; // mV
         parameters.amplitude_fb_cp_db = -50.;
         parameters.amplitude_fb_ci_db = -60.;
-        parameters.exec_fb_upper = 0.2;
-        parameters.exec_fb_lower = -0.1;
+        parameters.exec_fb_upper = 200.0;
+        parameters.exec_fb_lower = -100.0;
         bp->set_no_spin (false);
         bp->set_input_width_chars (8);
 
-        bp->grid_add_ec ("Setpoint", Volt, &parameters.amplitude_fb_setpoint, 0.0, 1.0, "g", 0.1, 1.0, "AMPLITUDE-FB-SETPOINT");
+        bp->grid_add_ec ("Setpoint", mVolt, &parameters.amplitude_fb_setpoint, 0.0, 1000.0, "g", 1.0, 10.0, "AMPLITUDE-FB-SETPOINT");
         bp->new_line ();
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::amplitude_gain_changed, this);
         bp->grid_add_ec ("CP gain", dB, &parameters.amplitude_fb_cp_db, -200.0, 200.0, "g", 0.1, 1.0, "AMPLITUDE-FB-CP");
@@ -330,9 +330,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::parameter_changed, this);
-        bp->grid_add_ec ("Upper Limit", Volt, &parameters.exec_fb_upper, 0.0, 1.0, "g", 0.1, 1.0, "EXEC-FB-UPPER");
+        bp->grid_add_ec ("Upper Limit", mVolt, &parameters.exec_fb_upper, 0.0, 1000.0, "g", 1.0, 10.0, "EXEC-FB-UPPER");
         bp->new_line ();
-        bp->grid_add_ec ("Lower Limit", Volt, &parameters.exec_fb_lower, -1.0, 1.0, "g", 0.1, 1.0, "EXEC-FB-LOWER");
+        bp->grid_add_ec ("Lower Limit", mVolt, &parameters.exec_fb_lower, -1000.0, 1000.0, "g", 1.0, 10.0, "EXEC-FB-LOWER");
         bp->new_line ();
         bp->grid_add_check_button ( N_("Enable"), "Enable Amplitude Controller", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::amplitude_controller), this);
@@ -343,7 +343,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->pop_grid ();
 
         bp->new_grid_with_frame ("Phase Controller");
-        bp->grid_add_ec ("Reading", Deg, &parameters.phase_monitor, -1.0, 1.0, "g", 0.1, 1., "PHASE-MONITOR");
+        bp->grid_add_ec ("Reading", Deg, &parameters.phase_monitor, -180.0, 180.0, "g", 1., 10., "PHASE-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
@@ -364,9 +364,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::parameter_changed, this);
-        bp->grid_add_ec ("Upper Limit", Deg, &parameters.freq_fb_upper, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-UPPER");
+        bp->grid_add_ec ("Upper Limit", Hz, &parameters.freq_fb_upper, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-UPPER");
         bp->new_line ();
-        bp->grid_add_ec ("Lower Limit", Deg, &parameters.freq_fb_lower, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-LOWER");
+        bp->grid_add_ec ("Lower Limit", Hz, &parameters.freq_fb_lower, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-LOWER");
         bp->new_line ();
         bp->grid_add_check_button ( N_("Enable"), "Enable Phase Controller", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_controller), this);
