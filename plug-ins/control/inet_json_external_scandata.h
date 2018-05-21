@@ -182,6 +182,8 @@ public:
         static void choice_transport_ch4_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_transport_ch5_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
+        static void choice_auto_set_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+
 	void set_gain_defaults ();
         
 	void update (); // window update (inputs, etc. -- here currently not really necessary)
@@ -354,6 +356,8 @@ private:
         BuildParam *bp;
 
         gboolean run_scope;
+        double gain_scale[5];
+        double time_scale[5];
         GtkWidget *signal_graph;
        
         GtkWidget *input_rpaddress;
