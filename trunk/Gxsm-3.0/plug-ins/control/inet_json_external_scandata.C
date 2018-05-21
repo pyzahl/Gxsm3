@@ -305,7 +305,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->pop_grid ();
 
         bp->new_grid_with_frame ("Amplitude Controller");
-        bp->grid_add_ec ("Reading", Volt, &parameters.volume_monitor, -1.0, 1.0, "g", 0.1, 1., "VOLUME-MONITOR");
+        bp->grid_add_ec ("Reading", mVolt, &parameters.volume_monitor, -1.0, 1.0, "g", 0.1, 1., "VOLUME-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
@@ -1166,7 +1166,7 @@ void Inet_Json_External_Scandata::update_graph (){
                                 wave->set_xy_fast (k,xs*k,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s/100.);
                         }
                         if (gain_scale[ch] < 0.)
-                                gain_scale[ch] = 100. / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
+                                gain_scale[ch] = 70. / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
                         wave->draw (cr);
 
                         for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg /= 100.;
