@@ -278,24 +278,20 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_input_width_chars (16);
 
         bp->new_grid_with_frame ("RedPitaya PAC Setup");
-        bp->grid_add_ec ("Reading", Hz, &parameters.dds_frequency_monitor, 0.0, 25e6, "g", 0.1, 1., "DDS-FREQ-MONITOR");
-        EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
-        bp->ec->Freeze ();
-        bp->new_line ();
-        bp->grid_add_ec ("Offset", mVolt, &parameters.dc_offset, -1000.0, 1000.0, "g", 0.1, 1., "DC-OFFSET");
+        bp->grid_add_ec ("In1 Offset", mVolt, &parameters.dc_offset, -1000.0, 1000.0, "g", 0.1, 1., "DC-OFFSET");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
         parameters.pactau = 200.0; // us
-        parameters.frequency = 32768.0; // Hz
-        parameters.volume = 300.0; // mV
+        parameters.frequency_manual = 32768.0; // Hz
+        parameters.volume_manual = 300.0; // mV
   	bp->grid_add_ec ("Tau PAC", uTime, &parameters.pactau, 0.0, 63e6, "g", 0.1, 1., "PACTAU");
         bp->new_line ();
         bp->set_no_spin (false);
         bp->set_input_width_chars (10);
-  	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency, 0.0, 20e6, "g", 0.1, 100., "FREQUENCY");
+  	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency_manual, 0.0, 20e6, "g", 0.1, 100., "FREQUENCY-MANUAL");
         bp->new_line ();
-  	bp->grid_add_ec ("Volume", mVolt, &parameters.volume, 0.0, 1000.0, "g", 1.0, 10.0, "VOLUME");
+  	bp->grid_add_ec ("Volume", mVolt, &parameters.volume_manual, 0.0, 1000.0, "g", 1.0, 10.0, "VOLUME-MANUAL");
         bp->new_line ();
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
@@ -334,6 +330,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->grid_add_ec ("Lower Limit", mVolt, &parameters.exec_fb_lower, -1000.0, 1000.0, "g", 1.0, 10.0, "EXEC-FB-LOWER");
         bp->new_line ();
+        bp->grid_add_ec ("Exec Amp", mVolt, &parameters.exec_amplitude_monitor, -1000.0, 1000.0, "g", 0.1, 1., "EXEC-AMPLITUDE-MONITOR");
+        EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
+        bp->ec->Freeze ();
+        bp->new_line ();
         bp->grid_add_check_button ( N_("Enable"), "Enable Amplitude Controller", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::amplitude_controller), this);
         bp->grid_add_check_button ( N_("Invert"), "Invert Amplitude Controller Gain", 1,
@@ -367,6 +367,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->grid_add_ec ("Upper Limit", Hz, &parameters.freq_fb_upper, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-UPPER");
         bp->new_line ();
         bp->grid_add_ec ("Lower Limit", Hz, &parameters.freq_fb_lower, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-LOWER");
+        bp->new_line ();
+        bp->grid_add_ec ("DDS Freq", Hz, &parameters.dds_frequency_monitor, 0.0, 25e6, "g", 0.1, 1., "DDS-FREQ-MONITOR");
+        EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
+        bp->ec->Freeze ();
         bp->new_line ();
         bp->grid_add_check_button ( N_("Enable"), "Enable Phase Controller", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_controller), this);
@@ -676,16 +680,16 @@ void Inet_Json_External_Scandata::parameter_changed (Param_Control* pcs, gpointe
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
 
         self->write_parameter ("PACTAU", self->parameters.pactau);
-        self->write_parameter ("FREQUENCY", self->parameters.frequency);
-        self->write_parameter ("VOLUME", self->parameters.volume);
-        self->write_parameter ("TUNE-DFREQ", self->parameters.tune_dfreq);
-        self->write_parameter ("TUNE-SPAN", self->parameters.tune_span);
-        self->write_parameter ("AMPLITUDE-FB-SETPOINT", self->parameters.amplitude_fb_setpoint);
-        self->write_parameter ("EXEC-FB-UPPER", self->parameters.exec_fb_upper);
-        self->write_parameter ("EXEC-FB-LOWER", self->parameters.exec_fb_lower);
-        self->write_parameter ("PHASE-FB-SETPOINT", self->parameters.phase_fb_setpoint);
-        self->write_parameter ("FREQ-FB-UPPER", self->parameters.freq_fb_upper);
-        self->write_parameter ("FREQ-FB-LOWER", self->parameters.freq_fb_lower);
+        self->write_parameter ("FREQUENCY_MANUAL", self->parameters.frequency_manual);
+        self->write_parameter ("VOLUME_MANUAL", self->parameters.volume_manual);
+        self->write_parameter ("TUNE_DFREQ", self->parameters.tune_dfreq);
+        self->write_parameter ("TUNE_SPAN", self->parameters.tune_span);
+        self->write_parameter ("AMPLITUDE_FB_SETPOINT", self->parameters.amplitude_fb_setpoint);
+        self->write_parameter ("EXEC_FB_UPPER", self->parameters.exec_fb_upper);
+        self->write_parameter ("EXEC_FB_LOWER", self->parameters.exec_fb_lower);
+        self->write_parameter ("PHASE_FB_SETPOINT", self->parameters.phase_fb_setpoint);
+        self->write_parameter ("FREQ_FB_UPPER", self->parameters.freq_fb_upper);
+        self->write_parameter ("FREQ_FB_LOWER", self->parameters.freq_fb_lower);
         //self->write_parameter ("", self->parameters.);
 }
 

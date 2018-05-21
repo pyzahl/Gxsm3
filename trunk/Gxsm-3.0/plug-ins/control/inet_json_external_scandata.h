@@ -47,6 +47,7 @@ struct JSON_signal {
 
 struct PACPLL_parameters {
         double dc_offset;
+        double exec_amplitude_monitor;
         double dds_frequency_monitor;
         double volume_monitor;
         double phase_monitor;
@@ -63,8 +64,8 @@ struct PACPLL_parameters {
         double gain4;
         double gain5;
         double pactau;
-        double frequency;
-        double volume;
+        double frequency_manual;
+        double volume_manual;
         double operation;
         double pacverbose;
         double transport_decimation;
@@ -111,6 +112,7 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "CPU_LOAD", &pacpll_parameters.cpu_load, true },
         { "COUNTER", &pacpll_parameters.counter, true },
         { "FREE_RAM", &pacpll_parameters.free_ram, true },
+        { "EXEC_AMPLITIUDE_MONITOR", &pacpll_parameters.exec_amplitude_monitor, true },
         { "DDS_FREQ_MONITOR", &pacpll_parameters.dds_frequency_monitor, true },
         { "VOLUME_MONITOR", &pacpll_parameters.volume_monitor, true },
         { "PHASE_MONITOR", &pacpll_parameters.phase_monitor, true },
@@ -124,8 +126,8 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "GAIN4", &pacpll_parameters.gain4, false },
         { "GAIN5", &pacpll_parameters.gain5, false },
         { "PACTAU", &pacpll_parameters.pactau, false },
-        { "FREQUENCY", &pacpll_parameters.frequency, false },
-        { "VOLUME", &pacpll_parameters.volume, false },
+        { "FREQUENCY_MANUAL", &pacpll_parameters.frequency_manual, false },
+        { "VOLUME_MANUAL", &pacpll_parameters.volume_manual, false },
         { "OPERATION", &pacpll_parameters.operation, false },
         { "PACVERBOSE", &pacpll_parameters.pacverbose, false },
         { "TRANSPORT_DECIMATION", &pacpll_parameters.transport_decimation, false },
