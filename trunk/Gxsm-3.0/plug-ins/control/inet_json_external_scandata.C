@@ -266,6 +266,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         // Window Title
 	AppWindowInit("Inet JSON External Scan Data Control for High Speed RedPitaya PACPLL");
 
+        gchar *gs_path = g_strdup_printf ("%s.inet_json_settings", GXSM_RES_BASE_PATH_DOT);
+        inet_json_settings = g_settings_new (gs_path);
+
         bp = new BuildParam (v_grid);
         bp->set_no_spin (true);
 
@@ -377,11 +380,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
         bp->set_input_width_chars (25);
         input_rpaddress = bp->grid_add_input ("RedPitaya Address");
+
+        g_settings_bind (inet_json_settings, "redpitay-address",
+                         G_OBJECT (bp->input), "text",
+                         G_SETTINGS_BIND_DEFAULT);
         gtk_widget_set_tooltip_text (input_rpaddress, "RedPitaya IP Address like rp-f05603.local or 130.199.123.123");
         //  "ws://rp-f05603.local:9002/"
         //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "http://rp-f05603.local/pacpll/?type=run");
         //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "130.199.243.200");
-        gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "192.168.1.10");
+        //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "192.168.1.10");
         
         bp->grid_add_check_button ( N_("Connect"), "Check to initiate connection, uncheck to close connection.", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::connect_cb), this);

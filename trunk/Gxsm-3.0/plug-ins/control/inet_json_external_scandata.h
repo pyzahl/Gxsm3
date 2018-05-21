@@ -368,7 +368,8 @@ private:
         PACPLL_signals signals;
 
         BuildParam *bp;
-
+        GSettings *inet_json_settings;
+        
         gboolean run_scope;
         double gain_scale[5];
         double time_scale[5];
