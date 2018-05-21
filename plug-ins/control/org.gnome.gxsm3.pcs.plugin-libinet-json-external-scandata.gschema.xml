@@ -1,12 +1,6 @@
 <schemalist>
   <schema id="org.gnome.gxsm3.pcs.plugin-libinet-json-external-scandata" path="/org/gnome/gxsm3/pcs/plugin-libinet-json-external-scandata/">
 
-    <key name="rp-pacpll-dds-freq-monitor" type="d">
-      <default>0</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-DDS-FREQ-MONITOR', Default/U: 0 Hz     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-DDS-FREQ-MONITOR', Default/U: 0 Hz    , Adjustment PCS Name: 'rp-pacpll-DDS-FREQ-MONITOR' </description>
-    </key>
-
     <key name="rp-pacpll-dc-offset" type="d">
       <default>0</default>
       <summary>PCS Remote-ID: 'rp-pacpll-DC-OFFSET', Default/U: 0 mV     </summary>
@@ -19,16 +13,16 @@
       <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 2e+08 µs    , Adjustment PCS Name: 'rp-pacpll-PACTAU' </description>
     </key>
 
-    <key name="rp-pacpll-frequency" type="d">
+    <key name="rp-pacpll-frequency-manual" type="d">
       <default>32768</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-FREQUENCY', Default/U: 32768 Hz     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-FREQUENCY', Default/U: 32768 Hz    , Adjustment PCS Name: 'rp-pacpll-FREQUENCY' </description>
+      <summary>PCS Remote-ID: 'rp-pacpll-FREQUENCY-MANUAL', Default/U: 32768 Hz     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-FREQUENCY-MANUAL', Default/U: 32768 Hz    , Adjustment PCS Name: 'rp-pacpll-FREQUENCY-MANUAL' </description>
     </key>
 
-    <key name="rp-pacpll-volume" type="d">
+    <key name="rp-pacpll-volume-manual" type="d">
       <default>300</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-VOLUME', Default/U: 300 mV     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-VOLUME', Default/U: 300 mV    , Adjustment PCS Name: 'rp-pacpll-VOLUME' </description>
+      <summary>PCS Remote-ID: 'rp-pacpll-VOLUME-MANUAL', Default/U: 300 mV     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-VOLUME-MANUAL', Default/U: 300 mV    , Adjustment PCS Name: 'rp-pacpll-VOLUME-MANUAL' </description>
     </key>
 
     <key name="rp-pacpll-tune-dfreq" type="d">
@@ -79,6 +73,12 @@
       <description>pcs0000, PCS Remote-ID: 'rp-pacpll-EXEC-FB-LOWER', Default/U: -100 mV    , Adjustment PCS Name: 'rp-pacpll-EXEC-FB-LOWER' </description>
     </key>
 
+    <key name="rp-pacpll-exec-amplitude-monitor" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-EXEC-AMPLITUDE-MONITOR', Default/U: 0 mV     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-EXEC-AMPLITUDE-MONITOR', Default/U: 0 mV    , Adjustment PCS Name: 'rp-pacpll-EXEC-AMPLITUDE-MONITOR' </description>
+    </key>
+
     <key name="rp-pacpll-phase-monitor" type="d">
       <default>0</default>
       <summary>PCS Remote-ID: 'rp-pacpll-PHASE-MONITOR', Default/U: 0 °     </summary>
@@ -113,6 +113,12 @@
       <default>30000</default>
       <summary>PCS Remote-ID: 'rp-pacpll-FREQ-FB-LOWER', Default/U: 30000 Hz     </summary>
       <description>pcs0000, PCS Remote-ID: 'rp-pacpll-FREQ-FB-LOWER', Default/U: 30000 Hz    , Adjustment PCS Name: 'rp-pacpll-FREQ-FB-LOWER' </description>
+    </key>
+
+    <key name="rp-pacpll-dds-freq-monitor" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-DDS-FREQ-MONITOR', Default/U: 0 Hz     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-DDS-FREQ-MONITOR', Default/U: 0 Hz    , Adjustment PCS Name: 'rp-pacpll-DDS-FREQ-MONITOR' </description>
     </key>
   </schema>
 
