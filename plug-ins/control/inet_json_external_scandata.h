@@ -179,7 +179,12 @@ public:
 	static void scan_start_callback (gpointer user_data);
 	static void scan_stop_callback (gpointer user_data);
 
-	static void parameter_changed (Param_Control* pcs, gpointer user_data);
+	static void pac_tau_parameter_changed (Param_Control* pcs, gpointer user_data);
+	static void pac_frequency_parameter_changed (Param_Control* pcs, gpointer user_data);
+	static void pac_volume_parameter_changed (Param_Control* pcs, gpointer user_data);
+	static void tune_parameter_changed (Param_Control* pcs, gpointer user_data);
+	static void amp_ctrl_parameter_changed (Param_Control* pcs, gpointer user_data);
+	static void phase_ctrl_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void amplitude_gain_changed (Param_Control* pcs, gpointer user_data);
         static void amplitude_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void amplitude_controller (GtkWidget *widget, Inet_Json_External_Scandata *self);
@@ -195,7 +200,7 @@ public:
 
         static void choice_auto_set_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
-	void set_gain_defaults ();
+	void send_all_parameters ();
         
 	void update (); // window update (inputs, etc. -- here currently not really necessary)
         void update_monitoring_parameters ();
@@ -204,7 +209,6 @@ public:
 
         void stream_data ();
         
-	GtkWidget *remote_param;
         static void connect_cb (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void enable_scope (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void dbg_l1 (GtkWidget *widget, Inet_Json_External_Scandata *self);
@@ -352,7 +356,8 @@ public:
         void json_parse_message (const char *json_string);
         
         void status_append (const gchar *msg);
-
+        void update_health ();
+        
         void debug_log (const gchar *msg){
                 if (debug_level > 4)
                         g_message (msg);
@@ -379,6 +384,7 @@ private:
        
         GtkWidget *input_rpaddress;
         GtkWidget *text_status;
+	GtkWidget *red_pitaya_health;
 
         gint debug_level; 
         UnitObj *Unity, *Hz, *Deg, *VoltDeg, *Volt, *mVolt, *VoltHz, *dB, *Time, *uTime;

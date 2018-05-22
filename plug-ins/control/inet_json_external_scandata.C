@@ -261,7 +261,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	VoltHz   = new UnitObj("mV/Hz","mV/Hz");
 	dB       = new UnitObj("dB","dB");
 	Time     = new UnitObj("s","s");
-	uTime    = new LinUnit(UTF8_MU "s", "us", "Time", 1e-6);
+	uTime    = new LinUnit(UTF8_MU "s", "us", "Time");
 
         // Window Title
 	AppWindowInit("Inet JSON External Scan Data Control for High Speed RedPitaya PACPLL");
@@ -274,8 +274,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
         bp->set_pcs_remote_prefix ("rp-pacpll-");
 
-        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::parameter_changed, this);
         bp->set_input_width_chars (16);
+        bp->set_default_ec_change_notice_fkt (NULL, NULL);
 
         bp->new_grid_with_frame ("RedPitaya PAC Setup");
         bp->grid_add_ec ("In1 Offset", mVolt, &parameters.dc_offset, -1000.0, 1000.0, "g", 0.1, 1., "DC-OFFSET");
@@ -285,23 +285,28 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         parameters.pactau = 200.0; // us
         parameters.frequency_manual = 32768.0; // Hz
         parameters.volume_manual = 300.0; // mV
-  	bp->grid_add_ec ("Tau PAC", uTime, &parameters.pactau, 0.0, 63e6, "g", 0.1, 1., "PACTAU");
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_tau_parameter_changed, this);
+  	bp->grid_add_ec ("Tau PAC", uTime, &parameters.pactau, 0.0, 63e6, "6g", 10., 1., "PACTAU");
         bp->new_line ();
         bp->set_no_spin (false);
         bp->set_input_width_chars (12);
-  	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency_manual, 0.0, 20e6, "12.3f", 0.1, 100., "FREQUENCY-MANUAL");
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_frequency_parameter_changed, this);
+  	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency_manual, 0.0, 20e6, "12g", 0.1, 10., "FREQUENCY-MANUAL");
         bp->new_line ();
-  	bp->grid_add_ec ("Volume", mVolt, &parameters.volume_manual, 0.0, 1000.0, "g", 0.01, 10.0, "VOLUME-MANUAL");
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_volume_parameter_changed, this);
+  	bp->grid_add_ec ("Volume", mVolt, &parameters.volume_manual, 0.0, 1000.0, "5g", 0.1, 1.0, "VOLUME-MANUAL");
         bp->new_line ();
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
         parameters.tune_dfreq = 0.1;
         parameters.tune_span = 50.0;
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::tune_parameter_changed, this);
   	bp->grid_add_ec ("Tune dFreq", Hz, &parameters.tune_dfreq, 1e-4, 1e3, "g", 0.01, 0.1, "TUNE-DFREQ");
         bp->new_line ();
   	bp->grid_add_ec ("Tune Span", Hz, &parameters.tune_span, 0.0, 1e6, "g", 0.1, 10., "TUNE-SPAN");
 
         bp->pop_grid ();
+        bp->set_default_ec_change_notice_fkt (NULL, NULL);
 
         bp->new_grid_with_frame ("Amplitude Controller");
         bp->set_input_nx (3);
@@ -318,7 +323,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_no_spin (false);
         bp->set_input_width_chars (10);
 
-        bp->grid_add_ec ("Setpoint", mVolt, &parameters.amplitude_fb_setpoint, 0.0, 1000.0, "g", 0.1, 10.0, "AMPLITUDE-FB-SETPOINT");
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::amp_ctrl_parameter_changed, this);
+        bp->grid_add_ec ("Setpoint", mVolt, &parameters.amplitude_fb_setpoint, 0.0, 1000.0, "5g", 0.1, 10.0, "AMPLITUDE-FB-SETPOINT");
         bp->new_line ();
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::amplitude_gain_changed, this);
         bp->grid_add_ec ("CP gain", dB, &parameters.amplitude_fb_cp_db, -200.0, 200.0, "g", 0.1, 1.0, "AMPLITUDE-FB-CP");
@@ -327,14 +333,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
-        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::parameter_changed, this);
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::amp_ctrl_parameter_changed, this);
         bp->set_input_nx (1);
         bp->set_input_width_chars (10);
         bp->grid_add_ec ("Limits", mVolt, &parameters.exec_fb_lower, -1000.0, 1000.0, "g", 1.0, 10.0, "EXEC-FB-LOWER");
         bp->grid_add_ec ("...", mVolt, &parameters.exec_fb_upper, 0.0, 1000.0, "g", 1.0, 10.0, "EXEC-FB-UPPER");
+        bp->new_line ();
         bp->set_input_width_chars (16);
         bp->set_input_nx (3);
-        bp->new_line ();
+        bp->set_default_ec_change_notice_fkt (NULL, NULL);
         bp->grid_add_ec ("Exec Amp", mVolt, &parameters.exec_amplitude_monitor, -1000.0, 1000.0, "g", 0.1, 1., "EXEC-AMPLITUDE-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
@@ -362,7 +369,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         parameters.freq_fb_lower = 30000.;
         bp->set_no_spin (false);
         bp->set_input_width_chars (8);
-        bp->grid_add_ec ("Setpoint", Deg, &parameters.phase_fb_setpoint, -180.0, 180.0, "g", 0.1, 1.0, "PHASE-FB-SETPOINT");
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::phase_ctrl_parameter_changed, this);
+        bp->grid_add_ec ("Setpoint", Deg, &parameters.phase_fb_setpoint, -180.0, 180.0, "5g", 0.1, 1.0, "PHASE-FB-SETPOINT");
         bp->new_line ();
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::phase_gain_changed, this);
         bp->grid_add_ec ("CP gain", dB, &parameters.phase_fb_cp_db, -200.0, 200.0, "g", 0.1, 1.0, "PHASE-FB-CP");
@@ -371,14 +379,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
-        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::parameter_changed, this);
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::phase_ctrl_parameter_changed, this);
         bp->set_input_width_chars (10);
         bp->set_input_nx (1);
         bp->grid_add_ec ("Limits", Hz, &parameters.freq_fb_lower, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-LOWER");
         bp->grid_add_ec ("...", Hz, &parameters.freq_fb_upper, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-UPPER");
+        bp->new_line ();
         bp->set_input_width_chars (16);
         bp->set_input_nx (3);
-        bp->new_line ();
+        bp->set_default_ec_change_notice_fkt (NULL, NULL);
         bp->grid_add_ec ("DDS Freq", Hz, &parameters.dds_frequency_monitor, 0.0, 25e6, "14.4f", 0.1, 1., "DDS-FREQ-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
@@ -423,6 +432,11 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         //tmp=bp->grid_add_button ( N_("Write"), "TEST WRITE", 1,
         //                          G_CALLBACK (Inet_Json_External_Scandata::write_cb), this);
 
+        bp->new_line ();
+        bp->set_input_width_chars (80);
+        red_pitaya_health = bp->grid_add_input ("RedPitaya Health",10);
+        gtk_widget_set_sensitive (bp->input, FALSE);
+        gtk_editable_set_editable (GTK_EDITABLE (bp->input), FALSE); 
         bp->new_line ();
 
         text_status = gtk_text_view_new ();
@@ -687,25 +701,42 @@ int Inet_Json_External_Scandata::setup_scan (int ch,
 }
 
 
-
-void Inet_Json_External_Scandata::parameter_changed (Param_Control* pcs, gpointer user_data){
+void Inet_Json_External_Scandata::pac_tau_parameter_changed (Param_Control* pcs, gpointer user_data){
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
-
         self->write_parameter ("PACTAU", self->parameters.pactau);
+}
+
+void Inet_Json_External_Scandata::pac_frequency_parameter_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
         self->write_parameter ("FREQUENCY_MANUAL", self->parameters.frequency_manual);
+}
+
+void Inet_Json_External_Scandata::pac_volume_parameter_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
         self->write_parameter ("VOLUME_MANUAL", self->parameters.volume_manual);
+}
+
+void Inet_Json_External_Scandata::tune_parameter_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
         self->write_parameter ("TUNE_DFREQ", self->parameters.tune_dfreq);
         self->write_parameter ("TUNE_SPAN", self->parameters.tune_span);
+}
+
+void Inet_Json_External_Scandata::amp_ctrl_parameter_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
         self->write_parameter ("AMPLITUDE_FB_SETPOINT", self->parameters.amplitude_fb_setpoint);
         self->write_parameter ("EXEC_FB_UPPER", self->parameters.exec_fb_upper);
         self->write_parameter ("EXEC_FB_LOWER", self->parameters.exec_fb_lower);
+}
+
+void Inet_Json_External_Scandata::phase_ctrl_parameter_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
         self->write_parameter ("PHASE_FB_SETPOINT", self->parameters.phase_fb_setpoint);
         self->write_parameter ("FREQ_FB_UPPER", self->parameters.freq_fb_upper);
         self->write_parameter ("FREQ_FB_LOWER", self->parameters.freq_fb_lower);
-        //self->write_parameter ("", self->parameters.);
 }
 
-void Inet_Json_External_Scandata::set_gain_defaults (){
+void Inet_Json_External_Scandata::send_all_parameters (){
         write_parameter ("GAIN1", 100.);
         write_parameter ("SHR_CH1", 0.);
         write_parameter ("GAIN2", 100.);
@@ -718,6 +749,14 @@ void Inet_Json_External_Scandata::set_gain_defaults (){
         write_parameter ("TRANSPORT_DECIMATION", 2);
         write_parameter ("TRANSPORT_MODE", 0);
         write_parameter ("OPERATION", 2);
+        pac_tau_parameter_changed (NULL, this);
+        pac_frequency_parameter_changed (NULL, this);
+        pac_volume_parameter_changed (NULL, this);
+        tune_parameter_changed (NULL, this);
+        amp_ctrl_parameter_changed (NULL, this);
+        amplitude_gain_changed (NULL, this);
+        phase_ctrl_parameter_changed (NULL, this);
+        phase_gain_changed (NULL, this);
 }
 
 void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -920,8 +959,7 @@ void Inet_Json_External_Scandata::got_client_connection (GObject *object, GAsync
 		g_signal_connect(self->client, "closed",  G_CALLBACK(Inet_Json_External_Scandata::on_closed),  self);
 		g_signal_connect(self->client, "message", G_CALLBACK(Inet_Json_External_Scandata::on_message), self);
 		//g_signal_connect(connection, "closing", G_CALLBACK(on_closing_send_message), message);
-                self->set_gain_defaults ();
-
+                self->send_all_parameters ();
         }
 }
 
@@ -1026,6 +1064,7 @@ void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
                 self->update_monitoring_parameters();
                 self->update_graph ();
                 self->stream_data ();
+                self->update_health ();
         }
 
 	g_bytes_unref (message);
@@ -1091,6 +1130,11 @@ void Inet_Json_External_Scandata::write_parameter (const gchar *paramater_id, in
         }
 }
 
+void Inet_Json_External_Scandata::update_health (){
+        gchar *health_string = g_strdup_printf ("CPU: %3.0f%% Free: %6.1f MB #: %g", pacpll_parameters.cpu_load, pacpll_parameters.free_ram/1024/1024, pacpll_parameters.counter);
+        gtk_entry_set_text (GTK_ENTRY (red_pitaya_health), health_string);
+        g_free (health_string);
+}
 
 void Inet_Json_External_Scandata::status_append (const gchar *msg){
 
