@@ -112,7 +112,7 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "CPU_LOAD", &pacpll_parameters.cpu_load, true },
         { "COUNTER", &pacpll_parameters.counter, true },
         { "FREE_RAM", &pacpll_parameters.free_ram, true },
-        { "EXEC_AMPLITIUDE_MONITOR", &pacpll_parameters.exec_amplitude_monitor, true },
+        { "EXEC_MONITOR", &pacpll_parameters.exec_amplitude_monitor, true },
         { "DDS_FREQ_MONITOR", &pacpll_parameters.dds_frequency_monitor, true },
         { "VOLUME_MONITOR", &pacpll_parameters.volume_monitor, true },
         { "PHASE_MONITOR", &pacpll_parameters.phase_monitor, true },

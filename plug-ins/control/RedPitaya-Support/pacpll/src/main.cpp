@@ -120,7 +120,7 @@ CIntParameter TRANSPORT_DECIMATION("TRANSPORT_DECIMATION", CBaseParameter::RW, 2
 
 CFloatParameter DC_OFFSET("DC_OFFSET", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
 
-CDoubleParameter EXEC_AMPLITUDE_MONITOR("EXEC_AMPLITUDE_MONITOR", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
+CDoubleParameter EXEC_MONITOR("EXEC_MONITOR", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
 CDoubleParameter DDS_FREQ_MONITOR("DDS_FREQ_MONITOR", CBaseParameter::RW, 0, 0, 0.0, 60e6);// Hz
 CDoubleParameter PHASE_MONITOR("PHASE_MONITOR", CBaseParameter::RW, 0, 0, -180.0, 180.0); // deg
 CDoubleParameter VOLUME_MONITOR("VOLUME_MONITOR", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
@@ -972,7 +972,7 @@ void UpdateSignals(void)
 
         VOLUME_MONITOR.Value ()   = reading_vector[4] * 1000.; // Volume Monitor in mV
         PHASE_MONITOR.Value ()    = reading_vector[5] * 180./M_PI; // PLL Phase deg
-        EXEC_AMPLITUDE_MONITOR.Value () = reading_vector[8] * 1000.; // Exec Amplitude Monitor in mV
+        EXEC_MONITOR.Value () = reading_vector[8] * 1000.; // Exec Amplitude Monitor in mV
         DDS_FREQ_MONITOR.Value () = reading_vector[9]; // DDS Freq Monitor in Hz
         
         rp_PAC_auto_dc_offset_correct ();
