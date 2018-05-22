@@ -121,15 +121,15 @@ CIntParameter TRANSPORT_DECIMATION("TRANSPORT_DECIMATION", CBaseParameter::RW, 2
 CFloatParameter DC_OFFSET("DC_OFFSET", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
 
 CDoubleParameter EXEC_MONITOR("EXEC_MONITOR", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
-CDoubleParameter DDS_FREQ_MONITOR("DDS_FREQ_MONITOR", CBaseParameter::RW, 0, 0, 0.0, 60e6);// Hz
+CDoubleParameter DDS_FREQ_MONITOR("DDS_FREQ_MONITOR", CBaseParameter::RW, 0, 0, 0.0, 25e6);// Hz
 CDoubleParameter PHASE_MONITOR("PHASE_MONITOR", CBaseParameter::RW, 0, 0, -180.0, 180.0); // deg
 CDoubleParameter VOLUME_MONITOR("VOLUME_MONITOR", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
 
 // PAC CONFIGURATION
 //./pacpll -m s -f 32766.0 -v .5 -t 0.0004 -V 3
 //./pacpll -m t -f 32766.0 -v .5 -t 0.0004 -M 1 -s 2.0 -d 0.05 -u 150000  > data-tune
-CDoubleParameter FREQUENCY_TUNE("FREQUENCY_TUNE", CBaseParameter::RW, 32766.0, 0, 1, 20e6); // Hz
-CDoubleParameter FREQUENCY_MANUAL("FREQUENCY_MANUAL", CBaseParameter::RW, 32766.0, 0, 1, 20e6); // Hz
+CDoubleParameter FREQUENCY_TUNE("FREQUENCY_TUNE", CBaseParameter::RW, 32766.0, 0, 1, 25e6); // Hz
+CDoubleParameter FREQUENCY_MANUAL("FREQUENCY_MANUAL", CBaseParameter::RW, 32766.0, 0, 1, 25e6); // Hz
 CDoubleParameter VOLUME_MANUAL("VOLUME_MANUAL", CBaseParameter::RW, 300.0, 0, 0.0, 1000.0); // mV
 CDoubleParameter PACTAU("PACTAU", CBaseParameter::RW, 200.0, 0, 0.0, 60e6); // us
 
@@ -343,7 +343,7 @@ double dds_phaseinc (double freq){
 
 double dds_phaseinc_to_freq (unsigned long long ddsphaseincQ44){
         double fclk = 125e6;
-        return (double)ddsphaseincQ44/Q44*fclk;
+        return fclk*(double)ddsphaseincQ44/(double)(Q44);
 }
 
 #define PACPLL_CFG_DDS_PHASEINC 0
@@ -548,11 +548,11 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         x = read_gpio_reg_int32 (2,0); // GPIO X3 : LMS DBG1 :: M (LMS input Signal) (cfg + 0x2000) ===> used for DC OFFSET calculation
         x3=(double)x / QLMS;
         x = read_gpio_reg_int32 (2,1); // GPIO X4 : CORDIC SQRT (AM2=A^2+B^2) = Amplitude Monitor
-        //x4=(double)x / QCORDICSQRT;
-        x4=(double)x / QEXEC;
-        x = read_gpio_reg_int32 (3,0); // GPIO X5 : CORDIC SQRT = Amplitude after FIR -- experimental
+        x4=(double)x / QCORDICSQRT;
+        //x4=(double)x / QEXEC;
+        x = read_gpio_reg_int32 (3,0); // GPIO X5 : XXX -- CORDIC SQRT = Amplitude after FIR -- experimental, removed FIR
         x5=(double)x / QCORDICSQRTFIR;
-        x = read_gpio_reg_int32 (3,1); // GPIO X6 : CORDIC ATAN(X/Y) = Phase after FIR -- experimental
+        x = read_gpio_reg_int32 (3,1); // GPIO X6 : XXX --- CORDIC ATAN(X/Y) = Phase after FIR -- experimental, removed FIR
         x6=(double)x / QCORDICATANFIR;
         xx7 = x = read_gpio_reg_int32 (4,0); // GPIO X7 : Exec Ampl Control Signal (signed)
         x7=(double)x / QEXEC;
@@ -578,14 +578,16 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         reading_vector[3] = b; // LMS B (Imag)
 
         // FPGA CORDIC based convertions
-        reading_vector[4] = x4;  // FPGA CORDIC Amplitude Monitor
-        reading_vector[5] = x10; // FPGA CORDIC Phase Monitor
+        reading_vector[4] = x4;  // FPGA CORDIC (SQRT) Amplitude Monitor
+        reading_vector[5] = x10; // FPGA CORDIC (ATAN) Phase Monitor
 
         reading_vector[6] = x5;  // FPGA CORDIC FIR Amplitude
         reading_vector[7] = x6;  // FPGA CORDIC FIR Phase !! <-CHECK FPGA CONFIG
 
         reading_vector[8] = x7;  // Exec Ampl Control Signal (signed)
-        reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9>>(64-44)));  // FPGA LMS Y || now: DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
+        //                                                         <<12
+        reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
+        //reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9>>(64-44)));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
 
         reading_vector[10] = x3; // M (LMS input Signal)
         reading_vector[11] = x3; // M1 (LMS input Signal-DC), tests...
@@ -970,7 +972,7 @@ void UpdateSignals(void)
         
         if (verbose > 3) fprintf(stderr, "UpdateSignal complete.\n");
 
-        VOLUME_MONITOR.Value ()   = reading_vector[4] * 1000.; // Volume Monitor in mV
+        VOLUME_MONITOR.Value ()   = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
         PHASE_MONITOR.Value ()    = reading_vector[5] * 180./M_PI; // PLL Phase deg
         EXEC_MONITOR.Value () = reading_vector[8] * 1000.; // Exec Amplitude Monitor in mV
         DDS_FREQ_MONITOR.Value () = reading_vector[9]; // DDS Freq Monitor in Hz
