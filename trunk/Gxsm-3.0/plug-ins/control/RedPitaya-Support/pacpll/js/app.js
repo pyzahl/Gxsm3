@@ -6,6 +6,9 @@
     APP.config.app_url = '/bazaar?start=' + APP.config.app_id + '?' + location.search.substr(1);
     APP.config.socket_url = 'ws://' + window.location.hostname + ':9002';
 
+    //console.log ("APP URL: " + APP.config.app_url )
+    //console.log ("SOCKET URL :" + APP.config.socket_url )
+
     // WebSocket
     APP.ws = null;
 
@@ -14,6 +17,8 @@
 
     APP.param_callbacks = {};
 
+    APP.param_callbacks["PACPLL_RUN"] = APP.processRun;
+    
     // Signal stack
     APP.signalStack = [];
 
@@ -26,9 +31,9 @@
     };
     
     // Parameters
-    APP.pactau = 0.0004;
+    APP.pactau = 200.0; // us
     APP.frequency = 30755.0; //32766.0;
-    APP.volume = 0.4;
+    APP.volume = 200.0; // mV
     APP.operation = 0;
     APP.TransportDecimation = 16;
     APP.TransportMode = 0;
@@ -37,7 +42,6 @@
     APP.TransportCh5 = 5;
     
     APP.pacverbose = 0;
-    APP.processing = false;
     APP.gain1 = 100;
     APP.gain2 = 100;
     APP.gain3 = 1000;
@@ -69,7 +73,11 @@
     
     APP.compressed_data = 0;
     APP.decompressed_data = 0;
- 
+    // App state
+    APP.state = {
+        socket_opened: false,
+        processing: false,
+    };
 
     // Starts template application on server
     APP.startApp = function() {
@@ -93,7 +101,12 @@
     };
 
 
-
+    APP.closeWebSocket = function() {
+        if (APP.ws) {
+	    APP.state.socket_opened = false;
+            APP.ws.close ();
+	}
+    };
 
     APP.connectWebSocket = function() {
 
@@ -115,6 +128,7 @@
             APP.ws.onopen = function() {
                 $('#hello_message').text("GXSM3 Red Pitaya PACPLL Webinterface");
                 console.log('Socket opened');   
+                APP.state.socket_opened = true;
 		
 		APP.params.local = {};
                 setTimeout(APP.loadParams, 20);
@@ -144,6 +158,7 @@
             };
 
             APP.ws.onclose = function() {
+                APP.state.socket_opened = false;
                 console.log('Socket closed');
             };
 
@@ -156,10 +171,10 @@
                 //console.log('Message recieved');
 
                 //Capture signals
-                if (APP.processing) {
+                if (APP.state.processing) {
                     return;
                 }
-                APP.processing = true;
+                APP.state.processing = true;
 
                 try {
                     var data = new Uint8Array(ev.data);
@@ -171,7 +186,7 @@
 
                     if (receive.parameters) {
 			//console.log ("**ws received parameters");
-			//console.log (receive.parameters);
+			console.log ("APP.ws.onmessage" + receive.parameters);
 
                         APP.parameterStack.push (receive.parameters);
                         if ((Object.keys(APP.params.orig).length == 0) && (Object.keys(receive.parameters).length == 0)) {
@@ -186,15 +201,32 @@
                     if (receive.signals) {
                         APP.signalStack.push(receive.signals);
                     }
-                    APP.processing = false;
+                    APP.state.processing = false;
                 } catch (e) {
-                    APP.processing = false;
+                    APP.state.processing = false;
                     console.log(e);
                 } finally {
-                    APP.processing = false;
+                    APP.state.processing = false;
                 }
             };
         }
+    };
+
+    // Sends to server modified parameters
+    APP.sendParams = function() {
+        if ($.isEmptyObject(APP.params.local)) {
+            return false;
+        }
+
+        if (!APP.state.socket_opened) {
+            console.log('ERROR: Cannot save changes, socket not opened');
+            return false;
+        }
+
+        APP.params.local['in_command'] = { value: 'send_all_params' };
+        APP.ws.send(JSON.stringify({ parameters: APP.params.local }));
+        APP.params.local = {};
+        return true;
     };
 
     APP.performanceHandler = function() {
@@ -234,6 +266,7 @@
         for (var param_name in new_params) {
             // Save new parameter value
             APP.params.orig[param_name] = new_params[param_name];
+            console.log('APP.processParameters: ' + param_name + new_params[param_name]);
  
             if (APP.param_callbacks[param_name] !== undefined){
                 APP.param_callbacks[param_name](new_params);
@@ -244,6 +277,7 @@
     APP.statusParameterShowHandler = function() {
         //Stats - parameters         $('#ch1_reading').text(parseFloat(ch1).toFixed(4));
         $('#dc_offset').text(parseFloat (1.0*APP.params.orig['DC_OFFSET'].value).toFixed(4) + "mV");
+        $('#exec_amp_mon').text(parseFloat (1.0*APP.params.orig['EXEC_AMPLITUDE_MONITOR'].value).toFixed(4) + "mV");
         $('#dds_freq_mon').text(parseFloat (1.0*APP.params.orig['DDS_FREQ_MONITOR'].value).toFixed(4) + "Hz");
         $('#dds_volume_mon').text(parseFloat (1.0*APP.params.orig['VOLUME_MONITOR'].value).toFixed(4) + "mV");
         $('#info_cpu').text(floatToLocalString(shortenFloat(APP.params.orig['CPU_LOAD'].value)));
@@ -380,7 +414,7 @@
         APP.frequency = $('#frequency_set').val();
 
         var local = {};
-        local['FREQUENCY'] = { value: APP.frequency };
+        local['FREQUENCY_MANUAL'] = { value: APP.frequency };
         APP.ws.send(JSON.stringify({ parameters: local }));
 
         $('#frequency_value').text(APP.frequency);
@@ -391,10 +425,10 @@
     APP.setVolume = function() {
 
         APP.volume = $('#volume_set').val();
-	var volt = APP.volume/1000.;
+	var volt = APP.volume;
 	
         var local = {};
-        local['VOLUME'] = { value: volt };
+        local['VOLUME_MANUAL'] = { value: volt };
         APP.ws.send(JSON.stringify({ parameters: local }));
 
         $('#volume_value').text(APP.volume);
@@ -518,7 +552,7 @@
 	}
 	
         var local = {};
-        local['FREQUENCY'] = { value: APP.tune_f };
+        local['FREQUENCY_MANUAL'] = { value: APP.tune_f };
         APP.ws.send(JSON.stringify({ parameters: local }));
 	
         $('#frequency_value').text(APP.tune_f);
@@ -808,6 +842,29 @@
         APP.plot.draw();
     };
 
+    APP.SaveGraphsPNG = function() {
+        html2canvas($('body'), {
+            background: '#343433', // Like background of BODY
+            onrendered: function(canvas) {
+                var a = document.createElement('a');
+                // toDataURL defaults to png, so we need to request a jpeg, then convert for file download.
+                a.href = canvas.toDataURL("image/jpeg").replace("image/jpeg", "image/octet-stream");
+                a.download = 'graphs.jpg';
+                // a.click(); // Not working with firefox
+                fireEvent(a, 'click');
+            }
+        });
+    }
+
+    APP.processRun = function(new_params) {
+        if (new_params['PACPLL_RUN'].value === true) {
+            $('#PACPLL_RUN').hide();
+            $('#PACPLL_STOP').css('display', 'block');
+        } else {
+            $('#PACPLL_STOP').hide();
+            $('#PACPLL_RUN').show();
+        }
+    }
 
 
 
@@ -1081,6 +1138,40 @@ $(function() {
         APP.setTransportCh5(); 
     });
 
+
+    // Process clicks on top menu buttons
+    $('#PACPLL_RUN').on('click', function(ev) {
+        ev.preventDefault();
+        $('#PACPLL_RUN').hide();
+        $('#PACPLL_STOP').css('display', 'block');
+        APP.params.local['PACPLL_RUN'] = { value: true };
+        APP.sendParams();
+        APP.running = true;
+	APP.startApp();
+	console.log('PACPLL: RUN, Restart App and reopen WS');
+    });
+
+    $('#PACPLL_STOP').on('click', function(ev) {
+        ev.preventDefault();
+        $('#PACPLL_STOP').hide();
+        $('#PACPLL_RUN').show();
+        APP.params.local['PACPLL_RUN'] = { value: false };
+        APP.sendParams();
+        APP.running = false;
+	APP.closeWebSocket();
+	console.log('PACPLL: STOP, close WS.');
+    });
+
+    $('#PACPLL_SAVEGRAPH').on('click', function() {
+        setTimeout(APP.SaveGraphsPNG, 30);
+    });
+
+    $('#PACPLL_SAVECSV').on('click', function() {
+        $(this).attr('href', APP.downloadDataAsCSV("pacpllData.csv"));
+    });
+
+
+    
     // Start application
     APP.startApp();
 });
