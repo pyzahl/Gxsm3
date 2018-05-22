@@ -378,6 +378,7 @@ private:
         GSettings *inet_json_settings;
         
         gboolean run_scope;
+        int transport;
         double gain_scale[5];
         double time_scale[5];
         GtkWidget *signal_graph;
