@@ -288,8 +288,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
   	bp->grid_add_ec ("Tau PAC", uTime, &parameters.pactau, 0.0, 63e6, "g", 0.1, 1., "PACTAU");
         bp->new_line ();
         bp->set_no_spin (false);
-        bp->set_input_width_chars (10);
-  	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency_manual, 0.0, 20e6, "g", 0.1, 100., "FREQUENCY-MANUAL");
+        bp->set_input_width_chars (12);
+  	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency_manual, 0.0, 20e6, "12.3f", 0.1, 100., "FREQUENCY-MANUAL");
         bp->new_line ();
   	bp->grid_add_ec ("Volume", mVolt, &parameters.volume_manual, 0.0, 1000.0, "g", 1.0, 10.0, "VOLUME-MANUAL");
         bp->new_line ();
@@ -304,17 +304,19 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->pop_grid ();
 
         bp->new_grid_with_frame ("Amplitude Controller");
+        bp->set_input_nx (3);
         bp->grid_add_ec ("Reading", mVolt, &parameters.volume_monitor, -1.0, 1.0, "g", 0.1, 1., "VOLUME-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
         parameters.amplitude_fb_setpoint = 100.0; // mV
+        parameters.amplitude_fb_invert = 1.;
         parameters.amplitude_fb_cp_db = -50.;
         parameters.amplitude_fb_ci_db = -60.;
         parameters.exec_fb_upper = 200.0;
         parameters.exec_fb_lower = -100.0;
         bp->set_no_spin (false);
-        bp->set_input_width_chars (8);
+        bp->set_input_width_chars (10);
 
         bp->grid_add_ec ("Setpoint", mVolt, &parameters.amplitude_fb_setpoint, 0.0, 1000.0, "g", 1.0, 10.0, "AMPLITUDE-FB-SETPOINT");
         bp->new_line ();
@@ -326,28 +328,34 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::parameter_changed, this);
-        bp->grid_add_ec ("Upper Limit", mVolt, &parameters.exec_fb_upper, 0.0, 1000.0, "g", 1.0, 10.0, "EXEC-FB-UPPER");
-        bp->new_line ();
-        bp->grid_add_ec ("Lower Limit", mVolt, &parameters.exec_fb_lower, -1000.0, 1000.0, "g", 1.0, 10.0, "EXEC-FB-LOWER");
+        bp->set_input_nx (1);
+        bp->set_input_width_chars (10);
+        bp->grid_add_ec ("Limits", mVolt, &parameters.exec_fb_lower, -1000.0, 1000.0, "g", 1.0, 10.0, "EXEC-FB-LOWER");
+        bp->grid_add_ec ("...", mVolt, &parameters.exec_fb_upper, 0.0, 1000.0, "g", 1.0, 10.0, "EXEC-FB-UPPER");
+        bp->set_input_width_chars (16);
+        bp->set_input_nx (3);
         bp->new_line ();
         bp->grid_add_ec ("Exec Amp", mVolt, &parameters.exec_amplitude_monitor, -1000.0, 1000.0, "g", 0.1, 1., "EXEC-AMPLITUDE-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
-        bp->grid_add_check_button ( N_("Enable"), "Enable Amplitude Controller", 1,
+        bp->set_input_nx (1);
+        bp->grid_add_check_button ( N_("Enable"), "Enable Amplitude Controller", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::amplitude_controller), this);
-        bp->grid_add_check_button ( N_("Invert"), "Invert Amplitude Controller Gain", 1,
+        bp->grid_add_check_button ( N_("Invert"), "Invert Amplitude Controller Gain", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::amplitude_controller_invert), this);
 
 
         bp->pop_grid ();
 
         bp->new_grid_with_frame ("Phase Controller");
+        bp->set_input_nx (3);
         bp->grid_add_ec ("Reading", Deg, &parameters.phase_monitor, -180.0, 180.0, "g", 1., 10., "PHASE-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
         parameters.phase_fb_setpoint = 50.;
+        parameters.phase_fb_invert = 1.;
         parameters.phase_fb_cp_db = -180.;
         parameters.phase_fb_ci_db = -180.;
         parameters.freq_fb_upper = 33000.;
@@ -364,18 +372,22 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::parameter_changed, this);
-        bp->grid_add_ec ("Upper Limit", Hz, &parameters.freq_fb_upper, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-UPPER");
-        bp->new_line ();
-        bp->grid_add_ec ("Lower Limit", Hz, &parameters.freq_fb_lower, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-LOWER");
+        bp->set_input_width_chars (10);
+        bp->set_input_nx (1);
+        bp->grid_add_ec ("Limits", Hz, &parameters.freq_fb_lower, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-LOWER");
+        bp->grid_add_ec ("...", Hz, &parameters.freq_fb_upper, 0.0, 25e6, "g", 0.1, 1.0, "FREQ-FB-UPPER");
+        bp->set_input_width_chars (16);
+        bp->set_input_nx (3);
         bp->new_line ();
         bp->grid_add_ec ("DDS Freq", Hz, &parameters.dds_frequency_monitor, 0.0, 25e6, "g", 0.1, 1., "DDS-FREQ-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
-        bp->grid_add_check_button ( N_("Enable"), "Enable Phase Controller", 1,
+        bp->set_input_nx (1);
+        bp->grid_add_check_button ( N_("Enable"), "Enable Phase Controller", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_controller), this);
-        bp->grid_add_check_button ( N_("Invert"), "Invert Phase Controller Gain", 1,
-                                    G_CALLBACK (Inet_Json_External_Scandata::amplitude_controller_invert), this);
+        bp->grid_add_check_button ( N_("Invert"), "Invert Phase Controller Gain", 2,
+                                    G_CALLBACK (Inet_Json_External_Scandata::phase_controller_invert), this);
 
         bp->pop_grid ();
 
@@ -743,12 +755,10 @@ void Inet_Json_External_Scandata::choice_transport_ch5_callback (GtkWidget *widg
 
 void Inet_Json_External_Scandata::amplitude_gain_changed (Param_Control* pcs, gpointer user_data){
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
-        self->write_parameter ("AMPLITUDE_FB_CP",
-                               self->parameters.amplitude_fb_cp = self->parameters.amplitude_fb_invert
-                               * pow (10., self->parameters.amplitude_fb_cp_db/20.));
-        self->write_parameter ("AMPLITUDE_FB_CI",
-                               self->parameters.amplitude_fb_ci = self->parameters.amplitude_fb_invert
-                               * pow (10., self->parameters.amplitude_fb_ci_db/20.));
+        self->parameters.amplitude_fb_cp = self->parameters.amplitude_fb_invert * pow (10., self->parameters.amplitude_fb_cp_db/20.);
+        self->parameters.amplitude_fb_ci = self->parameters.amplitude_fb_invert * pow (10., self->parameters.amplitude_fb_ci_db/20.);
+        self->write_parameter ("AMPLITUDE_FB_CP", self->parameters.amplitude_fb_cp);
+        self->write_parameter ("AMPLITUDE_FB_CI", self->parameters.amplitude_fb_ci);
 }
 
 void Inet_Json_External_Scandata::amplitude_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -763,12 +773,10 @@ void Inet_Json_External_Scandata::amplitude_controller (GtkWidget *widget, Inet_
 
 void Inet_Json_External_Scandata::phase_gain_changed (Param_Control* pcs, gpointer user_data){
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
-        self->write_parameter ("PHASE_FB_CP",
-                               self->parameters.phase_fb_cp = self->parameters.phase_fb_invert
-                               * pow (10., self->parameters.phase_fb_cp_db/20.));
-        self->write_parameter ("PHASE_FB_CI",
-                               self->parameters.phase_fb_ci = self->parameters.phase_fb_invert
-                               * pow (10., self->parameters.phase_fb_ci_db/20.));
+        self->parameters.phase_fb_cp = self->parameters.phase_fb_invert * pow (10., self->parameters.phase_fb_cp_db/20.);
+        self->parameters.phase_fb_ci = self->parameters.phase_fb_invert * pow (10., self->parameters.phase_fb_ci_db/20.);
+        self->write_parameter ("PHASE_FB_CP", self->parameters.phase_fb_cp);
+        self->write_parameter ("PHASE_FB_CI", self->parameters.phase_fb_ci);
 }
 
 void Inet_Json_External_Scandata::phase_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -790,14 +798,14 @@ void Inet_Json_External_Scandata::update(){
 void Inet_Json_External_Scandata::update_monitoring_parameters(){
 
         // mirror global parameters to private
-        parameters.dds_frequency_monitor = pacpll_parameters.dds_frequency_monitor;
         parameters.dc_offset = pacpll_parameters.dc_offset;
+        parameters.exec_amplitude_monitor = pacpll_parameters.exec_amplitude_monitor;
+        parameters.dds_frequency_monitor = pacpll_parameters.dds_frequency_monitor;
         parameters.volume_monitor = pacpll_parameters.volume_monitor;
         parameters.phase_monitor = pacpll_parameters.phase_monitor;
         parameters.cpu_load = pacpll_parameters.cpu_load;
         parameters.free_ram = pacpll_parameters.free_ram;
         parameters.counter = pacpll_parameters.counter;
-
         if (G_IS_OBJECT (window))
 		g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "PAC_EC_READINGS_list"),
 				(GFunc) App::update_ec, NULL);
@@ -1030,7 +1038,7 @@ void Inet_Json_External_Scandata::on_closed (SoupWebsocketConnection *ws, gpoint
 
 void Inet_Json_External_Scandata::json_parse_message (const char *json_string){
         jsmn_parser p;
-        jsmntok_t tok[10000]; /* We expect no more than 5000 tokens, signal array is 1024 * 5*/
+        jsmntok_t tok[10000]; /* We expect no more than 10000 tokens, signal array is 1024 * 5*/
 
         // typial data messages:
         // {"signals":{"SIGNAL_CH3":{"size":1024,"value":[0,0,...,0.543632,0.550415]},"SIGNAL_CH4":{"size":1024,"value":[0,0,... ,-94.156487]},"SIGNAL_CH5":{"size":1024,"value":[0,0,.. ,-91.376022,-94.156487]}}}
@@ -1156,7 +1164,8 @@ void Inet_Json_External_Scandata::update_graph (){
                 paper->set_fill_rgba (CAIRO_COLOR_BLACK);
                 paper->draw (cr);
                 delete paper;
-
+                //cairo_item_segments *grid = new cairo_item_segments (44);
+                
                 double avg=0.;
                 char *valuestring;
                 cairo_item_text *reading = new cairo_item_text ();

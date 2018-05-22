@@ -277,7 +277,7 @@
     APP.statusParameterShowHandler = function() {
         //Stats - parameters         $('#ch1_reading').text(parseFloat(ch1).toFixed(4));
         $('#dc_offset').text(parseFloat (1.0*APP.params.orig['DC_OFFSET'].value).toFixed(4) + "mV");
-        $('#exec_amp_mon').text(parseFloat (1.0*APP.params.orig['EXEC_AMPLITUDE_MONITOR'].value).toFixed(4) + "mV");
+        $('#exec_amp_mon').text(parseFloat (1.0*APP.params.orig['EXEC_MONITOR'].value).toFixed(4) + "mV");
         $('#dds_freq_mon').text(parseFloat (1.0*APP.params.orig['DDS_FREQ_MONITOR'].value).toFixed(4) + "Hz");
         $('#dds_volume_mon').text(parseFloat (1.0*APP.params.orig['VOLUME_MONITOR'].value).toFixed(4) + "mV");
         $('#info_cpu').text(floatToLocalString(shortenFloat(APP.params.orig['CPU_LOAD'].value)));
