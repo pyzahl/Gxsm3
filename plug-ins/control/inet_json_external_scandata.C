@@ -291,7 +291,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_input_width_chars (12);
   	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency_manual, 0.0, 20e6, "12.3f", 0.1, 100., "FREQUENCY-MANUAL");
         bp->new_line ();
-  	bp->grid_add_ec ("Volume", mVolt, &parameters.volume_manual, 0.0, 1000.0, "g", 1.0, 10.0, "VOLUME-MANUAL");
+  	bp->grid_add_ec ("Volume", mVolt, &parameters.volume_manual, 0.0, 1000.0, "g", 0.01, 10.0, "VOLUME-MANUAL");
         bp->new_line ();
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
@@ -318,7 +318,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_no_spin (false);
         bp->set_input_width_chars (10);
 
-        bp->grid_add_ec ("Setpoint", mVolt, &parameters.amplitude_fb_setpoint, 0.0, 1000.0, "g", 1.0, 10.0, "AMPLITUDE-FB-SETPOINT");
+        bp->grid_add_ec ("Setpoint", mVolt, &parameters.amplitude_fb_setpoint, 0.0, 1000.0, "g", 0.1, 10.0, "AMPLITUDE-FB-SETPOINT");
         bp->new_line ();
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::amplitude_gain_changed, this);
         bp->grid_add_ec ("CP gain", dB, &parameters.amplitude_fb_cp_db, -200.0, 200.0, "g", 0.1, 1.0, "AMPLITUDE-FB-CP");
@@ -379,7 +379,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_input_width_chars (16);
         bp->set_input_nx (3);
         bp->new_line ();
-        bp->grid_add_ec ("DDS Freq", Hz, &parameters.dds_frequency_monitor, 0.0, 25e6, "g", 0.1, 1., "DDS-FREQ-MONITOR");
+        bp->grid_add_ec ("DDS Freq", Hz, &parameters.dds_frequency_monitor, 0.0, 25e6, "14.4f", 0.1, 1., "DDS-FREQ-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
@@ -1073,10 +1073,10 @@ void Inet_Json_External_Scandata::write_parameter (const gchar *paramater_id, do
         //soup_websocket_connection_send_text (client, "{ \"parameters\":{\"GAIN1\":{\"value\":200.0}}}");
 
         if (client){
-                gchar *json_string = g_strdup_printf ("{ \"parameters\":{\"%s\":{\"value\":%12g}}}", paramater_id, value);
+                gchar *json_string = g_strdup_printf ("{ \"parameters\":{\"%s\":{\"value\":%g}}}", paramater_id, value);
                 soup_websocket_connection_send_text (client, json_string);
-                if  (debug_level > 1)
-                        g_print (json_string);
+                if  (debug_level > 0)
+                        g_print ("%s\n",json_string);
                 g_free (json_string);
         }
 }
@@ -1085,8 +1085,8 @@ void Inet_Json_External_Scandata::write_parameter (const gchar *paramater_id, in
         if (client){
                 gchar *json_string = g_strdup_printf ("{ \"parameters\":{\"%s\":{\"value\":%d}}}", paramater_id, value);
                 soup_websocket_connection_send_text (client, json_string);
-                if  (debug_level > 1)
-                        g_print (json_string);
+                if  (debug_level > 0)
+                        g_print ("%s\n",json_string);
                 g_free (json_string);
         }
 }
