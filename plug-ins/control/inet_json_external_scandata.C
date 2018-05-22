@@ -764,7 +764,7 @@ void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, 
 }
 
 void Inet_Json_External_Scandata::choice_transport_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
-        self->write_parameter ("TRANSPORT_MODE", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+        self->write_parameter ("TRANSPORT_MODE", self->transport=gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
 }
 
 void Inet_Json_External_Scandata::choice_auto_set_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -1190,11 +1190,12 @@ void Inet_Json_External_Scandata::stream_data (){
 }
 
 void Inet_Json_External_Scandata::update_graph (){
-        int n=1024;
+        int n=1023;
         int h=256;
         if (!run_scope)
                 h=2;
         double xs = 0.5;
+        double x0 = xs*n/2;
         double yr = h/2;
         cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, n/2, h);
         cairo_t *cr = cairo_create (surface);
@@ -1239,6 +1240,12 @@ void Inet_Json_External_Scandata::update_graph (){
                         reading->set_text (10, -(110-14*ch), valuestring);
                         g_free (valuestring);
                         reading->draw (cr);
+                }
+                if (transport == 0){ // add polar plot for CH1,2 as XY
+                        wave->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
+                        for (int k=0; k<n; ++k)
+                                wave->set_xy_fast (k,n/4-yr*gain_scale[0]*signal[0][k]/100.,-yr*gain_scale[1]*signal[1][k]/100.);
+                        wave->draw (cr);
                 }
                 delete wave;
                 delete reading;
