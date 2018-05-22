@@ -8,13 +8,13 @@
     </key>
 
     <key name="rp-pacpll-pactau" type="ad">
-      <default>[6.3e+07, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 1, 10, 0,  0, 0      ]      </default>
+      <default>[200, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 1, 10, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-pactau' </summary>
       <description>Configuration for GXSM Entry with ID 'rp-pacpll-pactau'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
     <key name="rp-pacpll-frequency-manual" type="ad">
-      <default>[2e+07, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 100, 1000, 0,  0, 0      ]      </default>
+      <default>[32768, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 100, 1000, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-frequency-manual' </summary>
       <description>Configuration for GXSM Entry with ID 'rp-pacpll-frequency-manual'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
@@ -32,7 +32,7 @@
     </key>
 
     <key name="rp-pacpll-tune-span" type="ad">
-      <default>[1e+06, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 10, 100, 0,  0, 0      ]      </default>
+      <default>[50, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 10, 100, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-tune-span' </summary>
       <description>Configuration for GXSM Entry with ID 'rp-pacpll-tune-span'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
@@ -44,7 +44,7 @@
     </key>
 
     <key name="rp-pacpll-amplitude-fb-setpoint" type="ad">
-      <default>[1000, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 10, 100, 0,  0, 0      ]      </default>
+      <default>[20, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 10, 100, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-amplitude-fb-setpoint' </summary>
       <description>Configuration for GXSM Entry with ID 'rp-pacpll-amplitude-fb-setpoint'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
@@ -104,19 +104,19 @@
     </key>
 
     <key name="rp-pacpll-freq-fb-lower" type="ad">
-      <default>[2.5e+07, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 1, 10, 0,  0, 0      ]      </default>
+      <default>[28000, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 1, 10, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-freq-fb-lower' </summary>
       <description>Configuration for GXSM Entry with ID 'rp-pacpll-freq-fb-lower'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
     <key name="rp-pacpll-freq-fb-upper" type="ad">
-      <default>[2.5e+07, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 1, 10, 0,  0, 0      ]      </default>
+      <default>[35000, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 1, 10, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-freq-fb-upper' </summary>
       <description>Configuration for GXSM Entry with ID 'rp-pacpll-freq-fb-upper'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
     <key name="rp-pacpll-dds-freq-monitor" type="ad">
-      <default>[2.5e+07, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 1, 10, 0,  0, 0      ]      </default>
+      <default>[32768, 0, 1e+111, -1e+111, 1e+111, 1e+111, 0.1, 1, 10, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-dds-freq-monitor' </summary>
       <description>Configuration for GXSM Entry with ID 'rp-pacpll-dds-freq-monitor'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
