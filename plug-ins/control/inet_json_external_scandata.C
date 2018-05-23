@@ -1206,19 +1206,21 @@ void Inet_Json_External_Scandata::stream_data (){
                 write_parameter ("TRANSPORT_DECIMATION", data_decimation);
         }
 
-        if (ch_freq >= 0){
+        if (ch_freq >= 0 || ch_ampl >= 0){
                 if (x < gapp->xsm->scan[ch_freq]->mem2d->GetNx () &&
                     y < gapp->xsm->scan[ch_freq]->mem2d->GetNy ()){
                         for (int i=0; i<1000; ++i) {
-                                gapp->xsm->scan[ch_freq]->mem2d->PutDataPkt (parameters.freq_fb_lower + pacpll_signals.signal_ch1[i], x++,y);
+                                if (ch_freq >= 0)
+                                        gapp->xsm->scan[ch_freq]->mem2d->PutDataPkt (parameters.freq_fb_lower + pacpll_signals.signal_ch2[i], x,y);
+                                if (ch_ampl >= 0)
+                                        gapp->xsm->scan[ch_ampl]->mem2d->PutDataPkt (pacpll_signals.signal_ch1[i], x,y);
+                                ++x;
                                 if (x >= gapp->xsm->scan[ch_freq]->mem2d->GetNx ()) {x=0; ++y; };
                                 if (y >= gapp->xsm->scan[ch_freq]->mem2d->GetNy ()) break;
                         }
                         streampos += 1024;
                         gapp->xsm->scan[ch_freq]->draw ();
                 }
-        }
-        if (ch_ampl >= 0){
         }
 }
 
