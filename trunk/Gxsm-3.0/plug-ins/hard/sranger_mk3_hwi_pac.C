@@ -386,29 +386,29 @@ void DSPPACControl::create_folder (){
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (SetClipping_callback), this);
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Range", Hz, &pll.Range[clip_index], 0., 75000., "11.5f", 1., 100., "range");
+	pac_bp->grid_add_ec ("Range", Hz, &pll.Range[clip_index], 0., 75000., ".3f", 1., 100., "range");
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Freq. Range");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Min.", Hz, &pll.ClipMin[clip_index], 0., 75000., "11.5f", 1., 10., "min");
+	pac_bp->grid_add_ec ("Min.", Hz, &pll.ClipMin[clip_index], 0., 75000., "g", 1., 10., "min");
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Min. Freq. (abs)");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Max.", Hz, &pll.ClipMax[clip_index], 0., 75000., "11.5f", 1., 10., "max");
+	pac_bp->grid_add_ec ("Max.", Hz, &pll.ClipMax[clip_index], 0., 75000., "g", 1., 10., "max");
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Max. Freq. (abs)");
 
 #if 0
 // --- Mux to Output -- N/A w GXSM-PAC
-	pac_bp->grid_add_ec ("Sens.", VoltHz, &pll.xx, 0., 75000., "11.5f", 1., 1., "sens");
+	pac_bp->grid_add_ec ("Sens.", VoltHz, &pll.xx, 0., 75000., "g", 1., 1., "sens");
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Sensitivity (Freq.)");
 
-	pac_bp->grid_add_ec ("Mux. Freq", Out, &pll.xx, 0., 75000., "11.5f", 1., 1., "muxf");
+	pac_bp->grid_add_ec ("Mux. Freq", Out, &pll.xx, 0., 75000., "g", 1., 1., "muxf");
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Mux Freq.");
 #endif
@@ -422,7 +422,7 @@ void DSPPACControl::create_folder (){
 
         pac_bp->set_pcs_remote_prefix ("dsp-pac-res-phase-");
 
-	pac_bp->grid_add_ec ("Ref.", Deg, &pll.Reference[clip_index], -180., 180., "11.4f", 0.1, 5., "ref");
+	pac_bp->grid_add_ec ("Ref.", Deg, &pll.Reference[clip_index], -180., 180., ".3f", 0.1, 5., "ref");
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Reference Phase. (setpoint Phase)");
         pac_bp->new_line();
@@ -432,18 +432,18 @@ void DSPPACControl::create_folder (){
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (SetClipping_callback), this);
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Range", Deg, &pll.Range[clip_index], 0., 360., "11.5f", 1., 30., "range");
+	pac_bp->grid_add_ec ("Range", Deg, &pll.Range[clip_index], 0., 360., "g", 1., 30., "range");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Phase. Range");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Min.", Deg, &pll.ClipMin[clip_index], -180., 180., "11.5f", 1., 30., "min");
+	pac_bp->grid_add_ec ("Min.", Deg, &pll.ClipMin[clip_index], -180., 180., "g", 1., 30., "min");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Min. Phase. (rel)");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Max.", Deg, &pll.ClipMax[clip_index], -180., 180., "11.5f", 1., 30., "max");
+	pac_bp->grid_add_ec ("Max.", Deg, &pll.ClipMax[clip_index], -180., 180., "g", 1., 30., "max");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Max. Phase. (rel)");
@@ -451,12 +451,12 @@ void DSPPACControl::create_folder (){
 
 #if 0
 // --- Mux to Output -- N/A w GXSM-PAC
-	pac_bp->grid_add_ec ("Sens.", VoltDeg, &pll.xx, 0., 75000., "11.5f");
+	pac_bp->grid_add_ec ("Sens.", VoltDeg, &pll.xx, 0., 75000., "g");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Sensitivity (Phase)");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Mux. Phase", Out, &pll.xx, 0., 75000., "11.5f");
+	pac_bp->grid_add_ec ("Mux. Phase", Out, &pll.xx, 0., 75000., "g");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Mux Phase");
 #endif
@@ -470,7 +470,7 @@ void DSPPACControl::create_folder (){
 
         pac_bp->set_pcs_remote_prefix ("dsp-pac-exci-amp-");
 
-	pac_bp->grid_add_ec ("Ref.", Volt, &pll.Reference[clip_index], 0., 10., "11.5f", 0.1, 1.0, "ref");
+	pac_bp->grid_add_ec ("Ref.", Volt, &pll.Reference[clip_index], 0., 10., ".4f", 0.1, 1.0, "ref");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Exitation Ref (Volume Sine)");
         pac_bp->new_line();
@@ -480,18 +480,18 @@ void DSPPACControl::create_folder (){
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (SetClipping_callback), this);
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Range", Volt, &pll.Range[clip_index], -10., 10., "11.5f", 0.1, 1., "range");
+	pac_bp->grid_add_ec ("Range", Volt, &pll.Range[clip_index], -10., 10., "g", 0.1, 1., "range");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Amp. Range");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Min.", Volt, &pll.ClipMin[clip_index], -10., 10., "11.5f", 0.1, 1., "min");
+	pac_bp->grid_add_ec ("Min.", Volt, &pll.ClipMin[clip_index], -10., 10., "g", 0.1, 1., "min");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Min. Amp. (abs)");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Max.", Volt, &pll.ClipMax[clip_index], -10., 10., "11.5f", 0.1, 1., "max");
+	pac_bp->grid_add_ec ("Max.", Volt, &pll.ClipMax[clip_index], -10., 10., "g", 0.1, 1., "max");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Max. Amp. (abs)");
@@ -499,12 +499,12 @@ void DSPPACControl::create_folder (){
 
 #if 0
 // --- Mux to Output -- N/A w GXSM-PAC
-	pac_bp->grid_add_ec ("Sens.", Volt, &pll.xx, 0., 75000., "11.5f", 0.1, 1., "sens");
+	pac_bp->grid_add_ec ("Sens.", Volt, &pll.xx, 0., 75000., "g", 0.1, 1., "sens");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Sensitivity (Amp.)");
         pac_bp->new_line();
 
-	pac_bp->grid_add_ec ("Mux. Amp", Out, &pll.xx, 0., 75000., "11.5f", 0.1, 1., "muxa");
+	pac_bp->grid_add_ec ("Mux. Amp", Out, &pll.xx, 0., 75000., "g", 0.1, 1., "muxa");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_list = g_slist_prepend( EC_list, ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Mux Amp.");
@@ -518,7 +518,7 @@ void DSPPACControl::create_folder (){
 	pac_bp->new_grid_with_frame ("Resonator Amp.");
         pac_bp->set_pcs_remote_prefix ("dsp-pac-res-amp-");
 
-	pac_bp->grid_add_ec ("Ref.", Volt, &pll.Reference[clip_index], 0., 10., "7.5f", 1e-3, 0.1, "ref");
+	pac_bp->grid_add_ec ("Ref.", Volt, &pll.Reference[clip_index], 0., 10., "g", 1e-3, 0.1, "ref");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Reference Amp. (setpoint Amp)");
         pac_bp->new_line ();
@@ -528,18 +528,18 @@ void DSPPACControl::create_folder (){
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (SetClipping_callback), this);
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Range", Volt, &pll.Range[clip_index], 0., 10., "11.5f", 0.1, 1., "range");
+	pac_bp->grid_add_ec ("Range", Volt, &pll.Range[clip_index], 0., 10., "g", 0.1, 1., "range");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Freq. Range");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Min.", Volt, &pll.ClipMin[clip_index], 0., 10., "11.5f", 0.1, 1., "min");
+	pac_bp->grid_add_ec ("Min.", Volt, &pll.ClipMin[clip_index], 0., 10., "g", 0.1, 1., "min");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Min. Freq. (abs)");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Max.", Volt, &pll.ClipMax[clip_index], 0., 10., "11.5f", 0.1, 1., "max");
+	pac_bp->grid_add_ec ("Max.", Volt, &pll.ClipMax[clip_index], 0., 10., "g", 0.1, 1., "max");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	EC_CLIP_list = g_slist_prepend( EC_CLIP_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Max. Freq. (abs)");
@@ -547,12 +547,12 @@ void DSPPACControl::create_folder (){
 
 #if 0
 // --- Mux to Output -- N/A w GXSM-PAC
-	pac_bp->grid_add_ec ("Sens.", Volt, &pll.xx, 0., 75000., "11.5f", 0.1, 1., "sens");
+	pac_bp->grid_add_ec ("Sens.", Volt, &pll.xx, 0., 75000., "g", 0.1, 1., "sens");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Sensitivity (Exci Amp.)");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Mux. Exci Amp", Out, &pll.xx, 0., 75000., "11.5f", 0.1, 1., "muxea");
+	pac_bp->grid_add_ec ("Mux. Exci Amp", Out, &pll.xx, 0., 75000., "g", 0.1, 1., "muxea");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Operation, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Mux Exci Amp.");
 #endif
@@ -641,13 +641,13 @@ void DSPPACControl::create_folder (){
 
         pac_bp->set_pcs_remote_prefix ("dsp-pac-excitation-sine-");
         pac_bp->set_no_spin (false);
-	pac_bp->grid_add_ec ("Sine-Amp", Volt, &pll.volumeSine, 0., 10., "11.5f", 0.01, 0.1,"amp");
+	pac_bp->grid_add_ec ("Sine-Amp", Volt, &pll.volumeSine, 0., 10., ".3f", 0.01, 0.1,"amp");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Sine, this);
 	EC_amp_freeze_list = g_slist_prepend (EC_amp_freeze_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Excitation Sine Wave Amplitude");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Sine-Freq", Hz, &pll.FSineHz, 0., 75000., "11.5f", 0.1, 100.,"freq");
+	pac_bp->grid_add_ec ("Sine-Freq", Hz, &pll.FSineHz, 0., 75000., ".4f", 0.1, 100.,"freq");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Sine, this);
 	EC_phase_freeze_list = g_slist_prepend( EC_phase_freeze_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Excitation Frequency");
@@ -658,37 +658,37 @@ void DSPPACControl::create_folder (){
         pac_bp->set_pcs_remote_prefix ("dsp-pac-");
 
 //----- Monitoring
-	pac_bp->grid_add_ec ("Res-Freq", Hz, &pll.Filter64Out[F64_Excitation], 0., 75000., "11.5f");
+	pac_bp->grid_add_ec ("Res-Freq", Hz, &pll.Filter64Out[F64_Excitation], 0., 75000., ".4f");
 	//	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Sine, this);
 	EC_R_list = g_slist_prepend( EC_R_list, pac_bp->ec);
 	pac_bp->ec->Freeze ();
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Res-Phase", Deg, &pll.Filter64Out[F64_ResPhaseLP], -180., 180., "11.5f");
+	pac_bp->grid_add_ec ("Res-Phase", Deg, &pll.Filter64Out[F64_ResPhaseLP], -180., 180., "g");
 	//	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Sine, this);
 	EC_R_list = g_slist_prepend( EC_R_list, pac_bp->ec);
 	pac_bp->ec->Freeze ();
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Res-Amp", Volt, &pll.Filter64Out[F64_ResAmpLP], 0., 10., "11.5f");
+	pac_bp->grid_add_ec ("Res-Amp", Volt, &pll.Filter64Out[F64_ResAmpLP], 0., 10., "g");
 	//	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Sine, this);
 	EC_R_list = g_slist_prepend( EC_R_list, pac_bp->ec);
 	pac_bp->ec->Freeze ();
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Exec-Amp", Volt, &pll.Filter64Out[F64_ExecAmpLP], 0., 10., "11.5f");
+	pac_bp->grid_add_ec ("Exec-Amp", Volt, &pll.Filter64Out[F64_ExecAmpLP], 0., 10., "g");
 	//	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Sine, this);
 	EC_R_list = g_slist_prepend( EC_R_list, pac_bp->ec);
 	pac_bp->ec->Freeze ();
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Phase-Mon", Deg, &pll.phase, -180., 180., "11.5f");
+	pac_bp->grid_add_ec ("Phase-Mon", Deg, &pll.phase, -180., 180., "g");
 	//	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Sine, this);
 	EC_R_list = g_slist_prepend( EC_R_list, pac_bp->ec);
 	pac_bp->ec->Freeze ();
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("AmpEst-Mon", Volt, &pll.amp_estimation, 0., 10., "11.5f");
+	pac_bp->grid_add_ec ("AmpEst-Mon", Volt, &pll.amp_estimation, 0., 10., "g");
 	//	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_Sine, this);
 	EC_R_list = g_slist_prepend( EC_R_list, pac_bp->ec);
 	pac_bp->ec->Freeze ();
@@ -711,12 +711,12 @@ void DSPPACControl::create_folder (){
 	pac_bp->new_grid_with_frame ("Amplitude FB Controller");
 
         pac_bp->set_no_spin (false);
-	pac_bp->grid_add_ec ("Setpoint-Amp", Volt, &pll.setpoint_Amp, 0., 10., "11.5f", 1e-3, 0.01, "am-set");
+	pac_bp->grid_add_ec ("Setpoint-Amp", Volt, &pll.setpoint_Amp, 0., 10., ".3f", 1e-3, 0.01, "am-set");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerAmp, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Setpoint Amp.");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("CP-Amp gain", dB, &pll.cp_gain_Amp, -140., 100., "11.5f", 0.1, 5.0, "am-cp-gain");
+	pac_bp->grid_add_ec ("CP-Amp gain", dB, &pll.cp_gain_Amp, -140., 100., "g", 0.1, 5.0, "am-cp-gain");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerAmp, this);
 	EC_CIP_amp_list = g_slist_prepend (EC_CIP_amp_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Coef. Proportional Amplitude Gain");
@@ -727,7 +727,7 @@ void DSPPACControl::create_folder (){
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (DSPPACControl::controller_callback), this);
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("CI-Amp gain", dB, &pll.ci_gain_Amp, -140., 100., "11.5f", 0.1, 5.0, "am-ci-gain");
+	pac_bp->grid_add_ec ("CI-Amp gain", dB, &pll.ci_gain_Amp, -140., 100., "g", 0.1, 5.0, "am-ci-gain");
 	pac_bp->set_ec_change_notice_fkt (DSPPACControl::Changed_ControllerAmp, this);
 	EC_CIP_amp_list = g_slist_prepend (EC_CIP_amp_list, pac_bp-> ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Coef. Integral Amplitide gain");
@@ -741,22 +741,22 @@ void DSPPACControl::create_folder (){
         pac_bp->new_line ();
 
 
-	pac_bp->grid_add_ec ("BW-Amp", Hz, &pll.auto_set_BW_Amp, 0.01, 100., "11.5f", 1., 1., "am-bw-set");
+	pac_bp->grid_add_ec ("BW-Amp", Hz, &pll.auto_set_BW_Amp, 0.01, 100., "g", 1., 1., "am-bw-set");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerAmpAutoSet, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Auto set CP,CI for Amplitude controller from bandwidth");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Q", Unity, &pll.Qfactor, 0.1, 1e8, "11.5f", 10., 1000., "res-q-factor");
+	pac_bp->grid_add_ec ("Q", Unity, &pll.Qfactor, 0.1, 1e8, "g", 10., 1000., "res-q-factor");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerAmpAutoSet, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Q factor needed for auto set CP,CI calculation");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Res. Gain", Unity, &pll.GainRes, 1e-6, 1e10, "11.5f", 1., 1., "res-gain");
+	pac_bp->grid_add_ec ("Res. Gain", Unity, &pll.GainRes, 1e-6, 1e10, "g", 1., 1., "res-gain");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerAmpAutoSet, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Resonator gain needed for auto set CP,CI calculation");
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("Res. Gain now", Unity, &pll.res_gain_computed, -1e10, 1e10, "11.5f");
+	pac_bp->grid_add_ec ("Res. Gain now", Unity, &pll.res_gain_computed, -1e10, 1e10, "g");
 	EC_R_list = g_slist_prepend( EC_R_list, pac_bp->ec);
 	pac_bp->ec->Freeze ();
         pac_bp->new_line ();
@@ -798,14 +798,14 @@ void DSPPACControl::create_folder (){
 	pac_bp->new_grid_with_frame ("Phase FB Controller");
 
         pac_bp->set_no_spin (false);
-	pac_bp->grid_add_ec ("Setpoint-Phase", Deg, &pll.setpoint_Phase, -180., 180., "11.5f", 0.1, 5., "ph-set");
+	pac_bp->grid_add_ec ("Setpoint-Phase", Deg, &pll.setpoint_Phase, -180., 180., "g", 0.1, 5., "ph-set");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerPhase, this);
 	EC_CIP_phase_list = g_slist_prepend( EC_CIP_phase_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Setpoint Phase");
 //	pac_bp->ec->Freeze ();
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("CP-Phase gain", dB, &pll.cp_gain_Phase, -140., 100., "11.5f", 0.1, 5.0, "ph-cp-gain");
+	pac_bp->grid_add_ec ("CP-Phase gain", dB, &pll.cp_gain_Phase, -140., 100., "g", 0.1, 5.0, "ph-cp-gain");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerPhase, this);
 	EC_CIP_phase_list = g_slist_prepend( EC_CIP_phase_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Coef. Proportional Phase gain");
@@ -816,7 +816,7 @@ void DSPPACControl::create_folder (){
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (DSPPACControl::controller_callback), this);
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("CI-Phase gain", dB, &pll.ci_gain_Phase, -140., 100., "11.5f", 0.1, 5.0, "ph-ci-gain");
+	pac_bp->grid_add_ec ("CI-Phase gain", dB, &pll.ci_gain_Phase, -140., 100., "g", 0.1, 5.0, "ph-ci-gain");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerPhase, this);
 	EC_CIP_phase_list = g_slist_prepend( EC_CIP_phase_list, pac_bp->ec);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Coef. Integral Phase gain");
@@ -828,7 +828,7 @@ void DSPPACControl::create_folder (){
 	g_signal_connect (G_OBJECT (pac_bp->button), "clicked", G_CALLBACK (DSPPACControl::controller_callback), this);
         pac_bp->new_line ();
 
-	pac_bp->grid_add_ec ("BW-Phase", Hz, &pll.auto_set_BW_Phase, 0.1, 10000., "11.5f", 1., 1., "ph-bw-set");
+	pac_bp->grid_add_ec ("BW-Phase", Hz, &pll.auto_set_BW_Phase, 0.1, 10000., "g", 1., 1., "ph-bw-set");
 	pac_bp->set_ec_change_notice_fkt(DSPPACControl::Changed_ControllerPhaseAutoSet, this);
 	gtk_widget_set_tooltip_text (pac_bp->input, "Auto set CP,CI for Phase controller from bandwidth");
         pac_bp->new_line ();
