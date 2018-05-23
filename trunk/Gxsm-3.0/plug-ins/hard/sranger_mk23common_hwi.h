@@ -107,6 +107,7 @@ public:
 	virtual double GetUserParam (gint n, gchar *id=NULL) { return 0.; };
 	virtual gint   SetUserParam (gint n, gchar *id=NULL, double value=0.) { return 0; };
 	
+	virtual double GetScanrate () { return scanpixelrate; }; // query current set scan rate in s/pixel
 
 	virtual void ExecCmd(int Cmd) {};
 	virtual void SetMode(int mode) {};
@@ -193,6 +194,7 @@ public:
 	int probe_time_estimate;
 	int bz_statistics[5];
 	int fifo_block;
+        double scanpixelrate;
 };
 
 #endif

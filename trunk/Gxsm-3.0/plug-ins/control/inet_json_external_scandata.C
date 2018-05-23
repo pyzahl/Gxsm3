@@ -291,7 +291,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_no_spin (false);
         bp->set_input_width_chars (12);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_frequency_parameter_changed, this);
-  	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency_manual, 0.0, 20e6, "12g", 0.1, 10., "FREQUENCY-MANUAL");
+  	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency_manual, 0.0, 20e6, ".4lf", 0.1, 10., "FREQUENCY-MANUAL");
         bp->new_line ();
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_volume_parameter_changed, this);
   	bp->grid_add_ec ("Volume", mVolt, &parameters.volume_manual, 0.0, 1000.0, "5g", 0.1, 1.0, "VOLUME-MANUAL");
@@ -316,8 +316,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         parameters.amplitude_fb_setpoint = 100.0; // mV
         parameters.amplitude_fb_invert = 1.;
-        parameters.amplitude_fb_cp_db = -50.;
-        parameters.amplitude_fb_ci_db = -60.;
+        parameters.amplitude_fb_cp_db = -60.;
+        parameters.amplitude_fb_ci_db = -50.;
         parameters.exec_fb_upper = 200.0;
         parameters.exec_fb_lower = -100.0;
         bp->set_no_spin (false);
@@ -363,10 +363,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         parameters.phase_fb_setpoint = 50.;
         parameters.phase_fb_invert = 1.;
-        parameters.phase_fb_cp_db = -180.;
-        parameters.phase_fb_ci_db = -180.;
-        parameters.freq_fb_upper = 33000.;
-        parameters.freq_fb_lower = 30000.;
+        parameters.phase_fb_cp_db = -135.;
+        parameters.phase_fb_ci_db = -160.;
+        parameters.freq_fb_upper = 35000.;
+        parameters.freq_fb_lower = 28000.;
         bp->set_no_spin (false);
         bp->set_input_width_chars (8);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::phase_ctrl_parameter_changed, this);
@@ -388,7 +388,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_input_width_chars (16);
         bp->set_input_nx (3);
         bp->set_default_ec_change_notice_fkt (NULL, NULL);
-        bp->grid_add_ec ("DDS Freq", Hz, &parameters.dds_frequency_monitor, 0.0, 25e6, "14.4f", 0.1, 1., "DDS-FREQ-MONITOR");
+        bp->grid_add_ec ("DDS Freq", Hz, &parameters.dds_frequency_monitor, 0.0, 25e6, ".4lf", 0.1, 1., "DDS-FREQ-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
@@ -692,6 +692,8 @@ int Inet_Json_External_Scandata::setup_scan (int ch,
 	gapp->xsm->scan[ch]->data.s.xdir = strchr (titleprefix, '-') ? -1.:1.;
 	gapp->xsm->scan[ch]->data.s.ydir = gapp->xsm->data.s.ydir;
 
+        streampos=x=y=0; // assume top down full size
+        
 	PI_DEBUG (DBG_L2, "setup_scan[" << ch << " ]: scantitle done: " << gapp->xsm->scan[ch]->data.ui.type ); 
 
 	g_free (scantitle);
@@ -737,16 +739,16 @@ void Inet_Json_External_Scandata::phase_ctrl_parameter_changed (Param_Control* p
 }
 
 void Inet_Json_External_Scandata::send_all_parameters (){
-        write_parameter ("GAIN1", 100.);
-        write_parameter ("SHR_CH1", 0.);
-        write_parameter ("GAIN2", 100.);
-        write_parameter ("SHR_CH1", 0.);
-        write_parameter ("GAIN3", 100.);
-        write_parameter ("GAIN4", 100.);
-        write_parameter ("SHR_CH34", 0.);
-        write_parameter ("GAIN5", 100.);
+        write_parameter ("GAIN1", 1.);
+        write_parameter ("GAIN2", 1.);
+        write_parameter ("GAIN3", 1.);
+        write_parameter ("GAIN4", 1.);
+        write_parameter ("GAIN5", 1.);
+        write_parameter ("SHR_CH1", 4.);
+        write_parameter ("SHR_CH2", 4.);
+        write_parameter ("SHR_CH34", 4.);
         write_parameter ("PACVERBOSE", 0);
-        write_parameter ("TRANSPORT_DECIMATION", 2);
+        write_parameter ("TRANSPORT_DECIMATION", 16);
         write_parameter ("TRANSPORT_MODE", 0);
         write_parameter ("OPERATION", 2);
         pac_tau_parameter_changed (NULL, this);
@@ -1183,7 +1185,38 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 }
 
 void Inet_Json_External_Scandata::stream_data (){
+        int deci=16;
+        int n=4;
+        if (ch_freq >= 0 || ch_ampl >= 0){
+                double decimation = 125e6 * gapp->xsm->hardware->GetScanrate ();
+                deci = (gint64)decimation;
+                if (deci > 2){
+                        for (n=0; deci; ++n) deci >>= 1;
+                        --n;
+                }
+                deci = 1<<n;
+                //g_print ("Scan Pixel rate is %g s/pix -> Decimation %g -> %d n=%d\n", gapp->xsm->hardware->GetScanrate (), decimation, deci, n);
+        }
+        if (deci != data_decimation){
+                data_decimation = deci;
+                data_shr = n;
+                write_parameter ("SHR_CH1", data_shr);
+                write_parameter ("SHR_CH2", data_shr);
+                write_parameter ("SHR_CH34", data_shr);
+                write_parameter ("TRANSPORT_DECIMATION", data_decimation);
+        }
+
         if (ch_freq >= 0){
+                if (x < gapp->xsm->scan[ch_freq]->mem2d->GetNx () &&
+                    y < gapp->xsm->scan[ch_freq]->mem2d->GetNy ()){
+                        for (int i=0; i<1000; ++i) {
+                                gapp->xsm->scan[ch_freq]->mem2d->PutDataPkt (parameters.freq_fb_lower + pacpll_signals.signal_ch1[i], x++,y);
+                                if (x >= gapp->xsm->scan[ch_freq]->mem2d->GetNx ()) {x=0; ++y; };
+                                if (y >= gapp->xsm->scan[ch_freq]->mem2d->GetNy ()) break;
+                        }
+                        streampos += 1024;
+                        gapp->xsm->scan[ch_freq]->draw ();
+                }
         }
         if (ch_ampl >= 0){
         }
@@ -1214,7 +1247,7 @@ void Inet_Json_External_Scandata::update_graph (){
                 double avg=0.;
                 char *valuestring;
                 cairo_item_text *reading = new cairo_item_text ();
-                reading->set_font_face_size ("Ununtu", 12.);
+                reading->set_font_face_size ("Ununtu", 10.);
                 reading->set_anchor (CAIRO_ANCHOR_W);
                 cairo_item_path *wave = new cairo_item_path (n);
                 wave->set_line_width (1.0);
@@ -1228,23 +1261,29 @@ void Inet_Json_External_Scandata::update_graph (){
                                 s=signal[ch][k];
                                 if (s>max) max=s;
                                 if (s<min) min=s;
-                                wave->set_xy_fast (k,xs*k,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s/100.);
+                                wave->set_xy_fast (k,xs*k,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s);
                         }
                         if (gain_scale[ch] < 0.)
-                                gain_scale[ch] = 70. / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
+                                gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
                         wave->draw (cr);
 
-                        for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg /= 100.;
-                        valuestring = g_strdup_printf ("Ch%d %12.5f [x %g]", ch+1, avg/100., gain_scale[ch]);
+                        for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg/=100.;
+                        valuestring = g_strdup_printf ("Ch%d %12.5f [x %g] %g %g {%g}", ch+1, avg, gain_scale[ch], min, max, max-min);
                         reading->set_stroke_rgba (BasicColors[color[ch]]);
                         reading->set_text (10, -(110-14*ch), valuestring);
                         g_free (valuestring);
                         reading->draw (cr);
                 }
+                valuestring = g_strdup_printf ("Dec=%d [>>%d]", data_decimation, data_shr);
+                reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                reading->set_text (400, -110, valuestring);
+                g_free (valuestring);
+                reading->draw (cr);
+                
                 if (transport == 0){ // add polar plot for CH1,2 as XY
                         wave->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
                         for (int k=0; k<n; ++k)
-                                wave->set_xy_fast (k,n/4-yr*gain_scale[0]*signal[0][k]/100.,-yr*gain_scale[1]*signal[1][k]/100.);
+                                wave->set_xy_fast (k,n/4-yr*gain_scale[0]*signal[0][k],-yr*gain_scale[1]*signal[1][k]);
                         wave->draw (cr);
                 }
                 delete wave;

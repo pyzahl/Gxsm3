@@ -3562,7 +3562,8 @@ void DSPControl::recalculate_dsp_scan_speed_parameters (gint32 &dsp_scan_dnx, gi
 		g_free (info);
 	} else {
 		scan_speed_x = sranger_mk2_hwi_pi.app->xsm->Inst->Dig2XA ((long)(dsp_scan_fs_dx * frq_ref / frac));
-		gchar *info = g_strdup_printf (" (%g A/s, %g ms/pix)", scan_speed_x/scan_forward_slow_down, (double)dsp_scan_dnx/frq_ref*1e3*scan_forward_slow_down);
+                sranger_common_hwi->scanpixelrate = (double)dsp_scan_dnx/frq_ref*scan_forward_slow_down;
+		gchar *info = g_strdup_printf (" (%g A/s, %g ms/pix)", scan_speed_x/scan_forward_slow_down, sranger_common_hwi->scanpixelrate*1e3);
 		scan_speed_ec->set_info (info);
 		g_free (info);
 	}

@@ -321,7 +321,7 @@ gchar *Param_Control::Get_UsrString(){
 		XSM_DEBUG (DBG_L5, "Param_Control::Get_UsrString -- PCS H Usr out: " << h << " ==> " << txt);
 	}
 	else{
-                txt = g_strdup_printf("%s %s %s", unit->UsrString (Get_dValue()) , info? info:" ", warn);
+                txt = g_strdup_printf("%s %s %s", unit->UsrString (Get_dValue(), UNIT_SM_NORMAL, prec) , info? info:" ", warn);
         }
         g_free(warn);
 
