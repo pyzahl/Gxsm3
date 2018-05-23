@@ -399,62 +399,11 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_controller_invert), this);
 
         bp->pop_grid ();
-
         bp->new_line ();
-        bp->new_grid_with_frame ("RedPitaya Web Socket Address for JSON talk", 10);
 
-        bp->set_input_width_chars (25);
-        input_rpaddress = bp->grid_add_input ("RedPitaya Address");
-
-        g_settings_bind (inet_json_settings, "redpitay-address",
-                         G_OBJECT (bp->input), "text",
-                         G_SETTINGS_BIND_DEFAULT);
-        gtk_widget_set_tooltip_text (input_rpaddress, "RedPitaya IP Address like rp-f05603.local or 130.199.123.123");
-        //  "ws://rp-f05603.local:9002/"
-        //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "http://rp-f05603.local/pacpll/?type=run");
-        //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "130.199.243.200");
-        //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "192.168.1.10");
+        // ========================================
         
-        bp->grid_add_check_button ( N_("Connect"), "Check to initiate connection, uncheck to close connection.", 1,
-                                    G_CALLBACK (Inet_Json_External_Scandata::connect_cb), this);
-        bp->grid_add_check_button ( N_("Scope"), "Enable Scope", 1,
-                                    G_CALLBACK (Inet_Json_External_Scandata::enable_scope), this);
-        bp->grid_add_check_button ( N_("Debug"), "Enable debugging LV1.", 1,
-                                    G_CALLBACK (Inet_Json_External_Scandata::dbg_l1), this);
-        bp->grid_add_check_button ( N_("+"), "Debug LV2", 1,
-                                    G_CALLBACK (Inet_Json_External_Scandata::dbg_l2), this);
-        bp->grid_add_check_button ( N_("++"), "Debug LV4", 1,
-                                    G_CALLBACK (Inet_Json_External_Scandata::dbg_l4), this);
-        
-        //bp->new_line ();
-        //tmp=bp->grid_add_button ( N_("Read"), "TEST READ", 1,
-        //                          G_CALLBACK (Inet_Json_External_Scandata::read_cb), this);
-        //tmp=bp->grid_add_button ( N_("Write"), "TEST WRITE", 1,
-        //                          G_CALLBACK (Inet_Json_External_Scandata::write_cb), this);
-
-        bp->new_line ();
-        bp->set_input_width_chars (80);
-        red_pitaya_health = bp->grid_add_input ("RedPitaya Health",10);
-        gtk_widget_set_sensitive (bp->input, FALSE);
-        gtk_editable_set_editable (GTK_EDITABLE (bp->input), FALSE); 
-        bp->new_line ();
-
-        text_status = gtk_text_view_new ();
- 	gtk_text_view_set_editable (GTK_TEXT_VIEW (text_status), FALSE);
-        //gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (text_status), GTK_WRAP_WORD_CHAR);
-        GtkWidget *scrolled_window = gtk_scrolled_window_new (NULL, NULL);
-        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-        gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled_window), GTK_SHADOW_IN);
-        //gtk_widget_set_size_request (scrolled_window, 200, 60);
-        gtk_widget_set_hexpand (scrolled_window, TRUE);
-        gtk_widget_set_vexpand (scrolled_window, TRUE);
-        gtk_container_add (GTK_CONTAINER (scrolled_window), GTK_WIDGET (text_status)) ;
-        bp->grid_add_widget (scrolled_window, 10);
-
-        
-        bp->pop_grid ();
-        bp->new_line ();
-
+        bp->new_grid_with_frame ("Oscilloscope and Data Transfer Selection -- Experimental", 10);
         // OPERATION MODE
 	wid = gtk_combo_box_text_new ();
         g_signal_connect (G_OBJECT (wid), "changed",
@@ -587,10 +536,70 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
 	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 5);
 
-                                     
+
+        // Scope Display
         bp->new_line ();
         signal_graph = gtk_image_new_from_surface (NULL);
         bp->grid_add_widget (signal_graph, 10);
+        
+
+        // ========================================
+        
+        bp->pop_grid ();
+        bp->new_line ();
+        
+        bp->new_grid_with_frame ("RedPitaya Web Socket Address for JSON talk", 10);
+
+        bp->set_input_width_chars (25);
+        input_rpaddress = bp->grid_add_input ("RedPitaya Address");
+
+        g_settings_bind (inet_json_settings, "redpitay-address",
+                         G_OBJECT (bp->input), "text",
+                         G_SETTINGS_BIND_DEFAULT);
+        gtk_widget_set_tooltip_text (input_rpaddress, "RedPitaya IP Address like rp-f05603.local or 130.199.123.123");
+        //  "ws://rp-f05603.local:9002/"
+        //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "http://rp-f05603.local/pacpll/?type=run");
+        //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "130.199.243.200");
+        //gtk_entry_set_text (GTK_ENTRY (input_rpaddress), "192.168.1.10");
+        
+        bp->grid_add_check_button ( N_("Connect"), "Check to initiate connection, uncheck to close connection.", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::connect_cb), this);
+        bp->grid_add_check_button ( N_("Scope"), "Enable Scope", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::enable_scope), this);
+        bp->grid_add_check_button ( N_("Debug"), "Enable debugging LV1.", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::dbg_l1), this);
+        bp->grid_add_check_button ( N_("+"), "Debug LV2", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::dbg_l2), this);
+        bp->grid_add_check_button ( N_("++"), "Debug LV4", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::dbg_l4), this);
+        
+        //bp->new_line ();
+        //tmp=bp->grid_add_button ( N_("Read"), "TEST READ", 1,
+        //                          G_CALLBACK (Inet_Json_External_Scandata::read_cb), this);
+        //tmp=bp->grid_add_button ( N_("Write"), "TEST WRITE", 1,
+        //                          G_CALLBACK (Inet_Json_External_Scandata::write_cb), this);
+
+        bp->new_line ();
+        bp->set_input_width_chars (80);
+        red_pitaya_health = bp->grid_add_input ("RedPitaya Health",10);
+        gtk_widget_set_sensitive (bp->input, FALSE);
+        gtk_editable_set_editable (GTK_EDITABLE (bp->input), FALSE); 
+        bp->new_line ();
+
+        text_status = gtk_text_view_new ();
+ 	gtk_text_view_set_editable (GTK_TEXT_VIEW (text_status), FALSE);
+        //gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (text_status), GTK_WRAP_WORD_CHAR);
+        GtkWidget *scrolled_window = gtk_scrolled_window_new (NULL, NULL);
+        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+        gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled_window), GTK_SHADOW_IN);
+        //gtk_widget_set_size_request (scrolled_window, 200, 60);
+        gtk_widget_set_hexpand (scrolled_window, TRUE);
+        gtk_widget_set_vexpand (scrolled_window, TRUE);
+        gtk_container_add (GTK_CONTAINER (scrolled_window), GTK_WIDGET (text_status)) ;
+        bp->grid_add_widget (scrolled_window, 10);
+
+        // ========================================
+        bp->pop_grid ();
         
         bp->show_all ();
  
