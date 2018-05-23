@@ -304,6 +304,7 @@ public:
                         if (store_next){
                                 if (jp){
                                         *(jp->value) = atof (js+t->start);
+                                        //g_print ("ATOF[%.*s]=%g %14.8f\n", 20, js+t->start, *(jp->value), *(jp->value));
                                         jp=NULL;
                                         store_next = false;
                                 } else if (jps){
@@ -370,7 +371,11 @@ public:
 private:
         int ch_freq;
         int ch_ampl;
-
+        int data_decimation;
+        int data_shr;
+        int streampos;
+        int x,y;
+        
         PACPLL_parameters parameters;
         PACPLL_signals signals;
 

@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <glib/gprintf.h>
 
 #include <gtk/gtk.h>
 
@@ -134,8 +135,8 @@ public:
         virtual void Change(double x, int n=0){};
 
         /* do g_free this returned string !!! */
-        virtual gchar *UsrString(double b, UNIT_MODES um=UNIT_SM_NORMAL){
-                gchar *fmt = g_strconcat("%",prec,um==UNIT_SM_NORMAL?" ":"", Symbol(um),NULL);
+        virtual gchar *UsrString(double b, UNIT_MODES um=UNIT_SM_NORMAL, const gchar *prec_override=NULL){
+                gchar *fmt = g_strconcat("%",prec_override?prec_override:prec,um==UNIT_SM_NORMAL?" ":"", Symbol(um),NULL);
                 gchar *txt;
                 txt = g_strdup_printf(fmt, Base2Usr(b));
                 g_free(fmt);

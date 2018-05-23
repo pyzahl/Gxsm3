@@ -115,6 +115,8 @@ class XSM_Hardware{
 	virtual gchar* InqeueryUserParamUnit (gint n) { return NULL; };
 	virtual double GetUserParam (gint n, const gchar *id=NULL) { return 0.; };
 	virtual gint   SetUserParam (gint n, const gchar *id=NULL, double value=0.) { return FALSE; };
+
+	virtual double GetScanrate () { return 0.; }; // query current set scan rate in s/pixel
 	
 	/* 
 	 * Generic scan parameters and scanhead controls

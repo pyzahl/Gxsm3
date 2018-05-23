@@ -586,8 +586,8 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
 
         reading_vector[8] = x7;  // Exec Ampl Control Signal (signed)
         //                                                         <<12
-        reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
-        //reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9>>(64-44)));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
+        //reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
+        reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9>>(64-44)));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
 
         reading_vector[10] = x3; // M (LMS input Signal)
         reading_vector[11] = x3; // M1 (LMS input Signal-DC), tests...
@@ -826,24 +826,24 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN2 (14)
                         // printf ("%d %8.6f %8.6f\n", i>>3, (double)ix32/Q22, (double)ix32/Q22);
-                        SIGNAL_CH1[k] = (float)ix32*gain1/Q13*(1<<SHR_CH1.Value ())/dec;
-                        SIGNAL_CH2[k] = (float)iy32*gain2/Q13*(1<<SHR_CH2.Value ())/dec;
+                        SIGNAL_CH1[k] = (float)ix32*gain1/Q13;
+                        SIGNAL_CH2[k] = (float)iy32*gain2/Q13;
                 }
                 break;
         case 1: // AXIS45 :  CORDIC SQRT, ATAN
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                        SIGNAL_CH1[k] = (float)ix32*gain1/QCORDICATAN*(1<<SHR_CH1.Value ())/dec;
-                        SIGNAL_CH2[k] = (float)iy32*gain2/QCORDICSQRT*(1<<SHR_CH2.Value ())/dec;
+                        SIGNAL_CH1[k] = (float)ix32*gain1/QCORDICATAN;
+                        SIGNAL_CH2[k] = (float)iy32*gain2/QCORDICSQRT;
                 }
                 break;
         case 2: // IN1, ADDR
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                        SIGNAL_CH1[k] = (float)ix32*gain1/Q13*(1<<SHR_CH1.Value ())/dec;
-                        val  = (float)iy32*gain2/QCORDICSQRT*(1<<SHR_CH2.Value ())/dec;
+                        SIGNAL_CH1[k] = (float)ix32*gain1/Q13;
+                        val  = (float)iy32*gain2/QCORDICSQRT;
                         dc_new += val;
                         SIGNAL_CH2[k] = val-dc;
                 }
@@ -854,7 +854,7 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
                         SIGNAL_CH1[k]  = (float)ix32*gain1/Q13*(1<<SHR_CH1.Value ())/dec;
-                        val  = (float)iy32*gain2/QCORDICATAN*(1<<SHR_CH2.Value ())/dec;
+                        val  = (float)iy32*gain2/QCORDICATAN;
                         dc_new += val;
                         SIGNAL_CH2[k]  = val-dc;
                 }
@@ -864,24 +864,24 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl Exec (32)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Freq (48)-Lower(48)
-                        SIGNAL_CH1[k]  = (float)ix32*gain1/Q31*(1<<SHR_CH1.Value ())/dec;
-                        SIGNAL_CH2[k]  = (float)iy32*gain2/Q31*(1<<SHR_CH2.Value ())/dec - dc;
+                        SIGNAL_CH1[k]  = (float)ix32 / QEXEC;
+                        SIGNAL_CH2[k]  = (float)dds_phaseinc_to_freq ((double)iy32); // correct to 44
                 }
                 break;
         case 5:
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // FIR Ampl (experimental)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // FIR Phase (experimental)
-                        SIGNAL_CH1[k]  = (float)ix32*gain1/QCORDICSQRT*(1<<SHR_CH1.Value ())/dec;
-                        SIGNAL_CH2[k]  = (float)iy32*gain2/QCORDICATAN*(1<<SHR_CH2.Value ())/dec;
+                        SIGNAL_CH1[k]  = (float)ix32*gain1/QCORDICSQRT; // *(1<<SHR_CH1.Value ())/dec;
+                        SIGNAL_CH2[k]  = (float)iy32*gain2/QCORDICATAN; // *(1<<SHR_CH2.Value ())/dec;
                 }
                 break;
         case 6:
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // pixel clock counter, keeps counting, reset via mode 7
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // line clock counter, ..."" "" ""
-                        SIGNAL_CH1[k]  = (float)ix32*gain1*(1<<SHR_CH1.Value ())/dec;
-                        SIGNAL_CH2[k]  = (float)iy32*gain2*(1<<SHR_CH2.Value ())/dec;
+                        SIGNAL_CH1[k]  = (float)ix32*gain1;
+                        SIGNAL_CH2[k]  = (float)iy32*gain2;
                 }
                 break;
         default : break;
