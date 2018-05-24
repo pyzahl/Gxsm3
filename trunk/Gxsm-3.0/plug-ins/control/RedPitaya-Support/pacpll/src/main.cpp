@@ -117,6 +117,7 @@ CIntParameter TRANSPORT_CH4("TRANSPORT_CH4", CBaseParameter::RW, 1, 0, 0, 13);
 CIntParameter TRANSPORT_CH5("TRANSPORT_CH5", CBaseParameter::RW, 1, 0, 0, 13);
 CIntParameter TRANSPORT_MODE("TRANSPORT_MODE", CBaseParameter::RW, 0, 0, 0, 32768);
 CIntParameter TRANSPORT_DECIMATION("TRANSPORT_DECIMATION", CBaseParameter::RW, 2, 0, 1, 32768);
+CIntParameter BRAM_WRITE_POS("BRAM_WRITE_POS", CBaseParameter::RW, 0, 0, -100, 1024);
 
 CFloatParameter DC_OFFSET("DC_OFFSET", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
 
@@ -522,13 +523,14 @@ void rp_PAC_configure_transport (int control, int shr_ch1, int shr_ch2, int shr_
  * reading_vector[3] := LMS B
  * reading_vector[4] := FPGA CORDIC Amplitude Monitor
  * reading_vector[5] := FPGA CORDIC Phase Monitor
- * reading_vector[6] := xxx --- FIR passed CORDIC Amplitude Monitor
- * reading_vector[7] := xxx --- FIR passed CORDIC Phase Monitor
- * reading_vector[8] := Exec Amp Mon
- * reading_vector[9] := DDS PH mon hi 32 of 44
- * reading_vector[10]:= LMS M (LMS Input Signal)
- * reading_vector[11]:= LMS M1 (LMS Input Signal-DC) | DDS ph mon low 32 of 44
- * reading_vector[12]:= Phase from X,Y
+ * reading_vector[6] := x5
+ * reading_vector[7] := x6
+ * reading_vector[8] := x7 Exec Amp Mon
+ * reading_vector[9] := DDS Freq
+ * reading_vector[10]:= x3 Monitor (In0 Signal, LMS inpu)
+ * reading_vector[11]:= x3
+ * reading_vector[12]:= x11
+ * reading_vector[13]:= x12
  */
 
 #define READING_MAX_VALUES 14
@@ -567,9 +569,9 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         //pfpga=atan2 (x8,x7)/M_PI*180. - 90.;
         //pfpga /= 180.;
         y=x = read_gpio_reg_int32 (6,0); // GPIO X11 : Transport WPos
-        x11=(double)x;
+        x11=(double)(x&0xffff);
         x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-        x12=(double)x;
+        x12=(double)((x>>16)&0xffff);
 
         // LMS Detector Readings and double precision conversions
         reading_vector[0] = v; // LMS Amplitude (Volume) in Volts (from A,B)
@@ -585,15 +587,13 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         reading_vector[7] = x6;  // FPGA CORDIC FIR Phase !! <-CHECK FPGA CONFIG
 
         reading_vector[8] = x7;  // Exec Ampl Control Signal (signed)
-        //                                                         <<12
-        //reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
         reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9>>(64-44)));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
 
         reading_vector[10] = x3; // M (LMS input Signal)
         reading_vector[11] = x3; // M1 (LMS input Signal-DC), tests...
 
-        reading_vector[12] = x11; // tes -- pfpga Phase from X,Y
-        reading_vector[13] = x12; //
+        reading_vector[12] = x11; // test (bram write pos from data transport)
+        reading_vector[13] = x12; // test (bram debug from data transport)
 
         // x11: bram write pos (y)
         // x12: transport dbg  (x)
@@ -617,7 +617,7 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         
 
 int bram_status(int bram_status[2]){
-        bram_status[0] = read_gpio_reg_int32 (6,0); // GPIO X11 : Transport WPos
+        bram_status[0] = read_gpio_reg_int32 (6,0) & 0xffff; // GPIO X11 : Transport WPos
         bram_status[1] = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
         return ((bram_status[1]>>10) & 1)  &&  ((bram_status[1]>>8) & 1); // finished (finished and run set)
 }
@@ -918,8 +918,19 @@ void UpdateSignals(void)
                         rp_PAC_get_single_reading (reading_vector);
                         rp_PAC_get_single_reading (reading_vector);
                 }
+                BRAM_WRITE_POS.Value () = status[0];
+        } else {
+                BRAM_WRITE_POS.Value () = -99;
         }
 
+        if ( OPERATION.Value () == 5 ){ // LOOP READ (FIFO MODE)
+                int n=1024;
+                read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
+                rp_PAC_get_single_reading (reading_vector);
+                rp_PAC_get_single_reading (reading_vector);
+                BRAM_WRITE_POS.Value () = status[0];
+        }
+        
         // TUNE MODE
         if ( OPERATION.Value () == 6 ){
                 
@@ -1132,6 +1143,7 @@ void OnNewParams(void)
                 rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);
                 if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
+                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_LOOP, SHR_CH1.Value (), SHR_CH2.Value (), SHR_CH34.Value (), 256, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
                 read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
                 rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);

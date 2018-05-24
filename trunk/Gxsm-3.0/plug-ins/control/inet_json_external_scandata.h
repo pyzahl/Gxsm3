@@ -55,6 +55,9 @@ struct PACPLL_parameters {
         double free_ram;
         double counter;
 
+        double period;
+        double bram_write_pos;
+        
         double gain1;
         double shr_ch1;
         double gain2;
@@ -102,6 +105,7 @@ struct PACPLL_signals {
         double signal_ch3[1024];
         double signal_ch4[1024];
         double signal_ch5[1024];
+        double signal_freq[1024]; // in tune mode
 };
 
 PACPLL_parameters pacpll_parameters;
@@ -117,6 +121,9 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "VOLUME_MONITOR", &pacpll_parameters.volume_monitor, true },
         { "PHASE_MONITOR", &pacpll_parameters.phase_monitor, true },
 
+        { "BRAM_WRITE_POS", &pacpll_parameters.bram_write_pos, true },
+        { "PERIOD", &pacpll_parameters.period, false },
+
         { "GAIN1", &pacpll_parameters.gain1, false },
         { "SHR_CH1", &pacpll_parameters.shr_ch1, false },
         { "GAIN2", &pacpll_parameters.gain2, false },
@@ -131,7 +138,7 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "OPERATION", &pacpll_parameters.operation, false },
         { "PACVERBOSE", &pacpll_parameters.pacverbose, false },
         { "TRANSPORT_DECIMATION", &pacpll_parameters.transport_decimation, false },
-        { "TRANSPORT_MODE", &pacpll_parameters.transport_mode, false },
+        { "TRANSPORT_MODE", &pacpll_parameters.transport_mode, false }, // CH12
         { "TRANSPORT_CH3", &pacpll_parameters.transport_ch3, false },
         { "TRANSPORT_CH4", &pacpll_parameters.transport_ch4, false },
         { "TRANSPORT_CH5", &pacpll_parameters.transport_ch5, false },
@@ -159,6 +166,7 @@ JSON_signal PACPLL_JSON_signals[] = {
         { "SIGNAL_CH3", 1024, pacpll_signals.signal_ch3 },
         { "SIGNAL_CH4", 1024, pacpll_signals.signal_ch4 },
         { "SIGNAL_CH5", 1024, pacpll_signals.signal_ch5 },
+        { "SIGNAL_FREQ", 1024, pacpll_signals.signal_freq },
         { NULL, 0, NULL }
 };
 
@@ -193,11 +201,15 @@ public:
         static void phase_controller (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
         static void choice_operation_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
-        static void choice_transport_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void choice_transport_ch12_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_transport_ch3_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_transport_ch4_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_transport_ch5_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void scope_ac_ch1_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void scope_ac_ch2_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void scope_ac_ch3_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
+        static void choice_update_period_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_auto_set_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
 	void send_all_parameters ();
@@ -383,6 +395,8 @@ private:
         GSettings *inet_json_settings;
         
         gboolean run_scope;
+        gboolean scope_ac[5];
+        double scope_dc_level[5];
         int transport;
         double gain_scale[5];
         double time_scale[5];

@@ -205,7 +205,7 @@ module controller_pi #(
     assign mon_signal  = {m[AXIS_TDATA_WIDTH+DEXTEND-1], m[AXIS_TDATA_WIDTH-2:0]};
     assign mon_error   = {error[AXIS_TDATA_WIDTH+DEXTEND-1], error[AXIS_TDATA_WIDTH-2:0]};
     assign mon_control = {control[CONTROL2_WIDTH+CEXTEND-1], control[CONTROL2_WIDTH-2:CONTROL2_WIDTH-32]};
-    assign mon_control_lower32 = {control[CONTROL2_WIDTH+CEXTEND-1], control[31:0]}; // signed, lower 31
+    assign mon_control_lower32 = {{control[CONTROL2_WIDTH-32-1 : (CONTROL2_WIDTH>=64? CONTROL2_WIDTH-32-1-31:0)]}, {(CONTROL2_WIDTH>=64?0:(64-CONTROL2_WIDTH)){1'b0}}}; // signed, lower 31
     //assign mon_control_lower32 = {control[CONTROL2_WIDTH-32:0], {(32-(CONTROL2_WIDTH-32)){1'b0}}};
 
 endmodule
