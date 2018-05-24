@@ -237,6 +237,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         ch_freq = -1;
         ch_ampl = -1;
 
+        for (int i=0; i<5; ++i){ scope_ac[i]=false; scope_dc_level[i]=0.; }
+        
         block_message = 0;
         
         /* create a new connection, init */
@@ -417,7 +419,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 "RUN SCOPE",
                 "INIT BRAM TRANSPORT",
                 "START BRAM TRANSPORT",
-                "READ BRAM",
+                "READ BRAM LOOP",
                 "TUNE",
                 NULL };
 
@@ -427,32 +429,33 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
 	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 2);
 
-        // BRAM TRANSPORT MODE BLOCK S1,S2
+        // FPGA Update Period
 	wid = gtk_combo_box_text_new ();
         g_signal_connect (G_OBJECT (wid), "changed",
-                          G_CALLBACK (Inet_Json_External_Scandata::choice_transport_callback),
+                          G_CALLBACK (Inet_Json_External_Scandata::choice_update_period_callback),
                           this);
         bp->grid_add_widget (wid);
 
-	const gchar *transport_modes[] = {
-                "0: IN1, IN2",
-                "1: PHASE, AMPL",
-                "2: IN1, AMPL (AC)",
-                "3: IN2, PHASE (AC)",
-                "4: Exec,Freq",
-                "5: FIR Ampl,Phase",
-                "6: RP DIGITAL IN 0,1 counts",
-                "7: RESET Counts",
-                "8: RESET",
+	const gchar *update_periods[] = {
+                " 20ms",
+                " 50ms",
+                "100ms",
+                "200ms",
+                "500ms",
+                "  1s",
+                " 10s",
+                " 50s",
                 NULL };
    
 	// Init choicelist
-	for(int i=0; transport_modes[i]; i++)
-                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), transport_modes[i], transport_modes[i]);
+	for(int i=0; update_periods[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), update_periods[i], update_periods[i]);
 
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 3);
 
-        // Scop Auto Set Modes
+        bp->grid_add_label (" Scale");
+                
+        // Scope Auto Set Modes
 	wid = gtk_combo_box_text_new ();
         g_signal_connect (G_OBJECT (wid), "changed",
                           G_CALLBACK (Inet_Json_External_Scandata::choice_auto_set_callback),
@@ -477,24 +480,49 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
 	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 6);
 
-        
         bp->new_line ();
+
+        // BRAM TRANSPORT MODE BLOCK S1,S2
+	wid = gtk_combo_box_text_new ();
+        g_signal_connect (G_OBJECT (wid), "changed",
+                          G_CALLBACK (Inet_Json_External_Scandata::choice_transport_ch12_callback),
+                          this);
+        bp->grid_add_widget (wid);
+
+	const gchar *transport_modes[] = {
+                "0: IN1, IN2",
+                "1: PHASE, AMPL",
+                "2: IN1, AMPL (AC)",
+                "3: IN2, PHASE (AC)",
+                "4: Exec,Freq",
+                "5: FIR Ampl,Phase",
+                "6: RP DIGITAL IN 0,1 counts",
+                "7: RESET Counts",
+                "8: RESET",
+                NULL };
+   
+	// Init choicelist
+	for(int i=0; transport_modes[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), transport_modes[i], transport_modes[i]);
+
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
 
         // GPIO monitor selections -- full set, experimental
 	const gchar *monitor_modes_gpio[] = {
-                "LMS Amplitude from A,B",
-                "LMS Phase from A,B",
+                "LMS Amplitude(A,B)",
+                "LMS Phase(A,B)",
                 "LMS A",
                 "LMS B",
-                "FPGA CORDIC Amplitude Monitor",
-                "FPGA CORDIC Phase Monitor",
-                "FIR passed CORDIC Amplitude Monitor",
-                "FIR passed CORDIC Phase Monitor",
-                "LMS X",
-                "LMS Y",
-                "LMS M (LMS Input Signal)",
-                "LMS M1 (LMS Input Signal-DC)",
-                "Phase from X,Y",
+                "SQRT Ampl Monitor",
+                "ATAN Phase Monitor",
+                "X5",
+                "X6",
+                "X7",
+                "DDS Freq Monitor",
+                "X3 M (LMS Input)",
+                "X5 M1(LMS Input-DC)",
+                "X11 BRAM WPOS",
+                "X12 BRAM DEC",
                 NULL };
 
         // CH3 from GPIO MONITOR</p>
@@ -542,7 +570,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         signal_graph = gtk_image_new_from_surface (NULL);
         bp->grid_add_widget (signal_graph, 10);
         
+        bp->new_line ();
+        bp->grid_add_check_button ( N_("Ch1 AC"), "Remove Offset from Ch1", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::scope_ac_ch1_callback), this);
+        bp->grid_add_check_button ( N_("Ch2 AC"), "Remove Offset from Ch2", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::scope_ac_ch2_callback), this);
+        bp->grid_add_check_button ( N_("Ch3 AC"), "Remove Offset from Ch3", 1,
+                                    G_CALLBACK (Inet_Json_External_Scandata::scope_ac_ch3_callback), this);
 
+        
         // ========================================
         
         bp->pop_grid ();
@@ -774,7 +810,21 @@ void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, 
         self->write_parameter ("OPERATION", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
 }
 
-void Inet_Json_External_Scandata::choice_transport_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+void Inet_Json_External_Scandata::choice_update_period_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        switch (gtk_combo_box_get_active (GTK_COMBO_BOX (widget))){
+        case 0: self->write_parameter ("PERIOD",  20); break;
+        case 1: self->write_parameter ("PERIOD",  50); break;
+        case 2: self->write_parameter ("PERIOD", 100); break;
+        case 3: self->write_parameter ("PERIOD", 200); break;
+        case 4: self->write_parameter ("PERIOD", 500); break;
+        case 5: self->write_parameter ("PERIOD",1000); break;
+        case 6: self->write_parameter ("PERIOD",10000); break;
+        case 7: self->write_parameter ("PERIOD",50000); break;
+        default: self->write_parameter ("PERIOD", 200); break;
+        }
+}
+
+void Inet_Json_External_Scandata::choice_transport_ch12_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->write_parameter ("TRANSPORT_MODE", self->transport=gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
 }
 
@@ -883,6 +933,18 @@ void Inet_Json_External_Scandata::dbg_l4 (GtkWidget *widget, Inet_Json_External_
         else
                 self->debug_level &= ~4;
 }
+
+
+void Inet_Json_External_Scandata::scope_ac_ch1_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->scope_ac[0] = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+}
+void Inet_Json_External_Scandata::scope_ac_ch2_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->scope_ac[1] = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+}
+void Inet_Json_External_Scandata::scope_ac_ch3_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->scope_ac[2] = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+}
+
 
 void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_External_Scandata *self){
         if (!self->text_status) return;
@@ -1203,6 +1265,7 @@ void Inet_Json_External_Scandata::stream_data (){
                         for (n=0; deci; ++n) deci >>= 1;
                         --n;
                 }
+                if (n>16) n=16; // limit to 16
                 deci = 1<<n;
                 //g_print ("Scan Pixel rate is %g s/pix -> Decimation %g -> %d n=%d\n", gapp->xsm->hardware->GetScanrate (), decimation, deci, n);
         }
@@ -1272,10 +1335,18 @@ void Inet_Json_External_Scandata::update_graph (){
                                 s=signal[ch][k];
                                 if (s>max) max=s;
                                 if (s<min) min=s;
+                                if (scope_ac[ch])
+                                        s -= scope_dc_level[ch];
                                 wave->set_xy_fast (k,xs*k,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s);
                         }
+                        scope_dc_level[ch] = 0.5*(min+max);
                         if (gain_scale[ch] < 0.)
-                                gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
+                                if (scope_ac[ch]){
+                                        min -= scope_dc_level[ch];
+                                        max -= scope_dc_level[ch];
+                                        gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
+                                } else
+                                        gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
                         wave->draw (cr);
 
                         for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg/=100.;
