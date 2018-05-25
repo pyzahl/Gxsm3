@@ -116,6 +116,10 @@ module axis_4s_combine #(
     output wire          init_state,
     output wire [32-1:0] writeposition,
     output wire [32-1:0] debug,
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [16-1:0]  M_AXIS_aux_tdata,
+    output wire           M_AXIS_aux_tvalid,
+
 
     // BRAM PORT A
     output wire                        bram_porta_clk,
@@ -159,18 +163,10 @@ module axis_4s_combine #(
     assign finished_state = finished;
     assign writeposition = { decimate_count[15:0], 1'b0, 1'b0, bram_addr[13:0] };
     assign debug = { {(2){1'b0}}, operation[12:8],  operation[7:0],     {(5){1'b0}}, finished_state,trigger,running,   {(1){1'b0}}, bramwr_sms, {(1){1'b0}}, dec_sms };
-    
-    /*
-    always @(operation)
-    begin
-        start   <= operation[0:0]; // Trigger start for single shot
-        init    <= operation[7:4]; // reset/reinit
-        ch1_shr <= operation[12:8]; // DEC data shr ch1,..4
-        ch2_shr <= operation[20:16];
-        ch3_shr <= operation[28:24];
-        ch4_shr <= operation[28:24];
-    end
-    */
+
+    // pass decimated ch2s out for auxillary use    
+    assign M_AXIS_aux_tdata  = ch2s[64-1:64-16]; // Testing
+    assign M_AXIS_aux_tvalid = running;
     
     assign bram_porta_clk = a_clk;
     // assign bram_porta_rst = ~a_resetn;
@@ -212,9 +208,7 @@ module axis_4s_combine #(
         begin
             mk3_line_clock_last <= rp_digital_in[1:1];
             mk3_line_clock_next <= 1'b1;      
-        end
-        else
-        begin
+        end else begin
             mk3_line_clock_next <= 1'b0;      
         end
 
@@ -226,9 +220,7 @@ module axis_4s_combine #(
             running <= 1'b0;
             trigger <= 1'b0;
             finished <= 1'b0;
-        end
-        else
-        begin
+        end else begin
             if (operation[0] && ~running)
             begin
                 running <= 1'b1;
@@ -271,10 +263,15 @@ module axis_4s_combine #(
                     bram_wren_next  <= 2'd0;
 
                     sample_count_next <= sample_count + 1;
-                    if ((sample_count >= nsamples) && ~operation[1:1]) // run mode 1 single shot, finish
+                    if (sample_count >= nsamples) // run mode 1 single shot, finish
                     begin
                         dec_sms_next <= 3'd0;  // finished, needs reset to restart and re-arm.
-                        finished <= 1'b1; // set finish flag
+                        if (~operation[1]) // run mode 1 single shot, finish. Else start over (LOOP/FIFO mode)
+                        begin
+                            finished <= 1'b1; // set finish flag
+                        end else begin
+                            trigger <= 1'b1; // set trigger to start over right away
+                        end
                     end
                     bramwr_sms_next <= 3'd0; // idle next
                 end
@@ -443,10 +440,10 @@ module axis_4s_combine #(
     
                     if (decimate_count >= ndecimate && bramwr_sms_next == 0) // BRAM write cycle must be comleted
                     begin
-                        ch1s <= (ch1 >>> operation[12:8]);
-                        ch2s <= (ch2 >>> operation[20:16]);
-                        ch3s <= (ch3 >>> operation[28:24]);
-                        ch4s <= (ch4 >>> operation[28:24]);
+                        ch1s <= (ch1 >>> operation[31:8]);
+                        ch2s <= (ch2 >>> operation[31:8]);
+                        ch3s <= (ch3 >>> operation[31:8]);
+                        ch4s <= (ch4 >>> operation[31:8]);
                         dec_sms_next <= 2'd2; // start over decimating with next value(s)
                         bramwr_sms_next <= 3'd1; // initate write data cycles
                         bramwr_sms <= 3'd1; // initate write data cycles

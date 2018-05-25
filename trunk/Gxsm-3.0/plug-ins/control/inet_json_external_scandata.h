@@ -58,14 +58,6 @@ struct PACPLL_parameters {
         double period;
         double bram_write_pos;
         
-        double gain1;
-        double shr_ch1;
-        double gain2;
-        double shr_ch2;
-        double shr_ch34;
-        double gain3;
-        double gain4;
-        double gain5;
         double pactau;
         double frequency_manual;
         double volume_manual;
@@ -76,6 +68,12 @@ struct PACPLL_parameters {
         double transport_ch3;
         double transport_ch4;
         double transport_ch5;
+        double shr_dec_data;
+        double gain1;
+        double gain2;
+        double gain3;
+        double gain4;
+        double gain5;
         double tune_dfreq;
         double tune_span;
         double amplitude_fb_setpoint;
@@ -124,11 +122,9 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "BRAM_WRITE_POS", &pacpll_parameters.bram_write_pos, true },
         { "PERIOD", &pacpll_parameters.period, false },
 
+        { "SHR_DEC_DATA", &pacpll_parameters.shr_dec_data, false },
         { "GAIN1", &pacpll_parameters.gain1, false },
-        { "SHR_CH1", &pacpll_parameters.shr_ch1, false },
         { "GAIN2", &pacpll_parameters.gain2, false },
-        { "SHR_CH2", &pacpll_parameters.shr_ch2, false },
-        { "SHR_CH34", &pacpll_parameters.shr_ch34, false },
         { "GAIN3", &pacpll_parameters.gain3, false },
         { "GAIN4", &pacpll_parameters.gain4, false },
         { "GAIN5", &pacpll_parameters.gain5, false },
@@ -387,6 +383,7 @@ private:
         int data_shr;
         int streampos;
         int x,y;
+        int streaming;
         
         PACPLL_parameters parameters;
         PACPLL_signals signals;

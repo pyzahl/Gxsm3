@@ -54,7 +54,7 @@ module VolumeAdjuster16_14 #(
            y <= v*x; // Volume Q15 or Q(VAXIS_DATA_Q-1)
        end
     end
-    assign M_AXIS_tdata = {{(AXIS_DATA_WIDTH-ADC_WIDTH){y[VAXIS_DATA_Q+ADC_WIDTH-1]}}, {y[VAXIS_DATA_Q+ADC_WIDTH-1:VAXIS_DATA_Q-1]}, S_AXIS_tdata[AXIS_TDATA_WIDTH-AXIS_DATA_WIDTH-1 : 0]};
+    assign M_AXIS_tdata = {{(AXIS_DATA_WIDTH-ADC_WIDTH){y[VAXIS_DATA_Q+ADC_WIDTH-1]}}, {y[VAXIS_DATA_Q+ADC_WIDTH-1:VAXIS_DATA_Q-1]}, S_AXIS_tdata[AXIS_DATA_WIDTH-1 : 0]};
     assign M_AXIS_tvalid = S_AXIS_tvalid && SV_AXIS_tvalid;
    
 endmodule
