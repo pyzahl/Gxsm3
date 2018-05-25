@@ -57,6 +57,7 @@ struct PACPLL_parameters {
 
         double period;
         double bram_write_pos;
+        double bram_dec_count;
         
         double pactau;
         double frequency_manual;
@@ -76,6 +77,9 @@ struct PACPLL_parameters {
         double gain5;
         double tune_dfreq;
         double tune_span;
+        double center_amplitude;
+        double center_frequency;
+        double center_phase;
         double amplitude_fb_setpoint;
         double amplitude_fb_invert;
         double amplitude_fb_cp;
@@ -103,7 +107,7 @@ struct PACPLL_signals {
         double signal_ch3[1024];
         double signal_ch4[1024];
         double signal_ch5[1024];
-        double signal_freq[1024]; // in tune mode
+        double signal_frq[1024]; // in tune mode
 };
 
 PACPLL_parameters pacpll_parameters;
@@ -119,8 +123,9 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "VOLUME_MONITOR", &pacpll_parameters.volume_monitor, true },
         { "PHASE_MONITOR", &pacpll_parameters.phase_monitor, true },
 
-        { "BRAM_WRITE_POS", &pacpll_parameters.bram_write_pos, true },
         { "PERIOD", &pacpll_parameters.period, false },
+        { "BRAM_WRITE_POS", &pacpll_parameters.bram_write_pos, true },
+        { "BRAM_DEC_COUNT", &pacpll_parameters.bram_dec_count, true },
 
         { "SHR_DEC_DATA", &pacpll_parameters.shr_dec_data, false },
         { "GAIN1", &pacpll_parameters.gain1, false },
@@ -140,6 +145,9 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "TRANSPORT_CH5", &pacpll_parameters.transport_ch5, false },
         { "TUNE_DFREQ", &pacpll_parameters.tune_dfreq, false },
         { "TUNE_SPAN", &pacpll_parameters.tune_span, false },
+        { "CENTER_AMPLITUDE", &pacpll_parameters.center_amplitude, false },
+        { "CENTER_PHASE", &pacpll_parameters.center_phase, false },
+        { "CENTER_FREQUENCY", &pacpll_parameters.center_frequency, false },
         { "AMPLITUDE_FB_SETPOINT", &pacpll_parameters.amplitude_fb_setpoint, false },
         { "AMPLITUDE_FB_CP", &pacpll_parameters.amplitude_fb_cp, false },
         { "AMPLITUDE_FB_CI", &pacpll_parameters.amplitude_fb_ci, false },
@@ -162,7 +170,7 @@ JSON_signal PACPLL_JSON_signals[] = {
         { "SIGNAL_CH3", 1024, pacpll_signals.signal_ch3 },
         { "SIGNAL_CH4", 1024, pacpll_signals.signal_ch4 },
         { "SIGNAL_CH5", 1024, pacpll_signals.signal_ch5 },
-        { "SIGNAL_FREQ", 1024, pacpll_signals.signal_freq },
+        { "SIGNAL_FRQ", 1024, pacpll_signals.signal_frq },
         { NULL, 0, NULL }
 };
 
@@ -384,6 +392,7 @@ private:
         int streampos;
         int x,y;
         int streaming;
+        int operation_mode;
         
         PACPLL_parameters parameters;
         PACPLL_signals signals;
