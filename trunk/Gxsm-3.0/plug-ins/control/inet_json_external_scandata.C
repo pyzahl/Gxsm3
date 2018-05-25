@@ -671,6 +671,7 @@ void Inet_Json_External_Scandata::scan_start_callback (gpointer user_data){
         self->ch_freq = -1;
         self->ch_ampl = -1;
         self->streaming = 1;
+        self->operation_mode = 0;
         g_message ("Inet_Json_External_Scandata::scan_start_callback");
         if ((self->ch_freq=gapp->xsm->FindChan(xsmres.extchno[0])) >= 0)
                 self->setup_scan (self->ch_freq, "X+", "Ext1-Freq", "Hz", "Freq", 1.0);
@@ -808,7 +809,8 @@ void Inet_Json_External_Scandata::send_all_parameters (){
 }
 
 void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
-        self->write_parameter ("OPERATION", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+        self->operation_mode = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+        self->write_parameter ("OPERATION", self->operation_mode);
 }
 
 void Inet_Json_External_Scandata::choice_update_period_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -1336,7 +1338,12 @@ void Inet_Json_External_Scandata::update_graph (){
                                 if (s<min) min=s;
                                 if (scope_ac[ch])
                                         s -= scope_dc_level[ch];
-                                wave->set_xy_fast (k,xs*k,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s);
+
+                                double x = (operation_mode == 6 && ch > 1) ? 
+                                        250.+480.*pacpll_signals.signal_frq[k]/parameters.tune_span // tune plot
+                                        : xs*k; // time plot
+
+                                wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s);
                         }
                         scope_dc_level[ch] = 0.5*(min+max);
                         if (gain_scale[ch] < 0.)
@@ -1365,11 +1372,23 @@ void Inet_Json_External_Scandata::update_graph (){
                         g_free (cursors);
                 }
                         
-                valuestring = g_strdup_printf ("Dec=%d [>>%d] wp{%d}", data_decimation, data_shr, pacpll_parameters.bram_write_pos);
+                valuestring = g_strdup_printf ("Dec=%d [>>%d] wp#{%d,%d}", data_decimation, data_shr, pacpll_parameters.bram_write_pos, pacpll_parameters.bram_dec_count);
                 reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
                 reading->set_text (10, -(110-14*6), valuestring);
                 g_free (valuestring);
                 reading->draw (cr);
+
+                if (operation_mode == 6){ // tune info
+                        valuestring = g_strdup_printf ("Tuning: @max %g mV  %.4f Hz  %g deg",
+                                                       pacpll_parameters.center_amplitude,
+                                                       pacpll_parameters.center_frequency,
+                                                       pacpll_parameters.center_phase
+                                                       );
+                        reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                        reading->set_text (10, (110+14*0), valuestring);
+                        g_free (valuestring);
+                        reading->draw (cr);
+                }
                 
                 if (transport == 0){ // add polar plot for CH1,2 as XY
                         wave->set_stroke_rgba (CAIRO_COLOR_MAGENTA);

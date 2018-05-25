@@ -115,14 +115,20 @@ CIntParameter TRANSPORT_CH4("TRANSPORT_CH4", CBaseParameter::RW, 1, 0, 0, 13);
 CIntParameter TRANSPORT_CH5("TRANSPORT_CH5", CBaseParameter::RW, 1, 0, 0, 13);
 CIntParameter TRANSPORT_MODE("TRANSPORT_MODE", CBaseParameter::RW, 0, 0, 0, 32768);
 CIntParameter TRANSPORT_DECIMATION("TRANSPORT_DECIMATION", CBaseParameter::RW, 2, 0, 1, 32768);
+
 CIntParameter BRAM_WRITE_POS("BRAM_WRITE_POS", CBaseParameter::RW, 0, 0, -100, 1024);
+CIntParameter BRAM_DEC_COUNT("BRAM_DEC_COUNT", CBaseParameter::RW, 0, 0, 0, 0xffffffff);
 
 CFloatParameter DC_OFFSET("DC_OFFSET", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
 
 CDoubleParameter EXEC_MONITOR("EXEC_MONITOR", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
-CDoubleParameter DDS_FREQ_MONITOR("DDS_FREQ_MONITOR", CBaseParameter::RW, 0, 0, 0.0, 25e6);// Hz
+CDoubleParameter DDS_FREQ_MONITOR("DDS_FREQ_MONITOR", CBaseParameter::RW, 0, 0, 0.0, 25e6); // Hz
 CDoubleParameter PHASE_MONITOR("PHASE_MONITOR", CBaseParameter::RW, 0, 0, -180.0, 180.0); // deg
 CDoubleParameter VOLUME_MONITOR("VOLUME_MONITOR", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
+
+CDoubleParameter CENTER_AMPLITUDE("CENTER_AMPLITUDE", CBaseParameter::RW, 0, 0, 0.0, 1000.0); // mV
+CDoubleParameter CENTER_FREQUENCY("CENTER_FREQUENCY", CBaseParameter::RW, 0, 0, 0.0, 25e6); // Hz
+CDoubleParameter CENTER_PHASE("CENTER_PHASE", CBaseParameter::RW, 0, 0, -180.0, 180.0); // deg
 
 // PAC CONFIGURATION
 //./pacpll -m s -f 32766.0 -v .5 -t 0.0004 -V 3
@@ -611,10 +617,13 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
 }
         
 
-int bram_status(int bram_status[2]){
-        bram_status[0] = read_gpio_reg_int32 (6,0) & 0xffff; // GPIO X11 : Transport WPos
-        bram_status[1] = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-        return ((bram_status[1]>>10) & 1)  &&  ((bram_status[1]>>8) & 1); // finished (finished and run set)
+int bram_status(int bram_status[3]){
+        int x11 = read_gpio_reg_int32 (6,0); // GPIO X11 : Transport DecCnt, 0,0, Wpos
+        int x12 = read_gpio_reg_int32 (6,1); // GPIO X12 : Tranmsport Dbg
+        bram_status[0] = x11 & 0xffff; // GPIO X11 : Transport WPos
+        bram_status[1] = (x11>>16) & 0xffff; // GPIO X11 : Transport DecCount
+        bram_status[2] = x12;          // GPIO X12 : Transport Dbg
+        return ((bram_status[2]>>10) & 1)  &&  ((bram_status[2]>>8) & 1); // finished (finished and run set)
 }
 
 
@@ -890,9 +899,13 @@ void UpdateSignals(void)
         static int state=0;
         static int dir=1;
         static double f=0.;
+        static double tune_amp_max=0.;
+        static double tune_phase=0.;
+        static double tune_fcenter=0.;
+        double ampl, phase;
         double reading_vector[READING_MAX_VALUES];
         int ch;
-        int status[2];
+        int status[3];
         
         if (verbose > 3) fprintf(stderr, "UpdateSignals()\n");
 
@@ -914,29 +927,49 @@ void UpdateSignals(void)
                         rp_PAC_get_single_reading (reading_vector);
                 }
                 BRAM_WRITE_POS.Value () = status[0];
-        } else {
-                BRAM_WRITE_POS.Value () = -99;
+                BRAM_DEC_COUNT.Value () = status[1];
         }
 
         if ( OPERATION.Value () == 5 ){ // LOOP READ (FIFO MODE)
                 int n=1024;
+                bram_status(status);
                 read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
                 rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);
                 BRAM_WRITE_POS.Value () = status[0];
+                BRAM_DEC_COUNT.Value () = status[1];
         }
         
         // TUNE MODE
         if ( OPERATION.Value () == 6 ){
                 
+                ampl = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
+                phase = reading_vector[5] * 180./M_PI; // PLL Phase deg
+
+                if (ampl > tune_amp_max){
+                        tune_amp_max = ampl;
+                        tune_phase = phase;
+                        tune_fcenter = FREQUENCY_MANUAL.Value() + f;
+                }
+                
                 if (f < TUNE_SPAN.Value ()/2 && dir == 1)
                         f += TUNE_DFREQ.Value ();
-                if (f > TUNE_SPAN.Value ()/2 && dir == 1)
+                if (f > TUNE_SPAN.Value ()/2 && dir == 1){
                         dir = -1;
+                        CENTER_FREQUENCY.Value () = tune_fcenter;
+                        CENTER_PHASE.Value () = tune_phase;
+                        CENTER_AMPLITUDE.Value () = tune_amp_max;
+                        tune_amp_max=0.;
+                }
                 if (f > -TUNE_SPAN.Value ()/2 && dir == -1)
                         f -= TUNE_DFREQ.Value ();
-                if (f < -TUNE_SPAN.Value ()/2 && dir == -1)
+                if (f < -TUNE_SPAN.Value ()/2 && dir == -1){
                         dir = 1;
+                        CENTER_FREQUENCY.Value () = tune_fcenter;
+                        CENTER_PHASE.Value () = tune_phase;
+                        CENTER_AMPLITUDE.Value () = tune_amp_max;
+                        tune_amp_max=0.;
+                }
                 rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value() + f);
                 FREQUENCY_TUNE.Value() = f;
         } else {
@@ -980,7 +1013,7 @@ void UpdateSignals(void)
 
         VOLUME_MONITOR.Value ()   = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
         PHASE_MONITOR.Value ()    = reading_vector[5] * 180./M_PI; // PLL Phase deg
-        EXEC_MONITOR.Value () = reading_vector[8] * 1000.; // Exec Amplitude Monitor in mV
+        EXEC_MONITOR.Value ()     = reading_vector[8] * 1000.; // Exec Amplitude Monitor in mV
         DDS_FREQ_MONITOR.Value () = reading_vector[9]; // DDS Freq Monitor in Hz
         
         rp_PAC_auto_dc_offset_correct ();
