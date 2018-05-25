@@ -117,7 +117,7 @@ module axis_4s_combine #(
     output wire [32-1:0] writeposition,
     output wire [32-1:0] debug,
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
-    output wire [16-1:0]  M_AXIS_aux_tdata,
+    output wire [64-1:0]  M_AXIS_aux_tdata,
     output wire           M_AXIS_aux_tvalid,
 
 
@@ -165,7 +165,7 @@ module axis_4s_combine #(
     assign debug = { {(2){1'b0}}, operation[12:8],  operation[7:0],     {(5){1'b0}}, finished_state,trigger,running,   {(1){1'b0}}, bramwr_sms, {(1){1'b0}}, dec_sms };
 
     // pass decimated ch2s out for auxillary use    
-    assign M_AXIS_aux_tdata  = ch2s[64-1:64-16]; // Testing
+    assign M_AXIS_aux_tdata  = ch2s[64-1:0]; // Testing
     assign M_AXIS_aux_tvalid = running;
     
     assign bram_porta_clk = a_clk;
