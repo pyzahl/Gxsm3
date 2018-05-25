@@ -89,9 +89,7 @@ CIntParameter GAIN5("GAIN5", CBaseParameter::RW, 100, 0, 1, 10000);
 CIntParameter OPERATION("OPERATION", CBaseParameter::RW, 1, 0, 1, 10);
 CIntParameter PACVERBOSE("PACVERBOSE", CBaseParameter::RW, 0, 0, 0, 10);
 
-CIntParameter SHR_CH1("SHR_CH1", CBaseParameter::RW, 0, 0, 0, 32);
-CIntParameter SHR_CH2("SHR_CH2", CBaseParameter::RW, 0, 0, 0, 32);
-CIntParameter SHR_CH34("SHR_CH34", CBaseParameter::RW, 0, 0, 0, 32);
+CIntParameter SHR_DEC_DATA("SHR_DEC_DATA", CBaseParameter::RW, 0, 0, 0, 24);
 
 /*
  *  TRANSPORT FPGA MODULE to BRAM:
@@ -483,11 +481,7 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
         OPERATION::
         start   <= operation[0:0]; // Trigger start for single shot
         init    <= operation[7:4]; // reset/reinit
-        ch1_shr <= operation[15:8]; // DEC data shr ch1,..4
-        ch2_shr <= operation[23:16];
-
-        ch3_shr <= operation[31:24];
-        ch4_shr <= operation[31:24];
+        shr_dec_data <= operation[31:8]; // DEC data shr for ch1..4
 
  */
 #define PACPLL_CFG_TRANSPORT_CONTROL         6
@@ -499,13 +493,11 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
 #define PACPLL_CFG_TRANSPORT_LOOP            3
 #define PACPLL_CFG_TRANSPORT_XXXXX           0
 
-void rp_PAC_configure_transport (int control, int shr_ch1, int shr_ch2, int shr_ch34, int nsamples, int decimation, int channel_select){
+void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, int decimation, int channel_select){
         if (verbose > 2) fprintf(stderr, "##Configure transport: 0x%02x, dec=%d, M=%d\n",  control, decimation, channel_select); 
         set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_CONTROL,
-                                control
-                                | (((shr_ch1 >= 0 && shr_ch1 <= 32) ? shr_ch1 : 0) <<   8)
-                                | (((shr_ch2 >= 0 && shr_ch2 <= 32) ? shr_ch2 : 0) <<  16)
-                                | (((shr_ch34 >= 0 && shr_ch34 <= 32) ? shr_ch34 : 0) << 24)
+                                (control & 0xff)
+                                | (((shr_dec_data >= 0 && shr_dec_data <= 24) ? shr_dec_data : 0) << 8)
                                 );
         set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_SAMPLES, nsamples);
         if (decimation < 8)
@@ -691,8 +683,8 @@ int rp_app_init(void)
         rp_PAC_get_single_reading (reading_vector);
 
         // init block transport for scope
-        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT, SHR_CH1.Value (), SHR_CH2.Value (), SHR_CH34.Value (),  256, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
-        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_CH1.Value (), SHR_CH2.Value (), SHR_CH34.Value (), 256, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
+        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,  SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
+        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
         
         return 0;
 }
@@ -853,7 +845,7 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
-                        SIGNAL_CH1[k]  = (float)ix32*gain1/Q13*(1<<SHR_CH1.Value ())/dec;
+                        SIGNAL_CH1[k]  = (float)ix32*gain1;
                         val  = (float)iy32*gain2/QCORDICATAN;
                         dc_new += val;
                         SIGNAL_CH2[k]  = val-dc;
@@ -872,8 +864,8 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // FIR Ampl (experimental)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // FIR Phase (experimental)
-                        SIGNAL_CH1[k]  = (float)ix32*gain1/QCORDICSQRT; // *(1<<SHR_CH1.Value ())/dec;
-                        SIGNAL_CH2[k]  = (float)iy32*gain2/QCORDICATAN; // *(1<<SHR_CH2.Value ())/dec;
+                        SIGNAL_CH1[k]  = (float)ix32*gain1/QCORDICSQRT;
+                        SIGNAL_CH2[k]  = (float)iy32*gain2/QCORDICATAN;
                 }
                 break;
         case 6:
@@ -910,11 +902,11 @@ void UpdateSignals(void)
                 rp_PAC_get_single_reading (reading_vector);
                 if (bram_status(status)){
                         if (verbose == 1) fprintf(stderr, "BRAM T init:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,  SHR_CH1.Value (), SHR_CH2.Value (), SHR_CH34.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,  SHR_DEC_DATA.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
                         rp_PAC_get_single_reading (reading_vector);
                         rp_PAC_get_single_reading (reading_vector);
                         if (verbose == 1) fprintf(stderr, "BRAM T start:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_CH1.Value (), SHR_CH2.Value (), SHR_CH34.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_DEC_DATA.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
                         rp_PAC_get_single_reading (reading_vector);
                         rp_PAC_get_single_reading (reading_vector);
                 }
@@ -1045,9 +1037,7 @@ void OnNewParams(void)
         GAIN3.Update ();
         GAIN4.Update ();
         GAIN5.Update ();
-        SHR_CH1.Update ();
-        SHR_CH2.Update ();
-        SHR_CH34.Update ();
+        SHR_DEC_DATA.Update ();
         TUNE_SPAN.Update ();
         TUNE_DFREQ.Update ();
         
@@ -1119,7 +1109,7 @@ void OnNewParams(void)
                 rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);
                 if (verbose == 1) fprintf(stderr, "1BRAM T init:\n");
-                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT, SHR_CH1.Value (), SHR_CH2.Value (), SHR_CH34.Value (),  256, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
+                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT, SHR_DEC_DATA.Value (),  1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
                 rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);
         }
@@ -1131,7 +1121,7 @@ void OnNewParams(void)
                 rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);
                 if (verbose == 1) fprintf(stderr, "1BRAM T start:\n");
-                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_CH1.Value (), SHR_CH2.Value (), SHR_CH34.Value (), 256, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
+                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
                 rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);
         }
@@ -1143,7 +1133,7 @@ void OnNewParams(void)
                 rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);
                 if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
-                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_LOOP, SHR_CH1.Value (), SHR_CH2.Value (), SHR_CH34.Value (), 256, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
+                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_LOOP, SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
                 read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
                 rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);

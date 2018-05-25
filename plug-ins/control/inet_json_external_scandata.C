@@ -233,6 +233,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         debug_level = 1;
         input_rpaddress = NULL;
         text_status = NULL;
+        streaming = 0;
 
         ch_freq = -1;
         ch_ampl = -1;
@@ -669,6 +670,7 @@ void Inet_Json_External_Scandata::scan_start_callback (gpointer user_data){
         Inet_Json_External_Scandata *self = inet_json_external_scandata;
         self->ch_freq = -1;
         self->ch_ampl = -1;
+        self->streaming = 1;
         g_message ("Inet_Json_External_Scandata::scan_start_callback");
         if ((self->ch_freq=gapp->xsm->FindChan(xsmres.extchno[0])) >= 0)
                 self->setup_scan (self->ch_freq, "X+", "Ext1-Freq", "Hz", "Freq", 1.0);
@@ -681,6 +683,7 @@ void Inet_Json_External_Scandata::scan_stop_callback (gpointer user_data){
         Inet_Json_External_Scandata *self = inet_json_external_scandata;
         self->ch_freq = -1;
         self->ch_ampl = -1;
+        self->streaming = 0;
         g_message ("Inet_Json_External_Scandata::scan_stop_callback");
 }
 
@@ -789,9 +792,7 @@ void Inet_Json_External_Scandata::send_all_parameters (){
         write_parameter ("GAIN3", 1.);
         write_parameter ("GAIN4", 1.);
         write_parameter ("GAIN5", 1.);
-        write_parameter ("SHR_CH1", 4.);
-        write_parameter ("SHR_CH2", 4.);
-        write_parameter ("SHR_CH34", 4.);
+        write_parameter ("SHR_DEC_DATA", 4.);
         write_parameter ("PACVERBOSE", 0);
         write_parameter ("TRANSPORT_DECIMATION", 16);
         write_parameter ("TRANSPORT_MODE", 0);
@@ -1258,23 +1259,21 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 void Inet_Json_External_Scandata::stream_data (){
         int deci=16;
         int n=4;
-        if (ch_freq >= 0 || ch_ampl >= 0){
+        if (streaming){
                 double decimation = 125e6 * gapp->xsm->hardware->GetScanrate ();
                 deci = (gint64)decimation;
                 if (deci > 2){
                         for (n=0; deci; ++n) deci >>= 1;
                         --n;
                 }
-                if (n>16) n=16; // limit to 16
+                if (n>24) n=24; // limit to 24. Note: (32 bits - 8 control, may shorten control, only 3 needed)
                 deci = 1<<n;
                 //g_print ("Scan Pixel rate is %g s/pix -> Decimation %g -> %d n=%d\n", gapp->xsm->hardware->GetScanrate (), decimation, deci, n);
         }
         if (deci != data_decimation){
                 data_decimation = deci;
                 data_shr = n;
-                write_parameter ("SHR_CH1", data_shr);
-                write_parameter ("SHR_CH2", data_shr);
-                write_parameter ("SHR_CH34", data_shr);
+                write_parameter ("SHR_DEC_DATA", data_shr);
                 write_parameter ("TRANSPORT_DECIMATION", data_decimation);
         }
 
@@ -1356,9 +1355,19 @@ void Inet_Json_External_Scandata::update_graph (){
                         g_free (valuestring);
                         reading->draw (cr);
                 }
-                valuestring = g_strdup_printf ("Dec=%d [>>%d]", data_decimation, data_shr);
+                if (pacpll_parameters.bram_write_pos >= 0 && pacpll_parameters.bram_write_pos <= 1024){
+                        cairo_item_segments *cursors = new cairo_item_segments (2);
+                        cursors->set_line_width (0.5);
+                        cursors->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                        cursors->set_xy_fast (0,pacpll_parameters.bram_write_pos,-80.);
+                        cursors->set_xy_fast (1,pacpll_parameters.bram_write_pos,80.);
+                        cursors->draw (cr);
+                        g_free (cursors);
+                }
+                        
+                valuestring = g_strdup_printf ("Dec=%d [>>%d] wp{%d}", data_decimation, data_shr, pacpll_parameters.bram_write_pos);
                 reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
-                reading->set_text (400, -110, valuestring);
+                reading->set_text (10, -(110-14*6), valuestring);
                 g_free (valuestring);
                 reading->draw (cr);
                 
