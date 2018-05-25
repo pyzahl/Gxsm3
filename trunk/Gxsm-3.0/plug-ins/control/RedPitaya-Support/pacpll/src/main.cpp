@@ -430,8 +430,8 @@ void rp_PAC_auto_dc_offset_correct (){
 #define PACPLL_CFG_SET   0
 #define PACPLL_CFG_CP    1
 #define PACPLL_CFG_CI    2
-#define PACPLL_CFG_UPPER 3
-#define PACPLL_CFG_LOWER 5
+#define PACPLL_CFG_UPPER 3 // 3,4 64bit
+#define PACPLL_CFG_LOWER 5 // 5,6 64bit
 
 // AMPL from CORDIC: 24bit Q23 -- QCORDICSQRT
 void rp_PAC_set_amplitude_controller (double setpoint, double cp, double ci, double upper, double lower){
@@ -488,6 +488,7 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
 #define PACPLL_CFG_TRANSPORT_SAMPLES         7
 #define PACPLL_CFG_TRANSPORT_DECIMATION      8
 #define PACPLL_CFG_TRANSPORT_CHANNEL_SELECT  9
+#define PACPLL_CFG_TRANSPORT_AUX_SCALE       17
 #define PACPLL_CFG_TRANSPORT_INIT            (1<<4)
 #define PACPLL_CFG_TRANSPORT_START           1
 #define PACPLL_CFG_TRANSPORT_LOOP            3
@@ -504,6 +505,8 @@ void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, in
                 decimation = 8;
         set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_DECIMATION, decimation);
         set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_CHANNEL_SELECT, channel_select);
+        // AUX scale, Q15, in top 32
+        set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_AUX_SCALE, (32767)<<16);
 }
 
 /*
