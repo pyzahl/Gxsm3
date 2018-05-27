@@ -135,6 +135,8 @@ CDoubleParameter CENTER_PHASE("CENTER_PHASE", CBaseParameter::RW, 0, 0, -180.0, 
 //./pacpll -m t -f 32766.0 -v .5 -t 0.0004 -M 1 -s 2.0 -d 0.05 -u 150000  > data-tune
 CDoubleParameter FREQUENCY_TUNE("FREQUENCY_TUNE", CBaseParameter::RW, 32766.0, 0, 1, 25e6); // Hz
 CDoubleParameter FREQUENCY_MANUAL("FREQUENCY_MANUAL", CBaseParameter::RW, 32766.0, 0, 1, 25e6); // Hz
+CDoubleParameter FREQUENCY_CENTER("FREQUENCY_CENTER", CBaseParameter::RW, 32766.0, 0, 1, 25e6); // Hz -- used for BRam and AUX data to remove offset, and scale
+CDoubleParameter AUX_SCALE("AUX_SCALE", CBaseParameter::RW, 1.0, 0, -1e6, 1e6); // 1
 CDoubleParameter VOLUME_MANUAL("VOLUME_MANUAL", CBaseParameter::RW, 300.0, 0, 0.0, 1000.0); // mV
 CDoubleParameter PACTAU("PACTAU", CBaseParameter::RW, 200.0, 0, 0.0, 60e6); // us
 
@@ -238,6 +240,7 @@ void rp_PAC_App_Release(){
 #define Q23 QN(23)
 #define Q24 QN(24)
 #define Q13 QN(13)
+#define Q15 QN(15)
 #define QLMS QN(22)
 #define BITS_CORDICSQRT 24
 #define BITS_CORDICATAN 24
@@ -495,12 +498,13 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
 #define PACPLL_CFG_TRANSPORT_DECIMATION      8
 #define PACPLL_CFG_TRANSPORT_CHANNEL_SELECT  9
 #define PACPLL_CFG_TRANSPORT_AUX_SCALE       17
+#define PACPLL_CFG_TRANSPORT_AUX_CENTER      18  // 18,19
 #define PACPLL_CFG_TRANSPORT_INIT            (1<<4)
 #define PACPLL_CFG_TRANSPORT_START           1
 #define PACPLL_CFG_TRANSPORT_LOOP            3
 #define PACPLL_CFG_TRANSPORT_XXXXX           0
 
-void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, int decimation, int channel_select){
+void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, int decimation, int channel_select, double scale, double center){
         if (verbose > 2) fprintf(stderr, "##Configure transport: 0x%02x, dec=%d, M=%d\n",  control, decimation, channel_select); 
         set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_CONTROL,
                                 (control & 0xff)
@@ -511,8 +515,9 @@ void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, in
                 decimation = 8;
         set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_DECIMATION, decimation);
         set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_CHANNEL_SELECT, channel_select);
-        // AUX scale, Q15, in top 32
-        set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_AUX_SCALE, (32767)<<16);
+        // AUX scale, center
+        set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_AUX_SCALE, (int)round(Q15*scale));
+        set_gpio_cfgreg_int48 (PACPLL_CFG_TRANSPORT_AUX_CENTER, (unsigned long long)round (dds_phaseinc (center))); // => 44bit phase
 }
 
 /*
@@ -695,8 +700,8 @@ int rp_app_init(void)
         rp_PAC_get_single_reading (reading_vector);
 
         // init block transport for scope
-        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,  SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
-        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
+        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,  SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
         
         return 0;
 }
@@ -918,11 +923,11 @@ void UpdateSignals(void)
                 rp_PAC_get_single_reading (reading_vector);
                 if (bram_status(status)){
                         if (verbose == 1) fprintf(stderr, "BRAM T init:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,  SHR_DEC_DATA.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,  SHR_DEC_DATA.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
                         rp_PAC_get_single_reading (reading_vector);
                         rp_PAC_get_single_reading (reading_vector);
                         if (verbose == 1) fprintf(stderr, "BRAM T start:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_DEC_DATA.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_DEC_DATA.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
                         rp_PAC_get_single_reading (reading_vector);
                         rp_PAC_get_single_reading (reading_vector);
                 }
@@ -934,7 +939,6 @@ void UpdateSignals(void)
                 int n=1024;
                 bram_status(status);
                 read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
-                rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);
                 BRAM_WRITE_POS.Value () = status[0];
                 BRAM_DEC_COUNT.Value () = status[1];
@@ -1064,6 +1068,9 @@ void UpdateParams(void){
 
 void OnNewParams(void)
 {
+        static int operation=0;
+        double reading_vector[READING_MAX_VALUES];
+        
         if (verbose > 3) fprintf(stderr, "OnNewParams()\n");
         PACVERBOSE.Update ();
         OPERATION.Update ();
@@ -1078,6 +1085,8 @@ void OnNewParams(void)
         TUNE_DFREQ.Update ();
         
         FREQUENCY_MANUAL.Update ();
+        FREQUENCY_CENTER.Update ();
+        AUX_SCALE.Update ();
         VOLUME_MANUAL.Update ();
         PACTAU.Update ();
         PHASE_CONTROLLER.Update ();
@@ -1104,75 +1113,49 @@ void OnNewParams(void)
         TRANSPORT_CH4.Update ();
         TRANSPORT_CH5.Update ();
 
-        /*
-        if (verbose > 3) fprintf(stderr,
-                                 "NewParams: v:%d o:%d g[%d %d %d %d]\n"
-                                 "   f:%f v:%f tau:%f\n"
-                                 "   pc:%d ac:%d\n"
-                                 "   td:%d tm:%d tc3:%d tc4:%d\n",
-                                 PACVERBOSE.Value (),
-                                 OPERATION.Value (),
-                                 
-                                 GAIN1.Value (),
-                                 GAIN2.Value (),
-                                 GAIN3.Value (),
-                                 GAIN4.Value (),
-        
-                                 FREQUENCY_MANUAL.Value (),
-                                 VOLUME_MANUAL.Value (),
-                                 PACTAU.Value (),
-                                 
-                                 PHASE_CONTROLLER.Value (),
-                                 AMPLITUDE_CONTROLLER.Value (),
-
-                                 TRANSPORT_DECIMATION.Value (),
-                                 TRANSPORT_MODE.Value (),
-                                 TRANSPORT_CH3.Value (),
-                                 TRANSPORT_CH4.Value ()
-                                 );             
-        */
-        if ( OPERATION.Value () == 1 ){
-                
-                rp_PAC_auto_dc_offset_adjust ();
-                OPERATION.Value () = 0;
-                if (verbose > 0) fprintf(stderr, "OnNewParams: OP=1 Auto Offset Run, DC=%f mV\n", 1000.*signal_dc_measured);
-                pacpll_text.Value() = "Auto Offset completed.                 ";
-        }
-        if ( OPERATION.Value () == 3 ){
-                double reading_vector[READING_MAX_VALUES];
-                OPERATION.Value () = 0;
-                if (verbose > 0) fprintf(stderr, "OnNewParams: OP=3 Init BRAM Transport\n");
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
-                if (verbose == 1) fprintf(stderr, "1BRAM T init:\n");
-                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT, SHR_DEC_DATA.Value (),  1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
-        }
-        
-        if ( OPERATION.Value () == 4 ){
-                double reading_vector[READING_MAX_VALUES];
-                OPERATION.Value () = 0;
-                if (verbose > 0) fprintf(stderr, "OnNewParams: OP=4 Start BRAM Transport\n");
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
-                if (verbose == 1) fprintf(stderr, "1BRAM T start:\n");
-                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
-        }
-        
-        if ( OPERATION.Value () == 5 ){
-                double reading_vector[READING_MAX_VALUES];
-                OPERATION.Value () = 0;
-                if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Read BRAM\n");
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
-                if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
-                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_LOOP, SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value ());
-                read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
+        if ( OPERATION.Value () > 0 && OPERATION.Value () != operation ){
+                operation = OPERATION.Value ();
+                switch (OPERATION.Value ()){
+                case 1:
+                        rp_PAC_auto_dc_offset_adjust ();
+                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=1 Auto Offset Run, DC=%f mV\n", 1000.*signal_dc_measured);
+                        pacpll_text.Value() = "Auto Offset completed.                 ";
+                        break;
+                case 2: case 6: // Scope, Tune
+                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Start-Finish, Repeat Hilevel BRAM Transport (Scope/Tune)\n");
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT, SHR_DEC_DATA.Value (),  1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_get_single_reading (reading_vector);
+                        if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+                        break;
+                case 3:
+                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=3 Init/ResetStart BRAM Transport\n");
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_get_single_reading (reading_vector);
+                        if (verbose == 1) fprintf(stderr, "1BRAM T init:\n");
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT, SHR_DEC_DATA.Value (),  1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+                        rp_PAC_get_single_reading (reading_vector);
+                        break;
+                case 4:
+                        rp_PAC_get_single_reading (reading_vector);
+                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=4 Single Shot BRAM Transport -- test\n");
+                        rp_PAC_get_single_reading (reading_vector);
+                        if (verbose == 1) fprintf(stderr, "1BRAM T start:\n");
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START, SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+                        break;
+                case 5:
+                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Start Loop BRAM Transport for loop/FIFO mode\n");
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT, SHR_DEC_DATA.Value (),  1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_get_single_reading (reading_vector);
+                        if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_LOOP, SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+                        break;
+                }
         }
         
         if (verbose > 3) fprintf(stderr, "OnNewParams: set_PAC_config\n");

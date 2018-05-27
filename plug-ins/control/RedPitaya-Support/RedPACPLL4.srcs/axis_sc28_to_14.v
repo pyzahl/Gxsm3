@@ -49,7 +49,7 @@ module axis_sc28_to_14 #(
                                       S_AXIS_tdata[SRC_BITS-1:SRC_BITS-ADC_WIDTH],
         S_AXIS_aux_tvalid ?
         {{(MAXIS_DATA_WIDTH-ADC_WIDTH){S_AXIS_aux_tdata[AUX_BITS-1]}}, 
-                                      S_AXIS_tdata[AUX_BITS-1:AUX_BITS-ADC_WIDTH]}
+                                       S_AXIS_aux_tdata[AUX_BITS-1:AUX_BITS-ADC_WIDTH]}
         :
         {{(MAXIS_DATA_WIDTH-ADC_WIDTH){S_AXIS_tdata[SAXIS_TDATA_WIDTH-SAXIS_DATA_WIDTH+SRC_BITS-1]}}, 
                                        S_AXIS_tdata[SAXIS_TDATA_WIDTH-SAXIS_DATA_WIDTH+SRC_BITS-1:SAXIS_TDATA_WIDTH-SAXIS_DATA_WIDTH+SRC_BITS-ADC_WIDTH]}
