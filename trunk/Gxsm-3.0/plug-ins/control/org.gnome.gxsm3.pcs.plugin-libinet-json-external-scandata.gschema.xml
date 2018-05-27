@@ -26,9 +26,9 @@
     </key>
 
     <key name="rp-pacpll-aux-scale" type="d">
-      <default>1</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-AUX-SCALE', Default/U: 1     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-AUX-SCALE', Default/U: 1    , Adjustment PCS Name: 'rp-pacpll-AUX-SCALE' </description>
+      <default>0.011642</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-AUX-SCALE', Default/U: 0.011642 (20Hz/V) </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-AUX-SCALE', Default/U: 0.011642 (20Hz/V), Adjustment PCS Name: 'rp-pacpll-AUX-SCALE' </description>
     </key>
 
     <key name="rp-pacpll-volume-manual" type="d">

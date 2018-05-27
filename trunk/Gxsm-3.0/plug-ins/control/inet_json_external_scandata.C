@@ -289,7 +289,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         parameters.pactau = 200.0; // us
         parameters.frequency_manual = 32768.0; // Hz
         parameters.frequency_center = 32768.0; // Hz
-        parameters.aux_scale = 1.0; // 
+        parameters.aux_scale = 0.011642; // 20Hz / V equivalent 
         parameters.volume_manual = 300.0; // mV
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_tau_parameter_changed, this);
   	bp->grid_add_ec ("Tau PAC", uTime, &parameters.pactau, 0.0, 63e6, "6g", 10., 1., "PACTAU");
