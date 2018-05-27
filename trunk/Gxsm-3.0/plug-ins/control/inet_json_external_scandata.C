@@ -405,6 +405,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_default_ec_change_notice_fkt (NULL, NULL);
         bp->grid_add_ec ("DDS Freq", Hz, &parameters.dds_frequency_monitor, 0.0, 25e6, ".4lf", 0.1, 1., "DDS-FREQ-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
+        input_ddsfreq=bp->ec;
         bp->ec->Freeze ();
         bp->new_line ();
         bp->set_input_nx (1);
@@ -923,6 +924,10 @@ void Inet_Json_External_Scandata::update_monitoring_parameters(){
         parameters.cpu_load = pacpll_parameters.cpu_load;
         parameters.free_ram = pacpll_parameters.free_ram;
         parameters.counter = pacpll_parameters.counter;
+
+        gchar *delta_freq_info = g_strdup_printf ("[%g]", parameters.dds_frequency_monitor - parameters.frequency_center);
+        input_ddsfreq->set_info (delta_freq_info);
+        g_free (delta_freq_info);
         if (G_IS_OBJECT (window))
 		g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "PAC_EC_READINGS_list"),
 				(GFunc) App::update_ec, NULL);

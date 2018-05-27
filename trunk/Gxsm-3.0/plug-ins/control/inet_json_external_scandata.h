@@ -416,6 +416,8 @@ private:
         GtkWidget *text_status;
 	GtkWidget *red_pitaya_health;
 
+        Gtk_EntryControl *input_ddsfreq;
+
         gint debug_level; 
         UnitObj *Unity, *Hz, *Deg, *VoltDeg, *Volt, *mVolt, *VoltHz, *dB, *Time, *uTime;
 
