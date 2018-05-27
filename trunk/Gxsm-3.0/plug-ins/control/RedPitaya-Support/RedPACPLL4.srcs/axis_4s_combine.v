@@ -106,9 +106,9 @@ module axis_4s_combine #(
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     input wire [SAXIS_78_TDATA_WIDTH-1:0]  S_AXIS8_tdata, // FIR Phase
     input wire                          S_AXIS8_tvalid,
-    input wire [SAXIS_3_DATA_WIDTH-1:0] axis3_lower,  
+    input wire signed [SAXIS_3_DATA_WIDTH-1:0] axis3_center,  
     input wire [7:0]     rp_digital_in,
-    input wire [32-1:0]  operation,
+    input wire [32-1:0]  operation, // 0..7 control bits 0: 1=start 1: 1=single shot/0=fifo loop 2: 4: 1=init/reset , [31:8] DATA ACCUMULATOR (64) SHR
     input wire [32-1:0]  ndecimate,
     input wire [32-1:0]  nsamples,
     input wire [32-1:0]  channel_selector,
@@ -147,8 +147,11 @@ module axis_4s_combine #(
     reg signed [64-1:0] ch1s, ch2s, ch3s, ch4s;
 
     reg finished=1'b0;
+    reg finished_next=1'b0;
     reg running=1'b0; 
+    reg running_next=1'b0; 
     reg trigger=1'b0;
+    reg trigger_next=1'b0;
     
     reg [BRAM_DATA_WIDTH-1: 0] wr_data;    
 
@@ -177,6 +180,10 @@ module axis_4s_combine #(
         
     always @(posedge a_clk)
     begin
+        finished <= finished_next;
+        running  <= running_next;
+        trigger  <= trigger_next;
+        
         dec_sms <= dec_sms_next;
         bramwr_sms <= bramwr_sms_next;
         bram_addr <= bram_addr_next;
@@ -216,15 +223,15 @@ module axis_4s_combine #(
         begin
             dec_sms_next <= 3'd0;
             bramwr_sms_next <= 3'd0;
-            bram_wren_next <= 1'b0;
-            running <= 1'b0;
-            trigger <= 1'b0;
-            finished <= 1'b0;
+            bram_wren_next  <= 1'b0;
+            running_next  <= 1'b0;
+            trigger_next  <= 1'b0;
+            finished_next <= 1'b0;
         end else begin
             if (operation[0] && ~running)
             begin
-                running <= 1'b1;
-                trigger <= 1'b1;
+                running_next <= 1'b1;
+                trigger_next <= 1'b1;
             end
 
             // BRAM STORE MACHINE
@@ -266,11 +273,11 @@ module axis_4s_combine #(
                     if (sample_count >= nsamples) // run mode 1 single shot, finish
                     begin
                         dec_sms_next <= 3'd0;  // finished, needs reset to restart and re-arm.
-                        if (~operation[1]) // run mode 1 single shot, finish. Else start over (LOOP/FIFO mode)
+                        if (operation[1]) // run mode 1 single shot, finish. Else start over (LOOP/FIFO mode)
                         begin
-                            finished <= 1'b1; // set finish flag
+                            finished_next <= 1'b1; // set finish flag
                         end else begin
-                            trigger <= 1'b1; // set trigger to start over right away
+                            trigger_next <= 1'b1; // set trigger to start over right away
                         end
                     end
                     bramwr_sms_next <= 3'd0; // idle next
@@ -289,10 +296,9 @@ module axis_4s_combine #(
                 begin
                     if (trigger)
                     begin
-                        finished <= 1'b0; // clear finish flag
+                        finished_next <= 1'b0; // clear finish flag
                         dec_sms_next <= 3'd2;  // go
-                        dec_sms <= 3'd2;  // now
-                        trigger <= 1'b0;
+                        trigger_next <= 1'b0;
                     end
                 end
                 2:    // Initiate Measure, Average, Decimate, ...
@@ -339,8 +345,8 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS2_tvalid && S_AXIS3_tvalid)
                             begin
-                                ch1n <= S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0];                 // Amplitude Exec (32) =>  64 sum
-                                ch2n <= (S_AXIS3_tdata[SAXIS_3_DATA_WIDTH-1:0] - axis3_lower); // Freq (48) - Lower (48) =>  64 sum
+                                ch1n <= $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);                 // Amplitude Exec (32) =>  64 sum
+                                ch2n <= ($signed(S_AXIS3_tdata[SAXIS_3_DATA_WIDTH-1:0]) - $signed(axis3_center)); // Freq (48) - Center (48) =>  64 sum
                                 dec_sms_next <= 3'd3;
                             end
                         end
@@ -348,8 +354,8 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS7_tvalid && S_AXIS8_tvalid)
                             begin
-                                ch1n <= S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]; // FIR Ampl
-                                ch2n <= S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]; // FIR Phase
+                                ch1n <= S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]; // FIR Ampl xxx
+                                ch2n <= S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]; // FIR Phase xxx
                                 dec_sms_next <= 3'd3;
                             end
                         end
@@ -416,8 +422,8 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS2_tvalid && S_AXIS3_tvalid)
                             begin
-                                ch1n <= ch1 + S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]; // Amplitude (32) =>  64 sum
-                                ch2n <= ch2 + (S_AXIS3_tdata[SAXIS_3_DATA_WIDTH-1:0] - axis3_lower); // Freq (48) - Lower (48) =>  64 sum
+                                ch1n <= ch1 + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]); // Amplitude (32) =>  64 sum
+                                ch2n <= ch2 + ($signed(S_AXIS3_tdata[SAXIS_3_DATA_WIDTH-1:0]) - $signed(axis3_center)); // Freq (48) - Lower (48) =>  64 sum
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
                         end
@@ -425,8 +431,8 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS7_tvalid && S_AXIS8_tvalid)
                             begin
-                                ch1n <= ch1 + S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]; // FIR Ampl
-                                ch2n <= ch2 + S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]; // FIR Phase
+                                ch1n <= ch1 + $signed(S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]); // FIR Ampl
+                                ch2n <= ch2 + $signed(S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]); // FIR Phase
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
                         end
@@ -446,7 +452,6 @@ module axis_4s_combine #(
                         ch4s <= (ch4 >>> operation[31:8]);
                         dec_sms_next <= 2'd2; // start over decimating with next value(s)
                         bramwr_sms_next <= 3'd1; // initate write data cycles
-                        bramwr_sms <= 3'd1; // initate write data cycles
                     end
                 end
             endcase

@@ -281,12 +281,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_default_ec_change_notice_fkt (NULL, NULL);
 
         bp->new_grid_with_frame ("RedPitaya PAC Setup");
+        bp->set_input_nx (2);
         bp->grid_add_ec ("In1 Offset", mVolt, &parameters.dc_offset, -1000.0, 1000.0, "g", 0.1, 1., "DC-OFFSET");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
         parameters.pactau = 200.0; // us
         parameters.frequency_manual = 32768.0; // Hz
+        parameters.frequency_center = 32768.0; // Hz
+        parameters.aux_scale = 1.0; // 
         parameters.volume_manual = 300.0; // mV
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_tau_parameter_changed, this);
   	bp->grid_add_ec ("Tau PAC", uTime, &parameters.pactau, 0.0, 63e6, "6g", 10., 1., "PACTAU");
@@ -296,6 +299,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_frequency_parameter_changed, this);
   	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency_manual, 0.0, 20e6, ".4lf", 0.1, 10., "FREQUENCY-MANUAL");
         bp->new_line ();
+        bp->set_no_spin (true);
+        bp->set_input_width_chars (8);
+        bp->set_input_nx (1);
+  	bp->grid_add_ec ("Center,Scale", Hz, &parameters.frequency_center, 0.0, 20e6, ".4lf", 0.1, 10., "FREQUENCY-CENTER");
+  	bp->grid_add_ec (NULL, Unity, &parameters.aux_scale, -1e6, 1e6, ".4lf", 0.1, 10., "AUX-SCALE");
+        bp->new_line ();
+        bp->set_no_spin (false);
+        bp->set_input_nx (2);
+        bp->set_input_width_chars (12);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_volume_parameter_changed, this);
   	bp->grid_add_ec ("Volume", mVolt, &parameters.volume_manual, 0.0, 1000.0, "5g", 0.1, 1.0, "VOLUME-MANUAL");
         bp->new_line ();
@@ -760,6 +772,8 @@ void Inet_Json_External_Scandata::pac_tau_parameter_changed (Param_Control* pcs,
 void Inet_Json_External_Scandata::pac_frequency_parameter_changed (Param_Control* pcs, gpointer user_data){
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
         self->write_parameter ("FREQUENCY_MANUAL", self->parameters.frequency_manual);
+        self->write_parameter ("FREQUENCY_CENTER", self->parameters.frequency_center);
+        self->write_parameter ("AUX_SCALE", self->parameters.aux_scale);
 }
 
 void Inet_Json_External_Scandata::pac_volume_parameter_changed (Param_Control* pcs, gpointer user_data){
@@ -1355,6 +1369,7 @@ void Inet_Json_External_Scandata::update_graph (){
                                         gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
                         wave->draw (cr);
 
+                        avg=0.;
                         for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg/=100.;
                         valuestring = g_strdup_printf ("Ch%d %12.5f [x %g] %g %g {%g}", ch+1, avg, gain_scale[ch], min, max, max-min);
                         reading->set_stroke_rgba (BasicColors[color[ch]]);

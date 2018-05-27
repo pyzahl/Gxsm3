@@ -19,6 +19,18 @@
       <description>pcs0000, PCS Remote-ID: 'rp-pacpll-FREQUENCY-MANUAL', Default/U: 32768 Hz    , Adjustment PCS Name: 'rp-pacpll-FREQUENCY-MANUAL' </description>
     </key>
 
+    <key name="rp-pacpll-frequency-center" type="d">
+      <default>32768</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-FREQUENCY-CENTER', Default/U: 32768 Hz     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-FREQUENCY-CENTER', Default/U: 32768 Hz    , Adjustment PCS Name: 'rp-pacpll-FREQUENCY-CENTER' </description>
+    </key>
+
+    <key name="rp-pacpll-aux-scale" type="d">
+      <default>1</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-AUX-SCALE', Default/U: 1     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-AUX-SCALE', Default/U: 1    , Adjustment PCS Name: 'rp-pacpll-AUX-SCALE' </description>
+    </key>
+
     <key name="rp-pacpll-volume-manual" type="d">
       <default>300</default>
       <summary>PCS Remote-ID: 'rp-pacpll-VOLUME-MANUAL', Default/U: 300 mV     </summary>
