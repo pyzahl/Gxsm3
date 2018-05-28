@@ -1368,14 +1368,13 @@ void Inet_Json_External_Scandata::update_graph (){
                                 if (s<min) min=s;
                                 if (scope_ac[ch])
                                         s -= scope_dc_level[ch];
-
-                                double x = (operation_mode == 6 && ch > 1) ? 
+                                
+                                double x = (operation_mode == 6) ? 
                                         250.+480.*pacpll_signals.signal_frq[k]/parameters.tune_span // tune plot
                                         : xs*k; // time plot
 
                                 wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s);
                         }
-                        scope_dc_level[ch] = 0.5*(min+max);
                         if (gain_scale[ch] < 0.)
                                 if (scope_ac[ch]){
                                         min -= scope_dc_level[ch];
@@ -1419,9 +1418,7 @@ void Inet_Json_External_Scandata::update_graph (){
                         reading->set_text (10, (110+14*0), valuestring);
                         g_free (valuestring);
                         reading->draw (cr);
-                }
-                
-                if (transport == 0){ // add polar plot for CH1,2 as XY
+                } else if (transport == 0){ // add polar plot for CH1,2 as XY
                         wave->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
                         for (int k=0; k<n; ++k)
                                 wave->set_xy_fast (k,n/4-yr*gain_scale[0]*signal[0][k],-yr*gain_scale[1]*signal[1][k]);
