@@ -53,15 +53,19 @@
 
 //Signal size
 #define SIGNAL_SIZE_DEFAULT      1024
-#define SIGNAL_UPDATE_INTERVAL     50
+#define PARAMETER_UPDATE_INTERVAL 200 // ms
+#define SIGNAL_UPDATE_INTERVAL    100 // ms
 
 
 //Signal
 // Block mode
 CFloatSignal SIGNAL_CH1("SIGNAL_CH1", SIGNAL_SIZE_DEFAULT, 0.0f);
+std::vector<float> g_data_signal_ch1(SIGNAL_SIZE_DEFAULT); // only used in tune mode
 CFloatSignal SIGNAL_CH2("SIGNAL_CH2", SIGNAL_SIZE_DEFAULT, 0.0f);
+std::vector<float> g_data_signal_ch2(SIGNAL_SIZE_DEFAULT); // only used in tune mode
 
 // Slow from GPIO, stripe plotter mode
+
 CFloatSignal SIGNAL_CH3("SIGNAL_CH3", SIGNAL_SIZE_DEFAULT, 0.0f);
 std::vector<float> g_data_signal_ch3(SIGNAL_SIZE_DEFAULT);
 
@@ -165,8 +169,8 @@ CDoubleParameter FREQ_FB_LOWER("FREQ_FB_LOWER", CBaseParameter::RW, 0.1, 0, 0, 2
 
 CStringParameter pacpll_text("PAC_TEXT", CBaseParameter::RW, "N/A                                    ", 40);
 
-CIntParameter parameter_updatePeriod("PARAMETER_PERIOD", CBaseParameter::RW, 200, 0, 0, 50000);
-CIntParameter signal_updatePeriod("SIGNAL_PERIOD", CBaseParameter::RW, 200, 0, 0, 50000);
+CIntParameter parameter_updatePeriod("PARAMETER_PERIOD", CBaseParameter::RW, PARAMETER_UPDATE_INTERVAL, 0, 0, 50000);
+CIntParameter signal_updatePeriod("SIGNAL_PERIOD", CBaseParameter::RW, SIGNAL_UPDATE_INTERVAL, 0, 0, 50000);
 CIntParameter timeDelay("time_delay", CBaseParameter::RW, 50000, 0, 0, 100000000);
 CFloatParameter cpuLoad("CPU_LOAD", CBaseParameter::RW, 0, 0, 0, 100);
 CFloatParameter memoryFree ("FREE_RAM", CBaseParameter::RW, 0, 0, 0, 1e15);
@@ -919,7 +923,7 @@ void UpdateSignals(void)
         if (verbose > 3) fprintf(stderr, "UpdateSignals()\n");
 
         // Scope, Tune in single shot mode
-        if ( OPERATION.Value () == 2 || OPERATION.Value () == 6){
+        if ( OPERATION.Value () == 2){
                 if (verbose > 3) fprintf(stderr, "re-arm read BRAM writer\n");
                 if (verbose == 1) fprintf(stderr, "BRAM read:\n");
                 read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
@@ -955,9 +959,44 @@ void UpdateSignals(void)
         
         // TUNE MODE
         if ( OPERATION.Value () == 6 ){
+                ampl=0.;
+                phase=0.;;
+                int k;
+                size_t i = 12;
+                size_t N = 8*SIGNAL_SIZE_DEFAULT;
+                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
+                        phase += (double)ix32/QCORDICATAN;
+                        ampl  += (double)iy32/QCORDICSQRT;
+                }
+                phase /= SIGNAL_SIZE_DEFAULT;
+                ampl  /= SIGNAL_SIZE_DEFAULT;
+                ampl  *=  1000.; // Resonator Amplitude Signal Monitor in mV
+                phase *=  180./M_PI; // PLL Phase deg
+                g_data_signal_ch1.erase (g_data_signal_ch1.begin());
+                g_data_signal_ch1.push_back (phase);
+                g_data_signal_ch2.erase (g_data_signal_ch2.begin());
+                g_data_signal_ch2.push_back (ampl);
+                rp_PAC_get_single_reading (reading_vector);
+                rp_PAC_get_single_reading (reading_vector);
+                if (bram_status(status)){
+                        if (verbose == 1) fprintf(stderr, "BRAM T init:\n");
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
+                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_get_single_reading (reading_vector);
+                        if (verbose == 1) fprintf(stderr, "BRAM T start:\n");
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
+                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_get_single_reading (reading_vector);
+                }
+                BRAM_WRITE_POS.Value () = status[0];
+                BRAM_DEC_COUNT.Value () = status[1];
                 
-                ampl = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
-                phase = reading_vector[5] * 180./M_PI; // PLL Phase deg
+                //ampl = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
+                //phase = reading_vector[5] * 180./M_PI; // PLL Phase deg
 
                 if (ampl > tune_amp_max){
                         tune_amp_max = ampl;
@@ -1018,8 +1057,11 @@ void UpdateSignals(void)
                 SIGNAL_CH3[i] = g_data_signal_ch3[i];
                 SIGNAL_CH4[i] = g_data_signal_ch4[i];
                 SIGNAL_CH5[i] = g_data_signal_ch5[i];
-                if (OPERATION.Value () == 6)
+                if (OPERATION.Value () == 6){
+                        SIGNAL_CH1[i] = g_data_signal_ch1[i];
+                        SIGNAL_CH2[i] = g_data_signal_ch2[i];
                         SIGNAL_FRQ[i] = g_data_signal_frq[i];
+                }
         }
         
         if (verbose > 3) fprintf(stderr, "UpdateSignal complete.\n");
@@ -1148,7 +1190,7 @@ void OnNewParams(void)
                         if (verbose > 0) fprintf(stderr, "OnNewParams: OP=1 Auto Offset Run, DC=%f mV\n", 1000.*signal_dc_measured);
                         pacpll_text.Value() = "Auto Offset completed.                 ";
                         break;
-                case 2: case 6: // Scope, Tune
+                case 2: // Scope
                         if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Start-Finish, Repeat Hilevel BRAM Transport (Scope/Tune)\n");
                         rp_PAC_get_single_reading (reading_vector);
                         rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
@@ -1158,6 +1200,17 @@ void OnNewParams(void)
                         if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
                         rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
                                                     SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+                        break;
+                case 6: // Tune
+                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Start-Finish, Repeat Hilevel BRAM Transport (Scope/Tune)\n");
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
+                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_get_single_reading (reading_vector);
+                        if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
+                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
                         break;
                 case 3:
                         if (verbose > 0) fprintf(stderr, "OnNewParams: OP=3 Init/ResetStart BRAM Transport\n");

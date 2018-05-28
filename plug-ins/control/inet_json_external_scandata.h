@@ -111,6 +111,8 @@ struct PACPLL_signals {
         double signal_ch4[1024];
         double signal_ch5[1024];
         double signal_frq[1024]; // in tune mode
+        double signal_phase[1024]; // in tne mode, local
+        double signal_ampl[1024]; // in tune mode, local
 };
 
 PACPLL_parameters pacpll_parameters;
