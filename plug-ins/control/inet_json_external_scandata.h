@@ -55,7 +55,8 @@ struct PACPLL_parameters {
         double free_ram;
         double counter;
 
-        double period;
+        double parameter_period;
+        double signal_period;
         double bram_write_pos;
         double bram_dec_count;
         
@@ -125,7 +126,8 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "VOLUME_MONITOR", &pacpll_parameters.volume_monitor, true },
         { "PHASE_MONITOR", &pacpll_parameters.phase_monitor, true },
 
-        { "PERIOD", &pacpll_parameters.period, false },
+        { "PARAMETER_PERIOD", &pacpll_parameters.parameter_period, false },
+        { "SIGNAL_PERIOD", &pacpll_parameters.signal_period, false },
         { "BRAM_WRITE_POS", &pacpll_parameters.bram_write_pos, true },
         { "BRAM_DEC_COUNT", &pacpll_parameters.bram_dec_count, true },
 
@@ -296,15 +298,16 @@ public:
                 }
                 return NULL;
         };
-        static void dump_parameters (){
+        static void dump_parameters (int dbg=0){
                 for (JSON_parameter *p=PACPLL_JSON_parameters; p->js_varname; ++p)
                         g_print ("%s=%g\n", p->js_varname, *(p->value));
-                for (JSON_signal *p=PACPLL_JSON_signals; p->js_varname; ++p){
-                        g_print ("%s=[", p->js_varname);
-                        for (int i=0; i<p->size; ++i)
-                                g_print ("%g, ", p->value[i]);
-                        g_print ("]\n");
-                }
+                if (dbg > 4)
+                        for (JSON_signal *p=PACPLL_JSON_signals; p->js_varname; ++p){
+                                g_print ("%s=[", p->js_varname);
+                                for (int i=0; i<p->size; ++i)
+                                        g_print ("%g, ", p->value[i]);
+                                g_print ("]\n");
+                        }
         };
         static int json_fetch(const char *js, jsmntok_t *t, size_t count, int indent){
                 static JSON_parameter *jp=NULL;
@@ -377,7 +380,7 @@ public:
         void json_parse_message (const char *json_string);
         
         void status_append (const gchar *msg);
-        void update_health ();
+        void update_health (const gchar *msg=NULL);
         
         void debug_log (const gchar *msg){
                 if (debug_level > 4)
