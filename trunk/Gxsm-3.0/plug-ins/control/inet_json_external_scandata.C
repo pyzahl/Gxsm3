@@ -230,7 +230,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	*RemoteEntryList = NULL;
 	GSList *EC_R_list=NULL;
 
-        debug_level = 1;
+        debug_level = 0;
         input_rpaddress = NULL;
         text_status = NULL;
         streaming = 0;
@@ -364,7 +364,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_input_nx (1);
         bp->grid_add_check_button ( N_("Enable"), "Enable Amplitude Controller", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::amplitude_controller), this);
-        bp->grid_add_check_button ( N_("Invert"), "Invert Amplitude Controller Gain", 2,
+        bp->grid_add_check_button ( N_("Invert"), "Invert Amplitude Controller Gain. Normally positive.", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::amplitude_controller_invert), this);
 
 
@@ -411,7 +411,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_input_nx (1);
         bp->grid_add_check_button ( N_("Enable"), "Enable Phase Controller", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_controller), this);
-        bp->grid_add_check_button ( N_("Invert"), "Invert Phase Controller Gain", 2,
+        bp->grid_add_check_button ( N_("Invert"), "Invert Phase Controller Gain. Normally positive.", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_controller_invert), this);
 
         bp->pop_grid ();
@@ -432,9 +432,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 "MEASURE DC_OFFSET",
                 "RUN SCOPE",
                 "INIT BRAM TRANSPORT",
-                "START BRAM TRANSPORT",
-                "READ BRAM LOOP",
-                "TUNE",
+                "SINGLE SHOT",
+                "START BRAM LOOP",
+                "RUN TUNE",
                 NULL };
 
         // Init choicelist
@@ -634,6 +634,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         red_pitaya_health = bp->grid_add_input ("RedPitaya Health",10);
         gtk_widget_set_sensitive (bp->input, FALSE);
         gtk_editable_set_editable (GTK_EDITABLE (bp->input), FALSE); 
+        update_health ("Not connected.");
         bp->new_line ();
 
         text_status = gtk_text_view_new ();
@@ -830,15 +831,15 @@ void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, 
 
 void Inet_Json_External_Scandata::choice_update_period_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
         switch (gtk_combo_box_get_active (GTK_COMBO_BOX (widget))){
-        case 0: self->write_parameter ("PERIOD",  20); break;
-        case 1: self->write_parameter ("PERIOD",  50); break;
-        case 2: self->write_parameter ("PERIOD", 100); break;
-        case 3: self->write_parameter ("PERIOD", 200); break;
-        case 4: self->write_parameter ("PERIOD", 500); break;
-        case 5: self->write_parameter ("PERIOD",1000); break;
-        case 6: self->write_parameter ("PERIOD",10000); break;
-        case 7: self->write_parameter ("PERIOD",50000); break;
-        default: self->write_parameter ("PERIOD", 200); break;
+        case 0: self->write_parameter ("SIGNAL_PERIOD",  20); break;
+        case 1: self->write_parameter ("SIGNAL_PERIOD",  50); break;
+        case 2: self->write_parameter ("SIGNAL_PERIOD", 100); break;
+        case 3: self->write_parameter ("SIGNAL_PERIOD", 200); break;
+        case 4: self->write_parameter ("SIGNAL_PERIOD", 500); break;
+        case 5: self->write_parameter ("SIGNAL_PERIOD",1000); break;
+        case 6: self->write_parameter ("SIGNAL_PERIOD",10000); break;
+        case 7: self->write_parameter ("SIGNAL_PERIOD",50000); break;
+        default: self->write_parameter ("SIGNAL_PERIOD", 200); break;
         }
 }
 
@@ -976,6 +977,8 @@ void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_Exter
         if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))){
                 self->status_append ("Connecting to RedPitaya...\n");
 
+                self->update_health ("Connecting...");
+
                 // new soup session
                 self->session = soup_session_new ();
 
@@ -992,6 +995,7 @@ void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_Exter
                         g_warning (self->error->message);
                         self->status_append (self->error->message);
                         self->status_append ("\n ");
+                        self->update_health (self->error->message);
                         return;
                 } else {
                         gchar *buffer = g_new0 (gchar, 100);
@@ -1001,6 +1005,7 @@ void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_Exter
                                                           NULL,
                                                           &self->error);   
                         if (self->error != NULL) {
+                                self->update_health (self->error->message);
                                 g_warning (self->error->message);
                                 self->status_append (self->error->message);
                                 self->status_append ("\n ");
@@ -1010,6 +1015,7 @@ void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_Exter
                                 self->status_append ("Response: ");
                                 self->status_append (buffer);
                                 self->status_append ("\n ");
+                                self->update_health (buffer);
                         }
                         g_free (buffer);
                 }
@@ -1019,18 +1025,19 @@ void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_Exter
                 gchar *url = g_strdup_printf ("ws://%s:%u", gtk_entry_get_text (GTK_ENTRY (self->input_rpaddress)), self->port);
                 self->status_append (url);
                 self->status_append ("\n");
-                g_message ("Connecting to: %s", url);
+                // g_message ("Connecting to: %s", url);
                 
                 self->msg = soup_message_new ("GET", url);
                 g_free (url);
-                g_message ("soup_message_new - OK");
+                // g_message ("soup_message_new - OK");
                 soup_session_websocket_connect_async (self->session, self->msg, // SoupSession *session, SoupMessage *msg,
                                                       NULL, NULL, // const char *origin, char **protocols,
                                                       NULL, Inet_Json_External_Scandata::got_client_connection, self); // GCancellable *cancellable, GAsyncReadyCallback callback, gpointer user_data
-                g_message ("soup_session_websocket_connect_async - OK");
+                // g_message ("soup_session_websocket_connect_async - OK");
         } else {
                 // tear down connection
                 self->status_append ("Dissconnecting...\n ");
+                self->update_health ("Dissconnected");
 
                 //g_clear_object (&self->listener);
                 g_clear_object (&self->client);
@@ -1196,7 +1203,7 @@ void Inet_Json_External_Scandata::json_parse_message (const char *json_string){
 
         json_fetch (json_string, tok, p.toknext, 0);
         if  (debug_level > 1)
-                dump_parameters ();
+                dump_parameters (debug_level);
 }
 
 
@@ -1225,10 +1232,14 @@ void Inet_Json_External_Scandata::write_parameter (const gchar *paramater_id, in
         }
 }
 
-void Inet_Json_External_Scandata::update_health (){
-        gchar *health_string = g_strdup_printf ("CPU: %3.0f%% Free: %6.1f MB #: %g", pacpll_parameters.cpu_load, pacpll_parameters.free_ram/1024/1024, pacpll_parameters.counter);
-        gtk_entry_set_text (GTK_ENTRY (red_pitaya_health), health_string);
-        g_free (health_string);
+void Inet_Json_External_Scandata::update_health (const gchar *msg){
+        if (msg){
+                gtk_entry_set_text (GTK_ENTRY (red_pitaya_health), msg);
+        } else {
+                gchar *health_string = g_strdup_printf ("CPU: %3.0f%% Free: %6.1f MB #: %g", pacpll_parameters.cpu_load, pacpll_parameters.free_ram/1024/1024, pacpll_parameters.counter);
+                gtk_entry_set_text (GTK_ENTRY (red_pitaya_health), health_string);
+                g_free (health_string);
+        }
 }
 
 void Inet_Json_External_Scandata::status_append (const gchar *msg){
@@ -1238,7 +1249,7 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 	GString *output;
 	GtkTextMark *end_mark;
         GtkTextIter start_iter, end_trim_iter, end_iter;
-        gint lines, max_lines=20*debug_level;
+        gint lines, max_lines=20*debug_level+10;
 
 	if (!msg) {
 		if (debug_level > 4)
