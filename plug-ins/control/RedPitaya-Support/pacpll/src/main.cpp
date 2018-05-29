@@ -54,7 +54,7 @@
 //Signal size
 #define SIGNAL_SIZE_DEFAULT      1024
 #define PARAMETER_UPDATE_INTERVAL 200 // ms
-#define SIGNAL_UPDATE_INTERVAL    100 // ms
+#define SIGNAL_UPDATE_INTERVAL    200 // ms
 
 
 //Signal
@@ -594,8 +594,8 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         reading_vector[4] = x4;  // FPGA CORDIC (SQRT) Amplitude Monitor
         reading_vector[5] = x10; // FPGA CORDIC (ATAN) Phase Monitor
 
-        reading_vector[6] = x5;  // FPGA CORDIC FIR Amplitude
-        reading_vector[7] = x6;  // FPGA CORDIC FIR Phase !! <-CHECK FPGA CONFIG
+        reading_vector[6] = x5;  // X5
+        reading_vector[7] = x6;  // X4
 
         reading_vector[8] = x7;  // Exec Ampl Control Signal (signed)
         reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9>>(64-44)));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)

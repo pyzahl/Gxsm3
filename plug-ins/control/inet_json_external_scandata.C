@@ -506,13 +506,13 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	const gchar *transport_modes[] = {
                 "0: IN1, IN2",
                 "1: PHASE, AMPL",
-                "2: IN1, AMPL (AC)",
-                "3: IN2, PHASE (AC)",
+                "2: IN1, AMPL",
+                "3: IN1, PHASE",
                 "4: Exec,Freq",
-                "5: FIR Ampl,Phase",
-                "6: RP DIGITAL IN 0,1 counts",
-                "7: RESET Counts",
-                "8: RESET",
+                "5: Axis7,8",
+                "6: Col, Line **",
+                "7: 0,0 **",
+                "8: 8BIT GPIO, px clk",
                 NULL };
    
 	// Init choicelist
@@ -525,13 +525,13 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	const gchar *monitor_modes_gpio[] = {
                 "LMS Amplitude(A,B)",
                 "LMS Phase(A,B)",
-                "LMS A",
-                "LMS B",
+                "LMS A (Real)",
+                "LMS B (Imag)",
                 "SQRT Ampl Monitor",
                 "ATAN Phase Monitor",
                 "X5",
                 "X6",
-                "X7",
+                "Exec Amplitude",
                 "DDS Freq Monitor",
                 "X3 M (LMS Input)",
                 "X5 M1(LMS Input-DC)",
