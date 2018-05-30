@@ -8,9 +8,9 @@
     </key>
 
     <key name="rp-pacpll-pactau" type="d">
-      <default>200</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 200 µs     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 200 µs    , Adjustment PCS Name: 'rp-pacpll-PACTAU' </description>
+      <default>2.0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 2.0 µs     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 2.0 µs    , Adjustment PCS Name: 'rp-pacpll-PACTAU' </description>
     </key>
 
     <key name="rp-pacpll-frequency-manual" type="d">

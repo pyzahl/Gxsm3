@@ -49,7 +49,7 @@
  * ------------------------------------------------------------
  */
 
-
+#define ADC_SAMPLING_RATE 125e6
 
 //Signal size
 #define SIGNAL_SIZE_DEFAULT      1024
@@ -166,6 +166,19 @@ CDoubleParameter PHASE_FB_CI("PHASE_FB_CI", CBaseParameter::RW, 0, 0, -1000, 100
 CDoubleParameter FREQ_FB_UPPER("FREQ_FB_UPPER", CBaseParameter::RW, 32768.0, 0, 0, 25e6); // Hz
 CDoubleParameter FREQ_FB_LOWER("FREQ_FB_LOWER", CBaseParameter::RW, 0.1, 0, 0, 25e6); // Hz
 
+// PHASE Valid for PAC time constant set to 15us:
+// Cp = 20*log10 ( 1.6575e-5*Fc )
+// Ci = 20*log10 ( 1.7357e-10*Fc^2 )
+// Where Fc is the desired bandwidth of the controller in Hz (the suggested range is between 1.5 Hz to 4.5kHz).
+
+// AMPL
+// Cp = 20*log10 (0.08045*Q Fc / Gain_res F0 )
+// Ci = 20*log10 (8.4243e-7*Q Fc^2 /Gain_res F0 )
+// Where :
+//Gain res is the gain of the resonator at the resonance
+//Q is the Q factor of the resonator
+//F0 is the frequency at the resonance in Hz
+//Fc is the desired bandwidth of the controller in Hz (the suggested range is between 1.5 Hz to 10Hz).
 
 CStringParameter pacpll_text("PAC_TEXT", CBaseParameter::RW, "N/A                                    ", 40);
 
@@ -335,7 +348,7 @@ inline unsigned int read_gpio_reg_uint32 (int gpio_block, int pos){
 void rp_PAC_adjust_sdb64 (double hz){
         if (verbose > 2) fprintf(stderr, "RP FPGA_PACPLL CFG: mapped %08lx - %08lx.\n", (unsigned long)(0x42000000), (unsigned long)(0x42000000 + FPGA_PACPLL_CFG_block_size));
 
-        double fclk = 125e6 / 32;
+        double fclk = ADC_SAMPLING_RATE / 32;
         double dphi = 2.*M_PI*(hz/fclk);
         double x;
         if (verbose > 1) fprintf(stderr, "## Adjust: f= %12.4f Hz\n", hz);
@@ -350,12 +363,12 @@ void rp_PAC_adjust_sdb64 (double hz){
 
 // Q44: 32766.0000 Hz -> phase_inc=4611404543  0000000112dc72ff
 double dds_phaseinc (double freq){
-        double fclk = 125e6;
+        double fclk = ADC_SAMPLING_RATE;
         return Q44*freq/fclk;
 }
 
 double dds_phaseinc_to_freq (unsigned long long ddsphaseincQ44){
-        double fclk = 125e6;
+        double fclk = ADC_SAMPLING_RATE;
         return fclk*(double)ddsphaseincQ44/(double)(Q44);
 }
 
@@ -384,9 +397,10 @@ void rp_PAC_configure_loops (int phase_ctrl, int am_ctrl){
 }
 
 #define PACPLL_CFG_PACTAU 4
+// tau in s
 void rp_PAC_set_pactau (double tau){
         if (verbose > 2) fprintf(stderr, "##Configure: tau= %g  Q22: %d\n", tau, (int)(Q22 * tau)); 
-        set_gpio_cfgreg_int32 (PACPLL_CFG_PACTAU, (int)(Q22 * tau)); // Q22 significant from top
+        set_gpio_cfgreg_int32 (PACPLL_CFG_PACTAU, (int)(Q22/ADC_SAMPLING_RATE/tau)); // Q22 significant from top
 }
 
 #define PACPLL_CFG_DC_OFFSET 5
