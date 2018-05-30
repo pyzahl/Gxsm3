@@ -61,8 +61,8 @@ struct PACPLL_parameters {
         double bram_dec_count;
         
         double pactau;
-        double frequency_manual;
-        double frequency_center;
+        double frequency_manual; // manual f reset
+        double frequency_center; // manual f reference
         double aux_scale;
         double volume_manual;
         double operation;
@@ -80,9 +80,9 @@ struct PACPLL_parameters {
         double gain5;
         double tune_dfreq;
         double tune_span;
-        double center_amplitude;
-        double center_frequency;
-        double center_phase;
+        double center_amplitude; // center value of tune
+        double center_frequency; // center value of tune
+        double center_phase; // center value of tune
         double amplitude_fb_setpoint;
         double amplitude_fb_invert;
         double amplitude_fb_cp;
