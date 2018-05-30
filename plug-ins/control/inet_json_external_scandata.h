@@ -402,6 +402,7 @@ private:
         int x,y;
         int streaming;
         int operation_mode;
+        int channel_selections[5];
         
         PACPLL_parameters parameters;
         PACPLL_signals signals;

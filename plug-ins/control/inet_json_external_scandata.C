@@ -504,25 +504,29 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->grid_add_widget (wid);
 
 	const gchar *transport_modes[] = {
-                "0: IN1, IN2",
-                "1: PHASE, AMPL",
-                "2: IN1, AMPL",
-                "3: IN1, PHASE",
-                "4: Exec,Freq",
-                "5: Axis7,8",
-                "6: Col, Line **",
-                "7: 0,0 **",
-                "8: 8BIT GPIO, px clk",
+                "OFF: no plot",
+                "IN1, IN2",
+                "PHASE, AMPL",
+                "IN1, AMPL",
+                "IN1, PHASE",
+                "Exec,Freq",
+                "Axis7,8",
+                "Col, Line **",
+                "0,0 **",
+                "8BIT GPIO, px clk",
                 NULL };
    
 	// Init choicelist
 	for(int i=0; transport_modes[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), transport_modes[i], transport_modes[i]);
 
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
+        channel_selections[0] = 1;
+        channel_selections[1] = 1;
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 1);
 
         // GPIO monitor selections -- full set, experimental
 	const gchar *monitor_modes_gpio[] = {
+                "OFF: no plot",
                 "LMS Amplitude(A,B)",
                 "LMS Phase(A,B)",
                 "LMS A (Real)",
@@ -550,7 +554,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	for(int i=0; monitor_modes_gpio[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), monitor_modes_gpio[i], monitor_modes_gpio[i]);
 
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
+        channel_selections[2] = 1;
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 1);
 
         // CH4 from GPIO MONITOR</p>
 	wid = gtk_combo_box_text_new ();
@@ -563,7 +568,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	for(int i=0; monitor_modes_gpio[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), monitor_modes_gpio[i], monitor_modes_gpio[i]);
 
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 1);
+        channel_selections[3] = 2;
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 2);
 
         // CH5 from GPIO MONITOR</p>
 	wid = gtk_combo_box_text_new ();
@@ -576,7 +582,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	for(int i=0; monitor_modes_gpio[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), monitor_modes_gpio[i], monitor_modes_gpio[i]);
 
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 5);
+        channel_selections[4] = 6;
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 6);
 
 
         // Scope Display
@@ -833,9 +840,12 @@ void Inet_Json_External_Scandata::choice_update_period_callback (GtkWidget *widg
         switch (gtk_combo_box_get_active (GTK_COMBO_BOX (widget))){
         case 0: self->write_parameter ("SIGNAL_PERIOD",  20); break;
         case 1: self->write_parameter ("SIGNAL_PERIOD",  50); break;
-        case 2: self->write_parameter ("SIGNAL_PERIOD", 100); break;
-        case 3: self->write_parameter ("SIGNAL_PERIOD", 200); break;
-        case 4: self->write_parameter ("SIGNAL_PERIOD", 500); break;
+        case 2: self->write_parameter ("SIGNAL_PERIOD", 100);
+                self->write_parameter ("PARAMETER_PERIOD",  100); break;
+        case 3: self->write_parameter ("SIGNAL_PERIOD", 200);
+                self->write_parameter ("PARAMETER_PERIOD",  200); break;
+        case 4: self->write_parameter ("SIGNAL_PERIOD", 500);
+                self->write_parameter ("PARAMETER_PERIOD",  500); break;
         case 5: self->write_parameter ("SIGNAL_PERIOD",1000); break;
         case 6: self->write_parameter ("SIGNAL_PERIOD",10000); break;
         case 7: self->write_parameter ("SIGNAL_PERIOD",50000); break;
@@ -844,7 +854,10 @@ void Inet_Json_External_Scandata::choice_update_period_callback (GtkWidget *widg
 }
 
 void Inet_Json_External_Scandata::choice_transport_ch12_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
-        self->write_parameter ("TRANSPORT_MODE", self->transport=gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+        self->channel_selections[0] = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+        self->channel_selections[1] = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+        if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) > 0)
+                self->write_parameter ("TRANSPORT_MODE", self->transport=gtk_combo_box_get_active (GTK_COMBO_BOX (widget))-1);
 }
 
 void Inet_Json_External_Scandata::choice_auto_set_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -861,15 +874,21 @@ void Inet_Json_External_Scandata::choice_auto_set_callback (GtkWidget *widget, I
 }
 
 void Inet_Json_External_Scandata::choice_transport_ch3_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
-        self->write_parameter ("TRANSPORT_CH3", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+        self->channel_selections[2] = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+        if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) > 0)
+                self->write_parameter ("TRANSPORT_CH3", gtk_combo_box_get_active (GTK_COMBO_BOX (widget))-1);
 }
 
 void Inet_Json_External_Scandata::choice_transport_ch4_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
-        self->write_parameter ("TRANSPORT_CH4", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+        self->channel_selections[3] = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+        if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) > 0)
+                self->write_parameter ("TRANSPORT_CH4", gtk_combo_box_get_active (GTK_COMBO_BOX (widget))-1);
 }
 
 void Inet_Json_External_Scandata::choice_transport_ch5_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
-        self->write_parameter ("TRANSPORT_CH5", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+        self->channel_selections[4] = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+        if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) > 0)
+                self->write_parameter ("TRANSPORT_CH5", gtk_combo_box_get_active (GTK_COMBO_BOX (widget))-1);
 }
 
 void Inet_Json_External_Scandata::amplitude_gain_changed (Param_Control* pcs, gpointer user_data){
@@ -1335,6 +1354,8 @@ void Inet_Json_External_Scandata::update_graph (){
         double xs = 0.5;
         double x0 = xs*n/2;
         double yr = h/2;
+        double y0dB = yr*0.95;
+        double y120dB = -yr*0.95;
         cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, n/2, h);
         cairo_t *cr = cairo_create (surface);
         if (run_scope){
@@ -1358,7 +1379,7 @@ void Inet_Json_External_Scandata::update_graph (){
                 wave->set_line_width (1.0);
                 CAIRO_BASIC_COLOR_IDS color[] = { CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_CYAN_ID, CAIRO_COLOR_YELLOW_ID, CAIRO_COLOR_BLUE_ID };
                 double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5 };
-                double min,max,s;
+                double min,max,s,ydb;
                 for (int ch=0; ch<5; ++ch){
                         wave->set_stroke_rgba (BasicColors[color[ch]]);
                         min=max=signal[ch][512];
@@ -1373,8 +1394,19 @@ void Inet_Json_External_Scandata::update_graph (){
                                         250.+480.*pacpll_signals.signal_frq[k]/parameters.tune_span // tune plot
                                         : xs*k; // time plot
 
-                                wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s);
+                                if (operation_mode == 6 && ch == 1){
+                                        // 0..-120dB range, 1mV:-60dB (center), 0dB:1000mV (top)
+                                        wave->set_xy_fast (k, x,ydb=-y0dB*(20.*log10 (fabs(s)))/60.);
+                                }  else if (operation_mode == 6 && ch == 0){
+                                        // -180..180 deg
+                                        wave->set_xy_fast (k, x,-y0dB*s/180.);
+                                }
+                                else
+                                        wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s);
                         }
+
+                        scope_dc_level[ch] = 0.5*(min+max);
+
                         if (gain_scale[ch] < 0.)
                                 if (scope_ac[ch]){
                                         min -= scope_dc_level[ch];
@@ -1382,15 +1414,20 @@ void Inet_Json_External_Scandata::update_graph (){
                                         gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
                                 } else
                                         gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
-                        wave->draw (cr);
 
-                        avg=0.;
-                        for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg/=100.;
-                        valuestring = g_strdup_printf ("Ch%d %12.5f [x %g] %g %g {%g}", ch+1, avg, gain_scale[ch], min, max, max-min);
-                        reading->set_stroke_rgba (BasicColors[color[ch]]);
-                        reading->set_text (10, -(110-14*ch), valuestring);
-                        g_free (valuestring);
-                        reading->draw (cr);
+                        if (channel_selections[ch])
+                                wave->draw (cr);
+
+                        if (channel_selections[ch]){
+                                avg=0.;
+                                for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg/=100.;
+                                valuestring = g_strdup_printf ("Ch%d %12.5f [x %g] %g %g {%g}", ch+1, avg, gain_scale[ch], min, max, max-min);
+                                reading->set_stroke_rgba (BasicColors[color[ch]]);
+                                reading->set_text (10, -(110-14*ch), valuestring);
+                                g_free (valuestring);
+                                reading->draw (cr);
+                        }
+                        
                 }
                 if (pacpll_parameters.bram_write_pos >= 0 && pacpll_parameters.bram_write_pos <= 1024){
                         cairo_item_segments *cursors = new cairo_item_segments (2);
@@ -1401,14 +1438,56 @@ void Inet_Json_External_Scandata::update_graph (){
                         cursors->draw (cr);
                         g_free (cursors);
                 }
-                        
-                valuestring = g_strdup_printf ("Dec=%d [>>%d] wp#{%d,%d}", data_decimation, data_shr, pacpll_parameters.bram_write_pos, pacpll_parameters.bram_dec_count);
-                reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
-                reading->set_text (10, -(110-14*6), valuestring);
-                g_free (valuestring);
-                reading->draw (cr);
+
+                if (operation_mode != 6){
+                        valuestring = g_strdup_printf ("Dec=%d [>>%d] wp#{%d,%d}", data_decimation, data_shr, pacpll_parameters.bram_write_pos, pacpll_parameters.bram_dec_count);
+                        reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                        reading->set_text (10, -(110-14*6), valuestring);
+                        g_free (valuestring);
+                        reading->draw (cr);
+                }
 
                 if (operation_mode == 6){ // tune info
+                        g_print ("Tune: %g Hz,  %g mV,  %g dB, %g deg\n",
+                                 pacpll_signals.signal_frq[n-1],
+                                 s,
+                                 -20.*log (fabs(s)),
+                                 pacpll_signals.signal_ch1[n-1]
+                                 );
+
+                        // tick marks dB
+                        for (int db=0; db >= -120; db -= 20){
+                                valuestring = g_strdup_printf ("%4d dB", db);
+                                reading->set_stroke_rgba (CAIRO_COLOR_GREEN);
+                                reading->set_text (440, -y0dB*(db+60)/60., valuestring);
+                                g_free (valuestring);
+                                reading->draw (cr);
+                        }
+                        // ticks deg
+                        for (int deg=-180; deg <= 180; deg += 30){
+                                valuestring = g_strdup_printf ("%d" UTF8_DEGREE, deg);
+                                reading->set_stroke_rgba (CAIRO_COLOR_RED);
+                                reading->set_text (480, -y0dB*deg/180., valuestring);
+                                g_free (valuestring);
+                                reading->draw (cr);
+                        }
+                        cairo_item_segments *cursors = new cairo_item_segments (2);
+                        cursors->set_line_width (0.5);
+                        cursors->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                        double x = 250.+480.*pacpll_signals.signal_frq[n-1]/parameters.tune_span;
+                        cursors->set_xy_fast (0,x,ydb-20.);
+                        cursors->set_xy_fast (1,x,ydb+20.);
+                        cursors->draw (cr);
+                        cursors->set_xy_fast (0,250.+480.*(-0.5),0.);
+                        cursors->set_xy_fast (1,250.+480.*(0.5),0.);
+                        cursors->draw (cr);
+                        cursors->set_xy_fast (0,250.,y0dB);
+                        cursors->set_xy_fast (1,250.,y120dB);
+                        cursors->draw (cr);
+                        g_free (cursors);
+
+
+                        
                         valuestring = g_strdup_printf ("Tuning: @max %g mV  %.4f Hz  %g deg",
                                                        pacpll_parameters.center_amplitude,
                                                        pacpll_parameters.center_frequency,
