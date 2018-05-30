@@ -1379,7 +1379,7 @@ void Inet_Json_External_Scandata::update_graph (){
                 wave->set_line_width (1.0);
                 CAIRO_BASIC_COLOR_IDS color[] = { CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_CYAN_ID, CAIRO_COLOR_YELLOW_ID, CAIRO_COLOR_BLUE_ID };
                 double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5 };
-                double min,max,s,ydb;
+                double x,min,max,s,ydb;
                 for (int ch=0; ch<5; ++ch){
                         wave->set_stroke_rgba (BasicColors[color[ch]]);
                         min=max=signal[ch][512];
@@ -1390,10 +1390,10 @@ void Inet_Json_External_Scandata::update_graph (){
                                 if (scope_ac[ch])
                                         s -= scope_dc_level[ch];
                                 
-                                double x = (operation_mode == 6) ? 
+                                x = (operation_mode == 6) ? 
                                         250.+480.*pacpll_signals.signal_frq[k]/parameters.tune_span // tune plot
                                         : xs*k; // time plot
-
+                                
                                 if (operation_mode == 6 && ch == 1){
                                         // 0..-120dB range, 1mV:-60dB (center), 0dB:1000mV (top)
                                         wave->set_xy_fast (k, x,ydb=-y0dB*(20.*log10 (fabs(s)))/60.);
@@ -1448,12 +1448,13 @@ void Inet_Json_External_Scandata::update_graph (){
                 }
 
                 if (operation_mode == 6){ // tune info
-                        g_print ("Tune: %g Hz,  %g mV,  %g dB, %g deg\n",
-                                 pacpll_signals.signal_frq[n-1],
-                                 s,
-                                 -20.*log (fabs(s)),
-                                 pacpll_signals.signal_ch1[n-1]
-                                 );
+                        if (debug_level > 0)
+                                g_print ("Tune: %g Hz,  %g mV,  %g dB, %g deg\n",
+                                         pacpll_signals.signal_frq[n-1],
+                                         s,
+                                         -20.*log (fabs(s)),
+                                         pacpll_signals.signal_ch1[n-1]
+                                         );
 
                         // tick marks dB
                         for (int db=0; db >= -120; db -= 20){
@@ -1474,7 +1475,7 @@ void Inet_Json_External_Scandata::update_graph (){
                         cairo_item_segments *cursors = new cairo_item_segments (2);
                         cursors->set_line_width (0.5);
                         cursors->set_stroke_rgba (CAIRO_COLOR_WHITE);
-                        double x = 250.+480.*pacpll_signals.signal_frq[n-1]/parameters.tune_span;
+                        x = 250.+480.*pacpll_signals.signal_frq[n-1]/parameters.tune_span;
                         cursors->set_xy_fast (0,x,ydb-20.);
                         cursors->set_xy_fast (1,x,ydb+20.);
                         cursors->draw (cr);
@@ -1484,11 +1485,24 @@ void Inet_Json_External_Scandata::update_graph (){
                         cursors->set_xy_fast (0,250.,y0dB);
                         cursors->set_xy_fast (1,250.,y120dB);
                         cursors->draw (cr);
+
+                        cursors->set_stroke_rgba (CAIRO_COLOR_GREEN);
+                        x = 250.+480.*(pacpll_parameters.center_frequency-pacpll_parameters.frequency_manual)/parameters.tune_span;
+                        ydb=-y0dB*(20.*log10 (fabs (pacpll_parameters.center_amplitude)))/60.;
+                        cursors->set_xy_fast (0,x,ydb-50.);
+                        cursors->set_xy_fast (1,x,ydb+50.);
+                        cursors->draw (cr);
+
+                        cursors->set_stroke_rgba (CAIRO_COLOR_RED);
+                        x = 250.+480.*(pacpll_parameters.center_frequency-pacpll_parameters.frequency_manual)/parameters.tune_span;
+                        ydb=-y0dB*pacpll_parameters.center_phase/180.;
+                        cursors->set_xy_fast (0,x-50,ydb);
+                        cursors->set_xy_fast (1,x+50,ydb);
+                        cursors->draw (cr);
+
                         g_free (cursors);
-
-
                         
-                        valuestring = g_strdup_printf ("Tuning: @max %g mV  %.4f Hz  %g deg",
+                        valuestring = g_strdup_printf ("Tuning: last peak @ %g mV  %.4f Hz  %g deg",
                                                        pacpll_parameters.center_amplitude,
                                                        pacpll_parameters.center_frequency,
                                                        pacpll_parameters.center_phase
