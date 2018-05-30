@@ -60,9 +60,7 @@
 //Signal
 // Block mode
 CFloatSignal SIGNAL_CH1("SIGNAL_CH1", SIGNAL_SIZE_DEFAULT, 0.0f);
-std::vector<float> g_data_signal_ch1(SIGNAL_SIZE_DEFAULT); // only used in tune mode
 CFloatSignal SIGNAL_CH2("SIGNAL_CH2", SIGNAL_SIZE_DEFAULT, 0.0f);
-std::vector<float> g_data_signal_ch2(SIGNAL_SIZE_DEFAULT); // only used in tune mode
 
 // Slow from GPIO, stripe plotter mode
 
@@ -78,8 +76,16 @@ std::vector<float> g_data_signal_ch5(SIGNAL_SIZE_DEFAULT);
 CFloatSignal SIGNAL_FRQ("SIGNAL_FRQ", SIGNAL_SIZE_DEFAULT, 0.0f);
 std::vector<float> g_data_signal_frq(SIGNAL_SIZE_DEFAULT);
 
+CFloatSignal SIGNAL_TUNE_PHASE("SIGNAL_TUNE_PHASE", SIGNAL_SIZE_DEFAULT, 0.0f);
+std::vector<float> g_data_signal_ch1pa(SIGNAL_SIZE_DEFAULT); // only used in tune mode
+
+CFloatSignal SIGNAL_TUNE_AMPL("SIGNAL_TUNE_AMPL", SIGNAL_SIZE_DEFAULT, 0.0f);
+std::vector<float> g_data_signal_ch2aa(SIGNAL_SIZE_DEFAULT); // only used in tune mode
+
 CFloatSignal SIGNAL_TIME("SIGNAL_TIME", SIGNAL_SIZE_DEFAULT, 0.0f);
 std::vector<float> g_data_signal_time(SIGNAL_SIZE_DEFAULT);
+
+
 
 double signal_dc_measured = 0.0;
 
@@ -569,8 +575,7 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         x = read_gpio_reg_int32 (1,1); // GPIO X2 : LMS B (cfg + 0x1008)
         b=(double)x / QLMS;
         v=sqrt (a*a+b*b);
-        p=atan2 ((a-b),(a+b))/M_PI*180. - 90.;
-        p/=180.; // for testing
+        p=atan2 ((a-b),(a+b));
         
         x = read_gpio_reg_int32 (2,0); // GPIO X3 : LMS DBG1 :: M (LMS input Signal) (cfg + 0x2000) ===> used for DC OFFSET calculation
         x3=(double)x / QLMS;
@@ -600,13 +605,13 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
 
         // LMS Detector Readings and double precision conversions
         reading_vector[0] = v; // LMS Amplitude (Volume) in Volts (from A,B)
-        reading_vector[1] = p; // LMS Phase (from A,B)
+        reading_vector[1] = p/M_PI*180.; // LMS Phase (from A,B)
         reading_vector[2] = a; // LMS A (Real)
         reading_vector[3] = b; // LMS B (Imag)
 
         // FPGA CORDIC based convertions
         reading_vector[4] = x4;  // FPGA CORDIC (SQRT) Amplitude Monitor
-        reading_vector[5] = x10; // FPGA CORDIC (ATAN) Phase Monitor
+        reading_vector[5] = x10/M_PI*180.; // FPGA CORDIC (ATAN) Phase Monitor
 
         reading_vector[6] = x5;  // X5
         reading_vector[7] = x6;  // X4
@@ -981,17 +986,16 @@ void UpdateSignals(void)
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                        phase += (double)ix32/QCORDICATAN;
-                        ampl  += (double)iy32/QCORDICSQRT;
+                        phase += (SIGNAL_CH1[k] = (double)ix32/QCORDICATAN/M_PI*180.); // PLL Phase deg
+                        ampl  += (SIGNAL_CH2[k] = (double)iy32/QCORDICSQRT*1000.); // // Resonator Amplitude Signal Monitor in mV
                 }
                 phase /= SIGNAL_SIZE_DEFAULT;
                 ampl  /= SIGNAL_SIZE_DEFAULT;
-                ampl  *=  1000.; // Resonator Amplitude Signal Monitor in mV
-                phase *=  180./M_PI; // PLL Phase deg
-                g_data_signal_ch1.erase (g_data_signal_ch1.begin());
-                g_data_signal_ch1.push_back (phase);
-                g_data_signal_ch2.erase (g_data_signal_ch2.begin());
-                g_data_signal_ch2.push_back (ampl);
+                g_data_signal_ch1pa.erase (g_data_signal_ch1pa.begin());
+                g_data_signal_ch1pa.push_back (phase);
+                g_data_signal_ch2aa.erase (g_data_signal_ch2aa.begin());
+                g_data_signal_ch2aa.push_back (ampl);
+                
                 rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);
                 if (bram_status(status)){
@@ -1012,12 +1016,6 @@ void UpdateSignals(void)
                 //ampl = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
                 //phase = reading_vector[5] * 180./M_PI; // PLL Phase deg
 
-                if (ampl > tune_amp_max){
-                        tune_amp_max = ampl;
-                        tune_phase = phase;
-                        tune_fcenter = FREQUENCY_MANUAL.Value() + f;
-                }
-                
                 if (f < TUNE_SPAN.Value ()/2 && dir == 1)
                         f += TUNE_DFREQ.Value ();
                 if (f > TUNE_SPAN.Value ()/2 && dir == 1){
@@ -1038,6 +1036,13 @@ void UpdateSignals(void)
                 }
                 rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value() + f);
                 FREQUENCY_TUNE.Value() = f;
+
+                if (ampl > tune_amp_max){
+                        tune_amp_max = ampl;
+                        tune_phase = phase;
+                        tune_fcenter = FREQUENCY_MANUAL.Value() + f;
+                }
+                
         } else {
                 f = 0.; dir = 1;
         }
@@ -1072,8 +1077,8 @@ void UpdateSignals(void)
                 SIGNAL_CH4[i] = g_data_signal_ch4[i];
                 SIGNAL_CH5[i] = g_data_signal_ch5[i];
                 if (OPERATION.Value () == 6){
-                        SIGNAL_CH1[i] = g_data_signal_ch1[i];
-                        SIGNAL_CH2[i] = g_data_signal_ch2[i];
+                        SIGNAL_TUNE_PHASE[i] = g_data_signal_ch1pa[i];
+                        SIGNAL_TUNE_AMPL[i]  = g_data_signal_ch2aa[i];
                         SIGNAL_FRQ[i] = g_data_signal_frq[i];
                 }
         }
@@ -1081,7 +1086,7 @@ void UpdateSignals(void)
         if (verbose > 3) fprintf(stderr, "UpdateSignal complete.\n");
 
         VOLUME_MONITOR.Value ()   = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
-        PHASE_MONITOR.Value ()    = reading_vector[5] * 180./M_PI; // PLL Phase deg
+        PHASE_MONITOR.Value ()    = reading_vector[5]; // PLL Phase in deg
         EXEC_MONITOR.Value ()     = reading_vector[8] * 1000.; // Exec Amplitude Monitor in mV
         DDS_FREQ_MONITOR.Value () = reading_vector[9]; // DDS Freq Monitor in Hz
         
