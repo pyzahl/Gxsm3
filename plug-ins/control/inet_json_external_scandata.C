@@ -520,6 +520,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	for(int i=0; transport_modes[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), transport_modes[i], transport_modes[i]);
 
+        channel_selections[5] = 1;
+        channel_selections[6] = 1;
         channel_selections[0] = 1;
         channel_selections[1] = 1;
 	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 1);
@@ -1310,7 +1312,7 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 void Inet_Json_External_Scandata::stream_data (){
         int deci=16;
         int n=4;
-        if (streaming){
+        if (1) { //if (ch_freq >= 0 || ch_ampl >= 0){
                 double decimation = 125e6 * gapp->xsm->hardware->GetScanrate ();
                 deci = (gint64)decimation;
                 if (deci > 2){
@@ -1355,7 +1357,7 @@ void Inet_Json_External_Scandata::update_graph (){
         double x0 = xs*n/2;
         double yr = h/2;
         double y0dB = yr*0.95;
-        double y120dB = -yr*0.95;
+        double y60dB = -yr*0.95;
         cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, n/2, h);
         cairo_t *cr = cairo_create (surface);
         if (run_scope){
@@ -1377,51 +1379,60 @@ void Inet_Json_External_Scandata::update_graph (){
                 reading->set_anchor (CAIRO_ANCHOR_W);
                 cairo_item_path *wave = new cairo_item_path (n);
                 wave->set_line_width (1.0);
-                CAIRO_BASIC_COLOR_IDS color[] = { CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_CYAN_ID, CAIRO_COLOR_YELLOW_ID, CAIRO_COLOR_BLUE_ID };
-                double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5 };
-                double x,min,max,s,ydb;
-                for (int ch=0; ch<5; ++ch){
+                const gchar *ch_id[] = { "Ch1", "Ch2", "Ch3", "Ch4", "Ch5", "Phase", "Ampl" };
+                CAIRO_BASIC_COLOR_IDS color[] = { CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_CYAN_ID, CAIRO_COLOR_YELLOW_ID, CAIRO_COLOR_BLUE_ID, CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID  };
+                double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5, // 0...4 CH1..5
+                                     pacpll_signals.signal_phase, pacpll_signals.signal_ampl  }; // 5,6 PHASE, AMPL in Tune Mode, averaged from burst
+                double x,xf,min,max,s,ydb;
+
+                int ch_last=(operation_mode == 6) ? 7 : 5;
+                for (int ch=0; ch<ch_last; ++ch){
                         wave->set_stroke_rgba (BasicColors[color[ch]]);
                         min=max=signal[ch][512];
                         for (int k=0; k<n; ++k){
                                 s=signal[ch][k];
                                 if (s>max) max=s;
                                 if (s<min) min=s;
-                                if (scope_ac[ch])
-                                        s -= scope_dc_level[ch];
+                                if (ch<6)
+                                        if (scope_ac[ch])
+                                                s -= scope_dc_level[ch];
                                 
-                                x = (operation_mode == 6) ? 
-                                        250.+480.*pacpll_signals.signal_frq[k]/parameters.tune_span // tune plot
-                                        : xs*k; // time plot
+                                xf = 250.+480.*pacpll_signals.signal_frq[k]/parameters.tune_span; // tune plot, freq x
+                                x  = xs*k; // time plot
+                                x = (operation_mode == 6 && ch > 1) ? xf : x;
                                 
-                                if (operation_mode == 6 && ch == 1){
-                                        // 0..-120dB range, 1mV:-60dB (center), 0dB:1000mV (top)
-                                        wave->set_xy_fast (k, x,ydb=-y0dB*(20.*log10 (fabs(s)))/60.);
-                                }  else if (operation_mode == 6 && ch == 0){
+                                if (operation_mode == 6 && (ch == 6 || ch == 1)){
+                                        // 0..-60dB range, 1mV:-60dB (center), 0dB:1000mV (top)
+                                        wave->set_xy_fast (k, ch == 1 ? x:xf,ydb=-y0dB*(20.*(log10 (fabs(s))-1.5))/30.);
+                                }  else if (operation_mode == 6 && ((ch == 5 || ch == 0) // phase data always scale +/-180deg
+                                                                    || ( ch == 2 && (channel_selections[2]==2 || channel_selections[2]==6))
+                                                                    || ( ch == 3 && (channel_selections[3]==2 || channel_selections[3]==6))
+                                                                    || ( ch == 4 && (channel_selections[4]==2 || channel_selections[4]==6))) ){
                                         // -180..180 deg
-                                        wave->set_xy_fast (k, x,-y0dB*s/180.);
+                                        wave->set_xy_fast (k, ch == 0 ? x:xf,-y0dB*s/180.);
                                 }
                                 else
                                         wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s);
                         }
 
-                        scope_dc_level[ch] = 0.5*(min+max);
+                        if (ch<6){
+                                scope_dc_level[ch] = 0.5*(min+max);
 
-                        if (gain_scale[ch] < 0.)
-                                if (scope_ac[ch]){
-                                        min -= scope_dc_level[ch];
-                                        max -= scope_dc_level[ch];
-                                        gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
-                                } else
-                                        gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
-
+                                if (gain_scale[ch] < 0.)
+                                        if (scope_ac[ch]){
+                                                min -= scope_dc_level[ch];
+                                                max -= scope_dc_level[ch];
+                                                gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
+                                        } else
+                                                gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
+                        }
                         if (channel_selections[ch])
                                 wave->draw (cr);
-
-                        if (channel_selections[ch]){
+                                           
+                        if (operation_mode != 6 && channel_selections[ch]){
                                 avg=0.;
                                 for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg/=100.;
-                                valuestring = g_strdup_printf ("Ch%d %12.5f [x %g] %g %g {%g}", ch+1, avg, gain_scale[ch], min, max, max-min);
+                                valuestring = g_strdup_printf ("%s %12.5f [x %g] %g %g {%g}", ch_id[ch], avg, gain_scale[ch], min, max, max-min);
                                 reading->set_stroke_rgba (BasicColors[color[ch]]);
                                 reading->set_text (10, -(110-14*ch), valuestring);
                                 g_free (valuestring);
@@ -1457,10 +1468,10 @@ void Inet_Json_External_Scandata::update_graph (){
                                          );
 
                         // tick marks dB
-                        for (int db=0; db >= -120; db -= 20){
+                        for (int db=0; db >= -60; db -= 10){
                                 valuestring = g_strdup_printf ("%4d dB", db);
                                 reading->set_stroke_rgba (CAIRO_COLOR_GREEN);
-                                reading->set_text (440, -y0dB*(db+60)/60., valuestring);
+                                reading->set_text (440, -y0dB*(db+30)/30., valuestring);
                                 g_free (valuestring);
                                 reading->draw (cr);
                         }
@@ -1483,7 +1494,7 @@ void Inet_Json_External_Scandata::update_graph (){
                         cursors->set_xy_fast (1,250.+480.*(0.5),0.);
                         cursors->draw (cr);
                         cursors->set_xy_fast (0,250.,y0dB);
-                        cursors->set_xy_fast (1,250.,y120dB);
+                        cursors->set_xy_fast (1,250.,y60dB);
                         cursors->draw (cr);
 
                         cursors->set_stroke_rgba (CAIRO_COLOR_GREEN);

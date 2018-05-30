@@ -179,6 +179,8 @@ JSON_signal PACPLL_JSON_signals[] = {
         { "SIGNAL_CH4", 1024, pacpll_signals.signal_ch4 },
         { "SIGNAL_CH5", 1024, pacpll_signals.signal_ch5 },
         { "SIGNAL_FRQ", 1024, pacpll_signals.signal_frq },
+        { "SIGNAL_TUNE_PHASE", 1024, pacpll_signals.signal_phase },
+        { "SIGNAL_TUNE_AMPL",  1024, pacpll_signals.signal_ampl },
         { NULL, 0, NULL }
 };
 
@@ -402,7 +404,7 @@ private:
         int x,y;
         int streaming;
         int operation_mode;
-        int channel_selections[5];
+        int channel_selections[7];
         
         PACPLL_parameters parameters;
         PACPLL_signals signals;
