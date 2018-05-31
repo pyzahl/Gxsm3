@@ -1,3 +1,9 @@
+gxsm3 (3.48.0-0ubuntu0) bionic; urgency=medium
+
+  * support for redpitaya and other updates 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Thu, 31 May 2018 09:46:51 +0200
+
 gxsm3 (3.47.1-0ubuntu4) bionic; urgency=medium
 
   * release for Ubuntu 18.04 LTS
