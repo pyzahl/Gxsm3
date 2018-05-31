@@ -394,6 +394,17 @@ public:
                         status_append ("\n");
                 }
         };
+
+        // 1000mV = 0dB, 1mV = -60dB 
+        inline double dB_from_mV (double mv){
+                return 20.*(log10 (fabs(mv)+1e-10)-3.);
+        };
+        inline double db_to_y (double db, double dB_hi, double y_hi, double dB_mags){
+                return -y_hi*2*((db-dB_hi)/20./dB_mags+0.5);
+        };
+        inline double deg_to_y (double deg, double y_hi){
+                return -y_hi*deg/180.;
+        };
         
 private:
         int ch_freq;
