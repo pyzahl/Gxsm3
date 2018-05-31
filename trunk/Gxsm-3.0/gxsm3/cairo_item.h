@@ -324,6 +324,47 @@ public:
                         g_warning ("cairo_item_path::draw called with insufficent node number.");
                 }
         };
+        
+        virtual void draw_partial (cairo_t* cr, int i0, int i1) {
+                if (show_flag){
+                        cairo_save (cr);
+                        cairo_translate (cr, v0.x, v0.y);
+                        cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
+                        cairo_set_line_width (cr, lw); 
+                        switch (linemode){
+                        case 0: // connect solid
+                                cairo_move_to (cr, xy[i0].x, xy[i0].y);
+                                for (int i=i0+1; i<i1; ++i)
+                                        cairo_line_to (cr, xy[i].x, xy[i].y);
+                                break;
+                        case 1: // dots (h-bars, lw) 
+                                for (int i=i0; i<i1; ++i){
+                                        cairo_move_to (cr, xy[i].x, xy[i].y);
+                                        cairo_line_to (cr, xy[i].x+lw, xy[i].y);
+                                }
+                                break;
+                        case 2: // impulse 
+                                for (int i=i0; i<i1; ++i){
+                                        cairo_move_to (cr, xy[i].x, impulse_floor);
+                                        cairo_line_to (cr, xy[i].x, xy[i].y);
+                                }
+                                break;
+                        case 3: // X marks
+                                for (int i=i0; i<i1; ++i){
+                                        cairo_move_to (cr, xy[i].x-mark_radius, xy[i].y-mark_radius);
+                                        cairo_line_to (cr, xy[i].x+mark_radius, xy[i].y+mark_radius);
+                                        cairo_move_to (cr, xy[i].x+mark_radius, xy[i].y-mark_radius);
+                                        cairo_line_to (cr, xy[i].x-mark_radius, xy[i].y+mark_radius);
+                                }
+                                break;
+                        default:
+                                g_warning ("cairo_item_path::draw called with unhandled linemode.");
+                                break;
+                        }
+                        cairo_stroke (cr);
+                        cairo_restore (cr);
+                }
+        };
 
 private:
         gint linemode;
@@ -353,6 +394,20 @@ public:
                         cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
                         cairo_set_line_width (cr, lw); 
                         for (int i=0; i<n; ){
+                                cairo_move_to (cr, xy[i].x, xy[i].y); ++i;
+                                cairo_line_to (cr, xy[i].x, xy[i].y); ++i;
+                                cairo_stroke (cr);
+                        }
+                        cairo_restore (cr);
+                }
+        };
+        virtual void draw_partial (cairo_t* cr, int i0, int i1) {
+                if (show_flag){
+                        cairo_save (cr);
+                        cairo_translate (cr, v0.x, v0.y);
+                        cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
+                        cairo_set_line_width (cr, lw); 
+                        for (int i=i0; i<i1; ){
                                 cairo_move_to (cr, xy[i].x, xy[i].y); ++i;
                                 cairo_line_to (cr, xy[i].x, xy[i].y); ++i;
                                 cairo_stroke (cr);

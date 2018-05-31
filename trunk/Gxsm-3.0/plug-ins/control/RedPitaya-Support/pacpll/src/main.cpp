@@ -604,19 +604,19 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         x12=(double)((x>>16)&0xffff);
 
         // LMS Detector Readings and double precision conversions
-        reading_vector[0] = v; // LMS Amplitude (Volume) in Volts (from A,B)
+        reading_vector[0] = v*1000.; // LMS Amplitude (Volume) in mVolts (from A,B)
         reading_vector[1] = p/M_PI*180.; // LMS Phase (from A,B)
         reading_vector[2] = a; // LMS A (Real)
         reading_vector[3] = b; // LMS B (Imag)
 
         // FPGA CORDIC based convertions
-        reading_vector[4] = x4;  // FPGA CORDIC (SQRT) Amplitude Monitor
+        reading_vector[4] = x4*1000.;  // FPGA CORDIC (SQRT) Amplitude Monitor in mVolt
         reading_vector[5] = x10/M_PI*180.; // FPGA CORDIC (ATAN) Phase Monitor
 
         reading_vector[6] = x5;  // X5
         reading_vector[7] = x6;  // X4
 
-        reading_vector[8] = x7;  // Exec Ampl Control Signal (signed)
+        reading_vector[8] = x7*1000.0;  // Exec Ampl Control Signal (signed) in mV
         reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9>>(64-44)));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
 
         reading_vector[10] = x3; // M (LMS input Signal)
@@ -851,72 +851,62 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
         int k;
         size_t i = 12;
         size_t N = 8*n;
-        static float dc=0.;
-        float val;
-        float dc_new=0.;
         
         switch (t_mode){
         case 0: // AXIS1xy :  IN1, IN2
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN2 (14)
-                        // printf ("%d %8.6f %8.6f\n", i>>3, (double)ix32/Q22, (double)ix32/Q22);
-                        SIGNAL_CH1[k] = (float)ix32*gain1/Q13;
-                        SIGNAL_CH2[k] = (float)iy32*gain2/Q13;
+                        SIGNAL_CH1[k] = (float)ix32*gain1/Q13*1000.;
+                        SIGNAL_CH2[k] = (float)iy32*gain2/Q13*1000.;
                 }
                 break;
         case 1: // AXIS45 :  CORDIC SQRT, ATAN
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                        SIGNAL_CH1[k] = (float)ix32*gain1/QCORDICATAN;
-                        SIGNAL_CH2[k] = (float)iy32*gain2/QCORDICSQRT;
+                        SIGNAL_CH1[k] = (float)ix32/QCORDICATAN*180./M_PI;
+                        SIGNAL_CH2[k] = (float)iy32/QCORDICSQRT*1000.;
                 }
                 break;
         case 2: // IN1, ADDR
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                        SIGNAL_CH1[k] = (float)ix32*gain1/Q13;
-                        val  = (float)iy32*gain2/QCORDICSQRT;
-                        dc_new += val;
-                        SIGNAL_CH2[k] = val-dc;
+                        SIGNAL_CH1[k] = (float)ix32*gain1/Q13*1000.;
+                        SIGNAL_CH2[k] = (float)iy32/QCORDICSQRT*1000.;
                 }
-                dc = dc_new/SIGNAL_SIZE_DEFAULT;
                 break;
         case 3:
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
-                        SIGNAL_CH1[k]  = (float)ix32*gain1;
-                        val  = (float)iy32*gain2/QCORDICATAN;
-                        dc_new += val;
-                        SIGNAL_CH2[k]  = val-dc;
+                        SIGNAL_CH1[k]  = (float)ix32*gain1/Q13*1000.;
+                        SIGNAL_CH2[k]  = (float)iy32/QCORDICATAN*180./M_PI;
                 }
-                dc = dc_new/SIGNAL_SIZE_DEFAULT;
                 break;
         case 4:
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl Exec (32)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Freq (48)-Lower(48)
-                        SIGNAL_CH1[k]  = (float)ix32 / QEXEC;
+                        SIGNAL_CH1[k]  = (float)ix32 / QEXEC * 1000.;
                         SIGNAL_CH2[k]  = (float)dds_phaseinc_to_freq ((double)iy32); // correct to 44
                 }
                 break;
         case 5:
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // FIR Ampl (experimental)
-                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // FIR Phase (experimental)
-                        SIGNAL_CH1[k]  = (float)ix32*gain1/QCORDICSQRT;
-                        SIGNAL_CH2[k]  = (float)iy32*gain2/QCORDICATAN;
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // AX7
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // AX8
+                        SIGNAL_CH1[k]  = (float)ix32;
+                        SIGNAL_CH2[k]  = (float)iy32;
                 }
                 break;
         case 6:
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // pixel clock counter, keeps counting, reset via mode 7
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // line clock counter, ..."" "" ""
-                        SIGNAL_CH1[k]  = (float)ix32*gain1;
-                        SIGNAL_CH2[k]  = (float)iy32*gain2;
+                        SIGNAL_CH1[k]  = (float)ix32;
+                        SIGNAL_CH2[k]  = (float)iy32;
                 }
                 break;
         default : break;
@@ -979,7 +969,7 @@ void UpdateSignals(void)
         // TUNE MODE
         if ( OPERATION.Value () == 6 ){
                 ampl=0.;
-                phase=0.;;
+                phase=0.;
                 int k;
                 size_t i = 12;
                 size_t N = 8*SIGNAL_SIZE_DEFAULT;
@@ -991,8 +981,10 @@ void UpdateSignals(void)
                 }
                 phase /= SIGNAL_SIZE_DEFAULT;
                 ampl  /= SIGNAL_SIZE_DEFAULT;
+
                 g_data_signal_ch1pa.erase (g_data_signal_ch1pa.begin());
                 g_data_signal_ch1pa.push_back (phase);
+                
                 g_data_signal_ch2aa.erase (g_data_signal_ch2aa.begin());
                 g_data_signal_ch2aa.push_back (ampl);
                 
@@ -1085,9 +1077,9 @@ void UpdateSignals(void)
         
         if (verbose > 3) fprintf(stderr, "UpdateSignal complete.\n");
 
-        VOLUME_MONITOR.Value ()   = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
+        VOLUME_MONITOR.Value ()   = reading_vector[4]; // Resonator Amplitude Signal Monitor in mV
         PHASE_MONITOR.Value ()    = reading_vector[5]; // PLL Phase in deg
-        EXEC_MONITOR.Value ()     = reading_vector[8] * 1000.; // Exec Amplitude Monitor in mV
+        EXEC_MONITOR.Value ()     = reading_vector[8]; // Exec Amplitude Monitor in mV
         DDS_FREQ_MONITOR.Value () = reading_vector[9]; // DDS Freq Monitor in Hz
         
         rp_PAC_auto_dc_offset_correct ();

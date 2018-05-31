@@ -451,14 +451,14 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->grid_add_widget (wid);
 
 	const gchar *update_periods[] = {
-                " 20ms",
-                " 50ms",
-                "100ms",
-                "200ms",
-                "500ms",
-                "  1s",
-                " 10s",
-                " 50s",
+                " *1/--",
+                " *2/--",
+                "  3/131us",
+                "  4/262us",
+                "  6/1.05ms",
+                " 10/16.8ms",
+                " 16/--",
+                " 24/--",
                 NULL };
    
 	// Init choicelist
@@ -840,17 +840,41 @@ void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, 
 
 void Inet_Json_External_Scandata::choice_update_period_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
         switch (gtk_combo_box_get_active (GTK_COMBO_BOX (widget))){
-        case 0: self->write_parameter ("SIGNAL_PERIOD",  20); break;
-        case 1: self->write_parameter ("SIGNAL_PERIOD",  50); break;
+        case 0: self->write_parameter ("SIGNAL_PERIOD",  20);
+                self->write_parameter ("SHR_DEC_DATA", 1);
+                self->write_parameter ("TRANSPORT_DECIMATION", 1<<1);
+                break;
+        case 1: self->write_parameter ("SIGNAL_PERIOD",  50);
+                self->write_parameter ("SHR_DEC_DATA", 2);
+                self->write_parameter ("TRANSPORT_DECIMATION", 1<<2);
+                break;
         case 2: self->write_parameter ("SIGNAL_PERIOD", 100);
-                self->write_parameter ("PARAMETER_PERIOD",  100); break;
+                self->write_parameter ("PARAMETER_PERIOD",  100);
+                self->write_parameter ("SHR_DEC_DATA", 3);
+                self->write_parameter ("TRANSPORT_DECIMATION", 1<<3);
+                break;
         case 3: self->write_parameter ("SIGNAL_PERIOD", 200);
-                self->write_parameter ("PARAMETER_PERIOD",  200); break;
+                self->write_parameter ("PARAMETER_PERIOD",  200);
+                self->write_parameter ("SHR_DEC_DATA", 4);
+                self->write_parameter ("TRANSPORT_DECIMATION", 1<<4);
+                break;
         case 4: self->write_parameter ("SIGNAL_PERIOD", 500);
-                self->write_parameter ("PARAMETER_PERIOD",  500); break;
-        case 5: self->write_parameter ("SIGNAL_PERIOD",1000); break;
-        case 6: self->write_parameter ("SIGNAL_PERIOD",10000); break;
-        case 7: self->write_parameter ("SIGNAL_PERIOD",50000); break;
+                self->write_parameter ("PARAMETER_PERIOD",  500);
+                self->write_parameter ("SHR_DEC_DATA", 6);
+                self->write_parameter ("TRANSPORT_DECIMATION", 1<<6);
+                break;
+        case 5: self->write_parameter ("SIGNAL_PERIOD",1000);
+                self->write_parameter ("SHR_DEC_DATA", 10);
+                self->write_parameter ("TRANSPORT_DECIMATION", 1<<10);
+                break;
+        case 6: self->write_parameter ("SIGNAL_PERIOD",10000);
+                self->write_parameter ("SHR_DEC_DATA", 16);
+                self->write_parameter ("TRANSPORT_DECIMATION", 1<<16);
+                break;
+        case 7: self->write_parameter ("SIGNAL_PERIOD",50000);
+                self->write_parameter ("SHR_DEC_DATA", 24);
+                self->write_parameter ("TRANSPORT_DECIMATION", 1<<24);
+                break;
         default: self->write_parameter ("SIGNAL_PERIOD", 200); break;
         }
 }
@@ -1356,8 +1380,9 @@ void Inet_Json_External_Scandata::update_graph (){
         double xs = 0.5;
         double x0 = xs*n/2;
         double yr = h/2;
-        double y0dB = yr*0.95;
-        double y60dB = -yr*0.95;
+        double y_hi  = yr*0.95;
+        double dB_hi   =  -10.0;
+        double dB_mags =  4.0;
         cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, n/2, h);
         cairo_t *cr = cairo_create (surface);
         if (run_scope){
@@ -1383,17 +1408,18 @@ void Inet_Json_External_Scandata::update_graph (){
                 CAIRO_BASIC_COLOR_IDS color[] = { CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_CYAN_ID, CAIRO_COLOR_YELLOW_ID, CAIRO_COLOR_BLUE_ID, CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID  };
                 double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5, // 0...4 CH1..5
                                      pacpll_signals.signal_phase, pacpll_signals.signal_ampl  }; // 5,6 PHASE, AMPL in Tune Mode, averaged from burst
-                double x,xf,min,max,s,ydb;
-
+                double x,xf,min,max,s,ydb,yph;
                 int ch_last=(operation_mode == 6) ? 7 : 5;
                 for (int ch=0; ch<ch_last; ++ch){
+                        int part_i0=0;
+                        int part_pos=1;
                         wave->set_stroke_rgba (BasicColors[color[ch]]);
                         min=max=signal[ch][512];
                         for (int k=0; k<n; ++k){
                                 s=signal[ch][k];
                                 if (s>max) max=s;
                                 if (s<min) min=s;
-                                if (ch<6)
+                                if (ch<5)
                                         if (scope_ac[ch])
                                                 s -= scope_dc_level[ch];
                                 
@@ -1403,17 +1429,49 @@ void Inet_Json_External_Scandata::update_graph (){
                                 
                                 if (operation_mode == 6 && (ch == 6 || ch == 1)){
                                         // 0..-60dB range, 1mV:-60dB (center), 0dB:1000mV (top)
-                                        wave->set_xy_fast (k, ch == 1 ? x:xf,ydb=-y0dB*(20.*(log10 (fabs(s))-1.5))/30.);
-                                }  else if (operation_mode == 6 && ((ch == 5 || ch == 0) // phase data always scale +/-180deg
-                                                                    || ( ch == 2 && (channel_selections[2]==2 || channel_selections[2]==6))
-                                                                    || ( ch == 3 && (channel_selections[3]==2 || channel_selections[3]==6))
-                                                                    || ( ch == 4 && (channel_selections[4]==2 || channel_selections[4]==6))) ){
+                                        wave->set_xy_fast (k, ch == 1 ? x:xf, ydb=db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags));
+
+                                } else if (operation_mode == 6 && ((ch == 5 || ch == 0) // phase data always scale +/-180deg
+                                                                   || ( ch == 2 && (channel_selections[2]==2 || channel_selections[2]==6))
+                                                                   || ( ch == 3 && (channel_selections[3]==2 || channel_selections[3]==6))
+                                                                   || ( ch == 4 && (channel_selections[4]==2 || channel_selections[4]==6)))
+                                           ){
                                         // -180..180 deg
-                                        wave->set_xy_fast (k, ch == 0 ? x:xf,-y0dB*s/180.);
+                                        wave->set_xy_fast (k, ch == 0 ? x:xf, yph=deg_to_y (s, y_hi));
+                                } else{
+                                        if (ch > 1 && (channel_selections[ch]==2 || channel_selections[ch]==6)) // Phase
+                                                wave->set_xy_fast (k, x, deg_to_y (s, y_hi));
+                                        else if (ch == 0 && channel_selections[0]==2) // Phase
+                                                wave->set_xy_fast (k, x, deg_to_y (s, y_hi));
+                                        else if (ch > 1 && (channel_selections[ch]==1 || channel_selections[ch]==5 || channel_selections[ch]==9)) // Amplitude
+                                                wave->set_xy_fast (k, x, db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags));
+                                        else if (ch == 1 && channel_selections[0]==2) // Amplitude
+                                                wave->set_xy_fast (k, x, db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags));
+                                        else if (ch == 0 && (channel_selections[0]==5)){ // || channel_selections[0]==1)){ // Exec Amplitude
+                                                wave->set_xy_fast (k, x, db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags));
+                                                if (k>2 && s<0. && part_pos){
+                                                        wave->set_stroke_rgba (CAIRO_COLOR_MAGENTA_ID);
+                                                        wave->draw_partial (cr, part_i0, k-1); part_i0=k; part_pos=0;
+                                                }
+                                                if (k>2 && s>0. && !part_pos){
+                                                        wave->set_stroke_rgba (BasicColors[color[ch]]);
+                                                        wave->draw_partial (cr, part_i0, k-1); part_i0=k; part_pos=1;
+                                                }
+                                        }
+                                        else 
+                                                wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s);
                                 }
-                                else
-                                        wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s);
                         }
+                        if (s>0. && part_i0>0){
+                                wave->set_stroke_rgba (BasicColors[color[ch]]);
+                                wave->draw_partial (cr, part_i0, n-2);
+                        }
+                        if (s<0. && part_i0>0){
+                                wave->set_stroke_rgba (CAIRO_COLOR_MAGENTA_ID);
+                                wave->draw_partial (cr, part_i0, n-2);
+                        }
+                        if (channel_selections[ch] && part_i0==0)
+                                wave->draw (cr);
 
                         if (ch<6){
                                 scope_dc_level[ch] = 0.5*(min+max);
@@ -1426,8 +1484,6 @@ void Inet_Json_External_Scandata::update_graph (){
                                         } else
                                                 gain_scale[ch] = 0.7 / (0.0001 + (fabs(max) > fabs(min) ? fabs(max) : fabs(min)));
                         }
-                        if (channel_selections[ch])
-                                wave->draw (cr);
                                            
                         if (operation_mode != 6 && channel_selections[ch]){
                                 avg=0.;
@@ -1458,6 +1514,33 @@ void Inet_Json_External_Scandata::update_graph (){
                         reading->draw (cr);
                 }
 
+                // tick marks dB
+                for (int db=(int)dB_hi; db >= -20*dB_mags; db -= 10){
+                        valuestring = g_strdup_printf ("%4d dB", db);
+                        reading->set_stroke_rgba (CAIRO_COLOR_GREEN);
+                        reading->set_text (440,  db_to_y ((double)db, dB_hi, y_hi, dB_mags), valuestring);
+                        g_free (valuestring);
+                        reading->draw (cr);
+                }
+                // ticks deg
+                for (int deg=-180; deg <= 180; deg += 30){
+                        valuestring = g_strdup_printf ("%d" UTF8_DEGREE, deg);
+                        reading->set_stroke_rgba (CAIRO_COLOR_RED);
+                        reading->set_text (480, deg_to_y (deg, y_hi), valuestring);
+                        g_free (valuestring);
+                        reading->draw (cr);
+                }
+                cairo_item_segments *cursors = new cairo_item_segments (2);
+                cursors->set_line_width (0.5);
+                cursors->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                // coord cross
+                cursors->set_xy_fast (0,250.+480.*(-0.5),0.);
+                cursors->set_xy_fast (1,250.+480.*(0.5),0.);
+                cursors->draw (cr);
+                cursors->set_xy_fast (0,250.,y_hi);
+                cursors->set_xy_fast (1,250.,-y_hi);
+                cursors->draw (cr);
+
                 if (operation_mode == 6){ // tune info
                         if (debug_level > 0)
                                 g_print ("Tune: %g Hz,  %g mV,  %g dB, %g deg\n",
@@ -1467,51 +1550,42 @@ void Inet_Json_External_Scandata::update_graph (){
                                          pacpll_signals.signal_ch1[n-1]
                                          );
 
-                        // tick marks dB
-                        for (int db=0; db >= -60; db -= 10){
-                                valuestring = g_strdup_printf ("%4d dB", db);
-                                reading->set_stroke_rgba (CAIRO_COLOR_GREEN);
-                                reading->set_text (440, -y0dB*(db+30)/30., valuestring);
-                                g_free (valuestring);
-                                reading->draw (cr);
-                        }
-                        // ticks deg
-                        for (int deg=-180; deg <= 180; deg += 30){
-                                valuestring = g_strdup_printf ("%d" UTF8_DEGREE, deg);
-                                reading->set_stroke_rgba (CAIRO_COLOR_RED);
-                                reading->set_text (480, -y0dB*deg/180., valuestring);
-                                g_free (valuestring);
-                                reading->draw (cr);
-                        }
-                        cairo_item_segments *cursors = new cairo_item_segments (2);
-                        cursors->set_line_width (0.5);
-                        cursors->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                        // current pos marks
+                        cursors->set_stroke_rgba (CAIRO_COLOR_YELLOW);
                         x = 250.+480.*pacpll_signals.signal_frq[n-1]/parameters.tune_span;
                         cursors->set_xy_fast (0,x,ydb-20.);
                         cursors->set_xy_fast (1,x,ydb+20.);
                         cursors->draw (cr);
-                        cursors->set_xy_fast (0,250.+480.*(-0.5),0.);
-                        cursors->set_xy_fast (1,250.+480.*(0.5),0.);
-                        cursors->draw (cr);
-                        cursors->set_xy_fast (0,250.,y0dB);
-                        cursors->set_xy_fast (1,250.,y60dB);
+                        cursors->set_xy_fast (0,x,yph-20);
+                        cursors->set_xy_fast (1,x,yph+20);
                         cursors->draw (cr);
 
                         cursors->set_stroke_rgba (CAIRO_COLOR_GREEN);
                         x = 250.+480.*(pacpll_parameters.center_frequency-pacpll_parameters.frequency_manual)/parameters.tune_span;
-                        ydb=-y0dB*(20.*log10 (fabs (pacpll_parameters.center_amplitude)))/60.;
+                        ydb=-y_hi*(20.*log10 (fabs (pacpll_parameters.center_amplitude)))/60.;
                         cursors->set_xy_fast (0,x,ydb-50.);
                         cursors->set_xy_fast (1,x,ydb+50.);
                         cursors->draw (cr);
 
                         cursors->set_stroke_rgba (CAIRO_COLOR_RED);
                         x = 250.+480.*(pacpll_parameters.center_frequency-pacpll_parameters.frequency_manual)/parameters.tune_span;
-                        ydb=-y0dB*pacpll_parameters.center_phase/180.;
+                        ydb=-y_hi*pacpll_parameters.center_phase/180.;
                         cursors->set_xy_fast (0,x-50,ydb);
                         cursors->set_xy_fast (1,x+50,ydb);
                         cursors->draw (cr);
 
                         g_free (cursors);
+
+                        valuestring = g_strdup_printf ("Phase: %g deg", pacpll_signals.signal_phase[n-1]);
+                        reading->set_stroke_rgba (CAIRO_COLOR_RED);
+                        reading->set_text (10, -(110), valuestring);
+                        g_free (valuestring);
+                        reading->draw (cr);
+                        valuestring = g_strdup_printf ("Amplitude: %g dB (%g mV)", dB_from_mV (pacpll_signals.signal_ampl[n-1]), pacpll_signals.signal_ampl[n-1] );
+                        reading->set_stroke_rgba (CAIRO_COLOR_GREEN);
+                        reading->set_text (10, -(110-14), valuestring);
+                        g_free (valuestring);
+                        reading->draw (cr);
                         
                         valuestring = g_strdup_printf ("Tuning: last peak @ %g mV  %.4f Hz  %g deg",
                                                        pacpll_parameters.center_amplitude,
