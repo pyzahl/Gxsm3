@@ -40,6 +40,7 @@ Build-Depends: 	debhelper (>= 9.0.0),
 		libopencv-video-dev,  
 		libpangomm-1.4-dev, 
 		libquicktime-dev, 
+		libsoup2.4-dev,
 		python2.7-dev, 
 		python-gobject-2-dev, 
 		subversion,
@@ -67,7 +68,7 @@ Depends: 	${shlibs:Depends},
 		libfftw3-3,
 		libfreetype6, 
 		libgail-3-0,
-		libglew1.13,
+		libglew2.0,
 		libglib2.0-0,
 		libglib2.0-bin, 
 		libgnomeui-0, 
@@ -83,17 +84,18 @@ Depends: 	${shlibs:Depends},
 		libgtksourceview-3.0-1, 
 		libgtksourceview-3.0-common,		 
 		libnetcdf-c++4-1, 
-		libnetcdf11, 
+		libnetcdf13, 
 		libnetcdff6,
 		libnlopt0, 
-		libopencv-contrib2.4v5, 
-		libopencv-core2.4v5, 
-		libopencv-highgui2.4v5, 
-		libopencv-imgproc2.4v5, 
-		libopencv-objdetect2.4v5, 
-		libopencv-video2.4v5,  
+		libopencv-contrib3.2, 
+		libopencv-core3.2, 
+		libopencv-highgui3.2, 
+		libopencv-imgproc3.2, 
+		libopencv-objdetect3.2, 
+		libopencv-video3.2,  
 		libpangomm-1.4-1v5, 
-		libquicktime2,  
+		libquicktime2,
+		libsoup2.4-1,  
 		libxdot4, 
 		python, 
 		python-gobject-2, 
@@ -105,7 +107,7 @@ Depends: 	${shlibs:Depends},
 		subversion, 
 		xdg-utils, 
 		xdot
-Suggests: sranger-modules-mk23-dkms, sranger-modules-std-dkms
+Suggests: sranger-modules-mk23-dkms, sranger-modules-std-dkms, gwyddion
 Replaces: sranger (<< 0.0.2 )
 Breaks: sranger (<< 0.0.2 )
 Description: Multi-channel data acquisition via STM/AFM
@@ -128,17 +130,4 @@ Description: Multi-channel data acquisition via STM/AFM
  http://sranger.sf.net or in 
  J. Vac. Sci. Technol. B 28, C4E39 (2010) 
  (doi:10.1116/1.3374719) 
- .
- This is an experimental version which give you a preview on
- the new GXSM3 which is based on GTK3. To use this package 
- you will have to upgrade your libgtk+-3 to version >3.20 by
- adding the gnome-staging repository
- apt-add-repository ppa:gnome3-team/gnome3
- apt-add-repository ppa:gnome3-team/gnome3-staging
- apt update
- apt dist-upgrade
- .
- To remove this ppa install ppa-purge and run
- ppa-purge ppa:gnome3-team/gnome3
- ppa-purge ppa:gnome3-team/gnome3-staging
 
