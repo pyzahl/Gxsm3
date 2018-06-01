@@ -61,6 +61,7 @@ struct PACPLL_parameters {
         double bram_dec_count;
         
         double pactau;
+        double pacatau;
         double frequency_manual; // manual f reset
         double frequency_center; // manual f reference
         double aux_scale;
@@ -140,6 +141,7 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "GAIN4", &pacpll_parameters.gain4, false },
         { "GAIN5", &pacpll_parameters.gain5, false },
         { "PACTAU", &pacpll_parameters.pactau, false },
+        { "PACATAU", &pacpll_parameters.pacatau, false },
         { "FREQUENCY_MANUAL", &pacpll_parameters.frequency_manual, false }, // manual/tune frequency
         { "FREQUENCY_CENTER", &pacpll_parameters.frequency_center, false }, // center frequency -- used as offset for AUX
         { "AUX_SCALE", &pacpll_parameters.aux_scale, false },

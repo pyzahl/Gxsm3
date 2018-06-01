@@ -13,6 +13,12 @@
       <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 40.0 µs    , Adjustment PCS Name: 'rp-pacpll-PACTAU' </description>
     </key>
 
+    <key name="rp-pacpll-pacatau" type="d">
+      <default>40.0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PACATAU', Default/U: 40.0 µs     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PACATAU', Default/U: 40.0 µs    , Adjustment PCS Name: 'rp-pacpll-PACATAU' </description>
+    </key>
+
     <key name="rp-pacpll-frequency-manual" type="d">
       <default>32768</default>
       <summary>PCS Remote-ID: 'rp-pacpll-FREQUENCY-MANUAL', Default/U: 32768 Hz     </summary>

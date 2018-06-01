@@ -294,11 +294,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         parameters.frequency_center = 32768.0; // Hz
         parameters.aux_scale = 0.011642; // 20Hz / V equivalent 
         parameters.volume_manual = 300.0; // mV
+        bp->set_input_width_chars (8);
+        bp->set_input_nx (1);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_tau_parameter_changed, this);
   	bp->grid_add_ec ("Tau PAC", uTime, &parameters.pactau, 0.0, 63e6, "6g", 10., 1., "PACTAU");
+  	bp->grid_add_ec (NULL, uTime, &parameters.pacatau, 0.0, 63e6, "6g", 10., 1., "PACATAU");
         bp->new_line ();
         bp->set_no_spin (false);
         bp->set_input_width_chars (12);
+        bp->set_input_nx (2);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_frequency_parameter_changed, this);
   	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency_manual, 0.0, 20e6, ".4lf", 0.1, 10., "FREQUENCY-MANUAL");
         bp->new_line ();
@@ -781,6 +785,7 @@ int Inet_Json_External_Scandata::setup_scan (int ch,
 void Inet_Json_External_Scandata::pac_tau_parameter_changed (Param_Control* pcs, gpointer user_data){
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
         self->write_parameter ("PACTAU", self->parameters.pactau);
+        self->write_parameter ("PACATAU", self->parameters.pacatau);
 }
 
 void Inet_Json_External_Scandata::pac_frequency_parameter_changed (Param_Control* pcs, gpointer user_data){
