@@ -238,8 +238,11 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         ch_freq = -1;
         ch_ampl = -1;
 
-        for (int i=0; i<5; ++i){ scope_ac[i]=false; scope_dc_level[i]=0.; }
-        
+        for (int i=0; i<5; ++i){
+                scope_ac[i]=false;
+                scope_dc_level[i]=0.;
+                gain_scale[i] = 0.001; // 1000mV full scale
+        }
         block_message = 0;
         
         /* create a new connection, init */
@@ -286,7 +289,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
-        parameters.pactau = 200.0; // us
+        parameters.pactau = 40.0; // us
         parameters.frequency_manual = 32768.0; // Hz
         parameters.frequency_center = 32768.0; // Hz
         parameters.aux_scale = 0.011642; // 20Hz / V equivalent 
@@ -329,12 +332,12 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
-        parameters.amplitude_fb_setpoint = 100.0; // mV
+        parameters.amplitude_fb_setpoint = 20.0; // mV
         parameters.amplitude_fb_invert = 1.;
-        parameters.amplitude_fb_cp_db = -60.;
-        parameters.amplitude_fb_ci_db = -50.;
-        parameters.exec_fb_upper = 200.0;
-        parameters.exec_fb_lower = -100.0;
+        parameters.amplitude_fb_cp_db = -25.;
+        parameters.amplitude_fb_ci_db = -40.;
+        parameters.exec_fb_upper = 300.0;
+        parameters.exec_fb_lower = -300.0;
         bp->set_no_spin (false);
         bp->set_input_width_chars (10);
 
@@ -376,10 +379,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
-        parameters.phase_fb_setpoint = 50.;
+        parameters.phase_fb_setpoint = 60.;
         parameters.phase_fb_invert = 1.;
-        parameters.phase_fb_cp_db = -135.;
-        parameters.phase_fb_ci_db = -160.;
+        parameters.phase_fb_cp_db = -76.;
+        parameters.phase_fb_ci_db = -143.;
         parameters.freq_fb_upper = 35000.;
         parameters.freq_fb_lower = 28000.;
         bp->set_no_spin (false);
@@ -451,13 +454,13 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->grid_add_widget (wid);
 
 	const gchar *update_periods[] = {
-                " *1/--",
-                " *2/--",
-                "  3/131us",
+                "* 3/131us",
                 "  4/262us",
                 "  6/1.05ms",
                 " 10/16.8ms",
+                " 14/--",
                 " 16/--",
+                " 20/--",
                 " 24/--",
                 NULL };
    
@@ -482,9 +485,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 "Auto Set CH3",
                 "Auto Set CH4",
                 "Auto Set CH5",
-                "Default All=0.1",
-                "Default All=1",
-                "Default All=10",
+                "Default All=1V",
+                "Default All=1x",
+                "Default All=10x",
                 "Manual",
                 NULL };
    
@@ -506,12 +509,12 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	const gchar *transport_modes[] = {
                 "OFF: no plot",
                 "IN1, IN2",
-                "PHASE, AMPL",
-                "IN1, AMPL",
-                "IN1, PHASE",
-                "Exec,Freq",
-                "Axis7,8",
-                "Col, Line **",
+                "Phase, Ampl",
+                "IN1, Ampl",
+                "IN1, Phase",
+                "Exec, Freq",
+                "Ampl, Exec",
+                "Phase, Freq",
                 "0,0 **",
                 "8BIT GPIO, px clk",
                 NULL };
@@ -839,43 +842,43 @@ void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, 
 }
 
 void Inet_Json_External_Scandata::choice_update_period_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->data_shr_max = -1;
         switch (gtk_combo_box_get_active (GTK_COMBO_BOX (widget))){
         case 0: self->write_parameter ("SIGNAL_PERIOD",  20);
-                self->write_parameter ("SHR_DEC_DATA", 1);
-                self->write_parameter ("TRANSPORT_DECIMATION", 1<<1);
+                self->data_shr_max = -1;
                 break;
         case 1: self->write_parameter ("SIGNAL_PERIOD",  50);
-                self->write_parameter ("SHR_DEC_DATA", 2);
-                self->write_parameter ("TRANSPORT_DECIMATION", 1<<2);
+                self->data_shr_max = 4;
                 break;
         case 2: self->write_parameter ("SIGNAL_PERIOD", 100);
                 self->write_parameter ("PARAMETER_PERIOD",  100);
-                self->write_parameter ("SHR_DEC_DATA", 3);
-                self->write_parameter ("TRANSPORT_DECIMATION", 1<<3);
+                self->data_shr_max = 6;
                 break;
         case 3: self->write_parameter ("SIGNAL_PERIOD", 200);
                 self->write_parameter ("PARAMETER_PERIOD",  200);
-                self->write_parameter ("SHR_DEC_DATA", 4);
-                self->write_parameter ("TRANSPORT_DECIMATION", 1<<4);
+                self->data_shr_max = 10;
                 break;
         case 4: self->write_parameter ("SIGNAL_PERIOD", 500);
                 self->write_parameter ("PARAMETER_PERIOD",  500);
-                self->write_parameter ("SHR_DEC_DATA", 6);
-                self->write_parameter ("TRANSPORT_DECIMATION", 1<<6);
+                self->data_shr_max = 14;
                 break;
         case 5: self->write_parameter ("SIGNAL_PERIOD",1000);
-                self->write_parameter ("SHR_DEC_DATA", 10);
-                self->write_parameter ("TRANSPORT_DECIMATION", 1<<10);
+                self->data_shr_max = 16;
                 break;
         case 6: self->write_parameter ("SIGNAL_PERIOD",10000);
-                self->write_parameter ("SHR_DEC_DATA", 16);
-                self->write_parameter ("TRANSPORT_DECIMATION", 1<<16);
+                self->data_shr_max = 20;
                 break;
         case 7: self->write_parameter ("SIGNAL_PERIOD",50000);
-                self->write_parameter ("SHR_DEC_DATA", 24);
-                self->write_parameter ("TRANSPORT_DECIMATION", 1<<24);
+                self->data_shr_max = 24;
                 break;
         default: self->write_parameter ("SIGNAL_PERIOD", 200); break;
+        }
+        if (self->data_shr_max > 0){
+                self->write_parameter ("SHR_DEC_DATA", self->data_shr_max);
+                self->write_parameter ("TRANSPORT_DECIMATION", 1<<self->data_shr_max);
+        } else {
+                self->write_parameter ("SHR_DEC_DATA", self->data_shr_max);
+                self->write_parameter ("TRANSPORT_DECIMATION", 1<<self->data_shr_max);
         }
 }
 
@@ -892,7 +895,7 @@ void Inet_Json_External_Scandata::choice_auto_set_callback (GtkWidget *widget, I
                 self->gain_scale[m] = -1.; // recalculate
         else {
                 m -= 5;
-                double s[] = { 0.1, 1.0, 10.0 };
+                double s[] = { 0.01, 1.0, 10.0 };
                 if (m < 3) 
                         for (int i=0; i<5; ++i)
                                 self->gain_scale[i] = s[m]; // Fixed
@@ -1336,14 +1339,14 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 void Inet_Json_External_Scandata::stream_data (){
         int deci=16;
         int n=4;
-        if (1) { //if (ch_freq >= 0 || ch_ampl >= 0){
+        if (data_shr_max > 2) { //if (ch_freq >= 0 || ch_ampl >= 0){
                 double decimation = 125e6 * gapp->xsm->hardware->GetScanrate ();
                 deci = (gint64)decimation;
                 if (deci > 2){
                         for (n=0; deci; ++n) deci >>= 1;
                         --n;
                 }
-                if (n>24) n=24; // limit to 24. Note: (32 bits - 8 control, may shorten control, only 3 needed)
+                if (n>data_shr_max) n=data_shr_max; // limit to 24. Note: (32 bits - 8 control, may shorten control, only 3 needed)
                 deci = 1<<n;
                 //g_print ("Scan Pixel rate is %g s/pix -> Decimation %g -> %d n=%d\n", gapp->xsm->hardware->GetScanrate (), decimation, deci, n);
         }
@@ -1441,13 +1444,22 @@ void Inet_Json_External_Scandata::update_graph (){
                                 } else{
                                         if (ch > 1 && (channel_selections[ch]==2 || channel_selections[ch]==6)) // Phase
                                                 wave->set_xy_fast (k, x, deg_to_y (s, y_hi));
-                                        else if (ch == 0 && channel_selections[0]==2) // Phase
+                                        else if ((   ch == 0 && channel_selections[0]==2) // Phase
+                                                 || (ch == 1 && channel_selections[0]==4)
+                                                 || (ch == 0 && channel_selections[0]==7)
+                                                 )
                                                 wave->set_xy_fast (k, x, deg_to_y (s, y_hi));
-                                        else if (ch > 1 && (channel_selections[ch]==1 || channel_selections[ch]==5 || channel_selections[ch]==9)) // Amplitude
+                                        
+                                        else if ((   ch >  1 && (channel_selections[ch]==1 || channel_selections[ch]==5 || channel_selections[ch]==9)) // Amplitude
+                                                 || (ch == 1 && channel_selections[0]==2) // Amplitude
+                                                 || (ch == 1 && channel_selections[0]==3)
+                                                 || (ch == 0 && channel_selections[0]==6)
+                                                 )
                                                 wave->set_xy_fast (k, x, db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags));
-                                        else if (ch == 1 && channel_selections[0]==2) // Amplitude
-                                                wave->set_xy_fast (k, x, db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags));
-                                        else if (ch == 0 && (channel_selections[0]==5)){ // || channel_selections[0]==1)){ // Exec Amplitude
+                                        
+                                        else if ((   ch == 0 && (channel_selections[0]==5)) // || channel_selections[0]==1)){ // Exec Amplitude
+                                                 || (ch == 1 && (channel_selections[0]==6))
+                                                 ){
                                                 wave->set_xy_fast (k, x, db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags));
                                                 if (k>2 && s<0. && part_pos){
                                                         wave->set_stroke_rgba (CAIRO_COLOR_MAGENTA_ID);

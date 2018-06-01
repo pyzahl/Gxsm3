@@ -411,6 +411,7 @@ private:
         int ch_ampl;
         int data_decimation;
         int data_shr;
+        int data_shr_max;
         int streampos;
         int x,y;
         int streaming;
