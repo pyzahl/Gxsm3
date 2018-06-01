@@ -3252,7 +3252,10 @@ void  py_gxsm_console::write_example_file(void)
 	std::ofstream example_file;
 	example_file.open(example_filename);
 	example_file << "\n#Since no default file / script was found, here are some\n"
-		"# things you can do with the python interface.\n"
+		"# things you can do with the python interface.\n\n"
+                "# Please visit/install gxsm3-lib-utils.py, ... before executing this:\n"
+                "# Simply visit Menu/Libraries/Lib Utils first.\n\n"
+                "#GXSM_USE_LIBRARY <gxsm3-lib-utils>\n\n"
 		"# You can also create the more extensive default/example tools collection: File->Use default.\n"
 		"# - see the manual for more information\n"
 		"# Execute to try these\n"
@@ -3273,7 +3276,7 @@ void  py_gxsm_console::write_example_file(void)
 		"    gxsm.set (\"dsp-fbs-ci\", \"20\")\n"
 		"    gxsm.set (\"OffsetX\", \"0\")\n"
 		"    gxsm.set (\"OffsetY\", \"0\")\n"
-		"    gxsm.action (\"DSP_CMD_AUTOAPP\")\n"
+		"#    gxsm.action (\"DSP_CMD_AUTOAPP\")\n"
 		"    gxsm.sleep (10)\n"
 		"    #gxsm.startscan ()\n"
 	        "    gxsm.moveto_scan_xy (100.,50.)\n";
