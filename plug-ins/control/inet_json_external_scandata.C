@@ -290,6 +290,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->ec->Freeze ();
         bp->new_line ();
         parameters.pactau = 40.0; // us
+        parameters.pacatau = 30.0; // us
         parameters.frequency_manual = 32768.0; // Hz
         parameters.frequency_center = 32768.0; // Hz
         parameters.aux_scale = 0.011642; // 20Hz / V equivalent 
