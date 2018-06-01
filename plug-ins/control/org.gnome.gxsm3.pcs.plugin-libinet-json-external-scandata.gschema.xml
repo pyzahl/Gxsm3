@@ -8,9 +8,9 @@
     </key>
 
     <key name="rp-pacpll-pactau" type="d">
-      <default>2.0</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 2.0 µs     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 2.0 µs    , Adjustment PCS Name: 'rp-pacpll-PACTAU' </description>
+      <default>40.0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 40.0 µs     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 40.0 µs    , Adjustment PCS Name: 'rp-pacpll-PACTAU' </description>
     </key>
 
     <key name="rp-pacpll-frequency-manual" type="d">
@@ -62,27 +62,27 @@
     </key>
 
     <key name="rp-pacpll-amplitude-fb-cp" type="d">
-      <default>-50</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-CP', Default/U: -50 dB     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-CP', Default/U: -50 dB    , Adjustment PCS Name: 'rp-pacpll-AMPLITUDE-FB-CP' </description>
+      <default>-25</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-CP', Default/U: -25 dB     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-CP', Default/U: -25 dB    , Adjustment PCS Name: 'rp-pacpll-AMPLITUDE-FB-CP' </description>
     </key>
 
     <key name="rp-pacpll-amplitude-fb-ci" type="d">
-      <default>-60</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-CI', Default/U: -60 dB     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-CI', Default/U: -60 dB    , Adjustment PCS Name: 'rp-pacpll-AMPLITUDE-FB-CI' </description>
+      <default>-40</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-CI', Default/U: -40 dB     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-AMPLITUDE-FB-CI', Default/U: -40 dB    , Adjustment PCS Name: 'rp-pacpll-AMPLITUDE-FB-CI' </description>
     </key>
 
     <key name="rp-pacpll-exec-fb-lower" type="d">
-      <default>-100</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-EXEC-FB-LOWER', Default/U: -100 mV     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-EXEC-FB-LOWER', Default/U: -100 mV    , Adjustment PCS Name: 'rp-pacpll-EXEC-FB-LOWER' </description>
+      <default>-300</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-EXEC-FB-LOWER', Default/U: -300 mV     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-EXEC-FB-LOWER', Default/U: -300 mV    , Adjustment PCS Name: 'rp-pacpll-EXEC-FB-LOWER' </description>
     </key>
 
     <key name="rp-pacpll-exec-fb-upper" type="d">
-      <default>200</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-EXEC-FB-UPPER', Default/U: 200 mV     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-EXEC-FB-UPPER', Default/U: 200 mV    , Adjustment PCS Name: 'rp-pacpll-EXEC-FB-UPPER' </description>
+      <default>300</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-EXEC-FB-UPPER', Default/U: 300 mV     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-EXEC-FB-UPPER', Default/U: 300 mV    , Adjustment PCS Name: 'rp-pacpll-EXEC-FB-UPPER' </description>
     </key>
 
     <key name="rp-pacpll-exec-amplitude-monitor" type="d">
@@ -104,15 +104,15 @@
     </key>
 
     <key name="rp-pacpll-phase-fb-cp" type="d">
-      <default>-180</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-PHASE-FB-CP', Default/U: -180 dB     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PHASE-FB-CP', Default/U: -180 dB    , Adjustment PCS Name: 'rp-pacpll-PHASE-FB-CP' </description>
+      <default>-76</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PHASE-FB-CP', Default/U: -76 dB     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PHASE-FB-CP', Default/U: -76 dB    , Adjustment PCS Name: 'rp-pacpll-PHASE-FB-CP' </description>
     </key>
 
     <key name="rp-pacpll-phase-fb-ci" type="d">
-      <default>-180</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-PHASE-FB-CI', Default/U: -180 dB     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PHASE-FB-CI', Default/U: -180 dB    , Adjustment PCS Name: 'rp-pacpll-PHASE-FB-CI' </description>
+      <default>-143</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PHASE-FB-CI', Default/U: -143 dB     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PHASE-FB-CI', Default/U: -143 dB    , Adjustment PCS Name: 'rp-pacpll-PHASE-FB-CI' </description>
     </key>
 
     <key name="rp-pacpll-freq-fb-lower" type="d">

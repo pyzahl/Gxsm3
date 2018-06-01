@@ -48,7 +48,7 @@ module controller_pi #(
     parameter M_AXIS_CONTROL_TDATA_WIDTH = 32, // SERVO CONTROL DATA WIDTH OF AXIS
     parameter CONTROL_WIDTH = 32, // SERVO CONTROL DATA WIDTH
     parameter M_AXIS_CONTROL2_TDATA_WIDTH = 32, // INTERNAL CONTROl DATA WIDTH MAPPED TO AXIS FOR READOUT not including extend
-    parameter CONTROL2_WIDTH = 64, // INTERNAL CONTROl DATA WIDTH not including extend **** COEFQ+AXIS_TDATA_WIDTH == CONTROL2_WIDTH
+    parameter CONTROL2_WIDTH = 50, //64, // INTERNAL CONTROl DATA WIDTH not including extend **** COEFQ+AXIS_TDATA_WIDTH == CONTROL2_WIDTH
     parameter CONTROL2_OUT_WIDTH = 32, // max passed outside control width, must be <= CONTROL2_WIDTH
     parameter COEF_WIDTH = 32, // CP, CI WIDTH
     parameter QIN = 22, // Q In Signal
@@ -56,7 +56,7 @@ module controller_pi #(
     parameter QCONTROL = 31, // Q Controlvalue
     parameter CEXTEND = 4, // room for saturation check
     parameter DEXTEND = 1,  // data, erorr extend
-    parameter AMCONTROL_ALLOW_NEG_SPECIAL = 0
+    parameter AMCONTROL_ALLOW_NEG_SPECIAL = 1
 )
 (
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
@@ -148,7 +148,7 @@ module controller_pi #(
             begin
                 if (AMCONTROL_ALLOW_NEG_SPECIAL)
                 begin
-                    if (error_next < $signed(0) && control_next < $signed(0)) // auto reset condition for amplitude control to preven negative phase, but allow active "damping"
+                    if (error_next > $signed(0) && control_next < $signed(0)) // auto reset condition for amplitude control to preven negative phase, but allow active "damping"
                     begin
                         control      <= 0;
                         controlint   <= 0;

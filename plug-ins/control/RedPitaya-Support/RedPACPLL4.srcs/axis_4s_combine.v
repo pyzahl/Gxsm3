@@ -107,8 +107,8 @@ module axis_4s_combine #(
     input wire [SAXIS_78_TDATA_WIDTH-1:0]  S_AXIS8_tdata, // FIR Phase
     input wire                          S_AXIS8_tvalid,
     input wire signed [SAXIS_3_DATA_WIDTH-1:0] axis3_center,  
-    input wire [7:0]     rp_digital_in,
-    input wire [32-1:0]  operation, // 0..7 control bits 0: 1=start 1: 1=single shot/0=fifo loop 2: 4: 1=init/reset , [31:8] DATA ACCUMULATOR (64) SHR
+    input wire [8-1:0]   rp_digital_in,
+    input wire [32-1:0]  operation, // 0..7 control bits 0: 1=start 1: 1=single shot/0=fifo loop 2, 4: 16=init/reset , [31:8] DATA ACCUMULATOR (64) SHR
     input wire [32-1:0]  ndecimate,
     input wire [32-1:0]  nsamples,
     input wire [32-1:0]  channel_selector,
@@ -145,6 +145,7 @@ module axis_4s_combine #(
     reg signed [64-1:0] ch1, ch2, ch3, ch4;
     reg signed [64-1:0] ch1n, ch2n, ch3n, ch4n;
     reg signed [64-1:0] ch1s, ch2s, ch3s, ch4s;
+    reg signed [64-1:0] delta_freq;
 
     reg finished=1'b0;
     reg finished_next=1'b0;
@@ -194,6 +195,8 @@ module axis_4s_combine #(
         ch2 <= ch2n;
         ch3 <= ch3n;
         ch4 <= ch4n;
+        delta_freq <= $signed(S_AXIS3_tdata[SAXIS_3_DATA_WIDTH-1:0]) - $signed(axis3_center);
+        //    ch2n <= $signed(S_AXIS3_tdata[SAXIS_3_DATA_WIDTH-1:0]) - $signed(axis3_center); // Freq (48) - Center (48) =>  64 sum
 
         decimate_count <= decimate_count_next; 
         sample_count <= sample_count_next;
@@ -346,34 +349,42 @@ module axis_4s_combine #(
                             if (S_AXIS2_tvalid && S_AXIS3_tvalid)
                             begin
                                 ch1n <= $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);                 // Amplitude Exec (32) =>  64 sum
-                                ch2n <= ($signed(S_AXIS3_tdata[SAXIS_3_DATA_WIDTH-1:0]) - $signed(axis3_center)); // Freq (48) - Center (48) =>  64 sum
+                                ch2n <= delta_freq; // Freq (48) - Center (48) =>  64 sum
                                 dec_sms_next <= 3'd3;
                             end
                         end
                         5:
                         begin
-                            if (S_AXIS7_tvalid && S_AXIS8_tvalid)
+                            if (S_AXIS5_tvalid && S_AXIS2_tvalid)
                             begin
-                                ch1n <= S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]; // FIR Ampl xxx
-                                ch2n <= S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]; // FIR Phase xxx
+                                ch1n <= $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch2n <= $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // Amplitude Exec (32) =>  64 sum
+//                            if (S_AXIS7_tvalid && S_AXIS8_tvalid)
+//                                ch1n <= S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]; // AX7
+//                                ch2n <= S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]; // AX8
                                 dec_sms_next <= 3'd3;
                             end
                         end
                         6:
                         begin
-                            ch1n <= ch1 + mk3_pixel_clock; // keep counting!
-                            ch2n <= ch1 + mk3_line_clock;
-                            dec_sms_next <= 3'd3;
+                            if (S_AXIS4_tvalid && S_AXIS3_tvalid)
+                            begin
+                                ch1n <= $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
+                                ch2n <= delta_freq; // Freq (48) - Center (48) =>  64 sum
+//                            ch1n <= ch1 + mk3_pixel_clock; // keep counting! SET SHR to 0!!!
+//                            ch2n <= ch1 + mk3_line_clock;
+                                dec_sms_next <= 3'd3;
+                            end
                         end
                         7:
                         begin
-                            ch1 <= 0; // just set zero!
-                            ch2 <= 0;
+                            ch1n <= 0; // just set zero!
+                            ch2n <= 0;
                             dec_sms_next <= 3'd3;
                         end
                         8:
                         begin
-                            ch1n <= rp_digital_in;
+                            ch1n <= {{(64-8){1'b0}}, rp_digital_in[7:0]}; // rp_digital_in; SET SHR to 0!!!
                             ch2n <= mk3_pixel_clock;
                             dec_sms_next <= 3'd3;
                         end
@@ -386,8 +397,8 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS1_tvalid)
                             begin
-                                ch1n <= ch1 + $signed(S_AXIS1_tdata[15:0]);
-                                ch2n <= ch2 + $signed(S_AXIS1_tdata[16+15:16+0]);
+                                ch1n <= ch1 + $signed(S_AXIS1_tdata[15:0]); // IN1
+                                ch2n <= ch2 + $signed(S_AXIS1_tdata[16+15:16+0]); // IN2
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
                         end
@@ -404,7 +415,7 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS1_tvalid && S_AXIS5_tvalid)
                             begin
-                                ch1n <= ch1 + $signed(S_AXIS1_tdata[15:0]);
+                                ch1n <= ch1 + $signed(S_AXIS1_tdata[15:0]); // IN1
                                 ch2n <= ch2 + $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
                             end
                             decimate_count_next <= decimate_count + 1; // next sample
@@ -413,7 +424,7 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS1_tvalid && S_AXIS4_tvalid)
                             begin
-                                ch1n <= ch1 + $signed(S_AXIS1_tdata[15:0]);
+                                ch1n <= ch1 + $signed(S_AXIS1_tdata[15:0]); // IN1
                                 ch2n <= ch2 + $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
                             end
                             decimate_count_next <= decimate_count + 1; // next sample
@@ -423,25 +434,41 @@ module axis_4s_combine #(
                             if (S_AXIS2_tvalid && S_AXIS3_tvalid)
                             begin
                                 ch1n <= ch1 + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]); // Amplitude (32) =>  64 sum
-                                ch2n <= ch2 + ($signed(S_AXIS3_tdata[SAXIS_3_DATA_WIDTH-1:0]) - $signed(axis3_center)); // Freq (48) - Lower (48) =>  64 sum
+                                ch2n <= ch2 + delta_freq; // Freq (48) - Lower (48) =>  64 sum
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
                         end
                         5:
                         begin
-                            if (S_AXIS7_tvalid && S_AXIS8_tvalid)
+                            if (S_AXIS5_tvalid && S_AXIS2_tvalid)
                             begin
-                                ch1n <= ch1 + $signed(S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]); // FIR Ampl
-                                ch2n <= ch2 + $signed(S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]); // FIR Phase
+                                ch1n <= ch1 + $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch2n <= ch2 + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // Amplitude Exec (32) =>  64 sum
+//                            if (S_AXIS7_tvalid && S_AXIS8_tvalid)
+//                                ch1n <= S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]; // AX7
+//                                ch2n <= S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]; // AX8
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
                         end
                         6:
                         begin
-                            ch1n <= ch1 + mk3_pixel_clock;
-                            ch2n <= ch2 + mk3_line_clock;
-                            decimate_count_next <= decimate_count + 1; // next sample
+                            if (S_AXIS4_tvalid && S_AXIS3_tvalid)
+                            begin
+                                ch1n <= ch1 +  $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
+                                ch2n <= ch2 + delta_freq; // Freq (48) - Center (48) =>  64 sum
+//                            if (S_AXIS7_tvalid && S_AXIS8_tvalid)
+//                            begin
+//                                ch1n <= ch1 + $signed(S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]); // AXIS7
+//                                ch2n <= ch2 + $signed(S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]); // AXIS8
+                                decimate_count_next <= decimate_count + 1; // next sample
+                            end
                         end
+  //                      6:
+  //                      begin
+  //                          ch1n <= ch1 + mk3_pixel_clock;
+  //                          ch2n <= ch2 + mk3_line_clock;
+  //                          decimate_count_next <= decimate_count + 1; // next sample
+  //                      end
                     endcase
     
                     if (decimate_count >= ndecimate && bramwr_sms_next == 0) // BRAM write cycle must be comleted

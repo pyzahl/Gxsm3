@@ -767,84 +767,6 @@ int rp_get_signals(float ***s, int *sig_num, int *sig_len)
 //WRITE
 //*((volatile uint32_t *) ( ((uint8_t*)map)+ offset )) = value;
 
-/*
-
-                       0: // S_AXIS1: 32: {16: ADC-IN1, 16: ADC-IN2 }
-                        begin
-                            if (S_AXIS1_tvalid)
-                            begin
-                                ch1n <= $signed(S_AXIS1_tdata[15:0]);          // IN1 (16bit data, 14bit ADC) => 32
-                                ch2n <= $signed(S_AXIS1_tdata[16+15:16+0]);    // IN2 (16bit data, 14bit ADC) => 32
-                                dec_sms_next <= 3'd3;
-                            end
-                        end
-                        1:
-                        begin
-                            if (S_AXIS4_tvalid && S_AXIS5_tvalid)
-                            begin
-                                ch1n <= $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
-                                ch2n <= $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
-                                dec_sms_next <= 3'd3;
-                            end
-                        end
-                        2:
-                        begin
-                            if (S_AXIS1_tvalid && S_AXIS5_tvalid)
-                            begin
-                                ch1n <= $signed(S_AXIS1_tdata[15:0]);                    // IN1 Signal with
-                                ch2n <= $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
-                                dec_sms_next <= 3'd3;
-                            end
-                        end
-                        3:
-                        begin
-                            if (S_AXIS1_tvalid && S_AXIS4_tvalid)
-                            begin
-                                ch1n <= $signed(S_AXIS1_tdata[15:0]);                    // IN1 Signal with
-                                ch2n <= $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
-                                dec_sms_next <= 3'd3;
-                            end
-                        end
-                        4:
-                        begin
-                            if (S_AXIS2_tvalid && S_AXIS3_tvalid)
-                            begin
-                                ch1n <= S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0];                 // Amplitude Exec (32) =>  64 sum
-                                ch2n <= (S_AXIS3_tdata[SAXIS_3_DATA_WIDTH-1:0] - axis3_lower); // Freq (48) - Lower (48) =>  64 sum
-                                dec_sms_next <= 3'd3;
-                            end
-                        end
-                        5:
-                        begin
-                            if (S_AXIS7_tvalid && S_AXIS8_tvalid)
-                            begin
-                                ch1n <= S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]; // FIR Ampl
-                                ch2n <= S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]; // FIR Phase
-                                dec_sms_next <= 3'd3;
-                            end
-                        end
-                        6:
-                        begin
-                            ch1n <= ch1 + mk3_pixel_clock; // keep counting!
-                            ch2n <= ch1 + mk3_line_clock;
-                            dec_sms_next <= 3'd3;
-                        end
-                        7:
-                        begin
-                            ch1 <= 0; // just set zero!
-                            ch2 <= 0;
-                            dec_sms_next <= 3'd3;
-                        end
-                        8:
-                        begin
-                            ch1n <= rp_digital_in;
-                            ch2n <= mk3_pixel_clock;
-                            dec_sms_next <= 3'd3;
-                        end
-                    endcase
-
- */
-
 
 
 void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
@@ -895,21 +817,28 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                 break;
         case 5:
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // AX7
-                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // AX8
-                        SIGNAL_CH1[k]  = (float)ix32;
-                        SIGNAL_CH2[k]  = (float)iy32;
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl Exec (32)
+                        SIGNAL_CH1[k]  = (float)ix32/QCORDICSQRT*1000.;
+                        SIGNAL_CH2[k]  = (float)iy32 / QEXEC * 1000.;
                 }
                 break;
         case 6:
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // pixel clock counter, keeps counting, reset via mode 7
-                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // line clock counter, ..."" "" ""
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Freq (48)-Lower(48)
+                        SIGNAL_CH1[k]  = (float)ix32/QCORDICATAN*180./M_PI;
+                        SIGNAL_CH2[k]  = (float)dds_phaseinc_to_freq ((double)iy32); // correct to 44
+                }
+                break;
+        default :
+                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // direct data
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // direct data
                         SIGNAL_CH1[k]  = (float)ix32;
                         SIGNAL_CH2[k]  = (float)iy32;
                 }
                 break;
-        default : break;
         }
 }
 
