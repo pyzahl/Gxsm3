@@ -561,6 +561,7 @@ to the community. The GXSM-Forums always welcome input.
 #include "config.h"
 #include "pyremote.h"
 #include "pyscript_templates.h"
+#include "pyscript_templates_script_libs.h"
 #include "gxsm/plugin.h"
 #include "gxsm/gnome-res.h"
 
@@ -732,6 +733,8 @@ public:
         char* run_command(const gchar *cmd, int mode);
         void append (const gchar *msg);
 
+        gchar *pre_parse_script (const gchar *script); // parse script for gxsm lib include statements
+
         static void open_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void open_action_script_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void save_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
@@ -748,8 +751,9 @@ public:
         static void clear_output(GtkToolButton *btn, gpointer user_data);
         // static gboolean check_func(PyObject *m, gchar *name, gchar *filename);
 
-        void run_action_script (const gchar *name){
-                gchar *output, *tmp_script;
+
+        gchar *get_gxsm_script (const gchar *name){
+                gchar *tmp_script = NULL;
                 gchar* path = g_strconcat (g_get_home_dir (), "/.gxsm3/pyaction", NULL);
                 gchar* tmp_script_filename = g_strconcat (path, "/", name, ".py", NULL);
                 g_free (path);
@@ -767,30 +771,34 @@ public:
                                 gapp->warning (message);
                                 g_free(message);
                         }
-                        gchar *tmp = g_strdup_printf ("%s #jobs[%d]+1", N_("\n>>> Executing action script: "), action_script_running);
-                        append (tmp);
-                        g_free (tmp);
-                        append (name);
-                        append (" => ");
-                        append (tmp_script_filename);
-                        // append (tmp_script);
-                        append ("\n");
-                        action_script_running++;
-                        output = run_command(tmp_script, Py_file_input);
-                        --action_script_running;
-                        g_free (tmp_script);
-                        append (output);
-                        append (N_("\n<<< Action script finished: "));
-                        append (name);
-                        append ("\n");
                 } else {
-                        gchar *message = g_strdup_printf("Action script %s not yet defined.\nPlease define action script using the python console.", tmp_script_filename);
+                        gchar *message = g_strdup_printf("Action script/library %s not yet defined.\nPlease define action script using the python console.", tmp_script_filename);
                         g_message (message);
                         append(message);
                         gapp->warning (message);
                         g_free(message);
                 }
                 g_free (tmp_script_filename);
+                return tmp_script;
+        };
+        
+        void run_action_script (const gchar *name){
+                gchar *tmp_script = get_gxsm_script (name);
+                if (tmp_script){
+                        gchar *tmp = g_strdup_printf ("%s #jobs[%d]+1", N_("\n>>> Executing action script: "), action_script_running);
+                        append (tmp);
+                        g_free (tmp);
+                        append (name);
+                        append ("\n");
+                        action_script_running++;
+                        gchar *output = run_command(tmp_script, Py_file_input);
+                        --action_script_running;
+                        g_free (tmp_script);
+                        append (output);
+                        append (N_("\n<<< Action script finished: "));
+                        append (name);
+                        append ("\n");
+                }
         };
         
         void set_script_filename (const gchar *name = NULL){
@@ -865,6 +873,41 @@ public:
                                                 example_file.open(script_filename);
                                                 example_file << "# Gxsm Python Script for Multi layer/time series Drawing Export " << script_filename << " was created.\n\n";
                                                 example_file << template_movie_drawing_export;
+                                                example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-lib-utils")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Script Library: " << script_filename << " was created.\n\n";
+                                                example_file << template_library_utils;
+                                                example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-lib-control")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Script Library: " << script_filename << " was created.\n\n";
+                                                example_file << template_library_control;
+                                                example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-lib-scan")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Script Library: " << script_filename << " was created.\n\n";
+                                                example_file << template_library_scan;
+                                                example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-lib-probe")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Script Library: " << script_filename << " was created.\n\n";
+                                                example_file << template_library_probe;
+                                                example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-lib-analysis")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Script Library: " << script_filename << " was created.\n\n";
+                                                example_file << template_library_analysis;
                                                 example_file.close();
                                         } else {
                                                 // make sample
@@ -2612,13 +2655,76 @@ void py_gxsm_console::append (const gchar *msg)
 
 }
 
+// simple parser to include script library.
+// As this seams not possible with embedded python via "use ..." as gxsm.Fucntions() are not availble in external libraries.
+// So this simple approach.
+gchar *py_gxsm_console::pre_parse_script (const gchar *script){
+        gchar *tmp;
+        gchar *parsed_script = g_strdup ("# parsed script\n");
+        gchar **lines = NULL;
+        gchar *to_parse = g_strdup (script);
+        int i=0;
+        do {
+                ++i;
+                if (lines) g_strfreev (lines);
+                lines = g_strsplit (to_parse, "\n", 2);
+                g_free (to_parse);
+                //g_print ("%05d: %s\n", i, lines[0]);
+
+                if (g_strrstr(lines[0], "#GXSM_USE_LIBRARY")){
+                        gchar *a = g_strrstr(lines[0], "<");
+                        gchar *b = g_strrstr(lines[0], ">");
+                        if (a && b){
+                                *b='\0';
+                                gchar *name=a+1;
+                                //g_print ("Including Library <%s>\n", name);
+                                gchar *lib_script = get_gxsm_script (name);
+                               
+                                tmp = g_strconcat (parsed_script, "\n",
+                                                   "### BEGIN GXSM LIBRARY SCRIPT <", name, ">\n\n",
+                                                   lib_script ? lib_script : "## PARSING ERROR: LIB-SCRIPT NOT FOUND", "\n",
+                                                   "### END GXSM LIBRARY SCRIPT <", name, ">\n\n",
+                                                   NULL);
+                                g_free (parsed_script);
+                                *b='>';
+                                parsed_script = tmp;
+                        } else {
+                                g_warning ("Pasing Error here: %s", lines[0]);
+                                gchar *message = g_strdup_printf("Action script/library parser syntax error at line %d:\n"
+                                                                 "%s\n"
+                                                                 "Gxsm Library script include example statement:\n"
+                                                                 "#GXSM_USE_LIBRARY <gxsm3-lib-utils>\n",
+                                                                 i,
+                                                                 lines[0]);
+                                g_message (message);
+                                append(message);
+                                gapp->warning (message);
+                                g_free(message);
+                        }
+                } else {
+                        tmp = g_strconcat (parsed_script, "\n", lines[0], NULL);
+                        g_free (parsed_script);
+                        parsed_script = tmp;
+                }
+                        
+                to_parse = g_strdup (lines[1]);
+        } while (lines[0] && lines[1]);
+
+        g_strfreev (lines);
+        g_free (to_parse);
+
+        //g_print (parsed_script);
+        
+        return parsed_script;
+}
+
 void py_gxsm_console::run_file(GtkToolButton *btn, gpointer user_data)
 {
 	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
 	GtkTextView *textview;
 	GtkTextBuffer *console_file_buf;
 	GtkTextIter start_iter, end_iter;
-	gchar *output, *script;
+	gchar *output, *script, *parsed_script;
 
 	textview = GTK_TEXT_VIEW(pygc->console_file_content);
 	console_file_buf = gtk_text_view_get_buffer(textview);
@@ -2633,7 +2739,11 @@ void py_gxsm_console::run_file(GtkToolButton *btn, gpointer user_data)
                 gtk_text_buffer_get_bounds(console_file_buf, &start_iter, &end_iter);
                 script = gtk_text_buffer_get_text(console_file_buf,
                                                   &start_iter, &end_iter, FALSE);
-                pygc->append (N_("\n>>> Executing script now.\n"));
+                parsed_script = pygc->pre_parse_script (script);
+                g_free (script);
+                script = parsed_script;
+                
+                pygc->append (N_("\n>>> Executing parsed script now.\n"));
                 pygc->user_script_running++;
                 output = pygc->run_command (script, Py_file_input);
                 --pygc->user_script_running;
