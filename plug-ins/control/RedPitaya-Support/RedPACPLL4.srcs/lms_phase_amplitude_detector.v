@@ -121,6 +121,7 @@ module lms_phase_amplitude_detector #(
     input wire [S_AXIS_SC_TDATA_WIDTH-1:0]  S_AXIS_SC_tdata,
     input wire                              S_AXIS_SC_tvalid,
     input signed [31:0] tau, // Q22
+    input signed [31:0] Atau, // Q22
     input signed [31:0] dc, // Q22
 
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
@@ -155,11 +156,17 @@ module lms_phase_amplitude_detector #(
     reg signed [LMS_DATA_WIDTH-1:0] m=0; // Q22 input signal: measured value
     reg signed [LMS_DATA_WIDTH-1:0] m1=0; // Q22 input signal: measured value
     reg signed [LMS_DATA_WIDTH-1:0] a=0;
+    reg signed [LMS_DATA_WIDTH-1:0] Aa=0;
     reg signed [LMS_DATA_WIDTH-1:0] b=0;
+    reg signed [LMS_DATA_WIDTH-1:0] Ab=0;
     reg signed [LMS_DATA_WIDTH-1:0] predict=0; 
+    reg signed [LMS_DATA_WIDTH-1:0] Apredict=0; 
     reg signed [LMS_DATA_WIDTH-1:0] predict1=0; 
+    reg signed [LMS_DATA_WIDTH-1:0] Apredict1=0; 
     reg signed [LMS_DATA_WIDTH-1:0] d_mu_e1=0; 
+    reg signed [LMS_DATA_WIDTH-1:0] Ad_mu_e1=0; 
     reg signed [LMS_DATA_WIDTH-1:0] d_mu_e2=0; 
+    reg signed [LMS_DATA_WIDTH-1:0] Ad_mu_e2=0; 
     reg [2*(LMS_DATA_WIDTH-1)+1-1:0] ampl2=0; 
     reg signed [LMS_DATA_WIDTH+2-1:0] x=0; 
     reg signed [LMS_DATA_WIDTH+2-1:0] y=0; 
@@ -196,6 +203,7 @@ module lms_phase_amplitude_detector #(
         // ###0
         // temp = s * a + c * b + 0x200000;  // Q22 * Q22 : Q44
         predict <= (s * a + c * b + 45'sh200000) >>> 22; // Q22
+        Apredict <= (s * Aa + c * Ab + 45'sh200000) >>> 22; // Q22
         
         // Compute d_mu_e    
         // ### 1
@@ -203,16 +211,19 @@ module lms_phase_amplitude_detector #(
         // temll = (errordet * Tau_pac + 0x200000  #// Q22 * Q22 : Q44 
         // temll = temll >> 22  #// Q22
         d_mu_e1 <= ((m1-predict1) * tau + 45'sh200000) >>> 22;
+        Ad_mu_e1 <= ((m1-Apredict1) * Atau + 45'sh200000) >>> 22;
         
         // Compute LMS
         // ### 2
         // temll = c * d_mu_e + 0x200000  #// Q22 * Q22 : Q44 
         // temll = temll >> 22 #// Q22
         b <= b + ((c2 * d_mu_e2 + 45'sh200000) >>> 22);
+        Ab <= Ab + ((c2 * Ad_mu_e2 + 45'sh200000) >>> 22);
         
         // temll = s * d_mu_e + 0x200000  #// Q22 * Q22 : Q44 
         // temll = temll >> 22  #// Q22
         a <= a + ((s2 * d_mu_e2 + 45'sh200000) >>> 22);
+        Aa <= Aa + ((s2 * Ad_mu_e2 + 45'sh200000) >>> 22);
         
         // Rot45
         // R2 = sqrt(2)
@@ -223,12 +234,16 @@ module lms_phase_amplitude_detector #(
         // amp = sqrt (a*a + b*b); // SQRT( Q44 )
         // ph  = atan ((a-b)/(a+b)); // Q22
 
-        ampl2 <= a*a + b*b; // 1Q44
+        // amplitude from 2nd A-PAC 
+        ampl2 <= Aa*Aa + Ab*Ab; // 1Q44
         y <= a-b;
         x <= a+b;
         
         predict1 <= predict;
+        Apredict1 <= Apredict;
         d_mu_e2 <= d_mu_e1;
+        Ad_mu_e2 <= Ad_mu_e1;
+        
         m1 <= m-dc;
         c1 <= c;
         c2 <= c1;

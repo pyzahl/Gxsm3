@@ -148,7 +148,8 @@ CDoubleParameter FREQUENCY_MANUAL("FREQUENCY_MANUAL", CBaseParameter::RW, 32766.
 CDoubleParameter FREQUENCY_CENTER("FREQUENCY_CENTER", CBaseParameter::RW, 32766.0, 0, 1, 25e6); // Hz -- used for BRam and AUX data to remove offset, and scale
 CDoubleParameter AUX_SCALE("AUX_SCALE", CBaseParameter::RW, 1.0, 0, -1e6, 1e6); // 1
 CDoubleParameter VOLUME_MANUAL("VOLUME_MANUAL", CBaseParameter::RW, 300.0, 0, 0.0, 1000.0); // mV
-CDoubleParameter PACTAU("PACTAU", CBaseParameter::RW, 200.0, 0, 0.0, 60e6); // us
+CDoubleParameter PACTAU("PACTAU", CBaseParameter::RW, 40.0, 0, 0.0, 60e6); // us
+CDoubleParameter PACATAU("PACATAU", CBaseParameter::RW, 30.0, 0, 0.0, 60e6); // us
 
 
 CDoubleParameter TUNE_SPAN("TUNE_SPAN", CBaseParameter::RW, 5.0, 0, 0.1, 1e6); // Hz
@@ -402,11 +403,13 @@ void rp_PAC_configure_loops (int phase_ctrl, int am_ctrl){
         set_gpio_cfgreg_int32 (PACPLL_CFG_CONTROL_LOOPS, (phase_ctrl ? 1:0) | (am_ctrl ? 2:0));
 }
 
-#define PACPLL_CFG_PACTAU 4
-// tau in s
-void rp_PAC_set_pactau (double tau){
+#define PACPLL_CFG_PACTAU   4
+#define PACPLL_CFG_PACATAU 27
+// tau in s for dual PAC
+void rp_PAC_set_pactau (double tau, double atau){
         if (verbose > 2) fprintf(stderr, "##Configure: tau= %g  Q22: %d\n", tau, (int)(Q22 * tau)); 
-        set_gpio_cfgreg_int32 (PACPLL_CFG_PACTAU, (int)(Q22/ADC_SAMPLING_RATE/tau)); // Q22 significant from top
+        set_gpio_cfgreg_int32 (PACPLL_CFG_PACTAU, (int)(Q22/ADC_SAMPLING_RATE/tau)); // Q22 significant from top - tau for phase
+        set_gpio_cfgreg_int32 (PACPLL_CFG_PACATAU, (int)(Q22/ADC_SAMPLING_RATE/atau)); // Q22 significant from top -- atau is tau for amplitude
 }
 
 #define PACPLL_CFG_DC_OFFSET 5
@@ -669,7 +672,7 @@ void set_PAC_config()
         if (OPERATION.Value() != 6)
                 rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value());
         rp_PAC_set_volume (VOLUME_MANUAL.Value() / 1000.); // mV -> V
-        rp_PAC_set_pactau (PACTAU.Value() * 1e-6); // us -> s
+        rp_PAC_set_pactau (PACTAU.Value() * 1e-6, PACATAU.Value() * 1e-6); // us -> s
 
         rp_PAC_set_amplitude_controller (
                                          AMPLITUDE_FB_SETPOINT.Value ()/1000., // mv to V
@@ -1098,6 +1101,7 @@ void OnNewParams(void)
         AUX_SCALE.Update ();
         VOLUME_MANUAL.Update ();
         PACTAU.Update ();
+        PACATAU.Update ();
         PHASE_CONTROLLER.Update ();
         AMPLITUDE_CONTROLLER.Update ();
 
