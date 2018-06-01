@@ -733,7 +733,7 @@ public:
         char* run_command(const gchar *cmd, int mode);
         void append (const gchar *msg);
 
-        gchar *pre_parse_script (const gchar *script); // parse script for gxsm lib include statements
+        gchar *pre_parse_script (const gchar *script, int *n_lines=NULL, int r=0); // parse script for gxsm lib include statements
 
         static void open_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void open_action_script_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
@@ -2658,12 +2658,30 @@ void py_gxsm_console::append (const gchar *msg)
 // simple parser to include script library.
 // As this seams not possible with embedded python via "use ..." as gxsm.Fucntions() are not availble in external libraries.
 // So this simple approach.
-gchar *py_gxsm_console::pre_parse_script (const gchar *script){
+gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int r){
         gchar *tmp;
-        gchar *parsed_script = g_strdup ("# parsed script\n");
+        gchar *parsed_script = g_strdup_printf ("### parsed script. Level: %d\n", r);
         gchar **lines = NULL;
         gchar *to_parse = g_strdup (script);
         int i=0;
+        int n=0;
+        if (n_lines)
+                n=*n_lines;
+                
+        // Max recursion = 10
+        if (r > 10){
+                gchar *message = g_strdup_printf("Pasing Error: Potential dead-loop of recursive inclusion detected:\n"
+                                                 "Include Level > 10.\n"
+                                                 );
+                g_warning (message);
+                append(message);
+                gapp->warning (message);
+                g_free(message);
+
+                g_free (parsed_script);
+                return to_parse;
+        }
+
         do {
                 ++i;
                 if (lines) g_strfreev (lines);
@@ -2679,15 +2697,43 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script){
                                 gchar *name=a+1;
                                 //g_print ("Including Library <%s>\n", name);
                                 gchar *lib_script = get_gxsm_script (name);
-                               
-                                tmp = g_strconcat (parsed_script, "\n",
-                                                   "### BEGIN GXSM LIBRARY SCRIPT <", name, ">\n\n",
-                                                   lib_script ? lib_script : "## PARSING ERROR: LIB-SCRIPT NOT FOUND", "\n",
-                                                   "### END GXSM LIBRARY SCRIPT <", name, ">\n\n",
-                                                   NULL);
-                                g_free (parsed_script);
-                                *b='>';
-                                parsed_script = tmp;
+                                if (lib_script){
+                                        int n_included=0;
+                                        gchar *rtmp = pre_parse_script (lib_script, &n_included, r+1); // recursively parse
+                                        g_free (lib_script);
+                                        n_included += 8; // incl. comments below
+                                        gchar *stat = g_strdup_printf ("Lines inlucded from <%s> at line %d: %d, Include Level: %d\n",
+                                                                       name, i, n_included, r+1);
+                                
+                                        tmp = g_strconcat (parsed_script, "\n\n",
+                                                           "### BEGIN GXSM LIBRARY SCRIPT <", name, ">\n\n",
+                                                           rtmp ? rtmp : "## PARSING ERROR: LIB-SCRIPT NOT FOUND", "\n",
+                                                           "### ", stat,
+                                                           "### END GXSM LIBRARY SCRIPT <", name, ">\n\n",
+                                                           NULL);
+                                        append (stat);
+                                        g_message (stat);
+
+                                        i += n_included;
+
+                                        g_free (stat);
+                                        g_free (parsed_script);
+                                        g_free (rtmp);
+                                        *b='>';
+                                        parsed_script = tmp;
+                                } else {
+                                        gchar *message = g_strdup_printf("Action script/library parser error at line %d:\n"
+                                                                         "%s\n"
+                                                                         "Include file <%s> not found.",
+                                                                         i,
+                                                                         lines[0],
+                                                                         name
+                                                                         );
+                                        g_message (message);
+                                        append(message);
+                                        gapp->warning (message);
+                                        g_free(message);
+                                }
                         } else {
                                 g_warning ("Pasing Error here: %s", lines[0]);
                                 gchar *message = g_strdup_printf("Action script/library parser syntax error at line %d:\n"
@@ -2713,7 +2759,11 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script){
         g_strfreev (lines);
         g_free (to_parse);
 
+        //g_print ("PARSED-SCRIPT\n");
         //g_print (parsed_script);
+
+        if (n_lines)
+                *n_lines = i;
         
         return parsed_script;
 }
@@ -2729,7 +2779,7 @@ void py_gxsm_console::run_file(GtkToolButton *btn, gpointer user_data)
 	textview = GTK_TEXT_VIEW(pygc->console_file_content);
 	console_file_buf = gtk_text_view_get_buffer(textview);
 
-        gchar *tmp = g_strdup_printf ("%s #jobs[%d]+1", N_("\n>>> Checking for user script execution... \n"), pygc->user_script_running);
+        gchar *tmp = g_strdup_printf ("%s #jobs[%d]+1\n", N_("\n>>> Checking for user script execution... \n"), pygc->user_script_running);
         pygc->append (tmp);
         g_free (tmp);
 
