@@ -27,6 +27,52 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
+const gchar *template_library_demo = R"V0G0N(
+# Gxsm Python Script Library Demo and Test
+
+# GXSM_USE_LIBRARY <gxsm3-lib-utils>
+
+# Gxsm control sctipting  test suit
+
+gxsm.set("RangeX","500")
+gxsm.set("PointsX","400")
+gxsm.startscan()
+gxsm.moveto_scan_xy (123, 234)
+
+
+tip = tip_control()
+tip.set_refpoint_current ()
+tip.goto_xy (100, 200,1)
+gxsm.sleep(1)
+tip.goto_refpoint()
+
+xylist = tip.make_grid_coords(20, 1, 30, 1, 2, [[0,0], [10,20]])
+
+#terminate = run_set (np.random.shuffle([2.0, 1.0, 0.5, 0.4, 0.2, 0.1, 0.05, -0.1, -0.2, -0.5, 1.0, 1.5, -1.0, -1.5, 2.0, -2.0, 2.5, 0.1, 0.1])
+#terminate = run_set (np.arange(0.1, 1.0, 0.1 ))
+
+#run_mosaic ([[0,0],[1100,0],[2200,0],[0,1100],[1100,1100],[2200,1100],[0,2200],[1100,2200],[2200,2200]],[-1100,-1100])
+#run_mosaic (make_coords (600,7), [-600*3,-600*3])
+
+#run_force_map(0.2,-2.6,0.02,-0.1,0.35, False)
+#gxsm.logev("ForceMap complete, starting ref scan, SS off.")
+#forall_rectangles_subscan ()
+
+#autoapproach_via_z0()
+
+#run_iv_setpointlist (xy1, len1, 0.2, [0.1, 0.2, 0.3], 0,0.05)
+#run_gvp_simple (xy1, len1, skip)
+
+#run_iv_simple (xy, len2, 0.4, 0.050, 51)
+#run_lm_simple (xy, len2, 0.05, 0.02, 10)
+
+#run_survey (xy, len2, 0.1, 0.01)
+
+#tip.release_Z ()	
+
+
+)V0G0N";
+
 const gchar *template_library_utils = R"V0G0N(
 # Gxsm Python Script Library Template
 # Generic Utilities
@@ -135,7 +181,7 @@ class tip_control():
 
 
         def goto_refpoint(self, sleep=40):
-                gxsm.moveto_scan_xy (self.s_x0, self.sy_0)
+                gxsm.moveto_scan_xy (self.s_x0, self.s_y0)
                 self.wait_scan_pos()
                 gxsm.sleep (sleep)
 
@@ -172,6 +218,40 @@ class tip_control():
                 gxsm.set ("dsp-fbs-mx0-current-set","%f"%(self.current))
                 gxsm.sleep (100) # sleep 100/10 sec
 
+	def make_grid_coords(self, spnx, steps, spny, stepx, positions=1, position=[[0,0]], shuffle=False):
+		sxlist = np.arange (-spnx, spnx+stepx, stepx)
+		sylist = np.arange (-spny, spny+stepy, stepy)
+
+		#position = [[-8.6,-8.1]             ]#, [20.0,80.0]]
+		#positions = 1
+
+		len1 = np.size(sxlist) * np.size(sylist)
+		len2 = np.size(sxlist) * np.size(sylist) * positions
+		xy = np.arange(2.0*len2).reshape(len2,2)
+		xy1 = np.arange(2.0*len1).reshape(len1,2)
+
+		i=0
+		for r in position:
+			i1=0
+			for y in sylist:
+				for x in sxlist:
+					xy[i][0] = x + r[0]
+					xy[i][1] = y + r[1]
+					xy1[i1][0] = x + r[0]
+					xy1[i1][1] = y + r[1]
+					i=i+1           
+					i1=i1+1
+		if shuffle:
+			np.random.shuffle(xy1)
+
+	return xy1
+
+	def make_coords(self, w, n):
+		c=[]
+		for i in range (0,n):
+			for j in range (0,n):
+				c.append ([i*w, j*w])
+		return c
 
 )V0G0N";
 
