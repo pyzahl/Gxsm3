@@ -1422,7 +1422,14 @@ void Inet_Json_External_Scandata::update_graph (){
                 for (int ch=0; ch<ch_last; ++ch){
                         int part_i0=0;
                         int part_pos=1;
-                        wave->set_stroke_rgba (BasicColors[color[ch]]);
+
+                        if (operation_mode == 6 && (ch == 0 || ch == 1))
+                                if (ch == 0)
+                                        wave->set_stroke_rgba (1.,0.,0.,0.5);
+                                else
+                                        wave->set_stroke_rgba (0.,1.,0.,0.5);
+                        else
+                                wave->set_stroke_rgba (BasicColors[color[ch]]);
                         min=max=signal[ch][512];
                         for (int k=0; k<n; ++k){
                                 s=signal[ch][k];
