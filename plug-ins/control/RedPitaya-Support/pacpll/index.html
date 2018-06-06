@@ -183,7 +183,13 @@
 		<div class="col-xs-12 option-content">
 		  <div class="panel_input_field" ;="" id="full_input">
 		    <p id="field_descr_text">PAC-Tau <span id='pactau_value'></span></p>
-		    <div class="input_entry_full" id="input_entry"><input id='pactau_set' type="range" step="1.0" size="2" value="200.0" min = "0.1" max = "10000"></div>
+		    <div class="input_entry_full" id="input_entry"><input id='pactau_set' type="number" step="1.0" size="2" value="50.0" min = "1" max = "100000"></div>
+		  </div>
+		</div>
+		<div class="col-xs-12 option-content">
+		  <div class="panel_input_field" ;="" id="full_input">
+		    <p id="field_descr_text">PAC-ATau <span id='pacatau_value'></span></p>
+		    <div class="input_entry_full" id="input_entry"><input id='pacatau_set' type="number" step="1.0" size="2" value="20.0" min = "1" max = "100000"></div>
 		  </div>
 		</div>
 		<div class="col-xs-12 option-content">
@@ -195,7 +201,7 @@
 		<div class="col-xs-12 option-content">
 		  <div class="panel_input_field" ;="" id="full_input">
 		    <p id="field_descr_text">Frequency Span <span id='frequency_span_value'></span> Hz</p>
-		    <div class="input_entry_full" id="input_entry"><input id='frequency_span_set' type="number" step="0.1" size="2" value="50.0" min = "0.0" max = "1e6.0"></div>
+		    <div class="input_entry_full" id="input_entry"><input id='frequency_span_set' type="number" step="0.1" size="2" value="50.0" min = "0.0" max = "8e6.0"></div>
 		  </div>
 		</div>
                 <div class="col-xs-12 option-content">
@@ -231,6 +237,7 @@
 		<div class="fpga_readings">Exec Amp Mon=<span id="exec_amp_mon"></span></div>
 		<div class="fpga_readings">DDS Freq Mon=<span id="dds_freq_mon"></span></div>
 		<div class="fpga_readings">DDS Volume Mon=<span id="dds_volume_mon"></span></div>
+		<div class="fpga_readings">Phase Mon=<span id="phase_mon"></span></div>
 	      </div>
 	      <hr/>
 	      <p>A9 Linux Box Status:</p>
@@ -259,9 +266,9 @@
 		      <option value="1">MEASURE DC_OFFSET</option>
 		      <option value="2">RUN SCOPE</option>
 		      <option value="3">INIT BRAM TRANSPORT</option>
-		      <option value="4">START BRAM TRANSPORT</option>
-		      <option value="5">READ BRAM</option>
-		      <option value="6">TUNE</option>
+		      <option value="4">SINGLE SHOT</option>
+		      <option value="5">START BRAM LOOP</option>
+		      <option value="6">RUN TUNE</option>
 		    </select>
 		  </div>
 		</div>
@@ -280,29 +287,25 @@
 		      <option value="2">2: IN1, AMPL (AC)</option>
 		      <option value="3">3: IN2, PHASE (AC)</option>
 		      <option value="4">4: Exec,Freq</option>
-		      <option value="5">5: FIR Ampl,Phase</option>
-		      <option value="6">6: RP DIGITAL IN 0,1 counts</option>
-		      <option value="7">7: RESET Counts</option>
-		      <option value="8">8: RESET</option>
+		      <option value="5">5: Ampl, Exec</option>
+		      <option value="6">6: Phase, Freq</option>
+		      <option value="7">7: 0,0</option>
+		      <option value="8">8: GPIO,pxclk</option>
 		    </select>
 		  </div>
 		</div>
 		<div class="col-xs-12 option-content">
 		  <div class="panel_input_field" ;="" id="full_input">
 		    <p id="field_descr_text">GainS1 <span id='gain1_value'></span></p>
-		    <div class="input_entry_full" id="input_entry"><input id='gain1_set' type="range" size="2" value="100" min = "1" max = "10000"></div>
-		    <p id="field_descr_text">SHR-S1 <span id='shr_ch1_value'></span></p>
-		    <div class="input_entry_full" id="input_entry"><input id='shr_ch1_set' type="range" size="2" value="4" min = "0" max = "64"></div>
+		    <div class="input_entry_full" id="input_entry"><input id='gain1_set' type="range" size="2" value="1" min = "1" max = "10000"></div>
+		    <p id="field_descr_text">SHR-DEC <span id='shr_dec_value'></span></p>
+		    <div class="input_entry_full" id="input_entry"><input id='shr_dec_set' type="range" size="2" value="4" min = "0" max = "64"></div>
 		  </div>
 		</div>
 		<div class="col-xs-12 option-content">
 		  <div class="panel_input_field" ;="" id="full_input">
 		    <p id="field_descr_text">GainS2 <span id='gain2_value'></span></p>
-		    <div class="input_entry_full" id="input_entry"><input id='gain2_set' type="range" size="2" value="100" min = "1" max = "10000"></div>
-		    <p id="field_descr_text">SHR-S2 <span id='shr_ch2_value'></span></p>
-		    <div class="input_entry_full" id="input_entry"><input id='shr_ch2_set' type="range" size="2" value="4" min = "0" max = "64"></div>
-		    <p id="field_descr_text">SHR-S34 <span id='shr_ch34_value'></span></p>
-		    <div class="input_entry_full" id="input_entry"><input id='shr_ch34_set' type="range" size="2" value="4" min = "0" max = "64"></div>
+		    <div class="input_entry_full" id="input_entry"><input id='gain2_set' type="range" size="2" value="1" min = "1" max = "10000"></div>
 		  </div>
 		</div>
 		<div class="col-xs-12 option-content">
@@ -313,22 +316,23 @@
 		      <option value="1">LMS Phase from A,B</option>
 		      <option value="2">LMS A</option>
 		      <option value="3">LMS B</option>
-		      <option value="4">FPGA CORDIC Amplitude Monitor</option>
-		      <option value="5">FPGA CORDIC Phase Monitor</option>
-		      <option value="6">FIR passed CORDIC Amplitude Monitor</option>
-		      <option value="7">FIR passed CORDIC Phase Monitor</option>
-		      <option value="8">LMS X</option>
-		      <option value="9">LMS Y</option>
-		      <option value="10">LMS M (LMS Input Signal)</option>
-		      <option value="11">LMS M1 (LMS Input Signal-DC)</option>
-		      <option value="12">Phase from X,Y</option>
+		      <option value="4">SQRT Amplitude Monitor</option>
+		      <option value="5">ATAN Phase Monitor</option>
+		      <option value="6">X5</option>
+		      <option value="7">X6</option>
+		      <option value="8">Exec Amplitude</option>
+		      <option value="9">DDS Freq Monitor</option>
+		      <option value="10">X3 M (LMS Input)</option>
+		      <option value="11">X5 M1 (LMS Input Signal-DC)</option>
+		      <option value="12">X11 WBRAM WP</option>
+		      <option value="13">X12 WBRAM DEC</option>
 		    </select>
 		  </div>
 		</div>
 		<div class="col-xs-12 option-content">
 		  <div class="panel_input_field" ;="" id="full_input">
 		    <p id="field_descr_text">Gain CH3 <span id='gain3_value'></span></p>
-		    <div class="input_entry_full" id="input_entry"><input id='gain3_set' type="range" size="2" value="1000" min = "1" max = "10000"></div>
+		    <div class="input_entry_full" id="input_entry"><input id='gain3_set' type="range" size="2" value="1" min = "1" max = "10000"></div>
 		  </div>
 		</div>
 		<div class="col-xs-12 option-content">
@@ -339,22 +343,23 @@
 		      <option selected value="1">LMS Phase from A,B</option>
 		      <option value="2">LMS A</option>
 		      <option value="3">LMS B</option>
-		      <option value="4">FPGA CORDIC Amplitude Monitor</option>
-		      <option value="5">FPGA CORDIC Phase Monitor</option>
-		      <option value="6">FIR passed CORDIC Amplitude Monitor</option>
-		      <option value="7">FIR passed CORDIC Phase Monitor</option>
-		      <option value="8">LMS X</option>
-		      <option value="9">LMS Y</option>
-		      <option value="10">LMS M (LMS Input Signal)</option>
-		      <option value="11">LMS M1 (LMS Input Signal-DC)</option>
-		      <option value="12">Phase from X,Y</option>
+		      <option value="4">SQRT Amplitude Monitor</option>
+		      <option value="5">ATAN Phase Monitor</option>
+		      <option value="6">X5</option>
+		      <option value="7">X6</option>
+		      <option value="8">Exec Amplitude</option>
+		      <option value="9">DDS Freq Monitor</option>
+		      <option value="10">X3 M (LMS Input)</option>
+		      <option value="11">X5 M1 (LMS Input Signal-DC)</option>
+		      <option value="12">X11 WBRAM WP</option>
+		      <option value="13">X12 WBRAM DEC</option>
 		    </select>
 		  </div>
 		</div>
 		<div class="col-xs-12 option-content">
 		  <div class="panel_input_field" ;="" id="full_input">
 		    <p id="field_descr_text">Gain CH4 <span id='gain4_value'></span></p>
-		    <div class="input_entry_full" id="input_entry"><input id='gain4_set' type="range" size="2" value="100" min = "1" max = "10000"></div>
+		    <div class="input_entry_full" id="input_entry"><input id='gain4_set' type="range" size="2" value="1" min = "1" max = "10000"></div>
 		  </div>
 		</div>
 		<div class="col-xs-12 option-content">
@@ -365,22 +370,23 @@
 		      <option value="1">LMS Phase from A,B</option>
 		      <option value="2">LMS A</option>
 		      <option value="3">LMS B</option>
-		      <option value="4">FPGA CORDIC Amplitude Monitor</option>
-		      <option selected value="5">FPGA CORDIC Phase Monitor</option>
-		      <option value="6">FIR passed CORDIC Amplitude Monitor</option>
-		      <option value="7">FIR passed CORDIC Phase Monitor</option>
-		      <option value="8">LMS X</option>
-		      <option value="9">LMS Y</option>
-		      <option value="10">LMS M (LMS Input Signal)</option>
-		      <option value="11">LMS M1 (LMS Input Signal-DC)</option>
-		      <option value="12">Phase from X,Y</option>
+		      <option value="4">SQRT Amplitude Monitor</option>
+		      <option selected value="5">ATAN Phase Monitor</option>
+		      <option value="6">X5</option>
+		      <option value="7">X6</option>
+		      <option value="8">Exec Amplitude</option>
+		      <option value="9">DDS Freq Monitor</option>
+		      <option value="10">X3 M (LMS Input)</option>
+		      <option value="11">X5 M1 (LMS Input Signal-DC)</option>
+		      <option value="12">X11 WBRAM WP</option>
+		      <option value="13">X12 WBRAM DEC</option>
 		    </select>
 		  </div>
 		</div>
 		<div class="col-xs-12 option-content">
 		  <div class="panel_input_field" ;="" id="full_input">
 		    <p id="field_descr_text">Gain CH5 <span id='gain5_value'></span></p>
-		    <div class="input_entry_full" id="input_entry"><input id='gain5_set' type="range" size="2" value="100" min = "1" max = "10000"></div>
+		    <div class="input_entry_full" id="input_entry"><input id='gain5_set' type="range" size="2" value="1" min = "1" max = "10000"></div>
 		  </div>
 		</div>
 	      </div>
