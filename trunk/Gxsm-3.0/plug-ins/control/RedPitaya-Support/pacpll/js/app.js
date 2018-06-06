@@ -31,8 +31,10 @@
     };
     
     // Parameters
-    APP.pactau = 200.0; // us
+    APP.pactau = 50.0; // us
+    APP.pacatau = 20.0; // us
     APP.frequency = 30755.0; //32766.0;
+    APP.aux_scale = 0.0116; // 20Hz/V fixed for this app
     APP.volume = 200.0; // mV
     APP.operation = 0;
     APP.TransportDecimation = 16;
@@ -42,14 +44,12 @@
     APP.TransportCh5 = 5;
     
     APP.pacverbose = 0;
-    APP.gain1 = 100;
-    APP.gain2 = 100;
-    APP.gain3 = 1000;
-    APP.gain4 = 100;
-    APP.gain5 = 100;
-    APP.shr_ch1 = 4;
-    APP.shr_ch2 = 4;
-    APP.shr_ch34 = 0;
+    APP.gain1 = 1;
+    APP.gain2 = 1;
+    APP.gain3 = 1;
+    APP.gain4 = 1;
+    APP.gain5 = 1;
+    APP.shr_dec = 4;
 
     APP.tune_timer = null;
     APP.tune_f   =  0.0;
@@ -136,6 +136,7 @@
                 // Set initial parameters
 		// NOTE: server is crashing/aborting if any paramert is out of range, JSON names do not match, invaling vars assigned, invalid HTML id's, etc. etc.!!!
                 APP.setPactau();
+                APP.setPacAtau();
                 APP.setFrequency();
                 APP.setVolume();
                 APP.setOperation();
@@ -151,8 +152,7 @@
                 APP.setGain3();
                 APP.setGain4();
                 APP.setGain5();
-		APP.setShrCh1();
-		APP.setShrCh2();
+		APP.setShrDec();
 
 		console.log('WS open, send init params done.');
             };
@@ -280,6 +280,7 @@
         $('#exec_amp_mon').text(parseFloat (1.0*APP.params.orig['EXEC_MONITOR'].value).toFixed(4) + "mV");
         $('#dds_freq_mon').text(parseFloat (1.0*APP.params.orig['DDS_FREQ_MONITOR'].value).toFixed(4) + "Hz");
         $('#dds_volume_mon').text(parseFloat (1.0*APP.params.orig['VOLUME_MONITOR'].value).toFixed(4) + "mV");
+        $('#phase_mon').text(parseFloat (1.0*APP.params.orig['PHASE_MONITOR'].value).toFixed(4) + "deg");
         $('#info_cpu').text(floatToLocalString(shortenFloat(APP.params.orig['CPU_LOAD'].value)));
         $('#info_ram').text(floatToLocalString(shortenFloat(APP.params.orig['FREE_RAM'].value/(1024*1024))));
         $('#info_counter').text(APP.params.orig['COUNTER'].value);
@@ -289,7 +290,8 @@
 
     APP.loadParams = function() {
         APP.params.local = {};
-        APP.params.local['PERIOD'] = { value: 100 }; //RO
+        APP.params.local['PARAMETER_PERIOD'] = { value: 200 }; //RO
+        APP.params.local['SIGNAL_PERIOD'] = { value: 200 }; //RO
         APP.ws.send(JSON.stringify({ parameters: APP.params.local }));
         APP.params.local = {};
     };
@@ -307,15 +309,15 @@
 
     };
 
-    APP.setShrCh1 = function() {
+    APP.setShrDec = function() {
 
-        APP.shr_ch1 = $('#shr_ch1_set').val();
+        APP.shr_dec = $('#shr_dec_set').val();
 
         var local = {};
-        local['SHR_CH1'] = { value: APP.shr_ch1 };
+        local['SHR_DEC_DATA'] = { value: APP.shr_dec };
         APP.ws.send(JSON.stringify({ parameters: local }));
 
-        $('#shr_ch1_value').text(APP.shr_ch1);
+        $('#shr_dec_value').text(APP.shr_dec);
 
     };
 
@@ -332,29 +334,6 @@
 
     };
     
-    APP.setShrCh2 = function() {
-
-        APP.shr_ch2 = $('#shr_ch2_set').val();
-
-        var local = {};
-        local['SHR_CH2'] = { value: APP.shr_ch2 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#shr_ch2_value').text(APP.shr_ch2);
-
-    };
-
-    APP.setShrCh34 = function() {
-
-        APP.shr_ch34 = $('#shr_ch34_set').val();
-
-        var local = {};
-        local['SHR_CH34'] = { value: APP.shr_ch34 };
-        APP.ws.send(JSON.stringify({ parameters: local }));
-
-        $('#shr_ch34_value').text(APP.shr_ch34);
-
-    };
 
     //Set gain
     APP.setGain3 = function() {
@@ -408,6 +387,19 @@
 
     };
 
+    // Set pacatau
+    APP.setPacAtau = function() {
+
+        APP.apactau = $('#pacatau_set').val();
+
+        var local = {};
+        local['PACATAU'] = { value: APP.pacatau };
+        APP.ws.send(JSON.stringify({ parameters: local }));
+
+        $('#pacatau_value').text(APP.pacatau);
+
+    };
+
     // Set frequency
     APP.setFrequency = function() {
 
@@ -415,6 +407,14 @@
 
         var local = {};
         local['FREQUENCY_MANUAL'] = { value: APP.frequency };
+        APP.ws.send(JSON.stringify({ parameters: local }));
+
+	// use same
+        local['FREQUENCY_CENTER'] = { value: APP.frequency };
+        APP.ws.send(JSON.stringify({ parameters: local }));
+
+	// set aux scale
+        local['AUX_SCALE'] = { value: APP.aux_scale };
         APP.ws.send(JSON.stringify({ parameters: local }));
 
         $('#frequency_value').text(APP.frequency);
@@ -906,8 +906,8 @@ $(function() {
             shadowSize: 0, // Drawing is faster without shadows
         },
         yaxis: {
-            min: -120,
-            max: 120
+            min: -1000,
+            max: 1000
         },
         xaxis: {
             min: 0,
@@ -984,9 +984,9 @@ $(function() {
         APP.setGain1(); 
     });
 
-    $("#shr_ch1_set").on("change input", function() {
+    $("#shr_dec_set").on("change input", function() {
 
-	APP.setShrCh1();
+	APP.setShrDec();
     });
 
     
@@ -996,16 +996,6 @@ $(function() {
         APP.setGain2(); 
     });
     
-    $("#shr_ch2_set").on("change input", function() {
-
-	APP.setShrCh2();
-    });
-
-    $("#shr_ch34_set").on("change input", function() {
-
-	APP.setShrCh34();
-    });
-
     // Input change
     $("#gain3_set").on("change input", function() {
 
@@ -1028,6 +1018,12 @@ $(function() {
     $("#pactau_set").on("change input", function() {
 
         APP.setPactau(); 
+    });
+
+    // Input change
+    $("#pacatau_set").on("change input", function() {
+
+        APP.setPacAtau(); 
     });
 
     // Input change
