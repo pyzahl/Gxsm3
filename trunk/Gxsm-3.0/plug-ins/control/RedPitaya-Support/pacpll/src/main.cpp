@@ -942,7 +942,7 @@ void UpdateSignals(void)
 
                 if (f < TUNE_SPAN.Value ()/2 && dir == 1)
                         f += TUNE_DFREQ.Value ();
-                if (f > TUNE_SPAN.Value ()/2 && dir == 1){
+                else if (dir == 1){
                         dir = -1;
                         CENTER_FREQUENCY.Value () = tune_fcenter;
                         CENTER_PHASE.Value () = tune_phase;
@@ -951,7 +951,7 @@ void UpdateSignals(void)
                 }
                 if (f > -TUNE_SPAN.Value ()/2 && dir == -1)
                         f -= TUNE_DFREQ.Value ();
-                if (f < -TUNE_SPAN.Value ()/2 && dir == -1){
+                else if (dir == -1){
                         dir = 1;
                         CENTER_FREQUENCY.Value () = tune_fcenter;
                         CENTER_PHASE.Value () = tune_phase;
