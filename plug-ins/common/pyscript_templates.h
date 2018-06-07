@@ -27,6 +27,29 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
+const gchar *template_demo_script = R"V0G0N(
+###########################################################################
+# Python Gxsm3 remote example script using library gxsm3-lib-scan.
+# Before the works you must have the libraries Utils and Scan in place in ~/.gxsm3/pyaction/, for that:
+# Please visit via the remote console Menu->Libraries->Lib Utils and Lib Scan, and save each.
+# From then on those files are under your control. 
+# If you update or want to make sure to get the latest provided version simply delete those files.
+# Then come back here and try out this script!
+
+# 1. Import gxsm3-lib-scan.py from ~/.gxsm3/pyaction/, this also includes gxsm3-lib-utils.py and commonly used python libs for you!
+
+#GXSM_USE_LIBRARY <gxsm3-lib-scan>
+
+# 2. create your scan base object:
+
+scan = scan_control()
+
+# 3. use it! Here simply it executes a scan for every bias voltage given in the list:
+
+scan.run_set ([-0.6, -0.4, -0.3])
+
+)V0G0N";
+
 const gchar *template_help = R"V0G0N(
 ############################################################################
 #

@@ -600,9 +600,7 @@ to the community. The GXSM-Forums always welcome input.
 #include "gxsm_app.h"
 #include "gxsm/app_view.h"
 
-#include "gxsm3-script.h"
-
-      // Fill in the GxsmPlugin Description here
+ // Fill in the GxsmPlugin Description here
 GxsmPlugin pyremote_pi = {
 	  NULL,                   // filled in and used by Gxsm, don't touch !
 	  NULL,                   // filled in and used by Gxsm, don't touch !
@@ -823,7 +821,7 @@ public:
                                                 example_file.open(script_filename);
                                                 example_file << "# Example python gxsm3 script file " << script_filename << " was created.\n"
                                                         "# this is the gxsm developer test and work script - see the Gxsm3 manual for more information\n";
-                                                example_file.write ((const char*)remote_gxsm3_py, remote_gxsm3_py_len);
+                                                example_file << template_demo_script;
                                                 example_file.close();
                                         } else if (strstr (script_filename, "gxsm3-help")){
                                                 // make sample
@@ -3254,10 +3252,16 @@ void  py_gxsm_console::write_example_file(void)
 	example_file << "\n#Since no default file / script was found, here are some\n"
 		"# things you can do with the python interface.\n\n"
                 "# Please visit/install gxsm3-lib-utils.py, ... before executing this:\n"
-                "# Simply visit Menu/Libraries/Lib Utils first.\n\n"
-                "#GXSM_USE_LIBRARY <gxsm3-lib-utils>\n\n"
+                "# Simply visit Menu/Libraries/Lib Utils first.\n"
+                "\n"
+                "#GXSM_USE_LIBRARY <gxsm3-lib-scan>\n"
+                "\n"
 		"# You can also create the more extensive default/example tools collection: File->Use default.\n"
 		"# - see the manual for more information\n"
+                "# Load scan support object from library\n"
+                "\n"
+                "scan = scan_control()\n"
+                "\n"
 		"# Execute to try these\n"
 		"c = gxsm.get(\"script-control\")\n"
 		"print \"Control value: \", c\n"
@@ -3278,7 +3282,11 @@ void  py_gxsm_console::write_example_file(void)
 		"    gxsm.set (\"OffsetY\", \"0\")\n"
 		"#    gxsm.action (\"DSP_CMD_AUTOAPP\")\n"
 		"    gxsm.sleep (10)\n"
+                "\n"
 		"    #gxsm.startscan ()\n"
+                "\n"
+                "    scan.run_set ([-0.6, -0.4, -0.3])  # simply executes a scan for every bias voltage given in the list.\n"
+                "\n"
 	        "    gxsm.moveto_scan_xy (100.,50.)\n";
 	example_file.close();
 }
