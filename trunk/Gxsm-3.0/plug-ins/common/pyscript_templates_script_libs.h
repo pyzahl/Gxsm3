@@ -244,7 +244,7 @@ class tip_control():
 		if shuffle:
 			np.random.shuffle(xy1)
 
-		return xy1
+		 return xy1
 
 	def make_coords(self, w, n):
 		c=[]
