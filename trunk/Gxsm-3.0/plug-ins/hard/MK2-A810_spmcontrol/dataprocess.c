@@ -511,6 +511,11 @@ interrupt void dataprocess()
 // FEEDBACK OUT -- calculate Z-Scan output:
 
 	d_tmp = _lssub (feedback.z32neg, probe.Zpos);
+	//#define INTERNAL_Z_SLOPE_ADD
+#ifdef INTERNAL_Z_SLOPE_ADD
+	// internal slope adding -- experimental for Yoichi
+	d_tmp = _lsadd (d_tmp, s_xymult_prev); // add this line here to add z-slope
+#endif
 	HR_OUT (5, d_tmp);
 
 	sigma_delta_index = (++sigma_delta_index) & 7;
