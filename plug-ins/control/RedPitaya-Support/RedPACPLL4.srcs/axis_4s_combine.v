@@ -101,10 +101,10 @@ module axis_4s_combine #(
     // input wire [SAXIS_6_TDATA_WIDTH-1:0]  S_AXIS6_tdata,
     // input wire                          S_AXIS6_tvalid,
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
-    input wire [SAXIS_78_TDATA_WIDTH-1:0]  S_AXIS7_tdata, // FIR Ampl
+    input wire [SAXIS_78_TDATA_WIDTH-1:0]  S_AXIS7_tdata, // M-MDC
     input wire                          S_AXIS7_tvalid,
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
-    input wire [SAXIS_78_TDATA_WIDTH-1:0]  S_AXIS8_tdata, // FIR Phase
+    input wire [SAXIS_78_TDATA_WIDTH-1:0]  S_AXIS8_tdata, // ---
     input wire                          S_AXIS8_tvalid,
     input wire signed [SAXIS_3_DATA_WIDTH-1:0] axis3_center,  
     input wire [8-1:0]   rp_digital_in,
@@ -378,9 +378,12 @@ module axis_4s_combine #(
                         end
                         7:
                         begin
-                            ch1n <= 0; // just set zero!
-                            ch2n <= 0;
-                            dec_sms_next <= 3'd3;
+                            if (S_AXIS7_tvalid && S_AXIS5_tvalid)
+                            begin
+                                ch1n <= $signed(S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]); // M-MDC (32)
+                                ch2n <= $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                dec_sms_next <= 3'd3;
+                            end
                         end
                         8:
                         begin
@@ -444,9 +447,6 @@ module axis_4s_combine #(
                             begin
                                 ch1n <= ch1 + $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
                                 ch2n <= ch2 + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // Amplitude Exec (32) =>  64 sum
-//                            if (S_AXIS7_tvalid && S_AXIS8_tvalid)
-//                                ch1n <= S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]; // AX7
-//                                ch2n <= S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]; // AX8
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
                         end
@@ -456,19 +456,22 @@ module axis_4s_combine #(
                             begin
                                 ch1n <= ch1 +  $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
                                 ch2n <= ch2 + delta_freq; // Freq (48) - Center (48) =>  64 sum
-//                            if (S_AXIS7_tvalid && S_AXIS8_tvalid)
-//                            begin
-//                                ch1n <= ch1 + $signed(S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]); // AXIS7
-//                                ch2n <= ch2 + $signed(S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]); // AXIS8
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
                         end
-  //                      6:
-  //                      begin
-  //                          ch1n <= ch1 + mk3_pixel_clock;
-  //                          ch2n <= ch2 + mk3_line_clock;
-  //                          decimate_count_next <= decimate_count + 1; // next sample
-  //                      end
+                        7:
+                        begin
+                            if (S_AXIS7_tvalid && S_AXIS5_tvalid)
+                            begin
+                                ch1n <= ch1 + $signed(S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]); // M-MDC (32)
+                                ch2n <= ch2 + $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                decimate_count_next <= decimate_count + 1; // next sample
+                            end
+                        end
+                        8:
+                        begin
+                            decimate_count_next <= decimate_count + 1; // next sample
+                        end
                     endcase
     
                     if (decimate_count >= ndecimate && bramwr_sms_next == 0) // BRAM write cycle must be comleted

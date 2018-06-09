@@ -109,7 +109,10 @@ module lms_phase_amplitude_detector #(
     parameter LMS_DATA_WIDTH = 26,
     parameter LMS_Q_WIDTH = 22, // do not change
     parameter M_AXIS_XY_TDATA_WIDTH = 64,
-    parameter M_AXIS_AM_TDATA_WIDTH = 48
+    parameter M_AXIS_AM_TDATA_WIDTH = 48,
+    parameter MDC_TIME_CONST_N = 20, // x' = [x*(1<<(N-1))+X]>>N
+    parameter MDC_DATA_WIDTH = LMS_Q_WIDTH+MDC_TIME_CONST_N+2,
+    parameter M_AXIS_MDC_TDATA_WIDTH = 32
 )
 (
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
@@ -140,6 +143,10 @@ module lms_phase_amplitude_detector #(
     output wire [M_AXIS_AM_TDATA_WIDTH-1:0] M_AXIS_AM2_tdata, // dbg
     output wire                             M_AXIS_AM2_tvalid,
     
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [M_AXIS_MDC_TDATA_WIDTH-1:0] M_AXIS_MDC_tdata, // M - DC
+    output wire                              M_AXIS_MDC_tvalid,
+    
     output wire [31:0] dbg1,
     output wire [31:0] dbg2,
     output wire [31:0] dbg3,
@@ -155,6 +162,9 @@ module lms_phase_amplitude_detector #(
     reg signed [LMS_DATA_WIDTH-1:0] c2=0; // Q22
     reg signed [LMS_DATA_WIDTH-1:0] m=0; // Q22 input signal: measured value
     reg signed [LMS_DATA_WIDTH-1:0] m1=0; // Q22 input signal: measured value
+    //    reg signed [MDC_DATA_WIDTH-1:0] mdc1=0; // DC IIR low pass
+    reg signed [LMS_DATA_WIDTH-1:0] mdc=0; // DC IIR low pass
+    reg signed [LMS_DATA_WIDTH-1:0] mdc1=0; // DC IIR low pass
     reg signed [LMS_DATA_WIDTH-1:0] a=0;
     reg signed [LMS_DATA_WIDTH-1:0] Aa=0;
     reg signed [LMS_DATA_WIDTH-1:0] b=0;
@@ -190,6 +200,13 @@ module lms_phase_amplitude_detector #(
                   {(LMS_DATA_WIDTH-(LMS_DATA_WIDTH-LMS_Q_WIDTH-1)-S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH){1'b0}} // fill 0
                  };
         end
+        
+        //  IIR DC filter
+        //mdc  <= (mdc1 * $signed(((1<<MDC_TIME_CONST_N)-1)) + m ) >>> MDC_TIME_CONST_N;
+        mdc  <= (mdc1 * 21'sh0fffff + m ) >>> 20;
+        //mdc  <= (mdc1 * 21'sh03ffff + m ) >>> 18;
+        mdc1 <= mdc;
+        
         if (S_AXIS_SC_tvalid)
             begin
             s <= {{(LMS_DATA_WIDTH-LMS_Q_WIDTH-1){ S_AXIS_SC_tdata[S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-1]}}, S_AXIS_SC_tdata[S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-1 : S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-LMS_Q_WIDTH-1]};
@@ -244,7 +261,8 @@ module lms_phase_amplitude_detector #(
         d_mu_e2 <= d_mu_e1;
         Ad_mu_e2 <= Ad_mu_e1;
         
-        m1 <= m-dc;
+    //        m1 <= m-dc;
+        m1 <= m-mdc1;
         c1 <= c;
         c2 <= c1;
         s1 <= s;
@@ -262,13 +280,16 @@ module lms_phase_amplitude_detector #(
     assign M_AXIS_AM2_tdata  = { {(M_AXIS_AM_TDATA_WIDTH-2*(LMS_DATA_WIDTH-1)){1'b0}}, ampl2[2*(LMS_DATA_WIDTH-1):0] }; 
     assign M_AXIS_AM2_tvalid = 1'b1;
     
+    assign M_AXIS_MDC_tdata  = { {(M_AXIS_MDC_TDATA_WIDTH-LMS_DATA_WIDTH){m1[LMS_DATA_WIDTH-1]}}, m1}; 
+    assign M_AXIS_MDC_tvalid = 1'b1;
+    
     //assign M_AXIS_XX_tdata  = { {(2){predict1[LMS_DATA_WIDTH-1]}},predict1[LMS_DATA_WIDTH-1:LMS_DATA_WIDTH-14], {(2){m[LMS_DATA_WIDTH-1]}},m[LMS_DATA_WIDTH-1-8:LMS_DATA_WIDTH-14-8]}; 
     //assign M_AXIS_XX_tvalid = 1'b1;
 
     assign Aout = {{(32-LMS_DATA_WIDTH){a[LMS_DATA_WIDTH-1]}}, a}; // a
     assign Bout = {{(32-LMS_DATA_WIDTH){b[LMS_DATA_WIDTH-1]}}, b}; // b
     assign dbg1 = {{(32-LMS_DATA_WIDTH){m[LMS_DATA_WIDTH-1]}}, m}; // m
-    assign dbg2 = {{(32-LMS_DATA_WIDTH){m[LMS_DATA_WIDTH-1]}}, m1}; // m1
+    assign dbg2 = {{(32-LMS_DATA_WIDTH){m[LMS_DATA_WIDTH-1]}}, mdc}; // m1
     assign dbg3 = {{(32-LMS_DATA_WIDTH-2){x[LMS_DATA_WIDTH+2-1]}}, x}; // x
     assign dbg4 = {{(32-LMS_DATA_WIDTH-2){y[LMS_DATA_WIDTH+2-1]}}, y}; // y
 

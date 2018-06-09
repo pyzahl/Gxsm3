@@ -557,7 +557,7 @@ void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, in
  * reading_vector[3] := LMS B
  * reading_vector[4] := FPGA CORDIC Amplitude Monitor
  * reading_vector[5] := FPGA CORDIC Phase Monitor
- * reading_vector[6] := x5
+ * reading_vector[6] := x5 M-DCiir
  * reading_vector[7] := x6
  * reading_vector[8] := x7 Exec Amp Mon
  * reading_vector[9] := DDS Freq
@@ -794,7 +794,7 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                         SIGNAL_CH2[k] = (float)iy32/QCORDICSQRT*1000.;
                 }
                 break;
-        case 2: // IN1, ADDR
+        case 2:
                 for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
@@ -832,6 +832,14 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Freq (48)-Lower(48)
                         SIGNAL_CH1[k]  = (float)ix32/QCORDICATAN*180./M_PI;
                         SIGNAL_CH2[k]  = (float)dds_phaseinc_to_freq ((double)iy32); // correct to 44
+                }
+                break;
+        case 7:
+                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // M-DC_iir (32)
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
+                        SIGNAL_CH1[k] = (float)ix32/QLMS*1000.; // mV
+                        SIGNAL_CH2[k] = (float)iy32/QCORDICSQRT*1000.; // mV
                 }
                 break;
         default :

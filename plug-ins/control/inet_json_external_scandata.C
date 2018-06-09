@@ -520,7 +520,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 "Exec, Freq",
                 "Ampl, Exec",
                 "Phase, Freq",
-                "0,0 **",
+                "M-DCiir, Ampl",
                 "8BIT GPIO, px clk",
                 NULL };
    
@@ -1407,6 +1407,7 @@ void Inet_Json_External_Scandata::update_graph (){
                 //cairo_item_segments *grid = new cairo_item_segments (44);
                 
                 double avg=0.;
+                double avg10=0.;
                 char *valuestring;
                 cairo_item_text *reading = new cairo_item_text ();
                 reading->set_font_face_size ("Ununtu", 10.);
@@ -1511,9 +1512,10 @@ void Inet_Json_External_Scandata::update_graph (){
                         }
                                            
                         if (operation_mode != 6 && channel_selections[ch]){
-                                avg=0.;
+                                avg=avg10=0.;
                                 for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg/=100.;
-                                valuestring = g_strdup_printf ("%s %12.5f [x %g] %g %g {%g}", ch_id[ch], avg, gain_scale[ch], min, max, max-min);
+                                for (int i=1023-10; i<1023; ++i) avg10+=signal[ch][i]; avg10/=10.;
+                                valuestring = g_strdup_printf ("%s %g %12.5f [x %g] %g %g {%g}", ch_id[ch], avg10, avg, gain_scale[ch], min, max, max-min);
                                 reading->set_stroke_rgba (BasicColors[color[ch]]);
                                 reading->set_text (10, -(110-14*ch), valuestring);
                                 g_free (valuestring);
