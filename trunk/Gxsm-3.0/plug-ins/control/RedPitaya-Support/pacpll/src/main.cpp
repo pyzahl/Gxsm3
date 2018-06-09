@@ -585,9 +585,9 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         x = read_gpio_reg_int32 (2,1); // GPIO X4 : CORDIC SQRT (AM2=A^2+B^2) = Amplitude Monitor
         x4=(double)x / QCORDICSQRT;
         //x4=(double)x / QEXEC;
-        x = read_gpio_reg_int32 (3,0); // GPIO X5 : XXX -- CORDIC SQRT = Amplitude after FIR -- experimental, removed FIR
-        x5=(double)x / QCORDICSQRTFIR;
-        x = read_gpio_reg_int32 (3,1); // GPIO X6 : XXX --- CORDIC ATAN(X/Y) = Phase after FIR -- experimental, removed FIR
+        x = read_gpio_reg_int32 (3,0); // GPIO X5 : MDC
+        x5=(double)x / QLMS; // MDC    /QCORDICSQRTFIR;
+        x = read_gpio_reg_int32 (3,1); // GPIO X6 : XXX
         x6=(double)x / QCORDICATANFIR;
         xx7 = x = read_gpio_reg_int32 (4,0); // GPIO X7 : Exec Ampl Control Signal (signed)
         x7=(double)x / QEXEC;
@@ -616,7 +616,7 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         reading_vector[4] = x4*1000.;  // FPGA CORDIC (SQRT) Amplitude Monitor in mVolt
         reading_vector[5] = x10/M_PI*180.; // FPGA CORDIC (ATAN) Phase Monitor
 
-        reading_vector[6] = x5;  // X5
+        reading_vector[6] = x5*1000.;  // X5
         reading_vector[7] = x6;  // X4
 
         reading_vector[8] = x7*1000.0;  // Exec Ampl Control Signal (signed) in mV
