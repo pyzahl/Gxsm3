@@ -111,7 +111,7 @@ module lms_phase_amplitude_detector #(
     parameter M_AXIS_XY_TDATA_WIDTH = 64,
     parameter M_AXIS_AM_TDATA_WIDTH = 48,
     parameter MDC_TIME_CONST_N = 20, // x' = [x*(1<<(N-1))+X]>>N
-    parameter MDC_DATA_WIDTH = LMS_Q_WIDTH+MDC_TIME_CONST_N+2,
+    parameter MDC_DATA_WIDTH = S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH+MDC_TIME_CONST_N+2,
     parameter M_AXIS_MDC_TDATA_WIDTH = 32
 )
 (
@@ -123,8 +123,9 @@ module lms_phase_amplitude_detector #(
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     input wire [S_AXIS_SC_TDATA_WIDTH-1:0]  S_AXIS_SC_tdata,
     input wire                              S_AXIS_SC_tvalid,
-    input signed [31:0] tau, // Q22
-    input signed [31:0] Atau, // Q22
+    input signed [31:0] tau, // Q22 tau phase
+    input signed [31:0] Atau, // Q22 tau amplitude
+    input signed [31:0] dc_tau, // Q22 tai DC iir at cs zero x
     input signed [31:0] dc, // Q22
 
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
@@ -164,7 +165,9 @@ module lms_phase_amplitude_detector #(
     reg signed [LMS_DATA_WIDTH-1:0] m1=0; // Q22 input signal: measured value
     //    reg signed [MDC_DATA_WIDTH-1:0] mdc1=0; // DC IIR low pass
     reg signed [LMS_DATA_WIDTH-1:0] mdc=0; // DC IIR low pass
+    reg signed [LMS_DATA_WIDTH-1:0] mdc_mue=0; // DC IIR low pass
     reg signed [LMS_DATA_WIDTH-1:0] mdc1=0; // DC IIR low pass
+    reg signed [LMS_DATA_WIDTH-1:0] mdc2=0; // DC IIR low pass
     reg signed [LMS_DATA_WIDTH-1:0] a=0;
     reg signed [LMS_DATA_WIDTH-1:0] Aa=0;
     reg signed [LMS_DATA_WIDTH-1:0] b=0;
@@ -180,6 +183,9 @@ module lms_phase_amplitude_detector #(
     reg [2*(LMS_DATA_WIDTH-1)+1-1:0] ampl2=0; 
     reg signed [LMS_DATA_WIDTH+2-1:0] x=0; 
     reg signed [LMS_DATA_WIDTH+2-1:0] y=0; 
+    reg sp=0;
+    reg cp=0;
+    reg sc_zero=0;
     
     assign M_AXIS_SC_tdata  = S_AXIS_SC_tdata; // pass
     assign M_AXIS_SC_tvalid = S_AXIS_SC_tvalid; // pass
@@ -199,18 +205,60 @@ module lms_phase_amplitude_detector #(
                                                  {S_AXIS_SIGNAL_tdata[S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH-1 : 0]}, // 14bit ADC data bits 13..0
                   {(LMS_DATA_WIDTH-(LMS_DATA_WIDTH-LMS_Q_WIDTH-1)-S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH){1'b0}} // fill 0
                  };
+//            mdc0 <= {{(2){S_AXIS_SIGNAL_tdata[S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH-1]}}, // 2 top bits room w signum extension
+//                         {S_AXIS_SIGNAL_tdata[S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH-1 : 0]}, // 14bit ADC data bits 13..0
+//                         {(MDC_DATA_WIDTH-2-S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH){1'b0}} // fill 0
+//                    };
         end
         
         //  IIR DC filter
-        //mdc  <= (mdc1 * $signed(((1<<MDC_TIME_CONST_N)-1)) + m ) >>> MDC_TIME_CONST_N;
-        mdc  <= (mdc1 * 21'sh0fffff + m ) >>> 20;
+        if (sc_zero)
+        begin
+            mdc_mue <= ((m-mdc) * dc_tau) >>> 22;
+            mdc1 <= mdc + mdc_mue;
+            sc_zero <= 0; // reset zero indicator
+        end
+        mdc <= mdc1;
+        
+//      mdc1 <= (mdc2 * $signed(((1<<MDC_TIME_CONST_N)-1)) + mdc0) >>> MDC_TIME_CONST_N; // high precision IIR
+//      mdc2 <= mdc1;
+//      mdc  <= {mdc2[MDC_DATA_WIDTH-1], // take upper bits from top-2 w signum
+//               mdc2[MDC_DATA_WIDTH-2-1:MDC_DATA_WIDTH-2-LMS_DATA_WIDTH-1]};
+        //mdc  <= (mdc1 * 21'sh0fffff + m) >>> 20;
         //mdc  <= (mdc1 * 21'sh03ffff + m ) >>> 18;
-        mdc1 <= mdc;
         
         if (S_AXIS_SC_tvalid)
-            begin
+        begin
+        // Sin, Cos
             s <= {{(LMS_DATA_WIDTH-LMS_Q_WIDTH-1){ S_AXIS_SC_tdata[S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-1]}}, S_AXIS_SC_tdata[S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-1 : S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-LMS_Q_WIDTH-1]};
             c <= {{(LMS_DATA_WIDTH-LMS_Q_WIDTH-1){ S_AXIS_SC_tdata[                        SC_DATA_WIDTH-1]}}, S_AXIS_SC_tdata[                        SC_DATA_WIDTH-1 :                         SC_DATA_WIDTH-LMS_Q_WIDTH-1]};
+        // S,C Zero Detector
+            if (s>$signed(0) && ~sp)
+            begin
+                sp <= 1;
+                sc_zero <= 1;
+            end
+            else
+            begin
+                if (s<$signed(0) && sp)
+                begin
+                    sp <= 0;
+                    sc_zero <= 1;
+                end
+            end
+            if (c>$signed(0) && ~cp)
+            begin
+                cp <= 1;
+                sc_zero <= 1;
+            end
+            else
+            begin
+                if (c<$signed(0) && cp)
+                begin
+                    cp <= 0;
+                    sc_zero <= 1;
+                end
+            end
         end
 
         // ci1t=s;  // DelayForRef (delayRef, s, &InputRef1[0]);
@@ -262,7 +310,7 @@ module lms_phase_amplitude_detector #(
         Ad_mu_e2 <= Ad_mu_e1;
         
     //        m1 <= m-dc;
-        m1 <= m-mdc1;
+        m1 <= m - (dc_tau[31] ? dc : mdc); // auto IIR dc or manual dc
         c1 <= c;
         c2 <= c1;
         s1 <= s;
@@ -289,7 +337,7 @@ module lms_phase_amplitude_detector #(
     assign Aout = {{(32-LMS_DATA_WIDTH){a[LMS_DATA_WIDTH-1]}}, a}; // a
     assign Bout = {{(32-LMS_DATA_WIDTH){b[LMS_DATA_WIDTH-1]}}, b}; // b
     assign dbg1 = {{(32-LMS_DATA_WIDTH){m[LMS_DATA_WIDTH-1]}}, m}; // m
-    assign dbg2 = {{(32-LMS_DATA_WIDTH){m[LMS_DATA_WIDTH-1]}}, mdc}; // m1
+    assign dbg2 = {{(32-LMS_DATA_WIDTH){mdc[LMS_DATA_WIDTH-1]}}, mdc}; // m1
     assign dbg3 = {{(32-LMS_DATA_WIDTH-2){x[LMS_DATA_WIDTH+2-1]}}, x}; // x
     assign dbg4 = {{(32-LMS_DATA_WIDTH-2){y[LMS_DATA_WIDTH+2-1]}}, y}; // y
 

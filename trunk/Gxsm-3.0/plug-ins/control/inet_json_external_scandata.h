@@ -60,6 +60,7 @@ struct PACPLL_parameters {
         double bram_write_pos;
         double bram_dec_count;
         
+        double pac_dctau;
         double pactau;
         double pacatau;
         double frequency_manual; // manual f reset
@@ -140,6 +141,7 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "GAIN3", &pacpll_parameters.gain3, false },
         { "GAIN4", &pacpll_parameters.gain4, false },
         { "GAIN5", &pacpll_parameters.gain5, false },
+        { "PAC_DCTAU", &pacpll_parameters.pac_dctau, false },
         { "PACTAU", &pacpll_parameters.pactau, false },
         { "PACATAU", &pacpll_parameters.pacatau, false },
         { "FREQUENCY_MANUAL", &pacpll_parameters.frequency_manual, false }, // manual/tune frequency
@@ -441,7 +443,7 @@ private:
         Gtk_EntryControl *input_ddsfreq;
 
         gint debug_level; 
-        UnitObj *Unity, *Hz, *Deg, *VoltDeg, *Volt, *mVolt, *VoltHz, *dB, *Time, *uTime;
+        UnitObj *Unity, *Hz, *Deg, *VoltDeg, *Volt, *mVolt, *VoltHz, *dB, *Time, *mTime, *uTime;
 
 	GSList*   SPMC_RemoteEntryList;
 

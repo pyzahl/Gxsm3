@@ -148,6 +148,7 @@ CDoubleParameter FREQUENCY_MANUAL("FREQUENCY_MANUAL", CBaseParameter::RW, 32766.
 CDoubleParameter FREQUENCY_CENTER("FREQUENCY_CENTER", CBaseParameter::RW, 32766.0, 0, 1, 25e6); // Hz -- used for BRam and AUX data to remove offset, and scale
 CDoubleParameter AUX_SCALE("AUX_SCALE", CBaseParameter::RW, 1.0, 0, -1e6, 1e6); // 1
 CDoubleParameter VOLUME_MANUAL("VOLUME_MANUAL", CBaseParameter::RW, 300.0, 0, 0.0, 1000.0); // mV
+CDoubleParameter PAC_DCTAU("PAC_DCTAU", CBaseParameter::RW, 10.0, 0, -1.0, 1e6); // ms ,negative value disables DC LMS and used manual DC 
 CDoubleParameter PACTAU("PACTAU", CBaseParameter::RW, 40.0, 0, 0.0, 60e6); // us
 CDoubleParameter PACATAU("PACATAU", CBaseParameter::RW, 30.0, 0, 0.0, 60e6); // us
 
@@ -403,13 +404,18 @@ void rp_PAC_configure_loops (int phase_ctrl, int am_ctrl){
         set_gpio_cfgreg_int32 (PACPLL_CFG_CONTROL_LOOPS, (phase_ctrl ? 1:0) | (am_ctrl ? 2:0));
 }
 
-#define PACPLL_CFG_PACTAU   4
-#define PACPLL_CFG_PACATAU 27
+#define PACPLL_CFG_PACTAU     4
+#define PACPLL_CFG_PACATAU   27
+#define PACPLL_CFG_PAC_DCTAU 28
 // tau in s for dual PAC
-void rp_PAC_set_pactau (double tau, double atau){
+void rp_PAC_set_pactau (double tau, double atau, double dc_tau){
         if (verbose > 2) fprintf(stderr, "##Configure: tau= %g  Q22: %d\n", tau, (int)(Q22 * tau)); 
         set_gpio_cfgreg_int32 (PACPLL_CFG_PACTAU, (int)(Q22/ADC_SAMPLING_RATE/tau)); // Q22 significant from top - tau for phase
         set_gpio_cfgreg_int32 (PACPLL_CFG_PACATAU, (int)(Q22/ADC_SAMPLING_RATE/atau)); // Q22 significant from top -- atau is tau for amplitude
+        if (dc_tau > 0.)
+                set_gpio_cfgreg_int32 (PACPLL_CFG_PAC_DCTAU, (int)(Q22/(4.*FREQUENCY_MANUAL.Value ())/dc_tau)); // Q22 significant from top -- dc_tau is tau for DC LMS Filter
+        else
+                set_gpio_cfgreg_int32 (PACPLL_CFG_PAC_DCTAU, -1); // disable
 }
 
 #define PACPLL_CFG_DC_OFFSET 5
@@ -557,7 +563,7 @@ void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, in
  * reading_vector[3] := LMS B
  * reading_vector[4] := FPGA CORDIC Amplitude Monitor
  * reading_vector[5] := FPGA CORDIC Phase Monitor
- * reading_vector[6] := x5 M-DCiir
+ * reading_vector[6] := x5 M-DC_LMS
  * reading_vector[7] := x6
  * reading_vector[8] := x7 Exec Amp Mon
  * reading_vector[9] := DDS Freq
@@ -672,7 +678,7 @@ void set_PAC_config()
         if (OPERATION.Value() != 6)
                 rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value());
         rp_PAC_set_volume (VOLUME_MANUAL.Value() / 1000.); // mV -> V
-        rp_PAC_set_pactau (PACTAU.Value() * 1e-6, PACATAU.Value() * 1e-6); // us -> s
+        rp_PAC_set_pactau (PACTAU.Value() * 1e-6, PACATAU.Value() * 1e-6, PAC_DCTAU.Value() * 1e-3); // us -> s, us -> s, ms -> s
 
         rp_PAC_set_amplitude_controller (
                                          AMPLITUDE_FB_SETPOINT.Value ()/1000., // mv to V
