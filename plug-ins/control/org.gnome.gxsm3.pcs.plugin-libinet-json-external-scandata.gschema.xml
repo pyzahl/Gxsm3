@@ -7,6 +7,12 @@
       <description>pcs0000, PCS Remote-ID: 'rp-pacpll-DC-OFFSET', Default/U: 0 mV    , Adjustment PCS Name: 'rp-pacpll-DC-OFFSET' </description>
     </key>
 
+    <key name="rp-pacpll-pac-dctau" type="d">
+      <default>10.0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PAC-DCTAU', Default/U: 10.0 ms     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PAC-DCTAU', Default/U: 10.0 ms    , Adjustment PCS Name: 'rp-pacpll-PAC-DCTAU' </description>
+    </key>
+
     <key name="rp-pacpll-pactau" type="d">
       <default>40.0</default>
       <summary>PCS Remote-ID: 'rp-pacpll-PACTAU', Default/U: 40.0 µs     </summary>
