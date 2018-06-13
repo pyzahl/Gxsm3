@@ -63,7 +63,7 @@ class lms():
 fref=1000.0
 xx=3
 ftest=fref*xx
-tau=2
+tau=1000
 pac = lms(fref, 125e6, tau*1e-6)
 
 #print pac.ampl(), pac.phase()
