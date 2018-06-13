@@ -643,15 +643,72 @@ double pcs_mag_base (double v, const gchar** pfx, double fac=10., int magshift=0
         return x/magnitude[mi-magshift]/fac;
 }
 
+#if 0
+** Message: 13:35:13.626: PCS:put-value to adj... log uv:0.01 -> adjv:4
+** Message: 13:35:13.629: spin_sci input.. : 0.01 --> 0.01
+** Message: 13:35:13.629: PCS:adj-callback get_vale (adj)  : 0.01 --> v=0.01
+** Message: 13:35:13.630: PCS:put-value to adj... log uv:0.000101158 -> adjv:0.01
+** Message: 13:35:13.633: PCS:adj-callback log_mode_auto_dual set paramerter 0.01 -> val=0.000101158
+** Message: 13:35:13.636: PCS:adj-callback get_vale (adj)  : 0.01 --> v=0.01
+** Message: 13:35:13.636: PCS:put-value to adj... log uv:0.000101158 -> adjv:0.01
+** Message: 13:35:13.637: PCS:adj-callback log_mode_auto_dual set paramerter 0.01 -> val=0.000101158
+** Message: 13:35:13.637: spin_sci_output: usr_string={0.000101158 nA    } spin_button={0.000101158 nA    }! dval=0.000101158
+** Message: 13:35:16.554: PCS:adj-callback get_vale (adj)  : 3.11037 --> v=3.11037
+** Message: 13:35:16.554: PCS:put-value to adj... log uv:0.2 -> adjv:3.11037
+** Message: 13:35:16.557: PCS:adj-callback log_mode_auto_dual set paramerter 3.11037 -> val=0.2
+** Message: 13:35:16.557: spin_sci_output: usr_string={ 0.2 V    } spin_button={ 0.2 V    }! dval=0.2
+** Message: 13:35:17.066: PCS:adj-callback get_vale (adj)  : 3.11137 --> v=3.11137
+** Message: 13:35:17.066: PCS:put-value to adj... log uv:0.200341 -> adjv:3.11137
+** Message: 13:35:17.069: PCS:adj-callback log_mode_auto_dual set paramerter 3.11137 -> val=0.200341
+** Message: 13:35:17.069: spin_sci_output: usr_string={0.200341 V    } spin_button={0.200341 V    }! dval=0.200341
+** Message: 13:35:18.301: PCS:put-value to adj... log uv:0.200341 -> adjv:3.11137
+** Message: 13:35:18.305: spin_sci input.. : 3.11137 --> 3.11137
+** Message: 13:35:18.305: PCS:adj-callback get_vale (adj)  : 3.11137 --> v=3.11137
+** Message: 13:35:18.305: PCS:put-value to adj... log uv:0.200341 -> adjv:3.11137
+** Message: 13:35:18.308: PCS:adj-callback log_mode_auto_dual set paramerter 3.11137 -> val=0.200341
+** Message: 13:35:18.308: PCS:adj-callback get_vale (adj)  : 3.11137 --> v=3.11137
+** Message: 13:35:18.308: PCS:put-value to adj... log uv:0.200341 -> adjv:3.11137
+** Message: 13:35:18.310: PCS:adj-callback log_mode_auto_dual set paramerter 3.11137 -> val=0.200341
+** Message: 13:35:18.310: spin_sci_output: usr_string={0.200341 V    } spin_button={0.200341 V    }! dval=0.200341
 
+
+Bias 0.2
+** Message: 13:35:23.083: PCS:put-value to adj... log uv:0.200341 -> adjv:3.11137
+** Message: 13:35:23.085: spin_sci input.. : 3.11137 --> 3.11137
+** Message: 13:35:23.086: PCS:adj-callback get_vale (adj)  : 3.11137 --> v=3.11137
+** Message: 13:35:23.086: PCS:put-value to adj... log uv:0.200341 -> adjv:3.11137
+** Message: 13:35:23.088: PCS:adj-callback log_mode_auto_dual set paramerter 3.11137 -> val=0.200341
+** Message: 13:35:23.088: PCS:adj-callback get_vale (adj)  : 3.11137 --> v=3.11137
+** Message: 13:35:23.088: PCS:put-value to adj... log uv:0.200341 -> adjv:3.11137
+** Message: 13:35:23.090: PCS:adj-callback log_mode_auto_dual set paramerter 3.11137 -> val=0.200341
+** Message: 13:35:23.090: spin_sci_output: usr_string={0.200341 V    } spin_button={0.200341 V    }! dval=0.200341
+
+Current 0.01                                                                                                                             
+** Message: 13:35:26.153: PCS:put-value to adj... log uv:0.000101158 -> adjv:0.0100005
+** Message: 13:35:26.156: spin_sci input.. : 0.0100005 --> 0.0100005
+** Message: 13:35:26.156: PCS:adj-callback get_vale (adj)  : 0.0100005 --> v=0.0100005
+** Message: 13:35:26.156: PCS:put-value to adj... log uv:0.000101158 -> adjv:0.0100005
+** Message: 13:35:26.158: PCS:adj-callback log_mode_auto_dual set paramerter 0.0100005 -> val=0.000101158
+** Message: 13:35:26.159: PCS:adj-callback get_vale (adj)  : 0.0100005 --> v=0.0100005
+** Message: 13:35:26.159: PCS:put-value to adj... log uv:0.000101158 -> adjv:0.0100005
+** Message: 13:35:26.161: PCS:adj-callback log_mode_auto_dual set paramerter 0.0100005 -> val=0.000101158
+** Message: 13:35:26.161: spin_sci_output: usr_string={0.000101158 nA    } spin_button={0.000101158 nA    }! dval=0.000101158
+                                                                
+** Message: 13:35:27.701: PCS:put-value to adj... log uv:0.200341 -> adjv:3.11137
+** Message: 13:35:27.703: spin_sci input.. : 3.11137 --> 3.11137
+** Message: 13:35:27.704: PCS:adj-callback get_vale (adj)  : 3.11137 --> v=3.11137
+#endif
 
 void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl *gpcs){
 	if (!adj) return;
 
-        //g_message ("PCS:adj-cb.  : %g  LGM=%d", gtk_adjustment_get_value (adj), gpcs->log_mode);
 
         double  v=gtk_adjustment_get_value (adj);
-
+        //#define DEBUG_PCS_LOG
+#ifdef DEBUG_PCS_LOG
+        g_message ("PCS:adj-callback get_vale (adj)  : %g --> v=%g", gtk_adjustment_get_value (adj), v);
+#endif
+        
         if (gpcs->adj_mode & PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE){
                 double al=gtk_adjustment_get_lower (adj);
                 double au=gtk_adjustment_get_upper (adj);
@@ -670,8 +727,10 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
                 // LOG ADJUSTMENT MODE
                 gpcs->calc_adj_log_gain ();
                 gpcs->Set_Parameter (gpcs->adj_to_value (v), TRUE, FALSE);
-                //g_message ("PCS:adj-cb.. : log_mode_auto_dual set paramerter %g -> val=%g", v, gpcs->adj_to_value (v));
- 
+#ifdef DEBUG_PCS_LOG
+                g_message ("PCS:adj-callback log_mode_auto_dual set paramerter %g -> val=%g", v, gpcs->adj_to_value (v));
+#endif
+                
                 if (gpcs->adj_mode & PARAM_CONTROL_ADJUSTMENT_ADD_MARKS){
                         double l=gtk_adjustment_get_lower (adj);
                         double r=gtk_adjustment_get_upper (adj);
@@ -807,7 +866,9 @@ void Gtk_EntryControl::Put_Value(){
                 if (adj_mode & PARAM_CONTROL_ADJUSTMENT_LOG_MODE_MASK){
                         calc_adj_log_gain ();
                         gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), value_to_adj (unit->Usr2Base (Get_dValue ())));
-                        //g_message ("PCS:put-value w adj... log uv:%g -> adjv:%g", unit->Usr2Base (Get_dValue ()),value_to_adj (unit->Usr2Base (Get_dValue ())));
+#ifdef DEBUG_PCS_LOG
+                        g_message ("PCS:put-value to adj... log uv:%g -> adjv:%g", unit->Usr2Base (Get_dValue ()),value_to_adj (unit->Usr2Base (Get_dValue ())));
+#endif
                 } else {
                         gtk_adjustment_set_value (GTK_ADJUSTMENT(adj), unit->Usr2Base (Get_dValue()));
                 }
@@ -1035,6 +1096,9 @@ void Gtk_EntryControl::pcs_adjustment_configure (){
 	g_free (tmp);
 
         BuildParam bp;
+
+        GtkWidget* adj_mode_ceck_button[4] = {NULL,NULL,NULL,NULL}; // 0: lin/log 1: dual-rangel 2: ticks
+
         bp.set_error_text (N_("Value not allowed."));
 
         gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
@@ -1062,17 +1126,50 @@ void Gtk_EntryControl::pcs_adjustment_configure (){
                 bp.grid_add_ec ("Page [B2]", unit, &page, -EC_INF, EC_INF, "8g"); bp.new_line ();
                 bp.grid_add_ec ("Pg10 [B3]", unit, &page10, -EC_INF, EC_INF, "8g"); bp.new_line ();
                 bp.grid_add_ec ("Progressive", unity, &progressive, 0., 10., "g"); bp.new_line ();
+
+                adj_mode_ceck_button[0] = bp.grid_add_check_button ("Log-Scale", "use slider in log scale mode.\n WARING: EXPERIMENTAL",
+                                                        1, NULL, NULL, (adj_mode & PARAM_CONTROL_ADJUSTMENT_LOG)?1:0
+                                                        );
+                bp.new_line ();
+                adj_mode_ceck_button[1] = bp.grid_add_check_button ("Log-Sym", "use slider in log scale mode with zero at center. Left: log, neg val.\n WARING: EXPERIMENTAL",
+                                                        1,NULL, NULL, adj_mode & PARAM_CONTROL_ADJUSTMENT_LOG?1:0
+                                                        );
+                bp.new_line ();
+                adj_mode_ceck_button[2] = bp.grid_add_check_button ("Dual-Range", "use slider in log scale mode with zero at center. Left: log, neg val.\n WARING: EXPERIMENTAL",
+                                                        1,NULL, NULL, adj_mode & PARAM_CONTROL_ADJUSTMENT_LOG?1:0
+                                                        );
+                bp.new_line ();
+                adj_mode_ceck_button[3] = bp.grid_add_check_button ("Add-Ticks", "add tick marks w. snapping to slider",
+                                                        1,NULL, NULL, adj_mode & PARAM_CONTROL_ADJUSTMENT_LOG?1:0
+                                                        );
+                bp.new_line ();
         }
         gtk_widget_show_all (dialog);
         
 	gint result = gtk_dialog_run (GTK_DIALOG (dialog));
-
+        gint mode_tmp = PARAM_CONTROL_ADJUSTMENT_LINEAR; // = 0
+        
+        if (adj_mode_ceck_button[0])
+                if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (adj_mode_ceck_button[0])))
+                        mode_tmp |= PARAM_CONTROL_ADJUSTMENT_LOG;
+        if (adj_mode_ceck_button[1])
+                if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (adj_mode_ceck_button[1])))
+                        mode_tmp |= PARAM_CONTROL_ADJUSTMENT_LOG_SYM;
+        if (adj_mode_ceck_button[2])
+                if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (adj_mode_ceck_button[2])))
+                        mode_tmp |= PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE;
+        if (adj_mode_ceck_button[3])
+                if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (adj_mode_ceck_button[3])))
+                        mode_tmp |= PARAM_CONTROL_ADJUSTMENT_ADD_MARKS;
+                       
   	gtk_widget_destroy (dialog);
 
         delete unity;
 
-	if (result == GTK_RESPONSE_ACCEPT)
+	if (result == GTK_RESPONSE_ACCEPT){
+                set_adjustment_mode (mode_tmp);
 		put_pcs_configuartion ();
+        }
 }
 
 #define XRM_GET_WD(L, V) tdv = g_strdup_printf ("%g", V); xrm.Get (L, &V, tdv); g_free (tdv)
@@ -1318,13 +1415,16 @@ void Gtk_EntryControl::put_pcs_configuartion (){
 }
 
 static gint
-ec_gtk_spin_button_sci_output (GtkSpinButton *spin_button)
+ec_gtk_spin_button_sci_output (GtkSpinButton *spin_button,
+                              gpointer       user_data)
 {
         if (G_IS_OBJECT(spin_button) ){ 
                 Gtk_EntryControl *ec = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (spin_button), "Gtk_EntryControl");
                 if (ec){
                         gchar *buf = ec->Get_UsrString();
-                        // g_message ("spin_button_sci_output: usr_string={%s} spin_button={%s} dval=%g", buf, gtk_entry_get_text (GTK_ENTRY (spin_button)), ec->Get_dValue());
+#ifdef DEBUG_PCS_LOG
+                        g_message ("spin_sci_output: usr_string={%s} spin_button={%s}! dval=%g", buf, gtk_entry_get_text (GTK_ENTRY (spin_button)), ec->Get_dValue());
+#endif
                         
                         if (strcmp (buf, gtk_entry_get_text (GTK_ENTRY (spin_button))))
                                 gtk_entry_set_text (GTK_ENTRY (spin_button), buf);
@@ -1343,16 +1443,19 @@ ec_gtk_spin_button_sci_output (GtkSpinButton *spin_button)
 
 static gint
 ec_gtk_spin_button_sci_input (GtkSpinButton *spin_button,
-			       gdouble       *new_val)
+                              gdouble       *new_val,
+                              gpointer       user_data)
 {
 	gchar *err = NULL;
         Gtk_EntryControl *ec = (Gtk_EntryControl *)g_object_get_data( G_OBJECT (spin_button), "Gtk_EntryControl");
-	*new_val = g_strtod (gtk_entry_get_text (GTK_ENTRY (spin_button)), &err);
+        gdouble input_value = g_strtod (gtk_entry_get_text (GTK_ENTRY (spin_button)), &err);
         // g_message ("spin input.  : v=%g", *new_val);
 
-	*new_val = (gdouble)ec->Convert2Base (*new_val);
-        // g_message ("spin input.. : --> %g", *new_val);
-
+	*new_val = (gdouble)ec->Convert2Base (input_value);
+#ifdef DEBUG_PCS_LOG
+        g_message ("spin_sci input.. : %g --> %g", input_value, *new_val);
+#endif
+        
         //gtk_spin_button_set_value (spin_button,  ec->Get_dValue());
         
 	if (*err)
