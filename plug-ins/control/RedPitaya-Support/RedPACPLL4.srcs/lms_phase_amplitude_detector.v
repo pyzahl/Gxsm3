@@ -125,7 +125,7 @@ module lms_phase_amplitude_detector #(
     input wire                              S_AXIS_SC_tvalid,
     input signed [31:0] tau, // Q22 tau phase
     input signed [31:0] Atau, // Q22 tau amplitude
-    input signed [31:0] dc_tau, // Q22 tai DC iir at cs zero x
+    input signed [31:0] dc_tau, // Q31 tau DC iir at cos-sin zero x
     input signed [31:0] dc, // Q22
 
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
@@ -165,9 +165,9 @@ module lms_phase_amplitude_detector #(
     reg signed [LMS_DATA_WIDTH-1:0] m1=0; // Q22 input signal: measured value
     //    reg signed [MDC_DATA_WIDTH-1:0] mdc1=0; // DC IIR low pass
     reg signed [LMS_DATA_WIDTH-1:0] mdc=0; // DC IIR low pass
-    reg signed [LMS_DATA_WIDTH-1:0] mdc_mue=0; // DC IIR low pass
-    reg signed [LMS_DATA_WIDTH-1:0] mdc1=0; // DC IIR low pass
-    reg signed [LMS_DATA_WIDTH-1:0] mdc2=0; // DC IIR low pass
+    reg signed [LMS_DATA_WIDTH+32-1:0] mdc_mue=0; // DC IIR low pass
+    reg signed [LMS_DATA_WIDTH+32-1:0] mdc1=0; // DC IIR low pass
+    reg signed [LMS_DATA_WIDTH+32-1:0] mdc2=0; // DC IIR low pass
     reg signed [LMS_DATA_WIDTH-1:0] a=0;
     reg signed [LMS_DATA_WIDTH-1:0] Aa=0;
     reg signed [LMS_DATA_WIDTH-1:0] b=0;
@@ -214,18 +214,15 @@ module lms_phase_amplitude_detector #(
         //  IIR DC filter
         if (sc_zero)
         begin
-            mdc_mue <= ((m-mdc) * dc_tau) >>> 22;
-            mdc1 <= mdc + mdc_mue;
+            mdc_mue <= (m-mdc) * dc_tau;
+            mdc1 <= mdc2 + mdc_mue;
             sc_zero <= 0; // reset zero indicator
         end
-        mdc <= mdc1;
-        
-//      mdc1 <= (mdc2 * $signed(((1<<MDC_TIME_CONST_N)-1)) + mdc0) >>> MDC_TIME_CONST_N; // high precision IIR
-//      mdc2 <= mdc1;
-//      mdc  <= {mdc2[MDC_DATA_WIDTH-1], // take upper bits from top-2 w signum
-//               mdc2[MDC_DATA_WIDTH-2-1:MDC_DATA_WIDTH-2-LMS_DATA_WIDTH-1]};
-        //mdc  <= (mdc1 * 21'sh0fffff + m) >>> 20;
-        //mdc  <= (mdc1 * 21'sh03ffff + m ) >>> 18;
+        else
+        begin
+            mdc2 <= mdc1;
+            mdc  <= mdc1[LMS_DATA_WIDTH+32-1:32];
+        end
         
         if (S_AXIS_SC_tvalid)
         begin
@@ -310,7 +307,7 @@ module lms_phase_amplitude_detector #(
         Ad_mu_e2 <= Ad_mu_e1;
         
     //        m1 <= m-dc;
-        m1 <= m - (dc_tau[31] ? dc : mdc); // auto IIR dc or manual dc
+        m1 <= m - $signed(dc_tau[31] ? dc : mdc); // auto IIR dc or manual dc
         c1 <= c;
         c2 <= c1;
         s1 <= s;
