@@ -412,10 +412,15 @@ void rp_PAC_set_pactau (double tau, double atau, double dc_tau){
         if (verbose > 2) fprintf(stderr, "##Configure: tau= %g  Q22: %d\n", tau, (int)(Q22 * tau)); 
         set_gpio_cfgreg_int32 (PACPLL_CFG_PACTAU, (int)(Q22/ADC_SAMPLING_RATE/tau)); // Q22 significant from top - tau for phase
         set_gpio_cfgreg_int32 (PACPLL_CFG_PACATAU, (int)(Q22/ADC_SAMPLING_RATE/atau)); // Q22 significant from top -- atau is tau for amplitude
+        // double c = Q31/(4.*FREQUENCY_MANUAL.Value ())/dc_tau;
+        // if (c < 1.0)
+        // ...
         if (dc_tau > 0.)
-                set_gpio_cfgreg_int32 (PACPLL_CFG_PAC_DCTAU, (int)(Q22/(4.*FREQUENCY_MANUAL.Value ())/dc_tau)); // Q22 significant from top -- dc_tau is tau for DC LMS Filter
+                set_gpio_cfgreg_int32 (PACPLL_CFG_PAC_DCTAU, (int)(Q31/(4.*FREQUENCY_MANUAL.Value ())/dc_tau)); // Q22 significant from top -- dc_tau is tau for DC LMS Filter
+        else if (dc_tau < 0.)
+                set_gpio_cfgreg_uint32 (PACPLL_CFG_PAC_DCTAU, 0xffffffff); // disable
         else
-                set_gpio_cfgreg_int32 (PACPLL_CFG_PAC_DCTAU, -1); // disable
+                set_gpio_cfgreg_uint32 (PACPLL_CFG_PAC_DCTAU, 0); // freeze
 }
 
 #define PACPLL_CFG_DC_OFFSET 5
@@ -1116,6 +1121,8 @@ void OnNewParams(void)
         VOLUME_MANUAL.Update ();
         PACTAU.Update ();
         PACATAU.Update ();
+        PAC_DCTAU.Update ();
+        
         PHASE_CONTROLLER.Update ();
         AMPLITUDE_CONTROLLER.Update ();
 
