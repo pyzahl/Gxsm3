@@ -182,13 +182,19 @@
 	      <p id="field_descr_hdr"><b>PAC Configuation/Sweep</b></p>
 		<div class="col-xs-12 option-content">
 		  <div class="panel_input_field" ;="" id="full_input">
-		    <p id="field_descr_text">PAC-Tau <span id='pactau_value'></span></p>
+		    <p id="field_descr_text">DC-Tau in ms <span id='dctau_value'></span></p>
+		    <div class="input_entry_full" id="input_entry"><input id='dctau_set' type="number" step="1.0" size="2" value="100.0" min = "-1" max = "100000"></div>
+		  </div>
+		</div>
+		<div class="col-xs-12 option-content">
+		  <div class="panel_input_field" ;="" id="full_input">
+		    <p id="field_descr_text">PAC-Tau in us <span id='pactau_value'></span></p>
 		    <div class="input_entry_full" id="input_entry"><input id='pactau_set' type="number" step="1.0" size="2" value="50.0" min = "1" max = "100000"></div>
 		  </div>
 		</div>
 		<div class="col-xs-12 option-content">
 		  <div class="panel_input_field" ;="" id="full_input">
-		    <p id="field_descr_text">PAC-ATau <span id='pacatau_value'></span></p>
+		    <p id="field_descr_text">PAC-ATau in us <span id='pacatau_value'></span></p>
 		    <div class="input_entry_full" id="input_entry"><input id='pacatau_set' type="number" step="1.0" size="2" value="20.0" min = "1" max = "100000"></div>
 		  </div>
 		</div>
@@ -289,7 +295,7 @@
 		      <option value="4">4: Exec,Freq</option>
 		      <option value="5">5: Ampl, Exec</option>
 		      <option value="6">6: Phase, Freq</option>
-		      <option value="7">7: 0,0</option>
+		      <option value="7">7: M-DC, AMPL</option>
 		      <option value="8">8: GPIO,pxclk</option>
 		    </select>
 		  </div>

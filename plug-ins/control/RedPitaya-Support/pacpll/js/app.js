@@ -31,6 +31,7 @@
     };
     
     // Parameters
+    APP.dc_tau = 100.0; // ms
     APP.pactau = 50.0; // us
     APP.pacatau = 20.0; // us
     APP.frequency = 30755.0; //32766.0;
@@ -135,6 +136,7 @@
 
                 // Set initial parameters
 		// NOTE: server is crashing/aborting if any paramert is out of range, JSON names do not match, invaling vars assigned, invalid HTML id's, etc. etc.!!!
+                APP.setDCtau();
                 APP.setPactau();
                 APP.setPacAtau();
                 APP.setFrequency();
@@ -374,7 +376,21 @@
 
     };
 
-    // Set pactau
+    // Set DC tau
+    APP.setDCtau = function() {
+
+        APP.dc_tau = $('#dctau_set').val();
+
+        var local = {};
+        local['PAC_DCTAU'] = { value: APP.dc_tau };
+        APP.ws.send(JSON.stringify({ parameters: local }));
+
+        $('#dctau_value').text(APP.dc_tau);
+
+    };
+
+    // Set PAC tau (phase LMS path)
+    
     APP.setPactau = function() {
 
         APP.pactau = $('#pactau_set').val();
@@ -387,7 +403,7 @@
 
     };
 
-    // Set pacatau
+    // Set pacatau (ampl LMS path)
     APP.setPacAtau = function() {
 
         APP.apactau = $('#pacatau_set').val();
@@ -1012,6 +1028,12 @@ $(function() {
     $("#gain5_set").on("change input", function() {
 
         APP.setGain5(); 
+    });
+
+    // Input change
+    $("#dctau_set").on("change input", function() {
+
+        APP.setDCtau(); 
     });
 
     // Input change
