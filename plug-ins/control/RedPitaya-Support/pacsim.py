@@ -3,6 +3,7 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+from random import randint
 
 Q22 = (1<<22)-1
 
@@ -60,47 +61,44 @@ class lms():
     def phase (self):
         return math.atan2 (self.a-self.b, self.a+self.b)
 
-fref=1000.0
-xx=3
-ftest=fref*xx
-tau=1000
-pac = lms(fref, 125e6, tau*1e-6)
+tscale = 100    # 1 = 1x 
+fref   = 1000.0 # Hz
+tau    = 250    # us
 
-#print pac.ampl(), pac.phase()
+xx  = 1 # base freq
+xx2 = 0 # 3.57356
+xx3 = 0 # 0.1
+na  = 0.5 # nose ampl
 
-N=500000
+frefs=fref*tscale
+ftest=frefs*xx
+ftest2=frefs*xx2
+ftest3=frefs*xx3
+ssrate = 125e6
+pac = lms(frefs, ssrate, tau*1e-6/tscale)
+
+N=int(10*ssrate*tau*1e-6/tscale)
 t=np.arange (N).astype(np.float)
 ts=np.arange (N).astype(np.float)
 s=np.arange (N).astype(np.float)
 a=np.arange (N).astype(np.float)
 p=np.arange (N).astype(np.float)
 
-#print t
-
 for i in range (0,N):
     wt=i*pac.dt*math.pi*2.*ftest
-    s[i]=0.1*math.sin(wt)
+    wt2=i*pac.dt*math.pi*2.*ftest2
+    wt3=i*pac.dt*math.pi*2.*ftest3
+    s[i]=0.2*math.sin(wt)+0.5*math.sin(wt2)+0.3*math.sin(wt3)+na*randint(-1000, 1000)*1e-3
     t[i]=i
-    ts[i]=1e3*pac.run_step(s[i]*Q22)
+    ts[i]=1e3*pac.run_step(s[i]*Q22)*tscale
     a[i]=pac.ampl()
     p[i]=pac.phase()
-    
-    #print t[i], a[i], p[i]
 
 plt.xlabel('time in ms')
 plt.plot (ts, s, label="signal")
 plt.plot (ts, a, label="ampl")
 plt.plot (ts, p, label="phase")
-plt.title ('PAC LMS Simulation tau: %g'%tau+'us f=%g'%fref+'Hz fs=x%g'%xx)
-plt.grid (True)
-plt.legend()
-plt.show ()
-
-plt.xlabel('time in samples')
-plt.plot (t, s, label="signal")
-plt.plot (t, a, label="ampl")
-plt.plot (t, p, label="phase")
-plt.title ('PAC LMS Simulation')
+plt.title ('PAC LMS Simulation tau: %g'%tau+'us f=%g'%fref+'Hz fs=x%g'%xx+'+x%g'%xx2+'+x%g'%xx3)
 plt.grid (True)
 plt.legend()
 plt.show ()
