@@ -8,14 +8,17 @@ from random import randint
 Q22 = (1<<22)-1
 
 class lms():
-    def __init__(self, f0=1000., frq=125e6, tau=2e-6):
+    def __init__(self, f0=1000., frq=125e6, tau=2e-6, iir_f=0.):
         self.a=0L
         self.b=0L
         self.time=0.0
         self.dt=1.0/frq
         self.fref=f0
         self.tau_pac=int(Q22*self.dt/tau)
-
+        self.iirf = iir_f
+        self.ss = 0L
+        self.cc = 0L
+        
     def run_step(self, signal):
         wt=self.time*math.pi*2.*self.fref
         self.phasedetect (int(signal), int(Q22*math.sin (wt)), int(Q22*math.cos (wt)))
@@ -28,8 +31,11 @@ class lms():
 
         #// Apply loopback filter on ref
 
-        ci1t=s  # DelayForRef (delayRef, s, &InputRef1[0]);
-        cr1t=c  # DelayForRef (delayRef, c, &InputRef2[0]);
+        self.ss=int ((1.-self.iirf)*self.ss+self.iirf*s)
+        self.cc=int ((1.-self.iirf)*self.cc+self.iirf*c)
+
+        ci1t=s-self.ss  # DelayForRef (delayRef, s, &InputRef1[0]);
+        cr1t=c-self.cc  # DelayForRef (delayRef, c, &InputRef2[0]);
 
         #// Compute the prediction
 
@@ -65,22 +71,27 @@ tscale = 100    # 1 = 1x
 fref   = 1000.0 # Hz
 tau    = 250    # us
 
+iir    = 5e-4;
+
 xx  = 1 # base freq
 xx2 = 0 # 3.57356
 xx3 = 0 # 0.1
-na  = 0.5 # nose ampl
+na  = 0.0 # nose ampl
 
 frefs=fref*tscale
 ftest=frefs*xx
 ftest2=frefs*xx2
 ftest3=frefs*xx3
 ssrate = 125e6
-pac = lms(frefs, ssrate, tau*1e-6/tscale)
+pac = lms(frefs, ssrate, tau*1e-6/tscale)#,iir)
 
-N=int(10*ssrate*tau*1e-6/tscale)
+N=int(300*ssrate*tau*1e-6/tscale)
+
 t=np.arange (N).astype(np.float)
 ts=np.arange (N).astype(np.float)
 s=np.arange (N).astype(np.float)
+m=np.arange (N).astype(np.float)
+sdc=np.arange (N).astype(np.float)
 a=np.arange (N).astype(np.float)
 p=np.arange (N).astype(np.float)
 
@@ -88,14 +99,20 @@ for i in range (0,N):
     wt=i*pac.dt*math.pi*2.*ftest
     wt2=i*pac.dt*math.pi*2.*ftest2
     wt3=i*pac.dt*math.pi*2.*ftest3
-    s[i]=0.2*math.sin(wt)+0.5*math.sin(wt2)+0.3*math.sin(wt3)+na*randint(-1000, 1000)*1e-3
+    s[i]=0.2*math.sin(wt)+0.5*math.sin(wt2)+0.3*math.sin(wt3)+na*randint(-1000, 1000)*1e-3+0.2*math.sin(wt/200)
+    sdc[i] = s[i]
+    if i>1:
+        sdc[i]=(1.-iir)*sdc[i-1]+iir*sdc[i]
+    m[i] = s[i] - sdc[i]
     t[i]=i
-    ts[i]=1e3*pac.run_step(s[i]*Q22)*tscale
+    ts[i]=1e3*pac.run_step(m[i]*Q22)*tscale
     a[i]=pac.ampl()
     p[i]=pac.phase()
 
 plt.xlabel('time in ms')
 plt.plot (ts, s, label="signal")
+plt.plot (ts, sdc, label="signal dc")
+plt.plot (ts, m, label="signal-dc")
 plt.plot (ts, a, label="ampl")
 plt.plot (ts, p, label="phase")
 plt.title ('PAC LMS Simulation tau: %g'%tau+'us f=%g'%fref+'Hz fs=x%g'%xx+'+x%g'%xx2+'+x%g'%xx3)
