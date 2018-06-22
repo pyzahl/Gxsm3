@@ -166,6 +166,10 @@ module lms_phase_amplitude_detector #(
     //    reg signed [MDC_DATA_WIDTH-1:0] mdc1=0; // DC IIR low pass
     reg signed [LMS_DATA_WIDTH-1:0] mdc=0; // DC IIR low pass
     reg signed [LMS_DATA_WIDTH+32-1:0] mdc_mue=0; // DC IIR low pass
+    reg signed [LMS_DATA_WIDTH+32-1:0] mdc_mue_e1=0; // DC IIR low pass
+    reg signed [LMS_DATA_WIDTH+32-1:0] mdc_mue_e2=0; // DC IIR low pass
+    reg signed [LMS_DATA_WIDTH+32-1:0] mdc_mue_e3=0; // DC IIR low pass
+    reg signed [LMS_DATA_WIDTH+32-1:0] mdc_mue_e4=0; // DC IIR low pass
     reg signed [LMS_DATA_WIDTH+32-1:0] mdc1=0; // DC IIR low pass
     reg signed [LMS_DATA_WIDTH+32-1:0] mdc2=0; // DC IIR low pass
     reg signed [LMS_DATA_WIDTH-1:0] a=0;
@@ -205,16 +209,17 @@ module lms_phase_amplitude_detector #(
                                                  {S_AXIS_SIGNAL_tdata[S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH-1 : 0]}, // 14bit ADC data bits 13..0
                   {(LMS_DATA_WIDTH-(LMS_DATA_WIDTH-LMS_Q_WIDTH-1)-S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH){1'b0}} // fill 0
                  };
-//            mdc0 <= {{(2){S_AXIS_SIGNAL_tdata[S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH-1]}}, // 2 top bits room w signum extension
-//                         {S_AXIS_SIGNAL_tdata[S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH-1 : 0]}, // 14bit ADC data bits 13..0
-//                         {(MDC_DATA_WIDTH-2-S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH){1'b0}} // fill 0
-//                    };
         end
         
-        //  IIR DC filter
+        //  special IIR DC filter DC error on average of samples at 0,90,180,270
         if (sc_zero)
         begin
-            mdc_mue <= (m-mdc) * dc_tau;
+            // mdc_mue <= (m-mdc) * dc_tau;
+            mdc_mue_e1 <= (m-mdc)>>>2; // prepare for moving sum over period at 0,90,180,270
+            mdc_mue_e2 <= mdc_mue_e1;
+            mdc_mue_e3 <= mdc_mue_e2;
+            mdc_mue_e4 <= mdc_mue_e3;
+            mdc_mue <= (mdc_mue_e1+mdc_mue_e2+mdc_mue_e3+mdc_mue_e4) * dc_tau;
             mdc1 <= mdc2 + mdc_mue;
             sc_zero <= 0; // reset zero indicator
         end
