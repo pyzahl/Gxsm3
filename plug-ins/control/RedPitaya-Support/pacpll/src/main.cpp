@@ -157,6 +157,7 @@ CDoubleParameter TUNE_SPAN("TUNE_SPAN", CBaseParameter::RW, 5.0, 0, 0.1, 1e6); /
 CDoubleParameter TUNE_DFREQ("TUNE_DFREQ", CBaseParameter::RW, 0.05, 0, 0.0001, 1000.); // Hz
 
 // PLL CONFIGURATION
+CBooleanParameter SET_SINGLESHOT_TRANSPORT_TRIGGER("SET_SINGLESHOT_TRANSPORT_TRIGGER", CBaseParameter::RW, false, 0);
 CBooleanParameter AMPLITUDE_CONTROLLER("AMPLITUDE_CONTROLLER", CBaseParameter::RW, false, 0);
 CBooleanParameter PHASE_CONTROLLER("PHASE_CONTROLLER", CBaseParameter::RW, false, 0);
 
@@ -399,6 +400,7 @@ void rp_PAC_set_volume (double volume){
 }
 
 #define PACPLL_CFG_CONTROL_LOOPS 3
+// Configure Control Loops Ampl and Phase On/Off
 void rp_PAC_configure_loops (int phase_ctrl, int am_ctrl){
         if (verbose > 2) fprintf(stderr, "##Configure loop controls: %x",  phase_ctrl ? 1:0 | am_ctrl ? 2:0); 
         set_gpio_cfgreg_int32 (PACPLL_CFG_CONTROL_LOOPS, (phase_ctrl ? 1:0) | (am_ctrl ? 2:0));
@@ -407,28 +409,30 @@ void rp_PAC_configure_loops (int phase_ctrl, int am_ctrl){
 #define PACPLL_CFG_PACTAU     4
 #define PACPLL_CFG_PACATAU   27
 #define PACPLL_CFG_PAC_DCTAU 28
-// tau in s for dual PAC
+// tau in s for dual PAC and auto DC offset
 void rp_PAC_set_pactau (double tau, double atau, double dc_tau){
         if (verbose > 2) fprintf(stderr, "##Configure: tau= %g  Q22: %d\n", tau, (int)(Q22 * tau)); 
         set_gpio_cfgreg_int32 (PACPLL_CFG_PACTAU, (int)(Q22/ADC_SAMPLING_RATE/tau)); // Q22 significant from top - tau for phase
         set_gpio_cfgreg_int32 (PACPLL_CFG_PACATAU, (int)(Q22/ADC_SAMPLING_RATE/atau)); // Q22 significant from top -- atau is tau for amplitude
-        // double c = Q31/(4.*FREQUENCY_MANUAL.Value ())/dc_tau;
-        // if (c < 1.0)
-        // ...
+
+        // Q22 significant from top -- dc_tau is tau for DC FIR-IIR Filter on phase aligned decimated data:
+        // at 4x Freq Ref sampling rate. Moving averaging FIR sampling at past 4 zero crossing of Sin Cos ref passed on to IIR with tau
         if (dc_tau > 0.)
-                set_gpio_cfgreg_int32 (PACPLL_CFG_PAC_DCTAU, (int)(Q31/(4.*FREQUENCY_MANUAL.Value ())/dc_tau)); // Q22 significant from top -- dc_tau is tau for DC LMS Filter
+                set_gpio_cfgreg_int32 (PACPLL_CFG_PAC_DCTAU, (int)(Q31/(4.*FREQUENCY_MANUAL.Value ())/dc_tau));
         else if (dc_tau < 0.)
-                set_gpio_cfgreg_uint32 (PACPLL_CFG_PAC_DCTAU, 0xffffffff); // disable
+                set_gpio_cfgreg_uint32 (PACPLL_CFG_PAC_DCTAU, 0xffffffff); // disable -- use manaul DC, set below
         else
                 set_gpio_cfgreg_uint32 (PACPLL_CFG_PAC_DCTAU, 0); // freeze
 }
 
 #define PACPLL_CFG_DC_OFFSET 5
+// Set "manual" DC offset used if dc_tau (see above) signum bit is set (neg).
 void rp_PAC_set_dcoff (double dc){
         if (verbose > 2) fprintf(stderr, "##Configure: dc= %g  Q22: %d\n", dc, (int)(Q22 * dc)); 
         set_gpio_cfgreg_int32 (PACPLL_CFG_DC_OFFSET, (int)(Q22 * dc));
 }
 
+// measure DC, update manual offset
 void rp_PAC_auto_dc_offset_adjust (){
         double dc = 0.0;
         int x,i,k;
@@ -453,7 +457,7 @@ void rp_PAC_auto_dc_offset_adjust (){
         signal_dc_measured = dc;
 }
 
-
+// update/follow (slow IIR) DC offset
 void rp_PAC_auto_dc_offset_correct (){
         int i,x;
         double x1;
@@ -469,6 +473,55 @@ void rp_PAC_auto_dc_offset_correct (){
         rp_PAC_set_dcoff (signal_dc_measured);
 }
 
+// Controller Topology:
+/*
+  // IP Configuration
+  //                                  DEFAULTS   PHASE   AMPL         
+    parameter AXIS_TDATA_WIDTH =            32,  24      24    // INPUT AXIS DATA WIDTH
+    parameter M_AXIS_CONTROL_TDATA_WIDTH =  32,  48      16    // SERVO CONTROL DATA WIDTH OF AXIS
+    parameter CONTROL_WIDTH =               32,  44      16    // SERVO CONTROL DATA WIDTH
+    parameter M_AXIS_CONTROL2_TDATA_WIDTH = 32,  48      32    // INTERNAL CONTROl DATA WIDTH MAPPED TO AXIS FOR READOUT not including extend
+    parameter CONTROL2_WIDTH =              50,  75      56    // INTERNAL CONTROl DATA WIDTH not including extend **** COEFQ+AXIS_TDATA_WIDTH == CONTROL2_WIDTH
+    parameter CONTROL2_OUT_WIDTH =          32,  44      32    // max passed outside control width, must be <= CONTROL2_WIDTH
+    parameter COEF_WIDTH =                  32,  32      32    // CP, CI WIDTH
+    parameter QIN =                         22,  22      22    // Q In Signal
+    parameter QCOEF =                       31,  31      31    // Q CP, CI's
+    parameter QCONTROL =                    31,  31      31    // Q Controlvalue
+    parameter CEXTEND =                      4,   1       4    // room for saturation check
+    parameter DEXTEND =                      1,   1       1    // data, erorr extend
+    parameter AMCONTROL_ALLOW_NEG_SPECIAL =  1    0       1    // Special Ampl. Control Mode
+  // ********************
+
+  if (AMCONTROL_ALLOW_NEG_SPECIAL)
+     if (error_next > $signed(0) && control_next < $signed(0)) // auto reset condition for amplitude control to preven negative phase, but allow active "damping"
+          control      <= 0;
+          controlint   <= 0;
+
+  ... check limits and limit to upper and lower, set limiter status indicators;
+
+  m = AXI-axi_input;   // [AXIS_TDATA_WIDTH-1:0]
+  error = setpoint - m;
+
+  if (enable)
+    controlint_next <= controlint + ci*error; // saturation via extended range and limiter // Q64.. += Q31 x Q22 ==== AXIS_TDATA_WIDTH + COEF_WIDTH
+    control_next    <= controlint + cp*error; // 
+  else
+    controlint_next <= reset;
+    control_next    <= reset;
+
+  *************************
+  assign M_AXIS_CONTROL_tdata   = {control[CONTROL2_WIDTH+CEXTEND-1], control[CONTROL2_WIDTH-2:CONTROL2_WIDTH-CONTROL_WIDTH]}; // strip extension
+  assign M_AXIS_CONTROL2_tdata  = {control[CONTROL2_WIDTH+CEXTEND-1], control[CONTROL2_WIDTH-2:CONTROL2_WIDTH-CONTROL2_OUT_WIDTH]};
+
+  assign mon_signal  = {m[AXIS_TDATA_WIDTH+DEXTEND-1], m[AXIS_TDATA_WIDTH-2:0]};
+  assign mon_error   = {error[AXIS_TDATA_WIDTH+DEXTEND-1], error[AXIS_TDATA_WIDTH-2:0]};
+  assign mon_control = {control[CONTROL2_WIDTH+CEXTEND-1], control[CONTROL2_WIDTH-2:CONTROL2_WIDTH-32]};
+  assign mon_control_lower32 = {{control[CONTROL2_WIDTH-32-1 : (CONTROL2_WIDTH>=64? CONTROL2_WIDTH-32-1-31:0)]}, {(CONTROL2_WIDTH>=64?0:(64-CONTROL2_WIDTH)){1'b0}}}; // signed, lower 31
+  *************************
+ */
+
+
+// Configure Controllers
 
 // +10 AM Controller
 // +20 PHASE Controller
@@ -481,6 +534,7 @@ void rp_PAC_auto_dc_offset_correct (){
 #define PACPLL_CFG_UPPER 3 // 3,4 64bit
 #define PACPLL_CFG_LOWER 5 // 5,6 64bit
 
+// Amplitude Controller
 // AMPL from CORDIC: 24bit Q23 -- QCORDICSQRT
 void rp_PAC_set_amplitude_controller (double setpoint, double cp, double ci, double upper, double lower){
         if (verbose > 2) fprintf(stderr, "##Configure Controller: set= %g  Q22: %d    cp=%g ci=%g upper=%g lower=%g\n", setpoint, (int)(Q22 * setpoint), cp, ci, upper, lower); 
@@ -505,6 +559,8 @@ void rp_PAC_set_amplitude_controller (double setpoint, double cp, double ci, dou
         set_gpio_cfgreg_int32 (PACPLL_CFG_AMPLITUDE_CONTROLLER + PACPLL_CFG_LOWER, ((int)(QEXEC * lower)));
 }
 
+// Phase Controller
+// CONTROL[75] OUT[44] : [75-1-1:75-44]=43+1   m[24]  x  c[32]  = 56 M: 24{Q32},  P: 44{Q14}
 void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double upper, double lower){
         if (verbose > 2) fprintf(stderr, "##Configure Controller: set= %g  Q22: %d    cp=%g ci=%g upper=%g lower=%g\n", setpoint, (int)(Q22 * setpoint), cp, ci, upper, lower); 
 
@@ -519,8 +575,8 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
         // = PSign * CPN(29)*pow(10.,Pgain/20.);
         */
 
-        set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_SET,   ((int)(QCORDICATAN * setpoint))<<(32-BITS_CORDICATAN));
-        set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_CP,    (long long)(QPHCOEF * cp)); // 22+1 bit error, 32bit CP,CI << 31 
+        set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_SET,   ((int)(QCORDICATAN * setpoint))); // <<(32-BITS_CORDICATAN));
+        set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_CP,    (long long)(QPHCOEF * cp)); // {32}   22+1 bit error, 32bit CP,CI << 31 --  m[24]  x  cp|ci[32]  = 56 M: 24{Q32},  P: 44{Q14}, top S43
         set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_CI,    (long long)(QPHCOEF * ci));
         set_gpio_cfgreg_int48 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_UPPER, (unsigned long long)round (dds_phaseinc (upper))); // => 44bit phase
         set_gpio_cfgreg_int48 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_LOWER, (unsigned long long)round (dds_phaseinc (lower)));
@@ -543,6 +599,7 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
 #define PACPLL_CFG_TRANSPORT_LOOP            0   // Bit 1=0
 #define PACPLL_CFG_TRANSPORT_START           1   // Bit 0=1
 
+// Configure BRAM Data Transport Mode
 void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, int decimation, int channel_select, double scale, double center){
         if (verbose > 2) fprintf(stderr, "##Configure transport: 0x%02x, dec=%d, M=%d\n",  control, decimation, channel_select); 
         set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_CONTROL,
@@ -580,6 +637,7 @@ void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, in
 
 #define READING_MAX_VALUES 14
 
+// Get all GPIO mapped data / system state snapshot
 void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         int x,y,xx7,xx8,xx9,uix;
         double a,b,v,p,x3,x4,x5,x6,x7,x8,x9,x10,qca,pfpga,x11,x12;
@@ -680,6 +738,25 @@ int bram_status(int bram_status[3]){
 // Generator config
 void set_PAC_config()
 {
+        double reading_vector[READING_MAX_VALUES];
+        int status[3];
+
+        if (SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
+
+                //while (!bram_status(status)); // block
+
+                // trigger single shot
+                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
+                                            SHR_DEC_DATA.Value (),  1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+                rp_PAC_get_single_reading (reading_vector);
+                rp_PAC_get_single_reading (reading_vector);
+                if (verbose > 0) fprintf(stderr, "OnNewParams: OP=4 Single Shot BRAM Transport -- trigger before controller adjust\n");
+                rp_PAC_get_single_reading (reading_vector);
+                if (verbose == 1) fprintf(stderr, "1BRAM T start:\n");
+                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
+                                            SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+        }
+
         if (OPERATION.Value() != 6)
                 rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value());
         rp_PAC_set_volume (VOLUME_MANUAL.Value() / 1000.); // mV -> V
@@ -889,7 +966,7 @@ void UpdateSignals(void)
                 read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
                 rp_PAC_get_single_reading (reading_vector);
                 rp_PAC_get_single_reading (reading_vector);
-                if (bram_status(status)){
+                if (bram_status(status) && !SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
                         if (verbose == 1) fprintf(stderr, "BRAM T init:\n");
                         rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
                                                     SHR_DEC_DATA.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
@@ -1125,6 +1202,7 @@ void OnNewParams(void)
         
         PHASE_CONTROLLER.Update ();
         AMPLITUDE_CONTROLLER.Update ();
+        SET_SINGLESHOT_TRANSPORT_TRIGGER.Update ();
 
         AMPLITUDE_FB_SETPOINT.Update ();
         AMPLITUDE_FB_CP.Update ();
