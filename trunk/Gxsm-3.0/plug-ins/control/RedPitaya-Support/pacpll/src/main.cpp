@@ -381,6 +381,11 @@ double dds_phaseinc_to_freq (unsigned long long ddsphaseincQ44){
         return fclk*(double)ddsphaseincQ44/(double)(Q44);
 }
 
+double dds_phaseinc_rel_to_freq (long long ddsphaseincQ44){
+        double fclk = ADC_SAMPLING_RATE;
+        return fclk*(double)ddsphaseincQ44/(double)(Q44);
+}
+
 #define PACPLL_CFG_DDS_PHASEINC 0
 //#define PACPLL_CFG_DDS_PHASEINC_LO 0
 //#define PACPLL_CFG_DDS_PHASEINC_HI 1
@@ -903,7 +908,7 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl Exec (32)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Freq (48)-Lower(48)
                         SIGNAL_CH1[k]  = (float)ix32 / QEXEC * 1000.;
-                        SIGNAL_CH2[k]  = (float)dds_phaseinc_to_freq ((double)iy32); // correct to 44
+                        SIGNAL_CH2[k]  = (float)dds_phaseinc_rel_to_freq ((double)iy32); // correct to 44
                 }
                 break;
         case 5:
@@ -919,7 +924,7 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Freq (48)-Lower(48)
                         SIGNAL_CH1[k]  = (float)ix32/QCORDICATAN*180./M_PI;
-                        SIGNAL_CH2[k]  = (float)dds_phaseinc_to_freq ((double)iy32); // correct to 44
+                        SIGNAL_CH2[k]  = (float)dds_phaseinc_rel_to_freq ((double)iy32); // correct to 44
                 }
                 break;
         case 7:

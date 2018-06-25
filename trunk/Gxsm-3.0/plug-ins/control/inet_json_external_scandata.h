@@ -409,9 +409,12 @@ public:
                 return -y_hi*2*((db-dB_hi)/20./dB_mags+0.5);
         };
         inline double deg_to_y (double deg, double y_hi){
-                return -y_hi*deg/180.;
+                if (fabs (deg) > 180.*deg_extend)
+                        if (deg_extend < 4)
+                                deg_extend++;
+                return -y_hi*deg/180./deg_extend;
         };
-        
+         
 private:
         int ch_freq;
         int ch_ampl;
@@ -423,6 +426,7 @@ private:
         int streaming;
         int operation_mode;
         int channel_selections[7];
+        int deg_extend;
         
         PACPLL_parameters parameters;
         PACPLL_signals signals;
