@@ -68,8 +68,10 @@ module axis_4s_combine #(
     parameter SAXIS_2_TDATA_WIDTH = 32,
     parameter SAXIS_3_DATA_WIDTH  = 48,
     parameter SAXIS_3_TDATA_WIDTH = 48,
-    parameter SAXIS_45_DATA_WIDTH  = 24,
-    parameter SAXIS_45_TDATA_WIDTH = 24,
+    parameter SAXIS_4_DATA_WIDTH  = 32,
+    parameter SAXIS_4_TDATA_WIDTH = 32,
+    parameter SAXIS_5_DATA_WIDTH  = 24,
+    parameter SAXIS_5_TDATA_WIDTH = 24,
     parameter SAXIS_6_DATA_WIDTH   = 32,
     parameter SAXIS_6_TDATA_WIDTH  = 32,
     parameter SAXIS_78_DATA_WIDTH  = 32,
@@ -92,10 +94,10 @@ module axis_4s_combine #(
     input wire [SAXIS_3_TDATA_WIDTH-1:0]  S_AXIS3_tdata,
     input wire                            S_AXIS3_tvalid,
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
-    input wire [SAXIS_45_TDATA_WIDTH-1:0]  S_AXIS4_tdata,
+    input wire [SAXIS_4_TDATA_WIDTH-1:0]  S_AXIS4_tdata,
     input wire                          S_AXIS4_tvalid,
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
-    input wire [SAXIS_45_TDATA_WIDTH-1:0]  S_AXIS5_tdata,
+    input wire [SAXIS_5_TDATA_WIDTH-1:0]  S_AXIS5_tdata,
     input wire                          S_AXIS5_tvalid,
     // (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     // input wire [SAXIS_6_TDATA_WIDTH-1:0]  S_AXIS6_tdata,
@@ -321,8 +323,8 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS4_tvalid && S_AXIS5_tvalid)
                             begin
-                                ch1n <= $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
-                                ch2n <= $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch1n <= $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]); // Phase (24) =>  32
+                                ch2n <= $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
                                 dec_sms_next <= 3'd3;
                             end
                         end
@@ -331,7 +333,7 @@ module axis_4s_combine #(
                             if (S_AXIS1_tvalid && S_AXIS5_tvalid)
                             begin
                                 ch1n <= $signed(S_AXIS1_tdata[15:0]);                    // IN1 Signal with
-                                ch2n <= $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch2n <= $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
                                 dec_sms_next <= 3'd3;
                             end
                         end
@@ -340,7 +342,7 @@ module axis_4s_combine #(
                             if (S_AXIS1_tvalid && S_AXIS4_tvalid)
                             begin
                                 ch1n <= $signed(S_AXIS1_tdata[15:0]);                    // IN1 Signal with
-                                ch2n <= $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
+                                ch2n <= $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]); // Phase (24) =>  32
                                 dec_sms_next <= 3'd3;
                             end
                         end
@@ -357,7 +359,7 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS5_tvalid && S_AXIS2_tvalid)
                             begin
-                                ch1n <= $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch1n <= $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
                                 ch2n <= $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // Amplitude Exec (32) =>  64 sum
 //                            if (S_AXIS7_tvalid && S_AXIS8_tvalid)
 //                                ch1n <= S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]; // AX7
@@ -369,7 +371,7 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS4_tvalid && S_AXIS3_tvalid)
                             begin
-                                ch1n <= $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
+                                ch1n <= $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]); // Phase (24) =>  32
                                 ch2n <= delta_freq; // Freq (48) - Center (48) =>  64 sum
 //                            ch1n <= ch1 + mk3_pixel_clock; // keep counting! SET SHR to 0!!!
 //                            ch2n <= ch1 + mk3_line_clock;
@@ -381,7 +383,7 @@ module axis_4s_combine #(
                             if (S_AXIS7_tvalid && S_AXIS5_tvalid)
                             begin
                                 ch1n <= $signed(S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]); // M-MDC (32)
-                                ch2n <= $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch2n <= $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
                                 dec_sms_next <= 3'd3;
                             end
                         end
@@ -409,8 +411,8 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS4_tvalid && S_AXIS5_tvalid)
                             begin
-                                ch1n <= ch1 + $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
-                                ch2n <= ch2 + $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch1n <= ch1 + $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]); // Phase (24) =>  32
+                                ch2n <= ch2 + $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
                         end
@@ -419,7 +421,7 @@ module axis_4s_combine #(
                             if (S_AXIS1_tvalid && S_AXIS5_tvalid)
                             begin
                                 ch1n <= ch1 + $signed(S_AXIS1_tdata[15:0]); // IN1
-                                ch2n <= ch2 + $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch2n <= ch2 + $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
                             end
                             decimate_count_next <= decimate_count + 1; // next sample
                         end
@@ -428,7 +430,7 @@ module axis_4s_combine #(
                             if (S_AXIS1_tvalid && S_AXIS4_tvalid)
                             begin
                                 ch1n <= ch1 + $signed(S_AXIS1_tdata[15:0]); // IN1
-                                ch2n <= ch2 + $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
+                                ch2n <= ch2 + $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]); // Phase (24) =>  32
                             end
                             decimate_count_next <= decimate_count + 1; // next sample
                         end
@@ -445,7 +447,7 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS5_tvalid && S_AXIS2_tvalid)
                             begin
-                                ch1n <= ch1 + $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch1n <= ch1 + $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
                                 ch2n <= ch2 + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // Amplitude Exec (32) =>  64 sum
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
@@ -454,7 +456,7 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS4_tvalid && S_AXIS3_tvalid)
                             begin
-                                ch1n <= ch1 +  $signed(S_AXIS4_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Phase (24) =>  32
+                                ch1n <= ch1 +  $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]); // Phase (24) =>  32
                                 ch2n <= ch2 + delta_freq; // Freq (48) - Center (48) =>  64 sum
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
@@ -464,7 +466,7 @@ module axis_4s_combine #(
                             if (S_AXIS7_tvalid && S_AXIS5_tvalid)
                             begin
                                 ch1n <= ch1 + $signed(S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]); // M-MDC (32)
-                                ch2n <= ch2 + $signed(S_AXIS5_tdata[SAXIS_45_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch2n <= ch2 + $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
                         end

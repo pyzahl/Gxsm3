@@ -315,7 +315,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_input_width_chars (8);
         bp->set_input_nx (1);
   	bp->grid_add_ec ("Center,Scale", Hz, &parameters.frequency_center, 0.0, 20e6, ".3lf", 0.1, 10., "FREQUENCY-CENTER");
-  	bp->grid_add_ec (NULL, Unity, &parameters.aux_scale, -1e6, 1e6, ".3lf", 0.1, 10., "AUX-SCALE");
+  	bp->grid_add_ec (NULL, Unity, &parameters.aux_scale, -1e6, 1e6, ".6lf", 0.1, 10., "AUX-SCALE");
         bp->new_line ();
         bp->set_no_spin (false);
         bp->set_input_nx (2);
@@ -379,6 +379,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->grid_add_check_button ( N_("Invert"), "Invert Amplitude Controller Gain. Normally positive.", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::amplitude_controller_invert), this);
 
+        bp->new_line ();
+        bp->grid_add_check_button ( N_("Set Auto Trigger SS"), "Set Auto Trigger SS", 2,
+                                    G_CALLBACK (Inet_Json_External_Scandata::set_ss_auto_trigger), this);
 
         bp->pop_grid ();
 
@@ -930,6 +933,10 @@ void Inet_Json_External_Scandata::choice_transport_ch5_callback (GtkWidget *widg
         self->channel_selections[4] = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
         if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) > 0)
                 self->write_parameter ("TRANSPORT_CH5", gtk_combo_box_get_active (GTK_COMBO_BOX (widget))-1);
+}
+
+void Inet_Json_External_Scandata::set_ss_auto_trigger (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("SET_SINGLESHOT_TRANSPORT_TRIGGER", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
 }
 
 void Inet_Json_External_Scandata::amplitude_gain_changed (Param_Control* pcs, gpointer user_data){
