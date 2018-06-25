@@ -237,6 +237,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
         ch_freq = -1;
         ch_ampl = -1;
+        deg_extend = 1;
 
         for (int i=0; i<5; ++i){
                 scope_ac[i]=false;
@@ -1403,7 +1404,7 @@ void Inet_Json_External_Scandata::update_graph (){
         double x0 = xs*n/2;
         double yr = h/2;
         double y_hi  = yr*0.95;
-        double dB_hi   =  -10.0;
+        double dB_hi   =  0.0;
         double dB_mags =  4.0;
         cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, n/2, h);
         cairo_t *cr = cairo_create (surface);
@@ -1439,9 +1440,9 @@ void Inet_Json_External_Scandata::update_graph (){
 
                         if (operation_mode == 6 && (ch == 0 || ch == 1))
                                 if (ch == 0)
-                                        wave->set_stroke_rgba (1.,0.,0.,0.5);
+                                        wave->set_stroke_rgba (1.,0.,0.,0.4);
                                 else
-                                        wave->set_stroke_rgba (0.,1.,0.,0.5);
+                                        wave->set_stroke_rgba (0.,1.,0.,0.4);
                         else
                                 wave->set_stroke_rgba (BasicColors[color[ch]]);
                         min=max=signal[ch][512];
@@ -1563,7 +1564,7 @@ void Inet_Json_External_Scandata::update_graph (){
                         reading->draw (cr);
                 }
                 // ticks deg
-                for (int deg=-180; deg <= 180; deg += 30){
+                for (int deg=-180*deg_extend; deg <= 180*deg_extend; deg += 30*deg_extend){
                         valuestring = g_strdup_printf ("%d" UTF8_DEGREE, deg);
                         reading->set_stroke_rgba (CAIRO_COLOR_RED);
                         reading->set_text (480, deg_to_y (deg, y_hi), valuestring);
@@ -1581,6 +1582,19 @@ void Inet_Json_External_Scandata::update_graph (){
                 cursors->set_xy_fast (1,250.,-y_hi);
                 cursors->draw (cr);
 
+                // phase setpoint
+                cursors->set_stroke_rgba (1.,0.,0.,0.5);
+                cursors->set_xy_fast (0,250.+480.*(-0.5), deg_to_y (parameters.phase_fb_setpoint, y_hi));
+                cursors->set_xy_fast (1,250.+480.*(0.5), deg_to_y (parameters.phase_fb_setpoint, y_hi));
+                cursors->draw (cr);
+
+                // phase setpoint
+                cursors->set_stroke_rgba (0.,1.,0.,0.5);
+                cursors->set_xy_fast (0,250.+480.*(-0.5), db_to_y (dB_from_mV (parameters.amplitude_fb_setpoint), dB_hi, y_hi, dB_mags));
+                cursors->set_xy_fast (1,250.+480.*(0.5), db_to_y (dB_from_mV (parameters.amplitude_fb_setpoint), dB_hi, y_hi, dB_mags));
+                cursors->draw (cr);
+
+               
                 if (operation_mode == 6){ // tune info
                         if (debug_level > 0)
                                 g_print ("Tune: %g Hz,  %g mV,  %g dB, %g deg\n",
@@ -1644,7 +1658,10 @@ void Inet_Json_External_Scandata::update_graph (){
                 }
                 delete wave;
                 delete reading;
+        } else {
+                deg_extend = 1;
         }
+        
         cairo_destroy (cr);
         
         gtk_image_set_from_surface (GTK_IMAGE (signal_graph), surface);
