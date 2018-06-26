@@ -80,11 +80,11 @@ module phase_unwrap #(
         
         if (enable)
         begin
-            if (dp01 > 25'sd6588397) // > pi : (1<<21)*pi = 6588397.3
+            if (dp01 > 25'sd6588397)                      // > pi : (1<<21)*pi = 6588397.3
             begin
                 phase_wrap <= phase_wrap - 25'sd13176795; // 2pi : (1<<21)*pi = 13176794.6
             end
-            if (dp01 < -25'sd6588397) // > pi  (1<<21)*pi = 6588397.3
+            if (dp01 < -25'sd6588397)                     // > pi  (1<<21)*pi = 6588397.3
             begin
                 phase_wrap <= phase_wrap + 25'sd13176795;
             end

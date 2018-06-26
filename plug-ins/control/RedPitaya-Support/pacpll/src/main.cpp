@@ -160,7 +160,7 @@ CDoubleParameter TUNE_DFREQ("TUNE_DFREQ", CBaseParameter::RW, 0.05, 0, 0.0001, 1
 CBooleanParameter SET_SINGLESHOT_TRANSPORT_TRIGGER("SET_SINGLESHOT_TRANSPORT_TRIGGER", CBaseParameter::RW, false, 0);
 CBooleanParameter AMPLITUDE_CONTROLLER("AMPLITUDE_CONTROLLER", CBaseParameter::RW, false, 0);
 CBooleanParameter PHASE_CONTROLLER("PHASE_CONTROLLER", CBaseParameter::RW, false, 0);
-
+CBooleanParameter PHASE_UNWRAPPING_ALWAYS("PHASE_UNWRAPPING_ALWAYS", CBaseParameter::RW, false, 0);
 
 //void rp_PAC_set_phase_controller64 (double setpoint, double cp, double ci, double upper, double lower)
 CDoubleParameter AMPLITUDE_FB_SETPOINT("AMPLITUDE_FB_SETPOINT", CBaseParameter::RW, 20, 0, 0, 1000); // mV
@@ -406,9 +406,9 @@ void rp_PAC_set_volume (double volume){
 
 #define PACPLL_CFG_CONTROL_LOOPS 3
 // Configure Control Loops Ampl and Phase On/Off
-void rp_PAC_configure_loops (int phase_ctrl, int am_ctrl){
+void rp_PAC_configure_loops (int phase_ctrl, int am_ctrl, int phase_unwrap_always){
         if (verbose > 2) fprintf(stderr, "##Configure loop controls: %x",  phase_ctrl ? 1:0 | am_ctrl ? 2:0); 
-        set_gpio_cfgreg_int32 (PACPLL_CFG_CONTROL_LOOPS, (phase_ctrl ? 1:0) | (am_ctrl ? 2:0));
+        set_gpio_cfgreg_int32 (PACPLL_CFG_CONTROL_LOOPS, (phase_ctrl ? 1:0) | (am_ctrl ? 2:0) | (phase_unwrap_always ? 4:0));
 }
 
 #define PACPLL_CFG_PACTAU     4
@@ -783,7 +783,7 @@ void set_PAC_config()
                                      FREQ_FB_LOWER.Value ()
                                      );
         
-        rp_PAC_configure_loops (PHASE_CONTROLLER.Value ()?1:0, AMPLITUDE_CONTROLLER.Value ()?1:0);
+        rp_PAC_configure_loops (PHASE_CONTROLLER.Value ()?1:0, AMPLITUDE_CONTROLLER.Value ()?1:0, PHASE_UNWRAPPING_ALWAYS.Value ()?1:0);
 }
 
 
@@ -1208,7 +1208,8 @@ void OnNewParams(void)
         PHASE_CONTROLLER.Update ();
         AMPLITUDE_CONTROLLER.Update ();
         SET_SINGLESHOT_TRANSPORT_TRIGGER.Update ();
-
+        PHASE_UNWRAPPING_ALWAYS.Update ();
+        
         AMPLITUDE_FB_SETPOINT.Update ();
         AMPLITUDE_FB_CP.Update ();
         AMPLITUDE_FB_CI.Update ();
