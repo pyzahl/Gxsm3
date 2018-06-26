@@ -453,6 +453,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 "SINGLE SHOT",
                 "START BRAM LOOP",
                 "RUN TUNE",
+                "RUN TUNE F",
+                "RUN TUNE FF",
                 NULL };
 
         // Init choicelist
@@ -1440,7 +1442,9 @@ void Inet_Json_External_Scandata::update_graph (){
                 double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5, // 0...4 CH1..5
                                      pacpll_signals.signal_phase, pacpll_signals.signal_ampl  }; // 5,6 PHASE, AMPL in Tune Mode, averaged from burst
                 double x,xf,min,max,s,ydb,yph;
-                int ch_last=(operation_mode == 6) ? 7 : 5;
+                if (operation_mode >= 6 || operation_mode <= 8)
+                        operation_mode = 6; // TUNE
+                int ch_last=(operation_mode >= 6 || operation_mode <= 8) ? 7 : 5;
                 for (int ch=0; ch<ch_last; ++ch){
                         int part_i0=0;
                         int part_pos=1;
@@ -1554,7 +1558,7 @@ void Inet_Json_External_Scandata::update_graph (){
                         g_free (cursors);
                 }
 
-                if (operation_mode != 6){
+                if (operation_mode < 6){
                         valuestring = g_strdup_printf ("Dec=%d [>>%d] wp#{%d,%d}", data_decimation, data_shr, pacpll_parameters.bram_write_pos, pacpll_parameters.bram_dec_count);
                         reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
                         reading->set_text (10, -(110-14*6), valuestring);
