@@ -218,7 +218,7 @@ class tip_control():
                 gxsm.set ("dsp-fbs-mx0-current-set","%f"%(self.current))
                 gxsm.sleep (100) # sleep 100/10 sec
 
-	def make_grid_coords(self, spnx, steps, spny, stepx, positions=1, position=[[0,0]], shuffle=False):
+	def make_grid_coords(self, spnx, stepx, spny, stepy, positions=1, position=[[0,0]], shuffle=False):
 		sxlist = np.arange (-spnx, spnx+stepx, stepx)
 		sylist = np.arange (-spny, spny+stepy, stepy)
 
@@ -758,6 +758,7 @@ class probe_control():
                 gxsm.set ("dsp-fbs-bias","%f"%(ref_bias))
                 gxsm.set ("dsp-LCK-AC-Bias-Amp","%g"%(ac_amp))
                 gxsm.set ("dsp-fbs-mx0-current-set","%f"%(ref_current))
+                gxsm.sleep (20)
                 i_ac_bias_amp=gxsm.get ("dsp-LCK-AC-Bias-Amp")
                 for i in range(0, num):
                         if run_ref > 0 and i % run_ref == 0:
@@ -769,14 +770,17 @@ class probe_control():
                         sx=coords[i][0]
                         sy=coords[i][1]
         # force offset and set scan coords
-                        print "ScanXY: ", sx, sy
+                        #print "ScanXY: ", sx, sy
                         gxsm.logev ("IV Simple at ScanXY= "%sx + ", %f"%sy)
                         gxsm.moveto_scan_xy (sx, sy)
+	                gxsm.sleep (20)
                         self.tip.wait_scan_pos()
-                        print "VP Execute #", i, " of ", len2, " (", (100.*float(i)/len2), "%)"
+                        #print "VP Execute #", i, " of ", len2, " (", (100.*float(i)/num), "%)"
+	                gxsm.sleep (20)
                         gxsm.action ("DSP_VP_IV_EXECUTE")
         # wait until VP action has finished
-                        M = wait_for_vp ()
+	                gxsm.sleep (50)
+                        M = self.tip.wait_for_vp ()
                         if M < -3:
                                 terminate = 1
                                 break
