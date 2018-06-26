@@ -1442,9 +1442,9 @@ void Inet_Json_External_Scandata::update_graph (){
                 double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5, // 0...4 CH1..5
                                      pacpll_signals.signal_phase, pacpll_signals.signal_ampl  }; // 5,6 PHASE, AMPL in Tune Mode, averaged from burst
                 double x,xf,min,max,s,ydb,yph;
-                if (operation_mode >= 6 || operation_mode <= 8)
+                if (operation_mode >= 6 && operation_mode <= 8)
                         operation_mode = 6; // TUNE
-                int ch_last=(operation_mode >= 6 || operation_mode <= 8) ? 7 : 5;
+                int ch_last=(operation_mode == 6) ? 7 : 5;
                 for (int ch=0; ch<ch_last; ++ch){
                         int part_i0=0;
                         int part_pos=1;
