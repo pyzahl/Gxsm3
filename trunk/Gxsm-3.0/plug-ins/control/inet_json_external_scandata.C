@@ -429,7 +429,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_controller), this);
         bp->grid_add_check_button ( N_("Invert"), "Invert Phase Controller Gain. Normally positive.", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_controller_invert), this);
-
+        bp->new_line ();
+        bp->grid_add_check_button ( N_("Unwapping"), "Always unwrap phase/auto unwrap only if controller is enabled", 2,
+                                    G_CALLBACK (Inet_Json_External_Scandata::phase_unwrapping_always), this);
         bp->pop_grid ();
         bp->new_line ();
 
@@ -572,8 +574,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	for(int i=0; monitor_modes_gpio[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), monitor_modes_gpio[i], monitor_modes_gpio[i]);
 
-        channel_selections[2] = 1;
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 1);
+        channel_selections[2] = 0;
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
 
         // CH4 from GPIO MONITOR</p>
 	wid = gtk_combo_box_text_new ();
@@ -586,8 +588,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	for(int i=0; monitor_modes_gpio[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), monitor_modes_gpio[i], monitor_modes_gpio[i]);
 
-        channel_selections[3] = 2;
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 2);
+        channel_selections[3] = 0;
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
 
         // CH5 from GPIO MONITOR</p>
 	wid = gtk_combo_box_text_new ();
@@ -600,8 +602,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	for(int i=0; monitor_modes_gpio[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), monitor_modes_gpio[i], monitor_modes_gpio[i]);
 
-        channel_selections[4] = 6;
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 6);
+        channel_selections[4] = 0;
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
 
 
         // Scope Display
@@ -974,6 +976,11 @@ void Inet_Json_External_Scandata::phase_controller_invert (GtkWidget *widget, In
 void Inet_Json_External_Scandata::phase_controller (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->write_parameter ("PHASE_CONTROLLER", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
         self->parameters.phase_controller = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+}
+
+void Inet_Json_External_Scandata::phase_unwrapping_always (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("PHASE_UNWRAPPING_ALWAYS", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        self->parameters.phase_unwrapping_always = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
 }
 
 void Inet_Json_External_Scandata::update(){

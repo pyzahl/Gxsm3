@@ -103,6 +103,7 @@ struct PACPLL_parameters {
         double freq_fb_upper;
         double freq_fb_lower;
         double phase_controller;
+        double phase_unwrapping_always;
         double set_singleshot_transport_trigger;
 };
 
@@ -172,6 +173,7 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "FREQ_FB_UPPER", &pacpll_parameters.freq_fb_upper, false },
         { "FREQ_FB_LOWER", &pacpll_parameters.freq_fb_lower, false },
         { "PHASE_CONTROLLER", &pacpll_parameters.phase_controller, false },
+        { "PHASE_UNWRAPPING_ALWAYS", &pacpll_parameters.phase_unwrapping_always, false },
         { "SET_SINGLESHOT_TRANSPORT_TRIGGER", &pacpll_parameters.set_singleshot_transport_trigger, false },
         
         { NULL, NULL, true }
@@ -218,6 +220,7 @@ public:
 	static void phase_gain_changed (Param_Control* pcs, gpointer user_data);
         static void phase_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void phase_controller (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void phase_unwrapping_always (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void set_ss_auto_trigger (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
         static void choice_operation_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
