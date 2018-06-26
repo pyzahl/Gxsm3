@@ -1000,111 +1000,149 @@ void UpdateSignals(void)
         }
         
         // TUNE MODE
-        if ( OPERATION.Value () == 6 ){
-                ampl=0.;
-                phase=0.;
-                int k;
-                size_t i = 12;
-                size_t N = 8*SIGNAL_SIZE_DEFAULT;
-                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
-                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                        phase += (SIGNAL_CH1[k] = (double)ix32/QCORDICATAN/M_PI*180.); // PLL Phase deg
-                        ampl  += (SIGNAL_CH2[k] = (double)iy32/QCORDICSQRT*1000.); // // Resonator Amplitude Signal Monitor in mV
-                }
-                phase /= SIGNAL_SIZE_DEFAULT;
-                ampl  /= SIGNAL_SIZE_DEFAULT;
+        if ( OPERATION.Value () >= 6 && OPERATION.Value () <= 8){
+                static int reps[] = { 1, 5, 25 };
+                int decs[] = { 16, 14, 12 };
+                int waitus[] = { 100000, 80000, 40000 };
+                for (int ti = 0; ti < reps[OPERATION.Value ()-6]; ++ti){
+                        ampl=0.;
+                        phase=0.;
+                        int k;
+                        size_t i = 12;
+                        size_t N = 8*SIGNAL_SIZE_DEFAULT;
 
-                g_data_signal_ch1pa.erase (g_data_signal_ch1pa.begin());
-                g_data_signal_ch1pa.push_back (phase);
-                
-                g_data_signal_ch2aa.erase (g_data_signal_ch2aa.begin());
-                g_data_signal_ch2aa.push_back (ampl);
-                
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
-                if (bram_status(status)){
-                        if (verbose == 1) fprintf(stderr, "BRAM T init:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                        if (verbose == 1) fprintf(stderr, "BRAM T start:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
-                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                }
-                BRAM_WRITE_POS.Value () = status[0];
-                BRAM_DEC_COUNT.Value () = status[1];
-                
-                //ampl = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
-                //phase = reading_vector[5] * 180./M_PI; // PLL Phase deg
+                        if (ti > 0)
+                                usleep (waitus[OPERATION.Value ()-6]);
+                        
+                        for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
+                                int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
+                                int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
+                                phase += (SIGNAL_CH1[k] = (double)ix32/QCORDICATAN/M_PI*180.); // PLL Phase deg
+                                ampl  += (SIGNAL_CH2[k] = (double)iy32/QCORDICSQRT*1000.); // // Resonator Amplitude Signal Monitor in mV
+                        }
+                        phase /= SIGNAL_SIZE_DEFAULT;
+                        ampl  /= SIGNAL_SIZE_DEFAULT;
 
-                if (f < TUNE_SPAN.Value ()/2 && dir == 1)
-                        f += TUNE_DFREQ.Value ();
-                else if (dir == 1){
-                        dir = -1;
-                        CENTER_FREQUENCY.Value () = tune_fcenter;
-                        CENTER_PHASE.Value () = tune_phase;
-                        CENTER_AMPLITUDE.Value () = tune_amp_max;
-                        tune_amp_max=0.;
-                }
-                if (f > -TUNE_SPAN.Value ()/2 && dir == -1)
-                        f -= TUNE_DFREQ.Value ();
-                else if (dir == -1){
-                        dir = 1;
-                        CENTER_FREQUENCY.Value () = tune_fcenter;
-                        CENTER_PHASE.Value () = tune_phase;
-                        CENTER_AMPLITUDE.Value () = tune_amp_max;
-                        tune_amp_max=0.;
-                }
-                rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value() + f);
-                FREQUENCY_TUNE.Value() = f;
-
-                if (ampl > tune_amp_max){
-                        tune_amp_max = ampl;
-                        tune_phase = phase;
-                        tune_fcenter = FREQUENCY_MANUAL.Value() + f;
-                }
+                        g_data_signal_ch1pa.erase (g_data_signal_ch1pa.begin());
+                        g_data_signal_ch1pa.push_back (phase);
                 
+                        g_data_signal_ch2aa.erase (g_data_signal_ch2aa.begin());
+                        g_data_signal_ch2aa.push_back (ampl);
+                
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_get_single_reading (reading_vector);
+                        if (bram_status(status)){
+                                if (verbose == 1) fprintf(stderr, "BRAM T init:\n");
+                                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
+                                                            decs[OPERATION.Value ()-6],  1024, 1<<decs[OPERATION.Value ()-6], 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
+                                rp_PAC_get_single_reading (reading_vector);
+                                rp_PAC_get_single_reading (reading_vector);
+                                if (verbose == 1) fprintf(stderr, "BRAM T start:\n");
+                                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
+                                                            decs[OPERATION.Value ()-6],  1024, 1<<decs[OPERATION.Value ()-6], 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
+                                rp_PAC_get_single_reading (reading_vector);
+                                rp_PAC_get_single_reading (reading_vector);
+                        }
+                        BRAM_WRITE_POS.Value () = status[0];
+                        BRAM_DEC_COUNT.Value () = status[1];
+                
+                        //ampl = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
+                        //phase = reading_vector[5] * 180./M_PI; // PLL Phase deg
+
+                        if (f < TUNE_SPAN.Value ()/2 && dir == 1)
+                                f += TUNE_DFREQ.Value ();
+                        else if (dir == 1){
+                                dir = -1;
+                                CENTER_FREQUENCY.Value () = tune_fcenter;
+                                CENTER_PHASE.Value () = tune_phase;
+                                CENTER_AMPLITUDE.Value () = tune_amp_max;
+                                tune_amp_max=0.;
+                        }
+                        if (f > -TUNE_SPAN.Value ()/2 && dir == -1)
+                                f -= TUNE_DFREQ.Value ();
+                        else if (dir == -1){
+                                dir = 1;
+                                CENTER_FREQUENCY.Value () = tune_fcenter;
+                                CENTER_PHASE.Value () = tune_phase;
+                                CENTER_AMPLITUDE.Value () = tune_amp_max;
+                                tune_amp_max=0.;
+                        }
+                        rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value() + f);
+                        FREQUENCY_TUNE.Value() = f;
+
+                        if (ampl > tune_amp_max){
+                                tune_amp_max = ampl;
+                                tune_phase = phase;
+                                tune_fcenter = FREQUENCY_MANUAL.Value() + f;
+                        }
+                        g_data_signal_frq.erase (g_data_signal_frq.begin());
+                        g_data_signal_frq.push_back (f);
+
+                        rp_PAC_get_single_reading (reading_vector);
+ 
+                        // Slow GPIO MONITOR in strip plotter mode
+                        // Push it to vector
+                        ch = TRANSPORT_CH3.Value ();
+                        if (verbose > 3) fprintf(stderr, "UpdateSignals: CH3=%d \n", ch);
+                        g_data_signal_ch3.erase (g_data_signal_ch3.begin());
+                        g_data_signal_ch3.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 0] * GAIN3.Value ());
+
+                        ch = TRANSPORT_CH4.Value ();
+                        if (verbose > 3) fprintf(stderr, "UpdateSignals: CH4=%d \n", ch);
+                        g_data_signal_ch4.erase (g_data_signal_ch4.begin());
+                        g_data_signal_ch4.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 1] * GAIN4.Value ());
+
+                        ch = TRANSPORT_CH5.Value ();
+                        if (verbose > 3) fprintf(stderr, "UpdateSignals: CH5=%d \n", ch);
+                        g_data_signal_ch5.erase (g_data_signal_ch5.begin());
+                        g_data_signal_ch5.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 1] * GAIN5.Value ());
+
+                        for (int i = 0; i < SIGNAL_SIZE_DEFAULT; i++){
+                                SIGNAL_CH3[i] = g_data_signal_ch3[i];
+                                SIGNAL_CH4[i] = g_data_signal_ch4[i];
+                                SIGNAL_CH5[i] = g_data_signal_ch5[i];
+                                if (OPERATION.Value () >= 6 && OPERATION.Value () <= 8){
+                                        SIGNAL_TUNE_PHASE[i] = g_data_signal_ch1pa[i];
+                                        SIGNAL_TUNE_AMPL[i]  = g_data_signal_ch2aa[i];
+                                        SIGNAL_FRQ[i] = g_data_signal_frq[i];
+                                }
+                        }
+                }                
         } else {
                 f = 0.; dir = 1;
-        }
-        g_data_signal_frq.erase (g_data_signal_frq.begin());
-        g_data_signal_frq.push_back (f);
         
-        if (verbose > 3) fprintf(stderr, "UpdateSignals get GPIO reading:\n");
+                if (verbose > 3) fprintf(stderr, "UpdateSignals get GPIO reading:\n");
 
-        rp_PAC_get_single_reading (reading_vector);
+                rp_PAC_get_single_reading (reading_vector);
 
-        // Slow GPIO MONITOR in strip plotter mode
-        // Push it to vector
-        ch = TRANSPORT_CH3.Value ();
-        if (verbose > 3) fprintf(stderr, "UpdateSignals: CH3=%d \n", ch);
-        g_data_signal_ch3.erase (g_data_signal_ch3.begin());
-        g_data_signal_ch3.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 0] * GAIN3.Value ());
+                // Slow GPIO MONITOR in strip plotter mode
+                // Push it to vector
+                ch = TRANSPORT_CH3.Value ();
+                if (verbose > 3) fprintf(stderr, "UpdateSignals: CH3=%d \n", ch);
+                g_data_signal_ch3.erase (g_data_signal_ch3.begin());
+                g_data_signal_ch3.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 0] * GAIN3.Value ());
 
-        ch = TRANSPORT_CH4.Value ();
-        if (verbose > 3) fprintf(stderr, "UpdateSignals: CH4=%d \n", ch);
-        g_data_signal_ch4.erase (g_data_signal_ch4.begin());
-        g_data_signal_ch4.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 1] * GAIN4.Value ());
+                ch = TRANSPORT_CH4.Value ();
+                if (verbose > 3) fprintf(stderr, "UpdateSignals: CH4=%d \n", ch);
+                g_data_signal_ch4.erase (g_data_signal_ch4.begin());
+                g_data_signal_ch4.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 1] * GAIN4.Value ());
 
-        ch = TRANSPORT_CH5.Value ();
-        if (verbose > 3) fprintf(stderr, "UpdateSignals: CH5=%d \n", ch);
-        g_data_signal_ch5.erase (g_data_signal_ch5.begin());
-        g_data_signal_ch5.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 1] * GAIN5.Value ());
+                ch = TRANSPORT_CH5.Value ();
+                if (verbose > 3) fprintf(stderr, "UpdateSignals: CH5=%d \n", ch);
+                g_data_signal_ch5.erase (g_data_signal_ch5.begin());
+                g_data_signal_ch5.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 1] * GAIN5.Value ());
 
-        // Copy data to signals
-        if (verbose > 3) fprintf(stderr, "UpdateSignals copy signals\n");
-        for (int i = 0; i < SIGNAL_SIZE_DEFAULT; i++){
-                SIGNAL_CH3[i] = g_data_signal_ch3[i];
-                SIGNAL_CH4[i] = g_data_signal_ch4[i];
-                SIGNAL_CH5[i] = g_data_signal_ch5[i];
-                if (OPERATION.Value () == 6){
-                        SIGNAL_TUNE_PHASE[i] = g_data_signal_ch1pa[i];
-                        SIGNAL_TUNE_AMPL[i]  = g_data_signal_ch2aa[i];
-                        SIGNAL_FRQ[i] = g_data_signal_frq[i];
+                // Copy data to signals
+                if (verbose > 3) fprintf(stderr, "UpdateSignals copy signals\n");
+                for (int i = 0; i < SIGNAL_SIZE_DEFAULT; i++){
+                        SIGNAL_CH3[i] = g_data_signal_ch3[i];
+                        SIGNAL_CH4[i] = g_data_signal_ch4[i];
+                        SIGNAL_CH5[i] = g_data_signal_ch5[i];
+                        if (OPERATION.Value () == 6){
+                                SIGNAL_TUNE_PHASE[i] = g_data_signal_ch1pa[i];
+                                SIGNAL_TUNE_AMPL[i]  = g_data_signal_ch2aa[i];
+                                SIGNAL_FRQ[i] = g_data_signal_frq[i];
+                        }
                 }
         }
         
@@ -1260,6 +1298,28 @@ void OnNewParams(void)
                         if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
                         rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
                                                     16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
+                        break;
+                case 7: // Tune fast
+                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Start-Finish, Repeat Hilevel BRAM Transport (Scope/Tune)\n");
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
+                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_get_single_reading (reading_vector);
+                        if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
+                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
+                        break;
+                case 8: // Tune very fast
+                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Start-Finish, Repeat Hilevel BRAM Transport (Scope/Tune)\n");
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
+                                                    12,  1024, 4096, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_get_single_reading (reading_vector);
+                        if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
+                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
+                                                    12,  1024, 4096, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
                         break;
                 case 3:
                         if (verbose > 0) fprintf(stderr, "OnNewParams: OP=3 Init/ResetStart BRAM Transport\n");
