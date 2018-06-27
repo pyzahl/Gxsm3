@@ -1011,9 +1011,6 @@ void UpdateSignals(void)
                         size_t i = 12;
                         size_t N = 8*SIGNAL_SIZE_DEFAULT;
 
-                        if (ti > 0)
-                                usleep (waitus[OPERATION.Value ()-6]);
-                        
                         for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
                                 int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
                                 int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
@@ -1029,23 +1026,9 @@ void UpdateSignals(void)
                         g_data_signal_ch2aa.erase (g_data_signal_ch2aa.begin());
                         g_data_signal_ch2aa.push_back (ampl);
                 
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                        if (bram_status(status)){
-                                if (verbose == 1) fprintf(stderr, "BRAM T init:\n");
-                                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                                            decs[OPERATION.Value ()-6],  1024, 1<<decs[OPERATION.Value ()-6], 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
-                                rp_PAC_get_single_reading (reading_vector);
-                                rp_PAC_get_single_reading (reading_vector);
-                                if (verbose == 1) fprintf(stderr, "BRAM T start:\n");
-                                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
-                                                            decs[OPERATION.Value ()-6],  1024, 1<<decs[OPERATION.Value ()-6], 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
-                                rp_PAC_get_single_reading (reading_vector);
-                                rp_PAC_get_single_reading (reading_vector);
-                        }
-                        BRAM_WRITE_POS.Value () = status[0];
-                        BRAM_DEC_COUNT.Value () = status[1];
-                
+                        g_data_signal_frq.erase (g_data_signal_frq.begin());
+                        g_data_signal_frq.push_back (f);
+
                         //ampl = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
                         //phase = reading_vector[5] * 180./M_PI; // PLL Phase deg
 
@@ -1067,16 +1050,36 @@ void UpdateSignals(void)
                                 CENTER_AMPLITUDE.Value () = tune_amp_max;
                                 tune_amp_max=0.;
                         }
+
+                        // next
                         rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value() + f);
                         FREQUENCY_TUNE.Value() = f;
+                        usleep (25000); // min recover time
 
+                        rp_PAC_get_single_reading (reading_vector);
+                        rp_PAC_get_single_reading (reading_vector);
+                        if (bram_status(status)){
+                                if (verbose == 1) fprintf(stderr, "BRAM T init:\n");
+                                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
+                                                            decs[OPERATION.Value ()-6],  1024, 1<<decs[OPERATION.Value ()-6], 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
+                                rp_PAC_get_single_reading (reading_vector);
+                                rp_PAC_get_single_reading (reading_vector);
+                                if (verbose == 1) fprintf(stderr, "BRAM T start:\n");
+                                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
+                                                            decs[OPERATION.Value ()-6],  1024, 1<<decs[OPERATION.Value ()-6], 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
+                                rp_PAC_get_single_reading (reading_vector);
+                                rp_PAC_get_single_reading (reading_vector);
+                        }
+                        BRAM_WRITE_POS.Value () = status[0];
+                        BRAM_DEC_COUNT.Value () = status[1];
+                        if (ti > 0)
+                                usleep (waitus[OPERATION.Value ()-6]);
+                
                         if (ampl > tune_amp_max){
                                 tune_amp_max = ampl;
                                 tune_phase = phase;
                                 tune_fcenter = FREQUENCY_MANUAL.Value() + f;
                         }
-                        g_data_signal_frq.erase (g_data_signal_frq.begin());
-                        g_data_signal_frq.push_back (f);
 
                         rp_PAC_get_single_reading (reading_vector);
  
