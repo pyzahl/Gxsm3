@@ -52,7 +52,8 @@
 #define ADC_SAMPLING_RATE 125e6
 
 //Signal size
-#define SIGNAL_SIZE_DEFAULT      1024
+#define SIGNAL_SIZE_DEFAULT       1024
+#define TUNE_SIGNAL_SIZE_DEFAULT  1024
 #define PARAMETER_UPDATE_INTERVAL 200 // ms
 #define SIGNAL_UPDATE_INTERVAL    200 // ms
 
@@ -73,14 +74,14 @@ std::vector<float> g_data_signal_ch4(SIGNAL_SIZE_DEFAULT);
 CFloatSignal SIGNAL_CH5("SIGNAL_CH5", SIGNAL_SIZE_DEFAULT, 0.0f);
 std::vector<float> g_data_signal_ch5(SIGNAL_SIZE_DEFAULT);
 
-CFloatSignal SIGNAL_FRQ("SIGNAL_FRQ", SIGNAL_SIZE_DEFAULT, 0.0f);
-std::vector<float> g_data_signal_frq(SIGNAL_SIZE_DEFAULT);
+CFloatSignal SIGNAL_FRQ("SIGNAL_FRQ", TUNE_SIGNAL_SIZE_DEFAULT, 0.0f);
+std::vector<float> g_data_signal_frq(TUNE_SIGNAL_SIZE_DEFAULT);
 
-CFloatSignal SIGNAL_TUNE_PHASE("SIGNAL_TUNE_PHASE", SIGNAL_SIZE_DEFAULT, 0.0f);
-std::vector<float> g_data_signal_ch1pa(SIGNAL_SIZE_DEFAULT); // only used in tune mode
+CFloatSignal SIGNAL_TUNE_PHASE("SIGNAL_TUNE_PHASE", TUNE_SIGNAL_SIZE_DEFAULT, 0.0f);
+std::vector<float> g_data_signal_ch1pa(TUNE_SIGNAL_SIZE_DEFAULT); // only used in tune mode
 
-CFloatSignal SIGNAL_TUNE_AMPL("SIGNAL_TUNE_AMPL", SIGNAL_SIZE_DEFAULT, 0.0f);
-std::vector<float> g_data_signal_ch2aa(SIGNAL_SIZE_DEFAULT); // only used in tune mode
+CFloatSignal SIGNAL_TUNE_AMPL("SIGNAL_TUNE_AMPL", TUNE_SIGNAL_SIZE_DEFAULT, 0.0f);
+std::vector<float> g_data_signal_ch2aa(TUNE_SIGNAL_SIZE_DEFAULT); // only used in tune mode
 
 CFloatSignal SIGNAL_TIME("SIGNAL_TIME", SIGNAL_SIZE_DEFAULT, 0.0f);
 std::vector<float> g_data_signal_time(SIGNAL_SIZE_DEFAULT);
@@ -950,6 +951,7 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
 
 void UpdateSignals(void)
 {
+        static int clear_tune_data=0;
         static int state=0;
         static int dir=1;
         static double f=0.;
@@ -1104,14 +1106,29 @@ void UpdateSignals(void)
                                 SIGNAL_CH3[i] = g_data_signal_ch3[i];
                                 SIGNAL_CH4[i] = g_data_signal_ch4[i];
                                 SIGNAL_CH5[i] = g_data_signal_ch5[i];
-                                if (OPERATION.Value () >= 6 && OPERATION.Value () <= 8){
-                                        SIGNAL_TUNE_PHASE[i] = g_data_signal_ch1pa[i];
-                                        SIGNAL_TUNE_AMPL[i]  = g_data_signal_ch2aa[i];
-                                        SIGNAL_FRQ[i] = g_data_signal_frq[i];
-                                }
                         }
+                        for (int i = 0; i < TUNE_SIGNAL_SIZE_DEFAULT; i++){
+                                SIGNAL_TUNE_PHASE[i] = g_data_signal_ch1pa[i];
+                                SIGNAL_TUNE_AMPL[i]  = g_data_signal_ch2aa[i];
+                                SIGNAL_FRQ[i] = g_data_signal_frq[i];
+                        }
+                        clear_tune_data=1; // after completed
                 }                
         } else {
+                if (clear_tune_data){
+                        clear_tune_data=0;
+
+                        for (int i = 0; i < TUNE_SIGNAL_SIZE_DEFAULT; i++){
+                                g_data_signal_ch1pa.erase (g_data_signal_ch1pa.begin());
+                                g_data_signal_ch1pa.push_back (0.0);
+                
+                                g_data_signal_ch2aa.erase (g_data_signal_ch2aa.begin());
+                                g_data_signal_ch2aa.push_back (0.0);
+                
+                                g_data_signal_frq.erase (g_data_signal_frq.begin());
+                                g_data_signal_frq.push_back (0.0);
+                        }
+                }
                 f = 0.; dir = 1;
         
                 if (verbose > 3) fprintf(stderr, "UpdateSignals get GPIO reading:\n");
@@ -1141,11 +1158,6 @@ void UpdateSignals(void)
                         SIGNAL_CH3[i] = g_data_signal_ch3[i];
                         SIGNAL_CH4[i] = g_data_signal_ch4[i];
                         SIGNAL_CH5[i] = g_data_signal_ch5[i];
-                        if (OPERATION.Value () == 6){
-                                SIGNAL_TUNE_PHASE[i] = g_data_signal_ch1pa[i];
-                                SIGNAL_TUNE_AMPL[i]  = g_data_signal_ch2aa[i];
-                                SIGNAL_FRQ[i] = g_data_signal_frq[i];
-                        }
                 }
         }
         
