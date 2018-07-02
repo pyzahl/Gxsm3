@@ -30,7 +30,7 @@
 const gchar *template_library_demo = R"V0G0N(
 # Gxsm Python Script Library Demo and Test
 
-# GXSM_USE_LIBRARY <gxsm3-lib-utils>
+# GXSM_USE_LIBRARY <gxsm3-lib-scan>
 
 # Gxsm control sctipting  test suit
 
@@ -41,6 +41,7 @@ gxsm.moveto_scan_xy (123, 234)
 
 
 tip = tip_control()
+scan = scan_control()
 tip.set_refpoint_current ()
 tip.goto_xy (100, 200,1)
 gxsm.sleep(1)
@@ -54,9 +55,9 @@ xylist = tip.make_grid_coords(20, 1, 30, 1, 2, [[0,0], [10,20]])
 #run_mosaic ([[0,0],[1100,0],[2200,0],[0,1100],[1100,1100],[2200,1100],[0,2200],[1100,2200],[2200,2200]],[-1100,-1100])
 #run_mosaic (make_coords (600,7), [-600*3,-600*3])
 
-#run_force_map(0.2,-2.6,0.02,-0.1,0.35, False)
+#scan.run_force_map(0.2,-2.6,0.02,-0.1,0.35, False)
 #gxsm.logev("ForceMap complete, starting ref scan, SS off.")
-#forall_rectangles_subscan ()
+#scan.forall_rectangles_subscan ()
 
 #autoapproach_via_z0()
 
@@ -634,7 +635,7 @@ class scan_control():
                         gxsm.set ("dsp-fbs-mx0-current-set","%f"%levelreg)
                         gxsm.set ("dsp-fbs-bias","%f" %bias)
                         if allrectss:
-                                forall_rectangles_subscan ()
+                                self.forall_rectangles_subscan ()
                         else:
                                 gxsm.startscan ()
                                 gxsm.waitscan ()
@@ -649,7 +650,7 @@ class scan_control():
                                 gxsm.set ("dsp-fbs-mx0-current-set","%f"%levelreg)
                                 gxsm.set ("dsp-fbs-bias","%f" %bias)
                                 if allrectss:
-                                        forall_rectangles_subscan ()
+                                        self.forall_rectangles_subscan ()
                                 else:
                                         gxsm.startscan ()
                                         gxsm.waitscan ()
