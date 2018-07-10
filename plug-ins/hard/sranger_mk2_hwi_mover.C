@@ -642,15 +642,14 @@ void DSPMoverControl::configure_callback (GSimpleAction *action, GVariant *param
                 new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
                 
                 g_simple_action_set_state (action, new_state);
-                g_variant_unref (old_state);
 
                 PI_DEBUG_GP (DBG_L4, "Toggle action %s activated, state changes from %d to %d\n",
                              g_action_get_name (G_ACTION (action)),
                              g_variant_get_boolean (old_state),
                              g_variant_get_boolean (new_state));
-
                 g_simple_action_set_state (action, new_state);
                 g_variant_unref (old_state);
+
         } else {
                 new_state = g_variant_new_boolean (false);
         }
