@@ -263,11 +263,11 @@ short steppermotor_func (double amplitude, double phi){
 
 // duration in ms
 // amp in V SR out (+/-2.05V max)
-int DSPMoverControl::create_waveform (double amp, double duration){
+int DSPMoverControl::create_waveform (double amp, double duration, int space){
+        gint space_len = 0;
 #define SR_VFAC    (32767./10.00) // A810 max Volt out is 10V
-
         for (int i=0; i < MOV_MAXWAVELEN; ++i)
-		mover_param.MOV_waveform[i] = (short)0;
+		mover_param.MOV_waveform[i] = 0;
 
         double pointing = duration > 0. ? 1. : -1.;
         gint channels = 1;
@@ -279,7 +279,11 @@ int DSPMoverControl::create_waveform (double amp, double duration){
                         break;
                 }
 
-	gint space_len = channels * (gint)round ( DSPControlClass->frq_ref* mover_param.Wave_space*1e-3); 
+        if (space >= 0)
+                space_len = channels * space;
+        else
+                space_len = channels * (gint)round ( DSPControlClass->frq_ref* mover_param.Wave_space*1e-3); 
+
         PI_DEBUG_GP(DBG_L2, "DSPMoverControl::create_waveform (frq_ref, %f\n)", DSPControlClass->frq_ref);       
 
 	mover_param.MOV_wave_len = channels * (gint)round (DSPControlClass->frq_ref*fabs (duration)*1e-3);
@@ -311,7 +315,7 @@ int DSPMoverControl::create_waveform (double amp, double duration){
 
         double phase = mover_param.inch_worm_phase/360.;
         int   iphase = (int)(phase*kn);
-        
+
 	switch (mover_param.MOV_waveform_id){
 	case MOV_WAVE_SAWTOOTH:
                 PI_DEBUG_GP (DBG_L2, " ** SAWTOOTH\n");
@@ -584,11 +588,11 @@ int DSPMoverControl::create_waveform (double amp, double duration){
 		break;
         }
 
-        
 	// terminate with spacing using 1st sample
 	for (int i = mover_param.MOV_wave_len; i < mover_param.MOV_wave_len+space_len; i += channels)
                 for (int k=0; k < channels; ++k)
-                        mover_param.MOV_waveform[i+k] = mover_param.MOV_waveform[k];
+                        if ((i+k) < MOV_MAXWAVELEN)
+                                mover_param.MOV_waveform[i+k] = mover_param.MOV_waveform[k];
 
 	mover_param.MOV_wave_len += space_len;
 	
@@ -779,7 +783,7 @@ void DSPMoverControl::create_folder (){
         mov_bp->set_error_text ("Invalid Value.");
         mov_bp->set_input_width_chars (10);
         mov_bp->set_no_spin ();
-        
+
 	for(itab=i=0; MoverNames[i]; ++i){                
                 Gtk_EntryControl *ec_axis[3];
 
@@ -1107,7 +1111,7 @@ void DSPMoverControl::create_folder (){
 
 			mov_bp->notebook_tab_show_all ();
 
-                        config_waveform (cbx, this); // force update
+                        configure_waveform (cbx); // update now
 
 			continue;
 		}
@@ -1504,12 +1508,11 @@ void DSPMoverControl::create_folder (){
   
 	// ============================================================
 	// save List away...
-	g_object_set_data( G_OBJECT (window), "MOVER_EC_list", mov_bp->get_ec_list_head ());
-	sranger_mk2_hwi_pi.app->RemoteEntryList = g_slist_concat (sranger_mk2_hwi_pi.app->RemoteEntryList, mov_bp->get_remote_list_head ());
-
-        AppWindowInit (NULL); // stage two
+        g_object_set_data( G_OBJECT (window), "MOVER_EC_list", mov_bp->get_ec_list_head ());
+        sranger_mk2_hwi_pi.app->RemoteEntryList = g_slist_concat (sranger_mk2_hwi_pi.app->RemoteEntryList, mov_bp->get_remote_list_head ());
         configure_callback (NULL, NULL, this); // configure "false"
         
+        AppWindowInit (NULL); // stage two
         set_window_geometry ("dsp-mover-control");
 }
 
@@ -1599,18 +1602,22 @@ void DSPMoverControl::updateDSP(int sliderno){
 
 
 int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
+        return dspc->configure_waveform (widget);
+}
+
+int DSPMoverControl::configure_waveform(GtkWidget *widget){
 	//if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
 	//	dspc->mover_param.MOV_waveform_id = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "CurveId"));                
         if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) == -1)
                 return 0;
 
- 	dspc->mover_param.MOV_waveform_id = wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].curve_id;
+ 	mover_param.MOV_waveform_id = wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].curve_id;
         gtk_widget_set_tooltip_text (widget, wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].tool_tip_info);
 
-        //g_message ("Selected Wave Form %d -> %d", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)), dspc->mover_param.MOV_waveform_id);
+        //g_message ("Selected Wave Form %d -> %d", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)), mover_param.MOV_waveform_id);
         
         gint nw = wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].num_waves;
-	GSList *wc = dspc->mov_bp->get_configure_hide_list_b_head ();
+	GSList *wc = mov_bp->get_configure_hide_list_b_head ();
 
         if (!wc) return 0;
         int i=7*6; // 7 widgets x 6 wave channels max
@@ -1618,7 +1625,7 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
 
         // 6 lines for waves. 7 widgets: Wave N: X, ###, Y, ###, Z, ###, wave-icon
         for (int k=0; k<nw; ++k){
-                dspc->draw_waveform_preview ((GtkWidget*) g_slist_nth_data (wc, i-1), k); // wave icon
+                draw_waveform_preview ((GtkWidget*) g_slist_nth_data (wc, i-1), k); // wave icon
                 for (int q=0; q<7; ++q)
                         gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, --i+6));
         }
@@ -1626,8 +1633,9 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
                 for (int q=0; q<7; ++q)
                         gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, --i+6));
 
+
         int q = 2*3 + 7*6; // 3 GPIO + 6x6 WXYZ
-        if (dspc->mover_param.MOV_waveform_id == MOV_WAVE_SINE) {
+        if (mover_param.MOV_waveform_id == MOV_WAVE_SINE) {
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 0)); //GPIO Preset
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 1)); //GPIO L..
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 2)); //GPIO Poff
@@ -1642,7 +1650,7 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 5+q)); //L
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 6+q)); //Phase
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 7+q)); //Phase L
-        } else if (dspc->mover_param.MOV_waveform_id == MOV_WAVE_BESOCKE) {
+        } else if (mover_param.MOV_waveform_id == MOV_WAVE_BESOCKE) {
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 0));
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 1));
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 2));
@@ -1657,7 +1665,7 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 5+q));
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 6+q));
                 gtk_widget_hide ((GtkWidget*) g_slist_nth_data (wc, 7+q));
-        } else if (dspc->mover_param.MOV_waveform_id == MOV_WAVE_GPIO) {
+        } else if (mover_param.MOV_waveform_id == MOV_WAVE_GPIO) {
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 0));
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 1));
                 gtk_widget_show ((GtkWidget*) g_slist_nth_data (wc, 2));
@@ -1693,10 +1701,10 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
 }
 
 gboolean DSPMoverControl::draw_waveform_preview (GtkWidget *widget, int wn){
-        int nch = create_waveform (1.,1.); // preview params only, full scale, 1ms equiv. points -- Fwd. -->
+        int nch = create_waveform (1.,1., 1); // preview params only, full scale, 1ms equiv. points -- Fwd. -->
         int n =  mover_param.MOV_wave_len/nch; // samples/ch
         cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, n+2, 34);
-        
+
         cairo_t *cr = cairo_create (surface);
         cairo_translate (cr, 1., 17.);
         cairo_scale (cr, 1., 1.);
@@ -1709,16 +1717,15 @@ gboolean DSPMoverControl::draw_waveform_preview (GtkWidget *widget, int wn){
         for (int k=0; k<n; ++k) wave->set_xy_fast (k,k,yr*mover_param.MOV_waveform[k*nch+wn]);
         wave->draw (cr);
 
-        nch = create_waveform (1.,-1.); // preview params only, full scale, 1ms equiv. points -- Rev. <--
+        nch = create_waveform (1.,-1., 1); // preview params only, full scale, 1ms equiv. points -- Rev. <--
         wave->set_stroke_rgba (CAIRO_COLOR_BLUE);
         for (int k=0; k<n; ++k) wave->set_xy_fast (k,k,yr*mover_param.MOV_waveform[k*nch+wn]);
         wave->draw (cr);
 
         delete wave;
 
-        cairo_destroy (cr);
-        
         gtk_image_set_from_surface (GTK_IMAGE (widget), surface);
+        cairo_destroy (cr);
 
         return true;
 }

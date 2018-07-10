@@ -926,6 +926,7 @@ public:
 	static void ChangedNotify(Param_Control* pcs, gpointer data);
 	static void ChangedWaveOut(Param_Control* pcs, gpointer data);
 	static int config_waveform (GtkWidget *widget, DSPMoverControl *dspc);
+	int configure_waveform (GtkWidget *widget);
 	gboolean draw_waveform_preview (GtkWidget *widget,  int wn);
 	static int config_output (GtkWidget *widget, DSPMoverControl *dspc);
 	static int CmdAction(GtkWidget *widget, DSPMoverControl *dspc);
@@ -944,7 +945,7 @@ public:
                         gtk_widget_hide (GTK_WIDGET (g_object_get_data (G_OBJECT (w), "TabGrid")));
         };
 
-	int create_waveform (double amp, double duration);
+	int create_waveform (double amp, double duration, int space=-1);
 	Mover_Param mover_param;
 	double Z0_speed, Z0_adjust, Z0_goto;
 

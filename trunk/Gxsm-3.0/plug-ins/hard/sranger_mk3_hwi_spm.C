@@ -480,8 +480,14 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 		dsp_aap.n_wave_channels    = long_2_sranger_long (channels); /* number wave channels -- up top 6, must match wave data */
                 for (int i=0; i<channels; ++i)
                         dsp_aap.channel_mapping[i] = long_2_sranger_long (DSPMoverClass->mover_param.wave_out_channel_xyz[i][2]);
-			
-		dsp_aap.mover_mode = long_2_sranger_long (AAP_MOVER_AUTO_APP | AAP_MOVER_WAVE_PLAY);
+
+                if (DSPMoverClass->mover_param.MOV_waveform_id == MOV_WAVE_GPIO){
+                        g_message ("MK3 AUTO APPROACH START in AAP_MOVER_PULSE mode");
+                        dsp_aap.mover_mode = long_2_sranger_long (AAP_MOVER_AUTO_APP | AAP_MOVER_PULSE);
+                } else {
+                        g_message ("MK3 AUTO APPROACH START in AAP_MOVER_WAVE_PLAY mode");
+                        dsp_aap.mover_mode = long_2_sranger_long (AAP_MOVER_AUTO_APP | AAP_MOVER_WAVE_PLAY);
+                }
                 //DSPMoverClass->mover_param.MOV_mode 
 		//DSPMoverClass->mover_param.MOV_output 
                 //DSPMoverClass->mover_param.inch_worm_phase > 0. ? AAP_MOVER_IWMODE : 0
@@ -718,7 +724,13 @@ void sranger_mk3_hwi_spm::ExecCmd(int Cmd){
 			gpio3_monitor_dir = dsp_gpio.gpio_direction_bits;
 
                         g_message ("Checking for GPIO changes...");
-                        g_message ("dsp_gpio.gpio_data_out                      = %02X", dsp_gpio.gpio_data_out);
+                        g_message ("GPIO: dsp_puls.period                       = %d", dsp_puls.period);
+                        g_message ("GPIO: dsp_puls.duration                     = %d", dsp_puls.duration);
+                        g_message ("GPIO: dsp_puls.number                       = %d", dsp_puls.number);
+                        g_message ("GPIO: dsp_puls.on_bcode                     = %02X", dsp_puls.on_bcode);
+                        g_message ("GPIO: dsp_puls.off_bcode                    = %02X", dsp_puls.off_bcode);
+                        g_message ("GPIO: dsp_puls.reset_bcode                  = %02X", dsp_puls.reset_bcode);
+                        g_message ("GPIO: dsp_gpio.gpio_data_out                = %02X", dsp_gpio.gpio_data_out);
                         g_message ("DSPMoverClass->mover_param.GPIO_reset       = %02X", DSPMoverClass->mover_param.GPIO_reset);
                         g_message ("DSPMoverClass->mover_param.AFM_GPIO_setting = %02X", DSPMoverClass->mover_param.AFM_GPIO_setting);
 
