@@ -1508,6 +1508,8 @@ class Mk3_Configurator:
                     "SR MK3 write GPIO settings": self.mk3spm.write_gpio,
                     "SR MK3 CLR DSP GP53,54,55": self.mk3spm.clr_dsp_gpio,
                     "SR MK3 SET DSP GP53,54,55": self.mk3spm.set_dsp_gpio,
+                    "SR TEST GPIO PULSE": self.mk3spm.execute_pulse_cb,
+
 ##                   "SR MK3 read D-FIFO128": readFIFO128,
 ##                   "SR MK3 read D-FIFO-R": readFIFO,
 ##                   "SR MK3 read PD-FIFO-R": readPFIFO,

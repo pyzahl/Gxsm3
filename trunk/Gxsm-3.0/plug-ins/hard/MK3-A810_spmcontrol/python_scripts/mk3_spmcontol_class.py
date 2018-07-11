@@ -939,10 +939,10 @@ fmt_pulse = "<lllllHHHHllll"
 	ii_pulse_duration,
 	ii_pulse_period,
 	ii_pulse_number,
-	ii_pulse_on_bcode,
-	ii_pulse_off_bcode,
-	ii_pulse_reset_bcode,
-	ii_pulse_dummy,
+	ii_pulse_on_bcode,    # short
+	ii_pulse_off_bcode,   # short
+	ii_pulse_reset_bcode, # short
+ 	ii_pulse_dummy,       # short
 	ii_pulse_io_address,
 	ii_pulse_i_per,
 	ii_pulse_i_rep,
@@ -1748,10 +1748,15 @@ class SPMcontrol():
                 
         ##### duration, period given in ms
         ##### must configure GPIO direction bits mask before!
-        def execute_pulse(self, direction, duration, period, number=1, on_bcode=1, off_bcode=0, reset_bcode=0, gpio_port=0):
+        def execute_pulse_cb(self, junk, duration=100, period=200, number=100, on_bcode=3, off_bcode=2, reset_bcode=0, gpio_port=0):
+                self.execute_pulse (duration, period, number, on_bcode, off_bcode, reset_bcode, gpio_port)
+                
+        def execute_pulse(self, duration, period, number=1, on_bcode=3, off_bcode=2, reset_bcode=0, gpio_port=0):
                 GPIO_Data_0 = 0x46000006
                 ms2dpc = 150.
-                self.mk3.write (i_pulse, struct.pack (fmt_pulse, 1,0, int(round(duration*ms2dpc)), int(round(period*ms2dpc)), number, on_bcode, off_bcode, reset_bcode, 0, GPIO_Data_0, 10, 0, 0))
+                print ("GPIO PULSE:")
+                print ([duration, period, number, on_bcode, off_bcode, reset_bcode])
+                self.write (i_pulse, struct.pack (fmt_pulse, 1,0, int(round(duration*ms2dpc)), int(round(period*ms2dpc)), number, on_bcode, off_bcode, reset_bcode, 0, GPIO_Data_0, 0, 0, 0), mode=1)
 
 ##### HR mode control
 	def read_hr(self, dum=0):
