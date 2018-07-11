@@ -63,24 +63,26 @@ void init_CR_out_pulse (){
 // stop all mover/approach actions, cleanup
 #pragma CODE_SECTION(stop_CR_out_pulse, ".text:slow")
 void stop_CR_out_pulse (){
-        CR_generic_io.gpio_data_out = CR_out_pulse.reset_bcode;
+        unsigned short x = CR_generic_io.gpio_data_out | CR_out_pulse.reset_bcode;
         //WR_GPIO (GPIO_Data_0, &CR_out_pulse.reset_bcode, 1);
+        WR_GPIO (GPIO_Data_0, &x, 1);
 	CR_out_pulse.stop  = 0;
 	CR_out_pulse.pflg  = 0;
 }
 
 #pragma CODE_SECTION(run_CR_out_pulse, ".text:slow")
 void run_CR_out_pulse (){
-	if (CR_out_pulse.i_per == 0)
+        unsigned short x = CR_generic_io.gpio_data_out;
+	if (CR_out_pulse.i_per == 0){
 //		Port[CR_out_pulse.io_address] = CR_out_pulse.on_bcode;
-                CR_generic_io.gpio_data_out = CR_out_pulse.on_bcode;
-              //WR_GPIO (GPIO_Data_0, &CR_out_pulse.on_bcode, 1);
-
-	if (CR_out_pulse.i_per == CR_out_pulse.duration)
+                x |= CR_out_pulse.on_bcode;
+                WR_GPIO (GPIO_Data_0, &x, 1);
+        }
+	if (CR_out_pulse.i_per == CR_out_pulse.duration){
 //		Port[CR_out_pulse.io_address] = CR_out_pulse.off_bcode;
-                CR_generic_io.gpio_data_out = CR_out_pulse.off_bcode;
-              //WR_GPIO (GPIO_Data_0, &CR_out_pulse.off_bcode, 1);
-
+                x |= CR_out_pulse.off_bcode;
+                WR_GPIO (GPIO_Data_0, &x, 1);
+        }
 	if (CR_out_pulse.i_per++ == CR_out_pulse.period){
 		CR_out_pulse.i_per = 0;	
 		if (CR_out_pulse.i_rep++ == CR_out_pulse.number)
