@@ -11,7 +11,11 @@ lib_LTLIBRARIES = libvolume_transform.la \
 	libshear_x.la \
 	libshear_y.la \
 	libOctoCorr.la \
-	librotate90.la
+	librotate90.la \
+	libunwrap.la
+
+libunwrap_la_SOURCES = unwrap.C
+libunwrap_la_LDFLAGS = -module -export-dynamic -avoid-version
 
 libaffine_la_SOURCES = affine.C
 libaffine_la_LDFLAGS = -module -export-dynamic -avoid-version
