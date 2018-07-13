@@ -3021,7 +3021,7 @@ void ViewControl::view_file_save_drawing (const gchar* imgname){
 
         double add_y_space = 0.;
         if (legend_position_code == 'b')
-                add_y_space = npy*18./400+1;
+                add_y_space = npy*18./400.*(double)npx/npy+1;
         
 	if (g_strrstr (imgname,".svg")){
                 surface = cairo_svg_surface_create (imgname, (double)npx, (double)npy+add_y_space);
