@@ -1057,7 +1057,7 @@ class TuneScope():
 
 			try:
 				self.Fc = float(self.Fcenter.get_text())
-				if self.Fc < 1000.:
+				if self.Fc < 10.:
 					self.Fc=32766.
 				if self.Fc > 75000.:
 					self.Fc=32766.
