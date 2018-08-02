@@ -1225,26 +1225,29 @@ public:
                                   << std::endl;
         };
 
-        inline void cAab (double LJp_a[2], double LJp_b[2], double AB[2]){
-                double p_ab = LJp_a[1]+LJp_b[1];
-                double p_ab2 = p_ab*p_ab;
-                double p_ab4 = p_ab2*p_ab2;
-                double p_ab6 = p_ab4*p_ab2;
-                double p_ab12 = p_ab6*p_ab6;
-                AB[0] = 2.0*sqrt (LJp_a[0]*LJp_b[0]) * p_ab6;  // (LJp_a[1]+LJp_b[1])^6;
-                AB[1] =     sqrt (LJp_a[0]*LJp_b[0]) * p_ab12; // (LJp_a[1]+LJp_b[1])^12;
-        }
+        // LJp[0]: Eneregy in eV, LJp[1]: r0 in Ang
+        inline double cAab (double LJp_a[2], double LJp_b[2], double AB[2]){
+                double r_ab = LJp_a[1]+LJp_b[1]; // r
+                double r_ab2 = r_ab*r_ab;
+                double r_ab4 = r_ab2*r_ab2;
+                double r_ab6 = r_ab4*r_ab2;  // r^6
+                double r_ab12 = r_ab6*r_ab6; // r^12
+                double sqrtLJpab = sqrt (LJp_a[0]*LJp_b[0]); // E_ab
+                AB[0] = 2.0*sqrtLJpab * r_ab6;  // A_ab = 2 E_ab r^6,    r_ab = ra+rb
+                AB[1] =     sqrtLJpab * r_ab12; // B_ab =   E_ab r^12
+                return r_ab; 
+        };
         
         // pre compute L-J parameters needed: probe to ... all atoms
         void lj_param_pre_compute (double LJp_probe[2]){
                 // LP_probe <-> atom_i
                 for (int i=0; Elements[i].N != -1; ++i)
                         if (Elements[i].LJp[0] > 0.){
-                                cAab(LJp_probe, Elements[i].LJp, LJp_AB_lookup[Elements[i].N]);
+                                double r=cAab(LJp_probe, Elements[i].LJp, LJp_AB_lookup[Elements[i].N]);
                                 WorkF_lookup[Elements[i].N] = Elements[i].Phi;
-                                printf("## LJp[%02d] --- eps_a= %10.8f eV, r_a= %10.8f Ang, %2s => L-J-AB to probe eps_ab= %14.4f r_ab= %14.4f\n",
+                                printf("## LJp[%02d] --- eps_a= %10.8f eV, r_a= %10.8f Ang, %2s => L-J-AB to probe Aab= %14.4f Bab= %14.4f r_ab= %g Ang\n",
                                        Elements[i].N, Elements[i].LJp[0], Elements[i].LJp[1],
-                                       Elements[i].name, LJp_AB_lookup[Elements[i].N][0], LJp_AB_lookup[Elements[i].N][1]);
+                                       Elements[i].name, LJp_AB_lookup[Elements[i].N][0], LJp_AB_lookup[Elements[i].N][1], r);
                         }
         }
 
