@@ -95,13 +95,18 @@ The PlugIn configurator...
  * -------------------------------------------------------------------------------- 
  */
 
+//#define USE_NLOPT // old approach -- slow...
+
 #include <gtk/gtk.h>
 #include <glib.h>
 #include <math.h>
 #include "config.h"
 #include "gxsm/plugin.h"
 #include "gxsm/vectorutil.h"
+
+#ifdef USE_NLOPT
 #include <nlopt.hpp>
+#endif
 
 #include <sstream>
 using namespace std;
@@ -2617,7 +2622,6 @@ private:
         double v[3];
 };
 
-//#define USE_NLOPT // old approach -- slow...
 #define USE_FIRE // new, see above class, simple and "fire" fast :)
 
 // full tip/probe force relaxation
