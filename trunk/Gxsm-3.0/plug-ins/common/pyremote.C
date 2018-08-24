@@ -1421,6 +1421,78 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
         return Py_BuildValue("i", -1);
 }
 
+static PyObject* remote_set_scan_unit(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: set scan zunit ");
+	remote_args ra;
+        int ch;
+	gchar *udim, *unitid, *ulabel;
+
+	if (!PyArg_ParseTuple(args, "lsss", &ch, &udim, &unitid, &ulabel))
+		return Py_BuildValue("i", -1);
+
+	Scan *dst = gapp->xsm->GetScanChannel (ch);
+        if (dst){
+       
+                UnitObj *u = gapp->xsm->MakeUnit (unitid, ulabel);
+                g_message ("Set Scan Unit %c [%s] in %s", udim[0], u->Label(), u->Symbol());
+                switch (udim[0]){
+                case 'x': case 'X':
+                        dst->data.SetXUnit(u); break;
+                case 'y': case 'Y':
+                        dst->data.SetYUnit(u); break;
+                case 'z': case 'Z':
+                        dst->data.SetZUnit(u); break;
+                case 'l': case 'L': case 'v': case 'V':
+                        dst->data.SetVUnit(u); break;
+                case 't': case 'T':
+                        dst->data.SetTimeUnit(u); break;
+                default:
+                        g_message ("Invalid Dimension Id given.");
+                        break;
+                }
+                delete u;
+        }
+        else {
+                g_message ("Invalid channel %d given.", ch);
+                return Py_BuildValue("i", -1);
+        }
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_set_scan_lookup(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: set scan lookup ");
+	remote_args ra;
+        int ch;
+	gchar *udim;
+        double start, end;
+
+	if (!PyArg_ParseTuple(args, "lsdd", &ch, &udim, &start, &end))
+		return Py_BuildValue("i", -1);
+
+	Scan *dst = gapp->xsm->GetScanChannel (ch);
+        if (dst){
+       
+                switch (udim[0]){
+                case 'x': case 'X':
+                        dst->mem2d->data->MkXLookup(start, end); break;
+                case 'y': case 'Y':
+                        dst->mem2d->data->MkYLookup(start, end); break;
+                case 'l': case 'L': case 'v': case 'V':
+                        dst->mem2d->data->MkVLookup(start, end); break;
+                default:
+                        g_message ("Invalid Dimension Id given.");
+                        break;
+                }
+        }
+        else
+                return Py_BuildValue("i", -1);
+
+	return Py_BuildValue("i", 0);
+}
+
+
 static PyObject* remote_getgeometry(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote:getgeometry");
@@ -2122,6 +2194,9 @@ static PyMethodDef EmbMethods[] = {
 	// BLOCK II
 	{"createscan", remote_createscan, METH_VARARGS, "Create Scan int: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('l', [...]))"},
 	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('f', [...]))"},
+	{"set_scan_unit", remote_set_scan_unit, METH_VARARGS, "Set Scan X,Y,Z,L Dim Unit: gxsm.set_scan_unit (ch,'X|Y|Z|L|T','UnitId string','Label string')"},
+	{"set_scan_lookup", remote_set_scan_lookup, METH_VARARGS, "Set Scan Lookup for Dim: gxsm.set_scan_lookup (ch,'X|Y|L',start,end)"},
+	//{"set_scan_lookup_i", remote_set_scan_llookup, METH_VARARGS, "Set Scan Lookup for Dim: gxsm.set_scan_lookup_i (ch,'X|Y|L',start,end)"},
 
 	{"get_geometry", remote_getgeometry, METH_VARARGS, "Get Scan Geometry: [rx,ry,x0,y0,alpha]=gxsm.get_geometry (ch)"},
 	{"get_differentials", remote_getdifferentials, METH_VARARGS, "Get Scan Scaling: [dx,dy,dz,dl]=gxsm.get_differentials (ch)"},
