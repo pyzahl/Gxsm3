@@ -50,7 +50,7 @@ dspcode_mk2_file_location = os.environ['HOME']+"/SRanger/TiCC-project-files/MK2-
 version = "1.1 (08.09.2011)"
 
 import pygtk
-pygtk.require('2.0')
+## pygtk.require('2.0')
 
 import gobject, gtk
 
@@ -87,15 +87,15 @@ def open_mk2_sranger():
 def init():
 # for ST-STD
 	os.system("cd")
-	os.system("gksudo 'mount -t debugfs none /sys/kernel/debug/'")
+	os.system("sudo 'mount -t debugfs none /sys/kernel/debug/'")
 	time.sleep(1)
-	os.system("gksudo 'fxload-sr-i386 -I SRangerFx -D /dev/bus/usb/`cat /sys/kernel/debug/usb/devices | grep \"T:\|P:\" | grep -B1 0a59 | tac | tail -n1 | awk -F \"=\" '{print $2 $7}' | awk '{ printf \"%03d/%03d\",$1,$3 }'`'")
+	os.system("sudo 'fxload-sr-i386 -I SRangerFx -D /dev/bus/usb/`cat /sys/kernel/debug/usb/devices | grep \"T:\|P:\" | grep -B1 0a59 | tac | tail -n1 | awk -F \"=\" '{print $2 $7}' | awk '{ printf \"%03d/%03d\",$1,$3 }'`'")
 	time.sleep(3)
 # changing attributes for the devices. Should be obsolent if the rights are already set in the defaults of the udev file system
 # for SR-STD/SP2
-	os.system("gksudo chmod 666 " + sranger_file_location)
+	os.system("sudo chmod 666 " + sranger_file_location)
 # for SR-MK2
-	os.system("gksudo chmod 666 " + sranger_mk2_file_location)
+	os.system("sudo chmod 666 " + sranger_mk2_file_location)
 
 def loadusb():
 	global magic

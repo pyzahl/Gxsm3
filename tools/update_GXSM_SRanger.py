@@ -72,7 +72,7 @@ def svn_gxsm_update():
 	os.chdir("gxsm_svn")
 	os.system("debuild -i -uc -us -b")
 	add_event("Installing Gxsm-3.0 via dpkg.")
-	os.system("gksudo 'dpkg -i ../gxsm_3.*.deb'")
+	os.system("sudo 'dpkg -i ../gxsm_3.*.deb'")
 	add_event("Gxsm installation done.")
 	return
 
@@ -92,7 +92,7 @@ def svn_sranger_update():
 	add_event("Compiling SRanger kernel modul.")	
 	os.system("debuild -i -uc -us -b")
 	add_event("Done. Installing via checkinstall.")	
-	os.system("gksudo 'dpkg -i ../sranger-modules-std*.deb'")
+	os.system("sudo 'dpkg -i ../sranger-modules-std*.deb'")
 	add_event("Kernel modul for SR-STD/SP2 should be ready to use.")	
 	event_list.set_label("")
 	add_event("Updating SRanger MK2/MK3Pro kernel modul.")
@@ -103,28 +103,28 @@ def svn_sranger_update():
 	add_event("Compiling SRanger kernel modul.")	
 	os.system("debuild -i -uc -us -b")
 	add_event("Done. Installing via checkinstall.")	
-	os.system("gksudo 'dpkg -i ../sranger-modules-mk23*.deb'")
+	os.system("sudo 'dpkg -i ../sranger-modules-mk23*.deb'")
 	add_event("Kernel modul for SR-MK2/MK3Pro should be ready to use.")	
 	return
 
 def apt_gxsm_update():
 	add_event("Updating Gxsm-3.0 from apt repositry.")
 	check_sources_list()
-	os.system("gksudo 'apt-get -y --allow-unauthenticated install gxsm'")
+	os.system("sudo 'apt-get -y --allow-unauthenticated install gxsm'")
 	add_event("Gxsm update done via apt-get.")
 	return
 
 def apt_kernel_update():
 	add_event("Updating SRanger kernel modules\n from apt repositry.")
 	check_sources_list()
-	os.system("gksudo 'apt-get -y --allow-unauthenticated install sranger-modules-mk23-dkms sranger-modules-std-dkms'")
+	os.system("sudo 'apt-get -y --allow-unauthenticated install sranger-modules-mk23-dkms sranger-modules-std-dkms'")
 	add_event("SRanger kernel update done via apt-get.")
 	return
 
 def check_sources_list():
 	# Check if sources.list exists
-	os.system("gksudo apt-add-repositry ppa:totto/gxsm")	
-	os.system("gksudo apt-get update")
+	os.system("sudo apt-add-repositry ppa:totto/gxsm")	
+	os.system("sudo apt-get update")
 	add_event("Updating cache of apt-get.")
 	return
 
