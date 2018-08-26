@@ -20,55 +20,15 @@ set -e
 
 case "$1" in
     configure)
-	echo "setting up gxsm menu"
-	cd /usr/share/gxsm3/pixmaps
-	xdg-icon-resource install --size 24 --context apps --mode system gxsm-icon_24x24.png gxsm-app	
-	xdg-icon-resource install --size 32 --context apps --mode system gxsm-icon_32x32.png gxsm-app
-	xdg-icon-resource install --size 48 --context apps --mode system gxsm-icon_48x48.png gxsm-app
-	xdg-icon-resource install --size 64 --context apps --mode system gxsm-icon_64x64.png gxsm-app
-	echo "gxsm-app icon added"
-	xdg-icon-resource install --size 24 --context apps --mode system gxsm-folder_24x24.png gxsm-folder
-	xdg-icon-resource install --size 32 --context apps --mode system gxsm-folder_32x32.png gxsm-folder
-	xdg-icon-resource install --size 48 --context apps --mode system gxsm-folder_48x48.png gxsm-folder
-	xdg-icon-resource install --size 64 --context apps --mode system gxsm-folder_64x64.png gxsm-folder
-	echo "gxsm-folder icon added"
-
+	echo "installing desktop icon"
 	cd /usr/share/gxsm3/menu	
-	xdg-desktop-menu install --noupdate gxsm-gxsm.directory gxsm-gxsm.desktop gxsm-nohardware.desktop gxsm-update.desktop sranger-initsr.desktop gxsm-dsp.desktop
-	echo "gxsm-menu added"
-	xdg-desktop-menu install --noupdate gxsm-gxsm.directory gxsm-mktwothree.directory gxsm-mktwothree.desktop sranger-mktwo.desktop sranger-mkthree.desktop sranger-mkthree-spd.desktop
-	echo "mk23-submenu added"	
-	xdg-desktop-menu install --noupdate gxsm-gxsm.directory gxsm-std.directory gxsm-std.desktop sranger-std.desktop sranger-std_auto.desktop
-	echo "std-submenu added"	
-	xdg-desktop-menu install --noupdate gxsm-gxsm.directory gxsm-doc.directory gxsm-manual.desktop sranger-manual.desktop gxsm-homepage.desktop gxsm-ventiotec.desktop gxsm-sranger.desktop gxsm-softdb.desktop 
-	echo "documentation-submenu added"	
+	xdg-desktop-menu install --noupdate gxsm-gxsm.desktop
 	xdg-desktop-menu forceupdate
-	value=`gsettings get org.gnome.desktop.app-folders folder-children`
-	newvalue=`echo ${value} | sed s/^"\["/"\[\'GxsmDoc\', \'GxsmTools\', \'GxsmSTD\', \'GxsmMK23\', "/`
-	dbus-launch gsettings set org.gnome.desktop.app-folders folder-children "$newvalue"
-
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmDoc/ name "gxsm-doc.directory"
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmDoc/ translate true
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmDoc/ apps "['gxsm-manual.desktop','sranger-manual.desktop','gxsm-homepage.desktop', 'gxsm-ventiotec.desktop', 'gxsm-sranger.desktop', 'gxsm-softdb.desktop']"
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmDoc/ categories "['GxsmDoc']"
 	
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmTools/ name "gxsm-gxsm.directory"
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmTools/ translate true
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmTools/ apps "['gxsm-dsp.desktop','gxsm-update.desktop','sranger-initsr.desktop']"
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmTools/ categories "['GxsmTools']"
-
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmSTD/ name "gxsm-std.directory"
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmSTD/ translate true
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmSTD/ apps "['gxsm-std.desktop','sranger-std.desktop','sranger-std_auto.desktop']"
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmSTD/ categories "['GxsmSTD']"
-
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmMK23/ name "gxsm-mktwothree.directory"
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmMK23/ translate true
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmMK23/ apps "['gxsm-mktwothree.desktop','sranger-mktwo.desktop','sranger-mkthree.desktop', 'sranger-mkthree-spd.desktop']"
-	dbus-launch gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/GxsmMK23/ categories "['GxsmMK23']"
-
-
-	echo "added gxsm icons to gnome activities toolbar"
+	echo "adding gxsm icons to gnome activities/favourites toolbar"
+	value=`gsettings get org.gnome.shell favorite-apps`
+	newvalue=`echo ${value} | sed s/^"\["/"\[\'gxsm-gxsm.desktop\', "/`
+	dbus-launch gsettings set org.gnome.shell favorite-apps "$newvalue"
 	cd    
 	;;
 
@@ -84,6 +44,6 @@ esac
 # dh_installdeb will replace this with shell code automatically
 # generated by other debhelper scripts.
 
-#DEBHELPER#
+
 
 exit 0
