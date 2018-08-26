@@ -1,3 +1,15 @@
+gxsm3 (3.48.0-0ubuntu2) bionic; urgency=medium
+
+  * changes desktop files, removes unity related code
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 26 Aug 2018 13:39:42 +0200
+
+gxsm3 (3.48.0-0ubuntu1) bionic; urgency=medium
+
+  * new package for GXSM3 Ubuntu 18.04 remix release
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 25 Aug 2018 20:07:41 +0200
+
 gxsm3 (3.48.0-0ubuntu0) bionic; urgency=medium
 
   * support for redpitaya and other updates 

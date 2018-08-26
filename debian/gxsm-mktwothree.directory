@@ -1,9 +1,0 @@
-[Desktop Entry]
-Encoding=UTF-8
-Value=1.0
-Type=Directory
-Name=GXSM (SR MK2/MK3Pro)
-Name[de]=GXSM (SR MK2/MK3Pro)
-Comment=Scripts related to the SR MK2/MK3Pro hardware
-Comment[de]=Skripte für die SR MK2/MK3Pro-Hardware
-Icon=gxsm-folder

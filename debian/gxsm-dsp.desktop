@@ -4,7 +4,7 @@
 Name=Signal Ranger DSP firmware
 Comment=Opens folder containing DSP firmware
 Icon=folder
-Exec=gnome-open /usr/share/gxsm3/dsp-firmware
+Exec=nautilus /usr/share/gxsm3/dsp-firmware
 Terminal=0
 Type=Application
 X-AppInstall-Package=gxsm3

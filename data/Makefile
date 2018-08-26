@@ -152,24 +152,24 @@ DATA = $(nodist_appdata_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/missing aclocal-1.15
+ACLOCAL = ${SHELL} /home/thorwag/gxsm3-svn/missing aclocal-1.15
 ALLOCA = 
 ALL_LINGUAS = 
 AMTAR = $${TAR-tar}
-AM_DEFAULT_VERBOSITY = 0
+AM_DEFAULT_VERBOSITY = 1
 AR = ar
-AUTOCONF = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/missing autoconf
-AUTOHEADER = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/missing autoheader
-AUTOMAKE = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/missing automake-1.15
+AUTOCONF = ${SHELL} /home/thorwag/gxsm3-svn/missing autoconf
+AUTOHEADER = ${SHELL} /home/thorwag/gxsm3-svn/missing autoheader
+AUTOMAKE = ${SHELL} /home/thorwag/gxsm3-svn/missing automake-1.15
 AWK = gawk
 CC = gcc
-CCDEPMODE = depmode=gcc3
+CCDEPMODE = depmode=none
 CFLAGS = -O0 -g
 CPP = gcc -E
-CPPFLAGS = 
+CPPFLAGS = -Wdate-time -D_FORTIFY_SOURCE=2
 CXX = g++
 CXXCPP = g++ -E
-CXXDEPMODE = depmode=gcc3
+CXXDEPMODE = depmode=none
 CXXFLAGS = -O0 -g -std=c++11
 CYGPATH_W = echo
 DEFAULT_FONT = 
@@ -187,7 +187,7 @@ EGREP = /bin/grep -E
 EXEEXT = 
 FFTW_LIBS = -lfftw3
 FGREP = /bin/grep -F
-FULL_LIBEXECDIR = /usr/local/libexec
+FULL_LIBEXECDIR = /usr/lib/x86_64-linux-gnu
 GETTEXT_PACKAGE = gxsm3
 GLIB_COMPILE_RESOURCES = /usr/bin/glib-compile-resources
 GLIB_COMPILE_SCHEMAS = /usr/lib/x86_64-linux-gnu/glib-2.0/glib-compile-schemas
@@ -196,19 +196,19 @@ GLIB_MKENUMS = /usr/bin/glib-mkenums
 GMSGFMT = /usr/bin/msgfmt
 GREP = /bin/grep
 GSETTINGS_DISABLE_SCHEMAS_COMPILE = 
-GTKSOURCEVIEW_CFLAGS = -pthread -I/usr/include/gtksourceview-3.0 -I/usr/include/libxml2 -I/usr/include/gtk-3.0 -I/usr/include/at-spi2-atk/2.0 -I/usr/include/at-spi-2.0 -I/usr/include/dbus-1.0 -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/gtk-3.0 -I/usr/include/gio-unix-2.0/ -I/usr/include/cairo -I/usr/include/pango-1.0 -I/usr/include/harfbuzz -I/usr/include/pango-1.0 -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/pixman-1 -I/usr/include/uuid -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/libpng16 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
+GTKSOURCEVIEW_CFLAGS = -pthread -I/usr/include/gtksourceview-3.0 -I/usr/include/libxml2 -I/usr/include/gtk-3.0 -I/usr/include/at-spi2-atk/2.0 -I/usr/include/at-spi-2.0 -I/usr/include/dbus-1.0 -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/gtk-3.0 -I/usr/include/gio-unix-2.0/ -I/usr/include/cairo -I/usr/include/pango-1.0 -I/usr/include/harfbuzz -I/usr/include/pango-1.0 -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/libpng16 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
 GTKSOURCEVIEW_DEPENDENCY = gtksourceview-3.0
 GTKSOURCEVIEW_LIBS = -lgtksourceview-3.0 -lgtk-3 -lgdk-3 -lpangocairo-1.0 -lpango-1.0 -latk-1.0 -lcairo-gobject -lcairo -lgdk_pixbuf-2.0 -lgio-2.0 -lgobject-2.0 -lglib-2.0
 GTK_MAC_CFLAGS = 
 GTK_MAC_LIBS = 
-GXSM3_CFLAGS = -O0 -g -pthread -I/usr/include/gail-3.0 -I/usr/include/libdrm -I/usr/include/hdf5/serial -I/usr/include/gtksourceview-3.0 -I/usr/include/gtk-3.0 -I/usr/include/at-spi2-atk/2.0 -I/usr/include/at-spi-2.0 -I/usr/include/dbus-1.0 -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/gtk-3.0 -I/usr/include/gio-unix-2.0/ -I/usr/include/cairo -I/usr/include/pango-1.0 -I/usr/include/harfbuzz -I/usr/include/pango-1.0 -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/pixman-1 -I/usr/include/uuid -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/libpng16 -I/usr/include/libsoup-2.4 -I/usr/include/libxml2 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/gsettings-desktop-schemas  
+GXSM3_CFLAGS = -O0 -g -pthread -I/usr/include/gail-3.0 -I/usr/include/libdrm -I/usr/include/hdf5/serial -I/usr/include/gtksourceview-3.0 -I/usr/include/gtk-3.0 -I/usr/include/at-spi2-atk/2.0 -I/usr/include/at-spi-2.0 -I/usr/include/dbus-1.0 -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/gtk-3.0 -I/usr/include/gio-unix-2.0/ -I/usr/include/cairo -I/usr/include/pango-1.0 -I/usr/include/harfbuzz -I/usr/include/pango-1.0 -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/libpng16 -I/usr/include/libsoup-2.4 -I/usr/include/libxml2 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/gsettings-desktop-schemas  
 GXSM3_IMPLIB = 
 GXSM3_LIBS = -L/usr/lib/x86_64-linux-gnu/hdf5/serial -lxml2 -Wl,--export-dynamic -lgmodule-2.0 -pthread -Wl,--export-dynamic -lgmodule-2.0 -pthread -lgailutil-3 -lGL -lnetcdf -lhdf5_hl -lhdf5 -lpthread -lsz -lz -ldl -lm -lcurl -lfftw3 -lgtksourceview-3.0 -lgtk-3 -lgdk-3 -lpangocairo-1.0 -lpango-1.0 -latk-1.0 -lcairo-gobject -lcairo -lgdk_pixbuf-2.0 -lsoup-2.4 -lgio-2.0 -lgobject-2.0 -lglib-2.0  
 GXSM3_MAJOR_VERSION = 3
 GXSM3_MICRO_VERSION = 0
 GXSM3_MINOR_VERSION = 48
 GXSM3_PLUGINS_DATA_DIR = ${datarootdir}/gxsm3/plugins
-GXSM3_PLUGINS_LIBS_DIR = ${exec_prefix}/lib/gxsm3/plugins
+GXSM3_PLUGINS_LIBS_DIR = ${prefix}/lib/gxsm3/plugins
 HELP_DIR = ${datadir}/help
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
@@ -225,7 +225,7 @@ INTLTOOL__v_MERGE_ = $(INTLTOOL__v_MERGE_$(AM_DEFAULT_VERBOSITY))
 INTLTOOL__v_MERGE_0 = @echo "  ITMRG " $@;
 ITSTOOL = itstool
 LD = /usr/bin/x86_64-linux-gnu-ld -m elf_x86_64
-LDFLAGS = 
+LDFLAGS = -Wl,-Bsymbolic-functions -Wl,-z,relro
 LIBOBJS = 
 LIBPNG = -lpng -lz
 LIBS = -lpython2.7 
@@ -237,8 +237,8 @@ LIPO =
 LN_S = ln -s
 LTLIBOBJS = 
 LT_SYS_LIBRARY_PATH = 
-MAINT = 
-MAKEINFO = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/missing makeinfo
+MAINT = #
+MAKEINFO = ${SHELL} /home/thorwag/gxsm3-svn/missing makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /bin/mkdir -p
 MSGFMT = /usr/bin/msgfmt
@@ -246,19 +246,19 @@ MSGMERGE = /usr/bin/msgmerge
 NM = /usr/bin/nm -B
 NMEDIT = 
 OBJC = gcc
-OBJCDEPMODE = depmode=gcc3
-OBJCFLAGS = 
+OBJCDEPMODE = depmode=none
+OBJCFLAGS = -g -O2 -fdebug-prefix-map=/home/thorwag/gxsm3-svn=. -fstack-protector-strong -Wformat -Werror=format-security
 OBJDUMP = objdump
 OBJEXT = o
 OTOOL = 
 OTOOL64 = 
 PACKAGE = gxsm3
 PACKAGE_BUGREPORT = http://sourceforge.net/tracker/?func=add&group_id=12992&atid=112992
-PACKAGE_DATA_DIR = /usr/local/share/gxsm3
-PACKAGE_DOC_DIR = /usr/local/share/doc/gxsm3
-PACKAGE_ICON_DIR = /usr/local/share/gxsm3/icons
+PACKAGE_DATA_DIR = /usr/share/gxsm3
+PACKAGE_DOC_DIR = /usr/share/doc/gxsm3
+PACKAGE_ICON_DIR = /usr/share/gxsm3/icons
 PACKAGE_NAME = gxsm3
-PACKAGE_PIXMAPS_DIR = /usr/local/share/pixmaps/gxsm3
+PACKAGE_PIXMAPS_DIR = /usr/share/pixmaps/gxsm3
 PACKAGE_STRING = gxsm3 3.48.0
 PACKAGE_TARNAME = gxsm3
 PACKAGE_URL = http://gxsm.sf.net
@@ -277,7 +277,7 @@ SHELL = /bin/bash
 STRIP = strip
 USE_NLS = yes
 VERSION = 3.48.0
-WARN_CFLAGS =  -Wall -Wstrict-prototypes -Wnested-externs -Werror=missing-prototypes -Werror=implicit-function-declaration -Werror=pointer-arith -Werror=init-self -Werror=format=2 -Werror=missing-include-dirs -Werror=return-type 
+WARN_CFLAGS =  -Wall -Wstrict-prototypes -Wnested-externs -Werror=missing-prototypes -Werror=implicit-function-declaration -Werror=pointer-arith -Werror=init-self -Werror=format-security -Werror=format=2 -Werror=missing-include-dirs -Werror=return-type 
 WINDRES = 
 XGETTEXT = /usr/bin/xgettext
 XMKMF = 
@@ -286,10 +286,10 @@ YACC = bison -y
 YELP_LC_DIST = true
 YELP_LC_MEDIA_LINKS = true
 YFLAGS = 
-abs_builddir = /home/pzahl/SVN/Gxsm-3.0/data
-abs_srcdir = /home/pzahl/SVN/Gxsm-3.0/data
-abs_top_builddir = /home/pzahl/SVN/Gxsm-3.0
-abs_top_srcdir = /home/pzahl/SVN/Gxsm-3.0
+abs_builddir = /home/thorwag/gxsm3-svn/data
+abs_srcdir = /home/thorwag/gxsm3-svn/data
+abs_top_builddir = /home/thorwag/gxsm3-svn
+abs_top_srcdir = /home/thorwag/gxsm3-svn
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
@@ -302,7 +302,7 @@ am__tar = tar --format=ustar -chf - "$$tardir"
 am__untar = tar -xf -
 bindir = ${exec_prefix}/bin
 build = x86_64-pc-linux-gnu
-build_alias = 
+build_alias = x86_64-linux-gnu
 build_cpu = x86_64
 build_os = linux-gnu
 build_vendor = pc
@@ -320,28 +320,28 @@ host_os = linux-gnu
 host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
-infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/install-sh
+infodir = ${prefix}/share/info
+install_sh = ${SHELL} /home/thorwag/gxsm3-svn/install-sh
 intltool__v_merge_options_ = $(intltool__v_merge_options_$(AM_DEFAULT_VERBOSITY))
 intltool__v_merge_options_0 = -q
-libdir = ${exec_prefix}/lib
-libexecdir = ${exec_prefix}/libexec
+libdir = ${prefix}/lib
+libexecdir = ${prefix}/lib/x86_64-linux-gnu
 libnetcdf_LIBS = -lnetcdf -lnetcdf_c++
 localedir = ${datarootdir}/locale
-localstatedir = ${prefix}/var
-mandir = ${datarootdir}/man
+localstatedir = /var
+mandir = ${prefix}/share/man
 mkdir_p = $(MKDIR_P)
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-plugindir = ${exec_prefix}/lib/gxsm3-plugins
-prefix = /usr/local
+plugindir = ${prefix}/lib/gxsm3-plugins
+prefix = /usr
 program_transform_name = s,x,x,
 psdir = ${docdir}
 runstatedir = ${localstatedir}/run
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
-sysconfdir = ${prefix}/etc
+sysconfdir = /etc
 target_alias = 
 top_build_prefix = ../
 top_builddir = ..
@@ -365,7 +365,7 @@ DISTCLEANFILES = \
 all: all-am
 
 .SUFFIXES:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: # $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -389,9 +389,9 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure:  $(am__configure_deps)
+$(top_srcdir)/configure: # $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+$(ACLOCAL_M4): # $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
