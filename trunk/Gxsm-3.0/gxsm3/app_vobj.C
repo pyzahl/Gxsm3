@@ -1949,14 +1949,19 @@ void VObKsys::print_xyz (double x, double y){
         g_print (" C %g %g 0\n",x,y);
 }
 
-void VObKsys::add_bond_len (double x1, double y1, double x2, double y2, cairo_item_text **cit){
+void VObKsys::add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text **cit){
+        double x1,x2,y1,y2;
         double dx,dy,bl,x,y;
+
+        bonds->get_xy(i1, x1,y1);
+        bonds->get_xy(i2, x2,y2);
+        
         x = 0.5*(x1+x2);
         y = 0.5*(y1+y2);
 
         double score=0;
         if (grid_size > 1)
-                score=score_bond (x1,y1, x2, y2, grid_size);
+                score=score_bond (bonds, i1,i2, grid_size);
  
         vinfo->W2Angstroem (x1,y1);
         vinfo->W2Angstroem (x2,y2);
@@ -1974,8 +1979,12 @@ void VObKsys::add_bond_len (double x1, double y1, double x2, double y2, cairo_it
         g_free(txt);
 }
 
-double VObKsys::score_bond (double x1, double y1, double x2, double y2, int n){
+double VObKsys::score_bond (cairo_item *bonds, int i1, int i2, int n){
         double score=0.;
+        double x1,x2,y1,y2;
+
+        bonds->get_xy(i1, x1,y1);
+        bonds->get_xy(i2, x2,y2);
         double dx = x2-x1;
         double dy = y2-y1;
         int norm=0;
@@ -1984,6 +1993,60 @@ double VObKsys::score_bond (double x1, double y1, double x2, double y2, int n){
         }
         return score/norm;
 }
+
+void VObKsys::adjust_bond_aromatic_index (cairo_item *bonds, int i1, int i2, double ai){
+        double x1,x2,y1,y2;
+        bonds->get_xy(i1, x1,y1);
+        bonds->get_xy(i2, x2,y2);
+
+        double dx = x2-x1;
+        double dy = y2-y1;
+        double adj = 1.+(10.-ai)/50.; 
+        
+        x1 += dx*adj;
+        y1 += dy*adj;
+        x2 -= dx*adj;
+        y2 -= dy*adj;
+        
+        bonds->set_xy(i1, x1,y1);
+        bonds->set_xy(i2, x2,y2);
+}
+
+void VObKsys::bonds_matchup (cairo_item *bonds, int i1, int i2){
+        int n = bonds->get_n_nodes ();
+
+        for (int i=0; i<n; ++i){
+                for (int j=1; j<n; ++j){
+                        if (i==j) continue;
+                        i1 = i;
+                        i2 = j;
+                        double x1,x2,y1,y2;
+                        bonds->get_xy(i1, x1,y1);
+                        bonds->get_xy(i2, x2,y2);
+
+                        double x1a,y1a,x2a,y2a;
+                        x1a=x1; x2a=x2;y1a=y1;y2a=y2;
+                        vinfo->W2Angstroem (x1a,y1a);
+                        vinfo->W2Angstroem (x2a,y2a);
+                        double dx = x2a-x1a;
+                        double dy = y2a-y1a;
+                        double dr =sqrt(dx*dx+dy*dy);
+                
+                        if (dr > 0.5 && dr < 3.5)
+                                g_print ("Bond[%d,%d] = (%g, %g) - (%g, %g) = |%g|\n", i,j, x1,y1, x2,y2, dr);
+                        else
+                                g_print ("XYXY[%d,%d] = (%g, %g) - (%g, %g) = |%g|\n", i,j, x1,y1, x2,y2, dr);
+                        
+                        if (dr < 0.5){
+                                double x = 0.5*(x1+x2);
+                                double y = 0.5*(y1+y2);
+                                bonds->set_xy(i1, x,y);
+                                bonds->set_xy(i2, x,y);
+                        }
+                }
+        }
+}
+
 
 void VObKsys::calc_grid(){
 	const int gm = grid_mode;
@@ -2020,6 +2083,13 @@ void VObKsys::calc_grid(){
                                 bonds->set_line_width (OBJECT_LINE_WIDTH);
                         }
 
+                        if (n_info != 4 && info){
+                                for (int i=0; i<n_info; ++i){
+                                        info[i]->hide ();
+                                        info[i]->queue_update (canvas);
+                                }
+                                g_free (info); n_info=0; info=NULL;
+                        }
                         if (n_info == 0 || info == NULL){
                                 n_info = 4;
                                 info = g_new0 (cairo_item_text*, n_info);
@@ -2050,30 +2120,30 @@ void VObKsys::calc_grid(){
                                 double x1,x2,y1,y2;
                                 bonds->set_xy (j++, x1=xy[2] + c0*rx[0] + s0*rx[1], y1=xy[3] + c0*rx[1] - s0*rx[0]);
                                 bonds->set_xy (j++, x2=xy[2] + c1*rx[0] + s1*rx[1], y2=xy[3] + c1*rx[1] - s1*rx[0]);
-                                if (grid_size>1) score += score_bond (x1,y1, x2, y2, grid_size);
-                                if (phii==0) add_bond_len (x1,y1, x2, y2, &info[0]);
+                                if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[0]);
                                 print_xyz (x2, y2);
                                 // spoke
                                 bonds->set_xy (j++, x1=xy[2] + c0*rx[0] + s0*rx[1], y1=xy[3] + c0*rx[1] - s0*rx[0]);
                                 bonds->set_xy (j++, x2=xy[2] + ro*(c0*rx[0] + s0*rx[1])/ri, y2=xy[3] + ro*(c0*rx[1] - s0*rx[0])/ri);
-                                if (grid_size>1) score += score_bond (x1,y1, x2, y2, grid_size);
-                                if (phii==0) add_bond_len (x1,y1, x2, y2, &info[1]);
+                                if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[1]);
                                 // spoke - outher segment
                                 bonds->set_xy (j++, x1=xy[2] + ro*(c0*rx[0] + s0*rx[1])/ri, y1=xy[3] + ro*(c0*rx[1] - s0*rx[0])/ri);
                                 bonds->set_xy (j++, x2=xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, y2=xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
-                                if (grid_size>1) score += score_bond (x1,y1, x2, y2, grid_size);
-                                if (phii==0) add_bond_len (x1,y1, x2, y2, &info[2]);
+                                if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[2]);
                                 print_xyz (x2, y2);
                                 // outher segment
                                 bonds->set_xy (j++, x1=xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, y1=xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
                                 bonds->set_xy (j++, x2=xy[2] + re*(c3*rx[0] + s3*rx[1])/ri, y2=xy[3] + re*(c3*rx[1] - s3*rx[0])/ri);
-                                if (grid_size>1) score += score_bond (x1,y1, x2, y2, grid_size);
-                                if (phii==0) add_bond_len (x1,y1, x2, y2, &info[3]);
+                                if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[3]);
                                 print_xyz (x2, y2);
                                 // outher segment - spoke next
                                 bonds->set_xy (j++, x1=xy[2] + re*(c3*rx[0] + s3*rx[1])/ri, y1=xy[3] + re*(c3*rx[1] - s3*rx[0])/ri);
                                 bonds->set_xy (j++, x2=xy[2] + ro*(c1*rx[0] + s1*rx[1])/ri, y2=xy[3] + ro*(c1*rx[1] - s1*rx[0])/ri);
-                                if (grid_size>1) score += score_bond (x1,y1, x2, y2, grid_size);
+                                if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
                                 print_xyz (x2, y2);
                                 // H's
                                 bonds->set_xy (j++, xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
@@ -2099,6 +2169,7 @@ void VObKsys::calc_grid(){
                         }
                 }
                 if (gm == 12 || gm == 13){ // Pentacene like linear array of hexas w / wo H
+                        double score = 0.;
                         if (gm == 12)
                                 nl = 6*num_grid_lines;
                         else
@@ -2118,6 +2189,17 @@ void VObKsys::calc_grid(){
                                 bonds->set_fill_rgba (0.,0.,0.,0.);
                                 bonds->set_line_width (OBJECT_LINE_WIDTH);
                         }
+                        if (n_info != 2 && info){
+                                for (int i=0; i<n_info; ++i){
+                                        info[i]->hide ();
+                                        info[i]->queue_update (canvas);
+                                }
+                                g_free (info); n_info=0; info=NULL;
+                        }
+                        if (n_info == 0 || info == NULL){
+                                n_info = 2;
+                                info = g_new0 (cairo_item_text*, n_info);
+                        }
 
                         j=0;
 
@@ -2131,6 +2213,9 @@ void VObKsys::calc_grid(){
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
                                 ++k; 
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                adjust_bond_aromatic_index (bonds, j-2,j-1, m_parameter[0]);
+                                if (grid_size>1) score += score_bond (bonds,j-2,j-1, grid_size);
+                                if (ir==0) add_bond_len (bonds,j-2,j-1, &info[0]);
                                 if (gm == 13){
                                         q=0; v=-1; q*=qvl; v*=qvl;
                                         bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
@@ -2139,6 +2224,9 @@ void VObKsys::calc_grid(){
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
                                 ++k; ++l;
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                adjust_bond_aromatic_index (bonds, j-2,j-1, m_parameter[1]);
+                                if (grid_size>1) score += score_bond (bonds,j-2,j-1, grid_size);
+                                if (ir==0) add_bond_len (bonds,j-2,j-1, &info[1]);
                                 if (gm == 13){
                                         q=1; v=0; q*=qvl; v*=qvl;
                                         bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
@@ -2147,6 +2235,7 @@ void VObKsys::calc_grid(){
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
                                 ++l;
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                adjust_bond_aromatic_index (bonds, j-2,j-1, m_parameter[0]);
                                 if (gm == 13){
                                         q=1; v=1; q*=qvl; v*=qvl;
                                         bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
@@ -2155,6 +2244,7 @@ void VObKsys::calc_grid(){
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
                                 --k;
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                adjust_bond_aromatic_index (bonds, j-2,j-1, m_parameter[1]);
                                 if (gm == 13){
                                         q=0; v=1; q*=qvl; v*=qvl;
                                         bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
@@ -2163,6 +2253,7 @@ void VObKsys::calc_grid(){
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
                                 --k; --l;
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
+                                adjust_bond_aromatic_index (bonds, j-2,j-1, m_parameter[0]);
                                 if (gm == 13){
                                         q=-1; v=0; q*=qvl; v*=qvl;
                                         bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
@@ -2172,16 +2263,29 @@ void VObKsys::calc_grid(){
                                 --l;
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
                                 ++k; ++k; ++l;
+                                adjust_bond_aromatic_index (bonds, j-2,j-1, m_parameter[1]);
+
                         }
+                        bonds_matchup (bonds, 1,3);
                         
                         bonds->show ();
                         bonds->set_stroke_rgba (&custom_element_b_color);
                         bonds->queue_update (canvas);
+                        for (int i=0; i<n_info; ++i){
+                                info[i]->show ();
+                                info[i]->queue_update (canvas);
+                        }
                 }
         } else {
                 if (bonds){
                            bonds->hide ();
                            bonds->queue_update (canvas);
+                }
+                if (info){
+                        for (int i=0; i<n_info; ++i){
+                                info[i]->hide ();
+                                info[i]->queue_update (canvas);
+                        }
                 }
         }
         

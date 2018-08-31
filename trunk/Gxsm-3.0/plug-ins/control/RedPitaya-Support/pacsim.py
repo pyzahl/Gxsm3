@@ -67,26 +67,15 @@ class lms():
     def phase (self):
         return math.atan2 (self.a-self.b, self.a+self.b)
 
-tscale = 100    # 1 = 1x 
-fref   = 1000.0 # Hz
-tau    = 250    # us
+fref=2e6
+xx=1
+ftest=fref*xx
+tau=0.15
+pac = lms(fref, 125e6, tau*1e-6)
 
 iir    = 5e-4;
 
-xx  = 1 # base freq
-xx2 = 0 # 3.57356
-xx3 = 0 # 0.1
-na  = 0.0 # nose ampl
-
-frefs=fref*tscale
-ftest=frefs*xx
-ftest2=frefs*xx2
-ftest3=frefs*xx3
-ssrate = 125e6
-pac = lms(frefs, ssrate, tau*1e-6/tscale)#,iir)
-
-N=int(300*ssrate*tau*1e-6/tscale)
-
+N=1000
 t=np.arange (N).astype(np.float)
 ts=np.arange (N).astype(np.float)
 s=np.arange (N).astype(np.float)
@@ -119,3 +108,12 @@ plt.title ('PAC LMS Simulation tau: %g'%tau+'us f=%g'%fref+'Hz fs=x%g'%xx+'+x%g'
 plt.grid (True)
 plt.legend()
 plt.show ()
+
+#plt.xlabel('time in samples')
+#plt.plot (t, s, label="signal")
+#plt.plot (t, a, label="ampl")
+#plt.plot (t, p, label="phase")
+#plt.title ('PAC LMS Simulation')
+#plt.grid (True)
+#plt.legend()
+#plt.show ()

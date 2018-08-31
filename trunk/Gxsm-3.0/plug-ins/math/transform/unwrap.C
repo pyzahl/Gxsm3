@@ -242,13 +242,11 @@ double uw (double z, double diffmax, double jump){
                         
         dz = z-z1;
         z1=z;
-
 #if 1
-        if (z<0)
+        if (z < 0.)
                 return (z+jump);
         else
-                return z;
-
+                return (z);
 #else
        
         if (dz > diffmax)
