@@ -412,8 +412,10 @@ class VObKsys : public VObject{
                           if (info[i]) info[i]->draw (cr);
 	};
         void print_xyz (double x, double y);
-        void add_bond_len (double x1, double y1, double x2, double y2, cairo_item_text **cit);
-        double score_bond (double x1, double y1, double x2, double y2, int n);
+        void add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text **cit);
+        double score_bond (cairo_item *bonds, int i1, int i2, int n);
+        void adjust_bond_aromatic_index (cairo_item *bonds, int i1, int i2, double ai=10.);
+        void bonds_matchup (cairo_item *bonds, int i1, int i2);
         
  private:
 	void calc_grid();

@@ -825,7 +825,8 @@ void sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
 	// move tip from current position to Origin i.e. x,y
 	dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
 	dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
-	SRANGER_DEBUG("SR:EndScan2D last XYPos: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
+	SRANGER_DEBUG("SR:SCAN_XY last: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
+        //gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (probe active): skipping.", 3);
 
 	double Mdx = x - (double)dsp_scan.xyz_vec[i_X];
 	double Mdy = y - (double)dsp_scan.xyz_vec[i_Y];
@@ -835,6 +836,7 @@ void sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
 	dsp_scan.fm_dx = (long)round(Mdx/steps);
 	dsp_scan.fm_dy = (long)round(Mdy/steps);
 	dsp_scan.num_steps_move_xy = (long)steps;
+	SRANGER_DEBUG("SR:SCAN_XY move: dXdY=" << Mdx <<", "<< Mdy << " #steps=" << steps);
 
 	double zx_ratio = sranger_mk2_hwi_pi.app->xsm->Inst->Dig2XA (1) / sranger_mk2_hwi_pi.app->xsm->Inst->Dig2ZA (1);
 	double zy_ratio = sranger_mk2_hwi_pi.app->xsm->Inst->Dig2YA (1) / sranger_mk2_hwi_pi.app->xsm->Inst->Dig2ZA (1);
@@ -875,7 +877,7 @@ void sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
 
 	dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
 	dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
-	SRANGER_DEBUG("SR:EndScan2D return XYPos: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
+	SRANGER_DEBUG("SR:SCAN_XY fin: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
 }
 
 // just note that we are scanning next...

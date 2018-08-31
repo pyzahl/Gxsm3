@@ -1318,8 +1318,7 @@ DSPControl::DSPControl () {
         dsp_bp->set_scale_nx (4); // set scale width to 4
         dsp_bp->set_input_width_chars (10);
         dsp_bp->grid_add_ec_with_scale ("Bias", Volt, &bias, -10., 10., "4g", 0.001, 0.01, "fbs-bias");
-        // disabled default -- experimental, has lately increased ocurring issues with non-managed/un-caught signals causing unclotrolled non log transformed number
-        //dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_LOG_SYM | PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
+        //        dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_LOG_SYM | PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
         dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
         dsp_bp->ec->set_logscale_min (1e-3);
         gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
@@ -1390,8 +1389,7 @@ DSPControl::DSPControl () {
                         dsp_bp->grid_add_label (mixer_channel_label[ch]);
                 }
                 dsp_bp->grid_add_ec_with_scale (NULL, mixer_unit[ch], &mix_set_point[ch], 0.0, 50., "4g", 0.001, 0.01, mixer_remote_id_set[ch]);
-                // disabled default -- experimental, has lately increased ocurring issues with non-managed/un-caught signals causing unclotrolled non log transformed number
-                //dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
+                // dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
                 dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
                 dsp_bp->ec->set_logscale_min (1e-4);
                 dsp_bp->ec->set_logscale_magshift (-3);
