@@ -1994,14 +1994,14 @@ double VObKsys::score_bond (cairo_item *bonds, int i1, int i2, int n){
         return score/norm;
 }
 
-void VObKsys::adjust_bond_aromatic_index (cairo_item *bonds, int i1, int i2, double ai){
+void VObKsys::adjust_bond_aromatic_index (cairo_item_segments_wlw *bonds, int i1, int i2, double ai){
         double x1,x2,y1,y2;
         bonds->get_xy(i1, x1,y1);
         bonds->get_xy(i2, x2,y2);
 
         double dx = x2-x1;
         double dy = y2-y1;
-        double adj = 1.+(10.-ai)/50.; 
+        double adj = 1.+ai; 
         
         x1 += dx*adj;
         y1 += dy*adj;
@@ -2010,19 +2010,18 @@ void VObKsys::adjust_bond_aromatic_index (cairo_item *bonds, int i1, int i2, dou
         
         bonds->set_xy(i1, x1,y1);
         bonds->set_xy(i2, x2,y2);
+        bonds->set_segment_line_width(i1, m_parameter[2]+adj*m_parameter[3]);
 }
 
-void VObKsys::bonds_matchup (cairo_item *bonds, int i1, int i2){
+void VObKsys::bonds_matchup (cairo_item *bonds){
         int n = bonds->get_n_nodes ();
 
         for (int i=0; i<n; ++i){
                 for (int j=1; j<n; ++j){
                         if (i==j) continue;
-                        i1 = i;
-                        i2 = j;
                         double x1,x2,y1,y2;
-                        bonds->get_xy(i1, x1,y1);
-                        bonds->get_xy(i2, x2,y2);
+                        bonds->get_xy(i, x1,y1);
+                        bonds->get_xy(j, x2,y2);
 
                         double x1a,y1a,x2a,y2a;
                         x1a=x1; x2a=x2;y1a=y1;y2a=y2;
@@ -2040,8 +2039,8 @@ void VObKsys::bonds_matchup (cairo_item *bonds, int i1, int i2){
                         if (dr < 0.5){
                                 double x = 0.5*(x1+x2);
                                 double y = 0.5*(y1+y2);
-                                bonds->set_xy(i1, x,y);
-                                bonds->set_xy(i2, x,y);
+                                bonds->set_xy(i, x,y);
+                                bonds->set_xy(j, x,y);
                         }
                 }
         }
@@ -2077,7 +2076,7 @@ void VObKsys::calc_grid(){
                         }
                         if (bonds == NULL){
                                 n_bonds = nl;
-                                bonds = new cairo_item_segments (n_bonds);
+                                bonds = new cairo_item_segments_wlw (n_bonds);
                                 bonds->set_stroke_rgba (&custom_element_b_color);
                                 bonds->set_fill_rgba (0.,0.,0.,0.);
                                 bonds->set_line_width (OBJECT_LINE_WIDTH);
@@ -2184,7 +2183,7 @@ void VObKsys::calc_grid(){
 
                         if (bonds == NULL){
                                 n_bonds = nl;
-                                bonds = new cairo_item_segments (n_bonds);
+                                bonds = new cairo_item_segments_wlw (n_bonds);
                                 bonds->set_stroke_rgba (&custom_element_b_color);
                                 bonds->set_fill_rgba (0.,0.,0.,0.);
                                 bonds->set_line_width (OBJECT_LINE_WIDTH);
@@ -2214,8 +2213,6 @@ void VObKsys::calc_grid(){
                                 ++k; 
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
                                 adjust_bond_aromatic_index (bonds, j-2,j-1, m_parameter[0]);
-                                if (grid_size>1) score += score_bond (bonds,j-2,j-1, grid_size);
-                                if (ir==0) add_bond_len (bonds,j-2,j-1, &info[0]);
                                 if (gm == 13){
                                         q=0; v=-1; q*=qvl; v*=qvl;
                                         bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
@@ -2225,8 +2222,6 @@ void VObKsys::calc_grid(){
                                 ++k; ++l;
                                 bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
                                 adjust_bond_aromatic_index (bonds, j-2,j-1, m_parameter[1]);
-                                if (grid_size>1) score += score_bond (bonds,j-2,j-1, grid_size);
-                                if (ir==0) add_bond_len (bonds,j-2,j-1, &info[1]);
                                 if (gm == 13){
                                         q=1; v=0; q*=qvl; v*=qvl;
                                         bonds->set_xy (j++, xy[2] + k*rx[0] + l*ry[0], xy[3] + k*rx[1] + l*ry[1]);
@@ -2266,8 +2261,14 @@ void VObKsys::calc_grid(){
                                 adjust_bond_aromatic_index (bonds, j-2,j-1, m_parameter[1]);
 
                         }
-                        bonds_matchup (bonds, 1,3);
-                        
+                        bonds_matchup (bonds);
+                        add_bond_len (bonds,0,1, &info[0]);
+                        add_bond_len (bonds,2,3, &info[1]);
+                        if (grid_size>1){
+                                for (int i=0; i<j; i+=2)
+                                        score += score_bond (bonds,i,i+1, grid_size);
+                                g_message ("Score = %.3f Hz", score/(j/2));
+                        }
                         bonds->show ();
                         bonds->set_stroke_rgba (&custom_element_b_color);
                         bonds->queue_update (canvas);
