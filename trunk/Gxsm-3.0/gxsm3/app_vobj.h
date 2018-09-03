@@ -414,8 +414,8 @@ class VObKsys : public VObject{
         void print_xyz (double x, double y);
         void add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text **cit);
         double score_bond (cairo_item *bonds, int i1, int i2, int n);
-        void adjust_bond_aromatic_index (cairo_item *bonds, int i1, int i2, double ai=10.);
-        void bonds_matchup (cairo_item *bonds, int i1, int i2);
+        void adjust_bond_aromatic_index (cairo_item_segments_wlw *bonds, int i1, int i2, double ai=10.);
+        void bonds_matchup (cairo_item *bonds);
         
  private:
 	void calc_grid();
@@ -423,7 +423,7 @@ class VObKsys : public VObject{
 	void update_grid();
 	cairo_item_segments *lines;
 	cairo_item_circle *atoms;
-	cairo_item_segments *bonds;
+	cairo_item_segments_wlw *bonds;
 	cairo_item_text **info;
 	gint n_atoms;
 	gint n_lines;

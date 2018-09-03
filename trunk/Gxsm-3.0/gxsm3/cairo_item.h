@@ -106,7 +106,7 @@ public:
         cairo_item () { 
                 // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "constructor");
                 GXSM_REF_OBJECT (GXSM_GRC_CAIRO_ITEM);
-                n=0; xy = NULL; 
+                n=0; xy = NULL;
                 v0.x = v0.y = 0.;  
                 set_line_width (1.0); set_stroke_rgba (0); set_fill_rgba (0); set_line_style (0);
                 bbox[0]=bbox[1]=0.; bbox[2]=bbox[3]=0.; 
@@ -417,6 +417,61 @@ public:
         };
 
 private:
+};
+
+class cairo_item_segments_wlw : public cairo_item{
+public:
+	cairo_item_segments_wlw (int nodes) {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "segments new");
+                xy = g_new (cairo_point, nodes); n=nodes;
+                wlw = g_new0 (double, n);
+        };
+	cairo_item_segments_wlw (cairo_item_path *cip) {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "segments new");
+                xy = g_new (cairo_point, n=cip->get_n_nodes());
+                wlw = g_new0 (double, n);
+        };
+	virtual ~cairo_item_segments_wlw () {
+                g_free (xy);
+                g_free (wlw);
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "segments delete");
+        };
+
+        void set_segment_line_width (int i, double line_width) {  if (i >= 0 && i < n) wlw[i] = line_width; };
+        
+        virtual void draw (cairo_t* cr, double alpha=1.0, gboolean tr=true) { // add qf???
+                if (show_flag){
+                        cairo_save (cr);
+                        cairo_translate (cr, v0.x, v0.y);
+                        cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
+                        cairo_set_line_width (cr, lw); 
+                        for (int i=0; i<n; ){
+                                if (wlw[i] > 0.)
+                                        cairo_set_line_width (cr, wlw[i]); 
+                                cairo_move_to (cr, xy[i].x, xy[i].y); ++i;
+                                cairo_line_to (cr, xy[i].x, xy[i].y); ++i;
+                                cairo_stroke (cr);
+                        }
+                        cairo_restore (cr);
+                }
+        };
+        virtual void draw_partial (cairo_t* cr, int i0, int i1) {
+                if (show_flag){
+                        cairo_save (cr);
+                        cairo_translate (cr, v0.x, v0.y);
+                        cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
+                        cairo_set_line_width (cr, lw); 
+                        for (int i=i0; i<i1; ){
+                                cairo_move_to (cr, xy[i].x, xy[i].y); ++i;
+                                cairo_line_to (cr, xy[i].x, xy[i].y); ++i;
+                                cairo_stroke (cr);
+                        }
+                        cairo_restore (cr);
+                }
+        };
+
+private:
+        double *wlw;
 };
 
 class cairo_item_path_closed : public cairo_item{
