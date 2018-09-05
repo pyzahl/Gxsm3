@@ -1476,7 +1476,7 @@ class SignalPlotter():
 
 class Mk3_Configurator:
     def __init__(self):
-	self.mk3spm = SPMcontrol ()
+	self.mk3spm = SPMcontrol (2)
 	self.mk3spm.read_configurations ()
 	self.vector_index = 0
 
