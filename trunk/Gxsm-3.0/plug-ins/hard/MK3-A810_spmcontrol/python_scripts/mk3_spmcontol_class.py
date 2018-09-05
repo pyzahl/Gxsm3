@@ -1166,6 +1166,7 @@ i_signal_lookup = 26
 FB_SPM_MAGIC_ADR_MK3 = 0x10F13F00
 FB_SPM_MAGIC_REF_MK3 = 0x3202EE01
 
+# MK3 COFF TEXT DSP CODE for power up kernel
 mk3_power_up_kernel = {
         0x10800800: [0x0000, 0x0000, 0x0000, 0x0000],
         0x10800804: [0x0000, 0x0000, 0x0000, 0x0000],
