@@ -59,7 +59,9 @@ struct PACPLL_parameters {
         double signal_period;
         double bram_write_pos;
         double bram_dec_count;
-        
+
+        double qc_gain;
+        double qc_phase;
         double pac_dctau;
         double pactau;
         double pacatau;
@@ -102,6 +104,7 @@ struct PACPLL_parameters {
         double phase_fb_ci_db;
         double freq_fb_upper;
         double freq_fb_lower;
+        double qcontrol;
         double phase_controller;
         double phase_unwrapping_always;
         double set_singleshot_transport_trigger;
@@ -145,6 +148,11 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "PAC_DCTAU", &pacpll_parameters.pac_dctau, false },
         { "PACTAU", &pacpll_parameters.pactau, false },
         { "PACATAU", &pacpll_parameters.pacatau, false },
+
+        { "QCONTROL", &pacpll_parameters.qcontrol, false },
+        { "QC_GAIN", &pacpll_parameters.qc_gain, false },
+        { "QC_PHASE", &pacpll_parameters.qc_phase, false },
+
         { "FREQUENCY_MANUAL", &pacpll_parameters.frequency_manual, false }, // manual/tune frequency
         { "FREQUENCY_CENTER", &pacpll_parameters.frequency_center, false }, // center frequency -- used as offset for AUX
         { "AUX_SCALE", &pacpll_parameters.aux_scale, false },
@@ -211,6 +219,8 @@ public:
 	static void pac_tau_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void pac_frequency_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void pac_volume_parameter_changed (Param_Control* pcs, gpointer user_data);
+        static void qcontrol (GtkWidget *widget, Inet_Json_External_Scandata *self);
+	static void qc_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void tune_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void amp_ctrl_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void phase_ctrl_parameter_changed (Param_Control* pcs, gpointer user_data);

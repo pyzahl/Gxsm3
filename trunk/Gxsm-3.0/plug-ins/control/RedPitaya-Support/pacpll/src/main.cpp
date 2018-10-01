@@ -39,6 +39,7 @@
 #include "main.h"
 
 // INSTALL:
+// cp ~/SVN/RedPitaya/RedPACPLL4mdc-SPI/RedPACPLL4mdc-SPI.runs/impl_1/system_wrapper.bit fpga.bit
 // scp -r pacpll root@rp-f05603:/opt/redpitaya/www/apps/
 // make clean; make INSTALL_DIR=/opt/redpitaya
 
@@ -153,6 +154,8 @@ CDoubleParameter PAC_DCTAU("PAC_DCTAU", CBaseParameter::RW, 10.0, 0, -1.0, 1e6);
 CDoubleParameter PACTAU("PACTAU", CBaseParameter::RW, 40.0, 0, 0.0, 60e6); // us
 CDoubleParameter PACATAU("PACATAU", CBaseParameter::RW, 30.0, 0, 0.0, 60e6); // us
 
+CDoubleParameter QC_GAIN("QC_GAIN", CBaseParameter::RW, 0, 0, -1.0, 1.0); // gain factor
+CDoubleParameter QC_PHASE("QC_PHASE", CBaseParameter::RW, 0, 0, 0.0, 360.0); // deg
 
 CDoubleParameter TUNE_SPAN("TUNE_SPAN", CBaseParameter::RW, 5.0, 0, 0.1, 1e6); // Hz
 CDoubleParameter TUNE_DFREQ("TUNE_DFREQ", CBaseParameter::RW, 0.05, 0, 0.0001, 1000.); // Hz
@@ -162,6 +165,7 @@ CBooleanParameter SET_SINGLESHOT_TRANSPORT_TRIGGER("SET_SINGLESHOT_TRANSPORT_TRI
 CBooleanParameter AMPLITUDE_CONTROLLER("AMPLITUDE_CONTROLLER", CBaseParameter::RW, false, 0);
 CBooleanParameter PHASE_CONTROLLER("PHASE_CONTROLLER", CBaseParameter::RW, false, 0);
 CBooleanParameter PHASE_UNWRAPPING_ALWAYS("PHASE_UNWRAPPING_ALWAYS", CBaseParameter::RW, false, 0);
+CBooleanParameter QCONTROL("QCONTROL", CBaseParameter::RW, false, 0);
 
 //void rp_PAC_set_phase_controller64 (double setpoint, double cp, double ci, double upper, double lower)
 CDoubleParameter AMPLITUDE_FB_SETPOINT("AMPLITUDE_FB_SETPOINT", CBaseParameter::RW, 20, 0, 0, 1000); // mV
@@ -281,6 +285,7 @@ void rp_PAC_App_Release(){
 #define BITS_AMPL_CONTROL   32
 #define BITS_PLHASE_CONTROL 48
 
+#define Q15 QN(15)
 #define Q31 0x7FFFFFFF  // (1<<31)-1 ... ov in expression expansion
 #define Q32 0xFFFFFFFF  // (1<<32)-1 ... ov in expression expansion
 #define Q40 QN64(40)
@@ -406,10 +411,24 @@ void rp_PAC_set_volume (double volume){
 }
 
 #define PACPLL_CFG_CONTROL_LOOPS 3
-// Configure Control Loops Ampl and Phase On/Off
-void rp_PAC_configure_loops (int phase_ctrl, int am_ctrl, int phase_unwrap_always){
+// Configure Control Switched: Loops Ampl and Phase On/Off, Unwrapping, QControl
+void rp_PAC_configure_switches (int phase_ctrl, int am_ctrl, int phase_unwrap_always, int qcontrol){
         if (verbose > 2) fprintf(stderr, "##Configure loop controls: %x",  phase_ctrl ? 1:0 | am_ctrl ? 2:0); 
-        set_gpio_cfgreg_int32 (PACPLL_CFG_CONTROL_LOOPS, (phase_ctrl ? 1:0) | (am_ctrl ? 2:0) | (phase_unwrap_always ? 4:0));
+        set_gpio_cfgreg_int32 (PACPLL_CFG_CONTROL_LOOPS, (phase_ctrl ? 1:0) | (am_ctrl ? 2:0) | (phase_unwrap_always ? 4:0) | (qcontrol ? 8:0));
+}
+
+
+#define QCONTROL_CFG_GAIN_DELAY 29
+void rp_PAC_set_qcontrol (double gain, double phase){
+        double samples_per_period = ADC_SAMPLING_RATE / FREQUENCY_MANUAL.Value ();
+        int ndelay = int (samples_per_period * phase/360. + 0.5);
+
+        if (ndelay < 0 || ndelay > 4095 || phase < 0.)
+                ndelay = 0; // Q-Control disabled when delay == 0
+
+        if (verbose > 2) fprintf(stderr, "##Configure: qcontrol= %d, %d\n", (int)(Q15*gain), ndelay); 
+
+        set_gpio_cfgreg_int32 (QCONTROL_CFG_GAIN_DELAY, ((int)(Q15 * gain)<<16) | ndelay );
 }
 
 #define PACPLL_CFG_PACTAU     4
@@ -768,6 +787,8 @@ void set_PAC_config()
         rp_PAC_set_volume (VOLUME_MANUAL.Value() / 1000.); // mV -> V
         rp_PAC_set_pactau (PACTAU.Value() * 1e-6, PACATAU.Value() * 1e-6, PAC_DCTAU.Value() * 1e-3); // us -> s, us -> s, ms -> s
 
+        rp_PAC_set_qcontrol (QC_GAIN.Value (), QC_PHASE.Value ());
+
         rp_PAC_set_amplitude_controller (
                                          AMPLITUDE_FB_SETPOINT.Value ()/1000., // mv to V
                                          AMPLITUDE_FB_CP.Value (),
@@ -784,7 +805,7 @@ void set_PAC_config()
                                      FREQ_FB_LOWER.Value ()
                                      );
         
-        rp_PAC_configure_loops (PHASE_CONTROLLER.Value ()?1:0, AMPLITUDE_CONTROLLER.Value ()?1:0, PHASE_UNWRAPPING_ALWAYS.Value ()?1:0);
+        rp_PAC_configure_switches (PHASE_CONTROLLER.Value ()?1:0, AMPLITUDE_CONTROLLER.Value ()?1:0, PHASE_UNWRAPPING_ALWAYS.Value ()?1:0, QCONTROL.Value ()?1:0);
 }
 
 
@@ -1257,6 +1278,10 @@ void OnNewParams(void)
         PACTAU.Update ();
         PACATAU.Update ();
         PAC_DCTAU.Update ();
+
+        QC_GAIN.Update ();
+        QC_PHASE.Update ();
+        QCONTROL.Update ();
         
         PHASE_CONTROLLER.Update ();
         AMPLITUDE_CONTROLLER.Update ();

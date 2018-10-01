@@ -298,6 +298,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         parameters.frequency_center = 32768.0; // Hz
         parameters.aux_scale = 0.011642; // 20Hz / V equivalent 
         parameters.volume_manual = 300.0; // mV
+        parameters.qc_gain=0.0; // gain +/-1.0
+        parameters.qc_phase=0.0; // deg
         bp->set_input_width_chars (8);
         bp->set_input_nx (1);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_tau_parameter_changed, this);
@@ -305,6 +307,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
   	bp->grid_add_ec ("Tau PAC", uTime, &parameters.pactau, 0.0, 63e6, "6g", 10., 1., "PACTAU");
   	bp->grid_add_ec (NULL, uTime, &parameters.pacatau, 0.0, 63e6, "6g", 10., 1., "PACATAU");
+        bp->new_line ();
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::qc_parameter_changed, this);
+  	bp->grid_add_ec ("QControl",Deg, &parameters.qc_phase, 0.0, 360.0, "5g", 10., 1., "QC-PHASE");
+  	bp->grid_add_ec (NULL, Unity, &parameters.qc_gain, -1.0, 1.0, "4g", 10., 1., "QC-GAIN");
         bp->new_line ();
         bp->set_no_spin (false);
         bp->set_input_width_chars (12);
@@ -383,6 +389,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->grid_add_check_button ( N_("Set Auto Trigger SS"), "Set Auto Trigger SS", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::set_ss_auto_trigger), this);
+        bp->grid_add_check_button ( N_("QControl"), "QControl", 2,
+                                    G_CALLBACK (Inet_Json_External_Scandata::qcontrol), this);
 
         bp->pop_grid ();
 
@@ -813,6 +821,17 @@ void Inet_Json_External_Scandata::pac_frequency_parameter_changed (Param_Control
 void Inet_Json_External_Scandata::pac_volume_parameter_changed (Param_Control* pcs, gpointer user_data){
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
         self->write_parameter ("VOLUME_MANUAL", self->parameters.volume_manual);
+}
+
+void Inet_Json_External_Scandata::qcontrol (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("QCONTROL", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        self->parameters.qcontrol = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+}
+
+void Inet_Json_External_Scandata::qc_parameter_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+        self->write_parameter ("QC_GAIN", self->parameters.qc_gain);
+        self->write_parameter ("QC_PHASE", self->parameters.qc_phase);
 }
 
 void Inet_Json_External_Scandata::tune_parameter_changed (Param_Control* pcs, gpointer user_data){

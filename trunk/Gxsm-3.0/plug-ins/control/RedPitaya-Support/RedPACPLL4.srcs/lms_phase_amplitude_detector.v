@@ -139,6 +139,9 @@ module lms_phase_amplitude_detector #(
     output wire [S_AXIS_SIGNAL_TDATA_WIDTH-1:0]  M_AXIS_SIGNAL_tdata,
     output wire                                  M_AXIS_SIGNAL_tvalid,
 
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [16-1:0]  M_AXIS_SIGNAL_M_tdata,
+    output wire           M_AXIS_SIGNAL_M_tvalid,
     
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     output wire [M_AXIS_AM_TDATA_WIDTH-1:0] M_AXIS_AM2_tdata, // dbg
@@ -153,7 +156,10 @@ module lms_phase_amplitude_detector #(
     output wire [31:0] dbg3,
     output wire [31:0] dbg4,
     output wire [31:0] Aout,
-    output wire [31:0] Bout
+    output wire [31:0] Bout,
+    output wire [31:0] LockInX,
+    output wire [31:0] LockInY,
+    output wire [15:0] LockInN
 );
     reg signed [LMS_DATA_WIDTH-1:0] s=0; // Q22
     reg signed [LMS_DATA_WIDTH-1:0] s1=0; // Q22
@@ -187,15 +193,30 @@ module lms_phase_amplitude_detector #(
     reg [2*(LMS_DATA_WIDTH-1)+1-1:0] ampl2=0; 
     reg signed [LMS_DATA_WIDTH+2-1:0] x=0; 
     reg signed [LMS_DATA_WIDTH+2-1:0] y=0; 
+
+    reg signed [LMS_DATA_WIDTH-1:0] LckX=0;
+    reg signed [LMS_DATA_WIDTH-1:0] LckY=0;
+    reg signed [LMS_DATA_WIDTH+16-1:0] LckXInt=0;
+    reg signed [LMS_DATA_WIDTH+16-1:0] LckYInt=0;
+    reg signed [LMS_DATA_WIDTH+16-1:0] LckXSum=0;
+    reg signed [LMS_DATA_WIDTH+16-1:0] LckYSum=0;
+    reg [16:0] Lck_i=0;
+    reg [16:0] Lck_N=0;
+    reg [16:0] Lck_Ni=0;
+
     reg sp=0;
     reg cp=0;
     reg sc_zero=0;
+    reg s0ref=0;
     
     assign M_AXIS_SC_tdata  = S_AXIS_SC_tdata; // pass
     assign M_AXIS_SC_tvalid = S_AXIS_SC_tvalid; // pass
    
     assign M_AXIS_SIGNAL_tdata  = S_AXIS_SIGNAL_tdata; // pass
     assign M_AXIS_SIGNAL_tvalid = S_AXIS_SIGNAL_tvalid; // pass
+
+    assign M_AXIS_SIGNAL_M_tdata  = S_AXIS_SIGNAL_tdata; // pass ADC DATA Signal M
+    assign M_AXIS_SIGNAL_M_tvalid = S_AXIS_SIGNAL_tvalid; // pass
 
     always @ (posedge aclk)
     begin
@@ -212,6 +233,7 @@ module lms_phase_amplitude_detector #(
         end
         
         //  special IIR DC filter DC error on average of samples at 0,90,180,270
+        Lck_Ni <= Lck_Ni + 1; // measure sine period
         if (sc_zero)
         begin
             // mdc_mue <= (m-mdc) * dc_tau;
@@ -239,6 +261,9 @@ module lms_phase_amplitude_detector #(
             begin
                 sp <= 1;
                 sc_zero <= 1;
+                s0ref <= 1;
+                Lck_N <= Lck_Ni; // update sine period
+                Lck_Ni <= 0; // reset period sample counter
             end
             else
             begin
@@ -311,12 +336,27 @@ module lms_phase_amplitude_detector #(
         d_mu_e2 <= d_mu_e1;
         Ad_mu_e2 <= Ad_mu_e1;
         
-    //        m1 <= m-dc;
+        // m1 <= m-dc;
         m1 <= m - $signed(dc_tau[31] ? dc : mdc); // auto IIR dc or manual dc
         c1 <= c;
         c2 <= c1;
         s1 <= s;
         s2 <= s1;
+        
+        // Classic LockIn and Correlation Integral over one period
+        LckX <= (s * m + 45'sh200000) >>> 22; // Q22
+        LckY <= (c * m + 45'sh200000) >>> 22; // Q22
+        LckXInt <= LckXInt + LckX;
+        LckYInt <= LckYInt + LckX;
+        if (s0ref)
+        begin
+            s0ref <= 0;
+            LckXSum <= LckXInt;
+            LckYSum <= LckYInt;
+            LckXInt <= 0;
+            LckYInt <= 0;
+        end
+      
     end
     
     //assign amplitude = sqrt (a*a+b*b); // Q22
@@ -343,5 +383,8 @@ module lms_phase_amplitude_detector #(
     assign dbg3 = {{(32-LMS_DATA_WIDTH-2){x[LMS_DATA_WIDTH+2-1]}}, x}; // x
     assign dbg4 = {{(32-LMS_DATA_WIDTH-2){y[LMS_DATA_WIDTH+2-1]}}, y}; // y
 
+    assign LockInX = {LckXSum[LMS_DATA_WIDTH+16-1:LMS_DATA_WIDTH+16-32]};
+    assign LockInY = {LckYSum[LMS_DATA_WIDTH+16-1:LMS_DATA_WIDTH+16-32]};
+    assign LockInN = Lck_N;
 
 endmodule
