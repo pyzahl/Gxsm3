@@ -25,6 +25,18 @@
       <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PACATAU', Default/U: 40.0 µs    , Adjustment PCS Name: 'rp-pacpll-PACATAU' </description>
     </key>
 
+    <key name="rp-pacpll-qc-phase" type="d">
+      <default>0.0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-QC-PHASE', Default/U: 0.0 deg     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-QC-PHASE', Default/U: 0.0 deg    , Adjustment PCS Name: 'rp-pacpll-QC-PHASE' </description>
+    </key>
+
+    <key name="rp-pacpll-qc-gain" type="d">
+      <default>0.0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-QC-GAIN', Default/U: 0.0      </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-QC-GAIN', Default/U: 0.0     , Adjustment PCS Name: 'rp-pacpll-QC-GAIN' </description>
+    </key>
+
     <key name="rp-pacpll-frequency-manual" type="d">
       <default>32768</default>
       <summary>PCS Remote-ID: 'rp-pacpll-FREQUENCY-MANUAL', Default/U: 32768 Hz     </summary>
