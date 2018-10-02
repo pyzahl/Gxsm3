@@ -215,7 +215,7 @@ module lms_phase_amplitude_detector #(
     assign M_AXIS_SIGNAL_tdata  = S_AXIS_SIGNAL_tdata; // pass
     assign M_AXIS_SIGNAL_tvalid = S_AXIS_SIGNAL_tvalid; // pass
 
-    assign M_AXIS_SIGNAL_M_tdata  = S_AXIS_SIGNAL_tdata; // pass ADC DATA Signal M
+    assign M_AXIS_SIGNAL_M_tdata  = S_AXIS_SIGNAL_tdata[S_AXIS_SIGNAL_DATA_WIDTH-1:0]; // pass ADC DATA Signal M
     assign M_AXIS_SIGNAL_M_tvalid = S_AXIS_SIGNAL_tvalid; // pass
 
     always @ (posedge aclk)

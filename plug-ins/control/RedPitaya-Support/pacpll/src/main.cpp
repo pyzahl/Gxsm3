@@ -154,7 +154,7 @@ CDoubleParameter PAC_DCTAU("PAC_DCTAU", CBaseParameter::RW, 10.0, 0, -1.0, 1e6);
 CDoubleParameter PACTAU("PACTAU", CBaseParameter::RW, 40.0, 0, 0.0, 60e6); // us
 CDoubleParameter PACATAU("PACATAU", CBaseParameter::RW, 30.0, 0, 0.0, 60e6); // us
 
-CDoubleParameter QC_GAIN("QC_GAIN", CBaseParameter::RW, 0, 0, -1.0, 1.0); // gain factor
+CDoubleParameter QC_GAIN("QC_GAIN", CBaseParameter::RW, 0, 0, -1024.0, 1024.0); // gain factor
 CDoubleParameter QC_PHASE("QC_PHASE", CBaseParameter::RW, 0, 0, 0.0, 360.0); // deg
 
 CDoubleParameter TUNE_SPAN("TUNE_SPAN", CBaseParameter::RW, 5.0, 0, 0.1, 1e6); // Hz
@@ -271,8 +271,11 @@ void rp_PAC_App_Release(){
 #define Q22 QN(22)
 #define Q23 QN(23)
 #define Q24 QN(24)
-#define Q13 QN(13)
+#define Q16 QN(16)
 #define Q15 QN(15)
+#define Q13 QN(13)
+#define Q12 QN(12)
+#define Q10 QN(10)
 #define QLMS QN(22)
 #define BITS_CORDICSQRT 24
 #define BITS_CORDICATAN 24
@@ -285,7 +288,6 @@ void rp_PAC_App_Release(){
 #define BITS_AMPL_CONTROL   32
 #define BITS_PLHASE_CONTROL 48
 
-#define Q15 QN(15)
 #define Q31 0x7FFFFFFF  // (1<<31)-1 ... ov in expression expansion
 #define Q32 0xFFFFFFFF  // (1<<32)-1 ... ov in expression expansion
 #define Q40 QN64(40)
@@ -419,6 +421,7 @@ void rp_PAC_configure_switches (int phase_ctrl, int am_ctrl, int phase_unwrap_al
 
 
 #define QCONTROL_CFG_GAIN_DELAY 29
+// Configure Q-Control Logic build into Volume Adjuster
 void rp_PAC_set_qcontrol (double gain, double phase){
         double samples_per_period = ADC_SAMPLING_RATE / FREQUENCY_MANUAL.Value ();
         int ndelay = int (samples_per_period * phase/360. + 0.5);
@@ -428,7 +431,8 @@ void rp_PAC_set_qcontrol (double gain, double phase){
 
         if (verbose > 2) fprintf(stderr, "##Configure: qcontrol= %d, %d\n", (int)(Q15*gain), ndelay); 
 
-        set_gpio_cfgreg_int32 (QCONTROL_CFG_GAIN_DELAY, ((int)(Q15 * gain)<<16) | ndelay );
+        ndelay = 4096-ndelay; // pre compute offset in ring buffer
+        set_gpio_cfgreg_int32 (QCONTROL_CFG_GAIN_DELAY, ((int)(Q10 * gain)<<16) | ndelay );
 }
 
 #define PACPLL_CFG_PACTAU     4
