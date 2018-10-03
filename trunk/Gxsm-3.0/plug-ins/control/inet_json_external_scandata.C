@@ -225,10 +225,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         GtkWidget *tmp;
         GtkWidget *wid;
 	
-	GSList *EC_list=NULL;
-	GSList **RemoteEntryList = new GSList *;
-	*RemoteEntryList = NULL;
 	GSList *EC_R_list=NULL;
+	GSList *EC_QC_list=NULL;
 
         debug_level = 0;
         input_rpaddress = NULL;
@@ -308,9 +306,16 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
   	bp->grid_add_ec ("Tau PAC", uTime, &parameters.pactau, 0.0, 63e6, "6g", 10., 1., "PACTAU");
   	bp->grid_add_ec (NULL, uTime, &parameters.pacatau, 0.0, 63e6, "6g", 10., 1., "PACATAU");
         bp->new_line ();
+        bp->set_no_spin (false);
+        bp->set_input_nx (2);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::qc_parameter_changed, this);
   	bp->grid_add_ec ("QControl",Deg, &parameters.qc_phase, 0.0, 360.0, "5g", 10., 1., "QC-PHASE");
-  	bp->grid_add_ec (NULL, Unity, &parameters.qc_gain, -1.0, 1.0, "4g", 10., 1., "QC-GAIN");
+        EC_QC_list = g_slist_prepend( EC_QC_list, bp->ec);
+        bp->ec->Freeze ();
+        bp->new_line ();
+  	bp->grid_add_ec ("QC Gain", Unity, &parameters.qc_gain, -1.0, 1.0, "4g", 10., 1., "QC-GAIN");
+        EC_QC_list = g_slist_prepend( EC_QC_list, bp->ec);
+        bp->ec->Freeze ();
         bp->new_line ();
         bp->set_no_spin (false);
         bp->set_input_width_chars (12);
@@ -331,13 +336,13 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
   	bp->grid_add_ec ("Volume", mVolt, &parameters.volume_manual, 0.0, 1000.0, "5g", 0.1, 1.0, "VOLUME-MANUAL");
         bp->new_line ();
         bp->set_no_spin (true);
-        bp->set_input_width_chars (16);
+        bp->set_input_width_chars (10);
         parameters.tune_dfreq = 0.1;
         parameters.tune_span = 50.0;
+        bp->set_input_nx (1);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::tune_parameter_changed, this);
-  	bp->grid_add_ec ("Tune dFreq", Hz, &parameters.tune_dfreq, 1e-4, 1e3, "g", 0.01, 0.1, "TUNE-DFREQ");
-        bp->new_line ();
-  	bp->grid_add_ec ("Tune Span", Hz, &parameters.tune_span, 0.0, 1e6, "g", 0.1, 10., "TUNE-SPAN");
+  	bp->grid_add_ec ("Tune dF,Span", Hz, &parameters.tune_dfreq, 1e-4, 1e3, "g", 0.01, 0.1, "TUNE-DFREQ");
+  	bp->grid_add_ec (NULL, Hz, &parameters.tune_span, 0.0, 1e6, "g", 0.1, 10., "TUNE-SPAN");
 
         bp->pop_grid ();
         bp->set_default_ec_change_notice_fkt (NULL, NULL);
@@ -391,6 +396,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                                     G_CALLBACK (Inet_Json_External_Scandata::set_ss_auto_trigger), this);
         bp->grid_add_check_button ( N_("QControl"), "QControl", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::qcontrol), this);
+	g_object_set_data( G_OBJECT (bp->button), "QC_SETTINGS_list", EC_QC_list);
 
         bp->pop_grid ();
 
@@ -698,6 +704,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
         set_window_geometry ("inet-json-rp-control"); // needs rescoure entry and defines window menu entry as geometry is managed
 
+	inet_json_external_scandata_pi.app->RemoteEntryList = g_slist_concat (inet_json_external_scandata_pi.app->RemoteEntryList, bp->remote_list_ec);
+
+        
         // hookup to scan start and stop
         inet_json_external_scandata_pi.app->ConnectPluginToStartScanEvent (Inet_Json_External_Scandata::scan_start_callback);
         inet_json_external_scandata_pi.app->ConnectPluginToStopScanEvent (Inet_Json_External_Scandata::scan_stop_callback);
@@ -823,9 +832,20 @@ void Inet_Json_External_Scandata::pac_volume_parameter_changed (Param_Control* p
         self->write_parameter ("VOLUME_MANUAL", self->parameters.volume_manual);
 }
 
+static void freeze_ec(Gtk_EntryControl* ec, gpointer data){ ec->Freeze (); };
+static void thaw_ec(Gtk_EntryControl* ec, gpointer data){ ec->Thaw (); };
+
+
 void Inet_Json_External_Scandata::qcontrol (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->write_parameter ("QCONTROL", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
         self->parameters.qcontrol = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+
+        if (self->parameters.qcontrol)
+                g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (widget), "QC_SETTINGS_list"),
+				(GFunc) thaw_ec, NULL);
+        else
+                g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (widget), "QC_SETTINGS_list"),
+				(GFunc) freeze_ec, NULL);
 }
 
 void Inet_Json_External_Scandata::qc_parameter_changed (Param_Control* pcs, gpointer user_data){
@@ -868,6 +888,7 @@ void Inet_Json_External_Scandata::send_all_parameters (){
         pac_tau_parameter_changed (NULL, this);
         pac_frequency_parameter_changed (NULL, this);
         pac_volume_parameter_changed (NULL, this);
+        qc_parameter_changed (NULL, this);
         tune_parameter_changed (NULL, this);
         amp_ctrl_parameter_changed (NULL, this);
         amplitude_gain_changed (NULL, this);
