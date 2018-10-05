@@ -1476,7 +1476,7 @@ class SignalPlotter():
 
 class Mk3_Configurator:
     def __init__(self):
-	self.mk3spm = SPMcontrol (2)
+	self.mk3spm = SPMcontrol (0)
 	self.mk3spm.read_configurations ()
 	self.vector_index = 0
 
@@ -1504,6 +1504,7 @@ class Mk3_Configurator:
 #                   "SR MK3 set HR1slow": self.mk3spm.set_hr_1slow,
 #                   "SR MK3 set HR1slow2": self.mk3spm.set_hr_1slow2,
 #                   "SR MK3 set HRs2": self.mk3spm.set_hr_s2,
+                    "SR MK3 RESET SCAN": self.mk3spm.reset_dsp_scan,
                     "SR MK3 read GPIO settings": self.mk3spm.read_gpio,
                     "SR MK3 write GPIO settings": self.mk3spm.write_gpio,
                     "SR MK3 CLR DSP GP53,54,55": self.mk3spm.clr_dsp_gpio,
