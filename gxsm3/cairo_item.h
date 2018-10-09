@@ -107,16 +107,19 @@ public:
                 // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "constructor");
                 GXSM_REF_OBJECT (GXSM_GRC_CAIRO_ITEM);
                 n=0; xy = NULL;
-                v0.x = v0.y = 0.;  
+                v0.x = v0.y = 0.;
+                angle=0.;
                 set_line_width (1.0); set_stroke_rgba (0); set_fill_rgba (0); set_line_style (0);
                 bbox[0]=bbox[1]=0.; bbox[2]=bbox[3]=0.; 
                 grabbed = false;
+                item_id=NULL;
                 show();  
         };
 	virtual ~cairo_item () {
                 hide();
                 GXSM_UNREF_OBJECT (GXSM_GRC_CAIRO_ITEM);
                 // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "destructor");
+                if (item_id) g_free (item_id);
         };
 	virtual void draw (cairo_t* cr, double alpha=1.0, gboolean tr=true) {};
         virtual void set_xy_fast (int i, double x, double y) { xy[i].x=x, xy[i].y=y; };
@@ -138,7 +141,10 @@ public:
                 for (int i=0; i<n; ++i)
                         (*map_xy_func) (xy[i].x, xy[i].y);
         };
-
+        void set_angle(double alpha) { angle = alpha; };
+        void set_id(const gchar *id) { if (item_id) item_id = g_strdup(id); }; // set only once for life time
+        const gchar *id() { return item_id; };
+        
 	virtual void set_anchor (int anchor) {}; 
 	virtual void set_text (const gchar *text) {};
 	virtual void set_text (double x, double y, const gchar *text) {};
@@ -243,6 +249,7 @@ protected:
         int n;
         cairo_point v0;
         cairo_point *xy;
+        double angle;
         double lw;
         int ls;
         double stroke_rgba[4];
@@ -250,6 +257,7 @@ protected:
         gboolean show_flag;
         double bbox[4];
         gboolean grabbed;
+        gchar *item_id;
 };
 
 class cairo_item_path : public cairo_item{
@@ -279,6 +287,8 @@ public:
                 if (show_flag && n > 1){
                         cairo_save (cr);
                         cairo_translate (cr, v0.x, v0.y);
+                        if (angle != 0.)
+                                cairo_rotate (cr, angle);
                         cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
                         cairo_set_line_width (cr, lw); 
 #ifdef __CIP_DEBUG
@@ -329,6 +339,8 @@ public:
                 if (show_flag){
                         cairo_save (cr);
                         cairo_translate (cr, v0.x, v0.y);
+                        if (angle != 0.)
+                                cairo_rotate (cr, angle);
                         cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
                         cairo_set_line_width (cr, lw); 
                         switch (linemode){
@@ -391,6 +403,8 @@ public:
                 if (show_flag){
                         cairo_save (cr);
                         cairo_translate (cr, v0.x, v0.y);
+                        if (angle != 0.)
+                                cairo_rotate (cr, angle);
                         cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
                         cairo_set_line_width (cr, lw); 
                         for (int i=0; i<n; ){
@@ -443,6 +457,8 @@ public:
                 if (show_flag){
                         cairo_save (cr);
                         cairo_translate (cr, v0.x, v0.y);
+                        if (angle != 0.)
+                                cairo_rotate (cr, angle);
                         cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
                         cairo_set_line_width (cr, lw); 
                         for (int i=0; i<n; ){
@@ -459,6 +475,8 @@ public:
                 if (show_flag){
                         cairo_save (cr);
                         cairo_translate (cr, v0.x, v0.y);
+                        if (angle != 0.)
+                                cairo_rotate (cr, angle);
                         cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
                         cairo_set_line_width (cr, lw); 
                         for (int i=i0; i<i1; ){
@@ -490,6 +508,8 @@ public:
                         cairo_save (cr);
                         if (tr)
                                 cairo_translate (cr, v0.x, v0.y);
+                        if (angle != 0.)
+                                cairo_rotate (cr, angle);
                         cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], alpha*stroke_rgba[3]);
                         cairo_set_line_width (cr, lw); 
                         cairo_move_to (cr, xy[0].x, xy[0].y);
@@ -532,6 +552,8 @@ public:
                         cairo_save (cr);
                         if (tr)
                                 cairo_translate (cr, v0.x, v0.y);
+                        if (angle != 0.)
+                                cairo_rotate (cr, angle);
                         cairo_set_line_width (cr, lw); 
                         cairo_set_source_rgba (cr, fill_rgba[0], fill_rgba[1], fill_rgba[2], alpha*fill_rgba[3]);
                         cairo_rectangle (cr,  xy[0].x, xy[0].y,   xy[1].x-xy[0].x, xy[1].y-xy[0].y);
@@ -587,6 +609,56 @@ public:
 
 private:
         double radius;
+};
+
+class cairo_item_arc : public cairo_item{
+public:
+	cairo_item_arc (double x, double y, double r_i, double d_r, double phi_i, double d_phi, double angle_scale=1.0, int n_=1, double nd_phi_=0.) {
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "circle new");
+                xy = g_new (cairo_point, 1); n=1; xy[0].x=x, xy[0].y=y;
+                arc_scale = angle_scale;
+                ri=r_i; dr=d_r; phii=arc_scale*phi_i; dphi=arc_scale*d_phi; num=n_; nd_phi = arc_scale*nd_phi_;
+        };
+	virtual ~cairo_item_arc () {
+                g_free (xy);
+                // GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_CAIRO_ITEM, "circle delete");
+        };
+        void set_radius (double r_i, double d_r) { ri=r_i;  dr=d_r; };
+        void set_arc (double phi_i, double d_phi, int n_=1, double nd_phi_=0.) { phii=arc_scale*phi_i; dphi=arc_scale*d_phi; num=n_; nd_phi = arc_scale*nd_phi_; };
+        void set_angle_scale (double f) { arc_scale =f; }; // set custom scale to radians
+        virtual void update_bbox (gboolean add_lw=true) {
+                bbox[0] = xy[0].x-ri-dr-lw;
+                bbox[1] = xy[0].y-ri-dr-lw;
+                bbox[2] = xy[0].x+ri+dr+lw;
+                bbox[3] = xy[0].y+ri+dr+lw;
+        };
+
+        virtual void draw (cairo_t* cr, double alpha=1.0, gboolean tr=true) { // add qf???
+                if (show_flag){
+                        cairo_save (cr);
+                        cairo_translate (cr, v0.x, v0.y);
+                        if (angle != 0.)
+                                cairo_rotate (cr, angle);
+                        cairo_set_line_width (cr, dr);
+                        cairo_set_source_rgba (cr, stroke_rgba[0], stroke_rgba[1], stroke_rgba[2], stroke_rgba[3]);
+                        double phi=phii;
+                        for(int i=0; i<num; ++i, phi+=nd_phi){
+                                if (dphi > 0)
+                                        cairo_arc (cr,  xy[i].x, xy[i].y,  ri+0.5*dr, phi, phi+dphi);
+                                else
+                                        cairo_arc_negative (cr,  xy[i].x, xy[i].y,  ri+0.5*dr, phi, phii+dphi);
+                                cairo_stroke (cr);
+                        }
+                        
+                        cairo_restore (cr);
+                }
+        };
+
+private:
+        double arc_scale;
+        double ri, dr, phii, dphi;
+        int num;
+        double nd_phi;
 };
 
 
@@ -670,5 +742,7 @@ private:
         gint    t_anchor;
         gint    t_justify;
 };
+
+
 
 #endif
