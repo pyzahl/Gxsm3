@@ -7,6 +7,7 @@ lib_LTLIBRARIES = \
 	libqueryDSPinfo.la \
 	libextra_scan_info.la
 
+#	libProbeIndicator.la \
 #	libeditnc.la
 #	liblistplugins.la \
 #	libmkicons.la \
@@ -17,6 +18,9 @@ libpyremote_la_LDFLAGS = -module -export-dynamic -avoid-version ${GTKSOURCEVIEW_
 
 libPanView_la_SOURCES = PanView.C
 libPanView_la_LDFLAGS = -module -export-dynamic -avoid-version
+
+#libProbeIndicator_la_SOURCES = ProbeIndicator.C
+#libProbeIndicator_la_LDFLAGS = -module -export-dynamic -avoid-version
 
 libqueryDSPinfo_la_SOURCES = queryDSPinfo.C
 libqueryDSPinfo_la_LDFLAGS = -module -export-dynamic -avoid-version
