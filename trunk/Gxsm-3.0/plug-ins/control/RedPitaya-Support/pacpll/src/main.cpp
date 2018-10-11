@@ -151,8 +151,8 @@ CDoubleParameter FREQUENCY_CENTER("FREQUENCY_CENTER", CBaseParameter::RW, 32766.
 CDoubleParameter AUX_SCALE("AUX_SCALE", CBaseParameter::RW, 1.0, 0, -1e6, 1e6); // 1
 CDoubleParameter VOLUME_MANUAL("VOLUME_MANUAL", CBaseParameter::RW, 300.0, 0, 0.0, 1000.0); // mV
 CDoubleParameter PAC_DCTAU("PAC_DCTAU", CBaseParameter::RW, 10.0, 0, -1.0, 1e6); // ms ,negative value disables DC LMS and used manual DC 
-CDoubleParameter PACTAU("PACTAU", CBaseParameter::RW, 40.0, 0, 0.0, 60e6); // us
-CDoubleParameter PACATAU("PACATAU", CBaseParameter::RW, 30.0, 0, 0.0, 60e6); // us
+CDoubleParameter PACTAU("PACTAU", CBaseParameter::RW, 10.0, 0, 0.0, 60e6); // in periods now -- 350us good value @ 30kHz
+CDoubleParameter PACATAU("PACATAU", CBaseParameter::RW, 1.5, 0, 0.0, 60e6); // in periods now -- 50us good value @ 30kHz
 
 CDoubleParameter QC_GAIN("QC_GAIN", CBaseParameter::RW, 0, 0, -1024.0, 1024.0); // gain factor
 CDoubleParameter QC_PHASE("QC_PHASE", CBaseParameter::RW, 0, 0, 0.0, 360.0); // deg
@@ -435,15 +435,50 @@ void rp_PAC_set_qcontrol (double gain, double phase){
         set_gpio_cfgreg_int32 (QCONTROL_CFG_GAIN_DELAY, ((int)(Q10 * gain)<<16) | ndelay );
 }
 
-#define PACPLL_CFG_PACTAU     4
+// tau from mu
+double time_const(double fref, double mu){
+        return -(1.0/fref) / log(1.0-mu);
+}
+// mu from tau
+double mu_const(double fref, double tau){
+        return 1.0-exp(-1.0/(fref*tau));
+}
+// -3dB cut off freq
+double cut_off__freq_3db(double fref, double mu):
+        return -(1.0/(fref*2.*M_PI)) * math.log(1.0-mu);
+}
+
+double mu_opt (double periods){
+        double mu = 11.9464 / (6.46178 + periods);
+        return mu > 1.0 ? 1.0 : mu;
+}
+
+#define PACPLL_CFG_PACTAU     4 // (actual Q22 mu)
 #define PACPLL_CFG_PACATAU   27
 #define PACPLL_CFG_PAC_DCTAU 28
 // tau in s for dual PAC and auto DC offset
 void rp_PAC_set_pactau (double tau, double atau, double dc_tau){
         if (verbose > 2) fprintf(stderr, "##Configure: tau= %g  Q22: %d\n", tau, (int)(Q22 * tau)); 
-        set_gpio_cfgreg_int32 (PACPLL_CFG_PACTAU, (int)(Q22/ADC_SAMPLING_RATE/tau)); // Q22 significant from top - tau for phase
-        set_gpio_cfgreg_int32 (PACPLL_CFG_PACATAU, (int)(Q22/ADC_SAMPLING_RATE/atau)); // Q22 significant from top -- atau is tau for amplitude
 
+#if 1
+        // in tau s (us) -> mu
+        set_gpio_cfgreg_int32 (PACPLL_CFG_PACTAU, (int)(Q22/ADC_SAMPLING_RATE/(1e-6*tau))); // Q22 significant from top - tau for phase
+        set_gpio_cfgreg_int32 (PACPLL_CFG_PACATAU, (int)(Q22/ADC_SAMPLING_RATE/(1e-6*atau))); // Q22 significant from top -- atau is tau for amplitude
+#else
+        // in peridos relative to reference base frequency. Silently limit mu to opt mu.
+        // mu_opt = 11.9464 / (6.46178 + ADC_SAMPLE_FRQ/F_REF)
+        double spp = ADC_SAMPLING_RATE / FREQUENCY_MANUAL.Value (); // samples per period
+        double mu_fastest = mu_opt (spp);
+        double mu = mu_const (ADC_SAMPLING_RATE, tau/FREQUENCY_MANUAL.Value ()); // mu from user tau measured in periods of f-reference
+        if (verbose > 2) fprintf(stderr, "##Configure: pac PHtau   mu= %g, fastest=%g\n", mu, mu_fstest);
+        if (mu > mu_fastest) mu=mu_fastest;
+        set_gpio_cfgreg_int32 (PACPLL_CFG_PACTAU, (int)(Q22*mu)); // Q22 significant from top - tau for phase
+
+        double mu = mu_const (ADC_SAMPLING_RATE, atau/FREQUENCY_MANUAL.Value ()); // mu from user tau measured in periods of f-reference
+        if (verbose > 2) fprintf(stderr, "##Configure: pac AMPtau   mu= %g, fastest=%g\n", mu, mu_fstest);
+        if (mu > mu_fastest) mu=mu_fastest;
+        set_gpio_cfgreg_int32 (PACPLL_CFG_PACATAU, (int)(Q22*mu)); // Q22 significant from top -- atau is tau for amplitude
+#endif
         // Q22 significant from top -- dc_tau is tau for DC FIR-IIR Filter on phase aligned decimated data:
         // at 4x Freq Ref sampling rate. Moving averaging FIR sampling at past 4 zero crossing of Sin Cos ref passed on to IIR with tau
         if (dc_tau > 0.)
@@ -789,7 +824,7 @@ void set_PAC_config()
         if (OPERATION.Value() != 6)
                 rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value());
         rp_PAC_set_volume (VOLUME_MANUAL.Value() / 1000.); // mV -> V
-        rp_PAC_set_pactau (PACTAU.Value() * 1e-6, PACATAU.Value() * 1e-6, PAC_DCTAU.Value() * 1e-3); // us -> s, us -> s, ms -> s
+        rp_PAC_set_pactau (PACTAU.Value(), PACATAU.Value(), PAC_DCTAU.Value() * 1e-3); // periods, periods, ms -> s
 
         rp_PAC_set_qcontrol (QC_GAIN.Value (), QC_PHASE.Value ());
 
