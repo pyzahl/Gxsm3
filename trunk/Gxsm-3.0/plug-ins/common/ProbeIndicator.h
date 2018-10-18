@@ -37,14 +37,33 @@ public:
                 // skeleton
                 irad = 100.; orad = irad*1.2; delta = irad*0.05;
                 rsz = irad/5.; asp=1.67; 
-                ic = new cairo_item_circle (0.,0., irad);
-                oc = new cairo_item_circle (0.,0., orad);
 
                 // empty elements
                 marks = NULL;
                 indicators = NULL;
                 tics = NULL;
                 horizon = NULL;
+
+                // default setup
+                transparency = 0.5;
+                set_color (cc_tics, CAIRO_COLOR_BLACK_ID, transparency);
+                set_color (cc_gauge, CAIRO_COLOR_CYAN_ID, transparency);
+                set_color (cc_marks, CAIRO_COLOR_CYAN_ID, transparency);
+                set_color (cc_indpos, CAIRO_COLOR_RED_ID, transparency);
+                set_color (cc_indneg, CAIRO_COLOR_BLUE_ID, transparency);
+                set_color (cc_horizon, CAIRO_COLOR_GRAY5_ID, transparency);
+
+                // gauge skeleton
+                ic = new cairo_item_circle (0.,0., irad);
+                ic->set_stroke_rgba (cc_gauge);
+                ic->set_fill_rgba (0.,0.,0.,0.0);
+                ic->set_line_width (2.0);
+                oc = new cairo_item_circle (0.,0., orad);
+                oc->set_stroke_rgba (cc_gauge);
+                oc->set_fill_rgba (cc_gauge);
+                oc->set_line_width (2.0);
+                oc->set_fill_rgba (0.,0.,0.,0.05);
+
 
         };
         ~hud_object(){
@@ -53,29 +72,52 @@ public:
                 g_slist_free_full (indicators, (GDestroyNotify)hud_object::remove_cairo_item);
                 g_slist_free_full (marks, (GDestroyNotify)hud_object::remove_cairo_item);
         };
+        static void set_color(float c[4], int id, float alpha){
+                c[0]=BasicColors[id][0];
+                c[1]=BasicColors[id][1];
+                c[2]=BasicColors[id][2];
+                c[3]=alpha;
+        };
+        
         static void remove_cairo_item(cairo_item *x) { delete x; };
         static void draw_cairo_item(cairo_item *x, cairo_t* cr) { x->draw (cr); };
         static void hide_cairo_item(cairo_item *x, void* data) { x->hide (); };
         static void show_cairo_item(cairo_item *x, void* data) { x->show (); };
-        
-        cairo_item_path_closed* add_mark (const gchar *id, double pos, double z){
-                double y=irad*z;
+        static void q_update_cairo_item(cairo_item *x, GtkWidget* ima) { x->queue_update (ima); };
+
+        // marker arrow
+        cairo_item_path_closed* add_mark (const gchar *id, double pos, double z, int level=0, int pointing=1, double scale=1.){
+                double ir=level == 0 ? irad : orad;
+                double y=level == 0 ? ir*z*pointing : ir-rsz*scale*pointing;
+                double xx = rsz*scale/asp;
                 cairo_item_path_closed *m = new cairo_item_path_closed (5);
                 m->set_id(id);
                 m->set_angle(pos/400.*2.*M_PI);
-                m->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
-                m->set_fill_rgba (1., 0., 0., 1.);
+                m->set_stroke_rgba (cc_marks);
+                m->set_fill_rgba (cc_marks);
                 m->set_position (0., 0.);
                 m->set_xy (0, 0., y);
-                m->set_xy (1, +rsz/asp, y+rsz);
-                m->set_xy (2, +rsz/asp, irad);
-                m->set_xy (3, -rsz/asp, irad);
-                m->set_xy (4, -rsz/asp, y+rsz);
-                m->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
-                m->set_fill_rgba (1., 0., 0., 1.);
+                m->set_xy (1, +xx, y+rsz*scale*pointing);
+                m->set_xy (2, +xx, ir);
+                m->set_xy (3, -xx, ir);
+                m->set_xy (4, -xx, y+rsz*scale*pointing);
+                m->set_stroke_rgba (cc_marks);
+                m->set_fill_rgba (cc_marks);
                 m->set_line_width (1.0);
                 marks = g_slist_prepend (marks, m);
                 return m;
+        };
+        void set_mark_color(cairo_item_path_closed* m, int id){
+                float cc_tmp[4];
+                if (id >=0)
+                        set_color (cc_tmp, id, transparency);
+                else
+                        set_color (cc_tmp, CAIRO_COLOR_CYAN_ID, transparency);
+                m->set_stroke_rgba (cc_tmp);
+                m->set_fill_rgba (cc_tmp);
+        };
+        void set_mark_pos(cairo_item_path_closed* m, double pos){
+                m->set_angle(pos/400.*2.*M_PI);
         };
         void set_mark_len(cairo_item_path_closed* m, double z){
                 double y=irad*z;
@@ -83,15 +125,29 @@ public:
                 m->set_xy (1, +rsz/asp, y+rsz);
                 m->set_xy (4, -rsz/asp, y+rsz);
         };
-        cairo_item_arc* add_indicator (const gchar *id, double pos, double val){
-                cairo_item_arc *arc = new cairo_item_arc (0.,0., irad, orad-irad-delta, pos, val, 2.*M_PI/400.);
+
+        // Indicator bar
+        cairo_item_arc* add_indicator (const gchar *id, double pos, double val, int level=0, int levels=1){
+                cairo_item_arc *arc = new cairo_item_arc (0.,0.,
+                                                          irad+2+level*(orad-irad-delta)/levels,
+                                                          (orad-irad-delta)/levels,
+                                                          pos, val, 2.*M_PI/400.);
                 arc->set_id(id);
-                if (val < 0.) arc->set_stroke_rgba (CAIRO_COLOR_BLUE);
-                else arc->set_stroke_rgba (CAIRO_COLOR_GREEN);
+                if (val < 0.) arc->set_stroke_rgba (cc_indneg);
+                else arc->set_stroke_rgba (cc_indpos);
                 indicators = g_slist_prepend (indicators, arc);
                 return arc;
         };
 
+        void set_indicator_color(cairo_item_arc* a, int id, int sig){
+                float cc_tmp[4];
+                if (id >=0)
+                        set_color (cc_tmp, id, transparency);
+                else
+                        set_color (cc_tmp, sig>0? CAIRO_COLOR_RED_ID:CAIRO_COLOR_BLUE_ID, transparency);
+                a->set_stroke_rgba (cc_tmp);
+                a->set_fill_rgba (cc_tmp);
+        };
         void set_indicator_val (cairo_item_arc *arc, double pos, double val){
                 arc->set_arc (pos+(val>0.?1.:-1.), val);
         };
@@ -99,7 +155,7 @@ public:
         cairo_item_arc* add_tics (const gchar *id, double pos, double val, int n, double dtic){
                 cairo_item_arc *arc = new cairo_item_arc (0.,0., orad, (orad-irad)*0.3, pos+(dtic>0.?-0.5:0.5), val, 2.*M_PI/400., n, dtic);
                 arc->set_id(id);
-                arc->set_stroke_rgba (CAIRO_COLOR_BLACK);
+                arc->set_stroke_rgba (cc_tics);
                 tics = g_slist_prepend (tics, arc);
                 return arc;
         };
@@ -109,9 +165,9 @@ public:
                 cairo_item_path *h = new cairo_item_path (n);
                 h->set_id(id);
                 h->set_angle(pos/400.*2.*M_PI);
-                h->set_stroke_rgba (CAIRO_COLOR_RED);
+                h->set_stroke_rgba (cc_horizon);
                 h->set_position (0., y);
-                h->set_line_width (1.0);
+                h->set_line_width (2.0);
                 horizon = g_slist_prepend (horizon, h);
                 return h;
         };
@@ -120,6 +176,10 @@ public:
         void queue_update (GtkWidget* imgarea) {
                 ic->queue_update (imgarea);
                 oc->queue_update (imgarea);
+                g_slist_foreach (marks, (GFunc)hud_object::q_update_cairo_item, this);
+                g_slist_foreach (indicators, (GFunc)hud_object::q_update_cairo_item, this);
+                g_slist_foreach (tics, (GFunc)hud_object::q_update_cairo_item, this);
+                g_slist_foreach (horizon, (GFunc)hud_object::q_update_cairo_item, imgarea);
         };
         void hide (){
                 ic->hide();
@@ -153,6 +213,14 @@ private:
         GSList *marks;
         GSList *tics;
         GSList *horizon;
+
+        float transparency;
+        float cc_tics[4];
+        float cc_gauge[4];
+        float cc_indpos[4];
+        float cc_indneg[4];
+        float cc_horizon[4];
+        float cc_marks[4];
 };
 
 
@@ -184,7 +252,9 @@ private:
         // remplaced with: cairo_item_rectangle / text / path
         cairo_item_text  *info;
         hud_object *probe;
-        cairo_item_arc *ipos, *ineg;
+        cairo_item_arc *ipos, *ineg, *ipos2, *ineg2;
+        cairo_item_arc *fpos, *fneg, *fpos2, *fneg2;
         cairo_item_path_closed *tip;
+        cairo_item_path_closed *m1, *m2;
         cairo_item_path *horizon;
 };
