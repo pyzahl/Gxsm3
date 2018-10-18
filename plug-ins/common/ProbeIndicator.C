@@ -330,11 +330,23 @@ ProbeIndicator::ProbeIndicator (){
         probe->add_tics ("T1", 0, 1., 9, 25.);
         probe->add_tics ("T1", 240, 1., 13, 10.);
         
-        tip=probe->add_mark ("M1", 200, 0.);
-        probe->add_mark ("M2", 0, 0.7);
+        tip=probe->add_mark ("MT", 200, 0.);
+        probe->add_mark ("MB", 0, 0.7);
+
+        m1=probe->add_mark ("M1", 0, 0., 1, -1, 0.5);
+        m2=probe->add_mark ("M2", 250, 0., 1, -1, 0.75);
         
-        ipos=probe->add_indicator ("IPos", 100.0, 50.);
-        ineg=probe->add_indicator ("INeg", 100.0, -50.);
+        ipos=probe->add_indicator ("IPos", 100.0, 50., 0, 2);
+        ipos2=probe->add_indicator ("IPos", 100.0, 50., 1, 2);
+        ineg=probe->add_indicator ("INeg", 100.0, -50., 0, 2);
+        ineg2=probe->add_indicator ("INeg", 100.0, -50., 1, 2);
+
+        fpos=probe->add_indicator ("IPos", 300.0, 25., 0, 2);
+        fpos2=probe->add_indicator ("IPos", 300.0, 20., 1, 2);
+        fneg=probe->add_indicator ("INeg", 300.0, -12., 0, 2);
+        fneg2=probe->add_indicator ("INeg", 300.0, -5., 1, 2);
+
+
         horizon=probe->add_horizon ("H", 0.0, 0.0, 128);
  
 	probe->queue_update (canvas);
@@ -489,9 +501,12 @@ void ProbeIndicator::stop (){
 
 gint ProbeIndicator::refresh(){
         static gint busy=FALSE;
-	double x,y,z,q,Ilg;
+        static double tics=0.;
 
         if (busy) return FALSE;
+
+	double x,y,z,q,Ilg;
+        double max_z = xsmres.AnalogVMaxOut*gapp->xsm->Inst->VZ();
 
         busy = TRUE;
 	x=y=z=q=0.;
@@ -503,20 +518,26 @@ gint ProbeIndicator::refresh(){
                 return FALSE;
         }
 
+#if 0
         static int ii=0;
         ii++;
         if (ii>100) ii=0;
         
         probe->set_indicator_val (ipos, 100.0, 0.75*ii);
-        probe->set_mark_len (tip, ii/100.);
+        probe->set_indicator_val (ipos2, 100.0, ii>10 ? 0.75*(ii-10) : 0.);
+        probe->set_indicator_val (ineg, 100.0, -0.55*ii);
+        probe->set_indicator_val (ineg2, 100.0, ii>10 ? -0.55*(ii-10) : 0.);
 
-        
-#if 0
-        if (fabs(z/max_z) < 0.8)
-                tip_marker_z->set_stroke_rgba (CAIRO_COLOR_FORESTGREEN_ID, 0.8);
-        else
-                tip_marker_z->set_stroke_rgba (CAIRO_COLOR_RED);
+        probe->set_mark_pos (m1, ii*2.);
+        probe->set_mark_pos (m2, -ii*0.75);
 #endif
+        
+        probe->set_mark_len (tip, z/max_z);
+        if (fabs(z/max_z) < 0.8)
+                probe->set_mark_color (tip, -1);
+        else
+                probe->set_mark_color (tip, CAIRO_COLOR_RED_ID);
+
 	if (gapp->xsm->hardware){
 		double x0,y0,z0;
 #if 0
@@ -560,7 +581,27 @@ gint ProbeIndicator::refresh(){
                 // Life Paramater Info
 		gapp->xsm->hardware->RTQuery ("f0I", x, y, q); // get f0, I -- val1,2,3=[fo,Iav,Irms]
                 Ilg = log10 (fabs(y) + 1.0);
-		
+
+                probe->set_indicator_val (ipos,  100.0, y > 0.? 250.*Ilg : 0.);
+                probe->set_indicator_val (ipos2, 100.0, y > 0.? 25.*y : 0.);
+                probe->set_indicator_val (ineg,  100.0, y < 0.? -250.*Ilg : 0.);
+                probe->set_indicator_val (ineg2, 100.0, y < 0.? 25.*y:0.);
+
+                if (fabs(x) < 200.){
+                        probe->set_indicator_val (fpos2, 300.0, x > 0. ? x:0.);
+                        probe->set_indicator_val (fneg2, 300.0, x < 0. ? x:0.);
+                } else {
+                        probe->set_indicator_val (fpos2, 300.0, 0.);
+                        probe->set_indicator_val (fneg2, 300.0, 0.);
+                }
+                if (fabs(x) > 10.)
+                        x *= 0.1;
+                if (fabs(x) > 10.)
+                        x = 10.*x/fabs(x);
+                probe->set_indicator_val (fpos,  300.0, x > 0.? 10.*x : 0.);
+                probe->set_indicator_val (fneg,  300.0, x < 0.? 10.*x : 0.);
+              
+                
 		gchar *tmp = NULL;
 
                 if (fabs(y) < 0.25)
@@ -572,8 +613,8 @@ gint ProbeIndicator::refresh(){
                 info->queue_update (canvas);
 
                 
-                for(int i=0; i<128; ++i)
-                        horizon->set_xy (i, i-64., gapp->xsm->Inst->V2ZAng(z));
+                for(int i=0; i<128; ++i, tics+=1./128.)
+                        horizon->set_xy (i, i-64., 10.*sin(tics*2.*M_PI*4.7)*gapp->xsm->Inst->V2ZAng(z));
                 
 		g_free (tmp);
 
@@ -586,6 +627,8 @@ gint ProbeIndicator::refresh(){
                         y *= 10.;
 
 	}
+
+        probe->queue_update (canvas);
         
         busy = FALSE;
 	return TRUE;
