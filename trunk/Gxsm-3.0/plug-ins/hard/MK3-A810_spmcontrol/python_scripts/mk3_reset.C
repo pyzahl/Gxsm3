@@ -746,7 +746,7 @@ void hpi_move (int dsp, guint address, guint16 *data){
   for (int i=0; i<4096 && data[i] < 0x0100; ++i)
     buffer[length++] = guchar(data[i]);
 
-  g_print ("HPI MOVE: [0x%10x] %d bytes", address, length);
+  g_print ("HPI MOVE: [0x%10x] %d bytes\n", address, length);
   arg.index = address;
   arg.length = length;
   arg.buffer = buffer;
@@ -754,24 +754,24 @@ void hpi_move (int dsp, guint address, guint16 *data){
 }	
 
 void issue_mk3_hard_reset (int dsp){
-  g_print ("MK3 issue hardware reset and restart from flash.");
+  g_print ("\nMK3 issue hardware reset and restart from flash.\n");
 
-  g_print ("MK3 HPI RESET SET");
+  g_print ("MK3 HPI RESET SET\n");
   ioctl (dsp, SRANGER_MK23_IOCTL_ASSERT_DSP_RESET, 0);
   usleep(250000);
-  g_print ("MK3 HPI RESET RELEASE");
+  g_print ("MK3 HPI RESET RELEASE\n");
   ioctl (dsp, SRANGER_MK23_IOCTL_RELEASE_DSP_RESET, 0);
   usleep(250000);
-  g_print ("MK3 HPI CONTROL 0x101 to HPIC");
+  g_print ("MK3 HPI CONTROL 0x101 to HPIC\n");
   ioctl (dsp, SRANGER_MK2_IOCTL_HPI_CONTROL_REQUEST, 0x101);
 
-  g_print ("MK3 HPI MOVE POWER-UP KERNEL UPLOAD");
+  g_print ("MK3 HPI MOVE POWER-UP KERNEL UPLOAD\n");
   //#- Write the power kernel sections
   for (int i=0; section_addr[i]; ++i){
-    g_print ("MK3 HPI MOVE POWER-UP KERNEL UPLOAD SECTION at 0x%x", section_addr[i]);
+    g_print ("MK3 HPI MOVE POWER-UP KERNEL UPLOAD SECTION at 0x%x\n", section_addr[i]);
     hpi_move (dsp, section_addr[i], section_texts[i]);
   }                   
-  g_print ("MK3 HPI MOVE ENTRY POINT ADDRESS");
+  g_print ("MK3 HPI MOVE ENTRY POINT ADDRESS\n");
   //#- Write the Entry point of the power-up kernel (value 32-bit 0x10E09860) at the address 0x1C40008 with a HPI write USB request.
   guint16 tmp1[] = { 0x10E0, 0x9860, 0xffff };
   hpi_move (dsp, 0x1C40008, tmp1);
@@ -781,12 +781,12 @@ void issue_mk3_hard_reset (int dsp){
   
   usleep(100000);
 
-  g_print ("MK3 SPEED FAST");
+  g_print ("MK3 SPEED FAST\n");
   ioctl (dsp, SRANGER_MK2_IOCTL_SPEED_FAST, 0);
-  g_print ("MK3 STATE SET 1");
+  g_print ("MK3 STATE SET 1\n");
   ioctl (dsp, SRANGER_MK2_IOCTL_DSP_STATE_SET, 0);
 
-  g_print ("MK3 POWER UP RESET CYCLE INITATED.");
+  g_print ("MK3 POWER UP RESET CYCLE INITATED.\n\n");
 }
 
 int main (){

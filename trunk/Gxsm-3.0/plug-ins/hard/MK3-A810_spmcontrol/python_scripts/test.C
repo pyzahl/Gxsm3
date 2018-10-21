@@ -837,7 +837,7 @@ int main (){
 		p32 ("softid", magic.dsp_soft_id);
 		p32 ("statemachine", magic.statemachine);
 
-		issue_mk3_hard_reset (dsp);
+		//issue_mk3_hard_reset (dsp);
 
 		close (dsp);
 	}
