@@ -28,6 +28,7 @@ version = "2.1.0"
 import os		# use os because python IO is bugy
 import time
 import fcntl
+#import sys
 
 #import GtkExtra
 import struct
@@ -36,7 +37,7 @@ import array
 import math
 import re
 
-from numpy import *
+#from numpy import *
 
 import pickle
 
@@ -2052,12 +2053,18 @@ class SPMcontrol():
         #	- And the bytes 1 and 0 (to indicate mode Power_Up_Kernel and Com_Idle)          
         #########
 
-        def issue_mk3_hard_reset (self, fd):
-                fcntl.ioctl (fd, 73, struct.pack('i', 0)) # SRANGER_MK23_IOCTL_ASSERT_DSP_RESET ioctl =73  (0x10, 1) HPI-RESET
-		time.sleep(0.25)
-                fcntl.ioctl (fd, 74, struct.pack('i', 0)) # SRANGER_MK23_IOCTL_RELEASE_DSP_RESET ioctl =74  (0x10, 0) HPI-RESET
-		time.sleep(0.25)
-                fcntl.ioctl (fd, 79, struct.pack('i', 0x101)) # SRANGER_MK2_IOCTL_HPI_CONTROL_REQUEST ioctl =79 (0x14, xx) HPI-CONTROL
+        def hpi_move (self, fd, address, data):
+                length = len(data)
+                mv=memoryview(array.array('H', data).tostring())
+                print (mv)
+                imv=str(mv)
+                buffer_pointer=int(imv[11:-1],0)
+
+                print ("HPI MOVE: [0x%x]"%address + " 0x%x" %buffer_pointer + ", {%d}" %length, data)
+                
+                ##fcntl.ioctl (fd, 77, struct.pack('LLL', address, length, buffer_pointer)) # SRANGER_MK2_IOCTL_HPI_CONTROL_REQUEST ioctl =79 (0x14, xx) HPI-CONTROL
+                
+                
                 # HPI-ARGS:
                 # struct sranger_mk2_hpi_move_args {
 	        #  __u16 index;
@@ -2066,8 +2073,43 @@ class SPMcontrol():
                 # };
 
                 ##fcntl.ioctl (fd, 77 struct.pack('i', xxx)) # SRANGER_MK2_IOCTL_HPI_CONTROL_REQUEST ioctl =77 (0x13, xx) HPI-MOVE out
-                
-                fcntl.ioctl (fd, 84, struct.pack('i', 0)) # SRANGER_MK2_IOCTL_SPEED_FAST ioctl =83 (0x15, xx) HPI-SPEED
+
+        
+        def issue_mk3_hard_reset (self, dum):
+                print ("MK3 issue hardware reset and restart from flash.")
+		sr = open( self.sr_dev_path, "rb")
+		fd = sr.fileno()
+
+                print ("MK3 RESET --- DUMMY, ACTUAL CALLS ARE NOT ENABLED -- issues w python pointer access")
+                print ("MK3 HPI RESET SET")
+                ##fcntl.ioctl (fd, 73, struct.pack('i', 0)) # SRANGER_MK23_IOCTL_ASSERT_DSP_RESET ioctl =73  (0x10, 1) HPI-RESET
+		time.sleep(0.25)
+                print ("MK3 HPI RESET RELEASE")
+                ##fcntl.ioctl (fd, 74, struct.pack('i', 0)) # SRANGER_MK23_IOCTL_RELEASE_DSP_RESET ioctl =74  (0x10, 0) HPI-RESET
+		time.sleep(0.25)
+                print ("MK3 HPI CONTROL 0x101 to HPIC")
+                ##fcntl.ioctl (fd, 79, struct.pack('i', 0x101)) # SRANGER_MK2_IOCTL_HPI_CONTROL_REQUEST ioctl =79 (0x14, xx) HPI-CONTROL
+
+                print ("MK3 HPI MOVE POWER-UP KERNEL UPLOAD")
+                for section_address in mk3_power_up_kernel.keys():
+                        print ("MK3 HPI MOVE POWER-UP KERNEL UPLOAD SECTION "+section_address)
+                        self.hpi_move (fd, section_address, mk3_power_up_kernel[section_address])
+                        
+                print ("MK3 HPI MOVE ENTRY POINT ADDRESS")
+                #- Write the Entry point of the power-up kernel (value 32-bit 0x10E09860) at the address 0x1C40008 with a HPI write USB request.
+                ##self.hpi_move (fd, 0x1C40008, [0x10E0, 0x9860])
+                #- Write the the value 0x1 (32-bit) at the address 0x1C4000C with a HPI write USB request.
+                ##self.hpi_move (fd, 0x1C4000C, [0x0000, 0x0001])
+                        
+                time.sleep(0.1)
+
+                print ("MK3 SPEED FAST")
+                ##fcntl.ioctl (fd, 84, struct.pack('i', 1)) # SRANGER_MK2_IOCTL_SPEED_FAST ioctl =83 (0x15, xx) HPI-SPEED
+                print ("MK3 STATE SET 1")
+                ##fcntl.ioctl (fd, 84, struct.pack('i', 0)) # SRANGER_MK2_IOCTL_DSP_STATE_SET ioctl =85 ioctl (0x20, 0,0) STATE-SET
+
+                print ("MK3 POWER UP RESET CYCLE INITATED.")
+                sr.close ()
                 ##########
         
         ## packed data example:    struct.pack ("<llLL", _input_id, _signal[SIG_INDEX],0,0)
