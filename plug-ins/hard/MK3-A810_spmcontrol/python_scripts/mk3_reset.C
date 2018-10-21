@@ -1,4 +1,4 @@
-// g++ `pkg-config --libs  --cflags glib-2.0` test.C
+// g++ `pkg-config --libs  --cflags glib-2.0` mk3_reset.C 
 
 #include <locale.h>
 #include <libintl.h>
@@ -736,7 +736,8 @@ guint16 *section_texts[] = {  s0x10800800,  s0x10800804, s0x10800808,  s0x108008
 
 
 void hpi_move (int dsp, guint address, guint16 *data){
-  struct {
+   int ret=0;
+   struct {
     guint16 index;
     guint16 length;
     void* buffer;
@@ -750,20 +751,25 @@ void hpi_move (int dsp, guint address, guint16 *data){
   arg.index = address;
   arg.length = length;
   arg.buffer = buffer;
-  ioctl(dsp, SRANGER_MK2_IOCTL_HPI_MOVE_OUTREQUEST, (unsigned long)&arg);
+  ret=ioctl(dsp, SRANGER_MK2_IOCTL_HPI_MOVE_OUTREQUEST, (unsigned long)&arg);
+  g_print ("->%d\n", ret);
 }	
 
 void issue_mk3_hard_reset (int dsp){
+  int ret=0;
   g_print ("\nMK3 issue hardware reset and restart from flash.\n");
 
   g_print ("MK3 HPI RESET SET\n");
-  ioctl (dsp, SRANGER_MK23_IOCTL_ASSERT_DSP_RESET, 0);
+  ret=ioctl (dsp, SRANGER_MK23_IOCTL_ASSERT_DSP_RESET, 0);
+  g_print ("->%d\n", ret);
   usleep(250000);
   g_print ("MK3 HPI RESET RELEASE\n");
-  ioctl (dsp, SRANGER_MK23_IOCTL_RELEASE_DSP_RESET, 0);
+  ret=ioctl (dsp, SRANGER_MK23_IOCTL_RELEASE_DSP_RESET, 0);
+  g_print ("->%d\n", ret);
   usleep(250000);
   g_print ("MK3 HPI CONTROL 0x101 to HPIC\n");
-  ioctl (dsp, SRANGER_MK2_IOCTL_HPI_CONTROL_REQUEST, 0x101);
+  ret=ioctl (dsp, SRANGER_MK2_IOCTL_HPI_CONTROL_REQUEST, 0x101);
+  g_print ("->%d\n", ret);
 
   g_print ("MK3 HPI MOVE POWER-UP KERNEL UPLOAD\n");
   //#- Write the power kernel sections
@@ -773,18 +779,22 @@ void issue_mk3_hard_reset (int dsp){
   }                   
   g_print ("MK3 HPI MOVE ENTRY POINT ADDRESS\n");
   //#- Write the Entry point of the power-up kernel (value 32-bit 0x10E09860) at the address 0x1C40008 with a HPI write USB request.
-  guint16 tmp1[] = { 0x10E0, 0x9860, 0xffff };
+  //guint16 tmp1[] = { 0x10E0, 0x9860, 0xffff };
+  guint16 tmp1[] = { 0x10, 0xE0, 0x98, 0x60, 0xffff };
   hpi_move (dsp, 0x1C40008, tmp1);
   //#- Write the the value 0x1 (32-bit) at the address 0x1C4000C with a HPI write USB request.
-  guint16 tmp2[] = { 0x0000, 0x0001, 0xffff };
+  //guint16 tmp2[] = { 0x0000, 0x0001, 0xffff };
+  guint16 tmp2[] = { 0x00, 0x00, 0x00,0x01, 0xffff };
   hpi_move (dsp, 0x1C4000C, tmp2);
   
   usleep(100000);
 
   g_print ("MK3 SPEED FAST\n");
-  ioctl (dsp, SRANGER_MK2_IOCTL_SPEED_FAST, 0);
+  ret=ioctl (dsp, SRANGER_MK2_IOCTL_SPEED_FAST, 0);
+  g_print ("->%d\n", ret);
   g_print ("MK3 STATE SET 1\n");
-  ioctl (dsp, SRANGER_MK2_IOCTL_DSP_STATE_SET, 0);
+  ret=ioctl (dsp, SRANGER_MK2_IOCTL_DSP_STATE_SET, 0);
+  g_print ("->%d\n", ret);
 
   g_print ("MK3 POWER UP RESET CYCLE INITATED.\n\n");
 }
