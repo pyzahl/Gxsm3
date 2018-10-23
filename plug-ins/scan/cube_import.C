@@ -424,15 +424,15 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
                 gchar **record = NULL;
                 gchar **token  = record;
                 for (int ix=0; ix<dims[0]; ix++) {
-                        g_message ("X=%d *************\n",ix);
+                        //g_message ("X=%d *************\n",ix);
                         for (int iy=0; iy<dims[1]; iy++) {
-                                g_message (" Y=%d *************\n",iy);
+                                //g_message (" Y=%d *************\n",iy);
                                 for (int iz=0; iz<dims[2]; iz++) {
                                         while (!token){
                                                 if (!f.good())
                                                         return status=FIO_OPEN_ERR;
                                                 f.getline (line, maxcharsperline);
-                                                g_message ("  new VDataLine:\n%s", line);
+                                                //g_message ("  new VDataLine:\n%s", line);
                                                 record = g_strsplit_set (line, " \t,", 100);
                                                 token  = record;
                                                 if (!*token){
@@ -441,14 +441,14 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
                                                 }
                                         }
                                         SKIP_EMPTY_N(token);
-                                        g_message ("    V[%d][%d][%d]=>%s<",ix,iy,iz,*token);
+                                        //g_message ("    V[%d][%d][%d]=>%s<",ix,iy,iz,*token);
                                         double value = atof (*token++);
                                         scan->mem2d->PutDataPkt (value, ix, iy, iz);
-                                        g_message ("    next: %s",*token);
+                                        //g_message ("    next: %s",*token);
                                         SKIP_EMPTY_N (token);
                                         //g_message ("    next: %s",*token);
                                         if (!*token){
-                                                g_message ("token=%s", *token);
+                                                //g_message ("token=%s", *token);
                                                 g_strfreev (record);
                                                 record = token = NULL;
                                         }
