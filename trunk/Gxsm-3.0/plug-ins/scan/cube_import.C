@@ -287,6 +287,7 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
 	g_string_append (FileList, "\n");
 
 #define SKIP_EMPTY(T) { while (*T) if (strlen (*T) < 1) ++T; else break; if (!*T) { f.close(); return status=FIO_NOT_RESPONSIBLE_FOR_THAT_FILE; }}
+#define SKIP_EMPTY_N(T) { while (*T) if (strlen (*T) < 1) ++T; else break; }
         
         // # atoms, origin
         {
@@ -374,9 +375,9 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
 	scan->data.s.dx = voxels[0][0]; // assume cubic voxel
 	scan->data.s.dy = voxels[1][1];
         scan->data.s.dz = voxels[2][2];
-	scan->data.s.rx = scan->data.s.dx * scan->data.s.nx;
-	scan->data.s.ry = scan->data.s.dy * scan->data.s.ny;
-	scan->data.s.rz = scan->data.s.dz * scan->data.s.nvalues;
+	scan->data.s.rx = scan->data.s.dx * scan->data.s.nx *0.52917721; // from bor to ang   1bor = 5.2917721067(12)×10−11 m
+	scan->data.s.ry = scan->data.s.dy * scan->data.s.ny *0.52917721;
+	scan->data.s.rz = scan->data.s.dz * scan->data.s.nvalues *0.52917721;
 	scan->data.s.x0 = 0.;
 	scan->data.s.y0 = 0.;
 	scan->data.s.alpha = 0.;
@@ -389,20 +390,23 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
 	scan->data.display.bright = 32.;
 	scan->data.display.contrast = 1.0;
 
-	// FYI: (PZ)
+        g_message ("Setting up Dimensions rx:%g x ry:%g x rv:%d in Ang", scan->data.s.rx, scan->data.s.ry, scan->data.s.rz);
+
+
+        // FYI: (PZ)
 	//  scan->data.display.vrange_z  = ; // View Range Z in base ZUnits
 	//  scan->data.display.voffset_z = 0; // View Offset Z in base ZUnits
 	//  scan->AutoDisplay([...]); // may be used too...
   
-	UnitObj *u = gapp->xsm->MakeUnit ("um", "X");
+	UnitObj *u = gapp->xsm->MakeUnit ("AA", "X");
 	scan->data.SetXUnit(u);
 	delete u;
 
-	u = gapp->xsm->MakeUnit ("um", "Y");
+	u = gapp->xsm->MakeUnit ("AA", "Y");
 	scan->data.SetYUnit(u);
 	delete u;
 
-	u = gapp->xsm->MakeUnit ("um", "Z");
+	u = gapp->xsm->MakeUnit ("AA", "Z");
 	scan->data.SetZUnit(u);
 	delete u;
 
@@ -411,6 +415,7 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
 	FileList=NULL;
 
         // Read Img Data.
+        g_message ("Creating Scan nx:%d x ny:%d x nv:%d", scan->data.s.nx, scan->data.s.ny, scan->data.s.nvalues);
         scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, scan->data.s.nvalues, ZD_FLOAT);
 
         g_message ("Reading cube file voxel data %d x %d x %d", dims[0], dims[1], dims[2]);
@@ -419,33 +424,30 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
                 gchar **record = NULL;
                 gchar **token  = record;
                 for (int ix=0; ix<dims[0]; ix++) {
+                        g_message ("X=%d *************\n",ix);
                         for (int iy=0; iy<dims[1]; iy++) {
+                                g_message (" Y=%d *************\n",iy);
                                 for (int iz=0; iz<dims[2]; iz++) {
                                         while (!token){
                                                 if (!f.good())
                                                         return status=FIO_OPEN_ERR;
                                                 f.getline (line, maxcharsperline);
-                                                if (ix>47)
-                                                        g_message ("VData: %s", line);
+                                                g_message ("  new VDataLine:\n%s", line);
                                                 record = g_strsplit_set (line, " \t,", 100);
                                                 token  = record;
-                                                SKIP_EMPTY (token);
                                                 if (!*token){
                                                         g_strfreev (record);
                                                         record = token = NULL;
                                                 }
                                         }
-                                        if (ix>47)
-                                                g_message ("V[%d][%d][%d]=>%s<",ix,iy,iz,*token);
+                                        SKIP_EMPTY_N(token);
+                                        g_message ("    V[%d][%d][%d]=>%s<",ix,iy,iz,*token);
                                         double value = atof (*token++);
                                         scan->mem2d->PutDataPkt (value, ix, iy, iz);
-                                        if (*token){
-                                                if (strlen (*token) < 1){
-                                                        g_strfreev (record);
-                                                        record = token = NULL;
-                                                }
-                                        }
-                                        else{
+                                        g_message ("    next: %s",*token);
+                                        SKIP_EMPTY_N (token);
+                                        //g_message ("    next: %s",*token);
+                                        if (!*token){
                                                 g_message ("token=%s", *token);
                                                 g_strfreev (record);
                                                 record = token = NULL;
@@ -464,7 +466,9 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
 	scan->mem2d->data->MkXLookup (origin[0]-scan->data.s.rx/2., origin[0]+scan->data.s.rx/2.);
 	scan->mem2d->data->MkYLookup (origin[1]+scan->data.s.ry/2., origin[1]-scan->data.s.ry/2.);
 	scan->mem2d->data->MkVLookup (origin[2]+scan->data.s.rz/2., origin[2]-scan->data.s.rz/2.);
-  
+
+        gapp->spm_update_all();
+
 	return FIO_OK; 
 }
 
