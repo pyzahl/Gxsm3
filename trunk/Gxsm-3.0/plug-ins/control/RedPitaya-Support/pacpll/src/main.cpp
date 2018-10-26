@@ -426,12 +426,12 @@ void rp_PAC_set_qcontrol (double gain, double phase){
         double samples_per_period = ADC_SAMPLING_RATE / FREQUENCY_MANUAL.Value ();
         int ndelay = int (samples_per_period * phase/360. + 0.5);
 
-        if (ndelay < 0 || ndelay > 4095 || phase < 0.)
+        if (ndelay < 0 || ndelay > 8192 || phase < 0.)
                 ndelay = 0; // Q-Control disabled when delay == 0
 
         if (verbose > 2) fprintf(stderr, "##Configure: qcontrol= %d, %d\n", (int)(Q15*gain), ndelay); 
 
-        ndelay = 4096-ndelay; // pre compute offset in ring buffer
+        ndelay = 8192-ndelay; // pre compute offset in ring buffer
         set_gpio_cfgreg_int32 (QCONTROL_CFG_GAIN_DELAY, ((int)(Q10 * gain)<<16) | ndelay );
 }
 
