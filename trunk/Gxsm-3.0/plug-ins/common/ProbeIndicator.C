@@ -591,6 +591,9 @@ gint ProbeIndicator::refresh(){
                 probe->set_indicator_val (ipos,  100.0, y > 0.? 25.*Ilg : 0.);
                 probe->set_indicator_val (ineg,  100.0, y < 0.? -25.*Ilg : 0.);
 
+                probe->set_mark_pos (m1,  25.*(y > 0. ? Ilg : -Ilg));
+
+                
                 if (fabs(x) < 200.){
                         probe->set_indicator_val (fpos2, 300.0, x > 0. ? x:0.);
                         probe->set_indicator_val (fneg2, 300.0, x < 0. ? x:0.);
