@@ -353,7 +353,7 @@ ProbeIndicator::ProbeIndicator (){
  
 	//probe->queue_update (canvas);
         
-	info = new cairo_item_text (0.0, 0.0, "Probe HUD");
+	info = new cairo_item_text (60.0, 35.0, "Probe HUD");
         //info->set_text ("Probe HUD")
 	info->set_stroke_rgba (CAIRO_COLOR_BLUE);
 	info->set_font_face_size ("Ununtu", 12.);
@@ -523,20 +523,6 @@ gint ProbeIndicator::refresh(){
                 busy = FALSE;
                 return FALSE;
         }
-
-#if 0
-        static int ii=0;
-        ii++;
-        if (ii>100) ii=0;
-        
-        probe->set_indicator_val (ipos, 100.0, 0.75*ii);
-        probe->set_indicator_val (ipos2, 100.0, ii>10 ? 0.75*(ii-10) : 0.);
-        probe->set_indicator_val (ineg, 100.0, -0.55*ii);
-        //probe->set_indicator_val (ineg2, 100.0, ii>10 ? -0.55*(ii-10) : 0.);
-
-        probe->set_mark_pos (m1, ii*2.);
-        probe->set_mark_pos (m2, -ii*0.75);
-#endif
         
         probe->set_mark_len (tip, z/max_z);
         if (fabs(z/max_z) < 0.8)
@@ -586,14 +572,8 @@ gint ProbeIndicator::refresh(){
 
                 // Life Paramater Info
 		gapp->xsm->hardware->RTQuery ("f0I", x, y, q); // get f0, I -- val1,2,3=[fo,Iav,Irms]
-                Ilg = log10 (fabs(1000.*y) + 1.0);
 
-                probe->set_indicator_val (ipos,  100.0, y > 0.? 25.*Ilg : 0.);
-                probe->set_indicator_val (ineg,  100.0, y < 0.? -25.*Ilg : 0.);
-
-                probe->set_mark_pos (m1,  25.*(y > 0. ? Ilg : -Ilg));
-
-                
+                // Freq
                 if (fabs(x) < 200.){
                         probe->set_indicator_val (fpos2, 300.0, x > 0. ? x:0.);
                         probe->set_indicator_val (fneg2, 300.0, x < 0. ? x:0.);
@@ -608,24 +588,19 @@ gint ProbeIndicator::refresh(){
                 probe->set_indicator_val (fpos,  300.0, x > 0.? 10.*x : 0.);
                 probe->set_indicator_val (fneg,  300.0, x < 0.? 10.*x : 0.);
               
-                
-		gchar *tmp = NULL;
-
-                if (fabs(y) < 0.25)
-                        tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y*1000., x, gapp->xsm->Inst->V2ZAng(z));
-                else
-                        tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y, x, gapp->xsm->Inst->V2ZAng(z));
-
-                info->set_text (tmp);
-                //info->queue_update (canvas);
+                // Current
+                Ilg = log10 (fabs(1000.*y) + 1.0);
+                probe->set_indicator_val (ipos,  100.0, y > 0.? 25.*Ilg : 0.);
+                probe->set_indicator_val (ineg,  100.0, y < 0.? -25.*Ilg : 0.);
+                probe->set_mark_pos (m1,  25.*(y > 0. ? Ilg : -Ilg));
 
 		gapp->xsm->hardware->RTQuery ("S1", SCOPE_N, &scope[0][0]); // RT Query S1
 		gapp->xsm->hardware->RTQuery ("S2", SCOPE_N, &scope[1][0]); // RT Query S2
 		gapp->xsm->hardware->RTQuery ("T",  SCOPE_N, NULL); // RT Query, Trigger next
 
                 gfloat xmax, xmin;
-                xmax=xmin=scope[0][0];
                 gint dec=SCOPE_N/128;
+                xmax=xmin=scope[0][0]*dec;
                 int k=0;
                 gfloat xr,xc;
                 xc = 0.5*(scope_max[0]+scope_min[0]);
@@ -650,8 +625,9 @@ gint ProbeIndicator::refresh(){
 
                 Ilgmp = log10 (fabs(1000.*scope_max[0]/dec / gapp->xsm->Inst->nAmpere2V(1.)) + 1.0);
                 Ilgmi = log10 (fabs(1000.*scope_min[0]/dec / gapp->xsm->Inst->nAmpere2V(1.)) + 1.0);
-                double ref=100.0 + 25.*(scope_max[0] > 0.? Ilgmp : -Ilgmp);
-                probe->set_indicator_val (ipos2, ref, 100.0 + 25.*(scope_min[0] > 0.? Ilgmi : -Ilgmi) - ref);
+                double upper=25.*(scope_max[0] > 0.? Ilgmp : -Ilgmp);
+                double lower=25.*(scope_min[0] > 0.? Ilgmi : -Ilgmi);
+                probe->set_indicator_val (ipos2, 100.+upper, lower-upper);
                                
                 xmax=xmin=scope[1][0];
                 k=0;
@@ -680,16 +656,15 @@ gint ProbeIndicator::refresh(){
                 scope_min[1] = 0.9*scope_min[1] + 0.1*xmin;
 
 
+		gchar *tmp = NULL;
+                if (fabs(y) < 0.25)
+                        tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g:%g", y*1000., x, gapp->xsm->Inst->V2ZAng(z), scope_min[0]/dec,scope_max[0]/dec);
+                else
+                        tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g:%g", y, x, gapp->xsm->Inst->V2ZAng(z), scope_min[0]/dec,scope_max[0]/dec);
+
+                info->set_text (tmp);
                 g_free (tmp);
-
-
-                // Pseudo Current Log Scale Bar: 3 decade by color green, blue red
-                y=Ilg;
-                if (Ilg < 0.01)
-                        y *= 100.;
-                else if (Ilg < 0.1)
-                        y *= 10.;
-
+                info->queue_update (canvas);
 	}
 
         probe->queue_update (canvas);

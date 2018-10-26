@@ -735,23 +735,45 @@ guint16 *section_texts[] = {  s0x10800800,  s0x10800804, s0x10800808,  s0x108008
 */
 
 
+
 void hpi_move (int dsp, guint address, guint16 *data){
-   int ret=0;
-   struct {
+  int ret=0;
+  struct {
     guint16 index;
     guint16 length;
     void* buffer;
   } arg;
-  guchar buffer[4096];
-  int length = 0;
-  for (int i=0; i<4096 && data[i] < 0x0100; ++i)
-    buffer[length++] = guchar(data[i]);
+  struct {
+    guint32 branch_address;
+    guint32 transfer_address;
+    guint16 nb_words;
+    guint16 error_code;
+    guint16 data[256];
+  }kmove_mbox;
+
+  struct {
+    guint32 branch_address;
+    guint32 transfer_address;
+    guint16 nb_words;
+    guint16 op_type;
+  }kmove_init;
+
+   guchar buffer[4096];
+   int length = 0;
+   for (int i=0; i<4096 && data[i] < 0x0100; ++i)
+     buffer[length++] = guchar(data[i]);
 
   g_print ("HPI MOVE: [0x%10x] %d bytes\n", address, length);
-  arg.index = address;
-  arg.length = length;
-  arg.buffer = buffer;
-  ret=ioctl(dsp, SRANGER_MK2_IOCTL_HPI_MOVE_OUTREQUEST, (unsigned long)&arg);
+  //arg.index = address;
+  //arg.length = length;
+  //arg.buffer = buffer;
+  //ret=ioctl(dsp, SRANGER_MK2_IOCTL_HPI_MOVE_OUTREQUEST, (unsigned long)&arg);
+  kmove_mbox.branch_address = 0x00; // K MOVE TO DSP MEM FUNCTION  intrinsic read and write functions address???
+  kmove_mbox.transfer_address = address;
+  kmove_mbox.nb_words = length;
+  for (int i=0; i<256 && data[i] < 0x0100; ++i)
+    kmove_mbox.data[i] = buffer[i];
+  ret=ioctl(dsp, SRANGER_MK2_IOCTL_MBOX_K_WRITE, (unsigned long)&kmove_mbox);
   g_print ("->%d\n", ret);
 }	
 
