@@ -624,8 +624,10 @@ gint ProbeIndicator::refresh(){
                 xmax=xmin=scope[0][0];
                 gint dec=SCOPE_N/128;
                 int k=0;
+                gfloat xr,xc;
+                xc = 0.5*(scope_max[0]+scope_min[0]);
+                xr = scope_max[0]-scope_min[0];
                 for(int i=0; i<128; ++i, tics+=1./128.){
-                        gfloat xr=1.;
                         gfloat x=0.;
                         for (int j=0; j<dec; ++j, ++k)
                                 x += scope[0][k];
@@ -635,7 +637,7 @@ gint ProbeIndicator::refresh(){
                         if (x<xmin)
                                 xmin = x;
 
-                        x -= 0.5*(xr=(scope_max[0]+scope_min[0]));
+                        x -= xc;
                         x *= 32./xr;
                         
                         horizon[0]->set_xy (i, i-64., x);
@@ -650,20 +652,26 @@ gint ProbeIndicator::refresh(){
                                
                 xmax=xmin=scope[1][0];
                 k=0;
+                xc = 0.5*(scope_max[1]+scope_min[1]);
+                xr = scope_max[1]-scope_min[1];
                 for(int i=0; i<128; ++i, tics+=1./128.){
-                        gfloat xr=1.;
+                        gfloat xr,xc;
                         gfloat x=0.;
                         for (int j=0; j<dec; ++j, ++k)
-                                x += scope[0][k];
+                                x += scope[1][k];
+
+                        x /= dec;
+                        x = gapp->xsm->Inst->V2ZAng(x);
+                        
                         if (x>xmax)
                                 xmax = x;
                         if (x<xmin)
                                 xmin = x;
 
-                        x -= 0.5*(xr=(scope_max[1]+scope_min[1]));
-                        x *= 32./xr;
+                        x -= xc;
+                        x *= 32./20.; // xr is too jumpy ... fixed 20A
                         
-                        horizon[1]->set_xy (i, i-64., x);
+                        horizon[1]->set_xy (i, i-64., x); // -100*z/max_z);
                 }
                 scope_max[1] = 0.9*scope_max[1] + 0.1*xmax;
                 scope_min[1] = 0.9*scope_min[1] + 0.1*xmin;
