@@ -3185,40 +3185,42 @@ void sranger_mk3_hwi_dev::setup_step_response (double dPhase, double dAmplitude)
 //			}
 }
 
-int sranger_mk3_hwi_dev::read_pll_signal1 (PAC_control &pll, int n, double scale, gint flag){
-	pll.blcklen = read_pll_variable32i (dsp_pll.blcklen);
+int sranger_mk3_hwi_dev::read_pll_signal1 (gfloat *signal, int n, double scale, gint flag){
+	gint blcklen = read_pll_variable32i (dsp_pll.blcklen);
 
-	if (pll.blcklen == -1){
-	    if (n > 0 && n <= PAC_BLCKLEN){
-		read_pll_array32 (dsp_pll.Signal1, n, pll.tmp_array);
-		PAC_DEBUGL0_PRINT ("adr  Signal1=%x\n", dsp_pll.Signal1);
-		PAC_DEBUGL0_PRINT ("adr pSignal1=%x\n", dsp_pll.pSignal1);
-		PAC_DEBUGL0_PRINT ("--- pSignal1=%x\n", (gint32)read_pll_variable32 (dsp_pll.pSignal1));
-		for (int i=0; i<n; ++i)
-		    pll.Signal1[i] = (double)pll.tmp_array[i] * scale;
-	    }
-	    if (flag)
-		set_blcklen (n);
-	    return 0;
+	if (blcklen == -1){
+                if (n > 0 && n <= PAC_BLCKLEN){
+                        gint32 tmp_array[PAC_BLCKLEN];
+                        read_pll_array32 (dsp_pll.Signal1, n, tmp_array);
+                        PAC_DEBUGL0_PRINT ("adr  Signal1=%x\n", dsp_pll.Signal1);
+                        PAC_DEBUGL0_PRINT ("adr pSignal1=%x\n", dsp_pll.pSignal1);
+                        PAC_DEBUGL0_PRINT ("--- pSignal1=%x\n", (gint32)read_pll_variable32 (dsp_pll.pSignal1));
+                        for (int i=0; i<n; ++i)
+                                signal[i] = (gfloat)tmp_array[i] * scale;
+                }
+                if (flag)
+                        set_blcklen (n);
+                return 0;
 	}
 	return -1;
 }
     
-int sranger_mk3_hwi_dev::read_pll_signal2 (PAC_control &pll, int n, double scale, gint flag){
-	pll.blcklen = read_pll_variable32i (dsp_pll.blcklen);
+int sranger_mk3_hwi_dev::read_pll_signal2 (gfloat *signal, int n, double scale, gint flag){
+	gint blcklen = read_pll_variable32i (dsp_pll.blcklen);
 	
-	if (pll.blcklen == -1){
-	    if (n > 0 && n <= PAC_BLCKLEN){
-		read_pll_array32 (dsp_pll.Signal2, n, pll.tmp_array);
-		PAC_DEBUGL0_PRINT ("adr  Signal2=%x\n", dsp_pll.Signal2);
-		PAC_DEBUGL0_PRINT ("adr pSignal2=%x\n", dsp_pll.pSignal2);
-		PAC_DEBUGL0_PRINT ("--- pSignal2=%x\n", (gint32)read_pll_variable32 (dsp_pll.pSignal2));
-		for (int i=0; i<PAC_BLCKLEN; ++i)
-		    pll.Signal2[i] = (double)pll.tmp_array[i] * scale;
-	    }
-	    if (flag)
-		set_blcklen (n);
-	    return 0;
+	if (blcklen == -1){
+                if (n > 0 && n <= PAC_BLCKLEN){
+                        gint32 tmp_array[PAC_BLCKLEN];
+                        read_pll_array32 (dsp_pll.Signal2, n, tmp_array);
+                        PAC_DEBUGL0_PRINT ("adr  Signal2=%x\n", dsp_pll.Signal2);
+                        PAC_DEBUGL0_PRINT ("adr pSignal2=%x\n", dsp_pll.pSignal2);
+                        PAC_DEBUGL0_PRINT ("--- pSignal2=%x\n", (gint32)read_pll_variable32 (dsp_pll.pSignal2));
+                        for (int i=0; i<n; ++i)
+                                signal[i] = (gfloat)tmp_array[i] * scale;
+                }
+                if (flag)
+                        set_blcklen (n);
+                return 0;
 	}
 	return -1;
 }

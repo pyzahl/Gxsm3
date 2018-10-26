@@ -215,8 +215,8 @@ public:
 	virtual void write_dsp_vector (int index, PROBE_VECTOR_GENERIC *__dsp_vector);
 	virtual void write_dsp_abort_probe ();
 
-	virtual int read_pll_signal1 (PAC_control &pll, int n, double scale=1., gint flag=FALSE){};
-	virtual int read_pll_signal2 (PAC_control &pll, int n, double scale=1., gint flag=FALSE){};
+	virtual int read_pll_signal1 (gfloat *signal, int n, double scale=1., gint flag=FALSE){};
+	virtual int read_pll_signal2 (gfloat *signal, int n, double scale=1., gint flag=FALSE){};
  
 	void set_scope (int s1, int s2){};
 	void set_blcklen (int len=1024){};

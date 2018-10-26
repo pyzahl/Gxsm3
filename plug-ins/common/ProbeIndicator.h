@@ -171,14 +171,20 @@ public:
                 horizon = g_slist_prepend (horizon, h);
                 return h;
         };
+        void set_horizon_color(cairo_item_path* p, int id){
+                float cc_tmp[4];
+                set_color (cc_tmp, id, transparency);
+                p->set_stroke_rgba (cc_tmp);
+                p->set_fill_rgba (cc_tmp);
+        };
 
 
         void queue_update (GtkWidget* imgarea) {
                 ic->queue_update (imgarea);
                 oc->queue_update (imgarea);
-                g_slist_foreach (marks, (GFunc)hud_object::q_update_cairo_item, this);
-                g_slist_foreach (indicators, (GFunc)hud_object::q_update_cairo_item, this);
-                g_slist_foreach (tics, (GFunc)hud_object::q_update_cairo_item, this);
+                g_slist_foreach (marks, (GFunc)hud_object::q_update_cairo_item, imgarea);
+                g_slist_foreach (indicators, (GFunc)hud_object::q_update_cairo_item, imgarea);
+                g_slist_foreach (tics, (GFunc)hud_object::q_update_cairo_item, imgarea);
                 g_slist_foreach (horizon, (GFunc)hud_object::q_update_cairo_item, imgarea);
         };
         void hide (){
@@ -256,5 +262,5 @@ private:
         cairo_item_arc *fpos, *fneg, *fpos2, *fneg2;
         cairo_item_path_closed *tip;
         cairo_item_path_closed *m1, *m2;
-        cairo_item_path *horizon;
+        cairo_item_path *horizon[2];
 };

@@ -367,6 +367,37 @@ gint  sranger_mk3_hwi_spm::RTQuery (const gchar *property, gchar **val) {
 
 
 
+gint  sranger_mk3_hwi_spm::RTQuery (const gchar *property, int n, gfloat *data){
+        const gint64 max_age = 20000; // 20ms
+        static gint64 time_of_last_reading1 = 0; // abs time in us
+        static gint64 time_of_last_reading2 = 0; // abs time in us
+        static gint64 time_of_last_trg = 0; // abs time in us
+        static gint s1ok=0, s2ok=0;
+
+        // Trigger
+        if ( property[0] == 'T' && (time_of_last_trg+max_age) < g_get_real_time () ){
+                time_of_last_trg = g_get_real_time ();
+                set_blcklen (n);
+                s1ok=-1; s2ok=-1;
+        }
+        
+        // Signal1
+        if ( property[1] == '1' && ((time_of_last_reading1+max_age) < g_get_real_time () || s1ok)){
+                time_of_last_reading1 = g_get_real_time ();
+
+                double scale = 10./((1L<<31)-1);
+                s1ok=read_pll_signal1 (data, n, scale, 0);
+        }
+        // Signal2
+        if ( property[1] == '2' && ((time_of_last_reading2+max_age) < g_get_real_time () || s2ok)){
+                time_of_last_reading2 = g_get_real_time ();
+
+                double scale = 10./((1L<<31)-1);
+                s2ok=read_pll_signal2 (data, n, scale, 0);
+        }
+}
+
+
 void sranger_mk3_hwi_spm::SetMode(int mode){
 	static SPM_STATEMACHINE_MK3 dsp_state;
 	dsp_state.set_mode = long_2_sranger_long(mode);
