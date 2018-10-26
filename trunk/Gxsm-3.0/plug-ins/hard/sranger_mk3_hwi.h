@@ -103,6 +103,7 @@ public:
 	virtual gint RTQuery (const gchar *property, double &val1, double &val2) { return FALSE; };
 	virtual gint RTQuery (const gchar *property, double &val1, double &val2, double &val3) { return FALSE; };
 	virtual gint RTQuery (const gchar *property, gchar **val) { return FALSE; };
+	virtual gint RTQuery (const gchar *property, int n, gfloat *data) { return FALSE; };
 
 	virtual double GetUserParam (gint n, gchar *id=NULL);
 	virtual gint   SetUserParam (gint n, gchar *id=NULL, double value=0.);
@@ -222,8 +223,8 @@ public:
 	virtual int check_pac () { return 0; } // returns 0 if PAC/PLL capability available, else -1
 	virtual int read_pll (PAC_control &pll, PLL_GROUP group=PLL_ALL);
 	virtual int write_pll (PAC_control &pll, PLL_GROUP group, int enable=0);
-	virtual int read_pll_signal1 (PAC_control &pll, int n, double scale=1., gint flag=FALSE);
-	virtual int read_pll_signal2 (PAC_control &pll, int n, double scale=1., gint flag=FALSE);
+	virtual int read_pll_signal1 (gfloat *signal, int n, double scale=1., gint flag=FALSE);
+	virtual int read_pll_signal2 (gfloat *signal, int n, double scale=1., gint flag=FALSE);
 
 	void set_scope (int s1, int s2);
 	void set_blcklen (int len=1024);
@@ -317,6 +318,7 @@ class sranger_mk3_hwi_spm : public sranger_mk3_hwi_dev{
 	virtual gint RTQuery (const gchar *property, double &val1, double &val2) { return FALSE; };
 	virtual gint RTQuery (const gchar *property, double &val1, double &val2, double &val3);
 	virtual gint RTQuery (const gchar *property, gchar **val);
+	virtual gint RTQuery (const gchar *property, int n, gfloat *data);
 
 	virtual void UpdateScanGainMirror ();
 	virtual void SetOffset(double x, double y);

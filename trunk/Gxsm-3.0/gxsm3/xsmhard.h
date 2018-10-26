@@ -107,6 +107,7 @@ class XSM_Hardware{
 	virtual gint RTQuery (const gchar *property, double &val1, double &val2) { return FALSE; };
 	virtual gint RTQuery (const gchar *property, double &val1, double &val2, double &val3);
 	virtual gint RTQuery (const gchar *property, gchar **val) { return FALSE; };
+	virtual gint RTQuery (const gchar *property, int n, gfloat *data) { return FALSE; };
 	virtual gint RTQuery () { return y_current; }; // actual progress on scan -- y-index mirror from FIFO read, etc. -- returns -1 if not available
 
 	/* Methods for future use */
@@ -192,6 +193,14 @@ class XSM_Hardware{
 		idlefunc = ifunc;
 	};
 
+	/*
+	doule copy_from_last(){
+                double ix,iy;
+                gapp->xsm->scan[10]->World2Pixel  (sim_xyz0[0]+sim_xyzS[0], sim_xyz0[1]+sim_xyzS[1], ix,iy);
+                return sim_xyzS[2] =  gapp->xsm->scan[10]->data.s.dz * gapp->xsm->scan[10]->mem2d->GetDataPktInterpol (ix,iy);
+	}
+	*/
+	
 	void CallIdleFunc(){ if (idlefunc) (*idlefunc)(idlefunc_data); };
 
 	void add_user_event_now (const gchar *message_id, const gchar *info, double value[2], gint addflag=FALSE);

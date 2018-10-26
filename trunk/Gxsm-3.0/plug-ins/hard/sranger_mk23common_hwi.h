@@ -103,6 +103,7 @@ public:
 	virtual gint RTQuery (const gchar *property, double &val1, double &val2) { return FALSE; };
 	virtual gint RTQuery (const gchar *property, double &val1, double &val2, double &val3) { return FALSE; };
 	virtual gint RTQuery (const gchar *property, gchar **val) { return FALSE; };
+	virtual gint RTQuery (const gchar *property, int n, gfloat *data) { return FALSE; };
 
 	virtual double GetUserParam (gint n, gchar *id=NULL) { return 0.; };
 	virtual gint   SetUserParam (gint n, gchar *id=NULL, double value=0.) { return 0; };
@@ -157,8 +158,8 @@ public:
 	virtual int read_pll (PAC_control &pll, PLL_GROUP group=PLL_ALL) { return -1; };
 	virtual int write_pll (PAC_control &pll, PLL_GROUP group, int enable=0) { return -1; };
 
-	virtual int read_pll_signal1 (PAC_control &pll, int n, double scale=1., gint flag=FALSE){ return 0; };
-	virtual int read_pll_signal2 (PAC_control &pll, int n, double scale=1., gint flag=FALSE){ return 0; };
+	virtual int read_pll_signal1 (gfloat *signal, int n, double scale=1., gint flag=FALSE){ return 0; };
+	virtual int read_pll_signal2 (gfloat *signal, int n, double scale=1., gint flag=FALSE){ return 0; };
 	virtual void set_blcklen (int len){};
 	virtual void set_scope (int s1, int s2){};
 	virtual void setup_step_response (double dPhase, double dAmplitude){};

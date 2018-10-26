@@ -339,7 +339,7 @@ ProbeIndicator::ProbeIndicator (){
         ipos=probe->add_indicator ("IPos", 100.0, 50., 0, 2);
         ipos2=probe->add_indicator ("IPos", 100.0, 50., 1, 2);
         ineg=probe->add_indicator ("INeg", 100.0, -50., 0, 2);
-        ineg2=probe->add_indicator ("INeg", 100.0, -50., 1, 2);
+        //ineg2=probe->add_indicator ("INeg", 100.0, -50., 1, 2);
 
         fpos=probe->add_indicator ("IPos", 300.0, 25., 0, 2);
         fpos2=probe->add_indicator ("IPos", 300.0, 20., 1, 2);
@@ -347,9 +347,11 @@ ProbeIndicator::ProbeIndicator (){
         fneg2=probe->add_indicator ("INeg", 300.0, -5., 1, 2);
 
 
-        horizon=probe->add_horizon ("H", 0.0, 0.0, 128);
+        horizon[0]=probe->add_horizon ("H0", 0.0, 0.0, 128);
+        probe->set_horizon_color(horizon[0], CAIRO_COLOR_RED_ID);
+        horizon[1]=probe->add_horizon ("H1", 0.0, 0.0, 128);
  
-	probe->queue_update (canvas);
+	//probe->queue_update (canvas);
         
 	info = new cairo_item_text (0.0, 0.0, "Probe HUD");
         //info->set_text ("Probe HUD")
@@ -357,7 +359,7 @@ ProbeIndicator::ProbeIndicator (){
 	info->set_font_face_size ("Ununtu", 12.);
 	info->set_spacing (-.1);
 	info->set_anchor (CAIRO_ANCHOR_E);
-	info->queue_update (canvas);
+	//info->queue_update (canvas);
 
 	refresh ();
 }
@@ -500,12 +502,16 @@ void ProbeIndicator::stop (){
 
 
 gint ProbeIndicator::refresh(){
+        #define SCOPE_N 4096
+        static gfloat scope[4][SCOPE_N];
+        static gfloat scope_min[4];
+        static gfloat scope_max[4];
         static gint busy=FALSE;
         static double tics=0.;
-
+        
         if (busy) return FALSE;
 
-	double x,y,z,q,Ilg;
+	double x,y,z,q,Ilg, Ilgmp, Ilgmi;
         double max_z = xsmres.AnalogVMaxOut*gapp->xsm->Inst->VZ();
 
         busy = TRUE;
@@ -526,7 +532,7 @@ gint ProbeIndicator::refresh(){
         probe->set_indicator_val (ipos, 100.0, 0.75*ii);
         probe->set_indicator_val (ipos2, 100.0, ii>10 ? 0.75*(ii-10) : 0.);
         probe->set_indicator_val (ineg, 100.0, -0.55*ii);
-        probe->set_indicator_val (ineg2, 100.0, ii>10 ? -0.55*(ii-10) : 0.);
+        //probe->set_indicator_val (ineg2, 100.0, ii>10 ? -0.55*(ii-10) : 0.);
 
         probe->set_mark_pos (m1, ii*2.);
         probe->set_mark_pos (m2, -ii*0.75);
@@ -554,7 +560,7 @@ gint ProbeIndicator::refresh(){
 					       gapp->xsm->Inst->V2XAng(x),
 					       gapp->xsm->Inst->V2YAng(y));
                         infoXY0->set_text (tmp);
-                        infoXY0->queue_update (canvas);
+                        //infoXY0->queue_update (canvas);
 			g_free (tmp);
 
 			// Z0 position marker
@@ -574,18 +580,16 @@ gint ProbeIndicator::refresh(){
                                 tip_marker_z0->set_stroke_rgba (CAIRO_COLOR_BLUE_ID, 0.8);
                         else
                                 tip_marker_z0->set_stroke_rgba (CAIRO_COLOR_RED);
-                        tip_marker_z0->queue_update (canvas); // schedule update
+                        //tip_marker_z0->queue_update (canvas); // schedule update
 		}
 #endif
 
                 // Life Paramater Info
 		gapp->xsm->hardware->RTQuery ("f0I", x, y, q); // get f0, I -- val1,2,3=[fo,Iav,Irms]
-                Ilg = log10 (fabs(y) + 1.0);
+                Ilg = log10 (fabs(1000.*y) + 1.0);
 
-                probe->set_indicator_val (ipos,  100.0, y > 0.? 250.*Ilg : 0.);
-                probe->set_indicator_val (ipos2, 100.0, y > 0.? 25.*y : 0.);
-                probe->set_indicator_val (ineg,  100.0, y < 0.? -250.*Ilg : 0.);
-                probe->set_indicator_val (ineg2, 100.0, y < 0.? 25.*y:0.);
+                probe->set_indicator_val (ipos,  100.0, y > 0.? 25.*Ilg : 0.);
+                probe->set_indicator_val (ineg,  100.0, y < 0.? -25.*Ilg : 0.);
 
                 if (fabs(x) < 200.){
                         probe->set_indicator_val (fpos2, 300.0, x > 0. ? x:0.);
@@ -610,13 +614,62 @@ gint ProbeIndicator::refresh(){
                         tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y, x, gapp->xsm->Inst->V2ZAng(z));
 
                 info->set_text (tmp);
-                info->queue_update (canvas);
+                //info->queue_update (canvas);
 
-                
-                for(int i=0; i<128; ++i, tics+=1./128.)
-                        horizon->set_xy (i, i-64., 10.*sin(tics*2.*M_PI*4.7)*gapp->xsm->Inst->V2ZAng(z));
-                
-		g_free (tmp);
+		gapp->xsm->hardware->RTQuery ("S1", SCOPE_N, &scope[0][0]); // RT Query S1
+		gapp->xsm->hardware->RTQuery ("S2", SCOPE_N, &scope[1][0]); // RT Query S2
+		gapp->xsm->hardware->RTQuery ("T",  SCOPE_N, NULL); // RT Query, Trigger next
+
+                gfloat xmax, xmin;
+                xmax=xmin=scope[0][0];
+                gint dec=SCOPE_N/128;
+                int k=0;
+                for(int i=0; i<128; ++i, tics+=1./128.){
+                        gfloat xr=1.;
+                        gfloat x=0.;
+                        for (int j=0; j<dec; ++j, ++k)
+                                x += scope[0][k];
+                        // x /= dec; // no need as auto scaled regardless
+                        if (x>xmax)
+                                xmax = x;
+                        if (x<xmin)
+                                xmin = x;
+
+                        x -= 0.5*(xr=(scope_max[0]+scope_min[0]));
+                        x *= 32./xr;
+                        
+                        horizon[0]->set_xy (i, i-64., x);
+                }
+                scope_max[0] = 0.9*scope_max[0] + 0.1*xmax;
+                scope_min[0] = 0.9*scope_min[0] + 0.1*xmin;
+
+                Ilgmp = log10 (fabs(1000.*scope_max[0]/dec / gapp->xsm->Inst->nAmpere2V(1.)) + 1.0);
+                Ilgmi = log10 (fabs(1000.*scope_min[0]/dec / gapp->xsm->Inst->nAmpere2V(1.)) + 1.0);
+                double ref=100.0 + 25.*(scope_max[0] > 0.? Ilgmp : -Ilgmp);
+                probe->set_indicator_val (ipos2, ref, 100.0 + 25.*(scope_min[0] > 0.? Ilgmi : -Ilgmi) - ref);
+                               
+                xmax=xmin=scope[1][0];
+                k=0;
+                for(int i=0; i<128; ++i, tics+=1./128.){
+                        gfloat xr=1.;
+                        gfloat x=0.;
+                        for (int j=0; j<dec; ++j, ++k)
+                                x += scope[0][k];
+                        if (x>xmax)
+                                xmax = x;
+                        if (x<xmin)
+                                xmin = x;
+
+                        x -= 0.5*(xr=(scope_max[1]+scope_min[1]));
+                        x *= 32./xr;
+                        
+                        horizon[1]->set_xy (i, i-64., x);
+                }
+                scope_max[1] = 0.9*scope_max[1] + 0.1*xmax;
+                scope_min[1] = 0.9*scope_min[1] + 0.1*xmin;
+
+
+                g_free (tmp);
 
 
                 // Pseudo Current Log Scale Bar: 3 decade by color green, blue red

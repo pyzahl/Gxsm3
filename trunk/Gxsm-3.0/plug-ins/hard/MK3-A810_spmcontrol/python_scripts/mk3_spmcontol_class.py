@@ -2483,7 +2483,31 @@ class SPMcontrol():
                        + "\n VPS Z-adj-offset: %8.4f" %(self.PROBE[ii_probe_Zpos]/q31) + "\n"
                 )
                 return 1       
-
+            
+        def reset_dsp_scan(self, dummy): 
+            self.write (i_scan, struct.pack ("lllllllllllllllllllllllllllllllllllllllllllll", \
+                    0, 0, \
+                    1<<31, 0, 0, 1<<31, \
+                    0, 0, \
+                    0, 0, \
+                    0, 0, 0, 0, \
+                    0, 0, \
+                    1<<16, 1<<16, \
+                    0, \
+                    1<<16, 1<<16, 0, \
+                    1, 1, \
+                    0, 0, \
+                    0, 0, \
+                    2<<16, \
+                    1, \
+                    0x000A0A0A, \
+                    0, 0, 0, \
+                    0, 0, \
+                    0, 0, 0, \
+                    0, 0, 0, 0, \
+                    1, 0))
+                    # do not over write input source vectors
+            
         def print_statemachine_status(self, dummy=0):
                 print "DSP Statemachine struct="
                 print self.SPM_STATEMACHINE
