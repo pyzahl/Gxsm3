@@ -28,7 +28,9 @@
 #include <math.h>
 #include "cairo_item.h"
 
-
+#define SCOPE_ON  1
+#define SCOPE_FFT 2
+#define SCOPE_DBG 256
 
 
 class hud_object {
@@ -249,6 +251,8 @@ public:
         void stop ();
 
 private:  
+        gint       modes;
+        
         gint       hud_size;
 
         guint      timer_id;

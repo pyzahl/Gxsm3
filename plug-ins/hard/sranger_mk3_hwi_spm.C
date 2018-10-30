@@ -365,6 +365,10 @@ gint  sranger_mk3_hwi_spm::RTQuery (const gchar *property, gchar **val) {
         return TRUE; 
 };
 
+#define DSP32Qs15dot16TOV     (10.0/(32767.*(1<<16)))
+#define DSP32Qs15dot16TO_Volt (10.0/(32767.*(1<<16)))
+#define DSP32Qs15dot0TO_Volt  (10.0/32767.)
+#define DSP32Qs23dot8TO_Volt  (10.0/(32767.*(1<<8)))
 
 
 gint  sranger_mk3_hwi_spm::RTQuery (const gchar *property, int n, gfloat *data){
@@ -385,14 +389,14 @@ gint  sranger_mk3_hwi_spm::RTQuery (const gchar *property, int n, gfloat *data){
         if ( property[1] == '1' && ((time_of_last_reading1+max_age) < g_get_real_time () || s1ok)){
                 time_of_last_reading1 = g_get_real_time ();
 
-                double scale = 10./((1L<<31)-1);
+                double scale =  DSP32Qs23dot8TO_Volt; // assuming MIX_IN_0..3 withe 23Q8 scale for10V
                 s1ok=read_pll_signal1 (data, n, scale, 0);
         }
         // Signal2
         if ( property[1] == '2' && ((time_of_last_reading2+max_age) < g_get_real_time () || s2ok)){
                 time_of_last_reading2 = g_get_real_time ();
 
-                double scale = 10./((1L<<31)-1);
+                double scale =  DSP32Qs15dot16TO_Volt;
                 s2ok=read_pll_signal2 (data, n, scale, 0);
         }
 }
