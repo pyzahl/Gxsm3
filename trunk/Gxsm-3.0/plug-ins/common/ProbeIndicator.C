@@ -300,6 +300,7 @@ ProbeIndicator::ProbeIndicator (){
         hud_size = 150;
 	timer_id = 0;
 	probe = NULL;
+        modes = SCOPE_ON;
         
 	AppWindowInit (N_("HUD Probe Indicator"));
 
@@ -414,58 +415,42 @@ gint ProbeIndicator::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ProbeIn
 	// cairo_scale (cr, 0.5*pv->WXS/pv->max_x, -0.5*pv->WYS/pv->max_y);
 
         // undo cairo image translation/scale:
-        mouse_pix_xy[0] = event->button.x; //(event->button.x - (double)(12+pv->WXS/2.))/( 0.5*pv->WXS/pv->max_x);
-        mouse_pix_xy[1] = event->button.y; //(event->button.y - (double)(12+pv->WYS/2.))/( 0.5*pv->WYS/pv->max_y);
+        mouse_pix_xy[0] = event->button.x-pv->hud_size; //(event->button.x - (double)(12+pv->WXS/2.))/( 0.5*pv->WXS/pv->max_x);
+        mouse_pix_xy[1] = event->button.y-pv->hud_size; //(event->button.y - (double)(12+pv->WYS/2.))/( 0.5*pv->WYS/pv->max_y);
 
-        #if 0
-        double pxw=(2*pv->x0r)/N_PRESETS;
-        double pyw=(2*pv->y0r)/N_PRESETS;
-
-        int i = (int)((mouse_pix_xy[0]+pv->x0r)/pxw);
-        int j = 6-(int)((mouse_pix_xy[1]+pv->y0r)/pyw);
-        if (i < 0 || i > (N_PRESETS-1))
-                i=j=-1;
-        if (j < 0 || j > (N_PRESETS-1))
-                i=j=-1;
 
         switch (event->type) {
 	case GDK_BUTTON_PRESS:
 		switch(event->button.button) {
 		case 1:
-                        preset[0] = i-3;
-                        preset[1] = j-3;
-                        g_object_set_data (G_OBJECT(canvas), "preset_xy", preset);
-                        gapp->offset_to_preset_callback (canvas, gapp);
-                        // g_message ("ProbeIndicator Button1 Pressed at XY=%g, %g => %d, %d",  mouse_pix_xy[0], mouse_pix_xy[1], i,j );
+                        //g_object_set_data (G_OBJECT(canvas), "preset_xy", preset);
+                        //gapp->offset_to_preset_callback (canvas, gapp);
+                        g_message ("ProbeIndicator Button1 Pressed at XY=%g, %g",  mouse_pix_xy[0]);
+                        if (mouse_pix_xy[0] > 0)
+                                pv->modes = (pv->modes & ~SCOPE_ON) | SCOPE_ON;
+                        else
+                                pv->modes &= ~SCOPE_ON;
+
+                        if (mouse_pix_xy[1] < 0)
+                                pv->modes = (pv->modes & ~SCOPE_DBG) | SCOPE_DBG;
+                        else
+                                pv->modes &= ~SCOPE_DBG;
 			break;
                 }
                 break;
 		
 	case GDK_MOTION_NOTIFY:
-                if (pi != i || pj != j){
-                        if (pi>=0 && pj>=0){
-                                pv->pos_preset_box[pi][pj]->set_fill_rgba (0,0,0,0.1);
-                                pi=pj=-1;
-                        }
-                        
-                        if (i>=0 && j>=0){
-                                pv->pos_preset_box[i][j]->set_fill_rgba (1,0,0,0.3);
-                                pi=i; pj=j;
-                        }
-                        // g_message ("ProbeIndicator XY=%g, %g => %d, %d",  mouse_pix_xy[0], mouse_pix_xy[1], i,j);
-                }
 		break;
 		
 	case GDK_ENTER_NOTIFY:
-                pv->show_preset_grid = true;
+                //pv->show_preset_grid = true;
 		break;
 	case GDK_LEAVE_NOTIFY:
-                pv->show_preset_grid = false;
+                //pv->show_preset_grid = false;
                 break;
 		
 	default: break;
 	}
-        #endif
         
 	return FALSE;
 }
@@ -594,11 +579,12 @@ gint ProbeIndicator::refresh(){
                 probe->set_indicator_val (ineg,  100.0, y < 0.? -25.*Ilg : 0.);
                 probe->set_mark_pos (m1,  25.*(y > 0. ? Ilg : -Ilg));
 
-		gapp->xsm->hardware->RTQuery ("S1", SCOPE_N, &scope[0][0]); // RT Query S1
-		gapp->xsm->hardware->RTQuery ("S2", SCOPE_N, &scope[1][0]); // RT Query S2
-		gapp->xsm->hardware->RTQuery ("T",  SCOPE_N, NULL); // RT Query, Trigger next
-
-                gfloat xmax, xmin;
+                if (modes & SCOPE_ON){
+                        gapp->xsm->hardware->RTQuery ("S1", SCOPE_N, &scope[0][0]); // RT Query S1
+                        gapp->xsm->hardware->RTQuery ("S2", SCOPE_N, &scope[1][0]); // RT Query S2
+                        gapp->xsm->hardware->RTQuery ("T",  SCOPE_N, NULL); // RT Query, Trigger next
+                }
+                gfloat xmax, xmin, xrms;
                 gint dec=SCOPE_N/128;
                 xmax=xmin=scope[0][0]*dec;
                 int k=0;
@@ -656,12 +642,28 @@ gint ProbeIndicator::refresh(){
                 scope_min[1] = 0.9*scope_min[1] + 0.1*xmin;
 
 
-		gchar *tmp = NULL;
-                if (fabs(y) < 0.25)
-                        tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g:%g", y*1000., x, gapp->xsm->Inst->V2ZAng(z), scope_min[0]/dec,scope_max[0]/dec);
-                else
-                        tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g:%g", y, x, gapp->xsm->Inst->V2ZAng(z), scope_min[0]/dec,scope_max[0]/dec);
-
+                gchar *tmp = NULL;
+                if (modes & SCOPE_DBG){
+                        if (fabs(y) < 0.25)
+                                tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g : %g\n%g : %g",
+                                                       y*1000., x,
+                                                       scope_min[0]/dec, scope_max[0]/dec,
+                                                       scope_min[1]/dec, scope_max[1]/dec
+                                                       );
+                        else
+                                tmp = g_strdup_printf ("I: %8.1f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g : %g\n%g : %g",
+                                                       y, x,
+                                                       scope_min[0]/dec, scope_max[0]/dec,
+                                                       scope_min[1]/dec, scope_max[1]/dec
+                                                       );
+                        //tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM,
+                        //                               y, x); //  "\n%g:%g", gapp->xsm->Inst->V2ZAng(z), scope_min[0]/dec,scope_max[0]/dec);
+                } else {
+                        if (fabs(y) < 0.25)
+                                tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y*1000., x);
+                        else
+                                tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y, x);
+                }
                 info->set_text (tmp);
                 g_free (tmp);
                 info->queue_update (canvas);
