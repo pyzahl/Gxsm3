@@ -1,6 +1,6 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
-// g++ `pkg-config --libs  --cflags glib-2.0` mk3_reset.C 
+// g++ `pkg-config --libs  --cflags glib-2.0` mk3_reset.C -o mk3_reset
 
 #include <locale.h>
 #include <libintl.h>
@@ -889,6 +889,9 @@ void issue_mk3_hard_reset (int dsp){
         g_print ("->%d\n", ret);
         g_print ("MK3 STATE SET 1... ");
         ret=ioctl (dsp, SRANGER_MK2_IOCTL_DSP_STATE_SET, 0);
+        g_print ("->%d\n", ret);
+        g_print ("MK3 SET LED GREEN... ");
+        ret=ioctl (dsp, SRANGER_MK2_IOCTL_W_LEDS, 2);
         g_print ("->%d\n", ret);
 
         g_print ("MK3 POWER UP RESET CYCLE INITATED.\n\n");
