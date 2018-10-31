@@ -24,7 +24,7 @@
 #define FB_SPM_MAGIC_ADR  0x10F13F00 /**< Magic struct is at this fixed addess in external SRAM */
 #define FB_SPM_MAGIC     0x3202EE01
 
-#define SRDEV "/dev/sranger_mk2_2"
+#define SRDEV "/dev/sranger_mk2_1"
 
 typedef gint32   DSP_INT;
 typedef guint32  DSP_UINT;
@@ -132,13 +132,13 @@ void pu32(const gchar *l, guint32 x) {
 	std::cout << l << " = " << info << " [u32] = " << x << std::endl;
 }
 
-void dumpbuffer(unsigned char *buffer, int bi, int bf){
+void dumpbuffer(unsigned char *buffer, int bi, int bf, int a_base=0){
 	int i, j;
 	unsigned char tmp[16];
 	for(i=bi; i<=bf; i+=16){
 		memset (tmp, 0, 16);
 		for(j=0; (i+j) <= bf && j<16; ++j) tmp[j] = buffer[i+j];
-		g_print("%06X: %02x %02x %02x %02x  %02x %02x %02x %02x  %02x %02x %02x %02x  %02x %02x %02x %02x\n", i>>1,
+		g_print("%06X: %02x %02x %02x %02x  %02x %02x %02x %02x  %02x %02x %02x %02x  %02x %02x %02x %02x\n", a_base + i,
 		       tmp[0],tmp[1],tmp[2],tmp[3],tmp[4],tmp[5],tmp[6],tmp[7],
 		       tmp[8],tmp[9],tmp[10],tmp[11],tmp[12],tmp[13],tmp[14],tmp[15]);
 	}
@@ -736,60 +736,77 @@ guint16 *section_texts[] = {  s0x10800800,  s0x10800804, s0x10800808,  s0x108008
 
 
 
-void hpi_move (int dsp, guint address, guint16 *data){
+void hpi_move (int dsp, guint address, guint16 *data, gint verify=1){
   int ret=0;
   struct {
-    guint16 index;
+    guint32 address;
     guint16 length;
     void* buffer;
   } arg;
-  struct {
-    guint32 branch_address;
-    guint32 transfer_address;
-    guint16 nb_words;
-    guint16 error_code;
-    guint16 data[256];
-  }kmove_mbox;
-
-  struct {
-    guint32 branch_address;
-    guint32 transfer_address;
-    guint16 nb_words;
-    guint16 op_type;
-  }kmove_init;
-
    guchar buffer[4096];
+   guchar vbuffer[4096];
    int length = 0;
-   for (int i=0; i<4096 && data[i] < 0x0100; ++i)
+   for (int i=0; i<4096 && data[i] < 0x0100; ++i){
      buffer[length++] = guchar(data[i]);
+     //g_print("%02x ", guchar(data[i]));
+   }
+   dumpbuffer(buffer,0,length-1, address);
+   
+   g_print ("HPI MOVE: [0x%08x] %d bytes... ", address, length);
+   arg.address = address;
+   arg.length = length;
+   arg.buffer = buffer;
+   ret=ioctl(dsp, SRANGER_MK2_IOCTL_HPI_MOVE_OUTREQUEST, (unsigned long)&arg);
+   if (ret != length)
+     g_print ("HPI MOVE ERROR: %d bytes moved of %d.\n", ret, length);
+   else
+     g_print ("HPI MOVE OK: all %d bytes moved.\n", ret);
 
-  g_print ("HPI MOVE: [0x%10x] %d bytes\n", address, length);
-  //arg.index = address;
-  //arg.length = length;
-  //arg.buffer = buffer;
-  //ret=ioctl(dsp, SRANGER_MK2_IOCTL_HPI_MOVE_OUTREQUEST, (unsigned long)&arg);
-  kmove_mbox.branch_address = 0x00; // K MOVE TO DSP MEM FUNCTION  intrinsic read and write functions address???
-  kmove_mbox.transfer_address = address;
-  kmove_mbox.nb_words = length;
-  for (int i=0; i<256 && data[i] < 0x0100; ++i)
-    kmove_mbox.data[i] = buffer[i];
-  ret=ioctl(dsp, SRANGER_MK2_IOCTL_MBOX_K_WRITE, (unsigned long)&kmove_mbox);
-  g_print ("->%d\n", ret);
+   // TEST for error checking, wrinting wrong bytes for test
+   //arg.address = address+10;
+   //arg.length = 4;
+   //ret=ioctl(dsp, SRANGER_MK2_IOCTL_HPI_MOVE_OUTREQUEST, (unsigned long)&arg);
+
+
+   if (verify){
+     g_print ("Verifying Text now...\n", ret);
+     arg.address = address;
+     arg.length = length;
+     arg.buffer = vbuffer;
+     ret=ioctl(dsp, SRANGER_MK2_IOCTL_HPI_MOVE_INREQUEST, (unsigned long)&arg);
+     if (ret != length)
+       g_print ("HPI MOVE IN ERROR: %d bytes moved of %d.\n", ret, length);
+     else
+       g_print ("HPI MOVE IN OK: all %d bytes moved.\n", ret);
+     int verr=0;
+     for (int i=0; i<length; ++i){
+       if (vbuffer[i] != buffer[i]){
+	 g_print ("VERR at 0x%08x %02x not matching %02x\n", i+address, vbuffer[i], buffer[i]);
+	 verr++;
+       }
+     }
+     if (verr)
+	 g_print ("%d errors.\n", verr);
+     else
+	 g_print ("Verify OK.\n");
+   }
+   
 }	
 
 void issue_mk3_hard_reset (int dsp){
+  int i;
   int ret=0;
   g_print ("\nMK3 issue hardware reset and restart from flash.\n");
 
-  g_print ("MK3 HPI RESET SET\n");
+  g_print ("MK3 HPI RESET SET... ");
   ret=ioctl (dsp, SRANGER_MK23_IOCTL_ASSERT_DSP_RESET, 0);
   g_print ("->%d\n", ret);
   usleep(250000);
-  g_print ("MK3 HPI RESET RELEASE\n");
+  g_print ("MK3 HPI RESET RELEASE... ");
   ret=ioctl (dsp, SRANGER_MK23_IOCTL_RELEASE_DSP_RESET, 0);
   g_print ("->%d\n", ret);
   usleep(250000);
-  g_print ("MK3 HPI CONTROL 0x101 to HPIC\n");
+  g_print ("MK3 HPI CONTROL 0x101 to HPIC... ");
   ret=ioctl (dsp, SRANGER_MK2_IOCTL_HPI_CONTROL_REQUEST, 0x101);
   g_print ("->%d\n", ret);
 
@@ -801,20 +818,24 @@ void issue_mk3_hard_reset (int dsp){
   }                   
   g_print ("MK3 HPI MOVE ENTRY POINT ADDRESS\n");
   //#- Write the Entry point of the power-up kernel (value 32-bit 0x10E09860) at the address 0x1C40008 with a HPI write USB request.
-  //guint16 tmp1[] = { 0x10E0, 0x9860, 0xffff };
-  guint16 tmp1[] = { 0x10, 0xE0, 0x98, 0x60, 0xffff };
-  hpi_move (dsp, 0x1C40008, tmp1);
+  guint16 tmp[8] = {0,0,0,0, 0,0,0,0};
+  guint16 tmp1[] = { 0x10E0, 0x9860 };
+  guchar *tmp8;
+  tmp8 = (guchar*)tmp1;
+  for (i=0; i<4; ++i) tmp[i] = tmp8[i]; tmp[4]=0xffff;
+  hpi_move (dsp, 0x1C40008, tmp);
   //#- Write the the value 0x1 (32-bit) at the address 0x1C4000C with a HPI write USB request.
-  //guint16 tmp2[] = { 0x0000, 0x0001, 0xffff };
-  guint16 tmp2[] = { 0x00, 0x00, 0x00,0x01, 0xffff };
-  hpi_move (dsp, 0x1C4000C, tmp2);
+  guint16 tmp2[] = { 0x0000, 0x0001, 0xffff };
+  tmp8 = (guchar*)tmp2;
+  for (i=0; i<4; ++i) tmp[i] = tmp8[i]; tmp[4]=0xffff;
+  hpi_move (dsp, 0x1C4000C, tmp);
   
   usleep(100000);
 
-  g_print ("MK3 SPEED FAST\n");
+  g_print ("MK3 SPEED FAST...");
   ret=ioctl (dsp, SRANGER_MK2_IOCTL_SPEED_FAST, 0);
   g_print ("->%d\n", ret);
-  g_print ("MK3 STATE SET 1\n");
+  g_print ("MK3 STATE SET 1... ");
   ret=ioctl (dsp, SRANGER_MK2_IOCTL_DSP_STATE_SET, 0);
   g_print ("->%d\n", ret);
 
@@ -834,6 +855,9 @@ int main (){
 	else{
 		int ret;
 		unsigned int vendor, product;
+
+		issue_mk3_hard_reset (dsp);
+
 		if ((ret=ioctl(dsp, SRANGER_MK2_IOCTL_VENDOR, (unsigned long)&vendor)) < 0){
 			SRANGER_ERROR(strerror(ret) << " cannot query VENDOR" << std::endl);
 			close (dsp);
@@ -868,8 +892,6 @@ int main (){
 		p32 ("mmdd", magic.mmdd);
 		p32 ("softid", magic.dsp_soft_id);
 		p32 ("statemachine", magic.statemachine);
-
-		issue_mk3_hard_reset (dsp);
 
 		close (dsp);
 	}
