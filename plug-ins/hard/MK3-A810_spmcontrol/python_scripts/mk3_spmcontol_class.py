@@ -37,7 +37,7 @@ import array
 import math
 import re
 
-#from numpy import *
+from numpy import *
 
 import pickle
 
