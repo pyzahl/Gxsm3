@@ -334,8 +334,10 @@ ProbeIndicator::ProbeIndicator (){
         tip=probe->add_mark ("MT", 200, 0.);
         probe->add_mark ("MB", 0, 0.7);
 
-        m1=probe->add_mark ("M1", 0, 0., 1, -1, 0.5);
-        m2=probe->add_mark ("M2", 250, 0., 1, -1, 0.75);
+        m1=probe->add_mark ("M1", 0, 0., 1, -1, 0.75);
+        m2=probe->add_mark ("M2", 0, 0., 1, -1, 0.75);
+        probe->set_mark_color (m1, CAIRO_COLOR_RED_ID);
+        probe->set_mark_color (m2, CAIRO_COLOR_RED_ID);
         
         ipos=probe->add_indicator ("IPos", 100.0, 50., 0, 2);
         ipos2=probe->add_indicator ("IPos", 100.0, 50., 1, 2);
@@ -577,7 +579,6 @@ gint ProbeIndicator::refresh(){
                 Ilg = log10 (fabs(1000.*y) + 1.0);
                 probe->set_indicator_val (ipos,  100.0, y > 0.? 25.*Ilg : 0.);
                 probe->set_indicator_val (ineg,  100.0, y < 0.? -25.*Ilg : 0.);
-                probe->set_mark_pos (m1,  25.*(y > 0. ? Ilg : -Ilg));
 
                 if (modes & SCOPE_ON){
                         gapp->xsm->hardware->RTQuery ("S1", SCOPE_N, &scope[0][0]); // RT Query S1
@@ -614,6 +615,8 @@ gint ProbeIndicator::refresh(){
                 double upper=25.*(scope_max[0] > 0.? Ilgmp : -Ilgmp);
                 double lower=25.*(scope_min[0] > 0.? Ilgmi : -Ilgmi);
                 probe->set_indicator_val (ipos2, 100.+upper, lower-upper);
+                probe->set_mark_pos (m1,  upper);
+                probe->set_mark_pos (m2,  lower);
                                
                 xmax=xmin=scope[1][0];
                 k=0;
