@@ -497,7 +497,7 @@ void ProbeIndicator::stop (){
 
 gint ProbeIndicator::refresh(){
         #define SCOPE_N 4096
-        static gfloat scope[4][SCOPE_N];
+        static gfloat scope[4][SCOPE_N+1];
         static gfloat scope_min[4];
         static gfloat scope_max[4];
         static gint busy=FALSE;
@@ -595,14 +595,18 @@ gint ProbeIndicator::refresh(){
                 gfloat xmax, xmin, xrms;
                 gint dec=SCOPE_N/128;
                 xmax=xmin=scope[0][0]*dec;
+                xrms=0.;
                 int k=0;
                 gfloat xr,xc;
                 xc = 0.5*(scope_max[0]+scope_min[0]);
                 xr = scope_max[0]-scope_min[0];
+                
                 for(int i=0; i<128; ++i, tics+=1./128.){
                         gfloat x=0.;
-                        for (int j=0; j<dec; ++j, ++k)
+                        for (int j=0; j<dec; ++j, ++k){
                                 x += scope[0][k];
+                                xrms += scope[0][k]*scope[0][k];
+                        }
                         // x /= dec; // no need as auto scaled regardless
                         if (x>xmax)
                                 xmax = x;
@@ -611,6 +615,8 @@ gint ProbeIndicator::refresh(){
                       
                         horizon[0]->set_xy (i, i-64., -32.*(x-xc)/xr);
                 }
+                xrms /= SCOPE_N;
+                xrms = sqrt(xrms);
                 scope_max[0] = 0.9*scope_max[0] + 0.1*xmax;
                 scope_min[0] = 0.9*scope_min[0] + 0.1*xmin;
                
@@ -623,7 +629,8 @@ gint ProbeIndicator::refresh(){
                 probe->set_mark_pos (m2,  lower);
 
                 k=0;
-                run_fft (SCOPE_N, &scope[0][0], &scope[2][0], 10./32768, 10., 1.0);
+                //run_fft (SCOPE_N+1, &scope[0][0], &scope[2][0], 1e-1810./32768, 10., 1.0);
+                run_fft (SCOPE_N+1, &scope[0][0], &scope[2][0], 1e-18, 10., 1.0);
                 for(int i=0; i<128; ++i, tics+=1./128.){
                         gfloat xr,xc;
                         gfloat x=0.;
@@ -634,7 +641,7 @@ gint ProbeIndicator::refresh(){
                         }
                         //x /= dec;
                         //g_print ("%g ", x);
-                        horizon[2]->set_xy (i, i-64., -32.*x/160.); // x: 0..-70db
+                        horizon[2]->set_xy (i, i-64., -32.*x/1000.); // x: 0..-70db
                 }
 
                 
@@ -663,6 +670,8 @@ gint ProbeIndicator::refresh(){
 
 
                 gchar *tmp = NULL;
+                if (modes & SCOPE_ON)
+                        y = xrms/gapp->xsm->Inst->nAmpere2V(1.);
                 if (modes & SCOPE_DBG){
                         if (fabs(y) < 0.25)
                                 tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g : %g\n%g : %g",

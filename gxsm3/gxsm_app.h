@@ -220,7 +220,7 @@ public:
                 }
                 else
                         gtk_statusbar_push(GTK_STATUSBAR (appbar), appbar_ctx_id, mld);
-                check_events();
+                check_events_self();
         };
         void ClearStatus(){
                 gtk_statusbar_remove_all (GTK_STATUSBAR (appbar), appbar_ctx_id);

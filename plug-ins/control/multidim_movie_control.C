@@ -362,7 +362,7 @@ void Multidim_Movie_Control::l_play (GtkWidget *w, Multidim_Movie_Control *mmc){
 			mmc->update ();
 			usleep ((unsigned long)(mmc->frame_delay * 1e3));
 		}
-		gapp->check_events ();
+		gapp->check_events_self (); // quiet
 
 		if (!mmc->stop_play_layer)
 			l_play (NULL, mmc);
@@ -421,7 +421,7 @@ void Multidim_Movie_Control::t_play (GtkWidget *w, Multidim_Movie_Control *mmc){
 			mmc->update ();
 			usleep ((unsigned long)(mmc->frame_delay * 1e3));
 		}
-		gapp->check_events ();
+		gapp->check_events_self (); // quiet
 
 		if (!mmc->stop_play_time)
 			t_play (NULL, mmc);

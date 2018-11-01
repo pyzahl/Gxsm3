@@ -1128,7 +1128,7 @@ int rhk_ScanControl::prepare_to_start_scan (SCAN_DT_TYPE st){
 	scan_flag = SCAN_FLAG_RUN;
 
 	gapp->SetStatus ("Starting Scan: Ch.Setup");
-	gapp->check_events ();
+	gapp->check_events ("Scan Start Channel Setup");
     
 	// update hardware parameters
 	this->updateRHK();
@@ -1485,7 +1485,7 @@ int rhk_ScanControl::do_scan (){
 			do_scanline ();
 			++line;
 		}
-		gapp->check_events();
+		gapp->check_events_self();
 	}
 
 	// finish scan
@@ -1555,7 +1555,7 @@ int rhk_ScanControl::do_hscapture (){
 		if (scan_flag!=SCAN_FLAG_STOP) {
 		line = -1;
 		do_scanline ();
-		gapp->check_events();
+		gapp->check_events_self();
 	}
 
 	gapp->xsm->hardware->EndScan2D ();

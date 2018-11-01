@@ -406,7 +406,7 @@ void sranger_hwi_spm::EndScan2D(){
 	// wait until ready
 	do {
 		usleep (20000); // release cpu time
-		gapp->check_events (); // do not lock
+		gapp->check_events ("Returning tip to home..."); // do not lock
 		DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
 		sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
 	} while (dsp_scan.pflg);
@@ -693,7 +693,7 @@ void sranger_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob[MAX
 	// wait for data, updated display, data move is done in background by the fifo read thread
 	do {
 		usleep (20000); // release cpu time
-		gapp->check_events (); // do not lock
+		gapp->check_events_self(); // do not lock, quite
 		DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
 		if (ydir > 0 && yindex <= fifo_data_y_index) break;
 		if (ydir < 0 && yindex >= fifo_data_y_index) break;

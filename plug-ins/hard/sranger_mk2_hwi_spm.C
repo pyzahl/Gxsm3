@@ -1254,7 +1254,7 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 	// wait for data, updated display, data move is done in background by the fifo read thread
 	do {
 	        usleep ((int)us_per_line < 20000 ? (int)us_per_line : 20000); // release cpu time
-		gapp->check_events (); // do not lock
+		gapp->check_events_self (); // do not lock, quite
 		DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
 		if (ydir > 0 && yindex <= fifo_data_y_index) break;
 		if (ydir < 0 && yindex >= fifo_data_y_index) break;

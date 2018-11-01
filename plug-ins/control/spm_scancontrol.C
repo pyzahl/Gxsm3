@@ -1370,7 +1370,7 @@ int SPM_ScanControl::prepare_to_start_scan (SCAN_DT_TYPE st){
 	scan_flag = SCAN_FLAG_RUN;
 
 	gapp->SetStatus ("Starting Scan: Ch.Setup");
-	gapp->check_events ();
+	gapp->check_events ("Scan Channel Setup");
     
 	// setup scan size
 	gapp->xsm->hardware->SetDxDy (
@@ -1659,7 +1659,13 @@ int SPM_ScanControl::do_scan (int l){
 		PI_DEBUG (DBG_L2, "do_scan scan in progress, exiting.");
 		return FALSE;
 	}
+        if (! gapp->xsm->hardware->RTQuery_clear_to_start_scan ()){
+                gapp->monitorcontrol->LogEvent ("Start Scan", "Instrument is busy with VP or conflciting task: skipping requst.", 3);
+                g_warning ("Start Scan: Instrument is busy with VP or conflciting task. Skipping.");
+                return FALSE;
+        }
 
+        
 	switch (scan_dir){
 	case SCAN_DIR_TOPDOWN: 
 		last_scan_dir = SCAN_DIR_TOPDOWN;
@@ -1804,7 +1810,7 @@ int SPM_ScanControl::do_scan (int l){
 			// skip to next line
 			last_scan_dir == SCAN_DIR_TOPDOWN ? ++line : --line;
 		}
-		gapp->check_events();
+		gapp->check_events_self (); // be quiet, longer tast
 	}
 	
 	// finish scan
@@ -1909,7 +1915,7 @@ int SPM_ScanControl::do_hscapture (){
 		// execute high speed capture scan (line = -1 indicates this mode)
 		line = -1;
 		do_scanline ();
-		gapp->check_events ();
+		gapp->check_events_self (); // be quiet, longer task
 	}
 
 	gapp->xsm->hardware->EndScan2D ();

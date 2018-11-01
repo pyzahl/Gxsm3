@@ -2718,12 +2718,10 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         gapp->progress_info_new ("DigiFilter Convolute", 1+(int)max_jobs, GCallback (cancel_callback), &stop_flag, false);
         gapp->progress_info_set_bar_fraction (0.1, 2);
         gapp->progress_info_set_bar_text ("Setup", 2);
-        gapp->check_events ();
 
         InitializeKernel ();
         
         gapp->progress_info_set_bar_fraction (0.3, 2);
-        gapp->check_events ();
         
         if(Src->data->GetNx()<1 && Src->data->GetNy()<1)
                 return FALSE;
@@ -2745,7 +2743,6 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                 }
 
         gapp->progress_info_set_bar_fraction (0.4, 2);
-        gapp->check_events ();
 
         // edge top / bottom and oberserve shift
         for(i=0;i<ms;i++){
@@ -2756,7 +2753,6 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
         x.data->CopyFrom(Src->data, 0,mm-2, ns,mm+ms-1 ,nn, 1, true);
         
         gapp->progress_info_set_bar_fraction (0.5, 2);
-        gapp->check_events ();
 
         // corners
         for(i=0;i<ms;i++)
@@ -2767,7 +2763,6 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                         x.data->Z(Src->data->Z(nn-1,mm-1), nn+ns+j,mm+ms+i);
                 }
         gapp->progress_info_set_bar_fraction (0.8, 2);
-        gapp->check_events ();
 
 // #define SAVECONVOLSRC
 #ifdef  SAVECONVOLSRC
@@ -2854,7 +2849,6 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                         tpi[jobno] = g_thread_new ("mem2d_digi_filter_convolve_thread", mem2d_digi_filter_convolve_thread, &job[jobno]);
                 }
                 // std::cout << "Waiting for all threads to complete." << std::endl;
-                gapp->check_events ();
         
                 for (int running=1; running;){
                         running=0;
@@ -2865,7 +2859,6 @@ gboolean MemDigiFilter::Convolve(Mem2d *Src, Mem2d *Dest){
                                 gchar *info = g_strdup_printf ("ConvJob %d", jobno+1);
                                 gapp->progress_info_set_bar_text (info, jobno+2);
                                 g_free (info);
-                                gapp->check_events ();
                         }
                 }
         

@@ -105,6 +105,11 @@ public:
 	virtual gint RTQuery (const gchar *property, gchar **val) { return FALSE; };
 	virtual gint RTQuery (const gchar *property, int n, gfloat *data) { return FALSE; };
 
+	/* high level calls for instrtument condition checks */
+	virtual gint RTQuery_clear_to_start_scan (){ double v1,v2,v3; int flags; RTQuery("s", v1,v2,v3); flags=(int)v1; return (flags&(6|8|16|128)) ? 0:1; };
+	virtual gint RTQuery_clear_to_start_probe (){  double v1,v2,v3; int flags; RTQuery("s", v1,v2,v3); flags=(int)v1; return (flags&(6|8|16|128)) ? 0:1; };
+	virtual gint RTQuery_clear_to_move_tip (){  double v1,v2,v3; int flags; RTQuery("s", v1,v2,v3); flags=(int)v1; return (flags&(8)) ? 0:1; };
+
 	virtual double GetUserParam (gint n, gchar *id=NULL);
 	virtual gint   SetUserParam (gint n, gchar *id=NULL, double value=0.);
 
