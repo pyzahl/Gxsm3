@@ -28,10 +28,15 @@
 #include <math.h>
 #include "cairo_item.h"
 
+# include <complex>
+# include <fftw3.h>
+#define c_re(c) ((c)[0])
+#define c_im(c) ((c)[1])
+
+
 #define SCOPE_ON  1
 #define SCOPE_FFT 2
 #define SCOPE_DBG 256
-
 
 class hud_object {
 public:
@@ -250,6 +255,63 @@ public:
         void start ();
         void stop ();
 
+        gint run_fft (gint len, gfloat *data, gfloat *psd_db, double min, double max, double mu=1.){
+                static gint n=0;
+                static double *in=NULL;
+                static double *out=NULL;
+                //static fftw_complex *out=NULL;
+                static fftw_plan plan=NULL;
+
+                if (n != len || !in || !out || !plan){
+                        if (plan){
+                                fftw_destroy_plan (plan); plan=NULL;
+                        }
+                        // free temp data memory
+                        if (in) delete[] in; in=NULL;
+                        if (out) delete[] out; out=NULL;
+                        n=0;
+                        if (len < 2) // clenaup only, exit
+                                return 0;
+
+                        n = len;
+                        // get memory for complex data
+                        in  = new double [n];
+                        //out = new fftw_complex [n];
+                        out = new double [n];
+
+                        // create plan for fft
+                        //plan = fftw_plan_dft_r2c_1d (n, in, out, FFTW_ESTIMATE);
+                        plan = fftw_plan_r2r_1d (n, in, out, FFTW_REDFT00, FFTW_ESTIMATE);
+                        if (plan == NULL)
+                                return -1;
+                }
+                        
+                // prepare data for fftw
+                for (int i = 0; i < n; ++i)
+                        in[i] = data[i];
+
+                //g_print("FFTin %g",in[0]);
+                
+                // compute transform
+                fftw_execute (plan);
+
+                //double N=2*(n-1);
+                double scale = 1./max;
+                double db=0.;
+                int k=0;
+                for (int i = n/2+1; i >= 0; --i, ++k){
+                        //db = scale * (c_re(out[i])*c_re(out[i]) + c_im(out[i])*c_im(out[i]));
+                        db = scale * out[i];
+                        if (db > min)
+                                psd_db[k] = (1.-mu)*psd_db[k] + mu*20.*log(db);
+                        else
+                                psd_db[k] = (1.-mu)*psd_db[k] + mu*20.*log(min);
+                        //g_print("FFTout%i %g * %g %g dB\n",i,data[i], db, psd_db[i]);
+
+                }
+                return 0;
+        };
+        
 private:  
         gint       modes;
         
@@ -266,5 +328,5 @@ private:
         cairo_item_arc *fpos, *fneg, *fpos2, *fneg2;
         cairo_item_path_closed *tip;
         cairo_item_path_closed *m1, *m2;
-        cairo_item_path *horizon[2];
+        cairo_item_path *horizon[3];
 };

@@ -352,8 +352,13 @@ ProbeIndicator::ProbeIndicator (){
 
         horizon[0]=probe->add_horizon ("H0", 0.0, 0.0, 128);
         probe->set_horizon_color(horizon[0], CAIRO_COLOR_RED_ID);
+
         horizon[1]=probe->add_horizon ("H1", 0.0, 0.0, 128);
- 
+
+        horizon[2]=probe->add_horizon ("H2", 0.0, 0.0, 128);
+        probe->set_horizon_color(horizon[2], CAIRO_COLOR_RED_ID);
+
+        
 	//probe->queue_update (canvas);
         
 	info = new cairo_item_text (60.0, 35.0, "Probe HUD");
@@ -373,6 +378,7 @@ ProbeIndicator::~ProbeIndicator (){
         PI_DEBUG (DBG_L4, "ProbeIndicator::~ProbeIndicator -- stop_tip_monitor RTQuery");
 
 	stop ();
+        run_fft (0, NULL, NULL, 0.,0.);
 
         UNREF_DELETE_CAIRO_ITEM (probe, canvas);
         UNREF_DELETE_CAIRO_ITEM (info, canvas);
@@ -469,6 +475,7 @@ gboolean  ProbeIndicator::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, 
 	pv->info->draw (cr);
 
         cairo_restore (cr);
+        return TRUE;
 }
  
 
@@ -601,15 +608,12 @@ gint ProbeIndicator::refresh(){
                                 xmax = x;
                         if (x<xmin)
                                 xmin = x;
-
-                        x -= xc;
-                        x *= 32./xr;
-                        
-                        horizon[0]->set_xy (i, i-64., x);
+                      
+                        horizon[0]->set_xy (i, i-64., -32.*(x-xc)/xr);
                 }
                 scope_max[0] = 0.9*scope_max[0] + 0.1*xmax;
                 scope_min[0] = 0.9*scope_min[0] + 0.1*xmin;
-
+               
                 Ilgmp = log10 (fabs(1000.*scope_max[0]/dec / gapp->xsm->Inst->nAmpere2V(1.)) + 1.0);
                 Ilgmi = log10 (fabs(1000.*scope_min[0]/dec / gapp->xsm->Inst->nAmpere2V(1.)) + 1.0);
                 double upper=25.*(scope_max[0] > 0.? Ilgmp : -Ilgmp);
@@ -617,8 +621,24 @@ gint ProbeIndicator::refresh(){
                 probe->set_indicator_val (ipos2, 100.+upper, lower-upper);
                 probe->set_mark_pos (m1,  upper);
                 probe->set_mark_pos (m2,  lower);
-                               
-                xmax=xmin=scope[1][0];
+
+                k=0;
+                run_fft (SCOPE_N, &scope[0][0], &scope[2][0], 10./32768, 10., 1.0);
+                for(int i=0; i<128; ++i, tics+=1./128.){
+                        gfloat xr,xc;
+                        gfloat x=0.;
+                        for (int j=0; j<dec/2; ++j, ++k){
+                                if (x > scope[2][k])
+                                        x = scope[2][k];
+                                //x += scope[2][k];
+                        }
+                        //x /= dec;
+                        //g_print ("%g ", x);
+                        horizon[2]->set_xy (i, i-64., -32.*x/160.); // x: 0..-70db
+                }
+
+                
+                xmax=xmin=scope[1][0]*dec;
                 k=0;
                 xc = 0.5*(scope_max[1]+scope_min[1]);
                 xr = scope_max[1]-scope_min[1];
@@ -636,10 +656,7 @@ gint ProbeIndicator::refresh(){
                         if (x<xmin)
                                 xmin = x;
 
-                        x -= xc;
-                        x *= 32./20.; // xr is too jumpy ... fixed 20A
-                        
-                        horizon[1]->set_xy (i, i-64., x); // -100*z/max_z);
+                        horizon[1]->set_xy (i, i-64., 32.*(x-xc)/20.); // xr is too jumpy ... fixed 20A
                 }
                 scope_max[1] = 0.9*scope_max[1] + 0.1*xmax;
                 scope_min[1] = 0.9*scope_min[1] + 0.1*xmin;
