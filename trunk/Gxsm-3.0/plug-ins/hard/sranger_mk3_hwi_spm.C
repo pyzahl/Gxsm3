@@ -832,6 +832,12 @@ void sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
 	AREA_SCAN_MK3 dsp_scan;
 	PROBE_MK3 dsp_probe;
 
+        if (! RTQuery_clear_to_move_tip ()){
+                gapp->monitorcontrol->LogEvent ("MovetoSXY", "Instrument is busy with VP or conflciting task: skipping requst.", 3);
+                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- Instrument is busy with VP or conflciting task. Skipping.");
+                return;
+        }
+        
         // make sure no conflicts
 	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
         sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
@@ -943,6 +949,7 @@ void sranger_mk3_hwi_spm::EndScan2D(){
 		usleep (20000); // give some time
 		sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
 		CONV_32 (dsp_scan.pflg);
+                gapp->check_events ("Returning tip to home..."); // do not lock [added new]
 	} while (dsp_scan.pflg && --i); // check complete and timeout ~4s
 
         if (!i)
@@ -1486,7 +1493,7 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 	// wait for data, updated display, data move is done in background by the fifo read thread
 	do {
 	        usleep ((int)us_per_line < 10000 ? (int)us_per_line : 10000); // release cpu time
-		gapp->check_events (); // do not lock
+		gapp->check_events_self (); // do not lock, quiete
 		DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
 		if (ydir > 0 && yindex <= fifo_data_y_index) break;
 		if (ydir < 0 && yindex >= fifo_data_y_index) break;

@@ -285,10 +285,16 @@ public:
                         if (plan == NULL)
                                 return -1;
                 }
-                        
+
+                
+                // prepare data for fftw
+                double x=0.;
+                for (int i = 0; i < n; ++i)
+                        x+=data[i];
+                x/=n;
                 // prepare data for fftw
                 for (int i = 0; i < n; ++i)
-                        in[i] = data[i];
+                        in[i] = (data[i]-x)*sin(i*M_PI/n);
 
                 //g_print("FFTin %g",in[0]);
                 
@@ -296,17 +302,16 @@ public:
                 fftw_execute (plan);
 
                 //double N=2*(n-1);
-                double scale = 1./max;
+                double scale = 1./(max*2*(n-1));
                 double db=0.;
-                int k=0;
-                for (int i = n/2+1; i >= 0; --i, ++k){
+                for (int i = 0; i <n; ++i){
                         //db = scale * (c_re(out[i])*c_re(out[i]) + c_im(out[i])*c_im(out[i]));
                         db = scale * out[i];
                         if (db > min)
-                                psd_db[k] = (1.-mu)*psd_db[k] + mu*20.*log(db);
+                                psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(db);
                         else
-                                psd_db[k] = (1.-mu)*psd_db[k] + mu*20.*log(min);
-                        //g_print("FFTout%i %g * %g %g dB\n",i,data[i], db, psd_db[i]);
+                                psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(min);
+                        //g_print("FFTout[%i] %g W %g   * %g %g dB\n",i,data[i],in[i], db, psd_db[i]);
 
                 }
                 return 0;

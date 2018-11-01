@@ -849,7 +849,8 @@ public:
                                                int *tnadd=NULL, int *vnadd=NULL,
                                                int *crop_window_xy=NULL, gboolean crop=FALSE);
         
-	inline void check_events(){ while(gtk_events_pending()) gtk_main_iteration(); };
+	inline void check_events(const gchar *info=NULL){ progress_info_new (info?info:"Instrument Busy",1,NULL, NULL, TRUE);  while(gtk_events_pending()) gtk_main_iteration(); progress_info_close (); };
+	inline void check_events_self(){ while(gtk_events_pending()) gtk_main_iteration(); };
 
 /* FixMe !!!! */
 	void flash(const char *mld){

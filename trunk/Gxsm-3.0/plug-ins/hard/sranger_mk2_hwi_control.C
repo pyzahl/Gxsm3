@@ -3946,12 +3946,10 @@ int DSPControl::fast_scan_callback(GtkWidget *widget, DSPControl *dspc){
 int DSPControl::check_vp_in_progress (const gchar *extra_info){
 	double a,b,c;
         PI_DEBUG_GP (DBG_L4, "%s \n",__FUNCTION__);
-	sranger_common_hwi->RTQuery ("s", a,b,c);
-	int probe_pflg = (int)a;
-	if ((probe_pflg>>3) & 1){
+	if (! sranger_common_hwi->RTQuery_clear_to_start_probe ()){
 	
                 GtkDialogFlags flags =  (GtkDialogFlags) (GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT);
-                GtkWidget *dialog = gtk_dialog_new_with_buttons (N_("Attention -- VP in progress"),
+                GtkWidget *dialog = gtk_dialog_new_with_buttons (N_("Attention -- VP or Scan in progress"),
                                                                  GTK_WINDOW (gapp->get_app_window ()),
 								 flags,
                                                                  _("_OK"),
@@ -3967,7 +3965,7 @@ int DSPControl::check_vp_in_progress (const gchar *extra_info){
                 
                 else
                         gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area (GTK_DIALOG(dialog))), 
-                                           gtk_label_new (N_("Vector Probe in progress.\n"
+                                           gtk_label_new (N_("Vector Probe or Scan in progress.\n"
                                                              "Cancel request and wait or force restart (OK)?\n"
                                                              "Warning: overriding this this may lead to unpredicatble results.")), 
                                            TRUE, TRUE, GXSM_WIDGET_PAD);

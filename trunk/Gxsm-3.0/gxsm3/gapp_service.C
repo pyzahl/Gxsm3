@@ -542,7 +542,7 @@ GtkWidget* GnomeAppService::progress_info_new (const gchar *title, gint levels, 
         }
 
 	gtk_widget_show_all (progress_dialog);
-	check_events();
+	check_events_self();
 	return progress_dialog;
 }
 
@@ -553,7 +553,7 @@ int GnomeAppService::progress_info_set_bar_fraction (gdouble fraction, gint leve
 	if (progress_bar[level-1] && fraction >= 0.)
 		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (progress_bar[level-1]), fraction);
 
-	check_events();
+	check_events_self();
 	return 0;
 }
 
@@ -566,7 +566,7 @@ int GnomeAppService::progress_info_set_bar_pulse (gint level, gdouble fraction){
 			gtk_progress_bar_set_pulse_step (GTK_PROGRESS_BAR (progress_bar[level-1]), fraction);
 		else
 			gtk_progress_bar_pulse (GTK_PROGRESS_BAR (progress_bar[level-1]));
-		check_events();
+		check_events_self();
 	}
 	return 0;
 }
@@ -580,7 +580,7 @@ int GnomeAppService::progress_info_set_bar_text (const gchar* text, gint level){
                 gtk_progress_bar_set_show_text (GTK_PROGRESS_BAR (progress_bar[level-1]), TRUE);
         }
 
-	check_events();
+	check_events_self();
 	return 0;
 }
 
@@ -593,7 +593,7 @@ int GnomeAppService::progress_info_add_info (const gchar* info){
 	gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area (GTK_DIALOG (progress_dialog))), label, 
                             TRUE, TRUE, GXSM_WIDGET_PAD);
 
-	check_events ();
+	check_events_self();
 	return 0;
 }
 

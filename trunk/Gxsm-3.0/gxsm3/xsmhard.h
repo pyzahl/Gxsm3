@@ -110,6 +110,11 @@ class XSM_Hardware{
 	virtual gint RTQuery (const gchar *property, int n, gfloat *data) { return FALSE; };
 	virtual gint RTQuery () { return y_current; }; // actual progress on scan -- y-index mirror from FIFO read, etc. -- returns -1 if not available
 
+	/* high level calls for instrtument condition checks */
+	virtual gint RTQuery_clear_to_start_scan (){ return 1; };
+	virtual gint RTQuery_clear_to_start_probe (){ return 1; };
+	virtual gint RTQuery_clear_to_move_tip (){ return 1; };
+	
 	/* Methods for future use */
 	virtual gchar* InqeueryUserParamId (gint n) { return NULL; };
 	virtual gchar* InqeueryUserParamDescription (gint n) { return NULL; };

@@ -330,7 +330,7 @@ int DSPControl::Probing_graph_callback( GtkWidget *widget, DSPControl *dspc, int
 
 	XSM_DEBUG_PG ("Pobing_graph_callback lock?" );
 
-	while (	dspc->pv_lock ) gapp->check_events ();
+	while (	dspc->pv_lock ) gapp->check_events_self (); // quiet
 
 	XSM_DEBUG_PG ("Pobing_graph_callback data-ready?" );
 

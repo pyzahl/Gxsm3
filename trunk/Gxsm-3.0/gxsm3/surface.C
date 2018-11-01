@@ -620,7 +620,7 @@ int Surface::load(const char *rname){
 		clock_t t=clock()+xsmres.LoadDelay*CLOCKS_PER_SEC/10;
 		ActiveScan->auto_display ();
 		do {
-			gapp->check_events();
+			gapp->check_events_self();
 		} while(t < clock());
 	} else {
                 ActiveScan->draw();
@@ -1360,8 +1360,6 @@ void Surface::SetMasterScan(Scan *ms){
 // //  				XSM_DEBUG (DBG_L2,  "-Original:" << "nx:" << Original->data.s.nx << " GetNx:" << Original->mem2d->GetNx() );
 // //  				XSM_DEBUG (DBG_L2,  "-Icon    :" << "nx:" << Icon->data.s.nx << " GetNx:" << Icon->mem2d->GetNx() );
 // //  				// [5] "Scaling": -a
-// //  
-// //  				//	gapp->check_events();
 // //  
 // //  				epsf->putgrey(Original, Icon->mem2d, mid->options[MkIconOpt_Scaling] == 'a', FALSE);
 // //  				epsf->endimage();
