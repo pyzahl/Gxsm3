@@ -293,9 +293,15 @@ public:
                         x+=data[i];
                 x/=n;
                 // prepare data for fftw
-                for (int i = 0; i < n; ++i)
-                        in[i] = (data[i]-x)*sin(i*M_PI/n);
-
+                double s=2.*M_PI/(n-1);
+                double a0=0.54;
+                double a1=1.-a0;
+                int n2=n/2;
+                for (int i = 0; i < n; ++i){
+                        double w=a0+a1*cos((i-n2)*s);
+                        in[i] = (data[i]-x)*w;
+                        //in[i] = sin(10.*i*M_PI/n)*w; //*sin((double)i*M_PI/n);
+                }
                 //g_print("FFTin %g",in[0]);
                 
                 // compute transform
@@ -304,14 +310,15 @@ public:
                 //double N=2*(n-1);
                 double scale = 1./(max*2*(n-1));
                 double db=0.;
-                for (int i = 0; i <n; ++i){
+                for (int i=0; i<n; ++i){
                         //db = scale * (c_re(out[i])*c_re(out[i]) + c_im(out[i])*c_im(out[i]));
                         db = scale * out[i];
-                        if (db > min)
-                                psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(db);
-                        else
-                                psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(min);
-                        //g_print("FFTout[%i] %g W %g   * %g %g dB\n",i,data[i],in[i], db, psd_db[i]);
+                        psd_db[i] = db*1000;
+                        //if (db > min)
+                        //        psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(db);
+                        //else
+                        //        psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(min);
+                        //g_print("%d %g %g %g %g\n",i,data[i],in[i], db, psd_db[i]);
 
                 }
                 return 0;
