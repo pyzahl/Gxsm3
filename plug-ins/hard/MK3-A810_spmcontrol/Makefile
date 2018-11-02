@@ -53,7 +53,7 @@ CS           = $(C6X_BIN_DIR)/./strip6x
 ## !!!! WARNING: use on your own risc in any aspect. !!!!
 ##
 CFLAGS       = -O3 -mv 6400+ --mem_model:const=far --mem_model:data=far -i $(C6X_C_DIR) -c -DDSP_CC
-CLFLAGS      = --stack_size=0x1000 -i $(C6X_LIB_DIR) -c
+CLFLAGS      = --stack_size=0x1000 -i $(C6X_LIB_DIR) -cr
 LIBS         = CMD_SR3.cmd SR3PRO_A810Driver.lib PAC_pll.lib
 
 C_OBJECTS = FB_spm.obj dataprocess.obj \

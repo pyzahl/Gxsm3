@@ -85,6 +85,22 @@ DSP_INT32  s_xymult = 0;
 DSP_INT32  d_tmp=0;
 DSP_INT32  tmp_hrbits = 0;
 
+DSP_UINT8 recorder_decc = 0; // decimation count
+DSP_UINT8 recorder_deccl = 0; // decimation count last
+DSP_UINT16 recorder_deci = 0; // decimation data index
+DSP_INT40  recorder_dec_sum = 0L;
+DSP_INT32  recorder_s1_buffer[0x100] = {
+        0,0,0,0, 0,0,0,0,
+        0,0,0,0, 0,0,0,0,
+        0,0,0,0, 0,0,0,0,
+        0,0,0,0, 0,0,0,0,
+
+        0,0,0,0, 0,0,0,0,
+        0,0,0,0, 0,0,0,0,
+        0,0,0,0, 0,0,0,0,
+        0,0,0,0, 0,0,0,0
+};
+
 //#define SIGMA_DELTA_HR_MASK_FAST
 #ifdef SIGMA_DELTA_HR_MASK_FAST  // Fast HR Matrix -- good idea, but performance/distorsion issues with the A810 due to the high dynamic demands
 int     sigma_delta_hr_mask[SIGMA_DELTA_LEN * SIGMA_DELTA_LEN] = { 
@@ -416,7 +432,20 @@ void dataprocess()
 			} else { // manage trigger -- ONLY IF PLL OFF AVAILABLE
                                 check_trigger_levels();
                         }
-		} 
+                }
+                // decimated ring buffer
+                recorder_s1_buffer[recorder_decc] = (DSP_INT32)pSignal1[0];
+                recorder_dec_sum += (DSP_INT32)pSignal1[0];
+                recorder_deccl = recorder_decc+1; // uchar loops at 256!!
+                recorder_dec_sum -= recorder_s1_buffer[recorder_deccl];
+                recorder_decc++;
+                if (recorder_decc==0){
+                        Signal1[0x80000+recorder_deci] = recorder_dec_sum >> 8; // CIC
+                        Signal2[0x80000+recorder_deci] = pSignal2[0];
+                        Signal1[0x7ffff]=recorder_deci;
+                        recorder_deci++;
+                        recorder_deci &= 0x3ffff;
+                }
 	}
 #endif
 

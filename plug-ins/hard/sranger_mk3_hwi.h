@@ -230,6 +230,8 @@ public:
 	virtual int write_pll (PAC_control &pll, PLL_GROUP group, int enable=0);
 	virtual int read_pll_signal1 (gfloat *signal, int n, double scale=1., gint flag=FALSE);
 	virtual int read_pll_signal2 (gfloat *signal, int n, double scale=1., gint flag=FALSE);
+	virtual int read_pll_signal1dec (gfloat *signal, int n, double scale=1.);
+	virtual int read_pll_signal2dec (gfloat *signal, int n, double scale=1.);
 
 	void set_scope (int s1, int s2);
 	void set_blcklen (int len=1024);

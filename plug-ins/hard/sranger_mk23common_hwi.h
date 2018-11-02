@@ -165,6 +165,8 @@ public:
 
 	virtual int read_pll_signal1 (gfloat *signal, int n, double scale=1., gint flag=FALSE){ return 0; };
 	virtual int read_pll_signal2 (gfloat *signal, int n, double scale=1., gint flag=FALSE){ return 0; };
+	virtual int read_pll_signal1dec (gfloat *signal, int n, double scale=1.){ return 0; };
+	virtual int read_pll_signal2dec (gfloat *signal, int n, double scale=1.){ return 0; };
 	virtual void set_blcklen (int len){};
 	virtual void set_scope (int s1, int s2){};
 	virtual void setup_step_response (double dPhase, double dAmplitude){};
