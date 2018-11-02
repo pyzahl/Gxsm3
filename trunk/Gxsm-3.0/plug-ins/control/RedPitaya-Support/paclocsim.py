@@ -151,7 +151,7 @@ class lms_f():
         self.time=0.0
         self.dt=1.0/frq
         self.fref=f0
-        self.tau_pac=self.dt/tau
+        self.mu=self.dt/tau
         self.iirf = iir_f
         self.errordet=0.0
         self.predict=0.0
@@ -169,7 +169,7 @@ class lms_f():
         # Compute d_mu_e  
 
         self.errordet = signal- self.predict
-        d_mu_e = self.errordet * self.tau_pac
+        d_mu_e = self.errordet * self.mu
 
         # Compute LMS
 
@@ -190,27 +190,26 @@ class lms_f():
 
 
 
-    
+fsample=124e6
 fref=2e6
 xx=1
-xx2=1.8
+xx2=2.0
 xx3=2.4
 ftest=fref*xx
 ftest2=fref*xx2
 ftest3=fref*xx3
-tau=0.4 #0.15 # 0.15
+tau0=0.055 #0.15 # 0.15
+taulck=0.01
 a1=0.2
 a2=0.0
 a3=0.0
-na=0.2
+na=0.0
 tscale=1
-pac = lms(fref, 124e6, tau*1e-6)
-lck = lockin(fref, 124e6, tau*1e-6)
-
 iir    = 5e-4;
 
-N=250*tscale
-M=2000
+N=1000*tscale
+M=1
+tau=tau0
 
 t=np.arange (N).astype(np.float)
 ts=np.arange (N).astype(np.float)
@@ -231,22 +230,45 @@ ar=np.arange (M).astype(np.float)
 lar=np.arange (M).astype(np.float)
 f=np.arange (M).astype(np.float)
 
-for k in range (0,M):
-    ff = float(k)/M
-    ff = pow(10., ff*2.5-2)
-    ftest = ff*fref
-    f[k]=ff
-    if k == M-1:
-        ftest=fref*0.99
+fsweep=False
+tausweep=True
 
+for k in range (0,M):
+    ftest = fref
+
+    if fsweep:
+        pac = lms(fref, fsample, tau*1e-6)
+        lck = lockin(fref, fsample, tau*1e-6)
+        ff = float(k)/M
+        ff = pow(10., ff*2.5-2)
+        ftest = ff*fref
+        f[k]=ff
+
+    if tausweep:
+        tau = tau0 + k*0.002
+        
+    if k == M-1:
+        ftest=fref
+        tau = tau0
+
+    pac = lms_f(fref,  fsample, tau*1e-6)
+    lck = lockin(fref,  fsample, taulck*1e-6)
+    sdphi=0.0
+    sdamp=0.0
     for i in range (0,N):
         #if i == 500:
         #    pac.dt = pac.dt*1.1
         #    lck.dt = lck.dt*1.1
+        if i>300 and i < 310:
+            sdamp=sdamp+0.1/10.
+
+        if i>400 and i < 410:
+            sdphi=sdphi+math.pi/90.
+
         wt=i*pac.dt*math.pi*2.*ftest
         wt2=i*pac.dt*math.pi*2.*ftest2
         wt3=i*pac.dt*math.pi*2.*ftest3
-        s[i]=a1*math.sin(wt) + a2*math.sin(wt2) + a3*math.sin(wt3) + na*randint(-1000, 1000)*1e-3 #+0.2*math.sin(wt/200)
+        s[i]=(a1+sdamp)*math.sin(wt+sdphi) + a2*math.sin(wt2) + a3*math.sin(wt3) + na*randint(-1000, 1000)*1e-3 #+0.2*math.sin(wt/200)
         sdc[i] = s[i]
         if i>1:
             sdc[i]=(1.-iir)*sdc[i-1]+iir*sdc[i]
@@ -265,6 +287,9 @@ for k in range (0,M):
 
     ar[k] = a[N-1]
     lar[k] = la[N-1]
+    if tausweep and k != M-1:
+        plt.plot (ts, a, label="LMS-ampl tau=%g"%tau)
+        plt.plot (ts, p, label="LMS-phase tau=%g"%tau)
  
 a[0]=0
 p[0]=0
@@ -291,8 +316,8 @@ plt.plot (ts, la, label="LCK-ampl")
 plt.plot (ts, lp, label="LCK-phase")
 #plt.plot (ts, x, label="LCK-X")
 #plt.plot (ts, y, label="LCK-Y")
-#plt.title ('PAConvergence LMS vs. LockIn Simulation tau: %g'%tau+'us f=%g'%fref+'Hz fs=x%g'%xx+'+x%g'%xx2+'+x%g'%xx3)
-plt.title ('PAConvergence LMS vs. LockIn Simulation tau: %g'%tau+'us f=%g'%fref+'Hz')
+#plt.title ('PAConvergence LMS vs. LockIn Simulation (124 MHz sampling) tau: %g'%tau+'us f=%g'%(fref*1e-6)+'MHz fs=x%g'%xx+'+x%g'%xx2+'+x%g'%xx3)
+plt.title ('PAConvergence LMS vs. LockIn Simulation (124 MHz sampling) tau: %g'%tau+'us f=%g'%(fref*1e-6)+'MHz')
 plt.grid (True)
 plt.legend()
 plt.show ()
@@ -306,11 +331,12 @@ plt.show ()
 #plt.legend()
 #plt.show ()
 
-plt.xlabel('Freq in Hz x F-ref')
-plt.plot (f, ar, label="LMS")
-plt.plot (f, lar, label="LockIn")
-#plt.plot (t, p, label="phase")
-#plt.title ('PAC LMS Simulation')
-plt.grid (True)
-plt.legend()
-plt.show ()
+if fsweep:
+    plt.xlabel('Freq in Hz x F-ref')
+    plt.plot (f, ar, label="LMS")
+    plt.plot (f, lar, label="LockIn")
+    #plt.plot (t, p, label="phase")
+    #plt.title ('PAC LMS Simulation')
+    plt.grid (True)
+    plt.legend()
+    plt.show ()

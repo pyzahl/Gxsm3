@@ -135,7 +135,7 @@
 #ifdef FB_SPM_VERSION
 #undef FB_SPM_VERSION
 #endif
-#define FB_SPM_VERSION   0x00003056 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_VERSION   0x00003057 /* FB_SPM main Version, BCD: 00.00 */
 #ifdef FB_SPM_DATE_YEAR
 #undef FB_SPM_DATE_YEAR
 #endif
@@ -143,7 +143,7 @@
 #ifdef FB_SPM_DATE_MMDD
 #undef FB_SPM_DATE_MMDD
 #endif
-#define FB_SPM_DATE_MMDD 0x00000104 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00001102 /* Date: Month/Day, BCD */
 
 #ifdef FB_SPM_FEATURES
 #undef FB_SPM_FEATURES
@@ -176,6 +176,8 @@
 typedef int            DSP_NINT;  // index, emumerations, counting, sizes
 typedef unsigned int   DSP_NUINT;
 typedef unsigned int   DSP_UINTA; // pointers, adresses, references
+typedef char           DSP_INT8;
+typedef unsigned char  DSP_UINT8;
 typedef short          DSP_INT16; // data
 typedef unsigned short DSP_UINT16;
 typedef int            DSP_INT32;

@@ -311,16 +311,18 @@ public:
                 //double N=2*(n-1);
                 //double scale = 1./(max*2*(n-1));
                 double scale = 5./(max*(n-1));
-                double db=0.;
+                double mag=0.;
                 for (int i=0; i<n; ++i){
-                        db = scale * sqrt(c_re(out[i])*c_re(out[i]) + c_im(out[i])*c_im(out[i]));
-                        //db = scale * out[i];
-                        //psd_db[i] = db;
-                        if (db > min)
-                                psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(db);
+                        mag = scale * sqrt(c_re(out[i])*c_re(out[i]) + c_im(out[i])*c_im(out[i]));
+                        //mag = scale * out[i];
+                        //psd_db[i] = mag;
+                        if (mag > min)
+                                //  psd_db[i] = gfloat((1.-mu)*(double)psd_db[i] + mu*20.*log(mag));
+                                psd_db[i] = gfloat(20.*log(mag));
                         else
-                                psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(min);
-                        //g_print("%d %g %g %g %g\n",i,data[i],in[i], db, psd_db[i]);
+                                psd_db[i] = -100.; //gfloat((1.-mu)*(double)psd_db[i] + mu*20.*log(min));
+
+                        //g_print("%d %g %g %g %g\n",i,data[i],in[i], mag, psd_db[i]);
 
                 }
                 return 0;
@@ -342,5 +344,5 @@ private:
         cairo_item_arc *fpos, *fneg, *fpos2, *fneg2;
         cairo_item_path_closed *tip;
         cairo_item_path_closed *m1, *m2;
-        cairo_item_path *horizon[3];
+        cairo_item_path *horizon[4];
 };

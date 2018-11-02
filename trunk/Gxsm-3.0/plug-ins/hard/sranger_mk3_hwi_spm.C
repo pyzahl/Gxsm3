@@ -375,6 +375,8 @@ gint  sranger_mk3_hwi_spm::RTQuery (const gchar *property, int n, gfloat *data){
         const gint64 max_age = 20000; // 20ms
         static gint64 time_of_last_reading1 = 0; // abs time in us
         static gint64 time_of_last_reading2 = 0; // abs time in us
+        static gint64 time_of_last_reading3 = 0; // abs time in us
+        static gint64 time_of_last_reading4 = 0; // abs time in us
         static gint64 time_of_last_trg = 0; // abs time in us
         static gint s1ok=0, s2ok=0;
 
@@ -398,6 +400,20 @@ gint  sranger_mk3_hwi_spm::RTQuery (const gchar *property, int n, gfloat *data){
 
                 double scale =  DSP32Qs15dot16TO_Volt;
                 s2ok=read_pll_signal2 (data, n, scale, 0);
+        }
+        // Signal1 deci 256
+        if ( property[1] == '3' && ((time_of_last_reading3+max_age) < g_get_real_time () || s2ok)){
+                time_of_last_reading3 = g_get_real_time ();
+
+                double scale =  DSP32Qs15dot16TO_Volt;
+                s2ok=read_pll_signal1dec (data, n, scale);
+        }
+        // Signal2 subsampled 256
+        if ( property[1] == '4' && ((time_of_last_reading4+max_age) < g_get_real_time () || s2ok)){
+                time_of_last_reading4 = g_get_real_time ();
+
+                double scale =  DSP32Qs15dot16TO_Volt;
+                s2ok=read_pll_signal2dec (data, n, scale);
         }
 }
 

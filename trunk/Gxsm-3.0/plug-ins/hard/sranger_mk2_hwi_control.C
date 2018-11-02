@@ -1245,19 +1245,22 @@ DSPControl::DSPControl () {
                 lockin_input[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_LOCKIN_B_INPUT_ID);
 
                 for (int jj=0; jj<4; ++jj){
-                        gchar *txt = g_strdup_printf ("Mixer Signal Input[%d] = %d -> %s", jj, mix_fbsource[jj], sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->label);
+                        const gchar *l =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->label;
+                        gchar *txt = g_strdup_printf ("Mixer Signal Input[%d] = %d -> %s", jj, mix_fbsource[jj], l ? l : "?E?");
                         PI_DEBUG_GP (DBG_L1, "%s\n", txt);
                         gapp->monitorcontrol->LogEvent ("MK3-SIGNAL-CONFIGURATION-INFO", txt);
                         g_free (txt);
                 }
                 for (int jj=0; jj<=6; ++jj){
-                        gchar *txt = g_strdup_printf ("Probe Signal Input[%d] = %d -> %s", jj, probe_source[jj], sranger_common_hwi->lookup_dsp_signal_managed (probe_source[jj])->label);
+                        const gchar *l = sranger_common_hwi->lookup_dsp_signal_managed (probe_source[jj])->label;
+                        gchar *txt = g_strdup_printf ("Probe Signal Input[%d] = %d -> %s", jj, probe_source[jj], l ? l : "?E?");
                         PI_DEBUG_GP (DBG_L1, "%s\n", txt);
                         gapp->monitorcontrol->LogEvent ("MK3-SIGNAL-CONFIGURATION-INFO", txt);
                         g_free (txt);
                 }
                 for (int jj=0; jj<2; ++jj){
-                        gchar *txt = g_strdup_printf ("LockIn Signal Input[%d] = %d -> %s", jj, lockin_input[jj], sranger_common_hwi->lookup_dsp_signal_managed (lockin_input[jj])->label);
+                        const gchar *l = sranger_common_hwi->lookup_dsp_signal_managed (lockin_input[jj])->label;
+                        gchar *txt = g_strdup_printf ("LockIn Signal Input[%d] = %d -> %s", jj, lockin_input[jj], l ? : "?E?"); 
                         PI_DEBUG_GP (DBG_L1, "%s\n", txt);
                         gapp->monitorcontrol->LogEvent ("MK3-SIGNAL-CONFIGURATION-INFO", txt);
                         g_free (txt);

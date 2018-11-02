@@ -3225,6 +3225,51 @@ int sranger_mk3_hwi_dev::read_pll_signal2 (gfloat *signal, int n, double scale, 
 	return -1;
 }
 
+int sranger_mk3_hwi_dev::read_pll_signal1dec (gfloat *signal, int n, double scale){
+	gint32 deci;
+        read_pll_array32 (dsp_pll.Signal1+4*0x7ffff, 1, &deci);
+        //g_print ("deci=%d %08x\n",deci, deci);
+        if (n > 0 && n <= 0x40000){
+                gint32 tmp_array[0x40000];
+                gint32 start = deci-n;
+                if (start > 0)
+                        read_pll_array32 (dsp_pll.Signal1+((0x80000+start)<<2), n, tmp_array);
+                else{
+                        gint n1 = -start;
+                        gint n2 = n-n1;
+                        read_pll_array32 (dsp_pll.Signal1+((0x80000+0x40000-n1)<<2), n1, tmp_array);
+                        read_pll_array32 (dsp_pll.Signal1+((0x80000+n2)<<2), n2, tmp_array+n1);
+                }
+                for (int i=0; i<n; ++i){
+                        signal[i] = (gfloat)tmp_array[i] * scale;
+                        //g_print ("%d %d\n", i,tmp_array[i]);
+                }
+        }
+	return -1;
+}
+
+int sranger_mk3_hwi_dev::read_pll_signal2dec (gfloat *signal, int n, double scale){
+	gint32 deci;
+        read_pll_array32 (dsp_pll.Signal1+4*0x7ffff, 1, &deci);
+        if (n > 0 && n <= 0x40000){
+                gint32 tmp_array[0x40000];
+                gint32 start = deci-n;
+                if (start > 0)
+                        read_pll_array32 (dsp_pll.Signal1+((0x80000+start)<<2), n, tmp_array);
+                else{
+                        gint n1 = -start;
+                        gint n2 = n-n1;
+                        read_pll_array32 (dsp_pll.Signal2+((0x80000+0x40000-n1)<<2), n1, tmp_array);
+                        read_pll_array32 (dsp_pll.Signal2+((0x80000+n2)<<2), n2, tmp_array+n1);
+                }
+                for (int i=0; i<n; ++i)
+                        signal[i] = (gfloat)tmp_array[i] * scale;
+        }
+	return -1;
+}
+
+
+
 int sranger_mk3_hwi_dev::write_pll (PAC_control &pll, PLL_GROUP group, int enable){
 	static int wait=0;
 	static int pll_old_init=1;
