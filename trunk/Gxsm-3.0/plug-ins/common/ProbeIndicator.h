@@ -258,8 +258,8 @@ public:
         gint run_fft (gint len, gfloat *data, gfloat *psd_db, double min, double max, double mu=1.){
                 static gint n=0;
                 static double *in=NULL;
-                static double *out=NULL;
-                //static fftw_complex *out=NULL;
+                //static double *out=NULL;
+                static fftw_complex *out=NULL;
                 static fftw_plan plan=NULL;
 
                 if (n != len || !in || !out || !plan){
@@ -276,12 +276,12 @@ public:
                         n = len;
                         // get memory for complex data
                         in  = new double [n];
-                        //out = new fftw_complex [n];
-                        out = new double [n];
+                        out = new fftw_complex [n];
+                        //out = new double [n];
 
                         // create plan for fft
-                        //plan = fftw_plan_dft_r2c_1d (n, in, out, FFTW_ESTIMATE);
-                        plan = fftw_plan_r2r_1d (n, in, out, FFTW_REDFT00, FFTW_ESTIMATE);
+                        plan = fftw_plan_dft_r2c_1d (n, in, out, FFTW_ESTIMATE);
+                        //plan = fftw_plan_r2r_1d (n, in, out, FFTW_REDFT00, FFTW_ESTIMATE);
                         if (plan == NULL)
                                 return -1;
                 }
@@ -300,7 +300,8 @@ public:
                 for (int i = 0; i < n; ++i){
                         double w=a0+a1*cos((i-n2)*s);
                         in[i] = (data[i]-x)*w;
-                        //in[i] = sin(10.*i*M_PI/n)*w; //*sin((double)i*M_PI/n);
+                        //in[i] = min*sin(100.*i*M_PI/n)*w;
+                        //in[i] += max*sin(300.*i*M_PI/n)*w;
                 }
                 //g_print("FFTin %g",in[0]);
                 
@@ -308,16 +309,17 @@ public:
                 fftw_execute (plan);
 
                 //double N=2*(n-1);
-                double scale = 1./(max*2*(n-1));
+                //double scale = 1./(max*2*(n-1));
+                double scale = 5./(max*(n-1));
                 double db=0.;
                 for (int i=0; i<n; ++i){
-                        //db = scale * (c_re(out[i])*c_re(out[i]) + c_im(out[i])*c_im(out[i]));
-                        db = scale * out[i];
-                        psd_db[i] = db*1000;
-                        //if (db > min)
-                        //        psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(db);
-                        //else
-                        //        psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(min);
+                        db = scale * sqrt(c_re(out[i])*c_re(out[i]) + c_im(out[i])*c_im(out[i]));
+                        //db = scale * out[i];
+                        //psd_db[i] = db;
+                        if (db > min)
+                                psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(db);
+                        else
+                                psd_db[i] = (1.-mu)*psd_db[i] + mu*20.*log(min);
                         //g_print("%d %g %g %g %g\n",i,data[i],in[i], db, psd_db[i]);
 
                 }

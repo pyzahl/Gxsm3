@@ -629,8 +629,7 @@ gint ProbeIndicator::refresh(){
                 probe->set_mark_pos (m2,  lower);
 
                 k=0;
-                //run_fft (SCOPE_N+1, &scope[0][0], &scope[2][0], 1e-1810./32768, 10., 1.0);
-                run_fft (SCOPE_N+1, &scope[0][0], &scope[2][0], 1e-18, 10., 1.0);
+                run_fft (SCOPE_N+1, &scope[0][0], &scope[2][0], 1e-7, 10.,0.05);
                 for(int i=0; i<128; ++i, tics+=1./128.){
                         gfloat xr,xc;
                         gfloat x=0.;
@@ -641,7 +640,7 @@ gint ProbeIndicator::refresh(){
                         }
                         //x /= dec;
                         //g_print ("%g ", x);
-                        horizon[2]->set_xy (i, i-64., -32.*x/1000.); // x: 0..-70db
+                        horizon[2]->set_xy (i, i-64., -32.*x/150.); // x: 0..-96db
                 }
 
                 
