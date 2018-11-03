@@ -406,15 +406,16 @@ gint  sranger_mk3_hwi_spm::RTQuery (const gchar *property, int n, gfloat *data){
                 time_of_last_reading3 = g_get_real_time ();
 
                 double scale =  DSP32Qs15dot16TO_Volt;
-                s2ok=read_pll_signal1dec (data, n, scale);
+                s2ok=read_pll_signal1dec (data, n, scale, 1);
         }
         // Signal2 subsampled 256
         if ( property[1] == '4' && ((time_of_last_reading4+max_age) < g_get_real_time () || s2ok)){
                 time_of_last_reading4 = g_get_real_time ();
 
                 double scale =  DSP32Qs15dot16TO_Volt;
-                s2ok=read_pll_signal2dec (data, n, scale);
+                s2ok=read_pll_signal2dec (data, n, scale, 1);
         }
+        return 0;
 }
 
 
@@ -445,6 +446,7 @@ gint sranger_mk3_hwi_spm::SetUserParam (gint n, const gchar *id, double value){
                 else if (! strcmp (id, "ZADJ_HOLD"))
                         ExecCmd (DSP_CMD_ZPOS_ADJUST_HOLD);
         }
+        return 0;
 }
 
 

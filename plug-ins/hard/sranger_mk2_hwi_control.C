@@ -3500,6 +3500,7 @@ gint DSPControl::SetUserParam (gint n, gchar *id, double value){
 		break;
 	default: break;
 	}
+	return 0;
 }
 
 void DSPControl::update(){
@@ -3836,6 +3837,7 @@ int DSPControl::zpos_monitor_callback( GtkWidget *widget, DSPControl *dspc){
                         dspc->zpos_refresh_timer_id = 0;
                 }
         }
+        return 0;
 }
 
 int DSPControl::feedback_callback( GtkWidget *widget, DSPControl *dspc){
@@ -3987,11 +3989,13 @@ int DSPControl::check_vp_in_progress (const gchar *extra_info){
 int DSPControl::LockIn_read_callback( GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L4, "%s \n",__FUNCTION__);
 //	dspc->read_dsp_lockin (...);
+        return 0;
 }
 
 int DSPControl::LockIn_write_callback( GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L4, "%s \n",__FUNCTION__);
 //	dspc->write_dsp_lockin_probe_final (...);
+        return 0;
 }
 
 // PV write
@@ -4067,6 +4071,7 @@ int DSPControl::Probing_exec_IV_callback( GtkWidget *widget, DSPControl *dspc){
 
 int DSPControl::Probing_write_IV_callback( GtkWidget *widget, DSPControl *dspc){
         dspc->write_dsp_probe (0, PV_MODE_IV);
+        return 0;
 }
 
 int DSPControl::Probing_exec_FZ_callback( GtkWidget *widget, DSPControl *dspc){
@@ -4107,6 +4112,7 @@ int DSPControl::Probing_exec_FZ_callback( GtkWidget *widget, DSPControl *dspc){
 
 int DSPControl::Probing_write_FZ_callback( GtkWidget *widget, DSPControl *dspc){
         dspc->write_dsp_probe (0, PV_MODE_FZ);
+        return 0;
 }
 
 // PL
@@ -4150,6 +4156,7 @@ int DSPControl::Probing_exec_PL_callback( GtkWidget *widget, DSPControl *dspc){
 
 int DSPControl::Probing_write_PL_callback( GtkWidget *widget, DSPControl *dspc){
         dspc->write_dsp_probe (0, PV_MODE_PL);
+        return 0;
 }
 
 // LP
@@ -4192,6 +4199,7 @@ int DSPControl::Probing_exec_LP_callback( GtkWidget *widget, DSPControl *dspc){
 
 int DSPControl::Probing_write_LP_callback( GtkWidget *widget, DSPControl *dspc){
 	dspc->write_dsp_probe (0, PV_MODE_LP);
+        return 0;
 }
 
 // SP
@@ -4228,6 +4236,7 @@ int DSPControl::Probing_exec_SP_callback( GtkWidget *widget, DSPControl *dspc){
 
 int DSPControl::Probing_write_SP_callback( GtkWidget *widget, DSPControl *dspc){
         dspc->write_dsp_probe (0, PV_MODE_SP);
+        return 0;
 }
 
 // TS
@@ -4270,6 +4279,7 @@ int DSPControl::Probing_exec_TS_callback( GtkWidget *widget, DSPControl *dspc){
 
 int DSPControl::Probing_write_TS_callback( GtkWidget *widget, DSPControl *dspc){
         dspc->write_dsp_probe (0, PV_MODE_TS);
+        return 0;
 }
 
 // GVP
@@ -4313,6 +4323,7 @@ int DSPControl::Probing_exec_GVP_callback( GtkWidget *widget, DSPControl *dspc){
 
 int DSPControl::Probing_write_GVP_callback( GtkWidget *widget, DSPControl *dspc){
         dspc->write_dsp_probe (0, PV_MODE_GVP);
+        return 0;
 }
 
 // TK
@@ -4357,6 +4368,7 @@ int DSPControl::Probing_exec_TK_callback( GtkWidget *widget, DSPControl *dspc){
 int DSPControl::Probing_write_TK_callback( GtkWidget *widget, DSPControl *dspc){
 	dspc->dump_probe_hdr (); // TESTING
         dspc->write_dsp_probe (0, PV_MODE_TK);
+        return 0;
 }
 
 
@@ -4404,6 +4416,7 @@ int DSPControl::Probing_write_AX_callback( GtkWidget *widget, DSPControl *dspc){
 
 	// setup vector table
         dspc->write_dsp_probe (0, PV_MODE_AX);
+        return 0;
 }
 
 
@@ -4453,6 +4466,7 @@ int DSPControl::Probing_write_ABORT_callback( GtkWidget *widget, DSPControl *dsp
 
 	// setup vector table
         dspc->write_dsp_probe (0, PV_MODE_ABORT);
+        return 0;
 }
 
 
@@ -4504,6 +4518,7 @@ int DSPControl::choice_mixmode_callback (GtkWidget *widget, DSPControl *dspc){
 	dspc->updateDSP();
 
         PI_DEBUG_GP (DBG_L4, "%s **3 done\n",__FUNCTION__);
+        return 0;
 }
 
 int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
@@ -4544,6 +4559,7 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
 	      g_free (tmp);
 	}
 	PI_DEBUG_GP (DBG_L3, "MIX-c\n");
+        return 0;
 }
 
 int DSPControl::choice_vector_index_j_callback (GtkWidget *widget, DSPControl *dspc){
@@ -4554,6 +4570,7 @@ int DSPControl::choice_vector_index_j_callback (GtkWidget *widget, DSPControl *d
                 PI_DEBUG_GP (DBG_L3, "DSPControl::choice_vector_index_j_callback -- DSP_vpdata_ij[1]=%d",i);
         } else
                 g_warning ("DSPControl::choice_vector_index_j_callback -- ignoring: index < 0");
+        return 0;
 }
 
 void DSPControl::update_sourcesignals_from_DSP_callback (){
@@ -4701,6 +4718,7 @@ int DSPControl::choice_scansource_callback (GtkWidget *widget, DSPControl *dspc)
 							    sranger_common_hwi->lookup_dsp_signal_managed (si)->unit,
 							    sranger_common_hwi->lookup_dsp_signal_managed (si)->scale
 							    );
+        return 0;
 }
 
 int DSPControl::choice_prbsource_callback (GtkWidget *widget, DSPControl *dspc){
@@ -4788,6 +4806,7 @@ int DSPControl::choice_lcksource_callback (GtkWidget *widget, DSPControl *dspc){
 	PI_DEBUG_GP (DBG_L3, "LockIn-Input[%d]=0x%x  <== %s\n",channel,selection, sranger_common_hwi->dsp_signal_lookup_managed[selection].label);
 	sranger_common_hwi->change_signal_input(selection, DSP_SIGNAL_LOCKIN_A_INPUT_ID+channel);
 	dspc->lockin_input[channel] = selection;
+        return 0;
 }
 
 int DSPControl::choice_Ampl_callback (GtkWidget *widget, DSPControl *dspc){
@@ -4840,6 +4859,7 @@ int DSPControl::callback_change_AC_option_flags (GtkWidget *widget, DSPControl *
 		dspc->AC_option_flags &= ~msk;
 
         dspc->set_tab_settings ("AC", dspc->AC_option_flags, dspc->AC_auto_flags, dspc->AC_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_AC_auto_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4854,6 +4874,7 @@ int DSPControl::callback_change_AC_auto_flags (GtkWidget *widget, DSPControl *ds
 		dspc->raster_auto_flags = dspc->AC_auto_flags;
 
         dspc->set_tab_settings ("AC", dspc->AC_option_flags, dspc->AC_auto_flags, dspc->AC_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_IV_option_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4865,6 +4886,7 @@ int DSPControl::callback_change_IV_option_flags (GtkWidget *widget, DSPControl *
 		dspc->IV_option_flags &= ~msk;
 
         dspc->set_tab_settings ("IV", dspc->IV_option_flags, dspc->IV_auto_flags, dspc->IV_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_IV_auto_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4879,6 +4901,7 @@ int DSPControl::callback_change_IV_auto_flags (GtkWidget *widget, DSPControl *ds
 		dspc->raster_auto_flags = dspc->IV_auto_flags;
 
         dspc->set_tab_settings ("IV", dspc->IV_option_flags, dspc->IV_auto_flags, dspc->IV_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_FZ_option_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4890,6 +4913,7 @@ int DSPControl::callback_change_FZ_option_flags (GtkWidget *widget, DSPControl *
 		dspc->FZ_option_flags &= ~msk;
 
         dspc->set_tab_settings ("FZ", dspc->FZ_option_flags, dspc->FZ_auto_flags, dspc->FZ_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_FZ_auto_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4904,6 +4928,7 @@ int DSPControl::callback_change_FZ_auto_flags (GtkWidget *widget, DSPControl *ds
 		dspc->raster_auto_flags = dspc->FZ_auto_flags;
 
         dspc->set_tab_settings ("FZ", dspc->FZ_option_flags, dspc->FZ_auto_flags, dspc->FZ_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_PL_option_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4919,6 +4944,7 @@ int DSPControl::callback_change_PL_option_flags (GtkWidget *widget, DSPControl *
 		dspc->raster_auto_flags = dspc->PL_auto_flags;
 
         dspc->set_tab_settings ("PL", dspc->PL_option_flags, dspc->PL_auto_flags, dspc->PL_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_PL_auto_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4930,6 +4956,7 @@ int DSPControl::callback_change_PL_auto_flags (GtkWidget *widget, DSPControl *ds
 		dspc->PL_auto_flags &= ~msk;
 
         dspc->set_tab_settings ("PL", dspc->PL_option_flags, dspc->PL_auto_flags, dspc->PL_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_LP_option_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4944,6 +4971,7 @@ int DSPControl::callback_change_LP_option_flags (GtkWidget *widget, DSPControl *
 		dspc->raster_auto_flags = dspc->LP_auto_flags;
 
         dspc->set_tab_settings ("LP", dspc->LP_option_flags, dspc->LP_auto_flags, dspc->LP_glock_data);
+        return 0;
 }
  
 int DSPControl::callback_change_LP_auto_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4955,6 +4983,7 @@ int DSPControl::callback_change_LP_auto_flags (GtkWidget *widget, DSPControl *ds
 		dspc->LP_auto_flags &= ~msk;
  
         dspc->set_tab_settings ("LP", dspc->LP_option_flags, dspc->LP_auto_flags, dspc->LP_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_SP_option_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4969,6 +4998,7 @@ int DSPControl::callback_change_SP_option_flags (GtkWidget *widget, DSPControl *
 		dspc->raster_auto_flags = dspc->SP_auto_flags;
 
         dspc->set_tab_settings ("SP", dspc->SP_option_flags, dspc->SP_auto_flags, dspc->SP_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_SP_auto_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4980,6 +5010,7 @@ int DSPControl::callback_change_SP_auto_flags (GtkWidget *widget, DSPControl *ds
 		dspc->SP_auto_flags &= ~msk;
 
         dspc->set_tab_settings ("SP", dspc->SP_option_flags, dspc->SP_auto_flags, dspc->SP_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_TS_option_flags (GtkWidget *widget, DSPControl *dspc){
@@ -4994,6 +5025,7 @@ int DSPControl::callback_change_TS_option_flags (GtkWidget *widget, DSPControl *
 		dspc->raster_auto_flags = dspc->TS_auto_flags;
 
         dspc->set_tab_settings ("TS", dspc->TS_option_flags, dspc->TS_auto_flags, dspc->TS_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_TS_auto_flags (GtkWidget *widget, DSPControl *dspc){
@@ -5005,6 +5037,7 @@ int DSPControl::callback_change_TS_auto_flags (GtkWidget *widget, DSPControl *ds
 		dspc->TS_auto_flags &= ~msk;
 
         dspc->set_tab_settings ("TS", dspc->TS_option_flags, dspc->TS_auto_flags, dspc->TS_glock_data);
+        return 0;
 }
 
 
@@ -5023,6 +5056,7 @@ int DSPControl::callback_change_GVP_option_flags (GtkWidget *widget, DSPControl 
         dspc->set_tab_settings ("GVP", dspc->GVP_option_flags, dspc->GVP_auto_flags, dspc->GVP_glock_data);
         dspc->GVP_store_vp ("LM_set_last"); // last in view
         dspc->GVP_store_vp ("GVP_set_last"); // last in view
+        return 0;
 }
 
 int DSPControl::callback_change_GVP_vpc_option_flags (GtkWidget *widget, DSPControl *dspc){
@@ -5036,6 +5070,7 @@ int DSPControl::callback_change_GVP_vpc_option_flags (GtkWidget *widget, DSPCont
 		dspc->GVP_opt[k] &= ~msk;
 
         dspc->set_tab_settings ("LM", dspc->GVP_option_flags, dspc->GVP_auto_flags, dspc->GVP_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_update_GVP_vpc_option_checkbox (GtkWidget *widget, DSPControl *dspc){
@@ -5045,6 +5080,7 @@ int DSPControl::callback_update_GVP_vpc_option_checkbox (GtkWidget *widget, DSPC
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(widget), (dspc->GVP_opt[k] & msk) ? 1:0);
 
         dspc->set_tab_settings ("LM", dspc->GVP_option_flags, dspc->GVP_auto_flags, dspc->GVP_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_edit_GVP (GtkWidget *widget, DSPControl *dspc){
@@ -5108,15 +5144,18 @@ int DSPControl::callback_edit_GVP (GtkWidget *widget, DSPControl *dspc){
 			dspc->GVP_vpcjr[k] = dspc->GVP_vpcjr[ks];
 		}
 	dspc->update ();
+        return 0;
 }
 
 int DSPControl::callback_GVP_store_vp (GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
 	dspc->GVP_store_vp ((const gchar*)g_object_get_data(G_OBJECT(widget), "key"));
+        return 0;
 }
 int DSPControl::callback_GVP_restore_vp (GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
 	dspc->GVP_restore_vp ((const gchar*)g_object_get_data(G_OBJECT(widget), "key"));
+        return 0;
 }
 
 int DSPControl::callback_change_GVP_auto_flags (GtkWidget *widget, DSPControl *dspc){
@@ -5128,6 +5167,7 @@ int DSPControl::callback_change_GVP_auto_flags (GtkWidget *widget, DSPControl *d
 		dspc->GVP_auto_flags &= ~msk;
 
         dspc->set_tab_settings ("LM", dspc->GVP_option_flags, dspc->GVP_auto_flags, dspc->GVP_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_TK_ref(GtkWidget *widget, DSPControl *dspc){
@@ -5137,12 +5177,14 @@ int DSPControl::callback_change_TK_ref(GtkWidget *widget, DSPControl *dspc){
 	PI_DEBUG (DBG_L4, "TK-ref set to: " << dspc->TK_ref );
 
         dspc->set_tab_settings ("TK", dspc->TK_option_flags, dspc->TK_auto_flags, dspc->TK_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_FZ_ref(GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
 	dspc->FZ_limiter_ch = atoi (gtk_combo_box_get_active_id ( GTK_COMBO_BOX (widget)));
 	PI_DEBUG (DBG_L4, "FZ-limiter-ch set to: " << dspc->FZ_limiter_ch );
+        return 0;
 }
 
 int DSPControl::callback_change_TK_option_flags (GtkWidget *widget, DSPControl *dspc){
@@ -5157,6 +5199,7 @@ int DSPControl::callback_change_TK_option_flags (GtkWidget *widget, DSPControl *
 		dspc->raster_auto_flags = dspc->TK_auto_flags;
 
         dspc->set_tab_settings ("TK", dspc->TK_option_flags, dspc->TK_auto_flags, dspc->TK_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_TK_auto_flags (GtkWidget *widget, DSPControl *dspc){
@@ -5168,6 +5211,7 @@ int DSPControl::callback_change_TK_auto_flags (GtkWidget *widget, DSPControl *ds
 		dspc->TK_auto_flags &= ~msk;
 
         dspc->set_tab_settings ("TK", dspc->TK_option_flags, dspc->TK_auto_flags, dspc->TK_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_AX_option_flags (GtkWidget *widget, DSPControl *dspc){
@@ -5180,6 +5224,7 @@ int DSPControl::callback_change_AX_option_flags (GtkWidget *widget, DSPControl *
 
 	if (dspc->write_vector_mode == PV_MODE_AX)
 		dspc->raster_auto_flags = dspc->AX_auto_flags;
+        return 0;
 }
 
 int DSPControl::callback_change_AX_auto_flags (GtkWidget *widget, DSPControl *dspc){
@@ -5191,6 +5236,7 @@ int DSPControl::callback_change_AX_auto_flags (GtkWidget *widget, DSPControl *ds
 		dspc->AX_auto_flags &= ~msk;
 
         dspc->set_tab_settings ("AX", dspc->AX_option_flags, dspc->AX_auto_flags, dspc->AX_glock_data);
+        return 0;
 }
 
 int DSPControl::callback_change_ABORT_option_flags (GtkWidget *widget, DSPControl *dspc){
@@ -5203,6 +5249,7 @@ int DSPControl::callback_change_ABORT_option_flags (GtkWidget *widget, DSPContro
 
 	if (dspc->write_vector_mode == PV_MODE_ABORT)
 		dspc->raster_auto_flags = dspc->ABORT_auto_flags;
+        return 0;
 }
 
 int DSPControl::callback_change_ABORT_auto_flags (GtkWidget *widget, DSPControl *dspc){
@@ -5213,6 +5260,7 @@ int DSPControl::callback_change_ABORT_auto_flags (GtkWidget *widget, DSPControl 
 	else
 		dspc->ABORT_auto_flags &= ~msk;
 
+        return 0;
 }
 
 int DSPControl::DSP_multiIV_callback (GtkWidget *widget, DSPControl *dspc){
@@ -5225,17 +5273,20 @@ int DSPControl::DSP_multiIV_callback (GtkWidget *widget, DSPControl *dspc){
 				(GFunc) gtk_widget_hide, NULL);
 
 	dspc->multiIV_mode = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+        return 0;
 }
 
 int DSPControl::DSP_slope_callback (GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
 	dspc->area_slope_compensation_flag = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));	
 	dspc->updateDSP();
+        return 0;
 }
 
 int DSPControl::DSP_cret_callback (GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
 	dspc->center_return_flag = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));	
+        return 0;
 }
 
 int DSPControl::change_source_callback (GtkWidget *widget, DSPControl *dspc){
@@ -5284,10 +5335,12 @@ int DSPControl::callback_XJoin (GtkWidget *widget, DSPControl *dspc){
 	dspc->XJoin = (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) ? TRUE : FALSE;
 	dspc->vis_XJoin = dspc->XJoin;
         g_settings_set_boolean (dspc->hwi_settings, "probe-x-join", dspc->XJoin);
+        return 0;
 }
 
 int DSPControl::callback_GrMatWindow (GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L3, "%s \n",__FUNCTION__);
 	dspc->GrMatWin = (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) ? TRUE : FALSE;
         g_settings_set_boolean (dspc->hwi_settings, "probe-graph-matrix-window", dspc->GrMatWin);
+        return 0;
 }
