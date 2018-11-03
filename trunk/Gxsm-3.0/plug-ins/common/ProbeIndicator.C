@@ -350,16 +350,22 @@ ProbeIndicator::ProbeIndicator (){
         fneg2=probe->add_indicator ("INeg", 300.0, -5., 1, 2);
 
 
-        horizon[0]=probe->add_horizon ("H0", 0.0, 0.0, 128);
+        horizon[0]=probe->add_horizon ("Ifast", 0.0, 0.0, 128);
         probe->set_horizon_color(horizon[0], CAIRO_COLOR_RED_ID);
 
-        horizon[1]=probe->add_horizon ("H1", 0.0, 0.0, 128);
+        horizon[1]=probe->add_horizon ("Zfast", 0.0, 0.0, 128);
 
-        horizon[2]=probe->add_horizon ("H2", 0.0, 0.0, 128);
+        horizon[2]=probe->add_horizon ("IPSD", 0.0, 0.0, 128);
         probe->set_horizon_color(horizon[2], CAIRO_COLOR_RED_ID);
 
-        horizon[3]=probe->add_horizon ("H3", 0.0, 0.0, 128);
+        horizon[3]=probe->add_horizon ("IdecHi", 0.0, 0.0, 128);
         probe->set_horizon_color(horizon[3], CAIRO_COLOR_ORANGE_ID);
+
+        horizon[4]=probe->add_horizon ("IdecLo", 0.0, 0.0, 128);
+        probe->set_horizon_color(horizon[4], CAIRO_COLOR_ORANGE_ID);
+
+        horizon[5]=probe->add_horizon ("Zdec", 0.0, 0.0, 128);
+        //probe->set_horizon_color(horizon[5], CAIRO_COLOR_ORANGE_ID);
 
         
 	//probe->queue_update (canvas);
@@ -595,7 +601,7 @@ gint ProbeIndicator::refresh(){
                         gapp->xsm->hardware->RTQuery ("S1", SCOPE_N+1, &scope[0][0]); // RT Query S1
                         gapp->xsm->hardware->RTQuery ("S2", SCOPE_N+1, &scope[1][0]); // RT Query S2
                         gapp->xsm->hardware->RTQuery ("S3", SCOPE_N+1, &scopedec[0][0]); // RT Query S1 dec
-                        //gapp->xsm->hardware->RTQuery ("S4", SCOPE_N+1, &scopedec[1][0]); // RT Query S2 dec
+                        gapp->xsm->hardware->RTQuery ("S4", SCOPE_N+1, &scopedec[1][0]); // RT Query S2 dec
                         gapp->xsm->hardware->RTQuery ("T",  SCOPE_N+1, NULL); // RT Query, Trigger next
                 }
                 gfloat xmax, xmin, xrms;
@@ -637,26 +643,32 @@ gint ProbeIndicator::refresh(){
                 xc = 0.5*(scope_max[2]+scope_min[2]);
                 xr = scope_max[2]-scope_min[2];
                 for(i=k=0; i<128; ++i, tics+=1./128.){
-                        gfloat x=0.;
-                        for (int j=0; j<dec; ++j, ++k)
-                                x += scopedec[0][k];
-                        x /= dec; // no need as auto scaled regardless
-                        if (x>xmax)
-                                xmax = x;
-                        if (x<xmin)
-                                xmin = x;
-                      
+                        gfloat x=scopedec[0][k];
+                        gfloat x2=scopedec[0][k];
+                        for (int j=0; j<dec; ++j, ++k){
+                                if (x <= scopedec[0][k])
+                                        x = scopedec[0][k];
+                                if (x2 >= scopedec[0][k])
+                                        x2 = scopedec[0][k];
+                                if (scopedec[0][k] > xmax)
+                                        xmax = scopedec[0][k];
+                                if (scopedec[0][k] < xmin)
+                                        xmin = scopedec[0][k];
+                        }
                         horizon[3]->set_xy (i, i-64., -32.*(x-xc)/xr);
+                        horizon[4]->set_xy (i, i-64., -32.*(x2-xc)/xr);
                 }
                 scope_max[2] = 0.7*scope_max[2] + 0.3*xmax;
                 scope_min[2] = 0.7*scope_min[2] + 0.3*xmin;
-               
 
-                run_fft (SCOPE_N, &scopedec[0][0], &scope[2][0], 1e-7, 10.,0.5);
+                // decimated fs: 150000 Hz / 256 = 585.9375 Hz
+
+                run_fft (SCOPE_N, &scopedec[0][0], &scope[2][0], 1e-7, 10.,0.1);
                 for(i=k=0; i<128; ++i, tics+=1./128.){
                         gfloat x=0.;
                         gint next=(int)(log(i+1.0)/log(128.0)*SCOPE_N/2);
                         for (; k<=next && k<SCOPE_N; ++k){
+                                //g_print ("%d %g\n",k,scope[2][k]);
                                 if (x > scope[2][k]) // peak decimated 0 ... -NN db
                                         x = scope[2][k];
                         }
@@ -682,6 +694,7 @@ gint ProbeIndicator::refresh(){
                                 xmin = x;
 
                         horizon[1]->set_xy (i, i-64., 32.*(x-xc)/20.); // xr is too jumpy ... fixed 20A
+                        horizon[5]->set_xy (i, i-64., 32.*(scopedec[1][k]-xc)/20.); // xr is too jumpy ... fixed 20A
                 }
                 scope_max[1] = 0.9*scope_max[1] + 0.1*xmax;
                 scope_min[1] = 0.9*scope_min[1] + 0.1*xmin;

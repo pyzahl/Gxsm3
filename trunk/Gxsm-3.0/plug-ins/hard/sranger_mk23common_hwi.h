@@ -123,12 +123,12 @@ public:
 
 	int is_scanning() { return ScanningFlg; };
 	virtual	int start_fifo_read (int y_start, 
-			     int num_srcs0, int num_srcs1, int num_srcs2, int num_srcs3, 
-			     Mem2d **Mob0, Mem2d **Mob1, Mem2d **Mob2, Mem2d **Mob3) {};
+                                     int num_srcs0, int num_srcs1, int num_srcs2, int num_srcs3, 
+                                     Mem2d **Mob0, Mem2d **Mob1, Mem2d **Mob2, Mem2d **Mob3) { return 0; };
 
-	virtual	int ReadLineFromFifo (int y_index) {};
+	virtual	int ReadLineFromFifo (int y_index) { return 0; };
 
-	virtual int ReadProbeFifo (int dspdev, int control=0) {};
+	virtual int ReadProbeFifo (int dspdev, int control=0) { return 0; };
 
 	// ========================================
 	virtual void read_dsp_state (gint32 &mode) {}; // FB on/off
@@ -153,7 +153,7 @@ public:
 	virtual void read_dsp_lockin (double AC_amp[4], double &AC_frq, double &AC_phaseA, double &AC_phaseB, gint32 &AC_lockin_avg_cycels) {};
 	virtual void write_dsp_lockin_probe_final (double AC_amp[4], double &AC_frq, double AC_phaseA, double AC_phaseB,
 						   gint32 AC_lockin_avg_cycels, double VP_lim_val[2], double noise_amp, int start=0) {};
-	virtual int dsp_lockin_state(int set=-1){};
+	virtual int dsp_lockin_state(int set=-1){return 0;};
 
 	virtual void read_dsp_vector (int index, PROBE_VECTOR_GENERIC *__dsp_vector) {};
 	virtual void write_dsp_vector (int index, PROBE_VECTOR_GENERIC *__dsp_vector) {};

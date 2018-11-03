@@ -627,6 +627,7 @@ class DSPControl : public AppBase{
         GtkWidget *VXYZS0Gain[6];
         double AdjustGain (int channel, int index) {
                 gtk_combo_box_set_active (GTK_COMBO_BOX (VXYZS0Gain[channel]), index);
+                return 0.;
         };
         
         // -- linear drift correction --

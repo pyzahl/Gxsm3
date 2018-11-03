@@ -3225,7 +3225,8 @@ int sranger_mk3_hwi_dev::read_pll_signal2 (gfloat *signal, int n, double scale, 
 	return -1;
 }
 
-int sranger_mk3_hwi_dev::read_pll_signal1dec (gfloat *signal, int n, double scale){
+int sranger_mk3_hwi_dev::read_pll_signal1dec (gfloat *signal, int n, double scale, gint record){
+        static gint32 ring_buffer_position_last = -1;
 	gint32 deci;
         read_pll_array32 (dsp_pll.Signal1+4*0x7ffff, 1, &deci);
         //g_print ("deci=%d %08x\n",deci, deci);
@@ -3238,17 +3239,37 @@ int sranger_mk3_hwi_dev::read_pll_signal1dec (gfloat *signal, int n, double scal
                         gint n1 = -start;
                         gint n2 = n-n1;
                         read_pll_array32 (dsp_pll.Signal1+((0x80000+0x40000-n1)<<2), n1, tmp_array);
-                        read_pll_array32 (dsp_pll.Signal1+((0x80000+n2)<<2), n2, tmp_array+n1);
+                        read_pll_array32 (dsp_pll.Signal1+((0x80000)<<2), n2, tmp_array+n1);
                 }
                 for (int i=0; i<n; ++i){
                         signal[i] = (gfloat)tmp_array[i] * scale;
                         //g_print ("%d %d\n", i,tmp_array[i]);
                 }
+                if (record && ring_buffer_position_last>=0){
+                        std::ofstream f;
+                        f.open("gxsm3-recorder-logfile-signal1-dec256", std::ios::out | std::ios::app);
+                        if(f.good()){
+                                // append new data from ring_buffer_position_last ... deci (now)
+                                int k=0;
+                                //f << "# " << ring_buffer_position_last << " ... " << deci << std::endl;
+                                if (ring_buffer_position_last < deci)
+                                        for (int i=n-(deci-ring_buffer_position_last); i<n; ++i)
+                                                //f << (ring_buffer_position_last+k++) << " " << tmp_array[i] << std::endl;
+                                                f << tmp_array[i] << std::endl;
+                                else
+                                        for (int i=n-(deci+0x40000-ring_buffer_position_last); i<n; ++i)
+                                                //f << (ring_buffer_position_last+k++) << " " << tmp_array[i] << " L" << std::endl;
+                                                f << tmp_array[i] << " L" << std::endl;
+                                f.close ();
+                        }
+                }
         }
+        ring_buffer_position_last = deci;
 	return -1;
 }
 
-int sranger_mk3_hwi_dev::read_pll_signal2dec (gfloat *signal, int n, double scale){
+int sranger_mk3_hwi_dev::read_pll_signal2dec (gfloat *signal, int n, double scale, gint record){
+        static gint32 ring_buffer_position_last = -1;
 	gint32 deci;
         read_pll_array32 (dsp_pll.Signal1+4*0x7ffff, 1, &deci);
         if (n > 0 && n <= 0x40000){
@@ -3264,7 +3285,27 @@ int sranger_mk3_hwi_dev::read_pll_signal2dec (gfloat *signal, int n, double scal
                 }
                 for (int i=0; i<n; ++i)
                         signal[i] = (gfloat)tmp_array[i] * scale;
+
+                if (record && ring_buffer_position_last>=0){
+                        std::ofstream f;
+                        f.open("gxsm3-recorder-logfile-signal2-dec256", std::ios::out | std::ios::app);
+                        if(f.good()){
+                                // append new data from ring_buffer_position_last ... deci (now)
+                                int k=0;
+                                //f << "# " << ring_buffer_position_last << " ... " << deci << std::endl;
+                                if (ring_buffer_position_last < deci)
+                                        for (int i=n-(deci-ring_buffer_position_last); i<n; ++i)
+                                                //f << (ring_buffer_position_last+k++) << " "  << tmp_array[i] << std::endl;
+                                                f << tmp_array[i] << std::endl;
+                                else
+                                        for (int i=n-(deci+0x40000-ring_buffer_position_last); i<n; ++i)
+                                                //f << (ring_buffer_position_last+k++) << " "  << tmp_array[i] << " L" << std::endl;
+                                                f << tmp_array[i] << std::endl;
+                                f.close ();
+                        }
+                }
         }
+        ring_buffer_position_last = deci;
 	return -1;
 }
 

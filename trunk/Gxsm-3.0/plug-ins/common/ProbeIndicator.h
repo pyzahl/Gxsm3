@@ -38,6 +38,13 @@
 #define SCOPE_FFT 2
 #define SCOPE_DBG 256
 
+
+class cairo_item_switch {
+public:
+        cairo_item_switch (){};
+        ~cairo_item_switch (){};
+};
+
 class hud_object {
 public:
         hud_object(){
@@ -310,17 +317,17 @@ public:
 
                 //double N=2*(n-1);
                 //double scale = 1./(max*2*(n-1));
-                double scale = 5./(max*(n-1));
+                double scale = n/max;
                 double mag=0.;
                 for (int i=0; i<n; ++i){
                         mag = scale * sqrt(c_re(out[i])*c_re(out[i]) + c_im(out[i])*c_im(out[i]));
                         //mag = scale * out[i];
                         //psd_db[i] = mag;
                         if (mag > min)
-                                //  psd_db[i] = gfloat((1.-mu)*(double)psd_db[i] + mu*20.*log(mag));
-                                psd_db[i] = gfloat(20.*log(mag));
+                                psd_db[i] = gfloat((1.-mu)*(double)psd_db[i] + mu*20.*log(mag));
+                        //psd_db[i] = gfloat(20.*log(mag));
                         else
-                                psd_db[i] = -100.; //gfloat((1.-mu)*(double)psd_db[i] + mu*20.*log(min));
+                                psd_db[i] = gfloat((1.-mu)*(double)psd_db[i] + mu*20.*log(min));
 
                         //g_print("%d %g %g %g %g\n",i,data[i],in[i], mag, psd_db[i]);
 
@@ -344,5 +351,5 @@ private:
         cairo_item_arc *fpos, *fneg, *fpos2, *fneg2;
         cairo_item_path_closed *tip;
         cairo_item_path_closed *m1, *m2;
-        cairo_item_path *horizon[4];
+        cairo_item_path *horizon[6];
 };
