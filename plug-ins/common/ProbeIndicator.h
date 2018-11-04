@@ -34,9 +34,16 @@
 #define c_im(c) ((c)[1])
 
 
-#define SCOPE_ON  1
-#define SCOPE_FFT 2
-#define SCOPE_DBG 256
+#define SCOPE_NONE   0
+#define SCOPE_ON     1
+#define SCOPE_FFT    2
+#define SCOPE_ZOOM   4
+#define SCOPE_RECORD 8
+#define SCOPE_INFO      0x10
+#define SCOPE_INFOPLUS  0x20
+#define SCOPE_INFOMINUS 0x40
+#define SCOPE_PAUSE     0x80
+#define SCOPE_DBG       0x100
 
 
 class cairo_item_switch {
@@ -253,6 +260,16 @@ public:
 
         static gboolean canvas_draw_callback (GtkWidget *widget, cairo_t *cr, ProbeIndicator *pv);
         static gint canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ProbeIndicator *pv);
+
+        static void close_callback (GtkWidget *widget, gpointer user_data);
+        static void run_scope_callback (GtkWidget *widget, gpointer user_data);
+        static void zoom_scope_callback (GtkWidget *widget, gpointer user_data);
+        static void record_callback (GtkWidget *widget, gpointer user_data);
+        static void pause_callback (GtkWidget *widget, gpointer user_data);
+        static void shutdown_callback (GtkWidget *widget, gpointer user_data);
+        static void info_callback (GtkWidget *widget, gpointer user_data);
+        static void more_info_callback (GtkWidget *widget, gpointer user_data);
+        static void less_info_callback (GtkWidget *widget, gpointer user_data);
         
         void show() {
                 // gtk_widget_show_all (window);
