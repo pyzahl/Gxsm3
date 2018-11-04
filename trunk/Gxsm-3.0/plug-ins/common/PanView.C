@@ -480,7 +480,7 @@ void PanView::AppWindowInit(const gchar *title){
 	gtk_window_set_resizable (GTK_WINDOW(window), FALSE);
 	gtk_window_set_decorated (GTK_WINDOW(window), FALSE);
 	gtk_window_set_keep_above (GTK_WINDOW(window), TRUE);
-	gtk_window_stick (GTK_WINDOW(window));
+	//gtk_window_stick (GTK_WINDOW(window));
         
 	v_grid = gtk_grid_new ();
         gtk_container_add (GTK_CONTAINER (window), v_grid);
@@ -608,6 +608,8 @@ gboolean  PanView::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, PanView
         cairo_scale (cr, 1., -1);
 	pv->tip_marker_z0->draw (cr);
 	pv->tip_marker_z->draw (cr);
+
+        return TRUE;
 }
  
 

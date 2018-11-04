@@ -3251,7 +3251,7 @@ int sranger_mk3_hwi_dev::read_pll_signal1dec (gfloat *signal, int n, double scal
                         if(f.good()){
                                 // append new data from ring_buffer_position_last ... deci (now)
                                 int k=0;
-                                //f << "# " << ring_buffer_position_last << " ... " << deci << std::endl;
+                                f << "# " << ring_buffer_position_last << " ... " << deci << std::endl;
                                 if (ring_buffer_position_last < deci)
                                         for (int i=n-(deci-ring_buffer_position_last); i<n; ++i)
                                                 //f << (ring_buffer_position_last+k++) << " " << tmp_array[i] << std::endl;
@@ -3292,7 +3292,7 @@ int sranger_mk3_hwi_dev::read_pll_signal2dec (gfloat *signal, int n, double scal
                         if(f.good()){
                                 // append new data from ring_buffer_position_last ... deci (now)
                                 int k=0;
-                                //f << "# " << ring_buffer_position_last << " ... " << deci << std::endl;
+                                f << "# " << ring_buffer_position_last << " ... " << deci << std::endl;
                                 if (ring_buffer_position_last < deci)
                                         for (int i=n-(deci-ring_buffer_position_last); i<n; ++i)
                                                 //f << (ring_buffer_position_last+k++) << " "  << tmp_array[i] << std::endl;

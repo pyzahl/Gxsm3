@@ -378,7 +378,7 @@ gint  sranger_mk3_hwi_spm::RTQuery (const gchar *property, int n, gfloat *data){
         static gint64 time_of_last_reading3 = 0; // abs time in us
         static gint64 time_of_last_reading4 = 0; // abs time in us
         static gint64 time_of_last_trg = 0; // abs time in us
-        static gint s1ok=0, s2ok=0;
+        static gint s1ok=0, s2ok=0, s3ok=0, s4ok=0;
 
         // Trigger
         if ( property[0] == 'T' && (time_of_last_trg+max_age) < g_get_real_time () ){
@@ -402,18 +402,18 @@ gint  sranger_mk3_hwi_spm::RTQuery (const gchar *property, int n, gfloat *data){
                 s2ok=read_pll_signal2 (data, n, scale, 0);
         }
         // Signal1 deci 256
-        if ( property[1] == '3' && ((time_of_last_reading3+max_age) < g_get_real_time () || s2ok)){
+        if ( property[1] == '3' && ((time_of_last_reading3+max_age) < g_get_real_time () || s3ok)){
                 time_of_last_reading3 = g_get_real_time ();
 
                 double scale =  DSP32Qs15dot16TO_Volt;
-                s2ok=read_pll_signal1dec (data, n, scale, 1);
+                s3ok=read_pll_signal1dec (data, n, scale, property[0] == 'R');
         }
         // Signal2 subsampled 256
-        if ( property[1] == '4' && ((time_of_last_reading4+max_age) < g_get_real_time () || s2ok)){
+        if ( property[1] == '4' && ((time_of_last_reading4+max_age) < g_get_real_time () || s4ok)){
                 time_of_last_reading4 = g_get_real_time ();
 
                 double scale =  DSP32Qs15dot16TO_Volt;
-                s2ok=read_pll_signal2dec (data, n, scale, 1);
+                s4ok=read_pll_signal2dec (data, n, scale, property[0] == 'R');
         }
         return 0;
 }

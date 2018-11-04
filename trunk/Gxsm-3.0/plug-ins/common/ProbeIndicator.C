@@ -296,11 +296,92 @@ static gint ProbeIndicator_tip_refresh_callback (ProbeIndicator *pv){
 }
 
 
+void ProbeIndicator::close_callback (GtkWidget *widget, gpointer user_data) {
+        ProbeIndicator *pv = (ProbeIndicator *) user_data; 
+        g_print ("ProbeIndicator::close_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                pv->modes = (pv->modes & ~SCOPE_DBG) | SCOPE_DBG;
+        else
+                pv->modes &= ~SCOPE_DBG;
+}
+
+void ProbeIndicator::shutdown_callback (GtkWidget *widget, gpointer user_data) {
+        ProbeIndicator *pv = (ProbeIndicator *) user_data; 
+        g_print ("ProbeIndicator::shutdown_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+}
+
+void ProbeIndicator::run_scope_callback (GtkWidget *widget, gpointer user_data) {
+        ProbeIndicator *pv = (ProbeIndicator *) user_data; 
+        //g_print ("ProbeIndicator::run_scope_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                pv->modes = (pv->modes & ~SCOPE_ON) | SCOPE_ON;
+        else
+                pv->modes &= ~SCOPE_ON;
+}
+
+void ProbeIndicator::zoom_scope_callback (GtkWidget *widget, gpointer user_data) {
+        ProbeIndicator *pv = (ProbeIndicator *) user_data; 
+        //g_print ("ProbeIndicator::zoom_scope_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                pv->modes = (pv->modes & ~SCOPE_ZOOM) | SCOPE_ZOOM;
+        else
+                pv->modes &= ~SCOPE_ZOOM;
+}
+
+void ProbeIndicator::record_callback (GtkWidget *widget, gpointer user_data) {
+        ProbeIndicator *pv = (ProbeIndicator *) user_data; 
+        //g_print ("ProbeIndicator:record_:scope_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                pv->modes = (pv->modes & ~SCOPE_RECORD) | SCOPE_RECORD;
+        else
+                pv->modes &= ~SCOPE_RECORD;
+}
+
+void ProbeIndicator::pause_callback (GtkWidget *widget, gpointer user_data) {
+        ProbeIndicator *pv = (ProbeIndicator *) user_data; 
+        //g_print ("ProbeIndicator::pause_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))){
+                pv->modes = (pv->modes & ~SCOPE_PAUSE) | SCOPE_PAUSE;
+                pv->stop ();
+        } else {
+                pv->modes &= ~SCOPE_PAUSE;
+                pv->start ();
+        }
+}
+
+void ProbeIndicator::info_callback (GtkWidget *widget, gpointer user_data) {
+        ProbeIndicator *pv = (ProbeIndicator *) user_data; 
+        //g_print ("ProbeIndicator::info_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                pv->modes = (pv->modes & ~SCOPE_INFO) | SCOPE_INFO;
+        else
+                pv->modes &= ~SCOPE_INFO;
+}
+
+void ProbeIndicator::more_info_callback (GtkWidget *widget, gpointer user_data) {
+        ProbeIndicator *pv = (ProbeIndicator *) user_data; 
+        //g_print ("ProbeIndicator::more_info_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                pv->modes = (pv->modes & ~SCOPE_INFOPLUS) | SCOPE_INFOPLUS;
+        else
+                pv->modes &= ~SCOPE_INFOPLUS;
+}
+
+void ProbeIndicator::less_info_callback (GtkWidget *widget, gpointer user_data) {
+        ProbeIndicator *pv = (ProbeIndicator *) user_data; 
+        //g_print ("ProbeIndicator::less_info_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                pv->modes = (pv->modes & ~SCOPE_INFOMINUS) | SCOPE_INFOMINUS;
+        else
+                pv->modes &= ~SCOPE_INFOMINUS;
+}
+
 ProbeIndicator::ProbeIndicator (){ 
         hud_size = 150;
 	timer_id = 0;
 	probe = NULL;
-        modes = SCOPE_ON;
+        modes = SCOPE_NONE;
         
 	AppWindowInit (N_("HUD Probe Indicator"));
 
@@ -325,8 +406,94 @@ ProbeIndicator::ProbeIndicator (){
 	gtk_widget_set_size_request (canvas, 2*hud_size, 2*hud_size);
 
 	gtk_widget_show (canvas);
-	gtk_grid_attach (GTK_GRID (v_grid), canvas, 1,1, 10,10);
+	gtk_grid_attach (GTK_GRID (v_grid), canvas, 1,1, 40,40);
 
+        GtkIconSize tb_icon_size = GTK_ICON_SIZE_BUTTON;
+        GtkWidget *tb = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("utilities-system-monitor-symbolic", tb_icon_size));
+        gtk_widget_show (tb);
+        gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
+	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+        g_signal_connect (G_OBJECT (tb), "toggled",
+                          G_CALLBACK (ProbeIndicator::run_scope_callback), this);
+	gtk_grid_attach (GTK_GRID (v_grid), tb, 1,1, 1,1);
+
+
+        tb = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("system-search-symbolic", tb_icon_size));
+        gtk_widget_show (tb);
+        gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
+	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+        g_signal_connect (G_OBJECT (tb), "toggled",
+                          G_CALLBACK (ProbeIndicator::zoom_scope_callback), this);
+	gtk_grid_attach (GTK_GRID (v_grid), tb, 1,2, 1,1);
+
+        tb = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("media-record-symbolic", tb_icon_size));
+        gtk_widget_show (tb);
+        gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
+	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+        g_signal_connect (G_OBJECT (tb), "toggled",
+                          G_CALLBACK (ProbeIndicator::record_callback), this);
+	gtk_grid_attach (GTK_GRID (v_grid), tb, 1,3, 1,1);
+
+        tb = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("preferences-system-details-symbolic", tb_icon_size));
+        gtk_widget_show (tb);
+        gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
+	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+        g_signal_connect (G_OBJECT (tb), "toggled",
+                          G_CALLBACK (ProbeIndicator::info_callback), this);
+	gtk_grid_attach (GTK_GRID (v_grid), tb, 2,1, 1,1);
+
+
+        tb = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("list-add-symbolic", tb_icon_size));
+        gtk_widget_show (tb);
+        gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
+	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+        g_signal_connect (G_OBJECT (tb), "toggled",
+                          G_CALLBACK (ProbeIndicator::more_info_callback), this);
+	gtk_grid_attach (GTK_GRID (v_grid), tb, 2,2, 1,1);
+
+        tb = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("list-remove-symbolic", tb_icon_size));
+        gtk_widget_show (tb);
+        gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
+	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+        g_signal_connect (G_OBJECT (tb), "toggled",
+                          G_CALLBACK (ProbeIndicator::less_info_callback), this);
+	gtk_grid_attach (GTK_GRID (v_grid), tb, 2,3, 1,1);
+
+        tb = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("media-playback-pause-symbolic", tb_icon_size));
+        gtk_widget_show (tb);
+        gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
+	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+        g_signal_connect (G_OBJECT (tb), "toggled",
+                          G_CALLBACK (ProbeIndicator::pause_callback), this);
+	gtk_grid_attach (GTK_GRID (v_grid), tb, 3,1, 1,1);
+
+
+        tb = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("system-shutdown-symbolic", tb_icon_size));
+        gtk_widget_show (tb);
+        gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
+	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+        g_signal_connect (G_OBJECT (tb), "toggled",
+                          G_CALLBACK (ProbeIndicator::shutdown_callback), this);
+	gtk_grid_attach (GTK_GRID (v_grid), tb, 40,2, 1,1);
+
+        tb = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("window-close-symbolic", tb_icon_size));
+        gtk_widget_show (tb);
+        gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
+	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+        g_signal_connect (G_OBJECT (tb), "toggled",
+                          G_CALLBACK (ProbeIndicator::close_callback), this);
+	gtk_grid_attach (GTK_GRID (v_grid), tb, 40,1, 1,1);
+        
+        
         probe = new hud_object();
         probe->add_tics ("T1", 0, 1., 9, 25.);
         probe->add_tics ("T1", 240, 1., 13, 10.);
@@ -443,16 +610,6 @@ gint ProbeIndicator::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ProbeIn
                         //g_object_set_data (G_OBJECT(canvas), "preset_xy", preset);
                         //gapp->offset_to_preset_callback (canvas, gapp);
                         g_message ("ProbeIndicator Button1 Pressed at XY=%g, %g",  mouse_pix_xy[0]);
-                        if (mouse_pix_xy[0] > 0)
-                                pv->modes = (pv->modes & ~SCOPE_ON) | SCOPE_ON;
-                        else
-                                pv->modes &= ~SCOPE_ON;
-
-                        if (mouse_pix_xy[1] < 0)
-                                pv->modes = (pv->modes & ~SCOPE_DBG) | SCOPE_DBG;
-                        else
-                                pv->modes &= ~SCOPE_DBG;
-			break;
                 }
                 break;
 		
@@ -468,7 +625,6 @@ gint ProbeIndicator::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ProbeIn
 		
 	default: break;
 	}
-        
 	return FALSE;
 }
 
@@ -508,12 +664,16 @@ gint ProbeIndicator::refresh(){
         #define SCOPE_N 4096
         static gfloat scope[4][SCOPE_N+1];
         static gfloat scopedec[2][SCOPE_N+1];
-        static gfloat scope_min[4];
-        static gfloat scope_max[4];
+        static gfloat scope_min[4] = {0,0,0,0};
+        static gfloat scope_max[4] = {0,0,0,0};
+        static gfloat xrms = 0.;
         static gint busy=FALSE;
         static double tics=0.;
+        static gint infoflag=1;
+        static gint scopeflag=1;
+        gint dec=SCOPE_N/128;
         
-        if (busy) return FALSE;
+        if (busy) return FALSE; // skip this one, busy
 
 	double x,y,z,q,Ilg, Ilgmp, Ilgmi;
         double max_z = xsmres.AnalogVMaxOut*gapp->xsm->Inst->VZ();
@@ -600,139 +760,170 @@ gint ProbeIndicator::refresh(){
                 if (modes & SCOPE_ON){
                         gapp->xsm->hardware->RTQuery ("S1", SCOPE_N+1, &scope[0][0]); // RT Query S1
                         gapp->xsm->hardware->RTQuery ("S2", SCOPE_N+1, &scope[1][0]); // RT Query S2
-                        gapp->xsm->hardware->RTQuery ("S3", SCOPE_N+1, &scopedec[0][0]); // RT Query S1 dec
-                        gapp->xsm->hardware->RTQuery ("S4", SCOPE_N+1, &scopedec[1][0]); // RT Query S2 dec
+                        if (modes & SCOPE_RECORD){
+                                gapp->xsm->hardware->RTQuery ("R3", SCOPE_N+1, &scopedec[0][0]); // RT Query S1 dec, record
+                                gapp->xsm->hardware->RTQuery ("R4", SCOPE_N+1, &scopedec[1][0]); // RT Query S2 dec, record
+                        } else {
+                                gapp->xsm->hardware->RTQuery ("D3", SCOPE_N+1, &scopedec[0][0]); // RT Query S1 dec
+                                gapp->xsm->hardware->RTQuery ("D4", SCOPE_N+1, &scopedec[1][0]); // RT Query S2 dec
+                        }
                         gapp->xsm->hardware->RTQuery ("T",  SCOPE_N+1, NULL); // RT Query, Trigger next
-                }
-                gfloat xmax, xmin, xrms;
-                gint dec=SCOPE_N/128;
-                xmax=xmin=scope[0][0]*dec;
-                xrms=0.;
-                gfloat xr,xc;
-                xc = 0.5*(scope_max[0]+scope_min[0]);
-                xr = scope_max[0]-scope_min[0];
-                int i,k;
-                for(i=k=0; i<128; ++i, tics+=1./128.){
-                        gfloat x=0.;
-                        for (int j=0; j<dec; ++j, ++k){
-                                x += scope[0][k];
-                                xrms += scope[0][k]*scope[0][k];
-                        }
-                        // x /= dec; // no need as auto scaled regardless
-                        if (x>xmax)
-                                xmax = x;
-                        if (x<xmin)
-                                xmin = x;
+                
+                        gfloat xmax, xmin;
+                        dec=SCOPE_N/128;
+                        if (modes & SCOPE_ZOOM)
+                                dec=1;
+                                
+                        xmax=xmin=scope[0][0]*dec;
+                        xrms=0.;
+                        gfloat xr,xc;
+                        xc = 0.5*(scope_max[0]+scope_min[0]);
+                        xr = scope_max[0]-scope_min[0];
+                        int i,k;
+                        for(i=k=0; i<128; ++i, tics+=1./128.){
+                                gfloat x=0.;
+                                for (int j=0; j<dec; ++j, ++k){
+                                        x += scope[0][k];
+                                        xrms += scope[0][k]*scope[0][k];
+                                }
+                                // x /= dec; // no need as auto scaled regardless
+                                if (x>xmax)
+                                        xmax = x;
+                                if (x<xmin)
+                                        xmin = x;
                       
-                        horizon[0]->set_xy (i, i-64., -32.*(x-xc)/xr);
-                }
-                xrms /= SCOPE_N;
-                xrms = sqrt(xrms);
-                scope_max[0] = 0.9*scope_max[0] + 0.1*xmax;
-                scope_min[0] = 0.9*scope_min[0] + 0.1*xmin;
-                Ilgmp = log10 (fabs(1000.*scope_max[0]/dec / gapp->xsm->Inst->nAmpere2V(1.)) + 1.0);
-                Ilgmi = log10 (fabs(1000.*scope_min[0]/dec / gapp->xsm->Inst->nAmpere2V(1.)) + 1.0);
-                double upper=25.*(scope_max[0] > 0.? Ilgmp : -Ilgmp);
-                double lower=25.*(scope_min[0] > 0.? Ilgmi : -Ilgmi);
-                probe->set_indicator_val (ipos2, 100.+upper, lower-upper);
-                probe->set_mark_pos (m1,  upper);
-                probe->set_mark_pos (m2,  lower);
-
-                // slow dec signal
-                xmax=xmin=scopedec[0][0];
-                xc = 0.5*(scope_max[2]+scope_min[2]);
-                xr = scope_max[2]-scope_min[2];
-                for(i=k=0; i<128; ++i, tics+=1./128.){
-                        gfloat x=scopedec[0][k];
-                        gfloat x2=scopedec[0][k];
-                        for (int j=0; j<dec; ++j, ++k){
-                                if (x <= scopedec[0][k])
-                                        x = scopedec[0][k];
-                                if (x2 >= scopedec[0][k])
-                                        x2 = scopedec[0][k];
-                                if (scopedec[0][k] > xmax)
-                                        xmax = scopedec[0][k];
-                                if (scopedec[0][k] < xmin)
-                                        xmin = scopedec[0][k];
+                                horizon[0]->set_xy (i, i-64., -32.*(x-xc)/xr);
                         }
-                        horizon[3]->set_xy (i, i-64., -32.*(x-xc)/xr);
-                        horizon[4]->set_xy (i, i-64., -32.*(x2-xc)/xr);
-                }
-                scope_max[2] = 0.7*scope_max[2] + 0.3*xmax;
-                scope_min[2] = 0.7*scope_min[2] + 0.3*xmin;
+                        xrms /= SCOPE_N;
+                        xrms = sqrt(xrms);
+                        scope_max[0] = 0.9*scope_max[0] + 0.1*xmax;
+                        scope_min[0] = 0.9*scope_min[0] + 0.1*xmin;
+                        Ilgmp = log10 (fabs(1000.*scope_max[0]/dec / gapp->xsm->Inst->nAmpere2V(1.)) + 1.0);
+                        Ilgmi = log10 (fabs(1000.*scope_min[0]/dec / gapp->xsm->Inst->nAmpere2V(1.)) + 1.0);
+                        double upper=25.*(scope_max[0] > 0.? Ilgmp : -Ilgmp);
+                        double lower=25.*(scope_min[0] > 0.? Ilgmi : -Ilgmi);
+                        probe->set_indicator_val (ipos2, 100.+upper, lower-upper);
+                        probe->set_mark_pos (m1,  upper);
+                        probe->set_mark_pos (m2,  lower);
 
-                // decimated fs: 150000 Hz / 256 = 585.9375 Hz
-
-                run_fft (SCOPE_N, &scopedec[0][0], &scope[2][0], 1e-7, 10.,0.1);
-                for(i=k=0; i<128; ++i, tics+=1./128.){
-                        gfloat x=0.;
-                        gint next=(int)(log(i+1.0)/log(128.0)*SCOPE_N/2);
-                        for (; k<=next && k<SCOPE_N; ++k){
-                                //g_print ("%d %g\n",k,scope[2][k]);
-                                if (x > scope[2][k]) // peak decimated 0 ... -NN db
-                                        x = scope[2][k];
+                        // slow dec signal
+                        xmax=xmin=scopedec[0][0];
+                        xc = 0.5*(scope_max[2]+scope_min[2]);
+                        xr = scope_max[2]-scope_min[2];
+                        k = SCOPE_N-dec*128;
+                        for(i=0; i<128; ++i, tics+=1./128.){
+                                gfloat x=scopedec[0][k];
+                                gfloat x2=scopedec[0][k];
+                                for (int j=0; j<dec; ++j, ++k){
+                                        if (x <= scopedec[0][k])
+                                                x = scopedec[0][k];
+                                        if (x2 >= scopedec[0][k])
+                                                x2 = scopedec[0][k];
+                                        if (scopedec[0][k] > xmax)
+                                                xmax = scopedec[0][k];
+                                        if (scopedec[0][k] < xmin)
+                                                xmin = scopedec[0][k];
+                                }
+                                horizon[3]->set_xy (i, i-64., -32.*(x-xc)/xr);
+                                horizon[4]->set_xy (i, i-64., -32.*(x2-xc)/xr);
                         }
-                        horizon[2]->set_xy (i, i-64., -32.*x/96.); // x: 0..-96db
-                }
+                        scope_max[2] = 0.7*scope_max[2] + 0.3*xmax;
+                        scope_min[2] = 0.7*scope_min[2] + 0.3*xmin;
+
+                        // decimated fs: 150000 Hz / 256 = 585.9375 Hz
+
+                        run_fft (SCOPE_N, &scopedec[0][0], &scope[2][0], 1e-7, 10.,0.1);
+                        k = SCOPE_N-dec*128;
+                        for(i=0; i<128; ++i, tics+=1./128.){
+                                gfloat x=0.;
+                                gint next=(int)(log(i+1.0)/log(128.0)*SCOPE_N/2);
+                                for (; k<=next && k<SCOPE_N; ++k){
+                                        //g_print ("%d %g\n",k,scope[2][k]);
+                                        if (x > scope[2][k]) // peak decimated 0 ... -NN db
+                                                x = scope[2][k];
+                                }
+                                horizon[2]->set_xy (i, i-64., -32.*x/96.); // x: 0..-96db
+                        }
 
                 
-                xmax=xmin=scope[1][0]*dec;
-                xc = 0.5*(scope_max[1]+scope_min[1]);
-                xr = scope_max[1]-scope_min[1];
-                for(i=k=0; i<128; ++i, tics+=1./128.){
-                        gfloat xr,xc;
-                        gfloat x=0.;
-                        for (int j=0; j<dec; ++j, ++k)
-                                x += scope[1][k];
+                        xmax=xmin=scope[1][0]*dec;
+                        xc = 0.5*(scope_max[1]+scope_min[1]);
+                        xr = scope_max[1]-scope_min[1];
+                        for(i=k=0; i<128; ++i, tics+=1./128.){
+                                gfloat xr,xc;
+                                gfloat x=0.;
+                                for (int j=0; j<dec; ++j, ++k)
+                                        x += scope[1][k];
 
-                        x /= dec;
-                        x = gapp->xsm->Inst->V2ZAng(x);
+                                x /= dec;
+                                x = gapp->xsm->Inst->V2ZAng(x);
                         
-                        if (x>xmax)
-                                xmax = x;
-                        if (x<xmin)
-                                xmin = x;
+                                if (x>xmax)
+                                        xmax = x;
+                                if (x<xmin)
+                                        xmin = x;
 
-                        horizon[1]->set_xy (i, i-64., 32.*(x-xc)/20.); // xr is too jumpy ... fixed 20A
-                        horizon[5]->set_xy (i, i-64., 32.*(scopedec[1][k]-xc)/20.); // xr is too jumpy ... fixed 20A
-                }
-                scope_max[1] = 0.9*scope_max[1] + 0.1*xmax;
-                scope_min[1] = 0.9*scope_min[1] + 0.1*xmin;
-
-
-                gchar *tmp = NULL;
-                if (modes & SCOPE_ON)
-                        y = xrms/gapp->xsm->Inst->nAmpere2V(1.);
-                if (modes & SCOPE_DBG){
-                        if (fabs(y) < 0.25)
-                                tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g : %g\n%g : %g",
-                                                       y*1000., x,
-                                                       scope_min[0]/dec, scope_max[0]/dec,
-                                                       scope_min[1]/dec, scope_max[1]/dec
-                                                       );
-                        else
-                                tmp = g_strdup_printf ("I: %8.1f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g : %g\n%g : %g",
-                                                       y, x,
-                                                       scope_min[0]/dec, scope_max[0]/dec,
-                                                       scope_min[1]/dec, scope_max[1]/dec
-                                                       );
-                        //tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM,
-                        //                               y, x); //  "\n%g:%g", gapp->xsm->Inst->V2ZAng(z), scope_min[0]/dec,scope_max[0]/dec);
+                                horizon[1]->set_xy (i, i-64., 32.*(x-xc)/20.); // xr is too jumpy ... fixed 20A
+                                horizon[5]->set_xy (i, i-64., 32.*(gapp->xsm->Inst->V2ZAng(scopedec[1][k])-xc)/20.); // decimated rolling signal
+                        }
+                        scope_max[1] = 0.9*scope_max[1] + 0.1*xmax;
+                        scope_min[1] = 0.9*scope_min[1] + 0.1*xmin;
+                        scopeflag=1;
                 } else {
-                        if (fabs(y) < 0.25)
-                                tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y*1000., x);
-                        else
-                                tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y, x);
+                        if (scopeflag){
+                                for(int i=0; i<128; ++i)
+                                        for(int k=0; k<=5; ++k)
+                                                horizon[k]->set_xy (i, i-64., 0.);
+                                scopeflag=0;
+                        }
                 }
-                info->set_text (tmp);
-                g_free (tmp);
-                info->queue_update (canvas);
+
+                if (modes & SCOPE_INFO){
+                        gchar *tmp = NULL;
+                        if (modes & SCOPE_ON)
+                                y = xrms/gapp->xsm->Inst->nAmpere2V(1.);
+                        if (modes & SCOPE_INFOPLUS){
+                                if (fabs(y) < 0.25)
+                                        tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g : %g\n%g : %g",
+                                                               y*1000., x,
+                                                               scope_min[0]/dec, scope_max[0]/dec,
+                                                               scope_min[1]/dec, scope_max[1]/dec
+                                                               );
+                                else
+                                        tmp = g_strdup_printf ("I: %8.1f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g : %g\n%g : %g",
+                                                               y, x,
+                                                               scope_min[0]/dec, scope_max[0]/dec,
+                                                               scope_min[1]/dec, scope_max[1]/dec
+                                                               );
+                                //tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM,
+                                //                               y, x); //  "\n%g:%g", gapp->xsm->Inst->V2ZAng(z), scope_min[0]/dec,scope_max[0]/dec);
+                        } else {
+                                if (fabs(y) < 0.25)
+                                        tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y*1000., x);
+                                else
+                                        tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y, x);
+                        }
+                        info->set_text (tmp);
+                        g_free (tmp);
+                        info->queue_update (canvas);
+                        infoflag=1;
+                } else {
+                        if (infoflag){
+                                info->set_text ("");
+                                info->queue_update (canvas);
+                                infoflag=0;
+                        }
+                }
 	}
 
         probe->queue_update (canvas);
         
         busy = FALSE;
-	return TRUE;
+
+	if (timer_id)
+                return TRUE; // keep repeating
+        else
+                return FALSE; // cancel g_timeout calls
 }
 
 ////////////////////////////////////////
