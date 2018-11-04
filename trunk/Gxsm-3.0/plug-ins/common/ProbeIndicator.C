@@ -666,7 +666,8 @@ gint ProbeIndicator::refresh(){
         static gfloat scopedec[2][SCOPE_N+1];
         static gfloat scope_min[4] = {0,0,0,0};
         static gfloat scope_max[4] = {0,0,0,0};
-        static gfloat xrms = 0.;
+        static double xrms = 0.;
+        static double xavg = 0.;
         static gint busy=FALSE;
         static double tics=0.;
         static gint infoflag=1;
@@ -775,7 +776,8 @@ gint ProbeIndicator::refresh(){
                                 dec=1;
                                 
                         xmax=xmin=scope[0][0]*dec;
-                        xrms=0.;
+                        xavg = 0.;
+                        xrms = 0.;
                         gfloat xr,xc;
                         xc = 0.5*(scope_max[0]+scope_min[0]);
                         xr = scope_max[0]-scope_min[0];
@@ -785,6 +787,7 @@ gint ProbeIndicator::refresh(){
                                 for (int j=0; j<dec; ++j, ++k){
                                         x += scope[0][k];
                                         xrms += scope[0][k]*scope[0][k];
+                                        xavg += scope[0][k];
                                 }
                                 // x /= dec; // no need as auto scaled regardless
                                 if (x>xmax)
@@ -795,6 +798,7 @@ gint ProbeIndicator::refresh(){
                                 horizon[0]->set_xy (i, i-64., -32.*(x-xc)/xr);
                         }
                         xrms /= SCOPE_N;
+                        xavg /= SCOPE_N;
                         xrms = sqrt(xrms);
                         scope_max[0] = 0.9*scope_max[0] + 0.1*xmax;
                         scope_min[0] = 0.9*scope_min[0] + 0.1*xmin;
@@ -880,28 +884,31 @@ gint ProbeIndicator::refresh(){
 
                 if (modes & SCOPE_INFO){
                         gchar *tmp = NULL;
-                        if (modes & SCOPE_ON)
-                                y = xrms/gapp->xsm->Inst->nAmpere2V(1.);
+                        double yy = 0.;
+                        if (modes & SCOPE_ON){
+                                y = xavg/gapp->xsm->Inst->nAmpere2V(1.);
+                                yy = xrms/gapp->xsm->Inst->nAmpere2V(1.);
+                        }
                         if (modes & SCOPE_INFOPLUS){
                                 if (fabs(y) < 0.25)
-                                        tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g : %g\n%g : %g",
-                                                               y*1000., x,
-                                                               scope_min[0]/dec, scope_max[0]/dec,
-                                                               scope_min[1]/dec, scope_max[1]/dec
+                                        tmp = g_strdup_printf ("I: %8.1f (%.2f) pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\nI: %.2f : %.2f\nZ: %.2f : %.2f",
+                                                               y*1000., yy*1000., x, gapp->xsm->Inst->V2ZAng(z),
+                                                               scope_min[0]/dec/gapp->xsm->Inst->nAmpere2V(1.), scope_max[0]/dec/gapp->xsm->Inst->nAmpere2V(1.),
+                                                               gapp->xsm->Inst->V2ZAng(scope_min[1]/dec), gapp->xsm->Inst->V2ZAng(scope_max[1]/dec)
                                                                );
                                 else
-                                        tmp = g_strdup_printf ("I: %8.1f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\n%g : %g\n%g : %g",
-                                                               y, x,
-                                                               scope_min[0]/dec, scope_max[0]/dec,
-                                                               scope_min[1]/dec, scope_max[1]/dec
+                                        tmp = g_strdup_printf ("I: %8.1f (%.2f) nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\nI: %.2f : %.2f\nZ: %.2f : %.2f",
+                                                               y, yy, x, gapp->xsm->Inst->V2ZAng(z),
+                                                               scope_min[0]/dec/gapp->xsm->Inst->nAmpere2V(1.), scope_max[0]/dec/gapp->xsm->Inst->nAmpere2V(1.),
+                                                               gapp->xsm->Inst->V2ZAng(scope_min[1]/dec), gapp->xsm->Inst->V2ZAng(scope_max[1]/dec)
                                                                );
                                 //tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM,
                                 //                               y, x); //  "\n%g:%g", gapp->xsm->Inst->V2ZAng(z), scope_min[0]/dec,scope_max[0]/dec);
                         } else {
                                 if (fabs(y) < 0.25)
-                                        tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y*1000., x);
+                                        tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y*1000., x, gapp->xsm->Inst->V2ZAng(z));
                                 else
-                                        tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y, x);
+                                        tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y, x, gapp->xsm->Inst->V2ZAng(z));
                         }
                         info->set_text (tmp);
                         g_free (tmp);
