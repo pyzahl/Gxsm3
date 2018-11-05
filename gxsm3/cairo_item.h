@@ -233,7 +233,7 @@ public:
         void set_fill_rgba (gint basic_color_index, gfloat a=1.0) {
                 for (int i=0; i<3; ++i)
                         fill_rgba[i]=BasicColors[basic_color_index % BASIC_COLORS][i];
-                stroke_rgba[3]=a;
+                fill_rgba[3]=a;
         };
         virtual void queue_update_bbox (GtkWidget* imgarea) {
                 gtk_widget_queue_draw_area (imgarea, bbox[0], bbox[1], bbox[2], bbox[3]);
