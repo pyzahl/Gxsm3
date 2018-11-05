@@ -3284,7 +3284,7 @@ int sranger_mk3_hwi_dev::read_pll_signal2dec (gfloat *signal, int n, double scal
                 gint32 tmp_array[0x40000];
                 gint32 start = deci-n;
                 if (start > 0)
-                        read_pll_array32 (dsp_pll.Signal1+((0x80000+start)<<2), n, tmp_array);
+                        read_pll_array32 (dsp_pll.Signal2+((0x80000+start)<<2), n, tmp_array);
                 else{
                         gint n1 = -start;
                         gint n2 = n-n1;

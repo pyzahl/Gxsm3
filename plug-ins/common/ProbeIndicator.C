@@ -608,6 +608,7 @@ ProbeIndicator::ProbeIndicator (){
         probe->set_horizon_color(horizon[0], CAIRO_COLOR_RED_ID);
 
         horizon[1]=probe->add_horizon ("Zfast", 0.0, 0.0, 128);
+        probe->set_horizon_color(horizon[1], CAIRO_COLOR_WHITE_ID);
 
         horizon[2]=probe->add_horizon ("IPSD", 0.0, 0.0, 128);
         probe->set_horizon_color(horizon[2], CAIRO_COLOR_GREEN_ID);
@@ -619,7 +620,7 @@ ProbeIndicator::ProbeIndicator (){
         probe->set_horizon_color(horizon[4], CAIRO_COLOR_ORANGE_ID);
 
         horizon[5]=probe->add_horizon ("Zdec", 0.0, 0.0, 128);
-        //probe->set_horizon_color(horizon[5], CAIRO_COLOR_ORANGE_ID);
+        probe->set_horizon_color(horizon[5], CAIRO_COLOR_WHITE_ID);
 
         
 	//probe->queue_update (canvas);
@@ -973,8 +974,8 @@ gint ProbeIndicator::refresh(){
                                 x /= dec;
                                 x = gapp->xsm->Inst->V2ZAng(x);
 
-                                xdec = scopedec[1][k]*32768./2./max_z; // ??? should not be need, shoudl be V ???
-                        
+                                xdec = scopedec[1][k]; // ??? should not be need, shoudl be V ???
+                                
                                 if (x>xmax)
                                         xmax = x;
                                 if (x<xmin)
@@ -982,8 +983,8 @@ gint ProbeIndicator::refresh(){
 
                                 //horizon[1]->set_xy (i, i-64., 32.*(x-xc)/xr.); // autorange
                                 horizon[1]->set_xy (i, i-64., 64.*(x-xc)/16.); // xr is too jumpy ... fixed 2A/div (+/-16A on grid)
-                                horizon[5]->set_xy (i, i-64., 100.*xdec); // decimated rolling signal, full scale (max z range matching tip marker)
-                                // g_print ("decZ %d %g  fBW: %g   xc: %g\n",i,gapp->xsm->Inst->V2ZAng(scopedec[1][k]), gapp->xsm->Inst->V2ZAng(scope[1][k]), xc);
+                                horizon[5]->set_xy (i, i-64., 100.*xdec/max_z); // decimated rolling signal, full scale (max z range matching tip marker)
+                                // g_print ("decZ %d %g  fBW: %g   xc: %g  xdec: %g mz: %g\n",i,gapp->xsm->Inst->V2ZAng(scopedec[1][k]), gapp->xsm->Inst->V2ZAng(scope[1][k]), xc, xdec, max_z);
 
                         }
                         scope_max[1] = 0.9*scope_max[1] + 0.1*xmax;
