@@ -38,12 +38,13 @@
 #define SCOPE_ON     1
 #define SCOPE_FFT    2
 #define SCOPE_ZOOM   4
-#define SCOPE_RECORD 8
-#define SCOPE_INFO      0x10
-#define SCOPE_INFOPLUS  0x20
-#define SCOPE_INFOMINUS 0x40
-#define SCOPE_PAUSE     0x80
-#define SCOPE_DBG       0x100
+#define SCOPE_FTFAST 8
+#define SCOPE_RECORD    0x10
+#define SCOPE_INFO      0x20
+#define SCOPE_INFOPLUS  0x40
+#define SCOPE_INFOMINUS 0x80
+#define SCOPE_PAUSE     0x100
+#define SCOPE_DBG       0x200
 
 
 class cairo_item_switch {
@@ -65,8 +66,26 @@ public:
                 tics = NULL;
                 horizon = NULL;
 
+                gint gnx=2*8+1;
+                gint gny=2*8+1;
+                grid = new cairo_item_segments (2*(gnx+gny));
+                gint k=0;
+                for (int i=0; i<gnx; ++i){
+                        grid->set_xy(k++, -64.0+i*8, -64.0);
+                        grid->set_xy(k++, -64.0+i*8,  64.0);
+                }
+                for (int i=0; i<gny; ++i){
+                        grid->set_xy(k++, -64.0, -64.0+i*8);
+                        grid->set_xy(k++,  64.0, -64.0+i*8);
+                }
+
                 // default setup
                 transparency = 0.5;
+
+                set_color (cc_grid, CAIRO_COLOR_GREEN_ID, 0.4);
+                grid->set_stroke_rgba (cc_grid);
+                grid->set_line_width (0.5);
+
                 set_color (cc_tics, CAIRO_COLOR_BLACK_ID, transparency);
                 set_color (cc_gauge, CAIRO_COLOR_CYAN_ID, transparency);
                 set_color (cc_marks, CAIRO_COLOR_CYAN_ID, transparency);
@@ -88,10 +107,12 @@ public:
 
         };
         ~hud_object(){
+                delete grid;
                 delete ic;
                 delete oc;
                 g_slist_free_full (indicators, (GDestroyNotify)hud_object::remove_cairo_item);
                 g_slist_free_full (marks, (GDestroyNotify)hud_object::remove_cairo_item);
+                g_slist_free_full (horizon, (GDestroyNotify)hud_object::remove_cairo_item);
         };
         static void set_color(float c[4], int id, float alpha){
                 c[0]=BasicColors[id][0];
@@ -201,6 +222,7 @@ public:
 
 
         void queue_update (GtkWidget* imgarea) {
+                grid->queue_update (imgarea);
                 ic->queue_update (imgarea);
                 oc->queue_update (imgarea);
                 g_slist_foreach (marks, (GFunc)hud_object::q_update_cairo_item, imgarea);
@@ -225,6 +247,7 @@ public:
                 g_slist_foreach (horizon, (GFunc)hud_object::show_cairo_item, this);
         };
         virtual void draw (cairo_t* cr, double alpha=0.0, gboolean tr=true){
+                grid->draw(cr);
                 ic->draw(cr);
                 oc->draw(cr);
                 g_slist_foreach (marks, (GFunc)hud_object::draw_cairo_item, cr);
@@ -241,7 +264,10 @@ private:
         GSList *tics;
         GSList *horizon;
 
+        cairo_item *grid;
+ 
         float transparency;
+        float cc_grid[4];
         float cc_tics[4];
         float cc_gauge[4];
         float cc_indpos[4];
@@ -258,12 +284,15 @@ public:
 
         void AppWindowInit(const gchar *title);
 
+        GtkWidget *signal_input_signal_options (gint channel, gint preset, gpointer ref);
+        
         static gboolean canvas_draw_callback (GtkWidget *widget, cairo_t *cr, ProbeIndicator *pv);
         static gint canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ProbeIndicator *pv);
 
         static void close_callback (GtkWidget *widget, gpointer user_data);
         static void run_scope_callback (GtkWidget *widget, gpointer user_data);
         static void zoom_scope_callback (GtkWidget *widget, gpointer user_data);
+        static void scope_ftfast_callback (GtkWidget *widget, gpointer user_data);
         static void record_callback (GtkWidget *widget, gpointer user_data);
         static void pause_callback (GtkWidget *widget, gpointer user_data);
         static void shutdown_callback (GtkWidget *widget, gpointer user_data);
@@ -362,7 +391,8 @@ private:
         GtkWidget  *canvas;
 
         // remplaced with: cairo_item_rectangle / text / path
-        cairo_item_text  *info;
+        cairo_item_circle *background;
+        cairo_item_text   *info;
         hud_object *probe;
         cairo_item_arc *ipos, *ineg, *ipos2, *ineg2;
         cairo_item_arc *fpos, *fneg, *fpos2, *fneg2;

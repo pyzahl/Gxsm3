@@ -112,6 +112,9 @@ static void ProbeIndicator_about (void);
 static void ProbeIndicator_configure (void);
 static void ProbeIndicator_cleanup (void);
 
+//extern DSPPACControl *DSPPACClass;
+
+
 ProbeIndicator *HUD_Window = NULL;
 gboolean refresh_function(GtkWidget *w, GdkEvent *event, void *data);
 
@@ -329,6 +332,15 @@ void ProbeIndicator::zoom_scope_callback (GtkWidget *widget, gpointer user_data)
                 pv->modes &= ~SCOPE_ZOOM;
 }
 
+void ProbeIndicator::scope_ftfast_callback (GtkWidget *widget, gpointer user_data) {
+        ProbeIndicator *pv = (ProbeIndicator *) user_data; 
+        //g_print ("ProbeIndicator::zoom_scope_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                pv->modes = (pv->modes & ~SCOPE_FTFAST) | SCOPE_FTFAST;
+        else
+                pv->modes &= ~SCOPE_FTFAST;
+}
+
 void ProbeIndicator::record_callback (GtkWidget *widget, gpointer user_data) {
         ProbeIndicator *pv = (ProbeIndicator *) user_data; 
         //g_print ("ProbeIndicator:record_:scope_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
@@ -377,6 +389,35 @@ void ProbeIndicator::less_info_callback (GtkWidget *widget, gpointer user_data) 
                 pv->modes &= ~SCOPE_INFOMINUS;
 }
 
+#if 0
+GtkWidget *ProbeIndicator::signal_input_signal_options (gint channel, gint preset, gpointer ref){
+        GtkWidget *cbtxt = gtk_combo_box_text_new (); 
+        g_object_set_data(G_OBJECT (cbtxt), "signal_channel", GINT_TO_POINTER (channel)); 
+#if 0
+        if ( !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Analog_IN") 
+             || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Control") 
+             || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Counter") 
+             || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Mixer") 
+             || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "LockIn") 
+             || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "PAC")){
+        }
+#endif
+        for (int jj=0;  jj<NUM_SIGNALS_UNIVERSAL && sranger_common_hwi->lookup_dsp_signal_managed (jj)->p; ++jj){ 
+                gchar *id = g_strdup_printf ("%d", jj);
+                const gchar *label = sranger_common_hwi->lookup_dsp_signal_managed (jj)->label;
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, label?label:"???");
+                g_free (id);
+        } 
+        gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), preset); 
+        g_signal_connect (G_OBJECT (cbtxt), "changed",	
+                          G_CALLBACK (DSPControl::choice_lcksource_callback), 
+                          ref);				
+        grid_add_widget (cbtxt);
+        return cbtxt;
+};
+#endif
+
+
 ProbeIndicator::ProbeIndicator (){ 
         hud_size = 150;
 	timer_id = 0;
@@ -423,25 +464,34 @@ ProbeIndicator::ProbeIndicator (){
         gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("system-search-symbolic", tb_icon_size));
         gtk_widget_show (tb);
         gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
-	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+	gtk_widget_set_tooltip_text (tb, N_("Zoom Scope"));
         g_signal_connect (G_OBJECT (tb), "toggled",
                           G_CALLBACK (ProbeIndicator::zoom_scope_callback), this);
 	gtk_grid_attach (GTK_GRID (v_grid), tb, 1,2, 1,1);
 
         tb = gtk_toggle_button_new ();
+        gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("edit-delete-symbolic", tb_icon_size));
+        gtk_widget_show (tb);
+        gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
+	gtk_widget_set_tooltip_text (tb, N_("Full BW FFT/decimated 256 FFT"));
+        g_signal_connect (G_OBJECT (tb), "toggled",
+                          G_CALLBACK (ProbeIndicator::scope_ftfast_callback), this);
+	gtk_grid_attach (GTK_GRID (v_grid), tb, 1,3, 1,1);
+        
+        tb = gtk_toggle_button_new ();
         gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("media-record-symbolic", tb_icon_size));
         gtk_widget_show (tb);
         gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
-	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+	gtk_widget_set_tooltip_text (tb, N_("Enable Record Signal 1 and 2 Streams, decimated 256, realt time"));
         g_signal_connect (G_OBJECT (tb), "toggled",
                           G_CALLBACK (ProbeIndicator::record_callback), this);
-	gtk_grid_attach (GTK_GRID (v_grid), tb, 1,3, 1,1);
+	gtk_grid_attach (GTK_GRID (v_grid), tb, 1,4, 1,1);
 
         tb = gtk_toggle_button_new ();
         gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("preferences-system-details-symbolic", tb_icon_size));
         gtk_widget_show (tb);
         gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
-	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+	gtk_widget_set_tooltip_text (tb, N_("Enable Basic Info"));
         g_signal_connect (G_OBJECT (tb), "toggled",
                           G_CALLBACK (ProbeIndicator::info_callback), this);
 	gtk_grid_attach (GTK_GRID (v_grid), tb, 2,1, 1,1);
@@ -451,11 +501,12 @@ ProbeIndicator::ProbeIndicator (){
         gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("list-add-symbolic", tb_icon_size));
         gtk_widget_show (tb);
         gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
-	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+	gtk_widget_set_tooltip_text (tb, N_("More details for Info"));
         g_signal_connect (G_OBJECT (tb), "toggled",
                           G_CALLBACK (ProbeIndicator::more_info_callback), this);
 	gtk_grid_attach (GTK_GRID (v_grid), tb, 2,2, 1,1);
 
+        /*
         tb = gtk_toggle_button_new ();
         gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("list-remove-symbolic", tb_icon_size));
         gtk_widget_show (tb);
@@ -464,12 +515,13 @@ ProbeIndicator::ProbeIndicator (){
         g_signal_connect (G_OBJECT (tb), "toggled",
                           G_CALLBACK (ProbeIndicator::less_info_callback), this);
 	gtk_grid_attach (GTK_GRID (v_grid), tb, 2,3, 1,1);
-
+        */
+        
         tb = gtk_toggle_button_new ();
         gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("media-playback-pause-symbolic", tb_icon_size));
         gtk_widget_show (tb);
         gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
-	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+	gtk_widget_set_tooltip_text (tb, N_("Pause all udpates, scope, recordings"));
         g_signal_connect (G_OBJECT (tb), "toggled",
                           G_CALLBACK (ProbeIndicator::pause_callback), this);
 	gtk_grid_attach (GTK_GRID (v_grid), tb, 3,1, 1,1);
@@ -479,7 +531,7 @@ ProbeIndicator::ProbeIndicator (){
         gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("system-shutdown-symbolic", tb_icon_size));
         gtk_widget_show (tb);
         gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
-	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+	gtk_widget_set_tooltip_text (tb, N_("N/A"));
         g_signal_connect (G_OBJECT (tb), "toggled",
                           G_CALLBACK (ProbeIndicator::shutdown_callback), this);
 	gtk_grid_attach (GTK_GRID (v_grid), tb, 40,2, 1,1);
@@ -488,18 +540,18 @@ ProbeIndicator::ProbeIndicator (){
         gtk_button_set_image (GTK_BUTTON (tb), gtk_image_new_from_icon_name ("window-close-symbolic", tb_icon_size));
         gtk_widget_show (tb);
         gtk_widget_set_name (tb, "probe-indicator-button"); // name used by CSS to apply custom color scheme
-	gtk_widget_set_tooltip_text (tb, N_("Enable Scope"));
+	gtk_widget_set_tooltip_text (tb, N_("N/A"));
         g_signal_connect (G_OBJECT (tb), "toggled",
                           G_CALLBACK (ProbeIndicator::close_callback), this);
 	gtk_grid_attach (GTK_GRID (v_grid), tb, 40,1, 1,1);
-        
+
         
         probe = new hud_object();
         probe->add_tics ("T1", 0, 1., 9, 25.);
         probe->add_tics ("T1", 240, 1., 13, 10.);
         
         tip=probe->add_mark ("MT", 200, 0.);
-        probe->add_mark ("MB", 0, 0.7);
+        //probe->add_mark ("MB", 0, 0.7);
 
         m1=probe->add_mark ("M1", 0, 0., 1, -1, 0.75);
         m2=probe->add_mark ("M2", 0, 0., 1, -1, 0.75);
@@ -523,7 +575,7 @@ ProbeIndicator::ProbeIndicator (){
         horizon[1]=probe->add_horizon ("Zfast", 0.0, 0.0, 128);
 
         horizon[2]=probe->add_horizon ("IPSD", 0.0, 0.0, 128);
-        probe->set_horizon_color(horizon[2], CAIRO_COLOR_RED_ID);
+        probe->set_horizon_color(horizon[2], CAIRO_COLOR_GREEN_ID);
 
         horizon[3]=probe->add_horizon ("IdecHi", 0.0, 0.0, 128);
         probe->set_horizon_color(horizon[3], CAIRO_COLOR_ORANGE_ID);
@@ -536,11 +588,15 @@ ProbeIndicator::ProbeIndicator (){
 
         
 	//probe->queue_update (canvas);
+        background = new cairo_item_circle (0.,0., 100.);
+	background->set_line_width (2.);
+	background->set_stroke_rgba (CAIRO_COLOR_GRAY5_ID);
+	background->set_fill_rgba (CAIRO_COLOR_BLACK_ID);
         
 	info = new cairo_item_text (60.0, 35.0, "Probe HUD");
         //info->set_text ("Probe HUD")
-	info->set_stroke_rgba (CAIRO_COLOR_BLUE);
-	info->set_font_face_size ("Ununtu", 12.);
+	info->set_stroke_rgba (CAIRO_COLOR_WHITE);
+	info->set_font_face_size ("Ununtu", 10.);
 	info->set_spacing (-.1);
 	info->set_anchor (CAIRO_ANCHOR_E);
 	//info->queue_update (canvas);
@@ -636,8 +692,10 @@ gboolean  ProbeIndicator::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, 
         // scale to volate range
 	//cairo_scale (cr, 0.5*pv->WXS/pv->max_x, -0.5*pv->WYS/pv->max_y);
 
-	pv->probe->draw (cr);         // pan area
-	pv->info->draw (cr);
+	pv->background->draw (cr); // fill/clear background
+                                                 
+	pv->probe->draw (cr);         // probe indicator
+	pv->info->draw (cr);          // info text
 
         cairo_restore (cr);
         return TRUE;
@@ -836,12 +894,23 @@ gint ProbeIndicator::refresh(){
 
                         // decimated fs: 150000 Hz / 256 = 585.9375 Hz
 
-                        run_fft (SCOPE_N, &scopedec[0][0], &scope[2][0], 1e-7, 10.,0.1);
-                        k = SCOPE_N-dec*128;
-                        for(i=0; i<128; ++i, tics+=1./128.){
-                                gfloat x=0.;
-                                gint next=(int)(log(i+1.0)/log(128.0)*SCOPE_N/2);
-                                for (; k<=next && k<SCOPE_N; ++k){
+                        if (modes & SCOPE_FTFAST)
+                                run_fft (SCOPE_N, &scope[0][0], &scope[2][0], 1e-7, 10.,0.1); // on full BW signal1
+                        else
+                                run_fft (SCOPE_N, &scopedec[0][0], &scope[2][0], 1e-7, 10.,0.1); // on decimated signal1
+
+                        gint right=SCOPE_N/2;
+                        if (modes & SCOPE_ZOOM)
+                                right = SCOPE_N/8;
+
+                        for(k=i=0; i<128; ++i){
+                                gfloat x=100.;
+                                gint next=(int)(log(i+1.0)/log(128.0)*right);
+                                for (; k<=next && k<right; ++k){
+                                        if (modes & SCOPE_DBG){
+                                                x = scope[2][k];
+                                                continue;
+                                        }
                                         //g_print ("%d %g\n",k,scope[2][k]);
                                         if (x > scope[2][k]) // peak decimated 0 ... -NN db
                                                 x = scope[2][k];
@@ -853,7 +922,7 @@ gint ProbeIndicator::refresh(){
                         xmax=xmin=scope[1][0]*dec;
                         xc = 0.5*(scope_max[1]+scope_min[1]);
                         xr = scope_max[1]-scope_min[1];
-                        for(i=k=0; i<128; ++i, tics+=1./128.){
+                        for(i=k=0; i<128; ++i){
                                 gfloat xr,xc;
                                 gfloat x=0.;
                                 for (int j=0; j<dec; ++j, ++k)

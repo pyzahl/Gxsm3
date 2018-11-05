@@ -3226,6 +3226,8 @@ int sranger_mk3_hwi_dev::read_pll_signal2 (gfloat *signal, int n, double scale, 
 }
 
 int sranger_mk3_hwi_dev::read_pll_signal1dec (gfloat *signal, int n, double scale, gint record){
+        const gint64 max_age = 60000000; // 60s
+        static gint64 time_of_last_stamp = 0; // abs time in us
         static gint32 ring_buffer_position_last = -1;
 	gint32 deci;
         read_pll_array32 (dsp_pll.Signal1+4*0x7ffff, 1, &deci);
@@ -3251,6 +3253,12 @@ int sranger_mk3_hwi_dev::read_pll_signal1dec (gfloat *signal, int n, double scal
                         if(f.good()){
                                 // append new data from ring_buffer_position_last ... deci (now)
                                 int k=0;
+                                if ((time_of_last_stamp+max_age) < g_get_real_time () ){
+                                        time_of_last_stamp = g_get_real_time ();
+                                
+                                        f << "## " <<  time_of_last_stamp << std::endl;
+                                }
+                                
                                 f << "# " << ring_buffer_position_last << " ... " << deci << std::endl;
                                 if (ring_buffer_position_last < deci)
                                         for (int i=n-(deci-ring_buffer_position_last); i<n; ++i)
