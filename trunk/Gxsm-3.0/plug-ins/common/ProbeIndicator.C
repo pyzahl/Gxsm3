@@ -756,6 +756,7 @@ void ProbeIndicator::stop (){
 
 gint ProbeIndicator::refresh(){
         #define SCOPE_N 4096
+        #define SCOPE_VIEW_DEC 4096/128
         static gfloat scope[4][SCOPE_N+1];
         static gfloat scopedec[2][SCOPE_N+1];
         static gfloat scope_min[4] = {0,0,0,0};
@@ -763,7 +764,6 @@ gint ProbeIndicator::refresh(){
         static double xrms = 0.;
         static double xavg = 0.;
         static gint busy=FALSE;
-        static double tics=0.;
         static gint infoflag=1;
         static gint scopeflag=1;
         gint dec=SCOPE_N/128;
@@ -878,7 +878,7 @@ gint ProbeIndicator::refresh(){
                         xc = 0.5*(scope_max[0]+scope_min[0]);
                         xr = scope_max[0]-scope_min[0];
                         int i,k;
-                        for(i=k=0; i<128; ++i, tics+=1./128.){
+                        for(i=k=0; i<128; ++i){
                                 gfloat x=0.;
                                 for (int j=0; j<dec; ++j, ++k){
                                         x += scope[0][k];
@@ -912,7 +912,7 @@ gint ProbeIndicator::refresh(){
                         xc = 0.5*(scope_max[2]+scope_min[2]);
                         xr = scope_max[2]-scope_min[2];
                         k = SCOPE_N-dec*128;
-                        for(i=0; i<128; ++i, tics+=1./128.){
+                        for(i=0; i<128; ++i){
                                 gfloat x=scopedec[0][k];
                                 gfloat x2=scopedec[0][k];
                                 for (int j=0; j<dec; ++j, ++k){
@@ -961,21 +961,23 @@ gint ProbeIndicator::refresh(){
 
                 
                         // Plot Signal2 (designed for Current (or may use dFreq) or MIX-IN-0, decimated DSP reat time scrolled view FULL-BW and :256 @ 4096->128
-                        xmax=xmin = gapp->xsm->Inst->V2ZAng (scope[1][0]);
-                        xc = 0.5*(scope_max[1]+scope_min[1]);
-                        xr = scope_max[1]-scope_min[1];
+                        xmax=xmin = gapp->xsm->Inst->V2ZAng (scope[1][0]); // in Ang
+                        xc = 0.5*(scope_max[1]+scope_min[1]); // center
+                        xr = scope_max[1]-scope_min[1]; // range
                         for(i=k=0; i<128; ++i){
-                                gfloat xr,xc;
                                 gfloat x=0.;
                                 gfloat xdec=0.;
                                 for (int j=0; j<dec; ++j, ++k)
                                         x += scope[1][k];
                                 
                                 x /= dec;
-                                x = gapp->xsm->Inst->V2ZAng(x);
+                                x = gapp->xsm->Inst->V2ZAng(x); // Z in Ang
 
-                                xdec = scopedec[1][k]; // ??? should not be need, shoudl be V ???
-                                
+                                if (i <= 64) // shift so center is current (where the tip is), lhs = now to -T1/2, rhs: older (-T1/2..-T)
+                                        xdec = scopedec[1][(i+64)*SCOPE_VIEW_DEC-1]; // simple decimated data stream, in V
+                                else
+                                        xdec = scopedec[1][(i-64)*SCOPE_VIEW_DEC-1]; // simple decimated data stream, in V
+                        
                                 if (x>xmax)
                                         xmax = x;
                                 if (x<xmin)
@@ -983,10 +985,12 @@ gint ProbeIndicator::refresh(){
 
                                 //horizon[1]->set_xy (i, i-64., 32.*(x-xc)/xr.); // autorange
                                 horizon[1]->set_xy (i, i-64., 64.*(x-xc)/16.); // xr is too jumpy ... fixed 2A/div (+/-16A on grid)
-                                horizon[5]->set_xy (i, i-64., 100.*xdec/max_z); // decimated rolling signal, full scale (max z range matching tip marker)
-                                // g_print ("decZ %d %g  fBW: %g   xc: %g  xdec: %g mz: %g\n",i,gapp->xsm->Inst->V2ZAng(scopedec[1][k]), gapp->xsm->Inst->V2ZAng(scope[1][k]), xc, xdec, max_z);
+                                horizon[5]->set_xy (i, i-64, 100.*xdec/max_z); // decimated rolling signal, full scale (max z range matching tip marker)
+                                //g_print ("decZ %d %g  fBW: %g   xc: %g xdec: %g V, max_z: %g V\n",i,
+                                //         gapp->xsm->Inst->V2ZAng(scopedec[1][k]), gapp->xsm->Inst->V2ZAng(scope[1][k]), xc, xdec, max_z);
 
                         }
+                        // update smoothly
                         scope_max[1] = 0.9*scope_max[1] + 0.1*xmax;
                         scope_min[1] = 0.9*scope_min[1] + 0.1*xmin;
                         scopeflag=1;
