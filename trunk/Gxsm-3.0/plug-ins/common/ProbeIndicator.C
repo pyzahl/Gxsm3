@@ -54,37 +54,72 @@
 
 
 % PlugInUsage
- Although this is a plugin it is opened automatically upon startup of GXSM.
- There is not interaction with the user.
+ Although this is a plugin it is opened automatically upon startup of GXSM, need to open first time via Main menu Window/Probe-Hud.
 
-\begin{figure}[hbt]
-\center { \fighalf{ProbeIndicator_indicators}}
-\caption{The indicators of the ProbeIndicator window.}
-\label{fig:ProbeIndicator}
-\end{figure}
 
- 1.) Indicator of the state machine on the DSP. In general the colors 
- indicate green=ON/in progress, red=OFF/inactive. From left to right
- the boxed indicate the status of the feedback, scan in progress, 
- vector proce in progress, mover in progress (coarse approach)
+https://youtu.be/eB1FO76M7gI
+	
+gxsm3 pi2 2018 11 04 20 01 15
+youtu.be
 
- 2.) Indicators of the 8 GPIO channels. They can be read on/off 
- (red/black) or write on/off (green/white) giving you four possible 
- states.
 
- 3.) Indicator of the Z position (Z-offset/z-scan)
+https://youtu.be/vTrldyKxrZ4
+	
+gxsm3 pi 2018 11 04 19 57 13
+youtu.be
+
+
+
+It added a few feature and the signal recorder/oscilloscope functionality to GXSM so far only accessible via the python script. Not designed to obsolete the more generic python, but specifically tuned for monitoring a two signals.
+
+
+Right now I have not included a signal selector for Signal1&2 (recorder) nor a preset into gxsm and you have to choose still using the python oscilloscope once:
+
+
+Select "MIX IN 0" for CH1 and "Z Servo Neg" for CH2.
+
+
+I'll likely default this.
+
+
+What is does:
+
+It records 2x 4096 data points (scope channel) at full BW, they are plotted in a 4096 -> 128 decimated graph.
+
+
+And it records in a constant gap less!!! continuous stream a 1:256 decimated data stream for both signals.
+
+Checking the [o] record button this data is (for ever, until you delete it) appended into two files located in the working directory (where you start gxsm3). It writes away plain integer numbers and occasional (every 60s) a line starting with a double comment ## nnnn absolute system time stamp in us. And for every read block a index # n .. m range. That may be used to precisely align both data sets in two individual files. Sample rate is exactly 150kHz/256.
+
+
+Using the "Magnifying Button" (Zoom) you can choose to plot at FULL BW the first 128 points.
+
+
+The Signal Button turns the scope on.
+
+The Info Button toggles some text info overlay.
+
+The [x] Button (left) selects FULL BW FFT display.
+
+
+Scope scaling is fully automatic...
+
+FFT scale in double log dB(Freq).... but needs still some optimizations. FFT is run either on decimated 1:256 or FULL BW data.
+
+Also it shows a symbolic tip... indication the actual Z-position, up it tip "up".
+
+
+And a logarithmic current scale bar polar graph and indicators on the outside. Bottom is Zero, 1st tic is 10p, then 100p, ... left / right = pos/neg
+
+The markers and short polar indicator at the position indicated the current absolute min/max (low pass filtered) for the current as read by the scope!
+
+
 
 % OptPlugInNotes
- The tip-position is close to realtime, but it is refreshed only
- several times per second and only if GXSM is idle. Thus the
- display/update may get stuck at times GXSM is very busy. Never the
- less the tip position is read back from the DSP and thus indicates
- the true position, regardless what in happening to GXSM of the DSP --
- so if anything goes wrong, you will see it here!
+MK3 only.
 
 % OptPlugInHints
- For now the plug-in assumes a scan which is centered in the middle of the
- scan not in the middle of the topline (as default for the pci32).
+
 
 % OptPlugInKnownBugs
  None
