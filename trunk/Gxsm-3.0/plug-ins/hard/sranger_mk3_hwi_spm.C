@@ -405,7 +405,7 @@ gint  sranger_mk3_hwi_spm::RTQuery (const gchar *property, int n, gfloat *data){
         if ( property[1] == '3' && ((time_of_last_reading3+max_age) < g_get_real_time () || s3ok)){
                 time_of_last_reading3 = g_get_real_time ();
 
-                double scale =  DSP32Qs15dot16TO_Volt;
+                double scale =  DSP32Qs23dot8TO_Volt;
                 s3ok=read_pll_signal1dec (data, n, scale, property[0] == 'R');
         }
         // Signal2 subsampled 256

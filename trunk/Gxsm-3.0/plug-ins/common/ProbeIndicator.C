@@ -867,7 +867,9 @@ gint ProbeIndicator::refresh(){
                         dec=SCOPE_N/128;
                         if (modes & SCOPE_ZOOM)
                                 dec=1;
-                                
+
+
+                        // Plot Signal1 (designed for Current (or may use dFreq) or MIX-IN-0, full BW 4096->128
                         xmax=xmin=scope[0][0]*dec;
                         xavg = 0.;
                         xrms = 0.;
@@ -903,6 +905,7 @@ gint ProbeIndicator::refresh(){
                         probe->set_mark_pos (m1,  upper);
                         probe->set_mark_pos (m2,  lower);
 
+                        // Plot Signal1 (designed for Current (or may use dFreq) or MIX-IN-0, decimated DSP reat time scrolled view FULL-BW:256 @ 4096->128
                         // slow dec signal
                         xmax=xmin=scopedec[0][0];
                         xc = 0.5*(scope_max[2]+scope_min[2]);
@@ -929,6 +932,7 @@ gint ProbeIndicator::refresh(){
 
                         // decimated fs: 150000 Hz / 256 = 585.9375 Hz
 
+                        // Calculate FFT
                         if (modes & SCOPE_FTFAST)
                                 run_fft (SCOPE_N, &scope[0][0], &scope[2][0], 1e-7, 10.,0.1); // on full BW signal1
                         else
@@ -938,6 +942,7 @@ gint ProbeIndicator::refresh(){
                         if (modes & SCOPE_ZOOM)
                                 right = SCOPE_N/8;
 
+                        // Plot FFT
                         for(k=i=0; i<128; ++i){
                                 gfloat x=100.;
                                 gint next=(int)(log(i+1.0)/log(128.0)*right);
@@ -954,25 +959,32 @@ gint ProbeIndicator::refresh(){
                         }
 
                 
-                        xmax=xmin=scope[1][0]*dec;
+                        // Plot Signal2 (designed for Current (or may use dFreq) or MIX-IN-0, decimated DSP reat time scrolled view FULL-BW and :256 @ 4096->128
+                        xmax=xmin = gapp->xsm->Inst->V2ZAng (scope[1][0]);
                         xc = 0.5*(scope_max[1]+scope_min[1]);
                         xr = scope_max[1]-scope_min[1];
                         for(i=k=0; i<128; ++i){
                                 gfloat xr,xc;
                                 gfloat x=0.;
+                                gfloat xdec=0.;
                                 for (int j=0; j<dec; ++j, ++k)
                                         x += scope[1][k];
-
+                                
                                 x /= dec;
                                 x = gapp->xsm->Inst->V2ZAng(x);
+
+                                xdec = scopedec[1][k]*32768./2./max_z; // ??? should not be need, shoudl be V ???
                         
                                 if (x>xmax)
                                         xmax = x;
                                 if (x<xmin)
                                         xmin = x;
 
-                                horizon[1]->set_xy (i, i-64., 32.*(x-xc)/20.); // xr is too jumpy ... fixed 20A
-                                horizon[5]->set_xy (i, i-64., 32.*(gapp->xsm->Inst->V2ZAng(scopedec[1][k])-xc)/20.); // decimated rolling signal
+                                //horizon[1]->set_xy (i, i-64., 32.*(x-xc)/xr.); // autorange
+                                horizon[1]->set_xy (i, i-64., 64.*(x-xc)/16.); // xr is too jumpy ... fixed 2A/div (+/-16A on grid)
+                                horizon[5]->set_xy (i, i-64., 100.*xdec); // decimated rolling signal, full scale (max z range matching tip marker)
+                                // g_print ("decZ %d %g  fBW: %g   xc: %g\n",i,gapp->xsm->Inst->V2ZAng(scopedec[1][k]), gapp->xsm->Inst->V2ZAng(scope[1][k]), xc);
+
                         }
                         scope_max[1] = 0.9*scope_max[1] + 0.1*xmax;
                         scope_min[1] = 0.9*scope_min[1] + 0.1*xmin;
@@ -995,16 +1007,16 @@ gint ProbeIndicator::refresh(){
                         }
                         if (modes & SCOPE_INFOPLUS){
                                 if (fabs(y) < 0.25)
-                                        tmp = g_strdup_printf ("I: %8.1f (%.2f) pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\nI: %.2f : %.2f\nZ: %.2f : %.2f",
+                                        tmp = g_strdup_printf ("I: %8.1f (%.2f) pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\nI: %.2f : %.2f pA\nZ: %.2f : %.2f " UTF8_ANGSTROEM,
                                                                y*1000., yy*1000., x, gapp->xsm->Inst->V2ZAng(z),
-                                                               scope_min[0]/dec/gapp->xsm->Inst->nAmpere2V(1.), scope_max[0]/dec/gapp->xsm->Inst->nAmpere2V(1.),
-                                                               gapp->xsm->Inst->V2ZAng(scope_min[1]/dec), gapp->xsm->Inst->V2ZAng(scope_max[1]/dec)
+                                                               scope_min[0]/dec/gapp->xsm->Inst->nAmpere2V(1.)*1000., scope_max[0]/dec/gapp->xsm->Inst->nAmpere2V(1.)*1000.,
+                                                               scope_min[1], scope_max[1]
                                                                );
                                 else
-                                        tmp = g_strdup_printf ("I: %8.1f (%.2f) nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\nI: %.2f : %.2f\nZ: %.2f : %.2f",
+                                        tmp = g_strdup_printf ("I: %8.1f (%.2f) nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM "\nI: %.2f : %.2f nA\nZ: %.2f : %.2f " UTF8_ANGSTROEM,
                                                                y, yy, x, gapp->xsm->Inst->V2ZAng(z),
                                                                scope_min[0]/dec/gapp->xsm->Inst->nAmpere2V(1.), scope_max[0]/dec/gapp->xsm->Inst->nAmpere2V(1.),
-                                                               gapp->xsm->Inst->V2ZAng(scope_min[1]/dec), gapp->xsm->Inst->V2ZAng(scope_max[1]/dec)
+                                                               scope_min[1], scope_max[1]
                                                                );
                                 //tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM,
                                 //                               y, x); //  "\n%g:%g", gapp->xsm->Inst->V2ZAng(z), scope_min[0]/dec,scope_max[0]/dec);
