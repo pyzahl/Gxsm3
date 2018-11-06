@@ -1222,6 +1222,11 @@ DSPControl::DSPControl () {
 	if (DSPPACClass) { // MK3
                 sranger_common_hwi->read_dsp_signals (); // read DSP signals or set up empty list depending on actual HW
 
+                // setup scope/recorder defaults
+                sranger_common_hwi->change_signal_input (sranger_common_hwi->lookup_signal_by_name("MIX IN 0"), DSP_SIGNAL_SCOPE_SIGNAL1_INPUT_ID);
+                sranger_common_hwi->change_signal_input (sranger_common_hwi->lookup_signal_by_name("Z Servo Neg"), DSP_SIGNAL_SCOPE_SIGNAL2_INPUT_ID);
+
+                
                 // override configuration of MIX0..3 INPUT config by actual configured DSP signal:
                 mix_fbsource[0] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER0_INPUT_ID);
                 mix_fbsource[1] = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_MIXER1_INPUT_ID);
