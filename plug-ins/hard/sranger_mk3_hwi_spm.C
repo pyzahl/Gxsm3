@@ -1436,14 +1436,14 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 
 		// mirror gain -- may be hooked into by Smart Piezo Amp or anything else!
 		dsp_scan.xyz_gain = ( 
-				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VZ ())) & 0xff) << 16 ) |
+				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VX ())) & 0xff) << 16 ) |
 				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VY ())) & 0xff) <<  8 ) |
-				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VX ())) & 0xff))      );
+				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VZ ())) & 0xff))      );
 		
 		dsp_move.xyz_gain = ( 
-				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VZ0 ())) & 0xff) << 16 ) |
+				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VX0 ())) & 0xff) << 16 ) |
 				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VY0 ())) & 0xff) <<  8 ) |
-				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VX0 ())) & 0xff))      );
+				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VZ0 ())) & 0xff))      );
 		// not yet transferred to DSP.
 
 		PI_DEBUG_GP (DBG_L5, "XYZ gain code:*Sc 0x%08x  Mv: 0x%08x \n", dsp_scan.xyz_gain, dsp_move.xyz_gain);
