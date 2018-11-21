@@ -836,6 +836,8 @@ void sranger_mk2_hwi_spm::EndScan2D(){
                 g_message ("sranger_mk2_hwi_spm::EndScan2D -- tip to orign/manual scan position [dig:%10.3f, %10.3f].", tip_pos[0]/(1<<16), tip_pos[1]/(1<<16));
                 tip_to_origin (tip_pos[0], tip_pos[1]);
         }
+
+        DSPControlClass->EndScanCheck ();
 }
 
 // we are paused

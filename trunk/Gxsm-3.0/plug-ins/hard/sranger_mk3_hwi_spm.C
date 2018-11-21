@@ -978,6 +978,7 @@ void sranger_mk3_hwi_spm::EndScan2D(){
                 g_message ("sranger_mk3_hwi_spm::EndScan2D -- tip to orign/manual scan position [dig:%10.3f, %10.3f].", tip_pos[0]/(1<<16), tip_pos[1]/(1<<16));
                 tip_to_origin (tip_pos[0], tip_pos[1]);
         }
+        DSPControlClass->EndScanCheck ();
 }
 
 // we are paused
@@ -1434,6 +1435,7 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		PI_DEBUG_GP (DBG_L5, "Zoff_xm/Im*** %d \n", dsp_scan.Zoff_2nd_xm);
 		PI_DEBUG_GP (DBG_L5, "NXP*** %d \n", dsp_scan.nx_pre);
 
+#if 0 // enable if you like to assure a gain update at scan-start, else it's only updated on gain change action what normally shoudl do.
 		// mirror gain -- may be hooked into by Smart Piezo Amp or anything else!
 		dsp_scan.xyz_gain = ( 
 				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VX ())) & 0xff) << 16 ) |
@@ -1444,6 +1446,7 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VX0 ())) & 0xff) << 16 ) |
 				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VY0 ())) & 0xff) <<  8 ) |
 				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VZ0 ())) & 0xff))      );
+#endif
 		// not yet transferred to DSP.
 
 		PI_DEBUG_GP (DBG_L5, "XYZ gain code:*Sc 0x%08x  Mv: 0x%08x \n", dsp_scan.xyz_gain, dsp_move.xyz_gain);

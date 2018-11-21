@@ -552,7 +552,9 @@ class DSPControl : public AppBase{
                                   gint xmap=0, gint src=0, gint num_active_xmaps=1, gint num_active_sources=1);
 
 	void StartScanPreCheck ();
-	pv_mode write_vector_mode;
+	void EndScanCheck ();
+
+        pv_mode write_vector_mode;
 
 	void store_values ();
 

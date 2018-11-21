@@ -414,6 +414,8 @@ void sranger_hwi_spm::EndScan2D(){
 	// do return to center?
 	if (DSPControlClass->center_return_flag)
 		tip_to_origin ();
+
+	DSPControlClass->EndScanCheck ();
 }
 
 // we are paused

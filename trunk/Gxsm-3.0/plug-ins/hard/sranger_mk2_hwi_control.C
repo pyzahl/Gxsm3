@@ -86,6 +86,7 @@ public:
                 scrolled_contents = NULL;
                 wid = NULL;
                 config_checkbutton_list = NULL;
+                scan_freeze_widget_list = NULL;
         };
 
         void start_notebook_tab (const gchar *name, const gchar *settings_name, Notebook_Tab_Name id,
@@ -417,9 +418,27 @@ public:
                 remote_list_ec = ecx->AddEntry2RemoteList(rid, remote_list_ec);
         };
 
+        void add_to_scan_freeze_widget_list (GtkWidget *w){
+                scan_freeze_widget_list = g_slist_prepend (scan_freeze_widget_list, w);
+        };
+        static void update_widget (GtkWidget *w, gpointer data){
+                gtk_widget_set_sensitive (w, GPOINTER_TO_INT(data));
+        };
+        void scan_start_gui_actions (){
+                g_message ("DSP GUI UDPATE SCAN START");
+                g_slist_foreach (scan_freeze_widget_list, (GFunc) DSP_GUI_Builder::update_widget, GINT_TO_POINTER(FALSE));
+        };
+        void scan_end_gui_actions (){
+                g_message ("DSP GUI UDPATE SCAN END");
+                g_slist_foreach (scan_freeze_widget_list, (GFunc) DSP_GUI_Builder::update_widget, GINT_TO_POINTER(TRUE));
+        };
+        
         GtkWidget *scrolled_contents;
         GtkWidget *wid;
         GSList *config_checkbutton_list;
+
+	GSList *scan_freeze_widget_list;
+
 };
 
 #define OUT_OF_RANGE N_("Value out of range!")
@@ -1571,9 +1590,11 @@ DSPControl::DSPControl () {
                         break;
 
                 if (j == 3){
+#if 0 // not needed
                         dsp_bp->grid_add_check_button ("SPD Link", "Sync Gains from Smart Piezo Drive", 1,
                                                        G_CALLBACK (DSPControl::spd_link_callback), this,
                                                        0, 1);
+#endif
                         dsp_bp->new_line ();
                 }
 
@@ -1620,6 +1641,7 @@ DSPControl::DSPControl () {
 #endif
                 
                 dsp_bp->grid_add_widget (wid);
+                dsp_bp->add_to_scan_freeze_widget_list (wid);
 	}
 
         dsp_bp->notebook_tab_show_all ();
@@ -4478,6 +4500,8 @@ int DSPControl::Probing_write_ABORT_callback( GtkWidget *widget, DSPControl *dsp
 
 
 void DSPControl::StartScanPreCheck (){
+        dsp_bp->scan_start_gui_actions ();
+
 	dynamic_zoom = 1.;
 	update ();
 
@@ -4490,6 +4514,10 @@ void DSPControl::StartScanPreCheck (){
 		raster_auto_flags = current_auto_flags;
 		write_dsp_probe (0, write_vector_mode);
 	}
+}
+
+void DSPControl::EndScanCheck (){
+        dsp_bp->scan_end_gui_actions ();
 }
 
 int DSPControl::auto_probe_callback(GtkWidget *widget, DSPControl *dspc){
@@ -4847,8 +4875,19 @@ int DSPControl::choice_Ampl_callback (GtkWidget *widget, DSPControl *dspc){
 	PI_DEBUG (DBG_L2, "Ampl: Ch=" << j << " i=" << i );
 	sranger_mk2_hwi_pi.app->spm_range_check(NULL, sranger_mk2_hwi_pi.app);
 	dspc->updateDSP();
-        
-	sranger_common_hwi->UpdateScanGainMirror ();
+
+        // set gain mirroring variable on DSP -- may be read out by any other tool like the MK3-SPD HV Amplifier tool
+
+        switch(j){
+        case 0: case 1: case 3: case 4:
+                sranger_common_hwi->MovetoXY (0.,0.);
+                break;
+        case 2: case 5:
+                // Z safety: ToDo
+                break;
+        }
+
+        sranger_common_hwi->UpdateScanGainMirror ();
 
         
 	return 0;
