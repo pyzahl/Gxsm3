@@ -2682,30 +2682,31 @@ void sranger_mk3_hwi_dev::write_dsp_vector (int index, PROBE_VECTOR_GENERIC *__d
 
 
 	// check count ranges
-	if (dsp_vector.dnx < 0 || dsp_vector.dnx > 32767 || dsp_vector.n < 0 || dsp_vector.n > 32767){
-		GtkWidget *dialog = gtk_message_dialog_new (NULL,
-							    GTK_DIALOG_DESTROY_WITH_PARENT,
-							    GTK_MESSAGE_WARNING,
-							    GTK_BUTTONS_CLOSE,
-							    "Probe Vector [pc%02d] not acceptable:\n"
-							    "n   = %6d   [0..32767]\n"
-							    "dnx = %6d   [0..32767]\n"
-							    "ATTENTION: May result in unpredictable probe actions.\n"
-							    "AUTO-LIMITING FOR SAFETY.\n"
-							    "Hint: adjust slope/speed/points.. to make fit.",
-							    index, dsp_vector.n, dsp_vector.dnx  
-			);
-		g_signal_connect_swapped (G_OBJECT (dialog), "response",
-					  G_CALLBACK (gtk_widget_destroy),
-					  G_OBJECT (dialog));
-		gtk_widget_show (dialog);
+	// NULL VECTOR, OK: END
+	if (!(dsp_vector.n == 0 && dsp_vector.dnx == 0 && dsp_vector.ptr_next == 0 && dsp_vector.ptr_final == 0))
+                if (dsp_vector.dnx < 0 || dsp_vector.dnx > 32767 || dsp_vector.n <= 0 || dsp_vector.n > 32767){
+                        GtkWidget *dialog = gtk_message_dialog_new (NULL,
+                                                                    GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                                    GTK_MESSAGE_WARNING,
+                                                                    GTK_BUTTONS_CLOSE,
+                                                                    "Probe Vector [pc%02d] not acceptable:\n"
+                                                                    "n   = %6d   [0..32767]\n"
+                                                                    "dnx = %6d   [0..32767]\n"
+                                                                    "Auto adjusting.\n"
+                                                                    "Hint: adjust slope/speed/points/time.",
+                                                                    index, dsp_vector.n, dsp_vector.dnx  
+                                                                    );
+                        g_signal_connect_swapped (G_OBJECT (dialog), "response",
+                                                  G_CALLBACK (gtk_widget_destroy),
+                                                  G_OBJECT (dialog));
+                        gtk_widget_show (dialog);
 
-		if (dsp_vector.dnx < 0) dsp_vector.dnx = 0;
-		if (dsp_vector.dnx > 32767) dsp_vector.dnx = 32767;
-		if (dsp_vector.n < 0) dsp_vector.n = 0;
-		if (dsp_vector.n > 32767) dsp_vector.n = 32767;
+                        if (dsp_vector.dnx < 0) dsp_vector.dnx = 0;
+                        if (dsp_vector.dnx > 32767) dsp_vector.dnx = 32767;
+                        if (dsp_vector.n <= 0) dsp_vector.n = 1;
+                        if (dsp_vector.n > 32767) dsp_vector.n = 32767;
 
-	}
+                }
 
 	// setup VPC essentials
 	dsp_vector.i = dsp_vector.repetitions; // preload repetitions counter now! (if now already done)
