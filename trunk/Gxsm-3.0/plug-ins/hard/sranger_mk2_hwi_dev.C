@@ -2500,17 +2500,19 @@ void sranger_mk2_hwi_dev::write_dsp_vector (int index, PROBE_VECTOR_GENERIC *__d
 
 
 	// check count ranges
-	if (dsp_vector.dnx < 0 || dsp_vector.dnx > 32767 || dsp_vector.n < 0 || dsp_vector.n > 2147483647){
+
+	// NULL VECTOR, OK: END
+	if (!(dsp_vector.n == 0 && dsp_vector.dnx == 0 && dsp_vector.ptr_next == 0 && dsp_vector.ptr_final == 0))
+	  if (dsp_vector.dnx < 0 || dsp_vector.dnx > 32767 || dsp_vector.n <= 0 || dsp_vector.n > 2147483647){
 		GtkWidget *dialog = gtk_message_dialog_new (NULL,
 							    GTK_DIALOG_DESTROY_WITH_PARENT,
 							    GTK_MESSAGE_WARNING,
 							    GTK_BUTTONS_CLOSE,
-							    "Probe Vector [pc%02d] not acceptable:\n"
-							    "n   = %6d   [0..2147483647]\n"
+							    "Probe Vector [MK2] [pc%02d] not acceptable:\n"
+							    "n   = %6d   [1..2147483647]\n"
 							    "dnx = %6d   [0..32767]\n"
-							    "ATTENTION: May result in unpredictable probe actions.\n"
-							    "AUTO-LIMITING FOR SAFETY.\n"
-							    "Hint: adjust slope/speed/points.. to make fit.",
+							    "Auto Limiting.\n"
+							    "Hint: adjust slope/speed/points/time.",
 							    index, dsp_vector.n, dsp_vector.dnx  
 			);
 		g_signal_connect_swapped (G_OBJECT (dialog), "response",
@@ -2520,10 +2522,9 @@ void sranger_mk2_hwi_dev::write_dsp_vector (int index, PROBE_VECTOR_GENERIC *__d
 
 		if (dsp_vector.dnx < 0) dsp_vector.dnx = 0;
 		if (dsp_vector.dnx > 32767) dsp_vector.dnx = 32767;
-		if (dsp_vector.n < 0) dsp_vector.n = 0;
+		if (dsp_vector.n <= 0) dsp_vector.n = 1;
 		if (dsp_vector.n > 2147483647) dsp_vector.n = 2147483647;
-
-	}
+	  }
 
 	// setup VPC essentials
 	dsp_vector.i = dsp_vector.repetitions; // preload repetitions counter now! (if now already done)
