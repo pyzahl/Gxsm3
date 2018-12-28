@@ -2,6 +2,53 @@
 - For the defines see SR3_Ref.h file
 - The function wait() must be already in your project. If not you can use this function in ASM:
 
+
+
+2) For the TX/RX int number for McBSP0, see page 167/243 of the attached file. The TX is number 50d and Rx is 49d. For the rest of the code and to change from McBSP1 to McBSP0, you will have to change the register from *BSP1 to *BSP0.
+
+For adding the interrupt vectors for the TX/RX of BSP0. You have to edit your vector.asm:
+
+;INT7 (MBXINT1)
+_VectINT7: 
+
+STW .D2T2 B10,*B15--[2] ; An absolute branch (or call) is used to avoid
+ || MVKL .S2     _McBSP1TX_INT,B10 ; far trampoline sections when the ISR is far (more
+MVKH .S2     _McBSP1TX_INT,B10 ; than 21-bits address from the current PC)
+B .S2     B10 ; Note that the B15 (software stack) is necessary
+     LDW .D2T2   *++B15[2],B10
+NOP     4
+NOP
+NOP
+
+;INT8 (MBRINT1)
+_VectINT8: 
+
+STW .D2T2 B10,*B15--[2] ; An absolute branch (or call) is used to avoid
+ || MVKL .S2     _McBSP1RX_INT,B10 ; far trampoline sections when the ISR is far (more
+MVKH .S2     _McBSP1RX_INT,B10 ; than 21-bits address from the current PC)
+B .S2     B10 ; Note that the B15 (software stack) is necessary
+     LDW .D2T2   *++B15[2],B10
+NOP     4
+NOP
+NOP
+
+In your C file:
+
+interrupt void McBSP1TX_INT()
+
+{
+
+}
+
+interrupt void McBSP1RX_INT()
+
+{
+
+}
+
+ 
+
+
 ;***************************************************************************
 ; wait function (delay in A4) : 7 cycles by delay value
 ; 17 CPU cyles of overhead
