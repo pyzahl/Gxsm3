@@ -564,8 +564,9 @@ void  DSPControlContainer::populate_tabs_missing () {
 // Popup Menu and Object Action Map
 // ============================================================
 
+// DSP-Control Window: Configure Mode Default and binding:
 static GActionEntry win_DSPControl_popup_entries[] = {
-        { "dsp-control-configure", DSPControl::configure_callback, NULL, "false", NULL },
+        { "dsp-control-configure", DSPControl::configure_callback, NULL, "true", NULL },
 };
 
 void DSPControl::configure_callback (GSimpleAction *action, GVariant *parameter, 
@@ -573,14 +574,18 @@ void DSPControl::configure_callback (GSimpleAction *action, GVariant *parameter,
         DSPControl *dspc = (DSPControl *) user_data;
         GVariant *old_state, *new_state;
 
+       
         if (action){
                 old_state = g_action_get_state (G_ACTION (action));
                 new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
                 
                 g_simple_action_set_state (action, new_state);
                 g_variant_unref (old_state);
+
+                g_settings_set_boolean (dspc->hwi_settings, "configure-mode", g_variant_get_boolean (new_state));
         } else {
-                new_state = g_variant_new_boolean (false);
+                // new_state = g_variant_new_boolean (true);
+                new_state = g_variant_new_boolean (g_settings_get_boolean (dspc->hwi_settings, "configure-mode"));
         }
 	if (g_variant_get_boolean (new_state)){
                 g_slist_foreach
@@ -653,6 +658,7 @@ void DSPControl::AppWindowInit(const gchar *title){
                 
                 PI_DEBUG (DBG_L2, "DSPControl::AppWindowInit -- header bar -- stage two, hook configure menu");
 
+                win_DSPControl_popup_entries[0].state = g_settings_get_boolean (hwi_settings, "configure-mode") ? "true":"false"; // get last state
                 g_action_map_add_action_entries (G_ACTION_MAP (app_window),
                                                  win_DSPControl_popup_entries, G_N_ELEMENTS (win_DSPControl_popup_entries),
                                                  this);
@@ -670,9 +676,6 @@ void DSPControl::AppWindowInit(const gchar *title){
                 gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
                 gtk_widget_show (header_menu_button);
                 g_object_set_data (G_OBJECT (window), "configure_menu", header_menu_button);
-                g_settings_bind (hwi_settings, "configure-mode",
-                                 G_OBJECT (GTK_BUTTON (header_menu_button)), "active",
-                                 G_SETTINGS_BIND_DEFAULT);
         }
 }
 
