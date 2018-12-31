@@ -633,7 +633,7 @@ static gboolean create_window_key_press_event_lcb(GtkWidget *widget, GdkEventKey
 // ============================================================
 
 static GActionEntry win_DSPMover_popup_entries[] = {
-        { "dsp-mover-configure", DSPMoverControl::configure_callback, NULL, "false", NULL },
+        { "dsp-mover-configure", DSPMoverControl::configure_callback, NULL, "true", NULL },
 };
 
 void DSPMoverControl::configure_callback (GSimpleAction *action, GVariant *parameter, 
@@ -654,8 +654,10 @@ void DSPMoverControl::configure_callback (GSimpleAction *action, GVariant *param
                 g_simple_action_set_state (action, new_state);
                 g_variant_unref (old_state);
 
+                g_settings_set_boolean (mc->hwi_settings, "configure-mode", g_variant_get_boolean (new_state));
         } else {
-                new_state = g_variant_new_boolean (false);
+                // new_state = g_variant_new_boolean (true);
+                new_state = g_variant_new_boolean (g_settings_get_boolean (mc->hwi_settings, "configure-mode"));
         }
 
 	if (g_variant_get_boolean (new_state)){
@@ -719,6 +721,7 @@ void DSPMoverControl::AppWindowInit(const gchar *title){
         } else {
                 PI_DEBUG (DBG_L2, "DSPMoverControl::AppWindowInit -- header bar -- stage two, hook configure menu");
 
+                win_DSPMover_popup_entries[0].state = g_settings_get_boolean (hwi_settings, "configure-mode") ? "true":"false"; // get last state
                 g_action_map_add_action_entries (G_ACTION_MAP (app_window),
                                                  win_DSPMover_popup_entries, G_N_ELEMENTS (win_DSPMover_popup_entries),
                                                  this);
@@ -735,10 +738,6 @@ void DSPMoverControl::AppWindowInit(const gchar *title){
                 gtk_menu_button_set_popup (GTK_MENU_BUTTON (header_menu_button), mc_popup_menu);
                 gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
                 gtk_widget_show (header_menu_button);
-
-                g_settings_bind (hwi_settings, "configure-mode",
-                                 G_OBJECT (GTK_BUTTON (header_menu_button)), "active",
-                                 G_SETTINGS_BIND_DEFAULT);  
         }
 }
 
