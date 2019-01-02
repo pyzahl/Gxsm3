@@ -89,7 +89,6 @@ UnitsTable XsmUnitsTable[] = {
 
 
 
-
 /* Main XSM Object */
 
 Xsm::Xsm(){

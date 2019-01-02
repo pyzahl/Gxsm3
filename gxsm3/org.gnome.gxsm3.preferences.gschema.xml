@@ -199,6 +199,13 @@
         STM/AFM: Tunnel Current Gain, Unit: V/nA
       </description>
     </key>
+    <key name="currentgainmodifier" type="d">
+      <default>1.0</default>
+      <summary>Unit: [ ] STM/AFM: (temporary) Tunnel Current Scaling</summary>
+      <description>
+        STM/AFM: (temporary) Tunnel Current Scaling
+      </description>
+    </key>
     <key name="nnewton2volt" type="d">
       <default>1.0</default>
       <summary>Unit: [V/nN] AFM: nano Newton to Volt calib. factor</summary>
@@ -1552,14 +1559,16 @@ if zero no waiting for pending events.
       </description>
     </key>
     <key name="loadcorrectxyz" type="ad">
-      <default>[1,1,1,1]</default>
-      <summary>set file load XYZ scale correction factor vector for [X, Y, ZsTopo, Zs*]</summary>
+      <default>[1.0,1.0,1.0,1.0]</default>
+      <summary>set NC file load XYZ scale correction factor vector [Xs, Ys, ZsTopo, Zs*]. Default: no change, set to [1,1,1,1].
+ZsTopo -- applies to Z of Topo dedicated data, Zs* to every thing else -- strongly advised to leave that at 1.XYZ scale correction factor vector [Xs, Ys, ZsTopo, Zs*]] is applied to scan scale (dx,dy,dz, rx,..) at NC-file load time once.
+This may be used to correct slight piezo calibartion deviations or temperature related scalings.
+Only on the fly applied at scan laod time. But you may save the file again, then it's applied.</summary>
       <description>
-	set NC file load XYZ scale correction factor vector [Xs, Ys, ZsTopo, Zs*]. Default: no change, set to [1,1,1,1].
-        ZsTopo -- applies to Z of Topo dedicated data, Zs* to every thing else -- strongly advised to leave that at 1.
-	XYZ scale correction factor vector [Xs, Ys, ZsTopo, Zs*]] is applied to scan scale (dx,dy,dz, rx,..) at NC-file load time once.
-        This may be used to correct slight piezo calibartion deviations or temperature related scalings.
-	Only on the fly applied at scan laod time. But you may save the file again, then it's applied.
+        set NC file load XYZ scale correction factor vector [Xs, Ys, ZsTopo, Zs*]. Default: no change, set to [1,1,1,1].
+ZsTopo -- applies to Z of Topo dedicated data, Zs* to every thing else -- strongly advised to leave that at 1.XYZ scale correction factor vector [Xs, Ys, ZsTopo, Zs*]] is applied to scan scale (dx,dy,dz, rx,..) at NC-file load time once.
+This may be used to correct slight piezo calibartion deviations or temperature related scalings.
+Only on the fly applied at scan laod time. But you may save the file again, then it's applied.
       </description>
     </key>
     <key name="slidercontroltype" type="s">

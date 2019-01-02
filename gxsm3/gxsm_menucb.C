@@ -251,7 +251,15 @@ void App::options_preferences_callback (GSimpleAction *simple, GVariant *paramet
 	gxsm_search_for_palette();
 	gxsm_search_for_HwI();
 	GnomeResPreferences *pref = gnome_res_preferences_new (xsm_res_def, GXSM_RES_PREFERENCES_PATH);
-	gnome_res_read_user_config (pref);
+        gnome_res_set_ok_message (pref,
+                                  "Complete configuration update on gxsm restart only.\n"
+                                  "On scan start the following instrument parameters are updated:"
+                                  "Piezo Sensitivities, Bias Gain/Offset, Current Gain/Modifier,\n Force Scaling, Freq. Scaling, eVolt Scaling ");
+        gnome_res_set_apply_message (pref,
+                                  "Complete configuration update on gxsm restart only.\n"
+                                  "On scan start the following instrument parameters are updated:"
+                                  "Piezo Sensitivities, Bias Gain/Offset, Current Gain/Modifier,\n Force Scaling, Freq. Scaling, eVolt Scaling ");
+        gnome_res_read_user_config (pref);
 	gnome_res_run_change_user_config (pref, N_("Gxsm Preferences")); 
 // on Dlg close pref is destroyed!
 	return;
