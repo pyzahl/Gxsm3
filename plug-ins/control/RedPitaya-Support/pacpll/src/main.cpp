@@ -1096,7 +1096,7 @@ void UpdateSignals(void)
                                 // TUNE mode: RS (Random Search)
                                 double k = 128.*(double)rand () / RAND_MAX - 64;
                                 i = TUNE_SIGNAL_SIZE_DEFAULT/2 + (int)x + k;
-                                if (i < 0 || i > TUNE_SIGNAL_SIZE_DEFAULT) i=TUNE_SIGNAL_SIZE_DEFAULT/2;
+                                if (i < 0 || i >= TUNE_SIGNAL_SIZE_DEFAULT) i=TUNE_SIGNAL_SIZE_DEFAULT/2;
 
                                 f = -TUNE_SPAN.Value ()/2 + df*i;
 
