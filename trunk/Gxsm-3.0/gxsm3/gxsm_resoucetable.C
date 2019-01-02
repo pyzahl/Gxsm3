@@ -190,6 +190,11 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	  ask_if_instrument_is_afm_and_hard
 		),
 	GNOME_RES_ENTRY_ASK_PATH_DEPEND_UNIT
+	( GNOME_RES_FLOAT_W_UNIT,  "Instrument/CurrentGainModifier", "1.0", &xsmres.current_gain_modifier, Unit1, N_("Inst-SPM"),
+	  N_("STM/AFM: (temporary) Tunnel Current Scaling"),
+	  ask_if_instrument_is_afm_and_hard
+		),
+	GNOME_RES_ENTRY_ASK_PATH_DEPEND_UNIT
 	( GNOME_RES_FLOAT_W_UNIT,  "Instrument/nNewton2Volt", "1.0", &xsmres.nNewton2Volt, UnitVnN, N_("Inst-SPM"),
 	  N_("AFM: nano Newton to Volt calib. factor"),
 	  ask_if_instrument_is_afm_and_hard

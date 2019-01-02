@@ -38,7 +38,8 @@ XSM_Instrument::XSM_Instrument(XSMRESOURCES &xsmres){
 	AnalogVMaxIn = xsmres.AnalogVMaxIn;
 	DigRangeOut = (long)xsmres.DigRangeOut;
 	AnalogVMaxOut = xsmres.AnalogVMaxOut;
-
+	current_gain_multiplier = 1.0;
+  
 	for( int i=0; i<GAIN_POSITIONS; ++i)
 		VList[i] = xsmres.V[i];
 	
@@ -95,11 +96,14 @@ void XSM_Instrument::update_piezosensitivity (XSMRESOURCES &xsmres, double temp)
 
 	BiasGain     = (double)xsmres.BiasGain;
 	BiasOffset   = (double)xsmres.BiasOffset;
-	nAmpere2Volt = (double)xsmres.nAmpere2Volt;
+
+	set_current_gain_modifier ((double)xsmres.current_gain_modifier);
+	nAmpere2Volt = (double)xsmres.nAmpere2Volt * current_gain_multiplier;
 	nNewton2Volt = (double)xsmres.nNewton2Volt;
 	dHertz2Volt  = (double)xsmres.dHertz2Volt;
 	eV2Volt      = (double)xsmres.EnergyCalibVeV;
 
+   
 	XSM_DEBUG_GP (DBG_L1, "XSM_Instrument::update_piezosensitivity ** xsmres.BiasGain     = %g\n", BiasGain);
 }
 

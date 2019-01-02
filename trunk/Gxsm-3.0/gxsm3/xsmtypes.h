@@ -130,6 +130,7 @@ typedef struct{
 	float BiasGain;
 	float BiasOffset;
 	float nAmpere2Volt;
+        float current_gain_modifier;
 	float nNewton2Volt;
 	float dHertz2Volt;
 	int   HiLoDelta;

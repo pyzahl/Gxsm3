@@ -53,6 +53,8 @@ public:
   virtual void update_piezosensitivity (XSMRESOURCES &xsmres, double temp = -1.);
   virtual double temperature (double diode_volts);
 
+  double set_current_gain_modifier (double f) { if (f > 0.) current_gain_multiplier = f; return f; };
+  
   double UOutLimit(double u){
     if(u>AnalogVMaxOut) { u=AnalogVMaxOut; }
     if(u<-AnalogVMaxOut) { u=-AnalogVMaxOut; }
@@ -182,6 +184,7 @@ protected:
   double xPsens, yPsens, zPsens; /* Tube Sensitivitys [A/V] */
   double BiasGain, BiasOffset;     /* Gain, Offset for optional Bias adjust */
   double nAmpere2Volt; /* nA (Tunnelcurrent) to Volt Factor */
+  double current_gain_multiplier; /* modify current gain factor (nAmp2V) by this scale */
   double nNewton2Volt; /* nN (Lever-Kraft) to Volt Factor */
   double dHertz2Volt;  /* dHz (Frq. Verstimmung) to Volt Factor */
   double eV2Volt;      /* eV to Volt Factor */
