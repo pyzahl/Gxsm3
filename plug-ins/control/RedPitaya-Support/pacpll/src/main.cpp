@@ -251,6 +251,8 @@ int rp_PAC_App_Init(){
 
         if (verbose > 1) fprintf(stderr, "RP FPGA_PACPLL CFG: mapped %08lx - %08lx.\n", (unsigned long)(0x42000000), (unsigned long)(0x42000000 + FPGA_PACPLL_CFG_block_size));
 
+        srand(time(NULL));   // init random
+
         return RP_OK;
 }
 
@@ -435,6 +437,7 @@ void rp_PAC_set_qcontrol (double gain, double phase){
         set_gpio_cfgreg_int32 (QCONTROL_CFG_GAIN_DELAY, ((int)(Q10 * gain)<<16) | ndelay );
 }
 
+#if 0
 // tau from mu
 double time_const(double fref, double mu){
         return -(1.0/fref) / log(1.0-mu);
@@ -444,14 +447,15 @@ double mu_const(double fref, double tau){
         return 1.0-exp(-1.0/(fref*tau));
 }
 // -3dB cut off freq
-double cut_off__freq_3db(double fref, double mu):
-        return -(1.0/(fref*2.*M_PI)) * math.log(1.0-mu);
+double cut_off_freq_3db(double fref, double mu){
+        return -(1.0/(fref*2.*M_PI)) * log(1.0-mu);
 }
 
 double mu_opt (double periods){
         double mu = 11.9464 / (6.46178 + periods);
         return mu > 1.0 ? 1.0 : mu;
 }
+#endif
 
 #define PACPLL_CFG_PACTAU     4 // (actual Q22 mu)
 #define PACPLL_CFG_PACATAU   27
@@ -821,7 +825,7 @@ void set_PAC_config()
                                             SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
         }
 
-        if (OPERATION.Value() != 6)
+        if (OPERATION.Value() < 6)
                 rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value());
         rp_PAC_set_volume (VOLUME_MANUAL.Value() / 1000.); // mV -> V
         rp_PAC_set_pactau (PACTAU.Value(), PACATAU.Value(), PAC_DCTAU.Value() * 1e-3); // periods, periods, ms -> s
@@ -1024,6 +1028,8 @@ void UpdateSignals(void)
         int status[3];
         int n=1024;
         
+        double df = TUNE_SPAN.Value ()/(TUNE_SIGNAL_SIZE_DEFAULT-1);
+
         if (verbose > 3) fprintf(stderr, "UpdateSignals()\n");
 
         // Scope, Tune in single shot mode
@@ -1062,10 +1068,15 @@ void UpdateSignals(void)
         }
         
         // TUNE MODE
-        if ( OPERATION.Value () >= 6 && OPERATION.Value () <= 8){
-                static int reps[] = { 1, 5, 25 };
-                int decs[] = { 16, 14, 12 };
-                int waitus[] = { 100000, 80000, 40000 };
+        if ( OPERATION.Value () >= 6 && OPERATION.Value () <= 9){
+                static int    i_prev = TUNE_SIGNAL_SIZE_DEFAULT/2;
+                static double f_prev = 0.;
+                static int reps[] = { 1, 5, 25, 32 };
+                int decs[] = { 16, 14, 12, 12 };
+                int waitus[] = { 100000, 80000, 40000, 80000 };
+                int i0 = (TUNE_SIGNAL_SIZE_DEFAULT-1)*(double)rand () / RAND_MAX;
+                double s = i0 > TUNE_SIGNAL_SIZE_DEFAULT/2 ? 1:-1.;
+                double x = (double)(i0-TUNE_SIGNAL_SIZE_DEFAULT/2); x *= x; x /= TUNE_SIGNAL_SIZE_DEFAULT/2; x *= s;
                 for (int ti = 0; ti < reps[OPERATION.Value ()-6]; ++ti){
                         ampl=0.;
                         phase=0.;
@@ -1081,38 +1092,60 @@ void UpdateSignals(void)
                         }
                         phase /= SIGNAL_SIZE_DEFAULT;
                         ampl  /= SIGNAL_SIZE_DEFAULT;
+                        if (OPERATION.Value () == 9){
+                                // TUNE mode: RS (Random Search)
+                                double k = 128.*(double)rand () / RAND_MAX - 64;
+                                i = TUNE_SIGNAL_SIZE_DEFAULT/2 + (int)x + k;
+                                if (i < 0 || i > TUNE_SIGNAL_SIZE_DEFAULT) i=TUNE_SIGNAL_SIZE_DEFAULT/2;
 
-                        g_data_signal_ch1pa.erase (g_data_signal_ch1pa.begin());
-                        g_data_signal_ch1pa.push_back (phase);
+                                f = -TUNE_SPAN.Value ()/2 + df*i;
+
+                                if (ti > 1){
+                                        if (SIGNAL_TUNE_PHASE[i_prev] != 0.0){
+                                                SIGNAL_TUNE_PHASE[i_prev] += phase;
+                                                SIGNAL_TUNE_PHASE[i_prev] *= 0.5;
+                                        } else
+                                                SIGNAL_TUNE_PHASE[i_prev] = phase;
+                                        if (SIGNAL_TUNE_AMPL[i_prev]  != 0.0){
+                                                SIGNAL_TUNE_AMPL[i_prev] += ampl;
+                                                SIGNAL_TUNE_AMPL[i_prev] *= 0.5;
+                                        } else
+                                                SIGNAL_TUNE_AMPL[i_prev] = ampl;
+                                        SIGNAL_FRQ[i_prev] = f_prev;
+                                }
+                                i_prev = i;
+                                f_prev = f;
+                        } else {
+                                // TUNE mode linear rocking sweep loop
+
+                                g_data_signal_ch1pa.erase (g_data_signal_ch1pa.begin());
+                                g_data_signal_ch1pa.push_back (phase);
                 
-                        g_data_signal_ch2aa.erase (g_data_signal_ch2aa.begin());
-                        g_data_signal_ch2aa.push_back (ampl);
+                                g_data_signal_ch2aa.erase (g_data_signal_ch2aa.begin());
+                                g_data_signal_ch2aa.push_back (ampl);
                 
-                        g_data_signal_frq.erase (g_data_signal_frq.begin());
-                        g_data_signal_frq.push_back (f);
+                                g_data_signal_frq.erase (g_data_signal_frq.begin());
+                                g_data_signal_frq.push_back (f);
 
-                        //ampl = reading_vector[4] * 1000.; // Resonator Amplitude Signal Monitor in mV
-                        //phase = reading_vector[5] * 180./M_PI; // PLL Phase deg
-
-                        if (f < TUNE_SPAN.Value ()/2 && dir == 1)
-                                f += TUNE_DFREQ.Value ();
-                        else if (dir == 1){
-                                dir = -1;
-                                CENTER_FREQUENCY.Value () = tune_fcenter;
-                                CENTER_PHASE.Value () = tune_phase;
-                                CENTER_AMPLITUDE.Value () = tune_amp_max;
-                                tune_amp_max=0.;
+                                if (f < TUNE_SPAN.Value ()/2 && dir == 1)
+                                        f += TUNE_DFREQ.Value ();
+                                else if (dir == 1){
+                                        dir = -1;
+                                        CENTER_FREQUENCY.Value () = tune_fcenter;
+                                        CENTER_PHASE.Value () = tune_phase;
+                                        CENTER_AMPLITUDE.Value () = tune_amp_max;
+                                        tune_amp_max=0.;
+                                }
+                                if (f > -TUNE_SPAN.Value ()/2 && dir == -1)
+                                        f -= TUNE_DFREQ.Value ();
+                                else if (dir == -1){
+                                        dir = 1;
+                                        CENTER_FREQUENCY.Value () = tune_fcenter;
+                                        CENTER_PHASE.Value () = tune_phase;
+                                        CENTER_AMPLITUDE.Value () = tune_amp_max;
+                                        tune_amp_max=0.;
+                                }
                         }
-                        if (f > -TUNE_SPAN.Value ()/2 && dir == -1)
-                                f -= TUNE_DFREQ.Value ();
-                        else if (dir == -1){
-                                dir = 1;
-                                CENTER_FREQUENCY.Value () = tune_fcenter;
-                                CENTER_PHASE.Value () = tune_phase;
-                                CENTER_AMPLITUDE.Value () = tune_amp_max;
-                                tune_amp_max=0.;
-                        }
-
                         // next
                         rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value() + f);
                         FREQUENCY_TUNE.Value() = f;
@@ -1167,10 +1200,15 @@ void UpdateSignals(void)
                                 SIGNAL_CH4[i] = g_data_signal_ch4[i];
                                 SIGNAL_CH5[i] = g_data_signal_ch5[i];
                         }
-                        for (int i = 0; i < TUNE_SIGNAL_SIZE_DEFAULT; i++){
-                                SIGNAL_TUNE_PHASE[i] = g_data_signal_ch1pa[i];
-                                SIGNAL_TUNE_AMPL[i]  = g_data_signal_ch2aa[i];
-                                SIGNAL_FRQ[i] = g_data_signal_frq[i];
+
+                        if (OPERATION.Value () == 9){
+                                ; // set directly at index above in RS mode
+                        } else {
+                                for (int i = 0; i < TUNE_SIGNAL_SIZE_DEFAULT; i++){
+                                        SIGNAL_TUNE_PHASE[i] = g_data_signal_ch1pa[i];
+                                        SIGNAL_TUNE_AMPL[i]  = g_data_signal_ch2aa[i];
+                                        SIGNAL_FRQ[i] = g_data_signal_frq[i];
+                                }
                         }
                         clear_tune_data=1; // after completed
                 }                
@@ -1179,6 +1217,15 @@ void UpdateSignals(void)
                         clear_tune_data=0;
 
                         for (int i = 0; i < TUNE_SIGNAL_SIZE_DEFAULT; i++){
+                                SIGNAL_TUNE_PHASE[i] = 0.;
+                                SIGNAL_TUNE_AMPL[i]  = 0.;
+                                SIGNAL_FRQ[i] = -TUNE_SPAN.Value ()/2 + df*i;
+
+                                CENTER_FREQUENCY.Value () = tune_fcenter;
+                                CENTER_PHASE.Value () = tune_phase;
+                                CENTER_AMPLITUDE.Value () = tune_amp_max;
+                                tune_amp_max=0.;
+                                
                                 g_data_signal_ch1pa.erase (g_data_signal_ch1pa.begin());
                                 g_data_signal_ch1pa.push_back (0.0);
                 
