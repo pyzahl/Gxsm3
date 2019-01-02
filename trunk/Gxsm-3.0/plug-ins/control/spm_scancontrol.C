@@ -933,6 +933,13 @@ static void spm_scancontrol_set_subscan_callback (GtkWidget *w, void *data){
                                 gapp->xsm->GetActiveScan () -> World2Pixel (x0, y0, p[0].x, p[0].y);
                                 gapp->xsm->GetActiveScan () -> World2Pixel (x1, y1, p[1].x, p[1].y);
 
+                                gint xm = gapp->xsm->GetActiveScan ()->mem2d->GetNx ()-1;
+                                gint ym = gapp->xsm->GetActiveScan ()->mem2d->GetNy ()-1;
+                                for (int i=0; i<1; ++i){
+                                        p[i].x = MAX (MIN (p[i].x, xm), 0);
+                                        p[i].y = MAX (MIN (p[i].y, ym), 0);
+                                }
+                                
                                 PI_DEBUG (DBG_L1, "SSC::SET_SUBSCAN => [" << p[0].x << ", " << p[0].y << ", " << p[1].x << ", " << p[1].y << "]");
                                 
                                 ((SPM_ScanControl*)data) -> set_subscan ((double)(p[0].x < p[1].x ? p[0].x:p[1].x-1),

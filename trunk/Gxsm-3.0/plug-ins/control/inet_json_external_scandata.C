@@ -469,6 +469,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 "RUN TUNE",
                 "RUN TUNE F",
                 "RUN TUNE FF",
+                "RUN TUNE RS",
                 NULL };
 
         // Init choicelist
@@ -1457,6 +1458,7 @@ void Inet_Json_External_Scandata::update_graph (){
         double dB_mags =  4.0;
         cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, n/2, h);
         cairo_t *cr = cairo_create (surface);
+        static int rs_mode=0;
         if (run_scope){
                 cairo_translate (cr, 0., yr);
                 cairo_scale (cr, 1., 1.);
@@ -1482,8 +1484,12 @@ void Inet_Json_External_Scandata::update_graph (){
                 double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5, // 0...4 CH1..5
                                      pacpll_signals.signal_phase, pacpll_signals.signal_ampl  }; // 5,6 PHASE, AMPL in Tune Mode, averaged from burst
                 double x,xf,min,max,s,ydb,yph;
-                if (operation_mode >= 6 && operation_mode <= 8)
+                if (operation_mode >= 6 && operation_mode <= 9){
+                        if (operation_mode == 9)
+                                rs_mode=3;
                         operation_mode = 6; // TUNE
+                } else
+                        rs_mode = 0;
                 int ch_last=(operation_mode == 6) ? 7 : 5;
                 for (int ch=0; ch<ch_last; ++ch){
                         int part_i0=0;
@@ -1496,6 +1502,12 @@ void Inet_Json_External_Scandata::update_graph (){
                                         wave->set_stroke_rgba (0.,1.,0.,0.4);
                         else
                                 wave->set_stroke_rgba (BasicColors[color[ch]]);
+
+                        if (operation_mode == 6 && ch > 1)
+                                wave->set_linemode (rs_mode);
+                        else
+                                wave->set_linemode (0);
+
                         min=max=signal[ch][512];
                         for (int k=0; k<n; ++k){
                                 s=signal[ch][k];
