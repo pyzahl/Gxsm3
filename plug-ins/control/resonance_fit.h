@@ -181,7 +181,7 @@ public:
         };
 
 #if 0 // Gaussian partials
-        int
+        static int
         func_df (const gsl_vector * x, void *params, gsl_matrix * J)
         {
                 struct data *d = (struct data *) params;
@@ -204,7 +204,7 @@ public:
                 return GSL_SUCCESS;
         };
 
-        int
+        static int
         func_fvv (const gsl_vector * x, const gsl_vector * v,
                   void *params, gsl_vector * fvv)
         {

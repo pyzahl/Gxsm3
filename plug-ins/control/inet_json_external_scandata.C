@@ -1730,7 +1730,7 @@ void Inet_Json_External_Scandata::update_graph (){
                                                 fn++;
                                         }
                                 }
-                                if (fn > 25){
+                                if (fn > 15){
                                         resonance_fit lmgeofit (f,a,m, fn); // using the Levenberg-Marquardt method with geodesic acceleration. Using GSL here.
                                         // initial guess
                                         if (pacpll_parameters.center_frequency > 1000.){
