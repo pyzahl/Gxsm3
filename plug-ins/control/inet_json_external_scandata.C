@@ -71,6 +71,7 @@ RP data streaming
 #include "gxsm/action_id.h"
 
 #include "plug-ins/control/inet_json_external_scandata.h"
+#include "plug-ins/control/resonance_fit.h"
 
 // Plugin Prototypes - default PlugIn functions
 static void inet_json_external_scandata_init (void); // PlugIn init
@@ -1713,6 +1714,59 @@ void Inet_Json_External_Scandata::update_graph (){
                         reading->set_text (10, (110+14*0), valuestring);
                         g_free (valuestring);
                         reading->draw (cr);
+
+                        // do FIT
+                        {
+                                double f[1024];
+                                double a[1024];
+                                double m[1024];
+                                int fn=0;
+                                for (int i=0; i<n; ++i){
+                                        double fi = pacpll_signals.signal_frq[i];
+                                        double ai = pacpll_signals.signal_ampl[i];
+                                        if (fi != 0. && ai > 0.){
+                                                f[fn] = fi+pacpll_parameters.frequency_manual;
+                                                a[fn] = ai;
+                                                fn++;
+                                        }
+                                }
+                                if (fn > 25){
+                                        resonance_fit lmgeofit (f,a,m, fn); // using the Levenberg-Marquardt method with geodesic acceleration. Using GSL here.
+                                        // initial guess
+                                        if (pacpll_parameters.center_frequency > 1000.){
+                                                lmgeofit.set_F0 (pacpll_parameters.center_frequency);
+                                                lmgeofit.set_A (pacpll_parameters.center_amplitude);
+                                        } else {
+                                                lmgeofit.set_F0 (pacpll_parameters.frequency_manual);
+                                                lmgeofit.set_A (50.0);
+                                        }
+                                        lmgeofit.set_Q (5000.0);
+                                        lmgeofit.execute_fit ();
+                                        cairo_item_path *resfit = new cairo_item_path (fn);
+                                        resfit->set_line_width (1.0);
+                                        resfit->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
+                                        for (int i=0; i<fn; ++i){
+                                                resfit->set_xy_fast (i,
+                                                                     250.+480.*(f[i]-pacpll_parameters.frequency_manual)/parameters.tune_span, // tune plot, freq x transform to canvas
+                                                                     ydb=db_to_y (dB_from_mV (m[i]), dB_hi, y_hi, dB_mags)
+                                                                     );
+                                                // g_print ("%05d \t %10.3f \t %8.3f %8.3f\n", i, f[i], a[i], m[i]);
+                                        }
+                                        resfit->draw (cr);
+                                        delete resfit;
+
+                                        valuestring = g_strdup_printf ("Q: %g  A: %g  F0: %g Hz",
+                                                                       lmgeofit.get_Q (),
+                                                                       lmgeofit.get_A (),
+                                                                       lmgeofit.get_F0 ()
+                                                                       );
+                                        reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                                        reading->set_text (10, (110-14*1), valuestring);
+                                        g_free (valuestring);
+                                        reading->draw (cr);
+                                }
+                        }
+                        
                 } else if (transport == 0){ // add polar plot for CH1,2 as XY
                         wave->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
                         for (int k=0; k<n; ++k)
