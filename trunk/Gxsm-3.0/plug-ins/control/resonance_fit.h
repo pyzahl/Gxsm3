@@ -1,0 +1,356 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
+/* Gnome gxsm - Gnome X Scanning Microscopy
+ * universal STM/AFM/SARLS/SPALEED/... controlling and
+ * data analysis software
+ *
+ * Gxsm Plugin Name: inet_json_external_scandata.C
+ * ========================================
+ * 
+ * Copyright (C) 1999 The Free Software Foundation
+ *
+ * Authors: Percy Zahl <zahl@fkp.uni-hannover.de>
+ * additional features: Andreas Klust <klust@fkp.uni-hannover.de>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+/*
+  ## FROM PYTHON TUNE TOOL:
+			def fit(function, parameters, x, data, u):
+				def fitfun(params):
+					for i,p in enumerate(parameters):
+						p.set(params[i])
+					return (data - function(x))/u
+
+				if x is None: x = arange(data.shape[0])
+				if u is None: u = ones(data.shape[0],"float")
+				p = [param() for param in parameters]
+				return leastsq(fitfun, p, full_output=1)
+
+			# define function to be fitted
+			def resonance(f):
+				A=1000.
+				return (A/A0())/sqrt(1.0+Q()**2*(f/w0()-w0()/f)**2)
+
+			self.resmodel = "Model:  A(f) = (1000/A0) / sqrt (1 + Q^2 * (f/f0 - f0/f)^2)"
+
+			# read data
+			## freq, vr, dvr=load('lcr.dat', unpack=True)
+			freq = self.Freq + self.Fstep*0.5         ## actual adjusted frequency, aligned for fit ??? not exactly sure why.
+			vr   = self.ResAmp 
+			dvr  = self.ResAmp/100.  ## error est. 1%
+
+			# the fit parameters: some starting values
+			A0=Parameter(iA0,"A")
+			w0=Parameter(if0,"f0")
+			Q=Parameter(iQ,"Q")
+
+			p=[A0,w0,Q]
+
+			# for theory plot we need some frequencies
+			freqs=linspace(self.Fc - self.Fspan/2, self.Fc + self.Fspan/2, 200)
+			initialplot=resonance(freqs)
+
+#			self.Fit = initialplot
+			
+			# uncertainty calculation
+#			v0=10.0
+#			uvr=sqrt(dvr*dvr+vr*vr*0.0025)/v0
+			v0=1.
+			uvr=sqrt(dvr*dvr+vr*vr*0.0025)/v0
+
+			# do fit using Levenberg-Marquardt
+#			p2,cov,info,mesg,success=fit(resonance, p, freq, vr/v0, uvr)
+			p2,cov,info,mesg,success=fit(resonance, p, freq, vr, None)
+
+			if success==1:
+				print "Converged"
+			else:
+				self.fitinfo[0] = "Fit not converged."
+				print "Not converged"
+				print mesg
+
+			# calculate final chi square
+			chisq=sum(info["fvec"]*info["fvec"])
+
+			dof=len(freq)-len(p)
+			# chisq, sqrt(chisq/dof) agrees with gnuplot
+			print "Converged with chi squared ",chisq
+			print "degrees of freedom, dof ", dof
+			print "RMS of residuals (i.e. sqrt(chisq/dof)) ", sqrt(chisq/dof)
+			print "Reduced chisq (i.e. variance of residuals) ", chisq/dof
+			print
+
+*/
+
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_multifit_nlinear.h>
+
+#define N      100    /* number of data points to fit */
+#define TMAX   (40.0) /* time variable in [0,TMAX] */
+
+struct data {
+        size_t n;
+        double * t;
+        double * y;
+};
+
+class resonance_fit{
+public:
+        resonance_fit (double *frq, double *amp, size_t n) { 
+                fit_data.n = n;
+                fit_data.t = frq;
+                fit_data.y = amp;
+        };
+        ~resonance_fit () { 
+        };
+
+
+        /* model function: a * exp( -1/2 * [ (t - b) / c ]^2 ) */
+        double
+        gaussian(const double a, const double b, const double c, const double t)
+        {
+                const double z = (t - b) / c;
+                return (a * exp(-0.5 * z * z));
+        };
+
+        double
+        resonance(const double a0, const double q, const double f0, const double f)
+        {
+                // A(f) = (1000/A0) / sqrt (1 + Q^2 * (f/f0 - f0/f)^2)
+                return (1000./a0) / sqrt (1. + q*q * gsl_pow_2(f/f0 - f0/f));
+        };
+        
+        int
+        func_f (const gsl_vector * x, void *params, gsl_vector * f)
+        {
+                struct data *d = (struct data *) params;
+                double a = gsl_vector_get(x, 0);
+                double b = gsl_vector_get(x, 1);
+                double c = gsl_vector_get(x, 2);
+                size_t i;
+
+                for (i = 0; i < d->n; ++i)
+                        {
+                                double ti = d->t[i];
+                                double yi = d->y[i];
+                                //double y = gaussian(a, b, c, ti);
+                                double y = resonance(a, b, c, ti);
+
+                                gsl_vector_set(f, i, yi - y);
+                        }
+
+                return GSL_SUCCESS;
+        };
+
+        int
+        func_df (const gsl_vector * x, void *params, gsl_matrix * J)
+        {
+                struct data *d = (struct data *) params;
+                double a = gsl_vector_get(x, 0);
+                double b = gsl_vector_get(x, 1);
+                double c = gsl_vector_get(x, 2);
+                size_t i;
+
+                for (i = 0; i < d->n; ++i)
+                        {
+                                double ti = d->t[i];
+                                double zi = (ti - b) / c;
+                                double ei = exp(-0.5 * zi * zi);
+
+                                gsl_matrix_set(J, i, 0, -ei);
+                                gsl_matrix_set(J, i, 1, -(a / c) * ei * zi);
+                                gsl_matrix_set(J, i, 2, -(a / c) * ei * zi * zi);
+                        }
+
+                return GSL_SUCCESS;
+        };
+
+        int
+        func_fvv (const gsl_vector * x, const gsl_vector * v,
+                  void *params, gsl_vector * fvv)
+        {
+                struct data *d = (struct data *) params;
+                double a = gsl_vector_get(x, 0);
+                double b = gsl_vector_get(x, 1);
+                double c = gsl_vector_get(x, 2);
+                double va = gsl_vector_get(v, 0);
+                double vb = gsl_vector_get(v, 1);
+                double vc = gsl_vector_get(v, 2);
+                size_t i;
+
+                for (i = 0; i < d->n; ++i)
+                        {
+                                double ti = d->t[i];
+                                double zi = (ti - b) / c;
+                                double ei = exp(-0.5 * zi * zi);
+                                double Dab = -zi * ei / c;
+                                double Dac = -zi * zi * ei / c;
+                                double Dbb = a * ei / (c * c) * (1.0 - zi*zi);
+                                double Dbc = a * zi * ei / (c * c) * (2.0 - zi*zi);
+                                double Dcc = a * zi * zi * ei / (c * c) * (3.0 - zi*zi);
+                                double sum;
+
+                                sum = 2.0 * va * vb * Dab +
+                                        2.0 * va * vc * Dac +
+                                        vb * vb * Dbb +
+                                        2.0 * vb * vc * Dbc +
+                                        vc * vc * Dcc;
+
+                                gsl_vector_set(fvv, i, sum);
+                        }
+
+                return GSL_SUCCESS;
+        };
+
+        void
+        callback(const size_t iter, void *params,
+                 const gsl_multifit_nlinear_workspace *w)
+        {
+                gsl_vector *f = gsl_multifit_nlinear_residual(w);
+                gsl_vector *x = gsl_multifit_nlinear_position(w);
+                double avratio = gsl_multifit_nlinear_avratio(w);
+                double rcond;
+
+                (void) params; /* not used */
+
+                /* compute reciprocal condition number of J(x) */
+                gsl_multifit_nlinear_rcond(&rcond, w);
+
+                fprintf(stderr, "iter %2zu: a = %.4f, b = %.4f, c = %.4f, |a|/|v| = %.4f cond(J) = %8.4f, |f(x)| = %.4f\n",
+                        iter,
+                        gsl_vector_get(x, 0),
+                        gsl_vector_get(x, 1),
+                        gsl_vector_get(x, 2),
+                        avratio,
+                        1.0 / rcond,
+                        gsl_blas_dnrm2(f));
+        };
+
+        void
+        solve_system(gsl_vector *x, gsl_multifit_nlinear_fdf *fdf,
+                     gsl_multifit_nlinear_parameters *params)
+        {
+                const gsl_multifit_nlinear_type *T = gsl_multifit_nlinear_trust;
+                const size_t max_iter = 200;
+                const double xtol = 1.0e-8;
+                const double gtol = 1.0e-8;
+                const double ftol = 1.0e-8;
+                const size_t n = fdf->n;
+                const size_t p = fdf->p;
+                gsl_multifit_nlinear_workspace *work =
+                        gsl_multifit_nlinear_alloc(T, params, n, p);
+                gsl_vector * f = gsl_multifit_nlinear_residual(work);
+                gsl_vector * y = gsl_multifit_nlinear_position(work);
+                int info;
+                double chisq0, chisq, rcond;
+
+                /* initialize solver */
+                gsl_multifit_nlinear_init(x, fdf, work);
+
+                /* store initial cost */
+                gsl_blas_ddot(f, f, &chisq0);
+
+                /* iterate until convergence */
+                gsl_multifit_nlinear_driver(max_iter, xtol, gtol, ftol,
+                                            callback, NULL, &info, work);
+
+                /* store final cost */
+                gsl_blas_ddot(f, f, &chisq);
+
+                /* store cond(J(x)) */
+                gsl_multifit_nlinear_rcond(&rcond, work);
+
+                gsl_vector_memcpy(x, y);
+
+                /* print summary */
+
+                fprintf(stderr, "NITER         = %zu\n", gsl_multifit_nlinear_niter(work));
+                fprintf(stderr, "NFEV          = %zu\n", fdf->nevalf);
+                fprintf(stderr, "NJEV          = %zu\n", fdf->nevaldf);
+                fprintf(stderr, "NAEV          = %zu\n", fdf->nevalfvv);
+                fprintf(stderr, "initial cost  = %.12e\n", chisq0);
+                fprintf(stderr, "final cost    = %.12e\n", chisq);
+                fprintf(stderr, "final x       = (%.12e, %.12e, %12e)\n",
+                        gsl_vector_get(x, 0), gsl_vector_get(x, 1), gsl_vector_get(x, 2));
+                fprintf(stderr, "final cond(J) = %.12e\n", 1.0 / rcond);
+
+                gsl_multifit_nlinear_free(work);
+        };
+
+
+        int execute_fit ()
+        {
+                const size_t p = 3;    /* number of model parameters */
+                const gsl_rng_type * T = gsl_rng_default;
+                gsl_vector *f = gsl_vector_alloc(fit_data.n);
+                gsl_vector *x = gsl_vector_alloc(p);
+                gsl_multifit_nlinear_fdf fdf;
+                gsl_multifit_nlinear_parameters fdf_params = gsl_multifit_nlinear_default_parameters();
+                gsl_rng * r;
+                size_t i;
+
+                gsl_rng_env_setup ();
+                r = gsl_rng_alloc (T);
+
+                /* define function to be minimized */
+                fdf.f = func_f;
+                fdf.df = func_df;
+                fdf.fvv = func_fvv;
+                fdf.n = n;
+                fdf.p = p;
+                fdf.params = &fit_data;
+
+                /* starting point */
+                gsl_vector_set(x, 0, 1.0);
+                gsl_vector_set(x, 1, 0.0);
+                gsl_vector_set(x, 2, 1.0);
+
+                fdf_params.trs = gsl_multifit_nlinear_trs_lmaccel;
+                solve_system(x, &fdf, &fdf_params);
+
+                /* print data and model */
+                {
+                        double A = gsl_vector_get(x, 0);
+                        double B = gsl_vector_get(x, 1);
+                        double C = gsl_vector_get(x, 2);
+
+                        for (i = 0; i < n; ++i)
+                                {
+                                        double ti = fit_data.t[i];
+                                        double yi = fit_data.y[i];
+                                        double fi = gaussian(A, B, C, ti);
+
+                                        printf("%f %f %f\n", ti, yi, fi);
+                                }
+                }
+
+                gsl_vector_free(f);
+                gsl_vector_free(x);
+                gsl_rng_free(r);
+
+                return 0;
+        };
+
+        
+private:
+        struct data fit_data;
+};
+
