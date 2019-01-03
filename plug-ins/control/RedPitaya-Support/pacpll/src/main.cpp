@@ -1011,22 +1011,6 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
         }
 }
 
-void read_phase_ampl_buffer_avg (double &ampl, double &phase){
-        ampl=0.;
-        phase=0.;
-        size_t i = 12;
-        size_t N = 8*SIGNAL_SIZE_DEFAULT;
-
-        for (int k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
-                int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                phase += (SIGNAL_CH1[k] = (double)ix32/QCORDICATAN/M_PI*180.); // PLL Phase deg
-                ampl  += (SIGNAL_CH2[k] = (double)iy32/QCORDICSQRT*1000.); // // Resonator Amplitude Signal Monitor in mV
-        }
-        phase /= SIGNAL_SIZE_DEFAULT;
-        ampl  /= SIGNAL_SIZE_DEFAULT;
-}
-
 int initiate_bram_write_measurements(){
         int ret;
         int status[3];
@@ -1053,8 +1037,33 @@ int initiate_bram_write_measurements(){
         return ret;
 }
 
+void read_phase_ampl_buffer_avg (double &ampl, double &phase, int initiate){
+        ampl=0.;
+        phase=0.;
+        size_t i = 12;
+        size_t N = 8*SIGNAL_SIZE_DEFAULT;
+
+        if (initiate){
+                int timeout = 100; while ( !initiate_bram_write_measurements () && --timeout>0) usleep (1000);
+        }
+        
+        // wait for buffer full
+        int status[3];
+        int max_try=100; while ( !bram_status(status) && --max_try>0) usleep (1000);
+
+        for (int k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
+                int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
+                int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
+                phase += (SIGNAL_CH1[k] = (double)ix32/QCORDICATAN/M_PI*180.); // PLL Phase deg
+                ampl  += (SIGNAL_CH2[k] = (double)iy32/QCORDICSQRT*1000.); // // Resonator Amplitude Signal Monitor in mV
+        }
+        phase /= SIGNAL_SIZE_DEFAULT;
+        ampl  /= SIGNAL_SIZE_DEFAULT;
+}
+
 void run_tune_op (int clear_tune_data, double epsilon){
         double reading_vector[READING_MAX_VALUES];
+        int status[3];
         int ch;
         static int dir=1;
         static double f=0.;
@@ -1097,9 +1106,7 @@ void run_tune_op (int clear_tune_data, double epsilon){
                 rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value() + f);
                 FREQUENCY_TUNE.Value() = f;
                 usleep (25000); // min recover time
-
-                int timeout = 10; while ( !initiate_bram_write_measurements () && --timeout>0) usleep (25000);
-                read_phase_ampl_buffer_avg (ampl, phase);
+                read_phase_ampl_buffer_avg (ampl, phase, 1);
                 ampl_prev  = ampl;
                 phase_prev = phase;
                 
@@ -1113,18 +1120,12 @@ void run_tune_op (int clear_tune_data, double epsilon){
         double x = (double)(i0-TUNE_SIGNAL_SIZE_DEFAULT/2); x *= x; x /= TUNE_SIGNAL_SIZE_DEFAULT/2; x *= s;
         int k = 0;
         for (int ti = 0; ti < reps[OPERATION.Value ()-6]; ++ti){
-                if (clear_tune_data){
-                        int timeout = 10; while ( !initiate_bram_write_measurements () && --timeout>0) usleep (25000);
-                        usleep (50000);
-                }
-                read_phase_ampl_buffer_avg (ampl, phase);
+                read_phase_ampl_buffer_avg (ampl, phase, clear_tune_data);
 
                 // wait for stable reading
-                int max_try=10;
+                int max_try = 30;
                 while (fabs(ampl-ampl_prev) > epsilon*ampl && --max_try>0){
-                        int timeout = 10; while ( !initiate_bram_write_measurements () && --timeout>0) usleep (25000);
-                        usleep (50000);
-                        read_phase_ampl_buffer_avg (ampl, phase);
+                        read_phase_ampl_buffer_avg (ampl, phase, 1);
                         ampl_prev  = ampl;
                         phase_prev = phase;
                 }
@@ -1191,7 +1192,7 @@ void run_tune_op (int clear_tune_data, double epsilon){
                 FREQUENCY_TUNE.Value() = f;
                 usleep (25000); // min recover time
 
-                int timeout = 10; while ( !initiate_bram_write_measurements () && --timeout>0) usleep (25000);
+                int timeout = 100; while ( !initiate_bram_write_measurements () && --timeout>0) usleep (1000);
 
                 if (reps[OPERATION.Value ()-6] > 1)
                         usleep (waitus[OPERATION.Value ()-6]);
