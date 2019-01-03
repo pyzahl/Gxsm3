@@ -112,33 +112,53 @@ struct data {
         double * y;
 };
 
+struct mod_data {
+        size_t n;
+        double * t;
+        double * y;
+        double A,B,C;
+};
+
+/* GSL fitting:
+ https://www.gnu.org/software/gsl/doc/html/nls.html#exponential-fitting-example
+*/
+
 class resonance_fit{
 public:
-        resonance_fit (double *frq, double *amp, size_t n) { 
+        resonance_fit (double *frq, double *amp, double *model, size_t n) { 
                 fit_data.n = n;
                 fit_data.t = frq;
                 fit_data.y = amp;
+                result.n = n;
+                result.t = frq;
+                result.y = model;
+                result.A  = 50.; // amplitude
+                result.B  = 30000.; // center
+                result.C  = 5000.0; // Q
         };
         ~resonance_fit () { 
         };
 
 
         /* model function: a * exp( -1/2 * [ (t - b) / c ]^2 ) */
-        double
+        static double
         gaussian(const double a, const double b, const double c, const double t)
         {
                 const double z = (t - b) / c;
                 return (a * exp(-0.5 * z * z));
         };
 
-        double
-        resonance(const double a0, const double q, const double f0, const double f)
+        static double
+        resonance(const double a, const double b, const double c, const double t)
         {
-                // A(f) = (1000/A0) / sqrt (1 + Q^2 * (f/f0 - f0/f)^2)
-                return (1000./a0) / sqrt (1. + q*q * gsl_pow_2(f/f0 - f0/f));
+        // A(f) = (1000/A0) / sqrt (1 + Q^2 * (f/f0 - f0/f)^2)
+        // rewite a := A0, b := f0, c := Q, t := f
+        // Res(a,b,c,t)
+                const double z = t/b - b/t;
+                return (1000./a) / sqrt (1. + c*c * z*z);
         };
         
-        int
+        static int
         func_f (const gsl_vector * x, void *params, gsl_vector * f)
         {
                 struct data *d = (struct data *) params;
@@ -160,6 +180,7 @@ public:
                 return GSL_SUCCESS;
         };
 
+#if 0 // Gaussian partials
         int
         func_df (const gsl_vector * x, void *params, gsl_matrix * J)
         {
@@ -219,8 +240,85 @@ public:
 
                 return GSL_SUCCESS;
         };
+#endif
 
-        void
+        // Resonanne partials
+        static int
+        func_df (const gsl_vector * x, void *params, gsl_matrix * J)
+        {
+                struct data *d = (struct data *) params;
+                double a = gsl_vector_get(x, 0);
+                double b = gsl_vector_get(x, 1);
+                double c = gsl_vector_get(x, 2);
+                size_t i;
+
+                for (i = 0; i < d->n; ++i)
+                        {
+                                double ti    = d->t[i];
+                                double zi    = ti/b - b/ti;
+                                double czi   = c*c*zi*zi + 1.0;
+                                double czi32 = czi*sqrt(czi);
+                                double dbzi  = -ti/(b*b) - 1.0/ti;
+                                
+                                gsl_matrix_set(J, i, 0, 1000.0/(a*a*sqrt(czi)));
+                                gsl_matrix_set(J, i, 1, 1000.0*c*c*dbzi*zi/(a*czi32));
+                                gsl_matrix_set(J, i, 2, 1000.0*c*zi*zi/(a*czi32));
+                        }
+
+                return GSL_SUCCESS;
+        };
+
+        static int
+        func_fvv (const gsl_vector * x, const gsl_vector * v,
+                  void *params, gsl_vector * fvv)
+        {
+                struct data *d = (struct data *) params;
+                double a = gsl_vector_get(x, 0);
+                double b = gsl_vector_get(x, 1);
+                double c = gsl_vector_get(x, 2);
+                double va = gsl_vector_get(v, 0);
+                double vb = gsl_vector_get(v, 1);
+                double vc = gsl_vector_get(v, 2);
+                size_t i;
+
+                double a2 = a*a;
+                double b2 = b*b;
+                double c2 = c*c;
+                for (i = 0; i < d->n; ++i)
+                        {
+                                double ti = d->t[i];
+                                double zi   = ti/b - b/ti;
+                                double czi  = c2*zi*zi + 1.0;
+                                double czi12 = sqrt(czi);
+                                double czi32 = czi*czi12;
+                                double czi52 = czi*czi*czi12;
+                                double dbzi = -ti/b2 - 1.0/ti;
+                                
+                                double Daa = -2000.0/(a2*a*czi12);
+                                double Dab = -1000.0*c2*dbzi*zi/(a2*czi32);
+                                double Dac = -1000.0*c*zi*zi/(a2*czi32);
+                                double Dbb = 2000.0*c2*ti*zi/(a*b2*b*czi32) + 1000.0*c2*dbzi*dbzi/(a*czi32) - 3000.0*c2*c2*dbzi*dbzi*zi*zi/(a*czi52);
+                                double Dbc = 2000.0*c*dbzi*zi/(a*czi32) - 3000.0*c2*c*dbzi*zi*zi*zi/(a*czi52);
+                                double Dcc = 1000.0*zi*zi*(1.0-2.0*c2*zi*zi)/(a*czi52);
+                                double sum;
+
+                                sum =
+                                        va * va * Daa
+                                        + 2.0 * va * vb * Dab
+                                        + 2.0 * va * vc * Dac
+                                        + vb * vb * Dbb
+                                        + 2.0 * vb * vc * Dbc
+                                        + vc * vc * Dcc;
+
+                                gsl_vector_set(fvv, i, sum);
+                        }
+
+                return GSL_SUCCESS;
+        };
+
+
+        
+        static void
         callback(const size_t iter, void *params,
                  const gsl_multifit_nlinear_workspace *w)
         {
@@ -249,14 +347,17 @@ public:
                      gsl_multifit_nlinear_parameters *params)
         {
                 const gsl_multifit_nlinear_type *T = gsl_multifit_nlinear_trust;
+                //const size_t max_iter = 200;
+                //const double xtol = 1.0e-8;
+                //const double gtol = 1.0e-8;
+                //const double ftol = 1.0e-8;
                 const size_t max_iter = 200;
                 const double xtol = 1.0e-8;
                 const double gtol = 1.0e-8;
                 const double ftol = 1.0e-8;
                 const size_t n = fdf->n;
                 const size_t p = fdf->p;
-                gsl_multifit_nlinear_workspace *work =
-                        gsl_multifit_nlinear_alloc(T, params, n, p);
+                gsl_multifit_nlinear_workspace *work = gsl_multifit_nlinear_alloc(T, params, n, p);
                 gsl_vector * f = gsl_multifit_nlinear_residual(work);
                 gsl_vector * y = gsl_multifit_nlinear_position(work);
                 int info;
@@ -298,9 +399,10 @@ public:
 
         int execute_fit ()
         {
+                const size_t n = fit_data.n;
                 const size_t p = 3;    /* number of model parameters */
                 const gsl_rng_type * T = gsl_rng_default;
-                gsl_vector *f = gsl_vector_alloc(fit_data.n);
+                gsl_vector *f = gsl_vector_alloc(n);
                 gsl_vector *x = gsl_vector_alloc(p);
                 gsl_multifit_nlinear_fdf fdf;
                 gsl_multifit_nlinear_parameters fdf_params = gsl_multifit_nlinear_default_parameters();
@@ -319,28 +421,21 @@ public:
                 fdf.params = &fit_data;
 
                 /* starting point */
-                gsl_vector_set(x, 0, 1.0);
-                gsl_vector_set(x, 1, 0.0);
-                gsl_vector_set(x, 2, 1.0);
+                gsl_vector_set(x, 0, result.A);
+                gsl_vector_set(x, 1, result.B);
+                gsl_vector_set(x, 2, result.C);
 
                 fdf_params.trs = gsl_multifit_nlinear_trs_lmaccel;
                 solve_system(x, &fdf, &fdf_params);
 
-                /* print data and model */
-                {
-                        double A = gsl_vector_get(x, 0);
-                        double B = gsl_vector_get(x, 1);
-                        double C = gsl_vector_get(x, 2);
+                /* store results and model */
+                result.A = gsl_vector_get(x, 0);
+                result.B = gsl_vector_get(x, 1);
+                result.C = gsl_vector_get(x, 2);
 
-                        for (i = 0; i < n; ++i)
-                                {
-                                        double ti = fit_data.t[i];
-                                        double yi = fit_data.y[i];
-                                        double fi = gaussian(A, B, C, ti);
-
-                                        printf("%f %f %f\n", ti, yi, fi);
-                                }
-                }
+                for (i = 0; i < result.n; ++i)
+                        // double fi = gaussian(result.A, result.B, result.C, result.t[i]);
+                        result.y[i] = resonance(result.A, result.B, result.C, result.t[i]);
 
                 gsl_vector_free(f);
                 gsl_vector_free(x);
@@ -349,8 +444,18 @@ public:
                 return 0;
         };
 
+        // set initial
+        void set_Q(double q) { result.C = q; };
+        void set_A(double a) { result.A = a; };
+        void set_F0(double f0) { result.B = f0; };
+
+        // get results
+        double get_Q() { return result.C; };
+        double get_A() { return result.A; };
+        double get_F0() { return result.B; };
         
 private:
         struct data fit_data;
+        struct mod_data result;
 };
 
