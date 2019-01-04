@@ -1719,48 +1719,79 @@ void Inet_Json_External_Scandata::update_graph (){
                         {
                                 double f[1024];
                                 double a[1024];
-                                double m[1024];
+                                double p[1024];
+                                double ma[1024];
+                                double mp[1024];
                                 int fn=0;
                                 for (int i=0; i<n; ++i){
                                         double fi = pacpll_signals.signal_frq[i];
                                         double ai = pacpll_signals.signal_ampl[i];
+                                        double pi = pacpll_signals.signal_phase[i];
                                         if (fi != 0. && ai > 0.){
                                                 f[fn] = fi+pacpll_parameters.frequency_manual;
                                                 a[fn] = ai;
+                                                p[fn] = pi;
                                                 fn++;
                                         }
                                 }
                                 if (fn > 15){
-                                        resonance_fit lmgeofit (f,a,m, fn); // using the Levenberg-Marquardt method with geodesic acceleration. Using GSL here.
+                                        resonance_fit lmgeofit_res (f,a,ma, fn); // using the Levenberg-Marquardt method with geodesic acceleration. Using GSL here.
                                         // initial guess
                                         if (pacpll_parameters.center_frequency > 1000.){
-                                                lmgeofit.set_F0 (pacpll_parameters.center_frequency);
-                                                lmgeofit.set_A (pacpll_parameters.center_amplitude);
+                                                lmgeofit_res.set_F0 (pacpll_parameters.center_frequency);
+                                                lmgeofit_res.set_A (1000.0/pacpll_parameters.center_amplitude);
                                         } else {
-                                                lmgeofit.set_F0 (pacpll_parameters.frequency_manual);
-                                                lmgeofit.set_A (50.0);
+                                                lmgeofit_res.set_F0 (pacpll_parameters.frequency_manual);
+                                                lmgeofit_res.set_A (1000.0/20.0);
                                         }
-                                        lmgeofit.set_Q (5000.0);
-                                        lmgeofit.execute_fit ();
+                                        lmgeofit_res.set_Q (5000.0);
+                                        lmgeofit_res.execute_fit ();
                                         cairo_item_path *resfit = new cairo_item_path (fn);
                                         resfit->set_line_width (1.0);
                                         resfit->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
+
+                                        phase_fit lmgeofit_ph (f,p,mp, fn); // using the Levenberg-Marquardt method with geodesic acceleration. Using GSL here.
+                                        // initial guess
+                                        if (pacpll_parameters.center_frequency > 1000.){
+                                                lmgeofit_ph.set_B (pacpll_parameters.center_frequency);
+                                                lmgeofit_ph.set_A (1.0);
+                                        } else {
+                                                lmgeofit_ph.set_B (pacpll_parameters.frequency_manual);
+                                                lmgeofit_ph.set_A (1.0);
+                                        }
+                                        lmgeofit_ph.set_C (60.0);
+                                        lmgeofit_ph.execute_fit ();
+                                        cairo_item_path *phfit = new cairo_item_path (fn);
+                                        phfit->set_line_width (1.0);
+                                        phfit->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
+                                        
                                         for (int i=0; i<fn; ++i){
                                                 resfit->set_xy_fast (i,
                                                                      250.+480.*(f[i]-pacpll_parameters.frequency_manual)/parameters.tune_span, // tune plot, freq x transform to canvas
-                                                                     ydb=db_to_y (dB_from_mV (m[i]), dB_hi, y_hi, dB_mags)
+                                                                     ydb=db_to_y (dB_from_mV (ma[i]), dB_hi, y_hi, dB_mags)
                                                                      );
+
+                                                phfit->set_xy_fast (i,
+                                                                    250.+480.*(f[i]-pacpll_parameters.frequency_manual)/parameters.tune_span, // tune plot, freq x transform to canvas,
+                                                                    yph=deg_to_y (mp[i], y_hi)
+                                                                    );
+
                                                 // g_print ("%05d \t %10.3f \t %8.3f %8.3f\n", i, f[i], a[i], m[i]);
                                         }
                                         resfit->draw (cr);
+                                        phfit->draw (cr);
                                         delete resfit;
+                                        delete phfit;
 
-                                        valuestring = g_strdup_printf ("Q: %g  A: %g  F0: %g Hz",
-                                                                       lmgeofit.get_Q (),
-                                                                       lmgeofit.get_A (),
-                                                                       lmgeofit.get_F0 ()
+                                        valuestring = g_strdup_printf ("Model Q: %g  A: %g mV  F0: %g Hz  Phase: %g [%g] @ %g Hz",
+                                                                       lmgeofit_res.get_Q (),
+                                                                       1000./lmgeofit_res.get_A (),
+                                                                       lmgeofit_res.get_F0 (),
+                                                                       lmgeofit_ph.get_C (),
+                                                                       lmgeofit_ph.get_A (),
+                                                                       lmgeofit_ph.get_B ()
                                                                        );
-                                        reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                                        reading->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
                                         reading->set_text (10, (110-14*1), valuestring);
                                         g_free (valuestring);
                                         reading->draw (cr);
