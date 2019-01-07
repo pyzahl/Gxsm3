@@ -257,7 +257,7 @@ def CPN(N):
         return ((1<<(N))-1.)
 
 
-NUM_SIGNALS =  101
+NUM_SIGNALS =  109
 
 FB_SPM_FLASHBLOCK_XIDENTIFICATION_A =   0x10aa
 FB_SPM_FLASHBLOCK_XIDENTIFICATION_B =   0x0001
@@ -384,6 +384,14 @@ SIGNAL_LOOKUP = [
         [0, 99, 32, "user_input_signal_array[0]", "user signal array",  "xV", DSP32Qs23dot8TO_Volt, "Control", "user signal input value array [32]"], ## DSP_SIG
 	[0, 99, 1, "sco_s[0].out",    "SCO1 Out",      "V", DSP32Qs15dot16TO_Volt, "SCO", "SCO1 output"], ## 	DSP_SIG SCO output
 	[0, 99, 1, "sco_s[1].out",    "SCO2 Out",      "V", DSP32Qs15dot16TO_Volt, "SCO", "SCO2 output"], ## 	DSP_SIG SCO output
+        [0, 99, 1, "analog.McBSP_SPI[0]", "SPI Freq",      "Hz",    1, "MCBSP_SPI_LINK", "SPI DATA Freq"], ## DSP McBSP SPI LINK[0]
+        [0, 99, 1, "analog.McBSP_SPI[1]", "SPI Exec",      "mV",    1, "MCBSP_SPI_LINK", "SPI DATA Exec"], ## DSP McBSP SPI LINK[1]
+        [0, 99, 1, "analog.McBSP_SPI[2]", "SPI Ampl",      "mV",    1, "MCBSP_SPI_LINK", "SPI DATA Ampl"], ## DSP McBSP SPI LINK[2]
+        [0, 99, 1, "analog.McBSP_SPI[3]", "SPI Phase",     "deg",   1, "MCBSP_SPI_LINK", "SPI DATA Phase"], ## DSP McBSP SPI LINK[3]
+        [0, 99, 1, "analog.McBSP_SPI[4]", "SPI 4",         "X",     1, "MCBSP_SPI_LINK", "SPI DATA CH4"], ## DSP McBSP SPI LINK[4]
+        [0, 99, 1, "analog.McBSP_SPI[5]", "SPI 5",         "X",     1, "MCBSP_SPI_LINK", "SPI DATA CH5"], ## DSP McBSP SPI LINK[5]
+        [0, 99, 1, "analog.McBSP_SPI[6]", "SPI 6",         "X",     1, "MCBSP_SPI_LINK", "SPI DATA CH6"], ## DSP McBSP SPI LINK[6]
+        [0, 99, 1, "analog.McBSP_SPI[7]", "SPI 7",         "X",     1, "MCBSP_SPI_LINK", "SPI DATA CH7"], ## DSP McBSP SPI LINK[7]
 	[-1, 0, 0, "no signal", "END OF SIGNALS", "NA", 0]  ## END MARKING
 ]
 
@@ -2686,6 +2694,24 @@ class SPMcontrol():
 		else:
 			self.write_o (i_statemachine, 4, struct.pack (fmt_statemachine_w, mask))
 
+        # Experimental SPI Link support configuration request -- default: OFF
+        def dsp_enable_McBSP(self, dummy, num):
+                print "\nRequesting DSP McBSP (SPI communication) support initializtion\n\n \n\n"
+		self.write_o (i_statemachine, ii_statemachine_DSP_speed_req*4, struct.pack (fmt_statemachine_w, 1001),1)
+                        
+        def dsp_configure_McBSP_N(self, dummy, num):
+                print "\nRequesting DSP McBSP (SPI communication) " + str(num) + " words. Valid: N=[1,2,3,4,8]\n\n \n\n"
+		self.write_o (i_statemachine, ii_statemachine_DSP_speed_req*4, struct.pack (fmt_statemachine_w, 1010+num),1)
+                        
+        def dsp_reset_McBSP(self, dummy, num):
+                print "\nRequesting DSP McBSP (SPI communication) reset\n\n \n\n"
+		self.write_o (i_statemachine, ii_statemachine_DSP_speed_req*4, struct.pack (fmt_statemachine_w, 1002),1)
+                        
+        def dsp_test_McBSP(self, dummy, num):
+                print "\nRequesting DSP McBSP (SPI communication) test\n\n \n\n"
+		self.write_o (i_statemachine, ii_statemachine_DSP_speed_req*4, struct.pack (fmt_statemachine_w, 1003),1)
+
+                
         # Experimental, use only on your risc -- 688 MHz (all older MK3 models are 600 MHz spec., only newer revision are 700 MHz approved)
         def dsp_adjust_speed(self, dummy, speed=590):
                 clk=self.read_o (i_statemachine, ii_statemachine_DSP_speed_act*4, fmt_statemachine_w)
