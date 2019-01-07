@@ -32,18 +32,16 @@
 #include "g_intrinsics.h"
 #include "FB_spm_dataexchange.h"
 
+#define Time1_us 84 // In the assembler function _wait, the value to set to obtain 1 us is 84. It is 7 CPU cycles * 84 at 589 MHz.
+                    // *** =99 for 688 MHz
+
+#define SPI_Tx_Bit 0x0080 // INT7
+#define SPI_Rx_Bit 0x0100 // INT8
+#define SPI_RxTx_Bit 0x0180 // INT8 and INT7
+
+
 extern ANALOG_VALUES    analog;
 
-
-/*
-;***************************************************************************
-; wait function (delay in A4) : 7 cycles by delay value
-; 17 CPU cyles of overhead
-;***************************************************************************
-*/
-
-
-#define Time1_us 7 // 7 cycles per ~1us    (150us : 3687 cycles at 24.576MHz x 2)
 
 #define MAX_SPI_FRAME_LEN      8
 int SPI_frame_element = 0;
@@ -150,12 +148,16 @@ void InitMcBSP0_InSPIMode()
 	INTC_INTMUX1=(INTC_INTMUX1 & 0x00FFFFFF) | 0x30000000;		// Add the MBXINT1 event (51:30h) on INT7 ->TX
 	INTC_INTMUX2=(INTC_INTMUX2 & 0xFFFFFF00) | 0x00000031;		// Add the MBRINT1 event (50:31h) on INT8 ->RX
 
-#if 0 // missing code:
-	DisableInts_SDB;
+        // DisableInts_SDB;
+        CSR = ~0x1 & CSR; // Disable INTs 
+
 	IER &= ~SPI_RxTx_Bit; // Disable the SPI int RX/TX
-	EnableInts_SDB;
+
+        // EnableInts_SDB;
+        CSR = 1 | CSR; // Enable ints 
+
 	ICR=SPI_RxTx_Bit; // Clear flag
-#endif
+
 	// 11: FRST=1 (enable frame-syn generator)
 
 	MCBSP0_SPCR |= MCBSP_SPCR_FRST;
