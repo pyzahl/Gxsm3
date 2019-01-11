@@ -28,7 +28,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-
+extern void SetSPIwords(int n);
 extern void ResetMcBSP0();
 extern void InitMcBSP0_InSPIMode();
 extern void TestMcBSP0();
