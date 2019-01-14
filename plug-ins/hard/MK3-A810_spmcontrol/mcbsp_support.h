@@ -28,7 +28,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#define MCBSP_MODE_McBSP 0
+#define MCBSP_MODE_DLB   1
+#define MCBSP_MODE_SPI   (3<<1)
+#define MCBSP_MODE_AUTO_RECOVER  (1<<8)
+
 extern void SetSPIwords(int n);
 extern void ResetMcBSP0();
-extern void InitMcBSP0_InSPIMode();
-extern void TestMcBSP0();
+extern void InitMcBSP0_InSPIMode(int wpf, int mode);
+extern void DebugMcBSP0(int level);
+extern void start_McBSP_transfer(unsigned int index);

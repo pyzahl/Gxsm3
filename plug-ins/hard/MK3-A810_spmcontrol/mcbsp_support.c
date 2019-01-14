@@ -31,20 +31,21 @@
 #include "SR3_Reg.h"
 #include "g_intrinsics.h"
 #include "FB_spm_dataexchange.h"
+#include "mcbsp_support.h"
 
 #define Time1_us 84 // In the assembler function _wait, the value to set to obtain 1 us is 84. It is 7 CPU cycles * 84 at 589 MHz.
                     // *** =99 for 688 MHz
 
 #define SPI_Tx_Bit 0x0080 // INT7
 #define SPI_Rx_Bit 0x0100 // INT8
-#define SPI_RxTx_Bit 0x0180 // INT8 and INT7
+#define SPI_RxTx_Bit (SPI_Rx_Bit | SPI_Tx_Bit) // INT8 and INT7
 
 
 extern ANALOG_VALUES    analog;
 
 
 #define MAX_SPI_FRAMES    8
-int SPI_words_per_frame = 4;
+int SPI_words_per_frame = 8;
 int SPI_frame_element = 0;
 int SPI_frame_count = 0;
 int SPI_enabled = 0;
@@ -52,7 +53,7 @@ int SPI_enabled = 0;
 unsigned int SPI_transmitted_words = 0;
 unsigned int SPI_received_words = 0;
 
-unsigned int SPI_test_count=0;
+unsigned int SPI_debug_mode=0;
 
 #pragma CODE_SECTION(SetSPIwords, ".text:slow")
 void SetSPIwords(int n){
@@ -67,86 +68,89 @@ void ResetMcBSP0()
 {
 	MCBSP0_SPCR=(3<<CLKSTPBit);	// Put the McBSP0 in reset
         SPI_enabled = 0;
-        SPI_words_per_frame = 4; 
+        SPI_words_per_frame = 8;
         SPI_frame_count = 0;
-        SPI_test_count = 0;
+        SPI_debug_mode = 0;
+        SPI_transmitted_words = 0;
+        SPI_received_words = 0;
 }
 
 #pragma CODE_SECTION(InitMcBSP0_InSPIMode, ".text:slow")
-void InitMcBSP0_InSPIMode()
+// wpf: words per frame: 1..8
+// mode: b0: DLB (digital loop back test mode), b12: SPI mode (clock stop)
+void InitMcBSP0_InSPIMode(int wpf, int mode)
 {
+        SetSPIwords(wpf);
+        
+        // DisableInts_SDB;
+        CSR = ~0x1 & CSR; // Disable INTs.
+        
 	// STEP 1: Power up the SP
 
 	CFG_VDD3P3V_PWDN &= ~SetSPPD; // 0x80 : bit SP(mcbsp0,1)
 
 	// STEP 2
 
-	MCBSP0_SPCR=(3<<CLKSTPBit);	// Put the McBSP0 in reset
-        // CLKSTP=3 Clock starts with rising edge with delay
+        // ====== McBSP Serial Port Control Register (SPCR)
+	//MCBSP0_SPCR=(0<<CLKSTPBit);	// Put the McBSP0 in reset, regular McBSP mode, clock is running
+
+        // CLKSTP=3 Clock starts with rising edge with delay [SPI mode]
+        // MCBSP_SPCR_DLB // DLBBit [digital loopback test]
+	// MCBSP0_SPCR=(3<<CLKSTPBit) + ((mode&1) << DLBBit);	// Put the McBSP0 in reset // 3= SPI (Clock Stop Mode)
+	MCBSP0_SPCR = (((mode>>1)&3)<<CLKSTPBit) + ((mode&1) << DLBBit);	// Put the McBSP0 in reset // 3= SPI (Clock Stop Mode)
+
 
 	// STEP 3
 
-        // Configure: Pin Control Register PCR
-        // CLKRPBit   0 = 0   receive data sampled on falling edge
-        // CLKXPBit   1 = 0   rising clock pol
+        // Configure:
+        // ====== Pin Control Register PCR
+        // CLKRPBit   0 = 0   receive data sampled on falling edge of CLKR (input)
+        // CLKXPBit   1 = 0   rising clock pol (transmit on rising edge of CLKX)
         // FSRPBit    2 = 0   receive fram pol pos
         // FSXPBit    3 = 0   pos Frame Pol
-        // DRSTATBit  4
-        // DXSTATBit  5
-        // CLKSTATBit 6
-        // CLKRMBit 8   = 0  CLKR is input (returned clock!! need this)
-        // CLKXMBit 9   = 1   
-        // FSXMBit  11  = 1  Frame Sync by FSGM bit in SRGM, 0: external source ??
-        // RIOENBit 12  = 0
-        // XIOENBit 13  = 0   DX, FSX, CLKX active
+        // SCLKME     7 = 0  (sample rate gen...)
+        // CLKRMBit   8 = 0  CLKR is input (returned clock!! need this)
+        // CLKXMBit   9 = 1  McBSP master and generates clkx for slave and for its receive clock 
+        // FSRMBit   10 = 0  0: is derived from external source. 1: internally, FSR is output
+        // FSXMBit   11 = 1  Frame Sync Generation by FSGM bit in SRGM, 0: is derived from external source.
+        // RIOENBit  12 = 0
+        // XIOENBit  13 = 0   DX, FSX, CLKX active
 
         // CLKX and FSX must be output
         // -> CLKXM=1, FSXM=1
         // CLKR and FSR must be input (reference clock/frame from clock/frame return over wire):
         // -> CLKRM=0, FSRM=0 
-        MCBSP0_PCR = (1 << PCR_CLKXMBit) + (1 << FSXMBit);
+	MCBSP0_PCR = (1 << PCR_CLKXMBit) + (1 << PCR_FSXMBit) + (0 << PCR_CLKXPBit) + (0 << PCR_CLKRPBit) + (0 << PCR_FSXPBit);
         
-
         
+        // ===== Sample Rate Generator Register SRGR
 	// Set the SPI (clock: Internal clock at SYSClk3 (CPU (589E6)/6): diviser /7: 14.024 MHz)
+        // FSGM=0 0: Transmit FSX is generated on every DXR->XSR copy, 1: FSX is driven by sample rate generator frame sync signal (FSG)
+        // CLKSP=GSYNC=0 (don't care in internal input clock mode)
+        // CLKSM=1 (Internal input clock)
+        // FPER= (8x32-bit words by frame)  8*32-1   -- ??? total frame length for all words ???
+        // FWID=0 =1: 2 CLK WIDE FS Pulse
+        // CLKGDV=6 (divider at 7 to generate 14.024 MHz)
+        // (99<<CLKGDVBit) // 1 MHz clock
+        // (49<<CLKGDVBit) // 2 MHz clock
+        // (12<<CLKGDVBit) // 8 MHz clock **
+        // (24<<CLKGDVBit) // 4 MHz clock
+        // (6<<CLKGDVBit)  // 16 MHz clock,   (6<<CLKGDVBit); //  20 MHz ???
+	MCBSP0_SRGR=(1<<CLKSMBit) + ((8*32-1)<<FPERBit)+ (99<<CLKGDVBit) + (0 << FSGMBit) + (1 << FWIDBit); // 1// 8 MHz
 
-	//MCBSP0_SRGR=(1<<CLKSMBit) + (7<<FPERBit)+ (6<<CLKGDVBit); // 8 clocks per frame (8bit)!
-	//MCBSP0_SRGR=(1<<CLKSMBit) + (34<<FPERBit)+ (99<<CLKGDVBit) + (1 << FSGMBit); // 1 MHz, 34 clocks per frame (32 bit word)
-	//MCBSP0_SRGR=(1<<CLKSMBit) + (34<<FPERBit)+ (49<<CLKGDVBit); //  2 MHz
-	//MCBSP0_SRGR=(1<<CLKSMBit) + (34<<FPERBit)+ (24<<CLKGDVBit); //  4 MHz
-	MCBSP0_SRGR=(1<<CLKSMBit) + (34<<FPERBit)+ (12<<CLKGDVBit) + (1 << FSGMBit); //  8 MHz
-	//MCBSP0_SRGR=(1<<CLKSMBit) + (34<<FPERBit)+ (6<<CLKGDVBit); //  16 MHz
-	//MCBSP0_SRGR=(1<<CLKSMBit) + (34<<FPERBit)+ (6<<CLKGDVBit); //  20 MHz
-							// FSGM=0
-							// CLKSP=GSYNC=0 (don't care in internal input clock mode)
-							// CLKSM=1 (Internal input clock)
-							// FSGM=0
-							// FPER=7 (8-bits by frame)
-							// FWID=0
-							// CLKGDV=6 (divider at 7 to generate 14.024 MHz)
-
-	// want 32bit, 4 frames default
-	MCBSP0_RCR=(1<<RDATDLYBit) + (5<<RWDLEN1Bit) + (4 << RFRLEN1Bit);	// 32-bits word (phase1), 1 words by frame, Receive 1-bit delay
-	MCBSP0_XCR=(1<<XDATDLYBit) + (5<<XWDLEN1Bit) + (4 << XFRLEN1Bit);	// 32-bits word (phase1), 1 words by frame, Transmit 1-bit delay
-							// RPHASE=XPHASE=0
-							// RFRLEN1=XFRLEN1=0
-							// RCOMPAND=0
-							// RFIG=0
-							// RDATDLY=XDATDLY=1
-							// RFRLEN1=XFRLEN1=0 1 word of RWDLEN1-bits
-							// XFRLEN1=XFRLEN1=0 1 word of XWDLEN1-bits
-							// RWDLEN1=XWDLEN1=0 (8-bits) =5 (32-bits)
-							// XWDLEN1=XWDLEN1=0 (8-bits) =5 (32-bits)
-	MCBSP0_PCR=(1<<CLKXMBit) + (1<<FSXMBit) + (0<<CLKXPBit) + (0<<CLKRPBit) + (0<<FSXPBit);
-							// FSXM=1
-							// FSRM=0
-							// CLKXM=1 McBSP master and generates clkx for slave and for its receive clock
-							// CLKRM=0 CLKR set as input
-							// SCLKME=0
-							// FSXP=0
-							// FSRP=0
-							// CLKXP=0 (transmit on rising edge of CLKX)
-							// CLKRP=0 (receive on falling edge of CLKR)
+        // ===== McBSP Receive Control Register (RCR) and Transmit Control Register (XCR)
+	// want 32bit, 4x 32bit words default, up to 8 words
+	MCBSP0_RCR=(1<<RDATDLYBit) + (5<<RWDLEN1Bit) + ((SPI_words_per_frame-1) << RFRLEN1Bit);	// 32-bits word (phase1), 1 words by frame, Receive 1-bit delay
+        MCBSP0_XCR=(1<<XDATDLYBit) + (5<<XWDLEN1Bit) + ((SPI_words_per_frame-1) << XFRLEN1Bit);	// 32-bits word (phase1), 1 words by frame, Transmit 1-bit delay
+        // RPHASE=XPHASE=0
+        // RFRLEN1=XFRLEN1=0
+        // RCOMPAND=0
+        // RFIG=0
+        // RDATDLY=XDATDLY=1
+        // RFRLEN1=XFRLEN1=0 1 word of RWDLEN1-bits
+        // XFRLEN1=XFRLEN1=0 1 word of XWDLEN1-bits
+        // RWDLEN1=XWDLEN1=0 (8-bits) =5 (32-bits)
+        // XWDLEN1=XWDLEN1=0 (8-bits) =5 (32-bits)
 
 	// STEP 4: wait 2 clks (we do 10)
 
@@ -166,14 +170,15 @@ void InitMcBSP0_InSPIMode()
 	wait(2*Time1_us);
 	MCBSP0_SPCR &= ~MCBSP_SPCR_XRST;
 
-        //MCBSP0_SPCR &= ~(3 << XINTMBit); // make sure it is =0 for XINT driven by XRDY (end of word) and end of frame
-        //MCBSP0_SPCR &= ~(3 << RINTMBit); // make sure it is =0 for RINT driven by RRDY (end of word) and end of frame
+        // should be OK as set above, but make sure
+        MCBSP0_SPCR &= ~(3 << XINTMBit); // make sure it is =0 for XINT driven by XRDY (end of word) and end of frame
+        MCBSP0_SPCR &= ~(3 << RINTMBit); // make sure it is =0 for RINT driven by RRDY (end of word) and end of frame
         
 	// STEP 7: Init EDMA (no DMA)
 
 	// STEP 8: XRST=RRST=1 enable Transmitter and enable Receiver.
 
-	MCBSP0_SPCR |= (MCBSP_SPCR_XRST+MCBSP_SPCR_RRST+MCBSP_SPCR_DLB); // DLBBit ?? [digital loopback]
+	MCBSP0_SPCR |= (MCBSP_SPCR_XRST+MCBSP_SPCR_RRST); 
 
 	// 9: Nothing to do
 
@@ -195,9 +200,9 @@ void InitMcBSP0_InSPIMode()
 	INTC_INTMUX2=(INTC_INTMUX2 & 0xFFFFFF00) | 0x00000031;		// Add the MBRINT1 event (50:31h) on INT8 ->RX
 
         // DisableInts_SDB;
-        CSR = ~0x1 & CSR; // Disable INTs 
+        // CSR = ~0x1 & CSR; // Disable INTs 
 
-	IER &= ~SPI_RxTx_Bit; // Disable the SPI int RX/TX
+	IER &= ~SPI_RxTx_Bit; // Disable RX/TX int
 
         // EnableInts_SDB;
         CSR = 1 | CSR; // Enable ints 
@@ -208,23 +213,18 @@ void InitMcBSP0_InSPIMode()
 
 	MCBSP0_SPCR |= MCBSP_SPCR_FRST;
 
-        SPI_words_per_frame = 4; 
+        //SPI_words_per_frame = 4; 
         SPI_frame_count = 0;
-        SPI_test_count = 0;
+        SPI_debug_mode = 0;
         SPI_enabled = 1;
+
+        analog.McBSP_SPI[8] = MCBSP0_SPCR;
+        analog.McBSP_SPI[9] = MCBSP0_PCR;
+       
+	IER |= SPI_RxTx_Bit; // Enable RX/TX int
 }
 
-/* During a serial transfer, there are typically periods of serial port inactivity between packets or transfers.
-   The receive and transmit frame synchronization pulse occurs for every serial transfer. When the McBSP is
-   not in the reset state and has been configured for the desired operation, a serial transfer can be initiated
-   by programming (R/X)PHASE = 0 for a single-phase frame with the required number of elements
-   programmed in (R/X)FRLEN1. The number of elements can range from 1 to 128 ((R/X)FRLEN1 = 00h to
-   7Fh). The required serial element length is set in the (R/X)WDLEN1 field in the (R/X)CR. If a dual-phase
-   frame is required for the transfer, RPHASE = 1 and each (R/X)FRLEN1/2 can be set to any value between
-   0h and 7Fh.
-*/
-
-void start_McBSP_transfer(){
+void start_McBSP_transfer(unsigned int index){
         if (!SPI_enabled)
                 return;
 
@@ -241,28 +241,58 @@ void start_McBSP_transfer(){
         SPI_frame_count =  SPI_words_per_frame-1;
 
         // check for error, reset
-#if 0
-        if (MCBSP0_SPCR & (MCBSP_SPCR_XSYNCERR | MCBSP_SPCR_RSYNCERR)){
-                MCBSP0_SPCR |= MCBSP_SPCR_XRST;
-                wait(2*Time1_us);
-                MCBSP0_SPCR &= ~MCBSP_SPCR_XRST;
-        }
+#if 1
+        if (SPI_debug_mode & MCBSP_MODE_AUTO_RECOVER)
+                if (MCBSP0_SPCR & (MCBSP_SPCR_XSYNCERR | MCBSP_SPCR_RSYNCERR)){
+                        MCBSP0_SPCR &= ~(MCBSP_SPCR_XRST | MCBSP_SPCR_RRST); // put RT and TX in reset
+                        wait(2*Time1_us);
+                        MCBSP0_SPCR |= MCBSP_SPCR_XRST | MCBSP_SPCR_RRST;
+                }
 #endif
-        // 11: FRST=1 (enable frame-syn generator)
-        //MCBSP0_SPCR &= ~MCBSP_SPCR_FRST;
-	//MCBSP0_SPCR |= MCBSP_SPCR_FRST;
 
-	MCBSP0_RCR=(1<<RDATDLYBit) + (5<<RWDLEN1Bit) + (SPI_frame_count << RFRLEN1Bit);	// 32-bits word (phase1), 1 words by frame, Receive 1-bit delay
-	MCBSP0_XCR=(1<<XDATDLYBit) + (5<<XWDLEN1Bit) + (SPI_frame_count << XFRLEN1Bit);	// 32-bits word (phase1), 1 words by frame, Transmit 1-bit delay
-        MCBSP0_DXR_32BIT = 0xF0F00001; // Initial Word
+	//MCBSP0_RCR=(1<<RDATDLYBit) + (5<<RWDLEN1Bit) + (SPI_frame_count << RFRLEN1Bit);	// 32-bits word (phase1), 1 words by frame, Receive 1-bit delay
+	//MCBSP0_XCR=(1<<XDATDLYBit) + (5<<XWDLEN1Bit) + (SPI_frame_count << XFRLEN1Bit);	// 32-bits word (phase1), 1 words by frame, Transmit 1-bit delay
+        MCBSP0_DXR_32BIT = index; //0xF0F00001; // Initial Word
 
         // Debug
-        if (SPI_test_count){
-                analog.McBSP_SPI[3] = SPI_transmitted_words;
-                analog.McBSP_SPI[4] = SPI_received_words;
-                analog.McBSP_SPI[5] = MCBSP0_PCR;
-                analog.McBSP_SPI[6] = MCBSP0_SPCR;
-                analog.McBSP_SPI[7] = MCBSP0_DRR_32BIT;
+
+        //After the first write into MCBSP0_DXR_32BIT, check the IFR register if the INT7 flag is ON?
+        //It seems that no interrupt is generated. Check the XRDY bit in the SPCR register to see if the Tx has been done.
+        //Also, check the XINTM set-up is the SPCR register. It should be at zero.
+
+     
+        switch (SPI_debug_mode & 0x0f){
+        case 0: break;
+        case 1:
+                analog.McBSP_SPI[8] = MCBSP0_SPCR & (  (1 << XSYNCERRBit) | (1 << XEMPTYBit) | (1 << XRDYBit)
+                                                     | (1 << RSYNCERRBit) | (1 << RFULLBit)  | (1 << RRDYBit));
+                analog.McBSP_SPI[10] = SPI_transmitted_words;
+                analog.McBSP_SPI[11] = SPI_received_words;
+                break;
+        case 2:
+                analog.McBSP_SPI[8] = analog.McBSP_SPI[2] = MCBSP0_SPCR & (  (1 << XSYNCERRBit) | (1 << XEMPTYBit) | (1 << XRDYBit)
+                                                                           | (1 << RSYNCERRBit) | (1 << RFULLBit)  | (1 << RRDYBit));
+                analog.McBSP_SPI[3] = IFR & SPI_RxTx_Bit;
+                analog.McBSP_SPI[4] = MCBSP0_SPCR;
+                analog.McBSP_SPI[5] = index;
+                //analog.McBSP_SPI[5] = MCBSP0_DRR_32BIT;
+                analog.McBSP_SPI[6] = SPI_transmitted_words;
+                analog.McBSP_SPI[7] = SPI_received_words;
+                analog.McBSP_SPI[10] = SPI_transmitted_words;
+                analog.McBSP_SPI[11] = SPI_received_words;
+                break;
+        case 3:
+                analog.McBSP_SPI[8] = analog.McBSP_SPI[2] = MCBSP0_SPCR & (  (1 << XSYNCERRBit) | (1 << XEMPTYBit) | (1 << XRDYBit)
+                                                                           | (1 << RSYNCERRBit) | (1 << RFULLBit)  | (1 << RRDYBit));
+                analog.McBSP_SPI[3] = IFR & SPI_RxTx_Bit;
+                analog.McBSP_SPI[4] = MCBSP0_SPCR;
+                analog.McBSP_SPI[5] = index;
+                analog.McBSP_SPI[6] = SPI_transmitted_words;
+                analog.McBSP_SPI[7] = SPI_received_words;
+                analog.McBSP_SPI[9] = MCBSP0_DRR_32BIT;
+                analog.McBSP_SPI[10] = SPI_transmitted_words;
+                analog.McBSP_SPI[11] = SPI_received_words;
+                break;
         }
 }
 
@@ -279,21 +309,19 @@ interrupt void McBSP1TX_INT()
 interrupt void McBSP1RX_INT()
 {
         if (SPI_frame_element < SPI_words_per_frame ){
-                analog.McBSP_SPI[SPI_frame_element++] = MCBSP0_DRR_32BIT;
+                if (!SPI_debug_mode || SPI_frame_element < 2)
+                        analog.McBSP_SPI[SPI_frame_element++] = MCBSP0_DRR_32BIT;
                 SPI_received_words++;
         }
-        //else
-                // 11: FRST=0 (disable frame-syn generator)
-                // MCBSP0_SPCR &= ~MCBSP_SPCR_FRST;
 }
 
-void TestMcBSP0()
+#pragma CODE_SECTION(DebugMcBSP0, ".text:slow")
+void DebugMcBSP0(int level)
 {
         if (!SPI_enabled)
                 return;
 
-        SPI_words_per_frame = 2;
         SPI_transmitted_words = 0;
         SPI_received_words = 0;
-        SPI_test_count=1;
+        SPI_debug_mode=level;
 }
