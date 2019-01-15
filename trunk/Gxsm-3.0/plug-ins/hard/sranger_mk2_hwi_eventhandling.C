@@ -666,6 +666,7 @@ int DSPControl::Probing_abort_callback( GtkWidget *widget, DSPControl *dspc){
 	// ==> feedback state ON or OFF. SO AFTER THAT -- CHEC and eventually manually recover settings!
 	// but aborting on your request
 	dspc->Probing_exec_ABORT_callback (widget, dspc);
+        return 0;
 }
 
 
@@ -746,6 +747,8 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 	gchar *tmp = g_strdup(gapp->xsm->data.ui.comment);
 	gchar *cr;
 	while (cr=strchr (tmp, 0x0d))
+		*cr = ' ';
+	while (cr=strchr (tmp, 0x0a))
 		*cr = ' ';
 	
 	f << "# GXSM-Main-Comment      :: comment=\"" << tmp << "\"" << std::endl;
