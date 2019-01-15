@@ -1521,6 +1521,34 @@ double Mem2d::GetDataPktInterpol(double x, double y, double v){
 	return val_floor * (1.-d) + val_ceil * d;
 }
 
+double Mem2d::GetDataPktInterpol(double x, double y, double v, Scan *sct, int tn){
+        gint tiN = sct->number_of_time_elements ();
+        if (tn >= tiN)
+                return 0.;
+        if (tn < 0)
+                return 0.;
+	int il=GetLayer ();
+	int ifloor = (int)(floor(v));
+	int iceil = (int)(ceil(v));
+
+	if (ifloor < 0) ifloor = 0;
+	if (ifloor >= GetNv ()) ifloor = GetNv () - 1;
+	if (iceil >= GetNv ()) iceil = GetNv () - 1;
+	if (iceil < 0) iceil = 0;
+
+        Mem2d *mt = sct->mem2d_time_element (tn);
+
+        mt->SetLayer (ifloor);
+	double val_floor = mt->GetDataPktInterpol (x,y);
+	mt->SetLayer (iceil);
+	double val_ceil = mt->GetDataPktInterpol (x,y);
+	mt->SetLayer (il);
+
+	double d = v - (double)ifloor;
+
+	return val_floor * (1.-d) + val_ceil * d;
+}
+
 double Mem2d::GetDataPktInterpol(double x, double y, int v, double t, Scan *sct, double dt, double t0){
         double tid;
         gint tiN = sct->number_of_time_elements ();

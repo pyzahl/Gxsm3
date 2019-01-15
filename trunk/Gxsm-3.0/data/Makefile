@@ -152,15 +152,15 @@ DATA = $(nodist_appdata_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/missing aclocal-1.16
+ACLOCAL = ${SHELL} /local-home/percy/SVN/Gxsm-3.0/missing aclocal-1.15
 ALLOCA = 
 ALL_LINGUAS = 
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 0
 AR = ar
-AUTOCONF = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/missing autoconf
-AUTOHEADER = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/missing autoheader
-AUTOMAKE = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/missing automake-1.16
+AUTOCONF = ${SHELL} /local-home/percy/SVN/Gxsm-3.0/missing autoconf
+AUTOHEADER = ${SHELL} /local-home/percy/SVN/Gxsm-3.0/missing autoheader
+AUTOMAKE = ${SHELL} /local-home/percy/SVN/Gxsm-3.0/missing automake-1.15
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -238,7 +238,7 @@ LN_S = ln -s
 LTLIBOBJS = 
 LT_SYS_LIBRARY_PATH = 
 MAINT = 
-MAKEINFO = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/missing makeinfo
+MAKEINFO = ${SHELL} /local-home/percy/SVN/Gxsm-3.0/missing makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /bin/mkdir -p
 MSGFMT = /usr/bin/msgfmt
@@ -282,14 +282,14 @@ WINDRES =
 XGETTEXT = /usr/bin/xgettext
 XMKMF = 
 XMLLINT = xmllint
-YACC = bison -y
+YACC = yacc
 YELP_LC_DIST = true
 YELP_LC_MEDIA_LINKS = true
 YFLAGS = 
-abs_builddir = /home/pzahl/SVN/Gxsm-3.0/data
-abs_srcdir = /home/pzahl/SVN/Gxsm-3.0/data
-abs_top_builddir = /home/pzahl/SVN/Gxsm-3.0
-abs_top_srcdir = /home/pzahl/SVN/Gxsm-3.0
+abs_builddir = /local-home/percy/SVN/Gxsm-3.0/data
+abs_srcdir = /local-home/percy/SVN/Gxsm-3.0/data
+abs_top_builddir = /local-home/percy/SVN/Gxsm-3.0
+abs_top_srcdir = /local-home/percy/SVN/Gxsm-3.0
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
@@ -321,7 +321,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/pzahl/SVN/Gxsm-3.0/install-sh
+install_sh = ${SHELL} /local-home/percy/SVN/Gxsm-3.0/install-sh
 intltool__v_merge_options_ = $(intltool__v_merge_options_$(AM_DEFAULT_VERBOSITY))
 intltool__v_merge_options_0 = -q
 libdir = ${exec_prefix}/lib
@@ -382,8 +382,8 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	  *config.status*) \
 	    cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh;; \
 	  *) \
-	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__maybe_remake_depfiles)'; \
-	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__maybe_remake_depfiles);; \
+	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
+	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
 	esac;
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
@@ -428,10 +428,7 @@ ctags CTAGS:
 cscope cscopelist:
 
 
-distdir: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) distdir-am
-
-distdir-am: $(DISTFILES)
+distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
 	list='$(DISTFILES)'; \

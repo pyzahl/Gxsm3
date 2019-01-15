@@ -308,6 +308,7 @@ public:
 	double GetDataWidthAv(double x, double y, int v, double w, double s, double dx, double dy);
 	double GetDataPktInterpol(double x, double y);
 	double GetDataPktInterpol(double x, double y, int v);
+        double GetDataPktInterpol(double x, double y, double v, Scan *sct, int tn);
 	double GetDataPktInterpol(double x, double y, double v);
 	double GetDataPktInterpol(double x, double y, int v, double t, Scan *sct, double dt=0., double t0=0.);
 	double GetDataPktInterpol(double x, double y, double dr, int ly);
