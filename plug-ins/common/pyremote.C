@@ -1553,7 +1553,10 @@ static PyObject* remote_getdatapkt(PyObject *self, PyObject *args)
 
 	Scan *src = gapp->xsm->GetScanChannel (ch);
         if (src)
-                return Py_BuildValue("d", src->mem2d->GetDataPktInterpol (x,y,v));
+                if (t > 0.)
+                        return Py_BuildValue("d", src->mem2d->GetDataPktInterpol (x,y,v, src, (int)(t)));
+                else
+                        return Py_BuildValue("d", src->mem2d->GetDataPktInterpol (x,y,v));
         else
 		return Py_BuildValue("d", 0.);
 }
