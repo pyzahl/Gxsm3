@@ -135,7 +135,7 @@
 #ifdef FB_SPM_VERSION
 #undef FB_SPM_VERSION
 #endif
-#define FB_SPM_VERSION   0x00003058 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_VERSION   0x00003059 /* FB_SPM main Version, BCD: 00.00 */
 #ifdef FB_SPM_DATE_YEAR
 #undef FB_SPM_DATE_YEAR
 #endif
@@ -143,7 +143,7 @@
 #ifdef FB_SPM_DATE_MMDD
 #undef FB_SPM_DATE_MMDD
 #endif
-#define FB_SPM_DATE_MMDD 0x00000113 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00000120 /* Date: Month/Day, BCD */
 
 #ifdef FB_SPM_FEATURES
 #undef FB_SPM_FEATURES
@@ -165,6 +165,7 @@
 	"Bias/Z Re-Adjuster: Yes\n"\
 	"HR MODE FOR ALL OUTPUT SIGNALS, HR MATRIX control: Yes, LDC option in offset move function: Yes\n"\
 	"SCO block: Yes\n"\
+	"McBSP LINK SUPPORT: Yes\n"\
 	"THIS IS SR-MK3-Pro with Analog810 8Ch 16bit in/out + GPIO + 2 Counters\nAnalog810 ReConfig+-Start: Yes\n"
 
 
