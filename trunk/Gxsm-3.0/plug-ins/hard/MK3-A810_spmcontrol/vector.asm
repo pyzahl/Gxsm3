@@ -21,6 +21,8 @@
 ;***************************************************************************
 
 	.global _SR3A810ISR
+	.global _McBSP1TX_INT
+	.global _McBSP1RX_INT
 
 	.sect 	.vectors
 
@@ -54,30 +56,32 @@ _VectINT6:
 
 	;INT7
 	
-_VectINT7:
 
-	NOP 
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP		
+;INT7 (MBXINT1)   -- McBSP (SPI Master, Transmit TX)
+_VectINT7: 
 
-	;INT8
+	STW .D2T2 B10,*B15--[2] ; An absolute branch (or call) is used to avoid
+	|| MVKL .S2     _McBSP1TX_INT,B10 ; far trampoline sections when the ISR is far (more
+	MVKH .S2     _McBSP1TX_INT,B10 ; than 21-bits address from the current PC)
+	B .S2     B10 ; Note that the B15 (software stack) is necessary
+	LDW .D2T2   *++B15[2],B10
+	NOP     4
+	NOP
+	NOP
+
+;INT8 (MBRINT1)   -- McBSP (SPI Master, Read RX)
+_VectINT8: 
+
+	STW .D2T2 B10,*B15--[2] ; An absolute branch (or call) is used to avoid
+	|| MVKL .S2     _McBSP1RX_INT,B10 ; far trampoline sections when the ISR is far (more
+	MVKH .S2     _McBSP1RX_INT,B10 ; than 21-bits address from the current PC)
+	B .S2     B10 ; Note that the B15 (software stack) is necessary
+	LDW .D2T2   *++B15[2],B10
+	NOP     4
+	NOP
+	NOP
+
 	
-_VectINT8:
-
-	NOP 
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP	
-
 	;INT9
 	
 _VectINT9:

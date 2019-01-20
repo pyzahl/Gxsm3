@@ -257,7 +257,7 @@ def CPN(N):
         return ((1<<(N))-1.)
 
 
-NUM_SIGNALS =  109
+NUM_SIGNALS =  110
 
 FB_SPM_FLASHBLOCK_XIDENTIFICATION_A =   0x10aa
 FB_SPM_FLASHBLOCK_XIDENTIFICATION_B =   0x0001
@@ -392,6 +392,7 @@ SIGNAL_LOOKUP = [
         [0, 99, 1, "analog.McBSP_SPI[5]", "SPI 5",         "X",     1, "MCBSP_SPI_LINK", "SPI DATA CH5"], ## DSP McBSP SPI LINK[5]
         [0, 99, 1, "analog.McBSP_SPI[6]", "SPI 6",         "X",     1, "MCBSP_SPI_LINK", "SPI DATA CH6"], ## DSP McBSP SPI LINK[6]
         [0, 99, 1, "analog.McBSP_SPI[7]", "SPI 7",         "X",     1, "MCBSP_SPI_LINK", "SPI DATA CH7"], ## DSP McBSP SPI LINK[7]
+        [0, 99, 8, "analog.McBSP_SPI_STATUS_VEC", "SPI STATUS VECTOR",         "X",     1, "MCBSP_SPI_LINK", "SPI STATUS VECTOR"], ## DSP McBSP SPI STATUS VECTOR
 	[-1, 0, 0, "no signal", "END OF SIGNALS", "NA", 0]  ## END MARKING
 ]
 
@@ -2697,11 +2698,16 @@ class SPMcontrol():
         # Experimental SPI Link support configuration request -- default: OFF
         def dsp_enable_McBSP(self, dummy, num):
                 print "\nRequesting DSP McBSP (SPI communication) support initializtion\n\n \n\n"
-		self.write_o (i_statemachine, ii_statemachine_DSP_speed_req*4, struct.pack (fmt_statemachine_w, 1001),1)
+                if num >= 0 and num < 10:
+		        self.write_o (i_statemachine, ii_statemachine_DSP_speed_req*4, struct.pack (fmt_statemachine_w, 1000+num),1)
                         
         def dsp_configure_McBSP_N(self, dummy, num):
                 print "\nRequesting DSP McBSP (SPI communication) " + str(num) + " words. Valid: N=[1,2,3,4,8]\n\n \n\n"
 		self.write_o (i_statemachine, ii_statemachine_DSP_speed_req*4, struct.pack (fmt_statemachine_w, 1010+num),1)
+                        
+        def dsp_configure_McBSP_M(self, dummy, num):
+                print "\nRequesting DSP McBSP (SPI communication) " + str(num) + " words. Valid: N=[1,2,3,4,8]\n\n \n\n"
+		self.write_o (i_statemachine, ii_statemachine_DSP_speed_req*4, struct.pack (fmt_statemachine_w, 1020+num),1)
                         
         def dsp_reset_McBSP(self, dummy, num):
                 print "\nRequesting DSP McBSP (SPI communication) reset\n\n \n\n"

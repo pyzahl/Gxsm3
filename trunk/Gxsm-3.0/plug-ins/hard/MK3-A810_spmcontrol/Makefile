@@ -63,7 +63,8 @@ C_OBJECTS = FB_spm.obj dataprocess.obj \
 	FB_spm_CoolRunner_puls.obj FB_spm_dsoszi.obj \
 	spm_log.obj \
 	ReadWrite_GPIO.obj \
-	SR3_flash_support.obj
+	SR3_flash_support.obj \
+	mcbsp_support.obj
 
 ASM_OBJECTS = LogAsmSR3Pro.obj timerasm.obj vector.obj
 

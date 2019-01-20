@@ -26,7 +26,7 @@
 #define FB_SPM_MAGIC_ADR  0x10F13F00 /**< Magic struct is at this fixed addess in external SRAM */
 #define FB_SPM_MAGIC     0x3202EE01
 
-#define SRDEV "/dev/sranger_mk2_1"
+#define SRDEV "/dev/sranger_mk2_2"
 
 typedef gint32   DSP_INT;
 typedef guint32  DSP_UINT;

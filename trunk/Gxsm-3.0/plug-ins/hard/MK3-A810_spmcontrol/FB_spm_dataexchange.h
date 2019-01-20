@@ -135,15 +135,15 @@
 #ifdef FB_SPM_VERSION
 #undef FB_SPM_VERSION
 #endif
-#define FB_SPM_VERSION   0x00003057 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_VERSION   0x00003058 /* FB_SPM main Version, BCD: 00.00 */
 #ifdef FB_SPM_DATE_YEAR
 #undef FB_SPM_DATE_YEAR
 #endif
-#define FB_SPM_DATE_YEAR 0x00002018 /* Date: Year/MM/DD, BCD */
+#define FB_SPM_DATE_YEAR 0x00002019 /* Date: Year/MM/DD, BCD */
 #ifdef FB_SPM_DATE_MMDD
 #undef FB_SPM_DATE_MMDD
 #endif
-#define FB_SPM_DATE_MMDD 0x00001102 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00000113 /* Date: Month/Day, BCD */
 
 #ifdef FB_SPM_FEATURES
 #undef FB_SPM_FEATURES
@@ -874,6 +874,7 @@ typedef struct{
 /**  ----------------------- FPGA extended and gated counter[2] -- auto gated on sampling speed/point interval */
         DSP_INT32    counter[2];    /** [] counts */
         DSP_INT32    gate_time[2];  /** [] number of summing cycles */
+        DSP_INT32    McBSP_SPI[16];  /* SPI LINK DATA */
 	DSP_INT32    debug[8];      /** scratch variabel space */
 #ifdef DSP_CC
 } ANALOG_VALUES;

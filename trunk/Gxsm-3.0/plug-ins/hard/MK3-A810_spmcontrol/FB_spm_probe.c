@@ -33,6 +33,8 @@
 #include "dataprocess.h"
 #include "ReadWrite_GPIO.h"
 
+#include "mcbsp_support.h"
+
 /* compensate for X AIC pipe delay */
 #define PIPE_LEN (5)
 
@@ -922,7 +924,11 @@ int wait_for_trigger (){
 //  -update current count, restore skip data counter
 
 void run_one_time_step(){
-	// read GPIO if requested (CPU time costy!!!)
+          // initiate external data SPI request and transfer
+        if (probe.iix == probe.vector->dnx)
+                start_McBSP_transfer (probe.ix);
+
+        // read GPIO if requested (CPU time costy!!!)
 	if (probe.vector->options & VP_GPIO_READ){
 		if (!GPIO_subsample--){
 			GPIO_subsample = CR_generic_io.gpio_subsample;
@@ -940,6 +946,7 @@ void run_one_time_step(){
 
         if (! probe.iix-- || probe.lix){
                 if (probe.ix--){
+                        // generate external probe point data clock on GP55
                         if (probe.ix&1)
                                 SET_DSP_GP55;
                         else

@@ -44,12 +44,17 @@
 extern ANALOG_VALUES    analog;
 
 
-#define MAX_SPI_FRAMES    8
+#define FPGA_NUM_32B_WORDS  8
 int SPI_words_per_frame = 8;
 int SPI_frame_element = 0;
-int SPI_frame_count = 0;
+int SPI_word_count = 0;
 int SPI_enabled = 0;
+int SPI_clkdiv = 99; // Serial Clock 1MHz
+int use_FSG = MCBSP_MODE_CTRL_FSG;
+unsigned int FSonTXC_MCBSP0_SRGR;
+unsigned int FSonFSG_MCBSP0_SRGR;
 
+unsigned int SPI_tx_data = 0;
 unsigned int SPI_transmitted_words = 0;
 unsigned int SPI_received_words = 0;
 
@@ -57,10 +62,19 @@ unsigned int SPI_debug_mode=0;
 
 #pragma CODE_SECTION(SetSPIwords, ".text:slow")
 void SetSPIwords(int n){
-        if (n >= 0 && n <= MAX_SPI_FRAMES)
+        if (n >= 1 && n <= 8)
                 SPI_words_per_frame = n; 
         else
-                SPI_words_per_frame = MAX_SPI_FRAMES;      
+                SPI_words_per_frame = 8;
+}
+
+#pragma CODE_SECTION(SetSPIclock, ".text:slow")
+// McBSP (SPI) CLKGDV=div,  CLK = 100MHz / (CLKGDV+1)
+void SetSPIclock(int div){
+        if (div >= 0 && div <= 255)
+                SPI_clkdiv = div; 
+        else
+                SPI_clkdiv = 99; // 1 MHz fallback
 }
 
 #pragma CODE_SECTION(ResetMcBSP0, ".text:slow")
@@ -69,7 +83,7 @@ void ResetMcBSP0()
 	MCBSP0_SPCR=(3<<CLKSTPBit);	// Put the McBSP0 in reset
         SPI_enabled = 0;
         SPI_words_per_frame = 8;
-        SPI_frame_count = 0;
+        SPI_word_count = 0;
         SPI_debug_mode = 0;
         SPI_transmitted_words = 0;
         SPI_received_words = 0;
@@ -81,6 +95,7 @@ void ResetMcBSP0()
 void InitMcBSP0_InSPIMode(int wpf, int mode)
 {
         SetSPIwords(wpf);
+        use_FSG = mode;
         
         // DisableInts_SDB;
         CSR = ~0x1 & CSR; // Disable INTs.
@@ -96,15 +111,14 @@ void InitMcBSP0_InSPIMode(int wpf, int mode)
 
         // CLKSTP=3 Clock starts with rising edge with delay [SPI mode]
         // MCBSP_SPCR_DLB // DLBBit [digital loopback test]
-	// MCBSP0_SPCR=(3<<CLKSTPBit) + ((mode&1) << DLBBit);	// Put the McBSP0 in reset // 3= SPI (Clock Stop Mode)
-	MCBSP0_SPCR = (((mode>>1)&3)<<CLKSTPBit) + ((mode&1) << DLBBit);	// Put the McBSP0 in reset // 3= SPI (Clock Stop Mode)
-
+	// MCBSP0_SPCR=(3<<CLKSTPBit) + (0 << DLBBit);	// Put the McBSP0 in reset // 3= SPI (Clock Stop Mode)
+	MCBSP0_SPCR = (0 << CLKSTPBit) + (0 << DLBBit);	// Put the McBSP0 in reset, McBSP default mode
 
 	// STEP 3
 
         // Configure:
         // ====== Pin Control Register PCR
-        // CLKRPBit   0 = 0   receive data sampled on falling edge of CLKR (input)
+        // CLKRPBit   0 = 0   1: rising edge!    0: receive data sampled on falling edge of CLKR (input)
         // CLKXPBit   1 = 0   rising clock pol (transmit on rising edge of CLKX)
         // FSRPBit    2 = 0   receive fram pol pos
         // FSXPBit    3 = 0   pos Frame Pol
@@ -120,8 +134,7 @@ void InitMcBSP0_InSPIMode(int wpf, int mode)
         // -> CLKXM=1, FSXM=1
         // CLKR and FSR must be input (reference clock/frame from clock/frame return over wire):
         // -> CLKRM=0, FSRM=0 
-	MCBSP0_PCR = (1 << PCR_CLKXMBit) + (1 << PCR_FSXMBit) + (0 << PCR_CLKXPBit) + (0 << PCR_CLKRPBit) + (0 << PCR_FSXPBit);
-        
+	MCBSP0_PCR = (0 << CLKRPBit) + (1 << PCR_CLKXMBit) + (1 << PCR_FSXMBit) + (0 << PCR_CLKXPBit) + (0 << PCR_CLKRPBit) + (0 << PCR_FSXPBit);
         
         // ===== Sample Rate Generator Register SRGR
 	// Set the SPI (clock: Internal clock at SYSClk3 (CPU (589E6)/6): diviser /7: 14.024 MHz)
@@ -130,14 +143,17 @@ void InitMcBSP0_InSPIMode(int wpf, int mode)
         // CLKSM=1 (Internal input clock)
         // FPER= (8x32-bit words by frame)  8*32-1   -- ??? total frame length for all words ???
         // FWID=0 =1: 2 CLK WIDE FS Pulse
-        // CLKGDV=6 (divider at 7 to generate 14.024 MHz)
+        // CLKGDV=6 (divider at 7 to generate 14.024 MHz) CLK = 100MHz / (CLKGDV+1)
         // (99<<CLKGDVBit) // 1 MHz clock
         // (49<<CLKGDVBit) // 2 MHz clock
         // (12<<CLKGDVBit) // 8 MHz clock **
         // (24<<CLKGDVBit) // 4 MHz clock
         // (6<<CLKGDVBit)  // 16 MHz clock,   (6<<CLKGDVBit); //  20 MHz ???
-	MCBSP0_SRGR=(1<<CLKSMBit) + ((8*32-1)<<FPERBit)+ (99<<CLKGDVBit) + (0 << FSGMBit) + (1 << FWIDBit); // 1// 8 MHz
-
+	//MCBSP0_SRGR=(1<<CLKSMBit) + ((8*32-1)<<FPERBit)+ (99<<CLKGDVBit) + (0 << FSGMBit) + (1 << FWIDBit); // 1MHz
+	FSonTXC_MCBSP0_SRGR = (1<<CLKSMBit) + ((8*32-1+8)<<FPERBit)+ (SPI_clkdiv<<CLKGDVBit) + (0 << FSGMBit) + (1 << FWIDBit); // FSGMBit=0: Transmit FSX is generated on every DXR->XSR copy
+	FSonFSG_MCBSP0_SRGR = FSonTXC_MCBSP0_SRGR + (1 << FSGMBit); // FSGMBit=1: FSX is driven by sample rate generator frame sync signal (FSG)
+        MCBSP0_SRGR = use_FSG & MCBSP_MODE_FTXC ? FSonTXC_MCBSP0_SRGR : FSonFSG_MCBSP0_SRGR;
+        
         // ===== McBSP Receive Control Register (RCR) and Transmit Control Register (XCR)
 	// want 32bit, 4x 32bit words default, up to 8 words
 	MCBSP0_RCR=(1<<RDATDLYBit) + (5<<RWDLEN1Bit) + ((SPI_words_per_frame-1) << RFRLEN1Bit);	// 32-bits word (phase1), 1 words by frame, Receive 1-bit delay
@@ -211,10 +227,12 @@ void InitMcBSP0_InSPIMode(int wpf, int mode)
 
 	// 11: FRST=1 (enable frame-syn generator)
 
-	MCBSP0_SPCR |= MCBSP_SPCR_FRST;
-
-        //SPI_words_per_frame = 4; 
-        SPI_frame_count = 0;
+        if (use_FSG & (MCBSP_MODE_FSG | MCBSP_MODE_FTXC)){
+                MCBSP0_SPCR |= MCBSP_SPCR_FRST;
+        }
+        // else: not yet! start at first transfer request
+        
+        SPI_word_count = 0;
         SPI_debug_mode = 0;
         SPI_enabled = 1;
 
@@ -238,10 +256,10 @@ void start_McBSP_transfer(unsigned int index){
         // MAY RESET: FRSTBit in SPCR  // Frame-sync generator reset bit.
 
         SPI_frame_element = 0; // reset receiver frame element count
-        SPI_frame_count =  SPI_words_per_frame-1;
+        SPI_tx_data = index;
 
         // check for error, reset
-#if 1
+#if 0
         if (SPI_debug_mode & MCBSP_MODE_AUTO_RECOVER)
                 if (MCBSP0_SPCR & (MCBSP_SPCR_XSYNCERR | MCBSP_SPCR_RSYNCERR)){
                         MCBSP0_SPCR &= ~(MCBSP_SPCR_XRST | MCBSP_SPCR_RRST); // put RT and TX in reset
@@ -250,9 +268,21 @@ void start_McBSP_transfer(unsigned int index){
                 }
 #endif
 
-	//MCBSP0_RCR=(1<<RDATDLYBit) + (5<<RWDLEN1Bit) + (SPI_frame_count << RFRLEN1Bit);	// 32-bits word (phase1), 1 words by frame, Receive 1-bit delay
-	//MCBSP0_XCR=(1<<XDATDLYBit) + (5<<XWDLEN1Bit) + (SPI_frame_count << XFRLEN1Bit);	// 32-bits word (phase1), 1 words by frame, Transmit 1-bit delay
-        MCBSP0_DXR_32BIT = index; //0xF0F00001; // Initial Word
+#if 1
+        if (use_FSG & (MCBSP_MODE_CTRL_FSG |  MCBSP_MODE_FTXC)){
+                SPI_word_count =  SPI_words_per_frame-1;
+                SPI_tx_data = 0;
+                MCBSP0_DXR_32BIT = index; //0xF0F00001; // copy Initial Word now
+        } else {
+                SPI_word_count =  SPI_words_per_frame; // done via TX_INT
+        }
+#endif
+        
+        SPI_word_count =  SPI_words_per_frame; // done via TX_INT
+
+        if (use_FSG &  MCBSP_MODE_CTRL_FSG)
+                // take FSG out of reset, start frame transmission, stopped again after last word is out!
+                MCBSP0_SPCR |= MCBSP_SPCR_FRST; // takes one frame to start!
 
         // Debug
 
@@ -270,26 +300,21 @@ void start_McBSP_transfer(unsigned int index){
                 analog.McBSP_SPI[11] = SPI_received_words;
                 break;
         case 2:
-                analog.McBSP_SPI[8] = analog.McBSP_SPI[2] = MCBSP0_SPCR & (  (1 << XSYNCERRBit) | (1 << XEMPTYBit) | (1 << XRDYBit)
-                                                                           | (1 << RSYNCERRBit) | (1 << RFULLBit)  | (1 << RRDYBit));
-                analog.McBSP_SPI[3] = IFR & SPI_RxTx_Bit;
-                analog.McBSP_SPI[4] = MCBSP0_SPCR;
-                analog.McBSP_SPI[5] = index;
+                analog.McBSP_SPI[3] = MCBSP0_SPCR;
+                analog.McBSP_SPI[4] = MCBSP0_MCR;
+                analog.McBSP_SPI[5] = MCBSP0_SPCR & (MCBSP_SPCR_XSYNCERR | MCBSP_SPCR_RSYNCERR);
                 //analog.McBSP_SPI[5] = MCBSP0_DRR_32BIT;
                 analog.McBSP_SPI[6] = SPI_transmitted_words;
                 analog.McBSP_SPI[7] = SPI_received_words;
+                analog.McBSP_SPI[8] = MCBSP0_SPCR;
                 analog.McBSP_SPI[10] = SPI_transmitted_words;
                 analog.McBSP_SPI[11] = SPI_received_words;
                 break;
         case 3:
-                analog.McBSP_SPI[8] = analog.McBSP_SPI[2] = MCBSP0_SPCR & (  (1 << XSYNCERRBit) | (1 << XEMPTYBit) | (1 << XRDYBit)
-                                                                           | (1 << RSYNCERRBit) | (1 << RFULLBit)  | (1 << RRDYBit));
-                analog.McBSP_SPI[3] = IFR & SPI_RxTx_Bit;
-                analog.McBSP_SPI[4] = MCBSP0_SPCR;
-                analog.McBSP_SPI[5] = index;
+                analog.McBSP_SPI[5] = MCBSP0_DRR_32BIT;
                 analog.McBSP_SPI[6] = SPI_transmitted_words;
                 analog.McBSP_SPI[7] = SPI_received_words;
-                analog.McBSP_SPI[9] = MCBSP0_DRR_32BIT;
+                analog.McBSP_SPI[8] = MCBSP0_SPCR;
                 analog.McBSP_SPI[10] = SPI_transmitted_words;
                 analog.McBSP_SPI[11] = SPI_received_words;
                 break;
@@ -299,18 +324,29 @@ void start_McBSP_transfer(unsigned int index){
 // McBSP [SPI] TX (Transmit)
 interrupt void McBSP1TX_INT()
 {
-        if (SPI_frame_count){
-                MCBSP0_DXR_32BIT = SPI_frame_count--;
+        if (SPI_word_count){
+                if (SPI_tx_data){
+                        MCBSP0_DXR_32BIT = SPI_tx_data;
+                        SPI_tx_data = 0;
+                        SPI_word_count = SPI_words_per_frame - 1;
+                }else
+                        MCBSP0_DXR_32BIT = SPI_word_count--;
                 SPI_transmitted_words++;
+                if (SPI_word_count == 0 && (use_FSG & MCBSP_MODE_CTRL_FSG))
+                        MCBSP0_SPCR &= ~MCBSP_SPCR_FRST; // stop FSG
+        } else {
+                MCBSP0_DXR_32BIT = 0xF0F2F0F1; // dummy mark
         }
 }
 
 // McBSP [SPI] RX (Receive)
 interrupt void McBSP1RX_INT()
 {
-        if (SPI_frame_element < SPI_words_per_frame ){
-                if (!SPI_debug_mode || SPI_frame_element < 2)
-                        analog.McBSP_SPI[SPI_frame_element++] = MCBSP0_DRR_32BIT;
+        if (SPI_frame_element >= SPI_words_per_frame ){
+                SPI_frame_element = 0;
+                analog.McBSP_SPI[15] = MCBSP0_DRR_32BIT;
+        } else {
+                analog.McBSP_SPI[SPI_frame_element++] = MCBSP0_DRR_32BIT;
                 SPI_received_words++;
         }
 }
