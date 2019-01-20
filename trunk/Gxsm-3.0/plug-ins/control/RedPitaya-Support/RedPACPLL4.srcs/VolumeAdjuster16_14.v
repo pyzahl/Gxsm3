@@ -27,7 +27,8 @@ module VolumeAdjuster16_14 #(
     parameter AXIS_DATA_WIDTH  = 16,
     parameter AXIS_TDATA_WIDTH = 32,
     parameter VAXIS_DATA_WIDTH = 16,
-    parameter VAXIS_DATA_Q     = 14
+    parameter VAXIS_DATA_Q     = 14,
+    parameter QC_PHASE_LEN2    = 13
 )
 (
    input a_clk,
@@ -56,10 +57,10 @@ module VolumeAdjuster16_14 #(
     reg signed [VAXIS_DATA_Q+ADC_WIDTH-1:0] y=0;
     reg signed [16-1:0] qc_gain=0;
     reg signed [ADC_WIDTH-1:0] signal=0;
-    reg [12-1:0] qc_delay=0;
-    reg signed [16-1:0] delayline [4096-1:0];
-    reg [12-1:0] i=0;
-    reg [12-1:0] id=0;
+    reg [QC_PHASE_LEN2-1:0] qc_delay=0;
+    reg signed [16-1:0] delayline [(QC_PHASE_LEN2<<2)-1:0];
+    reg [QC_PHASE_LEN2-1:0] i=0;
+    reg [QC_PHASE_LEN2-1:0] id=0;
     always @ (posedge a_clk)
     begin
        if (S_AXIS_tvalid && SV_AXIS_tvalid)
@@ -70,7 +71,7 @@ module VolumeAdjuster16_14 #(
           // Q-Control Mixer
           signal   <= {S_AXIS_SIGNAL_M_tdata[ADC_WIDTH-1 : 0]};
           qc_gain  <= QC_gain;
-          qc_delay <= QC_delay[12-1:0];
+          qc_delay <= QC_delay[QC_PHASE_LEN2-1:0];
           if (QC_enable)
           begin
                 delayline[i] <= signal <<< 2;

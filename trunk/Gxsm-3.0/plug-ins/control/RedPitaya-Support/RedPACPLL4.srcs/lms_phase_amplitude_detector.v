@@ -112,7 +112,10 @@ module lms_phase_amplitude_detector #(
     parameter M_AXIS_AM_TDATA_WIDTH = 48,
     parameter MDC_TIME_CONST_N = 20, // x' = [x*(1<<(N-1))+X]>>N
     parameter MDC_DATA_WIDTH = S_AXIS_SIGNAL_SIGNIFICANT_DATA_WIDTH+MDC_TIME_CONST_N+2,
-    parameter M_AXIS_MDC_TDATA_WIDTH = 32
+    parameter M_AXIS_MDC_TDATA_WIDTH = 32,
+    parameter LCK_INT_WIDTH = 22+44-12,    // 22 -- 14 base, renormalized around dphi working range (12 bits) ::: 22+44 - renorm ~54 ?!??!?
+    parameter LCK_INT_PH_WIDTH = 45, // 44 + 1 for phase
+    parameter LCK_BUFFER_LEN2 = 14
 )
 (
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
@@ -127,7 +130,12 @@ module lms_phase_amplitude_detector #(
     input signed [31:0] Atau, // Q22 tau amplitude
     input signed [31:0] dc_tau, // Q31 tau DC iir at cos-sin zero x
     input signed [31:0] dc, // Q22
-
+    
+    input [31:0] DDS_dphi,
+    
+    input lck_ampl,
+    input lck_phase,
+    
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     output wire [M_AXIS_SC_TDATA_WIDTH-1:0] M_AXIS_SC_tdata, // (Sine, Cosine) vector pass through
     output wire                             M_AXIS_SC_tvalid,
@@ -193,21 +201,36 @@ module lms_phase_amplitude_detector #(
     reg [2*(LMS_DATA_WIDTH-1)+1-1:0] ampl2=0; 
     reg signed [LMS_DATA_WIDTH+2-1:0] x=0; 
     reg signed [LMS_DATA_WIDTH+2-1:0] y=0; 
+    reg signed [LMS_DATA_WIDTH+2-1:0] tmpX=0; 
+    reg signed [LMS_DATA_WIDTH+2-1:0] tmpY=0; 
+    reg signed [LMS_DATA_WIDTH+2-1:0] tmpXA=0; 
+    reg signed [LMS_DATA_WIDTH+2-1:0] tmpYA=0; 
 
+    // Lock-In
+    reg [32-1:0] dds_dphi [10-1:0]; // 22
     reg signed [LMS_DATA_WIDTH-1:0] LckX=0;
     reg signed [LMS_DATA_WIDTH-1:0] LckY=0;
-    reg signed [LMS_DATA_WIDTH+16-1:0] LckXInt=0;
-    reg signed [LMS_DATA_WIDTH+16-1:0] LckYInt=0;
-    reg signed [LMS_DATA_WIDTH+16-1:0] LckXSum=0;
-    reg signed [LMS_DATA_WIDTH+16-1:0] LckYSum=0;
-    reg [16:0] Lck_i=0;
-    reg [16:0] Lck_N=0;
-    reg [16:0] Lck_Ni=0;
+
+    reg signed [45-1:0] LckdIntPhi1=0; // DDS PHASE WIDTH=44 + 1
+    reg signed [45-1:0] LckdIntPhi2=0; // DDS PHASE WIDTH=44 + 1
+    reg signed [LCK_INT_WIDTH-1:0] LckXInt=0;
+    reg signed [LCK_INT_WIDTH-1:0] LckYInt=0;
+    
+    reg signed [LCK_INT_PH_WIDTH-1:0] LckDdphi1=0;
+    reg signed [LCK_INT_WIDTH-1:0] LckXdphi1=0;
+    reg signed [LCK_INT_WIDTH-1:0] LckYdphi1=0;
+    reg signed [LCK_INT_PH_WIDTH-1:0] LckDdphi [(LCK_BUFFER_LEN2<<2)-1:0];
+    reg signed [LCK_INT_WIDTH-1:0] LckXdphi [(LCK_BUFFER_LEN2<<2)-1:0];
+    reg signed [LCK_INT_WIDTH-1:0] LckYdphi [(LCK_BUFFER_LEN2<<2)-1:0];
+    
+    reg signed [LMS_DATA_WIDTH-1:0] LckXSum=0;
+    reg signed [LMS_DATA_WIDTH-1:0] LckYSum=0;
+    reg [LCK_BUFFER_LEN2-1:0] Lck_i=0;
+    reg [LCK_BUFFER_LEN2-1:0] Lck_N=0;
 
     reg sp=0;
     reg cp=0;
     reg sc_zero=0;
-    reg s0ref=0;
     
     assign M_AXIS_SC_tdata  = S_AXIS_SC_tdata; // pass
     assign M_AXIS_SC_tvalid = S_AXIS_SC_tvalid; // pass
@@ -217,6 +240,7 @@ module lms_phase_amplitude_detector #(
 
     assign M_AXIS_SIGNAL_M_tdata  = S_AXIS_SIGNAL_tdata[S_AXIS_SIGNAL_DATA_WIDTH-1:0]; // pass ADC DATA Signal M
     assign M_AXIS_SIGNAL_M_tvalid = S_AXIS_SIGNAL_tvalid; // pass
+
 
     always @ (posedge aclk)
     begin
@@ -233,7 +257,6 @@ module lms_phase_amplitude_detector #(
         end
         
         //  special IIR DC filter DC error on average of samples at 0,90,180,270
-        Lck_Ni <= Lck_Ni + 1; // measure sine period
         if (sc_zero)
         begin
             // mdc_mue <= (m-mdc) * dc_tau;
@@ -253,6 +276,17 @@ module lms_phase_amplitude_detector #(
         
         if (S_AXIS_SC_tvalid)
         begin
+        // DDS step, may delay by 10
+            dds_dphi[9] <= DDS_dphi;
+            dds_dphi[8] <= dds_dphi[9];
+            dds_dphi[7] <= dds_dphi[8];
+            dds_dphi[6] <= dds_dphi[7];
+            dds_dphi[5] <= dds_dphi[6];
+            dds_dphi[4] <= dds_dphi[5];
+            dds_dphi[3] <= dds_dphi[4];
+            dds_dphi[2] <= dds_dphi[3];
+            dds_dphi[1] <= dds_dphi[2];
+            dds_dphi[0] <= dds_dphi[1];
         // Sin, Cos
             s <= {{(LMS_DATA_WIDTH-LMS_Q_WIDTH-1){ S_AXIS_SC_tdata[S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-1]}}, S_AXIS_SC_tdata[S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-1 : S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-LMS_Q_WIDTH-1]};
             c <= {{(LMS_DATA_WIDTH-LMS_Q_WIDTH-1){ S_AXIS_SC_tdata[                        SC_DATA_WIDTH-1]}}, S_AXIS_SC_tdata[                        SC_DATA_WIDTH-1 :                         SC_DATA_WIDTH-LMS_Q_WIDTH-1]};
@@ -261,9 +295,6 @@ module lms_phase_amplitude_detector #(
             begin
                 sp <= 1;
                 sc_zero <= 1;
-                s0ref <= 1;
-                Lck_N <= Lck_Ni; // update sine period
-                Lck_Ni <= 0; // reset period sample counter
             end
             else
             begin
@@ -325,11 +356,15 @@ module lms_phase_amplitude_detector #(
         // --> phase = Q22 arctan ((a-b)/(a+b))
         // amp = sqrt (a*a + b*b); // SQRT( Q44 )
         // ph  = atan ((a-b)/(a+b)); // Q22
+        //---- amplitude and phase moved to end
 
-        // amplitude from 2nd A-PAC 
+        /*
+        // amplitude squared from 2nd A-PAC 
         ampl2 <= Aa*Aa + Ab*Ab; // 1Q44
+        // x,y (for phase)from 1st PAC
         y <= a-b;
         x <= a+b;
+        */
         
         predict1 <= predict;
         Apredict1 <= Apredict;
@@ -344,19 +379,119 @@ module lms_phase_amplitude_detector #(
         s2 <= s1;
         
         // Classic LockIn and Correlation Integral over one period
+        // STEP 1: Correlelation Product
         LckX <= (s * m + 45'sh200000) >>> 22; // Q22
         LckY <= (c * m + 45'sh200000) >>> 22; // Q22
-        LckXInt <= LckXInt + LckX;
-        LckYInt <= LckYInt + LckX;
-        if (s0ref)
-        begin
-            s0ref <= 0;
-            LckXSum <= LckXInt;
-            LckYSum <= LckYInt;
-            LckXInt <= 0;
-            LckYInt <= 0;
-        end
+
+        // STEP 2: Scale to Phase-Signal Volume
+        LckDdphi1 <= dds_dphi[0];
+        LckXdphi1 <= (LckX * dds_dphi[0]) >>> 12; // Q22 + Q44 [assume 30kHz range renorm by 12 now (4096) --  4166 is 30kHz spp] 22+44-12=54
+        LckYdphi1 <= (LckY * dds_dphi[0]) >>> 12;
+        // Store in ring buffer
+        LckDdphi [Lck_i] <= LckDdphi1;
+        LckXdphi [Lck_i] <= LckXdphi1;
+        LckYdphi [Lck_i] <= LckYdphi1;
+
+/*      sequencial code
+        x = signal*s;
+        y = signal*c;
+        // add new
+        sumdphi  += dphi
+        sumcorrx += x*dphi
+        sumcorry += y*dphi
+        // correct and compensate if phase window len changed
+        while (sumdphi > 2*math.pi+dphi/2):
+            sumdphi  -= corrdphi[circ(corri-corrlen)];
+            sumcorrx -= corrx[circ(corri-corrlen)];
+            sumcorry -= corry[circ(corri-corrlen)];
+            corrlen--;
       
+        corrdphi[corri] = dphi;
+        corrx[corri] = x*dphi;
+        corry[corri] = y*dphi;
+        corrlen++;
+        corri = circ(corri+1);
+*/
+        LckdIntPhi2 = LckdIntPhi1 + LckDdphi1; // one step ???? blocking works may be???
+        // single shot unrolled LockIn moving window correlation integral
+        if (LckdIntPhi2 > {(44){1'b1}} && (LckdIntPhi2 - LckDdphi [Lck_i-Lck_N]) > {(44){1'b1}} ) // phase > 2pi (+dphi/2) // 2pi =!= 2<<44
+        begin
+            LckdIntPhi1 <= LckdIntPhi2 - LckDdphi [Lck_i-Lck_N] - LckDdphi [Lck_i-Lck_N+1];
+            LckXInt <= LckXInt - LckXdphi [Lck_i-Lck_N] - LckXdphi [Lck_i-Lck_N+1] + LckXdphi [Lck_i]; 
+            LckYInt <= LckYInt - LckYdphi [Lck_i-Lck_N] - LckYdphi [Lck_i-Lck_N+1] + LckYdphi [Lck_i];
+            Lck_N <= Lck_N - 1; //!!!!
+        end else begin
+            if (LckdIntPhi2 > {(44){1'b1}}) // phase > 2pi (+dphi/2) // 2pi =!= 2<<44
+            begin
+                LckdIntPhi1 <= LckdIntPhi2 - LckDdphi [Lck_i-Lck_N];
+                LckXInt <= LckXInt - LckXdphi [Lck_i-Lck_N] + LckXdphi [Lck_i];
+                LckYInt <= LckYInt - LckYdphi [Lck_i-Lck_N] + LckYdphi [Lck_i];
+            end else begin
+                LckXInt <= LckXInt + LckXdphi [Lck_i];
+                LckYInt <= LckYInt + LckYdphi [Lck_i];
+                Lck_N <= Lck_N + 1; //!!!!
+            end
+        end
+/* does not fit */
+/*
+        // single shot unrolled LockIn moving window correlation integral
+        if (LckdIntPhi + LckDdphi1 > {(44){1'b1}} && (LckdIntPhi + LckDdphi1 - LckDdphi [Lck_i-Lck_N]) > {(44){1'b1}} ) // phase > 2pi (+dphi/2) // 2pi =!= 2<<44
+        begin
+            LckdIntPhi <= LckdIntPhi + LckDdphi1 - LckDdphi [Lck_i-Lck_N] - LckDdphi [Lck_i-Lck_N+1];
+            LckXInt <= LckXInt - LckXdphi [Lck_i-Lck_N] - LckXdphi [Lck_i-Lck_N+1] + LckXdphi [Lck_i]; 
+            LckYInt <= LckYInt - LckYdphi [Lck_i-Lck_N] - LckYdphi [Lck_i-Lck_N+1] + LckYdphi [Lck_i];
+            Lck_N <= Lck_N - 1; //!!!!
+        end else begin
+            if (LckdIntPhi + LckDdphi1 > {(44){1'b1}}) // phase > 2pi (+dphi/2) // 2pi =!= 2<<44
+            begin
+                LckdIntPhi <= LckdIntPhi + LckDdphi1 - LckDdphi [Lck_i-Lck_N];
+                LckXInt <= LckXInt - LckXdphi [Lck_i-Lck_N] + LckXdphi [Lck_i];
+                LckYInt <= LckYInt - LckYdphi [Lck_i-Lck_N] + LckYdphi [Lck_i];
+            end else begin
+                LckdIntPhi <= LckdIntPhi + LckDdphi1;
+                LckXInt <= LckXInt + LckXdphi [Lck_i];
+                LckYInt <= LckYInt + LckYdphi [Lck_i];
+                Lck_N <= Lck_N + 1; //!!!!
+            end
+        end
+*/
+        Lck_i <= Lck_i + 1;
+
+        LckXSum <= LckXInt >>> (44-12); // DDS-dPhi is Q 44 normalize with 2pi == Q44 (remaining bits)
+        LckYSum <= LckYInt >>> (44-12); // DDS-dPhi is Q 44
+          
+        // prepare outputs by selection        
+/*  
+        if (lck_ampl)
+        begin
+            tmpXA=LckXSum;
+            tmpYA=LckYSum;
+        end else begin
+            tmpXA=Aa;
+            tmpYA=Ab;
+        end
+        if (lck_phase)
+        begin
+            tmpX=LckXSum;
+            tmpY=LckYSum;
+        end else begin
+            tmpX=a;
+            tmpY=b;
+        end
+        // amplitude squared from 2nd A-PAC 
+        ampl2 <= tmpXA*tmpXA + tmpYA*tmpYA; // 1Q44
+        // x,y (for phase)from 1st PAC
+        y <= tmpX-tmpY;
+        x <= tmpX+tmpY;
+*/
+          
+        // amplitude squared from 2nd A-PAC 
+        ampl2 <= Aa*Aa + Ab*Ab; // 1Q44
+        // x,y (for phase)from 1st PAC
+        y <= a-b;
+        x <= a+b;
+      
+          
     end
     
     //assign amplitude = sqrt (a*a+b*b); // Q22
@@ -383,8 +518,8 @@ module lms_phase_amplitude_detector #(
     assign dbg3 = {{(32-LMS_DATA_WIDTH-2){x[LMS_DATA_WIDTH+2-1]}}, x}; // x
     assign dbg4 = {{(32-LMS_DATA_WIDTH-2){y[LMS_DATA_WIDTH+2-1]}}, y}; // y
 
-    assign LockInX = {LckXSum[LMS_DATA_WIDTH+16-1:LMS_DATA_WIDTH+16-32]};
-    assign LockInY = {LckYSum[LMS_DATA_WIDTH+16-1:LMS_DATA_WIDTH+16-32]};
+    assign LockInX = {{(32-LMS_DATA_WIDTH-2){LckXSum[LMS_DATA_WIDTH+2-1]}}, LckXSum};
+    assign LockInY = {{(32-LMS_DATA_WIDTH-2){LckYSum[LMS_DATA_WIDTH+2-1]}}, LckYSum};
     assign LockInN = Lck_N;
 
 endmodule
