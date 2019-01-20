@@ -1,3 +1,16 @@
+gxsm3 (3.49.1-0ubuntu0) bionic; urgency=medium
+
+  * release of "Defender of the electron"
+  * added dependency to libgsl-dev used by the RedPitaya plugin
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 12 Jan 2019 17:06:08 +0100
+
+gxsm3 (3.48.0-0ubuntu3) bionic; urgency=medium
+
+  * new test 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 11 Nov 2018 12:34:25 +0100
+
 gxsm3 (3.48.0-0ubuntu2) bionic; urgency=medium
 
   * changes desktop files, removes unity related code
