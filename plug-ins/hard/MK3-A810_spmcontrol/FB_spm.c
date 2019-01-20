@@ -157,6 +157,7 @@ ANALOG_VALUES    analog = {
 	{ NULL,NULL,NULL,NULL }, // to be initialized
 	//-----------------
 	{ 0,0 }, { 0, 0 },   // Counter, Gate
+	{ 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0 }, // McBSP SPI LINK BUFFER [8+8] x 32bit
 	{ 0,0,0,0,  0,0,0,0 } // scratch
 };
 
@@ -405,7 +406,7 @@ SIGNAL_MONITOR sig_mon = { -1,0,0,0,
 
 				   &analog.vnull,
 				   &analog.vnull,
-
+                                   
 				   &analog.debug[0],
 				   &analog.debug[1],
 				   &analog.debug[2],

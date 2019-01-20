@@ -28,12 +28,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#define MCBSP_MODE_McBSP 0
-#define MCBSP_MODE_DLB   1
-#define MCBSP_MODE_SPI   (3<<1)
-#define MCBSP_MODE_AUTO_RECOVER  (1<<8)
+#define MCBSP_MODE_FTXC          1 // on copy to tx
+#define MCBSP_MODE_CTRL_FSG      2 // control run frame rate generator, start/stop
+#define MCBSP_MODE_FSG           4 // run frame rate generator free
 
 extern void SetSPIwords(int n);
+extern void SetSPIclock(int div);
 extern void ResetMcBSP0();
 extern void InitMcBSP0_InSPIMode(int wpf, int mode);
 extern void DebugMcBSP0(int level);

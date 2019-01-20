@@ -35,6 +35,9 @@
 #include "PAC_pll.h"
 #include "ReadWrite_GPIO.h"
 
+#include "mcbsp_support.h"
+
+
 /* compensate for X AIC pipe delay and add user "nx_pre" amount */
 #define PIPE_LEN (5+scan.nx_pre)
 
@@ -264,14 +267,6 @@ void bz_push(int i, DSP_INT32 x){
 //		Xdumpbuffer ((unsigned char*)&datafifo.buffer_ul[bits-4], 32, 0);
 }
 
-void clear_summing_data (){
-	AS_AIC_data_sum[0] = AS_AIC_data_sum[1] = AS_AIC_data_sum[2] =
-	AS_AIC_data_sum[3] = AS_AIC_data_sum[4] = AS_AIC_data_sum[5] =
-	AS_AIC_data_sum[6] = AS_AIC_data_sum[7] = AS_AIC_data_sum[8] = 0;
-	analog.counter[0] = 0;
-	AS_AIC_num_samples = 0;
-}
-
 /* calc of f_dx/y and num_steps by host! */
 #pragma CODE_SECTION(init_area_scan, ".text:slow")
 void init_area_scan (){
@@ -355,8 +350,21 @@ void finish_area_scan (){
 	scan.pflg = 0;
 }
 
+void clear_summing_data (){
+	AS_AIC_data_sum[0] = AS_AIC_data_sum[1] = AS_AIC_data_sum[2] =
+	AS_AIC_data_sum[3] = AS_AIC_data_sum[4] = AS_AIC_data_sum[5] =
+	AS_AIC_data_sum[6] = AS_AIC_data_sum[7] = AS_AIC_data_sum[8] = 0;
+	analog.counter[0] = 0;
+	AS_AIC_num_samples = 0;
+}
+
 void integrate_as_data_srcs (DSP_UINT32 srcs){
-	if (srcs & 0x01) // PIDSrcA1 (Dest) --> Zmonitor (Topo) feedback generated Z signal
+
+        // initiate external data SPI request and transfer
+        if (AS_AIC_num_samples == 0)
+                start_McBSP_transfer (((scan.iy&0xffff)<<16) | (scan.ix&0xffff));
+
+        if (srcs & 0x01) // PIDSrcA1 (Dest) --> Zmonitor (Topo) feedback generated Z signal
 		AS_AIC_data_sum[8] += z_servo.control >> 16;
 
 	if (srcs & 0x0010) // DataSrcA1 --> AIC0 <-- I (current), ...
@@ -459,7 +467,8 @@ void run_area_scan (){
 		scan.xyz_vec[i_X] = _SADD32 (scan.xyz_vec[i_X], scan.cfs_dx); // this is with SAT!!
 		if (!scan.iix--){
 			if (scan.ix--){
-                                if (scan.ix&1)
+                                // generate external pixel data clock on GP53
+                               if (scan.ix&1)
                                         SET_DSP_GP53;
                                 else
                                         CLR_DSP_GP53;
@@ -505,6 +514,7 @@ void run_area_scan (){
 			scan.xyz_vec[i_X] = _SSUB32 (scan.xyz_vec[i_X], scan.cfs_dx);
 			if (!scan.iix--){
 				if (scan.ix--){
+                                        // generate external pixel data clock on GP53
                                         if (scan.ix&1)
                                                 SET_DSP_GP53;
                                         else
@@ -573,6 +583,7 @@ void run_area_scan (){
 		}
 		else{
 			if (scan.iy--){
+                                // generate external line sync clock on GP54
                                 if (scan.iy&1)
                                         SET_DSP_GP54;
                                 else
@@ -666,6 +677,7 @@ void run_area_scan_fast (){
 //		scan.xyz_vec[i_X] = _SADD32 (scan.xyz_vec[i_X], scan.cfs_dx); // this is with SAT!!
 		if (!scan.iix--){
 			if (scan.ix--){
+                                // generate external pixel data clock on GP53
                                 if (scan.ix&1)
                                         SET_DSP_GP53;
                                 else
@@ -690,6 +702,7 @@ void run_area_scan_fast (){
 //		scan.xyz_vec[i_X] = _SSUB32 (scan.xyz_vec[i_X], scan.cfs_dx);
 		if (!scan.iix--){
 			if (scan.ix--){
+                                // generate external pixel data clock on GP53
                                 if (scan.ix&1)
                                         SET_DSP_GP53;
                                 else
@@ -719,6 +732,7 @@ void run_area_scan_fast (){
 		}
 		else{
 			if (scan.iy--){
+                                // generate external line sync clock on GP53
                                 if (scan.iy&1)
                                         SET_DSP_GP54;
                                 else

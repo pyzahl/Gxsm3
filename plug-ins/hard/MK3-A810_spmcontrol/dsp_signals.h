@@ -196,7 +196,7 @@
 #define DSP32Qs23dot8TO_Volt  (10.0/(32767.*(1<<8)))
 #define CPN(N) ((double)(1LL<<(N))-1.)
 
-#define NUM_SIGNALS 101
+#define NUM_SIGNALS 110
 
 #define FB_SPM_FLASHBLOCK_IDENTIFICATION_A  0x10aa
 #define FB_SPM_FLASHBLOCK_IDENTIFICATION_B  0x0001
@@ -207,10 +207,10 @@
 
 #pragma DATA_SECTION(dsp_signal_lookup, "SMAGIC")
 
-
-
-
-
+#define RP_FPGA_QEXEC 31 // Q EXEC READING Controller        -- 1V/(2^RP_FPGA_QEXEC-1)
+#define RP_FPGA_QSQRT 23 // Q CORDIC SQRT Amplitude Reading  -- 1V/(2^RP_FPGA_QSQRT-1)
+#define RP_FPGA_QATAN 21 // Q CORDIC ATAN Phase Reading      -- 180deg/(PI*(2^RP_FPGA_QATAN-1))
+#define RP_FPGA_QFREQ 44 // Q DIFF FREQ READING              -- 125MHz/(2^RP_FPGA_QFREQ-1) well number should not exceed 32bit 
 
 
 # ifdef CREATE_DSP_SIGNAL_LOOKUP
@@ -318,6 +318,15 @@ DSP_SIG dsp_signal_lookup[NUM_SIGNALS] = {
 	MAKE_DSP_SIG_ENTRY_VECTOR (32, user_input_signal_array[0], "user signal array",  "xV", DSP32Qs15dot16TO_Volt, "Control", "user signal input value array [32]"), // DSP_SIG
 	MAKE_DSP_SIG_ENTRY (sco_s[0].out,    "SCO1 Out",      "V", DSP32Qs15dot16TO_Volt, "SCO1", "SCO1 output"), // 	DSP_SIG SCO output
 	MAKE_DSP_SIG_ENTRY (sco_s[1].out,    "SCO2 Out",      "V", DSP32Qs15dot16TO_Volt, "SCO2", "SCO2 output"), // 	DSP_SIG SCO output
+	MAKE_DSP_SIG_ENTRY (analog.McBSP_SPI[0], "McBSP Phase", "deg", (180.0/(M_PI*((1L<<RP_FPGA_QATAN)-1))), "MCBSP_SPI_LINK", "SPI DATA Phase"), // DSP McBSP SPI LINK[0]
+	MAKE_DSP_SIG_ENTRY (analog.McBSP_SPI[1], "McBSP Freq", "Hz",   (125000000.0/((1L<<RP_FPGA_QFREQ)-1)),  "MCBSP_SPI_LINK", "SPI DATA Freq"), // DSP McBSP SPI LINK[1]
+	MAKE_DSP_SIG_ENTRY (analog.McBSP_SPI[2], "McBSP Ampl", "mV", (1.0/((1L<<RP_FPGA_QSQRT)-1)),         "MCBSP_SPI_LINK", "SPI DATA Ampl"), // DSP McBSP SPI LINK[2]
+	MAKE_DSP_SIG_ENTRY (analog.McBSP_SPI[3], "McBSP Exec", "mV", (1.0/((1L<<RP_FPGA_QEXEC)-1)),         "MCBSP_SPI_LINK", "SPI DATA Exec"), // DSP McBSP SPI LINK[3]
+	MAKE_DSP_SIG_ENTRY (analog.McBSP_SPI[4], "McBSP CH4", "X", 1, "MCBSP_SPI_LINK", "SPI DATA LINK CH4"), // DSP McBSP SPI LINK[4]
+	MAKE_DSP_SIG_ENTRY (analog.McBSP_SPI[5], "McBSP CH5", "X", 1, "MCBSP_SPI_LINK", "SPI DATA LINK CH5"), // DSP McBSP SPI LINK[5]
+	MAKE_DSP_SIG_ENTRY (analog.McBSP_SPI[6], "McBSP CH6", "X", 1, "MCBSP_SPI_LINK", "SPI DATA LINK CH6"), // DSP McBSP SPI LINK[6]
+	MAKE_DSP_SIG_ENTRY (analog.McBSP_SPI[7], "McBSP CH7", "X", 1, "MCBSP_SPI_LINK", "SPI DATA LINK CH7"), // DSP McBSP SPI LINK[7]
+	MAKE_DSP_SIG_ENTRY_VECTOR (8, analog.McBSP_SPI[8], "McBSPVec", "X", 1, "MCBSP_SPI_LINK", "SPI DATA LINK STATUS VECTOR"), // DSP McBSP SPI LINK STATUS
 	MAKE_DSP_SIG_ENTRY_END ("END OF SIGNALS", "NA")  // END MARKING
 };
 

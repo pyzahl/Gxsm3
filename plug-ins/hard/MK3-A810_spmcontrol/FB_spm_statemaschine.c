@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* SRanger and Gxsm - Gnome X Scanning Microscopy Project
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -36,6 +38,7 @@
 #include "PAC_pll.h"
 #endif
 
+#include "mcbsp_support.h"
 
 extern SPM_STATEMACHINE state;
 extern FEEDBACK_MIXER   feedback_mixer;
@@ -235,22 +238,91 @@ void dsp_idle_loop (void){
 #endif
 
 #ifdef RECONFIGURE_DSP_SPEED
+                // DSP SPEED and McBSP control
 		if (state.DSP_speed[0] != state.DSP_speed[1]){
 			switch (state.DSP_speed[1]){
+			case 1001: // McBSP ON: ENABLE DEFAULT
+			        InitMcBSP0_InSPIMode(8,MCBSP_MODE_CTRL_FSG); // DEFAULT SETUP -- Configure McBSP0 port for McBSP 8x32bit word frames
+			        break;
+			case 1002: // McBSP in RESET
+                                ResetMcBSP0(); // put McBSP in RESET (STOP)
+			        break;
+			case 1003: // TEST
+                                //ResetMcBSP0(); // put McBSP in RESET (STOP)
+			        break;
+			case 1004: // DEBUG OFF (default)
+                                DebugMcBSP0(0); // DEBUG OFF
+			        break;
+			case 1005:
+                                DebugMcBSP0(1); // DEBUG ON, Level 1
+			        break;
+			case 1006:
+                                DebugMcBSP0(2); // DEBUG ON, Level 2
+			        break;
+			case 1007:
+                                DebugMcBSP0(3); // DEBUG ON, Level 3
+			        break;
+			case 1008:
+                                //DebugMcBSP0(MCBSP_MODE_AUTO_RECOVER); // DEBUG OFF + auto recover
+			        break;
+			case 1009:
+                                //DebugMcBSP0(1 | MCBSP_MODE_AUTO_RECOVER); // DEBUG ON, Level 1  + auto recover
+			        break;
+                                
+			case 1011: // configure_McBSP_N 1010+N
+                                InitMcBSP0_InSPIMode(1,MCBSP_MODE_FTXC); // Configure McBSP0 port for McBSP 1x32bit word frames
+			        break;
+			case 1012:
+                                InitMcBSP0_InSPIMode(2,MCBSP_MODE_FTXC);
+			        break;
+			case 1013:
+                                InitMcBSP0_InSPIMode(4,MCBSP_MODE_FTXC);
+			        break;
+			case 1014:
+                                InitMcBSP0_InSPIMode(8,MCBSP_MODE_FTXC);
+			        break;
+			case 1018:
+                                InitMcBSP0_InSPIMode(8,MCBSP_MODE_FSG);
+			        break;
+			case 1020: // configure_McBSP_M 1020+M
+                                SetSPIclock(199); // 0.5MHz
+			        break;
+			case 1021:
+                                SetSPIclock(99); // 1MHz
+			        break;
+			case 1022:
+                                SetSPIclock(49); // 2MHz
+			        break;
+			case 1023:
+                                SetSPIclock(12); // 8MHz
+			        break;
+			case 1024:
+                                SetSPIclock(9); // 10MHz
+			        break;
+			case 1025:
+                                SetSPIclock(6); // 16MHz
+			        break;
+			case 1026:
+                                SetSPIclock(4); // 20MHz
+			        break;
+			case 1027:
+                                SetSPIclock(3); // 25MHz
+			        break;
+
 			case 688:
 				stop_Analog810 (); // Stop AICs now again -- testing only
 				dsp_688MHz();
 				start_Analog810 ();
-				state.DSP_speed[0]=688;
+				state.DSP_speed[1]=state.DSP_speed[0]=688;
 				break;
 			default:
 				stop_Analog810 (); // Stop AICs now again -- testing only
 				dsp_590MHz();
 				start_Analog810 ();
-				state.DSP_speed[0]=590;
+				state.DSP_speed[1]=state.DSP_speed[0]=590;
 				break;
 			}
-			state.DSP_speed[1]=state.DSP_speed[0];
+                        state.DSP_speed[1]=state.DSP_speed[0]; // or no actual speed change!
 		}
 #endif
 
