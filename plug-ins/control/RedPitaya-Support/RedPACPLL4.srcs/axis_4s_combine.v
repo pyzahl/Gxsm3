@@ -76,6 +76,7 @@ module axis_4s_combine #(
     parameter SAXIS_6_TDATA_WIDTH  = 32,
     parameter SAXIS_78_DATA_WIDTH  = 32,
     parameter SAXIS_78_TDATA_WIDTH = 32,
+    parameter MAXIS_TDATA_WIDTH = 32,
     parameter integer BRAM_DATA_WIDTH = 64,
     parameter integer BRAM_ADDR_WIDTH = 15,
     parameter integer DECIMATED_WIDTH = 32
@@ -114,6 +115,7 @@ module axis_4s_combine #(
     input wire [32-1:0]  ndecimate,
     input wire [32-1:0]  nsamples,
     input wire [32-1:0]  channel_selector,
+    input wire           ext_trigger, // =0 for free run, auto trigger, 1= to hold trigger (until next pix, etc.)
     output wire          finished_state,
     output wire          init_state,
     output wire [32-1:0] writeposition,
@@ -130,7 +132,21 @@ module axis_4s_combine #(
     // input  wire [BRAM_DATA_WIDTH-1:0]  bram_porta_rddata,
     // output wire                        bram_porta_rst,
     output wire                        bram_porta_en,
-    output wire                        bram_porta_we
+    output wire                        bram_porta_we,
+    
+    // DOWN SAMPLED CH1-4
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_CH1_tdata,
+    output wire                          M_AXIS_CH1_tvalid,
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_CH2_tdata,
+    output wire                          M_AXIS_CH2_tvalid,
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_CH3_tdata,
+    output wire                          M_AXIS_CH3_tvalid,
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_CH4_tdata,
+    output wire                          M_AXIS_CH4_tvalid
     );
     
     reg [2:0] dec_sms=3'd0;
@@ -185,7 +201,10 @@ module axis_4s_combine #(
     begin
         finished <= finished_next;
         running  <= running_next;
-        trigger  <= trigger_next;
+        if (ext_trigger)
+        begin
+            trigger <= trigger_next;
+        end
         
         dec_sms <= dec_sms_next;
         bramwr_sms <= bramwr_sms_next;
@@ -375,6 +394,8 @@ module axis_4s_combine #(
                                 ch2n <= delta_freq; // Freq (48) - Center (48) =>  64 sum
 //                            ch1n <= ch1 + mk3_pixel_clock; // keep counting! SET SHR to 0!!!
 //                            ch2n <= ch1 + mk3_line_clock;
+                                ch3n <= $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch4n <= $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // Amplitude Exec (32) =>  64 sum
                                 dec_sms_next <= 3'd3;
                             end
                         end
@@ -458,6 +479,8 @@ module axis_4s_combine #(
                             begin
                                 ch1n <= ch1 +  $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]); // Phase (24) =>  32
                                 ch2n <= ch2 + delta_freq; // Freq (48) - Center (48) =>  64 sum
+                                ch3n <= ch3 + $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+                                ch4n <= ch4 + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // Amplitude Exec (32) =>  64 sum
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
                         end
@@ -489,4 +512,14 @@ module axis_4s_combine #(
             endcase
         end
     end
+    
+    assign M_AXIS_CH1_tdata = ch1s[31:0];
+    assign M_AXIS_CH1_tvalid = 1;
+    assign M_AXIS_CH2_tdata = ch2s[31:0];
+    assign M_AXIS_CH2_tvalid = 1;
+    assign M_AXIS_CH3_tdata = ch3s[31:0];
+    assign M_AXIS_CH3_tvalid = 1;
+    assign M_AXIS_CH4_tdata = ch4s[31:0];
+    assign M_AXIS_CH4_tvalid = 1;
+    
 endmodule
