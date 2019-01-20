@@ -242,7 +242,7 @@ void dsp_idle_loop (void){
 		if (state.DSP_speed[0] != state.DSP_speed[1]){
 			switch (state.DSP_speed[1]){
 			case 1001: // McBSP ON: ENABLE DEFAULT
-			        InitMcBSP0_InSPIMode(8,MCBSP_MODE_CTRL_FSG); // DEFAULT SETUP -- Configure McBSP0 port for McBSP 8x32bit word frames
+			        InitMcBSP0_InSPIMode(8, 99); // DEFAULT SETUP -- Configure McBSP0 port for McBSP 8x32bit word frames, CTRL_FSG mode is default, 1MHz CLK
 			        break;
 			case 1002: // McBSP in RESET
                                 ResetMcBSP0(); // put McBSP in RESET (STOP)
@@ -262,51 +262,59 @@ void dsp_idle_loop (void){
 			case 1007:
                                 DebugMcBSP0(3); // DEBUG ON, Level 3
 			        break;
-			case 1008:
-                                //DebugMcBSP0(MCBSP_MODE_AUTO_RECOVER); // DEBUG OFF + auto recover
-			        break;
-			case 1009:
-                                //DebugMcBSP0(1 | MCBSP_MODE_AUTO_RECOVER); // DEBUG ON, Level 1  + auto recover
-			        break;
-                                
+#define MCBSP_TESTING
+#ifdef MCBSP_TESTING
 			case 1011: // configure_McBSP_N 1010+N
-                                InitMcBSP0_InSPIMode(1,MCBSP_MODE_FTXC); // Configure McBSP0 port for McBSP 1x32bit word frames
+                                InitMcBSP0_InSPIMode(1,0); // Configure McBSP0 port for McBSP 1x32bit word frames, keep clock
 			        break;
 			case 1012:
-                                InitMcBSP0_InSPIMode(2,MCBSP_MODE_FTXC);
+                                InitMcBSP0_InSPIMode(2,0); // Configure McBSP0 port for McBSP 2x32bit word frames, keep clock
 			        break;
 			case 1013:
-                                InitMcBSP0_InSPIMode(4,MCBSP_MODE_FTXC);
+                                InitMcBSP0_InSPIMode(4,0); // Configure McBSP0 port for McBSP 4x32bit word frames, keep clock
 			        break;
 			case 1014:
-                                InitMcBSP0_InSPIMode(8,MCBSP_MODE_FTXC);
+                                InitMcBSP0_InSPIMode(8,0); // Configure McBSP0 port for McBSP 8x32bit word frames, keep clock
 			        break;
-			case 1018:
-                                InitMcBSP0_InSPIMode(8,MCBSP_MODE_FSG);
+			case 1015:
+                                InitMcBSP0_InSPIMode(16,0); // Configure McBSP0 port for McBSP 16x32bit word frames, keep clock
 			        break;
+#endif
 			case 1020: // configure_McBSP_M 1020+M
-                                SetSPIclock(199); // 0.5MHz
+                                InitMcBSP0_InSPIMode(8, 199); // 0.5MHz
 			        break;
 			case 1021:
-                                SetSPIclock(99); // 1MHz
+                                InitMcBSP0_InSPIMode(8, 99); // 1MHz
 			        break;
 			case 1022:
-                                SetSPIclock(49); // 2MHz
+                                InitMcBSP0_InSPIMode(8, 49); // 2MHz
 			        break;
 			case 1023:
-                                SetSPIclock(12); // 8MHz
+                                InitMcBSP0_InSPIMode(8, 24); // 4MHz
 			        break;
 			case 1024:
-                                SetSPIclock(9); // 10MHz
+                                InitMcBSP0_InSPIMode(8, 19); // 5MHz
 			        break;
 			case 1025:
-                                SetSPIclock(6); // 16MHz
+                                InitMcBSP0_InSPIMode(8, 15); // 6.25MHz
 			        break;
 			case 1026:
-                                SetSPIclock(4); // 20MHz
+                                InitMcBSP0_InSPIMode(8, 11); // 8.33MHz
 			        break;
 			case 1027:
-                                SetSPIclock(3); // 25MHz
+                                InitMcBSP0_InSPIMode(8, 9); // 10MHz
+			        break;
+			case 1028:
+                                InitMcBSP0_InSPIMode(8, 7); // 12.5MHz
+			        break;
+			case 1029:
+                                InitMcBSP0_InSPIMode(8, 6); // 14.28MHz
+			        break;
+			case 1030:
+                                InitMcBSP0_InSPIMode(8, 5); // 16.67MHz
+			        break;
+			case 1031:
+                                InitMcBSP0_InSPIMode(8, 4); // 20MHz
 			        break;
 
 			case 688:
