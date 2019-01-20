@@ -652,7 +652,7 @@ public:
         };
 
 
-        /* model function: atan (a*(t-b)) */
+        /* model function: atan (a*(t-b)) + c */
         static double
         phase(const double a, const double b, const double c, const double t)
         {
