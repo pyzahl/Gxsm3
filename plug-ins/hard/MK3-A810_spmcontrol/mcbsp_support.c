@@ -79,6 +79,7 @@ void ResetMcBSP0()
         SPI_debug_mode = 0;
         SPI_transmitted_words = 0;
         SPI_received_words = 0;
+        SPI_frame_element = SPI_words_per_frame;
 }
 
 #pragma CODE_SECTION(InitMcBSP0_InSPIMode, ".text:slow")
@@ -227,6 +228,7 @@ void InitMcBSP0_InSPIMode(int wpf, int div)
         SPI_word_count = 0;
         SPI_debug_mode = 0;
         SPI_enabled = 1;
+        SPI_frame_element = SPI_words_per_frame;
 
         analog.McBSP_SPI[8] = MCBSP0_SPCR;
         analog.McBSP_SPI[9] = MCBSP0_PCR;
@@ -235,9 +237,16 @@ void InitMcBSP0_InSPIMode(int wpf, int div)
 }
 
 void start_McBSP_transfer(unsigned int index){
+        // Is the McBSP coinfigured and enabled
         if (!SPI_enabled)
                 return;
 
+        // transfer in progress -- too fast/overlapping, skip. => holding values.
+        if (SPI_frame_element < SPI_words_per_frame){
+                analog.McBSP_SPI[8] = 0xff00ff00; // add overrun error mark
+                return;
+        }
+                
         SPI_frame_element = 0; // reset receiver frame element count
         SPI_word_count    = SPI_words_per_frame-1; // remeining words to transfer after this one below
         MCBSP0_DXR_32BIT  = index; // copy Initial Word now (index contains line/col or probe index only)
