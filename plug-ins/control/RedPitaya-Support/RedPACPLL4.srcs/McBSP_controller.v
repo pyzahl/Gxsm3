@@ -118,8 +118,8 @@ module McBSP_controller #(
             data[(4 * BITS_PER_WORD) - 1 : (4 * BITS_PER_WORD)-32] <= S_AXIS5_tdata;
             data[(3 * BITS_PER_WORD) - 1 : (3 * BITS_PER_WORD)-32] <= S_AXIS6_tdata;
             data[(2 * BITS_PER_WORD) - 1 : (2 * BITS_PER_WORD)-32] <= S_AXIS7_tdata;
-            // data[(1 * BITS_PER_WORD) - 1 : (1 * BITS_PER_WORD)-32] <= S_AXIS8_tdata;
-            data[(1 * BITS_PER_WORD) - 1 : (1 * BITS_PER_WORD)-32] <= data_read[(8 * BITS_PER_WORD) - 1 : (8 * BITS_PER_WORD)-32]; // LOOP BACK TEST, index: col,row
+            data[(1 * BITS_PER_WORD) - 1 : (1 * BITS_PER_WORD)-32] <= S_AXIS8_tdata;
+            // data[(1 * BITS_PER_WORD) - 1 : (1 * BITS_PER_WORD)-32] <= data_read[(8 * BITS_PER_WORD) - 1 : (8 * BITS_PER_WORD)-32]; // LOOP BACK TEST, index: col,row
         end else
         begin
             if (frame_start)

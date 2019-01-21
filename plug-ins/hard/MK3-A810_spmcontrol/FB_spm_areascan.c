@@ -362,7 +362,7 @@ void integrate_as_data_srcs (DSP_UINT32 srcs){
 
         // initiate external data SPI request and transfer
         if (AS_AIC_num_samples == 0)
-                start_McBSP_transfer (((scan.iy&0xffff)<<16) | (scan.ix&0xffff));
+                initiate_McBSP_transfer (((scan.iy&0xffff)<<16) | (scan.ix&0xffff));
 
         if (srcs & 0x01) // PIDSrcA1 (Dest) --> Zmonitor (Topo) feedback generated Z signal
 		AS_AIC_data_sum[8] += z_servo.control >> 16;

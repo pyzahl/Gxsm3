@@ -146,7 +146,22 @@ module axis_4s_combine #(
     output wire                          M_AXIS_CH3_tvalid,
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_CH4_tdata,
-    output wire                          M_AXIS_CH4_tvalid
+    output wire                          M_AXIS_CH4_tvalid,
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_AMPL_tdata,
+    output wire                          M_AXIS_AMPL_tvalid,
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_PHASE_tdata,
+    output wire                          M_AXIS_PHASE_tvalid,
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_FCENTER_tdata,
+    output wire                          M_AXIS_FCENTER_tvalid,
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_FREQ31_0_tdata,
+    output wire                          M_AXIS_FREQ31_0_tvalid,
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
+    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_FREQ63_32_tdata,
+    output wire                          M_AXIS_FREQ63_32_tvalid
     );
     
     reg [2:0] dec_sms=3'd0;
@@ -513,6 +528,7 @@ module axis_4s_combine #(
         end
     end
     
+    // assign CH1..4 from box carr filtering as selected
     assign M_AXIS_CH1_tdata = ch1s[31:0];
     assign M_AXIS_CH1_tvalid = 1;
     assign M_AXIS_CH2_tdata = ch2s[31:0];
@@ -521,5 +537,22 @@ module axis_4s_combine #(
     assign M_AXIS_CH3_tvalid = 1;
     assign M_AXIS_CH4_tdata = ch4s[31:0];
     assign M_AXIS_CH4_tvalid = 1;
+
+    // assign raw unfiltered amplitude and phase
+    assign M_AXIS_AMPL_tdata   = $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // Amplitude (24) =>  32
+    assign M_AXIS_AMPL_tvalid  = 1;
+    assign M_AXIS_PHASE_tdata  = $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]); // Phase (24) =>  32
+    assign M_AXIS_PHASE_tvalid = 1;
+
+    // assign F CENTER used for d-freq signal, upper 32 bit from 48 (SAXIS_3_TDATA_WIDTH)
+    assign M_AXIS_FCENTER_tdata = axis3_center[SAXIS_3_TDATA_WIDTH-1:SAXIS_3_TDATA_WIDTH-32];
+    assign M_AXIS_FCENTER_tvalid = 1;
+    
+    // assign unfiltered absolute frequency
+    assign M_AXIS_FREQ31_0_tdata = S_AXIS3_tdata[31:0];
+    assign M_AXIS_FREQ31_0_tvalid = 1;
+    assign M_AXIS_FREQ63_32_tdata = {{(64-SAXIS_3_TDATA_WIDTH){1'b0}}, S_AXIS3_tdata[SAXIS_3_TDATA_WIDTH-1:32]};
+    assign M_AXIS_FREQ63_32_tvalid = 1;
+
     
 endmodule

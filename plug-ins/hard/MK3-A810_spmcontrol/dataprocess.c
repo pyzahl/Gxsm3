@@ -40,6 +40,7 @@
 #include "FB_spm_dataexchange.h"
 #include "dataprocess.h"  
 #include "PAC_pll.h"
+#include "mcbsp_support.h"
 
 /* local used variables for automatic offset compensation */
 int       IdleTimeTmp;
@@ -867,6 +868,13 @@ void dataprocess()
 		state.DataProcessTime_Peak = state.DataProcessTime;
 		state.IdleTime_Peak = state.IdleTime;
 	}
+
+// ************************************************************
+// AT VERY END OF DATA PROCESSING TASKS
+// CHECK FOR PENDING McBSP TRANSFER, causing a fast ISR burst
+// ************************************************************
+
+        start_pending_McBSP_transfer();
 }
 
 
