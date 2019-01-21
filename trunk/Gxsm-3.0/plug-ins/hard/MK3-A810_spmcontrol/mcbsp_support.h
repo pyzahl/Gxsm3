@@ -28,9 +28,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-extern void SetSPIwords(int n);
-extern void SetSPIclock(int div);
+extern void SetMcBSPwords(int n);
+extern void SetMcBSPclock(int div);
 extern void ResetMcBSP0();
-extern void InitMcBSP0_InSPIMode(int wpf, int mode);
+extern void InitMcBSP0_in_RP_FPGA_Mode(int wpf, int mode);
 extern void DebugMcBSP0(int level);
-extern void start_McBSP_transfer(unsigned int index);
+extern void initiate_McBSP_transfer(unsigned int index);
+extern void start_pending_McBSP_transfer();

@@ -2444,7 +2444,7 @@ class Mk3_Configurator:
                         hb.pack_start(button)
 				
 
-                        # McBSP (SPI Communication)
+                        # McBSP (FPGA <-> MK3 hi speed seria link communication)
 			hb = gobject.new(gtk.HBox(spacing=10))
                         box2.pack_start(hb)
                         lbl =  gobject.new(gtk.Label, label="DSP McBSP:")
@@ -2458,6 +2458,9 @@ class Mk3_Configurator:
 
                         lbl =  gobject.new(gtk.Label, label="Debug:")
                         hb.pack_start(lbl)
+                        button = gtk.Button("SCHEDULE INST")
+                        button.connect("clicked", self.mk3spm.dsp_enable_McBSP, 3)
+                        hb.pack_start(button)
                         button = gtk.Button("OFF")
                         button.connect("clicked", self.mk3spm.dsp_enable_McBSP, 4)
                         hb.pack_start(button)

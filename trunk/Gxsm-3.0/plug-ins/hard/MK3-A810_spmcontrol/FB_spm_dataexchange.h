@@ -875,7 +875,7 @@ typedef struct{
 /**  ----------------------- FPGA extended and gated counter[2] -- auto gated on sampling speed/point interval */
         DSP_INT32    counter[2];    /** [] counts */
         DSP_INT32    gate_time[2];  /** [] number of summing cycles */
-        DSP_INT32    McBSP_SPI[16];  /* SPI LINK DATA */
+        DSP_INT32    McBSP_FPGA[16];  /* SPI LINK DATA */
 	DSP_INT32    debug[8];      /** scratch variabel space */
 #ifdef DSP_CC
 } ANALOG_VALUES;
