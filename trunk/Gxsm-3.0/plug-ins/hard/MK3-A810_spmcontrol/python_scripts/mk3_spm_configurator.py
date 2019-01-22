@@ -2439,10 +2439,30 @@ class Mk3_Configurator:
                                 print response
                                 if response == gtk.RESPONSE_ACCEPT and checkbox.get_active():
                                         self.mk3spm.dsp_adjust_speed(0, 688)
-                        
+
                         button.connect("clicked", confirm_688)
                         hb.pack_start(button)
 				
+                        def confirm_experimental(dummy, func, param1):
+                                label = gtk.Label("Confirm Experimental DSP code.\nWARNING\nUse on own risc. Not for production yet.")
+                                dialog = gtk.Dialog("DSP Experimental Feature",
+                                                    None,
+                                                    gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                                                     gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+                                dialog.vbox.pack_start(label)
+                                label.show()
+                                checkbox = gtk.CheckButton("I agree.")
+                                dialog.action_area.pack_end(checkbox)
+                                checkbox.show()
+                                response = dialog.run()
+                                dialog.destroy()
+                                
+                                if response == gtk.RESPONSE_ACCEPT and checkbox.get_active():
+                                        func(0, param1)
+                                else:
+                                        print ("Function not activated, please confirm via checkbox.")
+                                        
 
                         # McBSP (FPGA <-> MK3 hi speed seria link communication)
 			hb = gobject.new(gtk.HBox(spacing=10))
@@ -2450,7 +2470,7 @@ class Mk3_Configurator:
                         lbl =  gobject.new(gtk.Label, label="DSP McBSP:")
                         hb.pack_start(lbl)
                         button = gtk.Button("ON")
-                        button.connect("clicked", self.mk3spm.dsp_enable_McBSP, 1)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_enable_McBSP, 1)
                         hb.pack_start(button)
                         button = gtk.Button("RST")
                         button.connect("clicked", self.mk3spm.dsp_reset_McBSP, 0)
@@ -2458,7 +2478,7 @@ class Mk3_Configurator:
 
                         lbl =  gobject.new(gtk.Label, label="Debug:")
                         hb.pack_start(lbl)
-                        button = gtk.Button("SCHEDULE INST")
+                        button = gtk.Button("SCHEDULE@END")
                         button.connect("clicked", self.mk3spm.dsp_enable_McBSP, 3)
                         hb.pack_start(button)
                         button = gtk.Button("OFF")
@@ -2508,40 +2528,40 @@ class Mk3_Configurator:
                         lbl =  gobject.new(gtk.Label, label="DSP McBSP MHz: ")
                         hb.pack_start(lbl)
                         button = gtk.Button("0.5")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 0)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 0)
                         hb.pack_start(button)
                         button = gtk.Button("1")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 1)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 1)
                         hb.pack_start(button)
                         button = gtk.Button("2")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 2)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 2)
                         hb.pack_start(button)
                         button = gtk.Button("4")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 3)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 3)
                         hb.pack_start(button)
                         button = gtk.Button("5")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 4)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 4)
                         hb.pack_start(button)
                         button = gtk.Button("6.25")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 5)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 5)
                         hb.pack_start(button)
                         button = gtk.Button("8.33")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 6)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 6)
                         hb.pack_start(button)
-                        button = gtk.Button("N=10")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 7)
+                        button = gtk.Button("10")
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 7)
                         hb.pack_start(button)
-                        button = gtk.Button("N=12.5")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 8)
+                        button = gtk.Button("12.5")
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 8)
                         hb.pack_start(button)
-                        button = gtk.Button("N=14.28")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 9)
+                        button = gtk.Button("14.28")
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 9)
                         hb.pack_start(button)
-                        button = gtk.Button("N=16.6")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 10)
+                        button = gtk.Button("16.6")
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 10)
                         hb.pack_start(button)
-                        button = gtk.Button("N=20")
-                        button.connect("clicked", self.mk3spm.dsp_configure_McBSP_M, 11)
+                        button = gtk.Button("20")
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 11)
                         hb.pack_start(button)
 
 
