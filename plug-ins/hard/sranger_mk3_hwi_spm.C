@@ -146,7 +146,11 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 
 	if (!init){ // setup signal monitor
 		for (int i=0; signal_monitor_index[i] >= 0 && signal_monitor_setup[i]; ++i){
-			signal_id [signal_monitor_index[i] ] = lookup_signal_by_name (signal_monitor_setup[i]);
+                        if (signal_monitor_index[i] == 12 && DSPPACClass->pll.Reference[0] == 0.0) // use MK3 PACPLL signal -- if MK3-PACPLL Referecne is set to ZERO
+                                // attempt to use and configure McBSP channel, auto override setup signa name!
+                                signal_id [signal_monitor_index[i] ] = lookup_signal_by_name ("McBSP Freq");
+                        else
+                                signal_id [signal_monitor_index[i] ] = lookup_signal_by_name (signal_monitor_setup[i]);
 			if (signal_id [signal_monitor_index[i]] >= 0){
 				PI_DEBUG_GP (DBG_L1, "Info: RTQuery: setup signal monitor[%d] <== S%d (%s)\n", signal_monitor_index[i], signal_id[ signal_monitor_index[i]], lookup_signal_name_by_index (signal_id[ signal_monitor_index[i]]) );
 				change_signal_input (signal_id [signal_monitor_index [i]], signal_monitor_index[i]); // adjust monitor setup for Gxsm needs -- not essential but expected by RTQuery/PanView
@@ -225,13 +229,17 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
                           << " value=" << qf << lookup_signal_unit_by_index (signal_id[I])
                           << std::endl;
                 */      
-                if (qf > 100.)
+                val1 = qf - DSPPACClass->pll.Reference[0];
+#if 0
+                if (qf > 100.){
                         val1 = qf - DSPPACClass->pll.Reference[0];
+                }
                 else if (qf > 0.)
 			val1 = -log (qf) / (2.*M_PI/75000.); // f0 in Hz
 		else
 			val1 = 75000.; // FBW
-//		val2 = gapp->xsm->Inst->Dig2VoltIn (dsp_analog_in.adc[5]) / gapp->xsm->Inst->nAmpere2V(1.); // actual nA reading    xxxx V  * 0.1nA/V
+#endif
+                //		val2 = gapp->xsm->Inst->Dig2VoltIn (dsp_analog_in.adc[5]) / gapp->xsm->Inst->nAmpere2V(1.); // actual nA reading    xxxx V  * 0.1nA/V
 		val2 = S_MON (13) / gapp->xsm->Inst->nAmpere2V(1.); // actual nA reading    xxxx V  * 0.1nA/V
 		val3 = sqrt(S_MON (14)) / gapp->xsm->Inst->nAmpere2V(1.); // actual nA RMS reading    xxxx V  * 0.1nA/V
 		return TRUE;

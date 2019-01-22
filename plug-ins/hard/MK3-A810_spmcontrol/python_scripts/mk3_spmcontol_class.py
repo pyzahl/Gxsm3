@@ -267,6 +267,11 @@ FB_SPM_SIGNAL_INPUT_VERSION =         0x0003
 MAX_INPUT_NUMBER_LIMIT =              0x100  ## just a safey limit for FLASH storage
 
 
+RP_FPGA_QEXEC = 31 ## Q EXEC READING Controller        -- 1V/(2^RP_FPGA_QEXEC-1)
+RP_FPGA_QSQRT = 23 ## Q CORDIC SQRT Amplitude Reading  -- 1V/(2^RP_FPGA_QSQRT-1)
+RP_FPGA_QATAN = 21 ## Q CORDIC ATAN Phase Reading      -- 180deg/(PI*(2^RP_FPGA_QATAN-1))
+RP_FPGA_QFREQ = 44 ## Q DIFF FREQ READING              -- 125MHz/(2^RP_FPGA_QFREQ-1) well number should not exceed 32bit 
+
 
 
 
@@ -384,15 +389,15 @@ SIGNAL_LOOKUP = [
         [0, 99, 32, "user_input_signal_array[0]", "user signal array",  "xV", DSP32Qs23dot8TO_Volt, "Control", "user signal input value array [32]"], ## DSP_SIG
 	[0, 99, 1, "sco_s[0].out",    "SCO1 Out",      "V", DSP32Qs15dot16TO_Volt, "SCO", "SCO1 output"], ## 	DSP_SIG SCO output
 	[0, 99, 1, "sco_s[1].out",    "SCO2 Out",      "V", DSP32Qs15dot16TO_Volt, "SCO", "SCO2 output"], ## 	DSP_SIG SCO output
-        [0, 99, 1, "analog.McBSP_SPI[0]", "SPI Freq",      "Hz",    1, "MCBSP_SPI_LINK", "SPI DATA Freq"], ## DSP McBSP SPI LINK[0]
-        [0, 99, 1, "analog.McBSP_SPI[1]", "SPI Exec",      "mV",    1, "MCBSP_SPI_LINK", "SPI DATA Exec"], ## DSP McBSP SPI LINK[1]
-        [0, 99, 1, "analog.McBSP_SPI[2]", "SPI Ampl",      "mV",    1, "MCBSP_SPI_LINK", "SPI DATA Ampl"], ## DSP McBSP SPI LINK[2]
-        [0, 99, 1, "analog.McBSP_SPI[3]", "SPI Phase",     "deg",   1, "MCBSP_SPI_LINK", "SPI DATA Phase"], ## DSP McBSP SPI LINK[3]
-        [0, 99, 1, "analog.McBSP_SPI[4]", "SPI 4",         "X",     1, "MCBSP_SPI_LINK", "SPI DATA CH4"], ## DSP McBSP SPI LINK[4]
-        [0, 99, 1, "analog.McBSP_SPI[5]", "SPI 5",         "X",     1, "MCBSP_SPI_LINK", "SPI DATA CH5"], ## DSP McBSP SPI LINK[5]
-        [0, 99, 1, "analog.McBSP_SPI[6]", "SPI 6",         "X",     1, "MCBSP_SPI_LINK", "SPI DATA CH6"], ## DSP McBSP SPI LINK[6]
-        [0, 99, 1, "analog.McBSP_SPI[7]", "SPI 7",         "X",     1, "MCBSP_SPI_LINK", "SPI DATA CH7"], ## DSP McBSP SPI LINK[7]
-        [0, 99, 8, "analog.McBSP_SPI_STATUS_VEC", "SPI STATUS VECTOR",         "X",     1, "MCBSP_SPI_LINK", "SPI STATUS VECTOR"], ## DSP McBSP SPI STATUS VECTOR
+	[0, 99, 1, "analog.McBSP_FPGA[0]", "McBSP Phase", "deg", (180.0/(math.pi*((1L<<RP_FPGA_QATAN)-1))), "MCBSP_LINK", "McBSPCH0 DATA Phase"], ## DSP McBSP SPI LINK[0]
+	[0, 99, 1, "analog.McBSP_FPGA[1]", "McBSP Freq", "Hz",   (125000000.0/((1L<<RP_FPGA_QFREQ)-1)),  "MCBSP_LINK", "McBSPCH1 DATA Freq"], ## DSP McBSP SPI LINK[1]
+	[0, 99, 1, "analog.McBSP_FPGA[2]", "McBSP Ampl", "mV", (1.0/((1L<<RP_FPGA_QSQRT)-1)),            "MCBSP_LINK", "McBSPCH2 DATA Ampl"], ## DSP McBSP SPI LINK[2]
+	[0, 99, 1, "analog.McBSP_FPGA[3]", "McBSP Exec", "mV", (1.0/((1L<<RP_FPGA_QEXEC)-1)),            "MCBSP_LINK", "McBSPCH3 DATA Exec"], ## DSP McBSP SPI LINK[3]
+	[0, 99, 1, "analog.McBSP_FPGA[4]", "McBSP XAm",  "mV", (1.0/((1L<<RP_FPGA_QSQRT)-1)),            "MCBSP_LINK", "McBSPCH4 DATA Ampl raw"], ## DSP McBSP SPI LINK[4]
+	[0, 99, 1, "analog.McBSP_FPGA[5]", "McBSP XPh", "deg", (180.0/(math.pi*((1L<<RP_FPGA_QATAN)-1))),   "MCBSP_LINK", "McBSPCH5 DATA Phase raw"], ## DSP McBSP SPI LINK[5]
+	[0, 99, 1, "analog.McBSP_FPGA[6]", "McBSP XFH32", "Hz", ((1L<<32)*125000000.0/((1L<<RP_FPGA_QFREQ)-1)), "MCBSP_LINK", "McBSPCH6 DATA FreqHI Bit 63-32 raw"], ## DSP McBSP SPI LINK[6]
+	[0, 99, 1, "analog.McBSP_FPGA[7]", "McBSP XFL32", "Hz", (125000000.0/((1L<<RP_FPGA_QFREQ)-1)), "MCBSP_LINK", "McBSPCH7 DATA FreqLO Bit 31-0 raw"], ## DSP McBSP SPI LINK[7]
+        [0, 99, 8, "analog.McBSP_FPGA_VEC", "McBSP VECTOR", "X",  1, "MCBSP_LINK", "McBSP VECTOR"], ## McBSP SPI STATUS VECTOR
 	[-1, 0, 0, "no signal", "END OF SIGNALS", "NA", 0]  ## END MARKING
 ]
 

@@ -547,9 +547,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 "IN1, Phase",
                 "Exec, Freq",
                 "Ampl, Exec",
-                "Phase, Freq",
+                "Phase, Freq,[Am,Ex]",
                 "M-DCiir, Ampl",
-                "8BIT GPIO, px clk",
+                "8BIT GPIO P, pxclk",
                 NULL };
    
 	// Init choicelist
