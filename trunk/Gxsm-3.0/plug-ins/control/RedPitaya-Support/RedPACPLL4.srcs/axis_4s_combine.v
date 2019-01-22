@@ -425,7 +425,7 @@ module axis_4s_combine #(
                         end
                         8:
                         begin
-                            ch1n <= {{(64-8){1'b0}}, rp_digital_in[7:0]}; // rp_digital_in; SET SHR to 0!!!
+                            ch1n <= {rp_digital_in[7:0], rp_digital_in[7:0], rp_digital_in[7:0], rp_digital_in[7:0]}; // rp_digital_in; SET SHR to 0 or find it shifted!!!
                             ch2n <= mk3_pixel_clock;
                             dec_sms_next <= 3'd3;
                         end
@@ -474,7 +474,7 @@ module axis_4s_combine #(
                         begin
                             if (S_AXIS2_tvalid && S_AXIS3_tvalid)
                             begin
-                                ch1n <= ch1 + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]); // Amplitude (32) =>  64 sum
+                                ch1n <= ch1 + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]); // Amplitude Exec (32) =>  64 sum
                                 ch2n <= ch2 + delta_freq; // Freq (48) - Lower (48) =>  64 sum
                                 decimate_count_next <= decimate_count + 1; // next sample
                             end
