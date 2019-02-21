@@ -48,6 +48,8 @@
 // HAS TO BE IDENTICAL TO THE DRIVER's FILE!
 #include "../plug-ins/hard/modules/sranger_mk23_ioctl.h"
 
+#include "MK3-A810_spmcontrol/FB_spm_task_names.h"
+
 // important notice:
 // ----------------------------------------------------------------------
 // all numbers need to be byte swaped on i386 (no change on ppc!!) via 
@@ -113,7 +115,7 @@ sranger_mk3_hwi_spm::~sranger_mk3_hwi_spm(){
  "o" :                Z0, X0, Y0  offset -- in volts after piezo amplifier
  "R" :                expected Z, X, Y -- in Angstroem/base unit
  "f" :                dFreq, I-avg, I-RMS
- "s" :                DSP Statemachine Status Bits, DSP load, DSP load peak
+ "s","S" :                DSP Statemachine Status Bits, DSP load, DSP load peak
  "Z" :                probe Z Position
  "i" :                GPIO (high level speudo monitor)
  "A" :                Mover/Wave axis counts 0,1,2 (X/Y/Z)
@@ -130,7 +132,9 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 	static gint ok=FALSE;
 	static MOVE_OFFSET_MK3 dsp_move;
 	static AUTOAPPROACH_MK3 dsp_autoapp;
-        
+
+        static gint dsp_rt_process_time[32];
+        static gint dsp_id_process_time[32];
 	static gint         signal_monitor_index[] = { 0, 1, 2, 3,   4, 5, 6,
                                                        11, 12, 13, 14,
                                                        16, 17, 18,
@@ -246,14 +250,15 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 	}
 
 	// DSP Status Indicators
-	if (*property == 's'){
+	if (*property == 's' || *property == 'S' ){
 
 		lseek (dsp, magic_data.statemachine, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_read  (dsp, &dsp_statemachine, sizeof (dsp_statemachine)); 
 		CONV_32 (dsp_statemachine.mode);
 		CONV_32 (dsp_statemachine.DataProcessTime);
 		CONV_32 (dsp_statemachine.IdleTime);
-		CONV_32 (dsp_statemachine.DataProcessTime_Peak);
+		CONV_32 (dsp_statemachine.DataProcessReentryTime);
+		CONV_32 (dsp_statemachine.DataProcessReentryPeak);
 		CONV_32 (dsp_statemachine.IdleTime_Peak);
 
 		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
@@ -294,11 +299,110 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 				+ (( dsp_autoapp.pflg & 1) << 7)
 			);
 
-// "  DSP Load: %.1f" %(100.*SPM_STATEMACHINE[ii_statemachine_DataProcessTime]/(SPM_STATEMACHINE[ii_statemachine_DataProcessTime]+SPM_STATEMACHINE[ii_statemachine_IdleTime]))
-// "  Peak: %.1f" %(100.*SPM_STATEMACHINE[ii_statemachine_DataProcessTime_Peak]/(SPM_STATEMACHINE[ii_statemachine_DataProcessTime_Peak]+SPM_STATEMACHINE[ii_statemachine_IdleTime_Peak]))
-		val2 = (double)dsp_statemachine.DataProcessTime / (double)(dsp_statemachine.DataProcessTime + dsp_statemachine.IdleTime); // DSP Load
-		val3 = (double)dsp_statemachine.DataProcessTime_Peak / (double)(dsp_statemachine.DataProcessTime_Peak + dsp_statemachine.IdleTime_Peak); // DSP Peak Load
+#define PRINT_DSP_PROCESS_LIST
+#ifdef PRINT_DSP_PROCESS_LIST
+                if (*property == 'S') 
+                {
 
+                        /****
+ANSI COLOR CODES
+ cout << "\033[1;31mbold red text\033[0m\n";
+
+Here, \033 is the ESC character, ASCII 27. It is followed by [, then zero or more numbers separated by ;, and finally the letter m. The numbers describe the colour and format to switch to from that point onwards.
+
+The codes for foreground and background colours are:
+
+         foreground background
+black        30         40
+red          31         41
+green        32         42
+yellow       33         43
+blue         34         44
+magenta      35         45
+cyan         36         46
+white        37         47
+
+Additionally, you can use these:
+
+reset             0  (everything back to normal)
+bold/bright       1  (often a brighter shade of the same colour)
+underline         4
+inverse           7  (swap foreground and background colours)
+bold/bright off  21
+underline off    24
+inverse off      27
+                        ***/
+                        static gdouble load=0.;
+                        g_print ("\n\033[35;1;7mDSP RTENGINE4GXSM V1.0 by P.Zahl TIME STRUCTS:\033[0m DP TICKS %10lu %10lus %10lum %02ds\n",
+                                 dsp_statemachine.DSP_time,
+                                 dsp_statemachine.BLK_count_seconds, dsp_statemachine.BLK_count_minutes-1, dsp_statemachine.DSP_seconds);
+                                 
+                        load = 0.9*load + 0.1*((double)dsp_statemachine.DataProcessTime/(double)dsp_statemachine.DataProcessReentryTime);
+                        int d = (int)(double)(dsp_statemachine.BLK_count_minutes-1)/(24*60);
+                        int h = (int)(double)(dsp_statemachine.BLK_count_minutes-1)/60 - 24*d;
+                        int m = (int)(double)(dsp_statemachine.BLK_count_minutes-1) - 24*60*d - h*60;
+                        int s = 59-dsp_statemachine.DSP_seconds;
+                        g_print ("\n\033[0mDSP STATUS up %d days %d:%02d:%02d, Average Load: %g\n", d,h,m,s, load);
+                        g_print ("DP Reentry Time: %10lu  Earliest: %10lu Latest: %10lu    %8lx\n"
+                                 "DP Time: %10lu  Max: %10lu  Idle Max: %10lu Min: %10lu   %8lx\n",
+                                 dsp_statemachine.DataProcessReentryTime,
+                                 dsp_statemachine.DataProcessReentryPeak & 0xffff,
+                                 dsp_statemachine.DataProcessReentryPeak >> 16, dsp_statemachine.DataProcessReentryPeak,
+                                 dsp_statemachine.dp_task_control[0].process_time_peak_now >> 16,
+                                 dsp_statemachine.dp_task_control[0].process_time_peak_now & 0xffff,
+                                 dsp_statemachine.IdleTime_Peak >> 16,
+                                 dsp_statemachine.IdleTime_Peak & 0xffff, dsp_statemachine.IdleTime_Peak );
+                        g_print ("DP Continue Time Limit: %10lu", dsp_statemachine.DP_max_time_until_abort);
+                        g_print ("\n\n\033[0mPROCESS LIST ** RT Flags: O: on odd clk, E: on even clk, S=sleeping, A=active, R=running now, s=sleeping now\n");
+                        g_print ("\033[4mPID       DSPTIME    TASKTIME   TASKTMMAX  MISSEDTASK  FLAGS  NAME of RT Data Processing (DP) Task\033[0m\n");
+                        //        RT000         297        1624        2577           0  11  system
+
+                        static int missed_count_last[NUM_DATA_PROCESSING_TASKS+1];
+                        for (int i=0; i<NUM_DATA_PROCESSING_TASKS+1; i++){
+                                gchar *flags = g_strdup_printf("%s%s",
+                                                               dsp_statemachine.dp_task_control[i].process_flag == 0   ? "--S" :
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x10 ? "--A" :
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x20 ? "-OA" :
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x40 ? "-EA" : "-?-",
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x01 ? "R" : "s");
+
+                                if (dsp_statemachine.dp_task_control[i].process_flag){
+                                        g_print ("%sRT%03d\033[0m  %10lu  %10lu  %10lu  %10lu   %s  %s\n",
+                                                 missed_count_last[i] == dsp_statemachine.dp_task_control[i].missed_count ? "\033[1m":"\033[31m",
+                                                 i,
+                                                 dsp_statemachine.dp_task_control[i].process_time,
+                                                 dsp_statemachine.dp_task_control[i].process_time_peak_now >> 16,
+                                                 dsp_statemachine.dp_task_control[i].process_time_peak_now & 0xffff,
+                                                 dsp_statemachine.dp_task_control[i].missed_count,
+                                                 flags,
+                                                 MK3_dsp_dp_process_name[i]);
+                                        missed_count_last[i] = dsp_statemachine.dp_task_control[i].missed_count;
+                                } else
+                                        g_print ("RT%03d is sleeping                                       %s  %s\n", i, flags, MK3_dsp_dp_process_name[i]);
+
+                        }
+                        g_print ("\n\033[4mPID    TIMER NEXT    INTERVAL   EXEC COUNT  FLAGS   NAME of IDle (ID) Task\033[0m\n");
+                        //                 ID000           0           0            0  ALWAYS  bz push data from RT_FIFO
+
+                        for (int i=0; i<NUM_IDLE_TASKS; i++){
+                                if (dsp_statemachine.id_task_control[i].process_flag)
+                                        g_print ("\033[1mID%03d\033[0m  %10lu  %10lu  %10lu   %s  %s\n", i,
+                                                 (unsigned int)dsp_statemachine.id_task_control[i].timer_next,
+                                                 (unsigned int)dsp_statemachine.id_task_control[i].interval,
+                                                 (unsigned int)dsp_statemachine.id_task_control[i].exec_count,
+                                                 dsp_statemachine.id_task_control[i].process_flag == 0   ? "SLEEP " :
+                                                 dsp_statemachine.id_task_control[i].process_flag & 0x10 ? "\033[33mALWAYS\033[0m" :
+                                                 dsp_statemachine.id_task_control[i].process_flag & 0x20 ? "\033[32mTIMER \033[0m" :
+                                                 dsp_statemachine.id_task_control[i].process_flag & 0x40 ? "\033[36mCLOCK \033[0m" : "  ?  ",
+                                                 MK3_dsp_id_process_name[i]);
+                                //else g_print ("ID%03 is sleeping\n", i);
+                        }
+                        g_print ("\033[0m\n");
+                }
+#endif
+                val2 = (double)dsp_statemachine.DataProcessTime / (double)(dsp_statemachine.DataProcessReentryTime); // DSP Load
+                val3 = (double)(dsp_statemachine.dp_task_control[0].process_time_peak_now&0xffff) / (double)(dsp_statemachine.DataProcessReentryTime); // DSP Peak Load
+                
                 return TRUE;
 	}
 
@@ -442,6 +546,38 @@ void sranger_mk3_hwi_spm::ClrMode(int mode){
 	lseek (dsp, magic_data.statemachine, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 	sr_write (dsp, &dsp_state, MAX_WRITE_SPM_STATEMACHINE<<1); 
 }
+
+
+int sranger_mk3_hwi_spm::RotateStepwise(int exec) {
+        if (exec){
+                static AREA_SCAN_MK3 dsp_scan;
+
+                gint32 mxx,mxy,myx,myy;
+
+                // rotation matrix in Q31
+                mxx = long_2_sranger_long (float_2_sranger_q31 (rotmxx));
+                mxy = long_2_sranger_long (float_2_sranger_q31 (rotmxy));
+                myx = long_2_sranger_long (float_2_sranger_q31 (rotmyx));
+                myy = long_2_sranger_long (float_2_sranger_q31 (rotmyy));
+
+                //g_print ("ROTMATRIX...[%g, %g, %g, %g]\n", rotmxx, rotmxy, rotmyx, rotmyy);
+        
+                // set new rotation matrix -- small delta expected
+                dsp_scan.start = APPLY_NEW_ROTATION;
+                dsp_scan.stop  = 0;
+                dsp_scan.rotm[0] = mxx;
+                dsp_scan.rotm[1] = mxy;
+                dsp_scan.rotm[2] = myx;
+                dsp_scan.rotm[3] = myy;
+
+                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_write (dsp, &dsp_scan, ((2+4)*4)); // write start, stop, rotm[4] - only here
+                return 0;
+        }
+        return 1;
+        
+}
+
 
 gint sranger_mk3_hwi_spm::SetUserParam (gint n, const gchar *id, double value){
         if (id){
@@ -1339,31 +1475,7 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		// ------> SRanger::EndScan2D always returns to 0/0 <------
 		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
-		
-		gint32 mxx,mxy,myx,myy;
-		PI_DEBUG (DBG_L2, "Scan Rotation Matrix: [[" << rotmxx << ", " << rotmxy << "], [" << rotmyx << ", " << rotmyy << "]]");
-		// rotation matrix in Q31
-		mxx = long_2_sranger_long (float_2_sranger_q31 (rotmxx));
-		mxy = long_2_sranger_long (float_2_sranger_q31 (rotmxy));
-		myx = long_2_sranger_long (float_2_sranger_q31 (rotmyx));
-		myy = long_2_sranger_long (float_2_sranger_q31 (rotmyy));
-		PI_DEBUG (DBG_L9, "ROTM - SR swapped: [[" << std::hex << mxx << ", " << mxy << "], [" << myx << ", " << myy << "]]" << std::dec );
 
-		// check for new rotation
-		if (dsp_scan.rotm[0] != mxx || dsp_scan.rotm[1] != mxy || dsp_scan.rotm[2] != myx || dsp_scan.rotm[3] != myy){
-			// move to origin (rotation invariant point) before any rotation matrix changes!!
-                        g_message ("sranger_mk3_hwi_spm::ScanLineM -- setup, rotation matrix changed: tip to orign forced for rotation invariant point.");
-			tip_to_origin ();
-			// reread position
-			lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-			sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
-			// set new rotation matrix
-			dsp_scan.rotm[0] = mxx;
-			dsp_scan.rotm[1] = mxy;
-			dsp_scan.rotm[2] = myx;
-			dsp_scan.rotm[3] = myy;
-		}
-		
 		// convert
 		dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
 		dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);

@@ -595,6 +595,9 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
                                 mover_param.MOV_waveform[i+k] = mover_param.MOV_waveform[k];
 
 	mover_param.MOV_wave_len += space_len;
+
+        if (mover_param.MOV_wave_len >= MOV_MAXWAVELEN)
+                mover_param.MOV_wave_len = MOV_MAXWAVELEN-1;
 	
         return channels;
 }

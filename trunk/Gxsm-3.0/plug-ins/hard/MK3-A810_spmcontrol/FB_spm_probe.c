@@ -460,7 +460,7 @@ void probe_append_header_and_positionvector (){ // size: 14
 void init_lockin (int target_mode){
 	int j;
 	// init LockIn variables
-	probe.state = PROBE_INIT_LOCKIN;
+	//##probe.state = PROBE_INIT_LOCKIN;
 
 	// calc pre-start pos to center integration window correct
 	// PRB_xS -= PRB_dnx * LOCKIN_ILN/2;
@@ -505,7 +505,7 @@ void init_lockin (int target_mode){
 	else    AC_tab_inc = 1;               // LockIn-Ref on  292.97Hz
 
 	PRB_norm2 = SPECT_SIN_LEN_P2 + (30-_NORM32 (probe.AC_nAve)) - (30-_NORM32 (AC_tab_inc)) + probe.lockin_shr_corrsum; // 9 + #bits in nAve
-	analog.debug[0] = PRB_norm2;
+	// analog.debug[0] = PRB_norm2;
 
 	probe.state = target_mode;
 	probe.start = 0;
@@ -536,12 +536,13 @@ void init_probe (){
         PRB_Trk_state = -1;
         PRB_Trk_ref   = 0L;
 
+#ifdef WEGXXXX
 	if (probe.state < PROBE_RUN_LOCKIN_FREE){ // don't touch if free running.
 		probe.state = PROBE_NO_LOCKIN; // disable, re-init
 		PRB_lockin_restart_flg = 1;
 		init_lockin (PROBE_RUN_LOCKIN_PROBE); // auto: on probe only level
 	}
-
+#endif
 	// calc data normalization factor
 //	PRB_ks_normfac  = PRB_ACMult*2.*MATH_PI/(PRB_nAve*SPECT_SIN_LEN*LOCKIN_ILN);
 //	PRB_avg_normfac = PRB_ACMult/(PRB_nAve*SPECT_SIN_LEN*LOCKIN_ILN);
@@ -555,16 +556,18 @@ void init_probe (){
 	probe.pflg  = 1; // enable probe
 }
 
+
 #pragma CODE_SECTION(stop_lockin, ".text:slow")
 void stop_lockin (int level){
 	if (probe.state == level) // don't touch if other level is running.
 		probe.state = PROBE_NO_LOCKIN;
+        probe.LockIn_ref = 0;
 }
 
 #pragma CODE_SECTION(stop_probe, ".text:slow")
 void stop_probe (){
 	// finish probe
-	stop_lockin (PROBE_RUN_LOCKIN_PROBE); // don't touch if free ro scan level is running.
+        //##	stop_lockin (PROBE_RUN_LOCKIN_PROBE); // don't touch if free ro scan level is running.
 	probe.start = 0;
 	probe.stop  = 0;
 	probe.pflg = 0;
@@ -803,19 +806,24 @@ void buffer_probe_section_end_data_srcs ()
 }
 
 // mini probe program flow interpreter kernel
-#pragma CODE_SECTION(next_section, ".text:slow")
+//#pragma CODE_SECTION(next_section, ".text:slow")
 void next_section (){
 	GPIO_subsample = 0;
 
         if (! probe.vector){ // initialize ?
                 probe.vector = probe.vector_head;
                 PRB_section_count = 0; // init PVC
-//              if (probe.vector < (DSP_INT)(&prbdf)) // error, cancel probe now.
-//                      stop_probe ();
+#if 0
+                if (probe.vector < (DSP_INT)(&prbdf)){ // error, cancel probe now.
+                      probe.stop  = 1;
+                      probe.pflg = 0;
+                }
+#endif
         }
         else{
                 if (!probe.vector->ptr_final){ // end Vector program?
-                        stop_probe ();
+                        probe.stop  = 1;
+                        probe.pflg = 0;
                         return;
                 }
 		buffer_probe_section_end_data_srcs (); // store end of section data into matrix buffer -- used for area scan data transfer
@@ -826,8 +834,10 @@ void next_section (){
                         if (probe.vector->ptr_next){ // loop or branch to next
                                 PRB_section_count += probe.vector->ptr_next; // adjust PVC (section "count" -- better section-index)
                                 probe.vector += probe.vector->ptr_next; // next vector to loop
-                        }else
-                                stop_probe (); // error, no valid next vector: stop_probe now
+                        }else{
+                                probe.stop  = 1;
+                                probe.pflg = 0;
+                        }
                 }
                 else{
 			probe.vector->i = probe.vector->repetitions; // loop done, reload loop counter for next time
@@ -946,11 +956,13 @@ void run_one_time_step(){
 
         if (! probe.iix-- || probe.lix){
                 if (probe.ix--){
+#ifdef ENABLE_SCAN_GP55_CLOCK
                         // generate external probe point data clock on GP55
                         if (probe.ix&1)
                                 SET_DSP_GP55;
                         else
                                 CLR_DSP_GP55;
+#endif
                         store_probe_data_srcs ();
                         if (!probe.ix){
                                 // Special VP Track Mode Vector Set?
@@ -992,9 +1004,10 @@ void run_one_time_step(){
         }
 }
 
-#define LOCKIN_ON (probe.vector->srcs & 0x3000)
+#define LOCKIN_ON (probe.vector->srcs & 0x3000) // obsolete with signals
 void run_probe (){
-
+// run free only/manual
+#if 0
 	if (LOCKIN_ON){
 		if (PRB_lockin_restart_flg){
 			probe.AC_ix = -PRB_SE_DELAY;
@@ -1008,11 +1021,13 @@ void run_probe (){
 		}
 	} else {
 		PRB_lockin_restart_flg = 1;
-
+#endif
 		run_one_time_step ();
 		add_probe_vector ();
+#if 0
 	}
-
+#endif
+        
 // increment probe time
 	++probe.time; 
 }

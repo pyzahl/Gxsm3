@@ -107,6 +107,9 @@ struct PACPLL_parameters {
         double qcontrol;
         double phase_controller;
         double phase_unwrapping_always;
+        double lck_amplitude;
+        double lck_phase;
+
         double set_singleshot_transport_trigger;
 };
 
@@ -152,6 +155,9 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "QCONTROL", &pacpll_parameters.qcontrol, false },
         { "QC_GAIN", &pacpll_parameters.qc_gain, false },
         { "QC_PHASE", &pacpll_parameters.qc_phase, false },
+
+        { "LCK_AMPLITUDE", &pacpll_parameters.lck_amplitude, false },
+        { "LCK_PHASE", &pacpll_parameters.lck_phase, false },
 
         { "FREQUENCY_MANUAL", &pacpll_parameters.frequency_manual, false }, // manual/tune frequency
         { "FREQUENCY_CENTER", &pacpll_parameters.frequency_center, false }, // center frequency -- used as offset for AUX
@@ -219,6 +225,8 @@ public:
 	static void pac_tau_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void pac_frequency_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void pac_volume_parameter_changed (Param_Control* pcs, gpointer user_data);
+        static void select_pac_lck_amplitude (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void select_pac_lck_phase (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void qcontrol (GtkWidget *widget, Inet_Json_External_Scandata *self);
 	static void qc_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void tune_parameter_changed (Param_Control* pcs, gpointer user_data);

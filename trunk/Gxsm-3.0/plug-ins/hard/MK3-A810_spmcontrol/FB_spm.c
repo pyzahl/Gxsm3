@@ -74,14 +74,34 @@ SPM_STATEMACHINE state = {
 		0,0,  // set, clear_mode
 		MD_OFFSETADDING | MD_ZPOS_ADJUSTER,   //	state.mode to start with: PLL on, OFFSETADDING is default -- dummy now.
 		MD_IDLE | MD_ZPOS_ADJUSTER,    //	state.last_mode  = MF_IDLE
-		0,    //	state.BLK_count  = 0;
-		2000, //	state.BLK_Ncount = 2000;
+		0,    //	state.BLK_count_seconds  = 0;
+		0,    //	state.BLK_count_minutes  = 0;
 		0,    //	state.DSP_time   = 0;
-		0,    //	state.DSP_tens   = 0;
+		0,    //	state.DSP_seconds  = 0;
 		0,    //	state.DataProcessTime = 0;
-		0,    //	state.IdleTime   = 0;
-		0, 0, //        2x-dito .._peak
-		590, 590 // state.DSP_speed = 590 MHz
+		0,    //	state.ProcessReentryTime   = 0;
+		0x0000ffff, //  state.ProcessReentryPeak   = 0;  HI|LO
+		0x0000ffff, //  state.IdleTime_Peak   = 0;       HI|LO
+		590, 590, // state.DSP_speed = 590 MHz
+                { // DATA PROCESS Real Time Task Control [1+12]
+                        // 0x00: Never, 0x10: Always, 0x20: Odd, 0x40: Even
+                        { 0x10,0,0,0 }, // RT000
+                        { 0x10,0,0,0 }, { 0x00,0,0,0 }, { 0x00,0,0,0 }, { 0x40,0,0,0 }, // RT001..004
+                        { 0x00,0,0,0 }, { 0x00,0,0,0 }, { 0x10,0,0,0 }, { 0x00,0,0,0 }, // RT005..008
+                        { 0x00,0,0,0 }, { 0x00,0,0,0 }, { 0x00,0,0,0 }, { 0x00,0,0,0 }  // RT009..012
+                },
+                { // IDLE Task Control [32]
+                        // 0x00: Never, 0x10: always normal, 0x20: timer controlled (150kHz clock)
+                        { 0x10,0,0,0 }, { 0x20,0,0,1   }, { 0x10,0,0,0 }, { 0x00,0,0,0 }, // ID001..004
+                        { 0x10,0,0,0 }, { 0x10,0,0,0   }, { 0x10,0,0,0 }, { 0x10,0,0,0 }, // ID005..008
+                        { 0x10,0,0,0 }, { 0x10,0,0,0   }, { 0x10,0,0,0 }, { 0x10,0,0,0 }, // ID009..012
+                        { 0x10,0,0,0 }, { 0x10,0,0,0   }, { 0x10,0,0,0 }, { 0x10,0,0,0 }, // ID013..016
+                        { 0x20,0,0,111 }, { 0x20,0,0,5000 }, { 0x00,0,0,0 }, { 0x00,0,0,0 }, // ID017..020
+                        { 0x00,0,0,0 }, { 0x00,0,0,0   }, { 0x00,0,0,0 }, { 0x00,0,0,0 }, // ID021..024
+                        { 0x00,0,0,0 }, { 0x00,0,0,0   }, { 0x00,0,0,0 }, { 0x20,0,0,3 }, // ID025..028
+                        { 0x00,0,0,0 }, { 0x20,0,0,5   }, { 0x00,0,0,7 }, { 0x40,0,0,150000 }  // ID029..032
+                },
+                3500
 };
 
 /* A810 Configuration -- may be altered and then A810 restarted via AIC_STO, START cycle */
@@ -247,6 +267,8 @@ AREA_SCAN        scan = {
 		0,    //        scan.ifr
 		0, 0, 0, 0 , // src_input[4]; 
 		0,    //	scan.sstate = 0;
+		{ 1<<31 ,0,    //  scan.rotmatrix: protected operating copy
+		  0, 1<<31 },  //
 		0     //	scan.pflg = 0;
 };
 
@@ -272,7 +294,7 @@ PROBE            probe = {
 	{ 0,0,0,0 }, //     *probe.src_input[4]
 	{ 0,0,0,0 }, //     *probe.prb_output[4]
 	{ 0,0,0,0 }, //     *probe.LockIn input[4]
-	0,0,  //     *probe.limiter_up, dn;
+	{ 0,0 },  //     *probe.limiter_up, dn;
 	0,0,  //     *probe.limiter_input, *probe.Tracker_input
 	0,    //        probe.AC_ix = 0;
 	0,    //        probe.time = 0;
@@ -557,16 +579,16 @@ void setup_default_signal_configuration(){
 	feedback_mixer.FB_IN_is_analog_flg[0] = 1;
 	feedback_mixer.iir_ca_q15[0] = (Q15)>>2; // slight low pass IIR
 
-	feedback_mixer.input_p[1] = &analog.in[1];
-	feedback_mixer.FB_IN_is_analog_flg[1] = 1;
+	feedback_mixer.input_p[1] = &analog.vnull; //&analog.in[1];
+	feedback_mixer.FB_IN_is_analog_flg[1] = 0;
 	feedback_mixer.iir_ca_q15[1] = Q15-1; // FBW
 
-	feedback_mixer.input_p[2] = &analog.in[2];
-	feedback_mixer.FB_IN_is_analog_flg[2] = 1;
+	feedback_mixer.input_p[2] = &analog.vnull; //&analog.in[2];
+	feedback_mixer.FB_IN_is_analog_flg[2] = 0;
 	feedback_mixer.iir_ca_q15[2] = Q15-1; // FBW
 
-	feedback_mixer.input_p[3] = &analog.in[3];
-	feedback_mixer.FB_IN_is_analog_flg[3] = 1;
+	feedback_mixer.input_p[3] = &analog.vnull; //&analog.in[3];
+	feedback_mixer.FB_IN_is_analog_flg[3] = 0;
 	feedback_mixer.iir_ca_q15[3] = Q15-1; // FBW
 
 	// setup LockIn defaults
@@ -1314,9 +1336,16 @@ void main()
 	PLL_lookup.pac_lib_status = StartPLL (4,7);
 #endif
 
+	/* configure GPIO all in for startup safety -- this is ans should be default power-up, just to make sure again */
+//	short io;
+//	io = 0x0000; WR_GPIO (GPIO_Dir_0, &io, 1);
+        
 	fill_magic ();
 	setup_default_signal_configuration ();
-
+        
+        // for sanity
+        state.DP_max_time_until_abort = 3500;
+        
 	/* check for valid saved flash signal configuration and auto-restore */
 	restore_configuration_from_flash ();
 
@@ -1330,9 +1359,9 @@ void main()
 //          VBias 1.35V, differential inputs, all input/output gains at 0dB
 
 	/* Setup DSP timer/clock */
-//	TSCReadFirst();
-//	TSCReadSecond();
 	TSCInit();
+	TSCReadFirst();
+	TSCReadSecond();
 
 	/* Init Analog810 */
 
@@ -1380,9 +1409,11 @@ void main()
 
 	HPI_HPIC = Acknowledge;
 
-	TSCReadFirst();
+	/* Get Time and Start State Maschine and Task Processing now */
 
-	/* Start State Maschine now */
+        scan.stop=1;
+        probe.stop=1;
+        z_servo.watch=0; // must reset flag here, if task is not running, it is not managed
 
 	dsp_idle_loop ();
 }

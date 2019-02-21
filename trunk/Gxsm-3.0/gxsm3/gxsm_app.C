@@ -400,6 +400,22 @@ void App::build_gxsm (Gxsm3appWindow *win){
 
         XSM_DEBUG(DBG_L2, "App::build_gxsm - attach control elements SPM+AS+UI" );
 
+  	/* Load Gxsm Plugins: additional control windows, math/filters/etc. */
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - Scanning for PlugIns...");
+        pcs_set_current_gschema_group ("plugins");
+        // SetStatus(N_("Scanning for GXSM Plugins..."));
+	if( !xsmres.disableplugins )
+		reload_gxsm_plugins();
+
+	/* call hook to update gxsm setting from hardware as desired */
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - call xsmhard->update_gxsm_configurations");
+
+        if (xsm->hardware)
+                xsm->hardware->update_gxsm_configurations ();
+        else{
+                XSM_DEBUG(DBG_L2, "App::build_gxsm - no call: xsm->hardware invalid.");
+        }
+
         pcs_set_current_gschema_group ("mainwindow");
 
 	if(IS_SPALEED_CTRL)
@@ -433,23 +449,9 @@ void App::build_gxsm (Gxsm3appWindow *win){
 
         channelselector = new ChannelSelector();
 
-  	/* Load Gxsm Plugins: additional control windows, math/filters/etc. */
-        XSM_DEBUG(DBG_L2, "App::build_gxsm - Scanning for PlugIns...");
-        pcs_set_current_gschema_group ("plugins");
-        // SetStatus(N_("Scanning for GXSM Plugins..."));
-	if( !xsmres.disableplugins )
-		reload_gxsm_plugins();
 
         pcs_set_current_gschema_group ("post-build-error-path");
 
-	/* call hook to update gxsm setting from hardware as desired */
-        XSM_DEBUG(DBG_L2, "App::build_gxsm - call xsmhard->update_gxsm_configurations");
-
-        if (xsm->hardware)
-                xsm->hardware->update_gxsm_configurations ();
-        else{
-                XSM_DEBUG(DBG_L2, "App::build_gxsm - no call: xsm->hardware invalid.");
-        }
 
         // monitorcontrol->LogEvent ("Hardware Information", xsm->hardware->get_info ());
 

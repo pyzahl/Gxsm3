@@ -115,6 +115,8 @@ public:
 
 	virtual gint RTQuery () { return fifo_data_y_index + subscan_data_y_index_offset; }; // actual progress on scan -- y-index mirror from FIFO read
 
+	virtual int RotateStepwise(int exec=1) { return 0; };
+
 	virtual void ExecCmd(int Cmd) {};
 	virtual void SetMode(int mode) {};
 	virtual void ClrMode(int mode) {};
@@ -327,6 +329,7 @@ class sranger_mk3_hwi_spm : public sranger_mk3_hwi_dev{
 	virtual gint RTQuery (const gchar *property, gchar **val);
 	virtual gint RTQuery (const gchar *property, int n, gfloat *data);
 
+	virtual int RotateStepwise(int exec=0);
 	virtual void UpdateScanGainMirror ();
 	virtual void SetOffset(double x, double y);
 	virtual void MovetoXY (double x, double y);

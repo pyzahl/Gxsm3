@@ -97,7 +97,7 @@ def phasedetect (signal, s, c, Tau_pac):
                 return -Q22
   
 */
-
+`define USE_DUAL_PAC /* implemet dual PAC for pahse and ampl or single PAC + Lock-In option */
 
 module lms_phase_amplitude_detector #(
     parameter S_AXIS_SIGNAL_TDATA_WIDTH = 32,
@@ -326,28 +326,33 @@ module lms_phase_amplitude_detector #(
         // ###0
         // temp = s * a + c * b + 0x200000;  // Q22 * Q22 : Q44
         predict <= (s * a + c * b + 45'sh200000) >>> 22; // Q22
+//# DUAL PAC or PAC+LCK -- both needs 82 DSP units out of 80 available for total design
+`ifdef USE_DUAL_PAC
         Apredict <= (s * Aa + c * Ab + 45'sh200000) >>> 22; // Q22
-        
+`endif        
         // Compute d_mu_e    
         // ### 1
         // errordet = signal-predict #// Q22 - Q22 : Q22
         // temll = (errordet * Tau_pac + 0x200000  #// Q22 * Q22 : Q44 
         // temll = temll >> 22  #// Q22
         d_mu_e1 <= ((m1-predict1) * tau + 45'sh200000) >>> 22;
+`ifdef USE_DUAL_PAC
         Ad_mu_e1 <= ((m1-Apredict1) * Atau + 45'sh200000) >>> 22;
-        
+`endif        
         // Compute LMS
         // ### 2
         // temll = c * d_mu_e + 0x200000  #// Q22 * Q22 : Q44 
         // temll = temll >> 22 #// Q22
         b <= b + ((c2 * d_mu_e2 + 45'sh200000) >>> 22);
+`ifdef USE_DUAL_PAC
         Ab <= Ab + ((c2 * Ad_mu_e2 + 45'sh200000) >>> 22);
-        
+`endif
         // temll = s * d_mu_e + 0x200000  #// Q22 * Q22 : Q44 
         // temll = temll >> 22  #// Q22
         a <= a + ((s2 * d_mu_e2 + 45'sh200000) >>> 22);
+`ifdef USE_DUAL_PAC
         Aa <= Aa + ((s2 * Ad_mu_e2 + 45'sh200000) >>> 22);
-        
+`endif        
         // Rot45
         // R2 = sqrt(2)
         // ar = a*R2 - b*R2 = R2*(a-b)
@@ -367,10 +372,13 @@ module lms_phase_amplitude_detector #(
         */
         
         predict1 <= predict;
-        Apredict1 <= Apredict;
         d_mu_e2 <= d_mu_e1;
+
+`ifdef USE_DUAL_PAC
+        Apredict1 <= Apredict;
         Ad_mu_e2 <= Ad_mu_e1;
-        
+`endif
+
         // m1 <= m-dc;
         m1 <= m - $signed(dc_tau[31] ? dc : mdc); // auto IIR dc or manual dc
         c1 <= c;
@@ -461,36 +469,21 @@ module lms_phase_amplitude_detector #(
         LckYSum <= LckYInt >>> (44-12); // DDS-dPhi is Q 44
           
         // prepare outputs by selection        
-/*  
-        if (lck_ampl)
-        begin
-            tmpXA=LckXSum;
-            tmpYA=LckYSum;
-        end else begin
-            tmpXA=Aa;
-            tmpYA=Ab;
-        end
-        if (lck_phase)
-        begin
-            tmpX=LckXSum;
-            tmpY=LckYSum;
-        end else begin
-            tmpX=a;
-            tmpY=b;
-        end
-        // amplitude squared from 2nd A-PAC 
-        ampl2 <= tmpXA*tmpXA + tmpYA*tmpYA; // 1Q44
-        // x,y (for phase)from 1st PAC
-        y <= tmpX-tmpY;
-        x <= tmpX+tmpY;
-*/
-          
+        
+`ifdef USE_DUAL_PAC
+        //# For Dual PAC:     
         // amplitude squared from 2nd A-PAC 
         ampl2 <= Aa*Aa + Ab*Ab; // 1Q44
         // x,y (for phase)from 1st PAC
         y <= a-b;
         x <= a+b;
-      
+`else
+        /* select PAC or LockIn individually */
+        //#        ampl2 <= (lck_ampl?LckXSum:Aa)*(lck_ampl?LckXSum:Aa) + (lck_ampl?LckYSum:Ab)*(lck_ampl?LckYSum:Ab);
+        ampl2 <= (lck_ampl?LckXSum:a)*(lck_ampl?LckXSum:a) + (lck_ampl?LckYSum:b)*(lck_ampl?LckYSum:b);
+        y     <= (lck_phase?LckXSum:a) - (lck_phase?LckYSum:b);
+        x     <= (lck_phase?LckXSum:a) + (lck_phase?LckYSum:b);
+`endif        
           
     end
     

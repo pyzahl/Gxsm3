@@ -2454,7 +2454,7 @@ void ProfileControl::file_print_callback (int index, ProfileControl *pc)
 	--index;
 	if ((tmpf=g_file_open_tmp("GXSM_TEMPFILE_XXXXXX", &tmp, &printer_failure)) != -1){
 		FILE *gricmd;
-		char command[512];
+		char command[520];
 		char retinfo[64];
 		int ret;
         		

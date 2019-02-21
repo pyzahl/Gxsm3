@@ -583,25 +583,123 @@ i_magic_date    = 3
 i_magic_sid     = 4
 
 i_statemachine = 5
-fmt_statemachine = "<LLLLLLlLLLLLLL"
+#fmt_statemachine = "<LLLLLLlLLLLLLL"  "<LLLLLLLLLLLLLL LLL[8+1] LLL[16] ..."
+####################################  0000   11112222333344445555666677778888   +4x4              +8x4                                +8x4
+fmt_statemachine = "<LLLLLLLLLLLLLL"+"LLLL"+"LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"+"LLLLLLLLLLLLLLLL"+"LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"+"LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"+"LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"+"LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"+"L"
 fmt_statemachine_w = "<L"
 fmt_statemachine_w2 = "<LL"
+NUM_RT_TASKS=1+12
+NUM_ID_TASKS=32
+
 [
 	ii_statemachine_set_mode,
 	ii_statemachine_clr_mode,
 	ii_statemachine_mode,
 	ii_statemachine_last_mode,
-	ii_statemachine_BLK_count,
-	ii_statemachine_BLK_Ncount,
+	ii_statemachine_BLK_count_seconds,
+	ii_statemachine_BLK_count_minutes,
 	ii_statemachine_DSP_time,
-	ii_statemachine_DSP_tens,
+	ii_statemachine_DSP_seconds,
 	ii_statemachine_DataProcessTime,
-	ii_statemachine_IdleTime,
-	ii_statemachine_DataProcessTime_Peak,
+	ii_statemachine_DataProcessReentryTime,
+	ii_statemachine_DataProcessReentryPeak,
 	ii_statemachine_IdleTime_Peak,
 	ii_statemachine_DSP_speed_act,
-	ii_statemachine_DSP_speed_req
-] = range (0,14)
+	ii_statemachine_DSP_speed_req,
+        ii_statemachine_rt_task_control
+] = range (0,15)
+
+[
+        ii_statemachine_rt_task_control_flags,
+        ii_statemachine_rt_task_control_missed,
+        ii_statemachine_rt_task_control_time,
+        ii_statemachine_rt_task_control_time_peak_now, # in 16 bits each in  hi , lo
+        ii_statemachine_rt_task_control_len
+] = range (0,5)
+
+[
+        ii_statemachine_id_task_control_flags,
+        ii_statemachine_id_task_control_n_exec,
+        ii_statemachine_id_task_control_time_next,
+        ii_statemachine_id_task_control_interval,
+        ii_statemachine_id_task_control_len
+] = range (0,5)
+
+ii_statemachine_id_task_control=ii_statemachine_rt_task_control+ii_statemachine_rt_task_control_len*NUM_RT_TASKS
+ii_statemachine_DP_max_time_until_abort = ii_statemachine_id_task_control + ii_statemachine_id_task_control_len*NUM_ID_TASKS
+
+dsp_rt_process_name = [
+        "System", # RT000
+
+        ## RT Tasks
+        "PACPLL, Recorder, Analog IN, Mixer, adap.IIR", #RT001
+        "QEP, GATEING, COUNTER Expansion",
+        "Z-servo Control and Feedback Mode Logic",
+        "Area Scan",
+
+        "Vector Probe Machine", #RT005
+        "LockIn", #RT006
+        "Analog OUT Mapping with HR",  ## RT007
+        "Coarse Motion Wave Generator: AutoApp/Mover/Pulse", ## RT008
+
+        "--", #RT009
+        "M-servo",
+        "SCO 0",
+        "SCO 1",
+]                
+
+dsp_id_process_name = [
+        ## Ilde Tasks
+        ## ID001
+        "BZ push data from RT_FIFO",
+        "Offset Move",
+        "Probe Feedback Flag Manager",
+        "",
+        
+        ## ID005
+        "Statemachine Control, exec lnx",
+        "Feedback Mixer log update",
+        "Signal Management",
+        "Offset Move init",
+
+        ## ID009
+        "Scan Controls",
+        "Probe Controls",
+        "Auto Approach Control",
+        "GPIO Pulse Control",
+
+        ## ID013
+        "GPIO Services",
+        "PACPLL Control",
+        "DSP Core Management",
+        "AIC Control**",
+
+        ##ID0017
+        "Signal Monitor Update",
+        "Request McBSP transfer",
+        "",
+        "",
+        
+        ##ID0021
+        "",
+        "",
+        "",
+        "",
+
+        ##ID0025
+        "",
+        "",
+        "",
+        "Bias and Zpos adjusters",
+        
+        ##ID0029
+        "",
+        "RMS Signal Processing",
+        "Noise (random) Signal Generator",
+        "1s Timer Test",
+
+]
+
 
 i_AIC_in = 6
 fmt_AIC_in = "<hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh"
@@ -2191,6 +2289,82 @@ class SPMcontrol():
 
 		sr.close ()
 		return 1
+
+        def get_rtos_parameter(self, ii_param):
+                return self.SPM_STATEMACHINE[ii_param]
+        def get_task_control_entry(self, ii_control, ii_entry, pid):
+                return self.SPM_STATEMACHINE[ii_control+ii_statemachine_rt_task_control_len*pid+ii_entry]
+        def get_task_control_entry_task_time(self, ii_control, pid):
+                return self.SPM_STATEMACHINE[ii_control+ii_statemachine_rt_task_control_len*pid+ii_statemachine_rt_task_control_time_peak_now] >> 16
+        def get_task_control_entry_peak_time(self, ii_control, pid):
+                return self.SPM_STATEMACHINE[ii_control+ii_statemachine_rt_task_control_len*pid+ii_statemachine_rt_task_control_time_peak_now] & 0xffff
+
+        def configure_rt_task(self, pid, flag):
+                if flag == "sleep":
+                        flags = 0x00
+                elif flag == "active":
+                        flags = 0x10
+                elif flag == "odd":
+                        flags = 0x20
+                elif flag == "even":
+                        flags = 0x40
+                else:
+                        return
+                if pid > 0 and pid < NUM_RT_TASKS:
+			self.write_o (i_statemachine, 4*(ii_statemachine_rt_task_control+ii_statemachine_rt_task_control_len*pid+ii_statemachine_rt_task_control_flags), struct.pack ("<L", flags))
+                        
+        def configure_id_task(self, pid, flag, interval=0):
+                if flag == "sleep":
+                        flags = 0x00
+                elif flag == "always":
+                        flags = 0x10
+                elif flag == "timer":
+                        flags = 0x20
+                elif flag == "clock":
+                        flags = 0x40
+                else:
+                        return
+                if pid >= 0 and pid < NUM_ID_TASKS:
+			self.write_o (i_statemachine, 4*(ii_statemachine_id_task_control+ii_statemachine_id_task_control_len*pid+ii_statemachine_id_task_control_flags), struct.pack ("<L", flags))
+                        if interval > 0:
+			        self.write_o (i_statemachine, 4*(ii_statemachine_id_task_control+ii_statemachine_id_task_control_len*pid+ii_statemachine_id_task_control_interval), struct.pack ("<L", interval))
+                        
+        def reset_task_control_peak(self, dum=0):
+                for pid in range(0,NUM_RT_TASKS):
+			self.write_o (i_statemachine, 4*(ii_statemachine_rt_task_control+ii_statemachine_rt_task_control_len*pid+ii_statemachine_rt_task_control_time_peak_now), struct.pack ("<L", 0))
+			self.write_o (i_statemachine, 4*(ii_statemachine_rt_task_control+ii_statemachine_rt_task_control_len*pid+ii_statemachine_rt_task_control_missed), struct.pack ("<L", 0))
+		#self.write_o (i_statemachine, 4*(ii_statemachine_rt_task_control + ii_statemachine_rt_task_control_time_peak_now), struct.pack ("<L", 0x0000ffff)) ## RT[0]
+		self.write_o (i_statemachine, 4*ii_statemachine_DataProcessReentryPeak, struct.pack ("<L", 0x0000ffff))
+		self.write_o (i_statemachine, 4*ii_statemachine_IdleTime_Peak, struct.pack ("<L", 0x0000ffff))
+        def reset_task_control_nexec(self, dum=0):
+                for pid in range(0,NUM_ID_TASKS):
+			self.write_o (i_statemachine, 4*(ii_statemachine_id_task_control+ii_statemachine_rt_task_control_len*pid+ii_statemachine_id_task_control_n_exec), struct.pack ("<L", 0))
+
+        def reset_dsp_clock(self, dum=0):
+                ################## TESTS
+                new_seconds  = 0 #0x7e000000
+                new_minutes  = 0 #33*24*60+13*60+37
+                new_dsp_time = 0 # 0x7e000000
+		self.write_o (i_statemachine, 4*(ii_statemachine_BLK_count_seconds), struct.pack ("<LLLL", new_seconds,new_minutes,new_dsp_time,0))
+                # need to reset TIMER schedules also, alse they freeze to that time
+                for pid in range(0,NUM_ID_TASKS):
+			self.write_o (i_statemachine, 4*(ii_statemachine_id_task_control+ii_statemachine_rt_task_control_len*pid+ii_statemachine_id_task_control_time_next), struct.pack ("<L", new_dsp_time))
+                
+        def set_dsp_rt_DP_max(self, value): ### WARNING keep below ~4000, default is 3500
+                if value > 2000 and value <= 4400:
+		        self.write_o (i_statemachine, 4*(ii_statemachine_DP_max_time_until_abort), struct.pack ("<L", value))
+        def set_dsp_rt_DP_max_default(self, dum=0):
+                self.set_dsp_rt_DP_max(3500)
+        def set_dsp_rt_DP_max_hi1(self, dum=0):
+                self.set_dsp_rt_DP_max(3800)
+        def set_dsp_rt_DP_max_hi2(self, dum=0):
+                self.set_dsp_rt_DP_max(4000)
+        def set_dsp_rt_DP_max_hi3(self, dum=0):
+                self.set_dsp_rt_DP_max(4200)
+        def set_dsp_rt_DP_max_hi4(self, dum=0):
+                self.set_dsp_rt_DP_max(4400)
+
+                        
 # VP support
                         
         def dump_VP_fifobuffer (self):
@@ -2710,7 +2884,10 @@ class SPMcontrol():
                 print "\nRequesting DSP McBSP (SPI communication) " + str(num) + " words. Valid: N=[1,2,3,4,8]\n\n \n\n"
 		self.write_o (i_statemachine, ii_statemachine_DSP_speed_req*4, struct.pack (fmt_statemachine_w, 1010+num),1)
                         
-        def dsp_configure_McBSP_M(self, dummy, num):
+        def dsp_configure_McBSP_M(self, btn, num, lbl=None):
+                if lbl != None:
+                        m=btn.get_label();
+                        lbl.set_text("DSP McBSP@ "+m+"MHz")
                 print "\nRequesting DSP McBSP (SPI communication) " + str(num) + " words. Valid: N=[1,2,3,4,8]\n\n \n\n"
 		self.write_o (i_statemachine, ii_statemachine_DSP_speed_req*4, struct.pack (fmt_statemachine_w, 1020+num),1)
                         

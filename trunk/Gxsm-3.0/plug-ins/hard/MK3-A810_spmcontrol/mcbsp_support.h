@@ -34,4 +34,3 @@ extern void ResetMcBSP0();
 extern void InitMcBSP0_in_RP_FPGA_Mode(int wpf, int mode);
 extern void DebugMcBSP0(int level);
 extern void initiate_McBSP_transfer(unsigned int index);
-extern void start_pending_McBSP_transfer();

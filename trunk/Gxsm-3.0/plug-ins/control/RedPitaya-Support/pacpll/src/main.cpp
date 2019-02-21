@@ -166,6 +166,8 @@ CBooleanParameter AMPLITUDE_CONTROLLER("AMPLITUDE_CONTROLLER", CBaseParameter::R
 CBooleanParameter PHASE_CONTROLLER("PHASE_CONTROLLER", CBaseParameter::RW, false, 0);
 CBooleanParameter PHASE_UNWRAPPING_ALWAYS("PHASE_UNWRAPPING_ALWAYS", CBaseParameter::RW, false, 0);
 CBooleanParameter QCONTROL("QCONTROL", CBaseParameter::RW, false, 0);
+CBooleanParameter LCK_AMPLITUDE("LCK_AMPLITUDE", CBaseParameter::RW, false, 0);
+CBooleanParameter LCK_PHASE("LCK_PHASE", CBaseParameter::RW, false, 0);
 
 //void rp_PAC_set_phase_controller64 (double setpoint, double cp, double ci, double upper, double lower)
 CDoubleParameter AMPLITUDE_FB_SETPOINT("AMPLITUDE_FB_SETPOINT", CBaseParameter::RW, 20, 0, 0, 1000); // mV
@@ -416,9 +418,13 @@ void rp_PAC_set_volume (double volume){
 
 #define PACPLL_CFG_CONTROL_LOOPS 3
 // Configure Control Switched: Loops Ampl and Phase On/Off, Unwrapping, QControl
-void rp_PAC_configure_switches (int phase_ctrl, int am_ctrl, int phase_unwrap_always, int qcontrol){
+void rp_PAC_configure_switches (int phase_ctrl, int am_ctrl, int phase_unwrap_always, int qcontrol, int lck_amp, int lck_phase){
         if (verbose > 2) fprintf(stderr, "##Configure loop controls: %x",  phase_ctrl ? 1:0 | am_ctrl ? 2:0); 
-        set_gpio_cfgreg_int32 (PACPLL_CFG_CONTROL_LOOPS, (phase_ctrl ? 1:0) | (am_ctrl ? 2:0) | (phase_unwrap_always ? 4:0) | (qcontrol ? 8:0));
+        set_gpio_cfgreg_int32 (PACPLL_CFG_CONTROL_LOOPS,
+                               (phase_ctrl ? 1:0) | (am_ctrl ? 2:0) | (phase_unwrap_always ? 4:0) |
+                               (qcontrol ? 8:0) |
+                               (lck_amp ? 0x10:0)  | (lck_phase ? 0x20:0)
+                               );
 }
 
 
@@ -848,7 +854,7 @@ void set_PAC_config()
                                      FREQ_FB_LOWER.Value ()
                                      );
         
-        rp_PAC_configure_switches (PHASE_CONTROLLER.Value ()?1:0, AMPLITUDE_CONTROLLER.Value ()?1:0, PHASE_UNWRAPPING_ALWAYS.Value ()?1:0, QCONTROL.Value ()?1:0);
+        rp_PAC_configure_switches (PHASE_CONTROLLER.Value ()?1:0, AMPLITUDE_CONTROLLER.Value ()?1:0, PHASE_UNWRAPPING_ALWAYS.Value ()?1:0, QCONTROL.Value ()?1:0, LCK_AMPLITUDE.Value ()?1:0, LCK_PHASE.Value ()?1:0);
 }
 
 

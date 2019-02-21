@@ -272,10 +272,14 @@ void App::spm_offset_check(Param_Control* pcs, gpointer app){
 
         XSM_DEBUG(DBG_L3,  "offset check -- moveto 0,0"  );
 
+        #if 0
         // move tip to center of scan ( 0,0 ) now also
         data->s.sx = data->s.sy = 0.;
         ((App*)app)->xsm->hardware->MovetoXY(0, 0);
+        #endif
 
+        ((App*)app)->xsm->hardware->SetAlpha(data->s.alpha);
+        
         XSM_DEBUG(DBG_L3,  "offset check -- update all"  );
         
         ((App*)app)->spm_update_all();
@@ -683,7 +687,10 @@ GtkWidget* App::create_spm_control (){
         spm_bp->grid_add_ec ("Rotation", xsm->ArcUnit, &xsm->data.s.alpha,
                              -360., 360., "6g", 1., 15.,
                              "Rotation");
-        EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
+
+        if (gapp->xsm->hardware)
+                if (!gapp->xsm->hardware->RotateStepwise (0)) // test for delta rotation availability
+                        EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec); // no life/while scanning rotation!
 
         GtkWidget *preset_button = spm_bp->grid_add_button
                 ("Move to Origin", "Move to Origin (Zero Offset)", 1,
