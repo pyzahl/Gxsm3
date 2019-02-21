@@ -26,7 +26,7 @@
 #define FB_SPM_MAGIC_ADR  0x10F13F00 /**< Magic struct is at this fixed addess in external SRAM */
 #define FB_SPM_MAGIC     0x3202EE01
 
-#define SRDEV "/dev/sranger_mk2_2"
+#define SRDEV "/dev/sranger_mk2_0"
 
 typedef gint32   DSP_INT;
 typedef guint32  DSP_UINT;
@@ -897,17 +897,26 @@ void issue_mk3_hard_reset (int dsp){
         g_print ("MK3 POWER UP RESET CYCLE INITATED.\n\n");
 }
 
-int main (){
-	int dsp;
+int main ( int argc, char **argv ){
+	int dsp=0;
 	SPM_MAGIC_DATA_LOCATIONS magic;
-	
+        
 	magic.magic = 0; // set to zero, this means all data is invalid!
 
-	if((dsp = open (SRDEV, O_RDWR)) <= 0){
-		std::cerr << "Can not open " << SRDEV << std::endl;
-		return -1;
-	}
-	else{
+        if (argc > 1){
+                if((dsp = open (argv[1], O_RDWR)) <= 0){
+                        std::cerr << "Can not open " << argv[1] << std::endl;
+                        return -1;
+                }
+        } else {
+        
+                if((dsp = open (SRDEV, O_RDWR)) <= 0){
+                        std::cerr << "Can not open " << SRDEV << std::endl;
+                        return -1;
+                }
+        }
+
+        if (dsp) {
 		int ret;
 		unsigned int vendor, product;
 

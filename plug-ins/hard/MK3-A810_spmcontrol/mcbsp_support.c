@@ -52,7 +52,6 @@ int McBSP_word_count = 0;
 int McBSP_enabled = 0;
 int McBSP_clkdiv = 99; // Serial Clock 1MHz
 int McBSP_data[16] = { 0, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 }; // McBSP TX data array
-int McBSP_start_flag = 0;
 
 unsigned int McBSP_transmitted_words = 0;
 unsigned int McBSP_received_words = 0;
@@ -86,7 +85,6 @@ void ResetMcBSP0()
         McBSP_received_words = 0;
         McBSP_frame_element = McBSP_words_per_frame;
         McBSP_data[0] = 0;
-        McBSP_start_flag = 0;
         McBSP_schedule_pending_count = 0;
 }
 
@@ -248,23 +246,9 @@ void initiate_McBSP_transfer(unsigned int index){
         // set 1st data word
         McBSP_data[0] = index;
 
-        // schedule
-        McBSP_start_flag = 1;
-
-        // start rigth away?
-        if ((McBSP_debug_mode & 0x10) == 0)
-                start_pending_McBSP_transfer();
-}
-
-void start_pending_McBSP_transfer(){
         // Is the McBSP coinfigured and enabled
         if (!McBSP_enabled)
                 return;
-
-        if (!McBSP_start_flag)
-                return;
-        
-        McBSP_start_flag=0;
         
         // transfer in progress -- too fast/overlapping, skip. => holding values.
         if (McBSP_frame_element < McBSP_words_per_frame){

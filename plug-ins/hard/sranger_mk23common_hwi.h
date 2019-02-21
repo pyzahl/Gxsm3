@@ -115,6 +115,8 @@ public:
 	
 	virtual double GetScanrate () { return scanpixelrate; }; // query current set scan rate in s/pixel
 
+	virtual int RotateStepwise(int exec=1) { return 0; };
+
 	virtual void ExecCmd(int Cmd) {};
 	virtual void SetMode(int mode) {};
 	virtual void ClrMode(int mode) {};

@@ -142,6 +142,7 @@ class XSM_Hardware{
 
 	/* set scan angle in degree, this affects the scan-coordinate system */
 	virtual void SetAlpha(double alpha);
+	virtual int RotateStepwise(int exec=1) { return 0; };
 
 	/* perform a moveto aktion within the scan-coordinate system (rotated by alpha) */
 	virtual void MovetoXY (double x, double y);

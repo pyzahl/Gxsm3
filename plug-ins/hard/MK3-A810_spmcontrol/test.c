@@ -126,8 +126,22 @@ int spm_logn(int x){
 }
 
 int main(void){
-	for (int x=0; x<0x8000; x++)
-		spm_logn(x);
+	int i;
+	unsigned char d,t,n;
+	int ld;
+	
+	t=d=n=0;
+
+	n=254;
+	
+	for (i=0; i<280; i++){
+		t++;
+		d=n-t;
+		ld=(int)n-(int)t;
+		std::cout << i << ", t=" << (int)t << " d=20-t=" << (int)d << " ld=" << ld << std::endl;
+	}
+	//	for (int x=0; x<0x8000; x++)
+	//	spm_logn(x);
 //		std::cout << x << " " << (spm_logn(x)) << std::endl;
 
 }

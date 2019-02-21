@@ -209,13 +209,44 @@ void XSM_Hardware::SetNxNy(long nx, long ny){
 }
 
 void XSM_Hardware::SetAlpha(double alpha){ 
+        const double Dphi = M_PI/4000.;
+        double dphi=0.;
+        double old_alpha = Alpha;
+        double target_alpha = M_PI*alpha/180.;
+        
 	XSM_DEBUG (DBG_L4, "HARD: Alpha " << alpha);
-	Alpha=M_PI*alpha/180.;
-	rotmyy = rotmxx = cos(Alpha);
-	rotmyx = -(rotmxy = sin(Alpha));
 
-	irotmyy = irotmxx = cos(-Alpha);
-	irotmyx = -(irotmxy = sin(-Alpha));
+        //g_print ("Initial Alpha=%g\n", Alpha*180/M_PI);
+
+        double da = target_alpha - old_alpha;
+        //g_print ("Delta=%g\n", da*180/M_PI);
+        while (da > M_PI) da -= 2.*M_PI;
+        while (da < -M_PI) da += 2.*M_PI;
+        //g_print ("To go=%g\n", da*180/M_PI);
+
+        if (da > 0.) dphi = Dphi;
+        else  dphi = -Dphi;
+        
+        for (; fabs (da) > 2.*Dphi; da -= dphi){
+                Alpha += dphi;
+                rotmyy = rotmxx = cos(Alpha);
+                rotmyx = -(rotmxy = sin(Alpha));
+
+                irotmyy = irotmxx = cos(-Alpha);
+                irotmyx = -(irotmxy = sin(-Alpha));
+
+                //g_print ("Alpha=%g\n", Alpha*180/M_PI);
+                RotateStepwise();
+        }
+        Alpha = target_alpha;
+        rotmyy = rotmxx = cos(Alpha);
+        rotmyx = -(rotmxy = sin(Alpha));
+
+        irotmyy = irotmxx = cos(-Alpha);
+        irotmyx = -(irotmxy = sin(-Alpha));
+
+        //g_print ("Target Alpha=%g\n", Alpha*180/M_PI);
+        RotateStepwise();
 }
 
 int XSM_Hardware::ScanDirection (int dir){

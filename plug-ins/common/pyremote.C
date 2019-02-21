@@ -2829,7 +2829,8 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
                         parsed_script = tmp;
                 }
                         
-                to_parse = g_strdup (lines[1]);
+                if (lines[1])
+                        to_parse = g_strdup (lines[1]);
         } while (lines[0] && lines[1]);
 
         g_strfreev (lines);

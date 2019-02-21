@@ -398,6 +398,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->grid_add_check_button ( N_("QControl"), "QControl", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::qcontrol), this);
 	g_object_set_data( G_OBJECT (bp->button), "QC_SETTINGS_list", EC_QC_list);
+        bp->new_line ();
+        bp->grid_add_check_button ( N_("Use LockIn Mode*"), "Use LockIn Mode.\n*: Must use PAC/LockIn FPGA bit code\n instead of Dual PAC FPGA bit code.", 2,
+                                    G_CALLBACK (Inet_Json_External_Scandata::select_pac_lck_amplitude), this);
 
         bp->pop_grid ();
 
@@ -447,6 +450,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->grid_add_check_button ( N_("Unwapping"), "Always unwrap phase/auto unwrap only if controller is enabled", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_unwrapping_always), this);
+        bp->new_line ();
+        bp->grid_add_check_button ( N_("Use LockIn Mode"), "Use LockIn Mode", 2,
+                                    G_CALLBACK (Inet_Json_External_Scandata::select_pac_lck_phase), this);
         bp->pop_grid ();
         bp->new_line ();
 
@@ -837,6 +843,13 @@ void Inet_Json_External_Scandata::pac_volume_parameter_changed (Param_Control* p
 static void freeze_ec(Gtk_EntryControl* ec, gpointer data){ ec->Freeze (); };
 static void thaw_ec(Gtk_EntryControl* ec, gpointer data){ ec->Thaw (); };
 
+
+void Inet_Json_External_Scandata::select_pac_lck_amplitude (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("LCK_AMPLITUDE", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+}
+void Inet_Json_External_Scandata::select_pac_lck_phase (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("LCK_PHASE", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+}
 
 void Inet_Json_External_Scandata::qcontrol (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->write_parameter ("QCONTROL", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));

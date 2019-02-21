@@ -42,43 +42,6 @@
 #include "PAC_pll.h"
 #include "mcbsp_support.h"
 
-/* local used variables for automatic offset compensation */
-int       IdleTimeTmp;
-long      tmpsum  = 0;
-DSP_INT64 rmssum2 = 0L;
-DSP_INT64 rmssum  = 0L;
-
-// RMS buffer
-#define RMS_N2           8
-#define RMS_N            (1 << RMS_N2)
-int     rms_pipi = 0;       /* Pipe index */
-int     rms_I_pipe[RMS_N] = 
-{ 
-        //   16       32                 64                                   128                                                                        256
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0
-};
-#if 0
-DSP_INT32    rms_I2_pipe[RMS_N] = 
-{ 
-        //   16       32                 64                                   128                                                                        256
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0
-};
-#endif
-DSP_INT64    rms_I2_pipe64[RMS_N] = 
-{ 
-        //   16       32                 64                                   128                                                                        256
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0
-};
-
 // 8x digital sigma-delta over sampling using bit0 of 16 -> gain of 2 bits resoultion (16+2=18)
 #define SIGMA_DELTA_LEN   8
 int     sigma_delta_index = 0;
@@ -141,7 +104,6 @@ DSP_UINT32      SUM_QEP_cnt_Diff[2];
 int       gate_cnt = 0;
 int       gate_cnt_multiplier = 0;
 int       gate_cnt_1 = 0;
-int       feedback_hold = 0; /* Probe controlled Feedback-Hold flag */
 int       pipi = 0;       /* Pipe index */
 int       scnt = 0;       /* Slow summing count */
 
@@ -151,10 +113,6 @@ DSP_INT32   Q30   = 1073741823L;
 DSP_INT32   Q15L   = 32767L;
 DSP_INT32   Q15    = 32767;
 DSP_INT32   AbsIn  = 0;
-
-/* RANDOM GEN */
-
-DSP_INT32 randomnum = 1L;
 
 DSP_INT32 blcklen_mem = 0;
 
@@ -186,22 +144,25 @@ DSP_INT32 mm_vec[4];
 DSP_INT32 result_vec[4];
 
 
-#define BIAS_ADJUST_STEP (4*(1<<16))
-#define Z_ADJUST_STEP    (0x200)
-
-/* Auxillary Random Number Generator */
-
-#define RNG_a 16807         /* multiplier */
-#define RNG_m 2147483647L   /* 2**31 - 1 */
-#define RNG_q 127773L       /* m div a */
-#define RNG_r 2836          /* m mod a */
-
 #define USE_MUL32C
 #ifdef USE_MUL32C 
 // multiplication of 2x 32bit Q31 elements
 
 // The overhead is now 38 cycles and you can use this formula to compute the total number of cycle:
 // 38+nx*1.5 cycles. The code size if now 26 instructions instead of 20 for the version I sent to you this morning.
+
+void copy32(int *restrict x, int *restrict r, unsigned short nx)
+{
+   int i;
+   _nassert((int) nx % 2 == 0);
+   _nassert((int) nx >= 2);
+  
+   for (i=0; i<nx; i += 2)
+   {
+           r[i] = x[i];
+           r[i+1] = x[i+1];
+   }  
+}
 
 unsigned int mul32(int *restrict x, int *restrict y,  int *restrict r, unsigned short nx)
 {
@@ -232,51 +193,6 @@ unsigned int mul32(int *restrict x, int *restrict y,  int *restrict r, unsigned 
 #else
 # include "mul32.h"
 #endif
-
-#ifdef NOISE_ENABLE
-#pragma CODE_SECTION(generate_nextlongrand, ".text:slow")
-void generate_nextlongrand (){
-      DSP_INT32 lo, hi;
-
-      lo = _SMPY32 (RNG_a, randomnum & 0xFFFF);
-      hi = _SMPY32 (RNG_a, (DSP_UINT32)randomnum >> 16);
-      lo += (hi & 0x7FFF) << 16;
-      if (lo > RNG_m){
-            lo &= RNG_m;
-            ++lo;
-      }
-      lo += hi >> 15;
-      if (lo > RNG_m){
-            lo &= RNG_m;
-            ++lo;
-      }
-      randomnum = (DSP_INT32)lo;
-}
-#endif
-
-/* #define AIC_OUT(N) iobuf.mout[N] */
-/* smoothly adjust bias - make sure |analog_bias| < 32766-BIAS_ADJUST_STEP !!  */
-inline void run_bias_adjust (){
-	if (analog.bias - BIAS_ADJUST_STEP > analog.bias_adjust){
-		analog.bias_adjust += BIAS_ADJUST_STEP;
-	}else{	
-		if (analog.bias + BIAS_ADJUST_STEP < analog.bias_adjust)
-			analog.bias_adjust -= BIAS_ADJUST_STEP;
-		else	
-			analog.bias_adjust = analog.bias;
-	}
-}
-
-/* smoothly brings Zpos back to zero in case VP left it non zero at finish */
-inline void run_Zpos_adjust (){
-	if (probe.Zpos > Z_ADJUST_STEP)
-		probe.Zpos -= Z_ADJUST_STEP;
-	else
-		if (probe.Zpos < -Z_ADJUST_STEP)
-			probe.Zpos += Z_ADJUST_STEP;
-		else
-			probe.Zpos = 0;
-}
 
 /* run SCO on signal */
 #define CPN31 2147483647
@@ -373,30 +289,15 @@ inline void check_trigger_levels(){
                 blcklen = PLL_lookup.blcklen_trigger; // now activate recording!
 }
 
-/* This is ISR is called on each new sample.  The "mode"/statevariable
- * should be initialized with AIC_OFFSET_COMPENSATION before starting
- * the AIC/DMA isr, this assures the correct offset initialization and
- * runs the automatic offset compensation on startup.
- */
+// Data Processing Tasks  dp_task_001..008(void)
+//===========================================================
+// scheduled in data process
+// executed in idle loop with 01 = highest priority down to 08
 
-void dataprocess()
-{
-	/* FEEDBACK */
+int dp_task_001(void){
+        // RUN ALWAYS
+        int i;
 	long long tmp40 = 0; // 40bit
-	long long FB_mixer_delta = 0; // 40bit
-	int i,k;
-
-	/* Update Idle Time */
-	TSCReadSecond ();
-	state.IdleTime = MeasuredTime;
-
-	TSCReadFirst ();
-
-// ============================================================
-// PROCESS MODULE: DSP PROCESSING CLOCK TICKS -- looping
-// ============================================================
-	++state.DSP_time; // 150kHz ticks
-
 // ============================================================
 // PROCESS MODULE: PAC (Phase Amplitude Controller) 
 //             and PLL (Phase Locked Loop)
@@ -448,14 +349,6 @@ void dataprocess()
 #endif
 
 // ============================================================
-// PROCESS MODULE: NOISE GENERATOR (RANDOM NUMBER)
-// ============================================================
-#ifdef NOISE_ENABLE
-	// update noise source
-	generate_nextlongrand ();
-	analog.noise = randomnum;
-#endif
-// ============================================================
 // PROCESS MODULE: ANALOG_IN
 // ============================================================
 	// copy AD inputs -- scale to 15.16
@@ -492,227 +385,173 @@ void dataprocess()
 		if (feedback_mixer.mode[i] & 0x10) // negate feedback source?
 		        feedback_mixer.FB_IN_processed[i] *= -1;
 	}
+        return 0;
+}
 
-// ============================================================
-// PROCESS MODULE: RMS -- average and rms computations via FIR
-// ============================================================
-	// Average and RMS computations
-	d_tmp = *analog.avg_input >> 16; // 32bit (QS15.16 input) -- scale to fit sum 
-	analog.avg_signal = _SADD32 (analog.avg_signal, d_tmp);
-	analog.avg_signal = _SSUB32 (analog.avg_signal, rms_I_pipe[rms_pipi]);
-	rms_I_pipe[rms_pipi] = d_tmp;
-						
-	tmpsum = _SSUB32 (d_tmp, _SSHL32 (analog.avg_signal, -RMS_N2));
-	rmssum2 = tmpsum;
-	rmssum2 *= rmssum2;
-	rmssum  += rmssum2; 
-	rmssum  -= rms_I2_pipe64[rms_pipi];
-	analog.rms_signal = rmssum >> 32;
-	rms_I2_pipe64[rms_pipi] = rmssum;
-
-	// now tricky -- taking chances of mult OVR if RMS is too big, designed for read small noise with offset eliminated.
-	// tmpsum = _SMPY32 (tmpsum, tmpsum);
-	// analog.rms_signal = _SADD32 (analog.rms_signal, tmpsum);
-	// analog.rms_signal = _SSUB32 (analog.rms_signal, rms_I2_pipe[rms_pipi]);
-	// rms_I2_pipe[rms_pipi]  = tmpsum;
-				
-	if (++rms_pipi == RMS_N) 
-		rms_pipi = 0;
-	// RMS, AVG results normalizsation on host level!
-
-	if (sigma_delta_index & 1){
-
+int dp_task_002(void){
 // ============================================================
 // PROCESS MODULE: COUNTER
-//  QEP, GATE TIME CONTROL, COUNTER expansion
+// QEP, GATE TIME CONTROL, COUNTER expansion
 // ============================================================
 
 #ifdef USE_ANALOG_16 // if special build for MK2-Analog_16
-                analog.counter[0] = 0; // Counter/Timer support not yet available via FPGA
-                analog.counter[1] = 0; // Counter/Timer support not yet available via FPGA
+        analog.counter[0] = 0; // Counter/Timer support not yet available via FPGA
+        analog.counter[1] = 0; // Counter/Timer support not yet available via FPGA
 #else // default: MK2-A810
 
-		/* Automatic Aligned Gateing by scan or probe process */
-//		SUM_QEP_cnt_Diff[0]=SUM_QEP_cnt_Diff[0]+(int)(QEP_cnt[0]-QEP_cnt_old[0]);
-		analog.counter[0]=analog.counter[0] + (unsigned short)(QEP_cnt[0]-QEP_cnt_old[0]); 
+        /* Automatic Aligned Gateing by scan or probe process */
+        //		SUM_QEP_cnt_Diff[0]=SUM_QEP_cnt_Diff[0]+(int)(QEP_cnt[0]-QEP_cnt_old[0]);
+        analog.counter[0]=analog.counter[0] + (unsigned short)(QEP_cnt[0]-QEP_cnt_old[0]); 
 
-		QEP_cnt_old[0]=QEP_cnt[0];
+        QEP_cnt_old[0]=QEP_cnt[0];
 
-//		SUM_QEP_cnt_Diff[1]=SUM_QEP_cnt_Diff[1]+(int)(QEP_cnt[1]-QEP_cnt_old[1]);
-		analog.counter[1]=analog.counter[1] + (unsigned short)(QEP_cnt[1]-QEP_cnt_old[1]); 
-		QEP_cnt_old[1]=QEP_cnt[1];      
+        //		SUM_QEP_cnt_Diff[1]=SUM_QEP_cnt_Diff[1]+(int)(QEP_cnt[1]-QEP_cnt_old[1]);
+        analog.counter[1]=analog.counter[1] + (unsigned short)(QEP_cnt[1]-QEP_cnt_old[1]); 
+        QEP_cnt_old[1]=QEP_cnt[1];      
 			
-		/* always handle Counter_1 -- 16it gatetime only (fast only, < 800ms @ 75 kHz) */
-		if (++gate_cnt_1 >= CR_generic_io.gatetime_1){
-			gate_cnt_1 = 0;
-			CR_generic_io.count_1 = analog.counter[1];
-			analog.counter[1] = 0;
+        /* always handle Counter_1 -- 16it gatetime only (fast only, < 800ms @ 75 kHz) */
+        if (++gate_cnt_1 >= CR_generic_io.gatetime_1){
+                gate_cnt_1 = 0;
+                CR_generic_io.count_1 = analog.counter[1];
+                analog.counter[1] = 0;
 			
-			if (CR_generic_io.count_1 > CR_generic_io.peak_count_1) 
-				CR_generic_io.peak_count_1 = CR_generic_io.count_1;
-		}
+                if (CR_generic_io.count_1 > CR_generic_io.peak_count_1) 
+                        CR_generic_io.peak_count_1 = CR_generic_io.count_1;
+        }
 			
-		if (!(scan.pflg || probe.pflg) && CR_generic_io.pflg) {
-			/* stand alone Rate Meter Mode else gating managed via spm_areascan or _probe module */
+        if (!(scan.pflg || probe.pflg) && CR_generic_io.pflg) {
+                /* stand alone Rate Meter Mode else gating managed via spm_areascan or _probe module */
 				
-			/* handle Counter_0 -- 32it gatetime (very wide range) */
-			if (gate_cnt_multiplier >= CR_generic_io.gatetime_h_0){
-				if (++gate_cnt >= CR_generic_io.gatetime_l_0){
-					gate_cnt = 0;
-					gate_cnt_multiplier = 0;
+                /* handle Counter_0 -- 32it gatetime (very wide range) */
+                if (gate_cnt_multiplier >= CR_generic_io.gatetime_h_0){
+                        if (++gate_cnt >= CR_generic_io.gatetime_l_0){
+                                gate_cnt = 0;
+                                gate_cnt_multiplier = 0;
 						
-					CR_generic_io.count_0 = analog.counter[0];
-					analog.counter[0] = 0;
+                                CR_generic_io.count_0 = analog.counter[0];
+                                analog.counter[0] = 0;
 					
-					if (CR_generic_io.count_0 > CR_generic_io.peak_count_0) 
-						CR_generic_io.peak_count_0 = CR_generic_io.count_0;
-				}
-			} else { // this makes up a 32bit counter...
-				if (++gate_cnt == 0)
-					++gate_cnt_multiplier;
-			}
-		}
-#endif
-
-// ============================================================
-// PROCESS MODULE: OFFSET MOVE
-// ============================================================
-		/* Offset Move task ? */
-		if (move.pflg)
-			run_offset_move ();
-
-// ============================================================
-// PROCESS MODULE: AREA SCAN
-// ============================================================
-		/* Area Scan task - normal mode ?
-		 * the feedback task needs to be enabled to see the effect
-                 * --> can set CI/CP to small values to "contineously" disable it!
-                 */
-                if (scan.pflg == (AREA_SCAN_RUN | AREA_SCAN_START_NORMAL))
-                        if (!scan.raster_b || !probe.pflg) // pause scan if raster_b!=0 and probe is going.
-                                run_area_scan ();
-
-                // reset FB watch -- see below
-                z_servo.watch = 0; // for actual watch fb activity
-
-	} else {
-                
-// ============================================================
-// PROCESS MODULE: VECTOR PROBE (VP)
-// or if idle VP BIAS and Z-Adjusters to follow controls
-// ============================================================
-                /* Vector Probe task ?  (Bias may be changed here) */
-                feedback_hold = 0;
-                if (probe.pflg){
-                        run_probe ();
-                        if (probe.vector)
-                                if (probe.vector->options & VP_FEEDBACK_HOLD)
-                                        feedback_hold = 1;
-                } else {
-                        /* (re) Adjust Bias, Zpos ? */
-                        if (analog.bias_adjust != analog.bias)
-                                run_bias_adjust ();
-
-			if ((state.mode & MD_ZPOS_ADJUSTER) && probe.Zpos != 0) // enable Zpos adjusting normally!
-				run_Zpos_adjust ();
-
-                        probe.Upos = analog.bias_adjust; // probe.Upos is default master for BIAS at all times, foolowing user control or VP comand
+                                if (CR_generic_io.count_0 > CR_generic_io.peak_count_0) 
+                                        CR_generic_io.peak_count_0 = CR_generic_io.count_0;
+                        }
+                } else { // this makes up a 32bit counter...
+                        if (++gate_cnt == 0)
+                                ++gate_cnt_multiplier;
                 }
         }
+#endif
+        return 0;
+}
 
-// ============================================================
-// PROCESS MODULE: FULL BW: LockIn task
-// ============================================================
-	if (probe.state >= PROBE_RUN_LOCKIN_PROBE)
-		run_lockin ();
-	else
-		probe.LockIn_ref = 0; // reset modulation
+int dp_task_003(void){
+        /* FEEDBACK */
+	long long tmp40 = 0; // 40bit
+	long long FB_mixer_delta = 0; // 40bit
+	int i;
+        
+        // ============================================================
+        // feedback and area scan in
+        // ODD cycle
+        // ============================================================
+                        
+        // ============================================================
+        // if (sigma_delta_index & 1){}
+        // PROCESS MODULES: 
+        //  MIXER DATA TRANSFORMATIONS and DELTA COMPUTATIONS
+        //  DELTA ACCUMULATION
+        // ============================================================
+        /* FeedBack (FB) task ?  (evaluates several conditions and runs in various modes) */
 
-// ============================================================
-// PROCESS MODULE: FAST SCAN
-// ============================================================
-	/* run FAST AREA SCAN (sinusodial) ? */
-	if (scan.pflg == (AREA_SCAN_RUN | AREA_SCAN_START_FASTSCAN))
-		run_area_scan_fast ();
+        /** FB_IN_processed[0..3] ==> 4-CHANNEL MIXER MODULE ==> MIXER.delta **/
+        /** FOLLOWED BY Z-SERVO -- normally main Z feedback **/
 
-	
-// ============================================================
-// PROCESS MODULES: 
-//  MIXER DATA TRANSFORMATIONS and DELTA COMPUTATIONS
-//  DELTA ACCUMULATION
-// ============================================================
-	/* FeedBack (FB) task ?  (evaluates several conditions and runs in various modes) */
+        // reset FB watch -- see below
+        z_servo.watch = 0; // for actual watch fb activity
 
-	/** FB_IN_processed[0..3] ==> 4-CHANNEL MIXER MODULE ==> MIXER.delta **/
-	/** FOLLOWED BY Z-SERVO -- normally main Z feedback **/
-
-	if (!feedback_hold && sigma_delta_index & 1){ /* may be freezed by probing process */
-		/* Let's check out, if the feedback loop is really running. */
-		feedback_hold = 1; 
-
-		/* run main Z-servo (feedback) control loop? */
-		if (state.mode & MD_PID){
-			if ( !(AS_ch2nd_constheight_enabled && scan.pflg)){ // skip in 2nd const height mode!
-				feedback_hold = 0; 
-
+        if ( !(AS_ch2nd_constheight_enabled && scan.pflg)){ // skip in 2nd const height mode!
 						
-				// Feedback Mixer -- data transform and delta computation, summing
-				FB_mixer_delta = 0L; // Q23 x 16 (long long) -- can grow to 40+2bits total!
+                // Feedback Mixer -- data transform and delta computation, summing
+                FB_mixer_delta = 0L; // Q23 x 16 (long long) -- can grow to 40+2bits total!
 
-				for (i=0; i<4; ++i){
-					tmp40 = 0L;
- 					// process MIXER CHANNEL i
-					switch (feedback_mixer.mode[i]&0x0f){
-					case 3: // LOG
-						// log result is Q23 (1 and 2^23-1) from Q23 input:
-						feedback_mixer.lnx = calc_mix_log (feedback_mixer.FB_IN_processed[i], feedback_mixer.I_offset);
-						tmp40 = (long long)(feedback_mixer.lnx - feedback_mixer.setpoint_log[i]);
-						break;
-					case 1: // LIN
-						tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.setpoint[i]);
-						break;
-					case 9: // FUZZY
-						if (feedback_mixer.FB_IN_processed[i] > feedback_mixer.level[i])
-							tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.level[i] - feedback_mixer.setpoint[i]);
-						break;
-					case 11: // FUZZY LOG
-					        if (abs (feedback_mixer.FB_IN_processed[i]) > feedback_mixer.level[i]){
-                                                        feedback_mixer.lnx = calc_mix_log (feedback_mixer.FB_IN_processed[i], feedback_mixer.I_offset);
-                                                        tmp40 = (long long)(feedback_mixer.lnx - feedback_mixer.setpoint_log[i]);
-						} else {
-                                                        tmp40 = (long long)(z_servo.neg_control) - (long long)(feedback_mixer.Z_setpoint);
-                                                }
-						break;
-					default: break; // OFF
-					}
-					feedback_mixer.channel[i] = _SAT32 (tmp40);
-					FB_mixer_delta += tmp40 * (long long)feedback_mixer.gain[i];
-				}
+                for (i=0; i<4; ++i){
+                        tmp40 = 0L;
+                        // process MIXER CHANNEL i
+                        switch (feedback_mixer.mode[i]&0x0f){
+                        case 3: // LOG
+                                // log result is Q23 (1 and 2^23-1) from Q23 input:
+                                feedback_mixer.lnx = calc_mix_log (feedback_mixer.FB_IN_processed[i], feedback_mixer.I_offset);
+                                tmp40 = (long long)(feedback_mixer.lnx - feedback_mixer.setpoint_log[i]);
+                                break;
+                        case 1: // LIN
+                                tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.setpoint[i]);
+                                break;
+                        case 9: // FUZZY
+                                if (feedback_mixer.FB_IN_processed[i] > feedback_mixer.level[i])
+                                        tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.level[i] - feedback_mixer.setpoint[i]);
+                                break;
+                        case 11: // FUZZY LOG
+                                if (abs (feedback_mixer.FB_IN_processed[i]) > feedback_mixer.level[i]){
+                                        feedback_mixer.lnx = calc_mix_log (feedback_mixer.FB_IN_processed[i], feedback_mixer.I_offset);
+                                        tmp40 = (long long)(feedback_mixer.lnx - feedback_mixer.setpoint_log[i]);
+                                } else {
+                                        tmp40 = (long long)(z_servo.neg_control) - (long long)(feedback_mixer.Z_setpoint);
+                                }
+                                break;
+                        default: break; // OFF
+                        }
+                        feedback_mixer.channel[i] = _SAT32 (tmp40);
+                        FB_mixer_delta += tmp40 * (long long)feedback_mixer.gain[i];
+                }
 
-				feedback_mixer.delta = _SAT32 (FB_mixer_delta>>8); // Q23, SAT
+                feedback_mixer.delta = _SAT32 (FB_mixer_delta>>8); // Q23, SAT
 	
-				// **SIGNAL** :: default link is *z_servo.input == feedback_mixer.delta 
+                // **SIGNAL** :: default link is *z_servo.input == feedback_mixer.delta 
 
-// ============================================================
-// PROCESS MODULE: MAIN Z SERVO
-// ============================================================
-				z_servo.delta = _SAT32 ((long)*z_servo.input); // Q23 input and setpoint, SAT difference
-				run_servo_timestep (&z_servo);
-			}
-		}
-	}
+                // ============================================================
+                // PROCESS MODULE: MAIN Z SERVO
+                // ============================================================
+                z_servo.delta = _SAT32 ((long)*z_servo.input); // Q23 input and setpoint, SAT difference
+                run_servo_timestep (&z_servo);
+        }
+        
+        return 0;
+}
 
-// NOW OUTPUT HR SIGNALS ON XYZ-Offset and XYZ-Scan -- do not touch Bias OUT(6) and Motor OUT(7) here -- handled directly previously.
-// note: OUT(0-5) get overridden below by coarse/mover actions if requeste!!!
+int dp_task_004(void){
+        // ============================================================
+        // PROCESS MODULE: AREA SCAN
+        // ============================================================
+        /* Area Scan task - normal mode ?
+         * the feedback task needs to be enabled to see the effect
+         * --> can set CI/CP to small values to "contineously" disable it!
+         */
+        if (scan.pflg == (AREA_SCAN_RUN | AREA_SCAN_START_NORMAL))
+                if (!scan.raster_b || !probe.pflg) // pause scan if raster_b!=0 and probe is going.
+                        run_area_scan ();
 
-/* HR sigma-delta data processing (if enabled) -- turn off via adjusting sigma_delta_hr_mask to all 0 */
+        // ============================================================
+        // PROCESS MODULE: FAST SCAN
+        // ============================================================
 
-// do scan coordinate rotation transformation:
-        if ( !(state.mode & MD_XYSROT))
-        {
+        /* run FAST AREA SCAN (sinusodial) ? */
+        if (scan.pflg == (AREA_SCAN_RUN | AREA_SCAN_START_FASTSCAN))
+                run_area_scan_fast ();
+                
+        // ============================================================
+        // do expensive 32bit precision (tmp64/40) rotation in
+        // EVEN cycle
+        // ============================================================
+                
+        // NOW OUTPUT HR SIGNALS ON XYZ-Offset and XYZ-Scan -- do not touch Bias OUT(6) and Motor OUT(7) here -- handled directly previously.
+        // note: OUT(0-5) get overridden below by coarse/mover actions if requeste!!!
+
+        /* HR sigma-delta data processing (if enabled) -- turn off via adjusting sigma_delta_hr_mask to all 0 */
+
+        // do scan coordinate rotation transformation:
+        if ( !(state.mode & MD_XYSROT)){
                 xy_vec[2] = xy_vec[0] = scan.xyz_vec[i_X];
                 xy_vec[3] = xy_vec[1] = scan.xyz_vec[i_Y];
-                mul32 (xy_vec, scan.rotm, result_vec, 4);
+                mul32 (xy_vec, scan.rotmatrix, result_vec, 4);
                 scan.xy_r_vec[i_X] = _SADD32 (result_vec[0], result_vec[1]);
                 scan.xy_r_vec[i_Y] = _SADD32 (result_vec[2], result_vec[3]);
         } else {
@@ -720,48 +559,65 @@ void dataprocess()
                 scan.xy_r_vec[i_Y] = scan.xyz_vec[i_Y];
         }
 
-// XY-Offset and XY-Scan output -- calculates Scan XY output and added offset as configured
-// default: HR_OUT[3,4] = scan.xy_r_vec + move.xyz_vec
-//** done below in one shot loop **
-//**	compute_analog_out (3, &analog.out[3]);
-//**	compute_analog_out (4, &analog.out[4]);
+        // XY-Offset and XY-Scan output -- calculates Scan XY output and added offset as configured
+        // default: HR_OUT[3,4] = scan.xy_r_vec + move.xyz_vec
+        //** done below in one shot loop **
+        //**	compute_analog_out (3, &analog.out[3]);
+        //**	compute_analog_out (4, &analog.out[4]);
 
-// PROCESS MODULE: SLOPE-COMPENSATION
+        // PROCESS MODULE: SLOPE-COMPENSATION
+        // ==================================================
+        // Z-Offset -- slope compensation output
+        //---- slope add X*mx + Y*my
+        // limit dz add from xy-mult to say 10x scan.fm_dz0x+y, feedback like adjust if "diff" to far off from sudden slope change 
+        //      zpos_xymult = move.ZPos + scan.XposR * scan.fm_dz0x +  scan.YposR * scan.fm_dz0y ;
+        // make sure a smooth adjust -- if slope parameters get changed, need to prevent a jump.
+
+        mul32 (scan.xy_r_vec, scan.fm_dz0_xy_vec, result_vec, 2);
+        s_xymult = _SADD32 (result_vec[i_X], result_vec[i_Y]);
+        
+        d_tmp = _SSUB32 (s_xymult, scan.z_offset_xyslope);
+        if (d_tmp > scan.z_slope_max) // limit up
+                scan.z_offset_xyslope = _SADD32 (scan.z_offset_xyslope, scan.z_slope_max);
+        else if (d_tmp < -scan.z_slope_max) // limit dn
+                scan.z_offset_xyslope = _SADD32 (scan.z_offset_xyslope, -scan.z_slope_max);
+        else scan.z_offset_xyslope = s_xymult; // normally this should do it
+                
+        return 0;
+}
+
+int dp_task_005(void){
+// ============================================================
+// PROCESS MODULE: VECTOR PROBE (VP)
+// or if idle VP BIAS and Z-Adjusters to follow controls
+// ============================================================
+        /* Vector Probe task ?  (Bias may be changed here) */
+        if (probe.pflg)
+                run_probe ();
+        return 0;
+}
+
+int dp_task_006(void){
+// ============================================================
+// PROCESS MODULE: FULL BW: LockIn task
+// ============================================================
+        run_lockin ();
+#if 0
+	if (probe.state >= PROBE_RUN_LOCKIN_PROBE)
+		run_lockin ();
+	else
+		probe.LockIn_ref = 0; // reset modulation
+#endif
+        return 0;
+}
+
+int dp_task_007(void){
+        int i;
 // ==================================================
-// Z-Offset -- slope compensation output
-//---- slope add X*mx + Y*my
-// limit dz add from xy-mult to say 10x scan.fm_dz0x+y, feedback like adjust if "diff" to far off from sudden slope change 
-//      zpos_xymult = move.ZPos + scan.XposR * scan.fm_dz0x +  scan.YposR * scan.fm_dz0y ;
-// make sure a smooth adjust -- if slope parameters get changed, need to prevent a jump.
+// NO MORE TIME OR PHASE CRITICAL ANALOG OUTPUT
+// ADJUSTMENTS PAST dp_task_006
+// ==================================================
 
-	mul32 (scan.xy_r_vec, scan.fm_dz0_xy_vec, result_vec, 2);
-	s_xymult = _SADD32 (result_vec[i_X], result_vec[i_Y]);
-        
-	d_tmp = _SSUB32 (s_xymult, scan.z_offset_xyslope);
-	if (d_tmp > scan.z_slope_max) // limit up
-		scan.z_offset_xyslope = _SADD32 (scan.z_offset_xyslope, scan.z_slope_max);
-	else if (d_tmp < -scan.z_slope_max) // limit dn
-		scan.z_offset_xyslope = _SADD32 (scan.z_offset_xyslope, -scan.z_slope_max);
-	else scan.z_offset_xyslope = s_xymult; // normally this should do it
-
-
-// ============================================================
-// PROCESS MODULE: MOTOR SERVO
-// ============================================================
-
-	m_servo.delta = _SAT32 ((long)m_servo.setpoint - (long)*m_servo.input); // Q23 input and setpoint, SAT difference
-	run_servo_timestep (&m_servo);
-
-// ============================================================
-// PROCESS MODULE: SCO (Signal Controller Oszillator)
-// ============================================================
-	if (sco_s[0].in)
-	  run_sco (&sco_s[0]);
-
-	if (sco_s[1].in)
-	  run_sco (&sco_s[1]);
-
-        
 // PROCESS MODULE: ANALOG OUTPUT MIXER
 // ==================================================
 
@@ -770,40 +626,22 @@ void dataprocess()
 	for (i=0; i<max_out_ch; ++i)
 		compute_analog_out (i, &analog.out[i]);
 
-//** --- here is what the default means in expanded form: ---
-
-// DEFAULT: Z SERVO (FEEDBACK) OUT -- calculate Z-Scan output:
-// **SIGNAL** :: default link is *analog.out_p[5] == z_servo.neg_control   SUB: -probe.Zpos  ADD: +NULL
-
-//**	compute_analog_out (5, &analog.out[5]);
-
-// DEFAULT: BIAS_ADJUST OUT -- calculate Bias output:
-// **SIGNAL** :: default link is *analog.out_p[6] == probe.Upos    SUB: -NULL  ADD: +NULL
-// ** probe and lockin mod/ref is hooking in here!
-
-//**	compute_analog_out (6, &analog.out[6]);
-
-// DEFAULT: MOTOR OUT -- calculate Motor output:
-// **SIGNAL** :: default link is *analog.out_p[7] == analog.motor    SUB: -NULL  ADD: +NULL
-
-//**	compute_analog_out (7, &analog.out[7]);
-
 // ========== END OUTPUT ANALOG DATA [except coase mover signal overrides later] ==========
 
         sigma_delta_index = (++sigma_delta_index) & 7;
 
 // ========== END HR processing ================
+        return 0;
+}
 
-
+int dp_task_008(void){
+        int i,k;
 
 // PROCESS MODULE: COARSE --- WAVE and PULSE out OVERRIDES if active!!
 // ======================================================================
 	/* Run Autoapproch/Movercontrol task ? */
         if (autoapp.pflg){
-                if (autoapp.pflg==2)
-                        autoapp.pflg = 0;
-                else
-                        run_autoapp ();
+                run_autoapp ();
 		
 		if (autoapp.mover_mode & AAP_MOVER_WAVE_PLAY){
                         for (i=0; i<autoapp.n_wave_channels; ++i){
@@ -828,54 +666,165 @@ void dataprocess()
                 if (CR_out_pulse.pflg)
                         run_CR_out_pulse ();
 
-	
+        return 0;
+}
+
+int dp_task_009(void){
+        return 0;
+}
+
+int dp_task_010(void){
 // ============================================================
-// PROCESS MODULE: SIGNAL MONITOR data copy processing
+// PROCESS MODULE: MOTOR SERVO
 // ============================================================
 
-	for (i=0; i<NUM_MONITOR_SIGNALS; ++i)
-		sig_mon.signal[i] = *sig_mon.signal_p[i];
+	m_servo.delta = _SAT32 ((long)m_servo.setpoint - (long)*m_servo.input); // Q23 input and setpoint, SAT difference
+	run_servo_timestep (&m_servo);
+        return 0;
+}
 
- 
-// ************************************************************
-// END OF DATA PROCESSING TASKS -- final time keeping
-// ************************************************************
+int dp_task_011(void){
+// ============================================================
+// PROCESS MODULE: SCO (Signal Controller Oszillator)
+// ============================================================
+	if (sco_s[0].in)
+	  run_sco (&sco_s[0]);
 
+        return 0;
+}
+
+int dp_task_012(void){
+	if (sco_s[1].in)
+	  run_sco (&sco_s[1]);
+
+        return 0;
+}
+
+typedef int (*func_ptr)(void);
+
+func_ptr dp_task_list[NUM_DATA_PROCESSING_TASKS+1] = {
+        NULL,
+        dp_task_001, dp_task_002, dp_task_003, dp_task_004,
+        dp_task_005, dp_task_006, dp_task_007, dp_task_008,
+        dp_task_009, dp_task_010, dp_task_011, dp_task_012
+};
+
+
+/* This is ISR is called on each new sample.  The "mode"/statevariable
+ * should be initialized with AIC_OFFSET_COMPENSATION before starting
+ * the AIC/DMA isr, this assures the correct offset initialization and
+ * runs the automatic offset compensation on startup.
+ */
+
+void dataprocess()
+{
+        int i, ip;
+        int tmp1, tmp2;
 // ============================================================
-// UPDATE SYNC GPIO BITS FOR EXTERNAL SCAN ADN PROBE DATA SYNCING
+// PROCESS MODULE: DSP PROCESSING CLOCK TICKS and TIME KEEPING
 // ============================================================
-#if 0   // trouble some, causes eventually crash -- too slow??
-        data_sync_io.gpiow_bits =
-                (CR_generic_io.gpio_data_out & 0xff)
-                | ((scan.ix & 1)<<8)
-                | ((scan.iy & 1)<<9)
-                | ((probe.ix & 1)<<10);
-        WR_GPIO (GPIO_Data_0, &data_sync_io.gpiow_bits, 1); // write port
-#endif
+        // now done via SR3PRO_A810Driver[-interruptible-no-kernel-int].lib
+        //IER &= ~0x0010; // Disable INT4 (kernel) -- protect data integrity (atomic read/write protect not necessary for data manipulated inside here)
+
+        TSCReadSecond();
+        state.DataProcessReentryTime = MeasuredTime;
+        tmp1 = state.DataProcessReentryPeak & 0xffff; // LO (min time)
+        tmp2 = state.DataProcessReentryPeak >> 16;    // HI (max time)
+        state.DataProcessReentryPeak  = tmp1 < MeasuredTime ?  tmp1 : MeasuredTime; // LO (min time)
+        state.DataProcessReentryPeak |= (tmp2 > MeasuredTime ?  tmp2 : MeasuredTime) << 16; // HI (max time)
         
-/* -- end of all data processing, preformance statistics update now -- */
-	
-//-****	asm_read_time ();
+	TSCReadFirst(); // Reference time start now
 
-	/* Update Dataprocess Time */
+        MeasuredTime -= state.DataProcessTime; // time outside dataprocess (but incl. little overhead DMA, ...)
+        tmp1 = state.IdleTime_Peak & 0xffff; // LO (min time)
+        tmp2 = state.IdleTime_Peak >> 16;    // HI (max time)
+        state.IdleTime_Peak  = tmp1 < MeasuredTime ?  tmp1 : MeasuredTime; // LO (min time)
+        state.IdleTime_Peak |= (tmp2 > MeasuredTime ?  tmp2 : MeasuredTime) << 16; // HI (max time)
+        
+	++state.DSP_time; // 150kHz dataprocessing synchronous time ticks
+
+        // inspect and return ASAP on missed complete processing (Emergency: only if not aborted correctly in time)
+        for (i=1; i<=NUM_DATA_PROCESSING_TASKS; i++)
+                if (state.dp_task_control[i].process_flag&1)
+                        state.dp_task_control[i].missed_count++; // inclrement missed count
+
+        if (state.dp_task_control[0].process_flag&1){ // self running?
+                state.dp_task_control[0].missed_count++; // increment missed (aborted) system call count
+                return;  // abort now and return ASAP
+        }
+        
+
+// ============================================================
+// REAL TIME PROCESS CONTROL
+// ============================================================
+
+        /* Initialize active processes for this cycle 
+           -- flag mask 0x10 for active always
+           -- flag mask 0x20 for active on ODD only
+           -- flag mask 0x40 for active on EVEN only
+        */
+        for (i=1; i<=NUM_DATA_PROCESSING_TASKS; i++){
+                /*
+                if (state.dp_task_control[i].process_flag & 0x10)
+                        state.dp_task_control[i].process_flag |= 1;
+                else if (state.dp_task_control[i].process_flag & 0x20 && state.DSP_time&1)
+                        state.dp_task_control[i].process_flag |= 1;
+                else if (state.dp_task_control[i].process_flag & 0x40 && !(state.DSP_time&1))
+                        state.dp_task_control[i].process_flag |= 1;
+                */
+                // OR
+                state.dp_task_control[i].process_flag |= 
+                           (state.dp_task_control[i].process_flag & 0x10)
+                        || (state.dp_task_control[i].process_flag & 0x20 && state.DSP_time&1)
+                        || (state.dp_task_control[i].process_flag & 0x40 && !(state.DSP_time&1))
+                        ? 1 : 0;
+        }
+        
+        state.dp_task_control[0].process_flag |= 1; // set self to running now
 	TSCReadSecond();
-	state.DataProcessTime = MeasuredTime;
+        state.dp_task_control[0].process_time = MeasuredTime;
 
-	TSCReadFirst();
+        /* HI PRIORITY: Data Processing Tasks */
+        ip=0;
+        for (i=1; i<=NUM_DATA_PROCESSING_TASKS; i++){
+                if (state.dp_task_control[i].process_flag&1){
+                        dp_task_list [i] (); // Execute RT Task
+                        TSCReadSecond ();
+                        state.dp_task_control[i].process_time = MeasuredTime; // incremental!
+                        tmp1 = state.dp_task_control[i].process_time_peak_now & 0xffff; // last peak of process time (LO)
+                        tmp2 = MeasuredTime - state.dp_task_control[ip].process_time;  // actual process time from difference to previouly [ip] executed task
+                        state.dp_task_control[i].process_time_peak_now  = tmp2 << 16;  // actual process time from difference -> upper 16 (HI)
+                        state.dp_task_control[i].process_time_peak_now |= tmp2 > tmp1 ? tmp2 : tmp1; // peak in lower 16 (LO)
+                        state.dp_task_control[i].process_flag &= 0xf0; // completed, remove flag bit 0
+                        ip=i;
+                }
+                if (MeasuredTime > state.DP_max_time_until_abort) // time since start processing -- may selfadjust via 4000-max of next ???
+                        break; // abort, running out of time! approx max 4500 - 100 - 60 - N x 120??? for possible McBSP interrupt -- ticks available to reentry
+        }
 
-	/* Load Peak Detection */
-	if (abs(state.DataProcessTime) > abs(state.DataProcessTime_Peak)){
-		state.DataProcessTime_Peak = state.DataProcessTime;
-		state.IdleTime_Peak = state.IdleTime;
-	}
+        /* Update Dataprocess Time Total */
+        TSCReadSecond();
+        state.DataProcessTime = MeasuredTime;
 
-// ************************************************************
-// AT VERY END OF DATA PROCESSING TASKS
-// CHECK FOR PENDING McBSP TRANSFER, causing a fast ISR burst
-// ************************************************************
+        /* Total Processing System Time DP[0] and Peak */
+        tmp1 = state.dp_task_control[0].process_time_peak_now & 0xffff;
+        state.dp_task_control[0].process_time_peak_now  = MeasuredTime << 16; // actual total data process time -> upper 16 (HI)
+        state.dp_task_control[0].process_time_peak_now |= MeasuredTime > tmp1 ? MeasuredTime : tmp1; // peak in lower 16 (LO)
 
-        start_pending_McBSP_transfer();
+        /* END of DP */
+        state.dp_task_control[0].process_flag &= 0xf0; // self completed
+
+        // now done via SR3PRO_A810Driver[-interruptible-no-kernel-int].lib
+        //IER |= 0x0010; // Enable INT4 (kernel)  
 }
 
 
 /* END */
+
+/*
+IER &= ~0x0010; // Disable INT4 (kernel)
+
+... Critical code
+
+IER |= 0x0010; // Enable INT4 (kernel)  
+*/

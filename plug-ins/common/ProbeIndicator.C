@@ -1025,6 +1025,11 @@ gint ProbeIndicator::refresh(){
                                                                );
                                 //tmp = g_strdup_printf ("I: %8.4f nA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM,
                                 //                               y, x); //  "\n%g:%g", gapp->xsm->Inst->V2ZAng(z), scope_min[0]/dec,scope_max[0]/dec);
+
+                                // query and print to terminal DSP task list
+                                double a,b,c;
+                                gapp->xsm->hardware->RTQuery ("S", a, b, c); // get DST RT statemachine status info, with termial process list dump option on
+
                         } else {
                                 if (fabs(y) < 0.25)
                                         tmp = g_strdup_printf ("I: %8.1f pA\ndF: %8.1f Hz\nZ: %8.4f" UTF8_ANGSTROEM, y*1000., x, gapp->xsm->Inst->V2ZAng(z));

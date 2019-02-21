@@ -26,6 +26,7 @@ module McBSP_io_connect #(
     // inout logic [ 8-1:0] exp_p_io,
     inout  [8-1:0] exp_p_io,
     inout  [8-1:0] exp_n_io,
+    input  McBSP_clkr, // CLKR: clock return
     input  McBSP_tx,   // TX: data transmit
     input  McBSP_fsx,  // optional, debug: data frame start FSX
     input  McBSP_frm,  // optional, debug: data frame
@@ -44,6 +45,7 @@ IOBUF rx_iobuf  (.O(McBSP_rx),  .IO(exp_p_io[2:2]), .I(0),         .T(1) );
 IOBUF tx_iobuf  (.O(dummy),     .IO(exp_p_io[3:3]), .I(McBSP_tx),  .T(0) );
 IOBUF fsx_iobuf (.O(dummy),     .IO(exp_p_io[4:4]), .I(McBSP_fsx), .T(0) );
 IOBUF frm_iobuf (.O(dummy),     .IO(exp_p_io[5:5]), .I(McBSP_frm), .T(0) );
+IOBUF clkr_iobuf(.O(dummy),     .IO(exp_p_io[6:6]), .I(McBSP_clkr),.T(0) );
 IOBUF nrx_iobuf (.O(McBSP_nrx), .IO(exp_p_io[7:7]), .I(0),         .T(1) );
 
 IOBUF exp_in_iobuf[8-1:0] (.O(RP_exp_in), .IO(exp_n_io), .I(8'b00000000),    .T(8'b11111111) );

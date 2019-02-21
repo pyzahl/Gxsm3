@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 ## * Python User Control for
 ## * Configuration and SPM Approach Control tool for the FB_spm DSP program/GXSM2 Mk3-Pro/A810 based
@@ -61,6 +61,7 @@ timeout_update_A810_readings          =  120
 timeout_update_signal_monitor_menu    = 2000
 timeout_update_signal_monitor_reading =  500
 timeout_update_meter_readings         =   88
+timeout_update_process_list           =  100
 
 timeout_min_recorder          =   80
 timeout_min_tunescope         =   20
@@ -116,7 +117,7 @@ class Visualize():
 						      color="lightgrey",
 						      label = mod)
 			c = moduleg [mod]
-			print "AddSubgraph: "+mod
+			print ("AddSubgraph: "+mod)
 			graph.add_subgraph (c)
 			signaln [mod] = pydot.Node( mod, style="filled", fillcolor="lightskyblue")
 			c.add_node( signaln [mod] )
@@ -2217,7 +2218,7 @@ class Mk3_Configurator:
 					  border_width=2)
 			self.wins[name] = win
 			win.connect("delete_event", self.delete_event)
-			win.set_size_request(720, 500)
+			win.set_size_request(800, 500)
 
 			box1 = gobject.new(gtk.VBox(False, 0))
 			win.add(box1)
@@ -2297,7 +2298,7 @@ class Mk3_Configurator:
 		self.wins[name].show_all()
 
     # Build MK3-A810 FB-SPMCONTROL Signal Manger / FLASH SUPPORT
-    def create_signal_manager(self, _button, flashdbg=1):
+    def create_signal_manager(self, _button, flashdbg=0):
 		name="SPM Signal and DSP Core Manager"
 		if not self.wins.has_key(name):
 			win = gobject.new(gtk.Window,
@@ -2308,10 +2309,15 @@ class Mk3_Configurator:
 					  border_width=2)
 			self.wins[name] = win
 			win.connect("delete_event", self.delete_event)
-			win.set_size_request(720, 250)
+			win.set_size_request(800, 450)
 
+	                scrolled_window = gobject.new(gtk.ScrolledWindow())
+	                scrolled_window.set_border_width(5)
+	                scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+			win.add(scrolled_window)
+                        
 			box1 = gobject.new(gtk.VBox(False, 0))
-			win.add(box1)
+			scrolled_window.add_with_viewport(box1)
 
 ##			scrolled_window = gobject.new(gtk.ScrolledWindow())
 ##			scrolled_window.set_border_width(3)
@@ -2413,6 +2419,15 @@ class Mk3_Configurator:
                         box2.pack_start(hb)
                         data =  gobject.new(gtk.Label, label="DSP CORE MANAGER:")
                         hb.pack_start(data)
+                        button = gtk.Button("CLR RTL-PEAK")
+                        button.connect("clicked", self.mk3spm.reset_task_control_peak)
+                        hb.pack_start(button)
+                        button = gtk.Button("CLR N EXEC")
+                        button.connect("clicked", self.mk3spm.reset_task_control_nexec)
+                        hb.pack_start(button)
+                        button = gtk.Button("REST CLOCK")
+                        button.connect("clicked", self.mk3spm.reset_dsp_clock)
+                        hb.pack_start(button)
                         button = gtk.Button("STATE?")
                         button.connect("clicked", self.mk3spm.print_statemachine_status)
                         hb.pack_start(button)
@@ -2420,7 +2435,6 @@ class Mk3_Configurator:
                         button.connect("clicked", self.mk3spm.dsp_adjust_speed, 590)
                         hb.pack_start(button)
                         button = gtk.Button("688MHz")
-
                         def confirm_688(dummy):
                                 label = gtk.Label("Confirm DSP reconfiguration to 688 MHz.\nWARNING\nUse on own risc.")
                                 dialog = gtk.Dialog("DSP Clock Reconfiguration",
@@ -2442,8 +2456,30 @@ class Mk3_Configurator:
 
                         button.connect("clicked", confirm_688)
                         hb.pack_start(button)
+
+			hb = gobject.new(gtk.HBox(spacing=10))
+                        box2.pack_start(hb)
+                        lbl =  gobject.new(gtk.Label, label="DP MAX Tuning: ")
+                        hb.pack_start(lbl)
+                        button = gtk.Button("Default")
+                        button.connect("clicked", self.mk3spm.set_dsp_rt_DP_max_default)
+                        hb.pack_start(button)
+                        button = gtk.Button("3800")
+                        button.connect("clicked", self.mk3spm.set_dsp_rt_DP_max_hi1)
+                        hb.pack_start(button)
+                        button = gtk.Button("4000")
+                        button.connect("clicked", self.mk3spm.set_dsp_rt_DP_max_hi2)
+                        hb.pack_start(button)
+                        button = gtk.Button("4200!")
+                        button.connect("clicked", self.mk3spm.set_dsp_rt_DP_max_hi3)
+                        hb.pack_start(button)
+                        button = gtk.Button("4400!!")
+                        button.connect("clicked", self.mk3spm.set_dsp_rt_DP_max_hi4)
+                        hb.pack_start(button)
+
+                        
 				
-                        def confirm_experimental(dummy, func, param1):
+                        def confirm_experimental(dummy, func, param1, param2=None):
                                 label = gtk.Label("Confirm Experimental DSP code.\nWARNING\nUse on own risc. Not for production yet.")
                                 dialog = gtk.Dialog("DSP Experimental Feature",
                                                     None,
@@ -2459,7 +2495,7 @@ class Mk3_Configurator:
                                 dialog.destroy()
                                 
                                 if response == gtk.RESPONSE_ACCEPT and checkbox.get_active():
-                                        func(0, param1)
+                                        func(dummy, param1, param2)
                                 else:
                                         print ("Function not activated, please confirm via checkbox.")
                                         
@@ -2528,51 +2564,355 @@ class Mk3_Configurator:
                         lbl =  gobject.new(gtk.Label, label="DSP McBSP MHz: ")
                         hb.pack_start(lbl)
                         button = gtk.Button("0.5")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 0)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 0, lbl)
                         hb.pack_start(button)
                         button = gtk.Button("1")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 1)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 1, lbl)
                         hb.pack_start(button)
                         button = gtk.Button("2")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 2)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 2, lbl)
                         hb.pack_start(button)
                         button = gtk.Button("4")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 3)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 3, lbl)
                         hb.pack_start(button)
                         button = gtk.Button("5")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 4)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 4, lbl)
                         hb.pack_start(button)
                         button = gtk.Button("6.25")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 5)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 5, lbl)
                         hb.pack_start(button)
                         button = gtk.Button("8.33")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 6)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 6, lbl)
                         hb.pack_start(button)
                         button = gtk.Button("10")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 7)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 7, lbl)
                         hb.pack_start(button)
                         button = gtk.Button("12.5")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 8)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 8, lbl)
                         hb.pack_start(button)
                         button = gtk.Button("14.28")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 9)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 9, lbl)
                         hb.pack_start(button)
                         button = gtk.Button("16.6")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 10)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 10, lbl)
                         hb.pack_start(button)
                         button = gtk.Button("20")
-                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 11)
+                        button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 11, lbl)
                         hb.pack_start(button)
-
 
                         button = gtk.Button(stock='gtk-close')
 			button.connect("clicked", lambda w: win.hide())
 			box2.pack_start(button)
 			button.set_flags(gtk.CAN_DEFAULT)
 			button.grab_default()
+
+	                separator = gobject.new (gtk.HSeparator())
+	                box2.pack_start (separator, expand=False)
+
+                        self.load=0.0
+ 			labtimestructs = gobject.new (gtk.Label, label="DSP TIME")
+			labtimestructs.set_alignment(0.0, 0.5)
+	                box2.pack_start (labtimestructs, expand=False)
+                        gobject.timeout_add (timeout_update_process_list, self.rt_dsprtosinfo_update, labtimestructs)
+                                    
+			table = gtk.Table (7, 20)
+			table.set_row_spacings(0)
+			table.set_col_spacings(4)
+			box2.pack_start(table, False, False, 0)
+
+			r=0
+                        c=0
+                        hdrs=["PID","DSPTIME","TASK-TIME","PEAK","MISSED","FLAGS","Name of RT Task"]
+                        for h in hdrs:
+                                labh = gobject.new(gtk.Label, label=h)
+                                if c == 0 or c == 6:
+				        labh.set_alignment(0.0, 0.5)
+                                else:
+                                        if c == 5:
+                                                labh.set_alignment(0.5, 0.5)
+                                        else:
+                                                labh.set_alignment(1.0, 0.5)
+			        table.attach (labh, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND)
+                                c=c+1
+                        for pid in range(0,NUM_RT_TASKS):
+                                r=r+1
+                                c=0
+ 				labpid = gobject.new (gtk.Label, label="RT{:03d}".format(pid))
+				labpid.set_alignment(0.0, 0.5)
+				table.attach (labpid, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+ 				labdsp_t = gobject.new (gtk.Label, label="0")
+				labdsp_t.set_alignment(1.0, 0.5)
+				table.attach (labdsp_t, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+ 				labtask_t = gobject.new (gtk.Label, label="0")
+				labtask_t.set_alignment(1.0, 0.5)
+				table.attach (labtask_t, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+ 				labtask_m = gobject.new (gtk.Label, label="0")
+				labtask_m.set_alignment(1.0, 0.5)
+				table.attach (labtask_m, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+ 				labmissed = gobject.new (gtk.Label, label="0")
+				labmissed.set_alignment(1.0, 0.5)
+				table.attach (labmissed, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+ 				labflag = gobject.new (gtk.Label, label="0")
+				labflag.set_alignment(0.5, 0.5)
+				table.attach (labflag, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+                                lab=gobject.new(gtk.Label, label=dsp_rt_process_name[pid])
+				lab.set_alignment(0.0, 0.5)
+				table.attach(lab, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+                                if pid > 0:
+                                        cfg=gtk.Button("cfg")
+                                        cfg.connect("clicked", self.configure_rt, pid)
+				        table.attach(cfg, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+
+                        	gobject.timeout_add (timeout_update_process_list, self.rt_process_list_update, labdsp_t, labtask_t, labtask_m, labmissed, labflag, labpid, pid)
+
+                        r=r+2
+                        c=0
+                        hdrs=["PID","TIME NEXT","INTERVAL", "Timer Info", "NUM EXEC", "FLAGS", "Name of Idle Task"]
+                        for h in hdrs:
+                                labh = gobject.new(gtk.Label, label=h)
+                                if c == 0 or c == 6:
+				        labh.set_alignment(0.0, 0.5)
+                                else:
+                                        if c == 5:
+                                                labh.set_alignment(0.5, 0.5)
+                                        else:
+                                                labh.set_alignment(1.0, 0.5)
+			        table.attach (labh, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND)
+                                c=c+1
+
+                        for pid in range(0,NUM_ID_TASKS):
+                                r=r+1
+                                c=0
+ 				labpid = gobject.new (gtk.Label, label="ID{:03d}".format(pid+1))
+				labpid.set_alignment(0.0, 0.5)
+				table.attach (labpid, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+ 				labtn = gobject.new (gtk.Label, label="0")
+				labtn.set_alignment(1.0, 0.5)
+				table.attach (labtn, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+ 				labtask_ti = gobject.new (gtk.Label, label="0")
+				labtask_ti.set_alignment(1.0, 0.5)
+				table.attach (labtask_ti, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+ 				lab_tmr_frq = gobject.new (gtk.Label, label="-")
+				lab_tmr_frq.set_alignment(1.0, 0.5)
+				table.attach (lab_tmr_frq, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+ 				labtask_n = gobject.new (gtk.Label, label="0")
+				labtask_n.set_alignment(1.0, 0.5)
+				table.attach (labtask_n, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+ 				labtask_f = gobject.new (gtk.Label, label="0")
+				labtask_f.set_alignment(0.5, 0.5)
+				table.attach (labtask_f, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+                                lab=gobject.new(gtk.Label, label=dsp_id_process_name[pid])
+				lab.set_alignment(0.0, 0.5)
+				table.attach(lab, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+                                c=c+1
+                                cfg=gtk.Button("cfg")
+                                cfg.connect("clicked", self.configure_id, pid)
+				table.attach(cfg, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
+
+                        	gobject.timeout_add (timeout_update_process_list, self.id_process_list_update, labpid, labtn, labtask_ti, lab_tmr_frq, labtask_n, labtask_f, pid)
                         
 		self.wins[name].show_all()
 
+    def rt_process_list_update(self, _dsp_t, _task_t, _task_m, _missed, _flag, _labpid, pid):
+            flags = self.mk3spm.get_task_control_entry(ii_statemachine_rt_task_control, ii_statemachine_rt_task_control_flags, pid)
+            missed_last = int(_missed.get_text())
+            missed = self.mk3spm.get_task_control_entry(ii_statemachine_rt_task_control, ii_statemachine_rt_task_control_missed, pid)
+
+            if flags == 0:
+                    _labpid.set_markup("<span color='grey'>RT{:03d}</span>".format(pid))
+                    _flag.set_markup("<span color='grey'>INACTIVE</span>")
+            else:
+                    if missed_last != missed:
+                            _labpid.set_markup("<span color='red'>RT{:03d}</span>".format(pid))
+                    else:
+                            _labpid.set_markup("<span color='blue'>RT{:03d}</span>".format(pid))
+                    if flags & 0x10:
+                            _flag.set_markup("<span color='blue'>ALWAYS</span>")
+                    if flags & 0x20:
+                            _flag.set_markup("<span color='green'>on ODD CLK</span>")
+                    if flags & 0x40:
+                            _flag.set_markup("<span color='green'>on EVEN CLK</span>")
+                            
+	    _dsp_t.set_text("{:10d}".format(self.mk3spm.get_task_control_entry(ii_statemachine_rt_task_control, ii_statemachine_rt_task_control_time, pid)))
+	    _task_t.set_text("{:10d}".format(self.mk3spm.get_task_control_entry_task_time (ii_statemachine_rt_task_control, pid)))
+	    _task_m.set_text("{:10d}".format(self.mk3spm.get_task_control_entry_peak_time (ii_statemachine_rt_task_control, pid)))
+	    _missed.set_text("{:10d}".format(missed))
+	    return 1
+
+    def configure_rt(self, bnt, pid):
+            pname  = gtk.Label(dsp_rt_process_name[pid])
+            flags = self.mk3spm.get_task_control_entry(ii_statemachine_rt_task_control, ii_statemachine_rt_task_control_flags, pid)
+            label = gtk.Label("Set Flags:")
+            dialog = gtk.Dialog("Adjust RT{:03d} Task".format(pid),
+                                None,
+                                gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                                 gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+
+            dialog.vbox.pack_start(pname)
+            pname.show()
+	    hb = gobject.new(gtk.HBox(spacing=10))
+            dialog.vbox.pack_end(hb)
+            hb.show()
+            hb.pack_start(label)
+            label.show()
+            cb_active = gtk.RadioButton(None, "Active")
+            hb.pack_end(cb_active)
+            cb_active.show()
+            cb_odd = gtk.RadioButton(cb_active, "Odd")
+            hb.pack_end(cb_odd)
+            cb_odd.show()
+            cb_even = gtk.RadioButton(cb_active, "Even")
+            hb.pack_end(cb_even)
+            cb_even.show()
+            cb_sleep = gtk.RadioButton(cb_active, "Sleep")
+            hb.pack_end(cb_sleep)
+            cb_sleep.show()
+
+            if flags & 0x10:
+                    cb_active.set_active(True)
+            elif flags & 0x20:
+                    cb_odd.set_active(True)
+            elif flags & 0x40:
+                    cb_even.set_active(True)
+            else:
+                    cb_sleep.set_active(True)
+                    
+            response = dialog.run()
+            dialog.destroy()
+            
+            if response == gtk.RESPONSE_ACCEPT:
+                    if cb_active.get_active():
+                            self.mk3spm.configure_rt_task(pid, "active")
+                    elif cb_odd.get_active():
+                            self.mk3spm.configure_rt_task(pid, "odd")
+                    elif cb_even.get_active():
+                            self.mk3spm.configure_rt_task(pid, "even")
+                    elif cb_sleep.get_active():
+                            self.mk3spm.configure_rt_task(pid, "sleep")
+                    
+    def id_process_list_update(self, _labpid, _tn, _ti, _tmr_frq, _ne, _flags, pid):
+            flags = self.mk3spm.get_task_control_entry(ii_statemachine_id_task_control, ii_statemachine_id_task_control_flags, pid)
+            if flags == 0:
+                    _labpid.set_markup("<span color='grey'>ID{:03d}</span>".format(pid+1))
+                    _flags.set_markup("<span color='grey'>INACTIVE</span>")
+            else:
+                    if flags & 0x10:
+                            _labpid.set_markup("<span color='blue'>ID{:03d}</span>".format(pid+1))
+                            _flags.set_markup("<span color='blue'>ALWAYS</span>")
+                    elif flags & 0x20:
+                            _labpid.set_markup("<span color='green'>ID{:03d}</span>".format(pid+1))
+                            _flags.set_markup("<span color='green'>TIMER</span>")
+                    elif flags & 0x40:
+                            _labpid.set_markup("<span color='yellow'>ID{:03d}</span>".format(pid+1))
+                            _flags.set_markup("<span color='yellow'>CLOCK</span>")
+                    else:
+                            _labpid.set_markup("<span color='red'>ID{:03d}</span>".format(pid+1))
+                            _flags.set_markup("<span color='red'>???</span>")
+                            
+	    _tn.set_text("{:10d}".format(self.mk3spm.get_task_control_entry(ii_statemachine_id_task_control, ii_statemachine_id_task_control_time_next, pid)))
+            interval = self.mk3spm.get_task_control_entry(ii_statemachine_id_task_control, ii_statemachine_id_task_control_interval, pid)
+	    _ti.set_text("{:10d}".format(interval))
+            if interval > 0:
+	            _tmr_frq.set_text("{:g}Hz".format(150000./interval)+" {:g}ms".format(interval/150.))
+            else:
+	            _tmr_frq.set_text("-")
+	    _ne.set_text("{:10d}".format(self.mk3spm.get_task_control_entry(ii_statemachine_id_task_control, ii_statemachine_id_task_control_n_exec, pid)))
+	    return 1
+
+    def configure_id(self, btn, pid):
+            pname  = gtk.Label(dsp_id_process_name[pid])
+            flags = self.mk3spm.get_task_control_entry(ii_statemachine_id_task_control, ii_statemachine_id_task_control_flags, pid)
+            label = gtk.Label("Set flags:")
+            dialog = gtk.Dialog("Adjust ID{:03d} Task".format(pid+1),
+                                None,
+                                gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                                 gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+            dialog.vbox.pack_start(pname)
+            pname.show()
+	    hb = gobject.new(gtk.HBox(spacing=10))
+            dialog.vbox.pack_end(hb)
+            hb.show()
+            hb.pack_start(label)
+            label.show()
+            cb_always = gtk.RadioButton(None, "Always")
+            hb.pack_end(cb_always)
+            cb_always.show()
+            cb_timer = gtk.RadioButton(cb_always, "Timer")
+            hb.pack_end(cb_timer)
+            cb_timer.show()
+            cb_clock = gtk.RadioButton(cb_always, "Clock")
+            hb.pack_end(cb_clock)
+            cb_clock.show()
+            cb_sleep = gtk.RadioButton(cb_always, "Sleep")
+            hb.pack_end(cb_sleep)
+            cb_sleep.show()
+
+            if flags & 0x10:
+                    cb_always.set_active(True)
+            elif flags & 0x20:
+                    cb_timer.set_active(True)
+            elif flags & 0x40:
+                    cb_clock.set_active(True)
+            else:
+                    cb_sleep.set_active(True)
+                    
+            response = dialog.run()
+            dialog.destroy()
+            
+            if response == gtk.RESPONSE_ACCEPT:
+                    if cb_always.get_active():
+                            self.mk3spm.configure_id_task(pid, "always")
+                    elif cb_timer.get_active():
+                            self.mk3spm.configure_id_task(pid, "timer")
+                    elif cb_clock.get_active():
+                            self.mk3spm.configure_id_task(pid, "clock")
+                    elif cb_sleep.get_active():
+                            self.mk3spm.configure_id_task(pid, "sleep")
+
+    def rtc_get(self, param):
+            return self.mk3spm.get_rtos_parameter (param)
+        
+    def rt_dsprtosinfo_update(self, labtimestructs):
+            self.load = 0.9*self.load + 0.1*self.rtc_get (ii_statemachine_DataProcessTime)/self.rtc_get (ii_statemachine_DataProcessReentryTime)
+            d = int((self.rtc_get (ii_statemachine_BLK_count_minutes)-1)/(24*60))
+            h = int((self.rtc_get (ii_statemachine_BLK_count_minutes)-1)/60 - 24*d);
+            m = int((self.rtc_get (ii_statemachine_BLK_count_minutes)-1) - 24*60*d - h*60)
+            s = 59 - self.rtc_get (ii_statemachine_DSP_seconds)
+            labtimestructs.set_text("DSP TIME STRUCTS: DP TICKS {:10d}   {:10d}s   {:10d}m   {:02d}s\n"
+                                    .format(self.rtc_get (ii_statemachine_DSP_time),
+                                            self.rtc_get (ii_statemachine_BLK_count_seconds),
+                                            self.rtc_get (ii_statemachine_BLK_count_minutes)-1,
+                                            self.rtc_get (ii_statemachine_DSP_seconds))
+                                    +"DSP STATUS up  {:d} days {:d}:{:02d}:{:02d}, Average Load: {:g}\n".format(d,h,m,s, self.load)
+                                    +"DP Reentry Time:  {:10d}  Earliest: {:10d}  Latest:  {:10d}\n"
+                                    .format(
+                                            self.rtc_get (ii_statemachine_DataProcessReentryTime),
+                                            self.rtc_get (ii_statemachine_DataProcessReentryPeak & 0xffff),
+                                            self.rtc_get (ii_statemachine_DataProcessReentryPeak >> 16))
+                                    +"DP Time: {:10d}  Max: {:10d}  Idle Max: {:10d} Min: {:10d}\n"
+                                    .format(
+                                            self.mk3spm.get_task_control_entry_task_time(ii_statemachine_rt_task_control, 0),
+                                            self.mk3spm.get_task_control_entry_peak_time(ii_statemachine_rt_task_control, 0),
+                                            self.rtc_get (ii_statemachine_IdleTime_Peak >> 16),
+                                            self.rtc_get (ii_statemachine_IdleTime_Peak & 0xffff))
+                                    +"DP Continue Time Limit: {:10d}".format(self.rtc_get (ii_statemachine_DP_max_time_until_abort))
+            )
+	    return 1
 
 
     # updates the right side of the offset dialog

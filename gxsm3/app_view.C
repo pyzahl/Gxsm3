@@ -2045,21 +2045,36 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                                                         double value = 0.;
                                                         int nn_sum=0;
 
-                                                        if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
-                                                                for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum)
-                                                                        value += pen->get (ii, yi[l]);
-                                                        else
-                                                                for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum){
-                                                                        double q = pen->get (i, yni)/pen->get (i, xi);
+                                                        if (0){
+                                                                // old plain data version
+                                                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
+                                                                        for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum){
+                                                                                value += pen->get (ii, yi[l]);
+                                                                        }
+                                                                else
+                                                                        for (int ii=i; ii<i+nn_dec && ii<nn; ++ii, ++nn_sum){
+                                                                                double q = pen->get (i, yni)/pen->get (i, xi);
+                                                                                if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
+                                                                                        q=1.;
+                                                                                value += pen->get (ii, yi[l])/q;
+                                                                        }
+
+                                                                value /= nn_sum;
+                                                        } else {
+                                                                // experiment (fixed) IIR filter use on profile data
+                                                                int iirln = 200;
+                                                                double iirq = 0.025;
+                                                                if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->plot_formula)) == 0)
+                                                                        value = pen->get_iir (i, yi[l], iirln, iirq);
+                                                                else{
+                                                                        double q = pen->get_iir (i, yni, 200., 0.025)/pen->get_iir (i, xi, iirln, iirq);
                                                                         if (fabs(pen->get (i, xi)) < eps || fabs (q) < eps)
                                                                                 q=1.;
-                                                                        value += pen->get (ii, yi[l])/q;
+                                                                        value = pen->get_iir (i, yi[l], iirln, iirq)/q;
                                                                 }
-
-                                                        value /= nn_sum;
-
-                                                        if (value > 100.) // patch for ch possible mismatch info -- uncomment later!
-                                                                value *= 4.65675e-09 / 4.44674e-05;
+                                                        }
+                                                        //if (value > 100.) // patch for ch possible mismatch info -- uncomment later!
+                                                        //        value *= 4.65675e-09 / 4.44674e-05;
 
                                                         //g_message ("SetPoint: %d %g %d", ecount, value, i_dec);
                                                         for (int pm=0; pm < nn_mul; ++pm){

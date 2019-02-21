@@ -70,6 +70,10 @@ void init_autoapp (){
 	autoapp.fin_cnt = autoapp.n_wait_fin;
 	autoapp.tip_mode = TIP_ZPiezoMax;
 
+        // back up
+        autoapp.cp = z_servo.cp;
+        autoapp.ci = z_servo.ci;
+
 	tmp_s = 0;
 
 	// enable job
@@ -98,7 +102,7 @@ void stop_autoapp (){
 		state.mode |= MD_PID;
 
 	// switch off after next analog (iobuf) update
-	autoapp.pflg  = 2;
+	autoapp.pflg  = 0;
 }
 
 // Dummy Macro, no IO yet!
@@ -143,8 +147,10 @@ void run_wave_play (){
 
 			if (autoapp.mover_mode & AAP_MOVER_AUTO_APP)
 				autoapp.tip_mode = TIP_Delay_2; // proceed with next approach cycle
-			else
+			else {
+				autoapp.stop = 1; // stop self
 				autoapp.pflg = 0; // done, max number steps exceeded
+                        }
 			return;
                 }
         }
@@ -175,6 +181,7 @@ void run_tip_app (){
 
 		if (autoapp.fin_cnt == 0){
 			autoapp.tip_mode = TIP_Ready; // dummy state
+                        autoapp.stop = 1; // stop self
 			autoapp.pflg  = 0; // done! Cancel autoapproach.
 			autoapp.fin_cnt = autoapp.n_wait_fin;
 		}
@@ -187,6 +194,7 @@ void run_tip_app (){
 		if (app_ci_signum*z_servo.ci > 0) {
 			// save feedback settings
 			app_ci_signum = z_servo.ci > 0 ? 1:-1;
+                        // update
 			autoapp.cp = z_servo.cp;
 			autoapp.ci = z_servo.ci;
 						
@@ -230,8 +238,10 @@ void run_tip_app (){
 				if (!CR_out_pulse.pflg) // check if pulse job done ?
 					if (autoapp.mover_mode & AAP_MOVER_AUTO_APP) // double check if we not got canceled
 						autoapp.tip_mode = TIP_Delay_2; // proceed with next approach cycle
-					else
+					else {
+                                                autoapp.stop = 1; // stop self
 						autoapp.pflg = 0; // done, max number steps exceeded
+                                        }
 			} else
 				init_CR_out_pulse (); // initiate pulse job
 		else

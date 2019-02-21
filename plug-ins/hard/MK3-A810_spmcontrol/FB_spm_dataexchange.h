@@ -123,8 +123,6 @@
 # define FB_SPM_FEATURES_DSP_Z0_SLOPE_COMPENSATION "No"
 #endif
 
-//#define NOISE_ENABLE
-
 // these are checked/compared with the Gxsm-build and must match!
 // -- otherwise you exactly need to know/be sure what you are doing --
 // -- odd things like changed data structures, etc.., could break data transfer --
@@ -135,7 +133,7 @@
 #ifdef FB_SPM_VERSION
 #undef FB_SPM_VERSION
 #endif
-#define FB_SPM_VERSION   0x00003059 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_VERSION   0x00004000 /* FB_SPM main Version, BCD: 00.00 */
 #ifdef FB_SPM_DATE_YEAR
 #undef FB_SPM_DATE_YEAR
 #endif
@@ -143,14 +141,14 @@
 #ifdef FB_SPM_DATE_MMDD
 #undef FB_SPM_DATE_MMDD
 #endif
-#define FB_SPM_DATE_MMDD 0x00000120 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00000202 /* Date: Month/Day, BCD */
 
 #ifdef FB_SPM_FEATURES
 #undef FB_SPM_FEATURES
 #endif
 #define FB_SPM_FEATURES                                 \
 	"Version: Signal Master Evolved GXSM3B\n"\
-	"MK3Pro-A810/PLL+PAC Platform:\n\n" \
+	"MK3Pro-A810/PLL+PAC Micro RTL DSP System:\n\n" \
 	"Signal Management/Routing, Signal Matrix support\n"\
 	"dynamic current IIR channel + IIR mixer channels: Yes\n"\
 	"PLL PAC1F2F AMPCTRL-FUZZY-NEG: " FB_SPM_FEATURES_PLL "\n"\
@@ -257,6 +255,8 @@ typedef guint64  DSP_UINT64;
  * ==================================================
  */
 
+#define APPLY_NEW_ROTATION 0x13780001 /* priavte start commands for applying data to private copy */
+
 /* -- NOTE: modes mostly obsoleted now -- */
 
 #define MD_IDLE          0x0000  /**< all zero means ready, no idle task (scan,move,probe,approch,...) is running */
@@ -323,20 +323,43 @@ typedef struct {
  * Main DSP Statemachine Control Structure
  */
 
+/** Real Time Task Control for Data-Processing (DP) Tasks **/
+typedef struct {
+        DSP_UINT32 process_flag;
+        DSP_UINT32 missed_count; // RT-taks: missed count, IDeal-task: N executed count
+        DSP_UINT32 process_time;
+        DSP_UINT32 process_time_peak_now;
+} DSP_DP_TASK_CONTROL;
+
+/** Idle Task Control for other less time criticl Idle (ID) Tasks **/
+typedef struct {
+        DSP_UINT32 process_flag;
+        DSP_UINT32 exec_count; // RT-taks: missed count, IDeal-task: N executed count
+        DSP_UINT32 timer_next;
+        DSP_UINT32 interval;
+} DSP_ID_TASK_CONTROL;
+
+#define NUM_DATA_PROCESSING_TASKS 12
+#define NUM_IDLE_TASKS 32 // MUST BE 2^N
+
 typedef struct {
 	DSP_UINT32 set_mode;      /**< 0 mode change request: set bits =WO */
 	DSP_UINT32 clr_mode;      /**< 2 mode change request: clear bits =WO */
 	DSP_UINT32 mode;          /**< 4 current state =RO */
 	DSP_UINT32 last_mode;     /**< 6 last state =RO */
-	DSP_UINT32 BLK_count;    /**< 8 DSP counter, incremented in dataprocess =RO -- obsolete */
-	DSP_UINT32 BLK_Ncount;   /**< 10 divider to get 1/10 sec =RO -- obsolete */
-	DSP_INT32 DSP_time;     /**< 12 DSP time in 1/10sec =RO */
-	DSP_UINT32 DSP_tens;       /**< 14 counter to derive 1Hz heart beat =RO */
+	DSP_UINT32 BLK_count_seconds;    /**< 8  1s counter =RO */
+	DSP_UINT32 BLK_count_minutes;   /**< 10 1min counter  =RO */
+	DSP_UINT32 DSP_time;      /**< 12 DSP time 150kHz ticks =RO */
+	DSP_UINT32 DSP_seconds;   /**< 14 60 second down counter =RO */
 	DSP_UINT32 DataProcessTime;/**< 16 time spend in dataprocess -- performance indicator =RO */
-	DSP_UINT32 IdleTime;       /**< 18time spend not in dataprocess -- performance indicator =RO */
-	DSP_UINT32 DataProcessTime_Peak; /**< 20 time spend in dataprocess, peak -- performance indicator =RO */
-	DSP_UINT32 IdleTime_Peak;        /**< 22 time spend not in dataprocess, peak -- performance indicator =RO */
+	DSP_UINT32 DataProcessReentryTime; /**< 18time spend not in dataprocess -- performance indicator =RO */
+	DSP_UINT32 DataProcessReentryPeak; /**< 20 time spend in dataprocess, peak -- performance indicator =RO */
+	DSP_UINT32 IdleTime_Peak;  /**< 22 time spend not in dataprocess, peak -- performance indicator =RO */
 	DSP_UINT32 DSP_speed[2]; /**< 24, 26 DSP speed setting (MHz) actual, requested */
+
+        DSP_DP_TASK_CONTROL dp_task_control[NUM_DATA_PROCESSING_TASKS+1];
+        DSP_ID_TASK_CONTROL id_task_control[NUM_IDLE_TASKS];
+        DSP_UINT32 DP_max_time_until_abort; 
 #ifdef DSP_CC
 } SPM_STATEMACHINE;
 #else
@@ -537,6 +560,7 @@ typedef struct{
         DSP_INT32  ifr;               /**< fast return count option */
 	DSP_INT32_P src_input[4];     /**< signals mapped as channel source data. defaults: probe.LockIn_1stA, LockIn_2ndA, LockIn_0A, analog.counter[0]  */
 	DSP_INT32  sstate;            /**< current scan state =RO */
+	DSP_INT32  rotmatrix[4];      /**< active rotation matrix, secure copy, Q15 =WR */
 	DSP_INT32  pflg;              /**< process active flag =RO */
 #ifdef DSP_CC
 } AREA_SCAN;
@@ -692,7 +716,7 @@ typedef struct{
 #undef MAX_WRITE_PROBE
 #endif
 #endif
-#define MAX_WRITE_PROBE (2*(13))
+#define MAX_WRITE_PROBE (2*(11))
 
 
 /** Auto Approach and Slider/Mover Parameters */

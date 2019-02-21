@@ -56,7 +56,8 @@ module McBSP_controller #(
     input mcbsp_clk,
     input mcbsp_frame_start,
     input mcbsp_data_rx,
-    input mcbsp_data_nrx, // N-th RedPitaya Slave/Chained Link forwarding to McBSP Maser Slave -- optional
+    input mcbsp_data_nrx,   // N-th RedPitaya Slave/Chained Link forwarding to McBSP Maser Slave -- optional
+    output mcbsp_data_clkr, // clock return
     output mcbsp_data_tx,
     output mcbsp_data_fsx, // optional/debug FSX start
     output mcbsp_data_frm, // optional/debug Frame
@@ -97,6 +98,7 @@ module McBSP_controller #(
     reg [(WORDS_PER_FRAME * BITS_PER_WORD) -1 : 0] data_in;
     reg [(WORDS_PER_FRAME * BITS_PER_WORD) -1 : 0] data_read;
     reg tx=0;
+    reg clkr=0;
 
     reg rtrigger=1;
 
@@ -105,7 +107,8 @@ module McBSP_controller #(
         // Detect Frame Sync
         if (mcbsp_frame_start && ~frame_start)
         begin
-            rtrigger <= 1;
+            clkr <= 0; // generate clkr
+            rtrigger <= 1; // set frame start and trigger
             frame_start <= 1;
             frame_bit_counter <= 255; // ((WORDS_PER_FRAME * BITS_PER_WORD) - 1);
             // wait for aclk edge (very fast vs. mcbsp_clk)
@@ -148,11 +151,13 @@ module McBSP_controller #(
     begin
         if (frame_start)
         begin
-            // setup data bit
-            tx <= data[frame_bit_counter];
+            // generate clkr and setup data bit
+            clkr <= 1;
+            tx   <= data[frame_bit_counter];
         end
     end
 
+    assign mcbsp_data_clkr = clkr;
     assign mcbsp_data_tx = tx;
     assign trigger = rtrigger;
 

@@ -106,6 +106,31 @@ public:
                         return 0.;
 		return g_array_index (data, double, n*chunk_size+j); 
 	};
+	virtual double get_iir (int n, int j, int iirl=20, double iirf=0.05){ 
+		if (j < 0)
+			return (double)n;
+		if (j >= chunk_size)
+                        return 0.;
+                if (n >= num_sets)
+                        return 0.;
+                double z=0.;
+#if 0
+                int cnt=0;
+                // average around start
+                for (int i=MAX(0,n-iirl/2); i<=MIN(n+iirl/2,num_sets-1); i++, cnt++)
+                        z+=g_array_index (data, double, i*chunk_size+j);
+                z /= cnt;
+#else
+                z=g_array_index (data, double, (num_sets-1)*chunk_size+j);
+                
+#endif
+                double q=1.-iirf;
+                // IIR filter to j
+                //for (int i=MIN(0, n-iirl); i<=n; i++)
+                for (int i=num_sets-1; i>=n; i--)
+                        z = q*z + iirf*g_array_index (data, double, i*chunk_size+j);
+		return z;
+	};
 	virtual void print ();
 	virtual void save (std::ofstream *file);
 

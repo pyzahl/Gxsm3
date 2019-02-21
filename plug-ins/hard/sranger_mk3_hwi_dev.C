@@ -715,7 +715,8 @@ int sranger_mk3_hwi_dev::ReadLineFromFifo (int y_index){
 //			std::cout << "Dir:" << dir << " L: " << len[dir] << std::endl;
 		}
 
-		lseek (thread_dsp, magic_data.datafifo, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		// lseek (thread_dsp, magic_data.datafifo, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		lseek (thread_dsp, magic_data.datafifo, SRANGER_MK23_SEEK_DATA_SPACE);
 		sr_read (thread_dsp, &dsp_fifo, (MAX_WRITE_DATA_FIFO_SETUP)<<1, "RdLnFifo01");
 		dsp_fifo.stall = 0; // unlock scanning
 		check_and_swap (dsp_fifo.stall);
@@ -1696,7 +1697,8 @@ int sranger_mk3_hwi_dev::ReadProbeFifo (int dspdev, int control){
 		}
 		for (; dataleft > 0; database += 0x4000, dataleft -= 0x4000, position += 0x4000){
 			LOGMSGS1 ( "FR::NEED_DATA: B::0x" <<  std::hex << database <<  std::dec << std::endl);
-			lseek (dspdev, database, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+			//lseek (dspdev, database, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+			lseek (dspdev, database, SRANGER_MK23_SEEK_DATA_SPACE);
 			sr_read  (dspdev, &data[position], (dataleft >= 0x4000 ? 0x4000 : dataleft)<<1);
 		}
 		last_read_end = end_read;

@@ -82,6 +82,16 @@ int  AS_AIC_num_samples;
 DSP_INT32 bz_last[BZ_MAX_CHANNELS];
 int  bz_byte_pos;
 
+//#define DATAPROCESS_PUSH_INSTANT
+// or push via idle and FIFO
+#define RT_FIFO_HALF 8
+#define RT_FIFO_FULL 14
+#define RT_FIFO_MASK 15
+DSP_INT32 rt_fifo_i=0;
+DSP_INT32 rt_fifo_ix=0;
+DSP_INT32 rt_fifo_j=0;
+DSP_INT32 rt_fifo_push_data[17][RT_FIFO_MASK+1];
+
 #define BZ_PUSH_NORMAL   0x00000000UL // normal atomatic mode using size indicator bits 31,30:
 // -- Info: THIS CONST NAMES .._32,08,16,24 ARE NOT USED, JUST FOR DOCUMENMTATION PURPOSE
 #define BZ_PUSH_MODE_32  0x00000000UL // 40:32 => 0b00MMMMMM(8bit) 0xDDDDDDDD(32bit), M:mode bits, D:Data
@@ -177,6 +187,16 @@ void bz_init(){
 	bz_push_mode = BZ_PUSH_MODE_32_START; 
 	bz_byte_pos=0;
 	datafifo.w_position=datafifo.r_position=0;
+
+        // reset RT_FIFO for push data
+        rt_fifo_i=0;
+        rt_fifo_ix=0;
+        rt_fifo_j=0;
+
+        // DEBUG
+        analog.McBSP_FPGA[8] = 0;
+        analog.McBSP_FPGA[9] = 0;
+
 }
 
 void bz_push(int i, DSP_INT32 x){
@@ -318,8 +338,8 @@ void init_area_scan (){
 			if (scan.nx < Z_DATA_BUFFER_SIZE)
 				AS_ch2nd_scan_switch = AS_SCAN_2ND_XP; // enable 2nd scan line mode
 		
-		if ((scan.srcs_xp & 0x07000) || (scan.srcs_xm & 0x07000))  // setup LockIn job
-			init_lockin (PROBE_RUN_LOCKIN_SCAN);
+		//if ((scan.srcs_xp & 0x07000) || (scan.srcs_xm & 0x07000))  // setup LockIn job
+                //    init_lockin (PROBE_RUN_LOCKIN_SCAN);
 		
 		
 		if ((scan.srcs_xp & 0x08000) || (scan.srcs_xm & 0x08000)){ // if Counter channel requested, restart counter/timer now
@@ -337,11 +357,16 @@ void init_area_scan (){
 	}
 }
 
+inline void area_scan_finished (){
+        scan.pflg = 0;
+        scan.stop = AREA_SCAN_STOP;
+}
+ 
 #pragma CODE_SECTION(finish_area_scan, ".text:slow")
 void finish_area_scan (){
 	int i;
 
-	stop_lockin (PROBE_RUN_LOCKIN_SCAN);
+	//##stop_lockin (PROBE_RUN_LOCKIN_SCAN);
 
 	bz_push_mode = BZ_PUSH_MODE_32_FINISH;
 	for (i=0; i<BZ_MAX_CHANNELS; ++i)
@@ -394,6 +419,8 @@ void integrate_as_data_srcs (DSP_UINT32 srcs){
 	++AS_AIC_num_samples;
 }
 
+#ifdef DATAPROCESS_PUSH_INSTANT
+// do now
 void push_area_scan_data (DSP_UINT32 srcs){
 	DSP_UINT32 tmp;
 
@@ -452,6 +479,97 @@ void push_area_scan_data (DSP_UINT32 srcs){
 	analog.counter[1] = 0;
 }
 
+int bz_push_area_scan_data_out (void){ return 0; }
+
+#else
+
+// push to intermediate FIFO for ideal processing
+void push_area_scan_data (DSP_UINT32 srcs){
+	// read and buffer (for Rate Meter, gatetime not observed -- always last completed count)
+	CR_generic_io.count_0 = analog.counter[0];
+
+	if (srcs & 0xFFF1){
+                rt_fifo_push_data[0][rt_fifo_i] = (srcs << 16) | AS_AIC_num_samples;
+        
+                if (srcs & 0x0001) // PIDSrc1/Dest <-- Z = -AIC_Z-value ** AS_AIC_data_sum[8]/AS_AIC_num_samples
+                        rt_fifo_push_data[1][rt_fifo_i] = z_servo.control;
+                if (srcs & 0x0002) // MIXER selection 1
+                        rt_fifo_push_data[2][rt_fifo_i] = feedback_mixer.FB_IN_processed[1];
+                if (srcs & 0x0004) // MIXER selection 2
+                        rt_fifo_push_data[3][rt_fifo_i] = feedback_mixer.FB_IN_processed[2];
+                if (srcs & 0x0008) // MIXER selection 3
+                        rt_fifo_push_data[4][rt_fifo_i] = feedback_mixer.FB_IN_processed[3];
+                if (srcs & 0x0010) // DataSrcA1 --> AIC0
+                        rt_fifo_push_data[5][rt_fifo_i] = feedback_mixer.FB_IN_processed[0]; // *** (int)AS_AIC_data_sum[0];
+                if (srcs & 0x0020) // DataSrcA2 --> AIC1
+                        rt_fifo_push_data[6][rt_fifo_i] = (int)AS_AIC_data_sum[1];
+                if (srcs & 0x0040) // DataSrcA3 --> AIC2
+                        rt_fifo_push_data[7][rt_fifo_i] = (int)AS_AIC_data_sum[2];
+                if (srcs & 0x0080) // DataSrcA4 --> AIC3
+                        rt_fifo_push_data[8][rt_fifo_i] = (int)AS_AIC_data_sum[3];
+                if (srcs & 0x0100) // DataSrcB1 --> AIC4
+                        rt_fifo_push_data[9][rt_fifo_i] = (int)AS_AIC_data_sum[4];
+                if (srcs & 0x0200) // DataSrcB2 --> AIC5
+                        rt_fifo_push_data[10][rt_fifo_i] = (int)AS_AIC_data_sum[5];
+                if (srcs & 0x0400) // DataSrcB3 --> AIC6
+                        rt_fifo_push_data[11][rt_fifo_i] = (int)AS_AIC_data_sum[6];
+                if (srcs & 0x0800) // DataSrcB4 --> AIC7
+                        rt_fifo_push_data[12][rt_fifo_i] = (int)AS_AIC_data_sum[7]; // debugging test
+
+                if (srcs & 0x01000) // DataSrcC1 --> LockIn1stA [default maped signal]
+                        rt_fifo_push_data[13][rt_fifo_i] = *scan.src_input[0];
+                if (srcs & 0x02000) // DataSrcD1 --> LockIn2ndA [default maped signal]
+                        rt_fifo_push_data[14][rt_fifo_i] = *scan.src_input[1];
+                if (srcs & 0x04000) // DataSrcE1 --> LockIn0 [default maped signal]
+                        rt_fifo_push_data[15][rt_fifo_i] = *scan.src_input[2];
+                if (srcs & 0x08000) // "DataSrcF1" last CR Counter count [default maped signal]
+                        rt_fifo_push_data[16][rt_fifo_i] = *scan.src_input[3];
+
+                rt_fifo_i++;
+                rt_fifo_ix++;
+                rt_fifo_i &= RT_FIFO_MASK;
+        }
+        
+	// auto clear now including counter0
+	clear_summing_data ();
+	analog.counter[0] = 0;
+	analog.counter[1] = 0;
+}
+
+// called from idle task control with highest priority
+int bz_push_area_scan_data_out (void){
+        DSP_UINT32 srcs;
+        int i,m;
+        int processed=0;
+        // using bz_push for bit packing and delta signal usage
+        // init/reinit data set?
+        while (rt_fifo_ix > rt_fifo_j ){
+                // looping?
+                if (rt_fifo_j == 0){
+                        rt_fifo_ix &= RT_FIFO_MASK;
+                        if (rt_fifo_ix <= rt_fifo_j )
+                                break;
+                }
+                srcs = rt_fifo_push_data[0][rt_fifo_j]>>16; 
+                if (rt_fifo_push_data[0][rt_fifo_j] != bz_last[0]){ // re init using BZ_PUSH_MODE_32_START to indicate extra info set
+                        bz_push_mode = BZ_PUSH_MODE_32_START; 
+                        bz_push (0, rt_fifo_push_data[0][rt_fifo_j]);
+                        bz_push_mode = BZ_PUSH_NORMAL;
+                }
+
+                for (i=m=1; m <= 0x08000; i++, m <<= 1){
+                        if (srcs & m)
+                                bz_push (i, rt_fifo_push_data[i][rt_fifo_j]);
+                }
+                
+                rt_fifo_j++;
+                rt_fifo_j &= RT_FIFO_MASK;
+                processed++;
+        }
+        return processed;
+}
+#endif
+
 // TESTING IF SLOW WORKS HERE *****!!!!!!!!!!
 #pragma CODE_SECTION(run_area_scan, ".text:slow")
 void run_area_scan (){
@@ -467,12 +585,13 @@ void run_area_scan (){
 		scan.xyz_vec[i_X] = _SADD32 (scan.xyz_vec[i_X], scan.cfs_dx); // this is with SAT!!
 		if (!scan.iix--){
 			if (scan.ix--){
+#ifdef ENABLE_SCAN_GP53_CLOCK
                                 // generate external pixel data clock on GP53
-                               if (scan.ix&1)
+                                if (scan.ix&1)
                                         SET_DSP_GP53;
                                 else
                                         CLR_DSP_GP53;
-                                
+#endif   
 				if (AS_ip >= 0 && (AS_jp == 0 || scan.raster_a) && (scan.dnx_probe > 0)){
 					if (! --AS_ip){ // trigger probing process ?
 						if (!probe.pflg) // assure last prb job is done!!
@@ -514,11 +633,13 @@ void run_area_scan (){
 			scan.xyz_vec[i_X] = _SSUB32 (scan.xyz_vec[i_X], scan.cfs_dx);
 			if (!scan.iix--){
 				if (scan.ix--){
+#ifdef ENABLE_SCAN_GP53_CLOCK
                                         // generate external pixel data clock on GP53
                                         if (scan.ix&1)
                                                 SET_DSP_GP53;
                                         else
                                                 CLR_DSP_GP53;
+#endif
                                         
 #if 0
 					if (AS_ip >= 0 && AS_jp == 0 && (scan.dnx_probe > 0)){
@@ -540,7 +661,7 @@ void run_area_scan (){
 				}
 				else{
 					if (!scan.iy){ // area scan done?
-						finish_area_scan ();
+						area_scan_finished ();
 						goto finish_now;
 					}
 					scan.iiy = scan.dny;
@@ -583,11 +704,13 @@ void run_area_scan (){
 		}
 		else{
 			if (scan.iy--){
+#ifdef ENABLE_SCAN_GP54_CLOCK
                                 // generate external line sync clock on GP54
                                 if (scan.iy&1)
                                         SET_DSP_GP54;
                                 else
                                         CLR_DSP_GP54;
+#endif
 				if (AS_jp >= 0){
 					if (scan.raster_a){
 						AS_ip = AS_kp;
@@ -610,13 +733,13 @@ void run_area_scan (){
 				clear_summing_data ();
 			}
 			else // area scan is done -- double check here.
-				finish_area_scan ();
+				area_scan_finished ();
 			scan.cfs_dx = scan.fs_dx;
 		}
 		break;
 
 //	case AS_SCAN_YM: // "Y-" -- not valid yet -- exit AS
-//		finish_area_scan ();
+//		area_scan_finished ();
 //		break;
 
 	case AS_MOVE_XY: // move-XY:  and Z -- init/finalize scan, move to start/end of scan position and generic tip positioning withing scan coordinates, 
@@ -638,7 +761,7 @@ void run_area_scan (){
 			scan.num_steps_move_xy--;
 		} else {
 			if (scan.nx == 0){ // was MOVE_XY only?, then done
-				finish_area_scan ();
+				area_scan_finished ();
 			} else {
 				scan.sstate = AS_SCAN_XP;
 				scan.iix    = scan.dnx + PIPE_LEN;
@@ -655,7 +778,7 @@ void run_area_scan (){
 		break;
 
 	default: // just cancel job in case sth. went wrong!
-		finish_area_scan ();
+		area_scan_finished ();
 		break;
 	}
 }
@@ -677,12 +800,13 @@ void run_area_scan_fast (){
 //		scan.xyz_vec[i_X] = _SADD32 (scan.xyz_vec[i_X], scan.cfs_dx); // this is with SAT!!
 		if (!scan.iix--){
 			if (scan.ix--){
+#ifdef ENABLE_SCAN_GP53_CLOCK
                                 // generate external pixel data clock on GP53
                                 if (scan.ix&1)
                                         SET_DSP_GP53;
                                 else
                                         CLR_DSP_GP53;
-                                
+#endif                                
 				scan.iix    = AS_sdnx-1;
 				push_area_scan_data (scan.srcs_xp); // get XP data here!
 			}
@@ -702,18 +826,19 @@ void run_area_scan_fast (){
 //		scan.xyz_vec[i_X] = _SSUB32 (scan.xyz_vec[i_X], scan.cfs_dx);
 		if (!scan.iix--){
 			if (scan.ix--){
+#ifdef ENABLE_SCAN_GP53_CLOCK
                                 // generate external pixel data clock on GP53
                                 if (scan.ix&1)
                                         SET_DSP_GP53;
                                 else
                                         CLR_DSP_GP53;
-                                
+#endif                                
 				scan.iix   = AS_sdnx-1;
 				push_area_scan_data (scan.srcs_xm); // get XM data here!
 			}
 			else{
 				if (!scan.iy){ // area scan done?
-					finish_area_scan ();
+					area_scan_finished ();
 					goto finish_now;
 				}
 				scan.iiy = scan.dny;
@@ -732,11 +857,13 @@ void run_area_scan_fast (){
 		}
 		else{
 			if (scan.iy--){
-                                // generate external line sync clock on GP53
+#ifdef ENABLE_SCAN_GP54_CLOCK
+                                // generate external line sync clock on GP54
                                 if (scan.iy&1)
                                         SET_DSP_GP54;
                                 else
                                         CLR_DSP_GP54;
+#endif
 				scan.ix     = scan.nx;
 				scan.iix    = AS_sdnx = scan.dnx; // in fast sin mode only speed update in line basis possible due to non-linear steps
 				scan.sstate = AS_SCAN_XP;
@@ -750,13 +877,13 @@ void run_area_scan_fast (){
 				clear_summing_data ();
 			}
 			else // area scan is done -- double check here.
-				finish_area_scan ();
+				area_scan_finished ();
 //			scan.cfs_dx = scan.fs_dx;
 		}
 		break;
 
 //	case AS_SCAN_YM: // "Y-" -- not valid yet -- exit AS
-//		finish_area_scan ();
+//		area_scan_finished ();
 //		break;
 
 	case AS_MOVE_XY: // move-XY: init/finalize scan, move to start/end of scan position, 
@@ -767,7 +894,7 @@ void run_area_scan_fast (){
 			scan.num_steps_move_xy--;
 		} else {
 			if (scan.nx == 0){ // was MOVE_XY only?, then done
-				finish_area_scan ();
+				area_scan_finished ();
 			} else {
 				scan.sstate = AS_SCAN_XP;
 				scan.iix    = AS_sdnx = scan.dnx;
@@ -785,7 +912,7 @@ void run_area_scan_fast (){
 		break;
 
 	default: // just cancel job in case sth. went wrong!
-		finish_area_scan ();
+		area_scan_finished ();
 		break;
 	}
 }
