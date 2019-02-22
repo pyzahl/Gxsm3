@@ -2278,7 +2278,10 @@ class SPMcontrol():
 		self.M_SERVO  =  self.readf( sr.fileno(), i_m_servo,  fmt_servo)
 		self.MIXER_FB =  self.readf( sr.fileno(), i_feedback_mixer,  fmt_feedback_mixer)
 		self.SIGNAL_MONITOR =  self.readf( sr.fileno(), i_signal_monitor,  fmt_signal_monitor)
-#		print self.SIGNAL_MONITOR 
+                if self.start == 2:
+                        self.SIGNAL_MONITOR_HIST = [None, None, None, None,  None, None, None, None]
+		self.SIGNAL_MONITOR_HIST[self.start % 8] = self.SIGNAL_MONITOR;
+                #		print self.SIGNAL_MONITOR 
 		self.AUTOAPP_WATCH  =  self.readf( sr.fileno(), i_autoapp,  fmt_autoapp)
 		self.CR_COUNTER =  self.readf( sr.fileno(), i_CR_generic_io,  fmt_CR_generic_io)
 		
@@ -2764,20 +2767,42 @@ class SPMcontrol():
 	def get_monitor_data (self, tap):
 		return  self.SIGNAL_MONITOR[ii_signal_monitor_first+tap]
 	
+	def get_monitor_data_med (self, tap):              
+                return median ([
+                        self.SIGNAL_MONITOR_HIST[0][ii_signal_monitor_first+tap],
+                        self.SIGNAL_MONITOR_HIST[1][ii_signal_monitor_first+tap],
+                        self.SIGNAL_MONITOR_HIST[2][ii_signal_monitor_first+tap],
+                        self.SIGNAL_MONITOR_HIST[3][ii_signal_monitor_first+tap],
+                        self.SIGNAL_MONITOR_HIST[4][ii_signal_monitor_first+tap],
+                        self.SIGNAL_MONITOR_HIST[5][ii_signal_monitor_first+tap],
+                        self.SIGNAL_MONITOR_HIST[6][ii_signal_monitor_first+tap],
+                        self.SIGNAL_MONITOR_HIST[7][ii_signal_monitor_first+tap]
+                ])
+	
 	def get_monitor_pointer (self, tap):
 		return  self.SIGNAL_MONITOR[ii_signal_monitor_p_first+tap]
 	
 	def get_monitor_signal (self, tap):
 		sigptr = self.SIGNAL_MONITOR[ii_signal_monitor_p_first+tap]
+		value  = self.SIGNAL_MONITOR[ii_signal_monitor_first+tap]
 		if sigptr == 0:
-			value  = self.SIGNAL_MONITOR[ii_signal_monitor_first+tap]
 			return [value, value,[-1,0,0,"debug","N/A","0",0]]
 		else:
-			value  = self.SIGNAL_MONITOR[ii_signal_monitor_first+tap]
 			[signal,off] = self.lookup_signal_by_ptr (sigptr)
 	
 		return [value, value*signal[SIG_D2U], signal]
 
+        def get_monitor_signal_median (self, tap):
+		sigptr = self.SIGNAL_MONITOR[ii_signal_monitor_p_first+tap]
+		value  = self.get_monitor_data_med (tap)
+		if sigptr == 0:
+			return [value, value,[-1,0,0,"debug","N/A","0",0]]
+		else:
+			[signal,off] = self.lookup_signal_by_ptr (sigptr)
+	
+		return [value, value*signal[SIG_D2U], signal]
+
+        
         # for sanity never direct change/write DSP pointers, but go via signal input pointer change request via signal lookup and signal id
         def change_signal_input(self, dum, _signal, _input_id, voffset_func=lambda:0):
 		voffset = voffset_func ()

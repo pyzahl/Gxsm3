@@ -70,6 +70,147 @@ timeout_tunescope_default     =  150
 timeout_DSP_status_reading        =  100
 timeout_DSP_signal_lookup_reading = 2100
 
+
+## Si Diode Curve 10 -- i.e for DT-400
+## [ T(K), Volts, dV/dT (mV/K) ]
+curve_10 = [
+  [  1.40, 1.69812, -13.1 ],
+  [  1.60, 1.69521, -15.9 ],
+  [  1.80, 1.69177, -18.4 ],
+  [  2.00, 1.68786, -20.7 ],
+  [  2.20, 1.68352, -22.7 ],
+  [  2.40, 1.67880, -24.4 ],
+  [  2.60, 1.67376, -25.9 ],
+  [  2.80, 1.66845, -27.1 ],
+  [  3.00, 1.66292, -28.1 ],
+  [  3.20, 1.65721, -29.0 ],
+  [  3.40, 1.65134, -29.8 ],
+  [  3.60, 1.64529, -30.7 ],
+  [  3.80, 1.63905, -31.6 ],
+  [  4.00, 1.63263, -32.7 ],
+  [  4.20, 1.62602, -33.6 ],
+  [  4.40, 1.61920, -34.6 ],
+  [  4.60, 1.61220, -35.4 ],
+  [  4.80, 1.60506, -36.0 ],
+  [  5.00, 1.59782, -36.5 ],
+  [  5.50, 1.57928, -37.6 ],
+  [  6.00, 1.56027, -38.4 ],
+  [  6.50, 1.54097, -38.7 ],
+  [  7.00, 1.52166, -38.4 ],
+  [  7.50, 1.50272, -37.3 ],
+  [  8.00, 1.48443, -35.8 ],
+  [  8.50, 1.46700, -34.0 ],
+  [  9.00, 1.45048, -32.1 ],
+  [  9.50, 1.43488, -30.3 ],
+  [  10.0, 1.42013, -28.7 ],
+  [  10.5, 1.40615, -27.2 ],
+  [  11.0, 1.39287, -25.9 ],
+  [  11.5, 1.38021, -24.8 ],
+  [  12.0, 1.36809, -23.7 ],
+  [  12.5, 1.35647, -22.8 ],
+  [  13.0, 1.34530, -21.9 ],
+  [  13.5, 1.33453, -21.2 ],
+  [  14.0, 1.32412, -20.5 ],
+  [  14.5, 1.31403, -19.9 ],
+  [  15.0, 1.30422, -19.4 ],
+  [  15.5, 1.29464, -18.9 ],
+  [  16.0, 1.28527, -18.6 ],
+  [  16.5, 1.27607, -18.2 ],
+  [  17.0, 1.26702, -18.0 ],
+  [  17.5, 1.25810, -17.7 ],
+  [  18.0, 1.24928, -17.6 ],
+  [  18.5, 1.24053, -17.4 ],
+  [  19.0, 1.23184, -17.4 ],
+  [  19.5, 1.22314, -17.4 ],
+  [  20.0, 1.21440, -17.6 ],
+  [  21.0, 1.19645, -18.5 ],
+  [  22.0, 1.17705, -20.6 ],
+  [  23.0, 1.15558, -21.7 ],
+  [  24.0, 1.13598, -15.9 ],
+  [  25.0, 1.12463, -7.72 ],
+  [  26.0, 1.11896, -4.34 ],
+  [  27.0, 1.11517, -3.34 ],
+  [  28.0, 1.11212, -2.82 ],
+  [  29.0, 1.10945, -2.53 ],
+  [  30.0, 1.10702, -2.34 ],
+  [  32.0, 1.10263, -2.08 ],
+  [  34.0, 1.09864, -1.92 ],
+  [  36.0, 1.09490, -1.83 ],
+  [  38.0, 1.09131, -1.77 ],
+  [  40.0, 1.08781, -1.74 ],
+  [  42.0, 1.08436, -1.72 ],
+  [  44.0, 1.08093, -1.72 ],
+  [  46.0, 1.07748, -1.73 ],
+  [  48.0, 1.07402, -1.74 ],
+  [  50.0, 1.07053, -1.75 ],
+  [  52.0, 1.06700, -1.77 ],
+  [  54.0, 1.06346, -1.78 ],
+  [  56.0, 1.05988, -1.79 ],
+  [  58.0, 1.05629, -1.80 ],
+  [  60.0, 1.05267, -1.81 ],
+  [  65.0, 1.04353, -1.84 ],
+  [  70.0, 1.03425, -1.87 ],
+  [  75.0, 1.02482, -1.91 ],
+  [  77.35, 1.02032, -1.92 ],
+  [  80.0, 1.01525, -1.93 ],
+  [  85.0, 1.00552, -1.96 ],
+  [  90.0, 0.99565, -1.99 ],
+  [  95.0, 0.98564, -2.02 ],
+  [  100.0, 0.97550, -2.04 ],
+  [  110.0, 0.95487, -2.08 ],
+  [  120.0, 0.93383, -2.12 ],
+  [  130.0, 0.91243, -2.16 ],
+  [  140.0, 0.89072, -2.19 ],
+  [  150.0, 0.86873, -2.21 ],
+  [  160.0, 0.84650, -2.24 ],
+  [  170.0, 0.82404, -2.26 ],
+  [  180.0, 0.80138, -2.28 ],
+  [  190.0, 0.77855, -2.29 ],
+  [  200.0, 0.75554, -2.31 ],
+  [  210.0, 0.73238, -2.32 ],
+  [  220.0, 0.70908, -2.34 ],
+  [  230.0, 0.68564, -2.35 ],
+  [  240.0, 0.66208, -2.36 ],
+  [  250.0, 0.63841, -2.37 ],
+  [  260.0, 0.61465, -2.38 ],
+  [  270.0, 0.59080, -2.39 ],
+  [  273.15, 0.58327, -2.39 ],
+  [  280.0, 0.56690, -2.39 ],
+  [  290.0, 0.54294, -2.40 ],
+  [  300.0, 0.51892, -2.40 ],
+  [  305.0, 0.50688, -2.41 ],
+  [  310.0, 0.49484, -2.41 ],
+  [  320.0, 0.47069, -2.42 ],
+  [  330.0, 0.44647, -2.42 ],
+  [  340.0, 0.42221, -2.43 ],
+  [  350.0, 0.39783, -2.44 ],
+  [  360.0, 0.37337, -2.45 ],
+  [  370.0, 0.34881, -2.46 ],
+  [  380.0, 0.32416, -2.47 ],
+  [  390.0, 0.29941, -2.48 ],
+  [  400.0, 0.27456, -2.49 ],
+  [  410.0, 0.24963, -2.50 ],
+  [  420.0, 0.22463, -2.50 ],
+  [  430.0, 0.19961, -2.50 ],
+  [  440.0, 0.17464, -2.49 ],
+  [  450.0, 0.14985, -2.46 ],
+  [  460.0, 0.12547, -2.41 ],
+  [  470.0, 0.10191, -2.30 ],
+  [  475.0, 0.09062, -2.22 ],
+  [  10000.0, 0.0, 0.0 ]
+]
+
+
+## [ T(K), Volts, dV/dT (mV/K) ]
+def v2k(v):
+    for dtv in curve_10:
+        dv = v-dtv[1]
+        if dv >= 0.0:
+            return dtv[0] + dv*1000./dtv[2]
+
+#np_v2k = np.vectorize(v2k)
+
+
 # class MyDotWindow(xdot.DotWindow):
 #
 # 	def __init__(self):
@@ -1469,6 +1610,208 @@ class SignalPlotter():
 	parent.wins[name].show_all()
 
 
+class DiodeTPlotter():
+	# X: 7=time, plotting Monitor Taps 20,21,0,1
+    def __init__(self, parent, length = 3600., taps=[7,1], samplesperpage=3600):
+        self.monitor_taps = taps
+
+        [value, uv, signalV] = parent.mk3spm.get_monitor_signal (self.monitor_taps[1])
+
+	label = "Diode Temp Plotter -- Monitor Indexes 1 (MIX IN 1)"
+	name  = "Diode Temp Plotter"
+
+	if not parent.wins.has_key(name):
+		win = gobject.new(gtk.Window,
+				  type=gtk.WINDOW_TOPLEVEL,
+				  title=label,
+				  allow_grow=True,
+				  allow_shrink=True,
+				  border_width=0)
+		parent.wins[name] = win
+		v = gobject.new(gtk.HBox(spacing=0))
+
+		self.pos      = 0
+                self.span     = length
+		self.points   = samplesperpage
+		self.dt       = self.span/self.points
+		self.Time = zeros (self.points)
+		self.Tap4 = zeros (self.points)
+
+                self.t0 = parent.mk3spm.get_monitor_data (self.monitor_taps[0])
+
+		scope = Oscilloscope( gobject.new(gtk.Label), v, "XT", label)
+		scope.set_scale ( { signalV[SIG_UNIT]: "V", "Temp": "K" })
+		scope.set_chinfo(["TEMP","MONV"])
+                scope.set_flash ("configure CH4 via Signal Monitor: t, CH4:=" + str(self.monitor_taps[1]))
+
+		win.add(v)
+
+		table = gtk.Table(4, 2)
+		table.set_row_spacings(5)
+		table.set_col_spacings(5)
+		v.pack_start (table)
+
+		tr=0
+                c=0
+
+		lab = gobject.new(gtk.Label, label="CH1: Diode T in K")
+		table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.M3scale = gtk.Entry()
+		self.M3scale.set_text("1.0")
+		table.attach(self.M3scale, c, c+1, tr, tr+1)
+                tr=tr+1
+                
+		lab = gobject.new(gtk.Label, label="CH2: %s"%signalV[SIG_NAME] + ", Scale in %s/div"%signalV[SIG_UNIT])
+		table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.M4scale = gtk.Entry()
+		self.M4scale.set_text("0.1")
+		table.attach(self.M4scale, c, c+1, tr, tr+1)
+                tr=tr+1
+
+		tr = 0
+                c = 1
+		self.laby0 = gobject.new(gtk.Label, label="Offset in K")
+		table.attach(self.laby0, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.M3off = gtk.Entry()
+		self.M3off.set_text("0")
+		table.attach(self.M3off, c, c+1, tr, tr+1)
+                tr=tr+1
+
+		self.laby0 = gobject.new(gtk.Label, label="Offset in V, 1.40K = 1.69812V")
+		table.attach(self.laby0, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.M4off = gtk.Entry()
+		self.M4off.set_text("1.69812")
+		table.attach(self.M4off, c, c+1, tr, tr+1)
+                tr=tr+1
+                
+                c=0
+		lab = gobject.new(gtk.Label, label="Page length in s \n per "+str(self.points)+" samples")
+		table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.Il = gtk.Entry()
+		self.Il.set_text("%d"%self.span)
+		table.attach(self.Il, c, c+1, tr, tr+1)
+
+		self.xdc = 0.
+		self.ydc = 0.
+
+		def update_plotter():
+
+                        if self.pos >= self.points:
+                                #self.run = gtk.FALSE
+				#self.run_button.set_label("RESTART")
+				self.pos = 0
+                                                          
+                                save ("plotter_dt-"+str(self.t0), self.Time)
+                                save ("plotter_dv-"+str(self.t0), self.TapV)
+                                save ("plotter_dk-"+str(self.t0), self.TapK)
+                                scope.set_flash ("Saved: plotter_t#-"+str(self.t0))
+                                # auto loop
+                                self.t0 = parent.mk3spm.get_monitor_data (self.monitor_taps[0])
+                                
+			n = self.pos
+                        self.pos = self.pos+1
+
+                        t = parent.mk3spm.get_monitor_data (self.monitor_taps[0])
+                        t = (t-self.t0) / 150000.
+                        self.Time[n] = t
+                        
+                        [value, uv, signalV] = parent.mk3spm.get_monitor_signal_median (self.monitor_taps[1])
+                        self.TapV[n] = uv
+                        self.TapK[n] = v2k(uv)
+
+                        if n == 0:
+                            print "plotter data signals:"
+                            print signalV
+                            scope.set_chinfo(["Diode Temp in K", "Diode Volts"])
+
+                        print n, t, uv, v2k(uv)
+                        
+			try:
+				m3scale_div = float(self.M3scale.get_text())
+			except ValueError:
+				m3scale_div = 1
+
+			try:
+				m4scale_div = float(self.M4scale.get_text())
+			except ValueError:
+				m4scale_div = 1
+
+			try:
+				m3off = float(self.M3off.get_text())
+			except ValueError:
+				m3off = 0
+                                
+			try:
+				m4off = float(self.M4off.get_text())
+			except ValueError:
+				m4off = 0
+                                
+                        scope.set_scale ( { 
+                                        "Temp"   : "[ {:.3f} K ]  {:g} K".format(v2k(uv),m3scale_div), 
+                                        "DVolt:" : "[ {:.4f} V ]  {:g}".format(uv,m4scale_div), 
+					"time: " : "{:g} s".format(self.span/20.)
+					})
+
+                        ### def set_data (self, Xd, Yd, Zd=zeros(0), XYd=[zeros(0), zeros(0)]):
+
+                        #  if t > self.span:
+                        #    td = 20. * (self.Time-t+self.span)/self.span
+                        # else:
+                        td = -10. + 20. * self.Time/self.span
+                        tk = -(self.TapK - m3off) / m3scale_div 
+                        tv = -(self.TapV - m4off) / m4scale_div 
+                        #scope.set_data (zeros(0), zeros(0), zeros(0), XYd=[td, t1])
+                        #scope.set_data (t1, t2, zeros(0), XYd=[td, t1])
+                        scope.set_data_with_uv (tk, tv, zeros(0), zeros(0))
+
+			return self.run
+
+		def stop_update_plotter (win, event=None):
+			print "STOP, hide."
+			win.hide()
+			self.run = gtk.FALSE
+                        save ("plotter_dt-"+str(self.t0), self.Time)
+                        save ("plotter_dv-"+str(self.t0), self.TapV)
+                        save ("plotter_dk-"+str(self.t0), self.TapK)
+                        scope.set_flash ("Saved: plotter_dt#-"+str(self.t0))
+			return True
+
+		def toggle_run_plotter (b):
+			if self.run:
+				self.run = gtk.FALSE
+				self.run_button.set_label("RUN PLOTTER")
+                                save ("plotter_dt-"+str(self.t0), self.Time)
+                                save ("plotter_dv-"+str(self.t0), self.TapV)
+                                save ("plotter_dk-"+str(self.t0), self.TapK)
+                                scope.set_flash ("Saved: plotter_dt#-"+str(self.t0))
+			else:
+				self.run = gtk.TRUE
+				self.run_button.set_label("STOP PLOTTER")
+                                self.t0 = parent.mk3spm.get_monitor_data (self.monitor_taps[0])
+                                self.pos      = 0
+				self.span = float (self.Il.get_text())
+                                self.dt   = self.span/self.points
+                                self.Time = zeros (self.points)
+                                [value, uv, signalV] = parent.mk3spm.get_monitor_signal (self.monitor_taps[1])
+                                self.TapV = zeros (self.points)+uv
+                                self.TapK = zeros (self.points)+v2k(uv)
+				gobject.timeout_add (int (self.dt*1000.), update_plotter)
+
+		self.run_button = gtk.Button("STOP TUNE")
+		self.run_button.connect("clicked", toggle_run_plotter)
+		table.attach(self.run_button, 1, 2, tr, tr+1)
+
+		self.run = gtk.FALSE
+		win.connect("delete_event", stop_update_plotter)
+		toggle_run_plotter (self.run_button)
+		
+	parent.wins[name].show_all()
+
 
 
 ################################################################################
@@ -1489,6 +1832,7 @@ class Mk3_Configurator:
 		   "5 SPM Create Signal Graph": self.create_dotviz_graph,
 		   "6 SPM Signal Oscilloscope": self.create_oscilloscope_app,
 		   "6pSPM Signal Plotter": self.create_signalplotter_app,
+		   "6kSPM Diode Temp Plotter": self.create_diodetplotter_app,
 		   "7 PLL: Osc. Tune App": self.create_PLL_tune_app,
 		   "8 PLL: Ampl. Step App": self.create_amp_step_app,
 		   "9 PLL: Phase Step App": self.create_phase_step_app,
@@ -1708,6 +2052,9 @@ class Mk3_Configurator:
             ## may customize defaults using this line:
 	    ## sigplotter = SignalPlotter (self, 300, [7,20,21,0,1], 2000)
 	    sigplotter = SignalPlotter (self)
+
+    def create_diodetplotter_app (self, _button):
+	    dtplotter = DiodeTPlotter (self)
 	
     def create_PLL_tune_app (self, _button):
 	    tune = TuneScope (self)
