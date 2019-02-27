@@ -1,66 +1,31 @@
 #!/usr/bin/env python
 
+import os as os
+import time as time
 import numpy as np
 import scipy.signal as sig
 import matplotlib.pyplot as plt
 import glob2
 
+historysec = 3600*24*10 # plot last 24h only!
 
-##plotter_t4--868979936.npy
+interval = 3600 # seconds / per data set
 
-#files_t = glob2.glob("plotter_t-*.npy")
-#files_v = glob2.glob("plotter_t4-*.npy")
-files_v=[
-    "plotter_t4-804970816.npy",
-    "plotter_t4-264743975.npy",
-    "plotter_t4--275467746.npy",
-    "plotter_t4--815675757.npy",
-    "plotter_t4--1355885185.npy",
-    "plotter_t4--1896076879.npy",
-    "plotter_t4-1858675235.npy",
-    "plotter_t4-1318469695.npy",
-    "plotter_t4-778272008.npy",
-    "plotter_t4-238068340.npy",
-    "plotter_t4--302141533.npy",
-    "plotter_t4--842337735.npy",
-    "plotter_t4--1382535608.npy",
-    "plotter_t4--1922733769.npy",
-    "plotter_t4-1832024843.npy",
-    "plotter_t4-1291808073.npy",
-    "plotter_t4-751615155.npy",
-    "plotter_t4-211412009.npy",
-    "plotter_t4--328779721.npy",
-    "plotter_t4--868979936.npy",
-    "plotter_t4--1409191467.npy",
-    "plotter_t4--1949695067.npy",
-    "plotter_t4--1958061258.npy",
-    ]
-files_t=[
-    "plotter_t-804970816.npy",
-    "plotter_t-264743975.npy",
-    "plotter_t--275467746.npy",
-    "plotter_t--815675757.npy",
-    "plotter_t--1355885185.npy",
-    "plotter_t--1896076879.npy",
-    "plotter_t-1858675235.npy",
-    "plotter_t-1318469695.npy",
-    "plotter_t-778272008.npy",
-    "plotter_t-238068340.npy",
-    "plotter_t--302141533.npy",
-    "plotter_t--842337735.npy",
-    "plotter_t--1382535608.npy",
-    "plotter_t--1922733769.npy",
-    "plotter_t-1832024843.npy",
-    "plotter_t-1291808073.npy",
-    "plotter_t-751615155.npy",
-    "plotter_t-211412009.npy",
-    "plotter_t--328779721.npy",
-    "plotter_t--868979936.npy",
-    "plotter_t--1409191467.npy",
-    "plotter_t--1949695067.npy",
-    "plotter_t--1958061258.npy",
-]
+dataset_path='.'   
+files_t = glob2.glob(dataset_path+"/plotter_dt*")   
+files_k = glob2.glob(dataset_path+"/plotter_dk*")   
 
+#print (files)
+#print (filesdk)
+#files.extend(filesdk)
+
+files_t.sort(key=os.path.getmtime)
+files_k.sort(key=os.path.getmtime)
+
+
+
+
+#print (files)
 
 ## Si Diode Curve 10 -- i.e for DT-400
 ## [ T(K), Volts, dV/dT (mV/K) ]
@@ -192,6 +157,17 @@ curve_10 = [
 ]
 
 
+def butter_lowpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = sig.butter(order, normal_cutoff, btype='low', analog=False)
+    return b, a
+
+def butter_lowpass_filtfilt(data, cutoff, fs, order=5):
+    b, a = butter_lowpass(cutoff, fs, order=order)
+    y = sig.filtfilt(b, a, data)
+    return y
+
 ## [ T(K), Volts, dV/dT (mV/K) ]
 def v2k(v):
     for dtv in curve_10:
@@ -203,28 +179,42 @@ np_v2k = np.vectorize(v2k)
 
 t=np.array([])
 v=np.array([])
+k=np.array([])
 
 i=0
 t0=0.
-for ft, fv in zip(files_t[::-1], files_v[::-1]):
+tstart=time.time () - historysec
+t00=os.path.getmtime (files_t[0])-3600
+print (tstart, t00)
+for ft, fk in zip(files_t[::-1], files_k[::-1]):
     ttmp = np.load (ft)
-    if (abs(ttmp[-1]-3600.)) < 5:
-        t = np.append (t, ttmp+t0, axis=0)
-        v = np.append (v, np.load (fv), axis=0)
-        t0 = t0 + 3600 ## + t[-1] +  t[-1] - t[-2]  
-        print (ft, fv, t0, ttmp[0], ttmp[-1], v[-1])
+    ktmp = np.load (fk)
+    #if (abs(ttmp[-1]-3600.)) < 5 and np.size(ttmp) == np.size(ktmp) and np.size(ttmp) == 3600 :
+    if np.size(ttmp) == np.size(ktmp) and np.size(ttmp) == 3600 :
+        t0 = os.path.getmtime (ft)-4000
+        if t0 > tstart:
+            ti0=0
+            for i in range(1,np.size(ttmp)):
+                if abs(ttmp[i]) > interval:
+                    if ti0 == 0:
+                        print ("Adjusting for DSP time loop loop: ", ft, i, ttmp[i], ttmp[i-1])
+                        ti0 = ttmp[i] - ttmp[i-1]
+                    ttmp[i] = ttmp[i] - ti0
+            ktmp[0] = 0
+            t = np.append (t, ttmp[::-1]+t0-t00, axis=0)
+            k = np.append (k, ktmp[::-1], axis=0)
+            print (ft, "\t", fk, "\t", t0, ttmp[0], ttmp[-1], k[-1], np.size(t), np.size(k) )
 
 # TEST DTV CURVE        
 #for i in range(0,4000):
 #    v[i] = 1.7-0.0001*i
 
 
-#print (sig.medfilt(np.array([1.0,2.2,3.2,4.5,8.0]), 3))
-
-k=np_v2k(v)
-plt.plot (t, v)
-plt.plot (t, k)
-plt.plot (t, sig.medfilt(k, 11))
+##k=np_v2k(v)
+#plt.plot (t, v)
+plt.plot (t/3600, k)
+plt.plot (t/3600, sig.medfilt(k, 23))
+plt.plot (t/3600, butter_lowpass_filtfilt(k, 0.001, 1))
 plt.title ('Plotter Diode Voltage')
 plt.grid (True)
 plt.show ()
