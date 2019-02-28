@@ -130,13 +130,13 @@ class gxsm_link():
 		self.count = -1
 		self.offset_ctrl = oc
 		self.mk3spm = SPMcontrol ()
-                self.gain_code_last=0
-                self.gains = [ 0,0,0 ]
-                self.gxsm_gain_control_link = False
+		self.gain_code_last=0
+		self.gains = [ 0,0,0 ]
+		self.gxsm_gain_control_link = False
 		if self.mk3spm.status ():
 			self.mk3spm.read_configurations ()
 		# setup monitor for link:
-			print "Setting up Links in Signal Monitor. WARNING: DO NOT READJUST WHILE LINK IS ACTIVE."
+			print ("Setting up Links in Signal Monitor. WARNING: DO NOT READJUST WHILE LINK IS ACTIVE.")
 			x0 = self.mk3spm.lookup_signal_by_name ("X Offset")
 			self.x0tap = NUM_MONITOR_SIGNALS-4
 			y0 = self.mk3spm.lookup_signal_by_name ("Y Offset")
@@ -150,7 +150,7 @@ class gxsm_link():
 			self.mk3spm.change_signal_input (0, z0, DSP_SIGNAL_MONITOR_INPUT_BASE_ID+self.z0tap)
 			self.mk3spm.change_signal_input (0, gains, DSP_SIGNAL_MONITOR_INPUT_BASE_ID+self.gaintap)
 		else:
-			print "NO SPM_CONTROL HOOKED UP."
+			print ("NO SPM_CONTROL HOOKED UP.")
 
 	def offset_adjust (self, start, count):
 		global Z0_invert_status
@@ -166,7 +166,7 @@ class gxsm_link():
 			if Z0_invert_status:
 				v[2] = -v[2];
 			self.offset_ctrl.write_t_vector_var(v)
-                        if self.gxsm_gain_control_link:
+			if self.gxsm_gain_control_link:
                                 gc = self.mk3spm.get_monitor_data (self.gaintap)
                                 if gc != self.gain_code_last:
                                         self.gain_code_last = gc
@@ -174,7 +174,7 @@ class gxsm_link():
                                         print ("Adjust Gains XYZ: ", self.gains)
                                         self.offset_ctrl.adjust_gains (self.gains)
                                         
-	#   print "Number of ticks since 12:00am, January 1, 1970:", ticks, " #", count, v
+	#   print ("Number of ticks since 12:00am, January 1, 1970:", ticks, " #", count, v)
 	    
 	def start (self):
 		self.count = 0
@@ -199,9 +199,9 @@ class gxsm_link():
 
 def delete_event(win, event=None):
 	global GXSM_Link_status
-	print "Link: ", GXSM_Link_status
+	print ("Link: ", GXSM_Link_status)
 	if GXSM_Link_status:
-		print "GXSM Link is active, please disable Link to quit"
+		print ("GXSM Link is active, please disable Link to quit")
 		idlg = gtk.MessageDialog(None, 
 				       gtk.DIALOG_DESTROY_WITH_PARENT,
 				       gtk.MESSAGE_INFO, 
@@ -232,7 +232,7 @@ def read_back():
 	
 def _X_write_back_():
 	global HV1_configuration
-        sr = open (sr_spd_dev_path, "wb")
+	sr = open (sr_spd_dev_path, "wb")
 	os.write (sr.fileno(), struct.pack (fmt_config,
 					    HV1_configuration[ii_config_softwareid],
 					    HV1_configuration[ii_config_hardware_version],
@@ -333,8 +333,8 @@ def goto_presets():
 	tY0 = HV1_configuration[ii_config_preset_Y0]
 	tZ0 = HV1_configuration[ii_config_preset_Z0]
 
-	print "goto presets:"
-	print tX0, tY0, tZ0
+	print ("goto presets:")
+	print (tX0, tY0, tZ0)
 
 	sr = open (sr_spd_dev_path, "wb")
 	os.lseek (sr.fileno(), CONFIGURATION_VECTOR_ADDRESS + 2*ii_config_target_X0, 1)
@@ -407,8 +407,8 @@ class offset_vector():
 	            for i in range(0,5):
                             if gains[ci] == gain[i]:
                                     print ("setting gain[%d]"%ci+" to %dx"%gain[i])
-			            hv1_adjust (0, i, ii[ci])
-			            self.gainselectmenuvec[ci](i)
+                                    hv1_adjust (0, i, ii[ci])
+                                    self.gainselectmenuvec[ci](i)
 
 
 class drift_compensation():
@@ -440,7 +440,7 @@ class drift_compensation():
             for i in range (0,3):
                 v[i] = self.tvi[i] + (ticks - self.tvi[3]) * self.tvd[i]
             self.offset_ctrl.write_t_vector_var(v)
-#            print "Number of ticks since 12:00am, January 1, 1970:", ticks, " #", count, v
+#            print ("Number of ticks since 12:00am, January 1, 1970:", ticks, " #", count, v)
         
     def start (self):
         self.update ()
@@ -464,21 +464,21 @@ def toggle_configure_widgets (w):
 def toggle_driftcompensation (w, dc):
 	if w.get_active():
             dc.start ()
-            print "Drift Compensation ON"
+            print ("Drift Compensation ON")
 	else:
             dc.stop ()
-            print "Drift Compensation OFF"
+            print ("Drift Compensation OFF")
 	
 def toggle_gxsm_link (w, gl):
 	global GXSM_Link_status
 	if w.get_active():
 		gl.start ()
 		GXSM_Link_status = TRUE
-		print "GXSM Link enabled"
+		print ("GXSM Link enabled")
 	else:
 		gl.stop ()
 		GXSM_Link_status = FALSE
-		print "GXSM Link disabled"
+		print ("GXSM Link disabled")
 	
 def toggle_gxsm_gain_link (w, gl):
 	global GXSM_Link_status
@@ -491,15 +491,15 @@ def toggle_Z0_invert (w):
 	global Z0_invert_status
 	if w.get_active():
 		Z0_invert_status = TRUE
-		print "Z0 invert ACTIVE"
+		print ("Z0 invert ACTIVE")
 	else:
 		Z0_invert_status = FALSE
-		print "Z0 normal"
+		print ("Z0 normal")
 	
 def do_emergency(button):
-	print "Emergency Stop Action:"
+	print ("Emergency Stop Action:")
 	goto_presets()
-#	print " -- no action defined, doing nothing. -- "
+#	print (" -- no action defined, doing nothing. -- ")
 
 
 # create HV1 main panel
@@ -522,7 +522,7 @@ def create_hv1_app():
 		win.add(box1)
 		box1.show()
 
-                tr = 0
+		tr = 0
 
 		table = gtk.Table (6, 8)
 		table.set_row_spacings(5)
@@ -553,22 +553,22 @@ def create_hv1_app():
 #		lab.show ()
 #		table.attach(lab, 0, 1, tr, tr+1)
 
-                maxv = 200
+		maxv = 200
 		v = gobject.new(gtk.VBox(spacing=2))
 		c1 = Instrument( gobject.new(gtk.Label), v, "Volt", "X-Axis", unit[0])
-                c1.set_range(arange(0,maxv/10*11,maxv/10))
+		c1.set_range(arange(0,maxv/10*11,maxv/10))
 		c1.show()
 		table.attach(v, 1, 2, tr, tr+1)
 
 		v = gobject.new(gtk.VBox(spacing=2))
 		c2 = Instrument( gobject.new(gtk.Label), v, "Volt", "Y-Axis", unit[1])
-                c2.set_range(arange(0,maxv/10*11,maxv/10))
+		c2.set_range(arange(0,maxv/10*11,maxv/10))
 		c2.show()
 		table.attach(v, 2, 3, tr, tr+1)
 
 		v = gobject.new(gtk.VBox(spacing=2))
 		c3 = Instrument( gobject.new(gtk.Label), v, "Volt", "Z-Axis", unit[2])
-                c3.set_range(arange(0,maxv/10*11,maxv/10))
+		c3.set_range(arange(0,maxv/10*11,maxv/10))
 		c3.show()
 		table.attach(v, 3, 4, tr, tr+1)
 
@@ -594,7 +594,7 @@ def create_hv1_app():
 #		lab.show ()
 		table.attach(lab, 0, 1, tr, tr+1)
 
-                e = []
+		e = []
 
 		for i in range(0,3):
                     e.append (gtk.Entry())
@@ -615,7 +615,7 @@ def create_hv1_app():
 		lab.show ()
 		table.attach(lab, 0, 1, tr, tr+1)
 
-                eo = []
+		eo = []
 
 		for i in range(0,3):
                     eo.append (gtk.Entry())
@@ -634,7 +634,7 @@ def create_hv1_app():
 #		lab.show ()
 		table.attach(lab, 0, 1, tr, tr+1)
 
-                ed = []
+		ed = []
 
 		for i in range(0,3):
                     ed.append (gtk.Entry())
@@ -659,7 +659,7 @@ def create_hv1_app():
 		chan = ["gain_X", "gain_Y", "gain_Z"]
 		ii   = [ii_config_gain_X, ii_config_gain_Y, ii_config_gain_Z]
 		gain = [" 1x", " 2x", " 5x", "10x", "20x"]
-                gain_select = []
+		gain_select = []
 		for ci in range(0,3):
 			opt = gtk.OptionMenu()
 			menu = gtk.Menu()
@@ -667,7 +667,7 @@ def create_hv1_app():
 				item = make_menu_item(gain[i], make_menu_item, hv1_adjust, i, ii[ci])
 				menu.append(item)
 			menu.set_active(HV1_configuration[ii[ci]])
-                        gain_select.append (menu.set_active);
+			gain_select.append (menu.set_active);
 			opt.set_menu(menu)
 			opt.show()
 			table.attach(opt, 1+ci, 2+ci, tr, tr+1)
@@ -707,7 +707,7 @@ def create_hv1_app():
 		for i in range(0,7):
 			item = make_menu_item(slew[i], make_menu_item, hv1_adjust, srsteps[i], ii_config_slewadjust_steps)
 			menu.append(item)
-			print i, 181.81818 / 150000 * 32767 / srsteps[i]
+			print (i, 181.81818 / 150000 * 32767 / srsteps[i])
 			if HV1_configuration[ii_config_slewadjust_steps] <= srsteps[i]:
 				ist = i
 
@@ -724,9 +724,9 @@ def create_hv1_app():
 # Link controls
 
 
-                offset_control = offset_vector(eo, gain_select)
+		offset_control = offset_vector(eo, gain_select)
 		oabutton.connect("clicked", offset_control.write_t_vector)
-                dc_control = drift_compensation (ed, offset_control)
+		dc_control = drift_compensation (ed, offset_control)
 		GxsmLink = gxsm_link(offset_control)
 
 
@@ -811,7 +811,7 @@ def destroy(*args):
         gtk.main_quit()
 
 def locate_spm_control_dsp():
-	print "need to create a MK3 base support class........."
+	print ("need to create a MK3 base support class.........")
 
 
 ##
@@ -822,7 +822,7 @@ def locate_spm_control_dsp():
 for i in range(sr_spd_dev_index, 8-sr_spd_dev_index):
 	sr_spd_dev_path = sr_spd_dev_base+"%d" %i
 
-	print "looking for MK3-Pro/HV1 at " + sr_spd_dev_path
+	print ("looking for MK3-Pro/HV1 at " + sr_spd_dev_path)
 	try:
             with open (sr_spd_dev_path):
                 # open SRanger (MK3-Pro) check for HV1, initialize
@@ -838,7 +838,7 @@ for i in range(sr_spd_dev_index, 8-sr_spd_dev_index):
                 
                 print ("HV1 Magic Code ID:   %08X" %HV1_configuration[ii_config_softwareid])
                 if HV1_configuration[ii_config_softwareid] == HV1_magic_softwareid:
-                    print "Identified HV1 at " + sr_spd_dev_path
+                    print ("Identified HV1 at " + sr_spd_dev_path)
                     print ("Hardware Version :   %08X" %HV1_configuration[ii_config_hardware_version])
                     print ("Firmware Version :   %08X" %HV1_configuration[ii_config_firmware_version])
                     print ("\n Full Configuration Vector: \n")
@@ -847,18 +847,18 @@ for i in range(sr_spd_dev_index, 8-sr_spd_dev_index):
                     print (HV1_monitor)
                     break
 	except IOError:
-            print 'Oh dear. No such device.'
+            print ('Oh dear. No such device.')
 
-        print "continue seeking for HV1 ..."
+	print ("continue seeking for HV1 ...")
 
 if ( HV1_configuration[ii_config_softwareid] != HV1_magic_softwareid ):
 		print ("\nERROR: Exiting -- sorry, no valid HV1 (Smart Piezo Drive) code Mk3-Pro identified.")
 else:
-        get_status()
+	get_status()
 	create_hv1_app()
 	gobject.timeout_add(updaterate, get_status)	
 	gtk.main()
-	print "The HV1 is still active and alive unchanged, you can reconnect for control/monitor at any time."
+	print ("The HV1 is still active and alive unchanged, you can reconnect for control/monitor at any time.")
 
 print ("Byby.")
 
