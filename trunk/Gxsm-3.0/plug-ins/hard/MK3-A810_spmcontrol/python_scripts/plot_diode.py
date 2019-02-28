@@ -7,7 +7,7 @@ import scipy.signal as sig
 import matplotlib.pyplot as plt
 import glob2
 
-historysec = 3600*24*10 # plot last 24h only!
+historysec = 3600*24*3 # plot last 3 days only!
 
 interval = 3600 # seconds / per data set
 
@@ -197,10 +197,10 @@ for ft, fk in zip(files_t[::-1], files_k[::-1]):
             for i in range(1,np.size(ttmp)):
                 if abs(ttmp[i]) > interval:
                     if ti0 == 0:
-                        print ("Adjusting for DSP time loop loop: ", ft, i, ttmp[i], ttmp[i-1])
+                        print ("Adjusting for DSP time looping: ", ft, i, ttmp[i], ttmp[i-1])
                         ti0 = ttmp[i] - ttmp[i-1]
                     ttmp[i] = ttmp[i] - ti0
-            ktmp[0] = 0
+            ktmp[0] = 0 # add file block mark, remove if not like
             t = np.append (t, ttmp[::-1]+t0-t00, axis=0)
             k = np.append (k, ktmp[::-1], axis=0)
             print (ft, "\t", fk, "\t", t0, ttmp[0], ttmp[-1], k[-1], np.size(t), np.size(k) )
