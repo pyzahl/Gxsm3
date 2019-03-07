@@ -1,0 +1,28 @@
+Partlist RedPitaya Shield
+
+Exported from rp-schield-V2-MCBSP.brd at 3/7/19 9:46 AM
+
+EAGLE Version 9.0.1 Copyright (c) 1988-2018 Autodesk, Inc.
+
+Assembly variant: 
+
+Part      Value          Package             Library                                Position (mil)        Orientation     Notes
+
+C1        100n           C0805               resistor                               (1370.07874 1157.08661) R270         GCJ21BR72A104KA01L,Murata Electronics North America,CAP CER 0.1UF 100V X7R 0805 
+C2        100n           C0805               resistor                               (1045.11811 1131.49606) R270         GCJ21BR72A104KA01L,Murata Electronics North America,CAP CER 0.1UF 100V X7R 0805 
+C3        100n           C0805               resistor                               (1426.37795 1511.81102) R270         GCJ21BR72A104KA01L,Murata Electronics North America,CAP CER 0.1UF 100V X7R 0805 
+C4        4n             C0805               resistor                               (953.93701 1514.96063) R270
+C5        4n             C0805               resistor                               (560.23622 1124.40945) R270
+C6        4n             C0805               resistor                               (1859.44882 1127.55906) R270
+J1                       557785-1            con-amp-rj45-shield                    (1678.34646 485.03937) R0            95672-001LF,Amphenol ICC (FCI), CONN MOD JACK 8P8C R/A SHIELDED
+J2                       557785-1            con-amp-rj45-shield                    (888.97638 485.03937) R0             95672-001LF,Amphenol ICC (FCI), CONN MOD JACK 8P8C R/A SHIELDED
+JP1                      JP3Q                jumper                                 (772.66265 1905.02817) R0            OPTIONAL (remove/scratch pre wired default jumper settings on PCB)+2xJUMPER
+R1        24R9           M1206               resistor                               (1211.02362 1776.37795) R180          
+R2        24R9           M1206               resistor                               (801.02362 1376.37795) R180           
+RP-E1                    FE13-2              con-lsta                               (2250.76058 1609.62549) MR90         Customized cut: 2x 1979,Adafruit Industries LLC,STACKING HEADER RASPBERRY PI, extra long pins
+RP-E2                    FE13-2              con-lsta                               (242.86713 1609.77276) MR90          OPTIONAL (not needed, but may be installed for mechanical support reasons, same as above)
+RP-NTH-RX                FE08-2              con-lsta                               (1600 1850)           R90            OPTIONAL for RP daisychaining
+RP-NTH-TX                FE08-2              con-lsta                               (1900 1850)           R90            OPTIONAL for RP daisychaining
+U1        SN65MLVD202A   SOIC127P600X175-14N Texas Instruments_By_element14_Batch_1 (654.33071 1038.18898) R270          SN65MLVD202ADR, Texas Instruments, IC M-LVDS LINE DVR/RCVR 14-SOIC         
+U2        SN65MLVD202A   SOIC127P600X175-14N Texas Instruments_By_element14_Batch_1 (1048.0315 1418.89764) R270          SN65MLVD202ADR, Texas Instruments, IC M-LVDS LINE DVR/RCVR 14-SOIC         
+U3        SN65MLVD202A   SOIC127P600X175-14N Texas Instruments_By_element14_Batch_1 (1461.81102 1038.18898) R270         SN65MLVD202ADR, Texas Instruments, IC M-LVDS LINE DVR/RCVR 14-SOIC         

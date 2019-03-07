@@ -1,0 +1,22 @@
+Partlist MK3 Shield
+
+Exported from mk3-schield.brd at 3/7/19 9:44 AM
+
+EAGLE Version 9.0.1 Copyright (c) 1988-2018 Autodesk, Inc.
+
+Assembly variant: 
+
+Part     Value          Package             Library                                Position (mil)        Orientation      Notes
+
+C1       100n           C0805               resistor                               (747.91339 825.07874) R0               GCJ21BR72A104KA01L,Murata Electronics North America,CAP CER 0.1UF 100V X7R 0805 
+C2       100n           C0805               resistor                               (773.50394 1960.11811) R0              GCJ21BR72A104KA01L,Murata Electronics North America,CAP CER 0.1UF 100V X7R 0805 
+C3       100n           C0805               resistor                               (773.21506 704.50689) R0               GCJ21BR72A104KA01L,Murata Electronics North America,CAP CER 0.1UF 100V X7R 0805 
+C4       4n             C0805               resistor                               (770.06545 232.06594) R0               
+C5       4n             C0805               resistor                               (780.59055 1465.23622) R0
+C6       4n             C0805               resistor                               (777.44094 1314.44882) R0
+J1                      557785-1            con-amp-rj45-shield                    (2026.65354 1769.96063) R180           95672-001LF,Amphenol ICC (FCI), CONN MOD JACK 8P8C R/A SHIELDED 
+J2                      557785-1            con-amp-rj45-shield                    (1316.02362 1769.96063) R180           95672-001LF,Amphenol ICC (FCI), CONN MOD JACK 8P8C R/A SHIELDED 
+JP1                     JP3Q                jumper                                 (1463 577)            R0               OPTIONAL (remove/scratch pre wired default jumper settings on PCB)+2xJUMPER
+U1       SN65MLVD202A   SOIC127P600X175-14N Texas Instruments_By_element14_Batch_1 (866.81102 1559.33071) R0              SN65MLVD202ADR, Texas Instruments, IC M-LVDS LINE DVR/RCVR 14-SOIC       
+U2       SN65MLVD202A   SOIC127P600X175-14N Texas Instruments_By_element14_Batch_1 (866.12844 326.16043) R0               SN65MLVD202ADR, Texas Instruments, IC M-LVDS LINE DVR/RCVR 14-SOIC       
+U3       SN65MLVD202A   SOIC127P600X175-14N Texas Instruments_By_element14_Batch_1 (866.81102 916.81102) R0               SN65MLVD202ADR, Texas Instruments, IC M-LVDS LINE DVR/RCVR 14-SOIC 
