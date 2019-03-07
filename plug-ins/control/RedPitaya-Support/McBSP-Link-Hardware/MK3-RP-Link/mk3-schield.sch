@@ -5065,6 +5065,17 @@ RJ45 Jack connectors&lt;br&gt;
 <wire x1="-33.02" y1="15.24" x2="-33.02" y2="-5.08" width="0.1524" layer="91"/>
 <junction x="-33.02" y="-5.08"/>
 <label x="-45.72" y="2.54" size="1.778" layer="95"/>
+<pinref part="J1" gate="G$1" pin="3"/>
+<pinref part="J1" gate="G$1" pin="4"/>
+<wire x1="111.76" y1="121.92" x2="111.76" y2="119.38" width="0.1524" layer="91"/>
+<pinref part="J1" gate="G$1" pin="5"/>
+<wire x1="111.76" y1="119.38" x2="111.76" y2="116.84" width="0.1524" layer="91"/>
+<pinref part="J1" gate="G$1" pin="6"/>
+<wire x1="111.76" y1="116.84" x2="111.76" y2="114.3" width="0.1524" layer="91"/>
+<wire x1="111.76" y1="114.3" x2="101.6" y2="114.3" width="0.1524" layer="91"/>
+<wire x1="101.6" y1="114.3" x2="101.6" y2="175.26" width="0.1524" layer="91"/>
+<wire x1="101.6" y1="175.26" x2="-7.62" y2="175.26" width="0.1524" layer="91"/>
+<wire x1="-7.62" y1="175.26" x2="-7.62" y2="170.18" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="CLKR0" class="0">
