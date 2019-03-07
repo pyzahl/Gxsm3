@@ -8355,6 +8355,18 @@ RJ45 Jack connectors&lt;br&gt;
 <wire x1="-78.74" y1="144.78" x2="-60.96" y2="144.78" width="0.1524" layer="91"/>
 <junction x="-78.74" y="144.78"/>
 <wire x1="-60.96" y1="144.78" x2="-60.96" y2="121.92" width="0.1524" layer="91"/>
+<pinref part="J1" gate="G$1" pin="3"/>
+<pinref part="J1" gate="G$1" pin="4"/>
+<wire x1="111.76" y1="121.92" x2="111.76" y2="119.38" width="0.1524" layer="91"/>
+<pinref part="J1" gate="G$1" pin="5"/>
+<wire x1="111.76" y1="119.38" x2="111.76" y2="116.84" width="0.1524" layer="91"/>
+<pinref part="J1" gate="G$1" pin="6"/>
+<wire x1="111.76" y1="114.3" x2="111.76" y2="116.84" width="0.1524" layer="91"/>
+<wire x1="111.76" y1="116.84" x2="101.6" y2="116.84" width="0.1524" layer="91"/>
+<wire x1="101.6" y1="116.84" x2="101.6" y2="175.26" width="0.1524" layer="91"/>
+<wire x1="101.6" y1="175.26" x2="104.14" y2="175.26" width="0.1524" layer="91"/>
+<wire x1="101.6" y1="175.26" x2="-7.62" y2="175.26" width="0.1524" layer="91"/>
+<wire x1="-7.62" y1="175.26" x2="-7.62" y2="170.18" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="FPGA-S-CLK" class="0">
