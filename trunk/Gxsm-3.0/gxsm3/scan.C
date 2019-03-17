@@ -526,7 +526,7 @@ int Scan::draw(int y1, int y2){
 	return 0;
 }
 
-int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan, ZD_TYPE ztype){
+int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan, ZD_TYPE ztype, gboolean keep_layer_info){
         Scan tmp;
         const gboolean transferdata = (mem2d &&  mem2d->GetNx() > 1 && mem2d->GetNy() > 1 && data.s.nx > 1 && data.s.ny > 1 ) ? true : false;
         if (transferdata){
@@ -547,7 +547,7 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
 		data.UpdateUnits();
 	}
 
-        mem2d->Resize(data.s.nx, data.s.ny, data.s.nvalues, ztype);
+        mem2d->Resize(data.s.nx, data.s.ny, data.s.nvalues, ztype, keep_layer_info);
 
 	// check if non linear sine X scale (fast scan set) 
 	if (fast_scan){

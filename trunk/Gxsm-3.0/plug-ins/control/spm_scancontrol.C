@@ -1307,15 +1307,14 @@ int SPM_ScanControl::setup_scan (int ch,
 	gapp->xsm->scan[ch]->data.SetZUnit (u);
 	delete u;
 		
-	if (!keep_multi_layer_info)
-		gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (), zt);
-
 	// setup dz from instrument definition or propagated via signal definition
 	if (fabs (d2u) > 0.)
 		gapp->xsm->scan[ch]->data.s.dz = d2u;
 	else
 		gapp->xsm->scan[ch]->data.s.dz = gapp->xsm->Inst->ZResolution (unit);
 	
+        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (), zt, keep_multi_layer_info);
+
 	// set scan title, name, ... and draw it!
 
 	gchar *scantitle = NULL;
