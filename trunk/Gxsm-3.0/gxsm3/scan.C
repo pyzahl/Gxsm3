@@ -528,7 +528,7 @@ int Scan::draw(int y1, int y2){
 
 int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan, ZD_TYPE ztype){
         Scan tmp;
-        const gboolean transferdata=true;
+        const gboolean transferdata = (mem2d &&  mem2d->GetNx() > 1 && mem2d->GetNy() > 1 && data.s.nx > 1 && data.s.ny > 1 ) ? true : false;
         if (transferdata){
                 g_message ("Scan create -- tmp copy from current %d x %d", mem2d->GetNx(), mem2d->GetNy());
                 tmp.data.copy (data);
@@ -546,6 +546,7 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
 		data.GetUser_Info(*vdata);
 		data.UpdateUnits();
 	}
+
         mem2d->Resize(data.s.nx, data.s.ny, data.s.nvalues, ztype);
 
 	// check if non linear sine X scale (fast scan set) 
@@ -577,7 +578,6 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
 	
         if (transferdata){
                 g_message ("Scan create/transfer -- resizing. %d %d @ %g  -> %d %d @ %g", tmp.data.s.nx, tmp.data.s.ny, tmp.data.s.rx, data.s.nx, data.s.ny, data.s.rx);
-                //mem2d->Resize(data.s.nx, data.s.ny, data.s.nvalues, ztype);
 
                 // transfer data
                 g_message ("Scan create -- transfer data interplotated");
@@ -586,14 +586,11 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
                                 double wx,wy, rix, riy;
                                 Pixel2World (ix, iy, wx, wy);
                                 tmp.World2Pixel (wx, wy, rix,riy);
-                                if ((ix == 0 || ix ==  (data.s.nx-1)) && (iy == 0 || iy ==  (data.s.ny-1)))
-                                        g_message ("T %g %g -[%g]-> %d %d [%g %g]", rix,riy, tmp.mem2d->GetDataPktInterpol (rix,riy), ix, iy, wx, wy);
+                                //if ((ix == 0 || ix ==  (data.s.nx-1)) && (iy == 0 || iy ==  (data.s.ny-1)))
+                                //        g_message ("T %g %g -[%g]-> %d %d [%g %g]", rix,riy, tmp.mem2d->GetDataPktInterpol (rix,riy), ix, iy, wx, wy);
                                 mem2d->PutDataPkt (tmp.mem2d->GetDataPktInterpol (rix,riy), ix, iy, 0);
                         }
-        } else {
-                //mem2d->Resize(data.s.nx, data.s.ny, data.s.nvalues, ztype);
         }
-
 
 	XSM_DEBUG (DBG_L2, "Scan::create done");
 	State= IS_NEW;
