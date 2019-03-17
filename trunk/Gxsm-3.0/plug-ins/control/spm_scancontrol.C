@@ -1288,54 +1288,27 @@ int SPM_ScanControl::setup_scan (int ch,
 		}
 	}
 
-
-	Mem2d *m=gapp->xsm->scan[ch]->mem2d;
+        ZD_TYPE zt=ZD_SHORT;
 	if (type){
-		if (strncmp (type, "BYTE", 4)==0)
-			m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_BYTE, keep_multi_layer_info);
-		else if (strncmp (type, "SHORT", 5)==0)
-			m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_SHORT, keep_multi_layer_info);
-		else if (strncmp (type, "LONG", 4)==0)
-			m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_LONG, keep_multi_layer_info);
-		else if (strncmp (type, "ULONG", 5)==0)
-			m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_ULONG, keep_multi_layer_info);
-		else if (strncmp (type, "LLONG", 5)==0)
-			m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_LLONG, keep_multi_layer_info);
-		else if (strncmp (type, "FLOAT", 5)==0)
-			m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_FLOAT, keep_multi_layer_info);
-		else if (strncmp (type, "DOUBLE", 6)==0)
-			m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_DOUBLE, keep_multi_layer_info);
-		else if (strncmp (type, "COMPLEX", 5)==0)
-			m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_COMPLEX, keep_multi_layer_info);
-		else if (strncmp (type, "RGBA", 5)==0)
-			m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_RGBA, keep_multi_layer_info);
-		else{ // default fallback is "Short"
-			PI_DEBUG_ERROR (DBG_EVER, "GXSM WARNING: fallback to default data type >SHORT< for channel: " 
-                                        << titleprefix
-                                        << " * " << name
-                                        << " * " << unit
-                                        << " * " << label
-                                        << " * unkown type: >" << type << "<" );
-			m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_SHORT, keep_multi_layer_info);
+		if (strncmp (type, "BYTE", 4)==0) zt = ZD_BYTE;
+		else if (strncmp (type, "SHORT", 5)==0) zt = ZD_SHORT;
+		else if (strncmp (type, "LONG", 4)==0) zt = ZD_LONG;
+		else if (strncmp (type, "ULONG", 5)==0) zt = ZD_ULONG; 
+		else if (strncmp (type, "LLONG", 5)==0) zt = ZD_LLONG; 
+		else if (strncmp (type, "FLOAT", 5)==0) zt = ZD_FLOAT;
+		else if (strncmp (type, "DOUBLE", 6)==0) zt = ZD_DOUBLE; 
+		else if (strncmp (type, "COMPLEX", 5)==0) zt = ZD_COMPLEX;
+		else if (strncmp (type, " zt = RGBA", 5)==0) zt = ZD_RGBA;
+		else{  zt =  ZD_SHORT;// default fallback is "Short"
 		}
-	} else {
-                PI_DEBUG_ERROR (DBG_EVER, "GXSM WARNING: fallback to default data type >SHORT< for channel: " 
-                                << titleprefix
-                                << " * " << name
-                                << " * " << unit
-                                << " * " << label
-                                << " * type not set!! ");
-		m->Resize (m->GetNx (), m->GetNy (), m->GetNv (), ZD_SHORT, keep_multi_layer_info);
-	}
-
+	} 
 	// Setup correct Z unit
 	UnitObj *u = gapp->xsm->MakeUnit (unit, label);
 	gapp->xsm->scan[ch]->data.SetZUnit (u);
 	delete u;
 		
-	// uncomment this line if top is not uncommented!
 	if (!keep_multi_layer_info)
-		gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan ());
+		gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (), zt);
 
 	// setup dz from instrument definition or propagated via signal definition
 	if (fabs (d2u) > 0.)
