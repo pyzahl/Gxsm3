@@ -266,7 +266,14 @@ static void ProbeIndicator_query(void)
 		(xsmres.HardwareType[0] == 'n' && xsmres.HardwareType[1] == 'o')?"Offline (no hardware)":"Online",
 		ProbeIndicator_pi.name, 
 		NULL);
-	
+
+#if 1 // disable auto terminate with no real hardware
+	if (xsmres.HardwareType[0] == 'n' && xsmres.HardwareType[1] == 'o'){
+                HUD_Window = NULL;
+		return;
+        }
+#endif
+        
 	HUD_Window = new ProbeIndicator(); // ProbeIndicator(ProbeIndicator_pi.app->getApp());
 	ProbeIndicator_pi.app->ConnectPluginToSPMRangeEvent (ProbeIndicator_refresh_callback);
 	HUD_Window->start ();
@@ -458,7 +465,7 @@ ProbeIndicator::ProbeIndicator (){
 	timer_id = 0;
 	probe = NULL;
         modes = SCOPE_NONE;
-        
+
 	AppWindowInit (N_("HUD Probe Indicator"));
 
 	canvas = gtk_drawing_area_new(); // make a drawing area

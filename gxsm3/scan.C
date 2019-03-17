@@ -526,29 +526,28 @@ int Scan::draw(int y1, int y2){
 	return 0;
 }
 
-int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan){
+int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan, ZD_TYPE ztype){
+        Scan tmp;
+        const gboolean transferdata=true;
+        if (transferdata){
+                g_message ("Scan create -- tmp copy from current %d x %d", mem2d->GetNx(), mem2d->GetNy());
+                tmp.data.copy (data);
+                tmp.data.s.nx = mem2d->GetNx();
+                tmp.data.s.ny = mem2d->GetNy();
+                tmp.mem2d->copy(mem2d);
+                tmp.data.s.ntimes  = 1;
+		tmp.data.s.nvalues = 1;
+        }
+        
 	if(vdata){
 		Display_Param disp_tmp;
-		// jetzt alle Werte übernehmen
+		// jetzt alle Geometrie Werte übernehmen
 		data.GetScan_Param(*vdata);
 		data.GetUser_Info(*vdata);
-// **		data.GetDSP_Param(*vdata);
 		data.UpdateUnits();
-//    XSM_DEBUG (DBG_L2, "Scan:Create, viewdata:" << " c:" << data.display.contrast << " vdata:" << vdata->s.nx << "x" << vdata->s.ny);
-
-#if 0
-		if(State == IS_FRESH){ // nur falls neu, sonst beibehalten
-			data.GetDisplay_Param(*vdata);
-// **			data.GetLayer_Param(*vdata);
-		}
-#endif
 	}
-	
-	data.ui.SetName("noname");
-	
-	mem2d->Resize(data.s.nx, data.s.ny, data.s.nvalues);
+        mem2d->Resize(data.s.nx, data.s.ny, data.s.nvalues, ztype);
 
-//--OffRotFix--
 	// check if non linear sine X scale (fast scan set) 
 	if (fast_scan){
 		double rx2 = data.s.rx/2.;
@@ -573,6 +572,28 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
 		data.s.nvalues = 1;
 		data.s.ntimes = 1;
 	}
+
+	data.ui.SetName("noname");
+	
+        if (transferdata){
+                g_message ("Scan create/transfer -- resizing. %d %d @ %g  -> %d %d @ %g", tmp.data.s.nx, tmp.data.s.ny, tmp.data.s.rx, data.s.nx, data.s.ny, data.s.rx);
+                //mem2d->Resize(data.s.nx, data.s.ny, data.s.nvalues, ztype);
+
+                // transfer data
+                g_message ("Scan create -- transfer data interplotated");
+                for (int iy=0; iy < data.s.ny; ++iy)
+                        for (int ix=0; ix < data.s.nx; ++ix){
+                                double wx,wy, rix, riy;
+                                Pixel2World (ix, iy, wx, wy);
+                                tmp.World2Pixel (wx, wy, rix,riy);
+                                if ((ix == 0 || ix ==  (data.s.nx-1)) && (iy == 0 || iy ==  (data.s.ny-1)))
+                                        g_message ("T %g %g -[%g]-> %d %d [%g %g]", rix,riy, tmp.mem2d->GetDataPktInterpol (rix,riy), ix, iy, wx, wy);
+                                mem2d->PutDataPkt (tmp.mem2d->GetDataPktInterpol (rix,riy), ix, iy, 0);
+                        }
+        } else {
+                //mem2d->Resize(data.s.nx, data.s.ny, data.s.nvalues, ztype);
+        }
+
 
 	XSM_DEBUG (DBG_L2, "Scan::create done");
 	State= IS_NEW;

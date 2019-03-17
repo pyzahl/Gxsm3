@@ -242,7 +242,14 @@ static void PanView_query(void)
 		(xsmres.HardwareType[0] == 'n' && xsmres.HardwareType[1] == 'o')?"Offline (no hardware)":"Online",
 		PanView_pi.name, 
 		NULL);
-	
+
+#if 1 // disable auto terminate with no real hardware
+	if (xsmres.HardwareType[0] == 'n' && xsmres.HardwareType[1] == 'o'){
+                Pan_Window = NULL;
+		return;
+        }
+#endif
+        
 	Pan_Window = new PanView(); // PanView(PanView_pi.app->getApp());
 	PanView_pi.app->ConnectPluginToSPMRangeEvent (PanView_refresh_callback);
 	Pan_Window->start_tip_monitor ();
@@ -350,11 +357,6 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
                 for(int j=0; j<N_PRESETS; ++j)
                         pos_preset_box[i][j] = NULL;
 
-#if 0 // disable auto terminate with no real hardware
-	if (xsmres.HardwareType[0] == 'n' && xsmres.HardwareType[1] == 'o')
-		return;
-#endif
-        
 	finish (FALSE);
 
 	AppWindowInit (N_("Pan View and OSD"));
