@@ -577,10 +577,9 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
 	data.ui.SetName("noname");
 	
         if (transferdata){
-                g_message ("Scan create/transfer -- resizing. %d %d @ %g  -> %d %d @ %g", tmp.data.s.nx, tmp.data.s.ny, tmp.data.s.rx, data.s.nx, data.s.ny, data.s.rx);
+                XSM_DEBUG_GP (DBG_L1, "Scan create/transfer -- resizing. %d %d @ %g  -> %d %d @ %g", tmp.data.s.nx, tmp.data.s.ny, tmp.data.s.rx, data.s.nx, data.s.ny, data.s.rx);
 
-                // transfer data
-                g_message ("Scan create -- transfer data interplotated");
+                // transfer / remap data
                 for (int iy=0; iy < data.s.ny; ++iy)
                         for (int ix=0; ix < data.s.nx; ++ix){
                                 double wx,wy, rix, riy;

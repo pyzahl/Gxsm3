@@ -1275,8 +1275,9 @@ int SPM_ScanControl::setup_scan (int ch,
 				 double d2u
 	){
 	PI_DEBUG (DBG_L2, "setup_scan");
-	// did this scan already exists?
-	if ( ! gapp->xsm->scan[ch]){ // make a new one ?
+
+        // check for exisiting scan, reusing, remapping data
+	if ( ! gapp->xsm->scan[ch]){ // create scan object if not exisiting
 		gapp->xsm->scan[ch] = gapp->xsm->NewScan (gapp->xsm->ChannelView[ch], 
 							  gapp->xsm->data.display.ViewFlg, 
 							  ch, 
@@ -1302,21 +1303,25 @@ int SPM_ScanControl::setup_scan (int ch,
 		else{  zt =  ZD_SHORT;// default fallback is "Short"
 		}
 	} 
-	// Setup correct Z unit
-	UnitObj *u = gapp->xsm->MakeUnit (unit, label);
-	gapp->xsm->scan[ch]->data.SetZUnit (u);
-	delete u;
+
+	PI_DEBUG (DBG_L1, "setup_scan[" << ch << " ]: scan->create " << type << " channel."); 
 		
+        // Create/Resize/Update scan object -- now remapping existing data as muc has available
+        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (), zt, keep_multi_layer_info);
+
 	// setup dz from instrument definition or propagated via signal definition
 	if (fabs (d2u) > 0.)
 		gapp->xsm->scan[ch]->data.s.dz = d2u;
 	else
 		gapp->xsm->scan[ch]->data.s.dz = gapp->xsm->Inst->ZResolution (unit);
-	
-        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (), zt, keep_multi_layer_info);
 
+	// Setup correct Z unit
+	UnitObj *u = gapp->xsm->MakeUnit (unit, label);
+	gapp->xsm->scan[ch]->data.SetZUnit (u);
+	delete u;
 	// set scan title, name, ... and draw it!
 
+        // Setup Scan Title
 	gchar *scantitle = NULL;
 	if (!gapp->xsm->GetMasterScan ()){
 		gapp->xsm->SetMasterScan (gapp->xsm->scan[ch]);
@@ -1719,6 +1724,8 @@ int SPM_ScanControl::do_scan (int l){
 	g_slist_foreach ((GSList*) xm_2nd_scan_list,
 			 (GFunc) SPM_ScanControl::call_scan_start, mve);
 
+        
+        
 	gapp->xsm->hardware->StartScan2D();
 
 	line = 0;
