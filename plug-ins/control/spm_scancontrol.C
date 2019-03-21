@@ -1281,7 +1281,7 @@ int SPM_ScanControl::setup_scan (int ch,
 		gapp->xsm->scan[ch] = gapp->xsm->NewScan (gapp->xsm->ChannelView[ch], 
 							  gapp->xsm->data.display.ViewFlg, 
 							  ch, 
-							  &gapp->xsm->data);
+							  NULL);
 		// Error ?
 		if (!gapp->xsm->scan[ch]){
 			XSM_SHOW_ALERT (ERR_SORRY, ERR_NOMEM,"",1);
@@ -1340,7 +1340,6 @@ int SPM_ScanControl::setup_scan (int ch,
 
 	g_free (scantitle);
 	gapp->xsm->scan[ch]->draw ();
-
 
 	return 0;
 }
