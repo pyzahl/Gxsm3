@@ -2540,7 +2540,7 @@ void py_gxsm_console::initialize(void)
 PyObject* py_gxsm_console::run_string(const char *cmd, int type, PyObject *g, PyObject *l) {
 	PyObject *ret = PyRun_String(cmd, type, g, l);
 	if (!ret) {
-		g_message ("Python Error.", cmd);
+		g_message ("Python interpreter completed with Exception/Error.");
 		PyErr_Print();
 	}
 	return ret;

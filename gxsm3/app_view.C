@@ -1396,7 +1396,8 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                         double r,g,b;
                         double bar_len_ang = AutoSkl (vc->scan->data.s.rx / 4.);
                         bar_len = bar_len_ang / vc->scan->data.s.rx * 400.;
-                        vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol()-1), r,g,b);
+                        //vc->ximg->get_rgb_from_colortable ((unsigned long)(vc->ximg->GetMaxCol()-1), r,g,b);
+                        r=b=0.75; g=0.0;
                         if (vc->legend_items_code[3] == '1')
                                 cairo_set_source_rgb (cr, r,g,b);
                         else if (vc->legend_items_code[3] == '2')
