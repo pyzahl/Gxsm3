@@ -101,7 +101,7 @@ public:
 	
 	virtual void hide();
 	virtual int draw(int y1=-1, int y2=-2);
-	virtual int create(gboolean RoundFlg=FALSE, gboolean subgrid=FALSE, gdouble direction=1., gint fast_scan=0, ZD_TYPE ztype=ZD_IDENT, gboolean keep_layer_info=TRUE);
+	virtual int create(gboolean RoundFlg=FALSE, gboolean subgrid=FALSE, gdouble direction=1., gint fast_scan=0, ZD_TYPE ztype=ZD_IDENT, gboolean keep_layer_info=true, gboolean remap=false);
 	void Saved(){ State = IS_SAVED; };
 	
 	virtual void start(int l=0, double lv=0.);

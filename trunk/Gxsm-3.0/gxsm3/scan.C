@@ -526,17 +526,18 @@ int Scan::draw(int y1, int y2){
 	return 0;
 }
 
-int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan, ZD_TYPE ztype, gboolean keep_layer_info){
-        Scan tmp;
-        const gboolean transferdata = (mem2d &&  mem2d->GetNx() > 1 && mem2d->GetNy() > 1 && data.s.nx > 1 && data.s.ny > 1 ) ? true : false;
+int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan, ZD_TYPE ztype, gboolean keep_layer_info, gboolean remap){
+        Scan *tmp=NULL;
+        const gboolean transferdata = (remap && mem2d &&  mem2d->GetNx() > 2 && mem2d->GetNy() > 2 && data.s.nx > 2 && data.s.ny > 2 ) ? true : false;
         if (transferdata){
+                tmp = new Scan;
                 g_message ("Scan create -- tmp copy from current %d x %d", mem2d->GetNx(), mem2d->GetNy());
-                tmp.data.copy (data);
-                tmp.data.s.nx = mem2d->GetNx();
-                tmp.data.s.ny = mem2d->GetNy();
-                tmp.mem2d->copy(mem2d);
-                tmp.data.s.ntimes  = 1;
-		tmp.data.s.nvalues = 1;
+                tmp->data.copy (data);
+                tmp->data.s.nx = mem2d->GetNx();
+                tmp->data.s.ny = mem2d->GetNy();
+                tmp->mem2d->copy(mem2d);
+                tmp->data.s.ntimes  = 1;
+		tmp->data.s.nvalues = 1;
         }
         
 	if(vdata){
@@ -576,19 +577,20 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
 
 	data.ui.SetName("noname");
 	
-        if (transferdata){
-                XSM_DEBUG_GP (DBG_L1, "Scan create/transfer -- resizing. %d %d @ %g  -> %d %d @ %g", tmp.data.s.nx, tmp.data.s.ny, tmp.data.s.rx, data.s.nx, data.s.ny, data.s.rx);
+        if (tmp){
+                XSM_DEBUG_GP (DBG_L1, "Scan create/transfer -- resizing. %d %d @ %g  -> %d %d @ %g", tmp->data.s.nx, tmp->data.s.ny, tmp->data.s.rx, data.s.nx, data.s.ny, data.s.rx);
 
                 // transfer / remap data
                 for (int iy=0; iy < data.s.ny; ++iy)
                         for (int ix=0; ix < data.s.nx; ++ix){
                                 double wx,wy, rix, riy;
                                 Pixel2World (ix, iy, wx, wy);
-                                tmp.World2Pixel (wx, wy, rix,riy);
+                                tmp->World2Pixel (wx, wy, rix,riy);
                                 //if ((ix == 0 || ix ==  (data.s.nx-1)) && (iy == 0 || iy ==  (data.s.ny-1)))
-                                //        g_message ("T %g %g -[%g]-> %d %d [%g %g]", rix,riy, tmp.mem2d->GetDataPktInterpol (rix,riy), ix, iy, wx, wy);
-                                mem2d->PutDataPkt (tmp.mem2d->GetDataPktInterpol (rix,riy), ix, iy, 0);
+                                //        g_message ("T %g %g -[%g]-> %d %d [%g %g]", rix,riy, tmp->mem2d->GetDataPktInterpol (rix,riy), ix, iy, wx, wy);
+                                mem2d->PutDataPkt (tmp->mem2d->GetDataPktInterpol (rix,riy), ix, iy, 0);
                         }
+                delete tmp;
         }
 
 	XSM_DEBUG (DBG_L2, "Scan::create done");

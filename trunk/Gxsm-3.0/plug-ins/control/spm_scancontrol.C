@@ -1307,7 +1307,7 @@ int SPM_ScanControl::setup_scan (int ch,
 	PI_DEBUG (DBG_L1, "setup_scan[" << ch << " ]: scan->create " << type << " channel."); 
 		
         // Create/Resize/Update scan object -- now remapping existing data as muc has available
-        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (), zt, keep_multi_layer_info);
+        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (), zt, keep_multi_layer_info, true);
 
 	// setup dz from instrument definition or propagated via signal definition
 	if (fabs (d2u) > 0.)
@@ -1724,7 +1724,7 @@ int SPM_ScanControl::do_scan (int l){
 			 (GFunc) SPM_ScanControl::call_scan_start, mve);
 
         
-        
+        // prepare hardware for start scan "scan pre check"
 	gapp->xsm->hardware->StartScan2D();
 
 	line = 0;
