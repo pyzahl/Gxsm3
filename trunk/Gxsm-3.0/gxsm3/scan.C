@@ -50,7 +50,7 @@ Scan::Scan(Scan *scanmaster){
 	objects_id = 0;
 	objects_list = NULL;
 	vdata = scanmaster->vdata;;
-	mem2d = new Mem2d(1,1,scanmaster->mem2d->GetTyp()); // MemObj. anlegen
+	mem2d = new Mem2d(data.s.nx=scanmaster->mem2d->GetNx(),data.s.ny=scanmaster->mem2d->GetNy(),data.s.nvalues=scanmaster->mem2d->GetNv(),scanmaster->mem2d->GetTyp()); // MemObj. anlegen
 	if (vdata)
 		data.CpUnits(*vdata);
 	data.s.iyEnd=0;
@@ -58,7 +58,7 @@ Scan::Scan(Scan *scanmaster){
 	data.s.pixeltime=0.;
 	data.s.tStart=data.s.tEnd=(time_t)0;
 	data.s.ntimes=1;
-	data.s.nvalues=1;
+	//data.s.nvalues=1;
 	view=NULL; // noch klein View
 	VFlg  = scanmaster->VFlg;
 	ChanNo= scanmaster->ChanNo;
@@ -78,7 +78,6 @@ Scan::Scan(int vtype, int vflg, int ChNo, SCAN_DATA *vd, ZD_TYPE mtyp){
 	objects_id = 0;
 	objects_list = NULL;
 	vdata = vd ? vd : &gapp->xsm->data;
-	mem2d = new Mem2d(1,1,mtyp); // MemObj. anlegen
 	if(vd)
 		data.CpUnits(*vdata);
 	data.s.iyEnd=0;
@@ -86,7 +85,8 @@ Scan::Scan(int vtype, int vflg, int ChNo, SCAN_DATA *vd, ZD_TYPE mtyp){
 	data.s.pixeltime=0.;
 	data.s.tStart=data.s.tEnd=(time_t)0;
 	data.s.ntimes=1;
-	data.s.nvalues=1;
+	//data.s.nvalues=1;
+	mem2d = new Mem2d(data.s.nx=vdata->s.nx,data.s.ny=vdata->s.ny,data.s.nvalues=vdata->s.nvalues,mtyp); // MemObj. anlegen
 	view=NULL; // noch klein View
 	VFlg  = SCAN_V_QUICK;
 	ChanNo= ChNo;

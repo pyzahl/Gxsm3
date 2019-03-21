@@ -2540,6 +2540,7 @@ void py_gxsm_console::initialize(void)
 PyObject* py_gxsm_console::run_string(const char *cmd, int type, PyObject *g, PyObject *l) {
 	PyObject *ret = PyRun_String(cmd, type, g, l);
 	if (!ret) {
+		g_message ("Python Error.", cmd);
 		PyErr_Print();
 	}
 	return ret;
@@ -2763,6 +2764,7 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
                 if (lines) g_strfreev (lines);
                 lines = g_strsplit (to_parse, "\n", 2);
                 g_free (to_parse);
+                to_parse = NULL;
                 //g_print ("%05d: %s\n", i, lines[0]);
 
                 if (g_strrstr(lines[0], "#GXSM_USE_LIBRARY")){
@@ -2834,7 +2836,8 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
         } while (lines[0] && lines[1]);
 
         g_strfreev (lines);
-        g_free (to_parse);
+        if (to_parse)
+                g_free (to_parse);
 
         //g_print ("PARSED-SCRIPT\n");
         //g_print (parsed_script);

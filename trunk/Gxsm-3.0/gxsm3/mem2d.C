@@ -63,6 +63,7 @@ ZData::ZData(int Nx, int Ny, int Nv){
         GXSM_REF_OBJECT (GXSM_GRC_ZDATA);
         XSM_DEBUG (DBG_L6, "ZData::ZData");
         nx=Nx; ny=Ny; nv=Nv; vlayer_put=vlayer=0;
+        cp_ixy_sub[0]=cp_ixy_sub[2]=0; cp_ixy_sub[1]=nx; cp_ixy_sub[3]=ny;
         Li = new LineInfo[ny*nv]; 
         Xlookup=new double[nx]; 
         Ylookup=new double[ny]; 
