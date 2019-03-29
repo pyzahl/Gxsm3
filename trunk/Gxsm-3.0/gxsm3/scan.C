@@ -545,6 +545,7 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
 		// jetzt alle Geometrie Werte übernehmen
 		data.GetScan_Param(*vdata);
 		data.GetUser_Info(*vdata);
+                data.CpUnits (*vdata);
 		data.UpdateUnits();
 	}
 
