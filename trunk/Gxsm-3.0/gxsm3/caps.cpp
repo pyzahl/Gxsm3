@@ -1314,6 +1314,7 @@ void caps::initFormats()
 		case GL_COMPRESSED_RGBA_FXT1_3DFX:
 			FormatsData.COMPRESSED_RGBA_FXT1_3DFX = true;
 			break;
+#if 0
 		case GL_PALETTE4_RGB8_OES:
 			FormatsData.PALETTE4_RGB8_OES = true;
 			break;
@@ -1344,6 +1345,7 @@ void caps::initFormats()
 		case GL_PALETTE8_RGB5_A1_OES:
 			FormatsData.PALETTE8_RGB5_A1_OES = true;
 			break;
+#endif
 		case GL_ETC1_RGB8_OES:
 			FormatsData.ETC1_RGB8_OES = true;
 			break;

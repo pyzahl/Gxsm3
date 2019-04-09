@@ -68,13 +68,14 @@ LineProfile1D::LineProfile1D(int n, UnitObj *ux, UnitObj *uy, double xmin, doubl
 	scan1d->data.s.y0=0.;
 	scan1d->data.s.alpha=0.;
 
+	scan1d->create();
+	scan1d->mem2d->data->MkXLookup(xmin, xmax);
+
 	UnitObj Unity(" "," ","g","arb. units");
 	scan1d->data.SetXUnit (ux);
 	scan1d->data.SetYUnit (&Unity);
 	scan1d->data.SetZUnit (uy);
 
-	scan1d->create();
-	scan1d->mem2d->data->MkXLookup(xmin, xmax);
 }
 
 LineProfile1D::~LineProfile1D(){
