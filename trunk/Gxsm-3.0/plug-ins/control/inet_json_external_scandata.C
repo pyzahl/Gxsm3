@@ -472,7 +472,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 "RUN SCOPE",
                 "INIT BRAM TRANSPORT",
                 "SINGLE SHOT",
-                "START BRAM LOOP",
+                "OPERATION DECIMATON", // "START BRAM LOOP",
                 "RUN TUNE",
                 "RUN TUNE F",
                 "RUN TUNE FF",
@@ -483,7 +483,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	for(int i=0; operation_modes[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), operation_modes[i], operation_modes[i]);
 
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 2);
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 5); // "START BRAM LOOP" mode need to run for data decimation and transfer analog + McBSP
 
         // FPGA Update Period
 	wid = gtk_combo_box_text_new ();
@@ -566,7 +566,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         channel_selections[6] = 1;
         channel_selections[0] = 1;
         channel_selections[1] = 1;
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 1);
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 7); // normal operation for PLL, transfer: Phase, Freq,[Am,Ex] (analog: Freq, McBSP: 4ch transfer Ph, Frq, Am, Ex)
 
         // GPIO monitor selections -- full set, experimental
 	const gchar *monitor_modes_gpio[] = {
