@@ -7,7 +7,7 @@ import scipy.signal as sig
 import matplotlib.pyplot as plt
 import glob2
 
-historysec = 3600*72*3 # plot last 3 days only!
+historysec = 3600*72*7 # plot last 3 days only!
 
 interval = 3600 # seconds / per data set
 add_block_marks = False

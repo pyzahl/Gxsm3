@@ -142,7 +142,9 @@ public:
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Control")
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Counter")
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "LockIn")
-			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "PAC")){
+			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "PAC")
+			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "MCBSP_LINK")
+                             ){
 			        if (channel == 0 && !strcmp(sranger_common_hwi->lookup_dsp_signal_managed (jj)->label, "In 0"))
                                         { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "In0: I-Tunnel"); g_free (id); }
 				else

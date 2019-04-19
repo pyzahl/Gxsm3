@@ -47,22 +47,14 @@
  indicates the Z-position of the tip is visualized by the marker on
  the right edge of the window.
 
-\begin{figure}[hbt]
-\center { \fighalf{PanView}}
-\caption{The PanView window.}
-\label{fig:PanView}
-\end{figure}
+\GxsmScreenShot{PanView}{The PanView window.}
 
 
 % PlugInUsage
  Although this is a plugin it is opened automatically upon startup of GXSM.
  There is not interaction with the user.
 
-\begin{figure}[hbt]
-\center { \fighalf{PanView_indicators}}
-\caption{The indicators of the PanView window.}
-\label{fig:PanView}
-\end{figure}
+\GxsmScreenShot{PanView_indicators}{The indicators of the PanView window.}
 
  1.) Indicator of the state machine on the DSP. In general the colors 
  indicate green=ON/in progress, red=OFF/inactive. From left to right

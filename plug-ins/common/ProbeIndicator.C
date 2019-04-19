@@ -38,59 +38,47 @@
 % PlugInAuthorEmail: zahl@users.sf.net
 % PlugInMenuPath: Tools/Probe Indicator
 % PlugInDescription
- This is a handy tool which shows you, where your current scan is in the
- range of the maximum scan. Especially it gives you an error message if you
- leave the scan area. It also shows the position of rotated scans.
-
- In addition the current realtime XY position of the tip plus it
- indicates the Z-position of the tip is visualized by the marker on
- the right edge of the window.
+The Probe Indicator (Note: head up display (HUD) as future option was designed to be overlayed on any scans canvas) 
+is intended to give a real time feedback and provide dedicated monitoring of the tip/probe conditions. 
+Visually indicating probe postion (Z), current and frequency.
+It also provides a contineous rolling graphical view of Z and current plus a (work in progress) spectral analysis.
+Plus a recording button allows to gapless record two channels (Current, Z,...) as selected for the Recorder Signals1 and 2 inputs.
+You will have to use currently the pyton spm control app/Oszi if you like to change the default channels used here.
 
 \begin{figure}[hbt]
 \center { \fighalf{ProbeIndicator}}
-\caption{The ProbeIndicator window.}
+\caption{The ProbeIndicator window explained.}
 \label{fig:ProbeIndicator}
 \end{figure}
 
 
 % PlugInUsage
- Although this is a plugin it is opened automatically upon startup of GXSM, need to open first time via Main menu Window/Probe-Hud.
+Although this is a plugin it is opened automatically upon startup of GXSM automatically, you will need to open first time via Main menu Window/Probe-Hud.
+
+Please have a look for a demo:
+
+\GxsmVideoURL{https://youtu.be/eB1FO76M7gI}
+
+\GxsmVideoURL{https://youtu.be/vTrldyKxrZ4}
 
 
-https://youtu.be/eB1FO76M7gI
-	
-gxsm3 pi2 2018 11 04 20 01 15
-youtu.be
+\GxsmNote{not included: a signal selector for Signal 1 and 2 (recorder). 
+Use the spm control python app, oscilloscope and setup teh channels there: 
+Select "MIX IN 0" for CH1 and "Z Servo Neg" for CH2.}
 
+What the recorder does excatly:
 
-https://youtu.be/vTrldyKxrZ4
-	
-gxsm3 pi 2018 11 04 19 57 13
-youtu.be
+It records 2x 4096 data points (scope channel) at full BW, they are plotted in a 4096 to 128 decimated graph.
 
+And it records in a constant gap less continuous stream a 1:256 decimated data stream for both signals.
 
-
-It added a few feature and the signal recorder/oscilloscope functionality to GXSM so far only accessible via the python script. Not designed to obsolete the more generic python, but specifically tuned for monitoring a two signals.
-
-
-Right now I have not included a signal selector for Signal1&2 (recorder) nor a preset into gxsm and you have to choose still using the python oscilloscope once:
-
-
-Select "MIX IN 0" for CH1 and "Z Servo Neg" for CH2.
-
-
-I'll likely default this.
-
-
-What is does:
-
-It records 2x 4096 data points (scope channel) at full BW, they are plotted in a 4096 -> 128 decimated graph.
-
-
-And it records in a constant gap less!!! continuous stream a 1:256 decimated data stream for both signals.
-
-Checking the [o] record button this data is (for ever, until you delete it) appended into two files located in the working directory (where you start gxsm3). It writes away plain integer numbers and occasional (every 60s) a line starting with a double comment ## nnnn absolute system time stamp in us. And for every read block a index # n .. m range. That may be used to precisely align both data sets in two individual files. Sample rate is exactly 150kHz/256.
-
+Checking the [o] record button this data is (for ever, until you
+delete it) appended into two files located in the working directory
+(where you start gxsm3). It writes away plain integer numbers and
+occasional (every 60s) a line starting with a double comment \#\# nnnn
+absolute system time stamp in us. And for every read block a index \# $n \dots m$ range.
+That may be used to precisely align both data sets in two
+individual files. Sample rate is exactly 150kHz/256.
 
 Using the "Magnifying Button" (Zoom) you can choose to plot at FULL BW the first 128 points.
 
