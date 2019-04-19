@@ -759,15 +759,18 @@ store different speed/step values, the output will always occur as
 configured on the \GxsmEntry{Config} folder.
 
 \GxsmScreenShot{SR-DSP-MoverConfig}{SR-DSP-MoverConfig}
+
 \GxsmScreenShot{SR-DSP-Mover-configure}{SR-DSP-Mover-configure}
+
 \GxsmScreenShot{SR-DSP-Mover-XY-configure}{SR-DSP-Mover-XY-configure}
+
 \GxsmScreenShot{SR-DSP-Mover-Z0-simple}{SR-DSP-Mover-Z0-simple}
 
-%\GxsmScreenShotDual{SR-DSP-Mover}{GXSM SR generic coarse mover controller}{SR-DSP-Mover-Auto}{Auto approach controller}
+ % \GxsmScreenShotDual{SR-DSP-Mover}{GXSM SR generic coarse mover controller}{SR-DSP-Mover-Auto}{Auto approach controller}
 
-To configure the mover output signal type and channles select the "Config" tab. Select the "Curve Mode", normally a simple Sawtooth will do it.
-Then select the output configuration meeting your needs best. The MK3 "Signal Master" allows fully custom
-assignment of the generic "X" and "Y" mover actions to any available output channel. See below "Wave[0,1] out on" and Fig.~\ref{fig:screenshot:SR-DSP-MK3-Mover-Config}.
+To configure the mover output signal type and channles select the ``Config'' tab. Select the ``Curve Mode'', normally a simple Sawtooth will do it.
+Then select the output configuration meeting your needs best. The MK3 ``Signal Master'' allows fully custom
+assignment of the generic ``X'' and ``Y'' mover actions to any available output channel. See below  Wave$[0,1]$ out on  and Fig.~\ref{fig:screenshot:SR-DSP-MK3-MoverConfig}.
 
 \GxsmScreenShot{SR-DSP-MK3-Mover-config}{GXSM SR DSP configuration of SRanger (MK2/3Pro) inertial mover driver wave generate engine.}
 
