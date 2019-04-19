@@ -1,3 +1,9 @@
+gxsm3 (3.50.1-0ubuntu0) bionic; urgency=medium
+
+  * V3.50.1
+
+ -- Thorsten Wagner (Ubuntu packaging) <stm@users.sf.net>  Thu, 18 Apr 2019 23:43:49 +0200
+
 gxsm3 (3.49.1-0ubuntu0) bionic; urgency=medium
 
   * release of "Defender of the electron"

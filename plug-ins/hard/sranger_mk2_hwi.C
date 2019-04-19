@@ -780,7 +780,7 @@ You may alternatively also choose the pre set options below.
 Autoapproach is stopped, when measure signal reaches setpoint value. This value
 is set in SR DSP Control window (SCurrent value).
 
-\GxsmGraphics{SR-DSP-MK3-DSP-AutoApproach}{Autoapproach signals. $Z_s$ is scannig signal in Z axis.}
+\GxsmGraphic{SR-DSP-MK3-DSP-AutoApproach}{Autoapproach signals. $Z_s$ is scannig signal in Z axis.}
 
 In all tabs there is possible to set number of pulses in each step (input field \GxsmEntry{Max. Steps}).
 In the figure \ref{fig:SR-DSP-MK3-Mover-AutoApproach} marked with letter $a$. Length of each step ($c$) is determined by input field \GxsmEntry{Duration}.
