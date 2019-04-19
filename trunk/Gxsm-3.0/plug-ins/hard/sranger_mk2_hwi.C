@@ -561,12 +561,40 @@ Informations about the check options can be found in STS.
 There are several possibilities to prepare or manipulate a tip or locale surface area. One is to dip the
 tip into the sample in a controlled manner, another option is applying a charge pulse or both combined.
 
-\GxsmScreenShotW{SR-DSP-MK3-DSP-PL}{GXSM SR DSP Control window: PL mode setup}{0.9\textwidth}
-\GxsmScreenShot{A810-DSP-Control-PL-demo}{GXSM2 SR DSP Control window: PL mode - demo setup with PanView showing Z adjusted to 4.7$\:$\AA\ for testing.}
-\GxsmScreenShot{A810-DSP-Control-PL-plot-demo}{GXSM2 SR DSP Control window: PL mode - demo plot in self-test mode (Bias loop back to current)}
-\GxsmScreenShot{A810-DSP-Control-Graphs-PLdemo}{GXSM2 SR DSP Control window: PL mode - demo Graphs configuration}
-\GxsmScreenShot{A810-DSP-Control-PL-demo3x}{GXSM2 SR DSP Control window: PL mode - demo for repetions}
-\GxsmScreenShot{A810-DSP-Control-PL-plot-demo3x}{GXSM2 SR DSP Control window: PL mode - demo for repetitions}
+%\GxsmScreenShotW{SR-DSP-MK3-DSP-PL}{GXSM SR DSP Control window: PL mode setup}{0.9\textwidth}
+%\GxsmScreenShot{A810-DSP-Control-PL-demo}{GXSM2 SR DSP Control window: PL mode - demo setup with PanView showing Z adjusted to 4.7$\:$\AA\ for testing.}
+%\GxsmScreenShot{A810-DSP-Control-PL-plot-demo}{GXSM2 SR DSP Control window: PL mode - demo plot in self-test mode (Bias loop back to current)}
+%\GxsmScreenShot{A810-DSP-Control-Graphs-PLdemo}{GXSM2 SR DSP Control window: PL mode - demo Graphs configuration}
+%\GxsmScreenShot{A810-DSP-Control-PL-demo3x}{GXSM2 SR DSP Control window: PL mode - demo for repetions}
+%\GxsmScreenShot{A810-DSP-Control-PL-plot-demo3x}{GXSM2 SR DSP Control window: PL mode - demo for repetitions}
+
+
+
+\GxsmScreenShot{SR-DSP-MK3-ADV-configure}{SR-DSP-MK3-ADV-configure}
+\GxsmScreenShot{SR-DSP-MK3-ADV-simple}{SR-DSP-MK3-ADV-simple}
+\GxsmScreenShot{SR-DSP-MK3-DSP-Advanced}{SR-DSP-MK3-DSP-Advanced}
+\GxsmScreenShot{SR-DSP-MK3-DSP-Advanced-Raster}{SR-DSP-MK3-DSP-Advanced-Raster}
+\GxsmScreenShot{SR-DSP-MK3-DSP-AX}{SR-DSP-MK3-DSP-AX}
+\GxsmScreenShot{SR-DSP-MK3-DSP-Feedback-Scan}{SR-DSP-MK3-DSP-Feedback-Scan}
+\GxsmScreenShot{SR-DSP-MK3-DSP-Graphs}{SR-DSP-MK3-DSP-Graphs}
+\GxsmScreenShot{SR-DSP-MK3-DSP-LockIn}{SR-DSP-MK3-DSP-LockIn}
+\GxsmScreenShot{SR-DSP-MK3-DSP-PL}{SR-DSP-MK3-DSP-PL}
+\GxsmScreenShot{SR-DSP-MK3-DSP-STS}{SR-DSP-MK3-DSP-STS}
+\GxsmScreenShot{SR-DSP-MK3-DSP-Z}{SR-DSP-MK3-DSP-Z}
+\GxsmScreenShot{SR-DSP-MK3-FBS-bias-log-configure}{SR-DSP-MK3-FBS-bias-log-configure}
+\GxsmScreenShot{SR-DSP-MK3-FBS-configure}{SR-DSP-MK3-FBS-configure}
+\GxsmScreenShot{SR-DSP-MK3-FBS-CZ-FUZZY-LOG-bias-log}{SR-DSP-MK3-FBS-CZ-FUZZY-LOG-bias-log}
+\GxsmScreenShot{SR-DSP-MK3-FBS-simple}{SR-DSP-MK3-FBS-simple}
+\GxsmScreenShot{SR-DSP-MK3-Graphs}{SR-DSP-MK3-Graphs}
+\GxsmScreenShot{SR-DSP-MK3-LockIn-configure}{SR-DSP-MK3-LockIn-configure}
+\GxsmScreenShot{SR-DSP-MK3-LockIn-simple}{SR-DSP-MK3-LockIn-simple}
+\GxsmScreenShot{SR-DSP-MK3-Mover-config}{SR-DSP-MK3-Mover-config}
+\GxsmScreenShot{SR-DSP-MK3-PAC-FB-Controllers}{SR-DSP-MK3-PAC-FB-Controllers}
+\GxsmScreenShot{SR-DSP-MK3-PAC-Operation}{SR-DSP-MK3-PAC-Operation}
+\GxsmScreenShot{SR-DSP-MK3-VP-configure}{SR-DSP-MK3-VP-configure}
+\GxsmScreenShot{SR-DSP-MK3-VP-simple}{SR-DSP-MK3-VP-simple}
+
+
 
 \clearpage
 
@@ -730,7 +758,12 @@ Z/approach only. The different tabs are only for users convenience to
 store different speed/step values, the output will always occur as
 configured on the \GxsmEntry{Config} folder.
 
-\GxsmScreenShotDual{SR-DSP-Mover}{GXSM SR generic coarse mover controller}{SR-DSP-Mover-Auto}{Auto approach controller}
+\GxsmScreenShot{SR-DSP-MoverConfig}{SR-DSP-MoverConfig}
+\GxsmScreenShot{SR-DSP-Mover-configure}{SR-DSP-Mover-configure}
+\GxsmScreenShot{SR-DSP-Mover-XY-configure}{SR-DSP-Mover-XY-configure}
+\GxsmScreenShot{SR-DSP-Mover-Z0-simple}{SR-DSP-Mover-Z0-simple}
+
+%\GxsmScreenShotDual{SR-DSP-Mover}{GXSM SR generic coarse mover controller}{SR-DSP-Mover-Auto}{Auto approach controller}
 
 To configure the mover output signal type and channles select the "Config" tab. Select the "Curve Mode", normally a simple Sawtooth will do it.
 Then select the output configuration meeting your needs best. The MK3 "Signal Master" allows fully custom
