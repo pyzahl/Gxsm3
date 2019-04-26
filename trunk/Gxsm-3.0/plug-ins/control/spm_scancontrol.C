@@ -405,7 +405,7 @@ SPM_ScanControl::SPM_ScanControl ()
 	gtk_container_add (GTK_CONTAINER (frame), grid_ctrl);
 
 	// --------------------------------------------------
-	bs_tmp = button = gtk_button_new_with_label("Start");
+	bs_tmp = scan_start_button = button = gtk_button_new_with_label("Start");
 	//	gtk_actionable_set_action_name (GTK_ACTIONABLE (bs_tmp), "app.scan-start"); // may be alternative?!??!
 	gtk_grid_attach (GTK_GRID (grid_ctrl), button, x++, y, 1,1);
 	g_signal_connect ( G_OBJECT (button), "pressed",
@@ -487,6 +487,7 @@ SPM_ScanControl::SPM_ScanControl ()
         x=1,++y;
 	// --------------------------------------------------
 	GtkWidget *checkbutton = gtk_check_button_new_with_label(N_("Repeat"));
+	gtk_widget_set_tooltip_text (checkbutton, N_("Auto Restart Scan after completion.\nWARNING:\n Script triggered scan start will\nnever go beyond that scan start comand\n and repeats as long as this is checked."));
 	gtk_grid_attach (GTK_GRID (grid_ctrl), checkbutton, x++, y, 1,1);
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (checkbutton), RepeatMode ());
 	g_signal_connect (G_OBJECT (checkbutton), "toggled",
@@ -503,6 +504,7 @@ SPM_ScanControl::SPM_ScanControl ()
         // SubScan
         
         GtkWidget *slscheckbutton = gtk_check_button_new_with_label ("SubScan");
+	gtk_widget_set_tooltip_text (slscheckbutton, N_("Scanning is set to Sub Scan Mode if enabled."));
 	gtk_grid_attach (GTK_GRID (grid_ctrl), slscheckbutton, x++, y, 1,1);
 	g_object_set_data (G_OBJECT (slscheckbutton), "SUBSCAN_MODE", GINT_TO_POINTER (1));
 	g_object_set_data (G_OBJECT (slsbutton), "SUBSCAN_RB", slscheckbutton);
@@ -512,6 +514,11 @@ SPM_ScanControl::SPM_ScanControl ()
         g_object_set_data( G_OBJECT (bs_tmp), "SPMCONTROL_SLS_MODE", slscheckbutton);
         g_object_set_data( G_OBJECT (bm_tmp), "SPMCONTROL_SLS_MODE", slscheckbutton);
 	
+        // Remap Available (previous) Data at scan start to new geometry
+        GtkWidget *radcheckbutton = gtk_check_button_new_with_label ("RAD");
+	gtk_widget_set_tooltip_text (radcheckbutton, N_("Remap Available (previous) Data at scan start to new geometry."));
+	gtk_grid_attach (GTK_GRID (grid_ctrl), radcheckbutton, x++, y, 1,1);
+        g_object_set_data( G_OBJECT (scan_start_button), "SPMCONTROL_RAD_START_MODE_CB", radcheckbutton);
 
 //------------ SLS controls
         sls_mode = FALSE;
@@ -1307,7 +1314,11 @@ int SPM_ScanControl::setup_scan (int ch,
 	PI_DEBUG (DBG_L1, "setup_scan[" << ch << " ]: scan->create " << type << " channel."); 
 		
         // Create/Resize/Update scan object -- now remapping existing data as muc has available
-        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (), zt, keep_multi_layer_info, true);
+
+        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (), zt, keep_multi_layer_info,
+                                     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (g_object_get_data( G_OBJECT (scan_start_button), "SPMCONTROL_RAD_START_MODE_CB")))
+                                     // true
+                                     );
 
 	// setup dz from instrument definition or propagated via signal definition
 	if (fabs (d2u) > 0.)
