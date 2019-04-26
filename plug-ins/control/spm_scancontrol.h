@@ -265,6 +265,7 @@ private:
 	int       sls_config[4];
 	
 	GSList*   SPMC_RemoteEntryList;
+        GtkWidget* scan_start_button;
 
  public:
 	gboolean  keep_multi_layer_info;
