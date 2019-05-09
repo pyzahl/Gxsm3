@@ -485,11 +485,15 @@ int dp_task_003(void){
                         case 1: // LIN
                                 tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.setpoint[i]);
                                 break;
-                        case 9: // FUZZY
-                                if (feedback_mixer.FB_IN_processed[i] > feedback_mixer.level[i])
-                                        tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.level[i] - feedback_mixer.setpoint[i]);
+                        case 9: // CZ FUZZY LIN
+                                if (feedback_mixer.FB_IN_processed[i] > feedback_mixer.level[i]){
+                                        //tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.level[i] - feedback_mixer.setpoint[i]);
+                                        tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.setpoint[i]);
+                                } else {
+                                        tmp40 = (long long)(z_servo.neg_control) - (long long)(feedback_mixer.Z_setpoint);
+                                }
                                 break;
-                        case 11: // FUZZY LOG
+                        case 11: // CZ FUZZY LOG
                                 if (abs (feedback_mixer.FB_IN_processed[i]) > feedback_mixer.level[i]){
                                         feedback_mixer.lnx = calc_mix_log (feedback_mixer.FB_IN_processed[i], feedback_mixer.I_offset);
                                         tmp40 = (long long)(feedback_mixer.lnx - feedback_mixer.setpoint_log[i]);

@@ -171,8 +171,8 @@ public:
 		id = g_strdup_printf ("%d", MM_NEG|MM_ON);   gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-LIN"); g_free (id); 
 		id = g_strdup_printf ("%d", MM_LOG|MM_ON);   gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "LOG"); g_free (id); 
 									
-		id = g_strdup_printf ("%d", MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "FUZZY"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-FUZZY"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "CZ-FUZZY-LIN"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-CZ-FUZZY-LIN"); g_free (id); 
 		id = g_strdup_printf ("%d", MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "CZ-FUZZY-LOG"); g_free (id); 
 		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-CZ-FUZZY-LOG"); g_free (id); 
 		
