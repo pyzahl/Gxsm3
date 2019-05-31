@@ -168,6 +168,10 @@
 	    <attribute name="action">win.show-blueline</attribute>
 	  </item>
 	  <item>
+	    <attribute name="label" translatable="yes">Show World</attribute>
+	    <attribute name="action">win.view-world</attribute>
+	  </item>
+	  <item>
 	    <attribute name="label" translatable="yes">Palette</attribute>
 	    <attribute name="action">win.palette-mode</attribute>
 	  </item>

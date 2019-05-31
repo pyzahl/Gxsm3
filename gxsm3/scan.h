@@ -199,7 +199,8 @@ public:
 	void get_subscan_information (int ssi[4]) { for (int i=0; i<4; ++i) ssi[i]=ixy_sub[i]; };
 	
 	int ixy_sub[4]; // sub scan information [int xs, int xn, int ys, int yn]
-
+	gboolean show_world_map (gboolean flg);
+	
  private:
 	double t0_ref;
 	
@@ -213,6 +214,7 @@ public:
 	
 	int     objects_id;
 	GSList  *objects_list;
+	Scan *world_map;
 };
 
 /*

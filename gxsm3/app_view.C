@@ -134,6 +134,7 @@ static GActionEntry win_view_popup_entries[] = {
         { "attach-redline", ViewControl::view_view_attach_redline_callback, NULL, "false", NULL },
         { "show-redline", ViewControl::view_view_redline_callback, NULL, "false", NULL },
         { "show-blueline", ViewControl::view_view_blueline_callback, NULL, "false", NULL },
+        { "view-world", ViewControl::view_view_world_callback, NULL, "false", NULL },
         { "palette-mode", ViewControl::view_view_color_callback, NULL, "false", NULL },
         { "tolerant-mode", ViewControl::view_view_tolerant_callback, NULL, "false", NULL },
         { "rgb-mode", ViewControl::view_view_color_rgb_callback, NULL, "false", NULL },
@@ -3576,13 +3577,17 @@ void ViewControl::view_view_set_view_mode_radio_callback (GSimpleAction *action,
                 mode = (mode & 0xFF000) | SCAN_V_DIFFERENTIAL;
         }
 
+        vc->scan->SetVM(mode);
+
+#if 0 // old behaviour
    	if (vc->chno < 0){
                 vc->scan->SetVM(mode);
         } else {
                 gapp->xsm->ActivateChannel(vc->chno);
 		gapp->xsm->SetVM(mode);
         }
-      
+#endif
+        
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
 }
@@ -3696,6 +3701,31 @@ void ViewControl::view_view_blueline_callback (GSimpleAction *action, GVariant *
 		vc->scan->BlueLineActive=TRUE;
 	else
 		vc->scan->BlueLineActive=FALSE;
+}
+
+void ViewControl::view_view_world_callback (GSimpleAction *action, GVariant *parameter, 
+                                                     gpointer user_data){
+        ViewControl *vc = (ViewControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+                
+        XSM_DEBUG_GP (DBG_L1, "Toggle action %s activated, state changes from %d to %d\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_boolean (old_state),
+                      g_variant_get_boolean (new_state));
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+        if (!vc->scan->show_world_map (g_variant_get_boolean (new_state))){
+		gapp->message(N_("Sorry, no world map is managed.\n Enable ScanControl:RAD mode first!"));
+                old_state = g_action_get_state (G_ACTION (action));
+                new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+                g_simple_action_set_state (action, new_state);
+                g_variant_unref (old_state);
+        }
 }
 
 void ViewControl::view_view_tolerant_callback (GSimpleAction *action, GVariant *parameter,
