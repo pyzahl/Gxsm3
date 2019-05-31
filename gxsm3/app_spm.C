@@ -272,11 +272,11 @@ void App::spm_offset_check(Param_Control* pcs, gpointer app){
 
         XSM_DEBUG(DBG_L3,  "offset check -- moveto 0,0"  );
 
-        #if 0
-        // move tip to center of scan ( 0,0 ) now also
-        data->s.sx = data->s.sy = 0.;
-        ((App*)app)->xsm->hardware->MovetoXY(0, 0);
-        #endif
+        if (!pcs){
+                // move tip to center of scan ( 0,0 ) now also
+                //data->s.sx = data->s.sy = 0.;
+                ((App*)app)->xsm->hardware->MovetoXY(0, 0);
+        }
 
         ((App*)app)->xsm->hardware->SetAlpha(data->s.alpha);
         
@@ -314,8 +314,9 @@ void App::offset_to_preset_callback(GtkWidget* w, gpointer app){
          if (xy){
                  data->s.x0 = xy[0] * round(((App*)app)->xsm->XOffsetMax() / 3.5 / 10)*10;
                  data->s.y0 = xy[1] * round(((App*)app)->xsm->YOffsetMax() / 3.5 / 10)*10;
-         } else
+         } else {
                  data->s.x0 = data->s.y0 = 0.;
+         }
          App::spm_offset_check(NULL, app);
          // ((App*)app)->spm_update_all();
 }

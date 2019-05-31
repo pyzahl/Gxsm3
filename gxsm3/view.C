@@ -271,8 +271,11 @@ int Grey2D::update(int y1, int y2){
 			viewcontrol->SetActive (TRUE);
 		else
 			viewcontrol->SetActive (FALSE);
-		
-		XImg->ShowPic ();
+
+		if (scan->ixy_sub[1]>0)
+                        XImg->ShowSubPic(scan->ixy_sub[0]/QuenchFac, y1/QuenchFac,scan->ixy_sub[1]/QuenchFac,(y2+QuenchFac-y1-1)/QuenchFac, scan->ixy_sub[2]/QuenchFac, scan->ixy_sub[3]/QuenchFac);
+                else
+                        XImg->ShowPic ();
 		return 0;
 	}
 	int j,k;
