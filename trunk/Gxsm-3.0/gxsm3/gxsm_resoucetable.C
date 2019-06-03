@@ -149,6 +149,13 @@ GnomeResEntryInfoType xsm_res_def[] = {
 	  N_("Instrument"), 
 	  N_("Arbitrary Instrument Name, max. 30 chars !")
 		),
+
+	GNOME_RES_ENTRY_AUTO_PATH
+	( GNOME_RES_INT,  "Instrument/WorldSizeNxy","4096", &xsmres.world_size_nxy,
+          N_("Instrument"),
+	  N_("Width and height of world map in pixels")
+		),
+
 	GNOME_RES_ENTRY_INFOTEXT_DEPEND 
 	( N_("Inst-SPM"),
 	  N_("SPM and IVC specific Volt to physical unit conversions:\n\n"

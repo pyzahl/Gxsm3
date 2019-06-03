@@ -179,6 +179,7 @@ typedef struct{
 	gchar AutosaveUnit[12]; 	// storing Autosaveunit = percent, seconds, lines
 	gchar AutosaveOverwritemode[8];
 	gint  LineProfileOrgMode;
+        gint  world_size_nxy;
 	gint  geomsave;
 	gint  datnullok;
 	gint  menutooltips;

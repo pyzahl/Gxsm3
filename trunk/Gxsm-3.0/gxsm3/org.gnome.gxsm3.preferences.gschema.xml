@@ -157,6 +157,13 @@
         Arbitrary Instrument Name, max. 30 chars !
       </description>
     </key>
+    <key name="worldsizenxy" type="x">
+      <default>4096</default>
+      <summary>Width and height of world map in pixles</summary>
+      <description>
+        Width and height of world map in pixles
+      </description>
+    </key>
     <key name="x-piezo-av" type="d">
       <default>532.0</default>
       <summary>Unit: [Å/V] STM/AFM: X Piezo Sensitivity in Å/V</summary>
