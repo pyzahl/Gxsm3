@@ -545,6 +545,21 @@ gboolean Scan::show_world_map (gboolean flg){
         return true;
 }
 
+double arrmin(double *x, int n){
+        double m = *x;
+        for (int i=0; i<n; ++i, ++x)
+                if (*x < m)
+                        m = *x;
+        return m;
+}
+double arrmax(double *x, int n){
+        double m = *x;
+        for (int i=0; i<n; ++i, ++x)
+                if (*x > m)
+                        m = *x;
+        return m;
+}
+
 int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan, ZD_TYPE ztype, gboolean keep_layer_info, gboolean remap){
         Scan *tmp=NULL;
         const gboolean transferdata = (remap && mem2d &&  mem2d->GetNx() > 2 && mem2d->GetNy() > 2 && data.s.nx > 2 && data.s.ny > 2 ) ? true : false;
@@ -638,7 +653,7 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
                                 if (z == 0.0 && world_map){ // try remapping from world_map!
                                         world_map->World2Pixel (wx, wy, rix,riy);
                                         // update from world map
-                                        z = world_map->mem2d->GetDataPktInterpol (rix,riy);
+                                        z = world_map->mem2d->GetDataPktInterpol (rix,riy)/data.s.dz;
                                 }
                                 mem2d->PutDataPkt (z, ix, iy, 0);
                         }
@@ -647,9 +662,25 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
         if (tmp && world_map){
                 XSM_DEBUG_GP (DBG_L1, "Scan update world map.");
 
+                double wxy[2][4];
+                double rxy[2][4];
+                tmp->Pixel2World (0,0, wxy[0][0], wxy[1][0]);
+                world_map->World2Pixel (wxy[0][0], wxy[1][0], rxy[0][0], rxy[1][0]);
+                
+                tmp->Pixel2World (tmp->mem2d->GetNx()-1, tmp->mem2d->GetNy()-1, wxy[0][1], wxy[1][1]);
+                world_map->World2Pixel (wxy[0][1], wxy[1][1], rxy[0][1], rxy[1][1]);
+                
+                tmp->Pixel2World (tmp->mem2d->GetNx()-1,0, wxy[0][2], wxy[1][2]);
+                world_map->World2Pixel (wxy[0][2], wxy[1][2], rxy[0][2], rxy[1][2]);
+                
+                tmp->Pixel2World (0,tmp->mem2d->GetNy()-1, wxy[0][3], wxy[1][3]);
+                world_map->World2Pixel (wxy[0][3], wxy[1][3], rxy[0][3], rxy[1][3]);
+
+                int iix[2] = { (int)arrmin(rxy[0],4), (int)arrmax(rxy[0],4)  };
+                int iiy[2] = { (int)arrmin(rxy[1],4), (int)arrmax(rxy[1],4)  };
                 // transfer / remap data
-                for (int iy=0; iy < world_map->data.s.ny; ++iy)
-                        for (int ix=0; ix < world_map->data.s.nx; ++ix){
+                for (int iy=iiy[0]; iy < iiy[1]; ++iy)
+                        for (int ix=iix[0]; ix < iix[1]; ++ix){
                                 double wx,wy, rix, riy;
                                 world_map->Pixel2World (ix, iy, wx, wy);
                                 tmp->World2Pixel (wx, wy, rix,riy);
