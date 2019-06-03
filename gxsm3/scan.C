@@ -582,8 +582,8 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
                         world_map->data.s.y0 = 0.;
                         world_map->data.s.rx = 2*gapp->xsm->XOffsetMax(); // full accessible world range (offset)
                         world_map->data.s.ry = 2*gapp->xsm->YOffsetMax(); // full accessible world range (offset)
-                        world_map->data.s.nx = 4096; // fixed here for now
-                        world_map->data.s.ny = 4096;
+                        world_map->data.s.nx = xsmres.world_size_nxy; // set in preferences
+                        world_map->data.s.ny = xsmres.world_size_nxy;
                         world_map->data.s.dx = world_map->data.s.rx/(world_map->data.s.nx-1);
                         world_map->data.s.dy = world_map->data.s.ry/(world_map->data.s.ny-1);
                         world_map->data.s.dz = 1.0;
