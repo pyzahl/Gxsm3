@@ -686,7 +686,7 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
                                 tmp->World2Pixel (wx, wy, rix,riy);
                                 double z = tmp->mem2d->GetDataPktInterpol (rix,riy);
                                 if (z != 0.0) // crude simple test
-                                        world_map->mem2d->PutDataPkt (tmp->data.s.dz*z, ix, iy, 0); // scale to actual z, dz_world=1
+                                        world_map->mem2d->PutDataPkt (data.s.dz*z, ix, iy, 0); // scale to actual z, dz_world=1
                         }
                 gchar *tmp = g_strdup_printf("World Map for %s", world_map->data.ui.title);
                 world_map->data.ui.SetTitle (tmp);
