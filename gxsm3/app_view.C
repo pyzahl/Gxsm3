@@ -110,6 +110,7 @@ static GActionEntry win_view_popup_entries[] = {
         // { "quit", quit_activated, NULL, NULL, NULL },
         { "view-activate", ViewControl::Activate_callback, NULL, NULL, NULL },
         { "view-autodisp", ViewControl::AutoDisp_callback, NULL, NULL, NULL },
+        { "view-maptoworld", ViewControl::MapToWorld_callback, NULL, NULL, NULL },
         { "view-set-off", ViewControl::SetOff_callback, NULL, NULL, NULL },
         { "view-set-active", ViewControl::Activate_callback, NULL, NULL, NULL },
         { "view-set-on", ViewControl::SetOn_callback, NULL, NULL, NULL },
@@ -2345,6 +2346,13 @@ void ViewControl::AutoDisp_callback (GSimpleAction *simple, GVariant *parameter,
         ViewControl *vc = (ViewControl *) user_data;
 
         vc->scan->auto_display ();
+}
+
+void ViewControl::MapToWorld_callback (GSimpleAction *simple, GVariant *parameter, 
+                                     gpointer user_data){
+        ViewControl *vc = (ViewControl *) user_data;
+
+        vc->scan->update_world_map ();
 }
 
 void ViewControl::SetOff_callback (GSimpleAction *simple, GVariant *parameter, 

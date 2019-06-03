@@ -101,6 +101,7 @@ public:
 	
 	virtual void hide();
 	virtual int draw(int y1=-1, int y2=-2);
+	void update_world_map (Scan *src=NULL);
 	virtual int create(gboolean RoundFlg=FALSE, gboolean subgrid=FALSE, gdouble direction=1., gint fast_scan=0, ZD_TYPE ztype=ZD_IDENT, gboolean keep_layer_info=true, gboolean remap=false);
 	void Saved(){ State = IS_SAVED; };
 	
@@ -211,7 +212,8 @@ public:
 	//int numpkt2d;
 	int refcount;
 	int X_linearize;
-	
+	gdouble scan_direction;
+	ZD_TYPE scan_ztype;
 	int     objects_id;
 	GSList  *objects_list;
 	Scan *world_map;

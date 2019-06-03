@@ -117,6 +117,7 @@ public:
         static void SetMath_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void SetX_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void AutoDisp_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void MapToWorld_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 
         static void obj_remove_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void obj_properties_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);

@@ -13,6 +13,10 @@
 	<attribute name="label" translatable="yes">Auto Display</attribute>
 	<attribute name="action">win.view-autodisp</attribute>
       </item>
+      <item>
+	<attribute name="label" translatable="yes">Update World Map</attribute>
+	<attribute name="action">win.maptoworld</attribute>
+      </item>
       <submenu>
 	<attribute name="label" translatable="yes">Mode</attribute>
 	<section>
