@@ -15,7 +15,7 @@
       </item>
       <item>
 	<attribute name="label" translatable="yes">Update World Map</attribute>
-	<attribute name="action">win.maptoworld</attribute>
+	<attribute name="action">win.view-maptoworld</attribute>
       </item>
       <submenu>
 	<attribute name="label" translatable="yes">Mode</attribute>
