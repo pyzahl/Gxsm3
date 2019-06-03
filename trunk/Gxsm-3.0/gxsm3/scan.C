@@ -560,8 +560,72 @@ double arrmax(double *x, int n){
         return m;
 }
 
+void Scan::update_world_map(Scan *src){
+        XSM_DEBUG_GP (DBG_L1, "Scan update world map.");
+        if (!world_map){
+                world_map = new Scan(ID_CH_V_NO, false, ChanNo, NULL, scan_ztype);
+                //Scan::Scan(int vtype, int vflg, int ChNo, SCAN_DATA *vd, ZD_TYPE mtyp){
+                world_map->data.copy(data);
+                world_map->data.s.alpha = 0.;
+                world_map->data.s.x0 = 0.;
+                world_map->data.s.y0 = 0.;
+                world_map->data.s.rx = 2*gapp->xsm->XOffsetMax(); // full accessible world range (offset)
+                world_map->data.s.ry = 2*gapp->xsm->YOffsetMax(); // full accessible world range (offset)
+                world_map->data.s.nx = xsmres.world_size_nxy; // set in preferences
+                world_map->data.s.ny = xsmres.world_size_nxy;
+                world_map->data.s.dx = world_map->data.s.rx/(world_map->data.s.nx-1);
+                world_map->data.s.dy = world_map->data.s.ry/(world_map->data.s.ny-1);
+                world_map->data.s.dz = 1.0;
+                world_map->data.s.ntimes  = 1;
+                world_map->data.s.nvalues = 1;
+                gchar *tmp = g_strdup_printf("World Map for %s", data.ui.title);
+                world_map->data.ui.SetTitle (tmp);
+                g_free(tmp);
+                world_map->data.ui.SetName ("World Map");
+                if(vdata) world_map->data.CpUnits (*vdata);
+                world_map->mem2d->Resize( world_map->data.s.nx,  world_map->data.s.ny,  world_map->data.s.nvalues, scan_ztype, false);
+                world_map->mem2d->data->MkXLookup (-scan_direction*world_map->data.s.rx/2, scan_direction*world_map->data.s.rx/2);
+                world_map->mem2d->data->MkYLookup (world_map->data.s.ry/2, -world_map->data.s.ry/2);
+        }
+
+        Scan *tmps = src ? src : this;
+        double wxy[2][4];
+        double rxy[2][4];
+        tmps->Pixel2World (0,0, wxy[0][0], wxy[1][0]);
+        world_map->World2Pixel (wxy[0][0], wxy[1][0], rxy[0][0], rxy[1][0]);
+                
+        tmps->Pixel2World (tmps->mem2d->GetNx()-1, tmps->mem2d->GetNy()-1, wxy[0][1], wxy[1][1]);
+        world_map->World2Pixel (wxy[0][1], wxy[1][1], rxy[0][1], rxy[1][1]);
+                
+        tmps->Pixel2World (tmps->mem2d->GetNx()-1,0, wxy[0][2], wxy[1][2]);
+        world_map->World2Pixel (wxy[0][2], wxy[1][2], rxy[0][2], rxy[1][2]);
+                
+        tmps->Pixel2World (0,tmps->mem2d->GetNy()-1, wxy[0][3], wxy[1][3]);
+        world_map->World2Pixel (wxy[0][3], wxy[1][3], rxy[0][3], rxy[1][3]);
+
+        int iix[2] = { (int)arrmin(rxy[0],4), (int)arrmax(rxy[0],4)  };
+        int iiy[2] = { (int)arrmin(rxy[1],4), (int)arrmax(rxy[1],4)  };
+        // transfer / remap data
+        for (int iy=iiy[0]; iy < iiy[1]; ++iy)
+                for (int ix=iix[0]; ix < iix[1]; ++ix){
+                        double wx,wy, rix, riy;
+                        world_map->Pixel2World (ix, iy, wx, wy);
+                        tmps->World2Pixel (wx, wy, rix,riy);
+                        double z = tmps->mem2d->GetDataPktInterpol (rix,riy);
+                        if (z != 0.0) // crude simple test
+                                world_map->mem2d->PutDataPkt (data.s.dz*z, ix, iy, 0); // scale to actual z, dz_world=1
+                }
+
+        gchar *tmp = g_strdup_printf("World Map for %s", world_map->data.ui.title);
+        world_map->data.ui.SetTitle (tmp);
+        world_map->draw();
+
+}
+
 int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan, ZD_TYPE ztype, gboolean keep_layer_info, gboolean remap){
         Scan *tmp=NULL;
+        scan_ztype = ztype;
+        scan_direction = direction;
         const gboolean transferdata = (remap && mem2d &&  mem2d->GetNx() > 2 && mem2d->GetNy() > 2 && data.s.nx > 2 && data.s.ny > 2 ) ? true : false;
         if (transferdata){
                 tmp = new Scan;
@@ -573,31 +637,7 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
                 tmp->data.s.ntimes  = 1;
 		tmp->data.s.nvalues = 1;
 
-                if (!world_map){
-                        world_map = new Scan(ID_CH_V_NO, false, ChanNo, NULL, ztype);
-                        //Scan::Scan(int vtype, int vflg, int ChNo, SCAN_DATA *vd, ZD_TYPE mtyp){
-                        world_map->data.copy(data);
-                        world_map->data.s.alpha = 0.;
-                        world_map->data.s.x0 = 0.;
-                        world_map->data.s.y0 = 0.;
-                        world_map->data.s.rx = 2*gapp->xsm->XOffsetMax(); // full accessible world range (offset)
-                        world_map->data.s.ry = 2*gapp->xsm->YOffsetMax(); // full accessible world range (offset)
-                        world_map->data.s.nx = xsmres.world_size_nxy; // set in preferences
-                        world_map->data.s.ny = xsmres.world_size_nxy;
-                        world_map->data.s.dx = world_map->data.s.rx/(world_map->data.s.nx-1);
-                        world_map->data.s.dy = world_map->data.s.ry/(world_map->data.s.ny-1);
-                        world_map->data.s.dz = 1.0;
-                        world_map->data.s.ntimes  = 1;
-                        world_map->data.s.nvalues = 1;
-                        gchar *tmp = g_strdup_printf("World Map for %s", data.ui.title);
-                        world_map->data.ui.SetTitle (tmp);
-                        g_free(tmp);
-                        world_map->data.ui.SetName ("World Map");
-                        if(vdata) world_map->data.CpUnits (*vdata);
-                        world_map->mem2d->Resize( world_map->data.s.nx,  world_map->data.s.ny,  world_map->data.s.nvalues, ztype, false);
-                        world_map->mem2d->data->MkXLookup (-direction*world_map->data.s.rx/2, direction*world_map->data.s.rx/2);
-                        world_map->mem2d->data->MkYLookup (world_map->data.s.ry/2, -world_map->data.s.ry/2);
-                }
+                update_world_map ();
         }
         
 	if(vdata){
@@ -638,7 +678,7 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
 
 	data.ui.SetName("noname");
 	
-        if (tmp){
+        if (transferdata){
                 XSM_DEBUG_GP (DBG_L1, "Scan create/transfer -- resizing. %d %d @ %g  -> %d %d @ %g", tmp->data.s.nx, tmp->data.s.ny, tmp->data.s.rx, data.s.nx, data.s.ny, data.s.rx);
 
                 // transfer / remap data
@@ -657,45 +697,8 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
                                 }
                                 mem2d->PutDataPkt (z, ix, iy, 0);
                         }
-        }
-
-        if (tmp && world_map){
-                XSM_DEBUG_GP (DBG_L1, "Scan update world map.");
-
-                double wxy[2][4];
-                double rxy[2][4];
-                tmp->Pixel2World (0,0, wxy[0][0], wxy[1][0]);
-                world_map->World2Pixel (wxy[0][0], wxy[1][0], rxy[0][0], rxy[1][0]);
-                
-                tmp->Pixel2World (tmp->mem2d->GetNx()-1, tmp->mem2d->GetNy()-1, wxy[0][1], wxy[1][1]);
-                world_map->World2Pixel (wxy[0][1], wxy[1][1], rxy[0][1], rxy[1][1]);
-                
-                tmp->Pixel2World (tmp->mem2d->GetNx()-1,0, wxy[0][2], wxy[1][2]);
-                world_map->World2Pixel (wxy[0][2], wxy[1][2], rxy[0][2], rxy[1][2]);
-                
-                tmp->Pixel2World (0,tmp->mem2d->GetNy()-1, wxy[0][3], wxy[1][3]);
-                world_map->World2Pixel (wxy[0][3], wxy[1][3], rxy[0][3], rxy[1][3]);
-
-                int iix[2] = { (int)arrmin(rxy[0],4), (int)arrmax(rxy[0],4)  };
-                int iiy[2] = { (int)arrmin(rxy[1],4), (int)arrmax(rxy[1],4)  };
-                // transfer / remap data
-                for (int iy=iiy[0]; iy < iiy[1]; ++iy)
-                        for (int ix=iix[0]; ix < iix[1]; ++ix){
-                                double wx,wy, rix, riy;
-                                world_map->Pixel2World (ix, iy, wx, wy);
-                                tmp->World2Pixel (wx, wy, rix,riy);
-                                double z = tmp->mem2d->GetDataPktInterpol (rix,riy);
-                                if (z != 0.0) // crude simple test
-                                        world_map->mem2d->PutDataPkt (data.s.dz*z, ix, iy, 0); // scale to actual z, dz_world=1
-                        }
-                gchar *tmp = g_strdup_printf("World Map for %s", world_map->data.ui.title);
-                world_map->data.ui.SetTitle (tmp);
-                g_free(tmp);
-                world_map->draw();
-        }
-
-        if (tmp)
                 delete tmp;
+        }
         
 	XSM_DEBUG (DBG_L2, "Scan::create done");
 	State= IS_NEW;
