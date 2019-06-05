@@ -289,6 +289,7 @@ gxsm3_app_startup (GApplication *app)
 	add_accelerator (app, "win.view-activate", "F1");
 	add_accelerator (app, "win.view-autodisp", "F2");
 	add_accelerator (app, "win.view-maptoworld", "F4");
+	add_accelerator (app, "win.view-clr-world", "<Ctrl>F4");
 	add_accelerator (app, "win.object-mode::rectangle", "F5");
 	add_accelerator (app, "win.object-mode::point", "F6");
 	add_accelerator (app, "win.object-mode::line-show", "F7");

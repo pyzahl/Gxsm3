@@ -17,6 +17,10 @@
 	<attribute name="label" translatable="yes">Update World Map</attribute>
 	<attribute name="action">win.view-maptoworld</attribute>
       </item>
+      <item>
+	<attribute name="label" translatable="yes">Clear World Map</attribute>
+	<attribute name="action">win.view-clr-world</attribute>
+      </item>
       <submenu>
 	<attribute name="label" translatable="yes">Mode</attribute>
 	<section>
