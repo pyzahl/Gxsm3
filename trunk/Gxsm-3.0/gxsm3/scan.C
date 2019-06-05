@@ -622,6 +622,12 @@ void Scan::update_world_map(Scan *src){
 
 }
 
+void Scan::clear_world_map(){
+        if (world_map){
+                world_map->mem2d->SetData (0., 0,0, world_map->mem2d->GetNx(),world_map->mem2d->GetNy());
+                world_map->draw();
+        }
+}
 int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan, ZD_TYPE ztype, gboolean keep_layer_info, gboolean remap){
         Scan *tmp=NULL;
         scan_ztype = ztype;
