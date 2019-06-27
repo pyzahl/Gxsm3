@@ -1300,21 +1300,23 @@ class TuneScope():
 					if tmp != self.Fstep:
 						if tmp > 0.0001 and tmp < 100.:
 							self.Fstep=tmp
-							self.points   = int (2 * round (self.Fspan/2./self.Fstep) + 1)
-							self.ResAmp   = ones (self.points)
-							self.ResPhase2F = zeros (self.points)
-							self.ResAmp2F   = ones (self.points)
-							self.ResPhase = zeros (self.points)
-							self.Fit      = zeros (self.points)
-							self.Freq     = zeros (self.points)
-                                                        self.mode2f   = 0
-							self.pos      = -10
 						else:
 							print "invalid Fstep entry"
 				except ValueError:
 					print "invalid Fstep entry"
 
-				self.interval = int (self.Il.get_text())
+				self.points   = int (2 * round (self.Fspan/2./self.Fstep) + 1)
+                                print ("# points: ", self.points)
+				self.ResAmp   = ones (self.points)
+				self.ResPhase2F = zeros (self.points)
+				self.ResAmp2F   = ones (self.points)
+				self.ResPhase = zeros (self.points)
+                                self.ResPhasePAC = zeros (self.points)
+				self.Fit      = zeros (self.points)
+				self.Freq     = zeros (self.points)
+                                self.mode2f   = 0
+				self.pos      = -10
+                                self.interval = int (self.Il.get_text())
 				self.fitinfo = ["","",""]
 				self.resmodel = ""
 				if self.interval < timeout_min_tunescope or self.interval > 30000:
