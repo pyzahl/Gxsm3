@@ -1420,7 +1420,7 @@ DSPControl::DSPControl () {
                 } else {
                         dsp_bp->grid_add_label (mixer_channel_label[ch]);
                 }
-                dsp_bp->grid_add_ec_with_scale (NULL, mixer_unit[ch], &mix_set_point[ch], 0.0, 50., "4g", 0.001, 0.01, mixer_remote_id_set[ch]);
+                dsp_bp->grid_add_ec_with_scale (NULL, mixer_unit[ch], &mix_set_point[ch], ch==0? 0.0:-100.0, 100., "4g", 0.001, 0.01, mixer_remote_id_set[ch]);
                 // dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
                 dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
                 dsp_bp->ec->set_logscale_min (1e-4);
@@ -1431,7 +1431,7 @@ DSPControl::DSPControl () {
                 dsp_bp->set_input_width_chars (10);
                 dsp_bp->set_configure_list_mode_on ();
                 dsp_bp->grid_add_ec (NULL, Unity, &mix_gain[ch], -0.5, 0.5, "5g", 0.001, 0.01, mixer_remote_id_gn[ch]);
-                dsp_bp->grid_add_ec (NULL, mixer_unit[ch], &mix_level[0], -50.0, 50.0, "5g", 0.001, 0.01, mixer_remote_id_fl[ch]);
+                dsp_bp->grid_add_ec (NULL, mixer_unit[ch], &mix_level[0], -100.0, 100.0, "5g", 0.001, 0.01, mixer_remote_id_fl[ch]);
                 dsp_bp->grid_add_mixer_options (ch, mix_transform_mode[ch], this);
                 dsp_bp->set_configure_list_mode_off ();
                 dsp_bp->new_line ();
