@@ -483,7 +483,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	for(int i=0; operation_modes[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), operation_modes[i], operation_modes[i]);
 
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 5); // "START BRAM LOOP" mode need to run for data decimation and transfer analog + McBSP
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), operation_mode=5); // "START BRAM LOOP" mode need to run for data decimation and transfer analog + McBSP
 
         // FPGA Update Period
 	wid = gtk_combo_box_text_new ();
@@ -566,8 +566,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         channel_selections[6] = 1;
         channel_selections[0] = 1;
         channel_selections[1] = 1;
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 7); // normal operation for PLL, transfer: Phase, Freq,[Am,Ex] (analog: Freq, McBSP: 4ch transfer Ph, Frq, Am, Ex)
+        transport=6; // 0: IN1, IN2; ...
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), transport+1); // normal operation for PLL, transfer: Phase, Freq,[Am,Ex] (analog: Freq, McBSP: 4ch transfer Ph, Frq, Am, Ex)
 
+        
         // GPIO monitor selections -- full set, experimental
 	const gchar *monitor_modes_gpio[] = {
                 "OFF: no plot",
@@ -665,6 +667,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         
         bp->grid_add_check_button ( N_("Connect"), "Check to initiate connection, uncheck to close connection.", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::connect_cb), this);
+        run_scope=0;
         bp->grid_add_check_button ( N_("Scope"), "Enable Scope", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::enable_scope), this);
         bp->grid_add_check_button ( N_("Debug"), "Enable debugging LV1.", 1,
@@ -898,8 +901,8 @@ void Inet_Json_External_Scandata::send_all_parameters (){
         write_parameter ("SHR_DEC_DATA", 4.);
         write_parameter ("PACVERBOSE", 0);
         write_parameter ("TRANSPORT_DECIMATION", 16);
-        write_parameter ("TRANSPORT_MODE", 0);
-        write_parameter ("OPERATION", 2);
+        write_parameter ("TRANSPORT_MODE", transport);
+        write_parameter ("OPERATION", operation_mode);
         pac_tau_parameter_changed (NULL, this);
         pac_frequency_parameter_changed (NULL, this);
         pac_volume_parameter_changed (NULL, this);
