@@ -2193,7 +2193,12 @@ void sranger_mk3_hwi_dev::write_dsp_feedback (
 
 		if (i==1) // PLL-FREQ dedicated channel, INTERNAL PAC if Hertz2V is set to 0 in SPM settings -- 
 			if (gapp->xsm->Inst->dHertz2V(1.) == 0.0){ // INTERNAL PAC/PLL
-				dsp_feedback_mixer.setpoint[i] = (int)round((CPN(29)*2.*M_PI/150000.)*(set_point[i]+pllref)); // Q32 bit raw for PAC signal
+                                if (pllref > 0.0) // use MK3 PAC-PLL
+                                        dsp_feedback_mixer.setpoint[i] = (int)round((CPN(29)*2.*M_PI/150000.)*(set_point[i]+pllref)); // Q32 bit raw for PAC signal
+                                else{ // use McBSP based (RP) hi-speed PAC-PLL
+                                        double skl = lookup_signal_scale_by_index (lookup_signal_by_name ("McBSP Freq"));
+                                        dsp_feedback_mixer.setpoint[i] = (int)round(set_point[i]/skl); // Q32 bit raw for PAC signal
+                                }
                                 SRANGER_DEBUG_SIG (
                                                "MIX[1]:"
                                                << " pllref   = " << pllref << "Hz"
