@@ -562,7 +562,7 @@ int idle_task_018(void){
 // ============================================================
 // PROCESS MODULE: McBCP update async
 // ============================================================
-        if (!scan.pflg && !probe.pflg){
+        if (!scan.pflg && !probe.pflg && !state.dp_task_control[9].process_flag){
                 initiate_McBSP_transfer (0);
                 return 1;
         }

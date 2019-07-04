@@ -674,6 +674,10 @@ int dp_task_008(void){
 }
 
 int dp_task_009(void){
+        static int dec=8;
+        if (--dec) return 0;
+        dec = 8;
+        initiate_McBSP_transfer (0);
         return 0;
 }
 
