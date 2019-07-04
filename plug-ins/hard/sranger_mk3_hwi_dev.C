@@ -2216,7 +2216,11 @@ void sranger_mk3_hwi_dev::write_dsp_feedback (
                                                << " DSP-setpoint[1] = " << dsp_feedback_mixer.setpoint[i] 
                                                );
 			}
-		else // general purpose In-N signal "Volt" expected at mixer input
+		else if (pllref == 0.0 && gapp->xsm->Inst->dHertz2V(1.) == 0.0){ // PLL Ampl --  TMP HACK PY
+                        double skl = lookup_signal_scale_by_index (lookup_signal_by_name ("McBSP Ampl"));
+                        dsp_feedback_mixer.setpoint[i] = (int)round(set_point[i]/skl); // Q32 bit raw for PAC signal
+                }else
+                        // general purpose In-N signal "Volt" expected at mixer input
 			dsp_feedback_mixer.setpoint[i] = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*set_point[i]))); // Q23
 		dsp_feedback_mixer.level[i]    = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*level[i])));
 		dsp_feedback_mixer.gain[i]     = float_2_sranger_q15 (gain[i]);
