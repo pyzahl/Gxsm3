@@ -642,7 +642,7 @@ dsp_rt_process_name = [
         "Analog OUT Mapping with HR",  ## RT007
         "Coarse Motion Wave Generator: AutoApp/Mover/Pulse", ## RT008
 
-        "--", #RT009
+        "McBSP fast mode", #RT009
         "M-servo",
         "SCO 0",
         "SCO 1",
