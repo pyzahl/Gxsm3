@@ -935,7 +935,7 @@ int wait_for_trigger (){
 
 void run_one_time_step(){
           // initiate external data SPI request and transfer
-        if (probe.iix == probe.vector->dnx && !state.dp_task_control[9].process_flag)
+        if (probe.iix == probe.vector->dnx && !(state.dp_task_control[9].process_flag&0xffff))
                 initiate_McBSP_transfer (probe.ix);
 
         // read GPIO if requested (CPU time costy!!!)

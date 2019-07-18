@@ -87,13 +87,13 @@ extern int bz_push_area_scan_data_out (void);
 
 //#define MANUALCONTROL
 #ifdef MANUALCONTROL
-#define STOP_RT_TASK(N)         if(!state.id_task_control[3].process_flag&0x40) state.dp_task_control[N].process_flag  = 0x00
+#define STOP_RT_TASK(N)         if(!state.id_task_control[3].process_flag&0x40) state.dp_task_control[N].process_flag &= 0xffff0000
 #define START_RT_TASK(N)        if(!state.id_task_control[3].process_flag&0x40) state.dp_task_control[N].process_flag |= 0x10
 #define START_RT_TASK_ALWAYS(N) if(!state.id_task_control[3].process_flag&0x40) state.dp_task_control[N].process_flag |= 0x10
 #define START_RT_TASK_EVEN(N)   if(!state.id_task_control[3].process_flag&0x40) state.dp_task_control[N].process_flag |= 0x20
 #define START_RT_TASK_ODD(N)    if(!state.id_task_control[3].process_flag&0x40) state.dp_task_control[N].process_flag |= 0x40
 #else
-#define STOP_RT_TASK(N)         state.dp_task_control[N].process_flag  = 0x00
+#define STOP_RT_TASK(N)         state.dp_task_control[N].process_flag &= 0xffff0000
 #define START_RT_TASK(N)        state.dp_task_control[N].process_flag |= 0x10
 #define START_RT_TASK_ALWAYS(N) state.dp_task_control[N].process_flag |= 0x10
 #define START_RT_TASK_EVEN(N)   state.dp_task_control[N].process_flag |= 0x20
