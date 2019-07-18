@@ -2302,7 +2302,7 @@ class SPMcontrol():
         def get_task_control_entry_peak_time(self, ii_control, pid):
                 return self.SPM_STATEMACHINE[ii_control+ii_statemachine_rt_task_control_len*pid+ii_statemachine_rt_task_control_time_peak_now] & 0xffff
 
-        def configure_rt_task(self, pid, flag):
+        def configure_rt_task(self, pid, flag, ier_mask="none"):
                 if flag == "sleep":
                         flags = 0x00
                 elif flag == "active":
@@ -2313,7 +2313,15 @@ class SPMcontrol():
                         flags = 0x40
                 else:
                         return
-                if pid > 0 and pid < NUM_RT_TASKS:
+                
+                if ier_mask.find('kernel') > 0:
+                        flags = flags + 0x00100000
+                if ier_mask.find('a810') > 0:
+                        flags = flags + 0x00200000
+                if ier_mask.find('mcbsp') > 0:
+                        flags = flags + 0x00400000
+
+                if pid >= 0 and pid < NUM_RT_TASKS:
 			self.write_o (i_statemachine, 4*(ii_statemachine_rt_task_control+ii_statemachine_rt_task_control_len*pid+ii_statemachine_rt_task_control_flags), struct.pack ("<L", flags))
                         
         def configure_id_task(self, pid, flag, interval=0):

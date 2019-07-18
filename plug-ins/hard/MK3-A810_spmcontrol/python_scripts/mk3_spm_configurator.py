@@ -3014,7 +3014,7 @@ class Mk3_Configurator:
 				lab.set_alignment(0.0, 0.5)
 				table.attach(lab, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
                                 c=c+1
-                                if pid > 0:
+                                if pid >= 0:
                                         cfg=gtk.Button("cfg")
                                         cfg.connect("clicked", self.configure_rt, pid)
 				        table.attach(cfg, c, c+1, r, r+1, gtk.FILL | gtk.EXPAND )
@@ -3088,12 +3088,20 @@ class Mk3_Configurator:
                             _labpid.set_markup("<span color='red'>RT{:03d}</span>".format(pid))
                     else:
                             _labpid.set_markup("<span color='blue'>RT{:03d}</span>".format(pid))
+                    IER=" *<span color='violet'>"        
+                    if flags & 0x00100000:
+                        IER=IER+"K"        
+                    if flags & 0x00200000:
+                        IER=IER+"A"        
+                    if flags & 0x00400000:
+                        IER=IER+"M"        
+                    IER=IER+"</span>"        
                     if flags & 0x10:
-                            _flag.set_markup("<span color='blue'>ALWAYS</span>")
+                            _flag.set_markup("<span color='blue'>ALWAYS</span>"+IER)
                     if flags & 0x20:
-                            _flag.set_markup("<span color='green'>on ODD CLK</span>")
+                            _flag.set_markup("<span color='green'>on ODD CLK</span>"+IER)
                     if flags & 0x40:
-                            _flag.set_markup("<span color='green'>on EVEN CLK</span>")
+                            _flag.set_markup("<span color='green'>on EVEN CLK</span>"+IER)
                             
 	    _dsp_t.set_text("{:10d}".format(self.mk3spm.get_task_control_entry(ii_statemachine_rt_task_control, ii_statemachine_rt_task_control_time, pid)))
 	    _task_t.set_text("{:10d}".format(self.mk3spm.get_task_control_entry_task_time (ii_statemachine_rt_task_control, pid)))
@@ -3140,18 +3148,48 @@ class Mk3_Configurator:
             else:
                     cb_sleep.set_active(True)
                     
+            label = gtk.Label("Set Protect from (IRQ):")
+	    hb = gobject.new(gtk.HBox(spacing=10))
+            dialog.vbox.pack_end(hb)
+            hb.show()
+            hb.pack_start(label)
+            label.show()
+            cb_kernel = gtk.CheckButton("Kernel")
+            hb.pack_end(cb_kernel)
+            cb_kernel.show()
+            cb_A810 = gtk.CheckButton("A810")
+            hb.pack_end(cb_A810)
+            cb_A810.show()
+            cb_McBSP = gtk.CheckButton("McBSP")
+            hb.pack_end(cb_McBSP)
+            cb_McBSP.show()
+
+            if flags & 0x00100000:
+                    cb_kernel.set_active(True)
+            if flags & 0x00200000:
+                    cb_A810.set_active(True)
+            if flags & 0x00400000:
+                    cb_McBSP.set_active(True)
+
             response = dialog.run()
             dialog.destroy()
             
             if response == gtk.RESPONSE_ACCEPT:
+                    ier_flags="none"
+                    if cb_kernel.get_active():
+                            ier_flags=ier_flags+' kernel'
+                    if cb_A810.get_active():
+                            ier_flags=ier_flags+' a810'
+                    if cb_McBSP.get_active():
+                            ier_flags=ier_flags+' mcbsp'
                     if cb_active.get_active():
-                            self.mk3spm.configure_rt_task(pid, "active")
+                            self.mk3spm.configure_rt_task(pid, "active", ier_flags)
                     elif cb_odd.get_active():
-                            self.mk3spm.configure_rt_task(pid, "odd")
+                            self.mk3spm.configure_rt_task(pid, "odd", ier_flags)
                     elif cb_even.get_active():
-                            self.mk3spm.configure_rt_task(pid, "even")
+                            self.mk3spm.configure_rt_task(pid, "even", ier_flags)
                     elif cb_sleep.get_active():
-                            self.mk3spm.configure_rt_task(pid, "sleep")
+                            self.mk3spm.configure_rt_task(pid, "sleep", ier_flags)
                     
     def id_process_list_update(self, _labpid, _tn, _ti, _tmr_frq, _ne, _flags, pid):
             flags = self.mk3spm.get_task_control_entry(ii_statemachine_id_task_control, ii_statemachine_id_task_control_flags, pid)

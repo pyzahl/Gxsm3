@@ -728,12 +728,17 @@ void dataprocess()
 {
         int i, ip;
         int tmp1, tmp2;
+        unsigned int ier_protect_mask;
 // ============================================================
 // PROCESS MODULE: DSP PROCESSING CLOCK TICKS and TIME KEEPING
 // ============================================================
         // now done via SR3PRO_A810Driver[-interruptible-no-kernel-int].lib
         //IER &= ~0x0010; // Disable INT4 (kernel) -- protect data integrity (atomic read/write protect not necessary for data manipulated inside here)
 
+        // protect initial checks from recursion -- disable DMA/A810 int
+        ier_protect_mask = state.dp_task_control[0].process_flag >> 16;
+        IER &= ~ier_protect_mask; // Disable MASK
+        
         TSCReadSecond();
         state.DataProcessReentryTime = MeasuredTime;
         tmp1 = state.DataProcessReentryPeak & 0xffff; // LO (min time)
@@ -758,9 +763,16 @@ void dataprocess()
 
         if (state.dp_task_control[0].process_flag&1){ // self running?
                 state.dp_task_control[0].missed_count++; // increment missed (aborted) system call count
+                // enable (likley good idea DMA/A810 int...)
+                // remove proection (inverse to above)
+                IER |= ier_protect_mask;
                 return;  // abort now and return ASAP
         }
-        
+
+        state.dp_task_control[0].process_flag |= 1; // set self to running now
+        // enable (likley good idea DMA/A810 int...)
+        // remove proection (inverse to above)
+        IER |= ier_protect_mask;
 
 // ============================================================
 // REAL TIME PROCESS CONTROL
@@ -788,7 +800,6 @@ void dataprocess()
                         ? 1 : 0;
         }
         
-        state.dp_task_control[0].process_flag |= 1; // set self to running now
 	TSCReadSecond();
         state.dp_task_control[0].process_time = MeasuredTime;
 
@@ -796,14 +807,21 @@ void dataprocess()
         ip=0;
         for (i=1; i<=NUM_DATA_PROCESSING_TASKS; i++){
                 if (state.dp_task_control[i].process_flag&1){
+
+                        // Protect (disable IER) acordign to flag (normally NN=00 -- in process flag= 0x00NN 00PP -- means no protection, NN is IER MASK, PP are process mode and enable flags)
+                        ier_protect_mask = state.dp_task_control[i].process_flag >> 16;
+                        IER &= ~ier_protect_mask;
                         dp_task_list [i] (); // Execute RT Task
                         TSCReadSecond ();
                         state.dp_task_control[i].process_time = MeasuredTime; // incremental!
+                        // remove proection (inverse to above)
+                        IER |= ier_protect_mask;
+
                         tmp1 = state.dp_task_control[i].process_time_peak_now & 0xffff; // last peak of process time (LO)
                         tmp2 = MeasuredTime - state.dp_task_control[ip].process_time;  // actual process time from difference to previouly [ip] executed task
                         state.dp_task_control[i].process_time_peak_now  = tmp2 << 16;  // actual process time from difference -> upper 16 (HI)
                         state.dp_task_control[i].process_time_peak_now |= tmp2 > tmp1 ? tmp2 : tmp1; // peak in lower 16 (LO)
-                        state.dp_task_control[i].process_flag &= 0xf0; // completed, remove flag bit 0
+                        state.dp_task_control[i].process_flag &= 0xfffffff0; // completed, remove flag bit 0 (lowest nibble=0)
                         ip=i;
                 }
                 if (MeasuredTime > state.DP_max_time_until_abort) // time since start processing -- may selfadjust via 4000-max of next ???
@@ -820,7 +838,7 @@ void dataprocess()
         state.dp_task_control[0].process_time_peak_now |= MeasuredTime > tmp1 ? MeasuredTime : tmp1; // peak in lower 16 (LO)
 
         /* END of DP */
-        state.dp_task_control[0].process_flag &= 0xf0; // self completed
+        state.dp_task_control[0].process_flag &= 0xfffffff0; // self completed
 
         // now done via SR3PRO_A810Driver[-interruptible-no-kernel-int].lib
         //IER |= 0x0010; // Enable INT4 (kernel)  
