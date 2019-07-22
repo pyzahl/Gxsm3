@@ -3028,7 +3028,51 @@ class SPMcontrol():
 
 		return [xarray.astype(float)[::-1], yarray.astype(float)[::-1]]
 
+        # must call first with init=True
+        def read_recorder_deci(self, n=4097, recorder_file="", init=False):
+                if n < 0 or n > 0x40000:
+                        return 0
+                if init:
+                        self.max_age = 60000000 # 60s
+                        self.time_of_last_stamp = 0
+                        self.ring_buffer_position_last = -1
+		aS1 = self.RECORDER_VARS[ii_Signal1]
+		sr = open (self.sr_dev_path, "rb")
+		os.lseek (sr.fileno(), aS1+4*0x7ffff, 0) # non atomic reads for big data!
+		tmparray = fromfile(sr, dtype('<i4'), 1)
+		sr.close ()
+                deci = tmparray[0]
 
+                start = deci-n
+                if start > 0:
+                        sr = open (self.sr_dev_path, "rb")
+		        os.lseek (sr.fileno(), aS1+((0x80000+start)<<2), 0) # non atomic reads for big data!
+		        tmparray = fromfile(sr, dtype('<i4'), n)
+		        sr.close ()
+                else:
+                        n1 = -start
+                        n2 = n-n1
+                        sr = open (self.sr_dev_path, "rb")
+		        os.lseek (sr.fileno(), aS1+((0x80000+0x40000-n1)<<2), 0) # non atomic reads for big data!
+		        tmparray1 = fromfile(sr, dtype('<i4'), n1)
+		        os.lseek (sr.fileno(), aS1+((0x80000+n2)<<2), 0) # non atomic reads for big data!
+		        tmparray2 = fromfile(sr, dtype('<i4'), n2)
+		        sr.close ()
+                        tmparray = concatenate((tmparray1, tmparray2), axis=0)
+                if recorder_file != "" and self.ring_buffer_position_last>=0:
+                        with open(recorder_file, "a") as recorder:
+                                recorder.write("# "+str(self.ring_buffer_position_last) + " ... " + str(deci) + "\n")
+                                if self.ring_buffer_position_last < deci:
+                                        for i in range(n-(deci-self.ring_buffer_position_last), n):
+                                                recorder.write(str(tmparray[i]) + "\n")
+                                else:
+                                        for i in range(n-(deci+0x40000-self.ring_buffer_position_last), n):
+                                                recorder.write(str(tmparray[i]) + "\n")
+                self.ring_buffer_position_last = deci
+                return tmparray.astype(float)
+
+
+        
 	def adjust_PLL_sine (self, volumeSine, FSineHz, mode2f=0):
 		# reconfigure sine generator
 		vol = round (CPN(22)*volumeSine/10.)

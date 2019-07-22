@@ -54,6 +54,8 @@ from mk3_spmcontol_class import *
 from meterwidget import *
 from scopewidget import *
 
+import datetime
+
 # timeouts [ms]
 timeout_update_patchrack              = 3000
 timeout_update_patchmenu              = 3000
@@ -1612,6 +1614,147 @@ class SignalPlotter():
 	parent.wins[name].show_all()
 
 
+class RecorderDeci():
+	# X: 7=time, plotting Monitor Taps 20,21,0,1
+    def __init__(self, parent):
+	label = "Decimating Contineous Recorder Signal 0"
+	name  = "S0 Deci Recorder"
+
+	if not parent.wins.has_key(name):
+		win = gobject.new(gtk.Window,
+				  type=gtk.WINDOW_TOPLEVEL,
+				  title=label,
+				  allow_grow=True,
+				  allow_shrink=True,
+				  border_width=0)
+		parent.wins[name] = win
+		v = gobject.new(gtk.HBox(spacing=0))
+
+	        [Xsignal, Xdata, OffsetX] = parent.mk3spm.query_module_signal_input(DSP_SIGNAL_SCOPE_SIGNAL1_INPUT_ID)
+	        [Ysignal, Ydata, OffsetY] = parent.mk3spm.query_module_signal_input(DSP_SIGNAL_SCOPE_SIGNAL2_INPUT_ID)
+
+		scope = Oscilloscope( gobject.new(gtk.Label), v, "XT", label)
+                scope.scope.set_wide (True)
+		scope.show()
+		scope.set_chinfo([Xsignal[SIG_NAME], Ysignal[SIG_NAME]])
+		#scope.set_scale ( { signalV[SIG_UNIT]: "V", "Temp": "K" })
+
+		win.add(v)
+
+		table = gtk.Table(8, 2)
+		table.set_row_spacings(2)
+		table.set_col_spacings(2)
+		v.pack_start (table)
+		tr=0
+                c=0
+		lab = gobject.new(gtk.Label, label="CH1: %s"%Xsignal[SIG_NAME] + ", Scale in %s/div"%Xsignal[SIG_UNIT])
+
+		table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.M1scale = gtk.Entry()
+		self.M1scale.set_text("0.1")
+		table.attach(self.M1scale, c, c+1, tr, tr+1)
+                tr=tr+1
+
+		lab = gobject.new(gtk.Label, label="CH2: %s"%Ysignal[SIG_NAME] + ", Scale in %s/div"%Ysignal[SIG_UNIT])
+		table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.M2scale = gtk.Entry()
+		self.M2scale.set_text("1.0")
+		table.attach(self.M2scale, c, c+1, tr, tr+1)
+                tr=tr+1
+
+		lab = gobject.new(gtk.Label, label="Threshold")
+		table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
+		self.T1 = gtk.Entry()
+		self.T1.set_text("0.0")
+		table.attach(self.T1, c, c+1, tr, tr+1)
+                tr=tr+1
+
+                self.lastevent = parent.mk3spm.read_recorder_deci (4097, "", True)
+                self.logfile = 'mk3_S0_py_recorder_deci256.log'
+                self.logcount = 5
+                self.count = 100
+                
+		def update_recorder():
+			try:
+				m1scale_div = float(self.M1scale.get_text())
+			except ValueError:
+				m1scale_div = 1.0
+				
+			try:
+				m2scale_div = float(self.M2scale.get_text())
+			except ValueError:
+				m2scale_div = 1.0
+
+			try:
+				m1th = float(self.T1.get_text())
+			except ValueError:
+				m1th = 0.0
+
+                        dscale = 256.*32768./10. 
+                                
+                        rec = parent.mk3spm.read_recorder_deci (4097, self.logfile)
+                        scope.set_data (rec/256./32768.*10./m1scale_div, rec/dscale/m2scale_div)
+
+                        if m1th >= 0.0:
+                                ma = rec.max()/dscale
+                                mi = rec.min()/dscale
+                                scope.set_info(["max: "+str(ma), "min: "+str(mi)])
+                                if abs (ma) > m1th or abs (mi) > m1th:
+                                        self.logfile = 'mk3_S0_py_recorder_deci256.log'
+                                        if m1th > 0.0 and self.logcount == 0:
+                                                with open(self.logfile, "a") as recorder:
+                                                        recorder.write("### Threashold Triggered at: " + str(datetime.datetime.now()) + " max: "+str(ma) + " min: "+str(mi) + "\n")
+                                                        self.count = 0
+                                                        self.lastevent = rec
+                                        self.logcount = 25*5
+                                        self.count = self.count + 1
+                                        if self.count == 24:
+                                                self.lastevent = rec
+                                        scope.set_flash ("Threashold Detected, Recording... " + str(self.count))
+                                else:
+                                        if self.logcount > 0:
+                                                self.logcount = self.logcount - 1
+                                                scope.set_flash ("Threashold Detected, Recording... " + str(self.logcount))
+                                                scope.set_data_with_uv (rec/256./32768.*10./m1scale_div, rec/dscale/m2scale_div, zeros(0), self.lastevent/256./32768.*10./m1scale_div, self.lastevent/dscale/m2scale_div)
+                                        else:
+                                                if self.logfile != '':
+                                                        self.logfile = ''
+                                                        scope.set_data_with_uv (rec/256./32768.*10./m1scale_div, rec/dscale/m2scale_div, zeros(0), zeros(0), zeros(0))
+                        
+                        
+			return self.run
+
+		def stop_recorder (win, event=None):
+			print "STOP, hide."
+			win.hide()
+			self.run = gtk.FALSE
+			return True
+
+		def toggle_run_recorder (b):
+			if self.run:
+				self.run = gtk.FALSE
+				self.run_button.set_label("RUN REC")
+                                scope.set_flash ("Stopped.")
+			else:
+				self.run = gtk.TRUE
+				self.run_button.set_label("STOP REC")
+                                scope.set_flash ("Starting...")
+				gobject.timeout_add (200, update_recorder)
+
+		self.run_button = gtk.Button("STOP REC")
+		self.run_button.connect("clicked", toggle_run_recorder)
+		table.attach(self.run_button, 0, 1, tr, tr+1)
+
+		self.run = gtk.FALSE
+		win.connect("delete_event", stop_recorder)
+		toggle_run_recorder (self.run_button)
+		
+	parent.wins[name].show_all()
+
+
 class DiodeTPlotter():
 	# X: 7=time, plotting Monitor Taps 20,21,0,1
     def __init__(self, parent, length = 3600., taps=[7,1], samplesperpage=3600):
@@ -1835,6 +1978,7 @@ class Mk3_Configurator:
 		   "6 SPM Signal Oscilloscope": self.create_oscilloscope_app,
 		   "6pSPM Signal Plotter": self.create_signalplotter_app,
 		   "6kSPM Diode Temp Plotter": self.create_diodetplotter_app,
+		   "6zSPM Deci Stream Recorder": self.create_recorder_app,
 		   "7 PLL: Osc. Tune App": self.create_PLL_tune_app,
 		   "8 PLL: Ampl. Step App": self.create_amp_step_app,
 		   "9 PLL: Phase Step App": self.create_phase_step_app,
@@ -2057,6 +2201,9 @@ class Mk3_Configurator:
 
     def create_diodetplotter_app (self, _button):
 	    dtplotter = DiodeTPlotter (self)
+	
+    def create_recorder_app (self, _button):
+	    decirecorder = RecorderDeci (self)
 	
     def create_PLL_tune_app (self, _button):
 	    tune = TuneScope (self)
