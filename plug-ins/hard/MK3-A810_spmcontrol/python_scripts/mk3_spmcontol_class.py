@@ -40,6 +40,7 @@ import re
 from numpy import *
 
 import pickle
+import datetime
 
 SRANGER_MK23_IOCTL_SET_EXCLUSIVE_AUTO       = 102
 SRANGER_MK23_IOCTL_SET_EXCLUSIVE_UNLIMITED  = 103
@@ -3033,7 +3034,7 @@ class SPMcontrol():
                 if n < 0 or n > 0x40000:
                         return 0
                 if init:
-                        self.max_age = 60000000 # 60s
+                        self.max_age = 60 # 60s
                         self.time_of_last_stamp = 0
                         self.ring_buffer_position_last = -1
 		aS1 = self.RECORDER_VARS[ii_Signal1]
@@ -3059,15 +3060,21 @@ class SPMcontrol():
 		        tmparray2 = fromfile(sr, dtype('<i4'), n2)
 		        sr.close ()
                         tmparray = concatenate((tmparray1, tmparray2), axis=0)
+
                 if recorder_file != "" and self.ring_buffer_position_last>=0:
                         with open(recorder_file, "a") as recorder:
+                                now=time.mktime(datetime.datetime.now().timetuple())
+                                if self.time_of_last_stamp+self.max_age < now:
+                                        self.time_of_last_stamp = now
+                                        recorder.write("#T " + str(self.time_of_last_stamp )+ "\n")
+
                                 recorder.write("# "+str(self.ring_buffer_position_last) + " ... " + str(deci) + "\n")
                                 if self.ring_buffer_position_last < deci:
                                         for i in range(n-(deci-self.ring_buffer_position_last), n):
                                                 recorder.write(str(tmparray[i]) + "\n")
                                 else:
                                         for i in range(n-(deci+0x40000-self.ring_buffer_position_last), n):
-                                                recorder.write(str(tmparray[i]) + "\n")
+                                                recorder.write(str(tmparray[i]) + " L\n")
                 self.ring_buffer_position_last = deci
                 return tmparray.astype(float)
 
