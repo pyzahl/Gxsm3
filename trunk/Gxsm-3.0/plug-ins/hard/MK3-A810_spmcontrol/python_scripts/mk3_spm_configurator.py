@@ -1728,7 +1728,7 @@ class RecorderDeci():
 			return self.run
 
 		def stop_recorder (win, event=None):
-			print "STOP, hide."
+			print ("STOP, hide.")
 			win.hide()
 			self.run = gtk.FALSE
 			return True
