@@ -477,7 +477,7 @@ class Scope(gtk.DrawingArea):
                 if self.Xdata_rft.size != Xdata_rft_new.size:
                     self.Xdata_rft = Xdata_rft_new
                 else:
-                    self.Xdata_rft = self.Xdata_rft*0.1 + Xdata_rft_new*0.9
+                    self.Xdata_rft = self.Xdata_rft*0.02 + Xdata_rft_new*0.98
                 if self.dBX:
                     self.plot_xt (cr, -2.*log(self.Xdata_rft), lwp, 1., 0.925, 0., alpha-0.2, self.lambda_frqmap) # YELLOW
                     self.plot_markers (cr, self.Xdata_rft, self.Xmarkers, 1., 0.925, 0., alpha-0.2, True,  self.lambda_frqmap)
@@ -492,13 +492,17 @@ class Scope(gtk.DrawingArea):
                     else:
                         self.plot_xt (cr, self.par.Ydata, lwp, 1., 0.075, 0., alpha) # RED
                 if self.ftY:
-                    Ydata_rft = abs(fft.rfft(self.par.Ydata))/ny
-                    if self.dBY:
-                        self.plot_xt (cr, -2.*log(Ydata_rft), lwp, 1., 0.075, 0., alpha-0.2, self.lambda_frqmap) # RED
-                        self.plot_markers (cr, Ydata_rft, self.Ymarkers, 1., 0.075, 0., alpha-0.2, True, self.lambda_frqmap)
+                    Ydata_rft_new = abs(fft.rfft(self.par.Ydata))/ny
+                    if self.Ydata_rft.size != Ydata_rft_new.size:
+                        self.Ydata_rft = Ydata_rft_new
                     else:
-                        self.plot_xt (cr, -Ydata_rft, lwp, 1., 0.075, 0., alpha-0.2) # RED
-                        self.plot_markers (cr, Ydata_rft, self.Ymarkers, 1., 0.075, 0., alpha-0.2)
+                        self.Ydata_rft = self.Ydata_rft*0.02 + Ydata_rft_new*0.98
+                    if self.dBY:
+                        self.plot_xt (cr, -2.*log(self.Ydata_rft), lwp, 1., 0.075, 0., alpha-0.2, self.lambda_frqmap) # RED
+                        self.plot_markers (cr, self.Ydata_rft, self.Ymarkers, 1., 0.075, 0., alpha-0.2, True, self.lambda_frqmap)
+                    else:
+                        self.plot_xt (cr, -self.Ydata_rft, lwp, 1., 0.075, 0., alpha-0.2) # RED
+                        self.plot_markers (cr, self.Ydata_rft, self.Ymarkers, 1., 0.075, 0., alpha-0.2)
                     
         if size(self.par.Zdata) > 1:
             if self.dBZ: # 10 dB / div

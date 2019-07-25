@@ -1634,9 +1634,11 @@ class RecorderDeci():
 	        [Ysignal, Ydata, OffsetY] = parent.mk3spm.query_module_signal_input(DSP_SIGNAL_SCOPE_SIGNAL2_INPUT_ID)
 
 		scope = Oscilloscope( gobject.new(gtk.Label), v, "XT", label)
+                scope.set_subsample_factor(256)
                 scope.scope.set_wide (True)
 		scope.show()
-		scope.set_chinfo([Xsignal[SIG_NAME], Ysignal[SIG_NAME]])
+		scope.set_chinfo([Xsignal[SIG_NAME], "9.81*Integral of "+Xsignal[SIG_NAME]])
+		#scope.set_chinfo([Xsignal[SIG_NAME], Ysignal[SIG_NAME]])
 		#scope.set_scale ( { signalV[SIG_UNIT]: "V", "Temp": "K" })
 
 		win.add(v)
@@ -1695,12 +1697,24 @@ class RecorderDeci():
 
                         dscale = 256.*32768./10. 
                                 
-                        rec = parent.mk3spm.read_recorder_deci (4097, self.logfile)
-                        scope.set_data (rec/256./32768.*10./m1scale_div, rec/dscale/m2scale_div)
+                        rec = parent.mk3spm.read_recorder_deci (4097, self.logfile)/dscale
+                        vel = zeros(4097)
+                        if True:
+                            vint=0.0
+                            dt=256.0/150000.0
+                            om = sum(rec, axis=0)/4097.0
+                            i=0
+                            for a in rec:
+                                om = om*0.99+0.01*a
+                                vint = vint + 9.81*(a-om)*dt
+                                vel[i] = vint
+                                i=i+1
+
+                        scope.set_data (rec/m1scale_div, vel/m2scale_div)
 
                         if m1th >= 0.0:
-                                ma = rec.max()/dscale
-                                mi = rec.min()/dscale
+                                ma = rec.max()
+                                mi = rec.min()
                                 scope.set_info(["max: "+str(ma), "min: "+str(mi)])
                                 if abs (ma) > m1th or abs (mi) > m1th:
                                         self.logfile = 'mk3_S0_py_recorder_deci256.log'
@@ -1718,11 +1732,11 @@ class RecorderDeci():
                                         if self.logcount > 0:
                                                 self.logcount = self.logcount - 1
                                                 scope.set_flash ("Threashold Detected, Recording... " + str(self.logcount))
-                                                scope.set_data_with_uv (rec/256./32768.*10./m1scale_div, rec/dscale/m2scale_div, zeros(0), self.lastevent/256./32768.*10./m1scale_div, self.lastevent/dscale/m2scale_div)
+                                                scope.set_data_with_uv (rec/m1scale_div, vel/m2scale_div, zeros(0), self.lastevent/m1scale_div, self.lastevent/m2scale_div)
                                         else:
                                                 if self.logfile != '':
                                                         self.logfile = ''
-                                                        scope.set_data_with_uv (rec/256./32768.*10./m1scale_div, rec/dscale/m2scale_div, zeros(0), zeros(0), zeros(0))
+                                                        scope.set_data_with_uv (rec/m1scale_div, vel/m2scale_div, zeros(0), zeros(0), zeros(0))
                         
                         
 			return self.run
