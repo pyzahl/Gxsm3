@@ -3681,10 +3681,14 @@ void ViewControl::view_view_redline_callback (GSimpleAction *action, GVariant *p
 	if (g_variant_get_boolean (new_state)){
 		vc->scan->RedLineActive=TRUE;
 		if(!vc->RedLine){
+                        vc->scan->Activate (); // there is some where a hidden reference request for units via GetActiveScan().
 			gchar *tmp = g_strdup_printf ("Red Line Ch%d" ,vc->scan->get_channel_id ()+1);
-			vc->RedLine = new ProfileControl(tmp);
-                        vc->RedLine->SetMode (PROFILE_MODE_XGRID | PROFILE_MODE_YGRID | PROFILE_MODE_IMPULS | PROFILE_MODE_STICS);
-
+			vc->RedLine = new ProfileControl(tmp, vc->scan->get_channel_id ());
+                        if (vc->scan->get_channel_id () > 0)
+                                vc->RedLine->SetMode (PROFILE_MODE_XGRID | PROFILE_MODE_YGRID | PROFILE_MODE_STICS);
+                        else
+                                vc->RedLine->SetMode (PROFILE_MODE_XGRID | PROFILE_MODE_YGRID | PROFILE_MODE_IMPULS | PROFILE_MODE_STICS);
+                        
 			g_free (tmp);
 		}
 	}else{
