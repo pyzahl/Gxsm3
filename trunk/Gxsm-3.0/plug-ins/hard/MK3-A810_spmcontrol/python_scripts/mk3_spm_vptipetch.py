@@ -1439,9 +1439,11 @@ class Mk3_Tool_Menu:
 
 				image = gtk.Image()
 				if os.path.isfile("meter-icondB.png"):
-				    imagefile="meter-icondB.png"
-				else:
-				    imagefile="/usr/share/gxsm/pixmaps/meter-icondB.png"
+	    				imagefile="meter-icondB.png"
+	    			elif os.path.isfile("/usr/share/gxsm3/pixmaps/meter-icondB.png"):
+					imagefile="/usr/share/gxsm3/pixmaps/meter-icondB.png"
+            			else:
+					imagefile="/usr/share/gxsm/pixmaps/meter-icondB.png"
 				image.set_from_file(imagefile)
 				image.show()
 				button = gtk.Button()
@@ -1451,9 +1453,11 @@ class Mk3_Tool_Menu:
 
 				image = gtk.Image()
 				if os.path.isfile("meter-iconV.png"):
-				    imagefile="meter-iconV.png"
-				else:
-				    imagefile="/usr/share/gxsm/pixmaps/meter-iconV.png"
+	    				imagefile="meter-iconV.png"
+	    			elif os.path.isfile("/usr/share/gxsm3/pixmaps/meter-iconV.png"):
+					imagefile="/usr/share/gxsm3/pixmaps/meter-iconV.png"
+            			else:
+					imagefile="/usr/share/gxsm/pixmaps/meter-iconV.png"
 				image.set_from_file(imagefile)
 				image.show()
 				button = gtk.Button()
@@ -1463,9 +1467,11 @@ class Mk3_Tool_Menu:
 
 				image = gtk.Image()
 				if os.path.isfile("plot-icon.png"):
-				    imagefile="plot-icon.png"
-				else:
-				    imagefile="/usr/share/gxsm/pixmaps/plot-icon.png"
+	    				imagefile="plot-icon.png"
+	    			elif os.path.isfile("/usr/share/gxsm3/pixmaps/plot-icon.png"):
+					imagefile="/usr/share/gxsm3/pixmaps/plot-icon.png"
+            			else:
+					imagefile="/usr/share/gxsm/pixmaps/plot-icon.png"
 				image.set_from_file(imagefile)
 				image.show()
 				button = gtk.Button()
@@ -1862,10 +1868,12 @@ class Mk3_Tool_Menu:
                 table.attach (full_scale, 10, 11, r, r+1, gtk.FILL | gtk.EXPAND )
                 
                 image = gtk.Image()
-                if os.path.isfile("meter-icondB.png"):
-                    imagefile="meter-icondB.png"
-                else:
-                    imagefile="/usr/share/gxsm/pixmaps/meter-icondB.png"
+		if os.path.isfile("meter-icondB.png"):
+	    		imagefile="meter-icondB.png"
+	    	elif os.path.isfile("/usr/share/gxsm3/pixmaps/meter-icondB.png"):
+			imagefile="/usr/share/gxsm3/pixmaps/meter-icondB.png"
+            	else:
+			imagefile="/usr/share/gxsm/pixmaps/meter-icondB.png"
                 image.set_from_file(imagefile)
                 image.show()
                 button = gtk.Button()
@@ -1874,10 +1882,12 @@ class Mk3_Tool_Menu:
                 table.attach (button, 7, 8, r, r+1, gtk.FILL | gtk.EXPAND )
 
                 image = gtk.Image()
-                if os.path.isfile("meter-iconV.png"):
-                    imagefile="meter-iconV.png"
-                else:
-                    imagefile="/usr/share/gxsm/pixmaps/meter-iconV.png"
+		if os.path.isfile("meter-iconV.png"):
+	    		imagefile="meter-iconV.png"
+	    	elif os.path.isfile("/usr/share/gxsm3/pixmaps/meter-iconV.png"):
+			imagefile="/usr/share/gxsm3/pixmaps/meter-iconV.png"
+            	else:
+			imagefile="/usr/share/gxsm/pixmaps/meter-iconV.png"
                 image.set_from_file(imagefile)
                 image.show()
                 button = gtk.Button()
@@ -1886,10 +1896,12 @@ class Mk3_Tool_Menu:
                 table.attach (button, 8, 9, r, r+1, gtk.FILL | gtk.EXPAND )
                 
                 image = gtk.Image()
-                if os.path.isfile("plot-icon.png"):
-                    imagefile="plot-icon.png"
-                else:
-                    imagefile="/usr/share/gxsm/pixmaps/plot-icon.png"
+		if os.path.isfile("plot-icon.png"):
+	    		imagefile="plot-icon.png"
+	    	elif os.path.isfile("/usr/share/gxsm3/pixmaps/plot-icon.png"):
+			imagefile="/usr/share/gxsm3/pixmaps/plot-icon.png"
+            	else:
+			imagefile="/usr/share/gxsm/pixmaps/plot-icon.png"
                 image.set_from_file(imagefile)
                 image.show()
                 button = gtk.Button()

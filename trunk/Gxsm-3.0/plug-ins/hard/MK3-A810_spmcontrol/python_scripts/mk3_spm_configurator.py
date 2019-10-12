@@ -460,12 +460,18 @@ class Visualize():
 				graph.add_edge(edge)	
 
 	#	graph.write_png('signal_graph.png')
-		if os.path.exists("/usr/share/gxsm/pixmaps"):
+
+		if os.path.exists("/usr/share/gxsm3/pixmaps"):
+		# use directory /usr/share/gxsm3/pixmaps
+			graph.write_svg('/usr/share/gxsm3/pixmaps/signal_graph.svg')
+			graph.write_dot('/usr/share/gxsm3/pixmaps/signal_graph.dot')
+			os.system("xdot /usr/share/gxsm3/pixmaps/signal_graph.dot&")
+			# os.system("eog /usr/share/gxsm3/pixmaps/signal_graph.svg &")
+	    	elif os.path.exists("/usr/share/gxsm/pixmaps"):
 		# use directory /usr/share/gxsm/pixmaps
 			graph.write_svg('/usr/share/gxsm/pixmaps/signal_graph.svg')
 			graph.write_dot('/usr/share/gxsm/pixmaps/signal_graph.dot')
 			os.system("xdot /usr/share/gxsm/pixmaps/signal_graph.dot&")
-			# os.system("eog /usr/share/gxsm/pixmaps/signal_graph.svg &")
 		else:
 		# use working directory, possibly /gxsm-svn/Gxsm-2.0/plug-ins/hard/MK3-A810_spmcontrol/python_scripts
 			graph.write_svg('signal_graph.svg')
@@ -2664,11 +2670,13 @@ class Mk3_Configurator:
 				full_scale.set_text("auto")
 				table.attach (full_scale, 9, 10, r, r+1, gtk.FILL | gtk.EXPAND )
 
-				image = gtk.Image()
+				image = gtk.Image()	    
 				if os.path.isfile("meter-icondB.png"):
-				    imagefile="meter-icondB.png"
-				else:
-				    imagefile="/usr/share/gxsm/pixmaps/meter-icondB.png"
+					imagefile="meter-icondB.png"
+	    			elif os.path.isfile("/usr/share/gxsm3/pixmaps/meter-icondB.png"):
+					imagefile="/usr/share/gxsm3/pixmaps/meter-icondB.png"
+            			else:
+					imagefile="/usr/share/gxsm/pixmaps/meter-icondB.png"
 				image.set_from_file(imagefile)
 				image.show()
 				button = gtk.Button()
@@ -2678,9 +2686,11 @@ class Mk3_Configurator:
 
 				image = gtk.Image()
 				if os.path.isfile("meter-iconV.png"):
-				    imagefile="meter-iconV.png"
-				else:
-				    imagefile="/usr/share/gxsm/pixmaps/meter-iconV.png"
+					imagefile="meter-iconV.png"
+	    			elif os.path.isfile("/usr/share/gxsm3/pixmaps/meter-iconV.png"):
+					imagefile="/usr/share/gxsm3/pixmaps/meter-iconV.png"
+            			else:
+					imagefile="/usr/share/gxsm/pixmaps/meter-iconV.png"
 				image.set_from_file(imagefile)
 				image.show()
 				button = gtk.Button()

@@ -84,9 +84,11 @@ class Meter(gtk.DrawingArea):
             self.vumeter = 1
             self.set_size_request(220, 220)
 	    if os.path.isfile("vumeter-frame.png"):
-		image="vumeter-frame.png"
-	    else:
-		image="/usr/share/gxsm/pixmaps/vumeter-frame.png"
+	    	imagefile="vumeter-frame.png"
+	    elif os.path.isfile("/usr/share/gxsm3/pixmaps/vumeter-frame.png"):
+		imagefile="/usr/share/gxsm3/pixmaps/vumeter-frame.png"
+            else:
+		imagefile="/usr/share/gxsm/pixmaps/vumeter-frame.png"
             self.vumetersurface = cairo.ImageSurface.create_from_png(image)
             cr = cairo.Context (self.vumetersurface)
             cr.set_source_surface(self.vumetersurface, 0,0)  
@@ -107,10 +109,12 @@ class Meter(gtk.DrawingArea):
         if self.par.frametype == "Volt":
             self.vumeter = 2
             self.set_size_request(220, 220)
-            if os.path.isfile("meter-frame.png"):
-		image="meter-frame.png"
+	    if os.path.isfile("meter-frame.png"):
+	    	imagefile="meter-frame.png"
+	    elif os.path.isfile("/usr/share/gxsm3/pixmaps/meter-frame.png"):
+		imagefile="/usr/share/gxsm3/pixmaps/meter-frame.png"
             else:
-                image="/usr/share/gxsm/pixmaps/meter-frame.png"
+		imagefile="/usr/share/gxsm/pixmaps/meter-frame.png"
 	    self.vumetersurface = cairo.ImageSurface.create_from_png(image)
             cr = cairo.Context (self.vumetersurface)
             cr.set_source_surface(self.vumetersurface, 0,0)  

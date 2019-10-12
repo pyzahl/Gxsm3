@@ -213,7 +213,6 @@ class Scope(gtk.DrawingArea):
 		imagefile="/usr/share/gxsm3/pixmaps/scope-frame.png"
             else:
 		imagefile="/usr/share/gxsm/pixmaps/scope-frame.png"
-
         self.vuscopesurface = cairo.ImageSurface.create_from_png(imagefile)
         cr = cairo.Context (self.vuscopesurface)
         cr.set_source_surface(self.vuscopesurface, 0,0)  

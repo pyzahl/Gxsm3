@@ -79,8 +79,10 @@ class Scope(gtk.DrawingArea):
         self.set_size_request(550, 600)
 	if os.path.isfile("scope-frame.png"):
 		imagefile="scope-frame.png"
-	else:
-		imagefile="/usr/share/gxsm/pixmaps/scope-frame.png"
+	elif os.path.isfile("/usr/share/gxsm3/pixmaps/scope-frame.png"):
+		imagefile="/usr/share/gxsm3/pixmaps/scope-frame.png"
+        else:
+		imagefile="/usr/share/gxsm/pixmaps/scope-frame.png"	
         self.vuscopesurface = cairo.ImageSurface.create_from_png(imagefile)
         cr = cairo.Context (self.vuscopesurface)
         cr.set_source_surface(self.vuscopesurface, 0,0)  
