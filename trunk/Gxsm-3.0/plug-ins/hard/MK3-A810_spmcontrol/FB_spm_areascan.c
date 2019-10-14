@@ -595,7 +595,7 @@ void run_area_scan (){
 				if (AS_ip >= 0 && (AS_jp == 0 || scan.raster_a) && (scan.dnx_probe > 0)){
 					if (! --AS_ip){ // trigger probing process ?
 						if (!probe.pflg) // assure last prb job is done!!
-							init_probe ();
+							probe.start = 1; //init_probe ();
 						AS_ip = scan.dnx_probe;
 					}
 				}
@@ -645,7 +645,7 @@ void run_area_scan (){
 					if (AS_ip >= 0 && AS_jp == 0 && (scan.dnx_probe > 0)){
 						if (! --AS_ip){ // trigger probing process ?
 							if (!probe.pflg) // assure last prb job is done!!
-								init_probe ();
+                                                                probe.start = 1; //init_probe ();
 							AS_ip = scan.dnx_probe;
 						}
 					}

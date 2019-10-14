@@ -3039,7 +3039,7 @@ class SPMcontrol():
                         self.ring_buffer_position_last = -1
 		aS1 = self.RECORDER_VARS[ii_Signal1]
 		sr = open (self.sr_dev_path, "rb")
-		os.lseek (sr.fileno(), aS1+4*0x7ffff, 0) # non atomic reads for big data!
+		os.lseek (sr.fileno(), aS1+4*0x7ffff, 1) # atomic read for critical value
 		tmparray = fromfile(sr, dtype('<i4'), 1)
 		sr.close ()
                 deci = tmparray[0]

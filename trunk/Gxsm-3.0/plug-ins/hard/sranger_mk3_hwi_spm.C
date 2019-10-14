@@ -354,17 +354,21 @@ inverse off      27
                                  dsp_statemachine.IdleTime_Peak & 0xffff, dsp_statemachine.IdleTime_Peak );
                         g_print ("DP Continue Time Limit: %10lu", dsp_statemachine.DP_max_time_until_abort);
                         g_print ("\n\n\033[0mPROCESS LIST ** RT Flags: O: on odd clk, E: on even clk, S=sleeping, A=active, R=running now, s=sleeping now\n");
-                        g_print ("\033[4mPID       DSPTIME    TASKTIME   TASKTMMAX  MISSEDTASK  FLAGS  NAME of RT Data Processing (DP) Task\033[0m\n");
+                        g_print ("\033[4mPID       DSPTIME    TASKTIME   TASKTMMAX  MISSEDTASK  FLAGS     NAME of RT Data Processing (DP) Task\033[0m\n");
                         //        RT000         297        1624        2577           0  11  system
 
                         static int missed_count_last[NUM_DATA_PROCESSING_TASKS+1];
                         for (int i=0; i<NUM_DATA_PROCESSING_TASKS+1; i++){
-                                gchar *flags = g_strdup_printf("%s%s",
-                                                               dsp_statemachine.dp_task_control[i].process_flag == 0   ? "--S" :
-                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x10 ? "--A" :
-                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x20 ? "-OA" :
-                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x40 ? "-EA" : "-?-",
-                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x01 ? "R" : "s");
+                                gchar *flags = g_strdup_printf("%s%s%s%s%s",
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0xFFFF == 0   ? "--S" :
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x0010 ? "--A" :
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x0020 ? "-OA" :
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x0040 ? "-EA" : "-?-",
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x0001 ? "R" : "s",
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x00100000 ? "k" : "-",
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x00200000 ? "a" : "-",
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x00400000 ? "m" : "-"
+                                                               );
 
                                 if (dsp_statemachine.dp_task_control[i].process_flag){
                                         g_print ("%sRT%03d\033[0m  %10lu  %10lu  %10lu  %10lu   %s  %s\n",

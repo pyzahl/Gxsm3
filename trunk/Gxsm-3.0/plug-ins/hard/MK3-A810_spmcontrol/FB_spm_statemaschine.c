@@ -260,7 +260,7 @@ int idle_task_009(void){
         
         if (scan.start && !autoapp.pflg){
                 init_area_scan ();
-                //START_RT_TASK_EVEN (RT_TASK_AREA_SCAN);
+                START_RT_TASK_EVEN (RT_TASK_AREA_SCAN);
                 return 1;
         }
         
@@ -269,15 +269,20 @@ int idle_task_009(void){
         case AREA_SCAN_STOP:
                 scan.stop = 0;
                 finish_area_scan ();
-                //STOP_RT_TASK (RT_TASK_AREA_SCAN);
+                STOP_RT_TASK (RT_TASK_AREA_SCAN);
                 return 1; // Stop/Cancel/Abort scan
         case AREA_SCAN_PAUSE:
                 scan.stop = 0;
-                scan.pflg &= (AREA_SCAN_START_NORMAL|AREA_SCAN_START_FASTSCAN);
+                if (scan.pflg){
+                        scan.pflg &= (AREA_SCAN_START_NORMAL|AREA_SCAN_START_FASTSCAN);
+                        STOP_RT_TASK (RT_TASK_AREA_SCAN);
+                }
                 return 1; // Pause Scan
         case AREA_SCAN_RESUME: 
+                scan.stop = 0;
                 if (scan.pflg & (AREA_SCAN_START_NORMAL|AREA_SCAN_START_FASTSCAN)){
-                        scan.stop = 0; scan.pflg |= AREA_SCAN_RUN; 
+                        scan.pflg |= AREA_SCAN_RUN; 
+                        START_RT_TASK_EVEN (RT_TASK_AREA_SCAN);
                 }
                 return 1; // Resume Scan from Pause, else ignore
         default: return 0;
@@ -295,6 +300,8 @@ int idle_task_010(void){
         }
         // ELSE:
         if (probe.start && !probe.pflg && !autoapp.pflg){
+                if (scan.pflg)
+                        STOP_RT_TASK (RT_TASK_AREA_SCAN);
                 init_probe_fifo (); // reset probe fifo!
                 init_probe ();
                 START_RT_TASK_ODD (RT_TASK_VECTOR_PROBE);
@@ -313,6 +320,8 @@ int idle_task_010(void){
                 // make sure it's back on if enabled
                 if (state.mode & MD_PID)
                         START_RT_TASK_ODD (RT_TASK_FEEDBACK);
+                if (scan.pflg)
+                        START_RT_TASK_EVEN (RT_TASK_AREA_SCAN);
                 
                 return 1;
         }
