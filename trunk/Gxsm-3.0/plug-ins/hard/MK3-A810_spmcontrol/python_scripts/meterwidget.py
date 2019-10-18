@@ -89,7 +89,7 @@ class Meter(gtk.DrawingArea):
 		imagefile="/usr/share/gxsm3/pixmaps/vumeter-frame.png"
             else:
 		imagefile="/usr/share/gxsm/pixmaps/vumeter-frame.png"
-	    self.vumetersurface = cairo.ImageSurface.create_from_png(image)
+	    self.vumetersurface = cairo.ImageSurface.create_from_png(imagefile)
             cr = cairo.Context (self.vumetersurface)
             cr.set_source_surface(self.vumetersurface, 0,0)  
             cr.paint()
@@ -115,7 +115,7 @@ class Meter(gtk.DrawingArea):
 		imagefile="/usr/share/gxsm3/pixmaps/meter-frame.png"
             else:
 		imagefile="/usr/share/gxsm/pixmaps/meter-frame.png"
-            self.vumetersurface = cairo.ImageSurface.create_from_png(image)
+            self.vumetersurface = cairo.ImageSurface.create_from_png(imagefile)
             cr = cairo.Context (self.vumetersurface)
             cr.set_source_surface(self.vumetersurface, 0,0)  
             cr.paint()
