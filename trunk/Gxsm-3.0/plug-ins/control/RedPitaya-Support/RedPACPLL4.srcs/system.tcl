@@ -20,7 +20,7 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2017.4
+set scripts_vivado_version 2019.1
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
@@ -132,7 +132,7 @@ if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
 pavel-demin:user:axis_red_pitaya_adc:1.0\
 pavel-demin:user:axis_red_pitaya_dac:1.0\
-xilinx.com:ip:clk_wiz:5.4\
+xilinx.com:ip:clk_wiz:6.0\
 xilinx.com:ip:cordic:6.0\
 xilinx.com:ip:dds_compiler:6.0\
 xilinx.com:ip:util_ds_buf:2.1\
@@ -273,18 +273,26 @@ proc create_hier_cell_PS_data_transport { parentCell nameHier } {
 
   # Create interface pins
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:bram_rtl:1.0 BRAM_PORTB
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 M_AXIS_aux
+
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 S_AXIS1
+
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 S_AXIS2
+
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 S_AXIS3
+
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 S_AXIS4
+
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 S_AXIS5
+
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 S_AXIS7
+
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 S_AXIS8
+
 
   # Create pins
   create_bd_pin -dir I -type clk a_clk
-  create_bd_pin -dir I -from 47 -to 0 axis3_lower
   create_bd_pin -dir I -from 1023 -to 0 cfg
   create_bd_pin -dir O -from 31 -to 0 debug
   create_bd_pin -dir IO -from 7 -to 0 exp_n_io
@@ -329,14 +337,6 @@ proc create_hier_cell_PS_data_transport { parentCell nameHier } {
    CONFIG.GAIN_DATA_Q {15} \
  ] $ScaleAndAdjust_0
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {2} \
- ] [get_bd_intf_pins /PS_data_transport/ScaleAndAdjust_0/M_AXIS]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {8} \
- ] [get_bd_intf_pins /PS_data_transport/ScaleAndAdjust_0/S_AXIS]
-
   # Create instance: axis_4s_combine_0, and set properties
   set block_name axis_4s_combine
   set block_cell_name axis_4s_combine_0
@@ -351,70 +351,6 @@ proc create_hier_cell_PS_data_transport { parentCell nameHier } {
    CONFIG.BRAM_ADDR_WIDTH {15} \
    CONFIG.BRAM_DATA_WIDTH {64} \
  ] $axis_4s_combine_0
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/M_AXIS_AMPL]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/M_AXIS_CH1]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/M_AXIS_CH2]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/M_AXIS_CH3]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/M_AXIS_CH4]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/M_AXIS_FCENTER]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/M_AXIS_FREQ31_0]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/M_AXIS_FREQ63_32]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/M_AXIS_PHASE]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/S_AXIS1]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/S_AXIS2]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {6} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/S_AXIS3]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/S_AXIS4]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {3} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/S_AXIS5]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/S_AXIS7]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/axis_4s_combine_0/S_AXIS8]
 
   # Create instance: blk_mem_gen_0, and set properties
   set blk_mem_gen_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 blk_mem_gen_0 ]
@@ -457,10 +393,6 @@ proc create_hier_cell_PS_data_transport { parentCell nameHier } {
    CONFIG.SRC_BITS {32} \
  ] $cfg17_to_transport_auxscale
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/cfg17_to_transport_auxscale/M_AXIS]
-
   # Create instance: cfg18_19_to_transport_auxcenter, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg18_19_to_transport_auxcenter
@@ -478,10 +410,6 @@ proc create_hier_cell_PS_data_transport { parentCell nameHier } {
    CONFIG.SRC_BITS {64} \
  ] $cfg18_19_to_transport_auxcenter
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {6} \
- ] [get_bd_intf_pins /PS_data_transport/cfg18_19_to_transport_auxcenter/M_AXIS]
-
   # Create instance: cfg_to_transport_channel_select, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_transport_channel_select
@@ -497,10 +425,6 @@ proc create_hier_cell_PS_data_transport { parentCell nameHier } {
    CONFIG.MAXIS_TDATA_WIDTH {32} \
    CONFIG.SRC_ADDR {9} \
  ] $cfg_to_transport_channel_select
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/cfg_to_transport_channel_select/M_AXIS]
 
   # Create instance: cfg_to_transport_control, and set properties
   set block_name cfg_to_axis
@@ -518,10 +442,6 @@ proc create_hier_cell_PS_data_transport { parentCell nameHier } {
    CONFIG.SRC_ADDR {6} \
  ] $cfg_to_transport_control
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/cfg_to_transport_control/M_AXIS]
-
   # Create instance: cfg_to_transport_decimation, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_transport_decimation
@@ -538,10 +458,6 @@ proc create_hier_cell_PS_data_transport { parentCell nameHier } {
    CONFIG.SRC_ADDR {8} \
  ] $cfg_to_transport_decimation
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/cfg_to_transport_decimation/M_AXIS]
-
   # Create instance: cfg_to_transport_nsamples, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_transport_nsamples
@@ -557,10 +473,6 @@ proc create_hier_cell_PS_data_transport { parentCell nameHier } {
    CONFIG.MAXIS_TDATA_WIDTH {32} \
    CONFIG.SRC_ADDR {7} \
  ] $cfg_to_transport_nsamples
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_data_transport/cfg_to_transport_nsamples/M_AXIS]
 
   # Create interface connections
   connect_bd_intf_net -intf_net Conn1 [get_bd_intf_pins S_AXIS7] [get_bd_intf_pins axis_4s_combine_0/S_AXIS7]
@@ -653,10 +565,15 @@ proc create_hier_cell_PS_Phase_Controller { parentCell nameHier } {
 
   # Create interface pins
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 M_AXIS_CONTROL
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 M_AXIS_CONTROL2
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 M_AXIS_PASS
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 M_AXIS_PASS2
+
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 S_AXIS
+
 
   # Create pins
   create_bd_pin -dir I -type clk aclk
@@ -701,10 +618,6 @@ proc create_hier_cell_PS_Phase_Controller { parentCell nameHier } {
    CONFIG.SRC_BITS {64} \
  ] $cfg_to_axis_PhaseInc
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {6} \
- ] [get_bd_intf_pins /PS_Phase_Controller/cfg_to_axis_PhaseInc/M_AXIS]
-
   # Create instance: cfg_to_ph_ci, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_ph_ci
@@ -721,10 +634,6 @@ proc create_hier_cell_PS_Phase_Controller { parentCell nameHier } {
    CONFIG.SRC_ADDR {12} \
    CONFIG.SRC_BITS {32} \
  ] $cfg_to_ph_ci
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Phase_Controller/cfg_to_ph_ci/M_AXIS]
 
   # Create instance: cfg_to_ph_cp, and set properties
   set block_name cfg_to_axis
@@ -743,10 +652,6 @@ proc create_hier_cell_PS_Phase_Controller { parentCell nameHier } {
    CONFIG.SRC_BITS {32} \
  ] $cfg_to_ph_cp
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Phase_Controller/cfg_to_ph_cp/M_AXIS]
-
   # Create instance: cfg_to_ph_lower, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_ph_lower
@@ -764,10 +669,6 @@ proc create_hier_cell_PS_Phase_Controller { parentCell nameHier } {
    CONFIG.SRC_BITS {64} \
  ] $cfg_to_ph_lower
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {6} \
- ] [get_bd_intf_pins /PS_Phase_Controller/cfg_to_ph_lower/M_AXIS]
-
   # Create instance: cfg_to_ph_setpoint, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_ph_setpoint
@@ -783,10 +684,6 @@ proc create_hier_cell_PS_Phase_Controller { parentCell nameHier } {
    CONFIG.MAXIS_TDATA_WIDTH {32} \
    CONFIG.SRC_ADDR {10} \
  ] $cfg_to_ph_setpoint
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Phase_Controller/cfg_to_ph_setpoint/M_AXIS]
 
   # Create instance: cfg_to_ph_upper, and set properties
   set block_name cfg_to_axis
@@ -804,10 +701,6 @@ proc create_hier_cell_PS_Phase_Controller { parentCell nameHier } {
    CONFIG.SRC_ADDR {13} \
    CONFIG.SRC_BITS {64} \
  ] $cfg_to_ph_upper
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {6} \
- ] [get_bd_intf_pins /PS_Phase_Controller/cfg_to_ph_upper/M_AXIS]
 
   # Create instance: logic_or_0, and set properties
   set block_name logic_or
@@ -832,6 +725,7 @@ proc create_hier_cell_PS_Phase_Controller { parentCell nameHier } {
    }
     set_property -dict [ list \
    CONFIG.AMCONTROL_ALLOW_NEG_SPECIAL {0} \
+   CONFIG.AUTO_RESET_AT_LIMIT {1} \
    CONFIG.AXIS_TDATA_WIDTH {32} \
    CONFIG.CEXTEND {1} \
    CONFIG.CONTROL2_OUT_WIDTH {44} \
@@ -840,30 +734,6 @@ proc create_hier_cell_PS_Phase_Controller { parentCell nameHier } {
    CONFIG.M_AXIS_CONTROL2_TDATA_WIDTH {48} \
    CONFIG.M_AXIS_CONTROL_TDATA_WIDTH {48} \
  ] $phase_controller
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {6} \
- ] [get_bd_intf_pins /PS_Phase_Controller/phase_controller/M_AXIS_CONTROL]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {6} \
- ] [get_bd_intf_pins /PS_Phase_Controller/phase_controller/M_AXIS_CONTROL2]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Phase_Controller/phase_controller/M_AXIS_PASS]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Phase_Controller/phase_controller/M_AXIS_PASS2]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Phase_Controller/phase_controller/S_AXIS]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {6} \
- ] [get_bd_intf_pins /PS_Phase_Controller/phase_controller/S_AXIS_reset]
 
   # Create instance: phase_unwrap_0, and set properties
   set block_name phase_unwrap
@@ -876,14 +746,6 @@ proc create_hier_cell_PS_Phase_Controller { parentCell nameHier } {
      return 1
    }
   
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Phase_Controller/phase_unwrap_0/M_AXIS]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {3} \
- ] [get_bd_intf_pins /PS_Phase_Controller/phase_unwrap_0/S_AXIS]
-
   # Create interface connections
   connect_bd_intf_net -intf_net Conn1 [get_bd_intf_pins M_AXIS_CONTROL2] [get_bd_intf_pins phase_controller/M_AXIS_CONTROL2]
   connect_bd_intf_net -intf_net Conn2 [get_bd_intf_pins M_AXIS_PASS2] [get_bd_intf_pins phase_controller/M_AXIS_PASS2]
@@ -951,10 +813,15 @@ proc create_hier_cell_PS_Amplitude_Controller { parentCell nameHier } {
 
   # Create interface pins
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 M_AXIS_CONTROL
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 M_AXIS_CONTROL2
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 M_AXIS_PASS
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 M_AXIS_PASS2
+
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 S_AXIS
+
 
   # Create pins
   create_bd_pin -dir I -type clk aclk
@@ -985,30 +852,6 @@ proc create_hier_cell_PS_Amplitude_Controller { parentCell nameHier } {
    CONFIG.M_AXIS_CONTROL_TDATA_WIDTH {16} \
  ] $amplitude_controller
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {2} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/amplitude_controller/M_AXIS_CONTROL]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/amplitude_controller/M_AXIS_CONTROL2]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {3} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/amplitude_controller/M_AXIS_PASS]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {3} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/amplitude_controller/M_AXIS_PASS2]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {3} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/amplitude_controller/S_AXIS]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {2} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/amplitude_controller/S_AXIS_reset]
-
   # Create instance: cfg_to_am_ci, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_am_ci
@@ -1024,10 +867,6 @@ proc create_hier_cell_PS_Amplitude_Controller { parentCell nameHier } {
    CONFIG.MAXIS_TDATA_WIDTH {32} \
    CONFIG.SRC_ADDR {22} \
  ] $cfg_to_am_ci
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/cfg_to_am_ci/M_AXIS]
 
   # Create instance: cfg_to_am_cp, and set properties
   set block_name cfg_to_axis
@@ -1045,10 +884,6 @@ proc create_hier_cell_PS_Amplitude_Controller { parentCell nameHier } {
    CONFIG.SRC_ADDR {21} \
  ] $cfg_to_am_cp
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/cfg_to_am_cp/M_AXIS]
-
   # Create instance: cfg_to_am_lower, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_am_lower
@@ -1064,10 +899,6 @@ proc create_hier_cell_PS_Amplitude_Controller { parentCell nameHier } {
    CONFIG.MAXIS_TDATA_WIDTH {32} \
    CONFIG.SRC_ADDR {25} \
  ] $cfg_to_am_lower
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/cfg_to_am_lower/M_AXIS]
 
   # Create instance: cfg_to_am_setpoint, and set properties
   set block_name cfg_to_axis
@@ -1085,10 +916,6 @@ proc create_hier_cell_PS_Amplitude_Controller { parentCell nameHier } {
    CONFIG.SRC_ADDR {20} \
  ] $cfg_to_am_setpoint
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/cfg_to_am_setpoint/M_AXIS]
-
   # Create instance: cfg_to_am_upper, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_am_upper
@@ -1105,10 +932,6 @@ proc create_hier_cell_PS_Amplitude_Controller { parentCell nameHier } {
    CONFIG.SRC_ADDR {23} \
  ] $cfg_to_am_upper
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/cfg_to_am_upper/M_AXIS]
-
   # Create instance: cfg_to_axis_volume, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_axis_volume
@@ -1124,10 +947,6 @@ proc create_hier_cell_PS_Amplitude_Controller { parentCell nameHier } {
    CONFIG.MAXIS_TDATA_WIDTH {16} \
    CONFIG.SRC_ADDR {2} \
  ] $cfg_to_axis_volume
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {2} \
- ] [get_bd_intf_pins /PS_Amplitude_Controller/cfg_to_axis_volume/M_AXIS]
 
   # Create interface connections
   connect_bd_intf_net -intf_net Conn1 [get_bd_intf_pins M_AXIS_CONTROL2] [get_bd_intf_pins amplitude_controller/M_AXIS_CONTROL2]
@@ -1192,11 +1011,17 @@ proc create_hier_cell_PS { parentCell nameHier } {
 
   # Create interface pins
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:bram_rtl:1.0 BRAM_PORTA
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 DDR
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:display_processing_system7:fixedio_rtl:1.0 FIXED_IO
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M08_AXI
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M09_AXI
+
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M10_AXI
+
 
   # Create pins
   create_bd_pin -dir O -type clk FCLK_CLK0
@@ -1231,22 +1056,8 @@ proc create_hier_cell_PS { parentCell nameHier } {
    CONFIG.C_S00_AXI_ADDR_WIDTH {17} \
  ] $axi_bram_reader_0
 
-  set_property -dict [ list \
-   CONFIG.SUPPORTS_NARROW_BURST {0} \
-   CONFIG.NUM_READ_OUTSTANDING {1} \
-   CONFIG.NUM_WRITE_OUTSTANDING {1} \
-   CONFIG.MAX_BURST_LENGTH {1} \
- ] [get_bd_intf_pins /PS/axi_bram_reader_0/S_AXI]
-
   # Create instance: axi_cfg_register_0, and set properties
   set axi_cfg_register_0 [ create_bd_cell -type ip -vlnv pavel-demin:user:axi_cfg_register:1.0 axi_cfg_register_0 ]
-
-  set_property -dict [ list \
-   CONFIG.SUPPORTS_NARROW_BURST {0} \
-   CONFIG.NUM_READ_OUTSTANDING {1} \
-   CONFIG.NUM_WRITE_OUTSTANDING {1} \
-   CONFIG.MAX_BURST_LENGTH {1} \
- ] [get_bd_intf_pins /PS/axi_cfg_register_0/S_AXI]
 
   # Create instance: axi_gpio_0, and set properties
   set axi_gpio_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio_0 ]
@@ -2050,15 +1861,25 @@ proc create_root_design { parentCell } {
 
   # Create interface ports
   set DDR [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 DDR ]
+
   set FIXED_IO [ create_bd_intf_port -mode Master -vlnv xilinx.com:display_processing_system7:fixedio_rtl:1.0 FIXED_IO ]
+
   set Vaux0 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_analog_io_rtl:1.0 Vaux0 ]
+
   set Vaux1 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_analog_io_rtl:1.0 Vaux1 ]
+
   set Vaux8 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_analog_io_rtl:1.0 Vaux8 ]
+
   set Vaux9 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_analog_io_rtl:1.0 Vaux9 ]
+
   set Vp_Vn [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_analog_io_rtl:1.0 Vp_Vn ]
+
   set gpio_rtl_0 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 gpio_rtl_0 ]
+
   set spi_rtl_0 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:spi_rtl:1.0 spi_rtl_0 ]
+
   set spi_rtl_1 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:spi_rtl:1.0 spi_rtl_1 ]
+
 
   # Create ports
   set adc_clk_n_i [ create_bd_port -dir I adc_clk_n_i ]
@@ -2109,31 +1930,15 @@ proc create_root_design { parentCell } {
      return 1
    }
   
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /VolumeAdjuster16_14_and_QCtrl/M_AXIS]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {2} \
- ] [get_bd_intf_pins /VolumeAdjuster16_14_and_QCtrl/SV_AXIS]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /VolumeAdjuster16_14_and_QCtrl/S_AXIS]
-
   # Create instance: axis_red_pitaya_adc_0, and set properties
   set axis_red_pitaya_adc_0 [ create_bd_cell -type ip -vlnv pavel-demin:user:axis_red_pitaya_adc:1.0 axis_red_pitaya_adc_0 ]
 
   set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /axis_red_pitaya_adc_0/M_AXIS]
+   CONFIG.FREQ_HZ {125000000} \
+ ] [get_bd_pins /axis_red_pitaya_adc_0/adc_clk_n]
 
   # Create instance: axis_red_pitaya_dac_0, and set properties
   set axis_red_pitaya_dac_0 [ create_bd_cell -type ip -vlnv pavel-demin:user:axis_red_pitaya_dac:1.0 axis_red_pitaya_dac_0 ]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /axis_red_pitaya_dac_0/S_AXIS]
 
   # Create instance: axis_sc26_to_14_0, and set properties
   set block_name axis_sc28_to_14
@@ -2148,18 +1953,6 @@ proc create_root_design { parentCell } {
     set_property -dict [ list \
    CONFIG.SRC_BITS {26} \
  ] $axis_sc26_to_14_0
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /axis_sc26_to_14_0/M_AXIS]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {8} \
- ] [get_bd_intf_pins /axis_sc26_to_14_0/S_AXIS]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {2} \
- ] [get_bd_intf_pins /axis_sc26_to_14_0/S_AXIS_aux]
 
   # Create instance: cfg_select_amplitude_control, and set properties
   set block_name cfg_select
@@ -2249,10 +2042,6 @@ proc create_root_design { parentCell } {
    CONFIG.SRC_ADDR {27} \
  ] $cfg_to_axis_Atau
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /cfg_to_axis_Atau/M_AXIS]
-
   # Create instance: cfg_to_axis_dc, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_axis_dc
@@ -2269,10 +2058,6 @@ proc create_root_design { parentCell } {
    CONFIG.SRC_ADDR {5} \
  ] $cfg_to_axis_dc
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /cfg_to_axis_dc/M_AXIS]
-
   # Create instance: cfg_to_axis_dc_tau, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_axis_dc_tau
@@ -2286,10 +2071,6 @@ proc create_root_design { parentCell } {
     set_property -dict [ list \
    CONFIG.SRC_ADDR {28} \
  ] $cfg_to_axis_dc_tau
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /cfg_to_axis_dc_tau/M_AXIS]
 
   # Create instance: cfg_to_axis_qc_delay, and set properties
   set block_name cfg_to_axis
@@ -2307,10 +2088,6 @@ proc create_root_design { parentCell } {
    CONFIG.SRC_BITS {16} \
  ] $cfg_to_axis_qc_delay
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /cfg_to_axis_qc_delay/M_AXIS]
-
   # Create instance: cfg_to_axis_qc_gain, and set properties
   set block_name cfg_to_axis
   set block_cell_name cfg_to_axis_qc_gain
@@ -2326,10 +2103,6 @@ proc create_root_design { parentCell } {
    CONFIG.SRC_ADDR {29} \
    CONFIG.SRC_BITS {32} \
  ] $cfg_to_axis_qc_gain
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /cfg_to_axis_qc_gain/M_AXIS]
 
   # Create instance: cfg_to_axis_tau, and set properties
   set block_name cfg_to_axis
@@ -2347,12 +2120,8 @@ proc create_root_design { parentCell } {
    CONFIG.SRC_ADDR {4} \
  ] $cfg_to_axis_tau
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /cfg_to_axis_tau/M_AXIS]
-
   # Create instance: clk_wiz_0, and set properties
-  set clk_wiz_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:5.4 clk_wiz_0 ]
+  set clk_wiz_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:6.0 clk_wiz_0 ]
   set_property -dict [ list \
    CONFIG.CLKIN1_JITTER_PS {80.0} \
    CONFIG.CLKIN2_JITTER_PS {166.66} \
@@ -2437,26 +2206,6 @@ proc create_root_design { parentCell } {
    CONFIG.SC_DATA_WIDTH {26} \
  ] $lms_phase_amplitude_detector_0
 
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {6} \
- ] [get_bd_intf_pins /lms_phase_amplitude_detector_0/M_AXIS_AM2]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /lms_phase_amplitude_detector_0/M_AXIS_MDC]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {8} \
- ] [get_bd_intf_pins /lms_phase_amplitude_detector_0/M_AXIS_SC]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] [get_bd_intf_pins /lms_phase_amplitude_detector_0/M_AXIS_SIGNAL]
-
-  set_property -dict [ list \
-   CONFIG.TDATA_NUM_BYTES {8} \
- ] [get_bd_intf_pins /lms_phase_amplitude_detector_0/M_AXIS_XY]
-
   # Create instance: util_ds_buf_1, and set properties
   set util_ds_buf_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_1 ]
   set_property -dict [ list \
@@ -2512,7 +2261,6 @@ proc create_root_design { parentCell } {
   connect_bd_net -net adc_dat_a_i_1 [get_bd_ports adc_dat_a_i] [get_bd_pins axis_red_pitaya_adc_0/adc_dat_a]
   connect_bd_net -net adc_dat_b_i_1 [get_bd_ports adc_dat_b_i] [get_bd_pins axis_red_pitaya_adc_0/adc_dat_b]
   connect_bd_net -net amplitude_controller_mon_signal [get_bd_pins PS/gpio_io_1_x4] [get_bd_pins PS_Amplitude_Controller/mon_signal]
-  connect_bd_net -net axis3_lower_1 [get_bd_pins PS_Phase_Controller/data_lower] [get_bd_pins PS_data_transport/axis3_lower]
   connect_bd_net -net axis_red_pitaya_adc_0_adc_clk [get_bd_pins PS/slowest_sync_clk] [get_bd_pins PS_Amplitude_Controller/aclk] [get_bd_pins PS_Phase_Controller/aclk] [get_bd_pins PS_data_transport/a_clk] [get_bd_pins VolumeAdjuster16_14_and_QCtrl/a_clk] [get_bd_pins axis_red_pitaya_adc_0/adc_clk] [get_bd_pins axis_red_pitaya_dac_0/aclk] [get_bd_pins axis_sc26_to_14_0/a_clk] [get_bd_pins cfg_to_axis_Atau/a_clk] [get_bd_pins cfg_to_axis_dc/a_clk] [get_bd_pins cfg_to_axis_dc_tau/a_clk] [get_bd_pins cfg_to_axis_qc_delay/a_clk] [get_bd_pins cfg_to_axis_qc_gain/a_clk] [get_bd_pins cfg_to_axis_tau/a_clk] [get_bd_pins clk_wiz_0/clk_in1] [get_bd_pins cordic_atan_xy/aclk] [get_bd_pins cordic_sqrt/aclk] [get_bd_pins dds_compiler_0/aclk] [get_bd_pins lms_phase_amplitude_detector_0/aclk]
   connect_bd_net -net axis_red_pitaya_adc_0_adc_csn [get_bd_ports adc_csn_o] [get_bd_pins axis_red_pitaya_adc_0/adc_csn]
   connect_bd_net -net axis_red_pitaya_dac_0_dac_clk [get_bd_ports dac_clk_o] [get_bd_pins axis_red_pitaya_dac_0/dac_clk]
@@ -2563,6 +2311,7 @@ proc create_root_design { parentCell } {
   # Restore current instance
   current_bd_instance $oldCurInst
 
+  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
