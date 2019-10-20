@@ -83,7 +83,7 @@ module axis_4s_combine #(
 )
 (
     input a_clk,
-    // input a_resetn,
+    // input a_resetn
     
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     input wire [SAXIS_1_TDATA_WIDTH-1:0]  S_AXIS1_tdata,
@@ -126,6 +126,7 @@ module axis_4s_combine #(
 
 
     // BRAM PORT A
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     output wire                        bram_porta_clk,
     output wire [BRAM_ADDR_WIDTH-1:0]  bram_porta_addr,
     output wire [BRAM_DATA_WIDTH-1:0]  bram_porta_wrdata,

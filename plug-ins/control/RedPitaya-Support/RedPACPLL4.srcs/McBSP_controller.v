@@ -64,6 +64,7 @@ module McBSP_controller #(
     // input a_resetn,
     
     output wire trigger,
+    output wire [(WORDS_PER_FRAME * BITS_PER_WORD) -1 : 0] dataset_read,
     
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     input wire [SAXIS_TDATA_WIDTH-1:0]  S_AXIS1_tdata,
@@ -102,58 +103,61 @@ module McBSP_controller #(
 
     reg rtrigger=1;
 
-    always @(negedge mcbsp_clk) // read edge
+    always @(negedge mcbsp_clk or posedge mcbsp_clk) // read / write edges
     begin
-        // Detect Frame Sync
-        if (mcbsp_frame_start && ~frame_start)
+        if (!mcbsp_clk)
         begin
-            clkr <= 0; // generate clkr
-            rtrigger <= 1; // set frame start and trigger
-            frame_start <= 1;
-            frame_bit_counter <= 255; // ((WORDS_PER_FRAME * BITS_PER_WORD) - 1);
-            // wait for aclk edge (very fast vs. mcbsp_clk)
-            //@(posedge a_clk) // dose not synth.
-            // Latch Axis Data at Frame Sync Pulse and initial data serialization
-            data[(8 * BITS_PER_WORD) - 1 : (8 * BITS_PER_WORD)-32] <= S_AXIS1_tdata;
-            data[(7 * BITS_PER_WORD) - 1 : (7 * BITS_PER_WORD)-32] <= S_AXIS2_tdata;
-            data[(6 * BITS_PER_WORD) - 1 : (6 * BITS_PER_WORD)-32] <= S_AXIS3_tdata;
-            data[(5 * BITS_PER_WORD) - 1 : (5 * BITS_PER_WORD)-32] <= S_AXIS4_tdata;
-            data[(4 * BITS_PER_WORD) - 1 : (4 * BITS_PER_WORD)-32] <= S_AXIS5_tdata;
-            data[(3 * BITS_PER_WORD) - 1 : (3 * BITS_PER_WORD)-32] <= S_AXIS6_tdata;
-            data[(2 * BITS_PER_WORD) - 1 : (2 * BITS_PER_WORD)-32] <= S_AXIS7_tdata;
-            data[(1 * BITS_PER_WORD) - 1 : (1 * BITS_PER_WORD)-32] <= S_AXIS8_tdata;
-            // data[(1 * BITS_PER_WORD) - 1 : (1 * BITS_PER_WORD)-32] <= data_read[(8 * BITS_PER_WORD) - 1 : (8 * BITS_PER_WORD)-32]; // LOOP BACK TEST, index: col,row
-        end else
-        begin
-            if (frame_start)
+            // always @(negedge mcbsp_clk)...
+// Detect Frame Sync
+            if (mcbsp_frame_start && ~frame_start)
             begin
-                rtrigger <= 0;
-                // read data bit
-                data_in[frame_bit_counter] <= mcbsp_data_rx;
-        
-                // completed?
-                if (frame_bit_counter == 0)
-                begin
-                    frame_start <= 0;
-                end else
-                begin
-                    // next bit
-                    frame_bit_counter <= frame_bit_counter - 1;
-                end
+                clkr <= 0; // generate clkr
+                rtrigger <= 1; // set frame start and trigger
+                frame_start <= 1;
+                frame_bit_counter <= 255; // ((WORDS_PER_FRAME * BITS_PER_WORD) - 1);
+                // wait for aclk edge (very fast vs. mcbsp_clk)
+                //@(posedge a_clk) // dose not synth.
+                // Latch Axis Data at Frame Sync Pulse and initial data serialization
+                data[(8 * BITS_PER_WORD) - 1 : (8 * BITS_PER_WORD)-32] <= S_AXIS1_tdata;
+                data[(7 * BITS_PER_WORD) - 1 : (7 * BITS_PER_WORD)-32] <= S_AXIS2_tdata;
+                data[(6 * BITS_PER_WORD) - 1 : (6 * BITS_PER_WORD)-32] <= S_AXIS3_tdata;
+                data[(5 * BITS_PER_WORD) - 1 : (5 * BITS_PER_WORD)-32] <= S_AXIS4_tdata;
+                data[(4 * BITS_PER_WORD) - 1 : (4 * BITS_PER_WORD)-32] <= S_AXIS5_tdata;
+                data[(3 * BITS_PER_WORD) - 1 : (3 * BITS_PER_WORD)-32] <= S_AXIS6_tdata;
+                data[(2 * BITS_PER_WORD) - 1 : (2 * BITS_PER_WORD)-32] <= S_AXIS7_tdata;
+                data[(1 * BITS_PER_WORD) - 1 : (1 * BITS_PER_WORD)-32] <= S_AXIS8_tdata;
+                // data[(1 * BITS_PER_WORD) - 1 : (1 * BITS_PER_WORD)-32] <= data_read[(8 * BITS_PER_WORD) - 1 : (8 * BITS_PER_WORD)-32]; // LOOP BACK TEST, index: col,row
             end else
             begin
-                data_read <= data_in; // buffer read data
-            end   
-        end 
-    end
-
-    always @(posedge mcbsp_clk) // setup edge
-    begin
-        if (frame_start)
-        begin
-            // generate clkr and setup data bit
-            clkr <= 1;
-            tx   <= data[frame_bit_counter];
+                if (frame_start)
+                begin
+                    rtrigger <= 0;
+                    // read data bit
+                    data_in[frame_bit_counter] <= mcbsp_data_rx;
+            
+                    // completed?
+                    if (frame_bit_counter == 0)
+                    begin
+                        frame_start <= 0;
+                    end else
+                    begin
+                        // next bit
+                        frame_bit_counter <= frame_bit_counter - 1;
+                    end
+                end else
+                begin
+                    data_read <= data_in; // buffer read data
+                end   
+            end
+         end else
+    //   always @(posedge mcbsp_clk)...// setup edge
+         begin
+            if (frame_start)
+            begin
+                // generate clkr and setup data bit
+                clkr <= 1;
+                tx   <= data[frame_bit_counter];
+            end
         end
     end
 
@@ -164,5 +168,6 @@ module McBSP_controller #(
     assign mcbsp_data_frm = frame_start;
     assign mcbsp_data_fsx = rtrigger;
 
+    assign dataset_read = data_read;
 
 endmodule

@@ -30,6 +30,7 @@ module McBSP_io_connect #(
     input  McBSP_tx,   // TX: data transmit
     input  McBSP_fsx,  // optional, debug: data frame start FSX
     input  McBSP_frm,  // optional, debug: data frame
+ (* X_INTERFACE_PARAMETER = "FREQ_HZ 20000000" *)
     output McBSP_clk,  // McBSP clock
     output McBSP_fs,   // McBSP FS (frame start)
     output McBSP_rx,   // McBSP RX (data receive)
@@ -37,15 +38,15 @@ module McBSP_io_connect #(
     output [8-1:0] RP_exp_in
 );
 
-wire dummy;
+wire [4-1:0] dummy;
 
 IOBUF clk_iobuf (.O(McBSP_clk), .IO(exp_p_io[0:0]), .I(0),         .T(1) );
 IOBUF fs_iobuf  (.O(McBSP_fs),  .IO(exp_p_io[1:1]), .I(0),         .T(1) );
 IOBUF rx_iobuf  (.O(McBSP_rx),  .IO(exp_p_io[2:2]), .I(0),         .T(1) );
-IOBUF tx_iobuf  (.O(dummy),     .IO(exp_p_io[3:3]), .I(McBSP_tx),  .T(0) );
-IOBUF fsx_iobuf (.O(dummy),     .IO(exp_p_io[4:4]), .I(McBSP_fsx), .T(0) );
-IOBUF frm_iobuf (.O(dummy),     .IO(exp_p_io[5:5]), .I(McBSP_frm), .T(0) );
-IOBUF clkr_iobuf(.O(dummy),     .IO(exp_p_io[6:6]), .I(McBSP_clkr),.T(0) );
+IOBUF tx_iobuf  (.O(dummy[0]),  .IO(exp_p_io[3:3]), .I(McBSP_tx),  .T(0) );
+IOBUF fsx_iobuf (.O(dummy[1]),  .IO(exp_p_io[4:4]), .I(McBSP_fsx), .T(0) );
+IOBUF frm_iobuf (.O(dummy[2]),  .IO(exp_p_io[5:5]), .I(McBSP_frm), .T(0) );
+IOBUF clkr_iobuf(.O(dummy[3]),  .IO(exp_p_io[6:6]), .I(McBSP_clkr),.T(0) );
 IOBUF nrx_iobuf (.O(McBSP_nrx), .IO(exp_p_io[7:7]), .I(0),         .T(1) );
 
 IOBUF exp_in_iobuf[8-1:0] (.O(RP_exp_in), .IO(exp_n_io), .I(8'b00000000),    .T(8'b11111111) );

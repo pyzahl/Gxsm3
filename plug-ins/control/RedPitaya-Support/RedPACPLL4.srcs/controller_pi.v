@@ -56,7 +56,8 @@ module controller_pi #(
     parameter QCONTROL = 31, // Q Controlvalue
     parameter CEXTEND = 4, // room for saturation check
     parameter DEXTEND = 1,  // data, erorr extend
-    parameter AMCONTROL_ALLOW_NEG_SPECIAL = 1
+    parameter AMCONTROL_ALLOW_NEG_SPECIAL = 1,
+    parameter AUTO_RESET_AT_LIMIT = 0
 )
 (
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
@@ -105,6 +106,8 @@ module controller_pi #(
     reg signed [CONTROL2_WIDTH+CEXTEND-1:0] upper, lower, reset;
     reg signed [CONTROL2_WIDTH+CEXTEND-1:0] control=0;
     reg signed [CONTROL2_WIDTH+CEXTEND-1:0] control_next=0;
+    reg signed [CONTROL2_WIDTH+CEXTEND-1:0] control_cie=0;
+    reg signed [CONTROL2_WIDTH+CEXTEND-1:0] control_cpe=0;
     reg signed [CONTROL2_WIDTH+CEXTEND-1:0] controlint=0;
     reg signed [CONTROL2_WIDTH+CEXTEND-1:0] controlint_next=0;
     reg signed [AXIS_TDATA_WIDTH+DEXTEND-1:0] error=0;
@@ -131,8 +134,16 @@ module controller_pi #(
         // limit to range, in control mode
         if (enable && control_next > upper)
         begin
-            control      <= upper;
-            controlint   <= upper;
+            if (AUTO_RESET_AT_LIMIT)
+            begin
+                control      <= reset;
+                controlint   <= reset;
+            end
+            else
+            begin
+                control      <= upper;
+                controlint   <= upper;
+            end
             control_max  <= 1;
             control_min  <= enable? 0:1;
         end
@@ -140,8 +151,16 @@ module controller_pi #(
         begin
             if (enable && control_next < lower)
             begin
-                control      <= lower;
-                controlint   <= lower;
+                if (AUTO_RESET_AT_LIMIT)
+                begin
+                    control      <= reset;
+                    controlint   <= reset;
+                end
+                else
+                begin
+                    control      <= lower;
+                    controlint   <= lower;
+                end
                 control_max  <= enable? 0:1;
                 control_min  <= 1;
             end 
@@ -184,8 +203,10 @@ module controller_pi #(
             // Q CONTROL2_WIDTH-1 (Q31)  ===  AXIS_TDATA_WIDTH-1 (Q31) + COEFQ (Q22) --- SHR
             //controlint_next <= controlint + ((ci*error) >>> (QCOEF+QIN-QCONTROL)); // saturation via extended range and limiter // Q31 x Q22
             //control_next    <= controlint + ((cp*error) >>> (QCOEF+QIN-QCONTROL)); // 
-            controlint_next <= controlint + ci*error; // saturation via extended range and limiter // Q64.. += Q31 x Q22
-            control_next    <= controlint + cp*error; // 
+            control_cie <= ci*error; // saturation via extended range and limiter // Q64.. += Q31 x Q22
+            control_cpe <= cp*error; // saturation via extended range and limiter // Q64.. += Q31 x Q22
+            controlint_next <= controlint + control_cie; // saturation via extended range and limiter // Q64.. += Q31 x Q22
+            control_next    <= controlint + control_cpe; // 
             //controlint_next <= controlint + ((ci*error) >>> (COEFQ+AXIS_TDATA_WIDTH-CONTROL2_WIDTH)); // saturation via extended range and limiter
             //control_next    <= controlint + ((cp*error) >>> (COEFQ+AXIS_TDATA_WIDTH-CONTROL2_WIDTH)); // make this shift "0"
             //controlint_next <= controlint + (ci*error); // >>> (COEFQ+AXIS_TDATA_WIDTH-CONTROL2_WIDTH)); // saturation via extended range and limiter
