@@ -176,21 +176,18 @@ int DSPControl::Probing_event_setup_scan (int ch,
 	Mem2d *m=gapp->xsm->scan[ch]->mem2d;
         m->Resize (m->GetNx (), m->GetNy (), nvalues, ZD_DOUBLE, false); // multilayerinfo=clean
 	
-	// Setup correct Z unit
-	UnitObj *u = gapp->xsm->MakeUnit (unit, label);
-	gapp->xsm->scan[ch]->data.SetZUnit (u);
-	delete u;
-		
         gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan ());
 	gapp->xsm->scan[ch]->data.s.nvalues = nvalues;
         m->Resize (m->GetNx (), m->GetNy (), nvalues, ZD_DOUBLE, false); // multilayerinfo=clean
         m->data->MkVLookup(0, nvalues-1);
 
+	// Setup correct Z unit
+	UnitObj *u = gapp->xsm->MakeUnit (unit, label);
+	gapp->xsm->scan[ch]->data.SetZUnit (u);
+	delete u;
+
 	// setup dz from instrument definition or propagated via signal definition
-	if (fabs (d2u) > 0.)
-		gapp->xsm->scan[ch]->data.s.dz = d2u;
-	else
-		gapp->xsm->scan[ch]->data.s.dz = gapp->xsm->Inst->ZResolution (unit);
+        gapp->xsm->scan[ch]->data.s.dz = d2u;
 	
 	// set scan title, name, ... and draw it!
 
