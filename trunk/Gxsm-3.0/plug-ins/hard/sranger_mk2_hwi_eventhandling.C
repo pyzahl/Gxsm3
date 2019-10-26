@@ -165,21 +165,149 @@ double DSPControl::vp_scale_lookup(int i){
 }
 
 
+int DSPControl::Probing_event_setup_scan (int ch, 
+                                          const gchar *titleprefix, 
+                                          const gchar *name,
+                                          const gchar *unit,
+                                          const gchar *label,
+                                          double d2u,
+                                          int nvalues
+	){
+	Mem2d *m=gapp->xsm->scan[ch]->mem2d;
+        m->Resize (m->GetNx (), m->GetNy (), nvalues, ZD_DOUBLE, false); // multilayerinfo=clean
+	
+	// Setup correct Z unit
+	UnitObj *u = gapp->xsm->MakeUnit (unit, label);
+	gapp->xsm->scan[ch]->data.SetZUnit (u);
+	delete u;
+		
+        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan ());
+	gapp->xsm->scan[ch]->data.s.nvalues = nvalues;
+        m->Resize (m->GetNx (), m->GetNy (), nvalues, ZD_DOUBLE, false); // multilayerinfo=clean
+        m->data->MkVLookup(0, nvalues-1);
+
+	// setup dz from instrument definition or propagated via signal definition
+	if (fabs (d2u) > 0.)
+		gapp->xsm->scan[ch]->data.s.dz = d2u;
+	else
+		gapp->xsm->scan[ch]->data.s.dz = gapp->xsm->Inst->ZResolution (unit);
+	
+	// set scan title, name, ... and draw it!
+
+	gchar *scantitle = NULL;
+        scantitle = g_strdup_printf ("%s %s", titleprefix, name);
+	
+	gapp->xsm->scan[ch]->data.ui.SetName (scantitle);
+	gapp->xsm->scan[ch]->data.ui.SetOriginalName ("unknown");
+	gapp->xsm->scan[ch]->data.ui.SetTitle (scantitle);
+	gapp->xsm->scan[ch]->data.ui.SetType (scantitle);
+	gapp->xsm->scan[ch]->data.s.xdir = strchr (titleprefix, '-') ? -1.:1.;
+	gapp->xsm->scan[ch]->data.s.ydir = gapp->xsm->data.s.ydir;
+
+        gapp->channelselector->SetInfo (ch, scantitle);
+	gapp->xsm->scan[ch]->draw ();
+
+	g_free (scantitle);
+
+        return 0;
+}
+
 int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc){
 	static ProfileControl *pc[MAX_NUM_CHANNELS][MAX_NUM_CHANNELS];
 	int popped=0;
 	GArray **garr;
-
+        
 	XSM_DEBUG_PG ("DSPControl::Probing_eventcheck_callback -- enter");
 
 	// pop off all available data from stack
 	while ((garr = dspc->pop_probedata_arrays ()) != NULL){
 		++popped;
-		
-// attach event to active channel, if one exists -- raster mode ------------------------------
 
+                // find chunksize (total # data sources)
+                int chunksize = 0;
+                GPtrArray *glabarray = g_ptr_array_new ();
+                GPtrArray *gsymarray = g_ptr_array_new ();
+
+                for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src){
+                        if (dspc->vis_Source & msklookup[src]){
+                                g_ptr_array_add (glabarray, (gpointer) dspc->vp_label_lookup (src));
+                                g_ptr_array_add (gsymarray, (gpointer) dspc->vp_unit_lookup (src));
+                                ++chunksize;
+                        }
+                }
+
+                // auto decide on mapping mode -- direct data map to Scan-Channel or to Scan-Event
+                
+                gboolean mapping = false;
+                int src=-1;
+                for(int mapi=0; mapi < 4; ++mapi){
+                        int chmap;
+                        int map=0;
+                        // locate 1st,... probe src# to map
+                        ++src;
+                        while (map == 0){
+                                if (src < MAX_NUM_CHANNELS){
+                                        if (msklookup[src]>=0)
+                                                if (dspc->vis_Source & msklookup[src]){
+                                                        map = 1;
+                                                        break;
+                                                }
+                                        ++src;
+                                } else
+                                        break; // bail
+                        }
+                        
+                        if (map && (chmap = gapp->xsm->FindChan(xsmres.extchno[mapi])) >= 0){
+                                mapping = true;
+                                if (gapp->xsm->scan[chmap]->data.s.dz < 0.){
+                                        gchar *id = g_strconcat ("Map-", (const gchar*)g_ptr_array_index (glabarray,  mapi), NULL);
+                                        Probing_event_setup_scan (chmap, "X+", id,
+                                                                  (const gchar*)g_ptr_array_index (gsymarray,  mapi),
+                                                                  (const gchar*)g_ptr_array_index (glabarray,  mapi),
+                                                                  1.0, dspc->last_probe_data_index);
+                                        g_free (id);
+                                }
+
+                                // find first section header and take this X,Y coordinates as reference -- start of probe event
+                                int sec = 0;
+                                int bi=-1;
+                                double x,y,z;
+                                x=y=z=0;
+                                for (int j=0; j<dspc->last_probe_data_index; ++j){
+                                        int bsi = g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_BLOCK], double, j);
+                                        int s = (int) g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_SEC], double, j);
+                                        if (j>0 && (bsi == bi && s >= sec)){
+                                                sec = s;
+                                                continue;
+                                        }
+                                        sec = s; bi = bsi;
+                                        
+                                        x = gapp->xsm->Inst->Dig2X0A ((long) round (g_array_index (garr [PROBEDATA_ARRAY_X0], double, j)))
+                                                + gapp->xsm->Inst->Dig2XA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_XS], double, j)));
+                                        y =  gapp->xsm->Inst->Dig2Y0A ((long) round (g_array_index (garr [PROBEDATA_ARRAY_Y0], double, j)))
+                                                + gapp->xsm->Inst->Dig2YA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_YS], double, j)));
+                                        z = gapp->xsm->Inst->Dig2ZA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_ZS], double, j)));
+                                        break;
+                                }
+                                int xi, yi;
+                                gapp->xsm->scan[chmap]->World2Pixel (x,y, xi,yi);
+                                
+                                for (int i = 0; i < dspc->last_probe_data_index; i++){
+                                        int j=0;
+                                        if (i >=  gapp->xsm->scan[chmap]->mem2d->GetNv ()){ // auto range and sanity
+                                                gapp->xsm->scan[chmap]->mem2d->Resize (gapp->xsm->scan[chmap]->mem2d->GetNx (), gapp->xsm->scan[chmap]->mem2d->GetNy (), dspc->last_probe_data_index, ZD_DOUBLE, false);
+                                                gapp->xsm->scan[chmap]->mem2d->data->MkVLookup(0, dspc->last_probe_data_index-1);
+                                        }
+                                        gapp->xsm->scan[chmap]->mem2d->PutDataPkt (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), xi,yi,i);
+                                }
+                                
+                                gapp->xsm->scan[chmap]->draw ();
+                        }
+                }
+                
+                // attach event to active channel, if one exists -- raster mode ------------------------------
 		ScanEvent *se = NULL;
-		if (gapp->xsm->MasterScan){
+		if (!mapping && gapp->xsm->MasterScan){
 			// find first section header and take this X,Y coordinates as reference -- start of probe event
 			int sec = 0;
 			int bi=-1;
@@ -205,19 +333,8 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
 		}
 
 		// if we have attached an scan event, so fill it with data now
+                int unref=1;
 		if (se){
-			// find chunksize (total # data sources)
-			int chunksize = 0;
-			GPtrArray *glabarray = g_ptr_array_new ();
-			GPtrArray *gsymarray = g_ptr_array_new ();
-
-			for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src)
-				if (dspc->vis_Source & msklookup[src]){
-					g_ptr_array_add (glabarray, (gpointer) dspc->vp_label_lookup (src));
-					g_ptr_array_add (gsymarray, (gpointer) dspc->vp_unit_lookup (src));
-					++chunksize;
-				}
-			XSM_DEBUG_PG("DBG-M1");
 			if (chunksize > 0 && chunksize < MAX_NUM_CHANNELS){
 				double dataset[MAX_NUM_CHANNELS];
 				ProbeEntry *pe = new ProbeEntry ("Probe", time(0), glabarray, gsymarray, chunksize);
@@ -230,11 +347,14 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
 					pe->add ((double*)&dataset);
 				}
 				se->add_event (pe);
-				XSM_DEBUG_PG("DBG-M2");
+                                unref = 0; // do not unref glabarray, gsymarray here! Passed to probe event
 			}
 		}
-		XSM_DEBUG_PG("DBG-M3");
-
+                if (unref){
+                        // do not free if passed to probe event!
+                        g_ptr_array_free (glabarray, TRUE);
+                        g_ptr_array_free (gsymarray, TRUE);
+                }
 		free_probedata_array_set (garr, dspc);	
 	}
 	XSM_DEBUG_PG("DBG-M4");

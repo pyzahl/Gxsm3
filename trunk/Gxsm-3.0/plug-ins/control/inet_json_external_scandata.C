@@ -745,10 +745,12 @@ void Inet_Json_External_Scandata::scan_start_callback (gpointer user_data){
         self->streaming = 1;
         self->operation_mode = 0;
         g_message ("Inet_Json_External_Scandata::scan_start_callback");
+#if 0
         if ((self->ch_freq=gapp->xsm->FindChan(xsmres.extchno[0])) >= 0)
                 self->setup_scan (self->ch_freq, "X+", "Ext1-Freq", "Hz", "Freq", 1.0);
         if ((self->ch_ampl=gapp->xsm->FindChan(xsmres.extchno[1])) >= 0)
                 self->setup_scan (self->ch_ampl, "X+", "Ext1-Ampl", "V", "Ampl", 1.0);
+#endif
 }
 
 void Inet_Json_External_Scandata::scan_stop_callback (gpointer user_data){
@@ -767,6 +769,7 @@ int Inet_Json_External_Scandata::setup_scan (int ch,
 				 const gchar *label,
 				 double d2u
 	){
+#if 0
 	// did this scan already exists?
 	if ( ! gapp->xsm->scan[ch]){ // make a new one ?
 		gapp->xsm->scan[ch] = gapp->xsm->NewScan (gapp->xsm->ChannelView[ch], 
@@ -819,7 +822,8 @@ int Inet_Json_External_Scandata::setup_scan (int ch,
 
 	g_free (scantitle);
 	gapp->xsm->scan[ch]->draw ();
-
+#endif
+        
 	return 0;
 }
 
@@ -1300,7 +1304,7 @@ void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
                 
                 self->update_monitoring_parameters();
                 self->update_graph ();
-                self->stream_data ();
+                //self->stream_data ();
                 self->update_health ();
         }
 
@@ -1424,6 +1428,7 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 }
 
 void Inet_Json_External_Scandata::stream_data (){
+#if 0
         int deci=16;
         int n=4;
         if (data_shr_max > 2) { //if (ch_freq >= 0 || ch_ampl >= 0){
@@ -1460,6 +1465,7 @@ void Inet_Json_External_Scandata::stream_data (){
                         gapp->xsm->scan[ch_freq]->draw ();
                 }
         }
+#endif
 }
 
 void Inet_Json_External_Scandata::update_graph (){

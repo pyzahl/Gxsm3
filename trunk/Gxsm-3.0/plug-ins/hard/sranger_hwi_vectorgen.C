@@ -626,7 +626,7 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 										    GTK_DIALOG_DESTROY_WITH_PARENT,
 										    GTK_MESSAGE_WARNING,
 										    GTK_BUTTONS_CLOSE,
-										    "The probing at each raster point lasts to long:\n"
+										    "The probing at each raster point lasts too long:\n"
 										    "Time of one probe cycle is %.2f ms\n"
 										    "and\n"
 										    "Time from raster to raster point is %.2f ms.\n\n --- FYI: ---\n"
@@ -725,7 +725,7 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 										    GTK_DIALOG_DESTROY_WITH_PARENT,
 										    GTK_MESSAGE_WARNING,
 										    GTK_BUTTONS_CLOSE,
-										    "The probing a each raster point lasts to long:\n"
+										    "The probing a each raster point lasts too long:\n"
 										    "T probe cycle is %.2f ms\n"
 										    "and\n"
 										    "T raster to raster point is %.2f ms.",

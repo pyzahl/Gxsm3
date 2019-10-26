@@ -59,10 +59,10 @@ static const char* choice_ChMode[] =
 
 static const char* choice_ChModeExternalData[] =
 	{ 
-		"DataExt0",
-		"DataExt1",
-		"DataExt2",
-		"DataExt3",
+		"DataMap0",
+		"DataMap1",
+		"DataMap2",
+		"DataMap3",
 		0
 	};
 
@@ -91,6 +91,7 @@ ChannelSelector::ChannelSelector (int ChAnz){
 	ChSDirWidget = new GtkWidget*[ChAnz];
 	ChModeWidget = new GtkWidget*[ChAnz];
 	ChViewWidget = new GtkWidget*[ChAnz];
+        ChInfoWidget = new GtkWidget*[ChAnz];
 	RestoreWidget = new GtkWidget*[1];
 
 	for(i=0; i<ChAnz; i++){
@@ -157,6 +158,7 @@ ChannelSelector::ChannelSelector (int ChAnz){
 	gtk_widget_set_tooltip_text (wid, N_("Scan Direction"));
         gtk_grid_attach (GTK_GRID (v_grid), wid=gtk_label_new ("AS"),  4, 0, 1, 1);
 	gtk_widget_set_tooltip_text (wid, N_("Auto save enable\nfor scan data sources only."));
+        gtk_grid_attach (GTK_GRID (v_grid), wid=gtk_label_new ("Info"),  5, 0, 1, 1);
 
         // create channels and add to grid
         for(i=1; i<=ChAnz; i++){
@@ -274,7 +276,13 @@ ChannelSelector::ChannelSelector (int ChAnz){
                 g_signal_connect (G_OBJECT (wid), "toggled",
                                   G_CALLBACK (ChannelSelector::choice_ChAS_callback),
                                   NULL);        
-	}
+
+		wid = gtk_label_new ("-");
+		gapp->configure_drop_on_widget(wid);
+                ChInfoWidget[i-1] = wid;
+		gtk_grid_attach (GTK_GRID (v_grid), wid, 5, i, 1, 1);
+
+        }
         gtk_widget_show_all (v_grid);
 
         alife = 1;
@@ -427,6 +435,11 @@ void ChannelSelector::SetMode(int Channel, int Mode){
 void ChannelSelector::SetView(int Channel, int View){
 	gtk_combo_box_set_active (GTK_COMBO_BOX (ChViewWidget[Channel]), View);
 }
+
+void ChannelSelector::SetInfo(int Channel, const gchar *info){
+        gtk_label_set_text (GTK_LABEL(ChInfoWidget[Channel]), info);
+}
+
 
 void ChannelSelector::SetModeChannelSignal(int mode_id, const gchar* signal_name, const gchar* signal_label, const gchar *signal_unit, double d2unit){
 	int k,l;
