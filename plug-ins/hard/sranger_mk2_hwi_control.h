@@ -392,6 +392,7 @@ class DSPControl : public AppBase{
 	static int Probing_exec_ABORT_callback(GtkWidget *widget, DSPControl *dspc);
 	static int Probing_write_ABORT_callback(GtkWidget *widget, DSPControl *dspc);
 	static int Probing_exec_RF_callback(GtkWidget *widget, DSPControl *dspc);
+        static int Probing_event_setup_scan (int ch, const gchar *titleprefix, const gchar *name, const gchar *unit, const gchar *label, double d2u, int nvalues);
 	static int Probing_eventcheck_callback(GtkWidget *widget, DSPControl *dspc);
 	static int Probing_graph_callback(GtkWidget *widget, DSPControl *dspc, int finish_flag=0);
 	static int Probing_save_callback(GtkWidget *widget, DSPControl *dspc);

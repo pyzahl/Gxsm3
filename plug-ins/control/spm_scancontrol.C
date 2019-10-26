@@ -1244,7 +1244,15 @@ int SPM_ScanControl::initialize_scan_lists (){
 		}
 
 		master_scan = gapp->xsm->GetMasterScan ();
-		
+
+                // reset Ext/Map Channels
+                for(int i=0; i < 4; ++i){
+                        if ((ch = gapp->xsm->FindChan(xsmres.extchno[i])) >= 0){
+                                setup_scan (ch, "X+", "Map-PrbSrc#", "Xu", "Xt", "Xl", -1.0); // needs further setup!
+                        }
+                }
+
+                
 		// Automatic mode:
 		// if no Scansrc specified -- find free channel and use pid-default ("Topo")
 		if(! sok){
@@ -1349,9 +1357,11 @@ int SPM_ScanControl::setup_scan (int ch,
 
 	PI_DEBUG (DBG_L2, "setup_scan[" << ch << " ]: scantitle done: " << gapp->xsm->scan[ch]->data.ui.type ); 
 
-	g_free (scantitle);
+        gapp->channelselector->SetInfo (ch, scantitle);
 	gapp->xsm->scan[ch]->draw ();
 
+	g_free (scantitle);
+        
 	return 0;
 }
 

@@ -3,7 +3,7 @@
 <!--                                                         -->
 <!-- Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.   -->
 
-<Project Version="7" Minor="40" Path="/home/pzahl/SVN/RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.xpr">
+<Project Version="7" Minor="40" Path="/home/pzahl/SVN/Gxsm-3.0/plug-ins/control/RedPitaya-Support/RedPACPLL4.srcs/RedPitayaPACPLL4mdc-McBSP-201909.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="03969fef7ac94ce6a40ea9de3c5aecc0"/>
@@ -21,18 +21,18 @@
     <Option Name="ActiveSimSet" Val="IO_Connect"/>
     <Option Name="DefaultLib" Val="xil_defaultlib"/>
     <Option Name="ProjectType" Val="Default"/>
-    <Option Name="IPRepoPath" Val="$PPRDIR/../redpitaya_guide/tmp/cores"/>
-    <Option Name="IPOutputRepo" Val="$PCACHEDIR/ip"/>
+    <Option Name="IPRepoPath" Val="$PPRDIR/../../../../../RedPitaya/redpitaya_guide/tmp/cores"/>
+    <Option Name="IPOutputRepo" Val="/home/pzahl/SVN/RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.cache/ip"/>
     <Option Name="IPCachePermission" Val="read"/>
     <Option Name="IPCachePermission" Val="write"/>
     <Option Name="EnableCoreContainer" Val="FALSE"/>
     <Option Name="CreateRefXciForCoreContainers" Val="FALSE"/>
-    <Option Name="IPUserFilesDir" Val="$PIPUSERFILESDIR"/>
-    <Option Name="IPStaticSourceDir" Val="$PIPUSERFILESDIR/ipstatic"/>
+    <Option Name="IPUserFilesDir" Val="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.ip_user_files"/>
+    <Option Name="IPStaticSourceDir" Val="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.ip_user_files/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
     <Option Name="DSAVendor" Val="xilinx"/>
     <Option Name="DSANumComputeUnits" Val="16"/>
-    <Option Name="WTXSimLaunchSim" Val="391"/>
+    <Option Name="WTXSimLaunchSim" Val="392"/>
     <Option Name="WTModelSimLaunchSim" Val="0"/>
     <Option Name="WTQuestaLaunchSim" Val="0"/>
     <Option Name="WTIesLaunchSim" Val="0"/>
@@ -57,157 +57,136 @@
   <FileSets Version="1" Minor="31">
     <FileSet Name="sources_1" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1">
       <Filter Type="Srcs"/>
-      <File Path="$PSRCDIR/sources_1/new/axis_sc28_to_14.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/axis_sc28_to_14.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL2/RedPACPLL2.srcs/sources_1/new/axis_sc28_to_14.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL2/RedPACPLL2.srcs/sources_1/new/axis_sc28_to_14.v"/>
           <Attr Name="ImportTime" Val="1513563655"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/cfg_to_axis.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/cfg_to_axis.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL2/RedPACPLL2.srcs/sources_1/new/cfg_to_axis.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL2/RedPACPLL2.srcs/sources_1/new/cfg_to_axis.v"/>
           <Attr Name="ImportTime" Val="1513560479"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/VolumeAdjuster16_14.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/VolumeAdjuster16_14.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL2/RedPACPLL2.srcs/sources_1/new/VolumeAdjuster16_14.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL2/RedPACPLL2.srcs/sources_1/new/VolumeAdjuster16_14.v"/>
           <Attr Name="ImportTime" Val="1513645200"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/lms_phase_amplitude_detector.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/lms_phase_amplitude_detector.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL/RedPACPLL.srcs/sources_1/new/lms_phase_amplitude_detector.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL/RedPACPLL.srcs/sources_1/new/lms_phase_amplitude_detector.v"/>
           <Attr Name="ImportTime" Val="1511929453"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/controller_pi.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/controller_pi.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL3/RedPACPLL3.srcs/sources_1/new/controller_pi.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL3/RedPACPLL3.srcs/sources_1/new/controller_pi.v"/>
           <Attr Name="ImportTime" Val="1514347845"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/LED_connect.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/LED_connect.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL3/RedPACPLL3.srcs/sources_1/new/LED_connect.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL3/RedPACPLL3.srcs/sources_1/new/LED_connect.v"/>
           <Attr Name="ImportTime" Val="1514349243"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/axis_4s_combine.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/axis_4s_combine.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4/RedPACPLL4.srcs/sources_1/new/axis_4s_combine.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4/RedPACPLL4.srcs/sources_1/new/axis_4s_combine.v"/>
           <Attr Name="ImportTime" Val="1527818840"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/ScaleAndAdjust.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/ScaleAndAdjust.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4/RedPACPLL4.srcs/sources_1/new/ScaleAndAdjust.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4/RedPACPLL4.srcs/sources_1/new/ScaleAndAdjust.v"/>
           <Attr Name="ImportTime" Val="1527376935"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/phase_unwrap.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/phase_unwrap.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4mdc-SPI/RedPACPLL4mdc-SPI.srcs/sources_1/new/phase_unwrap.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4mdc-SPI/RedPACPLL4mdc-SPI.srcs/sources_1/new/phase_unwrap.v"/>
           <Attr Name="ImportTime" Val="1529974164"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/cfg_select.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/cfg_select.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4/RedPACPLL4.srcs/sources_1/new/cfg_select.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4/RedPACPLL4.srcs/sources_1/new/cfg_select.v"/>
           <Attr Name="ImportTime" Val="1516929609"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/logic_or.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/logic_or.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4mdc-SPI/RedPACPLL4mdc-SPI.srcs/sources_1/new/logic_or.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4mdc-SPI/RedPACPLL4mdc-SPI.srcs/sources_1/new/logic_or.v"/>
           <Attr Name="ImportTime" Val="1529975601"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/McBSP_controller.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/McBSP_controller.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4mdc-SPI1-PL/RedPACPLL4mdc-SPI1-PL.srcs/sources_1/new/McBSP_controller.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4mdc-SPI1-PL/RedPACPLL4mdc-SPI1-PL.srcs/sources_1/new/McBSP_controller.v"/>
           <Attr Name="ImportTime" Val="1547962233"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/McBSP_io_connect.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/McBSP_io_connect.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4mdc-SPI1-PL/RedPACPLL4mdc-SPI1-PL.srcs/sources_1/new/McBSP_io_connect.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4mdc-SPI1-PL/RedPACPLL4mdc-SPI1-PL.srcs/sources_1/new/McBSP_io_connect.v"/>
           <Attr Name="ImportTime" Val="1547945292"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/bd/system/system.bd">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/bd/system/system.bd">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../redpitaya_guide/tmp/1_led_blink/1_led_blink.srcs/sources_1/bd/system/system.bd"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/redpitaya_guide/tmp/1_led_blink/1_led_blink.srcs/sources_1/bd/system/system.bd"/>
           <Attr Name="ImportTime" Val="1509413251"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_1_0/system_axi_gpio_1_0.xci">
-          <Proxy FileSetName="system_axi_gpio_1_0"/>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axis_red_pitaya_dac_0_0/system_axis_red_pitaya_dac_0_0.xci">
+          <Proxy FileSetName="system_axis_red_pitaya_dac_0_0"/>
         </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_controller_pi_0_0/system_controller_pi_0_0.xci">
-          <Proxy FileSetName="system_controller_pi_0_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_1_1/system_axi_gpio_1_1.xci">
-          <Proxy FileSetName="system_axi_gpio_1_1"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_phase_controller_pi_0_0/system_phase_controller_pi_0_0.xci">
-          <Proxy FileSetName="system_phase_controller_pi_0_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_2_0/system_axi_gpio_2_0.xci">
-          <Proxy FileSetName="system_axi_gpio_2_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_tau_0/system_cfg_to_axis_tau_0.xci">
-          <Proxy FileSetName="system_cfg_to_axis_tau_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_0_0/system_axi_gpio_0_0.xci">
-          <Proxy FileSetName="system_axi_gpio_0_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_0_1/system_cfg_to_axis_0_1.xci">
-          <Proxy FileSetName="system_cfg_to_axis_0_1"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_lms_phase_amplitude_detector_0_0/system_lms_phase_amplitude_detector_0_0.xci">
-          <Proxy FileSetName="system_lms_phase_amplitude_detector_0_0"/>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_phase_unwrapping_0/system_cfg_select_phase_unwrapping_0.xci">
+          <Proxy FileSetName="system_cfg_select_phase_unwrapping_0"/>
         </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_VolumeAdjuster16_14_0_1/system_VolumeAdjuster16_14_0_1.xci">
           <Proxy FileSetName="system_VolumeAdjuster16_14_0_1"/>
@@ -224,204 +203,225 @@
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_proc_sys_reset_0_0/system_proc_sys_reset_0_0.xci">
           <Proxy FileSetName="system_proc_sys_reset_0_0"/>
         </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_cfg_register_0_0/system_axi_cfg_register_0_0.xci">
-          <Proxy FileSetName="system_axi_cfg_register_0_0"/>
-        </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_rst_ps7_0_125M_0/system_rst_ps7_0_125M_0.xci">
           <Proxy FileSetName="system_rst_ps7_0_125M_0"/>
         </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_processing_system7_0_0/system_processing_system7_0_0.xci">
           <Proxy FileSetName="system_processing_system7_0_0"/>
         </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_led_connect_0_0/system_led_connect_0_0.xci">
-          <Proxy FileSetName="system_led_connect_0_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_dc_0/system_cfg_to_axis_dc_0.xci">
-          <Proxy FileSetName="system_cfg_to_axis_dc_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_setpoint_0/system_cfg_to_am_setpoint_0.xci">
-          <Proxy FileSetName="system_cfg_to_am_setpoint_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_cp_0/system_cfg_to_am_cp_0.xci">
-          <Proxy FileSetName="system_cfg_to_am_cp_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_cp_2/system_cfg_to_am_cp_2.xci">
-          <Proxy FileSetName="system_cfg_to_am_cp_2"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_ci_0/system_cfg_to_am_ci_0.xci">
-          <Proxy FileSetName="system_cfg_to_am_ci_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_cp_3/system_cfg_to_am_cp_3.xci">
-          <Proxy FileSetName="system_cfg_to_am_cp_3"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_lower_0/system_cfg_to_am_lower_0.xci">
-          <Proxy FileSetName="system_cfg_to_am_lower_0"/>
-        </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_setpoint_1/system_cfg_to_am_setpoint_1.xci">
           <Proxy FileSetName="system_cfg_to_am_setpoint_1"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_upper_0/system_cfg_to_am_upper_0.xci">
-          <Proxy FileSetName="system_cfg_to_am_upper_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_3_0/system_axi_gpio_3_0.xci">
-          <Proxy FileSetName="system_axi_gpio_3_0"/>
         </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axis_4s_combine_0_0/system_axis_4s_combine_0_0.xci">
           <Proxy FileSetName="system_axis_4s_combine_0_0"/>
         </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_blk_mem_gen_0_0/system_blk_mem_gen_0_0.xci">
-          <Proxy FileSetName="system_blk_mem_gen_0_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_lower_1/system_cfg_to_am_lower_1.xci">
-          <Proxy FileSetName="system_cfg_to_am_lower_1"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_transport_0/system_cfg_to_transport_0.xci">
-          <Proxy FileSetName="system_cfg_to_transport_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_transport1_0/system_cfg_to_transport1_0.xci">
-          <Proxy FileSetName="system_cfg_to_transport1_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_transport_channel_select_0/system_cfg_to_transport_channel_select_0.xci">
-          <Proxy FileSetName="system_cfg_to_transport_channel_select_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_upper_1/system_cfg_to_am_upper_1.xci">
-          <Proxy FileSetName="system_cfg_to_am_upper_1"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_4_0/system_axi_gpio_4_0.xci">
-          <Proxy FileSetName="system_axi_gpio_4_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_bram_reader_0_0/system_axi_bram_reader_0_0.xci">
-          <Proxy FileSetName="system_axi_bram_reader_0_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_ScaleAndAdjust_0_1/system_ScaleAndAdjust_0_1.xci">
-          <Proxy FileSetName="system_ScaleAndAdjust_0_1"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_0_2/system_cfg_to_axis_0_2.xci">
-          <Proxy FileSetName="system_cfg_to_axis_0_2"/>
-        </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_1_1/system_cfg_to_axis_1_1.xci">
           <Proxy FileSetName="system_cfg_to_axis_1_1"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_0_3/system_cfg_to_axis_0_3.xci">
-          <Proxy FileSetName="system_cfg_to_axis_0_3"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_0_4/system_cfg_to_axis_0_4.xci">
-          <Proxy FileSetName="system_cfg_to_axis_0_4"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_phase_unwrap_0_0/system_phase_unwrap_0_0.xci">
-          <Proxy FileSetName="system_phase_unwrap_0_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_0_1/system_cfg_select_0_1.xci">
-          <Proxy FileSetName="system_cfg_select_0_1"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_logic_or_0_0/system_logic_or_0_0.xci">
-          <Proxy FileSetName="system_logic_or_0_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_0_5/system_cfg_to_axis_0_5.xci">
-          <Proxy FileSetName="system_cfg_to_axis_0_5"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_qc_gain_0/system_cfg_to_axis_qc_gain_0.xci">
-          <Proxy FileSetName="system_cfg_to_axis_qc_gain_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_phase_unwrapping_0/system_cfg_select_phase_unwrapping_0.xci">
-          <Proxy FileSetName="system_cfg_select_phase_unwrapping_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_phase_control_0/system_cfg_select_phase_control_0.xci">
-          <Proxy FileSetName="system_cfg_select_phase_control_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_lck_phase_control_0/system_cfg_select_lck_phase_control_0.xci">
-          <Proxy FileSetName="system_cfg_select_lck_phase_control_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_McBSP_controller_0_0/system_McBSP_controller_0_0.xci">
-          <Proxy FileSetName="system_McBSP_controller_0_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_McBSP_io_connect_0_0/system_McBSP_io_connect_0_0.xci">
-          <Proxy FileSetName="system_McBSP_io_connect_0_0"/>
         </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_util_ds_buf_1_0/system_util_ds_buf_1_0.xci">
           <Proxy FileSetName="system_util_ds_buf_1_0"/>
         </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_util_ds_buf_2_0/system_util_ds_buf_2_0.xci">
-          <Proxy FileSetName="system_util_ds_buf_2_0"/>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_cp_2/system_cfg_to_am_cp_2.xci">
+          <Proxy FileSetName="system_cfg_to_am_cp_2"/>
         </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axis_red_pitaya_adc_0_0/system_axis_red_pitaya_adc_0_0.xci">
-          <Proxy FileSetName="system_axis_red_pitaya_adc_0_0"/>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_transport1_0/system_cfg_to_transport1_0.xci">
+          <Proxy FileSetName="system_cfg_to_transport1_0"/>
         </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axis_red_pitaya_dac_0_0/system_axis_red_pitaya_dac_0_0.xci">
-          <Proxy FileSetName="system_axis_red_pitaya_dac_0_0"/>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_0_4/system_cfg_to_axis_0_4.xci">
+          <Proxy FileSetName="system_cfg_to_axis_0_4"/>
         </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_amplitude_control_0/system_cfg_select_amplitude_control_0.xci">
-          <Proxy FileSetName="system_cfg_select_amplitude_control_0"/>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_dc_0/system_cfg_to_axis_dc_0.xci">
+          <Proxy FileSetName="system_cfg_to_axis_dc_0"/>
         </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_phase_control_1/system_cfg_select_phase_control_1.xci">
-          <Proxy FileSetName="system_cfg_select_phase_control_1"/>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_cp_0/system_cfg_to_am_cp_0.xci">
+          <Proxy FileSetName="system_cfg_to_am_cp_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_lower_1/system_cfg_to_am_lower_1.xci">
+          <Proxy FileSetName="system_cfg_to_am_lower_1"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_lms_phase_amplitude_detector_0_0/system_lms_phase_amplitude_detector_0_0.xci">
+          <Proxy FileSetName="system_lms_phase_amplitude_detector_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_0_1/system_cfg_to_axis_0_1.xci">
+          <Proxy FileSetName="system_cfg_to_axis_0_1"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_led_connect_0_0/system_led_connect_0_0.xci">
+          <Proxy FileSetName="system_led_connect_0_0"/>
         </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_clk_wiz_0_0/system_clk_wiz_0_0.xci">
           <Proxy FileSetName="system_clk_wiz_0_0"/>
         </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_0_0/system_axi_gpio_0_0.xci">
+          <Proxy FileSetName="system_axi_gpio_0_0"/>
+        </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cordic_sqrt_0/system_cordic_sqrt_0.xci">
           <Proxy FileSetName="system_cordic_sqrt_0"/>
         </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cordic_atan_xy_0/system_cordic_atan_xy_0.xci">
-          <Proxy FileSetName="system_cordic_atan_xy_0"/>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_McBSP_io_connect_0_0/system_McBSP_io_connect_0_0.xci">
+          <Proxy FileSetName="system_McBSP_io_connect_0_0"/>
         </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_dds_compiler_0_0/system_dds_compiler_0_0.xci">
           <Proxy FileSetName="system_dds_compiler_0_0"/>
         </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_bram_reader_0_0/system_axi_bram_reader_0_0.xci">
+          <Proxy FileSetName="system_axi_bram_reader_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_0_2/system_cfg_to_axis_0_2.xci">
+          <Proxy FileSetName="system_cfg_to_axis_0_2"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_1_1/system_axi_gpio_1_1.xci">
+          <Proxy FileSetName="system_axi_gpio_1_1"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_1_0/system_axi_gpio_1_0.xci">
+          <Proxy FileSetName="system_axi_gpio_1_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_cfg_register_0_0/system_axi_cfg_register_0_0.xci">
+          <Proxy FileSetName="system_axi_cfg_register_0_0"/>
+        </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_xbar_0/system_xbar_0.xci">
           <Proxy FileSetName="system_xbar_0"/>
         </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_util_ds_buf_2_0/system_util_ds_buf_2_0.xci">
+          <Proxy FileSetName="system_util_ds_buf_2_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_controller_pi_0_0/system_controller_pi_0_0.xci">
+          <Proxy FileSetName="system_controller_pi_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_2_0/system_axi_gpio_2_0.xci">
+          <Proxy FileSetName="system_axi_gpio_2_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_tau_0/system_cfg_to_axis_tau_0.xci">
+          <Proxy FileSetName="system_cfg_to_axis_tau_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_0_5/system_cfg_to_axis_0_5.xci">
+          <Proxy FileSetName="system_cfg_to_axis_0_5"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_upper_1/system_cfg_to_am_upper_1.xci">
+          <Proxy FileSetName="system_cfg_to_am_upper_1"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_0_1/system_cfg_select_0_1.xci">
+          <Proxy FileSetName="system_cfg_select_0_1"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_3_0/system_axi_gpio_3_0.xci">
+          <Proxy FileSetName="system_axi_gpio_3_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_setpoint_0/system_cfg_to_am_setpoint_0.xci">
+          <Proxy FileSetName="system_cfg_to_am_setpoint_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axi_gpio_4_0/system_axi_gpio_4_0.xci">
+          <Proxy FileSetName="system_axi_gpio_4_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_McBSP_controller_0_0/system_McBSP_controller_0_0.xci">
+          <Proxy FileSetName="system_McBSP_controller_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_phase_unwrap_0_0/system_phase_unwrap_0_0.xci">
+          <Proxy FileSetName="system_phase_unwrap_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_upper_0/system_cfg_to_am_upper_0.xci">
+          <Proxy FileSetName="system_cfg_to_am_upper_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_phase_control_1/system_cfg_select_phase_control_1.xci">
+          <Proxy FileSetName="system_cfg_select_phase_control_1"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_phase_controller_pi_0_0/system_phase_controller_pi_0_0.xci">
+          <Proxy FileSetName="system_phase_controller_pi_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_lower_0/system_cfg_to_am_lower_0.xci">
+          <Proxy FileSetName="system_cfg_to_am_lower_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_ci_0/system_cfg_to_am_ci_0.xci">
+          <Proxy FileSetName="system_cfg_to_am_ci_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_transport_channel_select_0/system_cfg_to_transport_channel_select_0.xci">
+          <Proxy FileSetName="system_cfg_to_transport_channel_select_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_0_3/system_cfg_to_axis_0_3.xci">
+          <Proxy FileSetName="system_cfg_to_axis_0_3"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_axis_qc_gain_0/system_cfg_to_axis_qc_gain_0.xci">
+          <Proxy FileSetName="system_cfg_to_axis_qc_gain_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_amplitude_control_0/system_cfg_select_amplitude_control_0.xci">
+          <Proxy FileSetName="system_cfg_select_amplitude_control_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_transport_0/system_cfg_to_transport_0.xci">
+          <Proxy FileSetName="system_cfg_to_transport_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_ScaleAndAdjust_0_1/system_ScaleAndAdjust_0_1.xci">
+          <Proxy FileSetName="system_ScaleAndAdjust_0_1"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_lck_phase_control_0/system_cfg_select_lck_phase_control_0.xci">
+          <Proxy FileSetName="system_cfg_select_lck_phase_control_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cordic_atan_xy_0/system_cordic_atan_xy_0.xci">
+          <Proxy FileSetName="system_cordic_atan_xy_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_blk_mem_gen_0_0/system_blk_mem_gen_0_0.xci">
+          <Proxy FileSetName="system_blk_mem_gen_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_logic_or_0_0/system_logic_or_0_0.xci">
+          <Proxy FileSetName="system_logic_or_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_select_phase_control_0/system_cfg_select_phase_control_0.xci">
+          <Proxy FileSetName="system_cfg_select_phase_control_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_axis_red_pitaya_adc_0_0/system_axis_red_pitaya_adc_0_0.xci">
+          <Proxy FileSetName="system_axis_red_pitaya_adc_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_cfg_to_am_cp_3/system_cfg_to_am_cp_3.xci">
+          <Proxy FileSetName="system_cfg_to_am_cp_3"/>
+        </CompFileExtendedInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/bd/system/hdl/system_wrapper.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/bd/system/hdl/system_wrapper.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../redpitaya_guide/tmp/1_led_blink/1_led_blink.srcs/sources_1/bd/system/hdl/system_wrapper.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/redpitaya_guide/tmp/1_led_blink/1_led_blink.srcs/sources_1/bd/system/hdl/system_wrapper.v"/>
           <Attr Name="ImportTime" Val="1509413252"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/cfg_axis_select.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/cfg_axis_select.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL3/RedPACPLL3.srcs/sources_1/new/cfg_axis_select.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL3/RedPACPLL3.srcs/sources_1/new/cfg_axis_select.v"/>
           <Attr Name="ImportTime" Val="1514348222"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/axis_ram_writer.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/axis_ram_writer.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4/RedPACPLL4.srcs/sources_1/new/axis_ram_writer.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4/RedPACPLL4.srcs/sources_1/new/axis_ram_writer.v"/>
           <Attr Name="ImportTime" Val="1514516890"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/signal_combine.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/signal_combine.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL/RedPACPLL.srcs/sources_1/new/signal_combine.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL/RedPACPLL.srcs/sources_1/new/signal_combine.v"/>
           <Attr Name="ImportTime" Val="1511911195"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/split_signal.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/split_signal.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL/RedPACPLL.srcs/sources_1/new/split_signal.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL/RedPACPLL.srcs/sources_1/new/split_signal.v"/>
           <Attr Name="ImportTime" Val="1511917915"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../redpitaya_guide/cores/axi_cfg_register_v1_0/axi_cfg_register.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/redpitaya_guide/cores/axi_cfg_register_v1_0/axi_cfg_register.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -429,47 +429,47 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/SineSDB64.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/SineSDB64.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../project_knight_riger/project_knight_riger.srcs/sources_1/new/SineSDB64.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/project_knight_riger/project_knight_riger.srcs/sources_1/new/SineSDB64.v"/>
           <Attr Name="ImportTime" Val="1509512843"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/Signed16toQ22.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/Signed16toQ22.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL/RedPACPLL.srcs/sources_1/new/Signed16toQ22.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL/RedPACPLL.srcs/sources_1/new/Signed16toQ22.v"/>
           <Attr Name="ImportTime" Val="1511900183"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/SignedQ31toQ22.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/SignedQ31toQ22.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL/RedPACPLL.srcs/sources_1/new/SignedQ31toQ22.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL/RedPACPLL.srcs/sources_1/new/SignedQ31toQ22.v"/>
           <Attr Name="ImportTime" Val="1511881411"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/ArrithmeticShift.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/ArrithmeticShift.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL/RedPACPLL.srcs/sources_1/new/ArrithmeticShift.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL/RedPACPLL.srcs/sources_1/new/ArrithmeticShift.v"/>
           <Attr Name="ImportTime" Val="1511846353"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../redpitaya_guide/cores/axis_averager_v1_0/axis_averager.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/redpitaya_guide/cores/axis_averager_v1_0/axis_averager.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -477,7 +477,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../redpitaya_guide/cores/axis_constant_v1_0/axis_constant.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/redpitaya_guide/cores/axis_constant_v1_0/axis_constant.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -485,7 +485,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../redpitaya_guide/cores/axis_red_pitaya_dac_v1_0/axis_red_pitaya_dac.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/redpitaya_guide/cores/axis_red_pitaya_dac_v1_0/axis_red_pitaya_dac.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -493,7 +493,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../redpitaya_guide/cores/axis_red_pitaya_adc_v1_0/axis_red_pitaya_adc.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/redpitaya_guide/cores/axis_red_pitaya_adc_v1_0/axis_red_pitaya_adc.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -501,10 +501,10 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/port_slicer.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/sources_1/new/port_slicer.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4/RedPACPLL4.srcs/sources_1/new/port_slicer.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4/RedPACPLL4.srcs/sources_1/new/port_slicer.v"/>
           <Attr Name="ImportTime" Val="1527427487"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -520,20 +520,20 @@
     </FileSet>
     <FileSet Name="constrs_1" Type="Constrs" RelSrcDir="$PSRCDIR/constrs_1">
       <Filter Type="Constrs"/>
-      <File Path="$PPRDIR/../redpitaya_guide/cfg/ports.xdc">
+      <File Path="$PPRDIR/../../../../../RedPitaya/redpitaya_guide/cfg/ports.xdc">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../redpitaya_guide/cfg/clocks.xdc">
+      <File Path="$PPRDIR/../../../../../RedPitaya/redpitaya_guide/cfg/clocks.xdc">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
         </FileInfo>
       </File>
       <Config>
-        <Option Name="TargetConstrsFile" Val="$PPRDIR/../redpitaya_guide/cfg/clocks.xdc"/>
+        <Option Name="TargetConstrsFile" Val="$PPRDIR/../../../../../RedPitaya/redpitaya_guide/cfg/clocks.xdc"/>
         <Option Name="ConstrsType" Val="XDC"/>
       </Config>
     </FileSet>
@@ -553,46 +553,46 @@
     </FileSet>
     <FileSet Name="SDB64" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/SDB64">
       <Filter Type="Srcs"/>
-      <File Path="$PSRCDIR/SDB64/new/lms_phase_amplitude_detector_tb.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/SDB64/new/lms_phase_amplitude_detector_tb.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4mdc/RedPACPLL4mdc.srcs/SDB64/new/lms_phase_amplitude_detector_tb.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4mdc/RedPACPLL4mdc.srcs/SDB64/new/lms_phase_amplitude_detector_tb.v"/>
           <Attr Name="ImportTime" Val="1528952082"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/SDB64/new/controller_pi_tb.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/SDB64/new/controller_pi_tb.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4/RedPACPLL4.srcs/SDB64/new/controller_pi_tb.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4/RedPACPLL4.srcs/SDB64/new/controller_pi_tb.v"/>
           <Attr Name="ImportTime" Val="1527771361"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/SDB64/new/axis_4s_combine_tb.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/SDB64/new/axis_4s_combine_tb.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4/RedPACPLL4.srcs/SDB64/new/axis_4s_combine_tb.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4/RedPACPLL4.srcs/SDB64/new/axis_4s_combine_tb.v"/>
           <Attr Name="ImportTime" Val="1527467935"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/SDB64/new/SineSDB64_tb.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/SDB64/new/SineSDB64_tb.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL/RedPACPLL.srcs/SDB64/new/SineSDB64_tb.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL/RedPACPLL.srcs/SDB64/new/SineSDB64_tb.v"/>
           <Attr Name="ImportTime" Val="1511579125"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../RedPACPLL/SineSDB64_tb_behav1.wcfg">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPACPLL/SineSDB64_tb_behav1.wcfg">
         <FileInfo>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
@@ -604,7 +604,7 @@
         <Option Name="TransportPathDelay" Val="0"/>
         <Option Name="TransportIntDelay" Val="0"/>
         <Option Name="SrcSet" Val="sources_1"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/../RedPACPLL/SineSDB64_tb_behav1.wcfg"/>
+        <Option Name="XSimWcfgFile" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL/SineSDB64_tb_behav1.wcfg"/>
       </Config>
     </FileSet>
     <FileSet Name="system_axi_cfg_register_0_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/system_axi_cfg_register_0_0">
@@ -784,10 +784,10 @@
     </FileSet>
     <FileSet Name="Simulation_PAC" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/Simulation_PAC">
       <Filter Type="Srcs"/>
-      <File Path="$PSRCDIR/Simulation_PAC/new/lms_pad_sim.v">
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/Simulation_PAC/new/lms_pad_sim.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
-          <Attr Name="ImportPath" Val="$PPRDIR/../RedPACPLL4/RedPACPLL4.srcs/Simulation_PAC/new/lms_pad_sim.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../../RedPitaya/RedPACPLL4/RedPACPLL4.srcs/Simulation_PAC/new/lms_pad_sim.v"/>
           <Attr Name="ImportTime" Val="1527769441"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -1042,7 +1042,8 @@
       </Config>
     </FileSet>
     <FileSet Name="IO_Connect" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/IO_Connect">
-      <File Path="$PSRCDIR/IO_Connect/new/McBSP_tb.v">
+      <Filter Type="Srcs"/>
+      <File Path="$PPRDIR/../../../../../RedPitaya/RedPitayaPACPLL4mdc-McBSP-201909/RedPitayaPACPLL4mdc-McBSP-201909.srcs/IO_Connect/new/McBSP_tb.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -1056,7 +1057,6 @@
         <Option Name="TopAutoSet" Val="TRUE"/>
         <Option Name="TransportPathDelay" Val="0"/>
         <Option Name="TransportIntDelay" Val="0"/>
-        <Option Name="SimMode" Val="post-synthesis"/>
         <Option Name="SrcSet" Val="sources_1"/>
         <Option Name="NLNetlistMode" Val="funcsim"/>
       </Config>
@@ -1112,12 +1112,12 @@
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Flow_PerfOptimized_high" Flow="Vivado Synthesis 2017"/>
         <Step Id="synth_design">
-          <Option Id="NoCombineLuts">1</Option>
           <Option Id="RepFanoutThreshold">400</Option>
+          <Option Id="NoCombineLuts">1</Option>
           <Option Id="KeepEquivalentRegisters">1</Option>
           <Option Id="ResourceSharing">2</Option>
-          <Option Id="ShregMinSize">5</Option>
           <Option Id="FsmExtraction">1</Option>
+          <Option Id="ShregMinSize">5</Option>
         </Step>
       </Strategy>
       <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
@@ -1706,9 +1706,7 @@
     </Run>
     <Run Id="system_controller_pi_0_0_synth_1" Type="Ft3:Synth" SrcSet="system_controller_pi_0_0" Part="xc7z010clg400-1" ConstrsSet="system_controller_pi_0_0" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/system_controller_pi_0_0_synth_1" IncludeInArchive="true">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2019">
-          <Desc>Vivado Synthesis Defaults</Desc>
-        </StratHandle>
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2019"/>
         <Step Id="synth_design"/>
       </Strategy>
       <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
@@ -1717,9 +1715,7 @@
     </Run>
     <Run Id="system_phase_controller_pi_0_0_synth_1" Type="Ft3:Synth" SrcSet="system_phase_controller_pi_0_0" Part="xc7z010clg400-1" ConstrsSet="system_phase_controller_pi_0_0" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/system_phase_controller_pi_0_0_synth_1" IncludeInArchive="true">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2019">
-          <Desc>Vivado Synthesis Defaults</Desc>
-        </StratHandle>
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2019"/>
         <Step Id="synth_design"/>
       </Strategy>
       <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
@@ -1728,9 +1724,7 @@
     </Run>
     <Run Id="system_McBSP_io_connect_0_0_synth_1" Type="Ft3:Synth" SrcSet="system_McBSP_io_connect_0_0" Part="xc7z010clg400-1" ConstrsSet="system_McBSP_io_connect_0_0" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/system_McBSP_io_connect_0_0_synth_1" IncludeInArchive="true">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2019">
-          <Desc>Vivado Synthesis Defaults</Desc>
-        </StratHandle>
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2019"/>
         <Step Id="synth_design"/>
       </Strategy>
       <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
@@ -2819,9 +2813,7 @@
     </Run>
     <Run Id="system_controller_pi_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7z010clg400-1" ConstrsSet="system_controller_pi_0_0" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="system_controller_pi_0_0_synth_1" IncludeInArchive="false" GenFullBitstream="true">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2019">
-          <Desc>Default settings for Implementation.</Desc>
-        </StratHandle>
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2019"/>
         <Step Id="init_design"/>
         <Step Id="opt_design"/>
         <Step Id="power_opt_design"/>
@@ -2837,9 +2829,7 @@
     </Run>
     <Run Id="system_phase_controller_pi_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7z010clg400-1" ConstrsSet="system_phase_controller_pi_0_0" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="system_phase_controller_pi_0_0_synth_1" IncludeInArchive="false" GenFullBitstream="true">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2019">
-          <Desc>Default settings for Implementation.</Desc>
-        </StratHandle>
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2019"/>
         <Step Id="init_design"/>
         <Step Id="opt_design"/>
         <Step Id="power_opt_design"/>
@@ -2855,9 +2845,7 @@
     </Run>
     <Run Id="system_McBSP_io_connect_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7z010clg400-1" ConstrsSet="system_McBSP_io_connect_0_0" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="system_McBSP_io_connect_0_0_synth_1" IncludeInArchive="false" GenFullBitstream="true">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2019">
-          <Desc>Default settings for Implementation.</Desc>
-        </StratHandle>
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2019"/>
         <Step Id="init_design"/>
         <Step Id="opt_design"/>
         <Step Id="power_opt_design"/>

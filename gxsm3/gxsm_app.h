@@ -77,12 +77,14 @@ public:
                 delete [] ChSDirWidget;
                 delete [] ChModeWidget;
                 delete [] ChViewWidget;
+                delete [] ChInfoWidget;
                 g_clear_object (&ch_settings);
         };
 
         void SetSDir(int Channel, int Dir);
         void SetMode(int Channel, int Mode);
         void SetView(int Channel, int View);
+        void SetInfo(int Channel, const gchar *info);
 
         void SetModeChannelSignal(int mode_id, const gchar* signal_name, const gchar* signal_label, const gchar *signal_unit, double d2unit = 1.0);
 
@@ -97,6 +99,7 @@ private:
         GtkWidget **ChSDirWidget;
         GtkWidget **ChModeWidget;
         GtkWidget **ChViewWidget;
+        GtkWidget **ChInfoWidget;
         GtkWidget **RestoreWidget;
 
         GSettings *ch_settings;

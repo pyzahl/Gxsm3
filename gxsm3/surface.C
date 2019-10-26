@@ -241,6 +241,8 @@ int Surface::SetMode(int Channel, int choice, int force){
 					delete scan[Channel];
 					scan[Channel] = NULL;
 					SET_CHANNEL_SCAN_MODE(ChannelScanMode[Channel], choice);
+                                        gapp->channelselector->SetInfo (Channel, "-");
+
 				}else{ // locked and in used ...
 					ChannelMode[Channel] = ID_CH_M_ON;
 					SET_CHANNEL_SCAN_MODE(ChannelScanMode[Channel], ID_CH_M_ON);
@@ -249,9 +251,11 @@ int Surface::SetMode(int Channel, int choice, int force){
 		break;
 	case ID_CH_M_X:
 		SET_CHANNEL_SCAN_MODE(ChannelScanMode[Channel], choice);
+                gapp->channelselector->SetInfo (Channel, "X source");
 		break;
 	case ID_CH_M_MATH:
 		SET_CHANNEL_SCAN_MODE(ChannelScanMode[Channel], choice);
+                gapp->channelselector->SetInfo (Channel, "Math target");
 		break;
 	default:
 		if(choice > ID_CH_M_X){

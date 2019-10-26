@@ -661,13 +661,13 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
                         double T_raster2raster = 1e3 * gapp->xsm->data.s.rx / (gapp->xsm->data.s.nx/probe_trigger_raster_points_user) / scan_speed_x; // Time inbetween raster points in ms
                         info = g_strdup_printf ("Tp=%.2f ms, Tr=%.2f ms, Td=%.2f ms", T_probe_cycle, T_raster2raster, T_raster2raster - T_probe_cycle);
 
-                        if (T_raster2raster <= T_probe_cycle){
+                        if (probe_and_wait==0 && T_raster2raster <= T_probe_cycle){
                                 warn_flag=TRUE;
                                 GtkWidget *dialog = gtk_message_dialog_new (NULL,
                                                                             GTK_DIALOG_DESTROY_WITH_PARENT,
                                                                             GTK_MESSAGE_WARNING,
                                                                             GTK_BUTTONS_CLOSE,
-                                                                            "The probing at each raster point lasts to long:\n"
+                                                                            "The probing at each raster point lasts too long:\n"
                                                                             "Time of one probe cycle is %.2f ms\n"
                                                                             "and\n"
                                                                             "Time from raster to raster point is %.2f ms.\n\n --- FYI: ---\n"
@@ -779,12 +779,12 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
                         double T_raster2raster = 1e3 * gapp->xsm->data.s.rx / (gapp->xsm->data.s.nx/probe_trigger_raster_points_user) / scan_speed_x; // Time inbetween raster points in ms
                         info = g_strdup_printf ("Tp=%.2f ms, Tr=%.2f ms, Td=%.2f ms", T_probe_cycle, T_raster2raster, T_raster2raster - T_probe_cycle);
 
-                        if (T_raster2raster <= T_probe_cycle){
+                        if (probe_and_wait==0 && T_raster2raster <= T_probe_cycle){
                                 GtkWidget *dialog = gtk_message_dialog_new (NULL,
                                                                             GTK_DIALOG_DESTROY_WITH_PARENT,
                                                                             GTK_MESSAGE_WARNING,
                                                                             GTK_BUTTONS_CLOSE,
-                                                                            "The probing a each raster point lasts to long:\n"
+                                                                            "The probing a each raster point lasts too long:\n"
                                                                             "T probe cycle is %.2f ms\n"
                                                                             "and\n"
                                                                             "T raster to raster point is %.2f ms.",
