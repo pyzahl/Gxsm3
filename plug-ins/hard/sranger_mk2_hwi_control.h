@@ -430,6 +430,7 @@ class DSPControl : public AppBase{
 	static int callback_XJoin (GtkWidget *widget, DSPControl *dspc);
 	static int callback_GrMatWindow (GtkWidget *widget, DSPControl *dspc);
 	static int DSP_multiIV_callback (GtkWidget *widget, DSPControl *dspc);
+	static int DSP_multiBias_callback (GtkWidget *widget, DSPControl *dspc);
 
 	static int DSP_cret_callback (GtkWidget *widget, DSPControl *dspc);
 	static int DSP_slope_callback (GtkWidget *widget, DSPControl *dspc);
@@ -565,8 +566,9 @@ class DSPControl : public AppBase{
 	double frq_ref;           //!< Frequency Reference: i.e. feedback, scan, ... dataaq. sampling rate
 	int    feedback_flag;
 	// -- section ANALOG_VALUES --
-	double bias;              //!< Bias (usually applied to the sample)
-	double motor;             //!< Additional "Motor"-Output -- aux parameter for gate, source, etc.
+	double bias;           //!< Bias (usually applied to the sample)
+	double bias_sec[4];    //!< Bias (usually applied to the sample)
+	double motor;          //!< Additional "Motor"-Output -- aux parameter for gate, source, etc.
 
 	// -- section SPM_PI_FEEDBACK MIXER --
 	int    mix_fbsource[4];   // only for documentation
@@ -626,6 +628,7 @@ class DSPControl : public AppBase{
 	                          //!< i.e. it is gain-X/gain-Y
 	int pre_points;           //!< pre point before scan line data is taken (experimental)
 	int scan_forward_slow_down; //!<  additional scan forward slow down =1 normally
+	int scan_forward_slow_down_2nd; //!<  additional scan forward slow down =1 normally
 	
         GtkWidget *VXYZS0Gain[6];
         double AdjustGain (int channel, int index) {
@@ -887,6 +890,7 @@ private:
         GActionGroup *dspc_action_group;
 
 	int multiIV_mode;
+	int multiBias_mode;
 	#define MAX_DSPC_TABS 20
 	int show_tab_mode[MAX_DSPC_TABS];
 

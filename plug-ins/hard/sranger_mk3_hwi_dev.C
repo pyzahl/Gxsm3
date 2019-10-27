@@ -2363,7 +2363,10 @@ void sranger_mk3_hwi_dev::recalculate_dsp_scan_slope_parameters () {
 }
 
 void sranger_mk3_hwi_dev::conv_dsp_analog (){
-	CONV_32 (dsp_analog.bias);
+	CONV_32 (dsp_analog.bias[0]);
+	CONV_32 (dsp_analog.bias[1]);
+	CONV_32 (dsp_analog.bias[2]);
+	CONV_32 (dsp_analog.bias[3]);
 	CONV_32 (dsp_analog.motor);
 }
 
@@ -2376,10 +2379,13 @@ void sranger_mk3_hwi_dev::read_dsp_analog (){
 	conv_dsp_analog ();
 }
 
-void sranger_mk3_hwi_dev::write_dsp_analog (double bias, double motor){
+void sranger_mk3_hwi_dev::write_dsp_analog (double bias[4], double motor){
 	read_dsp_analog ();
 
-	dsp_analog.bias  = (gint32)round (CONST_DSP_F16*gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (bias)));
+	dsp_analog.bias[0]  = (gint32)round (CONST_DSP_F16*gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (bias[0])));
+	dsp_analog.bias[1]  = (gint32)round (CONST_DSP_F16*gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (bias[1])));
+	dsp_analog.bias[2]  = (gint32)round (CONST_DSP_F16*gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (bias[2])));
+	dsp_analog.bias[3]  = (gint32)round (CONST_DSP_F16*gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (bias[3])));
 	dsp_analog.motor = (gint32)round (CONST_DSP_F16*gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (motor)));
 
 	// only "bias" and "motor" is touched here!

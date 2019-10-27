@@ -1079,7 +1079,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 		for (ipid=idaq=i2nddaq=iprb=i=0; i < MAXSCANS; i++){
 			// PID src?  Find the first/next "Topo like" scan... 
 			// (ipid counts until all PID type scans are checked)
-			for (ch = -1; (ipid < PIDCHMAX) && ((ch=gapp->xsm->FindChan(xsmres.pidchno[ipid++])) < 0););
+			for (ch = -1; (ipid < PIDCHMAX) && ((ch=gapp->xsm->FindChan(xsmres.pidchno[ipid++], ID_CH_D_P)) < 0););
 
 			if(ch >= 0){ // got one!
 				PI_DEBUG (DBG_L3, "SPM_SCANCONTROL::initialize_scan_lists : Setting up XpScan - PID src found");
@@ -1102,7 +1102,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 			else{
 				// DAQ src? Find additional scans/channels to aquire...
 				// (idaq counts until all checked)
-				for(ch = -1; (idaq < DAQCHMAX) && ((ch=gapp->xsm->FindChan(xsmres.daqchno[idaq++])) < 0););
+				for(ch = -1; (idaq < DAQCHMAX) && ((ch=gapp->xsm->FindChan(xsmres.daqchno[idaq++], ID_CH_D_P)) < 0););
 				if(ch >= 0){ // got one!
 					// add to xp_srcs mask... use "MUXA" (DA0..3)
 					if(idaq <= 4)
@@ -1134,7 +1134,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 				else{
 					// 2nd DAQ src? Find additional scans/channels to aquire...
 					// (idaq counts until all checked)
-					for(ch = -1; (i2nddaq < DAQCHMAX) && ((ch=gapp->xsm->FindChan(ID_CH_M_2ND_OFFSET+xsmres.daqchno[i2nddaq++])) < 0););
+					for(ch = -1; (i2nddaq < DAQCHMAX) && ((ch=gapp->xsm->FindChan(xsmres.daqchno[i2nddaq++], ID_CH_D_2ND_P)) < 0););
 					if(ch >= 0){ // got one!
 						// add to xp_srcs mask... use "MUXA" (DA0..3)
 						if(i2nddaq <= 4)
@@ -1171,7 +1171,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 		// similar channel analysis for all XM (<-) scans... -- no probing in this direction!
 		for (ipid=i2nddaq=idaq=i=0; i<MAXSCANS; i++){
 			// new PID src?
-			for(ch = -1; (ipid < PIDCHMAX) && ((ch=gapp->xsm->FindChan(-xsmres.pidchno[ipid++])) < 0););
+			for(ch = -1; (ipid < PIDCHMAX) && ((ch=gapp->xsm->FindChan(xsmres.pidchno[ipid++], ID_CH_D_M)) < 0););
 
 			if(ch >= 0){
 				PI_DEBUG (DBG_L3, "SPM_SCANCONTROL::initialize_scan_lists : Setting up XmScan - PID src found");
@@ -1188,7 +1188,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 				sok=TRUE;
 			}
 			else{
-				for(ch = -1; (idaq < DAQCHMAX) && ((ch=gapp->xsm->FindChan(-xsmres.daqchno[idaq++])) < 0););
+				for(ch = -1; (idaq < DAQCHMAX) && ((ch=gapp->xsm->FindChan(xsmres.daqchno[idaq++], ID_CH_D_M)) < 0););
 				if(ch >= 0){
 					if(idaq <= 4)
 						xm_srcs |= MSK_MUXA(idaq-1);
@@ -1214,7 +1214,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 					sok=TRUE;
 				}
 				else{
-					for(ch = -1; (i2nddaq < DAQCHMAX) && ((ch=gapp->xsm->FindChan(-ID_CH_M_2ND_OFFSET-xsmres.daqchno[i2nddaq++])) < 0););
+					for(ch = -1; (i2nddaq < DAQCHMAX) && ((ch=gapp->xsm->FindChan(xsmres.daqchno[i2nddaq++], ID_CH_D_2ND_M)) < 0););
 					if(ch >= 0){
 						if(i2nddaq <= 4)
 							xm_2nd_srcs |= MSK_MUXA(i2nddaq-1);
@@ -1247,7 +1247,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 
                 // reset Ext/Map Channels
                 for(int i=0; i < 4; ++i){
-                        if ((ch = gapp->xsm->FindChan(xsmres.extchno[i])) >= 0){
+                        if ((ch = gapp->xsm->FindChan(xsmres.extchno[i], ID_CH_D_P)) >= 0){
                                 setup_scan (ch, "X+", "Map-PrbSrc#", "Xu", "Xt", "Xl", -1.0); // needs further setup!
                         }
                 }

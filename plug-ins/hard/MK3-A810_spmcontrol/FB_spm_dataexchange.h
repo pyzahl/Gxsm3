@@ -133,7 +133,7 @@
 #ifdef FB_SPM_VERSION
 #undef FB_SPM_VERSION
 #endif
-#define FB_SPM_VERSION   0x00004000 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_VERSION   0x00004010 /* FB_SPM main Version, BCD: 00.00 */
 #ifdef FB_SPM_DATE_YEAR
 #undef FB_SPM_DATE_YEAR
 #endif
@@ -141,7 +141,7 @@
 #ifdef FB_SPM_DATE_MMDD
 #undef FB_SPM_DATE_MMDD
 #endif
-#define FB_SPM_DATE_MMDD 0x00001013 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00001026 /* Date: Month/Day, BCD */
 
 #ifdef FB_SPM_FEATURES
 #undef FB_SPM_FEATURES
@@ -254,8 +254,6 @@ typedef guint64  DSP_UINT64;
  * definitions used for statemaschine controls 
  * ==================================================
  */
-
-#define APPLY_NEW_ROTATION 0x13780001 /* priavte start commands for applying data to private copy */
 
 /* -- NOTE: modes mostly obsoleted now -- */
 
@@ -531,6 +529,8 @@ typedef struct{
 #define AREA_SCAN_STOP           0x01
 #define AREA_SCAN_PAUSE          0x02
 #define AREA_SCAN_RESUME         0x04
+// special control modes
+#define APPLY_NEW_ROTATION           0x13780001 /* priavte start commands for applying data to private copy */
 
 typedef struct{
 	DSP_INT32  start;             /**< 0 Initiate Area Scan =WO */
@@ -548,19 +548,21 @@ typedef struct{
 	DSP_INT32  dnx, dny;          /**< 22,23  delta "nx": number of "DAC positions" inbetween "data points" =WR */
 	DSP_INT32  Zoff_2nd_xp, Zoff_2nd_xm; /**< 24,25 Zoffset for 2nd scan in EFM/MFM/... quasi const height mode -- shared with deltasRe/Im for fast sine scan*/
         DSP_INT32  fm_dz0_xy_vec[2];  /**< 26,27 X/Y-Z0-slopes in X and Y in main XY coordinate system =WR */
-        DSP_INT32  z_slope_max;       /**< 28,   fast return option */
+        DSP_INT32  z_slope_max;       /**< 28,   z slope limit option */
         DSP_INT32  fast_return;       /**< 29,   fast return option */
-	DSP_INT32  xyz_gain;          /**< 30 bitcoded 8-/8z/8y/8x (0..255)x */
-        DSP_INT32  xyz_vec[3];        /**< 31,32,33  current X/Yposition, 32bit =RO, scan coord sys */
-        DSP_INT32  xy_r_vec[2];       /**< 34,35     current X/Yposition, 32bit =RO, rotated final/offset coord sys */
-	DSP_INT32  z_offset_xyslope;  /**< 36 Z offset calculated from XY Scan pos and slope coefficients, smooth follower */
-        DSP_INT32  cfs_dx, cfs_dy;    /**< 37,38 copy of 32bit stepsize "scan", High Word -> DAC, Low Word -> "decimals" */
+        DSP_INT32  slow_down_factor, slow_down_factor_2nd; /**< 30,31   slow down options */
+	DSP_INT32  xyz_gain;          /**< 32 bitcoded 8-/8z/8y/8x (0..255)x */
+        DSP_INT32  xyz_vec[3];        /**< 33,34,35  current X/Yposition, 32bit =RO, scan coord sys */
+        DSP_INT32  xy_r_vec[2];       /**< 36,37     current X/Yposition, 32bit =RO, rotated final/offset coord sys */
+	DSP_INT32  z_offset_xyslope;  /**< 38 Z offset calculated from XY Scan pos and slope coefficients, smooth follower */
+        DSP_INT32  cfs_dx, cfs_dy;    /**< 39,40 copy of 32bit stepsize "scan", High Word -> DAC, Low Word -> "decimals" */
         DSP_INT32  iix, iiy, ix, iy;  /**< current inter x/y, and x/y counters =RO */
-	DSP_INT32  slow_down_factor, iiix; /**< current scan speed reduction beyond 2^15 dnx */
+	DSP_INT32  iiix; /**< current scan speed reduction beyond 2^15 dnx */
         DSP_INT32  ifr;               /**< fast return count option */
 	DSP_INT32_P src_input[4];     /**< signals mapped as channel source data. defaults: probe.LockIn_1stA, LockIn_2ndA, LockIn_0A, analog.counter[0]  */
 	DSP_INT32  sstate;            /**< current scan state =RO */
 	DSP_INT32  rotmatrix[4];      /**< active rotation matrix, secure copy, Q15 =WR */
+        DSP_INT32  section;
 	DSP_INT32  pflg;              /**< process active flag =RO */
 #ifdef DSP_CC
 } AREA_SCAN;
@@ -570,7 +572,7 @@ typedef struct{
 #undef MAX_WRITE_SCAN
 #endif
 #endif
-#define MAX_WRITE_SCAN (2*31)
+#define MAX_WRITE_SCAN (2*33)
 
 
 /** Data Sync Control */
@@ -882,7 +884,7 @@ typedef struct{
 /** Control, Analog and Counter management Module  */
 typedef struct{
 /**  --- controls, generated, constant signals **/
-	DSP_INT32    bias, motor;   /**< RW life mapped, these are commanded by Gxsm HwI **/
+	DSP_INT32    bias[4], motor;   /**< RW life mapped, these are commanded by Gxsm HwI **/
 /**  --- DA out processing **/
 	OUT_MIXER    out[14];        /** output module for each channel 0..7 and 8,9..14 mappings for wave-channels */
 /**  --- IN signal processing **/
@@ -912,8 +914,8 @@ typedef struct{
 #undef MAX_WRITE_ANALOG_FULL
 #endif
 #endif
-#define MAX_WRITE_ANALOG_CONTROL (2*2)
-#define MAX_WRITE_ANALOG_FULL (2*(2+8*5+1))
+#define MAX_WRITE_ANALOG_CONTROL (2*5)
+#define MAX_WRITE_ANALOG_FULL (2*(5+8*5+1))
 
 
 #define DATAFIFO_LENGTH (1<<12) // in 16 bit words

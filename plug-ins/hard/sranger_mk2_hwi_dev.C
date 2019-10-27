@@ -2289,10 +2289,10 @@ void sranger_mk2_hwi_dev::read_dsp_analog (){
 	conv_dsp_analog ();
 }
 
-void sranger_mk2_hwi_dev::write_dsp_analog (double bias, double motor){
+void sranger_mk2_hwi_dev::write_dsp_analog (double bias[4], double motor){
 	read_dsp_analog ();
 
-	dsp_analog.out[ANALOG_BIAS]  = (int)(gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (bias)));
+	dsp_analog.out[ANALOG_BIAS]  = (int)(gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (bias[0])));
 	dsp_analog.out[ANALOG_MOTOR] = (int)(gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (motor)));
 
 	// only "bias" and "motor" is touched here!

@@ -187,6 +187,24 @@
       <description>pcs0000, PCS Remote-ID: 'dsp-fbs-bias', Default/U:   0.5 V    , Adjustment PCS Name: 'dsp-fbs-bias' </description>
     </key>
 
+    <key name="dsp-fbs-bias1" type="d">
+      <default>0.5</default>
+      <summary>PCS Remote-ID: 'dsp-fbs-bias1', Default/U:   0.5 V     </summary>
+      <description>pcs0000, PCS Remote-ID: 'dsp-fbs-bias1', Default/U:   0.5 V    , Adjustment PCS Name: 'dsp-fbs-bias1' </description>
+    </key>
+
+    <key name="dsp-fbs-bias2" type="d">
+      <default>0.5</default>
+      <summary>PCS Remote-ID: 'dsp-fbs-bias2', Default/U:   0.5 V     </summary>
+      <description>pcs0000, PCS Remote-ID: 'dsp-fbs-bias2', Default/U:   0.5 V    , Adjustment PCS Name: 'dsp-fbs-bias2' </description>
+    </key>
+
+    <key name="dsp-fbs-bias3" type="d">
+      <default>0.5</default>
+      <summary>PCS Remote-ID: 'dsp-fbs-bias3', Default/U:   0.5 V     </summary>
+      <description>pcs0000, PCS Remote-ID: 'dsp-fbs-bias3', Default/U:   0.5 V    , Adjustment PCS Name: 'dsp-fbs-bias3' </description>
+    </key>
+
     <key name="dsp-fbs-motor" type="d">
       <default>0</default>
       <summary>PCS Remote-ID: 'dsp-fbs-motor', Default/U:     0 V     </summary>
@@ -407,6 +425,12 @@
       <default>1</default>
       <summary>PCS Remote-ID: 'dsp-adv-scan-fwd-slow-down', Default/U:     1       </summary>
       <description>pcs0000, PCS Remote-ID: 'dsp-adv-scan-fwd-slow-down', Default/U:     1      , Adjustment PCS Name: 'dsp-adv-scan-fwd-slow-down' </description>
+    </key>
+
+    <key name="dsp-adv-scan-fwd-slow-down-2nd" type="d">
+      <default>1</default>
+      <summary>PCS Remote-ID: 'dsp-adv-scan-fwd-slow-down-2nd', Default/U:     1       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dsp-adv-scan-fwd-slow-down-2nd', Default/U:     1      , Adjustment PCS Name: 'dsp-adv-scan-fwd-slow-down-2nd' </description>
     </key>
 
     <key name="dsp-adv-scan-pre-pts" type="d">

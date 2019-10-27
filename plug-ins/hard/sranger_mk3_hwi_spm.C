@@ -1490,12 +1490,13 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
                 if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(DSPControlClass->FastScan_status))) 
 			dsp_scan.start = long_2_sranger_long (-(AREA_SCAN_RUN|AREA_SCAN_START_FASTSCAN));
 		else
-                        if (DSPControlClass->scan_forward_slow_down > 1)
-                                dsp_scan.start = long_2_sranger_long (DSPControlClass->scan_forward_slow_down);
-                        else
-                                dsp_scan.start = long_2_sranger_long (-(AREA_SCAN_RUN|AREA_SCAN_START_NORMAL));
-		
-		// 1st XP scan here
+                        dsp_scan.start = long_2_sranger_long (-(AREA_SCAN_RUN|AREA_SCAN_START_NORMAL));
+
+                // set speed manipulation options
+                dsp_scan.slow_down_factor     = long_2_sranger_long (DSPControlClass->scan_forward_slow_down);
+                dsp_scan.slow_down_factor_2nd = long_2_sranger_long (DSPControlClass->scan_forward_slow_down_2nd);
+
+                // 1st XP scan here
 		dsp_scan.srcs_xp  = long_2_sranger_long (srcs_dir[0]);
 		dsp_scan.srcs_xm  = long_2_sranger_long (srcs_dir[1]);
 		

@@ -148,7 +148,7 @@ FEEDBACK_MIXER feedback_mixer = {
 
 /* Control, Analog and Counter signal management Module */
 ANALOG_VALUES    analog = {
-	VOLT2DAC (0.5),  // analog.bias = VOLT2DAC (0.5);
+        {VOLT2DAC (0.5), VOLT2DAC (0.5), VOLT2DAC (0.5), VOLT2DAC (0.5)},  // analog.bias = VOLT2DAC (0.5);
 	VOLT2DAC (0.0),  // motor = 0
 	//-----------------
 	{ OUT_MOD_INIT,
@@ -254,6 +254,7 @@ AREA_SCAN        scan = {
 		{ 0, 0 },  //      scan.fm_dzx, _dzy
 		2<<16,    //	scan.z_slope_max;
 		1,       //     scan.fast_return;
+                1,1,     //   scan.slow_down_factor, slow_down_2nd,
 		0x000A0A0A,  //	scan.gains XYZ = 0x000A0A0A; - / 10 (z) / 10 (y) / 10 (x)
 		{ 0,0,0 },    //	scan.XYZpos[]  = 0;
 		{ 0,0 },    //	scan.XYpos_r[]  = 0;
@@ -263,12 +264,13 @@ AREA_SCAN        scan = {
 		0,    //	scan.iiy    = 0;
 		0,    //	scan.ix    = 0;
 		0,    //	scan.iy    = 0;
-		1,0,  //        scan.slow_down_factor, iiix;
+		0,  //       iiix;
 		0,    //        scan.ifr
 		0, 0, 0, 0 , // src_input[4]; 
 		0,    //	scan.sstate = 0;
 		{ 1<<31 ,0,    //  scan.rotmatrix: protected operating copy
 		  0, 1<<31 },  //
+                0,    // section
 		0     //	scan.pflg = 0;
 };
 

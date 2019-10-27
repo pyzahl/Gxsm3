@@ -46,6 +46,7 @@
 
 #define EN_PROBE_TRIGGER      0x0008
 
+
 extern SPM_STATEMACHINE state;
 extern FEEDBACK_MIXER   feedback_mixer;
 extern SERVO            z_servo;
@@ -103,7 +104,7 @@ DSP_INT32 rt_fifo_push_data[17][RT_FIFO_MASK+1];
 #define BZ_PUSH_MODE_32_FINISH  0x3f000000UL // finish up with Full Zero 32 bit record of max length as AS-END mark.
 DSP_UINT32 bz_push_mode;
 
-DSP_INT16 *Z_data_buffer;
+DSP_INT32 *Z_data_buffer;
 
 /* Scan Control States */
 #define AS_READY    0
@@ -114,6 +115,18 @@ DSP_INT16 *Z_data_buffer;
 #define AS_SCAN_YM  5
 #define AS_SCAN_2ND_XP  6
 #define AS_SCAN_2ND_XM  7
+
+// to control (Z-)Servo manually for 2nd line scan modes
+
+inline void run_servo_manual (SERVO *servo, DSP_INT32 set){
+	long long tmp;
+        servo->i_sum = set;
+	tmp = set;
+	// make both output polarities available
+	servo->control = _SAT32 (tmp);
+	servo->neg_control = _SAT32 (-tmp);
+}
+
 
 #if 0  // --- same function available via PAC_pll lib as SineSDB()
 // NEW with 2f: void SineSDB(int *cr, int *ci, int *cr2, int *ci2, int deltasRe, int deltasIm)
@@ -298,7 +311,7 @@ void init_area_scan (){
 		init_probe_fifo (); // reset probe fifo once at start!
 
 		scan.stop  = 0;
-		scan.slow_down_factor = scan.start > 0 ? scan.start : 1; // 1 normally, >1 for slow down
+		// scan.slow_down_factor = scan.start > 0 ? scan.start : 1; // 1 normally, >1 for slow down
                 m = AREA_SCAN_RUN | AREA_SCAN_START_NORMAL;
                 if (scan.start < 0){
                         m = -scan.start; // ..START_NORMAL normal vector scan, linear X ramp, ..START_FAST_SCAN: fast mode, sine generator for X "ramp" 
@@ -349,10 +362,11 @@ void init_area_scan (){
 
 		bz_init();
 
-		Z_data_buffer = prbdf; // using probe buffer -- shared!
+		Z_data_buffer = (DSP_INT32*)prbdf; // using probe buffer -- shared!
 
 		// enable subtask
 		scan.sstate = AS_MOVE_XY;
+                scan.section=0;
 		scan.pflg  = m;
 	}
 }
@@ -373,6 +387,7 @@ void finish_area_scan (){
 		bz_push (i, 0);
 	scan.sstate = AS_READY;
 	scan.pflg = 0;
+        scan.section=0;
 }
 
 void clear_summing_data (){
@@ -577,7 +592,10 @@ void run_area_scan (){
 	case AS_SCAN_XP: // "X+" -> scan and dataaq.
 		if (--scan.iiix > 0)
 			break;
-                scan.iiix = scan.slow_down_factor;
+                if (AS_ch2nd_constheight_enabled)
+                        scan.iiix = scan.slow_down_factor_2nd;
+                else
+                        scan.iiix = scan.slow_down_factor;
 
 		if (scan.iix < scan.dnx)
 			integrate_as_data_srcs (scan.srcs_xp);
@@ -602,11 +620,12 @@ void run_area_scan (){
 				scan.iix  = scan.dnx-1;
 				
 				if (AS_ch2nd_constheight_enabled){
-//**** FIX!				feedback.z = _sadd (Z_data_buffer [scan.ix & Z_DATA_BUFFER_MASK], scan.Zoff_2nd_xp); // use memorized ZA profile + offset
+                                        // use memorized ZA profile + offset
+                                        run_servo_manual (&z_servo, _sadd (Z_data_buffer [scan.ix & Z_DATA_BUFFER_MASK], scan.Zoff_2nd_xp));
 					push_area_scan_data (scan.srcs_2nd_xp); // get 2nd XP data here!
 				}else{
 					if (AS_ch2nd_scan_switch == AS_SCAN_2ND_XP) // only if enabled 2nd scan line mode
-						Z_data_buffer [scan.ix & Z_DATA_BUFFER_MASK] = z_servo.control; // memorize Z profile
+						Z_data_buffer [scan.ix & Z_DATA_BUFFER_MASK] = z_servo.i_sum; // memorize Z profile
 
 					push_area_scan_data (scan.srcs_xp); // get XP data here!
 				}
@@ -619,6 +638,7 @@ void run_area_scan (){
 				else
 					scan.sstate = AS_SCAN_XM;
 				clear_summing_data ();
+                                ++scan.section; // next bias is list
 			}
 			scan.cfs_dx = scan.fs_dx;
 		}
@@ -653,7 +673,8 @@ void run_area_scan (){
 					scan.iix   = scan.dnx-1;
 					
 					if (AS_ch2nd_constheight_enabled){
-// FIX!!!!					feedback.z = _sadd (Z_data_buffer [(scan.nx-scan.ix-1) & Z_DATA_BUFFER_MASK], scan.Zoff_2nd_xm); // use memorized ZA profile + offset
+                                                // use memorized ZA profile + offset
+                                                run_servo_manual (&z_servo, _sadd (Z_data_buffer [(scan.nx-scan.ix-1) & Z_DATA_BUFFER_MASK], scan.Zoff_2nd_xm));
 						push_area_scan_data (scan.srcs_2nd_xm); // get 2nd XP data here!
 					}else{
 						push_area_scan_data (scan.srcs_xm); // get XM data here!
@@ -668,9 +689,10 @@ void run_area_scan (){
 					scan.cfs_dy = scan.fs_dy;
 					if (AS_ch2nd_constheight_enabled) {
 						scan.sstate = AS_SCAN_YP;
-						AS_ch2nd_constheight_enabled = 0;  // disable now
-					}else
+						AS_ch2nd_constheight_enabled = 0;  // disable now, start normal
+					}else{
 						scan.sstate = AS_ch2nd_scan_switch; // switch to next YP or 2nd stage scan line
+                                        }
 				}
 				scan.cfs_dx = scan.fs_dx;
 			}
@@ -686,6 +708,7 @@ void run_area_scan (){
 		scan.iix = scan.dnx + PIPE_LEN;
 		scan.cfs_dx = scan.fs_dx;
 		scan.sstate = AS_SCAN_XP;
+                scan.section++; // next bias section
 		clear_summing_data ();
 		break;
 	case AS_SCAN_2ND_XM: // configure 2nd XP scan
@@ -698,6 +721,7 @@ void run_area_scan (){
 		clear_summing_data ();
 		break;
 	case AS_SCAN_YP: // "Y+" next line (could be Y-up or Y-dn, dep. on sign. of fs_dy!)
+                scan.section=0; // reset section to default bias
 		if (scan.iiy--){
 //			scan.xyz_vec[i_Y] -= scan.fs_dy;
 			scan.xyz_vec[i_Y] = _SSUB32 (scan.xyz_vec[i_Y], scan.cfs_dy);
