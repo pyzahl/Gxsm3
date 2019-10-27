@@ -198,7 +198,7 @@ public:
 	
 	void conv_dsp_analog ();
 	virtual void read_dsp_analog (); // bias
-	virtual void write_dsp_analog (double bias, double motor) ;
+	virtual void write_dsp_analog (double bias[4], double motor) ;
 
 	void conv_dsp_scan ();
 	virtual void read_dsp_scan (gint32 &pflg);

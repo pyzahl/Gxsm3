@@ -145,7 +145,7 @@ public:
 		      double setpoint_zpos, double z_servo[3], double m_servo[3], double pllref=0.) {};
 	
 	virtual void read_dsp_analog () {}; // bias
-	virtual void write_dsp_analog (double bias, double motor) {};
+	virtual void write_dsp_analog (double bias[4], double motor) {};
 
 	virtual void read_dsp_scan (gint32 &pflg) {};
 	virtual void write_dsp_scan () {};

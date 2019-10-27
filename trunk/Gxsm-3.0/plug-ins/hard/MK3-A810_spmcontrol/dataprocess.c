@@ -236,6 +236,16 @@ inline void run_servo_timestep (SERVO *servo){
 	servo->watch = 1;
 }
 
+/* --> moved to areascan
+inline void run_servo_manual (SERVO *servo, DSP_INT32 set){
+	long long tmp;
+        servo->i_sum = set;
+	tmp = set;
+	// make both output polarities available
+	servo->control = _SAT32 (tmp);
+	servo->neg_control = _SAT32 (-tmp);
+}
+*/
 
 /* generic analog out mixer used for most channels */
 inline void compute_analog_out (int ch, OUT_MIXER *out){

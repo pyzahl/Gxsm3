@@ -51,8 +51,6 @@
 //#include "xsm_mkicons.h"
 //#include "app_mkicons.h"
 
-#define SET_CHANNEL_SCAN_MODE(X, M) X = ((X) > 0 ? M : -M)
-
 #define CHMAX (1+4*PIDCHMAX+4*DAQCHMAX)
 
 const gchar *MathErrString[] = {
@@ -81,6 +79,7 @@ Surface::Surface() : Xsm(){
 		ChannelView[i] = ID_CH_V_GREY;
 		ChannelMode[i] = ID_CH_M_OFF;
 		ChannelScanMode[i] = ID_CH_M_OFF;
+                ChannelScanDir[i] = ID_CH_D_P;
                 ChannelASflag[i] = 1;
 	}
 	SetRedraw();
@@ -173,23 +172,7 @@ int Surface::GetVM (){
 // ScanMode signum: scan dir
 int Surface::SetSDir(int Channel, int choice){
 	if(Channel < 0 || Channel >= MAX_CHANNELS) return -1;
-	if(abs(ChannelScanMode[Channel]) == ID_CH_M_OFF) return -1;
-	switch(choice){
-	case ID_CH_D_P:
-		ChannelScanMode[Channel] = abs(ChannelScanMode[Channel]);
-		break;
-	case ID_CH_D_M:
-		ChannelScanMode[Channel] = -abs(ChannelScanMode[Channel]);
-		break;
-	case ID_CH_D_2ND_P:
-		ChannelScanMode[Channel] = ID_CH_M_2ND_OFFSET + abs(ChannelScanMode[Channel]);
-		break;
-	case ID_CH_D_2ND_M:
-		ChannelScanMode[Channel] = -ID_CH_M_2ND_OFFSET -abs(ChannelScanMode[Channel]);
-		break;
-	}
-	XSM_DEBUG (DBG_L2, "Surface::SetSDir: " << Channel << " " << choice << " ChScM: " << ChannelScanMode[Channel]);
-
+        ChannelScanDir[Channel] = choice;
 	return 0;
 }
 
@@ -214,7 +197,7 @@ int Surface::SetMode(int Channel, int choice, int force){
 			ChannelMode[Channel] = choice;
                         if (    ChannelScanMode[Channel] == ID_CH_M_MATH
                             || -ChannelScanMode[Channel] == ID_CH_M_MATH) // new 20170912, fixed MATH channel assignments issue
-                                SET_CHANNEL_SCAN_MODE(ChannelScanMode[Channel], choice);
+                                ChannelScanMode[Channel] = choice;
 		}
 		else{
 			gapp->channelselector->SetMode(Channel, ID_CH_M_OFF);
@@ -240,29 +223,32 @@ int Surface::SetMode(int Channel, int choice, int force){
 						MasterScan = NULL;
 					delete scan[Channel];
 					scan[Channel] = NULL;
-					SET_CHANNEL_SCAN_MODE(ChannelScanMode[Channel], choice);
+					ChannelScanMode[Channel] = choice;
                                         gapp->channelselector->SetInfo (Channel, "-");
 
 				}else{ // locked and in used ...
 					ChannelMode[Channel] = ID_CH_M_ON;
-					SET_CHANNEL_SCAN_MODE(ChannelScanMode[Channel], ID_CH_M_ON);
+					ChannelScanMode[Channel] = ID_CH_M_ON;
 				}
 			}
 		break;
 	case ID_CH_M_X:
-		SET_CHANNEL_SCAN_MODE(ChannelScanMode[Channel], choice);
+                ChannelScanMode[Channel] = choice;
                 gapp->channelselector->SetInfo (Channel, "X source");
 		break;
 	case ID_CH_M_MATH:
-		SET_CHANNEL_SCAN_MODE(ChannelScanMode[Channel], choice);
+                ChannelScanMode[Channel] = choice;
                 gapp->channelselector->SetInfo (Channel, "Math target");
 		break;
 	default:
 		if(choice > ID_CH_M_X){
-			SET_CHANNEL_SCAN_MODE(ChannelScanMode[Channel], choice);
+                        ChannelScanMode[Channel] = choice;
+                        gapp->channelselector->SetInfo (Channel, "New scan source");
 		}
-		else
+		else{
 			XSM_DEBUG (DBG_L2, "Surface::SetMode: wrong Mode !");
+                        gapp->channelselector->SetInfo (Channel, "error set mode");
+                }
 		break;
 	}
 	gapp->channelselector->SetMode(Channel, ChannelMode[Channel]);
@@ -340,20 +326,19 @@ int Surface::ActivateChannel(int NewActiveChannel){
 }
 
 // Service Fkt, suche Channel Nr. mit fid als ID
-int Surface::FindChan(int fid, int start){
+int Surface::FindChan(int fid, int dir, int start){
 	int i;
 	for(i=start; i<MAX_CHANNELS; i++){
-		if(ChannelMode[i] == fid){
+		if(dir < 0 && ChannelMode[i] == fid){
 			//      XSM_DEBUG (DBG_L2, "Surface::FindChan ID=" << fid << " => Match #" << i);
 			return i;
-		}
-		else
-			if(fid != ID_CH_M_OFF && ChannelScanMode[i] == fid){
-				//	XSM_DEBUG (DBG_L2, "Surface::FindChan ID=" << fid << " => Match #" << i);
-				ChannelMode[i] = abs(fid);
-				gapp->channelselector->SetMode(i, abs(fid));
-				return i;
-			}
+		}                
+                if(fid != ID_CH_M_OFF && dir >= 0 && ChannelScanMode[i] == fid && ChannelScanDir[i] == dir){
+                        //	XSM_DEBUG (DBG_L2, "Surface::FindChan ID=" << fid << " => Match #" << i);
+                        ChannelMode[i] = abs(fid);
+                        gapp->channelselector->SetMode(i, abs(fid)); // update to scan mode
+                        return i;
+                }
 	}
 
 	//  XSM_DEBUG (DBG_L2, "Surface::FindChan ID=" << fid << " No Match");
@@ -730,19 +715,23 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
 
 		// Auto check for all dataaq scans to save
 		for(i=0; i<PIDCHMAX; ++i){
-			Ch[si++] = FindChan(xsmres.pidchno[i]);
-			Ch[si++] = FindChan(-xsmres.pidchno[i]);
+			Ch[si++] = FindChan(xsmres.pidchno[i], ID_CH_D_P);
+			Ch[si++] = FindChan(xsmres.pidchno[i], ID_CH_D_M);
 		}
     
 		for(i=0; i<DAQCHMAX; ++i){
-			Ch[si++] = FindChan(xsmres.daqchno[i]);
-			Ch[si++] = FindChan(-xsmres.daqchno[i]);
+			Ch[si++] = FindChan(xsmres.daqchno[i], ID_CH_D_P);
+			Ch[si++] = FindChan(xsmres.daqchno[i], ID_CH_D_M);
 
-			Ch[si++] = FindChan(ID_CH_M_2ND_OFFSET+xsmres.daqchno[i]);
-			Ch[si++] = FindChan(-(ID_CH_M_2ND_OFFSET+xsmres.daqchno[i]));
+			Ch[si++] = FindChan(xsmres.daqchno[i], ID_CH_D_2ND_P);
+			Ch[si++] = FindChan(xsmres.daqchno[i], ID_CH_D_2ND_M);
 		}
     
-
+		for(i=0; i<4; ++i){
+			Ch[si++] = FindChan(xsmres.extchno[i], ID_CH_D_P);
+			Ch[si++] = FindChan(xsmres.extchno[i], ID_CH_D_M);
+                }
+                        
 		for(ii=si=0; si<CHMAX; si++) // prevent of saving a copy (active scan == XXX-Topo-Xp (etc.))!
 			if(Ch[0] == Ch[si]){ Ch[0] = -1; break; } // magic remove from list if already marked for saving!
 
@@ -997,13 +986,13 @@ int Surface::auto_append_in_time (double t){
 	
 	// Auto check for all dataaq scans to save
 	for(i=0; i<PIDCHMAX; ++i){
-		Ch[si++] = FindChan(xsmres.pidchno[i]);
-		Ch[si++] = FindChan(-xsmres.pidchno[i]);
+		Ch[si++] = FindChan(xsmres.pidchno[i], ID_CH_D_P);
+		Ch[si++] = FindChan(xsmres.pidchno[i], ID_CH_D_M);
 	}
 	
 	for(i=0; i<DAQCHMAX; ++i){
-		Ch[si++] = FindChan(xsmres.daqchno[i]);
-		Ch[si++] = FindChan(-xsmres.daqchno[i]);
+		Ch[si++] = FindChan(xsmres.daqchno[i], ID_CH_D_P);
+		Ch[si++] = FindChan(xsmres.daqchno[i], ID_CH_D_M);
 	}
 	
 //	for(i=1; i<si; i++) // remove duplicates if any
@@ -1408,7 +1397,7 @@ void Surface::MathOperation(gboolean (*MOp)(MATHOPPARAMS)){
         int start=0;
 	if(ActiveScan){ // ist ein Scan Active ? (als Quelle noeig)
                 do{
-                        if((ChDest=FindChan(ID_CH_M_MATH, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
+                        if((ChDest=FindChan(ID_CH_M_MATH, -1, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
                                 if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
                                         // alle belegt !!!
                                         XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
@@ -1461,7 +1450,7 @@ void Surface::MathOperationS(gboolean (*MOp)(MATHOPPARAMDONLY)){
         int start=0;
 
         do{
-                if((ChDest=FindChan(ID_CH_M_MATH, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
+                if((ChDest=FindChan(ID_CH_M_MATH, -1, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
                         if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // kein Math Scan, dann neuen anlegen, noch moelich ?
                                 // alle belegt !!!
                                 XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
@@ -1514,7 +1503,7 @@ void Surface::MathOperation_for_all_vt(gboolean (*MOp)(MATHOPPARAMS)){
 
 	if(ActiveScan){ // ist ein Scan Active ? (als Quelle noeig)
                 do{
-                        if((ChDest=FindChan(ID_CH_M_MATH, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
+                        if((ChDest=FindChan(ID_CH_M_MATH, -1, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
                                 if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
                                         // alle belegt !!!
                                         XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);
@@ -1641,7 +1630,7 @@ void Surface::MathOperationX(gboolean (*MOp)(MATH2OPPARAMS), int IdSrc2, gboolea
 					return;
 				}
                         do{
-                                if((ChDest=FindChan(ID_CH_M_MATH, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
+                                if((ChDest=FindChan(ID_CH_M_MATH, -1, start)) < 0){ // ist bereits ein Math Scan vorhanden ? (benutzen !)
                                         if((ChDest=FindChan(ID_CH_M_OFF)) < 0){ // keiner Math Scan, dann neuen anlegen, noch moelich ?
                                                 // alle belegt !!!
                                                 XSM_SHOW_ALERT(ERR_SORRY, ERR_NOFREECHAN,"",1);

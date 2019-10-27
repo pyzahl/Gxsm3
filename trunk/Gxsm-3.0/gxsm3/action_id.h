@@ -55,8 +55,6 @@ typedef enum {
     ID_CH_M_LAST 
 } CHANNEL_MODE_ACTIONS;
 
-#define ID_CH_M_2ND_OFFSET 0x100
-
 typedef enum {
     ID_CH_D_P,
     ID_CH_D_M,

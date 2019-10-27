@@ -903,6 +903,7 @@ DSPControl::DSPControl () {
         int i,j;
 	AmpIndex  AmpI;
 	GSList *multi_IVsec_list=NULL;
+	GSList *multi_Bias_list=NULL;
 	GSList *zpos_control_list=NULL;
 
         GtkWidget *notebook;
@@ -1021,6 +1022,7 @@ DSPControl::DSPControl () {
 	xrm.Get ("dynamic_zoom", &dynamic_zoom, "1.0");
 	xrm.Get ("fast_return", &fast_return, "1.0");
 	xrm.Get ("scan_forward_slow_down", &scan_forward_slow_down, "1.0");
+	xrm.Get ("scan_forward_slow_down_2nd", &scan_forward_slow_down_2nd, "1.0");
 	xrm.Get ("pre_points", &pre_points, "0");
 	xrm.Get ("x2nd_Zoff_XP", &x2nd_Zoff, "0");
 	xrm.Get ("center_return_flag", &center_return_flag, "1");
@@ -1092,6 +1094,8 @@ DSPControl::DSPControl () {
 
 	probe_trigger_raster_points = 0;
 
+        multiBias_mode=0;
+        
 	// STS I-V
 	xrm.Get ("Probing_IV_sections", &IV_sections, "1");
 	xrm.Get ("multiIV_mode", &multiIV_mode, "0");
@@ -1354,8 +1358,39 @@ DSPControl::DSPControl () {
         dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
         dsp_bp->ec->set_logscale_min (1e-3);
         gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
+        GtkWidget *multiBias_checkbutton = dsp_bp->grid_add_check_button ("Multi-Bias mode", "enable multi bias section mode", 1,
+                                                                          G_CALLBACK(DSPControl::DSP_multiBias_callback), this);
         dsp_bp->new_line ();
 
+        dsp_bp->grid_add_ec_with_scale ("Bias-S1", Volt, &bias_sec[1], -10., 10., "4g", 0.001, 0.01, "fbs-bias1");
+        multi_Bias_list = g_slist_prepend (multi_Bias_list, dsp_bp->label);
+        multi_Bias_list = g_slist_prepend (multi_Bias_list, dsp_bp->input);
+        multi_Bias_list = g_slist_prepend (multi_Bias_list, dsp_bp->scale);
+        //        dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_LOG_SYM | PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
+        dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
+        dsp_bp->ec->set_logscale_min (1e-3);
+        gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
+        dsp_bp->new_line ();
+        dsp_bp->grid_add_ec_with_scale ("Bias-S2", Volt, &bias_sec[2], -10., 10., "4g", 0.001, 0.01, "fbs-bias2");
+        multi_Bias_list = g_slist_prepend (multi_Bias_list, dsp_bp->label);
+        multi_Bias_list = g_slist_prepend (multi_Bias_list, dsp_bp->input);
+        multi_Bias_list = g_slist_prepend (multi_Bias_list, dsp_bp->scale);
+        //        dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_LOG_SYM | PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
+        dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
+        dsp_bp->ec->set_logscale_min (1e-3);
+        gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
+        dsp_bp->new_line ();
+        dsp_bp->grid_add_ec_with_scale ("Bias-S3", Volt, &bias_sec[3], -10., 10., "4g", 0.001, 0.01, "fbs-bias3");
+        multi_Bias_list = g_slist_prepend (multi_Bias_list, dsp_bp->label);
+        multi_Bias_list = g_slist_prepend (multi_Bias_list, dsp_bp->input);
+        multi_Bias_list = g_slist_prepend (multi_Bias_list, dsp_bp->scale);
+        //        dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_LOG_SYM | PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
+        dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
+        dsp_bp->ec->set_logscale_min (1e-3);
+        gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
+        dsp_bp->new_line ();
+
+        
         dsp_bp->set_configure_list_mode_on ();
         dsp_bp->grid_add_ec_with_scale ("Motor", Volt, &motor, -10., 10., "4g", 0.001, 0.01, "fbs-motor");
         dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LINEAR | PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
@@ -1440,53 +1475,6 @@ DSPControl::DSPControl () {
 
         dsp_bp->set_input_width_chars ();
         
-        PI_DEBUG (DBG_L4, "DSPC----FB-CONTROL -- INPUT-SRCS ----------------------------- ");
-
-	// SCAN CHANNEL INPUT SOURCE CONFIGURATION MENUS
-	if (sranger_common_hwi->check_pac() != -1) {
-                dsp_bp->pop_grid ();
-                dsp_bp->new_line ();
-                dsp_bp->new_grid_with_frame ("Scan Input Source Selection");
-
-                dsp_bp->set_configure_list_mode_on ();
-                dsp_bp->add_to_configure_list (dsp_bp->frame); // manage en block
-                dsp_bp->set_configure_list_mode_off ();
-        
-                dsp_bp->grid_add_label ("VP section");
-                dsp_bp->grid_add_label ("VP signal");
-                dsp_bp->grid_add_label ("... Signal Scan Sources Selections ...", NULL, 4);
-
-                dsp_bp->new_line ();
-
-                dsp_bp->set_input_width_chars (4);
-                dsp_bp->grid_add_ec (NULL, Unity, &DSP_vpdata_ij[0], 0, 7, ".0f", "fbs-vp-section");
-                dsp_bp->set_input_width_chars ();
-                
-		VPSig_menu = wid = gtk_combo_box_text_new ();
-		g_signal_connect (G_OBJECT (wid), "changed",
-				  G_CALLBACK (DSPControl::choice_vector_index_j_callback),
-				  this);
-
-		for (int j=0; j<8; j++) {
-			if (j<4){
-				int si = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE0_INPUT_ID+j);
-				{ gchar *id = g_strdup_printf ("%d", j); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, sranger_common_hwi->lookup_dsp_signal_managed (si)->label); g_free (id); }
-			} else 
-				switch (j){
-				case 4: { gchar *id = g_strdup_printf ("%d", j); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "Counter 0"); g_free (id); } break;
-				case 5: { gchar *id = g_strdup_printf ("%d", j); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "Counter 1"); g_free (id); } break;
-				default: { gchar *id = g_strdup_printf ("%d", j); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "NULL"); g_free (id); } break;
-				}
-		}
-		gtk_combo_box_set_active (GTK_COMBO_BOX (wid), DSP_vpdata_ij[1]);
-		dsp_bp->grid_add_widget (wid);
-
-                for (int i=0; i<4; ++i){
-                        dsp_bp->grid_add_scan_input_signal_options (i, scan_source[i], this);
-                        VPScanSrcVPitem[i] =  dsp_bp->wid;
-                }
-	}
-
         // Z-Servo
         dsp_bp->pop_grid ();
         dsp_bp->new_line ();
@@ -1557,31 +1545,6 @@ DSPControl::DSPControl () {
 //	dsp_bp->grid_add_ec_with_scale ("ScanSpdReal", Speed,  &scan_speed_x, 0., 1e9, "5g", 1., 10.,  RemoteEntryList, ec->Freeze (), , "fbs-scan-speed-real");
 //      dsp_bp->new_line ();
 
-        dsp_bp->set_configure_list_mode_on ();
-
-	LDC_status = dsp_bp->grid_add_check_button ("Enable Linear Drift Correction", NULL, 3);
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (LDC_status), 0);
-	ldc_flag = 0;
-	g_signal_connect (G_OBJECT (LDC_status), "clicked",
-			    G_CALLBACK (DSPControl::ldc_callback), this);
-
-	FastScan_status = dsp_bp->grid_add_check_button ("Enable Fast Scan", NULL, 3);
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(FastScan_status), 0);
-	fast_scan_flag = 0;
-	g_signal_connect (G_OBJECT (FastScan_status), "clicked",
-			    G_CALLBACK (DSPControl::fast_scan_callback), this);
-
-	if (sranger_common_hwi->check_pac() == -1) // MK3 only so far
-		gtk_widget_set_sensitive (FastScan_status, FALSE);
-
-        dsp_bp->new_line ();
-
-        // LDC settings
-	dsp_bp->grid_add_ec ("LDCdX", Speed, &dxdt, -100., 100., "5g", 0.001, 0.01, "fbs-scan-ldc-dx");
-        dsp_bp->grid_add_ec ("dY", Speed, &dydt, -100., 100., "5g", 0.001, 0.01, "fbs-scan-ldc-dy");
-        dsp_bp->grid_add_ec ("dZ", Speed, &dzdt, -100., 100., "5g", 0.001, 0.01, "fbs-scan-ldc-dz");
-
-        dsp_bp->set_configure_list_mode_off ();
 
 	// ======================================== Piezo Drive / Amplifier Settings
         dsp_bp->pop_grid ();
@@ -1940,9 +1903,10 @@ DSPControl::DSPControl () {
         dsp_bp->set_configure_list_mode_on ();
         dsp_bp->new_line ();
 	dsp_bp->grid_add_ec ("Pre Pts", Unity, &pre_points, 0, 100, "5g", "adv-scan-pre-pts");
-	dsp_bp->grid_add_ec ("XS 2nd ZOff", Angstroem, &x2nd_Zoff, -10000., 10000., ".2f", 1., 1., "adv-scan-xs2nd-z-offset");
+	dsp_bp->grid_add_ec ("Fwd Slow Down 2nd", Unity, &scan_forward_slow_down_2nd, 1, 32000, "5g", "adv-scan-fwd-slow-down-2nd");
         dsp_bp->new_line ();
 	dsp_bp->grid_add_ec ("Dyn Zoom", Unity, &dynamic_zoom, 0., 5., "5g", 0.01, 0.1,  "adv-scan-dyn-zoom");
+	dsp_bp->grid_add_ec ("XS 2nd ZOff", Angstroem, &x2nd_Zoff, -10000., 10000., ".2f", 1., 1., "adv-scan-xs2nd-z-offset");
         dsp_bp->new_line ();
         dsp_bp->set_configure_list_mode_off ();
 
@@ -1968,7 +1932,85 @@ DSPControl::DSPControl () {
                          G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
                          G_SETTINGS_BIND_DEFAULT);
 
+        PI_DEBUG (DBG_L4, "DSPC----FB-CONTROL -- INPUT-SRCS ----------------------------- ");
+
+	// SCAN CHANNEL INPUT SOURCE CONFIGURATION MENUS
+	if (sranger_common_hwi->check_pac() != -1) {
+                dsp_bp->pop_grid ();
+                dsp_bp->new_line ();
+                dsp_bp->new_grid_with_frame ("Scan Input Source Selection");
+
+                dsp_bp->set_configure_list_mode_on ();
+                dsp_bp->add_to_configure_list (dsp_bp->frame); // manage en block
+                dsp_bp->set_configure_list_mode_off ();
         
+                dsp_bp->grid_add_label ("VP section");
+                dsp_bp->grid_add_label ("VP signal");
+                dsp_bp->grid_add_label ("... Signal Scan Sources Selections ...", NULL, 4);
+
+                dsp_bp->new_line ();
+
+                dsp_bp->set_input_width_chars (4);
+                dsp_bp->grid_add_ec (NULL, Unity, &DSP_vpdata_ij[0], 0, 7, ".0f", "fbs-vp-section");
+                dsp_bp->set_input_width_chars ();
+                
+		VPSig_menu = wid = gtk_combo_box_text_new ();
+		g_signal_connect (G_OBJECT (wid), "changed",
+				  G_CALLBACK (DSPControl::choice_vector_index_j_callback),
+				  this);
+
+		for (int j=0; j<8; j++) {
+			if (j<4){
+				int si = sranger_common_hwi->query_module_signal_input(DSP_SIGNAL_VECPROBE0_INPUT_ID+j);
+				{ gchar *id = g_strdup_printf ("%d", j); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, sranger_common_hwi->lookup_dsp_signal_managed (si)->label); g_free (id); }
+			} else 
+				switch (j){
+				case 4: { gchar *id = g_strdup_printf ("%d", j); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "Counter 0"); g_free (id); } break;
+				case 5: { gchar *id = g_strdup_printf ("%d", j); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "Counter 1"); g_free (id); } break;
+				default: { gchar *id = g_strdup_printf ("%d", j); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), id, "NULL"); g_free (id); } break;
+				}
+		}
+		gtk_combo_box_set_active (GTK_COMBO_BOX (wid), DSP_vpdata_ij[1]);
+		dsp_bp->grid_add_widget (wid);
+
+                for (int i=0; i<4; ++i){
+                        dsp_bp->grid_add_scan_input_signal_options (i, scan_source[i], this);
+                        VPScanSrcVPitem[i] =  dsp_bp->wid;
+                }
+	}
+
+        // LDC -- Enable Linear Drift Correction -- Controls
+        dsp_bp->pop_grid ();
+        dsp_bp->new_line ();
+        dsp_bp->new_grid_with_frame ("Enable Linear Drift Correction (LDC)");
+        dsp_bp->set_configure_list_mode_on ();
+
+	LDC_status = dsp_bp->grid_add_check_button ("Enable Linear Drift Correction", NULL, 3);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (LDC_status), 0);
+	ldc_flag = 0;
+	g_signal_connect (G_OBJECT (LDC_status), "clicked",
+			    G_CALLBACK (DSPControl::ldc_callback), this);
+
+	FastScan_status = dsp_bp->grid_add_check_button ("Enable Fast Scan (sine)", NULL, 3);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(FastScan_status), 0);
+	fast_scan_flag = 0;
+	g_signal_connect (G_OBJECT (FastScan_status), "clicked",
+			    G_CALLBACK (DSPControl::fast_scan_callback), this);
+
+	if (sranger_common_hwi->check_pac() == -1) // MK3 only so far
+		gtk_widget_set_sensitive (FastScan_status, FALSE);
+
+        dsp_bp->new_line ();
+
+        // LDC settings
+	dsp_bp->grid_add_ec ("LDCdX", Speed, &dxdt, -100., 100., "5g", 0.001, 0.01, "fbs-scan-ldc-dx");
+        dsp_bp->grid_add_ec ("dY", Speed, &dydt, -100., 100., "5g", 0.001, 0.01, "fbs-scan-ldc-dy");
+        dsp_bp->grid_add_ec ("dZ", Speed, &dzdt, -100., 100., "5g", 0.001, 0.01, "fbs-scan-ldc-dz");
+
+        dsp_bp->set_configure_list_mode_off ();
+
+        
+
         dsp_bp->notebook_tab_show_all ();
         dsp_bp->pop_grid ();
 
@@ -1992,8 +2034,9 @@ DSPControl::DSPControl () {
 	dsp_bp->grid_add_ec ("Sections", Unity, &IV_sections, 1,6, "2g", "IV-Sections");
         GtkWidget *multiIV_checkbutton = dsp_bp->grid_add_check_button ("Multi-IV mode", "enable muli section IV curve mode", 1,
                                                                         G_CALLBACK(DSPControl::DSP_multiIV_callback), this, IV_sections-1);
-        dsp_bp->new_line ();
 
+        dsp_bp->new_line ();
+                
 	dsp_bp->grid_add_label ("IV Probe"); dsp_bp->grid_add_label ("Start"); dsp_bp->grid_add_label ("End");  dsp_bp->grid_add_label ("Points");
 	for (int i=0; i<6; ++i) {
                 dsp_bp->new_line ();
@@ -3061,9 +3104,11 @@ DSPControl::DSPControl () {
 	// save List away...
 	g_object_set_data( G_OBJECT (window), "DSP_EC_list", dsp_bp->get_ec_list_head ());
         g_object_set_data( G_OBJECT (multiIV_checkbutton), "DSP_multiIV_list", multi_IVsec_list);
+        g_object_set_data( G_OBJECT (multiBias_checkbutton), "DSP_multiBias_list", multi_Bias_list);
 	g_object_set_data( G_OBJECT (zposmon_checkbutton), "DSP_zpos_control_list", zpos_control_list);
 
         DSP_multiIV_callback (multiIV_checkbutton, this);
+        DSP_multiBias_callback (multiBias_checkbutton, this);
 
 	GUI_ready = TRUE;
 
@@ -3521,10 +3566,14 @@ double DSPControl::GetUserParam (gint n, gchar *id){
 }
 
 gint DSPControl::SetUserParam (gint n, gchar *id, double value){
+        double bias_list[4];
 	switch (n){
 	case 6: // ENERGY in V --> AIC6 
-		bias = value;
-		sranger_common_hwi->write_dsp_analog (bias, motor);
+                bias_list[0] = value;
+                bias_list[1] = value;
+                bias_list[2] = value;
+                bias_list[3] = value;
+		sranger_common_hwi->write_dsp_analog (bias_list, motor);
 		break;
 	case 10: { // GATETIME in ms
 		double gatetime = value*1e3; // value is in ms
@@ -3582,7 +3631,8 @@ void DSPControl::recalculate_dsp_scan_speed_parameters (gint32 &dsp_scan_dnx, gi
 		dsp_scan_fast_return = 1;
 	if (dsp_scan_fast_return > 10000)
 		dsp_scan_fast_return = 1;
-	
+
+       
 	dsp_scan_nx_pre = dsp_scan_dnx * pre_points;
 	
 	dsp_scan_fs_dy *= sranger_common_hwi->scan_direction;
@@ -3732,7 +3782,19 @@ void DSPControl::updateDSP(int FbFlg){
 	}
 
         // Update Bias, Motor in Analog section
-        sranger_common_hwi->write_dsp_analog (bias, motor);
+        double bias_list[4];
+        if (multiBias_mode){
+                bias_list[0] = bias;
+                bias_list[1] = bias_sec[1];
+                bias_list[2] = bias_sec[2];
+                bias_list[3] = bias_sec[3];
+        } else {
+                bias_list[0] = bias;
+                bias_list[1] = bias;
+                bias_list[2] = bias;
+                bias_list[3] = bias;
+        }
+        sranger_common_hwi->write_dsp_analog (bias_list, motor);
 
 	int addflag=FALSE;
 	if (fabs (ue_bias - bias) > 1e-6){
@@ -5309,6 +5371,18 @@ int DSPControl::callback_change_ABORT_auto_flags (GtkWidget *widget, DSPControl 
 	else
 		dspc->ABORT_auto_flags &= ~msk;
 
+        return 0;
+}
+
+int DSPControl::DSP_multiBias_callback (GtkWidget *widget, DSPControl *dspc){
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+		g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (widget), "DSP_multiBias_list"),
+				(GFunc) gtk_widget_show, NULL);
+	else
+		g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (widget), "DSP_multiBias_list"),
+				(GFunc) gtk_widget_hide, NULL);
+
+	dspc->multiBias_mode = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
         return 0;
 }
 

@@ -282,7 +282,7 @@ DSP_SIG dsp_signal_lookup[NUM_SIGNALS] = {
         MAKE_DSP_SIG_ENTRY (autoapp.count_axis[0], "Count Axis 0", "1",     1, "Coarse", "Coarse Step Counter Axis 0 (X)"), // 	DSP_SIG Count Axis [0]
         MAKE_DSP_SIG_ENTRY (autoapp.count_axis[1], "Count Axis 1", "1",     1, "Coarse", "Coarse Step Counter Axis 1 (Y)"), // 	DSP_SIG Count Axis [1]
         MAKE_DSP_SIG_ENTRY (autoapp.count_axis[2], "Count Axis 2", "1",     1, "Coarse", "Coarse Step Counter Axis 2 (Z)"), // 	DSP_SIG Count Axis [2]
-	MAKE_DSP_SIG_ENTRY (analog.bias,        "Bias",        "V", DSP32Qs15dot16TO_Volt, "Control", "DSP Bias Voltage reference following smoothly the Bias Adjuster"),  //   DSP_SIG control_Bias;
+	MAKE_DSP_SIG_ENTRY_VECTOR (4,analog.bias[0],        "Bias",        "V", DSP32Qs15dot16TO_Volt, "Control", "DSP Bias Voltage reference following smoothly the Bias Adjuster"),  //   DSP_SIG control_Bias;
 	MAKE_DSP_SIG_ENTRY (analog.bias_adjust, "Bias Adjust", "V", DSP32Qs15dot16TO_Volt, "Control", "Bias Adjuster (Bias Voltage) setpoint given by user interface"),  //   DSP_SIG adjusted_Bias;
 	MAKE_DSP_SIG_ENTRY (analog.motor,       "Motor",       "V", DSP32Qs15dot16TO_Volt, "Control", "Motor Voltage (auxillary output shared with PLL excitiation if PAC processing is enabled!)"), //	DSP_SIG control_Motor;
 	MAKE_DSP_SIG_ENTRY (analog.noise,       "Noise",        "1",                  1, "Control", "White Noise Generator"), // 	DSP_SIG value_NOISE;

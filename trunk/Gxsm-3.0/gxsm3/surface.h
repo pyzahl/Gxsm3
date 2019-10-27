@@ -78,7 +78,7 @@ public:
   Scan* NewScan(int vtype, int vflg, int ChNo, SCAN_DATA *vd);
   int  ActivateFreeChannel();
   int  ActivateChannel(int NewActiveChannel);
-  int  FindChan(int fid, int start=0);
+  int  FindChan(int fid, int dir=-1, int start=0);
 
   void CleanupProfiles();
   int AddProfile(gchar *filename);
@@ -111,6 +111,7 @@ public:
   int  MasterChannel;
   int  ChannelMode[MAX_CHANNELS];
   int  ChannelScanMode[MAX_CHANNELS];
+  int  ChannelScanDir[MAX_CHANNELS];
   int  ChannelView[MAX_CHANNELS];
   int  ChannelASflag[MAX_CHANNELS];
   Scan *scan[MAX_CHANNELS];

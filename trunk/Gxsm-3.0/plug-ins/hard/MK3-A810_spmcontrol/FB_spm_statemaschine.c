@@ -106,13 +106,13 @@ extern int bz_push_area_scan_data_out (void);
 /* #define AIC_OUT(N) iobuf.mout[N] */
 /* smoothly adjust bias - make sure |analog_bias| < 32766-BIAS_ADJUST_STEP !!  */
 inline void run_bias_adjust (){
-	if (analog.bias - BIAS_ADJUST_STEP > analog.bias_adjust){
+	if (analog.bias[scan.section] - BIAS_ADJUST_STEP > analog.bias_adjust){
 		analog.bias_adjust += BIAS_ADJUST_STEP;
 	}else{	
-		if (analog.bias + BIAS_ADJUST_STEP < analog.bias_adjust)
+		if (analog.bias[scan.section] + BIAS_ADJUST_STEP < analog.bias_adjust)
 			analog.bias_adjust -= BIAS_ADJUST_STEP;
 		else	
-			analog.bias_adjust = analog.bias;
+			analog.bias_adjust = analog.bias[scan.section];
 	}
 }
 
@@ -655,9 +655,10 @@ int idle_task_027(void){
 int idle_task_028(void){
         if (!probe.pflg){
                 /* (re) Adjust Bias, Zpos ? */
-                probe.Upos = analog.bias_adjust; // probe.Upos is default master for BIAS at all times, foolowing user control or VP comand
-                if (analog.bias_adjust != analog.bias){
-                        run_bias_adjust ();
+                probe.Upos = analog.bias_adjust; // probe.Upos is default master for BIAS at all times, following user control or VP comand
+                if (analog.bias_adjust != analog.bias[scan.section]){
+                        //run_bias_adjust ();
+			analog.bias_adjust = analog.bias[scan.section];
                         return 1;
                 }
                 if ((state.mode & MD_ZPOS_ADJUSTER) && probe.Zpos != 0){ // enable Zpos adjusting normally!
