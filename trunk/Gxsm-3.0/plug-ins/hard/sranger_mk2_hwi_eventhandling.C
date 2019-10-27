@@ -225,11 +225,18 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                 GPtrArray *glabarray = g_ptr_array_new ();
                 GPtrArray *gsymarray = g_ptr_array_new ();
 
+                int Xsrc=-1;
                 for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src){
-                        if (dspc->vis_Source & msklookup[src]){
+                        if (dspc->vis_PSource & msklookup[src] || dspc->vis_XSource & msklookup[src]){
                                 g_ptr_array_add (glabarray, (gpointer) dspc->vp_label_lookup (src));
                                 g_ptr_array_add (gsymarray, (gpointer) dspc->vp_unit_lookup (src));
                                 ++chunksize;
+                                //                                g_message ("PEV: %i #%i Lab:%s USym:%s <%c>", chunksize, src,
+                                //                                           (gpointer) dspc->vp_label_lookup (src), (gpointer) dspc->vp_unit_lookup (src),
+                                //                                           dspc->vis_PSource & msklookup[src]? 'Y' : dspc->vis_XSource & msklookup[src] ? 'X' : '?');
+                                if (Xsrc<0 && dspc->vis_XSource & msklookup[src]){
+                                        Xsrc = src; // used to map layer index to value
+                                }
                         }
                 }
 
@@ -244,8 +251,8 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                         ++src;
                         while (map == 0){
                                 if (src < MAX_NUM_CHANNELS){
-                                        if (msklookup[src]>=0)
-                                                if (dspc->vis_Source & msklookup[src]){
+                                        if (dspc->vis_PSource & msklookup[src] || dspc->vis_XSource & msklookup[src])
+                                                if (dspc->vis_PSource & msklookup[src]){
                                                         map = 1;
                                                         break;
                                                 }
@@ -254,7 +261,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                         break; // bail
                         }
                         
-                        if (map && (chmap = gapp->xsm->FindChan(xsmres.extchno[mapi])) >= 0){
+                        if (map && (chmap = gapp->xsm->FindChan(xsmres.extchno[mapi], ID_CH_D_P)) >= 0){
                                 mapping = true;
                                 if (gapp->xsm->scan[chmap]->data.s.dz < 0.){
                                         gchar *id = g_strconcat ("Map-", (const gchar*)g_ptr_array_index (glabarray,  mapi), NULL);
@@ -262,6 +269,12 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                                   (const gchar*)g_ptr_array_index (gsymarray,  mapi),
                                                                   (const gchar*)g_ptr_array_index (glabarray,  mapi),
                                                                   1.0, dspc->last_probe_data_index);
+                                        //                                        g_message ("MAPI: %i CH%i Lab:%s USym:%s LayerLookup:%s(%s)", mapi, chmap,
+                                        //                                                   (const gchar*)g_ptr_array_index (gsymarray,  mapi),
+                                        //                                                   (const gchar*)g_ptr_array_index (glabarray,  mapi),
+                                        //                                                   Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"N/A":(gpointer) dspc->vp_unit_lookup (Xsrc)
+                                        //                                                   );
+
                                         g_free (id);
                                 }
 
@@ -292,11 +305,15 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                 for (int i = 0; i < dspc->last_probe_data_index; i++){
                                         int j=0;
                                         if (i >=  gapp->xsm->scan[chmap]->mem2d->GetNv ()){ // auto range and sanity
-                                                gapp->xsm->scan[chmap]->mem2d->Resize (gapp->xsm->scan[chmap]->mem2d->GetNx (), gapp->xsm->scan[chmap]->mem2d->GetNy (), dspc->last_probe_data_index, ZD_DOUBLE, false);
-                                                gapp->xsm->scan[chmap]->mem2d->data->MkVLookup(0, dspc->last_probe_data_index-1);
+                                                gapp->xsm->scan[chmap]->mem2d->Resize (gapp->xsm->scan[chmap]->mem2d->GetNx (), gapp->xsm->scan[chmap]->mem2d->GetNy (),
+                                                                                       dspc->last_probe_data_index, ZD_DOUBLE, false);
                                         }
                                         gapp->xsm->scan[chmap]->mem2d->PutDataPkt (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), xi,yi,i);
+                                        if (Xsrc >= 0)
+                                                gapp->xsm->scan[chmap]->mem2d->data->SetVLookup(i, dspc->vp_scale_lookup (Xsrc) * g_array_index (garr [expdi_lookup[Xsrc]], double, i)); // update X lookup
                                 }
+                                if (Xsrc < 0)
+                                        gapp->xsm->scan[chmap]->mem2d->data->MkVLookup(0, dspc->last_probe_data_index-1); // use index
                                 
                                 gapp->xsm->scan[chmap]->draw ();
                         }

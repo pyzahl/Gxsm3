@@ -2261,7 +2261,11 @@ int Mem2d::GetLayerDataLineFrom(Point2D *start, Mem2d *Mob, SCAN_DATA *sdata_src
 		sdata_dest->s.dy = 1.;
 		sdata_dest->s.dz = sdata_src->s.dz;
 
-		data->MkXLookup (Mob->data->GetVLookup (0), Mob->data->GetVLookup (Mob->GetNv()-1));
+                if (1){ // always assume layer lookup is possibly non linear
+                        for (int i=0; i < Mob->GetNv(); ++i)
+                                data->SetXLookup (i, Mob->data->GetVLookup (i)); // remap Layer Lookup Value to X-Lookup
+                } else
+                        data->MkXLookup (Mob->data->GetVLookup (0), Mob->data->GetVLookup (Mob->GetNv()-1));
 		data->SetYLookup (iy, Mob->get_frame_time ());
 		sdata_dest->s.alpha = 0.;
 
