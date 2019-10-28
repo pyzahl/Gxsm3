@@ -213,11 +213,13 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
 	static ProfileControl *pc[MAX_NUM_CHANNELS][MAX_NUM_CHANNELS];
         static int last_x=-1, last_y=-1;
 	int popped=0;
+        gboolean resume_scan = false;
 	GArray **garr;
 	GArray **garr_hdr;
         
 	XSM_DEBUG_PG ("DSPControl::Probing_eventcheck_callback -- enter");
 
+        
 	// pop off all available data from stack
 	while ((garr = dspc->pop_probedata_arrays ()) != NULL){
                 garr_hdr = dspc->pop_probehdr_arrays ();
@@ -268,7 +270,14 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                         
                         if (map && (chmap = gapp->xsm->FindChan(xsmres.extchno[mapi], ID_CH_D_P)) >= 0){
                                 mapping = true;
+
+                                // need to (re) initialize scan map?
                                 if (gapp->xsm->scan[chmap]->data.s.dz < 0.){
+                                        if (!resume_scan){
+                                                // slow machines may need this, mem2d reinit may take longer then tolerated for data stream
+                                                gapp->xsm->hardware->PauseScan2D();
+                                                resume_scan = true;
+                                        }
                                         gchar *id = g_strconcat ("Map-", (const gchar*)g_ptr_array_index (glabarray,  mapi), NULL);
                                         Probing_event_setup_scan (chmap, "X+", id,
                                                                   (const gchar*)g_ptr_array_index (gsymarray,  mapi),
@@ -340,34 +349,61 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                         }
                                         
                                 }
-                                
-                                for (int i = 0; i < dspc->last_probe_data_index; i++){
-                                        int j=0;
-                                        if (i >=  gapp->xsm->scan[chmap]->mem2d->GetNv ()){ // auto range and sanity
-                                                gapp->xsm->scan[chmap]->mem2d->Resize (gapp->xsm->scan[chmap]->mem2d->GetNx (), gapp->xsm->scan[chmap]->mem2d->GetNy (),
-                                                                                       dspc->last_probe_data_index, ZD_DOUBLE, false);
-                                        }
-                                        if (trackx || xiD < 0 || yiD < 0 || xiD >= gapp->xsm->scan[chmap]->mem2d->GetNx () || yiD >= gapp->xsm->scan[chmap]->mem2d->GetNy ()){
-                                                if (last_y >= 0 && last_x >= 0 && last_x+1 < gapp->xsm->scan[chmap]->mem2d->GetNx ()){
-                                                        if (fabs(last_x - xi) < 2 && fabs(last_y - yi) < 2){
-                                                                xi = last_x+1;
-                                                                yi = last_y;
-                                                        }
+
+                                if (dspc->last_probe_data_index >  gapp->xsm->scan[chmap]->mem2d->GetNv ()){ // auto range and sanity
+                                        gapp->xsm->scan[chmap]->mem2d->Resize (gapp->xsm->scan[chmap]->mem2d->GetNx (), gapp->xsm->scan[chmap]->mem2d->GetNy (),
+                                                                               dspc->last_probe_data_index, ZD_DOUBLE, false);
+                                }
+
+                                // Verify xy index coordinates
+                                int xip, yip;
+                                if (trackx || fabs(xiD - xi) > 3 || fabs(yiD - yi) > 3 || xiD < 0 || yiD < 0
+                                    || xiD >= gapp->xsm->scan[chmap]->mem2d->GetNx () || yiD >= gapp->xsm->scan[chmap]->mem2d->GetNy ()){
+
+                                        if (last_y >= 0 && last_x >= 0 && last_x+1 < gapp->xsm->scan[chmap]->mem2d->GetNx ()){
+                                                if (fabs(last_x - xi) < 2 && fabs(last_y - yi) < 2){
+                                                        xi = last_x+1;
+                                                        yi = last_y;
                                                 }
-                                                        
-                                                g_message ("Warning: no DSP digital coordinates available, using estimates: %d, %d", xi, yi);
-                                                if (xi >= 0 && yi > 0 && xi < gapp->xsm->scan[chmap]->mem2d->GetNx () && yi < gapp->xsm->scan[chmap]->mem2d->GetNy ())
-                                                        gapp->xsm->scan[chmap]->mem2d->PutDataPkt (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), xi,yi,i);
-                                        } else {
-                                                if (xiD >= 0 && yiD >= 0 && xiD < gapp->xsm->scan[chmap]->mem2d->GetNx () && yiD < gapp->xsm->scan[chmap]->mem2d->GetNy ())
-                                                        gapp->xsm->scan[chmap]->mem2d->PutDataPkt (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), xiD,yiD,i);
-                                                else
-                                                        g_message ("Warning: Coordinates out of scan, skipping. %d, %d", xiD, yiD);
                                         }
-                                        if (Xsrc >= 0)
+                                        g_message ("Warning: no good DSP digital coordinates available, using estimates: R %d, %d", xi, yi);
+
+                                        if (garr_hdr)
+                                        {
+                                                int i=0;
+                                                g_message ("P SEC HDR #%d :: i:%g, t:%g, X0:%g, Y0:%g, PHI:%g, XS:%g, YS:%g, ZS:%g, U:%g, S:%g",
+                                                           i,
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_INDEX], double, i),
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_TIME], double, i),
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i),
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i),
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_PHI], double, i),
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_XS], double, i),
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_YS], double, i),
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_ZS], double, i),
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_U], double, i),
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_SEC], double, i));
+                                        } else {
+                                                g_message ("No Probe HDR available.");
+                                        }
+
+                                        xip=xi; yip=yi;
+                                } else {
+                                        xip=xiD; yip=yiD;
+                                }
+                                // check and limit ranges
+                                if (xip < 0 || yip < 0 || xip >= gapp->xsm->scan[chmap]->mem2d->GetNx () || yip >= gapp->xsm->scan[chmap]->mem2d->GetNy ()){
+                                        g_message ("Warning: Coordinates (%d, %d) out of scan range. Mapping to 0,0.", xip, yip);
+                                        xip=0; yip=0;
+                                }
+                        
+                                // remap probe data data to scan mem2d buffer
+                                for (int i = 0; i < dspc->last_probe_data_index; i++){
+                                        gapp->xsm->scan[chmap]->mem2d->PutDataPkt (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), xip,yip,i);
+                                        if (Xsrc >= 0) // with X lookup
                                                 gapp->xsm->scan[chmap]->mem2d->data->SetVLookup(i, dspc->vp_scale_lookup (Xsrc) * g_array_index (garr [expdi_lookup[Xsrc]], double, i)); // update X lookup
                                 }
-                                if (Xsrc < 0)
+                                if (Xsrc < 0) // no X lookup, make index matching lookup
                                         gapp->xsm->scan[chmap]->mem2d->data->MkVLookup(0, dspc->last_probe_data_index-1); // use index
                                 
                                 gapp->xsm->scan[chmap]->draw ();
@@ -435,7 +471,11 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
 		if (gapp->xsm->MasterScan)
 			gapp->xsm->MasterScan->view->update_events ();
 
-	XSM_DEBUG_PG("DBG-M5");
+        // slow machines may need this while scan mem2d reinit.
+        if (resume_scan)
+                gapp->xsm->hardware->ResumeScan2D();
+
+        XSM_DEBUG_PG("DBG-M5");
 	XSM_DEBUG_PG ("DSPControl::Probing_eventcheck_callback -- exit");
 	return 0;
 }

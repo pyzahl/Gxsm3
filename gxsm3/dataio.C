@@ -283,14 +283,15 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 		  
 			XSM_DEBUG(DBG_L2, "getting array..." );
 			nc.get_var("value")->get (valuearr, scan->data.s.nvalues);
-			double va0=0.;
-                        gboolean make_vai=false;
+			//double va0=0.;
+                        //gboolean make_vai=false;
 			for(i=0; i<scan->data.s.nvalues; i++){
-                                if (i==1 && va0==valuearr[0])
-                                        make_vai=true;
-                                va0=valuearr[i];
-				scan->mem2d->data->SetVLookup(i, make_vai ? (double)i : valuearr[i]);
-				XSM_DEBUG_PLAIN (DBG_L3, valuearr[i] << " ");
+                                //if (i==1 && va0==valuearr[i])
+                                //        make_vai=true;
+                                //va0=valuearr[i];
+				//scan->mem2d->data->SetVLookup(i, make_vai ? (double)i : valuearr[i]);
+				scan->mem2d->data->SetVLookup(i, valuearr[i]);
+				//XSM_DEBUG_PLAIN (DBG_L3, valuearr[i] << " ");
 			}
 		  
 			XSM_DEBUG_PLAIN (DBG_L3, "done." );

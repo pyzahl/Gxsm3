@@ -1354,13 +1354,14 @@ DSPControl::DSPControl () {
         dsp_bp->start (); // start on grid top and use widget grid attach nx=4
         dsp_bp->set_scale_nx (4); // set scale width to 4
         dsp_bp->set_input_width_chars (10);
-        dsp_bp->grid_add_ec_with_scale ("Bias", Volt, &bias, -10., 10., "4g", 0.001, 0.01, "fbs-bias");
+        GtkWidget *multiBias_checkbutton = dsp_bp->grid_add_check_button ("Multi...  Bias", "enable multi bias section mode", 1,
+                                                                          G_CALLBACK(DSPControl::DSP_multiBias_callback), this);
+        dsp_bp->grid_add_ec_with_scale (NULL, Volt, &bias, -10., 10., "4g", 0.001, 0.01, "fbs-bias");
+        //dsp_bp->grid_add_ec_with_scale ("Bias", Volt, &bias, -10., 10., "4g", 0.001, 0.01, "fbs-bias");
         //        dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_LOG_SYM | PARAM_CONTROL_ADJUSTMENT_DUAL_RANGE | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
         dsp_bp->ec->SetScaleWidget (dsp_bp->scale, 0);
         dsp_bp->ec->set_logscale_min (1e-3);
         gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
-        GtkWidget *multiBias_checkbutton = dsp_bp->grid_add_check_button ("Multi-Bias mode", "enable multi bias section mode", 1,
-                                                                          G_CALLBACK(DSPControl::DSP_multiBias_callback), this);
         dsp_bp->new_line ();
 
         dsp_bp->grid_add_ec_with_scale ("Bias-S1", Volt, &bias_sec[1], -10., 10., "4g", 0.001, 0.01, "fbs-bias1");
@@ -2010,6 +2011,7 @@ DSPControl::DSPControl () {
 
         dsp_bp->set_configure_list_mode_off ();
 
+        dsp_bp->set_input_width_chars (8);
         
 
         dsp_bp->notebook_tab_show_all ();
@@ -4020,18 +4022,9 @@ void DSPControl::lockin_adjust_callback(Param_Control* pcs, gpointer data){
 
 int DSPControl::lockin_runfree_callback(GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L4, "%s \n",__FUNCTION__);
-	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))){
-		sranger_common_hwi->write_dsp_lockin_probe_final (
-			dspc->AC_amp, dspc->AC_frq, 
-			dspc->AC_phaseA, dspc->AC_phaseB,
-			dspc->AC_lockin_avg_cycels, dspc->FZ_limiter_val, 
-			dspc->noise_amp,
-			4) ; // PROBE_RUN_LOCKIN_FREE);
-//		sranger_common_hwi->dsp_lockin_state(1);
-		gchar *info = g_strdup_printf (" (%g Hz)", dspc->AC_frq);
-		dspc->AC_frq_ec->set_info (info);
-		g_free (info);
-	} else
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                sranger_common_hwi->dsp_lockin_state(1);
+	else
 		sranger_common_hwi->dsp_lockin_state(0);
 
 	return 0;
