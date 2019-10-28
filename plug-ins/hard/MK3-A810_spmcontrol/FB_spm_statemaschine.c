@@ -273,15 +273,13 @@ int idle_task_009(void){
                 return 1; // Stop/Cancel/Abort scan
         case AREA_SCAN_PAUSE:
                 scan.stop = 0;
-                if (scan.pflg){
-                        scan.pflg &= (AREA_SCAN_START_NORMAL|AREA_SCAN_START_FASTSCAN);
+                if (scan.pflg & AREA_SCAN_RUN){
                         STOP_RT_TASK (RT_TASK_AREA_SCAN);
                 }
                 return 1; // Pause Scan
         case AREA_SCAN_RESUME: 
                 scan.stop = 0;
-                if (scan.pflg & (AREA_SCAN_START_NORMAL|AREA_SCAN_START_FASTSCAN)){
-                        scan.pflg |= AREA_SCAN_RUN; 
+                if (scan.pflg & AREA_SCAN_RUN){
                         START_RT_TASK_EVEN (RT_TASK_AREA_SCAN);
                 }
                 return 1; // Resume Scan from Pause, else ignore

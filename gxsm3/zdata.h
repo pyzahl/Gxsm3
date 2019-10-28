@@ -224,7 +224,7 @@ public:
         inline int clampx (int x) { return x < 0 ? 0 : x >= nx ? nx-1 : x; };
         inline int clampy (int y) { return y < 0 ? 0 : y >= ny ? ny-1 : y; };
         inline int clampv (int v) { return v < 0 ? 0 : v >= nv ? nv-1 : v; };
-        
+
 protected:
 	int  ZResize(int Nx, int Ny, int Nv=0);
 	int  nx, ny, nv;

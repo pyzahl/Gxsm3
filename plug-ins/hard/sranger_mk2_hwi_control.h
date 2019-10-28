@@ -533,8 +533,10 @@ class DSPControl : public AppBase{
 	int probedata_length () { return current_probe_data_index; };
 	void push_probedata_arrays ();
 	GArray** pop_probedata_arrays ();
+	GArray** pop_probehdr_arrays ();
 	void init_probedata_arrays ();
 	static void free_probedata_array_set (GArray** garr, DSPControl *dc);
+	static void free_probehdr_array_set (GArray** garr, DSPControl *dc);
 	void free_probedata_arrays ();
 
 	int check_vp_in_progress (const gchar *extra_info=NULL);
@@ -642,6 +644,8 @@ class DSPControl : public AppBase{
 	GtkWidget *LDC_status;    //!< linear drift correction flag (on/off)
 	int    fast_scan_flag;    //!< Fast Scan flag
 	GtkWidget *FastScan_status;    //!< Fast Scan mode flag (on/off) -- Mk3 so far only
+        // -- DSP Scan DNX,DNY mirror
+        gint32 mirror_dsp_scan_dx32, mirror_dsp_scan_dy32;
 
 	Gtk_EntryControl *ZPos_ec;
         
@@ -817,6 +821,7 @@ class DSPControl : public AppBase{
 
 	// dynamic temporary probe data storage
 	GSList *probedata_list;
+	GSList *probehdr_list;
 	int num_probe_events;
 	// -- Array of full expanded probe data set
 #define NUM_PROBEDATA_ARRAYS 27

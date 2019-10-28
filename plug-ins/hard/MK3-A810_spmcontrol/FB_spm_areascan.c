@@ -312,26 +312,20 @@ void init_area_scan (){
 
 		scan.stop  = 0;
 		// scan.slow_down_factor = scan.start > 0 ? scan.start : 1; // 1 normally, >1 for slow down
-                m = AREA_SCAN_RUN | AREA_SCAN_START_NORMAL;
-                if (scan.start < 0){
-                        m = -scan.start; // ..START_NORMAL normal vector scan, linear X ramp, ..START_FAST_SCAN: fast mode, sine generator for X "ramp" 
-
-                        if (m & AREA_SCAN_START_FASTSCAN){ // init Sine generator, delatsRe/Im calculated by host, can be changed on line by line schedule
-                                AS_deltasRe = scan.Zoff_2nd_xp; // shared variables, no 2nd line mode in fast scan!
-                                AS_deltasIm = scan.Zoff_2nd_xm;
-                                // #define CPN(N) ((double)(1LL<<(N))-1.)
-                                // deltasRe = round (CPN(PREC) * cos (2.*M_PI*freq[0]/150000.)); -- here 2147483647 * cos (2pi/N), N=n*dnx*2+dny
-                                // deltasIm = round (CPN(PREC) * sin (2.*M_PI*freq[0]/150000.)); -- ... sin
-                                AS_cr = -2147483647; // staring sine at 6 O'Clock or at -1.00 or -(1<<31) int equiv.
-                                AS_ci = 0;
-                                AS_amplitude = (long long)((scan.dnx * scan.nx * scan.cfs_dx)>>1);
-                                AS_offset    = 0;
-                        }
-                }
-
-		// now starting...
+                m = scan.start;
 		scan.start = 0;
-		
+
+                if (m &  AREA_SCAN_RUN_FAST){
+                        AS_deltasRe = scan.Zoff_2nd_xp; // shared variables, no 2nd line mode in fast scan!
+                        AS_deltasIm = scan.Zoff_2nd_xm;
+                        // #define CPN(N) ((double)(1LL<<(N))-1.)
+                        // deltasRe = round (CPN(PREC) * cos (2.*M_PI*freq[0]/150000.)); -- here 2147483647 * cos (2pi/N), N=n*dnx*2+dny
+                        // deltasIm = round (CPN(PREC) * sin (2.*M_PI*freq[0]/150000.)); -- ... sin
+                        AS_cr = -2147483647; // staring sine at 6 O'Clock or at -1.00 or -(1<<31) int equiv.
+                        AS_ci = 0;
+                        AS_amplitude = (long long)((scan.dnx * scan.nx * scan.cfs_dx)>>1);
+                        AS_offset    = 0;
+                }
 		// calculate num steps to go to starting point -- done by host
 		
 		// init probe trigger count (-1 will disable it)
@@ -351,10 +345,6 @@ void init_area_scan (){
 			if (scan.nx < Z_DATA_BUFFER_SIZE)
 				AS_ch2nd_scan_switch = AS_SCAN_2ND_XP; // enable 2nd scan line mode
 		
-		//if ((scan.srcs_xp & 0x07000) || (scan.srcs_xm & 0x07000))  // setup LockIn job
-                //    init_lockin (PROBE_RUN_LOCKIN_SCAN);
-		
-		
 		if ((scan.srcs_xp & 0x08000) || (scan.srcs_xm & 0x08000)){ // if Counter channel requested, restart counter/timer now
 			analog.counter[0] = 0;
 			analog.counter[1] = 0;
@@ -364,7 +354,7 @@ void init_area_scan (){
 
 		Z_data_buffer = (DSP_INT32*)prbdf; // using probe buffer -- shared!
 
-		// enable subtask
+		// enable first subtask state for vector scan state machine
 		scan.sstate = AS_MOVE_XY;
                 scan.section=0;
 		scan.pflg  = m;
@@ -379,8 +369,6 @@ inline void area_scan_finished (){
 #pragma CODE_SECTION(finish_area_scan, ".text:slow")
 void finish_area_scan (){
 	int i;
-
-	//##stop_lockin (PROBE_RUN_LOCKIN_SCAN);
 
 	bz_push_mode = BZ_PUSH_MODE_32_FINISH;
 	for (i=0; i<BZ_MAX_CHANNELS; ++i)
@@ -769,22 +757,21 @@ void run_area_scan (){
 	case AS_MOVE_XY: // move-XY:  and Z -- init/finalize scan, move to start/end of scan position and generic tip positioning withing scan coordinates, 
 		// can be used with nx==0, then the job is finished after the xy move!!
 		if (scan.num_steps_move_xy){
+                        // MOVE XY
+                        scan.xyz_vec[i_X] = _SADD32 (scan.xyz_vec[i_X], scan.fm_dx);
+                        scan.xyz_vec[i_Y] = _SADD32 (scan.xyz_vec[i_Y], scan.fm_dy);
+                        // Z-ADJUST?
 			if (!(state.mode & MD_ZPOS_ADJUSTER)){ // is MOVE_XY Z allowed? Then may manipulate Zpos as well and store data
 				// optional (if fm_dz non Null) Z-pos manipulation within safe configurable guards
 				if (*probe.limiter_input < *probe.limiter_updn[0] && *probe.limiter_input > *probe.limiter_updn[1]){
-					scan.xyz_vec[i_X] = _SADD32 (scan.xyz_vec[i_X], scan.fm_dx);
-					scan.xyz_vec[i_Y] = _SADD32 (scan.xyz_vec[i_Y], scan.fm_dy);
 					probe.Zpos = _SADD32 (probe.Zpos, scan.fm_dz); // manipulate Z
 				}
 				push_area_scan_data (scan.srcs_xp); // now also store channel data along trajectory!
 				clear_summing_data ();
-			} else { // normal XY MOVE
-				scan.xyz_vec[i_X] = _SADD32 (scan.xyz_vec[i_X], scan.fm_dx);
-				scan.xyz_vec[i_Y] = _SADD32 (scan.xyz_vec[i_Y], scan.fm_dy);
 			}
 			scan.num_steps_move_xy--;
 		} else {
-			if (scan.nx == 0){ // was MOVE_XY only?, then done
+			if (scan.pflg & AREA_SCAN_MOVE_TIP){ // was MOVE_XY only?, then done
 				area_scan_finished ();
 			} else {
 				scan.sstate = AS_SCAN_XP;
@@ -917,7 +904,7 @@ void run_area_scan_fast (){
 			scan.xyz_vec[i_Y] = _SADD32 (scan.xyz_vec[i_Y], scan.fm_dy);
 			scan.num_steps_move_xy--;
 		} else {
-			if (scan.nx == 0){ // was MOVE_XY only?, then done
+			if (scan.pflg & AREA_SCAN_MOVE_TIP){ // was MOVE_XY only?, then done
 				area_scan_finished ();
 			} else {
 				scan.sstate = AS_SCAN_XP;

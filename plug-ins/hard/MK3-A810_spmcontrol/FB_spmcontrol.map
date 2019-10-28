@@ -1,7 +1,7 @@
 ******************************************************************************
                TMS320C6x Linker Unix v7.0.4                    
 ******************************************************************************
->> Linked Sat Oct 26 21:52:25 2019
+>> Linked Sun Oct 27 23:11:05 2019
 
 OUTPUT FILE NAME:   <FB_spmcontrol.out>
 ENTRY POINT SYMBOL: "_c_int00"  address: 10e0e500
@@ -11,7 +11,7 @@ MEMORY CONFIGURATION
 
          name            origin    length      used     unused   attr    fill
 ----------------------  --------  ---------  --------  --------  ----  --------
-  L2RAM                 10800000   00020000  0000a920  000156e0  RWIX
+  L2RAM                 10800000   00020000  0000a840  000157c0  RWIX
   L1PRAM_Vector         10e080a0   00000160  00000160  00000000  R  X
   L1PRAM_Kernel         10e08200   00000e00  00000000  00000e00  R  X
   L1PRAM                10e09000   00007000  00006d20  000002e0  R  X
@@ -35,49 +35,49 @@ SECTION ALLOCATION MAP
 section   page    origin      length       input sections
 --------  ----  ----------  ----------   ----------------
 .text:slow 
-*          0    10800000    00007f60     
+*          0    10800000    00007e80     
                   10800000    00002ce0     FB_spm.obj (.text:slow)
-                  10802ce0    00001a60     FB_spm_areascan.obj (.text:slow)
-                  10804740    00001460     FB_spm_probe.obj (.text:slow)
-                  10805ba0    00001360     FB_spm_statemaschine.obj (.text:slow)
-                  10806f00    00000680     FB_spm_autoapproach.obj (.text:slow)
-                  10807580    00000340     mcbsp_support.obj (.text:slow)
-                  108078c0    00000220     FB_spm_CoolRunner_puls.obj (.text:slow)
-                  10807ae0    000001c0     SR3_flash_support.obj (.text:slow)
-                  10807ca0    00000020     ReadWrite_GPIO.obj (.text:slow)
-                  10807cc0    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_bz_push_area_scan_data_out)
-                  10807ce0    00000020     FB_spm_offsetmove.obj ($Tramp$L$PI$$_run_offset_move)
-                  10807d00    00000020     spm_log.obj ($Tramp$L$PI$$_calc_mix_log)
-                  10807d20    00000020     FB_spm_offsetmove.obj ($Tramp$L$PI$$_init_offset_move)
-                  10807d40    00000020     dataprocess.obj ($Tramp$L$PI$$_copy32)
-                  10807d60    00000020     FB_spm_probe.obj ($Tramp$L$PI$$_next_section)
-                  10807d80    00000020     rts64plus.lib : imath64.obj ($Tramp$L$PI$$__divlli)
-                  10807da0    00000020                   : divi.obj ($Tramp$L$PI$$__divi)
-                  10807dc0    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_bz_push)
-                  10807de0    00000020     mcbsp_support.obj ($Tramp$L$PI$$_initiate_McBSP_transfer)
-                  10807e00    00000020     rts64plus.lib : negll.obj ($Tramp$L$PI$$__negll)
-                  10807e20    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_push_area_scan_data)
-                  10807e40    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_integrate_as_data_srcs)
-                  10807e60    00000020     PAC_pll.lib : SR3PRO_PLLAPI.obj ($Tramp$L$PI$$_SineSDB)
-                  10807e80    00000020     timerasm.obj ($Tramp$L$PI$$_wait)
-                  10807ea0    00000020     FB_spm_statemaschine.obj ($Tramp$L$PI$$_dsp_idle_loop)
-                  10807ec0    00000020     timerasm.obj ($Tramp$L$PI$$_TSCReadSecond)
-                  10807ee0    00000020     timerasm.obj ($Tramp$L$PI$$_TSCReadFirst)
-                  10807f00    00000020     timerasm.obj ($Tramp$L$PI$$_TSCInit)
-                  10807f20    00000020     SR3PRO_A810Driver.lib : SR3PRO_A810_Main.obj ($Tramp$L$PI$$_start_Analog810)
-                  10807f40    00000020                           : SR3PRO_A810_Main.obj ($Tramp$L$PI$$_stop_Analog810)
+                  10802ce0    00001980     FB_spm_areascan.obj (.text:slow)
+                  10804660    00001460     FB_spm_probe.obj (.text:slow)
+                  10805ac0    00001360     FB_spm_statemaschine.obj (.text:slow)
+                  10806e20    00000680     FB_spm_autoapproach.obj (.text:slow)
+                  108074a0    00000340     mcbsp_support.obj (.text:slow)
+                  108077e0    00000220     FB_spm_CoolRunner_puls.obj (.text:slow)
+                  10807a00    000001c0     SR3_flash_support.obj (.text:slow)
+                  10807bc0    00000020     ReadWrite_GPIO.obj (.text:slow)
+                  10807be0    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_bz_push_area_scan_data_out)
+                  10807c00    00000020     FB_spm_offsetmove.obj ($Tramp$L$PI$$_run_offset_move)
+                  10807c20    00000020     spm_log.obj ($Tramp$L$PI$$_calc_mix_log)
+                  10807c40    00000020     FB_spm_offsetmove.obj ($Tramp$L$PI$$_init_offset_move)
+                  10807c60    00000020     dataprocess.obj ($Tramp$L$PI$$_copy32)
+                  10807c80    00000020     FB_spm_probe.obj ($Tramp$L$PI$$_next_section)
+                  10807ca0    00000020     rts64plus.lib : imath64.obj ($Tramp$L$PI$$__divlli)
+                  10807cc0    00000020                   : divi.obj ($Tramp$L$PI$$__divi)
+                  10807ce0    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_bz_push)
+                  10807d00    00000020     mcbsp_support.obj ($Tramp$L$PI$$_initiate_McBSP_transfer)
+                  10807d20    00000020     rts64plus.lib : negll.obj ($Tramp$L$PI$$__negll)
+                  10807d40    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_push_area_scan_data)
+                  10807d60    00000020     FB_spm_areascan.obj ($Tramp$L$PI$$_integrate_as_data_srcs)
+                  10807d80    00000020     PAC_pll.lib : SR3PRO_PLLAPI.obj ($Tramp$L$PI$$_SineSDB)
+                  10807da0    00000020     timerasm.obj ($Tramp$L$PI$$_wait)
+                  10807dc0    00000020     FB_spm_statemaschine.obj ($Tramp$L$PI$$_dsp_idle_loop)
+                  10807de0    00000020     timerasm.obj ($Tramp$L$PI$$_TSCReadSecond)
+                  10807e00    00000020     timerasm.obj ($Tramp$L$PI$$_TSCReadFirst)
+                  10807e20    00000020     timerasm.obj ($Tramp$L$PI$$_TSCInit)
+                  10807e40    00000020     SR3PRO_A810Driver.lib : SR3PRO_A810_Main.obj ($Tramp$L$PI$$_start_Analog810)
+                  10807e60    00000020                           : SR3PRO_A810_Main.obj ($Tramp$L$PI$$_stop_Analog810)
 
 FIFO_DATA 
-*          0    10807f60    00002040     UNINITIALIZED
-                  10807f60    00002040     FB_spm.obj (FIFO_DATA)
+*          0    10807e80    00002040     UNINITIALIZED
+                  10807e80    00002040     FB_spm.obj (FIFO_DATA)
 
 .text:slow_PLL 
-*          0    10809fa0    000006c0     
-                  10809fa0    000006c0     PAC_pll.lib : SR3PRO_PLLAPI.obj (.text:slow_PLL)
+*          0    10809ec0    000006c0     
+                  10809ec0    000006c0     PAC_pll.lib : SR3PRO_PLLAPI.obj (.text:slow_PLL)
 
-asmA810    0    1080a660    000002c0     
-                  1080a660    000002a0     SR3PRO_A810Driver.lib : A810ISR_ASM.obj (asmA810)
-                  1080a900    00000020     dataprocess.obj ($Tramp$L$PI$$_dataprocess)
+asmA810    0    1080a580    000002c0     
+                  1080a580    000002a0     SR3PRO_A810Driver.lib : A810ISR_ASM.obj (asmA810)
+                  1080a820    00000020     dataprocess.obj ($Tramp$L$PI$$_dataprocess)
 
 .vectors   0    10e080a0    00000160     
                   10e080a0    00000160     vector.obj (.vectors)
@@ -216,105 +216,105 @@ callee name               trampoline name
    callee addr  tramp addr   call addr  call info
 --------------  -----------  ---------  ----------------
 $.text:slow:FB_spm_statemaschine.obj$0x1170  $Tramp$L$PI$$_run_next_sync_job_precision
-   10806d10     10e0cea0     10e0cdb8   FB_spm_statemaschine.obj (.text)
+   10806c30     10e0cea0     10e0cdb8   FB_spm_statemaschine.obj (.text)
                              10e0cde8   FB_spm_statemaschine.obj (.text)
 $.text:slow:mcbsp_support.obj$0x40  $Tramp$L$PI$$_InitMcBSP0_in_RP_FPGA_Mode
-   108075c0     10e0db80     10e0da78   mcbsp_support.obj (.text)
+   108074e0     10e0db80     10e0da78   mcbsp_support.obj (.text)
 $.text:slow:FB_spm_probe.obj$0x95c  $Tramp$L$PI$$_probe_append_header_and_positionvector
-   1080509c     10e0e660     10e0b250   FB_spm_probe.obj (.text)
+   10804fbc     10e0e660     10e0b250   FB_spm_probe.obj (.text)
 $.text:slow:FB_spm_probe.obj$0xd20  $Tramp$L$PI$$_next_track_vector
-   10805460     10e0e680     10e0b1ec   FB_spm_probe.obj (.text)
+   10805380     10e0e680     10e0b1ec   FB_spm_probe.obj (.text)
 $.text:slow:FB_spm_probe.obj$0x0  $Tramp$L$PI$$_store_probe_data_srcs
-   10804740     10e0e6a0     10e0b190   FB_spm_probe.obj (.text)
+   10804660     10e0e6a0     10e0b190   FB_spm_probe.obj (.text)
 $.text:slow:ReadWrite_GPIO.obj$0x0  $Tramp$L$PI$$_WR_GPIO
-   10807ca0     10e0e6c0     10e0b050   FB_spm_probe.obj (.text)
+   10807bc0     10e0e6c0     10e0b050   FB_spm_probe.obj (.text)
 $.text:slow:FB_spm_areascan.obj$0x0  $Tramp$L$PI$$_run_area_scan_fast
-   10802ce0     10e0e6e0     10e09960   dataprocess.obj (.text)
-$.text:slow:FB_spm_areascan.obj$0x64c  $Tramp$L$PI$$_run_area_scan
-   1080332c     10e0e700     10e09940   dataprocess.obj (.text)
+   10802ce0     10e0e6e0     10e09964   dataprocess.obj (.text)
+$.text:slow:FB_spm_areascan.obj$0x654  $Tramp$L$PI$$_run_area_scan
+   10803334     10e0e700     10e09948   dataprocess.obj (.text)
 $.text:slow:FB_spm_autoapproach.obj$0x5b0  $Tramp$L$PI$$_run_autoapp
-   108074b0     10e0e720     10e09418   dataprocess.obj (.text)
+   108073d0     10e0e720     10e09418   dataprocess.obj (.text)
 $.text:slow:FB_spm_CoolRunner_puls.obj$0x64  $Tramp$L$PI$$_run_CR_out_pulse
-   10807924     10e0e740     10e093f0   dataprocess.obj (.text)
+   10807844     10e0e740     10e093f0   dataprocess.obj (.text)
 $.text:FB_spm_areascan.obj$0xb48  $Tramp$L$PI$$_bz_push_area_scan_data_out
-   10e0c7c8     10807cc0     10806d08   FB_spm_statemaschine.obj (.text:slow)
+   10e0c7c8     10807be0     10806c28   FB_spm_statemaschine.obj (.text:slow)
 $.text:FB_spm_offsetmove.obj$0x0  $Tramp$L$PI$$_run_offset_move
-   10e0d240     10807ce0     10806ce0   FB_spm_statemaschine.obj (.text:slow)
+   10e0d240     10807c00     10806c00   FB_spm_statemaschine.obj (.text:slow)
 $.text:spm_log.obj$0x0    $Tramp$L$PI$$_calc_mix_log
-   10e0e640     10807d00     10806a50   FB_spm_statemaschine.obj (.text:slow)
-                             10806bac   FB_spm_statemaschine.obj (.text:slow)
+   10e0e640     10807c20     10806970   FB_spm_statemaschine.obj (.text:slow)
+                             10806acc   FB_spm_statemaschine.obj (.text:slow)
 $.text:FB_spm_offsetmove.obj$0x260  $Tramp$L$PI$$_init_offset_move
-   10e0d4a0     10807d20     1080692c   FB_spm_statemaschine.obj (.text:slow)
+   10e0d4a0     10807c40     1080684c   FB_spm_statemaschine.obj (.text:slow)
 $.text:dataprocess.obj$0x1a08  $Tramp$L$PI$$_copy32
-   10e0aa08     10807d40     108067a4   FB_spm_statemaschine.obj (.text:slow)
+   10e0aa08     10807c60     108066c4   FB_spm_statemaschine.obj (.text:slow)
 $.text:FB_spm_probe.obj$0x210  $Tramp$L$PI$$_next_section
-   10e0ac50     10807d60     10805848   FB_spm_probe.obj (.text:slow)
+   10e0ac50     10807c80     10805768   FB_spm_probe.obj (.text:slow)
 $.text:__divlli:rts64plus.lib<imath64.obj>$0x0  $Tramp$L$PI$$__divlli
-   10e0dd40     10807d80     108053f0   FB_spm_probe.obj (.text:slow)
-                             1080540c   FB_spm_probe.obj (.text:slow)
+   10e0dd40     10807ca0     10805310   FB_spm_probe.obj (.text:slow)
+                             1080532c   FB_spm_probe.obj (.text:slow)
 $.text:__divi:rts64plus.lib<divi.obj>$0x0  $Tramp$L$PI$$__divi
-   10e0df80     10807da0     108049f4   FB_spm_probe.obj (.text:slow)
-                             10804a84   FB_spm_probe.obj (.text:slow)
-                             10804ad4   FB_spm_probe.obj (.text:slow)
-                             10804b20   FB_spm_probe.obj (.text:slow)
-                             10804b70   FB_spm_probe.obj (.text:slow)
-                             10804bb8   FB_spm_probe.obj (.text:slow)
-                             10804c0c   FB_spm_probe.obj (.text:slow)
-                             10804c54   FB_spm_probe.obj (.text:slow)
-                             10804cac   FB_spm_probe.obj (.text:slow)
+   10e0df80     10807cc0     10804914   FB_spm_probe.obj (.text:slow)
+                             108049a4   FB_spm_probe.obj (.text:slow)
+                             108049f4   FB_spm_probe.obj (.text:slow)
+                             10804a40   FB_spm_probe.obj (.text:slow)
+                             10804a90   FB_spm_probe.obj (.text:slow)
+                             10804ad8   FB_spm_probe.obj (.text:slow)
+                             10804b2c   FB_spm_probe.obj (.text:slow)
+                             10804b74   FB_spm_probe.obj (.text:slow)
+                             10804bcc   FB_spm_probe.obj (.text:slow)
 $.text:FB_spm_areascan.obj$0x4f4  $Tramp$L$PI$$_bz_push
-   10e0c174     10807dc0     108046c4   FB_spm_areascan.obj (.text:slow)
-                             10804708   FB_spm_areascan.obj (.text:slow)
+   10e0c174     10807ce0     108045ec   FB_spm_areascan.obj (.text:slow)
+                             10804630   FB_spm_areascan.obj (.text:slow)
 $.text:mcbsp_support.obj$0x0  $Tramp$L$PI$$_initiate_McBSP_transfer
-   10e0d960     10807de0     10803e0c   FB_spm_areascan.obj (.text:slow)
-                             10805e2c   FB_spm_statemaschine.obj (.text:slow)
+   10e0d960     10807d00     10803db4   FB_spm_areascan.obj (.text:slow)
+                             10805d4c   FB_spm_statemaschine.obj (.text:slow)
 $.text:__negll:rts64plus.lib<negll.obj>$0x0  $Tramp$L$PI$$__negll
-   10e0e5e0     10807e00     108038ec   FB_spm_areascan.obj (.text:slow)
-                             10804180   FB_spm_areascan.obj (.text:slow)
+   10e0e5e0     10807d20     108038ec   FB_spm_areascan.obj (.text:slow)
+                             10804120   FB_spm_areascan.obj (.text:slow)
 $.text:FB_spm_areascan.obj$0x240  $Tramp$L$PI$$_push_area_scan_data
-   10e0bec0     10807e20     10802e80   FB_spm_areascan.obj (.text:slow)
-                             108030e4   FB_spm_areascan.obj (.text:slow)
+   10e0bec0     10807d40     10802e88   FB_spm_areascan.obj (.text:slow)
+                             108030ec   FB_spm_areascan.obj (.text:slow)
                              108038ac   FB_spm_areascan.obj (.text:slow)
                              10803918   FB_spm_areascan.obj (.text:slow)
-                             10803af4   FB_spm_areascan.obj (.text:slow)
-                             10803b24   FB_spm_areascan.obj (.text:slow)
-                             10804108   FB_spm_areascan.obj (.text:slow)
-                             108041b8   FB_spm_areascan.obj (.text:slow)
+                             10803ad0   FB_spm_areascan.obj (.text:slow)
+                             10803af8   FB_spm_areascan.obj (.text:slow)
+                             108040a8   FB_spm_areascan.obj (.text:slow)
+                             10804158   FB_spm_areascan.obj (.text:slow)
 $.text:FB_spm_areascan.obj$0x0  $Tramp$L$PI$$_integrate_as_data_srcs
-   10e0bc80     10807e40     10802e18   FB_spm_areascan.obj (.text:slow)
-                             10803074   FB_spm_areascan.obj (.text:slow)
-                             1080368c   FB_spm_areascan.obj (.text:slow)
+   10e0bc80     10807d60     10802e24   FB_spm_areascan.obj (.text:slow)
+                             10803078   FB_spm_areascan.obj (.text:slow)
+                             10803694   FB_spm_areascan.obj (.text:slow)
 $.text:fast_PLL:PAC_pll.lib<SR3PRO_PLLAPI.obj>$0xb84  $Tramp$L$PI$$_SineSDB
-   10e0f2e4     10807e60     10802d64   FB_spm_areascan.obj (.text:slow)
+   10e0f2e4     10807d80     10802d68   FB_spm_areascan.obj (.text:slow)
 $.text:timerasm.obj$0x0   $Tramp$L$PI$$_wait
-   10e0e140     10807e80     10802ad8   FB_spm.obj (.text:slow)
+   10e0e140     10807da0     10802ad8   FB_spm.obj (.text:slow)
                              10802b20   FB_spm.obj (.text:slow)
                              10802b88   FB_spm.obj (.text:slow)
                              10802bc0   FB_spm.obj (.text:slow)
                              10802bd4   FB_spm.obj (.text:slow)
-                             10807694   mcbsp_support.obj (.text:slow)
-                             108076ac   mcbsp_support.obj (.text:slow)
-                             108076c4   mcbsp_support.obj (.text:slow)
-                             10807718   mcbsp_support.obj (.text:slow)
+                             108075b4   mcbsp_support.obj (.text:slow)
+                             108075cc   mcbsp_support.obj (.text:slow)
+                             108075e4   mcbsp_support.obj (.text:slow)
+                             10807638   mcbsp_support.obj (.text:slow)
 $.text:FB_spm_statemaschine.obj$0x280  $Tramp$L$PI$$_dsp_idle_loop
-   10e0cbc0     10807ea0     10802a88   FB_spm.obj (.text:slow)
+   10e0cbc0     10807dc0     10802a88   FB_spm.obj (.text:slow)
 $.text:timerasm.obj$0x40  $Tramp$L$PI$$_TSCReadSecond
-   10e0e180     10807ec0     108029d0   FB_spm.obj (.text:slow)
+   10e0e180     10807de0     108029d0   FB_spm.obj (.text:slow)
 $.text:timerasm.obj$0x20  $Tramp$L$PI$$_TSCReadFirst
-   10e0e160     10807ee0     108029cc   FB_spm.obj (.text:slow)
+   10e0e160     10807e00     108029cc   FB_spm.obj (.text:slow)
 $.text:timerasm.obj$0xa0  $Tramp$L$PI$$_TSCInit
-   10e0e1e0     10807f00     108029c8   FB_spm.obj (.text:slow)
+   10e0e1e0     10807e20     108029c8   FB_spm.obj (.text:slow)
 $.text:SR3PRO_A810Driver.lib<SR3PRO_A810_Main.obj>$0x22c  $Tramp$L$PI$$_start_Analog810
-   10e0d0ec     10807f20     10800a90   FB_spm.obj (.text:slow)
+   10e0d0ec     10807e40     10800a90   FB_spm.obj (.text:slow)
                              10802a0c   FB_spm.obj (.text:slow)
-                             10805f20   FB_spm_statemaschine.obj (.text:slow)
-                             10806194   FB_spm_statemaschine.obj (.text:slow)
+                             10805e40   FB_spm_statemaschine.obj (.text:slow)
+                             108060b4   FB_spm_statemaschine.obj (.text:slow)
 $.text:SR3PRO_A810Driver.lib<SR3PRO_A810_Main.obj>$0x0  $Tramp$L$PI$$_stop_Analog810
-   10e0cec0     10807f40     10800a70   FB_spm.obj (.text:slow)
-                             10805eec   FB_spm_statemaschine.obj (.text:slow)
-                             10805f14   FB_spm_statemaschine.obj (.text:slow)
+   10e0cec0     10807e60     10800a70   FB_spm.obj (.text:slow)
+                             10805e0c   FB_spm_statemaschine.obj (.text:slow)
+                             10805e34   FB_spm_statemaschine.obj (.text:slow)
 $.text:dataprocess.obj$0x1564  $Tramp$L$PI$$_dataprocess
-   10e0a564     1080a900     1080a7f4   SR3PRO_A810Driver.lib : A810ISR_ASM.obj (asmA810)
+   10e0a564     1080a820     1080a714   SR3PRO_A810Driver.lib : A810ISR_ASM.obj (asmA810)
 
 
 GLOBAL SYMBOLS: SORTED ALPHABETICALLY BY Name 
@@ -353,7 +353,7 @@ address    name
 10f06e60   _CH2
 10f058dc   _CR_generic_io
 10f058b0   _CR_out_pulse
-1080a614   _ChangeFreqHL
+1080a534   _ChangeFreqHL
 10f06cf0   _ClipMax
 10f06ce0   _ClipMin
 10f06e68   _CoeffLog
@@ -362,7 +362,7 @@ address    name
 10f06c70   _CoeffTan_1High
 10f06c58   _CoeffTan_1Low
 10e0f704   _DataprocessPLL
-10807884   _DebugMcBSP0
+108077a4   _DebugMcBSP0
 10e0ea40   _DelayForRef
 10f06eb0   _FB_ReadAddress
 10f06eb4   _FB_WriteAddress
@@ -371,13 +371,13 @@ address    name
 10f06130   _GPIO_subsample
 10f06d00   _GainOutput
 10e0ceec   _InitDMA
-108075c0   _InitMcBSP0_in_RP_FPGA_Mode
+108074e0   _InitMcBSP0_in_RP_FPGA_Mode
 10f08410   _InputFiltered
 10f06c88   _InputRef1
 10f06d80   _InputRef1_2
 10f06ca0   _InputRef2
 10f06d98   _InputRef2_2
-1080a5cc   _LMSResponse_HL
+1080a4ec   _LMSResponse_HL
 10f08420   _LPSelect_Amp
 10f0841c   _LPSelect_Phase
 10e0d720   _LogFunctionASM
@@ -405,7 +405,7 @@ address    name
 10f06d40   _MemLL
 10f0845c   _MinTime
 10f08436   _Mode2F
-1080a564   _OutputSignalSetUp_HL
+1080a484   _OutputSignalSetUp_HL
 10e0f614   _PICorrector
 10e0f500   _PICorrectorAmp
 10f08380   _PI_Phase_Out
@@ -450,32 +450,32 @@ address    name
 10f08464   _QEP_ON
 10f06e38   _QEP_cnt
 10f06670   _QEP_cnt_old
-108077f4   _ResetMcBSP0
-1080a660   _SR3A810ISR
+10807714   _ResetMcBSP0
+1080a580   _SR3A810ISR
 10f06678   _SUM_QEP_cnt_Diff
-108075a0   _SetMcBSPclock
-10807580   _SetMcBSPwords
+108074c0   _SetMcBSPclock
+108074a0   _SetMcBSPwords
 80000000   _Signal1
 803d0900   _Signal2
 10f06d60   _SignalToFilter
 10f08418   _SineOut0
 10e0f2e4   _SineSDB
 10e0f1f0   _SquareRoot_SDB
-1080a0ac   _StartPLL
+10809fcc   _StartPLL
 10e0e1e0   _TSCInit
 10e0e160   _TSCReadFirst
 10e0e180   _TSCReadSecond
 10f08368   _Tau_PAC
 10f083f8   _TemLL
-1080a024   _TestAmpPIResp_HL
-10807be8   _TestFlash_HL
-10809fa0   _TestPhasePIResp_HL
+10809f44   _TestAmpPIResp_HL
+10807b08   _TestFlash_HL
+10809ec0   _TestPhasePIResp_HL
 10f08450   _TimerTemp
 10f05fb0   _VP_sec_count
 10f05ff0   _VP_sec_end_buffer
 10f05fa0   _VP_sec_int0
 10f05fa8   _VP_sec_int1
-10807ca0   _WR_GPIO
+10807bc0   _WR_GPIO
 10f06c44   _Z_data_buffer
 10f07ec0   __STACK_END
 00001000   __STACK_SIZE
@@ -528,9 +528,9 @@ ffffffff   ___pinit__
 10f08444   _b2
 10f08318   _blcklen
 10f066a4   _blcklen_mem
-10805348   _buffer_probe_section_end_data_srcs
+10805268   _buffer_probe_section_end_data_srcs
 10f067f0   _bz_byte_pos
-10804244   _bz_init
+108041e4   _bz_init
 10f067a8   _bz_last
 10e0c174   _bz_push
 10e0c7c8   _bz_push_area_scan_data_out
@@ -558,7 +558,7 @@ ffffffff   ___pinit__
 10f0836c   _d_mu_e
 10f0614c   _d_tmp
 10f05744   _data_sync_io
-10807f60   _datafifo
+10807e80   _datafifo
 10e0a564   _dataprocess
 10f08430   _delayRef
 10f08330   _deltaImT
@@ -591,57 +591,57 @@ ffffffff   ___pinit__
 10e0e060   _exit
 10f05268   _feedback_mixer
 10802410   _fill_magic
-108046c4   _finish_area_scan
-10807b88   _flash_erase
-10807b6c   _flash_read16
-10807b34   _flash_seek
-10807ae0   _flash_write16
+108045ec   _finish_area_scan
+10807aa8   _flash_erase
+10807a8c   _flash_read16
+10807a54   _flash_seek
+10807a00   _flash_write16
 10f06680   _gate_cnt
 10f06688   _gate_cnt_1
 10f06684   _gate_cnt_multiplier
 10f083dc   _icoef_Amp
 10f08388   _icoef_Phase
-10806d08   _idle_task_001
-10806cb4   _idle_task_002
-10806c30   _idle_task_003
-10806c2c   _idle_task_004
-10806b00   _idle_task_005
-108069a8   _idle_task_006
-10806950   _idle_task_007
-108068e8   _idle_task_008
-10806760   _idle_task_009
-10806534   _idle_task_010
-10806470   _idle_task_011
-108063d0   _idle_task_012
-108062e0   _idle_task_013
-108061c8   _idle_task_014
-10805e94   _idle_task_015
-10805e90   _idle_task_016
-10805e60   _idle_task_017
-10805de4   _idle_task_018
-10805de0   _idle_task_019
-10805dd8   _idle_task_020
-10805dd4   _idle_task_021
-10805dd0   _idle_task_022
-10805dcc   _idle_task_023
-10805dc8   _idle_task_024
-10805dc4   _idle_task_025
-10805dc0   _idle_task_026
-10805db8   _idle_task_027
-10805ce4   _idle_task_028
-10805ce0   _idle_task_029
-10805c20   _idle_task_030
-10805be4   _idle_task_031
-10805ba0   _idle_task_032
+10806c28   _idle_task_001
+10806bd4   _idle_task_002
+10806b50   _idle_task_003
+10806b4c   _idle_task_004
+10806a20   _idle_task_005
+108068c8   _idle_task_006
+10806870   _idle_task_007
+10806808   _idle_task_008
+10806680   _idle_task_009
+10806454   _idle_task_010
+10806390   _idle_task_011
+108062f0   _idle_task_012
+10806200   _idle_task_013
+108060e8   _idle_task_014
+10805db4   _idle_task_015
+10805db0   _idle_task_016
+10805d80   _idle_task_017
+10805d04   _idle_task_018
+10805d00   _idle_task_019
+10805cf8   _idle_task_020
+10805cf4   _idle_task_021
+10805cf0   _idle_task_022
+10805cec   _idle_task_023
+10805ce8   _idle_task_024
+10805ce4   _idle_task_025
+10805ce0   _idle_task_026
+10805cd8   _idle_task_027
+10805c04   _idle_task_028
+10805c00   _idle_task_029
+10805b40   _idle_task_030
+10805b04   _idle_task_031
+10805ac0   _idle_task_032
 10f04e40   _idle_task_list
-10807aa8   _init_CR_out_pulse
-10804340   _init_area_scan
-108074e0   _init_autoapp
-108058d0   _init_lockin
+108079c8   _init_CR_out_pulse
+108042e0   _init_area_scan
+10807400   _init_autoapp
+108057f0   _init_lockin
 10e0d4a0   _init_offset_move
-108057e0   _init_probe
-108057b8   _init_probe_fifo
-10805788   _init_probe_module
+10805700   _init_probe
+108056d8   _init_probe_fifo
+108056a8   _init_probe_module
 10e0d960   _initiate_McBSP_transfer
 10e0bc80   _integrate_as_data_srcs
 10e0aac4   _integrate_probe_data_srcs
@@ -664,7 +664,7 @@ ffffffff   ___pinit__
 10f05628   _move
 10e09000   _mul32
 10e0ac50   _next_section
-10805460   _next_track_vector
+10805380   _next_track_vector
 10f06d10   _offsetDisplay
 10f06d20   _outmix_display
 10f08310   _pSignal1
@@ -681,12 +681,12 @@ ffffffff   ___pinit__
 10f14000   _prbvh
 10f08360   _predict
 10f05760   _probe
-1080509c   _probe_append_header_and_positionvector
-10809f78   _probe_datafifo
-10805784   _probe_restore
-10805780   _probe_store
-10806ac8   _process_mode_clr
-10806aa4   _process_mode_set
+10804fbc   _probe_append_header_and_positionvector
+10809e98   _probe_datafifo
+108056a4   _probe_restore
+108056a0   _probe_store
+108069e8   _process_mode_clr
+108069c4   _process_mode_set
 10e0bec0   _push_area_scan_data
 10800000   _query_signal_input
 10f04e38   _randomnum
@@ -704,19 +704,19 @@ ffffffff   ___pinit__
 10f067f8   _rt_fifo_ix
 10f067fc   _rt_fifo_j
 10f06800   _rt_fifo_push_data
-10807924   _run_CR_out_pulse
-1080332c   _run_area_scan
+10807844   _run_CR_out_pulse
+10803334   _run_area_scan
 10802ce0   _run_area_scan_fast
-108074b0   _run_autoapp
+108073d0   _run_autoapp
 10e0b6c4   _run_lockin
 10e0cab0   _run_next_priority_job
 10e0c940   _run_next_sync_job
-10806d10   _run_next_sync_job_precision
+10806c30   _run_next_sync_job_precision
 10e0d240   _run_offset_move
 10e0af6c   _run_one_time_step
 10e0b560   _run_probe
-10807168   _run_tip_app
-10806fc0   _run_wave_play
+10807088   _run_tip_app
+10806ee0   _run_wave_play
 10f06148   _s_xymult
 10f0565c   _scan
 10f06690   _scnt
@@ -738,12 +738,12 @@ ffffffff   ___pinit__
 10f04ed0   _state
 10e0cec0   _stop_Analog810
 10800a6c   _stop_Analog810_HL
-108078c0   _stop_CR_out_pulse
-10806f00   _stop_autoapp
-10805324   _stop_lockin
-108051f4   _stop_probe
+108077e0   _stop_CR_out_pulse
+10806e20   _stop_autoapp
+10805244   _stop_lockin
+10805114   _stop_probe
 10800810   _store_configuration_to_flash
-10804740   _store_probe_data_srcs
+10804660   _store_probe_data_srcs
 10f0837c   _targetPhase
 10f08434   _testcodePLL
 10f06150   _tmp_hrbits
@@ -784,85 +784,85 @@ address    name
 10802c48   _dsp_590MHz
 10802c94   _configure_DSP_GP_PINS
 10802ce0   _run_area_scan_fast
-1080332c   _run_area_scan
-10804244   _bz_init
-10804340   _init_area_scan
-108046c4   _finish_area_scan
-10804740   _store_probe_data_srcs
-1080509c   _probe_append_header_and_positionvector
-108051f4   _stop_probe
-10805324   _stop_lockin
-10805348   _buffer_probe_section_end_data_srcs
-10805460   _next_track_vector
-10805780   _probe_store
-10805784   _probe_restore
-10805788   _init_probe_module
-108057b8   _init_probe_fifo
-108057e0   _init_probe
-108058d0   _init_lockin
-10805ba0   _idle_task_032
-10805be4   _idle_task_031
-10805c20   _idle_task_030
-10805ce0   _idle_task_029
-10805ce4   _idle_task_028
-10805db8   _idle_task_027
-10805dc0   _idle_task_026
-10805dc4   _idle_task_025
-10805dc8   _idle_task_024
-10805dcc   _idle_task_023
-10805dd0   _idle_task_022
-10805dd4   _idle_task_021
-10805dd8   _idle_task_020
-10805de0   _idle_task_019
-10805de4   _idle_task_018
-10805e60   _idle_task_017
-10805e90   _idle_task_016
-10805e94   _idle_task_015
-108061c8   _idle_task_014
-108062e0   _idle_task_013
-108063d0   _idle_task_012
-10806470   _idle_task_011
-10806534   _idle_task_010
-10806760   _idle_task_009
-108068e8   _idle_task_008
-10806950   _idle_task_007
-108069a8   _idle_task_006
-10806aa4   _process_mode_set
-10806ac8   _process_mode_clr
-10806b00   _idle_task_005
-10806c2c   _idle_task_004
-10806c30   _idle_task_003
-10806cb4   _idle_task_002
-10806d08   _idle_task_001
-10806d10   _run_next_sync_job_precision
-10806f00   _stop_autoapp
-10806fc0   _run_wave_play
-10807168   _run_tip_app
-108074b0   _run_autoapp
-108074e0   _init_autoapp
-10807580   _SetMcBSPwords
-108075a0   _SetMcBSPclock
-108075c0   _InitMcBSP0_in_RP_FPGA_Mode
-108077f4   _ResetMcBSP0
-10807884   _DebugMcBSP0
-108078c0   _stop_CR_out_pulse
-10807924   _run_CR_out_pulse
-10807aa8   _init_CR_out_pulse
-10807ae0   _flash_write16
-10807b34   _flash_seek
-10807b6c   _flash_read16
-10807b88   _flash_erase
-10807be8   _TestFlash_HL
-10807ca0   _WR_GPIO
-10807f60   _datafifo
-10809f78   _probe_datafifo
-10809fa0   _TestPhasePIResp_HL
-1080a024   _TestAmpPIResp_HL
-1080a0ac   _StartPLL
-1080a564   _OutputSignalSetUp_HL
-1080a5cc   _LMSResponse_HL
-1080a614   _ChangeFreqHL
-1080a660   _SR3A810ISR
+10803334   _run_area_scan
+108041e4   _bz_init
+108042e0   _init_area_scan
+108045ec   _finish_area_scan
+10804660   _store_probe_data_srcs
+10804fbc   _probe_append_header_and_positionvector
+10805114   _stop_probe
+10805244   _stop_lockin
+10805268   _buffer_probe_section_end_data_srcs
+10805380   _next_track_vector
+108056a0   _probe_store
+108056a4   _probe_restore
+108056a8   _init_probe_module
+108056d8   _init_probe_fifo
+10805700   _init_probe
+108057f0   _init_lockin
+10805ac0   _idle_task_032
+10805b04   _idle_task_031
+10805b40   _idle_task_030
+10805c00   _idle_task_029
+10805c04   _idle_task_028
+10805cd8   _idle_task_027
+10805ce0   _idle_task_026
+10805ce4   _idle_task_025
+10805ce8   _idle_task_024
+10805cec   _idle_task_023
+10805cf0   _idle_task_022
+10805cf4   _idle_task_021
+10805cf8   _idle_task_020
+10805d00   _idle_task_019
+10805d04   _idle_task_018
+10805d80   _idle_task_017
+10805db0   _idle_task_016
+10805db4   _idle_task_015
+108060e8   _idle_task_014
+10806200   _idle_task_013
+108062f0   _idle_task_012
+10806390   _idle_task_011
+10806454   _idle_task_010
+10806680   _idle_task_009
+10806808   _idle_task_008
+10806870   _idle_task_007
+108068c8   _idle_task_006
+108069c4   _process_mode_set
+108069e8   _process_mode_clr
+10806a20   _idle_task_005
+10806b4c   _idle_task_004
+10806b50   _idle_task_003
+10806bd4   _idle_task_002
+10806c28   _idle_task_001
+10806c30   _run_next_sync_job_precision
+10806e20   _stop_autoapp
+10806ee0   _run_wave_play
+10807088   _run_tip_app
+108073d0   _run_autoapp
+10807400   _init_autoapp
+108074a0   _SetMcBSPwords
+108074c0   _SetMcBSPclock
+108074e0   _InitMcBSP0_in_RP_FPGA_Mode
+10807714   _ResetMcBSP0
+108077a4   _DebugMcBSP0
+108077e0   _stop_CR_out_pulse
+10807844   _run_CR_out_pulse
+108079c8   _init_CR_out_pulse
+10807a00   _flash_write16
+10807a54   _flash_seek
+10807a8c   _flash_read16
+10807aa8   _flash_erase
+10807b08   _TestFlash_HL
+10807bc0   _WR_GPIO
+10807e80   _datafifo
+10809e98   _probe_datafifo
+10809ec0   _TestPhasePIResp_HL
+10809f44   _TestAmpPIResp_HL
+10809fcc   _StartPLL
+1080a484   _OutputSignalSetUp_HL
+1080a4ec   _LMSResponse_HL
+1080a534   _ChangeFreqHL
+1080a580   _SR3A810ISR
 10e09000   .text
 10e09000   ___text__
 10e09000   _mul32
