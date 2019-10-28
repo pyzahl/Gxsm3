@@ -211,13 +211,17 @@ int DSPControl::Probing_event_setup_scan (int ch,
 
 int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc){
 	static ProfileControl *pc[MAX_NUM_CHANNELS][MAX_NUM_CHANNELS];
+        static int last_x=-1, last_y=-1;
 	int popped=0;
 	GArray **garr;
+	GArray **garr_hdr;
         
 	XSM_DEBUG_PG ("DSPControl::Probing_eventcheck_callback -- enter");
 
 	// pop off all available data from stack
 	while ((garr = dspc->pop_probedata_arrays ()) != NULL){
+                garr_hdr = dspc->pop_probehdr_arrays ();
+        
 		++popped;
 
                 // find chunksize (total # data sources)
@@ -243,6 +247,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                 // auto decide on mapping mode -- direct data map to Scan-Channel or to Scan-Event
                 
                 gboolean mapping = false;
+                gboolean trackx = false;
                 int src=-1;
                 for(int mapi=0; mapi < 4; ++mapi){
                         int chmap;
@@ -274,7 +279,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                         //                                                   (const gchar*)g_ptr_array_index (glabarray,  mapi),
                                         //                                                   Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"N/A":(gpointer) dspc->vp_unit_lookup (Xsrc)
                                         //                                                   );
-
+                                        last_x=-1, last_y=-1; // reset
                                         g_free (id);
                                 }
 
@@ -291,7 +296,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                 continue;
                                         }
                                         sec = s; bi = bsi;
-                                        
+                                       
                                         x = gapp->xsm->Inst->Dig2X0A ((long) round (g_array_index (garr [PROBEDATA_ARRAY_X0], double, j)))
                                                 + gapp->xsm->Inst->Dig2XA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_XS], double, j)));
                                         y =  gapp->xsm->Inst->Dig2Y0A ((long) round (g_array_index (garr [PROBEDATA_ARRAY_Y0], double, j)))
@@ -300,7 +305,41 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                         break;
                                 }
                                 int xi, yi;
+                                int xiD=-1, yiD=-1;
                                 gapp->xsm->scan[chmap]->World2Pixel (x,y, xi,yi);
+
+                                {
+                                        int i=0;
+#if 0
+                                        g_message ("P SEC HDR #%d :: i:%g, t:%g, X0:%g, Y0:%g, PHI:%g, XS:%g, YS:%g, ZS:%g, U:%g, S:%g",
+                                                   i,
+                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_INDEX], double, i),
+                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_TIME], double, i),
+                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i),
+                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i),
+                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_PHI], double, i),
+                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_XS], double, i),
+                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_YS], double, i),
+                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_ZS], double, i),
+                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_U], double, i),
+                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_SEC], double, i));
+#endif
+                                        if (garr_hdr){
+                                                xiD = ((int)g_array_index (garr_hdr[PROBEDATA_ARRAY_XS], double, i)<<16)/dspc->mirror_dsp_scan_dx32 + gapp->xsm->scan[chmap]->data.s.nx/2 - 1;
+                                                yiD = (gapp->xsm->scan[chmap]->data.s.nx/2 - 1) - ((int)g_array_index (garr_hdr[PROBEDATA_ARRAY_YS], double, i)<<16)/dspc->mirror_dsp_scan_dy32;
+
+                                                g_message ("XYdsp: %d, %d  vs.  R[%d, %d]",
+                                                           xiD, yiD,
+                                                           xi,yi
+                                                           ); // 100 x 100 :  -49,+49 .. 49,+49; -49,+48 ..
+                                                last_x = xiD;
+                                                last_y = yiD;
+                                        } else {
+                                                g_message ("XYdsp: HDR N/A  R[%d, %d]", xi,yi);
+                                                trackx = true;
+                                        }
+                                        
+                                }
                                 
                                 for (int i = 0; i < dspc->last_probe_data_index; i++){
                                         int j=0;
@@ -308,7 +347,23 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                 gapp->xsm->scan[chmap]->mem2d->Resize (gapp->xsm->scan[chmap]->mem2d->GetNx (), gapp->xsm->scan[chmap]->mem2d->GetNy (),
                                                                                        dspc->last_probe_data_index, ZD_DOUBLE, false);
                                         }
-                                        gapp->xsm->scan[chmap]->mem2d->PutDataPkt (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), xi,yi,i);
+                                        if (trackx || xiD < 0 || yiD < 0 || xiD >= gapp->xsm->scan[chmap]->mem2d->GetNx () || yiD >= gapp->xsm->scan[chmap]->mem2d->GetNy ()){
+                                                if (last_y >= 0 && last_x >= 0 && last_x+1 < gapp->xsm->scan[chmap]->mem2d->GetNx ()){
+                                                        if (fabs(last_x - xi) < 2 && fabs(last_y - yi) < 2){
+                                                                xi = last_x+1;
+                                                                yi = last_y;
+                                                        }
+                                                }
+                                                        
+                                                g_message ("Warning: no DSP digital coordinates available, using estimates: %d, %d", xi, yi);
+                                                if (xi >= 0 && yi > 0 && xi < gapp->xsm->scan[chmap]->mem2d->GetNx () && yi < gapp->xsm->scan[chmap]->mem2d->GetNy ())
+                                                        gapp->xsm->scan[chmap]->mem2d->PutDataPkt (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), xi,yi,i);
+                                        } else {
+                                                if (xiD >= 0 && yiD >= 0 && xiD < gapp->xsm->scan[chmap]->mem2d->GetNx () && yiD < gapp->xsm->scan[chmap]->mem2d->GetNy ())
+                                                        gapp->xsm->scan[chmap]->mem2d->PutDataPkt (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), xiD,yiD,i);
+                                                else
+                                                        g_message ("Warning: Coordinates out of scan, skipping. %d, %d", xiD, yiD);
+                                        }
                                         if (Xsrc >= 0)
                                                 gapp->xsm->scan[chmap]->mem2d->data->SetVLookup(i, dspc->vp_scale_lookup (Xsrc) * g_array_index (garr [expdi_lookup[Xsrc]], double, i)); // update X lookup
                                 }
@@ -317,6 +372,9 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                 
                                 gapp->xsm->scan[chmap]->draw ();
                         }
+                }
+                if (trackx){
+                        last_x++;
                 }
                 
                 // attach event to active channel, if one exists -- raster mode ------------------------------
@@ -1001,15 +1059,22 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 #define DEFAULT_PROBE_LEN 256 // can increase automatically, just more efficient
 
 void DSPControl::push_probedata_arrays (){
-	GArray **garr = new GArray*[NUM_PROBEDATA_ARRAYS];
+	GArray **garrp = new GArray*[NUM_PROBEDATA_ARRAYS];
+	GArray **garrh = new GArray*[NUM_PROBEDATA_ARRAYS];
 	pv_lock = TRUE;
 	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i){
-		garr [i] = garray_probedata [i];
+		garrp [i] = garray_probedata [i];
 		garray_probedata [i] = g_array_sized_new (FALSE, TRUE, sizeof (double), DEFAULT_PROBE_LEN); // preallocated, can increase
 	}
-	probedata_list =  g_slist_prepend (probedata_list, garr); // push on list
+	probedata_list =  g_slist_prepend (probedata_list, garrp); // push probe data on list
 	last_probe_data_index = current_probe_data_index;
 
+	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i){
+		garrh [i] = garray_probe_hdrlist [i];
+		garray_probe_hdrlist [i] = g_array_sized_new (FALSE, TRUE, sizeof (double), DEFAULT_PROBE_LEN); // preallocated, can increase
+	}
+	probehdr_list =  g_slist_prepend (probehdr_list, garrh); // push section headers on list
+      
 	++num_probe_events;
 	pv_lock = FALSE;
 }
@@ -1022,6 +1087,22 @@ GArray** DSPControl::pop_probedata_arrays (){
 		if (last){
 			GArray **garr = (GArray **) (last->data);
 			probedata_list = g_slist_delete_link (probedata_list, last);
+                        pv_lock = FALSE;
+			return garr;
+		}
+	}
+	pv_lock = FALSE;
+	return NULL;
+}
+
+GArray** DSPControl::pop_probehdr_arrays (){
+	pv_lock = TRUE;
+	if (probehdr_list){
+		GSList *last = g_slist_last (probehdr_list);
+		if (last){
+			GArray **garr = (GArray **) (last->data);
+			probehdr_list = g_slist_delete_link (probehdr_list, last);
+                        pv_lock = FALSE;
 			return garr;
 		}
 	}
@@ -1036,15 +1117,27 @@ void DSPControl::free_probedata_array_set (GArray** garr, DSPControl *dc){
 	dc->pv_lock = FALSE;
 }
 
+void DSPControl::free_probehdr_array_set (GArray** garr, DSPControl *dc){
+	dc->pv_lock = TRUE;
+ 	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i)
+                g_array_free (garr[i], TRUE);
+	dc->pv_lock = FALSE;
+}
+
 void DSPControl::free_probedata_arrays (){
 	pv_lock = TRUE;
-	if (probedata_list)
-		return;
-	g_slist_foreach (probedata_list, (GFunc) DSPControl::free_probedata_array_set, this);
-	g_slist_free (probedata_list);
-	probedata_list = NULL;	
-	num_probe_events = 0;
-	pv_lock = FALSE;
+	if (probedata_list){
+                g_slist_foreach (probedata_list, (GFunc) DSPControl::free_probedata_array_set, this);
+                g_slist_free (probedata_list);
+                probedata_list = NULL;	
+        }
+	if (probehdr_list){
+                g_slist_foreach (probehdr_list, (GFunc) DSPControl::free_probehdr_array_set, this);
+                g_slist_free (probehdr_list);
+                probehdr_list = NULL;	
+        }
+        num_probe_events = 0;
+        pv_lock = FALSE;
 }
 
 void DSPControl::init_probedata_arrays (){
@@ -1052,14 +1145,15 @@ void DSPControl::init_probedata_arrays (){
 	for(int i=0; i<4; ++i)
 		vp_input_id_cache[i]=-1;
 	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i){
-		if (!garray_probedata[i]){
+		if (!garray_probedata[i])
 			garray_probedata [i] = g_array_sized_new (FALSE, TRUE, sizeof (double), DEFAULT_PROBE_LEN); // preallocated, can increase
-			garray_probe_hdrlist [i] = g_array_sized_new (FALSE, TRUE, sizeof (double), DEFAULT_PROBE_LEN); // preallocated, can increase
-		}
-		else{
+		else
 			g_array_set_size (garray_probedata [i], 0);
+
+		if (!garray_probe_hdrlist[i])
+			garray_probe_hdrlist [i] = g_array_sized_new (FALSE, TRUE, sizeof (double), DEFAULT_PROBE_LEN); // preallocated, can increase
+                else
 			g_array_set_size (garray_probe_hdrlist [i], 0);
-		}
 	}
 	current_probe_data_index = 0;
 	nun_valid_data_sections = 0;

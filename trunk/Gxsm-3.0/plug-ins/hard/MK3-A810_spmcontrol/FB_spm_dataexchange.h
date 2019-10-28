@@ -523,8 +523,8 @@ typedef struct{
 /** Full Frame Area Scan Control Structure */
 // start modes
 #define AREA_SCAN_RUN            0x01
-#define AREA_SCAN_START_NORMAL   0x04
-#define AREA_SCAN_START_FASTSCAN 0x08
+#define AREA_SCAN_RUN_FAST       0x02
+#define AREA_SCAN_MOVE_TIP       0x10
 // stop modes
 #define AREA_SCAN_STOP           0x01
 #define AREA_SCAN_PAUSE          0x02

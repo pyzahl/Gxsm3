@@ -242,8 +242,10 @@ int Surface::SetMode(int Channel, int choice, int force){
 		break;
 	default:
 		if(choice > ID_CH_M_X){
-                        ChannelScanMode[Channel] = choice;
-                        gapp->channelselector->SetInfo (Channel, "New scan source");
+                        if (ChannelScanMode[Channel] != choice){
+                                gapp->channelselector->SetInfo (Channel, "New scan source");
+                                ChannelScanMode[Channel] = choice;
+                        }
 		}
 		else{
 			XSM_DEBUG (DBG_L2, "Surface::SetMode: wrong Mode !");

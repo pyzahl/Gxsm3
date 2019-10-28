@@ -143,16 +143,19 @@ void ShmImage2D::MkPalette(const char *name){
 void ShmImage2D::saveimage(gchar *name){
 }
 
-void ShmImage2D::draw_callback (cairo_t *cr, gboolean draw_red_line){
+void ShmImage2D::draw_callback (cairo_t *cr, gboolean draw_red_line, gboolean draw_sls_box, gboolean draw_tip){
 	gdk_cairo_set_source_pixbuf (cr, gdk_pixbuf, 0., 0.);
 	cairo_paint(cr);
+        
         if (draw_red_line){
                 cairo_set_line_width (cr, ZoomFac);
                 cairo_set_source_rgb (cr, 1.0, 0.0, 0.0); // red
                 cairo_move_to (cr, red_line_points[0], red_line_points[1]);
                 cairo_line_to (cr, red_line_points[2], red_line_points[3]);
                 cairo_stroke (cr);
+        }
 
+        if (draw_sls_box){
                 if (red_box_extends[3] > 0){
                         cairo_set_line_width (cr, 1.5*ZoomFac);
                         cairo_set_source_rgba (cr, 1.0, 1.0, 0.0, 0.5); // yellow alpha 50%
@@ -163,6 +166,76 @@ void ShmImage2D::draw_callback (cairo_t *cr, gboolean draw_red_line){
                         cairo_line_to (cr, red_box_extends[0], red_box_extends[2]);
                         cairo_stroke (cr);
                 }
+        }
+        if (draw_tip){
+                double x,y,z;
+                gapp->xsm->hardware->RTQuery ("P", x,y,z);
+                //g_message ("PXYZ: %g %g %g", x,y,z);
+
+                x *= ZoomFac;
+                y *= ZoomFac;
+                
+                cairo_save (cr);
+                cairo_translate (cr, x, y-2*14.);
+                cairo_scale (cr, 2.,2.);
+
+                cairo_move_to (cr, 0, 0);
+                cairo_rel_curve_to (cr,
+                                    -2.76142,0,
+                                    -5,2.23858,
+                                    -5,5);
+                cairo_rel_curve_to (cr,
+                                    0,0.17259,
+                                    0.0142,0.33191,
+                                    0.0312,0.5);
+                cairo_rel_curve_to (cr,
+                                    0.0137,0.16725,
+                                    0.0358,0.33617,
+                                    0.0625,0.5);
+                cairo_rel_curve_to (cr,
+                                    0.57248,3.51444,
+                                    2.9063,6.00336,
+                                    4.9063,8.00336);
+                cairo_rel_curve_to (cr,
+                                    2,-2,
+                                    4.33372,-4.48892,
+                                    4.9062,-8.00336);
+                cairo_rel_curve_to (cr,
+                                    0.0267,-0.16383,
+                                    0.0488,-0.33275,
+                                    0.0625,-0.5);
+                cairo_rel_curve_to (cr,
+                                    0.0171,-0.16809,
+                                    0.0312,-0.32741,
+                                    0.0312,-0.5);
+                cairo_rel_curve_to (cr,
+                                    0,-2.76142,
+                                    -2.23858,-5,
+                                    -5,-5);
+                cairo_close_path (cr);
+                cairo_move_to (cr, 0.,3.);
+                cairo_rel_curve_to (cr,
+                                    1.10457,0,
+                                    2,0.89543,
+                                    2,2);
+                cairo_rel_curve_to (cr,
+                                    0,1.10457,
+                                    -0.89543,2,
+                                    -2,2);
+                cairo_rel_curve_to (cr,
+                                    -1.10457,0,
+                                    -2,-0.89543,
+                                    -2,-2);
+                cairo_rel_curve_to (cr,
+                                    0,-1.10457,
+                                    0.89543,-2,
+                                    2,-2); 
+                cairo_close_path (cr);
+                cairo_set_source_rgba (cr, 1.0, 1.0, 0.2, 0.6);
+                cairo_fill (cr);
+                cairo_stroke (cr);
+
+                cairo_restore (cr);
         }
 }
 

@@ -119,6 +119,8 @@ sranger_mk3_hwi_spm::~sranger_mk3_hwi_spm(){
  "Z" :                probe Z Position
  "i" :                GPIO (high level speudo monitor)
  "A" :                Mover/Wave axis counts 0,1,2 (X/Y/Z)
+ "p" :                X,Y Scan/Probe Coords in Pixel, 0,0 is center, DSP Scan Coords
+ "P" :                X,Y Scan/Probe Coords in Pixel, 0,0 is top left [indices]
  */
 
 gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
@@ -453,6 +455,16 @@ inverse off      27
 		return TRUE;
         }
 
+        if (*property == 'p'){
+                val1 = (double)(dsp_scan.xyz_vec[0] / (dsp_scan.fs_dx * dsp_scan.dnx));
+                val2 = (double)(dsp_scan.xyz_vec[1] / (dsp_scan.fs_dy * dsp_scan.dny));
+                val3 = (double)dsp_scan.xyz_vec[2] / (1<<16);
+        }
+        if (*property == 'P'){
+                val1 = (double)(dsp_scan.xyz_vec[0] / (dsp_scan.fs_dx * dsp_scan.dnx) + (gapp->xsm->data.s.nx/2 - 1) + 1);
+                val2 = (double)(-dsp_scan.xyz_vec[1] / (dsp_scan.fs_dy * dsp_scan.dny) + (gapp->xsm->data.s.ny/2 - 1) + 1);
+                val3 = (double)dsp_scan.xyz_vec[2] / (1<<16);
+        }
         
 //	printf ("ZXY: %g %g %g\n", val1, val2, val3);
 
@@ -1054,17 +1066,13 @@ void sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
 	dsp_scan.fm_dy = long_2_sranger_long (dsp_scan.fm_dy);
 	dsp_scan.num_steps_move_xy = long_2_sranger_long (dsp_scan.num_steps_move_xy);
 
-	dsp_scan.start = long_2_sranger_long (-(AREA_SCAN_RUN|AREA_SCAN_START_NORMAL));
+	dsp_scan.start = long_2_sranger_long (AREA_SCAN_MOVE_TIP);
 	dsp_scan.srcs_xp  = long_2_sranger_long(0);
 	dsp_scan.srcs_xm  = long_2_sranger_long(0);
 	dsp_scan.srcs_2nd_xp  = long_2_sranger_long (0);
 	dsp_scan.srcs_2nd_xm  = long_2_sranger_long (0);
 	dsp_scan.dnx_probe = long_2_sranger_long(-1);
 	dsp_scan.nx_pre = long_2_sranger_long(0);
-	dsp_scan.nx = long_2_sranger_long(0);
-	dsp_scan.ny = long_2_sranger_long(0);
-	dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
-	dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
 
 	// initiate "return to origin" "dummy" scan now
 	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
@@ -1154,7 +1162,7 @@ void sranger_mk3_hwi_spm::ResumeScan2D(){
 	CONV_32 (dsp_scan.pflg);
 
 	// resume scanning if paused
-	if (dsp_scan.pflg & (AREA_SCAN_START_NORMAL|AREA_SCAN_START_FASTSCAN)) { // only if PAUSEd previously!
+	if (dsp_scan.pflg & AREA_SCAN_RUN) { // only if PAUSEd previously!
 		dsp_scan.start = long_2_sranger_long(0);
 		dsp_scan.stop  = long_2_sranger_long(AREA_SCAN_RESUME); // RESUME SCAN FROM PAUSE
 		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
@@ -1300,7 +1308,8 @@ void sranger_mk3_hwi_spm::Move_delta_XYZ (double dx, double dy, double dz, Mem2d
 	dsp_scan.fm_dz = long_2_sranger_long (dsp_scan.fm_dz);
 	dsp_scan.num_steps_move_xy = long_2_sranger_long (dsp_scan.num_steps_move_xy);
 
-        dsp_scan.start = long_2_sranger_long (-(AREA_SCAN_RUN|AREA_SCAN_START_NORMAL));
+        dsp_scan.start = long_2_sranger_long (AREA_SCAN_MOVE_TIP);
+        dsp_scan.stop  = long_2_sranger_long (0);
         
 	dsp_scan.srcs_xp  = long_2_sranger_long(0);
 	dsp_scan.srcs_xm  = long_2_sranger_long(0);
@@ -1308,8 +1317,8 @@ void sranger_mk3_hwi_spm::Move_delta_XYZ (double dx, double dy, double dz, Mem2d
 	dsp_scan.srcs_2nd_xm  = long_2_sranger_long (0);
 	dsp_scan.dnx_probe = long_2_sranger_long(-1);
 	dsp_scan.nx_pre = long_2_sranger_long(0);
-	dsp_scan.nx = long_2_sranger_long(0); // NO ACTUAL SCAN -- just pre move!
-	dsp_scan.ny = long_2_sranger_long(0); // NO ACTUAL SCAN!
+	//dsp_scan.nx = long_2_sranger_long(0); // NO ACTUAL SCAN -- just pre move!
+	//dsp_scan.ny = long_2_sranger_long(0); // NO ACTUAL SCAN!
 	dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
 	dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
 
@@ -1488,9 +1497,10 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 
 		// setup scan
                 if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(DSPControlClass->FastScan_status))) 
-			dsp_scan.start = long_2_sranger_long (-(AREA_SCAN_RUN|AREA_SCAN_START_FASTSCAN));
+			dsp_scan.start = long_2_sranger_long (AREA_SCAN_RUN_FAST);
 		else
-                        dsp_scan.start = long_2_sranger_long (-(AREA_SCAN_RUN|AREA_SCAN_START_NORMAL));
+                        dsp_scan.start = long_2_sranger_long (AREA_SCAN_RUN);
+                dsp_scan.stop = long_2_sranger_long (0);
 
                 // set speed manipulation options
                 dsp_scan.slow_down_factor     = long_2_sranger_long (DSPControlClass->scan_forward_slow_down);

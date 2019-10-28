@@ -980,6 +980,7 @@ int DSPPACControl::choice_PAC_LP_callback (GtkWidget *widget, DSPPACControl *dsp
 	*lpi = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
         // GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget), "LP_index"));
 	sranger_common_hwi->write_pll( dspc->pll, PLL_OPERATION);
+        return 0;
 }
 
 int DSPPACControl::controller_callback (GtkWidget *widget, DSPPACControl *dspc){
@@ -1060,6 +1061,7 @@ int DSPPACControl::controller_callback (GtkWidget *widget, DSPPACControl *dspc){
                                   );
                 break;
 	}
+        return 0;
 }
 
 void DSPPACControl::copy_ref_freq_to_ref_callback (Param_Control* pcs, DSPPACControl *dspc){

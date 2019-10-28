@@ -539,7 +539,7 @@ int dp_task_004(void){
          * the feedback task needs to be enabled to see the effect
          * --> can set CI/CP to small values to "contineously" disable it!
          */
-        if (scan.pflg == (AREA_SCAN_RUN | AREA_SCAN_START_NORMAL))
+        if (scan.pflg & (AREA_SCAN_RUN | AREA_SCAN_MOVE_TIP))
                 if (!scan.raster_b || !probe.pflg) // pause scan if raster_b!=0 and probe is going.
                         run_area_scan ();
 
@@ -548,7 +548,7 @@ int dp_task_004(void){
         // ============================================================
 
         /* run FAST AREA SCAN (sinusodial) ? */
-        if (scan.pflg == (AREA_SCAN_RUN | AREA_SCAN_START_FASTSCAN))
+        if (scan.pflg & AREA_SCAN_RUN_FAST)
                 run_area_scan_fast ();
                 
         // ============================================================

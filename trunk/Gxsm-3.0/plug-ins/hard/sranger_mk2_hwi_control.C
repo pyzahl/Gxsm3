@@ -946,6 +946,7 @@ DSPControl::DSPControl () {
 	write_vector_mode=PV_MODE_NONE;
 
 	probedata_list = NULL;
+	probehdr_list = NULL;
 	num_probe_events = 0;
 	last_probe_data_index = 0;
 	nun_valid_data_sections = 0;
@@ -3620,12 +3621,15 @@ void DSPControl::recalculate_dsp_scan_speed_parameters (gint32 &dsp_scan_dnx, gi
 	// fs_dx * N =!= frac*Dx  -> N = ceil [frac*Dx/fs_dx]  -> fs_dx' = frac*Dx/N
 	
 	// N: dnx
-	dsp_scan_dnx = (gint32) ceil (frac * sranger_common_hwi->Dx * dynamic_zoom / fs_dx);
+        dsp_scan_dnx = (gint32) ceil (frac * sranger_common_hwi->Dx * dynamic_zoom / fs_dx);
 	dsp_scan_dny = (gint32) ceil (frac * sranger_common_hwi->Dy * dynamic_zoom / fs_dy);
-	
+        
 	dsp_scan_fs_dx = (gint32) (frac*sranger_common_hwi->Dx / ceil (frac * sranger_common_hwi->Dx / fs_dx));
 	dsp_scan_fs_dy = (gint32) (frac*sranger_common_hwi->Dy / ceil (frac * sranger_common_hwi->Dy / fs_dy));
 
+        mirror_dsp_scan_dx32 = dsp_scan_fs_dx*dsp_scan_dnx; // actual DSP dx in S15.16 between pixels in X
+        mirror_dsp_scan_dy32 = dsp_scan_fs_dy*dsp_scan_dny; // actual DSP dy in S15.16 between pixels in Y
+        
 	dsp_scan_fast_return = (gint32) (fast_return);
 	if (dsp_scan_fast_return < 1)
 		dsp_scan_fast_return = 1;

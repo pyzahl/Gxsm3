@@ -838,10 +838,7 @@ ii_signal_monitor_p_first = 4
 ii_signal_monitor_first = 4 + num_monitor_signals
 
 i_scan = 14
-fmt_scan = "<lllllllllllllllllllllllllllllllllllllllllllLLLLll"
-#               ss rot  npab srcs nxy fs n fm dxny Zo fmz  XYZ
-#	fmt = "<hh hhhh hhhh llll hh  ll l lll hh hh ll lll ll hhhh hh" [38]
-#	fmt = "<hhhhhhhhhhllllhhllllllhhhhlllllllhhhhhh"
+fmt_scan = "<lllllllllllllllllllllllllllllllllllllllllllllLLLLlllllll"
 [
 	ii_scan_start,
 	ii_scan_stop,
@@ -873,6 +870,8 @@ fmt_scan = "<lllllllllllllllllllllllllllllllllllllllllllLLLLll"
 	ii_scan_fm_dz0_xy_vecY,
 	ii_scan_z_slope_max,
 	ii_scan_fast_return,
+        ii_scan_slow_down_factor,
+        ii_scan_slow_down_factor_2nd,
 	ii_scan_xyz_gain,
 	ii_scan_xyz_vecX,
 	ii_scan_xyz_vecY,
@@ -886,15 +885,18 @@ fmt_scan = "<lllllllllllllllllllllllllllllllllllllllllllLLLLll"
 	ii_scan_iiy,
 	ii_scan_ix,
 	ii_scan_iy,
-        ii_scan_slow_down_factor,
 	ii_scan_ifr,
 	ii_scan_P_src_input0,
 	ii_scan_P_src_input1,
 	ii_scan_P_src_input2,
 	ii_scan_P_src_input3,
 	ii_scan_sstate,
+	ii_scan_rotmatXX,
+	ii_scan_rotmatXY,
+	ii_scan_rotmatYX,
+	ii_scan_rotmatYY,
 	ii_scan_pflg
-] = range (0,51)
+] = range (0,56)
 
 i_move = 15
 fmt_move = "<llllllllllll"
@@ -2654,6 +2656,7 @@ class SPMcontrol():
                 vx = self.SPM_SCAN[ii_scan_cfs_dx]*75000./(65536.*32767.)*10.0
                 xs = self.SPM_SCAN[ii_scan_cfs_dx]/(65536.*32767.)*self.SPM_SCAN[ii_scan_dnx]*10.0
                 print ("Scan-Control:\n"
+                       + " start:%03x" %(self.SPM_SCAN[ii_scan_start])+ " stop:%03x" %(self.SPM_SCAN[ii_scan_stop])+ " state:%03x" %(self.SPM_SCAN[ii_scan_sstate])+  " pflg:%03x" %(self.SPM_SCAN[ii_scan_pflg]) + "\n"
                        + " nx_pre:%03d" %(self.SPM_SCAN[ii_scan_nx_pre])+ ", fastreturn:%03d" %(self.SPM_SCAN[ii_scan_fast_return])
                        + " nx:%05d" %(self.SPM_SCAN[ii_scan_nx]) + ", ny:%05d" %(self.SPM_SCAN[ii_scan_ny]) + "\n"
                        + " fs_dx:%d" %(self.SPM_SCAN[ii_scan_fs_dx]) + ", y:%d" %(self.SPM_SCAN[ii_scan_fs_dy]) + "\n"
