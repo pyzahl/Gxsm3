@@ -2510,7 +2510,8 @@ void sranger_mk3_hwi_dev::read_dsp_lockin (double AC_amp[4], double &AC_frq, dou
 }
 
 int sranger_mk3_hwi_dev::dsp_lockin_state(int set=-1){
-	PROBE_MK3 dsp_probe;
+	lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+	sr_read (dsp, &dsp_probe, sizeof (dsp_probe)); 
 	dsp_probe.start = 0;
 	dsp_probe.stop  = 0;
 	switch (set){
