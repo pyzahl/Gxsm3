@@ -116,6 +116,8 @@ DSP_INT32 *Z_data_buffer;
 #define AS_SCAN_2ND_XP  6
 #define AS_SCAN_2ND_XM  7
 
+extern void switch_rt_task_areascan_to_probe (void);
+
 // to control (Z-)Servo manually for 2nd line scan modes
 
 inline void run_servo_manual (SERVO *servo, DSP_INT32 set){
@@ -365,6 +367,7 @@ void init_area_scan (){
 inline void area_scan_finished (){
         scan.pflg = 0;
         scan.stop = AREA_SCAN_STOP;
+        scan.dnx_probe = 0;
 }
  
 #pragma CODE_SECTION(finish_area_scan, ".text:slow")
@@ -606,9 +609,8 @@ void run_area_scan (){
 #endif
                                 {
                                         if (! --AS_ip){ // trigger probing process ?
-						if (!probe.pflg) // assure last prb job is done!! -- else skip
-							probe.start = 1; //init_probe ();
 						AS_ip = scan.dnx_probe;
+                                                switch_rt_task_areascan_to_probe();
 					}
 				}
 				scan.iix  = scan.dnx-1;
