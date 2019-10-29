@@ -83,6 +83,7 @@ typedef struct { int x,y; } Point2D;
 
 #define PIDCHMAX 4
 #define DAQCHMAX 12
+#define EXTCHMAX 8
 #define CHLABELLEN 32
 
 #define GRIMAX 6
@@ -151,7 +152,7 @@ typedef struct{
 	gchar daqZlabel[DAQCHMAX][CHLABELLEN];
 	double daqZd2u[DAQCHMAX];
 	int  daqdefault;
-	gchar extchno[4];
+	gchar extchno[EXTCHMAX];
 	//
 	gchar *UnitCmd;
 	gchar Unit[8];

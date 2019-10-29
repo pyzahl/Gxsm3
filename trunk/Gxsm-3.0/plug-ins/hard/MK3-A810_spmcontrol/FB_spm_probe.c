@@ -527,8 +527,6 @@ void init_probe (){
 	probe_store ();
 
 	// now starting...
-	probe.start = 0;
-	probe.stop  = 0;
 	probe.vector = NULL;
 	probe.time = 0;
 	probe.lix= 0;
@@ -554,6 +552,8 @@ void init_probe (){
 	probe_append_header_and_positionvector ();
 
 	probe.pflg  = 1; // enable probe
+	probe.start = 0;
+	probe.stop  = 0;
 }
 
 

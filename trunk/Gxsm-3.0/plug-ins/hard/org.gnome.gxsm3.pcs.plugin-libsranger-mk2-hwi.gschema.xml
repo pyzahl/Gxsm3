@@ -409,6 +409,12 @@
       <description>pcs0000, PCS Remote-ID: 'dsp-adv-scan-raster', Default/U:     0      , Adjustment PCS Name: 'dsp-adv-scan-raster' </description>
     </key>
 
+    <key name="dsp-adv-scan-rasterb" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dsp-adv-scan-rasterb', Default/U:     0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dsp-adv-scan-rasterb', Default/U:     0      , Adjustment PCS Name: 'dsp-adv-scan-rasterb' </description>
+    </key>
+
     <key name="dsp-adv-scan-raster-wait" type="d">
       <default>0</default>
       <summary>PCS Remote-ID: 'dsp-adv-scan-raster-wait', Default/U:  0       </summary>

@@ -251,7 +251,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                 gboolean mapping = false;
                 gboolean trackx = false;
                 int src=-1;
-                for(int mapi=0; mapi < 4; ++mapi){
+                for(int mapi=0; mapi < EXTCHMAX; ++mapi){
                         int chmap;
                         int map=0;
                         // locate 1st,... probe src# to map
@@ -357,7 +357,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
 
                                 // Verify xy index coordinates
                                 int xip, yip;
-                                if (trackx || fabs(xiD - xi) > 3 || fabs(yiD - yi) > 3 || xiD < 0 || yiD < 0
+                                if (trackx || fabs(xiD - xi) > 20 || fabs(yiD - yi) > 5 || xiD < 0 || yiD < 0
                                     || xiD >= gapp->xsm->scan[chmap]->mem2d->GetNx () || yiD >= gapp->xsm->scan[chmap]->mem2d->GetNy ()){
 
                                         if (last_y >= 0 && last_x >= 0 && last_x+1 < gapp->xsm->scan[chmap]->mem2d->GetNx ()){
@@ -966,6 +966,16 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 	f << "# GXSM-Main-Offset       :: X0=" <<  x0 << " Ang" <<  "  Y0=" << y0 << " Ang" 
 	  << ", iX0=" << ix << " Pix iX0=" << iy << " Pix"
 	  << std::endl;
+        f << "# DSP SCANCOORD POSITION :: DSP-XSpos=" 
+          << (((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_XS], double, 0)<<16)/dspc->mirror_dsp_scan_dx32 + gapp->xsm->MasterScan->data.s.nx/2 - 1)
+          << " DSP-YSpos=" 
+          << ((gapp->xsm->MasterScan->data.s.nx/2 - 1) - ((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_YS], double, 0)<<16)/dspc->mirror_dsp_scan_dy32)
+          << " CENTER-DSP-XSpos=" 
+          << (((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_XS], double, 0)<<16)/dspc->mirror_dsp_scan_dx32)
+          << " CENTER-DSP-YSpos=" 
+          << (((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_YS], double, 0)<<16)/dspc->mirror_dsp_scan_dy32)
+          << std::endl;
+        
 	f << "# GXSM-DSP-Control-FB    :: Bias=" << dspc->bias << " V" <<  ", Current=" << dspc->mix_set_point[0]  << " nA" << std::endl; 
 	f << "# GXSM-DSP-Control-STS   :: #IV=" << dspc->IV_repetitions << " " << std::endl; 
 	f << "# GXSM-DSP-Control-LOCKIN:: AC_amp=[ " 
@@ -1073,7 +1083,7 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 		val[4] = g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_SEC], double, i);
 
 // 1e3/dspc->frq_ref, XAngFac, YAngFac, ZAngFac,
-
+                
 		f << "#  " << std::setw(6) << i << "\t "
 		  << std::setw(10) << val[0] * 1e3/dspc->frq_ref << "\t " << std::setw(10) << (val[0]-t0) * 1e3/dspc->frq_ref << "\t "
 		  << std::setw(10) << val[1] * XAngFac << "\t "

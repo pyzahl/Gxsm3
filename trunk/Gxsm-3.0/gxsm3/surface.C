@@ -729,7 +729,7 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
 			Ch[si++] = FindChan(xsmres.daqchno[i], ID_CH_D_2ND_M);
 		}
     
-		for(i=0; i<4; ++i){
+		for(i=0; i<EXTCHMAX; ++i){
 			Ch[si++] = FindChan(xsmres.extchno[i], ID_CH_D_P);
 			Ch[si++] = FindChan(xsmres.extchno[i], ID_CH_D_M);
                 }

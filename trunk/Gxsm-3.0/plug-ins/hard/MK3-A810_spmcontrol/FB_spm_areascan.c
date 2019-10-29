@@ -336,6 +336,7 @@ void init_area_scan (){
 			AS_kp = 0;
 		} else {
 			AS_jp = -1;
+			AS_ip = -1;
 		}
 		AS_ch2nd_scan_switch = AS_SCAN_YP; // just go to next line by default
 		AS_ch2nd_constheight_enabled = 0;  // disable first
@@ -597,10 +598,15 @@ void run_area_scan (){
                                         SET_DSP_GP53;
                                 else
                                         CLR_DSP_GP53;
-#endif   
-				if (AS_ip >= 0 && (AS_jp == 0 || scan.raster_a) && (scan.dnx_probe > 0)){
-					if (! --AS_ip){ // trigger probing process ?
-						if (!probe.pflg) // assure last prb job is done!!
+#endif
+#if 0
+				if (AS_ip >= 0 && (AS_jp == 0 || scan.raster_a) && (scan.dnx_probe > 0))
+#else
+                                if (AS_ip >= 0)
+#endif
+                                {
+                                        if (! --AS_ip){ // trigger probing process ?
+						if (!probe.pflg) // assure last prb job is done!! -- else skip
 							probe.start = 1; //init_probe ();
 						AS_ip = scan.dnx_probe;
 					}
@@ -648,17 +654,7 @@ void run_area_scan (){
                                         else
                                                 CLR_DSP_GP53;
 #endif
-                                        
-#if 0
-					if (AS_ip >= 0 && AS_jp == 0 && (scan.dnx_probe > 0)){
-						if (! --AS_ip){ // trigger probing process ?
-							if (!probe.pflg) // assure last prb job is done!!
-                                                                probe.start = 1; //init_probe ();
-							AS_ip = scan.dnx_probe;
-						}
-					}
-#endif
-					scan.iix   = scan.dnx-1;
+                                        scan.iix   = scan.dnx-1;
 					
 					if (AS_ch2nd_constheight_enabled){
                                                 // use memorized ZA profile + offset
@@ -724,6 +720,14 @@ void run_area_scan (){
                                         CLR_DSP_GP54;
 #endif
 				if (AS_jp >= 0){
+#if 1
+                                        if (++AS_jp == scan.raster_b){
+                                                AS_jp = 0;
+                                                AS_ip = 1; // scan.dnx_probe; // reset X grid counter
+                                        } else {
+                                                AS_ip = -1;
+                                        }
+#else
 					if (scan.raster_a){
 						AS_ip = AS_kp;
 						if ((++AS_jp) & 1){ // set start if X grid counter
@@ -733,11 +737,13 @@ void run_area_scan (){
 						}
 						if (AS_ip++ >= AS_mod)
 							AS_ip -= AS_mod;
-					} else
+					} else {
 						if (++AS_jp == scan.dnx_probe){
 							AS_jp = 0;
-							AS_ip = scan.dnx_probe; // reset X grid counter
+							AS_ip = 1; // scan.dnx_probe; // reset X grid counter
 						}
+                                        }
+#endif
 				}
 				scan.ix  = scan.nx;
 				scan.iix = scan.dnx + PIPE_LEN;
