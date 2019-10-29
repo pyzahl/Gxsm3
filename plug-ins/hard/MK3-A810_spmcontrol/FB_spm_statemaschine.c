@@ -248,6 +248,13 @@ int idle_task_008(void){
         return 0;
 }
 
+void switch_rt_task_areascan_to_probe (void){
+        if (!probe.pflg){
+                STOP_RT_TASK (RT_TASK_AREA_SCAN);
+                probe.start = 1; //init_probe ();
+        }
+}
+
 #pragma CODE_SECTION(idle_task_009, ".text:slow")
 int idle_task_009(void){
         /* Start/Stop/Pause/Resume Area Scan ? */

@@ -440,16 +440,25 @@ void probe_append_header_and_positionvector (){ // size: 14
 	*probe_datafifo.buffer_l++ = probe.time; 
 	probe_datafifo.buffer_w += 6; // skip 6 words == 3 long
 
-        // Section start situation vector [XY[Z or Phase]_Offset, XYZ_Scan, Upos(bias), 0xffff]_16 :: 8
-        *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (move.xyz_vec[i_X]);
-        *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (move.xyz_vec[i_Y]);
-        *probe_datafifo.buffer_w++ = _SSHL32 (probe.PRB_ACPhaseA32, -12); // Phase    //  HRVALUE_TO_16 (move.xyz_vec[i_Z])
+        if (scan.dnx_probe){ // probe header for DSP LEVEL RASTER PROBE
+                *probe_datafifo.buffer_w++ = (DSP_INT16)scan.ix;
+                *probe_datafifo.buffer_w++ = (DSP_INT16)scan.iy;
+                *probe_datafifo.buffer_w++ = 0;
+                *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xyz_vec[i_X]);
+                *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xyz_vec[i_Y]);
+                *probe_datafifo.buffer_w++ = AIC_OUT(5);  // Z: feedback.z + Z_pos>>16; *****!
+                *probe_datafifo.buffer_w++ = AIC_OUT(6);  // Bias: U_pos>>16; *******!
+        } else { // probe header normal
+                // Section start situation vector [XY[Z or Phase]_Offset, XYZ_Scan, Upos(bias), 0xffff]_16 :: 8
+                *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (move.xyz_vec[i_X]);
+                *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (move.xyz_vec[i_Y]);
+                *probe_datafifo.buffer_w++ = _SSHL32 (probe.PRB_ACPhaseA32, -12); // Phase    //  HRVALUE_TO_16 (move.xyz_vec[i_Z])
+                *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xy_r_vec[i_X]);
+                *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xy_r_vec[i_Y]);
+                *probe_datafifo.buffer_w++ = AIC_OUT(5);  // Z: feedback.z + Z_pos>>16; *****!
+                *probe_datafifo.buffer_w++ = AIC_OUT(6);  // Bias: U_pos>>16; *******!
+        }
 
-        *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xy_r_vec[i_X]);
-        *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xy_r_vec[i_Y]);
-        *probe_datafifo.buffer_w++ = AIC_OUT(5);  // Z: feedback.z + Z_pos>>16; *****!
-
-        *probe_datafifo.buffer_w++ = AIC_OUT(6);  // Bias: U_pos>>16; *******!
         *probe_datafifo.buffer_w++ = PRB_section_count;
         probe_datafifo.buffer_l += 4; // skip 4 long == 8 words
 
