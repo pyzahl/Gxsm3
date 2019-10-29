@@ -57,12 +57,16 @@ static const char* choice_ChMode[] =
 		0
 	};
 
-static const char* choice_ChModeExternalData[] =
+static const char* choice_ChModeExternalData[EXTCHMAX+1] =
 	{ 
 		"DataMap0",
 		"DataMap1",
 		"DataMap2",
 		"DataMap3",
+		"DataMap4",
+		"DataMap5",
+		"DataMap6",
+		"DataMap7",
 		0
 	};
 

@@ -1144,6 +1144,8 @@ void sranger_mk3_hwi_spm::PauseScan2D(){
 	sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
 	CONV_32 (dsp_scan.pflg);
 
+        g_message ("SCAN PASUE: PFLG=%d", dsp_scan.pflg);
+        
 	// pause -- if scanning
 	if (dsp_scan.pflg & AREA_SCAN_RUN) {
 		dsp_scan.start = long_2_sranger_long(0);
@@ -1160,6 +1162,8 @@ void sranger_mk3_hwi_spm::ResumeScan2D(){
 	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 	sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
 	CONV_32 (dsp_scan.pflg);
+
+        g_message ("SCAN RESUME: PFLG=%d", dsp_scan.pflg);
 
 	// resume scanning if paused
 	if (dsp_scan.pflg & AREA_SCAN_RUN) { // only if PAUSEd previously!
@@ -1522,9 +1526,11 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		if (DSPControlClass->probe_trigger_raster_points){
 			if (DSPControlClass->probe_trigger_raster_points > 0){
 				dsp_scan.dnx_probe = long_2_sranger_long (DSPControlClass->probe_trigger_raster_points);
-				dsp_scan.raster_a = long_2_sranger_long ((int)(1.+ceil((DSPControlClass->probe_trigger_raster_points-1.)/2)));
+                                dsp_scan.raster_b = long_2_sranger_long (DSPControlClass->probe_trigger_raster_points_b);
+				dsp_scan.raster_a = long_2_sranger_long (DSPControlClass->probe_trigger_raster_points);
+                                // long_2_sranger_long ((int)(1.+ceil((DSPControlClass->probe_trigger_raster_points-1.)/2)));
 //				dsp_scan.raster_b = long_2_sranger_long ((int)(1.+floor((DSPControlClass->probe_trigger_raster_points-1.)/2)));
-				dsp_scan.raster_b = long_2_sranger_long (DSPControlClass->probe_and_wait);
+//				dsp_scan.raster_b = long_2_sranger_long (DSPControlClass->probe_and_wait);
 			} else {
 				dsp_scan.dnx_probe = long_2_sranger_long ((int)fabs((double)DSPControlClass->probe_trigger_raster_points));
 				dsp_scan.raster_a = long_2_sranger_long (0);

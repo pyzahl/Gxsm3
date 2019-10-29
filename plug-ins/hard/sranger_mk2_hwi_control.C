@@ -1094,6 +1094,7 @@ DSPControl::DSPControl () {
 	xrm.Get ("Probing_probe_and_wait", &probe_and_wait, "0");
 
 	probe_trigger_raster_points = 0;
+	probe_trigger_raster_points_b = 0;
 
         multiBias_mode=0;
         
@@ -1716,12 +1717,15 @@ DSPControl::DSPControl () {
                 g_free (id);
         }
 
-	dsp_bp->grid_add_ec ("Raster", Unity, &probe_trigger_raster_points_user, 0, 200, "5g", "adv-scan-raster");
+	dsp_bp->grid_add_ec ("RasterAB", Unity, &probe_trigger_raster_points_user, 0, 200, "5g", "adv-scan-raster");
 	Gtk_EntryControl *raster_ec = dsp_bp->ec;
+	dsp_bp->grid_add_ec (NULL, Unity, &probe_trigger_raster_points_b, 0, 200, "5g", "adv-scan-rasterb");
+	Gtk_EntryControl *rasterb_ec = dsp_bp->ec;
 
 	dsp_bp->grid_add_ec ("Wait", Unity, &probe_and_wait, 0, 1, "2g", "adv-scan-raster-wait");
 	raster_ec->Freeze ();
 	g_object_set_data (G_OBJECT (auto_probe_menu), "raster_ec", (gpointer)raster_ec);
+	g_object_set_data (G_OBJECT (auto_probe_menu), "rasterb_ec", (gpointer)rasterb_ec);
 
         // performing sanity checks and auto adjustments if necessary for MK3:
 	if (DSPPACClass) {

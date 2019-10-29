@@ -1246,7 +1246,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 		master_scan = gapp->xsm->GetMasterScan ();
 
                 // reset Ext/Map Channels
-                for(int i=0; i < 4; ++i){
+                for(int i=0; i < EXTCHMAX; ++i){
                         if ((ch = gapp->xsm->FindChan(xsmres.extchno[i], ID_CH_D_P)) >= 0){
                                 setup_scan (ch, "X+", "Map-PrbSrc#", "Xu", "Xt", "Xl", -1.0); // needs further setup!
                         }

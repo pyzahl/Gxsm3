@@ -679,6 +679,7 @@ class DSPControl : public AppBase{
 	// Probing
 	int probe_trigger_raster_points_user;
 	int probe_trigger_raster_points;
+	int probe_trigger_raster_points_b;
 	int probe_trigger_single_shot;
 	int probe_and_wait;
 	

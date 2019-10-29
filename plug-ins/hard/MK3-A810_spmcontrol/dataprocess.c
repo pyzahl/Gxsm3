@@ -540,7 +540,7 @@ int dp_task_004(void){
          * --> can set CI/CP to small values to "contineously" disable it!
          */
         if (scan.pflg & (AREA_SCAN_RUN | AREA_SCAN_MOVE_TIP))
-                if (!scan.raster_b || !probe.pflg) // pause scan if raster_b!=0 and probe is going.
+                if (!probe.pflg || probe.start) // pause scan if raster_b!=0 and probe is going.
                         run_area_scan ();
 
         // ============================================================
