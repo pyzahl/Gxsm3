@@ -102,9 +102,11 @@ int ZData::ZResize(int Nx, int Ny, int Nv){
 	double *yl = Ylookup;
 	double *vl = Vlookup;
 
-	if (Nv <= 0 && nv > 1) Nv=nv; // keep old nv?
-        else if (Nv < 1) Nv=1;
-        
+	if (Nv <= 0 && nv > 1){
+                Nv=nv; // keep old nv?
+        } else {
+                if (Nv < 1) Nv=1;
+        }
 	if(Li) delete [] Li;
 	Li=new LineInfo[Ny*Nv]; 
 	Xlookup=new double[Nx];
@@ -133,7 +135,7 @@ int ZData::ZResize(int Nx, int Ny, int Nv){
         if (cp_ixy_sub[2]+cp_ixy_sub[3] > Ny) cp_ixy_sub[3] = Ny-cp_ixy_sub[2];
         //cp_ixy_sub[0]=cp_ixy_sub[2]=0;
         //cp_ixy_sub[1]=Nx; cp_ixy_sub[3]=Ny;
-        
+                
 	nx=Nx; ny=Ny; nv=Nv; vlayer=0;
 	XSM_DEBUG (DBG_L6, "ZData: ZResize OK");
 
@@ -151,7 +153,11 @@ void ZData::ZPutDataSetDest(int ixy_sub[4])
                 XSM_DEBUG (DBG_L6, "ZData:ZPutDataSetDest => cp_ixy_sub=[" 
                            << cp_ixy_sub[0] << ", " << cp_ixy_sub[1] << ", " 
                            << cp_ixy_sub[2] << ", " << cp_ixy_sub[3]);
-        } 
+        } else {
+                // reset
+                cp_ixy_sub[0]=cp_ixy_sub[2]=0;
+                cp_ixy_sub[1]=nx; cp_ixy_sub[3]=ny;
+        }
 };
 
 void  ZData::set_shift (double cf_dt, double pixs_xdt, double pixs_ydt) {
