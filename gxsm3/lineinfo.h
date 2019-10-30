@@ -31,18 +31,20 @@
 class LineInfo{
   friend class Mem2d;
 public:
-  LineInfo(){ valid=FALSE; dnew=0; };
+  LineInfo(){ valid=FALSE; dnew=0; stored=0; };
   ~LineInfo(){};
 
-  inline void invalidate(){ valid=FALSE; dnew=1; };
+  inline void invalidate(){ valid=FALSE; dnew=1; stored=0; };
   void set(double &aa, double &bb){ a=aa; b=bb; valid=TRUE; };
   inline double getY(double x){ return a*x+b; };
   inline double getB(){ return b; };
-  int IsValid(){ return valid; };
-  int IsNew(){ return dnew; };
-  void setNew(int x=1){ dnew=x; };
+  inline int IsValid(){ return valid; };
+  inline int IsNew(){ return dnew; };
+  inline void SetNew(int x=1){ dnew=x; };
+  inline int IsStored(){ return stored; };
+  inline void SetStored(int x=1){ stored=x; };
 protected:
-  int    valid, dnew;
+  int    valid, dnew, stored;
 private:
   double a,b;
 };

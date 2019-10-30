@@ -118,6 +118,7 @@ static GActionEntry win_view_popup_entries[] = {
         { "view-set-math", ViewControl::SetMath_callback, NULL, NULL, NULL },
         { "view-set-x", ViewControl::SetX_callback, NULL, NULL, NULL },
         { "view-open", ViewControl::view_file_openhere_callback, NULL, NULL, NULL },
+        { "view-save-update", ViewControl::view_file_update_callback, NULL, NULL, NULL },
         { "view-save-auto", ViewControl::view_file_save_callback, NULL, NULL, NULL },
         { "view-save-as", ViewControl::view_file_save_as_callback, NULL, NULL, NULL },
         { "view-save-as-image", ViewControl::view_file_saveimage_callback, NULL, NULL, NULL },
@@ -2401,6 +2402,13 @@ void ViewControl::view_file_save_callback (GSimpleAction *simple, GVariant *para
         ViewControl *vc = (ViewControl *) user_data;
 	if (vc->chno < 0) return;
 	gapp->xsm->save(AUTO_NAME_SAVE, NULL, vc->chno);
+}
+
+void ViewControl::view_file_update_callback (GSimpleAction *simple, GVariant *parameter, 
+                                           gpointer user_data){
+        ViewControl *vc = (ViewControl *) user_data;
+	if (vc->chno < 0) return;
+        vc->scan->Update_ZData_NcFile();
 }
 
 void ViewControl::view_file_saveobjects_callback (GSimpleAction *simple, GVariant *parameter, 

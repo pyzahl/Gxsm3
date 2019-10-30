@@ -47,6 +47,7 @@ public:
         static void view_file_openhere_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_file_save_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_file_save_as_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void view_file_update_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_file_saveimage_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_file_saveobjects_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void view_file_loadobjects_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);

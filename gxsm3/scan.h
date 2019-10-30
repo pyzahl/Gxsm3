@@ -1,3 +1,4 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
@@ -24,7 +25,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #ifndef __SCAN_H
 #define __SCAN_H
@@ -105,7 +105,8 @@ public:
 	void clear_world_map ();
 	virtual int create(gboolean RoundFlg=FALSE, gboolean subgrid=FALSE, gdouble direction=1., gint fast_scan=0, ZD_TYPE ztype=ZD_IDENT, gboolean keep_layer_info=true, gboolean remap=false);
 	void Saved(){ State = IS_SAVED; };
-	
+        void Update_ZData_NcFile();
+  
 	virtual void start(int l=0, double lv=0.);
 	virtual void stop(int StopFlg=FALSE, int line=0);
 	gboolean is_scanning() { return Running ? true : false; };

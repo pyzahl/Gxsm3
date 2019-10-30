@@ -638,7 +638,7 @@ int LineProfile1D::SetData_redprofile(Scan *sc, int redblue){
 		int i_i = a.y + s->mem2d->GetNy ();
 		for (int i=0; i < s->mem2d->GetNy (); ++i, --i_i)
 			s->mem2d->data->SetYLookup (i, i_i);
-		sc->mem2d->data->Li[a.y].setNew(2); // now processed/displayed
+		sc->mem2d->data->Li[a.y].SetNew(2); // now processed/displayed
 	} else {
 	        a.y = sc->Pkt2dScanLine[0].y+hist_len;
 		while (a.y >= sc->mem2d->GetNy ()){
@@ -661,7 +661,7 @@ int LineProfile1D::SetData_redprofile(Scan *sc, int redblue){
 
 		for (int i=0; i < s->mem2d->GetNy (); ++i)
 			s->mem2d->data->SetYLookup (i, sc->Pkt2dScanLine[0].y+i);
-		sc->mem2d->data->Li[a.y].setNew(2); // now processed/displayed
+		sc->mem2d->data->Li[a.y].SetNew(2); // now processed/displayed
 	}
 
 	return 0;
