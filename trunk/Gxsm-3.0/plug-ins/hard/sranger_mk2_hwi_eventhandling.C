@@ -184,7 +184,7 @@ int DSPControl::Probing_event_setup_scan (int ch,
                    );
         //m->Resize (m->GetNx (), m->GetNy (), nvalues, ZD_DOUBLE, false); // multilayerinfo=clean
 	
-        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan ());
+        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (), ZD_DOUBLE, true, false, true );
         
         g_message ("C ch[%d] Nxy: %d, %d Nv:%d sls[%d,%d, %d,%d]",
                    ch,
@@ -325,12 +325,14 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                            g_array_index (garr_hdr[PROBEDATA_ARRAY_SEC], double, i));
 #endif
                                                 if (gapp->xsm->scan[chmap]->mem2d->data->GetNxSub()){
+#if 0
                                                         g_message ("CH[%d] HDR ixy: %d, %d   sls[%d,%d, %d,%d]", chmap,
                                                                    (int)g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i),
                                                                    (int)g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i),
                                                                    gapp->xsm->scan[chmap]->mem2d->data->GetX0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNxSub(),
                                                                    gapp->xsm->scan[chmap]->mem2d->data->GetY0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNySub()
                                                                    );
+#endif
                                                         xip = gapp->xsm->scan[chmap]->mem2d->data->GetNxSub()-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i);
                                                         yip = gapp->xsm->scan[chmap]->mem2d->data->GetNySub()-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
                                                 } else {
@@ -377,7 +379,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                         g_free (id);
                                 }
                       
-                                if (dspc->last_probe_data_index >  gapp->xsm->scan[chmap]->mem2d->GetNv ()){ // auto range and sanity
+                                if (dspc->last_probe_data_index !=  gapp->xsm->scan[chmap]->mem2d->GetNv ()){ // auto n-values range adjust
                                         gapp->xsm->scan[chmap]->mem2d->Resize (gapp->xsm->scan[chmap]->mem2d->GetNx (), gapp->xsm->scan[chmap]->mem2d->GetNy (),
                                                                                dspc->last_probe_data_index, ZD_DOUBLE, false);
                                         g_message ("Resize was required ** ch[%d] Nxy: %d, %d Nv:%d sls[%d,%d, %d,%d]",

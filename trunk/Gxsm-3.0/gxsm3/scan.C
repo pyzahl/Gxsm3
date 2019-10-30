@@ -628,7 +628,9 @@ void Scan::clear_world_map(){
                 world_map->draw();
         }
 }
-int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan, ZD_TYPE ztype, gboolean keep_layer_info, gboolean remap){
+int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fast_scan,
+                 ZD_TYPE ztype,
+                 gboolean keep_layer_info, gboolean remap, gboolean keep_nv){
         Scan *tmp=NULL;
         scan_ztype = ztype;
         scan_direction = direction;
@@ -641,7 +643,7 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
                 tmp->data.s.ny = mem2d->GetNy();
                 tmp->mem2d->copy(mem2d);
                 tmp->data.s.ntimes  = 1;
-		tmp->data.s.nvalues = 1;
+		tmp->data.s.nvalues = mem2d->GetNv(); //1;
 
                 update_world_map ();
         }
@@ -655,7 +657,8 @@ int Scan::create(gboolean RoundFlg, gboolean subgrid, gdouble direction, gint fa
 		data.UpdateUnits();
 	}
 
-        mem2d->Resize(data.s.nx, data.s.ny, data.s.nvalues, ztype, keep_layer_info);
+        mem2d->Resize(data.s.nx, data.s.ny, keep_nv ? -1 : data.s.nvalues, ztype, keep_layer_info);
+        //mem2d->Resize(data.s.nx, data.s.ny, -1, ztype, keep_layer_info);
 
 	// check if non linear sine X scale (fast scan set) 
 	if (fast_scan){

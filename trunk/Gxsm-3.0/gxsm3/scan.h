@@ -103,7 +103,9 @@ public:
 	virtual int draw(int y1=-1, int y2=-2);
 	void update_world_map (Scan *src=NULL);
 	void clear_world_map ();
-	virtual int create(gboolean RoundFlg=FALSE, gboolean subgrid=FALSE, gdouble direction=1., gint fast_scan=0, ZD_TYPE ztype=ZD_IDENT, gboolean keep_layer_info=true, gboolean remap=false);
+	virtual int create(gboolean RoundFlg=FALSE, gboolean subgrid=FALSE, gdouble direction=1., gint fast_scan=0,
+                           ZD_TYPE ztype=ZD_IDENT,
+                           gboolean keep_layer_info=true, gboolean remap=false, gboolean keep_nv=false);
 	void Saved(){ State = IS_SAVED; };
         void Update_ZData_NcFile();
   

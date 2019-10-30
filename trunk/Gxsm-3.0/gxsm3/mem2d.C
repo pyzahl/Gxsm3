@@ -62,6 +62,11 @@ const char *ZD_name[] = { "I", "Byte", "Short", "Long", "ULong", "LLong",
 ZData::ZData(int Nx, int Ny, int Nv){ 
         GXSM_REF_OBJECT (GXSM_GRC_ZDATA);
         XSM_DEBUG (DBG_L6, "ZData::ZData");
+
+        if (Nx < 1) Nx=1;
+        if (Ny < 1) Ny=1;
+        if (Nv < 1) Nv=1;
+
         nx=Nx; ny=Ny; nv=Nv; vlayer_put=vlayer=0;
         cp_ixy_sub[0]=cp_ixy_sub[2]=0; cp_ixy_sub[1]=nx; cp_ixy_sub[3]=ny;
         Li = new LineInfo[ny*nv]; 
@@ -97,8 +102,9 @@ int ZData::ZResize(int Nx, int Ny, int Nv){
 	double *yl = Ylookup;
 	double *vl = Vlookup;
 
-	if (Nv == 0) Nv=nv; // keep old nv?
-
+	if (Nv <= 0 && nv > 1) Nv=nv; // keep old nv?
+        else if (Nv < 1) Nv=1;
+        
 	if(Li) delete [] Li;
 	Li=new LineInfo[Ny*Nv]; 
 	Xlookup=new double[Nx];
@@ -167,6 +173,9 @@ TZData<ZTYP>::~TZData(){ XSM_DEBUG (DBG_L6, "TZData::~TZData"); TDel(); }
 
 template <class ZTYP> 
 int TZData<ZTYP>::Resize(int Nx, int Ny, int Nv){
+	if (Nv <= 0 && nv > 1) Nv=nv; // keep old nv?
+        else if (Nv < 1) Nv=1;
+        
 	XSM_DEBUG (DBG_L6, "TZData: Resize(" << Nx << " " << Ny << " " << Nv << ")");
 	XSM_DEBUG (DBG_L6, "TZData: Resize set size, reset Info");
 	if(Nx != nx || Ny != ny || Nv != nv){
