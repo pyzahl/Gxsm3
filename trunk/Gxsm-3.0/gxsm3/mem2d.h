@@ -321,6 +321,10 @@ public:
 		data->Z(value,x,y,v); 
 		data->Li[y].invalidate();
 	};
+	inline void   PutDataPkt_ixy_sub(double value, int x, int y, int v){
+		data->Z_ixy_sub(value,x,y,v); 
+		data->Li[y].invalidate();
+	};
 	double GetDataPktLineReg(int x, int y);
 	double GetDataPktHorizont(int x, int y);
 	double GetDataPktLog(int x, int y);
@@ -396,6 +400,7 @@ public:
 	static void evl_remove(gpointer entry, gpointer from);
 	void RemoveScanEvents ();
 	GSList* ReportScanEvents (GFunc report_obj_func, gpointer gp, double *xy=NULL, double distance=0., int number=0);
+	GSList* ReportScanEventsUnsort ();
 	GSList* ReportScanEventsXasc ();
 	GSList* ReportScanEventsYasc ();
 	void AttachScanEvent (ScanEvent *se);

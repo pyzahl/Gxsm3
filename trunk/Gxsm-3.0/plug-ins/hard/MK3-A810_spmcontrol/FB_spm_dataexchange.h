@@ -133,7 +133,7 @@
 #ifdef FB_SPM_VERSION
 #undef FB_SPM_VERSION
 #endif
-#define FB_SPM_VERSION   0x00004010 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_VERSION   0x00004011 /* FB_SPM main Version, BCD: 00.00 */
 #ifdef FB_SPM_DATE_YEAR
 #undef FB_SPM_DATE_YEAR
 #endif
@@ -141,7 +141,7 @@
 #ifdef FB_SPM_DATE_MMDD
 #undef FB_SPM_DATE_MMDD
 #endif
-#define FB_SPM_DATE_MMDD 0x00001026 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00001030 /* Date: Month/Day, BCD */
 
 #ifdef FB_SPM_FEATURES
 #undef FB_SPM_FEATURES
@@ -153,6 +153,7 @@
 	"dynamic current IIR channel + IIR mixer channels: Yes\n"\
 	"PLL PAC1F2F AMPCTRL-FUZZY-NEG: " FB_SPM_FEATURES_PLL "\n"\
 	"SCAN: Yes, Pause/Resume: Yes, Fast X-Sine mode: Yes, 2nd-Zoff-scan AKTIVE, Z[16], AIC0-7[16], 4x32bit-SIGNALS]! AIC_INT: " FB_SPM_FEATURES_AIC_AS_INT "\n" \
+	"SCANMAP: Yes, new probe trigger scheme\n" \
 	"Scan and Offset: vector moves, scan xyz move with limiter option\n" \
 	"MOVER,APP+ChanSelect: Yes, AAP GPIO pulse: Yes and general GPIO, IW/phase: Yes\n"\
 	"VPROBE: Yes\nVPROBE-AICdnxINT: " FB_SPM_FEATURES_AIC_INT "\nACPROBE: Yes\n 4x32bit-SIGNALs: Yes\nACphiQ19\n GPIO-WRITE option per segment: Yes, Trigger-Opt: Yes"\

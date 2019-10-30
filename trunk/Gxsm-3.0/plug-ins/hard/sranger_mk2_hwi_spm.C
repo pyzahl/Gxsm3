@@ -1020,6 +1020,7 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 	int num_srcs_w = 0; // #words
 	int num_srcs_l = 0; // #long words
 	int bi = 0;
+	
 	// find # of srcs_w (16 bit data) 0x0001, 0x0010..0x0800 (Bits 0, 4,5,6,7, 8,9,10,11)
 	do{
 		if(lssrcs & (1<<bi++))
@@ -1033,8 +1034,6 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 	
 	int num_srcs = (num_srcs_l<<4) | num_srcs_w;
 
-        for (int i=0; i<4; ++i) ixy_subscan[i]=ixy_sub[i];
-	
 	// ix0 not used yet, not subscan
 	if (yindex == -2 && xdir == 1){ // first init step of XP (->)
 		// cancel any running scan now

@@ -49,8 +49,10 @@ public:
 	virtual ~ZData();
 
 	inline int GetNx(){ return nx; };
+	inline int GetX0Sub(){ return cp_ixy_sub[0]; };
 	inline int GetNxSub(){ return cp_ixy_sub[1]; };
 	inline int GetNy(){ return ny; };
+	inline int GetY0Sub(){ return cp_ixy_sub[2]; };
 	inline int GetNySub(){ return cp_ixy_sub[3]; };
 	inline int GetNv(){ return nv; };
 
@@ -112,6 +114,7 @@ public:
 	virtual double Z(double z, int x, int y)=0;
 	virtual double ZSave(double z, int x, int y)=0;
 	virtual double Z(double z, int x, int y, int v)=0;
+	virtual double Z_ixy_sub(double z, int x, int y, int v)=0;
 	virtual double Z(double vx, double vy)=0;
 	virtual double Z(double z, double vx, double vy)=0;
 	virtual void   Zadd(double z, int x, int y)=0;
@@ -258,6 +261,7 @@ public:
 	inline double Z(double z, int x, int y){ return (double)(Zdat[y*nv+vlayer][x]=(ZTYP)z); };
 	inline double ZSave(double z, int x, int y){  if (x>=0 && x < nx && y >= 0 && y < ny) return (double)(Zdat[y*nv+vlayer][x]=(ZTYP)z); else return 0.; };
 	inline double Z(double z, int x, int y, int v){ return (double)(Zdat[y*nv+v][x]=(ZTYP)z); };
+	inline double Z_ixy_sub(double z, int x, int y, int v){ return (double)(Zdat[(y+cp_ixy_sub[2])*nv+v][x+cp_ixy_sub[0]]=(ZTYP)z); };
 	inline double Z(double vx, double vy);
 	inline double Z(double z, double vx, double vy);
 	inline void Zadd(double z, int x, int y){ Zdat[y*nv+vlayer][x]+=(ZTYP)z; };

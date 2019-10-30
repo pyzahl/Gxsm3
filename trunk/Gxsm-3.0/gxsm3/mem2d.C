@@ -119,7 +119,16 @@ int ZData::ZResize(int Nx, int Ny, int Nv){
 		memcpy(Vlookup, vl, (Nv > nv ? nv:Nv)*sizeof(double));
 		delete [] vl; 
 	}
-	nx=Nx; ny=Ny; nv=Nv; vlayer=0; cp_ixy_sub[0]=cp_ixy_sub[2]=0; cp_ixy_sub[1]=nx; cp_ixy_sub[3]=ny;
+        
+        // clip SLS
+        if (cp_ixy_sub[0] >= Nx) cp_ixy_sub[0] = Nx-1;
+        if (cp_ixy_sub[2] >= Ny) cp_ixy_sub[2] = Ny-1;
+        if (cp_ixy_sub[0]+cp_ixy_sub[1] > Nx) cp_ixy_sub[1] = Nx-cp_ixy_sub[0];
+        if (cp_ixy_sub[2]+cp_ixy_sub[3] > Ny) cp_ixy_sub[3] = Ny-cp_ixy_sub[2];
+        //cp_ixy_sub[0]=cp_ixy_sub[2]=0;
+        //cp_ixy_sub[1]=Nx; cp_ixy_sub[3]=Ny;
+        
+	nx=Nx; ny=Ny; nv=Nv; vlayer=0;
 	XSM_DEBUG (DBG_L6, "ZData: ZResize OK");
 
 	return 0;
@@ -864,6 +873,11 @@ GSList* Mem2d::ReportScanEvents (GFunc report_obj_func, gpointer gp, double *xy,
 		return NULL;
 	}
 	return NULL;
+}
+
+GSList* Mem2d::ReportScanEventsUnsort (){
+        GSList *ev_unsort = g_slist_copy (scan_event_list);
+        return ev_unsort;
 }
 
 GSList* Mem2d::ReportScanEventsXasc (){
