@@ -1323,9 +1323,11 @@ int SPM_ScanControl::setup_scan (int ch,
 		
         // Create/Resize/Update scan object -- now remapping existing data as muc has available
 
-        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (), zt, keep_multi_layer_info,
-                                     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (g_object_get_data( G_OBJECT (scan_start_button), "SPMCONTROL_RAD_START_MODE_CB")))
-                                     // true
+        gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan (),
+                                     zt,
+                                     keep_multi_layer_info, // keep layer informations
+                                     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (g_object_get_data( G_OBJECT (scan_start_button), "SPMCONTROL_RAD_START_MODE_CB"))), // RAD: remap data
+                                     strcmp (label, "EXTMAP")==0 ? true:false // keep_n_values
                                      );
 
 	// setup dz from instrument definition or propagated via signal definition
@@ -1629,6 +1631,7 @@ void SPM_ScanControl::run_probe (int ipx, int ipy){
 
 }
 
+//  update SLS info ( ixy_sub[4] ) from user entry in all scan destination channels
 void SPM_ScanControl::set_subscan (int xs, int xn, int ys, int yn){
         if (!master_scan)
                 return;
