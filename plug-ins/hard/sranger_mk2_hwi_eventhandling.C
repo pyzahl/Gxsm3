@@ -297,8 +297,15 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                            g_array_index (garr_hdr[PROBEDATA_ARRAY_U], double, i),
                                                            g_array_index (garr_hdr[PROBEDATA_ARRAY_SEC], double, i));
 #endif
-                                                xip=nx-1-g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i);
-                                                yip=ny-1-g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
+                                                if (gapp->xsm->hardware->ixy_subscan[2]){
+                                                        xip = gapp->xsm->hardware->ixy_subscan[0] + gapp->xsm->hardware->ixy_subscan[2]-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i);
+                                                        yip = gapp->xsm->hardware->ixy_subscan[1] + gapp->xsm->hardware->ixy_subscan[3]-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
+                                                } else {
+                                                        yip = ny-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
+                                                        xip = nx-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i);
+                                                }
+                                                yip=ny-1-gapp->xsm->hardware->ixy_subscan[1]-g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
+
                                                 xiD = ((int)g_array_index (garr_hdr[PROBEDATA_ARRAY_XS], double, i)<<16)/dspc->mirror_dsp_scan_dx32 + nx/2 - 1;
                                                 yiD = (nx/2 - 1) - ((int)g_array_index (garr_hdr[PROBEDATA_ARRAY_YS], double, i)<<16)/dspc->mirror_dsp_scan_dy32;
                                         

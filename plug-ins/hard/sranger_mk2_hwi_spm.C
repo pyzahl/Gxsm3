@@ -1032,6 +1032,8 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 	}while(bi<16);
 	
 	int num_srcs = (num_srcs_l<<4) | num_srcs_w;
+
+        for (int i=0; i<4; ++i) ixy_subscan[i]=ixy_sub[i];
 	
 	// ix0 not used yet, not subscan
 	if (yindex == -2 && xdir == 1){ // first init step of XP (->)

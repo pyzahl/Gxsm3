@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -22,8 +24,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #ifndef __XSMHARD_H
 #define __XSMHARD_H
@@ -240,13 +240,15 @@ class XSM_Hardware{
 	double rotmxx,rotmxy,rotmyx,rotmyy,rotoffx,rotoffy;
 
 	double irotmxx,irotmxy,irotmyx,irotmyy,irotoffx,irotoffy;
-
+  
 	int    fast_scan; // X scale is sinodial
 	int    suspend_watches;
 	int    scanmode;
 	int    scan_direction;
 
 	int    y_current;
+public:
+        int    ixy_subscan[4];
 };
 
 
