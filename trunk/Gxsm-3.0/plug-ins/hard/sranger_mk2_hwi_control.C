@@ -1617,43 +1617,7 @@ DSPControl::DSPControl () {
 
         dsp_bp->notebook_tab_show_all ();
 
-#if 0 // OBSOLETE
-// ==== Folder: Scan Events Trigger ========================================
-        dsp_bp->new_grid ();
-        dsp_bp->start_notebook_tab ("Trigger", "tab-trigger", NOTEBOOK_TAB_TRIGGER, hwi_settings);
-
-        //	dsp_bp->new_grid_with_frame ("Frame");
-        dsp_bp->pop_grid ();
-        dsp_bp->new_line ();
-        dsp_bp->new_grid_with_frame ("SR DSP Auto Scan Events Trigger");
-	label = gtk_label_new (N_("Trigger"));
-	checkbutton = gtk_check_button_new_with_label(N_("Enable Auto Trigger"));
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (checkbutton), trigger_pflg ? 1:0);
-	g_signal_connect (G_OBJECT (checkbutton), "clicked",
-			    G_CALLBACK (DSPControl::se_auto_trigger_callback), this);
-
-        for (int i=0; i<8; ++i){
-                if (i<4){
-                        // i=0..3: A,B,C,D
-                        frame_param = gtk_frame_new (N_("Bias Trigger (Voltage Dependent Scan)"));
-                        ADD_EC_SPIN ("Trig-Xpm-A", Unity, OUT_OF_RANGE, &trigger_i_xp[i], -1., 65534., ".0f", 1., 10.,  RemoteEntryList);
-                        ADD_EC_SPIN ("Bias-Xp-A", Volt, OUT_OF_RANGE, &trigger_bias_setpoint_xp[i], -10., 10., "5g", 0.01, 0.1,  RemoteEntryList);
-                        ADD_EC_SPIN ("Trig-Xm-A", Unity, OUT_OF_RANGE, &trigger_i_xm[i], -1., 65534., ".0f", 1., 10.,  RemoteEntryList);
-                        ADD_EC_SPIN ("Bias-Xm-A", Volt, OUT_OF_RANGE, &trigger_bias_setpoint_xm[i], -10., 10., "5g", 0.01, 0.1,  RemoteEntryList);
-                } else { // i=4..8: E,F,G,H
-                        frame_param = gtk_frame_new (N_("Setpoint/Current Trigger (Current Dependent Scan)"));
-                        ADD_EC_SPIN ("Trig-Xpm-E", Unity, OUT_OF_RANGE, &trigger_i_xp[i], -1., 65534., ".0f", 1., 10.,  RemoteEntryList);
-                        ADD_EC_SPIN ("SetPt-Xp-E", Current, OUT_OF_RANGE, &trigger_bias_setpoint_xp[i], -10., 10., "5g", 0.01, 0.1,  RemoteEntryList);
-                        ADD_EC_SPIN ("Trig-Xm-E", Unity, OUT_OF_RANGE, &trigger_i_xm[i], -1., 65534., ".0f", 1., 10.,  RemoteEntryList);
-                        ADD_EC_SPIN ("SetPt-Xm-E", Current, OUT_OF_RANGE, &trigger_bias_setpoint_xm[i], -10., 10., "5g", 0.01, 0.1,  RemoteEntryList);
-                }
-                dsp_bp->new_line ();
-        }
-
-        dsp_bp->notebook_tab_show_all ();
-        dsp_bp->pop_grid ();
-#endif
-        
+       
 // ==== Folder: Advanced or DSP Expert (advanced Feedback & Scan settings) ========================================
         PI_DEBUG (DBG_L4, "DSPC----TAB-ADVANCED ------------------------------- ");
 
@@ -3500,57 +3464,7 @@ void DSPControl::save_values (NcFile *ncf){
 //	sranger_mk2_hwi_ncaddvar (ncf, MK2ID"var_id", "Unit", "Var Description", "ShortName", value);
 
 // Vector Probe ============================================================
-// to-do !!!???
 
-
-// Scan Event Trigger ============================================================
-	if (trigger_pflg){
-		for (int i=0; i<8; ++i){
-			gchar* var = g_strdup_printf ("sranger_mk2_hwi_Trigger_Xp_at_%d", i);
-			NcVar* ncv_trig = ncf->add_var (var, ncShort);
-			g_free (var);
-			ncv_trig->add_att ("long_name", "SRanger: Scan Event Xp Trigger at");
-			ncv_trig->add_att ("var_unit", "RevIndex");
-			ncv_trig->put (&trigger_i_xp[i]);
-
-			if (i<4){
-				var = g_strdup_printf ("sranger_mk2_hwi_Trigger_Xp_Bias_%d", i);
-				ncv_trig = ncf->add_var (var, ncDouble);
-				g_free (var);
-				ncv_trig->add_att ("long_name", "SRanger: Scan Event Xp Bias");
-				ncv_trig->add_att ("var_unit", "Volt");
-			} else {
-				var = g_strdup_printf ("sranger_mk2_hwi_Trigger_Xp_Current_%d", i);
-				ncv_trig = ncf->add_var (var, ncDouble);
-				g_free (var);
-				ncv_trig->add_att ("long_name", "SRanger: Scan Event Xp Current");
-				ncv_trig->add_att ("var_unit", "nA");
-			}
-			ncv_trig->put (&trigger_bias_setpoint_xp[i]);
-
-			var = g_strdup_printf ("sranger_mk2_hwi_Trigger_Xm_at_%d", i);
-			ncv_trig = ncf->add_var (var, ncShort);
-			g_free (var);
-			ncv_trig->add_att ("long_name", "SRanger: Scan Event Trigger Xm at");
-			ncv_trig->add_att ("var_unit", "RevIndex");
-			ncv_trig->put (&trigger_i_xm[i]);
-
-			if (i<4){
-				var = g_strdup_printf ("sranger_mk2_hwi_Trigger_Xm_Bias_%d", i);
-				ncv_trig = ncf->add_var (var, ncDouble);
-				g_free (var);
-				ncv_trig->add_att ("long_name", "SRanger: Scan Event Xm Bias");
-				ncv_trig->add_att ("var_unit", "Volt");
-			} else {
-				var = g_strdup_printf ("sranger_mk2_hwi_Trigger_Xm_Current_%d", i);
-				ncv_trig = ncf->add_var (var, ncDouble);
-				g_free (var);
-				ncv_trig->add_att ("long_name", "SRanger: Scan Event Xm Current");
-				ncv_trig->add_att ("var_unit", "nA");
-			}
-			ncv_trig->put (&trigger_bias_setpoint_xm[i]);
-		}
-	}
 }
 
 
@@ -3883,18 +3797,6 @@ void DSPControl::updateDSP(int FbFlg){
 		ue_slope_flg = area_slope_compensation_flag;
 	}
 }
-
-void DSPControl::update_trigger(gboolean flg){
-	if (flg){
-		trigger_pflg=1;
-		g_slist_foreach (dsp_bp->get_freeze_list_head (), (GFunc) App::freeze_ec, NULL);
-	} else {
-		trigger_pflg=0;
-		g_slist_foreach (dsp_bp->get_freeze_list_head (), (GFunc) App::thaw_ec, NULL);
-	}	
-        // deleted trigger update -- obsoleted, removed DSP function
-}
-
 
 int DSPControl::ChangedAction(GtkWidget *widget, DSPControl *dspc){
 	dspc->updateDSP();

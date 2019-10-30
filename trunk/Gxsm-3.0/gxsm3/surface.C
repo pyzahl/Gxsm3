@@ -51,7 +51,7 @@
 //#include "xsm_mkicons.h"
 //#include "app_mkicons.h"
 
-#define CHMAX (1+4*PIDCHMAX+4*DAQCHMAX)
+#define CHMAX (1+4*PIDCHMAX+4*DAQCHMAX+2*EXTCHMAX)
 
 const gchar *MathErrString[] = {
 	"Math OK",
@@ -534,6 +534,10 @@ int Surface::load(const char *rname){
 		}
 		
 		if (!strncasecmp (fname+strlen(fname)-3,".nc",3)){
+                        gchar **tmp = g_strsplit_set (fname, "/", -1);
+                        gapp->channelselector->SetInfo (ActiveChannel, tmp[g_strv_length (tmp)-1]);
+                        g_strfreev (tmp);
+
                         switch (open_mode){
                         case xsm::open_mode::replace:
                                 {

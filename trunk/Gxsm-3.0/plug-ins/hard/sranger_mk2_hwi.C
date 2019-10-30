@@ -87,7 +87,6 @@ to the MK3 subsection for deviations from the MK2 interface and setup.}
 
 %The \GxsmEntry{SR DSP Control} Dialog is divided into several sections:
 %1) Feedback & Scan: This folder contains all necessary options regarding feedback and scan.
-%2) Trigger: For Multi-Volt and Current imaging % removed mode???
 %3) Advanced: Different settings for advanced features of the Signal Ranger.
 %4) STS: Parameter for dI/dV spectroscopy can be defined here.
 %5) FZ: In this section information about force - distance curves can be set.
@@ -323,39 +322,6 @@ all scan parameters of the digital vector scan generator like speed.
   stability with same CI. The feedback transfer is 1:1 (error to output
   per loop) if all gains, CP and CI, are set to one in linear mode.}
 
-% removed mode ???
-%% OptPlugInSection: Trigger -- Multi-Volt and -Current Control
-%
-%It is possible to trigger automatic changes of Bias or
-%Current-Setpoint while scanning at up to four given X indices each, for
-%Bias and Current for forward and backward scan direction.
-%
-% +/-4 DAC / cycle: 75000*4*10/32767=
-%If the index given is reached, the DSP will trigger a bias or
-%current-setpoint change. The bias is never changed instantly, but is
-%ramped with an fixed speed of (92 V/s @ 10V max. Bias) from that
-%position to the new value. The index is actually down-counted to zero
-%for each scan line, thus index 0 means the last point of every scan
-%line.
-%
-%The first line sets up the trigger points for X-forward (Xm) and
-%X-backward (Xp) for bias changes: Index-Xp, new Bias, Index-Xm, new
-%Bias.  The second to fourth line does the same in an equivalent
-%way. The next frame sets up the similar task for changes of the current
-%setpoint. Any Index never reached will just never trigger, thus an
-%index of -1 will disable it.
-%
-%To enable or updated the trigger data table, toggle/enable the Trigger
-%Enable check-box. At startup, GXSM will always read the current DSP
-%persistent trigger table and trigger-enable state.
-%
-%While the trigger is enabled, the Bias and Current settings are
-%locked. Any attempts to change it (i.e. the slider) will temporary
-%enforce your setting until the next trigger hits.
-%
-%You can turn the Trigger feature on or off at any time.
-%
-%\GxsmScreenShot{SR-DSP-Control-Trigger}{Trigger Control window}
 
 % OptPlugInSection: Advanced Feedback and Probe Control
 
