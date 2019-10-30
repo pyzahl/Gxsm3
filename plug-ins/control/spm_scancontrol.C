@@ -1668,8 +1668,10 @@ void SPM_ScanControl::set_subscan (int xs, int xn, int ys, int yn){
         for(int i=0; i < EXTCHMAX; ++i){
                 int ch;
                 if ((ch = gapp->xsm->FindChan(xsmres.extchno[i], ID_CH_D_P)) >= 0){
-                        gapp->xsm->scan[ch]-> set_subscan_information (sls_config);
-                        gapp->xsm->scan[ch]-> mem2d->data->ZPutDataSetDest (sls_config);
+                        if (gapp->xsm->scan[ch]){
+                                gapp->xsm->scan[ch]-> set_subscan_information (sls_config);
+                                gapp->xsm->scan[ch]-> mem2d->data->ZPutDataSetDest (sls_config);
+                        }
                 }
         }
 }	
