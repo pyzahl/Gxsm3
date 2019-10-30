@@ -212,7 +212,10 @@ gchar *ViewInfo::makeXYZinfo(double x, double y){
 
 	gchar *px  = Ux()->UsrString(mx);
 	gchar *py  = Uy()->UsrString(my);
-	gchar *pzh = pixelmode ? g_strdup_printf (" 0x%08x N:%d", (int)sc->mem2d->GetDataPkt(ix,iy), sc->mem2d->data->Li[iy].IsNew()) : NULL;
+	gchar *pzh = pixelmode ? g_strdup_printf (" 0x%08x N:%d S:%d", (int)sc->mem2d->GetDataPkt(ix,iy),
+                                                  sc->mem2d->data->Li[iy].IsNew(),
+                                                  sc->mem2d->data->Li[iy].IsStored()
+                                                  ) : NULL;
 	// ignoring xdir by now, assuming -> for pixel time estimation, also assuming constant scan speed all the time
 	// calcpixeltime
 	if (showtime){

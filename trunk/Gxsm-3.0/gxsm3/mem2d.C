@@ -351,30 +351,57 @@ void TZData<ZTYP>::set_all_Z (double z, int v, int x0, int y0, int xs, int ys){
 }
 
 // NetCDF Put / Get Methods "overloaded"
+#if 1
+template <class ZTYP> 
+void TZData<ZTYP>::NcPut(NcVar *ncfield, int time_index, gboolean update){
+	for(int y=0; y<ny; y++){
+		for(int v=0; v<nv; ++v){
+                        int liy=y+ny*v;
+                        if (update){
+                                if (Li[liy].IsNew() && ! Li[liy].IsStored()) {
+                                        ncfield->set_cur(time_index,v,y);
+                                        ncfield->put(Zdat[y*nv+v], 1,1, 1,nx);
+                                        Li[liy].SetStored();
+                                }
+                        } else {
+                                ncfield->set_cur(time_index,v,y);
+                                ncfield->put(Zdat[y*nv+v], 1,1, 1,nx);
+                                Li[liy].SetStored();
+                        }
+                //                if (y==0 && (v%10) == 0)
+                //                        gapp->progress_info_set_bar_fraction ((gdouble)v/nv, 2);
+                }
+	}
+}
+
+#else
 
 // #define SAVE_NEW_DATA_ONLY
 
 template <class ZTYP> 
-void TZData<ZTYP>::NcPut(NcVar *ncfield, int time_index){
-	gdouble yy, yy2;
-	yy = yy2 = 0.;
-	for(int y=0; y<ny; y++){
-		for(int v=0; v<nv; ++v){
+//void TZData<ZTYP>::NcPut(NcVar *ncfield, int time_index){
+void TZData<ZTYP>::NcPut(NcVar *ncfield, int time_index, gboolean update){
+
+        gdouble yy, yy2;
+        yy = yy2 = 0.;
+        for(int y=0; y<ny; y++){
+                for(int v=0; v<nv; ++v){
 #ifdef SAVE_NEW_DATA_ONLY
- 		        if (Li[y+ny*v].IsNew() > 0) {
-			        ncfield->set_cur(time_index,v,y);
-				ncfield->put(Zdat[y*nv+v], 1,1, 1,nx);
-		        }
+                        if (Li[y+ny*v].IsNew() > 0) {
+                                ncfield->set_cur(time_index,v,y);
+                                ncfield->put(Zdat[y*nv+v], 1,1, 1,nx);
+                        }
 #else
-			ncfield->set_cur(time_index,v,y);
-			ncfield->put(Zdat[y*nv+v], 1,1, 1,nx);
+                        ncfield->set_cur(time_index,v,y);
+                        ncfield->put(Zdat[y*nv+v], 1,1, 1,nx);
 #endif
-		}
-		yy = (double)y/(double)ny;
-		if (ceil(yy) - ceil(yy2) > 1.)
-			gapp->progress_info_set_bar_fraction (yy2=yy, 2);
-	}
+                }
+                yy = (double)y/(double)ny;
+                if (ceil(yy) - ceil(yy2) > 1.)
+                        gapp->progress_info_set_bar_fraction (yy2=yy, 2);
+        }
 }
+#endif
 
 template <class ZTYP> 
 void TZData<ZTYP>::NcGet(NcVar *ncfield, int time_index){

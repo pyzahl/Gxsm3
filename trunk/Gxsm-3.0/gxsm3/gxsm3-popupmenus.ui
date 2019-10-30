@@ -60,6 +60,10 @@
 	    <attribute name="action">win.view-save-auto</attribute>
 	  </item>
 	  <item>
+	    <attribute name="label" translatable="yes">_Update</attribute>
+	    <attribute name="action">win.view-save-update</attribute>
+	  </item>
+	  <item>
 	    <attribute name="label" translatable="yes">Save _as...</attribute>
 	    <attribute name="action">win.view-save-as</attribute>
 	  </item>

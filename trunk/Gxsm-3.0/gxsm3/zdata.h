@@ -179,7 +179,7 @@ public:
 
 	virtual inline double operator [] (int idx)=0;
 
-	virtual void NcPut(NcVar *ncfield, int time_index=0)=0;
+	virtual void NcPut(NcVar *ncfield, int time_index=0, gboolean update=false)=0;
 	virtual void NcGet(NcVar *ncfield, int time_index=0)=0;
 
 	virtual void norm (double mag=1., int vi=0, int vf=-1)=0;
@@ -334,7 +334,7 @@ public:
 
 	inline ZTYP* GetPtr(int x, int y, ZTYP z){ return &Zdat[y*nv+vlayer][x]; };
 
-	void NcPut(NcVar *ncfield, int time_index=0);
+	void NcPut(NcVar *ncfield, int time_index=0, gboolean update=false);
 	void NcGet(NcVar *ncfield, int time_index=0);
 
 	void norm (double mag=1., int vi=0, int vf=-1);

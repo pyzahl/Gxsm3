@@ -898,3 +898,62 @@ int Scan::World2Pixel (double wx, double wy, double &ix, double &iy, SCAN_COORD_
 
 	return 0;
 }
+
+
+void Scan::Update_ZData_NcFile(){
+	NcError ncerr(NcError::verbose_nonfatal);
+
+        // check for file name
+	if (!data.ui.name){
+                g_warning("No file name yet, please save first to update later!");
+                return;
+        }
+        
+        // open in write mode
+        NcFile nc(data.ui.name, NcFile::Write);
+   
+	// Check if the file was opened successfully
+	if (! nc.is_valid()){
+                g_warning("NetCDF file is not valid, please save first to update later!");
+		return;
+        }
+        
+        // read Data variable
+        NcVar *Data = NULL;
+        ZD_TYPE zd_type_ncfile=ZD_IDENT;
+        
+	if( ( Data = nc.get_var("H") ) ) // standart "SHORT" Topo Scan ?
+                zd_type_ncfile=ZD_SHORT; // Short
+        else
+		if( ( Data = nc.get_var("Intensity") ) ) // Diffract Scan "LONG" ?
+			zd_type_ncfile=ZD_LONG; // used by "Intensity" -- diffraction counts
+		else
+			if( ( Data = nc.get_var("FloatField") ) ) // Float ?
+				zd_type_ncfile=ZD_FLOAT;
+			else
+				if( ( Data = nc.get_var("DoubleField") ) ) // Double ?
+					zd_type_ncfile=ZD_DOUBLE;
+				else
+					if( ( Data = nc.get_var("ByteField") ) ) // Byte ?
+						zd_type_ncfile=ZD_BYTE;
+					else
+						if( ( Data = nc.get_var("ComplexDoubleField") ) ) // Complex ?
+							zd_type_ncfile=ZD_COMPLEX;
+						else
+							if( ( Data = nc.get_var("RGBA_ByteField") ) ) // RGBA Byte ?
+                                                                zd_type_ncfile=ZD_RGBA;
+        
+        if (mem2d->GetTyp() != zd_type_ncfile || zd_type_ncfile == ZD_IDENT){
+                g_warning("Sorry, NetCDF file ZData type is incompatible. Please save this scan first to update later!");
+                return;
+        }
+        
+        g_message("Data in NetCDF file >%s< is now updated!", data.ui.name);
+
+        if (data.s.ntimes == 1){
+                mem2d->data->NcPut (Data, 0, true);
+	} else {
+		for (int time_index=0; time_index<data.s.ntimes; ++time_index)
+			mem2d_time_element(time_index)->data->NcPut (Data, time_index, true);
+        }
+}
