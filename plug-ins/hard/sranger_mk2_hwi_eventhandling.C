@@ -174,14 +174,41 @@ int DSPControl::Probing_event_setup_scan (int ch,
                                           int nvalues
 	){
 	Mem2d *m=gapp->xsm->scan[ch]->mem2d;
-        m->Resize (m->GetNx (), m->GetNy (), nvalues, ZD_DOUBLE, false); // multilayerinfo=clean
+        g_message ("0 ch[%d] Nxy: %d, %d Nv:%d sls[%d,%d, %d,%d]",
+                   ch,
+                   m->data->GetNx (),
+                   m->data->GetNy (),
+                   m->data->GetNv (),
+                   m->data->GetX0Sub(), m->data->GetNxSub(),
+                   m->data->GetY0Sub(), m->data->GetNySub()
+                   );
+        //m->Resize (m->GetNx (), m->GetNy (), nvalues, ZD_DOUBLE, false); // multilayerinfo=clean
 	
         gapp->xsm->scan[ch]->create (TRUE, FALSE, strchr (titleprefix, '-') ? -1.:1., gapp->xsm->hardware->IsFastScan ());
-	gapp->xsm->scan[ch]->data.s.nvalues = nvalues;
-        m->Resize (m->GetNx (), m->GetNy (), nvalues, ZD_DOUBLE, false); // multilayerinfo=clean
+        
+        g_message ("C ch[%d] Nxy: %d, %d Nv:%d sls[%d,%d, %d,%d]",
+                   ch,
+                   m->data->GetNx (),
+                   m->data->GetNy (),
+                   m->data->GetNv (),
+                   m->data->GetX0Sub(), m->data->GetNxSub(),
+                   m->data->GetY0Sub(), m->data->GetNySub()
+                   );
+ 
+        gapp->xsm->scan[ch]->data.s.nvalues = nvalues;
+        m->Resize (m->GetNx (), m->GetNy (), nvalues, ZD_IDENT, false); // multilayerinfo=clean
         m->data->MkVLookup(0, nvalues-1);
 
-	// Setup correct Z unit
+        g_message ("R ch[%d] Nxy: %d, %d Nv:%d sls[%d,%d, %d,%d]",
+                   ch,
+                   m->data->GetNx (),
+                   m->data->GetNy (),
+                   m->data->GetNv (),
+                   m->data->GetX0Sub(), m->data->GetNxSub(),
+                   m->data->GetY0Sub(), m->data->GetNySub()
+                   );
+
+       // Setup correct Z unit
 	UnitObj *u = gapp->xsm->MakeUnit (unit, label);
 	gapp->xsm->scan[ch]->data.SetZUnit (u);
 	delete u;
@@ -278,7 +305,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                         }
 
                         if (map){
-                                if (xip<0){
+                                if (xip<0){ // only once per coordinate!
                                         if (garr_hdr) {
                                                 int i=0;
 
@@ -288,8 +315,8 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                            i,
                                                            g_array_index (garr_hdr[PROBEDATA_ARRAY_INDEX], double, i),
                                                            g_array_index (garr_hdr[PROBEDATA_ARRAY_TIME], double, i),
-                                                           xip=nx-1-g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i),
-                                                           yip=ny-1-g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i),
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i),
+                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i),
                                                            g_array_index (garr_hdr[PROBEDATA_ARRAY_PHI], double, i),
                                                            g_array_index (garr_hdr[PROBEDATA_ARRAY_XS], double, i),
                                                            g_array_index (garr_hdr[PROBEDATA_ARRAY_YS], double, i),
@@ -297,14 +324,19 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                            g_array_index (garr_hdr[PROBEDATA_ARRAY_U], double, i),
                                                            g_array_index (garr_hdr[PROBEDATA_ARRAY_SEC], double, i));
 #endif
-                                                if (gapp->xsm->hardware->ixy_subscan[2]){
-                                                        xip = gapp->xsm->hardware->ixy_subscan[0] + gapp->xsm->hardware->ixy_subscan[2]-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i);
-                                                        yip = gapp->xsm->hardware->ixy_subscan[1] + gapp->xsm->hardware->ixy_subscan[3]-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
+                                                if (gapp->xsm->scan[chmap]->mem2d->data->GetNxSub()){
+                                                        g_message ("CH[%d] HDR ixy: %d, %d   sls[%d,%d, %d,%d]", chmap,
+                                                                   (int)g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i),
+                                                                   (int)g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i),
+                                                                   gapp->xsm->scan[chmap]->mem2d->data->GetX0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNxSub(),
+                                                                   gapp->xsm->scan[chmap]->mem2d->data->GetY0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNySub()
+                                                                   );
+                                                        xip = gapp->xsm->scan[chmap]->mem2d->data->GetNxSub()-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i);
+                                                        yip = gapp->xsm->scan[chmap]->mem2d->data->GetNySub()-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
                                                 } else {
-                                                        yip = ny-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
                                                         xip = nx-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i);
+                                                        yip = ny-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
                                                 }
-                                                yip=ny-1-gapp->xsm->hardware->ixy_subscan[1]-g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
 
                                                 xiD = ((int)g_array_index (garr_hdr[PROBEDATA_ARRAY_XS], double, i)<<16)/dspc->mirror_dsp_scan_dx32 + nx/2 - 1;
                                                 yiD = (nx/2 - 1) - ((int)g_array_index (garr_hdr[PROBEDATA_ARRAY_YS], double, i)<<16)/dspc->mirror_dsp_scan_dy32;
@@ -330,28 +362,36 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                 }
                                 
                         
-                                // need to (re) initialize scan map?
+                                // sanity check -- need to resize scan map?
                                 if (gapp->xsm->scan[chmap]->data.s.dz < 0.){
                                         gchar *id = g_strconcat ("Map-", (const gchar*)g_ptr_array_index (glabarray,  mapi), "(", Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"i":(gpointer) dspc->vp_unit_lookup (Xsrc), ")", NULL);
                                         Probing_event_setup_scan (chmap, "X+", id,
                                                                   (const gchar*)g_ptr_array_index (gsymarray,  mapi),
                                                                   (const gchar*)g_ptr_array_index (glabarray,  mapi),
                                                                   1.0, dspc->last_probe_data_index);
-                                        //                                        g_message ("MAPI: %i CH%i Lab:%s USym:%s LayerLookup:%s(%s)", mapi, chmap,
-                                        //                                                   (const gchar*)g_ptr_array_index (gsymarray,  mapi),
-                                        //                                                   (const gchar*)g_ptr_array_index (glabarray,  mapi),
-                                        //                                                   Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"N/A":(gpointer) dspc->vp_unit_lookup (Xsrc)
-                                        //                                                   );
+                                        g_message ("MAPI: %i CH%i Lab:%s USym:%s LayerLookup:%s(%s)", mapi, chmap,
+                                                   (const gchar*)g_ptr_array_index (gsymarray,  mapi),
+                                                   (const gchar*)g_ptr_array_index (glabarray,  mapi),
+                                                   Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"N/A":(gpointer) dspc->vp_unit_lookup (Xsrc)
+                                                   );
                                         g_free (id);
                                 }
                       
                                 if (dspc->last_probe_data_index >  gapp->xsm->scan[chmap]->mem2d->GetNv ()){ // auto range and sanity
                                         gapp->xsm->scan[chmap]->mem2d->Resize (gapp->xsm->scan[chmap]->mem2d->GetNx (), gapp->xsm->scan[chmap]->mem2d->GetNy (),
                                                                                dspc->last_probe_data_index, ZD_DOUBLE, false);
+                                        g_message ("Resize was required ** ch[%d] Nxy: %d, %d Nv:%d sls[%d,%d, %d,%d]",
+                                                   chmap,
+                                                   gapp->xsm->scan[chmap]->mem2d->GetNx (),
+                                                   gapp->xsm->scan[chmap]->mem2d->GetNy (),
+                                                   gapp->xsm->scan[chmap]->mem2d->GetNv (),
+                                                   gapp->xsm->scan[chmap]->mem2d->data->GetX0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNxSub(),
+                                                   gapp->xsm->scan[chmap]->mem2d->data->GetY0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNySub()
+                                                   );
                                 }
                                 // remap probe data data to scan mem2d buffer
                                 for (int i = 0; i < dspc->last_probe_data_index; i++){
-                                        gapp->xsm->scan[chmap]->mem2d->PutDataPkt (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), xip,yip,i);
+                                        gapp->xsm->scan[chmap]->mem2d->PutDataPkt_ixy_sub (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), xip,yip,i);
                                         if (Xsrc >= 0) // with X lookup
                                                 gapp->xsm->scan[chmap]->mem2d->data->SetVLookup(i, dspc->vp_scale_lookup (Xsrc) * g_array_index (garr [expdi_lookup[Xsrc]], double, i)); // update X lookup
                                 }

@@ -64,7 +64,6 @@ XSM_Hardware::XSM_Hardware(){
 	SetSuspendWatches ();
         for (int i=0; i<3; ++i){
                 sim_xyzS [i] = 0., sim_xyz0 [i] = 0.;
-                ixy_subscan[i]=0;
         }
         sim_mode = 0;
 }

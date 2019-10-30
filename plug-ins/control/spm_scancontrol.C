@@ -1248,7 +1248,7 @@ int SPM_ScanControl::initialize_scan_lists (){
                 // reset Ext/Map Channels
                 for(int i=0; i < EXTCHMAX; ++i){
                         if ((ch = gapp->xsm->FindChan(xsmres.extchno[i], ID_CH_D_P)) >= 0){
-                                setup_scan (ch, "X+", "Map-PrbSrc#", "Xu", "Xt", "Xl", -1.0); // needs further setup!
+                                setup_scan (ch, "X+", "Map-PrbSrc#", "Xu", "DOUBLE", "EXTMAP", -1.0); // needs further setup!
                         }
                 }
 
@@ -1653,6 +1653,24 @@ void SPM_ScanControl::set_subscan (int xs, int xn, int ys, int yn){
         for (GSList* tmp = xm_scan_list; tmp; tmp = g_slist_next (tmp)){
 		((Scan*)tmp->data) -> set_subscan_information (sls_config);
 		((Scan*)tmp->data) -> mem2d->data->ZPutDataSetDest (sls_config);
+        }
+        
+	for (GSList* tmp = xp_2nd_scan_list; tmp; tmp = g_slist_next (tmp)){
+		((Scan*)tmp->data) -> set_subscan_information (sls_config);
+		((Scan*)tmp->data) -> mem2d->data->ZPutDataSetDest (sls_config);
+	}
+        
+        for (GSList* tmp = xm_2nd_scan_list; tmp; tmp = g_slist_next (tmp)){
+		((Scan*)tmp->data) -> set_subscan_information (sls_config);
+		((Scan*)tmp->data) -> mem2d->data->ZPutDataSetDest (sls_config);
+        }
+        // do also Ext/Map Channels
+        for(int i=0; i < EXTCHMAX; ++i){
+                int ch;
+                if ((ch = gapp->xsm->FindChan(xsmres.extchno[i], ID_CH_D_P)) >= 0){
+                        gapp->xsm->scan[ch]-> set_subscan_information (sls_config);
+                        gapp->xsm->scan[ch]-> mem2d->data->ZPutDataSetDest (sls_config);
+                }
         }
 }	
 

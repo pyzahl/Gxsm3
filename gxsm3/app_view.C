@@ -936,6 +936,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all", "All");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all project on x", "All Project on X");
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "all project on y", "All Project on Y");
+	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (select_events_by), "map all", "Map all");
  	gtk_combo_box_set_active (GTK_COMBO_BOX (select_events_by), 0);
 
         pe_bp->grid_add_label ("Formula");
@@ -1795,6 +1796,8 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                                 title = g_strdup_printf ("All probe projected on X: %s", pe->get_label (yi[l]));
                         else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 4)
                                 title = g_strdup_printf ("All probe projected on Y: %s", pe->get_label (yi[l]));
+                        else if ( gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 5)
+                                title = g_strdup_printf ("Map all: %s", pe->get_label (yi[l]));
                         else
                                 title = g_strdup (pe->get_label (yi[l]));
 
@@ -2102,8 +2105,38 @@ void  ViewControl::obj_event_plot_callback (GtkWidget* widget,
                                         //vc->EventPlot[l]->scan1d->AutoDisplay (0.,1.,1,0.05);
                                 }
                                 g_slist_free (all);
-                        }
-                        else{
+
+                        } else if (gtk_combo_box_get_active (GTK_COMBO_BOX (vc->select_events_by)) == 5){ // Map all
+                                GSList* all = vc->scan->mem2d->ReportScanEventsUnsort ();
+                                GSList* ev = all;
+                                int count=0;
+                                double xmin, xmax, dx, ymin, ymax, dy;
+                                double x,y;
+                                ((ScanEvent*)ev->data)->get_position (x, y);
+                                xmin=xmax=x; ymin=ymax=y; dx=dy=1e20;
+                                while (ev){
+                                        ScanEvent *sen = (ScanEvent*) ev->data;
+                                        EventEntry *een = (EventEntry*) sen->event_list->data;
+                                        if (een->description_id () == 'P')
+                                                count++;
+                                        sen->get_position (x, y);
+                                        if (xmin > x) xmin=x;
+                                        if (xmax < x) xmax=x;
+                                        if (ymin > y) ymin=y;
+                                        if (ymax < y) ymax=y;
+                                        if (fabs(x-xmin) > vc->scan->data.s.dx)
+                                                if (dx > x-xmin) dx = x-xmin;
+                                        if (fabs(y-ymin) > vc->scan->data.s.dy)
+                                                if (dy > y-ymin) dy = y-xmin;
+                                        if (fabs(y-ymax) >  vc->scan->data.s.dy)
+                                                if (dy > ymax-y) dy = ymax-y;
+                                        ev = g_slist_next (ev);
+                                }
+                                g_message ("MAP: #%d [%g %g] .. [%g %g] @ [%g %g]", count, xmin,ymin, xmax,ymax, dx,dy);
+                                
+                                vc->EventPlot[l]->RemoveScans ();
+
+                        } else{
                                 for(int i = 0; i < nn; i++)
                                         vc->EventPlot[l]->SetPoint (i, pe->get (i, xi), pe->get (i, yi[l]));
                         }

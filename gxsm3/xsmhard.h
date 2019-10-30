@@ -247,8 +247,6 @@ class XSM_Hardware{
 	int    scan_direction;
 
 	int    y_current;
-public:
-        int    ixy_subscan[4];
 };
 
 
