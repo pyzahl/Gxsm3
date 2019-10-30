@@ -604,13 +604,6 @@ class DSPControl : public AppBase{
 	// M-Servo-Module
 	double m_servo[3];
 
-	// -- section SCAN_EVENTS_TRIGGER
-	int    trigger_pflg;
-	int    trigger_i_xp[8];
-	int    trigger_i_xm[8];
-	double trigger_bias_setpoint_xp[8];
-	double trigger_bias_setpoint_xm[8];
-
 	// -- section AREA_SCAN --
 	int    dsp_scan_pflg;
 	double dynamic_zoom;      //!< on-the-fly zooming, 1 = normal

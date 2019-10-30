@@ -325,7 +325,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                         
                                 // need to (re) initialize scan map?
                                 if (gapp->xsm->scan[chmap]->data.s.dz < 0.){
-                                        gchar *id = g_strconcat ("Map-", (const gchar*)g_ptr_array_index (glabarray,  mapi), NULL);
+                                        gchar *id = g_strconcat ("Map-", (const gchar*)g_ptr_array_index (glabarray,  mapi), "(", Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"i":(gpointer) dspc->vp_unit_lookup (Xsrc), ")", NULL);
                                         Probing_event_setup_scan (chmap, "X+", id,
                                                                   (const gchar*)g_ptr_array_index (gsymarray,  mapi),
                                                                   (const gchar*)g_ptr_array_index (glabarray,  mapi),
