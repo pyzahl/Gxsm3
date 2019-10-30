@@ -543,13 +543,6 @@ void init_probe (){
         PRB_Trk_state = -1;
         PRB_Trk_ref   = 0L;
 
-#ifdef WEGXXXX
-	if (probe.state < PROBE_RUN_LOCKIN_FREE){ // don't touch if free running.
-		probe.state = PROBE_NO_LOCKIN; // disable, re-init
-		PRB_lockin_restart_flg = 1;
-		init_lockin (PROBE_RUN_LOCKIN_PROBE); // auto: on probe only level
-	}
-#endif
 	// calc data normalization factor
 //	PRB_ks_normfac  = PRB_ACMult*2.*MATH_PI/(PRB_nAve*SPECT_SIN_LEN*LOCKIN_ILN);
 //	PRB_avg_normfac = PRB_ACMult/(PRB_nAve*SPECT_SIN_LEN*LOCKIN_ILN);
@@ -660,7 +653,45 @@ void integrate_probe_data_srcs (){
 #endif
 }
 
-#pragma CODE_SECTION(store_probe_data_srcs, ".text:slow")
+
+
+#pragma CODE_SECTION(push_vector_normalized, ".text:slow")
+int push_vector_normalized(){
+        int w=0;
+        if (probe.vector->srcs & 0x01){ // Zmonitor (AIC5 -->)
+                *probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[8]/PRB_AIC_num_samples); ++w;
+        }
+        if (probe.vector->srcs & 0x02){ // Umonitor (AIC6 -->)
+                *probe_datafifo.buffer_w++ = AIC_OUT(6); ++w;
+        }
+        if (probe.vector->srcs & 0x10){ // AIC0 <-- FBMix 0: I (current)
+                *probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[0]/PRB_AIC_num_samples); ++w;
+        }
+        if (probe.vector->srcs & 0x20){ // AIC1 <-- FBMix 1: dF
+                *probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[1]/PRB_AIC_num_samples); ++w;
+        }
+        if (probe.vector->srcs & 0x40){ // AIC2 <-- FBMix 2
+                *probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[2]/PRB_AIC_num_samples); ++w;
+        }
+        if (probe.vector->srcs & 0x80){ // AIC3 <-- FBMix 3
+                *probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[3]/PRB_AIC_num_samples); ++w;
+        }
+        if (probe.vector->srcs & 0x100){ // AIC4
+                *probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[4]/PRB_AIC_num_samples); ++w;
+        }
+        if (probe.vector->srcs & 0x200){ // AIC5
+                *probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[5]/PRB_AIC_num_samples); ++w;
+        }
+        if (probe.vector->srcs & 0x400){ // AIC6
+                *probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[6]/PRB_AIC_num_samples); ++w;
+        }
+        if (probe.vector->srcs & 0x800){ // AIC7
+                *probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[7]/PRB_AIC_num_samples); ++w;
+        }
+        return w;
+}
+
+//#pragma CODE_SECTION(store_probe_data_srcs, ".text:slow")
 void store_probe_data_srcs ()
 {
 	int w=0;
@@ -669,36 +700,7 @@ void store_probe_data_srcs ()
 
 #ifdef DSP_PROBE_AIC_AVG
 	if (probe.vector->options & VP_AIC_INTEGRATE){
-
-		if (probe.vector->srcs & 0x01){ // Zmonitor (AIC5 -->)
-			*probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[8]/PRB_AIC_num_samples); ++w;
-		}
-		if (probe.vector->srcs & 0x02) // Umonitor (AIC6 -->)
-			*probe_datafifo.buffer_w++ = AIC_OUT(6), ++w;
-		if (probe.vector->srcs & 0x10){ // AIC0 <-- FBMix 0: I (current)
-			*probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[0]/PRB_AIC_num_samples); ++w;
-		}
-		if (probe.vector->srcs & 0x20){ // AIC1 <-- FBMix 1: dF
-			*probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[1]/PRB_AIC_num_samples); ++w;
-		}
-		if (probe.vector->srcs & 0x40){ // AIC2 <-- FBMix 2
-			*probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[2]/PRB_AIC_num_samples); ++w;
-		}
-		if (probe.vector->srcs & 0x80){ // AIC3 <-- FBMix 3
-			*probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[3]/PRB_AIC_num_samples); ++w;
-		}
-		if (probe.vector->srcs & 0x100){ // AIC4
-			*probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[4]/PRB_AIC_num_samples); ++w;
-		}
-		if (probe.vector->srcs & 0x200){ // AIC5
-			*probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[5]/PRB_AIC_num_samples); ++w;
-		}
-		if (probe.vector->srcs & 0x400){ // AIC6
-			*probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[6]/PRB_AIC_num_samples); ++w;
-		}
-		if (probe.vector->srcs & 0x800){ // AIC7
-			*probe_datafifo.buffer_w++ = (int)(PRB_AIC_data_sum[7]/PRB_AIC_num_samples); ++w;
-		}
+                w=push_vector_normalized();
 	} else {
 
 #endif // ------------------------------------------------------------
@@ -815,7 +817,7 @@ void buffer_probe_section_end_data_srcs ()
 }
 
 // mini probe program flow interpreter kernel
-//#pragma CODE_SECTION(next_section, ".text:slow")
+#pragma CODE_SECTION(next_section, ".text:slow")
 void next_section (){
 	GPIO_subsample = 0;
 
@@ -866,9 +868,8 @@ void next_section (){
                 ++PRB_section_count;
 #endif
         }
-        probe.ix = probe.vector->n; // load total steps per section = # vec to add
         probe.iix = probe.vector->dnx; // do dnx steps to take data until next point!
-
+        probe.ix = probe.vector->n; // load total steps per section = # vec to add
 }
 
 // manage conditional vector tracking mode -- atom/feature tracking
@@ -921,11 +922,12 @@ void next_track_vector(){
         }
         ++probe.vector; // increment programm (vector) counter to go to next TRACK check position
         ++PRB_section_count; // next
-        probe.ix = probe.vector->n; // load total steps per section = # vec to add
         probe.iix = probe.vector->dnx; // do dnx steps to take data until next point!
+        probe.ix = probe.vector->n; // load total steps per section = # vec to add
 }
 
 // trigger condition evaluation
+#pragma CODE_SECTION(wait_for_trigger, ".text:slow")
 int wait_for_trigger (){
 	if (probe.vector->options == (VP_TRIGGER_P | VP_TRIGGER_N)) // logic
 		return ((*probe.trigger_input) & ((probe.vector->options & VP_GPIO_MSK) >> 16)) ? 0:1; // usually tigger_input would point to probe.gpio_data for this GPIO/logic trigger
@@ -936,25 +938,69 @@ int wait_for_trigger (){
 	}
 }
 
+// prepare for next section or tracking vector -- called from idle processing regime!
+#pragma CODE_SECTION(process_next_section, ".text:slow")
+void process_next_section (){
+        // Special VP Track Mode Vector Set?
+        if (probe.vector->options & (VP_TRACK_UP | VP_TRACK_DN | VP_TRACK_REF | VP_TRACK_FIN)){
+                next_track_vector ();
+                
+        } else { // run regular VP program mode
+                next_section ();
+                //                clear_probe_data_srcs ();
+                probe_append_header_and_positionvector ();
+        }
+}
+
+#pragma CODE_SECTION(GPIO_check, ".text:slow")
+void GPIO_check(){
+        if (!GPIO_subsample--){
+                GPIO_subsample = CR_generic_io.gpio_subsample;
+                WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_in, 0);
+                probe.gpio_data = CR_generic_io.gpio_data_in; // mirror data in 32bit signal
+        }
+}
+
+#pragma CODE_SECTION(probe_signal_limiter_test, ".text:slow")
+void probe_signal_limiter_test(){	
+        if (probe.lix > 0) { ++probe.lix;  goto run_one_time_step_1; }
+        if (probe.vector->options & VP_LIMITER_UP)
+                if (*probe.limiter_input > *probe.limiter_updn[0]){
+                        ++probe.lix;
+                        goto run_one_time_step_1;
+                }
+        if (probe.vector->options & VP_LIMITER_DN)
+                if (*probe.limiter_input < *probe.limiter_updn[1]){
+                        ++probe.lix;
+                        goto run_one_time_step_1;
+                }
+        goto limiter_continue;
+ run_one_time_step_1:
+        if ((probe.vector->options & VP_LIMITER_MODE) != 0) {
+                probe.lix = 1; // cancel any "undo" mode, use final vector in next section
+                probe.vector->i = 0; // exit any loop
+        }
+ limiter_continue:
+        ;
+}
+
 // run a probe section step:
 // decrement and check counter for zero, then initiate next section (...add header info)
 // decrement skip data counter, check for zero then
 //  -acquire data of all srcs, store away
 //  -update current count, restore skip data counter
-
+/*
 void run_one_time_step(){
-          // initiate external data SPI request and transfer
+        if (!probe.ix) // idle task is workign on completion ofdata management, wait!
+                return;
+        
+        // initiate external data SPI request and transfer
         if (probe.iix == probe.vector->dnx && !(state.dp_task_control[9].process_flag&0xffff))
                 initiate_McBSP_transfer (probe.ix);
 
         // read GPIO if requested (CPU time costy!!!)
-	if (probe.vector->options & VP_GPIO_READ){
-		if (!GPIO_subsample--){
-			GPIO_subsample = CR_generic_io.gpio_subsample;
-			WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_in, 0);
-			probe.gpio_data = CR_generic_io.gpio_data_in; // mirror data in 32bit signal
-		}
-	}
+	if (probe.vector->options & VP_GPIO_READ)
+                GPIO_check();
 
 	// unsatisfied trigger condition will also HOLD VP as of now!
 	if (probe.vector->options & (VP_TRIGGER_P|VP_TRIGGER_N))
@@ -973,6 +1019,8 @@ void run_one_time_step(){
                                 CLR_DSP_GP55;
 #endif
                         store_probe_data_srcs ();
+                        
+#if 0 // ===> moved to idle tasks processing space
                         if (!probe.ix){
                                 // Special VP Track Mode Vector Set?
                                 if (probe.vector->options & (VP_TRACK_UP | VP_TRACK_DN | VP_TRACK_REF | VP_TRACK_FIN)){
@@ -980,67 +1028,85 @@ void run_one_time_step(){
 
                                 } else { // run regular VP program mode
                                         next_section ();
-                                        clear_probe_data_srcs ();
                                         probe_append_header_and_positionvector ();
                                 }
 			}
+#endif
                 }
 		// Limiter active?
-		if (probe.vector->options & VP_LIMITER){	
-			if (probe.lix > 0) { ++probe.lix;  goto run_one_time_step_1; }
-			if (probe.vector->options & VP_LIMITER_UP)
-				if (*probe.limiter_input > *probe.limiter_updn[0]){
-					++probe.lix;
-					goto run_one_time_step_1;
-				}
-			if (probe.vector->options & VP_LIMITER_DN)
-				if (*probe.limiter_input < *probe.limiter_updn[1]){
-					++probe.lix;
-					goto run_one_time_step_1;
-				}
-			goto limiter_continue;
-		run_one_time_step_1:
-			if ((probe.vector->options & VP_LIMITER_MODE) != 0) {
-				probe.lix = 1; // cancel any "undo" mode, use final vector in next section
-				probe.vector->i = 0; // exit any loop
-			}
-		limiter_continue:
-			;
+		if (probe.vector->options & VP_LIMITER){
+                        probe_signal_limiter_test();
 		} else if (probe.lix > 0) --probe.lix;
 		 
                 probe.iix = probe.vector->dnx; // load steps inbetween "data aq" points
                 clear_probe_data_srcs ();
         }
 }
+*/
 
-#define LOCKIN_ON (probe.vector->srcs & 0x3000) // obsolete with signals
 void run_probe (){
-// run free only/manual
-#if 0
-	if (LOCKIN_ON){
-		if (PRB_lockin_restart_flg){
-			probe.AC_ix = -PRB_SE_DELAY;
-			PRB_lockin_restart_flg = 0;
-		}
+        // next time step in GVP
+        // ** run_one_time_step ();
+        // ** add_probe_vector ();
 
-		// wait until starting procedure (korrelation integration time) finished
-		if(probe.AC_ix >= 0){
-			run_one_time_step ();
-			add_probe_vector ();
-		}
-	} else {
-		PRB_lockin_restart_flg = 1;
+        // next time step in GVP
+        if (probe.ix){ // idle task is working on completion of data management, wait!
+                // initiate external data SPI request and transfer
+                if (probe.iix == probe.vector->dnx && !(state.dp_task_control[9].process_flag&0xffff))
+                        initiate_McBSP_transfer (probe.ix);
+
+                // read GPIO if requested (CPU time costy!!!)
+                if (probe.vector->options & VP_GPIO_READ)
+                        GPIO_check();
+
+                // unsatisfied trigger condition will also HOLD VP as of now!
+                if (probe.vector->options & (VP_TRIGGER_P|VP_TRIGGER_N))
+                        if (wait_for_trigger ())
+                                return;
+
+                integrate_probe_data_srcs ();
+
+                if (! probe.iix-- || probe.lix){
+                        if (probe.ix--){
+#ifdef ENABLE_SCAN_GP55_CLOCK
+                                // generate external probe point data clock on GP55
+                                if (probe.ix&1)
+                                        SET_DSP_GP55;
+                                else
+                                        CLR_DSP_GP55;
 #endif
-		run_one_time_step ();
-		add_probe_vector ();
-#if 0
-	}
+                                store_probe_data_srcs ();
+                        
+#if 0 // ===> moved to idle tasks processing space
+                                if (!probe.ix){
+                                        // Special VP Track Mode Vector Set?
+                                        if (probe.vector->options & (VP_TRACK_UP | VP_TRACK_DN | VP_TRACK_REF | VP_TRACK_FIN)){
+                                                next_track_vector ();
+
+                                        } else { // run regular VP program mode
+                                                next_section ();
+                                                probe_append_header_and_positionvector ();
+                                        }
+                                }
 #endif
-        
-// increment probe time
+                        }
+                        // Limiter active?
+                        if (probe.vector->options & VP_LIMITER){
+                                probe_signal_limiter_test();
+                        } else if (probe.lix > 0) --probe.lix;
+		 
+                        probe.iix = probe.vector->dnx; // load steps inbetween "data aq" points
+                        clear_probe_data_srcs ();
+                }
+       
+                add_probe_vector ();
+        }
+
+        // increment probe time
 	++probe.time; 
 }
 
+#define LCK_2ND_ENABLE 0
 // digital LockIn, computes 0., 1st, 2nd order Amplitudes, generates reference/bias sweep, phase correction for 1st and 2nd order
 run_lockin (){
 	int i;
@@ -1071,20 +1137,22 @@ run_lockin (){
 
 //	PRB_korrel_sum1st[PRB_ki] = _SMAC (PRB_korrel_sum1st[PRB_ki], PRB_ref1st, Uin);
 
+#if LCK_2ND_ENABLE
 //	PRB_korrel_sum2ndA[PRB_ki] = _SADD32 (PRB_korrel_sum2ndA[PRB_ki], _SSHL32 ( _SMPY32 (PRB_ref2ndA, Uin), -16));
 //	PRB_korrel_sum2ndB[PRB_ki] = _SADD32 (PRB_korrel_sum2ndB[PRB_ki], _SSHL32 ( _SMPY32 (PRB_ref2ndB, Uin), -16));
 
 	PRB_korrel_sum2ndA[PRB_ki] += ((DSP_INT64)PRB_ref2ndA * (DSP_INT64)UinA) >> probe.lockin_shr_corrprod;
 	PRB_korrel_sum2ndB[PRB_ki] += ((DSP_INT64)PRB_ref2ndB * (DSP_INT64)UinB) >> probe.lockin_shr_corrprod;
-                
+#endif                
 	// average periods elapsed?
         if (PRB_AveCount >= probe.AC_nAve){
                 PRB_AveCount = 0;
                 PRB_LockIn_1stA = PRB_korrel_sum1stA[0]; 
                 PRB_LockIn_1stB = PRB_korrel_sum1stB[0]; 
+#if LCK_2ND_ENABLE
                 PRB_LockIn_2ndA = PRB_korrel_sum2ndA[0]; 
                 PRB_LockIn_2ndB = PRB_korrel_sum2ndB[0]; 
-
+#endif
 		// build korrelation sum
                 for (i = 1; i < LOCKIN_ILN; ++i){
 //                        probe.LockIn_1stA = _SADD32 (probe.LockIn_1stA, PRB_korrel_sum1stA[i]);
@@ -1093,8 +1161,10 @@ run_lockin (){
 //                        probe.LockIn_2ndB = _SADD32 (probe.LockIn_2ndB, PRB_korrel_sum2ndB[i]);
                         PRB_LockIn_1stA += PRB_korrel_sum1stA[i];
                         PRB_LockIn_1stB += PRB_korrel_sum1stB[i];
+#if LCK_2ND_ENABLE
                         PRB_LockIn_2ndA += PRB_korrel_sum2ndA[i];
                         PRB_LockIn_2ndB += PRB_korrel_sum2ndB[i];
+#endif
 		}
 
 		// data is ready now: probe.LockIn_1st, _2nd, _0
@@ -1103,8 +1173,10 @@ run_lockin (){
 			probe.LockIn_0B   = PRB_data_sumB >> PRB_norm2;
 		        probe.LockIn_1stA = PRB_korrel_sum1stA[0] >> PRB_norm2; // [8]  23|32 xN -> 16 xN 
 		        probe.LockIn_1stB = PRB_korrel_sum1stB[0] >> PRB_norm2; 
+#if LCK_2ND_ENABLE
 			probe.LockIn_2ndA = PRB_korrel_sum2ndA[0] >> PRB_norm2; 
 			probe.LockIn_2ndB = PRB_korrel_sum2ndB[0] >> PRB_norm2;
+#endif
 		}
 
                 ++probe.AC_ix;
@@ -1115,8 +1187,10 @@ run_lockin (){
 		// reset korrelation and average sums
                 PRB_korrel_sum1stA[PRB_ki] = 0L;
                 PRB_korrel_sum1stB[PRB_ki] = 0L;
+#if LCK_2ND_ENABLE
                 PRB_korrel_sum2ndA[PRB_ki] = 0L;
                 PRB_korrel_sum2ndB[PRB_ki] = 0L;
+#endif
 		PRB_data_sumA = 0;
 		PRB_data_sumB = 0;
         }
@@ -1133,6 +1207,8 @@ run_lockin (){
 //	PRB_ref1stA = PRB_sinreftabA[(PRB_modindex + SPECT_SIN_LEN-PIPE_LEN*AC_tab_inc + PRB_ACPhIdxA) & SPECT_SIN_LEN_MSK];
 	PRB_ref1stA = probe.LockInRefSinTabA[(PRB_modindex + SPECT_SIN_LEN-PIPE_LEN*AC_tab_inc + PRB_ACPhIdxA) & SPECT_SIN_LEN_MSK];
 	PRB_ref1stB = probe.LockInRefSinTabB[(PRB_modindex + SPECT_SIN_LEN-PIPE_LEN*AC_tab_inc + PRB_ACPhIdxB) & SPECT_SIN_LEN_MSK];
+#if LCK_2ND_ENABLE
 	PRB_ref2ndA = probe.LockInRefSinTabA[((PRB_modindex<<1) + SPECT_SIN_LEN-PIPE_LEN*AC_tab_inc + PRB_ACPhIdxA) & SPECT_SIN_LEN_MSK];
 	PRB_ref2ndB = probe.LockInRefSinTabB[((PRB_modindex<<1) + SPECT_SIN_LEN-PIPE_LEN*AC_tab_inc + PRB_ACPhIdxB) & SPECT_SIN_LEN_MSK];
+#endif
 }

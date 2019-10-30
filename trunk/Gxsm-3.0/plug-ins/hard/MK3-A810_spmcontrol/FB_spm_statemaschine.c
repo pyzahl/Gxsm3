@@ -148,18 +148,27 @@ int idle_task_002(void){
         return 0;
 }
 
+// Generic Vector Probe Program between Section Processing Function calls moved out of real time regime:
+extern void process_next_section ();
+
 #pragma CODE_SECTION(idle_task_003, ".text:slow")
 int idle_task_003(void){
-        if (probe.pflg && (state.mode & MD_PID)){
-                if (probe.vector)
-                        if (probe.vector->options & VP_FEEDBACK_HOLD){
-                                STOP_RT_TASK (RT_TASK_FEEDBACK);
-                                z_servo.watch = 0; // must reset flag here, if task is not running, it is not managed
-                                return 1;
-                        } else {
-                                START_RT_TASK_ODD (RT_TASK_FEEDBACK);
-                                return 1;
-                        }
+        // Vector Probe Manager
+        if (probe.pflg){
+                if (!probe.ix) // idle task needs to work on section completion out of RT regime
+                        process_next_section ();
+                
+                if (state.mode & MD_PID){
+                        if (probe.vector)
+                                if (probe.vector->options & VP_FEEDBACK_HOLD){
+                                        STOP_RT_TASK (RT_TASK_FEEDBACK);
+                                        z_servo.watch = 0; // must reset flag here, if task is not running, it is not managed
+                                        return 1;
+                                } else {
+                                        START_RT_TASK_ODD (RT_TASK_FEEDBACK);
+                                        return 1;
+                                }
+                }
         }
         return 0;
 }
@@ -309,7 +318,7 @@ int idle_task_010(void){
                         STOP_RT_TASK (RT_TASK_AREA_SCAN);
                 init_probe_fifo (); // reset probe fifo!
                 init_probe ();
-                START_RT_TASK_ODD (RT_TASK_VECTOR_PROBE);
+                START_RT_TASK_EVEN (RT_TASK_VECTOR_PROBE);
                 return 1;
         }
         

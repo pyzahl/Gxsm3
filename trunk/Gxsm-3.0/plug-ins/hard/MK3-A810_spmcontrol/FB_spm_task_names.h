@@ -78,7 +78,7 @@ const gchar *MK3_dsp_id_process_name[] = {
         // ID001
         "BZ push data from RT_FIFO",
         "Offset Move",
-        "Probe Feedback Flag Manager",
+        "Vector Probe Manager",
         "",
         
         // ID005
