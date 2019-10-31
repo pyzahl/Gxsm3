@@ -93,6 +93,7 @@ static GXSM_ACTION_INFO main_actions[] = {
 static GActionEntry app_gxsm_action_entries[] = {
         // { "rgb-mode", ViewControl::view_view_color_rgb_callback, NULL, "false", NULL },
         // { "set-marker-group", ViewControl::view_tool_marker_group_radio_callback, "s", "'red'", NULL },
+        { "file-update", App::file_update_callback, NULL, NULL, NULL },
         { "file-open", App::file_open_callback, NULL, NULL, NULL },
         { "file-open-to-free-channel", App::file_open_in_new_window_callback, NULL, NULL, NULL },
         { "file-close", App::file_close_callback, NULL, NULL, NULL },

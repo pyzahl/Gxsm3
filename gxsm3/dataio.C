@@ -822,7 +822,8 @@ FIO_STATUS NetCDF::Write(){
 
 	// data.ui.basename:
 	// filename with the original data (set once and never changed again)
-	if ( strcmp(scan->data.ui.originalname, "unknown (not saved)") == 0 ){
+	if ( g_strrstr(scan->data.ui.originalname, "(not saved)") 
+             || g_strrstr(scan->data.ui.originalname, "(in progress)") ){
 		scan->data.ui.SetOriginalName( name );
 		XSM_DEBUG (DBG_L2, "got original name:" << scan->data.ui.originalname);
 	}else{

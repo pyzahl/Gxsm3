@@ -118,7 +118,20 @@ void App::file_set_probepath_callback (GSimpleAction *simple, GVariant *paramete
 
 void App::file_save_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	if(!gapp) return;
-	gapp->xsm->save(AUTO_NAME_SAVE);
+	//gapp->xsm->save(AUTO_NAME_SAVE);
+
+	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp))
+		((Scan*)tmp->data)->Save ();
+        
+	return;
+}
+
+void App::file_update_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
+	if(!gapp) return;
+
+	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp))
+		((Scan*)tmp->data)->Update_ZData_NcFile ();
+        
 	return;
 }
 

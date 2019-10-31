@@ -1412,9 +1412,13 @@ void App::as_update(){
                  (GFunc) App::update_ec, NULL);
         
         // now automatic via as_settings bind, so get it !
-        as_setdata();   
-        gtk_entry_set_text ((GTK_ENTRY (g_object_get_data( G_OBJECT (as_control), "originalname"))), 
-                            xsm->data.ui.originalname);
+        as_setdata();
+        if (xsm->GetActiveScan())
+                gtk_entry_set_text ((GTK_ENTRY (g_object_get_data( G_OBJECT (as_control), "originalname"))), 
+                                    xsm->GetActiveScan()->data.ui.originalname);
+        else
+                gtk_entry_set_text ((GTK_ENTRY (g_object_get_data( G_OBJECT (as_control), "originalname"))), 
+                                    xsm->data.ui.originalname);
 }
 
 void App::as_setdata(){

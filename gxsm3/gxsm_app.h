@@ -144,6 +144,7 @@ public:
         static void file_set_datapath_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void file_set_probepath_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void file_save_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+        static void file_update_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void file_save_as_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void file_import_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
         static void file_export_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);

@@ -70,6 +70,8 @@ Surface::Surface() : Xsm(){
 	ActiveChannel = 0;
 	MasterChannel = 0;
 
+        SetActiveScanList (); // from external scan control
+        
 	ScanList = NULL;
 	ProfileList = NULL;
 	DelProfileList = NULL;
@@ -794,7 +796,7 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
 		g_free (tmp); g_free (suffix);
 	}
   
-	for(si=0; si<CHMAX; si++){
+	for(si=0; si<CHMAX; si++){  // -- this is obsoleted by scan->Save() method --
 		if (Ch[si] == -1) continue;
 		if (!scan[Ch[si]]) continue;
 
@@ -933,7 +935,7 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
 		gapp->monitorcontrol->LogEvent("*Save", fname);
 
 		// save Parameter and Data
-		{
+		{ // -- this is obsoleted by scan->Save() method for default auto safe, not for use with save as.... --
 			Dataio *Dio = NULL;
 			scan[Ch[si]]->CpyUserEntries(data);
 			//      scan[Ch[si]]->data.ui.SetBaseName(strrchr(fname,'/')+1);
@@ -960,6 +962,7 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
 		// fname done.
 		g_free(fname);
 	}
+#if 0        
 	// inc Partial Sub-Scan Counter
 	if( automode == AUTO_NAME_PARTIAL_SAVE){
 		++subcounter;
@@ -968,7 +971,7 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
 		++counter;
 		subcounter = 0;
 	}
-
+#endif
 	gapp->spm_update_all();
 
 	return 0; 
