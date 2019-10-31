@@ -244,178 +244,206 @@ int DSPControl::Probing_event_setup_scan (int ch,
         return 0;
 }
 
+// DSP Raster Probe MAP handling:
 int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc){
-	static ProfileControl *pc[MAX_NUM_CHANNELS][MAX_NUM_CHANNELS];
+	//static ProfileControl *pc[MAX_NUM_CHANNELS][MAX_NUM_CHANNELS];
         static int xiDD=0;
         static int xipD=0;
 	int popped=0;
 	GArray **garr;
 	GArray **garr_hdr;
-        
+        int xip=-1, yip=-1;
 	XSM_DEBUG_PG ("DSPControl::Probing_eventcheck_callback -- enter");
-
         
 	// pop off all available data from stack
 	while ((garr = dspc->pop_probedata_arrays ()) != NULL){
                 garr_hdr = dspc->pop_probehdr_arrays ();
-        
-		++popped;
+                ++popped;
+                
+                if (gapp->xsm->FindChan(xsmres.extchno[0], ID_CH_D_P) >= 0){ // mapi=0 must be selected!
+                        // find chunksize (total # data sources)
+                        int chunksize = 0;
+                        GPtrArray *glabarray = g_ptr_array_new ();
+                        GPtrArray *gsymarray = g_ptr_array_new ();
 
-                // find chunksize (total # data sources)
-                int chunksize = 0;
-                GPtrArray *glabarray = g_ptr_array_new ();
-                GPtrArray *gsymarray = g_ptr_array_new ();
-
-                int Xsrc=-1;
-                for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src){
-                        if (dspc->vis_PSource & msklookup[src] || dspc->vis_XSource & msklookup[src]){
-                                g_ptr_array_add (glabarray, (gpointer) dspc->vp_label_lookup (src));
-                                g_ptr_array_add (gsymarray, (gpointer) dspc->vp_unit_lookup (src));
-                                ++chunksize;
-                                //                                g_message ("PEV: %i #%i Lab:%s USym:%s <%c>", chunksize, src,
-                                //                                           (gpointer) dspc->vp_label_lookup (src), (gpointer) dspc->vp_unit_lookup (src),
-                                //                                           dspc->vis_PSource & msklookup[src]? 'Y' : dspc->vis_XSource & msklookup[src] ? 'X' : '?');
-                                if (Xsrc<0 && dspc->vis_XSource & msklookup[src]){
-                                        Xsrc = src; // used to map layer index to value
+                        int Xsrc=-1;
+                        
+                        for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src){
+                                if (dspc->vis_PSource & msklookup[src] || dspc->vis_XSource & msklookup[src]){
+                                        g_ptr_array_add (glabarray, (gpointer) dspc->vp_label_lookup (src));
+                                        g_ptr_array_add (gsymarray, (gpointer) dspc->vp_unit_lookup (src));
+                                        ++chunksize;
+                                        //                                g_message ("PEV: %i #%i Lab:%s USym:%s <%c>", chunksize, src,
+                                        //                                           (gpointer) dspc->vp_label_lookup (src), (gpointer) dspc->vp_unit_lookup (src),
+                                        //                                           dspc->vis_PSource & msklookup[src]? 'Y' : dspc->vis_XSource & msklookup[src] ? 'X' : '?');
+                                        if (Xsrc<0 && dspc->vis_XSource & msklookup[src]){
+                                                Xsrc = src; // used to map layer index to value
+                                        }
                                 }
                         }
-                }
 
-                // auto decide on mapping mode -- direct data map to Scan-Channel or to Scan-Event
+                        // auto decide on mapping mode -- direct data map to Scan-Channel or to Scan-Event
                 
-                gboolean mapping = false;
-                int src=-1;
-                int xip=-1, yip=-1;
-                int xiD=-1, yiD=-1;
-                for(int mapi=0; mapi < EXTCHMAX; ++mapi){
-                        int chmap=gapp->xsm->FindChan(xsmres.extchno[mapi], ID_CH_D_P);
-                        int map=0;
-  
-                        if (chmap < 0)
-                                continue;
+                        // *****************************************************************************************************************
+                        // remap probe data to scan channel(s) DataMap0..7
+                        // *****************************************************************************************************************
+                        int src=-1;
+                        int xiD=-1, yiD=-1;
+                        for(int mapi=0; mapi < EXTCHMAX; ++mapi){
+                                int map=0;
+                                int chmap=gapp->xsm->FindChan(xsmres.extchno[mapi], ID_CH_D_P);
+                                if (chmap < 0) // check if any DataMap channel is setup
+                                        continue;
                         
-                        mapping = true;
-                        int nx=gapp->xsm->scan[chmap]->mem2d->GetNx ();
-                        int ny=gapp->xsm->scan[chmap]->mem2d->GetNy ();
+                                int nx=gapp->xsm->scan[chmap]->mem2d->GetNx ();
+                                int ny=gapp->xsm->scan[chmap]->mem2d->GetNy ();
                         
-                        // locate 1st,... probe src# to map
-                        ++src;
-                        while (map == 0){
-                                if (src < MAX_NUM_CHANNELS){
-                                        if (dspc->vis_PSource & msklookup[src] || dspc->vis_XSource & msklookup[src])
-                                                if (dspc->vis_PSource & msklookup[src]){
-                                                        map = 1;
-                                                        break;
-                                                }
-                                        ++src;
-                                } else
-                                        break; // bail
-                        }
+                                // locate 1st,... probe src# to map
+                                ++src;
+                                // look for mapping sources and assign
+                                while (map == 0){
+                                        if (src < MAX_NUM_CHANNELS){
+                                                if (dspc->vis_PSource & msklookup[src] || dspc->vis_XSource & msklookup[src])
+                                                        if (dspc->vis_PSource & msklookup[src]){
+                                                                map = 1;
+                                                                break;
+                                                        }
+                                                ++src;
+                                        } else
+                                                break; // bail
+                                }
+                        
+                                if (map){
+                                        if (xip<0){ // only once per coordinate!
+                                                if (garr_hdr) {
+                                                        int i=0;
 
-                        if (map){
-                                if (xip<0){ // only once per coordinate!
-                                        if (garr_hdr) {
-                                                int i=0;
-
-                                                // get probe coordinates from DSP probe HDR
+                                                        // get probe coordinates from DSP probe HDR
 #if 0
-                                                g_message ("P SEC HDR #%d :: i:%g, t:%g, ix:%g, iy:%g, PHI:%g, XS:%g, YS:%g, ZS:%g, U:%g, S:%g",
-                                                           i,
-                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_INDEX], double, i),
-                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_TIME], double, i),
-                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i),
-                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i),
-                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_PHI], double, i),
-                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_XS], double, i),
-                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_YS], double, i),
-                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_ZS], double, i),
-                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_U], double, i),
-                                                           g_array_index (garr_hdr[PROBEDATA_ARRAY_SEC], double, i));
+                                                        g_message ("P SEC HDR #%d :: i:%g, t:%g, ix:%g, iy:%g, PHI:%g, XS:%g, YS:%g, ZS:%g, U:%g, S:%g",
+                                                                   i,
+                                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_INDEX], double, i),
+                                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_TIME], double, i),
+                                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i),
+                                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i),
+                                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_PHI], double, i),
+                                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_XS], double, i),
+                                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_YS], double, i),
+                                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_ZS], double, i),
+                                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_U], double, i),
+                                                                   g_array_index (garr_hdr[PROBEDATA_ARRAY_SEC], double, i));
 #endif
-                                                if (gapp->xsm->scan[chmap]->mem2d->data->GetNxSub()){
+                                                        if (gapp->xsm->scan[chmap]->mem2d->data->GetNxSub()){
 #if 0
-                                                        g_message ("CH[%d] HDR ixy: %d, %d   sls[%d,%d, %d,%d]", chmap,
-                                                                   (int)g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i),
-                                                                   (int)g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i),
-                                                                   gapp->xsm->scan[chmap]->mem2d->data->GetX0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNxSub(),
-                                                                   gapp->xsm->scan[chmap]->mem2d->data->GetY0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNySub()
+                                                                g_message ("CH[%d] HDR ixy: %d, %d   sls[%d,%d, %d,%d]", chmap,
+                                                                           (int)g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i),
+                                                                           (int)g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i),
+                                                                           gapp->xsm->scan[chmap]->mem2d->data->GetX0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNxSub(),
+                                                                           gapp->xsm->scan[chmap]->mem2d->data->GetY0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNySub()
+                                                                           );
+#endif
+                                                                xip = gapp->xsm->scan[chmap]->mem2d->data->GetNxSub()-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i);
+                                                                yip = gapp->xsm->scan[chmap]->mem2d->data->GetNySub()-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
+                                                        } else {
+                                                                xip = nx-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i);
+                                                                yip = ny-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
+                                                        }
+
+                                                        xiD = ((int)g_array_index (garr_hdr[PROBEDATA_ARRAY_XS], double, i)<<16)/dspc->mirror_dsp_scan_dx32 + nx/2 - 1;
+                                                        yiD = (nx/2 - 1) - ((int)g_array_index (garr_hdr[PROBEDATA_ARRAY_YS], double, i)<<16)/dspc->mirror_dsp_scan_dy32;
+                                        
+                                                        g_message ("DSP-areascan.ixy: %04d, %04d   index from XY ScanVector dsp: %04d, %04d  Deltas: %04d, %04d **DX %04d %04d",
+                                                                   xip,yip,
+                                                                   xiD, yiD,
+                                                                   xip-xiD, yip-yiD, xiD-xiDD, xip-xipD
                                                                    );
-#endif
-                                                        xip = gapp->xsm->scan[chmap]->mem2d->data->GetNxSub()-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i);
-                                                        yip = gapp->xsm->scan[chmap]->mem2d->data->GetNySub()-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
+                                                        xiDD=xiD; xipD=xip;
                                                 } else {
-                                                        xip = nx-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i);
-                                                        yip = ny-1 - g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i);
+                                                        g_message ("XYdsp: probe HDR N/A -- dropping point");
+                                                        xip=-1;
+                                                        continue;
                                                 }
-
-                                                xiD = ((int)g_array_index (garr_hdr[PROBEDATA_ARRAY_XS], double, i)<<16)/dspc->mirror_dsp_scan_dx32 + nx/2 - 1;
-                                                yiD = (nx/2 - 1) - ((int)g_array_index (garr_hdr[PROBEDATA_ARRAY_YS], double, i)<<16)/dspc->mirror_dsp_scan_dy32;
                                         
-                                                g_message ("DSP-areascan.ixy: %04d, %04d   index from XY ScanVector dsp: %04d, %04d  Deltas: %04d, %04d **DX %04d %04d",
-                                                           xip,yip,
-                                                           xiD, yiD,
-                                                           xip-xiD, yip-yiD, xiD-xiDD, xip-xipD
-                                                           );
-                                                xiDD=xiD; xipD=xip;
-                                        } else {
-                                                g_message ("XYdsp: probe HDR N/A -- dropping point");
-                                                xip=-1;
-                                                continue;
+                                                // check and limit ranges
+                                                if (xip < 0 || yip < 0 || xip >= gapp->xsm->scan[chmap]->mem2d->GetNx () || yip >= gapp->xsm->scan[chmap]->mem2d->GetNy ()){
+                                                        g_message ("Warning: Coordinates (%d, %d) out of scan range. Dropping point.", xip, yip);
+                                                        xip=-1;
+                                                        continue;
+                                                }
                                         }
-                                        
-                                        // check and limit ranges
-                                        if (xip < 0 || yip < 0 || xip >= gapp->xsm->scan[chmap]->mem2d->GetNx () || yip >= gapp->xsm->scan[chmap]->mem2d->GetNy ()){
-                                                g_message ("Warning: Coordinates (%d, %d) out of scan range. Dropping point.", xip, yip);
-                                                xip=-1;
-                                                continue;
-                                        }
-                                }
                                 
                         
-                                // sanity check -- need to resize scan map?
-                                if (gapp->xsm->scan[chmap]->data.s.dz < 0.){
-                                        gchar *id = g_strconcat ("Map-", (const gchar*)g_ptr_array_index (glabarray,  mapi), "(", Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"i":(gpointer) dspc->vp_unit_lookup (Xsrc), ")", NULL);
-                                        Probing_event_setup_scan (chmap, "X+", id,
-                                                                  (const gchar*)g_ptr_array_index (gsymarray,  mapi),
-                                                                  (const gchar*)g_ptr_array_index (glabarray,  mapi),
-                                                                  1.0, dspc->last_probe_data_index);
-                                        g_message ("MAPI: %i CH%i Lab:%s USym:%s LayerLookup:%s(%s)", mapi, chmap,
-                                                   (const gchar*)g_ptr_array_index (gsymarray,  mapi),
-                                                   (const gchar*)g_ptr_array_index (glabarray,  mapi),
-                                                   Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"N/A":(gpointer) dspc->vp_unit_lookup (Xsrc)
-                                                   );
-                                        g_free (id);
-                                }
+                                        // sanity check -- need to resize scan map?
+                                        if (gapp->xsm->scan[chmap]->data.s.dz < 0.){
+                                                gchar *id = g_strconcat ("Map-", (const gchar*)g_ptr_array_index (glabarray,  mapi), "(", Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"i":(gpointer) dspc->vp_unit_lookup (Xsrc), ")", NULL);
+                                                Probing_event_setup_scan (chmap, "X+", id,
+                                                                          (const gchar*)g_ptr_array_index (gsymarray,  mapi),
+                                                                          (const gchar*)g_ptr_array_index (glabarray,  mapi),
+                                                                          1.0, dspc->last_probe_data_index);
+                                                g_message ("MAPI: %i CH%i Lab:%s USym:%s LayerLookup:%s(%s)", mapi, chmap,
+                                                           (const gchar*)g_ptr_array_index (gsymarray,  mapi),
+                                                           (const gchar*)g_ptr_array_index (glabarray,  mapi),
+                                                           Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"N/A":(gpointer) dspc->vp_unit_lookup (Xsrc)
+                                                           );
+                                                g_free (id);
+                                        }
                       
-                                if (dspc->last_probe_data_index !=  gapp->xsm->scan[chmap]->mem2d->GetNv ()){ // auto n-values range adjust
-                                        gapp->xsm->scan[chmap]->mem2d->Resize (gapp->xsm->scan[chmap]->mem2d->GetNx (), gapp->xsm->scan[chmap]->mem2d->GetNy (),
-                                                                               dspc->last_probe_data_index, ZD_DOUBLE, false);
-                                        g_message ("Resize was required ** ch[%d] Nxy: %d, %d Nv:%d sls[%d,%d, %d,%d]",
-                                                   chmap,
-                                                   gapp->xsm->scan[chmap]->mem2d->GetNx (),
-                                                   gapp->xsm->scan[chmap]->mem2d->GetNy (),
-                                                   gapp->xsm->scan[chmap]->mem2d->GetNv (),
-                                                   gapp->xsm->scan[chmap]->mem2d->data->GetX0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNxSub(),
-                                                   gapp->xsm->scan[chmap]->mem2d->data->GetY0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNySub()
-                                                   );
-                                }
-                                // remap probe data data to scan mem2d buffer
-                                for (int i = 0; i < dspc->last_probe_data_index; i++){
-                                        gapp->xsm->scan[chmap]->mem2d->PutDataPkt_ixy_sub (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), xip,yip,i);
-                                        if (Xsrc >= 0) // with X lookup
-                                                gapp->xsm->scan[chmap]->mem2d->data->SetVLookup(i, dspc->vp_scale_lookup (Xsrc) * g_array_index (garr [expdi_lookup[Xsrc]], double, i)); // update X lookup
-                                }
-                                if (Xsrc < 0) // no X lookup, make index matching lookup
-                                        gapp->xsm->scan[chmap]->mem2d->data->MkVLookup(0, dspc->last_probe_data_index-1); // use index
+                                        if (dspc->last_probe_data_index !=  gapp->xsm->scan[chmap]->mem2d->GetNv ()){ // auto n-values range adjust
+                                                gapp->xsm->scan[chmap]->mem2d->Resize (gapp->xsm->scan[chmap]->mem2d->GetNx (), gapp->xsm->scan[chmap]->mem2d->GetNy (),
+                                                                                       dspc->last_probe_data_index, ZD_DOUBLE, false);
+                                                g_message ("Resize was required ** ch[%d] Nxy: %d, %d Nv:%d sls[%d,%d, %d,%d]",
+                                                           chmap,
+                                                           gapp->xsm->scan[chmap]->mem2d->GetNx (),
+                                                           gapp->xsm->scan[chmap]->mem2d->GetNy (),
+                                                           gapp->xsm->scan[chmap]->mem2d->GetNv (),
+                                                           gapp->xsm->scan[chmap]->mem2d->data->GetX0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNxSub(),
+                                                           gapp->xsm->scan[chmap]->mem2d->data->GetY0Sub(), gapp->xsm->scan[chmap]->mem2d->data->GetNySub()
+                                                           );
+                                        }
+                                        // remap probe data data to scan mem2d buffer
+                                        int rf=0;
+                                        int tf=0;
+                                        int nk=1;
+                                        int nl=1;
+                                        if (g_settings_get_boolean (dspc->hwi_settings, "probe-graph-enable-map-fill")){
+                                                rf = -dspc->probe_trigger_raster_points/2;
+                                                tf = -dspc->probe_trigger_raster_points_b/2;
+                                                nk = dspc->probe_trigger_raster_points;
+                                                nl = dspc->probe_trigger_raster_points_b;
+                                        }
+                                        for (int k=0; k<nk; ++k){
+                                                int x=xip+rf+k;
+                                                for (int l=0; l<nl; ++l){
+                                                        int y=yip+tf+l;
+                                                        if (x < 0 || y < 0 || x >= gapp->xsm->scan[chmap]->mem2d->GetNx () || y >= gapp->xsm->scan[chmap]->mem2d->GetNy ())
+                                                                continue;
+                                                        for (int i = 0; i < dspc->last_probe_data_index; i++){
+                                                                gapp->xsm->scan[chmap]->mem2d->PutDataPkt_ixy_sub (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), x,y,i);
+                                                                if (Xsrc >= 0) // with X lookup
+                                                                        gapp->xsm->scan[chmap]->mem2d->data->SetVLookup(i, dspc->vp_scale_lookup (Xsrc) * g_array_index (garr [expdi_lookup[Xsrc]], double, i)); // update X lookup
+                                                        }
+                                                }
+                                        }
+                                        if (Xsrc < 0) // no X lookup, make index matching lookup
+                                                gapp->xsm->scan[chmap]->mem2d->data->MkVLookup(0, dspc->last_probe_data_index-1); // use index
                                 
-                                gapp->xsm->scan[chmap]->draw ();
-                        }
-                }
-          
-                
-                // attach event to active channel, if one exists -- raster mode ------------------------------
-		ScanEvent *se = NULL;
-		if (!mapping && gapp->xsm->MasterScan){
+                                        gapp->xsm->scan[chmap]->draw ();
+                                } // endif map
+                        } // for mappi
+                        
+                        // unref lable and symbols
+                        g_ptr_array_free (glabarray, TRUE);
+                        g_ptr_array_free (gsymarray, TRUE);
+                        
+                } // endif DataMap Scan Channel mapping
+
+                // *****************************************************************************************************************
+                // attach event to active channel, if one exists -- not for DSP raster mode only manual/script mode ----------------
+                // *****************************************************************************************************************
+                if ( g_settings_get_boolean (dspc->hwi_settings, "probe-graph-enable-add-events")
+                     && gapp->xsm->MasterScan){
+                        ScanEvent *se = NULL;
+
 			// find first section header and take this X,Y coordinates as reference -- start of probe event
 			int sec = 0;
 			int bi=-1;
@@ -427,7 +455,16 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
 					continue;
 				}
 				sec = s; bi = bsi;
-				
+
+                                //g_message ("Creating SE");
+
+                                double wx, wy;
+                                gapp->xsm->MasterScan->Pixel2World (xip,yip, wx,wy); // fix SLS offset!!!
+                                se = new ScanEvent (wx,wy,
+                                                    gapp->xsm->Inst->Dig2ZA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_ZS], double, j)))
+                                                    );
+                                /*
+                                // NOTE: WRONG COORDS NOW HERE in mapping mode HDR is now different (20191030)
 				se = new ScanEvent (
 					gapp->xsm->Inst->Dig2X0A ((long) round (g_array_index (garr [PROBEDATA_ARRAY_X0], double, j)))
 					+ gapp->xsm->Inst->Dig2XA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_XS], double, j))),
@@ -435,36 +472,53 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
 					+ gapp->xsm->Inst->Dig2YA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_YS], double, j))),
 					gapp->xsm->Inst->Dig2ZA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_ZS], double, j)))
 					);
+                                */
 				gapp->xsm->MasterScan->mem2d->AttachScanEvent (se);
 				break;
 			}
-		}
+                        
+                        // if we have attached an scan event, so fill it with data now
+                        if (se){
+                                // find chunksize (total # data sources)
+                                int chunksize = 0;
+                                GPtrArray *glabarray = g_ptr_array_new ();
+                                GPtrArray *gsymarray = g_ptr_array_new ();
+                                //g_message ("Looking up data chunks...");
+                                // find chunksize (total # data sources)
 
-		// if we have attached an scan event, so fill it with data now
-                int unref=1;
-		if (se){
-			if (chunksize > 0 && chunksize < MAX_NUM_CHANNELS){
-				double dataset[MAX_NUM_CHANNELS];
-				ProbeEntry *pe = new ProbeEntry ("Probe", time(0), glabarray, gsymarray, chunksize);
-				for (int i = 0; i < dspc->last_probe_data_index; i++){
-					int j=0;
-					for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src){
-						if (dspc->vis_Source & msklookup[src])
-							dataset[j++] = dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i);
-					}
-					pe->add ((double*)&dataset);
-				}
-				se->add_event (pe);
-                                unref = 0; // do not unref glabarray, gsymarray here! Passed to probe event
-			}
-		}
-                if (unref){
-                        // do not free if passed to probe event!
-                        g_ptr_array_free (glabarray, TRUE);
-                        g_ptr_array_free (gsymarray, TRUE);
-                }
-		free_probedata_array_set (garr, dspc);	
-	}
+                                for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src)
+                                        if (dspc->vis_Source & msklookup[src]){
+                                                g_ptr_array_add (glabarray, (gpointer) dspc->vp_label_lookup (src));
+                                                g_ptr_array_add (gsymarray, (gpointer) dspc->vp_unit_lookup (src));
+                                                ++chunksize;
+                                        }
+                        
+                                if (chunksize > 0 && chunksize < MAX_NUM_CHANNELS){
+                                        double dataset[MAX_NUM_CHANNELS];
+                                        //g_message ("Creating PE");
+                                        ProbeEntry *pe = new ProbeEntry ("Probe", time(0), glabarray, gsymarray, chunksize);
+                                        for (int i = 0; i < dspc->last_probe_data_index; i++){
+                                                int j=0;
+                                                for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src){
+                                                        if (dspc->vis_Source & msklookup[src]){
+                                                                dataset[j++] = dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i);
+                                                                // g_message ("data for <%s> : %d %g", (gpointer) dspc->vp_label_lookup (src), i,dataset[j-1]);
+                                                        }
+                                                }
+                                                pe->add ((double*)&dataset);
+                                        }
+                                        se->add_event (pe);
+                                }
+                                //g_ptr_array_free (glabarray, TRUE); // passed to PE!
+                                //g_ptr_array_free (gsymarray, TRUE);
+                        }
+                } // end if attach SE, PE
+
+                // free popped arrays
+                free_probedata_array_set (garr_hdr, dspc);
+                free_probedata_array_set (garr, dspc);
+	} // while pop...
+        
 	XSM_DEBUG_PG("DBG-M4");
 
 	if (popped > 0)
@@ -751,68 +805,58 @@ int DSPControl::Probing_graph_callback( GtkWidget *widget, DSPControl *dspc, int
 		// find first section header and take this X,Y coordinates as reference -- start of probe event
 		XSM_DEBUG_PG ("Probing_graph_callback MasterScan: adding Ev." );
 		int sec = 0;
-		int bi = -1;
-		int j0=0;
-		for (int j=0; j<dspc->current_probe_data_index; ++j){
-			int bsi = g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_BLOCK], double, j);
-			int s = (int) g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_SEC], double, j);
-			if (j>0 && (bsi == bi && s >= sec)){
-				sec = s;
-				continue;
-			}
-			sec = s; bi = bsi;
-//			g_print ("j=%4d [s:%d, bsi:%d]\n", j, s, bsi);
+                int j=0;
+                //g_message ("Creating SE *** %d %d %d", j, sec, dspc->current_probe_data_index);
+                se = new ScanEvent (
+                                    gapp->xsm->Inst->Dig2X0A ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_X0], double, j)))
+                                    + gapp->xsm->Inst->Dig2XA ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_XS], double, j))),
+                                    gapp->xsm->Inst->Dig2Y0A ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_Y0], double, j)))
+                                    + gapp->xsm->Inst->Dig2YA ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_YS], double, j))),
+                                    gapp->xsm->Inst->Dig2ZA ((long) round ( g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_ZS], double, j)))
+                                    );
+                gapp->xsm->MasterScan->mem2d->AttachScanEvent (se);
 
-			se = new ScanEvent (
-				gapp->xsm->Inst->Dig2X0A ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_X0], double, j)))
-				+ gapp->xsm->Inst->Dig2XA ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_XS], double, j))),
-				gapp->xsm->Inst->Dig2Y0A ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_Y0], double, j)))
-				+ gapp->xsm->Inst->Dig2YA ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_YS], double, j))),
-				gapp->xsm->Inst->Dig2ZA ((long) round ( g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_ZS], double, j)))
-				);
-			gapp->xsm->MasterScan->mem2d->AttachScanEvent (se);
-
-			// for all sections add probe event!!!
-			XSM_DEBUG_PG ("Probing_graph_callback ScanEvent-update/add" );
-			// find chunksize (total # data sources)
-			int chunksize = 0;
-			GPtrArray *glabarray = g_ptr_array_new ();
-			GPtrArray *gsymarray = g_ptr_array_new ();
+                // for all sections add probe event!!!
+                XSM_DEBUG_PG ("Probing_graph_callback ScanEvent-update/add" );
+                // find chunksize (total # data sources)
+                int chunksize = 0;
+                GPtrArray *glabarray = g_ptr_array_new ();
+                GPtrArray *gsymarray = g_ptr_array_new ();
 			
-			for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src)
-				if (dspc->vis_Source & msklookup[src]){
-					g_ptr_array_add (glabarray, (gpointer) dspc->vp_label_lookup (src));
-					g_ptr_array_add (gsymarray, (gpointer) dspc->vp_unit_lookup (src));
-					++chunksize;
-				}
-			XSM_DEBUG_PG("DBG-Mb1");
+                for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src)
+                        if (dspc->vis_Source & msklookup[src]){
+                                g_ptr_array_add (glabarray, (gpointer) dspc->vp_label_lookup (src));
+                                g_ptr_array_add (gsymarray, (gpointer) dspc->vp_unit_lookup (src));
+                                ++chunksize;
+                                //g_message ("SRC: %s %s", dspc->vp_label_lookup (src), dspc->vp_unit_lookup (src));
+                        }
+                XSM_DEBUG_PG("DBG-Mb1");
 			
-			if (chunksize > 0 && chunksize < MAX_NUM_CHANNELS){
-				double dataset[MAX_NUM_CHANNELS];
-				ProbeEntry *pe = new ProbeEntry ("Probe", time(0), glabarray, gsymarray, chunksize);
-				for (int i = j0; i < j; i++){
-					int k=0;
-					XSM_DEBUG_PG("DBG-Mb2");
-					for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src){
-						if (dspc->vis_Source & msklookup[src])
-							dataset[k++] = dspc->vp_scale_lookup (src) * g_array_index (dspc->garray_probedata [expdi_lookup[src]], double, i);
-					}
-					pe->add ((double*)&dataset);
-					XSM_DEBUG_PG("DBG-Mb3");
-				}
-				se->add_event (pe);
-			}
-			XSM_DEBUG_PG("DBG-Mb4");
+                if (chunksize > 0 && chunksize < MAX_NUM_CHANNELS){
+                        double dataset[MAX_NUM_CHANNELS];
+                        //g_message ("Creating PE j=%d", j);
+                        ProbeEntry *pe = new ProbeEntry ("Probe", time(0), glabarray, gsymarray, chunksize);
+                        for (int i = 0; i < dspc->current_probe_data_index; i++){
+                                //for (int i = j0; i < j; i++){
+                                int k=0;
+                                XSM_DEBUG_PG("DBG-Mb2");
+                                for (int src=0; msklookup[src]>=0 && src < MAX_NUM_CHANNELS; ++src){
+                                        if (dspc->vis_Source & msklookup[src]){
+                                                dataset[k++] = dspc->vp_scale_lookup (src) * g_array_index (dspc->garray_probedata [expdi_lookup[src]], double, i);
+                                                // g_message ("Adding Dataset to PE i%d k%d %g", i, k, dspc->vp_scale_lookup (src) * g_array_index (dspc->garray_probedata [expdi_lookup[src]], double, i));
+                                        }
+                                }
+                                pe->add ((double*)&dataset);
+                                XSM_DEBUG_PG("DBG-Mb3");
+                        }
+                        se->add_event (pe);
+                }
+                XSM_DEBUG_PG("DBG-Mb4");
+                //g_ptr_array_free (glabarray, TRUE); // passed to PE
+                //g_ptr_array_free (gsymarray, TRUE); // passed to PE
 
-			j0=j;
-
-			gapp->xsm->MasterScan->view->update_events ();
-			XSM_DEBUG_PG ("Probing_graph_callback have ScanEvent?" );
-
-			XSM_DEBUG_PG("DBG-Mb5");
-
-//			break;
-		}
+                gapp->xsm->MasterScan->view->update_events ();
+                XSM_DEBUG_PG ("Probing_graph_callback have ScanEvent?" );
 	}
 
         int num_active_xmaps = 0;

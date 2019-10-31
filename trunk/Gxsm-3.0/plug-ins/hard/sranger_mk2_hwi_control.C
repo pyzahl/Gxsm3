@@ -1091,7 +1091,8 @@ DSPControl::DSPControl () {
 	vis_PlotSec = PlotSec;
 
 	xrm.Get ("Probing_probe_trigger_raster_points", &probe_trigger_raster_points_user, "0");
-	xrm.Get ("Probing_probe_and_wait", &probe_and_wait, "0");
+	xrm.Get ("Probing_probe_and_wait", &probe_and_wait, "1");
+	probe_and_wait=1;
 
 	probe_trigger_raster_points = 0;
 	probe_trigger_raster_points_b = 0;
@@ -1686,7 +1687,9 @@ DSPControl::DSPControl () {
 	dsp_bp->grid_add_ec (NULL, Unity, &probe_trigger_raster_points_b, 0, 200, "5g", "adv-scan-rasterb");
 	Gtk_EntryControl *rasterb_ec = dsp_bp->ec;
 
-	dsp_bp->grid_add_ec ("Wait", Unity, &probe_and_wait, 0, 1, "2g", "adv-scan-raster-wait");
+	if (!DSPPACClass)
+                dsp_bp->grid_add_ec ("Wait", Unity, &probe_and_wait, 0, 1, "2g", "adv-scan-raster-wait");
+
 	raster_ec->Freeze ();
 	g_object_set_data (G_OBJECT (auto_probe_menu), "raster_ec", (gpointer)raster_ec);
 	g_object_set_data (G_OBJECT (auto_probe_menu), "rasterb_ec", (gpointer)rasterb_ec);
@@ -3046,6 +3049,22 @@ DSPControl::DSPControl () {
                                        GCallback (callback_GrMatWindow), this,
                                        GrMatWin, 1
                                        );
+	dsp_bp->grid_add_check_button ("Map Fill", "Enable to fill in between raster points if raster probe grid > 1.",
+                                       1//,
+        //                                       GCallback (callback_GrMatWindow), this,
+        //                                       GrMatWin, 1
+                                       );
+        g_settings_bind (hwi_settings, "probe-graph-enable-map-fill",
+                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
+                         G_SETTINGS_BIND_DEFAULT);
+	dsp_bp->grid_add_check_button ("Add Events", "Disable to not add Probe Events to Master Scan.",
+                                       1//,
+        //                                       GCallback (callback_GrMatWindow), this,
+        //                                       GrMatWin, 1
+                                       );
+        g_settings_bind (hwi_settings, "probe-graph-enable-add-events",
+                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
+                         G_SETTINGS_BIND_DEFAULT);
 
         dsp_bp->pop_grid ();
         dsp_bp->new_line ();

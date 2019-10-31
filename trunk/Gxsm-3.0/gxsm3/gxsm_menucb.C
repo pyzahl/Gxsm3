@@ -120,8 +120,11 @@ void App::file_save_callback (GSimpleAction *simple, GVariant *parameter, gpoint
 	if(!gapp) return;
 	//gapp->xsm->save(AUTO_NAME_SAVE);
 
-	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp))
-		((Scan*)tmp->data)->Save ();
+	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp)){
+		if (((Scan*)tmp->data)->get_channel_id () >= 0)
+                        if (gapp->xsm->ChannelASflag[((Scan*)tmp->data)->get_channel_id ()])
+                                ((Scan*)tmp->data)->Save ();
+        }
         
 	return;
 }
@@ -130,7 +133,9 @@ void App::file_update_callback (GSimpleAction *simple, GVariant *parameter, gpoi
 	if(!gapp) return;
 
 	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp))
-		((Scan*)tmp->data)->Update_ZData_NcFile ();
+		if (((Scan*)tmp->data)->get_channel_id () >= 0)
+                        if (gapp->xsm->ChannelASflag[((Scan*)tmp->data)->get_channel_id ()])
+                                ((Scan*)tmp->data)->Update_ZData_NcFile ();
         
 	return;
 }
