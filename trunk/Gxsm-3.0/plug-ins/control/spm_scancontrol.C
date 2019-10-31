@@ -358,7 +358,8 @@ SPM_ScanControl::SPM_ScanControl ()
 	master_probescan = NULL;
 	keep_multi_layer_info = FALSE;
 
-	xp_scan_list     = NULL;
+        all_scan_list    = NULL;
+        xp_scan_list     = NULL;
 	xp_2nd_scan_list = NULL;
 	xp_prbscan_list  = NULL;
 	xm_scan_list     = NULL;
@@ -815,9 +816,16 @@ static void spm_scancontrol_start_callback (GtkWidget *w, void *data){
 			nostop = ((SPM_ScanControl*)data) -> do_scan();
 		}		
 
-		if(gapp->xsm->IsMode(MODE_AUTOSAVE))
-			gapp->xsm->save(AUTO_NAME_SAVE);
-		
+		if(gapp->xsm->IsMode(MODE_AUTOSAVE)){
+                        // use new auto safe
+                        for (GSList* tmp = ((SPM_ScanControl*)data)->all_scan_list; tmp; tmp = g_slist_next (tmp))
+                                ((Scan*)tmp->data)->Save (); // full save
+                        gapp->xsm->counter++;
+                        gapp->spm_update_all();
+                                
+                        // old:
+                        //  gapp->xsm->save(AUTO_NAME_SAVE);
+		}
 	} while (((SPM_ScanControl*)data) -> RepeatMode() && nostop);
 
 	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), TRUE);
@@ -1024,6 +1032,13 @@ static void spm_scancontrol_set_subscan_callback (GtkWidget *w, void *data){
 
 
 int SPM_ScanControl::free_scan_lists (){
+
+	gapp->xsm->SetActiveScanList ();
+
+	if (all_scan_list){
+		g_slist_free (all_scan_list);
+		all_scan_list = NULL;
+	}
 	if (xp_scan_list){
 		g_slist_free (xp_scan_list);
 		xp_scan_list = NULL;
@@ -1056,6 +1071,8 @@ int SPM_ScanControl::free_scan_lists (){
 int SPM_ScanControl::initialize_scan_lists (){
 	int i,ipid,idaq,i2nddaq,iprb,ch,sok,checks;
 
+	gapp->xsm->SetActiveScanList ();
+        
 	if (xp_scan_list || xm_scan_list 
 	    || xp_2nd_scan_list || xm_2nd_scan_list 
 	    || xp_prbscan_list || xm_prbscan_list) // stop if scan lists are existing!
@@ -1095,6 +1112,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 					);
 				// and add to list
 				xp_scan_list = g_slist_prepend (xp_scan_list, gapp->xsm->scan[ch]);
+				all_scan_list = g_slist_prepend (all_scan_list, gapp->xsm->scan[ch]);
 
 				// got one valid scan, so we could finish if no more... "Scan-OK"
 				sok=TRUE;
@@ -1129,6 +1147,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 						);
 					// add to list...
 					xp_scan_list = g_slist_prepend (xp_scan_list, gapp->xsm->scan[ch]);
+					all_scan_list = g_slist_prepend (all_scan_list, gapp->xsm->scan[ch]);
 					sok=TRUE;
 				}
 				else{
@@ -1161,6 +1180,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 							);
 						// add to list...
 						xp_2nd_scan_list = g_slist_prepend (xp_2nd_scan_list, gapp->xsm->scan[ch]);
+						all_scan_list = g_slist_prepend (all_scan_list, gapp->xsm->scan[ch]);
 						sok=TRUE;
 					}
 				}
@@ -1185,6 +1205,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 					    xsmres.pidsrcZd2u[ipid-1]
 					);
 				xm_scan_list = g_slist_prepend (xm_scan_list, gapp->xsm->scan[ch]);
+				all_scan_list = g_slist_prepend (all_scan_list, gapp->xsm->scan[ch]);
 				sok=TRUE;
 			}
 			else{
@@ -1211,6 +1232,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 						    xsmres.daqZd2u[idaq-1]
 						);
 					xm_scan_list = g_slist_prepend (xm_scan_list, gapp->xsm->scan[ch]);
+					all_scan_list = g_slist_prepend (all_scan_list, gapp->xsm->scan[ch]);
 					sok=TRUE;
 				}
 				else{
@@ -1237,6 +1259,7 @@ int SPM_ScanControl::initialize_scan_lists (){
 							    xsmres.daqZd2u[i2nddaq-1]
 							);
 						xm_2nd_scan_list = g_slist_prepend (xm_2nd_scan_list, gapp->xsm->scan[ch]);
+						all_scan_list = g_slist_prepend (all_scan_list, gapp->xsm->scan[ch]);
 						sok=TRUE;
 					}
 				}
@@ -1249,6 +1272,7 @@ int SPM_ScanControl::initialize_scan_lists (){
                 for(int i=0; i < EXTCHMAX; ++i){
                         if ((ch = gapp->xsm->FindChan(xsmres.extchno[i], ID_CH_D_P)) >= 0){
                                 setup_scan (ch, "X+", "Map-PrbSrc#", "Xu", "DOUBLE", "EXTMAP", -1.0); // needs further setup!
+                                all_scan_list = g_slist_prepend (all_scan_list, gapp->xsm->scan[ch]);
                         }
                 }
 
@@ -1278,7 +1302,11 @@ int SPM_ScanControl::initialize_scan_lists (){
 	if (!checks)
 		XSM_SHOW_ALERT (ERR_SORRY, ERR_NOSRCCHAN, "", 1);
 
-	return 0;
+
+	gapp->xsm->SetActiveScanList (all_scan_list); // EXPORT SCAN LIST
+
+
+        return 0;
 }
 
 int SPM_ScanControl::setup_scan (int ch, 
@@ -1357,9 +1385,15 @@ int SPM_ScanControl::setup_scan (int ch,
 	gapp->xsm->scan[ch]->data.s.xdir = strchr (titleprefix, '-') ? -1.:1.;
 	gapp->xsm->scan[ch]->data.s.ydir = gapp->xsm->data.s.ydir;
 
+        gapp->xsm->scan[ch]->storage_manager.set_type (scantitle);
+        gapp->xsm->scan[ch]->storage_manager.set_basename (gapp->xsm->data.ui.basename); // from GXSM Main GUI
+        gapp->xsm->scan[ch]->storage_manager.set_dataset_counter (gapp->xsm->counter);   // from GXSM Main GUI
+        gapp->xsm->scan[ch]->storage_manager.set_path (g_settings_get_string (gapp->get_as_settings (), "auto-save-folder"));   // from GXSM Main GUI
+        
 	PI_DEBUG (DBG_L2, "setup_scan[" << ch << " ]: scantitle done: " << gapp->xsm->scan[ch]->data.ui.type ); 
 
         gapp->channelselector->SetInfo (ch, scantitle);
+        //gapp->channelselector->SetInfo (ch, gapp->xsm->scan[ch]->storage_manager.get_name()); // test only
 	gapp->xsm->scan[ch]->draw ();
 
 	g_free (scantitle);
@@ -1648,35 +1682,10 @@ void SPM_ScanControl::set_subscan (int xs, int xn, int ys, int yn){
                   << "             [" << sls_config[2] << ", " << sls_config[3] << "]]" << std::endl);
 
 	// Setup Copy Mode in mem2d...
-	for (GSList* tmp = xp_scan_list; tmp; tmp = g_slist_next (tmp)){
+	for (GSList* tmp = all_scan_list; tmp; tmp = g_slist_next (tmp)){
 		((Scan*)tmp->data) -> set_subscan_information (sls_config);
 		((Scan*)tmp->data) -> mem2d->data->ZPutDataSetDest (sls_config);
-	}
-        
-        for (GSList* tmp = xm_scan_list; tmp; tmp = g_slist_next (tmp)){
-		((Scan*)tmp->data) -> set_subscan_information (sls_config);
-		((Scan*)tmp->data) -> mem2d->data->ZPutDataSetDest (sls_config);
-        }
-        
-	for (GSList* tmp = xp_2nd_scan_list; tmp; tmp = g_slist_next (tmp)){
-		((Scan*)tmp->data) -> set_subscan_information (sls_config);
-		((Scan*)tmp->data) -> mem2d->data->ZPutDataSetDest (sls_config);
-	}
-        
-        for (GSList* tmp = xm_2nd_scan_list; tmp; tmp = g_slist_next (tmp)){
-		((Scan*)tmp->data) -> set_subscan_information (sls_config);
-		((Scan*)tmp->data) -> mem2d->data->ZPutDataSetDest (sls_config);
-        }
-        // do also Ext/Map Channels
-        for(int i=0; i < EXTCHMAX; ++i){
-                int ch;
-                if ((ch = gapp->xsm->FindChan(xsmres.extchno[i], ID_CH_D_P)) >= 0){
-                        if (gapp->xsm->scan[ch]){
-                                gapp->xsm->scan[ch]-> set_subscan_information (sls_config);
-                                gapp->xsm->scan[ch]-> mem2d->data->ZPutDataSetDest (sls_config);
-                        }
-                }
-        }
+	}       
 }	
 
 int SPM_ScanControl::do_scan (int l){
@@ -1757,16 +1766,8 @@ int SPM_ScanControl::do_scan (int l){
 
 	// Set Start Time, notify scans about, initialisations...
 	MultiVoltEntry *mve =  MultiVoltMode () ? MultiVoltElement (l) : NULL;
-	g_slist_foreach ((GSList*) xp_scan_list,
+	g_slist_foreach ((GSList*) all_scan_list,
 			 (GFunc) SPM_ScanControl::call_scan_start, mve);
-	g_slist_foreach ((GSList*) xm_scan_list,
-			 (GFunc) SPM_ScanControl::call_scan_start, mve);
-
-	g_slist_foreach ((GSList*) xp_2nd_scan_list,
-			 (GFunc) SPM_ScanControl::call_scan_start, mve);
-	g_slist_foreach ((GSList*) xm_2nd_scan_list,
-			 (GFunc) SPM_ScanControl::call_scan_start, mve);
-
         
         // prepare hardware for start scan "scan pre check"
 	gapp->xsm->hardware->StartScan2D();
@@ -1852,14 +1853,7 @@ int SPM_ScanControl::do_scan (int l){
 	
 	// Set Scan End Time/trucate unfinished scans to save space
 
-	g_slist_foreach ((GSList*) xp_scan_list,
-			(GFunc) SPM_ScanControl::call_scan_stop, this);
-	g_slist_foreach ((GSList*) xm_scan_list,
-			(GFunc) SPM_ScanControl::call_scan_stop, this);
-
-	g_slist_foreach ((GSList*) xp_2nd_scan_list,
-			(GFunc) SPM_ScanControl::call_scan_stop, this);
-	g_slist_foreach ((GSList*) xm_2nd_scan_list,
+	g_slist_foreach ((GSList*) all_scan_list,
 			(GFunc) SPM_ScanControl::call_scan_stop, this);
 
 	return finish_scan ();
@@ -1949,10 +1943,10 @@ int SPM_ScanControl::do_hscapture (){
 
 	gapp->xsm->hardware->EndScan2D ();
 	line = master_scan->data.s.ny;
-	g_slist_foreach ((GSList*) xp_scan_list,
-			(GFunc) SPM_ScanControl::call_scan_stop, this);
-	g_slist_foreach ((GSList*) xm_scan_list,
-			(GFunc) SPM_ScanControl::call_scan_stop, this);
+
+        // moved to finish_scan below
+	//g_slist_foreach ((GSList*) all_scan_list, (GFunc) SPM_ScanControl::call_scan_stop, this);
+
 
 	return finish_scan ();
 }
@@ -1981,7 +1975,10 @@ int SPM_ScanControl::finish_scan (){
 
 	gapp->SignalStopScanEventToPlugins ();
 
-	gapp->spm_thaw_scanparam();
+        g_slist_foreach ((GSList*) all_scan_list,
+                         (GFunc) SPM_ScanControl::call_scan_stop, this);
+
+        gapp->spm_thaw_scanparam();
 
 	if ((stopped = scan_flag == SCAN_FLAG_STOP ? TRUE:FALSE)){
 		gapp->SetStatus("Scan interrupted");
@@ -1992,7 +1989,7 @@ int SPM_ScanControl::finish_scan (){
 		gapp->monitorcontrol->LogEvent("*EndOfScan", "OK");
 	}
 	
-	free_scan_lists ();
+	// free_scan_lists (); // keep
 	scan_flag = SCAN_FLAG_READY;
 
 	return !stopped;
@@ -2085,11 +2082,17 @@ void SPM_ScanControl::autosave_check (double sec, int initvalue){
 		nextAutosaveEvent += xsmres.AutosaveValue;
 		if(gapp->xsm->IsMode(MODE_AUTOSAVE)){
 			PI_DEBUG (DBG_L3, "Autosaveevent triggered.");
+
+                        // use new update
+                        for (GSList* tmp = all_scan_list; tmp; tmp = g_slist_next (tmp))
+                                ((Scan*)tmp->data)->Update_ZData_NcFile ();
+ #if 0
 			// check for overwritemode for autosave
 			if(!strncasecmp(xsmres.AutosaveOverwritemode, "true",2))
 				gapp->xsm->save(AUTO_NAME_PARTIAL_SAVE, NULL, -1, TRUE);
 			else
-				gapp->xsm->save(AUTO_NAME_PARTIAL_SAVE, NULL, -1, FALSE); 
+				gapp->xsm->save(AUTO_NAME_PARTIAL_SAVE, NULL, -1, FALSE);
+#endif
 		}
 	}
 }

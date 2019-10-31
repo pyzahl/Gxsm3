@@ -103,6 +103,9 @@ public:
   Scan* GetMasterScan();
   void SetMasterScan(Scan *ms);
 
+  void SetActiveScanList(GSList* all_scan_list=NULL){ active_scan_list = all_scan_list;  };
+  GSList* GetActiveScanList(){ return active_scan_list;  };
+  
   Scan *GetScanChannel (int ch) { if (ch >=0 && ch < MAX_CHANNELS) return scan[ch]; else return NULL; };
   
   /* Data */
@@ -117,6 +120,8 @@ public:
   Scan *scan[MAX_CHANNELS];
   Scan *ActiveScan;
   Scan *MasterScan;
+
+  GSList* active_scan_list;
 
   GSList *ScanList;    /* List of Scan Objects */
   GSList *ProfileList; /* List of ProfileControl Objects */

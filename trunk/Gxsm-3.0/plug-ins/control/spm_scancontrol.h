@@ -174,6 +174,7 @@ public:
 
 	// some helpers
 	static void call_scan_start (Scan* sc, gpointer data){ 
+                if (!sc) return;
 		if (data)
 			sc->start (((MultiVoltEntry*)data)->position (), ((MultiVoltEntry*)data)->volt ());
 		else
@@ -192,6 +193,7 @@ public:
 			}
 	};
 	static void call_scan_stop (Scan* sc, gpointer data){ 
+                if (!sc) return;
 		sc->stop (((SPM_ScanControl*)data)->scan_flag == SCAN_FLAG_STOP 
 			  && ((SPM_ScanControl*)data)->last_scan_dir == SCAN_DIR_TOPDOWN,
 			  ((SPM_ScanControl*)data)->line);
@@ -227,6 +229,7 @@ public:
 	};
 	void compute_mvolt_list (GtkWidget *grid);
 	GtkWidget *remote_param;
+        GSList *all_scan_list;
 
 private:
 	UnitObj *Unity; // Unit "1"

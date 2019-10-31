@@ -93,6 +93,60 @@ typedef struct {
 	SCAN_DATA *sdata;
 } TimeElementOfScan;
 
+class StorageManager{
+public:
+        StorageManager(){
+                dataset_counter=-1;
+                storage_path=NULL;
+                storage_basename=NULL;
+                storage_type=NULL;
+                storage_name=NULL;
+        };
+        ~StorageManager(){
+                g_free (storage_path);
+                g_free (storage_basename);
+                g_free (storage_type);
+                g_free (storage_name);
+        };
+        void set_dataset_counter(int n){ dataset_counter=n; };
+        void set_path(const gchar *path){ g_free (storage_path); storage_path = g_strdup(path); };
+        void set_basename(const gchar *basename){ g_free (storage_basename); storage_basename = g_strdup(basename); };
+        void set_type(const gchar *type){
+                g_free (storage_type); storage_type = g_strdup(type);
+                g_strdelimit (storage_type, "+",'p');
+                g_strdelimit (storage_type, "-",'m');
+                g_strdelimit (storage_type, " ",'-');
+                gchar *p = strchr (storage_type, ',');
+                if(p) *p=0; // cut off
+        };
+        const gchar *get_filename(){
+                g_free (storage_name); storage_name = NULL;
+                if (dataset_counter >= 0 && storage_path && storage_basename && storage_type){
+                        g_free (storage_name);
+                        storage_name=g_strdup_printf ("%s/%s-%03d-%s.nc", storage_path, storage_basename, dataset_counter, storage_type);
+                }
+                return storage_name;
+        };
+        const gchar *get_name(const gchar *append=NULL){
+                g_free (storage_name); storage_name = NULL;
+                if (dataset_counter >= 0 && storage_basename && storage_type){
+                        g_free (storage_name);
+                        if (append)
+                                storage_name=g_strdup_printf ("%s-%03d-%s.nc %s", storage_basename, dataset_counter, storage_type, append);
+                        else
+                                storage_name=g_strdup_printf ("%s-%03d-%s.nc", storage_basename, dataset_counter, storage_type);
+                }
+                return storage_name;
+        };
+private:
+        int dataset_counter;
+        gchar *storage_path;
+        gchar *storage_basename;
+        gchar *storage_type;
+        gchar *storage_name;
+};
+
+
 class Scan{
 public:
 	Scan(Scan *scanmaster);
@@ -103,11 +157,14 @@ public:
 	virtual int draw(int y1=-1, int y2=-2);
 	void update_world_map (Scan *src=NULL);
 	void clear_world_map ();
+      
 	virtual int create(gboolean RoundFlg=FALSE, gboolean subgrid=FALSE, gdouble direction=1., gint fast_scan=0,
                            ZD_TYPE ztype=ZD_IDENT,
                            gboolean keep_layer_info=true, gboolean remap=false, gboolean keep_nv=false);
 	void Saved(){ State = IS_SAVED; };
-        void Update_ZData_NcFile();
+
+        int Save ();
+        int Update_ZData_NcFile ();
   
 	virtual void start(int l=0, double lv=0.);
 	virtual void stop(int StopFlg=FALSE, int line=0);
@@ -140,9 +197,9 @@ public:
 	Mem2d *mem2d;    /* 2d Daten */
 	int   mem2d_refcount;
 	SCAN_DATA data;  /* Daten des letzten Scans - Scanbezogen*/
-
 	SCAN_DATA *vdata; /* ever valid Pointer to XSM-(User)-Data (may be manipulated) */
-
+        StorageManager storage_manager;
+        
 	View  *view;     /* View Objekt */
 	
 	Point2D Pkt2dScanLine[2];
@@ -221,6 +278,12 @@ public:
 	int     objects_id;
 	GSList  *objects_list;
 	Scan *world_map;
+
+        // passed at scan-setup time
+        int dataset_counter;
+        gchar *storage_path;
+        gchar *storage_basename;
+        gchar *storage_name;
 };
 
 /*

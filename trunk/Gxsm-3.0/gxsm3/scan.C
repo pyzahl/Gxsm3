@@ -36,6 +36,7 @@
 #include "glbvars.h"
 #include "action_id.h"
 #include "xsm.h"
+#include "dataio.h"
 
 #include "gxsm_monitor_vmemory_and_refcounts.h"
 
@@ -725,13 +726,13 @@ void Scan::start(int l, double lv){
 		data.UpdateUnits ();
 		data.s.tStart = time (0);
 		data.s.ntimes = 1;
-		data.ui.SetOriginalName ("unknown (not saved)");
-
+		data.ui.SetOriginalName (storage_manager.get_name ("(not saved)")); // ("unknown (not saved)");
+#if 0
 		if (vdata){
-			vdata->ui.SetOriginalName ("unknown (not saved)");
+			vdata->ui.SetOriginalName (storage_manager.get_name ("(not saved)"));
 			gapp->ui_update();
 		}
-
+#endif
 		// clean up LayerInformation and auto add basic set
 		mem2d->remove_layer_information ();
 	}
@@ -769,11 +770,13 @@ void Scan::stop(int StopFlg, int line){
 	mem2d->SetLayer (0);
 	Running = 0;
 	dec_refcount ();
+#if 0
 	if (vdata){
 		vdata->ui.SetOriginalName ("unknown (not saved)");
 		gapp->ui_update(); // hack as long signal "changed" did not work
 		data.ui.SetComment (vdata->ui.comment);
 	}
+#endif
 }
 
 // get updated copy of user fields comment, ...
@@ -902,23 +905,47 @@ int Scan::World2Pixel (double wx, double wy, double &ix, double &iy, SCAN_COORD_
 	return 0;
 }
 
+int Scan::Save(){
+        Dataio *Dio = NULL;
+        CpyUserEntries(gapp->xsm->data);
+      
+        Dio = new NetCDF(this, storage_manager.get_filename());
 
-void Scan::Update_ZData_NcFile(){
+        if (Dio){
+                Dio->Write();
+                if (Dio->ioStatus()){
+                        gapp->SetStatus(N_("Error"), Dio->ioStatus());
+                        XSM_SHOW_ALERT(ERR_SORRY, Dio->ioStatus(), storage_manager.get_filename(),1);
+                }
+                else{
+                        Saved();
+                        gapp->monitorcontrol->LogEvent("*Save", storage_manager.get_filename());
+                        gapp->SetStatus(N_("Saving done "), storage_manager.get_name());
+                }
+
+                delete Dio;
+        } else
+                return -1;
+        return 0;
+}
+
+int Scan::Update_ZData_NcFile(){
 	NcError ncerr(NcError::verbose_nonfatal);
 
         // check for file name
-	if (!data.ui.name){
+	if (!storage_manager.get_filename()){
                 g_warning("No file name yet, please save first to update later!");
-                return;
+                return -1;
         }
         
         // open in write mode
-        NcFile nc(data.ui.name, NcFile::Write);
+        NcFile nc(storage_manager.get_filename(), NcFile::Write);
    
 	// Check if the file was opened successfully
 	if (! nc.is_valid()){
-                g_warning("NetCDF file is not valid, please save first to update later!");
-		return;
+                g_warning("NetCDF file is not valid, please save first to update later! Trying Auto Save now...");
+                Save (); // try auto save
+		return -1;
         }
         
         // read Data variable
@@ -948,10 +975,14 @@ void Scan::Update_ZData_NcFile(){
         
         if (mem2d->GetTyp() != zd_type_ncfile || zd_type_ncfile == ZD_IDENT){
                 g_warning("Sorry, NetCDF file ZData type is incompatible. Please save this scan first to update later!");
-                return;
+                return -1;
         }
+
+        data.ui.SetOriginalName (storage_manager.get_name ("(in progress)"));
         
-        g_message("Data in NetCDF file >%s< is now updated!", data.ui.name);
+        g_message("Data in NetCDF file >%s< is now updated!", storage_manager.get_filename());
+        gapp->monitorcontrol->LogEvent("*Update", storage_manager.get_filename());
+        gapp->SetStatus(N_("Update done "), storage_manager.get_name());
 
         if (data.s.ntimes == 1){
                 mem2d->data->NcPut (Data, 0, true);
@@ -959,4 +990,6 @@ void Scan::Update_ZData_NcFile(){
 		for (int time_index=0; time_index<data.s.ntimes; ++time_index)
 			mem2d_time_element(time_index)->data->NcPut (Data, time_index, true);
         }
+
+        return 0;
 }

@@ -914,6 +914,7 @@ gboolean AppBase::window_state_watch_callback (GtkWidget *widget,
         case GDK_WINDOW_STATE_FOCUSED: break;
         case GDK_WINDOW_STATE_TILED: break;
         case GDK_WINDOW_STATE_WITHDRAWN: break;
+        default: break;
         }
         
         return false;

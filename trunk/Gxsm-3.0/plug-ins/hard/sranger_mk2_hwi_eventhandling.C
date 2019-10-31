@@ -228,7 +228,15 @@ int DSPControl::Probing_event_setup_scan (int ch,
 	gapp->xsm->scan[ch]->data.s.xdir = strchr (titleprefix, '-') ? -1.:1.;
 	gapp->xsm->scan[ch]->data.s.ydir = gapp->xsm->data.s.ydir;
 
+        gapp->xsm->scan[ch]->storage_manager.set_type (scantitle);
+        gapp->xsm->scan[ch]->storage_manager.set_basename (gapp->xsm->data.ui.basename); // from GXSM Main GUI
+        gapp->xsm->scan[ch]->storage_manager.set_dataset_counter (gapp->xsm->counter);   // from GXSM Main GUI
+        gapp->xsm->scan[ch]->storage_manager.set_path (g_settings_get_string (gapp->get_as_settings (), "auto-save-folder"));   // from GXSM Main GUI
+        
+	PI_DEBUG (DBG_L2, "setup_scan[" << ch << " ]: scantitle done: " << gapp->xsm->scan[ch]->data.ui.type ); 
+
         gapp->channelselector->SetInfo (ch, scantitle);
+        //gapp->channelselector->SetInfo (ch, gapp->xsm->scan[ch]->storage_manager.get_name()); // testing
 	gapp->xsm->scan[ch]->draw ();
 
 	g_free (scantitle);
