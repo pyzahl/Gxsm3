@@ -238,6 +238,7 @@ int DSPControl::Probing_event_setup_scan (int ch,
         gapp->channelselector->SetInfo (ch, scantitle);
         //gapp->channelselector->SetInfo (ch, gapp->xsm->scan[ch]->storage_manager.get_name()); // testing
 	gapp->xsm->scan[ch]->draw ();
+	gapp->xsm->scan[ch]->start ();
 
 	g_free (scantitle);
 
