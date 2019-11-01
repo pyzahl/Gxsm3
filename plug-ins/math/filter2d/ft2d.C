@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -260,21 +262,29 @@ static gboolean ft2d_run(Scan *Src, Scan *Dest)
 {
 	XSM_DEBUG (DBG_L3, "F2D FFT");
 	ZData  *SrcZ;
-
+        gboolean flg_cpx=true;
+        
 	SrcZ  =  Src->mem2d->data;
-	Dest->mem2d->Resize (Dest->data.s.nx, Dest->data.s.ny, ZD_COMPLEX);
+	Dest->data.s.nvalues = Src->mem2d->GetNv ();
+        if (Src->mem2d->GetNv () > 1){
+                Dest->mem2d->Resize (Dest->data.s.nx, Dest->data.s.ny, Src->mem2d->GetNv (), ZD_DOUBLE);
+                flg_cpx=false;
+        } else {
+                Dest->mem2d->Resize (Dest->data.s.nx, Dest->data.s.ny, ZD_COMPLEX);
+                Dest->data.s.nvalues=3;
+                Dest->mem2d->data->SetVLookup(0, 0);
+                Dest->mem2d->data->SetVLookup(1, 1);
+                Dest->mem2d->data->SetVLookup(2, 2);
+        }
+        
 	// set "Complex" layer param defaults
-	Dest->data.s.nvalues=3;
 	Dest->data.s.ntimes=1;
-	Dest->mem2d->data->SetVLookup(0, 0);
-	Dest->mem2d->data->SetVLookup(1, 1);
-	Dest->mem2d->data->SetVLookup(2, 2);
 
 	Dest->data.s.x0 = 0.;
 	Dest->data.s.y0 = 0.;
 	Dest->data.s.dx = 200./Dest->data.s.nx;
 	Dest->data.s.dy = 200./Dest->data.s.ny;
-	Dest->data.s.rx = 200.;
+  	Dest->data.s.rx = 200.;
 	Dest->data.s.ry = 200.; // Dest->data.s.ny*Dest->data.s.dy;
 
 	Dest->mem2d->data->MkXLookup(-100, 100);
@@ -290,8 +300,8 @@ static gboolean ft2d_run(Scan *Src, Scan *Dest)
 	double *in = (double *) dat;
 
 	if (dat == NULL) {
-		XSM_DEBUG (DBG_L3, "F2D FFT: libfftw: Error allocating memory for complex data");
-		return MATH_NOMEM;
+                XSM_DEBUG (DBG_L3, "F2D FFT: libfftw: Error allocating memory for complex data");
+                return MATH_NOMEM;
 	}
 
 	memset(in, 0, sizeof(in));
@@ -301,49 +311,62 @@ static gboolean ft2d_run(Scan *Src, Scan *Dest)
 						  in, dat, FFTW_ESTIMATE);
 
 	if (plan == NULL) {
-		XSM_DEBUG (DBG_L3, "F2D FFT: libfftw: Error creating plan");
-		return MATH_LIB_ERR;
+                XSM_DEBUG (DBG_L3, "F2D FFT: libfftw: Error creating plan");
+                return MATH_LIB_ERR;
 	}
 
-	// convert image data to fftw_real
-	for (int line=0; line < Src->mem2d->GetNy(); line++) {
-		SrcZ ->SetPtr(0, line);
-		for (int col=0; col < Src->mem2d->GetNx(); col++)
-			in[line*xlen2 + col] = SrcZ->GetNext();
-	}
+	for(int v = 0; v < Dest->data.s.nvalues; v++){
+                Dest->mem2d->SetLayer(v);
+                Src->mem2d->SetLayer(v);
 
-	// compute 2D transform using in-place fourier transform
-	fftw_execute (plan);
+	
+                // convert image data to fftw_real
+                for (int line=0; line < Src->mem2d->GetNy(); line++) {
+                        SrcZ ->SetPtr(0, line);
+                        for (int col=0; col < Src->mem2d->GetNx(); col++)
+                                in[line*xlen2 + col] = SrcZ->GetNext();
+                }
 
-	// convert complex data to image
-	// and flip image that spatial freq. (0,0) is in the middle
-	// (quadrant swap using the QSWP macro defined in xsmmath.h)
+                // compute 2D transform using in-place fourier transform
+                fftw_execute (plan);
+
+                // convert complex data to image
+                // and flip image that spatial freq. (0,0) is in the middle
+                // (quadrant swap using the QSWP macro defined in xsmmath.h)
   
-	XSM_DEBUG (DBG_L3, "F2D FFT done, converting data to ABS/RE/IM");
+                XSM_DEBUG (DBG_L3, "F2D FFT done, converting data to ABS/RE/IM");
 
-	double I;
-	int m,n;
-	double norm=Src->mem2d->GetNx() * Src->mem2d->GetNy();
+                double I;
+                int m,n;
+                double norm=Src->mem2d->GetNx() * Src->mem2d->GetNy();
 
-	for (int line=0; line < Src->mem2d->GetNy(); line++) {
-		for (int i,col=0; col < xlen; col++) {
-			i=line*xlen + col;
-			m = QSWP(col, Src->mem2d->GetNx());
-			n = QSWP(line, Src->mem2d->GetNy());
-			I = sqrt (c_re(dat[i]) * c_re(dat[i]) +  c_im(dat[i]) * c_im(dat[i])) / norm;
-			Dest->mem2d->PutDataPkt(I, m, n, 0);
-			Dest->mem2d->PutDataPkt(c_re(dat[i]) / norm, m, n, 1);
-			Dest->mem2d->PutDataPkt(c_im(dat[i]) / norm, m, n, 2);
-			if(line != (Src->mem2d->GetNy()/2)){
-				m = Src->mem2d->GetNx() - m;
-				n = Src->mem2d->GetNy() - n;
-				Dest->mem2d->PutDataPkt(I, m, n, 0);
-				Dest->mem2d->PutDataPkt(c_re(dat[i]) / norm, m, n, 1);
-				Dest->mem2d->PutDataPkt(c_im(dat[i]) / norm, m, n, 2);
-			}
-		}
-	}
-  
+                for (int line=0; line < Src->mem2d->GetNy(); line++) {
+                        for (int i,col=0; col < xlen; col++) {
+                                i=line*xlen + col;
+                                m = QSWP(col, Src->mem2d->GetNx());
+                                n = QSWP(line, Src->mem2d->GetNy());
+                                I = sqrt (c_re(dat[i]) * c_re(dat[i]) +  c_im(dat[i]) * c_im(dat[i])) / norm;
+                                if (flg_cpx){
+                                        Dest->mem2d->PutDataPkt(I, m, n, 0);
+                                        Dest->mem2d->PutDataPkt(c_re(dat[i]) / norm, m, n, 1);
+                                        Dest->mem2d->PutDataPkt(c_im(dat[i]) / norm, m, n, 2);
+                                }
+                                else
+                                        Dest->mem2d->PutDataPkt(I, m, n);
+                                if(line != (Src->mem2d->GetNy()/2)){
+                                        m = Src->mem2d->GetNx() - m;
+                                        n = Src->mem2d->GetNy() - n;
+                                        if (flg_cpx){
+                                                Dest->mem2d->PutDataPkt(I, m, n, 0);
+                                                Dest->mem2d->PutDataPkt(c_re(dat[i]) / norm, m, n, 1);
+                                                Dest->mem2d->PutDataPkt(c_im(dat[i]) / norm, m, n, 2);
+                                        }
+                                        else
+                                                Dest->mem2d->PutDataPkt(I, m, n);
+                                }
+                        }
+                }
+	}  
 	// destroy plan
 	fftw_destroy_plan(plan); 
 

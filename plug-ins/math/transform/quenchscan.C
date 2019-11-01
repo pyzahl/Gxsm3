@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -250,24 +252,40 @@ static gboolean quenchscan_run(Scan *Src, Scan *Dest)
 	Dest->data.s.nx = (Src->data.s.nx/2) & ~1;
 	Dest->data.s.dx = Src->data.s.dx*2.;
 	Dest->data.s.ny = (Src->data.s.ny/2) & ~1;
+	Dest->data.s.nvalues = Src->mem2d->GetNv ();
 	Dest->data.s.dy = Src->data.s.dy*2.;
-	Dest->mem2d->Resize(Dest->data.s.nx, Dest->data.s.ny);
+	Dest->mem2d->Resize(Dest->data.s.nx, Dest->data.s.ny, Src->mem2d->GetNv ());
 
 	Mem2d NextLine(Src->mem2d->GetNx(), 1, Src->mem2d->GetTyp());
 	SrcZn = NextLine.data;
-	for(line = 0; line < Dest->data.s.ny; line++){
-		NextLine.CopyFrom(Src->mem2d, 0,2*line+1, 0,0, Src->mem2d->GetNx());
-		DestZ->SetPtr(0, line);
-		SrcZ ->SetPtr(0, 2*line);
-		SrcZn->SetPtr(0, 0);
-		for(col = 0; col < Dest->data.s.nx; col++){
-			val  = SrcZ ->GetNext();
-			val += SrcZ ->GetNext();
-			val += SrcZn->GetNext();
-			val += SrcZn->GetNext();
-			val /= 4.;
-			DestZ->SetNext(val);
-		}
+	for(int v = 0; v < Dest->data.s.nvalues; v++){
+                Dest->mem2d->SetLayer(v);
+                Src->mem2d->SetLayer(v);
+                for(line = 0; line < Dest->data.s.ny; line++){
+                        NextLine.CopyFrom(Src->mem2d, 0,2*line+1, 0,0, Src->mem2d->GetNx());
+                        DestZ->SetPtr(0, line);
+                        SrcZ ->SetPtr(0, 2*line);
+                        SrcZn->SetPtr(0, 0);
+                        for(col = 0; col < Dest->data.s.nx; col++){
+                                val  = SrcZ ->GetNext();
+                                val += SrcZ ->GetNext();
+                                val += SrcZn->GetNext();
+                                val += SrcZn->GetNext();
+                                val /= 4.;
+                                DestZ->SetNext(val);
+                        }
+                }
+                /*
+                if (Src->mem2d->layer_information_list[v]){
+                        int nj = g_list_length (m->layer_information_list[v]);
+                        for (int j = 0; j<nj; ++j){
+                                LayerInformation *li = (LayerInformation*) g_list_nth_data (Src->mem2d->layer_information_list[layer_index], j);
+                                if (li)
+                                        Dest->mem2d->add_layer_information (v, new LayerInformation (li));
+                        }
+                }
+                */
+
 	}
 	return MATH_OK;
 }
