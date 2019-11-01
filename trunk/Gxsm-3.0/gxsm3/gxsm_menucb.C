@@ -100,7 +100,7 @@ void App::browse_callback(gchar *selection, App* ap){
 
 void App::file_set_datapath_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	if(!gapp) return;
-	gapp->xsm->save(CHANGE_PATH_ONLY);
+	gapp->xsm->save (CHANGE_PATH_ONLY);
 	return;
 }
 
@@ -118,12 +118,28 @@ void App::file_set_probepath_callback (GSimpleAction *simple, GVariant *paramete
 
 void App::file_save_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	if(!gapp) return;
-	//gapp->xsm->save(AUTO_NAME_SAVE);
 
 	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp)){
-		if (((Scan*)tmp->data)->get_channel_id () >= 0)
-                        if (gapp->xsm->ChannelASflag[((Scan*)tmp->data)->get_channel_id ()])
-                                ((Scan*)tmp->data)->Save ();
+		if (((Scan*)tmp->data)->get_channel_id () >= 0){
+                        if (gapp->xsm->ChannelASflag[((Scan*)tmp->data)->get_channel_id ()]){
+                                if (((Scan*)tmp->data)->Save ()){ // returns -1 if file exists and does nothing, else it's saved (or error)
+                                        GtkWidget *dialog = gtk_message_dialog_new (gapp->get_window (),
+                                                                                    GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                                                    GTK_MESSAGE_WARNING,
+                                                                                    GTK_BUTTONS_YES_NO,
+                                                                                    N_("File '%s' exists or can't be written, try overwrite?"),
+                                                                                    ((Scan*)tmp->data)->storage_manager.get_filename());
+                                        int overwrite = gtk_dialog_run (GTK_DIALOG (dialog));
+                                        gtk_widget_destroy (dialog);
+                                        if (overwrite != GTK_RESPONSE_YES){
+                                                gapp->SetStatus(N_("File exists, save aborted by user."));
+                                                continue; // skip!
+                                        } else {
+                                                ((Scan*)tmp->data)->Save (true); // force overwrite
+                                        }
+                                }
+                        }
+                }
         }
         
 	return;

@@ -457,23 +457,13 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
 				}
 				sec = s; bi = bsi;
 
-                                //g_message ("Creating SE");
-
                                 double wx, wy;
-                                gapp->xsm->MasterScan->Pixel2World (xip,yip, wx,wy); // fix SLS offset!!!
+                                gapp->xsm->MasterScan->Pixel2World (xip+gapp->xsm->MasterScan->mem2d->data->GetX0Sub(),
+                                                                    yip+gapp->xsm->MasterScan->mem2d->data->GetY0Sub(),
+                                                                    wx,wy); // with SLS offset
                                 se = new ScanEvent (wx,wy,
                                                     gapp->xsm->Inst->Dig2ZA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_ZS], double, j)))
                                                     );
-                                /*
-                                // NOTE: WRONG COORDS NOW HERE in mapping mode HDR is now different (20191030)
-				se = new ScanEvent (
-					gapp->xsm->Inst->Dig2X0A ((long) round (g_array_index (garr [PROBEDATA_ARRAY_X0], double, j)))
-					+ gapp->xsm->Inst->Dig2XA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_XS], double, j))),
-					gapp->xsm->Inst->Dig2Y0A ((long) round (g_array_index (garr [PROBEDATA_ARRAY_Y0], double, j)))
-					+ gapp->xsm->Inst->Dig2YA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_YS], double, j))),
-					gapp->xsm->Inst->Dig2ZA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_ZS], double, j)))
-					);
-                                */
 				gapp->xsm->MasterScan->mem2d->AttachScanEvent (se);
 				break;
 			}

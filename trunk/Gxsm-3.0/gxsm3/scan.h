@@ -121,6 +121,27 @@ public:
         };
         const gchar *get_filename(){
                 g_free (storage_name); storage_name = NULL;
+
+                /*
+	// Automatic file counter --> DIGITS string
+	if( IS_FILENAME_CONVENTION_ALPHA ) {
+		int cbase = (int)'z'-(int)'a'+1;
+		int tmp = counter/cbase/cbase;
+		digits = g_strdup_printf ("%c%c%c",
+					  (char)('a'+ tmp % cbase), 
+					  (char)('a'+ ((counter - tmp*cbase*cbase) / cbase) % cbase), 
+					  (char)('a'+ counter % cbase ));
+	} else if( IS_FILENAME_CONVENTION_DIGIT ){
+		digits = g_strdup_printf ("%03d",counter+1);
+	} else {
+		for(si=0; si<CHMAX; si++) if(Ch[si] == -1) continue; else break;
+		struct tm *ts = localtime (&scan[Ch[si]]->data.s.tStart);
+		digits = g_strdup_printf ("%04d%02d%02d%02d%02d%02d", 
+					  1900+ts->tm_year, ts->tm_mon, ts->tm_mday, 
+					  ts->tm_hour, ts->tm_min, ts->tm_sec);
+	}
+                */
+                
                 if (dataset_counter >= 0 && storage_path && storage_basename && storage_type){
                         g_free (storage_name);
                         storage_name=g_strdup_printf ("%s/%s-%03d-%s.nc", storage_path, storage_basename, dataset_counter, storage_type);
@@ -163,7 +184,7 @@ public:
                            gboolean keep_layer_info=true, gboolean remap=false, gboolean keep_nv=false);
 	void Saved(){ State = IS_SAVED; };
 
-        int Save ();
+        int Save (gboolean overwrite=false, gboolean check_file_exist=false);
         int Update_ZData_NcFile ();
   
 	virtual void start(int l=0, double lv=0.);
