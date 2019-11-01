@@ -362,6 +362,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                 } else {
                                                         g_message ("XYdsp: probe HDR N/A -- dropping point");
                                                         xip=-1;
+                                                        mapi = EXTCHMAX;
                                                         continue;
                                                 }
                                         
@@ -369,11 +370,11 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                 if (xip < 0 || yip < 0 || xip >= gapp->xsm->scan[chmap]->mem2d->GetNx () || yip >= gapp->xsm->scan[chmap]->mem2d->GetNy ()){
                                                         g_message ("Warning: Coordinates (%d, %d) out of scan range. Dropping point.", xip, yip);
                                                         xip=-1;
+                                                        mapi = EXTCHMAX;
                                                         continue;
                                                 }
                                         }
-                                
-                        
+
                                         // sanity check -- need to resize scan map?
                                         if (gapp->xsm->scan[chmap]->data.s.dz < 0.){
                                                 gchar *id = g_strconcat ("Map-", (const gchar*)g_ptr_array_index (glabarray,  mapi), "(", Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"i":(gpointer) dspc->vp_unit_lookup (Xsrc), ")", NULL);
@@ -444,29 +445,14 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                 if ( g_settings_get_boolean (dspc->hwi_settings, "probe-graph-enable-add-events")
                      && gapp->xsm->MasterScan){
                         ScanEvent *se = NULL;
-
-			// find first section header and take this X,Y coordinates as reference -- start of probe event
-			int sec = 0;
-			int bi=-1;
-			for (int j=0; j<dspc->last_probe_data_index; ++j){
-				int bsi = g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_BLOCK], double, j);
-				int s = (int) g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_SEC], double, j);
-				if (j>0 && (bsi == bi && s >= sec)){
-					sec = s;
-					continue;
-				}
-				sec = s; bi = bsi;
-
-                                double wx, wy;
-                                gapp->xsm->MasterScan->Pixel2World (xip+gapp->xsm->MasterScan->mem2d->data->GetX0Sub(),
-                                                                    yip+gapp->xsm->MasterScan->mem2d->data->GetY0Sub(),
-                                                                    wx,wy); // with SLS offset
-                                se = new ScanEvent (wx,wy,
-                                                    gapp->xsm->Inst->Dig2ZA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_ZS], double, j)))
-                                                    );
-				gapp->xsm->MasterScan->mem2d->AttachScanEvent (se);
-				break;
-			}
+                        double wx, wy;
+                        gapp->xsm->MasterScan->Pixel2World (xip+gapp->xsm->MasterScan->mem2d->data->GetX0Sub(),
+                                                            yip+gapp->xsm->MasterScan->mem2d->data->GetY0Sub(),
+                                                            wx,wy); // with SLS offset
+                        se = new ScanEvent (wx,wy,
+                                            gapp->xsm->Inst->Dig2ZA ((long) round (g_array_index (garr [PROBEDATA_ARRAY_ZS], double, 0)))
+                                            );
+                        gapp->xsm->MasterScan->mem2d->AttachScanEvent (se);
                         
                         // if we have attached an scan event, so fill it with data now
                         if (se){
