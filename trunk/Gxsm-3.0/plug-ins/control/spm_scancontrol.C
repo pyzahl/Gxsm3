@@ -818,8 +818,22 @@ static void spm_scancontrol_start_callback (GtkWidget *w, void *data){
 
 		if(gapp->xsm->IsMode(MODE_AUTOSAVE)){
                         // use new auto safe
-                        for (GSList* tmp = ((SPM_ScanControl*)data)->all_scan_list; tmp; tmp = g_slist_next (tmp))
-                                ((Scan*)tmp->data)->Save (); // full save
+                        int maxcounter_until_ask = gapp->xsm->counter+100;
+                        for (GSList* tmp = ((SPM_ScanControl*)data)->all_scan_list; tmp; tmp = g_slist_next (tmp)){
+                                while (((Scan*)tmp->data)->Save ()){ // full save, no user interaction -- no overwrite, but auto couter advance until clear to go
+                                        gapp->xsm->counter++; // try next counter
+                                        gapp->spm_update_all();
+                                        for (GSList* tmpAdjustCounter = ((SPM_ScanControl*)data)->all_scan_list; tmpAdjustCounter; tmpAdjustCounter = g_slist_next (tmpAdjustCounter))
+                                                ((Scan*)tmpAdjustCounter->data)->storage_manager.set_dataset_counter (gapp->xsm->counter);
+                                        // may add a safety bail out??? Even should end some time....?
+                                        if (gapp->xsm->counter >= maxcounter_until_ask){
+                                                if (gapp->question_yes_no ("File Counter reached large count and still file exists? Continue?"))
+                                                        maxcounter_until_ask += 100; // try few more
+                                                else
+                                                        break; // skip
+                                        }
+                                }
+                        }
                         gapp->xsm->counter++;
                         gapp->spm_update_all();
                                 
@@ -2086,13 +2100,6 @@ void SPM_ScanControl::autosave_check (double sec, int initvalue){
                         // use new update
                         for (GSList* tmp = all_scan_list; tmp; tmp = g_slist_next (tmp))
                                 ((Scan*)tmp->data)->Update_ZData_NcFile ();
- #if 0
-			// check for overwritemode for autosave
-			if(!strncasecmp(xsmres.AutosaveOverwritemode, "true",2))
-				gapp->xsm->save(AUTO_NAME_PARTIAL_SAVE, NULL, -1, TRUE);
-			else
-				gapp->xsm->save(AUTO_NAME_PARTIAL_SAVE, NULL, -1, FALSE);
-#endif
 		}
 	}
 }
