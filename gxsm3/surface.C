@@ -641,18 +641,11 @@ int Surface::load(const char *rname){
 // forceOverwrite:  TRUE  = force overwrite
 //                  FALSE = ask before overwrite (default)
 int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOverwrite){
-	int si,i,ii;
-	std::ofstream f;
 	gchar *fname = NULL;
-	gchar *defaultname = NULL;
-	gchar *basename = NULL;
 	gchar *ffname = NULL;
-	static gchar *digits = NULL;
 	static gchar *path = NULL;
-	gchar *stype = NULL;
-	int Ch[CHMAX];
-	for(si=0; si<CHMAX; si++) Ch[si] = -1;
 
+        // ADJUST PATH ONLY
 	if(!path || automode == CHANGE_PATH_ONLY){
 
                 path = g_strdup (g_settings_get_string (gapp->get_as_settings (), "auto-save-folder"));
@@ -712,266 +705,123 @@ int Surface::save(AUTO_SAVE_MODE automode, char *rname, int chidx, int forceOver
 		}
 	}
 
-	if(chidx >= 0){
-		Ch[0] = chidx;
-	}
-	else{
-		si=0;
+	if(chidx < 0)
+                return -1; // only single specific scan channels -- auto save all is handled by menu-callback(s) directly via scan class Scan->Save(..) now!
 
-		// Active scan
-		Ch[si++] = FindChan(ID_CH_M_ACTIVE);
+        // FILE SAVE DIALOG
+        int overwrite;
+        do{ // while some error...
+                const gchar *defaultname = scan[chidx]->storage_manager.get_name();
 
-		// Auto check for all dataaq scans to save
-		for(i=0; i<PIDCHMAX; ++i){
-			Ch[si++] = FindChan(xsmres.pidchno[i], ID_CH_D_P);
-			Ch[si++] = FindChan(xsmres.pidchno[i], ID_CH_D_M);
-		}
-    
-		for(i=0; i<DAQCHMAX; ++i){
-			Ch[si++] = FindChan(xsmres.daqchno[i], ID_CH_D_P);
-			Ch[si++] = FindChan(xsmres.daqchno[i], ID_CH_D_M);
+                if (rname) {
+                        ffname = rname;
+                } else {
+                        GtkWidget *chooser = gtk_file_chooser_dialog_new ("NC file to save", 
+                                                                          gapp->get_window (),
+                                                                          GTK_FILE_CHOOSER_ACTION_SAVE,
+                                                                          _("_Cancel"), GTK_RESPONSE_CANCEL,
+                                                                          _("_Save"), GTK_RESPONSE_ACCEPT,
+                                                                          NULL);
+                        gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (chooser), path);
+                        gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (chooser), defaultname);
 
-			Ch[si++] = FindChan(xsmres.daqchno[i], ID_CH_D_2ND_P);
-			Ch[si++] = FindChan(xsmres.daqchno[i], ID_CH_D_2ND_M);
-		}
-    
-		for(i=0; i<EXTCHMAX; ++i){
-			Ch[si++] = FindChan(xsmres.extchno[i], ID_CH_D_P);
-			Ch[si++] = FindChan(xsmres.extchno[i], ID_CH_D_M);
+                        GtkFileFilter *nc_filter = gtk_file_filter_new ();
+                        gtk_file_filter_set_name (nc_filter, "NetCDF");
+                        gtk_file_filter_add_pattern (nc_filter, "*.nc");
+                        gtk_file_filter_add_pattern (nc_filter, "*.cdf");
+                        gtk_file_filter_add_pattern (nc_filter, "*.netcdf");
+                        gtk_file_filter_add_pattern (nc_filter, "*.NC");
+                        gtk_file_filter_add_pattern (nc_filter, "*.hdf");
+                        gtk_file_filter_add_pattern (nc_filter, "*.HDF");
+                        gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), nc_filter);
+
+                        GtkFileFilter *all_filter = gtk_file_filter_new ();
+                        gtk_file_filter_set_name (all_filter, "All");
+                        gtk_file_filter_add_pattern (all_filter, "*");
+                        gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), all_filter);
+
+                        ffname = NULL;
+                        if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT){
+                                ffname = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
+                        }			
+                        gtk_widget_destroy (chooser);
+
+                        if(! ffname){ // cancel ??
+                                gapp->SetStatus(N_("Save aborted by user."));
+                                return 1;
+                        }
                 }
-                        
-		for(ii=si=0; si<CHMAX; si++) // prevent of saving a copy (active scan == XXX-Topo-Xp (etc.))!
-			if(Ch[0] == Ch[si]){ Ch[0] = -1; break; } // magic remove from list if already marked for saving!
+                
+                fname = ffname;
+                g_free(path);
+                path  = g_strndup(fname, strrchr(fname, '/')-fname);
 
-		for(si=0; si<(CHMAX-1); si++) // remove duplicates
-			for(ii=si+1; ii<CHMAX; ii++)
-				if(Ch[ii] == Ch[si] || !ChannelASflag[Ch[ii]]) // new 20180514
-					Ch[ii] = -1;
+                g_settings_set_string (gapp->get_as_settings (), "auto-save-folder", path);
+                
+                XSM_DEBUG (DBG_L2, "Save: Name is:<" << fname << ">");
+                XSM_DEBUG (DBG_L2, "Save: Path is:<" << path << ">");
+                // if no extension given, use default type from resources
+                if (strncasecmp(fname+strlen(fname)-3,".nc",3)){
+                        gchar *fnamebase = g_strdup(fname);
+                        g_free(fname);
+                        fname = g_strconcat(fnamebase, ".nc", NULL);
+                        // fnamebase done.
+                        g_free(fnamebase);
+                }
 
-		for(ii=si=0; si<CHMAX; si++)
-			if(Ch[si] != -1){ ii++; break; }
+                overwrite = GTK_RESPONSE_YES;
+                // check if file exists -- if so, ask user for action
+                if (g_file_test (fname, G_FILE_TEST_EXISTS)){
+                        // Check overwrite on save?
+                        if(forceOverwrite == FALSE){
+                                GtkWidget *dialog = gtk_message_dialog_new (gapp->get_window (),
+                                                                            GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                                            GTK_MESSAGE_WARNING,
+                                                                            GTK_BUTTONS_YES_NO,
+                                                                            N_("File '%s' exists, overwrite?"),
+                                                                            fname);
+                                overwrite = gtk_dialog_run (GTK_DIALOG (dialog));
+                                gtk_widget_destroy (dialog);
+                                if (overwrite != GTK_RESPONSE_YES){
+                                        gapp->SetStatus(N_("File exists, save aborted by user."));
+                                        return 1;
+                                }
+                        }else{
+                                XSM_DEBUG (DBG_L2, "forceOverwrite enabled: overwriting file!");
+                                gapp->SetStatus(N_("File overwrite forced by default."));
+                        }
+                }
+        }while (overwrite != GTK_RESPONSE_YES);
     
-		if(!ii){
-			gapp->SetStatus(ERR_SORRY, ERR_NOACTIVESCAN);
-			XSM_SHOW_ALERT(ERR_SORRY, ERR_NOACTIVESCAN,HINT_ACTIVATESCAN,1);
-			return 1;
-		}
-	}
+        gapp->monitorcontrol->LogEvent("*Save", fname);
 
-	if (digits)
-		g_free (digits);
-	digits = NULL;
-
-	// Automatic file counter --> DIGITS string
-	if( IS_FILENAME_CONVENTION_ALPHA ) {
-		int cbase = (int)'z'-(int)'a'+1;
-		int tmp = counter/cbase/cbase;
-		digits = g_strdup_printf ("%c%c%c",
-					  (char)('a'+ tmp % cbase), 
-					  (char)('a'+ ((counter - tmp*cbase*cbase) / cbase) % cbase), 
-					  (char)('a'+ counter % cbase ));
-	} else if( IS_FILENAME_CONVENTION_DIGIT ){
-		digits = g_strdup_printf ("%03d",counter+1);
-	} else {
-		for(si=0; si<CHMAX; si++) if(Ch[si] == -1) continue; else break;
-		struct tm *ts = localtime (&scan[Ch[si]]->data.s.tStart);
-		digits = g_strdup_printf ("%04d%02d%02d%02d%02d%02d", 
-					  1900+ts->tm_year, ts->tm_mon, ts->tm_mday, 
-					  ts->tm_hour, ts->tm_min, ts->tm_sec);
-	}
-
-	// if autosavemode, additional subcounter used, Automatic file counter --> DIGITS string
-	if( automode == AUTO_NAME_PARTIAL_SAVE){
-		gchar *suffix = NULL;
-		if( IS_FILENAME_CONVENTION_ALPHA) {
-			int cbase = (int)'z'-(int)'a'+1;
-			int tmp = subcounter/cbase/cbase;
-			suffix = g_strdup_printf ("_%c%c%c",
-						  (char)('a'+ tmp % cbase), 
-						  (char)('a'+ ((subcounter - tmp*cbase*cbase) / cbase) % cbase), 
-						  (char)('a'+ subcounter % cbase ));
-		} else  suffix = g_strdup_printf ("_%03d", subcounter+1);
-		gchar *tmp=digits;
-		digits = g_strconcat (tmp, suffix, NULL);
-		g_free (tmp); g_free (suffix);
-	}
-  
-	for(si=0; si<CHMAX; si++){  // -- this is obsoleted by scan->Save() method --
-		if (Ch[si] == -1) continue;
-		if (!scan[Ch[si]]) continue;
-
-		// Automatisch Namen erzeugen 
-		// Name := BASENAME [[ + DIGITS] + SCANTYPE] + "." + FILETYPEEXT
-		// 1. --> make basename, add counter if no name given
-		if(rname)
-			basename = g_strdup(rname);
-		else
-			basename = g_strconcat(data.ui.basename, digits, NULL);
-
-		// 2. --> add ScanTyp specifier, SCANTYPE := ChannelModeName + p|m
-
-		if(si > 0){ // ScanChannels ..., get Type
-			if (! strncmp (scan[Ch[si]]->data.ui.type, "not set", 7)){
-				if (! strncmp (scan[Ch[si]]->data.ui.title, "title not set", 13))
-					stype = g_strdup_printf ("ch%02d ", Ch[si]);
-				else
-					stype = g_strdup (scan[Ch[si]]->data.ui.title);
-			} else
-				stype = g_strdup (scan[Ch[si]]->data.ui.type);
-			// convert type to a more regular filename
-			g_strdelimit (stype, "+",'p');
-			g_strdelimit (stype, "-",'m');
-			g_strdelimit (stype, " ",'-');
-
-			gchar *p = strchr (stype, ',');
-			if(p)
-				*p=0;
-			defaultname = g_strdup_printf ("%s-%s",basename,stype);
-			if(p)
-				*p = ',';
-			// stype done.
-			g_free(stype);
-		}
-		else // only acticve Channel, no special stuff
-			defaultname = g_strdup(basename);
-		// basename done.
-		g_free(basename);
-
-		int overwrite;
-		do{ // while some error...
-			// get and check filename fname
-			// File Dialog oder Automatik ?
-			if(automode != MANUAL_SAVE_AS){ // attach path to autogenerated name...
-				fname = g_strconcat(path, "/", defaultname, NULL);
-
-				// attach additional .autosave to filename for intermediate saves.
-				if( automode == AUTO_NAME_PARTIAL_SAVE) // Autosaves need another name!
-					fname = g_strconcat(path, "/", defaultname, ".autosave", NULL);
+        // full NetCDF save: Parameter and Data
+        {
+                Dataio *Dio = NULL;
+                scan[chidx]->CpyUserEntries(data);
       
-			}else{ // or call filedialog
-				GtkWidget *chooser = gtk_file_chooser_dialog_new ("NC file to save", 
-                                                                                  gapp->get_window (),
-										  GTK_FILE_CHOOSER_ACTION_SAVE,
-										  _("_Cancel"), GTK_RESPONSE_CANCEL,
-										  _("_Save"), GTK_RESPONSE_ACCEPT,
-										  NULL);
-				gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (chooser), path);
-				gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (chooser), defaultname);
+                if (!strncasecmp(fname+strlen(fname)-3,".nc",3))
+                        Dio = new NetCDF(scan[chidx], fname);
 
-                                GtkFileFilter *nc_filter = gtk_file_filter_new ();
-                                gtk_file_filter_set_name (nc_filter, "NetCDF");
-                                gtk_file_filter_add_pattern (nc_filter, "*.nc");
-                                gtk_file_filter_add_pattern (nc_filter, "*.cdf");
-                                gtk_file_filter_add_pattern (nc_filter, "*.netcdf");
-                                gtk_file_filter_add_pattern (nc_filter, "*.NC");
-                                gtk_file_filter_add_pattern (nc_filter, "*.hdf");
-                                gtk_file_filter_add_pattern (nc_filter, "*.HDF");
-                                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), nc_filter);
-                                
+                if (Dio){
+                        Dio->Write();
+                        if(Dio->ioStatus()){
+                                gapp->SetStatus(N_("Error"), Dio->ioStatus());
+                                XSM_SHOW_ALERT(ERR_SORRY, Dio->ioStatus(), fname,1);
+                        }
+                        else{
+                                scan[chidx]->Saved();
+                                gapp->SetStatus(N_("Saving done "), fname);
+                        }
 
-                                GtkFileFilter *all_filter = gtk_file_filter_new ();
-                                gtk_file_filter_set_name (all_filter, "All");
-                                gtk_file_filter_add_pattern (all_filter, "*");
-                                gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), all_filter);
+                        delete Dio;
+                } 
+                else
+                        gapp->SetStatus(N_("Error, not saved "), fname);
+        }
+        // fname done.
+        g_free(fname);
 
-				ffname = NULL;
-				if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT){
-					ffname = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
-				}			
-				gtk_widget_destroy (chooser);
-
-				if(! ffname){ // cancel ??
-					gapp->SetStatus(N_("Save aborted by user."));
-					return 1;
-				}
-//				fname = g_strdup(ffname);
-				fname = ffname;
-				g_free(path);
-				path  = g_strndup(fname, strrchr(fname, '/')-fname);
-
-                                g_settings_set_string (gapp->get_as_settings (), "auto-save-folder", path);
-				// XsmRescourceManager xrm("FilingPathMemory");
-				// xrm.Put ("NC_DataSavePath", path);
-			}
-			XSM_DEBUG (DBG_L2, "Save: Name is:<" << fname << ">");
-			XSM_DEBUG (DBG_L2, "Save: Path is:<" << path << ">");
-			// if no extension given, use default type from resources
-			if (strncasecmp(fname+strlen(fname)-3,".nc",3)){
-				gchar *fnamebase = g_strdup(fname);
-				g_free(fname);
-				fname = g_strconcat(fnamebase, ".nc", NULL);
-				// fnamebase done.
-				g_free(fnamebase);
-			}
-			// defaultname done.
-			g_free(defaultname);
-
-			overwrite = GTK_RESPONSE_YES;
-			// check if file exists -- if so, ask user for action
-			f.open(fname, std::ios::in);
-			if(f.good()){
-				f.close();
-				// Check overwrite on save?
-				if(forceOverwrite == FALSE){
-					GtkWidget *dialog = gtk_message_dialog_new (gapp->get_window (),
-										    GTK_DIALOG_DESTROY_WITH_PARENT,
-										    GTK_MESSAGE_WARNING,
-										    GTK_BUTTONS_YES_NO,
-										    N_("File '%s' exists, overwrite?"),
-										    fname);
-					overwrite = gtk_dialog_run (GTK_DIALOG (dialog));
-					gtk_widget_destroy (dialog);
-					if (overwrite != GTK_RESPONSE_YES){
-						gapp->SetStatus(N_("File exists, save aborted by user."));
-						return 1;
-					}
-				}else{
-					XSM_DEBUG (DBG_L2, "forceOverwrite enabled: overwriting file!");
-					gapp->SetStatus(N_("File overwrite forced by default."));
-				}
-			}
-		}while (overwrite != GTK_RESPONSE_YES);
-    
-		gapp->monitorcontrol->LogEvent("*Save", fname);
-
-		// save Parameter and Data
-		{ // -- this is obsoleted by scan->Save() method for default auto safe, not for use with save as.... --
-			Dataio *Dio = NULL;
-			scan[Ch[si]]->CpyUserEntries(data);
-			//      scan[Ch[si]]->data.ui.SetBaseName(strrchr(fname,'/')+1);
-      
-			if(!strncasecmp(fname+strlen(fname)-3,".nc",3))
-				Dio = new NetCDF(scan[Ch[si]], fname);
-
-			if (Dio){
-				Dio->Write();
-				if(Dio->ioStatus()){
-					gapp->SetStatus(N_("Error"), Dio->ioStatus());
-					XSM_SHOW_ALERT(ERR_SORRY, Dio->ioStatus(), fname,1);
-				}
-				else{
-					scan[Ch[si]]->Saved();
-					gapp->SetStatus(N_("Saving done "), fname);
-				}
-
-				delete Dio;
-			} 
-			else
-				gapp->SetStatus(N_("Error, not saved "), fname);
-		}
-		// fname done.
-		g_free(fname);
-	}
-#if 0        
-	// inc Partial Sub-Scan Counter
-	if( automode == AUTO_NAME_PARTIAL_SAVE){
-		++subcounter;
-	}
-	else{ // increment Scan Counter
-		++counter;
-		subcounter = 0;
-	}
-#endif
 	gapp->spm_update_all();
 
 	return 0; 

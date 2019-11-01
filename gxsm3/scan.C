@@ -905,10 +905,20 @@ int Scan::World2Pixel (double wx, double wy, double &ix, double &iy, SCAN_COORD_
 	return 0;
 }
 
-int Scan::Save(){
+int Scan::Save(gboolean overwrite, gboolean check_file_exist){
         Dataio *Dio = NULL;
         CpyUserEntries(gapp->xsm->data);
-      
+
+        if (check_file_exist){
+                if (g_file_test (storage_manager.get_filename(), G_FILE_TEST_EXISTS)) // | G_FILE_TEST_IS_DIR)))
+                        return -1;
+                else
+                        return 0;
+        }
+        if (!overwrite){
+                if (g_file_test (storage_manager.get_filename(), G_FILE_TEST_EXISTS))
+                        return -1;
+        }
         Dio = new NetCDF(this, storage_manager.get_filename());
 
         if (Dio){
@@ -944,8 +954,24 @@ int Scan::Update_ZData_NcFile(){
 	// Check if the file was opened successfully
 	if (! nc.is_valid()){
                 g_warning("NetCDF file is not valid, please save first to update later! Trying Auto Save now...");
-                Save (); // try auto save
-		return -1;
+                if (Save ()){ // try auto save, do not overwrite automatically
+                        GtkWidget *dialog = gtk_message_dialog_new (gapp->get_window (),
+                                                                    GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                                    GTK_MESSAGE_WARNING,
+                                                                    GTK_BUTTONS_YES_NO,
+                                                                    N_("File '%s' exists or can't be written, try overwrite?"),
+                                                                    storage_manager.get_filename());
+                        int overwrite = gtk_dialog_run (GTK_DIALOG (dialog));
+                        gtk_widget_destroy (dialog);
+                        if (overwrite != GTK_RESPONSE_YES){
+                                gapp->SetStatus(N_("File exists, save aborted by user."));
+                                return -1; // abort
+                        } else {
+                                Save (true); // force overwrite as requested
+                                return 0;
+                        }
+                }
+		return 0; // saved full
         }
         
         // read Data variable
