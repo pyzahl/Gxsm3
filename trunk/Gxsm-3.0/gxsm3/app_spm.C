@@ -711,7 +711,7 @@ GtkWidget* App::create_spm_control (){
         spm_bp->grid_add_ec("Layers", xsm->Unity, &xsm->data.s.nvalues,
                             1., xsm->MaxValues(), ".0f",
                             "Layers");
-        // EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec); // Allow
+        // EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
         g_object_set_data( G_OBJECT (grid), "EC_Layers", spm_bp->ec);
         spm_bp->ec->Freeze ();
 
@@ -722,7 +722,7 @@ GtkWidget* App::create_spm_control (){
                              0., 10., ".0f",
                              "LayerSelect");
         g_object_set_data( G_OBJECT (grid), "LayerSelectSpin", spm_bp->input);
-        EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
+        // EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec); // Allow
 
         spm_bp->set_label_width_chars (SPM_MAIN_LWIC);
         spm_bp->grid_add_label ("-.--#", NULL, 2);
