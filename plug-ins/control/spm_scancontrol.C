@@ -1865,11 +1865,6 @@ int SPM_ScanControl::do_scan (int l){
 	if( line < master_scan->data.s.ny && line&1) 
 		line++;
 	
-	// Set Scan End Time/trucate unfinished scans to save space
-
-	g_slist_foreach ((GSList*) all_scan_list,
-			(GFunc) SPM_ScanControl::call_scan_stop, this);
-
 	return finish_scan ();
 }
 
@@ -1957,10 +1952,6 @@ int SPM_ScanControl::do_hscapture (){
 
 	gapp->xsm->hardware->EndScan2D ();
 	line = master_scan->data.s.ny;
-
-        // moved to finish_scan below
-	//g_slist_foreach ((GSList*) all_scan_list, (GFunc) SPM_ScanControl::call_scan_stop, this);
-
 
 	return finish_scan ();
 }
