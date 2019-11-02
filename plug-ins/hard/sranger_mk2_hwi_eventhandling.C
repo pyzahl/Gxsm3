@@ -251,6 +251,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
         static int xdelta=1;
         static int xiDD=0;
         static int xipD=0;
+        static int yipD=0;
         static int Xsrc_lookup_end=-1;
 	int popped=0;
 	GArray **garr;
@@ -362,9 +363,9 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                                    );
                                                         xdelta=xip-xipD;
                                                         xlast=xip;
-                                                        xiDD=xiD; xipD=xip;
+                                                        xiDD=xiD; xipD=xip; yipD=yip;
                                                 } else {
-                                                        xip = xlast+xdelta;
+                                                        xip = xlast+xdelta; yip=yiD;
                                                         g_message ("XYdsp: probe HDR N/A -- projecting x to %d", xip);
                                                         if (xip >= gapp->xsm->scan[chmap]->mem2d->GetNx ()){
                                                                 g_message ("XYdsp: probe HDR N/A, project out of range -- dropping point");
