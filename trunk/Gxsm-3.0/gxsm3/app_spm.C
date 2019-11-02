@@ -711,7 +711,7 @@ GtkWidget* App::create_spm_control (){
         spm_bp->grid_add_ec("Layers", xsm->Unity, &xsm->data.s.nvalues,
                             1., xsm->MaxValues(), ".0f",
                             "Layers");
-        EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec);
+        // EC_ScanFix_list = g_slist_prepend( EC_ScanFix_list, spm_bp->ec); // Allow
         g_object_set_data( G_OBJECT (grid), "EC_Layers", spm_bp->ec);
         spm_bp->ec->Freeze ();
 

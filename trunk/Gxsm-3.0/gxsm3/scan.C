@@ -722,6 +722,8 @@ void Scan::start(int l, double lv){
 	time(&t);
 
 	inc_refcount ();
+        g_message ("SCAN[%02d]::START. INC_REFCOUNT = %d",ChanNo,get_refcount());
+
 	if (l==0){
 		data.UpdateUnits ();
 		data.s.tStart = time (0);
@@ -770,6 +772,7 @@ void Scan::stop(int StopFlg, int line){
 	mem2d->SetLayer (0);
 	Running = 0;
 	dec_refcount ();
+        g_message ("SCAN[%02d]::STOP. DEC_REFCOUNT = %d",ChanNo,get_refcount());
 #if 0
 	if (vdata){
 		vdata->ui.SetOriginalName ("unknown (not saved)");
