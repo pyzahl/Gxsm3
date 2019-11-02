@@ -287,6 +287,8 @@ static gboolean quenchscan_run(Scan *Src, Scan *Dest)
                 */
 
 	}
+        Dest->mem2d->data->CopyLookups (Src->mem2d->data);
+        Dest->mem2d->copy_layer_information (Src->mem2d);
 	return MATH_OK;
 }
 
