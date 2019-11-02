@@ -249,6 +249,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
 	//static ProfileControl *pc[MAX_NUM_CHANNELS][MAX_NUM_CHANNELS];
         static int xiDD=0;
         static int xipD=0;
+        static int Xsrc_lookup_end=-1;
 	int popped=0;
 	GArray **garr;
 	GArray **garr_hdr;
@@ -374,9 +375,12 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                 }
                                         }
 
-                                        // sanity check -- need to resize scan map?
+                                        // sanity check adn trigger initial final setup -- need to resize scan map?
                                         if (gapp->xsm->scan[chmap]->data.s.dz < 0.){
-                                                gchar *id = g_strconcat ("Map-", (const gchar*)g_ptr_array_index (glabarray,  mapi), "(", Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"i":(gpointer) dspc->vp_unit_lookup (Xsrc), ")", NULL);
+                                                gchar *id = g_strconcat ("Map-", (const gchar*)g_ptr_array_index (glabarray,  mapi),
+                                                                         "(", Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc),
+                                                                         Xsrc<0?"i":(gpointer) dspc->vp_unit_lookup (Xsrc), ")",
+                                                                         NULL);
                                                 Probing_event_setup_scan (chmap, "X+", id,
                                                                           (const gchar*)g_ptr_array_index (gsymarray,  mapi),
                                                                           (const gchar*)g_ptr_array_index (glabarray,  mapi),
@@ -386,6 +390,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                            (const gchar*)g_ptr_array_index (glabarray,  mapi),
                                                            Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"N/A":(gpointer) dspc->vp_unit_lookup (Xsrc)
                                                            );
+                                                Xsrc_lookup_end = -1;
                                                 g_free (id);
                                         }
                       
@@ -420,8 +425,19 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                                 continue;
                                                         for (int i = 0; i < dspc->last_probe_data_index; i++){
                                                                 gapp->xsm->scan[chmap]->mem2d->PutDataPkt_ixy_sub (dspc->vp_scale_lookup (src) * g_array_index (garr [expdi_lookup[src]], double, i), x,y,i);
-                                                                if (Xsrc >= 0) // with X lookup
+                                                                if (Xsrc >= 0 && Xsrc_lookup_end < i){ // update with X lookup
+                                                                        gapp->xsm->scan[chmap]->mem2d->SetLayer (i);
                                                                         gapp->xsm->scan[chmap]->mem2d->data->SetVLookup(i, dspc->vp_scale_lookup (Xsrc) * g_array_index (garr [expdi_lookup[Xsrc]], double, i)); // update X lookup
+                                                                        gchar *lpl = g_strdup_printf ("Layer-Param %s", (const gchar*)dspc->vp_label_lookup (Xsrc));
+                                                                        gchar *lpu = g_strdup_printf ("%%5.3f %s", (const gchar*)dspc->vp_unit_lookup (Xsrc));
+                                                                        gapp->xsm->scan[chmap]->mem2d->add_layer_information (new LayerInformation (lpl,
+                                                                                                                                                    dspc->vp_scale_lookup (Xsrc) * g_array_index (garr [expdi_lookup[Xsrc]], double, i),
+                                                                                                                                                    lpu));
+                                                                        g_free (lpl);
+                                                                        g_free (lpu);
+                                                                        Xsrc_lookup_end=i;
+                                                                }
+
                                                         }
                                                 }
                                         }
