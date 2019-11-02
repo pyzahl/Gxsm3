@@ -116,43 +116,110 @@ void App::file_set_probepath_callback (GSimpleAction *simple, GVariant *paramete
 	return;
 }
 
-void App::file_save_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
+
+void App::auto_save_scans (){ // auto save or update scan(s) in progress or completed. No overwrite question, auto counter advance!
 	if(!gapp) return;
 
-	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp)){
-		if (((Scan*)tmp->data)->get_channel_id () >= 0){
-                        if (gapp->xsm->ChannelASflag[((Scan*)tmp->data)->get_channel_id ()]){
-                                if (((Scan*)tmp->data)->Save ()){ // returns -1 if file exists and does nothing, else it's saved (or error)
-                                        GtkWidget *dialog = gtk_message_dialog_new (gapp->get_window (),
-                                                                                    GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                                                    GTK_MESSAGE_WARNING,
-                                                                                    GTK_BUTTONS_YES_NO,
-                                                                                    N_("File '%s' exists or can't be written, try overwrite?"),
-                                                                                    ((Scan*)tmp->data)->storage_manager.get_filename());
-                                        int overwrite = gtk_dialog_run (GTK_DIALOG (dialog));
-                                        gtk_widget_destroy (dialog);
-                                        if (overwrite != GTK_RESPONSE_YES){
-                                                gapp->SetStatus(N_("File exists, save aborted by user."));
-                                                continue; // skip!
-                                        } else {
-                                                ((Scan*)tmp->data)->Save (true); // force overwrite
+        // use new auto safe
+        int maxcounter_until_ask = xsm->counter+100;
+ 	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp)){ // for all current scans in progress or completed last
+                if (((Scan*)tmp->data)->get_channel_id () >= 0){
+                        if (gapp->xsm->ChannelASflag[((Scan*)tmp->data)->get_channel_id ()]){ // if maked for autos save (AS)
+                                // full save, no user interaction -- no overwrite, but auto couter advance until clear to go. But with prev. updated file, do overwrite!
+                                while (((Scan*)tmp->data)->Save (gapp->auto_update_all)){
+                                        xsm->counter++; // try next counter
+                                        spm_update_all();
+                                        for (GSList* tmpAdjustCounter = gapp->xsm->GetActiveScanList(); tmpAdjustCounter; tmpAdjustCounter = g_slist_next (tmpAdjustCounter))
+                                                ((Scan*)tmpAdjustCounter->data)->storage_manager.set_dataset_counter (xsm->counter);
+                                        // may add a safety bail out??? Even should end some time....?
+                                        if (xsm->counter >= maxcounter_until_ask){
+                                                if (question_yes_no ("File Counter reached large count and still file exists? Continue?"))
+                                                        maxcounter_until_ask += 100; // try few more
+                                                else
+                                                        break; // skip
                                         }
                                 }
                         }
                 }
         }
-        
+        xsm->counter++;
+        spm_update_all();
+}
+
+void App::auto_update_scans (){ // auto save or update scan(s) in progress or completed.
+	if(!gapp) return;
+
+	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp)) // for all current scans in progress or completed last
+		if (((Scan*)tmp->data)->get_channel_id () >= 0)
+                        if (gapp->xsm->ChannelASflag[((Scan*)tmp->data)->get_channel_id ()]) // if maked for autos save (AS)
+                                ((Scan*)tmp->data)->Update_ZData_NcFile ();
+
+        gapp->set_toolbar_autosave_button (true);
+        return;
+}
+
+void App::file_save_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
+	if(!gapp) return;
+
+        if (gapp->auto_update_all){
+                gapp->auto_update_scans ();
+                return;
+        }
+
+        int i=0;
+	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp)){ // for all current scans in progress or completed last
+		if (((Scan*)tmp->data)->get_channel_id () >= 0){
+                        if (gapp->xsm->ChannelASflag[((Scan*)tmp->data)->get_channel_id ()]){ // if maked for autos save (AS)
+                                if (((Scan*)tmp->data)->Save ()){ // returns -1 if file exists and does nothing, else it's saved (or error)
+                                        GtkWidget *dialog = gtk_message_dialog_new (gapp->get_window (),
+                                                                                    GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                                                    GTK_MESSAGE_WARNING,
+                                                                                    GTK_BUTTONS_YES_NO,
+                                                                                    N_("File '%s' exists or can't be written, try overwrite?\nOr apply auto counter advance?"),
+                                                                                    ((Scan*)tmp->data)->storage_manager.get_filename());
+                                        
+                                        if (i==0) gtk_dialog_add_button (GTK_DIALOG (dialog), "_Apply", GTK_RESPONSE_APPLY); // 1st time offer auto counter advance option
+
+                                        int overwrite = gtk_dialog_run (GTK_DIALOG (dialog));
+                                        gtk_widget_destroy (dialog);
+
+                                        switch (overwrite){
+                                        case GTK_RESPONSE_NO:
+                                                gapp->SetStatus(N_("File exists, save aborted by user."));
+                                                continue; // skip!
+                                        case GTK_RESPONSE_YES:
+                                                ((Scan*)tmp->data)->Save (true); // force overwrite
+                                                break;
+                                        case GTK_RESPONSE_APPLY:
+                                                gapp->auto_save_scans ();
+                                                break;
+                                        }
+                                }
+                                ++i;
+                        }
+                }
+        }
+
+        gapp->tool_button_save_all = GTK_TOOL_BUTTON (g_object_get_data (G_OBJECT (simple), "toolbar_button"));
+        gapp->set_toolbar_autosave_button (true);
 	return;
 }
 
+void App::set_toolbar_autosave_button (gboolean update_mode){
+        if (tool_button_save_all){
+                if (update_mode){
+                        gtk_tool_button_set_icon_name (tool_button_save_all, "view-refresh-symbolic");
+                        auto_update_all = true;
+                }else{
+                        gtk_tool_button_set_icon_name (tool_button_save_all, "document-save-symbolic");
+                        auto_update_all = false;
+                }
+        }
+}
+        
 void App::file_update_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data){
 	if(!gapp) return;
-
-	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp))
-		if (((Scan*)tmp->data)->get_channel_id () >= 0)
-                        if (gapp->xsm->ChannelASflag[((Scan*)tmp->data)->get_channel_id ()])
-                                ((Scan*)tmp->data)->Update_ZData_NcFile ();
-        
+        gapp->auto_update_scans ();
 	return;
 }
 

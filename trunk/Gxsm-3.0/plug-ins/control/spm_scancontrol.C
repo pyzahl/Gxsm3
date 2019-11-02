@@ -817,29 +817,9 @@ static void spm_scancontrol_start_callback (GtkWidget *w, void *data){
 		}		
 
 		if(gapp->xsm->IsMode(MODE_AUTOSAVE)){
-                        // use new auto safe
-                        int maxcounter_until_ask = gapp->xsm->counter+100;
-                        for (GSList* tmp = ((SPM_ScanControl*)data)->all_scan_list; tmp; tmp = g_slist_next (tmp)){
-                                while (((Scan*)tmp->data)->Save ()){ // full save, no user interaction -- no overwrite, but auto couter advance until clear to go
-                                        gapp->xsm->counter++; // try next counter
-                                        gapp->spm_update_all();
-                                        for (GSList* tmpAdjustCounter = ((SPM_ScanControl*)data)->all_scan_list; tmpAdjustCounter; tmpAdjustCounter = g_slist_next (tmpAdjustCounter))
-                                                ((Scan*)tmpAdjustCounter->data)->storage_manager.set_dataset_counter (gapp->xsm->counter);
-                                        // may add a safety bail out??? Even should end some time....?
-                                        if (gapp->xsm->counter >= maxcounter_until_ask){
-                                                if (gapp->question_yes_no ("File Counter reached large count and still file exists? Continue?"))
-                                                        maxcounter_until_ask += 100; // try few more
-                                                else
-                                                        break; // skip
-                                        }
-                                }
-                        }
-                        gapp->xsm->counter++;
-                        gapp->spm_update_all();
-                                
-                        // old:
-                        //  gapp->xsm->save(AUTO_NAME_SAVE);
-		}
+                        gapp->auto_save_scans ();
+                }
+
 	} while (((SPM_ScanControl*)data) -> RepeatMode() && nostop);
 
 	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), TRUE);
@@ -1792,6 +1772,8 @@ int SPM_ScanControl::do_scan (int l){
 	autosave_check (0., xsmres.AutosaveValue);
 	set_subscan ();
 
+        gapp->set_toolbar_autosave_button (); // reset auto save button to full save symbol
+        
 	// copy muxsettings from other direction if not given
 	// weird... to fix !!!
 	if(!xm_srcs) xm_srcs = xp_srcs;
@@ -2089,8 +2071,7 @@ void SPM_ScanControl::autosave_check (double sec, int initvalue){
 			PI_DEBUG (DBG_L3, "Autosaveevent triggered.");
 
                         // use new update
-                        for (GSList* tmp = all_scan_list; tmp; tmp = g_slist_next (tmp))
-                                ((Scan*)tmp->data)->Update_ZData_NcFile ();
+                        gapp->auto_update_scans ();
 		}
 	}
 }

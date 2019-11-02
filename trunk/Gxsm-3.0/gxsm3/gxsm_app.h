@@ -189,6 +189,11 @@ public:
         /* Main - Window - Callbacks */
         static void browse_callback(gchar *selection, App* ap);
 
+        void auto_save_scans (); // auto savescan(s) in progress or completed.
+        void auto_update_scans (); // auto update scan(s) in progress or completed.
+        void set_toolbar_autosave_button (gboolean update_mode=false);
+        
+        
         /* Emit Toolbar Actions */
         int signal_emit_toolbar_action (const gchar *action, GSimpleAction *simple=NULL);
 
@@ -474,7 +479,9 @@ private:
         GtkWidget *gxsm_menu;
         GtkWidget *grid;
         GtkToolItem *scan_button;
-
+        GtkToolButton *tool_button_save_all;
+        gboolean auto_update_all;
+        
         GSettings *gxsm_app_settings;
         GSettings *as_settings;
         

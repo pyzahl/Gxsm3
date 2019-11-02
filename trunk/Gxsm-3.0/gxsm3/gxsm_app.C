@@ -128,6 +128,8 @@ App::App(GApplication *g_app)
         app_window = NULL;
 	appbar = NULL;
 	appbar_ctx_id = 0;
+        tool_button_save_all = NULL;
+        auto_update_all = false;
 
 	// still not created
         channelselector = NULL;
@@ -273,6 +275,9 @@ void App::AppWindowInit(const gchar *title){
 
                         gtk_tool_button_set_icon_name (GTK_TOOL_BUTTON (ti_button), gai->icon_name);
                         gtk_widget_set_tooltip_text (GTK_WIDGET (ti_button), gai->label);
+
+                        if (strcmp (gai->label, "Save All") == 0)
+                                tool_button_save_all = GTK_TOOL_BUTTON (ti_button);
 
                         gchar *app_action = g_strconcat ("app.", gai->gaction.name, NULL); 
                         gtk_actionable_set_action_name (GTK_ACTIONABLE (ti_button), app_action);
