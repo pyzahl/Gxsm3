@@ -247,6 +247,8 @@ int DSPControl::Probing_event_setup_scan (int ch,
 // DSP Raster Probe MAP handling:
 int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc){
 	//static ProfileControl *pc[MAX_NUM_CHANNELS][MAX_NUM_CHANNELS];
+        static int xlast=0;
+        static int xdelta=1;
         static int xiDD=0;
         static int xipD=0;
         static int Xsrc_lookup_end=-1;
@@ -358,12 +360,18 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                                    xiD, yiD,
                                                                    xip-xiD, yip-yiD, xiD-xiDD, xip-xipD
                                                                    );
+                                                        xdelta=xip-xipD;
+                                                        xlast=xip;
                                                         xiDD=xiD; xipD=xip;
                                                 } else {
-                                                        g_message ("XYdsp: probe HDR N/A -- dropping point");
-                                                        xip=-1;
-                                                        mapi = EXTCHMAX;
-                                                        continue;
+                                                        xip = xlast+xdelta;
+                                                        g_message ("XYdsp: probe HDR N/A -- projecting x to %d", xip);
+                                                        if (xip >= gapp->xsm->scan[chmap]->mem2d->GetNx ()){
+                                                                g_message ("XYdsp: probe HDR N/A, project out of range -- dropping point");
+                                                                xip=-1;
+                                                                mapi = EXTCHMAX;
+                                                                continue;
+                                                        }
                                                 }
                                         
                                                 // check and limit ranges
@@ -507,8 +515,10 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                 } // end if attach SE, PE
 
                 // free popped arrays
-                free_probedata_array_set (garr_hdr, dspc);
-                free_probedata_array_set (garr, dspc);
+                if (garr_hdr)
+                        free_probedata_array_set (garr_hdr, dspc);
+                if (garr)
+                        free_probedata_array_set (garr, dspc);
 	} // while pop...
         
 	XSM_DEBUG_PG("DBG-M4");
