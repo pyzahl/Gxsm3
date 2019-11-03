@@ -178,12 +178,12 @@ public:
 	inline void PutDataLine(int y, void *src){ 
 		data_valid=1;
 		data->ZPutDataLine(y, src); 
-		data->Li[y].invalidate();
+		data->InvalidateLine (y);
 	};
 	inline void PutDataLine16dot16(int y, void *src, int mode=MEM_SET){ 
 		data_valid=1;
 		data->ZPutDataLine16dot16(y, src, mode); 
-		data->Li[y].invalidate();
+		data->InvalidateLine (y);
 	};
 	inline void SetData (double value, int x0, int y0, int nx, int ny){
                 for(int y=y0; y<ny && y<y0+ny; ++y)
@@ -208,7 +208,7 @@ public:
 					data->Z (src->data->Z (j,i), j2,i2,1);
 					data->Z (0., j2,i2,2);
 				}
-				data->Li[i2].invalidate();
+                                data->InvalidateLine (i2);
 			}
 			return;
 		}
@@ -219,7 +219,7 @@ public:
 					data->Z (sqrt ( src->data->Z (j,i,1) * src->data->Z (j,i,1)
 						       +src->data->Z (j,i,2) * src->data->Z (j,i,2)),
 						 j2,i2);
-				data->Li[i2].invalidate();
+                                data->InvalidateLine (i2);
 			}
 			return;
 		}
@@ -228,19 +228,19 @@ public:
 			for(int i=y, i2=toy; ny--; i++, i2++){
 				for(int n=nx, j=y, j2=toy; n--; j++, j2++)
 					data->Z(src->data->Z(j,i), j2,i2);
-				data->Li[i2].invalidate();	    
+                                data->InvalidateLine (i2);
 			}
 		else
 			for(int i=y, i2=toy+ny-1; ny--; i++, i2--){
 				for(int n=nx, j=y, j2=toy; n--; j++, j2++)
 					data->Z(src->data->Z(j,i), j2,i2);
-				data->Li[i2].invalidate();	    
+                                data->InvalidateLine (i2);
 			}
 	};
 	inline void PutDataLine(int y, void *src, int mode){ 
 		data_valid=1;
 		data->ZPutDataLine(y, src, mode); 
-		data->Li[y].invalidate();
+                data->InvalidateLine (y);
 	};
 	inline void   GetDataLine(int y, void *dest){ 
 		data->ZGetDataLine(y, dest); 
@@ -315,15 +315,15 @@ public:
 	double GetDataPktInterpol(double x, double y, double dw, double ds, int ly, double dx, double dy);
 	inline void   PutDataPkt(double value, int x, int y){ 
 		data->Z(value,x,y); 
-		data->Li[y].invalidate();
+                data->InvalidateLine (y);
 	};
 	inline void   PutDataPkt(double value, int x, int y, int v){ 
 		data->Z(value,x,y,v); 
-		data->Li[y].invalidate();
+                data->InvalidateLine (y,v);
 	};
 	inline void   PutDataPkt_ixy_sub(double value, int x, int y, int v){
 		data->Z_ixy_sub(value,x,y,v); 
-		data->Li[y].invalidate();
+                data->InvalidateLineSub (y,v);
 	};
 	double GetDataPktLineReg(int x, int y);
 	double GetDataPktHorizont(int x, int y);

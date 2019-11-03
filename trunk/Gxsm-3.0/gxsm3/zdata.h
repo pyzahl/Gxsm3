@@ -55,7 +55,10 @@ public:
 	inline int GetY0Sub(){ return cp_ixy_sub[2]; };
 	inline int GetNySub(){ return cp_ixy_sub[3]; };
 	inline int GetNv(){ return nv; };
-
+        inline void InvalidateLine(int yi){ Li[yi+ny*vlayer].invalidate(); };
+        inline void InvalidateLine(int yi, int vi){ Li[yi+ny*vi].invalidate(); };
+        inline void InvalidateLineSub(int yi, int vi){ yi+=cp_ixy_sub[2]; Li[yi+ny*vi].invalidate(); };
+        
 	double GetXLookup(int i){ if(i>=0 && i<nx) return Xlookup[i]; else return 0.; };
 	double GetYLookup(int i){ if(i>=0 && i<ny) return Ylookup[i]; else return 0.; };
 	double GetVLookup(int i){ if(i>=0 && i<nv) return Vlookup[i]; else return 0.; };
@@ -340,7 +343,8 @@ public:
 
 	void NcPut(NcVar *ncfield, int time_index=0, gboolean update=false);
 	void NcGet(NcVar *ncfield, int time_index=0);
-
+        static gpointer NcDataUpdate_thread (void *env);
+        
 	void norm (double mag=1., int vi=0, int vf=-1);
 	void mabs_norm (double mag=1., int vi=0, int vf=-1);
 	void add (double c=1., int vi=0, int vf=-1);

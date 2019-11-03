@@ -979,31 +979,20 @@ int Scan::Update_ZData_NcFile(){
         
         // read Data variable
         NcVar *Data = NULL;
-        ZD_TYPE zd_type_ncfile=ZD_IDENT;
-        
-	if( ( Data = nc.get_var("H") ) ) // standart "SHORT" Topo Scan ?
-                zd_type_ncfile=ZD_SHORT; // Short
-        else
-		if( ( Data = nc.get_var("Intensity") ) ) // Diffract Scan "LONG" ?
-			zd_type_ncfile=ZD_LONG; // used by "Intensity" -- diffraction counts
-		else
-			if( ( Data = nc.get_var("FloatField") ) ) // Float ?
-				zd_type_ncfile=ZD_FLOAT;
-			else
-				if( ( Data = nc.get_var("DoubleField") ) ) // Double ?
-					zd_type_ncfile=ZD_DOUBLE;
-				else
-					if( ( Data = nc.get_var("ByteField") ) ) // Byte ?
-						zd_type_ncfile=ZD_BYTE;
-					else
-						if( ( Data = nc.get_var("ComplexDoubleField") ) ) // Complex ?
-							zd_type_ncfile=ZD_COMPLEX;
-						else
-							if( ( Data = nc.get_var("RGBA_ByteField") ) ) // RGBA Byte ?
-                                                                zd_type_ncfile=ZD_RGBA;
-        
-        if (mem2d->GetTyp() != zd_type_ncfile || zd_type_ncfile == ZD_IDENT){
-                g_warning("Sorry, NetCDF file ZData type is incompatible. Please save this scan first to update later!");
+
+        switch (mem2d->GetTyp()){
+        case ZD_DOUBLE:  Data = nc.get_var("DoubleField"); break; // Double data field ?
+        case ZD_FLOAT:   Data = nc.get_var("FloatField"); break;  // Float data field ?
+        case ZD_SHORT:   Data = nc.get_var("H"); break;           // standart "SHORT" Topo Scan ?
+        case ZD_LONG:    Data = nc.get_var("Intensity"); break;   // used by "Intensity" -- diffraction counts
+	case ZD_BYTE:    Data = nc.get_var("ByteField"); break;   // Byte ?
+	case ZD_COMPLEX: Data = nc.get_var("ComplexDoubleField"); break; // Complex ?
+	case ZD_RGBA:    Data = nc.get_var("RGBA_ByteField"); break;     // RGBA Byte ?
+        default:    g_critical("Sorry, compatible NetCDF Data field variable not found."); return -1;
+        }
+                
+        if (!Data){
+                g_critical("Sorry, NetCDF file ZData type is incompatible. Please save this scan first to update later!");
                 return -1;
         }
 
