@@ -516,10 +516,8 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                 } // end if attach SE, PE
 
                 // free popped arrays
-                if (garr_hdr)
-                        free_probedata_array_set (garr_hdr, dspc);
-                if (garr)
-                        free_probedata_array_set (garr, dspc);
+                free_probehdr_array_set (garr_hdr, dspc);
+                free_probedata_array_set (garr, dspc);
 	} // while pop...
         
 	XSM_DEBUG_PG("DBG-M4");
@@ -1156,7 +1154,11 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 void DSPControl::push_probedata_arrays (){
 	GArray **garrp = new GArray*[NUM_PROBEDATA_ARRAYS];
 	GArray **garrh = new GArray*[NUM_PROBEDATA_ARRAYS];
-	pv_lock = TRUE;
+
+        GXSM_REF_OBJECT(GXSM_GRC_PRBHDR);
+        GXSM_REF_OBJECT(GXSM_GRC_PRBVEC);
+
+        pv_lock = TRUE;
 	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i){
 		garrp [i] = garray_probedata [i];
 		garray_probedata [i] = g_array_sized_new (FALSE, TRUE, sizeof (double), DEFAULT_PROBE_LEN); // preallocated, can increase
@@ -1206,17 +1208,23 @@ GArray** DSPControl::pop_probehdr_arrays (){
 }
 
 void DSPControl::free_probedata_array_set (GArray** garr, DSPControl *dc){
+        if (!garr) return;
 	dc->pv_lock = TRUE;
 	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i)
 		g_array_free (garr[i], TRUE);
 	dc->pv_lock = FALSE;
+
+        GXSM_UNREF_OBJECT(GXSM_GRC_PRBVEC);      
 }
 
 void DSPControl::free_probehdr_array_set (GArray** garr, DSPControl *dc){
+        if (!garr) return;
 	dc->pv_lock = TRUE;
  	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i)
                 g_array_free (garr[i], TRUE);
 	dc->pv_lock = FALSE;
+
+        GXSM_UNREF_OBJECT(GXSM_GRC_PRBHDR);
 }
 
 void DSPControl::free_probedata_arrays (){
@@ -1226,11 +1234,13 @@ void DSPControl::free_probedata_arrays (){
                 g_slist_free (probedata_list);
                 probedata_list = NULL;	
         }
+
 	if (probehdr_list){
                 g_slist_foreach (probehdr_list, (GFunc) DSPControl::free_probehdr_array_set, this);
                 g_slist_free (probehdr_list);
                 probehdr_list = NULL;	
         }
+
         num_probe_events = 0;
         pv_lock = FALSE;
 }
