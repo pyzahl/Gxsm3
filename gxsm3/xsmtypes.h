@@ -346,7 +346,7 @@ public:
 		title      = g_strdup("title not set");
 		name       = g_strdup("nobody");
 		basename   = g_strdup("specify_one");
-		originalname = g_strdup("unknown (not saved)");
+		originalname = g_strdup("unknown (new)");
 		type       = g_strdup("type not set");
 		MakeUIdefaults();
 	};

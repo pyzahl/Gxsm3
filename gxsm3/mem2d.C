@@ -376,26 +376,71 @@ void TZData<ZTYP>::set_all_Z (double z, int v, int x0, int y0, int xs, int ys){
 
 // NetCDF Put / Get Methods "overloaded"
 #if 1
+
+template <typename ZTYP> 
+struct NcDataUpdate_Job_Env{
+        TZData<ZTYP> *self;
+        NcVar *ncfield;
+        int time_index;
+        gboolean update;
+        gboolean busy;
+};
+template <class ZTYP> 
+gpointer TZData<ZTYP>::NcDataUpdate_thread (void *env){
+        NcDataUpdate_Job_Env<ZTYP>* e_ = (NcDataUpdate_Job_Env<ZTYP>*)env;
+        NcDataUpdate_Job_Env<ZTYP> e;
+        memcpy (&e, e_, sizeof(e));
+        TZData<ZTYP> *self = e.self;
+        e_->busy = false;
+        int count=0;
+	for(int y=0; y<self->ny; y++){
+		for(int v=0; v<self->nv; ++v){
+                        int liy=y+self->ny*v;
+                        if (!e.update || (e.update && (self->Li[liy].IsNew() && ! self->Li[liy].IsStored()))) {
+                                count++;
+                                //g_message ("NcVar update %d, %d", v,y);
+                                e.ncfield->set_cur(e.time_index,v,y);
+                                e.ncfield->put(self->Zdat[y*self->nv+v], 1,1, 1,self->nx);
+                                self->Li[liy].SetStored();
+                        }
+                        //                if (y==0 && (v%10) == 0)
+                        //                        gapp->progress_info_set_bar_fraction ((gdouble)v/nv, 2);
+                }
+	}
+        if (e.update) g_message ("NcVar updated at %d lines x values", count);
+        return NULL;
+}
+
 template <class ZTYP> 
 void TZData<ZTYP>::NcPut(NcVar *ncfield, int time_index, gboolean update){
+#if 0
+        NcDataUpdate_Job_Env<ZTYP> job;
+        job.self = this;
+        job.ncfield = ncfield;
+        job.time_index = time_index;
+        job.update = update;
+        job.busy = true;
+        GThread* gt =  g_thread_new ("NcDataUpdate_thread",  TZData<ZTYP>::NcDataUpdate_thread, &job);
+        //while (job.busy);
+        g_thread_join (gt);
+#else
+        int count=0;
 	for(int y=0; y<ny; y++){
 		for(int v=0; v<nv; ++v){
                         int liy=y+ny*v;
-                        if (update){
-                                if (Li[liy].IsNew() && ! Li[liy].IsStored()) {
-                                        ncfield->set_cur(time_index,v,y);
-                                        ncfield->put(Zdat[y*nv+v], 1,1, 1,nx);
-                                        Li[liy].SetStored();
-                                }
-                        } else {
+                        if (!update || (update && (Li[liy].IsNew() && ! Li[liy].IsStored()))) {
+                                count++;
+                                //g_message ("NcVar update %d, %d", v,y);
                                 ncfield->set_cur(time_index,v,y);
                                 ncfield->put(Zdat[y*nv+v], 1,1, 1,nx);
                                 Li[liy].SetStored();
                         }
-                //                if (y==0 && (v%10) == 0)
-                //                        gapp->progress_info_set_bar_fraction ((gdouble)v/nv, 2);
+                        //                if (y==0 && (v%10) == 0)
+                        //                        gapp->progress_info_set_bar_fraction ((gdouble)v/nv, 2);
                 }
 	}
+        if (update) g_message ("NcVar updated at %d lines x values", count);
+#endif
 }
 
 #else
@@ -2407,7 +2452,7 @@ void Mem2d::DataRead(std::ifstream &f, int ydir){
 		}
 		else
 			XSM_DEBUG (DBG_L6, "File ends unexpectetly !");
-		data->GetLi(y)->invalidate();
+                data->InvalidateLine (y);
 	}
 	data_valid=1;
 }
@@ -2437,7 +2482,7 @@ void Mem2d::DataD2DRead(std::ifstream &f, double gate){
 			data->Z(val*val*fac,j,i);
 		}
 		buf++;
-		data->GetLi(i)->invalidate();
+                data->InvalidateLine (i);
 	}
 	g_free( ptr );
 	data_valid=1;
@@ -2679,6 +2724,7 @@ inline double mem2d_digi_filter_convolve_point_kernel (int ii, int jj, Mem2d_Dig
                         sum +=  job->In->Z (jj+j, i+ii) * kern->Z (j,i,q);
         return sum;
 }                        
+
 
 gpointer mem2d_digi_filter_convolve_thread (void *env){
         Mem2d_Digi_Filter_Convolve_Job_Env* job = (Mem2d_Digi_Filter_Convolve_Job_Env*)env;

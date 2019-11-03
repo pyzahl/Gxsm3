@@ -1844,6 +1844,8 @@ int SPM_ScanControl::do_scan (int l){
 	gapp->xsm->hardware->CallIdleFunc ();
 	gapp->xsm->hardware->SetIdleFunc (NULL, NULL);
 
+        gapp->set_toolbar_autosave_button (); // reset auto save button to full save symbol
+
 	if( line < master_scan->data.s.ny && line&1) 
 		line++;
 	
