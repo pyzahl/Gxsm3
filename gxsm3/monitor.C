@@ -56,6 +56,8 @@ const gchar *grc_name[] = {
         "CairoItem",
         "ProfileObj",
         "ProfileCtrl",
+        "PrbHdrArr",
+        "PrbVecArr",
         NULL
 };
 

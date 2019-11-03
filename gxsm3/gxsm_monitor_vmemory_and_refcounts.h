@@ -41,7 +41,9 @@
 #define GXSM_GRC_CAIRO_ITEM   8
 #define GXSM_GRC_PROFILEOBJ   9
 #define GXSM_GRC_PROFILECTRL 10
-#define GXSM_GRC_LAST        11
+#define GXSM_GRC_PRBHDR      11
+#define GXSM_GRC_PRBVEC      12
+#define GXSM_GRC_LAST        13
 
 #ifdef GXSM_MONITOR_VMEMORY_USAGE
 extern gint global_ref_counter[32];
