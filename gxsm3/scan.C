@@ -910,8 +910,12 @@ int Scan::World2Pixel (double wx, double wy, double &ix, double &iy, SCAN_COORD_
 
 int Scan::Save(gboolean overwrite, gboolean check_file_exist){
         Dataio *Dio = NULL;
-        CpyUserEntries(gapp->xsm->data);
 
+        if(g_strrstr (data.ui.originalname,"(in progress)"))
+                overwrite = true;
+
+        CpyUserEntries(gapp->xsm->data);
+        
         if (check_file_exist){
                 if (g_file_test (storage_manager.get_filename(), G_FILE_TEST_EXISTS)) // | G_FILE_TEST_IS_DIR)))
                         return -1;
@@ -928,12 +932,14 @@ int Scan::Save(gboolean overwrite, gboolean check_file_exist){
                 Dio->Write();
                 if (Dio->ioStatus()){
                         gapp->SetStatus(N_("Error"), Dio->ioStatus());
+                        gapp->monitorcontrol->LogEvent("*Error Saving", storage_manager.get_filename());
                         XSM_SHOW_ALERT(ERR_SORRY, Dio->ioStatus(), storage_manager.get_filename(),1);
                 }
                 else{
                         Saved();
                         gapp->monitorcontrol->LogEvent("*Save", storage_manager.get_filename());
                         gapp->SetStatus(N_("Saving done "), storage_manager.get_name());
+                        data.ui.SetOriginalName (storage_manager.get_name ("(*saved)")); // update without path
                 }
 
                 delete Dio;
@@ -974,6 +980,7 @@ int Scan::Update_ZData_NcFile(){
                                 return 0;
                         }
                 }
+                data.ui.SetOriginalName (storage_manager.get_name ("*(in progress)"));
 		return 0; // saved full
         }
         

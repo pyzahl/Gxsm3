@@ -825,7 +825,7 @@ FIO_STATUS NetCDF::Write(){
 	if ( g_strrstr(scan->data.ui.originalname, "(not saved)") 
              || g_strrstr(scan->data.ui.originalname, "(in progress)")
              || g_strrstr(scan->data.ui.originalname, "(new)") ){
-		scan->data.ui.SetOriginalName( name );
+		scan->data.ui.SetOriginalName( name ); // full path/name for storing original position once!
 		XSM_DEBUG (DBG_L2, "got original name:" << scan->data.ui.originalname);
 	}else{
 		XSM_DEBUG (DBG_L2, "original left untouched:" << name << " != " << scan->data.ui.originalname);

@@ -112,13 +112,28 @@
       </description>
    </key>
    <key name="probe-graph-enable-add-events" type="b">
-      <default>true</default>
+      <default>false</default>
       <summary>automatically add probve events</summary>
       <description>
 	Disable to not add Probe Events to Master Scan.
       </description>
    </key>
-   
+   <key name="probe-graph-enable-map-plot-events" type="b">
+      <default>false</default>
+      <summary>automatically plot profiles for mapping probe data</summary>
+      <description>
+	Automatically update plot profiles for mapping probe data at every raster point.
+	Not recommended for fast repeating probes.
+      </description>
+   </key>
+   <key name="probe-graph-enable-map-save-events" type="b">
+      <default>false</default>
+      <summary>automatically save vpdata files for mapping probe data</summary>
+      <description>
+	Automatically save vpdata files for mapping probe data at every raster point.
+	Not recommended for fast repeating probes.
+      </description>
+   </key>
    <key name="probe-graph-matrix-window" type="b">
       <default>true</default>
       <summary>probe-graph-matrix-window mode</summary>

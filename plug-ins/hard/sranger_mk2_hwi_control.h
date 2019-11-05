@@ -558,6 +558,8 @@ class DSPControl : public AppBase{
 	void StartScanPreCheck ();
 	void EndScanCheck ();
 
+        GSettings *get_hwi_settings(){ return hwi_settings; };
+
         pv_mode write_vector_mode;
 
 	void store_values ();
@@ -894,7 +896,7 @@ private:
 	int show_tab_mode[MAX_DSPC_TABS];
 
 	GSettings *hwi_settings;
-
+        
         // ==== VP graphs organizer
         Gxsm3appWindow *vpg_app_window;
 	GtkWindow* vpg_window;

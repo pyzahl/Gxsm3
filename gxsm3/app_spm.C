@@ -1373,7 +1373,7 @@ GtkWidget* App::create_as_control (){
 
         
         as_bp->set_input_width_chars (6);
-        as_bp->grid_add_ec ("#", xsm->Unity, &xsm->counter,
+        as_bp->grid_add_ec ("#", xsm->Unity, &xsm->file_counter,
                             0, 99999, "05.0f", "auto-save-counter-i");
 
         as_bp->grid_add_button ("...", "Set file storage folder.",1,

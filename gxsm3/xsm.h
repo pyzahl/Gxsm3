@@ -127,8 +127,6 @@ public:
         UnitObj *Y_Unit;
         UnitObj *Z_Unit;
 
-        int    counter; /* File Counter */
-        int    subcounter; /* second File Counter for enumerating autosaves */
 
         xsm::open_mode file_open_mode;
 
@@ -138,6 +136,14 @@ public:
         long ModeFlg;
         long ZoomFlg;
 
+        int GetFileCounter() { return file_counter; };
+        void FileCounterInc() { file_counter++; };
+        int GetNextVPFileCounter() { return ++vp_file_counter; };
+        void ResetVPFileCounter() { vp_file_counter=0; };
+        
+        int    file_counter; /* File Counter */
+        int    vp_file_counter; /* VP File Counter */
+protected:
 private:
 };
 
