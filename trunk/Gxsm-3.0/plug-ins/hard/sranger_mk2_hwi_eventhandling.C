@@ -229,7 +229,7 @@ int DSPControl::Probing_event_setup_scan (int ch,
 
         gapp->xsm->scan[ch]->storage_manager.set_type (scantitle);
         gapp->xsm->scan[ch]->storage_manager.set_basename (gapp->xsm->data.ui.basename); // from GXSM Main GUI
-        gapp->xsm->scan[ch]->storage_manager.set_dataset_counter (gapp->xsm->counter);   // from GXSM Main GUI
+        gapp->xsm->scan[ch]->storage_manager.set_dataset_counter (gapp->xsm->GetFileCounter ());   // from GXSM Main GUI
         gapp->xsm->scan[ch]->storage_manager.set_path (g_settings_get_string (gapp->get_as_settings (), "auto-save-folder"));   // from GXSM Main GUI
         gapp->xsm->scan[ch]->data.ui.SetOriginalName (gapp->xsm->scan[ch]->storage_manager.get_name ("(not saved)"));
         
@@ -401,6 +401,10 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                            );
                                                 Xsrc_lookup_end = -1;
                                                 g_free (id);
+                                                //gapp->xsm->scan[chmap]->mem2d->add_layer_information (new LayerInformation ("Bias", gapp->xsm->data.s.Bias, "%5.3f V"));
+                                                //gapp->xsm->scan[chmap]->mem2d->add_layer_information (new LayerInformation ("Layer", l, "%03.0f"));
+
+                                                
                                         }
                       
                                         if (dspc->last_probe_data_index !=  gapp->xsm->scan[chmap]->mem2d->GetNv ()){ // auto n-values range adjust
@@ -960,10 +964,10 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 	// XsmRescourceManager xrm("FilingPathMemory");
 	// gchar *path = xrm.GetStr ("Probe_DataSavePath", xsmres.DataPath);
 
-	gchar *fntmp = g_strdup_printf ("%s/%s%03d-%s.vpdata", 
+	gchar *fntmp = g_strdup_printf ("%s/%s%03d-VP%03d-%s.vpdata", 
 					// path, 
 					g_settings_get_string (gapp->get_as_settings (), "auto-save-folder-probe"), 
-					gapp->xsm->data.ui.basename, ++gapp->xsm->counter, "VP");
+					gapp->xsm->data.ui.basename, gapp->xsm->GetFileCounter(), gapp->xsm->GetNextVPFileCounter(), "VP");
 	// g_free (path);
 
 	time_t t;

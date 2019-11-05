@@ -3050,19 +3050,27 @@ DSPControl::DSPControl () {
                                        GrMatWin, 1
                                        );
 	dsp_bp->grid_add_check_button ("Map Fill", "Enable to fill in between raster points if raster probe grid > 1.",
-                                       1//,
-        //                                       GCallback (callback_GrMatWindow), this,
-        //                                       GrMatWin, 1
+                                       1
                                        );
         g_settings_bind (hwi_settings, "probe-graph-enable-map-fill",
                          G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
                          G_SETTINGS_BIND_DEFAULT);
 	dsp_bp->grid_add_check_button ("Add Events", "Disable to not add Probe Events to Master Scan.",
-                                       1//,
-        //                                       GCallback (callback_GrMatWindow), this,
-        //                                       GrMatWin, 1
+                                       1
                                        );
         g_settings_bind (hwi_settings, "probe-graph-enable-add-events",
+                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
+                         G_SETTINGS_BIND_DEFAULT);
+	dsp_bp->grid_add_check_button ("Plot", "Plot data as profile(s) after every raster point probe.\nNot recommended for fast probing repeats.",
+                                       1
+                                       );
+        g_settings_bind (hwi_settings, "probe-graph-enable-map-plot-events",
+                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
+                         G_SETTINGS_BIND_DEFAULT);
+	dsp_bp->grid_add_check_button ("Save", "Save individual data as vpdata files.\nNot recommended for fast probing repeats.",
+                                       1
+                                       );
+        g_settings_bind (hwi_settings, "probe-graph-enable-map-save-events",
                          G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
                          G_SETTINGS_BIND_DEFAULT);
 
@@ -4050,6 +4058,8 @@ int DSPControl::LockIn_exec_callback( GtkWidget *widget, DSPControl *dspc){
 
 int DSPControl::Probing_exec_IV_callback( GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L4, "%s \n",__FUNCTION__);
+	dspc->current_auto_flags = dspc->IV_auto_flags;
+
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
 
@@ -4301,6 +4311,8 @@ int DSPControl::Probing_write_TS_callback( GtkWidget *widget, DSPControl *dspc){
 // GVP
 
 int DSPControl::Probing_exec_GVP_callback( GtkWidget *widget, DSPControl *dspc){
+	dspc->current_auto_flags = dspc->GVP_auto_flags;
+
 	if (dspc->check_vp_in_progress ()) 
 		return -1;
 

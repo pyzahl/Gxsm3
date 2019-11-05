@@ -144,7 +144,7 @@ public:
                 
                 if (dataset_counter >= 0 && storage_path && storage_basename && storage_type){
                         g_free (storage_name);
-                        storage_name=g_strdup_printf ("%s/%s-%03d-%s.nc", storage_path, storage_basename, dataset_counter, storage_type);
+                        storage_name=g_strdup_printf ("%s/%s%03d-%s.nc", storage_path, storage_basename, dataset_counter, storage_type);
                 }
                 return storage_name;
         };
@@ -153,9 +153,9 @@ public:
                 if (dataset_counter >= 0 && storage_basename && storage_type){
                         g_free (storage_name);
                         if (append)
-                                storage_name=g_strdup_printf ("%s-%03d-%s.nc %s", storage_basename, dataset_counter, storage_type, append);
+                                storage_name=g_strdup_printf ("%s%03d-%s.nc %s", storage_basename, dataset_counter, storage_type, append);
                         else
-                                storage_name=g_strdup_printf ("%s-%03d-%s.nc", storage_basename, dataset_counter, storage_type);
+                                storage_name=g_strdup_printf ("%s%03d-%s.nc", storage_basename, dataset_counter, storage_type);
                 }
                 return storage_name;
         };

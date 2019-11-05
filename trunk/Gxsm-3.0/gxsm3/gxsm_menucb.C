@@ -121,18 +121,18 @@ void App::auto_save_scans (){ // auto save or update scan(s) in progress or comp
 	if(!gapp) return;
 
         // use new auto safe
-        int maxcounter_until_ask = xsm->counter+100;
+        int maxcounter_until_ask = xsm->GetFileCounter()+100;
  	for (GSList* tmp = gapp->xsm->GetActiveScanList(); tmp; tmp = g_slist_next (tmp)){ // for all current scans in progress or completed last
                 if (((Scan*)tmp->data)->get_channel_id () >= 0){
                         if (gapp->xsm->ChannelASflag[((Scan*)tmp->data)->get_channel_id ()]){ // if maked for autos save (AS)
                                 // full save, no user interaction -- no overwrite, but auto couter advance until clear to go. But with prev. updated file, do overwrite!
                                 while (((Scan*)tmp->data)->Save (gapp->auto_update_all)){
-                                        xsm->counter++; // try next counter
+                                        xsm->FileCounterInc (); // try next counter
                                         spm_update_all();
                                         for (GSList* tmpAdjustCounter = gapp->xsm->GetActiveScanList(); tmpAdjustCounter; tmpAdjustCounter = g_slist_next (tmpAdjustCounter))
-                                                ((Scan*)tmpAdjustCounter->data)->storage_manager.set_dataset_counter (xsm->counter);
+                                                ((Scan*)tmpAdjustCounter->data)->storage_manager.set_dataset_counter (xsm->GetFileCounter ());
                                         // may add a safety bail out??? Even should end some time....?
-                                        if (xsm->counter >= maxcounter_until_ask){
+                                        if (xsm->GetFileCounter () >= maxcounter_until_ask){
                                                 if (question_yes_no ("File Counter reached large count and still file exists? Continue?"))
                                                         maxcounter_until_ask += 100; // try few more
                                                 else
@@ -142,7 +142,6 @@ void App::auto_save_scans (){ // auto save or update scan(s) in progress or comp
                         }
                 }
         }
-        xsm->counter++;
         spm_update_all();
 }
 

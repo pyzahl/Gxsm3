@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -23,7 +25,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 /* irnore this module for docuscan
 % PlugInModuleIgnore
@@ -1473,8 +1474,8 @@ gpointer ProbeFifoReadThread (void *ptr_sr){
 
 	int i=1;
 	while (sr->is_scanning () || finish_flag){
-		if (DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT)
-			DSPControlClass->Probing_graph_update_thread_safe ();
+                if (DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT)
+                        DSPControlClass->Probing_graph_update_thread_safe ();
 
 		++i;
 		switch (sr->ReadProbeFifo (sr->probe_thread_dsp)){
@@ -1501,7 +1502,7 @@ gpointer ProbeFifoReadThread (void *ptr_sr){
 					DSPControlClass->Probing_graph_update_thread_safe (1);
 				
 				if (DSPControlClass->current_auto_flags & FLAG_AUTO_SAVE)
-					DSPControlClass->Probing_save_callback (NULL, DSPControlClass);	
+                                        DSPControlClass->Probing_save_callback (NULL, DSPControlClass);	
 
 				goto finish;
 			}
@@ -1539,13 +1540,13 @@ gpointer ProbeFifoReadFunction (void *ptr_sr, int dspdev){
 			plotted = 0;
 			continue;
 		case RET_FR_WAIT:
-			if (DSPControlClass->probedata_length () > 0){
-				if (!plotted && DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT){
-					LOGMSGS ( "ProbeFifoReadFunction -- FR_WAIT-ing for data, update plot display." << std::endl);
-					DSPControlClass->Probing_graph_update_thread_safe ();
-					plotted++;
-				}	
-			}
+			//if (DSPControlClass->probedata_length () > 0){
+			//	if (!plotted && DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT){
+			//		LOGMSGS ( "ProbeFifoReadFunction -- FR_WAIT-ing for data, update plot display." << std::endl);
+			//		DSPControlClass->Probing_graph_update_thread_safe ();
+			//		plotted++;
+			//	}	
+			//}
 			return NULL;
 		case RET_FR_OK:
 			plotted = 0;
@@ -1555,10 +1556,12 @@ gpointer ProbeFifoReadFunction (void *ptr_sr, int dspdev){
 		case RET_FR_FCT_END: 
 			plotted = 0;
 			if (DSPControlClass->probedata_length () > 0){
-				if (DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT)
+				//if (DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT)
+                                if (g_settings_get_boolean (DSPControlClass->get_hwi_settings (), "probe-graph-enable-map-plot-events"))
 					DSPControlClass->Probing_graph_update_thread_safe (1);
 
-				if (DSPControlClass->current_auto_flags & FLAG_AUTO_SAVE)
+				//if (DSPControlClass->current_auto_flags & FLAG_AUTO_SAVE)
+                                if (g_settings_get_boolean (DSPControlClass->get_hwi_settings (), "probe-graph-enable-map-save-events"))
 					DSPControlClass->Probing_save_callback (NULL, DSPControlClass);	
 
 				DSPControlClass->push_probedata_arrays ();

@@ -173,8 +173,8 @@ Xsm::Xsm(){
 
 	mradius=1.; // Math2D Radius
 
-	counter = 0;
-	subcounter = 0;
+	file_counter = 0;
+	vp_file_counter = 0;
 
         file_open_mode = xsm::open_mode::append_time; // default -- please keep matched to menu init
         

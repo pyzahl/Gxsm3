@@ -1483,8 +1483,9 @@ gpointer ProbeFifoReadThread3 (void *ptr_sr){
 
 	int i=1;
 	while (sr->is_scanning () || finish_flag > 0){
-		if (DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT)
-			DSPControlClass->Probing_graph_update_thread_safe (0);
+                
+                if (DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT)
+                        DSPControlClass->Probing_graph_update_thread_safe (0);
 		++i;
 		switch (sr->ReadProbeFifo (sr->probe_thread_dsp)){
 		case RET_FR_NOWAIT:
@@ -1513,7 +1514,7 @@ gpointer ProbeFifoReadThread3 (void *ptr_sr){
 
 				if (DSPControlClass->current_auto_flags & FLAG_AUTO_SAVE)
 					DSPControlClass->Probing_save_callback (NULL, DSPControlClass);
-
+                                        
 				finish_flag=MODE_FINISHED_OK;
 				continue;
 			}
@@ -1561,9 +1562,9 @@ gpointer ProbeFifoReadFunction3 (void *ptr_sr, int dspdev){
 			plotted = 0;
 			continue;
 		case RET_FR_WAIT:
-			if (!plotted && DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT)
-                                DSPControlClass->Probing_graph_update_thread_safe (0);
-			plotted++;
+			//if (!plotted && DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT)
+                        //        DSPControlClass->Probing_graph_update_thread_safe (0);
+			//plotted++;
 			return NULL;
 		case RET_FR_OK:
 			plotted = 0;
@@ -1573,10 +1574,10 @@ gpointer ProbeFifoReadFunction3 (void *ptr_sr, int dspdev){
 		case RET_FR_FCT_END: 
 			plotted = 0;
 			if (DSPControlClass->probedata_length () > 0){
-				if (DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT)
+                                if (g_settings_get_boolean (DSPControlClass->get_hwi_settings (), "probe-graph-enable-map-plot-events"))
                                         DSPControlClass->Probing_graph_update_thread_safe (1);
 
-				if (DSPControlClass->current_auto_flags & FLAG_AUTO_SAVE)
+                                if (g_settings_get_boolean (DSPControlClass->get_hwi_settings (), "probe-graph-enable-map-save-events"))
 					DSPControlClass->Probing_save_callback (NULL, DSPControlClass);
 
 				DSPControlClass->push_probedata_arrays ();
