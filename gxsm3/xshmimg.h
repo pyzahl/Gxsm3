@@ -50,11 +50,12 @@ class ShmImage2D{
 public:
         ShmImage2D(GtkWidget *area, 
                    int Width, int Height, 
-                   int xorigin, int yorigin
+                   int xorigin, int yorigin,
+                   int QuechFactor=1
                    );
         ~ShmImage2D();
 
-        void Resize(int Width, int Height);
+        void Resize(int Width, int Height, int QuechFactor=1);
 
         unsigned long GetMaxCol(){ return maxcol; };
         void MkPalette(const char *name=NULL);
@@ -93,6 +94,7 @@ private:
         int rowstride, bpp, width, height, x0, y0;
         guchar *pixels;
 
+        int QuenchFac;
         int ZoomFac;
         gint tr_xy[2];
 };

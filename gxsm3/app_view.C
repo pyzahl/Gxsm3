@@ -695,7 +695,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         /* Hook Ximg class up to canvas */
 	XSM_DEBUG (DBG_L2,  "VC::VC ximg" );
 	// setup image object into canvas
-	ximg = new ShmImage2D (canvas, nx/ZoomFac, ny/ZoomFac,0,0);
+	ximg = new ShmImage2D (canvas, nx/ZoomFac, ny/ZoomFac,0,0, QuenchFac);
 
         // configure canvas draw callback 
         g_signal_connect (G_OBJECT (canvas), "draw",
@@ -1463,7 +1463,7 @@ void ViewControl::Resize (char *title, int nx, int ny,
                 vinfo->SetQfZf(QuenchFac, ZoomFac);
 
                 XSM_DEBUG (DBG_L2,  "VC::RESIZE ximg->Resize" );
-                ximg->Resize (nx/ZoomFac,ny/ZoomFac);
+                ximg->Resize (nx/ZoomFac,ny/ZoomFac, QuenchFac);
 	}
 
         //	usx = MIN((nx+rulewidth+2*border), (2*gdk_screen_width()/3));
