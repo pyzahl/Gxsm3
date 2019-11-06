@@ -106,7 +106,9 @@ FIO_STATUS NetCDF::Read(xsm::open_mode mode){
 	gapp->progress_info_new ("NetCDF Read Progress", 2);
 	gapp->progress_info_set_bar_fraction (0., 1);
 	gapp->progress_info_set_bar_text (name, 1);
-
+	gapp->SetStatus (N_("Loading... "), name);
+        gapp->monitorcontrol->LogEvent(N_("Loading... "), name);
+        
 	switch (mode){
 	case xsm::open_mode::replace: scan->free_time_elements (); break;
 	case xsm::open_mode::append_time: break;

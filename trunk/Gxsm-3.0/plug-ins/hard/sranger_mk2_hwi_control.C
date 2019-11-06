@@ -1669,7 +1669,7 @@ DSPControl::DSPControl () {
 	// -------- Automatic Raster Probe Mode Select
         dsp_bp->pop_grid ();
         dsp_bp->new_line ();
-        dsp_bp->new_grid_with_frame ("Automatic Raster Probe Trigger Control & Probe Details");
+        dsp_bp->new_grid_with_frame ("Automatic Raster Probe Mapping Control (DSP level) Graphs[Sources] -> DataMapN Ch");
 
 	GtkWidget *auto_probe_menu = gtk_combo_box_text_new ();
 	dsp_bp->grid_add_widget (auto_probe_menu);
@@ -1690,7 +1690,34 @@ DSPControl::DSPControl () {
 	if (!DSPPACClass)
                 dsp_bp->grid_add_ec ("Wait", Unity, &probe_and_wait, 0, 1, "2g", "adv-scan-raster-wait");
 
+	dsp_bp->grid_add_check_button ("Map Fill", "Enable to fill in between raster points if raster probe grid > 1.",
+                                       1
+                                       );
+        g_settings_bind (hwi_settings, "probe-graph-enable-map-fill",
+                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
+                         G_SETTINGS_BIND_DEFAULT);
+	dsp_bp->grid_add_check_button ("Add Events", "Disable to not add Probe Events to Master Scan.",
+                                       1
+                                       );
+        g_settings_bind (hwi_settings, "probe-graph-enable-add-events",
+                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
+                         G_SETTINGS_BIND_DEFAULT);
+	dsp_bp->grid_add_check_button ("Plot", "Plot data as profile(s) after every raster point probe.\nNot recommended for fast probing repeats.",
+                                       1
+                                       );
+        g_settings_bind (hwi_settings, "probe-graph-enable-map-plot-events",
+                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
+                         G_SETTINGS_BIND_DEFAULT);
+	dsp_bp->grid_add_check_button ("Save", "Save individual data as vpdata files.\nNot recommended for fast probing repeats.",
+                                       1
+                                       );
+        g_settings_bind (hwi_settings, "probe-graph-enable-map-save-events",
+                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
+                         G_SETTINGS_BIND_DEFAULT);
+
+        
 	raster_ec->Freeze ();
+	rasterb_ec->Freeze ();
 	g_object_set_data (G_OBJECT (auto_probe_menu), "raster_ec", (gpointer)raster_ec);
 	g_object_set_data (G_OBJECT (auto_probe_menu), "rasterb_ec", (gpointer)rasterb_ec);
 
@@ -3049,31 +3076,6 @@ DSPControl::DSPControl () {
                                        GCallback (callback_GrMatWindow), this,
                                        GrMatWin, 1
                                        );
-	dsp_bp->grid_add_check_button ("Map Fill", "Enable to fill in between raster points if raster probe grid > 1.",
-                                       1
-                                       );
-        g_settings_bind (hwi_settings, "probe-graph-enable-map-fill",
-                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
-                         G_SETTINGS_BIND_DEFAULT);
-	dsp_bp->grid_add_check_button ("Add Events", "Disable to not add Probe Events to Master Scan.",
-                                       1
-                                       );
-        g_settings_bind (hwi_settings, "probe-graph-enable-add-events",
-                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
-                         G_SETTINGS_BIND_DEFAULT);
-	dsp_bp->grid_add_check_button ("Plot", "Plot data as profile(s) after every raster point probe.\nNot recommended for fast probing repeats.",
-                                       1
-                                       );
-        g_settings_bind (hwi_settings, "probe-graph-enable-map-plot-events",
-                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
-                         G_SETTINGS_BIND_DEFAULT);
-	dsp_bp->grid_add_check_button ("Save", "Save individual data as vpdata files.\nNot recommended for fast probing repeats.",
-                                       1
-                                       );
-        g_settings_bind (hwi_settings, "probe-graph-enable-map-save-events",
-                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
-                         G_SETTINGS_BIND_DEFAULT);
-
         dsp_bp->pop_grid ();
         dsp_bp->new_line ();
         dsp_bp->new_grid_with_frame ("Plot / Save current data in buffer");
@@ -4523,13 +4525,17 @@ void DSPControl::EndScanCheck (){
 
 int DSPControl::auto_probe_callback(GtkWidget *widget, DSPControl *dspc){
         dspc->write_vector_mode =  (pv_mode) atoi (gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget)));
-	Gtk_EntryControl* ri = (Gtk_EntryControl*) g_object_get_data( G_OBJECT (widget), "raster_ec");
-	if (!ri) return 0;
+	Gtk_EntryControl* ra = (Gtk_EntryControl*) g_object_get_data( G_OBJECT (widget), "raster_ec");
+	Gtk_EntryControl* rb = (Gtk_EntryControl*) g_object_get_data( G_OBJECT (widget), "rasterb_ec");
+	if (!ra || !rb) return 0;
 
-	if (dspc->write_vector_mode == PV_MODE_NONE)
-		ri->Freeze ();
-	else
-		ri->Thaw ();
+	if (dspc->write_vector_mode == PV_MODE_NONE){
+		ra->Freeze ();
+		rb->Freeze ();
+	} else {
+		ra->Thaw ();
+                rb->Thaw ();
+        }
 
 	return 0;	      
 }
