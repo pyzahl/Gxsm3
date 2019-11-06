@@ -1540,13 +1540,12 @@ gpointer ProbeFifoReadFunction (void *ptr_sr, int dspdev){
 			plotted = 0;
 			continue;
 		case RET_FR_WAIT:
-			//if (DSPControlClass->probedata_length () > 0){
-			//	if (!plotted && DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT){
-			//		LOGMSGS ( "ProbeFifoReadFunction -- FR_WAIT-ing for data, update plot display." << std::endl);
-			//		DSPControlClass->Probing_graph_update_thread_safe ();
-			//		plotted++;
-			//	}	
-			//}
+			if (DSPControlClass->probedata_length () > 0){
+                                if (!plotted && g_settings_get_boolean (DSPControlClass->get_hwi_settings (), "probe-graph-enable-map-plot-events")){
+					DSPControlClass->Probing_graph_update_thread_safe (0);
+                                        plotted++;
+                                }
+                        }
 			return NULL;
 		case RET_FR_OK:
 			plotted = 0;
@@ -1556,11 +1555,9 @@ gpointer ProbeFifoReadFunction (void *ptr_sr, int dspdev){
 		case RET_FR_FCT_END: 
 			plotted = 0;
 			if (DSPControlClass->probedata_length () > 0){
-				//if (DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT)
                                 if (g_settings_get_boolean (DSPControlClass->get_hwi_settings (), "probe-graph-enable-map-plot-events"))
 					DSPControlClass->Probing_graph_update_thread_safe (1);
 
-				//if (DSPControlClass->current_auto_flags & FLAG_AUTO_SAVE)
                                 if (g_settings_get_boolean (DSPControlClass->get_hwi_settings (), "probe-graph-enable-map-save-events"))
 					DSPControlClass->Probing_save_callback (NULL, DSPControlClass);	
 

@@ -1562,9 +1562,12 @@ gpointer ProbeFifoReadFunction3 (void *ptr_sr, int dspdev){
 			plotted = 0;
 			continue;
 		case RET_FR_WAIT:
-			//if (!plotted && DSPControlClass->current_auto_flags & FLAG_AUTO_PLOT)
-                        //        DSPControlClass->Probing_graph_update_thread_safe (0);
-			//plotted++;
+			if (DSPControlClass->probedata_length () > 0){
+                                if (!plotted && g_settings_get_boolean (DSPControlClass->get_hwi_settings (), "probe-graph-enable-map-plot-events")){
+                                        DSPControlClass->Probing_graph_update_thread_safe (0);
+                                        plotted++;
+                                }
+                        }
 			return NULL;
 		case RET_FR_OK:
 			plotted = 0;
