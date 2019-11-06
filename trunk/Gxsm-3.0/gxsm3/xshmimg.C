@@ -37,12 +37,15 @@
 
 ShmImage2D::ShmImage2D(GtkWidget* area, 
 		       int Width, int Height, 
-		       int xorigin, int yorigin
+		       int xorigin, int yorigin,
+                       int QuechFactor
 		       ){
         tr_xy[0] = tr_xy[1] = 0.;
         
         x0 = xorigin; 
         y0 = yorigin;
+        QuenchFac = QuechFactor;
+
         maxcol  = 0;
         ZoomFac = 1;
         imgarea = area;
@@ -55,12 +58,12 @@ ShmImage2D::ShmImage2D(GtkWidget* area,
         Resize(Width, Height);
 }
 
-void ShmImage2D::Resize(int Width, int Height){
+void ShmImage2D::Resize(int Width, int Height, int QuechFactor){
         XSM_DEBUG(DBG_L3, "ShmImage2D::Resize" << Width << "x" << Height );
 
         width  = Width;
         height = Height;
-
+        QuenchFac = QuechFactor;
         red_line_points[2] = x0;
         red_line_points[0] = x0 + (width-1)*ZoomFac;
         red_line_points[1] = red_line_points[3] = y0;
@@ -174,6 +177,8 @@ void ShmImage2D::draw_callback (cairo_t *cr, gboolean draw_red_line, gboolean dr
 
                 x *= ZoomFac;
                 y *= ZoomFac;
+                x /= QuenchFac;
+                y /= QuenchFac;
                 
                 cairo_save (cr);
                 cairo_translate (cr, x, y-2*14.);
