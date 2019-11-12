@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* SRanger MK2 and Gxsm - Gnome X Scanning Microscopy Project
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -34,7 +36,6 @@
 
 /* MK2 Note: all addresses are 32bit (LONG) */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #ifndef __FB_SPM_DATAEXCHANGE_H
 #define __FB_SPM_DATAEXCHANGE_H
@@ -116,13 +117,13 @@
 // -- otherwise you exactly need to know/be sure what you are doing --
 // -- odd things like changed data structures, etc.., could break data transfer --
 #define FB_SPM_SOFT_ID   0x1001 /* FB_SPM sofware id */
-#define FB_SPM_VERSION   0x2035 /* FB_SPM main Version, BCD: 00.00 */
-#define FB_SPM_DATE_YEAR 0x2018 /* Date: Year, BCD */
-#define FB_SPM_DATE_MMDD 0x0117 /* Date: Month/Day, BCD */
+#define FB_SPM_VERSION   0x2040 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_DATE_YEAR 0x2019 /* Date: Year, BCD */
+#define FB_SPM_DATE_MMDD 0x1109 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
-	"Version: Lednice-Battenkill Worrier 2013\n"\
-	"4 Source Feedback Mix: Yes\nFB-EXT: Option\nFB-watch\n"\
+	"Version: Crash Hack RTEngine4Gxsm Mark2 2019\n"\
+	"4 Source Feedback Mix: Yes\nFB-EXT: Option\nFB-watch\nZ-Setpoint/Fuzzy Control\n"\
 	"dynamic current IIR: Yes, IIR/RMS comp. always if set, MIX_MODE negate: Yes, FUZZY/LOG: yes\n"\
 	"SCAN: Yes, Pause/Resume: Yes, FastRet: Yes, 2nd-Zoff-scan AKTIVE, Z[16], AIC0-7[16], dIdV/ddIdV/LckI0/Count[32]! AIC_INT: " FB_SPM_FEATURES_AIC_AS_INT "\n" \
 	"Z0-SLOPE-COMPENSATION: " FB_SPM_FEATURES_DSP_Z0_SLOPE_COMPENSATION "\n" \
@@ -138,34 +139,6 @@
 	"THIS IS SR-MK2 with Analog810 8Ch 16bity in/out + GPIO + 2 Counters\nAnalog810 ReConfig+-Start: Yes\nHR-mode: Yes RNG: Yes\n"\
 	"Non blocking user KernelRead/Write support: Yes -- at ByteAddress 00000800 ReadMemNA, ReadProgNA, WriteMemNA, WriteProgNA\n"
 
-
-// use DSP_CC for DSP CC, not if used for GXSM SRanger_HwI include file!
-// ==> now defined at compile time via Makefile CC option -DDSP_CC
-// #define DSP_CC
-
-#ifdef DSP_CC
-typedef short DSP_INT;
-typedef int   DSP_IINT;
-typedef unsigned short DSP_UINT;
-typedef long DSP_LONG;
-typedef unsigned long DSP_ULONG;
-#else
-typedef gint16  DSP_INT;
-typedef guint16 DSP_IINT;
-typedef guint16 DSP_UINT;
-typedef gint32  DSP_LONG;
-typedef guint32 DSP_ULONG;
-#endif
-
-#ifdef DSP_CC
-# define PROBE_VECTOR_P  PROBE_VECTOR*  
-# define DSP_INT_P       DSP_INT*
-# define DSP_LONG_P      DSP_LONG*
-#else
-# define PROBE_VECTOR_P  DSP_UINT
-# define DSP_INT_P       DSP_UINT
-# define DSP_LONG_P      DSP_UINT
-#endif
 /*
  * only used for initialisation, no floats needed on DSP, 
  * only the cc should compute this! 
@@ -175,6 +148,29 @@ typedef guint32 DSP_ULONG;
 #define U_AD_MAX 10.0
 #define VOLT2DAC(U) (DSP_INT)((U)*32767./U_DA_MAX)
 #define DAC2VOLT(R) (DSP_INT)((R)*U_AD_MAX/32767.)
+
+
+/** Full Frame Area Scan Control Structure */
+// start modes
+#define AREA_SCAN_RUN            0x01
+#define AREA_SCAN_RUN_FAST       0x02
+#define AREA_SCAN_MOVE_TIP       0x10
+// stop modes
+#define AREA_SCAN_STOP           0x01
+#define AREA_SCAN_PAUSE          0x02
+#define AREA_SCAN_RESUME         0x04
+// special control modes
+#ifdef DSP_CC
+# define APPLY_NEW_ROTATION           0x1378 /* priavte start commands for applying data to private copy */
+#else
+# define MK2_APPLY_NEW_ROTATION           0x1378 /* priavte start commands for applying data to private copy */
+#endif
+
+#define PROBE_NO_LOCKIN         0
+#define PROBE_INIT_LOCKIN       1
+#define PROBE_RUN_LOCKIN_PROBE  2
+#define PROBE_RUN_LOCKIN_SCAN   3
+#define PROBE_RUN_LOCKIN_FREE   4
 
 /**
  * Here are all structs and constants needed for data exchange and
@@ -217,6 +213,73 @@ typedef guint32 DSP_ULONG;
 #define MD_AIC_RECONFIG 0x4000  /**< Request AIC Reconfig */
 #define MD_3_NOTUSED    0x8000  /**< reserved for future use */
 
+
+
+// use DSP_CC for DSP CC, not if used for GXSM SRanger_HwI include file!
+// ==> now defined at compile time via Makefile CC option -DDSP_CC
+// #define DSP_CC
+
+#ifdef DSP_CC
+typedef unsigned char DSP_UINT8;
+typedef short DSP_INT;
+typedef int   DSP_IINT;
+typedef unsigned short DSP_UINT;
+typedef long DSP_LONG;
+typedef unsigned long DSP_ULONG;
+typedef short           DSP_INT16; // data - MK2 native is "int", same as "short"
+typedef unsigned short  DSP_UINT16;
+typedef long            DSP_INT32;
+typedef unsigned long   DSP_UINT32;
+#else
+typedef gint16  DSP_INT;
+typedef guint16 DSP_IINT;
+typedef guint16 DSP_UINT;
+typedef gint32  DSP_LONG;
+typedef guint32 DSP_ULONG;
+typedef gint16   DSP_INT16;
+typedef guint16  DSP_UINT16;
+typedef gint32   DSP_INT32;
+typedef guint32  DSP_UINT32;
+#endif
+
+#ifdef DSP_CC
+# define PROBE_VECTOR_P  PROBE_VECTOR*  
+# define DSP_INT_P       DSP_INT*
+# define DSP_LONG_P      DSP_LONG*
+# define DSP_INT16_P     DSP_INT16*
+# define DSP_INT32_P     DSP_INT32*
+#else
+# define PROBE_VECTOR_P  DSP_UINT
+# define DSP_INT_P       DSP_UINT
+# define DSP_LONG_P      DSP_UINT
+//# define DSP_INT16_P     DSP_UINT
+//# define DSP_INT32_P     DSP_UINT
+#endif
+
+
+/**
+ * Main DSP Statemachine Control Structure
+ */
+
+/** Real Time Task Control for Data-Processing (DP) Tasks **/
+typedef struct {
+        DSP_UINT   process_flag;
+        DSP_UINT   missed_count; // RT-taks: missed count, IDeal-task: N executed count
+        DSP_UINT32 process_time;
+        DSP_UINT32 process_time_peak_now;
+} DSPMK2_DP_TASK_CONTROL;
+
+/** Idle Task Control for other less time criticl Idle (ID) Tasks **/
+typedef struct {
+        DSP_UINT   process_flag;
+        DSP_UINT   exec_count; // RT-taks: missed count, IDeal-task: N executed count
+        DSP_UINT32 timer_next;
+        DSP_UINT32 interval;
+} DSPMK2_ID_TASK_CONTROL;
+
+#define NUM_DATA_PROCESSING_TASKS 12
+#define NUM_IDLE_TASKS 32 // MUST BE 2^N
+
 /**
  * DSP Magics Structure -- (C) 2008 by P.Zahl
  * MK2 all addresses have to be 32bit
@@ -238,7 +301,7 @@ typedef struct {
 	DSP_UINT scan;          /**< 11: Address of ascan struct =RO */
 	DSP_UINT move;          /**< 12: Address of move struct =RO */
 	DSP_UINT probe;         /**< 13: Address of probe struct =RO */
-	DSP_UINT autoapproach;  /**< 14: Address of autoapproch struct =RO */
+	DSP_UINT autoapproach;  /**< 14: Address of autoapproch/wavegen struct =RO */
 	DSP_UINT datafifo;      /**< 15: Address of datafifo struct =RO */
 	DSP_UINT probedatafifo; /**< 16: Address of probe datafifo struct =RO */
 	DSP_UINT data_sync_io;  /**< 17: Address of data_sync_io struct =RO */
@@ -264,15 +327,20 @@ typedef struct {
 	DSP_UINT clr_mode;      /**< mode change request: clear bits =WO */
 	DSP_UINT mode;          /**< current state =RO */
 	DSP_UINT last_mode;     /**< last state =RO */
-	DSP_ULONG BLK_count;    /**< DSP counter, incremented in dataprocess =RO */
-	DSP_ULONG BLK_Ncount;   /**< divider to get 1/10 sec =RO */
-	DSP_ULONG DSP_time;     /**< DSP time in 1/10sec =RO */
-	DSP_INT DSP_tens;       /**< counter to derive 1Hz heart beat =RO */
-	DSP_INT DataProcessTime;/**< time spend in dataprocess -- performance indicator =RO */
-	DSP_INT IdleTime;       /**< time spend not in dataprocess -- performance indicator =RO */
-	DSP_INT DataProcessTime_Peak; /**< time spend in dataprocess, peak -- performance indicator =RO */
-	DSP_INT IdleTime_Peak;        /**< time spend not in dataprocess, peak -- performance indicator =RO */
-	DSP_INT DataProcessMode;/**< Mode of data processing =RO -- obsolete */
+
+	DSP_UINT   DSP_seconds;   /**< 14 60 second down counter =RO */
+	DSP_UINT   DSP_minutes;   /**< 10 1min counter  =RO */
+        DSP_UINT32 DSP_count_seconds;    /**< 8  1s counter =RO */
+	DSP_UINT32 DSP_time;      /**< 12 DSP time 150kHz ticks =RO */
+
+	DSP_UINT32 DataProcessTime;/**< 16 time spend in dataprocess -- performance indicator =RO */
+	DSP_UINT32 DataProcessReentryTime; /**< 18time spend not in dataprocess -- performance indicator =RO */
+	DSP_UINT32 DataProcessReentryPeak; /**< 20 time spend in dataprocess, peak -- performance indicator =RO */
+	DSP_UINT32 IdleTime_Peak;  /**< 22 time spend not in dataprocess, peak -- performance indicator =RO */
+
+        DSPMK2_DP_TASK_CONTROL dp_task_control[NUM_DATA_PROCESSING_TASKS+1];
+        DSPMK2_ID_TASK_CONTROL id_task_control[NUM_IDLE_TASKS];
+        DSP_UINT32 DP_max_time_until_abort; 
 } SPM_STATEMACHINE;
 #define MAX_WRITE_SPM_STATEMACHINE 2
 
@@ -342,6 +410,7 @@ typedef struct {
 	DSP_INT fb2_delta;           /**< feedback 2nd delta =RW */
 	DSP_INT fb2_delta2;          /**< feedback 2nd delta2 =RW */
 	DSP_LONG fb2_i_sum;           /**< feedback 2nd intergrator =RW */
+        DSP_INT output_M;            /** mapped to OUT(7) "Motor" */
 } EXT_CONTROL;
 #define MAX_WRITE_EXT_CONTROL 12
 
@@ -356,13 +425,15 @@ typedef struct {
 	DSP_INT gain[4];  /**< 4 Gain for signal in Q15 rep =RW */
 	DSP_INT mode[4];  /**< 8 mixer mode: Bit0: 0=OFF, 1=ON (Lin mode), Bit1: 1=Log/0=Lin, Bit2: reserved (IIR/FULL), Bit3: 1=FUZZY mode, Bit4: negate input value */
 	DSP_INT setpoint[4]; /**< 12 individual setpoint for every signal */
-	DSP_INT exec;     /**< 16 log computation of x -> lnx =WO */
-	DSP_INT x, lnx;   /** < 17,18 individual setpoint for every signal RW */
-	DSP_INT y;        /** < 19 */
-	DSP_LONG delta;   /** < 20 */
-	DSP_INT setpoint_log[4]; /**< 12 individual setpoint after log for every signal */
+        DSP_INT Z_setpoint; /** 16 Z setpoint for fuzzy Z control */
+	DSP_INT exec;     /**< 17 log computation of x -> lnx =WO */
+	DSP_INT x, lnx;   /** < 18,19 individual setpoint for every signal RW */
+	DSP_INT y;        /** < 20 */
+        DSP_INT pad;
+	DSP_LONG delta;   /** < 22 */
+	DSP_INT setpoint_log[4]; /**< 24 individual setpoint after log for every signal */
 } FEEDBACK_MIXER;
-#define MAX_WRITE_FEEDBACK_MIXER 16
+#define MAX_WRITE_FEEDBACK_MIXER 17
 
 /** 
  * definitions used for Move Offset and Scan control
@@ -395,33 +466,38 @@ typedef struct{
 /** Full Frame Area Scan Control Structure */
 
 typedef struct{
-	DSP_INT  start;             /**< 0,  0 Initiate Area Scan =WO -- 1 normal start scan, > 1 start slow down scan with factor = start */
-	DSP_INT  stop;              /**< 1,  1 Cancel (=1) or Pause (=2) or Resume (=4) Area Scan =WO */
-	DSP_LONG rotm[4];           /**< 2,  2,4,6,8 scan rotation matrix Q31 xx,xy,yx,yy */
-	DSP_INT	 nx_pre;            /**< 6,  10 number of pre-scan dummy points =WR */
-	DSP_INT	 dnx_probe;         /**< 7,  11 number of positions inbetween probe points, -1==noprobe =WR */
-	DSP_INT	 raster_a, raster_b;/**< 8,  12,13 alternate probe raster scheme -1==noprobe =WR */
-	DSP_LONG srcs_xp, srcs_xm;  /**<10,  14,16 source channel configuration =WR */
-	DSP_LONG srcs_2nd_xp, srcs_2nd_xm;  /**<12, 18,20    source channel configuration =WR */
-	DSP_INT	 nx, ny;            /**<14, 22,23  number of points to scan in x =WR */
-	DSP_LONG fs_dx, fs_dy;      /**<16, 24,26  32bit stepsize "scan", High Word -> DAC, Low Word -> "decimals" */
-	DSP_LONG num_steps_move_xy; /**<18, 28     number of move steps for vector (fm_dx,fm_dy) xy move */
-	DSP_LONG fm_dx, fm_dy, fm_dzxy; /**<19, 30,32,34  32bit stepsize "move" and slope in xy vec dir, High Word -> DAC, Low Word -> "decimals" */
-	DSP_INT	 dnx, dny;          /**<22, 36,37  delta "nx": number of "DAC positions" inbetween "data points" =WR */
-	DSP_INT  Zoff_2nd_xp, Zoff_2nd_xm; /**<24, 38,39 Zoffset for 2nd scan in EFM/MFM/... quasi const height mode */
-	DSP_LONG fm_dz0_xy_vec[2];  /**<26, 40,42 X/Y-Z0-slopes in X and Y in main XY coordinate system =WR */
-	DSP_LONG z_slope_max;       /**<28, 44 fast return option */
-	DSP_INT  fast_return, dum_fil;/**<29, 46,47 fast return option */
-	DSP_LONG xyz_vec[3];         /**<31, 48,50,52  current X/Yposition, 32bit =RO, scan coord sys */
-	DSP_LONG xy_r_vec[2];        /**<34, 54,56  current X/Yposition, 32bit =RO, rotated final/offset coord sys */
-	DSP_LONG cfs_dx, cfs_dy;    /**<36, copy of 32bit stepsize "scan", High Word -> DAC, Low Word -> "decimals" */
+	DSP_INT  start;             /**< 0,  #0 Initiate Area Scan =WO -- 1 normal start scan, > 1 start slow down scan with factor = start */
+	DSP_INT  stop;              /**< 1,  #1 Cancel (=1) or Pause (=2) or Resume (=4) Area Scan =WO */
+	DSP_LONG rotm[4];           /**< 2,  #2..5 scan rotation matrix Q31 xx,xy,yx,yy */
+	DSP_INT	 nx_pre;            /**< 10, #6 number of pre-scan dummy points =WR */
+	DSP_INT	 dnx_probe;         /**< 11, #7 number of positions inbetween probe points, -1==noprobe =WR */
+	DSP_INT	 raster_a, raster_b;/**< 12, #8  alternate probe raster scheme -1==noprobe =WR */
+	DSP_LONG srcs_xp, srcs_xm;  /**<14,  #10 source channel configuration =WR */
+	DSP_LONG srcs_2nd_xp, srcs_2nd_xm;  /**<18  #12 source channel configuration =WR */
+	DSP_INT	 nx, ny;            /**<22  #14 number of points to scan in x =WR */
+	DSP_LONG fs_dx, fs_dy;      /**<24  #16 32bit stepsize "scan", High Word -> DAC, Low Word -> "decimals" */
+	DSP_LONG num_steps_move_xy; /**<28  #18   number of move steps for vector (fm_dx,fm_dy) xy move */
+	DSP_LONG fm_dx, fm_dy, fm_dzxy; /**<30 #19,20,21 32bit stepsize "move" and slope in xy vec dir, High Word -> DAC, Low Word -> "decimals" */
+	DSP_INT	 dnx, dny;          /**<36  #22 delta "nx": number of "DAC positions" inbetween "data points" =WR */
+	DSP_INT  Zoff_2nd_xp, Zoff_2nd_xm; /**<38 #24 Zoffset for 2nd scan in EFM/MFM/... quasi const height mode */
+	DSP_LONG fm_dz0_xy_vec[2];  /**<40 #26 X/Y-Z0-slopes in X and Y in main XY coordinate system =WR */
+	DSP_LONG z_slope_max;       /**<44 #28 fast return option */
+	DSP_INT  fast_return, fast_return_2nd;/**<46 #29,30 fast return option */
+	DSP_INT  slow_down_factor, slow_down_factor_2nd; /**< 48 #31,32  slow down options */
+	DSP_INT  bias_section[4];    /** 50-53 #33,34,35,36 */
+	DSP_LONG xyz_gain;          /**< 54,55 #37 bitcoded 8-/8z/8y/8x (0..255)x */
+	DSP_LONG pad;               /**< 56,57 #38 bitcoded 8-/8z/8y/8x (0..255)x */
+	DSP_LONG xyz_vec[3];        /**<58  #39,40,41 current X/Yposition, 32bit =RO, scan coord sys */
+	DSP_LONG xy_r_vec[2];        /**<  #42 current X/Yposition, 32bit =RO, rotated final/offset coord sys */
+	DSP_LONG cfs_dx, cfs_dy;    /**< copy of 32bit stepsize "scan", High Word -> DAC, Low Word -> "decimals" */
 	DSP_INT  iix, iiy, ix, iy;  /**< current inter x/y, and x/y counters =RO */
-	DSP_INT  slow_down_factor, iiix; /**< current scan speed reduction beyond 2^15 dnx */
+	DSP_INT  iiix;              /**< current scan speed reduction beyond 2^15 dnx */
 	DSP_INT  ifr;               /**< fast return count option */
 	DSP_INT  sstate;            /**< current scan state =RO */
+	DSP_INT  section;            /**< current scan state =RO */
 	DSP_INT  pflg;              /**< process active flag =RO */
 } AREA_SCAN;
-#define MAX_WRITE_SCAN 47
+#define MAX_WRITE_SCAN 56
 
 /** Data Sync Control */
 
@@ -480,6 +556,7 @@ typedef struct{
 #define VP_LIMITER       0x300 // Limiter ON/OFF flag mask
 #define VP_LIMITER_UP    0x100 // Limit if > value
 #define VP_LIMITER_DN    0x200 // Limit if < value
+#define VP_LIMITER_MODE  0xC0 // Limiter mode code bit mask 0x40+0x80  00: hold, 01: abort with vector forward branch (postive) PCJR
 #define VP_LIMIT_SRC     0xC0 // Limiter "Value" source code bit mask 0x40+0x80  00: Z (IN0), 01: I (IN1), 10: (IN2), 11: (IN3)
 #ifdef VP_GPIO_MSK
 #undef VP_GPIO_MSK
@@ -487,7 +564,19 @@ typedef struct{
 #define VP_GPIO_MSK      0xff0000
 #define VP_NODATA_RESERVED 0x80000000
 
+#define VP_TRIGGER_P       0x01000000 // GPIO/signal trigger flag on pos edge -- release VP on "data & mask" or time end/out of section 
+#define VP_TRIGGER_N       0x02000000 // GPIO/signal trigger flag on neg edge -- release VP on "data & mask" or time end/out of section 
+#define VP_GPIO_SET        0x04000000 // GPIO set/update data -- once per section via statemachine, using idle cycle time for slow IO!!
+#define VP_GPIO_READ       0x08000000 // GPIO set/update data -- once per section via statemachine, using idle cycle time for slow IO!!
+#define VP_RESET_COUNTER_0 0x10000000
+#define VP_RESET_COUNTER_1 0x20000000
+#define VP_NODATA_RESERVED 0x80000000
 
+#define PROBE_NO_LOCKIN         0
+#define PROBE_INIT_LOCKIN       1
+#define PROBE_RUN_LOCKIN_PROBE  2
+#define PROBE_RUN_LOCKIN_SCAN   3
+#define PROBE_RUN_LOCKIN_FREE   4
 
 /**
  * Vector Probe control structure
@@ -520,6 +609,7 @@ typedef struct{
 	DSP_INT     lix, dum;        /**< flags for limiter  =RO */
 	DSP_INT     state;           /**< current probe state =RO */
 	DSP_INT     pflg;            /**< process active flag =RO */
+	DSP_INT     pflg_lockin;     /**< process active flag =RO */
 } PROBE;
 #define MAX_WRITE_PROBE 14
 
@@ -622,7 +712,7 @@ typedef struct{
 	DSP_LONG          pSignal2;        /**< 2 pointer to Signal1 */
 	volatile DSP_LONG blcklen16;       /**< 4 Max: (Signalx size * 2) - 1  (8191) */
 	volatile DSP_LONG blcklen32;       /**< 6 Max: Signalx size - 1 (4095) */
-	DSP_INT           pad;             /**< */
+	DSP_INT           start;           /**< Control Recorder: 1 start 16bit, 2: start 32bit, 99: Stop*/
 	DSP_INT           pflg;            /**< 8 recorder process flag -- can be externally set. 0=OFF. Bit 1=>16bit rec, 2=>32bit rec */
 } RECORDER;
 

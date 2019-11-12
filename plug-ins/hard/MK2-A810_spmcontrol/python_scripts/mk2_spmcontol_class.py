@@ -66,22 +66,24 @@ MK2_i_magic_sid     = 4
 
 
 MK2_i_statemachine = 5
-MK2_fmt_statemachine = "<hhhhLLLhhhhhh"
-MK2_fmt_statemachine_w = "<h"
+MK2_fmt_statemachine = "<HHHHHHLLLLLL"
+MK2_fmt_statemachine_w = "<H"
 [
 	MK2_ii_statemachine_set_mode,
 	MK2_ii_statemachine_clr_mode,
 	MK2_ii_statemachine_mode,
 	MK2_ii_statemachine_last_mode,
-	MK2_ii_statemachine_BLK_count,
-	MK2_ii_statemachine_BLK_Ncount,
+	MK2_ii_statemachine_DSP_seconds,
+	MK2_ii_statemachine_DSP_minutes,
+	MK2_ii_statemachine_DSP_count_seconds,
 	MK2_ii_statemachine_DSP_time,
-	MK2_ii_statemachine_DSP_tens,
 	MK2_ii_statemachine_DataProcessTime,
-	MK2_ii_statemachine_IdleTime,
-	MK2_ii_statemachine_DataProcessTime_Peak,
+	MK2_ii_statemachine_DataProcessReentryTime,
+	MK2_ii_statemachine_DataProcessReentryPeak,
 	MK2_ii_statemachine_IdleTime_Peak,
-	MK2_ii_statemachine_DataProcessMode
+	MK2_ii_statemachine_DP_tasks, # ... DSPMK2_DP_TASK_CONTROL dp_task_control[NUM_DATA_PROCESSING_TASKS+1];
+                                      # ... DSPMK2_ID_TASK_CONTROL id_task_control[NUM_IDLE_TASKS];
+        # DP_max_time_until_abort
 ] = range (0,13)
 
 

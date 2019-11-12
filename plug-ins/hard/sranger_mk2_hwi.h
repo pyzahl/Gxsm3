@@ -113,6 +113,7 @@ public:
 	void swap (guint16 *addr);
 	void swap (gint16  *addr);
 	void swap (gint32 *addr);
+	void swap (guint32 *addr);
 	void check_and_swap (gint16 &data) {
 		if (swap_flg)
 			swap (&data);
@@ -150,6 +151,7 @@ public:
 	gint32 int_2_sranger_int (gint32 x);
 	guint16 uint_2_sranger_uint (guint16 x);
 	gint32 long_2_sranger_long (gint32 x);
+	guint32 ulong_2_sranger_ulong (guint32 x);
 
 	virtual int start_fifo_read (int y_start, 
 			     int num_srcs0, int num_srcs1, int num_srcs2, int num_srcs3, 
@@ -208,6 +210,8 @@ public:
 
 	void conv_dsp_probe ();
 	virtual void read_dsp_lockin (double *AC_amp, double &AC_frq, double &AC_phaseA, double &AC_phaseB, gint32 &AC_lockin_avg_cycels);
+	virtual int dsp_lockin_state (int set=-1);
+
 	virtual void write_dsp_lockin_probe_final (double AC_amp[4], double &AC_frq, double AC_phaseA, double AC_phaseB, gint32 AC_lockin_avg_cycels, double VP_lim_val[2], double noise_amp, int start=0);
 
 	void conv_dsp_vector ();
@@ -293,6 +297,8 @@ class sranger_mk2_hwi_spm : public sranger_mk2_hwi_dev{
 	virtual gint RTQuery (const gchar *property, double &val1, double &val2, double &val3);
 	virtual gint RTQuery (const gchar *property, gchar **val) { return FALSE; };
 
+	virtual int RotateStepwise(int exec=0);
+	virtual void UpdateScanGainMirror ();
 	virtual void SetOffset(double x, double y);
 	virtual void MovetoXY (double x, double y);
 	virtual void StartScan2D();

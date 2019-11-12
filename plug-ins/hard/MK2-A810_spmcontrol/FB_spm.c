@@ -56,20 +56,50 @@ extern DSP_INT      prbdf;
 // IMPORTANT:
 // KEEP THIS LISTS COMPATIBLE WITH STRUCT DEFINITIONS !!!!!
 
+
+/*
+ * DSP RT ENGINE (C) PyZ subsystem
+ * ==================================================
+ */
+
+
+// IMPORTANT:
+// KEEP THIS LISTS COMPATIBLE WITH STRUCT DEFINITIONS !!!!!
+
 /* Init SPM state maschine */
 SPM_STATEMACHINE state = {
-		0,0,  // set, clear_mode
-		MD_IDLE,   //	state.mode       = MD_IDLE;
-		MD_PID | MD_OFFSETADDING,    //	state.last_mode  = MD_READY | MD_PID | MD_OFFSETCOMP;
-		0,    //	state.BLK_count  = 0;
-		2000, //	state.BLK_Ncount = 2000;
-		0,    //	state.DSP_time   = 0;
-		0,    //	state.DSP_tens   = 0;
-		0,    //	state.DataProcessTime = 0;
-		0,    //	state.IdleTime   = 0;
-		0, 0, //        2x-dito .._peak
-		AIC_OFFSET_COMPENSATION    //	state.DataProcessMode = AIC_OFFSET_COMPENSATION;
+		0,0,      // set, clear_mode
+		MD_IDLE,  //	state.mode       = MD_IDLE;
+		0,        // last_mode (dummy)
+		0,     //	state.DSP_seconds  = 0;
+		0,     //	state.DSP_minutes  = 0;
+		0L,    //	state.DSP_count_seconds  = 0;
+		0L,    //	state.DSP_time  = 0;
+		0L,    //	state.DataProcessTime = 0;
+		0L,    //	state.ProcessReentryTime   = 0;
+		0x0000ffffL, //  state.ProcessReentryPeak   = 0;  HI|LO
+		0x0000ffffL, //  state.IdleTime_Peak   = 0;       HI|LO
+                { // DATA PROCESS Real Time Task Control [1+12]
+                        // 0x00: Never, 0x10: Always, 0x20: Odd, 0x40: Even
+                        { 0x10,0,0L,0L }, // RT000
+                        { 0x20,0,0L,0L }, { 0x20,0,0L,0L }, { 0x10,0,0L,0L }, { 0x00,0,0L,0L }, // RT001..004
+                        { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, { 0x10,0,0L,0L }, // RT005..008
+                        { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, { 0x00,0,0L,0L }  // RT009..012
+                },
+                { // IDLE Task Control [32]
+                        // 0x00: Never, 0x10: always normal, 0x20: timer controlled (150kHz clock), 0x40: clock mode
+                        { 0x10,0,0L,0L }, { 0x20,0,0L,1L  }, { 0x10,0,0L,0L }, { 0x20,0,0L,15L }, // ID001..004
+                        { 0x10,0,0L,0L }, { 0x10,0,0L,0L  }, { 0x10,0,0L,0L }, { 0x10,0,0L,0L }, // ID005..008
+                        { 0x10,0,0L,0L }, { 0x10,0,0L,0L  }, { 0x10,0,0L,0L }, { 0x10,0,0L,0L }, // ID009..012
+                        { 0x10,0,0L,0L }, { 0x10,0,0L,17L  }, { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, // ID013..016
+                        { 0x20,0,0L,111L }, { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, // ID017..020
+                        { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, // ID021..024
+                        { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, { 0x00,0,0L,0L }, { 0x10,0,0L,3L }, // ID025..028
+                        { 0x00,0,0L,0L }, { 0x20,0,0L,5L  }, { 0x00,0,0L,7L }, { 0x40,0,0L,150000L }  // ID029..032
+                },
+                2000L
 };
+
 
 /* A810 Configuration -- may be altered and then A810 restarted via AIC_STO, START cycle */
 /* A810_CONFIG      a810_config = { 5, 1, 1 }; // 150kHz, +/-5V, QEP=on -- for SD on, testing */
@@ -169,7 +199,10 @@ AREA_SCAN        scan = {
 		0, 0, //        scan.Zoff_2nd_xp = 0, scan.Zoff_2nd_xm = 0;
 		0L, 0L, //      scan.fm_dz0x, _dz0y
 		2L<<16, //      scan.z_slope_max
-		0,0, //         scan.fast return, dum_fil
+		1,1, //         fast_return, fast_return_2nd
+		1,1, //         slow_down_factor, slow_down_factor_2nd
+		1001,1002,1003,1004, //  bias_secion[4]
+		0L,1L, //       xyz_gain, pad
 		0L,    //	scan.Xpos  = 0;
 		0L,    //	scan.Ypos  = 0;
 		0L,    //	scan.Zpos  = 0;
@@ -180,9 +213,10 @@ AREA_SCAN        scan = {
 		0,    //	scan.iiy    = 0;
 		0,    //	scan.ix    = 0;
 		0,    //	scan.iy    = 0;
-		1,0,  //        scan.slow_down_factor, iiix;
-		0,     //        scan.ifr;
+		0,   //         iiix;
+		0,    //        scan.ifr;
 		0,    //	scan.sstate = 0;
+		0,    //	scan.section = 0;
 		0     //	scan.pflg = 0;
 };
 
@@ -222,7 +256,7 @@ PROBE            probe = {
 	NULL, //        PROBE_VECTOR *vector;
 	0L, 0L, 0, 0,   //	probe.ix = probe.iix = 0L, probe.lix = 0, dum;
 	0,    //	probe.state = 0;
-	0     //	probe.pflg  = 0;
+	0,0   //	probe.pflg  = 0; probe.pflg_lockin = 0
 };
 
 /* Init autoapproach */
@@ -245,8 +279,8 @@ AUTOAPPROACH     autoapp = {
 	0,     // mv_step_count;   /**< step counter */
 	0,     // tip_mode;        /**< Tip mode, used by auto approach */
 	0,     // delay_cnt;       /**< Delay count */
-	0,     // cp, ci;          /**< temporary used */
-        0,0,0 ,     // count_axis[3];   /**< axis step counters */
+	0,0,   // cp, ci;          /**< temporary used */
+        0,0,0, // count_axis[3];   /**< axis step counters */
 	0     // pflg;            /**< process active flag =RO */
 };
 
@@ -383,8 +417,7 @@ void main()
 
 	/* Setup DSP timer/clock */
 
-	asm_init_clock ();
-
+	TSCInit();
 
 #ifdef USE_ANALOG_16 // if special build for MK2-Analog_16
 

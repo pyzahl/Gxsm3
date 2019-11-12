@@ -47,6 +47,9 @@
 // HAS TO BE IDENTICAL TO THE DRIVER's FILE!
 #include "../plug-ins/hard/modules/sranger_mk23_ioctl.h"
 
+#include "MK2-A810_spmcontrol/FB_spm_task_names.h"
+
+
 // important notice:
 // ----------------------------------------------------------------------
 // all numbers need to be byte swaped on i386 (no change on ppc!!) via 
@@ -89,7 +92,8 @@ void dumpbuffer(unsigned char *buffer, int size, int i0){
 
 sranger_mk2_hwi_spm::sranger_mk2_hwi_spm():sranger_mk2_hwi_dev(){
 	SRANGER_DEBUG("Init Sranger SPM");
-	ScanningFlg=0;	
+	ScanningFlg=0;
+        tip_pos [0] = tip_pos[1] = 0.;
 }
 
 /*
@@ -114,6 +118,7 @@ sranger_mk2_hwi_spm::~sranger_mk2_hwi_spm(){
 #define CONV_16(X) X = int_2_sranger_int (X)
 #define CONV_U16(X) X = uint_2_sranger_uint (X)
 #define CONV_32(X) X = long_2_sranger_long (X)
+#define CONV_U32(X) X = ulong_2_sranger_ulong (X)
 
 /*
  Real-Time Query of DSP signals/values, auto buffered for z,o,R
@@ -122,12 +127,14 @@ sranger_mk2_hwi_spm::~sranger_mk2_hwi_spm(){
  "o" :                Z0, X0, Y0  offset -- in volts after piezo amplifier
  "R" :                expected Z, X, Y -- in Angstroem/base unit
  "f" :                dFreq, I-avg, I-RMS
- "s" :                DSP Statemachine Status Bits, DSP load, DSP load peak
+ "s","S" :            DSP Statemachine Status Bits, DSP load, DSP load peak, S: update RTEngine Process List on terminal
  "Z" :                probe Z Position
- "i" :                GPIO (high level speudo monitor)
+4 "i" :                GPIO (high level speudo monitor)
  "A" :                Mover/Wave axis counts 0,1,2 (X/Y/Z)
+ "p" :                X,Y Scan/Probe Coords in Pixel, 0,0 is center, DSP Scan Coords
+ "P" :                X,Y Scan/Probe Coords in Pixel, 0,0 is top left [indices]
  */
-
+//#define MK2_SCAN_STRUCT_DEBUG
 gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
         const gint64 max_age = 50000; // 50ms
         const gint64 max_age_as = 250000; // 250ms
@@ -269,18 +276,61 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 	}
 
 	// DSP Status Indicators
-	if (*property == 's'){
+	if (*property == 's' || *property == 'S'){
 		lseek (dsp, magic_data.statemachine, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_read  (dsp, &dsp_statemachine, sizeof (dsp_statemachine)); 
-		CONV_16 (dsp_statemachine.mode);
-		CONV_16 (dsp_statemachine.DataProcessTime);
-		CONV_16 (dsp_statemachine.IdleTime);
-		CONV_16 (dsp_statemachine.DataProcessTime_Peak);
-		CONV_16 (dsp_statemachine.IdleTime_Peak);
+		CONV_U16 (dsp_statemachine.mode);
+		CONV_U32 (dsp_statemachine.DataProcessTime);
+		CONV_U32 (dsp_statemachine.DataProcessReentryTime);
+		CONV_U32 (dsp_statemachine.DataProcessReentryPeak);
+		CONV_U32 (dsp_statemachine.IdleTime_Peak);
 
 		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
  		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan)); 
-		CONV_16 (dsp_scan.pflg);
+
+                CONV_32 (dsp_scan.rotm[0]);
+                CONV_32 (dsp_scan.rotm[1]);
+                CONV_32 (dsp_scan.rotm[2]);
+                CONV_32 (dsp_scan.rotm[3]);
+                CONV_32 (dsp_scan.z_slope_max);
+                CONV_16 (dsp_scan.fast_return);
+                CONV_16 (dsp_scan.fast_return_2nd);
+                CONV_16 (dsp_scan.slow_down_factor);
+                CONV_16 (dsp_scan.slow_down_factor_2nd);
+                CONV_16 (dsp_scan.bias_section[0]);
+                CONV_16 (dsp_scan.bias_section[1]);
+                CONV_16 (dsp_scan.bias_section[2]);
+                CONV_16 (dsp_scan.bias_section[3]);
+                CONV_16 (dsp_scan.nx_pre);
+                CONV_16 (dsp_scan.dnx_probe);
+                CONV_16 (dsp_scan.raster_a);
+                CONV_16 (dsp_scan.raster_b);
+                CONV_32 (dsp_scan.srcs_xp);
+                CONV_32 (dsp_scan.srcs_xm);
+                CONV_32 (dsp_scan.srcs_2nd_xp);
+                CONV_32 (dsp_scan.srcs_2nd_xm);
+                CONV_16 (dsp_scan.nx);
+                CONV_16 (dsp_scan.ny);
+                CONV_32 (dsp_scan.fs_dx);
+                CONV_32 (dsp_scan.fs_dy);
+                CONV_32 (dsp_scan.num_steps_move_xy);
+                CONV_32 (dsp_scan.fm_dx);
+                CONV_32 (dsp_scan.fm_dy); 
+                CONV_32 (dsp_scan.fm_dzxy);
+                CONV_32 (dsp_scan.fm_dz0_xy_vec[i_X]);
+                CONV_32 (dsp_scan.fm_dz0_xy_vec[i_Y]);
+                CONV_16 (dsp_scan.dnx);
+                CONV_16 (dsp_scan.dny);
+                CONV_16 (dsp_scan.Zoff_2nd_xp);
+                CONV_16 (dsp_scan.Zoff_2nd_xm);
+                CONV_32 (dsp_scan.xyz_vec[i_X]);
+                CONV_32 (dsp_scan.xyz_vec[i_Y]);
+                CONV_32 (dsp_scan.cfs_dx);
+                CONV_32 (dsp_scan.cfs_dy);
+
+                // RO:
+                CONV_16 (dsp_scan.sstate);
+                CONV_16 (dsp_scan.pflg);
 
 		lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_read  (dsp, &dsp_probe, sizeof (dsp_probe)); 
@@ -304,12 +354,217 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 
 // "  DSP Load: %.1f" %(100.*SPM_STATEMACHINE[ii_statemachine_DataProcessTime]/(SPM_STATEMACHINE[ii_statemachine_DataProcessTime]+SPM_STATEMACHINE[ii_statemachine_IdleTime]))
 // "  Peak: %.1f" %(100.*SPM_STATEMACHINE[ii_statemachine_DataProcessTime_Peak]/(SPM_STATEMACHINE[ii_statemachine_DataProcessTime_Peak]+SPM_STATEMACHINE[ii_statemachine_IdleTime_Peak]))
-		val2 = (double)dsp_statemachine.DataProcessTime / (double)(dsp_statemachine.DataProcessTime + dsp_statemachine.IdleTime); // DSP Load
-		val3 = (double)dsp_statemachine.DataProcessTime_Peak / (double)(dsp_statemachine.DataProcessTime_Peak + dsp_statemachine.IdleTime_Peak); // DSP Peak Load
+                // **** RteMk2 FIXME
+		val2 = (double)dsp_statemachine.DataProcessTime / (double)(dsp_statemachine.DataProcessTime + dsp_statemachine.IdleTime_Peak); // DSP Load
+		val3 = (double)dsp_statemachine.DataProcessTime / (double)(dsp_statemachine.DataProcessTime + dsp_statemachine.IdleTime_Peak); // DSP Peak Load
 		
-		return TRUE;
+#define PRINT_DSP_PROCESS_LIST
+#ifdef PRINT_DSP_PROCESS_LIST
+                if (*property == 'S'){
+
+                        /****
+ANSI COLOR CODES
+ cout << "\033[1;31mbold red text\033[0m\n";
+
+Here, \033 is the ESC character, ASCII 27. It is followed by [, then zero or more numbers separated by ;, and finally the letter m. The numbers describe the colour and format to switch to from that point onwards.
+
+The codes for foreground and background colours are:
+
+         foreground background
+black        30         40
+red          31         41
+green        32         42
+yellow       33         43
+blue         34         44
+magenta      35         45
+cyan         36         46
+white        37         47
+
+Additionally, you can use these:
+
+reset             0  (everything back to normal)
+bold/bright       1  (often a brighter shade of the same colour)
+underline         4
+inverse           7  (swap foreground and background colours)
+bold/bright off  21
+underline off    24
+inverse off      27
+                        ***/
+                        static gdouble load=0.;
+                        CONV_U16 ( dsp_statemachine.DSP_seconds);
+                        CONV_U16 ( dsp_statemachine.DSP_minutes);
+                        CONV_U32 ( dsp_statemachine.DSP_count_seconds);
+                        CONV_U32 ( dsp_statemachine.DSP_time);
+                        CONV_U32 ( dsp_statemachine.DP_max_time_until_abort);
+                        g_print ("\n\033[35;1;7mDSP RTENGINE4GXSM Mark2 V1.0 by P.Zahl TIME STRUCTS:\033[0m DP TICKS %10lu %10lus %10lum %02ds\n",
+                                 dsp_statemachine.DSP_time,
+                                 dsp_statemachine.DSP_count_seconds, dsp_statemachine.DSP_minutes-1, dsp_statemachine.DSP_seconds);
+                                 
+                        load = 0.9*load + 0.1*((double)dsp_statemachine.DataProcessTime/(double)dsp_statemachine.DataProcessReentryTime);
+                        int d = (int)(double)(dsp_statemachine.DSP_minutes-1)/(24*60);
+                        int h = (int)(double)(dsp_statemachine.DSP_minutes-1)/60 - 24*d;
+                        int m = (int)(double)(dsp_statemachine.DSP_minutes-1) - 24*60*d - h*60;
+                        int s = 59-dsp_statemachine.DSP_seconds;
+                        g_print ("\n\033[0mDSP STATUS up %d days %d:%02d:%02d, Average Load: %g\n", d,h,m,s, load);
+                        g_print ("DP Reentry Time: %10lu  Earliest: %10lu Latest: %10lu    %8lx\n"
+                                 "DP Time: %10lu  Max: %10lu  Idle Max: %10lu Min: %10lu   %8lx\n",
+                                 dsp_statemachine.DataProcessReentryTime,
+                                 dsp_statemachine.DataProcessReentryPeak & 0xffff,
+                                 dsp_statemachine.DataProcessReentryPeak >> 16, dsp_statemachine.DataProcessReentryPeak,
+                                 dsp_statemachine.dp_task_control[0].process_time_peak_now >> 16,
+                                 dsp_statemachine.dp_task_control[0].process_time_peak_now & 0xffff,
+                                 dsp_statemachine.IdleTime_Peak >> 16,
+                                 dsp_statemachine.IdleTime_Peak & 0xffff, dsp_statemachine.IdleTime_Peak );
+                        g_print ("DP Continue Time Limit: %10lu", dsp_statemachine.DP_max_time_until_abort);
+                        g_print ("\n\n\033[0mPROCESS LIST ** RT Flags: O: on odd clk, E: on even clk, S=sleeping, A=active, R=running now, s=sleeping now\n");
+                        g_print ("\033[4mPID       DSPTIME    TASKTIME   TASKTMMAX  MISSEDTASK  FLAGS     NAME of RT Data Processing (DP) Task\033[0m\n");
+                        //        RT000         297        1624        2577           0  11  system
+
+                        static int missed_count_last[NUM_DATA_PROCESSING_TASKS+1];
+                        for (int i=0; i<NUM_DATA_PROCESSING_TASKS+1; i++){ 
+                                CONV_16 ( dsp_statemachine.dp_task_control[i].process_flag);
+                                CONV_16 ( dsp_statemachine.dp_task_control[i].missed_count);
+                                CONV_U32 ( dsp_statemachine.dp_task_control[i].process_time);
+                                CONV_U32 ( dsp_statemachine.dp_task_control[i].process_time_peak_now);
+
+                                gchar *flags = g_strdup_printf("%s%s%s%s%s",
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0xFFFF == 0   ? "--S" :
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x0010 ? "--A" :
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x0020 ? "-OA" :
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x0040 ? "-EA" : "-?-",
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x0001 ? "R" : "s",
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x00100000 ? "k" : "-",
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x00200000 ? "a" : "-",
+                                                               dsp_statemachine.dp_task_control[i].process_flag & 0x00400000 ? "m" : "-"
+                                                               );
+
+                                if (dsp_statemachine.dp_task_control[i].process_flag){
+                                        g_print ("%sRT%03d\033[0m  %10lu  %10lu  %10lu  %10lu   %s  %s\n",
+                                                 missed_count_last[i] == dsp_statemachine.dp_task_control[i].missed_count ? "\033[1m":"\033[31m",
+                                                 i,
+                                                 dsp_statemachine.dp_task_control[i].process_time,
+                                                 (dsp_statemachine.dp_task_control[i].process_time_peak_now >> 16) > 32768 ? // fix a wicked stupid problem with number representations MK2/BE
+                                                          (1L<<16)-(dsp_statemachine.dp_task_control[i].process_time_peak_now >> 16) : dsp_statemachine.dp_task_control[i].process_time_peak_now >> 16,
+                                                 (dsp_statemachine.dp_task_control[i].process_time_peak_now & 0xffff) > 32768 ?
+                                                          (1L<<16)-(dsp_statemachine.dp_task_control[i].process_time_peak_now & 0xffff) : dsp_statemachine.dp_task_control[i].process_time_peak_now & 0xffff,
+                                                 dsp_statemachine.dp_task_control[i].missed_count,
+                                                 flags,
+                                                 MK2_dsp_dp_process_name[i]);
+                                        missed_count_last[i] = dsp_statemachine.dp_task_control[i].missed_count;
+                                } else
+                                        g_print ("RT%03d is sleeping                                       %s  %s\n", i, flags, MK2_dsp_dp_process_name[i]);
+
+                        }
+                        g_print ("\n\033[4mPID    TIMER NEXT    INTERVAL   EXEC COUNT  FLAGS   NAME of IDle (ID) Task\033[0m\n");
+                        //                 ID000           0           0            0  ALWAYS  bz push data from RT_FIFO
+
+                        for (int i=0; i<NUM_IDLE_TASKS; i++){
+                                CONV_16 ( dsp_statemachine.id_task_control[i].process_flag);
+                                CONV_16 ( dsp_statemachine.id_task_control[i].exec_count);
+                                CONV_U32 ( dsp_statemachine.id_task_control[i].timer_next);
+                                CONV_U32 ( dsp_statemachine.id_task_control[i].interval);
+                                if (dsp_statemachine.id_task_control[i].process_flag)
+                                        g_print ("\033[1mID%03d\033[0m  %10lu  %10lu  %10lu   %s  %s\n", i,
+                                                 (unsigned int)dsp_statemachine.id_task_control[i].timer_next,
+                                                 (unsigned int)dsp_statemachine.id_task_control[i].interval,
+                                                 (unsigned int)dsp_statemachine.id_task_control[i].exec_count,
+                                                 dsp_statemachine.id_task_control[i].process_flag == 0   ? "SLEEP " :
+                                                 dsp_statemachine.id_task_control[i].process_flag & 0x10 ? "\033[33mALWAYS\033[0m" :
+                                                 dsp_statemachine.id_task_control[i].process_flag & 0x20 ? "\033[32mTIMER \033[0m" :
+                                                 dsp_statemachine.id_task_control[i].process_flag & 0x40 ? "\033[36mCLOCK \033[0m" : "  ?  ",
+                                                 MK2_dsp_id_process_name[i]);
+                                //else g_print ("ID%03 is sleeping\n", i);
+                        }
+                        g_print ("\033[0m\n");
+
+#ifdef MK2_SCAN_STRUCT_DEBUG
+                        g_print ("\nMOVE ==================================\n");
+                        g_print ("start %d\n", dsp_move.start);
+                        g_print ("num_steps  %d\n", dsp_move.num_steps);
+                        g_print ("xyz_vec[3]   %6d %6d %6d\n", dsp_move.xyz_vec[0], dsp_move.xyz_vec[1], dsp_move.xyz_vec[2]);
+                        g_print ("pflg   {%d}\n", dsp_move.pflg);
+
+                        g_print ("\nAREA-SCAN =============================\n");
+                        g_print ("start %d\n", dsp_scan.start);
+                        g_print ("stop  %d\n", dsp_scan.stop);
+                        g_print ("rotm[ %g, %g, %g, %g ]\n",
+                                 (double)dsp_scan.rotm[0]/2147483647.,
+                                 (double)dsp_scan.rotm[1]/2147483647.,
+                                 (double)dsp_scan.rotm[2]/2147483647.,
+                                 (double)dsp_scan.rotm[3]/2147483647.);
+                        g_print ("nx_pre     %d\n", dsp_scan.nx_pre);
+                        g_print ("dnx_probe  %d\n", dsp_scan.dnx_probe);
+                        g_print ("raster     %d, %d\n", dsp_scan.raster_a, dsp_scan.raster_b);
+                        g_print ("srcs_xp,xm: %8X, %8X; 2nd: %8X, %8X\n",
+                                 dsp_scan.srcs_xp,dsp_scan.srcs_xm,
+                                 dsp_scan.srcs_2nd_xp, dsp_scan.srcs_2nd_xm);
+                        g_print ("nx, ny: (%d, %d)\n", dsp_scan.nx, dsp_scan.ny);
+                        g_print ("fs_dx, fs_dy: %d %d\n", dsp_scan.fs_dx, dsp_scan.fs_dy);
+                        g_print ("num_steps_move_xy: %d\n", dsp_scan.num_steps_move_xy);
+                        g_print ("fm_dx, fm_dy, fm_dzxy %d %d %d\n", dsp_scan.fm_dx, dsp_scan.fm_dy, dsp_scan.fm_dzxy);
+                        g_print ("dnx, dny %d %d\n", dsp_scan.dnx, dsp_scan.dny);
+                        g_print ("Zoff_2nd_xp, Zoff_2nd_xm %d %d\n", dsp_scan.Zoff_2nd_xp, dsp_scan.Zoff_2nd_xm);
+                        g_print ("fm_dz0_xy_vec[2]  %d %d\n", dsp_scan.fm_dz0_xy_vec[0], dsp_scan.fm_dz0_xy_vec[1]);
+                        g_print ("z_slope_max       %d\n", dsp_scan.z_slope_max);
+                        g_print ("fast_return, fast_return_2nd             %d %d\n", dsp_scan.fast_return, dsp_scan.fast_return_2nd);
+                        g_print ("slow_down_factor, slow_down_factor_2nd   %d %d\n", dsp_scan.slow_down_factor, dsp_scan.slow_down_factor_2nd);
+                        g_print ("bias_section[4] %g %g %g %g\n",
+                                 10.*(double)dsp_scan.bias_section[0]/(1<<15),
+                                 10.*(double)dsp_scan.bias_section[1]/(1<<15),
+                                 10.*(double)dsp_scan.bias_section[2]/(1<<15),
+                                 10.*(double)dsp_scan.bias_section[3]/(1<<15));
+                        g_print ("xyz_gain %8X\n", dsp_scan.xyz_gain);
+                        g_print ("pad %d\n", dsp_scan.pad);
+                        g_print ("xyz_vec[3]   %6d %6d %6d\n", dsp_scan.xyz_vec[0], dsp_scan.xyz_vec[1], dsp_scan.xyz_vec[2]);
+                        g_print ("xy_r_vec[2]  %6d %6d\n", dsp_scan.xy_r_vec[0], dsp_scan.xy_r_vec[1]);
+                        g_print ("cfs_dx, cfs_dy %d %d\n", dsp_scan.cfs_dx, dsp_scan.cfs_dy);
+                        g_print ("iix, iiy, ix, iy   %3d %3d  %3d %3d\n", dsp_scan.iix, dsp_scan.iiy, dsp_scan.ix, dsp_scan.iy);
+                        g_print ("iiix  %d\n", dsp_scan.iiix);
+                        g_print ("ifr   %d\n", dsp_scan.ifr);
+                        g_print ("sstate  %d\n", dsp_scan.sstate);
+                        g_print ("section %d\n", dsp_scan.section);
+                        g_print ("pflg   {%d}\n", dsp_scan.pflg);
+
+                        g_print ("\nAUTO_APP =============================\n");
+                        g_print ("start %d\n", dsp_autoapp.start);
+                        g_print ("stop  %d\n", dsp_autoapp.stop);
+                        g_print ("pflg   {%d}\n", dsp_autoapp.pflg);
+
+                        g_print ("\nPROBE ================================\n");
+                        g_print ("start %d\n", dsp_probe.start);
+                        g_print ("stop  %d\n", dsp_probe.stop);
+                        g_print ("pflg   {%d}\n", dsp_probe.pflg);
+#if 0
+                        {
+                                static DATA_FIFO dsp_fifo;
+                                lseek (dsp, magic_data.datafifo, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                sr_read (dsp, &dsp_fifo, sizeof(dsp_fifo));
+                                check_and_swap (dsp_fifo.r_position);
+                                check_and_swap (dsp_fifo.w_position);
+                                check_and_swap (dsp_fifo.fill);
+                                check_and_swap (dsp_fifo.stall);
+                                g_print ("\nAS FIFO ===============================\n");
+                                g_print ("r-pos %d\n", dsp_fifo.r_position);
+                                g_print ("w-pos %d\n", dsp_fifo.w_position);
+                                g_print ("fill  %d\n", dsp_fifo.fill);
+                                g_print ("stall %d\n", dsp_fifo.stall);
+                        }
+#endif                   
+#endif
+                }
+#endif
+                val2 = (double)dsp_statemachine.DataProcessTime / (double)(dsp_statemachine.DataProcessReentryTime); // DSP Load
+                val3 = (double)(dsp_statemachine.dp_task_control[0].process_time_peak_now&0xffff) / (double)(dsp_statemachine.DataProcessReentryTime); // DSP Peak Load
+                
+                return TRUE;
 	}
 
+        if (*property == 'Z'){
+                val1 = sranger_mk2_hwi_pi.app->xsm->Inst->Dig2ZA ((double)dsp_probe.Zpos / (double)(1<<16));
+		return TRUE;
+        }
+        
+        
 	// quasi GPIO monitor/mirror -- HIGH LEVEL!!!
 	if (*property == 'i'){
 #define REALTIME_GPIO_WATCH
@@ -337,13 +592,30 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		val1 = (double)gpio_monitor_out;
 		val2 = (double)gpio_monitor_in;
 		val3 = (double)gpio_monitor_dir;
+                return TRUE;
 	}
 
         if ( *property == 'A' ){
                 val1 = (double)dsp_autoapp.count_axis[0];
                 val2 = (double)dsp_autoapp.count_axis[1];
                 val3 = (double)dsp_autoapp.count_axis[2];
+		return TRUE;
         }
+
+
+        if (*property == 'p'){
+                val1 = (double)(dsp_scan.xyz_vec[0] / (dsp_scan.fs_dx * dsp_scan.dnx));
+                val2 = (double)(dsp_scan.xyz_vec[1] / (dsp_scan.fs_dy * dsp_scan.dny));
+                val3 = (double)dsp_scan.xyz_vec[2] / (1<<16);
+		return TRUE;
+        }
+        if (*property == 'P'){
+                val1 = (double)(dsp_scan.xyz_vec[0] / (dsp_scan.fs_dx * dsp_scan.dnx) + (gapp->xsm->data.s.nx/2 - 1) + 1);
+                val2 = (double)(-dsp_scan.xyz_vec[1] / (dsp_scan.fs_dy * dsp_scan.dny) + (gapp->xsm->data.s.ny/2 - 1) + 1);
+                val3 = (double)dsp_scan.xyz_vec[2] / (1<<16);
+		return TRUE;
+        }
+        
         
 //	printf ("ZXY: %g %g %g\n", val1, val2, val3);
 
@@ -369,6 +641,42 @@ void sranger_mk2_hwi_spm::ClrMode(int mode){
 	lseek (dsp, magic_data.statemachine, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 	sr_write (dsp, &dsp_state, MAX_WRITE_SPM_STATEMACHINE<<1); 
 }
+
+
+
+int sranger_mk2_hwi_spm::RotateStepwise(int exec) {
+        if (exec){
+                static AREA_SCAN sdsp_scan;
+
+                gint32 mxx,mxy,myx,myy;
+
+                sdsp_scan.start = 0; //APPLY_NEW_ROTATION;
+                sdsp_scan.stop  = 0;
+                CONV_16 (sdsp_scan.start);
+                CONV_16 (sdsp_scan.stop);
+
+                // rotation matrix in Q31
+		mxx = long_2_sranger_long (float_2_sranger_q31 (rotmxx));
+		mxy = long_2_sranger_long (float_2_sranger_q31 (rotmxy));
+		myx = long_2_sranger_long (float_2_sranger_q31 (rotmyx));
+		myy = long_2_sranger_long (float_2_sranger_q31 (rotmyy));
+
+                // g_print ("ROTMATRIX...[%g, %g, %g, %g]\n", rotmxx, rotmxy, rotmyx, rotmyy);
+        
+                // set new rotation matrix -- small delta expected
+                sdsp_scan.rotm[0] = mxx;
+                sdsp_scan.rotm[1] = mxy;
+                sdsp_scan.rotm[2] = myx;
+                sdsp_scan.rotm[3] = myy;
+
+                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_write (dsp, &sdsp_scan, (2+8)<<1); // write start, stop, rotm[4] - only here
+                return 0;
+        }
+        return 1;
+        
+}
+
 
 void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 	static int wave_form_address=0;
@@ -758,7 +1066,7 @@ void sranger_mk2_hwi_spm::tip_to_origin(double x, double y){
 	dsp_scan.fm_dy = long_2_sranger_long (dsp_scan.fm_dy);
 	dsp_scan.num_steps_move_xy = long_2_sranger_long (dsp_scan.num_steps_move_xy);
 
-	dsp_scan.start = int_2_sranger_int(1);
+	dsp_scan.start = int_2_sranger_int (AREA_SCAN_MOVE_TIP);
 	dsp_scan.srcs_xp  = long_2_sranger_long(0);
 	dsp_scan.srcs_xm  = long_2_sranger_long(0);
 	dsp_scan.srcs_2nd_xp  = long_2_sranger_long (0);
@@ -811,7 +1119,7 @@ void sranger_mk2_hwi_spm::EndScan2D(){
 	// cancel scanning?
 	if (dsp_scan.pflg) {
 		dsp_scan.start = int_2_sranger_int(0);
-		dsp_scan.stop  = int_2_sranger_int(1);
+		dsp_scan.stop  = int_2_sranger_int(AREA_SCAN_STOP);
 		dsp_scan.raster_b = int_2_sranger_int (0);
 		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_scan, MAX_WRITE_SCAN<<1);
@@ -848,9 +1156,9 @@ void sranger_mk2_hwi_spm::PauseScan2D(){
 	CONV_16 (dsp_scan.pflg);
 
 	// pause -- if scanning
-	if (dsp_scan.pflg == 1) {
+	if (dsp_scan.pflg  &  AREA_SCAN_RUN) {
 		dsp_scan.start = int_2_sranger_int(0);
-		dsp_scan.stop  = int_2_sranger_int(2); // PAUSE SCAN
+		dsp_scan.stop  = int_2_sranger_int(AREA_SCAN_PAUSE);
 		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_scan, 2<<1); // only start/stop!
 	}
@@ -865,14 +1173,44 @@ void sranger_mk2_hwi_spm::ResumeScan2D(){
 	CONV_16 (dsp_scan.pflg);
 
 	// resume scanning if paused
-	if (dsp_scan.pflg == 2) { // only if PAUSEd previously!
+	if (dsp_scan.pflg &  AREA_SCAN_RUN) { // only if PAUSEd previously!
 		dsp_scan.start = int_2_sranger_int(0);
-		dsp_scan.stop  = int_2_sranger_int(4); // RESUME SCAN FROM PAUSE
+		dsp_scan.stop  = int_2_sranger_int(AREA_SCAN_RESUME);
 		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_scan, 2<<1); // only start/stop!
 	}
 //	ScanningFlg=1;
 }
+
+
+void sranger_mk2_hwi_spm::UpdateScanGainMirror (){
+#if 0
+	static AREA_SCAN dsp_scan;
+	static MOVE_OFFSET dsp_move;
+	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+	sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
+	CONV_16 (dsp_scan.pflg);
+        // Update XYZ Scan Gains: bitcoded -/8/8/8 (0..255)x -- not yet used and fixed set to 10x (0x000a0a0a) -- also:	DSP_SIG Offset XYZ_gain
+        dsp_scan.xyz_gain = long_2_sranger_long ((long)( 0
+                                                         | ((((long)round(gapp->xsm->Inst->VX()))&0xff) << 16)
+                                                         | ((((long)round(gapp->xsm->Inst->VY()))&0xff) << 8)
+                                                         | ((((long)round(gapp->xsm->Inst->VZ()))&0xff))));
+
+        lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+        sr_write (dsp, &dsp_scan, 2<<1); // only start/stop!
+
+        lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+	sr_read (dsp, &dsp_move, sizeof (dsp_move)); 
+        // Update XYZ Offset Gains: bitcoded -/8/8/8 (0..255)x -- not yet used and fixed set to 10x (0x000a0a0a) -- also:	DSP_SIG Offset XYZ_gain
+        dsp_move.xyz_gain = long_2_sranger_long ((long)( 0
+                                                         | ((((long)round(gapp->xsm->Inst->VX0()))&0xff) << 16)
+                                                         | ((((long)round(gapp->xsm->Inst->VY0()))&0xff) << 8)
+                                                         | ((((long)round(gapp->xsm->Inst->VZ0()))&0xff))));
+	lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+	sr_write (dsp, &dsp_move, MAX_WRITE_MOVE<<2);
+#endif
+}
+
 
 // this does almost the same as the XSM_Hardware base class would do, 
 // but you may want to do sth. yourself here
@@ -1042,7 +1380,7 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		// cancel scanning?
 		if (dsp_scan.pflg) {
 			dsp_scan.start = int_2_sranger_int (0);
-			dsp_scan.stop  = int_2_sranger_int (1);
+			dsp_scan.stop  = int_2_sranger_int (AREA_SCAN_STOP);
 			lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 			sr_write (dsp, &dsp_scan, MAX_WRITE_SCAN<<1);
 			usleep (50000); // give some time to stop
@@ -1096,6 +1434,7 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
 		
+#if 0 // Instant Rotation now also, do not touch here any more!
 		gint32 mxx,mxy,myx,myy;
 		PI_DEBUG (DBG_L2, "Scan Rotation-Matrix: [[" << rotmxx << ", " << rotmxy << "], [" << rotmyx << ", " << rotmyy << "]]");
 		// rotation matrix in Q31
@@ -1119,7 +1458,7 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 			dsp_scan.rotm[2] = myx;
 			dsp_scan.rotm[3] = myy;
 		}
-		
+#endif		
 		// convert
 		dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
 		dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
@@ -1127,41 +1466,40 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		SRANGER_DEBUG("SR:Start/Rot XYPos: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
 
 		// setup scan, added forward_slow_down mode
-#if 0
+#if 0 // no fatsscan on MK2
 		if (GTK_TOGGLE_BUTTON(DSPControlClass->FastScan_status)->active) 
-			dsp_scan.start = int_2_sranger_int (2);
+			dsp_scan.start = int_2_sranger_int (AREA_SCAN_RUN_FAST);
 		else
-			dsp_scan.start = int_2_sranger_int (1);
+			dsp_scan.start = int_2_sranger_int (AREA_SCAN_RUN);
 #endif
-                if (DSPControlClass->scan_forward_slow_down > 1)
-                        dsp_scan.start = int_2_sranger_int (DSPControlClass->scan_forward_slow_down);
-                else
-                        dsp_scan.start = int_2_sranger_int (1);
-		
+                dsp_scan.start = int_2_sranger_int (AREA_SCAN_RUN);
+                dsp_scan.stop = int_2_sranger_int (0);
+
+                // set speed manipulation options
+                dsp_scan.slow_down_factor     = int_2_sranger_int (DSPControlClass->scan_forward_slow_down);
+                dsp_scan.slow_down_factor_2nd = int_2_sranger_int (DSPControlClass->scan_forward_slow_down_2nd);
+
+                
 		// 1st XP scan here
 		//   enable do probe at XP?
-		if (DSPControlClass->Source && DSPControlClass->probe_trigger_raster_points > 0)
-			dsp_scan.srcs_xp  = long_2_sranger_long (srcs_dir[0] | 0x0008);
-		else
-			dsp_scan.srcs_xp  = long_2_sranger_long (srcs_dir[0]);
-		
+                dsp_scan.srcs_xp  = long_2_sranger_long (srcs_dir[0]);
 		dsp_scan.srcs_xm  = long_2_sranger_long (srcs_dir[1]);
 		
 		// 2nd scan, setup later, see below
 		dsp_scan.srcs_2nd_xp  = long_2_sranger_long (srcs_dir[2]);
 		dsp_scan.srcs_2nd_xm  = long_2_sranger_long (srcs_dir[3]);
 
-		// --- DISABLED ---
+		// Z-Offset 2nd pass
 		dsp_scan.Zoff_2nd_xp  = int_2_sranger_int (sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
 		dsp_scan.Zoff_2nd_xm  = int_2_sranger_int (sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
 
 		// enable probe?
-		if (DSPControlClass->Source && DSPControlClass->probe_trigger_raster_points){
-			if (DSPControlClass->Source && DSPControlClass->probe_trigger_raster_points > 0){
+		if (DSPControlClass->probe_trigger_raster_points){
+			if (DSPControlClass->probe_trigger_raster_points > 0){
 				dsp_scan.dnx_probe = int_2_sranger_int (DSPControlClass->probe_trigger_raster_points);
-				dsp_scan.raster_a = int_2_sranger_int ((int)(1.+ceil((DSPControlClass->probe_trigger_raster_points-1.)/2)));
-//				dsp_scan.raster_b = int_2_sranger_int ((int)(1.+floor((DSPControlClass->probe_trigger_raster_points-1.)/2)));
-				dsp_scan.raster_b = int_2_sranger_int (DSPControlClass->probe_and_wait);
+				dsp_scan.raster_a  = int_2_sranger_int (DSPControlClass->probe_trigger_raster_points); //(int)(1.+ceil((DSPControlClass->probe_trigger_raster_points-1.)/2)));
+				dsp_scan.raster_b  = int_2_sranger_int (DSPControlClass->probe_trigger_raster_points_b); //(int)(1.+floor((DSPControlClass->probe_trigger_raster_points-1.)/2)));
+//				dsp_scan.raster_b  = int_2_sranger_int (DSPControlClass->probe_and_wait);
 			} else {
 				dsp_scan.dnx_probe = int_2_sranger_int ((int)fabs((double)DSPControlClass->probe_trigger_raster_points));
 				dsp_scan.raster_a = int_2_sranger_int (0);
@@ -1181,25 +1519,26 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 	
 		recalculate_dsp_scan_speed_parameters (); // adjusts dsp_scan.dnx, ....!
 
-		// some thing wicked is going on -- getting screwed valued returned in "dsp_scan.fs_dx & dy"
-		PI_DEBUG_GP (DBG_L4, "twFSX*** %d \n", tmp_fs_dx);
-		PI_DEBUG_GP (DBG_L4, "twFSY*** %d \n", tmp_fs_dy);
-		PI_DEBUG_GP (DBG_L4, "twDNX*** %d \n", tmp_dnx);
-		PI_DEBUG_GP (DBG_L4, "twDNY*** %d \n", tmp_dny);
-		PI_DEBUG_GP (DBG_L4, "twNXP*** %d \n", tmp_nx_pre);
-		
 		dsp_scan.fs_dx  = (DSP_LONG)tmp_fs_dx;
 		dsp_scan.fs_dy  = (DSP_LONG)tmp_fs_dy;
 		dsp_scan.dnx    = (DSP_INT)tmp_dnx;
 		dsp_scan.dny    = (DSP_INT)tmp_dny;
 		dsp_scan.nx_pre = (DSP_INT)tmp_nx_pre;
-		// ----
 
-		PI_DEBUG_GP (DBG_L4, "FSX*** %d \n", dsp_scan.fs_dx);
-		PI_DEBUG_GP (DBG_L4, "FSY*** %d \n", dsp_scan.fs_dy);
-		PI_DEBUG_GP (DBG_L4, "DNX*** %d \n", dsp_scan.dnx);
-		PI_DEBUG_GP (DBG_L4, "DNY*** %d \n", dsp_scan.dny);
-		PI_DEBUG_GP (DBG_L4, "NXP*** %d \n", dsp_scan.nx_pre);
+#if 0 // enable if you like to assure a gain update at scan-start, else it's only updated on gain change action what normally shoudl do.
+		// mirror gain -- may be hooked into by Smart Piezo Amp or anything else!
+		dsp_scan.xyz_gain = ( 
+				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VX ())) & 0xff) << 16 ) |
+				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VY ())) & 0xff) <<  8 ) |
+				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VZ ())) & 0xff))      );
+		
+		dsp_move.xyz_gain = ( 
+				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VX0 ())) & 0xff) << 16 ) |
+				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VY0 ())) & 0xff) <<  8 ) |
+				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VZ0 ())) & 0xff))      );
+#endif
+		// not yet transferred to DSP.
+		PI_DEBUG_GP (DBG_L5, "XYZ gain code:*Sc 0x%08x  Mv: ---\n", dsp_scan.xyz_gain); // "0x%08x \n", dsp_scan.xyz_gain, dsp_move.xyz_gain); // not yet in MK2 struct
 
 		const double fract = 1<<16;
 		// from current position to Origin/Start
@@ -1217,6 +1556,7 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		dsp_scan.fm_dy = (long)round(Mdy/steps);
 		dsp_scan.num_steps_move_xy = (long)steps;
 
+		// slope
 		recalculate_dsp_scan_slope_parameters (); // adjusts dsp_scan.fs_dx, dsp_scan.fs_dy, dsp_scan.fm_dz0x, dsp_scan.fm_dz0y);
 		gapp->xsm->data.s.pixeltime = (double)dsp_scan.dnx/DSPControlClass->frq_ref;
 
@@ -1241,7 +1581,13 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		dsp_scan.fm_dy = long_2_sranger_long (dsp_scan.fm_dy);
 		dsp_scan.num_steps_move_xy = long_2_sranger_long (dsp_scan.num_steps_move_xy);
 
+		dsp_scan.Zoff_2nd_xp  = long_2_sranger_long (dsp_scan.Zoff_2nd_xp);
+		dsp_scan.Zoff_2nd_xm  = long_2_sranger_long (dsp_scan.Zoff_2nd_xm);
+
 		dsp_scan.fm_dzxy = long_2_sranger_long (dsp_scan.fm_dzxy);
+
+		dsp_scan.xyz_gain = long_2_sranger_long (dsp_scan.xyz_gain);
+		//dsp_move.xyz_gain = long_2_sranger_long (dsp_move.xyz_gain); // *** not in MK2 struct at this ime
 				
 		// initiate scan now, this starts a 2D scan process!!!
 		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
@@ -1256,7 +1602,7 @@ void sranger_mk2_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 	us_per_line = dsp_scan.dnx*dsp_scan.nx/DSPControlClass->frq_ref*1e6;
 	// wait for data, updated display, data move is done in background by the fifo read thread
 	do {
-	        usleep ((int)us_per_line < 20000 ? (int)us_per_line : 20000); // release cpu time
+	        usleep ((int)us_per_line < 10000 ? (int)us_per_line : 10000); // release cpu time
 		gapp->check_events_self (); // do not lock, quite
 		DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
 		if (ydir > 0 && yindex <= fifo_data_y_index) break;

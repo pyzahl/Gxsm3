@@ -34,9 +34,19 @@
         .title "ASM functions"
         .mmregs
 
-	.global _asm_init_clock
-	.global _asm_read_time
-        .global _DSP_time
+	.global _TSCInit
+
+	.global _TimerTemp
+	.global _MeasuredTime
+	.global _MaxTime
+	.global _MinTime
+
+	.bss _TimerTemp,4,4
+	.bss _MeasuredTime,4,4
+	.bss _MaxTime,4,4
+	.bss _MinTime,4,4
+
+
 	
 ;***************************************************************************
 ; Timer0 register address set
@@ -49,7 +59,7 @@ T0CNT2  .set            0x1009
 T0PRD1  .set            0x100C
 T0PRD2  .set            0x100D
 
-T0GCTL1 .set            0x1012
+T0GCTL1 .set            0x1012 
 T0CTL1  .set            0x1010
 	
 ; Init DSP mode
@@ -61,7 +71,10 @@ T0CTL1  .set            0x1010
 ; Dual mode unchained with no prescaler
 ; Timer0 at 150 MHz
 
-_asm_init_clock:	
+	.sect ".text"
+	.align 4
+	
+_TSCInit:	
 	MOV     #0x00, port(#T0CTL1)    ; Disable timer 0
         MOV     #0, port(#T0CNT1)               ; Init Cnt1,2 at 0
         MOV     #0, port(#T0CNT2)
@@ -74,7 +87,9 @@ _asm_init_clock:
 
 ; Read Timer0
 
-_asm_read_time:
+        .global _TSCReadFirst
+
+_TSCReadFirst:	
 	PSHBOTH XAR0
 	PSHBOTH XAR1
         PSH     dbl(AC0)
@@ -82,26 +97,34 @@ _asm_read_time:
         MOV     port(#T0CNT2),AR1
         MOV     AR1,HI(AC0)
         OR      AR0,AC0                 ; ACO contain the 32-bit timer value
-
-; Add Function to time
-
-; Read Timer0 again
-                
-;         MOV     port(#T0CNT1),AR0       ; CNT1 must read first, then a copy of the current CNT2 is done
-;         MOV     port(#T0CNT2),AR1
-;         MOV     AR1,HI(AC1)
-;         OR      AR0,AC1                         ; AC1 contain the 32-bit timer value
-                
-; Compute Time and save it
-                
-;         SUB     AC1,AC0
-;         ABS     AC0
-        MOV     AC0,dbl(*(_DSP_time))
-
+        MOV     AC0,dbl(*(_TimerTemp))
 	POP     dbl(AC0)
         POPBOTH XAR1
         POPBOTH XAR0
+	RET
+	
 
+; Read Timer0 again
+
+        .global _TSCReadSecond
+_TSCReadSecond:
+	PSHBOTH XAR0
+	PSHBOTH XAR1
+        PSH     dbl(AC0)
+        MOV     dbl(*(_TimerTemp)),AC0
+        MOV     port(#T0CNT1),AR0       ; CNT1 must read first, then a copy of the current CNT2 is done
+        MOV     port(#T0CNT2),AR1
+        MOV     AR1,HI(AC1)
+        OR      AR0,AC1                         ; AC1 contain the 32-bit timer value
+                
+; Compute Time and save it
+                
+        SUB     AC1,AC0
+        ABS     AC0
+        MOV     AC0,dbl(*(_MeasuredTime))
+	POP     dbl(AC0)
+        POPBOTH XAR1
+        POPBOTH XAR0
 	RET
 
 	.end

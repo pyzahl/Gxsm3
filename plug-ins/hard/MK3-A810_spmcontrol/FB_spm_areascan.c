@@ -85,9 +85,9 @@ int  bz_byte_pos;
 
 //#define DATAPROCESS_PUSH_INSTANT
 // or push via idle and FIFO
-#define RT_FIFO_HALF 8
-#define RT_FIFO_FULL 14
-#define RT_FIFO_MASK 15
+#define RT_FIFO_HALF 16 //  8
+#define RT_FIFO_FULL 30 // 14
+#define RT_FIFO_MASK 31 // 15
 DSP_INT32 rt_fifo_i=0;
 DSP_INT32 rt_fifo_ix=0;
 DSP_INT32 rt_fifo_j=0;
@@ -194,10 +194,6 @@ void bz_init(){
 	int i; 
 	for (i=0; i<(DATAFIFO_LENGTH>>1); ++i) datafifo.buffer_ul[i] = 0x3f3f3f3f;
 	for (i=16; i<32; ++i) datafifo.buffer_ul[i] = (DSP_UINT32)i;
-// testing only
-//	for (i=(DATAFIFO_LENGTH>>2)-16; i<(DATAFIFO_LENGTH>>2); ++i) datafifo.buffer_ul[i] = (DSP_UINT32)i;
-//	for (i=(DATAFIFO_LENGTH>>1)-16; i<(DATAFIFO_LENGTH>>1); ++i) datafifo.buffer_ul[i] = (DSP_UINT32)i;
-// ------------
 	for (i=0; i<BZ_MAX_CHANNELS; ++i) bz_last[i] = 0; 
 	bz_push_mode = BZ_PUSH_MODE_32_START; 
 	bz_byte_pos=0;
@@ -304,20 +300,14 @@ void bz_push(int i, DSP_INT32 x){
 
 /* calc of f_dx/y and num_steps by host! */
 #pragma CODE_SECTION(init_area_scan, ".text:slow")
-void init_area_scan (){
-	int m;
+void init_area_scan (int smode){
 	// wait until fifo read thread on host is ready
 	if (!datafifo.stall) {
 		// reset FIFO -- done by host
 
 		init_probe_fifo (); // reset probe fifo once at start!
 
-		scan.stop  = 0;
-		// scan.slow_down_factor = scan.start > 0 ? scan.start : 1; // 1 normally, >1 for slow down
-                m = scan.start;
-		scan.start = 0;
-
-                if (m &  AREA_SCAN_RUN_FAST){
+                if (scan.start &  AREA_SCAN_RUN_FAST){
                         AS_deltasRe = scan.Zoff_2nd_xp; // shared variables, no 2nd line mode in fast scan!
                         AS_deltasIm = scan.Zoff_2nd_xm;
                         // #define CPN(N) ((double)(1LL<<(N))-1.)
@@ -360,7 +350,9 @@ void init_area_scan (){
 		// enable first subtask state for vector scan state machine
 		scan.sstate = AS_MOVE_XY;
                 scan.section=0;
-		scan.pflg  = m;
+                scan.start = 0;
+                scan.stop  = 0;
+		scan.pflg  = smode;
 	}
 }
 

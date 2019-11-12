@@ -2026,7 +2026,7 @@ static void sranger_mk2_hwi_cleanup(void)
 	g_free(mp);
 #endif
 
-	// delete ...
+	// delete ... 
 
 	if( DSPControlContainerClass ){
                 PI_DEBUG (DBG_L4, THIS_HWI_PREFIX "::sranger_mk2_hwi_cleanup -- delete DSP Control-Container-Class.");

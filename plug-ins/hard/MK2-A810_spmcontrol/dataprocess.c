@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* SRanger and Gxsm - Gnome X Scanning Microscopy Project
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -27,7 +29,6 @@
  */
 /* 20040820 CVS fix2 */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 /*
  *
@@ -64,31 +65,13 @@ extern void RecSignalsASM32();
 #include "FB_spm_dataexchange.h"
 #include "dataprocess.h"  
 #include "mul32.h"
+#include "FB_spm_task_names.h"
 
 /* local used variables for automatic offset compensation */
 long    memb[8];        /* 32 bit variable used to calculate the input0 offset*/
 int     blcklen;	/* Block length, used for the offset measurement*/
 int     IdleTimeTmp;
-long    tmpsum;
 
-// RMS buffer
-#define RMS_N2           8
-#define RMS_N            (1 << RMS_N2)
-int     rms_pipi = 0;       /* Pipe index */
-int     rms_I_pipe[RMS_N] = 
-{ 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 
-	0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0
-};
-long    rms_I2_pipe[RMS_N] = 
-{ 
-	0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L, 0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L, 
-	0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L, 0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L, 
-	0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L, 0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L, 
-	0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L, 0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0L,  0L,0L,0L,0L, 0L,0L,0L,0
-};
 
 // 8x digital sigma-delta over sampling using bit0 of 16 -> gain of 2 bits resoultion (16+2=18)
 #define SIGMA_DELTA_LEN   8
@@ -155,11 +138,6 @@ long   Q15L   = 32767L;
 int    Q15    = 32767;
 int    AbsIn  = 0;
 
-/* RANDOM GEN */
-
-long randomnum = 1L;
-
-
 /* externals of SPM control */
 
 extern SPM_STATEMACHINE state;
@@ -184,66 +162,19 @@ long xy_vec[4];
 long mm_vec[4];
 long result_vec[4];
 
-#define BIAS_ADJUST_STEP 4
-#define Z_ADJUST_STEP   0x200L
-
-
-/* Auxillary Random Number Generator */
-
-#define RNG_a 16807         /* multiplier */
-#define RNG_m 2147483647L   /* 2**31 - 1 */
-#define RNG_q 127773L       /* m div a */
-#define RNG_r 2836          /* m mod a */
-
-inline void generate_nextlongrand (){
-      unsigned long lo, hi;
-
-      lo = _lsmpy (RNG_a, randomnum & 0xFFFF);
-      hi = _lsmpy (RNG_a, (unsigned long)randomnum >> 16);
-      lo += (hi & 0x7FFF) << 16;
-      if (lo > RNG_m){
-            lo &= RNG_m;
-            ++lo;
-      }
-      lo += hi >> 15;
-      if (lo > RNG_m){
-            lo &= RNG_m;
-            ++lo;
-      }
-      randomnum = (long)lo;
+int last_dp_i=0;
+inline void read_dp_process_time (int i){
+	unsigned long tmp1, tmp2;
+	TSCReadSecond();
+	state.dp_task_control[i].process_time = MeasuredTime;
+        tmp1 = state.dp_task_control[i].process_time_peak_now & 0xffff; // last peak of process time (LO)
+        tmp2 = MeasuredTime - state.dp_task_control[last_dp_i].process_time;  // actual process time from difference to previouly [ip] executed task
+        state.dp_task_control[i].process_time_peak_now  = tmp2 << 16;  // actual process time from difference -> upper 16 (HI)
+        state.dp_task_control[i].process_time_peak_now |= tmp2 > tmp1 ? tmp2 : tmp1; // peak in lower 16 (LO)
+        //state.dp_task_control[i].process_flag &= 0xfffffff0; // completed, remove flag bit 0 (lowest nibble=0)
+        last_dp_i=i;
 }
-
-
-/* smoothly adjust bias - make sure |analog_bias| < 32766-BIAS_ADJUST_STEP !!  */
-inline void run_bias_adjust (){
-	if (analog.out[ANALOG_BIAS]-BIAS_ADJUST_STEP > AIC_OUT(6)){
-		AIC_OUT(6) += BIAS_ADJUST_STEP;
-	}else{	
-		if (analog.out[ANALOG_BIAS]+BIAS_ADJUST_STEP < AIC_OUT(6))
-			AIC_OUT(6) -= BIAS_ADJUST_STEP;
-		else	
-			AIC_OUT(6) = analog.out[ANALOG_BIAS];
-	}
-}
-
-/* smoothly brings Zpos back to zero in case VP left it non zero at finish */
-inline void run_Zpos_adjust (){
-#if 0
-	probe.Zpos = 0;
-#else
-	if (probe.Zpos > 0)
-//		probe.Zpos -= Z_ADJUST_STEP;
-		probe.Zpos = _lsadd (probe.Zpos, -Z_ADJUST_STEP);
-	else
-		if (probe.Zpos < 0)
-//			probe.Zpos += Z_ADJUST_STEP;
-			probe.Zpos = _lsadd (probe.Zpos, Z_ADJUST_STEP);
-		else
-			probe.Zpos = 0L;
-#endif
-}
-
-
+	
 /* This is ISR is called on each new sample.  The "mode"/statevariable
  * should be initialized with AIC_OFFSET_COMPENSATION before starting
  * the AIC/DMA isr, this assures the correct offset initialization and
@@ -253,39 +184,100 @@ inline void run_Zpos_adjust (){
 
 interrupt void dataprocess()
 {
-	int i, k;
-	asm_read_time ();
+        unsigned long tmp1, tmp2;
+	int mi, i, k;
+// ============================================================
+// PROCESS MODULE: DSP PROCESSING CLOCK TICKS and TIME KEEPING
+// ============================================================
+        // now done via SR3PRO_A810Driver[-interruptible-no-kernel-int].lib
+        //IER &= ~0x0010; // Disable INT4 (kernel) -- protect data integrity (atomic read/write protect not necessary for data manipulated inside here)
 
-	/* Load DataTime */
-	state.DataProcessTime = (int)DSP_time;
+        TSCReadSecond();
+        state.dp_task_control[0].process_time = MeasuredTime; // reference time
+        last_dp_i=0; // initialize reference to last reading
+        
+        state.DataProcessReentryTime = MeasuredTime;
+        tmp1 = state.DataProcessReentryPeak & 0xffff; // LO (min time)
+        tmp2 = state.DataProcessReentryPeak >> 16;    // HI (max time)
+        state.DataProcessReentryPeak  = tmp1 < MeasuredTime ?  tmp1 : MeasuredTime; // LO (min time)
+        state.DataProcessReentryPeak |= (tmp2 > MeasuredTime ?  tmp2 : MeasuredTime) << 16; // HI (max time)
 
-	/* Compute IdleTime */
-	IdleTimeTmp   -= state.DataProcessTime;
-	state.IdleTime = IdleTimeTmp;
+	TSCReadFirst(); // Reference time start now
 
+        MeasuredTime -= state.DataProcessTime; // time outside dataprocess (but incl. little overhead DMA, ...)
+        tmp1 = state.IdleTime_Peak & 0xffff; // LO (min time)
+        tmp2 = state.IdleTime_Peak >> 16;    // HI (max time)
+        state.IdleTime_Peak  = tmp1 < MeasuredTime ?  tmp1 : MeasuredTime; // LO (min time)
+        state.IdleTime_Peak |= (tmp2 > MeasuredTime ?  tmp2 : MeasuredTime) << 16; // HI (max time)
+        
+	++state.DSP_time; // 150kHz dataprocessing synchronous time ticks
 
-	if (sigma_delta_index & 1){
+// ============================================================
+// PROCESS MODULE: PRIMITIVE pflg controlled RT TASK PROCESSING
+// ============================================================
 
+// PROCESS FIXED RTE SCHEDULE...
+	
+// ============================================================
+// RTE TASKS -- ALWAYS
+// ============================================================
+	if ( state.dp_task_control[RT_TASK_ADAPTIIR].process_flag & 0x10){
+	// always compute IIR/filters/RM, applies also to STS sources with FB OFF now!
+	// *** if (feedback.I_cross > 0){
+	        // run IIR self adaptive filter on DAC0
+	        feedback.I_fbw = AIC_IN(0);
+		AbsIn = _abss(AIC_IN(0));
+		feedback.q_factor15 = _lssub (Q15L, _smac (feedback.cb_Ic, AbsIn, Q15) / _sadd (AbsIn, feedback.I_cross));
+		feedback.zxx = feedback.q_factor15;
+		if (feedback.q_factor15 < feedback.ca_q15)
+		        feedback.q_factor15 = feedback.ca_q15;
+		feedback.I_iir = _smac ( _lsmpy ( _ssub (Q15, feedback.q_factor15), AIC_IN(0)),  feedback.q_factor15, _lsshl (feedback.I_iir, -16));
+		AIC_IN(0) = _lsshl (feedback.I_iir, -16);
+
+		read_dp_process_time (RT_TASK_ADAPTIIR);
+	}
+
+	// ALWAYS TASKS!!!
+	for (mi=0; mi<4; ++mi){
+	        // MIXER CHANNEL i
+	        if (feedback_mixer.mode[mi] & 0x10) // negate flag set?
+		        AIC_IN(mi) = -AIC_IN(mi);
+	}
+	/* "virtual" DSP based differential input for IN0 and IN4 as reference remapped on IN0 */
+	if (state.mode & MD_DIFFIN0M4){
+		AIC_IN(0) = _ssub (AIC_IN(0), AIC_IN(4));
+	}
+		
+// ============================================================
+// RTE TASKS -- EVEN 0x20
+// ============================================================
+	if (state.DSP_time & 1){
 #ifdef USE_ANALOG_16 // if special build for MK2-Analog_16
 		analog.counter[0] = 0L; // Counter/Timer support not yet available via FPGA
 		analog.counter[1] = 0L; // Counter/Timer support not yet available via FPGA
-
 #else // default: MK2-A810
+		// QEP TASK ================================================
+		if (state.dp_task_control[RT_TASK_QEP].process_flag & 0x20){
 
-		/* Automatic Aligned Gateing by scan or probe process */
-		asm_counter_accumulate (); /* accumulate events in counters */
+			/* Automatic Aligned Gateing by scan or probe process */
+			asm_counter_accumulate (); /* accumulate events in counters */
 			
-		/* always handle Counter_1 -- 16it gatetime only (fast only, < 800ms @ 75 kHz) */
-		if (++gate_cnt_1 >= CR_generic_io.gatetime_1){
-			gate_cnt_1 = 0;
-			CR_generic_io.count_1 = analog.counter[1];
-			analog.counter[1] = 0L;
+			/* always handle Counter_1 -- 16it gatetime only (fast only, < 800ms @ 75 kHz) */
+			if (++gate_cnt_1 >= CR_generic_io.gatetime_1){
+				gate_cnt_1 = 0;
+				CR_generic_io.count_1 = analog.counter[1];
+				analog.counter[1] = 0L;
 				
-			if (CR_generic_io.count_1 > CR_generic_io.peak_count_1) 
-				CR_generic_io.peak_count_1 = CR_generic_io.count_1;
+				if (CR_generic_io.count_1 > CR_generic_io.peak_count_1) 
+					CR_generic_io.peak_count_1 = CR_generic_io.count_1;
+			}
+			
+			read_dp_process_time (RT_TASK_QEP);
 		}
-	
-		if (!(scan.pflg || probe.pflg) && CR_generic_io.pflg) {
+		
+		// RATEMETER TASK ================================================
+		if (state.dp_task_control[RT_TASK_RATEMETER].process_flag & 0x20){
+			//** if (!(scan.pflg || probe.pflg) && CR_generic_io.pflg) {
 			/* stand alone Rate Meter Mode else gating managed via spm_areascan or _probe module */
 				
 			/* handle Counter_0 -- 32it gatetime (very wide range) */
@@ -304,169 +296,166 @@ interrupt void dataprocess()
 				if (++gate_cnt == 0)
 					++gate_cnt_multiplier;
 			}
+			
+			read_dp_process_time (RT_TASK_RATEMETER);
 		}
 #endif		
-	}
+		if (state.dp_task_control[RT_TASK_FEEDBACK].process_flag & 0x20){
+			feedback.watch = 0;
+			if (!feedback_hold){ /* may be freezed by probing process */
+				if ( !(AS_ch2nd_constheight_enabled && scan.pflg)){ // skip in 2nd const height mode!
 
-	// always compute IIR/filters/RM, applies also to STS sources with FB OFF now!
-	if (feedback.I_cross > 0){
-	        // run IIR self adaptive filter on DAC0
-	        feedback.I_fbw = AIC_IN(0);
-		AbsIn = _abss(AIC_IN(0));
-		feedback.q_factor15 = _lssub (Q15L, _smac (feedback.cb_Ic, AbsIn, Q15) / _sadd (AbsIn, feedback.I_cross));
-		feedback.zxx = feedback.q_factor15;
-		if (feedback.q_factor15 < feedback.ca_q15)
-		        feedback.q_factor15 = feedback.ca_q15;
-		feedback.I_iir = _smac ( _lsmpy ( _ssub (Q15, feedback.q_factor15), AIC_IN(0)),  feedback.q_factor15, _lsshl (feedback.I_iir, -16));
-		AIC_IN(0) = _lsshl (feedback.I_iir, -16);
-	}
-						
-	// Average and RMS computations
-	feedback.I_avg = _lsadd (feedback.I_avg, AIC_IN(0));
-	feedback.I_avg = _lssub (feedback.I_avg, rms_I_pipe[rms_pipi]);
-	rms_I_pipe[rms_pipi] = AIC_IN(0);
-	
-	tmpsum = _lssub (AIC_IN(0), _lsshl (feedback.I_avg, -RMS_N2));
-	tmpsum = _abss(tmpsum);
-	if (tmpsum > 2047) // need to limit to avoid overflow of sum
-	        tmpsum = 2047;
-	tmpsum *= tmpsum;
-	feedback.I_rms = _lsadd (feedback.I_rms, tmpsum);
-	feedback.I_rms = _lssub (feedback.I_rms, rms_I2_pipe[rms_pipi]);
-	rms_I2_pipe[rms_pipi]  = tmpsum;
-	
-	if (++rms_pipi == RMS_N) 
-	        rms_pipi = 0;
-						
-        #define mi i
-	for (mi=0; mi<4; ++mi){
-	        // MIXER CHANNEL mi
-	        if (feedback_mixer.mode[mi] & 0x10) // negate flag set?
-		        AIC_IN(mi) = -AIC_IN(mi);
-	}
+					// Feedback Mixer -- data transform and delta computation, summing
+					feedback_mixer.delta = 0L;
 
-	if (sigma_delta_index & 1){
-		/* Offset Move task ? */
-		if (move.pflg)
-			run_offset_move ();
-			
-		/* Area Scan task ?
-		 * the feedback task needs to be enabled to see the effect
-		 * --> can set CI/CP to small values to "contineously" disable it!
-		 */
-		if (scan.pflg == 1)
-			if (!scan.raster_b || !probe.pflg) // pause scan in raster_b is set and probe is going.
-				run_area_scan ();
-
-		// reset FB watch -- see below
-		feedback.watch = 0; // for actual watch fb activity
-	} else {
-		
-		/* Vector Probe task ?  (Bias may be changed here) */
-		feedback_hold = 0;
-		if (probe.pflg){
-			run_probe ();
-			if (probe.vector)
-				if (probe.vector->options & VP_FEEDBACK_HOLD)
-					feedback_hold = 1;
-		} else {
-			/* (re) Adjust Bias ? */
-//			probe.Upos = _lsshl (analog.out[ANALOG_BIAS], 16);
-			probe.Upos = (long)analog.out[ANALOG_BIAS] << 16;
-				
-			if (AIC_OUT(6) != analog.out[ANALOG_BIAS])
-				run_bias_adjust ();
-			if (probe.Zpos)
-				run_Zpos_adjust ();
-		}
-	}
-
-	/* "virtual" DSP based differential input for IN0 and IN4 as reference remapped on IN0 */
-			
-	if (state.mode & MD_DIFFIN0M4){
-		AIC_IN(0) = _ssub (AIC_IN(0), AIC_IN(4));
-	}
-
-	/* FeedBack (FB) task ?  (evaluates several conditions and runs in various modes) */
-
-	if (!feedback_hold && sigma_delta_index & 1){ /* may be freezed by probing process */
-		/* Let's check out, if the feedback loop is really running. */
-		feedback_hold = 1; 
-
-//#define EN_CODE_EXTERNAL_FEEDBACK_CTRL
-#ifdef EN_CODE_EXTERNAL_FEEDBACK_CTRL
-		/* check if PID flag, EXTFB flag (+ treshold check...) are set */
-		if ((state.mode & (MD_EXTFB | MD_PID)) == (MD_EXTFB | MD_PID) ?
-		    (*(((int*)&iobuf)+external.FB_control_channel) <= external.FB_control_treshold) : state.mode & MD_PID){
-#else
-		if (state.mode & MD_PID){
-#endif
-			if ( !(AS_ch2nd_constheight_enabled && scan.pflg)){ // skip in 2nd const height mode!
-				feedback_hold = 0; 
-
-				// Feedback Mixer -- data transform and delta computation, summing
-				feedback_mixer.delta = 0L;
-
-				for (mi=0; mi<4; ++mi){
- 					// MIXER CHANNEL mi
-					switch (feedback_mixer.mode[mi]){
-					case 3: // LOG
-						feedback_mixer.x = AIC_IN(mi);
-						asm_calc_mix_log ();
-						feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.lnx, feedback_mixer.setpoint_log[mi]), feedback_mixer.gain[mi]);
-						break;
-					case 1: // LIN
-						feedback_mixer.x = AIC_IN(mi);
-						feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]), feedback_mixer.gain[mi]);
-						break;
-					case 9: // FUZZY
-						if (AIC_IN(mi) > feedback_mixer.level[mi]){
-							feedback_mixer.x = _ssub (AIC_IN(mi), feedback_mixer.level[mi]);
-							feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]), feedback_mixer.gain[mi]);
-						}
-						break;
-					case 11: // FUZZY LOG
-						if (AIC_IN(mi) > feedback_mixer.level[mi]){
-							feedback_mixer.x = _ssub (AIC_IN(mi), feedback_mixer.level[mi]);
+					for (mi=0; mi<4; ++mi){
+						// MIXER CHANNEL mi
+						switch (feedback_mixer.mode[mi]){
+						case 3: // LOG
+							feedback_mixer.x = AIC_IN(mi);
 							asm_calc_mix_log ();
-							feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.lnx, feedback_mixer.setpoint[mi]), feedback_mixer.gain[mi]);
+							feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.lnx, feedback_mixer.setpoint_log[mi]), feedback_mixer.gain[mi]);
+							break;
+						case 1: // LIN
+							feedback_mixer.x = AIC_IN(mi);
+							feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]), feedback_mixer.gain[mi]);
+							break;
+#ifdef OLDFUZZYLOGIC
+						case 9: // FUZZY
+							if (AIC_IN(mi) > feedback_mixer.level[mi]){
+								feedback_mixer.x = _ssub (AIC_IN(mi), feedback_mixer.level[mi]);
+								feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]), feedback_mixer.gain[mi]);
+							}
+							break;
+						case 11: // FUZZY LOG
+							if (AIC_IN(mi) > feedback_mixer.level[mi]){
+								feedback_mixer.x = _ssub (AIC_IN(mi), feedback_mixer.level[mi]);
+								asm_calc_mix_log ();
+								feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.lnx, feedback_mixer.setpoint[mi]), feedback_mixer.gain[mi]);
+							}
+							break;
+#else // new FUZZY Z-Pos Control
+                                                case 9: // CZ FUZZY LIN
+                                                        if (AIC_IN(mi) > feedback_mixer.level[mi]){
+                                                                feedback_mixer.x = AIC_IN(mi);
+                                                                feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]), feedback_mixer.gain[mi]);
+                                                        } else {
+                                                                feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback.z32neg>>16, feedback_mixer.Z_setpoint), feedback_mixer.gain[mi]);
+                                                        }
+                                                        break;
+                                                case 11: // CZ FUZZY LOG
+                                                        if (abs (AIC_IN(mi)) > feedback_mixer.level[mi]){
+                                                                feedback_mixer.x = AIC_IN(mi);
+                                                                asm_calc_mix_log ();
+                                                                feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.lnx, feedback_mixer.setpoint_log[mi]), feedback_mixer.gain[mi]);
+                                                        } else {
+                                                                feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback.z32neg>>16, feedback_mixer.Z_setpoint), feedback_mixer.gain[mi]);
+                                                        }
+                                                        break;
+#endif                                                        
+						default: break; // OFF
 						}
-						break;
-					default: break; // OFF
 					}
-				}
 
-				// run plain feedback from delta directly
-				feedback.delta =  _lsshl (feedback_mixer.delta, -15);
-				asm_feedback_from_delta ();
-				feedback.watch = 1; // OK, we did it! -- for actual watch fb activity
+					// run plain feedback from delta directly
+					feedback.delta =  _lsshl (feedback_mixer.delta, -15);
+					asm_feedback_from_delta ();
+					feedback.watch = 1; // OK, we did it! -- for actual watch fb activity
+				}
 			}
-		} else {
-			if (state.mode & MD_ZTRAN) // use external Z, inverted
-				feedback.z = AIC_OUT(6) = (-AIC_IN(7));
+
+			read_dp_process_time (RT_TASK_FEEDBACK);
+		}
+
+	} else {
+// ============================================================
+// RTE TASKS -- ODD 0x40
+// ============================================================
+		// ALWAYS set default bias, overriden below as required by scan_section, vetor_probe Upos, and may be modulated by locking
+		analog.out[ANALOG_BIAS] = scan.bias_section[0];
+		
+		// VECTOR AREA SCAN TASK ====================================
+		if (state.dp_task_control[RT_TASK_AREA_SCAN].process_flag & 0x40){
+			if (scan.pflg & (AREA_SCAN_RUN | AREA_SCAN_MOVE_TIP))
+                                run_area_scan ();
+			
+			// use section bias!
+			analog.out[ANALOG_BIAS] = scan.bias_section[scan.section];
+
+			read_dp_process_time (RT_TASK_AREA_SCAN);
+		}
+		
+		// VECTRO PROBE TASK =========================================
+		if (state.dp_task_control[RT_TASK_VECTOR_PROBE].process_flag & 0x40){
+			/* NOTE: Bias "probe.Upos" may be changed here. */
+			feedback_hold = 0;
+                        if (probe.pflg){
+                                run_probe (); // BIAS from probe relative to last setting
+
+                                if (probe.vector)
+                                        if (probe.vector->options & VP_FEEDBACK_HOLD)
+                                                feedback_hold = 1;
+			}
+			read_dp_process_time (RT_TASK_VECTOR_PROBE);
+
+		}
+		// copy to Upos
+		AIC_OUT(6) = _lsshl (probe.Upos, -16);
+
+                // mirror from ext control
+                AIC_OUT(7) = external.output_M;
+
+
+		// VECTRO PROBE TASK =========================================
+		if (state.dp_task_control[RT_TASK_LOCKIN].process_flag & 0x40){
+			run_lockin ();
+			read_dp_process_time (RT_TASK_LOCKIN);
 		}
 	}
 
+	// ALWAYS TASKS!!! ===================================================
 
-// NOW OUTPUT HR SIGNALS ON XYZ-Offset and XYZ-Scan -- do not touch Bias OUT(6) and Motor OUT(7) here -- handled directly previously.
-// note: OUT(0-5) get overridden below by coarse/mover actions if requeste!!!
+        // do scan coordinate rotation transformation:
+        if ( !(state.mode & MD_XXA))
+                {
+                        xy_vec[2] = xy_vec[0] = scan.xyz_vec[i_X];
+                        xy_vec[3] = xy_vec[1] = scan.xyz_vec[i_Y];
+                        mul32 (xy_vec, scan.rotm, result_vec, 4);
+                        scan.xy_r_vec[i_X] = _lsadd (result_vec[0], result_vec[1]);
+                        scan.xy_r_vec[i_Y] = _lsadd (result_vec[2], result_vec[3]);
+                } else {
+                scan.xy_r_vec[i_X] = scan.xyz_vec[i_X];
+                scan.xy_r_vec[i_Y] = scan.xyz_vec[i_Y];
+        }
 
-/* HR sigma-delta data processing (if enabled) -- turn off via adjusting sigma_delta_hr_mask to all 0 */
+        // Calculate Slope for Z-Offset Output/Analog gain 1 adding option
+        //---- slope add X*mx + Y*my
+        //#ifdef DSP_Z0_SLOPE_COMPENSATION
+        // limit dz add from xy-mult to say 10x scan.fm_dz0x+y, feedback like adjust if "diff" to far off from sudden slope change 
+        //	zpos_xymult = move.ZPos + scan.XposR * scan.fm_dz0x +  scan.YposR * scan.fm_dz0y ;
+        // make sure a smooth adjust -- if slope parameters get changed, need to prevent a jump.
 
-// do scan coordinate rotation transformation:
-	if ( !(state.mode & MD_XXA))
-	{
-		xy_vec[2] = xy_vec[0] = scan.xyz_vec[i_X];
-		xy_vec[3] = xy_vec[1] = scan.xyz_vec[i_Y];
-		mul32 (xy_vec, scan.rotm, result_vec, 4);
-		scan.xy_r_vec[i_X] = _lsadd (result_vec[0], result_vec[1]);
-		scan.xy_r_vec[i_Y] = _lsadd (result_vec[2], result_vec[3]);
-	} else {
-		scan.xy_r_vec[i_X] = scan.xyz_vec[i_X];
-		scan.xy_r_vec[i_Y] = scan.xyz_vec[i_Y];
-	}
+        // Z AREA SCAN SLOPE
+        if ( !(state.mode & MD_XXB)){
+                mul32 (scan.xy_r_vec, scan.fm_dz0_xy_vec, result_vec, 2);
+                s_xymult = _lsadd (result_vec[i_X], result_vec[i_Y]);
+		
+                d_tmp = _lssub (s_xymult, s_xymult_prev);
+                if (d_tmp > scan.z_slope_max) // limit up
+                        s_xymult_prev = _lsadd (s_xymult_prev, scan.z_slope_max);
+                else if (d_tmp < -scan.z_slope_max) // limit dn
+                        s_xymult_prev = _lsadd (s_xymult_prev, -scan.z_slope_max);
+                else s_xymult_prev = s_xymult; // normally this should do it
+        }
 
-// XY-Offset and XY-Scan output -- separated or combined as life configuraion:
+
+        
+	// NOW OUTPUT HR SIGNALS ON XYZ-Offset and XYZ-Scan -- do not touch Bias OUT(6) and Motor OUT(7) here -- handled directly previously.
+	// note: OUT(0-5) get overridden below by coarse/mover actions if requeste!!!
+
+	/* HR sigma-delta data processing (if enabled) -- turn off via adjusting sigma_delta_hr_mask to all 0 */
+
+	// XY-Offset and XY-Scan output -- separated or combined as life configuraion:
 	if (state.mode & MD_OFFSETADDING){
 		for (i=0; i<=i_Y; ++i)
 			result_vec[i] = _lsadd (move.xyz_vec[i], scan.xy_r_vec[i]);
@@ -481,35 +470,16 @@ interrupt void dataprocess()
 	}
 
 
-// Z-Offset output
-//---- slope add X*mx + Y*my
-//#ifdef DSP_Z0_SLOPE_COMPENSATION
-// limit dz add from xy-mult to say 10x scan.fm_dz0x+y, feedback like adjust if "diff" to far off from sudden slope change 
-//	zpos_xymult = move.ZPos + scan.XposR * scan.fm_dz0x +  scan.YposR * scan.fm_dz0y ;
-// make sure a smooth adjust -- if slope parameters get changed, need to prevent a jump.
-
-	if ( !(state.mode & MD_XXB))
-	{
-		mul32 (scan.xy_r_vec, scan.fm_dz0_xy_vec, result_vec, 2);
-		s_xymult = _lsadd (result_vec[i_X], result_vec[i_Y]);
-		
-		d_tmp = _lssub (s_xymult, s_xymult_prev);
-		if (d_tmp > scan.z_slope_max) // limit up
-			s_xymult_prev = _lsadd (s_xymult_prev, scan.z_slope_max);
-		else if (d_tmp < -scan.z_slope_max) // limit dn
-			s_xymult_prev = _lsadd (s_xymult_prev, -scan.z_slope_max);
-		else s_xymult_prev = s_xymult; // normally this should do it
-		
+	// Z-Offset (and slope if enabled) output
+	if ( !(state.mode & MD_XXB)){
 		zpos_xymult = _lsadd (move.xyz_vec[i_Z], s_xymult_prev);
 		HR_OUT (2, zpos_xymult);
 	} else {
 		HR_OUT (2, move.xyz_vec[i_Z]);
 	}
-//#endif
 
 
-// FEEDBACK OUT -- calculate Z-Scan output:
-
+	// FEEDBACK OUT -- calculate Z-Scan output:
 	d_tmp = _lssub (feedback.z32neg, probe.Zpos);
 	//#define INTERNAL_Z_SLOPE_ADD
 #ifdef INTERNAL_Z_SLOPE_ADD
@@ -520,126 +490,67 @@ interrupt void dataprocess()
 
 	sigma_delta_index = (++sigma_delta_index) & 7;
 
-// ========== END HR processing ================
-
-
-	// any special external task/watch/etc. ? -- pass variable out on channel 7 -- no FIR */
-	if (state.mode & MD_WATCH)
-	{
-		switch(external.watch_value){
-			//default: AIC_OUT(7) = 0;
-#ifdef EN_CODE_EXTERNAL_FEEDBACK_CTRL
-		case EXTERNAL_FEEDBACK:
-			AIC_OUT(7) = _sadd(feedback_hold * _ssub(external.watch_max, external.watch_min), external.watch_min);
-			break;
-			// AIC_OUT(7) = feedback_hold * (external.watch_max - external.watch_min) + external.watch_min;
-#endif
-		case EXTERNAL_OFFSET_X:
-			AIC_OUT(7) = analog.out[ANALOG_X0_AUX];
-			break;
-#if 0
-		case EXTERNAL_LOG:
-			AIC_OUT(7) = feedback_mixer.lnx;
-			break;
-#endif
-#if 0
-		case EXTERNAL_DELTA:
-			AIC_OUT(7) = feedback.delta;
-			break;
-#endif
-		case EXTERNAL_PRB_SINE:
-			AIC_OUT(7) = PRB_ref1stA;
-			break;
-		case EXTERNAL_PRB_PHASE:
-			AIC_OUT(7) = PRB_modindex > (probe.LockInRefSinLenA>>1) ? 16384 : 0;
-			break;
-		case EXTERNAL_BIAS_ADD:
-			AIC_OUT(6) = _lsshl (_smac (probe.Upos, AIC_IN(7), probe.AC_amp), -16);
-			break;
-		case EXTERNAL_FEEDBACK_ADD:
-			AIC_OUT(7) = _sadd (AIC_OUT(5), AIC_IN(7));
-			break;
-		case EXTERNAL_EN_MOTOR:
-			AIC_OUT(7) = analog.out[ANALOG_MOTOR];
-			break;
-//#define EN_CODE_EXTERNAL_FB2
-#ifdef EN_CODE_EXTERNAL_FB2
-// note: may break things here... max code size exceeded eventually depending on other code sections enabled
-		case EXTERNAL_EN_PHASE:
-			AIC_OUT(7) = _sadd (_lsshl (PRB_ACPhaseA32, -16), analog.out[ANALOG_MOTOR]);
-			break;
-		case EXTERNAL_PID:
-			// run 2nd PID feedback in AIC 7 in/out
-			tmpsum = AIC_IN(7);
-			tmpsum = _ssub (external.fb2_set, tmpsum);
-			external.fb2_delta2 = _ssub (external.fb2_delta, tmpsum);
-			external.fb2_delta  = tmpsum;
-			tmpsum = external.fb2_i_sum = _smac (external.fb2_i_sum, external.fb2_ci, external.fb2_delta);
-			tmpsum = _smac (tmpsum, external.fb2_cp, external.fb2_delta);
-			tmpsum = _smac (tmpsum, external.fb2_cd, external.fb2_delta2);
-			HR_OUT (7, tmpsum);
-			break;
-#endif
-		}
-	}
-	else AIC_OUT(7) = 0;
-
-
-
+	read_dp_process_time (RT_TASK_ANALOG_OUTHR);
 	
-// Auxillary outputs, option, coarse moves overrides, etc.
+	// ========== END ALWAYS TASK -- HR processing ================
 
-	if (state.mode & MD_NOISE){
-		generate_nextlongrand ();
-		AIC_OUT(6) = _lsshl (_smac (probe.Upos, randomnum, probe.AC_amp), -16);
-	}
-
-	/* Run Autoapproch/Movercontrol task ? */
-	if (autoapp.pflg){
-		if (autoapp.pflg==2)
-			autoapp.pflg = 0;
-		else
-			run_autoapp ();
-		
-		for (i=0; i<autoapp.n_wave_channels; ++i){
-			k = autoapp.channel_mapping[i] & 7;
-			if (autoapp.channel_mapping[i] & AAP_MOVER_SIGNAL_ADD)
-				AIC_OUT (k) = _sadd (AIC_OUT (k), analog.out[k]);
+	//if ( state.dp_task_control[RT_TASK_MSERVO].process_flag & 0x10){
+	//}
+	
+	// AUTO APP and COARSE MOTION/WAVEPLAY TASK ======================
+	if ( state.dp_task_control[RT_TASK_WAVEPLAY].process_flag & 0x10){
+		/* Run Autoapproch/Movercontrol task ? */
+		if (autoapp.pflg > 0){
+			if (autoapp.pflg==2)
+                                autoapp.pflg = -1; // terminate next
 			else
-				AIC_OUT (k) = analog.out[k];
-		}
-	} else 
-		/* Run CoolRunner Out puls(es) task ? */
-		if (CR_out_pulse.pflg)
-			run_CR_out_pulse ();
+				run_autoapp ();
+		
+			for (i=0; i<autoapp.n_wave_channels; ++i){
+				k = autoapp.channel_mapping[i] & 7;
+				if (autoapp.channel_mapping[i] & AAP_MOVER_SIGNAL_ADD)
+					AIC_OUT (k) = _sadd (AIC_OUT (k), analog.out[k]);
+				else
+					AIC_OUT (k) = analog.out[k];
+			}
+		} else 
+			/* Run CoolRunner Out puls(es) task ? */
+			if (CR_out_pulse.pflg)
+				run_CR_out_pulse ();
 
-	/* hooks to universal recorder */
-	if (recorder.pflg){
-		switch (recorder.pflg){
-		case 1: RecSignalsASM16(); break;
-		case 2: RecSignalsASM32(); break;
-		}
+		read_dp_process_time (RT_TASK_WAVEPLAY);
 	}
-
-	/* increment DSP blink statemaschine's counter and time reference */
-	++state.BLK_count;
-
-	/* -- end of all data processing, preformance statistics update now -- */
 	
-	asm_read_time ();
-
-	/* Load IdleTime */
-	IdleTimeTmp = (int)DSP_time;
-
-	/* Compute DataTime */
-	state.DataProcessTime -= IdleTimeTmp;
-
-
-	/* Load Peak Detection */
-	if (abs(state.DataProcessTime) > abs(state.DataProcessTime_Peak)){
-		 state.DataProcessTime_Peak = state.DataProcessTime;
-		 state.IdleTime_Peak = state.IdleTime;
+	// RECORDER TASK =================================================
+	if ( state.dp_task_control[RT_TASK_RECORDER].process_flag & 0x10){
+		/* hooks to universal recorder */
+		if (recorder.pflg){
+			switch (recorder.pflg){
+			case 1: RecSignalsASM16(); break;
+			case 2: RecSignalsASM32(); break;
+			}
+		}
+		read_dp_process_time (RT_TASK_RECORDER);
 	}
+
+// ============================================================
+// PROCESS MODULE END: TIME KEEPING
+// ============================================================
+
+        /* Update Dataprocess Time Total */
+        TSCReadSecond();
+        state.DataProcessTime = MeasuredTime;
+
+        /* Total Processing System Time DP[0] and Peak */
+        tmp1 = state.dp_task_control[0].process_time_peak_now & 0xffff;
+        state.dp_task_control[0].process_time_peak_now  = MeasuredTime << 16; // actual total data process time -> upper 16 (HI)
+        state.dp_task_control[0].process_time_peak_now |= MeasuredTime > tmp1 ? MeasuredTime : tmp1; // peak in lower 16 (LO)
+
+        /* END of DP */
+        //state.dp_task_control[0].process_flag &= 0xf0; // self completed
+
+        // now done via SR3PRO_A810Driver[-interruptible-no-kernel-int].lib
+        //IER |= 0x0010; // Enable INT4 (kernel)  
 }
 
 

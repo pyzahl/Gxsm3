@@ -466,7 +466,7 @@ void probe_append_header_and_positionvector (){ // size: 14
 }
 
 #pragma CODE_SECTION(init_lockin, ".text:slow")
-void init_lockin (int target_mode){
+void init_lockin (){
 	int j;
 	// init LockIn variables
 	//##probe.state = PROBE_INIT_LOCKIN;
@@ -516,7 +516,6 @@ void init_lockin (int target_mode){
 	PRB_norm2 = SPECT_SIN_LEN_P2 + (30-_NORM32 (probe.AC_nAve)) - (30-_NORM32 (AC_tab_inc)) + probe.lockin_shr_corrsum; // 9 + #bits in nAve
 	// analog.debug[0] = PRB_norm2;
 
-	probe.state = target_mode;
 	probe.start = 0;
 	probe.stop  = 0;
 }
@@ -559,17 +558,9 @@ void init_probe (){
 }
 
 
-#pragma CODE_SECTION(stop_lockin, ".text:slow")
-void stop_lockin (int level){
-	if (probe.state == level) // don't touch if other level is running.
-		probe.state = PROBE_NO_LOCKIN;
-        probe.LockIn_ref = 0;
-}
-
 #pragma CODE_SECTION(stop_probe, ".text:slow")
 void stop_probe (){
 	// finish probe
-        //##	stop_lockin (PROBE_RUN_LOCKIN_PROBE); // don't touch if free ro scan level is running.
 	probe.start = 0;
 	probe.stop  = 0;
 	probe.pflg = 0;
@@ -616,7 +607,7 @@ void clear_probe_data_srcs (){
 	PRB_AIC_data_sum[0] = PRB_AIC_data_sum[1] = PRB_AIC_data_sum[2] =
 	PRB_AIC_data_sum[3] = PRB_AIC_data_sum[4] = PRB_AIC_data_sum[5] =
 	PRB_AIC_data_sum[6] = PRB_AIC_data_sum[7] = PRB_AIC_data_sum[8] = 0;
-	PRB_AIC_num_samples=probe.vector->dnx+1;
+	PRB_AIC_num_samples = 0;
 	
 	VP_sec_int0 = VP_sec_int1 = 0L;
 	VP_sec_count = 0;
@@ -650,6 +641,8 @@ void integrate_probe_data_srcs (){
 
 	if (probe.vector->srcs & 0x800) // AIC7
 		PRB_AIC_data_sum[7] += AIC_IN(7);
+
+        PRB_AIC_num_samples++;
 #endif
 }
 

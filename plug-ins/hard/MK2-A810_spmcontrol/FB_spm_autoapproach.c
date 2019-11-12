@@ -55,8 +55,6 @@ short *waveptr;
 // initialize for mover and autoapproach
 void init_autoapp (){
 	// now prepare for starting...
-	autoapp.start = 0;
-	autoapp.stop  = 0;
 
 	// init mover
 	autoapp.mv_count = 0; 
@@ -75,8 +73,6 @@ void init_autoapp (){
 
 // stop all mover/approach actions, cleanup
 void stop_autoapp (){
-	autoapp.start = 0;
-	autoapp.stop  = 0;
 
 	if (app_ci_signum*feedback.ci < 0) {
 		// ensure proper feedback on

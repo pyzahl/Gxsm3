@@ -660,28 +660,6 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
                         double T_probe_cycle   = 1e3 * (double)vp_duration/frq_ref; // Time of full probe cycle in ms
                         double T_raster2raster = 1e3 * gapp->xsm->data.s.rx / (gapp->xsm->data.s.nx/probe_trigger_raster_points_user) / scan_speed_x; // Time inbetween raster points in ms
                         info = g_strdup_printf ("Tp=%.2f ms, Tr=%.2f ms, Td=%.2f ms", T_probe_cycle, T_raster2raster, T_raster2raster - T_probe_cycle);
-
-                        if (probe_and_wait==0 && T_raster2raster <= T_probe_cycle){
-                                warn_flag=TRUE;
-                                GtkWidget *dialog = gtk_message_dialog_new (NULL,
-                                                                            GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                                            GTK_MESSAGE_WARNING,
-                                                                            GTK_BUTTONS_CLOSE,
-                                                                            "The probing at each raster point lasts too long:\n"
-                                                                            "Time of one probe cycle is %.2f ms\n"
-                                                                            "and\n"
-                                                                            "Time from raster to raster point is %.2f ms.\n\n --- FYI: ---\n"
-                                                                            "# Raster points per line: %d\n"
-                                                                            "Time inbetween single scan points: %.2f ms",
-                                                                            T_probe_cycle, T_raster2raster, 
-                                                                            gapp->xsm->data.s.nx/probe_trigger_raster_points_user,
-                                                                            1e3 * gapp->xsm->data.s.rx / gapp->xsm->data.s.nx / scan_speed_x
-                                                                            );
-                                g_signal_connect_swapped (G_OBJECT (dialog), "response",
-                                                          G_CALLBACK (gtk_widget_destroy),
-                                                          G_OBJECT (dialog));
-                                gtk_widget_show (dialog);
-                        }	
                 } else
                         info = g_strdup_printf ("Tp=%.2f ms, dU=%.3f V, dUs=%.2f mV, O*0x%02x S*0x%06x", 
                                                 1e3*(double)vp_duration/frq_ref, dU_IV, dU_step*1e3, options, vis_Source
@@ -778,23 +756,6 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
                         double T_probe_cycle   = 1e3 * (double)vp_duration/frq_ref; // Time of full probe cycle in ms
                         double T_raster2raster = 1e3 * gapp->xsm->data.s.rx / (gapp->xsm->data.s.nx/probe_trigger_raster_points_user) / scan_speed_x; // Time inbetween raster points in ms
                         info = g_strdup_printf ("Tp=%.2f ms, Tr=%.2f ms, Td=%.2f ms", T_probe_cycle, T_raster2raster, T_raster2raster - T_probe_cycle);
-
-                        if (probe_and_wait==0 && T_raster2raster <= T_probe_cycle){
-                                GtkWidget *dialog = gtk_message_dialog_new (NULL,
-                                                                            GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                                            GTK_MESSAGE_WARNING,
-                                                                            GTK_BUTTONS_CLOSE,
-                                                                            "The probing a each raster point lasts too long:\n"
-                                                                            "T probe cycle is %.2f ms\n"
-                                                                            "and\n"
-                                                                            "T raster to raster point is %.2f ms.",
-                                                                            T_probe_cycle, T_raster2raster
-                                                                            );
-                                g_signal_connect_swapped (G_OBJECT (dialog), "response",
-                                                          G_CALLBACK (gtk_widget_destroy),
-                                                          G_OBJECT (dialog));
-                                gtk_widget_show (dialog);
-                        }
 		} else
                         info = g_strdup_printf ("Tp=%.2f ms", 
                                                 1e3*(double)vp_duration/frq_ref

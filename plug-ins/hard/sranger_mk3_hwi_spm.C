@@ -335,7 +335,7 @@ underline off    24
 inverse off      27
                         ***/
                         static gdouble load=0.;
-                        g_print ("\n\033[35;1;7mDSP RTENGINE4GXSM V1.0 by P.Zahl TIME STRUCTS:\033[0m DP TICKS %10lu %10lus %10lum %02ds\n",
+                        g_print ("\n\033[35;1;7mDSP RTENGINE4GXSM Mark3 V1.0 by P.Zahl TIME STRUCTS:\033[0m DP TICKS %10lu %10lus %10lum %02ds\n",
                                  dsp_statemachine.DSP_time,
                                  dsp_statemachine.BLK_count_seconds, dsp_statemachine.BLK_count_minutes-1, dsp_statemachine.DSP_seconds);
                                  
@@ -445,6 +445,7 @@ inverse off      27
 		val1 = (double)gpio3_monitor_out;
 		val2 = (double)gpio3_monitor_in;
 		val3 = (double)gpio3_monitor_dir;
+		return TRUE;
 	}
 
         if (*property == 'A'){
@@ -459,11 +460,13 @@ inverse off      27
                 val1 = (double)(dsp_scan.xyz_vec[0] / (dsp_scan.fs_dx * dsp_scan.dnx));
                 val2 = (double)(dsp_scan.xyz_vec[1] / (dsp_scan.fs_dy * dsp_scan.dny));
                 val3 = (double)dsp_scan.xyz_vec[2] / (1<<16);
+		return TRUE;
         }
         if (*property == 'P'){
                 val1 = (double)(dsp_scan.xyz_vec[0] / (dsp_scan.fs_dx * dsp_scan.dnx) + (gapp->xsm->data.s.nx/2 - 1) + 1);
                 val2 = (double)(-dsp_scan.xyz_vec[1] / (dsp_scan.fs_dy * dsp_scan.dny) + (gapp->xsm->data.s.ny/2 - 1) + 1);
                 val3 = (double)dsp_scan.xyz_vec[2] / (1<<16);
+		return TRUE;
         }
         
 //	printf ("ZXY: %g %g %g\n", val1, val2, val3);
@@ -1518,16 +1521,16 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		dsp_scan.srcs_2nd_xp  = long_2_sranger_long (srcs_dir[2]);
 		dsp_scan.srcs_2nd_xm  = long_2_sranger_long (srcs_dir[3]);
 
-		// --- DISABLED ---
-//		dsp_scan.Zoff_2nd_xp  = long_2_sranger_long (sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
-//		dsp_scan.Zoff_2nd_xm  = long_2_sranger_long (sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
+		// Z-Offset 2nd pass
+		dsp_scan.Zoff_2nd_xp  = long_2_sranger_long (sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
+		dsp_scan.Zoff_2nd_xm  = long_2_sranger_long (sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
 
 		// enable probe?
 		if (DSPControlClass->probe_trigger_raster_points){
 			if (DSPControlClass->probe_trigger_raster_points > 0){
 				dsp_scan.dnx_probe = long_2_sranger_long (DSPControlClass->probe_trigger_raster_points);
-                                dsp_scan.raster_b = long_2_sranger_long (DSPControlClass->probe_trigger_raster_points_b);
-				dsp_scan.raster_a = long_2_sranger_long (DSPControlClass->probe_trigger_raster_points);
+				dsp_scan.raster_a  = long_2_sranger_long (DSPControlClass->probe_trigger_raster_points);
+                                dsp_scan.raster_b  = long_2_sranger_long (DSPControlClass->probe_trigger_raster_points_b);
                                 // long_2_sranger_long ((int)(1.+ceil((DSPControlClass->probe_trigger_raster_points-1.)/2)));
 //				dsp_scan.raster_b = long_2_sranger_long ((int)(1.+floor((DSPControlClass->probe_trigger_raster_points-1.)/2)));
 //				dsp_scan.raster_b = long_2_sranger_long (DSPControlClass->probe_and_wait);
@@ -1548,17 +1551,8 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 
 		ydir = yindex > 0 ? -1 : 1;
 	
-		// speed
 		recalculate_dsp_scan_speed_parameters (); // adjusts dsp_scan.dnx, ....!
 
-		// some thing wicked is going on -- getting screwed valued returned in "dsp_scan.fs_dx & dy"
-		PI_DEBUG_GP (DBG_L5, "sc.FSX** %d \n", dsp_scan.fs_dx);
-		PI_DEBUG_GP (DBG_L5, "twFSX*** %d \n", tmp_fs_dx);
-		PI_DEBUG_GP (DBG_L5, "twFSY*** %d \n", tmp_fs_dy);
-		PI_DEBUG_GP (DBG_L5, "twDNX*** %d \n", tmp_dnx);
-		PI_DEBUG_GP (DBG_L5, "twDNY*** %d \n", tmp_dny);
-		PI_DEBUG_GP (DBG_L5, "twNXP*** %d \n", tmp_nx_pre);
-		
 		dsp_scan.fs_dx  = (DSP_INT32)tmp_fs_dx;
 		dsp_scan.fs_dy  = (DSP_INT32)tmp_fs_dy;
 		dsp_scan.dnx    = (DSP_INT32)tmp_dnx;
@@ -1566,15 +1560,6 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		dsp_scan.nx_pre = (DSP_INT32)tmp_nx_pre;
 		dsp_scan.Zoff_2nd_xp = (DSP_INT32)tmp_sRe;
 		dsp_scan.Zoff_2nd_xm = (DSP_INT32)tmp_sIm;
-		// ----
-
-		PI_DEBUG_GP (DBG_L5, "FSX*** %d \n", dsp_scan.fs_dx);
-		PI_DEBUG_GP (DBG_L5, "FSY*** %d \n", dsp_scan.fs_dy);
-		PI_DEBUG_GP (DBG_L5, "DNX*** %d \n", dsp_scan.dnx);
-		PI_DEBUG_GP (DBG_L5, "DNY*** %d \n", dsp_scan.dny);
-		PI_DEBUG_GP (DBG_L5, "Zoff_xp/Re*** %d \n", dsp_scan.Zoff_2nd_xp);
-		PI_DEBUG_GP (DBG_L5, "Zoff_xm/Im*** %d \n", dsp_scan.Zoff_2nd_xm);
-		PI_DEBUG_GP (DBG_L5, "NXP*** %d \n", dsp_scan.nx_pre);
 
 #if 0 // enable if you like to assure a gain update at scan-start, else it's only updated on gain change action what normally shoudl do.
 		// mirror gain -- may be hooked into by Smart Piezo Amp or anything else!
@@ -1589,7 +1574,6 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 				     ((((int)round( sranger_mk2_hwi_pi.app->xsm->Inst->VZ0 ())) & 0xff))      );
 #endif
 		// not yet transferred to DSP.
-
 		PI_DEBUG_GP (DBG_L5, "XYZ gain code:*Sc 0x%08x  Mv: 0x%08x \n", dsp_scan.xyz_gain, dsp_move.xyz_gain);
 
 		const double fract = 1<<16;
@@ -1599,6 +1583,7 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		double Mdx = -(((double)Nx+1.)/2.-ixy_sub[0])*dsp_scan.dnx*dsp_scan.fs_dx - (double)dsp_scan.xyz_vec[i_X];
 		double Mdy =  (((double)Ny-1.)/2.-ixy_sub[2])*dsp_scan.dny*dsp_scan.fs_dy - (double)dsp_scan.xyz_vec[i_Y];
                 subscan_data_y_index_offset = ixy_sub[2];
+                
 		//### double Mdx = -(double)(Nx+1)*dsp_scan.dnx*dsp_scan.fs_dx/2. - (double)dsp_scan.xyz_vec[i_X];
 		//### double Mdy =  (double)(Ny-1)*dsp_scan.dny*dsp_scan.fs_dy/2. - (double)dsp_scan.xyz_vec[i_Y];
 		double mvspd = fract * sranger_mk2_hwi_pi.app->xsm->Inst->X0A2Dig (DSPControlClass->move_speed_x) / DSPControlClass->frq_ref;
@@ -1612,8 +1597,6 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		gapp->xsm->data.s.pixeltime = (double)dsp_scan.dnx/DSPControlClass->frq_ref;
 
 		// convert to DSP
-		//dsp_scan.nx = long_2_sranger_long (Nx); // num datapoints in X to take
-		//dsp_scan.ny = long_2_sranger_long (Ny-1); // num datapoints in Y to take
 		if (ixy_sub[1] > 0)
                         dsp_scan.nx = long_2_sranger_long (ixy_sub[1]); // num datapoints in X to take
                 else

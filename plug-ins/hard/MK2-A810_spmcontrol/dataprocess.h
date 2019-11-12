@@ -83,4 +83,11 @@ extern int                  PRB_modindex;
 #define	GPIO_Dir_0  0x600009
 
 
+extern void TSCReadFirst();
+extern void TSCReadSecond();
+extern void TSCInit();
+extern    volatile unsigned long    TimerTemp, MeasuredTime, MaxTime, MinTime;
+
+
+
 #endif						

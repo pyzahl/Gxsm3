@@ -34,18 +34,22 @@
 # Linux hosted 55xx Code Generation Tools Linux-DSP-Tools-1.00.00.06 
 # https://www-a.ti.com/downloads/sds_support/targetcontent/LinuxDspTools/download.html 
 #
+# code tested with C5500CGT4.2.3 as of 20111228
 # --------------------------------------------------------------------------------
 
-C55X_C_DIR   = /opt/TI/cgtools-c5500/include
-C55X_LIB_DIR = /opt/TI/cgtools-c5500/lib
-C55X_BIN_DIR = /opt/TI/cgtools-c5500/bin
+# C55BASE      = /opt/TI/cgtools-c5500
+C55BASE      = /opt/TI/C5500CGT4.2.3
+C55X_C_DIR   = $(C55BASE)/include
+C55X_LIB_DIR = $(C55BASE)/lib
+C55X_BIN_DIR = $(C55BASE)/bin
 
 C            = $(C55X_BIN_DIR)/./cl55
 CL           = $(C55X_BIN_DIR)/./lnk55
 CS           = $(C55X_BIN_DIR)/./strip55
-CFLAGS       = -O3 -v5502 -i $(C55X_C_DIR) -c -DUSE_ANALOG_16 -DDSP_CC
+CFLAGS       = -O3 -v5502 -i $(C55X_C_DIR) -c -DDSP_CC
+# CLFLAGS      = --stack=0x1200 -i $(C55X_LIB_DIR) -c
 CLFLAGS      = -i $(C55X_LIB_DIR) -c
-LIBS         = FB_spm_lnk_A16.cmd
+LIBS         = FB_spm_lnk.cmd
 
 C_OBJECTS = dataprocess.obj \
 	FB_spm.obj FB_spm_statemaschine.obj \
@@ -54,17 +58,17 @@ C_OBJECTS = dataprocess.obj \
 	FB_spm_CoolRunner_puls.obj FB_spm_dsoszi.obj
 
 ASM_OBJECTS = FB_spm_magic.obj spm_log.obj feedback.obj \
-        dsp_clock.obj vectors_A16.obj ReadWrite_GPIO.obj mul32.obj record.obj
+        counter_accu.obj dsp_clock.obj vectors.obj ReadWrite_GPIO.obj mul32.obj record.obj
 
-FB_spmcontrol_MK2_A16.out: $(C_OBJECTS) $(ASM_OBJECTS) $(LIBS)
+FB_spmcontrol_MK2_A810.out: $(C_OBJECTS) $(ASM_OBJECTS) $(LIBS)
 	@echo
 	@echo binding objects...
-	$(CL) $(CLFLAGS) $(C_OBJECTS) $(ASM_OBJECTS) $(LIBS) -m FB_spmcontrol_MK2_A16.map -o FB_spmcontrol_MK2_A16.out
+	$(CL) $(CLFLAGS) $(C_OBJECTS) $(ASM_OBJECTS) $(LIBS) -m FB_spmcontrol_MK2_A810.map -o FB_spmcontrol_MK2_A810.out
 #	@echo
-#	@echo stripping debug info from FB_spmcontrol_MK2_A16.out...
-#	@echo $(CS) FB_spmcontrol_MK2_A16.out
+#	@echo stripping debug info from FB_spmcontrol_MK2_A810.out...
+#	@echo $(CS) FB_spmcontrol_MK2_A810.out
 	@echo
-	@echo FB_spmcontrol_MK2_A16.out is ready to load into the DSP.
+	@echo FB_spmcontrol_MK2_A810.out is ready to load into the DSP.
 	@echo
 
 $(C_OBJECTS) : dataprocess.h  FB_spm_analog.h  FB_spm_dataexchange.h  FB_spm.h  FB_spm_statemaschine.h 
@@ -76,9 +80,9 @@ $(ASM_OBJECTS): %.obj: %.asm
 	$(C) -c $(CFLAGS) $<
 
 .PHONY : load
-load: FB_spmcontrol_MK2_A16.out
+load: FB_spmcontrol_MK2_A810.out
 	ln -sf ../../loadusb64/kernel.out .
-	../../loadusb64/loadusb FB_spmcontrol_MK2_A16.out
+	../../loadusb64/loadusb FB_spmcontrol_MK2_A810.out
 
 .PHONY : clean
 clean :
