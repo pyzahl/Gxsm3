@@ -465,6 +465,7 @@ private:
         double gain_scale[5];
         double time_scale[5];
         gboolean unwrap_phase_plot;
+        double scope_width_points;
         GtkWidget *signal_graph;
        
         GtkWidget *input_rpaddress;

@@ -156,6 +156,13 @@
       <summary>PCS Remote-ID: 'rp-pacpll-DDS-FREQ-MONITOR', Default/U: 32768 Hz     </summary>
       <description>pcs0000, PCS Remote-ID: 'rp-pacpll-DDS-FREQ-MONITOR', Default/U: 32768 Hz    , Adjustment PCS Name: 'rp-pacpll-DDS-FREQ-MONITOR' </description>
     </key>
+
+    <key name="rp-pacpll-scope-width" type="d">
+      <default>512</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-SCOPE-WIDTH', Default/U: 512 Hz     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-SCOPE-WIDT', Default/U: 512 Hz, Adjustment PCS Name: 'rp-pacpll-SCOPE-WIDTH' </description>
+    </key>
+
   </schema>
 
 </schemalist>

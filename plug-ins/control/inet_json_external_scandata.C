@@ -451,7 +451,6 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->grid_add_check_button ( N_("Unwapping"), "Always unwrap phase/auto unwrap only if controller is enabled", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_unwrapping_always), this);
-        bp->new_line ();
         bp->grid_add_check_button ( N_("Unwap Plot"), "Unwrap plot at high level", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_unwrap_plot), this);
         bp->new_line ();
@@ -680,7 +679,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                                     G_CALLBACK (Inet_Json_External_Scandata::dbg_l2), this);
         bp->grid_add_check_button ( N_("++"), "Debug LV4", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::dbg_l4), this);
-        
+        scope_width_points = 512.;
+        bp->set_input_width_chars (8);
+  	bp->grid_add_ec ("SW", Unity, &scope_width_points, 256.0, 1024.0, ".0f", 128, 256., "SCOPE-WIDTH");        
         //bp->new_line ();
         //tmp=bp->grid_add_button ( N_("Read"), "TEST READ", 1,
         //                          G_CALLBACK (Inet_Json_External_Scandata::read_cb), this);
@@ -1509,20 +1510,23 @@ void Inet_Json_External_Scandata::update_graph (){
         int h=256;
         if (!run_scope)
                 h=2;
-        double xs = 0.5;
+        double xs = scope_width_points/1024.;
+        double xcenter = scope_width_points/2;
+        double xwidcenter = scope_width_points/2;
+        double scope_width = scope_width_points;
         double x0 = xs*n/2;
         double yr = h/2;
         double y_hi  = yr*0.95;
         double dB_hi   =  0.0;
         double dB_mags =  4.0;
-        cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, n/2, h);
+        cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, (int)scope_width_points, h);
         cairo_t *cr = cairo_create (surface);
         static int rs_mode=0;
         if (run_scope){
                 cairo_translate (cr, 0., yr);
                 cairo_scale (cr, 1., 1.);
                 cairo_save (cr);
-                cairo_item_rectangle *paper = new cairo_item_rectangle (0., -128., 512., 128.);
+                cairo_item_rectangle *paper = new cairo_item_rectangle (0., -128., scope_width_points, 128.);
                 paper->set_line_width (0.2);
                 paper->set_stroke_rgba (CAIRO_COLOR_GREY1);
                 paper->set_fill_rgba (CAIRO_COLOR_BLACK);
@@ -1576,9 +1580,8 @@ void Inet_Json_External_Scandata::update_graph (){
                                         if (scope_ac[ch])
                                                 s -= scope_dc_level[ch];
                                 
-                                xf = 250.+480.*pacpll_signals.signal_frq[k]/parameters.tune_span; // tune plot, freq x
-                                x  = xs*k; // time plot
-                                x = (operation_mode == 6 && ch > 1) ? xf : x;
+                                xf = xcenter + scope_width/2.*pacpll_signals.signal_frq[k]/parameters.tune_span; // tune plot, freq x
+                                x  = (operation_mode == 6 && ch > 1) ? xf : xs*k; // over freq or time plot
                                 
                                 if (operation_mode == 6 && (ch == 6 || ch == 1)){
                                         // 0..-60dB range, 1mV:-60dB (center), 0dB:1000mV (top)
@@ -1681,7 +1684,7 @@ void Inet_Json_External_Scandata::update_graph (){
                 for (int db=(int)dB_hi; db >= -20*dB_mags; db -= 10){
                         valuestring = g_strdup_printf ("%4d dB", db);
                         reading->set_stroke_rgba (CAIRO_COLOR_GREEN);
-                        reading->set_text (440,  db_to_y ((double)db, dB_hi, y_hi, dB_mags), valuestring);
+                        reading->set_text (scope_width - 40,  db_to_y ((double)db, dB_hi, y_hi, dB_mags), valuestring);
                         g_free (valuestring);
                         reading->draw (cr);
                 }
@@ -1689,7 +1692,7 @@ void Inet_Json_External_Scandata::update_graph (){
                 for (int deg=-180*deg_extend; deg <= 180*deg_extend; deg += 30*deg_extend){
                         valuestring = g_strdup_printf ("%d" UTF8_DEGREE, deg);
                         reading->set_stroke_rgba (CAIRO_COLOR_RED);
-                        reading->set_text (480, deg_to_y (deg, y_hi), valuestring);
+                        reading->set_text (scope_width- 80, deg_to_y (deg, y_hi), valuestring);
                         g_free (valuestring);
                         reading->draw (cr);
                 }
@@ -1697,23 +1700,25 @@ void Inet_Json_External_Scandata::update_graph (){
                 cursors->set_line_width (0.5);
                 cursors->set_stroke_rgba (CAIRO_COLOR_WHITE);
                 // coord cross
-                cursors->set_xy_fast (0,250.+480.*(-0.5),0.);
-                cursors->set_xy_fast (1,250.+480.*(0.5),0.);
+                //double xcc = scope_width_points/2;
+                //double xyl = 
+                cursors->set_xy_fast (0,xcenter+(scope_width - 50)*(-0.5),0.);
+                cursors->set_xy_fast (1,xcenter+(scope_width - 50)*(0.5),0.);
                 cursors->draw (cr);
-                cursors->set_xy_fast (0,250.,y_hi);
-                cursors->set_xy_fast (1,250.,-y_hi);
+                cursors->set_xy_fast (0,xcenter,y_hi);
+                cursors->set_xy_fast (1,xcenter,-y_hi);
                 cursors->draw (cr);
 
                 // phase setpoint
                 cursors->set_stroke_rgba (1.,0.,0.,0.5);
-                cursors->set_xy_fast (0,250.+480.*(-0.5), deg_to_y (parameters.phase_fb_setpoint, y_hi));
-                cursors->set_xy_fast (1,250.+480.*(0.5), deg_to_y (parameters.phase_fb_setpoint, y_hi));
+                cursors->set_xy_fast (0,xcenter+(scope_width/2 - 30)*(-0.5), deg_to_y (parameters.phase_fb_setpoint, y_hi));
+                cursors->set_xy_fast (1,xcenter+(scope_width/2 - 30)*(0.5), deg_to_y (parameters.phase_fb_setpoint, y_hi));
                 cursors->draw (cr);
 
                 // phase setpoint
                 cursors->set_stroke_rgba (0.,1.,0.,0.5);
-                cursors->set_xy_fast (0,250.+480.*(-0.5), db_to_y (dB_from_mV (parameters.amplitude_fb_setpoint), dB_hi, y_hi, dB_mags));
-                cursors->set_xy_fast (1,250.+480.*(0.5), db_to_y (dB_from_mV (parameters.amplitude_fb_setpoint), dB_hi, y_hi, dB_mags));
+                cursors->set_xy_fast (0,xcenter+(scope_width/2 - 30)*(-0.5), db_to_y (dB_from_mV (parameters.amplitude_fb_setpoint), dB_hi, y_hi, dB_mags));
+                cursors->set_xy_fast (1,xcenter+(scope_width/2 - 30)*(0.5), db_to_y (dB_from_mV (parameters.amplitude_fb_setpoint), dB_hi, y_hi, dB_mags));
                 cursors->draw (cr);
 
                
@@ -1728,7 +1733,7 @@ void Inet_Json_External_Scandata::update_graph (){
 
                         // current pos marks
                         cursors->set_stroke_rgba (CAIRO_COLOR_YELLOW);
-                        x = 250.+480.*pacpll_signals.signal_frq[n-1]/parameters.tune_span;
+                        x = xcenter+(scope_width/2 - 30)*pacpll_signals.signal_frq[n-1]/parameters.tune_span;
                         cursors->set_xy_fast (0,x,ydb-20.);
                         cursors->set_xy_fast (1,x,ydb+20.);
                         cursors->draw (cr);
@@ -1737,14 +1742,14 @@ void Inet_Json_External_Scandata::update_graph (){
                         cursors->draw (cr);
 
                         cursors->set_stroke_rgba (CAIRO_COLOR_GREEN);
-                        x = 250.+480.*(pacpll_parameters.center_frequency-pacpll_parameters.frequency_manual)/parameters.tune_span;
+                        x = xcenter+(scope_width/2 - 30)*(pacpll_parameters.center_frequency-pacpll_parameters.frequency_manual)/parameters.tune_span;
                         ydb=-y_hi*(20.*log10 (fabs (pacpll_parameters.center_amplitude)))/60.;
                         cursors->set_xy_fast (0,x,ydb-50.);
                         cursors->set_xy_fast (1,x,ydb+50.);
                         cursors->draw (cr);
 
                         cursors->set_stroke_rgba (CAIRO_COLOR_RED);
-                        x = 250.+480.*(pacpll_parameters.center_frequency-pacpll_parameters.frequency_manual)/parameters.tune_span;
+                        x = xcenter+(scope_width/2 - 30)*(pacpll_parameters.center_frequency-pacpll_parameters.frequency_manual)/parameters.tune_span;
                         ydb=-y_hi*pacpll_parameters.center_phase/180.;
                         cursors->set_xy_fast (0,x-50,ydb);
                         cursors->set_xy_fast (1,x+50,ydb);
@@ -1825,12 +1830,12 @@ void Inet_Json_External_Scandata::update_graph (){
                                         
                                         for (int i=0; i<fn; ++i){
                                                 resfit->set_xy_fast (i,
-                                                                     250.+480.*(f[i]-pacpll_parameters.frequency_manual)/parameters.tune_span, // tune plot, freq x transform to canvas
+                                                                     xcenter+(scope_width/2 - 30)*(f[i]-pacpll_parameters.frequency_manual)/parameters.tune_span, // tune plot, freq x transform to canvas
                                                                      ydb=db_to_y (dB_from_mV (ma[i]), dB_hi, y_hi, dB_mags)
                                                                      );
 
                                                 phfit->set_xy_fast (i,
-                                                                    250.+480.*(f[i]-pacpll_parameters.frequency_manual)/parameters.tune_span, // tune plot, freq x transform to canvas,
+                                                                    xcenter+(scope_width/2 - 30)*(f[i]-pacpll_parameters.frequency_manual)/parameters.tune_span, // tune plot, freq x transform to canvas,
                                                                     yph=deg_to_y (mp[i], y_hi)
                                                                     );
 
@@ -1859,7 +1864,7 @@ void Inet_Json_External_Scandata::update_graph (){
                 } else if (transport == 0){ // add polar plot for CH1,2 as XY
                         wave->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
                         for (int k=0; k<n; ++k)
-                                wave->set_xy_fast (k,n/4-yr*gain_scale[0]*signal[0][k],-yr*gain_scale[1]*signal[1][k]);
+                                wave->set_xy_fast (k,xcenter-yr*gain_scale[0]*signal[0][k],-yr*gain_scale[1]*signal[1][k]);
                         wave->draw (cr);
                 }
                 delete wave;
