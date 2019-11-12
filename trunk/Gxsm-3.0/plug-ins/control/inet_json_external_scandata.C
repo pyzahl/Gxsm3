@@ -244,6 +244,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 gain_scale[i] = 0.001; // 1000mV full scale
         }
         block_message = 0;
+        unwrap_phase_plot = true;
         
         /* create a new connection, init */
 
@@ -450,6 +451,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->grid_add_check_button ( N_("Unwapping"), "Always unwrap phase/auto unwrap only if controller is enabled", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::phase_unwrapping_always), this);
+        bp->new_line ();
+        bp->grid_add_check_button ( N_("Unwap Plot"), "Unwrap plot at high level", 2,
+                                    G_CALLBACK (Inet_Json_External_Scandata::phase_unwrap_plot), this);
         bp->new_line ();
         bp->grid_add_check_button ( N_("Use LockIn Mode"), "Use LockIn Mode", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::select_pac_lck_phase), this);
@@ -1047,6 +1051,10 @@ void Inet_Json_External_Scandata::phase_unwrapping_always (GtkWidget *widget, In
         self->parameters.phase_unwrapping_always = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
 }
 
+void Inet_Json_External_Scandata::phase_unwrap_plot (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->unwrap_phase_plot = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+}
+
 void Inet_Json_External_Scandata::update(){
 	if (G_IS_OBJECT (window))
 		g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "INETJSONSCANCONTROL_EC_list"),
@@ -1468,6 +1476,34 @@ void Inet_Json_External_Scandata::stream_data (){
 #endif
 }
 
+double Inet_Json_External_Scandata::unwrap (int k, double phi){
+        static int pk=0;
+        static int side=1;
+        static double pphi;
+        
+        if (!unwrap_phase_plot) return phi;
+
+        if (k==0){ // choose start
+                if (phi > 0.) side = 1; else side = -1;
+                pk=k; pphi=phi;
+                return (phi);
+        }
+        if (fabs(phi-pphi) > 180){
+                switch (side){
+                case 1: phi += 360;
+                        pk=k; pphi=phi;
+                        return (phi);
+                case -1: phi -= 360;
+                        pk=k; pphi=phi;
+                        return (phi);
+                }
+        } else {
+                if (phi > 0.) side = 1; else side = -1;
+        }
+        pk=k; pphi=phi;
+        return (phi);
+}
+ 
 void Inet_Json_External_Scandata::update_graph (){
         int n=1023;
         int h=256;
@@ -1554,15 +1590,15 @@ void Inet_Json_External_Scandata::update_graph (){
                                                                    || ( ch == 4 && (channel_selections[4]==2 || channel_selections[4]==6)))
                                            ){
                                         // -180..180 deg
-                                        wave->set_xy_fast (k, ch == 0 ? x:xf, yph=deg_to_y (s, y_hi));
+                                        wave->set_xy_fast (k, ch == 0 ? x:xf, yph=deg_to_y (unwrap(k,s), y_hi));
                                 } else{
                                         if (ch > 1 && (channel_selections[ch]==2 || channel_selections[ch]==6)) // Phase
-                                                wave->set_xy_fast (k, x, deg_to_y (s, y_hi));
+                                                wave->set_xy_fast (k, unwrap (k,x), deg_to_y (unwrap(k,s), y_hi));
                                         else if ((   ch == 0 && channel_selections[0]==2) // Phase
                                                  || (ch == 1 && channel_selections[0]==4)
                                                  || (ch == 0 && channel_selections[0]==7)
                                                  )
-                                                wave->set_xy_fast (k, x, deg_to_y (s, y_hi));
+                                                wave->set_xy_fast (k, unwrap (k,x), deg_to_y (s, y_hi));
                                         
                                         else if ((   ch >  1 && (channel_selections[ch]==1 || channel_selections[ch]==5 || channel_selections[ch]==9)) // Amplitude
                                                  || (ch == 1 && channel_selections[0]==2) // Amplitude

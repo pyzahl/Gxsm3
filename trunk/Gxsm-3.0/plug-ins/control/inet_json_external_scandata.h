@@ -239,6 +239,7 @@ public:
         static void phase_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void phase_controller (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void phase_unwrapping_always (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void phase_unwrap_plot (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void set_ss_auto_trigger (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
         static void choice_operation_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
@@ -422,6 +423,8 @@ public:
                 }
         };
 
+        double unwrap (int k, double phi);
+        
         // 1000mV = 0dB, 1mV = -60dB 
         inline double dB_from_mV (double mv){
                 return 20.*(log10 (fabs(mv)+1e-10)-3.);
@@ -461,6 +464,7 @@ private:
         int transport;
         double gain_scale[5];
         double time_scale[5];
+        gboolean unwrap_phase_plot;
         GtkWidget *signal_graph;
        
         GtkWidget *input_rpaddress;
