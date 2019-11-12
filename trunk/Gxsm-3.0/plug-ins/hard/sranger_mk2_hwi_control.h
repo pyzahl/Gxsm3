@@ -676,8 +676,6 @@ class DSPControl : public AppBase{
 	int probe_trigger_raster_points;
 	int probe_trigger_raster_points_b;
 	int probe_trigger_single_shot;
-	int probe_and_wait;
-	
 
 	// Graphs Folder -- user settings origin
 	int Source, XSource, PSource;

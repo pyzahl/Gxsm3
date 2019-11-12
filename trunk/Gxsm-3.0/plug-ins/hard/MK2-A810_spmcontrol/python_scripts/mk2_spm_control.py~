@@ -39,7 +39,7 @@ import array
 import math
 
 # Set here the SRanger dev to be used:
-sr_dev_path = "/dev/sranger_mk2_3"
+sr_dev_path = "/dev/sranger_mk2_0"
 
 ## 00003fd3    _sigma_delta_hr_mask
 
@@ -55,26 +55,8 @@ i_magic_sid     = 4
 
 
 i_statemachine = 5
-fmt_statemachine = "<HHHHHHLLLLLL"
-fmt_statemachine_w = "<H"
-_fmt_statemachine_w = "<H"
-[
-	MK2_ii_statemachine_set_mode,
-	MK2_ii_statemachine_clr_mode,
-	MK2_ii_statemachine_mode,
-	MK2_ii_statemachine_last_mode,
-	MK2_ii_statemachine_DSP_seconds,
-	MK2_ii_statemachine_DSP_minutes,
-	MK2_ii_statemachine_DSP_count_seconds,
-	MK2_ii_statemachine_DSP_time,
-	MK2_ii_statemachine_DataProcessTime,
-	MK2_ii_statemachine_DataProcessReentryTime,
-	MK2_ii_statemachine_DataProcessReentryPeak,
-	MK2_ii_statemachine_IdleTime_Peak,
-	MK2_ii_statemachine_DP_tasks, # ... DSPMK2_DP_TASK_CONTROL dp_task_control[NUM_DATA_PROCESSING_TASKS+1];
-                                      # ... DSPMK2_ID_TASK_CONTROL id_task_control[NUM_IDLE_TASKS];
-        # DP_max_time_until_abort
-] = range (0,13)
+fmt_statemachine = "<hhhhLLLhhhhhh"
+fmt_statemachine_w = "<h"
 
 i_AIC_in = 6
 fmt_AIC_in = "<hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh"
@@ -94,26 +76,26 @@ fmt_analog_out_offset = "<hhhhhhhh" #+16
 fmt_analog_counter = "<LLLL" #+24
 
 i_scan = 11
-fmt_scan = "<hhllllhhhhllllhhllllllhhhhlllhhhhhhhhlllllllllhhhhhhhhh"
+fmt_scan = "<hhllllhhhhllllhhllllllhhhhlllhhlllllllhhhhhhhhh"
 #               ss rot  npab srcs nxy fs n fm dxny Zo fmz  XYZ
 #       fmt = "<hh hhhh hhhh llll hh  ll l lll hh hh ll lll ll hhhh hh" [38]
 #       fmt = "<hhhhhhhhhhllllhhllllllhhhhlllllllhhhhhh"
 ii_scan_rotm = 2
-ii_scan_xyz = 39
-ii_scan_xyzr = 42
+ii_scan_xyz = 30
+ii_scan_xyzr = 33
 
 i_move = 12
 fmt_move = "<hhlllllllllh"
 
 i_probe = 13
-fmt_probe = "<hhhhhhhhhhllllllllllllLLllhhhhh"
-ii_probe_ACamp = 4
-ii_probe_ACfrq = 5
-ii_probe_ACphaseA = 6
-ii_probe_ACphaseB = 7
-ii_probe_ACnAve = 8
-ii_probe_ACix = 9
-ii_probe_time = 10
+fmt_probe = "<hhhhhhhhllllllll"
+ii_probe_ACamp = 2
+ii_probe_ACfrq = 3
+ii_probe_ACphaseA = 4
+ii_probe_ACphaseB = 5
+ii_probe_ACnAve = 6
+ii_probe_ACix = 7
+ii_probe_time = 8
 
 i_autoapp = 14
 fmt_autoapp = "<hhhhhhhhhhhhhhhhhhLLhhhhhhhhhh"
@@ -1254,9 +1236,37 @@ def check_dsp_scan(_set):
 	xs = SPM_SCAN[31]/(65536.*32767.)*SPM_SCAN[22]*2.05
 	_set ("SCAN-pre:%d" %(SPM_SCAN[6])
 	      + " Nx:%d" %(SPM_SCAN[14]) + ",y:%d" %(SPM_SCAN[15]) + "\n"
-              + " XYZ   : %d, %d,     %d" %(SPM_SCAN[ii_scan_xyz],SPM_SCAN[ii_scan_xyz+2], SPM_SCAN[ii_scan_xyz+4]) + "\n"
-	      + " XYR   : %d, %d" %(SPM_SCAN[ii_scan_xyzr],SPM_SCAN[ii_scan_xyzr+2]) + "\n"
+	      + " fs_dx:%d" %(SPM_SCAN[16]) + ",y:%d" %(SPM_SCAN[17]) + "\n"
+	      + " cfs_dx:%d" %(SPM_SCAN[36]) + ",y:%d" %(SPM_SCAN[37]) + "\n"
+	      + " dnx:%d" %(SPM_SCAN[22]) + ",y:%d" %(SPM_SCAN[23]) + "\n"
+	      + " X speed calc [V/s]: %f" %vx + "  in A @ 533 A/V G1: %f\n" %(vx*533)
+	      + " X step size [V]...: %f" %xs + "  in A @ 533 A/V G1: %f\n" %(xs*533)
+	      + " ROTM  : %d, %d, %d, %d" %(SPM_SCAN[2],SPM_SCAN[3],SPM_SCAN[4],SPM_SCAN[5]) + "\n"
+	      + " ROTMn : %.5f, %.5f, %.5f, %.5f" %(SPM_SCAN[2]/fq,SPM_SCAN[3]/fq,SPM_SCAN[4]/fq,SPM_SCAN[5]/fq) + "\n"
+	      + " xy_vec: %d, %d, %d, %d" %(xyvec[0],xyvec[1],xyvec[2],xyvec[3]) + "\n"
+	      + " rs_vec: %d, %d, %d, %d" %(rsvec[0],rsvec[1],rsvec[2],rsvec[3]) + "\n"
+	      + " XYZ   : %d, %d,     %d" %(SPM_SCAN[31],SPM_SCAN[32], SPM_SCAN[33]) + "\n"
+	      + " XYR   : %d, %d" %(SPM_SCAN[34],SPM_SCAN[35]) + "\n"
+	      + " nsm_xm:%d" %(SPM_SCAN[18]) + "\n"
+	      + " fm_dx:%d" %(SPM_SCAN[19]) + ",y:%d" %(SPM_SCAN[20]) + ",zxy:%d" %(SPM_SCAN[21])
+	      + " fm_dzy:%d" %(SPM_SCAN[26]) + ",y:%d" %(SPM_SCAN[27]) + "\n"
+	      + " Xpos:%d" %(SPM_SCAN[28]) + ",Y:%d" %(SPM_SCAN[29]) + ",Z:%d\n" %(SPM_SCAN[30])
+	      + "M: Xnew:%d" %(SPM_MOVE[2]) + ",Ynew:%d" %(SPM_MOVE[3]) + ",fdx:%d" %(SPM_MOVE[4]) + ",fdy:%d\n" %(SPM_MOVE[5])
+	      + "M: Xpos:%d" %(SPM_MOVE[8]) + ",Ypos:%d" %(SPM_MOVE[9]) + ",steps:%d" %(SPM_MOVE[7]) + ",pflg:%d\n" %(SPM_MOVE[6])
+	      + "P: ACamp:%d" %(SPM_PROBE[ii_probe_ACamp]) + ",frq:%d" %(SPM_PROBE[ii_probe_ACfrq]) + ",phA:%d" %(SPM_PROBE[ii_probe_ACphaseA]) + ",ACnAve:%d" %(SPM_PROBE[ii_probe_ACnAve]) + ",ACix:%d\n" %(SPM_PROBE[ii_probe_ACix])
+	      + "A: Xo0: %06d" %(analog_out[0]) + " Yo0: %06d" %(analog_out[1]) + " Zo0: %06d\n" %(analog_out[2])
+	      + "A: Xsc: %06d" %(analog_out[3]) + " Ysc: %06d" %(analog_out[4]) + " Zsc: %06d " %(analog_out[5]) + " Z32: %09d\n" %(SPM_FEEDBACK[22])
+	      + "A: Bias %06d" %(analog_out[6]) + " Out7 %06d\n" %(analog_out[7])
+	      + "W16: %08d" %(WATCH[0]) + " %08d" %(WATCH[1]) + " %08d" %(WATCH[2]) + " %08d" %(WATCH[3]) + " %08d" %(WATCH[4]) + " %08d\n" %(WATCH[5])
+	      + "SRCSXP: %08x" %(SPM_SCAN[10]) + " XM: %08x" %(SPM_SCAN[11]) + " XP2 %08x" %(SPM_SCAN[12]) + " XM2 %08x" %(SPM_SCAN[13]) + " 2ndOff %d" %(SPM_SCAN[24]) + ", %d\n" %(SPM_SCAN[25])
+	      + "LN_SET0: %06d" %(MIXER_FB[22]) + " SET0 %06d\n" %(MIXER_FB[12])
+	      + "MX-delta: %012d" %(MIXER_delta) + " G4 %06d" %(MIXER_FB[7]) + " .x %06d" %(MIXER_FB[17]) + " setpoint  %06d" %(MIXER_FB[15])
+	      + "\nAAP_mode: %d" %(AUTOAPP[ii_autoapp_mover_mode]) +  " AAP_mwc %d" %(AUTOAPP[ii_autoapp_max_wave_cycles])
+	      + "\nAAP_tipmode: %d" %(AUTOAPP[ii_autoapp_tip_mode]) +  " AAP_pflg %d" %(AUTOAPP[ii_autoapp_pflg]) 
+	      + "\nAAP counts: %d" %(AUTOAPP[ii_autoapp_count_axis0]) + ", %d" %(AUTOAPP[ii_autoapp_count_axis0+1]) + ", %d" %(AUTOAPP[ii_autoapp_count_axis0+1]) +
               "\n"
+              
+              #	      + "W32: %08d" %(WATCHL16) + " %08d" %(WATCHL17) + " %08d" %(WATCH[16+2]) + " %08d" %(WATCH[16+3])
 	      )
         # print AUTOAPP;
         

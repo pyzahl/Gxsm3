@@ -2188,45 +2188,44 @@ void sranger_mk3_hwi_dev::write_dsp_feedback (
                       double setpoint_zpos, double z_servo[3], double m_servo[3], double pllref){
 
         SRANGER_DEBUG_SIG ( "---> sranger_mk3_hwi_dev::write_dsp_feedback --->");
-  
 	for (int i=0; i<4; ++i){
 		if (i==0) // TUNNEL-CURRENT dedicated channel
 			dsp_feedback_mixer.setpoint[i] = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->nAmpere2V (set_point[i])))); // Q23
-		else
-			dsp_feedback_mixer.setpoint[i] = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*set_point[i]))); // Q23
-
-		if (i==1) // PLL-FREQ dedicated channel, INTERNAL PAC if Hertz2V is set to 0 in SPM settings -- 
-			if (gapp->xsm->Inst->dHertz2V(1.) == 0.0){ // INTERNAL PAC/PLL
-                                if (pllref > 0.0) // use MK3 PAC-PLL
-                                        dsp_feedback_mixer.setpoint[i] = (int)round((CPN(29)*2.*M_PI/150000.)*(set_point[i]+pllref)); // Q32 bit raw for PAC signal
-                                else{ // use McBSP based (RP) hi-speed PAC-PLL
-                                        double skl = lookup_signal_scale_by_index (lookup_signal_by_name ("McBSP Freq"));
-                                        dsp_feedback_mixer.setpoint[i] = (int)round(set_point[i]/skl); // Q32 bit raw for PAC signal
+		else{
+                        if (i==1){ // PLL-FREQ dedicated channel, INTERNAL PAC if Hertz2V is set to 0 in SPM settings -- 
+                                if (gapp->xsm->Inst->dHertz2V(1.) == 0.0){ // INTERNAL PAC/PLL
+                                        if (pllref > 0.0) // use MK3 PAC-PLL
+                                                dsp_feedback_mixer.setpoint[i] = (int)round((CPN(29)*2.*M_PI/150000.)*(set_point[i]+pllref)); // Q32 bit raw for PAC signal
+                                        else{ // use McBSP based (RP) hi-speed PAC-PLL
+                                                double skl = lookup_signal_scale_by_index (lookup_signal_by_name ("McBSP Freq"));
+                                                dsp_feedback_mixer.setpoint[i] = (int)round(set_point[i]/skl); // Q32 bit raw for PAC signal
+                                        }
+                                        SRANGER_DEBUG_SIG (
+                                                           "MIX[1]:"
+                                                           << " pllref   = " << pllref << "Hz"
+                                                           << " setpoint = " << set_point[i] << "Hz"
+                                                           << " PLL setpoint absolute = " << (set_point[i]+pllref) << "Hz"
+                                                           << " DSP-setpoint[1] = " << dsp_feedback_mixer.setpoint[i]
+                                                           );
+                                } else {
+                                        dsp_feedback_mixer.setpoint[i] = (int)round(256.*round(gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->dHertz2V (set_point[i])))); // Q23
+                                        SRANGER_DEBUG_SIG (
+                                                           "MIX[1]:"
+                                                           << " dHz2Volt = " << gapp->xsm->Inst->dHertz2V(1.) << "Hz/Volt"
+                                                           << " setpoint = " << set_point[i] << "Hz"
+                                                           << " setpoint volt   = " << gapp->xsm->Inst->dHertz2V (set_point[i]) << "V"
+                                                           << " DSP-setpoint[1] = " << dsp_feedback_mixer.setpoint[i] 
+                                                           );
                                 }
-                                SRANGER_DEBUG_SIG (
-                                               "MIX[1]:"
-                                               << " pllref   = " << pllref << "Hz"
-                                               << " setpoint = " << set_point[i] << "Hz"
-                                               << " PLL setpoint absolute = " << (set_point[i]+pllref) << "Hz"
-                                               << " DSP-setpoint[1] = " << dsp_feedback_mixer.setpoint[i]
-                                               );
-			} else {
-				dsp_feedback_mixer.setpoint[i] = (int)round(256.*round(gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->dHertz2V (set_point[i])))); // Q23
-                                SRANGER_DEBUG_SIG (
-                                               "MIX[1]:"
-                                               << " dHz2Volt = " << gapp->xsm->Inst->dHertz2V(1.) << "Hz/Volt"
-                                               << " setpoint = " << set_point[i] << "Hz"
-                                               << " setpoint volt   = " << gapp->xsm->Inst->dHertz2V (set_point[i]) << "V"
-                                               << " DSP-setpoint[1] = " << dsp_feedback_mixer.setpoint[i] 
-                                               );
-			}
-		else if (pllref == 0.0 && gapp->xsm->Inst->dHertz2V(1.) == 0.0){ // PLL Ampl --  TMP HACK PY
-                        double skl = lookup_signal_scale_by_index (lookup_signal_by_name ("McBSP Ampl"));
-                        dsp_feedback_mixer.setpoint[i] = (int)round(set_point[i]/skl); // Q32 bit raw for PAC signal
-                }else
-                        // general purpose In-N signal "Volt" expected at mixer input
-			dsp_feedback_mixer.setpoint[i] = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*set_point[i]))); // Q23
-		dsp_feedback_mixer.level[i]    = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*level[i])));
+                        } else if (pllref == 0.0 && gapp->xsm->Inst->dHertz2V(1.) == 0.0){ // PLL Ampl --  TMP HACK PY
+                                double skl = lookup_signal_scale_by_index (lookup_signal_by_name ("McBSP Ampl"));
+                                dsp_feedback_mixer.setpoint[i] = (int)round(set_point[i]/skl); // Q32 bit raw for PAC signal
+                        } else {
+                                // general purpose In-N signal "Volt" expected at mixer input
+                                dsp_feedback_mixer.setpoint[i] = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*set_point[i]))); // Q23
+                        }
+                }
+                dsp_feedback_mixer.level[i]    = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*level[i])));
 		dsp_feedback_mixer.gain[i]     = float_2_sranger_q15 (gain[i]);
 		dsp_feedback_mixer.mode[i]     = transform_mode[i];
 		dsp_feedback_mixer.iir_ca_q15[i] = float_2_sranger_q15 (exp (-2.*M_PI*IIR_f0_max[i]/75000.));
@@ -2513,7 +2512,7 @@ void sranger_mk3_hwi_dev::read_dsp_lockin (double AC_amp[4], double &AC_frq, dou
         SRANGER_DEBUG_SIG ( "LockIn SHR Settings read back.");
 }
 
-int sranger_mk3_hwi_dev::dsp_lockin_state(int set=-1){
+int sranger_mk3_hwi_dev::dsp_lockin_state(int set){
 	lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 	sr_read (dsp, &dsp_probe, sizeof (dsp_probe)); 
 	dsp_probe.start = 0;
@@ -2534,8 +2533,6 @@ int sranger_mk3_hwi_dev::dsp_lockin_state(int set=-1){
 		return 0;
 		break;
 	case -1:
-		lseek   (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-		sr_read (dsp, &dsp_probe, sizeof (dsp_probe)); 
 		CONV_32 (dsp_probe.state);
 		return dsp_probe.state == PROBE_RUN_LOCKIN_FREE ? 1:0;
 		break;

@@ -497,6 +497,21 @@ void sranger_mk2_hwi_dev::swap (gint32 *addr){
 		*addr = (temp1 << 24) | (temp2 << 16) | (temp3 << 8) | temp4;
 }
 
+void sranger_mk2_hwi_dev::swap (guint32 *addr){
+	guint32 temp1, temp2, temp3, temp4;
+
+	temp1 = (*addr)       & 0xFF;
+	temp2 = (*addr >> 8)  & 0xFF;
+	temp3 = (*addr >> 16) & 0xFF;
+	temp4 = (*addr >> 24) & 0xFF;
+
+
+	if (target == SR_HWI_TARGET_C55)
+		*addr = (temp3 << 24) | (temp4 << 16) | (temp1 << 8) | temp2;
+	else // can assume so far else is: if (target == SR_HWI_TARGET_C54)
+		*addr = (temp1 << 24) | (temp2 << 16) | (temp3 << 8) | temp4;
+}
+
 /*
 Qm.n  (m+n+1)bits total, n=fractional bits, n=0: integer
 
@@ -567,6 +582,35 @@ gint32 sranger_mk2_hwi_dev::long_2_sranger_long (gint32 x){
 		x32[3] = temp1;
 
 		x = *((gint32*)x32);
+		
+		return x;
+	} else
+		return x;
+}
+
+
+guint32 sranger_mk2_hwi_dev::ulong_2_sranger_ulong (guint32 x){
+	if (swap_flg){
+		swap (&x);
+		return x;
+	}
+
+	if (target == SR_HWI_TARGET_C55){
+		guint32 temp0, temp1, temp2, temp3;
+		gchar  x32[4];
+		
+		
+		temp0 = (x)       & 0xFF;
+		temp1 = (x >> 8)  & 0xFF;
+		temp2 = (x >> 16) & 0xFF;
+		temp3 = (x >> 24) & 0xFF;
+
+		x32[0] = temp2;
+		x32[1] = temp3;
+		x32[2] = temp0;
+		x32[3] = temp1;
+
+		x = *((guint32*)x32);
 		
 		return x;
 	} else
@@ -2091,8 +2135,10 @@ void sranger_mk2_hwi_dev::read_dsp_state (gint32 &mode){
 	sr_read (dsp, &dsp_state, sizeof(dsp_state)); 
 
 	CONV_16 (dsp_state.mode);
-	CONV_16 (dsp_state.DataProcessTime);
-	CONV_16 (dsp_state.IdleTime);
+	CONV_32 (dsp_state.DataProcessTime);
+	CONV_32 (dsp_state.DataProcessReentryTime);
+	CONV_32 (dsp_state.DataProcessReentryPeak);
+	CONV_32 (dsp_state.IdleTime_Peak);
 
 	mode = dsp_state.mode;
 }
@@ -2142,6 +2188,7 @@ void sranger_mk2_hwi_dev::conv_dsp_feedback (){
 		CONV_16 (dsp_feedback_mixer.mode[i]);
 		CONV_16 (dsp_feedback_mixer.setpoint[i]);
 	}
+        CONV_16 (dsp_feedback_mixer.Z_setpoint);
 }
 
 void sranger_mk2_hwi_dev::read_dsp_feedback (){
@@ -2182,6 +2229,8 @@ void sranger_mk2_hwi_dev::write_dsp_feedback (
 	dsp_feedback.cb_Ic    = (DSP_LONG) (32767. * (cb = IIR_f0_min/IIR_f0_max[0] * Ic));
 	dsp_feedback.I_cross  = (int)Ic; 
 	dsp_feedback.I_offset = 1+(int)(gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->nAmpere2V (1e-3*LOG_I_offset))); // given in pA
+
+        dsp_feedback_mixer.Z_setpoint   = (int)(round(gapp->xsm->Inst->ZA2Dig (setpoint_zpos))); // new ZPos reference for FUZZY-LOG CONST HEIGHT 
 
 	if (!IIR_flag)
 		dsp_feedback.I_cross = 0; // disable IIR!
@@ -2305,6 +2354,15 @@ void sranger_mk2_hwi_dev::write_dsp_analog (double bias[4], double motor){
 
 	// from DSP to PC
 	conv_dsp_analog ();
+
+        // update bias section in dsp_scan
+        gint32 x;
+        read_dsp_scan (x);
+	dsp_scan.bias_section[0]  = (int)(gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (bias[0])));
+	dsp_scan.bias_section[1]  = (int)(gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (bias[1])));
+	dsp_scan.bias_section[2]  = (int)(gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (bias[2])));
+	dsp_scan.bias_section[3]  = (int)(gapp->xsm->Inst->VoltOut2Dig (gapp->xsm->Inst->BiasV2Vabs (bias[3])));
+        write_dsp_scan ();
 }
 
 void sranger_mk2_hwi_dev::conv_dsp_scan (){
@@ -2312,8 +2370,15 @@ void sranger_mk2_hwi_dev::conv_dsp_scan (){
 	CONV_32 (dsp_scan.rotm[1]);
 	CONV_32 (dsp_scan.rotm[2]);
 	CONV_32 (dsp_scan.rotm[3]);
-	CONV_16 (dsp_scan.fast_return);
 	CONV_32 (dsp_scan.z_slope_max);
+	CONV_16 (dsp_scan.fast_return);
+	CONV_16 (dsp_scan.fast_return_2nd);
+	CONV_16 (dsp_scan.slow_down_factor);
+	CONV_16 (dsp_scan.slow_down_factor_2nd);
+	CONV_16 (dsp_scan.bias_section[0]);
+	CONV_16 (dsp_scan.bias_section[1]);
+	CONV_16 (dsp_scan.bias_section[2]);
+	CONV_16 (dsp_scan.bias_section[3]);
 	CONV_16 (dsp_scan.nx_pre);
 	CONV_16 (dsp_scan.dnx_probe);
 	CONV_16 (dsp_scan.raster_a);
@@ -2402,6 +2467,34 @@ void sranger_mk2_hwi_dev::read_dsp_lockin (double AC_amp[4], double &AC_frq, dou
 	AC_phaseA = (double)dsp_probe.AC_phaseA/16.;
 	AC_phaseB = (double)dsp_probe.AC_phaseB/16.;
 	AC_lockin_avg_cycels = dsp_probe.AC_nAve;
+}
+
+int sranger_mk2_hwi_dev::dsp_lockin_state(int set){
+	lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+	sr_read (dsp, &dsp_probe, sizeof (dsp_probe));
+	dsp_probe.start = 0;
+	dsp_probe.stop  = 0;
+	switch (set){
+	case 0:	dsp_probe.stop = PROBE_RUN_LOCKIN_FREE;
+		CONV_16 (dsp_probe.start);
+		CONV_16 (dsp_probe.stop);
+		lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		sr_write (dsp, &dsp_probe,  MAX_WRITE_PROBE<<1); 
+		return 0;
+		break;
+	case 1:	dsp_probe.start = PROBE_RUN_LOCKIN_FREE;
+		CONV_16 (dsp_probe.start);
+		CONV_16 (dsp_probe.stop);
+		lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		sr_write (dsp, &dsp_probe,  MAX_WRITE_PROBE<<1); 
+		return 0;
+		break;
+	case -1:
+		CONV_16 (dsp_probe.state);
+		return dsp_probe.state == PROBE_RUN_LOCKIN_FREE ? 1:0;
+		break;
+	}
+	return -1;
 }
 
 void sranger_mk2_hwi_dev::write_dsp_lockin_probe_final (double AC_amp[4], double &AC_frq, double AC_phaseA, double AC_phaseB, gint32 AC_lockin_avg_cycels, double VP_lim_val[2], double noise_amp, int start) {

@@ -89,10 +89,12 @@
 	.asg *(_feedback_mixer+13), mix_sp1
 	.asg *(_feedback_mixer+14), mix_sp2
 	.asg *(_feedback_mixer+15), mix_sp3
-	.asg *(_feedback_mixer+17), mix_x
-	.asg *(_feedback_mixer+18), mix_lnx
-	.asg *(_feedback_mixer+19), mix_y
-	.asg *(_feedback_mixer+20), fb_delta_mixed
+	.asg *(_feedback_mixer+16), mix_Zset
+	.asg *(_feedback_mixer+17), mix_exec
+	.asg *(_feedback_mixer+18), mix_x
+	.asg *(_feedback_mixer+19), mix_lnx
+	.asg *(_feedback_mixer+20), mix_y
+	.asg *(_feedback_mixer+21), fb_delta_mixed
 
 	
 ;____________________________________________________________________________

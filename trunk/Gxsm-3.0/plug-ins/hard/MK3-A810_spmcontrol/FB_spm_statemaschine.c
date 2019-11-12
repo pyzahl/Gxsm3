@@ -105,6 +105,7 @@ extern int bz_push_area_scan_data_out (void);
 
 /* #define AIC_OUT(N) iobuf.mout[N] */
 /* smoothly adjust bias - make sure |analog_bias| < 32766-BIAS_ADJUST_STEP !!  */
+#if 0
 inline void run_bias_adjust (){
 	if (analog.bias[scan.section] - BIAS_ADJUST_STEP > analog.bias_adjust){
 		analog.bias_adjust += BIAS_ADJUST_STEP;
@@ -115,6 +116,7 @@ inline void run_bias_adjust (){
 			analog.bias_adjust = analog.bias[scan.section];
 	}
 }
+#endif
 
 /* smoothly brings Zpos back to zero in case VP left it non zero at finish */
 inline void run_Zpos_adjust (){
@@ -275,7 +277,7 @@ int idle_task_009(void){
         }
         
         if (scan.start && !autoapp.pflg){
-                init_area_scan ();
+                init_area_scan (scan.start);
                 START_RT_TASK_EVEN (RT_TASK_AREA_SCAN);
                 return 1;
         }
@@ -308,7 +310,7 @@ int idle_task_010(void){
         int i;
         /* LockIn run free and Vector Probe control manager */
         if (probe.start == PROBE_RUN_LOCKIN_FREE){
-                init_lockin (PROBE_RUN_LOCKIN_FREE);
+                init_lockin ();
                 START_RT_TASK_ALWAYS (RT_TASK_LOCKIN);
                 return 1;
         }
@@ -324,7 +326,6 @@ int idle_task_010(void){
         
         if (probe.stop == PROBE_RUN_LOCKIN_FREE){
                 STOP_RT_TASK (RT_TASK_LOCKIN);
-                stop_lockin (PROBE_RUN_LOCKIN_FREE);
                 return 1;
         }
         // ELSE:
@@ -341,16 +342,17 @@ int idle_task_010(void){
         }
         // else if probe running, check on FB manipulations
         if (probe.pflg){
-                if (probe.vector->options & VP_GPIO_SET){
-                        i =  (probe.vector->options & VP_GPIO_MSK) >> 16;
-                        if (probe.gpio_setting != i){ // update GPIO!
-                                CR_generic_io.gpio_data_out = (DSP_UINT16)i;
-                                WRITE_GPIO_0 (CR_generic_io.gpio_data_out);
-                                //WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_out, 1);
-                                probe.gpio_setting = i;
+                if (probe.vector)
+                        if (probe.vector->options & VP_GPIO_SET){
+                                i =  (probe.vector->options & VP_GPIO_MSK) >> 16;
+                                if (probe.gpio_setting != i){ // update GPIO!
+                                        CR_generic_io.gpio_data_out = (DSP_UINT16)i;
+                                        WRITE_GPIO_0 (CR_generic_io.gpio_data_out);
+                                        //WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_out, 1);
+                                        probe.gpio_setting = i;
+                                }
+                                return 1;
                         }
-                        return 1;
-                }
         }
         return 0;
 }

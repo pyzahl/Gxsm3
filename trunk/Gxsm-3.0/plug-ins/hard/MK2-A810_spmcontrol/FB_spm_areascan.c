@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* SRanger and Gxsm - Gnome X Scanning Microscopy Project
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -26,8 +28,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-
 #include "FB_spm_dataexchange.h"
 #include "dataprocess.h"
 
@@ -36,8 +36,6 @@
 
 #define Z_DATA_BUFFER_SIZE    0x2000
 #define Z_DATA_BUFFER_MASK    0x3fff
-
-#define EN_PROBE_TRIGGER      0x0008
 
 extern SPM_PI_FEEDBACK  feedback;
 extern FEEDBACK_MIXER   feedback_mixer;
@@ -69,6 +67,16 @@ int  AS_AIC_num_samples;
 long bz_last[BZ_MAX_CHANNELS];
 int  bz_byte_pos;
 
+//#define DATAPROCESS_PUSH_INSTANT
+// or push via idle and FIFO
+#define RT_FIFO_HALF 16 //  8
+#define RT_FIFO_FULL 30 // 14
+#define RT_FIFO_MASK 31 // 15
+int rt_fifo_i=0;
+int rt_fifo_ix=0;
+int rt_fifo_j=0;
+DSP_INT32 rt_fifo_push_data[BZ_MAX_CHANNELS][RT_FIFO_MASK+1];
+
 #define BZ_PUSH_NORMAL   0x00000000UL // normal atomatic mode using size indicator bits 31,30:
 // -- Info: THIS CONST NAMES .._32,08,16,24 ARE NOT USED, JUST FOR DOCUMENMTATION PURPOSE
 #define BZ_PUSH_MODE_32  0x00000000UL // 40:32 => 0b00MMMMMM(8bit) 0xDDDDDDDD(32bit), M:mode bits, D:Data
@@ -91,6 +99,7 @@ short *Z_data_buffer;
 #define AS_SCAN_YM  5
 #define AS_SCAN_2ND_XP  6
 #define AS_SCAN_2ND_XM  7
+#define AS_STALLED   99
 
 void bz_init(){ 
 	int i; 
@@ -98,6 +107,12 @@ void bz_init(){
 	for (i=0; i<BZ_MAX_CHANNELS; ++i) bz_last[i] = 0L; 
 	bz_push_mode = BZ_PUSH_MODE_32_START; 
 	bz_byte_pos=0;
+	datafifo.w_position=datafifo.r_position=0;
+
+        // reset RT_FIFO for push data
+        rt_fifo_i=0;
+        rt_fifo_ix=0;
+        rt_fifo_j=0;
 }
 
 void bz_push(int i, long x){
@@ -197,18 +212,12 @@ void clear_summing_data (){
 }
 
 /* calc of f_dx/y and num_steps by host! */
-void init_area_scan (){
+void init_area_scan (int as_mode){
 	// wait until fifo read thread on host is ready
 	if (!datafifo.stall) {
 		// reset FIFO -- done by host
-
 		init_probe_fifo (); // reset probe fifo once at start!
-
-		scan.slow_down_factor = scan.start; // 1 normally, >1 for slow down
-		// now starting...
-		scan.start = 0;
-		scan.stop  = 0;
-				
+		
 		// calculate num steps to go to starting point -- done by host
 
 		// init probe trigger count (-1 will disable it)
@@ -228,9 +237,6 @@ void init_area_scan (){
 			if (scan.nx < Z_DATA_BUFFER_SIZE)
 				AS_ch2nd_scan_switch = AS_SCAN_2ND_XP; // enable 2nd scan line mode
 
-		if ((scan.srcs_xp & 0x07000) || (scan.srcs_xm & 0x07000))  // setup LockIn job
-			init_lockin_for_bgjob ();
-
 
 		if ((scan.srcs_xp & 0x08000) || (scan.srcs_xm & 0x08000)){ // if Counter channel requested, restart counter/timer now
 			analog.counter[0] = 0L;
@@ -243,8 +249,20 @@ void init_area_scan (){
 
 		// enable subtask
 		scan.sstate = AS_MOVE_XY;
-		scan.pflg  = 1;
+                scan.section=0;
+		scan.start = 0;
+		scan.stop  = 0;
+		scan.pflg  = as_mode;
+	} else {
+		scan.sstate = AS_STALLED;
 	}
+}
+
+
+inline void area_scan_finished (){
+        scan.pflg = 0;
+        scan.stop = AREA_SCAN_STOP;
+        scan.dnx_probe = 0;
 }
 
 void finish_area_scan (){
@@ -254,6 +272,7 @@ void finish_area_scan (){
 		bz_push (i, 0);
 	scan.sstate = AS_READY;
 	scan.pflg = 0;
+	scan.section=0;
 }
 
 void integrate_as_data_srcs (long srcs){
@@ -287,6 +306,8 @@ void integrate_as_data_srcs (long srcs){
 	++AS_AIC_num_samples;
 }
 
+#ifdef DATAPROCESS_PUSH_INSTANT
+// do now
 void push_area_scan_data (unsigned long srcs){
 	DSP_ULONG tmp;
 
@@ -344,18 +365,111 @@ void push_area_scan_data (unsigned long srcs){
         data_sync_io.tick=1;
 }
 
-void run_area_scan (){
-	if ((scan.srcs_xp & 0x07000) || (scan.srcs_xm & 0x07000)){
-		// run LockIn
-		// probe.AC_ix = 0; // -PRB_SE_DELAY - 2;
-		run_lockin ();
-	}
+int bz_push_area_scan_data_out (void){ return 0; }
 
+#else
+
+// push to intermediate FIFO for ideal processing
+void push_area_scan_data (unsigned long srcs){
+	// read and buffer (for Rate Meter, gatetime not observed -- always last completed count)
+	CR_generic_io.count_0 = analog.counter[0];
+
+	if (srcs & 0xFFF1){
+                rt_fifo_push_data[0][rt_fifo_i] = (srcs << 16) | AS_AIC_num_samples;
+        
+                if (srcs & 0x0001) // PIDSrc1/Dest <-- Z = -AIC_Z-value ** AS_AIC_data_sum[8]/AS_AIC_num_samples
+                        rt_fifo_push_data[1][rt_fifo_i] = feedback.z32;
+                if (srcs & 0x0010) // DataSrcA1 --> AIC0
+                        rt_fifo_push_data[2][rt_fifo_i] = (long)AS_AIC_data_sum[0];
+                if (srcs & 0x0020) // DataSrcA2 --> AIC1
+                        rt_fifo_push_data[3][rt_fifo_i] = (long)AS_AIC_data_sum[1];
+                if (srcs & 0x0040) // DataSrcA3 --> AIC2
+                        rt_fifo_push_data[4][rt_fifo_i] = (long)AS_AIC_data_sum[2];
+                if (srcs & 0x0080) // DataSrcA4 --> AIC3
+                        rt_fifo_push_data[5][rt_fifo_i] = (long)AS_AIC_data_sum[3];
+                if (srcs & 0x0100) // DataSrcB1 --> AIC4
+                        rt_fifo_push_data[6][rt_fifo_i] = (long)AS_AIC_data_sum[4];
+                if (srcs & 0x0200) // DataSrcB2 --> AIC5
+                        rt_fifo_push_data[7][rt_fifo_i] = (long)AS_AIC_data_sum[5];
+                if (srcs & 0x0400) // DataSrcB3 --> AIC6
+                        rt_fifo_push_data[8][rt_fifo_i] = (long)AS_AIC_data_sum[6];
+                if (srcs & 0x0800) // DataSrcB4 --> AIC7
+                        rt_fifo_push_data[9][rt_fifo_i] = (long)AS_AIC_data_sum[7]; // debugging test
+
+                if (srcs & 0x01000) // DataSrcC1 --> LockIn1stA [default maped signal]
+                        rt_fifo_push_data[10][rt_fifo_i] = probe.LockIn_1stA;
+                if (srcs & 0x02000) // DataSrcD1 --> LockIn2ndA [default maped signal]
+                        rt_fifo_push_data[11][rt_fifo_i] = probe.LockIn_2ndA;
+                if (srcs & 0x04000) // DataSrcE1 --> LockIn0 [default maped signal]
+                        rt_fifo_push_data[12][rt_fifo_i] = probe.LockIn_0;
+                if (srcs & 0x08000) // "DataSrcF1" last CR Counter count [default maped signal]
+                        rt_fifo_push_data[13][rt_fifo_i] =  analog.counter[0];
+
+                rt_fifo_i++;
+                rt_fifo_ix++;
+                rt_fifo_i &= RT_FIFO_MASK;
+        }
+        
+	// auto clear now including counter0
+	clear_summing_data ();
+	analog.counter[0] = 0;
+	analog.counter[1] = 0;
+
+	// update sync info
+        data_sync_io.xyit[0]=scan.ix;
+        data_sync_io.xyit[1]=scan.iy;
+        // data_sync_io.xyit[3]=state.DSP_time;
+        data_sync_io.tick=1;
+}
+
+// called from idle task control with highest priority
+int bz_push_area_scan_data_out (void){
+        DSP_UINT32 srcs;
+        unsigned int i,m;
+        int processed=0;
+        // using bz_push for bit packing and delta signal usage
+        // init/reinit data set?
+        while (rt_fifo_ix > rt_fifo_j ){
+                // looping?
+                if (rt_fifo_j == 0){
+                        rt_fifo_ix &= RT_FIFO_MASK;
+                        if (rt_fifo_ix <= rt_fifo_j )
+                                break;
+                }
+                srcs = rt_fifo_push_data[0][rt_fifo_j]>>16; 
+                if (rt_fifo_push_data[0][rt_fifo_j] != bz_last[0]){ // re init using BZ_PUSH_MODE_32_START to indicate extra info set
+                        bz_push_mode = BZ_PUSH_MODE_32_START; 
+                        bz_push (0, rt_fifo_push_data[0][rt_fifo_j]);
+                        bz_push_mode = BZ_PUSH_NORMAL;
+                }
+
+                i=1;
+                if (srcs & 0x0001)
+                        bz_push (1, rt_fifo_push_data[i][rt_fifo_j]);
+                ++i; // MK2: no masks 0x0002, 4, 8
+                //for (m=0x0010; m <= 0x8000; i++, m <<= 1){
+                for (m=0x0010; i <= 13; i++, m <<= 1){
+                        if (srcs & m)
+                                bz_push (i, rt_fifo_push_data[i][rt_fifo_j]);
+                }
+                
+                rt_fifo_j++;
+                rt_fifo_j &= RT_FIFO_MASK;
+                processed++;
+        }
+        return processed;
+}
+#endif
+
+void run_area_scan (){
 	switch (scan.sstate){
 	case AS_SCAN_XP: // "X+" -> scan and dataaq.
 		if (--scan.iiix > 0)
 			break;
-                scan.iiix = scan.slow_down_factor;
+                if (AS_ch2nd_constheight_enabled)
+                        scan.iiix = scan.slow_down_factor_2nd;
+                else
+			scan.iiix = scan.slow_down_factor;
 
 		if (scan.iix < scan.dnx)
 			integrate_as_data_srcs (scan.srcs_xp);
@@ -363,11 +477,10 @@ void run_area_scan (){
 		scan.xyz_vec[i_X] = _lsadd (scan.xyz_vec[i_X], scan.cfs_dx); // this is with SAT!!
 		if (!scan.iix--){
 			if (scan.ix--){
-				if (AS_ip >= 0 && (AS_jp == 0 || scan.raster_a) && (scan.srcs_xp &  EN_PROBE_TRIGGER)){
+				if (AS_ip >= 0){
 					if (! --AS_ip){ // trigger probing process ?
-						if (!probe.pflg) // assure last prb job is done!!
-							init_probe ();
 						AS_ip = scan.dnx_probe;
+						switch_rt_task_areascan_to_probe();
 					}
 				}
 
@@ -391,6 +504,7 @@ void run_area_scan (){
 				else
 					scan.sstate = AS_SCAN_XM;
 				clear_summing_data ();
+                                ++scan.section; // next bias is list
 			}
 			scan.cfs_dx = scan.fs_dx;
 		}
@@ -405,13 +519,6 @@ void run_area_scan (){
 			scan.xyz_vec[i_X] = _lssub (scan.xyz_vec[i_X], scan.cfs_dx);
 			if (!scan.iix--){
 				if (scan.ix--){
-					if (AS_ip >= 0 && AS_jp == 0 && (scan.srcs_xm & EN_PROBE_TRIGGER)){
-						if (! --AS_ip){ // trigger probing process ?
-							if (!probe.pflg) // assure last prb job is done!!
-								init_probe ();
-							AS_ip = scan.dnx_probe;
-						}
-					}
 					
 					scan.iix   = scan.dnx-1;
 					
@@ -424,7 +531,7 @@ void run_area_scan (){
 				}
 				else{
 					if (!scan.iy){ // area scan done?
-						finish_area_scan ();
+						area_scan_finished ();
 						goto finish_now;
 //						break;
 					}
@@ -450,6 +557,7 @@ void run_area_scan (){
 		scan.iix = scan.dnx + PIPE_LEN;
 		scan.cfs_dx = scan.fs_dx;
 		scan.sstate = AS_SCAN_XP;
+                scan.section++; // next bias section
 		clear_summing_data ();
 		break;
 	case AS_SCAN_2ND_XM: // configure 2nd XP scan
@@ -462,6 +570,7 @@ void run_area_scan (){
 		clear_summing_data ();
 		break;
 	case AS_SCAN_YP: // "Y+" next line (could be Y-up or Y-dn, dep. on sign. of fs_dy!)
+                scan.section=0; // reset section to default bias
 		if (scan.iiy--){
 //						scan.xyz_vec[i_Y] -= scan.fs_dy;
 			scan.xyz_vec[i_Y] = _lssub (scan.xyz_vec[i_Y], scan.cfs_dy);
@@ -469,20 +578,12 @@ void run_area_scan (){
 		else{
 			if (scan.iy--){
 				if (AS_jp >= 0){
-					if (scan.raster_a){
-						AS_ip = AS_kp;
-						if ((++AS_jp) & 1){ // set start if X grid counter
-							if (++AS_kp >= AS_mod)
-								AS_kp=0;
-							AS_ip += scan.raster_a;
-						}
-						if (AS_ip++ >= AS_mod)
-							AS_ip -= AS_mod;
-					} else
-						if (++AS_jp == scan.dnx_probe){
-							AS_jp = 0;
-							AS_ip = scan.dnx_probe; // reset X grid counter
-						}
+                                        if (++AS_jp == scan.raster_b){
+                                                AS_jp = 0;
+                                                AS_ip = 1; // scan.dnx_probe; // reset X grid counter
+                                        } else {
+                                                AS_ip = -1;
+					}
 				}
 				scan.ix  = scan.nx;
 				scan.iix = scan.dnx + PIPE_LEN;
@@ -495,9 +596,9 @@ void run_area_scan (){
 		}
 		break;
 
-	case AS_SCAN_YM: // "Y-" -- not valid yet -- exit AS
-		finish_area_scan ();
-		break;
+//	case AS_SCAN_YM: // "Y-" -- not valid yet -- exit AS
+//		area_scan_finished ();
+//		break;
 
 	case AS_MOVE_XY: // move-XY: init/finalize scan, move to start/end of scan position, 
 		// can be used with nx==0, then the job is finished after the xy move!!
@@ -506,10 +607,21 @@ void run_area_scan (){
 //			scan.xyz_vec[i_Y] += scan.fm_dy;
 			scan.xyz_vec[i_X] = _lsadd (scan.xyz_vec[i_X], scan.fm_dx);
 			scan.xyz_vec[i_Y] = _lsadd (scan.xyz_vec[i_Y], scan.fm_dy);
+#if 0 // BACKPORT??
+                        // Z-ADJUST?
+			if (!(state.mode & MD_ZPOS_ADJUSTER)){ // is MOVE_XY Z allowed? Then may manipulate Zpos as well and store data
+				// optional (if fm_dz non Null) Z-pos manipulation within safe configurable guards
+				if (*probe.limiter_input < *probe.limiter_updn[0] && *probe.limiter_input > *probe.limiter_updn[1]){
+					probe.Zpos = _SADD32 (probe.Zpos, scan.fm_dz); // manipulate Z
+				}
+				push_area_scan_data (scan.srcs_xp); // now also store channel data along trajectory!
+				clear_summing_data ();
+			}
+#endif
 			scan.num_steps_move_xy--;
 		} else {
-			if (scan.nx == 0){ // was MOVE_XY only?, then done
-				finish_area_scan ();
+			if (scan.pflg & AREA_SCAN_MOVE_TIP){ // was MOVE_XY only?, then done
+				area_scan_finished ();
 			} else {
 				scan.sstate = AS_SCAN_XP;
 				scan.iix    = scan.dnx + PIPE_LEN;
@@ -526,7 +638,7 @@ void run_area_scan (){
 		break;
 
 	default: // just cancel job in case sth. went wrong!
-		finish_area_scan ();
+		area_scan_finished ();
 		break;
 	}
 }

@@ -1091,8 +1091,6 @@ DSPControl::DSPControl () {
 	vis_PlotSec = PlotSec;
 
 	xrm.Get ("Probing_probe_trigger_raster_points", &probe_trigger_raster_points_user, "0");
-	xrm.Get ("Probing_probe_and_wait", &probe_and_wait, "1");
-	probe_and_wait=1;
 
 	probe_trigger_raster_points = 0;
 	probe_trigger_raster_points_b = 0;
@@ -1686,9 +1684,6 @@ DSPControl::DSPControl () {
 	Gtk_EntryControl *raster_ec = dsp_bp->ec;
 	dsp_bp->grid_add_ec (NULL, Unity, &probe_trigger_raster_points_b, 0, 200, "5g", "adv-scan-rasterb");
 	Gtk_EntryControl *rasterb_ec = dsp_bp->ec;
-
-	if (!DSPPACClass)
-                dsp_bp->grid_add_ec ("Wait", Unity, &probe_and_wait, 0, 1, "2g", "adv-scan-raster-wait");
 
 	dsp_bp->grid_add_check_button ("Map Fill", "Enable to fill in between raster points if raster probe grid > 1.",
                                        1
@@ -2726,13 +2721,14 @@ DSPControl::DSPControl () {
                 dsp_bp->new_line (0, 2);
                 dsp_bp->grid_add_label ("CORRPRD-SHR");
                 dsp_bp->grid_add_label ("CORRSUM-SHR");
+	}
 
-                dsp_bp->new_line ();
-		LockIn_mode = dsp_bp->grid_add_check_button ("LockIn run free", "enable contineous modulation and LockIn processing.\n"
-                                                             "CAUTION: not recommended normally. Toggle with caution. (retract)\n"
-                                                             "Else: Automatic on only if needed/LockIn Data requested.", 1,
-                                                             GCallback (DSPControl::lockin_runfree_callback), this,
-                                                             sranger_common_hwi->dsp_lockin_state(-1), 0);
+        dsp_bp->new_line ();
+        LockIn_mode = dsp_bp->grid_add_check_button ("LockIn run free", "enable contineous modulation and LockIn processing.\n",
+                                                     1,
+                                                     GCallback (DSPControl::lockin_runfree_callback), this,
+                                                     sranger_common_hwi->dsp_lockin_state(-1), 0);
+	if (DSPPACClass) {
                 dsp_bp->set_configure_list_mode_on ();
 		dsp_bp->grid_add_ec ("CORRPRD-SHR", Unity, &AC_amp[2], 0., 32., "5g", 1., 1., "LCK-CORRPRD-SHR");
         	dsp_bp->grid_add_ec ("CORRSUM-SHR", Unity, &AC_amp[3], -32., 32., "5g", 1., 1., "LCK-CORRSUM-SHR");

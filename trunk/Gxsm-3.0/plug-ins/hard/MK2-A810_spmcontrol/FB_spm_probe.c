@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* SRanger and Gxsm - Gnome X Scanning Microscopy Project
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -25,8 +27,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #include "FB_spm_dataexchange.h"
 #include "dataprocess.h"
@@ -221,17 +221,27 @@ void probe_append_header_and_positionvector (){ // size: 14
 	}
 	*probe_datafifo.buffer_l++ = probe.time; 
 	probe_datafifo.buffer_w += 6; // skip 6 words == 3 long
- 
-	// Section start situation vector [XY[Z or Phase]_Offset, XYZ_Scan, Upos(bias), 0xffff]_16 :: 8
-	*probe_datafifo.buffer_w++ = HRVALUE_TO_16 (move.xyz_vec[i_X]);
-	*probe_datafifo.buffer_w++ = HRVALUE_TO_16 (move.xyz_vec[i_Y]);
-	*probe_datafifo.buffer_w++ = _lsshl (PRB_ACPhaseA32, -12); // Phase    //  HRVALUE_TO_16 (move.xyz_vec[i_Z])
 
-	*probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xy_r_vec[i_X]);
-	*probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xy_r_vec[i_Y]);
-	*probe_datafifo.buffer_w++ = AIC_OUT(5);  // Z: feedback.z + Z_pos>>16;
+	if (scan.dnx_probe){ // probe header for DSP LEVEL RASTER PROBE
+                *probe_datafifo.buffer_w++ = scan.ix;
+                *probe_datafifo.buffer_w++ = scan.iy;
+                *probe_datafifo.buffer_w++ = 0;
+                *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xyz_vec[i_X]);
+                *probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xyz_vec[i_Y]);
+                *probe_datafifo.buffer_w++ = AIC_OUT(5);  // Z: feedback.z + Z_pos>>16; *****!
+                *probe_datafifo.buffer_w++ = AIC_OUT(6);  // Bias: U_pos>>16; *******!
+        } else { // probe header normal
+		// Section start situation vector [XY[Z or Phase]_Offset, XYZ_Scan, Upos(bias), 0xffff]_16 :: 8
+		*probe_datafifo.buffer_w++ = HRVALUE_TO_16 (move.xyz_vec[i_X]);
+		*probe_datafifo.buffer_w++ = HRVALUE_TO_16 (move.xyz_vec[i_Y]);
+		*probe_datafifo.buffer_w++ = _lsshl (PRB_ACPhaseA32, -12); // Phase    //  HRVALUE_TO_16 (move.xyz_vec[i_Z])
 
-	*probe_datafifo.buffer_w++ = AIC_OUT(6);  // Bias: U_pos>>16;
+		*probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xy_r_vec[i_X]);
+		*probe_datafifo.buffer_w++ = HRVALUE_TO_16 (scan.xy_r_vec[i_Y]);
+		*probe_datafifo.buffer_w++ = AIC_OUT(5);  // Z: feedback.z + Z_pos>>16;
+		*probe_datafifo.buffer_w++ = AIC_OUT(6);  // Bias: U_pos>>16;
+	}
+	
 	*probe_datafifo.buffer_w++ = PRB_section_count;
 	probe_datafifo.buffer_l += 4; // skip 4 long == 8 words
 
@@ -241,53 +251,46 @@ void probe_append_header_and_positionvector (){ // size: 14
 
 void init_lockin (){
 	int j;
-	if (probe.AC_amp > 0){
-		probe.state = PROBE_START_LOCKIN;
+	// init LockIn variables
 
-		// init LockIn variables
+	// calc pre-start pos to center integration window correct
+	// PRB_xS -= PRB_dnx * LOCKIN_ILN/2;
 
-		// calc pre-start pos to center integration window correct
-		// PRB_xS -= PRB_dnx * LOCKIN_ILN/2;
+	// adjust "probe.nx_init" -- fixme
 
-		// adjust "probe.nx_init" -- fixme
-
-		// init correlation sum buffer
-		PRB_ki = 0;
-		for (j = 0; j < LOCKIN_ILN; ++j){
-			PRB_korrel_sum1stA[j] = 0;
-			PRB_korrel_sum1stB[j] = 0;
-			PRB_korrel_sum2ndA[j] = 0;
-			PRB_korrel_sum2ndB[j] = 0;
-		}
-		PRB_ref1stA = 0;
-		PRB_ref1stB = 0;
-		PRB_ref2ndA = 0;
-		PRB_ref2ndB = 0;
-		PRB_AveCount = 0;
-		PRB_modindex = 0;
-		// calc phase in indices, "/" needs _idiv, so omit it here!
-//				PRB_ACPhIclscdx  = (int)(probe.AC_phase*SPECT_SIN_LEN/360);
-		PRB_ACPhIdxA   = _lsshl (_lsmpy (probe.AC_phaseA, PHASE_FACTOR_Q19), -15);
-		PRB_ACPhIdxB   = _lsshl (_lsmpy (probe.AC_phaseB, PHASE_FACTOR_Q19), -15);
-		PRB_ACPhIdxdBA = PRB_ACPhIdxB - PRB_ACPhIdxA;
-		PRB_ACPhaseA32 = _lsshl (probe.AC_phaseA, 16);
-
-		// AIC samples at 22000Hz, full Sintab length is 128, so need increments of
-		// 1,2,4,8 for the following discrete frequencies
-		if (probe.AC_frq > 1000)
-			AC_tab_inc = 8*AC_TAB_INC;     // LockIn-Ref on 1375Hz
-		else if (probe.AC_frq > 500)
-			AC_tab_inc = 4*AC_TAB_INC;     // LockIn-Ref on 687.5Hz
-		else if (probe.AC_frq > 250)
-			AC_tab_inc = 2*AC_TAB_INC;     // LockIn-Ref on 343.75Hz
-		else AC_tab_inc = 1*AC_TAB_INC;     // LockIn-Ref on 171.875Hz
-
+	// init correlation sum buffer
+	PRB_ki = 0;
+	for (j = 0; j < LOCKIN_ILN; ++j){
+		PRB_korrel_sum1stA[j] = 0;
+		PRB_korrel_sum1stB[j] = 0;
+		PRB_korrel_sum2ndA[j] = 0;
+		PRB_korrel_sum2ndB[j] = 0;
 	}
+	PRB_ref1stA = 0;
+	PRB_ref1stB = 0;
+	PRB_ref2ndA = 0;
+	PRB_ref2ndB = 0;
+	PRB_AveCount = 0;
+	PRB_modindex = 0;
+	// calc phase in indices, "/" needs _idiv, so omit it here!
+	//				PRB_ACPhIclscdx  = (int)(probe.AC_phase*SPECT_SIN_LEN/360);
+	PRB_ACPhIdxA   = _lsshl (_lsmpy (probe.AC_phaseA, PHASE_FACTOR_Q19), -15);
+	PRB_ACPhIdxB   = _lsshl (_lsmpy (probe.AC_phaseB, PHASE_FACTOR_Q19), -15);
+	PRB_ACPhIdxdBA = PRB_ACPhIdxB - PRB_ACPhIdxA;
+	PRB_ACPhaseA32 = _lsshl (probe.AC_phaseA, 16);
+
+	// AIC samples at 22000Hz, full Sintab length is 128, so need increments of
+	// 1,2,4,8 for the following discrete frequencies
+	if (probe.AC_frq > 1000)
+		AC_tab_inc = 8*AC_TAB_INC;     // LockIn-Ref on 1375Hz
+	else if (probe.AC_frq > 500)
+		AC_tab_inc = 4*AC_TAB_INC;     // LockIn-Ref on 687.5Hz
+	else if (probe.AC_frq > 250)
+		AC_tab_inc = 2*AC_TAB_INC;     // LockIn-Ref on 343.75Hz
+	else AC_tab_inc = 1*AC_TAB_INC;     // LockIn-Ref on 171.875Hz
+
 }
 
-void init_lockin_for_bgjob (){
-	init_lockin ();
-}
 
 // reset probe fifo control to buffer beginnning
 void init_probe_fifo (){
@@ -302,8 +305,6 @@ void init_probe (){
 	probe_store ();
 
 	// now starting...
-	probe.start = 0;
-	probe.stop  = 0;
 	probe.vector = NULL;
 	probe.time = 0; 
 	probe.lix = 0; 
@@ -313,7 +314,6 @@ void init_probe (){
 
 	PRB_lockin_restart_flg = 1;
 
-	init_lockin ();
 //	probe.f_dx = _lsshl ( probe.f_dx, -8+AC_tab_inc); // smooth bias ramp compu for LockIn
 
 	// calc data normalization factor
@@ -326,6 +326,8 @@ void init_probe (){
 	clear_probe_data_srcs ();
 	probe_append_header_and_positionvector ();
 
+        probe.start = 0;
+        probe.stop  = 0;
 	probe.pflg  = 1; // enable probe
 }
 
@@ -373,7 +375,7 @@ void clear_probe_data_srcs (){
 	PRB_AIC_data_sum[0] = PRB_AIC_data_sum[1] = PRB_AIC_data_sum[2] =
 	PRB_AIC_data_sum[3] = PRB_AIC_data_sum[4] = PRB_AIC_data_sum[5] =
 	PRB_AIC_data_sum[6] = PRB_AIC_data_sum[7] = PRB_AIC_data_sum[8] = 0;
-	PRB_AIC_num_samples=probe.vector->dnx+1;
+	PRB_AIC_num_samples = 0;
 }
 
 void integrate_probe_data_srcs (){
@@ -404,6 +406,8 @@ void integrate_probe_data_srcs (){
 
 	if (probe.vector->srcs & 0x800) // AIC7
 		PRB_AIC_data_sum[7] += AIC_IN(7);
+
+        PRB_AIC_num_samples++;
 #endif
 }
 
@@ -543,13 +547,19 @@ void store_probe_data_srcs ()
 void next_section (){
 	if (! probe.vector){ // initialize ?
 		probe.vector = probe.vector_head;
+                clear_probe_data_srcs ();
 		PRB_section_count = 0; // init PVC
-//		if (probe.vector < (DSP_INT)(&prbdf)) // error, cancel probe now.
-//			stop_probe ();
+#if 0
+                if (probe.vector < (DSP_INT)(&prbdf)){// error, cancel probe now.
+                        probe.stop  = 1;
+                        probe.pflg = 0;
+                }
+#endif
 	}
 	else{
 		if (!probe.vector->ptr_final){ // end Vector program?
-			stop_probe ();
+                        probe.stop  = 1;
+                        probe.pflg = 0;
 			return;
 		}
 #ifdef DSP_PROBE_VECTOR_PROGRAM
@@ -558,8 +568,10 @@ void next_section (){
 			if (probe.vector->ptr_next){ // loop or branch to next
 				PRB_section_count += probe.vector->ptr_next; // adjust PVC (section "count" -- better section-index)
 				probe.vector += probe.vector->ptr_next; // next vector to loop
-			}else
-				stop_probe (); // error, no valid next vector: stop_probe now
+			}else{
+                                probe.stop  = 1;
+                                probe.pflg = 0;
+			} // error, no valid next vector: stop_probe now
 		}
 		else{
 			probe.vector->i = probe.vector->repetitions; // loop done, reload loop counter for next time
@@ -572,6 +584,7 @@ void next_section (){
 		++PRB_section_count;
 #endif
 	}
+        
 	probe.ix = probe.vector->n; // load total steps per section = # vec to add
 	probe.iix = probe.vector->dnx; // do dnx steps to take data until next point!
 
@@ -656,83 +669,151 @@ inline int limiter_reference_source (){
 	return  AIC_IN(0); // fall back
 }
 
+// ===== FIX ME and REVIEW !!! ======= PORT IN PROGRESS
+inline int trigger_reference_source (){
+	switch (probe.vector->options & VP_LIMIT_SRC){
+	case 0x00: return AIC_IN(0);
+	case 0x40: return AIC_IN(1);
+	case 0x80: return AIC_IN(2);
+	case 0xC0: return AIC_IN(3);
+	}
+	return  AIC_IN(0); // fall back
+}
+
+// ===== FIX ME and REVIEW !!! ======= PORT IN PROGRESS
+// #pragma CODE_SECTION(probe_signal_limiter_test, ".text:slow")
+void probe_signal_limiter_test(){	
+        if (probe.lix > 0) { ++probe.lix;  goto run_one_time_step_1; }
+        if (probe.vector->options & VP_LIMITER_UP)
+                if (limiter_reference_source () > probe.LIM_up){
+                        ++probe.lix;
+                        goto run_one_time_step_1;
+                }
+        if (probe.vector->options & VP_LIMITER_DN)
+                if (limiter_reference_source () < probe.LIM_dn){
+                        ++probe.lix;
+                        goto run_one_time_step_1;
+                }
+        
+        goto limiter_continue;
+
+ run_one_time_step_1:
+        if ((probe.vector->options & VP_LIMITER_MODE) != 0) {
+                probe.lix = 1; // cancel any "undo" mode, use final vector in next section
+                probe.vector->i = 0; // exit any loop
+        }
+ limiter_continue:
+        ;
+}
+
+
+
+// trigger condition evaluation
+// #pragma CODE_SECTION(wait_for_trigger, ".text:slow")
+int wait_for_trigger (){
+	if (probe.vector->options == (VP_TRIGGER_P | VP_TRIGGER_N)) // logic
+		return ((trigger_reference_source ()) & ((probe.vector->options & VP_GPIO_MSK) >> 16)) ? 0:1; // usually tigger_input would point to probe.gpio_data for this GPIO/logic trigger
+	else if (probe.vector->options & VP_TRIGGER_P){ // positive
+		return (trigger_reference_source () > 0) ? 0:1;
+	} else { // VP_TRIGGER_N -> negative 
+		return (trigger_reference_source () < 0) ? 0:1;
+	}
+}
+
+
+// prepare for next section or tracking vector -- called from idle processing regime!
+// #pragma CODE_SECTION(process_next_section, ".text:slow")
+void process_next_section (){
+        // Special VP Track Mode Vector Set?
+        if (probe.vector->options & (VP_TRACK_UP | VP_TRACK_DN | VP_TRACK_REF | VP_TRACK_FIN)){
+                next_track_vector ();
+                
+        } else { // run regular VP program mode
+                next_section ();
+                //                clear_probe_data_srcs ();
+                probe_append_header_and_positionvector ();
+        }
+}
+
+#if 0
+#pragma CODE_SECTION(GPIO_check, ".text:slow")
+void GPIO_check(){
+        if (!GPIO_subsample--){
+                GPIO_subsample = CR_generic_io.gpio_subsample;
+                WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_in, 0);
+                probe.gpio_data = CR_generic_io.gpio_data_in; // mirror data in 32bit signal
+        }
+}
+#endif
+
 // run a probe section step:
 // decrement and check counter for zero, then initiate next section (...add header info)
 // decrement skip data counter, check for zero then
 //  -acquire data of all srcs, store away
 //  -update current count, restore skip data counter
 
-void run_one_time_step(){
-	integrate_probe_data_srcs ();
-
-// "fast forward" if limiter active
-	if (((probe.iix--) == 0L) || probe.lix){
-		if ((probe.ix--) > 0L){
-			store_probe_data_srcs ();
-			if (probe.ix == 0L){
-				// Special VP Track Mode Vector Set?
-				if (probe.vector->options & (VP_TRACK_UP | VP_TRACK_DN | VP_TRACK_REF | VP_TRACK_FIN)){
-					next_track_vector ();
-
-				} else { // run regular VP program mode
-					next_section ();
-					clear_probe_data_srcs ();
-					probe_append_header_and_positionvector ();
-				}
-			}
-		}
-
-		// Limiter active?
-		if (probe.vector->options & VP_LIMITER){	
-			if (probe.lix > 0) { ++probe.lix;  goto run_one_time_step_1; }
-			if (probe.vector->options & VP_LIMITER_UP)
-				if (limiter_reference_source () > probe.LIM_up){
-					++probe.lix; goto run_one_time_step_1;
-				}
-			if (probe.vector->options & VP_LIMITER_DN)
-				if (limiter_reference_source () < probe.LIM_dn)
-					++probe.lix;
-		run_one_time_step_1:
-			;
-		} else if (probe.lix > 0) --probe.lix;
-		 
-		probe.iix = probe.vector->dnx; // load steps inbetween "data aq" points
-		clear_probe_data_srcs ();
-	}
-}
-
-
-#define LOCKIN_ON (probe.vector->srcs & 0x3000)
 void run_probe (){
+        // next time step in GVP
+        // ** run_one_time_step ();
+        // ** add_probe_vector ();
 
-	if (LOCKIN_ON){
-		if (PRB_lockin_restart_flg){
-			probe.AC_ix = -PRB_SE_DELAY;
-			PRB_lockin_restart_flg = 0;
-		}
+        // next time step in GVP
+        if (probe.ix){ // idle task is working on completion of data management, wait!
+#if 0
+                // initiate external data SPI request and transfer
+                if (probe.iix == probe.vector->dnx && !(state.dp_task_control[9].process_flag&0xffff))
+                        initiate_McBSP_transfer (probe.ix);
 
-		// wait until starting procedure (korrelation integration time) finished
-		if(probe.AC_ix >= 0){
-			run_one_time_step ();
-			add_probe_vector ();
-		}
+                // read GPIO if requested (CPU time costy!!!)
+                if (probe.vector->options & VP_GPIO_READ)
+                        GPIO_check();
+#endif
+                // unsatisfied trigger condition will also HOLD VP as of now!
+                if (probe.vector->options & (VP_TRIGGER_P|VP_TRIGGER_N))
+                        if (wait_for_trigger ())
+                                return;
 
-		run_lockin ();
+                integrate_probe_data_srcs ();
 
-	} else {
-		PRB_lockin_restart_flg = 1;
+                if (! probe.iix-- || probe.lix){
+                        if (probe.ix--){
+#ifdef ENABLE_SCAN_GP55_CLOCK
+                                // generate external probe point data clock on GP55
+                                if (probe.ix&1)
+                                        SET_DSP_GP55;
+                                else
+                                        CLR_DSP_GP55;
+#endif
+                                store_probe_data_srcs ();
+                        
+#if 0 // ===> moved to idle tasks processing space
+                                if (!probe.ix){
+                                        // Special VP Track Mode Vector Set?
+                                        if (probe.vector->options & (VP_TRACK_UP | VP_TRACK_DN | VP_TRACK_REF | VP_TRACK_FIN)){
+                                                next_track_vector ();
 
-		run_one_time_step ();
-		add_probe_vector ();
+                                        } else { // run regular VP program mode
+                                                next_section ();
+                                                probe_append_header_and_positionvector ();
+                                        }
+                                }
+#endif
+                        }
+                        // Limiter active?
+                        if (probe.vector->options & VP_LIMITER){
+                                probe_signal_limiter_test();
+                        } else if (probe.lix > 0) --probe.lix;
+		 
+                        probe.iix = probe.vector->dnx; // load steps inbetween "data aq" points
+                        clear_probe_data_srcs ();
+                }
+       
+                add_probe_vector ();
+        }
 
-		// manipulate U (bias)
-		AIC_OUT(6) = _lsshl (probe.Upos, -16);
-	}
-
-// increment probe time
+        // increment probe time
 	++probe.time; 
 }
-
 
 
 void sine_sdb32(int *cr, int *ci, int deltasRe, int deltasIm){
