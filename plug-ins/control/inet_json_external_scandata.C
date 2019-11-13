@@ -1688,28 +1688,39 @@ void Inet_Json_External_Scandata::update_graph (){
                         reading->draw (cr);
                 }
 
+                cairo_item_segments *cursors = new cairo_item_segments (2);
+                cursors->set_line_width (0.3);
+
                 // tick marks dB
+                cursors->set_stroke_rgba (0.2,1.,0.2,0.5);
                 for (int db=(int)dB_hi; db >= -20*dB_mags; db -= 10){
+                        double y;
                         valuestring = g_strdup_printf ("%4d dB", db);
                         reading->set_stroke_rgba (CAIRO_COLOR_GREEN);
-                        reading->set_text (scope_width - 40,  db_to_y ((double)db, dB_hi, y_hi, dB_mags), valuestring);
+                        reading->set_text (scope_width - 40,  y=db_to_y ((double)db, dB_hi, y_hi, dB_mags), valuestring);
                         g_free (valuestring);
                         reading->draw (cr);
+                        cursors->set_xy_fast (0,xcenter+(scope_width)*(-0.5),y);
+                        cursors->set_xy_fast (1,xcenter+(scope_width*0.7)*(0.5),y);
+                        cursors->draw (cr);
                 }
                 // ticks deg
+                cursors->set_stroke_rgba (1.,0.2,0.2,0.5);
                 for (int deg=-180*deg_extend; deg <= 180*deg_extend; deg += 30*deg_extend){
+                        double y;
                         valuestring = g_strdup_printf ("%d" UTF8_DEGREE, deg);
                         reading->set_stroke_rgba (CAIRO_COLOR_RED);
-                        reading->set_text (scope_width- 80, deg_to_y (deg, y_hi), valuestring);
+                        reading->set_text (scope_width- 80, y=deg_to_y (deg, y_hi), valuestring);
                         g_free (valuestring);
                         reading->draw (cr);
+                        cursors->set_xy_fast (0,xcenter+(scope_width)*(-0.5),y);
+                        cursors->set_xy_fast (1,xcenter+(scope_width*0.7)*(0.5),y);
+                        cursors->draw (cr);
                 }
-                cairo_item_segments *cursors = new cairo_item_segments (2);
+
                 cursors->set_line_width (0.5);
                 cursors->set_stroke_rgba (CAIRO_COLOR_WHITE);
                 // coord cross
-                //double xcc = scope_width_points/2;
-                //double xyl = 
                 cursors->set_xy_fast (0,xcenter+(scope_width*0.8)*(-0.5),0.);
                 cursors->set_xy_fast (1,xcenter+(scope_width*0.8)*(0.5),0.);
                 cursors->draw (cr);
@@ -1731,6 +1742,21 @@ void Inet_Json_External_Scandata::update_graph (){
 
                
                 if (operation_mode == 6){ // tune info
+                        cursors->set_stroke_rgba (0.8,0.8,0.8,0.4);
+                        reading->set_anchor (CAIRO_ANCHOR_CENTER);
+                        for (double f=-0.9*parameters.tune_span/2.; f < 0.8*parameters.tune_span/2.; f += 0.1*parameters.tune_span/2.){
+                                double x=xcenter+scope_width*f/parameters.tune_span; // tune plot, freq x transform to canvas
+                                valuestring = g_strdup_printf ("%g", f);
+                                reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                                reading->set_text (x, yr-8, valuestring);
+                                g_free (valuestring);
+                                reading->draw (cr);
+                                cursors->set_xy_fast (0,x,-yr);
+                                cursors->set_xy_fast (1,x,yr);
+                                cursors->draw (cr);
+                        }
+                        reading->set_anchor (CAIRO_ANCHOR_W);
+                        
                         if (debug_level > 0)
                                 g_print ("Tune: %g Hz,  %g mV,  %g dB, %g deg\n",
                                          pacpll_signals.signal_frq[n-1],
