@@ -1519,10 +1519,18 @@ void Inet_Json_External_Scandata::update_graph (){
         double y_hi  = yr*0.95;
         double dB_hi   =  0.0;
         double dB_mags =  4.0;
-        cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, (int)scope_width_points, h);
-        cairo_t *cr = cairo_create (surface);
+        static int current_width=0;
+        static cairo_surface_t *surface = NULL;
         static int rs_mode=0;
+        cairo_t *cr = NULL;
+        if (!surface || current_width != (int)scope_width_points){
+                cairo_surface_finish (surface);
+                cairo_surface_destroy (surface);
+                current_width = (int)scope_width_points;
+                surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, current_width, h);
+        }
         if (run_scope){
+                cr = cairo_create (surface);
                 cairo_translate (cr, 0., yr);
                 cairo_scale (cr, 1., 1.);
                 cairo_save (cr);
@@ -1882,10 +1890,17 @@ void Inet_Json_External_Scandata::update_graph (){
                 delete reading;
         } else {
                 deg_extend = 1;
+                if (cr)
+                        cairo_destroy (cr);
+                if (surface){
+                        gtk_image_set_from_surface (GTK_IMAGE (signal_graph), surface);
+                        cairo_surface_finish (surface);
+                        cairo_surface_destroy (surface);
+                        surface = NULL;
+                }
         }
-        
-        cairo_destroy (cr);
-        
-        gtk_image_set_from_surface (GTK_IMAGE (signal_graph), surface);
-        //cairo_surface_finish (surface);
+        if (cr)
+                cairo_destroy (cr);
+        if (surface)
+                gtk_image_set_from_surface (GTK_IMAGE (signal_graph), surface);
 }
