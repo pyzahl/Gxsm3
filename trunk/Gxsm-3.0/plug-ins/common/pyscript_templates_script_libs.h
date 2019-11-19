@@ -127,7 +127,7 @@ class tip_control():
                         if os.path.exists("remote.py-stop"):
                                 M = -10.
                                 break
-                print "FB: ", s&1, " Scan: ", s&(2+4), "  VP: ", s&8, "   Mov: ", s&16, " PLL: ", s&32, " **Motor=", M
+                print ("FB: ", s&1, " Scan: ", s&(2+4), "  VP: ", s&8, "   Mov: ", s&16, " PLL: ", s&32, " **Motor=", M)
                 gxsm.sleep(20)
                 return M
 
@@ -143,7 +143,7 @@ class tip_control():
                         if os.path.exists("remote.py-stop"):
                                 M = -10.
                                 break
-                print "FB: ", s&1, " Scan: ", s&(2+4), "  VP: ", s&8, "   Mov: ", s&16, " PLL: ", s&32, " **Motor=", M
+                print ("FB: ", s&1, " Scan: ", s&(2+4), "  VP: ", s&8, "   Mov: ", s&16, " PLL: ", s&32, " **Motor=", M)
                 gxsm.sleep(20)
                 return M
 
@@ -159,7 +159,7 @@ class tip_control():
                         if os.path.exists("remote.py-stop"):
                                 M = -10.
                                 break
-                print "FB: ", s&1, " Scan: ", s&(2+4), "  VP: ", s&8, "   Mov: ", s&16, " PLL: ", s&32, " **Motor=", M
+                print ("FB: ", s&1, " Scan: ", s&(2+4), "  VP: ", s&8, "   Mov: ", s&16, " PLL: ", s&32, " **Motor=", M)
                 gxsm.sleep(20)
                 return M
 
@@ -172,11 +172,11 @@ class tip_control():
                         M=gxsm.get ("dsp-fbs-motor")
                         svec=gxsm.rtquery ("s")
                         s = int(svec[0])
-                        scaction = s&(2+4)	
+                        scaction = s&(2+4)        
                         if os.path.exists("remote.py-stop"):
                                 M = -10.
                                 breaksp
-                print "FB: ", s&1, " Scan: ", s&(2+4), "  VP: ", s&8, "   Mov: ", s&16, " PLL: ", s&32, " **Motor=", M
+                print ("FB: ", s&1, " Scan: ", s&(2+4), "  VP: ", s&8, "   Mov: ", s&16, " PLL: ", s&32, " **Motor=", M)
                 gxsm.sleep(20)
                 return M
 
@@ -219,40 +219,40 @@ class tip_control():
                 gxsm.set ("dsp-fbs-mx0-current-set","%f"%(self.current))
                 gxsm.sleep (100) # sleep 100/10 sec
 
-	def make_grid_coords(self, spnx, stepx, spny, stepy, positions=1, position=[[0,0]], shuffle=False):
-		sxlist = np.arange (-spnx, spnx+stepx, stepx)
-		sylist = np.arange (-spny, spny+stepy, stepy)
+        def make_grid_coords(self, spnx, stepx, spny, stepy, positions=1, position=[[0,0]], shuffle=False):
+                sxlist = np.arange (-spnx, spnx+stepx, stepx)
+                sylist = np.arange (-spny, spny+stepy, stepy)
 
-		#position = [[-8.6,-8.1]             ]#, [20.0,80.0]]
-		#positions = 1
+                #position = [[-8.6,-8.1]             ]#, [20.0,80.0]]
+                #positions = 1
 
-		len1 = np.size(sxlist) * np.size(sylist)
-		len2 = np.size(sxlist) * np.size(sylist) * positions
-		xy = np.arange(2.0*len2).reshape(len2,2)
-		xy1 = np.arange(2.0*len1).reshape(len1,2)
+                len1 = np.size(sxlist) * np.size(sylist)
+                len2 = np.size(sxlist) * np.size(sylist) * positions
+                xy = np.arange(2.0*len2).reshape(len2,2)
+                xy1 = np.arange(2.0*len1).reshape(len1,2)
 
-		i=0
-		for r in position:
-			i1=0
-			for y in sylist:
-				for x in sxlist:
-					xy[i][0] = x + r[0]
-					xy[i][1] = y + r[1]
-					xy1[i1][0] = x + r[0]
-					xy1[i1][1] = y + r[1]
-					i=i+1           
-					i1=i1+1
-		if shuffle:
-			np.random.shuffle(xy1)
+                i=0
+                for r in position:
+                        i1=0
+                        for y in sylist:
+                                for x in sxlist:
+                                        xy[i][0] = x + r[0]
+                                        xy[i][1] = y + r[1]
+                                        xy1[i1][0] = x + r[0]
+                                        xy1[i1][1] = y + r[1]
+                                        i=i+1           
+                                        i1=i1+1
+                if shuffle:
+                        np.random.shuffle(xy1)
 
-		return xy1
+                return xy1
 
-	def make_coords(self, w, n):
-		c=[]
-		for i in range (0,n):
-			for j in range (0,n):
-				c.append ([i*w, j*w])
-		return c
+        def make_coords(self, w, n):
+                c=[]
+                for i in range (0,n):
+                        for j in range (0,n):
+                                c.append ([i*w, j*w])
+                return c
 
 )V0G0N";
 
@@ -293,138 +293,138 @@ class approach_control():
         # Watch dog script. Watching via RTQuery system parameters:
         # for example dF and if abs(dF) > limit DSP_CMD_STOPALL is issued (cancel auto approch, etc.)
 
-	def z0_goto(self, set_z0=0, speed=400):
-		gxsm.set ("dspmover-z0-goto","%g"%set_z0)
-		gxsm.set ("dspmover-z0-speed","%g"%speed)
-		gxsm.action ("DSP_CMD_GOTO_Z0")
-		svec=gxsm.rtquery ("o")  ## in HV volts
-		z0 = svec[0]
-		print "z0-goto: Retract to ", set_z0, " Ang ** RTQuery Offset Z0 = ", z0, "V x20"
-		gxsm.logev ('Z0 GOTO: Remote Z0 Retract')
-		gxsm.sleep (30)
-	#       
-	#       while abs(z0-set_z0) > 1.:
-	#               gxsm.action ("DSP_CMD_GOTO_Z0")
-	#               gxsm.sleep (200)
-	#               svec=gxsm.rtquery ("o")
-	#               z0 = svec[0]
-	#               svec=gxsm.rtquery ("z")
-	#               print "Z0=", z0, svec
-		return z0
+        def z0_goto(self, set_z0=0, speed=400):
+                gxsm.set ("dspmover-z0-goto","%g"%set_z0)
+                gxsm.set ("dspmover-z0-speed","%g"%speed)
+                gxsm.action ("DSP_CMD_GOTO_Z0")
+                svec=gxsm.rtquery ("o")  ## in HV volts
+                z0 = svec[0]
+                print ("z0-goto: Retract to ", set_z0, " Ang ** RTQuery Offset Z0 = ", z0, "V x20")
+                gxsm.logev ('Z0 GOTO: Remote Z0 Retract')
+                gxsm.sleep (30)
+        #       
+        #       while abs(z0-set_z0) > 1.:
+        #               gxsm.action ("DSP_CMD_GOTO_Z0")
+        #               gxsm.sleep (200)
+        #               svec=gxsm.rtquery ("o")
+        #               z0 = svec[0]
+        #               svec=gxsm.rtquery ("z")
+        #               print ("Z0=", z0, svec)
+                return z0
 
-	# Coarse Z0/Offset Tools/Approach custom
-	def xxz0_retract(self):
-		z0_goto(-160)
+        # Coarse Z0/Offset Tools/Approach custom
+        def xxz0_retract(self):
+                z0_goto(-160)
 
-	def z0_retract(self):
-		gxsm.set ("dspmover-z0-speed","1000")
-		svec=gxsm.rtquery ("o")  ## in HV volts
-		z0 = svec[0]
-		print "Z0 Retract ** Offset Z0 = ", z0
-		gxsm.logev ('Remote Z0 Retract')
-		while z0 > -160.:
-		        gxsm.action ("DSP_CMD_GOTO_Z0")
-		        gxsm.sleep (10)
-		        svec=gxsm.rtquery ("o")
-		        z0 = svec[0]
-		        svec=gxsm.rtquery ("z")
-		        print "Z0=", z0, svec
+        def z0_retract(self):
+                gxsm.set ("dspmover-z0-speed","1000")
+                svec=gxsm.rtquery ("o")  ## in HV volts
+                z0 = svec[0]
+                print ("Z0 Retract ** Offset Z0 = ", z0)
+                gxsm.logev ('Remote Z0 Retract')
+                while z0 > -160.:
+                        gxsm.action ("DSP_CMD_GOTO_Z0")
+                        gxsm.sleep (10)
+                        svec=gxsm.rtquery ("o")
+                        z0 = svec[0]
+                        svec=gxsm.rtquery ("z")
+                        print ("Z0=", z0, svec)
 
-	def z_in_range_check (zcheck=-15):
-		svec=gxsm.rtquery ("z") ## in HV Volts
-		print "Z in range check: ZXYS=", svec
-		return svec[0] > zcheck
+        def z_in_range_check (zcheck=-15):
+                svec=gxsm.rtquery ("z") ## in HV Volts
+                print ("Z in range check: ZXYS=", svec)
+                return svec[0] > zcheck
 
-	def z0_approach(self):
-		gxsm.set ("dspmover-z0-speed","600")
-		svec=gxsm.rtquery ("o") ## in HV Volts
-		z0 = svec[0]
-		print "Z0 approach ** Offset Z0 = ", z0
-		gxsm.logev ('Remote Z0 Approach')
-		while z0 < 180. and not self.z_in_range_check ():
-		        gxsm.action ("DSP_CMD_AUTOCENTER_Z0")
-		        gxsm.sleep (10)
-		        svec=gxsm.rtquery ("o")
-		        z0 = svec[0]
-		        svec=gxsm.rtquery ("z")
-		        print "Z0=", z0, svec
-		        sc = gxsm.get ("script-control")
-		        if sc < 1:
-		                break
-		return svec[0]
+        def z0_approach(self):
+                gxsm.set ("dspmover-z0-speed","600")
+                svec=gxsm.rtquery ("o") ## in HV Volts
+                z0 = svec[0]
+                print ("Z0 approach ** Offset Z0 = ", z0)
+                gxsm.logev ('Remote Z0 Approach')
+                while z0 < 180. and not self.z_in_range_check ():
+                        gxsm.action ("DSP_CMD_AUTOCENTER_Z0")
+                        gxsm.sleep (10)
+                        svec=gxsm.rtquery ("o")
+                        z0 = svec[0]
+                        svec=gxsm.rtquery ("z")
+                        print ("Z0=", z0, svec)
+                        sc = gxsm.get ("script-control")
+                        if sc < 1:
+                                break
+                return svec[0]
 
-	def autoapproach_via_z0(self):
-		gxsm.set ("dspmover-z0-goto","-1600")
-		count=0
-		gxsm.logev ('Remote Auto Approach start')
-		df_abort = 25;
-		#df = watch_dog_run (df_abort)
-		df = 0
-		while not self.z_in_range_check()  and abs(df) < df_abort:
-		        z0_retract ()
-		        gxsm.sleep (20)
-		        gxsm.logev ('Remote Auto Approach Z0: XP-Auto Steps')
-		        gxsm.action ("DSP_CMD_MOV-ZP_Auto")
-		        gxsm.sleep (20)
-		        zs=z0_approach ()
-		        #df = watch_dog_run (df_abort)
-		        count=count+1
-		        gxsm.logev ('Remote Auto Approach #' + str(count) + ' ZS=' + str (zs))
-		        sc = gxsm.get ("script-control")
-		        if sc < 1:
-		                break
-		        
-		gxsm.set ("dspmover-z0-speed","400")
-		gxsm.logev('Remote Auto Approach via Z0 completed')
-
-
-	def watch_dog_run(self, limit=25):
-		gxsm.logev("Watchdog run for DSP AutoApp in current. Watching: dF=%gHz"%limit)
-		gxsm.action ("DSP_CMD_AUTOAPP")
-		df=0.
-		while abs(df) < limit: 
-		        gxsm.sleep (10)
-		        fvec=gxsm.rtquery ("f")
-		        df = fvec[0]
-		        print "dF=",df
-		        gxsm.logev("Watchdog dF=%gHz"%df)
-		        sc = gxsm.get ("script-control")
-		        if sc < 1:
-		                break
-
-		gxsm.action ("DSP_CMD_STOPALL")
-		gxsm.logev("Watchdog DSP_CMD_STOPALL ACTION as of dF=%gHz"%df)
-		return df
-
-	def test_read ():
-		gxsm.sleep (200)
-		fvec=gxsm.rtquery ("f")
-		df = fvec[0]
-		print "dF=",df
-		zvec=gxsm.rtquery ("z")
-		print 'Zvec=', zvec
-		zvec=gxsm.rtquery ("z0")
-		print 'Z0vec=', zvec
-		gxsm.logev("Watchdog Check dF=%gHz" %df + " zvec=%g A" %zvec[0])
-		print("Watchdog Abort")
+        def autoapproach_via_z0(self):
+                gxsm.set ("dspmover-z0-goto","-1600")
+                count=0
+                gxsm.logev ('Remote Auto Approach start')
+                df_abort = 25;
+                #df = watch_dog_run (df_abort)
+                df = 0
+                while not self.z_in_range_check()  and abs(df) < df_abort:
+                        z0_retract ()
+                        gxsm.sleep (20)
+                        gxsm.logev ('Remote Auto Approach Z0: XP-Auto Steps')
+                        gxsm.action ("DSP_CMD_MOV-ZP_Auto")
+                        gxsm.sleep (20)
+                        zs=z0_approach ()
+                        #df = watch_dog_run (df_abort)
+                        count=count+1
+                        gxsm.logev ('Remote Auto Approach #' + str(count) + ' ZS=' + str (zs))
+                        sc = gxsm.get ("script-control")
+                        if sc < 1:
+                                break
+                        
+                gxsm.set ("dspmover-z0-speed","400")
+                gxsm.logev('Remote Auto Approach via Z0 completed')
 
 
-	def watch_dog_df_autoapp(self):
-		df_abort = 25
-		df=0.
-		z0_goto (300,400)
-		svec=gxsm.rtquery ("o") ## in HV Volts
-		z0 = svec[0]
-		print "Approach ** Offset Z0 = ", z0
-		gxsm.logev ('Remote Z0 Approach')
-		while z0 < 180. and not self.z_in_range_check (-8) and abs(df) < df_abort:
-		        df = self.watch_dog_run (df_abort)
-		        gxsm.sleep (200)
-		        sc = gxsm.get ("script-control")
-		        if sc < 1:
-		                break
+        def watch_dog_run(self, limit=25):
+                gxsm.logev("Watchdog run for DSP AutoApp in current. Watching: dF=%gHz"%limit)
+                gxsm.action ("DSP_CMD_AUTOAPP")
+                df=0.
+                while abs(df) < limit: 
+                        gxsm.sleep (10)
+                        fvec=gxsm.rtquery ("f")
+                        df = fvec[0]
+                        print ("dF=",df)
+                        gxsm.logev("Watchdog dF=%gHz"%df)
+                        sc = gxsm.get ("script-control")
+                        if sc < 1:
+                                break
 
-		return svec[0]
+                gxsm.action ("DSP_CMD_STOPALL")
+                gxsm.logev("Watchdog DSP_CMD_STOPALL ACTION as of dF=%gHz"%df)
+                return df
+
+        def test_read ():
+                gxsm.sleep (200)
+                fvec=gxsm.rtquery ("f")
+                df = fvec[0]
+                print ("dF=",df)
+                zvec=gxsm.rtquery ("z")
+                print ('Zvec=', zvec)
+                zvec=gxsm.rtquery ("z0")
+                print ('Z0vec=', zvec)
+                gxsm.logev("Watchdog Check dF=%gHz" %df + " zvec=%g A" %zvec[0])
+                print ("Watchdog Abort")
+
+
+        def watch_dog_df_autoapp(self):
+                df_abort = 25
+                df=0.
+                z0_goto (300,400)
+                svec=gxsm.rtquery ("o") ## in HV Volts
+                z0 = svec[0]
+                print ("Approach ** Offset Z0 = ", z0)
+                gxsm.logev ('Remote Z0 Approach')
+                while z0 < 180. and not self.z_in_range_check (-8) and abs(df) < df_abort:
+                        df = self.watch_dog_run (df_abort)
+                        gxsm.sleep (200)
+                        sc = gxsm.get ("script-control")
+                        if sc < 1:
+                                break
+
+                return svec[0]
 
 # FOR XYZ GAINS 10 X 2
 #autoapproach_via_z0()
@@ -474,7 +474,7 @@ class scan_control():
 
         def run_ref_image (self, u,c=0.):
                 self.fetch_conditions ()
-                print "Ref Image, Bias=", u
+                print ("Ref Image, Bias=", u)
                 gxsm.set ("dsp-fbs-bias","%f"%(u))
                 if c > 0.:
                         gxsm.set ("dsp-fbs-mx0-current-set","%f"%(c))
@@ -493,7 +493,7 @@ class scan_control():
                 if x:
                         return 1
                 for u in voltages:
-                        print "Bias=", u
+                        print ("Bias=", u)
                         if (zfreeze):
                                 self.tip.freeze_Z()
                         gxsm.set ("dsp-fbs-bias","%f"%(u))
@@ -514,7 +514,7 @@ class scan_control():
                 for i in range(0, num):
                         ox=coords[i][0]
                         oy=coords[i][1]
-                        print "OffsetXY: ", ox, oy
+                        print ("OffsetXY: ", ox, oy)
                         gxsm.set ("OffsetY","%f"%(oy))
                         self.tip.wait_move_pos()
                         gxsm.set ("OffsetX","%f"%(ox))
@@ -526,7 +526,7 @@ class scan_control():
                         for xy0 in coords:
                                 ox=xy0[0]+xy00[0]
                                 oy=xy0[1]+xy00[1]
-                                print "OffsetXY: ", ox, oy
+                                print ("OffsetXY: ", ox, oy)
                                 gxsm.set ("OffsetY","%f"%(oy))
                                 self.tip.wait_move_pos()
                                 gxsm.set ("OffsetX","%f"%(ox))
@@ -569,7 +569,7 @@ class scan_control():
                 i=0
                 while True:
                         o=gxsm.get_object(ref_ch, i)
-                        print o
+                        print (o)
                         gxsm.logev('Object %d:'%i + str(o))
 
                         i=i+1
@@ -607,7 +607,7 @@ class scan_control():
                         zra = zra+zr
 
                 zr = zra/10.0
-                print "Z=", zr
+                print ("Z=", zr)
                 gxsm.logev("AI0 Ref Z = %g"%zr)
                 gxsm.set ("dsp-fbs-mx0-current-set","0.010")
                 return zr
@@ -641,7 +641,7 @@ class scan_control():
                                 gxsm.waitscan ()
                 else:
                         for z in np.arange(0, zdown, dz):
-                        #	zr = get_zref_at_marker()
+                        #        zr = get_zref_at_marker()
                                 zr = zi
                                 zc = zr+z
                                 gxsm.logev("AI0 Z-Pos/Setpoint = %g" %z+" (%g)"%zc)
@@ -704,7 +704,7 @@ class probe_control():
                         sx=coords[i][0]
                         sy=coords[i][1]
         # force offset and set scan coords
-                        print "ScanXY: ", sx, sy
+                        print ("ScanXY: ", sx, sy)
                         gxsm.moveto_scan_xy (sx, sy)
                         self.tip.wait_scan_pos()
 
@@ -733,16 +733,16 @@ class probe_control():
                         gxsm.set ("OffsetX","%f"%(start_x0))
                         gxsm.set ("OffsetY","%f"%(start_y0))
                         gxsm.sleep (20)
-                        print "ScanXY: ", sx, sy
+                        print ("ScanXY: ", sx, sy)
                         gxsm.moveto_scan_xy (sx, sy)
                         wait_scan_pos()
                         gxsm.set ("dsp-fbs-bias","%f"%(ref_bias))
                         gxsm.set ("dsp-fbs-mx0-current-set","%f"%(ref_current))
-                        print "Zzzz"
+                        print ("Zzzz")
                         gxsm.sleep (20)
-                        print "VP Execute #", i, " of ", len2, " (", (100.*float(i)/len2), "%)"
+                        print ("VP Execute #", i, " of ", len2, " (", (100.*float(i)/len2), "%)")
                         gxsm.action ("dsp-fbs-VP_IV_EXECUTE")
-        #	        gxsm.action ("dsp-fbs-VP_LM_EXECUTE")
+        #                gxsm.action ("dsp-fbs-VP_LM_EXECUTE")
         # wait until VP action has finished
                         M = self.tip.wait_for_vp ()
                         if M < -3:
@@ -771,16 +771,16 @@ class probe_control():
                         sx=coords[i][0]
                         sy=coords[i][1]
         # force offset and set scan coords
-                        #print "ScanXY: ", sx, sy
-                        gxsm.logev ("IV Simple at ScanXY= "%sx + ", %f"%sy)
+                        print ("ScanXY: ", sx, sy)
+                        gxsm.logev ("IV Simple at ScanXY= %f"%sx + ", %f"%sy)
                         gxsm.moveto_scan_xy (sx, sy)
-	                gxsm.sleep (20)
+                        gxsm.sleep (20)
                         self.tip.wait_scan_pos()
-                        #print "VP Execute #", i, " of ", len2, " (", (100.*float(i)/num), "%)"
-	                gxsm.sleep (20)
+                        #print ("VP Execute #", i, " of ", len2, " (", (100.*float(i)/num), "%)")
+                        gxsm.sleep (20)
                         gxsm.action ("DSP_VP_IV_EXECUTE")
         # wait until VP action has finished
-	                gxsm.sleep (50)
+                        gxsm.sleep (50)
                         M = self.tip.wait_for_vp ()
                         if M < -3:
                                 terminate = 1
@@ -805,11 +805,11 @@ class probe_control():
                         sx=coords[i][0]
                         sy=coords[i][1]
         # force offset and set scan coords
-                        print "ScanXY: ", sx, sy
+                        print ("ScanXY: ", sx, sy)
                         gxsm.logev ("IV at ScanXY= "%sx + ", %f"%sy)
                         gxsm.moveto_scan_xy (sx, sy)
                         wait_scan_pos()
-                        print "VP Execute #", i, " of ", len2, " (", (100.*float(i)/len2), "%)"
+                        print ("VP Execute #", i, " of ", len2, " (", (100.*float(i)/len2), "%)")
                         for current in ref_current:
                                 gxsm.set ("dsp-fbs-mx0-current-set","%f"%current)
                                 gxsm.logev ("IV Setpoint= %f"%current)
@@ -844,14 +844,14 @@ class probe_control():
 
 
         def run_gvp_simple (self, coords, num, skip=0):
-                print 'num=',num
-                print 'skip=',skip
+                print ('num=',num)
+                print ('skip=',skip)
                 for i in range(0, num):
-                        print i
+                        print (i)
                         if i<skip:
-                                print 'skipping: ',coords[i][0],coords[i][1]
+                                print ('skipping: ',coords[i][0],coords[i][1])
                                 continue
-                        print coords[i][0],coords[i][1]
+                        print (coords[i][0],coords[i][1])
                         gxsm.moveto_scan_xy (coords[i][0],coords[i][1])
                         wait_scan_pos()
                         gxsm.logev ("DSP_VP_GVP_EXECUTE")
@@ -864,20 +864,20 @@ class probe_control():
 
         def run_lm (self, coords, num, ff, ref_bias=2.35, ref_current=0.045):
                 for i in range(0, num):
-        #		if i % 100 == 0:
-        #			if ff:
-        #			        release_Z ()
-        #			gxsm.set ("dsp-LCK-AC-Bias-Amp","0")    
-        #			run_ref_image (0.25)
+        #                if i % 100 == 0:
+        #                        if ff:
+        #                                release_Z ()
+        #                        gxsm.set ("dsp-LCK-AC-Bias-Amp","0")    
+        #                        run_ref_image (0.25)
                         sx=coords[i][0]
                         sy=coords[i][1]
-                        print "ScanXY: ", sx, sy
+                        print ("ScanXY: ", sx, sy)
                         gxsm.moveto_scan_xy (sx, sy)
                         self.tip.wait_scan_pos()
-                        print "Zzzz"
+                        print ("Zzzz")
                         gxsm.sleep (40)
-                        print "VP Execute #", i, " of ", len2, " (", (100.*float(i)/len2), "%)"
-        #	        gxsm.action ("dsp-fbs-VP_IV_EXECUTE")
+                        print ("VP Execute #", i, " of ", len2, " (", (100.*float(i)/len2), "%)")
+        #                gxsm.action ("dsp-fbs-VP_IV_EXECUTE")
                         gxsm.action ("dsp-fbs-VP_LM_EXECUTE")
         # wait until VP action has finished
                         M = wait_for_vp ()
@@ -885,11 +885,11 @@ class probe_control():
                                 terminate = 1
                                 break
 
-        #		if ff:
-        #		        release_Z ()    
+        #                if ff:
+        #                        release_Z ()    
 
-        #		if M < -0.9:
-        #			pause_tip_retract ()
+        #                if M < -0.9:
+        #                        pause_tip_retract ()
 
 
 )V0G0N";

@@ -566,7 +566,11 @@ to the community. The GXSM-Forums always welcome input.
 #include "gxsm/gnome-res.h"
 
 
-#if defined HAVE_PYTHON2_7_PYTHON_H
+#if defined HAVE_PYTHON3_7_PYTHON_H
+#    include <python3.7/Python.h>
+#elif defined HAVE_PYTHON3_7M_PYTHON_H
+#    include <python3.7m/Python.h>
+#elif defined HAVE_PYTHON2_7_PYTHON_H
 #    include <python2.7/Python.h>
 #elif defined HAVE_PYTHON2_6_PYTHON_H
 #    include <python2.6/Python.h>
@@ -697,14 +701,16 @@ static void pyremote_configure(void)
 	}
 }
 
-#include <pygtk-2.0/pygobject.h>
+// #include <pygtk-2.0/pygobject.h>
 
 typedef struct {
         GList *plugins;
+        PyObject *module;
         PyObject *dict;
         PyObject *main_module;
-} PygwyModuleInfo;
+} PyGxsmModuleInfo;
 
+static PyGxsmModuleInfo py_gxsm_module;
 
 class py_gxsm_console : public AppBase{
 public:
@@ -720,15 +726,13 @@ public:
         void AppWindowInit(const gchar *title);
 	
         void initialize(void);
-        void register_classes(PyObject *d);
         PyObject* run_string(const char *cmd, int type, PyObject *g, PyObject *l);
-        void show_stderr(gchar *str);
+        void show_stderr(const gchar *str);
         void initialize_stderr_redirect(PyObject *d);
-        void finalize_stderr_redirect(PyObject *d);
         void destroy_environment(PyObject *d, gboolean show_errors);
         PyObject* create_environment(const gchar *filename, gboolean show_errors);
 
-        char* run_command(const gchar *cmd, int mode);
+        const char* run_command(const gchar *cmd, int mode);
         void append (const gchar *msg);
 
         gchar *pre_parse_script (const gchar *script, int *n_lines=NULL, int r=0); // parse script for gxsm lib include statements
@@ -789,7 +793,7 @@ public:
                         append (name);
                         append ("\n");
                         action_script_running++;
-                        gchar *output = run_command(tmp_script, Py_file_input);
+                        const gchar *output = run_command(tmp_script, Py_file_input);
                         --action_script_running;
                         g_free (tmp_script);
                         append (output);
@@ -938,7 +942,7 @@ private:
         GSettings *gsettings;
         GtkWidget *file_menu;
 
-        PygwyModuleInfo s_pygwy;
+        //PyGxsmModuleInfo py_gxsm_module;
         const char *example_filename = "gxsm_pyremote_example.py";
 
         // Console GUI elemets
@@ -951,6 +955,7 @@ private:
         gboolean fail;
         gdouble exec_value;
 };
+
 
 
 ///////////////////////////////////////////////////////////////
@@ -1003,7 +1008,7 @@ static PyObject* remote_listr(PyObject *self, PyObject *args)
 	GSList* tmp = gapp->RemoteEntryList;
 	for (int n=0; n<slen; n++){
                 Gtk_EntryControl* ec = (Gtk_EntryControl*)tmp->data; // Look at data item in GSList.
-                PyTuple_SetItem(ret, n, PyString_FromString(ec->get_refname())); // Add Refname to Return-list
+                PyTuple_SetItem(ret, n, PyUnicode_FromString(ec->get_refname())); // Add Refname to Return-list
                 tmp = g_slist_next(tmp);
         }
 
@@ -1019,7 +1024,7 @@ static PyObject* remote_lista(PyObject *self, PyObject *args)
 	GSList* tmp = gapp->RemoteActionList;
 	for (int n=0; n<slen; n++){
                 remote_action_cb* ra = (remote_action_cb*)tmp->data; // Look at data item in GSList.
-                PyTuple_SetItem(ret, n, PyString_FromString(ra->cmd)); // Add Refname to Return-list
+                PyTuple_SetItem(ret, n, PyUnicode_FromString(ra->cmd)); // Add Refname to Return-list
                 tmp = g_slist_next(tmp);
         }
 
@@ -1230,20 +1235,7 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
                 if (PyObject_GetBuffer (obj, &view, PyBUF_SIMPLE))
                         return Py_BuildValue ("i", -1);
                 rf=true;
-        } else {
-                g_message ("PyObject_CheckBuffer(obj) -- failed -- trying old style");
-                //return Py_BuildValue("i", -1);
-                if (PyObject_CheckReadBuffer (obj)){
-                        if(PyObject_AsReadBuffer (obj, (const void**)&view.buf, &view.len)){
-                                g_message ("PyObject_AsReadBuffer(obj) (old) -- failed");
-                                return Py_BuildValue ("i", -1);
-                        }
-                } else {
-                        g_message ("PyObject_CheckReadBuffer(obj) (old) -- failed, exit");
-                        return Py_BuildValue ("i", -1);
-                }
         }
-
         if ( view.len / sizeof(long) != sizex*sizey*sizev ) {
                 g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", view.len / sizeof(long), sizex*sizey);
                 return Py_BuildValue("i", -1);
@@ -1340,20 +1332,7 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
                 if (PyObject_GetBuffer (obj, &view, PyBUF_SIMPLE))
                         return Py_BuildValue ("i", -1);
                 rf=true;
-        } else {
-                g_message ("PyObject_CheckBuffer(obj) -- failed -- trying old style");
-                //return Py_BuildValue("i", -1);
-                if (PyObject_CheckReadBuffer (obj)){
-                        if(PyObject_AsReadBuffer (obj, (const void**)&view.buf, &view.len)){
-                                g_message ("PyObject_AsReadBuffer(obj) (old) -- failed");
-                                return Py_BuildValue ("i", -1);
-                        }
-                } else {
-                        g_message ("PyObject_CheckReadBuffer(obj) (old) -- failed, exit");
-                        return Py_BuildValue ("i", -1);
-                }
         }
-
 	if ( view.len / sizeof(float) != sizex*sizey*sizev ) {
                 g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", view.len / sizeof(float), sizex*sizey);
 		return Py_BuildValue("i", -1);
@@ -2181,7 +2160,7 @@ ml_flags	int	flag bits indicating how the call should be constructed
 ml_doc	char *	points to the contents of the docstring
 */
 
-static PyMethodDef EmbMethods[] = {
+static PyMethodDef GxsmPyMethods[] = {
 	// BLOCK I
 	{"help", remote_help, METH_VARARGS, "List Gxsm methods: print gxsm.help ()"},
 	{"set", remote_set, METH_VARARGS, "Set Gxsm entry value, see list_refnames: gxsm.set ('refname','value as string')"},
@@ -2262,11 +2241,11 @@ static PyMethodDef EmbMethods[] = {
 static PyObject* remote_help(PyObject *self, PyObject *args)
 {
         gint entries;
-	for (entries=0; EmbMethods[entries].ml_name != NULL; entries++);
+	for (entries=0; GxsmPyMethods[entries].ml_name != NULL; entries++);
 	PyObject *ret = PyTuple_New(entries);
 	for (int n=0; n < entries; n++){
-                gchar *tmp = g_strdup_printf ("gxsm.%s : %s", EmbMethods[n].ml_name, EmbMethods[n].ml_doc);
-                PyTuple_SetItem(ret, n, PyString_FromString (tmp)); // Add Refname to Return-list
+                gchar *tmp = g_strdup_printf ("gxsm.%s : %s", GxsmPyMethods[n].ml_name, GxsmPyMethods[n].ml_doc);
+                PyTuple_SetItem(ret, n, PyUnicode_FromString (tmp)); // Add Refname to Return-list
                 g_free (tmp);
         }
 
@@ -2283,257 +2262,105 @@ int ok_button_callback( GtkWidget *widget, gpointer data)
 	return 0;
 }
 
-// NOTE: stuff below was taken from pygwy console in gwyddion and minimally adpated to gxsm
-
-// not really sure what's the piurposed of this
-/* ---------- types from other modules ---------- */
-static PyTypeObject *_PyGObject_Type;
-#define PyGObject_Type (*_PyGObject_Type)
-static PyTypeObject *_PyGtkTable_Type;
-#define PyGtkTable_Type (*_PyGtkTable_Type)
-static PyTypeObject *_PyGtkWidget_Type;
-#define PyGtkWidget_Type (*_PyGtkWidget_Type)
-static PyTypeObject *_PyGtkDialog_Type;
-#define PyGtkDialog_Type (*_PyGtkDialog_Type)
-static PyTypeObject *_PyGtkButton_Type;
-#define PyGtkButton_Type (*_PyGtkButton_Type)
-static PyTypeObject *_PyGtkDrawingArea_Type;
-#define PyGtkDrawingArea_Type (*_PyGtkDrawingArea_Type)
-static PyTypeObject *_PyGtkObject_Type;
-#define PyGtkObject_Type (*_PyGtkObject_Type)
-static PyTypeObject *_PyGtkWindow_Type;
-#define PyGtkWindow_Type (*_PyGtkWindow_Type)
-static PyTypeObject *_PyGtkLayout_Type;
-#define PyGtkLayout_Type (*_PyGtkLayout_Type)
-static PyTypeObject *_PyGtkTreeView_Type;
-#define PyGtkTreeView_Type (*_PyGtkTreeView_Type)
-static PyTypeObject *_PyGtkVBox_Type;
-#define PyGtkVBox_Type (*_PyGtkVBox_Type)
-static PyTypeObject *_PyGtkStatusbar_Type;
-#define PyGtkStatusbar_Type (*_PyGtkStatusbar_Type)
-static PyTypeObject *_PyGtkComboBox_Type;
-#define PyGtkComboBox_Type (*_PyGtkComboBox_Type)
-static PyTypeObject *_PyGtkTooltips_Type;
-#define PyGtkTooltips_Type (*_PyGtkTooltips_Type)
-static PyTypeObject *_PyGtkOrientation_Type;
-#define PyGtkOrientation_Type (*_PyGtkOrientation_Type)
-static PyTypeObject *_PyGtkPositionType_Type;
-#define PyGtkPositionType_Type (*_PyGtkPositionType_Type)
-static PyTypeObject *_PyGtkTreeIter_Type;
-#define PyGtkTreeIter_Type (*_PyGtkTreeIter_Type)
-static PyTypeObject *_PyGtkListStore_Type;
-#define PyGtkListStore_Type (*_PyGtkListStore_Type)
-static PyTypeObject *_PyGtkUpdateType_Type;
-#define PyGtkUpdateType_Type (*_PyGtkUpdateType_Type)
-static PyTypeObject *_PyGdkDrawable_Type;
-#define PyGdkDrawable_Type (*_PyGdkDrawable_Type)
-static PyTypeObject *_PyGdkPixbuf_Type;
-#define PyGdkPixbuf_Type (*_PyGdkPixbuf_Type)
-static PyTypeObject *_PyGdkGC_Type;
-#define PyGdkGC_Type (*_PyGdkGC_Type)
-static PyTypeObject *_PyGdkLineStyle_Type;
-#define PyGdkLineStyle_Type (*_PyGdkLineStyle_Type)
-
 py_gxsm_console::~py_gxsm_console (){
-        PI_DEBUG(DBG_L2, "Pyremote Plugin: destructor. Empty. Done.");
+        PI_DEBUG(DBG_L2, "Pyremote Plugin: destructor. Calls: Py_FinalizeEx()");
+        Py_FinalizeEx();
 }
 
 
-/* initialise stuff extension classes */
-void py_gxsm_console::register_classes(PyObject *d)
+/* Python strout/err redirection helper module */
+
+static PyObject* redirection_stdoutredirect(PyObject *self, PyObject *args)
 {
-	PyObject *module;
+        const char *string;
+        if(!PyArg_ParseTuple(args, "s", &string))
+                return NULL;
 
-	if ((module = PyImport_ImportModule("gobject")) != NULL) {
-		_PyGObject_Type = (PyTypeObject *)PyObject_GetAttrString(module, "GObject");
-		if (_PyGObject_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name GObject from gobject");
-			return ;
-		}
-	} else {
-		PyErr_SetString(PyExc_ImportError,
-				"could not import gobject");
-		return ;
-	}
+        g_print (string);
+        if (py_gxsm_remote_console)
+                py_gxsm_remote_console->append (string);
 
-        // crashing w gtk3 -- fixme
-#if 0
-	if ((module = PyImport_ImportModule("gtk")) != NULL) {
-		_PyGtkTable_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Table");
-		if (_PyGtkTable_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Table from gtk");
-			return ;
-		}
-		_PyGtkWidget_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Widget");
-		if (_PyGtkWidget_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Widget from gtk");
-			return ;
-		}
-		_PyGtkDialog_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Dialog");
-		if (_PyGtkDialog_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Dialog from gtk");
-			return ;
-		}
-		_PyGtkButton_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Button");
-		if (_PyGtkButton_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Button from gtk");
-			return ;
-		}
-		_PyGtkDrawingArea_Type = (PyTypeObject *)PyObject_GetAttrString(module, "DrawingArea");
-		if (_PyGtkDrawingArea_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name DrawingArea from gtk");
-			return ;
-		}
-		_PyGtkObject_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Object");
-		if (_PyGtkObject_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Object from gtk");
-			return ;
-		}
-		_PyGtkWindow_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Window");
-		if (_PyGtkWindow_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Window from gtk");
-			return ;
-		}
-		_PyGtkLayout_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Layout");
-		if (_PyGtkLayout_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Layout from gtk");
-			return ;
-		}
-		_PyGtkTreeView_Type = (PyTypeObject *)PyObject_GetAttrString(module, "TreeView");
-		if (_PyGtkTreeView_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name TreeView from gtk");
-			return ;
-		}
-		_PyGtkVBox_Type = (PyTypeObject *)PyObject_GetAttrString(module, "VBox");
-		if (_PyGtkVBox_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name VBox from gtk");
-			return ;
-		}
-		_PyGtkStatusbar_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Statusbar");
-		if (_PyGtkStatusbar_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Statusbar from gtk");
-			return ;
-		}
-		_PyGtkComboBox_Type = (PyTypeObject *)PyObject_GetAttrString(module, "ComboBox");
-		if (_PyGtkComboBox_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name ComboBox from gtk");
-			return ;
-		}
-		_PyGtkTooltips_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Tooltips");
-		if (_PyGtkTooltips_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Tooltips from gtk");
-			return ;
-		}
-		_PyGtkOrientation_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Orientation");
-		if (_PyGtkOrientation_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Orientation from gtk");
-			return ;
-		}
-		_PyGtkPositionType_Type = (PyTypeObject *)PyObject_GetAttrString(module, "PositionType");
-		if (_PyGtkPositionType_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name PositionType from gtk");
-			return ;
-		}
-		_PyGtkTreeIter_Type = (PyTypeObject *)PyObject_GetAttrString(module, "TreeIter");
-		if (_PyGtkTreeIter_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name TreeIter from gtk");
-			return ;
-		}
-		_PyGtkListStore_Type = (PyTypeObject *)PyObject_GetAttrString(module, "ListStore");
-		if (_PyGtkListStore_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name ListStore from gtk");
-			return ;
-		}
-		_PyGtkUpdateType_Type = (PyTypeObject *)PyObject_GetAttrString(module, "UpdateType");
-		if (_PyGtkUpdateType_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name UpdateType from gtk");
-			return ;
-		}
-	} else {
-		PyErr_SetString(PyExc_ImportError,
-				"could not import gtk");
-		return ;
-	}
-	if ((module = PyImport_ImportModule("gtk.gdk")) != NULL) {
-		_PyGdkDrawable_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Drawable");
-		if (_PyGdkDrawable_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Drawable from gtk.gdk");
-			return ;
-		}
-		_PyGdkPixbuf_Type = (PyTypeObject *)PyObject_GetAttrString(module, "Pixbuf");
-		if (_PyGdkPixbuf_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name Pixbuf from gtk.gdk");
-			return ;
-		}
-		_PyGdkGC_Type = (PyTypeObject *)PyObject_GetAttrString(module, "GC");
-		if (_PyGdkGC_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name GC from gtk.gdk");
-			return ;
-		}
-		_PyGdkLineStyle_Type = (PyTypeObject *)PyObject_GetAttrString(module, "LineStyle");
-		if (_PyGdkLineStyle_Type == NULL) {
-			PyErr_SetString(PyExc_ImportError,
-					"cannot import name LineStyle from gtk.gdk");
-			return ;
-		}
-	} else {
-		PyErr_SetString(PyExc_ImportError,
-				"could not import gtk.gdk");
-		return ;
-	}
-#endif
-	// NOTE: are there any gxsm classes we need to register?
-	//     pygobject_register_class(d, "GwyAxis", GWY_TYPE_AXIS, &PyGwyAxis_Type, Py_BuildValue("(O)", &PyGtkWidget_Type));
+        Py_INCREF(Py_None);
+        return Py_None;
+}
+
+static PyMethodDef RedirectionMethods[] = {
+                                           {"stdoutredirect", redirection_stdoutredirect, METH_VARARGS,
+                                            "stdout redirection helper"},
+                                           {NULL, NULL, 0, NULL}
+};
+
+static struct PyModuleDef redirection_module_def = {
+                                       PyModuleDef_HEAD_INIT,
+                                       "redirection",     /* m_name */
+                                       "GXSM Python Console STDI Redirection Module",  /* m_doc */
+                                       -1,                  /* m_size */
+                                       RedirectionMethods,  /* m_methods */
+                                       NULL,                /* m_reload */
+                                       NULL,                /* m_traverse */
+                                       NULL,                /* m_clear */
+                                       NULL,                /* m_free */
+};
+
+
+static struct PyModuleDef gxsm_module_def = {
+                                       PyModuleDef_HEAD_INIT,
+                                       "gxsm",     /* m_name */
+                                       "GXSM Python Remote Module",  /* m_doc */
+                                       -1,                  /* m_size */
+                                       GxsmPyMethods,       /* m_methods */
+                                       NULL,                /* m_reload */
+                                       NULL,                /* m_traverse */
+                                       NULL,                /* m_clear */
+                                       NULL,                /* m_free */
+};
+
+static PyObject* PyInit_Gxsm(void)
+{
+        PI_DEBUG (DBG_L1, "** PyInit_Gxsm => PyModuleCreate gxsm\n");
+        // g_print ("** PyInit_Gxsm => PyModuleCreate gxsm\n");
+        return PyModule_Create (&gxsm_module_def);
+}
+
+static PyObject* PyInit_Redirection(void)
+{
+        PI_DEBUG (DBG_L1, "** PyInit_Redirection => PyModuleCreate redirection\n");
+        // g_print ("** PyInit_Redirection => PyModuleCreate redirection\n");
+        return PyModule_Create (&redirection_module_def);
 }
 
 
 void py_gxsm_console::initialize(void)
 {
-	PyObject *m;
-
-	PI_DEBUG(DBG_L2, "pyremote Plugin :: initialize()");
+	PI_DEBUG(DBG_L1, "pyremote Plugin :: py_gxsm_console::initialize()");
 
 	if (!Py_IsInitialized()) {
-		PI_DEBUG (DBG_L2, "Checking function table sanity");
-		PI_DEBUG (DBG_L1, "Initializing Python interpreter");
-		// Do not register signal handlers
-		Py_InitializeEx(0);
-		PI_DEBUG (DBG_L2, "Add main module");
-		s_pygwy.main_module = PyImport_AddModule("__main__");
-		PI_DEBUG (DBG_L2, "Init pygobject");
-		init_pygobject();
+		PI_DEBUG (DBG_L1, "** Initializing Python interpreter, loading gxsm module and stdout redirection helper **");
+                PI_DEBUG (DBG_L1, "pyremote Plugin :: initialize -- PyImport_Append");
+                // g_print ("pyremote Plugin :: initialize -- PyImport_Append\n");
+                PyImport_AppendInittab ("gxsm", &PyInit_Gxsm);
+                PyImport_AppendInittab ("redirection", &PyInit_Redirection);
 
-		PI_DEBUG (DBG_L2, "Init gxsm module");
-		m = Py_InitModule ("gxsm", EmbMethods);
+                PI_DEBUG (DBG_L2, "pyremote Plugin :: initialize --  PyInitializeEx(0)");
+                // g_print ("pyremote Plugin :: initialize -- PyInitializeEx(0)\n");
+		// Do not register signal handlers -- i.e. do not "crash" gxsm on errors!
+                Py_InitializeEx (0);
+
+		PI_DEBUG (DBG_L2, "pyremote Plugin :: initialize -- ImportModule gxsm");
+                // g_print ("pyremote Plugin :: initialize -- ImportModule gxsm\n");
+                py_gxsm_module.module = PyImport_ImportModule("gxsm");
+                PyImport_ImportModule("redirection");
+
+                PI_DEBUG (DBG_L2, "pyremote Plugin :: initialize -- AddModule main\n");
+                // g_print ("pyremote Plugin :: initialize -- AddModule main\n");
+		py_gxsm_module.main_module = PyImport_AddModule("__main__");
+                
 		PI_DEBUG (DBG_L2, "Get dict");
-		s_pygwy.dict = PyModule_GetDict (m);
+                // g_print ("pyremote Plugin :: initialize -- GetDict");
+		py_gxsm_module.dict = PyModule_GetDict (py_gxsm_module.module);
 
-		PI_DEBUG (DBG_L2, "Register classes");
-		register_classes (s_pygwy.dict);
-	} else {
-		g_message ("Python interpreter already initialized, OK.");
+        } else {
+		g_message ("Python interpreter already initialized.");
 	}
 }
 
@@ -2546,7 +2373,7 @@ PyObject* py_gxsm_console::run_string(const char *cmd, int type, PyObject *g, Py
 	return ret;
 }
 
-void py_gxsm_console::show_stderr(gchar *str)
+void py_gxsm_console::show_stderr(const gchar *str)
 {
 	GtkWidget *dlg, *scroll, *frame, *text;
         GtkDialogFlags flags =  (GtkDialogFlags) (GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT);
@@ -2575,48 +2402,36 @@ void py_gxsm_console::show_stderr(gchar *str)
 
 void py_gxsm_console::initialize_stderr_redirect(PyObject *d)
 {
-	// redirect stderr to temporary file
-	run_string("import sys, tempfile\n"
-		   "_stderr_redir = tempfile.TemporaryFile()\n"
-		   "sys.stderr = _stderr_redir\n",
-		   //"sys.stdout = _stderr_redir",
+        // new redirection of stdout/err capture
+        run_string ("import redirection\n"
+                    "import sys\n"
+                    "class StdoutCatcher:\n"
+                    "    def write(self, stuff):\n"
+                    "        redirection.stdoutredirect(stuff)\n"
+                    "class StderrCatcher:\n"
+                    "    def write(self, stuff):\n"
+                    "        redirection.stdoutredirect(stuff)\n"
+                    "sys.stdout = StdoutCatcher()\n"
+                    "sys.stderr = StderrCatcher()\n",
 		   Py_file_input,
 		   d,
 		   d);
-}
-
-void py_gxsm_console::finalize_stderr_redirect(PyObject *d)
-{
-	PyObject *py_stderr;
-	gchar *buf;
-	// rewind redirected stderr file, read its content and display it in error window
-	run_string("_stderr_redir.seek(0)\n"
-		   "_stderr_str = _stderr_redir.read()\n"
-		   "_stderr_redir.close()",
-		   Py_file_input,
-		   d,
-		   d);
-	py_stderr = PyDict_GetItemString(d, "_stderr_str");
-	if (py_stderr && PyString_Check(py_stderr)) {
-		buf = PyString_AsString(py_stderr);
-		PI_DEBUG(DBG_L1, "Pygwy plugin stderr output:\n%s" << buf);
-		if (buf[0] != '\0') // show stderr only when it is not empty string
-			show_stderr(buf);
-		g_free(buf);
-	}
 }
 
 PyObject *py_gxsm_console::create_environment(const gchar *filename, gboolean show_errors) {
 	PyObject *d, *plugin_filename;
-	char *argv[1];
+	wchar_t *argv[1];
 	argv[0] = NULL;
 
-	d = PyDict_Copy(PyModule_GetDict(s_pygwy.main_module));
+	d = PyDict_Copy (PyModule_GetDict (py_gxsm_module.main_module));
 	// set __file__ variable for clearer error reporting
 	plugin_filename = Py_BuildValue("s", filename);
 	PyDict_SetItemString(d, "__file__", plugin_filename);
 	PySys_SetArgv(0, argv);
 
+        initialize_stderr_redirect(d);
+
+#if 0
 	// redirect stderr and stdout of python script to temporary file
 	if (show_errors) {
 		PI_DEBUG (DBG_L4,  "showing errors");
@@ -2624,14 +2439,13 @@ PyObject *py_gxsm_console::create_environment(const gchar *filename, gboolean sh
 	} else {
 		PI_DEBUG (DBG_L4,  "NOT showing errors");
         }
+#endif
 	return d;
 }
 
 void py_gxsm_console::destroy_environment(PyObject *d, gboolean show_errors) {
 	// show content of temporary file which contains stderr and stdout of python
 	// script and close it
-	if (show_errors)
-		finalize_stderr_redirect(d);
 	PyDict_Clear(d);
 	Py_DECREF(d);
 }
@@ -2670,27 +2484,22 @@ void py_gxsm_console::kill(GtkToggleButton *btn, gpointer user_data)
         }
 }
 
-char* py_gxsm_console::run_command(const gchar *cmd, int mode)
+const gchar* py_gxsm_console::run_command(const gchar *cmd, int mode)
 {
 	if (!cmd) {
 		g_warning("No command.");
 		return NULL;
 	}
 
-	// store _stderr_redir location
-	run_string(cmd,
-		   mode,
-		   dictionary,
-		   dictionary);
-	run_string("_stderr_redir_pos = _stderr_redir.tell()\n"
-		   "_stderr_redir.seek(0)\n"
-		   "_stderr_redir_string = _stderr_redir.read(_stderr_redir_pos)\n"
-		   "_stderr_redir.seek(0)",
-		   Py_file_input,
-		   dictionary,
-		   dictionary);
-
-        return PyString_AsString(PyDict_GetItemString(dictionary, "_stderr_redir_string"));
+        PyErr_Clear(); // clear any previous error or interrupts set
+        
+	PyObject* ret = PyRun_String(cmd,
+                                     mode,
+                                     dictionary,
+                                     dictionary);
+        
+        if (!ret) PyErr_Print();
+        return (ret ? "OK" : "PyRun Script raised an exeption.");
 }
 
 void py_gxsm_console::append (const gchar *msg)
@@ -2854,7 +2663,8 @@ void py_gxsm_console::run_file(GtkToolButton *btn, gpointer user_data)
 	GtkTextView *textview;
 	GtkTextBuffer *console_file_buf;
 	GtkTextIter start_iter, end_iter;
-	gchar *output, *script, *parsed_script;
+	const gchar *output;
+        gchar *script, *parsed_script;
 
 	textview = GTK_TEXT_VIEW(pygc->console_file_content);
 	console_file_buf = gtk_text_view_get_buffer(textview);
@@ -3326,7 +3136,7 @@ void py_gxsm_console::create_gui ()
 }
 
 
-// Small idiotic funxtion to create a file with some pyremote example commands if none is found.
+// Small idiotic function to create a file with some pyremote example commands if none is found.
 void  py_gxsm_console::write_example_file(void)
 {
 	std::ofstream example_file;
@@ -3392,6 +3202,10 @@ void py_gxsm_console::run()
 		AppWindowInit ("Gxsm Python Remote Console");
         }
 
+        append("Welcome to the PyRemote Control for GXSM: Python Version is ");
+        append(Py_GetVersion());
+
+        
 	script_filename = NULL;
         fail = false;
 	// create new environment
@@ -3401,21 +3215,14 @@ void py_gxsm_console::run()
 		return;
 	}
 
-	PI_DEBUG(DBG_L2, "pyremote Plugin :: console_run() run_string");
-	// redirect stdout & stderr to temporary file
-	run_string("import sys, gxsm, tempfile\n"
-		   "import gxsm as emb\n" // to satisfy legacy scripts - probbaly should be removed at some point?
-		   "_stderr_redir = tempfile.TemporaryFile()\n"
-		   "sys.stderr = _stderr_redir\n"
-		   "sys.stdout = _stderr_redir\n",
-		   Py_file_input,
+	PI_DEBUG(DBG_L2, "pyremote Plugin :: console_run() run_string to import gxsm module.");
+
+	run_string("import gxsm\n",
+        	   Py_file_input,
 		   d,
 		   d);
 
-	// store values for closing console
-	std_err = PyDict_GetItemString(d, "_stderr_redir");
-	Py_INCREF(std_err);
-	dictionary = d;
+        dictionary = d;
 
 	// try loading the default pyremote file
 	script_filename = g_strdup_printf("%s.py", xsmres.PyremoteFile);

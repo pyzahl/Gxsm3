@@ -5,7 +5,7 @@ AC_PREREQ(2.63.2)
 
 m4_define(gxsm3_major_version, 3)
 m4_define(gxsm3_minor_version, 51)
-m4_define(gxsm3_micro_version, 13)
+m4_define(gxsm3_micro_version, 14)
 m4_define(gxsm3_version, gxsm3_major_version.gxsm3_minor_version.gxsm3_micro_version)
 
 AC_INIT([gxsm3],
@@ -474,17 +474,18 @@ AC_DEFINE_UNQUOTED(COMPILEDBYNAME, "$USER@`hostname`; `date`", GXSM user@host CC
 # Quicktime library for Im/Export Plugin
 AC_CHECK_HEADERS(lqt/quicktime.h)
 
-# Now requires Python 2.5 or higher!
-AC_CHECK_LIB(python2.5, main)
-AC_CHECK_HEADERS(python2.5/Python.h)
+### REMOVED OBSOLETED PYTHON 2.X SUPPORT
 
-# Now requires Python 2.6 or higher!
-AC_CHECK_LIB(python2.6, main)
-AC_CHECK_HEADERS(python2.6/Python.h)
+# Now requires Python 3.7 or higher!
+AC_CHECK_LIB(python3.7, main)
+AC_CHECK_HEADERS(python3.7/Python.h)
+AC_CHECK_LIB(python3.7m, main)
+AC_CHECK_HEADERS(python3.7m/Python.h)
 
-# Now requires Python 2.7 or higher!
-AC_CHECK_LIB(python2.7, main)
-AC_CHECK_HEADERS(python2.7/Python.h)
+AC_CHECK_LIB(python3.8, main)
+AC_CHECK_HEADERS(python3.8/Python.h)
+AC_CHECK_LIB(python3.8m, main)
+AC_CHECK_HEADERS(python3.8m/Python.h)
 
 
 
