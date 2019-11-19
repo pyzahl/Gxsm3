@@ -2408,9 +2408,13 @@ void py_gxsm_console::initialize_stderr_redirect(PyObject *d)
                     "class StdoutCatcher:\n"
                     "    def write(self, stuff):\n"
                     "        redirection.stdoutredirect(stuff)\n"
+                    "    def flush(self):\n"
+                    "        redirection.stdoutredirect('\\n')\n"
                     "class StderrCatcher:\n"
                     "    def write(self, stuff):\n"
                     "        redirection.stdoutredirect(stuff)\n"
+                    "    def flush(self):\n"
+                    "        redirection.stdoutredirect('\\n')\n"
                     "sys.stdout = StdoutCatcher()\n"
                     "sys.stderr = StderrCatcher()\n",
 		   Py_file_input,
