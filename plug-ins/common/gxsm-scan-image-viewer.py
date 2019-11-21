@@ -30,15 +30,11 @@ from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as Navigatio
 from matplotlib.patches import Rectangle
 
 
-
-# uses the package python-xlib
-# from http://snipplr.com/view/19188/mouseposition-on-linux-via-xlib/
-# or: sudo apt-get install python-xlib
-from Xlib import display
+#from Xlib import display
 
 
-old_stdout = sys.stdout
-sys.stdout = open(os.devnull, 'w')
+#old_stdout = sys.stdout
+#sys.stdout = open(os.devnull, 'w')
 
 
 def mousepos():
@@ -216,6 +212,16 @@ class AppWindow(Gtk.ApplicationWindow):
         self.current = Gtk.Label(label="--")
         grid.attach(self.current, 1, y, 1, 1)
         y=y+1
+        l = Gtk.Label(label="Nx")
+        grid.attach(l, 0, y, 1, 1)
+        self.Nx = Gtk.Label(label="--")
+        grid.attach(self.Nx, 1, y, 1, 1)
+        y=y+1
+        l = Gtk.Label(label="Ny")
+        grid.attach(l, 0, y, 1, 1)
+        self.Ny = Gtk.Label(label="--")
+        grid.attach(self.Ny, 1, y, 1, 1)
+        y=y+1
         l = Gtk.Label(label="XRange")
         grid.attach(l, 0, y, 1, 1)
         self.Xrange = Gtk.Label(label="--")
@@ -263,36 +269,32 @@ class AppWindow(Gtk.ApplicationWindow):
         self.evb.add(self.canvas)
 
         self.evb.connect("motion-notify-event", self.on_mouse_move)
-        #self.evb.add_events(Gdk.EventMask.POINTER_MOTION_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
-        self.evb.set_events(Gdk.EventMask.POINTER_MOTION_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
-        ##self.evb.connect("clicked", lambda x: print("Button clicked"))
+        self.evb.add_events(Gdk.EventMask.POINTER_MOTION_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
+        #self.evb.set_events(Gdk.EventMask.POINTER_MOTION_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
         self.evb.connect("motion-notify-event", self.on_mouse_move)
-        self.evb.connect("button-press-event", self.on_mm) #on_mouse_click)
+        self.evb.connect("button-press-event", self.on_mouse_click)
         
         self.show_all()
         
-        self.mouseThread = MouseThread(self, self.position)
-        self.mouseThread.start()
-
-    def on_mm(self, widget, *args):
-        print(args)
+        #self.mouseThread = MouseThread(self, self.position)
+        #self.mouseThread.start()
 
     def on_mouse_move(self, widget, event):
-        print("Mxy\n")
-        print("     Move on widget: ", widget)
-        print("          Modifiers: ", event.state)
-        print("                 XY: ", event.x, event.x)
-
+        #print("     Move on widget: ", widget)
+        #print("          Modifiers: ", event.state)
+        #print("                 XY: ", event.x, event.y)
+        self.position.set_text ('MM: ({0:5.1f}, {1:5.1f})'.format( event.x, event.y))
 
     def on_mouse_click(self, widget, event):
-        print("Cxy\n")
         print("Key press on widget: ", widget)
         print("          Modifiers: ", event.state)
+        print("                 XY: ", event.x, event.y)
+        self.position.set_text ('MC: ({0:5.1f}, {1:5.1f})'.format( event.x, event.y))
 
         
     def quit(self, widget):
-        self.mouseThread.kill()
-
+        #self.mouseThread.kill()
+        return
         
 
     def on_file_clicked(self, widget):
@@ -389,6 +391,13 @@ class AppWindow(Gtk.ApplicationWindow):
         self.yr = self.rootgrp['rangey'][0]
         self.Yrange.set_text ('{0:.1f} '.format(self.rootgrp['rangey'][0])+self.rootgrp['rangey'].var_unit)
 
+        print('Nx      = ', len(self.rootgrp['dimx']))
+        self.nx = len(self.rootgrp['dimx'])
+        self.Nx.set_text ('{} px'.format(self.nx))
+        print('Ny      = ', len(self.rootgrp['dimy']))
+        self.ny = len(self.rootgrp['dimy'])
+        self.Ny.set_text ('{} px'.format(self.ny))
+
         print('dx      = ', self.rootgrp['dx'][0], self.rootgrp['dx'].var_unit)
         self.dx = self.rootgrp['dx'][0]
         self.dX.set_text ('{0:.4f} '.format(self.rootgrp['dx'][0])+self.rootgrp['dx'].var_unit)
@@ -400,6 +409,18 @@ class AppWindow(Gtk.ApplicationWindow):
         self.dZ.set_text ('{0:.4f} '.format(self.rootgrp['dz'][0])+self.rootgrp['dz'].var_unit)
         self.ZR.set_text ('{0:.2f} '.format(self.ImageData.max()-self.ImageData.min())+self.rootgrp['dz'].var_unit)
 
+
+        for p in self.axy.patches:
+            p.remove()
+        for p in self.axy.patches:
+            p.remove()
+        for p in self.axy.patches:
+            p.remove()
+        for p in self.axy.patches:
+            p.remove()
+        for p in self.axy.patches:
+            p.remove()
+        
         # create/update figure and image
         im=self.axy.imshow(self.ImageData, interpolation='bilinear', cmap=cm.RdYlGn,
                            origin='lower', extent=[0, self.xr, 0, self.yr],
