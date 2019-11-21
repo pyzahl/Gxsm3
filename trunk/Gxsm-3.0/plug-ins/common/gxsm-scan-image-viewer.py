@@ -1,22 +1,17 @@
 #!/usr/bin/env python3
 
-from netCDF4 import Dataset
-
-
-
 import sys
+import os		# use os because python IO is bugy
+import time
+import threading
 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, Gdk, GObject
 import cairo
-import os		# use os because python IO is bugy
-import time
-from time import sleep
-import fcntl
-from threading import Timer
 
-#import GtkExtra
+
+from netCDF4 import Dataset
 import struct
 import array
 import math
@@ -35,7 +30,6 @@ from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as Navigatio
 from matplotlib.patches import Rectangle
 
 
-import threading
 
 # uses the package python-xlib
 # from http://snipplr.com/view/19188/mouseposition-on-linux-via-xlib/
@@ -66,7 +60,7 @@ class MouseThread(threading.Thread):
                     break
                 text = "{0}".format(mousepos())
                 self.label.set_text(text)
-                sleep(0.01)
+                time.sleep(0.01)
         except (KeyboardInterrupt, SystemExit):
             sys.exit()
 
@@ -87,18 +81,38 @@ MENU_XML="""
       <attribute name="label" translatable="yes">Change label</attribute>
       <item>
         <attribute name="action">win.change_label</attribute>
-        <attribute name="target">String 1</attribute>
-        <attribute name="label" translatable="yes">String 1</attribute>
+        <attribute name="target">Unkown</attribute>
+        <attribute name="label" translatable="yes">Unkown</attribute>
       </item>
       <item>
         <attribute name="action">win.change_label</attribute>
-        <attribute name="target">String 2</attribute>
-        <attribute name="label" translatable="yes">String 2</attribute>
+        <attribute name="target">Flat</attribute>
+        <attribute name="label" translatable="yes">Flat</attribute>
       </item>
       <item>
         <attribute name="action">win.change_label</attribute>
-        <attribute name="target">String 3</attribute>
-        <attribute name="label" translatable="yes">String 3</attribute>
+        <attribute name="target">Lattice</attribute>
+        <attribute name="label" translatable="yes">Lattice</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.change_label</attribute>
+        <attribute name="target">Step</attribute>
+        <attribute name="label" translatable="yes">Step</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.change_label</attribute>
+        <attribute name="target">Step Bunch</attribute>
+        <attribute name="label" translatable="yes">Step Bunch</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.change_label</attribute>
+        <attribute name="target">Tiny Bump</attribute>
+        <attribute name="label" translatable="yes">Tiny Bump</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.change_label</attribute>
+        <attribute name="target">Danger</attribute>
+        <attribute name="label" translatable="yes">Danger</attribute>
       </item>
     </section>
     <section>
@@ -144,7 +158,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.gridwidget = grid
         self.add(grid)
 
-        lbl_variant = GLib.Variant.new_string("String 1")
+        lbl_variant = GLib.Variant.new_string("Label")
         lbl_action = Gio.SimpleAction.new_stateful("change_label", lbl_variant.get_type(),
                                                lbl_variant)
         lbl_action.connect("change-state", self.on_change_label_state)
@@ -154,6 +168,7 @@ class AppWindow(Gtk.ApplicationWindow):
                                margin=30)
 
 
+        grid.attach(Gtk.Label(label='Category'),0,49,2,1)
         grid.attach(self.label,0,50,2,1)
 
         y=0
@@ -165,9 +180,21 @@ class AppWindow(Gtk.ApplicationWindow):
         button2.connect("clicked", self.on_folder_clicked)
         grid.attach(button2, 0, y, 2, 1)
         y=y+1
-        button3 = Gtk.Button(label="Dump NetCDF")
-        button3.connect("clicked", self.load_CDF_clicked)
+        button3 = Gtk.Button(label="List NetCDF")
+        button3.connect("clicked", self.list_CDF_clicked)
         grid.attach(button3, 0, y, 2, 1)
+        y=y+1
+        button4 = Gtk.Button(label="Reload")
+        button4.connect("clicked", self.reload_clicked)
+        grid.attach(button4, 0, y, 2, 1)
+        y=y+1
+        button5 = Gtk.Button(label="Next#")
+        button5.connect("clicked", self.next_clicked)
+        grid.attach(button5, 0, y, 2, 1)
+        y=y+1
+        button6 = Gtk.Button(label="Live")
+        button6.connect("clicked", self.live_clicked)
+        grid.attach(button6, 0, y, 2, 1)
         y=y+1
 
         button3x3 = Gtk.Button(label="3x3")
@@ -269,23 +296,21 @@ class AppWindow(Gtk.ApplicationWindow):
         
 
     def on_file_clicked(self, widget):
-        dialog = Gtk.FileChooserDialog("Select Gxsm NetCDF image data file", self,
-                                       Gtk.FileChooserAction.OPEN,
-                                       (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                        Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-        
+        dialog = Gtk.FileChooserDialog(action=Gtk.FileChooserAction.OPEN)
+        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+			   Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        #dialog.set_transient_for(self.main_widget)
         self.add_filters(dialog)
-
+        #dialog.modal = True
         response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            print("Open clicked")
-            print("File selected: " + dialog.get_filename())
-            self.cdf_image_data_filename = dialog.get_filename()
-            self.load_CDF ()
-        elif response == Gtk.ResponseType.CANCEL:
-            print("Cancel clicked")
-
-        dialog.destroy()
+        try:
+            if response == Gtk.ResponseType.OK:
+                print("Open clicked")
+                print("File selected: " + dialog.get_filename())
+                self.cdf_image_data_filename = dialog.get_filename()
+                self.load_CDF ()
+        finally:
+            dialog.destroy()
 
     def add_filters(self, dialog):
         filter_py = Gtk.FileFilter()
@@ -300,9 +325,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
     def on_folder_clicked(self, widget):
         dialog = Gtk.FileChooserDialog("Please choose a folder", self,
-            Gtk.FileChooserAction.SELECT_FOLDER,
-            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-             "Select", Gtk.ResponseType.OK))
+                                       Gtk.FileChooserAction.SELECT_FOLDER,
+                                       (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                        "Select", Gtk.ResponseType.OK))
         dialog.set_default_size(800, 400)
 
         response = dialog.run()
@@ -314,6 +339,31 @@ class AppWindow(Gtk.ApplicationWindow):
 
         dialog.destroy()
 
+    def reload_clicked(self, widget):
+        if os.path.isfile(self.cdf_image_data_filename):
+            self.load_CDF ()
+        else:
+            print ('Sorry.')
+
+    def next_clicked(self, widget):
+        base = self.cdf_image_data_filename.split('-')
+        print (base)
+        next = ''
+        test = ''.join(base)+next+'.nc'
+        if os.path.isfile(test):
+            self.cdf_image_data_filename = test
+            self.load_CDF ()
+
+    def live_clicked(self, widget):
+        return
+        
+    def subdivide3x3_clicked(self, widget):
+        N=3
+        for i,j in list(np.ndindex(N,N)):
+            self.axy.add_patch(Rectangle((i*self.xr/N+1, j*self.yr/N+1), self.xr/N-2, self.yr/N-2, facecolor="red", alpha=0.1))
+        self.fig.canvas.draw()
+
+        
     def load_CDF(self):
         print("NetCDF File: ", self.cdf_image_data_filename)
         self.rootgrp = Dataset (self.cdf_image_data_filename, "r")
@@ -365,14 +415,7 @@ class AppWindow(Gtk.ApplicationWindow):
       
         self.rootgrp.close()
 
-    def subdivide3x3_clicked(self, widget):
-        N=3
-        for i,j in list(np.ndindex(N,N)):
-            self.axy.add_patch(Rectangle((i*self.xr/N+1, j*self.yr/N+1), self.xr/N-2, self.yr/N-2, facecolor="red", alpha=0.1))
-        self.fig.canvas.draw()
-
-        
-    def load_CDF_clicked(self, widget):
+    def list_CDF_clicked(self, widget):
         print("NetCDF File: ", self.cdf_image_data_filename)
         self.rootgrp = Dataset (self.cdf_image_data_filename, "r")
         print(self.rootgrp.data_model)
@@ -405,10 +448,6 @@ class AppWindow(Gtk.ApplicationWindow):
         print('dz = ', self.rootgrp['dz'][0], self.rootgrp['dz'].var_unit)
 
         self.rootgrp.close()
-
-    def load_scan(self):
-        return
-
 
         
     def on_change_label_state(self, action, value):
