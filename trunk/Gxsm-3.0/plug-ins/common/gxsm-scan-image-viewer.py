@@ -361,8 +361,39 @@ class AppWindow(Gtk.ApplicationWindow):
         
     def subdivide3x3_clicked(self, widget):
         N=3
+        self.axy.cla ()
         for i,j in list(np.ndindex(N,N)):
-            self.axy.add_patch(Rectangle((i*self.xr/N+1, j*self.yr/N+1), self.xr/N-2, self.yr/N-2, facecolor="red", alpha=0.1))
+
+            print ("ij=",i,j)
+            
+            i0 = int (i*self.nx/N+1)
+            j0 = int (j*self.ny/N+1)
+            iN = int (self.nx/N-2)
+            jN = int (self.ny/N-2)
+            print ("i0j0NN=", i0,j0, iN, jN)
+
+            x0  = i*self.xr/N*1.01
+            y0  = j*self.yr/N*1.01
+            xw  = self.xr/N*0.98
+            yw  = self.yr/N*0.98
+            print ("x0y0ww=",x0,y0, xw,yw)
+
+            #print (np.shape(self.ImageData))
+            ImPatch = self.ImageData[j0:j0+jN , i0:i0+iN]
+            vmin = ImPatch.min()
+            self.ImageData[j0:j0+jN , i0:i0+iN] =  self.ImageData[j0:j0+jN , i0:i0+iN] - vmin
+            #print (np.shape(ImPatch.shape))
+            #self.im = self.axy.imshow(ImPatch, interpolation='bilinear', cmap=cm.RdYlGn,
+            #                          origin='lower', extent=[x0, xw, y0, yw],
+            #                          vmax=ImPatch.max(),
+            #                          vmin=ImPatch.min())
+
+            self.axy.add_patch(Rectangle((x0,y0), xw, yw, facecolor="red", alpha=0.1))
+
+        self.im=self.axy.imshow(self.ImageData, interpolation='bilinear', cmap=cm.RdYlGn,
+                                origin='lower', extent=[0, self.xr, 0, self.yr],
+                                vmax=self.ImageData.max(), vmin=self.ImageData.min())
+
         self.fig.canvas.draw()
 
         
@@ -409,20 +440,12 @@ class AppWindow(Gtk.ApplicationWindow):
         self.dZ.set_text ('{0:.4f} '.format(self.rootgrp['dz'][0])+self.rootgrp['dz'].var_unit)
         self.ZR.set_text ('{0:.2f} '.format(self.ImageData.max()-self.ImageData.min())+self.rootgrp['dz'].var_unit)
 
-
-        for p in self.axy.patches:
-            p.remove()
-        for p in self.axy.patches:
-            p.remove()
-        for p in self.axy.patches:
-            p.remove()
-        for p in self.axy.patches:
-            p.remove()
-        for p in self.axy.patches:
+        tmp = self.axy.patches[:]
+        for p in tmp:
             p.remove()
         
         # create/update figure and image
-        im=self.axy.imshow(self.ImageData, interpolation='bilinear', cmap=cm.RdYlGn,
+        self.im=self.axy.imshow(self.ImageData, interpolation='bilinear', cmap=cm.RdYlGn,
                            origin='lower', extent=[0, self.xr, 0, self.yr],
                            vmax=self.ImageData.max(), vmin=self.ImageData.min())
         self.axy.set_title('...'+self.cdf_image_data_filename[-45:])
@@ -430,7 +453,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.axy.set_ylabel('Y in '+self.rootgrp['dy'].var_unit)
         if self.cbar:
             self.cbar.remove () #fig.delaxes(self.figure.axes[1])
-        self.cbar = self.fig.colorbar(im, extend='both', shrink=0.9, ax=self.axy)
+        self.cbar = self.fig.colorbar(self.im, extend='both', shrink=0.9, ax=self.axy)
         self.cbar.set_label('Z in '+self.rootgrp['dz'].var_unit)
         self.fig.canvas.draw()
       
