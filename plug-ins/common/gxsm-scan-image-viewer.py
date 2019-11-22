@@ -6,6 +6,7 @@ import time
 import threading
 import re
 import socket
+import json
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -36,23 +37,104 @@ from matplotlib import cm
 HOST = '127.0.0.1'  # The server's hostname or IP address
 PORT = 65432        # The port used by the server
 
+
 class SocketClient:
     def __init__(self, host, port):
+        self.s = None
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((HOST, PORT))
-            s.sendall(b'Hello GXSM3, Hello world -- AI is coming!')
-            data = s.recv(1024)
-            print('Received', repr(data))
+            self.s = s
+            self.s.connect((host, port))
+            self.send({'echo': [{'message': 'Hello GXSM3, Hello world -- AI is coming!'}]})
+            data = self.receive()
+            print('Received: ', data)
 
-    def send(message):
-        self.sok.sendall(b'gxsm-action-start-scan')
-        data = self.sok.recv(1024)
-        print('Received', repr(data))
-        return repr(data)
+    def __del__(self):
+        self.close()
 
+    def send(self, data):
+        if not self.s:
+            raise Exception('You have to connect first before sending data')
+        try:
+            serialized = json.dumps(data)
+        except (TypeError, ValueError):
+            raise Exception('You can only send JSON-serializable data')
+
+        print('Sending: N={} D=[{}]'.format(len(serialized.encode('utf-8')),serialized))
+
+        # send the length of the serialized data first
+        self.s.send(b'%d\n' % len(serialized.encode('utf-8')))
+        # send the serialized data
+        self.s.sendall(serialized.encode('utf-8'))
+            
     def request_life_filename():
-        return
+        self.send({'command': ['get','life-filename']})
+        return self.receive() # returns confirmation and current line number
 
+    def request_start_scan():
+        self.send({'action': ['start-scan']})
+        return self.receive()
+
+    def request_stop_scan():
+        self.send({'action': ['stop-scan']})
+        return self.receive()
+
+    def request_action(id):
+        self.send({'action': [{'id':id}]})
+        return self.receive()
+
+    def request_action_v(id, value):
+        self.send({'action': [{'id':id, 'value':value}]})
+        return self.receive()
+
+    def request_set_parameter(id, value):
+        self.send({'command': [{'set': id, 'value': value}]})
+        return self.receive()
+
+    def request_get_parameter(id):
+        self.send({'command': [{'get': id}]})
+        return self.receive()
+
+    def receive(self):
+        if not self.s:
+            raise Exception('You have to connect first before receiving data')
+        return self.receive_json(self.s)
+
+    def receive_json(self, socket):
+        # read the length of the data, letter by letter until we reach EOL
+        length_str = b''
+        print ('Waiting for response.\n')
+        char = self.s.recv(1)
+        while char != '\n':
+            length_str += char
+            char = self.s.recv(1)
+        total = int(length_str)
+        print('receiving json bytes # ', total, ' [', length_str, ']\n')
+        # use a memoryview to receive the data chunk by chunk efficiently
+        view = memoryview(bytearray(total))
+        next_offset = 0
+        while total - next_offset > 0:
+            recv_size = self.s.recv_into(view[next_offset:], total - next_offset)
+            next_offset += recv_size
+        try:
+            deserialized = json.loads(view.tobytes())
+        except (TypeError, ValueError):
+            raise Exception('Data received was not in JSON format')
+
+        print('received JSON: {}\n', deserialized)
+        
+        return deserialized
+    
+    def recv_and_close(self):
+        data = self.receive()
+        self.close()
+        return data
+    
+    def close(self):
+        if self.s:
+            self.s.close()
+            self.s = None
+
+    
 # Application stuff
 MENU_XML="""
 <?xml version="1.0" encoding="UTF-8"?>
@@ -122,6 +204,7 @@ class AppWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.gxsm = None
         self.cdf_image_data_filename = ''
         self.connect("destroy", self.quit)
 
@@ -396,6 +479,10 @@ class AppWindow(Gtk.ApplicationWindow):
             self.load_CDF ()
 
     def live_clicked(self, widget):
+        if self.gxsm == None:
+            self.gxsm = SocketClient(HOST, PORT)
+            fn = self.gxsm.request_life_filename()
+            print(fn)
         return
         
     def clear_clicked(self, widget):
