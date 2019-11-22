@@ -6,6 +6,7 @@ import socket
 import sys
 import os
 import fcntl
+import json
 
 ## CONNECTION CONFIG
 
@@ -25,23 +26,24 @@ sys.stdout.write ("************************************************************\
 
 ## message processing
 
-def process_message(msg):
-    if msg == b'gxsm-action-start-scan':
-        gxsm.startscan ()
-        return 'ok'
-    elif msg == b'gxsm-action-stop-scan':
-        gxsm.stopscan ()
-        return 'ok'
-    elif msg[0:16] == b'gxsm-set-OffsetX':
-        print ('[')
-        print (msg[0:16], '],[', msg[17:], ']\n')
-        x=float(msg[17:])
-        print(x)
-        gxsm.set('OffsetX','%f'%x)
-        return msg[17:]
-    else:
-        return '?'
-
+def process_message(jmsg):
+    print (jmsg)
+    for cmd in jmsg.items():
+        if cmd == 'command':
+            if jmsg['command'] == 'set':
+                gxsm.set(jmsg['command']['set'], jmsg['command']['value'])
+                return {'result': [{jmsg['command']}]}
+            elif jmsg['command'] == 'get':
+                value=gxsm.get(jmsg['command']['get'])
+                return {'result': [{'get':jmsg['command']['get'], 'value':value}]}
+            else:
+                return {'result': 'invalid command'}
+        elif cmd == 'action':
+            return {'result': 'ok'}
+        elif cmd == 'echo':
+            return {'result': [{'echo': jmsg['echo']['message']}]}
+        else: return {'result': 'invalid request'}
+            
 ## socket server 
     
 # set sys.stdin non-blocking
@@ -70,16 +72,44 @@ def read(conn, mask):
     global keep_alive
     try:
         client_address = conn.getpeername ()
-        data = conn.recv (1024)
-        print ('Got {} from {}'.format(data, client_address))
-        ret = process_message (data)
-        b = 'Echo:  <{}> -> {}'.format(data,ret)
-        conn.sendall (b.encode('utf-8'))
-        if not data:
+        jdata = receive_json(conn)
+        print ('Got {} from {}'.format(jdata, client_address))
+        send_json(conn, process_message (jdata))
+        if not jdata:
             keep_alive = True
     except:
         pass
             
+def send_as_json(server, data):
+    try:
+        serialized = json.dumps(data)
+    except (TypeError, ValueError):
+        raise Exception('You can only send JSON-serializable data')
+    # send the length of the serialized data first
+    server.socket.send(b'%d\n' % len(serialized))
+    # send the serialized data
+    socket.sendall(serialized)
+
+def receive_json(conn):
+    # read the length of the data, letter by letter until we reach EOL
+    length_str = b''
+    char = conn.recv(1)
+    while char != '\n':
+        length_str += char
+        char = conn.recv(1)
+    total = int(length_str)
+    # use a memoryview to receive the data chunk by chunk efficiently
+    view = memoryview(bytearray(total))
+    next_offset = 0
+    while total - next_offset > 0:
+        recv_size = conn.recv_into(view[next_offset:], total - next_offset)
+        next_offset += recv_size
+        try:
+            deserialized = json.loads(view.tobytes())
+        except (TypeError, ValueError):
+            raise Exception('Data received was not in JSON format')
+    return deserialized
+    
 def accept(sock, mask):
     new_conn, addr = sock.accept ()
     new_conn.setblocking (False)
