@@ -4,6 +4,8 @@ import sys
 import os		# use os because python IO is bugy
 import time
 import threading
+import re
+import socket
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -22,53 +24,36 @@ import matplotlib.pyplot as plt
 import matplotlib.cbook as cbook
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
-from matplotlib.backends.backend_gtk3agg import (
-    FigureCanvasGTK3Agg as FigureCanvas)
+from matplotlib.backends.backend_gtk3agg import (FigureCanvasGTK3Agg as FigureCanvas)
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
 from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as NavigationToolbar
 from matplotlib.patches import Rectangle
+from matplotlib import cm
 
+# Socket Client
 
-#from Xlib import display
+HOST = '127.0.0.1'  # The server's hostname or IP address
+PORT = 65432        # The port used by the server
 
+class SocketClient:
+    def __init__(self, host, port):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((HOST, PORT))
+            s.sendall(b'Hello GXSM3, Hello world -- AI is coming!')
+            data = s.recv(1024)
+            print('Received', repr(data))
 
-#old_stdout = sys.stdout
-#sys.stdout = open(os.devnull, 'w')
+    def send(message):
+        self.sok.sendall(b'gxsm-action-start-scan')
+        data = self.sok.recv(1024)
+        print('Received', repr(data))
+        return repr(data)
 
+    def request_life_filename():
+        return
 
-def mousepos():
-    """mousepos() --> (x, y) get the mouse coordinates on the screen (linux, Xlib)."""
-    data = display.Display().screen().root.query_pointer()._data
-    return data["root_x"], data["root_y"]
-
-
-class MouseThread(threading.Thread):
-    def __init__(self, parent, label):
-        threading.Thread.__init__(self)
-        self.label = label
-        self.killed = False
-
-    def run(self):
-        try:
-            while True:
-                if self.stopped():
-                    break
-                text = "{0}".format(mousepos())
-                self.label.set_text(text)
-                time.sleep(0.01)
-        except (KeyboardInterrupt, SystemExit):
-            sys.exit()
-
-    def kill(self):
-        self.killed = True
-
-    def stopped(self):
-        return self.killed
-
-
-
-# This would typically be its own file
+# Application stuff
 MENU_XML="""
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
@@ -184,7 +169,7 @@ class AppWindow(Gtk.ApplicationWindow):
         button4.connect("clicked", self.reload_clicked)
         grid.attach(button4, 0, y, 2, 1)
         y=y+1
-        button5 = Gtk.Button(label="Next#")
+        button5 = Gtk.Button(label="Next #")
         button5.connect("clicked", self.next_clicked)
         grid.attach(button5, 0, y, 2, 1)
         y=y+1
@@ -193,9 +178,26 @@ class AppWindow(Gtk.ApplicationWindow):
         grid.attach(button6, 0, y, 2, 1)
         y=y+1
 
+        buttonQ = Gtk.Button(label="P: Quick")
+        buttonQ.connect("clicked", self.process_quick_clicked)
+        grid.attach(buttonQ, 0, y, 2, 1)
+        y=y+1
+
+        button2x2 = Gtk.Button(label="2x2")
+        button2x2.connect("clicked", self.subdivide2x2_clicked)
+        grid.attach(button2x2, 0, y, 2, 1)
+        y=y+1
         button3x3 = Gtk.Button(label="3x3")
         button3x3.connect("clicked", self.subdivide3x3_clicked)
         grid.attach(button3x3, 0, y, 2, 1)
+        y=y+1
+        button4x4 = Gtk.Button(label="4x4")
+        button4x4.connect("clicked", self.subdivide4x4_clicked)
+        grid.attach(button4x4, 0, y, 2, 1)
+        y=y+1
+        button5x5 = Gtk.Button(label="5x5")
+        button5x5.connect("clicked", self.subdivide5x5_clicked)
+        grid.attach(button5x5, 0, y, 2, 1)
         y=y+1
 
         y=10
@@ -252,11 +254,20 @@ class AppWindow(Gtk.ApplicationWindow):
         self.ZR = Gtk.Label(label="--")
         grid.attach(self.ZR, 1, y, 1, 1)
 
-        y=99
+        y=97
+        buttonCM = Gtk.Button(label="Color Map Swap")
+        buttonCM.connect("clicked", self.color_map_swap_clicked)
+        grid.attach(buttonCM, 0, y, 2, 1)
+        y=y+1
+        buttonC = Gtk.Button(label="Clear")
+        buttonC.connect("clicked", self.clear_clicked)
+        grid.attach(buttonC, 0, y, 2, 1)
+        y=y+1
         self.position = Gtk.Label(label="Mouse-XY")
         grid.attach(self.position, 0, y, 2, 1)
 
-        
+        #ax = plt.Axes(fig,[0,0,1,1])
+    
         self.fig = Figure(figsize=(6, 6), dpi=100)
         self.axy = self.fig.add_subplot(111)
         self.canvas = FigureCanvas(self.fig)  # a Gtk.DrawingArea
@@ -264,6 +275,22 @@ class AppWindow(Gtk.ApplicationWindow):
         #self.gridwidget.attach(self.canvas, 3,0, 100,100)
         self.cbar = None
 
+        self.colormap = cm.RdYlGn
+        #self.colormap = cm.Greys  #magma
+        #cmaps['Sequential'] = [
+        #    'Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+        #    'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
+        #    'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn']
+
+        #cmaps['Perceptually Uniform Sequential'] = [
+        #    'viridis', 'plasma', 'inferno', 'magma', 'cividis']
+
+        #cmaps['Sequential (2)'] = [
+        #    'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
+        #    'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
+        #    'hot', 'afmhot', 'gist_heat', 'copper']
+
+        
         self.evb = Gtk.EventBox()
         self.gridwidget.attach(self.evb, 3,0, 100,100)
         self.evb.add(self.canvas)
@@ -276,13 +303,8 @@ class AppWindow(Gtk.ApplicationWindow):
         
         self.show_all()
         
-        #self.mouseThread = MouseThread(self, self.position)
-        #self.mouseThread.start()
 
     def on_mouse_move(self, widget, event):
-        #print("     Move on widget: ", widget)
-        #print("          Modifiers: ", event.state)
-        #print("                 XY: ", event.x, event.y)
         self.position.set_text ('MM: ({0:5.1f}, {1:5.1f})'.format( event.x, event.y))
 
     def on_mouse_click(self, widget, event):
@@ -347,11 +369,28 @@ class AppWindow(Gtk.ApplicationWindow):
         else:
             print ('Sorry.')
 
+    def color_map_swap_clicked(self, widget):
+        #self.colormap = cm.RdYlGn
+        self.colormap = cm.Greys
+        #self.colormap = cm.magma
+        #cmaps['Sequential'] = [
+        #    'Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+        #    'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
+        #    'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn']
+
+        #cmaps['Perceptually Uniform Sequential'] = [
+        #    'viridis', 'plasma', 'inferno', 'magma', 'cividis']
+
+        #cmaps['Sequential (2)'] = [
+        #    'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
+        #    'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
+        #    'hot', 'afmhot', 'gist_heat', 'copper']
+
+            
     def next_clicked(self, widget):
-        base = self.cdf_image_data_filename.split('-')
-        print (base)
-        next = ''
-        test = ''.join(base)+next+'.nc'
+        nnn = re.findall('[0-9]+',self.cdf_image_data_filename)
+        tmp = self.cdf_image_data_filename.split(nnn[-1])
+        test = tmp[0]+'{0:03d}'.format(int(nnn[-1])+1)+tmp[1]
         if os.path.isfile(test):
             self.cdf_image_data_filename = test
             self.load_CDF ()
@@ -359,43 +398,78 @@ class AppWindow(Gtk.ApplicationWindow):
     def live_clicked(self, widget):
         return
         
-    def subdivide3x3_clicked(self, widget):
-        N=3
-        self.axy.cla ()
-        for i,j in list(np.ndindex(N,N)):
+    def clear_clicked(self, widget):
+        for p in self.axy.patches[:]:
+            p.remove()
+        #foo = np.random.rand(9).reshape(3, 3)
+        #extent = (0, foo.shape[1], foo.shape[0], 0)
+        #self.axy.imshow(foo, extent=extent)
+        self.fig.canvas.draw()
+        
+    def process_quick_clicked(self, widget):
+        x = range (0,self.nx)
+        for y in self.ImageData[:]:
+            A = np.vstack([x, np.ones(len(x))]).T
+            m,c = np.linalg.lstsq(A, y)[0]
+            for i in x:
+                y[i] = y[i] - ( m*i + c )
 
-            print ("ij=",i,j)
-            
+        self.im=self.axy.imshow(self.ImageData, interpolation='bilinear', cmap=self.colormap,
+                                origin='lower', extent=[0, self.xr, 0, self.yr],
+                                vmax=self.ImageData.max(), vmin=self.ImageData.min())
+        self.fig.canvas.draw()
+
+    def subdivide2x2_clicked(self, widget):
+        self.subdivide_NxN(2,2)
+    def subdivide3x3_clicked(self, widget):
+        self.subdivide_NxN(3,3)
+    def subdivide4x4_clicked(self, widget):
+        self.subdivide_NxN(4,4)
+    def subdivide5x5_clicked(self, widget):
+        self.subdivide_NxN(5,5)
+
+    def subdivide_NxN(self, N,M):
+        #self.axy.cla ()
+        self.ImageData = self.ImageData - self.ImageData.min()
+        for p in self.axy.patches[:]:
+            p.remove()
+        
+        for i,j in list(np.ndindex(N,M)):
+
             i0 = int (i*self.nx/N+1)
-            j0 = int (j*self.ny/N+1)
+            j0 = int (j*self.ny/M+1)
             iN = int (self.nx/N-2)
-            jN = int (self.ny/N-2)
-            print ("i0j0NN=", i0,j0, iN, jN)
+            jN = int (self.ny/M-2)
 
             x0  = i*self.xr/N*1.01
-            y0  = j*self.yr/N*1.01
+            y0  = j*self.yr/M*1.01
             xw  = self.xr/N*0.98
-            yw  = self.yr/N*0.98
-            print ("x0y0ww=",x0,y0, xw,yw)
+            yw  = self.yr/M*0.98
 
-            #print (np.shape(self.ImageData))
             ImPatch = self.ImageData[j0:j0+jN , i0:i0+iN]
             vmin = ImPatch.min()
             self.ImageData[j0:j0+jN , i0:i0+iN] =  self.ImageData[j0:j0+jN , i0:i0+iN] - vmin
             #print (np.shape(ImPatch.shape))
-            #self.im = self.axy.imshow(ImPatch, interpolation='bilinear', cmap=cm.RdYlGn,
+            #self.im = self.axy.imshow(ImPatch, interpolation='bilinear', cmap=self.colormap,
             #                          origin='lower', extent=[x0, xw, y0, yw],
             #                          vmax=ImPatch.max(),
             #                          vmin=ImPatch.min())
 
-            self.axy.add_patch(Rectangle((x0,y0), xw, yw, facecolor="red", alpha=0.1))
+            self.add_color_patch (N,M, i,j, 'red')
 
-        self.im=self.axy.imshow(self.ImageData, interpolation='bilinear', cmap=cm.RdYlGn,
+        self.im=self.axy.imshow(self.ImageData, interpolation='bilinear', cmap=self.colormap,
                                 origin='lower', extent=[0, self.xr, 0, self.yr],
                                 vmax=self.ImageData.max(), vmin=self.ImageData.min())
 
         self.fig.canvas.draw()
 
+    def add_color_patch(self, N,M, i,j, color, alpha=0.1):
+        x0  = i*self.xr/N*1.01
+        y0  = j*self.yr/M*1.01
+        xw  = self.xr/N*0.98
+        yw  = self.yr/M*0.98
+        self.axy.add_patch(Rectangle((x0,y0), xw, yw, facecolor=color, alpha=alpha))
+        
         
     def load_CDF(self):
         print("NetCDF File: ", self.cdf_image_data_filename)
@@ -440,12 +514,11 @@ class AppWindow(Gtk.ApplicationWindow):
         self.dZ.set_text ('{0:.4f} '.format(self.rootgrp['dz'][0])+self.rootgrp['dz'].var_unit)
         self.ZR.set_text ('{0:.2f} '.format(self.ImageData.max()-self.ImageData.min())+self.rootgrp['dz'].var_unit)
 
-        tmp = self.axy.patches[:]
-        for p in tmp:
+        for p in self.axy.patches[:]:
             p.remove()
         
         # create/update figure and image
-        self.im=self.axy.imshow(self.ImageData, interpolation='bilinear', cmap=cm.RdYlGn,
+        self.im=self.axy.imshow(self.ImageData, interpolation='bilinear', cmap=self.colormap,
                            origin='lower', extent=[0, self.xr, 0, self.yr],
                            vmax=self.ImageData.max(), vmin=self.ImageData.min())
         self.axy.set_title('...'+self.cdf_image_data_filename[-45:])
