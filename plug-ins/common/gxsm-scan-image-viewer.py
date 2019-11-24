@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+## GXSM NetCDF San Image Viwer and Tag Tool with GXSM remote inspection and control socket client functionality
+
 import sys
 import os		# use os because python IO is bugy
 import time
