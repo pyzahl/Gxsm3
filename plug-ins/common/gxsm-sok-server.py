@@ -29,21 +29,33 @@ sys.stdout.write ("************************************************************\
 ## message processing
 
 def process_message(jmsg):
-    print (jmsg)
-    for cmd in jmsg.items():
+    print ('processing JSON:\n', jmsg)
+    for cmd in jmsg.keys():
+        print('Request = {}'.format(cmd))
         if cmd == 'command':
-            if jmsg['command'] == 'set':
-                gxsm.set(jmsg['command']['set'], jmsg['command']['value'])
-                return {'result': [{jmsg['command']}]}
-            elif jmsg['command'] == 'get':
-                value=gxsm.get(jmsg['command']['get'])
-                return {'result': [{'get':jmsg['command']['get'], 'value':value}]}
-            else:
-                return {'result': 'invalid command'}
+            for k in jmsg['command'][0].keys():
+                if k == 'set':
+                    print('gxsm.set ({}, {})'.format(jmsg['command'][0]['set'], jmsg['command'][0]['value']))
+                    gxsm.set(jmsg['command'][0]['set'], jmsg['command'][0]['value'])
+                    return {'result': [{jmsg['command'][0]}]}
+                elif k == 'get':
+                    print('gxsm.get ({})'.format(jmsg['command'][0]['get']))
+                    value=gxsm.get(jmsg['command'][0]['get'])
+                    print(value)
+                    return {'result': [{'get':jmsg['command'][0]['get'], 'value':value}]}
+                else:
+                    return {'result': 'invalid command'}
         elif cmd == 'action':
-            return {'result': 'ok'}
+            if (jmsg['action'][0] == 'start-scan'):
+                gxsm.startscan ()
+                return {'result': 'ok'}
+            elif (jmsg['action'][0] == 'stop-scan'):
+                gxsm.stopscan ()
+                return {'result': 'ok'}
+            else:
+                return {'result': 'invalid action'}
         elif cmd == 'echo':
-            return {'result': [{'echo': jmsg['echo']['message']}]}
+            return {'result': [{'echo': jmsg['echo'][0]['message']}]}
         else: return {'result': 'invalid request'}
             
 ## socket server 
@@ -69,30 +81,71 @@ def try_connect (server, server_addr):
     except:
         pass
     return False
-        
+
+def read_direct(conn, mask):
+    global keep_alive
+    try:
+        client_address = conn.getpeername ()
+        data = conn.recv (1024)
+        print ('Got {} from {}'.format(data, client_address))
+        try:
+            serialized = json.dumps(process_message (data))
+        except (TypeError, ValueError):
+            serialized = json.dumps({'JSON-Error'})
+            raise Exception('You can only send JSON-serializable data')
+        ret = '{}\n{}'.format(len(serialized), serialized)
+        sys.stdout.write ('Return JSON for {} => {}\n'.format(data,ret))
+        conn.sendall (ret.encode('utf-8'))
+        if not data:
+            keep_alive = True
+    except:
+        pass
+      
 def read(conn, mask):
     global keep_alive
     try:
         client_address = conn.getpeername ()
         jdata = receive_json(conn)
-        print ('Got {} from {}'.format(jdata, client_address))
-        send_json(conn, process_message (jdata))
+        if jdata:
+            print ('Got {} from {}'.format(jdata, client_address))
+            ret=process_message (jdata)
+            sys.stdout.write ('Return JSON for {} => {}\n'.format(jdata,ret))
+            send_as_json(conn, ret)
         if not jdata:
             keep_alive = True
     except:
         pass
             
-def send_as_json(server, data):
+def send_as_json(conn, data):
     try:
         serialized = json.dumps(data)
     except (TypeError, ValueError):
+        print ('JSON-SEND-Error')
+        serialized = json.dumps({'JSON-SEND-Error'})
         raise Exception('You can only send JSON-serializable data')
     # send the length of the serialized data first
-    server.socket.send(b'%d\n' % len(serialized))
-    # send the serialized data
-    socket.sendall(serialized)
+    sd = '{}\n{}'.format(len(serialized), serialized)
+    sys.stdout.write ('Sending JSON: {}\n'.format(sd))
+    conn.sendall (sd.encode('utf-8'))
 
 def receive_json(conn):
+    try:
+        # try simple assume one message
+        data = conn.recv (1024)
+        if data:
+            count, jsdata = data.split(b'\n')
+            print ('Got Data N={} D={}'.format(count,jsdata))
+            try:
+                deserialized = json.loads(jsdata)
+            except (TypeError, ValueError):
+                print('EE JSON-Deserialize-Error\n')
+                deserialized = json.loads({'JSON-Deserialize-Error'})
+                raise Exception('Data received was not in JSON format')
+            return deserialized
+    except:
+        pass
+
+def receive_json_long(conn):
     # read the length of the data, letter by letter until we reach EOL
     length_str = b''
     char = conn.recv(1)

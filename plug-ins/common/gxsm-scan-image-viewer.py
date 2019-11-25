@@ -42,80 +42,107 @@ PORT = 65432        # The port used by the server
 
 class SocketClient:
     def __init__(self, host, port):
-        self.s = None
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            self.s = s
-            self.s.connect((host, port))
-            self.send({'echo': [{'message': 'Hello GXSM3, Hello world -- AI is coming!'}]})
-            data = self.receive()
-            print('Received: ', data)
-
+        self.sok = None
+        #with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
+        #   self.sok = client
+        self.sok=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sok.connect ((host, port))
+        self.send_as_json ({'echo': [{'message': 'Hello GXSM3! Establishing Socket Link.'}]})
+        data = self.receive_json ()
+        print('Received: ', data)
+            
     def __del__(self):
-        self.close()
+        if not self.sok:
+            print ('No connection')
+            raise Exception('You have to connect first before receiving data')
+        self.sok.close()
 
-    def send(self, data):
-        if not self.s:
-            raise Exception('You have to connect first before sending data')
+    def send_as_json(self, data):
+        if not self.sok:
+            print ('No connection')
+            raise Exception('You have to connect first before receiving data')
         try:
             serialized = json.dumps(data)
         except (TypeError, ValueError):
             raise Exception('You can only send JSON-serializable data')
 
-        print('Sending: N={} D=[{}]'.format(len(serialized.encode('utf-8')),serialized))
+        print('Sending JSON: N={} D=[{}]'.format(len(serialized.encode('utf-8')),serialized))
 
         # send the length of the serialized data first
-        self.s.send(b'%d\n' % len(serialized.encode('utf-8')))
+        sd = '{}\n{}'.format(len(serialized), serialized)
         # send the serialized data
-        self.s.sendall(serialized.encode('utf-8'))
+        self.sok.sendall(sd.encode('utf-8'))
             
-    def request_life_filename():
-        self.send({'command': ['get','life-filename']})
-        return self.receive() # returns confirmation and current line number
-
-    def request_start_scan():
-        self.send({'action': ['start-scan']})
+    def request_start_scan(self):
+        self.send_as_json({'action': ['start-scan']})
         return self.receive()
 
-    def request_stop_scan():
-        self.send({'action': ['stop-scan']})
+    def request_stop_scan(self):
+        self.send_as_json({'action': ['stop-scan']})
         return self.receive()
 
-    def request_action(id):
-        self.send({'action': [{'id':id}]})
+    def request_action(self, id):
+        self.send_as_json({'action': [{'id':id}]})
         return self.receive()
 
-    def request_action_v(id, value):
-        self.send({'action': [{'id':id, 'value':value}]})
+    def request_action_v(self, id, value):
+        self.send_as_json({'action': [{'id':id, 'value':value}]})
         return self.receive()
 
-    def request_set_parameter(id, value):
-        self.send({'command': [{'set': id, 'value': value}]})
+    def request_set_parameter(self, id, value):
+        self.send_as_json({'command': [{'set': id, 'value': value}]})
         return self.receive()
 
-    def request_get_parameter(id):
-        self.send({'command': [{'get': id}]})
+    def request_get_parameter(self, id):
+        self.send_as_json({'command': [{'get': id}]})
         return self.receive()
 
     def receive(self):
-        if not self.s:
+        if not self.sok:
+            print ('No connection')
             raise Exception('You have to connect first before receiving data')
-        return self.receive_json(self.s)
+        return self.receive_json()
 
-    def receive_json(self, socket):
+    def receive_json(self):
+        print ('receive_json...\n')
+        if not self.sok:
+            print ('No connection')
+            raise Exception('You have to connect first before receiving data')
+        # try simple assume one message
+        try:
+            data = self.sok.recv (1024)
+            if data:
+                print ('Got Data: {}'.format(data))
+                count, jsdata = data.split(b'\n')
+                print ('N={} D={}'.format(count,jsdata))
+                try:
+                    deserialized = json.loads(jsdata)
+                    print ('Deserialized: {}'.format(deserialized))
+                    return deserialized
+                except (TypeError, ValueError):
+                    deserialized = json.loads({'JSON-Deserialize-Error'})
+                    raise Exception('Data received was not in JSON format')
+                    return deserialized
+            else:
+                pass
+        except:
+            pass
+        
+    def receive_json_long(self, socket):
         # read the length of the data, letter by letter until we reach EOL
         length_str = b''
         print ('Waiting for response.\n')
-        char = self.s.recv(1)
+        char = self.sok.recv(1)
         while char != '\n':
             length_str += char
-            char = self.s.recv(1)
+            char = self.sok.recv(1)
         total = int(length_str)
         print('receiving json bytes # ', total, ' [', length_str, ']\n')
         # use a memoryview to receive the data chunk by chunk efficiently
         view = memoryview(bytearray(total))
         next_offset = 0
         while total - next_offset > 0:
-            recv_size = self.s.recv_into(view[next_offset:], total - next_offset)
+            recv_size = self.sok.recv_into(view[next_offset:], total - next_offset)
             next_offset += recv_size
         try:
             deserialized = json.loads(view.tobytes())
@@ -133,8 +160,8 @@ class SocketClient:
     
     def close(self):
         if self.s:
-            self.s.close()
-            self.s = None
+            self.sok.close()
+            self.sok = None
 
     
 # Application stuff
@@ -258,9 +285,21 @@ class AppWindow(Gtk.ApplicationWindow):
         button5.connect("clicked", self.next_clicked)
         grid.attach(button5, 0, y, 2, 1)
         y=y+1
-        button6 = Gtk.Button(label="Live")
+        button6 = Gtk.Button(label="GXSM ! Live")
         button6.connect("clicked", self.live_clicked)
         grid.attach(button6, 0, y, 2, 1)
+        y=y+1
+        button66 = Gtk.Button(label="GXSM ! Get NX")
+        button66.connect("clicked", self.getNX_clicked)
+        grid.attach(button66, 0, y, 2, 1)
+        y=y+1
+        button7 = Gtk.Button(label="GXSM ! Start")
+        button7.connect("clicked", self.start_clicked)
+        grid.attach(button7, 0, y, 2, 1)
+        y=y+1
+        button8 = Gtk.Button(label="GXSM ! Stop")
+        button8.connect("clicked", self.stop_clicked)
+        grid.attach(button8, 0, y, 2, 1)
         y=y+1
 
         buttonQ = Gtk.Button(label="P: Quick")
@@ -483,8 +522,29 @@ class AppWindow(Gtk.ApplicationWindow):
     def live_clicked(self, widget):
         if self.gxsm == None:
             self.gxsm = SocketClient(HOST, PORT)
-            fn = self.gxsm.request_life_filename()
-            print(fn)
+        fn = self.gxsm.request_get_parameter('LiveFilenames')
+        print(fn)
+        return
+        
+    def getNX_clicked(self, widget):
+        if self.gxsm == None:
+            self.gxsm = SocketClient(HOST, PORT)
+        ret = self.gxsm.request_get_parameter('PointsX')
+        print(ret['result'][0]['value'])
+        return
+        
+    def start_clicked(self, widget):
+        if self.gxsm == None:
+            self.gxsm = SocketClient(HOST, PORT)
+        fn = self.gxsm.request_start_scan()
+        print(fn)
+        return
+        
+    def stop_clicked(self, widget):
+        if self.gxsm == None:
+            self.gxsm = SocketClient(HOST, PORT)
+        fn = self.gxsm.request_stop_scan()
+        print(fn)
         return
         
     def clear_clicked(self, widget):
