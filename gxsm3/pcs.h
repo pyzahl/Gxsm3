@@ -87,6 +87,7 @@ class Param_Control{
 	Param_Control(UnitObj *U, const char *W, int *V, double VMi, double VMa, const char *p);
 	Param_Control(UnitObj *U, const char *W, int *V, int VMi, int VMa, const char *p);
 	Param_Control(UnitObj *U, const char *W, short *V, double VMi, double VMa, const char *p);
+	Param_Control(UnitObj *U, const char *W, const gchar *V);
 	virtual ~Param_Control();
 
 	void Init();
@@ -117,6 +118,7 @@ class Param_Control{
 	void Val(unsigned long *V);
 	void Val(short *V);
 	void Val(int *V);
+        void Val(const gchar *V);
 	void Prec(const char *p);
 	gchar *Get_UsrString();
 
@@ -204,8 +206,9 @@ class Param_Control{
 	unsigned long *ULval;
 	int    *Ival;
 	short  *Sval;
-
+        
 protected:
+        const gchar *StringVal;
 	Param_Control *pc_head;
 	Param_Control *pc_next;
         int pc_count;
@@ -265,6 +268,14 @@ class Gtk_EntryControl : public Param_Control{
                 opt_scale = NULL;
                 set_count (index);
 		InitRegisterCb(AdjStep, AdjPage, AdjProg);
+	};
+	Gtk_EntryControl(UnitObj *U, const char *W, const gchar *V,  GtkWidget *w, gint index=0):
+		Param_Control(U, W, V){
+		entry=w;
+		extra=NULL;
+                opt_scale = NULL;
+                set_count (index);
+		InitRegisterCb(0.,0.,0.);
 	};
 	virtual ~Gtk_EntryControl(){
 		//    gtk_signal_handlers_destroy( G_OBJECT( entry ) );
@@ -345,7 +356,13 @@ class Gtk_EntryControl : public Param_Control{
 				if(! strcmp(data->arglist[0], "get")){ // query entry value, return in data->qvalue
 					if(refname && data->arglist[1])
 						if(! strcmp(data->arglist[1], refname)){
-							data->qvalue = Convert2Usr (Get_dValue ()); // return value is in user units
+                                                        if (StringVal){
+                                                                data->qvalue = 0.;
+                                                                data->qstr = StringVal;
+                                                        }else{
+                                                                data->qvalue = Convert2Usr (Get_dValue ()); // return value is in user units
+                                                                data->qstr = NULL;
+                                                        }
 							return TRUE;
 						}
 				} else if(refname && data->arglist[1] && data->arglist[2])

@@ -143,6 +143,7 @@ public:
         
         int    file_counter; /* File Counter */
         int    vp_file_counter; /* VP File Counter */
+
 protected:
 private:
 };

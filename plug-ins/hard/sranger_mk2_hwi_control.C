@@ -3350,22 +3350,17 @@ void DSPControl::save_values (NcFile *ncf){
 
 	PI_DEBUG (DBG_L4, "DSPControl::save_values");
 	gchar *i=NULL;
-	gchar *hwii=NULL;
-	if (sranger_common_hwi)
-		hwii = sranger_common_hwi->get_info ();
 
 	if (IS_AFM_CTRL) // AFM (linear)
-		i = g_strconcat ("SRanger HwI interface: AFM mode selected.\nHardware-Info:\n", hwii, NULL);
+		i = g_strconcat ("SRanger HwI interface: AFM mode selected.\nHardware-Info:\n", sranger_common_hwi->get_info (), NULL);
 	else
-		i = g_strconcat ("SRanger HwI interface: STM mode selected.\nHardware-Info:\n", hwii, NULL);
+		i = g_strconcat ("SRanger HwI interface: STM mode selected.\nHardware-Info:\n", sranger_common_hwi->get_info (), NULL);
 
 	NcDim* infod  = ncf->add_dim("sranger_info_dim", strlen(i));
 	NcVar* info   = ncf->add_var("sranger_info", ncChar, infod);
 	info->add_att("long_name", "SRanger HwI plugin information");
 	info->put(i, strlen(i));
 	g_free (i);
-	g_free (hwii);
-
 
 // Basic Feedback/Scan Parameter ============================================================
 

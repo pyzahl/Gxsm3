@@ -54,9 +54,6 @@ XSM_Hardware::XSM_Hardware(){
 	Alpha=0.; 
 	rotmyy=rotmxx=1.; rotmyx=rotmxy=0.;
 	y_current = -1;
-	idlefunc = NULL;
-	idlefunc_data = NULL;
-	InfoString = g_strdup("Data Analysis mode.\nNo hardware is configured or started with '-h no' option.");
 	AddStatusString = NULL;
 	SetScanMode();
 	ScanDirection (1);
@@ -70,9 +67,19 @@ XSM_Hardware::XSM_Hardware(){
 
 XSM_Hardware::~XSM_Hardware(){
         g_free (AddStatusString);
-        g_free (InfoString);
 }
 
+ const gchar* XSM_Hardware::get_info(){ 
+         return "*--GXSM XSM_Hardware base class --*\n"
+                 "This is just providing a simple emulation mode.\n"
+                 "No Hardware is connected!\n"
+                 "*--Features--*\n"
+                 "SCAN: Yes\n"
+                 "PROBE: No\n"
+                 "ACPROBE: No\n"
+                 "*--EOF--*\n"
+                 ;
+ }
 
 gint XSM_Hardware::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
 
@@ -182,7 +189,7 @@ void XSM_Hardware::add_user_event_now (const gchar *message_id, const gchar *inf
 }	
 
 
-void XSM_Hardware::SetOffset(double x, double y){
+gboolean XSM_Hardware::SetOffset(double x, double y){
 	XSM_DEBUG (DBG_L4, "HARD: Offset " << x << ", " << y);
 	sim_xyz0[0] = gapp->xsm->Inst->X0Resolution()*x;
 	sim_xyz0[1] = gapp->xsm->Inst->Y0Resolution()*y;
@@ -190,6 +197,7 @@ void XSM_Hardware::SetOffset(double x, double y){
 
         sim_mode = 1 | 16;
 
+        return FALSE;
 }
 
 void XSM_Hardware::SetDxDy(double dx, double dy){
@@ -257,7 +265,7 @@ int XSM_Hardware::ScanDirection (int dir){
 }
 
 
-void XSM_Hardware::MovetoXY(double x, double y){ 
+gboolean XSM_Hardware::MovetoXY(double x, double y){ 
 	rx = x; ry = y;
 
         Transform(&x, &y);
@@ -270,18 +278,22 @@ void XSM_Hardware::MovetoXY(double x, double y){
 	// g_message ("XSMHARD: MovetoXY: DA=[%g, %g] XY-Ang=[%g, %g] ",rx,ry, sim_xyzS[0],sim_xyzS[1]);
 
         sim_mode = 1 | 4;
+
+        return FALSE;
 }
 
 /* -- surface simulation code -- */
 
-void XSM_Hardware::ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_SRCS_CHANNELS], int ixy_sub[4]){
+gboolean XSM_Hardware::ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_SRCS_CHANNELS], int ixy_sub[4]){
 	double x0,y0, x,y;
-
+        
 	XSM_DEBUG (DBG_L4, "Sim Yi=" << yindex << " MuxM=" << muxmode);
 
-	if (yindex < 0 && yindex != -1) return;
+	if (yindex < 0 && yindex != -1){
+                return TRUE;
+        }
 
-	if (!Mob[0]) return;
+	if (!Mob[0]) return FALSE;
 
 	Mem2d Line(Mob[0], Nx, 1);
 
@@ -298,7 +310,6 @@ void XSM_Hardware::ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_S
         }
         rx = x0;
         ry = y0;
-        CallIdleFunc ();
 
         int i=0;
         do{
@@ -311,6 +322,8 @@ void XSM_Hardware::ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_S
         Simulate (muxmode);
         
         sim_mode = 1 | 0;
+
+        return FALSE; // done -- will be callend again if returnign TRUE until returns FALSE
 }
 
 void XSM_Hardware::Transform(double *x, double *y){

@@ -82,8 +82,8 @@ class XSM_Hardware{
 	virtual long GetPreScanLineOffset (){ return 0L; };
 
 	/* query Hardware description and features */
-	char* Info (int data){ return InfoString; }; /* Info */
-	gchar* GetStatusInfo () { return AddStatusString; }; /* Status */
+	const gchar* Info (int data){ return get_info(); }; /* Info on Hardware Class */
+	virtual const gchar* GetStatusInfo () { return AddStatusString; }; /* Status */
 
 	/* Hardware Limits */
 	virtual long GetMaxPointsPerLine (){ return 1L<<16; };
@@ -132,7 +132,7 @@ class XSM_Hardware{
 	virtual void UpdateScanGainMirror () {};
 
 	/* set scan offset, HwI should move detector to this position, absolute coordinates, not rotated */
-	virtual void SetOffset(double x, double y);
+	virtual gboolean SetOffset(double x, double y);
 
 	/* set scan step sizes, if dy is 0 or not given dy=dx is assumed */
 	virtual void SetDxDy(double dx, double dy=0.);
@@ -145,7 +145,7 @@ class XSM_Hardware{
 	virtual int RotateStepwise(int exec=1) { return 0; };
 
 	/* perform a moveto aktion within the scan-coordinate system (rotated by alpha) */
-	virtual void MovetoXY (double x, double y);
+	virtual gboolean MovetoXY (double x, double y);
 
 	/* set/get scan direction, +1: Top-Down, -1: Bottom-Up */
 	virtual int ScanDirection (int dir);
@@ -154,10 +154,10 @@ class XSM_Hardware{
 	virtual void StartScan2D(){;};
 
 	/* Scan a Line, negative yindex: scan initialization phase in progress... */
-	virtual void ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_SRCS_CHANNELS], int ixy_sub[4]);
+	virtual gboolean ScanLineM(int yindex, int xdir, int muxmode, Mem2d *Mob[MAX_SRCS_CHANNELS], int ixy_sub[4]);
 
 	/* End,Pause,Resume,Kill/Cancel Scan */
-	virtual void EndScan2D(){;};
+	virtual gboolean EndScan2D(){ return FALSE; };
 	virtual void PauseScan2D(){;};
 	virtual void ResumeScan2D(){;};
 	virtual void KillScan2D(){;};
@@ -178,36 +178,12 @@ class XSM_Hardware{
 	virtual int IsFastScan() { return fast_scan; };
 	void SetSuspendWatches(int f=0) { suspend_watches=f; };
 	virtual int IsSuspendWatches() { return suspend_watches; };
-	virtual gchar* get_info(){ 
-		return g_strdup("*--GXSM XSM_Hardware base class --*\n"
-				"This is just providing a simple emulation mode.\n"
-				"No Hardware is connected!\n"
-				"*--Features--*\n"
-				"SCAN: Yes\n"
-				"PROBE: No\n"
-				"ACPROBE: No\n"
-				"*--EOF--*\n"
-			); 
-	};
+	virtual const gchar* get_info();
 
 	void SetScanMode(int ssm=MEM_SET){ scanmode=ssm; };
 	int  FreeOldData(){ return (scanmode == MEM_SET); };
 	void Transform(double *x, double *y);
 	void invTransform(double *x, double *y);
-	void SetIdleFunc ( void (*ifunc)(gpointer), gpointer id){
-		idlefunc_data = id;
-		idlefunc = ifunc;
-	};
-
-	/*
-	doule copy_from_last(){
-                double ix,iy;
-                gapp->xsm->scan[10]->World2Pixel  (sim_xyz0[0]+sim_xyzS[0], sim_xyz0[1]+sim_xyzS[1], ix,iy);
-                return sim_xyzS[2] =  gapp->xsm->scan[10]->data.s.dz * gapp->xsm->scan[10]->mem2d->GetDataPktInterpol (ix,iy);
-	}
-	*/
-	
-	void CallIdleFunc(){ if (idlefunc) (*idlefunc)(idlefunc_data); };
 
 	void add_user_event_now (const gchar *message_id, const gchar *info, double value[2], gint addflag=FALSE);
 	void add_user_event_now (const gchar *message_id, const gchar *info, double v1, double v2, gint addflag=FALSE){
@@ -220,10 +196,6 @@ class XSM_Hardware{
 		add_user_event_now (m_id, "N/A", v, addflag); 
 	};
 	
-	gpointer idlefunc_data;
-	void (*idlefunc)(gpointer);
-
-	gchar *InfoString;
 	gchar *AddStatusString;
 
  private:

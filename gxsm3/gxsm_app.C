@@ -82,7 +82,7 @@ static GXSM_ACTION_INFO main_actions[] = {
                                     App::file_open_callback, NULL,
                                    "document-open-symbolic"),
 	GXSM_TOOLBAR_ACTION_ENTRY ("Save All", "file-save", "Save scans with automatically generated names",
-                                   App::file_save_callback, NULL,
+                                   App::file_save_callback, "Toolbar_Scan_Save_All_Update",
                                    "document-save-symbolic"),
 	GXSM_TOOLBAR_ACTION_ENTRY ("Exit Gxsm", "quit", "Exit the GXSM",
                                    App::file_quit_callback, NULL,
@@ -285,6 +285,10 @@ void App::AppWindowInit(const gchar *title){
                         g_free (app_action);
 
                         gtk_header_bar_pack_start (GTK_HEADER_BAR (header_bar), GTK_WIDGET (ti_button));
+
+                        //if (gai->toolbar_action)
+                        //        g_object_set_data (G_OBJECT (app_window), gai->toolbar_action, ti_button);
+
                 }
         }
 

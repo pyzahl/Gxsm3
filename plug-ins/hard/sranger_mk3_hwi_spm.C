@@ -126,6 +126,8 @@ sranger_mk3_hwi_spm::~sranger_mk3_hwi_spm(){
 gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
         const gint64 max_age = 20000; // 20ms
         static gint64 time_of_last_reading = 0; // abs time in us
+        const gint64 max_age_S = 100000; // 100ms
+        static gint64 time_of_last_reading_S = 0; // abs time in us
 	static gint init=FALSE; 
 	static SIGNAL_MONITOR_MK3 dsp_sig_mon;
 	static AREA_SCAN_MK3 dsp_scan;
@@ -252,38 +254,46 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 	}
 
 	// DSP Status Indicators
-	if (*property == 's' || *property == 'S' ){
+	if (*property == 's' || *property == 'S' || *property == 'W'){
+                if ( (time_of_last_reading_S+max_age_S) < g_get_real_time () ){
+                        time_of_last_reading_S = g_get_real_time ();
 
-		lseek (dsp, magic_data.statemachine, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-		sr_read  (dsp, &dsp_statemachine, sizeof (dsp_statemachine)); 
-		CONV_32 (dsp_statemachine.mode);
-		CONV_32 (dsp_statemachine.DataProcessTime);
-		CONV_32 (dsp_statemachine.IdleTime);
-		CONV_32 (dsp_statemachine.DataProcessReentryTime);
-		CONV_32 (dsp_statemachine.DataProcessReentryPeak);
-		CONV_32 (dsp_statemachine.IdleTime_Peak);
+                        lseek (dsp, magic_data.statemachine, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                        sr_read  (dsp, &dsp_statemachine, sizeof (dsp_statemachine)); 
+                        CONV_32 (dsp_statemachine.mode);
+                        CONV_32 (dsp_statemachine.DataProcessTime);
+                        CONV_32 (dsp_statemachine.IdleTime);
+                        CONV_32 (dsp_statemachine.DataProcessReentryTime);
+                        CONV_32 (dsp_statemachine.DataProcessReentryPeak);
+                        CONV_32 (dsp_statemachine.IdleTime_Peak);
 
-		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan)); 
-		CONV_32 (dsp_scan.pflg);
+                        lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                        sr_read  (dsp, &dsp_scan, sizeof (dsp_scan)); 
+                        CONV_32 (dsp_scan.pflg);
 
-		lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-		sr_read (dsp, &dsp_move, sizeof (dsp_move)); 
-		CONV_32 (dsp_move.pflg);
+                        lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                        sr_read (dsp, &dsp_move, sizeof (dsp_move)); 
+                        CONV_32 (dsp_move.pflg);
 
-		lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-		sr_read  (dsp, &dsp_probe, sizeof (dsp_probe)); 
-		CONV_32 (dsp_probe.pflg);
+                        lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                        sr_read  (dsp, &dsp_probe, sizeof (dsp_probe)); 
+                        CONV_32 (dsp_probe.pflg);
 
-		lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-		sr_read  (dsp, &dsp_autoapp, sizeof (dsp_autoapp)); 
-		CONV_32 (dsp_autoapp.pflg);
-
+                        lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                        sr_read  (dsp, &dsp_autoapp, sizeof (dsp_autoapp)); 
+                        CONV_32 (dsp_autoapp.pflg);
+                }
 		const int z_servo_watch = 16; // default -- FIX!!!!
 
 		// scan watchdog!
-		if (ScanningFlg && dsp_scan.pflg==0) // stop/cancel scan+FIFO-read in progress on Gxsm level if other wise interruped/finsihed FIFO overrun, etc.
-			EndScan2D();
+		if (*property == 'W'){
+                        if (ScanningFlg && dsp_scan.pflg==0){
+                                // stop/cancel scan+FIFO-read in progress on Gxsm level if other wise interruped/finsihed FIFO overrun, etc.
+                                g_message ("scan watchdog!");
+                                EndScan2D();
+                        } 
+                        return ScanningFlg;
+                }
 
 		// Bit Coded Status:
 		// 0x001: FB watch
@@ -1009,135 +1019,222 @@ void sranger_mk3_hwi_spm::reset_scandata_fifo(int stall){
 	sr_write (dsp, &dsp_fifo, (MAX_WRITE_DATA_FIFO_SETUP)<<1);
 }
 
-void sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
-	AREA_SCAN_MK3 dsp_scan;
-	PROBE_MK3 dsp_probe;
+gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
+        const gint64 timeout = 5000000; // 5s
+        const gint64 max_age = 20000;   // 20ms
+        static gint64 time_of_next_reading = 0; // abs time in us
+        static gint64 time_of_timeout = 0; // abs time in us
+        static int state = 0;
+        static AREA_SCAN_MK3 dsp_scan;
+	static PROBE_MK3 dsp_probe;
 
-        if (! RTQuery_clear_to_move_tip ()){
-                gapp->monitorcontrol->LogEvent ("MovetoSXY", "Instrument is busy with VP or conflciting task: skipping requst.", 3);
-                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- Instrument is busy with VP or conflciting task. Skipping.");
-                return;
-        }
+        //g_print ("\nTIP2ORIGIN: STATE %d  ** ", state);
+
+        switch (state){
+        case 0:
+                // make sure no conflicts
+                if (! RTQuery_clear_to_move_tip ()){
+                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "Instrument is busy with VP or conflciting task: skipping requst.", 3);
+                        g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- Instrument is busy with VP or conflciting task. Skipping.");
+                        return FALSE;
+                }
+                
+                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
+                CONV_32 (dsp_scan.pflg);
+                if (dsp_scan.pflg){
+                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (scanning/moving in progress): skipping.", 3);
+                        g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- scanning/moving (busy)! [%x] -- skipping.", dsp_scan.pflg);
+                        state = 0;
+                        return FALSE;
+                }
         
-        // make sure no conflicts
-	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-        sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
-        CONV_32 (dsp_scan.pflg);
-        if (dsp_scan.pflg){
-                gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (scanning/moving in progress): skipping.", 3);
-                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- scanning/moving (busy)! [%x] -- skipping.", dsp_scan.pflg);
-                return;
-        }
-        
-	lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-        sr_read  (dsp, &dsp_probe, sizeof (dsp_probe));
-        CONV_32 (dsp_probe.pflg);
-        if (dsp_probe.pflg){
-                gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (probe active): skipping.", 3);
-                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- probe active! [%x] -- skipping.", dsp_probe.pflg);
-                return;
-        }
+                lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_read  (dsp, &dsp_probe, sizeof (dsp_probe));
+                CONV_32 (dsp_probe.pflg);
+                if (dsp_probe.pflg){
+                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (probe active): skipping.", 3);
+                        g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- probe active! [%x] -- skipping.", dsp_probe.pflg);
+                        return FALSE;
+                }
 
-	// get current position
-	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-	sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
+                // get current position
+                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
 
-	reset_scandata_fifo ();
+                reset_scandata_fifo ();
+                {
+                        // setup move:
+                        // move tip from current position to Origin i.e. x,y
+                        dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
+                        dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
+                        SRANGER_DEBUG("SR:SCAN_XY last: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
+                        //gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (probe active): skipping.", 3);
 
-	// move tip from current position to Origin i.e. x,y
-	dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
-	dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
-	SRANGER_DEBUG("SR:SCAN_XY last: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
-        //gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (probe active): skipping.", 3);
+                        double Mdx = x - (double)dsp_scan.xyz_vec[i_X];
+                        double Mdy = y - (double)dsp_scan.xyz_vec[i_Y];
+                        double mvspd = (1<<16) * sranger_mk2_hwi_pi.app->xsm->Inst->X0A2Dig (DSPControlClass->move_speed_x) 
+                                / DSPControlClass->frq_ref;
+                        double steps = round (sqrt (Mdx*Mdx + Mdy*Mdy) / mvspd);
+                        dsp_scan.fm_dx = (long)round(Mdx/steps);
+                        dsp_scan.fm_dy = (long)round(Mdy/steps);
+                        dsp_scan.num_steps_move_xy = (long)steps;
+                        SRANGER_DEBUG("SR:SCAN_XY move: dXdY=" << Mdx <<", "<< Mdy << " #steps=" << steps);
 
-	double Mdx = x - (double)dsp_scan.xyz_vec[i_X];
-	double Mdy = y - (double)dsp_scan.xyz_vec[i_Y];
-	double mvspd = (1<<16) * sranger_mk2_hwi_pi.app->xsm->Inst->X0A2Dig (DSPControlClass->move_speed_x) 
-		/ DSPControlClass->frq_ref;
-	double steps = round (sqrt (Mdx*Mdx + Mdy*Mdy) / mvspd);
-	dsp_scan.fm_dx = (long)round(Mdx/steps);
-	dsp_scan.fm_dy = (long)round(Mdy/steps);
-	dsp_scan.num_steps_move_xy = (long)steps;
-	SRANGER_DEBUG("SR:SCAN_XY move: dXdY=" << Mdx <<", "<< Mdy << " #steps=" << steps);
+                        double zx_ratio = sranger_mk2_hwi_pi.app->xsm->Inst->Dig2XA (1) / sranger_mk2_hwi_pi.app->xsm->Inst->Dig2ZA (1);
+                        double zy_ratio = sranger_mk2_hwi_pi.app->xsm->Inst->Dig2YA (1) / sranger_mk2_hwi_pi.app->xsm->Inst->Dig2ZA (1);
+                        dsp_scan.fm_dz = 0;
 
-	double zx_ratio = sranger_mk2_hwi_pi.app->xsm->Inst->Dig2XA (1) / sranger_mk2_hwi_pi.app->xsm->Inst->Dig2ZA (1);
-	double zy_ratio = sranger_mk2_hwi_pi.app->xsm->Inst->Dig2YA (1) / sranger_mk2_hwi_pi.app->xsm->Inst->Dig2ZA (1);
-	dsp_scan.fm_dz = 0;
+                        // setup scan for zero size scan and move to 0,0 in scan coord sys
+                        dsp_scan.fm_dx = long_2_sranger_long (dsp_scan.fm_dx);
+                        dsp_scan.fm_dy = long_2_sranger_long (dsp_scan.fm_dy);
+                        dsp_scan.num_steps_move_xy = long_2_sranger_long (dsp_scan.num_steps_move_xy);
 
-	// setup scan for zero size scan and move to 0,0 in scan coord sys
-	dsp_scan.fm_dx = long_2_sranger_long (dsp_scan.fm_dx);
-	dsp_scan.fm_dy = long_2_sranger_long (dsp_scan.fm_dy);
-	dsp_scan.num_steps_move_xy = long_2_sranger_long (dsp_scan.num_steps_move_xy);
+                        dsp_scan.start = long_2_sranger_long (AREA_SCAN_MOVE_TIP);
+                        dsp_scan.srcs_xp  = long_2_sranger_long(0);
+                        dsp_scan.srcs_xm  = long_2_sranger_long(0);
+                        dsp_scan.srcs_2nd_xp  = long_2_sranger_long (0);
+                        dsp_scan.srcs_2nd_xm  = long_2_sranger_long (0);
+                        dsp_scan.dnx_probe = long_2_sranger_long(-1);
+                        dsp_scan.nx_pre = long_2_sranger_long(0);
 
-	dsp_scan.start = long_2_sranger_long (AREA_SCAN_MOVE_TIP);
-	dsp_scan.srcs_xp  = long_2_sranger_long(0);
-	dsp_scan.srcs_xm  = long_2_sranger_long(0);
-	dsp_scan.srcs_2nd_xp  = long_2_sranger_long (0);
-	dsp_scan.srcs_2nd_xm  = long_2_sranger_long (0);
-	dsp_scan.dnx_probe = long_2_sranger_long(-1);
-	dsp_scan.nx_pre = long_2_sranger_long(0);
-
-	// initiate "return to origin" "dummy" scan now
-	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-	sr_write (dsp, &dsp_scan, (MAX_WRITE_SCAN)<<1);
-
+                        // initiate "return to origin" "dummy" scan now
+                        lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                        sr_write (dsp, &dsp_scan, (MAX_WRITE_SCAN)<<1);
+                }
+                time_of_timeout = g_get_real_time () + timeout;
+                time_of_next_reading = g_get_real_time () + max_age;
+                state = 1;
+                return TRUE;
+        case 1:
 	// verify Pos,
-	// wait until ready
-        gint i=250;
-	do {
-		usleep (20000); // give some time
-		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
-		//		CallIdleFunc ();
-	} while (dsp_scan.pflg && --i); // check complete and timeout ~5s
-
-        if (!i)
-                g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- tip move timeout 5s exceeded.");
-
-	dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
-	dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
-	SRANGER_DEBUG("SR:SCAN_XY fin: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
+                if ( time_of_timeout > g_get_real_time () ){
+                        // check and wait until ready
+                        if (time_of_next_reading < g_get_real_time () ){
+                                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                sr_read  (dsp, &dsp_scan, sizeof (dsp_scan)); 
+                                CONV_32 (dsp_scan.pflg);
+                                time_of_next_reading = g_get_real_time () + max_age;
+                                // pop all remaining events
+                                DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
+                                //g_print ("Reading Scan pflg = %d ", dsp_scan.pflg);
+                        } else return TRUE; // wait
+                        if (dsp_scan.pflg) {
+                                return TRUE; // wait
+                        } else {
+                                dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
+                                dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
+                                SRANGER_DEBUG("SR:SCAN_XY fin: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
+                                state = 0;
+                                return FALSE; // completed!
+                        }
+                } else {
+                        g_warning ("WW sranger_mk3_hwi_spm::tip to origin/XY -- timeout 5s exceeded.");
+                        // gapp->check_events ("tip to origin/XY timeout reached.\nIgnoring and Continuing.");
+                        state = 0;
+                        return FALSE;
+                }
+        }
+        g_warning ("sranger_mk3_hwi_spm::tip to origin/XY STATE SYSTEM ERROR.");
+        state = 0;
+        return FALSE;
 }
 
 // just note that we are scanning next...
 void sranger_mk3_hwi_spm::StartScan2D(){
 	DSPControlClass->StartScanPreCheck ();
 	ScanningFlg=1; 
+        //g_print ("sranger_mk3_hwi_spm::StartScan2D SF=1\n");
 	KillFlg=FALSE; // if this gets TRUE while scanning, you should stopp it!!
 }
 
 // and its done now!
-void sranger_mk3_hwi_spm::EndScan2D(){ 
+gboolean sranger_mk3_hwi_spm::EndScan2D(){
+        const gint64 timeout = 6000000; // 6s
+        const gint64 max_age = 30000;   // 30ms
+        static gint64 time_of_next_reading = 0; // abs time in us
+        static gint64 time_of_timeout = 0; // abs time in us
+
+        static int state=0;
 	static AREA_SCAN_MK3 dsp_scan;
-	ScanningFlg=0; 
-	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-	sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
-	CONV_32 (dsp_scan.pflg);
-	// cancel scanning?
-	if (dsp_scan.pflg) {
-		dsp_scan.start = long_2_sranger_long(0);
-		dsp_scan.stop  = long_2_sranger_long(AREA_SCAN_STOP);
-		dsp_scan.raster_b = long_2_sranger_long (0);
-		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-		sr_write (dsp, &dsp_scan, MAX_WRITE_SCAN<<1);
-	}
-	// wait until ready
-        gint i=200;
-	do {
-		usleep (20000); // give some time
-		sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
-		CONV_32 (dsp_scan.pflg);
-                gapp->check_events ("Returning tip to home..."); // do not lock [added new]
-	} while (dsp_scan.pflg && --i); // check complete and timeout ~4s
-
-        if (!i)
-                g_warning ("sranger_mk3_hwi_spm::EndScan2D -- timeout 4s exceeded.");
-
-	// do return to center?
-	if (DSPControlClass->center_return_flag){
-                g_message ("sranger_mk3_hwi_spm::EndScan2D -- tip to orign/manual scan position [dig:%10.3f, %10.3f].", tip_pos[0]/(1<<16), tip_pos[1]/(1<<16));
-                tip_to_origin (tip_pos[0], tip_pos[1]);
+        //g_print ("\nEND2DSCAN: STATE %d  ** ", state);
+        switch (state){
+        case 0: if (ScanningFlg){
+                        ScanningFlg=0; 
+                        state = 1;
+                        //g_print ("2D Scan: Forcing stop! ");
+                        return TRUE;
+                } else { state = 0;
+                        g_warning ("End 2D Scan System State Error. Aborting.");
+                        // gapp->check_events ("End 2D Scan System State Error. Aborting.");
+                        return FALSE; } // ERROR
+        case 1: 
+                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
+                CONV_32 (dsp_scan.pflg);
+                // cancel scanning?
+                if (dsp_scan.pflg) {
+                        dsp_scan.start = long_2_sranger_long(0);
+                        dsp_scan.stop  = long_2_sranger_long(AREA_SCAN_STOP);
+                        dsp_scan.raster_b = long_2_sranger_long (0);
+                        lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                        sr_write (dsp, &dsp_scan, MAX_WRITE_SCAN<<1);
+                        //g_print ("Aborting 2D Scan...");
+                        // gapp->check_events ("Aborting 2D Scan... ");
+                        state = 2;
+                } else {
+                        //g_print ("2D Scan is stopped. ");
+                        state = 3;
+                }
+                time_of_timeout = g_get_real_time () + timeout;
+                time_of_next_reading = g_get_real_time () + max_age;
+                return TRUE;
+        case 2:
+                if ( time_of_timeout > g_get_real_time () ){
+                        if ( time_of_next_reading < g_get_real_time () ){
+                                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
+                                CONV_32 (dsp_scan.pflg);
+                                time_of_next_reading = g_get_real_time () + max_age;
+                                //g_print ("Reading Scan pflg=%d ", dsp_scan.pflg);
+                        } else return TRUE; // wait
+                        //gapp->check_events ("Aborting 2D Scan...");
+                        if (dsp_scan.pflg) {
+                                return TRUE; // wait
+                        } else {
+                                //g_print ("2D Scan stopped. ");
+                                //gapp->check_events ("2D Scan stopped. ");
+                                state = 3;
+                                return TRUE;
+                        }
+                } else {
+                        //g_print ("Timeout reached. ");
+                        g_warning ("WW sranger_mk3_hwi_spm::EndScan2D -- timeout 5s exceeded.");
+                        //gapp->check_events ("2D Scan stop timeout reached.\nIgnoring and Continuing.");
+                        state = 0;
+                        return FALSE;
+                }
+        case 3:
+                // do return to center?
+                if (DSPControlClass->center_return_flag){
+                        if (tip_to_origin (tip_pos[0], tip_pos[1])){
+                                //g_print ("Call: Tip to origin. ");
+                                //gapp->check_events ("Moving Tip to Marker / Scan Origin.");
+                                return TRUE;
+                        } else {
+                                state = 4;
+                                //g_print (" Done. ");
+                                //g_message ("sranger_mk3_hwi_spm::EndScan2D -- tip to orign/manual scan position [dig:%10.3f, %10.3f].", tip_pos[0]/(1<<16), tip_pos[1]/(1<<16));
+                                return TRUE;
+                        }
+                }
+                // go on to 4 rigth now here!
+        case 4:
+                DSPControlClass->EndScanCheck ();
+                state = 0;
+                return FALSE;
         }
-        DSPControlClass->EndScanCheck ();
+        return FALSE;
 }
 
 // we are paused
@@ -1205,36 +1302,27 @@ void sranger_mk3_hwi_spm::UpdateScanGainMirror (){
 
 // this does almost the same as the XSM_Hardware base class would do, 
 // but you may want to do sth. yourself here
-void sranger_mk3_hwi_spm::SetOffset(double x, double y){
+gboolean sranger_mk3_hwi_spm::SetOffset(double x, double y){
+        static gint64 time_of_last_reading = 0; // abs time in us
+        static gint64 time_of_timeout = 0; // abs time in us
+        static int state=0;
+
 	static double old_x=123456789, old_y=123456789;
 	static MOVE_OFFSET_MK3 dsp_move;
 	double dx,dy,steps;
 	const double fract = 1<<16;
 
-	if (DSPControlClass->ldc_flag) return; // ignore if any LDC (Linear Offset Compensation is in active!) 
+	if (DSPControlClass->ldc_flag) return FALSE; // ignore if any LDC (Linear Offset Compensation is in active!) 
 
         double vs=gapp->xsm->Inst->VX()+gapp->xsm->Inst->VY()+gapp->xsm->Inst->VZ();
-	if (old_x == x && old_y == y) return;
+	if (old_x == x && old_y == y) return FALSE;
 
 	SRANGER_DEBUG("SetOffset: " << x << ", " << y);
 	old_x = x; old_y = y;
 	
-#if 1
 	lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 	sr_read (dsp, &dsp_move, sizeof (dsp_move)); 
-#else
-	do {
-		lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-		sr_read (dsp, &dsp_move, sizeof (dsp_move)); 
-		if (long_2_sranger_long (dsp_move.pflg)){
-			if (long_2_sranger_long (dsp_move.num_steps)){
-				usleep (50000);
-			}
-		}
 
-	} while (long_2_sranger_long (dsp_move.pflg) && long_2_sranger_long (dsp_move.num_steps) > 0); // wait if there is a move in progress
-#endif
-	// convert -- only on i386 necessary
 	dsp_move.start = long_2_sranger_long (1);
 	dsp_move.xy_new_vec[i_X]  = long_2_sranger_long ((long)round(x*(1<<16)));
 	dsp_move.xy_new_vec[i_Y]  = long_2_sranger_long ((long)round(y*(1<<16)));
@@ -1253,34 +1341,50 @@ void sranger_mk3_hwi_spm::SetOffset(double x, double y){
 	lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 	sr_write (dsp, &dsp_move, MAX_WRITE_MOVE<<1);
 
+        return FALSE;
 }
 
-void sranger_mk3_hwi_spm::MovetoXY(double x, double y){
+gboolean sranger_mk3_hwi_spm::MovetoXY(double x, double y){
+        static int state = 0;
 	static double old_x=0, old_y=0;
 
-	// only if not scan in progress!
-	if (ScanningFlg == 0){
-		if (x != old_x || y != old_y){
-                        gchar *tmp=g_strdup_printf ("%10.4f %10.4f requested", x/(1<<16), y/(1<<16));
-                        gapp->monitorcontrol->LogEvent ("MovetoSXY", tmp, 3);
-                        g_free (tmp);
-		        const double Q16 = 1<<16;
-			old_x = x;
-			old_y = y;
-                        tip_pos[0] =  x * Q16;
-                        tip_pos[1] =  y * Q16;
-			tip_to_origin (tip_pos[0], tip_pos[1]);
-		}
-	}
+        switch (state){
+        case 0:
+                // only if not scan in progress!
+                if (ScanningFlg == 0){
+                        if (x != old_x || y != old_y){
+                                gchar *tmp=g_strdup_printf ("%10.4f %10.4f requested", x/(1<<16), y/(1<<16));
+                                gapp->monitorcontrol->LogEvent ("MovetoSXY", tmp, 3);
+                                g_free (tmp);
+                                const double Q16 = 1<<16;
+                                old_x = x;
+                                old_y = y;
+                                tip_pos[0] =  x * Q16;
+                                tip_pos[1] =  y * Q16;
+                                if (tip_to_origin (tip_pos[0], tip_pos[1])){
+                                        state = 1;
+                                        return TRUE;
+                                } else return FALSE; // completed
+                        } else return FALSE; // nothing to do
+                } else return FALSE; // forbidden, nothing to do
+        case 1:
+                if (tip_to_origin (tip_pos[0], tip_pos[1])){
+                        return TRUE; // wait for move to complete
+                } else {
+                        state = 0;
+                        return FALSE; // completed
+                }
+        }
+        return FALSE; // ERROR, abort
 }
 
 /* perform a delta move XYZ aktion within the scan-coordinate system (rotated by alpha) with limits */
-void sranger_mk3_hwi_spm::Move_delta_XYZ (double dx, double dy, double dz, Mem2d *Mob[MAX_SRCS_CHANNELS], const gchar *options) {
+gboolean sranger_mk3_hwi_spm::Move_delta_XYZ (double dx, double dy, double dz, Mem2d *Mob[MAX_SRCS_CHANNELS], const gchar *options) {
   	static AREA_SCAN_MK3 dsp_scan;
         static int busy=0;
         
         if (busy)
-                return;       
+                return FALSE;       
 
         busy=1;
         
@@ -1334,12 +1438,12 @@ void sranger_mk3_hwi_spm::Move_delta_XYZ (double dx, double dy, double dz, Mem2d
 	sr_write (dsp, &dsp_scan, (MAX_WRITE_SCAN)<<1);
 
 	// verify Pos,
-	// wait until ready
+	// wait until ready, should be very brief
         gint i=2000;
 	do {
 		usleep (5000); // give some time
 		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
-                CallIdleFunc ();
+                gapp->check_events();
 	} while (dsp_scan.pflg && --i); // with timeout ~5s
 
         if (!i)
@@ -1350,6 +1454,7 @@ void sranger_mk3_hwi_spm::Move_delta_XYZ (double dx, double dy, double dz, Mem2d
 
         busy=0;
         
+        return FALSE;
 }
 
 void sranger_mk3_hwi_spm::set_ldc (double dxdt, double dydt, double dzdt){;
@@ -1409,7 +1514,7 @@ void sranger_mk3_hwi_spm::set_ldc (double dxdt, double dydt, double dzdt){;
  * 
  */
 
-void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob[MAX_SRCS_CHANNELS], int ixy_sub[4]){
+gboolean sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob[MAX_SRCS_CHANNELS], int ixy_sub[4]){
 	static Mem2d **Mob_dir[4];
 	static long srcs_dir[4];
 	static int nsrcs_dir[4];
@@ -1417,79 +1522,80 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 	static int running = FALSE;
 	static AREA_SCAN_MK3 dsp_scan;
 	static double us_per_line;
-	
-	int num_srcs_w = 0; // #words
-	int num_srcs_l = 0; // #long words
-	int bi = 0;
-	// find # of srcs_w (16 bit data, 4-11:ovs32, norm  -> float) 0x0001, 0x0010..0x0800 (Bits 0, 4,5,6,7, 8,9,10,11)
-	do{
-		if(lssrcs & (1<<bi++))
-			++num_srcs_w;
-	}while(bi<12);
-	// find # of srcs_l (32 bit data -> float ) 0x1000..0x8000 (Bits 12,13,14,15)
-	do{
-		if(lssrcs & (1<<bi++))
-			++num_srcs_l;
-	}while(bi<16);
-	
-	int num_srcs = (num_srcs_l<<4) | num_srcs_w;
 
-	// ix0 not used yet, not subscan
-	if (yindex == -2 && xdir == 1){ // first init step of XP (->)
-		// cancel any running scan now
-		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-		sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
-		// cancel scanning?
-		if (dsp_scan.pflg) {
-			dsp_scan.start = long_2_sranger_long (0);
-			dsp_scan.stop  = long_2_sranger_long (AREA_SCAN_STOP);
-			lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-			sr_write (dsp, &dsp_scan, MAX_WRITE_SCAN<<1);
-			usleep (50000); // give some time to stop
-		}
-		
-		// reset DSP fifo read position
-		reset_scandata_fifo (1); // lock scan now, released at start of fifo read thread
-		
-		// clean up any old vector probe data
-		DSPControlClass->free_probedata_arrays ();
-		
-		
-		// and start fifo read thread, it releases the
-		// scan-lock (dspfifo.stall flag) and it terminates if it is
-		// done or scan stop is requested!
-		for (int i=0; i<4; ++i){
-			srcs_dir[i] = nsrcs_dir[i] = 0;
-			Mob_dir[i] = NULL;
-		}
-		srcs_dir[0]  = lssrcs;
-		nsrcs_dir[0] = num_srcs;
-		Mob_dir[0]   = Mob;
-		running= FALSE;
-		return;
-	}
-	if (yindex == -2 && xdir == -1){ // second init step of XM (<-)
-		srcs_dir[1]  = lssrcs;
-		nsrcs_dir[1] = num_srcs;
-		Mob_dir[1]   = Mob;
-		return;
-	}
-	if (yindex == -2 && xdir == 2){ // ... init step of 2ND_XP (2>)
-		srcs_dir[2]  = lssrcs;
-		nsrcs_dir[2] = num_srcs;
-		Mob_dir[2]   = Mob;
-		return;
-	}
-	if (yindex == -2 && xdir == -2){ // ... init step of 2ND_XM (<2)
-		srcs_dir[3]  = lssrcs;
-		nsrcs_dir[3] = num_srcs;
-		Mob_dir[3]   = Mob;
-		return;
-	}
+        if (yindex == -2){ // SETUP STAGE 1
+                int num_srcs_w = 0; // #words
+                int num_srcs_l = 0; // #long words
+                int num_srcs = 0;
+                int bi = 0;
 
+                running      = FALSE;
+
+                do{
+                        if(lssrcs & (1<<bi++))
+                                ++num_srcs_w;
+                }while(bi<12);
+                
+                // find # of srcs_l (32 bit data -> float ) 0x1000..0x8000 (Bits 12,13,14,15)
+                do{
+                        if(lssrcs & (1<<bi++))
+                                ++num_srcs_l;
+                }while(bi<16);
+                
+                num_srcs = (num_srcs_l<<4) | num_srcs_w;
+
+                switch (xdir){
+                case 1: // first init step of XP (->)
+                        // cancel any running scan now
+                        lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                        sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
+                        // cancel scanning?
+                        if (dsp_scan.pflg) {
+                                dsp_scan.start = long_2_sranger_long (0);
+                                dsp_scan.stop  = long_2_sranger_long (AREA_SCAN_STOP);
+                                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                sr_write (dsp, &dsp_scan, MAX_WRITE_SCAN<<1);
+                                usleep (50000); // give some time to stop
+                        }
+		
+                        // reset DSP fifo read position
+                        reset_scandata_fifo (1); // lock scan now, released at start of fifo read thread
+		
+                        // clean up any old vector probe data
+                        DSPControlClass->free_probedata_arrays ();
+		
+                        // and start fifo read thread, it releases the
+                        // scan-lock (dspfifo.stall flag) and it terminates if it is
+                        // done or scan stop is requested!
+                        for (int i=0; i<4; ++i){
+                                srcs_dir[i] = nsrcs_dir[i] = 0;
+                                Mob_dir[i] = NULL;
+                        }
+                        srcs_dir[0]  = lssrcs;
+                        nsrcs_dir[0] = num_srcs;
+                        Mob_dir[0]   = Mob;
+                        return TRUE;
+                case -1: // second init step of XM (<-)
+                        srcs_dir[1]  = lssrcs;
+                        nsrcs_dir[1] = num_srcs;
+                        Mob_dir[1]   = Mob;
+                        return TRUE;
+                case  2: // ... init step of 2ND_XP (2>)
+                        srcs_dir[2]  = lssrcs;
+                        nsrcs_dir[2] = num_srcs;
+                        Mob_dir[2]   = Mob;
+                        return TRUE;
+                case -2: // ... init step of 2ND_XM (<2)
+                        srcs_dir[3]  = lssrcs;
+                        nsrcs_dir[3] = num_srcs;
+                        Mob_dir[3]   = Mob;
+                        return TRUE;
+                }
+                return FALSE; // error
+        }
+        
+        // SETUP STAGE 2
 	if (! running && yindex >= 0){ // now do final scan setup and send scan setup, start reading data fifo
-		running = TRUE;
-		
 		// get current params and position
 		// Note: current Xpos/Ypos should be 0/0, so we can change the rot.matrix now!
 		// ------> SRanger::EndScan2D always returns to 0/0 <------
@@ -1549,7 +1655,8 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		dsp_scan.nx = Nx; // num datapoints in X to take
 		dsp_scan.ny = Ny-1; // num datapoints in Y to take
 
-		ydir = yindex > 0 ? -1 : 1;
+                g_print ("sranger_mk3_hwi_spm::ScanLineM INIT (yindex=%d [fifo-y=%d], xdir=%d, ydir=%d, lssrcs=%x\n", yindex, fifo_data_y_index, xdir, ydir, lssrcs);
+		ydir = yindex == 0 ? 1 : -1; // top-down / bottom-up ?
 	
 		recalculate_dsp_scan_speed_parameters (); // adjusts dsp_scan.dnx, ....!
 
@@ -1629,26 +1736,27 @@ void sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob
 		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_scan, (MAX_WRITE_SCAN)<<1); // write ix,iy - only here
 		start_fifo_read (yindex, nsrcs_dir[0], nsrcs_dir[1], nsrcs_dir[2], nsrcs_dir[3], Mob_dir[0], Mob_dir[1], Mob_dir[2], Mob_dir[3]);
+                usleep (20000); // give DSP time to start up scan
+                
+		running = TRUE;
+                return TRUE;
 	}
 
-	// call this while waiting for background data updates on screen...
-	//		ReadScanData (yindex, num_srcs, Mob); has moved into the thread now
+        // ACTUAL SCAN PROGRESS CHECK on line basis
+        if (ScanningFlg){ // make sure we did not got aborted and comkpleted already!
 
-	us_per_line = dsp_scan.dnx*dsp_scan.nx/(2.*DSPControlClass->frq_ref)*1e6;
-	// wait for data, updated display, data move is done in background by the fifo read thread
-	do {
-	        usleep ((int)us_per_line < 10000 ? (int)us_per_line : 10000); // release cpu time
-		gapp->check_events_self (); // do not lock, quiete
-		DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
-		if (ydir > 0 && yindex <= fifo_data_y_index) break;
-		if (ydir < 0 && yindex >= fifo_data_y_index) break;
+                DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
+                //g_print ("sranger_mk3_hwi_spm::ScanLineM(yindex=%d [fifo-y=%d], xdir=%d, ydir=%d, lssrcs=%x\n", yindex, fifo_data_y_index, xdir, ydir, lssrcs);
+                y_current = fifo_data_y_index;
 
-	} while (ScanningFlg);
+                if (ydir > 0 && yindex <= fifo_data_y_index) return FALSE; // break; // line completed top-down
+                if (ydir < 0 && yindex >= fifo_data_y_index) return FALSE; // break; // line completed bot-up
 
-	// update line, only if not canceled
-	if (ScanningFlg)
-		CallIdleFunc ();
-
-	// pop all remaining events
-	DSPControlClass->Probing_eventcheck_callback (NULL, DSPControlClass);
+                if ((ydir > 0 && yindex > 1) || (ydir < 0 && yindex < Ny-1)){
+                        double x,y,z;
+                        RTQuery ("W", x,y,z); // run watch dog
+                }
+                return TRUE;
+        }
+        return FALSE; // scan was stopped by users
 }

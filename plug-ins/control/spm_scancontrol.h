@@ -125,10 +125,20 @@ public:
 			const gchar *unit, const gchar *type, const gchar *label,
 			double d2u=0.);
 	/* configure a scan -- gets settings from channelselector/configuration */
-	void do_scanline (int init=FALSE); // execute a single scan line -- or if "line == -1" a HS 2D Area Capture/Scan
-	void run_probe (int ipx, int ipy); // run a local probe
-	int do_scan (int l=0); // do a full scan, line by line
-	int do_hscapture (); // do a full frame capute
+	gboolean do_scanline (int init=FALSE); // execute a single scan line -- or if "line == -1" a HS 2D Area Capture/Scan
+        void run_probe (int ipx, int ipy); // run a local probe
+
+        static gboolean spm_scancontrol_run_scans_task (gpointer data);
+
+        int setup_scanning_control (int l=0); // prepare for single scan, line by line
+        static gboolean scanning_task (gpointer spc);
+        gboolean scanning_control_init ();
+        gboolean scanning_control_run ();
+        gboolean scanning_control_finish ();
+        int scanning_task_stage;
+        int scanning_task_multivolt_i;
+        int scanning_task_line;
+        
 	void set_subscan (int xs=-1, int xn=0, int ys=0, int yn=0); /* setup for partial/sub scan, 
 								       current line, start at x = ix0, num points = num
 								    */
@@ -159,11 +169,6 @@ public:
 		return scan_flag == SCAN_FLAG_RUN || scan_flag == SCAN_FLAG_PAUSE 
 			? TRUE : FALSE; 
 	}; // check if a scan is in progress
-	int finish_scan (); /* finish the scan:
-			       return to origin (center of first line (SPM)),
-			       add some log info,
-			       free scan lists
-			     */
 
 	double update_status_info (int reset=FALSE); // compute and show some scan status info
 	void autosave_check (double sec, int initvalue=0); // check of autosave if requested
@@ -255,6 +260,7 @@ private:
 	int line, line2update; // current scan line and line to update in background
 	int ix0off; // current X offset (in pixels) -- if in subscan mode
 	SCAN_FLAG scan_flag; // scan status flag
+        gboolean  scan_stopped_by_user;
 	SCAN_DIR  scan_dir, last_scan_dir; // current and last scan direction
 	gboolean  do_probe; // set if currently in probe mode
 	gboolean  repeat_on; // scan repeat mode flag
@@ -272,6 +278,7 @@ private:
 
  public:
 	gboolean  keep_multi_layer_info;
+        GtkWidget* wdata;
 };
 
 #endif

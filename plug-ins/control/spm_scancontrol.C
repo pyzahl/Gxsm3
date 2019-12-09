@@ -423,14 +423,7 @@ SPM_ScanControl::SPM_ScanControl ()
         g_object_set_data( G_OBJECT (bs_tmp), "SPMCONTROL_MOVIE_BUTTON", button);
         g_object_set_data( G_OBJECT (bm_tmp), "SPMCONTROL_START_BUTTON", button);
 
-#if 0
-	button = gtk_button_new_with_label("HS Capture");
-	gtk_grid_attach (GTK_GRID (grid_ctrl), button, x++, y, 1,1);
-	g_signal_connect ( G_OBJECT (button), "pressed",
-			     G_CALLBACK (spm_scancontrol_hscapture_callback),
-			     this);
 //	gapp->RegisterPluginToolbarButton (G_OBJECT (button), "Toolbar_Scan_HsCapture");
-#endif
 
 #define ADD_SLS_CONTROL
 
@@ -725,7 +718,7 @@ SPM_ScanControl::~SPM_ScanControl (){
 	free_scan_lists ();
 
 	// clean up only
-	line = -1; do_scanline (TRUE);
+	line = -1; do_scanline (TRUE); // init call to clear all srcs references!
 
 //	std::cout << "SPM_ScanControl - cleanup multivolt" << std::endl;
 
@@ -757,23 +750,38 @@ static void via_remote_list_Check_ec(Gtk_EntryControl* ec, remote_args* ra){
 };
 
 static void spm_scancontrol_start_callback (GtkWidget *w, void *data){
-	int nostop;
-	guint i, l=0;
 	if (((SPM_ScanControl*)data) ->  scan_in_progress()){
 		((SPM_ScanControl*)data) -> resume_scan (); // in case paused, resume now!
 		return;
 	}
 
-	gtk_widget_set_sensitive (w, FALSE);
-	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_EC_NUM_VALUES"), FALSE);
-	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), FALSE);
-	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_BUTTON"), FALSE);
-	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_MODE"), FALSE);
-	gpointer ss_action = g_object_get_data (G_OBJECT (w), "simple-action");
-	if (ss_action)
-	        g_simple_action_set_enabled ((GSimpleAction*)ss_action, FALSE);
+        ((SPM_ScanControl*)data) -> wdata = w;
+        gdk_threads_add_idle (SPM_ScanControl::spm_scancontrol_run_scans_task, data);
+}
 
-	do {
+gboolean SPM_ScanControl::spm_scancontrol_run_scans_task (gpointer data){
+        static int runmode=0;
+	static guint i=0, l=0;
+        static gpointer ss_action = NULL;
+        
+        GtkWidget *w = ((SPM_ScanControl*)data) -> wdata;
+
+        switch (runmode){
+        case 0: 
+                gtk_widget_set_sensitive (w, FALSE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_EC_NUM_VALUES"), FALSE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), FALSE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_BUTTON"), FALSE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_MODE"), FALSE);
+                ss_action = g_object_get_data (G_OBJECT (w), "simple-action");
+                if (ss_action)
+                        g_simple_action_set_enabled ((GSimpleAction*)ss_action, FALSE);
+
+                runmode=1;
+                i=0;
+                return TRUE;
+
+        case 1:
                 gapp->xsm->FileCounterInc ();
                 gapp->xsm->ResetVPFileCounter ();
 
@@ -787,18 +795,10 @@ static void spm_scancontrol_start_callback (GtkWidget *w, void *data){
 		gapp->spm_update_all();
 		gapp->xsm->hardware->SetScanMode();
 		
+                runmode = 4; // in case of error, reset
 		if (((SPM_ScanControl*)data) -> MultiVoltMode()){
-			nostop = 1;
-			for (i=0; i<l && nostop; ++i){
+			if (i<l){
 				double value = ((SPM_ScanControl*)data) -> MultiVoltFromList(i);
-
-//				if (strncmp (gtk_entry_get_text (GTK_ENTRY (((SPM_ScanControl*)data) ->remote_param)), "DSP_Bias", 8) == 0)
-//					double bias = ((SPM_ScanControl*)data) -> MultiVoltFromList(i);
-
-				// old -- Bias only
-				// Set (DSP_Bias, bias or any other accessible parameter!) using remote list method to forward data to HwI plugin
-				// gchar *line3[] ={ "set", "DSP_Bias", g_strdup_printf ("%.4f", bias) };
-				// g_slist_foreach(gapp->RemoteEntryList, (GFunc) via_remote_list_Check_ec, (gpointer)line3);
 				
 				remote_args ra;
 				ra.qvalue = 0.;
@@ -812,26 +812,50 @@ static void spm_scancontrol_start_callback (GtkWidget *w, void *data){
 
 				for (int k=0; list[k]; ++k) g_free (list[k]);
 
-				nostop = ((SPM_ScanControl*)data) -> do_scan(i);
+				if (!((SPM_ScanControl*)data) -> setup_scanning_control(i))
+                                        return TRUE;
 				((SPM_ScanControl*)data) -> keep_multi_layer_info = TRUE;
+                                ++i;
 			}
 		} else {
-			nostop = ((SPM_ScanControl*)data) -> do_scan();
-		}		
+			if (!((SPM_ScanControl*)data) -> setup_scanning_control())
+                                return TRUE;
+		}
+                runmode = 2;
+                return TRUE;
+        case 2:
+                SPM_ScanControl::scanning_task (data); // actual scanning "setup, monitoring and update" task
+                if (((SPM_ScanControl*)data) -> scanning_task_stage == 0) // competed?
+                        runmode = 3;
 
+                return TRUE;
+        case 3:
+                if (((SPM_ScanControl*)data) -> MultiVoltMode() && i<l){
+                        runmode = 1;
+                        return TRUE;
+                }
 		if(gapp->xsm->IsMode(MODE_AUTOSAVE)){
                         gapp->auto_save_scans ();
                 }
 
-	} while (((SPM_ScanControl*)data) -> RepeatMode() && nostop);
-
-	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), TRUE);
-	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_BUTTON"), TRUE);
-	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_MODE"), TRUE);
-	gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_EC_NUM_VALUES"), TRUE);
-	gtk_widget_set_sensitive (w, TRUE);
-	if (ss_action)
-	        g_simple_action_set_enabled ((GSimpleAction*)ss_action, TRUE);
+                if (((SPM_ScanControl*)data) -> RepeatMode() && !((SPM_ScanControl*)data) -> scan_stopped_by_user)
+                        runmode = 1;
+                else
+                        runmode = 4;
+                return TRUE;
+        case 4:
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), TRUE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_BUTTON"), TRUE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_MODE"), TRUE);
+                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_EC_NUM_VALUES"), TRUE);
+                gtk_widget_set_sensitive (w, TRUE);
+                if (ss_action)
+                        g_simple_action_set_enabled ((GSimpleAction*)ss_action, TRUE);
+                runmode = 0;
+                return G_SOURCE_REMOVE;
+        }
+        runmode=0;
+        return G_SOURCE_REMOVE;
 }
 
 static void spm_scancontrol_movie_callback (GtkWidget *w, void *data){
@@ -868,7 +892,7 @@ static void spm_scancontrol_movie_callback (GtkWidget *w, void *data){
 		gapp->spm_update_all();
 		gapp->xsm->hardware->SetScanMode();
 
-		nostop = ((SPM_ScanControl*)data) -> do_scan();
+		nostop = ((SPM_ScanControl*)data) -> setup_scanning_control();
 
 		gapp->xsm->data.s.ntimes = gapp->xsm->auto_append_in_time ((double)(t - t0));
 	} while (nostop);
@@ -886,24 +910,6 @@ static void spm_scancontrol_movie_callback (GtkWidget *w, void *data){
                 if (ss_action)
                         g_simple_action_set_enabled ((GSimpleAction*)ss_action, TRUE);
         }
-}
-
-static void spm_scancontrol_hscapture_callback (GtkWidget *w, void *data){
-	int nostop;
-	if (((SPM_ScanControl*)data) ->  scan_in_progress())
-		return;
-	do {
-		time_t t; // Scan - Startzeit eintragen 
-		time(&t);
-		G_FREE_STRDUP_PRINTF(gapp->xsm->data.ui.dateofscan, "%s", ctime(&t));
-		gapp->spm_update_all();
-		gapp->xsm->hardware->SetScanMode();
-
-		nostop = ((SPM_ScanControl*)data) -> do_hscapture();
-
-		if(gapp->xsm->IsMode(MODE_AUTOSAVE))
-			gapp->xsm->save(AUTO_NAME_SAVE);
-	} while (nostop);
 }
 
 static void spm_scancontrol_pause_callback (GtkWidget *w, void *data){
@@ -1401,13 +1407,12 @@ int SPM_ScanControl::setup_scan (int ch,
 int SPM_ScanControl::prepare_to_start_scan (SCAN_DT_TYPE st){
 	// which origin mode?
         if (IS_SPALEED_CTRL||xsmres.ScanOrgCenter)
-	  YOriginTop = FALSE; // Fix hier für SPA-LEED
+                YOriginTop = FALSE; // Fix hier für SPA-LEED
 	else 
-	  YOriginTop = TRUE;
+                YOriginTop = TRUE;
 	scan_flag = SCAN_FLAG_RUN;
 
 	gapp->SetStatus ("Starting Scan: Ch.Setup");
-	gapp->check_events ("Scan Channel Setup");
     
 	// setup scan size
 	gapp->xsm->hardware->SetDxDy (
@@ -1463,7 +1468,7 @@ int SPM_ScanControl::prepare_to_start_scan (SCAN_DT_TYPE st){
 			return -1;
 		}
 		return 0;
-	case SCAN_FRAMECAPTURE:
+	case SCAN_FRAMECAPTURE: // obsoleted
 		if (gapp->xsm->data.s.nx*gapp->xsm->data.s.ny*ns_xp >= gapp->xsm->hardware->GetMaxPointsPerLine ()){
 			gchar *maxtxt = g_strdup_printf ("Hardware limits points per frame to\n"
 							 "%ld in total for all channels (->)!",
@@ -1493,12 +1498,13 @@ void IdleRefreshFunc (gpointer data){
 }
 
 // execute a single scan line -- or if "line == -1" a HS 2D Area Capture/Scan
-void SPM_ScanControl::do_scanline (int init){
+gboolean SPM_ScanControl::do_scanline (int init){
 	static Mem2d **m2d_xp=NULL;
 	static Mem2d **m2d_xm=NULL;
 	static Mem2d **m2d_2nd_xp=NULL;
 	static Mem2d **m2d_2nd_xm=NULL;
 	static IdleRefreshFuncData idf_data;
+        static int scanning_task_section=0;
 
 	// if first time called/first line, do some local (static vars) initializations here!
 	if (init){
@@ -1520,9 +1526,11 @@ void SPM_ScanControl::do_scanline (int init){
 			g_free (m2d_2nd_xm);
 			m2d_2nd_xm = NULL;
 		}
-		if( line < 0) 
-			return;
-
+		if( line < 0){
+                        scanning_task_section = 0;
+			return TRUE; // cleanup
+                }
+                
 		num = g_slist_length (xp_scan_list); 
 		if (num > 0){
 			Mem2d **m;
@@ -1588,74 +1596,83 @@ void SPM_ScanControl::do_scanline (int init){
 			*m = NULL;
 			g_slist_free (rev);
 		}
+                
 		idf_data.scan_list  = NULL;
 		idf_data.UpdateFunc = (GFunc) SPM_ScanControl::call_scan_draw_line;
 		idf_data.data = this;
+                idf_data.scan_list = NULL;
 		PI_DEBUG (DBG_L2, "SPM_ScanControl::do_scanline : init done");
 
+                // setup hardware data transfer
 		gapp->xsm->hardware->ScanLineM (-2,  1, xp_srcs, m2d_xp, sls_config);
 		gapp->xsm->hardware->ScanLineM (-2, -1, xm_srcs, m2d_xm, sls_config);
 		gapp->xsm->hardware->ScanLineM (-2,  2, xp_2nd_srcs, m2d_2nd_xp, sls_config);
 		gapp->xsm->hardware->ScanLineM (-2, -2, xm_2nd_srcs, m2d_2nd_xm, sls_config);
 
-		return;
+                // ready for processing lines
+                scanning_task_section = 1;
+		return TRUE;
 	}
 
-	if (line == -1){ // HS Capture -- Area Scan!!!
-		// do X+ Scan ?
-		if (m2d_xp)
-			gapp->xsm->hardware->ScanLineM (-1,  1, xp_srcs, m2d_xp, sls_config);
+	// do Scanline(s) cycling through (XP (->), XM (<-), XP2ND (2>), XM2ND (<2)) and update display
 
-		// do X- Scan ?
-		if (m2d_xm)
-			PI_DEBUG (DBG_L2, "Sorry -- not in HS Capture mode" );
-
-		return;
-	}
-
-	// do Scanline (XP (+))
-	// and display new Data
-	
-	// do X+ Scan?
-	if (m2d_xp){
-		// execute scanline
-		gapp->xsm->hardware->ScanLineM (line,  1, xp_srcs, m2d_xp, sls_config);
-		// setup idle func -- executed on next wait for data!
-		line2update = line+sls_config[2];
-		idf_data.scan_list = xp_scan_list;
-		gapp->xsm->hardware->SetIdleFunc (&IdleRefreshFunc, &idf_data);
-	}
-		
-
-	// do X- Scan ?
-	if (m2d_xm){
-		gapp->xsm->hardware->ScanLineM(line, -1, xm_srcs, m2d_xm, sls_config);
-		line2update = line+sls_config[2];
-		idf_data.scan_list = xm_scan_list;
-		gapp->xsm->hardware->SetIdleFunc (&IdleRefreshFunc, &idf_data);
-	} 
-
-
-	// do X2nd+ Scan?
-	if (m2d_2nd_xp){
-		// execute scanline
-		gapp->xsm->hardware->ScanLineM (line,  2, xp_2nd_srcs, m2d_2nd_xp, sls_config);
-		// setup idle func -- executed on next wait for data!
-		line2update = line+sls_config[2];
-		idf_data.scan_list = xp_2nd_scan_list;
-		gapp->xsm->hardware->SetIdleFunc (&IdleRefreshFunc, &idf_data);
-	}
-		
-
-	// do X- Scan ?
-	if (m2d_2nd_xm){
-		gapp->xsm->hardware->ScanLineM(line, -2, xm_2nd_srcs, m2d_2nd_xm, sls_config);
-		line2update = line+sls_config[2];
-		idf_data.scan_list = xm_2nd_scan_list;
-		gapp->xsm->hardware->SetIdleFunc (&IdleRefreshFunc, &idf_data);
-	} 
-
-	autosave_check (update_status_info ());
+        switch (scanning_task_section){
+        case 0: return FALSE;
+        case 1:
+                // do X+ Scan?
+                if (m2d_xp){
+                        // execute scanline XP (->), update previous line data in idle call
+                        if (!gapp->xsm->hardware->ScanLineM (line,  1, xp_srcs, m2d_xp, sls_config)){
+                                // setup idle func -- executed on next wait for data!
+                                line2update = line+sls_config[2];
+                                idf_data.scan_list = xp_scan_list;
+                                scanning_task_section = 2; // next section
+                                break;
+                        } else break;
+                } else
+                        scanning_task_section = 2; // next section
+        case 2:
+                // do X- Scan ?
+                if (m2d_xm){
+                        if (!gapp->xsm->hardware->ScanLineM(line, -1, xm_srcs, m2d_xm, sls_config)){
+                                line2update = line+sls_config[2];
+                                idf_data.scan_list = xm_scan_list;
+                                scanning_task_section = 3; // next section
+                                break;
+                        } else break;
+                } else
+                        scanning_task_section = 3; // next section
+        case 3:
+                // do X2nd+ Scan?
+                if (m2d_2nd_xp){
+                        if (!gapp->xsm->hardware->ScanLineM (line,  2, xp_2nd_srcs, m2d_2nd_xp, sls_config)){
+                                line2update = line+sls_config[2];
+                                idf_data.scan_list = xp_2nd_scan_list;
+                                scanning_task_section = 4; // next section
+                                break;
+                        } else break;
+                } else
+                        scanning_task_section = 4; // next section
+        case 4:
+                // do X- Scan ?
+                if (m2d_2nd_xm){
+                        if (!gapp->xsm->hardware->ScanLineM(line, -2, xm_2nd_srcs, m2d_2nd_xm, sls_config)){
+                                line2update = line+sls_config[2];
+                                idf_data.scan_list = xm_2nd_scan_list;
+                                scanning_task_section = 5; // next section
+                                break;
+                        } else break;
+                } else
+                        scanning_task_section = 5; // Auto Save Check!
+        case 5:
+                autosave_check (update_status_info ());
+                scanning_task_section = 1;
+                return FALSE; // done.
+        }
+        
+        if (idf_data.scan_list) IdleRefreshFunc (&idf_data);
+        gapp->check_events_self();
+        return TRUE;
 }
 
 void SPM_ScanControl::run_probe (int ipx, int ipy){
@@ -1685,20 +1702,7 @@ void SPM_ScanControl::set_subscan (int xs, int xn, int ys, int yn){
 	}       
 }	
 
-int SPM_ScanControl::do_scan (int l){
-	PI_DEBUG (DBG_L2, "do_scan");
-
-	if (scan_in_progress ()){
-		PI_DEBUG (DBG_L2, "do_scan scan in progress, exiting.");
-		return FALSE;
-	}
-        if (! gapp->xsm->hardware->RTQuery_clear_to_start_scan ()){
-                gapp->monitorcontrol->LogEvent ("Start Scan", "Instrument is busy with VP or conflciting task: skipping requst.", 3);
-                g_warning ("Start Scan: Instrument is busy with VP or conflciting task. Skipping.");
-                return FALSE;
-        }
-
-        
+gboolean SPM_ScanControl::scanning_control_init (){
 	switch (scan_dir){
 	case SCAN_DIR_TOPDOWN: 
 		last_scan_dir = SCAN_DIR_TOPDOWN;
@@ -1714,19 +1718,22 @@ int SPM_ScanControl::do_scan (int l){
 	gapp->xsm->data.s.ydir = last_scan_dir == SCAN_DIR_TOPDOWN ? 1:-1;
 	gapp->xsm->data.s.pixeltime = 0.;
 
-	gapp->xsm->hardware->ScanDirection(last_scan_dir == SCAN_DIR_TOPDOWN? +1 : -1);
+	gapp->xsm->hardware->ScanDirection (last_scan_dir == SCAN_DIR_TOPDOWN ? +1 : -1);
+
+        g_message ("SPM_ScanControl::scanning_control_init ** ScanDir is %d", last_scan_dir);
 
 	if (prepare_to_start_scan ()){ // uses gapp->xsm->data.s.ydir to setup scans
 		PI_DEBUG (DBG_L2, "prepare scan failed, exiting.");
 		stop_scan ();
 		free_scan_lists ();
+                g_warning ("prepare scan start failed, aborting process.");
 		return FALSE;
 	}
 
 	PI_DEBUG (DBG_L2, "do_scan precheck done.");
 
 	// now freeze all scanparameters
-	gapp->spm_freeze_scanparam();
+	gapp->spm_freeze_scanparam ();
     
 	PI_DEBUG (DBG_L2, "do_scan SetOffsets.");
 
@@ -1742,49 +1749,25 @@ int SPM_ScanControl::do_scan (int l){
 
 	// HwI needs to take care of no-jump
 	gapp->xsm->hardware->SetAlpha(master_scan->data.s.alpha);
-#if 0
-// vorlaeufig...
-	PI_DEBUG (DBG_L2, "do_scan Moveto 0,0, Rotate, Moveto.");
-
-	if (last_scan_dir == SCAN_DIR_TOPDOWN){
-		if (!IS_SPALEED_CTRL)
-			yline = 0;
-		else{ // SPA_LEED: don't care
-			yline = R2INT(gapp->xsm->Inst->YA2Dig((-master_scan->data.s.ny/2)*master_scan->data.s.dy)); 
-		}
-		gapp->xsm->hardware->MovetoXY(0, yline);
-		PI_DEBUG (DBG_L2, "Moveto:0,"<<yline);
-		// Dies ist der Rotations-Invariante Punkt !!
-		// Jetzt, und nur hier !!!!! drehen !
-		gapp->xsm->hardware->SetAlpha(master_scan->data.s.alpha);
-		PI_DEBUG (DBG_L2, "Set alpha: "<<master_scan->data.s.alpha);
-	}
-#endif
 
 	// Set Start Time, notify scans about, initialisations...
-	MultiVoltEntry *mve =  MultiVoltMode () ? MultiVoltElement (l) : NULL;
+	MultiVoltEntry *mve =  MultiVoltMode () ? MultiVoltElement (scanning_task_multivolt_i) : NULL;
 	g_slist_foreach ((GSList*) all_scan_list,
 			 (GFunc) SPM_ScanControl::call_scan_start, mve);
         
+        gapp->set_toolbar_autosave_button (); // reset auto save button to full save symbol
+        
         // prepare hardware for start scan "scan pre check"
-	gapp->xsm->hardware->StartScan2D();
+	gapp->xsm->hardware->StartScan2D ();
 
-	line = 0;
-	do_scanline (TRUE);
 	update_status_info (TRUE);
 	autosave_check (0., xsmres.AutosaveValue);
 	set_subscan ();
 
-        gapp->set_toolbar_autosave_button (); // reset auto save button to full save symbol
-        
-	// copy muxsettings from other direction if not given
-	// weird... to fix !!!
-	if(!xm_srcs) xm_srcs = xp_srcs;
-	if(!xp_srcs) xp_srcs = xm_srcs;
-	
-	PI_DEBUG (DBG_L3, "DoScan: Setup MUX");
-    
-	// MUX-Codierung:
+        scanning_task_line=0;
+        line = last_scan_dir == SCAN_DIR_TOPDOWN ? 0 : master_scan->mem2d->GetNySub ()-1;
+	do_scanline (TRUE);
+
 #ifdef XSM_DEBUG_OPTION
 	PI_DEBUG (DBG_L3,  "xp_srcs: " << xp_srcs );
 	for(int i=0; i<16; i++) PI_DEBUG_PLAIN (DBG_L2, (int)((xp_srcs&(1<<i))?1:0)); PI_DEBUG_PLAIN (DBG_L2, std::endl);
@@ -1800,170 +1783,39 @@ int SPM_ScanControl::do_scan (int l){
 		g_free (muxcoding);
 	}
 
-	// run scan now...
-        // GXSM2: new subscan fwd port
-        //	for(line = last_scan_dir == SCAN_DIR_TOPDOWN ? 0 : master_scan->data.s.ny-1;
-        //	    (last_scan_dir == SCAN_DIR_TOPDOWN ? line < master_scan->data.s.ny : line >= 0)
-	for(line = last_scan_dir == SCAN_DIR_TOPDOWN ? 0 : master_scan->mem2d->GetNySub ()-1; //data.s.ny-1;
-	    (last_scan_dir == SCAN_DIR_TOPDOWN ? line < master_scan->mem2d->GetNySub () : line >= 0)
-	    // WORKAROUND ****!!!!
-	    //	    (last_scan_dir == SCAN_DIR_TOPDOWN ? line < master_scan->data.s.ny-5 : line >= 0)
-		    && scan_flag != SCAN_FLAG_STOP;
+        return TRUE;
+}
 
-
-		){
-      
+gboolean SPM_ScanControl::scanning_control_run (){
+        if ((last_scan_dir == SCAN_DIR_TOPDOWN
+             ? line < master_scan->mem2d->GetNySub () : line >= 0)
+            && scan_flag != SCAN_FLAG_STOP
+            ){
 		if (scan_flag == SCAN_FLAG_RUN){
-			// PI_DEBUG (DBG_L3, "Running Line" << line);
-
-			// calculate yline and move to scanline start position
-
-			if (YOriginTop)
-				yline = R2INT (gapp->xsm->Inst->YA2Dig (
-						       -line*master_scan->data.s.dy));
-			else
-				yline = R2INT (gapp->xsm->Inst->YA2Dig (
-						       -(line - master_scan->data.s.ny/2)*master_scan->data.s.dy));
-			
-			gapp->xsm->hardware->MovetoXY (
-				R2INT (gapp->xsm->Inst->XA2Dig (
-					       master_scan->data.s.dx 
-					       * (ix0off - gapp->xsm->hardware->GetPreScanLineOffset () - master_scan->data.s.nx/2)
-					       )),
-				yline);
-
-
-			// execute scan line
-			do_scanline ();
-
-			// skip to next line
-			last_scan_dir == SCAN_DIR_TOPDOWN ? ++line : --line;
+			if (!do_scanline ()){
+                                // skip to next line
+                                // g_print ("scanning_control_run task_line#=%d  y-line=%d\n",scanning_task_line,line);
+                                scanning_task_line++;
+                                last_scan_dir == SCAN_DIR_TOPDOWN ? ++line : --line;
+                        }
 		}
-		gapp->check_events_self (); // be quiet, longer tast
+
+                return TRUE; // continue!
 	}
-	
-	// finish scan
-	gapp->xsm->hardware->EndScan2D ();
-	gapp->xsm->hardware->CallIdleFunc ();
-	gapp->xsm->hardware->SetIdleFunc (NULL, NULL);
+
+	if (gapp->xsm->hardware->EndScan2D ()){
+                do_scanline (); // kepp refreshing until tip final position os reached.
+                return TRUE; // wait, must keep calling this fucntion until return FALSE!
+        }
+        
+        return FALSE; // completed
+}
+
+gboolean SPM_ScanControl::scanning_control_finish (){
+	int stopped=0;
+	PI_DEBUG (DBG_L2, "SPM_ScanControl::scanning_control_finish.");
 
         gapp->set_toolbar_autosave_button (); // reset auto save button to full save symbol
-
-	if( line < master_scan->data.s.ny && line&1) 
-		line++;
-	
-	return finish_scan ();
-}
-
-int SPM_ScanControl::do_hscapture (){
-	if (scan_in_progress ()){
-		PI_DEBUG (DBG_L2, "do_scan scan in progress, exiting.");
-		return FALSE;
-	}
-
-	if (prepare_to_start_scan (SCAN_FRAMECAPTURE)){
-		PI_DEBUG (DBG_L2, "prepare scan failed, exiting.");
-		stop_scan ();
-		free_scan_lists ();
-		return FALSE;
-	}
-
-	// now freeze all scanparameters
-	gapp->spm_freeze_scanparam();
-
-	// move to origin
-	if (!IS_SPALEED_CTRL)
-		gapp->xsm->hardware->SetOffset (R2INT (gapp->xsm->Inst->X0A2Dig (master_scan->data.s.x0)),
-						R2INT (gapp->xsm->Inst->Y0A2Dig (master_scan->data.s.y0)));
-	else
-		gapp->xsm->hardware->SetOffset (R2INT(gapp->xsm->Inst->X0A2Dig (master_scan->data.s.x0) 
-						      + master_scan->data.s.SPA_OrgX/gapp->xsm->Inst->XResolution ()),
-						R2INT(gapp->xsm->Inst->Y0A2Dig (master_scan->data.s.y0) 
-						      + master_scan->data.s.SPA_OrgY/gapp->xsm->Inst->YResolution ()));
-	
-	// Auf Ursprung fahren: SPM: Mitte erste Scanzeile !!
-	gapp->xsm->hardware->MovetoXY (0,0);
-	gapp->xsm->hardware->SetAlpha (master_scan->data.s.alpha);
-
-	//--- call_scan_start was here
-
-	gapp->xsm->hardware->StartScan2D();
-
-	line = 0;
-	do_scanline (TRUE);
-	update_status_info (TRUE);
-
-	// Set Start Time, notify scans about, initialisations...
-	g_slist_foreach ((GSList*) xp_scan_list,
-			(GFunc) SPM_ScanControl::call_scan_start, this);
-	g_slist_foreach ((GSList*) xm_scan_list,
-			(GFunc) SPM_ScanControl::call_scan_start, this);
-
-	// copy muxsettings from other direction if not given
-	// weird... to fix !!!
-	if(!xm_srcs) xm_srcs = xp_srcs;
-	if(!xp_srcs) xp_srcs = xm_srcs;
-	
-	// MUX-Codierung:
-#ifdef XSM_DEBUG_OPTION
-	PI_DEBUG (DBG_L4,  "xp_srcs: " << xp_srcs );
-	for(int i=0; i<16; i++) PI_DEBUG_PLAIN (DBG_L2, (int)((xp_srcs&(1<<i))?1:0)); PI_DEBUG_PLAIN (DBG_L2, std::endl );
-	PI_DEBUG (DBG_L4,  "xm_srcs: " << xm_srcs );
-	for(int i=0; i<16; i++) PI_DEBUG_PLAIN (DBG_L2, (int)((xm_srcs&(1<<i))?1:0)); PI_DEBUG_PLAIN (DBG_L2, std::endl );
-#endif
-
-	{
-		gchar *muxcoding = g_strdup_printf ("xp_srcs: %2X  xm_srcs: %2X", xp_srcs, xm_srcs);
-		gapp->monitorcontrol->LogEvent ("*StartHSCapture", muxcoding);
-		g_free (muxcoding);
-	}
-
-	if (scan_flag != SCAN_FLAG_STOP ){
-		if (!YOriginTop){
-			int yline = R2INT (gapp->xsm->Inst->YA2Dig (
-						   -(line - master_scan->data.s.ny/2)
-						   *master_scan->data.s.dy));
-		gapp->xsm->hardware->MovetoXY (
-			R2INT (gapp->xsm->Inst->XA2Dig (
-				       master_scan->data.s.dx 
-				       * (ix0off - gapp->xsm->hardware->GetPreScanLineOffset ()
-					  - master_scan->data.s.nx/2)
-				       )), 
-			yline);
-		}
-		// execute high speed capture scan (line = -1 indicates this mode)
-		line = -1;
-		do_scanline ();
-		gapp->check_events_self (); // be quiet, longer task
-	}
-
-	gapp->xsm->hardware->EndScan2D ();
-	line = master_scan->data.s.ny;
-
-	return finish_scan ();
-}
-
-int SPM_ScanControl::finish_scan (){
-	int stopped;
-	PI_DEBUG (DBG_L2, "finish_scan.");
-
-	// Wieder auf Ursprung fahren: Mitte erste Scanzeile !!
-	// gapp->xsm->hardware->MovetoXY(0,0); // *** Py 20102037 -- not here any more
-	PI_DEBUG (DBG_L2, "Return to (0,0) at the end of the scan.");
-	/*	switch (scan_dir){
-	case SCAN_DIR_TOPDOWN: 
-		gapp->xsm->hardware->MovetoXY (0,0);
-		// Dies ist der Rotations-Invariante Punkt !!
-		// Jetzt, und nur hier !!!!! auf 0° drehen !
-		gapp->xsm->hardware->SetAlpha(0);
-		break;
-	default:
-		gapp->xsm->hardware->MovetoXY (0,0);
-		// Dies ist der Rotations-Invariante Punkt !!
-		// Jetzt, und nur hier !!!!! auf 0° drehen !
-		gapp->xsm->hardware->SetAlpha(0);
-		break;
-		}*/
 
 	gapp->SignalStopScanEventToPlugins ();
 
@@ -1983,9 +1835,65 @@ int SPM_ScanControl::finish_scan (){
 	
 	// free_scan_lists (); // keep
 	scan_flag = SCAN_FLAG_READY;
+        
+        scan_stopped_by_user = stopped;
 
-	return !stopped;
+        g_message ("SPM_ScanControl::scan_control_finish, by user flg=%d\n", scan_stopped_by_user);
+        
+        return G_SOURCE_REMOVE;
 }
+
+// Execute One Scan Process: init, run, finish state machine task
+gboolean SPM_ScanControl::scanning_task (gpointer spc){
+
+        //g_print ("\n** ST_stage=%d\n", ((SPM_ScanControl *)spc)->scanning_task_stage);
+                
+        switch (((SPM_ScanControl *)spc)->scanning_task_stage){
+        case 0 : return G_SOURCE_REMOVE;
+        case 1 :
+                ((SPM_ScanControl *)spc)->scanning_task_stage = 2;
+                return ((SPM_ScanControl *)spc)->scanning_control_init ();
+        case 2 :
+                if (((SPM_ScanControl *)spc)->scanning_control_run ())
+                        return TRUE;
+                else
+                        ((SPM_ScanControl *)spc)->scanning_task_stage = 3;
+                return TRUE;
+        case 3 :
+                if (((SPM_ScanControl *)spc)->scanning_control_finish ())
+                        return TRUE;
+                else {
+                        ((SPM_ScanControl *)spc)->scanning_task_stage = 0;
+                        return G_SOURCE_REMOVE;
+                }
+        default : return G_SOURCE_REMOVE;
+        }
+        return G_SOURCE_REMOVE;
+}
+
+// Setup task for one pas scan process
+int SPM_ScanControl::setup_scanning_control (int l){
+	PI_DEBUG (DBG_L2, "do_scan");
+
+	if (scan_in_progress ()){
+		PI_DEBUG (DBG_L2, "do_scan scan in progress, exiting.");
+		return FALSE;
+	}
+        if (! gapp->xsm->hardware->RTQuery_clear_to_start_scan ()){
+                gapp->monitorcontrol->LogEvent ("Start Scan", "Instrument is busy with VP or conflciting task: skipping requst.", 3);
+                g_warning ("Start Scan: Instrument is busy with VP or conflciting task. Skipping.");
+                return FALSE;
+        }
+
+        scanning_task_multivolt_i = l;
+        scanning_task_stage = 1; // start
+        scan_stopped_by_user = 0;
+
+        //gdk_threads_add_idle (SPM_ScanControl::scanning_task, this);
+
+        return TRUE;
+}
+
 
 double SPM_ScanControl::update_status_info (int reset){
 	static time_t tn, tnlog, t0;

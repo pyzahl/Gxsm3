@@ -334,18 +334,19 @@ sranger_mk2_hwi_dev::sranger_mk2_hwi_dev(){
 				SRANGER_DEBUG ("SRanger, FB_SPM soft: Magic data OK");
 				PI_DEBUG_GP (DBG_L1, "HWI-DEV-MK2-I**-- magic data OK.\n");
 				
-				if (InfoString)
-				        g_free (InfoString);
-				InfoString = g_strdup_printf("SR-MK2 connect at %s"
-							     "\nDSP-SoftId : %04x [HwI:%04x]"
-							     "\nDSP-SoftVer: %04x [HwI:%04x]"
-							     "\nDSP-SoftDat: %04x %04x [HwI:%04x %04x]",
-							     xsmres.DSPDev,
-							     magic_data.dsp_soft_id, FB_SPM_SOFT_ID,
-							     magic_data.version, FB_SPM_VERSION,
-							     magic_data.mmdd, magic_data.year, FB_SPM_DATE_MMDD, FB_SPM_DATE_YEAR
-							     );
-                                gapp->monitorcontrol->LogEvent ("MK2 HwI identification data", InfoString);
+                                {
+                                        gchar *InfoString = g_strdup_printf("SR-MK2 connect at %s"
+                                                                            "\nDSP-SoftId : %04x [HwI:%04x]"
+                                                                            "\nDSP-SoftVer: %04x [HwI:%04x]"
+                                                                            "\nDSP-SoftDat: %04x %04x [HwI:%04x %04x]",
+                                                                            xsmres.DSPDev,
+                                                                            magic_data.dsp_soft_id, FB_SPM_SOFT_ID,
+                                                                            magic_data.version, FB_SPM_VERSION,
+                                                                            magic_data.mmdd, magic_data.year, FB_SPM_DATE_MMDD, FB_SPM_DATE_YEAR
+                                                                            );
+                                        gapp->monitorcontrol->LogEvent ("MK2 HwI identification data", InfoString);
+                                        g_free (InfoString);
+                                }
 
 				if (FB_SPM_SOFT_ID != magic_data.dsp_soft_id){
 				        gchar *details = g_strdup_printf(
@@ -664,12 +665,9 @@ int sranger_mk2_hwi_dev::start_fifo_read (int y_start,
 
 gpointer FifoReadThread (void *ptr_sr){
 	sranger_mk2_hwi_dev *sr = (sranger_mk2_hwi_dev*)ptr_sr;
-	int ny = sr->fifo_data_Mobp[sr->fifo_data_num_srcs[0] ? 0:1][0]->GetNy();
+	int ny = sr->fifo_data_Mobp[sr->fifo_data_num_srcs[0] ? 0:1][0]->GetNySub();
 
 	SRANGER_DEBUG ("Starting Fifo Read, reading " << ny << " lines, " << "y_index: " << sr->fifo_data_y_index);
-
-	// This delay is to avoid some not yet exploited initial fifo-reading delay and unnecessary early fifo overflow - PZ
-//	usleep(2000000); // wait for GUI stuff to get ready, empiric -- 4s
 
 	sr->ReadLineFromFifo (SR_READFIFO_RESET); // init read fifo status
 
@@ -2034,8 +2032,10 @@ auto_recover_and_debug:
 /*
  * provide some info about the connected hardware/driver/etc.
  */
-gchar* sranger_mk2_hwi_dev::get_info(){
+const gchar* sranger_mk2_hwi_dev::get_info(){
+        static gchar *tmp=NULL;
 	static gchar *magic_info = NULL;
+        g_free (tmp);
 	if (productid){
 		gchar *details = NULL;
 		if (FB_SPM_VERSION != magic_data.version){
@@ -2090,21 +2090,21 @@ gchar* sranger_mk2_hwi_dev::get_info(){
 			details
 			);
 		g_free (details);
-		return g_strconcat (
-			"*--GXSM Sranger HwI base class--*\n",
-			"Sranger device: ", productid, "\n",
-			"*--Features--*\n",
-			FB_SPM_FEATURES,
-			"*--Magic Info--*\n",
-			magic_info,
-			"*--EOF--*\n",
-			NULL
-			); 
+		return tmp=g_strconcat (
+                                        "*--GXSM Sranger HwI base class--*\n",
+                                        "Sranger device: ", productid, "\n",
+                                        "*--Features--*\n",
+                                        FB_SPM_FEATURES,
+                                        "*--Magic Info--*\n",
+                                        magic_info,
+                                        "*--EOF--*\n",
+                                        NULL
+                                        ); 
 	}
 	else
-		return g_strdup("*--GXSM Sranger HwI base class--*\n"
-				"Sranger device not connected\n"
-				"or not supported.");
+		return tmp=g_strdup("*--GXSM Sranger HwI base class--*\n"
+                                    "Sranger device not connected\n"
+                                    "or not supported.");
 }
 
 double sranger_mk2_hwi_dev::GetUserParam (gint n, gchar *id){

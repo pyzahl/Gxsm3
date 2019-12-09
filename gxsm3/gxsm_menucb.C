@@ -128,7 +128,8 @@ void App::auto_save_scans (){ // auto save or update scan(s) in progress or comp
                                 // full save, no user interaction -- no overwrite, but auto couter advance until clear to go. But with prev. updated file, do overwrite!
                                 while (((Scan*)tmp->data)->Save (gapp->auto_update_all)){
                                         xsm->FileCounterInc (); // try next counter
-                                        spm_update_all();
+                                        if (!gapp->is_thread_safe_no_gui_mode())
+                                                spm_update_all();
                                         for (GSList* tmpAdjustCounter = gapp->xsm->GetActiveScanList(); tmpAdjustCounter; tmpAdjustCounter = g_slist_next (tmpAdjustCounter))
                                                 ((Scan*)tmpAdjustCounter->data)->storage_manager.set_dataset_counter (xsm->GetFileCounter ());
                                         // may add a safety bail out??? Even should end some time....?
@@ -142,7 +143,8 @@ void App::auto_save_scans (){ // auto save or update scan(s) in progress or comp
                         }
                 }
         }
-        spm_update_all();
+        if (!gapp->is_thread_safe_no_gui_mode())
+                spm_update_all();
 }
 
 void App::auto_update_scans (){ // auto save or update scan(s) in progress or completed.
@@ -207,10 +209,12 @@ void App::file_save_callback (GSimpleAction *simple, GVariant *parameter, gpoint
 void App::set_toolbar_autosave_button (gboolean update_mode){
         if (tool_button_save_all){
                 if (update_mode){
-                        gtk_tool_button_set_icon_name (tool_button_save_all, "view-refresh-symbolic");
+                        if (!gapp->is_thread_safe_no_gui_mode())
+                                gtk_tool_button_set_icon_name (tool_button_save_all, "view-refresh-symbolic");
                         auto_update_all = true;
                 }else{
-                        gtk_tool_button_set_icon_name (tool_button_save_all, "document-save-symbolic");
+                        if (!gapp->is_thread_safe_no_gui_mode())
+                                gtk_tool_button_set_icon_name (tool_button_save_all, "document-save-symbolic");
                         auto_update_all = false;
                 }
         }

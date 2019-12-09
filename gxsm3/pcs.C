@@ -78,7 +78,7 @@ Param_Control::Param_Control(UnitObj *U, const char *W, double *V, double VMi, d
 	XSM_DEBUG (DBG_L8, "PCS-double:: " << *V << ", " << VMi << ", " << VMa << ", " << p);
 	unit = U->Copy ();
 	warning = W ? g_strdup(W) : NULL;
-	Dval = V; Ival=0; ULval=0; Sval=0;
+	Dval = V; Ival=0; ULval=0; Sval=0; StringVal=NULL;
 	Init();
 	setMin (VMi);
 	setMax (VMa);
@@ -89,7 +89,7 @@ Param_Control::Param_Control(UnitObj *U, const char *W, unsigned long *V, double
 	XSM_DEBUG (DBG_L8, "PCS-ulong:: " << *V << ", " << VMi << ", " << VMa << ", " << p);
 	unit = U->Copy ();
 	warning = W ? g_strdup(W) : NULL;
-	ULval = V; Ival=0; Dval=0; Sval=0;
+	ULval = V; Ival=0; Dval=0; Sval=0; StringVal=NULL;
 	Init();
 	setMin (VMi);
 	setMax (VMa);
@@ -100,7 +100,7 @@ Param_Control::Param_Control(UnitObj *U, const char *W, int *V, double VMi, doub
 	XSM_DEBUG (DBG_L8, "PCS-int:: " << *V << ", " << VMi << ", " << VMa << ", " << p);
 	unit = U->Copy ();
 	warning = W ? g_strdup(W) : NULL;
-	Ival = V; ULval=0; Dval=0; Sval=0;
+	Ival = V; ULval=0; Dval=0; Sval=0; StringVal=NULL;
 	Init();
 	setMin (VMi);
 	setMax (VMa);
@@ -111,11 +111,22 @@ Param_Control::Param_Control(UnitObj *U, const char *W, short *V, double VMi, do
 	XSM_DEBUG (DBG_L8, "PCS-short:: " << *V << ", " << VMi << ", " << VMa << ", " << p);
 	unit = U->Copy ();
 	warning = W ? g_strdup(W) : NULL;
-	Sval = V; ULval=0; Ival=0; Dval=0;
+	Sval = V; ULval=0; Ival=0; Dval=0; StringVal=NULL;
 	Init();
 	setMin (VMi);
 	setMax (VMa);
 	prec = g_strdup(p);
+}
+
+Param_Control::Param_Control(UnitObj *U, const char *W, const gchar *SV){
+	XSM_DEBUG (DBG_L8, "PCS-string:: " << W);
+	unit = U->Copy ();
+	warning = W ? g_strdup(W) : NULL;
+	Sval = 0; ULval=0; Ival=0; Dval=0; StringVal=W;
+	Init();
+	setMin (0.);
+	setMax (0.);
+	prec = g_strdup("");
 }
 
 Param_Control::~Param_Control(){
@@ -179,19 +190,23 @@ void Param_Control::Init(){
 }
 
 void Param_Control::Val(double *V){
-	Dval = V; Ival=0; Sval=0;
+	Dval = V; Ival=0; Sval=0; StringVal=NULL;
 }
 
 void Param_Control::Val(int *V){
-	Ival = V; Dval=0; Sval=0;
+	Ival = V; Dval=0; Sval=0; StringVal=NULL;
 }
 
 void Param_Control::Val(unsigned long *V){
-	ULval=V; Ival = 0; Dval=0; Sval=0;
+	ULval=V; Ival = 0; Dval=0; Sval=0; StringVal=NULL;
 }
 
 void Param_Control::Val(short *V){
-	Sval = V; Ival=0; Dval=0;
+	Sval = V; Ival=0; Dval=0; StringVal=NULL;
+}
+
+void Param_Control::Val(const gchar *V){
+	Sval = 0; Ival=0; Dval=0; StringVal=V;
 }
 
 void Param_Control::setMax(double VMa, double Vmax_warn, const gchar* w_color){
@@ -303,6 +318,10 @@ gchar *Param_Control::Get_UsrString(){
 	gchar *warn;
 	if (color) g_free (color);
 	color = NULL;
+
+        if (StringVal)
+                return g_strdup (StringVal);
+        
 	if (Get_dValue() <= vMin_warn && warn_color[0]){
 		color = g_strdup (warn_color[0]);
 		warn = g_strdup_printf ("low (<%g)", vMin_warn);
@@ -332,6 +351,8 @@ gchar *Param_Control::Get_UsrString(){
 gboolean Param_Control::Set_FromValue(double nVal){
 	if (ShowMessage_flag)
                 return false;	//do nothing if a message dialog is active
+        if (StringVal)
+                return false;
 
 	new_value = nVal;
 	if(nVal <= vMax && nVal >= vMin){
@@ -524,7 +545,7 @@ void Gtk_EntryControl::write_pcs_gschema (int array_flag){
                 } else if (array_flag){
                         f << "," << Get_dValue() ;
                 } else {
-                       
+                        // Add: HANDLE StringVal!!
                         f << std::endl
                           << "    <key name=\"" << gsettings_key << "\" type=\"d\">" << std::endl
                           << "      <default>" << Get_dValue() << "</default>" << std::endl
@@ -551,7 +572,8 @@ void Gtk_EntryControl::get_init_value_from_settings (int array_flag){
                 if (!array_flag && get_count () == 0){
                         if (pcs_settings == NULL)
                                 pcs_settings = g_settings_new (gsettings_path);
-                        Set_FromValue (g_settings_get_double (pcs_settings, gsettings_key));
+                        if (!StringVal)
+                                Set_FromValue (g_settings_get_double (pcs_settings, gsettings_key));
                 } else
                         init_pcs_via_list ();
         }
@@ -1048,15 +1070,19 @@ gint Gtk_EntryControl::update_callback(GtkEditable *editable, void *data){
         if (editable && current_object){
                 gchar *p = gtk_editable_get_chars (editable, 0 , -1);
                 if (p){
+                        if (current_object->StringVal){
+                                ;
+                        } else {
 #if 0 // enable to monitor updates
-                        gchar *tmp;
-                        //g_message ("Gtk_EntryControl::update_callback txt={%s} pcs=%s", p, tmp=current_object->get_refname ());
-                        g_free (tmp);
-                        double x=atof (p);
-                        current_object->Set_Parameter (x, FALSE, FALSE);
+                                gchar *tmp;
+                                //g_message ("Gtk_EntryControl::update_callback txt={%s} pcs=%s", p, tmp=current_object->get_refname ());
+                                g_free (tmp);
+                                double x=atof (p);
+                                current_object->Set_Parameter (x, FALSE, FALSE);
 #else
-                        current_object->Set_Parameter (atof (p), FALSE, FALSE);
+                                current_object->Set_Parameter (atof (p), FALSE, FALSE);
 #endif
+                        }
                         g_free (p);
                 } else {
                         gchar *tmp;

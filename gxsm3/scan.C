@@ -756,7 +756,7 @@ void Scan::start(int l, double lv){
 	mem2d->add_layer_information (new LayerInformation ("SetPoint", data.s.SetPoint, "%5.2f V"));
 	mem2d->add_layer_information (new LayerInformation ("ZSetPoint XXX", data.s.ZSetPoint, "%5.2f  \303\205"));
 
-	Running = 1;
+        Running = 1;
 }
 
 void Scan::stop(int StopFlg, int line){
@@ -981,6 +981,7 @@ int Scan::Update_ZData_NcFile(){
                         }
                 }
                 data.ui.SetOriginalName (storage_manager.get_name ("*(in progress)"));
+
 		return 0; // saved full
         }
         

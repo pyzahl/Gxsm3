@@ -31,6 +31,7 @@
 typedef struct {
 	gchar **arglist;
 	double qvalue;
+        const gchar *qstr;
 } remote_args;
 
 #endif /* __REMOTEARGS_H__ */
