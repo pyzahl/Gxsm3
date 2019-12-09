@@ -374,6 +374,59 @@ class BuildParam{
                 return input;
         };
 
+        GtkWidget *grid_add_ec (const gchar* label, UnitObj *unit, const gchar *var, const gchar *remote_id=NULL, gint ec_array_index=-1){
+                gchar *rid = NULL;
+                gchar *arr = NULL;
+                
+                if (remote_id)
+                        rid = g_strconcat (remote_prefix, remote_id, arr, NULL); // do not free, keep
+                if (arr)
+                        g_free (arr);
+                
+                input = grid_add_input (N_(label), input_nx);
+                
+                if (input_width_chars > 0)
+                        gtk_entry_set_width_chars (GTK_ENTRY (input), input_width_chars);
+                
+                ec = new Gtk_EntryControl (unit, N_(error_text), var, input, ec_array_index >= 0 ? ec_array_index+1 : 0);
+
+                if (rid)
+                        g_object_set_data (G_OBJECT (input), "Adjustment_PCS_Name", (void*)rid);
+                else
+                        g_object_set_data (G_OBJECT (input), "Adjustment_PCS_Name", NULL);
+                
+                ec_list = g_slist_prepend (ec_list, ec);
+                
+                if (rid)
+                        remote_list_ec = ec->AddEntry2RemoteList(rid, remote_list_ec);
+
+                if (freeze_list_active)
+                        freeze_list_ec = g_slist_prepend (freeze_list_ec, ec);
+
+                if (data)
+                        ec->Set_ChangeNoticeFkt (ChangeNoticeFkt, data);
+
+                if (ec_array_index >= 0){
+                        if (x < ECIMAX){
+                                if (ec_array_index == 0){
+                                        ec->set_head_iter (ec); ec->set_count (1); 
+                                } else {
+                                        ec->set_head_iter (ec_iter[x]->get_iter_head ());
+                                        ec_iter[x]->set_next_iter (ec);   
+                                }
+                                ec_iter[x] = ec;
+                                // ec->init_pcs_array (); // must run after last ec element created to initialize
+                                // run --> init_ec_array ();
+                        } else {
+                                g_print ("BUILD-ERROR for ARRAY EC. Col Pos Mem x >= 32 [%d]\n", x);
+                        }
+                }
+
+                scale = NULL;
+                return input;
+        };
+
+        
         GtkWidget* grid_add_ec_with_scale (const gchar* labeltxt, UnitObj *unit, double *var, double lo, double hi, const gchar *fmt, double step=1., double page=1., const gchar *remote_id=NULL){
                 grid_add_ec (labeltxt, unit, var, lo, hi, fmt, step, page, remote_id);
                 scale = setup_scale(ec->GetAdjustment(), wx);
@@ -831,14 +884,19 @@ class Scan;
 class GnomeAppService : public AppBase{
 private:
 	GtkWidget *app;
+        gboolean  thread_safe_no_gui_mode;
 public:
-	GnomeAppService(GtkWidget *App=NULL){ app=App; fname = NULL; progress_dialog=NULL; };
+	GnomeAppService(GtkWidget *App=NULL){ app=App; fname = NULL; progress_dialog=NULL; thread_safe_no_gui_mode=false; };
 	virtual ~GnomeAppService(){ 
 		if(fname){ g_free(fname); fname=NULL; }
 		choice(NULL, NULL, NULL, 0, NULL, NULL, NULL, 0);
 		progress_info_close ();	
 	};
 
+        inline void enter_thread_safe_no_gui_mode() { thread_safe_no_gui_mode=true; };
+        inline void exit_thread_safe_no_gui_mode() { thread_safe_no_gui_mode=false; };
+        inline gboolean is_thread_safe_no_gui_mode() { return thread_safe_no_gui_mode; };
+        
 	void GnomeAppServiceSetApp(GtkWidget *App){ app=App; };
 
 	GtkWidget *getApp(){ return app; };
@@ -849,14 +907,21 @@ public:
                                                int *tnadd=NULL, int *vnadd=NULL,
                                                int *crop_window_xy=NULL, gboolean crop=FALSE);
         
-	inline void check_events(const gchar *info=NULL){ progress_info_new (info?info:"Instrument Busy",1,NULL, NULL, TRUE);  while(gtk_events_pending()) gtk_main_iteration(); progress_info_close (); };
-	inline void check_events_self(){ while(gtk_events_pending()) gtk_main_iteration(); };
+	inline void check_events(const gchar *info=NULL){
+                if (is_thread_safe_no_gui_mode()) return;
+                progress_info_new (info?info:"Instrument Busy",1,NULL, NULL, TRUE);  while(gtk_events_pending()) gtk_main_iteration(); progress_info_close ();
+        };
+	inline void check_events_self(){
+                if (is_thread_safe_no_gui_mode()) return;
+                while(gtk_events_pending()) gtk_main_iteration();
+        };
 
 /* FixMe !!!! */
 	void flash(const char *mld){
 		std::cout << "************" << mld << "************" << std::endl;
 	};
 	void warning(const char *mld){
+                if (is_thread_safe_no_gui_mode()) return;
 		if(window){
 			GtkWidget *dialog = gtk_message_dialog_new_with_markup
                                 (window,
@@ -875,6 +940,7 @@ public:
         static gint terminate_timeout_func (gpointer data);
 	void alert(const gchar *s1, const gchar *s2, const gchar *s3, int c);
 	void errormsg(const char *mld){
+                if (is_thread_safe_no_gui_mode()) return;
 		if(window){
 			GtkWidget *dialog = gtk_message_dialog_new_with_markup
                                 (window,
@@ -890,6 +956,7 @@ public:
 		}
 	};
 	void message(const char *mld){
+                if (is_thread_safe_no_gui_mode()) return;
 		if(window){
 			GtkWidget *dialog = gtk_message_dialog_new_with_markup
                                 (window,
@@ -906,6 +973,7 @@ public:
 		}
 	};
 	gboolean question_yes_no (const gchar *question, GtkWindow *pw=NULL, const gchar *format=NULL){ // Yes / No ?
+                if (is_thread_safe_no_gui_mode()) return TRUE;
 		GtkWindow *w = pw;
                 if (w == NULL)
 			w = window;
@@ -928,6 +996,7 @@ public:
 
 	gint question_yes_no_with_action (const gchar *question, const gchar *action_label, gint &var,
                                           GtkWidget *action=NULL, GtkWindow *pw=NULL){ // Yes / No ?
+                if (is_thread_safe_no_gui_mode()) return TRUE;
 		GtkWindow *w = pw;
                 if (w == NULL)
 			w = window;

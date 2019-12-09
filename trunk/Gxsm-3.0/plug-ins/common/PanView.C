@@ -570,17 +570,20 @@ gboolean  PanView::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, PanView
                                 if (pv->pos_preset_box[i][j])
                                         pv->pos_preset_box[i][j]->draw (cr);
 
-        pv->current_view->draw (cr);     // current set scan area
+        if (pv->current_view)
+                pv->current_view->draw (cr);     // current set scan area
 
         if (pv->Zratio > 2.){
                 cairo_save (cr);
                 cairo_scale (cr, 0.7*pv->Zratio, 0.7*pv->Zratio);
-                pv->current_view->draw (cr, 0.3, false);     // current set scan area zoomed
+                if (pv->current_view)
+                        pv->current_view->draw (cr, 0.3, false);     // current set scan area zoomed
                 cairo_restore (cr);
                 if (pv->tip_marker_zoom)
                         pv->tip_marker_zoom->draw (cr); // tip on zoomed view scan area
         }
-	pv->tip_marker->draw (cr); // absolute position
+        if (pv->tip_marker)
+                pv->tip_marker->draw (cr); // absolute position
 
         cairo_restore (cr);
 
@@ -596,12 +599,16 @@ gboolean  PanView::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, PanView
                 else
                         break;
 
-	pv->info->draw (cr);
-	pv->infoXY0->draw (cr);
+	if (pv->info){
+                pv->info->draw (cr);
+                pv->infoXY0->draw (cr);
+        }
         
         cairo_scale (cr, 1., -1);
-	pv->tip_marker_z0->draw (cr);
-	pv->tip_marker_z->draw (cr);
+        if (pv->tip_marker_z0)
+                pv->tip_marker_z0->draw (cr);
+        if (pv->tip_marker_z)
+                pv->tip_marker_z->draw (cr);
 
         return TRUE;
 }
@@ -693,6 +700,8 @@ void PanView :: tip_refresh()
         else 
                 return;
 
+        //g_print ("PanView zxy: %g %g %g\n", z,x,y);
+
 	// example for new cairo_item code to replace the code below:
 	if (tip_marker == NULL){
 		tip_marker = new cairo_item_path_closed (4);
@@ -763,7 +772,9 @@ void PanView :: tip_refresh()
 	
 	if (gapp->xsm->hardware){
 		double x0,y0,z0;
+                x0=y0=z0=0.0;
 		if (gapp->xsm->hardware->RTQuery ("O", z0, x0, y0)){ // get HR Offset
+                        //g_print ("PanView O: %g %g %g\n", z0,x0,y0);
 			gchar *tmp = NULL;
 			tmp = g_strdup_printf ("Offset Z0: %7.3f " UTF8_ANGSTROEM
                                                "\nXY0: %7.3f " UTF8_ANGSTROEM
@@ -800,7 +811,9 @@ void PanView :: tip_refresh()
 		}
 
                 // Life Paramater Info
+                x=y=q=0.0;
 		gapp->xsm->hardware->RTQuery ("f0I", x, y, q); // get f0, I -- val1,2,3=[fo,Iav,Irms]
+                //g_print ("PanView f0I: %g %g %g\n", x,y,q);
                 Ilg = log10 (fabs(y) + 1.0);
 		
 		gchar *tmp = NULL;
@@ -816,7 +829,9 @@ void PanView :: tip_refresh()
 		g_free (tmp);
 
 		// DSP RT Status update
+                x=y=q=0.0;
 		gapp->xsm->hardware->RTQuery ("status", x, y, q); // status code in x
+                //g_print ("PanView status: %g %g %g\n", x,y,q);
 		int status = (int)(x);
 
                 static int status_id[]      = { DSP_STATUSIND_FB, DSP_STATUSIND_SCAN, DSP_STATUSIND_VP, DSP_STATUSIND_MOV,
@@ -893,7 +908,9 @@ void PanView :: tip_refresh()
                                                                             CAIRO_COLOR_BLUE : (Ilg < 0.1) ?
                                                                             CAIRO_COLOR_GREEN : CAIRO_COLOR_RED);
 		// DSP RT GPIO update
+                x=y=q=0.0;
 		gapp->xsm->hardware->RTQuery ("iomirror", x, y, q); // status code in x
+                //g_print ("PanView iomonitor: %g %g %g\n", x,y,q);
 		int gpio_out = (int)(x);
 		int gpio_in  = (int)(y);
 		int gpio_dir = (int)(q);

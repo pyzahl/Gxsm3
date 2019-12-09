@@ -23,28 +23,57 @@ sc=gxsm.get ("script-control")
 sys.stdout.write ('* Script Control is set to {} currently.\n'.format(int(sc)))
 sys.stdout.write ('* Set Script Control >  0 to keep server alife! 0 will exit.\n')
 sys.stdout.write ('* Set Script Control == 1 for idle markings...\n')
-sys.stdout.write ('* Set Script Control >  1 for silence.\n')
+sys.stdout.write ('* Set Script Control == 2 for silence.\n')
+sys.stdout.write ('* Set Script Control >  2 minial sleep, WARNIGN: GUI may be sluggish.\n')
 sys.stdout.write ("************************************************************\n\n")
 
 ## message processing
 
 def process_message(jmsg):
-    print ('processing JSON:\n', jmsg)
+    #print ('processing JSON:\n', jmsg)
     for cmd in jmsg.keys():
-        print('Request = {}'.format(cmd))
+        #print('Request = {}'.format(cmd))
         if cmd == 'command':
             for k in jmsg['command'][0].keys():
                 if k == 'set':
-                    print('gxsm.set ({}, {})'.format(jmsg['command'][0]['set'], jmsg['command'][0]['value']))
+                    ## {'command': [{'set': id, 'value': value}]}
+
+                    #print('gxsm.set ({}, {})'.format(jmsg['command'][0]['set'], jmsg['command'][0]['value']))
                     gxsm.set(jmsg['command'][0]['set'], jmsg['command'][0]['value'])
-                    return {'result': [{jmsg['command'][0]}]}
+                    return {'result': [{'set':jmsg['command'][0]}]}
+
+                elif k == 'gets':
+                    ## {'command': [{'get': id}]}
+
+                    #print('gxsm.gets ({})'.format(jmsg['command'][0]['gets']))
+                    value=gxsm.gets(jmsg['command'][0]['gets'])
+                    #print(value)
+                    return {'result': [{'gets':jmsg['command'][0]['gets'], 'value':value}]}
+
                 elif k == 'get':
-                    print('gxsm.get ({})'.format(jmsg['command'][0]['get']))
+                    ## {'command': [{'get': id}]}
+
+                    #print('gxsm.get ({})'.format(jmsg['command'][0]['get']))
                     value=gxsm.get(jmsg['command'][0]['get'])
-                    print(value)
+                    #print(value)
                     return {'result': [{'get':jmsg['command'][0]['get'], 'value':value}]}
+
+                elif k == 'query':
+                    ## {'command': [{'query': x, 'args': [ch,...]}]}
+                    
+                    if (jmsg['command'][0]['query'] == 'chfname'):
+                        value=gxsm.chfname(jmsg['command'][0]['args'][0])
+                        return {'result': [{'query':jmsg['command'][0]['query'], 'value':value}]}
+
+                    elif (jmsg['command'][0]['query'] == 'y_current'):
+                        value=gxsm.y_current()
+                        return {'result': [{'query':jmsg['command'][0]['query'], 'value':value}]}
+
+                    else:
+                        return {'result': 'invalid query command'}
                 else:
                     return {'result': 'invalid command'}
+
         elif cmd == 'action':
             if (jmsg['action'][0] == 'start-scan'):
                 gxsm.startscan ()
@@ -52,6 +81,12 @@ def process_message(jmsg):
             elif (jmsg['action'][0] == 'stop-scan'):
                 gxsm.stopscan ()
                 return {'result': 'ok'}
+            elif (jmsg['action'][0] == 'autosave'):
+                value = gxsm.autosave ()
+                return {'result': 'ok', 'ret':value}
+            elif (jmsg['action'][0] == 'autoupdate'):
+                value = gxsm.autoupdate ()
+                return {'result': 'ok', 'ret':value}
             else:
                 return {'result': 'invalid action'}
         elif cmd == 'echo':
@@ -87,7 +122,7 @@ def read_direct(conn, mask):
     try:
         client_address = conn.getpeername ()
         data = conn.recv (1024)
-        print ('Got {} from {}'.format(data, client_address))
+        #print ('Got {} from {}'.format(data, client_address))
         try:
             serialized = json.dumps(process_message (data))
         except (TypeError, ValueError):
@@ -107,7 +142,7 @@ def read(conn, mask):
         client_address = conn.getpeername ()
         jdata = receive_json(conn)
         if jdata:
-            print ('Got {} from {}'.format(jdata, client_address))
+            #print ('Got {} from {}'.format(jdata, client_address))
             ret=process_message (jdata)
             sys.stdout.write ('Return JSON for {} => {}\n'.format(jdata,ret))
             send_as_json(conn, ret)
@@ -134,7 +169,7 @@ def receive_json(conn):
         data = conn.recv (1024)
         if data:
             count, jsdata = data.split(b'\n')
-            print ('Got Data N={} D={}'.format(count,jsdata))
+            #print ('Got Data N={} D={}'.format(count,jsdata))
             try:
                 deserialized = json.loads(jsdata)
             except (TypeError, ValueError):
@@ -209,8 +244,12 @@ while keep_alive:
         callback = key.data
         callback (key.fileobj, mask)
 
-    gxsm.sleep (1)
-
+    if sc > 3: # sc=4
+        gxsm.sleep (0.01) # 1ms
+    elif sc > 2: # sc=3
+        gxsm.sleep (0.1) # 10ms
+    else: # sc=2
+        gxsm.sleep (1) # 100ms
 
     if sc == 0:
         sys.stdout.write ('\nScript Control is 0:  Closing server down now.\n')

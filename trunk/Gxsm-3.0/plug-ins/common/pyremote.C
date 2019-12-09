@@ -1085,7 +1085,10 @@ static PyObject* remote_get(PyObject *self, PyObject *args)
 	g_slist_foreach(gapp->RemoteEntryList, (GFunc) Check_ec, (gpointer)&ra);
 	PI_DEBUG(DBG_L2, parameter << " query result: " << ra.qvalue );
 
-	return Py_BuildValue("f", ra.qvalue);
+        if (ra.qstr)
+                return Py_BuildValue("s", ra.qstr);
+        else
+                return Py_BuildValue("f", ra.qvalue);
 }
 
 static PyObject* remote_set(PyObject *self, PyObject *args)
@@ -1208,7 +1211,7 @@ static PyObject* remote_moveto_scan_xy(PyObject *self, PyObject *args)
 static PyObject* remote_startscan(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Starting scan");
-	gapp->signal_emit_toolbar_action ("Toolbar_Scan_Start");
+        gapp->signal_emit_toolbar_action ("Toolbar_Scan_Start");
 	return Py_BuildValue("i", 0);
 }
 
@@ -1664,14 +1667,12 @@ static PyObject* remote_stopscan(PyObject *self, PyObject *args)
 
 static PyObject* remote_waitscan(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Wait scan: commented out");
-	//  if( gapp->xsm->ScanInProgress() ){
-	//    PI_DEBUG(DBG_L2, "pyremote: Scan is in progress ");
-	//  }
-	//  else{
-	//    PI_DEBUG(DBG_L2, "pyremote: Scan is finished ");
-	//  }
-	return Py_BuildValue("i", 0);
+	PI_DEBUG(DBG_L2, "pyremote: wait scan");
+        double x,y,z;
+	if( gapp->xsm->hardware->RTQuery ("W",x,y,z) )
+                return Py_BuildValue("i", gapp->xsm->hardware->RTQuery () ); // return current y_index of scan
+        else
+                return Py_BuildValue("i", -1); // no scan in progress
 }
 
 static PyObject* remote_scaninit(PyObject *self, PyObject *args)
@@ -1738,6 +1739,24 @@ static PyObject* remote_scanline(PyObject *self, PyObject *args)
 ///////////////////////////////////////////////////////////////
 // BLOCK III  -- file IO
 ///////////////////////////////////////////////////////////////
+
+static PyObject* remote_autosave(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Save All/Update");
+        gapp->enter_thread_safe_no_gui_mode();
+        gapp->auto_save_scans ();
+        gapp->exit_thread_safe_no_gui_mode();
+	return Py_BuildValue("i", (long)gapp->xsm->hardware->RTQuery ());
+}
+
+static PyObject* remote_autoupdate(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Save All/Update");
+        gapp->enter_thread_safe_no_gui_mode();
+        gapp->auto_update_scans ();
+        gapp->exit_thread_safe_no_gui_mode();
+	return Py_BuildValue("i", (long)gapp->xsm->hardware->RTQuery ());
+}
 
 static PyObject* remote_save(PyObject *self, PyObject *args)
 {
@@ -1865,6 +1884,19 @@ static PyObject* remote_autodisplay(PyObject *self, PyObject *args)
         else
                 return Py_BuildValue("i", -1);
         return Py_BuildValue("i", 0);
+}
+
+static PyObject* remote_chfname(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Chfname ");
+	long channel = 0;
+	if (!PyArg_ParseTuple(args, "l", &channel))
+		return Py_BuildValue("i", -1);
+        int ch=channel;
+        if (gapp->xsm->GetScanChannel(ch))
+                return Py_BuildValue ("s", gapp->xsm->GetScanChannel (ch)->storage_manager.get_filename());
+        else
+                return Py_BuildValue ("s", "EE: invalid channel");
 }
 
 static PyObject* remote_chmodea(PyObject *self, PyObject *args)
@@ -2198,6 +2230,8 @@ static PyMethodDef GxsmPyMethods[] = {
 	{"scanline", remote_scanline, METH_VARARGS, "Scan line."},
 
 	// BLOCK III
+	{"autosave", remote_autosave, METH_VARARGS, "Save: Auto Save Scans. gxsm.autosave (). Returns current scanline y index and file name(s) if scanning."},
+	{"autoupdate", remote_autoupdate, METH_VARARGS, "Save: Auto Update Scans. gxsm.autoupdate (). Returns current scanline y index and file name(s) if scanning."},
 	{"save", remote_save, METH_VARARGS, "Save: Auto Save Scans: gxsm.save ()"},
 	{"saveas", remote_saveas, METH_VARARGS, "Save File As: gxsm.saveas (ch, 'path/fname.nc')"},
 	{"load", remote_load, METH_VARARGS, "Load File: gxsm.load (ch, 'path/fname.nc')"},
@@ -2208,6 +2242,7 @@ static PyMethodDef GxsmPyMethods[] = {
 	// BLOCK IV
 	{"set_view_indices", remote_set_view_indices, METH_VARARGS, "Set Ch view time and layer indices: gxsm.set_view_indices (ch, time, layer)"},
 	{"autodisplay", remote_autodisplay, METH_VARARGS, "Autodisplay active channel: gxsm.autodisplay ()"},
+	{"chfname", remote_chfname, METH_VARARGS, "Get Ch Filename: filename = gxsm.chfname (ch)"},
 	{"chmodea", remote_chmodea, METH_VARARGS, "Set Ch Mode to A: gxsm.chmodea (ch)"},
 	{"chmodex", remote_chmodex, METH_VARARGS, "Set Ch Mode to X: gxsm.chmodex (ch)"},
 	{"chmodem", remote_chmodem, METH_VARARGS, "Set Ch Mode to MATH: gxsm.chmodem (ch)"},

@@ -547,6 +547,7 @@ GtkWidget* GnomeAppService::progress_info_new (const gchar *title, gint levels, 
 }
 
 int GnomeAppService::progress_info_set_bar_fraction (gdouble fraction, gint level){
+        if (is_thread_safe_no_gui_mode()) return -1;
 	if (!progress_dialog) return -1;
 	if (level<1 || level > MAX_PROGRESS_LEVELS) return -1;
 
@@ -558,6 +559,7 @@ int GnomeAppService::progress_info_set_bar_fraction (gdouble fraction, gint leve
 }
 
 int GnomeAppService::progress_info_set_bar_pulse (gint level, gdouble fraction){
+        if (is_thread_safe_no_gui_mode()) return -1;
 	if (!progress_dialog) return -1;
 	if (level<1 || level > MAX_PROGRESS_LEVELS) return -1;
 
@@ -572,6 +574,7 @@ int GnomeAppService::progress_info_set_bar_pulse (gint level, gdouble fraction){
 }
 
 int GnomeAppService::progress_info_set_bar_text (const gchar* text, gint level){
+        if (is_thread_safe_no_gui_mode()) return -1;
 	if (!progress_dialog) return -1;
 	if (level<1 || level > MAX_PROGRESS_LEVELS) return -1;
 
@@ -585,6 +588,7 @@ int GnomeAppService::progress_info_set_bar_text (const gchar* text, gint level){
 }
 
 int GnomeAppService::progress_info_add_info (const gchar* info){
+        if (is_thread_safe_no_gui_mode()) return -1;
 	if (!progress_dialog)
 		return -1;
 
@@ -598,6 +602,7 @@ int GnomeAppService::progress_info_add_info (const gchar* info){
 }
 
 static guint gas_close_progress (GnomeAppService *gas){
+        if (gas->is_thread_safe_no_gui_mode()) return -1;
 	if (gas->progress_info_close_scheduled () > 1){
 		gas->progress_info_close_schedule_dec ();
 		return TRUE;
@@ -795,6 +800,7 @@ gint GnomeAppService::terminate_timeout_func (gpointer data){
 }
 
 void GnomeAppService::alert(const gchar *s1, const gchar *s2, const gchar *s3, int c){
+        if (is_thread_safe_no_gui_mode()) return;
         if(window){
                 GtkWidget *dialog = gtk_message_dialog_new_with_markup (window,
                                                                         GTK_DIALOG_DESTROY_WITH_PARENT,

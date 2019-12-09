@@ -22,4 +22,13 @@
     </section>
   </menu>
 
+  <menu id="hwi-generic-popup-menu">
+    <section>
+      <item>
+	<attribute name="label" translatable="yes">Configure</attribute>
+	<attribute name="action">win.generic-control-configure</attribute>
+      </item>
+    </section>
+  </menu>
+
 </interface>

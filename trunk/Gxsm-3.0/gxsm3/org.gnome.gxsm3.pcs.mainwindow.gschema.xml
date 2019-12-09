@@ -115,6 +115,12 @@
       <description>pcs0000, PCS Remote-ID: 'auto-save-counter-i', Default/U: 0   , Adjustment PCS Name: 'auto-save-counter-i' </description>
     </key>
 
+    <key name="auto-save-ff" type="s">
+      <default>"None"</default>
+      <summary>PCS Remote-ID: 'auto-save-ff', Default/U: 0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'auto-save-ff', Default/U: 0   , Adjustment PCS Name: 'auto-save-ff' </description>
+    </key>
+
   </schema>
 
 </schemalist>

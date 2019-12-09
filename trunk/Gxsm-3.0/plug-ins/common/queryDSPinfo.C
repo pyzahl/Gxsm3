@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -114,9 +116,7 @@ static void queryDSPinfo_about(void){
 }
 
 static void queryDSPinfo_run(GtkWidget *w, void *data){
-	gchar *infotext = queryDSPinfo_pi.app->xsm->hardware->get_info ();
-	gapp->message (infotext);
-	g_free (infotext);
+  gapp->message (queryDSPinfo_pi.app->xsm->hardware->get_info ());
 }
 
 static void queryDSPinfo_cleanup( void ){

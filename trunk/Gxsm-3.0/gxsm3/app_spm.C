@@ -275,7 +275,7 @@ void App::spm_offset_check(Param_Control* pcs, gpointer app){
         if (!pcs){
                 // move tip to center of scan ( 0,0 ) now also
                 //data->s.sx = data->s.sy = 0.;
-                ((App*)app)->xsm->hardware->MovetoXY(0, 0);
+                while (((App*)app)->xsm->hardware->MovetoXY(0, 0)); // G-IDLE ME
         }
 
         ((App*)app)->xsm->hardware->SetAlpha(data->s.alpha);
@@ -283,20 +283,6 @@ void App::spm_offset_check(Param_Control* pcs, gpointer app){
         XSM_DEBUG(DBG_L3,  "offset check -- update all"  );
         
         ((App*)app)->spm_update_all();
-
-#if 0	
-        // move to center of first line in scan coordinate system (may be rotated)
-
-        //-todo-offset-
-        // SPM: Center of first (top) line is 0,0
-        // SPALEED: Center of Scan is 0,0 and top center is 0,-ny/2*dy
-
-        if(IS_SPALEED_CTRL){
-                ((App*)app)->xsm->hardware->MovetoXY(0, R2INT(Inst->YA2Dig((-data->s.ny/2)*data->s.dy)));
-        }else{
-                ((App*)app)->xsm->hardware->MovetoXY(0, 0);
-        }
-#endif
         
         XSM_DEBUG(DBG_L3,  "offset check -- done."  );
 }
@@ -327,8 +313,9 @@ void App::spm_scanpos_check(Param_Control* pcs, gpointer app){
         SCAN_DATA *data = &((App*)app)->xsm->data;
 	
         // move to scan position relative to offset in scan coordinate system (may be rotated)
-        ((App*)app)->xsm->hardware->MovetoXY(R2INT(Inst->XA2Dig(data->s.sx)),
-                                             R2INT(Inst->YA2Dig(data->s.sy)));
+        while (((App*)app)->xsm->hardware->MovetoXY(R2INT(Inst->XA2Dig(data->s.sx)),
+                                             R2INT(Inst->YA2Dig(data->s.sy)))
+               ); // G-IDLE ME
 
         ((App*)app)->spm_update_all();
 }
@@ -766,6 +753,7 @@ GtkWidget* App::create_spm_control (){
 
         spm_bp->set_no_spin (false);
 
+        
         #if 0
         // Display scaling controls
         if (!strncasecmp(xsmres.InstrumentType, "CCD",3)){
@@ -1393,7 +1381,8 @@ GtkWidget* App::create_as_control (){
         gtk_widget_set_hexpand (as_bp->input, TRUE);
         g_object_set_data (refob, "originalname", as_bp->input);
         gtk_editable_set_editable (GTK_EDITABLE (as_bp->input), FALSE);
-	
+
+        
         // save List away...
         g_object_set_data (refob, "AS_EC_list", as_bp->get_ec_list_head ());
         as_bp->show_all ();

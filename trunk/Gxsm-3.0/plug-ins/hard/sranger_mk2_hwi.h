@@ -80,7 +80,7 @@ public:
 	virtual long GetMaxPointsPerLine(){ return  AIC_max_points; };
 	virtual long GetMaxLines(){ return  AIC_max_points; };
 
-	virtual gchar* get_info();
+	virtual const gchar* get_info();
 
 	/* Hardware realtime monitoring -- all optional */
 	/* default properties are
@@ -299,13 +299,13 @@ class sranger_mk2_hwi_spm : public sranger_mk2_hwi_dev{
 
 	virtual int RotateStepwise(int exec=0);
 	virtual void UpdateScanGainMirror ();
-	virtual void SetOffset(double x, double y);
-	virtual void MovetoXY (double x, double y);
+	virtual gboolean SetOffset(double x, double y);
+	virtual gboolean MovetoXY (double x, double y);
 	virtual void StartScan2D();
-	virtual void ScanLineM(int yindex, int xdir, int muxmode,
-			       Mem2d *Mob[MAX_SRCS_CHANNELS],
-			       int ixy_sub[4]);
-	virtual void EndScan2D();
+	virtual gboolean ScanLineM(int yindex, int xdir, int muxmode,
+				   Mem2d *Mob[MAX_SRCS_CHANNELS],
+				   int ixy_sub[4]);
+	virtual gboolean EndScan2D();
 	virtual void PauseScan2D();
 	virtual void ResumeScan2D();
 	virtual void KillScan2D(){ KillFlg=TRUE; };
@@ -317,7 +317,7 @@ class sranger_mk2_hwi_spm : public sranger_mk2_hwi_dev{
 	virtual void set_ldc (double dxdt=0., double dydt=0., double dzdt=0.);
 
 	void reset_scandata_fifo (int stall=0); //!< reset scan data FIFO buffer
-	void tip_to_origin (double x=0., double y=0.); //!< move tip to origin (default) or position in scan coordinate system
+	gboolean tip_to_origin (double x=0., double y=0.); //!< move tip to origin (default) or position in scan coordinate system
 
  protected:
 

@@ -1489,9 +1489,10 @@ void VObPoint::update_scanposition(){
 				gapp->xsm->data.s.sx, gapp->xsm->data.s.sy, 
 				SCAN_COORD_RELATIVE);
 
-	gapp->xsm->hardware->MovetoXY
-		(R2INT(gapp->xsm->Inst->XA2Dig(gapp->xsm->data.s.sx)),
-		 R2INT(gapp->xsm->Inst->YA2Dig(gapp->xsm->data.s.sy)));
+	while (gapp->xsm->hardware->MovetoXY
+               (R2INT(gapp->xsm->Inst->XA2Dig(gapp->xsm->data.s.sx)),
+                R2INT(gapp->xsm->Inst->YA2Dig(gapp->xsm->data.s.sy)))
+               ); // G-IDLE ME
 
 	gapp->spm_update_all ();
 }

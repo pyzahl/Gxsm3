@@ -73,7 +73,7 @@ print ('  Example: gxsm.set ("dsp-fbs-bias", "1.0")')
 print (s)
 
 for h in gxsm.list_refnames ():
-	print (h)
+	print ('{} \t=>\t {}'.format(h, gxsm.get(h))) 
 print ('*')
 
 print (s)
