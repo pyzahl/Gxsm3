@@ -566,16 +566,23 @@ to the community. The GXSM-Forums always welcome input.
 #include "gxsm/gnome-res.h"
 
 
-#if defined HAVE_PYTHON3_7_PYTHON_H
+#if defined HAVE_PYTHON3_8_PYTHON_H
+#    include <python3.8/Python.h>
+#elif defined HAVE_PYTHON3_8M_PYTHON_H
+#    include <python3.8m/Python.h>
+#elif defined HAVE_PYTHON3_7_PYTHON_H
 #    include <python3.7/Python.h>
 #elif defined HAVE_PYTHON3_7M_PYTHON_H
 #    include <python3.7m/Python.h>
-#elif defined HAVE_PYTHON2_7_PYTHON_H
-#    include <python2.7/Python.h>
-#elif defined HAVE_PYTHON2_6_PYTHON_H
-#    include <python2.6/Python.h>
-#elif defined HAVE_PYTHON2_5_PYTHON_H
-#    include <python2.5/Python.h>
+
+// Python3.7+ required
+//#elif defined HAVE_PYTHON2_7_PYTHON_H
+//#    include <python2.7/Python.h>
+//#elif defined HAVE_PYTHON2_6_PYTHON_H
+//#    include <python2.6/Python.h>
+//#elif defined HAVE_PYTHON2_5_PYTHON_H
+//#    include <python2.5/Python.h>
+
 #endif
 
 
