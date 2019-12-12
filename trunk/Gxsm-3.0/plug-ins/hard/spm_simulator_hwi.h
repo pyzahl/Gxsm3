@@ -86,6 +86,7 @@ public:
 
                 speed[0]=speed[1]=2000.0; // per tab
                 bias[0]=bias[1]=0.0;
+                options = 0x03;
                 create_folder ();
         };
 	virtual ~SPM_SIM_Control() {
@@ -99,7 +100,8 @@ public:
 	void create_folder();
 
         static void ChangedNotify(Param_Control* pcs, gpointer data) {;};
-       
+        static int config_options_callback (GtkWidget *widget, SPM_SIM_Control *dspc);
+        
 	//static void ChangedWaveOut(Param_Control* pcs, gpointer data);
 	//static int config_waveform (GtkWidget *widget, SPM_SIM_Control *spmsc);
 	static void configure_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
@@ -117,6 +119,8 @@ public:
 
         GUI_Builder *bp;
 
+        gint options;
+        
         // SPM SIM parameters
         double speed[2]; // per tab
         double bias[2];

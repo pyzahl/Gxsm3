@@ -436,6 +436,16 @@ int SPM_SIM_Control::choice_Ampl_callback (GtkWidget *widget, SPM_SIM_Control *s
 	return 0;
 }
 
+int SPM_SIM_Control::config_options_callback (GtkWidget *widget, SPM_SIM_Control *ssc){
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                ssc->options |= GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget),"Bit_Mask"));
+        else
+                ssc->options &= ~GPOINTER_TO_INT (g_object_get_data( G_OBJECT (widget),"Bit_Mask"));
+        
+        g_message ("SPM_SIM_Control::config_options_callback -> %04x", ssc->options);
+        return 0;
+}
+
 
 void SPM_SIM_Control::create_folder (){
         GtkWidget *notebook;
@@ -487,7 +497,21 @@ void SPM_SIM_Control::create_folder (){
                         // ...
                 }                        
 
-                if (i==2){
+                if (i==2){ // Config Tab
+                        // CheckButton via:
+                        // GtkWidget* grid_add_check_button (const gchar* labeltxt, const char *tooltip=NULL, int bwx=1,
+                        //                   GCallback cb=NULL, gpointer data=NULL, gint source=0, gint mask=-1){
+
+                        
+                        bp->grid_add_check_button ("Molecules",
+                                               "Check to enable Molecules.", 1,
+                                               GCallback (config_options_callback), this, 1, 0x01);
+                        bp->new_line ();
+                        bp->grid_add_check_button ("Blobs",
+                                               "Check to enable Blobs.", 1,
+                                               GCallback (config_options_callback), this, 1, 0x02);
+                        bp->new_line ();
+
                         // ======================================== Piezo Drive / Amplifier Settings
                         bp->new_grid_with_frame ("Piezo Drive Settings");
 
@@ -591,16 +615,166 @@ gboolean spm_simulator_hwi_dev::MovetoXY (double x, double y){
         return FALSE;
 }
 
+class feature{
+public:
+        feature(double rr=400.){
+                ab = 3.5;
+                xy[0] = ab*g_random_double_range (-rr, rr);
+                xy[1] = ab*g_random_double_range (-rr, rr);
+        };
+        ~feature(){};
+
+        virtual double get_z(double x, double y, int ch) { return 0.; };
+        
+        double xy[2];
+        double ab;
+};
+
+class feature_step : public feature{
+public:
+        feature_step():feature(400.){
+                phi = g_random_double_range (25., 75.);
+                m = atan(phi/57.);
+                dz = 3.4;
+        };
+        ~feature_step(){};
+
+        virtual double get_z(double x, double y, int ch) {
+                x -= xy[0];
+                y -= xy[1];
+                return m * x > y ? dz : 0.;
+        };
+private:
+        double phi,m;
+        double dz;
+};
+
+class feature_island : public feature{
+public:
+        feature_island(double rr=1000.):feature(rr){
+                r2 = g_random_double_range (10*ab, 100*ab);
+                r2 *= r2;
+        };
+        ~feature_island(){};
+
+        virtual double get_z(double x, double y, int ch)  {
+                x -= xy[0];
+                y -= xy[1];
+                return x*x+y*y < r2 ? ab : 0.;
+        };
+private:
+        double r2;
+};
+
+class feature_blob : public feature_island{
+public:
+        feature_blob():feature_island(2000.){
+                bz=50.;
+                double rr=bz;
+                for (int i=0; i<200; ++i){
+                        xx[i] = ab*g_random_double_range (-rr, rr);
+                        yy[i] = ab*g_random_double_range (-rr, rr);
+                        r2[i] = g_random_double_range (10*ab, bz*ab);
+                        r2[i] *= r2[i];
+                }
+        };
+        ~feature_blob(){};
+
+        virtual double get_z(double x, double y, int ch)  {
+                x -= xy[0];
+                y -= xy[1];
+                double z=0.;
+                for (int i=0; i<200; ++i){
+                        z += (x-xx[i])*(x-xx[i])+(y-yy[i])*(y-yy[i]) < r2[i] ? ab : 0.;
+                }
+                return z;
+        };
+private:
+        double xx[200], yy[200];
+        double r2[200];
+        double bz;
+};
+
+class feature_molecule : public feature{
+public:
+        feature_molecule(){
+                w=10.; h=30.;
+                phi = M_PI/6.*g_random_int_range (0, 4);
+        };
+        ~feature_molecule(){};
+
+        double shape(double x, double y){
+                double zx=cos(x/w*(M_PI/2));
+                double zy=cos(y/h*(M_PI/2));
+                return 6.5*(zx*zx*zy*zy);
+        };
+        
+        virtual double get_z(double x, double y, int ch) {
+                x -= xy[0];
+                y -= xy[1];
+                double xx =  x*cos(phi)+y*sin(phi);
+                double yy = -x*sin(phi)+y*cos(phi);
+                double rx=w*w;
+                double ry=h*h;
+                return xx*xx < rx && yy*yy < ry ? shape(xx,yy) : 0.;
+        };
+private:
+        double phi;
+        double w,h;
+};
+
+class feature_lattice : public feature{
+public:
+        feature_lattice(){
+        };
+        ~feature_lattice(){};
+
+        // create dummy data 3.5Ang period
+        virtual double get_z(double x, double y, int ch) {
+                return 10.*ch + SIMControlClass->bias[0] * ab * sin(x/ab*2.*M_PI) * cos(y/ab*2.*M_PI);
+        };
+};
+
+
 double spm_simulator_hwi_dev::simulate_value (int xi, int yi, int ch){
-        double x = (double)((double)xi/Nx-Nx/2)*Dx*Nx; // x in DAC units
-        double y = (double)(Ny/2-(double)yi/Ny)*Dy*Ny; // y in DAC units
+        const int N_steps=20;
+        const int N_blobs=7;
+        const int N_islands=10;
+        const int N_molecules=512;
+        const int N_bad_spots=16;
+        static feature_step stp[N_steps];
+        static feature_island il[N_islands];
+        static feature_blob blb[N_blobs];
+        static feature_molecule mol[N_molecules];
+        static feature_lattice lat;
+        static double fz = 1./gapp->xsm->Inst->Dig2ZA(1);
+        double x = xi*Dx-Dx*Nx/2; // x in DAC units
+        double y = yi*Dy-Dy*Ny/2; // y in DAC units
 
         x = gapp->xsm->Inst->Dig2XA ((long)round(x)); // convert to anstroems for model using instrument class
         y = gapp->xsm->Inst->Dig2YA ((long)round(y)); // convert to anstroems for model
 
-        Transform (&x, &y); // apply rotation!
+        x += 1.5*g_random_double_range (-gapp->xsm->Inst->Dig2XA(2), gapp->xsm->Inst->Dig2XA(2));
+        y += 1.5*g_random_double_range (-gapp->xsm->Inst->Dig2YA(2), gapp->xsm->Inst->Dig2YA(2));
         
-        return 10.*ch + SIMControlClass->bias[0] * sin(x/3.5*2.*M_PI) * cos(y/3.5*2.*M_PI); // create dummy data 3.5Ang period
+        //g_print ("XY: %g %g  [%g %g %d %d]",x,y, Dx,Dy, xi,yi);
+        
+        Transform (&x, &y); // apply rotation!
+        x += gapp->xsm->Inst->Dig2XA (x0);
+        y -= gapp->xsm->Inst->Dig2YA (y0);
+
+        //g_print ("XYR0: %g %g",x,y);
+
+        double z=0.0;
+        for (int i=0; i<N_steps;     ++i) z += stp[i].get_z (x,y, ch);
+        for (int i=0; i<N_islands;   ++i) z +=  il[i].get_z (x,y, ch);
+        if (SIMControlClass->options & 2)
+                for (int i=0; i<N_blobs;     ++i) z += blb[i].get_z (x,y, ch);
+        double zm=0;
+        if (SIMControlClass->options & 1)
+                for (int i=0; i<N_molecules; ++i) zm += mol[i].get_z (x,y, ch);
+        
+        return fz * (z + (zm > 0. ? zm : lat.get_z (x,y, ch)));
 }
 
 // DataReadThread:
