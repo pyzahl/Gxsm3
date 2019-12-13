@@ -11,7 +11,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 # Importing the Keras libraries and packages
 #import datetime
-#import glob2
+import glob2
 
 import tensorflow as tf
 from tensorflow.keras import backend as K
@@ -30,11 +30,12 @@ import threading
 import re
 import socket
 import json
+import random
 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, Gdk, GObject, GdkPixbuf
-import cairo
+#import cairo
 
 from netCDF4 import Dataset, chartostring, stringtochar, stringtoarr
 import struct
@@ -507,12 +508,12 @@ CAT_DESCRIPTIONS = {
     '8':  '8: Tiny Blob',
     '9':  '9: Blob',
     '10': '10: Large Blob',
-    '11': '11: --',
+    '11': '11: Step Pinning',
     '20': '20: Ideal Metal Tip',
     '21': '21: Good Metal Tip',
     '22': '22: Blunt Metal Tip',
     '23': '23: Bad Tip or Surface',
-    '24': '24: --',
+    '24': '24: Double or Multi Tip',
     '30': '30: Molecule on Tip Fuzzy',
     '31': '31: Molecule on Tip OK',
     '32': '32: CO Tip ideal',
@@ -687,6 +688,11 @@ MENU_XML="""
         </item>
         <item>
           <attribute name="action">win.change_taglabel</attribute>
+          <attribute name="target">11: Step Pinning</attribute>
+          <attribute name="label" translatable="yes">Step Pinning</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.change_taglabel</attribute>
           <attribute name="target">20: Ideal Metal Tip</attribute>
           <attribute name="label" translatable="yes">Ideal Metal Tip</attribute>
         </item>
@@ -704,6 +710,11 @@ MENU_XML="""
           <attribute name="action">win.change_taglabel</attribute>
           <attribute name="target">23: Bad Tip or Surface</attribute>
           <attribute name="label" translatable="yes">Bad Tip or Surface</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.change_taglabel</attribute>
+          <attribute name="target">24: Double or Multi Tip</attribute>
+          <attribute name="label" translatable="yes">Double or Multi Tip</attribute>
         </item>
         <item>
           <attribute name="action">win.change_taglabel</attribute>
@@ -801,6 +812,10 @@ MENU_XML="""
       <attribute name="label" translatable="yes">AI-Keras</attribute>
       <section>
 	<attribute name="id">ai-section</attribute>
+        <item>
+          <attribute name="action">win.ai_auto_add_folder_to_training_and_validation</attribute>
+          <attribute name="label" translatable="yes">Auto Folder to T+V</attribute>
+        </item>
         <item>
           <attribute name="action">win.ai_add_to_training_set</attribute>
           <attribute name="label" translatable="yes">Add to Training</attribute>
@@ -902,11 +917,17 @@ class AppWindow(Gtk.ApplicationWindow):
         y=y+1
         button5 = Gtk.Button(label="Next #")
         button5.connect("clicked", self.next_clicked)
-        grid.attach(button5, 0, y, 2, 1)
-        y=y+1
+        grid.attach(button5, 1, y, 1, 1)
         button6 = Gtk.Button(label="Prev #")
         button6.connect("clicked", self.prev_clicked)
-        grid.attach(button6, 0, y, 2, 1)
+        grid.attach(button6, 0, y, 1, 1)
+        y=y+1
+        button5 = Gtk.Button(label="Next")
+        button5.connect("clicked", self.next_in_list_clicked)
+        grid.attach(button5, 1, y, 1, 1)
+        button6 = Gtk.Button(label="Prev")
+        button6.connect("clicked", self.prev_in_list_clicked)
+        grid.attach(button6, 0, y, 1, 1)
         y=y+1
 
         ## PROCESSING OPTIONS
@@ -921,7 +942,10 @@ class AppWindow(Gtk.ApplicationWindow):
         y=y+1
         buttonQ = Gtk.Button(label="P: Grad^2")
         buttonQ.connect("clicked", self.process_grad2_clicked)
-        grid.attach(buttonQ, 0, y, 2, 1)
+        grid.attach(buttonQ, 0, y, 1, 1)
+        buttonQ = Gtk.Button(label="P: Grad^2 M1")
+        buttonQ.connect("clicked", self.process_grad2m1_clicked)
+        grid.attach(buttonQ, 1, y, 1, 1)
         y=y+1
 
         ## REGIONS SETUP
@@ -1012,29 +1036,30 @@ class AppWindow(Gtk.ApplicationWindow):
         grid.attach(self.ZR, 1, y, 1, 1)
 
         # Menu Actions Mode
-        act_variant = GLib.Variant.new_string("Tagging")
-        act_action = Gio.SimpleAction.new_stateful("change_action", act_variant.get_type(), act_variant)
+        self.act_variant = GLib.Variant.new_string("Tagging")
+        act_action = Gio.SimpleAction.new_stateful("change_action", self.act_variant.get_type(), self.act_variant)
         act_action.connect("change-state", self.on_change_action_state)
         self.add_action(act_action)
 
-        self.act_label = Gtk.Label(label=act_variant.get_string()) #,  margin=30)
+        self.act_label = Gtk.Label(label=self.act_variant.get_string()) #,  margin=30)
         y=y+1
         grid.attach(Gtk.Label(label='Action:'),0,y,1,1)
         grid.attach(self.act_label,1,y,1,1)
 
         # Menu: TAGGING
-        lbl_variant = GLib.Variant.new_string("--*0: Unknown*--")
-        lbl_action = Gio.SimpleAction.new_stateful("change_taglabel", lbl_variant.get_type(), lbl_variant)
+        self.taglabel_variant = GLib.Variant.new_string("*0: Unknown*")
+        lbl_action = Gio.SimpleAction.new_stateful("change_taglabel", self.taglabel_variant.get_type(), self.taglabel_variant)
         lbl_action.connect("change-state", self.on_change_taglabel_state)
         self.add_action(lbl_action)
         self.taglabel = "0: Unknown"
 
         # Menu Tagging Mode
         self.tact_variant = GLib.Variant.new_string("RegionTags")
-        tact_action = Gio.SimpleAction.new_stateful("change_tagdest", act_variant.get_type(), act_variant)
+        tact_action = Gio.SimpleAction.new_stateful("change_tagdest", self.tact_variant.get_type(), self.tact_variant)
         tact_action.connect("change-state", self.on_change_tagdest_state)
         self.add_action(tact_action)
-        self.tact_label = Gtk.Label(label=self.tact_variant.get_string()) #,  margin=30)
+        self.tact_label = Gtk.Label(label=self.tact_variant.get_string())
+        self.tact_label_group = self.tact_variant.get_string()
         y=y+1
         grid.attach(Gtk.Label(label='Tag Dest:'),0,y,1,1)
         grid.attach(self.tact_label,1,y,1,1)
@@ -1061,6 +1086,10 @@ class AppWindow(Gtk.ApplicationWindow):
         
         ## AI-Keras Actions
         #########################################################
+        action = Gio.SimpleAction.new("ai_auto_add_folder_to_training_and_validation", None)
+        action.connect("activate", self.on_ai_auto_add_folder_to_training_and_validation)
+        self.add_action(action)
+
         action = Gio.SimpleAction.new("ai_add_to_training_set", None)
         action.connect("activate", self.on_ai_add_to_training)
         self.add_action(action)
@@ -1108,15 +1137,15 @@ class AppWindow(Gtk.ApplicationWindow):
         self.taglabelbutton = [None, None, None, None, None, None, None]
         for i in range(0,self.numhistorytaglabels):
             if i==0:
-                self.taglabelbutton[i] = Gtk.RadioButton.new_with_label_from_widget (None, label=lbl_variant.get_string())
+                self.taglabelbutton[i] = Gtk.RadioButton.new_with_label_from_widget (None, label=self.taglabel_variant.get_string())
             else:
-                self.taglabelbutton[i] = Gtk.RadioButton.new_with_label_from_widget (self.taglabelbutton[i-1], label=lbl_variant.get_string())
+                self.taglabelbutton[i] = Gtk.RadioButton.new_with_label_from_widget (self.taglabelbutton[i-1], label=self.taglabel_variant.get_string())
             self.taglabelbutton[i].connect("clicked", self.taglabel_clicked)
             for child in self.taglabelbutton[i].get_children():
                 if i == 0:
-                    child.set_label('<big><b><span background="#{}"> {} </span></b></big>'.format('ff0000',lbl_variant.get_string()))
+                    child.set_label('<big><b><span background="#{}"> {} </span></b></big>'.format('ff0000',self.taglabel_variant.get_string()))
                 else:
-                    child.set_label('<big><span background="#{}"> {} </span></big>'.format('cccccc',lbl_variant.get_string()))
+                    child.set_label('<big><span background="#{}"> {} </span></big>'.format('cccccc',self.taglabel_variant.get_string()))
                 child.set_use_markup(True)
             y=y+1
             grid.attach(self.taglabelbutton[i],0,y,2,1)
@@ -1342,7 +1371,7 @@ class AppWindow(Gtk.ApplicationWindow):
             if self.click_action == 'Tagging':
                 self.tag(label)
                 self.tag_labels.append (label)
-                self.store_tag_to_netcdf (label)
+                self.add_tag_to_netcdf (label, self.tact_label_group)
 
             elif self.click_action == 'Scaling':
                 self.rect={'p1':[0,0], 'p2':[0,0]}
@@ -1360,9 +1389,8 @@ class AppWindow(Gtk.ApplicationWindow):
         else:
             self.positionC.set_text ('MC: N/A')
 
-    def store_tag_to_netcdf (self, label, nc_group='RegionTags'):
-        jstr = json.dumps (label)
-        self.NCFile_tags[nc_group].append (jstr)
+    ## addes tag to NCFile
+    def store_tags_to_netcdf (self, tags, nc_group='RegionTags'):
         #print ('NCFile_tags=',self.NCFile_tags['RegionTags'])
         if self.rootgrp:
             if nc_group in self.rootgrp.groups:
@@ -1374,9 +1402,18 @@ class AppWindow(Gtk.ApplicationWindow):
                 self.rootgrp.createDimension ('NumTags',64) # max 64 tags
                 tagsvar = self.rootgrp.createVariable  ('/{}/JsonImageTags'.format(nc_group), str, 'NumTags')
             print ('Updating Region Tags:\n')
-            i=0
-            tagsvar[:len(self.NCFile_tags[nc_group])] = np.array(self.NCFile_tags[nc_group])
+            i=len (tags)
+            if i > 0:
+                tagsvar[:len(tags)] = np.array(tags)
+            for j in range(i,64):
+                tagsvar[j:j+1] = np.array([''])
             print ('/{}/JsonImageTag ==> {}'.format(nc_group, tagsvar[:]))
+
+    ## addes tag to NCFile
+    def add_tag_to_netcdf (self, label, nc_group='RegionTags'):
+        jstr = json.dumps (label)
+        self.NCFile_tags[nc_group].append (jstr)
+        self.store_tags_to_netcdf (self.NCFile_tags[nc_group], nc_group)
             
     def on_file_clicked(self, widget):
         dialog = Gtk.FileChooserDialog(action=Gtk.FileChooserAction.OPEN)
@@ -1418,6 +1455,9 @@ class AppWindow(Gtk.ApplicationWindow):
             self.work_folder = dialog.get_filename()
             self.work_folder_w.set_text ('...{}'.format(self.work_folder[-25:]))
             print("Folder selected: {}".format(self.work_folder))
+            self.file_list = glob2.glob('{}/*.nc'.format(self.work_folder))
+            self.file_list_iterator = iter(self.file_list)
+
         elif response == Gtk.ResponseType.CANCEL:
             print("Cancel clicked")
 
@@ -1453,6 +1493,7 @@ class AppWindow(Gtk.ApplicationWindow):
         fn = tmp[0]+'{0:03d}'.format(int(nnn[-1])+1)+tmp[1]
         print('Trying to load: {}'.format(fn))
         if os.path.isfile (fn):
+            self.last_cdf_image_data_filename = self.cdf_image_data_filename
             self.cdf_image_data_filename = fn
             self.load_CDF ()
 
@@ -1461,9 +1502,25 @@ class AppWindow(Gtk.ApplicationWindow):
         tmp = self.cdf_image_data_filename.split(nnn[-1])
         fn = tmp[0]+'{0:03d}'.format(int(nnn[-1])-1)+tmp[1]
         if os.path.isfile (fn):
+            self.last_cdf_image_data_filename = self.cdf_image_data_filename
             self.cdf_image_data_filename = fn
             self.load_CDF ()
 
+    def next_in_list_clicked(self, widget):
+        try:
+            fn = next(self.file_list_iterator)
+            if os.path.isfile (fn):
+                self.last_cdf_image_data_filename = self.cdf_image_data_filename
+                self.cdf_image_data_filename = fn
+                self.load_CDF ()
+        except:
+            print ("END OF FILE LIST. RESTETTING TO START.")
+            self.file_list_iterator = iter(self.file_list)
+                
+    def prev_in_list_clicked(self, widget):
+        self.cdf_image_data_filename =  self.last_cdf_image_data_filename
+        self.load_CDF ()
+    
     def live_clicked(self, widget):
         if self.gxsm == None:
             self.gxsm = SocketClient(HOST, PORT)
@@ -1532,14 +1589,17 @@ class AppWindow(Gtk.ApplicationWindow):
             if self.GXSM_params[id][2] == widget:
                 ret = self.gxsm.request_set_parameter(id, str(float(etxt.lstrip().split(' ')[0])))
 
-    def clear_clicked(self, widget):
+    def clear_tags(self, nc_group):
         for p in self.axy.patches[:]:
             p.remove()
         for t in self.axy.texts[:]:
             t.remove()
         self.fig.canvas.draw()
-        self.NCFile_tags[self.tact_variant.get_string()] = []
+        self.NCFile_tags[nc_group] = []
         self.tag_labels = []
+        
+    def clear_clicked(self, widget):
+        self.clear_tags (self.tact_label_group)
         
     def process_quick_clicked(self, widget):
         x = range (0,self.nx)
@@ -1551,15 +1611,24 @@ class AppWindow(Gtk.ApplicationWindow):
 
         self.update_image(self.ImageData.max(), self.ImageData.min())
 
-
-    def process_grad2_clicked(self, widget):
+    def process_grad2(self):
         grad = np.gradient (self.ImageData)
         hx = np.histogram (grad[0], bins=256)
         hy = np.histogram (grad[1], bins=256)
         mx = hx[1][np.argmax(hx[0])]
         my = hy[1][np.argmax(hy[0])]
         self.ImageData = (grad[0]-mx)**2+(grad[1]-my)**2
+        
+    def process_grad2_clicked(self, widget):
+        self.process_grad2()
         self.update_image(self.ImageData[2:-2,2:-2].max(), self.ImageData[2:-2,2:-2].min())
+        
+    def process_grad2m1_clicked(self, widget):
+        self.process_grad2()
+        gmax = self.ImageData[2:-2,2:-2].max()
+        if gmax > 1.0:
+            gmax = 1.0
+        self.update_image (gmax, 0.0)
         
     def process_plane_clicked(self, widget):
         bg = self.plane_max_likely (self.ImageData)
@@ -1720,10 +1789,17 @@ class AppWindow(Gtk.ApplicationWindow):
         self.ub = self.rootgrp['sranger_mk2_hwi_bias'][0]
         self.bias.set_text ('{0:.4f} '.format(self.rootgrp['sranger_mk2_hwi_bias'][0])+self.rootgrp['sranger_mk2_hwi_bias'].var_unit)
 
-        print('Current = ', self.rootgrp['sranger_mk2_hwi_mix0_set_point'][0], self.rootgrp['sranger_mk2_hwi_mix0_set_point'].var_unit)
-        self.cur = self.rootgrp['sranger_mk2_hwi_mix0_set_point'][0]
-        self.current.set_text ('{0:.4f} '.format(self.rootgrp['sranger_mk2_hwi_mix0_set_point'][0])+self.rootgrp['sranger_mk2_hwi_mix0_set_point'].var_unit)
+        if 'sranger_mk2_hwi_mix0_set_point' in self.rootgrp.variables:
+            print('Current = ', self.rootgrp['sranger_mk2_hwi_mix0_set_point'][0], self.rootgrp['sranger_mk2_hwi_mix0_set_point'].var_unit)
+            self.cur = self.rootgrp['sranger_mk2_hwi_mix0_set_point'][0]
+            self.current.set_text ('{0:.4f} '.format(self.rootgrp['sranger_mk2_hwi_mix0_set_point'][0])+self.rootgrp['sranger_mk2_hwi_mix0_set_point'].var_unit)
 
+        if 'sranger_mk2_hwi_mix0_current_set_point' in self.rootgrp.variables:
+            print('Current (old name) = ', self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'][0], self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'].var_unit)
+            self.cur = self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'][0]
+            self.current.set_text ('{0:.4f} '.format(self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'][0])+self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'].var_unit)
+
+            
         print('X Range = ', self.rootgrp['rangex'][0], self.rootgrp['rangex'].var_unit)
         self.xr = self.rootgrp['rangex'][0]
         self.Xrange.set_text ('{0:.1f} '.format(self.rootgrp['rangex'][0])+self.rootgrp['rangex'].var_unit)
@@ -1765,15 +1841,16 @@ class AppWindow(Gtk.ApplicationWindow):
         self.cbar = self.fig.colorbar(self.im, extend='both', shrink=0.9, ax=self.axy)
         self.cbar.set_label('Z in '+gxsm_units[self.rootgrp['dz'].unit][0])
         self.fig.canvas.draw()
-        self.load_tags_from_netcdf ()
+        print ('NCLoad tags from group {}'.format (self.tact_label_group))
+        self.load_tags_from_netcdf (self.tact_label_group)
 
     def load_tags_from_netcdf (self, nc_group='RegionTags'):
-        self.NCFile_tags[nc_group] = []
+        self.clear_tags (nc_group)
         if nc_group in self.rootgrp.groups:
             #print (self.rootgrp.groups['RegionTags'])
             tagsvar = self.rootgrp['/{}/JsonImageTags'.format(nc_group)]
             #print ('NCFile RegionTags found:\n', tagsvar[:], '\n')
-            print("Loading Tags...")
+            print("Loading Tags... ", nc_group)
             for jstr in tagsvar:
                 if len(jstr) > 2:
                     self.NCFile_tags[nc_group].append (jstr)
@@ -1818,8 +1895,13 @@ class AppWindow(Gtk.ApplicationWindow):
         #print(self.rootgrp['sranger_mk2_hwi_bias'])
         print('Bias = ', self.rootgrp['sranger_mk2_hwi_bias'][0], gxsm_units[self.rootgrp['sranger_mk2_hwi_bias'].var_unit][0])
 
-        #print(self.rootgrp['sranger_mk2_hwi_mix0_set_point'])
-        print('Current = ', self.rootgrp['sranger_mk2_hwi_mix0_set_point'][0], gxsm_units[self.rootgrp['sranger_mk2_hwi_mix0_set_point'].var_unit][0])
+        if 'sranger_mk2_hwi_mix0_set_point' in self.rootgrp.variables:
+            #print(self.rootgrp['sranger_mk2_hwi_mix0_set_point'])
+            print('Current = ', self.rootgrp['sranger_mk2_hwi_mix0_set_point'][0], gxsm_units[self.rootgrp['sranger_mk2_hwi_mix0_set_point'].var_unit][0])
+
+        if 'sranger_mk2_hwi_mix0_current_set_point' in self.rootgrp.variables:
+            print('Current (old name) = ', self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'][0], self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'].var_unit)
+        
 
         #print(self.rootgrp['rangex'])
         print('X Range = ', self.rootgrp['rangex'][0], gxsm_units[self.rootgrp['rangex'].unit][0])
@@ -1862,9 +1944,9 @@ class AppWindow(Gtk.ApplicationWindow):
         print (self.taglabel)
             
     def on_change_tagdest_state(self, action, value):
-        action.set_state(value)
-        self.click_action = value.get_string()
-        self.tact_label.set_text(value.get_string())
+        action.set_state (value)
+        self.tact_label.set_text (value.get_string())
+        self.tact_label_group = value.get_string()
             
     def on_maximize_toggle(self, action, value):
         action.set_state(value)
@@ -1878,16 +1960,38 @@ class AppWindow(Gtk.ApplicationWindow):
         self.clear_clicked (None)
 
     def on_tags_store(self, action, param):
+        nc_group=self.tact_label_group
+        NCFile_tags = []
         for label in self.tag_labels:
-            print (label)
             tmp = label
             tmp['predictions'] = [] # remove predictions ndarray, not JSON complatible: TypeError: Object of type ndarray is not JSON serializable
-            self.store_tag_to_netcdf (tmp, self.tact_variant.get_string())
+            jstr = json.dumps (label)
+            NCFile_tags.append (jstr)
+        print (NCFile_tags)
+        self.store_tags_to_netcdf (NCFile_tags, nc_group)
         
     def on_tags_load(self, action, param):
-        self.load_tags_from_netcdf (self.tact_variant.get_string())
+        self.load_tags_from_netcdf (self.tact_label_group)
     
-    ## GXSM AI/BRAIN -- KERAS -- Managing
+    ## GXSM AI/BRAIN -- KERAS -- Data Managing
+    def on_ai_auto_add_folder_to_training_and_validation(self, action, param):
+        if not self.AI:
+            self.AI = brain() # init brain class (Keras)
+
+        for fn in self.file_list:
+            if os.path.isfile (fn):
+                self.cdf_image_data_filename = fn
+                self.load_CDF ()
+                for label in self.tag_labels:
+                    print ("preparing: {}".format(label))
+                    ij = label['region']['ij']
+                    ImPatch = self.ImageData[ij[1] : ij[1]+ij[3], ij[0] : ij[0]+ij[2]]
+                    vmin = ImPatch.min()
+                    patch = ImPatch - vmin
+                    if random.randint(1,100) > 66:
+                        self.AI.add_to_training_set (patch, label)
+                    else:
+                        self.AI.add_to_validation_set (patch, label)
 
     def on_ai_add_to_training(self, action, param):
         if not self.AI:
