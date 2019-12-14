@@ -233,7 +233,7 @@ class brain:
         dataset['dataarr'].append (np.transpose([data]))
         dataset['labelarr'].append (int(label['value']))
         dataset['tag'].append (label)
-        print (dataset)
+        #print (dataset)
         
         ### create gallery for visual indspection only, not used for data input
         im = Image.fromarray(data*64, 'F')
@@ -555,6 +555,10 @@ MENU_XML="""
         <attribute name="label" translatable="yes">Set Folder</attribute>
       </item>
       <item>
+        <attribute name="action">app.statistics</attribute>
+        <attribute name="label" translatable="yes">Folder Statistics</attribute>
+      </item>
+      <item>
         <attribute name="action">app.list</attribute>
         <attribute name="label" translatable="yes">List NetCDF</attribute>
       </item>
@@ -593,6 +597,10 @@ MENU_XML="""
         <item>
           <attribute name="action">app.folder</attribute>
           <attribute name="label" translatable="yes">Set Folder</attribute>
+        </item>
+        <item>
+          <attribute name="action">app.statistics</attribute>
+          <attribute name="label" translatable="yes">Folder Statistics</attribute>
         </item>
         <item>
           <attribute name="action">app.list</attribute>
@@ -1133,19 +1141,23 @@ class AppWindow(Gtk.ApplicationWindow):
         
         y=y+1
         grid.attach(Gtk.Label(label='Categories:'),0,y,2,1)
-        self.numhistorytaglabels=6
-        self.taglabelbutton = [None, None, None, None, None, None, None]
+        self.numhistorytaglabels=12
+        self.start_taglabels=7
+        self.taglabelbutton = []
         for i in range(0,self.numhistorytaglabels):
+            self.taglabelbutton.append(None)
+            lbl = CAT_DESCRIPTIONS[str(i)]
+            bgc = CAT_COLORS[str(i)]
             if i==0:
-                self.taglabelbutton[i] = Gtk.RadioButton.new_with_label_from_widget (None, label=self.taglabel_variant.get_string())
+                self.taglabelbutton[i] = Gtk.RadioButton.new_with_label_from_widget (None, label=lbl)
             else:
-                self.taglabelbutton[i] = Gtk.RadioButton.new_with_label_from_widget (self.taglabelbutton[i-1], label=self.taglabel_variant.get_string())
+                self.taglabelbutton[i] = Gtk.RadioButton.new_with_label_from_widget (self.taglabelbutton[i-1], label=lbl)  #self.taglabel_variant.get_string())
             self.taglabelbutton[i].connect("clicked", self.taglabel_clicked)
             for child in self.taglabelbutton[i].get_children():
                 if i == 0:
-                    child.set_label('<big><b><span background="#{}"> {} </span></b></big>'.format('ff0000',self.taglabel_variant.get_string()))
+                    child.set_label('<big><b><span background="{}"> *{}* </span></b></big>'.format(bgc,lbl))
                 else:
-                    child.set_label('<big><span background="#{}"> {} </span></big>'.format('cccccc',self.taglabel_variant.get_string()))
+                    child.set_label('<big><span background="{}"> *{}* </span></big>'.format(bgc,lbl))
                 child.set_use_markup(True)
             y=y+1
             grid.attach(self.taglabelbutton[i],0,y,2,1)
@@ -1457,12 +1469,38 @@ class AppWindow(Gtk.ApplicationWindow):
             print("Folder selected: {}".format(self.work_folder))
             self.file_list = glob2.glob('{}/*.nc'.format(self.work_folder))
             self.file_list_iterator = iter(self.file_list)
-
+            print ('{}\n#files: {}'.format(self.file_list, len(self.file_list)))
+            
         elif response == Gtk.ResponseType.CANCEL:
             print("Cancel clicked")
 
         dialog.destroy()
 
+    def on_folder_statistics(self):
+        fcount=0
+        pcount=[]
+        for fn in self.file_list:
+            fcount = fcount+1
+            tmprootgrp = Dataset (fn, "r")
+            print ('[{}] {} ..... Dims: {}, {} Ang @ {}, {}px'.format(fcount, fn,
+                                                                        tmprootgrp['rangex'][0], tmprootgrp['rangey'][0],
+                                                                        len(tmprootgrp['dimx']), len(tmprootgrp['dimy'])))
+            nc_group='RegionTags'
+            if nc_group in tmprootgrp.groups:
+                tagsvar = tmprootgrp['/{}/JsonImageTags'.format(nc_group)]
+                #print ('NCFile RegionTags found:\n', tagsvar[:], '\n')
+                #print("Loading Tags... ", nc_group)
+                for jstr in tagsvar:
+                    if len(jstr) > 2:
+                        label = json.loads (jstr)
+                        #print (' {} [{}]'.format(label['description'], label['value']))
+                        pcount.append(label['value'])
+                print (' Label Counts: {}'.format(np.histogram (pcount, bins=range(0,100))[0]))
+
+        print (pcount)
+        print (' Label Counts: {}'.format(np.histogram (pcount, bins=range(0,100))))
+
+                        
     def reload_clicked(self, widget):
         if os.path.isfile(self.cdf_image_data_filename):
             self.load_CDF ()
@@ -1730,7 +1768,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         self.update_image(self.ImageData.max(), self.ImageData.min())
 
-    def tag(self, label):
+    def tag(self, label, update=True):
         x,y = label['event-at']
         i = int(label['N']*x/self.xr)
         j = int(label['M']*y/self.yr)
@@ -1740,7 +1778,8 @@ class AppWindow(Gtk.ApplicationWindow):
             self.axy.text(x,y, '{0} ({1:.2f})'.format(label['value'], label['predictions'][int(label['value'])]))
         else:
             self.axy.text(x,y, '{}'.format(label['value']))
-        self.fig.canvas.draw()
+        if update:
+            self.fig.canvas.draw()
         
     def add_color_patch(self, N,M, i,j, color, alpha=0.1):
         x0  = i*self.xr/N*1.01
@@ -1857,7 +1896,8 @@ class AppWindow(Gtk.ApplicationWindow):
                     label = json.loads (jstr)
                     self.tag_labels.append (label)
                     print (label)
-                    self.tag (label)
+                    self.tag (label, False)
+        self.fig.canvas.draw()
 
 
 
@@ -1930,16 +1970,16 @@ class AppWindow(Gtk.ApplicationWindow):
     def on_change_taglabel_state(self, action, value):
         action.set_state(value)
         #self.taglabelbutton.set_text(value.get_string())
-        for i in range(self.numhistorytaglabels-1,0,-1):
+        for i in range(self.numhistorytaglabels-1, self.start_taglabels, -1):
             for child in self.taglabelbutton[i].get_children():
                 for cp in self.taglabelbutton[i-1].get_children():
                     child.set_label(cp.get_label())
                     child.set_use_markup(True)
 
-        for child in self.taglabelbutton[0].get_children():
-            child.set_label('<big><b><span background="{}">*{}*</span></b></big>'.format(CAT_COLORS[value.get_string().split(':')[0]], value.get_string()))
+        for child in self.taglabelbutton[self.start_taglabels].get_children():
+            child.set_label('<big><b><span background="{}"> *{}* </span></b></big>'.format(CAT_COLORS[value.get_string().split(':')[0]], value.get_string()))
             child.set_use_markup(True)
-        self.taglabelbutton[0].set_active (True)
+        self.taglabelbutton[self.start_taglabels].set_active (True)
         self.taglabel = value.get_string()
         print (self.taglabel)
             
@@ -1982,6 +2022,10 @@ class AppWindow(Gtk.ApplicationWindow):
             if os.path.isfile (fn):
                 self.cdf_image_data_filename = fn
                 self.load_CDF ()
+                print ('pre-processing image grad2')
+                self.process_grad2 ()
+                self.ImageData = self.ImageData*30.
+                self.update_image(self.ImageData[2:-2,2:-2].max(), self.ImageData[2:-2,2:-2].min())
                 for label in self.tag_labels:
                     print ("preparing: {}".format(label))
                     ij = label['region']['ij']
@@ -2103,6 +2147,10 @@ class Application(Gtk.Application):
         action.connect("activate", self.on_set_folder)
         self.add_action(action)
 
+        action = Gio.SimpleAction.new("statistics", None)
+        action.connect("activate", self.on_folder_statistics)
+        self.add_action(action)
+
         action = Gio.SimpleAction.new("list", None)
         action.connect("activate", self.on_list_netcdf)
         self.add_action(action)
@@ -2149,7 +2197,10 @@ class Application(Gtk.Application):
 
     def on_set_folder(self, action, param):
         self.window.on_folder_clicked(None)
-        
+
+    def on_folder_statistics(self, action, param):
+        self.window.on_folder_statistics()
+
     def on_list_netcdf(self, action, param):
         self.window.list_CDF_clicked(None)
     
