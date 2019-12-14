@@ -5,7 +5,7 @@
 ## nccopy -k nc4 testV3.nc testV4.nc
 ## F**edUp libs:  percy@ltncafm:~/SVN/Gxsm-3.0-spmc$ exec env LD_LIBRARY_PATH=/home/percy/anaconda3/pkgs/cudatoolkit-10.0.130-0/lib  /usr/bin/python3.7 ./gxsm-scan-image-viewer-sok-client.py 
 ## https://cs.stanford.edu/people/karpathy/rcnn/
-##https://www.kaggle.com/kmader/keras-rcnn-based-overview-wip#Overview
+##https://www.kaggle.com/kmader/keras-rcnn-based-overview-wip#Overview 
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
