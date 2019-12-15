@@ -5,7 +5,7 @@
 ## nccopy -k nc4 testV3.nc testV4.nc
 ## F**edUp libs:  percy@ltncafm:~/SVN/Gxsm-3.0-spmc$ exec env LD_LIBRARY_PATH=/home/percy/anaconda3/pkgs/cudatoolkit-10.0.130-0/lib  /usr/bin/python3.7 ./gxsm-scan-image-viewer-sok-client.py 
 ## https://cs.stanford.edu/people/karpathy/rcnn/
-##https://www.kaggle.com/kmader/keras-rcnn-based-overview-wip#Overview 
+##https://www.kaggle.com/kmader/keras-rcnn-based-overview-wip#Overview
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -178,11 +178,11 @@ class brain:
     def load_datasets(self):
         return
         
-    def store_brain(self):
-        self.classifier.save("STM_brain0.hd5") 
+    def store_brain(self, fn='STM_brain1.hd5'):
+        self.classifier.save(fn) 
 
-    def load_brain(self):
-        self.classifier = load_model("STM_brain0.hd5")
+    def load_brain(self, fn='STM_brain0.hd5'):
+        self.classifier = load_model(fn)
 
     def do_prediction(self):
         #test_image = image.load_img(casefile, target_size = (64, 64))
@@ -214,7 +214,7 @@ class brain:
         print (self.result)
         # update labels
         for v, tag in zip (self.result, self.prediction_data['tag']):
-            key = str(np.argmax(v))
+            key = str(np.argmax(v))  #np.argsort(-x)
             print ('{} => {} => key:"{}"'.format(tag, v, key))
             tag['value'] = key
             tag['predictions'] = v
@@ -634,6 +634,13 @@ MENU_XML="""
           <attribute name="label" translatable="yes">scaling</attribute>
         </item>
       </section>
+      <section>
+        <item>
+          <attribute name="action">win.swap-color-palette</attribute>
+          <attribute name="label" translatable="yes">Swap Platte</attribute>
+          <attribute name="accel">&lt;Primary&gt;p</attribute>
+        </item>
+      </section>
     </submenu>
     <submenu id="app-tagging-menu">
       <attribute name="label" translatable="yes">Tags</attribute>
@@ -823,6 +830,14 @@ MENU_XML="""
         <item>
           <attribute name="action">win.ai_auto_add_folder_to_training_and_validation</attribute>
           <attribute name="label" translatable="yes">Auto Folder to T+V</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.ai_auto_add_folder_to_training_and_validation_g2</attribute>
+          <attribute name="label" translatable="yes">Auto Folder to T+V Grad2</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.ai_auto_add_folder_to_training_and_validation_p</attribute>
+          <attribute name="label" translatable="yes">Auto Folder to T+V Plane</attribute>
         </item>
         <item>
           <attribute name="action">win.ai_add_to_training_set</attribute>
@@ -1077,6 +1092,12 @@ class AppWindow(Gtk.ApplicationWindow):
         self.work_folder_w = Gtk.Label(label='.')
         grid.attach(self.work_folder_w,1,y,1,1)
 
+        ## Other Actions
+        #########################################################
+        action = Gio.SimpleAction.new("swap-color-palette", None)
+        action.connect("activate", self.on_color_map_swap)
+        self.add_action(action)
+
         ## TAG Actions
         #########################################################
         action = Gio.SimpleAction.new("tags-clear", None)
@@ -1095,7 +1116,15 @@ class AppWindow(Gtk.ApplicationWindow):
         ## AI-Keras Actions
         #########################################################
         action = Gio.SimpleAction.new("ai_auto_add_folder_to_training_and_validation", None)
-        action.connect("activate", self.on_ai_auto_add_folder_to_training_and_validation)
+        action.connect("activate", self.on_ai_auto_add_folder_to_training_and_validation, 'd')
+        self.add_action(action)
+
+        action = Gio.SimpleAction.new("ai_auto_add_folder_to_training_and_validation_g2", None)
+        action.connect("activate", self.on_ai_auto_add_folder_to_training_and_validation, 'g2')
+        self.add_action(action)
+
+        action = Gio.SimpleAction.new("ai_auto_add_folder_to_training_and_validation_p", None)
+        action.connect("activate", self.on_ai_auto_add_folder_to_training_and_validation, 'p')
         self.add_action(action)
 
         action = Gio.SimpleAction.new("ai_add_to_training_set", None)
@@ -1166,10 +1195,6 @@ class AppWindow(Gtk.ApplicationWindow):
 
         #y=96
         y=y+1
-        buttonCM = Gtk.Button(label="Color Map Swap")
-        buttonCM.connect("clicked", self.color_map_swap_clicked)
-        grid.attach(buttonCM, 0, y, 2, 1)
-        y=y+1
         buttonC = Gtk.Button(label="Clear")
         buttonC.connect("clicked", self.clear_clicked)
         grid.attach(buttonC, 0, y, 2, 1)
@@ -1190,7 +1215,21 @@ class AppWindow(Gtk.ApplicationWindow):
         self.grid.attach(self.canvas, 3,1, 100,100)
         self.cbar = None
         self.im   = None
-        self.colormap = cm.RdYlGn
+        self.cmi = 0
+        self.colormaps = [ cm.gray, cm.RdYlGn,
+                           cm.Greys, cm.Purples, cm.Blues, cm.Greens, cm.Oranges, cm.Reds,
+                           cm.YlOrBr, cm.YlOrRd, cm.OrRd, cm.PuRd, cm.RdPu, cm.BuPu,
+                           cm.GnBu, cm.PuBu, cm.YlGnBu, cm.PuBuGn, cm.BuGn, cm.YlGn,
+                           cm.viridis, cm.plasma, cm.inferno, cm.magma, cm.cividis ]
+        self.colormap = self.colormaps[self.cmi]  ##cm.RdYlGn
+
+        #cmaps['Perceptually Uniform Sequential'] = [
+        #    'viridis', 'plasma', 'inferno', 'magma', 'cividis']
+
+        #cmaps['Sequential (2)'] = [
+        #    'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
+        #    'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
+        #    'hot', 'afmhot', 'gist_heat', 'copper'  ] #Greys
         #self.colormap = cm.Greys  #magma
         #cmaps['Sequential'] = [
         #    'Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
@@ -1455,6 +1494,22 @@ class AppWindow(Gtk.ApplicationWindow):
         filter_any.add_pattern("*")
         dialog.add_filter(filter_any)
 
+    def add_filters_hd5(self, dialog):
+        filter_hd5 = Gtk.FileFilter()
+        filter_hd5.set_name("HD5")
+        filter_hd5.add_pattern("*.hd5")
+        dialog.add_filter(filter_hd5)
+
+        filter_py = Gtk.FileFilter()
+        filter_py.set_name("Unidata HDF")
+        filter_py.add_mime_type("application/x-hdf")
+        dialog.add_filter(filter_py)
+
+        filter_any = Gtk.FileFilter()
+        filter_any.set_name("Any files")
+        filter_any.add_pattern("*")
+        dialog.add_filter(filter_any)
+
     def on_folder_clicked(self, widget):
         dialog = Gtk.FileChooserDialog("Please choose a folder", self,
                                        Gtk.FileChooserAction.SELECT_FOLDER,
@@ -1507,23 +1562,12 @@ class AppWindow(Gtk.ApplicationWindow):
         else:
             print ('Sorry.')
 
-    def color_map_swap_clicked(self, widget):
-        #self.colormap = cm.RdYlGn
-        self.colormap = cm.gray #Greys
-        #self.colormap = cm.magma
-        #cmaps['Sequential'] = [
-        #    'Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
-        #    'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
-        #    'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn']
-
-        #cmaps['Perceptually Uniform Sequential'] = [
-        #    'viridis', 'plasma', 'inferno', 'magma', 'cividis']
-
-        #cmaps['Sequential (2)'] = [
-        #    'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
-        #    'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
-        #    'hot', 'afmhot', 'gist_heat', 'copper']
-
+    def on_color_map_swap(self, action, value):
+        self.cmi = self.cmi+1
+        if self.cmi >= len(self.colormaps):
+            self.cmi = 0
+        self.colormap = self.colormaps[self.cmi]
+        self.update_image(self.ImageData.max(), self.ImageData.min())
             
     def next_clicked(self, widget):
         nnn = re.findall('[0-9]+',self.cdf_image_data_filename)
@@ -1670,7 +1714,7 @@ class AppWindow(Gtk.ApplicationWindow):
         
     def process_plane_clicked(self, widget):
         bg = self.plane_max_likely (self.ImageData)
-        self.ImageData = self.ImageData + bg
+        self.ImageData = self.ImageData - bg
         self.ImageData = self.ImageData - self.ImageData.min()
         self.update_image(self.ImageData.max(), self.ImageData.min())
         
@@ -1682,19 +1726,19 @@ class AppWindow(Gtk.ApplicationWindow):
         #print ('hy=',hy)
         mx = hx[1][np.argmax(hx[0])]
         my = hy[1][np.argmax(hy[0])]
-        print ('MaxProbGrad X at {} = {}'.format(np.argmax(hx[0]), hx[1][np.argmax(hx[0])]))
-        print ('MaxProbGrad Y at {} = {}'.format(np.argmax(hy[0]), hy[1][np.argmax(hy[0])]))
+        #print ('MaxProbGrad X at {} = {}'.format(np.argmax(hx[0]), hx[1][np.argmax(hx[0])]))
+        #print ('MaxProbGrad Y at {} = {}'.format(np.argmax(hy[0]), hy[1][np.argmax(hy[0])]))
         bg = np.empty(patch.shape)
-        rz=0.0
-        rx=0.0
-        for row in bg[:]:  #self.ImageData[:]:  #patch:
+        rz = patch[0][0]
+        for row in bg[:]:
             z=rz
             for i in range(0,patch.shape[1]):
                 row[i] = z
-                z=z+mx
-            rz=rz+my
+                z=z-mx
+            rz=rz-my
         s=bg.max() - bg.min()
-        print ('bg scale: {} = {} - {}'.format(s, bg.max(), bg.min()))
+        #print ('bg scale: {} = {} - {}'.format(s, bg.max(), bg.min()))
+        #print ('pml patch {} bg {}'.format(patch.shape, bg.shape))
         return bg
 
         
@@ -1716,7 +1760,7 @@ class AppWindow(Gtk.ApplicationWindow):
                          'N': n
                 }
                 self.tag_labels.append (label)
-                self.tag(label)
+                self.tag(label, False)
         self.AI.clear_prediction_set ()
         self.on_ai_add_to_prediction (None, None)
         self.on_ai_evaluate (None, None)
@@ -1770,12 +1814,20 @@ class AppWindow(Gtk.ApplicationWindow):
 
     def tag(self, label, update=True):
         x,y = label['event-at']
+        dx = self.xr/16
+        dy = self.yr/16
         i = int(label['N']*x/self.xr)
         j = int(label['M']*y/self.yr)
         label['region'] = self.add_color_patch(label['N'], label['M'], i,j, label['color'], label['alpha'])
         print (len(label['predictions']), label['value'])
         if len(label['predictions'])-1 >= int(label['value']):
-            self.axy.text(x,y, '{0} ({1:.2f})'.format(label['value'], label['predictions'][int(label['value'])]))
+            topc = np.argsort(-label['predictions'])
+            #self.axy.text(x,y, '{0} ({1:.2f})'.format(label['value'], label['predictions'][int(label['value'])]))
+            self.axy.text(x-dx,y+dy, '{0} ({1:.2f})'.format(topc[0], label['predictions'][topc[0]]))
+            if (label['predictions'][topc[1]] > 0.2):
+                self.axy.text(x-dx,y,    '{0} ({1:.2f})'.format(topc[1], label['predictions'][topc[1]]))
+                if (label['predictions'][topc[2]] > 0.2):
+                    self.axy.text(x-dx,y-dy, '{0} ({1:.2f})'.format(topc[2], label['predictions'][topc[2]]))
         else:
             self.axy.text(x,y, '{}'.format(label['value']))
         if update:
@@ -1818,10 +1870,10 @@ class AppWindow(Gtk.ApplicationWindow):
         self.tag_labels = []
         
         self.rootgrp = Dataset (self.cdf_image_data_filename, "r+")
-        print(self.rootgrp['FloatField'])
+        #print(self.rootgrp['FloatField'])
 
         self.ImageData = self.rootgrp['FloatField'][0][0][:][:]
-        print (self.ImageData)
+        #print (self.ImageData)
         self.Xlookup = self.rootgrp['dimx'][:]
         self.Ylookup = self.rootgrp['dimy'][:]
         print('Bias    = ', self.rootgrp['sranger_mk2_hwi_bias'][0], self.rootgrp['sranger_mk2_hwi_bias'].var_unit)
@@ -1895,7 +1947,7 @@ class AppWindow(Gtk.ApplicationWindow):
                     self.NCFile_tags[nc_group].append (jstr)
                     label = json.loads (jstr)
                     self.tag_labels.append (label)
-                    print (label)
+                    #print (label)
                     self.tag (label, False)
         self.fig.canvas.draw()
 
@@ -2014,7 +2066,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.load_tags_from_netcdf (self.tact_label_group)
     
     ## GXSM AI/BRAIN -- KERAS -- Data Managing
-    def on_ai_auto_add_folder_to_training_and_validation(self, action, param):
+    def on_ai_auto_add_folder_to_training_and_validation(self, action, param, opt):
         if not self.AI:
             self.AI = brain() # init brain class (Keras)
 
@@ -2022,16 +2074,30 @@ class AppWindow(Gtk.ApplicationWindow):
             if os.path.isfile (fn):
                 self.cdf_image_data_filename = fn
                 self.load_CDF ()
-                print ('pre-processing image grad2')
-                self.process_grad2 ()
-                self.ImageData = self.ImageData*30.
-                self.update_image(self.ImageData[2:-2,2:-2].max(), self.ImageData[2:-2,2:-2].min())
+                if opt == 'g2':
+                    print ('pre-processing image grad2')
+                    self.process_grad2 ()
+                    self.ImageData = self.ImageData*30.
+                    self.update_image(self.ImageData[2:-2,2:-2].max(), self.ImageData[2:-2,2:-2].min())
                 for label in self.tag_labels:
-                    print ("preparing: {}".format(label))
+                    print ("preparing: {}".format(label['description']))
                     ij = label['region']['ij']
                     ImPatch = self.ImageData[ij[1] : ij[1]+ij[3], ij[0] : ij[0]+ij[2]]
-                    vmin = ImPatch.min()
-                    patch = ImPatch - vmin
+                    if opt == 'd':
+                        vmin = ImPatch.min()
+                        patch = ImPatch - vmin
+                    if opt == 'p':
+                        print ('pre-processing image plane on patch')
+                        bg = self.plane_max_likely (ImPatch)
+                        print (ImPatch)
+                        print (bg)
+                        ImPatch = ImPatch - bg
+                        vmin = ImPatch.min()
+                        patch = ImPatch - vmin
+                        print ('PS: {}, bgS: {}'.format(ImPatch.shape, bg.shape))
+                    if opt == 'g2':
+                        vmin = ImPatch.min()
+                        patch = ImPatch - vmin
                     if random.randint(1,100) > 66:
                         self.AI.add_to_training_set (patch, label)
                     else:
@@ -2107,12 +2173,38 @@ class AppWindow(Gtk.ApplicationWindow):
         if not self.AI:
             print ("Nothing to store at this time!")
             return
-        self.AI.store_brain ()
+        dialog = Gtk.FileChooserDialog(action=Gtk.FileChooserAction.SAVE)
+        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+			   Gtk.STOCK_SAVE, Gtk.ResponseType.OK)
+        #dialog.set_transient_for(self.main_widget)
+        self.add_filters_hd5(dialog)
+        #dialog.modal = True
+        response = dialog.run()
+        try:
+            if response == Gtk.ResponseType.OK:
+                print("Save clicked")
+                print("File selected: " + dialog.get_filename())
+                self.AI.store_brain (dialog.get_filename())
+        finally:
+            dialog.destroy()
 
     def on_ai_load(self, action, param):
         if not self.AI:
             self.AI = brain () # init brain class (Keras)
-        self.AI.load_brain ()
+        dialog = Gtk.FileChooserDialog(action=Gtk.FileChooserAction.OPEN)
+        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+			   Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        #dialog.set_transient_for(self.main_widget)
+        self.add_filters_hd5(dialog)
+        #dialog.modal = True
+        response = dialog.run()
+        try:
+            if response == Gtk.ResponseType.OK:
+                print("Save clicked")
+                print("File selected: " + dialog.get_filename())
+                self.AI.load_brain (dialog.get_filename())
+        finally:
+            dialog.destroy()
 
 ############################################################
 # G Application Core
