@@ -1157,17 +1157,29 @@ gboolean sranger_mk3_hwi_spm::EndScan2D(){
 
         static int state=0;
 	static AREA_SCAN_MK3 dsp_scan;
+        static int abort_count=0;
         //g_print ("\nEND2DSCAN: STATE %d  ** ", state);
         switch (state){
         case 0: if (ScanningFlg){
                         ScanningFlg=0; 
                         state = 1;
+                        abort_count=0;
                         //g_print ("2D Scan: Forcing stop! ");
                         return TRUE;
-                } else { state = 0;
-                        g_warning ("End 2D Scan System State Error. Aborting.");
-                        // gapp->check_events ("End 2D Scan System State Error. Aborting.");
-                        return FALSE; } // ERROR
+                } else {
+                        state = 0;
+                        abort_count++;
+                        g_warning ("EE: End 2D Scan System State Error. Ignoring. Press 3x STOP to force scan abort.");
+                        if ( abort_count > 2 ){
+                                ScanningFlg=0;
+                                state = 1;
+                                abort_count=0;
+                                //g_print ("2D Scan: Forcing stop! ");
+                                g_warning ("** End 2D Scan Forced: ISSUING SCAN STOP.");
+                                return TRUE;
+                        }
+                        else
+                                return FALSE; } // ERROR
         case 1: 
                 lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                 sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
