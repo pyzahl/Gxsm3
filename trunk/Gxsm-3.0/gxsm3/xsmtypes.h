@@ -235,7 +235,13 @@ typedef struct{
 
 class Display_Param{
 public:
-	Display_Param(){ vframe =  vlayer = 0; contrast=1.; bright=0.; z_high=z_low=0.; vrange_z=10.; voffset_z=0.; ViewFlg=1; px_shift_xy[0]=px_shift_xy[1]=0.; px_shift_xy[2]=5e-5; use_high_low = 0; };
+	Display_Param(){
+                vframe =  vlayer = 0;
+                contrast=1.; bright=0.; z_high=z_low=0.; vrange_z=10.; voffset_z=0.;
+                ViewFlg=1;
+                px_shift_xy[0]=px_shift_xy[1]=0.; px_shift_xy[2]=5e-5;
+                use_high_low = 0;
+        };
 	~Display_Param(){};
 
 	void copy(Display_Param &src){
@@ -284,6 +290,7 @@ public:
 typedef struct{
 
 // scan data dimensions (quantization)
+// NOTE: the dimensions below are obsoleted, plase use meme2d->GetNx (), ... please functions in new code
 	int    ntimes;             /* Numer of Frames -- for future use, must be 1 so far */
 	int    nvalues;            /* Numer of Values -- for varing one parameter scans */
 	int    nx ,ny;             /* Number of data points in X and Y */
@@ -293,7 +300,6 @@ typedef struct{
 	double dx, dy, dz, dl;     /* Step Width  [Ang] */
 	double alpha;              /* Scan Angle [deg] */
 	double x0,y0;              /* Offset [Ang] */
-
 	double sx, sy;             /* Scan (Tip) Position withing scan coordinate system used for local probing, etc. -- normally 0,0 [Ang] */
 
 // generic and often used parameters, handy to have in the main window -- mirrored to main by HwI PlugIns, not essential --

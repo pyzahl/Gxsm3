@@ -267,10 +267,10 @@ static gboolean ft2d_run(Scan *Src, Scan *Dest)
 	SrcZ  =  Src->mem2d->data;
 	Dest->data.s.nvalues = Src->mem2d->GetNv ();
         if (Src->mem2d->GetNv () > 1){
-                Dest->mem2d->Resize (Dest->data.s.nx, Dest->data.s.ny, Src->mem2d->GetNv (), ZD_DOUBLE);
+                Dest->mem2d->Resize (Src->mem2d->GetNx (), Src->mem2d->GetNy (), Src->mem2d->GetNv (), ZD_DOUBLE);
                 flg_cpx=false;
         } else {
-                Dest->mem2d->Resize (Dest->data.s.nx, Dest->data.s.ny, ZD_COMPLEX);
+                Dest->mem2d->Resize (Src->mem2d->GetNx (), Src->mem2d->GetNy (), ZD_COMPLEX);
                 Dest->data.s.nvalues=3;
                 Dest->mem2d->data->SetVLookup(0, 0);
                 Dest->mem2d->data->SetVLookup(1, 1);
@@ -282,8 +282,8 @@ static gboolean ft2d_run(Scan *Src, Scan *Dest)
 
 	Dest->data.s.x0 = 0.;
 	Dest->data.s.y0 = 0.;
-	Dest->data.s.dx = 200./Dest->data.s.nx;
-	Dest->data.s.dy = 200./Dest->data.s.ny;
+	Dest->data.s.dx = 200./Dest->mem2d->GetNx ();
+	Dest->data.s.dy = 200./Dest->mem2d->GetNy ();
   	Dest->data.s.rx = 200.;
 	Dest->data.s.ry = 200.; // Dest->data.s.ny*Dest->data.s.dy;
 
@@ -315,16 +315,19 @@ static gboolean ft2d_run(Scan *Src, Scan *Dest)
                 return MATH_LIB_ERR;
 	}
 
-	for(int v = 0; v < Dest->data.s.nvalues; v++){
+	for(int v = 0; v < Src->mem2d->GetNv(); v++){
                 Dest->mem2d->SetLayer(v);
                 Src->mem2d->SetLayer(v);
+                //g_print ("V %d [%d]\n",v, Src->mem2d->GetNv());
 
 	
                 // convert image data to fftw_real
                 for (int line=0; line < Src->mem2d->GetNy(); line++) {
                         SrcZ ->SetPtr(0, line);
-                        for (int col=0; col < Src->mem2d->GetNx(); col++)
+                        for (int col=0; col < Src->mem2d->GetNx(); col++){
+                                //g_print ("XY %d %d [%d,%d]\n",col, line, Src->mem2d->GetNx(), Src->mem2d->GetNy());
                                 in[line*xlen2 + col] = SrcZ->GetNext();
+                        }
                 }
 
                 // compute 2D transform using in-place fourier transform

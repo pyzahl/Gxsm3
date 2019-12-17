@@ -417,6 +417,37 @@ XSM_Hardware* Xsm::HwI_Plugin_Load (App* app){
 SCAN_DATA::SCAN_DATA(){ 
         GXSM_LOG_DATAOBJ_ACTION (GXSM_GRC_SCANDATAOBJ, "constructor");
         GXSM_REF_OBJECT (GXSM_GRC_SCANDATAOBJ);
+
+        // initialize to safe defaults, must be set later accordingly
+        // NOTE: the dimensions below are obsoleted, plase use meme2d->GetNx (), ... please functions in new code
+	s.ntimes=1;             /* Numer of Frames -- for future use, must be 1 so far */
+	s.nvalues=1;            /* Numer of Values -- for varing one parameter scans */
+	s.nx=0; s.ny=0;           /* Number of data points in X and Y */
+
+        // scan data real world dimensions (scale)
+	s.rx=s.ry=s.rz=0.0;         /* Scan Ranges [Ang] */
+	s.dx=s.dy=s.dz=s.dl=1.0;      /* Step Width  [Ang] */
+	s.alpha=0.0;            /* Scan Angle [deg] */
+	s.x0=s.y0=0.0;            /* Offset [Ang] */
+	s.sx=s.sy=0.0;            /* Scan (Tip) Position withing scan coordinate system used for local probing, etc. -- normally 0,0 [Ang] */
+
+        // generic and often used parameters, handy to have in the main window -- mirrored to main by HwI PlugIns, not essential --
+        // IMPORTANT: DO NOT USE FOR ANY HARDWARE EXCEPT FOR WRITING/SHOWING TO THE USER!
+	s.SPA_OrgX=s.SPA_OrgY=0.0; /* secondary (used SPA-LEED only) Offset relativ to (0,0) [V] */
+	s.Energy=0.0;            /* Energy (if applicable) [eV], set to negative if not relevant */
+	s.GateTime=1.0;          /* GateTime (if applicable) [ms], set to negative if not relevant */
+	s.Bias=0.0;              /* some Bias (if applicable) [V], set to < -9.999e10 if not relevant */
+        s.Motor=0.0;             /* generic "Motor" (auxillary) Voltage */
+	s.Current=0.0;           /* some Curren (if applicable) [nA], set to < -9.999e10 if not relevant */
+	s.SetPoint=0.0;          /* some AFM SetPoint (if applicable) [V], set to < -9.999e10 if not relevant */
+	s.ZSetPoint=0.0;         /* some Z-SetPoint (if applicable) [A] */
+        s.pllref=0.0;            /* pllreference freq. in Hz as set */
+        
+        // real time window of scan frame
+	s.tStart=s.tEnd=0;        /* Scan Start and end time, [UNIX time] */
+	s.iyEnd=s.xdir=s.ydir=0;    /* last line valid/stopped if while scan, else last line, x,y scan direction -- managed by spmconacontrol */
+	s.pixeltime=1.0;        /* time per pixel - set by HwI */
+        
         //-todo-offset-, should be OK now
         if(xsmres.ScanOrgCenter) // if (IS_SPALEED_CTRL)
                 orgmode = SCAN_ORG_CENTER;

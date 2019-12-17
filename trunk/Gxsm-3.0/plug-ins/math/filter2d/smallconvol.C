@@ -197,9 +197,10 @@ static gboolean smallconvol_run(Scan *Src, Scan *Dest)
 	// new dest size:
 	// (the scan size is cropped by one line at each side of the scan
 	//  to get rid of border Problems during the convolution)
-	Dest->data.s.nx = Src->data.s.nx-2;
-	Dest->data.s.ny = Src->data.s.ny-2;
-	Dest->mem2d->Resize(Dest->data.s.nx, Dest->data.s.ny);
+	Dest->mem2d->Resize (Src->mem2d->GetNx () - 2, Src->mem2d->GetNy () - 2);
+	// new, but to be obsoleted next
+	Dest->data.s.nx = Dest->mem2d->GetNx ();
+	Dest->data.s.ny = Dest->mem2d->GetNy ();
 
 	// compute normalization factors:
 	double norm   = 1. / (kernel[0][0] + kernel[0][1] + kernel[0][2] +

@@ -2185,6 +2185,7 @@ int Mem2d::GetDataLineFrom(Point2D *start, Point2D *end, Mem2d *Mob, SCAN_DATA *
   	// y = data->GetYLookup((int)(start->y+dy/2)); // not used here
 	dl = sqrt((xy[2]-xy[0])*(xy[2]-xy[0]) + (xy[3]-xy[1])*(xy[3]-xy[1]));
 
+        // to be obsoleted -- size is to be set via Resize above and read back via mem2d->GetNx ()...
 	sdata_dest->s.nx = num_points_0 + num_points;
 	sdata_dest->s.x0 = 0.;
 	sdata_dest->s.dx = 1.;
