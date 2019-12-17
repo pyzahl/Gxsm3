@@ -267,7 +267,7 @@ void despike_d (Mem2d *in, Mem2d *out){
                         for (k=0; k<2*anz+1;k++)  {
                                 mi = hi;
                                 for (l=0; l<2*anz+1;l++) {
-                                        if (reihe1[l]<mi) {
+                                        if (reihe1[l]<mi && reihe1[l] != 0.0) {
                                                 mi=reihe1[l];
                                                 reihe2[k]=mi;
                                                 za=l;

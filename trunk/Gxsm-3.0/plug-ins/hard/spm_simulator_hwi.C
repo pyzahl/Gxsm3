@@ -749,8 +749,13 @@ double spm_simulator_hwi_dev::simulate_value (int xi, int yi, int ch){
         static feature_lattice lat;
         static double fz = 1./gapp->xsm->Inst->Dig2ZA(1);
         double x = xi*Dx-Dx*Nx/2; // x in DAC units
-        double y = yi*Dy-Dy*Ny/2; // y in DAC units
+        double y = (Ny-yi-1)*Dy-Dy*Ny/2; // y in DAC units, i=0 is top line, i=Ny is bottom line
 
+        // Please Note:
+        // spm_simulator_hwi_pi.app->xsm->... and gapp->xsm->...
+        // are identical pointers to the main g-application (gapp) class and it is made availabe vie the plugin descriptor
+        // in case the global gapp is not exported or used in the plugin. And either one may be used to access core settings.
+        
         x = gapp->xsm->Inst->Dig2XA ((long)round(x)); // convert to anstroems for model using instrument class, use Scan Gains
         y = gapp->xsm->Inst->Dig2YA ((long)round(y)); // convert to anstroems for model
 
