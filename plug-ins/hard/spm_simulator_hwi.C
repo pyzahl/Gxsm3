@@ -751,7 +751,7 @@ double spm_simulator_hwi_dev::simulate_value (int xi, int yi, int ch){
         double x = xi*Dx-Dx*Nx/2; // x in DAC units
         double y = yi*Dy-Dy*Ny/2; // y in DAC units
 
-        x = gapp->xsm->Inst->Dig2XA ((long)round(x)); // convert to anstroems for model using instrument class
+        x = gapp->xsm->Inst->Dig2XA ((long)round(x)); // convert to anstroems for model using instrument class, use Scan Gains
         y = gapp->xsm->Inst->Dig2YA ((long)round(y)); // convert to anstroems for model
 
         x += 1.5*g_random_double_range (-gapp->xsm->Inst->Dig2XA(2), gapp->xsm->Inst->Dig2XA(2));
@@ -759,9 +759,9 @@ double spm_simulator_hwi_dev::simulate_value (int xi, int yi, int ch){
         
         //g_print ("XY: %g %g  [%g %g %d %d]",x,y, Dx,Dy, xi,yi);
         
-        Transform (&x, &y); // apply rotation!
-        x += gapp->xsm->Inst->Dig2XA (x0);
-        y -= gapp->xsm->Inst->Dig2YA (y0);
+        invTransform (&x, &y); // apply rotation! Use invTransform for simualtion.
+        x += gapp->xsm->Inst->Dig2X0A (x0); // use Offset Gains
+        y += gapp->xsm->Inst->Dig2Y0A (y0);
 
         //g_print ("XYR0: %g %g",x,y);
 

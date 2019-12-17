@@ -266,11 +266,11 @@ static gboolean ift2d_run(Scan *Src, Scan *Dest)
 	}
 
 	SrcZ  =  Src->mem2d->data;
-	Dest->mem2d->Resize (Dest->data.s.nx, Dest->data.s.ny, 1, ZD_DOUBLE);
+	Dest->mem2d->Resize (Src->mem2d->GetNx (), Src->mem2d->GetNy (), 1, ZD_DOUBLE);
 	// set "Complex" layer param defaults
 	Dest->data.s.nvalues=1;
 	Dest->data.s.ntimes=1;
-	Dest->mem2d->data->SetVLookup(0, 0);
+	Dest->mem2d->data->SetVLookup (0, 0);
 
 	Dest->data.s.x0 = 0.;
 	Dest->data.s.y0 = 0.;

@@ -524,6 +524,7 @@ FIO_STATUS PNG_ImExportFile::import_data(const char *fname, int index_value, int
 		scan->data.orgmode = SCAN_ORG_CENTER;
 		scan->mem2d->data->MkXLookup (-scan->data.s.rx/2., scan->data.s.rx/2.);
 		scan->mem2d->data->MkYLookup (scan->data.s.ry/2., -scan->data.s.ry/2.);
+		scan->mem2d->data->MkVLookup (0, 4);
 
 	}
 
