@@ -139,6 +139,10 @@ public:
 	static void t_play (GtkWidget *w, Multidim_Movie_Control *mmc);
 	static void t_stop (GtkWidget *w, Multidim_Movie_Control *mmc);
 	static void t_rewind (GtkWidget *w, Multidim_Movie_Control *mmc);
+
+	static int play_layers (gpointer data);
+	static int play_times (gpointer data);
+	
 private:
 	gboolean stop_play_layer;
 	gboolean stop_play_time;
@@ -227,7 +231,7 @@ Multidim_Movie_Control::Multidim_Movie_Control ()
 	
 	stop_play_layer = TRUE;
 	stop_play_time  = TRUE;
-	frame_delay = 0.;
+	frame_delay = 20.;
 	t_play_flg = false;
 	l_play_flg = false;
 	play_direction = 1;
@@ -302,7 +306,7 @@ Multidim_Movie_Control::Multidim_Movie_Control ()
 
 	x=1,++y;
         input = mygtk_grid_add_input("Delay", grid, x, y, 1);
-        ec = new Gtk_EntryControl (Time, MLD_WERT_NICHT_OK, &frame_delay, 0., 10000., ".0f", input);
+        ec = new Gtk_EntryControl (Time, MLD_WERT_NICHT_OK, &frame_delay, 1., 10000., ".0f", input);
 
         contineous_autodisp = gtk_check_button_new_with_label(N_("Contineous AutoDisp"));
 	gtk_grid_attach (GTK_GRID (grid), contineous_autodisp, x++, y, 1, 1);
@@ -339,19 +343,23 @@ void Multidim_Movie_Control::update(){
 void Multidim_Movie_Control::l_play (GtkWidget *w, Multidim_Movie_Control *mmc){
 	if (mmc->t_play_flg) return;
 	if (XSM->data.s.nvalues <= 1) return;
+	switch (gtk_combo_box_get_active (GTK_COMBO_BOX (mmc->play_mode))){
+	case 0: mmc->play_direction = 1; break;
+	case 1: mmc->play_direction = 1; break;
+	case 2: mmc->play_direction = mmc->play_direction>0 ? -1:1; break;
+	default: break;
+	}
+	mmc->stop_play_layer = FALSE;
+        gdk_threads_add_timeout ((guint)mmc->frame_delay, Multidim_Movie_Control::play_layers, mmc);
+}
+
+int Multidim_Movie_Control::play_layers (gpointer data){
+	Multidim_Movie_Control *mmc = (Multidim_Movie_Control *)data;
+	static int id=0;
 	int l = XSM->data.display.vlayer;
-	if (w)
-		switch (gtk_combo_box_get_active (GTK_COMBO_BOX (mmc->play_mode))){
-		case 0: mmc->play_direction = 1; break;
-		case 1: mmc->play_direction = 1; break;
-		case 2: mmc->play_direction = mmc->play_direction>0 ? -1:1; break;
-		default: break;
-		}
+
 	l += mmc->play_direction;
 	if (l < XSM->data.s.nvalues && l >= 0){
-		if (w)
-			mmc->stop_play_layer = FALSE;
-
 		XSM->data.display.vlayer = l;
 		App::spm_select_layer (NULL, gapp);
 		if (mmc->frame_delay > 0.){
@@ -360,28 +368,32 @@ void Multidim_Movie_Control::l_play (GtkWidget *w, Multidim_Movie_Control *mmc){
 			else
 				gapp->spm_update_all ();
 			mmc->update ();
-			usleep ((unsigned long)(mmc->frame_delay * 1e3));
+			if (!mmc->stop_play_layer)
+				gdk_threads_add_timeout ((guint)mmc->frame_delay, Multidim_Movie_Control::play_layers, mmc);
 		}
-		gapp->check_events_self (); // quiet
-
-		if (!mmc->stop_play_layer)
-			l_play (NULL, mmc);
-		return;
+		return id;
 	}
 	switch (gtk_combo_box_get_active (GTK_COMBO_BOX (mmc->play_mode))){
 	case 0: mmc->play_direction = 1; break;
 	case 1: mmc->play_direction = 1; 
 		XSM->data.display.vlayer = 0;
 		App::spm_select_layer (NULL, gapp);
-		l_play (NULL, mmc);
+		if (!mmc->stop_play_layer)
+			gdk_threads_add_timeout ((guint)mmc->frame_delay, Multidim_Movie_Control::play_layers, mmc);
 		break;
-	case 2: mmc->play_direction = mmc->play_direction>0 ? -1:1; l_play (NULL, mmc); break;
+	case 2: mmc->play_direction = mmc->play_direction>0 ? -1:1;
+		if (!mmc->stop_play_layer)
+			gdk_threads_add_timeout ((guint)mmc->frame_delay, Multidim_Movie_Control::play_layers, mmc);
+		break;
 	default: break;
 	}
 
 	mmc->update ();
 	gapp->spm_update_all ();
+
+	return id;
 }
+
 void Multidim_Movie_Control::l_stop (GtkWidget *w, Multidim_Movie_Control *mmc){
 	mmc->stop_play_layer = TRUE;
 	mmc->update ();
@@ -398,19 +410,23 @@ void Multidim_Movie_Control::l_rewind (GtkWidget *w, Multidim_Movie_Control *mmc
 void Multidim_Movie_Control::t_play (GtkWidget *w, Multidim_Movie_Control *mmc){
 	if (mmc->l_play_flg) return;
 	if (XSM->data.s.ntimes <= 1) return;
+	switch (gtk_combo_box_get_active (GTK_COMBO_BOX (mmc->play_mode))){
+	case 0: mmc->play_direction = 1; break;
+	case 1: mmc->play_direction = 1; break;
+	case 2: mmc->play_direction = mmc->play_direction>0 ? -1:1; break;
+	default: break;
+	}
+	mmc->stop_play_time = FALSE;
+        gdk_threads_add_timeout ((guint)mmc->frame_delay, Multidim_Movie_Control::play_times, mmc);
+}
+	
+int Multidim_Movie_Control::play_times (gpointer data){
+	Multidim_Movie_Control *mmc = (Multidim_Movie_Control *)data;
+	static int id=0;
 	int l = XSM->data.display.vframe;
-	if (w)
-		switch (gtk_combo_box_get_active (GTK_COMBO_BOX (mmc->play_mode))){
-		case 0: mmc->play_direction = 1; break;
-		case 1: mmc->play_direction = 1; break;
-		case 2: mmc->play_direction = mmc->play_direction>0 ? -1:1; break;
-		default: break;
-		}
+
 	l += mmc->play_direction;
 	if (l < XSM->data.s.ntimes && l >= 0){
-		if (w)
-			mmc->stop_play_time = FALSE;
-
 		XSM->data.display.vframe = l;
 		App::spm_select_time (NULL, gapp);
 		if (mmc->frame_delay > 0.){
@@ -419,27 +435,31 @@ void Multidim_Movie_Control::t_play (GtkWidget *w, Multidim_Movie_Control *mmc){
 			else
 				gapp->spm_update_all ();
 			mmc->update ();
-			usleep ((unsigned long)(mmc->frame_delay * 1e3));
 		}
-		gapp->check_events_self (); // quiet
 
 		if (!mmc->stop_play_time)
-			t_play (NULL, mmc);
-		return;
+			gdk_threads_add_timeout ((guint)mmc->frame_delay, Multidim_Movie_Control::play_times, mmc);
+		return id;
 	}
 	switch (gtk_combo_box_get_active (GTK_COMBO_BOX (mmc->play_mode))){
 	case 0: mmc->play_direction = 1; break;
 	case 1: mmc->play_direction = 1;
 		XSM->data.display.vframe = 0;
 		App::spm_select_time (NULL, gapp);
-		t_play (NULL, mmc); 
+		if (!mmc->stop_play_time)
+			gdk_threads_add_timeout ((guint)mmc->frame_delay, Multidim_Movie_Control::play_times, mmc);
 		break;
-	case 2: mmc->play_direction = mmc->play_direction>0 ? -1:1; t_play (NULL, mmc); break;
+	case 2: mmc->play_direction = mmc->play_direction>0 ? -1:1;
+		if (!mmc->stop_play_time)
+			gdk_threads_add_timeout ((guint)mmc->frame_delay, Multidim_Movie_Control::play_times, mmc);
+		break;
 	default: break;
 	}
 	mmc->update ();
 	gapp->spm_update_all ();
+	return id;
 }
+
 void Multidim_Movie_Control::t_stop (GtkWidget *w, Multidim_Movie_Control *mmc){
 	mmc->stop_play_time = TRUE;
 	mmc->update ();

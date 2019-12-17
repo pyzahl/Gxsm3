@@ -1259,10 +1259,14 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
 	Scan *dst = gapp->xsm->GetScanChannel (ch);
         if (dst){
         
+                g_message ("Resize");
+                dst->mem2d->Resize (sizex, sizey, sizev, ZD_FLOAT);
+
                 dst->data.s.nx = sizex;
                 dst->data.s.ny = sizey;
                 dst->data.s.nvalues = sizev;
                 dst->data.s.ntimes = 1;
+                
                 dst->data.s.dx = rangex/(sizex-1);
                 dst->data.s.dy = rangey/(sizey-1);
                 dst->data.s.dz = 1;
@@ -1279,9 +1283,6 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
                                         NULL);
                 dst->data.ui.SetComment (tmp);
                 g_free (tmp);
-
-                g_message ("Resize");
-                dst->mem2d->Resize (dst->data.s.nx, dst->data.s.ny, dst->data.s.nvalues);
 
                 g_message ("Convert Data");
                 /*Read*/
@@ -1358,10 +1359,13 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
 	Scan *dst = gapp->xsm->GetScanChannel (ch);
         if (dst){
         
+                dst->mem2d->Resize (sizex, sizey, sizev, ZD_FLOAT);
+
                 dst->data.s.nx = sizex;
                 dst->data.s.ny = sizey;
                 dst->data.s.nvalues = sizev;
                 dst->data.s.ntimes = 1;
+
                 dst->data.s.dx = rangex/(sizex-1);
                 dst->data.s.dy = rangey/(sizey-1);
                 dst->data.s.dz = 1;
@@ -1376,8 +1380,6 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
                 gchar *tmp = g_strconcat("PyCreate ", NULL);
                 dst->data.ui.SetComment(tmp);
                 g_free(tmp);
-
-                dst->mem2d->Resize(dst->data.s.nx, dst->data.s.ny, dst->data.s.nvalues, ZD_FLOAT);
 
                 /*Read */
                 float *buf = (float*)view.buf;

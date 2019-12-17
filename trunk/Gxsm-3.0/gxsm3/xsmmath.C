@@ -270,6 +270,7 @@ gboolean CropScan(MATHOPPARAMS){
 	if(gapp->xsm->MausMode() != MRECTANGLE && gapp->xsm->MausMode() != MCIRCLE)
 		return MATH_SELECTIONERR;
 
+	Dest->mem2d->Resize (msr.xSize, msr.ySize);
 	Dest->data.s.nx = msr.xSize;
 	Dest->data.s.ny = msr.ySize;
 	Dest->data.s.x0 += (msr.xLeft + msr.xSize/2 - Src->data.s.nx/2)*Src->data.s.dx;
@@ -279,10 +280,9 @@ gboolean CropScan(MATHOPPARAMS){
 		Dest->data.s.y0 -= msr.yTop*Src->data.s.dy;
 
 	// Adapt to next possible value  
-	Dest->data.s.rx = Dest->data.s.nx*Dest->data.s.dx;
-	Dest->data.s.ry = Dest->data.s.ny*Dest->data.s.dy;
+	Dest->data.s.rx = Dest->mem2d->GetNx () * Dest->data.s.dx;
+	Dest->data.s.ry = Dest->mem2d->GetNy () * Dest->data.s.dy;
     
-	Dest->mem2d->Resize(Dest->data.s.nx, Dest->data.s.ny);
 
         g_message ("CROP: SRC(%d,%d, %d, %d)",
                    Src->data.s.nx, Src->data.s.ny, Src->data.s.nvalues, Src->data.s.ntimes);
@@ -292,7 +292,8 @@ gboolean CropScan(MATHOPPARAMS){
                    msr.xRight, msr.yBottom);
         
 	if (Src->data.s.ntimes == 1 && Src->mem2d->GetNv () == 1){
-		Dest->mem2d->CopyFrom(Src->mem2d, msr.xLeft,msr.yTop, 0,0, Dest->data.s.nx, Dest->data.s.ny);
+		Dest->mem2d->CopyFrom (Src->mem2d, msr.xLeft,msr.yTop,
+                                       0,0, Dest->mem2d->GetNx (), Dest->mem2d->GetNy ());
 	} else {
 		int Radius = 0;
 		int ti,tf, vi,vf;
