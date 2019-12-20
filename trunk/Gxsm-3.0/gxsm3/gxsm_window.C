@@ -105,7 +105,7 @@ gxsm3_app_window_class_init (Gxsm3appWindowClass *klass)
 Gxsm3appWindow *
 gxsm3_app_window_new (Gxsm3app *app)
 {
-        return (Gxsm3appWindow *) g_object_new (GXSM3_APP_WINDOW_TYPE, "application", app, NULL);
+        return (Gxsm3appWindow *) g_object_new (GXSM3_APP_WINDOW_TYPE, "application", app, gdk_get_default_root_window ()); //NULL);
 }
 
 gboolean
