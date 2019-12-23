@@ -1181,7 +1181,7 @@ void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_Exter
                 soup_session_websocket_connect_async (self->session, self->msg, // SoupSession *session, SoupMessage *msg,
                                                       NULL, NULL, // const char *origin, char **protocols,
                                                       NULL, Inet_Json_External_Scandata::got_client_connection, self); // GCancellable *cancellable, GAsyncReadyCallback callback, gpointer user_data
-                // g_message ("soup_session_websocket_connect_async - OK");
+                //g_message ("soup_session_websocket_connect_async - OK");
         } else {
                 // tear down connection
                 self->status_append ("Dissconnecting...\n ");
@@ -1310,14 +1310,14 @@ void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
                 self->json_parse_message (json_buffer);
 
                 g_free (json_buffer);
-                
+
                 self->update_monitoring_parameters();
                 self->update_graph ();
                 //self->stream_data ();
                 self->update_health ();
         }
-
-	g_bytes_unref (message);
+	//g_bytes_unref (message); // OK, no unref by ourself!!!!
+                       
 }
 
 void Inet_Json_External_Scandata::on_closed (SoupWebsocketConnection *ws, gpointer user_data){
@@ -1508,8 +1508,9 @@ double Inet_Json_External_Scandata::unwrap (int k, double phi){
 void Inet_Json_External_Scandata::update_graph (){
         int n=1023;
         int h=256;
+        static int hist=0;
         if (!run_scope)
-                h=2;
+                h=10;
         double xs = scope_width_points/1024.;
         double xcenter = scope_width_points/2;
         double xwidcenter = scope_width_points/2;
@@ -1523,12 +1524,17 @@ void Inet_Json_External_Scandata::update_graph (){
         static cairo_surface_t *surface = NULL;
         static int rs_mode=0;
         cairo_t *cr = NULL;
+        if (!run_scope && hist == h)
+                return;
         if (!surface || current_width != (int)scope_width_points){
-                cairo_surface_finish (surface);
-                cairo_surface_destroy (surface);
+                if (surface){
+                        cairo_surface_finish (surface);
+                        cairo_surface_destroy (surface);
+                }
                 current_width = (int)scope_width_points;
                 surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, current_width, h);
         }
+        hist=h;
         if (run_scope){
                 cr = cairo_create (surface);
                 cairo_translate (cr, 0., yr);
