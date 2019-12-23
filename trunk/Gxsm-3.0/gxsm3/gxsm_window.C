@@ -102,10 +102,17 @@ gxsm3_app_window_class_init (Gxsm3appWindowClass *klass)
 
 }
 
+
+//#define COMPLILE_TEST_WAYLAND 1
+
 Gxsm3appWindow *
 gxsm3_app_window_new (Gxsm3app *app)
 {
-        return (Gxsm3appWindow *) g_object_new (GXSM3_APP_WINDOW_TYPE, "application", app, gdk_get_default_root_window ()); //NULL);
+#if COMPLILE_TEST_WAYLAND
+        return (Gxsm3appWindow *) g_object_new (GXSM3_APP_WINDOW_TYPE, "application", app, gdk_get_default_root_window ()); // WAYLAND
+#else
+        return (Gxsm3appWindow *) g_object_new (GXSM3_APP_WINDOW_TYPE, "application", app, NULL); // X11
+#endif
 }
 
 gboolean
