@@ -1468,7 +1468,7 @@ DSPControl::DSPControl () {
                 dsp_bp->set_input_width_chars (10);
                 dsp_bp->set_configure_list_mode_on ();
                 dsp_bp->grid_add_ec (NULL, Unity, &mix_gain[ch], -0.5, 0.5, "5g", 0.001, 0.01, mixer_remote_id_gn[ch]);
-                dsp_bp->grid_add_ec (NULL, mixer_unit[ch], &mix_level[0], -100.0, 100.0, "5g", 0.001, 0.01, mixer_remote_id_fl[ch]);
+                dsp_bp->grid_add_ec (NULL, mixer_unit[ch], &mix_level[ch], -100.0, 100.0, "5g", 0.001, 0.01, mixer_remote_id_fl[ch]);
                 dsp_bp->grid_add_mixer_options (ch, mix_transform_mode[ch], this);
                 dsp_bp->set_configure_list_mode_off ();
                 dsp_bp->new_line ();
