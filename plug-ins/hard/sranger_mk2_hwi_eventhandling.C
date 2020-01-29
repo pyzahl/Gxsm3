@@ -1004,7 +1004,6 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 			y0 = gapp->xsm->data.s.y0;
 		}
 	}
-
         f.precision (12);
 	f << "# view via: xmgrace -graph 0 -pexec 'title \"GXSM Vector Probe Data: " << fntmp << "\"' -block " << fntmp  << " -bxy 2:4 ..." << std::endl;
 	f << "# GXSM Vector Probe Data :: VPVersion=00.02 vdate=20070227" << std::endl;
@@ -1013,16 +1012,18 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 	f << "# GXSM-Main-Offset       :: X0=" <<  x0 << " Ang" <<  "  Y0=" << y0 << " Ang" 
 	  << ", iX0=" << ix << " Pix iX0=" << iy << " Pix"
 	  << std::endl;
-        f << "# DSP SCANCOORD POSITION :: DSP-XSpos=" 
-          << (((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_XS], double, 0)<<16)/dspc->mirror_dsp_scan_dx32 + gapp->xsm->MasterScan->data.s.nx/2 - 1)
-          << " DSP-YSpos=" 
-          << ((gapp->xsm->MasterScan->data.s.nx/2 - 1) - ((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_YS], double, 0)<<16)/dspc->mirror_dsp_scan_dy32)
-          << " CENTER-DSP-XSpos=" 
-          << (((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_XS], double, 0)<<16)/dspc->mirror_dsp_scan_dx32)
-          << " CENTER-DSP-YSpos=" 
-          << (((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_YS], double, 0)<<16)/dspc->mirror_dsp_scan_dy32)
-          << std::endl;
-        
+        if (gapp->xsm->MasterScan)
+                f << "# DSP SCANCOORD POSITION :: DSP-XSpos=" 
+                  << (((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_XS], double, 0)<<16)/dspc->mirror_dsp_scan_dx32 + gapp->xsm->MasterScan->data.s.nx/2 - 1)
+                  << " DSP-YSpos=" 
+                  << ((gapp->xsm->MasterScan->data.s.nx/2 - 1) - ((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_YS], double, 0)<<16)/dspc->mirror_dsp_scan_dy32)
+                  << " CENTER-DSP-XSpos=" 
+                  << (((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_XS], double, 0)<<16)/dspc->mirror_dsp_scan_dx32)
+                  << " CENTER-DSP-YSpos=" 
+                  << (((int)g_array_index (dspc->garray_probe_hdrlist[PROBEDATA_ARRAY_YS], double, 0)<<16)/dspc->mirror_dsp_scan_dy32)
+                  << std::endl;
+        else
+                f << "# DSP SCANCOORD POSITION :: NO MASTERSCAN SCAN COORDINATES N/A" << std::endl;
 	f << "# GXSM-DSP-Control-FB    :: Bias=" << dspc->bias << " V" <<  ", Current=" << dspc->mix_set_point[0]  << " nA" << std::endl; 
 	f << "# GXSM-DSP-Control-STS   :: #IV=" << dspc->IV_repetitions << " " << std::endl; 
 	f << "# GXSM-DSP-Control-LOCKIN:: AC_amp=[ " 
