@@ -1526,7 +1526,7 @@ void Inet_Json_External_Scandata::update_graph (){
         cairo_t *cr = NULL;
         if (!run_scope && hist == h)
                 return;
-        if (!surface || current_width != (int)scope_width_points){
+        if (!surface || current_width != (int)scope_width_points || h != hist){
                 if (surface){
                         cairo_surface_finish (surface);
                         cairo_surface_destroy (surface);
@@ -1926,9 +1926,9 @@ void Inet_Json_External_Scandata::update_graph (){
                         cairo_destroy (cr);
                 if (surface){
                         gtk_image_set_from_surface (GTK_IMAGE (signal_graph), surface);
-                        cairo_surface_finish (surface);
-                        cairo_surface_destroy (surface);
-                        surface = NULL;
+                        //cairo_surface_finish (surface);
+                        //cairo_surface_destroy (surface);
+                        //surface = NULL;
                 }
         }
         if (cr)
