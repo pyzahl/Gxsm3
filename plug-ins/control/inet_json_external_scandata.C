@@ -162,8 +162,9 @@ static void inet_json_external_scandata_query(void)
 }
 
 static void inet_json_external_scandata_SaveValues_callback ( gpointer gp_ncf ){
-
-	//NcFile *ncf = (NcFile *) gp_ncf;
+	NcFile *ncf = (NcFile *) gp_ncf;
+        if (inet_json_external_scandata)
+                inet_json_external_scandata->save_values (ncf);
 	//NcDim* spmscd  = ncf->add_dim("inet_json_external_scandata_dim", strlen(tmp));
 	//NcVar* spmsc   = ncf->add_var("inet_json_external_scandata", ncChar, spmscd);
 	//spmsc->add_att("long_name", "inet_json_external_scandata: scan direction");
@@ -899,6 +900,19 @@ void Inet_Json_External_Scandata::phase_ctrl_parameter_changed (Param_Control* p
         self->write_parameter ("PHASE_FB_SETPOINT", self->parameters.phase_fb_setpoint);
         self->write_parameter ("FREQ_FB_UPPER", self->parameters.freq_fb_upper);
         self->write_parameter ("FREQ_FB_LOWER", self->parameters.freq_fb_lower);
+}
+
+void Inet_Json_External_Scandata::save_values (NcFile *ncf){
+        // store all Inet_Json_External_Scandata's control parameters for the RP PAC-PLL
+        for (JSON_parameter *p=PACPLL_JSON_parameters; p->js_varname; ++p){
+                gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", p->js_varname);
+                NcVar* ncv = ncf->add_var ( vn, ncDouble);
+                ncv->add_att ("long_name", vn);
+                ncv->add_att ("short_name", p->js_varname);
+                //ncv->add_att ("var_unit", p->js_varunit);
+                //ncv->add_att ("label", p->js_label);
+                ncv->put (p->value);
+        }
 }
 
 void Inet_Json_External_Scandata::send_all_parameters (){

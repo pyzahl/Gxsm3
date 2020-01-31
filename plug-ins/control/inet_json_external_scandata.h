@@ -255,6 +255,7 @@ public:
         static void choice_auto_set_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
 	void send_all_parameters ();
+        void save_values (NcFile *ncf);
         
 	void update (); // window update (inputs, etc. -- here currently not really necessary)
         void update_monitoring_parameters ();
