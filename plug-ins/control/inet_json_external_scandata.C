@@ -904,15 +904,17 @@ void Inet_Json_External_Scandata::phase_ctrl_parameter_changed (Param_Control* p
 
 void Inet_Json_External_Scandata::save_values (NcFile *ncf){
         // store all Inet_Json_External_Scandata's control parameters for the RP PAC-PLL
-        for (JSON_parameter *p=PACPLL_JSON_parameters; p->js_varname; ++p){
-                gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", p->js_varname);
-                NcVar* ncv = ncf->add_var ( vn, ncDouble);
-                ncv->add_att ("long_name", vn);
-                ncv->add_att ("short_name", p->js_varname);
-                //ncv->add_att ("var_unit", p->js_varunit);
-                //ncv->add_att ("label", p->js_label);
-                ncv->put (p->value);
-        }
+        // if socket connection is up
+        if (client)
+                for (JSON_parameter *p=PACPLL_JSON_parameters; p->js_varname; ++p){
+                        gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", p->js_varname);
+                        NcVar* ncv = ncf->add_var ( vn, ncDouble);
+                        ncv->add_att ("long_name", vn);
+                        ncv->add_att ("short_name", p->js_varname);
+                        //ncv->add_att ("var_unit", p->js_varunit);
+                        //ncv->add_att ("label", p->js_label);
+                        ncv->put (p->value);
+                }
 }
 
 void Inet_Json_External_Scandata::send_all_parameters (){
@@ -1047,6 +1049,7 @@ void Inet_Json_External_Scandata::phase_gain_changed (Param_Control* pcs, gpoint
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
         self->parameters.phase_fb_cp = self->parameters.phase_fb_invert * pow (10., self->parameters.phase_fb_cp_db/20.);
         self->parameters.phase_fb_ci = self->parameters.phase_fb_invert * pow (10., self->parameters.phase_fb_ci_db/20.);
+        g_message("PH_CI=%g",self->parameters.phase_fb_ci,self->parameters.phase_fb_ci );
         self->write_parameter ("PHASE_FB_CP", self->parameters.phase_fb_cp);
         self->write_parameter ("PHASE_FB_CI", self->parameters.phase_fb_ci);
 }
