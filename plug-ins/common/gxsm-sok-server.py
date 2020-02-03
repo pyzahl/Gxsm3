@@ -50,6 +50,7 @@ def process_message(jmsg):
                     #print(value)
                     return {'result': [{'gets':jmsg['command'][0]['gets'], 'value':value}]}
 
+
                 elif k == 'get':
                     ## {'command': [{'get': id}]}
 
