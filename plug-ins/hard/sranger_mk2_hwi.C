@@ -1996,6 +1996,7 @@ static void DSPControl_StartScan_callback( gpointer ){
 		DSPControlClass->update();
 }
 
+
 static void DSPControl_SaveValues_callback ( gpointer ncf ){
 	PI_DEBUG (DBG_L4, "SR-HwI::SPControl_SaveValues_callback");
 	if ( DSPControlClass )
