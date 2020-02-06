@@ -50,7 +50,8 @@
  * ------------------------------------------------------------
  */
 
-#define ADC_SAMPLING_RATE 125e6
+#define ADC_DECIMATING     1
+#define ADC_SAMPLING_RATE (125e6/ADC_DECIMATING)
 
 //Signal size
 #define SIGNAL_SIZE_DEFAULT       1024
@@ -242,7 +243,7 @@ int rp_PAC_App_Init(){
         if (FPGA_PACPLL_bram == MAP_FAILED)
                 return RP_EOOR;
   
-        if (verbose > 1) fprintf(stderr, "RP FPGA_PACPLL BRAM: mapped %08lx - %08lx.\n", (unsigned long)(0x43000000), (unsigned long)(0x43000000 + FPGA_PACPLL_BRAM_block_size));
+        if (verbose > 1) fprintf(stderr, "RP FPGA_PACPLL BRAM: mapped %08lx - %08lx.\n", (unsigned long)(0x40000000), (unsigned long)(0x40000000 + FPGA_PACPLL_BRAM_block_size));
 
         
         FPGA_PACPLL_cfg = mmap (NULL, FPGA_PACPLL_CFG_block_size,
