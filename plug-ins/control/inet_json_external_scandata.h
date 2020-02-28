@@ -122,6 +122,7 @@ struct PACPLL_signals {
         double signal_frq[1024]; // in tune mode
         double signal_phase[1024]; // in tne mode, local
         double signal_ampl[1024]; // in tune mode, local
+        double signal_gpiox[16];
 };
 
 PACPLL_parameters pacpll_parameters;
@@ -202,6 +203,7 @@ JSON_signal PACPLL_JSON_signals[] = {
         { "SIGNAL_FRQ", 1024, pacpll_signals.signal_frq },
         { "SIGNAL_TUNE_PHASE", 1024, pacpll_signals.signal_phase },
         { "SIGNAL_TUNE_AMPL",  1024, pacpll_signals.signal_ampl },
+        { "SIGNAL_GPIOX",  16, pacpll_signals.signal_gpiox },
         { NULL, 0, NULL }
 };
 

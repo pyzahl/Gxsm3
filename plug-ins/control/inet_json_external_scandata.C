@@ -692,6 +692,11 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->set_input_width_chars (80);
         red_pitaya_health = bp->grid_add_input ("RedPitaya Health",10);
+
+        PangoFontDescription *fontDesc = pango_font_description_from_string ("monospace 10");
+        gtk_widget_modify_font (red_pitaya_health, fontDesc);
+        pango_font_description_free (fontDesc);
+
         gtk_widget_set_sensitive (bp->input, FALSE);
         gtk_editable_set_editable (GTK_EDITABLE (bp->input), FALSE); 
         update_health ("Not connected.");
@@ -1401,9 +1406,23 @@ void Inet_Json_External_Scandata::update_health (const gchar *msg){
         if (msg){
                 gtk_entry_set_text (GTK_ENTRY (red_pitaya_health), msg);
         } else {
-                gchar *health_string = g_strdup_printf ("CPU: %3.0f%% Free: %6.1f MB #: %g", pacpll_parameters.cpu_load, pacpll_parameters.free_ram/1024/1024, pacpll_parameters.counter);
+                gchar *gpiox_string = NULL;
+                if (scope_width_points > 1000){
+                        gpiox_string = g_strdup_printf ("1[%08x %08x, %08x %08x] 5[%08x %08x, %08x %08x] 9[%08x %08x, %08x %08x] 13[%08x %08x, %08x %08x]",
+                                                        (int)pacpll_signals.signal_gpiox[0], (int)pacpll_signals.signal_gpiox[1],
+                                                        (int)pacpll_signals.signal_gpiox[2], (int)pacpll_signals.signal_gpiox[3],
+                                                        (int)pacpll_signals.signal_gpiox[4], (int)pacpll_signals.signal_gpiox[5],
+                                                        (int)pacpll_signals.signal_gpiox[6], (int)pacpll_signals.signal_gpiox[7],
+                                                        (int)pacpll_signals.signal_gpiox[8], (int)pacpll_signals.signal_gpiox[9],
+                                                        (int)pacpll_signals.signal_gpiox[10], (int)pacpll_signals.signal_gpiox[11],
+                                                        (int)pacpll_signals.signal_gpiox[12], (int)pacpll_signals.signal_gpiox[13],
+                                                        (int)pacpll_signals.signal_gpiox[14], (int)pacpll_signals.signal_gpiox[15]
+                                                        );
+                }
+                gchar *health_string = g_strdup_printf ("CPU: %03.0f%% Free: %6.1f MB %s #%g", pacpll_parameters.cpu_load, pacpll_parameters.free_ram/1024/1024, gpiox_string?gpiox_string:"[]", pacpll_parameters.counter);
                 gtk_entry_set_text (GTK_ENTRY (red_pitaya_health), health_string);
                 g_free (health_string);
+                g_free (gpiox_string);
         }
 }
 
