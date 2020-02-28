@@ -40,7 +40,7 @@
 
 // INSTALL:
 // cp ~/SVN/RedPitaya/RedPACPLL4mdc-SPI/RedPACPLL4mdc-SPI.runs/impl_1/system_wrapper.bit fpga.bit
-// scp -r pacpll root@rp-f05603:/opt/redpitaya/www/apps/
+// scp -r pacpll root@rp-f05603.local:/opt/redpitaya/www/apps/
 // make clean; make INSTALL_DIR=/opt/redpitaya
 
 // CHROME BROWSER NOTES: USER SCHIT-F5 to force reload of all data, else caches are fooling....
@@ -52,6 +52,7 @@
 
 #define ADC_DECIMATING     1
 #define ADC_SAMPLING_RATE (125e6/ADC_DECIMATING)
+//#define ADC_SAMPLING_RATE (125e6/2)
 
 //Signal size
 #define SIGNAL_SIZE_DEFAULT       1024
@@ -59,6 +60,7 @@
 #define PARAMETER_UPDATE_INTERVAL 200 // ms
 #define SIGNAL_UPDATE_INTERVAL    200 // ms
 
+#define SIGNAL_SIZE_GPIOX 16
 
 //Signal
 // Block mode
@@ -88,7 +90,8 @@ std::vector<float> g_data_signal_ch2aa(TUNE_SIGNAL_SIZE_DEFAULT); // only used i
 CFloatSignal SIGNAL_TIME("SIGNAL_TIME", SIGNAL_SIZE_DEFAULT, 0.0f);
 std::vector<float> g_data_signal_time(SIGNAL_SIZE_DEFAULT);
 
-
+CIntSignal SIGNAL_GPIOX("SIGNAL_GPIOX",  SIGNAL_SIZE_GPIOX, 0);
+std::vector<int> g_data_signal_gpiox(SIGNAL_SIZE_GPIOX);
 
 double signal_dc_measured = 0.0;
 
@@ -717,39 +720,45 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         int x,y,xx7,xx8,xx9,uix;
         double a,b,v,p,x3,x4,x5,x6,x7,x8,x9,x10,qca,pfpga,x11,x12;
         
-        x = read_gpio_reg_int32 (1,0); // GPIO X1 : LMS A (cfg + 0x1000)
+        SIGNAL_GPIOX[0] = x = read_gpio_reg_int32 (1,0); // GPIO X1 : LMS A (cfg + 0x1000)
         a=(double)x / QLMS;
-        x = read_gpio_reg_int32 (1,1); // GPIO X2 : LMS B (cfg + 0x1008)
+        SIGNAL_GPIOX[1] = x = read_gpio_reg_int32 (1,1); // GPIO X2 : LMS B (cfg + 0x1008)
         b=(double)x / QLMS;
         v=sqrt (a*a+b*b);
         p=atan2 ((a-b),(a+b));
         
-        x = read_gpio_reg_int32 (2,0); // GPIO X3 : LMS DBG1 :: M (LMS input Signal) (cfg + 0x2000) ===> used for DC OFFSET calculation
+        SIGNAL_GPIOX[2] = x = read_gpio_reg_int32 (2,0); // GPIO X3 : LMS DBG1 :: M (LMS input Signal) (cfg + 0x2000) ===> used for DC OFFSET calculation
         x3=(double)x / QLMS;
-        x = read_gpio_reg_int32 (2,1); // GPIO X4 : CORDIC SQRT (AM2=A^2+B^2) = Amplitude Monitor
+        SIGNAL_GPIOX[3] = x = read_gpio_reg_int32 (2,1); // GPIO X4 : CORDIC SQRT (AM2=A^2+B^2) = Amplitude Monitor
         x4=(double)x / QCORDICSQRT;
         //x4=(double)x / QEXEC;
-        x = read_gpio_reg_int32 (3,0); // GPIO X5 : MDC
+        SIGNAL_GPIOX[4] = x = read_gpio_reg_int32 (3,0); // GPIO X5 : MDC
         x5=(double)x / QLMS; // MDC    /QCORDICSQRTFIR;
-        x = read_gpio_reg_int32 (3,1); // GPIO X6 : XXX
+        SIGNAL_GPIOX[5] = x = read_gpio_reg_int32 (3,1); // GPIO X6 : XXX
         x6=(double)x / QCORDICATANFIR;
-        xx7 = x = read_gpio_reg_int32 (4,0); // GPIO X7 : Exec Ampl Control Signal (signed)
+        SIGNAL_GPIOX[6] = xx7 = x = read_gpio_reg_int32 (4,0); // GPIO X7 : Exec Ampl Control Signal (signed)
         x7=(double)x / QEXEC;
-        xx8 = x = read_gpio_reg_int32 (4,1); // GPIO X8 : DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
-        xx9 = x = read_gpio_reg_int32 (5,0); // GPIO X9 : DDS Phase Inc (Freq.) lower 32 bits of 44 (signed)
+        SIGNAL_GPIOX[7] = xx8 = x = read_gpio_reg_int32 (4,1); // GPIO X8 : DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
+        SIGNAL_GPIOX[8] = xx9 = x = read_gpio_reg_int32 (5,0); // GPIO X9 : DDS Phase Inc (Freq.) lower 32 bits of 44 (signed)
         x9=(double)x / QLMS;
-        uix = read_gpio_reg_uint32 (5,1); // GPIO X10: CORDIC ATAN(X/Y) = Phase Monitor
+        SIGNAL_GPIOX[9] = uix = read_gpio_reg_uint32 (5,1); // GPIO X10: CORDIC ATAN(X/Y) = Phase Monitor
         x10 = (double)uix / QCORDICATAN; // ATAN 24bit 3Q21 
         //x10=(qca=(double)x / QCORDICATAN/M_PI*180.) - 90. - (x8<0? 230:0.); // ???? WHY NOT 180 ????
         //x10 /= 180.; // for testing 100 ==== 180
                   
         //pfpga=atan2 (x8,x7)/M_PI*180. - 90.;
         //pfpga /= 180.;
-        y=x = read_gpio_reg_int32 (6,0); // GPIO X11 : Transport WPos
+        SIGNAL_GPIOX[10] = y=x = read_gpio_reg_int32 (6,0); // GPIO X11 : Transport WPos
         x11=(double)(x&0xffff);
-        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+        SIGNAL_GPIOX[11] = x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
         x12=(double)((x>>16)&0xffff);
 
+        SIGNAL_GPIOX[12] = x = read_gpio_reg_int32 (7,0); // GPIO X13 : Transport Dbg
+        SIGNAL_GPIOX[13] = x = read_gpio_reg_int32 (7,1); // GPIO X14 : Transport Dbg
+        SIGNAL_GPIOX[14] = x = read_gpio_reg_int32 (8,0); // GPIO X15 : Transport Dbg
+        SIGNAL_GPIOX[15] = x = read_gpio_reg_int32 (8,1); // GPIO X16 : Transport Dbg
+
+        
         // LMS Detector Readings and double precision conversions
         reading_vector[0] = v*1000.; // LMS Amplitude (Volume) in mVolts (from A,B)
         reading_vector[1] = p/M_PI*180.; // LMS Phase (from A,B)
