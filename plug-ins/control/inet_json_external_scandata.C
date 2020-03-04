@@ -528,9 +528,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 "Auto Set CH3",
                 "Auto Set CH4",
                 "Auto Set CH5",
-                "Default All=1V",
-                "Default All=1x",
-                "Default All=10x",
+                "Default All=1000mV",
+                "Default All=100mV",
+                "Default All=10mV",
                 "Manual",
                 NULL };
    
@@ -1003,10 +1003,10 @@ void Inet_Json_External_Scandata::choice_auto_set_callback (GtkWidget *widget, I
                 self->gain_scale[m] = -1.; // recalculate
         else {
                 m -= 5;
-                double s[] = { 0.01, 1.0, 10.0 };
+                double s[] = { 1.0, 10., 100. };
                 if (m < 3) 
                         for (int i=0; i<5; ++i)
-                                self->gain_scale[i] = s[m]; // Fixed
+                                self->gain_scale[i] = s[m]*1e-3; // Fixed
         }
 }
 
