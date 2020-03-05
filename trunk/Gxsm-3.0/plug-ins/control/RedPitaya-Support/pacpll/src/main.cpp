@@ -742,6 +742,8 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         SIGNAL_GPIOX[8] = xx9 = x = read_gpio_reg_int32 (5,0); // GPIO X9 : DDS Phase Inc (Freq.) lower 32 bits of 44 (signed)
         x9=(double)x / QLMS;
         SIGNAL_GPIOX[9] = uix = read_gpio_reg_uint32 (5,1); // GPIO X10: CORDIC ATAN(X/Y) = Phase Monitor
+        if (uix >= 0x7f000000)
+             uix = uix-0x7fffffff;
         x10 = (double)uix / QCORDICATAN; // ATAN 24bit 3Q21 
         //x10=(qca=(double)x / QCORDICATAN/M_PI*180.) - 90. - (x8<0? 230:0.); // ???? WHY NOT 180 ????
         //x10 /= 180.; // for testing 100 ==== 180
