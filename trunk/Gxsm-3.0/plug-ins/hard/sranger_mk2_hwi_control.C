@@ -2599,12 +2599,11 @@ DSPControl::DSPControl () {
                                  G_OBJECT (dsp_bp->input), "text",
                                  G_SETTINGS_BIND_DEFAULT);
 
-                g_free (gckey);
-                g_free (stolab);
-                g_free (rcllab);
+                //g_free (gckey);
+                //g_free (stolab);
+                //g_free (rcllab);
                 g_free (memolab);
                 g_free (memoid);
-                
 	}
 
         // ===================== done with panned
@@ -3210,6 +3209,7 @@ void DSPControl::store_values (){
 void DSPControl::GVP_store_vp (const gchar *key){
 	// g_message ("GVP-VP store memo key=%s", key);
 	PI_DEBUG_GP (DBG_L2, "GVP-VP store to memo %s\n", key);
+	g_message ( "GVP-VP store to memo %s\n", key);
         GVariant *v = g_settings_get_value (hwi_settings, "probe-gvp-vector-program-matrix");
         //GVariant *v = g_settings_get_value (hwi_settings, "probe-lm-vector-program-matrix");
         GVariantDict *dict = g_variant_dict_new (v);
@@ -3270,6 +3270,7 @@ void DSPControl::GVP_store_vp (const gchar *key){
 void DSPControl::GVP_restore_vp (const gchar *key){
 	// g_message ("GVP-VP restore memo key=%s", key);
 	PI_DEBUG_GP (DBG_L2, "GVP-VP restore to memo %s\n", key);
+	g_message ( "GVP-VP restore to memo %s\n", key);
         GVariant *v = g_settings_get_value (hwi_settings, "probe-gvp-vector-program-matrix");
         //GVariant *v = g_settings_get_value (hwi_settings, "probe-lm-vector-program-matrix");
         GVariantDict *dict = g_variant_dict_new (v);
