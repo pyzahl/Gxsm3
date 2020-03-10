@@ -2534,7 +2534,7 @@ DSPControl::DSPControl () {
 
 	// MEMO BUTTONs
         gtk_widget_set_hexpand (dsp_bp->grid, TRUE);
-	const gchar *keys[] = { "VPA", "VPB", "VPC", "VPD", "VPE", "VPF", "V0", NULL };
+	const gchar *keys[] = { "VPA", "VPB", "VPC", "VPD", "VPE", "VPF", "VPG", "VPH", "VPI", "VPJ", "V0", NULL };
 
 	for (int i=0; keys[i]; ++i) {
                 GdkRGBA rgba;
@@ -2542,9 +2542,10 @@ DSPControl::DSPControl () {
 		gchar *stolab = g_strdup_printf ("STO %s", keys[i]);
 		gchar *rcllab = g_strdup_printf ("RCL %s", keys[i]);
 		gchar *memolab = g_strdup_printf ("M %s", keys[i]);             
+		gchar *memoid  = g_strdup_printf ("memo-vp%c", 'a'+i);             
                 remote_action_cb *ra = NULL;
                 gchar *help = NULL;
-                        
+
                 dsp_bp->set_xy (i+1, 10);
                 // add button with remote support for program recall
                 ra = g_new( remote_action_cb, 1);
@@ -2584,11 +2585,26 @@ DSPControl::DSPControl () {
                 //                if (gdk_rgba_parse (&rgba, "SeaGreen3"))
                 //                        gtk_widget_override_background_color ( GTK_WIDGET (dsp_bp->button), GTK_STATE_FLAG_PRELIGHT, &rgba);
 #if 0 // may adda memo/info button
-                dsp_bp->set_xy (i+2, 11);
+                dsp_bp->set_xy (i+1, 12);
                 dsp_bp->grid_add_button (N_(memolab), memolab, 1,
                                          G_CALLBACK (callback_GVP_memo_vp), this,
                                          "key", gckey);
 #endif
+                dsp_bp->set_xy (i+1, 12);
+                dsp_bp->grid_add_input (NULL);
+                dsp_bp->set_input_width_chars (10);
+                gtk_widget_set_hexpand (dsp_bp->input, TRUE);
+
+                g_settings_bind (hwi_settings, memoid,
+                                 G_OBJECT (dsp_bp->input), "text",
+                                 G_SETTINGS_BIND_DEFAULT);
+
+                g_free (gckey);
+                g_free (stolab);
+                g_free (rcllab);
+                g_free (memolab);
+                g_free (memoid);
+                
 	}
 
         // ===================== done with panned

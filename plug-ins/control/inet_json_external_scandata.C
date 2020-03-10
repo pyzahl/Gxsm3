@@ -165,11 +165,6 @@ static void inet_json_external_scandata_SaveValues_callback ( gpointer gp_ncf ){
 	NcFile *ncf = (NcFile *) gp_ncf;
         if (inet_json_external_scandata)
                 inet_json_external_scandata->save_values (ncf);
-	//NcDim* spmscd  = ncf->add_dim("inet_json_external_scandata_dim", strlen(tmp));
-	//NcVar* spmsc   = ncf->add_var("inet_json_external_scandata", ncChar, spmscd);
-	//spmsc->add_att("long_name", "inet_json_external_scandata: scan direction");
-	//spmsc->put(tmp, strlen(tmp));
-	//g_free (tmp);
 }
 
 
@@ -910,16 +905,81 @@ void Inet_Json_External_Scandata::phase_ctrl_parameter_changed (Param_Control* p
 void Inet_Json_External_Scandata::save_values (NcFile *ncf){
         // store all Inet_Json_External_Scandata's control parameters for the RP PAC-PLL
         // if socket connection is up
-        if (client)
+        if (client){
+                // JSON READ BACK PARAMETERS! Loosing precison to float some where!! (PHASE_CI < -100dB => 0!!!)
                 for (JSON_parameter *p=PACPLL_JSON_parameters; p->js_varname; ++p){
                         gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", p->js_varname);
                         NcVar* ncv = ncf->add_var ( vn, ncDouble);
                         ncv->add_att ("long_name", vn);
                         ncv->add_att ("short_name", p->js_varname);
-                        //ncv->add_att ("var_unit", p->js_varunit);
-                        //ncv->add_att ("label", p->js_label);
                         ncv->put (p->value);
                 }
+                // ACTUAL PARAMETERS in "dB" DOUBLE PRECISION VALUES, getting OK to the FPGA...
+                {
+                        gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", "_PHASE_FB_CP");
+                        NcVar* ncv = ncf->add_var ( vn, ncDouble);
+                        ncv->add_att ("long_name", vn);
+                        ncv->add_att ("short_name", "_PHASE_FB_CP");
+                        ncv->add_att ("var_unit", "1");
+                        ncv->put (&parameters.phase_fb_cp); // OK!
+                }
+                {
+                        gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", "_PHASE_FB_CI");
+                        NcVar* ncv = ncf->add_var ( vn, ncDouble);
+                        ncv->add_att ("long_name", vn);
+                        ncv->add_att ("short_name", "_PHASE_FB_CI");
+                        ncv->add_att ("var_unit", "1");
+                        ncv->put (&parameters.phase_fb_ci); // OK!
+                }
+                {
+                        gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", "_AMPLITUDE_FB_CP");
+                        NcVar* ncv = ncf->add_var ( vn, ncDouble);
+                        ncv->add_att ("long_name", vn);
+                        ncv->add_att ("short_name", "_AMPLITUDE_FB_CP");
+                        ncv->add_att ("var_unit", "1");
+                        ncv->put (&parameters.amplitude_fb_cp); // OK!
+                }
+                {
+                        gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", "_AMPLITUDE_FB_CI");
+                        NcVar* ncv = ncf->add_var ( vn, ncDouble);
+                        ncv->add_att ("long_name", vn);
+                        ncv->add_att ("short_name", "_AMPLITUDE_FB_CI");
+                        ncv->add_att ("var_unit", "1");
+                        ncv->put (&parameters.amplitude_fb_ci); // OK!
+                }
+                {
+                        gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", "_PHASE_FB_CP_dB");
+                        NcVar* ncv = ncf->add_var ( vn, ncDouble);
+                        ncv->add_att ("long_name", vn);
+                        ncv->add_att ("short_name", "_PHASE_FB_CP_dB");
+                        ncv->add_att ("var_unit", "1");
+                        ncv->put (&parameters.phase_fb_cp_db); // OK!
+                }
+                {
+                        gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", "_PHASE_FB_CI_dB");
+                        NcVar* ncv = ncf->add_var ( vn, ncDouble);
+                        ncv->add_att ("long_name", vn);
+                        ncv->add_att ("short_name", "_PHASE_FB_CI_dB");
+                        ncv->add_att ("var_unit", "dB");
+                        ncv->put (&parameters.phase_fb_ci_db); // OK!
+                }
+                {
+                        gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", "_AMPLITUDE_FB_CP_dB");
+                        NcVar* ncv = ncf->add_var ( vn, ncDouble);
+                        ncv->add_att ("long_name", vn);
+                        ncv->add_att ("short_name", "_AMPLITUDE_FB_CP_dB");
+                        ncv->add_att ("var_unit", "1");
+                        ncv->put (&parameters.amplitude_fb_cp_db); // OK!
+                }
+                {
+                        gchar *vn = g_strdup_printf ("JSON_RedPACPALL_%s", "_AMPLITUDE_FB_CI_dB");
+                        NcVar* ncv = ncf->add_var ( vn, ncDouble);
+                        ncv->add_att ("long_name", vn);
+                        ncv->add_att ("short_name", "_AMPLITUDE_FB_CI_dB");
+                        ncv->add_att ("var_unit", "dB");
+                        ncv->put (&parameters.amplitude_fb_ci_db); // OK!
+                }
+        }
 }
 
 void Inet_Json_External_Scandata::send_all_parameters (){
