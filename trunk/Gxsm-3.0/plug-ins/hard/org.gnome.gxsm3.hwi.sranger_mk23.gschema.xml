@@ -319,6 +319,84 @@
       </description>
     </key>
     
+    <key name="memo-vpa" type="s">
+      <default>"--"</default>
+      <summary>VP Memo</summary>
+      <description>
+	memo string for VPA... buffers
+      </description>
+    </key>
+    <key name="memo-vpb" type="s">
+      <default>"--"</default>
+      <summary>VP Memo</summary>
+      <description>
+	memo string for VPA... buffers
+      </description>
+    </key>
+    <key name="memo-vpc" type="s">
+      <default>"--"</default>
+      <summary>VP Memo</summary>
+      <description>
+	memo string for VPA... buffers
+      </description>
+    </key>
+    <key name="memo-vpd" type="s">
+      <default>"--"</default>
+      <summary>VP Memo</summary>
+      <description>
+	memo string for VPA... buffers
+      </description>
+    </key>
+    <key name="memo-vpe" type="s">
+      <default>"--"</default>
+      <summary>VP Memo</summary>
+      <description>
+	memo string for VPA... buffers
+      </description>
+    </key>
+    <key name="memo-vpf" type="s">
+      <default>"--"</default>
+      <summary>VP Memo</summary>
+      <description>
+	memo string for VPA... buffers
+      </description>
+    </key>
+    <key name="memo-vpg" type="s">
+      <default>"--"</default>
+      <summary>VP Memo</summary>
+      <description>
+	memo string for VPA... buffers
+      </description>
+    </key>
+    <key name="memo-vph" type="s">
+      <default>"--"</default>
+      <summary>VP Memo</summary>
+      <description>
+	memo string for VPA... buffers
+      </description>
+    </key>
+    <key name="memo-vpi" type="s">
+      <default>"--"</default>
+      <summary>VP Memo</summary>
+      <description>
+	memo string for VPA... buffers
+      </description>
+    </key>
+    <key name="memo-vpj" type="s">
+      <default>"--"</default>
+      <summary>VP Memo</summary>
+      <description>
+	memo string for VPA... buffers
+      </description>
+    </key>
+    <key name="memo-vpk" type="s">
+      <default>"--"</default>
+      <summary>VP Memo</summary>
+      <description>
+	memo string for VPA... buffers
+      </description>
+    </key>
+    
   </schema>
 
 </schemalist>
