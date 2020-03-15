@@ -323,7 +323,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                         int i=0;
 
                                                         // get probe coordinates from DSP probe HDR
-#if 0
+#if 1
                                                         g_message ("P SEC HDR #%d :: i:%g, t:%g, ix:%g, iy:%g, PHI:%g, XS:%g, YS:%g, ZS:%g, U:%g, S:%g",
                                                                    i,
                                                                    g_array_index (garr_hdr[PROBEDATA_ARRAY_INDEX], double, i),
@@ -338,7 +338,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                                    g_array_index (garr_hdr[PROBEDATA_ARRAY_SEC], double, i));
 #endif
                                                         if (gapp->xsm->scan[chmap]->mem2d->data->GetNxSub()){
-#if 0
+#if 1
                                                                 g_message ("CH[%d] HDR ixy: %d, %d   sls[%d,%d, %d,%d]", chmap,
                                                                            (int)g_array_index (garr_hdr[PROBEDATA_ARRAY_X0], double, i),
                                                                            (int)g_array_index (garr_hdr[PROBEDATA_ARRAY_Y0], double, i),
@@ -1188,7 +1188,8 @@ GArray** DSPControl::pop_probedata_arrays (){
 		GSList *last = g_slist_last (probedata_list);
 		if (last){
 			GArray **garr = (GArray **) (last->data);
-			probedata_list = g_slist_delete_link (probedata_list, last);
+			// probedata_list = g_slist_delete_link (probedata_list, last); // !!!!!!!!!!!! FREES LINK and delete data?!?? Crap.
+                        probedata_list = g_slist_remove_link (probehdr_list, last);
                         pv_lock = FALSE;
 			return garr;
 		}
@@ -1203,7 +1204,8 @@ GArray** DSPControl::pop_probehdr_arrays (){
 		GSList *last = g_slist_last (probehdr_list);
 		if (last){
 			GArray **garr = (GArray **) (last->data);
-			probehdr_list = g_slist_delete_link (probehdr_list, last);
+			//probehdr_list = g_slist_delete_link (probehdr_list, last); // !!!!!!!!!!!! FREES LINK and delete data?!?? Crap.
+                        probehdr_list = g_slist_remove_link (probehdr_list, last);
                         pv_lock = FALSE;
 			return garr;
 		}
