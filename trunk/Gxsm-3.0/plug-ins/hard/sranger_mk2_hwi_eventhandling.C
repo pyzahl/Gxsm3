@@ -1188,8 +1188,8 @@ GArray** DSPControl::pop_probedata_arrays (){
 		GSList *last = g_slist_last (probedata_list);
 		if (last){
 			GArray **garr = (GArray **) (last->data);
-			// probedata_list = g_slist_delete_link (probedata_list, last); // !!!!!!!!!!!! FREES LINK and delete data?!?? Crap.
-                        probedata_list = g_slist_remove_link (probehdr_list, last);
+			probedata_list = g_slist_delete_link (probedata_list, last);
+                        // probedata_list = g_slist_remove_link (probehdr_list, last);
                         pv_lock = FALSE;
 			return garr;
 		}
@@ -1204,8 +1204,8 @@ GArray** DSPControl::pop_probehdr_arrays (){
 		GSList *last = g_slist_last (probehdr_list);
 		if (last){
 			GArray **garr = (GArray **) (last->data);
-			//probehdr_list = g_slist_delete_link (probehdr_list, last); // !!!!!!!!!!!! FREES LINK and delete data?!?? Crap.
-                        probehdr_list = g_slist_remove_link (probehdr_list, last);
+			probehdr_list = g_slist_delete_link (probehdr_list, last);
+                        // probehdr_list = g_slist_remove_link (probehdr_list, last);
                         pv_lock = FALSE;
 			return garr;
 		}
