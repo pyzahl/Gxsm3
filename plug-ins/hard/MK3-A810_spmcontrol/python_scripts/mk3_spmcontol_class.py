@@ -678,7 +678,7 @@ dsp_id_process_name = [
         ##ID0017
         "Signal Monitor Update",
         "Request McBSP transfer",
-        "",
+        "McBSP-Freq M-Servo",
         "",
         
         ##ID0021
@@ -2672,6 +2672,7 @@ class SPMcontrol():
                        + " Sc0-Xpos:%d" %(self.SPM_SCAN[ii_scan_xyz_vecX]) + ",Y:%d" %(self.SPM_SCAN[ii_scan_xyz_vecY]) + ",Z:%d\n" %(self.SPM_SCAN[ii_scan_xyz_vecZ])
                        + " Rot-Xpos:%d" %(self.SPM_SCAN[ii_scan_xy_r_vecX]) + ",Y:%d" %(self.SPM_SCAN[ii_scan_xy_r_vecY])
                        + "\nZ-Servo: CI=%d" %(self.Z_SERVO[ii_servo_ci]) + ", CP=%d" %(self.Z_SERVO[ii_servo_cp]) + ", delta=%d" %(self.Z_SERVO[ii_servo_delta]) + ", control=%d" %(self.Z_SERVO[ii_servo_control])
+                       + "\nM-Servo: CI=%d" %(self.M_SERVO[ii_servo_ci]) + ", CP=%d" %(self.M_SERVO[ii_servo_cp]) + ", delta=%d" %(self.M_SERVO[ii_servo_delta]) + ", control=%d" %(self.M_SERVO[ii_servo_control]) + ", setpoint=%d" %(self.M_SERVO[ii_servo_setpoint])
                        + "\nAuto-App/Wave[%d]"  %(self.AUTOAPP_WATCH[ii_autoapp_tip_mode]) + ": max#=%d" %(self.AUTOAPP_WATCH[ii_autoapp_max_wave_cycles]) +  ", w#=%d" %(self.AUTOAPP_WATCH[ii_autoapp_wave_length]) + " #ch=%d" %(self.AUTOAPP_WATCH[ii_autoapp_n_wave_channels]) + ", cX%d" %(self.AUTOAPP_WATCH[ii_autoapp_channel_mapping0]) + ", cY:%d" %(self.AUTOAPP_WATCH[ii_autoapp_channel_mapping1])
                        + "\nWave Counts: axis=%d" %(self.AUTOAPP_WATCH[ii_autoapp_axis]) + " dir=%d" %(self.AUTOAPP_WATCH[ii_autoapp_dir]) 
                        + ", Axis0=%d" %(self.AUTOAPP_WATCH[ii_autoapp_count_axis0]) 
