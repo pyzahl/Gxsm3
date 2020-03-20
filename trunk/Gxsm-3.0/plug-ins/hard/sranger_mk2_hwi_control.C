@@ -1513,7 +1513,8 @@ DSPControl::DSPControl () {
                                 dsp_bp->new_line ();
                                 dsp_bp->new_grid_with_frame (g_strconcat ("M-Servo on ", input_signal, NULL));
 
-				dsp_bp->grid_add_ec_with_scale ("Setpoint", Volt, &m_servo[SERVO_SETPT], -10., 10., "5g", 0.001, 0.01, "fbs-motor-setpoint");
+				dsp_bp->grid_add_ec_with_scale ("Setpoint", Frq, &m_servo[SERVO_SETPT], -100., 100., "5g", 0.001, 0.01, "fbs-motor-setpoint");
+				//dsp_bp->grid_add_ec_with_scale ("Setpoint", Volt, &m_servo[SERVO_SETPT], -10., 10., "5g", 0.001, 0.01, "fbs-motor-setpoint");
                                 dsp_bp->new_line ();
 				dsp_bp->grid_add_ec_with_scale ("CP", Unity, &m_servo[SERVO_CP], -200., 200., "5g", 0.001, 0.01, "fbs-motor-cp");
                                 dsp_bp->new_line ();
