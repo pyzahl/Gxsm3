@@ -594,8 +594,35 @@ int idle_task_018(void){
         return 0;
 }
 
+inline void Mrun_servo_timestep (SERVO *servo){
+	long long tmp;
+	servo->i_sum = _SAT32 ((long)servo->i_sum + (long)( ((long long)servo->delta * (long long)servo->ci) >> (15+23)) );
+	tmp = (long)((long)servo->i_sum + (((long long)servo->delta * (long long) servo->cp) >> (15+23)));
+	// make both output polarities available
+	servo->control = _SAT32 (tmp);
+	servo->neg_control = _SAT32 (-tmp);
+	servo->watch = servo->control >> 16;
+}
+
 #pragma CODE_SECTION(idle_task_019, ".text:slow")
 int idle_task_019(void){
+// ============================================================
+// PROCESS MODULE: MOTOR SERVO on McBSP -- optimized for max regualtion error (saturating) of 14.9Hz
+// experimental for SQDM bias tracking via M-Servo.
+// Use Python DSP Manager and Task Control to enable this timer task (#19)
+// and disable the above (#18) as conflicting potentially and obsoleted
+// Also need to configure adding of M-SERVO-WATCH signal (16bit mapped) servo control value to Bias
+// with for example a scaling (SMAC-A/B type output mapping)
+// using for example the "Noise-Amplidute Signal unless not used otherwise
+// ============================================================
+        initiate_McBSP_transfer (0);
+	m_servo.delta = _SSHL32(_SAT32((long)m_servo.setpoint - (long)analog.McBSP_FPGA[1]), 10);
+        // "Q23" input and setpoint, SAT difference
+        //-- if m_servo.input is McBSP Freq. scaling is 125e6Hz / (1<<44 -1)
+        //-- i.e. 1Hz = 140737.488  (1<<21 = 2097152  ~15Hz to fill 31bit needs << 10)
+        // (m_servo.setpoint - analog.McBSP_FPGA[1]) << 10  gives max delta (saturated) at 10Hz
+        
+	Mrun_servo_timestep (&m_servo); // delta * CI  >> (15+23)   --->   15.16
         return 0;
 }
 
