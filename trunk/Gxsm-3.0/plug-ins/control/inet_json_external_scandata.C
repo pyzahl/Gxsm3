@@ -287,6 +287,12 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
+
+        parameters.transport_tau[0] = -1.; // us, negative = disabled [bit 32 set in FPGA tau)
+        parameters.transport_tau[1] = -1.; // us, negative = disabled [bit 32 set in FPGA tau)
+        parameters.transport_tau[2] = -1.; // us, negative = disabled [bit 32 set in FPGA tau)
+        parameters.transport_tau[3] = -1.; // us, negative = disabled [bit 32 set in FPGA tau)
+
         parameters.pac_dctau = 10.0; // ms
         parameters.pactau = 40.0; // us
         parameters.pacatau = 30.0; // us
@@ -457,9 +463,20 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
         // ========================================
         
-        bp->new_grid_with_frame ("Oscilloscope and Data Transfer Selection -- Experimental", 10);
+        bp->new_grid_with_frame ("Oscilloscope and Data Transfer Control", 10);
         // OPERATION MODE
 	wid = gtk_combo_box_text_new ();
+
+        bp->set_input_width_chars (8);
+        bp->set_input_nx (1);
+        /*
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_tau_transport_changed, this);
+  	bp->grid_add_ec ("LP dFreq,Phase,Exec,Ampl", mTime, &parameters.transport_tau[0], -1.0, 63e6, "6g", 10., 1., "PAC-TRANSPORT-TAU-DFREQ");
+  	bp->grid_add_ec (NULL, mTime, &parameters.transport_tau[1], -1.0, 63e6, "6g", 10., 1., "PAC-TRANSPORT-TAU-PHASE");
+  	bp->grid_add_ec (NULL, mTime, &parameters.transport_tau[2], -1.0, 63e6, "6g", 10., 1., "PAC-TRANSPORT-TAU-EXEC");
+  	bp->grid_add_ec (NULL, mTime, &parameters.transport_tau[3], -1.0, 63e6, "6g", 10., 1., "PAC-TRANSPORT-TAU-AMPL");
+        bp->new_line ();
+        */
         g_signal_connect (G_OBJECT (wid), "changed",
                           G_CALLBACK (Inet_Json_External_Scandata::choice_operation_callback),
                           this);
@@ -471,7 +488,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 "RUN SCOPE",
                 "INIT BRAM TRANSPORT",
                 "SINGLE SHOT",
-                "OPERATION DECIMATON", // "START BRAM LOOP",
+                "STREAMING OPERATION", // "START BRAM LOOP",
                 "RUN TUNE",
                 "RUN TUNE F",
                 "RUN TUNE FF",
@@ -491,15 +508,66 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                           this);
         bp->grid_add_widget (wid);
 
+        /* for(i=0; i< 30; i=i+2) {printf ("\" %2d/%.2fms\"\n",i,1024*(1<<i)*2/125e6*1e3);}
+ for(i=0; i<=30; i=i+1) {printf ("\" %2d/%.2fms\"\n",i,1024*(1<<i)*2/125e6*1e3);}
+"  0/~16.38us"
+"  1/~32.77us"
+"  2/~65.54us"
+"  3/~131.07us"
+"  4/~262.14us"
+"  5/~524.29us"
+"  6/~1048.58us"
+"  6/~1.05ms"
+"  7/~2.10ms"
+"  8/~4.19ms"
+"  9/~8.39ms"
+" 10/~16.78ms"
+" 11/~33.55ms"
+" 12/~67.11ms"
+" 13/~134.22ms"
+" 14/~268.44ms"
+" 15/~536.87ms"
+" 16/~1073.74ms"
+" 16/~1.07s"
+" 17/~2.15s"
+" 18/~4.29s"
+" 19/~8.59s"
+" 20/~17.18s"
+" 21/~34.36s"
+" 22/~68.72s"
+" 23/~137.44s"
+" 24/~274.88s"
+" 25/~549.76s"
+" 26/~1099.51s"
+" 27/~2199.02s"
+" 28/~4398.05s"
+" 29/~8796.09s"
+
+        */
+        
 	const gchar *update_periods[] = {
-                "* 3/131us",
-                "  4/262us",
-                "  6/1.05ms",
-                " 10/16.8ms",
-                " 14/--",
-                " 16/--",
-                " 20/--",
-                " 24/--",
+                "* 1/ 32.8us",
+                "  2/ 65.5us",
+                "  3/131us",
+                "  4/262.14us",
+                "  5/524.29us",
+                "  6/  1.05ms",
+                "  7/  2.10ms",
+                "  8/  4.19ms",
+                "  9/  8.39ms",
+                " 10/ 16.78ms",
+                " 11/ 33.55ms",
+                " 12/ 67.11ms",
+                " 13/134.22ms",
+                " 14/268.44ms",
+                " 15/536.87ms",
+                " 16/  1.07s",
+                " 17/  2.15s",
+                " 18/  4.29s",
+                " 19/  8.59s",
+                " 20/ 17.18s",
+                " 21/ 34.36s",
+                " 22/ 68.72s",
                 NULL };
    
 	// Init choicelist
@@ -508,7 +576,42 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
 	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 3);
 
-        bp->grid_add_label (" Scale");
+        // Scope Trigger Options
+	wid = gtk_combo_box_text_new ();
+        g_signal_connect (G_OBJECT (wid), "changed",
+                          G_CALLBACK (Inet_Json_External_Scandata::choice_trigger_mode_callback),
+                          this);
+        bp->grid_add_widget (wid);
+
+	const gchar *trigger_modes[] = {
+                "Trigger: None",
+                "Auto CH1 Pos",
+                "Auto CH1 Neg",
+                "Auto CH2 Pos",
+                "Auto CH2 Neg",
+                "Logic B0 H",
+                "Logic B0 L",
+                "Logic B1 H",
+                "Logic B1 L",
+                "Logic B2 H",
+                "Logic B2 L",
+                "Logic B3 H",
+                "Logic B3 L",
+                "Logic B4 H",
+                "Logic B4 L",
+                "Logic B5 H",
+                "Logic B5 L",
+                "Logic B6 H",
+                "Logic B6 L",
+                "Logic B7 H",
+                "Logic B7 L",
+                NULL };
+   
+	// Init choicelist
+	for(int i=0; trigger_modes[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), trigger_modes[i], trigger_modes[i]);
+
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 1);
                 
         // Scope Auto Set Modes
 	wid = gtk_combo_box_text_new ();
@@ -534,7 +637,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), auto_set_modes[i], auto_set_modes[i]);
 
 	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 6);
-
+        
         bp->new_line ();
 
         // BRAM TRANSPORT MODE BLOCK S1,S2
@@ -546,26 +649,26 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
 	const gchar *transport_modes[] = {
                 "OFF: no plot",
-                "IN1, IN2",
-                "Phase, Ampl",
-                "IN1, Ampl",
-                "IN1, Phase",
-                "Exec, Freq",
-                "Ampl, Exec",
-                "Phase, Freq,[Am,Ex]",
-                "M-DCiir, Ampl",
-                "8BIT GPIO P, pxclk",
+                "IN1, IN2",            // [1] SCOPE
+                "IN1: AC, DC",         // [2] MON
+                "AMC: Ampl, Exec",     // [3] TWEAK
+                "PHC: dPhase, dFreq",  // [4] TWEAK
+                "Phase, Ampl",         // [5] TUNE
+                "Phase, dFreq,[Am,Ex]",// [6] SCAN
+                "--",
+                "DDR IN1/IN2",         // [7] SCOPE with DEC=1,SHR=0 Double(max) Data Rate config
+                "DEBUG McBSP",         // [8]
                 NULL };
    
 	// Init choicelist
 	for(int i=0; transport_modes[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), transport_modes[i], transport_modes[i]);
 
-        channel_selections[5] = 1;
-        channel_selections[6] = 1;
+        channel_selections[5] = 0;
+        channel_selections[6] = 0;
         channel_selections[0] = 1;
         channel_selections[1] = 1;
-        transport=6; // 0: IN1, IN2; ...
+        transport=5; // 5: SCAN OPERATION
 	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), transport+1); // normal operation for PLL, transfer: Phase, Freq,[Am,Ex] (analog: Freq, McBSP: 4ch transfer Ph, Frq, Am, Ex)
 
         
@@ -637,14 +740,52 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->grid_add_widget (signal_graph, 10);
         
         bp->new_line ();
-        bp->grid_add_check_button ( N_("Ch1 AC"), "Remove Offset from Ch1", 1,
+
+        // Scope Cotnrols
+        bp->grid_add_check_button ( N_("Ch1: AC"), "Remove Offset from Ch1", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::scope_ac_ch1_callback), this);
-        bp->grid_add_check_button ( N_("Ch2 AC"), "Remove Offset from Ch2", 1,
+        wid = gtk_combo_box_text_new ();
+        g_signal_connect (G_OBJECT (wid), "changed",
+                          G_CALLBACK (Inet_Json_External_Scandata::scope_z_ch1_callback),
+                          this);
+        bp->grid_add_widget (wid);
+        const gchar *zoom_levels[] = {
+                                      "0.001",
+                                      "0.01",
+                                      "0.1",
+                                      "1",
+                                      "10",
+                                      "100",
+                                      "1000",
+                                      "10k",
+                                      "100k",
+                                      NULL };
+	for(int i=0; zoom_levels[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid),  zoom_levels[i], zoom_levels[i]);
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 3);
+
+
+        bp->grid_add_check_button ( N_("Ch2: AC"), "Remove Offset from Ch2", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::scope_ac_ch2_callback), this);
+
+        wid = gtk_combo_box_text_new ();
+        g_signal_connect (G_OBJECT (wid), "changed",
+                          G_CALLBACK (Inet_Json_External_Scandata::scope_z_ch2_callback),
+                          this);
+        bp->grid_add_widget (wid);
+	for(int i=0; zoom_levels[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid),  zoom_levels[i], zoom_levels[i]);
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 3);
+
+
         bp->grid_add_check_button ( N_("Ch3 AC"), "Remove Offset from Ch3", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::scope_ac_ch3_callback), this);
+        bp->new_line ();
+        bp->grid_add_widget (gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0, 4096, 10), 10);
+        g_signal_connect (G_OBJECT (bp->any_widget), "value-changed",
+                          G_CALLBACK (Inet_Json_External_Scandata::scope_buffer_position_callback),
+                          this);
 
-        
         // ========================================
         
         bp->pop_grid ();
@@ -675,9 +816,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                                     G_CALLBACK (Inet_Json_External_Scandata::dbg_l2), this);
         bp->grid_add_check_button ( N_("++"), "Debug LV4", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::dbg_l4), this);
-        scope_width_points = 512.;
-        bp->set_input_width_chars (8);
-  	bp->grid_add_ec ("SW", Unity, &scope_width_points, 256.0, 4096.0, ".0f", 128, 256., "SCOPE-WIDTH");        
+        scope_width_points  = 512.;
+        scope_height_points = 256.;
+        bp->set_input_width_chars (5);
+  	bp->grid_add_ec ("SW", Unity, &scope_width_points, 256.0, 4096.0, ".0f", 128, 256., "SCOPE-WIDTH");
+        bp->set_input_width_chars (4);
+  	bp->grid_add_ec ("SH", Unity, &scope_height_points, 128.0, 1024.0, ".0f", 128, 256., "SCOPE-HEIGHT");
+        rp_verbose_level = 0.0;
+        bp->set_input_width_chars (2);
+  	bp->grid_add_ec ("V", Unity, &rp_verbose_level, 0., 10., ".0f", 1., 1., "RP-VERBOSE-LEVEL");        
         //bp->new_line ();
         //tmp=bp->grid_add_button ( N_("Read"), "TEST READ", 1,
         //                          G_CALLBACK (Inet_Json_External_Scandata::read_cb), this);
@@ -689,7 +836,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         red_pitaya_health = bp->grid_add_input ("RedPitaya Health",10);
 
         PangoFontDescription *fontDesc = pango_font_description_from_string ("monospace 10");
-        gtk_widget_modify_font (red_pitaya_health, fontDesc);
+        //gtk_widget_modify_font (red_pitaya_health, fontDesc);
+        gtk_widget_override_font (red_pitaya_health, fontDesc); // use CSS, thx, annyoing garbage... ??!?!?!?
         pango_font_description_free (fontDesc);
 
         gtk_widget_set_sensitive (bp->input, FALSE);
@@ -833,6 +981,13 @@ int Inet_Json_External_Scandata::setup_scan (int ch,
 	return 0;
 }
 
+void Inet_Json_External_Scandata::pac_tau_transport_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+        self->write_parameter ("TRANSPORT_TAU_DFREQ", self->parameters.transport_tau[0]); // negative = disabled
+        self->write_parameter ("TRANSPORT_TAU_PHASE", self->parameters.transport_tau[1]);
+        self->write_parameter ("TRANSPORT_TAU_EXEC",  self->parameters.transport_tau[2]);
+        self->write_parameter ("TRANSPORT_TAU_AMPL",  self->parameters.transport_tau[3]);
+}
 
 void Inet_Json_External_Scandata::pac_tau_parameter_changed (Param_Control* pcs, gpointer user_data){
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
@@ -843,8 +998,8 @@ void Inet_Json_External_Scandata::pac_tau_parameter_changed (Param_Control* pcs,
 
 void Inet_Json_External_Scandata::pac_frequency_parameter_changed (Param_Control* pcs, gpointer user_data){
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
-        self->write_parameter ("FREQUENCY_MANUAL", self->parameters.frequency_manual);
-        self->write_parameter ("FREQUENCY_CENTER", self->parameters.frequency_center);
+        self->write_parameter ("FREQUENCY_MANUAL", self->parameters.frequency_manual, "%.4f"); //, TRUE);
+        self->write_parameter ("FREQUENCY_CENTER", self->parameters.frequency_center, "%.4f"); //, TRUE);
         self->write_parameter ("AUX_SCALE", self->parameters.aux_scale);
 }
 
@@ -989,6 +1144,7 @@ void Inet_Json_External_Scandata::send_all_parameters (){
         write_parameter ("GAIN4", 1.);
         write_parameter ("GAIN5", 1.);
         write_parameter ("SHR_DEC_DATA", 4.);
+        write_parameter ("SCOPE_TRIGGER_MODE", 1);
         write_parameter ("PACVERBOSE", 0);
         write_parameter ("TRANSPORT_DECIMATION", 16);
         write_parameter ("TRANSPORT_MODE", transport);
@@ -1007,54 +1163,49 @@ void Inet_Json_External_Scandata::send_all_parameters (){
 void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->operation_mode = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
         self->write_parameter ("OPERATION", self->operation_mode);
+        self->write_parameter ("PACVERBOSE", (int)self->rp_verbose_level);
 }
 
 void Inet_Json_External_Scandata::choice_update_period_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
-        self->data_shr_max = -1;
-        switch (gtk_combo_box_get_active (GTK_COMBO_BOX (widget))){
-        case 0: self->write_parameter ("SIGNAL_PERIOD",  20);
-                self->data_shr_max = -1;
-                break;
-        case 1: self->write_parameter ("SIGNAL_PERIOD",  50);
-                self->data_shr_max = 4;
-                break;
-        case 2: self->write_parameter ("SIGNAL_PERIOD", 100);
+        self->data_shr_max = 0;
+        self->bram_window_length = 1.;
+
+        int ts = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+        if (ts < 11){
+                self->write_parameter ("SIGNAL_PERIOD", 100);
                 self->write_parameter ("PARAMETER_PERIOD",  100);
-                self->data_shr_max = 6;
-                break;
-        case 3: self->write_parameter ("SIGNAL_PERIOD", 200);
-                self->write_parameter ("PARAMETER_PERIOD",  200);
-                self->data_shr_max = 10;
-                break;
-        case 4: self->write_parameter ("SIGNAL_PERIOD", 500);
-                self->write_parameter ("PARAMETER_PERIOD",  500);
-                self->data_shr_max = 14;
-                break;
-        case 5: self->write_parameter ("SIGNAL_PERIOD",1000);
-                self->data_shr_max = 16;
-                break;
-        case 6: self->write_parameter ("SIGNAL_PERIOD",10000);
-                self->data_shr_max = 20;
-                break;
-        case 7: self->write_parameter ("SIGNAL_PERIOD",50000);
-                self->data_shr_max = 24;
-                break;
-        default: self->write_parameter ("SIGNAL_PERIOD", 200); break;
-        }
-        if (self->data_shr_max > 0){
-                self->write_parameter ("SHR_DEC_DATA", self->data_shr_max);
-                self->write_parameter ("TRANSPORT_DECIMATION", 1<<self->data_shr_max);
         } else {
-                self->write_parameter ("SHR_DEC_DATA", self->data_shr_max);
-                self->write_parameter ("TRANSPORT_DECIMATION", 1<<self->data_shr_max);
+                self->write_parameter ("SIGNAL_PERIOD", 200);
+                self->write_parameter ("PARAMETER_PERIOD",  200);
         }
+        
+        self->data_shr_max = ts;
+
+        int decimation = 1 << self->data_shr_max;
+        self->write_parameter ("SHR_DEC_DATA", self->data_shr_max);
+        self->write_parameter ("TRANSPORT_DECIMATION", decimation);
+
+        self->bram_window_length = 1024.*(double)decimation*2.*1./125e6; // sec
+        g_print ("SET_SINGLESHOT_TRGGER_POST_TIME = %g ms\n", 0.1 * 1e3*self->bram_window_length);
+        g_print ("BRAM_WINDOW_LENGTH ............ = %g ms\n", 1e3*self->bram_window_length);
+        g_print ("BRAM_DEC ...................... = %d\n", decimation);
+        g_print ("BRAM_DATA_SHR ................. = %d\n", self->data_shr_max);
+        self->write_parameter ("SET_SINGLESHOT_TRGGER_POST_TIME", 0.1 * 1e6*self->bram_window_length); // is us --  10% pre trigger
 }
 
 void Inet_Json_External_Scandata::choice_transport_ch12_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->channel_selections[0] = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
         self->channel_selections[1] = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
-        if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) > 0)
-                self->write_parameter ("TRANSPORT_MODE", self->transport=gtk_combo_box_get_active (GTK_COMBO_BOX (widget))-1);
+        if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) > 0){
+                int i=gtk_combo_box_get_active (GTK_COMBO_BOX (widget))-1;
+                if (i<0) i=0;
+                self->write_parameter ("TRANSPORT_MODE", self->transport=i);
+        }
+}
+
+void Inet_Json_External_Scandata::choice_trigger_mode_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("BRAM_SCOPE_TRIGGER_MODE", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+        self->write_parameter ("BRAM_SCOPE_TRIGGER_POS", (int)(0.1*1024));
 }
 
 void Inet_Json_External_Scandata::choice_auto_set_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -1069,6 +1220,11 @@ void Inet_Json_External_Scandata::choice_auto_set_callback (GtkWidget *widget, I
                                 self->gain_scale[i] = s[m]*1e-3; // Fixed
         }
 }
+
+void Inet_Json_External_Scandata::scope_buffer_position_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("BRAM_SCOPE_SHIFT_POINTS", (int)gtk_range_get_value (GTK_RANGE (widget)));
+}
+
 
 void Inet_Json_External_Scandata::choice_transport_ch3_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->channel_selections[2] = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
@@ -1198,6 +1354,16 @@ void Inet_Json_External_Scandata::scope_ac_ch3_callback (GtkWidget *widget, Inet
         self->scope_ac[2] = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
 }
 
+void Inet_Json_External_Scandata::scope_z_ch1_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        double z[] = { 0.001, 0.01, 0.1, 1.0, 10., 100., 1000., 10e3, 100e3, 1., 0., 0. };
+        int i = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+        self->scope_z[0] = z[i];
+}
+void Inet_Json_External_Scandata::scope_z_ch2_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        double z[] = { 0.001, 0.01, 0.1, 1.0, 10., 100., 1000., 10e3, 100e3, 1., 0., 0. };
+        int i = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+        self->scope_z[1] = z[i];
+}
 
 void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_External_Scandata *self){
         if (!self->text_status) return;
@@ -1438,25 +1604,31 @@ void Inet_Json_External_Scandata::json_parse_message (const char *json_string){
 
 
 
-void Inet_Json_External_Scandata::write_parameter (const gchar *paramater_id, double value){
+void Inet_Json_External_Scandata::write_parameter (const gchar *paramater_id, double value, const gchar *fmt, gboolean dbg){
         //soup_websocket_connection_send_text (self->client, "text");
         //soup_websocket_connection_send_binary (self->client, gconstpointer data, gsize length);
         //soup_websocket_connection_send_text (client, "{ \"parameters\":{\"GAIN1\":{\"value\":200.0}}}");
 
         if (client){
-                gchar *json_string = g_strdup_printf ("{ \"parameters\":{\"%s\":{\"value\":%g}}}", paramater_id, value);
+                gchar *json_string=NULL;
+                if (fmt){
+                        gchar *format = g_strdup_printf ("{ \"parameters\":{\"%s\":{\"value\":%s}}}", paramater_id, fmt);
+                        json_string = g_strdup_printf (format, value);
+                        g_free (format);
+                } else
+                        json_string = g_strdup_printf ("{ \"parameters\":{\"%s\":{\"value\":%g}}}", paramater_id, value);
                 soup_websocket_connection_send_text (client, json_string);
-                if  (debug_level > 0)
+                if  (debug_level > 0 || dbg)
                         g_print ("%s\n",json_string);
                 g_free (json_string);
         }
 }
 
-void Inet_Json_External_Scandata::write_parameter (const gchar *paramater_id, int value){
+void Inet_Json_External_Scandata::write_parameter (const gchar *paramater_id, int value, gboolean dbg){
         if (client){
                 gchar *json_string = g_strdup_printf ("{ \"parameters\":{\"%s\":{\"value\":%d}}}", paramater_id, value);
                 soup_websocket_connection_send_text (client, json_string);
-                if  (debug_level > 0)
+                if  (debug_level > 0 || dbg)
                         g_print ("%s\n",json_string);
                 g_free (json_string);
         }
@@ -1532,6 +1704,22 @@ void Inet_Json_External_Scandata::status_append (const gchar *msg){
 	g_object_unref (end_mark);
 }
 
+double AutoSkl(double dl){
+  double dp=floor(log10(dl));
+  if(dp!=0.)
+    dl/=pow(10.,dp);
+  if(dl>4) dl=5;
+  else if(dl>1) dl=2;
+  else dl=1;
+  if(dp!=0.)
+    dl*=pow(10.,dp);
+  return dl;
+}
+
+double AutoNext(double x0, double dl){
+  return(ceil(x0/dl)*dl);
+}
+
 void Inet_Json_External_Scandata::stream_data (){
 #if 0
         int deci=16;
@@ -1603,7 +1791,7 @@ double Inet_Json_External_Scandata::unwrap (int k, double phi){
  
 void Inet_Json_External_Scandata::update_graph (){
         int n=1023;
-        int h=256;
+        int h=(int)scope_height_points;
         static int hist=0;
         if (!run_scope)
                 h=10;
@@ -1620,6 +1808,9 @@ void Inet_Json_External_Scandata::update_graph (){
         static cairo_surface_t *surface = NULL;
         static int rs_mode=0;
         cairo_t *cr = NULL;
+
+        const int binary_BITS = 16;
+        
         if (!run_scope && hist == h)
                 return;
         if (!surface || current_width != (int)scope_width_points || h != hist){
@@ -1636,7 +1827,7 @@ void Inet_Json_External_Scandata::update_graph (){
                 cairo_translate (cr, 0., yr);
                 cairo_scale (cr, 1., 1.);
                 cairo_save (cr);
-                cairo_item_rectangle *paper = new cairo_item_rectangle (0., -128., scope_width_points, 128.);
+                cairo_item_rectangle *paper = new cairo_item_rectangle (0., -yr, scope_width_points, yr);
                 paper->set_line_width (0.2);
                 paper->set_stroke_rgba (CAIRO_COLOR_GREY1);
                 paper->set_fill_rgba (CAIRO_COLOR_BLACK);
@@ -1651,23 +1842,56 @@ void Inet_Json_External_Scandata::update_graph (){
                 reading->set_font_face_size ("Ununtu", 10.);
                 reading->set_anchor (CAIRO_ANCHOR_W);
                 cairo_item_path *wave = new cairo_item_path (n);
+                cairo_item_path *binwave8bit[binary_BITS] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
                 wave->set_line_width (1.0);
                 const gchar *ch_id[] = { "Ch1", "Ch2", "Ch3", "Ch4", "Ch5", "Phase", "Ampl" };
-                CAIRO_BASIC_COLOR_IDS color[] = { CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_CYAN_ID, CAIRO_COLOR_YELLOW_ID, CAIRO_COLOR_BLUE_ID, CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID  };
+                CAIRO_BASIC_COLOR_IDS color[] = { CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_CYAN_ID, CAIRO_COLOR_YELLOW_ID,
+                                                  CAIRO_COLOR_BLUE_ID, CAIRO_COLOR_RED_ID, CAIRO_COLOR_GREEN_ID, CAIRO_COLOR_FORESTGREEN_ID  };
                 double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5, // 0...4 CH1..5
                                      pacpll_signals.signal_phase, pacpll_signals.signal_ampl  }; // 5,6 PHASE, AMPL in Tune Mode, averaged from burst
                 double x,xf,min,max,s,ydb,yph;
+
+                const gchar *ch01_lab[2][10] = { {"IN1", "IN1-AC", "Ampl", "dPhase", "Phase", "Phase", "-", "-", "DBG", NULL },
+                                                 {"IN2", "IN1-DC", "Exec", "dFreq ", "Ampl ", "dFreq", "-", "-", "DBG", NULL } }; 
+                
                 if (operation_mode >= 6 && operation_mode <= 9){
                         if (operation_mode == 9)
                                 rs_mode=3;
                         operation_mode = 6; // TUNE
-                } else
+                        channel_selections[5]=5;
+                        channel_selections[6]=6;
+                } else {
                         rs_mode = 0;
+                        channel_selections[5]=0;
+                        channel_selections[6]=0;
+                }
+                // operation_mode = 6 : in TUNING CONFIGURATION, 7 total signals
+               
                 int ch_last=(operation_mode == 6) ? 7 : 5;
+                int tic_db=0;
+                int tic_deg=0;
+                int tic_hz=0;
+                int tic_lin=0;
                 for (int ch=0; ch<ch_last; ++ch){
                         int part_i0=0;
                         int part_pos=1;
 
+                        if (channel_selections[ch] == 0)
+                                continue;
+
+                        // Setup binary mode traces (DBG Ch)
+                        if(channel_selections[0]==9){
+                                if (!binwave8bit[0])
+                                        for (int bit=0; bit<binary_BITS; ++bit)
+                                                binwave8bit[bit] = new cairo_item_path (n);
+                                for (int bit=0; bit<binary_BITS; ++bit){
+                                        if (ch == 0)
+                                                        binwave8bit[bit]->set_stroke_rgba (color[bit%4]);
+                                        else
+                                                        binwave8bit[bit]->set_stroke_rgba (color[4+(bit%4)]);
+                                }
+                        }
+                        
                         if (operation_mode == 6 && (ch == 0 || ch == 1))
                                 if (ch == 0)
                                         wave->set_stroke_rgba (1.,0.,0.,0.4);
@@ -1686,45 +1910,45 @@ void Inet_Json_External_Scandata::update_graph (){
                                 s=signal[ch][k];
                                 if (s>max) max=s;
                                 if (s<min) min=s;
-                                if (ch<5)
-                                        if (scope_ac[ch])
-                                                s -= scope_dc_level[ch];
+
+                                if (scope_ac[ch])
+                                        s -= scope_dc_level[ch]; // AC
                                 
+                                if (ch<2)
+                                        if (scope_z[ch]>0.)
+                                                s *= scope_z[ch]; // ZOOM
+
                                 xf = xcenter + scope_width*pacpll_signals.signal_frq[k]/parameters.tune_span; // tune plot, freq x
                                 x  = (operation_mode == 6 && ch > 1) ? xf : xs*k; // over freq or time plot
-                                
-                                if (operation_mode == 6 && (ch == 6 || ch == 1)){
-                                        // 0..-60dB range, 1mV:-60dB (center), 0dB:1000mV (top)
-                                        wave->set_xy_fast (k, ch == 1 ? x:xf, ydb=db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags));
 
-                                } else if (operation_mode == 6 && ((ch == 5 || ch == 0) // phase data always scale +/-180deg
-                                                                   || ( ch == 2 && (channel_selections[2]==2 || channel_selections[2]==6))
-                                                                   || ( ch == 3 && (channel_selections[3]==2 || channel_selections[3]==6))
-                                                                   || ( ch == 4 && (channel_selections[4]==2 || channel_selections[4]==6)))
-                                           ){
-                                        // -180..180 deg
-                                        wave->set_xy_fast (k, ch == 0 ? x:xf, yph=deg_to_y (unwrap(k,s), y_hi));
-                                } else{
-                                        if (ch > 1 && (channel_selections[ch]==2 || channel_selections[ch]==6)) // Phase
-                                                wave->set_xy_fast (k, unwrap (k,x), deg_to_y (unwrap(k,s), y_hi));
-                                        else if ((   ch == 0 && channel_selections[0]==2) // Phase
-                                                 || (ch == 1 && channel_selections[0]==4)
-                                                 || (ch == 0 && channel_selections[0]==7)
-                                                 )
-                                                wave->set_xy_fast (k, unwrap (k,x), deg_to_y (s, y_hi));
-                                        
-                                        else if ((   ch >  1 && (channel_selections[ch]==1 || channel_selections[ch]==5 || channel_selections[ch]==9)) // Amplitude
-                                                 || (ch == 1 && channel_selections[0]==2) // Amplitude
-                                                 || (ch == 1 && channel_selections[0]==3)
-                                                 || (ch == 0 && channel_selections[0]==6)
-                                                 )
-                                                wave->set_xy_fast (k, x, db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags));
-                                        
-                                        else if ((   ch == 0 && (channel_selections[0]==5)) // || channel_selections[0]==1)){ // Exec Amplitude
-                                                 || (ch == 1 && (channel_selections[0]==6))
-                                                 ){
-                                                wave->set_xy_fast (k, x, db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags));
-                                                if (k>2 && s<0. && part_pos){
+                                // MAPPING TREE ---------------------
+
+                                // GPIO monitoring channels ch >= 2
+                                if (operation_mode == 6) { // TUNING
+                                        if ((ch == 6) || (ch == 1) || ( (ch > 1) && (ch < 5) && ((channel_selections[ch]==1) || (channel_selections[ch]==5)))){ // 1,5: GPIO Ampl
+                                                // 0..-60dB range, 1mV:-60dB (center), 0dB:1000mV (top)
+                                                wave->set_xy_fast (k, ch == 1 ? x:xf, ydb=db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags)), tic_db=1;
+                                        } else if ((ch == 5) || (ch == 0) || ( (ch > 1) && (ch < 5) && ((channel_selections[ch]==2) || (channel_selections[ch]==6)))){ // 2,6: GPIO Phase
+                                                // [-180 .. +180 deg] x expand
+                                                wave->set_xy_fast (k, ch == 0 ? x:xf, yph=deg_to_y (ch == 0 ? s:unwrap(k,s), y_hi)), tic_deg=1; // Phase for Tuning: with hi level unwrapping for plot
+                                        } else if ((ch > 1) && (ch < 5) && channel_selections[ch] > 0){ // Linear, other GPIO
+                                                wave->set_xy_fast (k, xf, -yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s), tic_lin=1; // else: linear scale with gain
+                                        } // else  --
+                                } else { // SCOPE, OPERATION: over time / index
+                                        if ((ch > 1) && (ch < 5)){ // GPIO mon...
+                                                if (channel_selections[ch]==2 || channel_selections[ch]==6) // Phase
+                                                        wave->set_xy_fast (k, unwrap (k,x), deg_to_y (s, y_hi)), tic_deg=1;
+                                                else if (channel_selections[ch]==1 || channel_selections[ch]==5 || channel_selections[ch]==9) // Amplitude mode for GPIO monitoring
+                                                        wave->set_xy_fast (k, x, db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags)), tic_db=1;
+                                                else
+                                                        wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s), tic_lin=1; // else: linear scale with gain
+
+                                        } else if (   (ch == 0 && channel_selections[0]==3) // AMC:  Ampl,  Exec
+                                                   || (ch == 1 && channel_selections[0]==3) // AMC:  Ampl,  Exec
+                                                   || (ch == 1 && channel_selections[0]==5) // TUNE: Phase, Ampl
+                                                      ){
+                                                wave->set_xy_fast (k, x, db_to_y (dB_from_mV (s), dB_hi, y_hi, dB_mags)), tic_db=1; // Ampl, dB
+                                                if (k>2 && s<0. && part_pos){  // dB for negative ampl -- change color!!
                                                         wave->set_stroke_rgba (CAIRO_COLOR_MAGENTA_ID);
                                                         wave->draw_partial (cr, part_i0, k-1); part_i0=k; part_pos=0;
                                                 }
@@ -1732,9 +1956,23 @@ void Inet_Json_External_Scandata::update_graph (){
                                                         wave->set_stroke_rgba (BasicColors[color[ch]]);
                                                         wave->draw_partial (cr, part_i0, k-1); part_i0=k; part_pos=1;
                                                 }
-                                        }
-                                        else 
-                                                wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s);
+
+                                        } else if (   (ch == 0 && channel_selections[0]==5) // TUNE: Phase, Ampl -- with unwrapping
+                                                   || (ch == 0 && channel_selections[0]==4) // PHC: dPhase, dFreq
+                                                   || (ch == 0 && channel_selections[0]==6) // OP:   Phase, dFreq
+                                                )
+                                                wave->set_xy_fast (k, x, deg_to_y (s, y_hi)), tic_deg=1; // Phase direct
+
+                                        else if (   (ch == 1 && channel_selections[0]==4) // PHC:dPhase, dFreq
+                                                 || (ch == 1 && channel_selections[0]==6) // OP:  Phase, dFreq
+                                                )
+                                                    wave->set_xy_fast (k, x, freq_to_y (s, y_hi)), tic_hz=1; // Hz
+                                        else if ( channel_selections[0]==9 && ch < 2){
+                                                for (int bit=0; bit<binary_BITS; ++bit)
+                                                        binwave8bit[bit]->set_xy_fast (k, x, binary_to_y (signal[ch][k], bit, ch, y_hi, binary_BITS));
+                                                wave->set_xy_fast (k, x, -yr*((int)(s)%256)/256.);
+                                        } else // SCOPE IN1,IN2, IN1 AC,DC
+                                                wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s), tic_lin=1; // else: linear scale with gain
                                 }
                         }
                         if (s>0. && part_i0>0){
@@ -1745,8 +1983,14 @@ void Inet_Json_External_Scandata::update_graph (){
                                 wave->set_stroke_rgba (CAIRO_COLOR_MAGENTA_ID);
                                 wave->draw_partial (cr, part_i0, n-2);
                         }
-                        if (channel_selections[ch] && part_i0==0)
+                        if (channel_selections[ch] && part_i0==0){
+
                                 wave->draw (cr);
+                                
+                                if (binwave8bit[0])
+                                        for (int bit=0; bit<binary_BITS; ++bit)
+                                                binwave8bit[bit]->draw (cr);
+                        }
 
                         if (ch<6){
                                 scope_dc_level[ch] = 0.5*(min+max);
@@ -1764,7 +2008,9 @@ void Inet_Json_External_Scandata::update_graph (){
                                 avg=avg10=0.;
                                 for (int i=1023-100; i<1023; ++i) avg+=signal[ch][i]; avg/=100.;
                                 for (int i=1023-10; i<1023; ++i) avg10+=signal[ch][i]; avg10/=10.;
-                                valuestring = g_strdup_printf ("%s %g %12.5f [x %g] %g %g {%g}", ch_id[ch], avg10, avg, gain_scale[ch], min, max, max-min);
+                                valuestring = g_strdup_printf ("%s %g %12.5f [x %g] %g %g {%g}",
+                                                               ch < 2 ? ch01_lab[ch][channel_selections[ch]-1] : ch_id[ch],
+                                                               avg10, avg, gain_scale[ch], min, max, max-min);
                                 reading->set_stroke_rgba (BasicColors[color[ch]]);
                                 reading->set_text (10, -(110-14*ch), valuestring);
                                 g_free (valuestring);
@@ -1794,29 +2040,89 @@ void Inet_Json_External_Scandata::update_graph (){
                 cursors->set_line_width (0.3);
 
                 // tick marks dB
-                cursors->set_stroke_rgba (0.2,1.,0.2,0.5);
-                for (int db=(int)dB_hi; db >= -20*dB_mags; db -= 10){
-                        double y;
-                        valuestring = g_strdup_printf ("%4d dB", db);
-                        reading->set_stroke_rgba (CAIRO_COLOR_GREEN);
-                        reading->set_text (scope_width - 40,  y=db_to_y ((double)db, dB_hi, y_hi, dB_mags), valuestring);
-                        g_free (valuestring);
-                        reading->draw (cr);
-                        cursors->set_xy_fast (0,xcenter+(scope_width)*(-0.5),y);
-                        cursors->set_xy_fast (1,xcenter+(scope_width*0.7)*(0.5),y);
-                        cursors->draw (cr);
+                if (tic_db){
+                        cursors->set_stroke_rgba (0.2,1.,0.2,0.5);
+                        for (int db=(int)dB_hi; db >= -20*dB_mags; db -= 10){
+                                double y;
+                                valuestring = g_strdup_printf ("%4d dB", db);
+                                reading->set_stroke_rgba (CAIRO_COLOR_GREEN);
+                                reading->set_text (scope_width - 40,  y=db_to_y ((double)db, dB_hi, y_hi, dB_mags), valuestring);
+                                g_free (valuestring);
+                                reading->draw (cr);
+                                cursors->set_xy_fast (0,xcenter+(scope_width)*(-0.5),y);
+                                cursors->set_xy_fast (1,xcenter+(scope_width*0.7)*(0.5),y);
+                                cursors->draw (cr);
+                        }
                 }
                 // ticks deg
-                cursors->set_stroke_rgba (1.,0.2,0.2,0.5);
-                for (int deg=-180*deg_extend; deg <= 180*deg_extend; deg += 30*deg_extend){
-                        double y;
-                        valuestring = g_strdup_printf ("%d" UTF8_DEGREE, deg);
-                        reading->set_stroke_rgba (CAIRO_COLOR_RED);
-                        reading->set_text (scope_width- 80, y=deg_to_y (deg, y_hi), valuestring);
-                        g_free (valuestring);
-                        reading->draw (cr);
-                        cursors->set_xy_fast (0,xcenter+(scope_width)*(-0.5),y);
-                        cursors->set_xy_fast (1,xcenter+(scope_width*0.7)*(0.5),y);
+                if(tic_deg){
+                        cursors->set_stroke_rgba (1.,0.2,0.2,0.5);
+                        for (int deg=-180*deg_extend; deg <= 180*deg_extend; deg += 30*deg_extend){
+                                double y;
+                                valuestring = g_strdup_printf ("%d" UTF8_DEGREE, deg);
+                                reading->set_stroke_rgba (CAIRO_COLOR_RED);
+                                reading->set_text (scope_width- 80, y=deg_to_y (deg, y_hi), valuestring);
+                                g_free (valuestring);
+                                reading->draw (cr);
+                                cursors->set_xy_fast (0,xcenter+(scope_width)*(-0.5),y);
+                                cursors->set_xy_fast (1,xcenter+(scope_width*0.7)*(0.5),y);
+                                cursors->draw (cr);
+                        }
+                }
+                // ticks lin
+                if(tic_lin){
+                        cursors->set_stroke_rgba (0.8,0.8,0.8,0.5);
+                        for (int yi=-100; yi <= 100; yi += 10){
+                                double y; //-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s
+                                valuestring = g_strdup_printf ("%d", yi);
+                                reading->set_stroke_rgba (0.8,0.8,0.8,0.5);
+                                reading->set_text (scope_width- 120, y=yi*0.01*y_hi, valuestring);
+                                g_free (valuestring);
+                                reading->draw (cr);
+                                cursors->set_xy_fast (0,xcenter+(scope_width)*(-0.5),y);
+                                cursors->set_xy_fast (1,xcenter+(scope_width*0.7)*(0.5),y);
+                                cursors->draw (cr);
+                        }
+                }
+                
+                if(tic_hz){
+                        cursors->set_stroke_rgba (0.8,0.8,0.0,0.5);
+                        for (int yi=-10; yi <= 10; yi += 1){
+                                double y; //-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s
+                                valuestring = g_strdup_printf ("%d Hz", yi);
+                                reading->set_stroke_rgba (0.8,0.8,0.0,0.5);
+                                reading->set_text (scope_width- 120, y=yi*0.1*y_hi, valuestring);
+                                g_free (valuestring);
+                                reading->draw (cr);
+                                cursors->set_xy_fast (0,xcenter+(scope_width)*(-0.5),y);
+                                cursors->set_xy_fast (1,xcenter+(scope_width*0.7)*(0.5),y);
+                                cursors->draw (cr);
+                        }
+                }
+                
+                if (operation_mode != 6){ // add time scale
+                        double tm = bram_window_length;
+                        double ts = tm < 10. ? 1. : 1e-3;
+                        tm *= ts;
+                        double dt = AutoSkl(tm/10.);
+                        double t0 = -0.1*tm;
+                        cursors->set_stroke_rgba (0.8,0.8,0.8,0.4);
+                        reading->set_anchor (CAIRO_ANCHOR_CENTER);
+                        for (double t=AutoNext(t0, dt); t < 0.9*tm; t += dt){
+                                double x=scope_width*(t-t0)/tm; // time position tic pos
+                                valuestring = g_strdup_printf ("%g %s", t*1000, ts > 0.9 ? "ms":"s");
+                                reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                                reading->set_text (x, yr-8, valuestring);
+                                g_free (valuestring);
+                                reading->draw (cr);
+                                cursors->set_xy_fast (0,x,-yr);
+                                cursors->set_xy_fast (1,x,yr);
+                                cursors->draw (cr);
+                        }
+                        cursors->set_stroke_rgba (0.4,0.1,0.4,0.4);
+                        double x=scope_width*0.1; // time position of post trigger (excl. soft delays)
+                        cursors->set_xy_fast (0,x,-yr);
+                        cursors->set_xy_fast (1,x,yr);
                         cursors->draw (cr);
                 }
 
@@ -1926,7 +2232,7 @@ void Inet_Json_External_Scandata::update_graph (){
                         reading->draw (cr);
 
                         // do FIT
-                        {
+                        if (!rs_mode){ // don't in RS tune mode, X is bad
                                 double f[1024];
                                 double a[1024];
                                 double p[1024];
@@ -2016,6 +2322,9 @@ void Inet_Json_External_Scandata::update_graph (){
                 }
                 delete wave;
                 delete reading;
+                if (binwave8bit[0])
+                        for (int bit=0; bit<binary_BITS; ++bit)
+                                delete binwave8bit[bit];
         } else {
                 deg_extend = 1;
                 if (cr)

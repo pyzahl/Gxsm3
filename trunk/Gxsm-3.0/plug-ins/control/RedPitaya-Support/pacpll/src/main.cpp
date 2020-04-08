@@ -35,9 +35,10 @@
 #include <vector>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 #include "main.h"
-
+  
 // INSTALL:
 // cp ~/SVN/RedPitaya/RedPACPLL4mdc-SPI/RedPACPLL4mdc-SPI.runs/impl_1/system_wrapper.bit fpga.bit
 // scp -r pacpll root@rp-f05603.local:/opt/redpitaya/www/apps/
@@ -50,9 +51,14 @@
  * ------------------------------------------------------------
  */
 
+#define REDPACPLL_DATE    0x20200408
+#define REDPACPLL_VERSION 0x00160000
+
+// #define REMAP_TO_OLD_FPGA_VERSION // (2019 compatible -- note transport is not finishing correctly in old FPGA in single shot)
+
+
 #define ADC_DECIMATING     1
 #define ADC_SAMPLING_RATE (125e6/ADC_DECIMATING)
-//#define ADC_SAMPLING_RATE (125e6/2)
 
 //Signal size
 #define SIGNAL_SIZE_DEFAULT       1024
@@ -105,7 +111,6 @@ CIntParameter GAIN5("GAIN5", CBaseParameter::RW, 100, 0, 1, 10000);
 CIntParameter OPERATION("OPERATION", CBaseParameter::RW, 1, 0, 1, 10);
 CIntParameter PACVERBOSE("PACVERBOSE", CBaseParameter::RW, 0, 0, 0, 10);
 
-CIntParameter SHR_DEC_DATA("SHR_DEC_DATA", CBaseParameter::RW, 0, 0, 0, 24);
 
 /*
  *  TRANSPORT FPGA MODULE to BRAM:
@@ -130,8 +135,13 @@ CIntParameter TRANSPORT_CH3("TRANSPORT_CH3", CBaseParameter::RW, 0, 0, 0, 13);
 CIntParameter TRANSPORT_CH4("TRANSPORT_CH4", CBaseParameter::RW, 1, 0, 0, 13);
 CIntParameter TRANSPORT_CH5("TRANSPORT_CH5", CBaseParameter::RW, 1, 0, 0, 13);
 CIntParameter TRANSPORT_MODE("TRANSPORT_MODE", CBaseParameter::RW, 0, 0, 0, 32768);
-CIntParameter TRANSPORT_DECIMATION("TRANSPORT_DECIMATION", CBaseParameter::RW, 2, 0, 1, 32768);
+CIntParameter TRANSPORT_DECIMATION("TRANSPORT_DECIMATION", CBaseParameter::RW, 2, 0, 1, 1<<24);
+CIntParameter SHR_DEC_DATA("SHR_DEC_DATA", CBaseParameter::RW, 0, 0, 0, 24);
 
+CIntParameter BRAM_SCOPE_TRIGGER_POS("BRAM_SCOPE_TRIGGER_POS", CBaseParameter::RW, 0, 0, 0, 4096); // Trigger Position Index
+CDoubleParameter BRAM_SCOPE_TRIGGER_LEVEL("BRAM_SCOPE_TRIGGER_LEVEL", CBaseParameter::RW, 0, 0, -20000., 20000.); // Trigger Level (in mV, Hz, deg)
+CIntParameter BRAM_SCOPE_TRIGGER_MODE("BRAM_SCOPE_TRIGGER_MODE", CBaseParameter::RW, 0, 0, 0, 20);  // 0: None, 1-4 CH1/2+/- 5-20 B0-8HL
+CIntParameter BRAM_SCOPE_SHIFT_POINTS("BRAM_SCOPE_SHIFT_POINTS", CBaseParameter::RW, 0, 0, 0, 4096); // Scope Data BRAM Shift/Offset Position
 CIntParameter BRAM_WRITE_POS("BRAM_WRITE_POS", CBaseParameter::RW, 0, 0, -100, 1024);
 CIntParameter BRAM_DEC_COUNT("BRAM_DEC_COUNT", CBaseParameter::RW, 0, 0, 0, 0xffffffff);
 
@@ -164,8 +174,11 @@ CDoubleParameter QC_PHASE("QC_PHASE", CBaseParameter::RW, 0, 0, 0.0, 360.0); // 
 CDoubleParameter TUNE_SPAN("TUNE_SPAN", CBaseParameter::RW, 5.0, 0, 0.1, 1e6); // Hz
 CDoubleParameter TUNE_DFREQ("TUNE_DFREQ", CBaseParameter::RW, 0.05, 0, 0.0001, 1000.); // Hz
 
-// PLL CONFIGURATION
+// BRAM LOAD CONTROL
 CBooleanParameter SET_SINGLESHOT_TRANSPORT_TRIGGER("SET_SINGLESHOT_TRANSPORT_TRIGGER", CBaseParameter::RW, false, 0);
+CDoubleParameter  SET_SINGLESHOT_TRIGGER_POST_TIME("SET_SINGLESHOT_TRIGGER_POST_TIME", CBaseParameter::RW, 0.0, 0, 0.0, 10e6); // us
+
+// PLL CONFIGURATION
 CBooleanParameter AMPLITUDE_CONTROLLER("AMPLITUDE_CONTROLLER", CBaseParameter::RW, false, 0);
 CBooleanParameter PHASE_CONTROLLER("PHASE_CONTROLLER", CBaseParameter::RW, false, 0);
 CBooleanParameter PHASE_UNWRAPPING_ALWAYS("PHASE_UNWRAPPING_ALWAYS", CBaseParameter::RW, false, 0);
@@ -185,6 +198,20 @@ CDoubleParameter PHASE_FB_CP("PHASE_FB_CP", CBaseParameter::RW, 0, 0, -1000, 100
 CDoubleParameter PHASE_FB_CI("PHASE_FB_CI", CBaseParameter::RW, 0, 0, -1000, 1000);
 CDoubleParameter FREQ_FB_UPPER("FREQ_FB_UPPER", CBaseParameter::RW, 32768.0, 0, 0, 25e6); // Hz
 CDoubleParameter FREQ_FB_LOWER("FREQ_FB_LOWER", CBaseParameter::RW, 0.1, 0, 0, 25e6); // Hz
+
+// AUX Controller (Hz -> Bias)
+CDoubleParameter AUX_FB_SETPOINT("AUX_FB_SETPOINT", CBaseParameter::RW, 0, 0, -100, 100); // Hz
+CDoubleParameter AUX_FB_CP("AUX_FB_CP", CBaseParameter::RW, 0, 0, -1000, 1000); 
+CDoubleParameter AUX_FB_CI("AUX_FB_CI", CBaseParameter::RW, 0, 0, -1000, 1000);
+CDoubleParameter AUX_FB_UPPER("AUX_FB_UPPER", CBaseParameter::RW,  0.1, 0, -10, 10); // Control
+CDoubleParameter AUX_FB_LOWER("AUX_FB_LOWER", CBaseParameter::RW, -0.1, 0, -10, 10); // Control
+
+// Transport LP TAU parameters
+CDoubleParameter TRANSPORT_TAU_DFREQ("TRANSPORT_TAU_DFREQ", CBaseParameter::RW, 0.01, 0, -1, 10e3); 
+CDoubleParameter TRANSPORT_TAU_PHASE("TRANSPORT_TAU_PHASE", CBaseParameter::RW, 0.01, 0, -1, 10e3); 
+CDoubleParameter TRANSPORT_TAU_EXEC("TRANSPORT_TAU_EXEC", CBaseParameter::RW, 0.01, 0, -1, 10e3); 
+CDoubleParameter TRANSPORT_TAU_AMPL("TRANSPORT_TAU_AMPL", CBaseParameter::RW, 0.01, 0, -1, 10e3); 
+
 
 // PHASE Valid for PAC time constant set to 15us:
 // Cp = 20*log10 ( 1.6575e-5*Fc )
@@ -209,6 +236,8 @@ CFloatParameter cpuLoad("CPU_LOAD", CBaseParameter::RW, 0, 0, 0, 100);
 CFloatParameter memoryFree ("FREE_RAM", CBaseParameter::RW, 0, 0, 0, 1e15);
 CDoubleParameter counter("COUNTER", CBaseParameter::RW, 1, 0, 1e-12, 1e+12);
 
+// global thread control parameter
+int thread_data__tune_control=0;
 
 /*
  * RedPitaya A9 FPGA Link
@@ -221,6 +250,7 @@ void *FPGA_PACPLL_bram = NULL;
 size_t FPGA_PACPLL_CFG_block_size = 0;
 size_t FPGA_PACPLL_BRAM_block_size = 0;
 
+//#define DEVELOPMENT_PACPLL_OP
 int verbose = 0;
 
 //fprintf(stderr, "");
@@ -232,9 +262,31 @@ int verbose = 0;
 
 int rp_PAC_App_Init(){
         int fd;
-        FPGA_PACPLL_CFG_block_size  = 7*sysconf (_SC_PAGESIZE);   // 1024bit CFG Register
+#ifdef REMAP_TO_OLD_FPGA_VERSION // (2019 compat.)
+        FPGA_PACPLL_CFG_block_size  = 7*sysconf (_SC_PAGESIZE);   // 1024bit CFG Register   = 7*sysconf (_SC_PAGESIZE); 
+#else
+        FPGA_PACPLL_CFG_block_size  = 9*sysconf (_SC_PAGESIZE);   // 1024bit CFG Register   = 9*sysconf (_SC_PAGESIZE); 
+#endif
         FPGA_PACPLL_BRAM_block_size = 2048*sysconf(_SC_PAGESIZE); // Dual Ported FPGA BRAM
 
+        //>INIT RP FPGA PACPLL. --- FPGA MEMORY MAPPING ---
+        //>> RP FPGA_PACPLL PAGESIZE:    00001000.
+        //>> RP FPGA_PACPLL BRAM: mapped 40000000 - 40800000   block length: 00800000.
+        //>> RP FPGA_PACPLL  CFG: mapped 42000000 - 42009000   block length: 00009000.
+
+        // RP-FPGA ADRESS MAP
+        // 32bit
+        // PS/axi_bram_reader0    0x4000_0000  2M  0x401F_FFFF
+        // PS/axi_cfg_register_0  0x4200_0000  4K  0x4200_0FFF  SLICES: CFG0: 0...1023 (#0-31)@32bit   CFG1: 1024-2047 (#32-63)@32bit
+        // PS/axi_gpio_0          0x4200_1000  4K  0x4200_1FFF
+        // PS/axi_gpio_1          0x4200_2000  4K  0x4200_2FFF
+        // PS/axi_gpio_2          0x4200_3000  4K  0x4200_3FFF
+        // PS/axi_gpio_3          0x4200_4000  4K  0x4200_4FFF
+        // PS/axi_gpio_4          0x4200_5000  4K  0x4200_5FFF
+        // PS/axi_gpio_5          0x4200_6000  4K  0x4200_6FFF
+        // PS/axi_gpio_6          0x4200_7000  4K  0x4200_7FFF
+        // PS/axi_gpio_7          0x4200_8000  4K  0x4200_8FFF
+        
         if ((fd = open (FPGA_PACPLL_A9_name, O_RDWR)) < 0) {
                 perror ("open");
                 return RP_EOOR;
@@ -246,7 +298,13 @@ int rp_PAC_App_Init(){
         if (FPGA_PACPLL_bram == MAP_FAILED)
                 return RP_EOOR;
   
-        if (verbose > 1) fprintf(stderr, "RP FPGA_PACPLL BRAM: mapped %08lx - %08lx.\n", (unsigned long)(0x40000000), (unsigned long)(0x40000000 + FPGA_PACPLL_BRAM_block_size));
+#ifdef DEVELOPMENT_PACPLL_OP
+        fprintf(stderr, "INIT RP FPGA PACPLL. --- FPGA MEMORY MAPPING ---\n");
+        fprintf(stderr, "RP FPGA_PACPLL PAGESIZE:    0x%08lx.\n", (unsigned long)(sysconf (_SC_PAGESIZE)));
+        fprintf(stderr, "RP FPGA_PACPLL BRAM: mapped 0x%08lx - 0x%08lx   block length: 0x%08lx.\n", (unsigned long)(0x40000000), (unsigned long)(0x40000000 + FPGA_PACPLL_BRAM_block_size), (unsigned long)(FPGA_PACPLL_BRAM_block_size));
+#else
+        if (verbose > 1) fprintf(stderr, "RP FPGA_PACPLL BRAM: mapped 0x%08lx - 0x%08lx.\n", (unsigned long)(0x40000000), (unsigned long)(0x40000000 + FPGA_PACPLL_BRAM_block_size));
+#endif
 
         
         FPGA_PACPLL_cfg = mmap (NULL, FPGA_PACPLL_CFG_block_size,
@@ -255,8 +313,12 @@ int rp_PAC_App_Init(){
         if (FPGA_PACPLL_cfg == MAP_FAILED)
                 return RP_EOOR;
 
-        if (verbose > 1) fprintf(stderr, "RP FPGA_PACPLL CFG: mapped %08lx - %08lx.\n", (unsigned long)(0x42000000), (unsigned long)(0x42000000 + FPGA_PACPLL_CFG_block_size));
-
+#ifdef DEVELOPMENT_PACPLL_OP
+        fprintf(stderr, "RP FPGA_PACPLL  CFG: mapped 0x%08lx - 0x%08lx   block length: 0x%08lx.\n", (unsigned long)(0x42000000), (unsigned long)(0x42000000 + FPGA_PACPLL_CFG_block_size),  (unsigned long)(FPGA_PACPLL_CFG_block_size));
+#else
+        if (verbose > 1) fprintf(stderr, "RP FPGA_PACPLL  CFG: mapped 0x%08lx - 0x%08lx.\n", (unsigned long)(0x42000000), (unsigned long)(0x42000000 + FPGA_PACPLL_CFG_block_size));
+#endif
+        
         srand(time(NULL));   // init random
 
         return RP_OK;
@@ -312,6 +374,7 @@ void rp_PAC_App_Release(){
 
 long double cpu_values[4] = {0, 0, 0, 0}; /* reading only user, nice, system, idle */
 
+int phase_setpoint_qcordicatan = 0;
 
 inline void set_gpio_cfgreg_int32 (int cfg_slot, int value){
         size_t off = cfg_slot * 4;
@@ -394,12 +457,24 @@ double dds_phaseinc (double freq){
 
 double dds_phaseinc_to_freq (unsigned long long ddsphaseincQ44){
         double fclk = ADC_SAMPLING_RATE;
+#ifdef DEVELOPMENT_PACPLL_OP_V
+        double df = fclk*(double)ddsphaseincQ44/(double)(Q44);
+        fprintf(stderr, "##DDS Phase Inc abs to freq: df= %12.4f Hz <- Q44 phase_inc=%lld  %016llx\n", df, ddsphaseincQ44, ddsphaseincQ44phase_inc);
+        return df;
+#else
         return fclk*(double)ddsphaseincQ44/(double)(Q44);
+#endif
 }
 
 double dds_phaseinc_rel_to_freq (long long ddsphaseincQ44){
         double fclk = ADC_SAMPLING_RATE;
+#ifdef DEVELOPMENT_PACPLL_OP_V
+        double df = fclk*(double)ddsphaseincQ44/(double)(Q44);
+        fprintf(stderr, "##DDS Phase Inc rel to freq: df= %12.4f Hz <- Q44 phase_inc=%lld  %016llx\n", df, ddsphaseincQ44, ddsphaseincQ44phase_inc);
+        return df;
+#else
         return fclk*(double)ddsphaseincQ44/(double)(Q44);
+#endif
 }
 
 #define PACPLL_CFG_DDS_PHASEINC 0
@@ -409,9 +484,23 @@ void rp_PAC_adjust_dds (double freq){
         // 44 Bit Phase, using 48bit tdata
         unsigned long long phase_inc = (unsigned long long)round (dds_phaseinc (freq));
         //        unsigned int lo32, hi32;
+#ifdef DEVELOPMENT_PACPLL_OP
+        fprintf(stderr, "##Adjust DDS: f= %12.4f Hz -> Q44 phase_inc=%lld  %016llx\n", freq, phase_inc, phase_inc);
+#else
         if (verbose > 2) fprintf(stderr, "##Adjust: f= %12.4f Hz -> Q44 phase_inc=%lld  %016llx\n", freq, phase_inc, phase_inc);
-
+#endif
+        
         set_gpio_cfgreg_int48 (PACPLL_CFG_DDS_PHASEINC, phase_inc);
+
+#ifdef DEVELOPMENT_PACPLL_OP
+        // Verify
+        unsigned long xx8 = read_gpio_reg_uint32 (4,1); // GPIO X7 : Exec Ampl Control Signal (signed)
+        unsigned long xx9 = read_gpio_reg_uint32 (5,0); // GPIO X8 : DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
+        unsigned long long ddsphi = ((unsigned long long)xx8<<(44-32)) + ((unsigned long long)xx9>>(64-44)); // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
+        double vfreq = dds_phaseinc_to_freq(ddsphi);
+        fprintf(stderr, "##Verify DDS: f= %12.4f Hz -> Q44 phase_inc=%lld  %016llx  ERROR: %12.4f Hz\n", vfreq, ddsphi, ddsphi, (vfreq-freq));
+#endif
+
 }
 
 #define PACPLL_CFG_VOLUME_SINE 2
@@ -521,7 +610,7 @@ void rp_PAC_auto_dc_offset_adjust (){
         
         for (k=i=0; i<300000; ++i){
                 if (i%777 == 0) usleep(1000);
-                x = read_gpio_reg_int32 (2,0);
+                x = read_gpio_reg_int32 (3,0); // 2,0
                 x1=(double)x / QLMS;
                 if (fabs(x1) < 0.5){
                         dc += x1;
@@ -543,7 +632,7 @@ void rp_PAC_auto_dc_offset_correct (){
         double q1=1.0-q;
         for (i=0; i<30000; ++i){
                 if (i%777 == 0) usleep(1000);
-                x = read_gpio_reg_int32 (2,0);
+                x = read_gpio_reg_int32 (3,0);
                 x1=(double)x / QLMS;
                 if (fabs(x1) < 0.1)
                         signal_dc_measured = q1*signal_dc_measured + q*x1;
@@ -653,7 +742,7 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
         // = PSign * CPN(29)*pow(10.,Pgain/20.);
         */
 
-        set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_SET,   ((int)(QCORDICATAN * setpoint))); // <<(32-BITS_CORDICATAN));
+        set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_SET,   (phase_setpoint_qcordicatan = (int)(QCORDICATAN * setpoint))); // <<(32-BITS_CORDICATAN));
         set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_CP,    (long long)(QPHCOEF * cp)); // {32}   22+1 bit error, 32bit CP,CI << 31 --  m[24]  x  cp|ci[32]  = 56 M: 24{Q32},  P: 44{Q14}, top S43
         set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_CI,    (long long)(QPHCOEF * ci));
         set_gpio_cfgreg_int48 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_UPPER, (unsigned long long)round (dds_phaseinc (upper))); // => 44bit phase
@@ -672,26 +761,110 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
 #define PACPLL_CFG_TRANSPORT_CHANNEL_SELECT  9
 #define PACPLL_CFG_TRANSPORT_AUX_SCALE       17
 #define PACPLL_CFG_TRANSPORT_AUX_CENTER      18  // 18,19
-#define PACPLL_CFG_TRANSPORT_INIT            16  // Bit 4=1
+#define PACPLL_CFG_TRANSPORT_RESET           16  // Bit 4=1
 #define PACPLL_CFG_TRANSPORT_SINGLE          2   // Bit 1=1
 #define PACPLL_CFG_TRANSPORT_LOOP            0   // Bit 1=0
 #define PACPLL_CFG_TRANSPORT_START           1   // Bit 0=1
 
+int __rp_pactransport_shr_dec_hi=0;
+
 // Configure BRAM Data Transport Mode
+void rp_PAC_transport_start (int control){
+        set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_CONTROL, (control & 0xff) | __rp_pactransport_shr_dec_hi);
+}
+
 void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, int decimation, int channel_select, double scale, double center){
-        if (verbose > 2) fprintf(stderr, "##Configure transport: 0x%02x, dec=%d, M=%d\n",  control, decimation, channel_select); 
-        set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_CONTROL,
-                                (control & 0xff)
-                                | (((shr_dec_data >= 0 && shr_dec_data <= 24) ? shr_dec_data : 0) << 8)
-                                );
-        set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_SAMPLES, nsamples);
-        if (decimation < 8)
-                decimation = 8;
+        static int control_reg=0;
+        __rp_pactransport_shr_dec_hi = channel_select > 7 ? 0 : ((shr_dec_data >= 0 && shr_dec_data <= 24) ? shr_dec_data : 0) << 8; // keep memory, do not shift DBG data
+        
+        if (control >= 0)
+                control_reg = control;
+        
+        if (verbose == 1) fprintf(stderr, "##Configure transport: 0x%02x, dec=%d, shr=%d, CHM=%d N=%d  {%s, %s}\n",  control_reg, decimation, shr_dec_data, channel_select, nsamples,
+                                  control_reg & PACPLL_CFG_TRANSPORT_RESET ? "RESET" : control & PACPLL_CFG_TRANSPORT_START ? "START" : "--",
+                                  control_reg & PACPLL_CFG_TRANSPORT_SINGLE ? "SINGLE":"LOOP"); 
+
+        set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_CONTROL, (control_reg & 0xff) | __rp_pactransport_shr_dec_hi);
+        
+        if (nsamples > 0){
+                set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_SAMPLES, nsamples);
+        }
+        if (decimation < 2) // if decimation is set to 1 this only works for DDR channels via data in Hi16 / Lo16 / sample and shr_data = 0, but FPGA decimation must be still set to 2!
+                decimation = 2;
+        
         set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_DECIMATION, decimation);
+
+#ifdef REMAP_TO_OLD_FPGA_VERSION
+        //           old mapping  IN12 PA 1A 1P AF AE PF MA DBG -
+        //                 from   { 0, 1, 2, 3, 4, 5, 6, 7, 8  }
+        //             remap to   { 0, 4, 2, 3, 3, 2, 5, 1, 8, 0 }; // best match
+        static int remap_ch[10] = { 0, 7, 2, 3, 1, 6, 5, 1, 8, 0 };
+        channel_select = remap_ch[channel_select];
+#endif
         set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_CHANNEL_SELECT, channel_select);
         // AUX scale, center
         set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_AUX_SCALE, (int)round(Q15*scale));
-        set_gpio_cfgreg_int48 (PACPLL_CFG_TRANSPORT_AUX_CENTER, (unsigned long long)round (dds_phaseinc (center))); // => 44bit phase
+        set_gpio_cfgreg_int48 (PACPLL_CFG_TRANSPORT_AUX_CENTER, (unsigned long long)round (dds_phaseinc (center))); // => 44bit phase f0 center ref for delta_freq calculation on FPGA
+}
+
+void rp_PAC_start_transport (int control_mode, int nsamples, int tr_mode){
+        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_RESET,
+                                    SHR_DEC_DATA.Value (),
+                                    nsamples,
+                                    TRANSPORT_DECIMATION.Value (),
+                                    tr_mode,
+                                    AUX_SCALE.Value (),
+                                    FREQUENCY_CENTER.Value()
+                                    );
+        
+        if (control_mode == PACPLL_CFG_TRANSPORT_RESET)
+                return;
+        
+        usleep(2000);
+        rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START | control_mode);
+}
+
+// BRAM write completed (single shot mode)?
+int bram_ready(){
+        return read_gpio_reg_int32 (6,1) & 0x8000 ? 1:0; // BRAM write completed (finshed flag set)
+}
+
+int bram_status(int bram_status[3]){
+        int x12 = read_gpio_reg_int32 (6,1); // GPIO X12 : assign writeposition = { decimate_count[15:0], finished, BR_wpos[14:0] };
+        bram_status[0] = x12 & 0x7fff;       // GPIO X12 : Transport WPos [15bit]
+        bram_status[1] = (x12>>16) & 0xffff; // GPIO X12 : Transport Sample Count
+        bram_status[2] = x12 & 0x8000 ? 1:0;      // GPIO X12 : Transport Finished
+        return bram_status[2]; // finished (finished and run set)
+}
+
+// Configure transport tau: time const or high speed IIR filter stages
+#define PACPLL_CFG1_OFFSET 32
+#define PACPLL_CFG_TRANSPORT_TAU_DFREQ   (PACPLL_CFG1_OFFSET + 0)
+#define PACPLL_CFG_TRANSPORT_TAU_PHASE   (PACPLL_CFG1_OFFSET + 1)
+#define PACPLL_CFG_TRANSPORT_TAU_EXEC    (PACPLL_CFG1_OFFSET + 2)
+#define PACPLL_CFG_TRANSPORT_TAU_AMPL    (PACPLL_CFG1_OFFSET + 3)
+
+void rp_PAC_set_tau_transport (double tau_dfreq, double tau_phase, double tau_exec, double tau_ampl){
+#ifdef REMAP_TO_OLD_FPGA_VERSION
+        return;
+#endif
+        //if (verbose == 1) fprintf(stderr, "PAC TAU TRANSPORT DBG: dFreq tau = %g ms ->  %d\n", tau_dfreq, (int)(Q32/ADC_SAMPLING_RATE/(1e-3*tau_dfreq)));
+        if (tau_dfreq > 0.)
+                set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_TAU_DFREQ, (int)(Q32/ADC_SAMPLING_RATE/(1e-3*tau_dfreq)));
+        else
+                set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_TAU_DFREQ, 0xffffffff);
+        if (tau_phase > 0.)
+                set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_TAU_PHASE, (int)(Q32/ADC_SAMPLING_RATE/(1e-3*tau_phase)));
+        else
+                set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_TAU_PHASE, 0xffffffff);
+        if (tau_exec > 0.)
+                set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_TAU_EXEC,  (int)(Q32/ADC_SAMPLING_RATE/(1e-3*tau_exec)));
+        else
+                set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_TAU_EXEC, 0xffffffff);
+        if (tau_ampl > 0.)
+                set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_TAU_AMPL,  (int)(Q32/ADC_SAMPLING_RATE/(1e-3*tau_ampl)));
+        else
+                set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_TAU_AMPL, 0xffffffff);
 }
 
 /*
@@ -717,7 +890,8 @@ void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, in
 
 // Get all GPIO mapped data / system state snapshot
 void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
-        int x,y,xx7,xx8,xx9,uix;
+        int x,y,xx7;
+        unsigned long xx8, xx9, uix;
         double a,b,v,p,x3,x4,x5,x6,x7,x8,x9,x10,qca,pfpga,x11,x12;
         
         SIGNAL_GPIOX[0] = x = read_gpio_reg_int32 (1,0); // GPIO X1 : LMS A (cfg + 0x1000)
@@ -738,27 +912,27 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         x6=(double)x / QCORDICATANFIR;
         SIGNAL_GPIOX[6] = xx7 = x = read_gpio_reg_int32 (4,0); // GPIO X7 : Exec Ampl Control Signal (signed)
         x7=(double)x / QEXEC;
-        SIGNAL_GPIOX[7] = xx8 = x = read_gpio_reg_int32 (4,1); // GPIO X8 : DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
-        SIGNAL_GPIOX[8] = xx9 = x = read_gpio_reg_int32 (5,0); // GPIO X9 : DDS Phase Inc (Freq.) lower 32 bits of 44 (signed)
+        SIGNAL_GPIOX[7] = xx8 = x = read_gpio_reg_uint32 (4,1); // GPIO X8 : DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
+        SIGNAL_GPIOX[8] = xx9 = x = read_gpio_reg_uint32 (5,0); // GPIO X9 : DDS Phase Inc (Freq.) lower 32 bits of 44 (signed)
         x9=(double)x / QLMS;
+#if 1
+        SIGNAL_GPIOX[9] = x = read_gpio_reg_int32 (5,1); // GPIO X10: CORDIC ATAN(X/Y) = Phase Monitor
+        x10 = (double)x / QCORDICATAN; // ATAN 24bit 3Q21 
+#else
         SIGNAL_GPIOX[9] = uix = read_gpio_reg_uint32 (5,1); // GPIO X10: CORDIC ATAN(X/Y) = Phase Monitor
         if (uix >= 0x7f000000)
              uix = uix-0x7fffffff;
         x10 = (double)uix / QCORDICATAN; // ATAN 24bit 3Q21 
-        //x10=(qca=(double)x / QCORDICATAN/M_PI*180.) - 90. - (x8<0? 230:0.); // ???? WHY NOT 180 ????
-        //x10 /= 180.; // for testing 100 ==== 180
-                  
-        //pfpga=atan2 (x8,x7)/M_PI*180. - 90.;
-        //pfpga /= 180.;
-        SIGNAL_GPIOX[10] = y=x = read_gpio_reg_int32 (6,0); // GPIO X11 : Transport WPos
-        x11=(double)(x&0xffff);
+#endif
+        SIGNAL_GPIOX[10] = x = read_gpio_reg_int32 (6,0); // GPIO X11 : Transport WPos
+        x11=(double)(x);
         SIGNAL_GPIOX[11] = x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-        x12=(double)((x>>16)&0xffff);
+        x12=(double)(x);
 
-        SIGNAL_GPIOX[12] = x = read_gpio_reg_int32 (7,0); // GPIO X13 : Transport Dbg
-        SIGNAL_GPIOX[13] = x = read_gpio_reg_int32 (7,1); // GPIO X14 : Transport Dbg
-        SIGNAL_GPIOX[14] = x = read_gpio_reg_int32 (8,0); // GPIO X15 : Transport Dbg
-        SIGNAL_GPIOX[15] = x = read_gpio_reg_int32 (8,1); // GPIO X16 : Transport Dbg
+        SIGNAL_GPIOX[12] = read_gpio_reg_int32 (7,0); // GPIO X13
+        SIGNAL_GPIOX[13] = read_gpio_reg_int32 (7,1); // GPIO X14
+        SIGNAL_GPIOX[14] = read_gpio_reg_int32 (8,0); // GPIO X15
+        SIGNAL_GPIOX[15] = read_gpio_reg_int32 (8,1); // GPIO X16
 
         
         // LMS Detector Readings and double precision conversions
@@ -775,7 +949,7 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         reading_vector[7] = x6;  // X4
 
         reading_vector[8] = x7*1000.0;  // Exec Ampl Control Signal (signed) in mV
-        reading_vector[9] = dds_phaseinc_to_freq(((long long)xx8<<(44-32)) + ((long long)xx9>>(64-44)));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
+        reading_vector[9] = dds_phaseinc_to_freq(((unsigned long long)xx8<<(44-32)) + ((unsigned long long)xx9>>(64-44)));  // DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
 
         reading_vector[10] = x3; // M (LMS input Signal)
         reading_vector[11] = x3; // M1 (LMS input Signal-DC), tests...
@@ -783,36 +957,13 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         reading_vector[12] = x11; // test (bram write pos from data transport)
         reading_vector[13] = x12; // test (bram debug from data transport)
 
-        // x11: bram write pos (y)
-        // x12: transport dbg  (x)
-        // assign writeposition = { {(32-BRAM_ADDR_WIDTH){1'b0}}, int_addrA_reg };
-        // assign debug = { {(2){1'b0}}, operation[12:8],  operation[7:0],     {(5){1'b0}}, finished_state,trigger,running,   {(1){1'b0}}, bramwr_sms, {(1){1'b0}}, dec_sms };
-        //start   <= operation[0:0]; // Trigger start for single shot
-        //init    <= operation[7:4]; // reset/reinit
-        //ch1_shr <= operation[12:8]; // DEC data shr ch1,..4
-        //ch2_shr <= operation[20:16];
-        //ch3_shr <= operation[28:24];
-        //ch4_shr <= operation[28:24];
-        if (verbose == 1) fprintf(stderr, "PAC TRANSPORT DBG: BRAM WritePos=%08X DBG=%08x DECSMS=%d BRAMSMS=%d run=%d trig=%d fin=%d op=%d ops=%d opo=%d ch1shr=%d\n",
-                                  y, x,
-                                  x&0x7, (x>>4)&7,
-                                  (x>>8)&1, (x>>9)&1, (x>>10)&1,
-                                  (x>>16)&0xf, (x>>16)&1, (x>>20)&15, (x>>24)&0x63
-                                  );
-        else if (verbose > 4) fprintf(stderr, "PAC DBG: A:%12f  B:%12f X1:%12f X2:%12f X3:%12f X4:%12f X5:%12f X6:%12f X7:%12f X8:%12f X9:%12f X10:%12f X11:%12f X12:%12f\n", a,b,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12);
-        else if (verbose > 3) fprintf(stderr, "PAC READING: Ampl=%10.4f V Phase=%10.4f deg a=%10.4f b=%10.4f  FPGA: %10.4f %10.4f FIR: %10.4f %10.4f  M %10.4f V  pfpga=%10.4f\n", v,p, a,b, x4, x10, x5, x6, x3, pfpga);
+        if (verbose > 2){
+                if (verbose == 1) fprintf(stderr, "PAC TRANSPORT DBG: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+                else if (verbose > 4) fprintf(stderr, "PAC DBG: A:%12f  B:%12f X1:%12f X2:%12f X3:%12f X4:%12f X5:%12f X6:%12f X7:%12f X8:%12f X9:%12f X10:%12f X11:%12f X12:%12f\n", a,b,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12);
+                else if (verbose > 3) fprintf(stderr, "PAC READING: Ampl=%10.4f V Phase=%10.4f deg a=%10.4f b=%10.4f  FPGA: %10.4f %10.4f FIR: %10.4f %10.4f  M %10.4f V  pfpga=%10.4f\n", v,p, a,b, x4, x10, x5, x6, x3, pfpga);
+        }
 }
         
-
-int bram_status(int bram_status[3]){
-        int x11 = read_gpio_reg_int32 (6,0); // GPIO X11 : Transport DecCnt, 0,0, Wpos
-        int x12 = read_gpio_reg_int32 (6,1); // GPIO X12 : Tranmsport Dbg
-        bram_status[0] = x11 & 0xffff; // GPIO X11 : Transport WPos
-        bram_status[1] = (x11>>16) & 0xffff; // GPIO X11 : Transport DecCount
-        bram_status[2] = x12;          // GPIO X12 : Transport Dbg
-        return ((bram_status[2]>>10) & 1)  &&  ((bram_status[2]>>8) & 1); // finished (finished and run set)
-}
-
 
 /*
  * RedPitaya A9 JSON Interface
@@ -827,29 +978,34 @@ void set_PAC_config()
         double reading_vector[READING_MAX_VALUES];
         int status[3];
 
-        if (SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
-
-                //while (!bram_status(status)); // block
-
-                // trigger single shot
-                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                            SHR_DEC_DATA.Value (),  1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
-                if (verbose > 0) fprintf(stderr, "OnNewParams: OP=4 Single Shot BRAM Transport -- trigger before controller adjust\n");
-                rp_PAC_get_single_reading (reading_vector);
-                if (verbose == 1) fprintf(stderr, "1BRAM T start:\n");
-                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
-                                            SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+        static double VOL_set_prev = 0.0;
+        static double AM_set_prev = 0.0;
+        static double PH_set_prev = 0.0;
+        
+        // prepare for trigger
+        if ( OPERATION.Value () == 2 || OPERATION.Value () == 4 ){ // auto SINGLE SHOT only on OP Param change or always in SCOPE mode
+                if ( AM_set_prev != AMPLITUDE_FB_SETPOINT.Value () || VOL_set_prev != VOLUME_MANUAL.Value() || PH_set_prev != PHASE_FB_SETPOINT.Value () || OPERATION.Value () == 4 ){
+                        if (SET_SINGLESHOT_TRANSPORT_TRIGGER.Value () && bram_ready ()){
+                                // Reset and rearm -- Auto Re-Trigger SCOPE in SS Mode if ready
+                                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_RESET,
+                                                            SHR_DEC_DATA.Value (), 4096, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+                        }
+                }
+        } else { // update transport settings on the fly
+                rp_PAC_configure_transport (-1,
+                                            SHR_DEC_DATA.Value (),
+                                            -1,
+                                            TRANSPORT_DECIMATION.Value (),
+                                            TRANSPORT_MODE.Value (),
+                                            AUX_SCALE.Value (),
+                                            FREQUENCY_CENTER.Value()
+                                            );
         }
-
-        if (OPERATION.Value() < 6)
-                rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value());
-        rp_PAC_set_volume (VOLUME_MANUAL.Value() / 1000.); // mV -> V
-        rp_PAC_set_pactau (PACTAU.Value(), PACATAU.Value(), PAC_DCTAU.Value() * 1e-3); // periods, periods, ms -> s
-
-        rp_PAC_set_qcontrol (QC_GAIN.Value (), QC_PHASE.Value ());
-
+        
+        if (AM_set_prev != AMPLITUDE_FB_SETPOINT.Value () && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
+                rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE);
+                usleep((useconds_t)SET_SINGLESHOT_TRIGGER_POST_TIME.Value ());
+        }
         rp_PAC_set_amplitude_controller (
                                          AMPLITUDE_FB_SETPOINT.Value ()/1000., // mv to V
                                          AMPLITUDE_FB_CP.Value (),
@@ -857,7 +1013,12 @@ void set_PAC_config()
                                          EXEC_FB_UPPER.Value ()/1000., // mV -> +/-1V
                                          EXEC_FB_LOWER.Value ()/1000.
                                          );
-
+        AM_set_prev = AMPLITUDE_FB_SETPOINT.Value ();
+        
+        if (PH_set_prev != PHASE_FB_SETPOINT.Value () && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
+                rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE);
+                usleep((useconds_t)SET_SINGLESHOT_TRIGGER_POST_TIME.Value ());
+        }
         rp_PAC_set_phase_controller (
                                      PHASE_FB_SETPOINT.Value ()/180.*M_PI, // Phase
                                      PHASE_FB_CP.Value (),
@@ -865,8 +1026,44 @@ void set_PAC_config()
                                      FREQ_FB_UPPER.Value (), // Hz
                                      FREQ_FB_LOWER.Value ()
                                      );
+        PH_set_prev = PHASE_FB_SETPOINT.Value ();
         
-        rp_PAC_configure_switches (PHASE_CONTROLLER.Value ()?1:0, AMPLITUDE_CONTROLLER.Value ()?1:0, PHASE_UNWRAPPING_ALWAYS.Value ()?1:0, QCONTROL.Value ()?1:0, LCK_AMPLITUDE.Value ()?1:0, LCK_PHASE.Value ()?1:0);
+        if (VOL_set_prev != VOLUME_MANUAL.Value() && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
+                rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE);
+                usleep((useconds_t)SET_SINGLESHOT_TRIGGER_POST_TIME.Value ());
+        }
+        rp_PAC_set_volume (VOLUME_MANUAL.Value() / 1000.); // mV -> V
+        VOL_set_prev = VOLUME_MANUAL.Value();
+
+        rp_PAC_set_pactau (PACTAU.Value(), PACATAU.Value(), PAC_DCTAU.Value() * 1e-3); // periods, periods, ms -> s
+
+        rp_PAC_set_qcontrol (QC_GAIN.Value (), QC_PHASE.Value ());
+
+        // in tune mode disable controllers autmatically and do not touch DDS settings, but allow Q Control
+        if (OPERATION.Value() < 6){
+                rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value());
+                rp_PAC_configure_switches (PHASE_CONTROLLER.Value ()?1:0, AMPLITUDE_CONTROLLER.Value ()?1:0, PHASE_UNWRAPPING_ALWAYS.Value ()?1:0, QCONTROL.Value ()?1:0, LCK_AMPLITUDE.Value ()?1:0, LCK_PHASE.Value ()?1:0);
+        } else {
+                rp_PAC_configure_switches (0, 0, PHASE_UNWRAPPING_ALWAYS.Value ()?1:0, QCONTROL.Value ()?1:0, LCK_AMPLITUDE.Value ()?1:0, LCK_PHASE.Value ()?1:0);
+        }
+        
+        rp_PAC_set_tau_transport (
+                                  TRANSPORT_TAU_DFREQ.Value (), // tau given in ms (1-e3)
+                                  TRANSPORT_TAU_PHASE.Value (),
+                                  TRANSPORT_TAU_EXEC.Value (),
+                                  TRANSPORT_TAU_AMPL.Value ()
+                                  );
+                                  
+
+        /*
+        rp_PAC_set_aux_controller (
+                                   AUX_FB_SETPOINT.Value (), // dHz -> ...
+                                   AUX_FB_CP.Value (),
+                                   AUX_FB_CI.Value (),
+                                   AUX_FB_UPPER.Value ()/1000., // mV -> V
+                                   AUX_FB_LOWER.Value ()/1000.
+                                   );
+        */
 }
 
 
@@ -896,6 +1093,7 @@ int rp_app_init(void)
 
         //Set signal update interval
         CDataManager::GetInstance()->SetSignalInterval(SIGNAL_UPDATE_INTERVAL);
+        CDataManager::GetInstance()->SetParamInterval(PARAMETER_UPDATE_INTERVAL);
 
         // Init PAC
         set_PAC_config();
@@ -903,10 +1101,10 @@ int rp_app_init(void)
         rp_PAC_get_single_reading (reading_vector);
 
         // init block transport for scope
-        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                    SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
-        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_LOOP,
-                                    SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_RESET,
+                                    SHR_DEC_DATA.Value (), 2048, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+        usleep(1000);
+        rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_LOOP);
         
         return 0;
 }
@@ -947,79 +1145,188 @@ int rp_get_signals(float ***s, int *sig_num, int *sig_len)
 //*((volatile uint32_t *) ( ((uint8_t*)map)+ offset )) = value;
 
 
+int check_trigger(int t, int slope, int y){
+        // fprintf(stderr, "CHECK TRIGGER t:%d  slope %d  y=%d \n",  t, slope, y);
+        if (slope > 0){ // Pos Zero X
+                if (y < -40) // neg theashold to start checking (5mV)
+                        return -1;
+                if (t < 0 && y > 0)
+                        return 1;
+        } else { // Neg Zero X
+                if (y > 40) // pos theashold to start checking
+                        return -1;
+                if (t < 0 && y < 0)
+                        return 1;
+        }
+        return t;
+}
+
+int check_trigger_bit(int t, int tm, unsigned int y){
+        unsigned int b = y & (1 << ( tm >> 1 ));
+        // TRIGGER simple on rising edge zero x
+        if (tm & 1){ // Pos Edge
+                if (b == 0)
+                        return -1;
+                if (t == -1 && b)
+                        return 1;
+        } else {
+                if (b)
+                        return -1;
+                if (t == -1 && b == 0)
+                        return 1;
+        }
+        return t;
+}
 
 void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
-        int k;
+        int t,k;
+        int pos;
         size_t i = 12;
         size_t N = 8*n;
-        
+        double trigger_level = BRAM_SCOPE_TRIGGER_LEVEL.Value ();
+        int index_shift  = 8*BRAM_SCOPE_SHIFT_POINTS.Value ();
+        int trigger_mode = BRAM_SCOPE_TRIGGER_MODE.Value ();
+        int trigger_pos  = trigger_mode ? BRAM_SCOPE_TRIGGER_POS.Value () : 0;
+        size_t trigger_adr =  (size_t)(8*trigger_pos);
+        if (verbose == 1) fprintf(stderr, "SCOPE TRIGGER: m=%d pos=%d\n",  trigger_mode, trigger_pos );
+
         switch (t_mode){
-        case 0: // AXIS1xy :  IN1, IN2
-                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
-                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN2 (14)
-                        SIGNAL_CH1[k] = (float)ix32*gain1/Q13*1000.;
-                        SIGNAL_CH2[k] = (float)iy32*gain2/Q13*1000.;
+        case 0: // AXIS1:  IN1, IN2
+                if (trigger_mode >= 1 && trigger_mode <= 4){
+                        int tlv = (int)round(trigger_level/1000.*Q13);
+                        i += trigger_adr; // start
+                        // advance i to trigger position
+                        for (t=0, pos=0; pos < 1000; ++pos){
+                                int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
+                                int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN2 (14)
+                                if (trigger_mode > 2)
+                                        t=check_trigger (t, trigger_mode&1 ? 1:0, (int16_t)(iy32&0xffff)-tlv);
+                                else
+                                        t=check_trigger (t, trigger_mode&1 ? 1:0, (int16_t)(ix32&0xffff)-tlv);
+                                if (t == 1 && verbose == 1) fprintf(stderr, "SCOPE TRIGGER F adr:%d  at %d  @x= %d  @y= %d t=%d\n",  trigger_adr, i, ix32, iy32, t);
+                                if (t == 1) break;
+                        }
+                        i -= trigger_adr; // go back by pre-trigger time
+                        if (verbose == 1) fprintf(stderr, "SCOPE TRIGGER AT: adr:%d  at %d t=%d\n",  trigger_adr, i, t);
+                }
+                i += index_shift;
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
+                        uint32_t ix32 = *((uint32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
+                        uint32_t iy32 = *((uint32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN2 (14)
+                        SIGNAL_CH1[k] = (float)((int16_t)(ix32&0xffff))*gain1/Q13*1000.;
+                        SIGNAL_CH2[k] = (float)((int16_t)(iy32&0xffff))*gain2/Q13*1000.;
                 }
                 break;
-        case 1: // AXIS45 :  CORDIC SQRT, ATAN
-                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
+        case 7: // DDR mode: IN1, IN2 -- only for dec=1
+                if (trigger_mode >= 1 && trigger_mode <= 4){
+                        int tlv = (int)round(trigger_level/1000.*Q13);
+                        i += trigger_adr/2; // start
+                        // advance i to trigger position
+                        for (t=0, pos=0; pos < 1000; ++pos){
+                                int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
+                                int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN2 (14)
+                                if (trigger_mode > 2)
+                                        t=check_trigger (t, trigger_mode&1 ? 1:0, (int16_t)(iy32&0xffff)-tlv);
+                                else
+                                        t=check_trigger (t, trigger_mode&1 ? 1:0, (int16_t)(ix32&0xffff)-tlv);
+                                if (t == 1 && verbose == 1) fprintf(stderr, "SCOPE TRIGGER F adr:%d  at %d  @x= %d  @y= %d t=%d\n",  trigger_adr, i, ix32, iy32, t);
+                                if (t == 1) break;
+                        }
+                        i -= trigger_adr/2; // go back by pre-trigger time
+                        if (verbose == 1) fprintf(stderr, "SCOPE TRIGGER AT: adr:%d  at %d t=%d\n",  trigger_adr, i, t);
+                }
+                i += index_shift;
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
+                        uint32_t ix32 = *((uint32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
+                        uint32_t iy32 = *((uint32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN2 (14)
+                        SIGNAL_CH1[k] = (float)((int16_t)(ix32&0xffff))*gain1/Q13*1000.;
+                        SIGNAL_CH2[k] = (float)((int16_t)(iy32&0xffff))*gain2/Q13*1000.;
+                        ++k;
+                        SIGNAL_CH1[k] = (float)((int16_t)((ix32>>16)&0xffff))*gain1/Q13*1000.;
+                        SIGNAL_CH2[k] = (float)((int16_t)((iy32>>16)&0xffff))*gain2/Q13*1000.;
+                }
+                break;
+        case 1: // AXIS6: DC Filter: In1(AC), In1(DC)
+                i += index_shift;
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 - AC (IN1-MDC AC dec + filtered) (16)
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 - DC (IN1 IIR LP dec + filtered) (16)
+                        SIGNAL_CH1[k] = (float)ix32*gain1/Q15*1000.;
+                        SIGNAL_CH2[k] = (float)iy32*gain2/Q15*1000. * 0.5; // where is the 1/2 ???
+                }
+                break;
+        case 2: // AXIS5/2: AMC Ampl, Exec
+                i += index_shift;
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // AMC: Ampl (24)   [[AMPLITUDE_FB_SETPOINT.Value ()]]
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // AMC: Ampl Exec (32)
+                        SIGNAL_CH1[k]  = (float)ix32 / QCORDICSQRT*1000.;
+                        SIGNAL_CH2[k]  = (float)iy32 / QEXEC*1000.;
+                }
+                break;
+        case 3: // AXIS4/3delta: PHC Phase Error, delta Freq
+                i += index_shift;
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // PHC: (Phase (24) - PHASE_FB_SETPOINT.Value ())
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // PHC: Freq (48)-Lower(48)
+                        SIGNAL_CH1[k]  = (float)(ix32-phase_setpoint_qcordicatan) / QCORDICATAN*180./M_PI;
+                        SIGNAL_CH2[k]  = (float)dds_phaseinc_rel_to_freq ((long long)iy32); // correct to 44
+                }
+                break;
+        case 4: // AXIS4/5: Phase, Ampl (Tuning configuration)
+                i += index_shift;
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // PHC: Phase (24)
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // AMC: Ampl (24)
+                        SIGNAL_CH1[k]  = (float)ix32 / QCORDICATAN*180./M_PI;
+                        SIGNAL_CH2[k]  = (float)iy32 / QCORDICSQRT*1000.;
+                }
+                break;
+        case 5: // Operation Transfer: Phase, delta Freq, [**McBSP3,4: Ampl, Exec]
+                i += index_shift;
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
-                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                        SIGNAL_CH1[k] = (float)ix32/QCORDICATAN*180./M_PI;
-                        SIGNAL_CH2[k] = (float)iy32/QCORDICSQRT*1000.;
-                }
-                break;
-        case 2:
-                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
-                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                        SIGNAL_CH1[k] = (float)ix32*gain1/Q13*1000.;
-                        SIGNAL_CH2[k] = (float)iy32/QCORDICSQRT*1000.;
-                }
-                break;
-        case 3:
-                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
-                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
-                        SIGNAL_CH1[k]  = (float)ix32*gain1/Q13*1000.;
-                        SIGNAL_CH2[k]  = (float)iy32/QCORDICATAN*180./M_PI;
-                }
-                break;
-        case 4:
-                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl Exec (32)
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Freq (48)-Lower(48)
-                        SIGNAL_CH1[k]  = (float)ix32 / QEXEC * 1000.;
-                        SIGNAL_CH2[k]  = (float)dds_phaseinc_rel_to_freq ((double)iy32); // correct to 44
+                        SIGNAL_CH1[k]  = (float)ix32 / QCORDICATAN*180./M_PI;
+                        SIGNAL_CH2[k]  = (float)dds_phaseinc_rel_to_freq ((long long)iy32); // correct to 44
                 }
                 break;
-        case 5:
-                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl Exec (32)
-                        SIGNAL_CH1[k]  = (float)ix32/QCORDICSQRT*1000.;
-                        SIGNAL_CH2[k]  = (float)iy32 / QEXEC * 1000.;
+        case 8: // Debug and Testing Channels [McBSP bits]
+                i += index_shift;
+                if (trigger_mode >= 5){
+                        i += trigger_adr;
+                        // advance i to trigger position
+                        for (t=0, pos=0; pos < 1000; ++pos){
+                                int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // DBG0
+                                int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // DBG1
+                                if (verbose == 1)
+                                        if ((ix32>>5) & 0xff == 0xff)
+                                                t=1;
+                                else
+                                        t=check_trigger_bit (t, trigger_mode-4, (unsigned int)ix32);
+                                //assign dbgC = {data_read[16-5-8-1:0], frame_bit_counter[7:0], rtrigger, tx, reg_data_rx, frame_start, clkr};
+                                if (t == 1 && verbose == 1) fprintf(stderr, "SCOPE TRIGGER BIN adr:%d  at %d  @x= %d  @y= %d t=%d\n",  trigger_adr, i, ix32, iy32, t);
+
+                                if (t == 1) break;
+                                
+                        }
+                        i -= trigger_adr;
+                }
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
+                        uint32_t ix32 = *((uint32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4;
+                        uint32_t iy32 = *((uint32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4;
+                        SIGNAL_CH1[k] = (float)((uint16_t)(ix32&0xffff));
+                        SIGNAL_CH2[k] = (float)((int16_t)(iy32&0xffff))*gain2/Q13*1000.; // get 1st in lo16
+                        if (dec == 1){ // DDR in hi/low 16
+                                ++k;
+                                SIGNAL_CH1[k] = (float)((uint16_t)((ix32>>16)&0xffff));
+                                SIGNAL_CH2[k] = (float)((int16_t)((iy32>>16)&0xffff))*gain2/Q13*1000.; // get 2nd in hi16
+                        }
                 }
                 break;
-        case 6:
-                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
-                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Freq (48)-Lower(48)
-                        SIGNAL_CH1[k]  = (float)ix32/QCORDICATAN*180./M_PI;
-                        SIGNAL_CH2[k]  = (float)dds_phaseinc_rel_to_freq ((double)iy32); // correct to 44
-                }
-                break;
-        case 7:
-                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // M-DC_iir (32)
-                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                        SIGNAL_CH1[k] = (float)ix32/QLMS*1000.; // mV
-                        SIGNAL_CH2[k] = (float)iy32/QCORDICSQRT*1000.; // mV
-                }
-                break;
-        default :
-                for (k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
+        default : // ***** OTHER -- PLAIN DATA *****
+                i += index_shift;
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
                         int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // direct data
                         int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // direct data
                         SIGNAL_CH1[k]  = (float)ix32;
@@ -1029,128 +1336,145 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
         }
 }
 
-int initiate_bram_write_measurements(){
-        int ret;
-        int status[3];
-        double reading_vector[READING_MAX_VALUES];
-        int decs[] = { 16, 14, 14, 16 };
-
-        rp_PAC_get_single_reading (reading_vector);
-        rp_PAC_get_single_reading (reading_vector);
-        ret =  bram_status(status);
-        if (ret){
-                if (verbose == 1) fprintf(stderr, "BRAM T init:\n");
-                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                            decs[OPERATION.Value ()-6],  1024, 1<<decs[OPERATION.Value ()-6], 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
-                if (verbose == 1) fprintf(stderr, "BRAM T start:\n");
-                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
-                                            decs[OPERATION.Value ()-6],  1024, 1<<decs[OPERATION.Value ()-6], 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
-        }
-        BRAM_WRITE_POS.Value () = status[0];
-        BRAM_DEC_COUNT.Value () = status[1];
-        return ret;
-}
-
-void read_phase_ampl_buffer_avg (double &ampl, double &phase, int initiate){
-        ampl=0.;
-        phase=0.;
-        size_t i = 12;
-        size_t N = 8*SIGNAL_SIZE_DEFAULT;
-
-        if (initiate){
-                int timeout = 100; while ( !initiate_bram_write_measurements () && --timeout>0) usleep (1000);
-        }
-        
+int wait_for_data(int max_wait_ms){
         // wait for buffer full
         int status[3];
-        int max_try=100; while ( !bram_status(status) && --max_try>0) usleep (1000);
+        int max_try=max_wait_ms; while ( !bram_status(status) && --max_try>0) usleep (1000);
 
-        for (int k=0; i<N && k < SIGNAL_SIZE_DEFAULT; ++k){
-                int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
-                int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
-                phase += (SIGNAL_CH1[k] = (double)ix32/QCORDICATAN/M_PI*180.); // PLL Phase deg
-                ampl  += (SIGNAL_CH2[k] = (double)iy32/QCORDICSQRT*1000.); // // Resonator Amplitude Signal Monitor in mV
-        }
-        phase /= SIGNAL_SIZE_DEFAULT;
-        ampl  /= SIGNAL_SIZE_DEFAULT;
+        BRAM_WRITE_POS.Value () = status[0];
+        BRAM_DEC_COUNT.Value () = status[1];
+
+        if (verbose > 1) fprintf(stderr, "wait_for_data. tm=%d S[%d %d %d]\n", max_wait_ms - max_try, status[0], status[1], status[2] );
+        
+        return status[2];
 }
 
-void run_tune_op (int clear_tune_data, double epsilon){
+void measure_and_read_phase_ampl_buffer_avg (double &ampl, double &phase){
+        int k=0;
+        
+        if (verbose > 1) fprintf(stderr, "initiate_bram_write_measurements. RESET and start SINGLE.\n");
+        rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, 4); // TransferMode=4: configure for PHASE, AMPL
+        usleep(5000);
+
+        if (wait_for_data (500)){
+                size_t i = 12+8*512; // skip
+                int count=0;
+                if (verbose > 1) fprintf(stderr, " measure_and_read_phase_ampl_buffer_avg. reading BRAM...\n");
+                // read data
+                ampl=0.;
+                phase=0.;
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Phase (24)
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // Ampl (24)
+                        phase += (SIGNAL_CH1[k] = (double)ix32/QCORDICATAN/M_PI*180.); // PLL Phase deg
+                        ampl  += (SIGNAL_CH2[k] = (double)iy32/QCORDICSQRT*1000.); // // Resonator Amplitude Signal Monitor in mV
+                        count++;
+                }
+                phase /= count;
+                ampl  /= count;
+        } else {
+                double reading_vector[READING_MAX_VALUES];
+                if (verbose > 1) fprintf(stderr, " measure_and_read_phase_ampl_buffer_avg. Failed. Using GPIO fallback snapshot!\n");
+                // try reinitialize transport
+                rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, 4); // configure for PHASE, AMPL
+                usleep(2000);
+                // get GPIO reading
+                rp_PAC_get_single_reading (reading_vector);
+                rp_PAC_get_single_reading (reading_vector);
+                ampl  = reading_vector[4]; // LMS Amplitude (Volume) in mVolts (from A,B)
+                phase = reading_vector[5]; // LMS Phase (from A,B) in deg
+         }
+
+        // clear what is not complete
+        for (; k < SIGNAL_SIZE_DEFAULT; ++k){
+                SIGNAL_CH1[k] = 0.; //phase;
+                SIGNAL_CH2[k] = 0.; //ampl;
+        }
+}
+
+double get_tune_df(double f){
+        if (OPERATION.Value () == 6) // tune simple, linear
+                return TUNE_DFREQ.Value ();
+
+        else if (OPERATION.Value () >= 7){ // tune fast, bigger steps away from center
+                if (fabs (f) >  TUNE_SPAN.Value ()/2)
+                        return 16*TUNE_DFREQ.Value ();
+                else if (fabs (f) >  TUNE_SPAN.Value ()/4)
+                        return 8*TUNE_DFREQ.Value ();
+                else if (fabs (f) >  TUNE_SPAN.Value ()/8)
+                        return 4*TUNE_DFREQ.Value ();
+                else if (fabs (f) >  TUNE_SPAN.Value ()/16)
+                        return 2*TUNE_DFREQ.Value ();
+                else if (fabs (f) >  TUNE_SPAN.Value ()/32)
+                        return 1.3*TUNE_DFREQ.Value ();
+                else
+                        return TUNE_DFREQ.Value ();
+        }
+        
+        return TUNE_DFREQ.Value ();
+}
+
+void *thread_tuning(void *arg) {
+        double epsilon = 0.10; // 0.02 // 2%
         double reading_vector[READING_MAX_VALUES];
         int status[3];
         int ch;
-        static int dir=1;
-        static double f=0.;
-        static double tune_amp_max=0.;
-        static double tune_phase=0.;
-        static double tune_fcenter=0.;
+        int dir=1;
+        double f=0.;
+        double tune_amp_max=0.;
+        double tune_phase=0.;
+        double tune_fcenter=0.;
         double ampl, phase;
-        static int    i_prev = TUNE_SIGNAL_SIZE_DEFAULT/2;
-        static double f_prev = 0.;
+        int    i_prev = TUNE_SIGNAL_SIZE_DEFAULT/2;
+        double f_prev = 0.;
         
-        static int reps[] = { 1, 5, 25, 6 };
-        int waitus[] = { 100000, 80000, 40000, 40000 };
         static int i0 = TUNE_SIGNAL_SIZE_DEFAULT/2;
         double df = TUNE_SPAN.Value ()/(TUNE_SIGNAL_SIZE_DEFAULT-1);
         double ampl_prev=0.;
         double phase_prev=0.;
 
-        // zero buffers, reset state
-        if (clear_tune_data){
-                for (int i = 0; i < TUNE_SIGNAL_SIZE_DEFAULT; i++){
-                        SIGNAL_TUNE_PHASE[i] = 0.;
-                        SIGNAL_TUNE_AMPL[i]  = 0.;
-                        SIGNAL_FRQ[i] = -TUNE_SPAN.Value ()/2 + df*i;
-                           
-                        g_data_signal_ch1pa.erase (g_data_signal_ch1pa.begin());
-                        g_data_signal_ch1pa.push_back (0.0);
+        // zero buffers, reset state at tune start
+        // init tune -------------------------------------------------
+        for (int i = 0; i < TUNE_SIGNAL_SIZE_DEFAULT; i++){
+                SIGNAL_TUNE_PHASE[i] = 0.;
+                SIGNAL_TUNE_AMPL[i]  = 0.;
+                SIGNAL_FRQ[i] = -TUNE_SPAN.Value ()/2 + df*i;
                 
-                        g_data_signal_ch2aa.erase (g_data_signal_ch2aa.begin());
-                        g_data_signal_ch2aa.push_back (0.0);
+                g_data_signal_ch1pa.erase (g_data_signal_ch1pa.begin());
+                g_data_signal_ch1pa.push_back (0.0);
                 
-                        g_data_signal_frq.erase (g_data_signal_frq.begin());
-                        g_data_signal_frq.push_back (0.0);
-                }
-                f = 0.; // f = -TUNE_SPAN.Value ()/4.;
-                dir = 1;
-                i0 = TUNE_SIGNAL_SIZE_DEFAULT/2;
-                i_prev = TUNE_SIGNAL_SIZE_DEFAULT/2;
-                f_prev = 0.;
-
-                rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value() + f);
-                FREQUENCY_TUNE.Value() = f;
-                usleep (25000); // min recover time
-                read_phase_ampl_buffer_avg (ampl, phase, 1);
-                ampl_prev  = ampl;
-                phase_prev = phase;
+                g_data_signal_ch2aa.erase (g_data_signal_ch2aa.begin());
+                g_data_signal_ch2aa.push_back (0.0);
                 
-                CENTER_FREQUENCY.Value () = tune_fcenter;
-                CENTER_PHASE.Value () = tune_phase;
-                CENTER_AMPLITUDE.Value () = tune_amp_max;
-                tune_amp_max=0.;
+                g_data_signal_frq.erase (g_data_signal_frq.begin());
+                g_data_signal_frq.push_back (0.0);
         }
+        f = 0.; // f = -TUNE_SPAN.Value ()/4.;
+        dir = 1;
+        i0 = TUNE_SIGNAL_SIZE_DEFAULT/2;
+        i_prev = TUNE_SIGNAL_SIZE_DEFAULT/2;
+        f_prev = 0.;
 
-        double s = i0 > TUNE_SIGNAL_SIZE_DEFAULT/2 ? 1:-1.;
-        double x = (double)(i0-TUNE_SIGNAL_SIZE_DEFAULT/2); x *= x; x /= TUNE_SIGNAL_SIZE_DEFAULT/2; x *= s;
-        int k = 0;
-        for (int ti = 0; ti < reps[OPERATION.Value ()-6]; ++ti){
-                read_phase_ampl_buffer_avg (ampl, phase, clear_tune_data);
+        // get intial reading
+        rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value() + f);
+        FREQUENCY_TUNE.Value() = f;
+        usleep (25000); // min recover time
+        measure_and_read_phase_ampl_buffer_avg (ampl, phase);
+        ampl_prev  = ampl;
+        phase_prev = phase;
+        
+        CENTER_FREQUENCY.Value () = tune_fcenter;
+        CENTER_PHASE.Value () = tune_phase;
+        CENTER_AMPLITUDE.Value () = tune_amp_max;
+        tune_amp_max=0.;
 
-                // wait for stable reading
-                int max_try = 30;
-                while (fabs(ampl-ampl_prev) > epsilon*ampl && --max_try>0){
-                        read_phase_ampl_buffer_avg (ampl, phase, 1);
-                        ampl_prev  = ampl;
-                        phase_prev = phase;
-                }
-                ampl_prev  = ampl;
-                phase_prev = phase;
+        // ---------------------------------------------------------------
 
-                
+        while (thread_data__tune_control){
+                double s = i0 > TUNE_SIGNAL_SIZE_DEFAULT/2 ? 1:-1.;
+                double x = (double)(i0-TUNE_SIGNAL_SIZE_DEFAULT/2); x *= x; x /= TUNE_SIGNAL_SIZE_DEFAULT/2; x *= s;
+                int k = 0;
+              
                 if (OPERATION.Value () == 9){
                         // TUNE mode: RS (Random Search)
                         // if stable or last rep, continue to near by point
@@ -1186,18 +1510,18 @@ void run_tune_op (int clear_tune_data, double epsilon){
                         g_data_signal_frq.erase (g_data_signal_frq.begin());
                         g_data_signal_frq.push_back (f);
 
-                        if (f < TUNE_SPAN.Value ()/2 && dir == 1)
-                                f += TUNE_DFREQ.Value ();
-                        else if (dir == 1){
+                        if (f < TUNE_SPAN.Value ()/2 && dir == 1){
+                                f += get_tune_df (f);
+                        } else if (dir == 1){
                                 dir = -1;
                                 CENTER_FREQUENCY.Value () = tune_fcenter;
                                 CENTER_PHASE.Value () = tune_phase;
                                 CENTER_AMPLITUDE.Value () = tune_amp_max;
                                 tune_amp_max=0.;
                         }
-                        if (f > -TUNE_SPAN.Value ()/2 && dir == -1)
-                                f -= TUNE_DFREQ.Value ();
-                        else if (dir == -1){
+                        if (f > -TUNE_SPAN.Value ()/2 && dir == -1){
+                                f -= get_tune_df (f);
+                        } else if (dir == -1){
                                 dir = 1;
                                 CENTER_FREQUENCY.Value () = tune_fcenter;
                                 CENTER_PHASE.Value () = tune_phase;
@@ -1206,44 +1530,42 @@ void run_tune_op (int clear_tune_data, double epsilon){
                         }
                 }
                 // next
+                if (verbose > 1) fprintf(stderr, "Tuning at: %g \n", FREQUENCY_MANUAL.Value() + f);
+
+                // adjust DDS
                 rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value() + f);
                 FREQUENCY_TUNE.Value() = f;
-                usleep (25000); // min recover time
 
-                int timeout = 100; while ( !initiate_bram_write_measurements () && --timeout>0) usleep (1000);
+                // min recover time after adjusting tune
+                if (OPERATION.Value () == 6) // tune
+                        usleep (5000);
+                else if (OPERATION.Value () == 7) // tune F
+                        usleep (8000);
+                else if (OPERATION.Value () == 8) // tune FF
+                        usleep (16000);
+                else // tune RS
+                        usleep (32000 + (unsigned long) (100000 * (1.-fabs (f)/TUNE_SPAN.Value ())  ));
 
-                if (reps[OPERATION.Value ()-6] > 1)
-                        usleep (waitus[OPERATION.Value ()-6]);
-                
+                // get a reading
+                measure_and_read_phase_ampl_buffer_avg (ampl, phase);
+
+                // check for stable reading
+                int max_try = 30;
+                while (fabs(ampl-ampl_prev) > epsilon*ampl && --max_try>0){
+                        if (verbose > 1) fprintf(stderr, "wait for tune to stabilize, ampl error: %g \n", fabs(ampl-ampl_prev));
+                        // try again
+                        measure_and_read_phase_ampl_buffer_avg (ampl, phase);
+                        ampl_prev  = ampl;
+                        phase_prev = phase;
+                }
+                ampl_prev  = ampl;
+                phase_prev = phase;
+
+                // update
                 if (ampl > tune_amp_max){
                         tune_amp_max = ampl;
                         tune_phase = phase;
                         tune_fcenter = FREQUENCY_MANUAL.Value() + f;
-                }
-
-                rp_PAC_get_single_reading (reading_vector);
- 
-                // Slow GPIO MONITOR in strip plotter mode
-                // Push it to vector
-                ch = TRANSPORT_CH3.Value ();
-                if (verbose > 3) fprintf(stderr, "UpdateSignals: CH3=%d \n", ch);
-                g_data_signal_ch3.erase (g_data_signal_ch3.begin());
-                g_data_signal_ch3.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 0] * GAIN3.Value ());
-
-                ch = TRANSPORT_CH4.Value ();
-                if (verbose > 3) fprintf(stderr, "UpdateSignals: CH4=%d \n", ch);
-                g_data_signal_ch4.erase (g_data_signal_ch4.begin());
-                g_data_signal_ch4.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 1] * GAIN4.Value ());
-
-                ch = TRANSPORT_CH5.Value ();
-                if (verbose > 3) fprintf(stderr, "UpdateSignals: CH5=%d \n", ch);
-                g_data_signal_ch5.erase (g_data_signal_ch5.begin());
-                g_data_signal_ch5.push_back (reading_vector[ch >=0 && ch < READING_MAX_VALUES ? ch : 1] * GAIN5.Value ());
-
-                for (int i = 0; i < SIGNAL_SIZE_DEFAULT; i++){
-                        SIGNAL_CH3[i] = g_data_signal_ch3[i];
-                        SIGNAL_CH4[i] = g_data_signal_ch4[i];
-                        SIGNAL_CH5[i] = g_data_signal_ch5[i];
                 }
 
                 if (OPERATION.Value () == 9){
@@ -1255,62 +1577,77 @@ void run_tune_op (int clear_tune_data, double epsilon){
                                 SIGNAL_FRQ[i] = g_data_signal_frq[i];
                         }
                 }
+                i0 = (TUNE_SIGNAL_SIZE_DEFAULT-1)*(double)rand () / RAND_MAX;
         }
-        i0 = (TUNE_SIGNAL_SIZE_DEFAULT-1)*(double)rand () / RAND_MAX;
+
+        return NULL;
 }
 
 void UpdateSignals(void)
 {
         static int clear_tune_data=1;
+        static pthread_t tune_thread;
         double reading_vector[READING_MAX_VALUES];
         int ch;
         int status[3];
-        int n=1024;
+        static int last_op=0;
         
         if (verbose > 3) fprintf(stderr, "UpdateSignals()\n");
 
-        // Scope, Tune in single shot mode
-        if ( OPERATION.Value () == 2){
-                if (verbose > 3) fprintf(stderr, "re-arm read BRAM writer\n");
-                if (verbose == 1) fprintf(stderr, "BRAM read:\n");
-                read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
-                if (bram_status(status) && !SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
-                        if (verbose == 1) fprintf(stderr, "BRAM T init:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                                    SHR_DEC_DATA.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                        if (verbose == 1) fprintf(stderr, "BRAM T start:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
-                                                    SHR_DEC_DATA.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                }
-                BRAM_WRITE_POS.Value () = status[0];
-                BRAM_DEC_COUNT.Value () = status[1];
-        }
+        rp_PAC_get_single_reading (reading_vector);
+        bram_status(status);
 
-        // LOOP READ (FIFO MODE)
-        if ( OPERATION.Value () == 5 ){
-                int n=1024;
-                // udpate
-                rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_LOOP,
-                                            SHR_DEC_DATA.Value (), n, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
-                bram_status(status);
+        switch ( OPERATION.Value () ){
+        case 2:
+                if (verbose == 1) fprintf(stderr, "UpdateSignals SCOPE OPERATION=2\n");
+                // Scope mode, wait for trace to completed, then auto retrigger start
+                if (last_op != OPERATION.Value ()){ // initiate
+                        rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, TRANSPORT_MODE.Value ());
+                        usleep(10000);
+                }
+                if (bram_status(status)){ // ready?
+                        // read
+                        read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
+                        // trigger next
+                        rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, TRANSPORT_MODE.Value ());
+                } else { // try re-initiate
+                        if (SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ())
+                                rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, TRANSPORT_MODE.Value ());
+                }
+                break;
+        case 4:
+                if (verbose == 1) fprintf(stderr, "UpdateSignals SCOPE-SS OPERATION=4\n");
+                // Scope in single shot mode, just read what we got and update signals
                 read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
-                rp_PAC_get_single_reading (reading_vector);
-                BRAM_WRITE_POS.Value () = status[0];
-                BRAM_DEC_COUNT.Value () = status[1];
-        }
-        
-        // TUNE MODE
-        if ( OPERATION.Value () >= 6 && OPERATION.Value () <= 9){
-                run_tune_op (clear_tune_data, 0.02); // 2% error
-                rp_PAC_get_single_reading (reading_vector);
-                clear_tune_data = 0; // after completed / mode switch zero tune data buffers
-        } else {
+                break;
+        case 5:
+                if (verbose == 1) fprintf(stderr, "UpdateSignals STREAM OPERATION=5\n");
+                // Streaming / Loop Mode -- just read what ever we got and update signals
+                read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
+                rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_LOOP, 4096, TRANSPORT_MODE.Value ());
+                break;
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+        // all TUNE MODEs
+                if (!thread_data__tune_control){
+                        thread_data__tune_control=1;
+                        if ( pthread_create( &tune_thread, NULL, thread_tuning, NULL) ) {
+                                fprintf(stderr, "Error creating tune thread.\n");
+                        } 
+                        clear_tune_data = 0; // after completed / mode switch zero tune data buffers
+                }
+                break;
+        }        
+
+        if (OPERATION.Value () < 6){
+                if (thread_data__tune_control){
+                    thread_data__tune_control=0;
+                    if ( pthread_join ( tune_thread, NULL ) ) {
+                            fprintf(stderr, "Error joining tune thread.\n");
+                    }
+                }
                 clear_tune_data = 1;
                 if (verbose > 3) fprintf(stderr, "UpdateSignals get GPIO reading:\n");
 
@@ -1344,12 +1681,18 @@ void UpdateSignals(void)
         
         if (verbose > 3) fprintf(stderr, "UpdateSignal complete.\n");
 
+        BRAM_WRITE_POS.Value ()   = status[0];
+        BRAM_DEC_COUNT.Value ()   = status[1];
+
+        rp_PAC_get_single_reading (reading_vector);
         VOLUME_MONITOR.Value ()   = reading_vector[4]; // Resonator Amplitude Signal Monitor in mV
         PHASE_MONITOR.Value ()    = reading_vector[5]; // PLL Phase in deg
         EXEC_MONITOR.Value ()     = reading_vector[8]; // Exec Amplitude Monitor in mV
         DDS_FREQ_MONITOR.Value () = reading_vector[9]; // DDS Freq Monitor in Hz
-        
+
         rp_PAC_auto_dc_offset_correct ();
+
+        last_op = OPERATION.Value (); 
 }
 
 void UpdateParams(void){
@@ -1397,6 +1740,7 @@ void UpdateParams(void){
 
 void OnNewParams(void)
 {
+        int x=0;
         static int ppv=0;
         static int spv=0;
         static int operation=0;
@@ -1430,7 +1774,7 @@ void OnNewParams(void)
         SHR_DEC_DATA.Update ();
         TUNE_SPAN.Update ();
         TUNE_DFREQ.Update ();
-        
+
         FREQUENCY_MANUAL.Update ();
         FREQUENCY_CENTER.Update ();
         AUX_SCALE.Update ();
@@ -1463,95 +1807,75 @@ void OnNewParams(void)
         if (verbose > 3) fprintf(stderr, "OnNewParams: verbose=%d\n", PACVERBOSE.Value ());
         verbose = PACVERBOSE.Value ();
 
+        BRAM_SCOPE_TRIGGER_MODE.Update ();
+        BRAM_SCOPE_TRIGGER_POS.Update ();
+        BRAM_SCOPE_TRIGGER_LEVEL.Update ();
+        BRAM_SCOPE_SHIFT_POINTS.Update ();
+        
         TRANSPORT_DECIMATION.Update ();
         TRANSPORT_MODE.Update ();
         TRANSPORT_CH3.Update ();
         TRANSPORT_CH4.Update ();
         TRANSPORT_CH5.Update ();
 
+        TRANSPORT_TAU_DFREQ.Update ();
+        TRANSPORT_TAU_PHASE.Update ();
+        TRANSPORT_TAU_EXEC.Update ();
+        TRANSPORT_TAU_AMPL.Update ();
+
+        AUX_FB_SETPOINT.Update ();
+        AUX_FB_CP.Update ();
+        AUX_FB_CI.Update ();
+        AUX_FB_UPPER.Update ();
+        AUX_FB_LOWER.Update ();
+
         if ( OPERATION.Value () > 0 && OPERATION.Value () != operation ){
                 operation = OPERATION.Value ();
-                switch (OPERATION.Value ()){
+                switch (operation){
                 case 1:
                         rp_PAC_auto_dc_offset_adjust ();
                         if (verbose > 0) fprintf(stderr, "OnNewParams: OP=1 Auto Offset Run, DC=%f mV\n", 1000.*signal_dc_measured);
                         pacpll_text.Value() = "Auto Offset completed.                 ";
                         break;
                 case 2: // Scope
-                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Start-Finish, Repeat Hilevel BRAM Transport (Scope/Tune)\n");
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                                    SHR_DEC_DATA.Value (),  1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                        if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
-                                                    SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+                        break;
+                case 3: // Reset
+                        rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_RESET, 2048, TRANSPORT_MODE.Value ());
+                        break;
+                case 4: // Single Shot
+                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        fprintf(stderr, "PAC TRANSPORT MANUAL SS0-0: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+
+                        rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_RESET, 4096, TRANSPORT_MODE.Value ());
+                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        fprintf(stderr, "PAC TRANSPORT MANUAL SS-R1: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+
+                        usleep (20000);
+                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        fprintf(stderr, "PAC TRANSPORT MANUAL SS-R2: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+
+                        rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, TRANSPORT_MODE.Value ());
+                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        fprintf(stderr, "PAC TRANSPORT MANUAL SS-S3: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+
+                        usleep (20000);
+                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        fprintf(stderr, "PAC TRANSPORT MANUAL SSS-4: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+                        usleep (100000);
+                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        fprintf(stderr, "PAC TRANSPORT MANUAL SSS-5: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+
+                        break;
+                case 5: // Operation Contineous FIFO Transport Mode (scanning)
+                        rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_LOOP, 4096, TRANSPORT_MODE.Value ());
                         break;
                 case 6: // Tune
-                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Start-Finish, Repeat Hilevel BRAM Transport (Scope/Tune)\n");
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                        if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
-                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
                         break;
                 case 7: // Tune fast
-                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Start-Finish, Repeat Hilevel BRAM Transport (Scope/Tune)\n");
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                        if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
-                                                    16,  1024, 65536, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
                         break;
                 case 8: // Tune very fast
-                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Start-Finish, Repeat Hilevel BRAM Transport (Scope/Tune)\n");
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                                    12,  1024, 4096, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                        if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
-                                                    12,  1024, 4096, 1, AUX_SCALE.Value (), FREQUENCY_CENTER.Value()); // Phase, Ampl
                         break;
-                case 3:
-                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=3 Init/ResetStart BRAM Transport\n");
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                        if (verbose == 1) fprintf(stderr, "1BRAM T init:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                                    SHR_DEC_DATA.Value (),  1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
-                        rp_PAC_get_single_reading (reading_vector);
-                        break;
-                case 4:
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                                    SHR_DEC_DATA.Value (),  1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=4 Single Shot BRAM Transport -- test\n");
-                        rp_PAC_get_single_reading (reading_vector);
-                        if (verbose == 1) fprintf(stderr, "1BRAM T start:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE,
-                                                    SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
-                        break;
-                case 5:
-                        if (verbose > 0) fprintf(stderr, "OnNewParams: OP=5 Start Loop BRAM Transport for loop/FIFO mode\n");
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_INIT,
-                                                    SHR_DEC_DATA.Value (),  1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                        rp_PAC_get_single_reading (reading_vector);
-                        if (verbose == 1) fprintf(stderr, "1BRAM read:\n");
-                        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_LOOP,
-                                                    SHR_DEC_DATA.Value (), 1024, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
+                case 9: // Tune RS
                         break;
                 }
         }
