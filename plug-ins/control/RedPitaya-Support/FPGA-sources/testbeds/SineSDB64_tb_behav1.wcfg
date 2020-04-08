@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="lms_phase_amplitude_detector_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="lms_phase_amplitude_detector_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="31000000001fs"></ZoomEndTime>
+      <Cursor1Time time="31000000000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="810"></NameColumnWidth>
+      <ValueColumnWidth column_width="319"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="22" />
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/s_sdb64/RealP">
+      <obj_property name="ElementShortName">RealP[63:0]</obj_property>
+      <obj_property name="ObjectShortName">RealP[63:0]</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/s_sdb64/ImaP">
+      <obj_property name="ElementShortName">ImaP[63:0]</obj_property>
+      <obj_property name="ObjectShortName">ImaP[63:0]</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/lms_phase_amplitude_Detector/s">
+      <obj_property name="ElementShortName">s[25:0]</obj_property>
+      <obj_property name="ObjectShortName">s[25:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/lms_phase_amplitude_Detector/c">
+      <obj_property name="ElementShortName">c[25:0]</obj_property>
+      <obj_property name="ObjectShortName">c[25:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/lms_phase_amplitude_Detector/mdc">
+      <obj_property name="ElementShortName">mdc[25:0]</obj_property>
+      <obj_property name="ObjectShortName">mdc[25:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+      <obj_property name="AnalogYRangeType">ANALOG_YRANGETYPE_AUTO</obj_property>
+      <obj_property name="AnalogYRangeMin">17310.000000</obj_property>
+      <obj_property name="AnalogYRRangeMax">17317.900000</obj_property>
+      <obj_property name="AnalogInterpolation">ANALOG_INTERPOLATION_LINEAR</obj_property>
+      <obj_property name="AnalogOffscale">ANALOG_OFFSCALE_HIDE</obj_property>
+      <obj_property name="AnalogHorizLine">0.000000</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/lms_phase_amplitude_detector_tb/lms_phase_amplitude_Detector/sp">
+      <obj_property name="ElementShortName">sp</obj_property>
+      <obj_property name="ObjectShortName">sp</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/lms_phase_amplitude_detector_tb/lms_phase_amplitude_Detector/cp">
+      <obj_property name="ElementShortName">cp</obj_property>
+      <obj_property name="ObjectShortName">cp</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/lms_phase_amplitude_detector_tb/lms_phase_amplitude_Detector/sc_zero">
+      <obj_property name="ElementShortName">sc_zero</obj_property>
+      <obj_property name="ObjectShortName">sc_zero</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/lms_phase_amplitude_Detector/mdc_mue">
+      <obj_property name="ElementShortName">mdc_mue[57:0]</obj_property>
+      <obj_property name="ObjectShortName">mdc_mue[57:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/signal">
+      <obj_property name="ElementShortName">signal[15:0]</obj_property>
+      <obj_property name="ObjectShortName">signal[15:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/dc_tau">
+      <obj_property name="ElementShortName">dc_tau[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dc_tau[31:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/dc">
+      <obj_property name="ElementShortName">dc[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dc[31:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/lms_phase_amplitude_Detector/m">
+      <obj_property name="ElementShortName">m[25:0]</obj_property>
+      <obj_property name="ObjectShortName">m[25:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/lms_phase_amplitude_Detector/m1">
+      <obj_property name="ElementShortName">m1[25:0]</obj_property>
+      <obj_property name="ObjectShortName">m1[25:0]</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/lms_phase_amplitude_Detector/mdc_mue">
+      <obj_property name="ElementShortName">mdc_mue[57:0]</obj_property>
+      <obj_property name="ObjectShortName">mdc_mue[57:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/phase_Unwrap/phase_unwrapped">
+      <obj_property name="ElementShortName">phase_unwrapped[31:0]</obj_property>
+      <obj_property name="ObjectShortName">phase_unwrapped[31:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+      <obj_property name="AnalogYRangeType">ANALOG_YRANGETYPE_FIXED</obj_property>
+      <obj_property name="AnalogYRangeMin">-6.83653e+07</obj_property>
+      <obj_property name="AnalogYRRangeMax">9.97023e+07</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/lms_phase_amplitude_detector_tb/clock">
+      <obj_property name="ElementShortName">clock</obj_property>
+      <obj_property name="ObjectShortName">clock</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/t">
+      <obj_property name="ElementShortName">t[31:0]</obj_property>
+      <obj_property name="ObjectShortName">t[31:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/td_ph">
+      <obj_property name="ElementShortName">td_ph[24:0]</obj_property>
+      <obj_property name="ObjectShortName">td_ph[24:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/phase_Unwrap/dp01">
+      <obj_property name="ElementShortName">dp01[24:0]</obj_property>
+      <obj_property name="ObjectShortName">dp01[24:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/phase_Unwrap/p0">
+      <obj_property name="ElementShortName">p0[23:0]</obj_property>
+      <obj_property name="ObjectShortName">p0[23:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/lms_phase_amplitude_detector_tb/phase_Unwrap/phase_wrap">
+      <obj_property name="ElementShortName">phase_wrap[31:0]</obj_property>
+      <obj_property name="ObjectShortName">phase_wrap[31:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+</wave_config>

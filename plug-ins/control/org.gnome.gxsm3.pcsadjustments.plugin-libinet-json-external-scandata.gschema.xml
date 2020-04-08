@@ -162,6 +162,44 @@
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-scope-width' </summary>
       <description>Configuration for GXSM Entry with ID 'rp-pacpll-scope-width'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
+
+    <key name="rp-pacpll-scope-height" type="ad">
+      <default>[1024, 128, 1e+111, -1e+111, 1e+111, 1e+111, 1, 1, 10, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-scope-width' </summary>
+      <description>Configuration for GXSM Entry with ID 'rp-pacpll-scope-height'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
+    <key name="rp-pacpll-rp-verbose-level" type="ad">
+      <default>[10, 1, 1e+111, -1e+111, 1e+111, 1e+111, 1, 1, 10, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-scope-width' </summary>
+      <description>Configuration for GXSM Entry with ID 'rp-pacpll-verbose-level'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
+    <key name="rp-pacpll-pac-transport-tau-dfreq" type="ad">
+      <default>[6.3e+07, -1, 1e+111, -1e+111, 1e+111, 1e+111, 10, 1, 10, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-pac-transport-tau-dfreq' </summary>
+      <description>Configuration for GXSM Entry with ID 'rp-pacpll-pac-transport-tau-dfreq'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
+    <key name="rp-pacpll-pac-transport-tau-phase" type="ad">
+      <default>[6.3e+07, -1, 1e+111, -1e+111, 1e+111, 1e+111, 10, 1, 10, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-pac-transport-tau-phase' </summary>
+      <description>Configuration for GXSM Entry with ID 'rp-pacpll-pac-transport-tau-phase'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
+    <key name="rp-pacpll-pac-transport-tau-exec" type="ad">
+      <default>[6.3e+07, -1, 1e+111, -1e+111, 1e+111, 1e+111, 10, 1, 10, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-pac-transport-tau-exec' </summary>
+      <description>Configuration for GXSM Entry with ID 'rp-pacpll-pac-transport-tau-exec'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
+    <key name="rp-pacpll-pac-transport-tau-ampl" type="ad">
+      <default>[6.3e+07, -1, 1e+111, -1e+111, 1e+111, 1e+111, 10, 1, 10, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'rp-pacpll-pac-transport-tau-ampl' </summary>
+      <description>Configuration for GXSM Entry with ID 'rp-pacpll-pac-transport-tau-ampl'. Setup of Min/Max Range (warnign: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
+
   </schema>
 
 </schemalist>

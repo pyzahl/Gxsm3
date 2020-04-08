@@ -159,8 +159,44 @@
 
     <key name="rp-pacpll-scope-width" type="d">
       <default>512</default>
-      <summary>PCS Remote-ID: 'rp-pacpll-SCOPE-WIDTH', Default/U: 512 Hz     </summary>
-      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-SCOPE-WIDT', Default/U: 512 Hz, Adjustment PCS Name: 'rp-pacpll-SCOPE-WIDTH' </description>
+      <summary>PCS Remote-ID: 'rp-pacpll-scope-width', Default/U: 760     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-scope_width', Default: 760, Adjustment PCS Name: 'rp-pacpll-scope-width' </description>
+    </key>
+
+    <key name="rp-pacpll-scope-height" type="d">
+      <default>256</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-scope-height', Default/U: 256     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-scope_height', Default: 256, Adjustment PCS Name: 'rp-pacpll-scope-height' </description>
+    </key>
+
+    <key name="rp-pacpll-rp-verbose-level" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-rp-verbose-level', Default/U: 0     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-verbose-level', Default: 0, Adjustment PCS Name: 'rp-pacpll-verbose-level' </description>
+    </key>
+    
+    <key name="rp-pacpll-pac-transport-tau-dfreq" type="d">
+      <default>-1</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PAC-TRANSPORT-TAU-DFREQ', Default/U:     -1 ms     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PAC-TRANSPORT-TAU-DFREQ', Default/U:     -1 ms    , Adjustment PCS Name: 'rp-pacpll-PAC-TRANSPORT-TAU-DFREQ' </description>
+    </key>
+
+    <key name="rp-pacpll-pac-transport-tau-phase" type="d">
+      <default>-1</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PAC-TRANSPORT-TAU-PHASE', Default/U:     -1 ms     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PAC-TRANSPORT-TAU-PHASE', Default/U:     -1 ms    , Adjustment PCS Name: 'rp-pacpll-PAC-TRANSPORT-TAU-PHASE' </description>
+    </key>
+
+    <key name="rp-pacpll-pac-transport-tau-exec" type="d">
+      <default>-1</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PAC-TRANSPORT-TAU-EXEC', Default/U:     -1 ms     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PAC-TRANSPORT-TAU-EXEC', Default/U:     -1 ms    , Adjustment PCS Name: 'rp-pacpll-PAC-TRANSPORT-TAU-EXEC' </description>
+    </key>
+
+    <key name="rp-pacpll-pac-transport-tau-ampl" type="d">
+      <default>-1</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PAC-TRANSPORT-TAU-AMPL', Default/U:     -1 ms     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PAC-TRANSPORT-TAU-AMPL', Default/U:     -1 ms    , Adjustment PCS Name: 'rp-pacpll-PAC-TRANSPORT-TAU-AMPL' </description>
     </key>
 
   </schema>

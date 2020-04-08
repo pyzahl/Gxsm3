@@ -111,6 +111,8 @@ struct PACPLL_parameters {
         double lck_phase;
 
         double set_singleshot_transport_trigger;
+
+        double transport_tau[4];
 };
 
 struct PACPLL_signals {
@@ -224,6 +226,7 @@ public:
 	static void scan_start_callback (gpointer user_data);
 	static void scan_stop_callback (gpointer user_data);
 
+	static void pac_tau_transport_changed (Param_Control* pcs, gpointer user_data);
 	static void pac_tau_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void pac_frequency_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void pac_volume_parameter_changed (Param_Control* pcs, gpointer user_data);
@@ -253,7 +256,14 @@ public:
         static void scope_ac_ch2_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void scope_ac_ch3_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
+        static void scope_z_ch1_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void scope_z_ch2_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+
+        static void scope_buffer_position_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+
+        
         static void choice_update_period_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void choice_trigger_mode_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_auto_set_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
 	void send_all_parameters ();
@@ -278,8 +288,8 @@ public:
                                gpointer user_data);
         static void on_closed (SoupWebsocketConnection *ws, gpointer user_data);
         
-        void write_parameter (const gchar *paramater_id, double value);
-        void write_parameter (const gchar *paramater_id, int value);
+        void write_parameter (const gchar *paramater_id, double value, const gchar *fmt=NULL, gboolean dbg=FALSE);
+        void write_parameter (const gchar *paramater_id, int value, gboolean dbg=FALSE);
 
         static int json_dump(const char *js, jsmntok_t *t, size_t count, int indent) {
                 int i, j, k;
@@ -436,10 +446,22 @@ public:
                 return -y_hi*2*((db-dB_hi)/20./dB_mags+0.5);
         };
         inline double deg_to_y (double deg, double y_hi){
+#if 0 // use auto extent of range
                 if (fabs (deg) > 180.*deg_extend)
                         if (deg_extend < 4)
                                 deg_extend++;
+#endif
                 return -y_hi*deg/180./deg_extend;
+        };
+        inline double freq_to_y (double df, double y_hi){
+                return -y_hi*df/10.0;
+        };
+        inline double binary_to_y (double x, int bit, int ch, double y_hi, int bits=8, int num_ch=2){
+                int    bitv = (double) (1 << bit);
+                double on = 0.4 * (((int)(x) & bitv) ? 1 : 0);
+                double pos = ch*y_hi/(num_ch-1);
+                double bith = 0.8*y_hi/(num_ch-1)/bits;
+                return -(-y_hi+y_hi*ch+bith*(bit+on));
         };
          
 private:
@@ -454,6 +476,8 @@ private:
         int operation_mode;
         int channel_selections[7];
         int deg_extend;
+
+        double bram_window_length; // scope window length in sec
         
         PACPLL_parameters parameters;
         PACPLL_signals signals;
@@ -463,12 +487,14 @@ private:
         
         gboolean run_scope;
         gboolean scope_ac[5];
+        double scope_z[2];
         double scope_dc_level[5];
         int transport;
         double gain_scale[5];
         double time_scale[5];
         gboolean unwrap_phase_plot;
         double scope_width_points;
+        double scope_height_points;
         GtkWidget *signal_graph;
        
         GtkWidget *input_rpaddress;
@@ -478,6 +504,7 @@ private:
         Gtk_EntryControl *input_ddsfreq;
 
         gint debug_level; 
+        double rp_verbose_level; 
         UnitObj *Unity, *Hz, *Deg, *VoltDeg, *Volt, *mVolt, *VoltHz, *dB, *Time, *mTime, *uTime;
 
 	GSList*   SPMC_RemoteEntryList;
