@@ -151,6 +151,8 @@ CDoubleParameter EXEC_MONITOR("EXEC_MONITOR", CBaseParameter::RW, 0, 0, -1000.0,
 CDoubleParameter DDS_FREQ_MONITOR("DDS_FREQ_MONITOR", CBaseParameter::RW, 0, 0, 0.0, 25e6); // Hz
 CDoubleParameter PHASE_MONITOR("PHASE_MONITOR", CBaseParameter::RW, 0, 0, -180.0, 180.0); // deg
 CDoubleParameter VOLUME_MONITOR("VOLUME_MONITOR", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
+CDoubleParameter DFREQ_MONITOR("DFREQ_MONITOR", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // Hz
+CDoubleParameter CONTROL_DFREQ_MONITOR("CONTROL_DFREQ_MONITOR", CBaseParameter::RW, 0, 0, -10000.0, 10000.0); // mV
 
 CDoubleParameter CENTER_AMPLITUDE("CENTER_AMPLITUDE", CBaseParameter::RW, 0, 0, 0.0, 1000.0); // mV
 CDoubleParameter CENTER_FREQUENCY("CENTER_FREQUENCY", CBaseParameter::RW, 0, 0, 0.0, 25e6); // Hz
@@ -185,6 +187,7 @@ CBooleanParameter PHASE_UNWRAPPING_ALWAYS("PHASE_UNWRAPPING_ALWAYS", CBaseParame
 CBooleanParameter QCONTROL("QCONTROL", CBaseParameter::RW, false, 0);
 CBooleanParameter LCK_AMPLITUDE("LCK_AMPLITUDE", CBaseParameter::RW, false, 0);
 CBooleanParameter LCK_PHASE("LCK_PHASE", CBaseParameter::RW, false, 0);
+CBooleanParameter DFREQ_CONTROLLER("DFREQ_CONTROLLER", CBaseParameter::RW, false, 0);
 
 //void rp_PAC_set_phase_controller64 (double setpoint, double cp, double ci, double upper, double lower)
 CDoubleParameter AMPLITUDE_FB_SETPOINT("AMPLITUDE_FB_SETPOINT", CBaseParameter::RW, 20, 0, 0, 1000); // mV
@@ -199,19 +202,20 @@ CDoubleParameter PHASE_FB_CI("PHASE_FB_CI", CBaseParameter::RW, 0, 0, -1000, 100
 CDoubleParameter FREQ_FB_UPPER("FREQ_FB_UPPER", CBaseParameter::RW, 32768.0, 0, 0, 25e6); // Hz
 CDoubleParameter FREQ_FB_LOWER("FREQ_FB_LOWER", CBaseParameter::RW, 0.1, 0, 0, 25e6); // Hz
 
-// AUX Controller (Hz -> Bias)
-CDoubleParameter AUX_FB_SETPOINT("AUX_FB_SETPOINT", CBaseParameter::RW, 0, 0, -100, 100); // Hz
-CDoubleParameter AUX_FB_CP("AUX_FB_CP", CBaseParameter::RW, 0, 0, -1000, 1000); 
-CDoubleParameter AUX_FB_CI("AUX_FB_CI", CBaseParameter::RW, 0, 0, -1000, 1000);
-CDoubleParameter AUX_FB_UPPER("AUX_FB_UPPER", CBaseParameter::RW,  0.1, 0, -10, 10); // Control
-CDoubleParameter AUX_FB_LOWER("AUX_FB_LOWER", CBaseParameter::RW, -0.1, 0, -10, 10); // Control
+// dFREQ Controller (Hz -> Control for Bias / Z / ...)
+CDoubleParameter DFREQ_FB_SETPOINT("DFREQ_FB_SETPOINT", CBaseParameter::RW, 0, 0, -100, 100); // Hz
+CDoubleParameter DFREQ_FB_CP("DFREQ_FB_CP", CBaseParameter::RW, 0, 0, -1000, 1000); 
+CDoubleParameter DFREQ_FB_CI("DFREQ_FB_CI", CBaseParameter::RW, 0, 0, -1000, 1000);
+CDoubleParameter DFREQ_FB_UPPER("DFREQ_FB_UPPER", CBaseParameter::RW,  100.0, 0, -10000, 10000); // Control
+CDoubleParameter DFREQ_FB_LOWER("DFREQ_FB_LOWER", CBaseParameter::RW, -100.0, 0, -10000, 10000); // Control
 
+/*
 // Transport LP TAU parameters
 CDoubleParameter TRANSPORT_TAU_DFREQ("TRANSPORT_TAU_DFREQ", CBaseParameter::RW, 0.01, 0, -1, 10e3); 
 CDoubleParameter TRANSPORT_TAU_PHASE("TRANSPORT_TAU_PHASE", CBaseParameter::RW, 0.01, 0, -1, 10e3); 
 CDoubleParameter TRANSPORT_TAU_EXEC("TRANSPORT_TAU_EXEC", CBaseParameter::RW, 0.01, 0, -1, 10e3); 
 CDoubleParameter TRANSPORT_TAU_AMPL("TRANSPORT_TAU_AMPL", CBaseParameter::RW, 0.01, 0, -1, 10e3); 
-
+*/
 
 // PHASE Valid for PAC time constant set to 15us:
 // Cp = 20*log10 ( 1.6575e-5*Fc )
@@ -371,6 +375,7 @@ void rp_PAC_App_Release(){
 #define QAMCOEF Q22
 #define QFREQ   Q47
 #define QPHCOEF Q31
+#define QDFCOEF Q31
 
 long double cpu_values[4] = {0, 0, 0, 0}; /* reading only user, nice, system, idle */
 
@@ -511,12 +516,14 @@ void rp_PAC_set_volume (double volume){
 
 #define PACPLL_CFG_CONTROL_LOOPS 3
 // Configure Control Switched: Loops Ampl and Phase On/Off, Unwrapping, QControl
-void rp_PAC_configure_switches (int phase_ctrl, int am_ctrl, int phase_unwrap_always, int qcontrol, int lck_amp, int lck_phase){
+void rp_PAC_configure_switches (int phase_ctrl, int am_ctrl, int phase_unwrap_always, int qcontrol, int lck_amp, int lck_phase, int dfreq_ctrl){
         if (verbose > 2) fprintf(stderr, "##Configure loop controls: %x",  phase_ctrl ? 1:0 | am_ctrl ? 2:0); 
         set_gpio_cfgreg_int32 (PACPLL_CFG_CONTROL_LOOPS,
-                               (phase_ctrl ? 1:0) | (am_ctrl ? 2:0) | (phase_unwrap_always ? 4:0) |
-                               (qcontrol ? 8:0) |
-                               (lck_amp ? 0x10:0)  | (lck_phase ? 0x20:0)
+                               (phase_ctrl ? 1:0) | (am_ctrl ? 2:0) | (phase_unwrap_always ? 4:0) |   // Bits 1,2,3
+                               (qcontrol ? 8:0) |                                                     // Bit  4
+                               (lck_amp ? 0x10:0)  | (lck_phase ? 0x20:0) |                           // Bits 5,6
+                               //(b7 ? 0x40:0) | (b8 ? 0x80:0)
+                               (dfreq_ctrl ? 0x100:0)                                                   // Bit 9
                                );
 }
 
@@ -695,6 +702,7 @@ void rp_PAC_auto_dc_offset_correct (){
 // +0 Set, +2 CP, +4 CI, +6 UPPER, +8 LOWER
 #define PACPLL_CFG_PHASE_CONTROLLER 10
 #define PACPLL_CFG_AMPLITUDE_CONTROLLER 20
+#define PACPLL_CFG_DFREQ_CONTROLLER (PACPLL_CFG1_OFFSET + 0)
 #define PACPLL_CFG_SET   0
 #define PACPLL_CFG_CP    1
 #define PACPLL_CFG_CI    2
@@ -844,6 +852,7 @@ int bram_status(int bram_status[3]){
 #define PACPLL_CFG_TRANSPORT_TAU_EXEC    (PACPLL_CFG1_OFFSET + 2)
 #define PACPLL_CFG_TRANSPORT_TAU_AMPL    (PACPLL_CFG1_OFFSET + 3)
 
+/*
 void rp_PAC_set_tau_transport (double tau_dfreq, double tau_phase, double tau_exec, double tau_ampl){
 #ifdef REMAP_TO_OLD_FPGA_VERSION
         return;
@@ -866,6 +875,33 @@ void rp_PAC_set_tau_transport (double tau_dfreq, double tau_phase, double tau_ex
         else
                 set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_TAU_AMPL, 0xffffffff);
 }
+*/
+
+// Phase Controller
+// CONTROL[75] OUT[44] : [75-1-1:75-44]=43+1   m[24]  x  c[32]  = 56 M: 24{Q32},  P: 44{Q14}
+void rp_PAC_set_dfreq_controller (double setpoint, double cp, double ci, double upper, double lower){
+        if (verbose > 2) fprintf(stderr, "##Configure Controller: set= %g  Q22: %d    cp=%g ci=%g upper=%g lower=%g\n", setpoint, (int)(Q22 * setpoint), cp, ci, upper, lower); 
+
+        /*
+        double cp = 20. * log10 (1.6575e-5  * pll.auto_set_BW_Phase);
+        double ci = 20. * log10 (1.7357e-10 * pll.auto_set_BW_Phase*pll.auto_set_BW_Phase);
+
+        write_pll_variable32 (dsp_pll.icoef_Phase, pll.signum_ci_Phase * CPN(29)*pow (10.,pll.ci_gain_Phase/20.));
+        // = ISign * CPN(29)*pow(10.,Igain/20.);
+	
+        write_pll_variable32 (dsp_pll.pcoef_Phase, pll.signum_cp_Phase * CPN(29)*pow (10.,pll.cp_gain_Phase/20.));
+        // = PSign * CPN(29)*pow(10.,Pgain/20.);
+        */
+
+        set_gpio_cfgreg_int32 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_SET,   (long long)(round(dds_phaseinc (setpoint)))); // 32bit dFreq (Full range is Q44)
+        set_gpio_cfgreg_int32 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_CP,    (long long)(QDFCOEF * cp)); // {32}
+        set_gpio_cfgreg_int32 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_CI,    (long long)(QDFCOEF * ci));
+        set_gpio_cfgreg_int48 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_UPPER, (long long)round (Q31*upper/10.0)); // => 15.16 32Q16 Control (Bias, Z, ...)
+        set_gpio_cfgreg_int48 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_LOWER, (long long)round (Q31*lower/10.0));
+}
+
+
+
 
 /*
  * Get Single Direct FPGA Reading via GPIO
@@ -924,12 +960,12 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
              uix = uix-0x7fffffff;
         x10 = (double)uix / QCORDICATAN; // ATAN 24bit 3Q21 
 #endif
-        SIGNAL_GPIOX[10] = x = read_gpio_reg_int32 (6,0); // GPIO X11 : Transport WPos
+        SIGNAL_GPIOX[10] = x = read_gpio_reg_int32 (6,0); // GPIO X11 : dFreq
         x11=(double)(x);
-        SIGNAL_GPIOX[11] = x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+        SIGNAL_GPIOX[11] = x = read_gpio_reg_int32 (6,1); // GPIO X12 BRAM write position
         x12=(double)(x);
 
-        SIGNAL_GPIOX[12] = read_gpio_reg_int32 (7,0); // GPIO X13
+        SIGNAL_GPIOX[12] = read_gpio_reg_int32 (7,0); // GPIO X13: control dFreq
         SIGNAL_GPIOX[13] = read_gpio_reg_int32 (7,1); // GPIO X14
         SIGNAL_GPIOX[14] = read_gpio_reg_int32 (8,0); // GPIO X15
         SIGNAL_GPIOX[15] = read_gpio_reg_int32 (8,1); // GPIO X16
@@ -954,8 +990,8 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         reading_vector[10] = x3; // M (LMS input Signal)
         reading_vector[11] = x3; // M1 (LMS input Signal-DC), tests...
 
-        reading_vector[12] = x11; // test (bram write pos from data transport)
-        reading_vector[13] = x12; // test (bram debug from data transport)
+        reading_vector[12] = dds_phaseinc_rel_to_freq((long long)(x11)); // delta Freq
+        reading_vector[13] = 10000.*(double)SIGNAL_GPIOX[12]/Q31; // control of dFreq controller
 
         if (verbose > 2){
                 if (verbose == 1) fprintf(stderr, "PAC TRANSPORT DBG: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
@@ -1042,28 +1078,33 @@ void set_PAC_config()
         // in tune mode disable controllers autmatically and do not touch DDS settings, but allow Q Control
         if (OPERATION.Value() < 6){
                 rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value());
-                rp_PAC_configure_switches (PHASE_CONTROLLER.Value ()?1:0, AMPLITUDE_CONTROLLER.Value ()?1:0, PHASE_UNWRAPPING_ALWAYS.Value ()?1:0, QCONTROL.Value ()?1:0, LCK_AMPLITUDE.Value ()?1:0, LCK_PHASE.Value ()?1:0);
+                rp_PAC_configure_switches (PHASE_CONTROLLER.Value ()?1:0,
+                                           AMPLITUDE_CONTROLLER.Value ()?1:0,
+                                           PHASE_UNWRAPPING_ALWAYS.Value ()?1:0,
+                                           QCONTROL.Value ()?1:0,
+                                           LCK_AMPLITUDE.Value ()?1:0,
+                                           LCK_PHASE.Value ()?1:0,
+                                           DFREQ_CONTROLLER.Value ()?1:0);
         } else {
-                rp_PAC_configure_switches (0, 0, PHASE_UNWRAPPING_ALWAYS.Value ()?1:0, QCONTROL.Value ()?1:0, LCK_AMPLITUDE.Value ()?1:0, LCK_PHASE.Value ()?1:0);
+                rp_PAC_configure_switches (0, 0, PHASE_UNWRAPPING_ALWAYS.Value ()?1:0, QCONTROL.Value ()?1:0, LCK_AMPLITUDE.Value ()?1:0, LCK_PHASE.Value ()?1:0, 0);
         }
-        
+
+        /*
         rp_PAC_set_tau_transport (
                                   TRANSPORT_TAU_DFREQ.Value (), // tau given in ms (1-e3)
                                   TRANSPORT_TAU_PHASE.Value (),
                                   TRANSPORT_TAU_EXEC.Value (),
                                   TRANSPORT_TAU_AMPL.Value ()
                                   );
-                                  
+        */                        
 
-        /*
-        rp_PAC_set_aux_controller (
-                                   AUX_FB_SETPOINT.Value (), // dHz -> ...
-                                   AUX_FB_CP.Value (),
-                                   AUX_FB_CI.Value (),
-                                   AUX_FB_UPPER.Value ()/1000., // mV -> V
-                                   AUX_FB_LOWER.Value ()/1000.
-                                   );
-        */
+        rp_PAC_set_dfreq_controller (
+                                     DFREQ_FB_SETPOINT.Value (), // dHz -> ...
+                                     DFREQ_FB_CP.Value (),
+                                     DFREQ_FB_CI.Value (),
+                                     DFREQ_FB_UPPER.Value ()/1000., // mV -> V
+                                     DFREQ_FB_LOWER.Value ()/1000.
+                                     );
 }
 
 
@@ -1689,7 +1730,9 @@ void UpdateSignals(void)
         PHASE_MONITOR.Value ()    = reading_vector[5]; // PLL Phase in deg
         EXEC_MONITOR.Value ()     = reading_vector[8]; // Exec Amplitude Monitor in mV
         DDS_FREQ_MONITOR.Value () = reading_vector[9]; // DDS Freq Monitor in Hz
-
+        DFREQ_MONITOR.Value ()    = reading_vector[12]; // delta Frequency Monitor in Hz (after decimation)
+        CONTROL_DFREQ_MONITOR.Value () = reading_vector[13]; // Control value of delta Frequency Controller
+        
         rp_PAC_auto_dc_offset_correct ();
 
         last_op = OPERATION.Value (); 
@@ -1791,6 +1834,9 @@ void OnNewParams(void)
         AMPLITUDE_CONTROLLER.Update ();
         SET_SINGLESHOT_TRANSPORT_TRIGGER.Update ();
         PHASE_UNWRAPPING_ALWAYS.Update ();
+        LCK_AMPLITUDE.Update ();
+        LCK_PHASE.Update ();
+        DFREQ_CONTROLLER.Update ();
         
         AMPLITUDE_FB_SETPOINT.Update ();
         AMPLITUDE_FB_CP.Update ();
@@ -1818,16 +1864,18 @@ void OnNewParams(void)
         TRANSPORT_CH4.Update ();
         TRANSPORT_CH5.Update ();
 
+        /*
         TRANSPORT_TAU_DFREQ.Update ();
         TRANSPORT_TAU_PHASE.Update ();
         TRANSPORT_TAU_EXEC.Update ();
         TRANSPORT_TAU_AMPL.Update ();
-
-        AUX_FB_SETPOINT.Update ();
-        AUX_FB_CP.Update ();
-        AUX_FB_CI.Update ();
-        AUX_FB_UPPER.Update ();
-        AUX_FB_LOWER.Update ();
+        */
+        
+        DFREQ_FB_SETPOINT.Update ();
+        DFREQ_FB_CP.Update ();
+        DFREQ_FB_CI.Update ();
+        DFREQ_FB_UPPER.Update ();
+        DFREQ_FB_LOWER.Update ();
 
         if ( OPERATION.Value () > 0 && OPERATION.Value () != operation ){
                 operation = OPERATION.Value ();
