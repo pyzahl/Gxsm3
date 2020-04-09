@@ -56,13 +56,14 @@ module controller_pi #(
     parameter CONTROL_W = 44,  // Significant Width of Control Output Data                        PH: 44  AM: 16
     parameter CONTROL2_W = 32, // max passed outside control width, must be <= CONTROL2_WIDTH     PH: 32  AM: 16
     parameter AMCONTROL_ALLOW_NEG_SPECIAL = 0, // special AM controller behavior                       0      1
-    parameter AUTO_RESET_AT_LIMIT = 0,         // optional behavior instead of saturation at limits,   X      0
-		                               //  push control back to reset value
+    parameter AUTO_RESET_AT_LIMIT  = 0,        // optional behavior instead of saturation at limits,   X      0
+		                                       //  push control back to reset value
+    parameter USE_RESET_DATA_INPUT = 1         // has reset value AXIS input,                          1      1
 
     // Calculated and fixed Parameters -- ignore and do not change in bogus GUI: zW_XXXXX -- or better hand caclulate and check! Unclear/false behavior :( 
-    parameter zW_ERROR         = IN_W + 1,               // ACTUAL CONTROL ERROR WIDTH REQUIRED as of significant data range
-    parameter zW_EXTEND        = 1,                      // FOR SATURATION CHECK PURPOSE 
-    parameter zW_CONTROL_INT   = COEF_W+IN_W+zW_EXTEND  // INTERNAL CONTROL INTEGRATOR WIDTH
+    //parameter zW_ERROR         = IN_W + 1,               // ACTUAL CONTROL ERROR WIDTH REQUIRED as of significant data range
+    //parameter zW_EXTEND        = 1,                      // FOR SATURATION CHECK PURPOSE 
+    //parameter zW_CONTROL_INT   = COEF_W+IN_W+zW_EXTEND  // INTERNAL CONTROL INTEGRATOR WIDTH
 )
 (
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_CLKEN aclk" *)
@@ -76,7 +77,7 @@ module controller_pi #(
     input wire signed [COEF_W-1:0]  ci, // Controller Parameter Integral
     input wire signed [M_AXIS_CONTROL_TDATA_WIDTH-1:0]  limit_upper, // Upper Control Limit
     input wire signed [M_AXIS_CONTROL_TDATA_WIDTH-1:0]  limit_lower, // Lower Control Limit
-    
+
     input wire signed [M_AXIS_CONTROL_TDATA_WIDTH-1:0]  S_AXIS_reset_tdata, // Controller Reset/Start, i.e. disabled control output value
     input wire                                          S_AXIS_reset_tvalid,
     input enable,
@@ -103,7 +104,11 @@ module controller_pi #(
     output wire status_min
     );
     
-    //	localparam integer ADDR_LSB = (C_S_AXI_DATA_WIDTH/32) + 1;
+    // Calculated and fixed Parameters 
+    localparam integer zW_ERROR         = IN_W + 1;               // ACTUAL CONTROL ERROR WIDTH REQUIRED as of significant data range
+    localparam integer zW_EXTEND        = 1;                      // FOR SATURATION CHECK PURPOSE 
+    localparam integer zW_CONTROL_INT   = COEF_W+IN_W+zW_EXTEND;  // INTERNAL CONTROL INTEGRATOR WIDTH
+
 
     reg signed [zW_ERROR-1:0] m=0;
     reg signed [zW_ERROR-1:0] error=0;
@@ -142,8 +147,12 @@ always @(posedge i_clk)
     begin
         upper <= {{(zW_EXTEND){       limit_upper[CONTROL_W-1]}},        limit_upper[CONTROL_W-1:0], {(zW_CONTROL_INT-CONTROL_W-zW_EXTEND){1'b0}}};  // sign extend and pad on right to control int width
         lower <= {{(zW_EXTEND){       limit_lower[CONTROL_W-1]}},        limit_lower[CONTROL_W-1:0], {(zW_CONTROL_INT-CONTROL_W-zW_EXTEND){1'b0}}};  // sign extend and pad on right to control int width
-        reset <= {{(zW_EXTEND){S_AXIS_reset_tdata[CONTROL_W-1]}}, S_AXIS_reset_tdata[CONTROL_W-1:0], {(zW_CONTROL_INT-CONTROL_W-zW_EXTEND){1'b0}}};  // sign extend and pad on right to control int width
-
+        if(USE_RESET_DATA_INPUT)
+        begin
+            reset <= {{(zW_EXTEND){S_AXIS_reset_tdata[CONTROL_W-1]}}, S_AXIS_reset_tdata[CONTROL_W-1:0], {(zW_CONTROL_INT-CONTROL_W-zW_EXTEND){1'b0}}};  // sign extend and pad on right to control int width
+        end else begin
+            reset <= 0;
+        end
         error <= error_next;
 
         reg_cp <= cp;

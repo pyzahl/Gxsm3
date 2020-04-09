@@ -1,9 +1,9 @@
-#//  create_clock -period 16.000 -name dec_aclk -waveform {0.000 8.000} [get_nets system_i/axis_decimator_0/aclk]
+#//  create_clock -period 16.000 -name dec_aclk -waveform {0.000 8.000} [get_nets system_i/axis_decimator/aclk]
 create_clock -period 8.000 -name adc_clk [get_ports adc_clk_p_i]
 create_clock -period 4.000 -name rx_clk [get_ports {daisy_p_i[1]}]
 
 #// [Place 30-574] Poor placement for routing between an IO pin and BUFG. If this sub optimal condition is acceptable for this design, you may use the CLOCK_DEDICATED_ROUTE constraint in the .xdc file to demote this message to a WARNING. However, the use of this override is highly discouraged. These examples can be used directly in the .xdc file to override this clock rule.
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets system_i/PS_data_transport/McBSP_io_connect_0/inst/clk_iobuf/O]
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets system_i/PS_data_transport/McBSP_io_connect/inst/clk_iobuf/O]
 
 set_property PACKAGE_PIN B10 [get_ports FIXED_IO_ps_srstb]
 set_property PACKAGE_PIN P4 [get_ports DDR_ras_n]

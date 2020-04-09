@@ -143,6 +143,8 @@ module axis_4s_combine #(
     output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_AMPL_LP_tdata,
     output wire                          M_AXIS_AMPL_LP_tvalid,
 
+    output wire [32-1:0] delta_frequency_monitor,
+
     // BRAM PUSH INTERFACE
     output wire [32-1:0] BR_ch1s,
     output wire [32-1:0] BR_ch2s,
@@ -296,7 +298,7 @@ module axis_4s_combine #(
                             ch2 <= ch2 + reg_delta_freq;                                 // PHC Freq (48) - Center (48)
                         end
                         4:
-                        begin                                                              // Tuning Configuration
+                        begin                                                             // Tuning Configuration
                             ch1 <= ch1 + $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]);  // PHC Phase (24)
                             ch2 <= ch2 + $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]);  // AMC Amplitude (24)
                         end
@@ -308,9 +310,9 @@ module axis_4s_combine #(
                             ch4 <= ch4 + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // Exec Amplitude (32)
                         end
                         6:
-                        begin
-                            ch1 <= ch1 + $signed(S_AXIS1S_tdata[SAXIS_1_DATA_WIDTH-1                       :                     0]); // IN1
-                            ch2 <= ch2 + $signed(S_AXIS1S_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2]); // IN2
+                        begin                                                             // dFreq Controller Test
+                            ch1 <= ch1 + reg_delta_freq;                                  // DFC delta Freq
+                            ch2 <= ch2 + $signed(S_AXIS1S_tdata);                         // DFC Control Value (32)
                         end
                         7: // DDR in #2 -> Hi16, #1 -> Lo16
                         begin
@@ -391,8 +393,8 @@ module axis_4s_combine #(
                         end
                         6:
                         begin
-                            ch1 <= $signed(S_AXIS1S_tdata[SAXIS_1_DATA_WIDTH-1                       :                     0]); // IN1
-                            ch2 <= $signed(S_AXIS1S_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2]); // IN2
+                            ch1 <= reg_delta_freq;
+                            ch2 <= $signed(S_AXIS1S_tdata); // dFreq Control
                         end
                         7: // DDR in #2 -> Hi16, #1 -> Lo16 -- ONLY GOOD WITH DEC=2 (external: DEC=1, SHR=0)
                         begin
@@ -419,6 +421,8 @@ module axis_4s_combine #(
         endcase
     end
     
+    // dFrequency [64] (44) =>  32 || signed, lower 31 bits, decimated -- must be in OPERATION SCANNING (=5) mode
+    assign delta_frequency_monitor = ch2s[31:0]; 
     
     // assign CH1..4 from box carr filtering as selected
     assign M_AXIS_CH1_tdata = ch1s[31:0]; // reg_tau_dfreq[31] ? ch1s[31:0] : ch1s_lp;
@@ -431,7 +435,7 @@ module axis_4s_combine #(
     assign M_AXIS_CH4_tdata = ch4s[31:0];
     assign M_AXIS_CH4_tvalid = 1;
 
-    // must be in STREAMING MODE and OPERATION SCANNING (=5)
+    // must be in STREAMING MODE and OPERATION SCANNING (=5) mode
     assign M_AXIS_DFREQ_LP_tdata  = ch2s[31:0]; // dFrequency [64] (44) =>  32 || signed, lower 31 bits
     assign M_AXIS_DFREQ_LP_tvalid = 1;
     assign M_AXIS_PHASE_LP_tdata  = ch1s[31:0]; // Phase (32) =>  32
