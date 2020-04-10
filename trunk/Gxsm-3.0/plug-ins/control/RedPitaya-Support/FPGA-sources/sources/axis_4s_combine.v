@@ -144,6 +144,7 @@ module axis_4s_combine #(
     output wire                          M_AXIS_AMPL_LP_tvalid,
 
     output wire [32-1:0] delta_frequency_monitor,
+    output wire [32-1:0] delta_frequency_direct,
 
     // BRAM PUSH INTERFACE
     output wire [32-1:0] BR_ch1s,
@@ -160,8 +161,8 @@ module axis_4s_combine #(
     reg [32-1:0] decimate_count=0; 
     reg [32-1:0] sample_count=0;
 
-    reg signed [64-1:0] ch1, ch2, ch3, ch4;
-    reg signed [64-1:0] ch1s, ch2s, ch3s, ch4s;
+    reg signed [64-1:0] ch1, ch2, chPH, chDF, chAM, chEX;
+    reg signed [64-1:0] ch1s, ch2s, chPHs, chDFs, chAMs, chEXs;
     reg signed [64-1:0] reg_freq_center;
     reg signed [64-1:0] reg_freq;
     reg signed [64-1:0] reg_delta_freq;
@@ -276,6 +277,12 @@ module axis_4s_combine #(
 
                 if (decimate_count < reg_ndecimate)
                 begin
+                    // decimate sum for all PAC-PLL channels
+                    chPH <= chPH + $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]);  // PHC Phase (24) =>  32
+                    chDF <= chDF + reg_delta_freq;                                  // Freq (48) - Center (48)
+                    chAM <= chAM + $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]);  // AMC Amplitude (24) =>  32
+                    chEX <= chEX + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // AMC Exec Amplitude (32)
+                    
                     case (reg_channel_selector) // channel selector
                         0:
                         begin
@@ -287,53 +294,32 @@ module axis_4s_combine #(
                             ch1 <= ch1 + $signed(S_AXIS6_tdata[15:0]);    // IN1 AC Signal 16bit
                             ch2 <= ch2 + $signed(S_AXIS6_tdata[31:16]);   // IN1 DC Signal from Filter
                         end
-                        2:
-                        begin
-                            ch1 <= ch1 + $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]);  // AMC Amplitude (24) =>  32
-                            ch2 <= ch2 + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // AMC Exec Amplitude (32)
-                        end
-                        3:
-                        begin
-                            ch1 <= ch1 + $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]); // PHC Phase (24) =>  32
-                            ch2 <= ch2 + reg_delta_freq;                                 // PHC Freq (48) - Center (48)
-                        end
-                        4:
-                        begin                                                             // Tuning Configuration
-                            ch1 <= ch1 + $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]);  // PHC Phase (24)
-                            ch2 <= ch2 + $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]);  // AMC Amplitude (24)
-                        end
-                        5:
-                        begin
-                            ch1 <= ch1 + $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]);  // Phase (24) =>  32
-                            ch2 <= ch2 + reg_delta_freq;                                  // Freq (48) - Center (48)
-                            ch3 <= ch3 + $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]);  // Amplitude (24) =>  32
-                            ch4 <= ch4 + $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // Exec Amplitude (32)
-                        end
                         6:
                         begin                                                             // dFreq Controller Test
-                            ch1 <= ch1 + reg_delta_freq;                                  // DFC delta Freq
-                            ch2 <= ch2 + $signed(S_AXIS1S_tdata);                         // DFC Control Value (32)
+                            ch2 <= ch2 + $signed(S_AXIS1S_tdata[32-1:0]);                         // DFC Control Value (32)
                         end
                         7: // DDR in #2 -> Hi16, #1 -> Lo16
                         begin
                             ch1[32-1:16] <= S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH-1 : 0];
                             ch2[32-1:16] <= S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2];
                         end
+/*
                         8: // for Debug and Testing
                         begin
                             ch1[15:0]    <= 0; //reg_McBSPbits; // DDR in #2 -> Hi16, #1 -> Lo16
                             ch2[32-1:16] <= 0; //S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2];
                         end
+*/  
                     endcase
 
                     bram_next <= 0; // hold BRAM write next
                 end
                 else begin
                     // normalize and store summed data data 
-                    ch1s <= (ch1 >>> reg_shift);
-                    ch2s <= (ch2 >>> reg_shift);
-                    ch3s <= (ch3 >>> reg_shift);
-                    ch4s <= (ch4 >>> reg_shift);
+                    chPHs <= (chPH >>> reg_shift);   // PHC Phase (24) =>  32
+                    chDFs <= (chDF >>> reg_shift);   // Freq (48) - Center (48)
+                    chAMs <= (chAM >>> reg_shift);   // AMPL ch3s
+                    chEXs <= (chEX >>> reg_shift);   // EXEC ch4s
 
                     bram_next <= 1; // initate BRAM write data cycles
                     sample_count <= sample_count + 1;
@@ -358,54 +344,68 @@ module axis_4s_combine #(
                     // Initiate Measuring next Sum Values
                     decimate_count <= 32'd1; // first sample again
     
+                    // initiate decimate sum for all PAC-PLL channels
+                    chPH <= $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]);  // PHC Phase (24) =>  32
+                    chDF <= reg_delta_freq;                                  // Freq (48) - Center (48)
+                    chAM <= $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]);  // AMC Amplitude (24) =>  32
+                    chEX <= $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // AMC Exec Amplitude (32)
+
+                    // initialize and store pending custom CH1, CH2 selections
                     case (reg_channel_selector) // channels selector
                         0:
                         begin
+                            ch1s  <= (ch1 >>> reg_shift);
+                            ch2s  <= (ch2 >>> reg_shift);
                             ch1 <= $signed(S_AXIS1_tdata[SAXIS_1_DATA_WIDTH-1                       :                     0]); // IN1
                             ch2 <= $signed(S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2]); // IN2
                         end
                         1:
                         begin
+                            ch1s  <= (ch1 >>> reg_shift);
+                            ch2s  <= (ch2 >>> reg_shift);
                             ch1 <= $signed(S_AXIS6_tdata[15:0]);    // IN1 AC Signal from DC Filter (16bit)
                             ch2 <= $signed(S_AXIS6_tdata[31:16]);   // IN1 DC Signal from DC Filter
                         end
                         2:
                         begin                                                       // AMC opt configuration   
-                            ch1 <= $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]); // AMC Amplitude (24) =>  32
-                            ch2 <= $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]); // AMC Exec Amplitude (32)
+                            ch1s  <= (chAM >>> reg_shift);                          // AMC Amplitude (24) =>  32
+                            ch2s  <= (chEX >>> reg_shift);                          // AMC Exec Amplitude (32)
                         end
                         3:
                         begin                                                       // PHC opt configuration
-                            ch1 <= $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]); // PHC Phase (24)
-                            ch2 <= reg_delta_freq;                                 // PHC Freq (48) - Center (48)
+                            ch1s  <= (chPH >>> reg_shift);                          // PHC Phase (24)
+                            ch2s  <= (chDF >>> reg_shift);                          // PHC Freq (48) - Center (48)
                         end
                         4:
-                        begin                                                        // Tuning Configuration
-                            ch1 <= $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]);  // PHC Phase (24)
-                            ch2 <= $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]);  // AMC Amplitude (24)
+                        begin                                                       // Tuning Configuration
+                            ch1s  <= (chPH >>> reg_shift);                          // PHC Phase (24)
+                            ch2s  <= (chAM >>> reg_shift);                          // AMC Amplitude (24)
                         end
                         5:
                         begin                                                        // Operation for scanning
-                            ch1 <= $signed(S_AXIS4_tdata[SAXIS_4_DATA_WIDTH-1:0]);  // Phase (24) =>  32
-                            ch2 <= reg_delta_freq;                                  // Freq (48) - Center (48)
-                            ch3 <= $signed(S_AXIS5_tdata[SAXIS_5_DATA_WIDTH-1:0]);  // Amplitude (24) =>  32
-                            ch4 <= $signed(S_AXIS2_tdata[SAXIS_2_DATA_WIDTH-1:0]);  // Exec Amplitude (32)
+                            ch1s  <= (chPH >>> reg_shift);                          // PHC Phase (24)
+                            ch2s  <= (chDF >>> reg_shift);                          // Freq (48) - Center (48)
                         end
                         6:
                         begin
-                            ch1 <= reg_delta_freq;
-                            ch2 <= $signed(S_AXIS1S_tdata); // dFreq Control
+                            ch1s  <= (chDF >>> reg_shift);                          // Freq (48) - Center (48)
+                            ch2s  <= (ch2 >>> reg_shift);                           // store
+                            ch2   <= $signed(S_AXIS1S_tdata[32-1:0]);               // dFreq Control Value 32
                         end
                         7: // DDR in #2 -> Hi16, #1 -> Lo16 -- ONLY GOOD WITH DEC=2 (external: DEC=1, SHR=0)
                         begin
+                            ch1s  <= (ch1 >>> reg_shift);
+                            ch2s  <= (ch2 >>> reg_shift);
                             ch1[16-1:0] <= S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH-1 : 0];
                             ch2[16-1:0] <= S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2];
                         end
+/*
                         8: // for Debug and Testing
                         begin
                             ch1 <= 0; // {reg_McBSPbits, reg_McBSPbits}; // DDR in #2 -> Hi16, #1 -> Lo16
                             ch2 <= 0; // {{16'b0}, S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2]};
                         end
+*/
                     endcase
                 end
                     
@@ -422,27 +422,27 @@ module axis_4s_combine #(
     end
     
     // dFrequency [64] (44) =>  32 || signed, lower 31 bits, decimated -- must be in OPERATION SCANNING (=5) mode
-    assign delta_frequency_monitor = ch2s[31:0]; 
+    assign delta_frequency_monitor = chDFs[31:0]; 
+    assign delta_frequency_direct  = reg_delta_freq[31:0]; 
     
-    // assign CH1..4 from box carr filtering as selected
-    assign M_AXIS_CH1_tdata = ch1s[31:0]; // reg_tau_dfreq[31] ? ch1s[31:0] : ch1s_lp;
+    // assign CH1,2 from box carr filtering as selected and AM, EX
+    assign M_AXIS_CH1_tdata = ch1s[31:0];
     assign M_AXIS_CH1_tvalid = 1;
-    //assign M_AXIS_CH2_tdata =  reg_tau_dfreq[31] ? ch2s[31:0] : ch2s_lp; // ch2s[31:0];
-    assign M_AXIS_CH2_tdata =  ch2s[31:0]; // ch2s[31:0];
+    assign M_AXIS_CH2_tdata =  ch2s[31:0];
     assign M_AXIS_CH2_tvalid = 1;
-    assign M_AXIS_CH3_tdata = ch3s[31:0];
+    assign M_AXIS_CH3_tdata = chAMs[31:0];
     assign M_AXIS_CH3_tvalid = 1;
-    assign M_AXIS_CH4_tdata = ch4s[31:0];
+    assign M_AXIS_CH4_tdata = chEXs[31:0];
     assign M_AXIS_CH4_tvalid = 1;
 
-    // must be in STREAMING MODE and OPERATION SCANNING (=5) mode
-    assign M_AXIS_DFREQ_LP_tdata  = ch2s[31:0]; // dFrequency [64] (44) =>  32 || signed, lower 31 bits
+    // must be in STREAMING MODE for contineous op
+    assign M_AXIS_DFREQ_LP_tdata  = chDFs[31:0]; // dFrequency [64] (44) =>  32 || signed, lower 31 bits
     assign M_AXIS_DFREQ_LP_tvalid = 1;
-    assign M_AXIS_PHASE_LP_tdata  = ch1s[31:0]; // Phase (32) =>  32
+    assign M_AXIS_PHASE_LP_tdata  = chPHs[31:0]; // Phase (32) =>  32
     assign M_AXIS_PHASE_LP_tvalid = 1;
-    assign M_AXIS_EXEC_LP_tdata   = ch4s[31:0];  // Amplitude Exec (32) =>  64 sum
+    assign M_AXIS_EXEC_LP_tdata   = chEXs[31:0];  // Amplitude Exec (32) =>  64 sum
     assign M_AXIS_EXEC_LP_tvalid  = 1;
-    assign M_AXIS_AMPL_LP_tdata   = ch3s[31:0]; // Amplitude (24) =>  32
+    assign M_AXIS_AMPL_LP_tdata   = chAMs[31:0]; // Amplitude (24) =>  32
     assign M_AXIS_AMPL_LP_tvalid  = 1;
     
 endmodule

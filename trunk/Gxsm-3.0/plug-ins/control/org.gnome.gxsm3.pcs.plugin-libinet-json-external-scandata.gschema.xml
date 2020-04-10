@@ -157,6 +157,48 @@
       <description>pcs0000, PCS Remote-ID: 'rp-pacpll-DDS-FREQ-MONITOR', Default/U: 32768 Hz    , Adjustment PCS Name: 'rp-pacpll-DDS-FREQ-MONITOR' </description>
     </key>
 
+    <key name="rp-pacpll-dfreq-monitor" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-DFREQ-MONITOR', Default/U: 0 °     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-DFREQ-MONITOR', Default/U: 0 °    , Adjustment PCS Name: 'rp-pacpll-DFREQ-MONITOR' </description>
+    </key>
+
+    <key name="rp-pacpll-dfreq-fb-setpoint" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-DFREQ-FB-SETPOINT', Default/U:    60 °     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-DFREQ-FB-SETPOINT', Default/U:    60 °    , Adjustment PCS Name: 'rp-pacpll-DFREQ-FB-SETPOINT' </description>
+    </key>
+
+    <key name="rp-pacpll-dfreq-fb-cp" type="d">
+      <default>-76</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-DFREQ-FB-CP', Default/U: -76 dB     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-DFREQ-FB-CP', Default/U: -76 dB    , Adjustment PCS Name: 'rp-pacpll-DFREQ-FB-CP' </description>
+    </key>
+
+    <key name="rp-pacpll-dfreq-fb-ci" type="d">
+      <default>-143</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-DFREQ-FB-CI', Default/U: -143 dB     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-DFREQ-FB-CI', Default/U: -143 dB    , Adjustment PCS Name: 'rp-pacpll-DFREQ-FB-CI' </description>
+    </key>
+
+    <key name="rp-pacpll-control-dfreq-fb-lower" type="d">
+      <default>-500</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-CONTROL-DFREQ-FB-LOWER', Default/U: -500 Hz     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-CONTROL-DFREQ-FB-LOWER', Default/U: -500 Hz    , Adjustment PCS Name: 'rp-pacpll-CONTROL-DFREQ-FB-LOWER' </description>
+    </key>
+
+    <key name="rp-pacpll-control-dfreq-fb-upper" type="d">
+      <default>500</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-CONTROL-DFREQ-FB-UPPER', Default/U: 500 Hz     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-CONTROL-DFREQ-FB-UPPER', Default/U: 500 Hz    , Adjustment PCS Name: 'rp-pacpll-CONTROL-DFREQ-FB-UPPER' </description>
+    </key>
+
+    <key name="rp-pacpll-dfreq-control-monitor" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-DFREQ-CONTROL-MONITOR', Default/U: 0.0000 Hz     </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-DFREQ-CONTROL-MONITOR', Default/U: 0.0000 Hz    , Adjustment PCS Name: 'rp-pacpll-DFREQ-CONTROL-MONITOR' </description>
+    </key>
+
     <key name="rp-pacpll-scope-width" type="d">
       <default>512</default>
       <summary>PCS Remote-ID: 'rp-pacpll-scope-width', Default/U: 760     </summary>

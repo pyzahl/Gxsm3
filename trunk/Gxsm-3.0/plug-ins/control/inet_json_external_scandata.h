@@ -51,6 +51,7 @@ struct PACPLL_parameters {
         double dds_frequency_monitor;
         double volume_monitor;
         double phase_monitor;
+        double control_dfreq_monitor;
         double cpu_load;
         double free_ram;
         double counter;
@@ -110,6 +111,17 @@ struct PACPLL_parameters {
         double lck_amplitude;
         double lck_phase;
 
+        double dfreq_monitor;
+        double dfreq_fb_setpoint;
+        double dfreq_fb_invert;
+        double dfreq_fb_cp_db;
+        double dfreq_fb_ci_db;
+        double dfreq_fb_cp;
+        double dfreq_fb_ci;
+        double dfreq_controller;
+        double control_dfreq_fb_upper;
+        double control_dfreq_fb_lower;
+
         double set_singleshot_transport_trigger;
 
         double transport_tau[4];
@@ -139,6 +151,8 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "DDS_FREQ_MONITOR", &pacpll_parameters.dds_frequency_monitor, true },
         { "VOLUME_MONITOR", &pacpll_parameters.volume_monitor, true },
         { "PHASE_MONITOR", &pacpll_parameters.phase_monitor, true },
+        { "DFREQ_MONITOR", &pacpll_parameters.dfreq_monitor, true },
+        { "CONTROL_DFREQ_MONITOR", &pacpll_parameters.control_dfreq_monitor, true },
 
         { "PARAMETER_PERIOD", &pacpll_parameters.parameter_period, false },
         { "SIGNAL_PERIOD", &pacpll_parameters.signal_period, false },
@@ -178,12 +192,14 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "CENTER_AMPLITUDE", &pacpll_parameters.center_amplitude, false },
         { "CENTER_PHASE", &pacpll_parameters.center_phase, false },
         { "CENTER_FREQUENCY", &pacpll_parameters.center_frequency, false },
+        
         { "AMPLITUDE_FB_SETPOINT", &pacpll_parameters.amplitude_fb_setpoint, false },
         { "AMPLITUDE_FB_CP", &pacpll_parameters.amplitude_fb_cp, false },
         { "AMPLITUDE_FB_CI", &pacpll_parameters.amplitude_fb_ci, false },
         { "EXEC_FB_UPPER", &pacpll_parameters.exec_fb_upper, false },
         { "EXEC_FB_LOWER", &pacpll_parameters.exec_fb_lower, false },
         { "AMPLITUDE_CONTROLLER", &pacpll_parameters.amplitude_controller, false },
+        
         { "PHASE_FB_SETPOINT", &pacpll_parameters.phase_fb_setpoint, false },
         { "PHASE_FB_CP", &pacpll_parameters.phase_fb_cp, false },
         { "PHASE_FB_CI", &pacpll_parameters.phase_fb_ci, false },
@@ -192,6 +208,13 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "PHASE_CONTROLLER", &pacpll_parameters.phase_controller, false },
         { "PHASE_UNWRAPPING_ALWAYS", &pacpll_parameters.phase_unwrapping_always, false },
         { "SET_SINGLESHOT_TRANSPORT_TRIGGER", &pacpll_parameters.set_singleshot_transport_trigger, false },
+        
+        { "DFREQ_FB_SETPOINT", &pacpll_parameters.dfreq_fb_setpoint, false },
+        { "DFREQ_FB_CP", &pacpll_parameters.dfreq_fb_cp, false },
+        { "DFREQ_FB_CI", &pacpll_parameters.dfreq_fb_ci, false },
+        { "DFREQ_FB_UPPER", &pacpll_parameters.control_dfreq_fb_upper, false },
+        { "DFREQ_FB_LOWER", &pacpll_parameters.control_dfreq_fb_lower, false },
+        { "DFREQ_CONTROLLER", &pacpll_parameters.dfreq_controller, false },
         
         { NULL, NULL, true }
 };
@@ -246,6 +269,11 @@ public:
         static void phase_unwrapping_always (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void phase_unwrap_plot (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void set_ss_auto_trigger (GtkWidget *widget, Inet_Json_External_Scandata *self);
+
+	static void dfreq_ctrl_parameter_changed (Param_Control* pcs, gpointer user_data);
+	static void dfreq_gain_changed (Param_Control* pcs, gpointer user_data);
+        static void dfreq_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void dfreq_controller (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
         static void choice_operation_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_transport_ch12_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
@@ -490,6 +518,7 @@ private:
         double scope_z[2];
         double scope_dc_level[5];
         int transport;
+        int bram_shift;
         double gain_scale[5];
         double time_scale[5];
         gboolean unwrap_phase_plot;
