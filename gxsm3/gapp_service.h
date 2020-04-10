@@ -158,6 +158,7 @@ class BuildParam{
 
         void grid_add_widget (GtkWidget *w, gint wwx=1, gint wwy=1){
                 if (w){
+                        any_widget = w;
                         gtk_grid_attach (GTK_GRID (grid), w, x, y, wwx, wwy);
                         if (configure_list_active)
                                 configure_list = g_slist_prepend (configure_list, w);
@@ -720,6 +721,7 @@ class BuildParam{
         GtkWidget *input;
         GtkWidget *spin;
         GtkWidget *scale;
+        GtkWidget *any_widget;
         Gtk_EntryControl *ec;
         Gtk_EntryControl *ec_iter[ECIMAX];
 private:

@@ -87,7 +87,7 @@ Find out what happenes with more or less bins!
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-
+#include "opencv2/imgproc/types_c.h"
 
 #include <math.h>
 #include <gtk/gtk.h>

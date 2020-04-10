@@ -315,6 +315,7 @@ static gboolean ft2d_run(Scan *Src, Scan *Dest)
                 return MATH_LIB_ERR;
 	}
 
+        double tmp=0.0;
 	for(int v = 0; v < Src->mem2d->GetNv(); v++){
                 Dest->mem2d->SetLayer(v);
                 Src->mem2d->SetLayer(v);
@@ -325,8 +326,15 @@ static gboolean ft2d_run(Scan *Src, Scan *Dest)
                 for (int line=0; line < Src->mem2d->GetNy(); line++) {
                         SrcZ ->SetPtr(0, line);
                         for (int col=0; col < Src->mem2d->GetNx(); col++){
+#if 0
                                 //g_print ("XY %d %d [%d,%d]\n",col, line, Src->mem2d->GetNx(), Src->mem2d->GetNy());
+                                double tmp2 = SrcZ->GetNext();
+                                tmp2 = tmp2 == 0.0 ? tmp : tmp2;
+                                tmp = tmp2;
+                                in[line*xlen2 + col] = tmp;
+#else
                                 in[line*xlen2 + col] = SrcZ->GetNext();
+#endif
                         }
                 }
 

@@ -1,5 +1,5 @@
 libdir = $(plugindir)/math
-AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
+AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm -I/usr/include/opencv4/
 
 lib_LTLIBRARIES = libaverage_profile.la \
 	libAngularAnalysis.la \
@@ -7,8 +7,6 @@ lib_LTLIBRARIES = libaverage_profile.la \
 	libadd_trail.la \
 	libstepcount.la \
 	libnndistribution.la \
-	libOpenCV_match.la \
-	libOpenCV_recenter.la \
 	libhistogram.la \
 	libhistoHOP.la \
 	libspasim.la \
@@ -18,7 +16,9 @@ lib_LTLIBRARIES = libaverage_profile.la \
 	libpolarhist.la \
 	libbaseinfo.la \
 	libautocorrelation.la \
-	libcrosscorrelation.la
+	libcrosscorrelation.la \
+	libOpenCV_match.la \
+	libOpenCV_recenter.la
 
 #
 #	libislandlbl.la \
