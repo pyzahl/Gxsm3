@@ -792,8 +792,6 @@ void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, in
                                   control_reg & PACPLL_CFG_TRANSPORT_RESET ? "RESET" : control & PACPLL_CFG_TRANSPORT_START ? "START" : "--",
                                   control_reg & PACPLL_CFG_TRANSPORT_SINGLE ? "SINGLE":"LOOP"); 
 
-        set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_CONTROL, (control_reg & 0xff) | __rp_pactransport_shr_dec_hi);
-        
         if (nsamples > 0){
                 set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_SAMPLES, nsamples);
         }
@@ -813,6 +811,8 @@ void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, in
         // AUX scale, center
         set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_AUX_SCALE, (int)round(Q15*scale));
         set_gpio_cfgreg_int48 (PACPLL_CFG_TRANSPORT_AUX_CENTER, (unsigned long long)round (dds_phaseinc (center))); // => 44bit phase f0 center ref for delta_freq calculation on FPGA
+
+        set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_CONTROL, (control_reg & 0xff) | __rp_pactransport_shr_dec_hi);
 }
 
 void rp_PAC_start_transport (int control_mode, int nsamples, int tr_mode){
@@ -896,8 +896,8 @@ void rp_PAC_set_dfreq_controller (double setpoint, double cp, double ci, double 
         set_gpio_cfgreg_int32 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_SET,   (long long)(round(dds_phaseinc (setpoint)))); // 32bit dFreq (Full range is Q44)
         set_gpio_cfgreg_int32 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_CP,    (long long)(QDFCOEF * cp)); // {32}
         set_gpio_cfgreg_int32 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_CI,    (long long)(QDFCOEF * ci));
-        set_gpio_cfgreg_int48 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_UPPER, (long long)round (Q31*upper/10.0)); // => 15.16 32Q16 Control (Bias, Z, ...)
-        set_gpio_cfgreg_int48 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_LOWER, (long long)round (Q31*lower/10.0));
+        set_gpio_cfgreg_int32 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_UPPER, (long long)round (Q31*upper/10.0)); // => 15.16 32Q16 Control (Bias, Z, ...) @ +/-10V range in Q31
+        set_gpio_cfgreg_int32 (PACPLL_CFG_DFREQ_CONTROLLER + PACPLL_CFG_LOWER, (long long)round (Q31*lower/10.0));
 }
 
 
@@ -1017,7 +1017,19 @@ void set_PAC_config()
         static double VOL_set_prev = 0.0;
         static double AM_set_prev = 0.0;
         static double PH_set_prev = 0.0;
+        static int AM_sw_prev = 0;
+        static int PH_sw_prev = 0;
+        static int DF_sw_prev = 0;
+
+        useconds_t code_delay = 70; // approx. measured post time we have regardless
+        useconds_t trigger_delay = (useconds_t)SET_SINGLESHOT_TRIGGER_POST_TIME.Value ();
+        if (trigger_delay >= code_delay)
+                trigger_delay -= code_delay;
+        else
+                trigger_delay = 0;
         
+        if (verbose == 1 && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()) fprintf(stderr, "PAC RECONFIG: trigger_delay=%d us\n", trigger_delay);
+
         // prepare for trigger
         if ( OPERATION.Value () == 2 || OPERATION.Value () == 4 ){ // auto SINGLE SHOT only on OP Param change or always in SCOPE mode
                 if ( AM_set_prev != AMPLITUDE_FB_SETPOINT.Value () || VOL_set_prev != VOLUME_MANUAL.Value() || PH_set_prev != PHASE_FB_SETPOINT.Value () || OPERATION.Value () == 4 ){
@@ -1040,7 +1052,7 @@ void set_PAC_config()
         
         if (AM_set_prev != AMPLITUDE_FB_SETPOINT.Value () && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
                 rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE);
-                usleep((useconds_t)SET_SINGLESHOT_TRIGGER_POST_TIME.Value ());
+                usleep(trigger_delay);
         }
         rp_PAC_set_amplitude_controller (
                                          AMPLITUDE_FB_SETPOINT.Value ()/1000., // mv to V
@@ -1053,7 +1065,7 @@ void set_PAC_config()
         
         if (PH_set_prev != PHASE_FB_SETPOINT.Value () && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
                 rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE);
-                usleep((useconds_t)SET_SINGLESHOT_TRIGGER_POST_TIME.Value ());
+                usleep(trigger_delay);
         }
         rp_PAC_set_phase_controller (
                                      PHASE_FB_SETPOINT.Value ()/180.*M_PI, // Phase
@@ -1066,7 +1078,7 @@ void set_PAC_config()
         
         if (VOL_set_prev != VOLUME_MANUAL.Value() && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
                 rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE);
-                usleep((useconds_t)SET_SINGLESHOT_TRIGGER_POST_TIME.Value ());
+                usleep(trigger_delay);
         }
         rp_PAC_set_volume (VOLUME_MANUAL.Value() / 1000.); // mV -> V
         VOL_set_prev = VOLUME_MANUAL.Value();
@@ -1075,6 +1087,14 @@ void set_PAC_config()
 
         rp_PAC_set_qcontrol (QC_GAIN.Value (), QC_PHASE.Value ());
 
+        if ( (AM_sw_prev != AMPLITUDE_CONTROLLER.Value() || PH_sw_prev!= PHASE_CONTROLLER.Value ())
+             && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
+                AM_sw_prev = AMPLITUDE_CONTROLLER.Value ();
+                PH_sw_prev = PHASE_CONTROLLER.Value ();
+                rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE);
+                usleep(trigger_delay);
+        }
+        
         // in tune mode disable controllers autmatically and do not touch DDS settings, but allow Q Control
         if (OPERATION.Value() < 6){
                 rp_PAC_adjust_dds (FREQUENCY_MANUAL.Value());
@@ -1833,6 +1853,7 @@ void OnNewParams(void)
         PHASE_CONTROLLER.Update ();
         AMPLITUDE_CONTROLLER.Update ();
         SET_SINGLESHOT_TRANSPORT_TRIGGER.Update ();
+        SET_SINGLESHOT_TRIGGER_POST_TIME.Update ();
         PHASE_UNWRAPPING_ALWAYS.Update ();
         LCK_AMPLITUDE.Update ();
         LCK_PHASE.Update ();

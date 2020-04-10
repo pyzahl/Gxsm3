@@ -241,10 +241,10 @@ always @(posedge i_clk)
     end
  
     //assign M_AXIS_CONTROL_tdata   = {control[zW_CONTROL_INT-1], control[zW_CONTROL_INT-zW_EXTEND-2 : zW_CONTROL_INT-zW_EXTEND-CONTROL_W]}; // strip extension
-    assign M_AXIS_CONTROL_tdata   = {{(M_AXIS_CONTROL_TDATA_WIDTH-CONTROL_W){control[zW_CONTROL_INT-1]}}, control[zW_CONTROL_INT-zW_EXTEND-2 : zW_CONTROL_INT-zW_EXTEND-CONTROL_W]}; // strip extension, expand to TDATA WIDTH
+    assign M_AXIS_CONTROL_tdata   = {{(M_AXIS_CONTROL_TDATA_WIDTH-CONTROL_W){control[zW_CONTROL_INT-1]}}, control[zW_CONTROL_INT-zW_EXTEND-1 : zW_CONTROL_INT-zW_EXTEND-CONTROL_W]}; // strip extension, expand to TDATA WIDTH
     assign M_AXIS_CONTROL_tvalid  = 1'b1;
     //assign M_AXIS_CONTROL2_tdata  = {control[zW_CONTROL_INT-1], control[zW_CONTROL_INT-zW_EXTEND-2 : zW_CONTROL_INT-zW_EXTEND-CONTROL2_W]}; // strip extension
-    assign M_AXIS_CONTROL2_tdata  = {{(M_AXIS_CONTROL_TDATA_WIDTH-CONTROL_W){control[zW_CONTROL_INT-1]}}, control[zW_CONTROL_INT-zW_EXTEND-2 : zW_CONTROL_INT-zW_EXTEND-CONTROL2_W]}; // strip extension, expand to TDATA WIDTH
+    assign M_AXIS_CONTROL2_tdata  = {{(M_AXIS_CONTROL_TDATA_WIDTH-CONTROL2_W){control[zW_CONTROL_INT-1]}}, control[zW_CONTROL_INT-zW_EXTEND-1 : zW_CONTROL_INT-zW_EXTEND-CONTROL2_W]}; // strip extension, expand to TDATA WIDTH
     assign M_AXIS_CONTROL2_tvalid = 1'b1;
 
     assign mon_signal  = {{(32-zW_ERROR){m[zW_ERROR-1]}}, m[zW_ERROR-1:0]};

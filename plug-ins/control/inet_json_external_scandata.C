@@ -458,6 +458,55 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->grid_add_check_button ( N_("Use LockIn Mode"), "Use LockIn Mode", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::select_pac_lck_phase), this);
+
+        bp->pop_grid ();
+
+        // =======================================
+        bp->new_grid_with_frame ("delta Frequency Controller");
+        bp->set_input_nx (3);
+        bp->grid_add_ec ("Reading", Hz, &parameters.dfreq_monitor, -200.0, 200.0, "g", 1., 10., "DFREQ-MONITOR");
+        EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
+        bp->ec->Freeze ();
+        bp->new_line ();
+        parameters.dfreq_fb_setpoint = -0.5;
+        parameters.dfreq_fb_invert = 1.;
+        parameters.dfreq_fb_cp_db = -76.;
+        parameters.dfreq_fb_ci_db = -143.;
+        parameters.control_dfreq_fb_upper = 500.;
+        parameters.control_dfreq_fb_lower = -500.;
+        bp->set_no_spin (false);
+        bp->set_input_width_chars (8);
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::dfreq_ctrl_parameter_changed, this);
+        bp->grid_add_ec ("Setpoint", Hz, &parameters.dfreq_fb_setpoint, -200.0, 200.0, "5g", 0.1, 1.0, "DFREQ-FB-SETPOINT");
+        bp->new_line ();
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::dfreq_gain_changed, this);
+        bp->grid_add_ec ("CP gain", dB, &parameters.dfreq_fb_cp_db, -200.0, 200.0, "g", 0.1, 1.0, "DFREQ-FB-CP");
+        bp->new_line ();
+        bp->grid_add_ec ("CI gain", dB, &parameters.dfreq_fb_ci_db, -200.0, 200.0, "g", 0.1, 1.0, "DFREQ-FB-CI");
+        bp->new_line ();
+        bp->set_no_spin (true);
+        bp->set_input_width_chars (16);
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::dfreq_ctrl_parameter_changed, this);
+        bp->set_input_width_chars (10);
+        bp->set_input_nx (1);
+        bp->grid_add_ec ("Limits", mVolt, &parameters.control_dfreq_fb_lower, -10000.0, 10000.0, "g", 0.1, 1.0, "CONTROL-DFREQ-FB-LOWER");
+        bp->grid_add_ec ("...", mVolt, &parameters.control_dfreq_fb_upper, -10000.0, 10000.0, "g", 0.1, 1.0, "CONTROL-DFREQ-FB-UPPER");
+        bp->new_line ();
+        bp->set_input_width_chars (16);
+        bp->set_input_nx (3);
+        bp->set_default_ec_change_notice_fkt (NULL, NULL);
+        bp->grid_add_ec ("Control", mVolt, &parameters.control_dfreq_monitor, 0.0, 25e6, ".4lf", 0.1, 1., "DFREQ-CONTROL-MONITOR");
+        EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
+        bp->ec->Freeze ();
+        bp->new_line ();
+        bp->set_input_nx (1);
+        bp->grid_add_check_button ( N_("Enable"), "Enable Dfreq Controller", 2,
+                                    G_CALLBACK (Inet_Json_External_Scandata::dfreq_controller), this);
+        bp->grid_add_check_button ( N_("Invert"), "Invert Dfreq Controller Gain. Normally positive.", 2,
+                                    G_CALLBACK (Inet_Json_External_Scandata::dfreq_controller_invert), this);
+
+        // =======================================
+
         bp->pop_grid ();
         bp->new_line ();
 
@@ -649,15 +698,15 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
 	const gchar *transport_modes[] = {
                 "OFF: no plot",
-                "IN1, IN2",            // [1] SCOPE
-                "IN1: AC, DC",         // [2] MON
-                "AMC: Ampl, Exec",     // [3] TWEAK
-                "PHC: dPhase, dFreq",  // [4] TWEAK
-                "Phase, Ampl",         // [5] TUNE
-                "Phase, dFreq,[Am,Ex]",// [6] SCAN
-                "--",
-                "DDR IN1/IN2",         // [7] SCOPE with DEC=1,SHR=0 Double(max) Data Rate config
-                "DEBUG McBSP",         // [8]
+                "IN1, IN2",             // [0] SCOPE
+                "IN1: AC, DC",          // [1] MON
+                "AMC: Ampl, Exec",      // [2] AMC Adjust
+                "PHC: dPhase, dFreq",   // [3] PHC Adjust
+                "Phase, Ampl",          // [4] TUNE
+                "Phase, dFreq,[Am,Ex]", // [5] SCAN
+                "DHC: dFreq, dFControl", // [6] DFC Adjust
+                "DDR IN1/IN2",          // [7] SCOPE with DEC=1,SHR=0 Double(max) Data Rate config
+                "DEBUG McBSP",          // [8]
                 NULL };
    
 	// Init choicelist
@@ -1057,6 +1106,13 @@ void Inet_Json_External_Scandata::phase_ctrl_parameter_changed (Param_Control* p
         self->write_parameter ("FREQ_FB_LOWER", self->parameters.freq_fb_lower);
 }
 
+void Inet_Json_External_Scandata::dfreq_ctrl_parameter_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+        self->write_parameter ("DFREQ_FB_SETPOINT", self->parameters.dfreq_fb_setpoint);
+        self->write_parameter ("DFREQ_FB_UPPER", self->parameters.control_dfreq_fb_upper);
+        self->write_parameter ("DFREQ_FB_LOWER", self->parameters.control_dfreq_fb_lower);
+}
+
 void Inet_Json_External_Scandata::save_values (NcFile *ncf){
         // store all Inet_Json_External_Scandata's control parameters for the RP PAC-PLL
         // if socket connection is up
@@ -1149,6 +1205,7 @@ void Inet_Json_External_Scandata::send_all_parameters (){
         write_parameter ("TRANSPORT_DECIMATION", 16);
         write_parameter ("TRANSPORT_MODE", transport);
         write_parameter ("OPERATION", operation_mode);
+        write_parameter ("BRAM_SCOPE_SHIFT_POINTS", bram_shift = 0);
         pac_tau_parameter_changed (NULL, this);
         pac_frequency_parameter_changed (NULL, this);
         pac_volume_parameter_changed (NULL, this);
@@ -1158,6 +1215,8 @@ void Inet_Json_External_Scandata::send_all_parameters (){
         amplitude_gain_changed (NULL, this);
         phase_ctrl_parameter_changed (NULL, this);
         phase_gain_changed (NULL, this);
+        dfreq_ctrl_parameter_changed (NULL, this);
+        dfreq_gain_changed (NULL, this);
 }
 
 void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -1185,12 +1244,12 @@ void Inet_Json_External_Scandata::choice_update_period_callback (GtkWidget *widg
         self->write_parameter ("SHR_DEC_DATA", self->data_shr_max);
         self->write_parameter ("TRANSPORT_DECIMATION", decimation);
 
-        self->bram_window_length = 1024.*(double)decimation*2.*1./125e6; // sec
+        self->bram_window_length = 1024.*(double)decimation*1./125e6; // sec
         g_print ("SET_SINGLESHOT_TRGGER_POST_TIME = %g ms\n", 0.1 * 1e3*self->bram_window_length);
         g_print ("BRAM_WINDOW_LENGTH ............ = %g ms\n", 1e3*self->bram_window_length);
         g_print ("BRAM_DEC ...................... = %d\n", decimation);
         g_print ("BRAM_DATA_SHR ................. = %d\n", self->data_shr_max);
-        self->write_parameter ("SET_SINGLESHOT_TRGGER_POST_TIME", 0.1 * 1e6*self->bram_window_length); // is us --  10% pre trigger
+        self->write_parameter ("SET_SINGLESHOT_TRIGGER_POST_TIME", 0.1 * 1e6*self->bram_window_length); // is us --  10% pre trigger
 }
 
 void Inet_Json_External_Scandata::choice_transport_ch12_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -1222,7 +1281,7 @@ void Inet_Json_External_Scandata::choice_auto_set_callback (GtkWidget *widget, I
 }
 
 void Inet_Json_External_Scandata::scope_buffer_position_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
-        self->write_parameter ("BRAM_SCOPE_SHIFT_POINTS", (int)gtk_range_get_value (GTK_RANGE (widget)));
+        self->write_parameter ("BRAM_SCOPE_SHIFT_POINTS", self->bram_shift = (int)gtk_range_get_value (GTK_RANGE (widget)));
 }
 
 
@@ -1294,6 +1353,26 @@ void Inet_Json_External_Scandata::phase_unwrap_plot (GtkWidget *widget, Inet_Jso
         self->unwrap_phase_plot = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
 }
 
+
+void Inet_Json_External_Scandata::dfreq_gain_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+        self->parameters.dfreq_fb_cp = self->parameters.dfreq_fb_invert * pow (10., self->parameters.dfreq_fb_cp_db/20.);
+        self->parameters.dfreq_fb_ci = self->parameters.dfreq_fb_invert * pow (10., self->parameters.dfreq_fb_ci_db/20.);
+        g_message("DF_CI=%g",self->parameters.dfreq_fb_ci,self->parameters.dfreq_fb_ci );
+        self->write_parameter ("DFREQ_FB_CP", self->parameters.dfreq_fb_cp);
+        self->write_parameter ("DFREQ_FB_CI", self->parameters.dfreq_fb_ci);
+}
+
+void Inet_Json_External_Scandata::dfreq_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->parameters.dfreq_fb_invert = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)) ? -1.:1.;
+        self->dfreq_gain_changed (NULL, self);
+}
+
+void Inet_Json_External_Scandata::dfreq_controller (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->write_parameter ("DFREQ_CONTROLLER", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+        self->parameters.dfreq_controller = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+}
+
 void Inet_Json_External_Scandata::update(){
 	if (G_IS_OBJECT (window))
 		g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "INETJSONSCANCONTROL_EC_list"),
@@ -1308,6 +1387,9 @@ void Inet_Json_External_Scandata::update_monitoring_parameters(){
         parameters.dds_frequency_monitor = pacpll_parameters.dds_frequency_monitor;
         parameters.volume_monitor = pacpll_parameters.volume_monitor;
         parameters.phase_monitor = pacpll_parameters.phase_monitor;
+        parameters.control_dfreq_monitor = pacpll_parameters.control_dfreq_monitor;
+        parameters.dfreq_monitor = pacpll_parameters.dfreq_monitor;
+        
         parameters.cpu_load = pacpll_parameters.cpu_load;
         parameters.free_ram = pacpll_parameters.free_ram;
         parameters.counter = pacpll_parameters.counter;
@@ -2105,10 +2187,11 @@ void Inet_Json_External_Scandata::update_graph (){
                         double ts = tm < 10. ? 1. : 1e-3;
                         tm *= ts;
                         double dt = AutoSkl(tm/10.);
-                        double t0 = -0.1*tm;
+                        double t0 = -0.1*tm + tm*bram_shift/1024.;
+                        double t1 = t0+tm;
                         cursors->set_stroke_rgba (0.8,0.8,0.8,0.4);
                         reading->set_anchor (CAIRO_ANCHOR_CENTER);
-                        for (double t=AutoNext(t0, dt); t < 0.9*tm; t += dt){
+                        for (double t=AutoNext(t0, dt); t <= t1; t += dt){
                                 double x=scope_width*(t-t0)/tm; // time position tic pos
                                 valuestring = g_strdup_printf ("%g %s", t*1000, ts > 0.9 ? "ms":"s");
                                 reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
