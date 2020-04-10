@@ -394,10 +394,10 @@ SIGNAL_LOOKUP = [
 	[0, 99, 1, "analog.McBSP_FPGA[1]", "McBSP Freq", "Hz",   (125000000.0/((1L<<RP_FPGA_QFREQ)-1)),  "MCBSP_LINK", "McBSPCH1 DATA Freq"], ## DSP McBSP SPI LINK[1]
 	[0, 99, 1, "analog.McBSP_FPGA[2]", "McBSP Ampl", "mV", (1.0/((1L<<RP_FPGA_QSQRT)-1)),            "MCBSP_LINK", "McBSPCH2 DATA Ampl"], ## DSP McBSP SPI LINK[2]
 	[0, 99, 1, "analog.McBSP_FPGA[3]", "McBSP Exec", "mV", (1.0/((1L<<RP_FPGA_QEXEC)-1)),            "MCBSP_LINK", "McBSPCH3 DATA Exec"], ## DSP McBSP SPI LINK[3]
-	[0, 99, 1, "analog.McBSP_FPGA[4]", "McBSP XAm",  "mV", (1.0/((1L<<RP_FPGA_QSQRT)-1)),            "MCBSP_LINK", "McBSPCH4 DATA Ampl raw"], ## DSP McBSP SPI LINK[4]
-	[0, 99, 1, "analog.McBSP_FPGA[5]", "McBSP XPh", "deg", (180.0/(math.pi*((1L<<RP_FPGA_QATAN)-1))),   "MCBSP_LINK", "McBSPCH5 DATA Phase raw"], ## DSP McBSP SPI LINK[5]
-	[0, 99, 1, "analog.McBSP_FPGA[6]", "McBSP XFH32", "Hz", ((1L<<32)*125000000.0/((1L<<RP_FPGA_QFREQ)-1)), "MCBSP_LINK", "McBSPCH6 DATA FreqHI Bit 63-32 raw"], ## DSP McBSP SPI LINK[6]
-	[0, 99, 1, "analog.McBSP_FPGA[7]", "McBSP XFL32", "Hz", (125000000.0/((1L<<RP_FPGA_QFREQ)-1)), "MCBSP_LINK", "McBSPCH7 DATA FreqLO Bit 31-0 raw"], ## DSP McBSP SPI LINK[7]
+	[0, 99, 1, "analog.McBSP_FPGA[4]", "McBSP X4",  "V", (1.0/((1L<<RP_FPGA_QSQRT)-1)),            "MCBSP_LINK", "McBSPCH4 DATA Ampl raw"], ## DSP McBSP SPI LINK[4]
+	[0, 99, 1, "analog.McBSP_FPGA[5]", "McBSP X5", "V", DSP32Qs15dot16TO_Volt,   "MCBSP_LINK", "McBSPCH5 DATA X"], ## DSP McBSP SPI LINK[5]
+	[0, 99, 1, "analog.McBSP_FPGA[6]", "McBSP X6", "V", DSP32Qs15dot16TO_Volt, "MCBSP_LINK", "McBSPCH6 DATA X"], ## DSP McBSP SPI LINK[6]
+	[0, 99, 1, "analog.McBSP_FPGA[7]", "McBSP dFControl", "V", DSP32Qs15dot16TO_Volt, "MCBSP_LINK", "McBSPCH7 DATA dFControl"], ## DSP McBSP SPI LINK[7]
         [0, 99, 8, "analog.McBSP_FPGA_VEC", "McBSP VECTOR", "X",  1, "MCBSP_LINK", "McBSP VECTOR"], ## McBSP SPI STATUS VECTOR
 	[-1, 0, 0, "no signal", "END OF SIGNALS", "NA", 0]  ## END MARKING
 ]
