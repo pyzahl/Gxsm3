@@ -1352,6 +1352,15 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                         SIGNAL_CH2[k]  = (float)dds_phaseinc_rel_to_freq ((long long)iy32); // correct to 44
                 }
                 break;
+        case 6: // Operation Transfer: delta Freq, DfControl Value
+                i += index_shift;
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // dFreq (48) in (32)
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // dFControl (32) SQ31 "x 10V"
+                        SIGNAL_CH1[k]  = (float)dds_phaseinc_rel_to_freq ((long long)ix32); // correct to 44
+                        SIGNAL_CH2[k]  = (float)iy32/Q31*10.0; // correct to Q31 * 10V
+                }
+                break;
         case 8: // Debug and Testing Channels [McBSP bits]
                 i += index_shift;
                 if (trigger_mode >= 5){
