@@ -220,7 +220,9 @@ static gboolean opencvrecenter_run(Scan *Src, Scan *SrcRef, Scan *Dest)
 	double recenter_threshold = 0.9; // suggestion recenter quality
 	int object_radius = 4; // no more than one mark withing this radius
 	int max_markers = 5000; // limit to this number -- in case things go weird
-	int method = CV_TM_CCOEFF_NORMED; // recentering algorithm, see http://docs.opencv.org/modules/imgproc/doc/object_detection.html
+	int method = 5; //CV_TM_CCOEFF_NORMED; // recentering algorithm, see http://docs.opencv.org/modules/imgproc/doc/object_detection.html
+        // ????  /usr/include/opencv4/opencv2/imgproc/types_c.h:    CV_TM_CCOEFF_NORMED =5
+
 	int i_marker_group = 0;
 	PI_DEBUG (DBG_L2, "OpenCV recenter");
 

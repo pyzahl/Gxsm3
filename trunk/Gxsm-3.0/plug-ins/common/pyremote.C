@@ -1594,6 +1594,109 @@ static PyObject* remote_getslice(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", 0);
 }
 
+static PyObject* remote_get_x_lookup(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+
+	long ch, i;
+
+	if (!PyArg_ParseTuple (args, "ll", &ch, &i))
+		return Py_BuildValue("d", 0.);
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src)
+                return Py_BuildValue("d", src->mem2d->data->GetXLookup(i));
+        else
+		return Py_BuildValue("d", 0.);
+}
+
+static PyObject* remote_get_y_lookup(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+
+	long ch, i;
+
+	if (!PyArg_ParseTuple (args, "ll", &ch, &i))
+		return Py_BuildValue("d", 0.);
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src)
+                return Py_BuildValue("d", src->mem2d->data->GetYLookup(i));
+        else
+		return Py_BuildValue("d", 0.);
+}
+
+static PyObject* remote_get_v_lookup(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+
+	long ch, i;
+
+	if (!PyArg_ParseTuple (args, "ll", &ch, &i))
+		return Py_BuildValue("d", 0.);
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src)
+                return Py_BuildValue("d", src->mem2d->data->GetVLookup(i));
+        else
+		return Py_BuildValue("d", 0.);
+}
+
+
+static PyObject* remote_set_x_lookup(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+
+	long ch, i;
+        double v;
+
+	if (!PyArg_ParseTuple (args, "lld", &ch, &i, &v))
+		return Py_BuildValue("d", 0.);
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src){
+                src->mem2d->data->SetXLookup(i, v);
+                return Py_BuildValue("d", src->mem2d->data->GetXLookup(i));
+        } else
+		return Py_BuildValue("d", 0.);
+}
+
+static PyObject* remote_set_y_lookup(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+
+	long ch, i;
+        double v;
+
+	if (!PyArg_ParseTuple (args, "lld", &ch, &i, &v))
+		return Py_BuildValue("d", 0.);
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src){
+                src->mem2d->data->SetYLookup(i, v);
+                return Py_BuildValue("d", src->mem2d->data->GetYLookup(i));
+        } else
+		return Py_BuildValue("d", 0.);
+}
+
+static PyObject* remote_set_v_lookup(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+
+	long ch, i;
+        double v;
+
+	if (!PyArg_ParseTuple (args, "lld", &ch, &i, &v))
+		return Py_BuildValue("d", 0.);
+
+	Scan *src = gapp->xsm->GetScanChannel (ch);
+        if (src){
+                src->mem2d->data->SetVLookup(i, v);
+                return Py_BuildValue("d", src->mem2d->data->GetVLookup(i));
+        } else
+		return Py_BuildValue("d", 0.);
+}
+
 
 static PyObject* remote_getobject(PyObject *self, PyObject *args)
 {
@@ -2227,6 +2330,12 @@ static PyMethodDef GxsmPyMethods[] = {
 	{"get_data_pkt", remote_getdatapkt, METH_VARARGS, "Get Data Value at point: value=gxsm.get_data_pkt (ch, x, y, v, t)"},
 	{"put_data_pkt", remote_putdatapkt, METH_VARARGS, "Put Data Value to point: gxsm.put_data_pkt (value, ch, x, y, v, t)"},
 	{"get_slice", remote_getslice, METH_VARARGS, "Get Slice/Image: [nx,ny,array]=gxsm.get_slice (ch, v, t)"},
+	{"get_x_lookup", remote_get_x_lookup, METH_VARARGS, "Get Scan Data index to world mapping: x=gxsm.get_x_lookup (ch, i)"},
+	{"get_y_lookup", remote_get_y_lookup, METH_VARARGS, "Get Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i)"},
+	{"get_v_lookup", remote_get_v_lookup, METH_VARARGS, "Get Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i)"},
+	{"set_x_lookup", remote_set_x_lookup, METH_VARARGS, "Set Scan Data index to world mapping: x=gxsm.get_x_lookup (ch, i, v)"},
+	{"set_y_lookup", remote_set_y_lookup, METH_VARARGS, "Set Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i, v)"},
+	{"set_v_lookup", remote_set_v_lookup, METH_VARARGS, "Set Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i, v)"},
 	{"get_object", remote_getobject, METH_VARARGS, "Get Object Coordinates: [type, x,y,..]=gxsm.get_object (ch, n)"},
 	{"add_marker_object", remote_addmobject, METH_VARARGS, "Put Marker Object at Coordinates: gxsm.add_marker_object (ch, label, mgrp=0..5, x,y)"},
         
