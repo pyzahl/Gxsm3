@@ -96,6 +96,7 @@ module McBSP_controller #(
     
     reg frame_start=0;
     reg [10-1:0] frame_bit_counter;
+    reg [(WORDS_PER_FRAME * BITS_PER_WORD) -1 : 0] reg_data_src;
     reg [(WORDS_PER_FRAME * BITS_PER_WORD) -1 : 0] data;
     reg [(WORDS_PER_FRAME * BITS_PER_WORD) -1 : 0] data_in;
     reg [(WORDS_PER_FRAME * BITS_PER_WORD) -1 : 0] data_read;
@@ -107,17 +108,23 @@ module McBSP_controller #(
     
     // reg [7:0] data_counter=0;
 
-/*
-    always @(negedge mcbsp_clk or posedge mcbsp_clk) // read / write edges
+    // Latch data from AXIS when new
+    always @(*)
     begin
-        if (!mcbsp_clk)
-        begin
-            clkr <= 0; // generate clkr
-*/
+        reg_data_src[(8 * BITS_PER_WORD) - 1 : (8 * BITS_PER_WORD)-32] <= S_AXIS1_tdata;
+        reg_data_src[(7 * BITS_PER_WORD) - 1 : (7 * BITS_PER_WORD)-32] <= S_AXIS2_tdata;
+        reg_data_src[(6 * BITS_PER_WORD) - 1 : (6 * BITS_PER_WORD)-32] <= S_AXIS3_tdata;
+        reg_data_src[(5 * BITS_PER_WORD) - 1 : (5 * BITS_PER_WORD)-32] <= S_AXIS4_tdata;
+        reg_data_src[(4 * BITS_PER_WORD) - 1 : (4 * BITS_PER_WORD)-32] <= S_AXIS5_tdata;
+        reg_data_src[(3 * BITS_PER_WORD) - 1 : (3 * BITS_PER_WORD)-32] <= S_AXIS6_tdata;
+        reg_data_src[(2 * BITS_PER_WORD) - 1 : (2 * BITS_PER_WORD)-32] <= S_AXIS7_tdata;
+        reg_data_src[(1 * BITS_PER_WORD) - 1 : (1 * BITS_PER_WORD)-32] <= S_AXIS8_tdata;
+    end
+
     always @(negedge mcbsp_clk) // McBSP read edge
     begin
             //clkr <= 0; // generate clkr
-// Detect Frame Sync
+            // Detect Frame Sync
             if (mcbsp_frame_start && ~frame_start)
             begin
                 rtrigger <= 1; // set frame start and trigger
@@ -126,14 +133,7 @@ module McBSP_controller #(
                 // wait for aclk edge (very fast vs. mcbsp_clk)
                 //@(posedge a_clk) // dose not synth.
                 // Latch Axis Data at Frame Sync Pulse and initial data serialization
-                data[(8 * BITS_PER_WORD) - 1 : (8 * BITS_PER_WORD)-32] <= S_AXIS1_tdata;
-                data[(7 * BITS_PER_WORD) - 1 : (7 * BITS_PER_WORD)-32] <= S_AXIS2_tdata;
-                data[(6 * BITS_PER_WORD) - 1 : (6 * BITS_PER_WORD)-32] <= S_AXIS3_tdata;
-                data[(5 * BITS_PER_WORD) - 1 : (5 * BITS_PER_WORD)-32] <= S_AXIS4_tdata;
-                data[(4 * BITS_PER_WORD) - 1 : (4 * BITS_PER_WORD)-32] <= S_AXIS5_tdata;
-                data[(3 * BITS_PER_WORD) - 1 : (3 * BITS_PER_WORD)-32] <= S_AXIS6_tdata;
-                data[(2 * BITS_PER_WORD) - 1 : (2 * BITS_PER_WORD)-32] <= S_AXIS7_tdata;
-                data[(1 * BITS_PER_WORD) - 1 : (1 * BITS_PER_WORD)-32] <= S_AXIS8_tdata;
+                data <= reg_data_src;
                 // data[(1 * BITS_PER_WORD) - 1 : (1 * BITS_PER_WORD)-32] <= data_read[(8 * BITS_PER_WORD) - 1 : (8 * BITS_PER_WORD)-32]; // LOOP BACK TEST, index: col,row
                 // data_counter <= data_counter + 1;
             end else
@@ -160,19 +160,7 @@ module McBSP_controller #(
                 end   
             end
     end
-/*
-         end else
-    //   always @(posedge mcbsp_clk)...// setup edge
-         begin
-            if (frame_start)
-            begin
-                // generate clkr and setup data bit
-                clkr <= 1;
-                tx   <= data[frame_bit_counter];
-            end
-        end
-    end
-*/
+
     always @(posedge mcbsp_clk) // McBSP transmit data setup edge
      begin
         // generate clkr and setup data bit
