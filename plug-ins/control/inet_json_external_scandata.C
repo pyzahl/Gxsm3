@@ -2110,18 +2110,23 @@ void Inet_Json_External_Scandata::update_graph (){
                         }
                         
                 }
-                if (pacpll_parameters.bram_write_pos >= 0 && pacpll_parameters.bram_write_pos <= 1024){
+                if (pacpll_parameters.bram_write_adr >= 0 && pacpll_parameters.bram_write_adr < 0x4000){
                         cairo_item_segments *cursors = new cairo_item_segments (2);
-                        cursors->set_line_width (0.5);
-                        cursors->set_stroke_rgba (CAIRO_COLOR_WHITE);
-                        cursors->set_xy_fast (0,pacpll_parameters.bram_write_pos,-80.);
-                        cursors->set_xy_fast (1,pacpll_parameters.bram_write_pos,80.);
+                        double icx = scope_width * (0.5*pacpll_parameters.bram_write_adr - bram_shift)/1024.;
+                        cursors->set_line_width (2.5);
+                        if (icx >= 0. && icx <= scope_width){
+                                cursors->set_line_width (0.5);
+                                cursors->set_stroke_rgba (CAIRO_COLOR_WHITE);
+                        } else if (icx < 0)  cursors->set_stroke_rgba (CAIRO_COLOR_RED), icx=2;
+                        else cursors->set_stroke_rgba (CAIRO_COLOR_RED), icx=scope_width-2;
+                        cursors->set_xy_fast (0, icx, -80.);
+                        cursors->set_xy_fast (1, icx,  80.);
                         cursors->draw (cr);
                         g_free (cursors);
                 }
 
                 if (operation_mode < 6){
-                        valuestring = g_strdup_printf ("Dec=%d [>>%d] wp#{%d,%d}", data_decimation, data_shr, pacpll_parameters.bram_write_pos, pacpll_parameters.bram_dec_count);
+                        valuestring = g_strdup_printf ("BRAM{A:%d, #:%d}", data_decimation, data_shr, pacpll_parameters.bram_write_adr, pacpll_parameters.bram_sample_pos);
                         reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
                         reading->set_text (10, -(110-14*6), valuestring);
                         g_free (valuestring);

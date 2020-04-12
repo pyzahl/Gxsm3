@@ -142,7 +142,9 @@ CIntParameter BRAM_SCOPE_TRIGGER_POS("BRAM_SCOPE_TRIGGER_POS", CBaseParameter::R
 CDoubleParameter BRAM_SCOPE_TRIGGER_LEVEL("BRAM_SCOPE_TRIGGER_LEVEL", CBaseParameter::RW, 0, 0, -20000., 20000.); // Trigger Level (in mV, Hz, deg)
 CIntParameter BRAM_SCOPE_TRIGGER_MODE("BRAM_SCOPE_TRIGGER_MODE", CBaseParameter::RW, 0, 0, 0, 20);  // 0: None, 1-4 CH1/2+/- 5-20 B0-8HL
 CIntParameter BRAM_SCOPE_SHIFT_POINTS("BRAM_SCOPE_SHIFT_POINTS", CBaseParameter::RW, 0, 0, 0, 4096); // Scope Data BRAM Shift/Offset Position
-CIntParameter BRAM_WRITE_POS("BRAM_WRITE_POS", CBaseParameter::RW, 0, 0, -100, 1024);
+CIntParameter BRAM_WRITE_ADR("BRAM_WRITE_ADR", CBaseParameter::RW, 0, 0, 0, 1<<16);
+CIntParameter BRAM_SAMPLE_POS("BRAM_SAMPLE_POS", CBaseParameter::RW, 0, 0, 0, 1<<16);
+CIntParameter BRAM_FINISHED("BRAM_FINISHED", CBaseParameter::RW, 0, 0, 0, 1);
 CIntParameter BRAM_DEC_COUNT("BRAM_DEC_COUNT", CBaseParameter::RW, 0, 0, 0, 0xffffffff);
 
 CFloatParameter DC_OFFSET("DC_OFFSET", CBaseParameter::RW, 0, 0, -1000.0, 1000.0); // mV
@@ -1423,8 +1425,9 @@ int wait_for_data(int max_wait_ms){
         int status[3];
         int max_try=max_wait_ms; while ( !bram_status(status) && --max_try>0) usleep (1000);
 
-        BRAM_WRITE_POS.Value () = status[0];
-        BRAM_DEC_COUNT.Value () = status[1];
+        BRAM_WRITE_ADR.Value ()  = status[0];
+        BRAM_SAMPLE_POS.Value () = status[1];
+        BRAM_FINISHED.Value ()   = status[2];
 
         if (verbose > 1) fprintf(stderr, "wait_for_data. tm=%d S[%d %d %d]\n", max_wait_ms - max_try, status[0], status[1], status[2] );
         
@@ -1678,6 +1681,9 @@ void UpdateSignals(void)
 
         rp_PAC_get_single_reading (reading_vector);
         bram_status(status);
+        BRAM_WRITE_ADR.Value ()  = status[0];
+        BRAM_SAMPLE_POS.Value () = status[1];
+        BRAM_FINISHED.Value ()   = status[2];
 
         switch ( OPERATION.Value () ){
         case 2:
@@ -1687,7 +1693,7 @@ void UpdateSignals(void)
                         rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, TRANSPORT_MODE.Value ());
                         usleep(10000);
                 }
-                if (bram_status(status)){ // ready?
+                if (status[2]){ // finished?
                         // read
                         read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
                         // trigger next
@@ -1761,9 +1767,6 @@ void UpdateSignals(void)
         }
         
         if (verbose > 3) fprintf(stderr, "UpdateSignal complete.\n");
-
-        BRAM_WRITE_POS.Value ()   = status[0];
-        BRAM_DEC_COUNT.Value ()   = status[1];
 
         rp_PAC_get_single_reading (reading_vector);
         VOLUME_MONITOR.Value ()   = reading_vector[4]; // Resonator Amplitude Signal Monitor in mV
@@ -1932,28 +1935,7 @@ void OnNewParams(void)
                         rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_RESET, 2048, TRANSPORT_MODE.Value ());
                         break;
                 case 4: // Single Shot
-                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        //fprintf(stderr, "PAC TRANSPORT MANUAL SS0-0: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
-
-                        rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_RESET, 4096, TRANSPORT_MODE.Value ());
-                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        //fprintf(stderr, "PAC TRANSPORT MANUAL SS-R1: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
-
-                        //usleep (20000);
-                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        //fprintf(stderr, "PAC TRANSPORT MANUAL SS-R2: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
-
                         rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, TRANSPORT_MODE.Value ());
-                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        //fprintf(stderr, "PAC TRANSPORT MANUAL SS-S3: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
-
-                        //usleep (20000);
-                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        //fprintf(stderr, "PAC TRANSPORT MANUAL SSS-4: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
-                        //usleep (100000);
-                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        //fprintf(stderr, "PAC TRANSPORT MANUAL SSS-5: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
-
                         break;
                 case 5: // Operation Contineous FIFO Transport Mode (scanning)
                         rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_LOOP, 4096, TRANSPORT_MODE.Value ());
