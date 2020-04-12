@@ -152,7 +152,7 @@ class lms():
     def phase (self):
         return math.atan2 (self.a-self.b, self.a+self.b)
 
-fref=32e3
+fref=330e3
 tscale=10
 xx=1
 xx2=1.8
@@ -164,6 +164,8 @@ tau=2.5  #0.15
 na=0.01
 pac = lms(fref, 125e6, tau*1e-6)
 
+dc_error=10*1e-3
+
 iir    = 5e-3;
 
 N=1000*tscale
@@ -174,16 +176,23 @@ m=np.zeros (N).astype(np.float)
 sdc=np.zeros (N).astype(np.float)
 a=np.zeros (N).astype(np.float)
 p=np.zeros (N).astype(np.float)
+s=np.zeros (N).astype(np.float)
 
+S=0.0
 for i in range (0,N):
-    wt=i*pac.dt*math.pi*2.*ftest
+    dphi=pac.dt*math.pi*2.*ftest
+    wt=i*dphi
     wt2=i*pac.dt*math.pi*2.*ftest2
     wt3=i*pac.dt*math.pi*2.*ftest3
     s[i]=0.2*math.sin(wt) #+0.5*math.sin(wt2) #+0.3*math.sin(wt3)+na*randint(-1000, 1000)*1e-3 #+0.2*math.sin(wt/200)
     sdc[i] = s[i]
     if i>1:
         sdc[i]=(1.-iir)*sdc[i-1]+iir*sdc[i]
-    m[i] = s[i] + 0.003 #- sdc[i]
+    m[i] = s[i] + dc_error #- sdc[i]
+
+    S = S + dphi*m[i]
+    s[i]=S
+    
     t[i]=i
     ts[i]=1e3*pac.run_step(m[i]*QLMS)*tscale
     a[i]=pac.ampl()
@@ -193,6 +202,7 @@ plt.xlabel('time in ms')
 #plt.plot (ts, s, label="signal")
 #plt.plot (ts, sdc, label="signal dc")
 plt.plot (ts, m, label="signal-dc")
+plt.plot (ts, s, label="S")
 plt.plot (ts, a, label="ampl")
 plt.plot (ts, p, label="phase")
 
@@ -202,7 +212,6 @@ pac = lms(fref, 125e6, tau*1e-6)
 
 iir    = 5e-3;
 
-N=1000*tscale
 t=np.zeros (N).astype(np.float)
 ts=np.zeros (N).astype(np.float)
 s=np.zeros (N).astype(np.float)
@@ -219,7 +228,7 @@ for i in range (0,N):
     sdc[i] = s[i]
     if i>1:
         sdc[i]=(1.-iir)*sdc[i-1]+iir*sdc[i]
-    m[i] = s[i] # - sdc[i]
+    m[i] = s[i] + dc_error # - sdc[i]
     t[i]=i
     ts[i]=1e3*pac.run_step_pipe(m[i]*QLMS)*tscale
     a[i]=pac.ampl()

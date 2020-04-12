@@ -458,11 +458,14 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->grid_add_check_button ( N_("Use LockIn Mode"), "Use LockIn Mode", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::select_pac_lck_phase), this);
+        bp->grid_add_check_button ( N_("dFreq Control"), "Show delta Frequencu Controller", 2,
+                                    G_CALLBACK (Inet_Json_External_Scandata::show_dF_control), this);
 
         bp->pop_grid ();
 
         // =======================================
         bp->new_grid_with_frame ("delta Frequency Controller");
+        dF_control_frame = bp->frame;
         bp->set_input_nx (3);
         bp->grid_add_ec ("Reading", Hz, &parameters.dfreq_monitor, -200.0, 200.0, "g", 1., 10., "DFREQ-MONITOR");
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
@@ -595,28 +598,29 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         */
         
 	const gchar *update_periods[] = {
-                "* 1/ 32.8us",
-                "  2/ 65.5us",
-                "  3/131us",
-                "  4/262.14us",
-                "  5/524.29us",
-                "  6/  1.05ms",
-                "  7/  2.10ms",
-                "  8/  4.19ms",
-                "  9/  8.39ms",
-                " 10/ 16.78ms",
-                " 11/ 33.55ms",
-                " 12/ 67.11ms",
-                " 13/134.22ms",
-                " 14/268.44ms",
-                " 15/536.87ms",
-                " 16/  1.07s",
-                " 17/  2.15s",
-                " 18/  4.29s",
-                " 19/  8.59s",
-                " 20/ 17.18s",
-                " 21/ 34.36s",
-                " 22/ 68.72s",
+                "* 1/ 32.8us  ( 32ns)",
+                "  2/ 65.5us  ( 64ns)",
+                "  3/131us    (128ns)",
+                "  4/262.14us (256ns)",
+                "  5/524.29us (512ns)",
+                "  6/  1.05ms ( 1.024us)",
+                "  7/  2.10ms ( 2.048us)",
+                "  8/  4.19ms ( 4.096us)",
+                "  9/  8.39ms ( 8.192us)",
+                " 10/ 16.78ms (16.4us",
+                " 11/ 33.55ms (32.8us)",
+                " 12/ 67.11ms (65.5us)",
+                " 13/134.22ms (131us)",
+                " 14/268.44ms (262us)",
+                " 15/536.87ms (524us)",
+                " 16/  1.07s  ( 1.05ms)",
+                " 17/  2.15s  ( 2.10ms)",
+                " 18/  4.29s  ( 4.19ms)",
+                " 19/  8.59s  ( 8.39ms)",
+                " 20/ 17.18s  (16.8ms)",
+                " 21/ 34.36s  (33.6ms)",
+                " 22/ 68.72s  (67.1ms)",
+                "DEC/SCOPE-LEN(BOXCARR)",
                 NULL };
    
 	// Init choicelist
@@ -1060,6 +1064,12 @@ void Inet_Json_External_Scandata::pac_volume_parameter_changed (Param_Control* p
 static void freeze_ec(Gtk_EntryControl* ec, gpointer data){ ec->Freeze (); };
 static void thaw_ec(Gtk_EntryControl* ec, gpointer data){ ec->Thaw (); };
 
+void Inet_Json_External_Scandata::show_dF_control (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
+                gtk_widget_show (self->dF_control_frame);
+        else
+                gtk_widget_hide (self->dF_control_frame);
+}
 
 void Inet_Json_External_Scandata::select_pac_lck_amplitude (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->write_parameter ("LCK_AMPLITUDE", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));

@@ -86,7 +86,7 @@ module axis_4s_combine #(
 (
     // (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_CLKEN a_clk" *)
-    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF S_AXIS1:S_AXIS1S:S_AXIS2:S_AXIS3:S_AXIS4:S_AXIS5:S_AXIS6:S_AXIS7:S_AXIS8:M_AXIS_aux:M_AXIS_CH1:M_AXIS_CH2:M_AXIS_CH3:M_AXIS_CH4:M_AXIS_DFREQ_LP:M_AXIS_PHASE_LP:M_AXIS_EXEC_LP:M_AXIS_AMPL_LP" *)
+    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF S_AXIS1:S_AXIS1S:S_AXIS2:S_AXIS3:S_AXIS4:S_AXIS5:S_AXIS6:S_AXIS7:S_AXIS8:M_AXIS_aux:M_AXIS_CH1:M_AXIS_CH2:M_AXIS_CH3:M_AXIS_CH4:M_AXIS_DFREQ_LP:M_AXIS_DFREQ_DEC:M_AXIS_PHASE_LP:M_AXIS_EXEC_LP:M_AXIS_AMPL_LP" *)
     input a_clk,
     // input a_resetn
     
@@ -134,6 +134,8 @@ module axis_4s_combine #(
     output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_CH4_tdata,
     output wire                          M_AXIS_CH4_tvalid,
 
+    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_DFREQ_DEC_tdata,
+    output wire                          M_AXIS_DFREQ_DEC_tvalid,
     output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_DFREQ_LP_tdata,
     output wire                          M_AXIS_DFREQ_LP_tvalid,
     output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_PHASE_LP_tdata,
@@ -332,13 +334,7 @@ module axis_4s_combine #(
                         begin
                             dec_sms_next  <= 3'd4; // finished, needs reset to restart and re-arm.
                             dec_sms       <= 3'd4; // finished, needs reset to restart and re-arm.
-                        end else begin
-                            dec_sms_next  <= 3'd2; // start over decimating with next value(s)
-                            dec_sms       <= 3'd2; // start over decimating with next value(s)
                         end
-                    end else begin
-                        dec_sms_next  <= 3'd2; // start over decimating with next value(s)
-                        dec_sms       <= 3'd2; // start over decimating with next value(s)
                     end
 
                     // Initiate Measuring next Sum Values
@@ -408,8 +404,6 @@ module axis_4s_combine #(
 */
                     endcase
                 end
-                    
-
             end
             // ===============================================================================================
             4:    // Finished State -- wait for new operation setup
@@ -436,6 +430,8 @@ module axis_4s_combine #(
     assign M_AXIS_CH4_tvalid = 1;
 
     // must be in STREAMING MODE for contineous op
+    assign M_AXIS_DFREQ_DEC_tdata  = chDFs[31:0]; // dFrequency [64] (44) =>  32 || signed, lower 31 bits
+    assign M_AXIS_DFREQ_DEC_tvalid = 1;
     assign M_AXIS_DFREQ_LP_tdata  = chDFs[31:0]; // dFrequency [64] (44) =>  32 || signed, lower 31 bits
     assign M_AXIS_DFREQ_LP_tvalid = 1;
     assign M_AXIS_PHASE_LP_tdata  = chPHs[31:0]; // Phase (32) =>  32

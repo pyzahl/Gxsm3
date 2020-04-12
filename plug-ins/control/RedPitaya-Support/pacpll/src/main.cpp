@@ -777,26 +777,27 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
 int __rp_pactransport_shr_dec_hi=0;
 
 // Configure BRAM Data Transport Mode
-void rp_PAC_transport_start (int control){
-        set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_CONTROL, (control & 0xff) | __rp_pactransport_shr_dec_hi);
+void rp_PAC_transport_set_control (int control){
+        static int control_reg=0;
+
+        if (control >= 0){
+                control_reg = control;
+                if (verbose == 1) fprintf(stderr, "TR: RESET: %s, START: %s, MODE: %s\n",
+                                          control_reg & PACPLL_CFG_TRANSPORT_RESET ? "SET  " : "READY",
+                                          control_reg & PACPLL_CFG_TRANSPORT_START ? "GO" : "ARMED",
+                                          control_reg & PACPLL_CFG_TRANSPORT_SINGLE ? "SINGLE":"LOOP");
+        }
+        set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_CONTROL, (control_reg & 0xff) | __rp_pactransport_shr_dec_hi);
 }
 
 void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, int decimation, int channel_select, double scale, double center){
-        static int control_reg=0;
         __rp_pactransport_shr_dec_hi = channel_select > 7 ? 0 : ((shr_dec_data >= 0 && shr_dec_data <= 24) ? shr_dec_data : 0) << 8; // keep memory, do not shift DBG data
         
-        if (control >= 0)
-                control_reg = control;
+        if (verbose == 1) fprintf(stderr, "Configure transport: dec=%d, shr=%d, CHM=%d N=%d ", decimation, shr_dec_data, channel_select, nsamples);
         
-        if (verbose == 1) fprintf(stderr, "##Configure transport: 0x%02x, dec=%d, shr=%d, CHM=%d N=%d  {%s, %s}\n",  control_reg, decimation, shr_dec_data, channel_select, nsamples,
-                                  control_reg & PACPLL_CFG_TRANSPORT_RESET ? "RESET" : control & PACPLL_CFG_TRANSPORT_START ? "START" : "--",
-                                  control_reg & PACPLL_CFG_TRANSPORT_SINGLE ? "SINGLE":"LOOP"); 
-
         if (nsamples > 0){
                 set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_SAMPLES, nsamples);
         }
-        if (decimation < 2) // if decimation is set to 1 this only works for DDR channels via data in Hi16 / Lo16 / sample and shr_data = 0, but FPGA decimation must be still set to 2!
-                decimation = 2;
         
         set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_DECIMATION, decimation);
 
@@ -812,15 +813,16 @@ void rp_PAC_configure_transport (int control, int shr_dec_data, int nsamples, in
         set_gpio_cfgreg_int32 (PACPLL_CFG_TRANSPORT_AUX_SCALE, (int)round(Q15*scale));
         set_gpio_cfgreg_int48 (PACPLL_CFG_TRANSPORT_AUX_CENTER, (unsigned long long)round (dds_phaseinc (center))); // => 44bit phase f0 center ref for delta_freq calculation on FPGA
 
-        set_gpio_cfgreg_uint32 (PACPLL_CFG_TRANSPORT_CONTROL, (control_reg & 0xff) | __rp_pactransport_shr_dec_hi);
+        rp_PAC_transport_set_control (control);
 }
 
 void rp_PAC_start_transport (int control_mode, int nsamples, int tr_mode){
+        // RESET TRANSPORT
         rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_RESET,
                                     SHR_DEC_DATA.Value (),
                                     nsamples,
                                     TRANSPORT_DECIMATION.Value (),
-                                    tr_mode,
+                                    tr_mode, // CHANNEL COMBINATION MODE
                                     AUX_SCALE.Value (),
                                     FREQUENCY_CENTER.Value()
                                     );
@@ -828,8 +830,8 @@ void rp_PAC_start_transport (int control_mode, int nsamples, int tr_mode){
         if (control_mode == PACPLL_CFG_TRANSPORT_RESET)
                 return;
         
-        usleep(2000);
-        rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START | control_mode);
+        // START TRANSPORT IN SINGLE or LOOP MODE
+        rp_PAC_transport_set_control (PACPLL_CFG_TRANSPORT_START | control_mode);
 }
 
 // BRAM write completed (single shot mode)?
@@ -1008,7 +1010,7 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
 
 
 
-// Generator config
+// manage PAC configuration and trigger for tune single shot operations
 void set_PAC_config()
 {
         double reading_vector[READING_MAX_VALUES];
@@ -1020,7 +1022,8 @@ void set_PAC_config()
         static int AM_sw_prev = 0;
         static int PH_sw_prev = 0;
         static int DF_sw_prev = 0;
-
+        static int uw_sw_prev = 0;
+        
         useconds_t code_delay = 70; // approx. measured post time we have regardless
         useconds_t trigger_delay = (useconds_t)SET_SINGLESHOT_TRIGGER_POST_TIME.Value ();
         if (trigger_delay >= code_delay)
@@ -1028,9 +1031,9 @@ void set_PAC_config()
         else
                 trigger_delay = 0;
         
-        if (verbose == 1 && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()) fprintf(stderr, "PAC RECONFIG: trigger_delay=%d us\n", trigger_delay);
 
         // prepare for trigger
+        /*
         if ( OPERATION.Value () == 2 || OPERATION.Value () == 4 ){ // auto SINGLE SHOT only on OP Param change or always in SCOPE mode
                 if ( AM_set_prev != AMPLITUDE_FB_SETPOINT.Value () || VOL_set_prev != VOLUME_MANUAL.Value() || PH_set_prev != PHASE_FB_SETPOINT.Value () || OPERATION.Value () == 4 ){
                         if (SET_SINGLESHOT_TRANSPORT_TRIGGER.Value () && bram_ready ()){
@@ -1049,9 +1052,20 @@ void set_PAC_config()
                                             FREQUENCY_CENTER.Value()
                                             );
         }
-        
+        */
+        if ( OPERATION.Value () != 4  )
+                rp_PAC_configure_transport (-1,
+                                            SHR_DEC_DATA.Value (),
+                                            -1,
+                                            TRANSPORT_DECIMATION.Value (),
+                                            TRANSPORT_MODE.Value (),
+                                            AUX_SCALE.Value (),
+                                            FREQUENCY_CENTER.Value()
+                                            );
+
+
         if (AM_set_prev != AMPLITUDE_FB_SETPOINT.Value () && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
-                rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE);
+                rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, TRANSPORT_MODE.Value ());
                 usleep(trigger_delay);
         }
         rp_PAC_set_amplitude_controller (
@@ -1064,7 +1078,7 @@ void set_PAC_config()
         AM_set_prev = AMPLITUDE_FB_SETPOINT.Value ();
         
         if (PH_set_prev != PHASE_FB_SETPOINT.Value () && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
-                rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE);
+                rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, TRANSPORT_MODE.Value ());
                 usleep(trigger_delay);
         }
         rp_PAC_set_phase_controller (
@@ -1077,7 +1091,7 @@ void set_PAC_config()
         PH_set_prev = PHASE_FB_SETPOINT.Value ();
         
         if (VOL_set_prev != VOLUME_MANUAL.Value() && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
-                rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE);
+                rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, TRANSPORT_MODE.Value ());
                 usleep(trigger_delay);
         }
         rp_PAC_set_volume (VOLUME_MANUAL.Value() / 1000.); // mV -> V
@@ -1087,11 +1101,12 @@ void set_PAC_config()
 
         rp_PAC_set_qcontrol (QC_GAIN.Value (), QC_PHASE.Value ());
 
-        if ( (AM_sw_prev != AMPLITUDE_CONTROLLER.Value() || PH_sw_prev!= PHASE_CONTROLLER.Value ())
+        if ( (AM_sw_prev != AMPLITUDE_CONTROLLER.Value() || PH_sw_prev!= PHASE_CONTROLLER.Value () || uw_sw_prev != PHASE_UNWRAPPING_ALWAYS.Value ())
              && OPERATION.Value () == 4 && SET_SINGLESHOT_TRANSPORT_TRIGGER.Value ()){
                 AM_sw_prev = AMPLITUDE_CONTROLLER.Value ();
                 PH_sw_prev = PHASE_CONTROLLER.Value ();
-                rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_SINGLE);
+                uw_sw_prev = PHASE_UNWRAPPING_ALWAYS.Value ();
+                rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, TRANSPORT_MODE.Value ());
                 usleep(trigger_delay);
         }
         
@@ -1162,10 +1177,7 @@ int rp_app_init(void)
         rp_PAC_get_single_reading (reading_vector);
 
         // init block transport for scope
-        rp_PAC_configure_transport (PACPLL_CFG_TRANSPORT_RESET,
-                                    SHR_DEC_DATA.Value (), 2048, TRANSPORT_DECIMATION.Value (), TRANSPORT_MODE.Value (), AUX_SCALE.Value (), FREQUENCY_CENTER.Value());
-        usleep(1000);
-        rp_PAC_transport_start (PACPLL_CFG_TRANSPORT_START|PACPLL_CFG_TRANSPORT_LOOP);
+        rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_LOOP, 4096, TRANSPORT_MODE.Value ());
         
         return 0;
 }
@@ -1249,7 +1261,7 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
         int trigger_mode = BRAM_SCOPE_TRIGGER_MODE.Value ();
         int trigger_pos  = trigger_mode ? BRAM_SCOPE_TRIGGER_POS.Value () : 0;
         size_t trigger_adr =  (size_t)(8*trigger_pos);
-        if (verbose == 1) fprintf(stderr, "SCOPE TRIGGER: m=%d pos=%d\n",  trigger_mode, trigger_pos );
+        // if (verbose == 1) fprintf(stderr, "SCOPE TRIGGER: m=%d pos=%d\n",  trigger_mode, trigger_pos );
 
         switch (t_mode){
         case 0: // AXIS1:  IN1, IN2
@@ -1686,15 +1698,14 @@ void UpdateSignals(void)
                 }
                 break;
         case 4:
-                if (verbose == 1) fprintf(stderr, "UpdateSignals SCOPE-SS OPERATION=4\n");
-                // Scope in single shot mode, just read what we got and update signals
-                read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
-                break;
+                // Scope in single shot mode -- just read what we got and update signals
         case 5:
-                if (verbose == 1) fprintf(stderr, "UpdateSignals STREAM OPERATION=5\n");
                 // Streaming / Loop Mode -- just read what ever we got and update signals
+                if (verbose == 1){
+                        unsigned int x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        fprintf(stderr, "PAC TRANSPORT: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+                }
                 read_bram (SIGNAL_SIZE_DEFAULT, TRANSPORT_DECIMATION.Value (),  TRANSPORT_MODE.Value (), GAIN1.Value (), GAIN2.Value ());
-                rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_LOOP, 4096, TRANSPORT_MODE.Value ());
                 break;
         case 6:
         case 7:
@@ -1921,27 +1932,27 @@ void OnNewParams(void)
                         rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_RESET, 2048, TRANSPORT_MODE.Value ());
                         break;
                 case 4: // Single Shot
-                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        fprintf(stderr, "PAC TRANSPORT MANUAL SS0-0: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        //fprintf(stderr, "PAC TRANSPORT MANUAL SS0-0: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
 
                         rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_RESET, 4096, TRANSPORT_MODE.Value ());
-                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        fprintf(stderr, "PAC TRANSPORT MANUAL SS-R1: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        //fprintf(stderr, "PAC TRANSPORT MANUAL SS-R1: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
 
-                        usleep (20000);
-                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        fprintf(stderr, "PAC TRANSPORT MANUAL SS-R2: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+                        //usleep (20000);
+                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        //fprintf(stderr, "PAC TRANSPORT MANUAL SS-R2: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
 
                         rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, TRANSPORT_MODE.Value ());
-                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        fprintf(stderr, "PAC TRANSPORT MANUAL SS-S3: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        //fprintf(stderr, "PAC TRANSPORT MANUAL SS-S3: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
 
-                        usleep (20000);
-                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        fprintf(stderr, "PAC TRANSPORT MANUAL SSS-4: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
-                        usleep (100000);
-                        x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
-                        fprintf(stderr, "PAC TRANSPORT MANUAL SSS-5: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+                        //usleep (20000);
+                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        //fprintf(stderr, "PAC TRANSPORT MANUAL SSS-4: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
+                        //usleep (100000);
+                        //x = read_gpio_reg_int32 (6,1); // GPIO X12 : Transport Dbg
+                        //fprintf(stderr, "PAC TRANSPORT MANUAL SSS-5: BRAM WritePos=%04X Sample#=%04x Finished=%d\n", x&0x7fff, x>>16, x&0x8000 ? 1:0);
 
                         break;
                 case 5: // Operation Contineous FIFO Transport Mode (scanning)

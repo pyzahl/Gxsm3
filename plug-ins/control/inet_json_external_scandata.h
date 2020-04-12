@@ -255,6 +255,7 @@ public:
 	static void pac_volume_parameter_changed (Param_Control* pcs, gpointer user_data);
         static void select_pac_lck_amplitude (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void select_pac_lck_phase (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void show_dF_control (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void qcontrol (GtkWidget *widget, Inet_Json_External_Scandata *self);
 	static void qc_parameter_changed (Param_Control* pcs, gpointer user_data);
 	static void tune_parameter_changed (Param_Control* pcs, gpointer user_data);
@@ -525,6 +526,7 @@ private:
         double scope_width_points;
         double scope_height_points;
         GtkWidget *signal_graph;
+        GtkWidget *dF_control_frame;
        
         GtkWidget *input_rpaddress;
         GtkWidget *text_status;

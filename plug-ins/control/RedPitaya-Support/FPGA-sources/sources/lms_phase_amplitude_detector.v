@@ -295,7 +295,7 @@ module lms_phase_amplitude_detector #(
         //== d_mu_e3 <= ((signal1 - predict1) * Rtau + QHALF) >>> LMS_Q_WIDTH;
         //d_mu_e_3 <= (predict_err_2 * Rtau + LMSQHALF) >>> LMS_Q_WIDTH;
         //d_mu_e_3 <= (predict_err_2 * Rtau + LMSQHALF); // ) >>> LMS_Q_WIDTH;
-        d_mu_e_3 <= predict_err_2 * Rtau; // test w o rounding
+        d_mu_e_3 <= predict_err_2 * Rtau + LMSQHALF; // ** test w o rounding
         if (USE_DUAL_PAC)
         begin
             //Ad_mu_e1 <= ((m1-Apredict1) * Atau + 45'sh200000) >>> 22;
