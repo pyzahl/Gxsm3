@@ -58,8 +58,9 @@ struct PACPLL_parameters {
 
         double parameter_period;
         double signal_period;
-        double bram_write_pos;
-        double bram_dec_count;
+        double bram_write_adr;
+        double bram_sample_pos;
+        double bram_finished;
 
         double qc_gain;
         double qc_phase;
@@ -156,8 +157,9 @@ JSON_parameter PACPLL_JSON_parameters[] = {
 
         { "PARAMETER_PERIOD", &pacpll_parameters.parameter_period, false },
         { "SIGNAL_PERIOD", &pacpll_parameters.signal_period, false },
-        { "BRAM_WRITE_POS", &pacpll_parameters.bram_write_pos, true },
-        { "BRAM_DEC_COUNT", &pacpll_parameters.bram_dec_count, true },
+        { "BRAM_WRITE_ADR", &pacpll_parameters.bram_write_adr, true },
+        { "BRAM_SAMPLE_POS", &pacpll_parameters.bram_sample_pos, true },
+        { "BRAM_FINISHED", &pacpll_parameters.bram_finished, true },
 
         { "SHR_DEC_DATA", &pacpll_parameters.shr_dec_data, false },
         { "GAIN1", &pacpll_parameters.gain1, false },
