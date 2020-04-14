@@ -2125,8 +2125,11 @@ void Inet_Json_External_Scandata::update_graph (){
                         g_free (cursors);
                 }
 
-                if (operation_mode < 6){
-                        valuestring = g_strdup_printf ("BRAM{A:%d, #:%d}", data_decimation, data_shr, pacpll_parameters.bram_write_adr, pacpll_parameters.bram_sample_pos);
+                if (debug_level&1){
+                        valuestring = g_strdup_printf ("BRAM{A:0x%04X, #:%d, F:%d}",
+                                                       (int)pacpll_parameters.bram_write_adr,
+                                                       (int)pacpll_parameters.bram_sample_pos,
+                                                       (int)pacpll_parameters.bram_finished);
                         reading->set_stroke_rgba (CAIRO_COLOR_WHITE);
                         reading->set_text (10, -(110-14*6), valuestring);
                         g_free (valuestring);
