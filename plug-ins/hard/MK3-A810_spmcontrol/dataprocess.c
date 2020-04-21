@@ -269,7 +269,7 @@ inline void compute_analog_out (int ch, OUT_MIXER *out){
 
 /* simple out mixer for coarse mode wave output to channel mixing -- 16bit aligned for wave !! */
 inline void compute_analog_wave_out (int ch, OUT_MIXER *out){
-	out->s = _SADD16 (*(out->add_a_p), *(out->p));
+	out->s = _SADD16 (*(out->add_a_p)>>16, *(out->p));
 	AIC_OUT(ch) = out->s;
 }
 

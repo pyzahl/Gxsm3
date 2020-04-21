@@ -834,6 +834,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->grid_add_check_button ( N_("Ch3 AC"), "Remove Offset from Ch3", 1,
                                     G_CALLBACK (Inet_Json_External_Scandata::scope_ac_ch3_callback), this);
         bp->new_line ();
+        bram_shift = 0;
         bp->grid_add_widget (gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0, 4096, 10), 10);
         g_signal_connect (G_OBJECT (bp->any_widget), "value-changed",
                           G_CALLBACK (Inet_Json_External_Scandata::scope_buffer_position_callback),

@@ -628,6 +628,8 @@ int idle_task_019(void){
 
 #pragma CODE_SECTION(idle_task_020, ".text:slow")
 int idle_task_020(void){
+        initiate_McBSP_transfer (0);
+	m_servo.watch = analog.McBSP_FPGA[7] >> 16; // map FPGA McBSP[7] (Bias Control)
         return 0;
 }
 

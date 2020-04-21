@@ -102,8 +102,8 @@ const gchar *MK3_dsp_id_process_name[] = {
         //ID0017
         "Signal Monitor Update",
         "McBSP Idle Transfers",
-        "McBSP-Freq M-Servo",
-        "",
+        "McBSP-Freq M-Servo @Watch",
+        "McBSP-Control M-Servo @Watch",
         
         //ID0021
         "",

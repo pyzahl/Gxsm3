@@ -97,10 +97,6 @@ void stop_autoapp (){
         for (tmp_i=0; tmp_i<autoapp.n_wave_channels; ++tmp_i, autoapp.mv_count++)
                 analog.wave[autoapp.channel_mapping[tmp_i] & 7] = 0;
 
-	// enable FB
-	if(!(state.mode & MD_PID))
-		state.mode |= MD_PID;
-
 	// switch off after next analog (iobuf) update
 	autoapp.pflg  = 0;
 }
@@ -163,10 +159,10 @@ void run_wave_play (){
 void run_tip_app (){
         switch(autoapp.tip_mode){
         case TIP_ZPiezoMax:
-		// enable feedback, Z-approach via CI,CP
-                if(!(state.mode & MD_PID))     // need to start feedback?
-                        state.mode |= MD_PID;     // enable feedback
-
+                // make sure we have restored feedback settings
+                z_servo.cp = autoapp.cp;
+                z_servo.ci = autoapp.ci;
+                
 		// check for tunneling conditions
 		// check for limit
 		if (app_ci_signum*z_servo.neg_control > VAL_EXTEND){ // almost extended? !!!Z-Signum dependent!!!
@@ -204,10 +200,7 @@ void run_tip_app (){
 		} else {
 			// check progress
 			if ( app_ci_signum*z_servo.neg_control < -VAL_EXTEND ){ // retracted?
-				state.mode &= ~MD_PID;     // disable feedback
-				// restore feedback settings
-				z_servo.cp = autoapp.cp;
-				z_servo.ci = autoapp.ci;
+				// state.mode &= ~MD_PID;     // disable feedback -- does not work any more, obsoleted
 
 				autoapp.delay_cnt = autoapp.n_wait;
 				// next state
