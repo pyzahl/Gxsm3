@@ -805,7 +805,7 @@ gpointer DataReadThread (void *ptr_sr){
                 g_message("FifoReadThread Scanning Top-Down... %d", sr->ScanningFlg);
 		for (int yi=y0; yi < y0+ny; ++yi){ // for all lines
                         for (int dir = 0; dir < 4 && sr->ScanningFlg; ++dir){ // check for every pass -> <- 2> <2
-                                g_message("FifoReadThread ny = %d, dir = %d, nsrcs = %d, srcs = 0x%04X", yi, dir, sr->nsrcs_dir[dir], sr->srcs_dir[dir]);
+                                //g_message("FifoReadThread ny = %d, dir = %d, nsrcs = %d, srcs = 0x%04X", yi, dir, sr->nsrcs_dir[dir], sr->srcs_dir[dir]);
                                 if (sr->nsrcs_dir[dir] == 0) // direction pass active?
                                         continue; // not selected?
                                 else
