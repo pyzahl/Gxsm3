@@ -662,7 +662,10 @@ int dp_task_008(void){
                                 k = autoapp.channel_mapping[i] & 7;
 
                                 // wave output computation
-                                compute_analog_wave_out (k, &analog.out[8+k]);
+                                if (autoapp.channel_mapping[i] & AAP_MOVER_SIGNAL_ADD)
+                                        AIC_OUT (k) = _sadd (AIC_OUT (k), *(analog.out[8+k].p));
+                                else
+                                        compute_analog_wave_out (k, &analog.out[8+k]);
 
                                 // --- adding is to be configure via signals for MK3!
                                 //if (autoapp.channel_mapping[i] & AAP_MOVER_SIGNAL_ADD)

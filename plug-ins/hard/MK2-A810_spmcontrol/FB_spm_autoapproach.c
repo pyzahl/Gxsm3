@@ -56,6 +56,10 @@ short *waveptr;
 void init_autoapp (){
 	// now prepare for starting...
 
+        // backup
+        autoapp.cp = feedback.cp;
+        autoapp.ci = feedback.ci;
+
 	// init mover
 	autoapp.mv_count = 0; 
 	autoapp.mv_step_count = 0;
@@ -79,10 +83,6 @@ void stop_autoapp (){
 		feedback.cp = autoapp.cp;
 		feedback.ci = autoapp.ci;
 	}
-
-	// enable FB
-	if(!(state.mode & MD_PID))
-		state.mode |= MD_PID;
 
 	// switch off after next analog (iobuf) update
 	autoapp.pflg  = 2;
@@ -134,10 +134,10 @@ void run_wave_play (){
 void run_tip_app (){
         switch(autoapp.tip_mode){
         case TIP_ZPiezoMax:
-		// enable feedback, Z-approach via CI,CP
-                if(!(state.mode & MD_PID))     // need to start feedback?
-                        state.mode |= MD_PID;     // enable feedback
-
+                // restore feedback settings
+                feedback.cp = autoapp.cp;
+                feedback.ci = autoapp.ci;
+                
 		// check for tunneling conditions
 		// check for limit
 		if (app_ci_signum*feedback.z > 30000 ){ // almost extended? !!!Z-Signum dependent!!!
@@ -164,6 +164,7 @@ void run_tip_app (){
 		if (app_ci_signum*feedback.ci > 0) {
 			// save feedback settings
 			app_ci_signum = feedback.ci > 0 ? 1:-1;
+                        // udpate (user may adjust while app)
 			autoapp.cp = feedback.cp;
 			autoapp.ci = feedback.ci;
 						
@@ -173,11 +174,6 @@ void run_tip_app (){
 		} else {
 			// check progress
 			if ( app_ci_signum*feedback.z < -30000 ){ // >= half extended?
-				state.mode &= ~MD_PID;     // disable feedback
-				// restore feedback settings
-				feedback.cp = autoapp.cp;
-				feedback.ci = autoapp.ci;
-
 				autoapp.delay_cnt = autoapp.n_wait;
 				// next state
 				autoapp.tip_mode = TIP_Delay_1;
