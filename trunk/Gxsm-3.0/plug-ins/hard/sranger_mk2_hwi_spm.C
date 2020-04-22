@@ -752,9 +752,14 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 		// configure wave[0,1,...] out channel destination
 		dsp_aap.n_wave_channels    = int_2_sranger_int (channels); /* number wave channels -- up top 6, must match wave data */
                 for (int i=0; i<channels; ++i) // multi channel wave -- test on "X"
-                        dsp_aap.channel_mapping[i] = int_2_sranger_int (DSPMoverClass->mover_param.wave_out_channel_xyz[i][2]);
+                        if (DSPMoverClass->mover_param.wave_out_channel_xyz[i][2] >= 10)
+                                dsp_aap.channel_mapping[i] = int_2_sranger_int ((DSPMoverClass->mover_param.wave_out_channel_xyz[i][2]-10) | AAP_MOVER_SIGNAL_ADD);
+                        else
+                                dsp_aap.channel_mapping[i] = int_2_sranger_int (DSPMoverClass->mover_param.wave_out_channel_xyz[i][2]&7);
       		// ... [5] (configure all channels!)
 
+                // MK2 WAVE ADDING: must add flag AAP_MOVER_SIGNAL_ADD to mapping: (autoapp.channel_mapping[i] & AAP_MOVER_SIGNAL_ADD)   ( == 0x100 )
+                
 		dsp_aap.mover_mode = int_2_sranger_int (AAP_MOVER_AUTO_APP | AAP_MOVER_WAVE_PLAY);
 
 		dsp_aap.max_wave_cycles = int_2_sranger_int (2*(int)DSPMoverClass->mover_param.AFM_Steps);     /* max number of repetitions */
@@ -832,19 +837,28 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
                 case DSP_CMD_AFM_MOV_XP:
                         dsp_aap.axis = int_2_sranger_int (0); // arbitrary assignment for counter: 0=X axis        
                         for (int i=0; i<channels; ++i) // multi channel wave -- test on "X"
-                                dsp_aap.channel_mapping[i] = int_2_sranger_int (DSPMoverClass->mover_param.wave_out_channel_xyz[i][0]);
+                                if (DSPMoverClass->mover_param.wave_out_channel_xyz[i][2] >= 10)
+                                        dsp_aap.channel_mapping[i] = int_2_sranger_int ((DSPMoverClass->mover_param.wave_out_channel_xyz[i][0]-10) | AAP_MOVER_SIGNAL_ADD);
+                                else
+                                        dsp_aap.channel_mapping[i] = int_2_sranger_int (DSPMoverClass->mover_param.wave_out_channel_xyz[i][0]&7);
                         break;
                 case DSP_CMD_AFM_MOV_YM:
                 case DSP_CMD_AFM_MOV_YP:
                         dsp_aap.axis = int_2_sranger_int (1); // arbitrary assignment for counter: 1=Y axis        
                         for (int i=0; i<channels; ++i)
-                                dsp_aap.channel_mapping[i] = int_2_sranger_int (DSPMoverClass->mover_param.wave_out_channel_xyz[i][1]);
+                                if (DSPMoverClass->mover_param.wave_out_channel_xyz[i][2] >= 10)
+                                        dsp_aap.channel_mapping[i] = int_2_sranger_int ((DSPMoverClass->mover_param.wave_out_channel_xyz[i][1]-10) | AAP_MOVER_SIGNAL_ADD);
+                                else
+                                        dsp_aap.channel_mapping[i] = int_2_sranger_int (DSPMoverClass->mover_param.wave_out_channel_xyz[i][1]&7);
                         break;                
                 case DSP_CMD_AFM_MOV_ZM:
                 case DSP_CMD_AFM_MOV_ZP:
                         dsp_aap.axis = int_2_sranger_int (2); // arbitrary assignment for counter: 2=Z axis      
                         for (int i=0; i<channels; ++i) 
-                                dsp_aap.channel_mapping[i] = int_2_sranger_int (DSPMoverClass->mover_param.wave_out_channel_xyz[i][2]);
+                                if (DSPMoverClass->mover_param.wave_out_channel_xyz[i][2] >= 10)
+                                        dsp_aap.channel_mapping[i] = int_2_sranger_int ((DSPMoverClass->mover_param.wave_out_channel_xyz[i][2]-10) | AAP_MOVER_SIGNAL_ADD);
+                                else
+                                        dsp_aap.channel_mapping[i] = int_2_sranger_int (DSPMoverClass->mover_param.wave_out_channel_xyz[i][2]&7);
                         break;
 		}
 		// ... [0..5] (configure all needed channels!)

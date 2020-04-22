@@ -137,11 +137,11 @@
 #ifdef FB_SPM_DATE_YEAR
 #undef FB_SPM_DATE_YEAR
 #endif
-#define FB_SPM_DATE_YEAR 0x00002019 /* Date: Year/MM/DD, BCD */
+#define FB_SPM_DATE_YEAR 0x00002020 /* Date: Year/MM/DD, BCD */
 #ifdef FB_SPM_DATE_MMDD
 #undef FB_SPM_DATE_MMDD
 #endif
-#define FB_SPM_DATE_MMDD 0x00001108 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x00000421 /* Date: Month/Day, BCD */
 
 #ifdef FB_SPM_FEATURES
 #undef FB_SPM_FEATURES

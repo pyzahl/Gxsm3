@@ -1015,16 +1015,16 @@ void DSPMoverControl::create_folder (){
                         for (int k=0; k<6; ++k){
                                 gchar *wchlab= g_strdup_printf("Wave %d: X", k);
                                 gchar *wchid = g_strdup_printf("wave-out%d-ch-x", k);
-                                mov_bp->grid_add_ec (wchlab, Unity, &mover_param.wave_out_channel_xyz[k][0], 0, 7, ".0f", wchid);
-                                gtk_widget_set_tooltip_text (mov_bp->input, "map wave N onto DAC channel 0-6 for X direction move action");
+                                mov_bp->grid_add_ec (wchlab, Unity, &mover_param.wave_out_channel_xyz[k][0], 0, 17, ".0f", wchid);
+                                gtk_widget_set_tooltip_text (mov_bp->input, "map wave N onto DAC channel 0-6 for X direction move action.\n MK2: add 10 for adding mode. 10=CH0, 11=CH1,.. with adding wave to current output signal");
                                 g_free (wchid);
                                 wchid = g_strdup_printf("wave-out%d-ch-y", k);
-                                mov_bp->grid_add_ec ("Y", Unity, &mover_param.wave_out_channel_xyz[k][1], 0, 7, ".0f", wchid);
-                                gtk_widget_set_tooltip_text (mov_bp->input, "map wave N onto DAC channel 0-6 for Y direction move action");
+                                mov_bp->grid_add_ec ("Y", Unity, &mover_param.wave_out_channel_xyz[k][1], 0, 17, ".0f", wchid);
+                                gtk_widget_set_tooltip_text (mov_bp->input, "map wave N onto DAC channel 0-6 for Y direction move action.\n MK2: add 10 for adding mode. 10=CH0, 11=CH1,.. with adding wave to current output signal");
                                 g_free (wchid);
                                 wchid = g_strdup_printf("wave-out%d-ch-z", k);
-                                mov_bp->grid_add_ec ("Z", Unity, &mover_param.wave_out_channel_xyz[k][2], 0, 7, ".0f", wchid);
-                                gtk_widget_set_tooltip_text (mov_bp->input, "map wave N onto DAC channel 0-6 for Z direction move action");
+                                mov_bp->grid_add_ec ("Z", Unity, &mover_param.wave_out_channel_xyz[k][2], 0, 17, ".0f", wchid);
+                                gtk_widget_set_tooltip_text (mov_bp->input, "map wave N onto DAC channel 0-6 for Z direction move action.\n MK2: add 10 for adding mode. 10=CH0, 11=CH1,.. with adding wave to current output signal");
                                 g_free (wchid);
                                 g_free (wchlab);
 
