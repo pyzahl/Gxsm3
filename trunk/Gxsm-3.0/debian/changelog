@@ -1,32 +1,38 @@
+gxsm3 (3.52.0-0ubuntu2) focal; urgency=medium
+
+  * optimized packaging for Ubuntu 20.04
+
+ -- Thorsten Wagner <stm@users.sf.net>  Fri, 01 May 2020 18:32:43 +0200
+
 gxsm3 (3.52.0-0ubuntu1) focal; urgency=medium
 
   * test on Ubuntu 20.04
 
- -- Thorsten Wagner (Ubuntu packaging) <stm@users.sf.net>  Thu, 30 Apr 2020 07:31:42 +0200
+ -- Thorsten Wagner <stm@users.sf.net>  Fri, 01 May 2020 16:04:27 +0200
 
 gxsm3 (3.52.0-0ubuntu0) bionic; urgency=medium
 
   * stable release
 
- -- Thorsten Wagner (Ubuntu packaging) <stm@users.sf.net>  Wed, 11 Dec 2019 21:31:24 +0100
+ -- Thorsten Wagner <stm@users.sf.net>  Wed, 11 Dec 2019 21:31:24 +0100
 
 gxsm3 (3.51.13-0ubuntu0) bionic; urgency=medium
 
   * snapshot 16.11.2019 from SVN main tree
 
- -- Thorsten Wagner (Ubuntu packaging) <stm@users.sf.net>  Sat, 16 Nov 2019 09:52:43 +0100
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 16 Nov 2019 09:52:43 +0100
 
 gxsm3 (3.50.2-0ubuntu0) bionic; urgency=medium
 
   * fixed pathes of python scripts and added dependency to python-gtk
 
- -- Thorsten Wagner (Ubuntu packaging) <stm@users.sf.net>  Sat, 12 Oct 2019 23:30:07 +0200
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 12 Oct 2019 23:30:07 +0200
 
 gxsm3 (3.50.1-0ubuntu0) bionic; urgency=medium
 
   * V3.50.1
 
- -- Thorsten Wagner (Ubuntu packaging) <stm@users.sf.net>  Thu, 18 Apr 2019 23:43:49 +0200
+ -- Thorsten Wagner <stm@users.sf.net>  Thu, 18 Apr 2019 23:43:49 +0200
 
 gxsm3 (3.49.1-0ubuntu0) bionic; urgency=medium
 
