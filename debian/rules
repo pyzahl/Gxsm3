@@ -22,7 +22,7 @@ export DH_ALWAYS_EXCLUDE=config.status:config.log:.svn
 
 
 %:
-	dh $@ --parallel --with autotools-dev
+	dh $@ --parallel
 
 override_dh_autoreconf:
 	dh_autoreconf ./autogen.sh
