@@ -1,3 +1,15 @@
+gxsm3 (3.52.0-0ubuntu4) focal; urgency=medium
+
+  * added also libpython3.7 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Fri, 08 May 2020 22:39:52 +0200
+
+gxsm3 (3.52.0-0ubuntu3) focal; urgency=medium
+
+  * added dependency to python3.7 needed for pyremote
+
+ -- Thorsten Wagner <stm@users.sf.net>  Fri, 08 May 2020 21:27:45 +0200
+
 gxsm3 (3.52.0-0ubuntu2) focal; urgency=medium
 
   * optimized packaging for Ubuntu 20.04
