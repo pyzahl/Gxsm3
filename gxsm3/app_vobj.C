@@ -96,9 +96,14 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, int pflg, VOBJ_COORD_
 	grid_multiples = 4;
 	grid_size = 1;
 	grid_mode = 2;
+	info_option = 1;
 	grid_aspect=1.0;
 	grid_base=1.0;
-        for (int i=0; i<4; ++i) m_parameter[i]=0.0;
+        m_n_opt=10;
+        m_verbose=1;
+        m_phi=0.;
+        for (int i=0; i<10; ++i) m_parameter[i]=0.0, m_dopt[i]=0.0;
+        for (int i=0; i<5; ++i) m_dopt_r[i]=0.0;
         
 	space_time_now[0]=space_time_now[1]=0;
 	space_time_on[0]=space_time_on[1]=0;
@@ -580,6 +585,11 @@ void VObject::selection_grid_plot_changed_cb (GtkComboBox *cb, VObject *vo){
         vo->Update ();
 }
 
+void VObject::selection_info_options_changed_cb (GtkComboBox *cb, VObject *vo){
+        vo->info_option  = gtk_combo_box_get_active (GTK_COMBO_BOX (cb));
+        vo->Update ();
+}
+
 void VObject::build_properties_view (gboolean add){
 	GtkWidget *textinput = NULL;
 	GtkWidget *dim_sel = NULL;
@@ -588,9 +598,11 @@ void VObject::build_properties_view (gboolean add){
 	GtkWidget *data_sel = NULL;
 	GtkWidget *data_plot = NULL;
 	GtkWidget *grid_plot = NULL;
+        GtkWidget *info_options = NULL;
 	GtkWidget *showlabel_checkbutton = NULL;
 	GtkWidget *showprofile_checkbutton = NULL;
 	GtkWidget *lock_checkbutton = NULL;
+	GtkWidget *opt_button = NULL;
 
 #if 0
         // FIX!!!
@@ -830,17 +842,92 @@ void VObject::build_properties_view (gboolean add){
                         properties_bp->new_line ();
 
                         properties_bp->grid_add_ec ("Grid Size", Unity, &grid_size, 1, 1000, ".0f");
+                        info_options = gtk_combo_box_text_new ();
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (info_options), "info-none", "Info: none");  // 0
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (info_options), "info-none", "Info: BLen");  // 1
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (info_options), "info-none", "Info: Score/BdF");  // 2
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (info_options), "info-none", "Info: i1:i2");  // 3
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (info_options), "info-none", "Info: -");  // 4
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (info_options), "info-none", "Info: -");  // 5
+                        gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (info_options), "info-none", "Info: Score Fref=0");  // 6
+                        gtk_combo_box_set_active (GTK_COMBO_BOX (info_options), info_option);
+                        properties_bp->grid_add_widget (info_options, 1);
+                        g_signal_connect (G_OBJECT (info_options), "changed",
+                                          G_CALLBACK (VObject::selection_info_options_changed_cb), this);
                         properties_bp->new_line ();
 
+                        ECP_list = NULL;
                         properties_bp->grid_add_ec ("Grid Aspect", Unity, &grid_aspect, 0., 2., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
                         properties_bp->new_line ();
 
-                        properties_bp->grid_add_ec ("Par 1,2", Unity, &m_parameter[0], -100., 100., ".4f");
-                        properties_bp->grid_add_ec (NULL, Unity, &m_parameter[1], -100., 100., ".4f");
+                        properties_bp->grid_add_ec ("RXpos, d-opt", Unity, &xy[2], -1000., 1000., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt_r[0], -10., 10., ".4f");
                         properties_bp->new_line ();
-                        properties_bp->grid_add_ec ("Par 3,4", Unity, &m_parameter[2], -100., 100., ".4f");
-                        properties_bp->grid_add_ec (NULL, Unity, &m_parameter[3], -100., 100., ".4f");
+                        properties_bp->grid_add_ec ("RYpos, d-opt", Unity, &xy[3], -1000., 1000., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt_r[1], -10., 10., ".4f");
                         properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("RRot, d-opt", Unity, &m_phi, -180., 180., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt_r[2], -1., 1., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("RWid, d-opt", Unity, &xy[5], -1000., 1000., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt_r[3], -1., 1., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("RLen, d-opt", Unity, &xy[1], -1000., 1000., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt_r[4], -1., 1., ".4f");
+                        properties_bp->new_line ();
+
+                        properties_bp->grid_add_ec ("Parm 1, d-opt", Unity, &m_parameter[0], -100., 100., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt[0], -100., 100., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("Parm 2, d-opt", Unity, &m_parameter[1], -100., 100., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt[1], -100., 100., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("Parm 3, d-opt", Unity, &m_parameter[2], -100., 100., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt[2], -100., 100., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("Parm 4, d-opt", Unity, &m_parameter[3], -100., 100., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt[3], -100., 100., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("Parm 5, d-opt", Unity, &m_parameter[4], -100., 100., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt[4], -100., 100., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("Parm 6, d-opt", Unity, &m_parameter[5], -100., 100., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt[5], -100., 100., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("Parm 7, d-opt", Unity, &m_parameter[6], -100., 100., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt[6], -100., 100., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("Parm 8, d-opt", Unity, &m_parameter[7], -100., 100., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt[7], -100., 100., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("Parm 9, d-opt", Unity, &m_parameter[8], -100., 100., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt[8], -100., 100., ".4f");
+                        properties_bp->new_line ();
+                        properties_bp->grid_add_ec ("Parm 10, d-opt", Unity, &m_parameter[9], -100., 100., ".4f");
+                        ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt[9], -100., 100., ".4f");
+                        properties_bp->new_line ();
+
+                        properties_bp->grid_add_ec ("#Steps", Unity, &m_n_opt, 0., 1000., ".0f");
+                        opt_button = gtk_button_new_with_label( N_("Run Opt"));
+                        properties_bp->grid_add_widget (opt_button, 2);
+                        g_signal_connect (G_OBJECT (opt_button), "clicked",
+                                          G_CALLBACK (VObject::run_m_param_optimization_cb), this);
                 }
 
                 if (textinput)
@@ -1104,6 +1191,10 @@ void VObject::SetUpScan(){
 
 void VObject::show_label_cb(GtkWidget *widget, VObject *vo){
         vo->show_label (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
+}
+
+void VObject::run_m_param_optimization_cb (GtkWidget *widget, VObject *vo){
+        vo->run_m_param_opt ();
 }
 
 
@@ -1951,7 +2042,7 @@ void VObKsys::print_xyz (double x, double y){
         g_print (" C %g %g 0\n",x,y);
 }
 
-void VObKsys::add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text **cit){
+void VObKsys::add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text **cit, const gchar *lab){
         double x1,x2,y1,y2;
         double dx,dy,bl,x,y;
 
@@ -1962,13 +2053,21 @@ void VObKsys::add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text *
         y = 0.5*(y1+y2);
 
         double score=0;
-        if (grid_size > 1)
-                score=score_bond (bonds, i1,i2, grid_size);
+        if (info_option & 2)
+                score=score_bond (bonds, i1,i2, 2);
  
         vinfo->W2Angstroem (x1,y1);
         vinfo->W2Angstroem (x2,y2);
         dx=x2-x1; dy=y2-y1; bl=sqrt(dx*dx+dy*dy);
-        gchar *txt = grid_size > 1 ? g_strdup_printf ("%.3f Hz",score) : g_strdup_printf ("%.1f pm",bl*100.);
+        gchar *txt=NULL;
+        switch (info_option){
+        case 0: txt = g_strdup_printf ("%s", lab?lab:""); break;
+        case 1: txt = g_strdup_printf ("%.1f pm",bl*100.); break;
+        case 2: txt = g_strdup_printf ("%.3f Hz",score); break;
+        case 3: txt = g_strdup_printf ("%d:%d", i1,i2); break;
+        case 6: txt = g_strdup_printf ("%.3f Hz",score); break;
+        default: txt = g_strdup_printf ("%s", lab?lab:""); break;
+        }
 
         if (*cit)
                 (*cit)->set_text (x,y,txt);
@@ -1977,7 +2076,9 @@ void VObKsys::add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text *
                 (*cit)->set_font_face_size ("Ununtu", 6.);
                 (*cit)->set_stroke_rgba (CAIRO_COLOR_CYAN);
         }
-        // g_print ("(%g,%g -- %g,%g) %s\n",x1,y1, x2,y2, txt);
+        if (m_verbose)
+                g_print ("%s : %s\n", lab?lab:"", txt);
+        // g_print ("%s [%d:%d] (%g,%g -- %g,%g) %s\n", lab?lab:"", i1,i2, x1,y1, x2,y2, txt);
         g_free(txt);
 }
 
@@ -1990,6 +2091,8 @@ double VObKsys::score_bond (cairo_item *bonds, int i1, int i2, int n){
         double dx = x2-x1;
         double dy = y2-y1;
         int norm=0;
+        if (info_option & 4)
+                vinfo->sc->data.s.pllref = 0.; // *** force 0 for ADC df data hack
         for (double l=0.0; l<=1.001; l+=1.0/(n-1), ++norm){
                 score += vinfo->getZ (x1+l*dx, y1+l*dy);
         }
@@ -2048,6 +2151,112 @@ void VObKsys::bonds_matchup (cairo_item *bonds){
         }
 }
 
+void VObKsys::opt_adjust_xy (int k, double d){
+        switch (k){
+        case 0: for (int l=0; l<3; l++) xy[2*l] += d; break; // position X
+        case 1: for (int l=0; l<3; l++) xy[1+2*l] += d; break; // position Y
+        case 2: // diff rot of xy[0,1]
+                { 
+                        double dx = xy[0]-xy[2];	/* x-component of first vector */
+                        double dy = xy[1]-xy[3];	/* y-component of first vector */
+                        double phi=atan2(dy,dx);
+                        m_phi = phi*180.0/M_PI;
+                        //g_message ("phi=%g", phi*180.0/M_PI);
+                        double c=cos(phi+d);
+                        double s=sin(phi+d);
+                        xy[0] = xy[2] + (dx*c + dy*s);
+                        xy[1] = xy[3] + (dy*c - dx*s);
+                }
+                break;
+        case 3: // width
+                {
+                        double dx = xy[0]-xy[2];	/* x-component of first vector */
+                        double dy = xy[1]-xy[3];	/* y-component of first vector */
+                        xy[0] = xy[2] + dx*(1.+d);
+                        xy[1] = xy[3] + dy*(1.+d);
+                        
+                } break;
+        case 4: // length
+                {
+                        double dx = xy[4]-xy[2];	/* x-component of 2nd vector */
+                        double dy = xy[5]-xy[3];	/* y-component of 2nd vector */
+                        xy[4] = xy[2] + dx*(1.+d);
+                        xy[5] = xy[3] + dy*(1.+d);
+                        
+                } break;
+        }       
+}
+
+void VObKsys::run_m_param_opt (){
+        double dr[5];
+        double d[10];
+        if (!(info_option&2)){
+                g_message ("Must be in score mode. Please set Info to Score.");
+                return;
+        }
+        m_verbose = 0;
+        calc_grid();
+        double last_score = total_score;
+
+        for (int k=0; k<5; k++)  dr[k]=m_dopt_r[k];
+        for (int k=0; k<10; k++) d[k]=m_dopt[k];
+        
+        for (int i=0; i<m_n_opt; ++i){
+                for (int k=0; k<5; k++){ // position x,y, angle, width, len
+                        if (fabs(dr[k]) > 0.0){
+                                opt_adjust_xy (k, dr[k]);
+                                Update();
+                                if (total_score < last_score){ // not good?
+                                        opt_adjust_xy (k, -dr[k]); // undo
+                                        dr[k] *= -1.0;
+                                        opt_adjust_xy (k, dr[k]);
+                                        Update();
+                                        if (total_score < last_score){ // not good?
+                                                opt_adjust_xy (k, -dr[k]); // undo
+                                                Update();
+                                                dr[k] *= -1.0;
+                                                dr[k] *= 0.9;
+                                                total_score = last_score;
+                                        } else {
+                                                last_score = total_score;
+                                        }
+                                } else {
+                                        last_score = total_score;
+                                }
+                                g_slist_foreach (ECP_list, (GFunc) App::update_ec, NULL);
+                                g_print ("#%d %d xy = %g %g {%g}, score=%g Hz\n", i, k,  xy[2], xy[3], dr[k], total_score);
+                        }
+                }
+                for (int k=0; k<10; k++){ // parameters
+                        if (fabs(d[k]) > 0.0){
+                                m_parameter[k] += d[k];
+                                calc_grid();
+                                if (total_score < last_score){ // not good?
+                                        m_parameter[k] -= d[k]; // undo, try differnt dir
+                                        d[k] *= -1.0;
+                                        calc_grid();
+                                        m_parameter[k] += d[k];
+                                        if (total_score < last_score){ // not good?
+                                                m_parameter[k] -= d[k]; // undo, decrese step, cont.
+                                                d[k] *= -1.0;
+                                                d[k] *= 0.9;
+                                                total_score = last_score;
+                                        } else {
+                                                last_score = total_score;
+                                        }
+                                } else {
+                                        last_score = total_score;
+                                }
+                                g_slist_foreach (ECP_list, (GFunc) App::update_ec, NULL);
+                                g_print ("#%d m_parameter[%d] = %g {%g}, score=%g Hz\n", i, k,  m_parameter[k], d[k], total_score);
+                        }
+                }
+        }
+        g_print("Residuals:");
+        for (int k=0; k<5; k++) g_print ("dr[%d] = %g\n",k, dr[k]);
+        for (int k=0; k<10; k++) g_print ("d[%d] = %g\n",k, d[k]);
+        m_verbose = 1;
+}
 
 void VObKsys::calc_grid(){
 	const int gm = grid_mode;
@@ -2069,7 +2278,7 @@ void VObKsys::calc_grid(){
         if (gm >= 12){ // core molecules
                 if (gm == 15) {  // BKF core
                         double score = 0.;
-#define NI_BKF 13
+#define NI_BKF 14
                         nl = 2*(6+5+2+6+5);
                         if (bonds && nl != n_bonds){
                                 bonds->queue_update (canvas);
@@ -2098,7 +2307,8 @@ void VObKsys::calc_grid(){
                         }
                         j = 0;
 
-                        g_message ("** BKF **");
+                        if (m_verbose)
+                                g_message ("** BKF **");
                         
                         // r1, r2, p1, p2, p3, p4
 
@@ -2116,151 +2326,152 @@ void VObKsys::calc_grid(){
                         // k l   l k
 
                         double x1,x2,y1,y2;
-#define b0(s) (s*0.5*rx[0] + 0.866*(1.0+m_parameter[0])*ry[0])
-#define b1(s) (s*0.5*rx[1] + 0.866*(1.0+m_parameter[0])*ry[1])
+                        double dx = xy[2]-xy[0];	/* x-component of first vector */
+                        double dy = xy[3]-xy[1];	/* y-component of first vector */
+                        double ddx = xy[2]-xy[4];	/* x-component of 2nd vector */
+                        double ddy = xy[3]-xy[5];	/* y-component of 2nd vector */
+                        double ap =  (1+m_parameter[9])*sqrt (ddx*ddx+ddy*ddy)/sqrt(dx*dx+dy*dy);
+                        const double s30 = 0.5;
+                        const double c30 = 0.86602562491683672008;
+                        const double s18 = 0.30901674200355010095;
+                        const double c18 = 0.95105659829555430867;
+                        //const double s36 = 0.58778482293254258497;
+                        const double c18_s36 = 1.53884142122809689364;
+        ;
+#define b0(s) (s*s30*rx[0] + c30*(1.0+m_parameter[0])*ry[0])
+#define b1(s) (s*s30*rx[1] + c30*(1.0+m_parameter[0])*ry[1])
                         double c0 = 1.732*ry[0];
                         double c1 = 1.732*ry[1];
-#define e0(s) (c0+s*0.5*rx[0] + 0.866*(1.0+m_parameter[1])*ry[0])
-#define e1(s) (c1+s*0.5*rx[1] + 0.866*(1.0+m_parameter[1])*ry[1])
-                        double f0 = 2*1.732*ry[0];
-                        double f1 = 2*1.732*ry[1];
-#define h0(s) (f0+s*0.309*(1.0+m_parameter[2])*rx[0] + 0.951*(1.0+m_parameter[3])*ry[0]) // !!!
-#define h1(s) (f1+s*0.309*(1.0+m_parameter[2])*rx[1] + 0.951*(1.0+m_parameter[3])*ry[1])
-                        double n0 = 3*1.732*ry[0]; // !!! 
-                        double n1 = 3*1.732*ry[1];
-                        double m0 = 3*1.732*ry[0]+ry[0]; // !!! 
-                        double m1 = 3*1.732*ry[1]+ry[1];
-#define i0(s) (n0+s*1.732*rx[0]) // !!! 
-#define i1(s) (n1+s*1.732*rx[1]) // !!! 
-#define j0(s) (m0+s*1.732*rx[0]) // !!! 
-#define j1(s) (m1+s*1.732*rx[1]) // !!! 
-#define k0(s) (m0+0.5*ry[0]+s*0.866*rx[0]) // !!! 
-#define k1(s) (m1+0.5*ry[1]+s*0.866*rx[1])
+#define e0(s) (c0+s*s30*rx[0] + c30*(1.0+m_parameter[1])*ry[0])
+#define e1(s) (c1+s*s30*rx[1] + c30*(1.0+m_parameter[1])*ry[1])
+                        double f0 = 2*(2*c30)*ry[0];
+                        double f1 = 2*(2*c30)*ry[1];
+#define h0(s) (f0+s*s18*(1.0+m_parameter[2])*rx[0] + c18*(1.0+m_parameter[3])*ry[0]) // !!!
+#define h1(s) (f1+s*s18*(1.0+m_parameter[2])*rx[1] + c18*(1.0+m_parameter[3])*ry[1])
+                        double n0 = f0+c18_s36*(1.0+m_parameter[3]+m_parameter[4])*ry[0]; // !!! 
+                        double n1 = f1+c18_s36*(1.0+m_parameter[3]+m_parameter[4])*ry[1];
+                        double m0 = n0+(1.0+m_parameter[5])*ry[0]; // !!! 
+                        double m1 = n1+(1.0+m_parameter[5])*ry[1];
+#define i0(s) (n0+s*ap*(2*c30)*(1.0+m_parameter[6])*rx[0]) // !!! 
+#define i1(s) (n1+s*ap*(2*c30)*(1.0+m_parameter[6])*rx[1]) // !!! 
+#define j0(s) (m0+s*ap*(2*c30)*(1.0+m_parameter[6])*rx[0]) // !!! 
+#define j1(s) (m1+s*ap*(2*c30)*(1.0+m_parameter[6])*rx[1]) // !!! 
+#define k0(s) (m0+s30*ry[0]+s*c30*ap*(1.0+m_parameter[7])*rx[0]) // !!! 
+#define k1(s) (m1+s30*ry[1]+s*c30*ap*(1.0+m_parameter[7])*rx[1])
 
                         // a
-                        g_message ("** BKF A **");
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0], y1=xy[3] - 0.5*rx[1]);
                         bonds->set_xy (j++, x2=xy[2] + 0.5*rx[0], y2=xy[3] + 0.5*rx[1]);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[0]);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[0], "a");
                         // b
-                        g_message ("** BKF B **");
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0], y1=xy[3] - 0.5*rx[1]);
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0] + b0(-1), y2=xy[3] - 0.5*rx[1] + b1(-1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[1]);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[1], "b");
                         // b'
                         bonds->set_xy (j++, x2=xy[2] + 0.5*rx[0], y1=xy[3] + 0.5*rx[1]);
                         bonds->set_xy (j++, x1=xy[2] + 0.5*rx[0] + b0(1), y2=xy[3] + 0.5*rx[1] + b1(1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
                         // c
-                        g_message ("** BKF C **");
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0] + b0(-1), y1=xy[3] - 0.5*rx[1] + b1(-1));
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0] + c0, y2=xy[3] - 0.5*rx[1] + c1);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[2]);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[2], "c");
                         // c'
                         bonds->set_xy (j++, x1=xy[2] + 0.5*rx[0] + b0(1), y1=xy[3] + 0.5*rx[1] + b1(1));
                         bonds->set_xy (j++, x2=xy[2] + 0.5*rx[0] + c0, y2=xy[3] + 0.5*rx[1] + c1);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
 
                         // d
-                        g_message ("** BKF D **");
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0] + c0, y1=xy[3] - 0.5*rx[1] + c1);
                         bonds->set_xy (j++, x2=xy[2] + 0.5*rx[0] + c0, y2=xy[3] + 0.5*rx[1] + c1);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[3]);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[3], "d");
                         // e
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0] + c0, y1=xy[3] - 0.5*rx[1] + c1);
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0] + e0(-1), y2=xy[3] - 0.5*rx[1] + e1(-1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[4]);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[4], "e");
                         // e'
                         bonds->set_xy (j++, x2=xy[2] + 0.5*rx[0] + c0, y1=xy[3] + 0.5*rx[1] + c1);
                         bonds->set_xy (j++, x1=xy[2] + 0.5*rx[0] + e0(1), y2=xy[3] + 0.5*rx[1] + e1(1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
                         // f
-                        g_message ("** BKF F **");
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0] + e0(-1), y1=xy[3] - 0.5*rx[1] + e1(-1));
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0] + f0, y2=xy[3] - 0.5*rx[1] + f1);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[5]);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[5], "f");
                         // f'
                         bonds->set_xy (j++, x1=xy[2] + 0.5*rx[0] + e0(1), y1=xy[3] + 0.5*rx[1] + e1(1));
                         bonds->set_xy (j++, x2=xy[2] + 0.5*rx[0] + f0, y2=xy[3] + 0.5*rx[1] + f1);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
 
                         // g
-                        g_message ("** BKF H **");
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0] + f0, y1=xy[3] - 0.5*rx[1] + f1);
                         bonds->set_xy (j++, x1=xy[2] + 0.5*rx[0] + f0, y2=xy[3] + 0.5*rx[1] + f1);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[6], "g");
                         // h
-                        g_message ("** BKF H **");
                         bonds->set_xy (j++, x1=xy[2] - 0.5*rx[0] + f0, y1=xy[3] - 0.5*rx[1] + f1);
                         bonds->set_xy (j++, x2=xy[2] - 0.5*rx[0] + h0(-1), y2=xy[3] - 0.5*rx[1] + h1(-1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[6]);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[7], "h");
                         // h'
                         bonds->set_xy (j++, x1=xy[2] + 0.5*rx[0] + f0, y1=xy[3] + 0.5*rx[1] + f1);
                         bonds->set_xy (j++, x2=xy[2] + 0.5*rx[0] + h0(1), y2=xy[3] + 0.5*rx[1] + h1(1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
 
                         // n
-                        g_message ("** BKF N **");
                         bonds->set_xy (j++, x2=xy[2] - 0.5*rx[0] + h0(-1), y2=xy[3] - 0.5*rx[1] + h1(-1));
                         bonds->set_xy (j++, x2=xy[2] + n0, y2=xy[3] + n1);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[7]);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[8], "n");
                         // n'
                         bonds->set_xy (j++, x2=xy[2] + 0.5*rx[0] + h0(1), y2=xy[3] + 0.5*rx[1] + h1(1));
                         bonds->set_xy (j++, x2=xy[2] + n0, y2=xy[3] + n1);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
                         // i
-                        bonds->set_xy (j++, x2=xy[2] + 0.5*rx[0] + h0(1), y2=xy[3] + 0.5*rx[1] + h1(1));
-                        bonds->set_xy (j++, x2=xy[2] + i0(1), y2=xy[3] + i1(1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[8]);
-                        // i'
                         bonds->set_xy (j++, x2=xy[2] - 0.5*rx[0] + h0(-1), y2=xy[3] - 0.5*rx[1] + h1(-1));
                         bonds->set_xy (j++, x2=xy[2] + i0(-1), y2=xy[3] + i1(-1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        // j
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[9], "i");
+                        // i'
+                        bonds->set_xy (j++, x2=xy[2] + 0.5*rx[0] + h0(1), y2=xy[3] + 0.5*rx[1] + h1(1));
                         bonds->set_xy (j++, x2=xy[2] + i0(1), y2=xy[3] + i1(1));
-                        bonds->set_xy (j++, x2=xy[2] + j0(1), y2=xy[3] + j1(1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[9]);
-                        // j'
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        // j
                         bonds->set_xy (j++, x2=xy[2] + i0(-1), y2=xy[3] + i1(-1));
                         bonds->set_xy (j++, x2=xy[2] + j0(-1), y2=xy[3] + j1(-1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[10], "j");
+                        // j'
+                        bonds->set_xy (j++, x2=xy[2] + i0(1), y2=xy[3] + i1(1));
+                        bonds->set_xy (j++, x2=xy[2] + j0(1), y2=xy[3] + j1(1));
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
                         // m
                         bonds->set_xy (j++, x2=xy[2] + n0, y2=xy[3] + n1);
                         bonds->set_xy (j++, x2=xy[2] + m0, y2=xy[3] + m1);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[10]);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[11], "m");
                         // k
-                        bonds->set_xy (j++, x2=xy[2] + j0(1), y2=xy[3] + j1(1));
-                        bonds->set_xy (j++, x2=xy[2] + k0(1), y2=xy[3] + k1(1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[11]);
-                        // k'
                         bonds->set_xy (j++, x2=xy[2] + j0(-1), y2=xy[3] + j1(-1));
                         bonds->set_xy (j++, x2=xy[2] + k0(-1), y2=xy[3] + k1(-1));
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        // l
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[12], "k");
+                        // k'
+                        bonds->set_xy (j++, x2=xy[2] + j0(1), y2=xy[3] + j1(1));
                         bonds->set_xy (j++, x2=xy[2] + k0(1), y2=xy[3] + k1(1));
-                        bonds->set_xy (j++, x2=xy[2] + m0, y2=xy[3] + m1);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        add_bond_len (bonds, j-2, j-1, &info[12]);
-                        // l'
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        // l
                         bonds->set_xy (j++, x2=xy[2] + k0(-1), y2=xy[3] + k1(-1));
                         bonds->set_xy (j++, x2=xy[2] + m0, y2=xy[3] + m1);
-                        if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                        
-                        if (grid_size>1) g_message ("Score = %.3f Hz", score/(j/2));
-
-                        g_message ("** BKF SHOW %d bonds **", j/2);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                        add_bond_len (bonds, j-2, j-1, &info[13], "l");
+                        // l'
+                        bonds->set_xy (j++, x2=xy[2] + k0(1), y2=xy[3] + k1(1));
+                        bonds->set_xy (j++, x2=xy[2] + m0, y2=xy[3] + m1);
+                        if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
                         
                         bonds->show ();
                         bonds->set_stroke_rgba (&custom_element_b_color);
@@ -2269,7 +2480,11 @@ void VObKsys::calc_grid(){
                                 info[i]->show ();
                                 info[i]->queue_update (canvas);
                         }
-                        if (grid_size>1) g_message ("Score = %.3f Hz", score/(5*6));
+                        if (info_option&2){
+                                total_score = score/24;
+                                if (m_verbose)
+                                        g_message ("Total Bond Score = %.3f Hz", total_score);
+                        }
                         
                         bonds->show ();
                         bonds->set_stroke_rgba (&custom_element_b_color);
@@ -2341,30 +2556,30 @@ void VObKsys::calc_grid(){
                                 double x1,x2,y1,y2;
                                 bonds->set_xy (j++, x1=xy[2] + c0*rx[0] + s0*rx[1], y1=xy[3] + c0*rx[1] - s0*rx[0]);
                                 bonds->set_xy (j++, x2=xy[2] + c1*rx[0] + s1*rx[1], y2=xy[3] + c1*rx[1] - s1*rx[0]);
-                                if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[0]);
+                                if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[0], "a");
                                 print_xyz (x2, y2);
                                 // spoke
                                 bonds->set_xy (j++, x1=xy[2] + c0*rx[0] + s0*rx[1], y1=xy[3] + c0*rx[1] - s0*rx[0]);
                                 bonds->set_xy (j++, x2=xy[2] + ro*(c0*rx[0] + s0*rx[1])/ri, y2=xy[3] + ro*(c0*rx[1] - s0*rx[0])/ri);
-                                if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[1]);
+                                if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[1], "b");
                                 // spoke - outher segment
                                 bonds->set_xy (j++, x1=xy[2] + ro*(c0*rx[0] + s0*rx[1])/ri, y1=xy[3] + ro*(c0*rx[1] - s0*rx[0])/ri);
                                 bonds->set_xy (j++, x2=xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, y2=xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
-                                if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[2]);
+                                if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[2], "c");
                                 print_xyz (x2, y2);
                                 // outher segment
                                 bonds->set_xy (j++, x1=xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, y1=xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
                                 bonds->set_xy (j++, x2=xy[2] + re*(c3*rx[0] + s3*rx[1])/ri, y2=xy[3] + re*(c3*rx[1] - s3*rx[0])/ri);
-                                if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
-                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[3]);
+                                if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
+                                if (phii==0) add_bond_len (bonds, j-2, j-1, &info[3], "d");
                                 print_xyz (x2, y2);
                                 // outher segment - spoke next
                                 bonds->set_xy (j++, x1=xy[2] + re*(c3*rx[0] + s3*rx[1])/ri, y1=xy[3] + re*(c3*rx[1] - s3*rx[0])/ri);
                                 bonds->set_xy (j++, x2=xy[2] + ro*(c1*rx[0] + s1*rx[1])/ri, y2=xy[3] + ro*(c1*rx[1] - s1*rx[0])/ri);
-                                if (grid_size>1) score += score_bond (bonds, j-2, j-1, grid_size);
+                                if (info_option&2) score += score_bond (bonds, j-2, j-1, 2);
                                 print_xyz (x2, y2);
                                 // H's
                                 bonds->set_xy (j++, xy[2] + re*(c2*rx[0] + s2*rx[1])/ri, xy[3] + re*(c2*rx[1] - s2*rx[0])/ri);
@@ -2372,7 +2587,11 @@ void VObKsys::calc_grid(){
                                 bonds->set_xy (j++, xy[2] + re*(c3*rx[0] + s3*rx[1])/ri, xy[3] + re*(c3*rx[1] - s3*rx[0])/ri);
                                 bonds->set_xy (j++, xy[2] + rh*(ch3*rx[0] + sh3*rx[1])/ri, xy[3] + rh*(ch3*rx[1] - sh3*rx[0])/ri);
                         }
-                        if (grid_size>1) g_message ("Score = %.3f Hz", score/(5*6));
+                        if (info_option&2){
+                                total_score = score/(5*6);
+                                if (m_verbose)
+                                        g_message ("Total Bond Score = %.3f Hz", total_score);
+                        }
                         
                         bonds->show ();
                         bonds->set_stroke_rgba (&custom_element_b_color);
@@ -2487,9 +2706,9 @@ void VObKsys::calc_grid(){
                         bonds_matchup (bonds);
                         add_bond_len (bonds,0,1, &info[0]);
                         add_bond_len (bonds,2,3, &info[1]);
-                        if (grid_size>1){
+                        if (info_option&2){
                                 for (int i=0; i<j; i+=2)
-                                        score += score_bond (bonds,i,i+1, grid_size);
+                                        score += score_bond (bonds,i,i+1, 2);
                                 g_message ("Score = %.3f Hz", score/(j/2));
                         }
                         bonds->show ();

@@ -78,6 +78,7 @@ class VObject : public scan_object_data{
         static void selection_data_changed_cb (GtkComboBox *cb, VObject *vo);
         static void selection_data_plot_changed_cb (GtkComboBox *cb, VObject *vo);
         static void selection_grid_plot_changed_cb (GtkComboBox *cb, VObject *vo);
+        static void selection_info_options_changed_cb (GtkComboBox *cb, VObject *vo);
         
 	void copy_xsmres_to_GdkRGBA (GdkRGBA &color, float c[4]){
                 color.red   = c[0];
@@ -96,6 +97,9 @@ class VObject : public scan_object_data{
 	static void show_profile_cb (GtkWidget *widget,  VObject *vo);
 	void show_profile (gboolean flg=true);
 
+	static void run_m_param_optimization_cb (GtkWidget *widget, VObject *vo);
+        virtual void run_m_param_opt (){};
+        
 	void build_properties_view (gboolean add=true);
         static void ec_properties_changed (Param_Control *pcs, gpointer data) { VObject* vob = (VObject*)data; vob->Update (); vob->remake_node_markers (); };
 	void set_xy_node(double *xy_node, VOBJ_COORD_MODE cmode, int node=0);
@@ -295,16 +299,24 @@ class VObject : public scan_object_data{
 	gboolean series_all; // FALSE: current only, TRUE: plot all series
 	gboolean plot_g2d; // FALSE: no 2d grey 2d plot, TRUE: plot also in as 2d grey/false color image
 
-	gint grid_mode; // GRID/CIRC
+	gint grid_mode; // GRID/CIRC/...
+	gint info_option; // Inof options
 	double grid_aspect;
 	double grid_base;
 	gint grid_multiples;
 	gint grid_size;
-        double m_parameter[4];
+        GSList *ECP_list;
+        double m_parameter[10];
+        double m_dopt[10];
+        double m_dopt_r[5];
+        double m_n_opt;
+        int m_verbose;
+        double total_score;
         
 	double marker_scale;
 	double label_offset_xy[2];
 	double *xy;
+        double m_phi;
 	cairo_item **abl;
 	cairo_item_text *object_label;
         int label_anchor;
@@ -412,10 +424,12 @@ class VObKsys : public VObject{
                           if (info[i]) info[i]->draw (cr);
 	};
         void print_xyz (double x, double y);
-        void add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text **cit);
+        void add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text **cit, const gchar *lab=NULL);
         double score_bond (cairo_item *bonds, int i1, int i2, int n);
         void adjust_bond_aromatic_index (cairo_item_segments_wlw *bonds, int i1, int i2, double ai=10.);
         void bonds_matchup (cairo_item *bonds);
+        virtual void run_m_param_opt ();
+        void opt_adjust_xy (int k, double d);
         
  private:
 	void calc_grid();
