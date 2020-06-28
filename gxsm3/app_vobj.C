@@ -871,7 +871,7 @@ void VObject::build_properties_view (gboolean add){
                         properties_bp->new_line ();
                         properties_bp->grid_add_ec ("RRot, d-opt", Unity, &m_phi, -180., 180., ".4f");
                         ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
-                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt_r[2], -1., 1., ".4f");
+                        properties_bp->grid_add_ec (NULL, Unity, &m_dopt_r[2], -10., 10., ".4f");
                         properties_bp->new_line ();
                         properties_bp->grid_add_ec ("RWid, d-opt", Unity, &xy[5], -1000., 1000., ".4f");
                         ECP_list = g_slist_prepend( ECP_list, properties_bp->ec);
@@ -2043,9 +2043,12 @@ void VObKsys::print_xyz (double x, double y){
 }
 
 void VObKsys::add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text **cit, const gchar *lab){
+        static int his=0;
+        static int bi=0;
+        static double blen[32][64];
         double x1,x2,y1,y2;
         double dx,dy,bl,x,y;
-
+       
         bonds->get_xy(i1, x1,y1);
         bonds->get_xy(i2, x2,y2);
         
@@ -2076,9 +2079,27 @@ void VObKsys::add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text *
                 (*cit)->set_font_face_size ("Ununtu", 6.);
                 (*cit)->set_stroke_rgba (CAIRO_COLOR_CYAN);
         }
-        if (m_verbose)
-                g_print ("%s : %s\n", lab?lab:"", txt);
+        if (m_verbose){
+                if (lab[0] == 'a') bi=0;
+                else bi++;
+                his=0;
+                g_print ("%s : %s  { ", lab?lab:"", txt);
+                for (int i=0; i<64 && blen[bi][i] > 0.; ++i) g_print ("%.1f pm",blen[bi][i]*100.);
+                g_print (" }\n");
+        }
+        else if (lab){
+                if (lab[0] == 'a'){
+                        bi=0;
+                        if (his==0) memset (blen, 0, sizeof(blen));
+                        else his++;
+                }
+                if (his >= 0 && his<64 && bi<32)
+                        blen[bi++][his] = bl;
+        }
         // g_print ("%s [%d:%d] (%g,%g -- %g,%g) %s\n", lab?lab:"", i1,i2, x1,y1, x2,y2, txt);
+
+
+
         g_free(txt);
 }
 
@@ -2160,12 +2181,13 @@ void VObKsys::opt_adjust_xy (int k, double d){
                         double dx = xy[0]-xy[2];	/* x-component of first vector */
                         double dy = xy[1]-xy[3];	/* y-component of first vector */
                         double phi=atan2(dy,dx);
+                        double r=sqrt(dx*dx+dy*dy);
                         m_phi = phi*180.0/M_PI;
                         //g_message ("phi=%g", phi*180.0/M_PI);
                         double c=cos(phi+d);
                         double s=sin(phi+d);
-                        xy[0] = xy[2] + (dx*c + dy*s);
-                        xy[1] = xy[3] + (dy*c - dx*s);
+                        xy[0] = xy[2] + r*c;
+                        xy[1] = xy[3] + r*s;
                 }
                 break;
         case 3: // width
@@ -2832,6 +2854,10 @@ void VObKsys::update_grid(){
 
 void VObKsys::Update(){
 	gchar *s1;
+
+        double dx = xy[0]-xy[2];	/* x-component of first vector */
+        double dy = xy[1]-xy[3];	/* y-component of first vector */
+        m_phi = atan2(dy,dx)*180.0/M_PI;
 
 	if (grid_mode > 3){
 		double dx = xy[2]-xy[0];	/* x-component of first vector */
