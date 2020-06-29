@@ -102,8 +102,9 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, int pflg, VOBJ_COORD_
         m_n_opt=10;
         m_verbose=1;
         m_phi=0.;
-        for (int i=0; i<10; ++i) m_parameter[i]=0.0, m_dopt[i]=0.0;
-        for (int i=0; i<5; ++i) m_dopt_r[i]=0.0;
+        for (int i=0; i<10; ++i) m_parameter[i]=0.0, m_dopt[i]=0.01;
+        for (int i=0; i<2; ++i) m_dopt_r[i]=2.0;
+        for (int i=2; i<5; ++i) m_dopt_r[i]=0.02;
         
 	space_time_now[0]=space_time_now[1]=0;
 	space_time_on[0]=space_time_on[1]=0;
@@ -2043,7 +2044,7 @@ void VObKsys::print_xyz (double x, double y){
 }
 
 void VObKsys::add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text **cit, const gchar *lab){
-        static int his=0;
+        static int his=-1;
         static int bi=0;
         static double blen[32][64];
         double x1,x2,y1,y2;
@@ -2079,23 +2080,41 @@ void VObKsys::add_bond_len (cairo_item *bonds, int i1, int i2, cairo_item_text *
                 (*cit)->set_font_face_size ("Ununtu", 6.);
                 (*cit)->set_stroke_rgba (CAIRO_COLOR_CYAN);
         }
-        if (m_verbose){
+#if 0
+        if (m_verbose && lab){
+                if (lab[0] == 'a'){
+                        bi=0;
+                        if (his==-1) memset (blen, 0, sizeof(blen));
+                        his++;
+                }
+                if (his >= 0 && his<64 && bi<32)
+                        blen[bi][his] = bl;
+                else his=-1; // reset
+                g_print ("%s : %s  { ", lab?lab:"", txt);
+                for (int i=0; i<64 && blen[bi][i] > 0.; ++i) g_print ("%.1f ",blen[bi][i]*100.);
+                g_print (" }\n");
+                bi++;
+        }
+#endif
+#if 1
+        if (m_verbose && lab){
                 if (lab[0] == 'a') bi=0;
                 else bi++;
-                his=0;
+                his=-1;
                 g_print ("%s : %s  { ", lab?lab:"", txt);
-                for (int i=0; i<64 && blen[bi][i] > 0.; ++i) g_print ("%.1f pm",blen[bi][i]*100.);
+                for (int i=0; i<64 && blen[bi][i] > 0.; ++i) g_print ("%.1f ",blen[bi][i]*100.);
                 g_print (" }\n");
         }
         else if (lab){
                 if (lab[0] == 'a'){
                         bi=0;
                         if (his==0) memset (blen, 0, sizeof(blen));
-                        else his++;
+                        his++;
                 }
                 if (his >= 0 && his<64 && bi<32)
                         blen[bi++][his] = bl;
         }
+#endif
         // g_print ("%s [%d:%d] (%g,%g -- %g,%g) %s\n", lab?lab:"", i1,i2, x1,y1, x2,y2, txt);
 
 
@@ -2222,10 +2241,13 @@ void VObKsys::run_m_param_opt (){
 
         for (int k=0; k<5; k++)  dr[k]=m_dopt_r[k];
         for (int k=0; k<10; k++) d[k]=m_dopt[k];
-        
+
+        int n_op=0;
         for (int i=0; i<m_n_opt; ++i){
+                n_op=0;
                 for (int k=0; k<5; k++){ // position x,y, angle, width, len
-                        if (fabs(dr[k]) > 0.0){
+                        if (fabs(dr[k]) > 1e-5){
+                                n_op++;
                                 opt_adjust_xy (k, dr[k]);
                                 Update();
                                 if (total_score < last_score){ // not good?
@@ -2246,11 +2268,12 @@ void VObKsys::run_m_param_opt (){
                                         last_score = total_score;
                                 }
                                 g_slist_foreach (ECP_list, (GFunc) App::update_ec, NULL);
-                                g_print ("#%d %d xy = %g %g {%g}, score=%g Hz\n", i, k,  xy[2], xy[3], dr[k], total_score);
+                                g_print ("#%d %d xy = %g %g %g {%g}, score=%g Hz\n", i, k,  xy[2], xy[3], m_phi, dr[k], total_score);
                         }
                 }
                 for (int k=0; k<10; k++){ // parameters
-                        if (fabs(d[k]) > 0.0){
+                        if (fabs(d[k]) > 1e-5){
+                                n_op++;
                                 m_parameter[k] += d[k];
                                 calc_grid();
                                 if (total_score < last_score){ // not good?
@@ -2273,8 +2296,10 @@ void VObKsys::run_m_param_opt (){
                                 g_print ("#%d m_parameter[%d] = %g {%g}, score=%g Hz\n", i, k,  m_parameter[k], d[k], total_score);
                         }
                 }
+                if (n_op == 0)
+                        break; // done
         }
-        g_print("Residuals:");
+        g_print("Residuals after %d parameter optimizations:", n_op);
         for (int k=0; k<5; k++) g_print ("dr[%d] = %g\n",k, dr[k]);
         for (int k=0; k<10; k++) g_print ("d[%d] = %g\n",k, d[k]);
         m_verbose = 1;
