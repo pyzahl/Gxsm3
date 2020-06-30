@@ -99,6 +99,8 @@ class VObject : public scan_object_data{
 
 	static void run_m_param_optimization_cb (GtkWidget *widget, VObject *vo);
         virtual void run_m_param_opt (){};
+	static void dump_param_cb (GtkWidget *widget, VObject *vo);
+        virtual void dump_param (){};
         
 	void build_properties_view (gboolean add=true);
         static void ec_properties_changed (Param_Control *pcs, gpointer data) { VObject* vob = (VObject*)data; vob->Update (); vob->remake_node_markers (); };
@@ -428,6 +430,7 @@ class VObKsys : public VObject{
         double score_bond (cairo_item *bonds, int i1, int i2, int n);
         void adjust_bond_aromatic_index (cairo_item_segments_wlw *bonds, int i1, int i2, double ai=10.);
         void bonds_matchup (cairo_item *bonds);
+        virtual void dump_param ();
         virtual void run_m_param_opt ();
         void opt_adjust_xy (int k, double d);
         
