@@ -289,6 +289,8 @@ private:
 
         const gchar *legend_items_code;
         int legend_position_code;
+        int legend_size_code;
+        int legend_color_code;
         
         int local_radius;
         Scan *scan;

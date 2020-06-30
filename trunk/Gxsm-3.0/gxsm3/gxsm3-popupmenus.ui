@@ -404,6 +404,38 @@
 		<attribute name="action">win.show-legend-position</attribute>
 		<attribute name="target">below</attribute>
 	      </item>
+	      <attribute name="id">view-objects-legend-section</attribute>
+	      <item>
+		<attribute name="label" translatable="yes">Font Small</attribute>
+		<attribute name="action">win.show-legend-size</attribute>
+		<attribute name="target">small</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Font Large</attribute>
+		<attribute name="action">win.show-legend-size</attribute>
+		<attribute name="target">large</attribute>
+	      </item>
+	      <attribute name="id">view-objects-legend-section</attribute>
+	      <item>
+		<attribute name="label" translatable="yes">Bar Purple</attribute>
+		<attribute name="action">win.show-legend-color</attribute>
+		<attribute name="target">purple</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Bar White</attribute>
+		<attribute name="action">win.show-legend-color</attribute>
+		<attribute name="target">white</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Bar Black</attribute>
+		<attribute name="action">win.show-legend-color</attribute>
+		<attribute name="target">black</attribute>
+	      </item>
+	      <item>
+		<attribute name="label" translatable="yes">Bar Transparent</attribute>
+		<attribute name="action">win.show-legend-color</attribute>
+		<attribute name="target">alpha</attribute>
+	      </item>
 	    </section>
 	  </submenu>
 	  <item>
