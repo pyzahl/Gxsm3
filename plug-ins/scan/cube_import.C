@@ -177,53 +177,56 @@ static void cube_import_query(void)
 	cube_import_pi.app->ConnectPluginToSaveFileEvent (cube_import_filecheck_save_callback);
 }
 
-
-// 5.) Start here with the plugins code, vars def., etc.... here.
-// ----------------------------------------------------------------------
-//
-
-
-// init-Function
-static void cube_import_init(void)
-{
-	PI_DEBUG (DBG_L2, cube_import_pi.name << "Plugin Init");
-}
-
-// about-Function
-static void cube_import_about(void)
-{
-	const gchar *authors[] = { cube_import_pi.authors, NULL};
-	gtk_show_about_dialog (NULL,
-			       "program-name",  cube_import_pi.name,
-			       "version", VERSION,
-			       "license", GTK_LICENSE_GPL_3_0,
-			       "comments", about_text,
-			       "authors", authors,
-			       NULL
-			       );
-}
-
-// configure-Function
-static void cube_import_configure(void)
-{
-	if(cube_import_pi.app)
-		cube_import_pi.app->message("cube_import Plugin Configuration");
-}
-
-// cleanup-Function, make sure the Menustrings are matching those above!!!
-static void cube_import_cleanup(void)
-{
-	PI_DEBUG (DBG_L2, "Plugin Cleanup done.");
-}
+struct Tatoms { double nxyz[4]; };
 
 // make a new derivate of the base class "Dataio"
 class cube_ImExportFile : public Dataio{
 public:
-	cube_ImExportFile(Scan *s, const char *n) : Dataio(s,n){ };
+	cube_ImExportFile() : Dataio(){
+                transpose_xyz[0]=0;
+                transpose_xyz[1]=1;
+                transpose_xyz[2]=2;
+                transpose_xyz[3]=0; // mode ident
+                // ***** Memory
+                line1 = NULL;
+                line2 = NULL;
+                atoms=0; // keep last read atoms for rewite
+                t_atoms_xyz=NULL;
+                origin[0]=origin[1]=origin[2]=origin[3]=0.0;
+        };
+	cube_ImExportFile(Scan *s, const char *n) : Dataio(s,n){
+                transpose_xyz[0]=0;
+                transpose_xyz[1]=1;
+                transpose_xyz[2]=2;
+                transpose_xyz[3]=0; // mode ident
+                // ***** Memory
+                line1 = NULL;
+                line2 = NULL;
+                atoms=0; // keep last read atoms for rewite
+                t_atoms_xyz=NULL;
+                origin[0]=origin[1]=origin[2]=origin[3]=0.0;
+        };
+        virtual ~cube_ImExportFile(){
+                if (t_atoms_xyz)
+                        g_free (t_atoms_xyz);
+                atoms=0;
+        };
+
 	virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace);
 	virtual FIO_STATUS Write();
 private:
 	FIO_STATUS import(const char *fname);
+        int transpose_xyz[4];
+        gchar *line1;
+        gchar *line2;
+        gint dims[3];
+        double origin[4];
+        double voxels[3][3];
+        gint atoms;
+        double ext_min_atom_xyz[4];
+        double ext_max_atom_xyz[4];
+        double extends_atom_xyz[4];
+        Tatoms *t_atoms_xyz;
 };
 
 FIO_STATUS cube_ImExportFile::Read(xsm::open_mode mode){
@@ -256,11 +259,7 @@ FIO_STATUS cube_ImExportFile::Read(xsm::open_mode mode){
 FIO_STATUS cube_ImExportFile::import(const char *fname){
         const int maxcharsperline = 0x4000;
 	gchar line[maxcharsperline];
-        gint atoms;
-        gint dims[3];
-        double origin[3];
-        double voxels[3][3];
-        
+
 	// Am I resposible for that file -- can only do a dimension sanity check
 	ifstream f;
 	GString *FileList=NULL;
@@ -279,10 +278,12 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
 
         // skip first 2 lines
         f.getline (line, maxcharsperline);
+        if(line1) g_free(line1); line1 = g_strdup(line);
 	g_string_append (FileList, line);
 	g_string_append (FileList, "\n");
 
         f.getline (line, maxcharsperline);
+        if(line2) g_free(line2); line2 = g_strdup(line);
 	g_string_append (FileList, line);
 	g_string_append (FileList, "\n");
 
@@ -299,7 +300,8 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
                 gchar **token  = record;
                 SKIP_EMPTY (token);
                 atoms = atoi (*token++);
-                for (int i=0; *token && i<3; ++token, ++i){
+                origin[3] = 1;
+                for (int i=0; *token && i<4; ++token, ++i){
                         SKIP_EMPTY (token);
                         origin[i] = atof(*token);
                 }
@@ -328,6 +330,10 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
         }
         g_message ("Reading cube file, %d atoms, reading Nxyz", atoms);
         // read and skip atoms
+        if (t_atoms_xyz)
+                g_free (t_atoms_xyz);
+        t_atoms_xyz = g_new (Tatoms, atoms) ;
+        
         for (int k=0; k<atoms; ++k){
                 f.getline (line, maxcharsperline);
                 g_message (line);
@@ -341,18 +347,74 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
                 for (int i=0; *token && i<4; ++token, ++i){
                         SKIP_EMPTY (token);
                         t_atom_xyz[i] = atof(*token);
+                        t_atoms_xyz[k].nxyz[i] = t_atom_xyz[i]; 
+                        if (k>0){
+                                if (ext_min_atom_xyz[i] > t_atom_xyz[i]) ext_min_atom_xyz[i] = t_atom_xyz[i];
+                                if (ext_max_atom_xyz[i] < t_atom_xyz[i]) ext_max_atom_xyz[i] = t_atom_xyz[i];
+                        } else {
+                                ext_min_atom_xyz[i] = t_atom_xyz[i];
+                                ext_max_atom_xyz[i] = t_atom_xyz[i];
+                        }
                 }
                 //g_message ("Atom[%d] %g", k, t_atom_xyz[0]);
                 g_strfreev (record);
                 if (!f.good())
                         return status=FIO_OPEN_ERR;
         }
+        // calculate extends, test for auto transpose so molecule in in XY plane
+        for (int i=0; i<4; ++i)
+                extends_atom_xyz[i] = ext_max_atom_xyz[i] - ext_min_atom_xyz[i];
+
+        gchar *tmp;
+        tmp = g_strdup_printf("Atom MIN: %g XYZ: %g %g %g\n", ext_min_atom_xyz[0],ext_min_atom_xyz[1],ext_min_atom_xyz[2],ext_min_atom_xyz[3]);
+        g_string_append (FileList, tmp); g_free(tmp);
+        tmp = g_strdup_printf("Atom MAX: %g XYZ: %g %g %g\n", ext_max_atom_xyz[0],ext_max_atom_xyz[1],ext_max_atom_xyz[2],ext_max_atom_xyz[3]);
+        g_string_append (FileList, tmp); g_free(tmp);
+        tmp = g_strdup_printf("Atom EXT: %g XYZ: %g %g %g\n", extends_atom_xyz[0],extends_atom_xyz[1],extends_atom_xyz[2],extends_atom_xyz[3]);
+        g_string_append (FileList, tmp); g_free(tmp);
+
+        int min_idx=3;
+        if (extends_atom_xyz[3] < extends_atom_xyz[2] && extends_atom_xyz[3] < extends_atom_xyz[1]){
+                transpose_xyz[0]=0;
+                transpose_xyz[1]=1;
+                transpose_xyz[2]=2;
+                transpose_xyz[3]=0; // mode ident
+                g_string_append (FileList, "OK, molecule in XY plane. :) \n");
+        }
+        else if (extends_atom_xyz[2] < extends_atom_xyz[1] && extends_atom_xyz[2] < extends_atom_xyz[3]){
+                g_string_append (FileList, "Molecule in XZ plane. Transposing YZ.\n");
+                transpose_xyz[0]=0;
+                transpose_xyz[1]=2;
+                transpose_xyz[2]=1;
+                transpose_xyz[3]=1; // mode T YZ
+                for (int k=0; k<atoms; ++k){
+                        double t_atom_xyz[4];
+                        memcpy (t_atom_xyz, t_atoms_xyz[k].nxyz, sizeof t_atom_xyz);
+                        for (int i=0; i<3; ++i)
+                                t_atoms_xyz[k].nxyz[i+1] = t_atom_xyz[transpose_xyz[i]+1];
+                }
+        }
+        else if (extends_atom_xyz[1] < extends_atom_xyz[2] && extends_atom_xyz[1] < extends_atom_xyz[3]){
+                g_string_append (FileList, "Molecule in YZ plane. Transposing XZ.\n");
+                transpose_xyz[0]=2;
+                transpose_xyz[1]=1;
+                transpose_xyz[2]=0;
+                transpose_xyz[3]=2; // mode T XZ
+                for (int k=0; k<atoms; ++k){
+                        double t_atom_xyz[4];
+                        memcpy (t_atom_xyz, t_atoms_xyz[k].nxyz, sizeof t_atom_xyz);
+                        for (int i=0; i<3; ++i)
+                                t_atoms_xyz[k].nxyz[i+1] = t_atom_xyz[transpose_xyz[i]+1];
+                }
+        } else {
+                g_string_append (FileList, "Molecule in strane plane! Keeping.\n");
+        }
 
         g_message ("Reading cube file scan setup %d x %d x %d", dims[0], dims[1], dims[2]);
 
 	time_t t; // Scan - Startzeit eintragen 
 	time(&t);
-	gchar *tmp = g_strconcat ((ctime(&t)), " (Imported)", NULL); scan->data.ui.SetDateOfScan (tmp); g_free (tmp);
+	tmp = g_strconcat ((ctime(&t)), " (Imported)", NULL); scan->data.ui.SetDateOfScan (tmp); g_free (tmp);
 	scan->data.ui.SetName (fname);
 	scan->data.ui.SetOriginalName (fname);
 	scan->data.ui.SetType ("Cube Volume Data"); 
@@ -369,12 +431,12 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
 	// this is mandatory.
 	// initialize scan structure -- this is a minimum example
 	scan->data.s.ntimes  = 1;
-	scan->data.s.nx = dims[0];
-	scan->data.s.ny = dims[1];
-	scan->data.s.nvalues = dims[2];
-	scan->data.s.dx = voxels[0][0]; // assume cubic voxel
-	scan->data.s.dy = voxels[1][1];
-        scan->data.s.dz = voxels[2][2];
+	scan->data.s.nx = dims[transpose_xyz[0]];                        
+	scan->data.s.ny = dims[transpose_xyz[1]];
+	scan->data.s.nvalues = dims[transpose_xyz[2]];
+	scan->data.s.dx = voxels[transpose_xyz[0]][transpose_xyz[0]]; // assume cubic voxel
+	scan->data.s.dy = voxels[transpose_xyz[1]][transpose_xyz[1]];
+        scan->data.s.dz = voxels[transpose_xyz[2]][transpose_xyz[2]];
 	scan->data.s.rx = scan->data.s.dx * scan->data.s.nx *0.52917721; // from bor to ang   1bor = 5.2917721067(12)×10−11 m
 	scan->data.s.ry = scan->data.s.dy * scan->data.s.ny *0.52917721;
 	scan->data.s.rz = scan->data.s.dz * scan->data.s.nvalues *0.52917721;
@@ -443,7 +505,11 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
                                         SKIP_EMPTY_N(token);
                                         //g_message ("    V[%d][%d][%d]=>%s<",ix,iy,iz,*token);
                                         double value = atof (*token++);
-                                        scan->mem2d->PutDataPkt (value, ix, iy, iz);
+                                        switch (transpose_xyz[3]){
+                                        case 0: scan->mem2d->PutDataPkt (value, ix, iy, iz); break; // normal XYZ mapping
+                                        case 1: scan->mem2d->PutDataPkt (value, ix, iz, iy); break; // YZ transpose
+                                        case 2: scan->mem2d->PutDataPkt (value, iz, iy, ix); break; // XZ transpose
+                                        }
                                         //g_message ("    next: %s",*token);
                                         SKIP_EMPTY_N (token);
                                         //g_message ("    next: %s",*token);
@@ -474,6 +540,7 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
 
 
 FIO_STATUS cube_ImExportFile::Write(){
+        double zero=0.0;
 	const gchar *fname;
 	ofstream f;
 
@@ -491,21 +558,33 @@ FIO_STATUS cube_ImExportFile::Write(){
 	if (!f.good())
 	        return status=FIO_OPEN_ERR;
         // << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << std::setfill( '0' ) << value
-        f << "GXSM Cube FILE" << std::endl;
-        f << "# ------------ dummy atoms, atom positions/objects are not supported ----" << std::endl;
-        f << std::setw( 11 ) << std::setprecision( 6 ) << std::setfill( '0' );
-        f << "3    0.000000    0.000000    0.000000" << std::endl;
-        f << scan->mem2d->GetNx () << "    " << scan->data.s.dx << "    0.000000    0.000000" << std::endl;
-        f << scan->mem2d->GetNy () << "    0.000000    " << scan->data.s.dy << "    0.000000" << std::endl;
-        f << scan->mem2d->GetNv () << "    0.000000    0.000000    " << scan->data.s.dz << std::endl;
-        f << "8    0.000000    5.570575    5.669178    5.593517" << std::endl;
-        f << "1    0.000000    5.562867    5.669178    7.428055" << std::endl;
-        f << "1    0.000000    7.340606    5.669178    5.111259" << std::endl;
- 
+        f << " GXSM Cube FILE of:" << (line1?line1:" - ") << std::endl;
+        f << (line2?line2:" -- no previous atoms info --") << std::endl;
+        f << std::fixed;
+        f << std::right << std::setw(5) << atoms                  << " " << std::setw(11) << std::setprecision(6) << origin[0]       << " " << std::setw(11) << origin[1]       << " " << std::setw(11) << origin[2] << " " << std::setw(11) << (int)(origin[3]) << std::endl;
+        f << std::right << std::setw(5) << scan->mem2d->GetNx ()  << " " << std::setw(11) << std::setprecision(6) << scan->data.s.dx << " " << std::setw(11) << zero            << " " << std::setw(11) << zero            << std::endl;
+        f << std::right << std::setw(5) << scan->mem2d->GetNy ()  << " " << std::setw(11) << std::setprecision(6) << zero            << " " << std::setw(11) << scan->data.s.dy << " " << std::setw(11) << zero            << std::endl;
+        f << std::right << std::setw(5) << scan->mem2d->GetNv ()  << " " << std::setw(11) << std::setprecision(6) << zero            << " " << std::setw(11) << zero            << " " << std::setw(11) << scan->data.s.dz << std::endl;
+        for (int k=0; k<atoms; ++k)
+                f << std::right
+                  << std::setw(5) << ((int)t_atoms_xyz[k].nxyz[0])
+                  << " " << std::setw(11) << t_atoms_xyz[k].nxyz[0]
+                  << " " << std::setw(11) << t_atoms_xyz[k].nxyz[1]
+                  << " " << std::setw(11) << t_atoms_xyz[k].nxyz[2]
+                  << " " << std::setw(11) << t_atoms_xyz[k].nxyz[3]
+                  << std::endl;
+        f << std::setprecision(6) << std::scientific;
 	for (int col=0; col < scan->mem2d->GetNx (); ++col) {
 		for (int row=0; row < scan->mem2d->GetNy (); ++row) {
                         for (int val=0; val < scan->mem2d->GetNv (); ++val) {
+#if 1
                                 f << scan->mem2d->GetDataPkt (col, row, val) << " ";
+#else // zero region with erros (hack)
+                                if (val > 70 && val < 330)
+                                        f << scan->mem2d->GetDataPkt (col, row, val) << " ";
+                                else
+                                        f << (0.0) << " ";
+#endif
                                 if (val % 6 == 5)
                                         f << std::endl;
                         }
@@ -517,6 +596,50 @@ FIO_STATUS cube_ImExportFile::Write(){
 	f.close ();
 
 	return FIO_OK; 
+}
+
+
+// 5.) Start here with the plugins code, vars def., etc.... here.
+// ----------------------------------------------------------------------
+//
+
+cube_ImExportFile *cube_fileobj = NULL;
+
+// init-Function
+static void cube_import_init(void)
+{
+	PI_DEBUG (DBG_L2, cube_import_pi.name << "Plugin Init");
+        cube_fileobj = new cube_ImExportFile ();
+}
+
+// about-Function
+static void cube_import_about(void)
+{
+	const gchar *authors[] = { cube_import_pi.authors, NULL};
+	gtk_show_about_dialog (NULL,
+			       "program-name",  cube_import_pi.name,
+			       "version", VERSION,
+			       "license", GTK_LICENSE_GPL_3_0,
+			       "comments", about_text,
+			       "authors", authors,
+			       NULL
+			       );
+}
+
+// configure-Function
+static void cube_import_configure(void)
+{
+	if(cube_import_pi.app)
+		cube_import_pi.app->message("cube_import Plugin Configuration");
+}
+
+// cleanup-Function, make sure the Menustrings are matching those above!!!
+static void cube_import_cleanup(void)
+{
+        if (cube_fileobj)
+                delete cube_fileobj;
+
+	PI_DEBUG (DBG_L2, "Plugin Cleanup done.");
 }
 
 // Plugin's Notify Cb's, registered to be called on file load/save to check file
@@ -536,9 +659,10 @@ static void cube_import_filecheck_load_callback (gpointer data ){
 			gapp->xsm->ActivateFreeChannel();
 			dst = gapp->xsm->GetActiveScan();
 		}
-		cube_ImExportFile fileobj (dst, *fn);
+		cube_fileobj->SetScan (dst);
+                cube_fileobj->SetName (*fn);
 
-		FIO_STATUS ret = fileobj.Read(); 
+		FIO_STATUS ret = cube_fileobj->Read(); 
 		if (ret != FIO_OK){ 
 			// I'am responsible! (But failed)
 			if (ret != FIO_NOT_RESPONSIBLE_FOR_THAT_FILE)
@@ -568,10 +692,11 @@ static void cube_import_filecheck_save_callback (gpointer data ){
 			  "Check File: cube_import_filecheck_save_callback called with >"
 			  << *fn << "<" );
 
-		cube_ImExportFile fileobj (src = gapp->xsm->GetActiveScan(), *fn);
+		cube_fileobj->SetScan (src = gapp->xsm->GetActiveScan());
+                cube_fileobj->SetName (*fn);
 
 		FIO_STATUS ret;
-		ret = fileobj.Write(); 
+		ret = cube_fileobj->Write(); 
 
 		if(ret != FIO_OK){
 			// I'am responsible! (But failed)
