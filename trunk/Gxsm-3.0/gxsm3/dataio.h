@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -23,8 +25,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
-
 #ifndef __DATAIO_H
 #define __DATAIO_H
 
@@ -33,44 +33,46 @@
 // using namespace netCDF;
 
 typedef enum { 
-    FIO_OK, 
-    FIO_OPEN_ERR, FIO_WRITE_ERR, FIO_READ_ERR,
-    FIO_NO_NAME,
-    FIO_NO_MEM,
-    FIO_DISK_FULL,
-    FIO_NO_DATFILE,
-    FIO_NO_GNUFILE,
-    FIO_NO_NETCDFFILE,
-    FIO_NO_NETCDFXSMFILE,
-    FIO_NSC_ERR,
-    FIO_NOT_RESPONSIBLE_FOR_THAT_FILE,
-    FIO_INVALID_FILE,
-    FIO_UNKNOWN_ERR
+              FIO_OK, 
+              FIO_OPEN_ERR, FIO_WRITE_ERR, FIO_READ_ERR,
+              FIO_NO_NAME,
+              FIO_NO_MEM,
+              FIO_DISK_FULL,
+              FIO_NO_DATFILE,
+              FIO_NO_GNUFILE,
+              FIO_NO_NETCDFFILE,
+              FIO_NO_NETCDFXSMFILE,
+              FIO_NSC_ERR,
+              FIO_NOT_RESPONSIBLE_FOR_THAT_FILE,
+              FIO_INVALID_FILE,
+              FIO_UNKNOWN_ERR
 } FIO_STATUS;
 
 class Dataio{
- public:
-  Dataio(Scan *s, const char *n){ scan=s; name=strdup(n); status=FIO_OK; };
-  virtual ~Dataio(){ free(name); };
-  void SetName(const char *n){ free(name); name=strdup(n); }
+public:
+        Dataio(){ scan=NULL; name=NULL; status=FIO_OK; };
+        Dataio(Scan *s, const char *n){ scan=s; name=strdup(n); status=FIO_OK; };
+        virtual ~Dataio(){ if(name) free(name); };
 
-  virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace)=0;
-  virtual FIO_STATUS Write()=0;
-  void SetScan(Scan *sc){ scan = sc; };
+        void SetName(const char *n){ if(name) free(name); name=strdup(n); }
+        void SetScan(Scan *sc){ scan = sc; };
 
-  const char* ioStatus();
-  char *name;
+        virtual FIO_STATUS Read(xsm::open_mode mode=xsm::open_mode::replace)=0;
+        virtual FIO_STATUS Write()=0;
 
- protected:
-  FIO_STATUS status;
-  Scan *scan;
+        const char* ioStatus();
+        char *name;
+
+protected:
+        FIO_STATUS status;
+        Scan *scan;
 };
 
 class NetCDF : public Dataio{
- public:
-  NetCDF(Scan *s, const char *n) : Dataio(s,n){ };
-  virtual FIO_STATUS Read (xsm::open_mode mode=xsm::open_mode::replace);
-  virtual FIO_STATUS Write ();
+public:
+        NetCDF(Scan *s, const char *n) : Dataio(s,n){ };
+        virtual FIO_STATUS Read (xsm::open_mode mode=xsm::open_mode::replace);
+        virtual FIO_STATUS Write ();
 };
 
 
