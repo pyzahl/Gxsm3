@@ -111,7 +111,7 @@ public:
 	
 	void run(Scan *Src, Scan *Dest);
 	void stop () { stop_flg = true; };
-	static int cancel_callback (GtkWidget *widget, StackReg *sr) { sr->stop (); };
+        static int cancel_callback (GtkWidget *widget, StackReg *sr) { sr->stop (); return 0; };
 	static int about_callback (GtkWidget *widget, gpointer x) { 	
 		const gchar *authors[] = { "P. Zahl", "P. Th\303\251venaz", "U.E. Ruttimann", "M. Unser", NULL};
 		gtk_show_about_dialog (NULL, 
@@ -155,6 +155,7 @@ public:
 				       "authors", authors,
 				       NULL
 				       );
+		return 0;
 	};
 
 	void registerSlice (
