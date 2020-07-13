@@ -585,6 +585,7 @@ public:
 		Vector_b* tmp;
 		msk = *(tmp = (Vector_b*) (pyramid.top())); pyramid.pop();
 		delete tmp;
+		return true;
 	};
 
 

@@ -168,6 +168,8 @@ static gboolean affine_run(Scan *Src, Scan *Dest)
 
 	g_message ("PlugIn affine.C: Fix Me! Need mouse coordinate port top new scan_obj methods.");
 
+	return 0;
+
 #if 0
 
 	if(Src->PktVal < 3){
