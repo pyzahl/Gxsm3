@@ -444,6 +444,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         input_ddsfreq=bp->ec;
         bp->ec->Freeze ();
+
+        bp->new_line ();
+        bp->grid_add_ec ("AM Lim", mVolt, &parameters.phase_hold_am_noise_limit, 0.0, 100.0, "g", 0.1, 1.0, "PHASE-HOLD-AM-NOISE-LIMIT");
+
         bp->new_line ();
         bp->set_input_nx (1);
         bp->grid_add_check_button ( N_("Enable"), "Enable Phase Controller", 2,
@@ -1115,6 +1119,7 @@ void Inet_Json_External_Scandata::phase_ctrl_parameter_changed (Param_Control* p
         self->write_parameter ("PHASE_FB_SETPOINT", self->parameters.phase_fb_setpoint);
         self->write_parameter ("FREQ_FB_UPPER", self->parameters.freq_fb_upper);
         self->write_parameter ("FREQ_FB_LOWER", self->parameters.freq_fb_lower);
+        self->write_parameter ("PHASE_HOLD_AM_NOISE_LIMIT", self->parameters.phase_hold_am_noise_limit);
 }
 
 void Inet_Json_External_Scandata::dfreq_ctrl_parameter_changed (Param_Control* pcs, gpointer user_data){

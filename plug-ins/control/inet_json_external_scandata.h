@@ -104,6 +104,7 @@ struct PACPLL_parameters {
         double phase_fb_ci;
         double phase_fb_cp_db;
         double phase_fb_ci_db;
+        double phase_hold_am_noise_limit; 
         double freq_fb_upper;
         double freq_fb_lower;
         double qcontrol;
@@ -207,6 +208,7 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "PHASE_FB_CI", &pacpll_parameters.phase_fb_ci, false },
         { "FREQ_FB_UPPER", &pacpll_parameters.freq_fb_upper, false },
         { "FREQ_FB_LOWER", &pacpll_parameters.freq_fb_lower, false },
+        { "PHASE_HOLD_AM_NOISE_LIMIT",  &pacpll_parameters.phase_hold_am_noise_limit, false },
         { "PHASE_CONTROLLER", &pacpll_parameters.phase_controller, false },
         { "PHASE_UNWRAPPING_ALWAYS", &pacpll_parameters.phase_unwrapping_always, false },
         { "SET_SINGLESHOT_TRANSPORT_TRIGGER", &pacpll_parameters.set_singleshot_transport_trigger, false },
