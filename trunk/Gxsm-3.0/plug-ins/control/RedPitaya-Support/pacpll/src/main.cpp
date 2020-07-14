@@ -197,6 +197,7 @@ CDoubleParameter AMPLITUDE_FB_CP("AMPLITUDE_FB_CP", CBaseParameter::RW, 0, 0, -1
 CDoubleParameter AMPLITUDE_FB_CI("AMPLITUDE_FB_CI", CBaseParameter::RW, 0, 0, -1000, 1000);
 CDoubleParameter EXEC_FB_UPPER("EXEC_FB_UPPER", CBaseParameter::RW, 500, 0, 0, 1000); // mV
 CDoubleParameter EXEC_FB_LOWER("EXEC_FB_LOWER", CBaseParameter::RW, 0, 0, -1000, 1000); // mV
+CDoubleParameter PHASE_HOLD_AM_NOISE_LIMIT("PHASE_HOLD_AM_NOISE_LIMIT", CBaseParameter::RW, 5, 0, 0, 1000); // mV
 
 CDoubleParameter PHASE_FB_SETPOINT("PHASE_FB_SETPOINT", CBaseParameter::RW, 0, 0, -180, 180); // deg
 CDoubleParameter PHASE_FB_CP("PHASE_FB_CP", CBaseParameter::RW, 0, 0, -1000, 1000); 
@@ -379,6 +380,9 @@ void rp_PAC_App_Release(){
 #define QPHCOEF Q31
 #define QDFCOEF Q31
 
+#define PACPLL_CFG1_OFFSET 32
+
+
 long double cpu_values[4] = {0, 0, 0, 0}; /* reading only user, nice, system, idle */
 
 int phase_setpoint_qcordicatan = 0;
@@ -528,7 +532,6 @@ void rp_PAC_configure_switches (int phase_ctrl, int am_ctrl, int phase_unwrap_al
                                (dfreq_ctrl ? 0x100:0)                                                   // Bit 9
                                );
 }
-
 
 #define QCONTROL_CFG_GAIN_DELAY 29
 // Configure Q-Control Logic build into Volume Adjuster
@@ -738,7 +741,8 @@ void rp_PAC_set_amplitude_controller (double setpoint, double cp, double ci, dou
 
 // Phase Controller
 // CONTROL[75] OUT[44] : [75-1-1:75-44]=43+1   m[24]  x  c[32]  = 56 M: 24{Q32},  P: 44{Q14}
-void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double upper, double lower){
+#define PACPLL_CFG_PHASE_CONTROL_THREASHOLD (PACPLL_CFG1_OFFSET + 8)
+void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double upper, double lower, double am_threashold){
         if (verbose > 2) fprintf(stderr, "##Configure Controller: set= %g  Q22: %d    cp=%g ci=%g upper=%g lower=%g\n", setpoint, (int)(Q22 * setpoint), cp, ci, upper, lower); 
 
         /*
@@ -757,6 +761,10 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
         set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_CI,    (long long)(QPHCOEF * ci));
         set_gpio_cfgreg_int48 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_UPPER, (unsigned long long)round (dds_phaseinc (upper))); // => 44bit phase
         set_gpio_cfgreg_int48 (PACPLL_CFG_PHASE_CONTROLLER + PACPLL_CFG_LOWER, (unsigned long long)round (dds_phaseinc (lower)));
+
+// PHASE_CONTROLLER_THREASHOLD for hold control if amplituide drops into noise regime to avoid run away
+// AMPL from CORDIC: 24bit Q23 -- QCORDICSQRT
+        set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROL_THREASHOLD,   ((int)(QCORDICSQRT * am_threashold))<<(32-BITS_CORDICSQRT));
 }
 /*
         OPERATION::
@@ -849,14 +857,15 @@ int bram_status(int bram_status[3]){
         return bram_status[2]; // finished (finished and run set)
 }
 
+
+/*
+// ---------- NOT IMPLEMENTED/NO ROOM ---------------------
 // Configure transport tau: time const or high speed IIR filter stages
-#define PACPLL_CFG1_OFFSET 32
 #define PACPLL_CFG_TRANSPORT_TAU_DFREQ   (PACPLL_CFG1_OFFSET + 0)
 #define PACPLL_CFG_TRANSPORT_TAU_PHASE   (PACPLL_CFG1_OFFSET + 1)
 #define PACPLL_CFG_TRANSPORT_TAU_EXEC    (PACPLL_CFG1_OFFSET + 2)
 #define PACPLL_CFG_TRANSPORT_TAU_AMPL    (PACPLL_CFG1_OFFSET + 3)
 
-/*
 void rp_PAC_set_tau_transport (double tau_dfreq, double tau_phase, double tau_exec, double tau_ampl){
 #ifdef REMAP_TO_OLD_FPGA_VERSION
         return;
@@ -1088,7 +1097,8 @@ void set_PAC_config()
                                      PHASE_FB_CP.Value (),
                                      PHASE_FB_CI.Value (),
                                      FREQ_FB_UPPER.Value (), // Hz
-                                     FREQ_FB_LOWER.Value ()
+                                     FREQ_FB_LOWER.Value (),
+                                     PHASE_HOLD_AM_NOISE_LIMIT.Value ()/1000. // mV to V
                                      );
         PH_set_prev = PHASE_FB_SETPOINT.Value ();
         
@@ -1893,6 +1903,7 @@ void OnNewParams(void)
         PHASE_FB_CI.Update ();
         FREQ_FB_UPPER.Update ();
         FREQ_FB_LOWER.Update ();
+        PHASE_HOLD_AM_NOISE_LIMIT.Update ();
         
         if (verbose > 3) fprintf(stderr, "OnNewParams: verbose=%d\n", PACVERBOSE.Value ());
         verbose = PACVERBOSE.Value ();
