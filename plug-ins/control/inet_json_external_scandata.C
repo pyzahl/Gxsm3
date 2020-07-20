@@ -217,8 +217,8 @@ static void inet_json_external_scandata_show_callback(GSimpleAction *simple, GVa
 }
 
 
-#define dB_min_from_Q(Q) (20.*log(1./(1<<(Q)-1)))
-#define dB_max_from_Q(Q) (20.*log(1./(1<<(32-(Q))-1)))
+#define dB_min_from_Q(Q) (20.*log10(1./((1<<(Q))-1)))
+#define dB_max_from_Q(Q) (20.*log10(1<<((32-(Q))-1)))
 #define SETUP_dB_RANGE_from_Q(PCS, Q) { PCS->setMin(dB_min_from_Q(Q)); PCS->setMax(dB_max_from_Q(Q)); }
 
 Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
