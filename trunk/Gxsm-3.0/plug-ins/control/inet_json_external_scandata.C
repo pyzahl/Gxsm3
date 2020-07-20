@@ -217,6 +217,10 @@ static void inet_json_external_scandata_show_callback(GSimpleAction *simple, GVa
 }
 
 
+#define dB_min_from_Q(Q) (20.*log(1./(1<<(Q)-1)))
+#define dB_max_from_Q(Q) (20.*log(1./(1<<(32-(Q))-1)))
+#define SETUP_dB_RANGE_from_Q(PCS, Q) { PCS->setMin(dB_min_from_Q(Q)); PCS->setMax(dB_max_from_Q(Q)); }
+
 Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 {
         GtkWidget *tmp;
@@ -371,8 +375,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::amplitude_gain_changed, this);
         bp->grid_add_ec ("CP gain", dB, &parameters.amplitude_fb_cp_db, -200.0, 200.0, "g", 0.1, 1.0, "AMPLITUDE-FB-CP");
+        SETUP_dB_RANGE_from_Q(bp->ec, 22); // Amplitude QAMCOEF = Q22
         bp->new_line ();
         bp->grid_add_ec ("CI gain", dB, &parameters.amplitude_fb_ci_db, -200.0, 200.0, "g", 0.1, 1.0, "AMPLITUDE-FB-CI");
+        SETUP_dB_RANGE_from_Q(bp->ec, 22); // Amplitude QAMCOEF = Q22
         bp->new_line ();
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
@@ -426,8 +432,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::phase_gain_changed, this);
         bp->grid_add_ec ("CP gain", dB, &parameters.phase_fb_cp_db, -200.0, 200.0, "g", 0.1, 1.0, "PHASE-FB-CP");
+        SETUP_dB_RANGE_from_Q(bp->ec, 31); // PHASE  QPHCOEF = Q31 
         bp->new_line ();
         bp->grid_add_ec ("CI gain", dB, &parameters.phase_fb_ci_db, -200.0, 200.0, "g", 0.1, 1.0, "PHASE-FB-CI");
+        SETUP_dB_RANGE_from_Q(bp->ec, 31); // PHASE  QPHCOEF = Q31 
         bp->new_line ();
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);
