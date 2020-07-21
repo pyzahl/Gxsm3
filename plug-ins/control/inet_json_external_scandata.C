@@ -375,10 +375,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::amplitude_gain_changed, this);
         bp->grid_add_ec ("CP gain", dB, &parameters.amplitude_fb_cp_db, -200.0, 200.0, "g", 0.1, 1.0, "AMPLITUDE-FB-CP");
-        SETUP_dB_RANGE_from_Q(bp->ec, 22); // Amplitude QAMCOEF = Q22
+        SETUP_dB_RANGE_from_Q(bp->ec, 31); // Amplitude QAMCOEF = Q31
         bp->new_line ();
         bp->grid_add_ec ("CI gain", dB, &parameters.amplitude_fb_ci_db, -200.0, 200.0, "g", 0.1, 1.0, "AMPLITUDE-FB-CI");
-        SETUP_dB_RANGE_from_Q(bp->ec, 22); // Amplitude QAMCOEF = Q22
+        SETUP_dB_RANGE_from_Q(bp->ec, 31); // Amplitude QAMCOEF = Q31
         bp->new_line ();
         bp->set_no_spin (true);
         bp->set_input_width_chars (16);

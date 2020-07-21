@@ -375,7 +375,7 @@ void rp_PAC_App_Release(){
 #define Q48 QN64(48)
 
 #define QEXEC   Q31
-#define QAMCOEF Q22
+#define QAMCOEF Q31
 #define QFREQ   Q47
 #define QPHCOEF Q31
 #define QDFCOEF Q31
