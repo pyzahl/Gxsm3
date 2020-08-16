@@ -86,7 +86,7 @@ module axis_4s_combine #(
 (
     // (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_CLKEN a_clk" *)
-    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF S_AXIS1:S_AXIS1S:S_AXIS2:S_AXIS3:S_AXIS4:S_AXIS5:S_AXIS6:S_AXIS7:S_AXIS8:M_AXIS_aux:M_AXIS_CH1:M_AXIS_CH2:M_AXIS_CH3:M_AXIS_CH4:M_AXIS_DFREQ_LP:M_AXIS_DFREQ_DEC:M_AXIS_PHASE_LP:M_AXIS_EXEC_LP:M_AXIS_AMPL_LP" *)
+    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF S_AXIS1:S_AXIS1S:S_AXIS2:S_AXIS3:S_AXIS4:S_AXIS5:S_AXIS6:S_AXIS7:S_AXIS8:M_AXIS_aux:M_AXIS_CH1:M_AXIS_CH2:M_AXIS_CH3:M_AXIS_CH4:M_AXIS_DFREQ_DEC:M_AXIS_DFREQ_LP:M_AXIS_PHASE_LP:M_AXIS_EXEC_LP:M_AXIS_AMPL_LP" *)
     input a_clk,
     // input a_resetn
     
@@ -203,20 +203,32 @@ module axis_4s_combine #(
     //assign BR_ch1s  = reg_tau_dfreq[31] ? ch1s[31:0] : ch1s_lp;
     assign BR_ch2s  = ch2s[31:0];
 
-    always @(posedge a_clk)
+    reg [1:0] rdecii = 0;
+
+    always @ (posedge a_clk)
+    begin
+        rdecii <= rdecii+1;
+    end
+
+
+    always @ (posedge rdecii[1])
     begin
         // buffer in local register
+        reg_channel_selector <= channel_selector[4-1:0];
+        reg_ext_trigger <= ext_trigger;
         reg_operation <= operation[7:0];
         reg_shift     <= operation[31:8];
         reg_ndecimate <= ndecimate;
         reg_nsamples  <= nsamples;
-        reg_channel_selector <= channel_selector[4-1:0];
-        reg_ext_trigger <= ext_trigger;
 
         // map data sources and calculate delta Freq
         reg_freq_center <= {{(64-SAXIS_3_DATA_WIDTH){1'b0}},  axis3_center[SAXIS_3_DATA_WIDTH-1:0]}; // expand to 64 bit, signed but always pos
         reg_freq        <= {{(64-SAXIS_3_DATA_WIDTH){1'b0}}, S_AXIS3_tdata[SAXIS_3_DATA_WIDTH-1:0]}; // expand to 64 bit, signed but always pos
         reg_delta_freq  <= reg_freq - reg_freq_center; // compute delta frequency -- should need way less than actual 48bits now! But here we go will full range. Deciamtion may overrun is delta is way way off normal.
+    end
+
+    always @(posedge a_clk)
+    begin
 
         // ===============================================================================
         // MANAGE EXT CONTROLS [reset, operation, trigger] FOR DECIMATING STATE MACHINE
