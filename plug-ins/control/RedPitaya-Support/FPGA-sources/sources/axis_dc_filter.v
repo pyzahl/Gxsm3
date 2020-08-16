@@ -99,7 +99,14 @@ module axis_dc_filter #
     reg signed [LMS_DATA_WIDTH+32-1:0] mdc_mue=0;
     reg signed [LMS_DATA_WIDTH-1:0] ac_signal=0;
 
+    reg [1:0] rdecii = 0;
+
     always @ (posedge aclk)
+    begin
+        rdecii <= rdecii+1;
+    end
+
+    always @ (posedge rdecii[1])
     begin
         reg_sc_zero <= sc_zero;
         reg_dc_tau  <= dc_tau; // Q31 tau DC iir at cos-sin zero x

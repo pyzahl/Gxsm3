@@ -44,7 +44,15 @@ module ScaleAndAdjust #(
     reg signed [GAIN_DATA_WIDTH-1:0] v=0;
     //reg signed [M_AXIS_DATA_WIDTH-1:0] w=0;
     reg signed [S_AXIS_DATA_WIDTH+GAIN_DATA_WIDTH-1:0] y=0;
+    
+    reg [1:0] rdecii = 0;
+
     always @ (posedge a_clk)
+    begin
+        rdecii <= rdecii+1;
+    end
+
+    always @ (posedge rdecii[1])
     begin
        if (S_AXIS_tvalid)
        begin

@@ -58,8 +58,9 @@ module controller_pi #(
     parameter AMCONTROL_ALLOW_NEG_SPECIAL = 0, // special AM controller behavior                       0      1
     parameter AUTO_RESET_AT_LIMIT  = 0,        // optional behavior instead of saturation at limits,   X      0
 		                                       //  push control back to reset value
-    parameter USE_RESET_DATA_INPUT = 1         // has reset value AXIS input,                          1      1
+    parameter USE_RESET_DATA_INPUT = 1,        // has reset value AXIS input,                          1      1
 
+    parameter RDECI = 1   // reduced rate decimation bits 1= 1/2 ...
     // Calculated and fixed Parameters -- ignore and do not change in bogus GUI: zW_XXXXX -- or better hand caclulate and check! Unclear/false behavior :( 
     //parameter zW_ERROR         = IN_W + 1,               // ACTUAL CONTROL ERROR WIDTH REQUIRED as of significant data range
     //parameter zW_EXTEND        = 1,                      // FOR SATURATION CHECK PURPOSE 
@@ -67,7 +68,7 @@ module controller_pi #(
 )
 (
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_CLKEN aclk" *)
-    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF S_AXIS:S_AXIS_reset:M_AXIS_PASS:M_AXIS_PASS2:M_AXIS_CONTROL:M_AXIS_CONTROL2" *)
+    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF S_AXIS:S_AXIS_reset:M_AXIS_PASS:M_AXIS_PASS2:M_AXIS_CONTROL:M_AXIS_CONTROL2:M_AXIS_CONTROL3" *)
     input aclk,
     input wire [AXIS_TDATA_WIDTH-1:0]  S_AXIS_tdata, // Controller data input
     input wire                         S_AXIS_tvalid,
@@ -80,7 +81,8 @@ module controller_pi #(
 
     input wire signed [M_AXIS_CONTROL_TDATA_WIDTH-1:0]  S_AXIS_reset_tdata, // Controller Reset/Start, i.e. disabled control output value
     input wire                                          S_AXIS_reset_tvalid,
-    input enable,
+    input wire enable,
+    input wire control_hold,
     
     output wire [AXIS_TDATA_WIDTH-1:0] M_AXIS_PASS_tdata, // passed input
     output wire                        M_AXIS_PASS_tvalid,
@@ -93,6 +95,9 @@ module controller_pi #(
     
     output wire [M_AXIS_CONTROL2_TDATA_WIDTH-1:0] M_AXIS_CONTROL2_tdata, // control output, full precision without over flow bit
     output wire                                   M_AXIS_CONTROL2_tvalid,
+
+    output wire [M_AXIS_CONTROL2_TDATA_WIDTH-1:0] M_AXIS_CONTROL3_tdata, // control output, full precision without over flow bit
+    output wire                                   M_AXIS_CONTROL3_tvalid,
 
     output wire signed [31:0] mon_signal,
     output wire signed [31:0] mon_error,
@@ -126,6 +131,7 @@ module controller_pi #(
     reg control_max;
     reg control_min;
     reg reg_enable;
+    reg reg_hold;
 
     assign M_AXIS_PASS_tdata  = S_AXIS_tdata; // pass
     assign M_AXIS_PASS_tvalid = S_AXIS_tvalid; // pass
@@ -143,7 +149,15 @@ assign	w_convergent = i_data[(IWID-1):0]
 always @(posedge i_clk)
 	o_convergent <= w_convergent[(IWID-1):(IWID-OWID)];
 */     
+
+    reg [RDECI:0] rdecii = 0;
+
     always @ (posedge aclk)
+    begin
+        rdecii <= rdecii+1;
+    end
+
+    always @ (posedge rdecii[RDECI])
     begin
         upper <= {{(zW_EXTEND){       limit_upper[CONTROL_W-1]}},        limit_upper[CONTROL_W-1:0], {(zW_CONTROL_INT-CONTROL_W-zW_EXTEND){1'b0}}};  // sign extend and pad on right to control int width
         lower <= {{(zW_EXTEND){       limit_lower[CONTROL_W-1]}},        limit_lower[CONTROL_W-1:0], {(zW_CONTROL_INT-CONTROL_W-zW_EXTEND){1'b0}}};  // sign extend and pad on right to control int width
@@ -159,6 +173,7 @@ always @(posedge i_clk)
         reg_ci <= ci;
 
         reg_enable <= enable;
+        reg_hold   <= control_hold;
 
         // limit to range, in control mode
         if (reg_enable && control_next > upper)
@@ -226,7 +241,7 @@ always @(posedge i_clk)
         // calculate error
         error_next   <= reg_setpoint - m; // IN_W + 1  (zW_ERROR)
 
-        if (reg_enable) // run controller, integrate and prepare control output
+        if (reg_enable && !reg_hold) // run controller, integrate and prepare control output
         begin
             control_cie <= reg_ci*error; // ciX*error // saturation via extended range and limiter // Q64.. += Q31 x Q22
             control_cpe <= reg_cp*error; // cpX*error // saturation via extended range and limiter // Q64.. += Q31 x Q22
@@ -235,8 +250,11 @@ always @(posedge i_clk)
         end 
         else // pass reset value as control
         begin
-            controlint_next <= reset;
-            control_next    <= reset;
+            if (!reg_enable)
+            begin
+                controlint_next <= reset;
+                control_next    <= reset;
+            end
         end
     end
  
@@ -246,6 +264,9 @@ always @(posedge i_clk)
     //assign M_AXIS_CONTROL2_tdata  = {control[zW_CONTROL_INT-1], control[zW_CONTROL_INT-zW_EXTEND-2 : zW_CONTROL_INT-zW_EXTEND-CONTROL2_W]}; // strip extension
     assign M_AXIS_CONTROL2_tdata  = {{(M_AXIS_CONTROL_TDATA_WIDTH-CONTROL2_W){control[zW_CONTROL_INT-1]}}, control[zW_CONTROL_INT-zW_EXTEND-1 : zW_CONTROL_INT-zW_EXTEND-CONTROL2_W]}; // strip extension, expand to TDATA WIDTH
     assign M_AXIS_CONTROL2_tvalid = 1'b1;
+    //3rd out
+    assign M_AXIS_CONTROL3_tdata  = {{(M_AXIS_CONTROL_TDATA_WIDTH-CONTROL2_W){control[zW_CONTROL_INT-1]}}, control[zW_CONTROL_INT-zW_EXTEND-1 : zW_CONTROL_INT-zW_EXTEND-CONTROL2_W]}; // strip extension, expand to TDATA WIDTH
+    assign M_AXIS_CONTROL3_tvalid = 1'b1;
 
     assign mon_signal  = {{(32-zW_ERROR){m[zW_ERROR-1]}}, m[zW_ERROR-1:0]};
     assign mon_error   = {{(32-zW_ERROR){error[zW_ERROR-1]}}, error[zW_ERROR-1:0]};

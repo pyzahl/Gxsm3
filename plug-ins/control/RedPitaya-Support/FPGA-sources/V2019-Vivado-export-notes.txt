@@ -1,0 +1,30 @@
+Instructions for updating the tcl files:
+
+1) inside project run the following
+   >write_project_tcl mk_prj_new.tcl
+2) best to compare this to the previous tcl and modify as necessary.
+   The bd related stuff should probably be removed from the tcl script?
+3) run the following:
+   >write_bd_tcl mk_bd_new.tcl
+4) this file should be ok to just overwrite the existing mk_bd.tcl file
+5) do a quick check to make sure project can be regenerated from scratch
+
+
+NOTE: The output script is the biggest garbage ever and all paths for a clean import of source files form a given folder must be manually adjusted.
+
+
+
+Instructions for creating project from scratch:
+
+1) start vivado_tcl console and change into project_folder directory
+2) delete <proj> folder contents (make a cleanup script for this someday)
+3) run >source mk_proj.tcl
+4) go to <proj> folder and open newly created project
+   (Note: you may need to make sure project is targeting the correct part!)
+5) at tcl console in project run:
+   >source mk_bd.tcl
+6) regenerate output products for bd design
+7) create wrapper for bd design (this should be something instantiated by HDL already in the design)
+
+
+

@@ -67,6 +67,19 @@ module phase_unwrap #(
     reg signed [M_AXIS_TDATA_WIDTH-1:0] dp01=0;
     reg signed [M_AXIS_TDATA_WIDTH-1:0] phase_wrap=0;
     reg signed [M_AXIS_TDATA_WIDTH-1:0] phase_unwrapped=0;
+    reg reg_unwrap_enable;
+
+    reg [1:0] rdecii = 0;
+
+    always @ (posedge aclk)
+    begin
+        rdecii <= rdecii+1;
+    end
+
+    always @ (posedge rdecii[1])
+    begin
+        reg_unwrap_enable <= enable;
+    end
 
     always @ (posedge aclk)
     begin
@@ -76,7 +89,7 @@ module phase_unwrap #(
         
         dp01 <= p0-p1;
         
-        if (enable)
+        if (reg_unwrap_enable)
         begin
             if (dp01 > 25'sd6588397)                      // > pi : (1<<21)*pi = 6588397.3
             begin
