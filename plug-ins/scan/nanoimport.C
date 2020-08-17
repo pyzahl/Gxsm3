@@ -229,8 +229,8 @@ FIO_STATUS NanoScopeFile::Read(xsm::open_mode mode){
 	scan->data.ui.SetOriginalName ("--NA--");
 	scan->data.ui.SetUser ("somebody@nanoscope");
 	FileList = g_string_new("Import from Nanoscope Data\n");
-	g_string_sprintfa(FileList, "Channel No: %d\n", imgindex+1);
-	g_string_append(FileList, "Original File Info Header follows:\n");
+	g_string_append_printf (FileList, "Channel No: %d\n", imgindex+1);
+	g_string_append (FileList, "Original File Info Header follows:\n");
 
 	scan->data.s.rx = 1.;
 	scan->data.s.ry = 1.;
@@ -293,31 +293,31 @@ FIO_STATUS NanoScopeFile::Read(xsm::open_mode mode){
 		}
 		if(g_ascii_strncasecmp(line, "\\@Sens. Zscan: V ",16) == 0){
 			ZSens_V_to_nm = atof(&line[16]);
-			g_string_sprintfa(FileList, "--->got ZSens(scan): %fV/nm\n", ZSens_V_to_nm);
+			g_string_append_printf (FileList, "--->got ZSens(scan): %fV/nm\n", ZSens_V_to_nm);
 			continue;
 		}
 		if(g_ascii_strncasecmp(line, "\\@Sens. Zsens: V ",16) == 0){
 			ZSens_V_to_nm = atof(&line[16]);
-			g_string_sprintfa(FileList, "--->got ZSens: %fnm/V\n", ZSens_V_to_nm);
+			g_string_append_printf (FileList, "--->got ZSens: %fnm/V\n", ZSens_V_to_nm);
 			ZSens_V_to_nm = 1./ZSens_V_to_nm;
-			g_string_sprintfa(FileList, "--->got ZSens: %fV/nm\n", ZSens_V_to_nm);
+			g_string_append_printf (FileList, "--->got ZSens: %fV/nm\n", ZSens_V_to_nm);
 			continue;
 		}
 		if(g_ascii_strncasecmp(line, "\\@Sens. Current: V ",18) == 0){
 			CurrentSens_V_to_nA = atof(&line[18]);
-			g_string_sprintfa(FileList, "--->got CurrentSens: %fV/nA\n", CurrentSens_V_to_nA);
+			g_string_append_printf (FileList, "--->got CurrentSens: %fV/nA\n", CurrentSens_V_to_nA);
 			continue;
 		}
 		if(g_ascii_strncasecmp(line, "\\@Sens. CurrentSens: V ",22) == 0){
 			CurrentSens_V_to_nA = atof(&line[18]);
-			g_string_sprintfa(FileList, "--->got CurrentSens: %fnA/V\n", CurrentSens_V_to_nA);
+			g_string_append_printf (FileList, "--->got CurrentSens: %fnA/V\n", CurrentSens_V_to_nA);
 			CurrentSens_V_to_nA = 1./CurrentSens_V_to_nA;
-			g_string_sprintfa(FileList, "--->got CurrentSens: %fV/nA\n", CurrentSens_V_to_nA);
+			g_string_append_printf (FileList, "--->got CurrentSens: %fV/nA\n", CurrentSens_V_to_nA);
 			continue;
 		}
 		if(g_ascii_strncasecmp(line, "\\@1:Z limit: V [Sens. Zscan] (",30) == 0){
 			ZDAtoVolt = atof(&line[30]); // 0.006713867V/LSB , 440V (+16bit)
-			g_string_sprintfa(FileList, "--->got ZDAtoVolt: %fV/LSB\n", ZDAtoVolt);
+			g_string_append_printf (FileList, "--->got ZDAtoVolt: %fV/LSB\n", ZDAtoVolt);
 			continue;
 		}
 
@@ -384,8 +384,8 @@ FIO_STATUS NanoScopeFile::Read(xsm::open_mode mode){
 				"** Note: I'm unsure about the Z-scale, I use:\n"
 				"** Z scale * Z magnify * 0.1 = 1DA/Angstroem\n");
 		// may be wrong in this way, I don't know...
-		g_string_sprintfa(FileList, "--->Z magn. = %f\n", Zmag);
-		g_string_sprintfa(FileList, "--->Z scale = %f\n", Zscale);
+		g_string_append_printf (FileList, "--->Z magn. = %f\n", Zmag);
+		g_string_append_printf (FileList, "--->Z scale = %f\n", Zscale);
 		//    scan->data.s.dz = 0.1*Zscale*Zmag; // in Ang/DA
 		scan->data.s.dz = 10.*Zscale/65536.; // in Ang/DA
 
@@ -454,10 +454,10 @@ FIO_STATUS NanoScopeFile::Read(xsm::open_mode mode){
 				if(pos){
 					*pos = 0;
 					gchar *ScanInfo = g_strdup(&line[22]);
-					g_string_sprintfa(FileList, "--->got ZScan Info: %s\n", ScanInfo);
+					g_string_append_printf (FileList, "--->got ZScan Info: %s\n", ScanInfo);
 					scan->data.ui.SetBaseName (scan->data.ui.name);
 					ZDAtoVolt = atof(pos+3); // 0.006713867V/LSB , 440V (+16bit)
-					g_string_sprintfa(FileList, "--->got ZScan Sens: %fV/LSB\n", ZDAtoVolt);
+					g_string_append_printf (FileList, "--->got ZScan Sens: %fV/LSB\n", ZDAtoVolt);
 	  
 					gchar *nameext = g_strdup_printf("%s[%d]%s", 
 									 scan->data.ui.name, 
@@ -469,7 +469,7 @@ FIO_STATUS NanoScopeFile::Read(xsm::open_mode mode){
 					g_free(ScanInfo);
 				}
 				else
-					g_string_sprintfa(FileList, "---> Error finding matching ']'!\n");
+					g_string_append_printf (FileList, "---> Error finding matching ']'!\n");
 				continue;
 			}
       
@@ -489,7 +489,7 @@ FIO_STATUS NanoScopeFile::Read(xsm::open_mode mode){
     
 	}
   
-	g_string_sprintfa(FileList, "--->Calculated dz = %f Ang/DAunit\n", scan->data.s.dz);
+	g_string_append_printf (FileList, "--->Calculated dz = %f Ang/DAunit\n", scan->data.s.dz);
 
 	// fix ugly ASCII in place... conversion below fails otherwise
 	for(gchar *p=FileList->str; *p; ++p)
