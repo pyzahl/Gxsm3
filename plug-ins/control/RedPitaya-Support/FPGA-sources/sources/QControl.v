@@ -61,7 +61,7 @@ module QControl #(
     reg signed [16-1:0] reg_QC_gain=0;
     reg signed [SIGNAL_M_WIDTH-1:0] signal=0;
     reg [QC_PHASE_LEN2-1:0] reg_QC_delay=0;
-    reg signed [SIGNAL_M_WIDTH-1:0] delayline [(QC_PHASE_LEN2<<2)-1:0];
+    reg signed [SIGNAL_M_WIDTH-1:0] delayline [(1<<QC_PHASE_LEN2)-1 : 0];
     reg [QC_PHASE_LEN2-1:0] i=0;
     reg [QC_PHASE_LEN2-1:0] id=0;
     
@@ -84,7 +84,7 @@ module QControl #(
         
         // qc_delay = 4096 - #delaysampels
         // Q-Control + PAC-PLL Volume Control Mixer
-        reg_QC_signal <= reg_QC_enable ? reg_QC_gain*delayline[id] : 0;
+        reg_QC_signal <= reg_QC_enable ? reg_QC_gain * $signed(delayline[id]) : 0;
         // regy_vx_QC    <= regy_vx + reg_QC_signal; // Volume Q15 or Q(VAXIS_DATA_Q-1)
         id <= i + reg_QC_delay;
         i  <= i+1;

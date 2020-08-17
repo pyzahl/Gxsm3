@@ -217,8 +217,8 @@ static void inet_json_external_scandata_show_callback(GSimpleAction *simple, GVa
 }
 
 
-#define dB_min_from_Q(Q) (20.*log10(1./((1<<(Q))-1)))
-#define dB_max_from_Q(Q) (20.*log10(1<<((32-(Q))-1)))
+#define dB_min_from_Q(Q) (20.*log10(1./((1L<<(Q))-1)))
+#define dB_max_from_Q(Q) (20.*log10(1L<<((32-(Q))-1)))
 #define SETUP_dB_RANGE_from_Q(PCS, Q) { PCS->setMin(dB_min_from_Q(Q)); PCS->setMax(dB_max_from_Q(Q)); }
 
 Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
@@ -297,9 +297,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         parameters.transport_tau[2] = -1.; // us, negative = disabled [bit 32 set in FPGA tau)
         parameters.transport_tau[3] = -1.; // us, negative = disabled [bit 32 set in FPGA tau)
 
-        parameters.pac_dctau = 10.0; // ms
-        parameters.pactau = 40.0; // us
-        parameters.pacatau = 30.0; // us
+        parameters.pac_dctau = 0.1; // ms
+        parameters.pactau = 150.0; // us
+        parameters.pacatau = 50.0; // us
         parameters.frequency_manual = 32768.0; // Hz
         parameters.frequency_center = 32768.0; // Hz
         parameters.aux_scale = 0.011642; // 20Hz / V equivalent 
@@ -363,8 +363,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         parameters.amplitude_fb_setpoint = 20.0; // mV
         parameters.amplitude_fb_invert = 1.;
-        parameters.amplitude_fb_cp_db = -25.;
-        parameters.amplitude_fb_ci_db = -40.;
+        parameters.amplitude_fb_cp_db = -35.;
+        parameters.amplitude_fb_ci_db = -80.;
         parameters.exec_fb_upper = 300.0;
         parameters.exec_fb_lower = -300.0;
         bp->set_no_spin (false);
@@ -421,8 +421,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         parameters.phase_fb_setpoint = 60.;
         parameters.phase_fb_invert = 1.;
-        parameters.phase_fb_cp_db = -76.;
-        parameters.phase_fb_ci_db = -143.;
+        parameters.phase_fb_cp_db = -95.;
+        parameters.phase_fb_ci_db = -180.;
         parameters.freq_fb_upper = 35000.;
         parameters.freq_fb_lower = 28000.;
         bp->set_no_spin (false);
