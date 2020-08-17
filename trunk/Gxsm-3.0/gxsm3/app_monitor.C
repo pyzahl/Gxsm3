@@ -249,11 +249,16 @@ void MonitorControl::LogEvent (const gchar *Action, const gchar *Entry, gint lev
                 gint lines = gtk_text_buffer_get_line_count (log_buf);
          
                 // append to log buffer view
-                GTimeVal gt;
-                g_get_current_time (&gt);
-                gchar *tmp = g_time_val_to_iso8601 (&gt);
+                //GTimeVal gt;
+                //g_get_current_time (&gt);
+                //gchar *tmp = g_time_val_to_iso8601 (&gt);
+                GTimeZone *tz = g_time_zone_new_local ();
+                GDateTime *gdt = g_date_time_new_now (tz);
+                gchar *tmp = g_date_time_format_iso8601 (gdt);
                 GString *output = g_string_new (tmp);
                 g_free (tmp);
+                g_time_zone_unref (tz);
+                g_date_time_unref (gdt);
                 output = g_string_append(output, ": \t");
                 output = g_string_append(output, Action);
                 output = g_string_append(output, ": \t");
