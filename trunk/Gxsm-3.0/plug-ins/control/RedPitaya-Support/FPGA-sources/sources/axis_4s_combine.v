@@ -80,13 +80,12 @@ module axis_4s_combine #(
     parameter MAXIS_TDATA_WIDTH = 32,
     parameter integer BRAM_DATA_WIDTH = 64,
     parameter integer BRAM_ADDR_WIDTH = 15,
-    parameter integer DECIMATED_WIDTH = 32,
-    parameter USE_RP_DIGITAL_IO = 0
+    parameter integer DECIMATED_WIDTH = 32
 )
 (
     // (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_CLKEN a_clk" *)
-    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF S_AXIS1:S_AXIS1S:S_AXIS2:S_AXIS3:S_AXIS4:S_AXIS5:S_AXIS6:S_AXIS7:S_AXIS8:M_AXIS_aux:M_AXIS_CH1:M_AXIS_CH2:M_AXIS_CH3:M_AXIS_CH4:M_AXIS_DFREQ_DEC:M_AXIS_DFREQ_LP:M_AXIS_PHASE_LP:M_AXIS_EXEC_LP:M_AXIS_AMPL_LP" *)
+    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF S_AXIS1:S_AXIS1S:S_AXIS2:S_AXIS3:S_AXIS4:S_AXIS5:S_AXIS6:S_AXIS7:S_AXIS8:M_AXIS_aux:M_AXIS_CH1:M_AXIS_CH2:M_AXIS_CH3:M_AXIS_CH4:M_AXIS_DFREQ_DEC:M_AXIS_DFREQ_DEC2" *)
     input a_clk,
     // input a_resetn
     
@@ -136,17 +135,13 @@ module axis_4s_combine #(
 
     output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_DFREQ_DEC_tdata,
     output wire                          M_AXIS_DFREQ_DEC_tvalid,
-    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_DFREQ_LP_tdata,
-    output wire                          M_AXIS_DFREQ_LP_tvalid,
-    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_PHASE_LP_tdata,
-    output wire                          M_AXIS_PHASE_LP_tvalid,
-    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_EXEC_LP_tdata,
-    output wire                          M_AXIS_EXEC_LP_tvalid,
-    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_AMPL_LP_tdata,
-    output wire                          M_AXIS_AMPL_LP_tvalid,
+    output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_DFREQ_DEC2_tdata,
+    output wire                          M_AXIS_DFREQ_DEC2_tvalid,
 
     output wire [32-1:0] delta_frequency_monitor,
     output wire [32-1:0] delta_frequency_direct,
+
+    output wire FIR_next,
 
     // BRAM PUSH INTERFACE
     output wire [32-1:0] BR_ch1s,
@@ -181,6 +176,8 @@ module axis_4s_combine #(
     reg trigger=1'b0;
     reg trigger_next=1'b0;
     
+    reg fir_next=0;
+    
     reg bram_reset=1;
     reg bram_next=0;
     reg bram_retry=0;
@@ -195,6 +192,9 @@ module axis_4s_combine #(
     // pass decimated ch2s out for auxillary use    
     assign M_AXIS_aux_tdata  = ch2s[32-1:0]; // Testing
     assign M_AXIS_aux_tvalid = 1'b1;
+    
+    
+    assign FIR_next = fir_next;
     
     // BRAM INTERFACE CONNECT
     assign BR_next  = bram_next;       
@@ -268,6 +268,7 @@ module axis_4s_combine #(
                 finished      <= 1'b0;
                 dec_sms_next  <= 3'd1; // ready, now wait for release of reset operation to enagage trigger and arm
                 sample_count  <= 32'd0;
+                fir_next      <= ~fir_next; // clock FIR for rest cycle
             end
             // ===============================================================================================
             1:    // Wait for trigger
@@ -275,6 +276,7 @@ module axis_4s_combine #(
                 if(trigger)
                 begin
                     sample_count <= 32'd0;
+                    fir_next     <= 0;      // FIR start and hold
                     bram_reset   <= 1'b0;   // take BRAM controller out of reset
                     bram_next    <= 0;      // hold BRAM write next
                     finished     <= 1'b0;
@@ -327,6 +329,7 @@ module axis_4s_combine #(
                     endcase
 
                     bram_next <= 0; // hold BRAM write next
+                    fir_next  <= 0; // hold FIR
                 end
                 else begin
                     // normalize and store summed data data 
@@ -336,6 +339,7 @@ module axis_4s_combine #(
                     chEXs <= (chEX >>> reg_shift);   // EXEC ch4s
 
                     bram_next <= 1; // initate BRAM write data cycles
+                    fir_next  <= 1; // load next into FIR
                     sample_count <= sample_count + 1;
                   
                     // check on sample count if in single shot mode, else continue  
@@ -421,6 +425,7 @@ module axis_4s_combine #(
             4:    // Finished State -- wait for new operation setup
             begin   
                 bram_next    <= 0;    // hold BRAM write next
+                fir_next     <= 0;    // hold FIR
                 finished     <= 1'b1; // set finish flag
             end
             // ===============================================================================================
@@ -433,24 +438,18 @@ module axis_4s_combine #(
     
     // assign CH1,2 from box carr filtering as selected and AM, EX
     assign M_AXIS_CH1_tdata = ch1s[31:0];
-    assign M_AXIS_CH1_tvalid = 1;
+    assign M_AXIS_CH1_tvalid = !reg_operation[4];
     assign M_AXIS_CH2_tdata =  ch2s[31:0];
-    assign M_AXIS_CH2_tvalid = 1;
+    assign M_AXIS_CH2_tvalid = !reg_operation[4];
     assign M_AXIS_CH3_tdata = chAMs[31:0];
-    assign M_AXIS_CH3_tvalid = 1;
+    assign M_AXIS_CH3_tvalid = !reg_operation[4];
     assign M_AXIS_CH4_tdata = chEXs[31:0];
-    assign M_AXIS_CH4_tvalid = 1;
+    assign M_AXIS_CH4_tvalid = !reg_operation[4];
 
     // must be in STREAMING MODE for contineous op
     assign M_AXIS_DFREQ_DEC_tdata  = chDFs[31:0]; // dFrequency [64] (44) =>  32 || signed, lower 31 bits
     assign M_AXIS_DFREQ_DEC_tvalid = 1;
-    assign M_AXIS_DFREQ_LP_tdata  = chDFs[31:0]; // dFrequency [64] (44) =>  32 || signed, lower 31 bits
-    assign M_AXIS_DFREQ_LP_tvalid = 1;
-    assign M_AXIS_PHASE_LP_tdata  = chPHs[31:0]; // Phase (32) =>  32
-    assign M_AXIS_PHASE_LP_tvalid = 1;
-    assign M_AXIS_EXEC_LP_tdata   = chEXs[31:0];  // Amplitude Exec (32) =>  64 sum
-    assign M_AXIS_EXEC_LP_tvalid  = 1;
-    assign M_AXIS_AMPL_LP_tdata   = chAMs[31:0]; // Amplitude (24) =>  32
-    assign M_AXIS_AMPL_LP_tvalid  = 1;
+    assign M_AXIS_DFREQ_DEC2_tdata  = chDFs[31:0]; // dFrequency [64] (44) =>  32 || signed, lower 31 bits
+    assign M_AXIS_DFREQ_DEC2_tvalid = 1;
     
 endmodule
