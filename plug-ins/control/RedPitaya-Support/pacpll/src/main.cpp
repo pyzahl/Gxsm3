@@ -246,6 +246,7 @@ CDoubleParameter counter("COUNTER", CBaseParameter::RW, 1, 0, 1e-12, 1e+12);
 // global thread control parameter
 int thread_data__tune_control=0;
 
+
 /*
  * RedPitaya A9 FPGA Link
  * ------------------------------------------------------------
@@ -261,6 +262,35 @@ size_t FPGA_PACPLL_BRAM_block_size = 0;
 int verbose = 0;
 
 //fprintf(stderr, "");
+
+
+
+// FIR filter for GPIO beased readings
+#define MAX_FIR_VALUES 9
+#define GPIO_FIR_LEN   1024
+static pthread_t gpio_reading_thread;
+double gpio_reading_FIRV_vector[MAX_FIR_VALUES];
+int gpio_reading_FIRV_buffer[MAX_FIR_VALUES][GPIO_FIR_LEN];
+unsigned long gpio_reading_FIRV_buffer_DDS[2][GPIO_FIR_LEN];
+#define GPIO_READING_DDS_X8 0
+#define GPIO_READING_DDS_X9 1
+
+// GPIO READING VECTOR ASSIGNMENTS
+#define GPIO_READING_LMS_A  0          // gpio_reading_FIRV_vector[GPIO_READING_LMS_A] / GPIO_FIR_LEN / QLMS
+#define GPIO_READING_LMS_B  1          // gpio_reading_FIRV_vector[GPIO_READING_LMS_B] / GPIO_FIR_LEN / QLMS
+#define GPIO_READING_OFFSET 2          // / QLMS
+#define GPIO_READING_AMPL   3          // gpio_reading_FIRV_vector[GPIO_READING_AMPL] / GPIO_FIR_LEN * 1000 / QCORDICSQRT => mV
+#define GPIO_READING_PHASE  4          // ... 180 / QCORDICATAN / M_PI => deg
+#define GPIO_READING_EXEC   5          // ... 1000 / QEXEC => mV
+#define GPIO_READING_DDS_FREQ       6  // ... * dds_phaseinc_to_freq[[4,1]<<(44-32) | [5,0]>>(64-44)]
+#define GPIO_READING_DFREQ          7  // ... * dds_phaseinc_to_freq()
+#define GPIO_READING_CONTROL_DFREQ  8  // ... 10000/Q31
+pthread_attr_t gpio_reading_attr;
+pthread_mutex_t gpio_reading_mutexsum;
+int gpio_reading_control = -1;
+void *thread_gpio_reading_FIR(void *arg);
+
+
 
 /*
  * RedPitaya A9 FPGA Memory Mapping Init
@@ -328,12 +358,24 @@ int rp_PAC_App_Init(){
         
         srand(time(NULL));   // init random
 
+        pthread_mutex_init (&gpio_reading_mutexsum, NULL);
+        pthread_attr_init (&gpio_reading_attr);
+        pthread_attr_setdetachstate (&gpio_reading_attr, PTHREAD_CREATE_JOINABLE);
+        pthread_create ( &gpio_reading_thread, &gpio_reading_attr, thread_gpio_reading_FIR, NULL); // start GPIO reading thread FIRs
+        pthread_attr_destroy (&gpio_reading_attr);
         return RP_OK;
 }
 
 void rp_PAC_App_Release(){
+        void *status;
+        gpio_reading_control = 0;
+        pthread_join (gpio_reading_thread, &status);
+        pthread_mutex_destroy (&gpio_reading_mutexsum);
+        
         munmap (FPGA_PACPLL_cfg, FPGA_PACPLL_CFG_block_size);
         munmap (FPGA_PACPLL_bram, FPGA_PACPLL_BRAM_block_size);
+
+        pthread_exit (NULL);
 }
 
 
@@ -867,6 +909,7 @@ int bram_status(int bram_status[3]){
 #define PACPLL_CFG_TRANSPORT_TAU_AMPL    (PACPLL_CFG1_OFFSET + 3)
 
 void rp_PAC_set_tau_transport (double tau_dfreq, double tau_phase, double tau_exec, double tau_ampl){
+
 #ifdef REMAP_TO_OLD_FPGA_VERSION
         return;
 #endif
@@ -915,6 +958,82 @@ void rp_PAC_set_dfreq_controller (double setpoint, double cp, double ci, double 
 
 
 
+// new GPIO READING THREAD with FIR
+void *thread_gpio_reading_FIR(void *arg) {
+        unsigned long x8,x9;
+        int i,j,x,y;
+        for (j=0; j<GPIO_FIR_LEN; j++){
+                gpio_reading_FIRV_buffer[GPIO_READING_DDS_X8][j] = 0;
+                gpio_reading_FIRV_buffer[GPIO_READING_DDS_X9][j] = 0;
+        }
+        for (i=0; i<MAX_FIR_VALUES; i++){
+                gpio_reading_FIRV_vector[i] = 0.0;
+                for (j=0; j<GPIO_FIR_LEN; j++)
+                        gpio_reading_FIRV_buffer[i][j] = 0;
+        }
+        for(j=0; gpio_reading_control; ){
+
+                pthread_mutex_lock (&gpio_reading_mutexsum);
+
+
+                x = read_gpio_reg_int32 (1,0); // GPIO X1 : LMS A (cfg + 0x1000)
+                gpio_reading_FIRV_vector[GPIO_READING_LMS_A] -= (double)gpio_reading_FIRV_buffer[GPIO_READING_LMS_A][j];
+                gpio_reading_FIRV_vector[GPIO_READING_LMS_A] += (double)x;
+                gpio_reading_FIRV_buffer[GPIO_READING_LMS_A][j] = x;
+
+                x = read_gpio_reg_int32 (1,1); // GPIO X2 : LMS B (cfg + 0x1008)
+                gpio_reading_FIRV_vector[GPIO_READING_LMS_B] -= (double)gpio_reading_FIRV_buffer[GPIO_READING_LMS_B][j];
+                gpio_reading_FIRV_vector[GPIO_READING_LMS_B] += (double)x;
+                gpio_reading_FIRV_buffer[GPIO_READING_LMS_B][j] = x;
+
+                //x = read_gpio_reg_int32 (3,0); // GPIO X5 : MDC
+                //gpio_reading_FIRV_vector[GPIO_READING_OFSET] -= (double)gpio_reading_FIRV_buffer[GPIO_READING_OFSET][j];
+                //gpio_reading_FIRV_vector[GPIO_READING_OFSET] += (double)x;
+                //gpio_reading_FIRV_buffer[GPIO_READING_OFSET][j] = x;
+                
+                x = read_gpio_reg_int32 (2,1); // GPIO X4 : CORDIC SQRT (AM2=A^2+B^2) = Amplitude Monitor
+                gpio_reading_FIRV_vector[GPIO_READING_AMPL] -= (double)gpio_reading_FIRV_buffer[GPIO_READING_AMPL][j];
+                gpio_reading_FIRV_vector[GPIO_READING_AMPL] += (double)x;
+                gpio_reading_FIRV_buffer[GPIO_READING_AMPL][j] = x;
+
+                x = read_gpio_reg_int32 (5,1); // GPIO X10: CORDIC ATAN(X/Y) = Phase Monitor
+                gpio_reading_FIRV_vector[GPIO_READING_PHASE] -= (double)gpio_reading_FIRV_buffer[GPIO_READING_PHASE][j];
+                gpio_reading_FIRV_vector[GPIO_READING_PHASE] += (double)x;
+                gpio_reading_FIRV_buffer[GPIO_READING_PHASE][j] = x;
+
+                x = read_gpio_reg_int32 (4,0); // GPIO X7 : Exec Ampl Control Signal (signed)
+                gpio_reading_FIRV_vector[GPIO_READING_EXEC] -= (double)gpio_reading_FIRV_buffer[GPIO_READING_EXEC][j];
+                gpio_reading_FIRV_vector[GPIO_READING_EXEC] += (double)x;
+                gpio_reading_FIRV_buffer[GPIO_READING_EXEC][j] = x;
+                
+                x8 = read_gpio_reg_uint32 (4,1); // GPIO X8 : DDS Phase Inc (Freq.) upper 32 bits of 44 (unsigned)
+                x9 = read_gpio_reg_uint32 (5,0); // GPIO X9 : DDS Phase Inc (Freq.) lower 32 bits of 44 (unsigned)
+                gpio_reading_FIRV_vector[GPIO_READING_DDS_FREQ] -= dds_phaseinc_to_freq(  ((unsigned long long)gpio_reading_FIRV_buffer_DDS[GPIO_READING_DDS_X8][j]<<(44-32))
+                                                                                        + ((unsigned long long)gpio_reading_FIRV_buffer_DDS[GPIO_READING_DDS_X9][j]>>(64-44)));
+                gpio_reading_FIRV_vector[GPIO_READING_DDS_FREQ] += dds_phaseinc_to_freq(  ((unsigned long long)x8<<(44-32))
+                                                                                        + ((unsigned long long)x9>>(64-44)));
+                gpio_reading_FIRV_buffer_DDS[GPIO_READING_DDS_X8][j] = x8;
+                gpio_reading_FIRV_buffer_DDS[GPIO_READING_DDS_X9][j] = x9;
+
+                x = read_gpio_reg_int32 (6,0); // GPIO X11 : dFreq
+                gpio_reading_FIRV_vector[GPIO_READING_DFREQ] -= dds_phaseinc_rel_to_freq((long long)(gpio_reading_FIRV_buffer[GPIO_READING_DFREQ][j]));
+                gpio_reading_FIRV_vector[GPIO_READING_DFREQ] += dds_phaseinc_rel_to_freq((long long)(x));
+                gpio_reading_FIRV_buffer[GPIO_READING_DFREQ][j] = x;
+
+                x = read_gpio_reg_int32 (7,0); // GPIO X13: control dFreq value
+                gpio_reading_FIRV_vector[GPIO_READING_CONTROL_DFREQ] -= (double)gpio_reading_FIRV_buffer[GPIO_READING_CONTROL_DFREQ][j];
+                gpio_reading_FIRV_vector[GPIO_READING_CONTROL_DFREQ] += (double)x;
+                gpio_reading_FIRV_buffer[GPIO_READING_CONTROL_DFREQ][j] = x;
+
+                pthread_mutex_unlock (&gpio_reading_mutexsum);
+
+                ++j;
+                j &= 0x3ff; // 1024
+                usleep (1000); // updated every 1ms
+        }
+        return NULL;
+}
+
 
 /*
  * Get Single Direct FPGA Reading via GPIO
@@ -936,6 +1055,38 @@ void rp_PAC_set_dfreq_controller (double setpoint, double cp, double ci, double 
  */
 
 #define READING_MAX_VALUES 14
+
+// compat func
+void rp_PAC_get_single_reading_FIR (double reading_vector[READING_MAX_VALUES]){
+        double a,b,v,p;
+        // LMS Detector Readings and double precision conversions
+        a = gpio_reading_FIRV_vector[GPIO_READING_LMS_A]/GPIO_FIR_LEN / QLMS;
+        b = gpio_reading_FIRV_vector[GPIO_READING_LMS_B]/GPIO_FIR_LEN / QLMS;
+        // hi level atan2 and sqrt
+        v=sqrt (a*a+b*b);
+        p=atan2 ((a-b),(a+b));
+        reading_vector[0] = v*1000.; // LMS Amplitude (Volume) in mVolts (from A,B)
+        reading_vector[1] = p/M_PI*180.; // LMS Phase (from A,B)
+        reading_vector[2] = a; // LMS A (Real)
+        reading_vector[3] = b; // LMS B (Imag)
+
+        // FPGA CORDIC based convertions
+        reading_vector[4] = gpio_reading_FIRV_vector[GPIO_READING_AMPL]/GPIO_FIR_LEN * 1000./QCORDICSQRT; //reading_vector[4]; // LMS Amplitude (Volume) in mVolts (from A,B)
+        reading_vector[5] = gpio_reading_FIRV_vector[GPIO_READING_PHASE]/GPIO_FIR_LEN * 180./QCORDICATAN/M_PI;   //reading_vector[5]; // LMS Phase (from A,B) in deg
+
+        // N/A
+        //reading_vector[6] = x5*1000.;  // X5
+        //reading_vector[7] = x6;  // X4
+        //reading_vector[10] = x3; // M (LMS input Signal)
+        //reading_vector[11] = x3; // M1 (LMS input Signal-DC), tests...
+
+        // Controllers
+        reading_vector[8] = gpio_reading_FIRV_vector[GPIO_READING_EXEC]/GPIO_FIR_LEN  * 1000/QEXEC;
+        reading_vector[9] = gpio_reading_FIRV_vector[GPIO_READING_DDS_FREQ]/GPIO_FIR_LEN;
+        reading_vector[12] = gpio_reading_FIRV_vector[GPIO_READING_DFREQ]/GPIO_FIR_LEN;
+        reading_vector[13] = gpio_reading_FIRV_vector[GPIO_READING_CONTROL_DFREQ]/GPIO_FIR_LEN * 10000/Q31;
+}
+
 
 // Get all GPIO mapped data / system state snapshot
 void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
@@ -961,20 +1112,17 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
         x6=(double)x / QCORDICATANFIR;
         SIGNAL_GPIOX[6] = xx7 = x = read_gpio_reg_int32 (4,0); // GPIO X7 : Exec Ampl Control Signal (signed)
         x7=(double)x / QEXEC;
+
         SIGNAL_GPIOX[7] = xx8 = x = read_gpio_reg_uint32 (4,1); // GPIO X8 : DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
         SIGNAL_GPIOX[8] = xx9 = x = read_gpio_reg_uint32 (5,0); // GPIO X9 : DDS Phase Inc (Freq.) lower 32 bits of 44 (signed)
         x9=(double)x / QLMS;
-#if 1
+
         SIGNAL_GPIOX[9] = x = read_gpio_reg_int32 (5,1); // GPIO X10: CORDIC ATAN(X/Y) = Phase Monitor
         x10 = (double)x / QCORDICATAN; // ATAN 24bit 3Q21 
-#else
-        SIGNAL_GPIOX[9] = uix = read_gpio_reg_uint32 (5,1); // GPIO X10: CORDIC ATAN(X/Y) = Phase Monitor
-        if (uix >= 0x7f000000)
-             uix = uix-0x7fffffff;
-        x10 = (double)uix / QCORDICATAN; // ATAN 24bit 3Q21 
-#endif
+
         SIGNAL_GPIOX[10] = x = read_gpio_reg_int32 (6,0); // GPIO X11 : dFreq
         x11=(double)(x);
+
         SIGNAL_GPIOX[11] = x = read_gpio_reg_int32 (6,1); // GPIO X12 BRAM write position
         x12=(double)(x);
 
@@ -1474,10 +1622,10 @@ void measure_and_read_phase_ampl_buffer_avg (double &ampl, double &phase){
                 rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, 4); // configure for PHASE, AMPL
                 usleep(2000);
                 // get GPIO reading
-                rp_PAC_get_single_reading (reading_vector);
-                rp_PAC_get_single_reading (reading_vector);
-                ampl  = reading_vector[4]; // LMS Amplitude (Volume) in mVolts (from A,B)
-                phase = reading_vector[5]; // LMS Phase (from A,B) in deg
+                //rp_PAC_get_single_reading (reading_vector);
+                // use GPIO FIR reading thread data
+                ampl  = gpio_reading_FIRV_vector[GPIO_READING_AMPL]/GPIO_FIR_LEN * 1000./QCORDICSQRT; //reading_vector[4]; // LMS Amplitude (Volume) in mVolts (from A,B)
+                phase = gpio_reading_FIRV_vector[GPIO_READING_PHASE]/GPIO_FIR_LEN * 180./QCORDICATAN/M_PI;   //reading_vector[5]; // LMS Phase (from A,B) in deg
          }
 
         // clear what is not complete
@@ -1689,7 +1837,7 @@ void UpdateSignals(void)
         
         if (verbose > 3) fprintf(stderr, "UpdateSignals()\n");
 
-        rp_PAC_get_single_reading (reading_vector);
+        rp_PAC_get_single_reading_FIR (reading_vector);
         bram_status(status);
         BRAM_WRITE_ADR.Value ()  = status[0];
         BRAM_SAMPLE_POS.Value () = status[1];
@@ -1748,8 +1896,6 @@ void UpdateSignals(void)
                 clear_tune_data = 1;
                 if (verbose > 3) fprintf(stderr, "UpdateSignals get GPIO reading:\n");
 
-                rp_PAC_get_single_reading (reading_vector);
-
                 // Slow GPIO MONITOR in strip plotter mode
                 // Push it to vector
                 ch = TRANSPORT_CH3.Value ();
@@ -1778,18 +1924,28 @@ void UpdateSignals(void)
         
         if (verbose > 3) fprintf(stderr, "UpdateSignal complete.\n");
 
-        rp_PAC_get_single_reading (reading_vector);
-        VOLUME_MONITOR.Value ()   = reading_vector[4]; // Resonator Amplitude Signal Monitor in mV
-        PHASE_MONITOR.Value ()    = reading_vector[5]; // PLL Phase in deg
-        EXEC_MONITOR.Value ()     = reading_vector[8]; // Exec Amplitude Monitor in mV
-        DDS_FREQ_MONITOR.Value () = reading_vector[9]; // DDS Freq Monitor in Hz
-        DFREQ_MONITOR.Value ()    = reading_vector[12]; // delta Frequency Monitor in Hz (after decimation)
-        CONTROL_DFREQ_MONITOR.Value () = reading_vector[13]; // Control value of delta Frequency Controller
+        // direct GPIO snapshot (noisy)
+        //rp_PAC_get_single_reading (reading_vector);
+        //VOLUME_MONITOR.Value ()   = reading_vector[4]; // Resonator Amplitude Signal Monitor in mV
+        //PHASE_MONITOR.Value ()    = reading_vector[5]; // PLL Phase in deg
+        //EXEC_MONITOR.Value ()     = reading_vector[8]; // Exec Amplitude Monitor in mV
+        //DDS_FREQ_MONITOR.Value () = reading_vector[9]; // DDS Freq Monitor in Hz
+        //DFREQ_MONITOR.Value ()    = reading_vector[12]; // delta Frequency Monitor in Hz (after decimation)
+        //CONTROL_DFREQ_MONITOR.Value () = reading_vector[13]; // Control value of delta Frequency Controller
+
+        // GPIO via FIR thread
+        VOLUME_MONITOR.Value ()   = gpio_reading_FIRV_vector[GPIO_READING_AMPL]/GPIO_FIR_LEN * 1000./QCORDICSQRT; //reading_vector[4]; // LMS Amplitude (Volume) in mVolts (from A,B)
+        PHASE_MONITOR.Value ()    = gpio_reading_FIRV_vector[GPIO_READING_PHASE]/GPIO_FIR_LEN * 180./QCORDICATAN/M_PI;   //reading_vector[5]; // LMS Phase (from A,B) in deg
+        EXEC_MONITOR.Value ()     = gpio_reading_FIRV_vector[GPIO_READING_EXEC]/GPIO_FIR_LEN  * 1000/QEXEC;
+        DDS_FREQ_MONITOR.Value () = gpio_reading_FIRV_vector[GPIO_READING_DDS_FREQ]/GPIO_FIR_LEN;
+        DFREQ_MONITOR.Value ()    = gpio_reading_FIRV_vector[GPIO_READING_DFREQ]/GPIO_FIR_LEN;
+        CONTROL_DFREQ_MONITOR.Value () = gpio_reading_FIRV_vector[GPIO_READING_CONTROL_DFREQ]/GPIO_FIR_LEN * 10000/Q31;
         
         rp_PAC_auto_dc_offset_correct ();
 
         last_op = OPERATION.Value (); 
 }
+
 
 void UpdateParams(void){
         if (verbose > 3) fprintf(stderr, "UpdateParams()\n");
@@ -1843,7 +1999,6 @@ void OnNewParams(void)
         double reading_vector[READING_MAX_VALUES];
 
 #if 0
-        
         if (ppv == 0) { ppv=parameter_updatePeriod.Value(); parameter_updatePeriod.Update (); }
         if (spv == 0) { spv=signal_updatePeriod.Value(); signal_updatePeriod.Update (); }
         
