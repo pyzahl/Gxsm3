@@ -14,7 +14,7 @@ AC_INIT([gxsm3],
 	[gxsm3],
 	[http://gxsm.sf.net])
 
-AX_IS_RELEASE([gxsm3_minor_version])
+# AX_IS_RELEASE([minor_version])
 # AX_REQUIRE_DEFINED([YELP_HELP_INIT])
 # AX_REQUIRE_DEFINED([APPSTREAM_XML])
 # AX_REQUIRE_DEFINED([GTK_DOC_CHECK])
