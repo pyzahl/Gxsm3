@@ -14,6 +14,11 @@ AC_INIT([gxsm3],
 	[gxsm3],
 	[http://gxsm.sf.net])
 
+AX_IS_RELEASE([minor-version])
+# AX_REQUIRE_DEFINED([YELP_HELP_INIT])
+# AX_REQUIRE_DEFINED([APPSTREAM_XML])
+# AX_REQUIRE_DEFINED([GTK_DOC_CHECK])
+
 AC_DEFINE_UNQUOTED(GXSM_VERSION_NAME, "Map ExplorerHD","GXSM version identifier screen name")
 AC_DEFINE_UNQUOTED(GXSM_WIDGET_PAD, 5, "default widget padding (replaces obsolete GNOME_PAD)")
 AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up")
@@ -650,7 +655,7 @@ AC_PATH_PROG(GLIB_MKENUMS, glib-mkenums)
 
 # GNOME_COMPILE_WARNINGS([maximum])
 # AX_COMPILER_FLAGS([WARN_CFLAGS],[WARN_LDFLAGS])
-AX_COMPILER_FLAGS(,,[YES])
+AX_COMPILER_FLAGS()
 
 AC_ARG_ENABLE(deprecations,
               [AS_HELP_STRING([--enable-deprecations],
