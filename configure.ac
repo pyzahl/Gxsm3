@@ -648,7 +648,8 @@ AC_PATH_PROG(GLIB_MKENUMS, glib-mkenums)
 
 # AC_DEFINE(GDK_VERSION_MIN_REQUIRED, GDK_VERSION_3_8, [minimum gdk version])
 
-GNOME_COMPILE_WARNINGS([maximum])
+# GNOME_COMPILE_WARNINGS([maximum])
+AX_COMPILER_FLAGS([WARN_CFLAGS],[WARN_LDFLAGS])
 
 AC_ARG_ENABLE(deprecations,
               [AS_HELP_STRING([--enable-deprecations],
