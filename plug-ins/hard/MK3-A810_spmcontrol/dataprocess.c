@@ -42,6 +42,11 @@
 #include "PAC_pll.h"
 #include "mcbsp_support.h"
 
+
+// "old" mixer channel mode on level -- in a FUZZY way adding to control error signal
+// #define FUZZYLOGIC_MIXER_MODE
+
+
 // 8x digital sigma-delta over sampling using bit0 of 16 -> gain of 2 bits resoultion (16+2=18)
 #define SIGMA_DELTA_LEN   8
 int     sigma_delta_index = 0;
@@ -486,6 +491,14 @@ int dp_task_003(void){
                 for (i=0; i<4; ++i){
                         tmp40 = 0L;
                         // process MIXER CHANNEL i
+                        /* +++ NOTE +++ these FLAGS are a critical subject to be reorganized in near future
+                          #define MM_OFF     0x00  // ------   --> OFF
+                          #define MM_ON      0x01  // ON/OFF   --> LIN/LOG
+                          #define MM_LOG     0x02  // LOG/LIN  --> NORMAL/FUZZY-LEVEL CZ   <-> NORMAL
+                          #define MM_IIR     0x04  // IIR/FULL --> NORMAL/FUZZY-LEVEL ZERO <-> NORMAL
+                          #define MM_FUZZY   0x08  // FUZZY/NORMAL  --> ---
+                          #define MM_NEG     0x10  // NEGATE SOURCE (INPUT) --> NORMAL/NEGATE SOURCE
+                        */
                         switch (feedback_mixer.mode[i]&0x0f){
                         case 3: // LOG
                                 // log result is Q23 (1 and 2^23-1) from Q23 input:
@@ -495,6 +508,21 @@ int dp_task_003(void){
                         case 1: // LIN
                                 tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.setpoint[i]);
                                 break;
+#ifdef FUZZYLOGIC_MIXER_MODE
+                        case 9: // FUZZY
+                                if (feedback_mixer.FB_IN_processed[i] > feedback_mixer.level[i]){
+                                        tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.setpoint[i]);
+                                }
+                                break;
+                        case 11: // FUZZY LOG
+                                if (abs (feedback_mixer.FB_IN_processed[i]) > feedback_mixer.level[i]){
+                                        feedback_mixer.lnx = calc_mix_log (feedback_mixer.FB_IN_processed[i], feedback_mixer.I_offset);
+                                        tmp40 = (long long)(feedback_mixer.lnx - feedback_mixer.setpoint_log[i]);
+                                }
+                                break;
+
+#else // new default FUZZY Z-Pos Control
+
                         case 9: // CZ FUZZY LIN
                                 if (feedback_mixer.FB_IN_processed[i] > feedback_mixer.level[i]){
                                         //tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.level[i] - feedback_mixer.setpoint[i]);
@@ -511,6 +539,7 @@ int dp_task_003(void){
                                         tmp40 = (long long)(z_servo.neg_control) - (long long)(feedback_mixer.Z_setpoint);
                                 }
                                 break;
+#endif
                         default: break; // OFF
                         }
                         feedback_mixer.channel[i] = _SAT32 (tmp40);
