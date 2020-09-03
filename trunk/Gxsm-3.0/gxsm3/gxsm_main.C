@@ -489,10 +489,15 @@ gxsm3_app_new (void)
 {
         XSM_DEBUG(DBG_L2, "gxsm3_app_new ========================================================" );
 
-        return (Gxsm3app*) g_object_new (GXSM3_APP_TYPE,
-                                         "application-id", GXSM_RES_BASE_PATH_DOT,
-                                         "flags", G_APPLICATION_HANDLES_OPEN,
-                                         NULL);
+        if (gxsm_new_instance) // allow new instance, disable checks
+                return (Gxsm3app*) g_object_new (GXSM3_APP_TYPE,
+                                                 "flags", G_APPLICATION_HANDLES_OPEN,
+                                                 NULL);
+        else
+                return (Gxsm3app*) g_object_new (GXSM3_APP_TYPE,
+                                                 "application-id", GXSM_RES_BASE_PATH_DOT,
+                                                 "flags", G_APPLICATION_HANDLES_OPEN,
+                                                 NULL);
 }
 
 // #define GXSM_STARTUP_VERBOSE
