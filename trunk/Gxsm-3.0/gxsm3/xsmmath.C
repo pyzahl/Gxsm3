@@ -587,7 +587,7 @@ gboolean StitchScans(MATHOPPARAMS){
                 z_adjust /= count;
 
         
-        for(int line = ili; line < ilf; line++)
+        for(int line = ili; line < ilf-2; line++)
 		for(int col = ici; col < icf; col++){
                         double x,y;
                         double ix,iy;
