@@ -48,6 +48,10 @@
 #define RT_TASK_SCO0         11
 #define RT_TASK_SCO1         12
 
+#define ID_TASK_BZ_PUSH            0
+#define ID_TASK_MOVE_AREA_SCAN     1
+
+
 #ifndef DSP_CC
 
 // hard real time data process (DP) tasks
