@@ -100,6 +100,13 @@ extern int bz_push_area_scan_data_out (void);
 #define START_RT_TASK_ODD(N)    state.dp_task_control[N].process_flag |= 0x40
 #endif
 
+#define STOP_ID_TASK(N)         state.id_task_control[N].process_flag = 0x00
+#define START_ID_TASK(N)        state.id_task_control[N].process_flag |= 0x10
+#define START_ID_TASK_TMR(N)    state.id_task_control[N].process_flag |= 0x20
+#define START_ID_TASK_CLK(N)    state.id_task_control[N].process_flag |= 0x40
+
+
+
 #define BIAS_ADJUST_STEP (4*(1<<16))
 #define Z_ADJUST_STEP    (0x200)
 
@@ -336,6 +343,9 @@ int idle_task_008(void){
         /* Start Offset Moveto ? */
         if (move.start && !autoapp.pflg){
                 init_offset_move ();
+#ifdef MIN_PAC_BUILD
+                START_ID_TASK (ID_TASK_MOVE_AREA_SCAN);
+#endif
                 return 1;
         }
         return 0;
@@ -343,7 +353,11 @@ int idle_task_008(void){
 
 void switch_rt_task_areascan_to_probe (void){
         if (!probe.pflg){
+#ifdef MIN_PAC_BUILD
+                STOP_ID_TASK (ID_TASK_MOVE_AREA_SCAN);
+#else
                 STOP_RT_TASK (RT_TASK_AREA_SCAN);
+#endif
                 probe.start = 1; //init_probe ();
         }
 }
@@ -360,7 +374,11 @@ int idle_task_009(void){
         
         if (scan.start && !autoapp.pflg){
                 init_area_scan (scan.start);
+#ifdef MIN_PAC_BUILD
+                START_ID_TASK (ID_TASK_MOVE_AREA_SCAN);
+#else
                 START_RT_TASK_EVEN (RT_TASK_AREA_SCAN);
+#endif
                 return 1;
         }
         
@@ -369,18 +387,30 @@ int idle_task_009(void){
         case AREA_SCAN_STOP:
                 scan.stop = 0;
                 finish_area_scan ();
+#ifdef MIN_PAC_BUILD
+                STOP_ID_TASK (ID_TASK_MOVE_AREA_SCAN);
+#else
                 STOP_RT_TASK (RT_TASK_AREA_SCAN);
+#endif
                 return 1; // Stop/Cancel/Abort scan
         case AREA_SCAN_PAUSE:
                 scan.stop = 0;
                 if (scan.pflg & AREA_SCAN_RUN){
+#ifdef MIN_PAC_BUILD
+                        STOP_ID_TASK (ID_TASK_MOVE_AREA_SCAN);
+#else
                         STOP_RT_TASK (RT_TASK_AREA_SCAN);
+#endif
                 }
                 return 1; // Pause Scan
         case AREA_SCAN_RESUME: 
                 scan.stop = 0;
                 if (scan.pflg & AREA_SCAN_RUN){
+#ifdef MIN_PAC_BUILD
+                        START_ID_TASK (ID_TASK_MOVE_AREA_SCAN);
+#else
                         START_RT_TASK_EVEN (RT_TASK_AREA_SCAN);
+#endif
                 }
                 return 1; // Resume Scan from Pause, else ignore
         default: return 0;
@@ -399,7 +429,11 @@ int idle_task_010(void){
         // ELSE:
         if (probe.start && !probe.pflg && !autoapp.pflg){
                 if (scan.pflg)
+#ifdef MIN_PAC_BUILD
+                        STOP_ID_TASK (ID_TASK_MOVE_AREA_SCAN);
+#else
                         STOP_RT_TASK (RT_TASK_AREA_SCAN);
+#endif
                 init_probe_fifo (); // reset probe fifo!
                 init_probe ();
                 START_RT_TASK_EVEN (RT_TASK_VECTOR_PROBE);
@@ -418,8 +452,11 @@ int idle_task_010(void){
                 if (state.mode & MD_PID)
                         START_RT_TASK_ODD (RT_TASK_FEEDBACK);
                 if (scan.pflg)
+#ifdef MIN_PAC_BUILD
+                        START_ID_TASK (ID_TASK_MOVE_AREA_SCAN);
+#else
                         START_RT_TASK_EVEN (RT_TASK_AREA_SCAN);
-                
+#endif
                 return 1;
         }
         // else if probe running, check on FB manipulations
