@@ -137,8 +137,16 @@ int idle_task_001(void){
         return bz_push_area_scan_data_out ();
 }
 
+#ifdef MIN_PAC_BUILD
+extern DSP_INT32  s_xymult;
+extern DSP_INT32 result_vec[4];
+#endif
+
 #pragma CODE_SECTION(idle_task_002, ".text:slow")
 int idle_task_002(void){
+#ifdef MIN_PAC_BUILD
+        DSP_INT32  d_tmp;
+#endif
         // ============================================================
         // PROCESS MODULE: OFFSET MOVE
         // ============================================================
@@ -147,6 +155,79 @@ int idle_task_002(void){
                 run_offset_move ();
                 return 1;
         }
+
+#ifdef MIN_PAC_BUILD // AREA_SCAN_TASK non RT task
+
+        // ============================================================
+        // PROCESS MODULE: AREA SCAN
+        // ============================================================
+        /* Area Scan task - normal mode ?
+         * the feedback task needs to be enabled to see the effect
+         * --> can set CI/CP to small values to "contineously" disable it!
+         */
+        if (scan.pflg & (AREA_SCAN_RUN | AREA_SCAN_MOVE_TIP))
+                if (!probe.pflg || probe.start) // pause scan if raster_b!=0 and probe is going.
+                        run_area_scan ();
+
+        // ============================================================
+        // PROCESS MODULE: FAST SCAN
+        // ============================================================
+
+        /* run FAST AREA SCAN (sinusodial) ? */
+        if (scan.pflg & AREA_SCAN_RUN_FAST)
+                run_area_scan_fast ();
+                
+        // ============================================================
+        // do expensive 32bit precision (tmp64/40) rotation in
+        // EVEN cycle
+        // ============================================================
+                
+        // NOW OUTPUT HR SIGNALS ON XYZ-Offset and XYZ-Scan -- do not touch Bias OUT(6) and Motor OUT(7) here -- handled directly previously.
+        // note: OUT(0-5) get overridden below by coarse/mover actions if requeste!!!
+
+        /* HR sigma-delta data processing (if enabled) -- turn off via adjusting sigma_delta_hr_mask to all 0 */
+
+#ifdef MIN_PAC_BUILD_NO_ROTATION
+        scan.xy_r_vec[i_X] = scan.xyz_vec[i_X];
+        scan.xy_r_vec[i_Y] = scan.xyz_vec[i_Y];
+#else
+        // do scan coordinate rotation transformation:
+        if ( !(state.mode & MD_XYSROT)){
+                xy_vec[2] = xy_vec[0] = scan.xyz_vec[i_X];
+                xy_vec[3] = xy_vec[1] = scan.xyz_vec[i_Y];
+                mul32 (xy_vec, scan.rotmatrix, result_vec, 4);
+                scan.xy_r_vec[i_X] = _SADD32 (result_vec[0], result_vec[1]);
+                scan.xy_r_vec[i_Y] = _SADD32 (result_vec[2], result_vec[3]);
+        } else {
+                scan.xy_r_vec[i_X] = scan.xyz_vec[i_X];
+                scan.xy_r_vec[i_Y] = scan.xyz_vec[i_Y];
+        }
+#endif
+        // XY-Offset and XY-Scan output -- calculates Scan XY output and added offset as configured
+        // default: HR_OUT[3,4] = scan.xy_r_vec + move.xyz_vec
+        //** done below in one shot loop **
+        //**	compute_analog_out (3, &analog.out[3]);
+        //**	compute_analog_out (4, &analog.out[4]);
+
+        // PROCESS MODULE: SLOPE-COMPENSATION
+        // ==================================================
+        // Z-Offset -- slope compensation output
+        //---- slope add X*mx + Y*my
+        // limit dz add from xy-mult to say 10x scan.fm_dz0x+y, feedback like adjust if "diff" to far off from sudden slope change 
+        //      zpos_xymult = move.ZPos + scan.XposR * scan.fm_dz0x +  scan.YposR * scan.fm_dz0y ;
+        // make sure a smooth adjust -- if slope parameters get changed, need to prevent a jump.
+
+        mul32 (scan.xy_r_vec, scan.fm_dz0_xy_vec, result_vec, 2);
+        s_xymult = _SADD32 (result_vec[i_X], result_vec[i_Y]);
+        
+        d_tmp = _SSUB32 (s_xymult, scan.z_offset_xyslope);
+        if (d_tmp > scan.z_slope_max) // limit up
+                scan.z_offset_xyslope = _SADD32 (scan.z_offset_xyslope, scan.z_slope_max);
+        else if (d_tmp < -scan.z_slope_max) // limit dn
+                scan.z_offset_xyslope = _SADD32 (scan.z_offset_xyslope, -scan.z_slope_max);
+        else scan.z_offset_xyslope = s_xymult; // normally this should do it
+                
+#endif
         return 0;
 }
 

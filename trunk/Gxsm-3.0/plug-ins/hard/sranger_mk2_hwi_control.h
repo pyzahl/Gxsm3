@@ -88,8 +88,8 @@ typedef struct{
 #define MM_OFF     0x00  // ------
 #define MM_ON      0x01  // ON/OFF
 #define MM_LOG     0x02  // LOG/LIN
-#define MM_IIR     0x04  // IIR/FULL
-#define MM_FUZZY   0x08  // FUZZY/NORMAL
+#define MM_LV_FUZZY   0x04  // FUZZY-LV/NORMAL
+#define MM_CZ_FUZZY   0x08  // FUZZY-CZ/NORMAL
 #define MM_NEG     0x10  // NEGATE SOURCE (INPUT)
 
 

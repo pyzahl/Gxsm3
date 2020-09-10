@@ -41,6 +41,13 @@
 
 /* Special Features Config */
 
+// PAC always on and PAC optimized minimalistic build, EXPERIMENTAL
+//#define MIN_PAC_BUILD
+//#define MIN_PAC_BUILD_NO_ROTATION
+
+// "old" mixer channel mode on level -- in a FUZZY way adding to control error signal
+//#define FUZZYLOGIC_MIXER_MODE // obsoleted
+
 /** define DSP_OFFSET_ADDING if the XY-Offset should be added to the XY-Scan-Position, 
  * no XY-Offset output if defined! 
  */

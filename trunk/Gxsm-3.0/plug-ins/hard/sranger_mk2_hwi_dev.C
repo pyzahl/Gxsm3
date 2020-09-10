@@ -797,7 +797,7 @@ int sranger_mk2_hwi_dev::ReadLineFromFifo (int y_index){
 							ProbeFifoReadFunction (this, thread_dsp);
 		
 						// Get all and empty fifo
-						lseek (thread_dsp, magic_data.datafifo, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+						lseek (thread_dsp, magic_data.datafifo, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC); // ### CONSIDER NON_ATOMIC
 						sr_read  (thread_dsp, &dsp_fifo, sizeof (dsp_fifo));
 						bz_need_reswap = 1;
 						++fifo_reads;
@@ -1716,7 +1716,7 @@ int sranger_mk2_hwi_dev::ReadProbeFifo (int dspdev, int control){
 		}
 		for (; dataleft > 0; database += 0x4000, dataleft -= 0x4000, position += 0x4000){
 			LOGMSGS ( "FR::NEED_DATA: B::0x" <<  std::hex << database <<  std::dec << std::endl);
-			lseek (dspdev, database, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+			lseek (dspdev, database, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC); // ### CONSIDER NON_ATOMIC
 			sr_read  (dspdev, &data[position], (dataleft >= 0x4000 ? 0x4000 : dataleft)<<1);
 		}
 		last_read_end = end_read;

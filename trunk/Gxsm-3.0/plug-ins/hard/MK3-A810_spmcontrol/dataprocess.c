@@ -43,14 +43,15 @@
 #include "mcbsp_support.h"
 
 
-// "old" mixer channel mode on level -- in a FUZZY way adding to control error signal
-// #define FUZZYLOGIC_MIXER_MODE
-
-
 // 8x digital sigma-delta over sampling using bit0 of 16 -> gain of 2 bits resoultion (16+2=18)
 #define SIGMA_DELTA_LEN   8
 int     sigma_delta_index = 0;
+
+#ifdef MIN_PAC_BUILD
+int	max_out_ch = 7; // it's down to 7 when PLL is active -- else PLL output signal is overwritten
+#else
 int	max_out_ch = 8; // it's down to 7 when PLL is active -- else PLL output signal is overwritten
+#endif
 
 DSP_INT32  s_xymult = 0;
 // DSP_INT32  zpos_xymult = 0;
@@ -310,15 +311,56 @@ inline void check_trigger_levels(){
 // executed in idle loop with 01 = highest priority down to 08
 
 int dp_task_001(void){
-        // RUN ALWAYS
-        int i;
-	long long tmp40 = 0; // 40bit
 // ============================================================
 // PROCESS MODULE: PAC (Phase Amplitude Controller) 
 //             and PLL (Phase Locked Loop)
 // and recorder data/trigger handling if not via PLL
 // ============================================================
+#ifdef MIN_PAC_BUILD
+        int i;
+	long long tmp40 = 0; // 40bit
+
+        max_out_ch = 7;
+
+        DataprocessPLL();
+        if (volumeSine < 0){
+                if (amp_estimation <= (setpoint_Amp >> 7)){
+                        memI_Amp = 0L;
+                }
+        }
+
+        analog.in[0] = AIC_IN(0) << 16;
+        analog.in[1] = AIC_IN(1) << 16;
+        analog.in[2] = AIC_IN(2) << 16;
+        analog.in[3] = AIC_IN(3) << 16;
+        analog.in[4] = AIC_IN(4) << 16;
+        analog.in[5] = AIC_IN(5) << 16;
+        analog.in[6] = AIC_IN(6) << 16;
+        analog.in[7] = AIC_IN(7) << 16;
+
+// =============================================================
+// PROCESS MODULE: MIXER INPUT PROCESSING, IIR, adaptive on MIX0
+// =============================================================
+	// map data channels and run real time 4-channel IIR filter
+	for (i=0; i<4; ++i){ // assign data / Q23 transfromations for ADCs
+		if (feedback_mixer.FB_IN_is_analog_flg[i]){
+			tmp40 = (*(feedback_mixer.input_p[i])) >> 16;    // make 16bit input (original analog in level)
+			feedback_mixer.q_factor15 = feedback_mixer.iir_ca_q15[i]; // get q
+			// compute IIR
+			feedback_mixer.iir_signal[i] = _SMAC ( _SMPY32 ( _SSUB16 (Q15, feedback_mixer.q_factor15), tmp40), feedback_mixer.q_factor15, _SSHL32 (feedback_mixer.iir_signal[i], -16));
+			feedback_mixer.FB_IN_processed[i] = feedback_mixer.iir_signal[i] >> 8;  // Q23.8 for MIXER
+		} else
+			feedback_mixer.FB_IN_processed[i] = *(feedback_mixer.input_p[i]); // about Q23.8 range -- assume equiv ~~~ AIC_IN(i) << 8;
+
+		if (feedback_mixer.mode[i] & 0x10) // negate feedback source?
+		        feedback_mixer.FB_IN_processed[i] *= -1;
+	}
+
+#else
 #ifdef USE_PLL_API
+        // RUN ALWAYS
+        int i;
+	long long tmp40 = 0; // 40bit
         if (state.mode & MD_PLL){
 		max_out_ch = 7;
 		if (PLL_lookup.blcklen_trigger != -1){
@@ -400,6 +442,7 @@ int dp_task_001(void){
 		if (feedback_mixer.mode[i] & 0x10) // negate feedback source?
 		        feedback_mixer.FB_IN_processed[i] *= -1;
 	}
+#endif
         return 0;
 }
 
@@ -492,12 +535,19 @@ int dp_task_003(void){
                         tmp40 = 0L;
                         // process MIXER CHANNEL i
                         /* +++ NOTE +++ these FLAGS are a critical subject to be reorganized in near future
-                          #define MM_OFF     0x00  // ------   --> OFF
-                          #define MM_ON      0x01  // ON/OFF   --> LIN/LOG
-                          #define MM_LOG     0x02  // LOG/LIN  --> NORMAL/FUZZY-LEVEL CZ   <-> NORMAL
-                          #define MM_IIR     0x04  // IIR/FULL --> NORMAL/FUZZY-LEVEL ZERO <-> NORMAL
-                          #define MM_FUZZY   0x08  // FUZZY/NORMAL  --> ---
-                          #define MM_NEG     0x10  // NEGATE SOURCE (INPUT) --> NORMAL/NEGATE SOURCE
+                           //                  MASK     0   1
+                          #define MM_ON        0x01  // OFF/ON
+                          #define MM_LOG       0x02  // LIN/LOG
+                          #define MM_LV_FUZZY  0x04  // NORMAL/FUZZY-LEVEL ZERO <-> NORMAL
+                          #define MM_CZ_FUZCZY 0x08  // NORMAL/FUZZY-LEVEL CZ
+                          #define MM_NEG       0x10  // NEGATE SOURCE (INPUT)
+                          // OLD               ID
+                          //#define MM_OFF     0x00  // OFF
+                          //#define MM_ON      0x01  // ON/OFF
+                          //#define MM_LOG     0x02  // LIN/LOG
+                          //#define MM_IIR     0x04  // IIR/FULL
+                          //#define MM_FUZZY   0x08  // FUZZY/NORMAL
+                          //#define MM_NEG     0x10  // NEGATE SOURCE (INPUT)
                         */
                         switch (feedback_mixer.mode[i]&0x0f){
                         case 3: // LOG
@@ -508,22 +558,23 @@ int dp_task_003(void){
                         case 1: // LIN
                                 tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.setpoint[i]);
                                 break;
-#ifdef FUZZYLOGIC_MIXER_MODE
-                        case 9: // FUZZY
+//#ifdef FUZZYLOGIC_MIXER_MODE
+                        case 5: // FUZZY [9*]
                                 if (feedback_mixer.FB_IN_processed[i] > feedback_mixer.level[i]){
                                         tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.setpoint[i]);
                                 }
                                 break;
-                        case 11: // FUZZY LOG
+#if 0                                
+                        case 7: // FUZZY LOG [11*]
                                 if (abs (feedback_mixer.FB_IN_processed[i]) > feedback_mixer.level[i]){
                                         feedback_mixer.lnx = calc_mix_log (feedback_mixer.FB_IN_processed[i], feedback_mixer.I_offset);
                                         tmp40 = (long long)(feedback_mixer.lnx - feedback_mixer.setpoint_log[i]);
                                 }
                                 break;
+#endif
+//#else // new default FUZZY Z-Pos Control
 
-#else // new default FUZZY Z-Pos Control
-
-                        case 9: // CZ FUZZY LIN
+                        case 9: // CZ FUZZY LIN [9]
                                 if (feedback_mixer.FB_IN_processed[i] > feedback_mixer.level[i]){
                                         //tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.level[i] - feedback_mixer.setpoint[i]);
                                         tmp40 = (long long)(feedback_mixer.FB_IN_processed[i] - feedback_mixer.setpoint[i]);
@@ -531,7 +582,7 @@ int dp_task_003(void){
                                         tmp40 = (long long)(z_servo.neg_control) - (long long)(feedback_mixer.Z_setpoint);
                                 }
                                 break;
-                        case 11: // CZ FUZZY LOG
+                        case 11: // CZ FUZZY LOG [11]
                                 if (abs (feedback_mixer.FB_IN_processed[i]) > feedback_mixer.level[i]){
                                         feedback_mixer.lnx = calc_mix_log (feedback_mixer.FB_IN_processed[i], feedback_mixer.I_offset);
                                         tmp40 = (long long)(feedback_mixer.lnx - feedback_mixer.setpoint_log[i]);
@@ -539,7 +590,7 @@ int dp_task_003(void){
                                         tmp40 = (long long)(z_servo.neg_control) - (long long)(feedback_mixer.Z_setpoint);
                                 }
                                 break;
-#endif
+//#endif
                         default: break; // OFF
                         }
                         feedback_mixer.channel[i] = _SAT32 (tmp40);
@@ -561,6 +612,9 @@ int dp_task_003(void){
 }
 
 int dp_task_004(void){
+#ifdef MIN_PAC_BUILD
+        /* ==> IDLE TASK 001 along with OFFSET MOVE */
+#else
         // ============================================================
         // PROCESS MODULE: AREA SCAN
         // ============================================================
@@ -579,7 +633,7 @@ int dp_task_004(void){
         /* run FAST AREA SCAN (sinusodial) ? */
         if (scan.pflg & AREA_SCAN_RUN_FAST)
                 run_area_scan_fast ();
-                
+
         // ============================================================
         // do expensive 32bit precision (tmp64/40) rotation in
         // EVEN cycle
@@ -625,7 +679,7 @@ int dp_task_004(void){
         else if (d_tmp < -scan.z_slope_max) // limit dn
                 scan.z_offset_xyslope = _SADD32 (scan.z_offset_xyslope, -scan.z_slope_max);
         else scan.z_offset_xyslope = s_xymult; // normally this should do it
-                
+#endif
         return 0;
 }
 
