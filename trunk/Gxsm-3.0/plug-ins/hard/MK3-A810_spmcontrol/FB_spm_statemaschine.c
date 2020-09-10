@@ -139,6 +139,7 @@ int idle_task_001(void){
 
 #ifdef MIN_PAC_BUILD
 extern DSP_INT32  s_xymult;
+extern DSP_INT32 xy_vec[4];
 extern DSP_INT32 result_vec[4];
 #endif
 

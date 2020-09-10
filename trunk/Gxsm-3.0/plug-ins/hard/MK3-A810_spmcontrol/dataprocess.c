@@ -43,6 +43,10 @@
 #include "mcbsp_support.h"
 
 
+// "old" mixer channel mode on level -- in a FUZZZY way adding to control error signal
+#define FUZZYLOGIC_MIXER_MODE
+
+
 // 8x digital sigma-delta over sampling using bit0 of 16 -> gain of 2 bits resoultion (16+2=18)
 #define SIGMA_DELTA_LEN   8
 int     sigma_delta_index = 0;
