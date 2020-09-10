@@ -171,11 +171,16 @@ public:
 		id = g_strdup_printf ("%d", MM_NEG|MM_ON);   gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-LIN"); g_free (id); 
 		id = g_strdup_printf ("%d", MM_LOG|MM_ON);   gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "LOG"); g_free (id); 
 									
-		id = g_strdup_printf ("%d", MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "CZ-FUZZY-LIN"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-CZ-FUZZY-LIN"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "CZ-FUZZY-LOG"); g_free (id); 
-		id = g_strdup_printf ("%d", MM_NEG|MM_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-CZ-FUZZY-LOG"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_CZ_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "CZ-FUZZY-LIN"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_NEG|MM_CZ_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-CZ-FUZZY-LIN"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_CZ_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "CZ-FUZZY-LOG"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_NEG|MM_CZ_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-CZ-FUZZY-LOG"); g_free (id); 
 		
+		id = g_strdup_printf ("%d", MM_LV_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "LV-FUZZY-LIN"); g_free (id); 
+		id = g_strdup_printf ("%d", MM_NEG|MM_LV_FUZZY|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-LV-FUZZY-LIN"); g_free (id); 
+		//id = g_strdup_printf ("%d", MM_LV_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "LV-FUZZY-LOG"); g_free (id); 
+		//id = g_strdup_printf ("%d", MM_NEG|MM_LV_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-LV-FUZZY-LOG"); g_free (id); 
+
 		if (preset == MM_OFF) 
 			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 0); 
 		else if (preset == MM_ON)	
@@ -184,14 +189,23 @@ public:
 			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 2); 
 		else if (preset == (MM_LOG|MM_ON))	
 			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 3); 
-		else if (preset == (MM_FUZZY|MM_ON)) 
+		else if (preset == (MM_CZ_FUZZY|MM_ON)) 
 			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 4); 
-		else if (preset == (MM_NEG|MM_FUZZY|MM_ON)) 
+		else if (preset == (MM_NEG|MM_CZ_FUZZY|MM_ON)) 
 			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 5); 
-		else if (preset == (MM_FUZZY|MM_LOG|MM_ON)) 
+		else if (preset == (MM_CZ_FUZZY|MM_LOG|MM_ON)) 
 			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 6); 
-		else if (preset == (MM_NEG|MM_FUZZY|MM_LOG|MM_ON)) 
+		else if (preset == (MM_NEG|MM_CZ_FUZZY|MM_LOG|MM_ON)) 
 			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 7); 
+
+		else if (preset == (MM_LV_FUZZY|MM_ON)) 
+			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 4); 
+		else if (preset == (MM_NEG|MM_LV_FUZZY|MM_ON)) 
+			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 5); 
+                //		else if (preset == (MM_LV_FUZZY|MM_LOG|MM_ON)) 
+                //			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 6); 
+                //		else if (preset == (MM_NEG|MM_LV_FUZZY|MM_LOG|MM_ON)) 
+                //			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 7); 
 
 		g_signal_connect (G_OBJECT (cbtxt),"changed",	
 				  G_CALLBACK (DSPControl::choice_mixmode_callback), 

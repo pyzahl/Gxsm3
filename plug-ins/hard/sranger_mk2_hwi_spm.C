@@ -154,7 +154,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
         // auto buffered
         if ( (*property == 'z' || *property == 'R' || *property == 'o') && (time_of_last_xyz_reading+max_age) < g_get_real_time () ){
 		// read/convert 3D tip positon
-		lseek (dsp_alternative, magic_data.AIC_out, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		lseek (dsp_alternative, magic_data.AIC_out, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC); // ## CONSIDER NON_ATOMIC
 		sr_read  (dsp_alternative, &dsp_analog, sizeof (dsp_analog));
 
 		CONV_16 (dsp_analog.x_scan);
@@ -170,7 +170,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 
         if ( (*property == 'A' || *property =='s') && (time_of_last_as_reading+max_age_as) < g_get_real_time () ){
                 // read DSP level wave/mover axis counts
-		lseek (dsp_alternative, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		lseek (dsp_alternative, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC); // ## CONSIDER NON_ATOMIC
 		sr_read  (dsp_alternative, &dsp_autoapp, sizeof (dsp_autoapp));
 		CONV_16 (dsp_autoapp.pflg);
 		CONV_16 (dsp_autoapp.count_axis[0]);
@@ -221,7 +221,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
         // unbuffered
 	if (*property == 'O'){
 		// read HR offset move position
-		lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);  // ## CONSIDER NON_ATOMIC
 		sr_read  (dsp, &dsp_move, sizeof (dsp_move)); 
 //		int_2_sranger_int (dsp_move.pflg)
 		CONV_32 (dsp_move.xyz_vec[i_X]); // 16.16 position
@@ -243,7 +243,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
         // unbuffered
         if ( (*property == 'f') && (time_of_last_fb_reading+max_age) < g_get_real_time () ){
 #if 0
-		lseek (dsp_alternative, magic_data.AIC_in, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		lseek (dsp_alternative, magic_data.AIC_in, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);  // ## CONSIDER NON_ATOMIC
 		read  (dsp_alternative, &dsp_analog_in, sizeof (dsp_analog_in));
 
 		// from DSP to PC
@@ -251,7 +251,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 			CONV_16 (dsp_analog_in.adc[i]);
 #endif
 		// read IIR life conditions
-		lseek (dsp_alternative, magic_data.feedback, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		lseek (dsp_alternative, magic_data.feedback, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);  // ## CONSIDER NON_ATOMIC
 		sr_read  (dsp_alternative, &dsp_feedback_watch, sizeof (dsp_feedback_watch));
 
 		CONV_16 (dsp_feedback_watch.q_factor15);
@@ -277,7 +277,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 
 	// DSP Status Indicators
 	if (*property == 's' || *property == 'S'){
-		lseek (dsp, magic_data.statemachine, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		lseek (dsp, magic_data.statemachine, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);  // ## CONSIDER NON_ATOMIC
 		sr_read  (dsp, &dsp_statemachine, sizeof (dsp_statemachine)); 
 		CONV_U16 (dsp_statemachine.mode);
 		CONV_U32 (dsp_statemachine.DataProcessTime);
@@ -285,7 +285,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 		CONV_U32 (dsp_statemachine.DataProcessReentryPeak);
 		CONV_U32 (dsp_statemachine.IdleTime_Peak);
 
-		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);  // ## CONSIDER NON_ATOMIC
  		sr_read  (dsp, &dsp_scan, sizeof (dsp_scan)); 
 
                 CONV_32 (dsp_scan.rotm[0]);
@@ -332,7 +332,7 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
                 CONV_16 (dsp_scan.sstate);
                 CONV_16 (dsp_scan.pflg);
 
-		lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);  // ## CONSIDER NON_ATOMIC
 		sr_read  (dsp, &dsp_probe, sizeof (dsp_probe)); 
 		CONV_16 (dsp_probe.pflg);
 
@@ -542,7 +542,7 @@ inverse off      27
 #if 0
                         {
                                 static DATA_FIFO dsp_fifo;
-                                lseek (dsp, magic_data.datafifo, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                lseek (dsp, magic_data.datafifo, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);  // ## CONSIDER NON_ATOMIC
                                 sr_read (dsp, &dsp_fifo, sizeof(dsp_fifo));
                                 check_and_swap (dsp_fifo.r_position);
                                 check_and_swap (dsp_fifo.w_position);
@@ -577,11 +577,11 @@ inverse off      27
 		static CR_GENERIC_IO dsp_gpio;
 		dsp_gpio.start = int_2_sranger_int(2); // MAKE DSP READ GPIO
 		dsp_gpio.stop  = int_2_sranger_int(0);
-		lseek (dsp, magic_data.CR_generic_io, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+		lseek (dsp, magic_data.CR_generic_io, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);  // ## CONSIDER NON_ATOMIC
 		sr_write (dsp, &dsp_gpio, 2<<1); 
 		int i=10;
 		do {
-			lseek (dsp, magic_data.CR_generic_io, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC); // READ RESULT
+			lseek (dsp, magic_data.CR_generic_io, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC); // READ RESULT  // ## CONSIDER NON_ATOMIC
 			sr_read (dsp, &dsp_gpio, sizeof (dsp_gpio)); 
 			CONV_U16 (dsp_gpio.start);
 			if (i<10) usleep(10000);
