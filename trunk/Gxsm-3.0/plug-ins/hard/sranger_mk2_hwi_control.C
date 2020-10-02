@@ -4028,7 +4028,7 @@ int DSPControl::check_vp_in_progress (const gchar *extra_info){
 
 		gint result = gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
-		return result;
+		return result == GTK_RESPONSE_ACCEPT ? 0:-1;
 	}
 	return 0;
 }
