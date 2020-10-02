@@ -299,6 +299,7 @@ gxsm3_app_startup (GApplication *app)
 	add_accelerator (app, "win.side-pane", "F9");
 
 	add_accelerator (app, "win.view-mode::direct", "<Ctrl>D");
+	add_accelerator (app, "win.view-mode::quick", "<Ctrl>Q");
 	add_accelerator (app, "win.fix-zoom::zoomfactor-1x", "Q");
 	add_accelerator (app, "win.fix-zoom::zoomfactor-2x", "<Shift>W");
 	add_accelerator (app, "win.fix-zoom::zoomfactor-1by2", "W");

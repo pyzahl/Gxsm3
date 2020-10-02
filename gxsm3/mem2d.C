@@ -2515,9 +2515,14 @@ void Mem2d::AutoHistogrammEvalMode (Point2D *p1, Point2D *p2, int delta, double 
 		nx=data->GetNx()-1; 
 		ny=data->GetNy()-1;
 	}
-	
+
+        // auto add border 1px
+        nx0++; nx-=2;
+        ny0++; ny-=2;
+
+        // check for sufficient area
 	if (nx0 > (nx-delta) || ny0 > (ny-delta))
-		return; // ERROR!!
+		return; // selected area too small. ERROR!!
 
 	// calculate histogramm, auto bin size
 	Zbin_num   = MAX((int)(Zrange/3), 10);  // +/-1 dz (3dz) in ein bin per default
