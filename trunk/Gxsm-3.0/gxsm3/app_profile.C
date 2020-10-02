@@ -74,6 +74,7 @@ static GActionEntry win_profile_popup_entries[] = {
 
         { "cursor-A",  ProfileControl::cur_Ashow_callback, NULL, "false", NULL },
         { "cursor-B",  ProfileControl::cur_Bshow_callback, NULL, "false", NULL },
+        { "opt-XR-AB",  ProfileControl::opt_xr_ab_callback, NULL, "false", NULL },
 
         { "cursor-A-left",  ProfileControl::cur_Aleft_callback, NULL, NULL, NULL },
         { "cursor-A-right",  ProfileControl::cur_Aright_callback, NULL, NULL, NULL }, 
@@ -173,11 +174,20 @@ void ProfileElement::SetOptions(long Flg){
 double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offset, GtkWidget *canvas){
 	Scan    *s;
 	double  dc=0.;
-
+        
         // XSM_DEBUG (DBG_L5, "ProfileElement::calc enter id=" << id);
+
+        int     ix_left=0;
+        int     ix_right=scan->mem2d->GetNx()-1;
 
         if (scan->mem2d->GetNx() < 4)
                 return 0.;
+
+	if(ymode & PROFILE_MODE_XR_AB){
+                ix_left  = MIN (pctrl->CursorsIdx[0], pctrl->CursorsIdx[1]);
+                ix_right = MAX (pctrl->CursorsIdx[0], pctrl->CursorsIdx[1]);
+        }
+        
  
         /*
          * unref, remove and delete unused paths
@@ -203,8 +213,10 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
 		psd_scan->mem2d->PutDataPkt (c, n-1, 0); // remove DC component
 		s = psd_scan;
         } else {
-                n=scan->mem2d->GetNx();
+                //n=scan->mem2d->GetNx();
+                n=ix_right-ix_left+1;
 		if(psd_scan){
+                        n=scan->mem2d->GetNx();
 			delete psd_scan;
 			psd_scan = NULL;
 		}
@@ -213,6 +225,10 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
         
         // n => n_dec, dec_len -- use auto (random pick) decimation if more points than physical x pixels!
         calc_decimation (ymode);
+
+        g_message ("CiAB: %d..%d, n,ndec: %d, %d", ix_left, ix_right, n, n_dec);
+
+
         if (pathitem[id]){
                 if (pathitem[id]->get_n_nodes () != n_dec){
                         UNREF_DELETE_CAIRO_ITEM_NO_UPDATE (pathitem[id]);
@@ -229,19 +245,18 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
         // pathitem[id]->set_xy (i, x,y); // manages xy data!
 
         if (dec_len > 1){
-                int k=0;
                 if(ymode & PROFILE_MODE_BINARY8){
                         ylocmin=-0.5; ylocmax=8.;
                         if(ymode & PROFILE_MODE_BINARY16)
                                 ylocmax=16.;
-                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                        for(int k=0, i=ix_left; k < n_dec; ++k, i+=dec_len){
                                 int ii = i + (rand() % dec_len);
                                 pathitem[id]->set_xy_fast (k,
                                                            s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)),
                                                            y_offset + (( (int)(s->mem2d->GetDataPkt(ii,yy)) & binary_mask ) ? 0.7 : 0.));
                         }
                 } else if(ymode & PROFILE_MODE_YLINREG){
-                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                        for(int k=0, i=ix_left; k < n_dec; ++k, i+=dec_len){
                                 int ii = i + (rand() % dec_len);
                                 pathitem[id]->set_xy_test (k,
                                                            s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)),
@@ -255,7 +270,7 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
                         double lpo = 1.0-lpn;
                         vp=v;
                         // for(int i=0, ix=0, iy=1; i < n; ix+=2, iy+=2, ++i){
-                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                        for(int k=0, i=ix_left; k < n_dec; ++k, i+=dec_len){
                                 int ii = i + dec_len/2;
                                 double y=s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy) * s->data.s.dz);
                                 for (int m=0; m<dec_len; ++m){
@@ -268,14 +283,14 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
                                 pathitem[id]->set_xy_test (k, s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)), y);
                         }
                 } else if(ymode & PROFILE_MODE_YDIFF){
-                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                        for(int k=0, i=ix_left; k < n_dec; ++k, i+=dec_len){
                                 int ii = i + (rand() % dec_len);
                                 pathitem[id]->set_xy_test (k,
                                                            s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)),
                                                            s->data.Zunit->Base2Usr(s->mem2d->GetDataPktDiff(ii+1,yy) * s->data.s.dz));
                         }
                 }else if(ymode & PROFILE_MODE_YLOG){
-                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                        for(int k=0, i=ix_left; k < n_dec; ++k, i+=dec_len){
                                 int ii = i + (rand() % dec_len);
                                 pathitem[id]->set_xy_hold_logmin (k,
                                                                   s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)),
@@ -283,7 +298,7 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
                                                                   xsmres.ProfileLogLimit);
                         }
                 }else{
-                        for(int i=0; k < n_dec; ++k, i+=dec_len){
+                        for(int k=0, i=ix_left; k < n_dec; ++k, i+=dec_len){
                                 int ii = i + (rand() % dec_len);
                                 pathitem[id]->set_xy_test (k,
                                                            s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(ii)),
@@ -295,14 +310,14 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
                         ylocmin=-0.5; ylocmax=8.;
                         if(ymode & PROFILE_MODE_BINARY16)
                                 ylocmax=16.;
-                        for(int i=0; i < n; ++i)
-                                pathitem[id]->set_xy_fast (i,
+                        for(int k=0, i=ix_left; i <= ix_right; ++i,++k)
+                                pathitem[id]->set_xy_fast (k,
                                                            s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
                                                            y_offset + (( (int)(s->mem2d->GetDataPkt(i,yy)) & binary_mask ) ? 0.7 : 0.));
 
                 } else if(ymode & PROFILE_MODE_YLINREG){
-                        for(int i=0; i < n; ++i)
-                                pathitem[id]->set_xy_test (i,
+                        for(int k=0, i=ix_left; i <= ix_right; ++i,++k)
+                                pathitem[id]->set_xy_test (k,
                                                            s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
                                                            s->data.Zunit->Base2Usr(s->mem2d->GetDataPktLineReg(i,yy)*s->data.s.dz));
                 } else if(ymode & PROFILE_MODE_YLOWPASS){
@@ -313,7 +328,7 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
                         double lpo = 1.0-lpn;
                         vp=v;
                         // for(int i=0, ix=0, iy=1; i < n; ix+=2, iy+=2, ++i){
-                        for(int i=0; i < n; ++i){
+                        for(int k=0, i=ix_left; i <= ix_right; ++i,++k){
                                 double y;
                                 v = y =  lpo*v + lpn * s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy) * s->data.s.dz);
 
@@ -321,22 +336,22 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
                                         y  = v-vp;
                                         vp = v;
                                 }
-                                pathitem[id]->set_xy_test (i, s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)), y);
+                                pathitem[id]->set_xy_test (k, s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)), y);
                         }
                 } else if(ymode & PROFILE_MODE_YDIFF){
-                        for(int i=0; i < n; ++i)
-                                pathitem[id]->set_xy_test (i,
+                        for(int k=0, i=ix_left; i <= ix_right; ++i,++k)
+                                pathitem[id]->set_xy_test (k,
                                                            s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
                                                            s->data.Zunit->Base2Usr(s->mem2d->GetDataPktDiff(i+1,yy) * s->data.s.dz));
                 }else if(ymode & PROFILE_MODE_YLOG){
-                        for(int i=0; i < n; ++i)
-                                pathitem[id]->set_xy_hold_logmin (i,
+                        for(int k=0, i=ix_left; i <= ix_right; ++i,++k)
+                                pathitem[id]->set_xy_hold_logmin (k,
                                                                   s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
                                                                   s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy)*s->data.s.dz),
                                                                   xsmres.ProfileLogLimit);
                 }else{
-                        for(int i=0; i < n; ++i)
-                                pathitem[id]->set_xy_test (i,
+                        for(int k=0, i=ix_left; i <= ix_right; ++i,++k)
+                                pathitem[id]->set_xy_test (k,
                                                            s->data.Xunit->Base2Usr(s->mem2d->data->GetXLookup(i)),
                                                            s->data.Zunit->Base2Usr(s->mem2d->GetDataPkt(i,yy)*s->data.s.dz));
                 }
@@ -850,16 +865,27 @@ void ProfileControl::Init(const gchar *titlestring, int ChNo, const gchar *resid
                 gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.cursor-A");
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
 
-                tb = gtk_check_button_new_with_label ("CB");
+                widget_cb = tb = gtk_check_button_new_with_label ("CB");
                 gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.cursor-B");
+                gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
+        
+                widget_xr_ab = tb = gtk_check_button_new_with_label ("AB");
+                gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.opt-XR-AB");
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tb), (mode & PROFILE_MODE_XR_AB) ? TRUE : FALSE);
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
         
                 tb = gtk_check_button_new_with_label ("BI");
                 gtk_actionable_set_action_name (GTK_ACTIONABLE (tb), "profile.opt-Y-binary");
                 gtk_grid_attach (GTK_GRID (pc_grid), tb, 10,k++, 1,1);
-        }
-        gtk_widget_show_all (pc_grid);
 
+                gtk_widget_show_all (pc_grid);
+                gtk_widget_hide (widget_cb);
+                gtk_widget_hide (widget_xr_ab);
+        } else {
+                gtk_widget_show_all (pc_grid);
+                widget_cb=NULL;
+                widget_xr_ab=NULL;
+        }
         if (!pc_in_window){
                 if (g_strrstr (title, "Red Line Ch")){ // manage 1st 8 channels for red line type profiles
                         gint i = atoi (&title[11]);
@@ -1105,12 +1131,14 @@ gboolean ProfileControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, P
 
         pc->drawScans (cr);
 
-        for (int id=0; id<2; ++id)
-                if (pc->Cursor[id][0]){
-                        pc->Cursor[id][0]->draw (cr);
-                        pc->Cursor[id][1]->draw (cr);
-                }
-
+	if(!(pc->mode & PROFILE_MODE_XR_AB)){
+                for (int id=0; id<2; ++id)
+                        if (pc->Cursor[id][0]){
+                                pc->Cursor[id][0]->draw (cr);
+                                pc->Cursor[id][1]->draw (cr);
+                        }
+        }
+        
         if (pc->BBox)
                 pc->BBox->draw (cr);
                 
@@ -2836,8 +2864,27 @@ void ProfileControl::skl_Xset_callback (GSimpleAction *action, GVariant *paramet
 	pc->UpdateArea ();
 }
 
-void ProfileControl::skl_Binary_callback (GSimpleAction *action, GVariant *parameter, 
-                                 gpointer user_data){
+void ProfileControl::opt_xr_ab_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
+        ProfileControl *pc = (ProfileControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+ 
+        if (g_variant_get_boolean (new_state))
+                pc->mode = (pc->mode & ~PROFILE_MODE_XR_AB) | PROFILE_MODE_XR_AB;
+	else
+		pc->mode &= ~PROFILE_MODE_XR_AB;
+
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+        pc->updateFrame ();
+	pc->SetYlabel ();
+	pc->UpdateArea ();
+}
+
+void ProfileControl::skl_Binary_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data){
 	static int b2=0;
         ProfileControl *pc = (ProfileControl *) user_data;
         GVariant *old_state, *new_state;
@@ -3018,11 +3065,14 @@ void ProfileControl::cur_Ashow_callback (GSimpleAction *action, GVariant *parame
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
 
-        if (g_variant_get_boolean (new_state))
+        if (g_variant_get_boolean (new_state)){
 		pc->showCur(0,TRUE);
-	else
+                gtk_widget_show (pc->widget_cb);
+	} else {
 		pc->showCur(0,FALSE);
-        
+                gtk_widget_hide (pc->widget_cb);
+                gtk_widget_hide (pc->widget_xr_ab);
+        }
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
 }
@@ -3035,11 +3085,13 @@ void ProfileControl::cur_Bshow_callback (GSimpleAction *action, GVariant *parame
         old_state = g_action_get_state (G_ACTION (action));
         new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
  
-        if (g_variant_get_boolean (new_state))
+        if (g_variant_get_boolean (new_state)){
 		pc->showCur(1,TRUE);
-	else
+                gtk_widget_show (pc->widget_xr_ab);
+	} else {
 		pc->showCur(1,FALSE);
-
+                gtk_widget_hide (pc->widget_xr_ab);
+        }
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
 }

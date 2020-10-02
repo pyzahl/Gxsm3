@@ -57,6 +57,7 @@ typedef struct{
 #define PROFILE_MODE_HEADER   (1<<16)
 #define PROFILE_MODE_STICS    (1<<17)
 #define PROFILE_MODE_DECIMATE (1<<18)
+#define PROFILE_MODE_XR_AB    (1<<19)
 
 #define PROFILE_SCALE_XAUTO   (1<<0)
 #define PROFILE_SCALE_YAUTO   (1<<1)
@@ -228,6 +229,7 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	~ProfileControl ();
         virtual void AppWindowInit (const gchar *title);
 
+        GtkWidget *widget_cb, *widget_xr_ab;
         GtkWidget *get_pc_grid () { return pc_grid; };
         void set_pc_matrix_size (gint ncolumns=1, gint nrows=1) { pc_ncolumns=ncolumns; pc_nrows=nrows; };
         gboolean is_external_window_set () { return pc_in_window != NULL ; };
@@ -284,8 +286,9 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	static void skl_Yset_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void skl_Xauto_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void skl_Xset_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	static void opt_xr_ab_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void skl_Binary_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
-
+       
 	static void cur_Ashow_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void cur_Bshow_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	static void cur_Aleft_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);
@@ -421,7 +424,9 @@ class ProfileControl : public AppBase, public LineProfile1D{
         
         double lp_gain;
         
- private:
+	int CursorsIdx[2];
+
+private:
 
 	void SetSize (double new_aspect=0.);
 	void drawScans (cairo_t* cr);
@@ -461,7 +466,6 @@ class ProfileControl : public AppBase, public LineProfile1D{
 	double ymin, ymax, yrange;
 	double lmaxmin, lmin;
 
-	int CursorsIdx[2];
 	VObject *cursor_bound_object;
 
 	gint64 mode, scaleing;
