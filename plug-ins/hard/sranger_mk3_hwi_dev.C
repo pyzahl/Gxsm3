@@ -2270,11 +2270,11 @@ void sranger_mk3_hwi_dev::write_dsp_feedback (
 	dsp_z_servo.ci = float_2_sranger_q31 (0.01 * z_servo[SERVO_CI] / sranger_mk2_hwi_pi.app->xsm->Inst->VZ ());
 
 	// Motor Servo:
-#if 0
+#if 1
 	dsp_m_servo.setpoint = float_2_sranger_q31 (gapp->xsm->Inst->VoltIn2Dig (m_servo[0]));
 #else
 #define McBSP_FREQ_CONVERSION (125000000./17592186044415.) // 125MHz / ((1<<44)-1)
-        g_print("M Frq Set=%g  %d\n", m_servo[0], (gint32)(m_servo[0]/McBSP_FREQ_CONVERSION));
+        g_print("M Servo McBSPConv: Frq Set=%g  %d\n", m_servo[0], (gint32)(m_servo[0]/McBSP_FREQ_CONVERSION));
 	dsp_m_servo.setpoint = (gint32)(m_servo[0]/McBSP_FREQ_CONVERSION);
 #endif
 	dsp_m_servo.cp = float_2_sranger_q31 (0.01 * m_servo[SERVO_CP]);
