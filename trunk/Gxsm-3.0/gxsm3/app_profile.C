@@ -226,7 +226,7 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
         // n => n_dec, dec_len -- use auto (random pick) decimation if more points than physical x pixels!
         calc_decimation (ymode);
 
-        g_message ("CiAB: %d..%d, n,ndec: %d, %d", ix_left, ix_right, n, n_dec);
+        // g_message ("CiAB: %d..%d, n,ndec: %d, %d", ix_left, ix_right, n, n_dec);
 
 
         if (pathitem[id]){
