@@ -1,3 +1,9 @@
+gxsm3 (3.52.0-0ubuntu5) focal; urgency=medium
+
+  * updated release for ubuntu 20.04 LTS/lubuntu 20.04 LTS 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 04 Oct 2020 11:10:26 +0200
+
 gxsm3 (3.52.0-0ubuntu4) focal; urgency=medium
 
   * added also libpython3.7 
