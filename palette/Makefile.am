@@ -19,4 +19,10 @@ palette_DATA = \
 	redpal.pnm \
 	romanflagpal.pnm \
 	parula.pnm \
+	cm-a.pnm \
+	cm-b.pnm \
+	cm-c.pnm \
+	cm-d.pnm \
+	cm-parula2.pnm \
+	cm-RdBuGnYl.pnm \
 	xxsmpalette.pnm
