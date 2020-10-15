@@ -78,6 +78,7 @@ const gchar *template_library_utils = R"V0G0N(
 # Gxsm Python Script Library Template
 # Generic Utilities
 
+
 # default imports
 import array
 import math
@@ -480,7 +481,9 @@ class scan_control():
                         gxsm.set ("dsp-fbs-mx0-current-set","%f"%(c))
                 gxsm.sleep (10)
                 gxsm.startscan ()
-                gxsm.waitscan ()
+                #                gxsm.waitscan ()
+                while gxsm.waitscan() >= 0:
+	                gxsm.sleep (50)
 
                 if self.tip.wait_for_scan () < -1:
                         self.restore_conditions ()
@@ -502,8 +505,9 @@ class scan_control():
                         if (zfreeze):
                                 self.tip.release_Z()
                         gxsm.startscan ()
-                        gxsm.waitscan ()
-
+                        gxsm.sleep(50)
+                        while gxsm.waitscan () >= 0:
+                            gxsm.sleep(50)
                         if self.tip.wait_for_scan () < -1:
                                 return 1
                                 break
@@ -535,7 +539,9 @@ class scan_control():
                                         self.tip.wait_move_pos()
                                         gxsm.sleep (20)
                                         gxsm.startscan ()
-                                        gxsm.waitscan ()
+                                        gxsm.sleep (50)
+                                        while gxsm.waitscan() >= 0:
+	                                        gxsm.sleep (50)
 
 
         def chdfrun (self, x,y):
@@ -663,7 +669,6 @@ class scan_control():
                 gxsm.set ("dsp-fbs-ci","50")
                 gxsm.set ("dsp-fbs-cp","55")
                 gxsm.set ("dsp-fbs-scan-speed-scan","50")
-
 
 )V0G0N";
 
