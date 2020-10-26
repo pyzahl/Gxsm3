@@ -36,11 +36,13 @@
 ## may emulate the response of the needle; they are VU-meters inasmuch as
 ## they respect the standard.
 
-import pygtk
-pygtk.require('2.0')
+import gi #pygtk
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
 import os		# use os because python IO is bugy
 
-import gobject, gtk
+#import gobject, gtk
 import cairo
 import time
 import fcntl
@@ -50,7 +52,7 @@ from threading import Timer
 import struct
 import array
 import math
-from gtk import TRUE, FALSE
+#from gtk import TRUE, FALSE
 from numpy  import *
 
 wins = {}
@@ -69,7 +71,7 @@ global AIC_in_buffer        # at magic[6]
 unit  = [ "dB", "dB" ]
 
 
-class Meter(gtk.DrawingArea):
+class Meter(Gtk.DrawingArea):
     def __init__(self, parent):
         self.par = parent
         super(Meter, self).__init__()
@@ -225,11 +227,10 @@ class Meter(gtk.DrawingArea):
         if self.vumeter == 0:
             self.set_size_request(50, -1)
 
-        self.connect("expose-event", self.expose)
+        self.connect("draw", self.draw) # "expose-event" -> "draw-signal"
 
 
-    def expose(self, widget, event):
-        cr = widget.window.cairo_create()
+    def draw(self, widget, cr):
         if self.vumeter > 0:
             cr.set_source_surface (self.vumetersurface)
             cr.paint()
@@ -477,10 +478,10 @@ class Meter(gtk.DrawingArea):
                         cr.text_path(lab)
                         cr.stroke()
 
-class Instrument(gtk.Label):
+class Instrument(Gtk.Label):
     def __init__(self, parent, vb, ft="VU", l="Meter", u="dB", fmt="%+5.3f "):
         #Initialize the Widget
-        gtk.Widget.__init__(self)
+        Gtk.Widget.__init__(self)
         self.set_use_markup(True)
         self.cur_value = 0
         self.cur_value_lo = 0
