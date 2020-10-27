@@ -53,7 +53,7 @@ import math
 from numpy  import *
 
 class Meter(Gtk.DrawingArea):
-    def __init__(self, parent, widget_scale):
+    def __init__(self, parent, widget_scale=1.0):
         self.cairo_scale=widget_scale
         self.par = parent
         super(Meter, self).__init__()
