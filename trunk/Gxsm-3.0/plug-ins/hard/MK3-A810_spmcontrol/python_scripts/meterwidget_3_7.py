@@ -36,43 +36,25 @@
 ## may emulate the response of the needle; they are VU-meters inasmuch as
 ## they respect the standard.
 
-import gi #pygtk
+import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 import os		# use os because python IO is bugy
 
-#import gobject, gtk
 import cairo
 import time
 import fcntl
 from threading import Timer
 
-#import GtkExtra
 import struct
 import array
 import math
-#from gtk import TRUE, FALSE
 from numpy  import *
 
-wins = {}
-
-sr_dev_base = "/dev/sranger"
-global sr_dev_path
-updaterate = 200
-
-delaylinelength = 32
-
-global SPM_STATEMACHINE
-global analog_offset	 # at magic[10]+16
-global AIC_gain          # at magic[8]+1+3*8
-global AIC_in_buffer        # at magic[6]
-
-unit  = [ "dB", "dB" ]
-
-
 class Meter(Gtk.DrawingArea):
-    def __init__(self, parent):
+    def __init__(self, parent, widget_scale):
+        self.cairo_scale=widget_scale
         self.par = parent
         super(Meter, self).__init__()
         self.vumeter = 0
@@ -81,7 +63,7 @@ class Meter(Gtk.DrawingArea):
         # Logarithmic Meter, Absolut, dB -- VU style
         if self.par.frametype == "VU":
             self.vumeter = 1
-            self.set_size_request(220, 220)
+            self.set_size_request(220*self.cairo_scale, 220*self.cairo_scale)
             if os.path.isfile("vumeter-frame.png"):
                 imagefile="vumeter-frame.png"
             elif os.path.isfile("/usr/share/gxsm3/pixmaps/vumeter-frame.png"):
@@ -107,7 +89,7 @@ class Meter(Gtk.DrawingArea):
         # load plain meter frame, annotate with all static elements
         if self.par.frametype == "Volt":
             self.vumeter = 2
-            self.set_size_request(220, 220)
+            self.set_size_request(220*cairo_scale, 220*cairo_scale)
             if os.path.isfile("meter-frame.png"):
                 imagefile="meter-frame.png"
             elif os.path.isfile("/usr/share/gxsm3/pixmaps/meter-frame.png"):
@@ -227,10 +209,11 @@ class Meter(Gtk.DrawingArea):
         if self.vumeter == 0:
             self.set_size_request(50, -1)
 
-        self.connect("draw", self.draw) # "expose-event" -> "draw-signal"
+        self.connect("draw", self.draw)
 
 
     def draw(self, widget, cr):
+        cr.scale(self.cairo_scale, self.cairo_scale)
         if self.vumeter > 0:
             cr.set_source_surface (self.vumetersurface)
             cr.paint()
@@ -479,7 +462,7 @@ class Meter(Gtk.DrawingArea):
                         cr.stroke()
 
 class Instrument(Gtk.Label):
-    def __init__(self, parent, vb, ft="VU", l="Meter", u="dB", fmt="%+5.3f "):
+    def __init__(self, parent, vb, ft="VU", l="Meter", u="dB", fmt="%+5.3f ", widget_scale=1.0):
         #Initialize the Widget
         Gtk.Widget.__init__(self)
         self.set_use_markup(True)
@@ -499,12 +482,12 @@ class Instrument(Gtk.Label):
             self.unitx = "Hertz"
         self.format = fmt + self.unit
         self.mrange = arange(0, 11, 1)
-        self.meter = Meter(self)
+        self.meter = Meter(self, widget_scale)
         vb.pack_start(self, False, False, 0)
         vb.pack_start(self.meter, False, False, 0)
         vb.show_all()
         self.show_all()
-              
+
     def set_range (self, r):
         self.mrange = r
 
