@@ -46,9 +46,10 @@ from meterwidget_3_7 import *
 from scopewidget_3_7 import *
 from mk3_spmcontol_class import *
 
+METER_SCALE = 0.66
+
 FALSE = 0
 TRUE  = -1
-
 
 # Set here the SRanger dev to be used -- or first to start looking for it:
 sr_spd_dev_index = 0
@@ -207,11 +208,11 @@ def delete_event(win, event=None):
         print ("Link: ", GXSM_Link_status)
         if GXSM_Link_status:
                 print ("GXSM Link is active, please disable Link to quit")
-                idlg = Gtk.MessageDialog(None, 
-                                       Gtk.DIALOG_DESTROY_WITH_PARENT,
-                                       Gtk.MESSAGE_INFO, 
-                                       Gtk.BUTTONS_OK, 
-                                       "Warning: GXSM Link is active!\nLink will go done on SPD Control termination.")
+                idlg = Gtk.MessageDialog(
+                        flags=0,
+                        message_type=Gtk.MessageType.INFO,
+                        buttons=Gtk.ButtonsType.OK,
+                        text="Warning: GXSM Link is active!\nLink will go done on SPD Control termination.")
                 idlg.run()
                 idlg.destroy()
                 return False
@@ -511,17 +512,29 @@ def on_gain_changed(combo, ii):
         if tree_iter is not None:
                 model = combo.get_model()
                 g = model[tree_iter][0]
-                print("Gain {}: {} [{}]".format(ii,g,tree_iter))
-                # --> call  hv1_adjust ( position, ii )
+                position = combo.get_active()
+                print("Gain {}: {} [{}]".format(ii,g,position))
+                hv1_adjust (None, position, ii)
 
-                
+# besides print label, same code:                
 def on_bw_changed(combo, ii):
         tree_iter = combo.get_active_iter()
         if tree_iter is not None:
                 model = combo.get_model()
                 g = model[tree_iter][0]
-                print("BW {}: {} [{}]".format(ii,g,tree_iter))
-                # --> call  hv1_adjust ( position, ii )
+                position = combo.get_active()
+                print("BW {}: {} [{}]".format(ii,g,position))
+                hv1_adjust (None, position, ii)
+
+def on_slew_changed(combo, ii):
+        tree_iter = combo.get_active_iter()
+        if tree_iter is not None:
+                model = combo.get_model()
+                g = model[tree_iter][0]
+                position = combo.get_active()
+                print("BW {}: {} [{}]".format(ii,g,position))
+                srsteps = [2080, 832, 208, 83, 21, 8, 2]
+                hv1_adjust (None, srsteps[position], ii )
 
                 
 # create HV1 main panel
@@ -567,19 +580,19 @@ def create_hv1_app():
         #                table.attach(lab, 0, 1, tr, tr+1)
         maxv = 200
         v = Gtk.VBox(spacing=2)
-        c1 = Instrument( GObject.new(Gtk.Label), v, "Volt", "X-Axis", unit[0])
+        c1 = Instrument( GObject.new(Gtk.Label), v, "Volt", "X-Axis", unit[0], widget_scale=METER_SCALE)
         c1.set_range(arange(0,maxv/10*11,maxv/10))
         c1.show()
         table.attach(v, 1, 2, tr, tr+1)
 
         v = Gtk.VBox(spacing=2)
-        c2 = Instrument( GObject.new(Gtk.Label), v, "Volt", "Y-Axis", unit[1])
+        c2 = Instrument( GObject.new(Gtk.Label), v, "Volt", "Y-Axis", unit[1], widget_scale=METER_SCALE)
         c2.set_range(arange(0,maxv/10*11,maxv/10))
         c2.show()
         table.attach(v, 2, 3, tr, tr+1)
 
         v = Gtk.VBox(spacing=2)
-        c3 = Instrument( GObject.new(Gtk.Label), v, "Volt", "Z-Axis", unit[2])
+        c3 = Instrument( GObject.new(Gtk.Label), v, "Volt", "Z-Axis", unit[2], widget_scale=METER_SCALE)
         c3.set_range(arange(0,maxv/10*11,maxv/10))
         c3.show()
         table.attach(v, 3, 4, tr, tr+1)
@@ -608,6 +621,7 @@ def create_hv1_app():
         for i in range(0,3):
                 e.append (Gtk.Entry())
                 e[i].set_text("%12.3f" %(scaleO[i]*HV1_configuration[ii_config_preset_X0+i]))
+                e[i].set_width_chars(8)
                 table.attach(e[i], 1+i, 2+i, tr, tr+1)
                 setup_list.append (e[i])
                 # e[i].show()
@@ -629,6 +643,7 @@ def create_hv1_app():
         for i in range(0,3):
                 eo.append (Gtk.Entry())
                 eo[i].set_text("%12.3f" %(scaleO[i]*HV1_configuration[ii_config_target_X0+i]))
+                eo[i].set_width_chars(8)
                 table.attach(eo[i], 1+i, 2+i, tr, tr+1)
                 eo[i].show()
 
@@ -648,6 +663,7 @@ def create_hv1_app():
         for i in range(0,3):
                 ed.append (Gtk.Entry())
                 ed[i].set_text("%12.3f " %(scaleO[i]*HV1_driftcomp[i]) ) # + unit[i] + "/s")
+                ed[i].set_width_chars(8)
                 table.attach(ed[i], 1+i, 2+i, tr, tr+1)
                 setup_list.append (ed[i])
 
@@ -677,14 +693,7 @@ def create_hv1_app():
                 renderer_text = Gtk.CellRendererText()
                 opt.pack_start(renderer_text, True)
                 opt.add_attribute(renderer_text, "text", 0)
-                #opt = Gtk.OptionMenu()
-                #menu = Gtk.Menu()
-                #for i in range(0,5):
-                #        item = make_menu_item(gain[i], make_menu_item, hv1_adjust, i, ii[ci])
-                #        menu.append(item)
-                #menu.set_active(HV1_configuration[ii[ci]])
-                #gain_select.append (menu.set_active);
-                #opt.set_menu(menu)
+                opt.set_active(HV1_configuration[ii[ci]])
                 opt.show()
                 table.attach(opt, 1+ci, 2+ci, tr, tr+1)
 
@@ -710,13 +719,7 @@ def create_hv1_app():
                 renderer_text = Gtk.CellRendererText()
                 opt.pack_start(renderer_text, True)
                 opt.add_attribute(renderer_text, "text", 0)
-                #opt = Gtk.OptionMenu()
-                #menu = Gtk.Menu()
-                #for i in range(0,3):
-                #        item = make_menu_item(bw[i], make_menu_item, hv1_adjust, i, ii[ci])
-                #        menu.append(item)
-                #menu.set_active(HV1_configuration[ii[ci]])
-                #opt.set_menu(menu)
+                opt.set_active(HV1_configuration[ii[ci]])
                 opt.show()
                 table.attach(opt, 1+ci, 2+ci, tr, tr+1)
 
@@ -726,25 +729,21 @@ def create_hv1_app():
         #                181.81818 V / 150000/s * 32767 / N => V/s
         srsteps = [2080, 832, 208, 83, 21, 8, 2]
         for s in slew:
-                gain_store.append([s])
+                slew_store.append([s])
         ci=3
         opt = Gtk.ComboBox.new_with_model(slew_store)
-        ##opt.connect("changed", self.on_slew_changed)
+        opt.connect("changed", on_slew_changed, ii_config_slewadjust_steps)
         renderer_text = Gtk.CellRendererText()
         opt.pack_start(renderer_text,  True)
         opt.add_attribute(renderer_text, "text", 0)
-        #opt = Gtk.OptionMenu()
-        #menu = Gtk.Menu()
         ist=0
         for i in range(0,7):
                 #item = make_menu_item(slew[i], make_menu_item, hv1_adjust, srsteps[i], ii_config_slewadjust_steps)
-                #menu.append(item)
                 print (i, 181.81818 / 150000 * 32767 / srsteps[i])
                 if HV1_configuration[ii_config_slewadjust_steps] <= srsteps[i]:
                         ist = i
 
-        #menu.set_active(ist)
-        #opt.set_menu(menu)
+        opt.set_active(ist)
         opt.show()
         table.attach(opt, 1+ci, 2+ci, tr, tr+1)
 
