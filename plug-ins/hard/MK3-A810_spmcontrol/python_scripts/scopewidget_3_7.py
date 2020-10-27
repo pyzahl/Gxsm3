@@ -37,7 +37,7 @@
 ## they respect the standard.
 
 import gi
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk, GLib
 
 import os     # use os because python IO is bugy
 
@@ -70,8 +70,8 @@ unit  = [ "dB", "dB" ]
 
 class Scope(Gtk.DrawingArea):
 
-    def __init__(self, parent):
-      
+    def __init__(self, parent, widget_scale=1.0):
+        self.cairo_scale=widget_scale
         self.par = parent
         super(Scope, self).__init__()
         self.set_lambda_frqmap ()
@@ -87,8 +87,8 @@ class Scope(Gtk.DrawingArea):
         self.set_fade (0.0)
         self.set_points (False)
         self.set_markers (10,10)
-        self.connect("expose-event", self.expose)
-        self.set_events(Gtk.gdk.BUTTON_PRESS_MASK)
+        self.connect("draw", self.draw)
+        #self.set_events(Gtk.Gdk.BUTTON_PRESS_MASK)
         self.connect('button-press-event', self.on_drawing_area_button_press)
         self.display_info = 300
         self.set_flash ("Starting...")
@@ -103,12 +103,12 @@ class Scope(Gtk.DrawingArea):
     def set_flash (self, message):
         self.flash_message = message
         self.display_info = 300
-        gobject.timeout_add (20, self.info_fade)
+        GLib.timeout_add (20, self.info_fade)
         
     def info_fade(self):
         if self.display_info > 0:
             self.display_info = self.display_info-1
-            gobject.timeout_add (20, self.info_fade)
+            GLib.timeout_add (20, self.info_fade)
             
     def set_markers (self, mx=0, my=0):
         self.Xmarkers = mx
@@ -153,7 +153,7 @@ class Scope(Gtk.DrawingArea):
             self.display_info = 300
         else:
             self.display_info = 300
-            gobject.timeout_add (20, self.info_fade)
+            GLib.timeout_add (20, self.info_fade)
             
     def set_lambda_frqmap (self, fmaplog=False):
         if fmaplog:
@@ -195,7 +195,7 @@ class Scope(Gtk.DrawingArea):
         if (self.wide):
             self.xcenter = 525
             self.xw=20.0
-            self.set_size_request(1050, 600)
+            self.set_size_request(1050*self.cairo_scale, 600*self.cairo_scale)
             if os.path.isfile("scope-frame-wide.png"):
                 imagefile="scope-frame-wide.png"
             elif os.path.isfile("/usr/share/gxsm3/pixmaps/scope-frame-wide.png"):
@@ -205,7 +205,7 @@ class Scope(Gtk.DrawingArea):
         else:
             self.xcenter = 275
             self.xw=10.0
-            self.set_size_request(550, 600)
+            self.set_size_request(550*self.cairo_scale, 600*self.cairo_scale)
             if os.path.isfile("scope-frame.png"):
                 imagefile="scope-frame.png"
             elif os.path.isfile("/usr/share/gxsm3/pixmaps/scope-frame.png"):
@@ -430,8 +430,8 @@ class Scope(Gtk.DrawingArea):
         else:
             self.flash_message = ""
                 
-    def expose(self, widget, event):
-        cr = widget.window.cairo_create()
+    def draw(self, widget, cr):
+        cr.scale(self.cairo_scale, self.cairo_scale)
         cr.set_source_surface (self.vuscopesurface)
         cr.paint()
         cr.stroke()
@@ -621,7 +621,7 @@ class Scope(Gtk.DrawingArea):
 
         
 class Oscilloscope(Gtk.Label):
-    def __init__(self, parent, vb, ft="XT", l="Scope"):
+    def __init__(self, parent, vb, ft="XT", l="Scope", widget_scale=1.0):
         
         #Initialize the Widget
         Gtk.Widget.__init__(self)
@@ -642,7 +642,7 @@ class Oscilloscope(Gtk.Label):
         self.Udata = zeros(0)
         self.Vdata = zeros(0)
         self.XYdata = array([[],[]])
-        self.scope = Scope(self)
+        self.scope = Scope(self, widget_scale)
         self.count = 0
         vb.pack_start(self, False, False, 0)
         vb.pack_start(self.scope, False, False, 0)

@@ -1815,8 +1815,6 @@ def create_offset_edit(_button):
                 box1.pack_start(box2, True, True, 0)
 
                 table = Gtk.Table (n_rows=6, n_columns=17)
-                #table.set_row_spacings(5)
-                #table.set_col_spacings(4)
                 box2.pack_start(table, False, False, 0)
      
                 lab = Gtk.Label( label="AIC-in Offset Level [mV]")
@@ -2040,12 +2038,9 @@ def create_settings_edit(_button):
                 box1.pack_start(box2, False, True, 0)
                 box2.show()
                 
-                button = Gtk.Button.new_with_mnemonic('close')
-                #button = Gtk.Button(stock='gtk-close')
+                button = Gtk.Button.new_with_mnemonic('Close')
                 button.connect("clicked", lambda w: win.hide())
                 box2.pack_start(button, True, True, 0)
-                #button.set_flags(Gtk.CAN_DEFAULT)
-                #button.grab_default()
                 button.show()
         wins[name].show()
 
