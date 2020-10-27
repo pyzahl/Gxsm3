@@ -89,7 +89,7 @@ class Meter(Gtk.DrawingArea):
         # load plain meter frame, annotate with all static elements
         if self.par.frametype == "Volt":
             self.vumeter = 2
-            self.set_size_request(220*cairo_scale, 220*cairo_scale)
+            self.set_size_request(220*self.cairo_scale, 220*self.cairo_scale)
             if os.path.isfile("meter-frame.png"):
                 imagefile="meter-frame.png"
             elif os.path.isfile("/usr/share/gxsm3/pixmaps/meter-frame.png"):
