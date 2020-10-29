@@ -28,7 +28,7 @@
 version = "1.0.0"
 
 import gi
-from gi.repository import Gtk, GObject
+from gi.repository import Gtk, GObject, Gdk
 
 import cairo
 import os                # use os because python IO is bugy
@@ -459,14 +459,16 @@ class drift_compensation():
         self.count = -1
 
 
-def toggle_configure_widgets (w):
+def toggle_configure_widgets (w, win):
         if w.get_active():
                 for w in setup_list:
                         w.show ()
         else:
                 for w in setup_list:
                         w.hide ()
-        
+        win.resize(1, 1)
+
+                        
 def toggle_driftcompensation (w, dc):
         if w.get_active():
             dc.start ()
@@ -502,10 +504,15 @@ def toggle_Z0_invert (w):
                 Z0_invert_status = FALSE
                 print ("Z0 normal")
         
-def do_emergency(button):
+def do_emergency(button,w,gl):
         print ("Emergency Stop Action:")
+        global GXSM_Link_status
+        if w.get_active():
+                gl.stop ()
+                GXSM_Link_status = FALSE
+                print ("GXSM Link enabled")
+                w.set_active(False)
         goto_presets()
-#        print (" -- no action defined, doing nothing. -- ")
 
 def on_gain_changed(combo, ii):
         tree_iter = combo.get_active_iter()
@@ -542,26 +549,35 @@ def create_hv1_app():
         global HV1_configuration
         global HV1_monitor
         name = "HV1 (SoftdB) Smart Piezo Drive Control and Monitor Panel V"+version+" * [" + sr_spd_dev_path + "]"
+
+        #Gdk.Screen.SetResolution (150)
+
+        
         win = Gtk.Window()
+        ### win.get_screen.set_resolution(150)
         wins[name] = win
         win.connect("delete_event", delete_event)
+        hb = Gtk.HeaderBar() 
+        hb.set_show_close_button(True) 
+        hb.props.title = "SPD Control"
+        win.set_titlebar(hb) 
 
         grid = Gtk.Grid()
         win.add (grid)
 
         tr=1
         maxv = 200
-        v = Gtk.VBox(spacing=0)
+        v = Gtk.VBox()
         c1 = Instrument( GObject.new(Gtk.Label), v, "Volt", "X-Axis", unit[0], widget_scale=METER_SCALE)
         c1.set_range(arange(0,maxv/10*11,maxv/10))
         grid.attach(v, 1,tr, 1,1)
         
-        v = Gtk.VBox(spacing=0)
+        v = Gtk.VBox()
         c2 = Instrument( GObject.new(Gtk.Label), v, "Volt", "Y-Axis", unit[1], widget_scale=METER_SCALE)
         c2.set_range(arange(0,maxv/10*11,maxv/10))
         grid.attach(v, 2,tr, 1,1)
 
-        v = Gtk.VBox(spacing=0)
+        v = Gtk.VBox()
         c3 = Instrument( GObject.new(Gtk.Label), v, "Volt", "Z-Axis", unit[2], widget_scale=METER_SCALE)
         c3.set_range(arange(0,maxv/10*11,maxv/10))
         grid.attach(v, 3,tr, 1,1)
@@ -706,22 +722,22 @@ def create_hv1_app():
 
         # Closing ---
         
-        hbox = GObject.new(Gtk.HBox(spacing=10))
-        hbox.set_border_width(5)
-        grid.attach(hbox, 0, tr, 5, 1)
-                
-        button = Gtk.Button(stock='gtk-quit')
-        # button.set_label("Emergency STOP")
-        button.connect("clicked", do_emergency)
-        # button.set_flags(Gtk.CAN_DEFAULT)
-        Label=button.get_children()[0]
-        Label=Label.get_children()[0].get_children()[1]
-        Label=Label.set_label('Emergency STOP')
-        hbox.pack_start(button, True, True, 0)
+        hbox =Gtk.HBox()
+        #grid.attach(hbox, 0, tr, 5, 1)
+        hb.pack_end(hbox)
+        
+        cbl = check_button = Gtk.CheckButton("GXSM Link")
+        button = Gtk.Button(stock='Stop')
+        button.connect("clicked", do_emergency, cbl, GxsmLink)
+        #Label=button.get_children()[0]
+        #Label=Label.get_children()[0].get_children()[1]
+        #Label=Label.set_label('STOP')
+        grid.attach(button, 4, 1, 1, 1)
+        #hbox.pack_start(button, True, True, 0)
 
         cbc = check_button = Gtk.CheckButton("Configure")
         check_button.set_active(False)
-        check_button.connect('toggled', toggle_configure_widgets)
+        check_button.connect('toggled', toggle_configure_widgets, win)
         hbox.pack_start(check_button, True, True, 0)
 
         dc_check_button = Gtk.CheckButton("Drift Comp.")
@@ -729,7 +745,7 @@ def create_hv1_app():
         dc_check_button.connect('toggled', toggle_driftcompensation, dc_control)
         hbox.pack_start(dc_check_button, True, True, 0)
 
-        check_button = Gtk.CheckButton("GXSM Link")
+        check_button=cbl
         check_button.set_active(False)
         check_button.connect('toggled', toggle_gxsm_link, GxsmLink)
         hbox.pack_start(check_button,  True, True, 0)
@@ -747,12 +763,12 @@ def create_hv1_app():
         hbox.pack_start(check_button, True, True, 0)
         check_button.set_sensitive (GxsmLink.status ())        
 
-        button = Gtk.Button(stock='gtk-close')
-        button.connect("clicked", delete_event)
-        hbox.pack_start(button, True, True, 0)
+        #button = Gtk.Button(stock='gtk-close')
+        #button.connect("clicked", delete_event)
+        #hbox.pack_start(button, True, True, 0)
 
         win.show_all()
-        toggle_configure_widgets(cbc)
+        toggle_configure_widgets(cbc, win)
         wins[name].show()
         
 def get_status():
