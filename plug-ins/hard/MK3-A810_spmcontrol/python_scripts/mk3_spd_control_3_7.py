@@ -559,8 +559,9 @@ def create_hv1_app():
         win.connect("delete_event", delete_event)
         hb = Gtk.HeaderBar() 
         hb.set_show_close_button(True) 
-        hb.props.title = "SPD Control"
+        hb.props.title = "MK3-HV1"
         win.set_titlebar(hb) 
+        hb.set_subtitle("Smart Pieo Drive") 
 
         grid = Gtk.Grid()
         win.add (grid)
@@ -735,7 +736,7 @@ def create_hv1_app():
         grid.attach(button, 4, 1, 1, 1)
         #hbox.pack_start(button, True, True, 0)
 
-        cbc = check_button = Gtk.CheckButton("Configure")
+        cbc = check_button = Gtk.CheckButton("Config")
         check_button.set_active(False)
         check_button.connect('toggled', toggle_configure_widgets, win)
         hbox.pack_start(check_button, True, True, 0)
