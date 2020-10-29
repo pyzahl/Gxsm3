@@ -545,98 +545,54 @@ def create_hv1_app():
         win = Gtk.Window()
         wins[name] = win
         win.connect("delete_event", delete_event)
-        
 
-        box1 = Gtk.VBox(spacing=3)
-        win.add(box1)
-        box1.show()
-        
-        tr = 0
+        grid = Gtk.Grid()
+        win.add (grid)
 
-        table = Gtk.Table (6, 8)
-        table.set_row_spacings(5)
-        table.set_col_spacings(5)
-        box1.pack_start (table, True, True, 0)
-        table.show()
-
-        # Channel Headings
-
-        spantag  = "<span size=\"18000\" font_family=\"monospace\">"
-        _spantag = "</span>"
-        hh = ["X", "Y", "Z"]
-        #                for i in range(0,3):
-        #                        c1 = GObject.new(Gtk.Label, label=spantag + "<b> " + hh[i] + " </b>("+ unit[i] +") " + _spantag)
-        #                        c1.set_use_markup(True)
-        #                        c1.show()
-        #                        table.attach(c1, 1+i, 2+i, tr, tr+1)
-        # Monitor
-        #                tr = tr+1
-        #                separator = GObject.new(Gtk.HSeparator())
-        #                separator.show()
-        #                table.attach(separator, 0, 5, tr, tr+1)
-        tr = tr+1
-        #                lab = GObject.new(Gtk.Label, label="Readings:")
-        #                lab.show ()
-        #                table.attach(lab, 0, 1, tr, tr+1)
+        tr=1
         maxv = 200
-        v = Gtk.VBox(spacing=2)
+        v = Gtk.VBox(spacing=0)
         c1 = Instrument( GObject.new(Gtk.Label), v, "Volt", "X-Axis", unit[0], widget_scale=METER_SCALE)
         c1.set_range(arange(0,maxv/10*11,maxv/10))
-        c1.show()
-        table.attach(v, 1, 2, tr, tr+1)
-
-        v = Gtk.VBox(spacing=2)
+        grid.attach(v, 1,tr, 1,1)
+        
+        v = Gtk.VBox(spacing=0)
         c2 = Instrument( GObject.new(Gtk.Label), v, "Volt", "Y-Axis", unit[1], widget_scale=METER_SCALE)
         c2.set_range(arange(0,maxv/10*11,maxv/10))
-        c2.show()
-        table.attach(v, 2, 3, tr, tr+1)
+        grid.attach(v, 2,tr, 1,1)
 
-        v = Gtk.VBox(spacing=2)
+        v = Gtk.VBox(spacing=0)
         c3 = Instrument( GObject.new(Gtk.Label), v, "Volt", "Z-Axis", unit[2], widget_scale=METER_SCALE)
         c3.set_range(arange(0,maxv/10*11,maxv/10))
-        c3.show()
-        table.attach(v, 3, 4, tr, tr+1)
-
-        tr = tr+1
-        #                lab = GObject.new(Gtk.Label, label="Readings:")
-        #                lab.show ()
-        #                table.attach(lab, 0, 1, tr, tr+1)
-        #                m1 = GObject.new(Meter)
-        #                GObject.timeout_add (updaterate, update_HV1_monitor, c1.set_reading, c2.set_reading, c3.set_reading)
+        grid.attach(v, 3,tr, 1,1)
+        tr=tr+1
+        
         GObject.timeout_add (updaterate, update_HV1_monitor, c1.set_reading_lohi, c2.set_reading_lohi, c3.set_reading_lohi)
-        tr = tr+1
         separator = Gtk.HSeparator()
-        separator.show()
-        table.attach(separator, 0, 5, tr, tr+1)
+        grid.attach(separator, 0, tr, 5, 1)
+        tr=tr+1
 
-        # Presets (Power Up)
-        tr = tr+1
         lab = Gtk.Label(label="Presets:")
         setup_list.append (lab)
-        #                lab.show ()
-        table.attach(lab, 0, 1, tr, tr+1)
+        grid.attach(lab, 0, tr, 1, 1)
 
         e = []
-
         for i in range(0,3):
                 e.append (Gtk.Entry())
                 e[i].set_text("%12.3f" %(scaleO[i]*HV1_configuration[ii_config_preset_X0+i]))
                 e[i].set_width_chars(8)
-                table.attach(e[i], 1+i, 2+i, tr, tr+1)
+                grid.attach(e[i], 1+i, tr, 1, 1)
                 setup_list.append (e[i])
-                # e[i].show()
 
         button = Gtk.Button(stock='gtk-apply')
         button.connect("clicked", write_p_vector, e[0], e[1], e[2])
         setup_list.append (button)
-        # button.show()
-        table.attach(button, 4, 5, tr, tr+1)
+        grid.attach(button, 4, tr, 1, 1)
                 
         # Offset Adjusts
         tr = tr+1
         lab = Gtk.Label(label="Offsets:")
-        lab.show ()
-        table.attach(lab, 0, 1, tr, tr+1)
+        grid.attach(lab, 0, tr, 1, 1)
         
         eo = []
 
@@ -644,19 +600,16 @@ def create_hv1_app():
                 eo.append (Gtk.Entry())
                 eo[i].set_text("%12.3f" %(scaleO[i]*HV1_configuration[ii_config_target_X0+i]))
                 eo[i].set_width_chars(8)
-                table.attach(eo[i], 1+i, 2+i, tr, tr+1)
-                eo[i].show()
+                grid.attach(eo[i], 1+i, tr, 1, 1)
 
         oabutton = Gtk.Button(stock='gtk-apply')
-        oabutton.show()
-        table.attach(oabutton, 4, 5, tr, tr+1)
+        grid.attach(oabutton, 4, tr, 1, 1)
 
         # Drift Compensation Setup
         tr = tr+1
         lab = Gtk.Label(label="Drift Comp.:")
         setup_list.append (lab)
-        # lab.show ()
-        table.attach(lab, 0, 1, tr, tr+1)
+        grid.attach(lab, 0, tr, 1, 1)
 
         ed = []
 
@@ -664,21 +617,17 @@ def create_hv1_app():
                 ed.append (Gtk.Entry())
                 ed[i].set_text("%12.3f " %(scaleO[i]*HV1_driftcomp[i]) ) # + unit[i] + "/s")
                 ed[i].set_width_chars(8)
-                table.attach(ed[i], 1+i, 2+i, tr, tr+1)
+                grid.attach(ed[i], 1+i, tr, 1, 1)
                 setup_list.append (ed[i])
 
         lab = GObject.new(Gtk.Label, label= unit[0] + "/s")
         setup_list.append (lab)
-        table.attach(lab, 4, 5, tr, tr+1)
-        #                button = Gtk.Button(stock='gtk-apply')
-        #                setup_list.append (button)
-        #                table.attach(button, 4, 5, tr, tr+1)
+        grid.attach(lab, 4, tr, 1, 1)
 
         # GAINs
         tr = tr+1
         lab = GObject.new(Gtk.Label, label="Gains:")
-        lab.show ()
-        table.attach(lab, 0, 1, tr, tr+1)
+        grid.attach(lab, 0, tr, 1, 1)
 
         gain_store = Gtk.ListStore(str)
         chan = ["gain_X", "gain_Y", "gain_Z"]
@@ -695,19 +644,16 @@ def create_hv1_app():
                 opt.add_attribute(renderer_text, "text", 0)
                 opt.set_active(HV1_configuration[ii[ci]])
                 gain_select.append(opt.set_active)
-                opt.show()
-                table.attach(opt, 1+ci, 2+ci, tr, tr+1)
+                grid.attach(opt, 1+ci, tr, 1, 1)
 
         ci=3
         lab = GObject.new(Gtk.Label, label="Slew:")
-        lab.show ()
-        table.attach(lab, 1+ci, 2+ci, tr, tr+1)
+        grid.attach(lab, 1+ci, tr, 1, 1)
 
         # BWs
         tr = tr+1
         lab = GObject.new(Gtk.Label, label="Bandwidth:")
-        lab.show ()
-        table.attach(lab, 0, 1, tr, tr+1)
+        grid.attach(lab, 0, tr, 1, 1)
         chan = ["bw_X", "bw_Y", "bw_Z"]
         ii   = [ii_config_bw_X, ii_config_bw_Y, ii_config_bw_Z]
         bw_store = Gtk.ListStore(str)
@@ -721,8 +667,7 @@ def create_hv1_app():
                 opt.pack_start(renderer_text, True)
                 opt.add_attribute(renderer_text, "text", 0)
                 opt.set_active(HV1_configuration[ii[ci]])
-                opt.show()
-                table.attach(opt, 1+ci, 2+ci, tr, tr+1)
+                grid.attach(opt, 1+ci, tr, 1, 1)
 
         # Slew rates as presets
         slew_store = Gtk.ListStore(str)
@@ -745,13 +690,12 @@ def create_hv1_app():
                         ist = i
 
         opt.set_active(ist)
-        opt.show()
-        table.attach(opt, 1+ci, 2+ci, tr, tr+1)
+        grid.attach(opt, 1+ci, tr, 1, 1)
 
         tr = tr+1
         separator = GObject.new(Gtk.HSeparator())
-        separator.show()
-        table.attach(separator, 0, 5, tr, tr+1)
+        grid.attach(separator, 0, tr, 5, 1)
+        tr = tr+1
 
         # Link controls
         
@@ -762,10 +706,9 @@ def create_hv1_app():
 
         # Closing ---
         
-        box2 = GObject.new(Gtk.HBox(spacing=10))
-        box2.set_border_width(10)
-        box1.pack_start(box2, False, True, 0)
-        box2.show()
+        hbox = GObject.new(Gtk.HBox(spacing=10))
+        hbox.set_border_width(5)
+        grid.attach(hbox, 0, tr, 5, 1)
                 
         button = Gtk.Button(stock='gtk-quit')
         # button.set_label("Emergency STOP")
@@ -774,53 +717,44 @@ def create_hv1_app():
         Label=button.get_children()[0]
         Label=Label.get_children()[0].get_children()[1]
         Label=Label.set_label('Emergency STOP')
-        button.show()
-        box2.pack_start(button, True, True, 0)
+        hbox.pack_start(button, True, True, 0)
 
-        check_button = Gtk.CheckButton("Configure")
+        cbc = check_button = Gtk.CheckButton("Configure")
         check_button.set_active(False)
         check_button.connect('toggled', toggle_configure_widgets)
-        box2.pack_start(check_button, True, True, 0)
-        check_button.show()
+        hbox.pack_start(check_button, True, True, 0)
 
         dc_check_button = Gtk.CheckButton("Drift Comp.")
         dc_check_button.set_active(False)
         dc_check_button.connect('toggled', toggle_driftcompensation, dc_control)
-        box2.pack_start(dc_check_button, True, True, 0)
-        dc_check_button.show()
+        hbox.pack_start(dc_check_button, True, True, 0)
 
         check_button = Gtk.CheckButton("GXSM Link")
         check_button.set_active(False)
         check_button.connect('toggled', toggle_gxsm_link, GxsmLink)
-        box2.pack_start(check_button,  True, True, 0)
-        check_button.show()
+        hbox.pack_start(check_button,  True, True, 0)
         check_button.set_sensitive (GxsmLink.status ())        
 
         check_button = Gtk.CheckButton("GXSM Gains")
         check_button.set_active(False)
         check_button.connect('toggled', toggle_gxsm_gain_link, GxsmLink)
-        box2.pack_start(check_button, True, True, 0)
-        check_button.show()
+        hbox.pack_start(check_button, True, True, 0)
         check_button.set_sensitive (GxsmLink.status ())
 
         check_button = Gtk.CheckButton("Z0 inv.")
         check_button.set_active(False)
         check_button.connect('toggled', toggle_Z0_invert)
-        box2.pack_start(check_button, True, True, 0)
-        check_button.show()
+        hbox.pack_start(check_button, True, True, 0)
         check_button.set_sensitive (GxsmLink.status ())        
 
         button = Gtk.Button(stock='gtk-close')
-        # button.label.set_label("Close App, HV1 keeps running")
         button.connect("clicked", delete_event)
-        #button.set_flags(Gtk.CAN_DEFAULT)
-        button.show()
-        box2.pack_start(button, True, True, 0)
-        button.grab_default()
+        hbox.pack_start(button, True, True, 0)
 
-        win.show()
+        win.show_all()
+        toggle_configure_widgets(cbc)
         wins[name].show()
-
+        
 def get_status():
         global HV1_monitor
         
