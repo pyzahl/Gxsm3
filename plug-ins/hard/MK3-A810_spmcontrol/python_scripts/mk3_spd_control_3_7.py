@@ -694,6 +694,7 @@ def create_hv1_app():
                 opt.pack_start(renderer_text, True)
                 opt.add_attribute(renderer_text, "text", 0)
                 opt.set_active(HV1_configuration[ii[ci]])
+                gain_select.append(opt.set_active)
                 opt.show()
                 table.attach(opt, 1+ci, 2+ci, tr, tr+1)
 
