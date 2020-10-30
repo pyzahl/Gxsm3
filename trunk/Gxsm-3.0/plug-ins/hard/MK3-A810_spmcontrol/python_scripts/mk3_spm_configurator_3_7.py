@@ -51,6 +51,8 @@ from scopewidget_3_7 import *
 
 import datetime
 
+OSZISCALE = 0.66
+
 # timeouts [ms]
 timeout_update_patchrack              = 3000
 timeout_update_patchmenu              = 3000
@@ -512,7 +514,7 @@ class SignalScope():
                 parent.wins[name] = win
                 v = Gtk.VBox(spacing=0)
 
-                scope = Oscilloscope( Gtk.Label(), v, "XT", label)
+                scope = Oscilloscope( Gtk.Label(), v, "XT", label, OSZISCALE)
                 scope.scope.set_wide (True)
                 scope.show()
                 scope.set_chinfo([Xsignal[SIG_NAME], Ysignal[SIG_NAME]])
@@ -854,7 +856,7 @@ class TuneScope():
 
                 self.FSineHz  = Frequency (0.)
 
-                scope = Oscilloscope( Gtk.Label(), v, "XT", label)
+                scope = Oscilloscope( Gtk.Label(), v, "XT", label, OSZISCALE)
                 scope.set_scale ( { Xsignal[SIG_UNIT]: "mV", Ysignal[SIG_UNIT]: "deg", "Freq." : "Hz" })
                 scope.set_chinfo(["Res Ampl LP","Res Phase LP","Model","Res Ampl 2F","Res Phase 2F"])
                 win.add(v)
@@ -1360,7 +1362,7 @@ class SignalPlotter():
 
                 self.t0 = parent.mk3spm.get_monitor_data (self.monitor_taps[0])
 
-                scope = Oscilloscope( Gtk.Label(), v, "XT", label)
+                scope = Oscilloscope( Gtk.Label(), v, "XT", label, OSZISCALE)
                 scope.set_scale ( { Xsignal[SIG_UNIT]: "mV", Ysignal[SIG_UNIT]: "deg", "time" : "s" })
                 scope.set_chinfo(["MON1","MON2","MON3","MON4"])
                 #scope.set_info(["to select CH1..4 taps","select Signals via Signal Monitor for:"," t, CH1..4 as Mon" + str(self.monitor_taps)])
@@ -1615,7 +1617,7 @@ class RecorderDeci():
                 [Xsignal, Xdata, OffsetX] = parent.mk3spm.query_module_signal_input(DSP_SIGNAL_SCOPE_SIGNAL1_INPUT_ID)
                 [Ysignal, Ydata, OffsetY] = parent.mk3spm.query_module_signal_input(DSP_SIGNAL_SCOPE_SIGNAL2_INPUT_ID)
 
-                scope = Oscilloscope( Gtk.Label(), v, "XT", label)
+                scope = Oscilloscope( Gtk.Label(), v, "XT", label, OSZISCALE)
                 scope.set_subsample_factor(256)
                 scope.scope.set_wide (True)
                 scope.show()
@@ -1775,7 +1777,7 @@ class DiodeTPlotter():
 
                 self.t0 = parent.mk3spm.get_monitor_data (self.monitor_taps[0])
 
-                scope = Oscilloscope( Gtk.Label(), v, "XT", label)
+                scope = Oscilloscope( Gtk.Label(), v, "XT", label, OSZISCALE)
                 scope.set_scale ( { signalV[SIG_UNIT]: "V", "Temp": "K" })
                 scope.set_chinfo(["TEMP","MONV"])
                 scope.set_flash ("configure CH4 via Signal Monitor: t, CH4:=" + str(self.monitor_taps[1]))
@@ -2166,12 +2168,14 @@ class Mk3_Configurator:
         ## "DISABLED", self.mk3spm.disable_signal_input, 0, _input_id, self.global_vector_index)
         # --> connect("activate", callback, value, identifier, func)
 
-        if (pos>0):
+        if pos>0:
             signal = SIG_LIST[pos-1]
             print ("Adjust Input", _input_id, " to signal:", signal)
-            self.mk3spm.change_signal_input (0, signal, _input_id, self.global_vector_index)
-            # "DISABLED"
-            #self.mk3spm.disable_signal_input (0, 0, _input_id, self.global_vector_index)
+            if signal[SIG_INDEX] >= 0:
+                self.mk3spm.change_signal_input (0, signal, _input_id, self.global_vector_index)
+            else:
+                # "DISABLED"
+                self.mk3spm.disable_signal_input (0, 0, _input_id, self.global_vector_index)
         else:
             print ("Can't do that.")
             

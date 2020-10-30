@@ -3015,17 +3015,17 @@ class SPMcontrol():
                         sr = open (self.sr_dev_path, "rb")
                         os.lseek (sr.fileno(), aS1+aoff, 0) # non atomic reads for big data!
                         if aoff > 0:
-                                xarray = append (xarray, fromfile(sr, dtype('<i4'), num/4))
+                                xarray = append (xarray, fromfile(sr, dtype('<i4'), int(num/4)))
                         else:
-                                xarray = fromfile(sr, dtype('<i4'), num/4)
+                                xarray = fromfile(sr, dtype('<i4'), int(num/4))
                         sr.close ()
 
                         sr = open (self.sr_dev_path, "rb")
                         os.lseek (sr.fileno(), aS2+aoff, 0)
                         if aoff > 0:
-                                yarray = append(yarray, fromfile(sr, dtype('<i4'), num/4))
+                                yarray = append(yarray, fromfile(sr, dtype('<i4'), int(num/4)))
                         else:
-                                yarray = fromfile(sr, dtype('<i4'), num/4)
+                                yarray = fromfile(sr, dtype('<i4'), int(num/4))
                         sr.close ()
 
                         aoff = aoff+BL
