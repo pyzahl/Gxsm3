@@ -1989,11 +1989,11 @@ class Mk3_Configurator:
 #                   "SR MK3 set HR1slow2": self.mk3spm.set_hr_1slow2,
 #                   "SR MK3 set HRs2": self.mk3spm.set_hr_s2,
 #                    "SR MK3 HARD RESET": self.mk3spm.issue_mk3_hard_reset,
-                    "SR MK3 read GPIO settings": self.mk3spm.read_gpio,
-                    "SR MK3 write GPIO settings": self.mk3spm.write_gpio,
-                    "SR MK3 CLR DSP GP53,54,55": self.mk3spm.clr_dsp_gpio,
-                    "SR MK3 SET DSP GP53,54,55": self.mk3spm.set_dsp_gpio,
-                    "SR TEST GPIO PULSE": self.mk3spm.execute_pulse_cb,
+#                    "SR MK3 read GPIO settings": self.mk3spm.read_gpio,
+#                    "SR MK3 write GPIO settings": self.mk3spm.write_gpio,
+#                    "SR MK3 CLR DSP GP53,54,55": self.mk3spm.clr_dsp_gpio,
+#                    "SR MK3 SET DSP GP53,54,55": self.mk3spm.set_dsp_gpio,
+#                    "SR TEST GPIO PULSE": self.mk3spm.execute_pulse_cb,
 
 ##                   "SR MK3 read D-FIFO128": readFIFO128,
 ##                   "SR MK3 read D-FIFO-R": readFIFO,
@@ -2001,13 +2001,18 @@ class Mk3_Configurator:
                    "U SCO Config": self.sco_config,
                    "X Vector Index Selector": self.create_index_selector_matrix,
                    "Y User Values": self.create_user_values,
-                   "Z SCAN DBG": self.print_dbg,
+#                   "Z SCAN DBG": self.print_dbg,
                  }
         win = Gtk.Window()
         win.set_name("main window")
-        win.set_size_request(260, 440)
         win.connect("destroy", self.destroy)
         win.connect("delete_event", self.destroy)
+
+        hb = Gtk.HeaderBar() 
+        hb.set_show_close_button(True) 
+        hb.props.title = "MK3-SPM"
+        win.set_titlebar(hb) 
+        hb.set_subtitle("Configurator Apps") 
 
         box1 = Gtk.VBox(False, 0)
         win.add(box1)
@@ -2043,6 +2048,7 @@ class Mk3_Configurator:
         button.connect ("clicked", self.do_exit)
         box2.pack_start (button, True, True, 0)
         win.show_all ()
+        win.set_size_request(1,600)
 
         self.wins = {}
 
@@ -2124,7 +2130,7 @@ class Mk3_Configurator:
     def print_dbg(self, b):
             def update ():
                     self.mk3spm.check_dsp_scan ()
-                    return TRUE
+                    return True
             
             GLib.timeout_add(200, update)
 
