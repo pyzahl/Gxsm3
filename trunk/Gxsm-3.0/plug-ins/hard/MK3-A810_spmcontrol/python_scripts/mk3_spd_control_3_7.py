@@ -28,7 +28,7 @@
 version = "1.0.0"
 
 import gi
-from gi.repository import Gtk, GObject, Gdk
+from gi.repository import Gtk, GLib
 
 import cairo
 import os                # use os because python IO is bugy
@@ -569,22 +569,22 @@ def create_hv1_app():
         tr=1
         maxv = 200
         v = Gtk.VBox()
-        c1 = Instrument( GObject.new(Gtk.Label), v, "Volt", "X-Axis", unit[0], widget_scale=METER_SCALE)
+        c1 = Instrument( Gtk.Label(), v, "Volt", "X-Axis", unit[0], widget_scale=METER_SCALE)
         c1.set_range(arange(0,maxv/10*11,maxv/10))
         grid.attach(v, 1,tr, 1,1)
         
         v = Gtk.VBox()
-        c2 = Instrument( GObject.new(Gtk.Label), v, "Volt", "Y-Axis", unit[1], widget_scale=METER_SCALE)
+        c2 = Instrument( Gtk.Label(), v, "Volt", "Y-Axis", unit[1], widget_scale=METER_SCALE)
         c2.set_range(arange(0,maxv/10*11,maxv/10))
         grid.attach(v, 2,tr, 1,1)
 
         v = Gtk.VBox()
-        c3 = Instrument( GObject.new(Gtk.Label), v, "Volt", "Z-Axis", unit[2], widget_scale=METER_SCALE)
+        c3 = Instrument( Gtk.Label(), v, "Volt", "Z-Axis", unit[2], widget_scale=METER_SCALE)
         c3.set_range(arange(0,maxv/10*11,maxv/10))
         grid.attach(v, 3,tr, 1,1)
         tr=tr+1
         
-        GObject.timeout_add (updaterate, update_HV1_monitor, c1.set_reading_lohi, c2.set_reading_lohi, c3.set_reading_lohi)
+        GLib.timeout_add (updaterate, update_HV1_monitor, c1.set_reading_lohi, c2.set_reading_lohi, c3.set_reading_lohi)
         separator = Gtk.HSeparator()
         grid.attach(separator, 0, tr, 5, 1)
         tr=tr+1
@@ -637,13 +637,13 @@ def create_hv1_app():
                 grid.attach(ed[i], 1+i, tr, 1, 1)
                 setup_list.append (ed[i])
 
-        lab = GObject.new(Gtk.Label, label= unit[0] + "/s")
+        lab = Gtk.Label(label=unit[0] + "/s")
         setup_list.append (lab)
         grid.attach(lab, 4, tr, 1, 1)
 
         # GAINs
         tr = tr+1
-        lab = GObject.new(Gtk.Label, label="Gains:")
+        lab = Gtk.Label(label="Gains:")
         grid.attach(lab, 0, tr, 1, 1)
 
         gain_store = Gtk.ListStore(str)
@@ -664,12 +664,12 @@ def create_hv1_app():
                 grid.attach(opt, 1+ci, tr, 1, 1)
 
         ci=3
-        lab = GObject.new(Gtk.Label, label="Slew:")
+        lab = Gtk.Label(label="Slew:")
         grid.attach(lab, 1+ci, tr, 1, 1)
 
         # BWs
         tr = tr+1
-        lab = GObject.new(Gtk.Label, label="Bandwidth:")
+        lab = Gtk.Label(label="Bandwidth:")
         grid.attach(lab, 0, tr, 1, 1)
         chan = ["bw_X", "bw_Y", "bw_Z"]
         ii   = [ii_config_bw_X, ii_config_bw_Y, ii_config_bw_Z]
@@ -710,7 +710,7 @@ def create_hv1_app():
         grid.attach(opt, 1+ci, tr, 1, 1)
 
         tr = tr+1
-        separator = GObject.new(Gtk.HSeparator())
+        separator = Gtk.HSeparator()
         grid.attach(separator, 0, tr, 5, 1)
         tr = tr+1
 
@@ -835,7 +835,7 @@ if ( HV1_configuration[ii_config_softwareid] != HV1_magic_softwareid ):
 else:
         get_status()
         create_hv1_app()
-        GObject.timeout_add(updaterate, get_status)        
+        GLib.timeout_add(updaterate, get_status)        
         Gtk.main()
         print ("The HV1 is still active and alive unchanged, you can reconnect for control/monitor at any time.")
 
