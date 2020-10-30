@@ -2779,7 +2779,8 @@ class Mk3_Configurator:
                         self.wins[name] = win
                         win.connect("delete_event", self.delete_event)
                         win.set_size_request(800, 450)
-
+                        self.dsp_man_win=win
+                        
                         scrolled_window = Gtk.ScrolledWindow()
                         scrolled_window.set_border_width(5)
                         win.add(scrolled_window)
@@ -2887,21 +2888,18 @@ class Mk3_Configurator:
                         button = Gtk.Button("688MHz")
                         def confirm_688(dummy):
                                 label = Gtk.Label("Confirm DSP reconfiguration to 688 MHz.\nWARNING\nUse on own risc.")
-                                dialog = Gtk.Dialog("DSP Clock Reconfiguration",
-                                                    None,
-                                                    Gtk.DIALOG_MODAL | Gtk.DIALOG_DESTROY_WITH_PARENT,
-                                                    (Gtk.STOCK_CANCEL, Gtk.RESPONSE_REJECT,
-                                                     Gtk.STOCK_OK, Gtk.RESPONSE_ACCEPT))
+                                dialog = Gtk.Dialog(title="DSP Clock Reconfiguration", transient_for=self.dsp_man_win, flags=0)
+                                dialog.add_buttons (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK)
                                 dialog.vbox.pack_start(label, True, True, 0)
                                 label.show()
                                 checkbox = Gtk.CheckButton("I agree.")
-                                dialog.action_area.pack_end(checkbox)
+                                dialog.action_area.pack_end(checkbox, True, True, 0)
                                 checkbox.show()
                                 response = dialog.run()
                                 dialog.destroy()
                                 
                                 print (response)
-                                if response == Gtk.RESPONSE_ACCEPT and checkbox.get_active():
+                                if response == Gtk.ResponseType.OK and checkbox.get_active():
                                         self.mk3spm.dsp_adjust_speed(0, 688)
 
                         button.connect("clicked", confirm_688)
@@ -2931,20 +2929,17 @@ class Mk3_Configurator:
                                 
                         def confirm_experimental(dummy, func, param1, param2=None):
                                 label = Gtk.Label("Confirm Experimental DSP code.\nWARNING\nUse on own risc. Not for production yet.")
-                                dialog = Gtk.Dialog("DSP Experimental Feature",
-                                                    None,
-                                                    Gtk.DIALOG_MODAL | Gtk.DIALOG_DESTROY_WITH_PARENT,
-                                                    (Gtk.STOCK_CANCEL, Gtk.RESPONSE_REJECT,
-                                                     Gtk.STOCK_OK, Gtk.RESPONSE_ACCEPT))
+                                dialog = Gtk.Dialog(title="DSP Experimental Feature", transient_for=self.dsp_man_win, flags=0)
+                                dialog.add_buttons (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK)
                                 dialog.vbox.pack_start(label, True, True, 0)
                                 label.show()
                                 checkbox = Gtk.CheckButton("I agree.")
-                                dialog.action_area.pack_end(checkbox)
+                                dialog.action_area.pack_end(checkbox, True, True, 0)
                                 checkbox.show()
                                 response = dialog.run()
                                 dialog.destroy()
                                 
-                                if response == Gtk.RESPONSE_ACCEPT and checkbox.get_active():
+                                if response == Gtk.ResponseType.OK and checkbox.get_active():
                                         func(dummy, param1, param2)
                                 else:
                                         print ("Function not activated, please confirm via checkbox.")
@@ -3080,7 +3075,7 @@ class Mk3_Configurator:
                                                 labh.set_alignment(0.5, 0.5)
                                         else:
                                                 labh.set_alignment(1.0, 0.5)
-                                table.attach (labh, c, c+1, r, r+1, Gtk.FILL | Gtk.EXPAND)
+                                table.attach (labh, c, c+1, r, r+1)
                                 c=c+1
                         for pid in range(0,NUM_RT_TASKS):
                                 r=r+1
@@ -3132,7 +3127,7 @@ class Mk3_Configurator:
                                                 labh.set_alignment(0.5, 0.5)
                                         else:
                                                 labh.set_alignment(1.0, 0.5)
-                                table.attach (labh, c, c+1, r, r+1, Gtk.FILL | Gtk.EXPAND)
+                                table.attach (labh, c, c+1, r, r+1)
                                 c=c+1
 
                         for pid in range(0,NUM_ID_TASKS):
@@ -3211,31 +3206,28 @@ class Mk3_Configurator:
     def configure_rt(self, bnt, pid):
             pname  = Gtk.Label(dsp_rt_process_name[pid])
             flags = self.mk3spm.get_task_control_entry(ii_statemachine_rt_task_control, ii_statemachine_rt_task_control_flags, pid)
-            label = Gtk.Label("Set Flags:")
-            dialog = Gtk.Dialog("Adjust RT{:03d} Task".format(pid),
-                                None,
-                                Gtk.DIALOG_MODAL | Gtk.DIALOG_DESTROY_WITH_PARENT,
-                                (Gtk.STOCK_CANCEL, Gtk.RESPONSE_REJECT,
-                                 Gtk.STOCK_OK, Gtk.RESPONSE_ACCEPT))
-
+            label = Gtk.Label(label="Set Flags:")
+            dialog = Gtk.Dialog(title="Adjust RT{:03d} Task".format(pid), transient_for=self.dsp_man_win, flags=0)
+            dialog.add_buttons (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK)
+            
             dialog.vbox.pack_start(pname, True, True, 0)
             pname.show()
             hb = Gtk.HBox()
-            dialog.vbox.pack_end(hb)
+            dialog.vbox.pack_end(hb, True, True, 0)
             hb.show()
             hb.pack_start(label, True, True, 0)
             label.show()
-            cb_active = Gtk.RadioButton(None, "Active")
-            hb.pack_end(cb_active)
+            cb_active = Gtk.RadioButton.new_with_label_from_widget(None, label="Active")
+            hb.pack_end(cb_active, True, True, 0)
             cb_active.show()
-            cb_odd = Gtk.RadioButton(cb_active, "Odd")
-            hb.pack_end(cb_odd)
+            cb_odd = Gtk.RadioButton.new_with_label_from_widget(cb_active,  label="Odd")
+            hb.pack_end(cb_odd, True, True, 0)
             cb_odd.show()
-            cb_even = Gtk.RadioButton(cb_active, "Even")
-            hb.pack_end(cb_even)
+            cb_even = Gtk.RadioButton.new_with_label_from_widget(cb_active,  label="Even")
+            hb.pack_end(cb_even, True, True, 0)
             cb_even.show()
-            cb_sleep = Gtk.RadioButton(cb_active, "Sleep")
-            hb.pack_end(cb_sleep)
+            cb_sleep = Gtk.RadioButton.new_with_label_from_widget(cb_active,  label="Sleep")
+            hb.pack_end(cb_sleep, True, True, 0)
             cb_sleep.show()
 
             if flags & 0x10:
@@ -3249,18 +3241,18 @@ class Mk3_Configurator:
                     
             label = Gtk.Label("Set Protect from (IRQ):")
             hb = Gtk.HBox()
-            dialog.vbox.pack_end(hb)
+            dialog.vbox.pack_end(hb, True, True, 0)
             hb.show()
             hb.pack_start(label, True, True, 0)
             label.show()
             cb_kernel = Gtk.CheckButton("Kernel")
-            hb.pack_end(cb_kernel)
+            hb.pack_end(cb_kernel, True, True, 0)
             cb_kernel.show()
             cb_A810 = Gtk.CheckButton("A810")
-            hb.pack_end(cb_A810)
+            hb.pack_end(cb_A810, True, True, 0)
             cb_A810.show()
             cb_McBSP = Gtk.CheckButton("McBSP")
-            hb.pack_end(cb_McBSP)
+            hb.pack_end(cb_McBSP, True, True, 0)
             cb_McBSP.show()
 
             if flags & 0x00100000:
@@ -3273,7 +3265,7 @@ class Mk3_Configurator:
             response = dialog.run()
             dialog.destroy()
             
-            if response == Gtk.RESPONSE_ACCEPT:
+            if response == Gtk.ResponseType.OK: #Gtk.RESPONSE_ACCEPT:
                     ier_flags="none"
                     if cb_kernel.get_active():
                             ier_flags=ier_flags+' kernel'
@@ -3323,29 +3315,27 @@ class Mk3_Configurator:
             pname  = Gtk.Label(dsp_id_process_name[pid])
             flags = self.mk3spm.get_task_control_entry(ii_statemachine_id_task_control, ii_statemachine_id_task_control_flags, pid)
             label = Gtk.Label("Set flags:")
-            dialog = Gtk.Dialog("Adjust ID{:03d} Task".format(pid+1),
-                                None,
-                                Gtk.DIALOG_MODAL | Gtk.DIALOG_DESTROY_WITH_PARENT,
-                                (Gtk.STOCK_CANCEL, Gtk.RESPONSE_REJECT,
-                                 Gtk.STOCK_OK, Gtk.RESPONSE_ACCEPT))
+            dialog = Gtk.Dialog(title="Adjust ID{:03d} Task".format(pid+1), transient_for=self.dsp_man_win, flags=0)
+            dialog.add_buttons (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK)
+
             dialog.vbox.pack_start(pname, True, True, 0)
             pname.show()
             hb = Gtk.HBox()
-            dialog.vbox.pack_end(hb)
+            dialog.vbox.pack_end(hb, True, True, 0)
             hb.show()
             hb.pack_start(label, True, True, 0)
             label.show()
-            cb_always = Gtk.RadioButton(None, "Always")
-            hb.pack_end(cb_always)
+            cb_always = Gtk.RadioButton.new_with_label_from_widget(None, label="Always")
+            hb.pack_end(cb_always, True, True, 0)
             cb_always.show()
-            cb_timer = Gtk.RadioButton(cb_always, "Timer")
-            hb.pack_end(cb_timer)
+            cb_timer = Gtk.RadioButton.new_with_label_from_widget(cb_always, label="Timer")
+            hb.pack_end(cb_timer, True, True, 0)
             cb_timer.show()
-            cb_clock = Gtk.RadioButton(cb_always, "Clock")
-            hb.pack_end(cb_clock)
+            cb_clock = Gtk.RadioButton.new_with_label_from_widget(cb_always, label="Clock")
+            hb.pack_end(cb_clock, True, True, 0)
             cb_clock.show()
-            cb_sleep = Gtk.RadioButton(cb_always, "Sleep")
-            hb.pack_end(cb_sleep)
+            cb_sleep = Gtk.RadioButton.new_with_label_from_widget(cb_always, label="Sleep")
+            hb.pack_end(cb_sleep, True, True, 0)
             cb_sleep.show()
 
             if flags & 0x10:
@@ -3360,7 +3350,7 @@ class Mk3_Configurator:
             response = dialog.run()
             dialog.destroy()
             
-            if response == Gtk.RESPONSE_ACCEPT:
+            if response == Gtk.ResponseType.OK:
                     if cb_always.get_active():
                             self.mk3spm.configure_id_task(pid, "always")
                     elif cb_timer.get_active():
