@@ -727,7 +727,7 @@ def create_hv1_app():
         #grid.attach(hbox, 0, tr, 5, 1)
         hb.pack_end(hbox)
         
-        cbl = check_button = Gtk.CheckButton("GXSM Link")
+        cbl = check_button = Gtk.CheckButton(label="GXSM Link")
         button = Gtk.Button(stock='Stop')
         button.connect("clicked", do_emergency, cbl, GxsmLink)
         #Label=button.get_children()[0]
@@ -736,12 +736,12 @@ def create_hv1_app():
         grid.attach(button, 4, 1, 1, 1)
         #hbox.pack_start(button, True, True, 0)
 
-        cbc = check_button = Gtk.CheckButton("Config")
+        cbc = check_button = Gtk.CheckButton(label="Config")
         check_button.set_active(False)
         check_button.connect('toggled', toggle_configure_widgets, win)
         hbox.pack_start(check_button, True, True, 0)
 
-        dc_check_button = Gtk.CheckButton("Drift Comp.")
+        dc_check_button = Gtk.CheckButton(label="Drift Comp.")
         dc_check_button.set_active(False)
         dc_check_button.connect('toggled', toggle_driftcompensation, dc_control)
         hbox.pack_start(dc_check_button, True, True, 0)
@@ -752,13 +752,13 @@ def create_hv1_app():
         hbox.pack_start(check_button,  True, True, 0)
         check_button.set_sensitive (GxsmLink.status ())        
 
-        check_button = Gtk.CheckButton("GXSM Gains")
+        check_button = Gtk.CheckButton(label="GXSM Gains")
         check_button.set_active(False)
         check_button.connect('toggled', toggle_gxsm_gain_link, GxsmLink)
         hbox.pack_start(check_button, True, True, 0)
         check_button.set_sensitive (GxsmLink.status ())
 
-        check_button = Gtk.CheckButton("Z0 inv.")
+        check_button = Gtk.CheckButton(label="Z0 inv.")
         check_button.set_active(False)
         check_button.connect('toggled', toggle_Z0_invert)
         hbox.pack_start(check_button, True, True, 0)
