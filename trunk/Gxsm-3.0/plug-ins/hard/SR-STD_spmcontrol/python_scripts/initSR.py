@@ -6,6 +6,7 @@
 ## * code is based on spm_autoconf.py from Bastian Weyers
 ## * 
 ## * Copyright (C) 2009 Thorsten Wagner / ventiotec (R) Dolega und Wagner GbR
+## * Copyright (C) 2020 Thorsten Wagner / ventiotec (R) Wagner und Muenchow GbR
 ## *
 ## * Author: Thorsten Wagner <linux@ventiotec.com>
 ## * WWW Home: http://sranger.sf.net / http://www.ventiotec.com
@@ -47,12 +48,11 @@ dspcode_mk2_file_location = os.environ['HOME']+"/SRanger/TiCC-project-files/MK2-
 ###############################################################################
 
 
-version = "1.1 (08.09.2011)"
+version = "2.0 (31.10.2020)"
 
-import pygtk
-## pygtk.require('2.0')
-
-import gobject, gtk
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, GLib 
 
 import time
 import struct
@@ -87,9 +87,9 @@ def open_mk2_sranger():
 def init():
 # for ST-STD
 	os.system("cd")
-	os.system("sudo 'mount -t debugfs none /sys/kernel/debug/'")
+	os.system("sudo mount --type debugfs none /sys/kernel/debug/")
 	time.sleep(1)
-	os.system("sudo 'fxload-sr-i386 -I SRangerFx -D /dev/bus/usb/`cat /sys/kernel/debug/usb/devices | grep \"T:\|P:\" | grep -B1 0a59 | tac | tail -n1 | awk -F \"=\" '{print $2 $7}' | awk '{ printf \"%03d/%03d\",$1,$3 }'`'")
+	os.system("sudo fxload-sr-i386 -I SRangerFx -D /dev/bus/usb/`cat /sys/kernel/debug/usb/devices | grep \"T:\|P:\" | grep -B1 0a59 | tac | tail -n1 | awk -F \"=\" '{print $2 $7}' | awk '{ printf \"%03d/%03d\",$1,$3 }'`")
 	time.sleep(3)
 # changing attributes for the devices. Should be obsolent if the rights are already set in the defaults of the udev file system
 # for SR-STD/SP2
@@ -154,14 +154,14 @@ def loadusb():
 		# For now - 14.06.2009 - the loadusb for the mk2 is still buggy under windows. So please use the windows tool. tw	
 def go_button(button):
 	event_list.set_label("")
-        init()
+	init()
 	loadusb()
 	button.disconnect(go_button_handler)
-	button.set_label("gtk-quit")
+	button.set_label("_Quit")
 	button.connect("clicked", destroy)
 	
 def destroy(*args):
-        gtk.main_quit()
+        Gtk.main_quit()
 
 
 # adds a new entry to the event_list
@@ -173,55 +173,45 @@ def add_event(text):
 def create_main_window():
 	global event_list
 	global go_button_handler
-	win = gobject.new(gtk.Window,
-	             type=gtk.WINDOW_TOPLEVEL,
-                     title='SRanger initSR '+version,
-                     allow_grow=True,
-                     allow_shrink=True,
-                     border_width=5)
-	win.set_name("main window")
+	win = Gtk.Window(title="initSR")
 	win.set_size_request(300, 320)
 	win.connect("destroy", destroy)
 	win.connect("delete_event", destroy)
 	
-	box1 = gobject.new(gtk.VBox(False, 0))
+	box1 = Gtk.VBox()
 	win.add(box1)
 	box1.show()
-	scrolled_window = gobject.new(gtk.ScrolledWindow())
-	scrolled_window.set_border_width(10)
-	scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-	box1.pack_start(scrolled_window)
+	scrolled_window = Gtk.ScrolledWindow()
+	scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC,Gtk.PolicyType.AUTOMATIC)
+	box1.pack_start(scrolled_window,True, True, 0)
 	scrolled_window.show()
 	
-	box2 = gobject.new(gtk.VBox())
+	box2 = Gtk.VBox()
 	box2.set_border_width(5)
-	scrolled_window.add_with_viewport(box2)
+	scrolled_window.add(box2)
 	box2.show()
 	
-	event_list = gobject.new(gtk.Label, label="Welcome to the SRanger\ninitSR script v. " + version + "\n\n")
+	event_list = Gtk.Label(label="Welcome to the SRanger\ninitSR script v. " + version + "\n\n")
 	add_event("This script will:")
 	add_event(" 1.\tTry to generate the usb \n\tdevices related to your\n\tSRanger board")
 	add_event(" 2.\tUpload the right DSP code")
-	box2.pack_start(event_list)
+	box2.pack_start(event_list,True, True,0)
 	event_list.show()
 
-	separator = gobject.new(gtk.HSeparator())
-	box1.pack_start(separator, expand=False)
-	separator.show()
-	box2 = gobject.new(gtk.VBox(spacing=10))
+	box2 = Gtk.VBox()
 	box2.set_border_width(5)
-	box1.pack_start(box2, expand=False)
+	box1.pack_start(box2, True, True, 0)
 	box2.show()
-	button = gtk.Button(stock="gtk-go-forward")
+	button = Gtk.Button.new_with_mnemonic("_Next")
 	go_button_handler = button.connect("clicked", go_button)
-	button.set_flags(gtk.CAN_DEFAULT)
-	box2.pack_start(button)
+	box2.pack_start(button, True, True, 0)
+	button.set_can_default(button) 
 	button.grab_default()
 	button.show()
 	win.show()
 
 create_main_window()
 
-gtk.main()
+Gtk.main()
 print ("Bye bye!")
 
