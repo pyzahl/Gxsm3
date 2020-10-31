@@ -100,7 +100,7 @@ Activate a channel and run it.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // Plugin Prototypes
 static void reverse_layers_init( void );

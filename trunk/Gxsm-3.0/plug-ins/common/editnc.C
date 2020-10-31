@@ -61,7 +61,7 @@ using namespace std;
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 static void editnc_about( void );
 static void editnc_run(GtkWidget *w, void *data);

@@ -27,7 +27,7 @@
  *
  */
 
-#include "../config.h"
+#include "config.h"
 
 /*
  * Functions to do binary I/O of floats, ints.

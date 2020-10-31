@@ -74,7 +74,7 @@ overflow, e.g. value wrapping round. There is no saturation mode yet.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // Plugin Prototypes
 static void to_byte_init( void );

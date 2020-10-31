@@ -79,11 +79,11 @@ Exporting data in the Scala SPM format is not yet implemented.
 #include <locale.h>
 
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/dataio.h"
-#include "gxsm/action_id.h"
-#include "gxsm/mem2d.h"
-#include "gxsm/unit.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/dataio.h"
+#include "gxsm3/action_id.h"
+#include "gxsm3/mem2d.h"
+#include "gxsm3/unit.h"
 
 #ifndef WORDS_BIGENDIAN
 # define WORDS_BIGENDIAN 0

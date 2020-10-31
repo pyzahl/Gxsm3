@@ -27,10 +27,10 @@
 */
 
 #include <gtk/gtk.h>
-#include "gxsm/glbvars.h"
-#include "gxsm/util.h"
-#include "gxsm/pcs.h"
-#include "gxsm/unit.h"
+#include "gxsm3/glbvars.h"
+#include "gxsm3/util.h"
+#include "gxsm3/pcs.h"
+#include "gxsm3/unit.h"
 
 #include <math.h>
 

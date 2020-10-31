@@ -26,8 +26,8 @@
 % PlugInModuleIgnore
 */
 
-#include "gxsm/unit.h"
-#include "gxsm/pcs.h"
+#include "gxsm3/unit.h"
+#include "gxsm3/pcs.h"
 #include "app_databox.h"
 
 #define DEFAULT_BOXWIDTH 2

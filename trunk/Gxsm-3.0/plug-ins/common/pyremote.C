@@ -562,8 +562,8 @@ to the community. The GXSM-Forums always welcome input.
 #include "pyremote.h"
 #include "pyscript_templates.h"
 #include "pyscript_templates_script_libs.h"
-#include "gxsm/plugin.h"
-#include "gxsm/gnome-res.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/gnome-res.h"
 
 
 #if defined HAVE_PYTHON3_8_PYTHON_H
@@ -589,12 +589,12 @@ to the community. The GXSM-Forums always welcome input.
 #include <sys/types.h>
 #include <signal.h>
 
-#include "action_id.h"
-#include "xsmtypes.h"
+#include "gxsm3/action_id.h"
+#include "gxsm3/xsmtypes.h"
 
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "glbvars.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/glbvars.h"
 
 #include "glib/gstdio.h"
 
@@ -603,13 +603,13 @@ to the community. The GXSM-Forums always welcome input.
 
 #include <gtksourceview/gtksource.h>
 
-#include "gapp_service.h"
-#include "xsm.h"
-#include "unit.h"
-#include "pcs.h"
+#include "gxsm3/gapp_service.h"
+#include "gxsm3/xsm.h"
+#include "gxsm3/unit.h"
+#include "gxsm3/pcs.h"
 
-#include "gxsm_app.h"
-#include "gxsm/app_view.h"
+#include "gxsm3/gxsm_app.h"
+#include "gxsm3/app_view.h"
 
  // Fill in the GxsmPlugin Description here
 GxsmPlugin pyremote_pi = {

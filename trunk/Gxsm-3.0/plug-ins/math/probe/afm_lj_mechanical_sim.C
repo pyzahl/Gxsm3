@@ -101,8 +101,8 @@ The PlugIn configurator...
 #include <glib.h>
 #include <math.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/vectorutil.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/vectorutil.h"
 
 #ifdef USE_NLOPT
 #include <nlopt.hpp>

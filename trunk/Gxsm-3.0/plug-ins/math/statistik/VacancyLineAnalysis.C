@@ -152,8 +152,8 @@ possible.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/app_profile.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/app_profile.h"
 
 
 typedef struct {

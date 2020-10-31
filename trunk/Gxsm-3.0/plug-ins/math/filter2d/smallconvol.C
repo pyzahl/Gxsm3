@@ -57,7 +57,7 @@ the math channel.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 
 static void smallconvol_init( void );

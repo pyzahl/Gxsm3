@@ -37,11 +37,11 @@
 #include <fcntl.h>
 
 #include "config.h"
-#include "gxsm/mem2d.h"
-#include "gxsm/scan.h"
-#include "gxsm/xsmhard.h"
-#include "gxsm/glbvars.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/mem2d.h"
+#include "gxsm3/scan.h"
+#include "gxsm3/xsmhard.h"
+#include "gxsm3/glbvars.h"
+#include "gxsm3/plugin.h"
 #include "app_probe.h"
 #include "include/dsp-pci32/xsm/xsmcmd.h"
 

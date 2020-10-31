@@ -30,7 +30,7 @@
 
 #include "peakfind_scan.h"
 #include "app_databox.h"
-#include "gxsm/remote.h"
+#include "gxsm3/remote.h"
 
 enum SKL_MODE { SKL_LIN, SKL_LOG, SKL_SQRT };
 #define FCOLMAX 256

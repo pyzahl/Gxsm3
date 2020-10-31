@@ -142,11 +142,11 @@
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/dataio.h"
-#include "gxsm/action_id.h"
-#include "gxsm/util.h"
-#include "gxsm/glbvars.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/dataio.h"
+#include "gxsm3/action_id.h"
+#include "gxsm3/util.h"
+#include "gxsm3/glbvars.h"
 #include "batch.h"
 #include "g_dat_types.h"
 #include "fileio.c"
@@ -394,7 +394,7 @@ private:
 // GNU File Types Extension
 // and tga export
 
-// für TGA Export
+// f\FCr TGA Export
 
 typedef struct { short k[6], x,y, pixsz; } TGA_head;
 typedef struct { unsigned char val[3]; } TGA_pix;
@@ -521,7 +521,7 @@ FIO_STATUS PrimitiveImExportFile::Read(xsm::open_mode mode){
 }
 
 FIO_STATUS PrimitiveImExportFile::gnuRead(const char *fname, int index_value, int index_time){
-// für Gnu-Paket:
+// f\FCr Gnu-Paket:
 	FILETYPE ft=BYTFIL;
 	int i,j;
 	long nb, anz;
@@ -1225,7 +1225,7 @@ FIO_STATUS PrimitiveImExportFile::Write(){
 		TGA_pix *TGAline;
 		long LineSize;
 		unsigned short Val;
-		/* Speicher für eine Zeile */
+		/* Speicher f\FCr eine Zeile */
 		TGAline = (TGA_pix *) malloc( LineSize=Nx*sizeof(TGA_pix));
 		if (TGAline == NULL) {
 			return FIO_NO_MEM;
@@ -1270,7 +1270,7 @@ FIO_STATUS PrimitiveImExportFile::Write(){
 				}
 				break;
 			case SCAN_V_DIRECT:
-				if(MapMode==2){ // 16bit für Povray
+				if(MapMode==2){ // 16bit f\FCr Povray
 					for(j=0;j<Nx;j++){
 						Val = (unsigned short)((long)(-(*ps++))+32767L);
 						(TGAline+j)->val[1] = (unsigned char)(Val&0x00ff);

@@ -56,10 +56,10 @@ Registers itself for loading files with the filename suffix ".Stm".
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/dataio.h"
-#include "gxsm/action_id.h"
-#include "gxsm/util.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/dataio.h"
+#include "gxsm3/action_id.h"
+#include "gxsm3/util.h"
 
 #include <sstream>
 

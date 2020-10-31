@@ -100,9 +100,9 @@ Compute the average X profile of all scanlines.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/action_id.h"
-#include "gxsm/app_profile.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/action_id.h"
+#include "gxsm3/app_profile.h"
 
 // Plugin Prototypes
 static void average_profile_init( void );

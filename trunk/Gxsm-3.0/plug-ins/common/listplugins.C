@@ -56,7 +56,7 @@ Call it using the menu \GxsmMenu{Tools/Plugin Details}.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // ===========================================
 // borrowed from gimp "pluginsdetails" PlugIn

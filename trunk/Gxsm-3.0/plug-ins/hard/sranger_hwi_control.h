@@ -28,7 +28,7 @@
 #ifndef __SRANGER_HWI_CONTROL_H
 #define __SRANGER_HWI_CONTROL_H
 
-#include "gxsm/app_profile.h"
+#include "gxsm3/app_profile.h"
 #include "SR-STD_spmcontrol/FB_spm_dataexchange.h" // SRanger data exchange structs and consts
 
 typedef enum { DestDSP, DestHwI } Destination;

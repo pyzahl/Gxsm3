@@ -121,7 +121,7 @@ parameters (1 will ask, 0 not).
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 static void spasimkz_init( void );
 static void spasimkz_about( void );

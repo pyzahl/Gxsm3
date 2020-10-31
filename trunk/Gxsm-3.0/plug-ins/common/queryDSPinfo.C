@@ -61,7 +61,7 @@ And it works with the kernel DSP emulation modules!
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 #include "include/dsp-pci32/xsm/xsmcmd.h"
 
 // ========================================

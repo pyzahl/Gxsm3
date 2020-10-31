@@ -64,9 +64,9 @@ the X channel.  The plug-in is called via \GxsmMenu{Math/Misc/Spectrocut}.
 #include <gtk/gtk.h>
 #include <string.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/scan.h"
-#include "gxsm/xsmmath.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/scan.h"
+#include "gxsm3/xsmmath.h"
  
 using namespace std;
 

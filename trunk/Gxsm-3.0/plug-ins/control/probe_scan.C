@@ -29,15 +29,15 @@
 #include <config.h>
 
 #include "probe_scan.h"
-#include "gxsm/regress.h"
-#include "gxsm/scan.h"
-#include "gxsm/dataio.h"
+#include "gxsm3/regress.h"
+#include "gxsm3/scan.h"
+#include "gxsm3/dataio.h"
 
-#include "gxsm/surface.h"
-#include "gxsm/glbvars.h"
-#include "gxsm/xsmtypes.h"
+#include "gxsm3/surface.h"
+#include "gxsm3/glbvars.h"
+#include "gxsm3/xsmtypes.h"
 
-#include "gxsm/action_id.h"
+#include "gxsm3/action_id.h"
 
 #define L_NULL  0
 #define L_START 1

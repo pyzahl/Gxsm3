@@ -116,13 +116,13 @@ This setup need to match the current hardware configuration.}
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
-#include "gxsm/unit.h"
-#include "gxsm/pcs.h"
-#include "gxsm/xsmtypes.h"
-#include "gxsm/glbvars.h"
-#include "gxsm/action_id.h"
+#include "gxsm3/unit.h"
+#include "gxsm3/pcs.h"
+#include "gxsm3/xsmtypes.h"
+#include "gxsm3/glbvars.h"
+#include "gxsm3/action_id.h"
 
 #include "include/dsp-pci32/xsm/xsmcmd.h"
 
@@ -1407,7 +1407,7 @@ int SPM_ScanControl::setup_scan (int ch,
 int SPM_ScanControl::prepare_to_start_scan (SCAN_DT_TYPE st){
 	// which origin mode?
         if (IS_SPALEED_CTRL||xsmres.ScanOrgCenter)
-                YOriginTop = FALSE; // Fix hier für SPA-LEED
+                YOriginTop = FALSE; // Fix hier f\FCr SPA-LEED
 	else 
                 YOriginTop = TRUE;
 	scan_flag = SCAN_FLAG_RUN;

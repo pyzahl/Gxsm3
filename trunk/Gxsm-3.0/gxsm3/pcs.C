@@ -50,7 +50,7 @@ good starting point.
 #include "pcs.h"
 #include "util.h"
 #include "xsmdebug.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 #include "gapp_service.h"
 #include "gnome-res.h"
 #include "glbvars.h"

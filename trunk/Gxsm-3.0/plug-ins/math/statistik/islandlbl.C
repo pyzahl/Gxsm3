@@ -27,7 +27,7 @@
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 #include "stdio.h"
 
 #include "mathilbl.h"

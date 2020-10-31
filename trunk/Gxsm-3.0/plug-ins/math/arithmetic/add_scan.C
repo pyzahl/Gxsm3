@@ -76,7 +76,7 @@ Both scans are required to have the same size in pixels.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // Plugin Prototypes
 static void add_scan_init( void );

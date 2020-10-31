@@ -58,11 +58,11 @@ Not yet tested.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/dataio.h"
-#include "gxsm/action_id.h"
-#include "gxsm/util.h"
-#include "gxsm/xsmtypes.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/dataio.h"
+#include "gxsm3/action_id.h"
+#include "gxsm3/util.h"
+#include "gxsm3/xsmtypes.h"
 
 // custom includes go here
 // -- START EDIT --

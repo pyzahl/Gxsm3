@@ -101,7 +101,7 @@ The active and X marked channels are used as data sources.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // Plugin Prototypes
 static void movieconcat_init( void );

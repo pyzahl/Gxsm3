@@ -42,7 +42,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#include "gxsm/action_id.h"
+#include "gxsm3/action_id.h"
 
 #include "demo_hwi_control.h"
 #include "demo_hwi.h"

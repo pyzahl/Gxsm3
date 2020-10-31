@@ -51,13 +51,13 @@ This plugin helps you printing several nc-images on one page.
 #include <dirent.h>
 #include <fnmatch.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 #include "epsfutils.h"
-#include "gxsm/glbvars.h"
+#include "gxsm3/glbvars.h"
 #include "mkicons.h"
 #include "pyremote.h"
 
-#include "gxsm/action_id.h" 
+#include "gxsm3/action_id.h" 
 // wegen ID_CH_*
 
 // Plugin Prototypes

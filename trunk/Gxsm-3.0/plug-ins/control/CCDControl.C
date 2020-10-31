@@ -69,11 +69,11 @@ CT 19xx
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
-#include "gxsm/unit.h"
-#include "gxsm/pcs.h"
-#include "gxsm/glbvars.h"
+#include "gxsm3/unit.h"
+#include "gxsm3/pcs.h"
+#include "gxsm3/glbvars.h"
 #include "plug-ins/hard/modules/ccd.h"
 
 #include "include/dsp-pci32/xsm/xsmcmd.h"

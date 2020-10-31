@@ -317,7 +317,7 @@ echo Finished. Now go to directory $TARGETDIRECTORY and have a look at "$PLUGINN
 #%
 #%#include <gtk/gtk.h>
 #%#include "config.h"
-#%#include "gxsm/plugin.h"
+#%#include "gxsm3/plugin.h"
 #%
 #%// Plugin Prototypes
 #%static void ___PLUGINNAME_init( void );

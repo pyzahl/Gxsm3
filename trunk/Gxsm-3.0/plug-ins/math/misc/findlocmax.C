@@ -83,7 +83,7 @@ figure out more about this piece of code.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
  
 using namespace std;
 
@@ -290,7 +290,7 @@ public:
 
 int SARLS_findlocmax_run(Scan *Src, Scan *Dest)
 {
-	/* Suche lokaler Maxima im Fokusbereich (Kasten mit 10µm*10µm) */
+	/* Suche lokaler Maxima im Fokusbereich (Kasten mit 10\B5m*10\B5m) */
 	/* Version 0.2 ML  (23/11/98)                                  */
 
 	int line,col,fokline,fokcol,fokxpoints,fokypoints;
@@ -311,7 +311,7 @@ int SARLS_findlocmax_run(Scan *Src, Scan *Dest)
 		for(col=0;col<Dest->data.s.nx;col++)
 			Dest->mem2d->PutDataPkt(0,col, line);     
   
-	/* Peaks aufspüren, mit einem Mindestabstand = Fokus = 10µm <- Variablen: fokxpoints, fokypoints */
+	/* Peaks aufsp\FCren, mit einem Mindestabstand = Fokus = 10\B5m <- Variablen: fokxpoints, fokypoints */
 	/* doppelte Peaks werden leider noch nicht rausgeworfen */
 
 	for(line=0;line<(Src->mem2d->GetNy()-fokypoints);line=line+(fokypoints/2))
@@ -368,7 +368,7 @@ int SARLS_findlocmax_run(Scan *Src, Scan *Dest)
 	f << "# Fokuspoints y = " << fokypoints << endl;
 	f << "# Datenpunktabstand [A]  dx = " << Src->data.s.dx << endl;
 	f << "# Datenpunktabstand [A]  dy = " << Src->data.s.dy << endl;
-	f << "# x   y	  Intensität" << endl ;
+	f << "# x   y	  Intensit\E4t" << endl ;
 
 	for(line=0;line<Dest->data.s.ny;line++)
 		for(col=0;col<Dest->data.s.nx;col++)

@@ -114,7 +114,7 @@ Control!
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 static void DSPMover_about( void );
 static void DSPMover_query( void );
@@ -161,12 +161,12 @@ GxsmPlugin *get_gxsm_plugin_info ( void ){
 }
 
 
-#include "gxsm/gxsm_app.h"
+#include "gxsm3/gxsm_app.h"
 
-#include "gxsm/unit.h"
-#include "gxsm/pcs.h"
-#include "gxsm/xsmtypes.h"
-#include "gxsm/glbvars.h"
+#include "gxsm3/unit.h"
+#include "gxsm3/pcs.h"
+#include "gxsm3/xsmtypes.h"
+#include "gxsm3/glbvars.h"
 
 #include "include/dsp-pci32/xsm/xsmcmd.h"
 
@@ -243,130 +243,7 @@ static void DSPMover_about(void)
 
 static void DSPMover_cleanup( void ){
 	PI_DEBUG (DBG_L2, "DSPMover Plugin Cleanup" );
-	gchar *mp = g_strconcat(DSPMover_pi.menupath, DSPMover_pi.menuentry, NULL);
-	gnome_app_remove_menus (GNOME_APP( DSPMover_pi.app->getApp() ), mp, 1);
-	g_free(mp);
-
-	// delete ...
-	if( DSPMoverClass )
-		delete DSPMoverClass ;
-}
-
-static void DSPMover_show_callback( GtkWidget* widget, void* data){
-	if( DSPMoverClass )
-		DSPMoverClass->show();
-}
-
-DSPMoverControl::DSPMoverControl (DSP_Param *Dsp, XSM_Hardware *Hard, int InWindow)
-{
-	dsp=Dsp;
-	hard=Hard;
-
-	Unity    = new UnitObj(" "," ");
-	Volt     = new UnitObj("V","V");
-	Time     = new UnitObj("s","s");
-	Length   = new UnitObj("nm","nm");
-
-	create_folder ();
-}
-
-DSPMoverControl::~DSPMoverControl (){
-	delete Length;
-	delete Time;
-	delete Volt;
-	delete Unity;
-}
-
-
-
-
-
-
-
-
-/* Parameter für DSP Programm (Regler etc. ...) */
-/* 
-   *** THIS "DSP_Param" struct will become obsolete ASAP --
-       i.e. all HwIs and other PIs are independent of it!! 
-   *** 
-*/
-typedef struct DSP_Param{
-  /* Feedback Control */
-  double	UTunnel;		/* Tunnelspannung */
-  double	ITunnelSoll;		/* Tunnelsollstrom */
-  double        SetPoint;               /* AFM FB Setpoint */
-  double	LogOffset;		/* Offset für Logregler */
-  double	LogSkl;			/* Logskalierung */
-  double	usrCP, usrCI, usrCD;	/* Reglerkonstante User */
-  double	CP, CI, CS, tau;     	/* Reglerkonstante DSP (scaled) */
-  double	Rotation;		/* Bilddrehwinkel */
-  double        fb_frq;			/* Timerfrequenz des Regelinterrupts [Hz] */
-  double	fir_fg;                 /* FIR Grenzfrq. / LowPass */
-  int           LinLog;                 /* Lin / Log Flag */
-  
-  /* Scan Control */
-  int	LS_nx2scan;		/* Scanlinelänge */
-  int   LS_nx_pre;              /* Scan Vorlauflänge */
-  int   LS_dnx;			/* Meßpunktabstand */
-  int	LS_stepsize;	        /* max. Schrittweite */
-  int	LS_nRegel;		/* Anzahl Reglerdurchläufe je Schritt */
-  int   LS_nAve;		/* Anzahl durchzuführender Mittelungen */
-  int   LS_IntAve;		/* =0: kein IntAve, =1: Aufsummieren von Punkte zu Punkt */
-  
-  int   MV_stepsize;      	/* max. Schrittweite für MoveTo */
-  int	MV_nRegel;		/* Anzahl Reglerdurchläufe je Schritt */
-
-  /* Mover Control */
-  double MOV_Ampl, MOV_Speed, MOV_Steps;
-
-  /* Auto Approch */
-  int	 TIP_nSteps;		/* Anzahl Z Steps (grob) */
-  double TIP_Delay;		/* Anzahl Wartezyclen zwischen Z-Steps */
-  int	 TIP_DUz;		/* Schrittweite für Z-Piezo-Spannung "ran" */
-  int	 TIP_DUzRev;		/* Schrittweite für Z-Piezo-Spannung "zurück" */
-
-  /* AFM special */
-  #define DSP_AFMMOV_MODES 4
-  double  AFM_Amp, AFM_Speed, AFM_Steps; /* AFM Besocke Kontrolle */
-  double  AFM_usrAmp[DSP_AFMMOV_MODES];
-  double  AFM_usrSpeed[DSP_AFMMOV_MODES], AFM_usrSteps[DSP_AFMMOV_MODES]; /* Parameter Memory */
-
-  /* SPA-LEED special */
-  double SPA_Energy, SPA_EnergyVolt;
-  double SPA_Gatetime;
-  double SPA_Length;
-
-};
-
-
-
-	xrm.Put("hardpars.MOV_Ampl", hardpars.MOV_Ampl);
-	xrm.Put("hardpars.MOV_Speed", hardpars.MOV_Speed);
-	xrm.Put("hardpars.MOV_Steps", hardpars.MOV_Steps);
-	xrm.Put("hardpars.TIP_nSteps", hardpars.TIP_nSteps);
-	xrm.Put("hardpars.TIP_Delay", hardpars.TIP_Delay);
-	xrm.Put("hardpars.TIP_DUz", hardpars.TIP_DUz);
-	xrm.Put("hardpars.TIP_DUzRev", hardpars.TIP_DUzRev);
-
-	xrm.Put("hardpars.AFM_Amp", hardpars.AFM_Amp);
-	xrm.Put("hardpars.AFM_Speed", hardpars.AFM_Speed);
-	xrm.Put("hardpars.AFM_Steps", hardpars.AFM_Steps);
-	xrm.Put("hardpars.AFM_usrAmp0", hardpars.AFM_usrAmp[0]);
-	xrm.Put("hardpars.AFM_usrAmp1", hardpars.AFM_usrAmp[1]);
-	xrm.Put("hardpars.AFM_usrAmp2", hardpars.AFM_usrAmp[2]);
-	xrm.Put("hardpars.AFM_usrAmp3", hardpars.AFM_usrAmp[3]);
-	xrm.Put("hardpars.AFM_usrSpeed0", hardpars.AFM_usrSpeed[0]);
-	xrm.Put("hardpars.AFM_usrSpeed1", hardpars.AFM_usrSpeed[1]);
-	xrm.Put("hardpars.AFM_usrSpeed2", hardpars.AFM_usrSpeed[2]);
-	xrm.Put("hardpars.AFM_usrSpeed3", hardpars.AFM_usrSpeed[3]);
-	xrm.Put("hardpars.AFM_usrSteps0", hardpars.AFM_usrSteps[0]);
-	xrm.Put("hardpars.AFM_usrSteps1", hardpars.AFM_usrSteps[1]);
-	xrm.Put("hardpars.AFM_usrSteps2", hardpars.AFM_usrSteps[2]);
-	xrm.Put("hardpars.AFM_usrSteps3", hardpars.AFM_usrSteps[3]);
-
-
-	xrm.Get("hardpars.MOV_Ampl", &hardpars.MOV_Ampl, "20.0");
-	xrm.Get("hardpars.MOV_Speed", &hardpars.MOV_Speed, "4.0");
+	gchar *mp = g_strconcat(DSPMover_pi.menupath, DSPM
 	xrm.Get("hardpars.MOV_Steps", &hardpars.MOV_Steps, "100.0");
 	xrm.Get("hardpars.TIP_nSteps", &hardpars.TIP_nSteps, "10");
 	xrm.Get("hardpars.TIP_Delay", &hardpars.TIP_Delay, "0.1");

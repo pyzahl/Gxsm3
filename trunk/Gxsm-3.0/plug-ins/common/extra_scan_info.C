@@ -57,7 +57,7 @@ Works automatic if loaded.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 #include "include/dsp-pci32/xsm/xsmcmd.h"
 
 using namespace std;

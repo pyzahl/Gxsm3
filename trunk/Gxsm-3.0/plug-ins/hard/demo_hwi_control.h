@@ -28,7 +28,7 @@
 #ifndef __DEMO_HWI_CONTROL_H
 #define __DEMO_HWI_CONTROL_H
 
-#include "gxsm/app_profile.h"
+#include "gxsm3/app_profile.h"
 #include "SR-STD_spmcontrol/FB_spm_dataexchange.h" // Demo data exchange structs and consts
 
 typedef enum { DestDSP, DestHwI } Destination;

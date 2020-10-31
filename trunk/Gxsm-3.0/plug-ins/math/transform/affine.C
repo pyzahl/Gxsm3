@@ -80,7 +80,7 @@ I know it's a bit tricky, good ideas to fix this are welcome!
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 static void affine_init( void );
 static void affine_about( void );
