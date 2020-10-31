@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3 -Es
 
 ## * initialize your Signal Ranger board
 ## * and load DSP Code
@@ -205,7 +205,7 @@ def create_main_window():
 	button = Gtk.Button.new_with_mnemonic("_Next")
 	go_button_handler = button.connect("clicked", go_button)
 	box2.pack_start(button, True, True, 0)
-	button.set_can_default(button) 
+	button.set_can_default(True) 
 	button.grab_default()
 	button.show()
 	win.show()
