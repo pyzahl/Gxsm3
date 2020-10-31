@@ -97,7 +97,7 @@ Activate a channel and run it. Needs volumetric data, i.e. a set of images in la
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // Plugin Prototypes
 static void volume_transform_init( void );

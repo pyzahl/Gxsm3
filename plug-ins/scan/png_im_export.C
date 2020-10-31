@@ -70,18 +70,18 @@ pnglib documentation: \GxsmWebLink{www.libpng.org/pub/png/libpng-manual.html}
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/dataio.h"
-#include "gxsm/action_id.h"
-#include "gxsm/util.h"
-#include "gxsm/xsmtypes.h"
-#include "gxsm/glbvars.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/dataio.h"
+#include "gxsm3/action_id.h"
+#include "gxsm3/util.h"
+#include "gxsm3/xsmtypes.h"
+#include "gxsm3/glbvars.h"
 
 // custom includes go here
 // -- START EDIT --
 #include "png.h"        /* libpng header; includes zlib.h */
-#include "readpng.h"    /* typedefs, common macros, public prototypes */
-#include "writepng.h"    /* typedefs, common macros, public prototypes */
+#include "gxsm3/readpng.h"    /* typedefs, common macros, public prototypes */
+#include "gxsm3/writepng.h"    /* typedefs, common macros, public prototypes */
 // -- END EDIT --
 
 // enable std namespace

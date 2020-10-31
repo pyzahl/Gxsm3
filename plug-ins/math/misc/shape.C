@@ -100,7 +100,7 @@ Call \GxsmMenu{Math/Misc/Shape}.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // Plugin Prototypes
 static void shape_init( void );

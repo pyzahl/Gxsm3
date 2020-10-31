@@ -419,7 +419,11 @@ to the community. The GXSM-Forums always welcome input.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/glbvars.h"
+#include "gxsm3/action_id.h"
+#include "gxsm3/xsmtypes.h"
+
 
 #if defined HAVE_PYTHON2_7_PYTHON_H
 #    include <python2.7/Python.h>
@@ -432,14 +436,6 @@ to the community. The GXSM-Forums always welcome input.
  
 #include <sys/types.h>
 #include <signal.h>
-
-#include "action_id.h"
-#include "xsmtypes.h"
-
-#include "config.h"
-#include "gxsm/plugin.h"
-#include "glbvars.h"
-
 
       //#include "app_remote.h"
 #include "pyremote.h"

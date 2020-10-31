@@ -36,18 +36,18 @@
 
 #include <time.h>
 
-#include "glbvars.h"
-#include "plug-ins/hard/modules/dsp.h"
+#include "gxsm3/glbvars.h"
+#include "modules/dsp.h"
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#include "gxsm/action_id.h"
+#include "gxsm3/action_id.h"
 
 #include "dsp-pci32/xsm/xsmcmd.h"
 
 #include "sranger_mk2_hwi_control.h"
 #include "sranger_mk23common_hwi.h"
-#include "../plug-ins/hard/modules/sranger_mk2_ioctl.h"
+#include "modules/sranger_mk2_ioctl.h"
 
 
 extern GxsmPlugin sranger_mk2_hwi_pi;

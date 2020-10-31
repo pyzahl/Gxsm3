@@ -68,7 +68,7 @@ zero the user is not prompted!
 #include <glib.h>
 #include <math.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 
 static void cancel_callback (GtkWidget *widget, int *status);

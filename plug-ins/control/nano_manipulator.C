@@ -73,12 +73,12 @@ This tool may ruin your tip and sample if impropper used!
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
-#include "gxsm/unit.h"
-#include "gxsm/pcs.h"
-#include "gxsm/xsmtypes.h"
-#include "gxsm/glbvars.h"
+#include "gxsm3/unit.h"
+#include "gxsm3/pcs.h"
+#include "gxsm3/xsmtypes.h"
+#include "gxsm3/glbvars.h"
 
 #include "include/dsp-pci32/xsm/xsmcmd.h"
 

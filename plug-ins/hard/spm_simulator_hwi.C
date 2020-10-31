@@ -57,13 +57,13 @@
 #include <sys/ioctl.h>
 
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/xsmhard.h"
-#include "gxsm/glbvars.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/xsmhard.h"
+#include "gxsm3/glbvars.h"
 
 
-#include "gxsm_app.h"
-#include "gxsm_window.h"
+#include "gxsm3/gxsm_app.h"
+#include "gxsm3/gxsm_window.h"
 
 
 // Define HwI PlugIn reference name here, this is what is listed later within "Preferenced Dialog"

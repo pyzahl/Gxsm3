@@ -29,7 +29,7 @@
  *
  */
 
-#include "../config.h"
+#include "config.h"
 
 
 /* this should be updated when the file version changes */

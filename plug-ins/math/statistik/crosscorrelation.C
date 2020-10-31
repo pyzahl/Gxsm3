@@ -71,8 +71,8 @@
 #include <complex>
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/xsmmath.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/xsmmath.h"
 
 #define UTF8_ANGSTROEM "\303\205"
 

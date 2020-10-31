@@ -56,9 +56,9 @@ may be possible. Stay tuned.)
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 #include "epsfutils.h"
-#include "gxsm/glbvars.h"
+#include "gxsm3/glbvars.h"
 #include "printer.h"
 #include "pyremote.h"
 #include "mkicons.h"

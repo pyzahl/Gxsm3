@@ -41,7 +41,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#include "gxsm/action_id.h"
+#include "gxsm3/action_id.h"
 
 #include "dsp-pci32/xsm/xsmcmd.h"
 

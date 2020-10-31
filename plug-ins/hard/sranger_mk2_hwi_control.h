@@ -28,7 +28,7 @@
 #ifndef __SRANGER_MK2_HWI_CONTROL_H
 #define __SRANGER_MK2_HWI_CONTROL_H
 
-#include "gxsm/app_profile.h"
+#include "gxsm3/app_profile.h"
 
 typedef enum { DestDSP, DestHwI } Destination;
 

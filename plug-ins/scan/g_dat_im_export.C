@@ -58,11 +58,11 @@ Not yet tested.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/dataio.h"
-#include "gxsm/action_id.h"
-#include "gxsm/util.h"
-#include "gxsm/xsmtypes.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/dataio.h"
+#include "gxsm3/action_id.h"
+#include "gxsm3/util.h"
+#include "gxsm3/xsmtypes.h"
 
 // custom includes go here
 // -- START EDIT --
@@ -439,7 +439,7 @@ FIO_STATUS Gdat_ImExportFile::Write(){
 	strncpy(Kopf.comment, scan->data.ui.comment, 255);
 	Kopf.nx[pcnt] = scan->data.s.nx;
 	Kopf.ny[pcnt] = scan->data.s.ny;
-	// ....->Inst wird nur wegen dat-Type benötigt .... :=(
+	// ....->Inst wird nur wegen dat-Type ben\F6tigt .... :=(
 	Kopf.dx[pcnt] = R2INT(scan->data.s.dx/gapp->xsm->Inst->XResolution());
 	Kopf.dy[pcnt] = R2INT(scan->data.s.dy/gapp->xsm->Inst->YResolution());
 	Kopf.x_Offset[pcnt] = R2INT(scan->data.s.x0/gapp->xsm->Inst->XResolution());
@@ -454,7 +454,7 @@ FIO_STATUS Gdat_ImExportFile::Write(){
 	Kopf.forw_delay=10L;
 	Kopf.back_delay=10L;
 	Kopf.NumOfTopAve=1;
-	// Kopf noch nicht vollständig ausgefüllt !
+	// Kopf noch nicht vollst\E4ndig ausgef\FCllt !
 
 	f.write((const char*)&Kopf, sizeof(HEADER));
 	if(f.fail()){

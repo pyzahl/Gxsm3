@@ -158,12 +158,12 @@ I have a lot\dots
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
-#include "gxsm/unit.h"
-#include "gxsm/pcs.h"
-#include "gxsm/xsmtypes.h"
-#include "gxsm/glbvars.h"
+#include "gxsm3/unit.h"
+#include "gxsm3/pcs.h"
+#include "gxsm3/xsmtypes.h"
+#include "gxsm3/glbvars.h"
 
 #include "include/dsp-pci32/xsm/xsmcmd.h"
 
@@ -689,91 +689,7 @@ DSPControl::DSPControl ()
 		gtk_widget_show (label);
 		gtk_container_add (GTK_CONTAINER (hbox_param), label);
 		//    gtk_box_pack_start (GTK_BOX (hbox_param), label, FALSE, TRUE, 0);
-		gtk_widget_set_size_request (label, 20, -1);
-
-		wid = gtk_option_menu_new ();
-		gtk_widget_set_size_request (wid, 50, -1);
-		gtk_widget_show (wid);
-		gtk_container_add (GTK_CONTAINER (hbox_param), wid);
-
-		menu = gtk_menu_new ();
-
-		// Init Verstärkungs-Choicelist
-		gchar *Vxyz;
-		for(i=0; i<GAIN_POSITIONS; i++){
-			if(xsmres.V[i] >= 1.)
-				Vxyz = g_strdup_printf("%2d",(int)xsmres.V[i]);
-			else
-				Vxyz = g_strdup_printf("%g",xsmres.V[i]);
-			menuitem = gtk_menu_item_new_with_label (Vxyz);
-			gtk_widget_show (menuitem);
-			gtk_menu_append (GTK_MENU (menu), menuitem);
-			/* connect with signal-handler if selected */
-			AmpI.l = 0L;
-			AmpI.s.ch = j;
-			AmpI.s.x  = i;
-			g_object_set_data(G_OBJECT (menuitem), "chindex", (gpointer)AmpI.l);
-			g_signal_connect (G_OBJECT (menuitem), "activate",
-					    G_CALLBACK (DSPControl::choice_Ampl_callback),
-					    this);
-		}
-		gtk_option_menu_set_menu (GTK_OPTION_MENU (wid), menu);
-		switch(j){
-		case 0: gtk_option_menu_set_history (GTK_OPTION_MENU (wid), xsmres.VXdefault); break;
-		case 1: gtk_option_menu_set_history (GTK_OPTION_MENU (wid), xsmres.VYdefault); break;
-		case 2: gtk_option_menu_set_history (GTK_OPTION_MENU (wid), xsmres.VZdefault); break;
-		}
-	}
-
-	gapp->RemoteEntryList = g_slist_concat (gapp->RemoteEntryList, RemoteEntryList);
-
-	// save List away...
-	g_object_set_data( G_OBJECT (widget), "DSP_EC_list", EC_list);
-}
-
-static void remove(gpointer entry, gpointer from){
-	from = (gpointer) g_slist_remove ((GSList*)from, entry);
-}
-
-DSPControl::~DSPControl (){
-	XsmRescourceManager xrm("innovative_dsp_hwi_control");
-
-        xrm.Put("data_hardpars.UTunnel", data_hardpars.UTunnel);
-        xrm.Put("data_hardpars_dual.UTunnel", data_hardpars_dual.UTunnel);
-        xrm.Put("data_hardpars.SetPoint", data_hardpars.SetPoint);
-        xrm.Put("data_hardpars_dual.SetPoint", data_hardpars_dual.SetPoint);
-        xrm.Put("data_hardpars.ITunnelSoll", data_hardpars.ITunnelSoll);
-        xrm.Put("data_hardpars_dual.ITunnelSoll", data_hardpars_dual.ITunnelSoll);
-        xrm.Put("data_hardpars.LogOffset", data_hardpars.LogOffset);
-        xrm.Put("data_hardpars_dual.LogOffset", data_hardpars_dual.LogOffset);
-        xrm.Put("data_hardpars.LogSkl", data_hardpars.LogSkl);
-        xrm.Put("data_hardpars_dual.LogSkl", data_hardpars_dual.LogSkl);
-        xrm.Put("data_hardpars.usrCP", data_hardpars.usrCP);
-        xrm.Put("data_hardpars_dual.usrCP", data_hardpars_dual.usrCP);
-        xrm.Put("data_hardpars.usrCI", data_hardpars.usrCI);
-        xrm.Put("data_hardpars_dual.usrCI", data_hardpars_dual.usrCI);
-        xrm.Put("data_hardpars.CS", data_hardpars.CS);
-        xrm.Put("data_hardpars_dual.CS", data_hardpars_dual.CS);
-        xrm.Put("data_hardpars.Rotation", data_hardpars.Rotation);
-        xrm.Put("data_hardpars_dual.Rotation", data_hardpars_dual.Rotation);
-        xrm.Put("data_hardpars.fb_frq", data_hardpars.fb_frq);
-        xrm.Put("data_hardpars_dual.fb_frq", data_hardpars_dual.fb_frq);
-        xrm.Put("data_hardpars.fir_fg", data_hardpars.fir_fg);
-        xrm.Put("data_hardpars_dual.fir_fg", data_hardpars_dual.fir_fg);
-        xrm.Put("data_hardpars.LinLog", data_hardpars.LinLog);
-        xrm.Put("data_hardpars_dual.LinLog", data_hardpars_dual.LinLog);
-        xrm.Put("data_hardpars.LS_nx2scan", data_hardpars.LS_nx2scan);
-        xrm.Put("data_hardpars_dual.LS_nx2scan", data_hardpars_dual.LS_nx2scan);
-        xrm.Put("data_hardpars.LS_nx_pre", data_hardpars.LS_nx_pre);
-        xrm.Put("data_hardpars_dual.LS_nx_pre", data_hardpars_dual.LS_nx_pre);
-        xrm.Put("data_hardpars.LS_dnx", data_hardpars.LS_dnx);
-        xrm.Put("data_hardpars_dual.LS_dnx", data_hardpars_dual.LS_dnx);
-        xrm.Put("data_hardpars.LS_stepsize", data_hardpars.LS_stepsize);
-        xrm.Put("data_hardpars_dual.LS_stepsize", data_hardpars_dual.LS_stepsize);
-        xrm.Put("data_hardpars.LS_nRegel", data_hardpars.LS_nRegel);
-        xrm.Put("data_hardpars_dual.LS_nRegel", data_hardpars_dual.LS_nRegel);
-        xrm.Put("data_hardpars.LS_nAve", data_hardpars.LS_nAve);
-        xrm.Put("data_hardpars_dual.LS_nAve", data_hardpars_dual.LS_nAve);
+		gtk_widget_set_size_request (label
         xrm.Put("data_hardpars.LS_IntAve", data_hardpars.LS_IntAve);
         xrm.Put("data_hardpars_dual.LS_IntAve", data_hardpars_dual.LS_IntAve);
         xrm.Put("data_hardpars.MV_stepsize", data_hardpars.MV_stepsize);

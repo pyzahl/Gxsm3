@@ -85,7 +85,7 @@ No bugs known.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // Plugin Prototypes
 static void SlopeDir_init( void );
@@ -351,7 +351,7 @@ double Phi(double dx, double dy){
 			       +Src->data.s.rx/2.);
   Dest->mem2d->data->MkYLookup(0., Src->data.s.ry);
   UnitObj *u;
-  Dest->data.SetZUnit(u=new UnitObj("°","°")); delete u;
+  Dest->data.SetZUnit(u=new UnitObj("\B0","\B0")); delete u;
   Dest->data.s.dz  = 1.;
   Dest->data.s.rz  = 90.;
  

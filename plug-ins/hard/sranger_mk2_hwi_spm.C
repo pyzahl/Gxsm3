@@ -34,8 +34,8 @@
 #include <libintl.h>
 
 
-#include "glbvars.h"
-#include "plug-ins/hard/modules/dsp.h"
+#include "gxsm3/glbvars.h"
+#include "modules/dsp.h"
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
@@ -45,7 +45,7 @@
 
 // need some SRanger io-controls 
 // HAS TO BE IDENTICAL TO THE DRIVER's FILE!
-#include "../plug-ins/hard/modules/sranger_mk23_ioctl.h"
+#include "modules/sranger_mk23_ioctl.h"
 
 #include "MK2-A810_spmcontrol/FB_spm_task_names.h"
 

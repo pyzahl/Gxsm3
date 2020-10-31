@@ -31,7 +31,7 @@
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 #include "autoalign_vector_types.h"
 #include "autoalign_turbo_reg.h"

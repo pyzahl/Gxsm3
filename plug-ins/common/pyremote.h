@@ -33,10 +33,10 @@
 
 #include <gtk/gtk.h>
 #include <math.h>
-#include "cairo_item.h"
+#include "gxsm3/cairo_item.h"
 
-#include "gxsm_app.h"
-#include "gxsm_window.h"
+#include "gxsm3/gxsm_app.h"
+#include "gxsm3/gxsm_window.h"
 
 struct remote_action_cb {
     const gchar  *cmd;

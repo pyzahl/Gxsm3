@@ -148,7 +148,7 @@ please please copy and rename it properly before!
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // Plugin Prototypes
 static void vorlage_init( void );

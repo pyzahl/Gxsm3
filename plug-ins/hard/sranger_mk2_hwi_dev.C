@@ -44,9 +44,9 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#include "glbvars.h"
-#include "xsmtypes.h"
-#include "xsmdebug.h"
+#include "gxsm3/glbvars.h"
+#include "gxsm3/xsmtypes.h"
+#include "gxsm3/xsmdebug.h"
 
 #include "sranger_mk2_hwi.h"
 
@@ -57,7 +57,7 @@
 
 // need some SRanger io-controls 
 // HAS TO BE IDENTICAL TO THE DRIVER's FILE!
-#include "../plug-ins/hard/modules/sranger_mk23_ioctl.h"
+#include "modules/sranger_mk23_ioctl.h"
 
 // SRanger data exchange structs and consts
 #include "MK2-A810_spmcontrol/FB_spm_dataexchange.h" 

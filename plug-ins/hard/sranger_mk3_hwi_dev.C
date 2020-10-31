@@ -41,9 +41,9 @@
 #include <iostream>   // for cout
 #include <sstream>    // for istringstream
 
-#include "glbvars.h"
-#include "xsmtypes.h"
-#include "xsmdebug.h"
+#include "gxsm3/glbvars.h"
+#include "gxsm3/xsmtypes.h"
+#include "gxsm3/xsmdebug.h"
 
 #include <fcntl.h>
 #include <sys/types.h>

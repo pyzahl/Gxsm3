@@ -74,7 +74,7 @@ into a new created math channel.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 #include "../../common/pyremote.h"
 
 // Plugin Prototypes

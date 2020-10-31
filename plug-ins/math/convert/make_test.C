@@ -67,7 +67,7 @@ Call \GxsmMenu{Math/Convert/make test}.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // Plugin Prototypes
 static void make_test_init( void );

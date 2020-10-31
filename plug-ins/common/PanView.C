@@ -86,12 +86,12 @@
  * -------------------------------------------------------------------------------- 
  */
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "glbvars.h"
-#include "xsmtypes.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/glbvars.h"
+#include "gxsm3/xsmtypes.h"
 
-#include "gxsm_app.h"
-#include "gxsm_window.h"
+#include "gxsm3/gxsm_app.h"
+#include "gxsm3/gxsm_window.h"
 
 #include "PanView.h"
 
@@ -141,7 +141,7 @@ GxsmPlugin PanView_pi = {
 	  // Description, is shown by PluginViewer (Plugin: listplugin, Tools->Plugin Details)
 	  (char *)"Scan Area visualization and life SPM parameter readings",
 	  // Author(s)
-	  (char *) "SKristan Temme, Thorsten Wagner, Percy Zahl",
+	  (char *) "Kristan Temme, Thorsten Wagner, Percy Zahl",
 	  // Menupath to position where it is appended to
 	  (char *)"windows-section",
 	  // Menuentry

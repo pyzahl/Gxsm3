@@ -75,9 +75,9 @@ The scaling of the data, especially in Z direction is not well tested.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/dataio.h"
-//#include "gxsm/action_id.h" // should not be needed, 15.11.2009 Thorsten Wagner (STM)
+#include "gxsm3/plugin.h"
+#include "gxsm3/dataio.h"
+//#include "gxsm3/action_id.h" // should not be needed, 15.11.2009 Thorsten Wagner (STM)
 
 using namespace std;
 

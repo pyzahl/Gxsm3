@@ -85,7 +85,7 @@ shifted lower part, connected.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // Plugin Prototypes
 static void shiftarea_init( void );

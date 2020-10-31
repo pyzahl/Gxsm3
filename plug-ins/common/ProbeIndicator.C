@@ -116,12 +116,12 @@ MK3 only.
  * -------------------------------------------------------------------------------- 
  */
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "glbvars.h"
-#include "xsmtypes.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/glbvars.h"
+#include "gxsm3/xsmtypes.h"
 
-#include "gxsm_app.h"
-#include "gxsm_window.h"
+#include "gxsm3/gxsm_app.h"
+#include "gxsm3/gxsm_window.h"
 
 #include "ProbeIndicator.h"
 

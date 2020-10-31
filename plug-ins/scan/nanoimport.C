@@ -69,9 +69,9 @@ According to the manual (V4.1):
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/dataio.h"
-#include "gxsm/action_id.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/dataio.h"
+#include "gxsm3/action_id.h"
 
 using namespace std;
 
@@ -493,7 +493,7 @@ FIO_STATUS NanoScopeFile::Read(xsm::open_mode mode){
 
 	// fix ugly ASCII in place... conversion below fails otherwise
 	for(gchar *p=FileList->str; *p; ++p)
-		if (*p == 'º') *p='d';
+		if (*p == '\BA') *p='d';
 
 	gsize br, bw;
 	GError *error = NULL;

@@ -74,7 +74,7 @@ Crashes Gxsm -- pending to fix.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
+#include "gxsm3/plugin.h"
 
 // Plugin Prototypes
 static void stat_diff_init( void );

@@ -70,13 +70,13 @@ DnD and URL drops are not tested.
 
 #include <gtk/gtk.h>
 #include "config.h"
-#include "gxsm/plugin.h"
-#include "gxsm/dataio.h"
-#include "gxsm/glbvars.h"
+#include "gxsm3/plugin.h"
+#include "gxsm3/dataio.h"
+#include "gxsm3/glbvars.h"
 #include "WSxM_header.h"                // File distributed with WSxM to make header of data file
 
 // includes obviously not longer needed, 15.11.2009 Thorsten Wagner (STM)
-//#include "gxsm/action_id.h"
+//#include "gxsm3/action_id.h"
 //#include <linux/coff.h>
 //#include "plug-ins/hard/sranger_hwi.h"
 //#include <netcdf.hh>                    // used to read additional data from original file
