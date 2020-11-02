@@ -2751,7 +2751,7 @@ class Mk3_Configurator:
                         box2.set_border_width(10)
                         box1.pack_start(box2, False, True, 0)
 
-                        button = Gtk.Button(stock='gtk-close')
+                        button = Gtk.Button(label='Close')
                         button.connect("clicked", lambda w: win.hide())
                         box2.pack_start(button, True, True, 0)
 
@@ -3031,7 +3031,7 @@ class Mk3_Configurator:
                         button.connect("clicked", confirm_experimental, self.mk3spm.dsp_configure_McBSP_M, 11, lbl)
                         hb.pack_start(button, True, True, 0)
 
-                        button = Gtk.Button(stock='gtk-close')
+                        button = Gtk.Button(label='Close')
                         button.connect("clicked", lambda w: win.hide())
                         box2.pack_start(button, True, True, 0)
 
