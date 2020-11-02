@@ -929,7 +929,7 @@ class TuneScope():
 
                 self.fitresults = { "A":0., "f0": 32768., "Q": 0. }
 
-                self.pk_data_fname = "data_last_tune_result"
+                self.pk_data_fname = "data_last_tune_result_3_7"
 
                 try:
                         with open (self.pk_data_fname, 'rb') as f:
