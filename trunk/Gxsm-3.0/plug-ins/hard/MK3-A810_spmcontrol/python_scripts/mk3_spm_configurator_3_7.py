@@ -523,9 +523,7 @@ class SignalScope():
                         self.block_length = 512
                         parent.mk3spm.set_recorder (self.block_length, self.trigger, self.trigger_level)
 
-                table = Gtk.Table(4, 2)
-                table.set_row_spacings(5)
-                table.set_col_spacings(5)
+                table = Gtk.Table(n_rows=4, n_columns=2)
                 v.pack_start (table, True, True, 0)
                 table.show()
 
@@ -582,7 +580,6 @@ class SignalScope():
                         if blck == -1:
                                 n = self.block_length
                                 [xd, yd] = parent.mk3spm.read_recorder (n)
-
                                 if not self.run:
                                         if n < 128:
                                                 print ("CH1:")
@@ -757,12 +754,11 @@ class SignalScope():
                                                 self.ss = 0
                                                 self.mode_button.set_label("T-Free")
 
-                self.run_button = Gtk.Button("STOP")
-#                self.run_button.set_use_stock(True)
+                self.run_button = Gtk.Button(label="STOP")
                 self.run_button.connect("clicked", toggle_run_recorder)
                 self.hb = Gtk.HBox()
                 self.hb.pack_start (self.run_button, True, True, 0)
-                self.mode_button = Gtk.Button("M: Free")
+                self.mode_button = Gtk.Button(label="M: Free")
                 self.mode=0 # 0 free, 1 auto, 2 nommal, 3 single
                 self.mode_button.connect("clicked", toggle_mode)
                 self.hb.pack_start (self.mode_button, True, True, 0)
@@ -770,7 +766,7 @@ class SignalScope():
                 table.attach(self.hb, 2, 3, tr, tr+1)
                 tr = tr+1
 
-                self.trigger_button = Gtk.Button("TRIGGER-OFF")
+                self.trigger_button = Gtk.Button(label="TRIGGER-OFF")
                 self.trigger_button.connect("clicked", toggle_trigger)
                 self.trigger_button.show ()
                 table.attach(self.trigger_button, 2, 3, tr, tr+1)
@@ -864,7 +860,7 @@ class TuneScope():
                 scope.scope.set_dBX (True)
                 scope.scope.set_dBZ (True)
 
-                table = Gtk.Table(4, 2)
+                table = Gtk.Table(n_rows=4, n_columns=2)
                 table.set_row_spacings(5)
                 table.set_col_spacings(5)
                 v.pack_start (table, True, True, 0)
@@ -1370,7 +1366,7 @@ class SignalPlotter():
 
                 win.add(v)
 
-                table = Gtk.Table(4, 2)
+                table = Gtk.Table(n_rows=4, n_columns=2)
                 table.set_row_spacings(5)
                 table.set_col_spacings(5)
                 v.pack_start (table, True, True, 0)
@@ -1627,7 +1623,7 @@ class RecorderDeci():
 
                 win.add(v)
 
-                table = Gtk.Table(8, 2)
+                table = Gtk.Table(n_rows=8, n_columns=2)
                 table.set_row_spacings(2)
                 table.set_col_spacings(2)
                 v.pack_start (table, True, True, 0)
@@ -1784,9 +1780,7 @@ class DiodeTPlotter():
 
                 win.add(v)
 
-                table = Gtk.Table(4, 2)
-                table.set_row_spacings(5)
-                table.set_col_spacings(5)
+                table = Gtk.Table(n_rows=4, n_columns=2)
                 v.pack_start (table, True, True, 0)
 
                 tr=0
@@ -1940,7 +1934,7 @@ class DiodeTPlotter():
                                 self.TapK = zeros (self.points)+v2k(uv)
                                 GLib.timeout_add (int (self.dt*1000.), update_plotter)
 
-                self.run_button = Gtk.Button("STOP TUNE")
+                self.run_button = Gtk.Button(label="STOP TUNE")
                 self.run_button.connect("clicked", toggle_run_plotter)
                 table.attach(self.run_button, 1, 2, tr, tr+1)
 
@@ -2014,18 +2008,18 @@ class Mk3_Configurator:
         win.set_titlebar(hb) 
         hb.set_subtitle("Configurator Apps") 
 
-        box1 = Gtk.VBox(False, 0)
+        box1 = Gtk.VBox()
         win.add(box1)
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.set_border_width(5)
         box1.pack_start(scrolled_window, True, True, 0)
         box2 = Gtk.VBox()
         box2.set_border_width(5)
-        scrolled_window.add_with_viewport(box2)
+        scrolled_window.add(box2)
 
-        lab = Gtk.Label("SR dev:" + self.mk3spm.sr_path ())
+        lab = Gtk.Label(label="SR dev:" + self.mk3spm.sr_path ())
         box2.pack_start(lab, True, True, 0)
-        lab = Gtk.Label(self.mk3spm.get_spm_code_version_info())
+        lab = Gtk.Label(label=self.mk3spm.get_spm_code_version_info())
         box2.pack_start(lab, True, True, 0)
 
         k = buttons.keys()
@@ -2044,7 +2038,7 @@ class Mk3_Configurator:
         box2 = Gtk.VBox()
         box2.set_border_width (5)
         box1.pack_start (box2, False, True, 0)
-        button = Gtk.Button.new_with_mnemonic('Close')
+        button = Gtk.Button(label='Close')
         button.connect ("clicked", self.do_exit)
         box2.pack_start (button, True, True, 0)
         win.show_all ()
@@ -2070,9 +2064,7 @@ class Mk3_Configurator:
                         box1.pack_start (separator, False, True, 0)
 
                         # 8x8 matrix selector
-                        table = Gtk.Table (8,8)
-                        table.set_row_spacings(1)
-                        table.set_col_spacings(1)
+                        table = Gtk.Table(n_rows=8, n_columns=8)
                         box1.pack_start(table, False, True, 0)
                         
                         for i in range (0,8):
@@ -2395,9 +2387,7 @@ class Mk3_Configurator:
                         box2.set_border_width(5)
                         box1.pack_start(box2, True, True, 0)
 
-                        table = Gtk.Table (6, 17)
-                        table.set_row_spacings(5)
-                        table.set_col_spacings(4)
+                        table = Gtk.Table (n_rows=6, n_columns=17)
                         box2.pack_start(table, False, False, 0)
 
                         r=0
@@ -2570,9 +2560,7 @@ class Mk3_Configurator:
                         box2.set_border_width(5)
                         box1.pack_start(box2, True, True, 0)
 
-                        table = Gtk.Table (11, 37)
-                        table.set_row_spacings(0)
-                        table.set_col_spacings(4)
+                        table = Gtk.Table (n_rows=11, n_columns=37)
                         box2.pack_start(table, False, False, 0)
 
                         r=0
@@ -2708,9 +2696,7 @@ class Mk3_Configurator:
                         scrolled_window.add_with_viewport(box2)
                         box1.pack_start(box2, True, True, 0)
 
-                        table = Gtk.Table (6, 17)
-                        table.set_row_spacings(0)
-                        table.set_col_spacings(4)
+                        table = Gtk.Table (n_rows=6, n_columns=17)
                         box2.pack_start(table, False, False, 0)
 
                         r=0
@@ -3058,9 +3044,7 @@ class Mk3_Configurator:
                         box2.pack_start (labtimestructs, False, True, 0)
                         GLib.timeout_add (timeout_update_process_list, self.rt_dsprtosinfo_update, labtimestructs)
                                     
-                        table = Gtk.Table (7, 20)
-                        table.set_row_spacings(0)
-                        table.set_col_spacings(4)
+                        table = Gtk.Table (n_rows=7, n_columns=20)
                         box2.pack_start(table, False, False, 0)
 
                         r=0

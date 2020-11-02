@@ -2391,9 +2391,9 @@ class SPMcontrol():
                 print ("FIFO at %08x" %(self.PROBEFIFO[7]+aoff) + " len=%d" %num)
                 os.lseek (sr.fileno(), self.PROBEFIFO[7]+aoff, 0) # non atomic reads for big data!
                 if aoff > 0:
-                        pd_array = append (pd_array, fromfile(sr, dtype('<i4'), num))
+                        pd_array = append (pd_array, fromfile(sr, dtype=dtype('<i4'), count=num))
                 else:
-                        pd_array = fromfile(sr, dtype('<i4'), num)
+                        pd_array = fromfile(sr, dtype=dtype('<i4'), count=num)
                 sr.close ()
                 return pd_array
                 
@@ -2983,6 +2983,7 @@ class SPMcontrol():
                 fmt = "<ll"
                 [blck, dum] = struct.unpack (fmt, os.read (sr.fileno(), struct.calcsize (fmt)))
                 sr.close ()
+                #print ("R-Rdy[blck]=",blck)
                 return blck
 
         ##    void read_pll_array32 (gint64 address, int n, gint32 *arr){
@@ -3013,6 +3014,7 @@ class SPMcontrol():
                                 num=num_left
 
                         sr = open (self.sr_dev_path, "rb")
+                        #print ("R-Rec seek to",aS1+aoff, num, int(num/4))
                         os.lseek (sr.fileno(), aS1+aoff, 0) # non atomic reads for big data!
                         if aoff > 0:
                                 xarray = append (xarray, fromfile(sr, dtype('<i4'), int(num/4)))

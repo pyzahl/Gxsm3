@@ -88,13 +88,16 @@ class Scope(Gtk.DrawingArea):
         self.set_points (False)
         self.set_markers (10,10)
         self.connect("draw", self.draw)
-        #self.set_events(Gtk.Gdk.BUTTON_PRESS_MASK)
+        #self.props.can_focus = True
+        self.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        #self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.KEY_PRESS_MASK)
         self.connect('button-press-event', self.on_drawing_area_button_press)
         self.display_info = 300
         self.set_flash ("Starting...")
         self.set_subsample_factor()
         self.Xdata_rft = zeros(2)
         self.Ydata_rft = zeros(2)
+
 
         
     def set_subsample_factor(self, sf=1):
@@ -115,38 +118,40 @@ class Scope(Gtk.DrawingArea):
         self.Ymarkers = my
         
     def on_drawing_area_button_press(self, widget, event):
-        # print event.x, ' ', event.y
+        #print (event.x, ' ', event.y)
         # Mode toggle buttons
-        if event.x > 50 and event.x < 100:
-            if event.y > 550 and event.y < 570: 
+        x = event.x/self.cairo_scale;
+        y = event.y/self.cairo_scale;
+        if x > 50 and x < 100:
+            if y > 550 and y < 570: 
                 self.set_wide (not self.wide)
-            if event.y > 570 and event.y < 590: 
+            if y > 570 and y < 590: 
                 self.set_xy (not self.xy)
-        elif event.x > 100 and event.x < 150:
-            if event.y > 550 and event.y < 570: 
+        elif x > 100 and x < 150:
+            if y > 550 and y < 570: 
                 self.set_fade (self.fade+0.1)
-            if event.y > 570 and event.y < 590: 
+            if y > 570 and y < 590: 
                 self.set_points (not self.points)
-        elif event.x > 150 and event.x < 185:
-            if event.y > 550 and event.y < 570: 
+        elif x > 150 and x < 185:
+            if y > 550 and y < 570: 
                 self.set_ftX (self.ftX+1)
-            if event.y > 570 and event.y < 590: 
+            if y > 570 and y < 590: 
                 self.set_ftY (self.ftY+1)
-        elif event.x > 185 and event.x < 220:
-            if event.y > 550 and event.y < 570: 
+        elif x > 185 and x < 220:
+            if y > 550 and y < 570: 
                 self.set_dBX (not self.dBX)
-            if event.y > 570 and event.y < 590: 
+            if y > 570 and y < 590: 
                 self.set_dBY (not self.dBY)
-            if event.y > 530 and event.y < 550: 
+            if y > 530 and y < 550: 
                 self.set_dBZ (not self.dBZ)
-            if event.y > 510 and event.y < 530: 
+            if y > 510 and y < 530: 
                 self.set_dBU (not self.dBU)
-            if event.y > 490 and event.y < 510: 
+            if y > 490 and y < 510: 
                 self.set_dBV (not self.dBV)
-        elif event.x > 220 and event.x < 250:
-            if event.y > 550 and event.y < 570: 
+        elif x > 220 and x < 250:
+            if y > 550 and y < 570: 
                 self.set_lambda_frqmap (True)
-            if event.y > 570 and event.y < 590: 
+            if y > 570 and y < 590: 
                 self.set_lambda_frqmap (False)
 
         if self.display_info > 0:
