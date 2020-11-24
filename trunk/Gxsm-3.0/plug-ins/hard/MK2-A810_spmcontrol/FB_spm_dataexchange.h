@@ -117,9 +117,9 @@
 // -- otherwise you exactly need to know/be sure what you are doing --
 // -- odd things like changed data structures, etc.., could break data transfer --
 #define FB_SPM_SOFT_ID   0x1001 /* FB_SPM sofware id */
-#define FB_SPM_VERSION   0x2040 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_VERSION   0x2041 /* FB_SPM main Version, BCD: 00.00 */
 #define FB_SPM_DATE_YEAR 0x2020 /* Date: Year, BCD */
-#define FB_SPM_DATE_MMDD 0x0421 /* Date: Month/Day, BCD */
+#define FB_SPM_DATE_MMDD 0x1123 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Crash Hack RTEngine4Gxsm Mark2 2019\n"\
@@ -494,7 +494,7 @@ typedef struct{
 	DSP_INT  iiix;              /**< current scan speed reduction beyond 2^15 dnx */
 	DSP_INT  ifr;               /**< fast return count option */
 	DSP_INT  sstate;            /**< current scan state =RO */
-	DSP_INT  section;            /**< current scan state =RO */
+	DSP_INT  section;           /**< current scan state =RO */
 	DSP_INT  pflg;              /**< process active flag =RO */
 } AREA_SCAN;
 #define MAX_WRITE_SCAN 56
@@ -608,6 +608,7 @@ typedef struct{
 	DSP_LONG    ix, iix;         /**< counters =RO */
 	DSP_INT     lix, dum;        /**< flags for limiter  =RO */
 	DSP_INT     state;           /**< current probe state =RO */
+        DSP_INT     gpio_setting;    /**< GPIO data last set */
 	DSP_INT     pflg;            /**< process active flag =RO */
 	DSP_INT     pflg_lockin;     /**< process active flag =RO */
 } PROBE;
