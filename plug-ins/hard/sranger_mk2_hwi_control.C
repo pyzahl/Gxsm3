@@ -2439,13 +2439,13 @@ DSPControl::DSPControl () {
 		dsp_bp->grid_add_ec (NULL,      Volt, &GVP_du[k], -10.0,   10.0,   "6.4g", 1., 10., "gvp-du", k); 
                 if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
-		dsp_bp->grid_add_ec (NULL, Angstroem, &GVP_dx[k], -1000.0, 1000.0, "6.4g", 1., 10., "gvp-dx", k); 
+		dsp_bp->grid_add_ec (NULL, Angstroem, &GVP_dx[k], -100000.0, 100000.0, "6.4g", 1., 10., "gvp-dx", k); 
                 if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
-		dsp_bp->grid_add_ec (NULL, Angstroem, &GVP_dy[k], -1000.0, 1000.0, "6.4g", 1., 10., "gvp-dy", k); 
+		dsp_bp->grid_add_ec (NULL, Angstroem, &GVP_dy[k], -100000.0, 100000.0, "6.4g", 1., 10., "gvp-dy", k); 
                 if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
-		dsp_bp->grid_add_ec (NULL, Angstroem, &GVP_dz[k], -1000.0, 1000.0, "6.4g", 1., 10., "gvp-dz", k); 
+		dsp_bp->grid_add_ec (NULL, Angstroem, &GVP_dz[k], -100000.0, 100000.0, "6.4g", 1., 10., "gvp-dz", k); 
                 if (k == (N_GVP_VECTORS-1)) dsp_bp->init_ec_array ();
 
                 dsp_bp->set_configure_list_mode_on (); // === advanced ===========================================

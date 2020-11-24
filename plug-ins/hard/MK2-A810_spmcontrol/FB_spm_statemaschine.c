@@ -406,16 +406,16 @@ int idle_task_010(void){
                 
                 return 1;
         }
-#if 0 // may backport...
+#if 1 // may backport -- testing --
         // else if probe running, check on FB manipulations
         if (probe.pflg){
                 if (probe.vector)
 			if (probe.vector->options & VP_GPIO_SET){
-				i =  (probe.vector->options & VP_GPIO_MSK) >> 16;
+				unsigned int i =  (probe.vector->options & VP_GPIO_MSK) >> 16;
 				if (probe.gpio_setting != i){ // update GPIO!
 					CR_generic_io.gpio_data_out = (DSP_UINT16)i;
-					WRITE_GPIO_0 (CR_generic_io.gpio_data_out);
-					//WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_out, 1);
+					//WRITE_GPIO_0 (CR_generic_io.gpio_data_out);
+					WR_GPIO (GPIO_Data_0, &CR_generic_io.gpio_data_out, 1);
 					probe.gpio_setting = i;
 				}
 				return 1;
