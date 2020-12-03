@@ -3019,7 +3019,9 @@ class SPMcontrol():
                         if aoff > 0:
                                 xarray = append (xarray, fromfile(sr, dtype('<i4'), int(num/4)))
                         else:
-                                xarray = fromfile(sr, dtype('<i4'), int(num/4))
+                                tmpbuf = sr.read(num)
+                                xarray = frombuffer(tmpbuf, dtype('<i4'), int(num/4))
+                                #xarray = fromfile(sr, dtype('<i4'), int(num/4))
                         sr.close ()
 
                         sr = open (self.sr_dev_path, "rb")
@@ -3027,7 +3029,9 @@ class SPMcontrol():
                         if aoff > 0:
                                 yarray = append(yarray, fromfile(sr, dtype('<i4'), int(num/4)))
                         else:
-                                yarray = fromfile(sr, dtype('<i4'), int(num/4))
+                                tmpbuf = sr.read(num)
+                                yarray = frombuffer(tmpbuf, dtype('<i4'), int(num/4))
+                                #yarray = fromfile(sr, dtype('<i4'), int(num/4))
                         sr.close ()
 
                         aoff = aoff+BL
@@ -3044,26 +3048,35 @@ class SPMcontrol():
                         self.time_of_last_stamp = 0
                         self.ring_buffer_position_last = -1
                 aS1 = self.RECORDER_VARS[ii_Signal1]
+
                 sr = open (self.sr_dev_path, "rb")
                 os.lseek (sr.fileno(), aS1+4*0x7ffff, 1) # atomic read for critical value
-                tmparray = fromfile(sr, dtype('<i4'), 1)
+                tmpbuf = sr.read(4)
+                tmparray = frombuffer(tmpbuf, dtype('<i4'), 1)
+                #tmparray = fromfile(sr, dtype('<i4'), 1)
                 sr.close ()
                 deci = tmparray[0]
-
+                
                 start = deci-n
                 if start > 0:
                         sr = open (self.sr_dev_path, "rb")
                         os.lseek (sr.fileno(), aS1+((0x80000+start)<<2), 0) # non atomic reads for big data!
-                        tmparray = fromfile(sr, dtype('<i4'), n)
+                        tmpbuf = sr.read(4*n)
+                        tmparray = frombuffer(tmpbuf, dtype('<i4'), n)
+                        #tmparray = fromfile(sr, dtype('<i4'), n)
                         sr.close ()
                 else:
                         n1 = -start
                         n2 = n-n1
                         sr = open (self.sr_dev_path, "rb")
                         os.lseek (sr.fileno(), aS1+((0x80000+0x40000-n1)<<2), 0) # non atomic reads for big data!
-                        tmparray1 = fromfile(sr, dtype('<i4'), n1)
+                        tmpbuf = sr.read(4*n)
+                        tmparray1 = frombuffer(tmpbuf, dtype('<i4'), n)
+                        #tmparray1 = fromfile(sr, dtype('<i4'), n1)
                         os.lseek (sr.fileno(), aS1+((0x80000+n2)<<2), 0) # non atomic reads for big data!
-                        tmparray2 = fromfile(sr, dtype('<i4'), n2)
+                        tmpbuf = sr.read(4*n)
+                        tmparray2 = frombuffer(tmpbuf, dtype('<i4'), n)
+                        #tmparray2 = fromfile(sr, dtype('<i4'), n2)
                         sr.close ()
                         tmparray = concatenate((tmparray1, tmparray2), axis=0)
 
@@ -3079,7 +3092,8 @@ class SPMcontrol():
                                         for i in range(n-(deci-self.ring_buffer_position_last), n):
                                                 recorder.write(str(tmparray[i]) + "\n")
                                 else:
-                                        for i in range(n-(deci+0x40000-self.ring_buffer_position_last), n):
+                                        #for i in range(n-(deci+0x40000-self.ring_buffer_position_last), n):
+                                        for i in range(n-(deci+n+1-self.ring_buffer_position_last), n):
                                                 recorder.write(str(tmparray[i]) + " L\n")
                 self.ring_buffer_position_last = deci
                 return tmparray.astype(float)
