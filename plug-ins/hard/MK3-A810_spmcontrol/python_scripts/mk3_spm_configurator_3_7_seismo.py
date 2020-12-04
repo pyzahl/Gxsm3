@@ -1662,7 +1662,7 @@ class RecorderDeci():
                 table.attach(self.M2scale, c, c+1, tr, tr+1)
                 tr=tr+1
 
-                lab = Gtk.Label( label="Threshold")
+                lab = Gtk.Label( label="Threshold Always")
                 table.attach(lab, c, c+1, tr, tr+1)
                 tr=tr+1
                 self.T1 = Gtk.Entry()
@@ -1670,11 +1670,22 @@ class RecorderDeci():
                 table.attach(self.T1, c, c+1, tr, tr+1)
                 tr=tr+1
 
+                lab = Gtk.Label( label="Auto Threshold Factor")
+                table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
+                self.TA = Gtk.Entry()
+                self.TA.set_text("1.1")
+                table.attach(self.TA, c, c+1, tr, tr+1)
+                tr=tr+1
+
                 self.lastevent = parent.mk3spm.read_recorder_deci (4097, "", True)
                 self.logfile = 'mk3_S0_py_recorder_deci256.log'
                 self.logcount = 5
                 self.count = 100
-                
+
+                self.maxlist = ones(256)*0.1
+                self.thauto = 0.2
+                self.thi = 0
 
                 def update_recorder():
                         try:
@@ -1691,6 +1702,11 @@ class RecorderDeci():
                                 m1th = float(self.T1.get_text())
                         except ValueError:
                                 m1th = 0.0
+
+                        try:
+                                m1tha = float(self.TA.get_text())
+                        except ValueError:
+                                m1tha = 1.1
 
                         dscale = 256.*32768./10. 
                                 
@@ -1712,14 +1728,23 @@ class RecorderDeci():
                         scope.set_data (rec/m1scale_div, vel/m2scale_div)
 
                         if m1th >= 0.0:
-                                ma = rec.max()
-                                mi = rec.min()
+                                ma = rec[-512:].max()
+                                mi = rec[-512:].min()
+                                peak = max(abs(ma), abs(mi))
+                                
                                 t=datetime.datetime.utcnow()
-                                scope.set_info(["max: "+str(ma), "min: "+str(mi)])
+                                scope.set_info(["max: "+str(ma), "min: "+str(mi), "thauto: "+str(self.thauto)])
+                                
                                 if 0.01*ma < 5.0:
-                                    if abs(ma) >= m1th or abs(mi) >= m1th:
-                                        print ("### Threashold Triggered at: " + str(t) + " max: "+str(ma) + " min: "+str(mi) + "\n")
-                                        self.log_event (t, 0.01*ma, 0.01*mi, 0.01*rec, vel, dt)
+                                    self.maxlist[self.thi]=peak
+                                    self.thi = (self.thi+1)%256
+                                    self.thauto = median(self.maxlist)*m1tha
+                                
+                                    if peak >= m1th or peak >= self.thauto :
+                                        #print(self.maxlist)
+                                        print(sort(self.maxlist))
+                                        print ("### Auto Threashold " + str(self.thauto) + " Triggered at: " + str(t) + " max: "+str(ma) + " min: "+str(mi) + "\n")
+                                        self.log_event (t, 0.01*ma, 0.01*mi, 0.01*rec[-512:], vel[-512:], dt)
                                 if abs (ma) > m1th or abs (mi) > m1th:
                                         self.logfile = 'mk3_S0_py_recorder_deci256.log'
                                         if m1th > 0.0 and self.logcount == 0:
@@ -1795,11 +1820,11 @@ class RecorderDeci():
                     for a,v in zip(acc, vel):
                         t = t + datetime.timedelta(seconds=dt)
                         deci=deci+1
-                        if a > am:
+                        if a > am and abs(a) < 5.0:
                             am=a
-                        if abs(v) > vm:
+                        if abs(v) > vm and abs(v) < 10.0:
                             vm = abs(v)
-                        if deci >= 128:
+                        if deci >= 64:
                             deci = 0
                             json_body.append({
                                 "measurement": "data",
