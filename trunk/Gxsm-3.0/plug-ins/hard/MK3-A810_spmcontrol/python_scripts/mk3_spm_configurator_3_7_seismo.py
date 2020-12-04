@@ -52,7 +52,7 @@ from scopewidget_3_7 import *
 import datetime
 
 from influxdb import InfluxDBClient
-influx_client = InfluxDBClient(host='localhost', port=8086)
+influxdb_client = InfluxDBClient(host='localhost', port=8086)
 
 OSZISCALE = 0.66
 
@@ -1609,7 +1609,8 @@ class RecorderDeci():
         name  = "S0 Deci Recorder"
 
         ### connect to influxdb, check db
-        dblist=influx_client.get_list_database()
+        ##influxdb_client.drop_database('seismo')
+        dblist=influxdb_client.get_list_database()
         create_db=True
         for db in dblist:
             print (db)
@@ -1618,8 +1619,8 @@ class RecorderDeci():
                 break
             #[{'name': 'telegraf'}, {'name': '_internal'}, {'name': 'pyexample'}]
         if create_db:
-            influx_client.create_database('seismo')
-        influx_client.switch_database('seismo')
+            influxdb_client.create_database('seismo')
+        influxdb_client.switch_database('seismo')
         ###
         
         if name not in wins:
@@ -1665,7 +1666,7 @@ class RecorderDeci():
                 table.attach(lab, c, c+1, tr, tr+1)
                 tr=tr+1
                 self.T1 = Gtk.Entry()
-                self.T1.set_text("0.0")
+                self.T1.set_text("0.2")
                 table.attach(self.T1, c, c+1, tr, tr+1)
                 tr=tr+1
 
@@ -1674,6 +1675,7 @@ class RecorderDeci():
                 self.logcount = 5
                 self.count = 100
                 
+
                 def update_recorder():
                         try:
                                 m1scale_div = float(self.M1scale.get_text())
@@ -1693,7 +1695,7 @@ class RecorderDeci():
                         dscale = 256.*32768./10. 
                                 
                         rec = parent.mk3spm.read_recorder_deci (4097, self.logfile)/dscale
-                        vel = zeros(4098)
+                        vel = zeros(4097)
                         if True:
                             vint=0.0
                             dt=256.0/150000.0
@@ -1704,18 +1706,25 @@ class RecorderDeci():
                                 vint = vint + 9.81*(a-om)*dt
                                 vel[i] = vint
                                 i=i+1
+                                if i>4096:
+                                    break
 
                         scope.set_data (rec/m1scale_div, vel/m2scale_div)
 
                         if m1th >= 0.0:
                                 ma = rec.max()
                                 mi = rec.min()
+                                t=datetime.datetime.utcnow()
                                 scope.set_info(["max: "+str(ma), "min: "+str(mi)])
+                                if 0.01*ma < 5.0:
+                                    if abs(ma) >= m1th or abs(mi) >= m1th:
+                                        print ("### Threashold Triggered at: " + str(t) + " max: "+str(ma) + " min: "+str(mi) + "\n")
+                                        self.log_event (t, 0.01*ma, 0.01*mi, 0.01*rec, vel, dt)
                                 if abs (ma) > m1th or abs (mi) > m1th:
                                         self.logfile = 'mk3_S0_py_recorder_deci256.log'
                                         if m1th > 0.0 and self.logcount == 0:
                                                 with open(self.logfile, "a") as recorder:
-                                                        recorder.write("### Threashold Triggered at: " + str(datetime.datetime.now()) + " max: "+str(ma) + " min: "+str(mi) + "\n")
+                                                        recorder.write("### Threashold Triggered at: " + str(t) + " max: "+str(ma) + " min: "+str(mi) + "\n")
                                                         self.count = 0
                                                         self.lastevent = rec
                                         self.logcount = 25*5
@@ -1736,22 +1745,7 @@ class RecorderDeci():
                         
                         return self.run
 
-                def log_data ():
-                    json_body = [
-                        {
-                            "measurement": "event",
-                            "tags": {
-                                "user": "percy",
-                                "accId": "Z-10264"
-                            },
-                            "time": str(datetime.datetime.now()),
-                            "fields": {
-                                "acceleration": 4096
-                            }
-                        }
-                    ]
-                    influx_client.write_points(json_body)
-                    
+                   
                 def stop_recorder (win, event=None):
                         print ("STOP, hide.")
                         win.hide()
@@ -1779,6 +1773,51 @@ class RecorderDeci():
                 
         parent.wins[name].show_all()
 
+    def log_event (self, t, max, min, acc, vel, dt):
+                    json_body = [
+                        {
+                            "measurement": "event",
+                            "tags": {
+                                "user": "percy",
+                                "accId": "Z-10264"
+                            },
+                            "time": str(t),
+                            "fields": {
+                                "max": max,
+                                "min": min
+                            }
+                        }
+                    ]
+                    t = t - datetime.timedelta(seconds=dt*4096)
+                    deci=0
+                    am=0.
+                    vm=0.
+                    for a,v in zip(acc, vel):
+                        t = t + datetime.timedelta(seconds=dt)
+                        deci=deci+1
+                        if a > am:
+                            am=a
+                        if abs(v) > vm:
+                            vm = abs(v)
+                        if deci >= 128:
+                            deci = 0
+                            json_body.append({
+                                "measurement": "data",
+                                "tags": {
+                                    "user": "percy",
+                                    "accId": "Z-10264"
+                                },
+                                "time": str(t),
+                                "fields": {
+                                    "acc": am,
+                                    "vel": vm
+                                }
+                            })
+                            am=0.0
+                            vm=0.0
+                    influxdb_client.write_points(json_body)
+                    #print(json_body)
+        
 
 class DiodeTPlotter():
         # X: 7=time, plotting Monitor Taps 20,21,0,1
@@ -3440,10 +3479,10 @@ class Mk3_Configurator:
 
     ##### fire up default background updates then run main gtk loop
     def main(self):
-            GLib.timeout_add (timeout_DSP_status_reading, self.mk3spm.get_status)        
-            GLib.timeout_add (timeout_DSP_signal_lookup_reading, self.mk3spm.read_signal_lookup, 1)
+        #GLib.timeout_add (timeout_DSP_status_reading, self.mk3spm.get_status)        
+        #GLib.timeout_add (timeout_DSP_signal_lookup_reading, self.mk3spm.read_signal_lookup, 1)
 
-            Gtk.main()
+        Gtk.main()
 
 
 ########################################
