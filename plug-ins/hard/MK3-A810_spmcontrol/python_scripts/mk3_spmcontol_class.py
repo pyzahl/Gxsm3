@@ -3093,7 +3093,7 @@ class SPMcontrol():
                                                 recorder.write(str(tmparray[i]) + "\n")
                                 else:
                                         #for i in range(n-(deci+0x40000-self.ring_buffer_position_last), n):
-                                        for i in range(n-(deci+n+1-self.ring_buffer_position_last), n):
+                                        for i in range(n-(deci+n-self.ring_buffer_position_last), n):
                                                 recorder.write(str(tmparray[i]) + " L\n")
                 self.ring_buffer_position_last = deci
                 return tmparray.astype(float)
