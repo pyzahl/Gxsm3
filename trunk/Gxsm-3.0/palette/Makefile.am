@@ -18,6 +18,7 @@ palette_DATA = \
 	omicronpal.pnm \
 	redpal.pnm \
 	romanflagpal.pnm \
+	parula-step-cm.pnm \
 	parula.pnm \
 	cm-a.pnm \
 	cm-b.pnm \
