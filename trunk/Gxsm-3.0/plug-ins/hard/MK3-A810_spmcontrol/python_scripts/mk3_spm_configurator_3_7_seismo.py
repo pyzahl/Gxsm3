@@ -1645,7 +1645,7 @@ class RecorderDeci():
                 v.pack_start (table, True, True, 0)
                 tr=0
                 c=0
-                lab = Gtk.Label( label="CH1: %s"%Xsignal[SIG_NAME] + ", Scale in %s/div"%Xsignal[SIG_UNIT])
+                lab = Gtk.Label( label="CH1: Acc %s"%Xsignal[SIG_NAME] + ", Scale in %s/div"%Xsignal[SIG_UNIT])
 
                 table.attach(lab, c, c+1, tr, tr+1)
                 tr=tr+1
@@ -1654,12 +1654,28 @@ class RecorderDeci():
                 table.attach(self.M1scale, c, c+1, tr, tr+1)
                 tr=tr+1
 
-                lab = Gtk.Label( label="CH2: %s"%Ysignal[SIG_NAME] + ", Scale in %s/div"%Ysignal[SIG_UNIT])
+                lab = Gtk.Label( label="CH2: Vel, Scale in %s/div"%Ysignal[SIG_UNIT])
                 table.attach(lab, c, c+1, tr, tr+1)
                 tr=tr+1
                 self.M2scale = Gtk.Entry()
-                self.M2scale.set_text("1.0")
+                self.M2scale.set_text("0.01")
                 table.attach(self.M2scale, c, c+1, tr, tr+1)
+                tr=tr+1
+
+                lab = Gtk.Label( label="CH3: Acc Event, Scale in %s/div"%Ysignal[SIG_UNIT])
+                table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
+                self.M3scale = Gtk.Entry()
+                self.M3scale.set_text("0.1")
+                table.attach(self.M3scale, c, c+1, tr, tr+1)
+                tr=tr+1
+
+                lab = Gtk.Label( label="CH4: Vel Event, Scale in %s/div"%Ysignal[SIG_UNIT])
+                table.attach(lab, c, c+1, tr, tr+1)
+                tr=tr+1
+                self.M4scale = Gtk.Entry()
+                self.M4scale.set_text("0.01")
+                table.attach(self.M4scale, c, c+1, tr, tr+1)
                 tr=tr+1
 
                 lab = Gtk.Label( label="Threshold Always")
@@ -1674,11 +1690,12 @@ class RecorderDeci():
                 table.attach(lab, c, c+1, tr, tr+1)
                 tr=tr+1
                 self.TA = Gtk.Entry()
-                self.TA.set_text("1.1")
+                self.TA.set_text("1.5")
                 table.attach(self.TA, c, c+1, tr, tr+1)
                 tr=tr+1
 
                 self.lastevent = parent.mk3spm.read_recorder_deci (4097, "", True)
+                self.lasteventvel = parent.mk3spm.read_recorder_deci (4097, "", True) # dummy fill
                 self.logfile = 'mk3_S0_py_recorder_deci256.log'
                 self.logcount = 5
                 self.count = 100
@@ -1687,6 +1704,11 @@ class RecorderDeci():
                 self.thauto = 0.2
                 self.thi = 0
 
+                self.event_tics = 5*60
+
+                self.t_last=datetime.datetime.utcnow()
+                self.t_last_ft=datetime.datetime.utcnow()
+                
                 def update_recorder():
                         try:
                                 m1scale_div = float(self.M1scale.get_text())
@@ -1699,6 +1721,16 @@ class RecorderDeci():
                                 m2scale_div = 1.0
 
                         try:
+                                m3scale_div = float(self.M3scale.get_text())
+                        except ValueError:
+                                m3scale_div = 1.0
+
+                        try:
+                                m4scale_div = float(self.M4scale.get_text())
+                        except ValueError:
+                                m4scale_div = 1.0
+
+                        try:
                                 m1th = float(self.T1.get_text())
                         except ValueError:
                                 m1th = 0.0
@@ -1708,50 +1740,70 @@ class RecorderDeci():
                         except ValueError:
                                 m1tha = 1.1
 
-                        dscale = 256.*32768./10. 
+                        dscale = 256.*32768./10.   ## decimation 256 and DAC value to volt
                                 
-                        rec = parent.mk3spm.read_recorder_deci (4097, self.logfile)/dscale
-                        vel = zeros(4097)
-                        if True:
+                        rec = parent.mk3spm.read_recorder_deci (4096, self.logfile)/dscale  ## raw reading in Volts
+                        if rec.size != 4096:
+                            print ("rec buffer size error. size=", rec.size)
+                            return self.run
+                        
+                        acc = rec ## in mg  ------  [1000 V/g] 1V = 1mg ** MATCH PREAMPLIFIER SETTING
+                        vel = zeros(4096)  ## in mm/s
+                        dt=256.0/150000.0
+                        if abs(acc.max()) < 9.0:
                             vint=0.0
-                            dt=256.0/150000.0
-                            om = sum(rec, axis=0)/4097.0
+                            om = sum(acc, axis=0)/4096.0  # floating actual zero or center value
                             i=0
-                            for a in rec:
-                                om = om*0.99+0.01*a
-                                vint = vint + 9.81*(a-om)*dt
+                            for a in acc:
+                                om = om*0.99+0.01*a ## low pass
+                                vint = vint + 9.807*(a-om)*dt
                                 vel[i] = vint
                                 i=i+1
                                 if i>4096:
                                     break
 
-                        scope.set_data (rec/m1scale_div, vel/m2scale_div)
+                        else:
+                              self.run ## skip, data error
+                              
+                        scope.set_data (acc/m1scale_div, vel/m2scale_div)
 
                         if m1th >= 0.0:
-                                ma = rec[-512:].max()
-                                mi = rec[-512:].min()
+                                ma = acc[-512:].max()
+                                mi = acc[-512:].min()
                                 peak = max(abs(ma), abs(mi))
                                 
                                 t=datetime.datetime.utcnow()
                                 scope.set_info(["max: "+str(ma), "min: "+str(mi), "thauto: "+str(self.thauto)])
                                 
-                                if 0.01*ma < 5.0:
+                                if peak < 9.0:
                                     self.maxlist[self.thi]=peak
                                     self.thi = (self.thi+1)%256
                                     self.thauto = median(self.maxlist)*m1tha
                                 
-                                    if peak >= m1th or peak >= self.thauto :
+                                    if peak >= m1th or peak >= self.thauto or self.logcount > 0:
                                         #print(self.maxlist)
                                         print(sort(self.maxlist))
-                                        print ("### Auto Threashold " + str(self.thauto) + " Triggered at: " + str(t) + " max: "+str(ma) + " min: "+str(mi) + "\n")
-                                        self.log_event (t, 0.01*ma, 0.01*mi, 0.01*rec[-512:], vel[-512:], dt)
-                                if abs (ma) > m1th or abs (mi) > m1th:
+                                        print ("### Auto Threashold " + str(self.thauto) + " Triggered at: " + str(t) + " max: "+str(ma) + " min: "+str(mi) + " #" + str(self.logcount)+"\n")
+                                        if self.logcount > 0:
+                                            n=1024
+                                        else:
+                                            n=4096
+                                        self.log_event_data (t, ma, mi, vel.max(), acc[-n:], vel[-n:], dt, self.thauto, 2)
+                                        self.log_rft_data (t, dt, acc, vel)
+                                    else:
+                                        self.event_tics = self.event_tics-1
+                                        if self.event_tics < 1:
+                                            self.event_tics = 5*60
+                                            self.log_event_only (t, peak, mi, vel.max(), self.thauto)
+
+                                if peak > m1th or peak >= self.thauto:
                                         self.logfile = 'mk3_S0_py_recorder_deci256.log'
                                         if m1th > 0.0 and self.logcount == 0:
                                                 with open(self.logfile, "a") as recorder:
                                                         recorder.write("### Threashold Triggered at: " + str(t) + " max: "+str(ma) + " min: "+str(mi) + "\n")
                                                         self.count = 0
-                                                        self.lastevent = rec
+                                                        self.lastevent = acc
+                                                        self.lasteventvel = vel
                                         self.logcount = 25*5
                                         self.count = self.count + 1
                                         if self.count == 24:
@@ -1761,7 +1813,7 @@ class RecorderDeci():
                                         if self.logcount > 0:
                                                 self.logcount = self.logcount - 1
                                                 scope.set_flash ("Threashold Detected, Recording... " + str(self.logcount))
-                                                scope.set_data_with_uv (rec/m1scale_div, vel/m2scale_div, zeros(0), self.lastevent/m1scale_div, self.lastevent/m2scale_div)
+                                                scope.set_data_with_uv (rec/m1scale_div, vel/m2scale_div, zeros(0), self.lastevent/m3scale_div, self.lasteventvel/m4scale_div)
                                         else:
                                                 if self.logfile != '':
                                                         self.logfile = ''
@@ -1798,7 +1850,7 @@ class RecorderDeci():
                 
         parent.wins[name].show_all()
 
-    def log_event (self, t, max, min, acc, vel, dt):
+    def log_event_only (self, t, max, min, velmax, thauto):
                     json_body = [
                         {
                             "measurement": "event",
@@ -1809,22 +1861,46 @@ class RecorderDeci():
                             "time": str(t),
                             "fields": {
                                 "max": max,
-                                "min": min
+                                "min": min,
+                                "velmax": velmax,
+                                "thauto": thauto
                             }
                         }
                     ]
-                    t = t - datetime.timedelta(seconds=dt*4096)
+                    influxdb_client.write_points(json_body)
+
+    def log_event_data (self, t, max, min, velmax, acc, vel, dt, thauto, decimation=16):
+                    json_body = [
+                        {
+                            "measurement": "event",
+                            "tags": {
+                                "user": "percy",
+                                "accId": "Z-10264"
+                            },
+                            "time": str(t),
+                            "fields": {
+                                "max": max,
+                                "min": min,
+                                "velmax": velmax,
+                                "thauto": thauto
+                            }
+                        }
+                    ]
+                    t = t - datetime.timedelta(seconds=dt*acc.size)
                     deci=0
-                    am=0.
-                    vm=0.
                     for a,v in zip(acc, vel):
                         t = t + datetime.timedelta(seconds=dt)
-                        deci=deci+1
-                        if a > am and abs(a) < 5.0:
-                            am=a
-                        if abs(v) > vm and abs(v) < 10.0:
+                        if deci==0:
+                            am = a
                             vm = abs(v)
-                        if deci >= 64:
+                        deci=deci+1
+                        
+                        if abs(a) < 10.0:
+                            am = am*0.8+0.2*a
+                        if abs(v) < 10.0:
+                            vm = vm*0.8+0.2*abs(v)
+                            
+                        if deci >= decimation and self.t_last < t:
                             deci = 0
                             json_body.append({
                                 "measurement": "data",
@@ -1838,11 +1914,116 @@ class RecorderDeci():
                                     "vel": vm
                                 }
                             })
-                            am=0.0
-                            vm=0.0
                     influxdb_client.write_points(json_body)
+                    self.t_last = t
                     #print(json_body)
-        
+
+    def log_rft_data (self, t, dt, acc, vel):
+        if t < self.t_last_ft+datetime.timedelta(seconds=4096*dt):
+            return
+        self.t_last_ft=t
+        acc_rft = abs(fft.rfft(acc))/acc.size
+        acc_rft = acc_rft[1:int(acc.size/2)+1]
+        vel_rft = abs(fft.rfft(vel))/vel.size
+        vel_rft = vel_rft[1:int(vel.size/2)+1]
+
+        N  = acc.size/2
+        freqs = arange(0,N)/N/dt/2
+                
+        json_body = []
+        i1=0
+        iN=1
+        NN=128
+        NP=int(N/2)
+        lb=1.025
+        iNN=lb**NN
+        for i in range(0,NN):
+            i2=int(NP*(iN-1)/iNN)
+            json_body.append({
+                "measurement": "rft_data",
+                "tags": {
+                    "user": "percy",
+                    "accId": "Z-10264",
+                    "frq": '{:05.1f}'.format(freqs[int((i1+i2)/2)])
+                },
+                "time": str(t-datetime.timedelta(seconds=2048*dt)),
+                "fields": {
+                    "mag_acc": acc_rft[i1:i2+1].max(),
+                    "mag_vel": vel_rft[i1:i2+1].max()
+                }
+            })
+            iN=iN*lb
+            i1=i2
+        #print(json_body)
+        influxdb_client.write_points(json_body)
+
+
+    def lin_rft_data (self, t, dt, acc, vel):
+        if t < self.t_last_ft+datetime.timedelta(seconds=4096*dt):
+            return
+        self.t_last_ft=t
+        acc_rft = abs(fft.rfft(acc))/acc.size
+        acc_rft = acc_rft[1:int(acc.size/2)+1]
+        vel_rft = abs(fft.rfft(vel))/vel.size
+        vel_rft = vel_rft[1:int(vel.size/2)+1]
+        rftsize = acc.size/2
+        N = 128
+        dec = int(rftsize/2/N)
+        acc_rft = acc_rft.reshape(-1,dec).max(1)
+        dec = int(rftsize/2/N)
+        vel_rft = vel_rft.reshape(-1,dec).max(1)
+        freqs = arange(0,N)
+        json_body = []
+        for f in freqs:
+            json_body.append({
+                "measurement": "rft_data",
+                "tags": {
+                    "user": "percy",
+                    "accId": "Z-10264",
+                    "frq": '{:05.1f}'.format((f+1)/(N/2)/(dt*dec))
+                },
+                "time": str(t-datetime.timedelta(seconds=2048*dt)),
+                "fields": {
+                    "mag_acc": acc_rft[f],
+                    "mag_vel": vel_rft[f]
+                }
+            })
+        #print(json_body)
+        influxdb_client.write_points(json_body)
+
+
+    def rft_peaks (self, t, dt, acc, vel):
+        if t < self.t_last_ft+datetime.timedelta(seconds=4096*dt):
+            return
+        self.t_last_ft=t
+        np = 64
+        acc_rft = abs(fft.rfft(acc[0:4096]))/4096   #acc.size
+        vel_rft = abs(fft.rfft(vel[0:4096]))/4096   #vel.size
+        peaks_tmp = argpartition (-acc_rft, np)
+        peaks = peaks_tmp[:np]
+        f_peaks = peaks/acc.size/dt
+        json_body = []
+        for f,peak in zip(f_peaks, peaks):
+            if peak < 10 or peak > size(data)-10:
+                continue
+            if acc_rft[peak] < amax(data[(peak-10):(peak+10)]):
+                continue
+        #    print(f, acc_rft[peak])
+            json_body.append({
+                "measurement": "rft_peaks",
+                "tags": {
+                    "user": "percy",
+                    "accId": "Z-10264"
+                },
+                "time": str(t),
+                "labels": {
+                    "frq": f,
+                },
+                "fields": {
+                    "acc": acc_rft[peak]
+                }
+            })
+        influxdb_client.write_points(json_body)
 
 class DiodeTPlotter():
         # X: 7=time, plotting Monitor Taps 20,21,0,1

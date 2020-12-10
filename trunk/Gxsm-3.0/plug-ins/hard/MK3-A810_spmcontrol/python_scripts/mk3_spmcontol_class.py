@@ -3071,11 +3071,11 @@ class SPMcontrol():
                         sr = open (self.sr_dev_path, "rb")
                         os.lseek (sr.fileno(), aS1+((0x80000+0x40000-n1)<<2), 0) # non atomic reads for big data!
                         tmpbuf = sr.read(4*n)
-                        tmparray1 = frombuffer(tmpbuf, dtype('<i4'), n)
+                        tmparray1 = frombuffer(tmpbuf, dtype('<i4'), n1)
                         #tmparray1 = fromfile(sr, dtype('<i4'), n1)
                         os.lseek (sr.fileno(), aS1+((0x80000+n2)<<2), 0) # non atomic reads for big data!
                         tmpbuf = sr.read(4*n)
-                        tmparray2 = frombuffer(tmpbuf, dtype('<i4'), n)
+                        tmparray2 = frombuffer(tmpbuf, dtype('<i4'), n2)
                         #tmparray2 = fromfile(sr, dtype('<i4'), n2)
                         sr.close ()
                         tmparray = concatenate((tmparray1, tmparray2), axis=0)
