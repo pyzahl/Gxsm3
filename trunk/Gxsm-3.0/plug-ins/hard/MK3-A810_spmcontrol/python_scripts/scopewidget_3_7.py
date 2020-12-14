@@ -476,7 +476,9 @@ class Scope(Gtk.DrawingArea):
                 else:
                     self.plot_xt (cr, self.par.Xdata, lwp, 1., 0.925, 0., alpha) # YELLOW
             if self.ftX:
-                Xdata_rft_new = abs(fft.rfft(self.par.Xdata))/nx
+                HW=hanning(self.par.Xdata.size)
+                Xdata_rft_new = abs(fft.rfft(HW*self.par.Xdata))/(nx/2)
+                # Xdata_rft_new = abs(fft.rfft(self.par.Xdata))/nx
                 if self.Xdata_rft.size != Xdata_rft_new.size:
                     self.Xdata_rft = Xdata_rft_new
                 else:
@@ -495,7 +497,9 @@ class Scope(Gtk.DrawingArea):
                     else:
                         self.plot_xt (cr, self.par.Ydata, lwp, 1., 0.075, 0., alpha) # RED
                 if self.ftY:
-                    Ydata_rft_new = abs(fft.rfft(self.par.Ydata))/ny
+                    HW=hanning(self.par.Xdata.size)
+                    Ydata_rft_new = abs(fft.rfft(HW*self.par.Ydata))/(ny/2)
+                    # Ydata_rft_new = abs(fft.rfft(self.par.Ydata))/ny
                     if self.Ydata_rft.size != Ydata_rft_new.size:
                         self.Ydata_rft = Ydata_rft_new
                     else:

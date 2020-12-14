@@ -1922,9 +1922,10 @@ class RecorderDeci():
         if t < self.t_last_ft+datetime.timedelta(seconds=4096*dt):
             return
         self.t_last_ft=t
-        acc_rft = abs(fft.rfft(acc))/acc.size
+        HW = hanning(acc.size)
+        acc_rft = abs(fft.rfft(HW*acc))/acc.size
         acc_rft = acc_rft[1:int(acc.size/2)+1]
-        vel_rft = abs(fft.rfft(vel))/vel.size
+        vel_rft = abs(fft.rfft(HW*vel))/vel.size
         vel_rft = vel_rft[1:int(vel.size/2)+1]
 
         N  = acc.size/2
