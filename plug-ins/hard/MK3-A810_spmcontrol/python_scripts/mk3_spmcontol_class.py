@@ -3040,7 +3040,7 @@ class SPMcontrol():
                 return [xarray.astype(float)[::-1], yarray.astype(float)[::-1]]
 
         # must call first with init=True
-        def read_recorder_deci(self, n=4097, recorder_file="", init=False):
+        def read_recorder_deci(self, n=4096, recorder_file="", init=False):
                 if n < 0 or n > 0x40000:
                         return 0
                 if init:
@@ -3057,6 +3057,16 @@ class SPMcontrol():
                 sr.close ()
                 deci = tmparray[0]
                 
+                #
+                #sr = open (self.sr_dev_path, "rb")
+                #os.lseek (sr.fileno(), aS1+((0x80000)<<2), 0) # non atomic reads for big data!
+                #tmpbuf = sr.read(4*n)
+                #tmparrayR = frombuffer(tmpbuf, dtype('<i4'), n)
+                #tmparray = concatenate((tmparrayR[deci:n], tmparrayR[0:deci]), axis=0)
+                #
+
+
+                # -- ring buffer is LARGER (=0x40000) than 4096 default!
                 start = deci-n
                 if start > 0:
                         sr = open (self.sr_dev_path, "rb")
@@ -3089,12 +3099,18 @@ class SPMcontrol():
 
                                 recorder.write("# "+str(self.ring_buffer_position_last) + " ... " + str(deci) + "\n")
                                 if self.ring_buffer_position_last < deci:
-                                        for i in range(n-(deci-self.ring_buffer_position_last), n):
-                                                recorder.write(str(tmparray[i]) + "\n")
+                                        if n-(deci-self.ring_buffer_position_last) >= 0:
+                                                for i in range(n-(deci-self.ring_buffer_position_last), n):
+                                                        recorder.write(str(tmparray[i]) + "\n")
+                                        else:
+                                                recorder.write("#EEi\n")
                                 else:
-                                        #for i in range(n-(deci+0x40000-self.ring_buffer_position_last), n):
-                                        for i in range(n-(deci+n-self.ring_buffer_position_last), n):
-                                                recorder.write(str(tmparray[i]) + " L\n")
+                                        if n-(deci+n-self.ring_buffer_position_last) >= 0:
+                                                #for i in range(n-(deci+0x40000-self.ring_buffer_position_last), n):
+                                                for i in range(n-(deci+n-self.ring_buffer_position_last), n):
+                                                        recorder.write(str(tmparray[i]) + " L\n")
+                                        else:
+                                                recorder.write("#EEi\n")
                 self.ring_buffer_position_last = deci
                 return tmparray.astype(float)
 
