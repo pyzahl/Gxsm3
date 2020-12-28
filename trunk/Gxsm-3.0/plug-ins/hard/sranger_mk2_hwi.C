@@ -154,8 +154,7 @@ Further the latest experimental release revises the feedback loop
 configuration and allows up to four signals (provided on ADC0$\dots$3)
 to be user configurable as feedback sources using linear or
 logarithmic signal transformations and even can be mixed and weighted
-in different ways via the gains $G_i$ as illustrated in Fig.
-\ref{fig:SR-DSP-MK3-mixer}. It also includes a special ``FUZZY'' mix mode for
+in different ways via the gains $G_i$ as illustrated in Fig.~\ref{fig:SR-DSP-MK3-mixer}. It also includes a special ``FUZZY'' mix mode for
 signal level depended enabling of a particular chanqnel only if its
 signal is beyond a given level; only the ``amount beyond'' is used for
 $\Delta_i$ computation.
@@ -216,7 +215,7 @@ computed on the DSP according to:
 
 \[ \tilde{\mbox{I}}_n = q \tilde{\mbox{I}}_{n-1} + (1-q) \mbox{I}_n \]
 
-Fig. \ref{fig:SR-DSP-MK3-IIR-plot-q} illustrates the IIR filter response to a
+Fig.~\ref{fig:SR-DSP-MK3-IIR-plot-q} illustrates the IIR filter response to a
 logarithmic steepening stair case test input signal. This is a live
 IIR performance demonstration utilizing the Gxsm Vector Probe Engine
 itself and having Gxsm and the MK2-A810 set up in a
@@ -736,7 +735,7 @@ configured on the \GxsmEntry{Config} folder.
 
 To configure the mover output signal type and channles select the ``Config'' tab. Select the ``Curve Mode'', normally a simple Sawtooth will do it.
 Then select the output configuration meeting your needs best. The MK3 ``Signal Master'' allows fully custom
-assignment of the generic ``X'' and ``Y'' mover actions to any available output channel. See below  Wave$[0,1]$ out on  and Fig.~\ref{fig:screenshot:SR-DSP-MK3-MoverConfig}.
+assignment of the generic ``X'' and ``Y'' mover actions to any available output channel. See below  Wave$[0,1]$ out on  and Fig.~\ref{fig:screenshot:SR-DSP-MK3-Mover-config}.
 
 \GxsmScreenShot{SR-DSP-MK3-Mover-config}{GXSM SR DSP configuration of SRanger (MK2/3Pro) inertial mover driver wave generate engine.}
 
@@ -745,7 +744,7 @@ More complex wave forms are available such as:
 \item[Wave: Sawtooth] Just a simple linear ramp and then a jump back to the initial value.
 \item[Wave: Sine] For testing and maybe some inch worm drive.
 \item[Wave: Cyclo, Cyclo+, Cyclo-, Inv Cyclo+, Inv Cyclo-] A cycloidal wave function (see \\ http://dx.doi.org/10.1063/1.1141450) should provide an even more abrupt change of the motion direction than the jump of the sawtooth and therefore work with lower amplitudes (or at lower temperatures) better. Depending on the option choosen, the signal is just limited to positive or negative values.
-\item[Wave: KOALA] Intendet to be used with a KOALA drive (see http://dx.doi.org/10.1063/1.3681444). This wave form will require signal at two output channels with a phase shift of $\pi$. The wave form is shown in figure \ref{fig:SR-DSP-MK3-Mover-Koala-waveform}.
+\item[Wave: KOALA] Intendet to be used with a KOALA drive (see http://dx.doi.org/10.1063/1.3681444). This wave form will require signal at two output channels with a phase shift of $\pi$. The wave form is shown in Fig.~\ref{fig:SR-DSP-MK3-Mover-Koala-waveform}.
 \GxsmGraphic{SR-DSP-MK3-Mover-Koala-waveform}{2}{Wave form used to operate a KOALA drive STM.}
 \item[Wave: Besocke] Intendet to be used with a Besocke style STM (see https://doi.org/10.1016/0039-6028(87)90151-8): 3 piezos walk up and down a ramp. In this particular case, the piezos have three segments at their outer side (u, v, w). This coarse motion will require signals at three output channels. These signals vary for different directions of movement. The fundamental waveform is shown in Fig.~\ref{fig:SR-DSP-MK3-Mover-Besocke-waveform}. By an additional analog switch, which can be controlled by the GPIO ports, one can change between xy motion (translation) and z motion (rotation). The switch either routes to the equivalent segments of the piezo the same signal (rotation) or projections on the three segments according to the 120$^\circ$ rotation between the three piezos (translation).
 
@@ -768,7 +767,7 @@ In config tab is possible to set:
 \begin{description}
 \item[Wave(0,1) out on] select the actual physical output channels used to output Wave X/Y vector. The defaults are: OUTMIX8 to Ch3 (normally X-Scan) and 9 to Ch4 (normally Y-Scan).
 You may alternatively also choose the pre set options below.
-\item[GPIO Pon] Sets ports as logic 1 or 0 in point $e$ - at the beginning of each pulse (see Fig.~\ref{fig:SR-DSP-MK3-Mover-AutoApproach}).
+\item[GPIO Pon] Sets ports as logic 1 or 0 in point $e$ - at the beginning of each pulse (see Fig.~\ref{fig:SR-DSP-MK3-DSP-AutoApproach}).
 \item[GPIO Poff] Sets ports in point $f$ -at the end of each pulse.
 \item[GPIO Preset] Sets ports in point $g$ - at the end of each pulse set.
 \item[GPIO XY-scan] Sets ports while scanning.
@@ -779,18 +778,17 @@ You may alternatively also choose the pre set options below.
 
 \GxsmNote{All previous settings (except GPIO delay) must be set in hexadecimal format.}
 
-Autoapproach is stopped, when measure signal reaches setpoint value. This value
-is set in SR DSP Control window (SCurrent value).
+Autoapproach is stopped, when measured signal reaches setpoint value. This value is set in SR DSP Control window (SCurrent value).
 
-\GxsmGraphic{SR-DSP-MK3-DSP-AutoApproach}{Autoapproach signals. $Z_s$ is scannig signal in Z axis.}
+\GxsmGraphic{SR-DSP-MK3-DSP-AutoApproach}{0.5}{Autoapproach signals. $Z_s$ is scannig signal in Z axis.}
 
 In all tabs there is possible to set number of pulses in each step (input field \GxsmEntry{Max. Steps}).
-In the figure \ref{fig:SR-DSP-MK3-Mover-AutoApproach} marked with letter $a$. Length of each step ($c$) is determined by input field \GxsmEntry{Duration}.
+In the Fig.~\ref{fig:SR-DSP-MK3-DSP-AutoApproach}, it is marked with letter $a$. Length of each step ($c$) is determined by input field \GxsmEntry{Duration}.
 
 %% OptPlugInSubSection: Stepper motor tab
 %
 %This tab is used for control macro approach, which can be realised by stepper motor. 
-%Approach motor is controlled by pulses on GPIO ports (in the fig. \ref%{fig:screenshot:stepperMotorPulses})
+%Approach motor is controlled by pulses on GPIO ports (in the Fig.~\ref{fig:screenshot:stepperMotorPulses})
 %
 %There are used these three signals:
 %
@@ -874,7 +872,7 @@ what you do. Secure the tip before trying new connections! Got me?
 \GxsmScreenShotS{signal-graph}{Signal Graph for typical STM operation, as created by the tool and graphviz from the actual life DSP configuration.}{0.13}
 
 A typical STM configuration will look like the mostly default
-configuration as shown in Fig.\ref{fig:signal-graph}. This life signal
+configuration as shown in Fig.~\ref{fig:screenshot:signal-graph}. This life signal
 visualization is provided via the configuration application. Use the
 xdot viewer (the configuration application attempts to launch xdot for
 you automatically, if not present nothing will happen and only a
@@ -882,39 +880,39 @@ signal\_graph.dot and .svg output files are created.  of better
 viewing, zooming and signal highlighting.
 
 \GxsmWarning{Please acknowledge and understand this message as you
-  work with the ``Signal Monitor'' and ``Patch Rack'' tools: Due to
-  the nature of a parallel execution of programs or multitasking on
-  the host side and the graceful management of multiple processes
-  talking to the DSP (MK3-Pro here) at the same time there can be
-  ``race'' conditions occur under certain circumstances accessing the
-  same DSP resources from two or more processes at the same
-  time. While it's guaranteed every process is receiving one completed
-  data read/write access package of any size, so it can not be
-  guaranteed that per process consecutive requests are consecutive for
-  the DSP as any other processes request may be served at any time in
-  between. This poses normally and per design no problem as long as
-  different processes request/operate on independent DSP resources or
-  tasks.\\ Now you must understand in this special case of the signal
-  management the actual signal configuration of any signal can be
-  requested and in a consecutive request read back as result.  Both,
-  \Gxsmx and the SPM configuration script are making use of this at
-  times and it's as of now the users responsibility to not run the
-  script's ``Signal Monitor'' or ``Patch Rack'' at the same time as
-  \Gxsmx will make signal configuration read back requests. You must
-  terminate (or at least temporary stop) any other signal requesting
-  script/process at the following times when \Gxsmx makes signal read
-  back requests: When \Gxsmx start up, Scan Start and Probe
-  Start/Graphs Plot Refreshes. In general don't run any not necessary
-  scripts, but for sure you may want to run the script to make
-  adjustments at initial system configuration/setup or tests or just
-  to monitor signals via the Recorder (Signal Oscilloscope) or run a
-  frequency/PLL tune -- this all is perfectly fine. It is not
-  sufficient to close the ``Patch Rack'' or ``Monitor'' Window as this
-  is only hiding the window, not destroying the tasks behind it. The
-  ``background task'' requesting signals are installed at 1st time
-  opening the window for the ``Monitor'' or ``Patch Rack''. In future
-  this problem may be controlled via spin-locks, but as of now this is
-  a not essential overhead of USB communications.}
+work with the ``Signal Monitor'' and ``Patch Rack'' tools: Due to
+the nature of a parallel execution of programs or multitasking on
+the host side and the graceful management of multiple processes
+talking to the DSP (MK3-Pro here) at the same time there can be
+``race'' conditions occur under certain circumstances accessing the
+same DSP resources from two or more processes at the same
+time. While it's guaranteed every process is receiving one completed
+data read/write access package of any size, so it can not be
+guaranteed that per process consecutive requests are consecutive for
+the DSP as any other processes request may be served at any time in
+between. This poses normally and per design no problem as long as
+different processes request/operate on independent DSP resources or
+tasks.\\ Now you must understand in this special case of the signal
+management the actual signal configuration of any signal can be
+requested and in a consecutive request read back as result.  Both,
+\Gxsmx and the SPM configuration script are making use of this at
+times and it's as of now the users responsibility to not run the
+script's ``Signal Monitor'' or ``Patch Rack'' at the same time as
+\Gxsmx will make signal configuration read back requests. You must
+terminate (or at least temporary stop) any other signal requesting
+script/process at the following times when \Gxsmx makes signal read
+back requests: When \Gxsmx start up, Scan Start and Probe
+Start/Graphs Plot Refreshes. In general don't run any not necessary
+scripts, but for sure you may want to run the script to make
+adjustments at initial system configuration/setup or tests or just
+to monitor signals via the Recorder (Signal Oscilloscope) or run a
+frequency/PLL tune -- this all is perfectly fine. It is not
+sufficient to close the ``Patch Rack'' or ``Monitor'' Window as this
+is only hiding the window, not destroying the tasks behind it. The
+``background task'' requesting signals are installed at 1st time
+opening the window for the ``Monitor'' or ``Patch Rack''. In future
+this problem may be controlled via spin-locks, but as of now this is
+a not essential overhead of USB communications.}
 
 \clearpage
 
@@ -930,7 +928,7 @@ those graphs may have many possibly overlapping signals.
 
 % OptPlugInSubSection: Signal Monitoring and Configuration
 \index{Signal Ranger MK3 Signals}
-The python application suite shown in Fig.\ref{fig:MK3-spm-configurator-apps}
+The python application suite shown in Fig.~\ref{fig:screenshot:MK3-spm-configurator-apps}
 
 \filename{plug-ins/hard/MK3-A810\_spmcontrol/python\_scripts/mk3\_spm\_configurator.py}
 
@@ -942,14 +940,14 @@ application and step response test tools not directly provided via the
 
 The actual readings of the two banks of each 8 AD and DA converters
 provided by the A810 expansion board can be monitored via the A810
-AD/DA Monitor App as shown in Fig\ref{fig:MK3-spm-configurator-A810-mon}.
+AD/DA Monitor App as shown in Fig.~\ref{fig:screenshot:MK3-spm-configurator-A810-mon}.
 \GxsmScreenShotS{MK3-spm-configurator-A810-mon}{A810 AD/DA
-  Monitor}{0.2}
+Monitor}{0.2}
 
 A subset of all signals can be configured via the Signal-Monitor for
 watching. In general for testing and debugging any signal can be
 selected at any monitor slot as shown in
-Fig.\ref{fig:MK3-spm-configurator-2-signal-mon}. But for normal operation
+Fig.~\ref{fig:screenshot:MK3-spm-configurator-2-signal-mon}. But for normal operation
 \Gxsmx and als the SmartPiezoDrive (see \ref{sec:SPD}) are
 automatically assigning Signal for efficient monitoring use and
 without in depth knowledge those shall not be altered after \Gxsmx
@@ -1062,16 +1060,16 @@ SI32 & 1 & feedback\_mixer.iir\_signal[3] &  IIR32 3 &  V &  DSP32Qs15dot16TO\_V
 {
 \tiny
 \ctable[
-	caption={ MK3 DSP Signal Description continued. With \newline
-		  {\small DSP32Qs15dot0TO\_Volt } := {$10/32767$}, \newline
-		  {\small DSP32Qs23dot8TO\_Volt } := {$10/(32767 * 2^8)$}, \newline
-		  {\small DSP32Qs15dot16TO\_Volt} := {$10/(32767 * 2^{16})$}\ and \newline
-		  {\small CPN(N) } := $2^N-1$
-	},
-	label={tab:DSPsignalscontcont},
-	botcap, % caption below table
-	sideways % This rotates the table
-	]{|l|r|l|l|c|p{3cm}|l|p{5cm}|}{}{
+caption={ MK3 DSP Signal Description continued. With \newline
+{\small DSP32Qs15dot0TO\_Volt } := {$10/32767$}, \newline
+{\small DSP32Qs23dot8TO\_Volt } := {$10/(32767 * 2^8)$}, \newline
+{\small DSP32Qs15dot16TO\_Volt} := {$10/(32767 * 2^{16})$}\ and \newline
+{\small CPN(N) } := $2^N-1$
+},
+label={tab:DSPsignalscontcont},
+botcap, % caption below table
+sideways % This rotates the table
+]{|l|r|l|l|c|p{3cm}|l|p{5cm}|}{}{
 \hline
 Type & Dim & DSP Variable & Signal Name & Unit & Conversion Factor & Module & Signal Description \\ \hline \hline
 SI32 & 1 & analog.out[0].s &  Out 0 &  V &  DSP32Qs15dot16TO\_Volt &  Analog\_OUT &  DAC OUTPUT 1 \\
@@ -1164,20 +1162,20 @@ DSP\_SIGNAL\_SCOPE\_SIGNAL2\_INPUT\_ID & & SI32 & Recorder/Scopt Input 2 \\ \hli
 
 
 \GxsmWarning{Reassigning Monitoring signals while normal Gxsm
-  operation may result in wrong signal reading in the PanView and may
-  corrupt the Gxsm-SmartPiezoDrive Link.}
+operation may result in wrong signal reading in the PanView and may
+corrupt the Gxsm-SmartPiezoDrive Link.}
 
 The Signal Monitor also allows to visualize Signals in a Galvanometer
-style for a better visual on changing readings as shown in Figs.
-\ref{fig:MK3-spm-configurator-2-signal-mon-meter},
-\ref{fig:MK3-spm-configurator-2-signal-mon-meter-rangefix}.
+style for a better visual on changing readings as shown in Figs.~
+\ref{fig:screenshot:MK3-spm-configurator-2-signal-mon-meter} and
+\ref{fig:screenshot:MK3-spm-configurator-2-signal-mon-meter-rangefix}.
 
 \GxsmNote{The more gizmos you watch via Galvos or the scope, the more
-  CPU time and USB bandwidth is utilized due to rapid refresh rates.
-  This is normally no problem unless a high data throughput is requested
-  for scanning or spectroscopy. It is advisable for normal operation
-  to minimize or best not run any of the configurator scripts while
-  taking data.}
+CPU time and USB bandwidth is utilized due to rapid refresh rates.
+This is normally no problem unless a high data throughput is requested
+for scanning or spectroscopy. It is advisable for normal operation
+to minimize or best not run any of the configurator scripts while
+taking data.}
 
 \GxsmScreenShotS{MK3-spm-configurator-2-signal-mon}{Signal Monitor}{0.2}
 
@@ -1194,9 +1192,9 @@ style for a better visual on changing readings as shown in Figs.
 To configure your own very custom SPM you may completely reroute any
 of the ``red'' signals (or make use of generic unutilized signals and
 inputs).  For this purpose use the Patch Rack application shown in
-Figs. \ref{fig:MK3-spm-configurator-2-signal-patchrack1},
-\ref{fig:MK3-spm-configurator-2-signal-patchrack2},
-\ref{fig:MK3-spm-configurator-2-signal-patchrack3}.
+Figs.~\ref{fig:screenshot:MK3-spm-configurator-2-signal-patchrack1},
+\ref{fig:screenshot:MK3-spm-configurator-2-signal-patchrack2}, and
+\ref{fig:screenshot:MK3-spm-configurator-2-signal-patchrack3}.
 
 Here you are the master and have to make sure thinks add up right. The
 Signal Monitor will be of great use to verify the functions.
@@ -1210,7 +1208,7 @@ Signal Monitor will be of great use to verify the functions.
 \GxsmScreenShotS{MK3-spm-configurator-2-signal-patchrack3}{Signal Patchrack}{0.2}
 
 When satisfied with the signal configuration the Signal Manager
-application (Fig.\ref{fig:MK3-spm-configurator-2-signal-manager})
+application (Fig.~\ref{fig:screenshot:MK3-spm-configurator-2-signal-manager})
 allows to store the current life configuration to the MK3's FLASH
 memory. It will be automatically reloaded on any later DSP power-up.
 However, DSP software upgrades may include a modified signal table, in
@@ -1222,35 +1220,35 @@ signals.  The ``Gxsm-MK2-like'' default configuration can be reloaded
 at any time:
 \begin{description}
 \item[REVERT TO POWER UP DEFAULTS] This actually loads the pre
-  defined ``Gxsm-MK2-like'' build in defaults configuration.
+defined ``Gxsm-MK2-like'' build in defaults configuration.
 \item[STORE TO FLASH] This stores the current signal configuration to flash.
 \item[RESTORE FROM FLASH] This attempts to restore a signal
-  configuration from flash if a valid flash table exists and the
-  revision is compatible with the DSP code revision. Reflashing the DSP
-  code does NOT alter the signal configuration table and depending on
-  what is new the configuration will be in most cases still be
-  usable. Only if the signal or input descriptions have changed it
-  will fail -- nothing will be changed in this case. You can just
-  watch the configuration via the Patch Rack or compare the Signal
-  Graphs.
+configuration from flash if a valid flash table exists and the
+revision is compatible with the DSP code revision. Reflashing the DSP
+code does NOT alter the signal configuration table and depending on
+what is new the configuration will be in most cases still be
+usable. Only if the signal or input descriptions have changed it
+will fail -- nothing will be changed in this case. You can just
+watch the configuration via the Patch Rack or compare the Signal
+Graphs.
 \item[ERASE (INVALIDATE) FLASH TABLE] This simply deletes any stored
-  signal configuration and thus invalidates the table. It does not
-  change the current configuration, but the next DSP power cycle will
-  obviously end up with the default configuration.
+signal configuration and thus invalidates the table. It does not
+change the current configuration, but the next DSP power cycle will
+obviously end up with the default configuration.
 \end{description}
 
 \GxsmHint{Advise: keep a human readable printout of your
-  configuration. The list on the terminal, a few screen shots as shown
-  here and may be also the signal graph.}
+configuration. The list on the terminal, a few screen shots as shown
+here and may be also the signal graph.}
 
 \GxsmNote{Notes to author: It is surely possible to save configuration
-  to a file on disk for later restore, but this is not yet
-  implemented.}
+to a file on disk for later restore, but this is not yet
+implemented.}
 
 \GxsmScreenShotS{MK3-spm-configurator-2-signal-manager}{Signal
-  Manager/Flash Configurator. Please note, here are additional FLASH
-  test/debugging controls visible which will be excluded per default
-  soon.}{0.2}
+Manager/Flash Configurator. Please note, here are additional FLASH
+test/debugging controls visible which will be excluded per default
+soon.}{0.2}
 \clearpage
 
 
@@ -1260,7 +1258,7 @@ at any time:
 The ``Create Signal Graph'' application inspects the current DSP
 configuration, checks for errors and generates via the GraphViz tool a
 dot file and a svg presentation of the configuration as shown in
-Fig.\ref{fig:signal-graph}. This app writes a dot and svg file. It
+Fig.~\ref{fig:screenshot:signal-graph}. This app writes a dot and svg file. It
 attempts to launch xdot for viewing. This fails if xdot is not installed.
 
 \clearpage
@@ -1280,7 +1278,7 @@ attempts to launch xdot for viewing. This fails if xdot is not installed.
 % OptPlugInSubSection: GXSM Signal Master Evolved and beyond
 \index{Signal Selection in GXSM} Configuring and selecting signals for
 aquisition withing GXSM is not highly
-flexible. Fig. \ref{fig:GXSM-SIGNAL-MASTER-EVOLVED} highlights the
+flexible. Fig.~\ref{fig:screenshot:GXSM-SIGNAL-MASTER-EVOLVED} highlights the
 dependencies from where signals are taken and now are dynamically set
 for given slots in the channelselector source and VPsig source pull
 down menus.
@@ -1325,24 +1323,24 @@ identical as Gxsm uses this SoftdB PAC-library and their DSP level
 application interface.
 
 For Gxsm as of now the PAC/PLL is started on channels\footnote{Channel
-  count convention is here 0 \dots 7.}  IN-4 (signal input) and OUT-7
+count convention is here 0 \dots 7.}  IN-4 (signal input) and OUT-7
 (excitation) via the library call ``StartPLL(4,7);''. This implies for
 all further operations that channel OUT-7 is not any more available
 for any other uses, but only when the PAC processing is enabled.
 
 \GxsmNote{About the MK3-Pro/A810-PLL and the by SoftdB provided active
-  miniature test oscillator PCB with two identical BNC's for input and
-  output: The excitation ``exec. signal input to the quartz'' side
-  (goes to A810 OUT-7) can be identified looking at the PCB and
-  finding the BNC what is connected only via R10 to the quartz (big
-  black block) or the BNC just next to the ON/OFF switch. The other
-  end connect to IN-4.}
+miniature test oscillator PCB with two identical BNC's for input and
+output: The excitation ``exec. signal input to the quartz'' side
+(goes to A810 OUT-7) can be identified looking at the PCB and
+finding the BNC what is connected only via R10 to the quartz (big
+black block) or the BNC just next to the ON/OFF switch. The other
+end connect to IN-4.}
 
 \GxsmNote{Simple alternative to the active oscillator: you can actually
-  just get a simple passive ``watch'' quartz with $32.768$ kHz and
-  hook it it directly inbetween OUT-7 and IN-4. Hint: just mount it
-  inside a convenient small BNC-BNC ``filter'' box. It will work nice
-  with just 0.5V excitaion!}
+just get a simple passive ``watch'' quartz with $32.768$ kHz and
+hook it it directly inbetween OUT-7 and IN-4. Hint: just mount it
+inside a convenient small BNC-BNC ``filter'' box. It will work nice
+with just 0.5V excitaion!}
 
 \begin{enumerate}
 \item For PAC/PLL signal monitoring select the two PLL related signals of interest
@@ -1350,100 +1348,99 @@ for any other uses, but only when the PAC processing is enabled.
 to watch with the scope via the Patch Rack and assign to ``SCOPE\_SIGNAL1/2\_INPUT''.
 
 \GxsmScreenShotS{MK3-spm-configurator-2-signal-patchrack-PLL-scope}{Example
-  Signal Patch Configuration for PLL view}{0.2}
+Signal Patch Configuration for PLL view}{0.2}
 
 \item Then select the phase detector time constant ``TauPAC'' -- set it
-  to 20 $\mu$s or faster.  \textbf{Referring to the PLL manual ``4.1 Phase
-    Detector Time Cst (s)'':} This control adjusts the time constant
-  of the phase detector. We suggest keeping time constant to $20 \mu$s
-  (fast set-up), which allows a bandwidth of about $8$ kHz. Note that
-  the auto-adjustment functions for the PI gains of both controllers
-  (amplitude and phase) automatically\footnote{This is \textbf{not} the
-    case for the Gxsm control and to use the auto gain adjustments
-    you must set TauPAC manually to 20 $\mu$s.} set the time constant
-  to 20us.  This way, the bandwidth of the controller is only limited
-  by the PI gains and the LP filter.
+to 20 $\mu$s or faster.  \textbf{Referring to the PLL manual ``4.1 Phase
+Detector Time Cst (s)'':} This control adjusts the time constant
+of the phase detector. We suggest keeping time constant to $20 \mu$s
+(fast set-up), which allows a bandwidth of about $8$ kHz. Note that
+the auto-adjustment functions for the PI gains of both controllers
+(amplitude and phase) automatically\footnote{This is \textbf{not} the
+case for the Gxsm control and to use the auto gain adjustments
+you must set TauPAC manually to 20 $\mu$s.} set the time constant
+to 20us.  This way, the bandwidth of the controller is only limited
+by the PI gains and the LP filter.
 
-  Any further tweaking of the time constant will prevent the auto-set
-  via ``Q'' from resulting in stable control loop conditions, so you
-  have to manually tweak those.
+Any further tweaking of the time constant will prevent the auto-set
+via ``Q'' from resulting in stable control loop conditions, so you
+have to manually tweak those.
 
 \item Then turn on the PAC Processing by activating the check box. Or toggle
-  to restart with changed time constant!
+to restart with changed time constant!
 
 \item Operational ranges setup. This defines the range mapping and
-  actual sensitivities for excitation frequency, resonator phase,
-  excitation and resonator amplitudes.  Set the phase range to $360$
-  \degree ($\pm180$ \degree) for tuning (see Fig. \ref{fig:screenshot:MK3-Gxsm-PLL-Control-op}). 
-  Select reasonable ranges for amplitudes matching your system needs.
-  \GxsmScreenShotS{MK3-Gxsm-PLL-Control-op}{PAC/PLL initial operation
-    boundary setup example. Time constant set to 20 $\mu$s here, PAC
-    processing enabled.}{0.5}
+actual sensitivities for excitation frequency, resonator phase,
+excitation and resonator amplitudes.  Set the phase range to $360$
+\degree ($\pm180$ \degree) for tuning (see Fig.~\ref{fig:screenshot:MK3-Gxsm-PLL-Control-op}). 
+Select reasonable ranges for amplitudes matching your system needs.
+\GxsmScreenShotS{MK3-Gxsm-PLL-Control-op}{PAC/PLL initial operation
+boundary setup example. Time constant set to 20 $\mu$s here, PAC
+processing enabled.}{0.5}
 
 \item Check signals, manually set a estimated frequency, play manually
-  and check for any initial response using the monitoring option to
-  just read the values. Leave both FB Controllers off for now. You
-  should see some with frequency changing resonator response
-  amplitude, make sure ranges are working for you, if not, readjust.
-  \GxsmScreenShotS{MK3-Gxsm-PLL-Control-phase0}{PAC/PLL -- initial
-    manual pre-check of signals and responses.}{0.2} \clearpage
+and check for any initial response using the monitoring option to
+just read the values. Leave both FB Controllers off for now. You
+should see some with frequency changing resonator response
+amplitude, make sure ranges are working for you, if not, readjust.
+\GxsmScreenShotS{MK3-Gxsm-PLL-Control-phase0}{PAC/PLL -- initial
+manual pre-check of signals and responses.}{0.2} \clearpage
 
 \item Now open the tune App to initiate a default sweep.
-  \GxsmScreenShotS{MK3-spm-configurator-7-tuneapp-initial}{PAC/PLL
-    Tune App -- initial run with phase reference set to zero. Here a
-    passive watch quartz was used.}{0.2} \clearpage
+\GxsmScreenShotS{MK3-spm-configurator-7-tuneapp-initial}{PAC/PLL
+Tune App -- initial run with phase reference set to zero. Here a
+passive watch quartz was used.}{0.2} \clearpage
 
 \item You may now already adjust the ``Setpoint-Phase'' to the value
-  the tune app detected phase at resonance. This is important as the
-  Phase controller works always around phase zero. And you have to
-  compensate via this Setpoint the phase offset. This done a
-  consecutive tune sweep should align the phase accordingly.
-  \GxsmScreenShotS{MK3-spm-configurator-7-tuneapp-phase-set}{PAC/PLL
-    Tune App -- frequency sweep with phase reference value was set to
-    initial phase at resonance as needed for phase locked loop (PLL is
-    always operating around phase 0). Here a passive watch quartz was
-    used}{0.2} \clearpage
+the tune app detected phase at resonance. This is important as the
+Phase controller works always around phase zero. And you have to
+compensate via this Setpoint the phase offset. This done a
+consecutive tune sweep should align the phase accordingly.
+\GxsmScreenShotS{MK3-spm-configurator-7-tuneapp-phase-set}{PAC/PLL
+Tune App -- frequency sweep with phase reference value was set to
+initial phase at resonance as needed for phase locked loop (PLL is
+always operating around phase 0). Here a passive watch quartz was
+used}{0.2} \clearpage
 
 \item Use the oscilloscope app to inspect the signals for further fine
-  tuning.\footnote{To be resolved issue,
-      currently the scope max block size/count is about 2000. Hi-level
-      Python issue. The DSP has storage for up to 1e6-1 value
-      pairs.}
-  \GxsmScreenShotS{MK3-spm-configurator-6-scope-PACsig}{Oscilloscope app
-    for viewing PLL operation. Use AC coupling for both channels so that 
-    you can enlarge the signals in a convient way.}{0.2}
+tuning.\footnote{To be resolved issue,
+currently the scope max block size/count is about 2000. Hi-level
+Python issue. The DSP has storage for up to 1e6-1 value
+pairs.}
+\GxsmScreenShotS{MK3-spm-configurator-6-scope-PACsig}{Oscilloscope app
+for viewing PLL operation. Use AC coupling for both channels so that 
+you can enlarge the signals in a convient way.}{0.2}
 
 \item Re run the tune tool with phase set to initial detected value
-  (relative to the initial reference set to zero! Keep in mind any
-  further adjustments are relative.).
-  \GxsmScreenShotS{MK3-Gxsm-PLL-Control-phase-set}{PAC/PLL Feedback
-    settings with phase reference set to initial phase at resonance
-    (here -73.7$\degree$).}{0.2} \clearpage
+(relative to the initial reference set to zero! Keep in mind any
+further adjustments are relative.).
+\GxsmScreenShotS{MK3-Gxsm-PLL-Control-phase-set}{PAC/PLL Feedback
+settings with phase reference set to initial phase at resonance
+(here -73.7$\degree$).}{0.2} \clearpage
 
 \item Enter the Q value computed by the tune app fit here to auto-set
-  the amplitude controller gains. Usually a good starting point.
-  Remember, those are only good for a phase detector time constant of
-  $20 \mu$s or faster as otherwise you limit the bandwidth before the
-  controllers! Select a reasonable amplitude setpoint, make sure the
-  excitation range is sufficient and turn on the amplitude controller.
-  \GxsmScreenShotS{MK3-Gxsm-PLL-Control-PAC-Ampl-FB}{PAC/PLL --
-    Amplitude FB on}{0.2}
+the amplitude controller gains. Usually a good starting point.
+Remember, those are only good for a phase detector time constant of
+$20 \mu$s or faster as otherwise you limit the bandwidth before the
+controllers! Select a reasonable amplitude setpoint, make sure the
+excitation range is sufficient and turn on the amplitude controller.
+\GxsmScreenShotS{MK3-Gxsm-PLL-Control-PAC-Ampl-FB}{PAC/PLL --
+Amplitude FB on}{0.2}
 
 \item Assuming the amplitude controller works you may proceed and
-  engage the phase controller to finally close the phase locked loop.
-  Just select the desired bandwidth. Then engage the controller check
-  box.
-  \GxsmScreenShotS{MK3-Gxsm-PLL-Control-PAC-ampl-phase-FB}{PAC/PLL
-    fully operational with both controller engaged. Amplitude
-    stabilized. Phase fixed.}{0.2}
+engage the phase controller to finally close the phase locked loop.
+Just select the desired bandwidth. Then engage the controller check
+box.
+\GxsmScreenShotS{MK3-Gxsm-PLL-Control-PAC-ampl-phase-FB}{PAC/PLL
+fully operational with both controller engaged. Amplitude
+stabilized. Phase fixed.}{0.2}
 
 \item Step Response Test Tool -- not yet completed -- need to fix
-  related issue with the python problem with big buffer transfers.
+related issue with the python problem with big buffer transfers.
 
 \end{enumerate}
 
 \clearpage
-
 
 \GxsmScreenShotS{MK3-DSP-Control-FB}{DSP Control -- Mixer, Servo}{0.2}
 \index{Signal Ranger MK3 Mixer, Z-Servo}
@@ -1457,15 +1454,15 @@ Few MK3-Pro related notes on LockIn updates:
 
 \begin{itemize}
 \item Reference Sinus table length is 512 samples, MK3 LockIn operated
-  on full rate of $150$ kHz. Available frequencies are: $\times$ 1, 2,
-  4, $\dots$ 32 (all 512 $\dots$ $\frac{512}{32}$ samples per period)
-  $\rightarrow$ 292.968 Hz, 585.938 Hz, 1171.875 Hz, 2343.75 Hz,
-  4687.5 Hz, 9375.0 Hz.
+on full rate of $150$ kHz. Available frequencies are: $\times$ 1, 2,
+4, $\dots$ 32 (all 512 $\dots$ $\frac{512}{32}$ samples per period)
+$\rightarrow$ 292.968 Hz, 585.938 Hz, 1171.875 Hz, 2343.75 Hz,
+4687.5 Hz, 9375.0 Hz.
 \item Do not run LockIn in ``run free'' mode for Phase adjusting sweep.
 \item Amplitude setting is respected in real time.
 \item To change frequency in ``run free'' mode you must toggle it
-  on/off after chaning to re initialize. Touch frq. entry to update on
-  actual set frequincy.
+on/off after chaning to re initialize. Touch frq. entry to update on
+actual set frequincy.
 \end{itemize}
 
 \GxsmScreenShotS{MK3-DSP-Control-LockIn}{DSP Control -- LockIn: Free run mode enabled.}{0.5}
@@ -1486,7 +1483,7 @@ Few MK3-Pro related notes on LockIn updates:
 \index{Smart Piezo Drive}
 \label{sec:SPD}
 The Smart Piezo Drive Linux Frontend
-(Fig.\ref{fig:MK3-SmartPiezoDriveControl-Link}) with Gxsm-DSP
+(Fig.~\ref{fig:screenshot:MK3-SmartPiezoDriveControl-Link}) with Gxsm-DSP
 Offset-Link capability is provided via this python application:
 
 \filename{plug-ins/hard/MK3-A810\_spmcontrol/python\_scripts/mk3\_spd\_control.py}
@@ -1498,14 +1495,12 @@ changed when the Link is up. It automatically is setting up the Link
 and Signals at startup and expects those not to be changed later.
 
 \GxsmWarning{Beware: Later reassigning any of the last 4 Signal
-  Monitor slots will result in wrong offset or gain settings.}
+Monitor slots will result in wrong offset or gain settings.}
 
 \GxsmScreenShotS{MK3-SmartPiezoDriveControl-Link}{MK3 based Smart
-  Piezo Drive (HV Amplifier) Control Panel with Gxsm-Link for digital
-  Offset control.}{0.3}
+Piezo Drive (HV Amplifier) Control Panel with Gxsm-Link for digital
+Offset control.}{0.3}
 \clearpage
-
-
 
 %% OptPlugInSources
 
