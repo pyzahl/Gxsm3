@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python3
 
 ## * Python User Control for
 ## * A Dolby (Digital) Pro-Logic (Thx) emulation and demonstration

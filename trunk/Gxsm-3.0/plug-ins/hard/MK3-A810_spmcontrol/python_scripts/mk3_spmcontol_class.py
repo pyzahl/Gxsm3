@@ -2039,13 +2039,13 @@ class SPMcontrol():
                 print ("---- SAVING ----")
                 config = { 'module_inputs' : mod_input_config, 'user_array_data' : user_array_data }
                 print (config)
-                file = open(file_name, 'w')
+                file = open(file_name, 'wb')
                 pickle.dump (config, file)
                 
         def load_and_write_actual_module_configuration (self, __button, file_name):
                 print ("DSP CONFIG RESTORE FROM FILE: ", file_name)
                 print ("---- LOADING ----")
-                file = open(file_name, 'r')
+                file = open(file_name, 'rb')
                 config = pickle.load (file)
                 mod_input_config = config['module_inputs']
                 user_array_data  = config['user_array_data']
