@@ -44,8 +44,8 @@ import array
 
 import math
 
-from meterwidget_3_7 import *
-from scopewidget_3_7 import *
+from meterwidget import *
+from scopewidget import *
 from mk3_spmcontol_class import *
 
 METER_SCALE = 0.66

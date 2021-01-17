@@ -46,8 +46,8 @@ import pydot
 from scipy.optimize import leastsq
 
 from mk3_spmcontol_class import *
-from meterwidget_3_7 import *
-from scopewidget_3_7 import *
+from meterwidget import *
+from scopewidget import *
 
 import datetime
 

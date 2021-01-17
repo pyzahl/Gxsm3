@@ -1,3 +1,9 @@
+gxsm3 (3.52.0-0ubuntu6) focal; urgency=medium
+
+  * cleaning up of python scripts for MK3 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 17 Jan 2021 18:17:18 +0100
+
 gxsm3 (3.52.0-0ubuntu5) focal; urgency=medium
 
   * updated release for ubuntu 20.04 LTS/lubuntu 20.04 LTS 

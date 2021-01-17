@@ -80,6 +80,7 @@ Depends: 	${shlibs:Depends},
 		libxml2-dev, 
 		python3.7,
 		python3-gi,
+		python3-pydot,
 		sed, 
 		subversion, 
 		xdot
