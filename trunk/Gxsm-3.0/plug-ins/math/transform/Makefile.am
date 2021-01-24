@@ -1,5 +1,5 @@
 libdir = $(plugindir)/math
-AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I/usr/include/python2.7 -I$(top_builddir)/gxsm
+AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
 # -O3 -ftree-loop-linear -ftree-loop-ivcanon -ftree-vectorize -funroll-loops
 
 lib_LTLIBRARIES = libvolume_transform.la \

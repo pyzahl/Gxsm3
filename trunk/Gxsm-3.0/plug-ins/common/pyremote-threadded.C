@@ -1646,8 +1646,8 @@ static void pyremote_run( GtkWidget *w, void *data )
 	PI_DEBUG_ERROR(DBG_L1, "Python module was disabled at build time, sorry.");
 	pyremote_pi.app->message("Sorry, Python remote module was disabled at build time.\n"
 				 "Reason: missing python support libraries\n"
-				 "Note: V2.5, 2.6, 2.7 are supported currently.\n"
-				 "Suggestion: sudo apt-get install python2.7-dev");
+				 "Note: V3.7 and V3.8 are supported currently.\n"
+				 "Suggestion: sudo apt-get install python3.8-dev");
 
 	return;
 }

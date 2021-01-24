@@ -1,5 +1,5 @@
 libdir = $(plugindir)/common
-AM_CPPFLAGS = $(GXSM3_CFLAGS) ${GTKSOURCEVIEW_CFLAGS} -I/usr/include/python2.7 -I$(includedir) -I$(top_builddir)/gxsm
+AM_CPPFLAGS = $(GXSM3_CFLAGS) ${GTKSOURCEVIEW_CFLAGS} -I$(includedir) -I$(top_builddir)/gxsm
 
 lib_LTLIBRARIES = \
 	libpyremote.la \
