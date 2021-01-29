@@ -125,11 +125,12 @@ unit  = [ "V", "V", "V" ]
 updaterate = 88        # update time watching the SRanger in ms
 
 GXSM_Link_status = FALSE
-Z0_invert_status  = FALSE
+Z0_invert_status  = TRUE
 
 wins = {}
 
 setup_list = []
+control_list = []
 
 
 class gxsm_link():
@@ -462,11 +463,29 @@ class drift_compensation():
 
 
 def toggle_configure_widgets (w, win):
+        print ("CONFIG STATES:")
         if w.get_active():
+                print ("ACTIVE")
+        if w.get_inconsistent ():
+                print ("INCONSISTENT")
+        if w.get_active():
+                if w.get_inconsistent ():
+                        w.set_inconsistent (False)
+                else:
+                        w.set_inconsistent (True)
+        if w.get_active():
+                if w.get_inconsistent ():
+                        for w in control_list:
+                                w.hide ()
+                else:
+                        for w in control_list:
+                                w.show ()
                 for w in setup_list:
                         w.show ()
         else:
                 for w in setup_list:
+                        w.hide ()
+                for w in control_list:
                         w.hide ()
         win.resize(1, 1)
 
@@ -611,6 +630,7 @@ def create_hv1_app():
         # Offset Adjusts
         tr = tr+1
         lab = Gtk.Label(label="Offsets:")
+        control_list.append (lab)
         grid.attach(lab, 0, tr, 1, 1)
         
         eo = []
@@ -619,9 +639,11 @@ def create_hv1_app():
                 eo.append (Gtk.Entry())
                 eo[i].set_text("%12.3f" %(scaleO[i]*HV1_configuration[ii_config_target_X0+i]))
                 eo[i].set_width_chars(8)
+                control_list.append (eo[i])
                 grid.attach(eo[i], 1+i, tr, 1, 1)
 
         oabutton = Gtk.Button(stock='gtk-apply')
+        control_list.append (oabutton)
         grid.attach(oabutton, 4, tr, 1, 1)
 
         # Drift Compensation Setup
@@ -646,6 +668,7 @@ def create_hv1_app():
         # GAINs
         tr = tr+1
         lab = Gtk.Label(label="Gains:")
+        control_list.append (lab)
         grid.attach(lab, 0, tr, 1, 1)
 
         gain_store = Gtk.ListStore(str)
@@ -663,15 +686,18 @@ def create_hv1_app():
                 opt.add_attribute(renderer_text, "text", 0)
                 opt.set_active(HV1_configuration[ii[ci]])
                 gain_select.append(opt.set_active)
+                control_list.append (opt)
                 grid.attach(opt, 1+ci, tr, 1, 1)
 
         ci=3
         lab = Gtk.Label(label="Slew:")
+        control_list.append (lab)
         grid.attach(lab, 1+ci, tr, 1, 1)
 
         # BWs
         tr = tr+1
         lab = Gtk.Label(label="Bandwidth:")
+        setup_list.append (lab)
         grid.attach(lab, 0, tr, 1, 1)
         chan = ["bw_X", "bw_Y", "bw_Z"]
         ii   = [ii_config_bw_X, ii_config_bw_Y, ii_config_bw_Z]
@@ -686,6 +712,7 @@ def create_hv1_app():
                 opt.pack_start(renderer_text, True)
                 opt.add_attribute(renderer_text, "text", 0)
                 opt.set_active(HV1_configuration[ii[ci]])
+                setup_list.append (opt)
                 grid.attach(opt, 1+ci, tr, 1, 1)
 
         # Slew rates as presets
@@ -709,6 +736,7 @@ def create_hv1_app():
                         ist = i
 
         opt.set_active(ist)
+        setup_list.append (opt)
         grid.attach(opt, 1+ci, tr, 1, 1)
 
         tr = tr+1
@@ -735,6 +763,7 @@ def create_hv1_app():
         #Label=button.get_children()[0]
         #Label=Label.get_children()[0].get_children()[1]
         #Label=Label.set_label('STOP')
+        control_list.append (button)
         grid.attach(button, 4, 1, 1, 1)
         #hbox.pack_start(button, True, True, 0)
 
@@ -746,23 +775,27 @@ def create_hv1_app():
         dc_check_button = Gtk.CheckButton(label="Drift Comp.")
         dc_check_button.set_active(False)
         dc_check_button.connect('toggled', toggle_driftcompensation, dc_control)
+        setup_list.append (dc_check_button)
         hbox.pack_start(dc_check_button, True, True, 0)
 
         check_button=cbl
         check_button.set_active(False)
         check_button.connect('toggled', toggle_gxsm_link, GxsmLink)
         hbox.pack_start(check_button,  True, True, 0)
+        #setup_list.append (check_button)
         check_button.set_sensitive (GxsmLink.status ())        
 
         check_button = Gtk.CheckButton(label="GXSM Gains")
         check_button.set_active(False)
         check_button.connect('toggled', toggle_gxsm_gain_link, GxsmLink)
         hbox.pack_start(check_button, True, True, 0)
+        #setup_list.append (check_button)
         check_button.set_sensitive (GxsmLink.status ())
 
         check_button = Gtk.CheckButton(label="Z0 inv.")
-        check_button.set_active(False)
+        check_button.set_active(True)
         check_button.connect('toggled', toggle_Z0_invert)
+        setup_list.append (check_button)
         hbox.pack_start(check_button, True, True, 0)
         check_button.set_sensitive (GxsmLink.status ())        
 
