@@ -492,6 +492,9 @@ AC_CHECK_HEADERS(python3.8/Python.h)
 AC_CHECK_LIB(python3.8m, main)
 AC_CHECK_HEADERS(python3.8m/Python.h)
 
+AC_CHECK_LIB(python3.9, main)
+AC_CHECK_HEADERS(python3.9/Python.h)
+
 
 
 dnl ---------------------------------------------------------
