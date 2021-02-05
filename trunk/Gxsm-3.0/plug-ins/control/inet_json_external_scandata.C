@@ -298,8 +298,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         parameters.transport_tau[3] = -1.; // us, negative = disabled [bit 32 set in FPGA tau)
 
         parameters.pac_dctau = 0.1; // ms
-        parameters.pactau = 150.0; // us
-        parameters.pacatau = 50.0; // us
+        parameters.pactau  = 50.0; // us
+        parameters.pacatau = 30.0; // us
         parameters.frequency_manual = 32768.0; // Hz
         parameters.frequency_center = 32768.0; // Hz
         parameters.aux_scale = 0.011642; // 20Hz / V equivalent 
@@ -361,12 +361,12 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
-        parameters.amplitude_fb_setpoint = 20.0; // mV
+        parameters.amplitude_fb_setpoint = 12.0; // mV
         parameters.amplitude_fb_invert = 1.;
-        parameters.amplitude_fb_cp_db = -35.;
-        parameters.amplitude_fb_ci_db = -80.;
-        parameters.exec_fb_upper = 300.0;
-        parameters.exec_fb_lower = -300.0;
+        parameters.amplitude_fb_cp_db = -25.;
+        parameters.amplitude_fb_ci_db = -35.;
+        parameters.exec_fb_upper = 500.0;
+        parameters.exec_fb_lower = -500.0;
         bp->set_no_spin (false);
         bp->set_input_width_chars (10);
 
@@ -421,10 +421,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->new_line ();
         parameters.phase_fb_setpoint = 60.;
         parameters.phase_fb_invert = 1.;
-        parameters.phase_fb_cp_db = -95.;
-        parameters.phase_fb_ci_db = -180.;
-        parameters.freq_fb_upper = 35000.;
-        parameters.freq_fb_lower = 28000.;
+        parameters.phase_fb_cp_db = -123.5;
+        parameters.phase_fb_ci_db = -184.;
+        parameters.freq_fb_upper = 34000.;
+        parameters.freq_fb_lower = 29000.;
         bp->set_no_spin (false);
         bp->set_input_width_chars (8);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::phase_ctrl_parameter_changed, this);
@@ -483,12 +483,12 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         EC_R_list = g_slist_prepend( EC_R_list, bp->ec);
         bp->ec->Freeze ();
         bp->new_line ();
-        parameters.dfreq_fb_setpoint = -0.5;
+        parameters.dfreq_fb_setpoint = -3.0;
         parameters.dfreq_fb_invert = 1.;
-        parameters.dfreq_fb_cp_db = -76.;
-        parameters.dfreq_fb_ci_db = -143.;
-        parameters.control_dfreq_fb_upper = 500.;
-        parameters.control_dfreq_fb_lower = -500.;
+        parameters.dfreq_fb_cp_db = -70.;
+        parameters.dfreq_fb_ci_db = -120.;
+        parameters.control_dfreq_fb_upper = 300.;
+        parameters.control_dfreq_fb_lower = -300.;
         bp->set_no_spin (false);
         bp->set_input_width_chars (8);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::dfreq_ctrl_parameter_changed, this);
@@ -639,7 +639,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	for(int i=0; update_periods[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), update_periods[i], update_periods[i]);
 
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 3);
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 18); // select 4.19ms FIR (4.29s scope length)
 
         // Scope Trigger Options
 	wid = gtk_combo_box_text_new ();
@@ -1563,7 +1563,12 @@ void Inet_Json_External_Scandata::got_client_connection (GObject *object, GAsync
 		g_signal_connect(self->client, "closed",  G_CALLBACK(Inet_Json_External_Scandata::on_closed),  self);
 		g_signal_connect(self->client, "message", G_CALLBACK(Inet_Json_External_Scandata::on_message), self);
 		//g_signal_connect(connection, "closing", G_CALLBACK(on_closing_send_message), message);
+                self->status_append ("RedPitaya PAC-PLL load configuration... init FIR...\n ");
                 self->send_all_parameters ();
+                self->write_parameter ("OPERATION", 3); // INIT BRAM TRANSPORT AND CLEAR FIR RING BUFFERS, give me a second...
+                usleep(1000000);
+                self->write_parameter ("OPERATION", self->operation_mode);
+                self->status_append ("RedPitaya PAC-PLL ready.\n ");
         }
 }
 
