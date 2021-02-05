@@ -261,7 +261,7 @@ static void afm_lj_mechanical_sim_configuration( void ){
 #define CONST_e    1.60217656535e-19   // Elementarladung [As] = [C]
 #define CONST_me   9.10938356e-31  // electron mass [kg]
 #define CONST_h    6.62607004e-34  // Planck's constant m^2 kg / s
-#define CONST_heVs 4.135667662e−15 // h in eV s
+#define CONST_heVs 4.135667662e-15 // h in eV s
 #define CONST_hbar (6.62607004e-34/2./M_PI)  // 1/2pi * Planck's constant m^2 kg / s
 #define CONST_ke   8.9875517873681764e9 // Coulomb force constant  ke [ kg·m^3 / (s^2 C^2) ]
 #define CONST_ke_ee ( CONST_ke*1e20*1e12*CONST_e*CONST_e ) // ke for C in e, r in Ang ==> pN

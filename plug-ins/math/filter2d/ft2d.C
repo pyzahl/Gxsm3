@@ -378,11 +378,16 @@ static gboolean ft2d_run(Scan *Src, Scan *Dest)
                         }
                 }
 	}  
-	// destroy plan
-	fftw_destroy_plan(plan); 
 
+        XSM_DEBUG (DBG_L3, "F2D FFT done, cleaning up plan, data 1");
+	// destroy plan
+        if (plan)
+                fftw_destroy_plan (plan); 
+
+        XSM_DEBUG (DBG_L3, "F2D FFT done, cleaning up plan, data 2");
 	// free real/complex data memory
-	fftw_free (dat);
+        if (dat)
+                fftw_free (dat);
 
         Dest->mem2d->data->CopyLookups (Src->mem2d->data);
         Dest->mem2d->copy_layer_information (Src->mem2d);
