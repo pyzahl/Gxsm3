@@ -1,3 +1,9 @@
+gxsm3 (3.52.0-0ubuntu7) focal; urgency=medium
+
+  * creating new subpackages 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 23 Jan 2021 19:43:40 +0100
+
 gxsm3 (3.52.0-0ubuntu6) focal; urgency=medium
 
   * cleaning up of python scripts for MK3 

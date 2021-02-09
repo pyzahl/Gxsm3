@@ -10,18 +10,6 @@ AM_CPPFLAGS = -I.. -I$(includedir) `pkg-config --cflags glib-2.0 gtk+-3.0`
 
 bin_PROGRAMS = mk3dspemu
 
-#noinst_PROGRAMS = mk3dspemu
-#NEED:  sudo apt-get install gcc-multilib g++-multilib
-# build on matter what in m32 bit mode: CFLAGS=-m32" "CXXFLAGS=-m32" "LDFLAGS=-m32
-# export PKG_CONFIG_PATH=/usr/lib32/pkgconfig:$PKG_CONFIG_PATH
-#autotools with no helper
-#Build-depend on dpkg-dev (>= 1.16.0).
-#Set DEB_HOST_MULTIARCH in debian/rules by calling: DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
-#Add --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) to each invocation of configure in debian/rules.
-#Any occurrences of /usr/lib in debian/rules should be replaced with /usr/lib/$(DEB_HOST_MULTIARCH).
-#Once you have built the package and verified that the shared library package contains only the expected files, and that your -dev package still works, mark this shared library package Multi-Arch: same in debian/control.
-#Mark the common package(which is "all") Multi-Arch: foreign in debian/control, if it may be needed by the shared library package.
-
 mk3dspemu_CFLAGS = $(GTK_CFLAGS) `pkg-config --cflags glib-2.0 gtk+-3.0`
 mk3dspemu_CXXFLAGS = $(GTK_CXXFLAGS) `pkg-config --cflags glib-2.0 gtk+-3.0`
 mk3dspemu_LDFLAGS = -lrt `pkg-config --libs glib-2.0 gtk+-3.0`

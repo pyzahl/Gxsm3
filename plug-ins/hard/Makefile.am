@@ -1,5 +1,5 @@
 libdir = $(plugindir)/hard
-AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm -I$(top_builddir)/include 
+AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm3 -I$(top_builddir)/include 
 
 lib_LTLIBRARIES = \
 	libsranger_mk2_hwi.la \
