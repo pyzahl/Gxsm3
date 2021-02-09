@@ -1,5 +1,5 @@
 libdir = $(plugindir)/control
-AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
+AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm3
 
 lib_LTLIBRARIES = \
 	libspm_scancontrol.la \

@@ -1,5 +1,5 @@
 libdir = $(plugindir)/math
-AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
+AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm3
 
 lib_LTLIBRARIES = \
 	libto_byte.la libto_short.la libshort_to_short.la libto_long.la\

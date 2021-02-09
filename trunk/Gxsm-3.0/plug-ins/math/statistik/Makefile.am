@@ -1,5 +1,5 @@
 libdir = $(plugindir)/math
-AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm -I/usr/include/opencv4/
+AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm3 -I/usr/include/opencv4/
 
 lib_LTLIBRARIES = libaverage_profile.la \
 	libAngularAnalysis.la \

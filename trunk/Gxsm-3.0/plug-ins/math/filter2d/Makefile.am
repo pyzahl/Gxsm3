@@ -1,5 +1,5 @@
 libdir = $(plugindir)/math
-AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
+AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm3
 
 lib_LTLIBRARIES = libift2d.la libft2d.la libcurvature.la liblocal_height.la\
 	libTderive.la libstat_diff.la libsmooth.la libnormal_z.la \

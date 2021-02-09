@@ -1,5 +1,5 @@
 libdir = $(plugindir)/math
-AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
+AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm3
 
 lib_LTLIBRARIES = libtimescalefft.la libremovelineshifts.la libplane_regression.la libwaterlevel.la \
 	libpass_cc.la libstop_ccr.la libplane_max_prop.la libparabolregress.la libbg_z_drift.la \

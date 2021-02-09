@@ -1,5 +1,5 @@
 libdir = $(plugindir)/math
-AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm
+AM_CPPFLAGS = $(GXSM3_CFLAGS) -I$(includedir) -I$(top_builddir)/gxsm3
 
 lib_LTLIBRARIES = libZ_limiter.la libmax.la libinvert_z.la \
 		  libdiv_scan.la libmul_scan.la \

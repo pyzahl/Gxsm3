@@ -28,15 +28,17 @@ override_dh_autoreconf:
 	dh_autoreconf ./autogen.sh
 
 override_dh_auto_configure:
-	dh_auto_configure -- -- libdir=\$${prefix}/lib
+	dh_auto_configure -- -- libdir=\$${prefix}/lib 
 
 override_dh_auto_build: 	
-	rm -rf man/gmetopng.1 man/rhkspm32topng.1 man/scalatopng.1 gxsm
-	cp -R gxsm3 gxsm
-	cp man/nctopng.1 man/gmetopng.1 	
-	cp man/nctopng.1 man/rhkspm32topng.1
-	cp man/nctopng.1 man/scalatopng.1
-	dh_auto_build
+	dh_auto_build --sourcedir=.
+#	dh_auto_build --sourcedir=plug-ins/hard/MK3-EMU
+
+#override_dh_auto_install:
+#	dh_auto_install
+
+#override_dh_auto_clean:
+#	dh_auto_clean
 
 override_dh_installdocs:
 	dh_installdocs NEWS
