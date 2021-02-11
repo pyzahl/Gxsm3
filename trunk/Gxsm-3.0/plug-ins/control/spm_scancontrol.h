@@ -212,6 +212,8 @@ public:
         int GetScanDir () {return last_scan_dir==SCAN_DIR_TOPDOWN?1:-1;};
 	void SetRepeatMode (gboolean rmd) { repeat_on = rmd; };
 	gboolean RepeatMode () { return repeat_on; };
+	void SetMovieMode (gboolean mmd) { movie_mode_on = mmd; };
+	gboolean MovieMode () { return movie_mode_on; };
 	void SetMultiVoltMode (gboolean mvmd) { mvolt_on = mvmd; };
 	gboolean MultiVoltMode () { return mvolt_on; };
 	guint MultiVoltNumber () { 
@@ -264,6 +266,7 @@ private:
 	SCAN_DIR  scan_dir, last_scan_dir; // current and last scan direction
 	gboolean  do_probe; // set if currently in probe mode
 	gboolean  repeat_on; // scan repeat mode flag
+	gboolean  movie_mode_on; // scan movie mode flag
 
 	gboolean  mvolt_on; // multi volt mode flag
 	double    mv_start, mv_end, mv_gap;
