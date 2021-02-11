@@ -376,6 +376,7 @@ SPM_ScanControl::SPM_ScanControl ()
 
 	xrm.Get("RepeatFlg", &tmp, "0");
 	SetRepeatMode (tmp ? TRUE:FALSE);
+	SetMovieMode (FALSE);
 
 	xrm.Get("MultiVoltFlg", &tmp, "0");
 	SetMultiVoltMode (tmp ? TRUE:FALSE);
@@ -755,6 +756,8 @@ static void spm_scancontrol_start_callback (GtkWidget *w, void *data){
 		return;
 	}
 
+        ((SPM_ScanControl*)data) -> SetMovieMode (FALSE);
+
         ((SPM_ScanControl*)data) -> wdata = w;
         gdk_threads_add_idle (SPM_ScanControl::spm_scancontrol_run_scans_task, data);
 }
@@ -763,6 +766,7 @@ gboolean SPM_ScanControl::spm_scancontrol_run_scans_task (gpointer data){
         static int runmode=0;
 	static guint i=0, l=0;
         static gpointer ss_action = NULL;
+        static time_t t0, t; // Scan - Startzeit eintragen 
         
         GtkWidget *w = ((SPM_ScanControl*)data) -> wdata;
 
@@ -777,11 +781,20 @@ gboolean SPM_ScanControl::spm_scancontrol_run_scans_task (gpointer data){
                 if (ss_action)
                         g_simple_action_set_enabled ((GSimpleAction*)ss_action, FALSE);
 
-                runmode=1;
+                if (((SPM_ScanControl*)data) -> MovieMode ()) {
+                        gapp->xsm->FileCounterInc ();
+                        gapp->xsm->ResetVPFileCounter ();
+                        gapp->xsm->auto_append_in_time (-1.); // negative time means free up all time elemenst of scans selected for movie
+                        time(&t0);
+                        
+                        runmode=11;
+                } else {
+                        runmode=10; // normal single scan or scan with repeat
+                }
                 i=0;
                 return TRUE;
 
-        case 1:
+        case 10:
                 gapp->xsm->FileCounterInc ();
                 gapp->xsm->ResetVPFileCounter ();
 
@@ -795,7 +808,7 @@ gboolean SPM_ScanControl::spm_scancontrol_run_scans_task (gpointer data){
 		gapp->spm_update_all();
 		gapp->xsm->hardware->SetScanMode();
 		
-                runmode = 4; // in case of error, reset
+                runmode = 99; // in case of error, reset
 		if (((SPM_ScanControl*)data) -> MultiVoltMode()){
 			if (i<l){
 				double value = ((SPM_ScanControl*)data) -> MultiVoltFromList(i);
@@ -821,17 +834,39 @@ gboolean SPM_ScanControl::spm_scancontrol_run_scans_task (gpointer data){
 			if (!((SPM_ScanControl*)data) -> setup_scanning_control())
                                 return TRUE;
 		}
-                runmode = 2;
+                runmode = 20;
                 return TRUE;
-        case 2:
+        case 11:
+                gapp->xsm->data.s.nvalues = 1;
+		time(&t);
+		PI_DEBUG (DBG_L2, "SPM_ScanControl - movie frame time: " << t);
+
+		((SPM_ScanControl*)data) -> keep_multi_layer_info = FALSE;
+		gapp->xsm->data.ui.SetDateOfScanNow();
+		gapp->spm_update_all();
+		gapp->xsm->hardware->SetScanMode();
+		
+                runmode = 99; // in case of error, reset
+                if (!((SPM_ScanControl*)data) -> setup_scanning_control())
+                        return TRUE;
+
+		gapp->xsm->data.s.ntimes = gapp->xsm->auto_append_in_time ((double)(t - t0));
+
+                runmode = 20;
+                return TRUE;
+        case 20:
                 SPM_ScanControl::scanning_task (data); // actual scanning "setup, monitoring and update" task
                 if (((SPM_ScanControl*)data) -> scanning_task_stage == 0) // competed?
-                        runmode = 3;
+                        runmode = 30;
 
                 return TRUE;
-        case 3:
+        case 30:
+                if (((SPM_ScanControl*)data) -> MovieMode() && !((SPM_ScanControl*)data) -> scan_stopped_by_user){
+                        runmode = 11;
+                        return TRUE;
+                }
                 if (((SPM_ScanControl*)data) -> MultiVoltMode() && i<l){
-                        runmode = 1;
+                        runmode = 10;
                         return TRUE;
                 }
 		if(gapp->xsm->IsMode(MODE_AUTOSAVE)){
@@ -839,11 +874,11 @@ gboolean SPM_ScanControl::spm_scancontrol_run_scans_task (gpointer data){
                 }
 
                 if (((SPM_ScanControl*)data) -> RepeatMode() && !((SPM_ScanControl*)data) -> scan_stopped_by_user)
-                        runmode = 1;
+                        runmode = 10;
                 else
-                        runmode = 4;
+                        runmode = 99;
                 return TRUE;
-        case 4:
+        case 99:
                 gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), TRUE);
                 gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_BUTTON"), TRUE);
                 gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_MODE"), TRUE);
@@ -859,57 +894,15 @@ gboolean SPM_ScanControl::spm_scancontrol_run_scans_task (gpointer data){
 }
 
 static void spm_scancontrol_movie_callback (GtkWidget *w, void *data){
-	int nostop;
-	if (((SPM_ScanControl*)data) ->  scan_in_progress())
+	if (((SPM_ScanControl*)data) ->  scan_in_progress()){
+		((SPM_ScanControl*)data) -> resume_scan (); // in case paused, resume now!
 		return;
+	}
 
-	if (G_IS_OBJECT (w)){
-                gtk_widget_set_sensitive (w, FALSE);
-                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_EC_NUM_VALUES"), FALSE);
-                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), FALSE);
-                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_BUTTON"), FALSE);
-                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_MODE"), FALSE);
-                gpointer ss_action = g_object_get_data (G_OBJECT (w), "simple-action");
-                if (ss_action)
-                        g_simple_action_set_enabled ((GSimpleAction*)ss_action, FALSE);
-        }
-                
-	PI_DEBUG (DBG_L4, "SPM_ScanControl - movie");
+        ((SPM_ScanControl*)data) -> SetMovieMode (TRUE);
 
-	gapp->xsm->auto_append_in_time (-1.); // negative time means free up all time elemenst of scans selected for movie
-
-	time_t t0, t; // Scan - Startzeit eintragen 
-	time(&t0);
-
-	PI_DEBUG (DBG_L2, "SPM_ScanControl - movie start time: " << t0);
-
-	do {
-		time(&t);
-
-		PI_DEBUG (DBG_L2, "SPM_ScanControl - movie frame time: " << t);
-
-		gapp->xsm->data.ui.SetDateOfScanNow();
-		gapp->spm_update_all();
-		gapp->xsm->hardware->SetScanMode();
-
-		nostop = ((SPM_ScanControl*)data) -> setup_scanning_control();
-
-		gapp->xsm->data.s.ntimes = gapp->xsm->auto_append_in_time ((double)(t - t0));
-	} while (nostop);
-
-	if(gapp->xsm->IsMode(MODE_AUTOSAVE))
-		gapp->xsm->save(AUTO_NAME_SAVE);
-
-	if (G_IS_OBJECT (w)){
-                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_EC_NUM_VALUES"), TRUE);
-                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), TRUE);
-                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_BUTTON"), TRUE);
-                gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_SLS_MODE"), TRUE);
-                gtk_widget_set_sensitive (w, TRUE);
-                gpointer ss_action = g_object_get_data (G_OBJECT (w), "simple-action");
-                if (ss_action)
-                        g_simple_action_set_enabled ((GSimpleAction*)ss_action, TRUE);
-        }
+        ((SPM_ScanControl*)data) -> wdata = w;
+        gdk_threads_add_idle (SPM_ScanControl::spm_scancontrol_run_scans_task, data);
 }
 
 static void spm_scancontrol_pause_callback (GtkWidget *w, void *data){
