@@ -13,7 +13,8 @@
 /usr/share/gxsm3/dsp-firmware
 /usr/share/gconf/defaults/
 /usr/share/applications
-/usr/share/doc/gxsm
+/usr/share/doc/gxsm3
+/usr/share/doc/gxsm3-mk3dspemu
 /usr/share/glib-2.0/schemas
 /usr/share/icons/hicolor/scalable
 /etc/xdg/menus/applications-merged

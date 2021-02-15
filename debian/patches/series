@@ -1,1 +1,2 @@
-fix-default-pathes.patch
+fix-local-path.diff
+enable_mk3dspemu.diff

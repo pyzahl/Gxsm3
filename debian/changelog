@@ -1,8 +1,51 @@
+gxsm3 (3.52.0-0ubuntu14) focal; urgency=medium
+
+  * applying patches
+
+ -- Thorsten Wagner <stm@users.sf.net>  Mon, 15 Feb 2021 22:09:13 +0100
+
+gxsm3 (3.52.0-0ubuntu13) focal; urgency=medium
+
+  * reverting to 3.0 (native) instead of 3.0 (quilt)
+  * will need patches to be applied before packing :-(
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 14 Feb 2021 20:42:01 +0100
+
+gxsm3 (3.52.0-0ubuntu12) focal; urgency=medium
+
+  * patching patch for /usr/local/share -> /usr/share 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 14 Feb 2021 19:33:38 +0100
+
+gxsm3 (3.52.0-0ubuntu11) focal; urgency=medium
+
+  * problems applying quilt patches: did run quilt refresh
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 14 Feb 2021 18:06:49 +0100
+
+gxsm3 (3.52.0-0ubuntu10) focal; urgency=medium
+
+  * trying debuild -S -sa but removed debian file in orig.tar.xz
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 14 Feb 2021 12:32:54 +0100
+
+gxsm3 (3.52.0-0ubuntu9) focal; urgency=medium
+
+  * next try to upload files to launchpad
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 14 Feb 2021 12:11:02 +0100
+
+gxsm3 (3.52.0-0ubuntu8) focal; urgency=medium
+
+  * switched to format 3 (quilt) form format 3 (native): will need orig.tar.xz file
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 14 Feb 2021 11:01:01 +0100
+
 gxsm3 (3.52.0-0ubuntu7) focal; urgency=medium
 
-  * creating new subpackages 
+  * creating new subpackage gxsm3-mk3dspemu (experimental) 
 
- -- Thorsten Wagner <stm@users.sf.net>  Sat, 23 Jan 2021 19:43:40 +0100
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 13 Feb 2021 20:15:59 +0100
 
 gxsm3 (3.52.0-0ubuntu6) focal; urgency=medium
 

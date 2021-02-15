@@ -32,8 +32,7 @@ override_dh_auto_configure:
 
 override_dh_auto_build: 	
 	dh_auto_build --sourcedir=.
-#	dh_auto_build --sourcedir=plug-ins/hard/MK3-EMU
-
+	
 #override_dh_auto_install:
 #	dh_auto_install
 
