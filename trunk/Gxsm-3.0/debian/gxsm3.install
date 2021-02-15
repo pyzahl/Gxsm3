@@ -1,10 +1,10 @@
 debian/Gxsm3-main.pdf usr/share/doc/gxsm3
 debian/sranger-main.pdf usr/share/doc/gxsm3
 
-pixmaps/gxsm-*.png usr/share/gxsm3/pixmaps
+# pixmaps/gxsm-*.png usr/share/gxsm3/pixmaps
 debian/signal_graph.svg usr/share/gxsm3/pixmaps
 debian/signal_graph.dot usr/share/gxsm3/pixmaps
-icons/*svg /usr/share/gxsm3/icons
+# icons/*svg /usr/share/gxsm3/icons
 
 debian/*.desktop usr/share/gxsm3/menu
 
@@ -18,3 +18,23 @@ plug-ins/hard/MK3-A810_spmcontrol/*.out usr/share/gxsm3/dsp-firmware/SR-MK3Pro
 plug-ins/hard/SR-STD_spmcontrol/FB_spmcontrol.out usr/share/gxsm3/dsp-firmware/SR-STD_SP2
 plug-ins/hard/MK2-A810_spmcontrol/FB_spmcontrol_MK2_*.out usr/share/gxsm3/dsp-firmware/SR-MK2
 
+### just needed in a multi binary control file ###
+usr/bin/gxsm3 usr/bin
+usr/bin/gmetopng usr/bin
+usr/bin/nc2top usr/bin
+usr/bin/nctopng usr/bin
+usr/bin/rhkspm32topng usr/bin
+usr/bin/scalatopng usr/bin
+usr/bin/uksoft2001topng usr/bin
+usr/bin/vpdata2ascii usr/bin
+usr/bin/wizard usr/bin
+usr/lib/gxsm3-plugins/* usr/lib/gxsm3-plugins
+usr/lib/pkgconfig/gxsm3.pc usr/lib/pkgconfig
+usr/share/glib-2.0/schemas/org.gnome.gxsm3*.xml usr/share/glib-2.0/schemas
+usr/share/gxsm3/gl-400/*.glsl usr/share/gxsm3/gl-400
+usr/share/gxsm3/icons/*.svg usr/share/gxsm3/icons
+usr/share/gxsm3/palette/* usr/share/gxsm3/palette
+usr/share/gxsm3/pixmaps/*.png usr/share/gxsm3/pixmaps
+usr/share/gxsm3/profileplot/* usr/share/gxsm3/profileplot
+usr/share/icons/hicolor/scalable/apps/gxsm3-icon.svg usr/share/icons/hicolor/scalable/apps        
+usr/share/thumbnailers/gxsm-nc.thumbnailer usr/share/thumbnailers

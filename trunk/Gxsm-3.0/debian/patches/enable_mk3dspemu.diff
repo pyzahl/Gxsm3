@@ -1,0 +1,5 @@
+--- a/plug-ins/Makefile.am
++++ b/plug-ins/Makefile.am
+@@ -1 +1 @@
+-SUBDIRS = control common scan math hard
++SUBDIRS = control common scan math hard hard/MK3-EMU

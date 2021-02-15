@@ -2,7 +2,7 @@ Source: gxsm3
 Section: science
 Priority: optional
 Maintainer: Thorsten Wagner <stm@users.sf.net>
-Build-Depends: 	debhelper (>= 9.0.0), 
+Build-Depends: 	debhelper (>= 12~), 
 		autotools-dev, 
 		freeglut3-dev, 
 		gsettings-desktop-schemas-dev,
@@ -107,4 +107,22 @@ Description: Multi-channel data acquisition via STM/AFM
  http://sranger.sf.net or in 
  J. Vac. Sci. Technol. B 28, C4E39 (2010) 
  (doi:10.1116/1.3374719) 
-
+ 
+Package: gxsm3-mk3dspemu
+Architecture: any
+Multi-Arch: same
+Pre-Depends:	${misc:Pre-Depends}
+Depends: 	${shlibs:Depends}, 
+		${misc:Depends}, 
+		gxsm3
+Suggests: 
+Replaces: sranger (<< 0.0.2 ), gxsm3 (<< 3.52.0-0ubuntu7)
+Breaks: sranger (<< 0.0.2 ), gxsm3 (<< 3.52.0-0ubuntu7)
+Description: Multi-channel data acquisition via STM/AFM
+ GXSM -- Gnome X Scanning Microscopy.
+ --- MK3 Emulation package ---
+ --- !!only experimental!! ---
+ You will have to run 
+ shm_fd = shm_open (sr_emu_dev_file, O_CREAT | O_TRUNC | O_RDWR, 0666);
+ in a terminal to create the shared memory file (sr_emu_dev_file) and adapt
+ the corresponding preferences in GXSM3
