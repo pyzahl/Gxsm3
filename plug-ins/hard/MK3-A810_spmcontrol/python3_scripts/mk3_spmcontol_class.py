@@ -2039,13 +2039,13 @@ class SPMcontrol():
                 print ("---- SAVING ----")
                 config = { 'module_inputs' : mod_input_config, 'user_array_data' : user_array_data }
                 print (config)
-                file = open(file_name, 'wb')
+                file = open(file_name, 'w')
                 pickle.dump (config, file)
                 
         def load_and_write_actual_module_configuration (self, __button, file_name):
                 print ("DSP CONFIG RESTORE FROM FILE: ", file_name)
                 print ("---- LOADING ----")
-                file = open(file_name, 'rb')
+                file = open(file_name, 'r')
                 config = pickle.load (file)
                 mod_input_config = config['module_inputs']
                 user_array_data  = config['user_array_data']
@@ -3039,27 +3039,44 @@ class SPMcontrol():
 
                 return [xarray.astype(float)[::-1], yarray.astype(float)[::-1]]
 
+        def read_recorder_get_deci_pos(self):
+                return self.ring_buffer_position_last
+                
         # must call first with init=True
         def read_recorder_deci(self, n=4096, recorder_file="", init=False):
+                read_recorder_deci_ch(self, n, 0, recorder_file, init)
+                
+        def read_recorder_deci_ch(self, n=4096, ch=0, recorder_file="", init=False):
                 if n < 0 or n > 0x40000:
                         return 0
                 if init:
                         self.max_age = 60 # 60s
                         self.time_of_last_stamp = 0
                         self.ring_buffer_position_last = -1
-                aS1 = self.RECORDER_VARS[ii_Signal1]
+                        self.ring_buffer_position_last0 = -1
+                        self.ring_buffer_position_last1 = -1
+
+                # For common DECI index only:
+                aS = self.RECORDER_VARS[ii_Signal1]
 
                 sr = open (self.sr_dev_path, "rb")
-                os.lseek (sr.fileno(), aS1+4*0x7ffff, 1) # atomic read for critical value
+                os.lseek (sr.fileno(), aS+4*0x7ffff, 1) # atomic read for critical value
                 tmpbuf = sr.read(4)
                 tmparray = frombuffer(tmpbuf, dtype('<i4'), 1)
                 #tmparray = fromfile(sr, dtype('<i4'), 1)
                 sr.close ()
                 deci = tmparray[0]
                 
+                if ch == 1:
+                        aS = self.RECORDER_VARS[ii_Signal2]
+                        self.ring_buffer_position_last = self.ring_buffer_position_last1
+                else:
+                        aS = self.RECORDER_VARS[ii_Signal1]
+                        self.ring_buffer_position_last = self.ring_buffer_position_last0
+
                 #
                 #sr = open (self.sr_dev_path, "rb")
-                #os.lseek (sr.fileno(), aS1+((0x80000)<<2), 0) # non atomic reads for big data!
+                #os.lseek (sr.fileno(), aS+((0x80000)<<2), 0) # non atomic reads for big data!
                 #tmpbuf = sr.read(4*n)
                 #tmparrayR = frombuffer(tmpbuf, dtype('<i4'), n)
                 #tmparray = concatenate((tmparrayR[deci:n], tmparrayR[0:deci]), axis=0)
@@ -3070,7 +3087,7 @@ class SPMcontrol():
                 start = deci-n
                 if start > 0:
                         sr = open (self.sr_dev_path, "rb")
-                        os.lseek (sr.fileno(), aS1+((0x80000+start)<<2), 0) # non atomic reads for big data!
+                        os.lseek (sr.fileno(), aS+((0x80000+start)<<2), 0) # non atomic reads for big data!
                         tmpbuf = sr.read(4*n)
                         tmparray = frombuffer(tmpbuf, dtype('<i4'), n)
                         #tmparray = fromfile(sr, dtype('<i4'), n)
@@ -3079,11 +3096,11 @@ class SPMcontrol():
                         n1 = -start
                         n2 = n-n1
                         sr = open (self.sr_dev_path, "rb")
-                        os.lseek (sr.fileno(), aS1+((0x80000+0x40000-n1)<<2), 0) # non atomic reads for big data!
+                        os.lseek (sr.fileno(), aS+((0x80000+0x40000-n1)<<2), 0) # non atomic reads for big data!
                         tmpbuf = sr.read(4*n)
                         tmparray1 = frombuffer(tmpbuf, dtype('<i4'), n1)
                         #tmparray1 = fromfile(sr, dtype('<i4'), n1)
-                        os.lseek (sr.fileno(), aS1+((0x80000+n2)<<2), 0) # non atomic reads for big data!
+                        os.lseek (sr.fileno(), aS+((0x80000)<<2), 0) # non atomic reads for big data!
                         tmpbuf = sr.read(4*n)
                         tmparray2 = frombuffer(tmpbuf, dtype('<i4'), n2)
                         #tmparray2 = fromfile(sr, dtype('<i4'), n2)
@@ -3112,6 +3129,11 @@ class SPMcontrol():
                                         else:
                                                 recorder.write("#EEi\n")
                 self.ring_buffer_position_last = deci
+                if ch == 1:
+                        self.ring_buffer_position_last1 = self.ring_buffer_position_last
+                else:
+                        self.ring_buffer_position_last0 = self.ring_buffer_position_last
+
                 return tmparray.astype(float)
 
 
