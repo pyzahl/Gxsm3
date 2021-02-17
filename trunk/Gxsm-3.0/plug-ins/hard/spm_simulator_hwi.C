@@ -511,7 +511,11 @@ void SPM_SIM_Control::create_folder (){
                                                "Check to enable Blobs.", 1,
                                                GCallback (config_options_callback), this, 1, 0x02);
                         bp->new_line ();
+                        bp->grid_add_check_button ("Reference Scan Landscape in CH11",
+                                               "Load a (large) reference image / scan int CH11.", 1,
+                                               GCallback (config_options_callback), this, 1, 0x04);
 
+                        bp->new_line ();
                         // ======================================== Piezo Drive / Amplifier Settings
                         bp->new_grid_with_frame ("Piezo Drive Settings");
 
@@ -748,6 +752,7 @@ double spm_simulator_hwi_dev::simulate_value (int xi, int yi, int ch){
         static feature_molecule mol[N_molecules];
         static feature_lattice lat;
         static double fz = 1./gapp->xsm->Inst->Dig2ZA(1);
+
         double x = xi*Dx-Dx*Nx/2; // x in DAC units
         double y = (Ny-yi-1)*Dy-Dy*Ny/2; // y in DAC units, i=0 is top line, i=Ny is bottom line
 
@@ -769,6 +774,13 @@ double spm_simulator_hwi_dev::simulate_value (int xi, int yi, int ch){
         y += gapp->xsm->Inst->Dig2Y0A (y0);
 
         //g_print ("XYR0: %g %g",x,y);
+
+        // use template landscape is scan loaded to CH11 !!
+        if (gapp->xsm->scan[10]){
+                double ix,iy;
+                gapp->xsm->scan[10]->World2Pixel  (x, y, ix,iy);
+                return gapp->xsm->scan[10]->data.s.dz * gapp->xsm->scan[10]->mem2d->GetDataPktInterpol (ix,iy);
+        }
 
         double z=0.0;
         for (int i=0; i<N_steps;     ++i) z += stp[i].get_z (x,y, ch);
