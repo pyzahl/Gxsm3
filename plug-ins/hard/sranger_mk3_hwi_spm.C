@@ -120,7 +120,8 @@ sranger_mk3_hwi_spm::~sranger_mk3_hwi_spm(){
  "i" :                GPIO (high level speudo monitor)
  "A" :                Mover/Wave axis counts 0,1,2 (X/Y/Z)
  "p" :                X,Y Scan/Probe Coords in Pixel, 0,0 is center, DSP Scan Coords
- "P" :                X,Y Scan/Probe Coords in Pixel, 0,0 is top left [indices]
+ "P" :                X,Y Scan/Probe Coords in Pixel, 0,0 is top le
+ft [indices]
  */
 
 gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
