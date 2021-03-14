@@ -4604,9 +4604,9 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
 	PI_DEBUG_GP (DBG_L3, "MIX-b\n");
 
 	if (mix_ch == 0){
-	      gchar *tmp = g_strdup_printf ("Mix-%s-ITunnel", sranger_common_hwi->dsp_signal_lookup_managed[signal].label);
+                gchar *tmp = g_strdup_printf ("Mix-%s-ITunnel", sranger_common_hwi->dsp_signal_lookup_managed[signal].label);
               PI_DEBUG_GP (DBG_L3, "MIX[0] =>> %s\n", tmp);
-	      gapp->channelselector->SetModeChannelSignal (6+3, tmp, tmp, // "nA", 1.);  //-- fix ???
+	      gapp->channelselector->SetModeChannelSignal (6+3, tmp, tmp, // "nA", 1.);  //-- fix ??? -- adjusting signal lookup at startup now!
                                                            sranger_common_hwi->dsp_signal_lookup_managed[signal].unit,
                                                            sranger_common_hwi->dsp_signal_lookup_managed[signal].scale*scale_extra);
               PI_DEBUG_GP (DBG_L3, "MIX%d-b2\n");
@@ -4650,8 +4650,16 @@ void DSPControl::update_sourcesignals_from_DSP_callback (){
 			scale_extra = 256.*256; // In 0..7 are scaled up for MIXER0-3, else raw 32bit number.
 
 		if (i == 0){
+                        g_message ("UPDATE SigSrc DSP: [%d] >%s< in (%s) x %g x se=%g {%g}",
+                                   si,
+                                   sranger_common_hwi->lookup_dsp_signal_managed (si)->label,
+                                   sranger_common_hwi->lookup_dsp_signal_managed (si)->unit,
+                                   sranger_common_hwi->lookup_dsp_signal_managed (si)->scale,
+                                   scale_extra,
+                                   sranger_common_hwi->lookup_dsp_signal_managed (si)->scale/(10.0/(32767.*(1<<16)))
+                                   );
 		        gchar *tmp = g_strdup_printf ("Mix-%s-ITunnel", sranger_common_hwi->lookup_dsp_signal_managed (si)->label);
-			gapp->channelselector->SetModeChannelSignal(6+3, tmp, tmp, // fix: ?? "nA", 1. );
+			gapp->channelselector->SetModeChannelSignal(6+3, tmp, tmp, // fix: ?? "nA", 1. ); // now adjusted for IN0 at startup in DSP signal table
 								    sranger_common_hwi->lookup_dsp_signal_managed (si)->unit,
 								    sranger_common_hwi->lookup_dsp_signal_managed (si)->scale*scale_extra
 								    );

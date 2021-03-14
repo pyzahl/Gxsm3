@@ -122,6 +122,8 @@ const char* unitlookup[] = { "V",   "V",    "V",    "V",    "V",    "V",     "V"
 #define XSM_DEBUG_PG(X) ;
 
 const char* DSPControl::vp_label_lookup(int i){
+        //if (i==0) // IN0 dedicated for tunnel current
+        //        return sranger_common_hwi->lookup_signal_name_by_index (0);
 	if (i > 11 && i < 16){
 		int k=i-12;
 		if (vp_input_id_cache[k] < 0)
@@ -134,6 +136,11 @@ const char* DSPControl::vp_label_lookup(int i){
 }
 
 const char* DSPControl::vp_unit_lookup(int i){
+        if (i==0) // IN0 dedicated for tunnel current
+                if (gapp->xsm->Inst->nAmpere2V (1.) > 1.)
+                        return "pA"; // sranger_common_hwi->lookup_signal_unit_by_index (0); // must be a unscaled unit here
+                else
+                        return "nA"; // sranger_common_hwi->lookup_signal_unit_by_index (0); // must be a unscaled unit here
 	if (i > 11 && i < 16){
 		int k=i-12;
 		if (vp_input_id_cache[k] < 0)
@@ -153,6 +160,11 @@ double DSPControl::vp_scale_lookup(int i){
 			       0.
 	};
 
+        if (i==0) // IN0 dedicated for tunnel current
+                if (gapp->xsm->Inst->nAmpere2V (1.) > 1.)
+                        return  DAC2Ulookup[0]/gapp->xsm->Inst->nAmpere2V (1e-3); // choose pA
+                else
+                        return  DAC2Ulookup[0]/gapp->xsm->Inst->nAmpere2V (1.); // nA
 	if (i > 11 && i < 16){
 		int k=i-12;
 		if (vp_input_id_cache[k] < 0)
