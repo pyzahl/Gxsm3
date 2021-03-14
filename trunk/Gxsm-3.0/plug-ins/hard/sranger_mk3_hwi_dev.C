@@ -3730,15 +3730,15 @@ int sranger_mk3_hwi_dev::read_signal_lookup (){
 		dsp_signal_lookup_managed[i].dim   = dsp_signal_lookup[i].dim;
 		dsp_signal_lookup_managed[i].label = g_strdup(dsp_signal_lookup[i].label);
                 if (i==0){ // IN0 dedicated to tunnel current via IVC
-                        g_print ("nA to Volt=%g",gapp->xsm->Inst->nAmpere2V (1.));
+                        // g_print ("1nA to Volt=%g  1pA to Volt=%g",gapp->xsm->Inst->nAmpere2V (1.),gapp->xsm->Inst->nAmpere2V (1e-3));
                         if (gapp->xsm->Inst->nAmpere2V (1.) > 1.){
-                                dsp_signal_lookup_managed[i].unit  = g_strdup("pA");
-                                dsp_signal_lookup_managed[i].scale = dsp_signal_lookup[i].scale;
-                                dsp_signal_lookup_managed[i].scale /= gapp->xsm->Inst->nAmpere2V (1.);
+                                dsp_signal_lookup_managed[i].unit  = g_strdup("pA"); // use pA scale
+                                dsp_signal_lookup_managed[i].scale = dsp_signal_lookup[i].scale; // -> Volts
+                                dsp_signal_lookup_managed[i].scale /= gapp->xsm->Inst->nAmpere2V (1); // values are always in nA
                         } else {
                                 dsp_signal_lookup_managed[i].unit  = g_strdup("nA");
-                                dsp_signal_lookup_managed[i].scale = dsp_signal_lookup[i].scale;
-                                dsp_signal_lookup_managed[i].scale /= gapp->xsm->Inst->nAmpere2V (1.);
+                                dsp_signal_lookup_managed[i].scale = dsp_signal_lookup[i].scale; // -> Volts
+                                dsp_signal_lookup_managed[i].scale /= gapp->xsm->Inst->nAmpere2V (1.); // nA
                         }
                 } else {
                         dsp_signal_lookup_managed[i].unit  = g_strdup(dsp_signal_lookup[i].unit);
