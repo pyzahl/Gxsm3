@@ -98,7 +98,7 @@ extern gboolean BgERegress(MATHOPPARAMS);
 
 /* Filter 1D */
 extern gboolean F1D_Despike(MATHOPPARAMS);
-extern gboolean F1D_LogPowerSpec(MATHOPPARAMS);
+extern gboolean F1D_PowerSpec(MATHOPPARAMS);
 extern gboolean F1D_FT_Window(MATH2OPPARAMS);
 extern gboolean F1D_FT_GaussStop(MATH2OPPARAMS);
 extern gboolean F1D_FT_GaussPass(MATH2OPPARAMS);

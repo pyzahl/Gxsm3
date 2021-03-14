@@ -205,8 +205,11 @@ double ProfileElement::calc(gint64 ymode, int id, int binary_mask, double y_offs
 			delete psd_scan;
 		psd_scan = new Scan (scan);
 		psd_scan->SetView ();
-		F1D_LogPowerSpec(scan, psd_scan);
+		F1D_PowerSpec(scan, psd_scan);
 		n=psd_scan->mem2d->GetNx();
+                ix_left=0;
+                ix_right=n-1;
+                ylocmin = 0.;
 		dc=psd_scan->mem2d->GetDataPkt (n-1, 0);
                 // g_message ("FT DC=%g  N=%d", dc, n);
 		double c=psd_scan->mem2d->GetDataPkt (n-2, 0);
