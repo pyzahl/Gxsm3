@@ -3729,8 +3729,21 @@ int sranger_mk3_hwi_dev::read_signal_lookup (){
 		dsp_signal_lookup_managed[i].p = dsp_signal_list[i].p;
 		dsp_signal_lookup_managed[i].dim   = dsp_signal_lookup[i].dim;
 		dsp_signal_lookup_managed[i].label = g_strdup(dsp_signal_lookup[i].label);
-		dsp_signal_lookup_managed[i].unit  = g_strdup(dsp_signal_lookup[i].unit);
-		dsp_signal_lookup_managed[i].scale = dsp_signal_lookup[i].scale;
+                if (i==0){ // IN0 dedicated to tunnel current via IVC
+                        g_print ("nA to Volt=%g",gapp->xsm->Inst->nAmpere2V (1.));
+                        if (gapp->xsm->Inst->nAmpere2V (1.) > 1.){
+                                dsp_signal_lookup_managed[i].unit  = g_strdup("pA");
+                                dsp_signal_lookup_managed[i].scale = dsp_signal_lookup[i].scale;
+                                dsp_signal_lookup_managed[i].scale /= gapp->xsm->Inst->nAmpere2V (1.);
+                        } else {
+                                dsp_signal_lookup_managed[i].unit  = g_strdup("nA");
+                                dsp_signal_lookup_managed[i].scale = dsp_signal_lookup[i].scale;
+                                dsp_signal_lookup_managed[i].scale /= gapp->xsm->Inst->nAmpere2V (1.);
+                        }
+                } else {
+                        dsp_signal_lookup_managed[i].unit  = g_strdup(dsp_signal_lookup[i].unit);
+                        dsp_signal_lookup_managed[i].scale = dsp_signal_lookup[i].scale;
+                }
 		dsp_signal_lookup_managed[i].module  = g_strdup(dsp_signal_lookup[i].module);
 		dsp_signal_lookup_managed[i].index  = -1;
                 PI_DEBUG_PLAIN (DBG_L2,

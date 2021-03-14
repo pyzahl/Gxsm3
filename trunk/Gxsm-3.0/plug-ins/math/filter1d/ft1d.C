@@ -232,7 +232,7 @@ static gboolean ft1d_run(Scan *Src, Scan *Dest)
 	if (Src->mem2d->GetNx () < 3) 
 		return MATH_SIZEERR;
 
-	return F1D_LogPowerSpec (Src, Dest);
+	return F1D_PowerSpec (Src, Dest);
 }
 
 
