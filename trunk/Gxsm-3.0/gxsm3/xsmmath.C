@@ -1015,15 +1015,15 @@ gboolean F1D_Despike(MATHOPPARAMS){
 #endif
 
 // compute 1D power spectrum (row by row)
-gboolean F1D_LogPowerSpec(MATHOPPARAMS)
+gboolean F1D_PowerSpec(MATHOPPARAMS)
 {
 	XSM_DEBUG (DBG_L3, "F1D LogPowerSpec");
 
 	XSM_DEBUG (DBG_L3, "F1D LogPowerSpec: using libfftw");
 
 	// get memory for complex data
-	double *in  = new double [Src->mem2d->GetNx()];
-	fftw_complex *out = new fftw_complex [Src->mem2d->GetNx()];
+        double        *in = (double*)       fftw_malloc(sizeof(double) * Src->mem2d->GetNx());
+        fftw_complex *out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Src->mem2d->GetNx());
 
 	// create plan for fft
 	fftw_plan plan = fftw_plan_dft_r2c_1d (Src->mem2d->GetNx(), in, out, FFTW_ESTIMATE);
@@ -1043,6 +1043,8 @@ gboolean F1D_LogPowerSpec(MATHOPPARAMS)
 	Dest->data.s.dz = Src->data.s.dz;
 	Dest->data.s.dy = Src->data.s.dy;
  
+	int n = Dest->mem2d->GetNx();
+        double norm = 1./n;
 	// compute 1D fourier transform for every row
 	for (int line = 0; line < Src->mem2d->GetNy(); line++) {
 		Src->mem2d->data->SetPtr(0, line);
@@ -1061,11 +1063,9 @@ gboolean F1D_LogPowerSpec(MATHOPPARAMS)
 		Dest->mem2d->data->SetPtr(0, line);
 
 		for (int col = Dest->mem2d->GetNx()-1; col >= 0; --col)
-			Dest->mem2d->data->SetNext ( ZEROVALUE + ( c_re(out[col])*c_re(out[col]) + 
-						       c_im(out[col])*c_im(out[col]) ));
+			Dest->mem2d->data->SetNext ( ZEROVALUE + norm * sqrt( c_re(out[col])*c_re(out[col]) + c_im(out[col])*c_im(out[col]) ));
 	}
 
-	int n = Dest->mem2d->GetNx();
 	double s = 1./(fabs(Src->mem2d->data->GetXLookup(Src->mem2d->GetNx()-1) - Src->mem2d->data->GetXLookup(0)));
 	for (int i=0; i<n; ++i)
 		Dest->mem2d->data->SetXLookup(i, (n-i)*s);
@@ -1074,8 +1074,8 @@ gboolean F1D_LogPowerSpec(MATHOPPARAMS)
 	fftw_destroy_plan (plan);
 
 	// free temp data memory
-	delete in;
-	delete out;
+        fftw_free(in);
+        fftw_free(out); 
 
 	return MATH_OK;
 }
