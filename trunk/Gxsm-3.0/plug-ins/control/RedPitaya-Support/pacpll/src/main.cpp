@@ -302,7 +302,7 @@ int rp_PAC_App_Init(){
 #ifdef REMAP_TO_OLD_FPGA_VERSION // (2019 compat.)
         FPGA_PACPLL_CFG_block_size  = 7*sysconf (_SC_PAGESIZE);   // 1024bit CFG Register   = 7*sysconf (_SC_PAGESIZE); 
 #else
-        FPGA_PACPLL_CFG_block_size  = 9*sysconf (_SC_PAGESIZE);   // 1024bit CFG Register   = 9*sysconf (_SC_PAGESIZE); 
+        FPGA_PACPLL_CFG_block_size  = 8*sysconf (_SC_PAGESIZE);   // 1024bit CFG Register   = 9*sysconf (_SC_PAGESIZE); 
 #endif
         FPGA_PACPLL_BRAM_block_size = 2048*sysconf(_SC_PAGESIZE); // Dual Ported FPGA BRAM
 
@@ -322,7 +322,7 @@ int rp_PAC_App_Init(){
         // PS/axi_gpio_4          0x4200_5000  4K  0x4200_5FFF
         // PS/axi_gpio_5          0x4200_6000  4K  0x4200_6FFF
         // PS/axi_gpio_6          0x4200_7000  4K  0x4200_7FFF
-        // PS/axi_gpio_7          0x4200_8000  4K  0x4200_8FFF
+        //### PS/axi_gpio_7          0x4200_8000  4K  0x4200_8FFF // removed mapping
         
         if ((fd = open (FPGA_PACPLL_A9_name, O_RDWR)) < 0) {
                 perror ("open");
@@ -1128,8 +1128,8 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
 
         SIGNAL_GPIOX[12] = read_gpio_reg_int32 (7,0); // GPIO X13: control dFreq
         SIGNAL_GPIOX[13] = read_gpio_reg_int32 (7,1); // GPIO X14
-        SIGNAL_GPIOX[14] = read_gpio_reg_int32 (8,0); // GPIO X15
-        SIGNAL_GPIOX[15] = read_gpio_reg_int32 (8,1); // GPIO X16
+        //SIGNAL_GPIOX[14] = read_gpio_reg_int32 (8,0); // GPIO X15
+        //SIGNAL_GPIOX[15] = read_gpio_reg_int32 (8,1); // GPIO X16
 
         
         // LMS Detector Readings and double precision conversions
