@@ -636,6 +636,18 @@ int idle_task_015(void){
                 case 1031:
                         InitMcBSP0_in_RP_FPGA_Mode(8, 4); // 20MHz
                         break;
+                case 1032:
+                        InitMcBSP0_in_RP_FPGA_Mode(8, 3); // 25MHz
+                        break;
+                case 1033:
+                        InitMcBSP0_in_RP_FPGA_Mode(8, 2); // 33MHz
+                        break;
+                case 1034:
+                        InitMcBSP0_in_RP_FPGA_Mode(8, 1); // 50MHz
+                        break;
+                case 1035:
+                        InitMcBSP0_in_RP_FPGA_Mode(8, 0); // 100MHz
+                        break;
 
                 case 688:
                         stop_Analog810 (); // Stop AICs now again -- testing only
