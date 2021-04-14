@@ -3,10 +3,10 @@
 <eagle version="9.0.1">
 <drawing>
 <settings>
-<setting alwaysvectorfont="no"/>
+<setting alwaysvectorfont="yes"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="10" unitdist="mil" unit="mil" style="dots" multiple="1" display="yes" altdistance="0.000123031496" altunitdist="mil" altunit="mil"/>
+<grid distance="0.000123031496" unitdist="mil" unit="mil" style="dots" multiple="1" display="no" altdistance="0.000123031496" altunitdist="mil" altunit="mil"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
@@ -26309,9 +26309,9 @@ design rules under a new name.</description>
 <attribute name="STANDARD" value="Manufacturer Recommendations" x="9.95989375" y="6.16041875" size="0.8128" layer="27" rot="R90" display="off"/>
 <attribute name="VALUE" x="12.78513125" y="46.712875" size="1.27" layer="27" rot="R90"/>
 </element>
-<element name="R4" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="23.622" y="27.686" rot="R90"/>
-<element name="R1" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="23.622" y="43.942" rot="R90"/>
-<element name="R2" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="23.622" y="12.7" rot="R90"/>
+<element name="R4" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="23.65425625" y="27.71019375" rot="R90"/>
+<element name="R1" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="23.703290625" y="44.0233" rot="R90"/>
+<element name="R2" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="23.61266875" y="12.73733125" rot="R90"/>
 </elements>
 <signals>
 <signal name="VCC+3.3V">
@@ -26725,7 +26725,7 @@ design rules under a new name.</description>
 <wire x1="22.0218" y1="28.4734" x2="22.017" y2="28.367" width="0.1524" layer="1"/>
 <wire x1="55.8546" y1="38.6842" x2="55.922" y2="38.607" width="0.1524" layer="1"/>
 <contactref element="R4" pad="2"/>
-<wire x1="23.622" y1="28.336" x2="22.048" y2="28.336" width="0.1524" layer="1"/>
+<wire x1="23.65425625" y1="28.36019375" x2="22.048" y2="28.336" width="0.1524" layer="1"/>
 <wire x1="22.048" y1="28.336" x2="22.017" y2="28.367" width="0.1524" layer="1"/>
 </signal>
 <signal name="N$2">
@@ -26740,7 +26740,7 @@ design rules under a new name.</description>
 <wire x1="21.8694" y1="26.9494" x2="22.017" y2="27.097" width="0.1524" layer="1"/>
 <wire x1="54.6354" y1="35.941" x2="54.652" y2="36.067" width="0.1524" layer="1"/>
 <contactref element="R4" pad="1"/>
-<wire x1="23.622" y1="27.036" x2="22.078" y2="27.036" width="0.1524" layer="1"/>
+<wire x1="23.65425625" y1="27.06019375" x2="22.078" y2="27.036" width="0.1524" layer="1"/>
 <wire x1="22.078" y1="27.036" x2="22.017" y2="27.097" width="0.1524" layer="1"/>
 </signal>
 <signal name="N$3">
@@ -26785,7 +26785,7 @@ design rules under a new name.</description>
 <contactref element="R1" pad="2"/>
 <wire x1="23.48" y1="44.592" x2="22.112" y2="44.592" width="0.1524" layer="1"/>
 <wire x1="22.112" y1="44.592" x2="22.017" y2="44.687" width="0.1524" layer="1"/>
-<wire x1="23.622" y1="44.592" x2="23.48" y2="44.592" width="0.1524" layer="1"/>
+<wire x1="23.703290625" y1="44.6733" x2="23.48" y2="44.592" width="0.1524" layer="1"/>
 <wire x1="23.48" y1="44.592" x2="23.7998" y2="44.7802" width="0.1524" layer="1"/>
 </signal>
 <signal name="N$6">
@@ -26806,7 +26806,7 @@ design rules under a new name.</description>
 <wire x1="36.4998" y1="36.0934" x2="36.602" y2="36.067" width="0.1524" layer="16"/>
 <via x="24.1554" y="41.8846" extent="1-16" drill="0.35"/>
 <contactref element="R1" pad="1"/>
-<wire x1="23.622" y1="43.292" x2="23.256" y2="43.292" width="0.1524" layer="1"/>
+<wire x1="23.703290625" y1="43.3733" x2="23.256" y2="43.292" width="0.1524" layer="1"/>
 </signal>
 <signal name="N$7">
 <contactref element="J2" pad="3"/>
@@ -26847,7 +26847,7 @@ design rules under a new name.</description>
 <wire x1="33.2994" y1="35.179" x2="34.062" y2="36.067" width="0.1524" layer="16"/>
 <via x="24.9682" y="13.2334" extent="1-16" drill="0.35"/>
 <contactref element="R2" pad="2"/>
-<wire x1="24.9682" y1="13.2334" x2="23.622" y2="13.35" width="0" layer="19" extent="1-16"/>
+<wire x1="24.9682" y1="13.2334" x2="23.61266875" y2="13.38733125" width="0" layer="19" extent="1-16"/>
 </signal>
 <signal name="N$10">
 <contactref element="U2" pad="11"/>
@@ -26861,7 +26861,7 @@ design rules under a new name.</description>
 <wire x1="32.6898" y1="38.5318" x2="32.792" y2="38.607" width="0.1524" layer="16"/>
 <via x="26.3906" y="13.4874" extent="1-16" drill="0.35"/>
 <contactref element="R2" pad="1"/>
-<wire x1="25.0698" y1="12.1666" x2="23.622" y2="12.05" width="0" layer="19" extent="1-1"/>
+<wire x1="25.0698" y1="12.1666" x2="23.61266875" y2="12.08733125" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$11">
 <contactref element="J2" pad="7"/>

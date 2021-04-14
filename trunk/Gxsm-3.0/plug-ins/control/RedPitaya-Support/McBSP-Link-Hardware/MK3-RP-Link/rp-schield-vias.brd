@@ -3,7 +3,7 @@
 <eagle version="9.0.1">
 <drawing>
 <settings>
-<setting alwaysvectorfont="no"/>
+<setting alwaysvectorfont="yes"/>
 <setting verticaltext="up"/>
 </settings>
 <grid distance="0.003125" unitdist="mic" unit="mm" style="lines" multiple="1" display="yes" altdistance="5" altunitdist="mil" altunit="mil"/>
@@ -26449,9 +26449,9 @@ design rules under a new name.</description>
 <attribute name="OC_NEWARK" value="unknown" x="40.64" y="46.99" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="VALUE" x="45.339" y="36.83" size="1.27" layer="27" ratio="10" rot="R90"/>
 </element>
-<element name="R3" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="41.7823125" y="24.594221875"/>
-<element name="R4" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="21.125246875" y="24.7952"/>
-<element name="R5" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="31.083778125" y="34.232609375"/>
+<element name="R3" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="41.6412375" y="24.671178125"/>
+<element name="R4" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="21.1160125" y="24.7075625"/>
+<element name="R5" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/1" value="100R" x="31.058128125" y="34.258259375"/>
 </elements>
 <signals>
 <signal name="VCC+3.3V">
@@ -26997,7 +26997,7 @@ design rules under a new name.</description>
 <wire x1="42.2148" y1="26.2636" x2="42.21" y2="26.37" width="0.1524" layer="1"/>
 <wire x1="45.72" y1="18.796" x2="45.805" y2="18.67" width="0.1524" layer="1"/>
 <contactref element="R3" pad="2"/>
-<wire x1="42.4323125" y1="24.594221875" x2="42.2148" y2="24.892" width="0" layer="19" extent="1-1"/>
+<wire x1="42.2912375" y1="24.671178125" x2="42.2148" y2="24.892" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="MOSI-">
 <contactref element="U3" pad="11"/>
@@ -27014,7 +27014,7 @@ design rules under a new name.</description>
 <wire x1="40.9956" y1="26.2636" x2="40.94" y2="26.37" width="0.1524" layer="1"/>
 <wire x1="46.9392" y1="21.082" x2="47.075" y2="21.21" width="0.1524" layer="1"/>
 <contactref element="R3" pad="1"/>
-<wire x1="40.9956" y1="23.5204" x2="41.1323125" y2="24.594221875" width="0" layer="19" extent="1-1"/>
+<wire x1="40.9956" y1="23.5204" x2="40.9912375" y2="24.671178125" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="CS+RET-FSR">
 <contactref element="U1" pad="9"/>
@@ -27043,7 +27043,7 @@ design rules under a new name.</description>
 <wire x1="21.7932" y1="26.2636" x2="21.7" y2="26.37" width="0.1524" layer="1"/>
 <wire x1="20.7264" y1="18.796" x2="20.675" y2="18.67" width="0.1524" layer="1"/>
 <contactref element="R4" pad="2"/>
-<wire x1="21.776109375" y1="24.989340625" x2="21.775246875" y2="24.7952" width="0" layer="19" extent="1-1"/>
+<wire x1="21.776109375" y1="24.989340625" x2="21.7660125" y2="24.7075625" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="CS-FSX">
 <contactref element="U1" pad="11"/>
@@ -27053,7 +27053,7 @@ design rules under a new name.</description>
 <wire x1="20.574" y1="26.2636" x2="20.43" y2="26.37" width="0.1524" layer="1"/>
 <wire x1="24.384" y1="21.2344" x2="24.485" y2="21.21" width="0.1524" layer="1"/>
 <contactref element="R4" pad="1"/>
-<wire x1="20.475246875" y1="24.7952" x2="20.56545625" y2="24.36075625" width="0" layer="19" extent="1-1"/>
+<wire x1="20.4660125" y1="24.7075625" x2="20.56545625" y2="24.36075625" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="CLK+-CLKX">
 <contactref element="U2" pad="9"/>
@@ -27086,7 +27086,7 @@ design rules under a new name.</description>
 <wire x1="26.848521875" y1="18.643603125" x2="25.755" y2="18.67" width="0.1524" layer="16"/>
 <via x="31.6992" y="29.0068" extent="1-16" drill="0.35"/>
 <contactref element="R5" pad="2"/>
-<wire x1="31.6992" y1="36.0172" x2="31.733778125" y2="34.232609375" width="0" layer="19" extent="1-1"/>
+<wire x1="31.6992" y1="36.0172" x2="31.708128125" y2="34.258259375" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="CLK-RET-CLKR">
 <contactref element="U2" pad="11"/>
@@ -27098,7 +27098,7 @@ design rules under a new name.</description>
 <wire x1="27.1272" y1="21.2344" x2="27.025" y2="21.21" width="0.1524" layer="16"/>
 <via x="30.3276" y="29.0068" extent="1-16" drill="0.35"/>
 <contactref element="R5" pad="1"/>
-<wire x1="30.3276" y1="36.0172" x2="30.433778125" y2="34.232609375" width="0" layer="19" extent="1-1"/>
+<wire x1="30.3276" y1="36.0172" x2="30.408128125" y2="34.258259375" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="~RE">
 <contactref element="U3" pad="3"/>
