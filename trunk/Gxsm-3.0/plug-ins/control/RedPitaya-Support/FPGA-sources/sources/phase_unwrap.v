@@ -45,7 +45,8 @@
 
 module phase_unwrap #(
     parameter S_AXIS_TDATA_WIDTH = 24, // INPUT AXIS DATA WIDTH  3Q21
-    parameter M_AXIS_TDATA_WIDTH = 32  // OUTPUT AXIS DATA WIDTH 11Q21
+    parameter M_AXIS_TDATA_WIDTH = 32, // OUTPUT AXIS DATA WIDTH 11Q21
+    parameter PHU_DISABLE = 0          // FORCE STATIC DISABLED
 )
 (
     // (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
@@ -84,29 +85,35 @@ module phase_unwrap #(
     always @ (posedge aclk)
     begin
         p0 <= $signed ({{(M_AXIS_TDATA_WIDTH-S_AXIS_TDATA_WIDTH){S_AXIS_tdata[S_AXIS_TDATA_WIDTH-1]}}, S_AXIS_tdata[S_AXIS_TDATA_WIDTH-1:0]});
-        p1 <= p0;
-        p2 <= p1;
         
-        dp01 <= p0-p1;
-        
-        if (reg_unwrap_enable)
+        if (PHU_DISABLE)
         begin
-            if (dp01 > 25'sd6588397)                      // > pi : (1<<21)*pi = 6588397.3
-            begin
-                phase_wrap <= phase_wrap - 25'sd13176795; // 2pi : (1<<21)*pi = 13176794.6
-            end
-            if (dp01 < -25'sd6588397)                     // > pi  (1<<21)*pi = 6588397.3
-            begin
-                phase_wrap <= phase_wrap + 25'sd13176795;
-            end
+            phase_unwrapped <= p0;
         end
         else
-        begin
-            phase_wrap <= 0;
-        end
-
-        phase_unwrapped <= p2 + phase_wrap; 
-        
+        begin             
+            p1 <= p0;
+            p2 <= p1;
+            
+            dp01 <= p0-p1;
+            if (reg_unwrap_enable)
+            begin
+                if (dp01 > 25'sd6588397)                      // > pi : (1<<21)*pi = 6588397.3
+                begin
+                    phase_wrap <= phase_wrap - 25'sd13176795; // 2pi : (1<<21)*pi = 13176794.6
+                end
+                if (dp01 < -25'sd6588397)                     // > pi  (1<<21)*pi = 6588397.3
+                begin
+                    phase_wrap <= phase_wrap + 25'sd13176795;
+                end
+            end
+            else
+            begin
+                phase_wrap <= 0;
+            end
+    
+            phase_unwrapped <= p2 + phase_wrap; 
+        end            
     end
     
     assign M_AXIS_tdata   = phase_unwrapped;

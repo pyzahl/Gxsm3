@@ -57,6 +57,9 @@ module McBSP_io_connect #(
 // IOBUF macro, .T(0) : Output direction. IO = I, O = I (passed)
 // IOBUF macro, .T(1) : Input direction.  IO = Z (high imp), O = IO (passed), I=X
 
+// V1.0 interface McBSP on exp_p_io[], IO-in on exp_n_io
+// ==========================================================================
+/*
 IOBUF clk_iobuf (.O(McBSP_clk),      .IO(exp_p_io[0]), .I(0),         .T(1) );
 IOBUF fs_iobuf  (.O(McBSP_fs),       .IO(exp_p_io[1]), .I(0),         .T(1) );
 IOBUF rx_iobuf  (.O(McBSP_rx),       .IO(exp_p_io[2]), .I(0),         .T(1) );
@@ -64,147 +67,38 @@ IOBUF tx_iobuf  (.O(McBSP_pass[0]),  .IO(exp_p_io[3]), .I(McBSP_tx),  .T(0) );
 IOBUF fsx_iobuf (.O(McBSP_pass[1]),  .IO(exp_p_io[4]), .I(McBSP_fsx), .T(0) );
 IOBUF frm_iobuf (.O(McBSP_pass[2]),  .IO(exp_p_io[5]), .I(McBSP_frm), .T(0) );
 IOBUF clkr_iobuf(.O(McBSP_pass[3]),  .IO(exp_p_io[6]), .I(McBSP_clkr),.T(0) );
-//OBUF tx_obuf  (.O(exp_p_io[3]), .I(McBSP_tx));
-//OBUF fsx_obuf (.O(exp_p_io[4]), .I(McBSP_fsx));
-//OBUF frm_obuf (.O(exp_p_io[5]), .I(McBSP_frm));
-//OBUF clkr_obuf(.O(exp_p_io[6]), .I(McBSP_clkr));
 IOBUF nrx_iobuf (.O(McBSP_nrx),      .IO(exp_p_io[7]), .I(0),         .T(1) );
 
 if (USE_RP_DIGITAL_IO)
 begin
     IOBUF exp_in_iobuf[8-1:0] (.O(RP_exp_in[8-1:0]), .IO(exp_n_io[8-1:0]), .I(8'b00000000),    .T(8'b11111111) );
 end
+// = V1 =====================================================================
+*/
+// ---------------------------------------- OR -------------------------------
+
+// V2.0 interface McBSP on exp_n_io[], IO-in on exp_p_io (swapped pins)
+// ===========================================================================
+IOBUF clk_iobuf (.O(McBSP_clk),      .IO(exp_n_io[0]), .I(0),         .T(1) );
+IOBUF fs_iobuf  (.O(McBSP_fs),       .IO(exp_n_io[1]), .I(0),         .T(1) );
+IOBUF rx_iobuf  (.O(McBSP_rx),       .IO(exp_n_io[2]), .I(0),         .T(1) );
+IOBUF tx_iobuf  (.O(McBSP_pass[0]),  .IO(exp_n_io[3]), .I(McBSP_tx),  .T(0) );
+IOBUF fsx_iobuf (.O(McBSP_pass[1]),  .IO(exp_n_io[4]), .I(McBSP_fsx), .T(0) );
+IOBUF frm_iobuf (.O(McBSP_pass[2]),  .IO(exp_n_io[5]), .I(McBSP_frm), .T(0) );
+IOBUF clkr_iobuf(.O(McBSP_pass[3]),  .IO(exp_n_io[6]), .I(McBSP_clkr),.T(0) );
+IOBUF nrx_iobuf (.O(McBSP_nrx),      .IO(exp_n_io[7]), .I(0),         .T(1) );
+
+if (USE_RP_DIGITAL_IO)
+begin
+    IOBUF exp_in_iobuf[8-1:0] (.O(RP_exp_in[8-1:0]), .IO(exp_p_io[8-1:0]), .I(8'b00000000),    .T(8'b11111111) );
+end
 else
 begin
     assign RP_exp_in = 0;
 end
+// = V2 =====================================================================
 
 // assign McBSP_dbg = { McBSP_clk, McBSP_fs, McBSP_rx, McBSP_nrx };
 
 
 endmodule
-
-
-/*
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_clk' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_clk' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_clk' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_clkr' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_clkr' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_clkr' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_frm' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_frm' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_frm' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_fs' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_fs' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_fs' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_fsx' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_fsx' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_fsx' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_nrx' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_nrx' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_nrx' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[0]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[0]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[0]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[1]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[1]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[1]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[2]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[2]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[2]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[3]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[3]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_pass[3]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_rx' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_rx' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_rx' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_tx' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_tx' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/McBSP_tx' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[0]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[0]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[0]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[1]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[1]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[1]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[2]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[2]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[2]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[3]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[3]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[3]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[4]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[4]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[4]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[5]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[5]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[5]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[6]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[6]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[6]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-[Constraints 18-550] Could not create 'DRIVE' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[7]' is not directly connected to top level port. Synthesis is ignored for DRIVE but preserved for implementation.
-
-[Constraints 18-550] Could not create 'IBUF_LOW_PWR' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[7]' is not directly connected to top level port. Synthesis is ignored for IBUF_LOW_PWR but preserved for implementation.
-
-[Constraints 18-550] Could not create 'SLEW' constraint because net 'system_i/PS_data_transport/McBSP_io_connect_0/RP_exp_in[7]' is not directly connected to top level port. Synthesis is ignored for SLEW but preserved for implementation.
-
-*/

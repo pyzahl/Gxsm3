@@ -24,7 +24,8 @@ module ScaleAndAdjust #(
     parameter S_AXIS_DATA_WIDTH = 32,
     parameter M_AXIS_DATA_WIDTH = 16,
     parameter GAIN_DATA_WIDTH   = 32,
-    parameter GAIN_DATA_Q       = 16
+    parameter GAIN_DATA_Q       = 16,
+    parameter ENABLE_ADC_OUT    = 1
 )
 (
    (* X_INTERFACE_PARAMETER = "ASSOCIATED_CLKEN a_clk" *)
@@ -54,14 +55,17 @@ module ScaleAndAdjust #(
 
     always @ (posedge rdecii[1])
     begin
-       if (S_AXIS_tvalid)
+       if (ENABLE_ADC_OUT)
        begin
-           x <= x1;
-           v <= v1;
-           x1 <= S_AXIS_tdata;
-           v1 <= gain;
-           y <= v*x; // Volume Q15 or Q(VAXIS_DATA_Q-1)
-       end
+           if (S_AXIS_tvalid)
+           begin
+               x <= x1;
+               v <= v1;
+               x1 <= S_AXIS_tdata;
+               v1 <= gain;
+               y <= v*x; // Volume Q15 or Q(VAXIS_DATA_Q-1)
+           end
+        end
     end
     assign M_AXIS_tdata  = {y[GAIN_DATA_WIDTH+S_AXIS_DATA_WIDTH-1], y[M_AXIS_DATA_WIDTH+GAIN_DATA_Q-1 : GAIN_DATA_Q]}; //-GAIN_DATA_Q-
     assign M_AXIS_tvalid = S_AXIS_tvalid;

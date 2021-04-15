@@ -173,7 +173,7 @@ module McBSP_controller #(
     assign trigger = rtrigger;
 
     assign mcbsp_data_frm = frame_start;
-    assign mcbsp_data_fsx = rtrigger;
+    assign mcbsp_data_fsx = mcbsp_frame_start;
 
     assign McBSP_sending = frame_start;
 
