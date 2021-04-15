@@ -61,7 +61,7 @@ module axis_FIR #(
         i <= i+1;
     end
     
-    assign M_AXIS_tdata  = sum[SAXIS_TDATA_WIDTH+FIR_DECI_L-1:FIR_DECI_L];
+    assign M_AXIS_tdata  = sum[SAXIS_TDATA_WIDTH+FIR_DECI_L-1:FIR_DECI_L+SAXIS_TDATA_WIDTH-MAXIS_TDATA_WIDTH];
     assign M_AXIS_tvalid = S_AXIS_tvalid;
     
 endmodule
