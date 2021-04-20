@@ -779,7 +779,7 @@ public:
                         }
                 } else {
                         gchar *message = g_strdup_printf("Action script/library %s not yet defined.\nPlease define action script using the python console.", tmp_script_filename);
-                        g_message (message);
+                        g_message ("%s", message);
                         append(message);
                         gapp->warning (message);
                         g_free(message);
@@ -1234,7 +1234,7 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
                 //if(!PyArg_ParseTuple(args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj)) // try xy only
                         return Py_BuildValue("i", -1);
         }
-        g_message ("Create Scan: %d x %d [x %d], size %g x %g Ang from python array",sizex, sizey, sizev, rangex, rangey);
+        g_message ("Create Scan: %ld x %ld [x %ld], size %g x %g Ang from python array",sizex, sizey, sizev, rangex, rangey);
 
         Py_buffer view;
         gboolean rf=false;
@@ -1244,10 +1244,10 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
                 rf=true;
         }
         if ( view.len / sizeof(long) != sizex*sizey*sizev ) {
-                g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", view.len / sizeof(long), sizex*sizey);
+                g_message ("Create Scan: ERROR array len=%ld does not match nx x ny=%ld", view.len / sizeof(long), sizex*sizey);
                 return Py_BuildValue("i", -1);
         }
-        g_message ("Create Scan: array len=%d OK.", view.len / sizeof(long));
+        g_message ("Create Scan: array len=%ld OK.", view.len / sizeof(long));
         
 
 	//Scan *dst;
@@ -1331,7 +1331,7 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
                 //if(!PyArg_ParseTuple(args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj)) // try xy only
                         return Py_BuildValue("i", -1);
         }
-        g_message ("Create Scan Float: %d x %d [x %d], size %g x %g Ang from python array",sizex, sizey, sizev, rangex, rangey);
+        g_message ("Create Scan Float: %ld x %ld [x %ld], size %g x %g Ang from python array",sizex, sizey, sizev, rangex, rangey);
 
         Py_buffer view;
         gboolean rf=false;
@@ -1342,10 +1342,10 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
                 rf=true;
         }
 	if ( view.len / sizeof(float) != sizex*sizey*sizev ) {
-                g_message ("Create Scan: ERROR array len=%d does not match nx x ny=%d", view.len / sizeof(float), sizex*sizey);
+                g_message ("Create Scan: ERROR array len=%ld does not match nx x ny=%ld", view.len / sizeof(float), sizex*sizey);
 		return Py_BuildValue("i", -1);
 	}
-        g_message ("Create Scan: array len=%d OK.", view.len / sizeof(float));
+        g_message ("Create Scan: array len=%ld OK.", view.len / sizeof(float));
         
 	//if (PyObject_AsWriteBuffer(the_array, (void **) &pbuf, (Py_ssize_t*)&blen))
 	//	return Py_BuildValue("i", -1);
@@ -2158,7 +2158,7 @@ static PyObject* remote_echo(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s", &line1))
 		return Py_BuildValue("i", -1);
 	/*Change the Debuglevel to: print always.*/
-        g_message (line1);
+        g_message ("%s", line1);
 	return Py_BuildValue("i", 0);
 }
 
@@ -2426,7 +2426,7 @@ static PyObject* redirection_stdoutredirect(PyObject *self, PyObject *args)
         if(!PyArg_ParseTuple(args, "s", &string))
                 return NULL;
 
-        g_print (string);
+        g_print ("%s", string);
         if (py_gxsm_remote_console)
                 py_gxsm_remote_console->append (string);
 
@@ -2713,7 +2713,7 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
                 gchar *message = g_strdup_printf("Pasing Error: Potential dead-loop of recursive inclusion detected:\n"
                                                  "Include Level > 10.\n"
                                                  );
-                g_warning (message);
+                g_warning ("%s", message);
                 append(message);
                 gapp->warning (message);
                 g_free(message);
@@ -2753,7 +2753,7 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
                                                            "### END GXSM LIBRARY SCRIPT <", name, ">\n\n",
                                                            NULL);
                                         append (stat);
-                                        g_message (stat);
+                                        g_message ("%s", stat);
 
                                         i += n_included;
 
@@ -2770,7 +2770,7 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
                                                                          lines[0],
                                                                          name
                                                                          );
-                                        g_message (message);
+                                        g_message ("%s", message);
                                         append(message);
                                         gapp->warning (message);
                                         g_free(message);
@@ -2783,7 +2783,7 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
                                                                  "#GXSM_USE_LIBRARY <gxsm3-lib-utils>\n",
                                                                  i,
                                                                  lines[0]);
-                                g_message (message);
+                                g_message ("%s", message);
                                 append(message);
                                 gapp->warning (message);
                                 g_free(message);

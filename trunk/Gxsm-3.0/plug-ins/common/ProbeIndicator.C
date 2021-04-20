@@ -696,7 +696,7 @@ gint ProbeIndicator::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ProbeIn
 		case 1:
                         //g_object_set_data (G_OBJECT(canvas), "preset_xy", preset);
                         //gapp->offset_to_preset_callback (canvas, gapp);
-                        g_message ("ProbeIndicator Button1 Pressed at XY=%g, %g",  mouse_pix_xy[0]);
+                        g_message ("ProbeIndicator Button1 Pressed at XY=%g, %g",  mouse_pix_xy[0], mouse_pix_xy[1]);
                 }
                 break;
 		
