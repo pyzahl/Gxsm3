@@ -1353,7 +1353,7 @@ void Inet_Json_External_Scandata::phase_gain_changed (Param_Control* pcs, gpoint
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
         self->parameters.phase_fb_cp = self->parameters.phase_fb_invert * pow (10., self->parameters.phase_fb_cp_db/20.);
         self->parameters.phase_fb_ci = self->parameters.phase_fb_invert * pow (10., self->parameters.phase_fb_ci_db/20.);
-        g_message("PH_CI=%g",self->parameters.phase_fb_ci,self->parameters.phase_fb_ci );
+        // g_message("PH_CICP=%g, %g", self->parameters.phase_fb_ci, self->parameters.phase_fb_cp );
         self->write_parameter ("PHASE_FB_CP", self->parameters.phase_fb_cp);
         self->write_parameter ("PHASE_FB_CI", self->parameters.phase_fb_ci);
 }
@@ -1382,7 +1382,7 @@ void Inet_Json_External_Scandata::dfreq_gain_changed (Param_Control* pcs, gpoint
         Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
         self->parameters.dfreq_fb_cp = self->parameters.dfreq_fb_invert * pow (10., self->parameters.dfreq_fb_cp_db/20.);
         self->parameters.dfreq_fb_ci = self->parameters.dfreq_fb_invert * pow (10., self->parameters.dfreq_fb_ci_db/20.);
-        g_message("DF_CI=%g",self->parameters.dfreq_fb_ci,self->parameters.dfreq_fb_ci );
+        // g_message("DF_CICP=%g, %g", self->parameters.dfreq_fb_ci, self->parameters.dfreq_fb_ci );
         self->write_parameter ("DFREQ_FB_CP", self->parameters.dfreq_fb_cp);
         self->write_parameter ("DFREQ_FB_CI", self->parameters.dfreq_fb_ci);
 }
@@ -1494,7 +1494,7 @@ void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_Exter
                 GInputStream *istream = soup_session_send (self->session, self->msg, NULL, &self->error);
 
                 if (self->error != NULL) {
-                        g_warning (self->error->message);
+                        g_warning ("%s", self->error->message);
                         self->status_append (self->error->message);
                         self->status_append ("\n ");
                         self->update_health (self->error->message);
@@ -1508,7 +1508,7 @@ void Inet_Json_External_Scandata::connect_cb (GtkWidget *widget, Inet_Json_Exter
                                                           &self->error);   
                         if (self->error != NULL) {
                                 self->update_health (self->error->message);
-                                g_warning (self->error->message);
+                                g_warning ("%s", self->error->message);
                                 self->status_append (self->error->message);
                                 self->status_append ("\n ");
                                 g_free (buffer);
@@ -1557,7 +1557,7 @@ void Inet_Json_External_Scandata::got_client_connection (GObject *object, GAsync
                 self->status_append ("Connection failed: ");
                 self->status_append (self->client_error->message);
                 self->status_append ("\n");
-                g_message (self->client_error->message);
+                g_message ("%s", self->client_error->message);
         } else {
                 self->status_append ("RedPitaya WebSocket Connected!\n ");
 		g_signal_connect(self->client, "closed",  G_CALLBACK(Inet_Json_External_Scandata::on_closed),  self);
@@ -1589,11 +1589,11 @@ void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
 		self->status_append ("WEBSOCKET_DATA_TEXT\n");
 		self->status_append ((gchar*)contents);
 		self->status_append ("\n");
-                g_message ((gchar*)contents);
+                g_message ("%s", (gchar*)contents);
 	} else if (type == SOUP_WEBSOCKET_DATA_BINARY) {
 		contents = g_bytes_get_data (message, &len);
 
-                tmp = g_strdup_printf ("WEBSOCKET_DATA_BINARY NGNIX JSON ZBytes: %d", len);
+                tmp = g_strdup_printf ("WEBSOCKET_DATA_BINARY NGNIX JSON ZBytes: %ld", len);
                 self->debug_log (tmp);
                 g_free (tmp);
 
@@ -1638,24 +1638,24 @@ void Inet_Json_External_Scandata::on_message(SoupWebsocketConnection *ws,
                         case Z_STREAM_END:
                                 tmp = NULL;
                                 if (self->debug_level > 2)
-                                        tmp = g_strdup_printf ("Z_STREAM_END out = %d, in = %d, ratio=%g\n",zInfo.total_out, zInfo.total_in, (double)zInfo.total_out / (double)zInfo.total_in);
+                                        tmp = g_strdup_printf ("Z_STREAM_END out = %ld, in = %ld, ratio=%g\n",zInfo.total_out, zInfo.total_in, (double)zInfo.total_out / (double)zInfo.total_in);
                                 break;
                         case Z_OK:
-                                tmp = g_strdup_printf ("Z_OK out = %d, in = %d\n",zInfo.total_out, zInfo.total_in); break;
+                                tmp = g_strdup_printf ("Z_OK out = %ld, in = %ld\n",zInfo.total_out, zInfo.total_in); break;
                         case Z_NEED_DICT:
-                                tmp = g_strdup_printf ("Z_NEED_DICT out = %d, in = %d\n",zInfo.total_out, zInfo.total_in); break;
+                                tmp = g_strdup_printf ("Z_NEED_DICT out = %ld, in = %ld\n",zInfo.total_out, zInfo.total_in); break;
                         case Z_DATA_ERROR:
                                 self->status_append (zInfo.msg);
-                                tmp = g_strdup_printf ("\nZ_DATA_ERROR out = %d, in = %d\n",zInfo.total_out, zInfo.total_in); break; 
+                                tmp = g_strdup_printf ("\nZ_DATA_ERROR out = %ld, in = %ld\n",zInfo.total_out, zInfo.total_in); break; 
                                 break;
                         case Z_STREAM_ERROR:
-                                tmp = g_strdup_printf ("Z_STREAM_ERROR out = %d\n",zInfo.total_out); break;
+                                tmp = g_strdup_printf ("Z_STREAM_ERROR out = %ld\n",zInfo.total_out); break;
                         case Z_MEM_ERROR:
-                                tmp = g_strdup_printf ("Z_MEM_ERROR out = %d, in = %d\n",zInfo.total_out, zInfo.total_in); break;
+                                tmp = g_strdup_printf ("Z_MEM_ERROR out = %ld, in = %ld\n",zInfo.total_out, zInfo.total_in); break;
                         case Z_BUF_ERROR:
-                                tmp = g_strdup_printf ("Z_BUF_ERROR out = %d, in = %d  ratio=%g\n",zInfo.total_out, zInfo.total_in, (double)zInfo.total_out / (double)zInfo.total_in); break;
+                                tmp = g_strdup_printf ("Z_BUF_ERROR out = %ld, in = %ld  ratio=%g\n",zInfo.total_out, zInfo.total_in, (double)zInfo.total_out / (double)zInfo.total_in); break;
                         default:
-                                tmp = g_strdup_printf ("ERROR ?? inflate result = %d,  out = %d, in = %d\n",ret,zInfo.total_out, zInfo.total_in); break;
+                                tmp = g_strdup_printf ("ERROR ?? inflate result = %d,  out = %ld, in = %ld\n",ret,zInfo.total_out, zInfo.total_in); break;
                         }
                         self->status_append (tmp);
                         g_free (tmp);

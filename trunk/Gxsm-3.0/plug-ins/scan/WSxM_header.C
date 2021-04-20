@@ -265,7 +265,7 @@ int HeaderWrite(WSxM_HEADER * pHeader, FILE * pFile, const char * cType)
     for (; FileIdPtr->name != 0; ++FileIdPtr) {
 	if (strstr(FileIdPtr->name, cType)) {
 	    fprintf(pFile, "%s", FileIdPtr->fileidtag);
-	    fprintf(pFile, "%s%ud\r\n", IMAGE_HEADER_SIZE_TEXT,
+	    fprintf(pFile, "%s%lud\r\n", IMAGE_HEADER_SIZE_TEXT,
 		    HeaderGetSize(pHeader)+strlen(FileIdPtr->fileidtag)-sizeof(STM_IMAGE_FILE_ID)+2);
 		// +2 because \r\n 
 	}

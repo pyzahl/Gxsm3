@@ -9,7 +9,7 @@ EXTRA_DIST = gxsm3.desktop
 
 desktopdir = $(datadir)/applications
 #desktop_in_files = gxsm3.desktop.in.in
-#desktop_DATA 	 = $(desktop_in_files:.desktop.in.in=.desktop)
+#desktop_DATA 	 = $(desktop_in_files:.desktop.in.in=.1esktop)
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = gxsm3$(GUCHARMAP_API_PC_VERSION).pc

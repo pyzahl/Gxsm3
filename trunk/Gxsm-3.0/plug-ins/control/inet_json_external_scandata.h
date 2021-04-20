@@ -462,7 +462,7 @@ public:
         
         void debug_log (const gchar *msg){
                 if (debug_level > 4)
-                        g_message (msg);
+                        g_message ("%s", msg);
                 if (debug_level > 2){
                         status_append (msg);
                         status_append ("\n");
