@@ -34,7 +34,7 @@ bool checkError(const char* Title)
 		}
 		
 		gchar *message = g_strdup_printf ("OpenGL Error (%s) at %s\n", ErrorString.c_str(), Title);
-		g_critical (message);
+		g_critical ("%s", message);
 		gapp->warning (message);
 		g_free (message);
 
