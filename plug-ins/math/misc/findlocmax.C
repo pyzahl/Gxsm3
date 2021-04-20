@@ -375,6 +375,7 @@ int SARLS_findlocmax_run(Scan *Src, Scan *Dest)
 			if (Dest->mem2d->GetDataPkt(col, line)!=0)     
 				f << col << " " << line << " " << Dest->mem2d->GetDataPkt(col, line) << endl;     
 	f.close();
+        return 0;
 }
 
 inline int imin (int x, int y) { return x < y ? x : y; }
