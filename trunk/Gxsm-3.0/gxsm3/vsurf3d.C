@@ -2249,7 +2249,7 @@ gboolean Surf3d::check_dimension_changed(){
                                          " --> GLSL  program code error or not found/installed?\n"
                                          "     check: %s for .glsl files.", getDataDirectory().c_str());
 
-                                g_critical (message);
+                                g_critical ("%s", message);
                                 gapp->warning (message);
                                 g_free (message);
 
@@ -2635,7 +2635,7 @@ void realize_vsurf3d_cb (GtkGLArea *area, Surf3d *s){
                          " --> GLSL  program code error or not found/installed?\n"
                          "     check: %s for .glsl files.", getDataDirectory().c_str());
 
-                g_critical (message);
+                g_critical ("%s",message);
                 gapp->warning (message);
                 g_free (message);
 
