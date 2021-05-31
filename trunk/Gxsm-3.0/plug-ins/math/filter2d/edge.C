@@ -185,6 +185,7 @@ GxsmMathOneSrcPlugin *get_gxsm_math_one_src_for_all_vt_plugin_info( void ) {
 
 /* Here we go... */
 
+double       krn_sigma = 1.; // default: 1 * r/2
 double       edge_radius = 5.;
 double       adaptive_threashold = 0.;
 double       zero_replace_value = 0.;
@@ -259,11 +260,15 @@ static void edge_cleanup(void)
 
 class MemEdgeKrn : public MemDigiFilter{
 public:
-	MemEdgeKrn (double xms, double xns, int m, int n, MemDigiFilter *adaptive_kernel=NULL, double adaptive_threashold=0.):MemDigiFilter (xms, xns, m, n, adaptive_kernel, adaptive_threashold){};
+	MemEdgeKrn (double xms, double xns, int m, int n, MemDigiFilter *adaptive_kernel=NULL, double adaptive_threashold=0., double Sigma=0.0):MemDigiFilter (xms, xns, m, n, adaptive_kernel, adaptive_threashold){ sigma=Sigma; };
 	virtual gboolean CalcKernel (){
 		int i,j;
 		int q=GetLayer ();
 		double sig2=(xms-q)*(xns-q)/4.; // set sigmal to "r/2"
+                double norm=0.0;
+                int    mm=0;
+                if (sigma!=0.0)
+                        sig2=sig2*sigma*sigma;
                 if (xms-q <= 1 || xns-q <= 1 || sig2 < 0.5){
                         g_message ("Calculating Edge (Laplace of Gauss) Kernel sigma=0 (delta kern)");
                         data->Z (1.0, n, m);
@@ -274,9 +279,18 @@ public:
                         for (j = -n+q; j<=n-q; j++){
                                 double r2 = j*j+i*i;
                                 data->Z ((1.-r2/(2.*sig2))/(M_PI*sig2*sig2) * exp (-r2/(2*sig2)), j+n, i+m);
+                                norm += r2;
+                                mm++;
                         }
+                norm /= mm;
+		g_message ("Norm=%g [%d]",norm, mm);
+
+                data->mabs_norm (1.);
+
 		return 0;
 	};
+private:
+        double sigma;
 };
 
 class MemGaussKrn : public MemDigiFilter{
@@ -454,13 +468,13 @@ static gboolean edge_run(Scan *Src, Scan *Dest)
 
                 g_message("edge_run for ti=%d, vi=%d", Src->mem2d->get_t_index (), Src->mem2d->GetLayer ());
 
-                const gchar* config_label[5] = { "Radius", "Adaptive Threashold", "Background f0", "Zero Replace Mode", NULL };
-                const gchar* config_info[4]  = { "Edge Kernel Radius. Convol Matrix[2R+2, 2R+1]", "Adaptive Threashold Value", "Replace Background (0) by f0", "Zero Replace none: 0, by value:1, auto:2" };
-                UnitObj *config_units[4] { gapp->xsm->Unity,  gapp->xsm->data.Zunit, gapp->xsm->data.Zunit, gapp->xsm->Unity,};
-                double config_minv[4] = { 0., -1e10, -1e10, 0.};
-                double config_maxv[4] = { Src->mem2d->GetNx()/10., 1e10, 1e10, 10. };
-                const gchar* config_fmt[4]  = { ".0f", "g", "g", "g" };
-                double *config_values[4] = { &edge_radius, &adaptive_threashold, &zero_replace_value, &zero_replace_mode };    // Radius, Adaptive Threashold, Mode
+                const gchar* config_label[6] = { "Radius", "Adaptive Threashold", "Background f0", "Zero Replace Mode", "Krn Sigma", NULL };
+                const gchar* config_info[5]  = { "Edge Kernel Radius. Convol Matrix[2R+2, 2R+1]", "Adaptive Threashold Value", "Replace Background (0) by f0", "Zero Replace none: 0, by value:1, auto:2", "Kernel Sigma x r/2" };
+                UnitObj *config_units[5] { gapp->xsm->Unity,  gapp->xsm->data.Zunit, gapp->xsm->data.Zunit, gapp->xsm->Unity, gapp->xsm->Unity,};
+                double config_minv[5] = { 0., -1e10, -1e10, 0., -10.};
+                double config_maxv[5] = { Src->mem2d->GetNx()/10., 1e10, 1e10, 10., 10. };
+                const gchar* config_fmt[5]  = { ".0f", "g", "g", "g", "g" };
+                double *config_values[5] = { &edge_radius, &adaptive_threashold, &zero_replace_value, &zero_replace_mode, &krn_sigma };    // Radius, Adaptive Threashold, Mode
 
                 gapp->ValueRequestList ("Edge Filter Configuration",
                                         config_label, config_info, config_units,
@@ -480,7 +494,7 @@ static gboolean edge_run(Scan *Src, Scan *Dest)
                 ada_kernel->InitializeKernel ();
 
                 g_message ("Setup MemAdaptiveCoreKrn");
-		edge_kernel = new MemEdgeKrn (edge_radius,edge_radius, s,s, ada_kernel, adaptive_threashold/Src->data.s.dz); // calc. convol kernel
+		edge_kernel = new MemEdgeKrn (edge_radius,edge_radius, s,s, ada_kernel, adaptive_threashold/Src->data.s.dz, krn_sigma); // calc. convol kernel
                 edge_kernel->set_kname ("gxsm_edge_edge_log_kernel");
                 edge_kernel->InitializeKernel ();
  

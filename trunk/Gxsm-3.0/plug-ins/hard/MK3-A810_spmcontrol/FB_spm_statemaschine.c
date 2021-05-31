@@ -640,7 +640,7 @@ int idle_task_015(void){
                         InitMcBSP0_in_RP_FPGA_Mode(8, 3); // 25MHz
                         break;
                 case 1033:
-                        InitMcBSP0_in_RP_FPGA_Mode(8, 2); // 33MHz
+                        InitMcBSP0_in_RP_FPGA_Mode(8, 2); // 33MHz *** duty cycle far off 50:50!!! DO NOT USE
                         break;
                 case 1034:
                         InitMcBSP0_in_RP_FPGA_Mode(8, 1); // 50MHz
