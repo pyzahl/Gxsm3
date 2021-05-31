@@ -69,7 +69,7 @@ void SetMcBSPwords(int n){
 #pragma CODE_SECTION(SetMcBSPclock, ".text:slow")
 // McBSP (McBSP) CLKGDV=div,  CLK = 100MHz / (CLKGDV+1)
 void SetMcBSPclock(int div){
-        if (div > 0 && div <= 255)
+        if (div >= 0 && div <= 255)
                 McBSP_clkdiv = div; 
 }
 
