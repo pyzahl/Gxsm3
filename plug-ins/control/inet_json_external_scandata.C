@@ -1563,12 +1563,19 @@ void Inet_Json_External_Scandata::got_client_connection (GObject *object, GAsync
 		g_signal_connect(self->client, "closed",  G_CALLBACK(Inet_Json_External_Scandata::on_closed),  self);
 		g_signal_connect(self->client, "message", G_CALLBACK(Inet_Json_External_Scandata::on_message), self);
 		//g_signal_connect(connection, "closing", G_CALLBACK(on_closing_send_message), message);
-                self->status_append ("RedPitaya PAC-PLL load configuration... init FIR...\n ");
+                self->status_append ("RedPitaya PAC-PLL loading configuration.\n ");
                 self->send_all_parameters ();
+                self->status_append ("RedPitaya PAC-PLL init, DEC FAST(12)...\n");
+                self->write_parameter ("TRANSPORT_DECIMATION", 12);
+                usleep(500000);
                 self->write_parameter ("OPERATION", 3); // INIT BRAM TRANSPORT AND CLEAR FIR RING BUFFERS, give me a second...
+                self->status_append ("RedPitaya PAC-PLL init, INIT-FIR... [2s Zzzz]\n");
+                usleep(2000000);
+                self->status_append ("RedPitaya PAC-PLL init, INIT-FIR completed.\n");
                 usleep(1000000);
+                self->status_append ("RedPitaya PAC-PLL normal operation, set to data streaming mode.\n");
                 self->write_parameter ("OPERATION", self->operation_mode);
-                self->status_append ("RedPitaya PAC-PLL ready.\n ");
+                self->status_append ("RedPitaya PAC-PLL is ready.\n ");
         }
 }
 
