@@ -3044,7 +3044,7 @@ class SPMcontrol():
                 
         # must call first with init=True
         def read_recorder_deci(self, n=4096, recorder_file="", init=False):
-                read_recorder_deci_ch(self, n, 0, recorder_file, init)
+                return self.read_recorder_deci_ch(n, 0, recorder_file, init)
                 
         def read_recorder_deci_ch(self, n=4096, ch=0, recorder_file="", init=False):
                 if n < 0 or n > 0x40000:
