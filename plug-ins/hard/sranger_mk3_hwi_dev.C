@@ -2189,6 +2189,7 @@ void sranger_mk3_hwi_dev::write_dsp_feedback (
 
         SRANGER_DEBUG_SIG ( "---> sranger_mk3_hwi_dev::write_dsp_feedback --->");
 	for (int i=0; i<4; ++i){
+                
 		if (i==0) // TUNNEL-CURRENT dedicated channel
 			dsp_feedback_mixer.setpoint[i] = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->nAmpere2V (set_point[i])))); // Q23
 		else{
