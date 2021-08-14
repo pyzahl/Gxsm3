@@ -1488,10 +1488,24 @@ DSPControl::DSPControl () {
 
                 if (ch > 1){
                         const gchar *u =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[ch])->unit;
-                        if (!strcmp(u, "V")) mixer_unit[ch] = Volt;
-                        if (!strcmp(u, "deg")) mixer_unit[ch] = Deg;
-                        if (!strcmp(u, "Hz")) mixer_unit[ch] = Frq;
-                }
+
+                        UnitObj *tmp = NULL;
+                        switch (u[0]){
+                        case 'V': tmp = new UnitObj("V","V"); break;
+                        case 'A' : tmp = new UnitObj(UTF8_ANGSTROEM,"A"); break;
+                        case 'H': tmp = new UnitObj("Hz","Hz"); break;
+                        case 'd': tmp = new UnitObj(UTF8_DEGREE,"Deg"); break;
+                        case 's': tmp = new UnitObj("s","sec"); break;
+                        case 'C': tmp = new UnitObj("#","CNT"); break;
+                        case 'm': tmp = new UnitObj("V","V"); break;
+                        case '1': tmp = new UnitObj("x1","x1"); break;
+                        case 'X': tmp = new UnitObj("X","Flag"); break;
+                        case 'x': tmp = new UnitObj("xV","xV"); break;
+                        case '*': tmp = new UnitObj("*V","*V"); break;
+                        default: tmp = new UnitObj("V","V"); break;
+                        }
+                        mixer_unit[ch] = tmp;
+                }                
 
                 dsp_bp->grid_add_ec_with_scale (NULL, mixer_unit[ch], &mix_set_point[ch], ch==0? 0.0:-100.0, 100., "4g", 0.001, 0.01, mixer_remote_id_set[ch]);
                 // dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
@@ -1501,7 +1515,7 @@ DSPControl::DSPControl () {
                 gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
 
                 if (signal_select_widget)
-                        g_object_set_data (G_OBJECT (signal_select_widget), "related_ec", dsp_bp->ec);
+                        g_object_set_data (G_OBJECT (signal_select_widget), "related_ec_setpoint", dsp_bp->ec);
 
                 
                 // dsp_bp->add_to_configure_hide_list (dsp_bp->scale);
@@ -1509,6 +1523,12 @@ DSPControl::DSPControl () {
                 dsp_bp->set_configure_list_mode_on ();
                 dsp_bp->grid_add_ec (NULL, Unity, &mix_gain[ch], -0.5, 0.5, "5g", 0.001, 0.01, mixer_remote_id_gn[ch]);
                 dsp_bp->grid_add_ec (NULL, mixer_unit[ch], &mix_level[ch], -100.0, 100.0, "5g", 0.001, 0.01, mixer_remote_id_fl[ch]);
+                delete (tmp);
+                mixer_unit[ch] = Volt;
+                
+                if (signal_select_widget)
+                        g_object_set_data (G_OBJECT (signal_select_widget), "related_ec_level", dsp_bp->ec);
+                
                 dsp_bp->grid_add_mixer_options (ch, mix_transform_mode[ch], this);
                 dsp_bp->set_configure_list_mode_off ();
                 dsp_bp->new_line ();
@@ -4623,7 +4643,7 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
 	dspc->mix_unit2volt_factor[mix_ch] = 1.;
 	dspc->mix_unit2volt_factor[0] = gapp->xsm->Inst->nAmpere2V (1.);
 
-        if (mix_ch > 1 && !strncmp (sranger_common_hwi->dsp_signal_lookup_managed[signal].label, "PLL ", 4)){
+        if (mix_ch > 1){ // ... && !strncmp (sranger_common_hwi->dsp_signal_lookup_managed[signal].label, "PLL ", 4)){
                 const gchar *u =  sranger_common_hwi->dsp_signal_lookup_managed[signal].unit;
                 double s =  sranger_common_hwi->dsp_signal_lookup_managed[signal].scale;
                 //dsp_feedback_mixer.setpoint[i] = (int)(round(s*factor[i]*set_point[i])); // Q23
@@ -4637,7 +4657,7 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
                 case 'd': tmp = new UnitObj(UTF8_DEGREE,"Deg"); break;
                 case 's': tmp = new UnitObj("s","sec"); break;
                 case 'C': tmp = new UnitObj("#","CNT"); break;
-                case 'm': tmp = new UnitObj("mV","mV"); break;
+                case 'm': tmp = new UnitObj("V","V"); break;
                 case '1': tmp = new UnitObj("x1","x1"); break;
                 case 'X': tmp = new UnitObj("X","Flag"); break;
                 case 'x': tmp = new UnitObj("xV","xV"); break;
@@ -4645,9 +4665,12 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
                 default: tmp = new UnitObj("V","V"); break;
                 }
                 
-                 Gtk_EntryControl *setpoint_ec =   ( Gtk_EntryControl *) g_object_get_data (G_OBJECT (widget), "related_ec");
+                Gtk_EntryControl *setpoint_ec =   ( Gtk_EntryControl *) g_object_get_data (G_OBJECT (widget), "related_ec_setpoint");
                 if (setpoint_ec)
                         setpoint_ec->changeUnit (tmp);
+                Gtk_EntryControl *setlevel_ec =   ( Gtk_EntryControl *) g_object_get_data (G_OBJECT (widget), "related_ec_level");
+                if (setlevel_ec)
+                        setlevel_ec->changeUnit (tmp);
                 delete (tmp);
         }
         
