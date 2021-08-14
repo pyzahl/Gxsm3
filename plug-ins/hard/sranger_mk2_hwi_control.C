@@ -1478,9 +1478,10 @@ DSPControl::DSPControl () {
                         dsp_bp->set_configure_list_mode_on (); 
                 else
                         dsp_bp->set_configure_list_mode_off ();
-               
+
+                GtkWidget *signal_select_widget = NULL;
                 if (sranger_common_hwi->check_pac() != -1) {
-                        dsp_bp->grid_add_mixer_input_options (ch, mix_fbsource[ch], this);
+                        signal_select_widget = dsp_bp->grid_add_mixer_input_options (ch, mix_fbsource[ch], this);
                 } else {
                         dsp_bp->grid_add_label (mixer_channel_label[ch]);
                 }
@@ -1499,6 +1500,10 @@ DSPControl::DSPControl () {
                 dsp_bp->ec->set_logscale_magshift (-3);
                 gtk_scale_set_digits (GTK_SCALE (dsp_bp->scale), 5);
 
+                if (signal_select_widget)
+                        g_object_set_data (G_OBJECT (signal_select_widget), "related_ec", dsp_bp->ec);
+
+                
                 // dsp_bp->add_to_configure_hide_list (dsp_bp->scale);
                 dsp_bp->set_input_width_chars (10);
                 dsp_bp->set_configure_list_mode_on ();
@@ -4623,6 +4628,27 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
                 double s =  sranger_common_hwi->dsp_signal_lookup_managed[signal].scale;
                 //dsp_feedback_mixer.setpoint[i] = (int)(round(s*factor[i]*set_point[i])); // Q23
                 dspc->mix_unit2volt_factor[mix_ch] = 1./(s*32768.*256./10.);
+
+                UnitObj *tmp = NULL;
+                switch (u[0]){
+                case 'V': tmp = new UnitObj("V","V"); break;
+                case 'A' : tmp = new UnitObj(UTF8_ANGSTROEM,"A"); break;
+                case 'H': tmp = new UnitObj("Hz","Hz"); break;
+                case 'd': tmp = new UnitObj(UTF8_DEGREE,"Deg"); break;
+                case 's': tmp = new UnitObj("s","sec"); break;
+                case 'C': tmp = new UnitObj("#","CNT"); break;
+                case 'm': tmp = new UnitObj("mV","mV"); break;
+                case '1': tmp = new UnitObj("x1","x1"); break;
+                case 'X': tmp = new UnitObj("X","Flag"); break;
+                case 'x': tmp = new UnitObj("xV","xV"); break;
+                case '*': tmp = new UnitObj("*V","*V"); break;
+                default: tmp = new UnitObj("V","V"); break;
+                }
+                
+                 Gtk_EntryControl *setpoint_ec =   ( Gtk_EntryControl *) g_object_get_data (G_OBJECT (widget), "related_ec");
+                if (setpoint_ec)
+                        setpoint_ec->changeUnit (tmp);
+                delete (tmp);
         }
         
 	double scale_extra = 256.;
