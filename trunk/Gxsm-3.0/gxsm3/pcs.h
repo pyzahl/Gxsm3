@@ -105,7 +105,7 @@ class Param_Control{
         };
 
 	virtual void update_limits() {};
-	void changeUnit(UnitObj *U){ delete unit; unit = U->Copy(); };
+	void changeUnit(UnitObj *U){ delete unit; unit = U->Copy(); Put_Value(); };
 	void changeUnit_hold_usr_value(UnitObj *U){ 
 		double valusr = unit->Base2Usr(Get_dValue());
                 delete unit;
