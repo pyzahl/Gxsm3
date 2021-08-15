@@ -424,15 +424,7 @@ to the community. The GXSM-Forums always welcome input.
 #include "gxsm3/action_id.h"
 #include "gxsm3/xsmtypes.h"
 
-
-#if defined HAVE_PYTHON2_7_PYTHON_H
-#    include <python2.7/Python.h>
-#elif defined HAVE_PYTHON2_6_PYTHON_H
-#    include <python2.6/Python.h>
-#elif defined HAVE_PYTHON2_5_PYTHON_H
-#    include <python2.5/Python.h>
-#endif
-
+#include <Python.h>
  
 #include <sys/types.h>
 #include <signal.h>

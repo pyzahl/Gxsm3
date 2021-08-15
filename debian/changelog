@@ -1,3 +1,22 @@
+gxsm3 (3.52.0-0ubuntu17) focal; urgency=medium
+
+  * testing new python include via python3-config 
+  * gxsm3 depends now on python3.8 (Ubuntu 20.04 standard) instead of python3.7
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 15 Aug 2021 10:24:48 +0200
+
+gxsm3 (3.52.0-0ubuntu16) focal; urgency=medium
+
+  * including readme for MK3-PLL *.out files
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 11 Jul 2021 15:51:21 +0200
+
+gxsm3 (3.52.0-0ubuntu15) focal; urgency=medium
+
+  * update to code of May, 8th, 2021
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 08 May 2021 10:23:05 +0200
+
 gxsm3 (3.52.0-0ubuntu14) focal; urgency=medium
 
   * applying patches
