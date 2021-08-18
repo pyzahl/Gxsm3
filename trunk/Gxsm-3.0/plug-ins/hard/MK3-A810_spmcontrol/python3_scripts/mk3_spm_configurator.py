@@ -1617,8 +1617,8 @@ class RecorderDeci():
                 scope.set_subsample_factor(256)
                 scope.scope.set_wide (True)
                 scope.show()
-                scope.set_chinfo([Xsignal[SIG_NAME], "9.81*Integral of "+Xsignal[SIG_NAME]])
-                #scope.set_chinfo([Xsignal[SIG_NAME], Ysignal[SIG_NAME]])
+                #scope.set_chinfo([Xsignal[SIG_NAME], "9.81*Integral of "+Xsignal[SIG_NAME]])
+                scope.set_chinfo([Xsignal[SIG_NAME], Ysignal[SIG_NAME]])
                 #scope.set_scale ( { signalV[SIG_UNIT]: "V", "Temp": "K" })
 
                 win.add(v)
@@ -1677,7 +1677,18 @@ class RecorderDeci():
 
                         dscale = 256.*32768./10. 
                                 
-                        rec = parent.mk3spm.read_recorder_deci (4097, self.logfile)/dscale
+                        rec  = parent.mk3spm.read_recorder_deci_ch (4097, 0, self.logfile)/dscale
+                        rec1 = parent.mk3spm.read_recorder_deci_ch (4097, 1, self.logfile)/dscale
+
+                        scope.set_data (rec/m1scale_div, rec1/m2scale_div)
+
+                        ma = rec.max()
+                        mi = rec.min()
+                        scope.set_info(["max: "+str(ma), "min: "+str(mi)])
+
+                        if True: # disable velocity calc and th recording
+                            return self.run
+                        
                         vel = zeros(4097)
                         if True:
                             vint=0.0
