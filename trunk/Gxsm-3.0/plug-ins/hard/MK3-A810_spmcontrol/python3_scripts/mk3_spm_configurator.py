@@ -1613,6 +1613,9 @@ class RecorderDeci():
                 [Xsignal, Xdata, OffsetX] = parent.mk3spm.query_module_signal_input(DSP_SIGNAL_SCOPE_SIGNAL1_INPUT_ID)
                 [Ysignal, Ydata, OffsetY] = parent.mk3spm.query_module_signal_input(DSP_SIGNAL_SCOPE_SIGNAL2_INPUT_ID)
 
+                print (Ysignal)
+                print (Xsignal)
+        
                 scope = Oscilloscope( Gtk.Label(), v, "XT", label, OSZISCALE)
                 scope.set_subsample_factor(256)
                 scope.scope.set_wide (True)
@@ -1624,8 +1627,6 @@ class RecorderDeci():
                 win.add(v)
 
                 table = Gtk.Table(n_rows=8, n_columns=2)
-                table.set_row_spacings(2)
-                table.set_col_spacings(2)
                 v.pack_start (table, True, True, 0)
                 tr=0
                 c=0
@@ -1636,6 +1637,8 @@ class RecorderDeci():
                 self.M1scale = Gtk.Entry()
                 self.M1scale.set_text("0.1")
                 table.attach(self.M1scale, c, c+1, tr, tr+1)
+                self.M1ac = Gtk.CheckButton(label="AC")
+                table.attach(self.M1ac, c+1, c+2, tr, tr+1)
                 tr=tr+1
 
                 lab = Gtk.Label( label="CH2: %s"%Ysignal[SIG_NAME] + ", Scale in %s/div"%Ysignal[SIG_UNIT])
@@ -1644,6 +1647,8 @@ class RecorderDeci():
                 self.M2scale = Gtk.Entry()
                 self.M2scale.set_text("1.0")
                 table.attach(self.M2scale, c, c+1, tr, tr+1)
+                self.M2ac = Gtk.CheckButton(label="AC")
+                table.attach(self.M2ac, c+1, c+2, tr, tr+1)
                 tr=tr+1
 
                 lab = Gtk.Label( label="Threshold")
@@ -1675,11 +1680,17 @@ class RecorderDeci():
                         except ValueError:
                                 m1th = 0.0
 
-                        dscale = 256.*32768./10. 
+                        #dscale = 256.*32768./10. 
                                 
-                        rec  = parent.mk3spm.read_recorder_deci_ch (4097, 0, self.logfile)/dscale
-                        rec1 = parent.mk3spm.read_recorder_deci_ch (4097, 1, self.logfile)/dscale
+                        rec  = parent.mk3spm.read_recorder_deci_ch (4097, 0, self.logfile)*Xsignal[SIG_D2U]
+                        rec1 = parent.mk3spm.read_recorder_deci_ch (4097, 1, self.logfile)*Ysignal[SIG_D2U]
 
+
+                        if self.M1ac.get_active():
+                            rec = rec - average(rec)
+                        if self.M2ac.get_active():
+                            rec1 = rec1 - average(rec1)
+                        
                         scope.set_data (rec/m1scale_div, rec1/m2scale_div)
 
                         ma = rec.max()
