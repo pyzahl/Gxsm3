@@ -138,6 +138,7 @@ public:
 		g_object_set_data(G_OBJECT (cbtxt), "mix_channel_fbsource", GINT_TO_POINTER (channel));
                 
 		for (int jj=0;  jj<NUM_SIGNALS_UNIVERSAL && sranger_common_hwi->lookup_dsp_signal_managed (jj)->p; ++jj){
+			//g_print ("MIX%d S#%d : %s", channel, jj, sranger_common_hwi->lookup_dsp_signal_managed (jj)->module);
 			if ( !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Analog_IN")
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Control")
 			     || !strcmp (sranger_common_hwi->lookup_dsp_signal_managed (jj)->module, "Counter")
@@ -148,10 +149,15 @@ public:
 			        if (channel == 0 && !strcmp(sranger_common_hwi->lookup_dsp_signal_managed (jj)->label, "In 0"))
                                         { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "In0: I-Tunnel"); g_free (id); }
 				else
-                                        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label); g_free (id); }
+                                        { gchar *id = g_strdup_printf ("%d", jj); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label);
+                                                //g_print (" FOUND ==> %s L>%s< P#%d", id, sranger_common_hwi->lookup_dsp_signal_managed (jj)->label, preset);
+                                                g_free (id); }
                         }
+                        //g_print("\n");
 		}
-		gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), preset);
+                gchar *preset_id = g_strdup_printf ("%d", preset); 
+		gtk_combo_box_set_active_id (GTK_COMBO_BOX (cbtxt), preset_id);
+                g_free (preset_id);
 		g_signal_connect (G_OBJECT (cbtxt), "changed",
 				  G_CALLBACK (DSPControl::choice_mixsource_callback),
 				  ref);
@@ -181,6 +187,11 @@ public:
 		//id = g_strdup_printf ("%d", MM_LV_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "LV-FUZZY-LOG"); g_free (id); 
 		//id = g_strdup_printf ("%d", MM_NEG|MM_LV_FUZZY|MM_LOG|MM_ON); gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbtxt), id, "NEG-LV-FUZZY-LOG"); g_free (id); 
 
+                gchar *preset_id = g_strdup_printf ("%d", preset); 
+		gtk_combo_box_set_active_id (GTK_COMBO_BOX (cbtxt), preset_id);
+                //g_print ("SetActive MIX%d p=%d <%s>\n", channel, preset, preset_id);
+                g_free (preset_id);
+                /*
 		if (preset == MM_OFF) 
 			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 0); 
 		else if (preset == MM_ON)	
@@ -206,7 +217,8 @@ public:
                 //			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 6); 
                 //		else if (preset == (MM_NEG|MM_LV_FUZZY|MM_LOG|MM_ON)) 
                 //			gtk_combo_box_set_active (GTK_COMBO_BOX (cbtxt), 7); 
-
+                */
+                
 		g_signal_connect (G_OBJECT (cbtxt),"changed",	
 				  G_CALLBACK (DSPControl::choice_mixmode_callback), 
 				  ref);				
@@ -1474,6 +1486,10 @@ DSPControl::DSPControl () {
 
         // Note: transform mode is always default [LOG,OFF,OFF,OFF] -- NOT READ BACK FROM DSP -- !!!
         for (gint ch=0; ch<4; ++ch){
+
+                mix_transform_mode[ch] = (int)sranger_common_hwi->read_dsp_feedback ("MT", ch);
+                //g_print ("INIT MIX%d MT=%d\n", ch,  mix_transform_mode[ch]);
+                
                 if (mix_transform_mode[ch] == MM_OFF)
                         dsp_bp->set_configure_list_mode_on (); 
                 else
@@ -4618,6 +4634,8 @@ int DSPControl::choice_mixmode_callback (GtkWidget *widget, DSPControl *dspc){
         channel = GPOINTER_TO_INT (g_object_get_data(G_OBJECT (widget), "mix_channel"));
         selection = atoi (gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget)));
 
+        //g_print ("Choice MIX%d MT=%d\n", channel, selection);
+
 	PI_DEBUG_GP (DBG_L3, "MixMode[%d]=0x%x\n",channel,selection);
 
 	dspc->mix_transform_mode[channel] = selection;
@@ -4625,6 +4643,7 @@ int DSPControl::choice_mixmode_callback (GtkWidget *widget, DSPControl *dspc){
         PI_DEBUG_GP (DBG_L4, "%s ** 2\n",__FUNCTION__);
 
 	dspc->updateDSP();
+        //g_print ("DSP READBACK MIX%d MT=%d\n", channel, (int)sranger_common_hwi->read_dsp_feedback ("MT", channel));
 
         PI_DEBUG_GP (DBG_L4, "%s **3 done\n",__FUNCTION__);
         return 0;

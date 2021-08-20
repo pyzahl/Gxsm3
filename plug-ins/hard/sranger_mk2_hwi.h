@@ -192,7 +192,7 @@ public:
 	virtual void write_dsp_reset ();
 	
 	void conv_dsp_feedback ();
-	virtual void read_dsp_feedback (); // cp, cp, setpoint
+	virtual double read_dsp_feedback (const gchar *property=NULL, int index=-1); // query feedback parameters
 	virtual void write_dsp_feedback (
 		 double set_point[4], double factor[4], double gain[4], double level[4], int transform_mode[4],
 		 double IIR_I_crossover, double IIR_f0_max[4], double IIR_f0_min, double LOG_I_offset, int IIR_flag,
