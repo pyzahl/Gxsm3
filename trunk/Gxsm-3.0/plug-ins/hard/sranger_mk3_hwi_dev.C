@@ -2168,7 +2168,7 @@ void sranger_mk3_hwi_dev::conv_dsp_feedback (){
 	CONV_32 (dsp_feedback_mixer.delta); // **
 }
 
-void sranger_mk3_hwi_dev::read_dsp_feedback (){
+double sranger_mk3_hwi_dev::read_dsp_feedback (const gchar *property, int index){
 	lseek (dsp, magic_data.z_servo, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 	sr_read (dsp, &dsp_z_servo, sizeof (SERVO_MK3), "Rd-DSP-Z-Servo");
 
@@ -2180,6 +2180,19 @@ void sranger_mk3_hwi_dev::read_dsp_feedback (){
 
 	// from DSP to PC -- only SetPoint!
 	conv_dsp_feedback ();
+
+        if (property){
+                switch (property[0]){
+                case 'M':
+                        switch (property[1]){
+                        case 'T': if (index>=0 && index<4) return (double)dsp_feedback_mixer.mode[index]; break;
+                        case 'L': if (index>=0 && index<4) return (double)dsp_feedback_mixer.level[index]; break; // convert!
+                        case 'G': if (index>=0 && index<4) return (double)dsp_feedback_mixer.gain[index]; break; // convert!
+                        case 'S': if (index>=0 && index<4) return (double)dsp_feedback_mixer.setpoint[index]; break; // convert!
+                        } break;
+                }
+                return 0.;
+        } else return 0.;
 }
 
 void sranger_mk3_hwi_dev::write_dsp_feedback (
