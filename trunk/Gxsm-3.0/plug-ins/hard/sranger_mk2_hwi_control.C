@@ -1308,18 +1308,21 @@ DSPControl::DSPControl () {
                         const gchar *l =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->label;
                         int d =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->dim;
                         const gchar *u =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->unit;
-                        double s =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->scale;
-                        double f = s*32768.*256./10.;
-                        gchar *txt = g_strdup_printf ("Mixer Signal Input[%d] = %d -> %s in %s, scale=%g, dim=%d, scale from Volts to unit: %g", jj, mix_fbsource[jj], l ? l : "?E?", u ? u : "?E?", s, d, f);
-                        PI_DEBUG_GP (DBG_L1, "%s\n", txt);
-                        gapp->monitorcontrol->LogEvent ("MK3-SIGNAL-CONFIGURATION-INFO", txt);
-                        g_free (txt);
+                        //double s =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->scale;
+                        //double f = s*32768.*256./10.;
+                        //gchar *txt = g_strdup_printf ("Mixer Signal Input[%d] = %d -> %s in %s, scale=%g, dim=%d, scale from Volts to unit: %g", jj, mix_fbsource[jj], l ? l : "?E?", u ? u : "?E?", s, d, f);
+                        //PI_DEBUG_GP (DBG_L1, "%s\n", txt);
+                        //gapp->monitorcontrol->LogEvent ("MK3-SIGNAL-CONFIGURATION-INFO", txt);
+                        //g_free (txt);
                         
                         // INIT mix_unit2volt_factor[] -- updated in signal change in choice_mixsource_callback()
                         if (jj > 1){
                                 //const gchar *u =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->unit;
                                 double s =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->scale;
-                                mix_unit2volt_factor[jj] = 1./s;
+                                if (!strncmp (sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->label, "In ", 3))
+                                        mix_unit2volt_factor[jj] = 256./s;
+                                else
+                                        mix_unit2volt_factor[jj] = 1./s;
                         }
                 }
                         
@@ -4668,7 +4671,10 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
                 double s =  sranger_common_hwi->dsp_signal_lookup_managed[signal].scale;
                 //dsp_feedback_mixer.setpoint[i] = (int)(round(s*factor[i]*set_point[i])); // Q23
 
-                dspc->mix_unit2volt_factor[mix_ch] = 1./s;
+                if (!strncmp (sranger_common_hwi->dsp_signal_lookup_managed[signal].label, "In ", 3))
+                        dspc->mix_unit2volt_factor[mix_ch] = 1./s/256.; // In0...7 Q23
+                else
+                        dspc->mix_unit2volt_factor[mix_ch] = 1./s; // other signals
                 //g_print ("MIX[%d]: %s in %s scale=%g  u2v=%g\n",mix_ch,l,u,s, dspc->mix_unit2volt_factor[mix_ch] );
 
 

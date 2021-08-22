@@ -2235,7 +2235,7 @@ void sranger_mk3_hwi_dev::write_dsp_feedback (
                                 dsp_feedback_mixer.level[i]    = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*level[i])));
                         } else {
                                 // general purpose In-N signal "Volt" or accordign to dsp_signal table
-                                //dsp_feedback_mixer.setpoint[i] = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*set_point[i]))); // Q23
+                                //dsp_feedback_mixer.setpoint[i] = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*set_point[i]))); // In0-7 Q23
                                 dsp_feedback_mixer.setpoint[i] = (int)(round(factor[i]*set_point[i])); // native signal (32bit)
                                 dsp_feedback_mixer.level[i]    = (int)(round(factor[i]*level[i]));
                         }
