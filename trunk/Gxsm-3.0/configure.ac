@@ -4,7 +4,7 @@ dnl Process this file with autoconf to produc a configure script.
 AC_PREREQ(2.63.2)
 
 m4_define(gxsm3_major_version, 3)
-m4_define(gxsm3_minor_version, 52)
+m4_define(gxsm3_minor_version, 53)
 m4_define(gxsm3_micro_version, 0)
 m4_define(gxsm3_version, gxsm3_major_version.gxsm3_minor_version.gxsm3_micro_version)
 
@@ -478,23 +478,6 @@ AC_DEFINE_UNQUOTED(COMPILEDBYNAME, "$USER@`hostname`; `date`", GXSM user@host CC
 
 # Quicktime library for Im/Export Plugin
 AC_CHECK_HEADERS(lqt/quicktime.h)
-
-### REMOVED OBSOLETED PYTHON 2.X SUPPORT
-
-# Now requires Python 3.7 or higher!
-AC_CHECK_LIB(python3.7, main)
-AC_CHECK_HEADERS(python3.7/Python.h)
-AC_CHECK_LIB(python3.7m, main)
-AC_CHECK_HEADERS(python3.7m/Python.h)
-
-AC_CHECK_LIB(python3.8, main)
-AC_CHECK_HEADERS(python3.8/Python.h)
-AC_CHECK_LIB(python3.8m, main)
-AC_CHECK_HEADERS(python3.8m/Python.h)
-
-AC_CHECK_LIB(python3.9, main)
-AC_CHECK_HEADERS(python3.9/Python.h)
-
 
 
 dnl ---------------------------------------------------------

@@ -1316,11 +1316,10 @@ DSPControl::DSPControl () {
                         g_free (txt);
                         
                         // INIT mix_unit2volt_factor[] -- updated in signal change in choice_mixsource_callback()
-                        if (jj > 1 && !strncmp (sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->label, "PLL ", 4)){
+                        if (jj > 1){
                                 //const gchar *u =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->unit;
                                 double s =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[jj])->scale;
-                                //dsp_feedback_mixer.setpoint[i] = (int)(round(s*factor[i]*set_point[i])); // Q23
-                                mix_unit2volt_factor[jj] = 1./(s*32768.*256./10.);
+                                mix_unit2volt_factor[jj] = 1./s;
                         }
                 }
                         
@@ -1502,10 +1501,10 @@ DSPControl::DSPControl () {
                         dsp_bp->grid_add_label (mixer_channel_label[ch]);
                 }
 
+                UnitObj *tmp = NULL;
                 if (ch > 1){
                         const gchar *u =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[ch])->unit;
 
-                        UnitObj *tmp = NULL;
                         switch (u[0]){
                         case 'V': tmp = new UnitObj("V","V"); break;
                         case 'A' : tmp = new UnitObj(UTF8_ANGSTROEM,"A"); break;
@@ -1539,8 +1538,8 @@ DSPControl::DSPControl () {
                 dsp_bp->set_configure_list_mode_on ();
                 dsp_bp->grid_add_ec (NULL, Unity, &mix_gain[ch], -0.5, 0.5, "5g", 0.001, 0.01, mixer_remote_id_gn[ch]);
                 dsp_bp->grid_add_ec (NULL, mixer_unit[ch], &mix_level[ch], -100.0, 100.0, "5g", 0.001, 0.01, mixer_remote_id_fl[ch]);
-                delete (tmp);
-                mixer_unit[ch] = Volt;
+
+                if (tmp) delete (tmp); // done setting unit -- if custom
                 
                 if (signal_select_widget)
                         g_object_set_data (G_OBJECT (signal_select_widget), "related_ec_level", dsp_bp->ec);
@@ -4662,11 +4661,16 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
 	dspc->mix_unit2volt_factor[mix_ch] = 1.;
 	dspc->mix_unit2volt_factor[0] = gapp->xsm->Inst->nAmpere2V (1.);
 
-        if (mix_ch > 1){ // ... && !strncmp (sranger_common_hwi->dsp_signal_lookup_managed[signal].label, "PLL ", 4)){
-                const gchar *u =  sranger_common_hwi->dsp_signal_lookup_managed[signal].unit;
+        if (mix_ch > 1){
+                // !strncmp (sranger_common_hwi->dsp_signal_lookup_managed[signal].label, "PLL ", 4)){
+                const gchar *l = sranger_common_hwi->dsp_signal_lookup_managed[signal].label;
+                const gchar *u = sranger_common_hwi->dsp_signal_lookup_managed[signal].unit;
                 double s =  sranger_common_hwi->dsp_signal_lookup_managed[signal].scale;
                 //dsp_feedback_mixer.setpoint[i] = (int)(round(s*factor[i]*set_point[i])); // Q23
-                dspc->mix_unit2volt_factor[mix_ch] = 1./(s*32768.*256./10.);
+
+                dspc->mix_unit2volt_factor[mix_ch] = 1./s;
+                //g_print ("MIX[%d]: %s in %s scale=%g  u2v=%g\n",mix_ch,l,u,s, dspc->mix_unit2volt_factor[mix_ch] );
+
 
                 UnitObj *tmp = NULL;
                 switch (u[0]){

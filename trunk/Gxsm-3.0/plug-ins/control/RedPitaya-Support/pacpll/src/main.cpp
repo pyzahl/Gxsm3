@@ -1085,6 +1085,25 @@ void rp_PAC_get_single_reading_FIR (double reading_vector[READING_MAX_VALUES]){
         reading_vector[9] = gpio_reading_FIRV_vector[GPIO_READING_DDS_FREQ]/GPIO_FIR_LEN;
         reading_vector[12] = gpio_reading_FIRV_vector[GPIO_READING_DFREQ]/GPIO_FIR_LEN;
         reading_vector[13] = gpio_reading_FIRV_vector[GPIO_READING_CONTROL_DFREQ]/GPIO_FIR_LEN * 10000/Q31;
+
+
+        SIGNAL_GPIOX[0] = read_gpio_reg_int32 (1,0); // GPIO X1 : LMS A (cfg + 0x1000)
+        SIGNAL_GPIOX[1] = read_gpio_reg_int32 (1,1); // GPIO X2 : LMS B (cfg + 0x1008)
+        SIGNAL_GPIOX[2] = read_gpio_reg_int32 (2,0); // GPIO X3 : LMS DBG1 :: M (LMS input Signal) (cfg + 0x2000) ===> used for DC OFFSET calculation
+        SIGNAL_GPIOX[3] = read_gpio_reg_int32 (2,1); // GPIO X4 : CORDIC SQRT (AM2=A^2+B^2) = Amplitude Monitor
+        SIGNAL_GPIOX[4] = read_gpio_reg_int32 (3,0); // GPIO X5 : MDC
+        SIGNAL_GPIOX[5] = read_gpio_reg_int32 (3,1); // GPIO X6 : XXX
+        SIGNAL_GPIOX[6] = read_gpio_reg_int32 (4,0); // GPIO X7 : Exec Ampl Control Signal (signed)
+        SIGNAL_GPIOX[7] = read_gpio_reg_uint32 (4,1); // GPIO X8 : DDS Phase Inc (Freq.) upper 32 bits of 44 (signed)
+        SIGNAL_GPIOX[8] = read_gpio_reg_uint32 (5,0); // GPIO X9 : DDS Phase Inc (Freq.) lower 32 bits of 44 (signed)
+        SIGNAL_GPIOX[9] = read_gpio_reg_int32 (5,1); // GPIO X10: CORDIC ATAN(X/Y) = Phase Monitor
+        SIGNAL_GPIOX[10]= read_gpio_reg_int32 (6,0); // GPIO X11 : dFreq
+        SIGNAL_GPIOX[11]= read_gpio_reg_int32 (6,1); // GPIO X12 BRAM write position
+        SIGNAL_GPIOX[12]= read_gpio_reg_int32 (7,0); // GPIO X13: control dFreq
+        SIGNAL_GPIOX[13]= read_gpio_reg_int32 (7,1); // GPIO X14
+        //SIGNAL_GPIOX[14] = read_gpio_reg_int32 (8,0); // GPIO X15
+        //SIGNAL_GPIOX[15] = read_gpio_reg_int32 (8,1); // GPIO X16
+
 }
 
 
@@ -1535,6 +1554,14 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                 break;
         case 8: // Debug and Testing Channels [McBSP bits]
                 i += index_shift;
+                for (k=0; k < SIGNAL_SIZE_DEFAULT; ++k){
+                        int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 - AC (IN1-MDC AC dec + filtered) (16)
+                        int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 - DC (IN1 IIR LP dec + filtered) (16)
+                        SIGNAL_CH1[k] = (float)ix32*gain1/Q22*1000.;
+                        SIGNAL_CH2[k] = (float)iy32*gain2/Q22*1000.; // where is the 1/2 ???
+                }
+#ifdef GPIODEBUG_ON
+                i += index_shift;
                 if (trigger_mode >= 5){
                         i += trigger_adr;
                         // advance i to trigger position
@@ -1565,6 +1592,7 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                                 SIGNAL_CH2[k] = (float)((int16_t)((iy32>>16)&0xffff))*gain2/Q13*1000.; // get 2nd in hi16
                         }
                 }
+#endif
                 break;
         default : // ***** OTHER -- PLAIN DATA *****
                 i += index_shift;

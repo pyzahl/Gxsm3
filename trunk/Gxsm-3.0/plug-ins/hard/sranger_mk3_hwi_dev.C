@@ -2203,9 +2203,10 @@ void sranger_mk3_hwi_dev::write_dsp_feedback (
         SRANGER_DEBUG_SIG ( "---> sranger_mk3_hwi_dev::write_dsp_feedback --->");
 	for (int i=0; i<4; ++i){
                 
-		if (i==0) // TUNNEL-CURRENT dedicated channel
+		if (i==0){ // TUNNEL-CURRENT dedicated channel
 			dsp_feedback_mixer.setpoint[i] = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->nAmpere2V (set_point[i])))); // Q23
-		else{
+                        dsp_feedback_mixer.level[i]    = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*level[i])));
+                }else{
                         if (i==1){ // PLL-FREQ dedicated channel, INTERNAL PAC if Hertz2V is set to 0 in SPM settings -- 
                                 if (gapp->xsm->Inst->dHertz2V(1.) == 0.0){ // INTERNAL PAC/PLL
                                         if (pllref > 0.0) // use MK3 PAC-PLL
@@ -2231,15 +2232,15 @@ void sranger_mk3_hwi_dev::write_dsp_feedback (
                                                            << " DSP-setpoint[1] = " << dsp_feedback_mixer.setpoint[i] 
                                                            );
                                 }
-                        } else if (pllref == 0.0 && gapp->xsm->Inst->dHertz2V(1.) == 0.0){ // PLL Ampl --  TMP HACK PY
-                                double skl = lookup_signal_scale_by_index (lookup_signal_by_name ("McBSP Ampl"));
-                                dsp_feedback_mixer.setpoint[i] = (int)round(set_point[i]/skl); // Q32 bit raw for PAC signal
+                                dsp_feedback_mixer.level[i]    = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*level[i])));
                         } else {
-                                // general purpose In-N signal "Volt" expected at mixer input
-                                dsp_feedback_mixer.setpoint[i] = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*set_point[i]))); // Q23
+                                // general purpose In-N signal "Volt" or accordign to dsp_signal table
+                                //dsp_feedback_mixer.setpoint[i] = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*set_point[i]))); // Q23
+                                dsp_feedback_mixer.setpoint[i] = (int)(round(factor[i]*set_point[i])); // native signal (32bit)
+                                dsp_feedback_mixer.level[i]    = (int)(round(factor[i]*level[i]));
                         }
                 }
-                dsp_feedback_mixer.level[i]    = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*level[i])));
+                //dsp_feedback_mixer.level[i]    = (int)(round(256.*gapp->xsm->Inst->VoltIn2Dig (factor[i]*level[i])));
 		dsp_feedback_mixer.gain[i]     = float_2_sranger_q15 (gain[i]);
 		dsp_feedback_mixer.mode[i]     = transform_mode[i];
 		dsp_feedback_mixer.iir_ca_q15[i] = float_2_sranger_q15 (exp (-2.*M_PI*IIR_f0_max[i]/75000.));
