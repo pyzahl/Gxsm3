@@ -2225,11 +2225,15 @@ void sranger_mk2_hwi_dev::write_dsp_feedback (
 		double setpoint_zpos, double z_servo[3], double m_servo[3], double pllref){
 
 	for (int i=0; i<4; ++i){
-		if (i==0)
+		if (i==0){
 			dsp_feedback_mixer.setpoint[i] = (int)(round(gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->nAmpere2V (set_point[i])))); // Q23
-		else
-			dsp_feedback_mixer.setpoint[i] = (int)(round(gapp->xsm->Inst->VoltIn2Dig (set_point_factor[i]*set_point[i]))); // Q23
-		dsp_feedback_mixer.level[i]    = (int)(round(gapp->xsm->Inst->VoltIn2Dig (set_point_factor[i]*level[i])));
+                }else if (i==1){
+                        dsp_feedback_mixer.setpoint[i] = (int)round(256.*round(gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->dHertz2V (set_point[i])))); // Q23
+                }else
+			dsp_feedback_mixer.setpoint[i] = (int)(round(gapp->xsm->Inst->VoltIn2Dig (set_point[i]))); // Q23
+                // dsp_feedback_mixer.setpoint[i] = (int)(round(gapp->xsm->Inst->VoltIn2Dig (set_point_factor[i]*set_point[i]))); // Q23
+		dsp_feedback_mixer.level[i]    = (int)(round(gapp->xsm->Inst->VoltIn2Dig (level[i])));
+		//dsp_feedback_mixer.level[i]    = (int)(round(gapp->xsm->Inst->VoltIn2Dig (set_point_factor[i]*level[i])));
 		dsp_feedback_mixer.gain[i]     = float_2_sranger_q15 (gain[i]);
 		dsp_feedback_mixer.mode[i]     = transform_mode[i];
 	}
