@@ -295,7 +295,7 @@ public:
         static void scope_buffer_position_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
         
-        static void choice_update_period_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void choice_update_ts_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_trigger_mode_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_auto_set_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
@@ -529,6 +529,11 @@ private:
         gboolean unwrap_phase_plot;
         double scope_width_points;
         double scope_height_points;
+
+        GtkWidget *update_ts_widget;
+        GtkWidget *update_op_widget;
+        GtkWidget *update_tr_widget;
+
         GtkWidget *signal_graph;
         GtkWidget *dF_control_frame;
        

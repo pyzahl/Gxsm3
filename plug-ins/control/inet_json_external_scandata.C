@@ -550,9 +550,9 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 "MANUAL",
                 "MEASURE DC_OFFSET",
                 "RUN SCOPE",
-                "INIT BRAM TRANSPORT",
+                "INIT BRAM TRANSPORT", // 3
                 "SINGLE SHOT",
-                "STREAMING OPERATION", // "START BRAM LOOP",
+                "STREAMING OPERATION", // 5 "START BRAM LOOP",
                 "RUN TUNE",
                 "RUN TUNE F",
                 "RUN TUNE FF",
@@ -563,14 +563,16 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	for(int i=0; operation_modes[i]; i++)
                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), operation_modes[i], operation_modes[i]);
 
+        update_op_widget = wid;
 	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), operation_mode=5); // "START BRAM LOOP" mode need to run for data decimation and transfer analog + McBSP
 
         // FPGA Update Period
 	wid = gtk_combo_box_text_new ();
         g_signal_connect (G_OBJECT (wid), "changed",
-                          G_CALLBACK (Inet_Json_External_Scandata::choice_update_period_callback),
+                          G_CALLBACK (Inet_Json_External_Scandata::choice_update_ts_callback),
                           this);
         bp->grid_add_widget (wid);
+        update_ts_widget = wid;
 
         /* for(i=0; i< 30; i=i+2) {printf ("\" %2d/%.2fms\"\n",i,1024*(1<<i)*2/125e6*1e3);}
  for(i=0; i<=30; i=i+1) {printf ("\" %2d/%.2fms\"\n",i,1024*(1<<i)*2/125e6*1e3);}
@@ -609,7 +611,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 
         */
         
-	const gchar *update_periods[] = {
+	const gchar *update_ts_list[] = {
                 "* 1/ 32.8us  ( 32ns)",
                 "  2/ 65.5us  ( 64ns)",
                 "  3/131us    (128ns)",
@@ -636,10 +638,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                 NULL };
    
 	// Init choicelist
-	for(int i=0; update_periods[i]; i++)
-                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), update_periods[i], update_periods[i]);
+	for(int i=0; update_ts_list[i]; i++)
+                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (wid), update_ts_list[i], update_ts_list[i]);
 
-	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 18); // select 4.19ms FIR (4.29s scope length)
+	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 18); // select 19
 
         // Scope Trigger Options
 	wid = gtk_combo_box_text_new ();
@@ -733,7 +735,8 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         channel_selections[6] = 0;
         channel_selections[0] = 1;
         channel_selections[1] = 1;
-        transport=5; // 5: SCAN OPERATION
+        transport=5; // 5: Phase, dFreq,[Ampl,Exec] (default for streaming operation, scanning, etc.)
+        update_tr_widget = wid;
 	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), transport+1); // normal operation for PLL, transfer: Phase, Freq,[Am,Ex] (analog: Freq, McBSP: 4ch transfer Ph, Frq, Am, Ex)
 
         
@@ -963,7 +966,7 @@ void Inet_Json_External_Scandata::scan_start_callback (gpointer user_data){
         self->ch_freq = -1;
         self->ch_ampl = -1;
         self->streaming = 1;
-        self->operation_mode = 0;
+        //self->operation_mode = 0;
         g_message ("Inet_Json_External_Scandata::scan_start_callback");
 #if 0
         if ((self->ch_freq=gapp->xsm->FindChan(xsmres.extchno[0])) >= 0)
@@ -1226,7 +1229,7 @@ void Inet_Json_External_Scandata::send_all_parameters (){
         write_parameter ("SHR_DEC_DATA", 4.);
         write_parameter ("SCOPE_TRIGGER_MODE", 1);
         write_parameter ("PACVERBOSE", 0);
-        write_parameter ("TRANSPORT_DECIMATION", 16);
+        write_parameter ("TRANSPORT_DECIMATION", 19);
         write_parameter ("TRANSPORT_MODE", transport);
         write_parameter ("OPERATION", operation_mode);
         write_parameter ("BRAM_SCOPE_SHIFT_POINTS", bram_shift = 0);
@@ -1249,7 +1252,7 @@ void Inet_Json_External_Scandata::choice_operation_callback (GtkWidget *widget, 
         self->write_parameter ("PACVERBOSE", (int)self->rp_verbose_level);
 }
 
-void Inet_Json_External_Scandata::choice_update_period_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+void Inet_Json_External_Scandata::choice_update_ts_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->data_shr_max = 0;
         self->bram_window_length = 1.;
 
@@ -1269,10 +1272,10 @@ void Inet_Json_External_Scandata::choice_update_period_callback (GtkWidget *widg
         self->write_parameter ("TRANSPORT_DECIMATION", decimation);
 
         self->bram_window_length = 1024.*(double)decimation*1./125e6; // sec
-        g_print ("SET_SINGLESHOT_TRGGER_POST_TIME = %g ms\n", 0.1 * 1e3*self->bram_window_length);
-        g_print ("BRAM_WINDOW_LENGTH ............ = %g ms\n", 1e3*self->bram_window_length);
-        g_print ("BRAM_DEC ...................... = %d\n", decimation);
-        g_print ("BRAM_DATA_SHR ................. = %d\n", self->data_shr_max);
+        //g_print ("SET_SINGLESHOT_TRGGER_POST_TIME = %g ms\n", 0.1 * 1e3*self->bram_window_length);
+        //g_print ("BRAM_WINDOW_LENGTH ............ = %g ms\n", 1e3*self->bram_window_length);
+        //g_print ("BRAM_DEC ...................... = %d\n", decimation);
+        //g_print ("BRAM_DATA_SHR ................. = %d\n", self->data_shr_max);
         self->write_parameter ("SET_SINGLESHOT_TRIGGER_POST_TIME", 0.1 * 1e6*self->bram_window_length); // is us --  10% pre trigger
 }
 
@@ -1566,15 +1569,21 @@ void Inet_Json_External_Scandata::got_client_connection (GObject *object, GAsync
                 self->status_append ("RedPitaya PAC-PLL loading configuration.\n ");
                 self->send_all_parameters ();
                 self->status_append ("RedPitaya PAC-PLL init, DEC FAST(12)...\n");
-                self->write_parameter ("TRANSPORT_DECIMATION", 12);
+                gtk_combo_box_set_active (GTK_COMBO_BOX (self->update_tr_widget), 6);  // select Ph,dF,Am,Ex
+                gtk_combo_box_set_active (GTK_COMBO_BOX (self->update_ts_widget), 12); // select 12, fast
+                while(gtk_events_pending()) gtk_main_iteration();
                 usleep(500000);
-                self->write_parameter ("OPERATION", 3); // INIT BRAM TRANSPORT AND CLEAR FIR RING BUFFERS, give me a second...
+                gtk_combo_box_set_active (GTK_COMBO_BOX (self->update_op_widget), 3); // INIT BRAM TRANSPORT AND CLEAR FIR RING BUFFERS, give me a second...
                 self->status_append ("RedPitaya PAC-PLL init, INIT-FIR... [2s Zzzz]\n");
+                while(gtk_events_pending()) gtk_main_iteration();
                 usleep(2000000);
                 self->status_append ("RedPitaya PAC-PLL init, INIT-FIR completed.\n");
                 usleep(1000000);
                 self->status_append ("RedPitaya PAC-PLL normal operation, set to data streaming mode.\n");
-                self->write_parameter ("OPERATION", self->operation_mode);
+                while(gtk_events_pending()) gtk_main_iteration();
+                usleep(500000);
+                gtk_combo_box_set_active (GTK_COMBO_BOX (self->update_op_widget), 5); // STREAMING OPERATION
+                gtk_combo_box_set_active (GTK_COMBO_BOX (self->update_ts_widget), 18); // select 19 (typical scan decimation/time scale filter)
                 self->status_append ("RedPitaya PAC-PLL is ready.\n ");
         }
 }
@@ -2086,9 +2095,12 @@ void Inet_Json_External_Scandata::update_graph (){
                                                 )
                                                     wave->set_xy_fast (k, x, freq_to_y (s, y_hi)), tic_hz=1; // Hz
                                         else if ( channel_selections[0]==9 && ch < 2){
+                                                wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*signal[ch][k]), tic_lin=1; // else: linear scale with gain
+#if 0
                                                 for (int bit=0; bit<binary_BITS; ++bit)
                                                         binwave8bit[bit]->set_xy_fast (k, x, binary_to_y (signal[ch][k], bit, ch, y_hi, binary_BITS));
                                                 wave->set_xy_fast (k, x, -yr*((int)(s)%256)/256.);
+#endif
                                         } else // SCOPE IN1,IN2, IN1 AC,DC
                                                 wave->set_xy_fast (k, x,-yr*(gain_scale[ch]>0.?gain_scale[ch]:1.)*s), tic_lin=1; // else: linear scale with gain
                                 }
