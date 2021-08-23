@@ -480,6 +480,21 @@ AC_DEFINE_UNQUOTED(COMPILEDBYNAME, "$USER@`hostname`; `date`", GXSM user@host CC
 AC_CHECK_HEADERS(lqt/quicktime.h)
 
 
+
+# Now requires Python 3.7 or higher!
+AC_CHECK_LIB(python3.7, main)
+AC_CHECK_HEADERS(python3.7/Python.h)
+AC_CHECK_LIB(python3.7m, main)
+AC_CHECK_HEADERS(python3.7m/Python.h)
+
+AC_CHECK_LIB(python3.8, main)
+AC_CHECK_HEADERS(python3.8/Python.h)
+AC_CHECK_LIB(python3.8m, main)
+AC_CHECK_HEADERS(python3.8m/Python.h)
+
+AC_CHECK_LIB(python3.9, main)
+AC_CHECK_HEADERS(python3.9/Python.h)
+
 dnl ---------------------------------------------------------
 dnl Architecture specific stuff
 dnl ---------------------------------------------------------

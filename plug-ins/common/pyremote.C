@@ -689,8 +689,6 @@ static void pyremote_configure(void)
 	}
 }
 
-// #include <pygtk-2.0/pygobject.h>
-
 typedef struct {
         GList *plugins;
         PyObject *module;
