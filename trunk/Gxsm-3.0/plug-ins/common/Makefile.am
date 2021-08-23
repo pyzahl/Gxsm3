@@ -14,7 +14,7 @@ lib_LTLIBRARIES = \
 #	libprinter.la
 
 libpyremote_la_SOURCES = pyremote.C
-libpyremote_la_LDFLAGS = -module -export-dynamic -avoid-version ${GTKSOURCEVIEW_LIBS}
+libpyremote_la_LDFLAGS = -module -export-dynamic -avoid-version ${GTKSOURCEVIEW_LIBS} $(shell python3-config --ldflags)
 
 libPanView_la_SOURCES = PanView.C
 libPanView_la_LDFLAGS = -module -export-dynamic -avoid-version
