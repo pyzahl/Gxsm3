@@ -1489,8 +1489,11 @@ DSPControl::DSPControl () {
         // Note: transform mode is always default [LOG,OFF,OFF,OFF] -- NOT READ BACK FROM DSP -- !!!
         for (gint ch=0; ch<4; ++ch){
 
+                PI_DEBUG (DBG_L4, "DSPC ** build mixer[" << ch << "]");
+                
                 mix_transform_mode[ch] = (int)sranger_common_hwi->read_dsp_feedback ("MT", ch);
-                //g_print ("INIT MIX%d MT=%d\n", ch,  mix_transform_mode[ch]);
+                
+                PI_DEBUG (DBG_L2, "DSPC -- INIT MIX" << ch << " MTM=" << mix_transform_mode[ch]);
                 
                 if (mix_transform_mode[ch] == MM_OFF)
                         dsp_bp->set_configure_list_mode_on (); 
@@ -1505,7 +1508,7 @@ DSPControl::DSPControl () {
                 }
 
                 UnitObj *tmp = NULL;
-                if (ch > 1){
+                if (sranger_common_hwi->check_pac() != -1 && ch > 1){
                         const gchar *u =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[ch])->unit;
 
                         switch (u[0]){
