@@ -1278,7 +1278,9 @@ DSPControl::DSPControl () {
                 sranger_common_hwi->read_dsp_signals (); // read DSP signals or set up empty list depending on actual HW
 
                 // setup scope/recorder defaults
+#if 0 // temporary DO NOT TOUCH
                 sranger_common_hwi->change_signal_input (sranger_common_hwi->lookup_signal_by_name("MIX IN 0"), DSP_SIGNAL_SCOPE_SIGNAL1_INPUT_ID);
+#endif
                 sranger_common_hwi->change_signal_input (sranger_common_hwi->lookup_signal_by_name("Z Servo Neg"), DSP_SIGNAL_SCOPE_SIGNAL2_INPUT_ID);
 
                 
