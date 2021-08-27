@@ -999,7 +999,7 @@ DSPControl::DSPControl () {
 	xrm.Get ("mix_set_point1", &mix_set_point[1], "0.1");
 	xrm.Get ("mix_set_point2", &mix_set_point[2], "0.0");
 	xrm.Get ("mix_set_point3", &mix_set_point[3], "0.0");
-	xrm.Get ("mix_gain0", &mix_gain[0], (DSPPACClass) ? "1.0":"0.5");
+	xrm.Get ("mix_gain0", &mix_gain[0], "0.5");
 	xrm.Get ("mix_gain1", &mix_gain[1], "0.5");
 	xrm.Get ("mix_gain2", &mix_gain[2], "0.5");
 	xrm.Get ("mix_gain3", &mix_gain[3], "0.5");
@@ -1491,11 +1491,8 @@ DSPControl::DSPControl () {
         // Note: transform mode is always default [LOG,OFF,OFF,OFF] -- NOT READ BACK FROM DSP -- !!!
         for (gint ch=0; ch<4; ++ch){
 
-                PI_DEBUG (DBG_L4, "DSPC ** build mixer[" << ch << "]");
-                
                 mix_transform_mode[ch] = (int)sranger_common_hwi->read_dsp_feedback ("MT", ch);
-                
-                PI_DEBUG (DBG_L2, "DSPC -- INIT MIX" << ch << " MTM=" << mix_transform_mode[ch]);
+                //g_print ("INIT MIX%d MT=%d\n", ch,  mix_transform_mode[ch]);
                 
                 if (mix_transform_mode[ch] == MM_OFF)
                         dsp_bp->set_configure_list_mode_on (); 
@@ -1510,7 +1507,7 @@ DSPControl::DSPControl () {
                 }
 
                 UnitObj *tmp = NULL;
-                if (sranger_common_hwi->check_pac() != -1 && ch > 1){
+                if (ch > 1){
                         const gchar *u =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[ch])->unit;
 
                         switch (u[0]){
