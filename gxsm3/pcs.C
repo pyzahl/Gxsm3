@@ -576,6 +576,7 @@ void Gtk_EntryControl::get_init_value_from_settings (int array_flag){
                                 Set_FromValue (g_settings_get_double (pcs_settings, gsettings_key));
                 } else
                         init_pcs_via_list ();
+                XSM_DEBUG_GP (DBG_L2, "PCS init done.\n");
         }
 }
  
