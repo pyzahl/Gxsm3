@@ -743,33 +743,39 @@ int LineProfile1D::SetData(Scan *sc, VObject *vo, gboolean append){
 		return 0;
 
 	case O_LINE:
-		if (vo->get_num_points () == 2){
+		if (vo->get_num_points () >= 2){
+                        int sections = vo->get_num_points ()-1;
+                        int section = 0;
 			int nt = sc->number_of_time_elements ();
                         int tstart = vo->get_profile_series_limit (0);
                         int tend   = vo->get_profile_series_limit (1);
                         if (tend < 1 || tend > nt)
                                 tend = nt;
-			if (vo->get_profile_series_all () && nt > 1
-			    && (vo->get_profile_series_dimension () == MEM2D_DIM_TIME || vo->get_profile_path_dimension () == MEM2D_DIM_TIME))
-                                for (int t=tstart; t<tend; ++t){
-					sc->mem2d_time_element (t) -> SetLayer (sc->mem2d->GetLayer ());
-					scan1d->mem2d->GetDataLineFrom (&p2d[0], &p2d[1], sc->mem2d_time_element (t), &sc->data, &scan1d->data,
-									(GETLINEORGMODE)xsmres.LineProfileOrgMode, 
-									vo->get_profile_path_width(),
-									vo->get_profile_path_step(),
-									vo->get_profile_path_dimension (),
-									vo->get_profile_series_dimension (),
-									vo->get_profile_series_all (),
-									t, tend-tstart, append);
-				}
-			else
-				scan1d->mem2d->GetDataLineFrom (&p2d[0], &p2d[1], sc->mem2d, &sc->data,  &scan1d->data,
-								(GETLINEORGMODE)xsmres.LineProfileOrgMode,
-								vo->get_profile_path_width(),
-								vo->get_profile_path_step(),
-								vo->get_profile_path_dimension (),
-								vo->get_profile_series_dimension (),
-								vo->get_profile_series_all (), 0,0, append);
+                        while (sections--){
+                                vo->get_xy_i_pixel2d (section++, &p2d[0]);
+                                vo->get_xy_i_pixel2d (section,   &p2d[1]);
+                                if (vo->get_profile_series_all () && nt > 1
+                                    && (vo->get_profile_series_dimension () == MEM2D_DIM_TIME || vo->get_profile_path_dimension () == MEM2D_DIM_TIME))
+                                        for (int t=tstart; t<tend; ++t){
+                                                sc->mem2d_time_element (t) -> SetLayer (sc->mem2d->GetLayer ());
+                                                scan1d->mem2d->GetDataLineFrom (&p2d[0], &p2d[1], sc->mem2d_time_element (t), &sc->data, &scan1d->data,
+                                                                                (GETLINEORGMODE)xsmres.LineProfileOrgMode, 
+                                                                                vo->get_profile_path_width(),
+                                                                                vo->get_profile_path_step(),
+                                                                                vo->get_profile_path_dimension (),
+                                                                                vo->get_profile_series_dimension (),
+                                                                                vo->get_profile_series_all (),
+                                                                                t, tend-tstart, append || section>1);
+                                        }
+                                else
+                                        scan1d->mem2d->GetDataLineFrom (&p2d[0], &p2d[1], sc->mem2d, &sc->data,  &scan1d->data,
+                                                                        (GETLINEORGMODE)xsmres.LineProfileOrgMode,
+                                                                        vo->get_profile_path_width(),
+                                                                        vo->get_profile_path_step(),
+                                                                        vo->get_profile_path_dimension (),
+                                                                        vo->get_profile_series_dimension (),
+                                                                        vo->get_profile_series_all (), 0,0, append || section>1);
+                        }
 		}
 
 
