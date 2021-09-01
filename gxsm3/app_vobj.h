@@ -48,6 +48,8 @@ class ProfileControl;
 
 typedef enum { VOBJ_COORD_FROM_MOUSE, VOBJ_COORD_ABSOLUT, VOBJ_COORD_RELATIV } VOBJ_COORD_MODE;
 
+#define MAX_NODES 16
+
 class VObject : public scan_object_data{
  public:
 	VObject (GtkWidget *canvas, double *xy0, int npkt, int pflg=FALSE, VOBJ_COORD_MODE cmode=VOBJ_COORD_FROM_MOUSE, const gchar *lab=NULL, double Marker_scale=1.);
@@ -322,10 +324,10 @@ class VObject : public scan_object_data{
 	cairo_item **abl;
 	cairo_item_text *object_label;
         int label_anchor;
-	cairo_item *arrow_head[6];
+	cairo_item *arrow_head[MAX_NODES];
 	cairo_item *cursors[2];
-	cairo_item *avg_area_marks[2*6];
-	cairo_item *avg_circ_marks[2*6];
+	cairo_item *avg_area_marks[2*MAX_NODES];
+	cairo_item *avg_circ_marks[2*MAX_NODES];
 	cairo_item *selected_bbox;
 	GtkWidget *popup;
 	GtkWidget *statusbar;

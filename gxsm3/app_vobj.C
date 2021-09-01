@@ -233,7 +233,7 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, int pflg, VOBJ_COORD_
 			: g_strdup_printf("Object[%d]", ++obj_count);
 
 	np=npkt > 0 ? npkt : 1;
-	abl = new cairo_item* [np+6+1];
+	abl = new cairo_item* [np+MAX_NODES+1];
 
         selected_bbox = NULL;
 
@@ -241,7 +241,7 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, int pflg, VOBJ_COORD_
         label_anchor = CAIRO_ANCHOR_CENTER;
         cursors[0] = NULL;
 	cursors[1] = NULL;
-	for (i=0; i<6; ++i){
+	for (i=0; i<MAX_NODES; ++i){
 		arrow_head[i]= NULL;
 		avg_area_marks[2*i+0] = NULL;
 		avg_area_marks[2*i+1] = NULL;
@@ -263,12 +263,8 @@ VObject::VObject(GtkWidget *Canvas, double *xy0, int npkt, int pflg, VOBJ_COORD_
 		abl[i] = node_marker (NULL, &xy[2*i], i);
                 abl[i]->queue_update (canvas);
 	}
-	abl[i++]=NULL;
-	abl[i++]=NULL;
-	abl[i++]=NULL;
-	abl[i++]=NULL;
-	abl[i++]=NULL;
-	abl[i++]=NULL;
+	for(; i<np+MAX_NODES;)
+                abl[i++]=NULL;
 
 	abl[i++]=NULL; // never use!! END mark.
 
@@ -325,7 +321,7 @@ VObject::~VObject(){
 
         UNREF_DELETE_CAIRO_ITEM (object_label, canvas);
 
-	for (i=0; i<6; ++i){
+	for (i=0; i<MAX_NODES; ++i){
                 UNREF_DELETE_CAIRO_ITEM (arrow_head[i], canvas);
         }
         
@@ -333,7 +329,7 @@ VObject::~VObject(){
                 UNREF_DELETE_CAIRO_ITEM (cursors[i], canvas);
         }
 
-        for (i=0; i<2*6; ++i){
+        for (i=0; i<2*MAX_NODES; ++i){
 		UNREF_DELETE_CAIRO_ITEM (avg_area_marks[i], canvas);
 		UNREF_DELETE_CAIRO_ITEM (avg_circ_marks[i], canvas);
 	}
@@ -406,7 +402,7 @@ void VObject::set_xy_node(double *xy_node, VOBJ_COORD_MODE cmode, int node){
 
 void VObject::insert_node(double *xy_node){
 	double *xy_tmp = new double[2*np+2];
-	cairo_item** abl_tmp = new cairo_item* [np+6+1];
+	cairo_item** abl_tmp = new cairo_item* [np+MAX_NODES+1];
 	for(int i=0; i<np; i++){
 		abl_tmp[i]  = abl[i];
 		xy_tmp[2*i] = xy[2*i];
@@ -423,12 +419,8 @@ void VObject::insert_node(double *xy_node){
 	abl_tmp[np] = node_marker (NULL, &xy[2*np], np);
         abl_tmp[np]->queue_update (canvas);
 
-	abl_tmp[np+1] = abl[np];
-	abl_tmp[np+2] = abl[np+1];
-	abl_tmp[np+3] = abl[np+2];
-	abl_tmp[np+4] = abl[np+3];
-	abl_tmp[np+5] = abl[np+4];
-	abl_tmp[np+6] = abl[np+5];
+        for (int k=0; k<MAX_NODES; ++k)
+                abl_tmp[np+k+1] = abl[np+k];
 
 	delete[] xy;
 	delete[] abl;
@@ -497,7 +489,7 @@ void VObject::draw (cairo_t *cr){
         if (show_flag){ // master show/hide for all
                 //  g_print ("vobj::draw %s at %g %g\n", name, xy[0], xy[1]);
                 if (!label_osd_style)
-                        for(int i=0; i<np+6; i++)
+                        for(int i=0; i<np+MAX_NODES; i++)
                                 if (abl[i]) 
                                         abl[i]->draw (cr);
                 
@@ -509,10 +501,10 @@ void VObject::draw (cairo_t *cr){
                         cursors[0]->draw (cr);
                 if (cursors[1])
                         cursors[1]->draw (cr);
-                for (int i=0; i<6; ++i)
+                for (int i=0; i<MAX_NODES; ++i)
                         if (arrow_head[i])
                                 arrow_head[i]->draw (cr);
-                for (int i=0; i<2*6; ++i){
+                for (int i=0; i<2*MAX_NODES; ++i){
                         if (avg_area_marks[i])
                                 avg_area_marks[i]->draw (cr);
                         if (avg_circ_marks[i])
@@ -1394,7 +1386,7 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
                 item = touched_item;
         else {
                 // check items
-                for(int i=0; i<np+6; i++){
+                for(int i=0; i<np+MAX_NODES; i++){
                         if (abl[i])
                                 if (abl[i]->check_grab_bbox (mxy[0], mxy[1])){
                                         item = abl[i];
@@ -1451,15 +1443,15 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
                 if (!lock && item->is_grabbed () && dragging && (event->motion.state & GDK_BUTTON1_MASK)){
                         new_x = item_x;
                         new_y = item_y;
-				
-                        if (item == abl[np]   || item == abl[np+1] ||
-                            item == abl[np+2] || item == abl[np+3] || 
-                            item == abl[np+4] || item == abl[np+5] || 
-                            item == arrow_head[0] || item == arrow_head[1] || 
-                            item == arrow_head[2] || item == arrow_head[3] || 
-                            item == arrow_head[4] || item == arrow_head[5] ||
-                            item == object_label 
-                            ){
+
+                        gboolean abl_grab=false;
+                        gboolean arrow_grab=false;
+                        for (int node=0; node < MAX_NODES && (abl[node] || arrow_head[node]); ++node){
+                                if (item == abl[np+node]) { abl_grab=true; break; }
+                                if (item == arrow_head[node]) { arrow_grab=true; break; }
+                        }
+                                
+                        if (arrow_grab || abl_grab || item == object_label){
                                 for(int i=0; i<np; i++){
                                         xy[2*i]+=new_x-x; // Move Object
                                         xy[2*i+1]+=new_y-y;
@@ -1470,8 +1462,8 @@ gboolean VObject::check_event(GdkEvent *event, double mxy[2]){
                                 // Move one Handle
                                 for(int i=0; i<np; i++)
                                         if(item == abl[i]){ // Move Object Element
-                                                xy[2*i]+=new_x-x;
-                                                xy[2*i+1]+=new_y-y;
+                                                xy[2*i]   += new_x-x;
+                                                xy[2*i+1] += new_y-y;
                                                 node_marker (item, &xy[2*i], i);
                                                 item->queue_update (canvas);
                                         }
@@ -1716,7 +1708,7 @@ VObLine::~VObLine(){
 }
 
 void VObLine::AddNode(){
-        if (np < 7){
+        if (np < MAX_NODES){
 		insert_node ();
 		Update ();
 	}
