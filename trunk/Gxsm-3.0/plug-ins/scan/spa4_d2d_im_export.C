@@ -357,7 +357,7 @@ FIO_STATUS spa4_ImExportFile::import(const char *fname){
   
 
 	FileList = g_string_new ("Imported by GXSM from SPA4-d2d data file.\n");
-	g_string_sprintfa (FileList, "Original Filename: %s\n", fname);
+	g_string_append_printf (FileList, "Original Filename: %s\n", fname);
 	g_string_append (FileList, "Orig. Comment: ");
 	g_string_append (FileList, d2d.comment);
 	g_string_append (FileList, "\n");

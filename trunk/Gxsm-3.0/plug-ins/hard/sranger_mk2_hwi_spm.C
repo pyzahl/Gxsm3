@@ -401,7 +401,7 @@ inverse off      27
                         CONV_U32 ( dsp_statemachine.DSP_count_seconds);
                         CONV_U32 ( dsp_statemachine.DSP_time);
                         CONV_U32 ( dsp_statemachine.DP_max_time_until_abort);
-                        g_print ("\n\033[35;1;7mDSP RTENGINE4GXSM Mark2 V1.0 by P.Zahl TIME STRUCTS:\033[0m DP TICKS %10lu %10lus %10lum %02ds\n",
+                        g_print ("\n\033[35;1;7mDSP RTENGINE4GXSM Mark2 V1.0 by P.Zahl TIME STRUCTS:\033[0m DP TICKS %10u %10us %10um %02ds\n",
                                  dsp_statemachine.DSP_time,
                                  dsp_statemachine.DSP_count_seconds, dsp_statemachine.DSP_minutes-1, dsp_statemachine.DSP_seconds);
                                  
@@ -411,8 +411,8 @@ inverse off      27
                         int m = (int)(double)(dsp_statemachine.DSP_minutes-1) - 24*60*d - h*60;
                         int s = 59-dsp_statemachine.DSP_seconds;
                         g_print ("\n\033[0mDSP STATUS up %d days %d:%02d:%02d, Average Load: %g\n", d,h,m,s, load);
-                        g_print ("DP Reentry Time: %10lu  Earliest: %10lu Latest: %10lu    %8lx\n"
-                                 "DP Time: %10lu  Max: %10lu  Idle Max: %10lu Min: %10lu   %8lx\n",
+                        g_print ("DP Reentry Time: %10u  Earliest: %10u Latest: %10u    %8x\n"
+                                 "DP Time: %10u  Max: %10u  Idle Max: %10u Min: %10u    %8x\n",
                                  dsp_statemachine.DataProcessReentryTime,
                                  dsp_statemachine.DataProcessReentryPeak & 0xffff,
                                  dsp_statemachine.DataProcessReentryPeak >> 16, dsp_statemachine.DataProcessReentryPeak,
@@ -420,7 +420,7 @@ inverse off      27
                                  dsp_statemachine.dp_task_control[0].process_time_peak_now & 0xffff,
                                  dsp_statemachine.IdleTime_Peak >> 16,
                                  dsp_statemachine.IdleTime_Peak & 0xffff, dsp_statemachine.IdleTime_Peak );
-                        g_print ("DP Continue Time Limit: %10lu", dsp_statemachine.DP_max_time_until_abort);
+                        g_print ("DP Continue Time Limit: %10u", dsp_statemachine.DP_max_time_until_abort);
                         g_print ("\n\n\033[0mPROCESS LIST ** RT Flags: O: on odd clk, E: on even clk, S=sleeping, A=active, R=running now, s=sleeping now\n");
                         g_print ("\033[4mPID       DSPTIME    TASKTIME   TASKTMMAX  MISSEDTASK  FLAGS     NAME of RT Data Processing (DP) Task\033[0m\n");
                         //        RT000         297        1624        2577           0  11  system
@@ -444,7 +444,7 @@ inverse off      27
                                                                );
 
                                 if (dsp_statemachine.dp_task_control[i].process_flag){
-                                        g_print ("%sRT%03d\033[0m  %10lu  %10lu  %10lu  %10lu   %s  %s\n",
+                                        g_print ("%sRT%03d\033[0m  %10u  %10lu  %10lu  %10u   %s  %s\n",
                                                  missed_count_last[i] == dsp_statemachine.dp_task_control[i].missed_count ? "\033[1m":"\033[31m",
                                                  i,
                                                  dsp_statemachine.dp_task_control[i].process_time,
@@ -469,7 +469,7 @@ inverse off      27
                                 CONV_U32 ( dsp_statemachine.id_task_control[i].timer_next);
                                 CONV_U32 ( dsp_statemachine.id_task_control[i].interval);
                                 if (dsp_statemachine.id_task_control[i].process_flag)
-                                        g_print ("\033[1mID%03d\033[0m  %10lu  %10lu  %10lu   %s  %s\n", i,
+                                        g_print ("\033[1mID%03d\033[0m  %10u  %10u  %10u   %s  %s\n", i,
                                                  (unsigned int)dsp_statemachine.id_task_control[i].timer_next,
                                                  (unsigned int)dsp_statemachine.id_task_control[i].interval,
                                                  (unsigned int)dsp_statemachine.id_task_control[i].exec_count,

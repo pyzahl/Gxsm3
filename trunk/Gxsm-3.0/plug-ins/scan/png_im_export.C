@@ -487,7 +487,7 @@ FIO_STATUS PNG_ImExportFile::import_data(const char *fname, int index_value, int
 		scan->data.ui.SetUser ("nobody");
 		
 		FileList = g_string_new ("Imported by GXSM from PNG.\n");
-		g_string_sprintfa (FileList, "Original Filename: %s\n", name);
+		g_string_append_printf (FileList, "Original Filename: %s\n", name);
 		g_string_append (FileList, "blaaa:\n");
 		scan->data.ui.SetComment (FileList->str);
 		g_string_free(FileList, TRUE); 

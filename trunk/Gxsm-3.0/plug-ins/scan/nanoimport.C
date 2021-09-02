@@ -493,7 +493,7 @@ FIO_STATUS NanoScopeFile::Read(xsm::open_mode mode){
 
 	// fix ugly ASCII in place... conversion below fails otherwise
 	for(gchar *p=FileList->str; *p; ++p)
-		if (*p == '\BA') *p='d';
+	  if (*p == '\BA') *p='d'; // <== !!!! >> unknown escape sequence: '\B'  ??? no idea what it should be!
 
 	gsize br, bw;
 	GError *error = NULL;

@@ -631,7 +631,7 @@ FIO_STATUS Quicktime_ImExportFile::Write(){
                         // The framerate is passed as a rational number (timescale/frame_duration). E.g. for an NTSC stream, you'll choose timescale = 30000 and frame_duration = 1001. To set up multiple video tracks with different formats and/or codecs, use lqt_add_video_track .
                         // time:	Timestamp of the frame in timescale tics
 
-                        g_message ("[%04d,%04d] Encoding Frame at %08d", time_index, layer_index, time_tic);
+                        g_message ("[%04d,%04d] Encoding Frame at %08ld", time_index, layer_index, time_tic);
 			if ( lqt_encode_video(qtfile, row_pointers, 0, time_tic) != 0){
 				quicktime_close (qtfile);
 				cout << "Encode of Video Frame failed" << endl;

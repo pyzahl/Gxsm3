@@ -585,7 +585,7 @@ gint64 Wip_ImExportFile::read_tag (gint64 start, gint64 stop, WIP_data *wip_data
                                 preview = g_strdup_printf ("%d", (int)*((gint64*)tag_data.data));
                                 for (int i=1; i<tag_data.size/data_size; ++i){
                                         tmp1 = preview;
-                                        preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %d", (int)*(((gint64*)tag_data.data)+i), NULL));
+                                        preview = g_strconcat(tmp1, tmp2=g_strdup_printf (", %d", (int)*(((gint64*)tag_data.data)+i)), NULL);
                                         g_free (tmp1);
                                         g_free (tmp2);
                                 }

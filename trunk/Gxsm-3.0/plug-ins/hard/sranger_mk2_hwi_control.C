@@ -1500,32 +1500,32 @@ DSPControl::DSPControl () {
                         dsp_bp->set_configure_list_mode_off ();
 
                 GtkWidget *signal_select_widget = NULL;
+                UnitObj *tmp = NULL;
                 if (sranger_common_hwi->check_pac() != -1) {
                         signal_select_widget = dsp_bp->grid_add_mixer_input_options (ch, mix_fbsource[ch], this);
+                        if (ch > 1){
+                                const gchar *u =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[ch])->unit;
+
+                                switch (u[0]){
+                                case 'V': tmp = new UnitObj("V","V"); break;
+                                case 'A' : tmp = new UnitObj(UTF8_ANGSTROEM,"A"); break;
+                                case 'H': tmp = new UnitObj("Hz","Hz"); break;
+                                case 'd': tmp = new UnitObj(UTF8_DEGREE,"Deg"); break;
+                                case 's': tmp = new UnitObj("s","sec"); break;
+                                case 'C': tmp = new UnitObj("#","CNT"); break;
+                                case 'm': tmp = new UnitObj("V","V"); break;
+                                case '1': tmp = new UnitObj("x1","x1"); break;
+                                case 'X': tmp = new UnitObj("X","Flag"); break;
+                                case 'x': tmp = new UnitObj("xV","xV"); break;
+                                case '*': tmp = new UnitObj("*V","*V"); break;
+                                default: tmp = new UnitObj("V","V"); break;
+                                }
+                                mixer_unit[ch] = tmp;
+                        }                
                 } else {
                         dsp_bp->grid_add_label (mixer_channel_label[ch]);
                 }
 
-                UnitObj *tmp = NULL;
-                if (ch > 1){
-                        const gchar *u =  sranger_common_hwi->lookup_dsp_signal_managed (mix_fbsource[ch])->unit;
-
-                        switch (u[0]){
-                        case 'V': tmp = new UnitObj("V","V"); break;
-                        case 'A' : tmp = new UnitObj(UTF8_ANGSTROEM,"A"); break;
-                        case 'H': tmp = new UnitObj("Hz","Hz"); break;
-                        case 'd': tmp = new UnitObj(UTF8_DEGREE,"Deg"); break;
-                        case 's': tmp = new UnitObj("s","sec"); break;
-                        case 'C': tmp = new UnitObj("#","CNT"); break;
-                        case 'm': tmp = new UnitObj("V","V"); break;
-                        case '1': tmp = new UnitObj("x1","x1"); break;
-                        case 'X': tmp = new UnitObj("X","Flag"); break;
-                        case 'x': tmp = new UnitObj("xV","xV"); break;
-                        case '*': tmp = new UnitObj("*V","*V"); break;
-                        default: tmp = new UnitObj("V","V"); break;
-                        }
-                        mixer_unit[ch] = tmp;
-                }                
 
                 dsp_bp->grid_add_ec_with_scale (NULL, mixer_unit[ch], &mix_set_point[ch], ch==0? 0.0:-100.0, 100., "4g", 0.001, 0.01, mixer_remote_id_set[ch]);
                 // dsp_bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
@@ -1813,7 +1813,7 @@ DSPControl::DSPControl () {
                                 if (ch_si[outn][om] < 0) // DISABLED?
                                         continue;
                                 if (ch_si[outn][om] >= NUM_SIGNALS){ // ERROR
-                                        g_warning ("%s\nCH_SI[ OUTn=%d, Om=%d] = %d is invalid.", outn, om, ch_si[outn][om]);
+                                        g_warning ("CH_SI[ OUTn=%d, Om=%d] = %d is invalid.", outn, om, ch_si[outn][om]);
                                         ch_si[outn][om] = NUM_SIGNALS+1; // POINT TO END SIGNAL FOR SAFETY
                                         continue;
                                 }
@@ -3386,7 +3386,7 @@ void DSPControl::GVP_restore_vp (const gchar *key){
                         vp_program_length=n;
                 else
                         if (n != vp_program_length)
-                                g_warning ("GXSM3 DCONF: DSPControl::GVP_restore_vp -- key_i '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
+                                g_warning ("GXSM3 DCONF: DSPControl::GVP_restore_vp -- key_i '%s' vector length %ld not matching program n=%d.\n", m_vckey, n, vp_program_length);
                 // g_assert_cmpint (n, ==, N_GVP_VECTORS);
                 for (int k=0; k<n && k<N_GVP_VECTORS; ++k)
                         GVPi[i][k]=pc_array_i[i][k];
@@ -3408,7 +3408,7 @@ void DSPControl::GVP_restore_vp (const gchar *key){
                 pc_array_d[i] = (double*) g_variant_get_fixed_array (vd[i], &n, sizeof (double));
                 //g_assert_cmpint (n, ==, N_GVP_VECTORS);
                 if (n != vp_program_length)
-                        g_warning ("GXSM3 DCONF: DSPControl::GVP_restore_vp -- key_d '%s' vector length %d not matching program n=%d.\n", m_vckey, n, vp_program_length);
+                        g_warning ("GXSM3 DCONF: DSPControl::GVP_restore_vp -- key_d '%s' vector length %ld not matching program n=%d.\n", m_vckey, n, vp_program_length);
                 for (int k=0; k<vp_program_length && k<N_GVP_VECTORS; ++k)
                         GVPd[i][k]=pc_array_d[i][k];
                 g_free (m_vckey);
@@ -4710,15 +4710,12 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
 	if (!strncmp (sranger_common_hwi->dsp_signal_lookup_managed[signal].label, "In ", 3))
 		scale_extra = 256.*256; // In 0..7 are scaled up for MIXER0-3, else raw 32bit number.
 
-	PI_DEBUG_GP (DBG_L3, "MIX-b\n");
-
 	if (mix_ch == 0){
                 gchar *tmp = g_strdup_printf ("Mix-%s-ITunnel", sranger_common_hwi->dsp_signal_lookup_managed[signal].label);
               PI_DEBUG_GP (DBG_L3, "MIX[0] =>> %s\n", tmp);
 	      gapp->channelselector->SetModeChannelSignal (6+3, tmp, tmp, // "nA", 1.);  //-- fix ??? -- adjusting signal lookup at startup now!
                                                            sranger_common_hwi->dsp_signal_lookup_managed[signal].unit,
                                                            sranger_common_hwi->dsp_signal_lookup_managed[signal].scale*scale_extra);
-              PI_DEBUG_GP (DBG_L3, "MIX%d-b2\n");
 	      g_free (tmp);
 	} else {
 	      gchar *tmp = g_strdup_printf ("Mix-%s", sranger_common_hwi->dsp_signal_lookup_managed[signal].label);
@@ -4727,10 +4724,8 @@ int DSPControl::choice_mixsource_callback (GtkWidget *widget, DSPControl *dspc){
                                                            sranger_common_hwi->dsp_signal_lookup_managed[signal].unit,
                                                            sranger_common_hwi->dsp_signal_lookup_managed[signal].scale*scale_extra
                                                            );
-              PI_DEBUG_GP (DBG_L3, "MIX-b*2\n");
 	      g_free (tmp);
 	}
-	PI_DEBUG_GP (DBG_L3, "MIX-c\n");
         return 0;
 }
 
