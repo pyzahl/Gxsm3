@@ -3310,8 +3310,6 @@ void  py_gxsm_console::write_example_file(void)
 void py_gxsm_console::run()
 {
 	PyObject *d;
-	gchar *file_content;
-	GtkTextView *textview;
 
 	PI_DEBUG(DBG_L2, "pyremote Plugin :: console_run()");
 

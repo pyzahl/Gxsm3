@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -205,7 +207,7 @@ static void extra_scan_info_SaveValues_callback ( gpointer gp_ncf ){
  #define NC_GET_VARIABLE(VNAME, VAR) if(ncf->get_var(VNAME)) ncf->get_var(VNAME)->get(VAR)
 
 static void extra_scan_info_LoadValues_callback ( gpointer gp_ncf ){
-	NcFile *ncf = (NcFile *) gp_ncf;
+        //NcFile *ncf = (NcFile *) gp_ncf;
         PI_DEBUG (DBG_L4, "Extra Scan Info::LoadValues_callback\n");
         //load_values ((NcFile *) ncf);
 }

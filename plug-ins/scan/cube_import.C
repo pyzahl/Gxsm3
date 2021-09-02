@@ -293,7 +293,7 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
         // # atoms, origin
         {
                 f.getline (line, maxcharsperline);
-                g_message (line);
+                g_message ("%s", line);
                 g_string_append (FileList, line);
                 g_string_append (FileList, "\n");
                 gchar **record = g_strsplit_set (line, " \t,", 200);
@@ -312,7 +312,7 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
         g_message ("Reading cube file, %d atoms", atoms);
         for (int k=0; k<3; ++k){
                 f.getline (line, maxcharsperline);
-                g_message (line);
+                g_message ("%s",line);
                 g_string_append (FileList, line);
                 g_string_append (FileList, "\n");
                 gchar **record = g_strsplit_set (line, " \t,", 200);
@@ -336,7 +336,7 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
         
         for (int k=0; k<atoms; ++k){
                 f.getline (line, maxcharsperline);
-                g_message (line);
+                g_message ("%s",line);
                 g_string_append (FileList, line);
                 g_string_append (FileList, "\n");
                 gchar **record = g_strsplit_set (line, " \t,", 200);
@@ -452,7 +452,7 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
 	scan->data.display.bright = 32.;
 	scan->data.display.contrast = 1.0;
 
-        g_message ("Setting up Dimensions rx:%g x ry:%g x rv:%d in Ang", scan->data.s.rx, scan->data.s.ry, scan->data.s.rz);
+        g_message ("Setting up Dimensions rx:%g x ry:%g x rv:%g in Ang", scan->data.s.rx, scan->data.s.ry, scan->data.s.rz);
 
 
         // FYI: (PZ)

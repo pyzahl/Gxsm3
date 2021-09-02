@@ -577,7 +577,7 @@ FIO_STATUS gmeyer_ImExportFile::import(const char *fname){
   
 
 	FileList = g_string_new ("Imported by Gxsm from G.Meyer STMAFM Dat file.\n");
-	g_string_sprintfa (FileList, "Original Filename: %s\n", fname);
+	g_string_append_printf (FileList, "Original Filename: %s\n", fname);
 	g_string_append (FileList, "Original GME File Header follows:\n");
 	
 	int dxi=0, dyi=0;
@@ -738,7 +738,7 @@ FIO_STATUS gmeyer_ImExportFile::import(const char *fname){
 		// start of gzdata
 		f.seekg (0x4000, ios::beg);
 		f.read ((char*) zbuf, nb);
-		g_print ("GME32Z-Import: deflating Z data [%d] : zuffer-size:%d data-size:%d ratio:%g\% \n", 
+		g_print ("GME32Z-Import: deflating Z data [%d] : zuffer-size:%d data-size:%d ratio:%g \n", 
 			 uncompress ((Bytef *) buf, &nb, (Bytef *) zbuf, znb),
 			 (int)znb, (int)nb, znb/nb*100.);
 		g_free (zbuf);

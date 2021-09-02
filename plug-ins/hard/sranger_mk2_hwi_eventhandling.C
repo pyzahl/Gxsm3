@@ -409,7 +409,7 @@ int DSPControl::Probing_eventcheck_callback( GtkWidget *widget, DSPControl *dspc
                                                 g_message ("MAPI: %i CH%i Lab:%s USym:%s LayerLookup:%s(%s)", mapi, chmap,
                                                            (const gchar*)g_ptr_array_index (gsymarray,  mapi),
                                                            (const gchar*)g_ptr_array_index (glabarray,  mapi),
-                                                           Xsrc<0?"index":(gpointer) dspc->vp_label_lookup (Xsrc), Xsrc<0?"N/A":(gpointer) dspc->vp_unit_lookup (Xsrc)
+                                                           Xsrc<0?"index":(const gchar*)((gpointer) dspc->vp_label_lookup (Xsrc)), Xsrc<0?"N/A":(const gchar*)((gpointer) dspc->vp_unit_lookup (Xsrc))
                                                            );
                                                 Xsrc_lookup_end = -1;
                                                 g_free (id);

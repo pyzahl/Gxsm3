@@ -358,28 +358,28 @@ FIO_STATUS RHK_SPM32_ImportFile::import(const char *fname){
 	comment = g_string_new (scan->data.ui.comment);
 	switch (page_type){
 	case 0:
-		g_string_sprintfa (comment, "Undefined image type.\n");
+		g_string_append_printf (comment, "Undefined image type.\n");
 		break;
 	case 1:
-		g_string_sprintfa (comment, "Topographic image.\n");
+		g_string_append_printf (comment, "Topographic image.\n");
 		break;
 	case 2:
-		g_string_sprintfa (comment, "Current image.\n");
+		g_string_append_printf (comment, "Current image.\n");
 		break;
 	case 3:
-		g_string_sprintfa (comment, "Aux image.\n");
+		g_string_append_printf (comment, "Aux image.\n");
 		break;
 	case 4:
-		g_string_sprintfa (comment, "Force image.\n");
+		g_string_append_printf (comment, "Force image.\n");
 		break;
 	case 5:
-		g_string_sprintfa (comment, "Signal image.\n");
+		g_string_append_printf (comment, "Signal image.\n");
 		break;
 	case 6:
-		g_string_sprintfa (comment, "Image FFT transform.\n");
+	        g_string_append_printf (comment, "Image FFT transform.\n");
 		break;
 	default:
-		g_string_sprintfa (comment, "Unknown page type.\n");
+		g_string_append_printf (comment, "Unknown page type.\n");
 		break;
 	}
 	scan->data.ui.SetComment (comment->str);
@@ -418,8 +418,8 @@ FIO_STATUS RHK_SPM32_ImportFile::import(const char *fname){
 	sscanf (header + 0x140, "%20s", label);
 	strncpy (text, header + 0x160, 160);
 	comment = g_string_new (scan->data.ui.comment);
-	g_string_sprintfa (comment, "id: %ld; label: %s.\n", file_id, label);
-	g_string_sprintfa (comment, "%s\n", text);
+	g_string_append_printf (comment, "id: %ld; label: %s.\n", file_id, label);
+	g_string_append_printf (comment, "%s\n", text);
 	scan->data.ui.SetComment (comment->str);
 	g_string_free(comment, TRUE); 
 	comment=NULL;

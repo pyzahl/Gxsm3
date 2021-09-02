@@ -304,7 +304,7 @@ FIO_STATUS ascii_ImExportFile::import(const char *fname){
 	        return status=FIO_OPEN_ERR;
 	
 	FileList = g_string_new ("Imported by GXSM from ASCII/NSNOM-Reuben data file.\n");
-	g_string_sprintfa (FileList, "Original Filename: %s\n", fname);
+	g_string_append_printf (FileList, "Original Filename: %s\n", fname);
 	g_string_append (FileList, "Orig. Header: \n");
 
 	// read header

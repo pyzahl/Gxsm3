@@ -378,7 +378,7 @@ FIO_STATUS Gdat_ImExportFile::import_data(const char *fname){
 	scan->data.ui.SetUser (Kopf.UserName);
 
 	FileList = g_string_new ("Imported by GXSM from old dat filetype.\n");
-	g_string_sprintfa (FileList, "Original Filename: %s\n", name);
+	g_string_append_printf (FileList, "Original Filename: %s\n", name);
 	g_string_append (FileList, "Original Kopf.comment:\n");
 	g_string_append (FileList, Kopf.comment);
 	scan->data.ui.SetComment (FileList->str);

@@ -300,7 +300,7 @@ FIO_STATUS PsiHDF_ImExportFile::import(const char *fname){
   
 
 	FileList = g_string_new ("Imported by GXSM from old dat filetype.\n");
-	g_string_sprintfa (FileList, "Original Filename: %s\n", fname);
+	g_string_append_printf (FileList, "Original Filename: %s\n", fname);
 //	g_string_append (FileList, "blaa\n");
 	
 	int magic;

@@ -289,7 +289,7 @@ FIO_STATUS binary_ImExportFile::import(const char *fname){
         
 	// read header
 	if ( f.good ()){
-                g_string_sprintfa (FileList, "Original Filename: %s\nDim-XYZB: %d %d %d %d\nExtends-XYZ: %f %f %f", fname,
+                g_string_append_printf (FileList, "Original Filename: %s\nDim-XYZB: %d %d %d %d\nExtends-XYZ: %f %f %f", fname,
                                    (int)h.dimensions_xyzb[0], (int)h.dimensions_xyzb[1], (int)h.dimensions_xyzb[2], h.dimensions_xyzb[3], 
                                    (double)extends_xyz[0],  (double)extends_xyz[1],  (double)extends_xyz[2]
                                    );
