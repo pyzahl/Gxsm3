@@ -296,10 +296,10 @@ void App::offset_to_preset_callback(GtkWidget* w, gpointer app){
          if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (g_object_get_data (G_OBJECT((((App*)app)->spm_control)), "offset_lock_button"))))
                  return;
 
-         double *xy = (double*)g_object_get_data (G_OBJECT(w), "preset_xy");
+         double *xy = (double*)g_object_get_data (G_OBJECT(w), "preset_xy"); // [ preset box ix, iy (0,0=center), +/-# presets ]
          if (xy){
-                 data->s.x0 = xy[0] * round(((App*)app)->xsm->XOffsetMax() / 3.5 / 10)*10;
-                 data->s.y0 = xy[1] * round(((App*)app)->xsm->YOffsetMax() / 3.5 / 10)*10;
+                 data->s.x0 = xy[0] * round(((App*)app)->xsm->XOffsetMax() / xy[2] / 10)*10;
+                 data->s.y0 = xy[1] * round(((App*)app)->xsm->YOffsetMax() / xy[2] / 10)*10;
          } else {
                  data->s.x0 = data->s.y0 = 0.;
          }
