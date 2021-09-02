@@ -322,7 +322,7 @@ static gint PanView_tip_refresh_callback (PanView *pv){
 
 
 PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
- 	int i,j;
+ 	int i;
 
 	pan_area = NULL;
 	pan_area_extends = NULL;
@@ -340,10 +340,10 @@ PanView ::  PanView (){ //GtkWidget *a) : GnomeAppService (a){
 	timer_id = 0;
 
 	for(i=0; i<16; ++i)
-		DSP_status_indicator[i] = DSP_status_indicator[i] = NULL;
+		DSP_status_indicator[i] = NULL;
 
 	for(i=0; i<16; ++i)
-		DSP_status_indicator[i] = DSP_gpio_indicator[i] = NULL;
+		DSP_gpio_indicator[i] = NULL;
 
         for(i=0; i<N_PRESETS; ++i)
                 for(int j=0; j<N_PRESETS; ++j)
@@ -485,13 +485,13 @@ void PanView::AppWindowInit(const gchar *title){
 }
 
 gint PanView::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, PanView *pv){
-	static int dragging=FALSE;
-	static GtkWidget *coordpopup=NULL;
-	static GtkWidget *coordlab=NULL;
+	//static int dragging=FALSE;
+	//static GtkWidget *coordpopup=NULL;
+	//static GtkWidget *coordlab=NULL;
         static int pi=-1;
         static int pj=-1;
         double mouse_pix_xy[2];
-        static double preset[2];
+        static double preset[3];
         
         //---------------------------------------------------------
 	// cairo_translate (cr, 12.+pv->WXS/2., 12.+pv->WYS/2.);
@@ -506,7 +506,7 @@ gint PanView::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, PanView *pv){
         double pyw=(2*pv->y0r)/N_PRESETS;
 
         int i = (int)((mouse_pix_xy[0]+pv->x0r)/pxw);
-        int j = 6-(int)((mouse_pix_xy[1]+pv->y0r)/pyw);
+        int j = (N_PRESETS-1)-(int)((mouse_pix_xy[1]+pv->y0r)/pyw);
         if (i < 0 || i > (N_PRESETS-1))
                 i=j=-1;
         if (j < 0 || j > (N_PRESETS-1))
@@ -516,8 +516,9 @@ gint PanView::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, PanView *pv){
 	case GDK_BUTTON_PRESS:
 		switch(event->button.button) {
 		case 1:
-                        preset[0] = i-3;
-                        preset[1] = j-3;
+                        preset[0] = i-(N_PRESETS-1)/2;
+                        preset[1] = j-(N_PRESETS-1)/2;
+                        preset[2] = N_PRESETS/2.0;
                         g_object_set_data (G_OBJECT(canvas), "preset_xy", preset);
                         gapp->offset_to_preset_callback (canvas, gapp);
                         // g_message ("PanView Button1 Pressed at XY=%g, %g => %d, %d",  mouse_pix_xy[0], mouse_pix_xy[1], i,j );
@@ -940,7 +941,7 @@ void PanView :: refresh()
 	static gboolean prev_error = false;
 	gboolean error = false;
 	double alpha;
-	int 	i,j; 
+	int 	i; 
 
 	if (!PanView_valid) return;
 
@@ -1018,13 +1019,15 @@ void PanView :: refresh()
 #if PRE_AREA
 
 	/*redraw the PanView prescan area */
-	pre_scanarea_points = gnome_canvas_points_new (4);
-	for(i=0,j=0;i < 4;i++){
-		pre_scanarea_points->coords[j]   = TO_CANVAS_X(max_corn[i][0]);
-		pre_scanarea_points->coords[j+1] = TO_CANVAS_Y(max_corn[i][1]);
-		j+=2;
-	}
-  	
+        pre_scanarea_points = gnome_canvas_points_new (4);
+	{
+                int j;
+                for(i=j=0;i < 4;i++){
+                        pre_scanarea_points->coords[j]   = TO_CANVAS_X(max_corn[i][0]);
+                        pre_scanarea_points->coords[j+1] = TO_CANVAS_Y(max_corn[i][1]);
+                        j+=2;
+                }
+  	}
 	if (pre_current_view)
 		gnome_canvas_item_set (pre_current_view, 
 				       "points", pre_scanarea_points, 
@@ -1066,7 +1069,7 @@ void PanView :: refresh()
                 current_view->set_stroke_rgba   (.2,.2,.2, 0.8);
         current_view->set_line_width (get_lw (1.0));
         current_view->set_position (x_offset, y_offset);
-	for(i=0,j=0;i < 4;i++)
+	for(i=0; i < 4; ++i)
                 current_view->set_xy (i, max_corn[i][0], max_corn[i][1]);
 
         current_view->queue_update (canvas);

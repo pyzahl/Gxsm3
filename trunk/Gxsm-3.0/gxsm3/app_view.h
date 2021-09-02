@@ -203,7 +203,7 @@ public:
                 ec->Put_Value();
                 if (u){
                         if (strcmp (u->Symbol (), ec->get_unit_symbol())){
-                                // g_message ("uvp-uec-unit change: %s", u->Symbol());
+                                XSM_DEBUG(DBG_L2, "uvp-uec-unit change: " << u->Symbol());
                                 ec->changeUnit(u);
                         }
                 }

@@ -340,7 +340,7 @@ void ProbeIndicator::close_callback (GtkWidget *widget, gpointer user_data) {
 }
 
 void ProbeIndicator::shutdown_callback (GtkWidget *widget, gpointer user_data) {
-        ProbeIndicator *pv = (ProbeIndicator *) user_data; 
+        //ProbeIndicator *pv = (ProbeIndicator *) user_data; 
         g_print ("ProbeIndicator::shutdown_callback TB: %d\n", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
 }
 
@@ -672,13 +672,13 @@ void ProbeIndicator::AppWindowInit(const gchar *title){
 }
 
 gint ProbeIndicator::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ProbeIndicator *pv){
-	static int dragging=FALSE;
-	static GtkWidget *coordpopup=NULL;
-	static GtkWidget *coordlab=NULL;
-        static int pi=-1;
-        static int pj=-1;
+	//static int dragging=FALSE;
+	//static GtkWidget *coordpopup=NULL;
+	//static GtkWidget *coordlab=NULL;
+        //static int pi=-1;
+        //static int pj=-1;
         double mouse_pix_xy[2];
-        static double preset[2];
+        //static double preset[2];
         
         //---------------------------------------------------------
 	// cairo_translate (cr, 12.+pv->WXS/2., 12.+pv->WYS/2.);
@@ -785,7 +785,7 @@ gint ProbeIndicator::refresh(){
                 probe->set_mark_color (tip, CAIRO_COLOR_RED_ID);
 
 	if (gapp->xsm->hardware){
-		double x0,y0,z0;
+		//double x0,y0,z0;
 #if 0
 		if (gapp->xsm->hardware->RTQuery ("O", z0, x0, y0)){ // get HR Offset
 			gchar *tmp = NULL;

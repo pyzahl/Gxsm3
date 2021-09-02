@@ -106,7 +106,7 @@ public:
 
 
         };
-        ~hud_object(){
+        virtual ~hud_object(){
                 delete grid;
                 delete ic;
                 delete oc;
@@ -320,8 +320,8 @@ public:
                                 fftw_destroy_plan (plan); plan=NULL;
                         }
                         // free temp data memory
-                        if (in) delete[] in; in=NULL;
-                        if (out) delete[] out; out=NULL;
+                        if (in) { delete[] in; in=NULL; }
+                        if (out) { delete[] out; out=NULL; }
                         n=0;
                         if (len < 2) // clenaup only, exit
                                 return 0;

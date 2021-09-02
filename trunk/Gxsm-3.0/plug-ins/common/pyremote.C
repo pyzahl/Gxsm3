@@ -1152,7 +1152,7 @@ static PyObject* remote_rtquery(PyObject *self, PyObject *args)
 static PyObject* remote_y_current(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: y_current ") ;
-	gchar *parameter;
+	//gchar *parameter;
 
 	gint y = gapp->xsm->hardware->RTQuery ();
 
@@ -1162,7 +1162,7 @@ static PyObject* remote_y_current(PyObject *self, PyObject *args)
 static PyObject* remote_moveto_scan_xy(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Moveto Scan XY ");
-	remote_args ra;
+	//remote_args ra;
 	double x, y;
         
 	if (!PyArg_ParseTuple(args, "dd", &x, &y))
@@ -1225,7 +1225,7 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
                         return Py_BuildValue ("i", -1);
                 rf=true;
         }
-        if ( view.len / sizeof(long) != sizex*sizey*sizev ) {
+        if ( (long unsigned int)(view.len / sizeof(long)) != (long unsigned int)(sizex*sizey*sizev) ) {
                 g_message ("Create Scan: ERROR array len=%ld does not match nx x ny=%ld", view.len / sizeof(long), sizex*sizey);
                 return Py_BuildValue("i", -1);
         }
@@ -1323,7 +1323,7 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
                         return Py_BuildValue ("i", -1);
                 rf=true;
         }
-	if ( view.len / sizeof(float) != sizex*sizey*sizev ) {
+	if ( (long unsigned int)(view.len / sizeof(float)) != (long unsigned int)(sizex*sizey*sizev) ) {
                 g_message ("Create Scan: ERROR array len=%ld does not match nx x ny=%ld", view.len / sizeof(float), sizex*sizey);
 		return Py_BuildValue("i", -1);
 	}
@@ -1394,7 +1394,7 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
 static PyObject* remote_set_scan_unit(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: set scan zunit ");
-	remote_args ra;
+	//remote_args ra;
         int ch;
 	gchar *udim, *unitid, *ulabel;
 
@@ -1433,7 +1433,7 @@ static PyObject* remote_set_scan_unit(PyObject *self, PyObject *args)
 static PyObject* remote_set_scan_lookup(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: set scan lookup ");
-	remote_args ra;
+	//remote_args ra;
         int ch;
 	gchar *udim;
         double start, end;
@@ -1556,7 +1556,7 @@ static PyObject* remote_getslice(PyObject *self, PyObject *args)
 	PI_DEBUG(DBG_L2, "pyremote: getslice");
 	long ch,v,t;
 
-	PyObject *obj;
+	//PyObject *obj;
         
 	if (!PyArg_ParseTuple (args, "lll", &ch, &v, &t))
 		return Py_BuildValue("i", -1);
@@ -2507,7 +2507,6 @@ PyObject* py_gxsm_console::run_string(const char *cmd, int type, PyObject *g, Py
 
 void py_gxsm_console::show_stderr(const gchar *str)
 {
-	GtkWidget *dlg, *scroll, *frame, *text;
         GtkDialogFlags flags =  (GtkDialogFlags) (GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT);
         GtkWidget *dialog = gtk_dialog_new_with_buttons (N_("Python interpreter result"),
                                                          window,
@@ -2515,10 +2514,8 @@ void py_gxsm_console::show_stderr(const gchar *str)
                                                          _("_CLOSE"), GTK_RESPONSE_CLOSE,
                                                          NULL);
 
-	scroll = gtk_scrolled_window_new (NULL, NULL);
-	gtk_container_add (GTK_CONTAINER(frame), scroll);
-
-	text = gtk_text_view_new ();
+	GtkWidget *text = gtk_text_view_new ();
+	GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
 	gtk_container_add (GTK_CONTAINER (scroll), text);
 	gtk_text_view_set_editable (GTK_TEXT_VIEW(text), FALSE);
 	gtk_text_buffer_set_text (gtk_text_view_get_buffer(GTK_TEXT_VIEW(text)),
@@ -2528,7 +2525,7 @@ void py_gxsm_console::show_stderr(const gchar *str)
 
         gtk_widget_show_all (dialog);
 
-        gint result = gtk_dialog_run (GTK_DIALOG (dialog));
+        /*gint result =*/ gtk_dialog_run (GTK_DIALOG (dialog));
         gtk_widget_destroy (dialog);
 }
 
@@ -2686,9 +2683,6 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
         gchar **lines = NULL;
         gchar *to_parse = g_strdup (script);
         int i=0;
-        int n=0;
-        if (n_lines)
-                n=*n_lines;
                 
         // Max recursion = 10
         if (r > 10){
@@ -2923,7 +2917,7 @@ void py_gxsm_console::open_file_callback (GSimpleAction *action, GVariant *param
 void py_gxsm_console::open_action_script_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
 	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
-	GtkWidget *file_chooser;
+	//GtkWidget *file_chooser;
 	GtkTextBuffer *console_file_buf;
 	GtkTextView *textview;
         GVariant *old_state=NULL, *new_state=NULL;
@@ -3029,7 +3023,7 @@ void py_gxsm_console::save_file_as_callback (GSimpleAction *action, GVariant *pa
 
 void py_gxsm_console::configure_callback (GSimpleAction *action, GVariant *parameter, 
                                           gpointer user_data){
-        py_gxsm_console *pygc = (py_gxsm_console *) user_data;
+        //py_gxsm_console *pygc = (py_gxsm_console *) user_data;
         GVariant *old_state, *new_state;
 
         old_state = g_action_get_state (G_ACTION (action));
@@ -3150,16 +3144,12 @@ void py_gxsm_console::AppWindowInit(const gchar *title){
 
 void py_gxsm_console::create_gui ()
 {
-	GtkWidget *console_scrolledwin, *file_scrolledwin,
-		*vpaned, *frame, *image_clear;
-	GtkWidget *entry_input, *button_bar, *button_open, *button_run,
-		*button_save, *button_save_as, *button_clearout, *button_kill;
-
-	GtkWidget *exec_input;
+	GtkWidget *console_scrolledwin, *file_scrolledwin, *vpaned, *frame;
+	GtkWidget *entry_input;
 
 	GtkTextView *file_textview, *output_textview;
-	PangoFontDescription *font_desc;
-
+	//PangoFontDescription *font_desc;
+        
 	BuildParam *bp;
 	UnitObj *null_unit;
 
@@ -3250,8 +3240,6 @@ void py_gxsm_console::create_gui ()
         
 	null_unit = new UnitObj(" "," ");
 	bp->grid_add_ec ("Script Control", null_unit, &exec_value, 0.0, 100.0, "4g", 1., 10., "script-control");
-        exec_input = bp->input;
-        //        g_object_set_data( G_OBJECT (exec_input), "Adjustment_PCS_Name", (void*)("Script-Control"));
 
         gapp->RemoteEntryList = bp->get_remote_list_head ();
 
@@ -3323,7 +3311,6 @@ void py_gxsm_console::run()
 {
 	PyObject *d;
 	gchar *file_content;
-	GtkTextBuffer *console_file_buf;
 	GtkTextView *textview;
 
 	PI_DEBUG(DBG_L2, "pyremote Plugin :: console_run()");
