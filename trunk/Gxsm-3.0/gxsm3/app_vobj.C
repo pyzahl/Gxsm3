@@ -549,6 +549,7 @@ void VObject::set_color_to_active (){ // Active
                 selected_bbox->set_fill_rgba (0., 0., 0., 0.);
                 selected_bbox->queue_update (canvas);
         }
+        is_selected = true;
 }
 
 void VObject::set_color_to_inactive (){ // Inactive
@@ -564,6 +565,7 @@ void VObject::set_color_to_inactive (){ // Inactive
         }
         UNREF_DELETE_CAIRO_ITEM (selected_bbox, canvas);
         selected_bbox = NULL;
+        is_selected = false;
 }
 
 void VObject::set_color_to_hilit (){ // Hilight

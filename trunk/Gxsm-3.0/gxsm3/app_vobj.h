@@ -285,7 +285,8 @@ class VObject : public scan_object_data{
                 if (i>=0 && i<np)
                         vinfo->XYview2pixel (xy[2*i], xy[2*i+1], p); 
         };
-        
+        virtual gboolean selected() { return is_selected; };
+
  protected:
 	gchar *name;
 	gchar *text;
@@ -344,6 +345,8 @@ class VObject : public scan_object_data{
 	GdkRGBA custom_element_b_color;
 
 	gboolean dragging_active;
+
+        gboolean is_selected;
  private:
 	int id;
 	V_OBJECT_TYPE type_id;

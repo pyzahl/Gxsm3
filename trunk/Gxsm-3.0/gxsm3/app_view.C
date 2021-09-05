@@ -543,6 +543,7 @@ void ViewControl::display_changed_vr_callback (Param_Control *pc, gpointer vc){
 
 void ViewControl::display_changed_sh_callback (Param_Control *pc, gpointer vc){
         ((ViewControl*)vc)->scan->set_display_shift ();
+        ((ViewControl*)vc)->update_view_panel ();
 }
 
 ViewControl::ViewControl (char *title, int nx, int ny, 
@@ -772,31 +773,24 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         view_bp->new_line ();
 
         // ==================================================
-        view_bp->new_grid_with_frame (N_("Dift Compensation (exp model)"), 1, 1);
+        view_bp->new_grid_with_frame (N_("Drift Compensation (exp model: S=(1-exp(-tau*dt))*s_x,y"), 1, 1);
 
         // Display -- Pixel Shift -- shift_x/y = creepfactor * shift_x/y_value
         // creepfactor = tau > 0. ? (1. - expf (-tau*dt)) : dt;
 
         view_bp->set_default_ec_change_notice_fkt  (display_changed_sh_callback, this);
-        gtk_widget_set_tooltip_text (
-                                     view_bp->grid_add_ec ("Shift X", scan->data.Xunit, &scan->data.display.px_shift_xy[0],
-                                                           -5000000., 5000000., "8g", 1., 1., NULL),
-                                     N_("image-shift_x,y = (1. - exp (-tau*dt)) * shift_x,y"));
-                                     
+        view_bp->grid_add_ec ("Shift X", scan->data.Xunit, &scan->data.display.px_shift_xy[0], -5000000., 5000000., "8g", 1., 1., NULL); //  "ShiftX"); // requires gschema for scan windows(s)...
         view_bp->new_line ();
 
-        gtk_widget_set_tooltip_text (
-                                     view_bp->grid_add_ec ("Shift Y", scan->data.Yunit, &scan->data.display.px_shift_xy[1],
-                                                           -5000000., 5000000., "8g", 1., 1.,NULL),
-                                     N_("image-shift_x,y = (1. - exp (-tau*dt)) * shift_x,y"));
-        
+        view_bp->grid_add_ec ("Shift Y", scan->data.Yunit, &scan->data.display.px_shift_xy[1], -5000000., 5000000., "8g", 1., 1., NULL); // "ShiftY");
+        view_bp->new_line ();
+        view_bp->grid_add_button ("Get Circle Coords", "get coords from selected Circle Object.\nSet Tau=-1 for manual and\n add a Point Object as Reference Pos.", 2,
+                                  G_CALLBACK (ViewControl::obj_circle_get_center_coords_callback), this);
         view_bp->new_line ();
 
-        gtk_widget_set_tooltip_text (
-                                     view_bp->grid_add_ec ("Tau", gapp->xsm->Unity, &scan->data.display.px_shift_xy[2],
-                                                           -5000000., 5000000., "8g", 0.00001, 0.00001,NULL),
-                                     N_("image-shift_x,y = (1. - exp (-tau*dt)) * shift_x,y"));
+        view_bp->grid_add_ec ("Tau", gapp->xsm->Unity, &scan->data.display.px_shift_xy[2], -10., 10., "8g", 0.00001, 0.00001, NULL); // "ShiftTau");
         
+
         // -- Info Tab
         // ==================================================
 	XSM_DEBUG (DBG_L2,  "VC::VC Info-Tab" );
@@ -1751,6 +1745,46 @@ void  ViewControl::obj_event_clear_ref_probe_callback (GtkWidget* widget,
         if (vc->greference_eventlist){
                 g_slist_free (vc->greference_eventlist);
                 vc->greference_eventlist = NULL;
+        }
+}
+
+void  ViewControl::obj_circle_get_center_coords_callback (GtkWidget* widget, 
+                                                          gpointer user_data){
+        ViewControl *vc = (ViewControl *) user_data;
+	if (!vc->gobjlist) return;
+        GSList *vol = vc->gobjlist;
+        Point2D pref;
+        gboolean ref_set = false;
+        while (vol){
+                VObject *vo = (VObject*) vol->data;
+                g_print ("%s\n", vo->get_name ());
+                if (!strncmp(vo->get_name (), "Point", 5)){
+                        vo->get_xy_i_pixel2d (0, &pref);
+                        g_print ("Reference: %s: [%d, %d]\n", vo->get_name (), pref.x, pref.y);
+                        ref_set = true;
+                        break;
+                }
+                vol = g_slist_next (vol);
+        }
+        vol = vc->gobjlist;
+        while (vol){
+                VObject *vo = (VObject*) vol->data;
+                g_print ("%s\n", vo->get_name ());
+                if (!strncmp(vo->get_name (), "Circle", 6) && vo->selected() && ref_set){
+                        Point2D p;
+                        double x,y;
+                        vo->get_xy_i (0, x, y); // in abs Ang
+                        vo->get_xy_i_pixel2d (0, &p);
+
+                        g_print ("Selected: %s: %g, %g [%d, %d]\n", vo->get_name (), x,y, p.x, p.y);
+                        // shift = p_new - p_ref  ;;  initial shift=0
+                        vc->scan->data.display.px_shift_xy[0] += p.x - pref.x; // udpate
+                        vc->scan->data.display.px_shift_xy[1] += p.y - pref.y; // udpate
+                        vc->update_view_panel ();
+                        vc->scan->set_display_shift ();
+                        break;
+                }
+                vol = g_slist_next (vol);
         }
 }
 

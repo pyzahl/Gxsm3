@@ -161,8 +161,10 @@ void ZData::ZPutDataSetDest(int ixy_sub[4])
 };
 
 void  ZData::set_shift (double cf_dt, double pixs_xdt, double pixs_ydt) {
-        pixshift_dt[0] = pixs_xdt;
-        pixshift_dt[1] = pixs_ydt;
+        if (cf_dt > 0.0){
+                pixshift_dt[0] = pixs_xdt;
+                pixshift_dt[1] = pixs_ydt;
+        }
         creepfactor    = cf_dt;
 };
 

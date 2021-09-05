@@ -224,7 +224,7 @@ public:
 	double zmin, zmax, zcenter, zrange;
 
         void set_shift (double cf_dt=0., double pixs_xdt=0., double pixs_ydt=0.);
-        gboolean is_shift () { return creepfactor == 0. ? false : true; };
+        gboolean is_shift () { return creepfactor != 0.0 ? true : false; };
         double creepfactor, pixshift_dt[2];
         
         inline int clampx (int x) { return x < 0 ? 0 : x >= nx ? nx-1 : x; };
@@ -254,11 +254,17 @@ public:
 
 	size_t Zsize(){ return sizeof(ZTYP); };
 	inline double Z(int x, int y){
-                if (creepfactor == 0.) return (double)Zdat[y*nv+vlayer][x];
+                if (creepfactor == 0.)
+                        return (double)Zdat[y*nv+vlayer][x];
+                if (creepfactor < 0.) 
+                        return (double)Zdat[clampy(y + round (pixshift_dt[1]))*nv+vlayer][clampx(x + round (pixshift_dt[0]))];
                 else return (double)Zdat[clampy(y + round (creepfactor*pixshift_dt[1]))*nv+vlayer][clampx(x + round (creepfactor*pixshift_dt[0]))];
         };
 	inline double Z(int x, int y, int v){
-                if (creepfactor == 0.) return (double)Zdat[y*nv+v][x];
+                if (creepfactor == 0.)
+                        return (double)Zdat[y*nv+v][x];
+                if (creepfactor < 0.) 
+                        return (double)Zdat[clampy(y + round (pixshift_dt[1]))*nv+v][clampx(x + round (pixshift_dt[0]))];
                 else return (double)Zdat[clampy(y + round (creepfactor*pixshift_dt[1]))*nv+v][clampx(x + round (creepfactor*pixshift_dt[0]))];
         };
 	inline double Z(double z, int x, int y){ return (double)(Zdat[y*nv+vlayer][x]=(ZTYP)z); };
