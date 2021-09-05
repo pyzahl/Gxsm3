@@ -1209,14 +1209,15 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
 	long sizex, sizey, sizev;
 	double rangex, rangey;
 	PyObject *obj;
+        long append=0;
 
         sizev=1; // try xyv
-	if(!PyArg_ParseTuple(args, "llllddO", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj)){
+	if(!PyArg_ParseTuple(args, "llllddOl", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj, &append)){
                 //sizev=1;
                 //if(!PyArg_ParseTuple(args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj)) // try xy only
                         return Py_BuildValue("i", -1);
         }
-        g_message ("Create Scan: %ld x %ld [x %ld], size %g x %g Ang from python array",sizex, sizey, sizev, rangex, rangey);
+        g_message ("Create Scan: %ld x %ld [x %ld], size %g x %g Ang from python array, append=%ld",sizex, sizey, sizev, rangex, rangey, append);
 
         Py_buffer view;
         gboolean rf=false;
@@ -1236,8 +1237,8 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
 	//gapp->xsm->ActivateFreeChannel();
 	//dst = gapp->xsm->GetActiveScan();
 	Scan *dst = gapp->xsm->GetScanChannel (ch);
+
         if (dst){
-        
                 g_message ("Resize");
                 dst->mem2d->Resize (sizex, sizey, sizev, ZD_FLOAT);
 
@@ -1280,6 +1281,22 @@ static PyObject* remote_createscan(PyObject *self, PyObject *args)
                 dst->mem2d->data->MkYLookup (-dst->data.s.ry/2., dst->data.s.ry/2.);
                 dst->mem2d->data->MkVLookup (0, dst->data.s.nvalues-1);
 
+                if (append > 0){
+                        // append in time
+                        //dst->GetDataSet(data);
+                        
+                        double t=0., t0=0.;
+                        if (!dst->TimeList) // reference to the first frame/image loaded
+                                t0 = (double)dst->data.s.tStart;
+                        
+                        t = (double)dst->data.s.tStart - t0;
+                        dst->mem2d->add_layer_information (new LayerInformation ("name", 0., "PyScanCreate"));
+                        dst->mem2d->add_layer_information (new LayerInformation ("t",t, "%.2f s"));
+                        dst->mem2d->data->update_ranges (0);
+                        dst->append_current_to_time_elements (-1, t);
+                } else
+                        dst->free_time_elements ();
+                
                 gapp->spm_update_all();
                 dst->draw();
 
@@ -1306,14 +1323,15 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
         long ch;
 	long sizex, sizey, sizev;
 	double rangex, rangey;
+        long append=0;
 
         sizev=1; // try xyv
-	if(!PyArg_ParseTuple(args, "llllddO", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj)){
+	if(!PyArg_ParseTuple(args, "llllddOl", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj, &append)){
                 //sizev=1;
                 //if(!PyArg_ParseTuple(args, "lllddO", &ch, &sizex, &sizey, &rangex, &rangey, &obj)) // try xy only
                         return Py_BuildValue("i", -1);
         }
-        g_message ("Create Scan Float: %ld x %ld [x %ld], size %g x %g Ang from python array",sizex, sizey, sizev, rangex, rangey);
+        g_message ("Create Scan Float: %ld x %ld [x %ld], size %g x %g Ang from python array, append=%ld",sizex, sizey, sizev, rangex, rangey, append);
 
         Py_buffer view;
         gboolean rf=false;
@@ -1375,6 +1393,23 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
                 dst->mem2d->data->MkYLookup(-dst->data.s.ry / 2.,
                                             dst->data.s.ry / 2.);
                 dst->mem2d->data->MkVLookup (0, dst->data.s.nvalues-1);
+
+                if (append > 0){
+                        // append in time
+                        //dst->GetDataSet(data);
+                        
+                        double t=0., t0=0.;
+                        if (!dst->TimeList) // reference to the first frame/image loaded
+                                t0 = (double)dst->data.s.tStart;
+                        
+                        t = (double)dst->data.s.tStart - t0;
+                        dst->mem2d->add_layer_information (new LayerInformation ("name", 0., "PyScanCreate"));
+                        dst->mem2d->add_layer_information (new LayerInformation ("t",t, "%.2f s"));
+                        dst->mem2d->data->update_ranges (0);
+                        dst->append_current_to_time_elements (-1, t);
+                } else
+                        dst->free_time_elements ();
+
                 gapp->spm_update_all();
                 dst->draw();
                 dst = NULL;
@@ -2297,8 +2332,8 @@ static PyMethodDef GxsmPyMethods[] = {
 	{"moveto_scan_xy", remote_moveto_scan_xy, METH_VARARGS, "Set tip position to Scan-XY: gxsm.moveto_scan_xy (x,y)"},
 
 	// BLOCK II
-	{"createscan", remote_createscan, METH_VARARGS, "Create Scan int: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('l', [...]))"},
-	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('f', [...]))"},
+	{"createscan", remote_createscan, METH_VARARGS, "Create Scan int: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('l', [...]), append)"},
+	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('f', [...]), append)"},
 	{"set_scan_unit", remote_set_scan_unit, METH_VARARGS, "Set Scan X,Y,Z,L Dim Unit: gxsm.set_scan_unit (ch,'X|Y|Z|L|T','UnitId string','Label string')"},
 	{"set_scan_lookup", remote_set_scan_lookup, METH_VARARGS, "Set Scan Lookup for Dim: gxsm.set_scan_lookup (ch,'X|Y|L',start,end)"},
 	//{"set_scan_lookup_i", remote_set_scan_llookup, METH_VARARGS, "Set Scan Lookup for Dim: gxsm.set_scan_lookup_i (ch,'X|Y|L',start,end)"},
