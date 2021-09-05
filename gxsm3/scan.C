@@ -276,8 +276,18 @@ double Scan::retrieve_time_element (int index){
 		mem2d->copy (tes->mem2d);
 		mem2d->data->SetLayer(v);
 		mem2d->set_frame_time (tes->mem2d->get_frame_time ());
-                mem2d->set_px_shift (data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+                mem2d->set_t_index(index);
 
+                if (data.display.px_shift_xy[2] >= 0){
+                        mem2d->set_px_shift (data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+                        g_print ("TES [%d] retrieve Scan::set_display_shift  TC %g %g %g\n", index, tes->mem2d->data->pixshift_dt[0], tes->mem2d->data->pixshift_dt[1], tes->mem2d->data->creepfactor);
+                } else {
+                        mem2d->data->pixshift_dt[0] = data.display.px_shift_xy[0] = tes->mem2d->data->pixshift_dt[0];
+                        mem2d->data->pixshift_dt[1] = data.display.px_shift_xy[1] = tes->mem2d->data->pixshift_dt[1];
+                        mem2d->data->creepfactor    = data.display.px_shift_xy[2];
+                        g_print ("TES [%d] retrieve Scan::set_display_shift M    %g %g %g\n", index, data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+                        g_print ("TES [%d] retrieve Scan::set_display_shift MTC= %g %g %g\n", index, tes->mem2d->data->pixshift_dt[0], tes->mem2d->data->pixshift_dt[1], tes->mem2d->data->creepfactor);
+                }                
 		return tes->mem2d->get_frame_time ();
 	}
 	return 0.;
@@ -401,15 +411,36 @@ void Scan::auto_display (){
 void Scan::set_display_shift (){
         //g_message ("--> Scan::set_display_shift");
 
-        if (data.display.px_shift_xy[0] == 0. && data.display.px_shift_xy[1] == 0.)
-                mem2d->set_px_shift ();
-        else
-                mem2d->set_px_shift (data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+        if (data.display.px_shift_xy[2] > 0.){
+                if (data.display.px_shift_xy[0] == 0. && data.display.px_shift_xy[1] == 0.)
+                        mem2d->set_px_shift ();
+                else
+                        mem2d->set_px_shift (data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
 
-	int nte = number_of_time_elements ();
-	for (int i=0; i<nte; ++i){
-		TimeElementOfScan *tes = (TimeElementOfScan*) g_list_nth_data (TimeList, i);
-		tes->mem2d->set_px_shift (data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+                int nte = number_of_time_elements ();
+                for (int i=0; i<nte; ++i){
+                        TimeElementOfScan *tes = (TimeElementOfScan*) g_list_nth_data (TimeList, i);
+                        if (tes)
+                                tes->mem2d->set_px_shift (data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+                        g_print ("Scan::set_display_shift TES %d tau %g %g %g\n", i, data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+                }
+        } else {
+                // current only (manaual) for tau < 0
+                //mem2d->set_px_shift (data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+                mem2d->data->pixshift_dt[0] = data.display.px_shift_xy[0];
+                mem2d->data->pixshift_dt[1] = data.display.px_shift_xy[1];
+                mem2d->data->creepfactor    = data.display.px_shift_xy[2];
+                g_print ("M2D [%d] Scan::set_display_shift M %g %g %g\n", mem2d->get_t_index (), data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+                if (mem2d->get_t_index () >= 0){
+                        TimeElementOfScan *tes = (TimeElementOfScan*) g_list_nth_data (TimeList, mem2d->get_t_index ());
+                        if (tes){
+                                //tes->mem2d->set_px_shift (data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+                                tes->mem2d->data->pixshift_dt[0] = data.display.px_shift_xy[0];
+                                tes->mem2d->data->pixshift_dt[1] = data.display.px_shift_xy[1];
+                                tes->mem2d->data->creepfactor    = data.display.px_shift_xy[2];
+                                g_print ("TES[%d] Scan::set_display_shift M %g %g %g\n", mem2d->get_t_index (), data.display.px_shift_xy[0], data.display.px_shift_xy[1], data.display.px_shift_xy[2]);
+                        }
+                }
         }
         draw ();
 }

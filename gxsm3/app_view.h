@@ -129,6 +129,7 @@ public:
 
         static void obj_event_add_ref_probe_callback (GtkWidget *widget, gpointer user_data);
         static void obj_event_clear_ref_probe_callback (GtkWidget *widget, gpointer user_data);
+        static void obj_circle_get_center_coords_callback (GtkWidget *widget, gpointer user_data);
         static void obj_event_plot_callback (GtkWidget *widget, gpointer user_data);
         static void obj_event_dump_callback (GtkWidget *widget, gpointer user_data);
 
