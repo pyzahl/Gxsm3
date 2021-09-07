@@ -834,6 +834,13 @@ public:
                                                 example_file << "# Gxsm Python Script file " << script_filename << " was created.\n";
                                                 example_file << template_watchdog;
                                                 example_file.close();
+                                        } else if (strstr (script_filename, "gxsm3-control-gxsm-sok-server")){
+                                                // make sample
+                                                std::ofstream example_file;
+                                                example_file.open(script_filename);
+                                                example_file << "# Gxsm Python Script file " << script_filename << " was created.\n";
+                                                example_file << template_gxsm_sok_server;
+                                                example_file.close();
                                         } else if (strstr (script_filename, "gxsm3-data-cfextract-simple")){
                                                 // make sample
                                                 std::ofstream example_file;
