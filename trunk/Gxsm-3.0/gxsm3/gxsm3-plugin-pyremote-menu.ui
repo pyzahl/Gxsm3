@@ -149,6 +149,11 @@
 		<attribute name="action">win.pyfile-action-use</attribute>
 		<attribute name="target">gxsm3-control-watchdog</attribute>
 	      </item>
+	      <item>
+		<attribute name="label" translatable="yes"> Gxsm Socket Server</attribute>
+		<attribute name="action">win.pyfile-action-use</attribute>
+		<attribute name="target">gxsm3-control-gxsm-sok-server</attribute>
+	      </item>
 	    </section>
 	  </submenu>
 	  <submenu>
