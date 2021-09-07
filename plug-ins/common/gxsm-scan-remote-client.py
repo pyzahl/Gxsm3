@@ -1624,19 +1624,26 @@ class AppWindow(Gtk.ApplicationWindow):
         print (self.ImageData)
         self.Xlookup = self.rootgrp['dimx'][:]
         self.Ylookup = self.rootgrp['dimy'][:]
-        print('Bias    = ', self.rootgrp['sranger_mk2_hwi_bias'][0], self.rootgrp['sranger_mk2_hwi_bias'].var_unit)
-        self.ub = self.rootgrp['sranger_mk2_hwi_bias'][0]
-        self.bias.set_text ('{0:.4f} '.format(self.rootgrp['sranger_mk2_hwi_bias'][0])+self.rootgrp['sranger_mk2_hwi_bias'].var_unit)
+        if 'sranger_mk2_hwi_bias' in self.rootgrp.variables:
+            print('Bias    = ', self.rootgrp['sranger_mk2_hwi_bias'][0], self.rootgrp['sranger_mk2_hwi_bias'].var_unit)
+            self.ub = self.rootgrp['sranger_mk2_hwi_bias'][0]
+            self.bias.set_text ('{0:.4f} '.format(self.rootgrp['sranger_mk2_hwi_bias'][0])+self.rootgrp['sranger_mk2_hwi_bias'].var_unit)
+        else:
+            self.bias.set_text ('??')
 
         if 'sranger_mk2_hwi_mix0_set_point' in self.rootgrp.variables:
             print('Current = ', self.rootgrp['sranger_mk2_hwi_mix0_set_point'][0], self.rootgrp['sranger_mk2_hwi_mix0_set_point'].var_unit)
             self.cur = self.rootgrp['sranger_mk2_hwi_mix0_set_point'][0]
             self.current.set_text ('{0:.4f} '.format(self.rootgrp['sranger_mk2_hwi_mix0_set_point'][0])+self.rootgrp['sranger_mk2_hwi_mix0_set_point'].var_unit)
+        else:
+            self.current.set_text ('??')
 
         if 'sranger_mk2_hwi_mix0_current_set_point' in self.rootgrp.variables:
             print('Current (old name) = ', self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'][0], self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'].var_unit)
             self.cur = self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'][0]
             self.current.set_text ('{0:.4f} '.format(self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'][0])+self.rootgrp['sranger_mk2_hwi_mix0_current_set_point'].var_unit)
+        else:
+            self.current.set_text ('??')
 
             
         print('X Range = ', self.rootgrp['rangex'][0], self.rootgrp['rangex'].var_unit)
