@@ -72,6 +72,11 @@
 	GUI simplification option: Indicates tab config to be showed
       </description>
     </key>
+    <key name="mover-waveform-id" type="i">
+      <default>0</default>
+      <summary>DSP Mover Wave Form ID</summary>
+      <description>DSP Mover Wave Form ID (as of Pop Up Menu List Item) </description>
+    </key>
   </schema>
 
 </schemalist>

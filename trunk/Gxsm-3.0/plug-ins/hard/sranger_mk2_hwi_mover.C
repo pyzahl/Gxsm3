@@ -187,7 +187,10 @@ DSPMoverControl::DSPMoverControl ()
 
         xrm.Get("MOV_output", &mover_param.MOV_output, "0");
 	xrm.Get("MOV_waveform_id", &mover_param.MOV_waveform_id, "0");
-	xrm.Get("AUTO_final_delay", &mover_param.final_delay, "50");
+
+        mover_param.MOV_waveform_id = g_settings_get_int (hwi_settings, "mover-waveform-id");
+
+        xrm.Get("AUTO_final_delay", &mover_param.final_delay, "50");
 	xrm.Get("AUTO_max_settling_time", &mover_param.max_settling_time, "1000");
 	xrm.Get("InchWorm_phase", &mover_param.inch_worm_phase, "0");
         
@@ -1616,6 +1619,9 @@ int DSPMoverControl::configure_waveform(GtkWidget *widget){
  	mover_param.MOV_waveform_id = wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].curve_id;
         gtk_widget_set_tooltip_text (widget, wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].tool_tip_info);
 
+        g_settings_set_int (hwi_settings, "mover-waveform-id", mover_param.MOV_waveform_id);
+
+        
         //g_message ("Selected Wave Form %d -> %d", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)), mover_param.MOV_waveform_id);
         
         gint nw = wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].num_waves;
