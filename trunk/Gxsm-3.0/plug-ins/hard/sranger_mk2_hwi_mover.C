@@ -326,17 +326,6 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
 
 	switch (mover_param.MOV_waveform_id){
 	case MOV_WAVE_SAWTOOTH:
-                PI_DEBUG_GP (DBG_L2, " ** SINE TMP AT SAW LOCATION -- disfunctional oddly\n");
-                if (pointing > 0) // wave for forward direction
-                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
-                                for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*phase*2.0*M_PI + (double)t*2.*M_PI/n)));
-                else
-                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
-                                for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*phase*2.0*M_PI - (double)t*2.*M_PI/n)));
-		break;
-                /*
                 PI_DEBUG_GP (DBG_L2, " ** SAWTOOTH WAVEFORM CALC\n");
                 if (pointing > 0) // wave for forward direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
@@ -349,22 +338,7 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
                                         mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(t<n2? -t : n-t)/n2);
                         }
 		break;
-                */
-                // ... to be adjusted for new wave play mode
 	case MOV_WAVE_SINE:
-                PI_DEBUG_GP (DBG_L2, " ** SAWTOOTH TMP AT SINE LOCATION\n");
-                if (pointing > 0) // wave for forward direction
-                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
-                                for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(t<n2? t : t-n)/n2);
-                        }
-                else // wave for reverse direction
-                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
-                                for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(t<n2? -t : n-t)/n2);
-                        }
-		break;
-                /*
                 PI_DEBUG_GP (DBG_L2, " ** SINE WAVEFORM CALC\n");
                 if (pointing > 0) // wave for forward direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
@@ -375,10 +349,10 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
                                 for (int k=0; k<channels; ++k)
                                         mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*phase*2.0*M_PI - (double)t*2.*M_PI/n)));
 		break;
-                */
 	case MOV_WAVE_CYCLO:
 	case MOV_WAVE_CYCLO_PL:
 	case MOV_WAVE_CYCLO_MI:
+                PI_DEBUG_GP (DBG_L2, " ** CYCLO* CALC\n");
                 if (pointing < 0)
                         amp = -amp; // invert
  		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
@@ -426,6 +400,7 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
 #if 0
 	case MOV_WAVE_CYCLO_IPL:
 	case MOV_WAVE_CYCLO_IMI:
+                PI_DEBUG_GP (DBG_L2, " ** CYCLO_I* CALC\n");
 		for (int i=0; i < mover_param.MOV_wave_len; i += channels){
 			double dt = pointing/(n - 1.);
 			double a = 1.;
@@ -454,6 +429,7 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
 		break;
 #endif
 	case MOV_WAVE_STEP:
+                PI_DEBUG_GP (DBG_L2, " ** STEP CALC\n");
                 for (int i=0; i < mover_param.MOV_wave_len; i += channels){
                         double x = (double)i/mover_param.MOV_wave_len;
                         for (int k=0; k<channels; ++k){
@@ -466,6 +442,7 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
                 }
 		break;
 	case MOV_WAVE_STEPPERMOTOR:
+               PI_DEBUG_GP (DBG_L2, " ** STEPPER MOTOR CALC\n");
                PI_DEBUG_GP (DBG_L2, "case StepperMotor channel=%d amp=%f pointing=%f MOV_wave_len=%d \n",
                                 channels,
                                 amp,
@@ -487,6 +464,7 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
 		break;
 
 	case MOV_WAVE_PULSE:
+                PI_DEBUG_GP (DBG_L2, " ** PULSE CALC\n");
                 for (int i=0; i < mover_param.MOV_wave_len; i += channels){
                         double x = (double)i/mover_param.MOV_wave_len;
                         for (int k=0; k<channels; ++k){
@@ -500,6 +478,7 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
 		break;
 
 	case MOV_WAVE_KOALA:
+                PI_DEBUG_GP (DBG_L2, " ** KOALA CALC\n");
                 {             
                 int i=0;
                 for (; i <= mover_param.MOV_wave_len; i += channels)
@@ -512,6 +491,7 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
 		break;
         
 	case MOV_WAVE_BESOCKE:
+                PI_DEBUG_GP (DBG_L2, " ** BESOCKE CALC\n");
                 {
                 double pduration;               // positive duration of the waveform
                 double tramp ;                  // duration of ramps before and after the jump
@@ -623,6 +603,7 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
 		break;
         }
 
+        PI_DEBUG_GP (DBG_L2, " ** ADDING SPACE\n");
 	// terminate with spacing using 1st sample
 	for (int i = mover_param.MOV_wave_len; i < mover_param.MOV_wave_len+space_len; i += channels)
                 for (int k=0; k < channels; ++k)
