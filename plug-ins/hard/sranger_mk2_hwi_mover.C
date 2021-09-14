@@ -275,12 +275,17 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
         double pointing = duration > 0. ? 1. : -1.;
         gint channels = 1;
 
-        // lookup num waves to compute
-        for(int j=0; wave_form_options[j].wave_form_label; j++)
-                if (mover_param.MOV_waveform_id == wave_form_options[j].curve_id){
-                        channels = wave_form_options[j].num_waves;
+        // check and find wave valid wave form id "k"
+        int k=0;
+        for (k=0; wave_form_options[k].wave_form_label; ++k)
+                if (mover_param.MOV_waveform_id == wave_form_options[k].curve_id)
                         break;
-                }
+        // lookup num waves to compute
+        channels = wave_form_options[k].num_waves;
+
+        PI_DEBUG_GP(DBG_L2, "DSPMoverControl::create_waveform ID=%d  %s #CH=%d\n",
+                    mover_param.MOV_waveform_id,  wave_form_options[k].wave_form_label,
+                    channels);
 
         if (space >= 0)
                 space_len = channels * space;
@@ -321,7 +326,18 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
 
 	switch (mover_param.MOV_waveform_id){
 	case MOV_WAVE_SAWTOOTH:
-                PI_DEBUG_GP (DBG_L2, " ** SAWTOOTH\n");
+                PI_DEBUG_GP (DBG_L2, " ** SINE TMP AT SAW LOCATION -- disfunctional oddly\n");
+                if (pointing > 0) // wave for forward direction
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*phase*2.0*M_PI + (double)t*2.*M_PI/n)));
+                else
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*phase*2.0*M_PI - (double)t*2.*M_PI/n)));
+		break;
+                /*
+                PI_DEBUG_GP (DBG_L2, " ** SAWTOOTH WAVEFORM CALC\n");
                 if (pointing > 0) // wave for forward direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
                                 for (int k=0; k<channels; ++k)
@@ -333,8 +349,23 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
                                         mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(t<n2? -t : n-t)/n2);
                         }
 		break;
+                */
                 // ... to be adjusted for new wave play mode
 	case MOV_WAVE_SINE:
+                PI_DEBUG_GP (DBG_L2, " ** SAWTOOTH TMP AT SINE LOCATION\n");
+                if (pointing > 0) // wave for forward direction
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(t<n2? t : t-n)/n2);
+                        }
+                else // wave for reverse direction
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(t<n2? -t : n-t)/n2);
+                        }
+		break;
+                /*
+                PI_DEBUG_GP (DBG_L2, " ** SINE WAVEFORM CALC\n");
                 if (pointing > 0) // wave for forward direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
                                 for (int k=0; k<channels; ++k)
@@ -344,6 +375,7 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
                                 for (int k=0; k<channels; ++k)
                                         mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*phase*2.0*M_PI - (double)t*2.*M_PI/n)));
 		break;
+                */
 	case MOV_WAVE_CYCLO:
 	case MOV_WAVE_CYCLO_PL:
 	case MOV_WAVE_CYCLO_MI:
@@ -962,17 +994,19 @@ void DSPMoverControl::create_folder (){
                         GtkWidget *cbx;
                         mov_bp->grid_add_widget (cbx = gtk_combo_box_text_new ());
                         // fill with options
-                        for(int j=0; wave_form_options[j].wave_form_label; j++)
-                                gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbx), NULL, wave_form_options[j].wave_form_label);
-
+                        for(int j=0; wave_form_options[j].wave_form_label; j++){
+                                 gchar *id = g_strdup_printf ("%d",  wave_form_options[j].curve_id);
+                                 gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (cbx), id, wave_form_options[j].wave_form_label);
+                                 g_free (id);
+                        }
                         /* connect with signal-handler if selected */
                         g_signal_connect (G_OBJECT (cbx), "changed", G_CALLBACK (DSPMoverControl::config_waveform), this);
 
-                        for(int j=0; wave_form_options[j].wave_form_label; j++)
-                                if (mover_param.MOV_waveform_id == wave_form_options[j].curve_id){
-                                        gtk_combo_box_set_active (GTK_COMBO_BOX (cbx), j);
-                                        break;
-                                }
+                        {
+                                gchar *id = g_strdup_printf ("%d", mover_param.MOV_waveform_id);
+                                gtk_combo_box_set_active_id (GTK_COMBO_BOX (cbx), id);
+                                g_free (id);
+                        }
                         mov_bp->new_line ();
 
                         mov_bp->grid_add_ec ("Space", Time, &mover_param.Wave_space, 0., 1000., ".3f", 1., 10., "Wave-Space");
@@ -1611,20 +1645,23 @@ int DSPMoverControl::config_waveform(GtkWidget *widget, DSPMoverControl *dspc){
 }
 
 int DSPMoverControl::configure_waveform(GtkWidget *widget){
-	//if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
-	//	dspc->mover_param.MOV_waveform_id = GPOINTER_TO_INT(g_object_get_data( G_OBJECT (widget), "CurveId"));                
-        if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) == -1)
-                return 0;
-
- 	mover_param.MOV_waveform_id = wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].curve_id;
-        gtk_widget_set_tooltip_text (widget, wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].tool_tip_info);
+        if (gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget)))
+                mover_param.MOV_waveform_id = atoi (gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget)));
+        else
+                PI_DEBUG_GP(DBG_L1, "ERROR: INVALID WAVE FORM SELECTED -- last [%d]\n", mover_param.MOV_waveform_id );
+                
+        int k=0;
+        for (k=0; wave_form_options[k].wave_form_label; ++k)
+                if (mover_param.MOV_waveform_id == wave_form_options[k].curve_id)
+                        break;
+        
+        gtk_widget_set_tooltip_text (widget, wave_form_options[k].tool_tip_info);
 
         g_settings_set_int (hwi_settings, "mover-waveform-id", mover_param.MOV_waveform_id);
 
+        PI_DEBUG_GP(DBG_L2, "Config Mover Wave Form: ID=%d  %s -- stored to settings.\n", mover_param.MOV_waveform_id,  wave_form_options[k].wave_form_label);
         
-        //g_message ("Selected Wave Form %d -> %d", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)), mover_param.MOV_waveform_id);
-        
-        gint nw = wave_form_options[gtk_combo_box_get_active (GTK_COMBO_BOX (widget))].num_waves;
+        gint nw = wave_form_options[k].num_waves;
 	GSList *wc = mov_bp->get_configure_hide_list_b_head ();
 
         if (!wc) return 0;
