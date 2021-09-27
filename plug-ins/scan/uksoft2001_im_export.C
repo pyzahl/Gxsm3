@@ -227,7 +227,7 @@ GxsmPlugin uksoft2001_im_export_pi = {
   "Percy Zahl",
   "file-import-section,file-export-section", // sep. im/export menuentry path by comma!
   N_("UKSOFT-LEEM,UKSOFT-LEEM"), // menu entry (same for both)
-  N_("UKSOFT import (LOAD use CRTL-L to edit),UKSOFT export (SAVE)"), // short help for menu entry
+  N_("UKSOFT import (LEEM LOAD: use CRTL-L to edit. May use ..%03d.. for indexed multi frame loading), UKSOFT export (SAVE)"), // short help for menu entry
   N_("UKSOFT 2001/UView import filter (Elimtec LEEM 2001-2016)."), // info
 // -- END EDIT --
   NULL,          // error msg, plugin may put error status msg here later
