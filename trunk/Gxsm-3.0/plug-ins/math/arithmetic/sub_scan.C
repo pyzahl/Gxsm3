@@ -234,15 +234,18 @@ static gboolean sub_scan_run(Scan *Src1, Scan *Src2, Scan *Dest)
 	if(Src1->data.s.nx != Src2->data.s.nx || Src1->data.s.ny != Src2->data.s.ny)
 		return MATH_SELECTIONERR;
 
-	Dest->mem2d->Resize (Dest->data.s.nx, Dest->data.s.ny, ZD_FLOAT);
+	Dest->mem2d->Resize (Dest->data.s.nx, Dest->data.s.ny, Src1->mem2d->GetNv (), ZD_FLOAT);
 
-	for(int v=0; v<Dest->mem2d->GetNv () && v<Src1->mem2d->GetNv () && v<Src2->mem2d->GetNv (); ++v)
+	for(int v=0; v<Dest->mem2d->GetNv () && v<Src1->mem2d->GetNv (); ++v)
 		for(int line=0; line<Dest->mem2d->GetNy (); ++line)
 			for(int col=0; col<Dest->mem2d->GetNx (); ++col)
 				Dest->mem2d->PutDataPkt(
 					Src1->mem2d->GetDataPkt (col, line, v)
-					- Src2->mem2d->GetDataPkt (col, line, v),
+					-  (v<Src2->mem2d->GetNv () ? Src2->mem2d->GetDataPkt (col, line, v) : Src2->mem2d->GetDataPkt (col, line)),
 					col, line, v);
+
+        Dest->mem2d->data->CopyLookups (Src1->mem2d->data);
+        Dest->mem2d->copy_layer_information (Src1->mem2d);
 	
 	return MATH_OK;
 }

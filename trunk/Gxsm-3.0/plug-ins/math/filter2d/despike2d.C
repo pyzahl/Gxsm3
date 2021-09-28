@@ -280,6 +280,79 @@ void despike_d (Mem2d *in, Mem2d *out){
         } /*j*/
 }
 
+// A utility function to swap two elements 
+inline void swap(double* a, double* b) 
+{ 
+        double t = *a; 
+        *a = *b; 
+        *b = t; 
+}
+  
+/* This function takes last element as pivot, places 
+the pivot element at its correct position in sorted 
+array, and places all smaller (smaller than pivot) 
+to left of pivot and all greater elements to right 
+of pivot */
+int partition (double arr[], int low, int high) 
+{ 
+    double pivot = arr[high]; // pivot 
+    int i = (low - 1); // Index of smaller element and indicates the right position of pivot found so far
+  
+    for (int j = low; j <= high - 1; j++) 
+    { 
+        // If current element is smaller than the pivot 
+        if (arr[j] < pivot) 
+        { 
+            i++; // increment index of smaller element 
+            swap(&arr[i], &arr[j]); 
+        } 
+    } 
+    swap(&arr[i + 1], &arr[high]); 
+    return (i + 1); 
+} 
+  
+/* The main function that implements QuickSort 
+arr[] --> Array to be sorted, 
+low --> Starting index, 
+high --> Ending index */
+void quickSort(double arr[], int low, int high) 
+{ 
+    if (low < high) 
+    { 
+        /* pi is partitioning index, arr[p] is now 
+        at right place */
+        int pi = partition(arr, low, high); 
+  
+        // Separately sort elements before 
+        // partition and after partition 
+        quickSort(arr, low, pi - 1); 
+        quickSort(arr, pi + 1, high); 
+    } 
+} 
+  
+void despike_median (Mem2d *in, Mem2d *out, int n=3, int m=3){
+        if (n<3) n=3;
+        if (m<3) m=3;
+        for (int i=0; i<out->GetNx(); ++i)
+                for (int j=0; j<out->GetNy(); ++j){
+                        double *arr = new double[m*n](); // init 0
+                        int mm=0;
+                        for(int k=i-(n-1)/2; k<=i+(n-1)/2; ++k)
+                                for(int l=j-(m-1)/2; l<=j+(m-1)/2; ++l)
+                                        if (k<0 || k>=in->GetNx() || l<0 || l>=in->GetNy())
+                                                arr[mm++]=in->data->Z(i,j);
+                                        else
+                                                arr[mm++]=in->data->Z(k,l);
+                        
+                        quickSort(arr, 0, n*m - 1); 
+                        if ((n*m) & 1)
+                                out->data->Z(arr[(n*m-1)/2], i,j);
+                        else
+                                out->data->Z(0.5*(arr[(n*m-1)/2] + arr[(n*m-1)/2+1]), i,j);
+                        delete [] arr;
+                }
+}
+
 
 // run-Function
 #ifdef GXSM_ONE_SRC_PLUGIN__DEF
@@ -293,7 +366,24 @@ void despike_d (Mem2d *in, Mem2d *out){
 	int vi=0;
 	int vf=0;
 	gboolean multidim = FALSE;
-	
+
+        const gchar* config_label[6] = { "Rows", "Lines", NULL };
+        const gchar* config_info[5]  = { "#rows (2=STM DESPIKE MODE 2x20, >2: Median)", "#lines (>2, Median)" };
+        UnitObj *config_units[5] { gapp->xsm->Unity,  gapp->xsm->Unity};
+        double config_minv[5] = { 2., 3.};
+        double config_maxv[5] = { 16., 16. };
+        const gchar* config_fmt[5]  = { ".0f", ".0f" };
+        double Mm=2.0;
+        double Mn=3.0;
+        double *config_values[5] = { &Mm, &Mn };
+        
+        gapp->ValueRequestList ("Despike Filter Configuration",
+                                config_label, config_info, config_units,
+                                config_minv, config_maxv, config_fmt,
+                                config_values
+                                );
+
+        
 	if (Src->data.s.ntimes != 1 || Src->mem2d->GetNv () != 1){
 		multidim = TRUE;
 		do {
@@ -320,12 +410,16 @@ void despike_d (Mem2d *in, Mem2d *out){
 		Dest->mem2d->Resize (m->GetNx (), m->GetNy (), vf-vi+1, m->GetTyp());
 		for (int v_index = vi; v_index <= vf; ++v_index){
 			m->SetLayer (v_index);
+                        Dest->mem2d->data->SetVLookup(v_index, Src->mem2d->data->GetVLookup(v_index));
 			Dest->mem2d->SetLayer (v_index-vi);	
 
 			Dest->mem2d->CopyFrom(m, 0,0, 0,0, 
 					      Dest->mem2d->GetNx(), Dest->mem2d->GetNy());
                         //despike_32650max (m, Dest->mem2d);
-                        despike_d (m, Dest->mem2d);
+                        if (Mm < 3. || Mn < 3.)
+                                despike_d (m, Dest->mem2d);
+                        else
+                                despike_median (m, Dest->mem2d, (int)Mn, (int)Mm);
 
 		}
 		Dest->append_current_to_time_elements (time_index-ti, m->get_frame_time ());
@@ -333,6 +427,9 @@ void despike_d (Mem2d *in, Mem2d *out){
 
 	Dest->data.s.ntimes = ntimes_tmp;
 	Dest->data.s.nvalues=Dest->mem2d->GetNv ();
+
+        Dest->mem2d->data->CopyLookups (Src->mem2d->data);
+        Dest->mem2d->copy_layer_information (Src->mem2d);
 
 	if (multidim){
 		gapp->progress_info_close ();
