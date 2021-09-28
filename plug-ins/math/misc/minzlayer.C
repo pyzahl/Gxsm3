@@ -40,11 +40,8 @@
 
 % PlugInDescription
 This filter extracts from a series of images in energy
-(layer-dimension) the workfunction assuming the image intensity
-dropping all sudden by a given percentage from it's near zero energy
-value. (LEEM Mirror-Mode to Regular imaging transition detection) and
-puts teh resulting energy (layer corresponding value) into the
-destination image.
+(layer-dimension) the enegry (layer value lookup) fiding the MIN index/ image intensity at each pixel.
+Resulting energy (layer corresponding value) is placed into the destination image.
 
 % PlugInUsage
 Call \GxsmMenu{Math/Misc/Minzlayer}\dots

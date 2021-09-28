@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -268,13 +270,15 @@ static gboolean Z_rescale_run(Scan *Src, Scan *Dest)
 
 	Dest->mem2d->Resize (Dest->data.s.nx, Dest->data.s.ny, Dest->mem2d->GetNv (), ZD_FLOAT);
 
-	for(int v=0; v<Dest->mem2d->GetNv (); ++v)
+	for(int v=0; v<Dest->mem2d->GetNv (); ++v){
+                Dest->mem2d->data->SetVLookup(v, Src->mem2d->data->GetVLookup(v));
+
 		for(int line=p[0].y; line<p[1].y; ++line)
 			for(int col=p[0].x; col<p[1].x; ++col)
 			  Dest->mem2d->PutDataPkt(
 						  factor * Src->mem2d->GetDataPkt (col, line, v),
 						  col, line, v);
-
+	}
 	return MATH_OK;
 }
 
