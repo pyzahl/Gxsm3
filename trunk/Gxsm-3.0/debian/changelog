@@ -1,3 +1,16 @@
+gxsm3 (3.53.0-0ubuntu2) focal; urgency=medium
+
+  * adding python3-scipy and python3-numpy to dependencies
+  * setting permission for signal_graph.svg/dot in /usr/shar/gxsm3/pixmaps
+
+ -- Thorsten Wagner <stm@users.sf.net>  Fri, 01 Oct 2021 21:28:30 +0200
+
+gxsm3 (3.53.0-0ubuntu1) focal; urgency=medium
+
+  * fixing seg fault bug of MK2 HWI
+
+ -- Thorsten Wagner <stm@users.sf.net>  Thu, 26 Aug 2021 21:32:58 +0200
+
 gxsm3 (3.52.0-0ubuntu17) focal; urgency=medium
 
   * testing new python include via python3-config 
