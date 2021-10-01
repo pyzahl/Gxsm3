@@ -69,7 +69,7 @@ static void despike2d_about( void );
 static void despike2d_configure( void );
 static void despike2d_cleanup( void );
 
-// Define Type of math plugin here, only one line should be commented in!!
+// Define Type of mat plugin here, only one line should be commented in!!
 #define GXSM_ONE_SRC_PLUGIN__DEF
 // #define GXSM_TWO_SRC_PLUGIN__DEF
 
@@ -218,35 +218,78 @@ static void despike2d_cleanup(void)
   PI_DEBUG (DBG_L2, "Despike2d Plugin Cleanup");
 }
 
-
-void despike_32650max (Mem2d *in, Mem2d *out){
-	int i,j,k,l,za=0,nx,ny;
-	int anz=1;
-	int num=1;
-	double reihe1[20],reihe2[20],mi;
-
-        nx=out->GetNx();
-        ny=out->GetNy();
-
-        for (j=anz; j<ny-anz; ++j){
-                for (i=anz; i<nx-anz; ++i) {
-                        for (k=j-anz, l=0; k<=j+anz; k++,l++)
-                                reihe1[l] = in->data->Z(i,k);
-                        for (k=0; k<2*anz+1;k++)  {
-                                mi = 32650;
-                                for (l=0; l<2*anz+1;l++) {
-                                        if (reihe1[l]<mi) {
-                                                mi=reihe1[l];
-                                                reihe2[k]=mi;
-                                                za=l;
-                                        }
-                                }
-                                reihe1[za]=32650;
-                        }
-                        out->data->Z(reihe2[num], i,j);
-                }  /*i*/
-        } /*j*/
+void ChangeValue (GtkComboBox* Combo,  gchararray *string){
+	GtkTreeIter iter;
+	GtkTreeModel *model;
+	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (Combo), &iter);
+	model = gtk_combo_box_get_model (GTK_COMBO_BOX (Combo));
+        if (*string){
+                g_free (*string); *string=NULL;
+        }
+	gtk_tree_model_get (model, &iter, 0, &(*string), -1);
+        std::cout << *string << std::endl;
 }
+
+
+class despike_setup : public AppBase{
+public:
+	despike_setup (double &nx, double &ny, gchararray *mode,
+                       double &max_threads
+                ){
+
+		GtkWidget *dialog;
+                GtkWidget *choice;
+                GtkWidget *chooser;
+
+                //UnitObj *meVA    = new UnitObj("meV/" UTF8_ANGSTROEM, "meV/" UTF8_ANGSTROEM );
+
+                GtkDialogFlags flags =  (GtkDialogFlags) (GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT);
+                dialog = gtk_dialog_new_with_buttons (N_("Despike Filter Setup"),
+                                                      GTK_WINDOW (gapp->get_app_window ()),
+                                                      flags,
+                                                      _("_OK"),
+                                                      GTK_RESPONSE_ACCEPT,
+                                                      _("_Cancel"),
+                                                      GTK_RESPONSE_REJECT,
+                                                      NULL);
+                BuildParam bp;
+                gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
+                bp.set_error_text ("Value not allowed.");
+                bp.input_nx = 5;
+
+		bp.grid_add_ec_with_scale ("kernel X #px",   gapp->xsm->Unity, &nx,    3.,   32., ".0f", 1.,  4.);
+                bp.new_line ();
+		bp.grid_add_ec_with_scale ("kernel Y #px",   gapp->xsm->Unity, &ny,    3.,   32., ".0f", 1.,  4.);
+                bp.new_line ();
+		
+                bp.grid_add_label ("Mode", NULL, 1, 1.0);
+		choice = gtk_combo_box_text_new ();
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "STM", "STM");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "Median", "Median");
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (choice), "32760MAX", "32760MAX");
+		g_signal_connect(G_OBJECT (choice), "changed", G_CALLBACK (ChangeValue), &(*mode));
+		bp.grid_add_widget (choice, 5);
+		gtk_combo_box_set_active (GTK_COMBO_BOX (choice), 0);
+
+		bp.grid_add_ec_with_scale ("Max Thread #",   gapp->xsm->Unity, &max_threads,    1.,   32., ".0f", 1.,  4.);
+                bp.new_line ();
+                        
+                gtk_widget_show_all (dialog);
+                
+		gint r=gtk_dialog_run(GTK_DIALOG(dialog));
+		gtk_widget_destroy (dialog);
+              
+                //delete meVA;
+
+                if (r == GTK_RESPONSE_REJECT){
+                        *mode = g_strdup ("NONE");
+                }
+        }
+
+	~despike_setup () {};
+};
+
+
 
 void despike_d (Mem2d *in, Mem2d *out){
 	int i,j,k,l,za=0,nx,ny;
@@ -278,6 +321,33 @@ void despike_d (Mem2d *in, Mem2d *out){
                         out->data->Z(reihe2[num], i,j);
                 }  /*i*/
         } /*j*/
+}
+
+void despike_STM (Mem2d *in, Mem2d *out, int i, int j, int v, double hi){
+	int za=0;
+	int anz=1;
+	int num=1;
+	double reihe1[20],reihe2[20],mi;
+
+        if (j < out->GetNy()-anz && i < out->GetNx()-anz && j >= anz && i >= anz){
+                for (int k=j-anz, l=0; k<=j+anz; k++,l++){
+                        //g_print ("Sd: %d %d %d\n",i,k,v);
+                        reihe1[l] = in->data->Z(i,k,v);
+                }
+                for (int k=0; k<2*anz+1;k++)  {
+                        mi = hi;
+                        for (int l=0; l<2*anz+1;l++) {
+                                if (reihe1[l]<mi && reihe1[l] != 0.0) {
+                                        mi=reihe1[l];
+                                        reihe2[k]=mi;
+                                        za=l;
+                                }
+                        }
+                        reihe1[za]=hi;
+                }
+                out->data->Z(reihe2[num], i,j,v);
+        } else
+                out->data->Z(in->data->Z(i,j,v), i,j,v); // copy for edges
 }
 
 // A utility function to swap two elements 
@@ -330,28 +400,82 @@ void quickSort(double arr[], int low, int high)
     } 
 } 
   
-void despike_median (Mem2d *in, Mem2d *out, int n=3, int m=3){
-        if (n<3) n=3;
-        if (m<3) m=3;
-        for (int i=0; i<out->GetNx(); ++i)
-                for (int j=0; j<out->GetNy(); ++j){
-                        double *arr = new double[m*n](); // init 0
-                        int mm=0;
-                        for(int k=i-(n-1)/2; k<=i+(n-1)/2; ++k)
-                                for(int l=j-(m-1)/2; l<=j+(m-1)/2; ++l)
-                                        if (k<0 || k>=in->GetNx() || l<0 || l>=in->GetNy())
-                                                arr[mm++]=in->data->Z(i,j);
-                                        else
-                                                arr[mm++]=in->data->Z(k,l);
-                        
-                        quickSort(arr, 0, n*m - 1); 
-                        if ((n*m) & 1)
-                                out->data->Z(arr[(n*m-1)/2], i,j);
+void despike_median (Mem2d *in, Mem2d *out, int i, int j, int v, int n=3, int m=3){
+        double *arr = new double[m*n](); // init 0
+        int mm=0;
+        for(int k=i-(n-1)/2; k<=i+(n-1)/2; ++k)
+                for(int l=j-(m-1)/2; l<=j+(m-1)/2; ++l)
+                        if (k<0 || k>=in->GetNx() || l<0 || l>=in->GetNy())
+                                arr[mm++]=in->data->Z(i,j,v);
                         else
-                                out->data->Z(0.5*(arr[(n*m-1)/2] + arr[(n*m-1)/2+1]), i,j);
-                        delete [] arr;
-                }
+                                arr[mm++]=in->data->Z(k,l,v);
+        
+        quickSort(arr, 0, n*m - 1); 
+        if ((n*m) & 1)
+                out->data->Z(arr[(n*m-1)/2], i,j,v);
+        else
+                out->data->Z(0.5*(arr[(n*m-1)/2] + arr[(n*m-1)/2+1]), i,j,v);
+        delete [] arr;
 }
+
+
+
+typedef struct{
+	Mem2d* SrcM;
+	Mem2d* DestM;
+	int y_i, y_f;
+	int x_i, x_f;
+	int l_i, l_f;
+	int Mn, Mm;
+        gchar mode;
+	int *status;
+	int job;
+	int progress;
+} DESPIKE_Job_Env;
+
+
+
+gpointer DESPIKE_thread (void *env){
+	DESPIKE_Job_Env* job = (DESPIKE_Job_Env*)env;
+	double valmin, val;
+	double z;
+
+        if (job->job)
+                for (int v_index=job->l_i; v_index <= job->l_f; ++v_index)
+                        job->DestM->data->SetVLookup(v_index, job->SrcM->data->GetVLookup(v_index));
+
+	for (int yi=job->y_i; yi < job->y_f; yi++){
+		if (*job->status) break;
+
+		for (int xi=job->x_i; xi < job->x_f; xi++){
+			if (*job->status) break;
+
+			for (int v_index=job->l_i; v_index <= job->l_f; ++v_index){
+                                //in->SetLayer (v);
+                                //in->HiLo (&hi, &lo);
+                                switch (job->mode){
+                                case 'S': // STM mode
+                                        despike_STM (job->SrcM, job->DestM, xi, yi, v_index, 1e20 ); break;
+                                case 'M': // Median mode
+                                        despike_median (job->SrcM, job->DestM, xi, yi, v_index, job->Mn, job->Mm); break;
+                                case '3': break;
+                                        despike_STM (job->SrcM, job->DestM, xi, yi, v_index, 32650.); break;
+                                case 'N': break;
+                                default : break;
+                                }
+                        }
+
+			job->progress++;
+		}
+	}
+	job->job = -1; // done indicator
+	return NULL;
+}
+
+static void cancel_callback (GtkWidget *widget, int *status){
+	*status = 1; 
+}
+	
 
 
 // run-Function
@@ -361,29 +485,22 @@ void despike_median (Mem2d *in, Mem2d *out, int n=3, int m=3){
  static gboolean despike2d_run(Scan *Src1, Scan *Src2, Scan *Dest)
 #endif
 {
+        int status = 0;
 	int ti=0; 
 	int tf=0;
 	int vi=0;
 	int vf=0;
 	gboolean multidim = FALSE;
 
-        const gchar* config_label[6] = { "Rows", "Lines", NULL };
-        const gchar* config_info[5]  = { "#rows (2=STM DESPIKE MODE 2x20, >2: Median)", "#lines (>2, Median)" };
-        UnitObj *config_units[5] { gapp->xsm->Unity,  gapp->xsm->Unity};
-        double config_minv[5] = { 2., 3.};
-        double config_maxv[5] = { 16., 16. };
-        const gchar* config_fmt[5]  = { ".0f", ".0f" };
-        double Mm=2.0;
+        double Mm=3.0;
         double Mn=3.0;
-        double *config_values[5] = { &Mm, &Mn };
-        
-        gapp->ValueRequestList ("Despike Filter Configuration",
-                                config_label, config_info, config_units,
-                                config_minv, config_maxv, config_fmt,
-                                config_values
-                                );
+        double max_threads = 8.;
+        int max_job=8;
+        gchararray mode = NULL;
+                
+	despike_setup (Mn, Mm, &mode, max_threads);
+        max_job=(int)max_threads;
 
-        
 	if (Src->data.s.ntimes != 1 || Src->mem2d->GetNv () != 1){
 		multidim = TRUE;
 		do {
@@ -401,6 +518,16 @@ void despike_median (Mem2d *in, Mem2d *out, int n=3, int m=3){
 		gapp->progress_info_set_bar_text ("Value", 2);
 	}
 
+	gapp->progress_info_new (mode, 1, GCallback (cancel_callback), &status);
+	gapp->progress_info_set_bar_fraction (0., 1);
+	gapp->progress_info_set_bar_text (" ", 1);
+
+	#define MAX_JOB 32
+	DESPIKE_Job_Env despike_job[MAX_JOB];
+	GThread* tpi[MAX_JOB];
+        if (max_job > MAX_JOB)
+                max_job=MAX_JOB;
+
 	int ntimes_tmp = tf-ti+1;
 	for (int time_index=ti; time_index <= tf; ++time_index){
 		Mem2d *m = Src->mem2d_time_element (time_index);
@@ -408,7 +535,9 @@ void despike_median (Mem2d *in, Mem2d *out, int n=3, int m=3){
 			gapp->progress_info_set_bar_fraction ((gdouble)(time_index-ti)/(gdouble)ntimes_tmp, 1);
 
 		Dest->mem2d->Resize (m->GetNx (), m->GetNy (), vf-vi+1, m->GetTyp());
-		for (int v_index = vi; v_index <= vf; ++v_index){
+
+                /*
+                for (int v_index = vi; v_index <= vf; ++v_index){
 			m->SetLayer (v_index);
                         Dest->mem2d->data->SetVLookup(v_index, Src->mem2d->data->GetVLookup(v_index));
 			Dest->mem2d->SetLayer (v_index-vi);	
@@ -422,9 +551,76 @@ void despike_median (Mem2d *in, Mem2d *out, int n=3, int m=3){
                                 despike_median (m, Dest->mem2d, (int)Mn, (int)Mm);
 
 		}
-		Dest->append_current_to_time_elements (time_index-ti, m->get_frame_time ());
+                */
+
+                std::cout << "DESPIKE:run ** spaning " << max_job << " thread jobs <" << mode << "> [" << Mn << ", " <<  Mm << "] for time element " << time_index << "." << std::endl;
+
+                // ******************************
+                // to be threadded:
+                //	for (int yi=0; yi < Ny; yi++)...
+                int col_per_job = m->GetNx () / (max_job-1);
+                int xi = 0;
+                int progress_max_job = col_per_job * m->GetNy ();
+                for (int jobno=0; jobno < max_job; ++jobno){
+                        despike_job[jobno].SrcM  = m;
+                        despike_job[jobno].DestM = Dest->mem2d;
+                        despike_job[jobno].y_i = 0;
+                        despike_job[jobno].y_f =  m->GetNy ();
+                        despike_job[jobno].x_i = xi;
+                        xi += col_per_job;
+                        if (xi < 1 || xi >  m->GetNx ()) xi = m->GetNx ();
+                        despike_job[jobno].x_f = xi;
+                        despike_job[jobno].l_i = vi;
+                        despike_job[jobno].l_f = vf;
+                        despike_job[jobno].Mn = (int)Mn;
+                        despike_job[jobno].Mm = (int)Mm;
+                        despike_job[jobno].mode = (gchar)mode[0];
+                        despike_job[jobno].status = &status;
+                        despike_job[jobno].job = jobno+1;
+                        despike_job[jobno].progress = 0;
+                        gchar *tid = g_strdup_printf ("DESPIKE_thread_%d", jobno);
+                        tpi[jobno] = g_thread_new (tid, DESPIKE_thread, &despike_job[jobno]);
+                        g_free (tid);
+                }
+
+                std::cout << "DESPIKE:run ** checking on jobs progress." << std::endl;
+
+                int job=0;
+                double psum_mx=0.;
+                do {
+                        double psum=0.;
+                        job=0;
+                        for (int jobno=0; jobno < max_job; ++jobno){
+                                psum += despike_job[jobno].progress;
+                                job  += despike_job[0].job;
+                        }
+                        if (psum > psum_mx)
+                                psum_mx = psum;
+                        gchar *tmp = g_strdup_printf("%i %%", (int)(100.*psum_mx/max_job/progress_max_job));
+                        gapp->progress_info_set_bar_text (tmp, 1);
+                        g_free (tmp);
+                        gapp->check_events ();
+                } while (job >= 0);
+
+                std::cout << "DESPIKE:run ** finishing up jobs." << std::endl;
+
+                gapp->progress_info_set_bar_text ("finishing up jobs", 1);
+                gapp->check_events ();
+
+                for (int jobno=0; jobno < max_job; ++jobno)
+                        g_thread_join (tpi[jobno]);
+
+
+                // ******************************
+                Dest->append_current_to_time_elements (time_index-ti, m->get_frame_time ());
 	}
 
+
+	std::cout << "DESPIKE:run ** cleaning up." << std::endl;
+
+	gapp->progress_info_close ();
+
+        
 	Dest->data.s.ntimes = ntimes_tmp;
 	Dest->data.s.nvalues=Dest->mem2d->GetNv ();
 
