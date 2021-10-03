@@ -1863,8 +1863,10 @@ class SPMcontrol():
                                                 sr.close ()
                                                 break
 
-                        except IOError:
-                                print ('Oh dear. No such device.')
+                        except IOError as e:
+                                print ('IOError: ', e)
+                                print ('Oh dear. No such device or failure connecting via <' + self.sr_dev_path + '>.')
+
 
                         print ("continue seeking for MK3-Pro with FB_SPMCONTROL ...")
 
@@ -1883,8 +1885,10 @@ class SPMcontrol():
                         print ("")
                 else:
                         print ("")
-                        print ("*** Sorry, no valid SPM-CONTROL found running on any plugged in MK2/3 ***")
+                        print ("*** Sorry, no valid SPM-CONTROL found running on any potentially plugged in MK2/3 ***")
+                        print ("ByBy.")
                         self.sr_dev_path  = "none"
+                        exit (0)
 
         def status (self):
                 return self.spm_control_found
