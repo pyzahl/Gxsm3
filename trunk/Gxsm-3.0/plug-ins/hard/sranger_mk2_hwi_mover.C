@@ -1031,7 +1031,7 @@ void DSPMoverControl::create_folder (){
                         // ===
                         mov_bp->new_line ();
                         // ======================================== Wave Output Setup ========================================
-			mov_bp->new_grid_with_frame ("#wave/direction(xyz)->DAC(0-6)");
+			mov_bp->new_grid_with_frame ("#wave/direction(xyz)->DAC(0-6) ... preview @ 1Vpp");
                         gtk_widget_set_tooltip_text (mov_bp->frame,"rows: waveform, columns: direction, cells: output channel; channel 7 does not work as it is overwritten by another signal."); 
 
                         mov_bp->new_line ();
@@ -1742,10 +1742,18 @@ gboolean DSPMoverControl::draw_waveform_preview (GtkWidget *widget, int wn){
         cairo_t *cr = cairo_create (surface);
         cairo_translate (cr, 1., 17.);
         cairo_scale (cr, 1., 1.);
-        double yr=16./SR_VFAC;
+        double yr=-16./(SR_VFAC+fabs(SR_VFAC*mover_param.Wave_offset));
         cairo_save (cr);
 
-        cairo_item_path *wave = new cairo_item_path (n);
+        cairo_item_path *wave = new cairo_item_path (2);
+        wave->set_line_width (0.5);
+        wave->set_stroke_rgba (CAIRO_COLOR_BLACK);
+        wave->set_xy_fast (0,0,0);
+        wave->set_xy_fast (1,n-1,0);
+        wave->draw (cr);
+        delete wave;
+
+        wave = new cairo_item_path (n);
         wave->set_line_width (2.0);
         wave->set_stroke_rgba (CAIRO_COLOR_RED);
         for (int k=0; k<n; ++k) wave->set_xy_fast (k,k,yr*mover_param.MOV_waveform[k*nch+wn]);
