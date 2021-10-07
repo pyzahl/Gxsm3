@@ -994,11 +994,13 @@ void DSPMoverControl::create_folder (){
                         mov_bp->grid_add_ec ("Space", Time, &mover_param.Wave_space, 0., 1000., ".3f", 1., 10., "Wave-Space");
 			g_object_set_data( G_OBJECT (mov_bp->input), "Wavespace ", GINT_TO_POINTER (i));
 			gtk_widget_set_tooltip_text (mov_bp->input, "Wave form spacing ");
+                        g_signal_connect (G_OBJECT (mov_bp->input), "changed", G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 
                         mov_bp->grid_add_ec ("Offset", Volt, &mover_param.Wave_offset, -10., 10., ".2f", 1., 10., "Wave-Offset");
 			g_object_set_data( G_OBJECT (mov_bp->input), "Waveoffset ", GINT_TO_POINTER (i));
 			gtk_widget_set_tooltip_text (mov_bp->input, "Wave form DC Offset ");
+                        g_signal_connect (G_OBJECT (mov_bp->input), "changed", G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 
                         // config options, managed -- moved here
