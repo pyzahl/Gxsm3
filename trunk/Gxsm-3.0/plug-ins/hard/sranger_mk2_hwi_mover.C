@@ -1009,20 +1009,24 @@ void DSPMoverControl::create_folder (){
 	                gtk_widget_set_tooltip_text (mov_bp->input,
                                                      "Generic Phase value may be used by custom wave form generation.\n"
                                                      "Used by Sine and Pulse\n");
+                        g_signal_connect (G_OBJECT (mov_bp->input), "changed", G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
                         mov_bp->set_configure_hide_list_b_mode_off ();;
 
                         mov_bp->set_configure_hide_list_b_mode_on ();
                         mov_bp->grid_add_ec ("z-jump/xy-amplitude", Unity, &mover_param.z_Rate, 0., 1., ".2f", 0.01, 0.1, "besocke-z-jump-ratio");
                         gtk_widget_set_tooltip_text (mov_bp->input, "Relative amplitude of the z-jump in respect to the amplitude of the xy-slide");
+                        g_signal_connect (G_OBJECT (mov_bp->input), "changed", G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 
                         mov_bp->grid_add_ec ("settling time t1", Time, &mover_param.time_delay_1, 0., 1., ".3f", 0.001, 0.01, "besocke-t1");
                         gtk_widget_set_tooltip_text (mov_bp->input, "Time delay of the signals to settle the tip before and after the z-jump");
+                        g_signal_connect (G_OBJECT (mov_bp->input), "changed", G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 
                         mov_bp->grid_add_ec ("period of fall t2", Time, &mover_param.time_delay_2, 0., 1., ".3f", 0.001, 0.01, "besocke-t2");
                         gtk_widget_set_tooltip_text (mov_bp->input, "Time between the z-jump and the xy-slide.");
+                        g_signal_connect (G_OBJECT (mov_bp->input), "changed", G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
                         mov_bp->set_configure_hide_list_b_mode_off ();
 
