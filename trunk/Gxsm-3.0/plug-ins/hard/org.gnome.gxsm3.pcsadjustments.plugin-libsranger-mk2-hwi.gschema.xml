@@ -1333,6 +1333,12 @@
       <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-space'. Setup of Min/Max Range (warning: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
     </key>
 
+    <key name="dspmover-config-wave-offset" type="ad">
+      <default>[10, -10, 1e+111, -1e+111, 1e+111, 1e+111, 1, 10, 100, 0,  0, 0      ]      </default>
+      <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-wave-offset' </summary>
+      <description>Configuration for GXSM Entry with ID 'dspmover-config-wave-offset'. Setup of Min/Max Range (warning: not checked for validity), Warning Bonds, Exclude Range and Spin Step/Page behavior. </description>
+    </key>
+
     <key name="dspmover-config-iw-phase" type="ad">
       <default>[360, 0, 1e+111, -1e+111, 1e+111, 1e+111, 1, 60, 600, 0,  0, 0      ]      </default>
       <summary>Array of [Adjustments Absolute Limits: Max, -Min,  Warning Bounds: Max, -Min,  Exclude Range: Lo, -Hi, Spin: Step, Page, Page10, Progressive-mode, 0,0] for 'dspmover-config-iw-phase' </summary>

@@ -1339,6 +1339,12 @@
       <description>pcs0000, PCS Remote-ID: 'dspmover-config-Wave-Space', Default/U: 0.000 ms    , Adjustment PCS Name: 'dspmover-config-Wave-Space' </description>
     </key>
 
+    <key name="dspmover-config-wave-offset" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'dspmover-config-Wave-Offset', Default/U: 0.0 V     </summary>
+      <description>pcs0000, PCS Remote-ID: 'dspmover-config-Wave-Offset', Default/U: 0.000 ms    , Adjustment PCS Name: 'dspmover-config-Offset-Space' </description>
+    </key>
+
     <key name="dspmover-config-iw-phase" type="d">
       <default>0</default>
       <summary>PCS Remote-ID: 'dspmover-config-IW-Phase', Default/U:   0 °     </summary>

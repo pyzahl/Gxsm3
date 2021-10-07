@@ -198,6 +198,7 @@ DSPMoverControl::DSPMoverControl ()
         xrm.Get("timedelay_1", &mover_param.time_delay_1, "0.09");
         xrm.Get("z_Rate", &mover_param.z_Rate, "0.1");
 	xrm.Get("Wave_space", &mover_param.Wave_space, "0.0");
+	xrm.Get("Wave_offset", &mover_param.Wave_offset, "0.0");
 
 	xrm.Get("GPIO_on", &mover_param.GPIO_on, "0");
 	xrm.Get("GPIO_off", &mover_param.GPIO_off, "0");
@@ -330,12 +331,12 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
                 if (pointing > 0) // wave for forward direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(t<n2? t : t-n)/n2);
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*((amp*(double)(t<n2? t : t-n)/n2)+mover_param.Wave_offset));
                         }
                 else // wave for reverse direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(double)(t<n2? -t : n-t)/n2);
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*((amp*(double)(t<n2? -t : n-t)/n2)+mover_param.Wave_offset));
                         }
 		break;
 	case MOV_WAVE_SINE:
@@ -343,11 +344,11 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
                 if (pointing > 0) // wave for forward direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*phase*2.0*M_PI + (double)t*2.*M_PI/n)));
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*((amp*sin (k*phase*2.0*M_PI + (double)t*2.*M_PI/n))+mover_param.Wave_offset));
                 else
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = ((short)round (SR_VFAC*amp*sin (k*phase*2.0*M_PI - (double)t*2.*M_PI/n)));
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*((amp*sin (k*phase*2.0*M_PI - (double)t*2.*M_PI/n))+mover_param.Wave_offset));
 		break;
 	case MOV_WAVE_CYCLO:
 	case MOV_WAVE_CYCLO_PL:
@@ -993,6 +994,11 @@ void DSPMoverControl::create_folder (){
                         mov_bp->grid_add_ec ("Space", Time, &mover_param.Wave_space, 0., 1000., ".3f", 1., 10., "Wave-Space");
 			g_object_set_data( G_OBJECT (mov_bp->input), "Wavespace ", GINT_TO_POINTER (i));
 			gtk_widget_set_tooltip_text (mov_bp->input, "Wave form spacing ");
+                        mov_bp->new_line ();
+
+                        mov_bp->grid_add_ec ("Offset", Volt, &mover_param.Wave_offset, -10., 10., ".2f", 1., 10., "Wave-Offset");
+			g_object_set_data( G_OBJECT (mov_bp->input), "Waveoffset ", GINT_TO_POINTER (i));
+			gtk_widget_set_tooltip_text (mov_bp->input, "Wave form DC Offset ");
                         mov_bp->new_line ();
 
                         // config options, managed -- moved here
