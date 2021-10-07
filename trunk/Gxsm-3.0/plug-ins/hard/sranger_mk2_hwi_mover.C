@@ -331,12 +331,12 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
                 if (pointing > 0) // wave for forward direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*((amp*(double)(t<n2? t : t-n)/n2)+mover_param.Wave_offset));
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(((double)(t<n2? t : t-n)/n2)+mover_param.Wave_offset));
                         }
                 else // wave for reverse direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*((amp*(double)(t<n2? -t : n-t)/n2)+mover_param.Wave_offset));
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(((double)(t<n2? -t : n-t)/n2)+mover_param.Wave_offset));
                         }
 		break;
 	case MOV_WAVE_SINE:
@@ -344,11 +344,11 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
                 if (pointing > 0) // wave for forward direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*((amp*sin (k*phase*2.0*M_PI + (double)t*2.*M_PI/n))+mover_param.Wave_offset));
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*((sin (k*phase*2.0*M_PI + (double)t*2.*M_PI/n))+mover_param.Wave_offset));
                 else
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
                                 for (int k=0; k<channels; ++k)
-                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*((amp*sin (k*phase*2.0*M_PI - (double)t*2.*M_PI/n))+mover_param.Wave_offset));
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*((sin (k*phase*2.0*M_PI - (double)t*2.*M_PI/n))+mover_param.Wave_offset));
 		break;
 	case MOV_WAVE_CYCLO:
 	case MOV_WAVE_CYCLO_PL:
@@ -997,9 +997,9 @@ void DSPMoverControl::create_folder (){
                         g_signal_connect (G_OBJECT (mov_bp->input), "changed", G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 
-                        mov_bp->grid_add_ec ("Offset", Volt, &mover_param.Wave_offset, -10., 10., ".2f", 1., 10., "Wave-Offset");
+                        mov_bp->grid_add_ec ("Offset", Unity, &mover_param.Wave_offset, -10., 10., ".2f", 1., 10., "Wave-Offset");
 			g_object_set_data( G_OBJECT (mov_bp->input), "Waveoffset ", GINT_TO_POINTER (i));
-			gtk_widget_set_tooltip_text (mov_bp->input, "Wave form DC Offset ");
+			gtk_widget_set_tooltip_text (mov_bp->input, "Wave form relative DC Offset (in Amplitude Volts) ");
                         g_signal_connect (G_OBJECT (mov_bp->input), "changed", G_CALLBACK (DSPMoverControl::config_waveform), this);
                         mov_bp->new_line ();
 
@@ -1035,7 +1035,7 @@ void DSPMoverControl::create_folder (){
                         // ===
                         mov_bp->new_line ();
                         // ======================================== Wave Output Setup ========================================
-			mov_bp->new_grid_with_frame ("#wave/direction(xyz)->DAC(0-6) ... preview @ 1Vpp");
+			mov_bp->new_grid_with_frame ("#wave/direction(xyz)->DAC(0-6) ... preview");
                         gtk_widget_set_tooltip_text (mov_bp->frame,"rows: waveform, columns: direction, cells: output channel; channel 7 does not work as it is overwritten by another signal."); 
 
                         mov_bp->new_line ();
