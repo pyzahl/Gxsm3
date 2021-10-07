@@ -191,7 +191,7 @@ typedef struct{
 	double max_settling_time;
         double retract_ci;
 	double inch_worm_phase;
-	double Wave_space;
+	double Wave_space, Wave_offset;
         double z_Rate;
         double time_delay_1;
         double time_delay_2;
