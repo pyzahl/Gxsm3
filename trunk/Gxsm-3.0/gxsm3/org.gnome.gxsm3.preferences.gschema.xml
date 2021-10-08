@@ -1532,14 +1532,14 @@ choose from:
         <choice value='lines'/>
         <choice value='seconds'/>
       </choices>
-      <default>'percent'</default>
+      <default>'seconds'</default>
       <summary>Autosaveunit: Save every percent, lines, seconds</summary>
       <description>
         Autosaveunit: Save every percent, lines, seconds
       </description>
     </key>
     <key name="autosavevalue" type="x">
-      <default>100</default>
+      <default>300</default>
       <summary>Rate of Autosaves, depending on Unit.</summary>
       <description>
         Rate of Autosaves, depending on Unit.
