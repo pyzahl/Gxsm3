@@ -1866,17 +1866,31 @@ gboolean SPM_ScanControl::scanning_task (gpointer spc){
 
 // Setup task for one pas scan process
 int SPM_ScanControl::setup_scanning_control (int l){
+        const gint64 timeout = 5000000; // 5s
+        const gint64 print_interval = 200000; // 200ms
+        static gint64 time_of_first_reading = 0; // abs time in us
+        static gint64 time_of_last_reading = 0; // abs time in us
 	PI_DEBUG (DBG_L2, "do_scan");
 
 	if (scan_in_progress ()){
 		PI_DEBUG (DBG_L2, "do_scan scan in progress, exiting.");
 		return FALSE;
 	}
-        if (! gapp->xsm->hardware->RTQuery_clear_to_start_scan ()){
-                gapp->monitorcontrol->LogEvent ("Start Scan", "Instrument is busy with VP or conflciting task: skipping requst.", 3);
-                g_warning ("Start Scan: Instrument is busy with VP or conflciting task. Skipping.");
-                return FALSE;
+        time_of_first_reading = g_get_real_time ();
+        while (! gapp->xsm->hardware->RTQuery_clear_to_start_scan ()){
+                gapp->check_events("Setup Scan Start is waiting for instrument ready.");
+                if ( (time_of_last_reading+print_interval) < g_get_real_time () ){
+                        gapp->monitorcontrol->LogEvent ("Start Scan", "Instrument is busy with VP or conflciting task: Waiting.", 3);
+                        g_warning ("Start Scan: Instrument is busy with VP or conflciting task. Waiting.");
+                }
+                time_of_last_reading = g_get_real_time ();
+                if ( (time_of_first_reading+timeout) < g_get_real_time () ){
+                        gapp->monitorcontrol->LogEvent ("Start Scan", "Instrument is busy with VP or conflciting task: skipping/abort.", 3);
+                        g_warning ("Start Scan: Instrument is busy with VP or conflciting task. Timeout reached, skipping/abort.");
+                        return FALSE;
+                }
         }
+
 
         scanning_task_multivolt_i = l;
         scanning_task_stage = 1; // start
