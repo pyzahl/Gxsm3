@@ -530,8 +530,8 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 	static double norm_i[2] = { -1., -1. };   // norm i -> data normalization ref point(s)
 	static double bg_sub = 0.;                // sub i -> sub ref spectrum
 	double *bg_array = NULL;
-	gchar *Source1;			// is the channel for layers V
-	gchar *Source2;			// is the channel, that will be mapped
+	gchar *Source1=NULL;			// is the channel for layers V
+	gchar *Source2=NULL;			// is the channel, that will be mapped
 	int iSource1 = -1;		// -1 means "Index" that is not available as a real channel
 	int iSource2 = -1;		// -1 means no channel to map -> break
 	int Nx = Src->mem2d->GetNx ();	// total Number of points in x
@@ -620,7 +620,7 @@ static gboolean probe_image_extract_run(Scan *Src, Scan *Dest)
 
 
 
-	if (Source1 < 0){
+	if (iSource1 < 0){
 		UnitObj *NUnit = new UnitObj( " "," ",".0f", "#");
 		Dest->data.SetVUnit (NUnit);
 		delete NUnit;
