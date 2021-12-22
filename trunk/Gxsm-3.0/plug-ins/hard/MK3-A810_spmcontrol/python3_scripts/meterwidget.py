@@ -512,7 +512,7 @@ class Instrument(Gtk.Label):
         spantag  = "<span size=\"24000\" font_family=\"monospace\"><b>"   # .. color=\"#ff0000\"
         self.set_markup (spantag + self.format %value + "</b></span>")
         self.cur_value = value       
-       GLib.idle_add (self.meter.queue_draw())
+        GLib.idle_add (self.meter.queue_draw())
         
     def set_reading_lohi_markup (self, value, lo, hi):
         spantag  = "<span size=\"24000\" font_family=\"monospace\"><b>"   # .. color=\"#ff0000\"
