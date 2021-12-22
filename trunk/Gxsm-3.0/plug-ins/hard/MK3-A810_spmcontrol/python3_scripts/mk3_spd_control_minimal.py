@@ -364,7 +364,7 @@ class offset_vector():
         self.etvec = etv
         self.gainselectmenuvec = gsv
 
-    def update_display():
+    def update_display(self):
         for i in range (0,3):
             self.etvec[i].set_text("%12.3f" %(scaleO[i]*HV1_configuration[ii_config_target_X0+i]))
         return False
@@ -387,7 +387,7 @@ class offset_vector():
         sr.close ()
         
         read_back ()
-        GLib.idle_add (self.update_display())
+        GLib.idle_add (self.update_display)
 
     def write_t_vector_var(self, tvec):
         global HV1_configuration
@@ -407,7 +407,7 @@ class offset_vector():
         sr.close ()
         
         read_back ()
-        GLib.idle_add (self.update_display())
+        GLib.idle_add (self.update_display)
 
     def adjust_gains (self, gains):
         #chan = ["gain_X", "gain_Y", "gain_Z"]
