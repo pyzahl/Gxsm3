@@ -759,7 +759,7 @@ def create_hv1_app():
         hb.pack_end(hbox)
         
         cbl = check_button = Gtk.CheckButton(label="GXSM Link")
-        button = Gtk.Button(stock='Stop')
+        button = Gtk.Button.new_with_mnemonic(label='Stop')
         button.connect("clicked", do_emergency, cbl, GxsmLink)
         #Label=button.get_children()[0]
         #Label=Label.get_children()[0].get_children()[1]
