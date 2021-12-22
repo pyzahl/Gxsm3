@@ -44,8 +44,8 @@ import array
 
 import math
 
-from meterwidget_3_7 import *
-from scopewidget_3_7 import *
+from meterwidget import *
+from scopewidget import *
 from mk3_spmcontol_class import *
 
 METER_SCALE = 0.66
@@ -363,7 +363,12 @@ class offset_vector():
     def __init__(self, etv, gsv):
         self.etvec = etv
         self.gainselectmenuvec = gsv
-        
+
+    def update_display():
+        for i in range (0,3):
+            self.etvec[i].set_text("%12.3f" %(scaleO[i]*HV1_configuration[ii_config_target_X0+i]))
+        return False
+
     def write_t_vector(self, button):
         global HV1_configuration
         tX = [0,0,0]
@@ -382,9 +387,7 @@ class offset_vector():
         sr.close ()
         
         read_back ()
-            
-        for i in range (0,3):
-            self.etvec[i].set_text("%12.3f" %(scaleO[i]*HV1_configuration[ii_config_target_X0+i]))
+        GLib.idle_add (self.update_display())
 
     def write_t_vector_var(self, tvec):
         global HV1_configuration
@@ -404,21 +407,19 @@ class offset_vector():
         sr.close ()
         
         read_back ()
-            
-        for i in range (0,3):
-            self.etvec[i].set_text("%12.3f" %(scaleO[i]*HV1_configuration[ii_config_target_X0+i]))
+        GLib.idle_add (self.update_display())
 
     def adjust_gains (self, gains):
-            #chan = ["gain_X", "gain_Y", "gain_Z"]
-            ii   = [ii_config_gain_X, ii_config_gain_Y, ii_config_gain_Z]
-            gain = [1, 2, 5, 10, 20]
-            for ci in range(0,3):
-                    for i in range(0,5):
-                            if gains[ci] == gain[i]:
-                                    print ("setting gain[%d]"%ci+" to %dx"%gain[i])
-                                    hv1_adjust (0, i, ii[ci])
-                                    self.gainselectmenuvec[ci](i)
-
+        #chan = ["gain_X", "gain_Y", "gain_Z"]
+        ii   = [ii_config_gain_X, ii_config_gain_Y, ii_config_gain_Z]
+        gain = [1, 2, 5, 10, 20]
+        for ci in range(0,3):
+            for i in range(0,5):
+                if gains[ci] == gain[i]:
+                    print ("setting gain[%d]"%ci+" to %dx"%gain[i])
+                    hv1_adjust (0, i, ii[ci])
+                    self.gainselectmenuvec[ci](i)
+        return False
 
 class drift_compensation():
     def __init__(self, edv, oc):
