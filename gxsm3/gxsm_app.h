@@ -135,6 +135,8 @@ public:
 
         virtual void AppWindowInit(const gchar *title);
         void build_gxsm (Gxsm3appWindow *win);
+        static int finish_system_startup_idle_callback (void *_self) { App *self=(App*)_self; return self-> finish_system_startup (); }; // ret=FALSE => finished
+        int finish_system_startup ();
 
         /* Menu - callbacks */
         static void file_open_callback (GSimpleAction *simple, GVariant *parameter, gpointer user_data);

@@ -822,6 +822,10 @@ void GnomeAppService::alert(const gchar *s1, const gchar *s2, const gchar *s3, i
                                        dialog
                                        );
                 }
+
+                gtk_dialog_run (GTK_DIALOG (dialog));
+                gtk_widget_destroy (dialog);
+                
         }
 }
 

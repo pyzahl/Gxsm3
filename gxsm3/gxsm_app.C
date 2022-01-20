@@ -313,6 +313,8 @@ void App::AppWindowInit(const gchar *title){
 	gtk_widget_show_all (GTK_WIDGET (window));
 }
 
+
+#if 0
 void App::build_gxsm (Gxsm3appWindow *win){
         //        const gchar *quit_accels[2] = { "<Ctrl>Q", NULL };
 
@@ -475,6 +477,198 @@ void App::build_gxsm (Gxsm3appWindow *win){
         
         XSM_DEBUG(DBG_L2, "App::build_gxsm - done.");
 }
+#endif
+
+
+
+void App::build_gxsm (Gxsm3appWindow *win){
+        //        const gchar *quit_accels[2] = { "<Ctrl>Q", NULL };
+
+	xsmres.gxsm3_ready = false;
+        XSM_DEBUG(DBG_L2, "App::build_gxsm ================================================================" );
+
+        pcs_set_current_gschema_group ("core");
+
+	// manage main window geometry
+        app_window = win;
+        // setup core functionality header bar, grid with status bar
+
+        XSM_DEBUG_GM (DBG_L3, "App::build_gxsm calling MAINAppWindowInit(%s, %s)", "*Gxsm4*", "*" GXSM_VERSION_NAME "*");
+        AppWindowInit (N_("Gxsm 3"));
+        XSM_DEBUG_GM (DBG_L3, "App::build_gxsm building GXSM core app ...");
+
+        /* Now able to bring up Splash and Startup Info window */
+        GxsmSplash (-1.0, "GXSM Startup.", "Initializing Windows and Modules."); // this will auto remove splash after timout!
+        
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - starting up" );
+        SetStatus(N_("Starting GXSM..."));
+        
+        /* Now read User Confiugartion */
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - reading config" );
+        SetStatus(N_("Reading User Config"));
+
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - gnome_res_preferences_new (xsm_res_def)" );
+	GnomeResPreferences *pref = gnome_res_preferences_new (xsm_res_def, GXSM_RES_PREFERENCES_PATH);
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - read_user_config" );
+
+        if (generate_preferences_gschema) {
+                gchar *gschema = gnome_res_write_gschema (pref);
+                
+                std::ofstream f;
+                f.open (GXSM_RES_BASE_PATH_DOT ".preferences.gschema.xml", std::ios::out);
+                f << gschema
+                  << std::endl;
+                f.close ();
+
+                g_free (gschema);
+                gnome_res_destroy (pref);
+
+                exit (0);
+        }
+
+#if 1 // DEVELOPER OPTIONS, SPECIAL BUILD
+        if (generate_gl_preferences_gschema) {
+                surf3d_write_schema ();
+                exit (0);
+        }
+#endif
+        
+        gnome_res_read_user_config (pref);
+        XSM_DEBUG(DBG_L2, "App::build_gxsm - destroy preferences object" );
+	gnome_res_destroy (pref);
+
+        set_window_geometry    ("main");
+        
+        XSM_DEBUG (DBG_L3,
+                   "App::build_gxsm - finished with main window.\n"
+                   "... loading and initiating modules via g_idle_add:\n"
+                   "... App::finish_system_startup_idle_callback\n"
+                   "... executes in stages while apllication main loop is operational." );
+        
+        g_idle_add (App::finish_system_startup_idle_callback, this);
+}
+
+int App::finish_system_startup (){
+        static int startup_stage=0;
+
+        ++startup_stage;
+        XSM_DEBUG_GM (DBG_L2, "**** IDLE FUNC: App::build_gxsm ==> App::finish_system_startup, stage=%2d  *****", startup_stage);
+
+        switch (startup_stage){
+        case 1:
+                ClearStatus();
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - Monitor");
+                pcs_set_current_gschema_group ("monitorwindow");
+                monitorcontrol  = new MonitorControl (logging_level);
+                return true;
+        case 2:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - start detecting Hardware configuration");
+                if(xsmres.HardwareTypeCmd)
+                        strcpy(xsmres.HardwareType, xsmres.HardwareTypeCmd);
+                if(xsmres.DSPDevCmd)
+                        strcpy(xsmres.DSPDev, xsmres.DSPDevCmd);
+
+                XSM_DEBUG (DBG_L1,  "DSPDev :" << xsmres.DSPDev );
+                XSM_DEBUG (DBG_L1,  "DSPType:" << xsmres.HardwareType );
+
+                /* Erzeuge und Initialise Xsm system */
+
+                pcs_set_current_gschema_group ("corehwi");
+
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - xsm = new Surface" );
+                SetStatus(N_("Generating Surface Object..."));
+                return true;
+        case 3:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - Surface manager (aka Scan Channel Management)");
+                xsm = new Surface (); // This is the master backend, channel control
+                return true;
+        case 4:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - Setup DnD on Main Window");
+                configure_drop_on_widget (GTK_WIDGET (app_window));
+                return true;
+        case 5:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - Adding Main Scan Geometry Controls");
+                /* fill in Gxsm main control elements SPM + AS + UI */
+                xsm->SetModeFlg (MODE_SETSTEPS);
+
+                pcs_set_current_gschema_group ("mainwindow");
+
+                if(IS_SPALEED_CTRL)
+                        // SPALEED Controls
+                        spm_control  = create_spa_control ();
+                else
+                        // SPM Controls
+                        spm_control  = create_spm_control ();
+
+                gtk_grid_attach (GTK_GRID (grid), spm_control, 0, 1, 1, 1);
+                gtk_widget_show_all (spm_control);
+                return true;
+        case 6:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - AS Controls");
+                // Auto Save Control
+                as_control   = create_as_control ();
+                gtk_grid_attach (GTK_GRID (grid), as_control, 0, 2, 1, 1);
+                gtk_widget_show_all (as_control);
+                return true;
+        case 7:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - UI Controls");
+                // User Info Control
+                ui_control   = create_ui_control ();
+                gtk_grid_attach (GTK_GRID (grid), ui_control, 0, 3, 1, 1);
+                gtk_widget_show_all (ui_control);
+                gtk_widget_show_all (GTK_WIDGET (window));
+                return true;
+        case 8:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - Building Channelselector");
+                pcs_set_current_gschema_group ("channelselectorwindow");
+                channelselector = new ChannelSelector ();
+                return true;
+        case 9:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - Scanning and loading GXSM PlugIns");
+                pcs_set_current_gschema_group ("plugins");
+                SetStatus(N_("Scanning for GXSM Plugins..."));
+                if( !xsmres.disableplugins )
+                        reload_gxsm_plugins();
+                return true;
+        case 10:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - Update Gxsm Settings from Configurations");
+
+                /* call hook to update gxsm setting from hardware as desired */
+                XSM_DEBUG(DBG_L3, "    ... App::build_gxsm - call xsmhard->update_gxsm_configurations");
+
+                if (xsm->hardware)
+                        xsm->hardware->update_gxsm_configurations ();
+                else{
+                        XSM_DEBUG(DBG_L2, "App::build_gxsm - no call: xsm->hardware invalid.");
+                }
+                return true;
+        case 11:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - adding HwI Info to Log");
+
+                pcs_set_current_gschema_group ("post-build-error-path");
+                monitorcontrol->LogEvent ("Hardware Information", xsm->hardware->get_info ());
+                xsmres.gxsm3_ready = true;
+                SetStatus(N_("Ready."));
+                return true;
+        case 12:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - Update all Entries.");
+                spm_update_all (-xsm->data.display.ViewFlg);
+                monitorcontrol->LogEvent ("GXSM", "startup");
+                return true;
+        case 13:
+                XSM_DEBUG(DBG_L2, "IDLE... App::build_gxsm - Reposition all window to stored Window Geometry (X11)");
+                load_app_geometry ();
+                return true;
+        case 14:
+                XSM_DEBUG(DBG_L2, "App::build_gxsm - done.");
+                return true;
+        default:
+                break;
+        }
+        
+        return false; // if reaching this line -- never returns, IDLE is done.
+}
+
 
 // Plugin handling
 // ========================================

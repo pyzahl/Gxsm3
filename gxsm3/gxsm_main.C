@@ -69,6 +69,12 @@ gchar *current_pcs_gschema_path_group = NULL;
 
 gboolean gxsm_build_self_test_script = false;
 
+int main_get_debug_level () { return debug_level; }
+int main_get_pi_debug_level () { return pi_debug_level; }
+
+App* main_get_gapp() { return gapp; }
+
+
 
 /* True if parsing determined that all the work is already done.  */
 int just_exit = 0;
