@@ -595,10 +595,6 @@ gxsm_plugins::~gxsm_plugins(){
 //
 // ----------------------------------------------------------------------
 
-// #define XSM_HWI_DEBUG(L, DBGTXT) std::cout << "** (" << __FILE__ << ": " << __FUNCTION__ << ") Gxsm-HwI-DEBUG-MESSAGE **: " << std::endl << " - " << DBGTXT << std::endl
-
-#define XSM_HWI_DEBUG_ERROR(L, DBGTXT)         do { if(debug_level > L) std::cerr << "** (" << __FILE__ << ": " << __FUNCTION__ << ") Gxsm-ERROR-MESSAGE **: " << NEWLINE << " - " << DBGTXT << NEWLINE; } while(0)
-#define XSM_HWI_DEBUG(L, DBGTXT)         do { if(debug_level > L) std::cout << "** (" << __FILE__ << ": " << __FUNCTION__ << ") Gxsm-DEBUG-MESSAGE **: " << NEWLINE << " - " << DBGTXT << NEWLINE; } while(0)
 
 #define GXSM_HWI_TYPE_MANGLE_NAME GXSM_PI_VOID_PREFIX "27" "get_gxsm_hwi_hardware_class" GXSM_PI_VOIDP_SUFFIX
 
