@@ -361,7 +361,7 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
                 if (!f.good())
                         return status=FIO_OPEN_ERR;
         }
-        // calculate extends, test for auto transpose so molecule in in XY plane
+        // calculate extends, test for auto transpose so molecule is in XY plane
         for (int i=0; i<4; ++i)
                 extends_atom_xyz[i] = ext_max_atom_xyz[i] - ext_min_atom_xyz[i];
 
@@ -373,8 +373,10 @@ FIO_STATUS cube_ImExportFile::import(const char *fname){
         tmp = g_strdup_printf("Atom EXT: %g XYZ: %g %g %g\n", extends_atom_xyz[0],extends_atom_xyz[1],extends_atom_xyz[2],extends_atom_xyz[3]);
         g_string_append (FileList, tmp); g_free(tmp);
 
+        int no_transpose = true;
+        
         int min_idx=3;
-        if (extends_atom_xyz[3] < extends_atom_xyz[2] && extends_atom_xyz[3] < extends_atom_xyz[1]){
+        if (no_transpose || (extends_atom_xyz[3] < extends_atom_xyz[2] && extends_atom_xyz[3] < extends_atom_xyz[1])){
                 transpose_xyz[0]=0;
                 transpose_xyz[1]=1;
                 transpose_xyz[2]=2;

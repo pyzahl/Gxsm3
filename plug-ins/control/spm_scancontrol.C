@@ -759,7 +759,7 @@ static void spm_scancontrol_start_callback (GtkWidget *w, void *data){
         ((SPM_ScanControl*)data) -> SetMovieMode (FALSE);
 
         ((SPM_ScanControl*)data) -> wdata = w;
-        gdk_threads_add_idle (SPM_ScanControl::spm_scancontrol_run_scans_task, data);
+        g_idle_add (SPM_ScanControl::spm_scancontrol_run_scans_task, data);
 }
 
 gboolean SPM_ScanControl::spm_scancontrol_run_scans_task (gpointer data){
@@ -856,10 +856,16 @@ gboolean SPM_ScanControl::spm_scancontrol_run_scans_task (gpointer data){
                 return TRUE;
         case 20:
                 SPM_ScanControl::scanning_task (data); // actual scanning "setup, monitoring and update" task
-                if (((SPM_ScanControl*)data) -> scanning_task_stage == 0) // competed?
-                        runmode = 30;
 
-                return TRUE;
+                if (((SPM_ScanControl*)data) -> scanning_task_stage == 0){ // competed?
+                        runmode = 30;
+                        g_idle_add (SPM_ScanControl::spm_scancontrol_run_scans_task, data);
+                } else {
+                        g_timeout_add (50, SPM_ScanControl::spm_scancontrol_run_scans_task, data); // throttle to 50ms
+                }
+
+                return G_SOURCE_REMOVE; // throttled
+                //return TRUE;
         case 30:
                 if (((SPM_ScanControl*)data) -> MovieMode() && !((SPM_ScanControl*)data) -> scan_stopped_by_user){
                         runmode = 11;
@@ -902,7 +908,7 @@ static void spm_scancontrol_movie_callback (GtkWidget *w, void *data){
         ((SPM_ScanControl*)data) -> SetMovieMode (TRUE);
 
         ((SPM_ScanControl*)data) -> wdata = w;
-        gdk_threads_add_idle (SPM_ScanControl::spm_scancontrol_run_scans_task, data);
+        g_idle_add (SPM_ScanControl::spm_scancontrol_run_scans_task, data);
 }
 
 static void spm_scancontrol_pause_callback (GtkWidget *w, void *data){
