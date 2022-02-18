@@ -767,11 +767,18 @@ gboolean SPM_ScanControl::spm_scancontrol_run_scans_task (gpointer data){
 	static guint i=0, l=0;
         static gpointer ss_action = NULL;
         static time_t t0, t; // Scan - Startzeit eintragen 
+        static guint scan_image_update_interval=50;
         
         GtkWidget *w = ((SPM_ScanControl*)data) -> wdata;
 
         switch (runmode){
-        case 0: 
+        case 0:
+                {
+                        GVariant *update_interval = g_settings_get_value (gapp->get_app_settings (), "scan-update-interval");
+                        scan_image_update_interval = (guint)g_variant_get_int32 (update_interval);
+                        if (scan_image_update_interval < 10 || scan_image_update_interval > 1000)
+                                scan_image_update_interval = 55;
+                }
                 gtk_widget_set_sensitive (w, FALSE);
                 gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_EC_NUM_VALUES"), FALSE);
                 gtk_widget_set_sensitive ((GtkWidget*)g_object_get_data( G_OBJECT (w), "SPMCONTROL_MOVIE_BUTTON"), FALSE);
@@ -861,7 +868,7 @@ gboolean SPM_ScanControl::spm_scancontrol_run_scans_task (gpointer data){
                         runmode = 30;
                         g_idle_add (SPM_ScanControl::spm_scancontrol_run_scans_task, data);
                 } else {
-                        g_timeout_add (50, SPM_ScanControl::spm_scancontrol_run_scans_task, data); // throttle to 50ms
+                        g_timeout_add (scan_image_update_interval, SPM_ScanControl::spm_scancontrol_run_scans_task, data); // throttle to 50ms
                 }
 
                 return G_SOURCE_REMOVE; // throttled
