@@ -249,7 +249,7 @@ void MonitorControl::LogEvent (const gchar *Action, const gchar *Entry, gint lev
                 gint lines = gtk_text_buffer_get_line_count (log_buf);
          
                 // append to log buffer view
-#if 1 // obsoleted code:
+#if 0 // obsoleted code:
 	        GTimeVal gt;
                 g_get_current_time (&gt);
                 gchar *tmp = g_time_val_to_iso8601 (&gt);
