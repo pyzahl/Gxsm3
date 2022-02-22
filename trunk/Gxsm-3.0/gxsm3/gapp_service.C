@@ -1105,10 +1105,13 @@ int AppBase::LoadGeometry(){
         g_assert_cmpint (n_stores, ==, WGEO_SIZE);
 
         position_auto ();
-#if 0
+#if 1
         resize_auto ();
 #endif
-        show_auto ();
+        if (strcmp (window_key, "main"))
+                show_auto ();
+        else
+                XSM_DEBUG_GM (DBG_L2, "AppBase::LoadGeometry ... MAIN window: show=always");
 
 	return 0;
 }
