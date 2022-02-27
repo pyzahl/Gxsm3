@@ -2266,86 +2266,166 @@ static PyObject* remote_load(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", idle_data.ret);
 }
 
-static PyObject* remote_import(PyObject *self, PyObject *args)
-{
-	PI_DEBUG(DBG_L2, "pyremote: Importing ");
+static gboolean main_context_import_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 	gchar* fname = NULL;
 	long channel = 0;
-	if (!PyArg_ParseTuple(args, "ls", &channel, &fname))
-		return Py_BuildValue("i", -1);
+        idle_data->ret = -1;
+        
+	if (!PyArg_ParseTuple(idle_data->args, "ls", &channel, &fname)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+        
 	if (fname){
 		gapp->xsm->ActivateChannel (channel);
 		gapp->xsm->load (fname);
-	} else return Py_BuildValue("i", -1);
-	return Py_BuildValue("i", 0);
+                idle_data->ret = 0;
+	}
+
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
+
+
+static PyObject* remote_import(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Importing ");
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_import_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
+}
+
+static gboolean main_context_export_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
+	gchar* fname = NULL;
+	long channel = 0;
+        idle_data->ret = -1;
+        
+	if (!PyArg_ParseTuple(idle_data->args, "ls", &channel, &fname)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+        
+	if (fname){
+		gapp->xsm->ActivateChannel (channel);
+		gapp->xsm->gnuexport (fname);
+                idle_data->ret = 0;
+	}
+
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
 }
 
 static PyObject* remote_export(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Exporting ");
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_export_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
+}
+
+static gboolean main_context_save_drawing_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 	gchar* fname = NULL;
 	long channel = 0;
-	if (!PyArg_ParseTuple(args, "ls", &channel, &fname))
-		return Py_BuildValue("i", -1);
+        long time_index = 0;
+        long layer_index = 0;
+
+        idle_data->ret = -1;
+        
+ 	if (!PyArg_ParseTuple(idle_data->args, "llls", &channel, &time_index, &layer_index, &fname)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+        
 	if (fname){
 		gapp->xsm->ActivateChannel (channel);
-		gapp->xsm->gnuexport (fname);
-	} else return Py_BuildValue("i", -1);
-	return Py_BuildValue("i", 0);
+                ViewControl* vc =gapp->xsm->GetActiveScan()->view->Get_ViewControl();
+
+                if (!vc){
+                        UNSET_WAIT_JOIN_MAIN;
+                        return G_SOURCE_REMOVE;
+                }
+                
+                gapp->xsm->data.display.vlayer = layer_index;
+                gapp->xsm->data.display.vframe = time_index;
+                App::spm_select_layer (NULL, gapp);
+                App::spm_select_time (NULL, gapp);
+                
+                gapp->xsm->GetActiveScan()->mem2d_time_element (time_index)->SetLayer (layer_index);
+                vc->view_file_save_drawing (fname);
+                idle_data->ret = 0;
+	}
+
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
 }
 
 static PyObject* remote_save_drawing (PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: save drawing ");
-	gchar* fname = NULL;
-	long channel = 0;
-        long time_index = 0;
-        long layer_index = 0;
-        
-	if (!PyArg_ParseTuple(args, "llls", &channel, &time_index, &layer_index, &fname))
-		return Py_BuildValue("i", -1);
-
-        if (fname){
-		gapp->xsm->ActivateChannel (channel);
-                ViewControl* vc =gapp->xsm->GetActiveScan()->view->Get_ViewControl();
-
-                if (!vc) return Py_BuildValue("i", -1);
-                
-               gapp->xsm->data.display.vlayer = layer_index;
-               gapp->xsm->data.display.vframe = time_index;
-                App::spm_select_layer (NULL, gapp);
-                App::spm_select_time (NULL, gapp);
-                
-               gapp->xsm->GetActiveScan()->mem2d_time_element (time_index)->SetLayer (layer_index);
-                vc->view_file_save_drawing (fname);
-                
-	} else return Py_BuildValue("i", -1);
-	return Py_BuildValue("i", 0);
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_save_drawing_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
 }
 
 ///////////////////////////////////////////////////////////////
 // BLOCK IV
 ///////////////////////////////////////////////////////////////
 
-static PyObject* remote_set_view_indices (PyObject *self, PyObject *args)
-{
-	PI_DEBUG(DBG_L2, "pyremote: save drawing ");
+static gboolean main_context_set_view_indices_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 	long channel = 0;
         long time_index = 0;
         long layer_index = 0;
+        idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple(args, "lll", &channel, &time_index, &layer_index))
-		return Py_BuildValue("i", -1);
-
-       gapp->xsm->ActivateChannel (channel);
-
-       gapp->xsm->data.display.vlayer = layer_index;
-       gapp->xsm->data.display.vframe = time_index;
+	if (!PyArg_ParseTuple(idle_data->args, "lll", &channel, &time_index, &layer_index)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+        
+        gapp->xsm->ActivateChannel (channel);
+        gapp->xsm->data.display.vlayer = layer_index;
+        gapp->xsm->data.display.vframe = time_index;
         App::spm_select_layer (NULL, gapp);
         App::spm_select_time (NULL, gapp);
+        gapp->xsm->GetActiveScan()->mem2d_time_element (time_index)->SetLayer (layer_index);
+        idle_data->ret = 0;
 
-       gapp->xsm->GetActiveScan()->mem2d_time_element (time_index)->SetLayer (layer_index);
-	return Py_BuildValue("i", 0);
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
+
+
+
+static PyObject* remote_set_view_indices (PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: save drawing ");
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_set_view_indices_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
 }
 
 
@@ -2353,9 +2433,9 @@ static PyObject* remote_set_view_indices (PyObject *self, PyObject *args)
 static gboolean main_context_autodisplay_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-       gapp->enter_thread_safe_no_gui_mode();
-       gapp->xsm->ActiveScan->auto_display();
-       gapp->exit_thread_safe_no_gui_mode();
+        gapp->enter_thread_safe_no_gui_mode();
+        gapp->xsm->ActiveScan->auto_display();
+        gapp->exit_thread_safe_no_gui_mode();
         
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -2388,100 +2468,218 @@ static PyObject* remote_chfname(PyObject *self, PyObject *args)
                 return Py_BuildValue ("s", "EE: invalid channel");
 }
 
+static gboolean main_context_chmodea_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
+	long channel = 0;
+        idle_data->ret = -1;
+        
+	if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+        gapp->xsm->ActivateChannel ((int)channel);
+        idle_data->ret = 0;
+
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
+
 static PyObject* remote_chmodea(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Chmode a ");
-	long channel = 0;
-	if (!PyArg_ParseTuple(args, "l", &channel))
-		return Py_BuildValue("i", -1);
-	return Py_BuildValue ("i",gapp->xsm->ActivateChannel ((int)channel));
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_chmodea_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
+}
 
+static gboolean main_context_chmodex_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
+	long channel = 0;
+        idle_data->ret = -1;
+        
+	if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+        gapp->xsm->SetMode ((int)channel, ID_CH_M_X);
+        idle_data->ret = 0;
+
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
 }
 
 static PyObject* remote_chmodex(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Chmode x ");
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_chmodex_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
+}
+
+static gboolean main_context_chmodem_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 	long channel = 0;
-	if (!PyArg_ParseTuple(args, "l", &channel))
-		return Py_BuildValue("i", -1);
-	return Py_BuildValue ("i",gapp->xsm->SetMode ((int)channel, ID_CH_M_X));
+        idle_data->ret = -1;
+        
+	if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+        gapp->xsm->SetMode ((int)channel, ID_CH_M_MATH);
+        idle_data->ret = 0;
+
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
 }
 
 static PyObject* remote_chmodem(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Chmode m ");
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_chmodem_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
+}
+
+static gboolean main_context_chmoden_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 	long channel = 0;
-	if (!PyArg_ParseTuple(args, "l", &channel))
-		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2,  channel );
-	return Py_BuildValue ("i",gapp->xsm->SetMode ((int)channel, ID_CH_M_MATH));
+        long mode = 0;
+        idle_data->ret = -1;
+
+        if (!PyArg_ParseTuple(idle_data->args, "ll", &channel, &mode)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+        idle_data->ret = 0;
+        gapp->xsm->SetMode ((int)channel, ID_CH_M_X+mode);
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
 }
 
 static PyObject* remote_chmoden(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Chmode n ");
-	long channel = 0;
-	long mode = 0;
-	if (!PyArg_ParseTuple(args, "ll", &channel, &mode))
-		return Py_BuildValue("i", -1);
-        return Py_BuildValue ("i",gapp->xsm->SetMode ((int)channel, ID_CH_M_X+mode));
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_chmoden_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
 }
 
 static PyObject* remote_chmodeno(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chmode no ");
+	PI_DEBUG(DBG_L2, "pyremote: Chmode no -- not available");
+	return Py_BuildValue("i", 0);
+#if 0 // not thread safe, may trigger GUI / dialog 
 	long channel = 0;
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
 	return Py_BuildValue ("i",gapp->xsm->SetView ((int)channel, ID_CH_V_NO));
+#endif
 }
 
 static PyObject* remote_chview1d(PyObject *self, PyObject *args)
 {
+	PI_DEBUG(DBG_L2, "pyremote: Chmode 1d -- not available");
+	return Py_BuildValue("i", 0);
+#if 0 // not thread safe, may trigger GUI / dialog 
 	PI_DEBUG(DBG_L2, "pyremote: Chview 1d.");
 	long channel = 0;
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
 	return Py_BuildValue ("i",gapp->xsm->SetView (channel, ID_CH_V_PROFILE));
+#endif
 }
 
 static PyObject* remote_chview2d(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chview 2d");
+	PI_DEBUG(DBG_L2, "pyremote: Chview 2d -- not avialable");
+	return Py_BuildValue("i", 0);
+#if 0 // not thread safe, may trigger GUI / dialog 
 	long channel = 0;
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
 	return Py_BuildValue ("i",gapp->xsm->SetView ((int)channel, ID_CH_V_GREY));
+#endif
 }
 
 static PyObject* remote_chview3d(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chview 3d.");
+	PI_DEBUG(DBG_L2, "pyremote: Chview 3d -- not available");
+	return Py_BuildValue("i", 0);
+#if 0 // not thread safe, may trigger GUI / dialog 
 	long channel = 0;
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
 	return Py_BuildValue ("i",gapp->xsm->SetView ((int)channel, ID_CH_V_SURFACE));
+#endif
 }
+
+static gboolean main_context_setvm_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
+	gapp->xsm->SetVM (idle_data->ret);
+        idle_data->ret = 0;
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
+
 
 static PyObject* remote_quick(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Quick");
-	gapp->xsm->SetVM(SCAN_V_QUICK);
-	return Py_BuildValue("i", 0);
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.ret = SCAN_V_QUICK; // mode here
+        idle_data.wait_join = true;
+        g_idle_add (main_context_setvm_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
 }
 
 static PyObject* remote_direct(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Direkt");
-	gapp->xsm->SetVM(SCAN_V_DIRECT);
-	return Py_BuildValue("i", 0);
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.ret = SCAN_V_DIRECT; // mode here
+        idle_data.wait_join = true;
+        g_idle_add (main_context_setvm_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
 }
 
 static PyObject* remote_log(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: Log");
-	gapp->xsm->SetVM(SCAN_V_LOG);
-	return Py_BuildValue("i", 0);
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.ret = SCAN_V_LOG; // mode here
+        idle_data.wait_join = true;
+        g_idle_add (main_context_setvm_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -2542,29 +2740,51 @@ static PyObject* remote_echo(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", 0);
 }
 
-static PyObject* remote_logev(PyObject *self, PyObject *args)
-{
 
-	PI_DEBUG(DBG_L2, "pyremote: Log ev.");
+static gboolean main_context_logev_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 	gchar* zeile;
-	if (!PyArg_ParseTuple(args, "s", &zeile))
-		return Py_BuildValue("i", -1);
+	if (!PyArg_ParseTuple(idle_data->args, "s", &zeile)){
+                idle_data->ret = -1;
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
 	if(zeile){
 		gapp->monitorcontrol->LogEvent((char *)"RemoteLogEv", zeile);
 	}else{
 		gapp->monitorcontrol->LogEvent((char *)"RemoteLogEv", (char *)"--");
 	}
-	return Py_BuildValue("i", 0);
+        idle_data->ret = 0;
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
 }
 
-static PyObject* remote_progress_info(PyObject *self, PyObject *args)
+static PyObject* remote_logev(PyObject *self, PyObject *args)
 {
+	PI_DEBUG(DBG_L2, "pyremote: Log ev.");
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.ret = SCAN_V_LOG; // mode here
+        idle_data.wait_join = true;
+        g_idle_add (main_context_logev_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
+}
 
-	PI_DEBUG(DBG_L2, "pyremote: progress_info");
+static gboolean main_context_progress_info_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
         double d;
 	gchar* info;
-	if (!PyArg_ParseTuple(args, "sd", &info, &d))
-		return Py_BuildValue("i", -1);
+        idle_data->ret = -1;
+
+	if (!PyArg_ParseTuple(idle_data->args, "sd", &info, &d)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+
 	if(info){
                 if (d < 0.)
                        gapp->progress_info_new (info, 1);
@@ -2575,26 +2795,58 @@ static PyObject* remote_progress_info(PyObject *self, PyObject *args)
                 if (d > 1.){
                        gapp->progress_info_close ();
                 }
-	}else{
-                return Py_BuildValue("i", -1);
+                idle_data->ret = 0;
 	}
-	return Py_BuildValue("i", 0);
+        
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
 }
 
+static PyObject* remote_progress_info(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: progress_info");
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_progress_info_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
+}
+
+
+static gboolean main_context_add_layer_information_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
+	gchar* info;
+	long layer = 0;
+
+	if (!PyArg_ParseTuple(idle_data->args, "sl", &info, &layer)){
+                idle_data->ret = -1;
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+
+        PI_DEBUG(DBG_L2, info << " to layer info, lv=" << layer );
+        if (gapp->xsm->ActiveScan)
+                if(info && layer>=0 && layer<gapp->xsm->GetActiveScan() -> mem2d->GetNv())
+                       gapp->xsm->GetActiveScan() -> mem2d->add_layer_information ((int)layer, new LayerInformation (info));
+
+        idle_data->ret = 0;
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
 
 static PyObject* remote_add_layer_information(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: add_layer_information to active scan channel");
-
-	gchar* info;
-	long layer = 0;
-	if (!PyArg_ParseTuple(args, "sl", &info, &layer))
-		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2, info << " to layer info, lv=" << layer );
-        if (gapp->xsm->ActiveScan)
-                if(info && layer>=0 && layer<gapp->xsm->GetActiveScan() -> mem2d->GetNv())
-                       gapp->xsm->GetActiveScan() -> mem2d->add_layer_information ((int)layer, new LayerInformation (info));
-	return Py_BuildValue("i", 0);
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_add_layer_information_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
 }
 
 static PyObject* remote_da0(PyObject *self, PyObject *args)
@@ -2611,17 +2863,19 @@ static PyObject* remote_da0(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", 0);
 }
 
-static PyObject* remote_signal_emit(PyObject *self, PyObject *args)
-{
 
-	PI_DEBUG(DBG_L2, "pyremote: Searching menupath ");
+static gboolean main_context_signal_emit_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 	gchar *action;
-	if (!PyArg_ParseTuple(args, "s", &action)) {
-		return Py_BuildValue("i", -1);
-	}
-	PI_DEBUG(DBG_L2, action );
+        idle_data->ret = -1;
 
-	g_message ("pyremote::remote_signal_emit (calling g_action_group_activate_action): %s", action);
+	if (!PyArg_ParseTuple(idle_data->args, "s", &action)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+
+	PI_DEBUG_GM (DBG_L2, "pyremote::remote_signal_emit (calling g_action_group_activate_action): %s", action);
 
         GActionMap *gm = G_ACTION_MAP (g_application_get_default ());
         //        g_message ("pyremote::remote_signal_emit get g_action_map: %s", gm ? "OK":"??");
@@ -2632,11 +2886,24 @@ static PyObject* remote_signal_emit(PyObject *self, PyObject *args)
 
         if (ga){
                 g_action_activate (ga, NULL);
-                return Py_BuildValue("i", 0);
+                idle_data->ret = 0;
         } else {
-                g_warning ("==> action unknown: %s", action);
-                return Py_BuildValue("i", -1);
+                PI_DEBUG_GP_WARNING (DBG_L2, "==> action unknown: %s", action);
         }
+
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
+
+static PyObject* remote_signal_emit(PyObject *self, PyObject *args)
+{
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_signal_emit_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
 }
 
 #if 0
