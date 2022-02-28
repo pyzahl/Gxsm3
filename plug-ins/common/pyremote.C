@@ -2717,6 +2717,39 @@ static PyObject* remote_log(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", idle_data.ret);
 }
 
+static gboolean main_context_math_crop_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
+	long chsrc = 0;
+	long chdst = 1;
+        idle_data->ret = -1;
+
+	if (!PyArg_ParseTuple(idle_data->args, "ll", &chsrc, &chdst)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+
+        if (chsrc != chdst && gapp->xsm->GetScanChannel(chsrc) && gapp->xsm->GetScanChannel(chdst)){
+                if (CropScan (gapp->xsm->GetScanChannel(chsrc), gapp->xsm->GetScanChannel(chdst)) == MATH_OK)
+                    idle_data->ret = 0;
+        }
+        
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
+
+static PyObject* remote_crop(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: Crop");
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_math_crop_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
+}
+
 ///////////////////////////////////////////////////////////////
 // BLOCK V
 // unitbz .   DONE
@@ -3059,6 +3092,7 @@ static PyMethodDef GxsmPyMethods[] = {
 	{"quick", remote_quick, METH_VARARGS, "Quick."},
 	{"direct", remote_direct, METH_VARARGS, "Direct."},
 	{"log", remote_log, METH_VARARGS, "Log."},
+	{"crop", remote_crop, METH_VARARGS, "Crop (ch-src, ch-dst)"},
 
 	// BLOCK V
 	{"unitbz", remote_unitbz, METH_VARARGS, "UnitBZ."},
