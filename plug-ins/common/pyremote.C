@@ -1952,19 +1952,23 @@ static PyObject* remote_getobject(PyObject *self, PyObject *args)
         return Py_BuildValue("s", "None");
 }
 
+static gboolean main_context_addmobject_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
+	long ch,grp,x,y;
+        gchar *id;
+        idle_data->ret = -1;
+        
+	if (!PyArg_ParseTuple (idle_data->args, "lslll", &ch, &id, &grp, &x, &y)){
+		//return Py_BuildValue("s", "Invalid Parameters. [ll]: ch, nth");
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
 
-static PyObject* remote_addmobject(PyObject *self, PyObject *args)
-{
 	const gchar *marker_group[] = { 
 		"*Marker:red", "*Marker:green", "*Marker:blue", "*Marker:yellow", "*Marker:cyan", "*Marker:magenta",  
 		NULL };
 	PI_DEBUG(DBG_L2, "pyremote:putobject");
-
-	long ch,grp,x,y;
-        gchar *id;
-        
-	if (!PyArg_ParseTuple (args, "lslll", &ch, &id, &grp, &x, &y))
-		return Py_BuildValue("s", "Invalid Parameters. [ll]: ch, nth");
 
 	Scan *src =gapp->xsm->GetScanChannel (ch);
         if (grp < 0 || grp > 6) grp=0; // silently set 0 if out of range
@@ -1987,7 +1991,26 @@ static PyObject* remote_addmobject(PyObject *self, PyObject *args)
                 vo->show_label (s);
                 vo->remake_node_markers ();
         }
-        return Py_BuildValue("i", 0);
+
+        idle_data->ret = 0;
+       
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
+
+
+static PyObject* remote_addmobject(PyObject *self, PyObject *args)
+{
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_addmobject_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+        if (idle_data.ret)
+                return Py_BuildValue("s", "Invalid Parameters. [ll]: ch, nth");
+        else 
+                return Py_BuildValue("s", "OK");
 }
 
 static PyObject* remote_stopscan(PyObject *self, PyObject *args)
@@ -2121,16 +2144,28 @@ static PyObject* remote_scanline(PyObject *self, PyObject *args)
 static gboolean main_context_TEMPLATE_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
+	long channel = 0;
+        idle_data->ret = -1;
         
+	if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+        gapp->xsm->ActivateChannel ((int)channel);
+        idle_data->ret = 0;
+
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
 }
 {
         IDLE_from_thread_data idle_data;
         idle_data.string = "Toolbar_Scan_Partial_Line";
+        idle_data.self = self;
+        idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_TEMPLATE_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
 }
 #endif
 
