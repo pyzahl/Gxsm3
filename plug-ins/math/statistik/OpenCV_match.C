@@ -291,7 +291,7 @@ static gboolean opencvmatch_run(Scan *Src, Scan *Dest)
 
 	// do matching via OpenCV library and some data post processing
 	Mat img_result, img_match, img_tmp, img_t8, img_r8;
-	matchTemplate (img1, img2, img_match, method);
+	matchTemplate (img1, img2, img_match, method); // removed last NULL arg
 	abs (img_match);
 	pow (img_match, 3., img_result);
 	threshold(img_result, img_tmp, match_threshold, 0., THRESH_TOZERO);
