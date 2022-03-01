@@ -314,7 +314,7 @@ public:
 
 class TopoGraphicScan : public Scan{
 public:
-	TopoGraphicScan(int vtype=0, int vflg=0, int ChNo=-1, SCAN_DATA *vd=0);
+	TopoGraphicScan(int vtype=0, int vflg=0, int ChNo=-1, SCAN_DATA *vd=0, ZD_TYPE mtyp=ZD_FLOAT);
 	virtual ~TopoGraphicScan();
   
 private:  

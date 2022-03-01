@@ -2497,9 +2497,10 @@ static PyObject* remote_chfname(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
         int ch=channel;
-        if (gapp->xsm->GetScanChannel(ch))
-                return Py_BuildValue ("s",gapp->xsm->GetScanChannel (ch)->storage_manager.get_filename());
-        else
+        if (gapp->xsm->GetScanChannel(ch)){
+                const gchar *tmp = gapp->xsm->GetScanChannel (ch)->storage_manager.get_filename();
+                return Py_BuildValue ("s", tmp ? tmp : gapp->xsm->GetScanChannel (ch)->data.ui.originalname);
+        } else
                 return Py_BuildValue ("s", "EE: invalid channel");
 }
 
@@ -2729,9 +2730,17 @@ static gboolean main_context_math_crop_from_thread (gpointer user_data){
                 return G_SOURCE_REMOVE;
         }
 
+        if (!gapp->xsm->GetScanChannel (chdst))
+                gapp->xsm->ActivateChannel (chdst);
+
         if (chsrc != chdst && gapp->xsm->GetScanChannel(chsrc) && gapp->xsm->GetScanChannel(chdst)){
-                if (CropScan (gapp->xsm->GetScanChannel(chsrc), gapp->xsm->GetScanChannel(chdst)) == MATH_OK)
+                if (CropScan (gapp->xsm->GetScanChannel (chsrc), gapp->xsm->GetScanChannel (chdst)) == MATH_OK)
                     idle_data->ret = 0;
+
+                gapp->enter_thread_safe_no_gui_mode();
+                gapp->xsm->ActivateChannel (chdst);
+                gapp->xsm->ActiveScan->auto_display();
+                gapp->exit_thread_safe_no_gui_mode();
         }
         
         UNSET_WAIT_JOIN_MAIN;
