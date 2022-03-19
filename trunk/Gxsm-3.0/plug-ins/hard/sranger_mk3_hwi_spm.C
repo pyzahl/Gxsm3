@@ -259,7 +259,7 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
                 if ( (time_of_last_reading_S+max_age_S) < g_get_real_time () ){
                         time_of_last_reading_S = g_get_real_time ();
 
-                        lseek (dsp, magic_data.statemachine, SRANGER_MK23_SEEK_DATA_SPACE);  // TEST NON ATOMIC --- | SRANGER_MK23_SEEK_ATOMIC);
+                        lseek (dsp, magic_data.statemachine, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                         sr_read  (dsp, &dsp_statemachine, sizeof (dsp_statemachine)); 
                         CONV_32 (dsp_statemachine.mode);
                         CONV_32 (dsp_statemachine.DataProcessTime);
@@ -268,19 +268,19 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
                         CONV_32 (dsp_statemachine.DataProcessReentryPeak);
                         CONV_32 (dsp_statemachine.IdleTime_Peak);
 
-                        lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE);  // TEST NON ATOMIC --- | SRANGER_MK23_SEEK_ATOMIC);
+                        lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                         sr_read  (dsp, &dsp_scan, sizeof (dsp_scan)); 
                         CONV_32 (dsp_scan.pflg);
 
-                        lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE);  // TEST NON ATOMIC --- | SRANGER_MK23_SEEK_ATOMIC);
+                        lseek (dsp, magic_data.move, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                         sr_read (dsp, &dsp_move, sizeof (dsp_move)); 
                         CONV_32 (dsp_move.pflg);
 
-                        lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE);  // TEST NON ATOMIC --- | SRANGER_MK23_SEEK_ATOMIC);
+                        lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                         sr_read  (dsp, &dsp_probe, sizeof (dsp_probe)); 
                         CONV_32 (dsp_probe.pflg);
 
-                        lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE);  // TEST NON ATOMIC --- | SRANGER_MK23_SEEK_ATOMIC);
+                        lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                         sr_read  (dsp, &dsp_autoapp, sizeof (dsp_autoapp)); 
                         CONV_32 (dsp_autoapp.pflg);
                 }
@@ -1028,17 +1028,22 @@ void sranger_mk3_hwi_spm::reset_scandata_fifo(int stall){
 gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
         const gint64 timeout = 5000000; // 5s
         const gint64 max_age = 20000;   // 20ms
+        static int mutex_self = 0;
         static gint64 time_of_next_reading = 0; // abs time in us
         static gint64 time_of_timeout = 0; // abs time in us
         static int state = 0;
         static AREA_SCAN_MK3 dsp_scan;
+        static AREA_SCAN_MK3 dsp_scan_verify;
 	static PROBE_MK3 dsp_probe;
 
-        //g_print ("\nTIP2ORIGIN: STATE %d  ** ", state);
+        // g_message ("TIP2ORIGIN: STATE %d  ** ", state);
 
         switch (state){
         case 0:
+                if (mutex_self)
+                        return FALSE;
                 // make sure no conflicts
+                usleep(20000); // make sure status is not buffered!
                 if (! RTQuery_clear_to_move_tip ()){
                         gapp->monitorcontrol->LogEvent ("MovetoSXY", "Instrument is busy with VP or conflciting task: skipping requst.", 3);
                         g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- Instrument is busy with VP or conflciting task. Skipping.");
@@ -1067,14 +1072,40 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
                 // get current position
                 lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                 sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
+                usleep (10000); // give some time
+                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_read  (dsp, &dsp_scan_verify, sizeof (dsp_scan_verify));
 
+                // verify
+                {
+                        int jj=10;
+                        while (long_2_sranger_long (dsp_scan.xyz_vec[i_X]) != long_2_sranger_long (dsp_scan_verify.xyz_vec[i_X])
+                               ||
+                               long_2_sranger_long (dsp_scan.xyz_vec[i_Y]) != long_2_sranger_long (dsp_scan_verify.xyz_vec[i_Y])){
+
+                                if (jj < 10)
+                                        g_warning ("TIP MOVE START: DSP SCAN XYZ VEC inconsistent {%d} [X%d != %d || Y %d != %d] -- retry", jj,
+                                                   long_2_sranger_long (dsp_scan.xyz_vec[i_X]), long_2_sranger_long (dsp_scan_verify.xyz_vec[i_X]),
+                                                   long_2_sranger_long (dsp_scan.xyz_vec[i_Y]), long_2_sranger_long (dsp_scan_verify.xyz_vec[i_Y]));
+                                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
+                                usleep (14000); // give some time
+                                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                sr_read  (dsp, &dsp_scan, sizeof (dsp_scan_verify));
+                                if (! --jj) return FALSE;
+                        }
+                }
+
+                
                 reset_scandata_fifo ();
                 {
                         // setup move:
                         // move tip from current position to Origin i.e. x,y
                         dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
-                       dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
+                        dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
                         SRANGER_DEBUG("SR:SCAN_XY last: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
+
+                        // g_message ("SR:SCAN_XY last: %d, %d", (dsp_scan.xyz_vec[i_X]>>16), (dsp_scan.xyz_vec[i_Y]>>16));
                         //gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (probe active): skipping.", 3);
 
                         double Mdx = x - (double)dsp_scan.xyz_vec[i_X];
@@ -1086,6 +1117,8 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
                         dsp_scan.fm_dy = (long)round(Mdy/steps);
                         dsp_scan.num_steps_move_xy = (long)steps;
                         SRANGER_DEBUG("SR:SCAN_XY move: dXdY=" << Mdx <<", "<< Mdy << " #steps=" << steps);
+
+                        // g_message ("SR:SCAN_XY move: dXdY= %d, %d   #steps= %d", Mdx, Mdy, steps);
 
                         double zx_ratio = sranger_mk2_hwi_pi.app->xsm->Inst->Dig2XA (1) / sranger_mk2_hwi_pi.app->xsm->Inst->Dig2ZA (1);
                         double zy_ratio = sranger_mk2_hwi_pi.app->xsm->Inst->Dig2YA (1) / sranger_mk2_hwi_pi.app->xsm->Inst->Dig2ZA (1);
@@ -1107,6 +1140,8 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
                         // initiate "return to origin" "dummy" scan now
                         lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                         sr_write (dsp, &dsp_scan, (MAX_WRITE_SCAN)<<1);
+
+                        mutex_self = 1; // block until done
                 }
                 time_of_timeout = g_get_real_time () + timeout;
                 time_of_next_reading = g_get_real_time () + max_age;
@@ -1117,8 +1152,13 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
                 if ( time_of_timeout > g_get_real_time () ){
                         // check and wait until ready
                         if (time_of_next_reading < g_get_real_time () ){
+                                usleep(20000); // 10ms
                                 lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                                 sr_read  (dsp, &dsp_scan, sizeof (dsp_scan)); 
+                                usleep (10000); // give some time
+                                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                sr_read  (dsp, &dsp_scan, sizeof (dsp_scan_verify));
+                                
                                 CONV_32 (dsp_scan.pflg);
                                 time_of_next_reading = g_get_real_time () + max_age;
                                 // pop all remaining events
@@ -1128,6 +1168,28 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
                         if (dsp_scan.pflg) {
                                 return TRUE; // wait
                         } else {
+
+                                mutex_self = 0; // un block
+                                // verify
+                                {
+                                        int jj=10;
+                                        while (long_2_sranger_long (dsp_scan.xyz_vec[i_X]) != long_2_sranger_long (dsp_scan_verify.xyz_vec[i_X])
+                                               ||
+                                               long_2_sranger_long (dsp_scan.xyz_vec[i_Y]) != long_2_sranger_long (dsp_scan_verify.xyz_vec[i_Y])){
+
+                                                if (jj < 10)
+                                                        g_warning ("TIP MOVE END: DSP SCAN XYZ VEC inconsistent {%d} [X%d != %d || Y %d != %d] -- retry", jj,
+                                                                   long_2_sranger_long (dsp_scan.xyz_vec[i_X]), long_2_sranger_long (dsp_scan_verify.xyz_vec[i_X]),
+                                                                   long_2_sranger_long (dsp_scan.xyz_vec[i_Y]), long_2_sranger_long (dsp_scan_verify.xyz_vec[i_Y]));
+                                                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                                sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
+                                                usleep (14000); // give some time
+                                                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                                sr_read  (dsp, &dsp_scan_verify, sizeof (dsp_scan_verify));
+                                                if (! --jj) return FALSE;
+                                        }
+                                }
+                                
                                 dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
                                 dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
                                 SRANGER_DEBUG("SR:SCAN_XY fin: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
@@ -1137,11 +1199,13 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
                 } else {
                         g_warning ("WW sranger_mk3_hwi_spm::tip to origin/XY -- timeout 5s exceeded.");
                         // gapp->check_events ("tip to origin/XY timeout reached.\nIgnoring and Continuing.");
+                        mutex_self = 0; // un block
                         state = 0;
                         return FALSE;
                 }
         }
         g_warning ("sranger_mk3_hwi_spm::tip to origin/XY STATE SYSTEM ERROR.");
+        mutex_self = 0; // un block
         state = 0;
         return FALSE;
 }
