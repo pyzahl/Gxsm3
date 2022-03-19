@@ -1020,6 +1020,11 @@ void sranger_mk3_hwi_spm::reset_scandata_fifo(int stall){
 	sr_write (dsp, &dsp_fifo, (MAX_WRITE_DATA_FIFO_SETUP)<<1);
 }
 
+
+//        return G_SOURCE_REMOVE; (TRUE)
+//        return G_SOURCE_CONTINUE;
+
+
 gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
         const gint64 timeout = 5000000; // 5s
         const gint64 max_age = 20000;   // 20ms
@@ -1039,7 +1044,7 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
                         g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- Instrument is busy with VP or conflciting task. Skipping.");
                         return FALSE;
                 }
-                
+#if 0
                 lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                 sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
                 CONV_32 (dsp_scan.pflg);
@@ -1058,7 +1063,7 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
                         g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- probe active! [%x] -- skipping.", dsp_probe.pflg);
                         return FALSE;
                 }
-
+#endif
                 // get current position
                 lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                 sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
@@ -1068,7 +1073,7 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
                         // setup move:
                         // move tip from current position to Origin i.e. x,y
                         dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);
-                        dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
+                       dsp_scan.xyz_vec[i_Y] = long_2_sranger_long (dsp_scan.xyz_vec[i_Y]);
                         SRANGER_DEBUG("SR:SCAN_XY last: " << (dsp_scan.xyz_vec[i_X]>>16) << ", " << (dsp_scan.xyz_vec[i_Y]>>16));
                         //gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (probe active): skipping.", 3);
 

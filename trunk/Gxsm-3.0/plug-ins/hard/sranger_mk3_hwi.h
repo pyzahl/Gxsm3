@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -22,8 +24,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-
-/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
 
 #ifndef __SRANGER_MK3_HWI_H
 #define __SRANGER_MK3_HWI_H
@@ -108,7 +108,7 @@ public:
 	/* high level calls for instrtument condition checks */
 	virtual gint RTQuery_clear_to_start_scan (){ double v1,v2,v3; int flags; RTQuery("s", v1,v2,v3); flags=(int)v1; return (flags&(6|8|16|128)) ? 0:1; };
 	virtual gint RTQuery_clear_to_start_probe (){  double v1,v2,v3; int flags; RTQuery("s", v1,v2,v3); flags=(int)v1; return (flags&(6|8|16|128)) ? 0:1; };
-	virtual gint RTQuery_clear_to_move_tip (){  double v1,v2,v3; int flags; RTQuery("s", v1,v2,v3); flags=(int)v1; return (flags&(8)) ? 0:1; };
+	virtual gint RTQuery_clear_to_move_tip (){  double v1,v2,v3; int flags; RTQuery("s", v1,v2,v3); flags=(int)v1; return (flags&(6|8|16|128)) ? 0:1; };
 
 	virtual double GetUserParam (gint n, gchar *id=NULL);
 	virtual gint   SetUserParam (gint n, gchar *id=NULL, double value=0.);
@@ -354,6 +354,7 @@ class sranger_mk3_hwi_spm : public sranger_mk3_hwi_dev{
 	virtual void set_ldc (double dxdt=0., double dydt=0., double dzdt=0.);
 
 	void reset_scandata_fifo (int stall=0); //!< reset scan data FIFO buffer
+
 	gboolean tip_to_origin (double x=0., double y=0.); //!< move tip to origin (default) or position in scan coordinate system
 
  protected:
