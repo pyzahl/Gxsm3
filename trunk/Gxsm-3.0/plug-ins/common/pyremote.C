@@ -1297,11 +1297,12 @@ static gboolean main_context_remote_moveto_scan_xy_from_thread (gpointer user_da
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 
-       gapp->xsm->hardware->MovetoXY
-                (R2INT(gapp->xsm->Inst->XA2Dig(gapp->xsm->data.s.sx)),
-                 R2INT(gapp->xsm->Inst->YA2Dig(gapp->xsm->data.s.sy)));
+        if (gapp->xsm->hardware->MovetoXY
+            (R2INT(gapp->xsm->Inst->XA2Dig(gapp->xsm->data.s.sx)),
+             R2INT(gapp->xsm->Inst->YA2Dig(gapp->xsm->data.s.sy))))
+                return G_SOURCE_CONTINUE;
         
-       gapp->spm_update_all ();
+        gapp->spm_update_all ();
 
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
