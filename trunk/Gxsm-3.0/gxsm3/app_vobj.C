@@ -1669,6 +1669,22 @@ void VObPoint::update_offset(){
 	gapp->spm_update_all ();
 }
 
+
+
+gboolean VObPoint::update_scanpos_idle(gpointer data){
+	
+        // move to scan position relative to offset in scan coordinate system (may be rotated)
+        if (!gapp->xsm->hardware->MovetoXY (
+                                            R2INT(gapp->xsm->Inst->XA2Dig(gapp->xsm->data.s.sx)),
+                                            R2INT(gapp->xsm->Inst->YA2Dig(gapp->xsm->data.s.sy)))
+            ){
+
+                gapp->spm_update_all ();
+                return G_SOURCE_REMOVE;
+        }
+        return G_SOURCE_CONTINUE;
+}
+
 void VObPoint::update_scanposition(){
 	double x,y;
 	x = (double)xy[0]*vinfo->GetQfac ();
@@ -1683,12 +1699,17 @@ void VObPoint::update_scanposition(){
 				gapp->xsm->data.s.sx, gapp->xsm->data.s.sy, 
 				SCAN_COORD_RELATIVE);
 
-	while (gapp->xsm->hardware->MovetoXY
+
+        g_idle_add (update_scanpos_idle, NULL);
+
+#if 0
+        while (gapp->xsm->hardware->MovetoXY
                (R2INT(gapp->xsm->Inst->XA2Dig(gapp->xsm->data.s.sx)),
                 R2INT(gapp->xsm->Inst->YA2Dig(gapp->xsm->data.s.sy)))
                ); // G-IDLE ME
 
 	gapp->spm_update_all ();
+#endif
 }
 
 

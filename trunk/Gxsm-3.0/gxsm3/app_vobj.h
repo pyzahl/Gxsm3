@@ -377,6 +377,7 @@ class VObPoint : public VObject{
 
  private:
 	void update_offset();
+        static gboolean update_scanpos_idle(gpointer data);
 	void update_scanposition();
 	int follow;
 };
