@@ -1432,17 +1432,17 @@ LNG sranger_mk3_hwi_dev::bz_unpack (int i, DSP_UINT32 *fifo_l, int &fi, int &cou
 // ==================================================
  
 // FIFO watch verbosity...
-//# define LOGMSGS0(X) PI_DEBUG (DBG_L1, X)
-# define LOGMSGS0(X)
+# define LOGMSGS0(X) PI_DEBUG (DBG_L1, X)
+//# define LOGMSGS0(X)
 
 # define LOGMSGS(X) PI_DEBUG (DBG_L2, X)
 //# define LOGMSGS(X)
 
-//# define LOGMSGS1(X) PI_DEBUG (DBG_L4, X)
-# define LOGMSGS1(X)
+# define LOGMSGS1(X) PI_DEBUG (DBG_L4, X)
+//# define LOGMSGS1(X)
 
-//# define LOGMSGS2(X) PI_DEBUG (DBG_L5, X)
-# define LOGMSGS2(X)
+# define LOGMSGS2(X) PI_DEBUG (DBG_L5, X)
+//# define LOGMSGS2(X)
 
 // ProbeFifoReadThread:
 // Independent ProbeFifoRead Thread (manual probe)

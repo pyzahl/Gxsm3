@@ -1026,8 +1026,8 @@ void sranger_mk3_hwi_spm::reset_scandata_fifo(int stall){
 
 
 gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
-        const gint64 timeout = 5000000; // 5s
-        const gint64 max_age = 20000;   // 20ms
+        const gint64 timeout = 15000000; // 15s
+        const gint64 max_age = 200000;   // 200ms
         static int mutex_self = 0;
         static gint64 time_of_next_reading = 0; // abs time in us
         static gint64 time_of_timeout = 0; // abs time in us
@@ -1049,26 +1049,7 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
                         g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- Instrument is busy with VP or conflciting task. Skipping.");
                         return FALSE;
                 }
-#if 0
-                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-                sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
-                CONV_32 (dsp_scan.pflg);
-                if (dsp_scan.pflg){
-                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (scanning/moving in progress): skipping.", 3);
-                        g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- scanning/moving (busy)! [%x] -- skipping.", dsp_scan.pflg);
-                        state = 0;
-                        return FALSE;
-                }
-        
-                lseek (dsp, magic_data.probe, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-                sr_read  (dsp, &dsp_probe, sizeof (dsp_probe));
-                CONV_32 (dsp_probe.pflg);
-                if (dsp_probe.pflg){
-                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "tip_to_origin is busy (probe active): skipping.", 3);
-                        g_warning ("sranger_mk3_hwi_spm::tip_to_origin -- probe active! [%x] -- skipping.", dsp_probe.pflg);
-                        return FALSE;
-                }
-#endif
+
                 // get current position
                 lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                 sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
@@ -1152,7 +1133,6 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
                 if ( time_of_timeout > g_get_real_time () ){
                         // check and wait until ready
                         if (time_of_next_reading < g_get_real_time () ){
-                                usleep(20000); // 10ms
                                 lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                                 sr_read  (dsp, &dsp_scan, sizeof (dsp_scan)); 
                                 usleep (10000); // give some time
@@ -1445,18 +1425,28 @@ gboolean sranger_mk3_hwi_spm::MovetoXY(double x, double y){
                                 tip_pos[1] =  y * Q16;
                                 if (tip_to_origin (tip_pos[0], tip_pos[1])){
                                         state = 1;
+                                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "in progress", 3);
                                         return TRUE;
-                                } else return FALSE; // completed
-                        } else return FALSE; // nothing to do
+                                } else{
+                                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "error, busy. aborting.", 3);
+                                        return FALSE; // completed or error/busy
+                                }
+                        } else {
+                                gapp->monitorcontrol->LogEvent ("MovetoSXY", "already at requested position.", 3);
+                                return FALSE; // nothing to do
+                        }
                 } else return FALSE; // forbidden, nothing to do
         case 1:
                 if (tip_to_origin (tip_pos[0], tip_pos[1])){
+                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "moving tip...", 3);
                         return TRUE; // wait for move to complete
                 } else {
                         state = 0;
+                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "completed.", 3);
                         return FALSE; // completed
                 }
         }
+        gapp->monitorcontrol->LogEvent ("MovetoSXY", "State Error.", 3);
         return FALSE; // ERROR, abort
 }
 
