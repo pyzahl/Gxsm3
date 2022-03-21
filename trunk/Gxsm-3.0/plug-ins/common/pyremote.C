@@ -1327,7 +1327,7 @@ static PyObject* remote_moveto_scan_xy(PyObject *self, PyObject *args)
 
                 IDLE_from_thread_data idle_data;
                 idle_data.wait_join = true;
-                g_idle_add (main_context_remote_moveto_scan_xy_from_thread, (gpointer)&idle_data);
+                g_timeout_add (50, main_context_remote_moveto_scan_xy_from_thread, (gpointer)&idle_data);
                 WAIT_JOIN_MAIN;
         
                 return Py_BuildValue("i", 0);
