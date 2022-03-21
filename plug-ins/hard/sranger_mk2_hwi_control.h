@@ -447,10 +447,15 @@ class DSPControl : public AppBase{
 		DSPControl *dspc = (DSPControl*) data;
 
                 // make probe vector data is not locked for vector manipulations, wait until available (fast)
-                while (dspc->pv_lock)
-                        usleep (1000);
+                if (dspc->pv_lock){
+                        g_message ("idle_callback for graph update: waiting for pv_lock to clear.");
+                        return TRUE;
+                }
 
                 dspc->gr_lock = TRUE;
+
+                //g_message ("idle_callback -- graph calling update.");
+                
 		dspc->Probing_graph_callback (NULL, dspc, dspc->idle_callback_data_ff);
                 dspc->gr_lock = FALSE;
                 
@@ -460,7 +465,7 @@ class DSPControl : public AppBase{
 	};
 		
 	void Probing_graph_update_thread_safe (int finish_flag=0) {
-                static int timeout_count=0;
+                int timeout_count=0;
                 static int last_index=0;
                 static int count=0;
                 // g_message ("Probing_graph_update_thread_safe: current index=%d, last=%d", current_probe_data_index, last_index);
@@ -474,12 +479,12 @@ class DSPControl : public AppBase{
                 // call: Probing_graph_callback (NULL, this, finish_flag);
                 // check for --  idle_id ??
                 while (idle_id && finish_flag){
-                        g_message ("Probing_graph_update_thread_safe: Finish_flag set -- waiting for last update to complete. current index=%d, last=%d, #toc=%d",
-                                   current_probe_data_index, last_index, timeout_count);
+                        g_message ("Probing_graph_update_thread_safe: Finish_flag set -- waiting for last update to complete. current index=%d, last=%d, #time out count=%d",
+                                   current_probe_data_index, last_index, 30-timeout_count);
                         usleep(250000);
                         ++timeout_count;
                         
-                        if (last_index == current_probe_data_index && timeout_count > 10){
+                        if (last_index == current_probe_data_index && timeout_count > 30){
                                 g_warning ("Probing_graph_update_thread_safe: Trying auto recovery from stalled update (timeout reached). current index=%d, last=%d",
                                          current_probe_data_index, last_index);
                                 idle_id = 0;
@@ -492,7 +497,7 @@ class DSPControl : public AppBase{
                         //           count, current_probe_data_index);
                         count=0;
                         idle_callback_data_ff = finish_flag;
-                        idle_id = gdk_threads_add_idle (DSPControl::idle_callback, this);
+                        idle_id = g_timeout_add (100, DSPControl::idle_callback, this);
                         if (finish_flag){
                                 g_message ("Probing_graph_update_thread_safe: plot update. Finished. Current data index=%d",
                                            current_probe_data_index);
@@ -521,7 +526,7 @@ class DSPControl : public AppBase{
                 // execute GUI updated thread safe
                 if (idle_id_update_gui == 0){
                         idle_callback_data_fn = g_strdup (fntmp);
-                        idle_id_update_gui = gdk_threads_add_idle (DSPControl::idle_callback_update_gui, this);
+                        idle_id_update_gui = g_timeout_add (100, DSPControl::idle_callback_update_gui, this);
                 } else {
                         g_warning ("update_gui_thread_safe: is busy, skipping [%s].", fntmp);
                 }
