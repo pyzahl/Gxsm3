@@ -1223,8 +1223,8 @@ static PyObject* remote_set(PyObject *self, PyObject *args)
 static gboolean main_context_action_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gchar *parameter;
-        gchar *value;
+	gchar *parameter=NULL;
+        gchar *value=NULL;
         idle_data->ret = -1;
 
 	if (!PyArg_ParseTuple(idle_data->args, "s|s", &parameter, &value)){
@@ -1232,7 +1232,7 @@ static gboolean main_context_action_from_thread (gpointer user_data){
                 return G_SOURCE_REMOVE;
         }
 
-	PI_DEBUG(DBG_L2, "pyremote Action ** idle cb: value:" << parameter << ", " << value );
+        PI_DEBUG(DBG_L2, "pyremote Action ** idle cb: value:" << parameter << ", " << (value?value:"N/A") );
 
 	gchar *list[] = {(char *)"action", parameter, value, NULL};
 	g_slist_foreach(gapp->RemoteActionList, (GFunc) CbAction_ra, (gpointer)list);

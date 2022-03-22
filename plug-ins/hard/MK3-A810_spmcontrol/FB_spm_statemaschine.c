@@ -166,6 +166,15 @@ int idle_task_002(void){
 
 #ifdef MIN_PAC_BUILD // AREA_SCAN_TASK non RT task
 
+        // MASK kernel ISR???
+        
+        /*
+          IER &= ~0x0010; // Disable INT4 (kernel)
+          ... Critical code
+          IER |= 0x0010; // Enable INT4 (kernel)  
+        */
+        //IER &= ~0x0010; // Disable INT4 (kernel)
+
         // ============================================================
         // PROCESS MODULE: AREA SCAN
         // ============================================================
@@ -236,6 +245,8 @@ int idle_task_002(void){
         else scan.z_offset_xyslope = s_xymult; // normally this should do it
                 
 #endif
+        //IER |= 0x0010; // Enable INT4 (kernel)  
+
         return 0;
 }
 
