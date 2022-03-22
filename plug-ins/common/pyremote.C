@@ -1299,8 +1299,11 @@ static gboolean main_context_remote_moveto_scan_xy_from_thread (gpointer user_da
 
         if (gapp->xsm->hardware->MovetoXY
             (R2INT(gapp->xsm->Inst->XA2Dig(gapp->xsm->data.s.sx)),
-             R2INT(gapp->xsm->Inst->YA2Dig(gapp->xsm->data.s.sy))))
+             R2INT(gapp->xsm->Inst->YA2Dig(gapp->xsm->data.s.sy)))){
+                if (gapp->xsm->ActiveScan)
+                        gapp->xsm->ActiveScan->auto_display();
                 return G_SOURCE_CONTINUE;
+        }
         
         gapp->spm_update_all ();
 
