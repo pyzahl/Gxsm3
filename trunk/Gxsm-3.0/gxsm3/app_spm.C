@@ -246,8 +246,16 @@ gboolean App::spm_offset_check_idle(gpointer app){
         if (!((App*)app)->xsm->hardware->MovetoXY(0, 0)){ // returns G_SOURCE_REMOVE (FALSE) when completed 
                 SCAN_DATA *data = &((App*)app)->xsm->data;
                 ((App*)app)->xsm->hardware->SetAlpha(data->s.alpha);
+                // TIP POS UPDATE
+                if (((App*)app)->xsm->ActiveScan)
+                        ((App*)app)->xsm->ActiveScan->auto_display();
                 return G_SOURCE_REMOVE;
         }
+
+        // TIP POS UPDATE
+        if (((App*)app)->xsm->ActiveScan)
+                ((App*)app)->xsm->ActiveScan->auto_display();
+
         return G_SOURCE_CONTINUE;
 }
 
@@ -284,7 +292,7 @@ void App::spm_offset_check(Param_Control* pcs, gpointer app){
         if (!pcs){
                 // move tip to center of scan ( 0,0 ) now also
                 //data->s.sx = data->s.sy = 0.;
-                g_idle_add (spm_offset_check_idle, app);
+                g_timeout_add (33, spm_offset_check_idle, app);
 
                 //while (((App*)app)->xsm->hardware->MovetoXY(0, 0)); // G-IDLE ME
         } else {
@@ -326,26 +334,22 @@ gboolean App::spm_scanpos_check_idle(gpointer app){
                                                    R2INT(Inst->YA2Dig(data->s.sy)))){
 
                 ((App*)app)->spm_update_all();
+                // TIP POS UPDATE
+                if (((App*)app)->xsm->ActiveScan)
+                        ((App*)app)->xsm->ActiveScan->auto_display();
                 return G_SOURCE_REMOVE;
         }
+
+        // TIP POS UPDATE
+        if (((App*)app)->xsm->ActiveScan)
+                ((App*)app)->xsm->ActiveScan->auto_display();
+
         return G_SOURCE_CONTINUE;
 }
 
 void App::spm_scanpos_check(Param_Control* pcs, gpointer app){
         XSM_DEBUG(DBG_L3,  "offset check"  );
-        g_idle_add (spm_offset_check_idle, app);
-
-#if 0
-        XSM_Instrument *Inst = ((App*)app)->xsm->Inst;
-        SCAN_DATA *data = &((App*)app)->xsm->data;
-	
-        // move to scan position relative to offset in scan coordinate system (may be rotated)
-        while (((App*)app)->xsm->hardware->MovetoXY(R2INT(Inst->XA2Dig(data->s.sx)),
-                                             R2INT(Inst->YA2Dig(data->s.sy)))
-               ); // G-IDLE ME
-
-        ((App*)app)->spm_update_all();
-#endif
+        g_timeout_add (33, spm_offset_check_idle, app);
 }
 
 void App::spm_nlayer_update(Param_Control* pcs, gpointer app){

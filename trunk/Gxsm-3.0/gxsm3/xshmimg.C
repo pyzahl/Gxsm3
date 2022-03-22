@@ -172,7 +172,9 @@ void ShmImage2D::draw_callback (cairo_t *cr, gboolean draw_red_line, gboolean dr
         }
         if (draw_tip){
                 double x,y,z;
-                gapp->xsm->hardware->RTQuery ("P", x,y,z);
+                gboolean tip_moving=false;
+                if (!gapp->xsm->hardware->RTQuery ("P", x,y,z))
+                        tip_moving = true; // not scan motion, move scan xy action
                 //g_message ("PXYZ: %g %g %g", x,y,z);
 
                 x *= ZoomFac;
@@ -236,7 +238,10 @@ void ShmImage2D::draw_callback (cairo_t *cr, gboolean draw_red_line, gboolean dr
                                     0.89543,-2,
                                     2,-2); 
                 cairo_close_path (cr);
-                cairo_set_source_rgba (cr, 1.0, 1.0, 0.2, 0.6);
+                if (tip_moving)
+                        cairo_set_source_rgba (cr, 1.0, 0.5, 0.0, 0.6);
+                else
+                        cairo_set_source_rgba (cr, 1.0, 1.0, 0.2, 0.6);
                 cairo_fill (cr);
                 cairo_stroke (cr);
 

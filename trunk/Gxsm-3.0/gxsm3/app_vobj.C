@@ -1678,10 +1678,17 @@ gboolean VObPoint::update_scanpos_idle(gpointer data){
                                             R2INT(gapp->xsm->Inst->XA2Dig(gapp->xsm->data.s.sx)),
                                             R2INT(gapp->xsm->Inst->YA2Dig(gapp->xsm->data.s.sy)))
             ){
-
                 gapp->spm_update_all ();
+                // TIP POS UPDATE
+                //if (gapp->xsm->ActiveScan)
+                //        gapp->xsm->ActiveScan->auto_display();
                 return G_SOURCE_REMOVE;
         }
+
+        // TIP POS UPDATE
+        if (gapp->xsm->ActiveScan)
+                gapp->xsm->ActiveScan->auto_display();
+        
         return G_SOURCE_CONTINUE;
 }
 
@@ -1700,7 +1707,7 @@ void VObPoint::update_scanposition(){
 				SCAN_COORD_RELATIVE);
 
 
-        g_idle_add (update_scanpos_idle, NULL);
+        g_timeout_add (50, update_scanpos_idle, NULL);
 
 #if 0
         while (gapp->xsm->hardware->MovetoXY
