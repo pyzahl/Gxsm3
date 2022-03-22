@@ -477,7 +477,10 @@ inverse off      27
                 val1 = (double)(dsp_scan.xyz_vec[0] / (dsp_scan.fs_dx * dsp_scan.dnx) + (gapp->xsm->data.s.nx/2 - 1) + 1);
                 val2 = (double)(-dsp_scan.xyz_vec[1] / (dsp_scan.fs_dy * dsp_scan.dny) + (gapp->xsm->data.s.ny/2 - 1) + 1);
                 val3 = (double)dsp_scan.xyz_vec[2] / (1<<16);
-		return TRUE;
+                gint state_query=0;
+                tip_to_origin (0.,0., &state_query);
+                // this returns FALSE when tip is busy moving as of init or mouse or scanx/y set!
+		return state_query == 1 ? FALSE : TRUE;
         }
         
 //	printf ("ZXY: %g %g %g\n", val1, val2, val3);
@@ -1025,7 +1028,7 @@ void sranger_mk3_hwi_spm::reset_scandata_fifo(int stall){
 //        return G_SOURCE_CONTINUE;
 
 
-gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
+gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y, gint *state_query){
         const gint64 timeout = 15000000; // 15s
         const gint64 max_age = 200000;   // 200ms
         static int mutex_self = 0;
@@ -1038,6 +1041,11 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y){
 
         // g_message ("TIP2ORIGIN: STATE %d  ** ", state);
 
+        if (state_query){
+                *state_query = state;
+                return FALSE;
+        }
+        
         switch (state){
         case 0:
                 if (mutex_self)
@@ -1593,6 +1601,7 @@ gboolean sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d 
 	static int ydir=0;
 	static int running = FALSE;
 	static AREA_SCAN_MK3 dsp_scan;
+        static AREA_SCAN_MK3 dsp_scan_verify;
 	static double us_per_line;
 
         if (yindex == -2){ // SETUP STAGE 1
@@ -1621,6 +1630,7 @@ gboolean sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d 
                         // cancel any running scan now
                         lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
                         sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
+
                         // cancel scanning?
                         if (dsp_scan.pflg) {
                                 dsp_scan.start = long_2_sranger_long (0);
@@ -1673,6 +1683,29 @@ gboolean sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d 
 		// ------> SRanger::EndScan2D always returns to 0/0 <------
 		lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_read (dsp, &dsp_scan, sizeof (dsp_scan));
+                usleep (10000); // give some time
+                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_read  (dsp, &dsp_scan_verify, sizeof (dsp_scan_verify));
+
+                // verify
+                {
+                        int jj=10;
+                        while (long_2_sranger_long (dsp_scan.xyz_vec[i_X]) != long_2_sranger_long (dsp_scan_verify.xyz_vec[i_X])
+                               ||
+                               long_2_sranger_long (dsp_scan.xyz_vec[i_Y]) != long_2_sranger_long (dsp_scan_verify.xyz_vec[i_Y])){
+
+                                if (jj < 10)
+                                        g_warning ("TIP MOVE START: DSP SCAN XYZ VEC inconsistent {%d} [X%d != %d || Y %d != %d] -- retry", jj,
+                                                   long_2_sranger_long (dsp_scan.xyz_vec[i_X]), long_2_sranger_long (dsp_scan_verify.xyz_vec[i_X]),
+                                                   long_2_sranger_long (dsp_scan.xyz_vec[i_Y]), long_2_sranger_long (dsp_scan_verify.xyz_vec[i_Y]));
+                                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                sr_read  (dsp, &dsp_scan, sizeof (dsp_scan));
+                                usleep (14000); // give some time
+                                lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                                sr_read  (dsp, &dsp_scan, sizeof (dsp_scan_verify));
+                                if (! --jj) return FALSE;
+                        }
+                }
 
 		// convert
 		dsp_scan.xyz_vec[i_X] = long_2_sranger_long (dsp_scan.xyz_vec[i_X]);

@@ -355,7 +355,7 @@ class sranger_mk3_hwi_spm : public sranger_mk3_hwi_dev{
 
 	void reset_scandata_fifo (int stall=0); //!< reset scan data FIFO buffer
 
-	gboolean tip_to_origin (double x=0., double y=0.); //!< move tip to origin (default) or position in scan coordinate system
+	gboolean tip_to_origin (double x=0., double y=0., gint *state_query=NULL); //!< move tip to origin (default) or position in scan coordinate system
 
  protected:
 
