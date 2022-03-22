@@ -25,6 +25,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 
+// #define BENCHMARK_ON
+// #define XSM_MATH_BENCHMARK
 
 /*
 
@@ -54,6 +56,8 @@ good starting point.
 #include "gapp_service.h"
 #include "gnome-res.h"
 #include "glbvars.h"
+
+#include "bench.h"
 
 #define EC_INF 1e133
 
@@ -349,10 +353,16 @@ gchar *Param_Control::Get_UsrString(){
 
 
 gboolean Param_Control::Set_FromValue(double nVal){
+               
 	if (ShowMessage_flag)
                 return false;	//do nothing if a message dialog is active
         if (StringVal)
                 return false;
+
+#ifdef BENCHMARK_ON
+        static bench B("Param_Control::Set_FromValue");
+        B.resume();
+#endif
 
 	new_value = nVal;
 	if(nVal <= vMax && nVal >= vMin){
@@ -361,6 +371,10 @@ gboolean Param_Control::Set_FromValue(double nVal){
 			if (Get_dValue() >= vMax_warn || Get_dValue() <= vMin_warn){
 				Set_dValue (nVal); // set managed value variable
                                 Put_Value (); // update/auto reformat entry
+#ifdef BENCHMARK_ON
+                                B.stop();
+                                B.print();
+#endif
                                 return true;
 			}
 			else{
@@ -377,10 +391,18 @@ gboolean Param_Control::Set_FromValue(double nVal){
                                         g_free (ref);
                                         g_free (txt);
                                         Put_Value (); // update/auto reformat entry
+#ifdef BENCHMARK_ON
+                                        B.stop();
+                                        B.print();
+#endif
                                         return success;
 				}
 			}
                         Put_Value (); // update/restore
+#ifdef BENCHMARK_ON
+                        B.stop();
+                        B.print();
+#endif
                         return false;
  		}
 
@@ -389,6 +411,10 @@ gboolean Param_Control::Set_FromValue(double nVal){
 			if (Get_dValue() >= v_ex_lo && Get_dValue() <= v_ex_hi){
 				Set_dValue (nVal); // set managed value variable
                                 Put_Value (); // update/auto reformat entry
+#ifdef BENCHMARK_ON
+                                B.stop();
+                                B.print();
+#endif
                                 return true;
 			}
 			else{
@@ -399,6 +425,10 @@ gboolean Param_Control::Set_FromValue(double nVal){
                                 g_free (ref);
                                 g_free (txt);
                                 Put_Value (); // update/auto reformat entry
+#ifdef BENCHMARK_ON
+                                B.stop();
+                                B.print();
+#endif
                                 return success;
 			}
 		}
@@ -406,6 +436,10 @@ gboolean Param_Control::Set_FromValue(double nVal){
                 // regular valid range, set managed value variable
                 Set_dValue (nVal);
                 Put_Value (); // set managed value variable
+#ifdef BENCHMARK_ON
+                B.stop();
+                B.print();
+#endif
                 return true;
 	}
 	else{ // out if absolute bounds, do nothing but show valid range information and restore previous value
@@ -424,6 +458,10 @@ gboolean Param_Control::Set_FromValue(double nVal){
 		g_free (txt);
 		g_free (ref);
                 Put_Value(); // set managed value variable
+#ifdef BENCHMARK_ON
+                B.stop();
+                B.print();
+#endif
                 return false;
 	}
 }
@@ -584,6 +622,11 @@ void Gtk_EntryControl::update_value_in_settings (int array_flag){
         if (suspend_settings_update)
                 return;
 
+#ifdef BENCHMARK_ON
+        static bench B("Gtk_EntryControl::update_value_in_settings");
+        B.resume();
+#endif
+
         if (check_gsettings_path ()){
                 
                 XSM_DEBUG_GP (DBG_L2, "PCS update value for %s.%s[%d] = %g\n", gsettings_path, gsettings_key, get_count (), Get_dValue () );
@@ -617,6 +660,10 @@ void Gtk_EntryControl::update_value_in_settings (int array_flag){
                         }
                 }
         }
+#ifdef BENCHMARK_ON
+        B.stop();
+        B.print();
+#endif
 }
 
 void  Gtk_EntryControl::init_pcs_via_list (){
@@ -835,6 +882,11 @@ void Gtk_EntryControl::adjustment_callback(GtkAdjustment *adj, Gtk_EntryControl 
 void Gtk_EntryControl::Put_Value(){
 	gchar *txt = Get_UsrString ();
 
+#ifdef BENCHMARK_ON
+        static bench B("Gtk_EntryControl::Put_Value");
+        B.resume();
+#endif
+
         if (af_update_handler_id[0]){
                 g_signal_handler_block (G_OBJECT (entry), af_update_handler_id[0]);
                 g_signal_handler_block (G_OBJECT (entry), af_update_handler_id[1]);
@@ -908,6 +960,10 @@ void Gtk_EntryControl::Put_Value(){
                 g_signal_handler_unblock (G_OBJECT (entry), af_update_handler_id[0]);
                 g_signal_handler_unblock (G_OBJECT (entry), af_update_handler_id[1]);
         }
+#ifdef BENCHMARK_ON
+        B.stop();
+        B.print();
+#endif
 }
 
 void Gtk_EntryControl::Set_Parameter(double Value=0., int flg=FALSE, int usr2base=FALSE){
@@ -963,6 +1019,12 @@ void Gtk_EntryControl::Set_NewValue (gboolean set_new_value){
 		return;
 	}
 
+#ifdef BENCHMARK_ON
+        static bench B("Gtk_EntryControl::Set_NewValue");
+        B.resume();
+#endif
+
+
 	Set_dValue(new_value);
 	Put_Value ();
 
@@ -980,6 +1042,11 @@ void Gtk_EntryControl::Set_NewValue (gboolean set_new_value){
 	// The ChangeNoticeFkt commits the current value to the DSP
 	if(ChangeNoticeFkt) (*ChangeNoticeFkt)(this, FktData);
 	ShowMessage_flag=0;
+
+#ifdef BENCHMARK_ON
+        B.stop();
+        B.print();
+#endif
 }
 
 void Gtk_EntryControl::ShowInfo (const char *header, const char *text){

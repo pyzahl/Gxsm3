@@ -47,34 +47,40 @@
 
 #ifdef XSM_MATH_BENCHMARK
 #include <iostream>
-#include <time.h>
 #include <string.h>
 
 class bench{
- public:
+public:
   bench(const char *I=NULL, unsigned long N=1L){
-    dt=0.; NumOps=N; 
+    dt = 0;
+    count = 0;
+    NumOps=N; 
     strcpy(Info, "XSM Benchmark: "); if(I) strcat(Info, I);
-    t0 = clock();
+    t0 = g_get_monotonic_time ();
   }
-  void start(){ dt=0.; t0 = clock(); };
-  void stop(){ t1 = clock(); dt = (double)(t1-t0)/CLOCKS_PER_SEC; }
+  void start(){ dt=0.; t0 = g_get_monotonic_time (); };
+  void resume(){ t0 = g_get_monotonic_time (); };
+  void stop(){ t1 = g_get_monotonic_time (); count++; dt += t1-t0; }
   double getdt(){ return dt; };
-  friend ostream &operator <<(ostream &o, bench &bench){
-    return o << bench.Info << std::endl
-	     << "Exec Time: " << bench.dt << "s" << std::endl
-	     << "PixOp/s  : " << (double)((double)bench.NumOps/bench.dt) << "/s" << std::endl;
+  double getdt_normed(){ return dt/count; };
+  void print () {
+    g_message ("%s ==> t-exec: %ld us  #: %ld  Ops/s: %g",
+	       Info,
+	       dt/count,
+	       count,
+	       (double)NumOps*1e6/dt*count);
   };
- private:
-  clock_t t0;
-  clock_t t1;
-  double dt;
+private:
+  gint64 t0;
+  gint64 t1;
+  gint64 dt;
+  gint64 count;
   char Info[256];
   unsigned long NumOps;
 };
 
 #define BenchStart(B,I,N) bench B(I,N)
-#define BenchStop(B)      B.stop(); XSM_DEBUG (DBG_L2 << B)
+#define BenchStop(B)      B.stop(); B.print ()
 
 #else /* Dummy */
 #define BenchStart(B,I,N)
