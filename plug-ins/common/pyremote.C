@@ -1961,10 +1961,11 @@ static gboolean main_context_addmobject_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 	long ch,grp,x,y;
+        double size = 1.0;
         gchar *id;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple (idle_data->args, "lslll", &ch, &id, &grp, &x, &y)){
+	if (!PyArg_ParseTuple (idle_data->args, "lsllld", &ch, &id, &grp, &x, &y, &size)){
 		//return Py_BuildValue("s", "Invalid Parameters. [ll]: ch, nth");
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
@@ -1975,19 +1976,22 @@ static gboolean main_context_addmobject_from_thread (gpointer user_data){
 		NULL };
 	PI_DEBUG(DBG_L2, "pyremote:putobject");
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
-        if (grp < 0 || grp > 6) grp=0; // silently set 0 if out of range
+        if (size < 0. || size > 10.) size = 1.0;
         
-        if (src->view->Get_ViewControl ()){
+	Scan *src =gapp->xsm->GetScanChannel (ch);
+        if (grp == -1 || !strncmp(id,"xy",2)){
+                grp = 5;
                 VObject *vo;
                 double xy[2];
                 gfloat c[4] = { 1.,0.,0.,1.};
                 int spc[2][2] = {{0,0},{0,0}};
                 int sp00[2] = {1,1};
                 int s = 0;
-                src->Pixel2World ((int)round(x), (int)round(y), xy[0], xy[1]);
-                gchar *lab = g_strdup_printf ("M%s",id);
-                (src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, 1.));
+                double px,py,pz;
+                gapp->xsm->hardware->RTQuery ("P", px, py, pz); // get Tip Position in pixels
+                src->Pixel2World ((int)round(px), (int)round(py), xy[0], xy[1]);
+                gchar *lab = g_strdup_printf ("M%s XYZ=%g,%g,%g",id, px,py,pz);
+                (src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, size));
                 vo->set_obj_name (marker_group[grp]);
                 vo->set_custom_label_font ("Sans Bold 12");
                 vo->set_custom_label_color (c);
@@ -1995,8 +1999,29 @@ static gboolean main_context_addmobject_from_thread (gpointer user_data){
                 vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
                 vo->show_label (s);
                 vo->remake_node_markers ();
-        }
+        } else {
 
+                if (grp < 0 || grp > 6) grp=0; // silently set 0 if out of range
+        
+                if (src->view->Get_ViewControl ()){
+                        VObject *vo;
+                        double xy[2];
+                        gfloat c[4] = { 1.,0.,0.,1.};
+                        int spc[2][2] = {{0,0},{0,0}};
+                        int sp00[2] = {1,1};
+                        int s = 0;
+                        src->Pixel2World ((int)round(x), (int)round(y), xy[0], xy[1]);
+                        gchar *lab = g_strdup_printf ("M%s",id);
+                        (src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, size));
+                        vo->set_obj_name (marker_group[grp]);
+                        vo->set_custom_label_font ("Sans Bold 12");
+                        vo->set_custom_label_color (c);
+                        vo->set_on_spacetime  (sp00[0] ? FALSE:TRUE, spc[0]);
+                        vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
+                        vo->show_label (s);
+                        vo->remake_node_markers ();
+                }
+        }
         idle_data->ret = 0;
        
         UNSET_WAIT_JOIN_MAIN;
@@ -3071,7 +3096,7 @@ static PyMethodDef GxsmPyMethods[] = {
 	{"set_y_lookup", remote_set_y_lookup, METH_VARARGS, "Set Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i, v)"},
 	{"set_v_lookup", remote_set_v_lookup, METH_VARARGS, "Set Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i, v)"},
 	{"get_object", remote_getobject, METH_VARARGS, "Get Object Coordinates: [type, x,y,..]=gxsm.get_object (ch, n)"},
-	{"add_marker_object", remote_addmobject, METH_VARARGS, "Put Marker Object at Coordinates: gxsm.add_marker_object (ch, label, mgrp=0..5, x,y)"},
+	{"add_marker_object", remote_addmobject, METH_VARARGS, "Put Marker Object at pixel coordinates or current tip pos (id='xy'|grp=-1): gxsm.add_marker_object (ch, label=str|'xy', mgrp=0..5|-1, x=ix,y=iy, size=0..1)"},
         
 	{"startscan", remote_startscan, METH_VARARGS, "Start Scan."},
 	{"stopscan", remote_stopscan, METH_VARARGS, "Stop Scan."},
