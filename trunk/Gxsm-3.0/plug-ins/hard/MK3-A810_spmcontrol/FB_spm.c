@@ -101,7 +101,7 @@ SPM_STATEMACHINE state = {
                         { 0x00,0,0,0 }, { 0x00,0,0,0   }, { 0x00,0,0,0 }, { 0x20,0,0,3 }, // ID025..028
                         { 0x00,0,0,0 }, { 0x20,0,0,5   }, { 0x00,0,0,7 }, { 0x40,0,0,150000 }  // ID029..032
                 },
-                3500
+                3000
 };
 
 /* A810 Configuration -- may be altered and then A810 restarted via AIC_STO, START cycle */
@@ -1346,7 +1346,7 @@ void main()
 	setup_default_signal_configuration ();
         
         // for sanity
-        state.DP_max_time_until_abort = 3500;
+        state.DP_max_time_until_abort = 3000;
         
 	/* check for valid saved flash signal configuration and auto-restore */
 	restore_configuration_from_flash ();
