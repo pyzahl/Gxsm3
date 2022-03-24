@@ -166,15 +166,6 @@ int idle_task_002(void){
 
 #ifdef MIN_PAC_BUILD // AREA_SCAN_TASK non RT task
 
-        // MASK kernel ISR???
-        
-        /*
-          IER &= ~0x0010; // Disable INT4 (kernel)
-          ... Critical code
-          IER |= 0x0010; // Enable INT4 (kernel)  
-        */
-        //IER &= ~0x0010; // Disable INT4 (kernel)
-
         // ============================================================
         // PROCESS MODULE: AREA SCAN
         // ============================================================
@@ -183,9 +174,12 @@ int idle_task_002(void){
          * --> can set CI/CP to small values to "contineously" disable it!
          */
         if (scan.pflg & (AREA_SCAN_RUN | AREA_SCAN_MOVE_TIP))
-                if (!probe.pflg || probe.start) // pause scan if raster_b!=0 and probe is going.
+                if (!probe.pflg || probe.start){ // pause scan if raster_b!=0 and probe is going.
+                        IER &= ~0x0010; // Disable INT4 (kernel)
                         run_area_scan ();
-
+                        IER |= 0x0010; // Enable INT4 (kernel)  
+                }
+#if 0
         // ============================================================
         // PROCESS MODULE: FAST SCAN
         // ============================================================
@@ -193,7 +187,8 @@ int idle_task_002(void){
         /* run FAST AREA SCAN (sinusodial) ? */
         if (scan.pflg & AREA_SCAN_RUN_FAST)
                 run_area_scan_fast ();
-                
+#endif
+        
         // ============================================================
         // do expensive 32bit precision (tmp64/40) rotation in
         // EVEN cycle
@@ -245,7 +240,6 @@ int idle_task_002(void){
         else scan.z_offset_xyslope = s_xymult; // normally this should do it
                 
 #endif
-        //IER |= 0x0010; // Enable INT4 (kernel)  
 
         return 0;
 }
@@ -257,9 +251,11 @@ extern void process_next_section ();
 int idle_task_003(void){
         // Vector Probe Manager
         if (probe.pflg){
-                if (!probe.ix) // idle task needs to work on section completion out of RT regime
+                if (!probe.ix){ // idle task needs to work on section completion out of RT regime
+                        IER &= ~0x0010; // Disable INT4 (kernel)
                         process_next_section ();
-                
+                        IER |= 0x0010; // Enable INT4 (kernel)  
+                }
                 if (state.mode & MD_PID){
                         if (probe.vector)
                                 if (probe.vector->options & VP_FEEDBACK_HOLD){
@@ -272,6 +268,8 @@ int idle_task_003(void){
                                 }
                 }
         }
+        if (state.mode & MD_PID)
+                START_RT_TASK_ODD (RT_TASK_FEEDBACK);
         return 0;
 }
 
@@ -988,13 +986,16 @@ int run_next_priority_job(void){
         int i;
         for (i=iip; i<NUM_IDLE_TASKS; i++){
                 if (state.id_task_control[i].process_flag & 0x10){
+                        //IER &= ~0x0010; // Disable INT4 (kernel)
                         state.id_task_control[i].process_flag |= 1;
                         if (idle_task_list [i] ()){
                                 state.id_task_control[i].timer_next = state.DSP_time; // since last data process end
+                                //IER |= 0x0010; // Enable INT4 (kernel)  
                                 state.id_task_control[i].exec_count++; // was actually processing, count n calls in flag of idle tasks
                                 iip = (i+1) & (NUM_IDLE_TASKS-1);
                                 return 1;
                         }
+                        //IER |= 0x0010; // Enable INT4 (kernel)  
                         state.id_task_control[i].process_flag &= 0xf0;
                 }
         }
@@ -1009,17 +1010,20 @@ int run_next_sync_job(void){
         long delta;
         for (i=iip; i<NUM_IDLE_TASKS; i++){
                 if (state.id_task_control[i].process_flag & 0x20){
+                        //IER &= ~0x0010; // Disable INT4 (kernel)
                         delta = (long)state.id_task_control[i].timer_next - (long)state.DSP_time;
                         if (delta < 0 || delta > 0x7FFFFFFFL){
                                 state.id_task_control[i].process_flag |= 1;
                                 state.id_task_control[i].timer_next = state.DSP_time + state.id_task_control[i].interval; // next time due, too close to now
                                 if (idle_task_list [i] ()){
+                                        //IER |= 0x0010; // Enable INT4 (kernel)  
                                         state.id_task_control[i].exec_count++; // was actually processing, count n calls in flag of idle tasks
                                         iip = (i+1) & (NUM_IDLE_TASKS-1);
                                         return 1;
                                 }
                                 state.id_task_control[i].process_flag &= 0xf0;
                         }
+                        //IER |= 0x0010; // Enable INT4 (kernel)  
                 }
         }
         iip=0;
@@ -1034,6 +1038,7 @@ int run_next_sync_job_precision(void){
         long delta;
         for (i=iip; i<NUM_IDLE_TASKS; i++){
                 if (state.id_task_control[i].process_flag & 0x40){
+                        //IER &= ~0x0010; // Disable INT4 (kernel)
                         delta = (long)state.id_task_control[i].timer_next - (long)state.DSP_time;
                         if (delta < 0 || delta > 0x7FFFFFFFL){
                                 state.id_task_control[i].process_flag |= 1;
@@ -1042,12 +1047,14 @@ int run_next_sync_job_precision(void){
                                 else
                                         state.id_task_control[i].timer_next = state.DSP_time + state.id_task_control[i].interval; // next time due, too close to now
                                 if (idle_task_list [i] ()){
+                                        //IER |= 0x0010; // Enable INT4 (kernel)  
                                         state.id_task_control[i].exec_count++; // was actually processing, count n calls in flag of idle tasks
                                         iip = (i+1) & (NUM_IDLE_TASKS-1);
                                         return 1;
                                 }
                                 state.id_task_control[i].process_flag &= 0xf0;
                         }
+                        //IER |= 0x0010; // Enable INT4 (kernel)  
                 }
         }
         iip=0;

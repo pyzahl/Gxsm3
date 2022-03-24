@@ -359,19 +359,20 @@ void init_area_scan (int smode){
 inline void area_scan_finished (){
         scan.pflg = 0;
         scan.stop = AREA_SCAN_STOP;
+	scan.sstate = AS_READY;
         scan.dnx_probe = 0;
 }
  
 #pragma CODE_SECTION(finish_area_scan, ".text:slow")
 void finish_area_scan (){
 	int i;
+	scan.sstate = AS_READY;
+	scan.pflg = 0;
+        scan.section=0;
 
 	bz_push_mode = BZ_PUSH_MODE_32_FINISH;
 	for (i=0; i<BZ_MAX_CHANNELS; ++i)
 		bz_push (i, 0);
-	scan.sstate = AS_READY;
-	scan.pflg = 0;
-        scan.section=0;
 }
 
 void clear_summing_data (){
@@ -794,6 +795,7 @@ void run_area_scan (){
 	}
 }
 
+#if 0
 // fast scan with X ramp mode as perfect harmonic Sine wave, no gizmos like LockIn, 2nd-line or probe.
 // CHECK SineSDB for compatibility with new 1F2F PAC PLL lib
 // with 2f: void SineSDB(int *cr, int *ci, int *cr2, int *ci2, int deltasRe, int deltasIm)
@@ -927,4 +929,4 @@ void run_area_scan_fast (){
 		break;
 	}
 }
-
+#endif
