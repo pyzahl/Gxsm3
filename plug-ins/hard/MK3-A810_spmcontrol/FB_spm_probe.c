@@ -1004,13 +1004,6 @@ void run_one_time_step(){
 
         if (! probe.iix-- || probe.lix){
                 if (probe.ix--){
-#ifdef ENABLE_SCAN_GP55_CLOCK
-                        // generate external probe point data clock on GP55
-                        if (probe.ix&1)
-                                SET_DSP_GP55;
-                        else
-                                CLR_DSP_GP55;
-#endif
                         store_probe_data_srcs ();
                         
 #if 0 // ===> moved to idle tasks processing space
@@ -1044,6 +1037,7 @@ void run_probe (){
 
         // next time step in GVP
         if (probe.ix){ // idle task is working on completion of data management, wait!
+#if 0 // REDUCING LOAD TEST
                 // initiate external data SPI request and transfer
                 if (probe.iix == probe.vector->dnx && !(state.dp_task_control[9].process_flag&0xffff))
                         initiate_McBSP_transfer (probe.ix);
@@ -1056,38 +1050,19 @@ void run_probe (){
                 if (probe.vector->options & (VP_TRIGGER_P|VP_TRIGGER_N))
                         if (wait_for_trigger ())
                                 return;
-
+#endif
                 integrate_probe_data_srcs ();
 
                 if (! probe.iix-- || probe.lix){
                         if (probe.ix--){
-#ifdef ENABLE_SCAN_GP55_CLOCK
-                                // generate external probe point data clock on GP55
-                                if (probe.ix&1)
-                                        SET_DSP_GP55;
-                                else
-                                        CLR_DSP_GP55;
-#endif
                                 store_probe_data_srcs ();
-                        
-#if 0 // ===> moved to idle tasks processing space
-                                if (!probe.ix){
-                                        // Special VP Track Mode Vector Set?
-                                        if (probe.vector->options & (VP_TRACK_UP | VP_TRACK_DN | VP_TRACK_REF | VP_TRACK_FIN)){
-                                                next_track_vector ();
-
-                                        } else { // run regular VP program mode
-                                                next_section ();
-                                                probe_append_header_and_positionvector ();
-                                        }
-                                }
-#endif
                         }
+#if 0 // REDUCING LOAD TEST
                         // Limiter active?
                         if (probe.vector->options & VP_LIMITER){
                                 probe_signal_limiter_test();
                         } else if (probe.lix > 0) --probe.lix;
-		 
+#endif		 
                         probe.iix = probe.vector->dnx; // load steps inbetween "data aq" points
                         clear_probe_data_srcs ();
                 }
