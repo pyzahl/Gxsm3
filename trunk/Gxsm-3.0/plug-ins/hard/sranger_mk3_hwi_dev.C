@@ -2480,8 +2480,12 @@ void sranger_mk3_hwi_dev::write_dsp_scan (){
 	conv_dsp_scan ();
 
 	// adjust ScanParams/Speed...
+
+        // DO NOT TOUCH scan.start and .stop
+        g_message ("sranger_mk3_hwi_dev::write_dsp_scan start,stop = %d, %d", dsp_scan.start,dsp_scan.stop);
+        dsp_scan.start=dsp_scan.stop=0; // make sure
 	lseek (dsp, magic_data.scan, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-	sr_write (dsp, &dsp_scan, MAX_WRITE_SCAN<<1);
+	sr_write (dsp, &dsp_scan, (MAX_WRITE_SCAN<<1));
 
 	// from DSP to PC
 	conv_dsp_scan ();
@@ -3735,7 +3739,7 @@ int sranger_mk3_hwi_dev::read_signal_lookup (){
 	off_t adr;
 	struct{ DSP_INT32_P p; } dsp_signal_list[NUM_SIGNALS];
 	adr = magic_data.signal_lookup; 
-	PI_DEBUG_GP (DBG_L4, "sranger_mk3_hwi_dev::read_signal_lookup at 0x%08x size=%lu\n", adr, sizeof (dsp_signal_list));
+	PI_DEBUG_GP (DBG_L4, "sranger_mk3_hwi_dev::read_signal_lookup at 0x%08lux size=%lu\n", adr, sizeof (dsp_signal_list));
 	lseek (dsp, adr, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 	sr_read (dsp, &dsp_signal_list, sizeof (dsp_signal_list)); 
 
