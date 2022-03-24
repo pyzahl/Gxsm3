@@ -2700,7 +2700,10 @@ void sranger_mk3_hwi_dev::write_dsp_vector (int index, PROBE_VECTOR_GENERIC *__d
 	// from DSP to PC
 	conv_dsp_probe ();
 
-	if (dsp_probe.vector_head < EXTERN_PROBE_VECTOR_HEAD_DEFAULT || index > 40 || index < 0){
+	if (dsp_probe.vector_head < EXTERN_PROBE_VECTOR_HEAD_DEFAULT
+            || dsp_probe.vector_head > EXTERN_PROBE_VECTOR_HEAD_DEFAULT + ((40*SIZE_OF_PROBE_VECTOR)<<1)
+            || index > 40 || index < 0){
+		g_message("Error writing Probe Vector:\n Bad vector address [%ux], aborting request.", dsp_probe.vector_head - EXTERN_PROBE_VECTOR_HEAD_DEFAULT);
 		sranger_mk2_hwi_pi.app->message("Error writing Probe Vector:\n Bad vector address, aborting request.");
 		return;
 	}
@@ -2761,6 +2764,26 @@ void sranger_mk3_hwi_dev::write_dsp_vector (int index, PROBE_VECTOR_GENERIC *__d
 	lseek (dsp, dsp_probe.vector_head + ((index*SIZE_OF_PROBE_VECTOR)<<1), SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 	sr_write (dsp, &dsp_vector, SIZE_OF_PROBE_VECTOR<<1);
 
+        usleep ((useconds_t) (10000) ); // allow a moment
+	lseek (dsp, dsp_probe.vector_head + ((index*SIZE_OF_PROBE_VECTOR)<<1), SRANGER_MK23_SEEK_DATA_SPACE);
+        PROBE_VECTOR_MK3 verify_vector;
+	sr_read (dsp, &verify_vector, SIZE_OF_PROBE_VECTOR<<1);
+
+        if (memcmp((void*)&dsp_vector, (void*)&verify_vector, SIZE_OF_PROBE_VECTOR<<1)){
+		g_message("Error writing Probe Vector:\n Verify vector [%d] failed. Retry:", index);
+                usleep ((useconds_t) (50000) ); // allow a moment
+                lseek (dsp, dsp_probe.vector_head + ((index*SIZE_OF_PROBE_VECTOR)<<1), SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_write (dsp, &dsp_vector, SIZE_OF_PROBE_VECTOR<<1);
+        
+                usleep ((useconds_t) (10000) ); // allow a moment
+                lseek (dsp, dsp_probe.vector_head + ((index*SIZE_OF_PROBE_VECTOR)<<1), SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
+                sr_read (dsp, &verify_vector, SIZE_OF_PROBE_VECTOR<<1);
+
+                if (memcmp((void *)&dsp_vector, (void *)&verify_vector, SIZE_OF_PROBE_VECTOR<<1)){
+                        g_message("Error writing Probe Vector:\n Verify vector [%d] failed again. Fatal.", index);
+                }
+        }
+        
 	// from DSP to PC
         conv_dsp_vector();
 }
