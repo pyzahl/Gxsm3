@@ -3168,6 +3168,12 @@ DSPControl::DSPControl () {
                                        GCallback (callback_GrMatWindow), this,
                                        GrMatWin, 1
                                        );
+	dsp_bp->grid_add_check_button ("Add Events", "Disable to not add Probe Events to Master Scan.",
+                                       1
+                                       );
+        g_settings_bind (hwi_settings, "probe-enable-add-events",
+                         G_OBJECT (GTK_BUTTON (dsp_bp->button)), "active",
+                         G_SETTINGS_BIND_DEFAULT);
         dsp_bp->pop_grid ();
         dsp_bp->new_line ();
         dsp_bp->new_grid_with_frame ("Plot / Save current data in buffer");
