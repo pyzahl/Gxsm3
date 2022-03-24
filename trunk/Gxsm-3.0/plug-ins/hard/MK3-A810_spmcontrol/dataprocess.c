@@ -633,11 +633,11 @@ int dp_task_004(void){
         // ============================================================
         // PROCESS MODULE: FAST SCAN
         // ============================================================
-
+#if 0
         /* run FAST AREA SCAN (sinusodial) ? */
         if (scan.pflg & AREA_SCAN_RUN_FAST)
                 run_area_scan_fast ();
-
+#endif
         // ============================================================
         // do expensive 32bit precision (tmp64/40) rotation in
         // EVEN cycle
