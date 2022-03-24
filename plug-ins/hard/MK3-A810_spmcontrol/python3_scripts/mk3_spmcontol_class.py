@@ -838,7 +838,7 @@ ii_signal_monitor_p_first = 4
 ii_signal_monitor_first = 4 + num_monitor_signals
 
 i_scan = 14
-fmt_scan = "<lllllllllllllllllllllllllllllllllllllllllllllLLLLlllllll"
+fmt_scan = "<llllllllllllllllllllllllllllllllllllllllllllllLLLLllllllll"
 [
         ii_scan_start,
         ii_scan_stop,
@@ -885,6 +885,7 @@ fmt_scan = "<lllllllllllllllllllllllllllllllllllllllllllllLLLLlllllll"
         ii_scan_iiy,
         ii_scan_ix,
         ii_scan_iy,
+        ii_scan_iiix,
         ii_scan_ifr,
         ii_scan_P_src_input0,
         ii_scan_P_src_input1,
@@ -895,8 +896,9 @@ fmt_scan = "<lllllllllllllllllllllllllllllllllllllllllllllLLLLlllllll"
         ii_scan_rotmatXY,
         ii_scan_rotmatYX,
         ii_scan_rotmatYY,
+        ii_scan_section,
         ii_scan_pflg
-] = range (0,56)
+] = range (0,58)
 
 i_move = 15
 fmt_move = "<llllllllllll"
