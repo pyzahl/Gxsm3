@@ -811,26 +811,28 @@ int DSPControl::Probing_graph_callback( GtkWidget *widget, DSPControl *dspc, int
 
 	XSM_DEBUG_PG ("DSPControl::Probing_graph_callback -- enter");
 
-        dspc->dump_probe_hdr (); // TESTING TRAIL 
-
 //xxxxxxxxxxxxx attach event to active channel, if one exists -- manual mode xxxxxxxxxxxxxxxxxxxxx
 
 	XSM_DEBUG_PG ("Probing_graph_callback MasterScan? Add Ev." );
 
-	ScanEvent *se = NULL;
-	if (gapp->xsm->MasterScan && finish_flag){
-		// find first section header and take this X,Y coordinates as reference -- start of probe event
+	if (gapp->xsm->MasterScan
+            && finish_flag
+            && g_settings_get_boolean (dspc->hwi_settings, "probe-enable-add-events")) {
+
+                dspc->dump_probe_hdr (); // TESTING TRAIL 
+
+                // find first section header and take this X,Y coordinates as reference -- start of probe event
 		XSM_DEBUG_PG ("Probing_graph_callback MasterScan: adding Ev." );
 		int sec = 0;
                 int j=0;
                 //g_message ("Creating SE *** %d %d %d", j, sec, dspc->current_probe_data_index);
-                se = new ScanEvent (
-                                    gapp->xsm->Inst->Dig2X0A ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_X0], double, j)))
-                                    + gapp->xsm->Inst->Dig2XA ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_XS], double, j))),
-                                    gapp->xsm->Inst->Dig2Y0A ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_Y0], double, j)))
-                                    + gapp->xsm->Inst->Dig2YA ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_YS], double, j))),
-                                    gapp->xsm->Inst->Dig2ZA ((long) round ( g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_ZS], double, j)))
-                                    );
+                ScanEvent *se = new ScanEvent (
+                                               gapp->xsm->Inst->Dig2X0A ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_X0], double, j)))
+                                               + gapp->xsm->Inst->Dig2XA ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_XS], double, j))),
+                                               gapp->xsm->Inst->Dig2Y0A ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_Y0], double, j)))
+                                               + gapp->xsm->Inst->Dig2YA ((long) round (g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_YS], double, j))),
+                                               gapp->xsm->Inst->Dig2ZA ((long) round ( g_array_index (dspc->garray_probedata [PROBEDATA_ARRAY_ZS], double, j)))
+                                               );
                 gapp->xsm->MasterScan->mem2d->AttachScanEvent (se);
 
                 // for all sections add probe event!!!

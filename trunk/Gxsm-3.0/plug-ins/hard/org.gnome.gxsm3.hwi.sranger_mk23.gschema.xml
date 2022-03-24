@@ -134,6 +134,13 @@
 	Not recommended for fast repeating probes.
       </description>
    </key>
+   <key name="probe-enable-add-events" type="b">
+      <default>true</default>
+      <summary>automatically add manual probe events to Master Scan</summary>
+      <description>
+	Disable to not add Manaul Probe Events to Master Scan.
+      </description>
+   </key>
    <key name="probe-graph-matrix-window" type="b">
       <default>true</default>
       <summary>probe-graph-matrix-window mode</summary>
