@@ -355,6 +355,8 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 	
 	if (!sranger_common_hwi) return; 
 
+        vp_signal_lookup_init_cache(); // read signals once before starting 20220328 -- update signal cache
+        
 	if (!start) // reset 
 		probe_trigger_single_shot = 0;
 

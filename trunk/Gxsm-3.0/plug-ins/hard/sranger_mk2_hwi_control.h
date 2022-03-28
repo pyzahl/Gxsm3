@@ -435,6 +435,8 @@ class DSPControl : public AppBase{
 	static int DSP_cret_callback (GtkWidget *widget, DSPControl *dspc);
 	static int DSP_slope_callback (GtkWidget *widget, DSPControl *dspc);
 
+
+        void vp_signal_lookup_init_cache();
 	const char* vp_label_lookup(int i);
 	const char* vp_unit_lookup(int i);
 	double      vp_scale_lookup(int i);
