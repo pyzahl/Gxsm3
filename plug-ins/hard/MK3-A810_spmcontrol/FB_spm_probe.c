@@ -1037,15 +1037,20 @@ void run_probe (){
 
         // next time step in GVP
         if (probe.ix){ // idle task is working on completion of data management, wait!
-#if 0 // REDUCING LOAD TEST
-                // initiate external data SPI request and transfer
+
+#if 1 // REDUCING LOAD TESTS
+                // initiate external data SPI/McBSP request and transfer
                 if (probe.iix == probe.vector->dnx && !(state.dp_task_control[9].process_flag&0xffff))
                         initiate_McBSP_transfer (probe.ix);
+#endif
 
+#if 1
                 // read GPIO if requested (CPU time costy!!!)
                 if (probe.vector->options & VP_GPIO_READ)
                         GPIO_check();
+#endif
 
+#if 0
                 // unsatisfied trigger condition will also HOLD VP as of now!
                 if (probe.vector->options & (VP_TRIGGER_P|VP_TRIGGER_N))
                         if (wait_for_trigger ())
