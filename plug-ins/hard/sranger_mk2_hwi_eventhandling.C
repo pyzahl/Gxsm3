@@ -36,6 +36,7 @@
 
 #include <time.h>
 #include <iomanip>
+#include <time.h>
 
 #include "gxsm3/gxsm_app.h"
 #include "gxsm3/gxsm_window.h"
@@ -557,8 +558,6 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
                                       gint xmap, gint src, gint num_active_xmaps, gint num_active_sources){
 
         static gint last_current_i=0;
-	UnitObj *UXaxis = new UnitObj(xua, " ", "g", xlab);
-	UnitObj *UYaxis = new UnitObj(yua,  " ", "g", ylab);
 	double xmin, xmax, x;
 
         // force rebuild if view/window arrangement changed?
@@ -633,8 +632,6 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 	XSM_DEBUG_PG("DBG-M VIS 1");
 
 	XSM_DEBUG_PG("Probing_graph_callback Visualization U&T/Rz" );
-	UXaxis->SetAlias (xlab);
-	UYaxis->SetAlias (ylab);
 	if (!pc){
 		XSM_DEBUG_PG("DBG-M VIS c1  ci=" << current_i);
 		XSM_DEBUG_PG ("Probing_graph_callback Visualization -- new pc" );
@@ -643,8 +640,12 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 		XSM_DEBUG_PG("DBG-M VIS c2  " << title << " xr= " << xmin << " .. " << xmax << " " << ylab);
                 gchar *resid = g_strdelimit (g_strconcat (xlab,ylab,NULL), " ;:()[],./?!@#$%^&*()+-=<>", '_');
 
+                UnitObj UXaxis (xua, " ", "g", xlab);
+                UnitObj UYaxis (yua, " ", "g", ylab);
+                UXaxis.SetAlias (xlab);
+                UYaxis.SetAlias (ylab);
 		pc = new ProfileControl (title, current_i, 
-                                         UXaxis, UYaxis, 
+                                         &UXaxis, &UYaxis, 
                                          xmin, xmax,
                                          resid,
                                          GrMatWin ? vpg_app_window : NULL);
@@ -754,9 +755,14 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 		XSM_DEBUG_PG ("Probing_graph_callback Visualization new pc -- put Av/Sec data" );
 		if (!pc_av){
 			XSM_DEBUG_PG ("Probing_graph_callback Visualization -- new pc_av" );
-			gchar   *title  = g_strdup_printf ("Vector Probe, Channel: %s %s", ylab, (vis_PlotAvg & plot_msk)?"averaged":"cur. section");
+			gchar   *title = g_strdup_printf ("Vector Probe, Channel: %s %s", ylab, (vis_PlotAvg & plot_msk)?"averaged":"cur. section");
+                        UnitObj UXaxis (xua, " ", "g", xlab);
+                        UnitObj UYaxis (yua, " ", "g", ylab);
+                        UXaxis.SetAlias (xlab);
+                        UYaxis.SetAlias (ylab);
 			pc_av = new ProfileControl (title, spectra_index+1, 
-						    UXaxis, UYaxis, xmin, xmax, ylab);
+						    &UXaxis, &UYaxis,
+                                                    xmin, xmax, ylab);
 			pc_av->scan1d->mem2d->Resize (spectra_index+1, join_same_x ? nas:1);
 			pc_av->SetTitle (title);
 			pc_av->set_ys_label (0, ylab);
@@ -799,8 +805,6 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 		}
 		XSM_DEBUG_PG("DBG-M VIS avgx");
 	} 
-	delete UXaxis;
-	delete UYaxis;
 	XSM_DEBUG_PG ("DSPControl::probedata_visualize -- exit");
 }
 
@@ -1170,6 +1174,8 @@ int DSPControl::Probing_save_callback( GtkWidget *widget, DSPControl *dspc){
 
 #define DEFAULT_PROBE_LEN 256 // can increase automatically, just more efficient
 
+//#define MEM_PERF_GARR
+
 void DSPControl::push_probedata_arrays (){
 	GArray **garrp = new GArray*[NUM_PROBEDATA_ARRAYS];
 	GArray **garrh = new GArray*[NUM_PROBEDATA_ARRAYS];
@@ -1193,6 +1199,9 @@ void DSPControl::push_probedata_arrays (){
       
 	++num_probe_events;
 	pv_lock = FALSE;
+#ifdef  MEM_PERF_GARR
+        g_message ("MEM_PERF_GARR DSPControl::push_probedata_arrays");
+#endif
 }
 
 // return last dataset and removed it from list, does not touch data itself
@@ -1209,6 +1218,9 @@ GArray** DSPControl::pop_probedata_arrays (){
 		}
 	}
 	pv_lock = FALSE;
+#ifdef  MEM_PERF_GARR
+        g_message ("MEM_PERF_GARR DSPControl::pop_probedata_arrays");
+#endif
 	return NULL;
 }
 
@@ -1225,72 +1237,175 @@ GArray** DSPControl::pop_probehdr_arrays (){
 		}
 	}
 	pv_lock = FALSE;
+#ifdef  MEM_PERF_GARR
+        g_message ("MEM_PERF_GARR DSPControl::pop_probehdr_arrays");
+#endif
 	return NULL;
 }
 
 void DSPControl::free_probedata_array_set (GArray** garr, DSPControl *dc){
         if (!garr) return;
 	dc->pv_lock = TRUE;
-	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i)
+	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i){
+#ifdef  MEM_PERF_GARR
+                g_message ("MEM_PERF_GARR DSPControl::free_probedata_array_set  [%d] garr len = %d", i, garr[i]->len);
+#endif
 		g_array_free (garr[i], TRUE);
+        }
 	dc->pv_lock = FALSE;
 
         GXSM_UNREF_OBJECT(GXSM_GRC_PRBVEC);      
+#ifdef  MEM_PERF_GARR
+        g_message ("MEM_PERF_GARR DSPControl::free_probedata_array_set");
+#endif
 }
 
 void DSPControl::free_probehdr_array_set (GArray** garr, DSPControl *dc){
         if (!garr) return;
 	dc->pv_lock = TRUE;
- 	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i)
+ 	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i){
+#ifdef  MEM_PERF_GARR
+                g_message ("MEM_PERF_GARR DSPControl::free_probehdr_array_set  [%d] garr len = %d", i, garr[i]->len);
+#endif
                 g_array_free (garr[i], TRUE);
+        }
 	dc->pv_lock = FALSE;
 
+#ifdef  MEM_PERF_GARR
+        g_message ("MEM_PERF_GARR DSPControl::free_probehdr_array_set");
+#endif
         GXSM_UNREF_OBJECT(GXSM_GRC_PRBHDR);
 }
+
+#ifdef  MEM_PERF_GARR
+gint parseLine (char* line){
+        // This assumes that a digit will be found and the line ends in " Kb".
+        gint i = strlen(line);
+        const char* p = line;
+        while (*p <'0' || *p > '9') p++;
+        line[i-3] = '\0';
+        i = atoi(p);
+        return i;
+}
+
+gint status_getValue (const gchar *what){ //Note: this value is in KB!
+        FILE* file = fopen("/proc/self/status", "r");
+        gint result = -1;
+        gchar line[128];
+        
+        while (fgets(line, 128, file) != NULL){
+                if (strncmp(line, what, strlen(what)) == 0){
+                        result = parseLine(line);
+                        break;
+                }
+        }
+        fclose(file);
+        return result;
+}
+#endif
+
 
 void DSPControl::free_probedata_arrays (){
 	pv_lock = TRUE;
 	if (probedata_list){
+                g_message ("MEM_PERF_GARR DSPControl::free_probedata_arrays free probedata_list ");
                 g_slist_foreach (probedata_list, (GFunc) DSPControl::free_probedata_array_set, this);
                 g_slist_free (probedata_list);
                 probedata_list = NULL;	
         }
 
 	if (probehdr_list){
+                g_message ("MEM_PERF_GARR DSPControl::free_probedata_arrays free probehdr_list ");
                 g_slist_foreach (probehdr_list, (GFunc) DSPControl::free_probehdr_array_set, this);
                 g_slist_free (probehdr_list);
                 probehdr_list = NULL;	
         }
 
+#ifdef  MEM_PERF_GARR
+        g_message ("MEM_PERF_GARR DSPControl::free_probedata_arrays");
+#endif
         num_probe_events = 0;
         pv_lock = FALSE;
 }
 
 void DSPControl::init_probedata_arrays (){
 	pv_lock = TRUE;
-	for(int i=0; i<4; ++i)
+
+#ifdef  MEM_PERF_GARR
+        static gint vmsp=0;
+        gint vms = status_getValue ("VmSize:");
+        g_message ("MEM_PERF_GARR DSPControl::init_probedata_arrays BEGIN VMS=%14d kb, %dMb, diff=%d kb", vms, vms/1024, vms-vmsp);
+        vmsp=vms;
+#endif
+        
+
+        for(int i=0; i<4; ++i)
 		vp_input_id_cache[i]=-1;
 	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i){
-		if (!garray_probedata[i])
-			garray_probedata [i] = g_array_sized_new (FALSE, TRUE, sizeof (double), DEFAULT_PROBE_LEN); // preallocated, can increase
-		else
+#if 0
+		if (garray_probedata[i])
+                        g_array_free (garray_probedata[i], TRUE);
+                garray_probedata [i] = g_array_new (FALSE, TRUE, sizeof (double));
+#else
+                if (!garray_probedata[i])
+                        garray_probedata [i] = g_array_new (FALSE, TRUE, sizeof (double)); // not zero padded, zero data, start at zero length, can increase
+                else{
+#ifdef  MEM_PERF_GARR2
+                        g_message ("MEM_PERF_GARR DSPControl::init_probedata_arrays resize  [%d] garr len = %d", i, garray_probedata [i]->len);
+#endif
 			g_array_set_size (garray_probedata [i], 0);
+                }
+#endif
 
+#if 0
+                if (garray_probe_hdrlist[i])
+                        g_array_free(garray_probe_hdrlist[i], TRUE);
+                garray_probe_hdrlist [i] = g_array_new (FALSE, TRUE, sizeof (double)); // preallocated, can increase
+                //garray_probe_hdrlist [i] = g_array_sized_new (FALSE, TRUE, sizeof (double), DEFAULT_PROBE_LEN); // clear,preallocated, can increase
+#else
 		if (!garray_probe_hdrlist[i])
-			garray_probe_hdrlist [i] = g_array_sized_new (FALSE, TRUE, sizeof (double), DEFAULT_PROBE_LEN); // preallocated, can increase
-                else
+			garray_probe_hdrlist [i] = g_array_new (FALSE, TRUE, sizeof (double));
+                else{
+#ifdef  MEM_PERF_GARR2
+                        g_message ("MEM_PERF_GARR DSPControl::init_probedata_arrays resize [%d] garr len = %d", i, garray_probe_hdrlist [i]->len);
+#endif
 			g_array_set_size (garray_probe_hdrlist [i], 0);
+                }
+#endif
+                
+#ifdef  MEM_PERF_GARR2
+                g_message ("MEM_PERF_GARR DSPControl::init_probedata_arrays  [%d] garr len = %d", i, garray_probedata [i]->len);
+                g_message ("MEM_PERF_GARR DSPControl::init_probedata_arrays  [%d] garr len = %d", i, garray_probe_hdrlist [i]->len);
+#endif
 	}
 	current_probe_data_index = 0;
 	nun_valid_data_sections = 0;
 	nun_valid_hdr = 0;
 	last_nun_hdr_dumped = 0;
 	pv_lock = FALSE;
+
+#ifdef  MEM_PERF_GARR
+        vms = status_getValue ("VmSize:");
+        g_message ("MEM_PERF_GARR DSPControl::init_probedata_arrays END VMS=%14d kb, %dMb, diff=%d kb", vms, vms/1024, vms-vmsp);
+        vmsp=vms;
+#endif
+
+#ifdef  MEM_PERF_GARR
+        g_message ("MEM_PERF_GARR DSPControl::init_probedata_arrays");
+#endif
 }
 
 void DSPControl::add_probedata(double data[13]){ 
 	int i,j;
 	pv_lock = TRUE;
+#ifdef  MEM_PERF_GARR
+        static gint vmss=0;
+        static gint vmsp=0;
+        gint vms = status_getValue ("VmSize:");
+        if (vms-vmsp)
+                g_message ("MEM_PERF_GARR DSPControl::add_probedata   ADD STA VMS=%14d kb, %dMb, diff=%d kb, sum=%d kb", vms, vms/1024, vms-vmsp, vmss);
+        vmsp=vms;
+#endif
 	for (i = PROBEDATA_ARRAY_AIC5OUT_ZMON, j=0; i <= PROBEDATA_ARRAY_END; ++i, ++j)
 		g_array_append_val (garray_probedata[i], data[j]);
 
@@ -1303,6 +1418,19 @@ void DSPControl::add_probedata(double data[13]){
 
 	current_probe_data_index++;	
 	pv_lock = FALSE;
+#ifdef  MEM_PERF_GARR2
+        g_message ("MEM_PERF_GARR DSPControl::add_probedata [%d] garr len = %d", i, garray_porbedata [i]->len);
+        g_message ("MEM_PERF_GARR DSPControl::add_probedata current_index: %d", current_probe_data_index);
+#endif
+
+#ifdef  MEM_PERF_GARR
+        vms = status_getValue ("VmSize:");
+        vmss += vms-vmsp;
+        if (vms-vmsp)
+                g_message ("MEM_PERF_GARR DSPControl::add_probedata   ADD END VMS=%14d kb, %dMb, diff=%d kb, sum=%d kb", vms, vms/1024, vms-vmsp, vmss);
+        vmsp=vms;
+#endif
+        
 }
 
 void DSPControl::add_probevector(){ 
@@ -1363,6 +1491,16 @@ void DSPControl::add_probevector(){
 	std::cout << sec << std::endl;
 #endif
 	pv_lock = FALSE;
+#ifdef  MEM_PERF_GARR
+        static gint vmsp=0;
+        gint vms = status_getValue ("VmSize:");
+        if (vms-vmsp)
+                g_message ("MEM_PERF_GARR DSPControl::add_probevector ADD END VMS=%14d kb, %dMb, diff=%d kb", vms, vms/1024, vms-vmsp);
+        vmsp=vms;
+#endif
+#ifdef  MEM_PERF_GARR2
+        g_message ("MEM_PERF_GARR DSPControl:::add_probevector current_index: %d", current_probe_data_index);
+#endif
 }
 
 void DSPControl::set_probevector(double pv[9]){ 
@@ -1390,6 +1528,11 @@ void DSPControl::add_probe_hdr(double pv[9]){
 	for (i = PROBEDATA_ARRAY_TIME, j=0; i <= PROBEDATA_ARRAY_SEC; ++i, ++j)
 		g_array_append_val (garray_probe_hdrlist[i], pv[j]);
 	++nun_valid_hdr;
+#ifdef  MEM_PERF_GARR
+        g_message ("MEM_PERF_GARR DSPControl::add_probe_hdr [%d] garr len = %d", i, garray_probedata [i]->len);
+        g_message ("MEM_PERF_GARR DSPControl::add_probe_hdr [%d] garr len = %d", i, garray_probe_hdrlist [i]->len);
+        g_message ("MEM_PERF_GARR DSPControl::add_probe_hdr current_index: %d", current_probe_data_index);
+#endif
 }
 
 void DSPControl::dump_probe_hdr(){ 
@@ -1486,6 +1629,7 @@ void DSPControl::dump_probe_hdr(){
 					}
 //				std::cout << "Marker at " << xy[0] << ", " << xy[1] << " " << info << std::endl;
 				}
+                                g_free (info);
 				gapp->xsm->MasterScan->view->update_events ();
 			}
 		}

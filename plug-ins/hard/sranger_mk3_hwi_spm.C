@@ -296,6 +296,12 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
                         return ScanningFlg;
                 }
 
+		if (*property == 'V'){
+                        val1 = DSPControlClass->probe_ready;
+                        val2=val3=0.0;
+                        return DSPControlClass->probe_ready;
+                }
+                
 		// Bit Coded Status:
 		// 0x001: FB watch
 		// 0x002,4: AREA-SCAN-MODE scanning, paused
@@ -1423,9 +1429,9 @@ gboolean sranger_mk3_hwi_spm::MovetoXY(double x, double y){
                 // only if not scan in progress!
                 if (ScanningFlg == 0){
                         if (x != old_x || y != old_y){
-                                gchar *tmp=g_strdup_printf ("%10.4f %10.4f requested", x/(1<<16), y/(1<<16));
-                                gapp->monitorcontrol->LogEvent ("MovetoSXY", tmp, 3);
-                                g_free (tmp);
+                                // gchar *tmp=g_strdup_printf ("%10.4f %10.4f requested", x/(1<<16), y/(1<<16));
+                                // gapp->monitorcontrol->LogEvent ("MovetoSXY", tmp, 3);
+                                // g_free (tmp);
                                 const double Q16 = 1<<16;
                                 old_x = x;
                                 old_y = y;
@@ -1433,24 +1439,24 @@ gboolean sranger_mk3_hwi_spm::MovetoXY(double x, double y){
                                 tip_pos[1] =  y * Q16;
                                 if (tip_to_origin (tip_pos[0], tip_pos[1])){
                                         state = 1;
-                                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "in progress", 3);
+                                        // gapp->monitorcontrol->LogEvent ("MovetoSXY", "in progress", 3);
                                         return TRUE;
                                 } else{
-                                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "error, busy. aborting.", 3);
+                                        // gapp->monitorcontrol->LogEvent ("MovetoSXY", "error, busy. aborting.", 3);
                                         return FALSE; // completed or error/busy
                                 }
                         } else {
-                                gapp->monitorcontrol->LogEvent ("MovetoSXY", "already at requested position.", 3);
+                                // gapp->monitorcontrol->LogEvent ("MovetoSXY", "already at requested position.", 3);
                                 return FALSE; // nothing to do
                         }
                 } else return FALSE; // forbidden, nothing to do
         case 1:
                 if (tip_to_origin (tip_pos[0], tip_pos[1])){
-                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "moving tip...", 3);
+                        // gapp->monitorcontrol->LogEvent ("MovetoSXY", "moving tip...", 3);
                         return TRUE; // wait for move to complete
                 } else {
                         state = 0;
-                        gapp->monitorcontrol->LogEvent ("MovetoSXY", "completed.", 3);
+                        // gapp->monitorcontrol->LogEvent ("MovetoSXY", "completed.", 3);
                         return FALSE; // completed
                 }
         }

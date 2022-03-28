@@ -1512,6 +1512,9 @@ gpointer ProbeFifoReadThread (void *ptr_sr){
 		  << sr->probe_fifo_thread_active << "] Timeout is set to:" 
 		  << (timeout-clock()) << "Clks (incl. 0.5s Reserve) (" << ((double)sr->probe_time_estimate/22000.) << "s)" << std::endl);
 
+        // unref up arrays
+        DSPControlClass->free_probedata_arrays ();
+
 	sr->ReadProbeFifo (sr->probe_thread_dsp, FR_INIT); // init
 
 	int i=1;
@@ -1576,6 +1579,9 @@ gpointer ProbeFifoReadFunction (void *ptr_sr, int dspdev){
 	static int plotted=0;
 	sranger_mk2_hwi_dev *sr = (sranger_mk2_hwi_dev*)ptr_sr;
 
+        // unref up arrays
+        DSPControlClass->free_probedata_arrays ();
+        
 	while (sr->is_scanning ()){
 		switch (sr->ReadProbeFifo (dspdev)){
 		case RET_FR_NOWAIT:
