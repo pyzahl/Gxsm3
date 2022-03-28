@@ -3178,6 +3178,7 @@ int ok_button_callback( GtkWidget *widget, gpointer data)
 py_gxsm_console::~py_gxsm_console (){
         PI_DEBUG_GM(DBG_L2, "Pyremote Plugin: destructor. Calls: Py_FinalizeEx()");
         Py_FinalizeEx();
+        PI_DEBUG_GM(DBG_L2, "Pyremote Plugin: destructor completed.");
 }
 
 

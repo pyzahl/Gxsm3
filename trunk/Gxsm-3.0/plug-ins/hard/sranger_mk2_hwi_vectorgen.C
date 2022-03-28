@@ -351,7 +351,7 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 	double vp_dt_sec=0.;
 	gboolean remote_set_post_start = FALSE;
         int warn_flag=FALSE;
-	gchar *info=NULL;
+        gchar *info=NULL;
 	
 	if (!sranger_common_hwi) return; 
 
@@ -1301,11 +1301,11 @@ void DSPControl::write_dsp_probe (int start, pv_mode pvm){
 							  noise_amp,
 							  start);
 
+        // --- no need --- 20220327PY
 	// Update EC's
-	update();
-
+	//update();
 	// Update from DSP
-	read_dsp_probe ();
+	//read_dsp_probe ();
 }
 
 
