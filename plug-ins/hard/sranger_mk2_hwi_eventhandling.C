@@ -122,13 +122,17 @@ const char* unitlookup[] = { "V",   "V",    "V",    "V",    "V",    "V",     "V"
 //#define XSM_DEBUG_PG(X)  std::cout << X << std::endl;
 #define XSM_DEBUG_PG(X) ;
 
+void DSPControl::vp_signal_lookup_init_cache(){
+        for (int k=0; k<4; ++k)
+                vp_input_id_cache[k] = sranger_common_hwi->query_module_signal_input (DSP_SIGNAL_VECPROBE0_INPUT_ID + k);
+}
+        
 const char* DSPControl::vp_label_lookup(int i){
+
         //if (i==0) // IN0 dedicated for tunnel current
         //        return sranger_common_hwi->lookup_signal_name_by_index (0);
 	if (i > 11 && i < 16){
 		int k=i-12;
-		if (vp_input_id_cache[k] < 0)
-			vp_input_id_cache[k] = sranger_common_hwi->query_module_signal_input (DSP_SIGNAL_VECPROBE0_INPUT_ID + k);
 		if (vp_input_id_cache[k] >= 0){
 			return sranger_common_hwi->lookup_signal_name_by_index (vp_input_id_cache[k]);
 		}
@@ -144,8 +148,6 @@ const char* DSPControl::vp_unit_lookup(int i){
                         return "nA"; // sranger_common_hwi->lookup_signal_unit_by_index (0); // must be a unscaled unit here
 	if (i > 11 && i < 16){
 		int k=i-12;
-		if (vp_input_id_cache[k] < 0)
-			vp_input_id_cache[k] = sranger_common_hwi->query_module_signal_input (DSP_SIGNAL_VECPROBE0_INPUT_ID + k);
 		if (vp_input_id_cache[k] >= 0){
 			return sranger_common_hwi->lookup_signal_unit_by_index (vp_input_id_cache[k]);
 		}
@@ -168,8 +170,6 @@ double DSPControl::vp_scale_lookup(int i){
                         return  DAC2Ulookup[0]/gapp->xsm->Inst->nAmpere2V (1.); // nA
 	if (i > 11 && i < 16){
 		int k=i-12;
-		if (vp_input_id_cache[k] < 0)
-			vp_input_id_cache[k] = sranger_common_hwi->query_module_signal_input (DSP_SIGNAL_VECPROBE0_INPUT_ID + k);
 		if (vp_input_id_cache[k] >= 0){
 			return sranger_common_hwi->lookup_signal_scale_by_index (vp_input_id_cache[k]);
 		}
@@ -1339,8 +1339,8 @@ void DSPControl::init_probedata_arrays (){
 #endif
         
 
-        for(int i=0; i<4; ++i)
-		vp_input_id_cache[i]=-1;
+        //vp_signal_lookup_init_cache(); // may interfere
+
 	for (int i=0; i<NUM_PROBEDATA_ARRAYS; ++i){
 #if 0
 		if (garray_probedata[i])
