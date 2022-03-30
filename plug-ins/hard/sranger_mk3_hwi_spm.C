@@ -121,6 +121,7 @@ sranger_mk3_hwi_spm::~sranger_mk3_hwi_spm(){
  "A" :                Mover/Wave axis counts 0,1,2 (X/Y/Z)
  "p" :                X,Y Scan/Probe Coords in Pixel, 0,0 is center, DSP Scan Coords
  "P" :                X,Y Scan/Probe Coords in Pixel, 0,0 is top le
+ "M" :                Mix-IN1,2,3
 ft [indices]
  */
 
@@ -185,6 +186,13 @@ gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &
 #define S_MONV(I) (gapp->xsm->Inst->Dig2VoltOut(3276.7) * lookup_signal_scale_by_index (signal_id[I]) * dsp_sig_mon.signal[I])
 #define S_MON(I)  (lookup_signal_scale_by_index (signal_id[I]) * dsp_sig_mon.signal[I])
 
+	if (*property == 'M'){
+		val1 =  S_MON (1);
+		val2 =  S_MON (2);
+		val3 =  S_MON (3);
+		ok=TRUE;
+		return TRUE;
+        }
 	if (*property == 'z'){
 		val1 =  gapp->xsm->Inst->VZ() * S_MONV (6);
 		val2 =  gapp->xsm->Inst->VX() * S_MONV (4);
