@@ -1277,9 +1277,12 @@ static PyObject* remote_rtquery(PyObject *self, PyObject *args)
 		return Py_BuildValue("i", -1);
 
 	double u,v,w;
-	gapp->xsm->hardware->RTQuery (parameter, u,v,w);
+	gint64 ret = gapp->xsm->hardware->RTQuery (parameter, u,v,w);
 
-	return Py_BuildValue("fff", u,v,w);
+        char uu[10] = { 0,0,0,0, 0,0,0,0, 0,0};
+        strncpy ((char*) uu, (char*)&ret, 8);
+
+	return Py_BuildValue("fffs", u,v,w, uu);
 }
 
 // asks HwI via RTQuery for real time watches -- depends on HwI and it's capabilities/availabel options
