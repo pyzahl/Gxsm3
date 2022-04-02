@@ -712,6 +712,7 @@ typedef struct {
         PyObject *dictionary;
         PyObject *ret;
         py_gxsm_console *pygc;
+        PyThreadState *py_state_save;
 } PyRunThreadData;
 
 
@@ -3262,6 +3263,8 @@ void py_gxsm_console::initialize(void)
                 // g_print ("pyremote Plugin :: initialize -- PyInitializeEx(0)\n");
 		// Do not register signal handlers -- i.e. do not "crash" gxsm on errors!
                 Py_InitializeEx (0);
+                //PyEval_InitThreads(); obsolete in 3.7
+                //PyEval_ReleaseLock();
 
 		PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: initialize -- ImportModule gxsm");
                 // g_print ("pyremote Plugin :: initialize -- ImportModule gxsm\n");
@@ -3398,13 +3401,16 @@ void py_gxsm_console::kill(GtkToggleButton *btn, gpointer user_data)
 	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
 
         if (pygc->user_script_running > 0){
-                pygc->append (N_("\n*** SCRIPT KILL: Setting PyErr Interrupt to abort script.\n"));
+                pygc->append (N_("\n*** SCRIPT INTERRUPT REQUESTED: Setting PyErr SIGINT to abort script.\n"));
         
                 //Py_AddPendingCall(-1);
-                PI_DEBUG_GM (DBG_L2,  "trying to kill interpreter");
-                PyErr_SetInterrupt();
+                PI_DEBUG_GM (DBG_L2,  "trying to interrup interpreter, sending SIGINT.");
+                PyErr_SetInterrupt ();
+                //PyErr_SetInterruptEx (SIGINT);
+                //PyErr_CheckSignals();
+                //PyErr_SetString(PyExc_KeyboardInterrupt, "Abort");
         } else {
-                pygc->append (N_("\n*** SCRIPT KILL: No user script is currently running.\n"));
+                pygc->append (N_("\n*** SCRIPT INTERRUPT: No user script is currently running.\n"));
         }
 }
 
@@ -3415,10 +3421,14 @@ void py_gxsm_console::PyRun_GTaskThreadFunc (GTask *task,
                                              GCancellable *cancellable){
         PyRunThreadData *s = (PyRunThreadData*) task_data;
         PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: py_gxsm_console::PyRun_GTaskThreadFunc");
+
+        PyGILState_STATE py_state = PyGILState_Ensure();
         s->ret = PyRun_String(s->cmd,
                               s->mode,
                               s->dictionary,
                               s->dictionary);
+        PyGILState_Release (py_state);
+
         g_free (s->cmd);
         s->cmd = NULL;
         PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: py_gxsm_console::PyRun_GTaskThreadFunc done");
@@ -3428,10 +3438,14 @@ void py_gxsm_console::PyRun_GTaskThreadFunc (GTask *task,
 gpointer py_gxsm_console::PyRun_GThreadFunc (gpointer data){
         PyRunThreadData *s = (PyRunThreadData*) data;
         PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: py_gxsm_console::PyRun_GThreadFunc");
+
+        PyGILState_STATE py_state = PyGILState_Ensure();
         s->ret = PyRun_String(s->cmd,
                               s->mode,
                               s->dictionary,
                               s->dictionary);
+        PyGILState_Release (py_state);
+        
         g_free (s->cmd);
         s->cmd = NULL;
         PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: py_gxsm_console::PyRun_GThreadFunc PyRun completed");
@@ -3442,6 +3456,9 @@ gpointer py_gxsm_console::PyRun_GThreadFunc (gpointer data){
                                     "\n<<< PyRun user script (as thread) run raised an exeption. <<<\n");
         s->pygc->push_message_async (NULL); // terminate IDLE push task
         PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: py_gxsm_console::PyRun_GThreadFunc finished.");
+
+        PyEval_RestoreThread(s->py_state_save);
+
         return NULL;
 }
 
@@ -3477,6 +3494,7 @@ const gchar* py_gxsm_console::run_command(const gchar *cmd, int mode)
                 run_data.ret  = NULL;
                 run_data.pygc = this;
 #if 1
+                run_data.py_state_save = PyEval_SaveThread();
                 g_thread_new (NULL, PyRun_GThreadFunc, &run_data);
 #else
                 GTask *pyrun_task = g_task_new (NULL,
