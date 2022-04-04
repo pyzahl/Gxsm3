@@ -1280,10 +1280,12 @@ static PyObject* remote_rtquery(PyObject *self, PyObject *args)
 	double u,v,w;
 	gint64 ret = gapp->xsm->hardware->RTQuery (parameter, u,v,w);
 
-        char uu[10] = { 0,0,0,0, 0,0,0,0, 0,0};
-        strncpy ((char*) uu, (char*)&ret, 8);
-
-	return Py_BuildValue("fffs", u,v,w, uu);
+        if (*parameter == 'm'){
+                static char uu[10] = { 0,0,0,0, 0,0,0,0, 0,0};
+                strncpy ((char*) uu, (char*)&ret, 8);
+                return Py_BuildValue("fffs", u,v,w, uu);
+        } else
+                return Py_BuildValue("fff", u,v,w);
 }
 
 // asks HwI via RTQuery for real time watches -- depends on HwI and it's capabilities/availabel options
@@ -3287,7 +3289,11 @@ void py_gxsm_console::initialize(void)
 PyObject* py_gxsm_console::run_string(const char *cmd, int type, PyObject *g, PyObject *l) {
         push_message_async ("\n<<< Python interpreter started. <<<\n");
         push_message_async (cmd);
-	PyObject *ret = PyRun_String(cmd, type, g, l);
+
+        PyGILState_STATE py_state = PyGILState_Ensure();
+        PyObject *ret = PyRun_String(cmd, type, g, l);
+        PyGILState_Release (py_state);
+        
         push_message_async (ret ?
                             "\n<<< Python interpreter finished processing string. <<<\n" :
                             "\n<<< Python interpreter completed with Exception/Error. <<<\n");
