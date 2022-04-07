@@ -204,12 +204,12 @@ static void edge_init(void)
   GtkWidget *dummywidget = gtk_menu_item_new();
 
   ra = g_new( remote_action_cb, 1);
-  ra -> cmd = g_strdup_printf("edge_PI");
+  ra -> cmd = g_strdup_printf("MATH_FILTER2D_Edge");
   ra -> RemoteCb = &edge_non_interactive;
   ra -> widget = dummywidget;
   ra -> data = NULL;
   gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
-  PI_DEBUG (DBG_L2, "edge-plugin: Adding new Remote Cmd: edge_PI");
+  PI_DEBUG (DBG_L2, "edge-plugin: Adding new Remote Cmd: MATH_FILTER2D_Edge");
 // remote action stuff
 }
 

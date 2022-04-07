@@ -62,12 +62,14 @@ into a new created math channel.
 #include <gtk/gtk.h>
 #include "config.h"
 #include "gxsm3/plugin.h"
+#include "../../common/pyremote.h"
 
 // Plugin Prototypes
 static void despike2d_init( void );
 static void despike2d_about( void );
 static void despike2d_configure( void );
 static void despike2d_cleanup( void );
+static void despike2d_non_interactive( GtkWidget *widget , gpointer pc );
 
 // Define Type of mat plugin here, only one line should be commented in!!
 #define GXSM_ONE_SRC_PLUGIN__DEF
@@ -189,6 +191,33 @@ GxsmMathTwoSrcPlugin *get_gxsm_math_two_src_plugin_info( void ) {
 static void despike2d_init(void)
 {
   PI_DEBUG (DBG_L2, "despike2d Plugin Init");
+
+// This is action remote stuff, stolen from the peak finder PI.
+  remote_action_cb *ra;
+  GtkWidget *dummywidget = gtk_menu_item_new();
+
+  ra = g_new( remote_action_cb, 1);
+  ra -> cmd = g_strdup_printf("MATH_FILTER2D_Despike");
+  ra -> RemoteCb = &despike2d_non_interactive;
+  ra -> widget = dummywidget;
+  ra -> data = NULL;
+  gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+  PI_DEBUG (DBG_L2, "edge-plugin: Adding new Remote Cmd: MATH_FILTER2D_Despike");
+// remote action stuff
+}
+
+static void despike2d_non_interactive( GtkWidget *widget , gpointer pc )
+{
+  PI_DEBUG (DBG_L2, "edge-plugin: edge is called from script.");
+
+//  cout << "pc: " << ((gchar**)pc)[1] << endl;
+//  cout << "pc: " << ((gchar**)pc)[2] << endl;
+//  cout << "pc: " << atof(((gchar**)pc)[2]) << endl;
+
+//  gapp->xsm->MathOperation(&edge_run_radius);
+  gapp->xsm->MathOperation(&despike2d_run);
+  return;
+
 }
 
 // about-Function
