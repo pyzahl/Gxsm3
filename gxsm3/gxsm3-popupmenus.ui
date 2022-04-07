@@ -701,7 +701,7 @@
       <attribute name="action">win.object-properties</attribute>
     </item>
     <item>
-      <attribute name="label" translatable="yes">Get Coordintes</attribute>
+      <attribute name="label" translatable="yes">Get Coordinates</attribute>
       <attribute name="action">win.get-coordinates</attribute>
     </item>
     <item>
