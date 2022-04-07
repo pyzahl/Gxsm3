@@ -197,12 +197,12 @@ static void normal_z_init(void)
   GtkWidget *dummywidget = gtk_menu_item_new();
 
   ra = g_new( remote_action_cb, 1);
-  ra -> cmd = g_strdup_printf("normal_z_PI");
+  ra -> cmd = g_strdup_printf("MATH_FILTER2D_Normal_Z");
   ra -> RemoteCb = &normal_z_non_interactive;
   ra -> widget = dummywidget;
   ra -> data = NULL;
   gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
-  PI_DEBUG (DBG_L2, "normal_z-plugin: Adding new Remote Cmd: normal_z_PI");
+  PI_DEBUG (DBG_L2, "normal_z-plugin: Adding new Remote Cmd: MATH_FILTER2D_Normal_Z");
 // remote action stuff
 }
 

@@ -211,7 +211,7 @@ static void diff_init(void)
    GtkWidget *dummywidget = gtk_menu_item_new();
  
    ra = g_new( remote_action_cb, 1);
-   ra -> cmd = g_strdup_printf("diff_PI");
+   ra -> cmd = g_strdup_printf("MATH_FILTER1D_Diff");
    ra -> RemoteCb = &diff_non_interactive;
    ra -> widget = dummywidget;
    ra -> data = NULL;
