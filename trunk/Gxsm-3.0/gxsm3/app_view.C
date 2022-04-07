@@ -3188,13 +3188,23 @@ void ViewControl::view_file_saveimage_callback (GSimpleAction *simple, GVariant 
         gchar *s_value = vc->scan->data.Vunit->UsrString (vc->scan->mem2d->data->GetVLookup (vc->scan->mem2d->GetLayer ()), UNIT_SM_PS);
         gchar *s_time = vc->scan->data.TimeUnit->UsrString (vc->scan->mem2d->get_frame_time (), UNIT_SM_PS);
         gchar *s_vrange = vc->scan->data.Zunit->UsrString (vc->scan->data.display.vrange_z, UNIT_SM_PS);
-	gchar *suggest0 = g_strdup_printf ("%s%s%s%s%s-VZ%s-snap.pdf", vc->scan->data.ui.originalname,
-                                          vc->scan->data.s.ntimes>1?"_L":"",
-                                          vc->scan->data.s.ntimes>1?s_time:"",
-                                          vc->scan->data.s.nvalues>1?"_T":"",
-                                          vc->scan->data.s.nvalues>1?s_value:"",
-                                          s_vrange
+        gchar *dirname = g_path_get_dirname (vc->scan->data.ui.name);
+        gchar *basename = g_path_get_basename (vc->scan->data.ui.name);
+        gchar **basev = g_strsplit(basename, ".", 2);
+#if 0
+	gchar *suggest0 = g_strdup_printf ("%/%s%s%s%s%s-VZ%s-snap.pdf", dirname, basev[0], // vc->scan->data.ui.originalname,
+                                           vc->scan->data.s.ntimes>1?"_L":"",
+                                           vc->scan->data.s.ntimes>1?s_time:"",
+                                           vc->scan->data.s.nvalues>1?"_T":"",
+                                           vc->scan->data.s.nvalues>1?s_value:"",
+                                           s_vrange
                                           );
+#endif
+	gchar *suggest0 = g_strdup_printf ("%s/%s.pdf", dirname, basev[0]);
+        g_free (dirname);
+        g_free (basename);
+        g_strfreev (basev);
+
         g_free (s_value);
         g_free (s_time);
         g_free (s_vrange);
