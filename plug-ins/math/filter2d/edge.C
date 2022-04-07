@@ -221,7 +221,8 @@ static void edge_non_interactive( GtkWidget *widget , gpointer pc )
 //  cout << "pc: " << ((gchar**)pc)[2] << endl;
 //  cout << "pc: " << atof(((gchar**)pc)[2]) << endl;
 
-  gapp->xsm->MathOperation(&edge_run_radius);
+//  gapp->xsm->MathOperation(&edge_run_radius);
+  gapp->xsm->MathOperation(&edge_run);
   return;
 
 }

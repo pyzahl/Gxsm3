@@ -122,7 +122,7 @@ sranger_mk3_hwi_spm::~sranger_mk3_hwi_spm(){
  "p" :                X,Y Scan/Probe Coords in Pixel, 0,0 is center, DSP Scan Coords
  "P" :                X,Y Scan/Probe Coords in Pixel, 0,0 is top left [indices]
  "M" :                Mix-IN1, 2, 3
- "mNN" :              Mix-IN0, 1, 2 -- or Monitor Singals at index SigMon[NN], [NN+1], [NN+2] (NN = 00 ... 27)
+ "mNN" :              MonitorSignal[NN] -- Monitor Singals at index SigMon[NN]: [Scaled Signal in Unit, raw signal, scale, ret=unit-string] (NN = 00 ... 22), 99: reload signal mapping
  */
 
 gint sranger_mk3_hwi_spm::RTQuery (const gchar *property, double &val1, double &val2, double &val3){

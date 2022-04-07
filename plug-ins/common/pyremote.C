@@ -2533,9 +2533,13 @@ static PyObject* remote_chfname(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "l", &channel))
 		return Py_BuildValue("i", -1);
         int ch=channel;
+        if (ch >= 100) ch -= 100;
         if (gapp->xsm->GetScanChannel(ch)){
                 const gchar *tmp = gapp->xsm->GetScanChannel (ch)->storage_manager.get_filename();
-                return Py_BuildValue ("s", tmp ? tmp : gapp->xsm->GetScanChannel (ch)->data.ui.originalname);
+                if (channel >= 100)
+                        return Py_BuildValue ("s", tmp ? tmp : gapp->xsm->GetScanChannel (ch)->data.ui.originalname);
+                else
+                        return Py_BuildValue ("s", tmp ? tmp : gapp->xsm->GetScanChannel (ch)->data.ui.name);
         } else
                 return Py_BuildValue ("s", "EE: invalid channel");
 }
