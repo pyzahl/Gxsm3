@@ -59,20 +59,961 @@
 The following script shows you all commands that the gxsm-module supports:
 
 \begin{alltt}
+# list core gxsm module functions:
 print dir(gxsm)
+
+# list buildin help on functions:
+for h in gxsm.help ():
+	print (h)
+
+# list all by gxsm known entry (set/get) reference names:
+for h in gxsm.list_refnames ():
+	print ('{} \t=>\t {}'.format(h, gxsm.get(h))) 
+
+# list all action hooks to activate function 
+# via a script triggered button press 
+# or call plugin hook enabled math plugins:
+for h in gxsm.list_actions ():
+	print (h)
 \end{alltt}
 
-The result will look like this:
+The result will look like this (with added notes):
 
 \begin{alltt}
-['__doc__', '__name__', 'autodisplay', 'chmodea',
-'chmodem', 'chmoden', 'chmodeno', 'chmodex',
-'chview1d', 'chview2d', 'chview3d', 'da0', 'direct',
-'echo', 'export', 'import', 'load', 'log',
-'logev', 'quick', 'save', 'saveas',
-'scaninit', 'scanline', 'scanupdate', 'scanylookup',
-'set', 'sleep', 'startscan', 'stopscan', 'unitbz',
-'unitev', 'units', 'unitvolt', 'waitscan', 'createscan']
+
+** gxsm python module:
+['__doc__', '__loader__', '__name__', '__package__', '__spec__', 'action', 'add_layerinformation', 
+'add_marker_object', 'autodisplay', 'autosave', 'autoupdate', 
+'chfname', 'chmodea', 'chmodem', 'chmoden', 'chmodeno', 'chmodex', 'chview1d', 'chview2d', 'chview3d', 
+'createscan', 'createscanf', 'crop', 'da0', 'direct', 'echo', 'export', 'get', 'get_data_pkt', 
+'get_differentials', 'get_dimensions', 'get_geometry', 'get_object', 'get_slice', 
+'get_v_lookup', 'get_x_lookup', 'get_y_lookup', 
+'gets', 'help', 'import', 'list_actions', 'list_refnames', 'load', 'log', 'logev', 
+'moveto_scan_xy', 'progress', 'put_data_pkt', 'quick', 'rtquery', 'save', 'save_drawing', 'saveas', 
+'scaninit', 'scanline', 'scanupdate', 'scanylookup', 'set', 'set_scan_lookup', 'set_scan_unit', 
+'set_v_lookup', 'set_view_indices', 'set_x_lookup', 'set_y_lookup', 'signal_emit', 'sleep', 
+'startscan', 'stopscan', 'unitbz', 'unitev', 'units', 'unitvolt', 'waitscan', 'y_current']
+
+***
+(1) Gxsm3 python remote console -- gxsm.help on build in commands
+ The following list shows a brief explanation of the commands, together with
+ the signature (that is the type of arguments).
+
+ '()' equals no argument. E.g. \verb+startscan()+
+
+ '(N)' equals one Integer arument. E.g. \verb+chview1d(2)+
+
+ '(X)' equals one Float argument. No example.
+
+ '(S)' equals a string. Often numbers are evaluated as strings first. Like in \verb+set("RangeX", "234.12")+
+
+ '(S,N)' equals two parameters. E.g. \verb+gnuexport("myfilename.nc", 1)+
+
+--------------------------------------------------------------------------------
+gxsm.help : List Gxsm methods: print gxsm.help ()
+gxsm.set : Set Gxsm entry value, see list_refnames: gxsm.set ('refname','value as string')
+gxsm.get : Get Gxsm entry as value, see list_refnames. gxsm.get ('refname')
+gxsm.gets : Get Gxsm entry as string. gxsm.gets ('refname')
+gxsm.list_refnames : List all available Gxsm entry refnames (Better: pointer hover over Gxsm-Entry
+                     to see tooltip with ref-name). print gxsm.list_refnames ()
+gxsm.action : Trigger Gxsm action (menu action or button signal), see list_actions: gxsm.action('action')
+gxsm.list_actions : List all available Gxsm actions (Better: pointer hover over Gxsm-Button 
+                    to see tooltip with action-name): print gxsm.list_actions ()
+gxsm.rtquery : Gxsm hardware Real-Time-Query: svec[3] = gxsm.rtquery('X|Y|Z|xy|zxy|o|f|s|i|U') 
+gxsm.y_current : RTQuery Current Scanline.
+gxsm.moveto_scan_xy : Set tip position to Scan-XY: gxsm.moveto_scan_xy (x,y)
+gxsm.createscan : Create Scan int: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('l', [...]), append)
+gxsm.createscanf : Create Scan float: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('f', [...]), append)
+gxsm.set_scan_unit : Set Scan X,Y,Z,L Dim Unit: gxsm.set_scan_unit (ch,'X|Y|Z|L|T','UnitId string','Label string')
+gxsm.set_scan_lookup : Set Scan Lookup for Dim: gxsm.set_scan_lookup (ch,'X|Y|L',start,end)
+gxsm.get_geometry : Get Scan Geometry: [rx,ry,x0,y0,alpha]=gxsm.get_geometry (ch)
+gxsm.get_differentials : Get Scan Scaling: [dx,dy,dz,dl]=gxsm.get_differentials (ch)
+gxsm.get_dimensions : Get Scan Dimensions: [nx,ny,nv,nt]=gxsm.get_dimensions (ch)
+gxsm.get_data_pkt : Get Data Value at point: value=gxsm.get_data_pkt (ch, x, y, v, t)
+gxsm.put_data_pkt : Put Data Value to point: gxsm.put_data_pkt (value, ch, x, y, v, t)
+gxsm.get_slice : Get Slice/Image: [nx,ny,array]=gxsm.get_slice (ch, v, t)
+gxsm.get_x_lookup : Get Scan Data index to world mapping: x=gxsm.get_x_lookup (ch, i)
+gxsm.get_y_lookup : Get Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i)
+gxsm.get_v_lookup : Get Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i)
+gxsm.set_x_lookup : Set Scan Data index to world mapping: x=gxsm.get_x_lookup (ch, i, v)
+gxsm.set_y_lookup : Set Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i, v)
+gxsm.set_v_lookup : Set Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i, v)
+gxsm.get_object : Get Object Coordinates: [type, x,y,..]=gxsm.get_object (ch, n)
+gxsm.add_marker_object : Put Marker Object at pixel coordinates or current tip pos (id='xy'|grp=-1):
+                          gxsm.add_marker_object (ch, label=str|'xy', mgrp=0..5|-1, x=ix,y=iy, size=0..1)
+gxsm.startscan : Start Scan.
+gxsm.stopscan : Stop Scan.
+gxsm.waitscan : Wait Scan. ret=gxsm.waitscan(blocking=true). ret=-1: no scan in progress, else current line index.
+gxsm.scaninit : Scaninit.
+gxsm.scanupdate : Scanupdate.
+gxsm.scanylookup : Scanylookup.
+gxsm.scanline : Scan line.
+gxsm.autosave : Save: Auto Save Scans. gxsm.autosave (). Returns current scanline y index and file name(s) if scanning.
+gxsm.autoupdate : Save: Auto Update Scans. gxsm.autoupdate (). Returns current scanline y index and file name(s) if scanning.
+gxsm.save : Save: Auto Save Scans: gxsm.save ()
+gxsm.saveas : Save File As: gxsm.saveas (ch, 'path/fname.nc')
+gxsm.load : Load File: gxsm.load (ch, 'path/fname.nc')
+gxsm.export : Export scan: gxsm.export (ch, 'path/fname.nc')
+gxsm.import : Import scan: gxsm.import (ch, 'path/fname.nc')
+gxsm.save_drawing : Save Drawing to file: gxsm.save_drawing (ch, time, layer, 'path/fname.png|pdf|svg')
+gxsm.set_view_indices : Set Ch view time and layer indices: gxsm.set_view_indices (ch, time, layer)
+gxsm.autodisplay : Autodisplay active channel: gxsm.autodisplay ()
+gxsm.chfname : Get Ch Filename: filename = gxsm.chfname (ch)
+gxsm.chmodea : Set Ch Mode to A: gxsm.chmodea (ch)
+gxsm.chmodex : Set Ch Mode to X: gxsm.chmodex (ch)
+gxsm.chmodem : Set Ch Mode to MATH: gxsm.chmodem (ch)
+gxsm.chmoden : Set Ch Mode to Data Channel <X+N>: gxsm.chmoden (ch,n)
+gxsm.chmodeno : Set View Mode to No: gxsm.chmodeno (ch)
+gxsm.chview1d : Set View Mode to 1D: gxsm.chmode1d (ch)
+gxsm.chview2d : Set View Mode to 2D: gxsm.chmode2d (ch)
+gxsm.chview3d : Set View Mode to 3D: gxsm.chmode3d (ch)
+gxsm.quick : Quick.
+gxsm.direct : Direct.
+gxsm.log : Log.
+gxsm.crop : Crop (ch-src, ch-dst)
+gxsm.unitbz : UnitBZ.
+gxsm.unitvolt : UnitVolt.
+gxsm.unitev : UniteV.
+gxsm.units : UnitS.
+gxsm.echo : Echo string to terminal. gxsm.echo('hello gxsm to terminal') 
+gxsm.logev : Write string to Gxsm system log file and log monitor: gxsm.logev ('hello gxsm to logfile/monitor') 
+gxsm.progress : Show/update gxsm progress info. fraction<0 init, 0..1 progress, >1 close: gxsm.progress ('Calculating...', fraction) 
+gxsm.add_layerinformation : Add Layerinformation to active scan. gxsm.add_layerinformation('Text',ch)
+gxsm.da0 : Da0. -- N/A for SRanger
+gxsm.signal_emit : Action-String. 
+gxsm.sleep : Sleep N/10s: gxsm.sleep (N) 
+*
+--------------------------------------------------------------------------------
+(2) Gxsm3 python remote console -- help on reference names
+  used for gxsm.set and get, gets commands.
+  Hint: hover the pointer over any get/set enabled Gxsm entry to see it`s ref-name!
+  Example: gxsm.set ("dsp-fbs-bias", "1.0")
+--------------------------------------------------------------------------------
+script-control 	=>	 0.0
+TimeSelect 	=>	 0.0
+Time 	=>	 1.0
+LayerSelect 	=>	 0.0
+Layers 	=>	 1.0
+Rotation 	=>	 0.0
+ScanY 	=>	 0.0
+ScanX 	=>	 0.0
+OffsetY 	=>	 0.0
+OffsetX 	=>	 0.0
+PointsY 	=>	 400.0
+PointsX 	=>	 400.0
+StepsY 	=>	 2.0050125313283207
+StepsX 	=>	 2.0050125313283207
+RangeY 	=>	 800.0
+RangeX 	=>	 800.0
+dsp-pac-ph-bw-set 	=>	 8000.0
+dsp-pac-ph-ci-gain 	=>	 -127.2
+dsp-pac-ph-cp-gain 	=>	 -61.6
+dsp-pac-ph-set 	=>	 -100.0
+dsp-pac-res-gain 	=>	 1.0
+dsp-pac-res-q-factor 	=>	 30000.0
+dsp-pac-am-bw-set 	=>	 8.0
+dsp-pac-am-ci-gain 	=>	 -77.5
+dsp-pac-am-cp-gain 	=>	 8.1
+dsp-pac-am-set 	=>	 0.1
+dsp-pac-excitation-sine-freq 	=>	 32766.4
+dsp-pac-excitation-sine-amp 	=>	 0.5
+dsp-pac-tau 	=>	 1.5e-05
+dsp-pac-res-amp-max 	=>	 5.0
+dsp-pac-res-amp-min 	=>	 0.0
+dsp-pac-res-amp-range 	=>	 1.25
+dsp-pac-res-amp-ref 	=>	 0.0
+dsp-pac-exci-amp-max 	=>	 1.0
+dsp-pac-exci-amp-min 	=>	 -0.05
+dsp-pac-exci-amp-range 	=>	 0.625
+dsp-pac-exci-amp-ref 	=>	 0.0
+dsp-pac-res-phase-max 	=>	 180.0
+dsp-pac-res-phase-min 	=>	 -180.0
+dsp-pac-res-phase-range 	=>	 7.16
+dsp-pac-res-phase-ref 	=>	 0.0
+dsp-pac-exci-freq-max 	=>	 41000.0
+dsp-pac-exci-freq-min 	=>	 29000.0
+dsp-pac-exci-freq-range 	=>	 187.0
+dsp-pac-exci-freq-ref 	=>	 0.0
+dsp-VP-Lim-Val-Dn 	=>	 1.0
+dsp-VP-Lim-Val-Up 	=>	 1.0
+dsp-X-Final-Delay 	=>	 0.01
+dsp-AX-GateTime 	=>	 0.001
+dsp-AX-Final-Delay 	=>	 0.01
+dsp-AX-Slope-Ramp 	=>	 100.0
+dsp-AX-V-Slope 	=>	 100.0
+dsp-AX-rep 	=>	 1.0
+dsp-AX-Points 	=>	 100.0
+dsp-AX-V-End 	=>	 1.0
+dsp-AX-V-Start 	=>	 0.0
+dsp-LCK-AC-Repetitions 	=>	 1.0
+dsp-LCK-AC-Final-Delay 	=>	 0.01
+dsp-LCK-AC-Slope 	=>	 12.0
+dsp-LCK-AC-Points 	=>	 720.0
+dsp-ALCK-C-Phase-Span 	=>	 360.0
+dsp-LCK-AC-avg-Cycles 	=>	 32.0
+dsp-LCK-AC-Phase-B 	=>	 90.0
+dsp-LCK-AC-Phase-A 	=>	 0.0
+dsp-LCK-AC-Frequency 	=>	 1171.88
+dsp-LCK-AC-Z-Amp 	=>	 0.0
+dsp-LCK-AC-Bias-Amp 	=>	 0.02
+dsp-LCK-CORRSUM-SHR 	=>	 0.0
+dsp-LCK-CORRPRD-SHR 	=>	 14.0
+dsp-Noise-Amplitude 	=>	 0.0
+dsp-TK-Delay 	=>	 1.0
+dsp-TK-Speed 	=>	 1000.0
+dsp-TK-Mode 	=>	 -1.0
+dsp-TK-Reps 	=>	 100.0
+dsp-TK-Nodes 	=>	 12.0
+dsp-TK-Points 	=>	 10.0
+dsp-TK-rad2 	=>	 0.0
+dsp-TK-rad 	=>	 2.0
+dsp-GVP-GPIO-Lock-57 	=>	 57.0
+dsp-GVP-Final-Delay 	=>	 0.01
+dsp-gvp-pcjr44 	=>	 0.0
+dsp-gvp-nrep44 	=>	 0.0
+dsp-gvp-data44 	=>	 0.0
+dsp-gvp-n44 	=>	 0.0
+dsp-gvp-dt44 	=>	 0.0
+dsp-gvp-dsig44 	=>	 0.0
+dsp-gvp-dz44 	=>	 0.0
+dsp-gvp-dy44 	=>	 0.0
+dsp-gvp-dx44 	=>	 0.0
+dsp-gvp-du44 	=>	 0.0
+dsp-gvp-pcjr43 	=>	 0.0
+dsp-gvp-nrep43 	=>	 0.0
+dsp-gvp-data43 	=>	 0.0
+dsp-gvp-n43 	=>	 0.0
+dsp-gvp-dt43 	=>	 0.0
+dsp-gvp-dsig43 	=>	 0.0
+dsp-gvp-dz43 	=>	 0.0
+dsp-gvp-dy43 	=>	 0.0
+dsp-gvp-dx43 	=>	 0.0
+dsp-gvp-du43 	=>	 0.0
+dsp-gvp-pcjr42 	=>	 0.0
+dsp-gvp-nrep42 	=>	 0.0
+dsp-gvp-data42 	=>	 0.0
+dsp-gvp-n42 	=>	 0.0
+dsp-gvp-dt42 	=>	 0.0
+dsp-gvp-dsig42 	=>	 0.0
+dsp-gvp-dz42 	=>	 0.0
+dsp-gvp-dy42 	=>	 0.0
+dsp-gvp-dx42 	=>	 0.0
+dsp-gvp-du42 	=>	 0.0
+dsp-gvp-pcjr41 	=>	 0.0
+dsp-gvp-nrep41 	=>	 0.0
+dsp-gvp-data41 	=>	 0.0
+dsp-gvp-n41 	=>	 0.0
+dsp-gvp-dt41 	=>	 0.0
+dsp-gvp-dsig41 	=>	 0.0
+dsp-gvp-dz41 	=>	 0.0
+dsp-gvp-dy41 	=>	 0.0
+dsp-gvp-dx41 	=>	 0.0
+dsp-gvp-du41 	=>	 0.0
+dsp-gvp-pcjr40 	=>	 0.0
+dsp-gvp-nrep40 	=>	 0.0
+dsp-gvp-data40 	=>	 0.0
+dsp-gvp-n40 	=>	 0.0
+dsp-gvp-dt40 	=>	 0.0
+dsp-gvp-dsig40 	=>	 0.0
+dsp-gvp-dz40 	=>	 0.0
+dsp-gvp-dy40 	=>	 0.0
+dsp-gvp-dx40 	=>	 0.0
+dsp-gvp-du40 	=>	 0.0
+dsp-gvp-pcjr39 	=>	 0.0
+dsp-gvp-nrep39 	=>	 0.0
+dsp-gvp-data39 	=>	 0.0
+dsp-gvp-n39 	=>	 0.0
+dsp-gvp-dt39 	=>	 0.0
+dsp-gvp-dsig39 	=>	 0.0
+dsp-gvp-dz39 	=>	 0.0
+dsp-gvp-dy39 	=>	 0.0
+dsp-gvp-dx39 	=>	 0.0
+dsp-gvp-du39 	=>	 0.0
+dsp-gvp-pcjr38 	=>	 0.0
+dsp-gvp-nrep38 	=>	 0.0
+dsp-gvp-data38 	=>	 0.0
+dsp-gvp-n38 	=>	 0.0
+dsp-gvp-dt38 	=>	 0.0
+dsp-gvp-dsig38 	=>	 0.0
+dsp-gvp-dz38 	=>	 0.0
+dsp-gvp-dy38 	=>	 0.0
+dsp-gvp-dx38 	=>	 0.0
+dsp-gvp-du38 	=>	 0.0
+dsp-gvp-pcjr37 	=>	 0.0
+dsp-gvp-nrep37 	=>	 0.0
+dsp-gvp-data37 	=>	 0.0
+dsp-gvp-n37 	=>	 0.0
+dsp-gvp-dt37 	=>	 0.0
+dsp-gvp-dsig37 	=>	 0.0
+dsp-gvp-dz37 	=>	 0.0
+dsp-gvp-dy37 	=>	 0.0
+dsp-gvp-dx37 	=>	 0.0
+dsp-gvp-du37 	=>	 0.0
+dsp-gvp-pcjr36 	=>	 0.0
+dsp-gvp-nrep36 	=>	 0.0
+dsp-gvp-data36 	=>	 0.0
+dsp-gvp-n36 	=>	 0.0
+dsp-gvp-dt36 	=>	 0.0
+dsp-gvp-dsig36 	=>	 0.0
+dsp-gvp-dz36 	=>	 0.0
+dsp-gvp-dy36 	=>	 0.0
+dsp-gvp-dx36 	=>	 0.0
+dsp-gvp-du36 	=>	 0.0
+dsp-gvp-pcjr35 	=>	 0.0
+dsp-gvp-nrep35 	=>	 0.0
+dsp-gvp-data35 	=>	 0.0
+dsp-gvp-n35 	=>	 0.0
+dsp-gvp-dt35 	=>	 0.0
+dsp-gvp-dsig35 	=>	 0.0
+dsp-gvp-dz35 	=>	 0.0
+dsp-gvp-dy35 	=>	 0.0
+dsp-gvp-dx35 	=>	 0.0
+dsp-gvp-du35 	=>	 0.0
+dsp-gvp-pcjr34 	=>	 0.0
+dsp-gvp-nrep34 	=>	 0.0
+dsp-gvp-data34 	=>	 0.0
+dsp-gvp-n34 	=>	 0.0
+dsp-gvp-dt34 	=>	 0.0
+dsp-gvp-dsig34 	=>	 0.0
+dsp-gvp-dz34 	=>	 0.0
+dsp-gvp-dy34 	=>	 0.0
+dsp-gvp-dx34 	=>	 0.0
+dsp-gvp-du34 	=>	 0.0
+dsp-gvp-pcjr33 	=>	 0.0
+dsp-gvp-nrep33 	=>	 0.0
+dsp-gvp-data33 	=>	 0.0
+dsp-gvp-n33 	=>	 0.0
+dsp-gvp-dt33 	=>	 0.0
+dsp-gvp-dsig33 	=>	 0.0
+dsp-gvp-dz33 	=>	 0.0
+dsp-gvp-dy33 	=>	 0.0
+dsp-gvp-dx33 	=>	 0.0
+dsp-gvp-du33 	=>	 0.0
+dsp-gvp-pcjr32 	=>	 0.0
+dsp-gvp-nrep32 	=>	 0.0
+dsp-gvp-data32 	=>	 0.0
+dsp-gvp-n32 	=>	 0.0
+dsp-gvp-dt32 	=>	 0.0
+dsp-gvp-dsig32 	=>	 0.0
+dsp-gvp-dz32 	=>	 0.0
+dsp-gvp-dy32 	=>	 0.0
+dsp-gvp-dx32 	=>	 0.0
+dsp-gvp-du32 	=>	 0.0
+dsp-gvp-pcjr31 	=>	 0.0
+dsp-gvp-nrep31 	=>	 0.0
+dsp-gvp-data31 	=>	 0.0
+dsp-gvp-n31 	=>	 0.0
+dsp-gvp-dt31 	=>	 0.0
+dsp-gvp-dsig31 	=>	 0.0
+dsp-gvp-dz31 	=>	 0.0
+dsp-gvp-dy31 	=>	 0.0
+dsp-gvp-dx31 	=>	 0.0
+dsp-gvp-du31 	=>	 0.0
+dsp-gvp-pcjr30 	=>	 0.0
+dsp-gvp-nrep30 	=>	 0.0
+dsp-gvp-data30 	=>	 0.0
+dsp-gvp-n30 	=>	 0.0
+dsp-gvp-dt30 	=>	 0.0
+dsp-gvp-dsig30 	=>	 0.0
+dsp-gvp-dz30 	=>	 0.0
+dsp-gvp-dy30 	=>	 0.0
+dsp-gvp-dx30 	=>	 0.0
+dsp-gvp-du30 	=>	 0.0
+dsp-gvp-pcjr29 	=>	 0.0
+dsp-gvp-nrep29 	=>	 0.0
+dsp-gvp-data29 	=>	 0.0
+dsp-gvp-n29 	=>	 0.0
+dsp-gvp-dt29 	=>	 0.0
+dsp-gvp-dsig29 	=>	 0.0
+dsp-gvp-dz29 	=>	 0.0
+dsp-gvp-dy29 	=>	 0.0
+dsp-gvp-dx29 	=>	 0.0
+dsp-gvp-du29 	=>	 0.0
+dsp-gvp-pcjr28 	=>	 0.0
+dsp-gvp-nrep28 	=>	 0.0
+dsp-gvp-data28 	=>	 0.0
+dsp-gvp-n28 	=>	 0.0
+dsp-gvp-dt28 	=>	 0.0
+dsp-gvp-dsig28 	=>	 0.0
+dsp-gvp-dz28 	=>	 0.0
+dsp-gvp-dy28 	=>	 0.0
+dsp-gvp-dx28 	=>	 0.0
+dsp-gvp-du28 	=>	 0.0
+dsp-gvp-pcjr27 	=>	 0.0
+dsp-gvp-nrep27 	=>	 0.0
+dsp-gvp-data27 	=>	 0.0
+dsp-gvp-n27 	=>	 0.0
+dsp-gvp-dt27 	=>	 0.0
+dsp-gvp-dsig27 	=>	 0.0
+dsp-gvp-dz27 	=>	 0.0
+dsp-gvp-dy27 	=>	 0.0
+dsp-gvp-dx27 	=>	 0.0
+dsp-gvp-du27 	=>	 0.0
+dsp-gvp-pcjr26 	=>	 0.0
+dsp-gvp-nrep26 	=>	 0.0
+dsp-gvp-data26 	=>	 0.0
+dsp-gvp-n26 	=>	 0.0
+dsp-gvp-dt26 	=>	 0.0
+dsp-gvp-dsig26 	=>	 0.0
+dsp-gvp-dz26 	=>	 0.0
+dsp-gvp-dy26 	=>	 0.0
+dsp-gvp-dx26 	=>	 0.0
+dsp-gvp-du26 	=>	 0.0
+dsp-gvp-pcjr25 	=>	 0.0
+dsp-gvp-nrep25 	=>	 0.0
+dsp-gvp-data25 	=>	 0.0
+dsp-gvp-n25 	=>	 0.0
+dsp-gvp-dt25 	=>	 0.0
+dsp-gvp-dsig25 	=>	 0.0
+dsp-gvp-dz25 	=>	 0.0
+dsp-gvp-dy25 	=>	 0.0
+dsp-gvp-dx25 	=>	 0.0
+dsp-gvp-du25 	=>	 0.0
+dsp-gvp-pcjr24 	=>	 0.0
+dsp-gvp-nrep24 	=>	 0.0
+dsp-gvp-data24 	=>	 0.0
+dsp-gvp-n24 	=>	 0.0
+dsp-gvp-dt24 	=>	 0.0
+dsp-gvp-dsig24 	=>	 0.0
+dsp-gvp-dz24 	=>	 0.0
+dsp-gvp-dy24 	=>	 0.0
+dsp-gvp-dx24 	=>	 0.0
+dsp-gvp-du24 	=>	 0.0
+dsp-gvp-pcjr23 	=>	 0.0
+dsp-gvp-nrep23 	=>	 0.0
+dsp-gvp-data23 	=>	 0.0
+dsp-gvp-n23 	=>	 0.0
+dsp-gvp-dt23 	=>	 0.0
+dsp-gvp-dsig23 	=>	 0.0
+dsp-gvp-dz23 	=>	 0.0
+dsp-gvp-dy23 	=>	 0.0
+dsp-gvp-dx23 	=>	 0.0
+dsp-gvp-du23 	=>	 0.0
+dsp-gvp-pcjr22 	=>	 0.0
+dsp-gvp-nrep22 	=>	 0.0
+dsp-gvp-data22 	=>	 0.0
+dsp-gvp-n22 	=>	 0.0
+dsp-gvp-dt22 	=>	 0.0
+dsp-gvp-dsig22 	=>	 0.0
+dsp-gvp-dz22 	=>	 0.0
+dsp-gvp-dy22 	=>	 0.0
+dsp-gvp-dx22 	=>	 0.0
+dsp-gvp-du22 	=>	 0.0
+dsp-gvp-pcjr21 	=>	 0.0
+dsp-gvp-nrep21 	=>	 0.0
+dsp-gvp-data21 	=>	 0.0
+dsp-gvp-n21 	=>	 0.0
+dsp-gvp-dt21 	=>	 0.0
+dsp-gvp-dsig21 	=>	 0.0
+dsp-gvp-dz21 	=>	 0.0
+dsp-gvp-dy21 	=>	 0.0
+dsp-gvp-dx21 	=>	 0.0
+dsp-gvp-du21 	=>	 0.0
+dsp-gvp-pcjr20 	=>	 0.0
+dsp-gvp-nrep20 	=>	 0.0
+dsp-gvp-data20 	=>	 0.0
+dsp-gvp-n20 	=>	 0.0
+dsp-gvp-dt20 	=>	 0.0
+dsp-gvp-dsig20 	=>	 0.0
+dsp-gvp-dz20 	=>	 0.0
+dsp-gvp-dy20 	=>	 0.0
+dsp-gvp-dx20 	=>	 0.0
+dsp-gvp-du20 	=>	 0.0
+dsp-gvp-pcjr19 	=>	 0.0
+dsp-gvp-nrep19 	=>	 0.0
+dsp-gvp-data19 	=>	 0.0
+dsp-gvp-n19 	=>	 0.0
+dsp-gvp-dt19 	=>	 0.0
+dsp-gvp-dsig19 	=>	 0.0
+dsp-gvp-dz19 	=>	 0.0
+dsp-gvp-dy19 	=>	 0.0
+dsp-gvp-dx19 	=>	 0.0
+dsp-gvp-du19 	=>	 0.0
+dsp-gvp-pcjr18 	=>	 0.0
+dsp-gvp-nrep18 	=>	 0.0
+dsp-gvp-data18 	=>	 0.0
+dsp-gvp-n18 	=>	 0.0
+dsp-gvp-dt18 	=>	 0.0
+dsp-gvp-dsig18 	=>	 0.0
+dsp-gvp-dz18 	=>	 0.0
+dsp-gvp-dy18 	=>	 0.0
+dsp-gvp-dx18 	=>	 0.0
+dsp-gvp-du18 	=>	 0.0
+dsp-gvp-pcjr17 	=>	 0.0
+dsp-gvp-nrep17 	=>	 0.0
+dsp-gvp-data17 	=>	 0.0
+dsp-gvp-n17 	=>	 0.0
+dsp-gvp-dt17 	=>	 0.0
+dsp-gvp-dsig17 	=>	 0.0
+dsp-gvp-dz17 	=>	 0.0
+dsp-gvp-dy17 	=>	 0.0
+dsp-gvp-dx17 	=>	 0.0
+dsp-gvp-du17 	=>	 0.0
+dsp-gvp-pcjr16 	=>	 0.0
+dsp-gvp-nrep16 	=>	 0.0
+dsp-gvp-data16 	=>	 0.0
+dsp-gvp-n16 	=>	 0.0
+dsp-gvp-dt16 	=>	 0.0
+dsp-gvp-dsig16 	=>	 0.0
+dsp-gvp-dz16 	=>	 0.0
+dsp-gvp-dy16 	=>	 0.0
+dsp-gvp-dx16 	=>	 0.0
+dsp-gvp-du16 	=>	 0.0
+dsp-gvp-pcjr15 	=>	 0.0
+dsp-gvp-nrep15 	=>	 0.0
+dsp-gvp-data15 	=>	 0.0
+dsp-gvp-n15 	=>	 0.0
+dsp-gvp-dt15 	=>	 0.0
+dsp-gvp-dsig15 	=>	 0.0
+dsp-gvp-dz15 	=>	 0.0
+dsp-gvp-dy15 	=>	 0.0
+dsp-gvp-dx15 	=>	 0.0
+dsp-gvp-du15 	=>	 0.0
+dsp-gvp-pcjr14 	=>	 0.0
+dsp-gvp-nrep14 	=>	 0.0
+dsp-gvp-data14 	=>	 0.0
+dsp-gvp-n14 	=>	 0.0
+dsp-gvp-dt14 	=>	 0.0
+dsp-gvp-dsig14 	=>	 0.0
+dsp-gvp-dz14 	=>	 0.0
+dsp-gvp-dy14 	=>	 0.0
+dsp-gvp-dx14 	=>	 0.0
+dsp-gvp-du14 	=>	 0.0
+dsp-gvp-pcjr13 	=>	 0.0
+dsp-gvp-nrep13 	=>	 0.0
+dsp-gvp-data13 	=>	 0.0
+dsp-gvp-n13 	=>	 0.0
+dsp-gvp-dt13 	=>	 0.0
+dsp-gvp-dsig13 	=>	 0.0
+dsp-gvp-dz13 	=>	 0.0
+dsp-gvp-dy13 	=>	 0.0
+dsp-gvp-dx13 	=>	 0.0
+dsp-gvp-du13 	=>	 0.0
+dsp-gvp-pcjr12 	=>	 0.0
+dsp-gvp-nrep12 	=>	 0.0
+dsp-gvp-data12 	=>	 0.0
+dsp-gvp-n12 	=>	 0.0
+dsp-gvp-dt12 	=>	 0.0
+dsp-gvp-dsig12 	=>	 0.0
+dsp-gvp-dz12 	=>	 0.0
+dsp-gvp-dy12 	=>	 0.0
+dsp-gvp-dx12 	=>	 0.0
+dsp-gvp-du12 	=>	 0.0
+dsp-gvp-pcjr11 	=>	 0.0
+dsp-gvp-nrep11 	=>	 0.0
+dsp-gvp-data11 	=>	 0.0
+dsp-gvp-n11 	=>	 0.0
+dsp-gvp-dt11 	=>	 0.0
+dsp-gvp-dsig11 	=>	 0.0
+dsp-gvp-dz11 	=>	 0.0
+dsp-gvp-dy11 	=>	 0.0
+dsp-gvp-dx11 	=>	 0.0
+dsp-gvp-du11 	=>	 0.0
+dsp-gvp-pcjr10 	=>	 0.0
+dsp-gvp-nrep10 	=>	 0.0
+dsp-gvp-data10 	=>	 0.0
+dsp-gvp-n10 	=>	 0.0
+dsp-gvp-dt10 	=>	 0.0
+dsp-gvp-dsig10 	=>	 0.0
+dsp-gvp-dz10 	=>	 0.0
+dsp-gvp-dy10 	=>	 0.0
+dsp-gvp-dx10 	=>	 0.0
+dsp-gvp-du10 	=>	 0.0
+dsp-gvp-pcjr09 	=>	 0.0
+dsp-gvp-nrep09 	=>	 0.0
+dsp-gvp-data09 	=>	 0.0
+dsp-gvp-n09 	=>	 0.0
+dsp-gvp-dt09 	=>	 0.0
+dsp-gvp-dsig09 	=>	 0.0
+dsp-gvp-dz09 	=>	 0.0
+dsp-gvp-dy09 	=>	 0.0
+dsp-gvp-dx09 	=>	 0.0
+dsp-gvp-du09 	=>	 0.0
+dsp-gvp-pcjr08 	=>	 0.0
+dsp-gvp-nrep08 	=>	 0.0
+dsp-gvp-data08 	=>	 0.0
+dsp-gvp-n08 	=>	 0.0
+dsp-gvp-dt08 	=>	 0.0
+dsp-gvp-dsig08 	=>	 0.0
+dsp-gvp-dz08 	=>	 0.0
+dsp-gvp-dy08 	=>	 0.0
+dsp-gvp-dx08 	=>	 0.0
+dsp-gvp-du08 	=>	 0.0
+dsp-gvp-pcjr07 	=>	 0.0
+dsp-gvp-nrep07 	=>	 0.0
+dsp-gvp-data07 	=>	 0.0
+dsp-gvp-n07 	=>	 0.0
+dsp-gvp-dt07 	=>	 0.0
+dsp-gvp-dsig07 	=>	 0.0
+dsp-gvp-dz07 	=>	 0.0
+dsp-gvp-dy07 	=>	 0.0
+dsp-gvp-dx07 	=>	 0.0
+dsp-gvp-du07 	=>	 0.0
+dsp-gvp-pcjr06 	=>	 0.0
+dsp-gvp-nrep06 	=>	 0.0
+dsp-gvp-data06 	=>	 0.0
+dsp-gvp-n06 	=>	 0.0
+dsp-gvp-dt06 	=>	 0.0
+dsp-gvp-dsig06 	=>	 0.0
+dsp-gvp-dz06 	=>	 0.0
+dsp-gvp-dy06 	=>	 0.0
+dsp-gvp-dx06 	=>	 0.0
+dsp-gvp-du06 	=>	 0.0
+dsp-gvp-pcjr05 	=>	 0.0
+dsp-gvp-nrep05 	=>	 0.0
+dsp-gvp-data05 	=>	 0.0
+dsp-gvp-n05 	=>	 0.0
+dsp-gvp-dt05 	=>	 0.0
+dsp-gvp-dsig05 	=>	 0.0
+dsp-gvp-dz05 	=>	 0.0
+dsp-gvp-dy05 	=>	 0.0
+dsp-gvp-dx05 	=>	 0.0
+dsp-gvp-du05 	=>	 0.0
+dsp-gvp-pcjr04 	=>	 0.0
+dsp-gvp-nrep04 	=>	 0.0
+dsp-gvp-data04 	=>	 0.0
+dsp-gvp-n04 	=>	 0.0
+dsp-gvp-dt04 	=>	 0.0
+dsp-gvp-dsig04 	=>	 0.0
+dsp-gvp-dz04 	=>	 0.0
+dsp-gvp-dy04 	=>	 0.0
+dsp-gvp-dx04 	=>	 0.0
+dsp-gvp-du04 	=>	 0.0
+dsp-gvp-pcjr03 	=>	 0.0
+dsp-gvp-nrep03 	=>	 1.0
+dsp-gvp-data03 	=>	 0.0
+dsp-gvp-n03 	=>	 0.0
+dsp-gvp-dt03 	=>	 0.0
+dsp-gvp-dsig03 	=>	 0.0
+dsp-gvp-dz03 	=>	 0.0
+dsp-gvp-dy03 	=>	 0.0
+dsp-gvp-dx03 	=>	 0.0
+dsp-gvp-du03 	=>	 0.0
+dsp-gvp-pcjr02 	=>	 0.0
+dsp-gvp-nrep02 	=>	 1.0
+dsp-gvp-data02 	=>	 2.0
+dsp-gvp-n02 	=>	 100.0
+dsp-gvp-dt02 	=>	 0.2
+dsp-gvp-dsig02 	=>	 0.0
+dsp-gvp-dz02 	=>	 -100.0
+dsp-gvp-dy02 	=>	 0.0
+dsp-gvp-dx02 	=>	 0.0
+dsp-gvp-du02 	=>	 -1.0
+dsp-gvp-pcjr01 	=>	 0.0
+dsp-gvp-nrep01 	=>	 1.0
+dsp-gvp-data01 	=>	 0.0
+dsp-gvp-n01 	=>	 2000.0
+dsp-gvp-dt01 	=>	 1.0
+dsp-gvp-dsig01 	=>	 0.0
+dsp-gvp-dz01 	=>	 0.0
+dsp-gvp-dy01 	=>	 0.0
+dsp-gvp-dx01 	=>	 0.0
+dsp-gvp-du01 	=>	 0.0
+dsp-gvp-pcjr00 	=>	 0.0
+dsp-gvp-nrep00 	=>	 1.0
+dsp-gvp-data00 	=>	 1.0
+dsp-gvp-n00 	=>	 100.0
+dsp-gvp-dt00 	=>	 0.2
+dsp-gvp-dsig00 	=>	 0.0
+dsp-gvp-dz00 	=>	 100.0
+dsp-gvp-dy00 	=>	 0.0
+dsp-gvp-dx00 	=>	 0.0
+dsp-gvp-du00 	=>	 1.0
+dsp-TS-Repetitions 	=>	 1.0
+dsp-TS-Points 	=>	 2048.0
+dsp-TS-Duration 	=>	 1000.0
+dsp-SP-Repetitions 	=>	 1.0
+dsp-SP-Delay 	=>	 0.01
+dsp-SP-Flag-V-on-X 	=>	 1.0
+dsp-SP-Ramp-Time 	=>	 10.0
+dsp-SP-Volts 	=>	 2.0
+dsp-SP-Duration 	=>	 10.0
+dsp-LP-Repetitions 	=>	 1.0
+dsp-LP-Slope 	=>	 10000.0
+dsp-LP-Laser-Delay 	=>	 10.0
+dsp-LP-Tip-Retract 	=>	 0.0
+dsp-LP-Trigger-Time 	=>	 10.0
+dsp-LP-Trigger-Volts 	=>	 2.0
+dsp-LP-FB-Time 	=>	 10.0
+dsp-PL-Repetitions 	=>	 1.0
+dsp-PL-Final-Delay 	=>	 0.01
+dsp-PL-Initial-Delay 	=>	 0.01
+dsp-PL-Step-dZ 	=>	 0.0
+dsp-PL-Step 	=>	 0.0
+dsp-PL-SetStart 	=>	 0.1
+dsp-PL-dZ-ext 	=>	 0.0
+dsp-PL-dZ 	=>	 0.0
+dsp-PL-Volts 	=>	 2.0
+dsp-PL-Res 	=>	 0.0
+dsp-PL-Slope 	=>	 10000.0
+dsp-PL-Duration 	=>	 10.0
+dsp-Z-Final-Delay 	=>	 0.01
+dsp-Z-Slope-Ramp 	=>	 100.0
+dsp-Z-Reps 	=>	 1.0
+dsp-Z-Slope 	=>	 100.0
+dsp-Z-Points 	=>	 100.0
+dsp-Z-end 	=>	 100.0
+dsp-Z-start 	=>	 0.0
+dsp-IV-Recover-Delay 	=>	 0.3
+dsp-IV-Final-Delay 	=>	 0.01
+dsp-IV-Line-Final-Delay 	=>	 1.0
+dsp-IV-Line-slope 	=>	 100.0
+dsp-IV-Line-dM 	=>	 0.0
+dsp-IV-Line-dY 	=>	 0.0
+dsp-IV-Line-dX 	=>	 50.0
+dsp-IV-rep 	=>	 1.0
+dsp-IV-Slope-Ramp 	=>	 50.0
+dsp-IV-Slope 	=>	 10.0
+dsp-IV-dz-rep 	=>	 0.0
+dsp-IV-dz 	=>	 0.0
+dsp-6-IV-Points05 	=>	 10.0
+dsp-6-IV-End05 	=>	 1.0
+dsp-6-IV-Start05 	=>	 -1.0
+dsp-5-IV-Points04 	=>	 10.0
+dsp-5-IV-End04 	=>	 1.0
+dsp-5-IV-Start04 	=>	 -1.0
+dsp-4-IV-Points03 	=>	 10.0
+dsp-4-IV-End03 	=>	 1.0
+dsp-4-IV-Start03 	=>	 -1.0
+dsp-3-IV-Points02 	=>	 10.0
+dsp-3-IV-End02 	=>	 1.0
+dsp-3-IV-Start02 	=>	 -1.0
+dsp-2-IV-Points01 	=>	 10.0
+dsp-2-IV-End01 	=>	 1.0
+dsp-2-IV-Start01 	=>	 -1.0
+dsp-IV-Points00 	=>	 100.0
+dsp-IV-End00 	=>	 1.0
+dsp-IV-Start00 	=>	 -1.0
+dsp-IV-Sections 	=>	 1.0
+dsp-fbs-scan-ldc-dz 	=>	 0.0
+dsp-fbs-scan-ldc-dy 	=>	 0.0
+dsp-fbs-scan-ldc-dx 	=>	 0.0
+dsp-fbs-vp-section 	=>	 2.0
+dsp-adv-scan-slope-y 	=>	 0.0
+dsp-adv-scan-slope-x 	=>	 0.0
+dsp-adv-scan-xs2nd-z-offset 	=>	 0.0
+dsp-adv-scan-dyn-zoom 	=>	 1.0
+dsp-adv-scan-fwd-slow-down-2nd 	=>	 1.0
+dsp-adv-scan-pre-pts 	=>	 0.0
+dsp-adv-scan-fwd-slow-down 	=>	 1.0
+dsp-adv-scan-fast-return 	=>	 1.0
+dsp-adv-scan-rasterb 	=>	 0.0
+dsp-adv-scan-raster 	=>	 0.0
+dsp-adv-iir3-fo 	=>	 18000.0
+dsp-adv-iir2-fo 	=>	 18000.0
+dsp-adv-iir1-fo 	=>	 18000.0
+dsp-adv-current-offset 	=>	 10.0
+dsp-adv-current-crossover 	=>	 100.0
+dsp-adv-iir-fo-max 	=>	 8000.0
+dsp-adv-iir0-fo-min 	=>	 200.0
+dsp-adv-dsp-freq-ref 	=>	 75000.0
+dsp-fbs-scan-speed-scan 	=>	 4094.1
+dsp-fbs-scan-speed-move 	=>	 1567.2
+dsp-fbs-ci 	=>	 0.0
+dsp-fbs-cp 	=>	 15.4
+dsp-fbs-mx3-level 	=>	 0.0
+dsp-fbs-mx3-gain 	=>	 0.5
+dsp-fbs-mx3-set 	=>	 0.0
+dsp-fbs-mx2-level 	=>	 0.0
+dsp-fbs-mx2-gain 	=>	 0.5
+dsp-fbs-mx2-set 	=>	 1.0
+dsp-fbs-mx1-freq-level 	=>	 0.0
+dsp-fbs-mx1-freq-gain 	=>	 -0.5
+dsp-fbs-mx1-freq-set 	=>	 0.0
+dsp-fbs-mx0-current-level 	=>	 0.0
+dsp-fbs-mx0-current-gain 	=>	 0.5
+dsp-fbs-mx0-current-set 	=>	 0.1
+dsp-adv-dsp-zpos-ref 	=>	 0.0
+dsp-fbs-motor 	=>	 0.0
+dsp-fbs-bias3 	=>	 0.5
+dsp-fbs-bias2 	=>	 0.5
+dsp-fbs-bias1 	=>	 0.5
+dsp-fbs-bias 	=>	 0.08567931456548372
+dspmover-config-GPIO-delay 	=>	 250.0
+dspmover-config-GPIO-tmp2 	=>	 0.0
+dspmover-config-GPIO-tmp1 	=>	 0.0
+dspmover-config-GPIO-scan 	=>	 0.0
+dspmover-config-GPIO-direction 	=>	 15.0
+dspmover-config-GPIO-reset 	=>	 0.0
+dspmover-config-GPIO-off 	=>	 0.0
+dspmover-config-GPIO-on 	=>	 0.0
+dspmover-config-wave-out5-ch-z 	=>	 0.0
+dspmover-config-wave-out5-ch-y 	=>	 0.0
+dspmover-config-wave-out5-ch-x 	=>	 0.0
+dspmover-config-wave-out4-ch-z 	=>	 0.0
+dspmover-config-wave-out4-ch-y 	=>	 0.0
+dspmover-config-wave-out4-ch-x 	=>	 0.0
+dspmover-config-wave-out3-ch-z 	=>	 0.0
+dspmover-config-wave-out3-ch-y 	=>	 0.0
+dspmover-config-wave-out3-ch-x 	=>	 0.0
+dspmover-config-wave-out2-ch-z 	=>	 0.0
+dspmover-config-wave-out2-ch-y 	=>	 0.0
+dspmover-config-wave-out2-ch-x 	=>	 0.0
+dspmover-config-wave-out1-ch-z 	=>	 0.0
+dspmover-config-wave-out1-ch-y 	=>	 0.0
+dspmover-config-wave-out1-ch-x 	=>	 0.0
+dspmover-config-wave-out0-ch-z 	=>	 5.0
+dspmover-config-wave-out0-ch-y 	=>	 4.0
+dspmover-config-wave-out0-ch-x 	=>	 3.0
+dspmover-config-besocke-t2 	=>	 0.09
+dspmover-config-besocke-t1 	=>	 0.1
+dspmover-config-besocke-z-jump-ratio 	=>	 0.1
+dspmover-config-IW-Phase 	=>	 55.0
+dspmover-config-Wave-Offset 	=>	 0.0
+dspmover-config-Wave-Space 	=>	 0.0
+dspmover-z0-goto 	=>	 0.0
+dspmover-z0-speed 	=>	 500.0
+dspmover-z0-range 	=>	 500.0
+dspmover-auto-axis-Z 	=>	 0.0
+dspmover-auto-axis-Y 	=>	 0.0
+dspmover-auto-axis-X 	=>	 0.0
+dspmover-config-Auto-App-Retract-CI 	=>	 150.0
+dspmover-config-Auto-App-Max-Settling-Time 	=>	 1000.0
+dspmover-config-Auto-App-Delay 	=>	 50.0
+dspmover-auto-gpio 	=>	 0.0
+dspmover-auto-duration 	=>	 4.0
+dspmover-auto-amplitude 	=>	 1.0
+dspmover-auto-max-steps 	=>	 5.0
+dspmover-lens-axis-Z 	=>	 0.0
+dspmover-lens-axis-Y 	=>	 0.0
+dspmover-lens-axis-X 	=>	 0.0
+dspmover-lens-gpio 	=>	 0.0
+dspmover-lens-duration 	=>	 5.0
+dspmover-lens-amplitude 	=>	 1.0
+dspmover-lens-max-steps 	=>	 100.0
+dspmover-psd-axis-Z 	=>	 0.0
+dspmover-psd-axis-Y 	=>	 0.0
+dspmover-psd-axis-X 	=>	 0.0
+dspmover-psd-gpio 	=>	 0.0
+dspmover-psd-duration 	=>	 5.0
+dspmover-psd-amplitude 	=>	 1.0
+dspmover-psd-max-steps 	=>	 100.0
+dspmover-rot-axis-Z 	=>	 0.0
+dspmover-rot-axis-Y 	=>	 0.0
+dspmover-rot-axis-X 	=>	 0.0
+dspmover-rot-gpio 	=>	 2.0
+dspmover-rot-duration 	=>	 3.0
+dspmover-rot-amplitude 	=>	 1.0
+dspmover-rot-max-steps 	=>	 2.0
+dspmover-xy-axis-Z 	=>	 0.0
+dspmover-xy-axis-Y 	=>	 0.0
+dspmover-xy-axis-X 	=>	 0.0
+dspmover-xy-gpio 	=>	 1.0
+dspmover-xy-duration 	=>	 3.0
+dspmover-xy-amplitude 	=>	 1.0
+dspmover-xy-max-steps 	=>	 1000.0
+SPMC_SLS_Yn 	=>	 0.0
+SPMC_SLS_Ys 	=>	 0.0
+SPMC_SLS_Xn 	=>	 0.0
+SPMC_SLS_Xs 	=>	 0.0
+rp-pacpll-RP-VERBOSE-LEVEL 	=>	 0.0
+rp-pacpll-SCOPE-HEIGHT 	=>	 256.0
+rp-pacpll-SCOPE-WIDTH 	=>	 1024.0
+rp-pacpll-DFREQ-CONTROL-MONITOR 	=>	 0.0
+rp-pacpll-CONTROL-DFREQ-FB-UPPER 	=>	 500.0
+rp-pacpll-CONTROL-DFREQ-FB-LOWER 	=>	 -500.0
+rp-pacpll-DFREQ-FB-CI 	=>	 -143.0
+rp-pacpll-DFREQ-FB-CP 	=>	 -76.0
+rp-pacpll-DFREQ-FB-SETPOINT 	=>	 0.0
+rp-pacpll-DFREQ-MONITOR 	=>	 0.0
+rp-pacpll-PHASE-HOLD-AM-NOISE-LIMIT 	=>	 0.0
+rp-pacpll-DDS-FREQ-MONITOR 	=>	 32768.0
+rp-pacpll-FREQ-FB-UPPER 	=>	 333000.0
+rp-pacpll-FREQ-FB-LOWER 	=>	 32000.0
+rp-pacpll-PHASE-FB-CI 	=>	 -150.0
+rp-pacpll-PHASE-FB-CP 	=>	 -95.0
+rp-pacpll-PHASE-FB-SETPOINT 	=>	 60.0
+rp-pacpll-PHASE-MONITOR 	=>	 0.0
+rp-pacpll-EXEC-AMPLITUDE-MONITOR 	=>	 0.0
+rp-pacpll-EXEC-FB-UPPER 	=>	 500.0
+rp-pacpll-EXEC-FB-LOWER 	=>	 -300.0
+rp-pacpll-AMPLITUDE-FB-CI 	=>	 -90.0
+rp-pacpll-AMPLITUDE-FB-CP 	=>	 -60.0
+rp-pacpll-AMPLITUDE-FB-SETPOINT 	=>	 8.0
+rp-pacpll-VOLUME-MONITOR 	=>	 0.0
+rp-pacpll-TUNE-SPAN 	=>	 50.0
+rp-pacpll-TUNE-DFREQ 	=>	 0.1
+rp-pacpll-VOLUME-MANUAL 	=>	 0.0
+rp-pacpll-AUX-SCALE 	=>	 0.011642
+rp-pacpll-FREQUENCY-CENTER 	=>	 149470.0
+rp-pacpll-FREQUENCY-MANUAL 	=>	 149470.0
+rp-pacpll-QC-GAIN 	=>	 0.0
+rp-pacpll-QC-PHASE 	=>	 0.0
+rp-pacpll-PACATAU 	=>	 40.0
+rp-pacpll-PACTAU 	=>	 40.0
+rp-pacpll-PAC-DCTAU 	=>	 10.0
+rp-pacpll-DC-OFFSET 	=>	 0.0
+*
+--------------------------------------------------------------------------------
+(3) Gxsm3 python remote console -- help on action names used for gxsm.action command
+  Hint: hover the pointer over any Gxsm Action enabled Button to see it`s action-name!
+  Example: gxsm.action ("DSP_CMD_GOTO_Z0")
+--------------------------------------------------------------------------------
+MATH_FILTER2D_Smooth
+MATH_FILTER1D_Diff
+MATH_FILTER2D_Edge
+MATH_FILTER2D_Normal_Z
+MATH_FILTER2D_Despike
+DSP_CMD_GOTO_Z0
+DSP_CMD_HOME_Z0
+DSP_CMD_AUTOCENTER_Z0
+DSP_CMD_DOWN_Z0
+DSP_CMD_UP_Z0
+DSP_CMD_STOP_Z0
+DSP_CMD_STOPALL
+DSP_CMD_AUTOAPP
+DSP_CMD_MOV-ZM_Auto
+DSP_CMD_MOV-ZP_Auto
+DSP_CMD_MOV-YM_Lens
+DSP_CMD_MOV-XP_Lens
+DSP_CMD_MOV-XM_Lens
+DSP_CMD_MOV-YP_Lens
+DSP_CMD_MOV-YM_PSD
+DSP_CMD_MOV-XP_PSD
+DSP_CMD_MOV-XM_PSD
+DSP_CMD_MOV-YP_PSD
+DSP_CMD_MOV-YM_Rot
+DSP_CMD_MOV-XP_Rot
+DSP_CMD_MOV-XM_Rot
+DSP_CMD_MOV-YP_Rot
+DSP_CMD_MOV-YM_XY
+DSP_CMD_MOV-XP_XY
+DSP_CMD_MOV-XM_XY
+DSP_CMD_MOV-YP_XY
+DSP_VP_ABORT_EXECUTE
+DSP_VP_AX_EXECUTE
+DSP_VP_AC_EXECUTE
+DSP_VP_TK_EXECUTE
+DSP_VP_GVP_EXECUTE
+DSP_VP_RCL_V0
+DSP_VP_STO_V0
+DSP_VP_RCL_VPJ
+DSP_VP_STO_VPJ
+DSP_VP_RCL_VPI
+DSP_VP_STO_VPI
+DSP_VP_RCL_VPH
+DSP_VP_STO_VPH
+DSP_VP_RCL_VPG
+DSP_VP_STO_VPG
+DSP_VP_RCL_VPF
+DSP_VP_STO_VPF
+DSP_VP_RCL_VPE
+DSP_VP_STO_VPE
+DSP_VP_RCL_VPD
+DSP_VP_STO_VPD
+DSP_VP_RCL_VPC
+DSP_VP_STO_VPC
+DSP_VP_RCL_VPB
+DSP_VP_STO_VPB
+DSP_VP_RCL_VPA
+DSP_VP_STO_VPA
+DSP_VP_TS_EXECUTE
+DSP_VP_SP_EXECUTE
+DSP_VP_LP_EXECUTE
+DSP_VP_PL_EXECUTE
+DSP_VP_FZ_EXECUTE
+DSP_VP_IV_EXECUTE
+
 \end{alltt}
 
 
@@ -1963,6 +2904,71 @@ static PyObject* remote_getobject(PyObject *self, PyObject *args)
         return Py_BuildValue("s", "None");
 }
 
+static gboolean main_context_getobject_action_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
+	long ch;
+        gchar *objnameid;
+        gchar *action;
+        idle_data->ret = -1;
+        
+	if (!PyArg_ParseTuple (idle_data->args, "lss", &ch, &objnameid, &action)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+
+	Scan *src =gapp->xsm->GetScanChannel (ch);
+        if (src){
+                int n_obj = src->number_of_object ();
+                for (int i=0; i < n_obj; ++i){
+                        scan_object_data *obj_data = src->get_object_data (i);
+                        if (obj_data){
+                                if (!strcmp (action, "REMOVE-ALL")){
+                                        if (!strncmp (obj_data->get_name (), objnameid, strlen(objnameid))){ // part match?
+                                                ViewControl *vc = src->view->Get_ViewControl ();
+                                                vc->remove_object ((VObject *)obj_data, vc);
+                                                n_obj = src->number_of_object ();
+                                                i=0;
+                                                idle_data->ret = 0;
+                                                continue;
+                                        }
+                                }
+                                if (!strcmp (obj_data->get_name (), objnameid)){ // match?
+                                        if (!strcmp (action, "GET-COORDS")){
+                                                obj_data->SetUpScan ();
+                                                idle_data->ret = 0;
+                                        }
+                                        else if (!strcmp (action, "REMOVE")){
+                                                ViewControl *vc = src->view->Get_ViewControl ();
+                                                vc->remove_object ((VObject *)obj_data, vc);
+                                                idle_data->ret = 0;
+                                        }
+                                        UNSET_WAIT_JOIN_MAIN;
+                                        return G_SOURCE_REMOVE;
+                                }
+                        }
+                }
+        }
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
+
+static PyObject* remote_getobject_action(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote:getobject_getcoords_setup_scan");
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_getobject_action_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+        if (idle_data.ret)
+                return Py_BuildValue("s", "Invalid Parameters. [lls]: ch, objname-id, action=[GET_COORDS, REMOVE]");
+        else 
+                return Py_BuildValue("s", "OK");
+
+}
+
 static gboolean main_context_addmobject_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
@@ -1981,31 +2987,59 @@ static gboolean main_context_addmobject_from_thread (gpointer user_data){
 		"*Marker:red", "*Marker:green", "*Marker:blue", "*Marker:yellow", "*Marker:cyan", "*Marker:magenta",  
 		NULL };
 	PI_DEBUG(DBG_L2, "pyremote:putobject");
-
-        if (size < 0. || size > 10.) size = 1.0;
-        
+      
 	Scan *src =gapp->xsm->GetScanChannel (ch);
-        if (grp == -1 || !strncmp(id,"xy",2)){
+        if (!strncmp(id,"Rectangle",9)){
+                VObject *vo;
+                double xy[4];
+                gfloat c[4] = { 1.,0.,0.,1.};
+                int spc[2][2] = {{0,0},{0,0}};
+                int sp00[2] = {1,1};
+                src->Pixel2World ((int)round(x-size/2), (int)round(y-size/2), xy[0], xy[1]);
+                src->Pixel2World ((int)round(x+size/2), (int)round(y+size/2), xy[2], xy[3]);
+                (src->view->Get_ViewControl ())->AddObject (vo = new VObRectangle ((src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, id, 1.0));
+                vo->set_obj_name (id);
+                vo->set_custom_label_font ("Sans Bold 12");
+                vo->set_custom_label_color (c);
+                if (grp>0){
+                        gfloat fillcolor[4];
+                        gfloat outlinecolor[4];
+                        for(int j=0; j<4; j++){
+                                int sh = 24-(8*j);
+                                fillcolor[j] = outlinecolor[j] = (gfloat)((grp&(0xff << sh) >> sh)) / 256.;
+                        }
+                        outlinecolor[3] = 0.0;
+                        vo->set_color_to_custom (fillcolor, outlinecolor);
+                }
+                vo->set_on_spacetime  (sp00[0] ? FALSE:TRUE, spc[0]);
+                vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
+                vo->show_label (true);
+                vo->lock_object (true);
+                vo->remake_node_markers ();
+        } else if (grp == -1 || !strncmp(id,"xy",2)){
+                if (size < 0. || size > 10.) size = 1.0;
                 grp = 5;
                 VObject *vo;
                 double xy[2];
                 gfloat c[4] = { 1.,0.,0.,1.};
                 int spc[2][2] = {{0,0},{0,0}};
                 int sp00[2] = {1,1};
-                int s = 0;
                 double px,py,pz;
                 gapp->xsm->hardware->RTQuery ("P", px, py, pz); // get Tip Position in pixels
                 src->Pixel2World ((int)round(px), (int)round(py), xy[0], xy[1]);
                 gchar *lab = g_strdup_printf ("M%s XYZ=%g,%g,%g",id, px,py,pz);
                 (src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, size));
+                g_free (lab);
                 vo->set_obj_name (marker_group[grp]);
                 vo->set_custom_label_font ("Sans Bold 12");
                 vo->set_custom_label_color (c);
                 vo->set_on_spacetime  (sp00[0] ? FALSE:TRUE, spc[0]);
                 vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
-                vo->show_label (s);
+                vo->show_label (true);
+                vo->lock_object (true);
                 vo->remake_node_markers ();
         } else {
+                if (size < 0. || size > 10.) size = 1.0;
 
                 if (grp < 0 || grp > 6) grp=0; // silently set 0 if out of range
         
@@ -2015,16 +3049,17 @@ static gboolean main_context_addmobject_from_thread (gpointer user_data){
                         gfloat c[4] = { 1.,0.,0.,1.};
                         int spc[2][2] = {{0,0},{0,0}};
                         int sp00[2] = {1,1};
-                        int s = 0;
                         src->Pixel2World ((int)round(x), (int)round(y), xy[0], xy[1]);
                         gchar *lab = g_strdup_printf ("M%s",id);
                         (src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, size));
+                        g_free (lab);
                         vo->set_obj_name (marker_group[grp]);
                         vo->set_custom_label_font ("Sans Bold 12");
                         vo->set_custom_label_color (c);
                         vo->set_on_spacetime  (sp00[0] ? FALSE:TRUE, spc[0]);
                         vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
-                        vo->show_label (s);
+                        vo->show_label (true);
+                        vo->lock_object (true);
                         vo->remake_node_markers ();
                 }
         }
@@ -3106,7 +4141,8 @@ static PyMethodDef GxsmPyMethods[] = {
 	{"set_y_lookup", remote_set_y_lookup, METH_VARARGS, "Set Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i, v)"},
 	{"set_v_lookup", remote_set_v_lookup, METH_VARARGS, "Set Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i, v)"},
 	{"get_object", remote_getobject, METH_VARARGS, "Get Object Coordinates: [type, x,y,..]=gxsm.get_object (ch, n)"},
-	{"add_marker_object", remote_addmobject, METH_VARARGS, "Put Marker Object at pixel coordinates or current tip pos (id='xy'|grp=-1): gxsm.add_marker_object (ch, label=str|'xy', mgrp=0..5|-1, x=ix,y=iy, size=0..1)"},
+	{"add_marker_object", remote_addmobject, METH_VARARGS, "Put Marker/Rectangle Object at pixel coordinates or current tip pos (id='xy'|grp=-1, 'Rectangle[id]|grp=-2): gxsm.add_marker_object (ch, label=str|'xy'|'Rectangle-id', mgrp=0..5|-1, x=ix,y=iy, size)"},
+        {"marker_getobject_action", remote_getobject_action, METH_VARARGS, "Marker/Rectangle Object Action: gxsm.marker_getobject_action (ch, objnameid, action='REMOVE'|'REMOVE-ALL'|'GET_COORDS')"},
         
 	{"startscan", remote_startscan, METH_VARARGS, "Start Scan."},
 	{"stopscan", remote_stopscan, METH_VARARGS, "Stop Scan."},
