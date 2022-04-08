@@ -2920,16 +2920,15 @@ static gboolean main_context_getobject_action_from_thread (gpointer user_data){
 	Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src){
                 int n_obj = src->number_of_object ();
-                int k=0;
                 for (int i=0; i < n_obj; ++i){
-                        scan_object_data *obj_data = src->get_object_data (i-k);
+                        scan_object_data *obj_data = src->get_object_data (i);
                         if (obj_data){
                                 if (!strcmp (action, "REMOVE-ALL")){
                                         if (!strncmp (obj_data->get_name (), objnameid, strlen(objnameid))){ // part match?
                                                 ViewControl *vc = src->view->Get_ViewControl ();
                                                 vc->remove_object ((VObject *)obj_data, vc);
-                                                n_obj--;
-                                                k++;
+                                                n_obj = src->number_of_object ();
+                                                --i;
                                                 idle_data->ret = 0;
                                                 continue;
                                         }
