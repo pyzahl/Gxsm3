@@ -1054,10 +1054,7 @@ gint spm_simulator_hwi_dev::RTQuery (const gchar *property, double &val1, double
 	// DSP Status Indicators
 	if (*property == 's' || *property == 'S' || *property == 'W'){
 		if (*property == 'W'){
-                        if (ScanningFlg){
-                                if (0) EndScan2D(); // if any error detected
-                                return TRUE;
-                        }
+                        return ScanningFlg;
                 }
                 // build status flags
 		val1 = (double)(0
