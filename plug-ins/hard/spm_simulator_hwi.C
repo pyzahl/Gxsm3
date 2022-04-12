@@ -449,7 +449,28 @@ int SPM_SIM_Control::config_options_callback (GtkWidget *widget, SPM_SIM_Control
 
 void SPM_SIM_Control::create_folder (){
         GtkWidget *notebook;
- 
+
+        static UnitObj *Unity, *Volt, *Angstroem, *Current, *Current_pA, *SetPtUnit, *Speed, *PhiSpeed, *Frq, *Deg, *Vslope, *Time, *msTime, *TimeUms, *minTime, *Hex;
+
+        
+	Unity    = new UnitObj(" "," ");
+	//Volt     = new UnitAutoMag("V","V");
+	Volt     = new UnitObj("V","V");
+	Angstroem= new UnitObj(UTF8_ANGSTROEM,"A");
+	Frq      = new UnitObj("Hz","Hz");
+	Time     = new UnitObj("s","s");
+	TimeUms  = new LinUnit("ms","ms",1e-3);
+	msTime   = new UnitObj("ms","ms");
+	minTime  = new UnitObj("min","min");
+	Deg      = new UnitObj(UTF8_DEGREE,"Deg");
+        // Current  = new UnitAutoMag("A","A"); ((UnitAutoMag*) Current)->set_mag_get_base (1e-9, 1e-9); // nA default and internal "base"
+        Current  = new UnitObj("nA","nA");
+	Current_pA  = new UnitObj("pA","pA");
+	Speed    = new UnitObj(UTF8_ANGSTROEM"/s","A/s");
+	PhiSpeed = new UnitObj(UTF8_DEGREE"/s","Deg/s");
+	Vslope   = new UnitObj("V/s","V/s");
+	Hex      = new UnitObj("h","h");
+
         AppWindowInit ("SPM Simulator");
         
         // ========================================
@@ -494,6 +515,64 @@ void SPM_SIM_Control::create_folder (){
                         bp->set_configure_list_mode_off ();
 
                         bp->new_line ();
+
+                        bp->set_input_width_chars (30);
+                        bp->set_input_nx (2);
+                        bp->grid_add_ec ("Z-Pos/Setpoint:", Angstroem, &zpos_ref, -100., 100., "6g", 0.01, 0.1, "adv-dsp-zpos-ref");
+
+                        bp->new_line ();
+
+                        bp->set_scale_nx (1);
+
+                        // Build MIXER CHANNELs
+                        UnitObj *mixer_unit[4] = { Current, Frq, Volt, Volt };
+                        const gchar *mixer_channel_label[4] = { "Mix0 (STM Current)", "Mix1 (AFM/Force)", "Mix2 (aux.)", "Mix3 (aux.)" };
+                        const gchar *mixer_remote_id_set[4] = { "fbs-mx0-current-set",  "fbs-mx1-freq-set",   "fbs-mx2-set",   "fbs-mx3-set" };
+                        const gchar *mixer_remote_id_gn[4]  = { "fbs-mx0-current-gain" ,"fbs-mx1-freq-gain",  "fbs-mx2-gain",  "fbs-mx3-gain" };
+                        const gchar *mixer_remote_id_fl[4]  = { "fbs-mx0-current-level","fbs-mx1-freq-level", "fbs-mx2-level", "fbs-mx3-level" };
+
+                        // Note: transform mode is always default [LOG,OFF,OFF,OFF] -- NOT READ BACK FROM DSP -- !!!
+                        for (gint ch=0; ch<1; ++ch){
+                                bp->grid_add_label (mixer_channel_label[ch]);
+
+                                bp->grid_add_ec_with_scale (NULL, mixer_unit[ch], &mix_set_point[ch], ch==0? 0.0:-100.0, 100., "4g", 0.001, 0.01, mixer_remote_id_set[ch]);
+                                // bp->ec->set_adjustment_mode (PARAM_CONTROL_ADJUSTMENT_LOG | PARAM_CONTROL_ADJUSTMENT_ADD_MARKS );
+                                bp->ec->SetScaleWidget (bp->scale, 0);
+                                bp->ec->set_logscale_min (1e-4);
+                                bp->ec->set_logscale_magshift (-3);
+                                gtk_scale_set_digits (GTK_SCALE (bp->scale), 5);
+
+                                bp->set_input_width_chars (10);
+                                //bp->grid_add_ec (NULL, Unity, &mix_gain[ch], -0.5, 0.5, "5g", 0.001, 0.01, mixer_remote_id_gn[ch]);
+                                bp->grid_add_label ("FZ-Level");
+                                bp->grid_add_ec (NULL, mixer_unit[ch], &mix_level[ch], -100.0, 100.0, "5g", 0.001, 0.01, mixer_remote_id_fl[ch]);
+                
+                                bp->new_line ();
+                        }
+
+                        bp->set_input_width_chars ();
+        
+                        // Z-Servo
+                        bp->pop_grid ();
+                        bp->new_line ();
+                        bp->new_grid_with_frame ("Z-Servo");
+
+                        bp->set_label_width_chars (7);
+                        bp->set_input_width_chars (12);
+
+                        bp->set_configure_list_mode_on ();
+                        bp->grid_add_ec_with_scale ("CP", Unity, &z_servo[SERVO_CP], 0., 200., "5g", 1.0, 0.1, "fbs-cp");
+                        GtkWidget *ZServoCP = bp->input;
+                        bp->new_line ();
+                        bp->set_configure_list_mode_off ();
+                        bp->grid_add_ec_with_scale ("CI", Unity, &z_servo[SERVO_CI], 0., 200., "5g", 1.0, 0.1, "fbs-ci");
+                        GtkWidget *ZServoCI = bp->input;
+
+                        g_object_set_data( G_OBJECT (ZServoCI), "HasClient", ZServoCP);
+                        g_object_set_data( G_OBJECT (ZServoCP), "HasMaster", ZServoCI);
+                        g_object_set_data( G_OBJECT (ZServoCI), "HasRatio", GUINT_TO_POINTER((guint)round(1000.*z_servo[SERVO_CP]/z_servo[SERVO_CI])));
+                              
+
                         // ...
                 }                        
 
@@ -557,6 +636,21 @@ void SPM_SIM_Control::create_folder (){
                                 //VXYZS0Gain[j] = wid; // store for remote access/manipulation
                                 bp->grid_add_widget (wid);
                         }
+
+
+                        bp->new_line ();
+                        bp->grid_add_ec ("Fast Return", Unity, &fast_return, 1., 1000., "5g", 1., 10.,  "adv-scan-fast-return");
+
+                        bp->new_line ();
+                        bp->set_scale_nx (2);
+                        bp->grid_add_ec_with_scale ("Slope X", Unity, &area_slope_x, -0.2, 0.2, ".5f", 0.0001, 0.0001,  "adv-scan-slope-x"); slope_x_ec = bp->ec;
+                        gtk_scale_set_digits (GTK_SCALE (bp->scale), 5);
+                        bp->new_line ();
+
+                        bp->grid_add_ec_with_scale ("Slope Y", Unity, &area_slope_y, -0.2, 0.2, ".5f", 0.0001, 0.0001,  "adv-scan-slope-y"); slope_y_ec = bp->ec;
+                        gtk_scale_set_digits (GTK_SCALE (bp->scale), 5);
+                        bp->set_scale_nx ();
+                        bp->new_line (0,2);
 
                         // ...
                 }
@@ -753,6 +847,11 @@ double spm_simulator_hwi_dev::simulate_value (int xi, int yi, int ch){
         static feature_lattice lat;
         static double fz = 1./gapp->xsm->Inst->Dig2ZA(1);
 
+        double zx_ratio = gapp->xsm->Inst->XResolution () / gapp->xsm->Inst->ZModResolution (); 
+        double zy_ratio = gapp->xsm->Inst->YResolution () / gapp->xsm->Inst->ZModResolution ();
+        double mx = zx_ratio * SIMControlClass->area_slope_x;
+        double my = zy_ratio * SIMControlClass->area_slope_y;
+      
         double x = xi*Dx-Dx*Nx/2; // x in DAC units
         double y = (Ny-yi-1)*Dy-Dy*Ny/2; // y in DAC units, i=0 is top line, i=Ny is bottom line
 
@@ -760,6 +859,10 @@ double spm_simulator_hwi_dev::simulate_value (int xi, int yi, int ch){
         // spm_simulator_hwi_pi.app->xsm->... and gapp->xsm->...
         // are identical pointers to the main g-application (gapp) class and it is made availabe vie the plugin descriptor
         // in case the global gapp is not exported or used in the plugin. And either one may be used to access core settings.
+
+        double z_offset_xyslope = gapp->xsm->Inst->Dig2ZA (x*mx + y*my);
+        //      zpos_xymult = move.ZPos + scan.XposR * scan.fm_dz0x +  scan.YposR * scan.fm_dz0y ;
+
         
         x = gapp->xsm->Inst->Dig2XA ((long)round(x)); // convert to anstroems for model using instrument class, use Scan Gains
         y = gapp->xsm->Inst->Dig2YA ((long)round(y)); // convert to anstroems for model
@@ -775,12 +878,13 @@ double spm_simulator_hwi_dev::simulate_value (int xi, int yi, int ch){
 
         //g_print ("XYR0: %g %g",x,y);
 
-        // use template landscape is scan loaded to CH11 !!
-        if (gapp->xsm->scan[10]){
-                double ix,iy;
-                gapp->xsm->scan[10]->World2Pixel  (x, y, ix,iy);
-                return gapp->xsm->scan[10]->data.s.dz * gapp->xsm->scan[10]->mem2d->GetDataPktInterpol (ix,iy);
-        }
+        // use template landscape is scan loaded to CH11, ... 14 !!
+        if (ch < 4)
+                if (gapp->xsm->scan[10+ch]){
+                        double ix,iy;
+                        gapp->xsm->scan[10+ch]->World2Pixel  (x, y, ix,iy);
+                        return (ch==0?z_offset_xyslope:0.0) + gapp->xsm->scan[10+ch]->data.s.dz * gapp->xsm->scan[10+ch]->mem2d->GetDataPktInterpol (ix,iy);
+                }
 
         double z=0.0;
         for (int i=0; i<N_steps;     ++i) z += stp[i].get_z (x,y, ch);
@@ -791,7 +895,7 @@ double spm_simulator_hwi_dev::simulate_value (int xi, int yi, int ch){
         if (SIMControlClass->options & 1)
                 for (int i=0; i<N_molecules; ++i) zm += mol[i].get_z (x,y, ch);
         
-        return fz * (z + (zm > 0. ? zm : lat.get_z (x,y, ch)));
+        return (ch==0?z_offset_xyslope:0.0) + fz * (z + (zm > 0. ? zm : lat.get_z (x,y, ch)));
 }
 
 // DataReadThread:

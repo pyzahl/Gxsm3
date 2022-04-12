@@ -124,6 +124,35 @@ public:
         // SPM SIM parameters
         double speed[2]; // per tab
         double bias[2];
+        double zpos_ref;
+        double Current;
+        double Frq;
+        
+	double frq_ref;           //!< Frequency Reference: i.e. feedback, scan, ... dataaq. sampling rate
+
+	// -- section SPM_PI_FEEDBACK MIXER --
+	int    mix_fbsource[4];   // only for documentation
+	double mix_unit2volt_factor[4]; // on default: [0] Current Setpoint (STM; log mode) [1..3]: off
+	double mix_set_point[4]; // on default: [0] Current Setpoint (STM; log mode) [1..3]: off
+	double mix_gain[4];      // Mixing Gains: 0=OFF, 1=100%, note: can be > 1 or even negative for scaling purposes
+	double mix_level[4];     // fuzzy mixing control via level, applied only if fuzzy flag set
+	// -- may not yet be applied to all signal --> check with DSP code
+	int    mix_transform_mode[4]; //!< transformation mode on/off log/lin iir/full fuzzy/normal
+
+
+	// SERVO COMPONENTS:
+#define SERVO_SETPT 0
+#define SERVO_CP    1
+#define SERVO_CI    2
+	double z_servo[3];    // Z-Servo (Feedback) [0] (not used here), [1] Const Proportional, [2] Const Integral [user visible values]
+
+	// -- section AREA_SCAN --
+	double fast_return;       //!< on-the-fly fast return option (scan retrace speed override factor, 1=normal)
+	double area_slope_x;      //!< slope compensation in X, in scan coordinate system (possibly rotated) -- applied before, but by feedback
+	double area_slope_y;      //!< slope compensation in Y, in scan coordinate system (possibly rotated) -- applied before, but by feedback
+	Gtk_EntryControl *slope_x_ec;
+	Gtk_EntryControl *slope_y_ec;
+	int    area_slope_compensation_flag; //!< enable/disable slope compensation
         
 private:
 	GSettings *hwi_settings;
