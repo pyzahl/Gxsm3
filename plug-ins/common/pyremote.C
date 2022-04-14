@@ -1671,6 +1671,9 @@ typedef struct {
         PyObject *args;
         gint ret;
         gboolean wait_join;
+        double vec[4];
+        gint64 i64;
+        gchar  c;
 } IDLE_from_thread_data;
 
 
@@ -2196,6 +2199,40 @@ static PyObject* remote_action(PyObject *self, PyObject *args)
         return Py_BuildValue("i", idle_data.ret);
 }
 
+
+static gboolean main_context_idle_rtquery (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATIONS
+
+	double u,v,w;
+	gint64 ret = gapp->xsm->hardware->RTQuery ( idle_data->string, u,v,w);
+        idle_data->vec[0]=u;
+        idle_data->vec[1]=v;
+        idle_data->vec[2]=w;
+        idle_data->i64=ret;
+        idle_data->ret = 0;
+
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
+
+static gint64 idle_rtquery(const gchar *m, double &x, double &y, double &z)
+{
+	PI_DEBUG(DBG_L2, "IDLE RTQuery ") ;
+        IDLE_from_thread_data idle_data;
+        idle_data.string = m;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_idle_rtquery, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+
+        x=idle_data.vec[0];
+        y=idle_data.vec[1];
+        z=idle_data.vec[2];
+        return idle_data.i64;
+}
+
+
+
 // asks HwI via RTQuery for real time watches -- depends on HwI and it's capabilities/availabel options
 /* Hardware realtime monitoring -- all optional */
 /* default properties are
@@ -2210,23 +2247,46 @@ static PyObject* remote_action(PyObject *self, PyObject *args)
  * "i" -> GPIO watch -- speudo real time, may be chached by GXSM: out, in, dir  [mk2/3]
  * "U" -> current bias
  */
-static PyObject* remote_rtquery(PyObject *self, PyObject *args)
-{
-	PI_DEBUG(DBG_L2, "pyremote: RTQuery ") ;
-	gchar *parameter;
+static gboolean main_context_rtquery_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+        // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
+	gchar *parameter=NULL;
+        idle_data->ret = -1;
 
-	if (!PyArg_ParseTuple(args, "s", &parameter))
-		return Py_BuildValue("i", -1);
+	if (!PyArg_ParseTuple(idle_data->args, "s", &parameter)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
 
 	double u,v,w;
 	gint64 ret = gapp->xsm->hardware->RTQuery (parameter, u,v,w);
+        idle_data->c=parameter[0];
+        idle_data->vec[0]=u;
+        idle_data->vec[1]=v;
+        idle_data->vec[2]=w;
+        idle_data->i64=ret;
+        idle_data->ret = 0;
 
-        if (*parameter == 'm'){
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
+
+static PyObject* remote_rtquery(PyObject *self, PyObject *args)
+{
+	PI_DEBUG(DBG_L2, "pyremote: RTQuery ") ;
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_rtquery_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+
+        if (idle_data.c == 'm'){
                 static char uu[10] = { 0,0,0,0, 0,0,0,0, 0,0};
-                strncpy ((char*) uu, (char*)&ret, 8);
-                return Py_BuildValue("fffs", u,v,w, uu);
+                strncpy ((char*) uu, (char*)&idle_data.i64, 8);
+                return Py_BuildValue("fffs", idle_data.vec[0], idle_data.vec[1], idle_data.vec[2], uu);
         } else
-                return Py_BuildValue("fff", u,v,w);
+                return Py_BuildValue("fff",  idle_data.vec[0], idle_data.vec[1], idle_data.vec[2]);
 }
 
 // asks HwI via RTQuery for real time watches -- depends on HwI and it's capabilities/availabel options
@@ -3025,7 +3085,8 @@ static gboolean main_context_addmobject_from_thread (gpointer user_data){
                 int spc[2][2] = {{0,0},{0,0}};
                 int sp00[2] = {1,1};
                 double px,py,pz;
-                gapp->xsm->hardware->RTQuery ("P", px, py, pz); // get Tip Position in pixels
+                // gapp->xsm->hardware->RTQuery ("P", px, py, pz); // get Tip Position in pixels
+                idle_rtquery ("P", px, py, pz); // get Tip Position in pixels
                 src->Pixel2World ((int)round(px), (int)round(py), xy[0], xy[1]);
                 gchar *lab = g_strdup_printf ("M%s XYZ=%g,%g,%g",id, px,py,pz);
                 (src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, size));
@@ -3100,12 +3161,12 @@ static PyObject* remote_waitscan(PyObject *self, PyObject *args)
         double x,y,z;
         long block = 0;
 	PI_DEBUG_GM (DBG_L2, "pyremote: wait scan");
-	if (!PyArg_ParseTuple (args, "l", &block)){
+	if (PyArg_ParseTuple (args, "l", &block)){
                 g_usleep(50000);
-                if(gapp->xsm->hardware->RTQuery ("W",x,y,z) ){
+                if(idle_rtquery ("W",x,y,z) ){
                         if (block){
                                 PI_DEBUG_GM (DBG_L2, "pyremote: wait scan (block=%d)-- blocking until ready.", (int) block);
-                                while(gapp->xsm->hardware->RTQuery ("W",x,y,z) ){
+                                while(idle_rtquery ("W",x,y,z) ){
                                         PI_DEBUG_GM (DBG_L2, "pyremote: wait scan blocking, line = %d",gapp->xsm->hardware->RTQuery () );
                                         g_usleep(100000);
                                 }
@@ -3115,7 +3176,7 @@ static PyObject* remote_waitscan(PyObject *self, PyObject *args)
                         return Py_BuildValue("i", -1); // no scan in progress
         } else {
                 PI_DEBUG_GM (DBG_L2, "pyremote: wait scan -- default: blocking until ready.");
-                while(gapp->xsm->hardware->RTQuery ("W",x,y,z) ){
+                while(idle_rtquery ("W",x,y,z) ){
                         g_usleep(100000);
                         PI_DEBUG_GM (DBG_L2, "pyremote: wait scan, default: block, line = %d",gapp->xsm->hardware->RTQuery () );
                 }
