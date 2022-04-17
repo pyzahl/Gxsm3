@@ -176,7 +176,9 @@ public:
 
 
 	virtual void SetUpScan()=0;
+	virtual void set_offset()=0;
 	virtual void show_label (gboolean flg=true)=0;
+	virtual void set_object_label(const gchar *lab)=0;
 
 };
 
