@@ -2998,6 +2998,14 @@ static gboolean main_context_getobject_action_from_thread (gpointer user_data){
                                                 obj_data->SetUpScan ();
                                                 idle_data->ret = 0;
                                         }
+                                        else if (!strcmp (action, "SET-OFFSET")){
+                                                obj_data->set_offset ();
+                                                idle_data->ret = 0;
+                                        }
+                                        else if (!strncmp (action, "SET-LABEL-TO:",13)){
+                                                obj_data->set_object_label (&action[13]);
+                                                idle_data->ret = 0;
+                                        }
                                         else if (!strcmp (action, "REMOVE")){
                                                 ViewControl *vc = src->view->Get_ViewControl ();
                                                 vc->remove_object ((VObject *)obj_data, vc);
@@ -3023,7 +3031,7 @@ static PyObject* remote_getobject_action(PyObject *self, PyObject *args)
         g_idle_add (main_context_getobject_action_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
         if (idle_data.ret)
-                return Py_BuildValue("s", "Invalid Parameters. [lls]: ch, objname-id, action=[GET_COORDS, REMOVE]");
+                return Py_BuildValue("s", "Invalid Parameters. [lls]: ch, objname-id, action=[GET_COORDS, SET-OFFSET, SET-LABEL-TO:{LABEL}, REMOVE]");
         else 
                 return Py_BuildValue("s", "OK");
 
@@ -3058,6 +3066,32 @@ static gboolean main_context_addmobject_from_thread (gpointer user_data){
                 src->Pixel2World ((int)round(x-size/2), (int)round(y-size/2), xy[0], xy[1]);
                 src->Pixel2World ((int)round(x+size/2), (int)round(y+size/2), xy[2], xy[3]);
                 (src->view->Get_ViewControl ())->AddObject (vo = new VObRectangle ((src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, id, 1.0));
+                vo->set_obj_name (id);
+                vo->set_custom_label_font ("Sans Bold 12");
+                vo->set_custom_label_color (c);
+                if (grp>0){
+                        gfloat fillcolor[4];
+                        gfloat outlinecolor[4];
+                        for(int j=0; j<4; j++){
+                                int sh = 24-(8*j);
+                                fillcolor[j] = outlinecolor[j] = (gfloat)((grp&(0xff << sh) >> sh)) / 256.;
+                        }
+                        outlinecolor[3] = 0.0;
+                        vo->set_color_to_custom (fillcolor, outlinecolor);
+                }
+                vo->set_on_spacetime  (sp00[0] ? FALSE:TRUE, spc[0]);
+                vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
+                vo->show_label (true);
+                vo->lock_object (true);
+                vo->remake_node_markers ();
+        } else if (!strncmp(id,"Point",5)){
+                VObject *vo;
+                double xy[2];
+                gfloat c[4] = { 1.,0.,0.,1.};
+                int spc[2][2] = {{0,0},{0,0}};
+                int sp00[2] = {1,1};
+                src->Pixel2World ((int)round(x), (int)round(y), xy[0], xy[1]);
+                (src->view->Get_ViewControl ())->AddObject (vo = new VObPoint ((src->view->Get_ViewControl ())->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, id, 1.0));
                 vo->set_obj_name (id);
                 vo->set_custom_label_font ("Sans Bold 12");
                 vo->set_custom_label_color (c);
@@ -4202,8 +4236,8 @@ static PyMethodDef GxsmPyMethods[] = {
 	{"set_y_lookup", remote_set_y_lookup, METH_VARARGS, "Set Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i, v)"},
 	{"set_v_lookup", remote_set_v_lookup, METH_VARARGS, "Set Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i, v)"},
 	{"get_object", remote_getobject, METH_VARARGS, "Get Object Coordinates: [type, x,y,..]=gxsm.get_object (ch, n)"},
-	{"add_marker_object", remote_addmobject, METH_VARARGS, "Put Marker/Rectangle Object at pixel coordinates or current tip pos (id='xy'|grp=-1, 'Rectangle[id]|grp=-2): gxsm.add_marker_object (ch, label=str|'xy'|'Rectangle-id', mgrp=0..5|-1, x=ix,y=iy, size)"},
-        {"marker_getobject_action", remote_getobject_action, METH_VARARGS, "Marker/Rectangle Object Action: gxsm.marker_getobject_action (ch, objnameid, action='REMOVE'|'REMOVE-ALL'|'GET_COORDS')"},
+	{"add_marker_object", remote_addmobject, METH_VARARGS, "Put Marker/Rectangle Object at pixel coordinates or current tip pos (id='xy'|grp=-1, 'Rectangle[id]|grp=-2, 'Point[id]'): gxsm.add_marker_object (ch, label=str|'xy'|'Rectangle-id', mgrp=0..5|-1, x=ix,y=iy, size)"},
+        {"marker_getobject_action", remote_getobject_action, METH_VARARGS, "Marker/Rectangle Object Action: gxsm.marker_getobject_action (ch, objnameid, action='REMOVE'|'REMOVE-ALL'|'GET_COORDS'|'SET-OFFSET')"},
         
 	{"startscan", remote_startscan, METH_VARARGS, "Start Scan."},
 	{"stopscan", remote_stopscan, METH_VARARGS, "Stop Scan."},

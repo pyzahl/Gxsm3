@@ -2495,15 +2495,15 @@ void ViewControl::view_file_update_callback (GSimpleAction *simple, GVariant *pa
 void ViewControl::view_file_saveobjects_callback (GSimpleAction *simple, GVariant *parameter, 
                                                   gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
-	gchar *oname = g_strconcat(vc->scan->data.ui.basename,"-objects",NULL);
+	gchar *oname = g_strconcat(vc->scan->data.ui.name,".obj",NULL);
 	gchar *fname = gapp->file_dialog_save ("Save Objects or .plt or HPGL", NULL, oname);
 	g_free(oname);
 	if (!fname) return;
 	vc->objsavestream.open(fname, std::ios::out);
-	if (strncmp(fname+strlen(fname)-4,".plt",4))
-		vc->SaveObjects();
-	else
+	if (!strncmp(fname+strlen(fname)-4,".plt",4))
 		vc->SaveObjectsHPGL();
+	else
+		vc->SaveObjects();
 	vc->objsavestream.close();
 }
 
@@ -2884,7 +2884,7 @@ gfloat *lookup_atom_color (gchar *id, double &r){
 void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVariant *parameter, 
                                                   gpointer user_data){
         ViewControl *vc = (ViewControl *) user_data;
-	gchar *oname = g_strconcat (vc->scan->data.ui.basename,"-objects",NULL);
+	gchar *oname = g_strconcat (vc->scan->data.ui.name, ".obj", NULL);
 
         GtkFileFilter *f0 = gtk_file_filter_new ();
         gtk_file_filter_set_name (f0, "All");
@@ -2892,18 +2892,18 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 
         GtkFileFilter *f1 = gtk_file_filter_new ();
         gtk_file_filter_set_name (f1, "Objects");
-        gtk_file_filter_add_pattern (f1, "*.objects");
+        gtk_file_filter_add_pattern (f1, "*.obj*");
 
         GtkFileFilter *f2 = gtk_file_filter_new ();
         gtk_file_filter_set_name (f2, "xyz Model");
         gtk_file_filter_add_pattern (f2, "*.xyz");
 
-        GtkFileFilter *filter[] = { f2, f1, f0, NULL };
+        GtkFileFilter *filter[] = { f1, f2, f0, NULL };
         
 	gchar *fname = gapp->file_dialog_load ("Load Objects", NULL, oname, filter);
 	g_free (oname);
 	vc->objloadstream.open (fname, std::ios::in);
-
+        
         // try if it is a .xyz file
         if (g_strrstr (fname, ".xyz")){
                 gchar line[512];
@@ -3001,7 +3001,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			   vo->show_label (0);
 			   vo->remake_node_markers ();
 		       }
-		} else if (!strncmp (line, "(VObject \"Point\"", 16)
+		} else if (!strncmp (line, "(VObject \"Point", 15)
 		    ||
 		    !strncmp (line, "(VObject \"*Marker:", 18)
 			){
@@ -3015,6 +3015,10 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			GetXAngYAng (vc->objloadstream, xy, TRUE);
 			XSM_DEBUG(DBG_L2, "Adding Point@xy:" << xy[0] << ", " << xy[1] );
 			vc->AddObject (vo = new VObPoint (vc->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
+
+                        if (!strncmp (lab, "Point", 5))
+                                vo->set_obj_name (lab);
+
 			vo->set_obj_name (nm);
 			vo->set_custom_label_font (f);
 			vo->set_custom_label_color (c);
@@ -3022,7 +3026,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
 			vo->show_label (s);
 			vo->remake_node_markers ();
-		} else if (!strncmp (line, "(VObject \"Line\"", 15)){
+		} else if (!strncmp (line, "(VObject \"Line", 14)){
 			double xy[2*7];
 			gfloat ec[4], c[4], mas;
 			gchar *f;
@@ -3060,7 +3064,10 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
 			vo->show_label (s);
 			vo->remake_node_markers ();
-		} else if (!strncmp (line, "(VObject \"Rectangle\"", 20)){
+		} else if (!strncmp (line, "(VObject \"Rectangle", 19)){
+
+                        g_message ("Rectange obj found for reading");
+                        g_message (line);
 			double xy[4];
 			gfloat ec[4], c[4], mas;
 			gchar *f;
@@ -3073,6 +3080,10 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			XSM_DEBUG(DBG_L2, "Adding Rectangle@xy:" << xy[0] << ", " << xy[1]
 			     << " : " << xy[2] << ", " << xy[3] );
 			vc->AddObject (vo = new VObRectangle (vc->canvas, xy, FALSE, VOBJ_COORD_ABSOLUT, lab, mas/vc->vinfo->GetZfac ()));
+
+                        if (!strncmp (lab, "Rectangle", 9))
+                                vo->set_obj_name (lab);
+
 			vo->set_custom_label_font (f);
 			vo->set_custom_label_color (c);
 			vo->set_custom_element_color (ec);
@@ -3080,7 +3091,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
 			vo->show_label (s);
 			vo->remake_node_markers ();
-		} else if (!strncmp (line, "(VObject \"Circle\"", 17)){
+		} else if (!strncmp (line, "(VObject \"Circle", 16)){
 			double xy[4];
 			gfloat ec[4], c[4], mas;
 			gchar *f;
@@ -3100,7 +3111,7 @@ void ViewControl::view_file_loadobjects_callback (GSimpleAction *simple, GVarian
 			vo->set_off_spacetime (sp00[1] ? FALSE:TRUE, spc[1]);
 			vo->show_label (s);
 			vo->remake_node_markers ();
-		} else if (!strncmp (line, "(VObject \"Ksys\"", 15)){
+		} else if (!strncmp (line, "(VObject \"Ksys", 15)){
 			double xy[6];
 			gfloat ec[4], c[4], mas;
 			gchar *f;
