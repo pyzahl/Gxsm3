@@ -1532,6 +1532,9 @@ to the community. The GXSM-Forums always welcome input.
 #include "pyscript_templates.h"
 #include "pyscript_templates_script_libs.h"
 
+// number of script control EC's -- but must manually match schemata in .xml files!
+#define NUM_SCV 10
+
 // Plugin Prototypes
 static void pyremote_init( void );
 static void pyremote_about( void );
@@ -1963,6 +1966,16 @@ public:
 
         void fix_eols_to_unix (gchar *text);
 
+        gboolean set_sc_label (const gchar *id, const gchar *l){
+                // *id = g_strdup_printf ("py-sc%02d",i+1);
+                if (strlen(id) < 7) return false;
+                int i = atoi(&id[5]);
+                if (i>0 && i <= NUM_SCV){
+                        gtk_label_set_text (GTK_LABEL(sc_label[i-1]) ,l);
+                        return true;
+                } else return false;
+        };
+        
 private:
         PyRunThreadData run_data;
         GSList *message_list;
@@ -1986,6 +1999,8 @@ private:
         gboolean query_filename;
         gboolean fail;
         gdouble exec_value;
+        gdouble sc_value[NUM_SCV];
+        GtkWidget *sc_label[NUM_SCV];
 };
 
 
@@ -4191,6 +4206,35 @@ static PyObject* remote_sleep(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", 0);
 }
 
+
+static gboolean main_context_set_sc_label_from_thread (gpointer user_data){
+        IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
+	gchar *id, *label;
+
+	if (!PyArg_ParseTuple(idle_data->args, "ss", &id, &label)){
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+        if (py_gxsm_remote_console)
+                py_gxsm_remote_console->set_sc_label (id, label);
+        
+        UNSET_WAIT_JOIN_MAIN;
+        return G_SOURCE_REMOVE;
+}
+
+static PyObject* remote_set_sc_label(PyObject *self, PyObject *args)
+{
+        IDLE_from_thread_data idle_data;
+        idle_data.self = self;
+        idle_data.args = args;
+        idle_data.wait_join = true;
+        g_idle_add (main_context_set_sc_label_from_thread, (gpointer)&idle_data);
+        WAIT_JOIN_MAIN;
+	return Py_BuildValue("i", idle_data.ret);
+}
+
+
+
 ///////////////////////////////////////////////////////////
 /*
 PyMethodDef
@@ -4288,6 +4332,7 @@ static PyMethodDef GxsmPyMethods[] = {
 	{"da0", remote_da0, METH_VARARGS, "Da0. -- N/A for SRanger"},
 	{"signal_emit", remote_signal_emit, METH_VARARGS, "Action-String. "},
 	{"sleep", remote_sleep, METH_VARARGS, "Sleep N/10s: gxsm.sleep (N) "},
+	{"set_sc_label", remote_set_sc_label, METH_VARARGS, "Set PyRemote SC label: gxsm.set_sc_label (id [1..8],'value as string')"},
 
 	{NULL, NULL, 0, NULL}
 };
@@ -5166,13 +5211,14 @@ void py_gxsm_console::AppWindowInit(const gchar *title){
 
 void py_gxsm_console::create_gui ()
 {
-	GtkWidget *console_scrolledwin, *file_scrolledwin, *vpaned, *frame;
+	GtkWidget *console_scrolledwin, *file_scrolledwin, *vpaned, *hpaned_scpane, *frame, *sc_grid;
 	GtkWidget *entry_input;
 
 	GtkTextView *file_textview, *output_textview;
 	//PangoFontDescription *font_desc;
         
 	BuildParam *bp;
+	BuildParam *bp_sc;
 	UnitObj *null_unit;
 
 #ifdef HAVE_GTKSOURCEVIEW
@@ -5182,20 +5228,29 @@ void py_gxsm_console::create_gui ()
 #endif
         PI_DEBUG(DBG_L2, "pyremote Plugin :: create_gui() -- building GUI elements.");
 
+        sc_grid = gtk_grid_new ();
         bp = new BuildParam (v_grid, NULL, gapp->RemoteEntryList);
         
 	// create static structure;
 	exec_value = 50.0; // mid value
-
+        
 	// create GUI
 
         PI_DEBUG(DBG_L2, "pyremote Plugin :: create_gui() -- building GUI elements..");
 
 	// window
+        hpaned_scpane = gtk_paned_new (GTK_ORIENTATION_HORIZONTAL);
+        gtk_widget_set_vexpand (hpaned_scpane, TRUE);
+        gtk_widget_set_hexpand (hpaned_scpane, TRUE);
+        bp->grid_add_widget (hpaned_scpane, 100);
+        
 	vpaned = gtk_paned_new (GTK_ORIENTATION_VERTICAL);
         gtk_widget_set_hexpand (vpaned, TRUE);
         gtk_widget_set_vexpand (vpaned, TRUE);
-        bp->grid_add_widget (vpaned, 100);
+
+        gtk_paned_pack1(GTK_PANED(hpaned_scpane), vpaned, TRUE, TRUE);
+        gtk_paned_pack2(GTK_PANED(hpaned_scpane), sc_grid, TRUE, TRUE);
+        //bp->grid_add_widget (vpaned, 100);
         bp->new_line ();
 
 	file_scrolledwin = gtk_scrolled_window_new(NULL, NULL);
@@ -5261,8 +5316,6 @@ void py_gxsm_console::create_gui ()
                            console_file_content);
 	gtk_text_view_set_editable (file_textview, TRUE);
 
-	gtk_paned_set_position (GTK_PANED(vpaned), 300);
-
 	frame = gtk_frame_new (N_("Command"));
 	entry_input = gtk_entry_new ();
 	gtk_container_add (GTK_CONTAINER(frame), entry_input);
@@ -5275,6 +5328,19 @@ void py_gxsm_console::create_gui ()
 
         gapp->RemoteEntryList = bp->get_remote_list_head ();
 
+        bp_sc = new BuildParam (sc_grid, NULL, gapp->RemoteEntryList);
+        for(int i=0; i<NUM_SCV; ++i){
+                sc_value[i] = 0.0;
+                gchar *l = g_strdup_printf ("SC%d",i+1);
+                gchar *id = g_strdup_printf ("py-sc%02d",i+1);
+                bp_sc->grid_add_ec (l, null_unit, &sc_value[i], -1e10, 1e10, "g", 1., 10., id);
+                sc_label[i] = bp_sc->label;
+                g_free (l);
+                g_free (id);
+                bp_sc->new_line ();
+        }
+        gapp->RemoteEntryList = bp_sc->get_remote_list_head ();
+
 	g_signal_connect(entry_input, "activate",
 			 G_CALLBACK(py_gxsm_console::command_execute), this);
         
@@ -5286,8 +5352,12 @@ void py_gxsm_console::create_gui ()
 	gtk_text_view_set_wrap_mode (output_textview, GTK_WRAP_WORD_CHAR);
 
         gtk_widget_show_all (v_grid);
+        gtk_widget_show_all (sc_grid);
 
         gtk_window_resize (GTK_WINDOW(window), 600, 500);
+	//gtk_paned_set_position (GTK_PANED(vpaned), 50);
+	//gtk_paned_set_position (GTK_PANED(vpaned), -1); // 1:1 -- unset default
+	gtk_paned_set_position (GTK_PANED(hpaned_scpane), 300);
         PI_DEBUG(DBG_L2, "pyremote Plugin :: console_create_gui() -- building GUI elements.... completed.");
 }
 
