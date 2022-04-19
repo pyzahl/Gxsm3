@@ -2847,17 +2847,11 @@ static PyObject* remote_getslice(PyObject *self, PyObject *args)
                 double *darr2 = (double*) malloc(sizeof(double) * dims[0]*dims[1]);
                 double *dp=darr2;
                 int yf = yi+yn;
-                g_print ("[");
-                for (int y=yi; y<yf; ++y){
-                        g_print ("{y=%d} [",y);
-                        for (int x=0; x<dims[0]; ++x){
-                                double d;
-                                *dp++ = d = src->mem2d->data->Z(x,y)*src->data.s.dz;
-                                g_print ("%g, ",d);
-                        }
-                        g_print ("],\n");
-                }
-                g_print ("]\n");
+
+                for (int y=yi; y<yf; ++y)
+                        for (int x=0; x<dims[0]; ++x)
+                                *dp++ = src->mem2d->data->Z(x,y)*src->data.s.dz;
+                
                 PyObject* pyarr = PyArray_SimpleNewFromData(2, dims, NPY_DOUBLE, (void*)darr2);
                 PyArray_ENABLEFLAGS((PyArrayObject*) pyarr, NPY_ARRAY_OWNDATA);
                 return Py_BuildValue("O", pyarr); // Python code will receive the array as numpy array.
