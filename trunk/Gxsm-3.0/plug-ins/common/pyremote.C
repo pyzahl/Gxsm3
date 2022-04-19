@@ -131,7 +131,7 @@ gxsm.get_differentials : Get Scan Scaling: [dx,dy,dz,dl]=gxsm.get_differentials 
 gxsm.get_dimensions : Get Scan Dimensions: [nx,ny,nv,nt]=gxsm.get_dimensions (ch)
 gxsm.get_data_pkt : Get Data Value at point: value=gxsm.get_data_pkt (ch, x, y, v, t)
 gxsm.put_data_pkt : Put Data Value to point: gxsm.put_data_pkt (value, ch, x, y, v, t)
-gxsm.get_slice : Get Slice/Image: [nx,ny,array]=gxsm.get_slice (ch, v, t)
+gxsm.get_slice : Get Data Slice from Scan Imagein ch, values are scaled by dz to unit: [nx,ny,array]=gxsm.get_slice (ch, v, t, yi, yn)
 gxsm.get_x_lookup : Get Scan Data index to world mapping: x=gxsm.get_x_lookup (ch, i)
 gxsm.get_y_lookup : Get Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i)
 gxsm.get_v_lookup : Get Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i)
@@ -1503,6 +1503,12 @@ to the community. The GXSM-Forums always welcome input.
 #include <gtksourceview/gtksource.h>
 
 #include <Python.h>
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#include "numpy/arrayobject.h"
+#include "numpy/ndarraytypes.h"
+#include "numpy/ndarrayobject.h"
+#include "numpy/arrayobject.h"
+
 #include <sys/types.h>
 #include <signal.h>
 
@@ -2817,24 +2823,44 @@ static PyObject* remote_putdatapkt(PyObject *self, PyObject *args)
 		return Py_BuildValue("i", -1);
 }
 
-//{"get_slice", remote_getslice, METH_VARARGS, "Get Slice/Image: [nx,ny,array]=gxsm.get_slice (ch, v, t)"},
+//{"get_slice", remote_getslice, METH_VARARGS, "Get Slice/Image: [nx,ny,array]=gxsm.get_slice (ch, v, t, yi, yn)"},
 
 static PyObject* remote_getslice(PyObject *self, PyObject *args)
 {
 	PI_DEBUG(DBG_L2, "pyremote: getslice");
-	long ch,v,t;
+	long ch,v,t,yi,yn;
 
 	//PyObject *obj;
         
-	if (!PyArg_ParseTuple (args, "lll", &ch, &v, &t))
+	if (!PyArg_ParseTuple (args, "lllll", &ch, &v, &t, &yi, &yn))
 		return Py_BuildValue("i", -1);
 
 	Scan *src =gapp->xsm->GetScanChannel (ch);
-        if (src){
-                g_message ("remote_getslice -- Complete Me!! N/A");
+        if (src && (yi+yn) < src->mem2d->GetNy()){
+                g_message ("remote_getslice from mem2d scan data in (dz scaled to unit) CH%d, Ys=%d Yf=%d", (int)ch, (int)yi, (int)(yi+yn));
 
-                //src->mem2d->GetDataPkt (x,y,v);
-                return Py_BuildValue("i", 0);
+                // PyObject* PyArray_SimpleNewFromData(int nd, npy_intp const* dims, int typenum, void* data);
+                // PyObject *PyArray_FromDimsAndData(int n_dimensions, int dimensions[n_dimensions], int item_type, char *data);
+                npy_intp dims[2]; 
+                dims[0] = src->mem2d->GetNx ();
+                dims[1] = yn;
+                double *darr2 = (double*) malloc(sizeof(double) * dims[0]*dims[1]);
+                double *dp=darr2;
+                int yf = yi+yn;
+                g_print ("[");
+                for (int y=yi; y<yf; ++y){
+                        g_print ("{y=%d} [",y);
+                        for (int x=0; x<dims[0]; ++x){
+                                double d;
+                                *dp++ = d = src->mem2d->data->Z(x,y)*src->data.s.dz;
+                                g_print ("%g, ",d);
+                        }
+                        g_print ("],\n");
+                }
+                g_print ("]\n");
+                PyObject* pyarr = PyArray_SimpleNewFromData(2, dims, NPY_DOUBLE, (void*)darr2);
+                PyArray_ENABLEFLAGS((PyArrayObject*) pyarr, NPY_ARRAY_OWNDATA);
+                return Py_BuildValue("O", pyarr); // Python code will receive the array as numpy array.
         } else
 		return Py_BuildValue("i", -1);
 
@@ -4272,7 +4298,7 @@ static PyMethodDef GxsmPyMethods[] = {
 	{"get_dimensions", remote_getdimensions, METH_VARARGS, "Get Scan Dimensions: [nx,ny,nv,nt]=gxsm.get_dimensions (ch)"},
 	{"get_data_pkt", remote_getdatapkt, METH_VARARGS, "Get Data Value at point: value=gxsm.get_data_pkt (ch, x, y, v, t)"},
 	{"put_data_pkt", remote_putdatapkt, METH_VARARGS, "Put Data Value to point: gxsm.put_data_pkt (value, ch, x, y, v, t)"},
-	{"get_slice", remote_getslice, METH_VARARGS, "Get Slice/Image: [nx,ny,array]=gxsm.get_slice (ch, v, t)"},
+	{"get_slice", remote_getslice, METH_VARARGS, "Get Image Data Slice (Lines) from Scan in channel ch, yi ... yi+yn: [nx,ny,array]=gxsm.get_slice (ch, v, t, yi, yn)"},
 	{"get_x_lookup", remote_get_x_lookup, METH_VARARGS, "Get Scan Data index to world mapping: x=gxsm.get_x_lookup (ch, i)"},
 	{"get_y_lookup", remote_get_y_lookup, METH_VARARGS, "Get Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i)"},
 	{"get_v_lookup", remote_get_v_lookup, METH_VARARGS, "Get Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i)"},
@@ -4446,6 +4472,13 @@ void py_gxsm_console::initialize(void)
                 // g_print ("pyremote Plugin :: initialize -- PyInitializeEx(0)\n");
 		// Do not register signal handlers -- i.e. do not "crash" gxsm on errors!
                 Py_InitializeEx (0);
+
+                //import_array(); // returns a value
+                if (_import_array() < 0) {
+                        PI_DEBUG_GM (DBG_L1, "pyremote Plugin :: initialize -- ImportModule gxsm, import array failed.");
+                        PyErr_Print(); PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
+                }
+                
                 //if (!PyEval_ThreadsInitialized())
                 //        PyEval_InitThreads();
                 //PyEval_InitThreads(); obsolete in 3.7
