@@ -2836,20 +2836,21 @@ static PyObject* remote_getslice(PyObject *self, PyObject *args)
 		return Py_BuildValue("i", -1);
 
 	Scan *src =gapp->xsm->GetScanChannel (ch);
-        if (src && (yi+yn) < src->mem2d->GetNy()){
+        if (src && (yi+yn) <= src->mem2d->GetNy()){
                 g_message ("remote_getslice from mem2d scan data in (dz scaled to unit) CH%d, Ys=%d Yf=%d", (int)ch, (int)yi, (int)(yi+yn));
 
                 // PyObject* PyArray_SimpleNewFromData(int nd, npy_intp const* dims, int typenum, void* data);
                 // PyObject *PyArray_FromDimsAndData(int n_dimensions, int dimensions[n_dimensions], int item_type, char *data);
                 npy_intp dims[2]; 
-                dims[0] = src->mem2d->GetNx ();
-                dims[1] = yn;
+                dims[0] = yn;
+                dims[1] = src->mem2d->GetNx ();
+                g_message ("Creating PyArray: shape %d , %d", dims[0], dims[1]);
                 double *darr2 = (double*) malloc(sizeof(double) * dims[0]*dims[1]);
                 double *dp=darr2;
                 int yf = yi+yn;
 
                 for (int y=yi; y<yf; ++y)
-                        for (int x=0; x<dims[0]; ++x)
+                        for (int x=0; x<dims[1]; ++x)
                                 *dp++ = src->mem2d->data->Z(x,y)*src->data.s.dz;
                 
                 PyObject* pyarr = PyArray_SimpleNewFromData(2, dims, NPY_DOUBLE, (void*)darr2);
