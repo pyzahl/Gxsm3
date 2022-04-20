@@ -1,5 +1,4 @@
-General Information
-===================
+## 1. General Information
 
 GXSM -- Gnome X Scanning Microscopy: A multi-channel image and
 vector-probe data acquisition and visualization system designed for
@@ -21,8 +20,7 @@ http://www.ventiotec.de/linux/GXSM-Linux.iso
 GXSM Web Site: http://gxsm.sf.net
 
 
-Installation
-============
+## 2. Installation
 
 gxsm3 requires GTK+ >= 3.14.0, GtkSourceView >= 3.14.0, libfftw, libnetcdf, libquicktime
 and PyGobject 3.0.x are required to enable python / scripting support.
@@ -40,8 +38,7 @@ See the file 'INSTALL' for more detailed information.
 
 
 
-How to report bugs
-==================
+## 3. How to report bugs
 
 Bugs should be reported to the GNOME bug tracking system.
 (http://bugzilla.gnome.org, product gedit). You will need to create an
@@ -68,8 +65,7 @@ In the bug report please include:
   program with the --sync command line option.
 
 
-Patches
-=======
+## 4. Patches
 
 Patches should also be submitted to bugzilla.gnome.org. If the patch
 fixes an existing bug, add the patch as an attachment to that bug
@@ -84,6 +80,8 @@ If you are interested in helping us to develop gedit, please see the
 file 'AUTHOR' for contact information and/or send a message to the gedit
 mailing list. See also the file 'HACKING' for more detailed information.
 
+# UPDATE on bug fixes, patches and new code feature suggetsions/integrations:
+Please ,make use of the GIT features to fork and submit for review!
 
   The gxsm team.
 
