@@ -80,7 +80,7 @@ If you are interested in helping us to develop gedit, please see the
 file 'AUTHOR' for contact information and/or send a message to the gedit
 mailing list. See also the file 'HACKING' for more detailed information.
 
-# UPDATE on bug fixes, patches and new code feature suggetsions/integrations:
+### UPDATE on bug fixes, patches and new code feature suggetsions/integrations:
 Please ,make use of the GIT features to fork and submit for review!
 
   The gxsm team.
