@@ -1,3 +1,5 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 8 c-style: "K&R" -*- */
+
 /* Gnome gxsm - Gnome X Scanning Microscopy
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
@@ -260,10 +262,20 @@ public:
 	MemSmoothKrn (double xms, double xns, int m, int n):MemDigiFilter (xms, xns, m, n){};
 	virtual gboolean CalcKernel (){
 		int i,j;
-		g_message ("Calculating Gauss Smooth Kernel");
-		for (i= -m; i<=m; i++)
-			for (j = -n; j<=n; j++)
-				data->Z (4*exp (-(i*i)/(xms*xms) -(j*j)/(xns*xns)), j+n, i+m); 
+
+		int ch_x=gapp->xsm->FindChan(ID_CH_M_X);
+		if (ch_x >= 0){
+                        Scan *mask = gapp->xsm->GetScanChannel (ch_x);
+                        g_message ("Calculating Kernel From CHX in %d:   %d x %d", ch_x, mask->mem2d->GetNx(), mask->mem2d->GetNy());
+                        // Resize (mask->mem2d->GetNx(), mask->mem2d->GetNy());
+                        ConvertFrom (mask->mem2d, 0,0, 0,0, m, n);
+		}
+		else{
+                        g_message ("Calculating Gauss Smooth Kernel");
+                        for (i= -m; i<=m; i++)
+                                for (j = -n; j<=n; j++)
+                                        data->Z (4*exp (-(i*i)/(xms*xms) -(j*j)/(xns*xns)), j+n, i+m);
+		}
 		return 0;
 	};
 };
@@ -323,8 +335,15 @@ void setup_multidimensional_data_copy (const gchar *title, Scan *src, int &ti, i
 static gboolean smooth_run___for_all_vt(Scan *Src, Scan *Dest)
 {
 	double r = 5.;    // Get Radius
-	gapp->ValueRequest("2D Convol. Filter Size", "Radius", "Smooth kernel size: s = 1+radius",
-			   gapp->xsm->Unity, 0., Src->mem2d->GetNx()/10., ".0f", &r);
+
+        int ch_x=gapp->xsm->FindChan(ID_CH_M_X);
+        if (ch_x >= 0){
+                Scan *mask = gapp->xsm->GetScanChannel (ch_x);
+                r = ((mask->mem2d->GetNx() > mask->mem2d->GetNy() ? mask->mem2d->GetNy() : mask->mem2d->GetNx())-1) / 2.0;
+                g_message ("Calculating Kernel From CHX in %d:   %d x %d => r=%g", ch_x, mask->mem2d->GetNx(), mask->mem2d->GetNy(), r);
+        } else
+                gapp->ValueRequest("2D Convol. Filter Size", "Radius", "Smooth kernel size: s = 1+radius",
+                                   gapp->xsm->Unity, 0., Src->mem2d->GetNx()/10., ".0f", &r);
 
 	int    s = 1+(int)(r + .9); // calc. approx Matrix Radius
 	MemSmoothKrn krn(r,r, s,s); // Setup Kernelobject
@@ -394,8 +413,15 @@ static gboolean smooth_run(Scan *Src, Scan *Dest)
 // check for multi dim calls, make sure not to ask user for paramters for every layer or time step!
 	if (((Src ? Src->mem2d->get_t_index ():0) == 0 && (Src ? Src->mem2d->GetLayer ():0) == 0) || !smooth_kernel) {
 		double r = smooth_radius;    // Get Radius
-		gapp->ValueRequest("2D Convol. Filter Size", "Radius", "Smooth kernel size: s = 1+radius",
-				   gapp->xsm->Unity, 0., Src->mem2d->GetNx()/10., ".0f", &r);
+
+		int ch_x=gapp->xsm->FindChan(ID_CH_M_X);
+                if (ch_x >= 0){
+                        Scan *mask = gapp->xsm->GetScanChannel (ch_x);
+                        r = ((mask->mem2d->GetNx() > mask->mem2d->GetNy() ? mask->mem2d->GetNy() : mask->mem2d->GetNx())-1) / 2.0;
+                        g_message ("Calculating Kernel From CHX in %d:   %d x %d => r=%g", ch_x, mask->mem2d->GetNx(), mask->mem2d->GetNy(), r);
+                } else
+                        gapp->ValueRequest("2D Convol. Filter Size", "Radius", "Smooth kernel size: s = 1+radius",
+                                           gapp->xsm->Unity, 0., Src->mem2d->GetNx()/10., ".0f", &r);
 		smooth_radius = r;
 		if (smooth_kernel)
 			free (smooth_kernel);
@@ -418,6 +444,13 @@ static gboolean smooth_run_radius(Scan *Src, Scan *Dest)
 {
 	// equals smooth-run except ValueRequest
 	double r = 5.0;    // Get Radius
+
+        int ch_x=gapp->xsm->FindChan(ID_CH_M_X);
+        if (ch_x >= 0){
+                Scan *mask = gapp->xsm->GetScanChannel (ch_x);
+                r = ((mask->mem2d->GetNx() > mask->mem2d->GetNy() ? mask->mem2d->GetNy() : mask->mem2d->GetNx())-1) / 2.0;
+                g_message ("Calculating Kernel From CHX in %d:   %d x %d => r=%g", ch_x, mask->mem2d->GetNx(), mask->mem2d->GetNy(), r);
+        }
 
 	int    s = 1+(int)(r + .9); // calc. approx Matrix Radius
 	MemSmoothKrn krn(r,r, s,s); // Setup Kernelobject
