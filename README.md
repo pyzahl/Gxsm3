@@ -30,12 +30,14 @@ and PyGobject 3.0.x are required to enable python / scripting support.
 
 Simple install procedure:
 
+```
   % git clone ... gxsm3-src			# checkout / unpack the sources
   % cd gxsm3-src				# change to the toplevel directory
   % ./autogen.sh				# run the `autogen' script
   % make					# build gedit
   [ Become root if necessary ]
   % make install				# install gxsm3
+```
 
 See the file 'INSTALL' for more detailed information.
 
