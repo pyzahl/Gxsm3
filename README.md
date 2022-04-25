@@ -1,8 +1,10 @@
+![Image Caption](icons/gxsm3-icon.svg)
+
 ## 1. General Information
 
 GXSM -- Gnome X Scanning Microscopy: A multi-channel image and
 vector-probe data acquisition and visualization system designed for
-SPM techniques (STM,AFM..), but also SPA-LEED. A plug-in interface
+SPM techniques (STM, AFM, etc.), but also SPA-LEED. A plug-in interface
 allows any user add-on data-processing and special hardware and
 instrument support.
 
@@ -12,13 +14,14 @@ signal processing tasks and instrument controls in a most flexible and
 adaptable manner.
 
 All latest stable software is available
-via SVN (gxsm2) and GIT (gxsm3-beta) only
+via SVN (gxsm2) and GIT (gxsm3) only
 
 or Live Demo/Install CD:
 http://www.ventiotec.de/linux/GXSM-Linux.iso
 
-GXSM Web Site: http://gxsm.sf.net
+Legacy GXSM Web Site: http://gxsm.sf.net
 
+We are in the process of migrating to Github.
 
 ## 2. Installation
 
@@ -40,17 +43,15 @@ See the file 'INSTALL' for more detailed information.
 
 ## 3. How to report bugs
 
-Bugs should be reported to the GNOME bug tracking system.
-(http://bugzilla.gnome.org, product gedit). You will need to create an
-account for yourself.
+Bugs should be reported to the [Gitlab issue tracking system](https://github.com/pyzahl/Gxsm3/issues).
 
 In the bug report please include:
 
 * Information about your system. For instance:
 
-   - What version of gxsm3
-   - What operating system and version
-   - What version of the gtk+, glib and gnome libraries
+   - Version of gxsm3
+   - Operating system and version
+   - Version of the gtk+, glib and gnome libraries
 
   And anything else you think is relevant.
 
