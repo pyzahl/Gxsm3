@@ -1,3 +1,15 @@
+gxsm3 (3.53.0-0ubuntu4) jammy; urgency=medium
+
+  * fixed build dependency to python3-numpy 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 22 May 2022 22:39:28 +0200
+
+gxsm3 (3.53.0-0ubuntu3) jammy; urgency=medium
+
+  * first release on Ubuntu 22.04 LTS 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 22 May 2022 20:24:03 +0200
+
 gxsm3 (3.53.0-0ubuntu2) focal; urgency=medium
 
   * adding python3-scipy and python3-numpy to dependencies
