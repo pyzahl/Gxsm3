@@ -219,8 +219,8 @@
 
     <key name="dsp-fbs-mx0-current-gain" type="d">
       <default>1</default>
-      <summary>PCS Remote-ID: 'dsp-fbs-mx0-current-gain', Default/U:     1       </summary>
-      <description>pcs0000, PCS Remote-ID: 'dsp-fbs-mx0-current-gain', Default/U:     1      , Adjustment PCS Name: 'dsp-fbs-mx0-current-gain' </description>
+      <summary>PCS Remote-ID: 'dsp-fbs-mx0-current-gain', Default/U:     0.5       </summary>
+      <description>pcs0000, PCS Remote-ID: 'dsp-fbs-mx0-current-gain', Default/U:     0.5      , Adjustment PCS Name: 'dsp-fbs-mx0-current-gain' </description>
     </key>
 
     <key name="dsp-fbs-mx0-current-level" type="d">
