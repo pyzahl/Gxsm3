@@ -669,9 +669,18 @@ void ProbeIndicator::AppWindowInit(const gchar *title){
 	gtk_widget_show_all (GTK_WIDGET (window));
 
 	set_window_geometry ("probe-hud");
+
+#if 0
+        // Wayland detect, enable window decoration for moving
+        gint x=0,y=0;
+        gtk_window_get_position (GTK_WINDOW (window), &x, &y);
+        if (x==0 && y==0) // Wayland!
+                gtk_window_set_decorated (GTK_WINDOW(window), TRUE);
+#endif
 }
 
 gint ProbeIndicator::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ProbeIndicator *pv){
+        static int once=0;
 	//static int dragging=FALSE;
 	//static GtkWidget *coordpopup=NULL;
 	//static GtkWidget *coordlab=NULL;
@@ -697,10 +706,14 @@ gint ProbeIndicator::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ProbeIn
                         //g_object_set_data (G_OBJECT(canvas), "preset_xy", preset);
                         //gapp->offset_to_preset_callback (canvas, gapp);
                         g_message ("ProbeIndicator Button1 Pressed at XY=%g, %g",  mouse_pix_xy[0], mouse_pix_xy[1]);
+                case 2:
+                        gtk_window_set_decorated (GTK_WINDOW(pv->window), TRUE);
+                        break;
                 }
                 break;
 		
 	case GDK_MOTION_NOTIFY:
+                once=1;
 		break;
 		
 	case GDK_ENTER_NOTIFY:
@@ -712,6 +725,18 @@ gint ProbeIndicator::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ProbeIn
 		
 	default: break;
 	}
+
+                // Wayland detect, enable window decoration for moving
+        if(once==1){
+                gint x=0,y=0;
+                once=2;
+                gtk_window_get_position (GTK_WINDOW (pv->window), &x, &y);
+                if (x==0 && y==0){ // Wayland!
+                        g_message ("API-PanV WP %d %d",x,y);
+                        gtk_window_set_decorated (GTK_WINDOW(pv->window), TRUE);
+                }
+        }
+
 	return FALSE;
 }
 

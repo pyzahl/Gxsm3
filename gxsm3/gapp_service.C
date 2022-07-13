@@ -1073,11 +1073,13 @@ int AppBase::SaveGeometry(int savealways){
         gtk_window_get_position (GTK_WINDOW (window), &window_geometry[WGEO_XPOS], &window_geometry[WGEO_YPOS]); 
         gtk_window_get_size (GTK_WINDOW (window), &window_geometry[WGEO_WIDTH], &window_geometry[WGEO_HEIGHT]);
 
-        GVariant *storage = g_variant_new_fixed_array (g_variant_type_new ("i"), window_geometry, WGEO_SIZE, sizeof (gint32));
-        g_settings_set_value (geometry_settings, window_key, storage);
+        if (window_geometry[WGEO_XPOS] != 0 && window_geometry[WGEO_YPOS] != 0){ // Wayland returns always 0,0 -- do not store as may mess up stored geometry
+                GVariant *storage = g_variant_new_fixed_array (g_variant_type_new ("i"), window_geometry, WGEO_SIZE, sizeof (gint32));
+                g_settings_set_value (geometry_settings, window_key, storage);
   
-        //g_free (storage); // ??
-      
+                //g_free (storage); // ??
+        }
+        
 	return 0;
 }
 

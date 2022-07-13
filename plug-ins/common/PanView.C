@@ -482,9 +482,20 @@ void PanView::AppWindowInit(const gchar *title){
 	gtk_widget_show_all (GTK_WIDGET (window));
 
 	set_window_geometry ("pan-view");
+
+        #if 0
+        // Wayland detect, enable window decoration for moving
+        gint x=0,y=0;
+        gtk_window_get_position (GTK_WINDOW (window), &x, &y);
+        if (x==0 && y==0){ // Wayland!
+                g_message ("API-PanV WP %d %d",x,y);
+                gtk_window_set_decorated (GTK_WINDOW(window), TRUE);
+        }
+        #endif
 }
 
 gint PanView::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, PanView *pv){
+        static int once=0;
 	//static int dragging=FALSE;
 	//static GtkWidget *coordpopup=NULL;
 	//static GtkWidget *coordlab=NULL;
@@ -523,10 +534,14 @@ gint PanView::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, PanView *pv){
                         gapp->offset_to_preset_callback (canvas, gapp);
                         // g_message ("PanView Button1 Pressed at XY=%g, %g => %d, %d",  mouse_pix_xy[0], mouse_pix_xy[1], i,j );
 			break;
+		case 2:
+                        gtk_window_set_decorated (GTK_WINDOW(pv->window), TRUE);
+                        break;
                 }
                 break;
 		
 	case GDK_MOTION_NOTIFY:
+                once=1;
                 if (pi != i || pj != j){
                         if (pi>=0 && pj>=0){
                                 pv->pos_preset_box[pi][pj]->set_fill_rgba (0,0,0,0.1);
@@ -550,6 +565,17 @@ gint PanView::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, PanView *pv){
 		
 	default: break;
 	}
+
+        // Wayland detect, enable window decoration for moving
+        if(once==1){
+                gint x=0,y=0;
+                once=2;
+                gtk_window_get_position (GTK_WINDOW (pv->window), &x, &y);
+                if (x==0 && y==0){ // Wayland!
+                        gtk_window_set_decorated (GTK_WINDOW(pv->window), TRUE);
+                }
+        }
+        
 	return FALSE;
 }
 
