@@ -1,0 +1,86 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Encoding=UTF-8
+Value=1.0
+Name=GXSM3
+Name[de]=GXSM3
+GenericName=Data acquisition and processing
+Comment=Gnome X Scanning Microscopy and Data Analysis & Visualisation - normal mode
+Comment[de]=Gnome X Rastersonden Mikroskopie und Daten Analyse & Visualisation - normales Startup
+Exec=gxsm3 %F
+TryExec=gxsm3
+Icon=gxsm3-icon
+#Icon=gxsm-app
+Terminal=false
+Type=Application
+Categories=Gxsm;GTK;GNOME;Science
+X-AppInstall-Package=gxsm3
+X-GNOME-Settings-Panel=gxsm3
+MimeType=application/x-netcdf
+Actions=New;NoHardware;Updater;GXSM3manual;SRANGERmanual;ventiotec;softdb;gxsm;sranger;DSP;initSR;MK2conf;MK3conf;SPDconf;STDautoconf;STDconf
+
+[Desktop Action New]
+Name=GXSM normal startup
+Exec=gxsm3
+
+[Desktop Action NoHardware]
+Name=GXSM no hardware
+Exec=gxsm3 -h no
+
+[Desktop Action Updater]
+Name=GXSM updater
+Exec=update_GXSM_SRanger.py
+
+[Desktop Action GXSM3manual]
+Name=GXSM offline manual
+Exec=evince /usr/share/doc/gxsm3/Gxsm3-main.pdf.gz
+
+[Desktop Action SRANGERmanual]
+Name=SRanger offline manual
+Exec=evince /usr/share/doc/gxsm3/sranger-main.pdf.gz
+
+[Desktop Action ventiotec]
+Name=www.ventiotec.com
+Exec=browse http://www.ventiotec.com
+
+[Desktop Action softdb]
+Name=www.softdb.com
+Exec=browse http://www.softdb.com
+
+[Desktop Action gxsm]
+Name=GXSM homepage 
+Exec=browse http://gxsm.sf.net
+
+[Desktop Action sranger]
+Name=SRanger homepage
+Exec=browse http://sranger.sf.net
+
+[Desktop Action DSP]
+Name=DSP firmware for SRanger boards
+Exec=nautilus /usr/share/gxsm3/dsp-firmware
+
+[Desktop Action initSR]
+Name=SRanger init
+Exec=initSR.py
+
+[Desktop Action MK2conf]
+Name=SRanger MK2 A810 conf
+Exec=mk2_spm_control.py
+
+[Desktop Action MK3conf]
+Name=SRanger MK3Pro A810 conf
+Exec=mk3_spm_configurator.py
+
+[Desktop Action SPDconf]
+Name=Smart Piezo Drive conf (MK3Pro)
+Exec=mk3_spd.py
+
+[Desktop Action STDautoconf]
+Name=SRanger STD autoconf
+Exec=spm_autoconf.py
+
+[Desktop Action STDconf]
+Name=SRanger STD conf
+Exec=sr_spm_control.py
+
