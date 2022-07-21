@@ -26,7 +26,7 @@ Exec=gxsm3
 
 [Desktop Action NoHardware]
 Name=GXSM no hardware
-Exec=gxsm3 -h=no
+Exec=gxsm3 -h no
 
 [Desktop Action Updater]
 Name=GXSM updater

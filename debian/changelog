@@ -1,3 +1,9 @@
+gxsm3 (3.53.0-0ubuntu10) jammy; urgency=medium
+
+  * fixed problem with desktop file (option -h=no did not work any more) 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Thu, 21 Jul 2022 21:57:34 +0200
+
 gxsm3 (3.53.0-0ubuntu9) jammy; urgency=medium
 
   * fixed python3.10 dependencies 
