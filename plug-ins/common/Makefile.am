@@ -1,5 +1,5 @@
 libdir = $(plugindir)/common
-AM_CPPFLAGS = $(GXSM3_CFLAGS) ${GTKSOURCEVIEW_CFLAGS} -I$(includedir) -I$(top_builddir)/gxsm3 $(shell python3-config --cflags)
+AM_CPPFLAGS = $(GXSM3_CFLAGS) ${GTKSOURCEVIEW_CFLAGS} -I$(includedir) -I$(top_builddir)/gxsm3 $(shell python3-config --cflags --embed)
 
 lib_LTLIBRARIES = \
 	libpyremote.la \
@@ -14,7 +14,7 @@ lib_LTLIBRARIES = \
 #	libprinter.la
 
 libpyremote_la_SOURCES = pyremote.C
-libpyremote_la_LDFLAGS = -module -export-dynamic -avoid-version ${GTKSOURCEVIEW_LIBS} $(shell python3-config --ldflags)
+libpyremote_la_LDFLAGS = -module -export-dynamic -avoid-version ${GTKSOURCEVIEW_LIBS} $(shell python3-config --ldflags --embed)
 
 libPanView_la_SOURCES = PanView.C
 libPanView_la_LDFLAGS = -module -export-dynamic -avoid-version

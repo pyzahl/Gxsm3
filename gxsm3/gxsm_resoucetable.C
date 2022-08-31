@@ -216,7 +216,7 @@ GnomeResEntryInfoType xsm_res_def[] = {
 		),
 	GNOME_RES_ENTRY_AUTO_PATH_OPTION
 	( GNOME_RES_BOOL, "Instrument/ScannerZPolarity", "negative", &xsmres.ScannerZPolarity, InstrumentZPolarityList, N_("Inst-SPM"), 
-	  N_("MK3 only: select scanner Z polarity.")
+	  N_("MK3 only: select scanner Z polarity. Default is negative and means Z-Piezo Volatge +MaxV = fully retracted.")
 		),
 
 	// Analog defaults, Piezodrive
