@@ -24,6 +24,8 @@ palette_DATA = \
 	cm-b.pnm \
 	cm-c.pnm \
 	cm-d.pnm \
+	grey-cm-d.pnm \
+	gre-i-cm-d.pnm \
 	cm-parula2.pnm \
 	cm-RdBuGnYl.pnm \
 	xxsmpalette.pnm
