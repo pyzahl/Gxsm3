@@ -134,6 +134,7 @@ static GActionEntry win_view_popup_entries[] = {
         { "side-pane", ViewControl::side_pane_action_callback, NULL, "true", NULL },
         { "view-mode", ViewControl::view_view_set_view_mode_radio_callback, "s", "'quick'", NULL },
         { "x-linearize", ViewControl::view_view_x_linearize_callback, NULL, "false", NULL },
+        { "aspect-range", ViewControl::view_view_aspect_range_callback, NULL, "false", NULL },
         { "attach-redline", ViewControl::view_view_attach_redline_callback, NULL, "false", NULL },
         { "show-redline", ViewControl::view_view_redline_callback, NULL, "false", NULL },
         { "show-blueline", ViewControl::view_view_blueline_callback, NULL, "false", NULL },
@@ -1281,6 +1282,10 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                 cairo_translate (cr, (double)(vc->rulewidth+vc->border/zf), (double)(vc->rulewidth+vc->border/zf));
         }
 
+        double num_as_pixy = vc->npy;
+        if (vc->scan->aspect_range())
+                num_as_pixy *= (double)vc->npx/(double)vc->npy;
+        
         cairo_scale (cr, zf, zf);
 
         // 1) draw ActiveFrame (or not)
@@ -1290,18 +1295,18 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
                 cairo_set_line_width (cr, 4.*vc->ActiveFrameWidth);
                 cairo_rectangle (cr, 
                                  -vc->ActiveFrameWidth/2./zf,  -vc->ActiveFrameWidth/2./zf,
-                                 (vc->ActiveFrameWidth+vc->npx)/zf, (vc->ActiveFrameWidth+vc->npy)/zf);
+                                 (vc->ActiveFrameWidth+vc->npx)/zf, (vc->ActiveFrameWidth+num_as_pixy)/zf);
                 cairo_stroke(cr);
         }
         
         // 2) draw image and red line via ShmImage2D
-	vc->ximg->draw_callback (cr, widget ? vc->tip_follow_flag?false:true:false, widget ? true:false, vc->tip_follow_flag); // option: red line and SubLineScan box
+	vc->ximg->draw_callback (cr, widget ? vc->tip_follow_flag?false:true:false, widget ? true:false, vc->tip_follow_flag, vc->scan->aspect_range()?(double)vc->npx/(double)vc->npy : 1.0); // option: red line and SubLineScan box
 
         // 3) draw legend items if eneabled
         if (vc->legend_items_code){
                 // make convenient coordinate system
                 double wx = (double)vc->npx/zf;
-                double wy = (double)vc->npy/zf;
+                double wy = (double)num_as_pixy/zf;
                 double bar_len;
                 double bar_width=16.;
                 double bar_d=5.;
@@ -1448,8 +1453,8 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
 
         // 5) add red line overlay
         if(vc->RedLine && vc->attach_redline_flag && widget){
-                cairo_translate (cr, 0, vc->npy/zf);
-                cairo_scale (cr, vc->npx/zf/vc->RedLine->get_drawing_width()*1.3, vc->npy/zf/vc->RedLine->get_drawing_width()*0.2);
+                cairo_translate (cr, 0, num_as_pixy/zf);
+                cairo_scale (cr, vc->npx/zf/vc->RedLine->get_drawing_width()*1.3, num_as_pixy/zf/vc->RedLine->get_drawing_width()*0.2);
                  
                 vc->RedLine->cairo_draw_profile_only_callback (cr, vc->RedLine);
         }
@@ -3757,6 +3762,34 @@ void ViewControl::view_view_x_linearize_callback (GSimpleAction *action, GVarian
 		vc->scan->x_linearize (TRUE);
 	} else {
 		vc->scan->x_linearize (FALSE);
+	}
+	//if (vc->chno < 0) return;
+	//gapp->xsm->ActivateChannel(vc->chno);
+	//gapp->xsm->AutoDisplay();
+        vc->scan->set_display ();
+}
+
+void ViewControl::view_view_aspect_range_callback (GSimpleAction *action, GVariant *parameter, 
+                                                  gpointer user_data){
+        ViewControl *vc = (ViewControl *) user_data;
+        GVariant *old_state, *new_state;
+
+        old_state = g_action_get_state (G_ACTION (action));
+        new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+                
+        XSM_DEBUG_GP (DBG_L1, "Toggle action %s activated, state changes from %d to %d\n",
+                      g_action_get_name (G_ACTION (action)),
+                      g_variant_get_boolean (old_state),
+                      g_variant_get_boolean (new_state));
+        
+        g_simple_action_set_state (action, new_state);
+        g_variant_unref (old_state);
+
+
+	if (g_variant_get_boolean (new_state)){
+		vc->scan->aspect_range (TRUE);
+	} else {
+		vc->scan->aspect_range (FALSE);
 	}
 	//if (vc->chno < 0) return;
 	//gapp->xsm->ActivateChannel(vc->chno);
