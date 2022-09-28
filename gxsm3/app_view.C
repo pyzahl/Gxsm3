@@ -1283,8 +1283,11 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
         }
 
         double num_as_pixy = vc->npy;
-        if (vc->scan->aspect_range())
-                num_as_pixy *= (double)vc->npx/(double)vc->npy;
+        double as_pixy = 1.0;
+        if (vc->scan->aspect_range()){
+                as_pixy = (double)vc->npx/(double)vc->npy * vc->scan->data.s.ry/vc->scan->data.s.rx;
+                num_as_pixy *= as_pixy;
+        }
         
         cairo_scale (cr, zf, zf);
 
@@ -1300,7 +1303,7 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
         }
         
         // 2) draw image and red line via ShmImage2D
-	vc->ximg->draw_callback (cr, widget ? vc->tip_follow_flag?false:true:false, widget ? true:false, vc->tip_follow_flag, vc->scan->aspect_range()?(double)vc->npx/(double)vc->npy : 1.0); // option: red line and SubLineScan box
+	vc->ximg->draw_callback (cr, widget ? vc->tip_follow_flag?false:true:false, widget ? true:false, vc->tip_follow_flag, as_pixy); // option: red line and SubLineScan box
 
         // 3) draw legend items if eneabled
         if (vc->legend_items_code){
