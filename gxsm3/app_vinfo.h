@@ -82,7 +82,7 @@ public:
         // convert X,Y (view, mouse) to image index
         void XYview2pixel(double x, double y, Point2D *p){
                 double mx = x*Qfac, xx;
-                double my = y*Qfac, yy;
+                double my = y*Qfac/as_pixy, yy;
                 xx = R2INT(mx); xx=MIN(sc->mem2d->GetNx()-1, MAX(0,xx));
                 yy = R2INT(my); yy=MIN(sc->mem2d->GetNy()-1, MAX(0,yy));
                 p->x = R2INT(xx);
@@ -93,9 +93,14 @@ public:
         void W2Angstroem(double &x, double &y);
         double AngstroemXRel2W(double x);
 
+        void dIndex_from_BitmapPix (double &ix, double &iy, double bx, double by) { ix = Qfac*bx; iy = Qfac*by/as_pixy; };
+        void BitmapPix_from_dIndex (double &bx, double &by, double ix, double iy) { bx = ix/Qfac; by = iy/Qfac*as_pixy; };
+        
         int GetQfac() { return Qfac; };
         int GetZfac() { return Zfac; };
 
+        void SetAS_PixY(double ratio=1.0) { as_pixy = ratio; };
+        
         UnitObj *Ux();
         UnitObj *Uy();
         UnitObj *Uz();
@@ -106,6 +111,7 @@ private:
         UnitObj *uy;
         UnitObj *uz;
         int Qfac, Zfac;
+        double as_pixy;
         int pixelmode;
         int showtime;
         SCAN_COORD_MODE sc_mode;

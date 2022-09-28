@@ -1286,9 +1286,9 @@ gboolean ViewControl::canvas_draw_callback (GtkWidget *widget, cairo_t *cr, View
         double as_pixy = 1.0;
         if (vc->scan->aspect_range()){
                 as_pixy = (double)vc->npx/(double)vc->npy * vc->scan->data.s.ry/vc->scan->data.s.rx;
+                vc->vinfo->SetAS_PixY (as_pixy);
                 num_as_pixy *= as_pixy;
         }
-        
         cairo_scale (cr, zf, zf);
 
         // 1) draw ActiveFrame (or not)
@@ -2295,7 +2295,8 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
         double zf = vc->vinfo->GetZfac();
         mouse_pix_xy[0] = (event->button.x - (double)(vc->rulewidth+vc->border/zf))/zf;
         mouse_pix_xy[1] = (event->button.y - (double)(vc->rulewidth+vc->border/zf))/zf;
-             
+
+        
         // 1st check if mouse on editable object
         vc->tmp_event = event;     // data for foreach
         vc->tmp_xy = mouse_pix_xy; // data for foreach

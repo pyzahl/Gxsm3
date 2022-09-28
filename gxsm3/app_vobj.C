@@ -1694,8 +1694,7 @@ gboolean VObPoint::update_scanpos_idle(gpointer data){
 
 void VObPoint::update_scanposition(){
 	double x,y;
-	x = (double)xy[0]*vinfo->GetQfac ();
-	y = (double)xy[1]*vinfo->GetQfac ();
+        vinfo->dIndex_from_BitmapPix (x,y, (double)xy[0], (double)xy[1]);
 
 	if (x < 0. || x >= vinfo->sc->mem2d->GetNx ())
 		return;

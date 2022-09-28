@@ -39,6 +39,7 @@ ViewInfo::ViewInfo(Scan *Sc, int qf, int zf){
   Qfac = qf; Zfac = zf;
   sc=Sc; 
   ux=uy=uz=NULL; // use "Scan" Units
+  as_pixy = 1.0;
 
   EnableTimeDisplay (FALSE);
   SetPixelUnit (FALSE);
@@ -69,8 +70,8 @@ gchar *ViewInfo::makeDXYinfo (double xy1a[2], double xy2a[2], double factor){
 	gchar  *infostring = NULL;
 	memcpy (xy1, xy1a, sizeof(xy1));
 	memcpy (xy2, xy2a, sizeof(xy2));
-	xy1[0] *= Qfac; xy1[1] *= Qfac;
-	xy2[0] *= Qfac; xy2[1] *= Qfac;
+	xy1[0] *= Qfac; xy1[1] *= Qfac/as_pixy;
+	xy2[0] *= Qfac; xy2[1] *= Qfac/as_pixy;
 
 	if (cohen_sutherland_line_clip_d (&xy1[0], &xy1[1], &xy2[0], &xy2[1],
 				      0.,0.,
@@ -101,9 +102,11 @@ gchar *ViewInfo::makeDnXYinfo(double *xy, int n){
 	double *xyc = new double[2*n];
 	double dx,dy;
 
-	for (int i=0; i<2*n; ++i)
+	for (int i=0; i<2*n; ++i){
 		xyc[i] = xy[i]*Qfac;
-
+                ++i;
+                xyc[i] = xy[i]*Qfac/as_pixy;
+        }
 	dx = dy = 0.;
 	if(pixelmode){
 		for (int i=2; i<2*n; i+=2){
@@ -129,8 +132,8 @@ gchar *ViewInfo::makeA2info(double xy1a[2], double xy2a[2]){
 	double xy1[2], xy2[2], dx, dy;
 	memcpy(xy1, xy1a, sizeof(xy1));
 	memcpy(xy2, xy2a, sizeof(xy2));
-	xy1[0] *= Qfac; xy1[1] *= Qfac;
-	xy2[0] *= Qfac; xy2[1] *= Qfac;
+	xy1[0] *= Qfac; xy1[1] *= Qfac/as_pixy;
+	xy2[0] *= Qfac; xy2[1] *= Qfac/as_pixy;
 	if(xy1[0]<0. || xy1[0] >= sc->mem2d->GetNx() || xy2[0]<0. || xy2[0] >= sc->mem2d->GetNx())
 		return g_strdup("x out of range");
 	if(xy1[1]<0. || xy1[1] >= sc->mem2d->GetNx() || xy2[1]<0. || xy2[1] >= sc->mem2d->GetNx())
@@ -150,7 +153,7 @@ gchar *ViewInfo::makeA2info(double xy1a[2], double xy2a[2]){
 
 gchar *ViewInfo::makeXYinfo(double x, double y){ 
 	double mx = x*Qfac, xx;
-	double my = y*Qfac, yy;
+	double my = y*Qfac/as_pixy, yy;
 	xx = R2INT(mx); xx=MIN(sc->mem2d->GetNx()-1, MAX(0,xx));
 	yy = R2INT(my); yy=MIN(sc->mem2d->GetNy()-1, MAX(0,yy));
 	
@@ -169,13 +172,13 @@ gchar *ViewInfo::makedXdYinfo(double xy1a[2], double xy2a[2]){
 	double dmx, dmy;
 	if(pixelmode){
 		dmx = (xy2a[0]-xy1a[0])*Qfac;
-		dmy = (xy2a[1]-xy1a[1])*Qfac;
+		dmy = (xy2a[1]-xy1a[1])*Qfac/as_pixy;
 	}else{
 		double xy1[2], xy2[2];
 		memcpy(xy1, xy1a, sizeof(xy1));
 		memcpy(xy2, xy2a, sizeof(xy2));
-		xy1[0] *= Qfac; xy1[1] *= Qfac;
-		xy2[0] *= Qfac; xy2[1] *= Qfac;
+		xy1[0] *= Qfac; xy1[1] *= Qfac/as_pixy;
+		xy2[0] *= Qfac; xy2[1] *= Qfac/as_pixy;
 		if(xy1[0]<0. || xy1[0] >= sc->mem2d->GetNx() || xy2[0]<0. || xy2[0] >= sc->mem2d->GetNx())
 			return g_strdup("x out of range");
 		if(xy1[1]<0. || xy1[1] >= sc->mem2d->GetNx() || xy2[1]<0. || xy2[1] >= sc->mem2d->GetNx())
@@ -199,7 +202,7 @@ gchar *ViewInfo::makedXdYinfo(double xy1a[2], double xy2a[2]){
 
 gchar *ViewInfo::makeXYZinfo(double x, double y){ 
 	double mx = x*Qfac, xx;
-	double my = y*Qfac, yy;
+	double my = y*Qfac/as_pixy, yy;
 	gchar *us = NULL;
 	gchar *pt = NULL;
 	xx = R2INT(mx); xx=MIN(sc->mem2d->GetNx()-1, MAX(0,xx));
