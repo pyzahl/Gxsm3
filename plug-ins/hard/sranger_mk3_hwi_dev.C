@@ -2340,11 +2340,16 @@ void sranger_mk3_hwi_dev::recalculate_dsp_scan_speed_parameters () {
 		tmp = 67108864.; // 1<<26
 	PI_DEBUG_GP (DBG_L4, "Z-Slope-Max (real, lim): %g \n", tmp);
 	dsp_scan.z_slope_max = (DSP_INT32)(tmp);
-	
-	dsp_scan.Zoff_2nd_xp = tmp_sRe = 0;
-	dsp_scan.Zoff_2nd_xm = tmp_sIm = 0;
+
+        // Z-Offset 2nd pass
+        dsp_scan.Zoff_2nd_xp  = long_2_sranger_long (CONST_DSP_F16*sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
+        dsp_scan.Zoff_2nd_xm  = long_2_sranger_long (CONST_DSP_F16*sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
+
+        
 	if (tmp_fast_return == -1){ // -1: indicates fast scan mode with X sin actuation
 #define CPN(N) ((double)(1LL<<(N))-1.)
+                dsp_scan.Zoff_2nd_xp = tmp_sRe = 0;
+                dsp_scan.Zoff_2nd_xm = tmp_sIm = 0;
 		double deltasRe, deltasIm;
 		double Num = (double)dsp_scan.dnx * (double)Nx * 2. + (double)dsp_scan.dny + (double) dsp_scan.nx_pre;
 		// calculate Sine generator parameter
