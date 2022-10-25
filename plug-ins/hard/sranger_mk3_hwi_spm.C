@@ -1630,6 +1630,7 @@ void sranger_mk3_hwi_spm::set_ldc (double dxdt, double dydt, double dzdt){;
  *
  * 
  */
+#define CONST_DSP_F16 65536.
 
 gboolean sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d *Mob[MAX_SRCS_CHANNELS], int ixy_sub[4]){
 	static Mem2d **Mob_dir[4];
@@ -1770,9 +1771,9 @@ gboolean sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d 
 		dsp_scan.srcs_2nd_xm  = long_2_sranger_long (srcs_dir[3]);
 
 		// Z-Offset 2nd pass
-		dsp_scan.Zoff_2nd_xp  = long_2_sranger_long (sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
-		dsp_scan.Zoff_2nd_xm  = long_2_sranger_long (sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
-
+		dsp_scan.Zoff_2nd_xp  = long_2_sranger_long (CONST_DSP_F16*sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
+		dsp_scan.Zoff_2nd_xm  = long_2_sranger_long (CONST_DSP_F16*sranger_mk2_hwi_pi.app->xsm->Inst->ZA2Dig (DSPControlClass->x2nd_Zoff)); // init to zero, set later  x2nd_Zoff
+               
 		// enable probe?
 		if (DSPControlClass->probe_trigger_raster_points){
 			if (DSPControlClass->probe_trigger_raster_points > 0){
@@ -1797,7 +1798,7 @@ gboolean sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d 
 		dsp_scan.nx = Nx; // num datapoints in X to take
 		dsp_scan.ny = Ny-1; // num datapoints in Y to take
 
-                g_print ("sranger_mk3_hwi_spm::ScanLineM INIT (yindex=%d [fifo-y=%d], xdir=%d, ydir=%d, lssrcs=%x\n", yindex, fifo_data_y_index, xdir, ydir, lssrcs);
+                g_print ("sranger_mk3_hwi_spm::ScanLineM INIT (yindex=%d [fifo-y=%d], xdir=%d, ydir=%d, lssrcs=%x, 2nd_off= %d\n", yindex, fifo_data_y_index, xdir, ydir, lssrcs, dsp_scan.Zoff_2nd_xp);
 		ydir = yindex == 0 ? 1 : -1; // top-down / bottom-up ?
 	
 		recalculate_dsp_scan_speed_parameters (); // adjusts dsp_scan.dnx, ....!
@@ -1807,8 +1808,8 @@ gboolean sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d 
 		dsp_scan.dnx    = (DSP_INT32)tmp_dnx;
 		dsp_scan.dny    = (DSP_INT32)tmp_dny;
 		dsp_scan.nx_pre = (DSP_INT32)tmp_nx_pre;
-		dsp_scan.Zoff_2nd_xp = (DSP_INT32)tmp_sRe;
-		dsp_scan.Zoff_2nd_xm = (DSP_INT32)tmp_sIm;
+		//dsp_scan.Zoff_2nd_xp = (DSP_INT32)tmp_sRe;
+		//dsp_scan.Zoff_2nd_xm = (DSP_INT32)tmp_sIm;
 
 #if 0 // enable if you like to assure a gain update at scan-start, else it's only updated on gain change action what normally shoudl do.
 		// mirror gain -- may be hooked into by Smart Piezo Amp or anything else!
