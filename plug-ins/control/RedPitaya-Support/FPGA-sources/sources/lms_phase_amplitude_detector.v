@@ -88,9 +88,9 @@ module lms_phase_amplitude_detector #(
     parameter M_AXIS_AM_TDATA_WIDTH = 48,
     parameter PH_DELAY = 10,     // PHASE delay steps
     parameter DPHASE_WIDTH = 44, // 44 for delta phase width
-    parameter LCK_BUFFER_LEN2 = 14,
+    parameter LCK_BUFFER_LEN2 = 13, // NEED 13 
     parameter USE_DUAL_PAC = 1,
-    parameter COMPUTE_LOCKIN = 0
+    parameter COMPUTE_LOCKIN = 1
 )
 (
     //(* X_INTERFACE_PARAMETER = "FREQ_HZ 62500000" *)
@@ -110,7 +110,7 @@ module lms_phase_amplitude_detector #(
     
     input lck_ampl,
     input lck_phase,
-    
+
     output wire [M_AXIS_SC_TDATA_WIDTH-1:0] M_AXIS_SC_tdata, // (Sine, Cosine) vector pass through
     output wire                             M_AXIS_SC_tvalid,
 
@@ -129,20 +129,72 @@ module lms_phase_amplitude_detector #(
     output wire [31:0] M_AXIS_LockInY_tdata,
     output wire        M_AXIS_LockInY_tvalid,
 
-    output wire sc_zero_x
+    output wire signed [31:0] dbg_lckN,
+    output wire signed [31:0] dbg_lckX,
+    output wire signed [31:0] dbg_lckY,
+    
+    output wire sc_zero_x,
+    output wire [2:0] zero_spcp
+    
+/*    
+    // LockIn Buffer BRAM
+    //output wire M_BRAM_PORT_A_addra[12:0],
+    //output wire M_BRAM_PORT_A_clka,
+    //output wire M_BRAM_PORT_A_dina[191:0],
+    //output wire M_BRAM_PORT_A_ena,
+    //output wire M_BRAM_PORT_A_wea[0:0],
+        
+    //output wire S_BRAM_PORT_B_addrb[12:0],
+    //output wire S_BRAM_PORT_B_clkb,
+    //input  wire S_BRAM_PORT_B_doutb[191:0],
+    //output wire S_BRAM_PORT_B_ena,
+          // Ports for BRAM
+   
+        
+    (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 BRAM_PORTA CLK" *)
+    output wire BRAM_PORTA_clk,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 BRAM_PORTA WE" *)
+    output wire [0 : 0] BRAM_PORTA_we,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 BRAM_PORTA ADDR" *)
+    output wire [12 : 0] BRAM_PORTA_addr,
+    (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME BRAM_PORTA, MEM_SIZE 8192, MEM_WIDTH 192, MEM_ECC NONE, MASTER_TYPE OTHER, READ_WRITE_MODE WRITE_ONLY, READ_LATENCY 1" *)
+    (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 BRAM_PORTA DIN" *)
+    output wire [191 : 0] BRAM_PORTA_din,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 BRAM_PORTB CLK" *)
+    output wire BRAM_PORTB_clk,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 BRAM_PORTB ADDR" *)
+    output wire [12 : 0] BRAM_PORTB_addr,
+    (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME BRAM_PORTB, MEM_SIZE 8192, MEM_WIDTH 192, MEM_ECC NONE, MASTER_TYPE OTHER, READ_WRITE_MODE READ_ONLY, READ_LATENCY 1" *)
+    (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 BRAM_PORTB DOUT" *)
+    input wire [191 : 0] BRAM_PORTB_dout
+*/
     );
 
 
     wire signed [2*LMS_DATA_WIDTH-1:0] LMSQHALF             = { {(2*LMS_DATA_WIDTH-LMS_Q_WIDTH){1'b0}}, 1'b1, {(LMS_Q_WIDTH-1){1'b0}} }; // for simple rounding Q 1/2 ("=0.5")  2^(44-1)
     wire signed [SC_DATA_WIDTH+LMS_DATA_WIDTH-1:0] SCQHALF  = { {(SC_DATA_WIDTH+LMS_DATA_WIDTH-SC_Q_WIDTH){1'b0}}, 1'b1, {(SC_Q_WIDTH-1){1'b0}} }; // for simple rounding Q 1/2 ("=0.5")
     // wire [45-1:0] PHASE_2PI = {{1'b0}, {(44){1'b1}}}; // 2PI in Q44 + 1/2 dPHI @ 32kHz = 17594437844230
-    wire [45-1:0] PHASE_2PI = 45'd17594437844230;
+    // wire [45-1:0] PHASE_2PI  = 45'd17594437844230; // 17592186044417  = 2PI in Q44
+    // wire [45-1:0] PHASE_2PIR = 45'd17596436316565; //30200Hz full rate
+    
+    //wire [45-1:0] PHASE_2PIR = 45'd4402296783253; //30200Hz 1/4 rate (DEC4)
+    wire [23-1:0] PHASE_2PIR = 23'd1048708; //30200Hz 1/4 rate (DEC4) in Q22
+    //wire [22-1:0] TWO_PI_Q22 = 22'd26353589; // 2pi in Q22
 
     reg signed [31:0] Rtau=0; // Q22 tau phase
     reg signed [31:0] RAtau=0; // Q22 tau amplitude
 
     reg signed [LMS_DATA_WIDTH-1:0] signal=0;  // 26Q22   LMS  Q22
     reg signed [LMS_DATA_WIDTH-1:0] signal_1=0; // 26Q22
+    reg signed [LMS_DATA_WIDTH-1:0] signal_2=0; // 26Q22
+    reg signed [LMS_DATA_WIDTH-1:0] signal_3=0; // 26Q22
+    reg signed [LMS_DATA_WIDTH-1:0] signal_4=0; // 26Q22
+    reg signed [LMS_DATA_WIDTH-1:0] signal_5=0; // 26Q22
+    reg signed [LMS_DATA_WIDTH-1:0] signal_6=0; // 26Q22
+    reg signed [LMS_DATA_WIDTH-1:0] signal_7=0; // 26Q22
+    reg signed [LMS_DATA_WIDTH-1:0] signal_8=0; // 26Q22
+    reg signed [LMS_DATA_WIDTH-1:0] signal_9=0; // 26Q22
+    reg signed [LMS_DATA_WIDTH-1:0] signal_10=0; // 26Q22
     reg signed [SC_DATA_WIDTH-1:0] s=0; // Q SC (25Q24)
     reg signed [SC_DATA_WIDTH-1:0] s1=0;
     reg signed [SC_DATA_WIDTH-1:0] s2=0;
@@ -181,47 +233,40 @@ module lms_phase_amplitude_detector #(
     // Lock-In
     // ========================================================
     // Calculated and fixed Parameters 
-    localparam integer PH_WIDTH_CUT       = 1;           // reduce max F by 1024
-    localparam integer LCK_DPH_WIDTH      = DPHASE_WIDTH - PH_WIDTH_CUT; // 125MHz / 256 max
-    localparam integer LCK_INT_PH_WIDTH   = DPHASE_WIDTH + 1; // 0 .. 2pi (plus need to fit 2pi+dPhi
-    localparam integer PH_SHIFT           = LCK_DPH_WIDTH/2;           // 12 ;   14 fits!
-    localparam integer LCK_INT_WIDTH      = LMS_DATA_WIDTH + DPHASE_WIDTH - PH_SHIFT; // integral over sine should not exceed 1  LMS_DATA_WIDTH + LCK_DPH_WIDTH - >>>PH_SHIFT  == LCK_INT_WIDTH
+    localparam integer LCK_PH_SHIFT     = 22; // phase reduction
+    localparam integer LCK_INT_PH_WIDTH = DPHASE_WIDTH - LCK_PH_SHIFT; // +1  = 22
+    localparam integer LCK_INT_WIDTH    = LMS_DATA_WIDTH + LCK_INT_PH_WIDTH + 10; // =  26 22 10 = 58
     //localparam integer LCK_NORM           = DPHASE_WIDTH-PH_SHIFT-PH_WIDTH_CUT; // "2pi" is the norm, splitup  
 
-    reg [LCK_DPH_WIDTH-1:0] dds_dphi [PH_DELAY-1:0]; // 22
-    reg signed [LMS_DATA_WIDTH-1:0] LckX=0;
-    reg signed [LMS_DATA_WIDTH-1:0] LckY=0;
+    //reg [LCK_DPH_WIDTH-1:0] dds_dphi [PH_DELAY-1:0]; // 22
+    reg signed [LMS_DATA_WIDTH+SC_DATA_WIDTH-1:0] LckXcorrp1 = 0; // SC_Q_WIDTH x LMS_DATA_WIDTH , LMS_Q_WIDTH
+    reg signed [LMS_DATA_WIDTH+SC_DATA_WIDTH-1:0] LckYcorrp1 = 0; // SC_Q_WIDTH x LMS_DATA_WIDTH , LMS_Q_WIDTH
 
-    reg [45-1:0] LckdIntPhi=0; // DDS PHASE WIDTH=44 + 1
+    reg signed [LMS_DATA_WIDTH-1:0] LckX2=0;
+    reg signed [LMS_DATA_WIDTH-1:0] LckY2=0;
+
+    reg [LCK_INT_PH_WIDTH:0]       LckdIntPhi=0; // DDS PHASE WIDTH=44 + 1
     reg signed [LCK_INT_WIDTH-1:0] LckXInt=0;
     reg signed [LCK_INT_WIDTH-1:0] LckYInt=0;
     
-    reg [LCK_INT_PH_WIDTH-1:0]     LckDdphi1=0;
-    reg signed [LCK_INT_WIDTH-1:0] LckXdphi1=0;
-    reg signed [LCK_INT_WIDTH-1:0] LckYdphi1=0;
-    reg [LCK_DPH_WIDTH-1:0] LckDdphi [(LCK_BUFFER_LEN2<<2)-1:0];
-    reg signed [LCK_INT_WIDTH-1:0] LckXdphi [(LCK_BUFFER_LEN2<<2)-1:0];
-    reg signed [LCK_INT_WIDTH-1:0] LckYdphi [(LCK_BUFFER_LEN2<<2)-1:0];
+    //reg signed [LCK_INT_WIDTH+LCK_DPH_WIDTH-1:0] LckXdphi3=0;
+    //reg signed [LCK_INT_WIDTH+LCK_DPH_WIDTH-1:0] LckYdphi3=0;
+    reg [DPHASE_WIDTH-1:0]         LckDdphi1=0;
+    reg signed [LCK_INT_PH_WIDTH-1+1:0] LckDdphi2=0;
+    reg [LCK_INT_PH_WIDTH-1:0]     LckDdphi3=0;
+    reg [LCK_INT_PH_WIDTH-1:0]     LckDdphi4=0;
+    reg signed [LCK_INT_WIDTH-1:0] LckXdphi4=0;
+    reg signed [LCK_INT_WIDTH-1:0] LckYdphi4=0;
+    //reg [LCK_INT_PH_WIDTH-1:0]     LckDdphi [(1<<LCK_BUFFER_LEN2)-1:0];
+    //reg signed [LCK_INT_WIDTH-1:0] LckXdphi [(1<<LCK_BUFFER_LEN2)-1:0];
+    //reg signed [LCK_INT_WIDTH-1:0] LckYdphi [(1<<LCK_BUFFER_LEN2)-1:0];
+    reg [LCK_INT_PH_WIDTH+LCK_INT_WIDTH+LCK_INT_WIDTH-1:0]     LckDXYdphi_mem [(1<<LCK_BUFFER_LEN2)-1:0]; // LckDXYdphi_mem inferred to BRAM
     
-    reg signed [LMS_DATA_WIDTH-1:0] LckXdelta1 = 0;
-    reg signed [LMS_DATA_WIDTH-1:0] LckXdelta2 = 0;
-    reg signed [LMS_DATA_WIDTH-1:0] LckXdelta3 = 0;
-    reg signed [LMS_DATA_WIDTH-1:0] LckYdelta1 = 0;
-    reg signed [LMS_DATA_WIDTH-1:0] LckYdelta2 = 0;
-    reg signed [LMS_DATA_WIDTH-1:0] LckYdelta3 = 0;
-    reg signed [LMS_DATA_WIDTH+LMS_DATA_WIDTH-1:0] LckX_tmp1 = 0; 
-    reg signed [LMS_DATA_WIDTH+LMS_DATA_WIDTH-1:0] LckX_tmp2 = 0; 
-    reg signed [LMS_DATA_WIDTH+LMS_DATA_WIDTH-1:0] LckX_tmp3 = 0; 
-    reg signed [LMS_DATA_WIDTH+LMS_DATA_WIDTH-1:0] LckY_tmp1 = 0; 
-    reg signed [LMS_DATA_WIDTH+LMS_DATA_WIDTH-1:0] LckY_tmp2 = 0; 
-    reg signed [LMS_DATA_WIDTH+LMS_DATA_WIDTH-1:0] LckY_tmp3 = 0; 
-    reg signed [LMS_DATA_WIDTH-1:0] LckX_lp1 = 0; 
-    reg signed [LMS_DATA_WIDTH-1:0] LckX_lp2 = 0; 
-    reg signed [LMS_DATA_WIDTH-1:0] LckX_lp3 = 0; 
-    reg signed [LMS_DATA_WIDTH-1:0] LckY_lp1 = 0; 
-    reg signed [LMS_DATA_WIDTH-1:0] LckY_lp2 = 0; 
-    reg signed [LMS_DATA_WIDTH-1:0] LckY_lp3 = 0; 
-
+    reg [LCK_INT_PH_WIDTH+LCK_INT_WIDTH+LCK_INT_WIDTH-1:0] LckDXYdphi_0=0;
+    reg [LCK_INT_PH_WIDTH+LCK_INT_WIDTH+LCK_INT_WIDTH-1:0] LckDXYdphi_1=0;
+    
+    reg signed [LMS_DATA_WIDTH+LMS_Q_WIDTH-1:0] LckXSumNorm=0;
+    reg signed [LMS_DATA_WIDTH+LMS_Q_WIDTH-1:0] LckYSumNorm=0;
     reg signed [LMS_DATA_WIDTH-1:0] LckXSum=0;
     reg signed [LMS_DATA_WIDTH-1:0] LckYSum=0;
     reg [LCK_BUFFER_LEN2-1:0] Lck_i=0;
@@ -235,16 +280,24 @@ module lms_phase_amplitude_detector #(
     assign M_AXIS_SC_tvalid = S_AXIS_SC_tvalid; // pass
    
     integer i;
-    initial for (i=0; i<PH_DELAY; i=i+1) dds_dphi[i] = 0;
-    initial for (i=0; i<(LCK_BUFFER_LEN2<<2); i=i+1) LckDdphi[i] = 0;
-    initial for (i=0; i<(LCK_BUFFER_LEN2<<2); i=i+1) LckXdphi[i] = 0;
-    initial for (i=0; i<(LCK_BUFFER_LEN2<<2); i=i+1) LckYdphi[i] = 0;
+    // initial for (i=0; i<PH_DELAY; i=i+1) dds_dphi[i] = 0;
+    //initial for (i=0; i<(1<<LCK_BUFFER_LEN2); i=i+1) LckDdphi[i] = 0;
+    //initial for (i=0; i<(1<<LCK_BUFFER_LEN2); i=i+1) LckXdphi[i] = 0;
+    //initial for (i=0; i<(1<<LCK_BUFFER_LEN2); i=i+1) LckYdphi[i] = 0;
+    initial for (i=0; i<(1<<LCK_BUFFER_LEN2); i=i+1) LckDXYdphi_mem[i] = 0;
 
     reg [1:0] rdecii = 0;
 
     always @ (posedge aclk)
     begin
         rdecii <= rdecii+1;
+        // rdecii 00 01 *10 11 00 ...
+        if (rdecii == 3)
+        begin
+            LckDXYdphi_1 <= LckDXYdphi_mem[Lck_i-Lck_N+1];
+        end else begin
+            LckDXYdphi_0 <= LckDXYdphi_mem[Lck_i-Lck_N];
+        end
     end
 
 
@@ -262,6 +315,15 @@ module lms_phase_amplitude_detector #(
     // Signal Input
         signal   <= S_AXIS_SIGNAL_tdata[LMS_DATA_WIDTH-1:0];
         signal_1 <= signal;
+        signal_2 <= signal_1;
+        signal_3 <= signal_2;
+        signal_4 <= signal_3;
+        signal_5 <= signal_4;
+        signal_6 <= signal_5;
+        signal_7 <= signal_6;
+        signal_8 <= signal_7;
+        signal_9 <= signal_8;
+        signal_10 <= signal_9;  // DDS step, delay signal by 10 -- check!
         
     // Sin, Cos
         //s <= {{(LMS_DATA_WIDTH-LMS_Q_WIDTH-1){ S_AXIS_SC_tdata[S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-1]}}, S_AXIS_SC_tdata[S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-1 : S_AXIS_SC_TDATA_WIDTH/2+SC_DATA_WIDTH-LMS_Q_WIDTH-1]};   // 26Q22 truncated
@@ -330,7 +392,7 @@ module lms_phase_amplitude_detector #(
         if (USE_DUAL_PAC)
         begin
             //Ad_mu_e1 <= ((m1-Apredict1) * Atau + 45'sh200000) >>> 22;
-            Ad_mu_e_3 <= (Apredict_err_2 * RAtau + LMSQHALF); //) >>> LMS_Q_WIDTH;
+            Ad_mu_e_3 <= Apredict_err_2 * RAtau + LMSQHALF; //) >>> LMS_Q_WIDTH;
         end
         
         // Compute LMS
@@ -339,6 +401,9 @@ module lms_phase_amplitude_detector #(
         // b <= b + ((c3 * d_mu_e_3 + SCQHALF) >>> SC_Q_WIDTH);
         // b <= b + ((c3 * $signed(d_mu_e_3[LMS_Q_WIDTH+LMS_Q_WIDTH-1:LMS_Q_WIDTH]) + SCQHALF) >>> SC_Q_WIDTH);
         // Cd_mu_e_4 <= c3 * $signed(d_mu_e_3[LMS_Q_WIDTH+LMS_Q_WIDTH-1 : LMS_Q_WIDTH]) + SCQHALF;
+        
+        //LMS_DATA_WIDTH+LMS_DATA_WIDTH-1
+        //--- Cd_mu_e_4 <= c3 * $signed(d_mu_e_3[LMS_Q_WIDTH+LMS_Q_WIDTH-1 : LMS_Q_WIDTH]);
         Cd_mu_e_4 <= c3 * $signed(d_mu_e_3[LMS_Q_WIDTH+LMS_Q_WIDTH-1 : LMS_Q_WIDTH]);
         //b <= b + $signed(Cd_mu_e_4[LMS_Q_WIDTH+SC_Q_WIDTH-1 : SC_Q_WIDTH]);
         b <= b + ((Cd_mu_e_4 + SCQHALF) >>> SC_Q_WIDTH);
@@ -428,90 +493,113 @@ module lms_phase_amplitude_detector #(
 
 
     */
-            // DDS step, delay by 10 -- check!
-            dds_dphi[9] <= S_AXIS_DDS_dphi_tdata[LCK_DPH_WIDTH-1:0]; // LCK_DPH_WIDTH bits from = DPHASE_WIDTH - DPH_CUT trimm "left" -- limits upper bandwidth
-            dds_dphi[8] <= dds_dphi[9];
-            dds_dphi[7] <= dds_dphi[8];
-            dds_dphi[6] <= dds_dphi[7];
-            dds_dphi[5] <= dds_dphi[6];
-            dds_dphi[4] <= dds_dphi[5];
-            dds_dphi[3] <= dds_dphi[4];
-            dds_dphi[2] <= dds_dphi[3];
-            dds_dphi[1] <= dds_dphi[2];
-            dds_dphi[0] <= dds_dphi[1];
 
             // Classic LockIn and Correlation moving Integral over one period
     
             // Store in ring buffer
-            LckDdphi [Lck_i] <= LckDdphi1; // LCK_INT_PH_WIDTH 
-            LckXdphi [Lck_i] <= LckXdphi1; // LCK_INT_WIDTH
-            LckYdphi [Lck_i] <= LckYdphi1;
+            // LckDdphi [Lck_i] <= LckDdphi4; // LCK_INT_PH_WIDTH 
+            // LckXdphi [Lck_i] <= LckXdphi4; // LCK_INT_WIDTH
+            // LckYdphi [Lck_i] <= LckYdphi4;
+            LckDXYdphi_mem [Lck_i] <= { LckDdphi4, LckXdphi4, LckYdphi4 }; // LCK_INT_PH_WIDTH 
 
             // STEP 1: Correlelation Product
-            LckX <= (s * signal + SCQHALF) >>> SC_Q_WIDTH; // Q22  LMS_DATA_WIDTH , LMS_Q_WIDTH
-            LckY <= (c * signal + SCQHALF) >>> SC_Q_WIDTH; // Q22
-    /*
-            // STEP 2: Scale to Phase-Signal Volume
-            LckDdphi1 <= {{(LCK_INT_PH_WIDTH-LCK_DPH_WIDTH){1'b0}}, dds_dphi[0]}; // convert to LCK_INT_PH_WIDTH 
-            LckXdphi1 <= (LckX * $signed(dds_dphi[0])) >>> PH_SHIFT; // LMS_DATA_WIDTH + LCK_DPH_WIDTH - >>>PH_SHIFT  == LCK_INT_WIDTH   [26]Q22 + Q44 [assume 30kHz range renorm by 12 now (4096) --  4166 is 30kHz spp] 22+44-12=54
-            LckYdphi1 <= (LckY * $signed(dds_dphi[0])) >>> PH_SHIFT; // Q22 [16 sig -> 6 spare] + Q44 [12 spare @ 30kHz] 44+22-6-12
+            LckDdphi1  <= S_AXIS_DDS_dphi_tdata[DPHASE_WIDTH-1:0] >>> 2; // convert to LCK_INT_PH_WIDTH  -- account for 4x decimation 
+            LckXcorrp1 <= s * signal_10; // SC_Q_WIDTH x LMS_DATA_WIDTH , LMS_Q_WIDTH
+            LckYcorrp1 <= c * signal_10; //
+
+            // STEP 2 
+            LckX2 <= (LckXcorrp1 + SCQHALF) >>> SC_Q_WIDTH; // Q22  LMS_DATA_WIDTH , LMS_Q_WIDTH
+            LckY2 <= (LckYcorrp1 + SCQHALF) >>> SC_Q_WIDTH; // Q22
+            LckDdphi2 <= LckDdphi1 >>> LCK_PH_SHIFT; 
+
+            // STEP 3: Scale to Phase-Signal Volume // **** DDS_dphi limited from principal 48bit to LCK_DPH_WIDTH *****
+            LckXdphi4 <= LckX2 * LckDdphi2; // S_AXIS_DDS_dphi_tdata[LCK_DPH_WIDTH-1:0]; // LMS_DATA_WIDTH + LCK_DPH_WIDTH - >>>PH_SHIFT  == LCK_INT_WIDTH   [26]Q22 + Q44 [assume 30kHz range renorm by 12 now (4096) --  4166 is 30kHz spp] 22+44-12=54
+            LckYdphi4 <= LckY2 * LckDdphi2; // S_AXIS_DDS_dphi_tdata[LCK_DPH_WIDTH-1:0]; // Q22 [16 sig -> 6 spare] + Q44 [12 spare @ 30kHz] 44+22-6-12
+            LckDdphi4 <= LckDdphi2[LCK_INT_PH_WIDTH-1:0];
+
+            //LckXdphi4 <= LckXdphi3 >>> PH_SHIFT; // LMS_DATA_WIDTH + LCK_DPH_WIDTH - >>>PH_SHIFT  == LCK_INT_WIDTH   [26]Q22 + Q44 [assume 30kHz range renorm by 12 now (4096) --  4166 is 30kHz spp] 22+44-12=54
+            //LckYdphi4 <= LckYdphi3 >>> PH_SHIFT; // Q22 [16 sig -> 6 spare] + Q44 [12 spare @ 30kHz] 44+22-6-12
+            //LckDdphi4 <= LckDdphi3;
             
-            // SETP 3: update ring buffer and correl length
+            // SETP 4: update ring buffer and correl length
             // update one period integral
             // single shot unrolled LockIn moving window correlation integral
-            if ((LckdIntPhi + LckDdphi1 - LckDdphi [Lck_i-Lck_N]) >= PHASE_2PI) // phase > 2pi (+dphi/2) // 2pi =!= 2<<44 -- ahead
+            
+            /*
+            if ((LckdIntPhi + LckDdphi4 - LckDdphi [Lck_i-Lck_N]) >= PHASE_2PIR) // phase > 2pi (+dphi/2) // 2pi =!= 2<<44 -- ahead
             begin
-                LckdIntPhi <= LckdIntPhi + LckDdphi1 - LckDdphi [Lck_i-Lck_N] - LckDdphi [Lck_i-Lck_N+1]; // remove two dPhi's, one shorter 
-                LckXInt    <= LckXInt    + LckXdphi1 - LckXdphi [Lck_i-Lck_N] - LckXdphi [Lck_i-Lck_N+1]; 
-                LckYInt    <= LckYInt    + LckYdphi1 - LckYdphi [Lck_i-Lck_N] - LckYdphi [Lck_i-Lck_N+1];
+                LckdIntPhi <= LckdIntPhi + LckDdphi4 - LckDdphi [Lck_i-Lck_N] - LckDdphi [Lck_i-Lck_N+1]; // remove two dPhi's, one shorter 
+                LckXInt    <= LckXInt    + LckXdphi4 - LckXdphi [Lck_i-Lck_N] - LckXdphi [Lck_i-Lck_N+1]; 
+                LckYInt    <= LckYInt    + LckYdphi4 - LckYdphi [Lck_i-Lck_N] - LckYdphi [Lck_i-Lck_N+1];
                 Lck_N <= Lck_N - 1; // shorter
             end else 
                 begin
-                if (LckdIntPhi + LckDdphi1 >= PHASE_2PI) // phase > 2pi (+dphi/2) // 2pi =!= 2<<44 -- right on
+                if (LckdIntPhi + LckDdphi4 >= PHASE_2PIR) // phase > 2pi (+dphi/2) // 2pi =!= 2<<44 -- right on
                 begin
-                    LckdIntPhi <= LckdIntPhi + LckDdphi1 - LckDdphi [Lck_i-Lck_N]; // remove one dPhi, add one new dPhi (now change in length)
-                    LckXInt    <= LckXInt    + LckXdphi1 - LckXdphi [Lck_i-Lck_N];
-                    LckYInt    <= LckYInt    + LckYdphi1 - LckYdphi [Lck_i-Lck_N];
+                    LckdIntPhi <= LckdIntPhi + LckDdphi4 - LckDdphi [Lck_i-Lck_N]; // remove one dPhi, add one new dPhi (now change in length)
+                    LckXInt    <= LckXInt    + LckXdphi4 - LckXdphi [Lck_i-Lck_N];
+                    LckYInt    <= LckYInt    + LckYdphi4 - LckYdphi [Lck_i-Lck_N];
                     // Lck_N unchanged
                 end else
                 begin // behind
-                    LckdIntPhi <= LckdIntPhi + LckDdphi1; // add new dPhi, and keep -- longer now
-                    LckXInt    <= LckXInt    + LckXdphi1;
-                    LckYInt    <= LckYInt    + LckYdphi1;
+                    LckdIntPhi <= LckdIntPhi + LckDdphi4; // add new dPhi, and keep -- longer now
+                    LckXInt    <= LckXInt    + LckXdphi4;
+                    LckYInt    <= LckYInt    + LckYdphi4;
                     Lck_N <= Lck_N + 1; // longer
                 end
             end
+            */
+            
+            //LckDXYdphi_0 <= LckDXYdphi_mem[Lck_i-Lck_N];
+            //LckDXYdphi_1 <= LckDXYdphi_mem[Lck_i-Lck_N+1];
+            //    reg [LCK_INT_PH_WIDTH+LCK_INT_WIDTH+LCK_INT_WIDTH-1:0]     LckDXYdphi [(1<<LCK_BUFFER_LEN2)-1:0];
+            if ((LckdIntPhi + LckDdphi4 - LckDXYdphi_0[LCK_INT_PH_WIDTH+LCK_INT_WIDTH+LCK_INT_WIDTH-1:LCK_INT_WIDTH+LCK_INT_WIDTH]) >= PHASE_2PIR) // phase > 2pi (+dphi/2) // 2pi =!= 2<<44 -- ahead
+            begin
+                LckdIntPhi <= LckdIntPhi + LckDdphi4 - LckDXYdphi_0[LCK_INT_PH_WIDTH+LCK_INT_WIDTH+LCK_INT_WIDTH-1:LCK_INT_WIDTH+LCK_INT_WIDTH] - LckDXYdphi_1[LCK_INT_PH_WIDTH+LCK_INT_WIDTH+LCK_INT_WIDTH-1:LCK_INT_WIDTH+LCK_INT_WIDTH]; // remove two dPhi's, one shorter 
+                LckXInt    <= LckXInt    + LckXdphi4 - LckDXYdphi_0[                 LCK_INT_WIDTH+LCK_INT_WIDTH-1:LCK_INT_WIDTH              ] - LckDXYdphi_1[                 LCK_INT_WIDTH+LCK_INT_WIDTH-1:LCK_INT_WIDTH              ]; 
+                LckYInt    <= LckYInt    + LckYdphi4 - LckDXYdphi_0[                               LCK_INT_WIDTH-1:0                          ] - LckDXYdphi_1[                               LCK_INT_WIDTH-1:0                          ];
+                Lck_N <= Lck_N - 1; // shorter
+            end else 
+                begin
+                if (LckdIntPhi + LckDdphi4 >= PHASE_2PIR) // phase > 2pi (+dphi/2) // 2pi =!= 2<<44 -- right on
+                begin
+                    LckdIntPhi <= LckdIntPhi + LckDdphi4 - LckDXYdphi_0[LCK_INT_PH_WIDTH+LCK_INT_WIDTH+LCK_INT_WIDTH-1:LCK_INT_WIDTH+LCK_INT_WIDTH]; // remove one dPhi, add one new dPhi (now change in length)
+                    LckXInt    <= LckXInt    + LckXdphi4 - LckDXYdphi_0[                 LCK_INT_WIDTH+LCK_INT_WIDTH-1:LCK_INT_WIDTH              ];
+                    LckYInt    <= LckYInt    + LckYdphi4 - LckDXYdphi_0[                               LCK_INT_WIDTH-1:0                          ];
+                    // Lck_N unchanged
+                end else
+                begin // behind
+                    LckdIntPhi <= LckdIntPhi + LckDdphi4; // add new dPhi, and keep -- longer now
+                    LckXInt    <= LckXInt    + LckXdphi4;
+                    LckYInt    <= LckYInt    + LckYdphi4;
+                    Lck_N <= Lck_N + 1; // longer
+                end
+            end
+            
+
+
             Lck_i <= Lck_i + 1;
     
-            LckXSum <= LckXInt[LCK_INT_WIDTH-1 : LCK_INT_WIDTH-LMS_DATA_WIDTH]; //>>> LCK_NORM; // normalize with 2pi == Q44 - PH_SHIFT (remaining bits afer partial pre norm)
-            LckYSum <= LckYInt[LCK_INT_WIDTH-1 : LCK_INT_WIDTH-LMS_DATA_WIDTH]; //>>> LCK_NORM; // 
-    */
-            LckXdelta1 <= LckX - LckX_lp1;
-            LckX_tmp1 <= LckXdelta1 * RAtau + LMSQHALF;
-            LckX_lp1  <= LckX_lp1 + $signed(LckX_tmp1[LMS_Q_WIDTH+LMS_Q_WIDTH-1 : LMS_Q_WIDTH]);
+            //   localparam integer LCK_INT_WIDTH      = LMS_DATA_WIDTH + DPHASE_WIDTH - PH_SHIFT; // integral over sine should not exceed 1  LMS_DATA_WIDTH + LCK_DPH_WIDTH - >>>PH_SHIFT  == LCK_INT_WIDTH
+            //   ** signed [LCK_INT_WIDTH-1:0] LckXInt=0;
 
-            LckXdelta2 <= LckX_lp1 - LckX_lp2;
-            LckX_tmp2 <= LckXdelta2 * RAtau + LMSQHALF;
-            LckX_lp2  <= LckX_lp2 + $signed(LckX_tmp2[LMS_Q_WIDTH+LMS_Q_WIDTH-1 : LMS_Q_WIDTH]);
+            //**    wire [45-1:0] PHASE_2PIR = 45'd4402296783253; //30200Hz 1/4 rate (DEC4)   *** 398599931957
+            //**    wire [22-1:0] TWO_PI_Q22 = 22'd26353589; // 2pi in Q22
+            //LckXSumNorm <= TWO_PI_Q22 * $signed(LckXInt[LCK_INT_WIDTH-1 : DPHASE_WIDTH - PH_SHIFT]); //>>> LCK_NORM; // normalize with 2pi == Q44 - PH_SHIFT (remaining bits afer partial pre norm)
+            //LckYSumNorm <= TWO_PI_Q22 * $signed(LckYInt[LCK_INT_WIDTH-1 : DPHASE_WIDTH - PH_SHIFT]); //>>> LCK_NORM; // 
+            //LckXSum <= LckXSumNorm >>> 22; //>>> LCK_NORM; // normalize with 2pi == Q44 - PH_SHIFT (remaining bits afer partial pre norm)
+            //LckYSum <= LckYSumNorm >>> 22; //>>> LCK_NORM; // 
+            //LckXSum <= LckXInt >>> (DPHASE_WIDTH-3 - LMS_Q_WIDTH + PH_SHIFT + 1 -13 ); //>>> LCK_NORM; // normalize with pi == Q44 / 4 {1/4 rate} / 2 {pi vs 2pi} = 44-3 - PH_SHIFT (remaining bits afer partial pre norm)
+            //LckYSum <= LckYInt >>> (DPHASE_WIDTH-3 - LMS_Q_WIDTH + PH_SHIFT + 1 -13); //>>> LCK_NORM; // 
+            //  x = INT__2PI { (X*SC >> SC__Q_WIDTH)*dPHI >> PH_SHIFT } / PI
+            //                  (X[22]+24)-24 + (44-22) 
+            LckXSum <= LckXInt >>> (DPHASE_WIDTH-2+1 - LCK_PH_SHIFT -2); //>>> LCK_NORM; // normalize with pi == Q44 / 4 {1/4 rate} / 2 {pi vs 2pi} = 44-3 - PH_SHIFT (remaining bits afer partial pre norm)
+            LckYSum <= LckYInt >>> (DPHASE_WIDTH-2+1 - LCK_PH_SHIFT -2); //>>> LCK_NORM; // 
+            //norm = 2 / self.PHASE_2PI / (1<<(self.LMS_Q_WIDTH)) * (1<<self.PH_SHIFT)
+            //         2^44 / 2^21 [keep LMS Q WIDTH] = 2^23  ----> 2pi * (XXX >> 23)
+            //  (44-...)=  DPHASE_WIDTH  - PH_SHIFT - LMS_Q_WIDTH     
+            // self.a = self.filter(self.a, 2pi*self.LckXSum/norm)  # 2 pi * ...
 
-            LckXdelta3 <= LckX_lp2 - LckX_lp3;
-            LckX_tmp3 <= LckXdelta3 * RAtau + LMSQHALF;
-            LckX_lp3  <= LckX_lp3 + $signed(LckX_tmp3[LMS_Q_WIDTH+LMS_Q_WIDTH-1 : LMS_Q_WIDTH]);
-            LckXSum  <= LckX_lp3;
-            
-            
-            LckYdelta1 <=  LckY - LckY_lp1;
-            LckY_tmp1 <= LckYdelta1 * RAtau + LMSQHALF;
-            LckY_lp1  <= LckY_lp1 + $signed(LckY_tmp1[LMS_Q_WIDTH+LMS_Q_WIDTH-1 : LMS_Q_WIDTH]);
-
-            LckYdelta2 <= LckY_lp1 - LckY_lp2;
-            LckY_tmp2 <= LckYdelta2 * RAtau + LMSQHALF;
-            LckY_lp2  <= LckY_lp2 + $signed(LckY_tmp2[LMS_Q_WIDTH+LMS_Q_WIDTH-1 : LMS_Q_WIDTH]);
-
-            LckYdelta3 <= LckY_lp2 - LckY_lp3;
-            LckY_tmp3 <= LckYdelta3 * RAtau + LMSQHALF;
-            LckY_lp3  <= LckY_lp3 + $signed(LckY_tmp3[LMS_Q_WIDTH+LMS_Q_WIDTH-1 : LMS_Q_WIDTH]);
-            LckYSum  <= LckY_lp3;
         end
           
         // prepare outputs by selection        
@@ -544,6 +632,8 @@ module lms_phase_amplitude_detector #(
             // x,y (for phase)from PH PAC or LockIn
             y     <= (lck_phase?LckXSum:a) - (lck_phase?LckYSum:b);
             x     <= (lck_phase?LckXSum:a) + (lck_phase?LckYSum:b);
+            //y     <= (lck_phase? LckYSum : (a - b));
+            //x     <= (lck_phase? LckXSum : (a + b));
         end
         else
         begin
@@ -575,11 +665,17 @@ module lms_phase_amplitude_detector #(
     assign M_AXIS_Bout_tvalid = 1'b1;
 
     // LockIn X,Y Sum
-    assign M_AXIS_LockInX_tdata  = {{(32-LMS_DATA_WIDTH-2){LckXSum[LMS_DATA_WIDTH+2-1]}}, LckXSum};
+    assign M_AXIS_LockInX_tdata  = {{(32-LMS_DATA_WIDTH){LckXSum[LMS_DATA_WIDTH-1]}}, LckXSum};
     assign M_AXIS_LockInX_tvalid = 1'b1;
-    assign M_AXIS_LockInY_tdata  = {{(32-LMS_DATA_WIDTH-2){LckYSum[LMS_DATA_WIDTH+2-1]}}, LckYSum};
+    assign M_AXIS_LockInY_tdata  = {{(32-LMS_DATA_WIDTH){LckYSum[LMS_DATA_WIDTH-1]}}, LckYSum};
     assign M_AXIS_LockInY_tvalid = 1'b1;
     
     assign sc_zero_x = sc_zero;
+    assign zero_spcp = {sc_zero, sp, cp};
+
+    //    assign dbg_lckN = { {(32-LCK_BUFFER_LEN2){1'b0}}, Lck_N }; // [LCK_BUFFER_LEN2-1:0] Lck_N=0;   14 bits
+    assign dbg_lckN = { 2'b00, Lck_i, 2'b00, Lck_N }; // [LCK_BUFFER_LEN2-1:0] Lck_N=0;   14 bits
+    assign dbg_lckX = {{(32-LMS_DATA_WIDTH){LckXSum[LMS_DATA_WIDTH-1]}}, LckXSum};
+    assign dbg_lckY = {{(32-LMS_DATA_WIDTH){LckYSum[LMS_DATA_WIDTH-1]}}, LckYSum};
 
 endmodule

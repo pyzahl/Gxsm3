@@ -80,12 +80,13 @@ module axis_4s_combine #(
     parameter MAXIS_TDATA_WIDTH = 32,
     parameter integer BRAM_DATA_WIDTH = 64,
     parameter integer BRAM_ADDR_WIDTH = 15,
-    parameter integer DECIMATED_WIDTH = 32
+    parameter integer DECIMATED_WIDTH = 32,
+    parameter integer LCK_ENABLE = 0
 )
 (
     // (* X_INTERFACE_PARAMETER = "FREQ_HZ 125000000" *)
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_CLKEN a_clk" *)
-    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF S_AXIS1:S_AXIS1S:S_AXIS2:S_AXIS3:S_AXIS4:S_AXIS5:S_AXIS6:S_AXIS7:S_AXIS8:M_AXIS_aux:M_AXIS_CH1:M_AXIS_CH2:M_AXIS_CH3:M_AXIS_CH4:M_AXIS_DFREQ_DEC:M_AXIS_DFREQ_DEC2" *)
+    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF S_AXIS1:S_AXIS1S:S_AXIS2:S_AXIS3:S_AXIS4:S_AXIS5:S_AXIS6:S_AXIS7:S_AXIS8:M_AXIS_CH1:M_AXIS_CH2:M_AXIS_CH3:M_AXIS_CH4:M_AXIS_DFREQ_DEC:M_AXIS_DFREQ_DEC2" *)
     input a_clk,
     // input a_resetn
     
@@ -120,9 +121,6 @@ module axis_4s_combine #(
     output wire          init_state,
     output wire [32-1:0] writeposition,
     
-    output wire [32-1:0]  M_AXIS_aux_tdata,
-    output wire           M_AXIS_aux_tvalid,
-
     // DOWN SAMPLED CH1-4
     output wire [MAXIS_TDATA_WIDTH-1:0]  M_AXIS_CH1_tdata,
     output wire                          M_AXIS_CH1_tvalid,
@@ -187,12 +185,7 @@ module axis_4s_combine #(
     
     assign init_state = operation[0];
     assign finished_state = finished;
-    assign writeposition = { sample_count[15:0], finished, BR_wpos[14:0] };
-
-    // pass decimated ch2s out for auxillary use    
-    assign M_AXIS_aux_tdata  = ch2s[32-1:0]; // Testing
-    assign M_AXIS_aux_tvalid = 1'b1;
-    
+    assign writeposition = { sample_count[15:0], finished, BR_wpos[14:0] };   
     
     assign FIR_next = fir_next;
     
@@ -319,13 +312,16 @@ module axis_4s_combine #(
                             ch1[32-1:16] <= S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH-1 : 0];
                             ch2[32-1:16] <= S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2];
                         end
-/*
-                        8: // for Debug and Testing
+                        8: // LockIn X,Y
                         begin
-                            ch1[15:0]    <= 0; //reg_McBSPbits; // DDR in #2 -> Hi16, #1 -> Lo16
-                            ch2[32-1:16] <= 0; //S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2];
+                            if (LCK_ENABLE)
+                            begin
+                                ch1 <= ch1 + $signed(S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]); // X
+                                ch2 <= ch2 + $signed(S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]); // Y
+                                //ch1[15:0]    <= 0; //reg_McBSPbits; // DDR in #2 -> Hi16, #1 -> Lo16
+                                //ch2[32-1:16] <= 0; //S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2];
+                            end
                         end
-*/  
                     endcase
 
                     bram_next <= 0; // hold BRAM write next
@@ -411,13 +407,18 @@ module axis_4s_combine #(
                             ch1[16-1:0] <= S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH-1 : 0];
                             ch2[16-1:0] <= S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2];
                         end
-/*
                         8: // for Debug and Testing
                         begin
-                            ch1 <= 0; // {reg_McBSPbits, reg_McBSPbits}; // DDR in #2 -> Hi16, #1 -> Lo16
-                            ch2 <= 0; // {{16'b0}, S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2]};
+                            if (LCK_ENABLE)
+                            begin
+                                ch1s  <= (ch1 >>> reg_shift);
+                                ch2s  <= (ch2 >>> reg_shift);
+                                ch1 <= $signed(S_AXIS7_tdata[SAXIS_78_DATA_WIDTH-1:0]); // X
+                                ch2 <= $signed(S_AXIS8_tdata[SAXIS_78_DATA_WIDTH-1:0]); // Y
+                                //ch1 <= 0; // {reg_McBSPbits, reg_McBSPbits}; // DDR in #2 -> Hi16, #1 -> Lo16
+                                //ch2 <= 0; // {{16'b0}, S_AXIS1_tdata[SAXIS_1_TDATA_WIDTH/2+SAXIS_1_DATA_WIDTH-1 : SAXIS_1_TDATA_WIDTH/2]};
+                            end
                         end
-*/
                     endcase
                 end
             end

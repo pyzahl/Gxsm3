@@ -124,6 +124,14 @@ struct PACPLL_parameters {
         double control_dfreq_fb_upper;
         double control_dfreq_fb_lower;
 
+        double pulse_form_bias0, pulse_form_bias1;
+        double pulse_form_phase0, pulse_form_phase1;
+        double pulse_form_width0, pulse_form_width1;
+        double pulse_form_width0if, pulse_form_width1if;
+        double pulse_form_height0, pulse_form_height1;
+        double pulse_form_height0if, pulse_form_height1if;
+        gboolean pulse_form_enable;
+        
         double set_singleshot_transport_trigger;
 
         double transport_tau[4];
@@ -219,6 +227,19 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "DFREQ_FB_UPPER", &pacpll_parameters.control_dfreq_fb_upper, false },
         { "DFREQ_FB_LOWER", &pacpll_parameters.control_dfreq_fb_lower, false },
         { "DFREQ_CONTROLLER", &pacpll_parameters.dfreq_controller, false },
+
+        { "PULSE_FORM_BIAS0", &pacpll_parameters.pulse_form_bias0, false },
+        { "PULSE_FORM_BIAS1", &pacpll_parameters.pulse_form_bias1, false },
+        { "PULSE_FORM_PHASE0", &pacpll_parameters.pulse_form_phase0, false },
+        { "PULSE_FORM_PHASE1", &pacpll_parameters.pulse_form_phase1, false },
+        { "PULSE_FORM_WIDTH0", &pacpll_parameters.pulse_form_width0, false },
+        { "PULSE_FORM_WIDTH0IF", &pacpll_parameters.pulse_form_width0if, false },
+        { "PULSE_FORM_WIDTH1", &pacpll_parameters.pulse_form_width1, false },
+        { "PULSE_FORM_WIDTH1IF", &pacpll_parameters.pulse_form_width1if, false },
+        { "PULSE_FORM_HEIGHT0", &pacpll_parameters.pulse_form_height0, false },
+        { "PULSE_FORM_HEIGHT0IF", &pacpll_parameters.pulse_form_height0if, false },
+        { "PULSE_FORM_HEIGHT1", &pacpll_parameters.pulse_form_height1, false },
+        { "PULSE_FORM_HEIGHT1IF", &pacpll_parameters.pulse_form_height1if, false },
         
         { NULL, NULL, true }
 };
@@ -280,6 +301,9 @@ public:
         static void dfreq_controller_invert (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void dfreq_controller (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
+	static void pulse_form_parameter_changed (Param_Control* pcs, gpointer user_data);
+        static void pulse_form_enable (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        
         static void choice_operation_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_transport_ch12_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_transport_ch3_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);

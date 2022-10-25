@@ -73,6 +73,7 @@ public:
         double getZ(double x, double y){ 
                 double mx = x*Qfac, xx;
                 double my = y*Qfac, yy;
+                //double my = y*Qfac/as_pixy, yy;
                 xx = R2INT(mx); xx=MIN(sc->mem2d->GetNx()-1, MAX(0,xx));
                 yy = R2INT(my); yy=MIN(sc->mem2d->GetNy()-1, MAX(0,yy));
                 int ix=(int)xx, iy=(int)yy;
