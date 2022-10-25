@@ -476,7 +476,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->pop_grid ();
 
         // =======================================
-        bp->new_grid_with_frame ("delta Frequency Controller");
+        bp->new_grid_with_frame_lock ("delta Frequency Controller");
         dF_control_frame = bp->frame;
         bp->set_input_nx (3);
         bp->grid_add_ec ("Reading", Hz, &parameters.dfreq_monitor, -200.0, 200.0, "g", 1., 10., "DFREQ-MONITOR");
@@ -519,12 +519,11 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                                     G_CALLBACK (Inet_Json_External_Scandata::dfreq_controller), this);
         bp->grid_add_check_button ( N_("Invert"), "Invert Dfreq Controller Gain. Normally positive.", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::dfreq_controller_invert), this);
-
         bp->pop_grid ();
 
         
         // =======================================
-        bp->new_grid_with_frame ("Pulse Former");
+        bp->new_grid_with_frame_lock ("Pulse Former");
         dF_control_frame = bp->frame;
         parameters.pulse_form_bias0 = 0;
         parameters.pulse_form_bias1 = 0;

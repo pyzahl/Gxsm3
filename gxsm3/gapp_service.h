@@ -178,6 +178,50 @@ class BuildParam{
                 gtk_container_add (GTK_CONTAINER (frame), grid);
         };
 
+
+        static void frame_lock_callback (GtkWidget *button, GtkWidget *data) {
+                GtkWidget *w = data;
+                gtk_button_set_image
+                        (GTK_BUTTON (button),
+                         gtk_image_new_from_icon_name
+                         (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button))
+                          ? "changes-prevent-symbolic" : "changes-allow-symbolic",
+                          GTK_ICON_SIZE_BUTTON));
+
+                if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button))){
+                        gtk_widget_hide (w);
+                        gtk_widget_hide ((GtkWidget*)g_object_get_data( G_OBJECT (w), "label"));
+                } else {
+                        gtk_widget_show (w);
+                        gtk_widget_show ((GtkWidget*)g_object_get_data( G_OBJECT (w), "label"));
+                }
+        };
+
+        void new_grid_with_frame_lock (const gchar *frame_title, gint fwx=1, gint fwy=1, gboolean state=true) {
+                frame = gtk_frame_new (N_(frame_title));   
+                gtk_frame_set_label_align (GTK_FRAME (frame), 0.02, 0.5);
+                grid_add_widget (frame, fwx, fwy);
+                new_grid ();
+                gtk_container_add (GTK_CONTAINER (frame), grid);
+
+                GtkWidget *flbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 1);
+                GtkWidget *fll = gtk_label_new (frame_title);
+                GtkWidget *flb = gtk_toggle_button_new ();
+                gtk_container_add (GTK_CONTAINER(flbox), flb);
+                gtk_container_add (GTK_CONTAINER(flbox), fll);
+                gtk_button_set_image (GTK_BUTTON (flb),
+                                      gtk_image_new_from_icon_name (state ? "changes-prevent-symbolic" : "changes-allow-symbolic", GTK_ICON_SIZE_BUTTON));
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), state);
+
+                g_object_set_data (G_OBJECT (grid), "frame", frame);
+                g_object_set_data (G_OBJECT (grid), "label", fll);
+
+                g_signal_connect(G_OBJECT (flb), "toggled", G_CALLBACK(frame_lock_callback), grid);
+
+                gtk_frame_set_label_widget (GTK_FRAME (frame), flbox);
+        };
+
+        
         GtkWidget* grid_add_label (const gchar* labeltxt, const char *tooltip=NULL, gint lwx=1, gfloat xalign=0.5){
                 label = gtk_label_new (N_(labeltxt));
                 if (fabs (xalign-0.5) > 0.01)
