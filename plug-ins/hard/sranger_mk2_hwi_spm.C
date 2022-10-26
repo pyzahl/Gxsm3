@@ -774,7 +774,10 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 		dsp_aap.n_wait_fin  = long_2_sranger_long((int)(DSPControlClass->frq_ref*1e-3*DSPMoverClass->mover_param.max_settling_time));                     /* delay inbetween cycels */
 
                 lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
-		sr_write (dsp, &dsp_aap,  MAX_WRITE_AUTOAPPROACH<<1); 
+		sr_write (dsp, &dsp_aap,  MAX_WRITE_AUTOAPPROACH<<1);
+
+                { int i=0; g_message ("DSP_CMD_APPROCH_MOV (Z) MAP-CH: %d AAP++ %s", dsp_aap.channel_mapping[i], DSPMoverClass->mover_param.wave_out_channel_xyz[i][2] >= 10 ? "Yes":"No" ); }
+                
 		break;
 	}
 	case DSP_CMD_APPROCH: // auto approch "Slider"
@@ -878,7 +881,11 @@ void sranger_mk2_hwi_spm::ExecCmd(int Cmd){
 
 		lseek (dsp, magic_data.autoapproach, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC);
 		sr_write (dsp, &dsp_aap,  MAX_WRITE_AUTOAPPROACH<<1); 
-		break;
+
+                { int i=0; g_message ("DSP_CMD_MOV (axis=%d) MAP-CH: %d AAP++ %s", dsp_aap.axis, dsp_aap.channel_mapping[i], DSPMoverClass->mover_param.wave_out_channel_xyz[i][2] >= 10 ? "Yes":"No" ); }
+
+
+                break;
 	}
 
 	case DSP_CMD_Z0_STOP:
