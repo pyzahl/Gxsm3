@@ -104,7 +104,7 @@ module controller_pi #(
     output wire signed [31:0] mon_control,
     output wire signed [31:0] mon_control_lower32,
     output wire signed [31:0] mon_control_B,
-    
+
     output wire status_max,
     output wire status_min
     );
@@ -275,6 +275,7 @@ always @(posedge i_clk)
     // assign mon_control_lower32 = {{control[zW_CONTROL_INT-zW_EXTEND-32-1 : ((zW_CONTROL_INT-zW_EXTEND) >= 64? zW_CONTROL_INT-zW_EXTEND-32-1-31:0)]}, {((zW_CONTROL_INT-zW_EXTEND) >= 64? 0:(64-zW_EXTEND-zW_CONTROL_INT)){1'b0}}}; // signed, lower 31 -- in case control_int_width is > 64
     // assign mon_control_lower32 = {{control[zW_CONTROL_INT-zW_EXTEND-32-1 : ((zW_CONTROL_INT-zW_EXTEND) >= 64? zW_CONTROL_INT-zW_EXTEND-32-1-31:0)]}, {((zW_CONTROL_INT-zW_EXTEND-2) >= 64? 0:(64-zW_EXTEND-zW_CONTROL_INT+2)){1'b0}}}; // signed, lower 31 -- in case control_int_width is > 64
     assign mon_control_lower32 = {control[zW_CONTROL_INT-zW_EXTEND-32-1 : 0], {(64-zW_EXTEND-zW_CONTROL_INT+2){1'b0}}}; // lower 32 (or less) bits left aligned
+
 //                                              57 - 1 - 32 - 1 = 23    : 0 [24]  ,  64 - 1 - 57 + 2 = 8 => 32
 //  0111001011111111
 //0111000010111111

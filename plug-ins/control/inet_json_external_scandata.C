@@ -476,7 +476,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->pop_grid ();
 
         // =======================================
-        bp->new_grid_with_frame ("delta Frequency Controller");
+        bp->new_grid_with_frame_lock ("delta Frequency Controller");
         dF_control_frame = bp->frame;
         bp->set_input_nx (3);
         bp->grid_add_ec ("Reading", Hz, &parameters.dfreq_monitor, -200.0, 200.0, "g", 1., 10., "DFREQ-MONITOR");
@@ -519,6 +519,54 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
                                     G_CALLBACK (Inet_Json_External_Scandata::dfreq_controller), this);
         bp->grid_add_check_button ( N_("Invert"), "Invert Dfreq Controller Gain. Normally positive.", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::dfreq_controller_invert), this);
+        bp->pop_grid ();
+
+        
+        // =======================================
+        bp->new_grid_with_frame_lock ("Pulse Former");
+        dF_control_frame = bp->frame;
+        parameters.pulse_form_bias0 = 0;
+        parameters.pulse_form_bias1 = 0;
+        parameters.pulse_form_phase0 = 0;
+        parameters.pulse_form_phase1 = 0;
+        parameters.pulse_form_width0 = 0.1;
+        parameters.pulse_form_width1 = 0.1;
+        parameters.pulse_form_width0if = 0.5;
+        parameters.pulse_form_width1if = 0.5;
+        parameters.pulse_form_height0 = 200.;
+        parameters.pulse_form_height1 = -200.;
+        parameters.pulse_form_height0if = -40.;
+        parameters.pulse_form_height1if = 40.;
+        parameters.pulse_form_enable = false;
+        bp->set_no_spin (false);
+        bp->set_input_width_chars (6);
+        bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pulse_form_parameter_changed, this);
+        GtkWidget *inputMB = bp->grid_add_ec ("Bias", mVolt, &parameters.pulse_form_bias0, 0.0, 180.0, "5g", 0.1, 1.0, "PULSE-FORM-BIAS0");
+        GtkWidget *inputCB = bp->grid_add_ec (NULL,     mVolt, &parameters.pulse_form_bias1, 0.0, 180.0, "5g", 0.1, 1.0, "PULSE-FORM-BIAS1");
+        g_object_set_data( G_OBJECT (inputMB), "HasClient", inputCB);
+        bp->new_line ();
+        GtkWidget *inputMP = bp->grid_add_ec ("Phase", Deg, &parameters.pulse_form_phase0, 0.0, 180.0, "5g", 1.0, 10.0, "PULSE-FORM-PHASE0");
+        GtkWidget *inputCP = bp->grid_add_ec (NULL,      Deg, &parameters.pulse_form_phase1, 0.0, 180.0, "5g", 1.0, 10.0, "PULSE-FORM-PHASE1");
+        g_object_set_data( G_OBJECT (inputMP), "HasClient", inputCP);
+
+        bp->new_line ();
+        GtkWidget *inputMW = bp->grid_add_ec ("Width", uTime, &parameters.pulse_form_width0, 0.0, 10000.0, "5g", 0.1, 1.0, "PULSE-FORM-WIDTH0");
+        GtkWidget *inputCW = bp->grid_add_ec (NULL,      uTime, &parameters.pulse_form_width1, 0.0, 10000.0, "5g", 0.1, 1.0, "PULSE-FORM-WIDTH1");
+        g_object_set_data( G_OBJECT (inputMW), "HasClient", inputCW);
+        bp->new_line ();
+        GtkWidget *inputMWI = bp->grid_add_ec ("WidthIF", uTime, &parameters.pulse_form_width0if, 0.0, 10000.0, "5g", 0.1, 1.0, "PULSE-FORM-WIDTH0IF");
+        GtkWidget *inputCWI = bp->grid_add_ec (NULL,        uTime, &parameters.pulse_form_width1if, 0.0, 10000.0, "5g", 0.1, 1.0, "PULSE-FORM-WIDTH1IF");
+        g_object_set_data( G_OBJECT (inputMWI), "HasClient", inputCWI);
+        bp->new_line ();
+        GtkWidget *inputMH = bp->grid_add_ec ("Height", mVolt, &parameters.pulse_form_height0, -1000.0, 1000.0, "5g", 1.0, 10.0, "PULSE-FORM-HEIGHT0");
+        GtkWidget *inputCH = bp->grid_add_ec (NULL,       mVolt, &parameters.pulse_form_height1, -1000.0, 1000.0, "5g", 1.0, 10.0, "PULSE-FORM-HEIGTH1");
+        bp->new_line ();
+        GtkWidget *inputMHI = bp->grid_add_ec ("HeightIF", mVolt, &parameters.pulse_form_height0if, -1000.0, 1000.0, "5g", 1.0, 10.0, "PULSE-FORM-HEIGHT0IF");
+        GtkWidget *inputCHI = bp->grid_add_ec (NULL,         mVolt, &parameters.pulse_form_height1if, -1000.0, 1000.0, "5g", 1.0, 10.0, "PULSE-FORM-HEIGTH1IF");
+        bp->new_line ();
+        bp->set_input_nx (1);
+        bp->grid_add_check_button ( N_("Enable"), "Enable Pulse Forming", 2,
+                                    G_CALLBACK (Inet_Json_External_Scandata::pulse_form_enable), this);
 
         // =======================================
 
@@ -1140,6 +1188,36 @@ void Inet_Json_External_Scandata::dfreq_ctrl_parameter_changed (Param_Control* p
         self->write_parameter ("DFREQ_FB_LOWER", self->parameters.control_dfreq_fb_lower);
 }
 
+void Inet_Json_External_Scandata::pulse_form_parameter_changed (Param_Control* pcs, gpointer user_data){
+        Inet_Json_External_Scandata *self = (Inet_Json_External_Scandata *)user_data;
+        self->write_parameter ("PULSE_FORM_BIAS0", self->parameters.pulse_form_bias0);
+        self->write_parameter ("PULSE_FORM_BIAS1", self->parameters.pulse_form_bias1);
+        self->write_parameter ("PULSE_FORM_PHASE0", self->parameters.pulse_form_phase0);
+        self->write_parameter ("PULSE_FORM_PHASE1", self->parameters.pulse_form_phase1);
+        self->write_parameter ("PULSE_FORM_WIDTH0", self->parameters.pulse_form_width0);
+        self->write_parameter ("PULSE_FORM_WIDTH1", self->parameters.pulse_form_width1);
+        self->write_parameter ("PULSE_FORM_WIDTH0IF", self->parameters.pulse_form_width0if);
+        self->write_parameter ("PULSE_FORM_WIDTH1IF", self->parameters.pulse_form_width1if);
+
+        if (self->parameters.pulse_form_enable){
+                self->write_parameter ("PULSE_FORM_HEIGHT0", self->parameters.pulse_form_height0);
+                self->write_parameter ("PULSE_FORM_HEIGHT1", self->parameters.pulse_form_height1);
+                self->write_parameter ("PULSE_FORM_HEIGHT0IF", self->parameters.pulse_form_height0if);
+                self->write_parameter ("PULSE_FORM_HEIGHT1IF", self->parameters.pulse_form_height1if);
+        } else {
+                self->write_parameter ("PULSE_FORM_HEIGHT0", 0.0);
+                self->write_parameter ("PULSE_FORM_HEIGHT1", 0.0);
+                self->write_parameter ("PULSE_FORM_HEIGHT0IF", 0.0);
+                self->write_parameter ("PULSE_FORM_HEIGHT1IF", 0.0);
+        }
+}
+
+void Inet_Json_External_Scandata::pulse_form_enable (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->parameters.pulse_form_enable = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+        self->pulse_form_parameter_changed (NULL, self);
+}
+
+
 void Inet_Json_External_Scandata::save_values (NcFile *ncf){
         // store all Inet_Json_External_Scandata's control parameters for the RP PAC-PLL
         // if socket connection is up
@@ -1394,6 +1472,7 @@ void Inet_Json_External_Scandata::dfreq_controller_invert (GtkWidget *widget, In
         self->parameters.dfreq_fb_invert = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)) ? -1.:1.;
         self->dfreq_gain_changed (NULL, self);
 }
+
 
 void Inet_Json_External_Scandata::dfreq_controller (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->write_parameter ("DFREQ_CONTROLLER", gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));

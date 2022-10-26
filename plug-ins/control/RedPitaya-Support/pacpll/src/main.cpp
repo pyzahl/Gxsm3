@@ -212,6 +212,20 @@ CDoubleParameter DFREQ_FB_CI("DFREQ_FB_CI", CBaseParameter::RW, 0, 0, -1000, 100
 CDoubleParameter DFREQ_FB_UPPER("DFREQ_FB_UPPER", CBaseParameter::RW,  100.0, 0, -10000, 10000); // Control
 CDoubleParameter DFREQ_FB_LOWER("DFREQ_FB_LOWER", CBaseParameter::RW, -100.0, 0, -10000, 10000); // Control
 
+CDoubleParameter PULSE_FORM_BIAS0("PULSE_FORM_BIAS0", CBaseParameter::RW, 0.0, 0, -1000, 1000); // mV
+CDoubleParameter PULSE_FORM_BIAS1("PULSE_FORM_BIAS1", CBaseParameter::RW, 0.0, 0, -1000, 1000); // mV
+CDoubleParameter PULSE_FORM_PHASE0("PULSE_FORM_PHASE0", CBaseParameter::RW, 0.0, 0, 0, 180); // deg
+CDoubleParameter PULSE_FORM_PHASE1("PULSE_FORM_PHASE1", CBaseParameter::RW, 0.0, 0, 0, 180); // deg
+CDoubleParameter PULSE_FORM_WIDTH0("PULSE_FORM_WIDTH0", CBaseParameter::RW, 0.0, 0, 0, 10000); // us
+CDoubleParameter PULSE_FORM_WIDTH1("PULSE_FORM_WIDTH1", CBaseParameter::RW, 0.0, 0, 0, 10000); // us
+
+CDoubleParameter PULSE_FORM_HEIGHT0("PULSE_FORM_HEIGHT0", CBaseParameter::RW, 0.0, 0, -1000, 1000); // mV
+CDoubleParameter PULSE_FORM_HEIGHT1("PULSE_FORM_HEIGHT1", CBaseParameter::RW, 0.0, 0, -1000, 1000); // mV
+CDoubleParameter PULSE_FORM_WIDTH0IF("PULSE_FORM_WIDTH0IF", CBaseParameter::RW, 0.0, 0, 0, 10000); // us
+CDoubleParameter PULSE_FORM_WIDTH1IF("PULSE_FORM_WIDTH1IF", CBaseParameter::RW, 0.0, 0, 0, 10000); // us
+CDoubleParameter PULSE_FORM_HEIGHT0IF("PULSE_FORM_HEIGHT0IF", CBaseParameter::RW, 0.0, 0, -1000, 1000); // mV
+CDoubleParameter PULSE_FORM_HEIGHT1IF("PULSE_FORM_HEIGHT1IF", CBaseParameter::RW, 0.0, 0, -1000, 1000); // mV
+
 /*
 // Transport LP TAU parameters
 CDoubleParameter TRANSPORT_TAU_DFREQ("TRANSPORT_TAU_DFREQ", CBaseParameter::RW, 0.01, 0, -1, 10e3); 
@@ -302,7 +316,7 @@ int rp_PAC_App_Init(){
 #ifdef REMAP_TO_OLD_FPGA_VERSION // (2019 compat.)
         FPGA_PACPLL_CFG_block_size  = 7*sysconf (_SC_PAGESIZE);   // 1024bit CFG Register   = 7*sysconf (_SC_PAGESIZE); 
 #else
-        FPGA_PACPLL_CFG_block_size  = 8*sysconf (_SC_PAGESIZE);   // 1024bit CFG Register   = 9*sysconf (_SC_PAGESIZE); 
+        FPGA_PACPLL_CFG_block_size  = 9*sysconf (_SC_PAGESIZE);   // 3x 1024bit CFG Register   = 9*sysconf (_SC_PAGESIZE); (2K + 2K  = 4K for region axi_cfg_register_0, _1
 #endif
         FPGA_PACPLL_BRAM_block_size = 2048*sysconf(_SC_PAGESIZE); // Dual Ported FPGA BRAM
 
@@ -314,7 +328,8 @@ int rp_PAC_App_Init(){
         // RP-FPGA ADRESS MAP
         // 32bit
         // PS/axi_bram_reader0    0x4000_0000  2M  0x401F_FFFF
-        // PS/axi_cfg_register_0  0x4200_0000  4K  0x4200_0FFF  SLICES: CFG0: 0...1023 (#0-31)@32bit   CFG1: 1024-2047 (#32-63)@32bit
+        // PS/axi_cfg_register_0  0x4200_0000  2K  0x4200_07FF  SLICES: CFG0: 0...1023 (#0-31)@32bit   CFG1: 1024-2047 (#32-63)@32bit
+        // PS/axi_cfg_register_1  0x4200_0800  2K  0x4200_0FFF  SLICES: CFG2: 0...1023 (#0-31)@32bit [ CFG3: 1024-2047 (#32-63)@32bit ]
         // PS/axi_gpio_0          0x4200_1000  4K  0x4200_1FFF
         // PS/axi_gpio_1          0x4200_2000  4K  0x4200_2FFF
         // PS/axi_gpio_2          0x4200_3000  4K  0x4200_3FFF
@@ -423,7 +438,10 @@ void rp_PAC_App_Release(){
 #define QDFCOEF Q31
 
 #define PACPLL_CFG1_OFFSET 32
+#define PACPLL_CFG2_OFFSET 0
 
+typedef unsigned short guint16;
+typedef short gint16;
 
 long double cpu_values[4] = {0, 0, 0, 0}; /* reading only user, nice, system, idle */
 
@@ -443,6 +461,22 @@ inline void set_gpio_cfgreg_uint32 (int cfg_slot, unsigned int value){
         *((int32_t *)((uint8_t*)FPGA_PACPLL_cfg + off)) = value;
 
         if (verbose > 2) fprintf(stderr, "set_gpio32[CFG%d] uint32 %04x = %08x %d\n", cfg_slot, off, value, value);
+}
+
+inline void set_gpio_cfgreg_int16_int16 (int cfg_slot, gint16 value_1, gint16 value_2){
+        size_t off = 0x8000 + cfg_slot * 4;
+
+        *((int32_t *)((uint8_t*)FPGA_PACPLL_cfg + off)) = (((int)value_1) << 16) | (int)value_2;
+
+        if (verbose > 2) fprintf(stderr, "set_gpio32[CFG%d] int16|16 %04x = %04x | %04x\n", cfg_slot, off, value_1, value_2);
+}
+
+inline void set_gpio_cfgreg_uint16_uint16 (int cfg_slot, guint16 value_1, guint16 value_2){
+        size_t off = 0x8000 + cfg_slot * 4;
+
+        *((int32_t *)((uint8_t*)FPGA_PACPLL_cfg + off)) = (((unsigned int)value_1) << 16) | (unsigned int)value_2;
+
+        if (verbose > 2) fprintf(stderr, "set_gpio32[CFG%d] uint16|16 %04x = %04x | %04x\n", cfg_slot, off, value_1, value_2);
 }
 
 inline void set_gpio_cfgreg_int64 (int cfg_slot, long long value){
@@ -808,6 +842,40 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
 // AMPL from CORDIC: 24bit Q23 -- QCORDICSQRT
         set_gpio_cfgreg_int32 (PACPLL_CFG_PHASE_CONTROL_THREASHOLD,   ((int)(QCORDICSQRT * am_threashold))<<(32-BITS_CORDICSQRT));
 }
+
+#define PACPLL_CFG_PULSE_FORM_BASE      (PACPLL_CFG2_OFFSET + 0)
+#define PACPLL_CFG_PULSE_FORM_DELAY_01  0  // [ 31..16 Delay P0, 15..0 Delay P1 ] 32bit
+#define PACPLL_CFG_PULSE_FORM_WH01_ARR  1 // [ 31..16 Width_n P0, 15..0 Width_n P1; 31..16 Height_n P0, 15..0 Height_n P1, ... [n=0,1,2]] 6x32 bit
+
+void rp_PAC_set_pulse_form (double bias0, double bias1, double phase0, double phase1, double width0, double width0if, double width1, double width1if, double height0, double height0if, double height1, double height1if){ // deg, us, mV, [Hz-ref]
+        // T = 1/freq_ref, N = T/ADC_SAMPLING_RATE, N = freq_ref / ADC_SAMPLING_RATE
+        // m = phase/360 * N
+
+        const int RDECI = 2;
+        double freq_ref = DDS_FREQ_MONITOR.Value ();
+        double mfactor  = ADC_SAMPLING_RATE / RDECI / freq_ref / 360.; // phase in deg to # samples
+        double usfactor = 1e-6 * ADC_SAMPLING_RATE;     // us to samples
+        double mVfactor = 1e-3*32768.; // mV to DAC[16bit]
+
+        double p0phws2 =  0.5*(width0 + 2*width0if)*usfactor; // complete pulse 1/2 width in steps
+        double p1phws2 =  0.5*(width1 + 2*width1if)*usfactor;
+
+        phase0 -= p0phws2/mfactor; if (phase0 < 0.) phase0 = 0.;
+        phase1 -= p1phws2/mfactor; if (phase1 < 0.) phase1 = 0.;
+        
+        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_DELAY_01,   (guint16)(phase0*mfactor+0.5),    (guint16)(phase1*mfactor+0.5));     // do conversion phase angle in deg to phase steps
+        
+        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+0, (guint16)(width0if*usfactor+0.5), (guint16)(width1if*usfactor+0.5));  // 0,1: width in us to steps
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+1, ( gint16)(height0if*mVfactor),    ( gint16)(height1if*mVfactor));     // 2,3: height in mV to 16bit (later 14bit on FPGA)
+        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+2, (guint16)(width0*usfactor+0.5),   (guint16)(width1*usfactor+0.5));    // 4,5: width in us to steps
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+3, ( gint16)(height0*mVfactor),      ( gint16)(height1*mVfactor));       // 6,7: height in mV to 16bit (later 14bit on FPGA)
+        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+4, (guint16)(width0if*usfactor+0.5), (guint16)(width1if*usfactor+0.5));  // 8,9: width in us to steps
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+5, ( gint16)(height0if*mVfactor),    ( gint16)(height1if*mVfactor));   // 10,11: height in mV to 16bit (later 14bit on FPGA)
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+6, ( gint16)(bias0*mVfactor),        ( gint16)(bias1*mVfactor));       // 12,13: B height in mV to 16bit (later 14bit on FPGA)
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+7, ( gint16)(bias0*mVfactor),        ( gint16)(bias1*mVfactor));       // 14,15: B height in mV to 16bit (later 14bit on FPGA)
+}
+
+
 /*
         OPERATION::
         start   <= operation[0:0]; // Trigger start for single shot
@@ -1319,6 +1387,21 @@ void set_PAC_config()
                                      DFREQ_FB_UPPER.Value ()/1000., // mV -> V
                                      DFREQ_FB_LOWER.Value ()/1000.
                                      );
+
+        rp_PAC_set_pulse_form (
+                               PULSE_FORM_BIAS0.Value (),
+                               PULSE_FORM_BIAS1.Value (),
+                               PULSE_FORM_PHASE0.Value (),
+                               PULSE_FORM_PHASE1.Value (),
+                               PULSE_FORM_WIDTH0.Value (),
+                               PULSE_FORM_WIDTH0IF.Value (),
+                               PULSE_FORM_WIDTH1.Value (),
+                               PULSE_FORM_WIDTH1IF.Value (),
+                               PULSE_FORM_HEIGHT0.Value (),
+                               PULSE_FORM_HEIGHT0IF.Value (),
+                               PULSE_FORM_HEIGHT1.Value (),
+                               PULSE_FORM_HEIGHT1IF.Value ()
+                               );
 }
 
 
@@ -1396,16 +1479,16 @@ int rp_get_signals(float ***s, int *sig_num, int *sig_len)
 //WRITE
 //*((volatile uint32_t *) ( ((uint8_t*)map)+ offset )) = value;
 
-
 int check_trigger(int t, int slope, int y){
+        int threashold = 65;
         // fprintf(stderr, "CHECK TRIGGER t:%d  slope %d  y=%d \n",  t, slope, y);
         if (slope > 0){ // Pos Zero X
-                if (y < -40) // neg theashold to start checking (5mV)
+                if (y < -threashold) // neg theashold to start checking (5mV)
                         return -1;
                 if (t < 0 && y > 0)
                         return 1;
         } else { // Neg Zero X
-                if (y > 40) // pos theashold to start checking
+                if (y > threashold) // pos theashold to start checking
                         return -1;
                 if (t < 0 && y < 0)
                         return 1;
@@ -1451,6 +1534,8 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
                         for (t=0, pos=0; pos < 1000; ++pos){
                                 int32_t ix32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN1 (14)
                                 int32_t iy32 = *((int32_t *)((uint8_t*)FPGA_PACPLL_bram+i)); i+=4; // IN2 (14)
+                                if (pos < 100)
+                                        continue;
                                 if (trigger_mode > 2)
                                         t=check_trigger (t, trigger_mode&1 ? 1:0, (int16_t)(iy32&0xffff)-tlv);
                                 else
@@ -2115,6 +2200,21 @@ void OnNewParams(void)
         DFREQ_FB_UPPER.Update ();
         DFREQ_FB_LOWER.Update ();
 
+
+        PULSE_FORM_BIAS0.Update ();
+        PULSE_FORM_BIAS1.Update ();
+        PULSE_FORM_PHASE0.Update ();
+        PULSE_FORM_PHASE1.Update ();
+        PULSE_FORM_WIDTH0.Update ();
+        PULSE_FORM_WIDTH1.Update ();
+        PULSE_FORM_HEIGHT0.Update ();
+        PULSE_FORM_HEIGHT1.Update ();
+        PULSE_FORM_WIDTH0IF.Update ();
+        PULSE_FORM_WIDTH1IF.Update ();
+        PULSE_FORM_HEIGHT0IF.Update ();
+        PULSE_FORM_HEIGHT1IF.Update ();
+
+        
         if ( OPERATION.Value () > 0 && OPERATION.Value () != operation ){
                 operation = OPERATION.Value ();
                 switch (operation){
