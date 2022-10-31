@@ -312,6 +312,9 @@ public:
         static void scope_ac_ch1_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void scope_ac_ch2_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void scope_ac_ch3_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void scope_xy_on_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void scope_fft_on_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
+        static void scope_fft_time_zoom_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
         static void scope_z_ch1_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void scope_z_ch2_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
@@ -543,6 +546,9 @@ private:
         GSettings *inet_json_settings;
         
         gboolean run_scope;
+        gboolean scope_xy_on;
+        gboolean scope_fft_on;
+        double scope_fft_time_zoom;
         gboolean scope_ac[5];
         double scope_z[2];
         double scope_dc_level[5];
