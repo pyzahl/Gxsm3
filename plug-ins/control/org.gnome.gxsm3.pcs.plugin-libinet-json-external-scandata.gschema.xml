@@ -277,6 +277,30 @@
       <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PULSE-FORM-HEIGTH1IF', Default/U: 10 mV    , Adjustment PCS Name: 'rp-pacpll-PULSE-FORM-HEIGTH1IF' </description>
     </key>
 
+    <key name="rp-pacpll-pulse-form-shapex" type="d">
+      <default>1</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PULSE-FORM-SHAPEX', Default/U:    1       </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PULSE-FORM-SHAPEX', Default/U:    1      , Adjustment PCS Name: 'rp-pacpll-PULSE-FORM-SHAPEX' </description>
+    </key>
+
+    <key name="rp-pacpll-pulse-form-shapexif" type="d">
+      <default>1</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PULSE-FORM-SHAPEXIF', Default/U:    1       </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PULSE-FORM-SHAPEXIF', Default/U:    1      , Adjustment PCS Name: 'rp-pacpll-PULSE-FORM-SHAPEXIF' </description>
+    </key>
+
+    <key name="rp-pacpll-pulse-form-shapexw" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PULSE-FORM-SHAPEXW', Default/U:    0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PULSE-FORM-SHAPEXW', Default/U:    0      , Adjustment PCS Name: 'rp-pacpll-PULSE-FORM-SHAPEXW' </description>
+    </key>
+
+    <key name="rp-pacpll-pulse-form-shapexwif" type="d">
+      <default>0</default>
+      <summary>PCS Remote-ID: 'rp-pacpll-PULSE-FORM-SHAPEXWIF', Default/U:    0       </summary>
+      <description>pcs0000, PCS Remote-ID: 'rp-pacpll-PULSE-FORM-SHAPEXWIF', Default/U:    0      , Adjustment PCS Name: 'rp-pacpll-PULSE-FORM-SHAPEXWIF' </description>
+    </key>
+ 
     
     <key name="rp-pacpll-scope-width" type="d">
       <default>512</default>

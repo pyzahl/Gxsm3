@@ -226,6 +226,11 @@ CDoubleParameter PULSE_FORM_WIDTH1IF("PULSE_FORM_WIDTH1IF", CBaseParameter::RW, 
 CDoubleParameter PULSE_FORM_HEIGHT0IF("PULSE_FORM_HEIGHT0IF", CBaseParameter::RW, 0.0, 0, -1000, 1000); // mV
 CDoubleParameter PULSE_FORM_HEIGHT1IF("PULSE_FORM_HEIGHT1IF", CBaseParameter::RW, 0.0, 0, -1000, 1000); // mV
 
+CDoubleParameter PULSE_FORM_SHAPEX("PULSE_FORM_SHAPEX", CBaseParameter::RW, 0.0, 0, -10, 10); // 1
+CDoubleParameter PULSE_FORM_SHAPEXIF("PULSE_FORM_SHAPEXIF", CBaseParameter::RW, 0.0, 0, -10, 10); // 1
+CDoubleParameter PULSE_FORM_SHAPEXW("PULSE_FORM_SHAPEXW", CBaseParameter::RW, 0.0, 0, 0, 1); // 1
+CDoubleParameter PULSE_FORM_SHAPEXWIF("PULSE_FORM_SHAPEXWIF", CBaseParameter::RW, 0.0, 0, 0, 1); // 1
+
 /*
 // Transport LP TAU parameters
 CDoubleParameter TRANSPORT_TAU_DFREQ("TRANSPORT_TAU_DFREQ", CBaseParameter::RW, 0.01, 0, -1, 10e3); 
@@ -845,9 +850,16 @@ void rp_PAC_set_phase_controller (double setpoint, double cp, double ci, double 
 
 #define PACPLL_CFG_PULSE_FORM_BASE      (PACPLL_CFG2_OFFSET + 0)
 #define PACPLL_CFG_PULSE_FORM_DELAY_01  0  // [ 31..16 Delay P0, 15..0 Delay P1 ] 32bit
-#define PACPLL_CFG_PULSE_FORM_WH01_ARR  1 // [ 31..16 Width_n P0, 15..0 Width_n P1; 31..16 Height_n P0, 15..0 Height_n P1, ... [n=0,1,2]] 6x32 bit
+#define PACPLL_CFG_PULSE_FORM_WH01_ARR  1 // [ 31..16 Width_n P0, 15..0 Width_n P1; 31..16 Height_n P0, 15..0 Height_n P1, ... [n=0,1,2]] 12x32 bit
 
-void rp_PAC_set_pulse_form (double bias0, double bias1, double phase0, double phase1, double width0, double width0if, double width1, double width1if, double height0, double height0if, double height1, double height1if){ // deg, us, mV, [Hz-ref]
+void rp_PAC_set_pulse_form (double bias0, double bias1,
+                            double phase0, double phase1,
+                            double width0, double width0if,
+                            double width1, double width1if,
+                            double height0, double height0if,
+                            double height1, double height1if,
+                            double shapexw, double shapexwif,
+                            double shapex, double shapexif){ // deg, us, mV, [Hz-ref]
         // T = 1/freq_ref, N = T/ADC_SAMPLING_RATE, N = freq_ref / ADC_SAMPLING_RATE
         // m = phase/360 * N
 
@@ -862,17 +874,36 @@ void rp_PAC_set_pulse_form (double bias0, double bias1, double phase0, double ph
 
         phase0 -= p0phws2/mfactor; if (phase0 < 0.) phase0 = 0.;
         phase1 -= p1phws2/mfactor; if (phase1 < 0.) phase1 = 0.;
-        
+
+        // phase delay
         set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_DELAY_01,   (guint16)(phase0*mfactor+0.5),    (guint16)(phase1*mfactor+0.5));     // do conversion phase angle in deg to phase steps
+
+        double rstif = shapexwif; // relative shaping pulse length time
+        double pstif = 1.0 - rstif; // remaining pulse length time
+        double rst = shapexw; // relative shaping pulse length time
+        double pst = 1.0 - rst; // remaining pulse length time
         
-        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+0, (guint16)(width0if*usfactor+0.5), (guint16)(width1if*usfactor+0.5));  // 0,1: width in us to steps
-        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+1, ( gint16)(height0if*mVfactor),    ( gint16)(height1if*mVfactor));     // 2,3: height in mV to 16bit (later 14bit on FPGA)
-        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+2, (guint16)(width0*usfactor+0.5),   (guint16)(width1*usfactor+0.5));    // 4,5: width in us to steps
-        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+3, ( gint16)(height0*mVfactor),      ( gint16)(height1*mVfactor));       // 6,7: height in mV to 16bit (later 14bit on FPGA)
-        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+4, (guint16)(width0if*usfactor+0.5), (guint16)(width1if*usfactor+0.5));  // 8,9: width in us to steps
-        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+5, ( gint16)(height0if*mVfactor),    ( gint16)(height1if*mVfactor));   // 10,11: height in mV to 16bit (later 14bit on FPGA)
-        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+6, ( gint16)(bias0*mVfactor),        ( gint16)(bias1*mVfactor));       // 12,13: B height in mV to 16bit (later 14bit on FPGA)
-        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+7, ( gint16)(bias0*mVfactor),        ( gint16)(bias1*mVfactor));       // 14,15: B height in mV to 16bit (later 14bit on FPGA)
+        // pre pulse shaping pre pulse, then remaining pulse
+        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+0, (guint16)(width0if*rstif*usfactor+0.5),     (guint16)(width1if*rstif*usfactor+0.5));  // 0,1: width in us to steps
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+1, ( gint16)(height0if*shapexif*mVfactor),     ( gint16)(height1if*shapexif*mVfactor));     // 2,3: height in mV to 16bit (later 14bit on FPGA)
+        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+2, (guint16)(width0if*pstif*usfactor+0.5),     (guint16)(width1if*pstif*usfactor+0.5));  // 0,1: width in us to steps
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+3, ( gint16)(height0if*mVfactor),              ( gint16)(height1if*mVfactor));     // 2,3: height in mV to 16bit (later 14bit on FPGA)
+
+        // pulse shaping pre pulse, then remaining pulse
+        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+4, (guint16)(width0*rst*usfactor+0.5),         (guint16)(width1*rst*usfactor+0.5));    // 4,5: width in us to steps
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+5, ( gint16)(height0*shapex*mVfactor),         ( gint16)(height1*shapex*mVfactor));       // 6,7: height in mV to 16bit (later 14bit on FPGA)
+        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+6, (guint16)(width0*pst*usfactor+0.5),         (guint16)(width1*pst*usfactor+0.5));    // 4,5: width in us to steps
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+7, ( gint16)(height0*mVfactor),                ( gint16)(height1*mVfactor));       // 6,7: height in mV to 16bit (later 14bit on FPGA)
+
+        // post pulse shaping pre pulse, then remaining pulse
+        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+8, (guint16)(width0if*rstif*usfactor+0.5),     (guint16)(width1if*rstif*usfactor+0.5));  // 8,9: width in us to steps
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+9, ( gint16)(height0if*shapexif*mVfactor),     ( gint16)(height1if*shapexif*mVfactor));   // 10,11: height in mV to 16bit (later 14bit on FPGA)
+        set_gpio_cfgreg_uint16_uint16 (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+10,(guint16)(width0if*pstif*usfactor+0.5),     (guint16)(width1if*pstif*usfactor+0.5));  // 8,9: width in us to steps
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+11,( gint16)(height0if*mVfactor),              ( gint16)(height1if*mVfactor));   // 10,11: height in mV to 16bit (later 14bit on FPGA)
+
+        // offset/bias base lines pre/post
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+12,( gint16)(bias0*mVfactor),        ( gint16)(bias1*mVfactor));       // 12,13: B height in mV to 16bit (later 14bit on FPGA)
+        set_gpio_cfgreg_int16_int16   (PACPLL_CFG_PULSE_FORM_BASE + PACPLL_CFG_PULSE_FORM_WH01_ARR+13,( gint16)(bias0*mVfactor),        ( gint16)(bias1*mVfactor));       // 14,15: B height in mV to 16bit (later 14bit on FPGA)
 }
 
 
@@ -1400,7 +1431,11 @@ void set_PAC_config()
                                PULSE_FORM_HEIGHT0.Value (),
                                PULSE_FORM_HEIGHT0IF.Value (),
                                PULSE_FORM_HEIGHT1.Value (),
-                               PULSE_FORM_HEIGHT1IF.Value ()
+                               PULSE_FORM_HEIGHT1IF.Value (),
+                               PULSE_FORM_SHAPEXW.Value (),
+                               PULSE_FORM_SHAPEXWIF.Value (),
+                               PULSE_FORM_SHAPEX.Value (),
+                               PULSE_FORM_SHAPEXIF.Value ()
                                );
 }
 
@@ -2200,7 +2235,6 @@ void OnNewParams(void)
         DFREQ_FB_UPPER.Update ();
         DFREQ_FB_LOWER.Update ();
 
-
         PULSE_FORM_BIAS0.Update ();
         PULSE_FORM_BIAS1.Update ();
         PULSE_FORM_PHASE0.Update ();
@@ -2213,6 +2247,10 @@ void OnNewParams(void)
         PULSE_FORM_WIDTH1IF.Update ();
         PULSE_FORM_HEIGHT0IF.Update ();
         PULSE_FORM_HEIGHT1IF.Update ();
+        PULSE_FORM_SHAPEXW.Update ();
+        PULSE_FORM_SHAPEXWIF.Update ();
+        PULSE_FORM_SHAPEX.Update ();
+        PULSE_FORM_SHAPEXIF.Update ();
 
         
         if ( OPERATION.Value () > 0 && OPERATION.Value () != operation ){

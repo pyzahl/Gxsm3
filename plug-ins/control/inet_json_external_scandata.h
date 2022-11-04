@@ -130,6 +130,8 @@ struct PACPLL_parameters {
         double pulse_form_width0if, pulse_form_width1if;
         double pulse_form_height0, pulse_form_height1;
         double pulse_form_height0if, pulse_form_height1if;
+        double pulse_form_shapexw, pulse_form_shapexwif;
+        double pulse_form_shapex, pulse_form_shapexif;
         gboolean pulse_form_enable;
         
         double set_singleshot_transport_trigger;
@@ -240,6 +242,10 @@ JSON_parameter PACPLL_JSON_parameters[] = {
         { "PULSE_FORM_HEIGHT0IF", &pacpll_parameters.pulse_form_height0if, false },
         { "PULSE_FORM_HEIGHT1", &pacpll_parameters.pulse_form_height1, false },
         { "PULSE_FORM_HEIGHT1IF", &pacpll_parameters.pulse_form_height1if, false },
+        { "PULSE_FORM_SHAPEXW", &pacpll_parameters.pulse_form_shapexw, false },
+        { "PULSE_FORM_SHAPEXWIF", &pacpll_parameters.pulse_form_shapexwif, false },
+        { "PULSE_FORM_SHAPEX", &pacpll_parameters.pulse_form_shapex, false },
+        { "PULSE_FORM_SHAPEXIF", &pacpll_parameters.pulse_form_shapexif, false },
         
         { NULL, NULL, true }
 };

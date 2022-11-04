@@ -537,6 +537,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         parameters.pulse_form_height1 = -200.;
         parameters.pulse_form_height0if = -40.;
         parameters.pulse_form_height1if = 40.;
+        parameters.pulse_form_shapex = 1.;
+        parameters.pulse_form_shapexif = 1.;
+        parameters.pulse_form_shapexw = 0.;
+        parameters.pulse_form_shapexwif = 0.;
         parameters.pulse_form_enable = false;
         bp->set_no_spin (false);
         bp->set_input_width_chars (6);
@@ -558,12 +562,23 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         GtkWidget *inputCWI = bp->grid_add_ec (NULL,        uTime, &parameters.pulse_form_width1if, 0.0, 10000.0, "5g", 0.1, 1.0, "PULSE-FORM-WIDTH1IF");
         g_object_set_data( G_OBJECT (inputMWI), "HasClient", inputCWI);
         bp->new_line ();
+        
         GtkWidget *inputMH = bp->grid_add_ec ("Height", mVolt, &parameters.pulse_form_height0, -1000.0, 1000.0, "5g", 1.0, 10.0, "PULSE-FORM-HEIGHT0");
         GtkWidget *inputCH = bp->grid_add_ec (NULL,       mVolt, &parameters.pulse_form_height1, -1000.0, 1000.0, "5g", 1.0, 10.0, "PULSE-FORM-HEIGTH1");
         bp->new_line ();
         GtkWidget *inputMHI = bp->grid_add_ec ("HeightIF", mVolt, &parameters.pulse_form_height0if, -1000.0, 1000.0, "5g", 1.0, 10.0, "PULSE-FORM-HEIGHT0IF");
         GtkWidget *inputCHI = bp->grid_add_ec (NULL,         mVolt, &parameters.pulse_form_height1if, -1000.0, 1000.0, "5g", 1.0, 10.0, "PULSE-FORM-HEIGTH1IF");
         bp->new_line ();
+        
+        GtkWidget *inputX  = bp->grid_add_ec ("Shape", Unity, &parameters.pulse_form_shapex, -10.0, 10.0, "4g", 0.1, 1.0, "PULSE-FORM-SHAPEX");
+        GtkWidget *inputXI = bp->grid_add_ec (NULL,    Unity, &parameters.pulse_form_shapexif, -10.0, 10.0, "4g", 0.1, 1.0, "PULSE-FORM-SHAPEXIF");
+        g_object_set_data( G_OBJECT (inputX), "HasClient", inputXI);
+        bp->new_line ();
+        GtkWidget *inputXW  = bp->grid_add_ec ("ShapeW", Unity, &parameters.pulse_form_shapexw, 0.0, 1.0, "4g", 0.1, 1.0, "PULSE-FORM-SHAPEXW");
+        GtkWidget *inputXWI = bp->grid_add_ec (NULL,    Unity, &parameters.pulse_form_shapexwif, 0.0, 1.0, "4g", 0.1, 1.0, "PULSE-FORM-SHAPEXWIF");
+        g_object_set_data( G_OBJECT (inputXW), "HasClient", inputXWI);
+        bp->new_line ();
+        
         bp->set_input_nx (1);
         bp->grid_add_check_button ( N_("Enable"), "Enable Pulse Forming", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::pulse_form_enable), this);
@@ -1229,6 +1244,10 @@ void Inet_Json_External_Scandata::pulse_form_parameter_changed (Param_Control* p
         self->write_parameter ("PULSE_FORM_WIDTH1", self->parameters.pulse_form_width1);
         self->write_parameter ("PULSE_FORM_WIDTH0IF", self->parameters.pulse_form_width0if);
         self->write_parameter ("PULSE_FORM_WIDTH1IF", self->parameters.pulse_form_width1if);
+        self->write_parameter ("PULSE_FORM_SHAPEXW", self->parameters.pulse_form_shapexw);
+        self->write_parameter ("PULSE_FORM_SHAPEXWIF", self->parameters.pulse_form_shapexwif);
+        self->write_parameter ("PULSE_FORM_SHAPEX", self->parameters.pulse_form_shapex);
+        self->write_parameter ("PULSE_FORM_SHAPEXIF", self->parameters.pulse_form_shapexif);
 
         if (self->parameters.pulse_form_enable){
                 self->write_parameter ("PULSE_FORM_HEIGHT0", self->parameters.pulse_form_height0);
