@@ -211,6 +211,24 @@ CDoubleParameter DFREQ_FB_CP("DFREQ_FB_CP", CBaseParameter::RW, 0, 0, -1000, 100
 CDoubleParameter DFREQ_FB_CI("DFREQ_FB_CI", CBaseParameter::RW, 0, 0, -1000, 1000);
 CDoubleParameter DFREQ_FB_UPPER("DFREQ_FB_UPPER", CBaseParameter::RW,  100.0, 0, -10000, 10000); // Control
 CDoubleParameter DFREQ_FB_LOWER("DFREQ_FB_LOWER", CBaseParameter::RW, -100.0, 0, -10000, 10000); // Control
+        /*
+PULSE_FORM_BIAS0=0
+PULSE_FORM_BIAS1=0
+PULSE_FORM_PHASE0=73
+PULSE_FORM_PHASE1=73
+PULSE_FORM_WIDTH0=0.1
+PULSE_FORM_WIDTH0IF=0.5
+PULSE_FORM_WIDTH1=0.1
+PULSE_FORM_WIDTH1IF=0.5
+PULSE_FORM_HEIGHT0=333
+PULSE_FORM_HEIGHT0IF=-37
+PULSE_FORM_HEIGHT1=-200
+PULSE_FORM_HEIGHT1IF=20
+PULSE_FORM_SHAPEXW=0.04
+PULSE_FORM_SHAPEXWIF=0.04
+PULSE_FORM_SHAPEX=0
+PULSE_FORM_SHAPEXIF=1.3
+        */
 
 CDoubleParameter PULSE_FORM_BIAS0("PULSE_FORM_BIAS0", CBaseParameter::RW, 0.0, 0, -1000, 1000); // mV
 CDoubleParameter PULSE_FORM_BIAS1("PULSE_FORM_BIAS1", CBaseParameter::RW, 0.0, 0, -1000, 1000); // mV
@@ -470,16 +488,22 @@ inline void set_gpio_cfgreg_uint32 (int cfg_slot, unsigned int value){
 
 inline void set_gpio_cfgreg_int16_int16 (int cfg_slot, gint16 value_1, gint16 value_2){
         size_t off = 0x8000 + cfg_slot * 4;
+        union { struct { gint16 hi, lo; } hl; int ww; } mem;
+        mem.hl.hi = value_1;
+        mem.hl.lo = value_2;
 
-        *((int32_t *)((uint8_t*)FPGA_PACPLL_cfg + off)) = (((int)value_1) << 16) | (int)value_2;
+        *((int32_t *)((uint8_t*)FPGA_PACPLL_cfg + off)) = mem.ww;
 
         if (verbose > 2) fprintf(stderr, "set_gpio32[CFG%d] int16|16 %04x = %04x | %04x\n", cfg_slot, off, value_1, value_2);
 }
 
 inline void set_gpio_cfgreg_uint16_uint16 (int cfg_slot, guint16 value_1, guint16 value_2){
         size_t off = 0x8000 + cfg_slot * 4;
+        union { struct { guint16 hi, lo; } hl; int ww; } mem;
+        mem.hl.hi = value_1;
+        mem.hl.lo = value_2;
 
-        *((int32_t *)((uint8_t*)FPGA_PACPLL_cfg + off)) = (((unsigned int)value_1) << 16) | (unsigned int)value_2;
+        *((int32_t *)((uint8_t*)FPGA_PACPLL_cfg + off)) = mem.ww;
 
         if (verbose > 2) fprintf(stderr, "set_gpio32[CFG%d] uint16|16 %04x = %04x | %04x\n", cfg_slot, off, value_1, value_2);
 }
@@ -862,7 +886,7 @@ void rp_PAC_set_pulse_form (double bias0, double bias1,
                             double shapex, double shapexif){ // deg, us, mV, [Hz-ref]
         // T = 1/freq_ref, N = T/ADC_SAMPLING_RATE, N = freq_ref / ADC_SAMPLING_RATE
         // m = phase/360 * N
-
+        
         const int RDECI = 2;
         double freq_ref = DDS_FREQ_MONITOR.Value ();
         double mfactor  = ADC_SAMPLING_RATE / RDECI / freq_ref / 360.; // phase in deg to # samples
@@ -1290,15 +1314,15 @@ void rp_PAC_get_single_reading (double reading_vector[READING_MAX_VALUES]){
 // manage PAC configuration and trigger for tune single shot operations
 void set_PAC_config()
 {
-        double reading_vector[READING_MAX_VALUES];
-        int status[3];
+        //double reading_vector[READING_MAX_VALUES];
+        //int status[3];
 
         static double VOL_set_prev = 0.0;
         static double AM_set_prev = 0.0;
         static double PH_set_prev = 0.0;
         static int AM_sw_prev = 0;
         static int PH_sw_prev = 0;
-        static int DF_sw_prev = 0;
+        //static int DF_sw_prev = 0;
         static int uw_sw_prev = 0;
         
         useconds_t code_delay = 70; // approx. measured post time we have regardless
@@ -1440,8 +1464,6 @@ void set_PAC_config()
 }
 
 
-
-
 const char *rp_app_desc(void)
 {
         return (const char *)"Red Pitaya PACPLL.\n";
@@ -1552,7 +1574,7 @@ void read_bram (int n, int dec, int t_mode, double gain1, double gain2){
         int t,k;
         int pos;
         size_t i = 12;
-        size_t N = 8*n;
+        // size_t N = 8*n;
         double trigger_level = BRAM_SCOPE_TRIGGER_LEVEL.Value ();
         int index_shift  = 8*BRAM_SCOPE_SHIFT_POINTS.Value ();
         int trigger_mode = BRAM_SCOPE_TRIGGER_MODE.Value ();
@@ -1764,7 +1786,7 @@ void measure_and_read_phase_ampl_buffer_avg (double &ampl, double &phase){
                 phase /= count;
                 ampl  /= count;
         } else {
-                double reading_vector[READING_MAX_VALUES];
+                //double reading_vector[READING_MAX_VALUES];
                 if (verbose > 1) fprintf(stderr, " measure_and_read_phase_ampl_buffer_avg. Failed. Using GPIO fallback snapshot!\n");
                 // try reinitialize transport
                 rp_PAC_start_transport (PACPLL_CFG_TRANSPORT_SINGLE, 4096, 4); // configure for PHASE, AMPL
@@ -1807,9 +1829,9 @@ double get_tune_df(double f){
 
 void *thread_tuning(void *arg) {
         double epsilon = 0.10; // 0.02 // 2%
-        double reading_vector[READING_MAX_VALUES];
-        int status[3];
-        int ch;
+        //double reading_vector[READING_MAX_VALUES];
+        //int status[3];
+        //int ch;
         int dir=1;
         double f=0.;
         double tune_amp_max=0.;
@@ -1822,7 +1844,7 @@ void *thread_tuning(void *arg) {
         static int i0 = TUNE_SIGNAL_SIZE_DEFAULT/2;
         double df = TUNE_SPAN.Value ()/(TUNE_SIGNAL_SIZE_DEFAULT-1);
         double ampl_prev=0.;
-        double phase_prev=0.;
+        //double phase_prev=0.;
 
         // zero buffers, reset state at tune start
         // init tune -------------------------------------------------
@@ -1852,7 +1874,7 @@ void *thread_tuning(void *arg) {
         usleep (25000); // min recover time
         measure_and_read_phase_ampl_buffer_avg (ampl, phase);
         ampl_prev  = ampl;
-        phase_prev = phase;
+        //phase_prev = phase;
         
         CENTER_FREQUENCY.Value () = tune_fcenter;
         CENTER_PHASE.Value () = tune_phase;
@@ -1947,10 +1969,10 @@ void *thread_tuning(void *arg) {
                         // try again
                         measure_and_read_phase_ampl_buffer_avg (ampl, phase);
                         ampl_prev  = ampl;
-                        phase_prev = phase;
+                        //phase_prev = phase;
                 }
                 ampl_prev  = ampl;
-                phase_prev = phase;
+                //phase_prev = phase;
 
                 // update
                 if (ampl > tune_amp_max){
@@ -1976,7 +1998,7 @@ void *thread_tuning(void *arg) {
 
 void UpdateSignals(void)
 {
-        static int clear_tune_data=1;
+        //static int clear_tune_data=1;
         static pthread_t tune_thread;
         double reading_vector[READING_MAX_VALUES];
         int ch;
@@ -2029,7 +2051,7 @@ void UpdateSignals(void)
                         if ( pthread_create( &tune_thread, NULL, thread_tuning, NULL) ) {
                                 fprintf(stderr, "Error creating tune thread.\n");
                         } 
-                        clear_tune_data = 0; // after completed / mode switch zero tune data buffers
+                        //clear_tune_data = 0; // after completed / mode switch zero tune data buffers
                 }
                 break;
         }        
@@ -2041,7 +2063,7 @@ void UpdateSignals(void)
                             fprintf(stderr, "Error joining tune thread.\n");
                     }
                 }
-                clear_tune_data = 1;
+                //clear_tune_data = 1;
                 if (verbose > 3) fprintf(stderr, "UpdateSignals get GPIO reading:\n");
 
                 // Slow GPIO MONITOR in strip plotter mode
@@ -2140,11 +2162,11 @@ void UpdateParams(void){
 
 void OnNewParams(void)
 {
-        int x=0;
-        static int ppv=0;
-        static int spv=0;
+        //int x=0;
+        //static int ppv=0;
+        //static int spv=0;
         static int operation=0;
-        double reading_vector[READING_MAX_VALUES];
+        //double reading_vector[READING_MAX_VALUES];
 
 #if 0
         if (ppv == 0) { ppv=parameter_updatePeriod.Value(); parameter_updatePeriod.Update (); }
