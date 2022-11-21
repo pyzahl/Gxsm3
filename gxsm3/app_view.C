@@ -3160,18 +3160,26 @@ void ViewControl::view_file_save_drawing (const gchar* imgname){
         cairo_t *cr;
         cairo_status_t status;
         int png=0;
-
         double add_y_space = 0.;
+        double as_pixy = 1.0;
+        double num_as_pixy = npy;
+
+        if (scan->aspect_range()){
+                as_pixy = (double)npx/(double)npy * scan->data.s.ry/scan->data.s.rx;
+                vinfo->SetAS_PixY (as_pixy);
+                num_as_pixy *= as_pixy;
+        }
+
         if (legend_position_code == 'b')
-                add_y_space = npy*18./400.*(double)npx/npy+1;
+                add_y_space =  num_as_pixy*18./400.*(double)npx/num_as_pixy+1;
         
 	if (g_strrstr (imgname,".svg")){
-                surface = cairo_svg_surface_create (imgname, (double)npx, (double)npy+add_y_space);
+                surface = cairo_svg_surface_create (imgname, (double)npx, (double)num_as_pixy+add_y_space);
                 cairo_svg_surface_restrict_to_version (surface, CAIRO_SVG_VERSION_1_2);
         } else if (g_strrstr (imgname,".pdf")){
-                surface = cairo_pdf_surface_create (imgname, (double)npx, (double)npy+add_y_space);
+                surface = cairo_pdf_surface_create (imgname, (double)npx, (double)num_as_pixy+add_y_space);
         } else {
-                surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, npx, npy+add_y_space);
+                surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, npx, num_as_pixy+add_y_space);
                 png=1;
         }
 
