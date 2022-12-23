@@ -285,7 +285,7 @@ AC_ARG_ENABLE( user-plugin-dir,
 [  --disable-user-plugin-dir disable per-user plugin dir],,
                 enable_user_plugin_dir="yes")
 
-AC_ARG_ENABLE(gtksourceview, AC_HELP_STRING([--enable-gtksourceview],
+AC_ARG_ENABLE(gtksourceview, AS_HELP_STRING([--enable-gtksourceview],
                                     [Syntax highlighting in Python wrapper console]),[],
                                     [enable_gtksourceview=yes])
 
