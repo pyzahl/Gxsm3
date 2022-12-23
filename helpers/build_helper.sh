@@ -6,6 +6,7 @@
 # 'prep' shall run any commands to 'prepare' the system for the build.
 # 'build' shall build the binaries.
 # 'install' shall install the binaries system-wide (may require sudo).
+# 'package' shall build a .deb-package.
 
 if [ ! -f /etc/os-release ] ; then
    echo "There is no /etc/os-release. "
