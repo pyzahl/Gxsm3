@@ -328,7 +328,9 @@ void App::offset_to_preset_callback(GtkWidget* w, gpointer app){
 gboolean App::spm_scanpos_check_idle(gpointer app){
         XSM_Instrument *Inst = ((App*)app)->xsm->Inst;
         SCAN_DATA *data = &((App*)app)->xsm->data;
-	
+
+        //g_message ("-> App::spm_scanpos_check_idle()::MovetoXY (%g, %g)", data->s.sx, data->s.sy);
+        
         // move to scan position relative to offset in scan coordinate system (may be rotated)
         if (!((App*)app)->xsm->hardware->MovetoXY (R2INT(Inst->XA2Dig(data->s.sx)),
                                                    R2INT(Inst->YA2Dig(data->s.sy)))){
@@ -336,20 +338,21 @@ gboolean App::spm_scanpos_check_idle(gpointer app){
                 ((App*)app)->spm_update_all();
                 // TIP POS UPDATE
                 if (((App*)app)->xsm->ActiveScan)
-                        ((App*)app)->xsm->ActiveScan->auto_display();
+                        ((App*)app)->xsm->ActiveScan->draw(); // auto_display();
                 return G_SOURCE_REMOVE;
         }
 
         // TIP POS UPDATE
         if (((App*)app)->xsm->ActiveScan)
-                ((App*)app)->xsm->ActiveScan->auto_display();
+                ((App*)app)->xsm->ActiveScan->draw(); // auto_display();
 
         return G_SOURCE_CONTINUE;
 }
 
 void App::spm_scanpos_check(Param_Control* pcs, gpointer app){
+        //SCAN_DATA *data = &((App*)app)->xsm->data;
         XSM_DEBUG(DBG_L3,  "offset check"  );
-        g_timeout_add (33, spm_offset_check_idle, app);
+        g_timeout_add (100, spm_scanpos_check_idle, app);
 }
 
 void App::spm_nlayer_update(Param_Control* pcs, gpointer app){
