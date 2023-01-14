@@ -1783,10 +1783,10 @@ class Mk2_Configurator:
                     os.write (sr.fileno(), struct.pack (fmt_statemachine_w, mask))
                     sr.close ()
                     
-            def ext_FB_control_channel(value):
+            def ext_FB_control_watch_value(value):
                     value = 0
                     sr = open (self.mk2rte.sr_dev_path, "wb")
-                    os.lseek (sr.fileno(), self.mk2rte.magic[i_external]+0, 1)
+                    os.lseek (sr.fileno(), self.mk2rte.magic[i_external]+2, 1)
                     os.write (sr.fileno(), struct.pack (fmt_external_w, int(value)))
                     sr.close ()
                     return 1
@@ -1794,6 +1794,9 @@ class Mk2_Configurator:
             def ext_FB_control(_object, _value, _identifier):
                     value = 0
                     sr = open (self.mk2rte.sr_dev_path, "wb")
+                    if _identifier=="ext_channel":
+                        os.lseek (sr.fileno(), self.mk2rte.magic[i_external]+0, 1)
+                        value = _object.get_value()
                     if _identifier=="ext_treshold":
                             os.lseek (sr.fileno(), self.mk2rte.magic[i_external]+1, 1)
                             value = _object.get_value()*3276.7
@@ -1998,7 +2001,7 @@ class Mk2_Configurator:
 
                     def on_ext_changed(widget):
                         print ('EXTERNAL MODE: ', widget.get_active())
-                        ext_FB_control_channel(widget.get_active())
+                        ext_FB_control_watch_value(widget.get_active())
                         return
                     
                     extern_combo.connect("changed", on_ext_changed)

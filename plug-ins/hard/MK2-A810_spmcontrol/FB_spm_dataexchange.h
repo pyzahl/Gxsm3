@@ -117,9 +117,9 @@
 // -- otherwise you exactly need to know/be sure what you are doing --
 // -- odd things like changed data structures, etc.., could break data transfer --
 #define FB_SPM_SOFT_ID   0x1001 /* FB_SPM sofware id */
-#define FB_SPM_VERSION   0x2041 /* FB_SPM main Version, BCD: 00.00 */
-#define FB_SPM_DATE_YEAR 0x2020 /* Date: Year, BCD */
-#define FB_SPM_DATE_MMDD 0x1123 /* Date: Month/Day, BCD */
+#define FB_SPM_VERSION   0x2042 /* FB_SPM main Version, BCD: 00.00 */
+#define FB_SPM_DATE_YEAR 0x2023 /* Date: Year, BCD */
+#define FB_SPM_DATE_MMDD 0x0113 /* Date: Month/Day, BCD */
 
 #define FB_SPM_FEATURES     \
 	"Version: Crash Hack RTEngine4Gxsm Mark2 2019\n"\
