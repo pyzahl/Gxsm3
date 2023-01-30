@@ -2453,10 +2453,13 @@ static gboolean main_context_createscan_from_thread (gpointer user_data){
                 dst->data.s.rx = rangex;
                 dst->data.s.ry = rangey;
 
-                dst->data.s.x0 = 0.;
-                dst->data.s.y0 = 0.;
-                dst->data.s.alpha = 0.;
-
+                // quick safety hack
+                Scan *ref =gapp->xsm->GetScanChannel (0);
+                if (ref){
+                        dst->data.s.x0 = ref->data.s.x0;
+                        dst->data.s.y0 = ref->data.s.y0;
+                        dst->data.s.alpha = ref->data.s.alpha;
+                }
                 dst->data.ui.SetUser ("User");
 
                 gchar *tmp=g_strconcat ("PyCreate ",
@@ -2590,9 +2593,13 @@ static gboolean main_context_createscanf_from_thread (gpointer user_data){
                 dst->data.s.rx = rangex;
                 dst->data.s.ry = rangey;
 
-                dst->data.s.x0 = 0.;
-                dst->data.s.y0 = 0.;
-
+                // quick safety hack
+                Scan *ref =gapp->xsm->GetScanChannel (0);
+                if (ref){
+                        dst->data.s.x0 = ref->data.s.x0;
+                        dst->data.s.y0 = ref->data.s.y0;
+                        dst->data.s.alpha = ref->data.s.alpha;
+                }
                 dst->data.ui.SetUser("User");
 
                 gchar *tmp = g_strconcat("PyCreate ", NULL);
@@ -2844,7 +2851,7 @@ static PyObject* remote_getslice(PyObject *self, PyObject *args)
                 npy_intp dims[2]; 
                 dims[0] = yn;
                 dims[1] = src->mem2d->GetNx ();
-                g_message ("Creating PyArray: shape %d , %d", dims[0], dims[1]);
+                g_message ("Creating PyArray: shape %d , %d", (int)dims[0], (int)dims[1]);
                 double *darr2 = (double*) malloc(sizeof(double) * dims[0]*dims[1]);
                 double *dp=darr2;
                 int yf = yi+yn;
