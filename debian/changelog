@@ -1,3 +1,9 @@
+gxsm3 (3.53.0-0ubuntu12) jammy; urgency=medium
+
+  * updated MK2 interface
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 02 Apr 2023 18:37:06 +0200
+
 gxsm3 (3.53.0-0ubuntu10) jammy; urgency=medium
 
   * fixed problem with desktop file (option -h=no did not work any more) 
