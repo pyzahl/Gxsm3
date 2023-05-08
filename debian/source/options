@@ -1,2 +1,1 @@
-tar-ignore = "*/RedPitaya-Support/*"
-extend-diff-ignore = "/RedPitaya-Support/"
+--tar-ignore="*RedPitaya-Support*"

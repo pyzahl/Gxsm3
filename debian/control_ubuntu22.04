@@ -5,6 +5,7 @@ Maintainer: Thorsten Wagner <stm@users.sf.net>
 Build-Depends: 	debhelper (>= 12~),
 		autotools-dev,
 		freeglut3-dev,
+		git,
 		gsettings-desktop-schemas-dev,
 		gtk-doc-tools,
 		intltool,
