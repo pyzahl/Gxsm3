@@ -518,7 +518,7 @@ static gboolean edge_run(Scan *Src, Scan *Dest)
 
 	MOUSERECT msr;
 	MkMausSelect (Src, &msr, Src->mem2d->GetNx(), Src->mem2d->GetNy());
-	if( msr.xSize  > 2 && msr.ySize > 2 && gapp->xsm->MausMode() == MRECTANGLE){
+	if( msr.xSize  > edge_radius && msr.ySize >  edge_radius && msr.xSize  < Src->mem2d->GetNx() && msr.ySize < Src->mem2d->GetNy() && gapp->xsm->MausMode() == MRECTANGLE){
                 Dest->data.copy (Src->data);
 
                 Dest->mem2d->Resize (msr.xSize, msr.ySize);
