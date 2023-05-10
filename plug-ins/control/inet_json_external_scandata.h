@@ -565,6 +565,7 @@ private:
         gboolean unwrap_phase_plot;
         double scope_width_points;
         double scope_height_points;
+        GtkWidget *signal_graph_area;
 
         GtkWidget *update_ts_widget;
         GtkWidget *update_op_widget;

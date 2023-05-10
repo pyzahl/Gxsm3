@@ -24,7 +24,19 @@
       <summary>PCS Remote-ID: 'sim-afm-bias', Default/U:  0.00 V     </summary>
       <description>pcs0000, PCS Remote-ID: 'sim-afm-bias', Default/U:  0.00 V    , Adjustment PCS Name: 'sim-afm-bias' </description>
     </key>
+
+    <key name="sim-stm-adv-dsp-zpos-ref" type="d">
+      <default>2</default>
+      <summary>PCS Remote-ID: 'sim-stm-adv-dsp-zpos-ref', Default/U:  0.00 A     </summary>
+      <description>pcs0000, PCS Remote-ID: 'sim-stm-adv-dsp-zpos-ref', Default/U:  0.00 A    , Adjustment PCS Name: 'sim-stm-adv-dsp-zpos-ref' </description>
+    </key>
+    <key name="sim-stm-fbs-mx0-current-set" type="d">
+      <default>2</default>
+      <summary>PCS Remote-ID: 'sim-stm-adv-dsp-zpos-ref', Default/U:  0.00 A     </summary>
+      <description>pcs0000, PCS Remote-ID: 'sim-stm-adv-dsp-zpos-ref', Default/U:  0.00 A    , Adjustment PCS Name: 'sim-stm-adv-dsp-zpos-ref' </description>
+    </key>
   </schema>
 
+  
 </schemalist>
 

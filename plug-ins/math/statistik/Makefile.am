@@ -18,7 +18,8 @@ lib_LTLIBRARIES = libaverage_profile.la \
 	libautocorrelation.la \
 	libcrosscorrelation.la \
 	libOpenCV_match.la \
-	libOpenCV_recenter.la
+	libOpenCV_recenter.la \
+	libOpenCV_recenter_stack.la
 
 #
 #	libislandlbl.la \
@@ -40,6 +41,10 @@ libOpenCV_match_la_LIBADD  = -lopencv_core -lopencv_features2d -lopencv_highgui 
 libOpenCV_recenter_la_SOURCES = OpenCV_recenter.C
 libOpenCV_recenter_la_LDFLAGS = -Wl -module -export-dynamic -avoid-version
 libOpenCV_recenter_la_LIBADD  = -lopencv_core -lopencv_features2d -lopencv_highgui -lopencv_objdetect -lopencv_imgproc
+
+libOpenCV_recenter_stack_la_SOURCES = OpenCV_recenter_stack.C
+libOpenCV_recenter_stack_la_LDFLAGS = -Wl -module -export-dynamic -avoid-version
+libOpenCV_recenter_stack_la_LIBADD  = -lopencv_core -lopencv_features2d -lopencv_highgui -lopencv_objdetect -lopencv_imgproc
 
 ### -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_ml -lopencv_video -lopencv_features2d -lopencv_calib3d -lopencv_objdetect -lopencv_contrib -lopencv_legacy -lopencv_flann
 

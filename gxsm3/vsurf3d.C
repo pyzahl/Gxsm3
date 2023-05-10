@@ -2080,10 +2080,20 @@ void inline Surf3d::PutPointMode(int k, int j, int vi){
                     mem2d_x->GetNv () == scan->mem2d->GetNv ())
                         surface_z_data_buffer[i].x = (GLfloat) ((mem2d_x->GetDataPkt(k,j,vi)-mem2d_x->data->zmin)/mem2d_x->data->zrange);
                 else {
-                        int u = (int) (k * (double)mem2d_x->GetNx () / (double)scan->mem2d->GetNx ());
-                        int v = (int) (j * (double)mem2d_x->GetNy () / (double)scan->mem2d->GetNy ());
-                        int w = (int) (vi * (double)mem2d_x->GetNv () / (double)scan->mem2d->GetNv ());
-                        surface_z_data_buffer[i].x = (GLfloat) (mem2d_x->GetDataPkt (u,v, w)/mem2d_x->GetDataRange ());
+                        int ChSrcX=gapp->xsm->FindChan (ID_CH_M_X);
+                        if (ChSrcX >= 0){
+                                if(gapp->xsm->scan[ChSrcX]){
+                                        double wx,wy, dk,dj;
+                                        scan->Pixel2World (k,j, wx,wy);
+                                        gapp->xsm->scan[ChSrcX]->World2Pixel (wx,wy, dk,dj);
+                                        surface_z_data_buffer[i].x = (GLfloat) ((gapp->xsm->scan[ChSrcX]->mem2d->GetDataPktInterpol(dk, dj, vi)-mem2d_x->data->zmin)/mem2d_x->data->zrange);
+                                }
+                        } else {
+                                int u = (int) (k * (double)mem2d_x->GetNx () / (double)scan->mem2d->GetNx ());
+                                int v = (int) (j * (double)mem2d_x->GetNy () / (double)scan->mem2d->GetNy ());
+                                int w = (int) (vi * (double)mem2d_x->GetNv () / (double)scan->mem2d->GetNv ());
+                                surface_z_data_buffer[i].x = (GLfloat) (mem2d_x->GetDataPkt (u,v, w)/mem2d_x->GetDataRange ());
+                        }
                 }
         } else {
                 surface_z_data_buffer[i].x = 0.5;
