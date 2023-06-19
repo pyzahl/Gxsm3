@@ -323,9 +323,11 @@ interrupt void dataprocess()
 						case 3: // LOG
 							asm_calc_mix_log ();
                                                         tmpL = _ssub (feedback_mixer.lnx, feedback_mixer.setpoint_log[mi]);
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
 							break;
 						case 1: // LIN
 							tmpL = _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]);
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
 							break;
 						case 5: // FUZZY
 							if (feedback_mixer.x > feedback_mixer.level[mi]){
@@ -334,6 +336,7 @@ interrupt void dataprocess()
 							} else {
                                                                 tmpL = 0L;
                                                         }
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
 							break;
 #if 0 // useless ??
 						case 7: // FUZZY LOG
@@ -344,6 +347,7 @@ interrupt void dataprocess()
 							} else {
                                                                 tmpL = 0L;
                                                         }
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
 							break;
 #endif
                                                 case 9: // CZ FUZZY LIN
@@ -352,6 +356,7 @@ interrupt void dataprocess()
                                                         } else {
                                                                 tmpL = _ssub (feedback.z32neg>>16, feedback_mixer.Z_setpoint);
                                                         }
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
                                                         break;
                                                 case 11: // CZ FUZZY LOG
                                                         if (abs (feedback_mixer.x) > feedback_mixer.level[mi]){
@@ -360,10 +365,10 @@ interrupt void dataprocess()
                                                         } else {
                                                                 tmpL = _ssub (feedback.z32neg>>16, feedback_mixer.Z_setpoint);
                                                         }
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
                                                         break;
 						default: break; // OFF
 						}
-                                                feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
 					}
 
 					// run plain feedback from delta directly
