@@ -2234,7 +2234,7 @@ void sranger_mk2_hwi_dev::write_dsp_feedback (
 		if (i==0){
 			dsp_feedback_mixer.setpoint[i] = (int)(round(gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->nAmpere2V (set_point[i])))); // Q23
                 }else if (i==1){
-                        dsp_feedback_mixer.setpoint[i] = (int)round(round(gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->dHertz2V (set_point[i]))))1; // Q23
+                        dsp_feedback_mixer.setpoint[i] = (int)round(round(gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->dHertz2V (set_point[i])))); // Q23
                 }else
 			dsp_feedback_mixer.setpoint[i] = (int)(round(gapp->xsm->Inst->VoltIn2Dig (set_point[i]))); // Q23
                 // dsp_feedback_mixer.setpoint[i] = (int)(round(gapp->xsm->Inst->VoltIn2Dig (set_point_factor[i]*set_point[i]))); // Q23
