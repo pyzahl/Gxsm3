@@ -2296,6 +2296,8 @@ gint ViewControl::canvas_event_cb(GtkWidget *canvas, GdkEvent *event, ViewContro
         mouse_pix_xy[0] = (event->button.x - (double)(vc->rulewidth+vc->border/zf))/zf;
         mouse_pix_xy[1] = (event->button.y - (double)(vc->rulewidth+vc->border/zf))/zf;
 
+        if (mouse_pix_xy[0] < 0 || mouse_pix_xy[1] < 0)
+                return FALSE;
         
         // 1st check if mouse on editable object
         vc->tmp_event = event;     // data for foreach
