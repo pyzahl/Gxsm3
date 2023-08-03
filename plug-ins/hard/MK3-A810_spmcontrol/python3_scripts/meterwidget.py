@@ -37,7 +37,7 @@
 ## they respect the standard.
 
 import gi
-gi.require_version("Gtk", "3.0")
+#gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 import os		# use os because python IO is bugy

@@ -472,7 +472,7 @@ void PanView::AppWindowInit(const gchar *title){
 	gtk_window_set_title (GTK_WINDOW(window), title);
 	gtk_widget_set_opacity (GTK_WIDGET(window), 0.75);
 	gtk_window_set_resizable (GTK_WINDOW(window), FALSE);
-	gtk_window_set_decorated (GTK_WINDOW(window), FALSE);
+	//gtk_window_set_decorated (GTK_WINDOW(window), FALSE);
 	gtk_window_set_keep_above (GTK_WINDOW(window), TRUE);
 	//gtk_window_stick (GTK_WINDOW(window));
         
