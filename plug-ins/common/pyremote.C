@@ -3474,7 +3474,7 @@ static gboolean main_context_saveas_from_thread (gpointer user_data){
         }
         
 	if (fname){
-		gapp->xsm->save (MANUAL_SAVE_AS, fname, channel, TRUE);
+		gapp->xsm->save (MANUAL_SAVE_AS, g_strdup(fname), channel, TRUE);
 		//gapp->xsm->save(TRUE, fname, channel);
                 idle_data->ret = 0;
 	}
