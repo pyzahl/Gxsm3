@@ -779,6 +779,7 @@ ViewControl::ViewControl (char *title, int nx, int ny,
         // Display -- Pixel Shift -- shift_x/y = creepfactor * shift_x/y_value
         // creepfactor = tau > 0. ? (1. - expf (-tau*dt)) : dt;
 
+        // BUG ***### soem thing going wrong here with data.Xunit reference if not same as Zunit ###*** 
         view_bp->set_default_ec_change_notice_fkt  (display_changed_sh_callback, this);
         view_bp->grid_add_ec ("Shift X", scan->data.Xunit, &scan->data.display.px_shift_xy[0], -5000000., 5000000., "8g", 1., 1., NULL); //  "ShiftX"); // requires gschema for scan windows(s)...
         view_bp->new_line ();
