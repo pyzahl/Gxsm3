@@ -186,6 +186,7 @@ GxsmMathOneSrcPlugin *get_gxsm_math_one_src_for_all_vt_plugin_info( void ) {
 /* Here we go... */
 
 double       krn_sigma = 1.; // default: 1 * r/2
+double       edge_radius_set = 5.;
 double       edge_radius = 5.;
 double       adaptive_threashold = 0.;
 double       zero_replace_value = 0.;
@@ -475,10 +476,10 @@ static gboolean edge_run(Scan *Src, Scan *Dest)
                 const gchar* config_label[7] = { "Radius", "Adaptive Threashold", "Background f0", "Zero Replace Mode", "Krn Sigma", "Ask Again", NULL };
                 const gchar* config_info[6]  = { "Edge Kernel Radius. Convol Matrix[2R+2, 2R+1]", "Adaptive Threashold Value", "Replace Background (0) by f0", "Zero Replace none: 0, by value:1, auto:2", "Kernel Sigma x r/2", "Ask for filter setup again" };
                 UnitObj *config_units[6] { gapp->xsm->Unity,  gapp->xsm->data.Zunit, gapp->xsm->data.Zunit, gapp->xsm->Unity, gapp->xsm->Unity, gapp->xsm->Unity};
-                double config_minv[6] = { 0., -1e10, -1e10, 0., -10., -1};
+                double config_minv[6] = { -1., -1e10, -1e10, 0., -10., -1};
                 double config_maxv[6] = { Src->mem2d->GetNx()/10., 1e10, 1e10, 10., 10., 1 };
                 const gchar* config_fmt[6]  = { ".0f", "g", "g", "g", "g", ".0f" };
-                double *config_values[6] = { &edge_radius, &adaptive_threashold, &zero_replace_value, &zero_replace_mode, &krn_sigma, &ask_again };    // Radius, Adaptive Threashold, Mode
+                double *config_values[6] = { &edge_radius_set, &adaptive_threashold, &zero_replace_value, &zero_replace_mode, &krn_sigma, &ask_again };    // Radius, Adaptive Threashold, Mode
 
                 gapp->ValueRequestList ("Edge Filter Configuration",
                                         config_label, config_info, config_units,
@@ -487,29 +488,37 @@ static gboolean edge_run(Scan *Src, Scan *Dest)
                                         );
 
                 ask_configure = ask_again != 0.0 ? true : false; 
+        }
+        
+        if (edge_kernel)
+                free (edge_kernel);
 
-		if (edge_kernel)
-			free (edge_kernel);
+        if (ada_kernel)
+                free (ada_kernel);
 
-		if (ada_kernel)
-			free (ada_kernel);
+        GSettings *global_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT ".global");
+        if (edge_radius_set < 0.) // get parameter via settings!
+                edge_radius = g_settings_get_double (global_settings, "math-global-share-variable-radius");
+                //g_settings_set_double (global_settings, "math-global-share-variable-radius", edge_radius);
+        else
+                edge_radius = edge_radius_set;
+        g_clear_object (&global_settings);
                 
-                g_message ("Setup MemAdaptiveTestKrn");
-		int    s = 1+(int)(edge_radius + .9); // calc. approx Matrix Radius
-		ada_kernel = new MemAdaptiveTestKrn (edge_radius,edge_radius, s,s); // calc. convol adaptive test kernel
-                ada_kernel->set_kname ("gxsm_edge_ada_kernel");
-                ada_kernel->InitializeKernel ();
+        g_message ("Setup MemAdaptiveTestKrn");
+        int    s = 1+(int)(edge_radius + .9); // calc. approx Matrix Radius
+        ada_kernel = new MemAdaptiveTestKrn (edge_radius,edge_radius, s,s); // calc. convol adaptive test kernel
+        ada_kernel->set_kname ("gxsm_edge_ada_kernel");
+        ada_kernel->InitializeKernel ();
 
-                g_message ("Setup MemAdaptiveCoreKrn");
-	edge_kernel = new MemEdgeKrn (edge_radius,edge_radius, s,s, ada_kernel, adaptive_threashold/Src->data.s.dz, krn_sigma); // calc. convol kernel
-                edge_kernel->set_kname ("gxsm_edge_edge_log_kernel");
-                edge_kernel->InitializeKernel ();
+        g_message ("Setup MemAdaptiveCoreKrn");
+        edge_kernel = new MemEdgeKrn (edge_radius,edge_radius, s,s, ada_kernel, adaptive_threashold/Src->data.s.dz, krn_sigma); // calc. convol kernel
+        edge_kernel->set_kname ("gxsm_edge_edge_log_kernel");
+        edge_kernel->InitializeKernel ();
  
-                g_message ("Setup Kernel Completed, Executing Convolve");
+        g_message ("Setup Kernel Completed, Executing Convolve");
 
-		if (!Src || !Dest)
-			return 0;
-	}	
+        if (!Src || !Dest)
+                return 0;
 
         if (zero_replace_mode > 1.5)
                 Src->mem2d->data->replace (0., -2e8, 0.01);
@@ -518,7 +527,7 @@ static gboolean edge_run(Scan *Src, Scan *Dest)
 
 	MOUSERECT msr;
 	MkMausSelect (Src, &msr, Src->mem2d->GetNx(), Src->mem2d->GetNy());
-	if( msr.xSize  > 2 && msr.ySize > 2 && gapp->xsm->MausMode() == MRECTANGLE){
+	if( msr.xSize  > edge_radius && msr.ySize >  edge_radius && msr.xSize  < Src->mem2d->GetNx() && msr.ySize < Src->mem2d->GetNy() && gapp->xsm->MausMode() == MRECTANGLE){
                 Dest->data.copy (Src->data);
 
                 Dest->mem2d->Resize (msr.xSize, msr.ySize);

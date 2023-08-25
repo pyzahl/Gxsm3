@@ -1667,28 +1667,44 @@ void VObPoint::update_offset(){
 
 
 gboolean VObPoint::update_scanpos_idle(gpointer data){
-	
+	static gpointer last = NULL;
+        
+        // prevent competing!
+        if (last && last != data && !((VObPoint*)data)->dragging_active)
+                return G_SOURCE_REMOVE;
+
+
+        //g_message ("...VObPoint::update_scanpos_idle (%g, %g)", gapp->xsm->data.s.sx, gapp->xsm->data.s.sy);
+
+        last = data;
         // move to scan position relative to offset in scan coordinate system (may be rotated)
+
         if (!gapp->xsm->hardware->MovetoXY (
                                             R2INT(gapp->xsm->Inst->XA2Dig(gapp->xsm->data.s.sx)),
                                             R2INT(gapp->xsm->Inst->YA2Dig(gapp->xsm->data.s.sy)))
             ){
-                gapp->spm_update_all ();
+                //gapp->spm_update_all ();
                 // TIP POS UPDATE
                 //if (gapp->xsm->ActiveScan)
-                //        gapp->xsm->ActiveScan->auto_display();
+                //        gapp->xsm->ActiveScan->draw(); //auto_display();
+                last = NULL;
+                
                 return G_SOURCE_REMOVE;
         }
 
         // TIP POS UPDATE
         if (gapp->xsm->ActiveScan)
-                gapp->xsm->ActiveScan->auto_display();
+                gapp->xsm->ActiveScan->draw(); //auto_display();
         
         return G_SOURCE_CONTINUE;
 }
 
 void VObPoint::update_scanposition(){
 	double x,y;
+
+        if (!dragging_active)
+                return;
+
         vinfo->dIndex_from_BitmapPix (x,y, (double)xy[0], (double)xy[1]);
 
 	if (x < 0. || x >= vinfo->sc->mem2d->GetNx ())
@@ -1700,7 +1716,8 @@ void VObPoint::update_scanposition(){
 				gapp->xsm->data.s.sx, gapp->xsm->data.s.sy, 
 				SCAN_COORD_RELATIVE);
 
-        g_timeout_add (50, update_scanpos_idle, NULL);
+        gapp->spm_update_all ();
+        g_timeout_add (50, update_scanpos_idle, this);
 }
 
 

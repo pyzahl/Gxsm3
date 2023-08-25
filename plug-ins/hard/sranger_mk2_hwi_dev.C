@@ -2234,7 +2234,7 @@ void sranger_mk2_hwi_dev::write_dsp_feedback (
 		if (i==0){
 			dsp_feedback_mixer.setpoint[i] = (int)(round(gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->nAmpere2V (set_point[i])))); // Q23
                 }else if (i==1){
-                        dsp_feedback_mixer.setpoint[i] = (int)round(256.*round(gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->dHertz2V (set_point[i])))); // Q23
+                        dsp_feedback_mixer.setpoint[i] = (int)round(round(gapp->xsm->Inst->VoltIn2Dig (gapp->xsm->Inst->dHertz2V (set_point[i])))); // Q23
                 }else
 			dsp_feedback_mixer.setpoint[i] = (int)(round(gapp->xsm->Inst->VoltIn2Dig (set_point[i]))); // Q23
                 // dsp_feedback_mixer.setpoint[i] = (int)(round(gapp->xsm->Inst->VoltIn2Dig (set_point_factor[i]*set_point[i]))); // Q23
@@ -2242,6 +2242,7 @@ void sranger_mk2_hwi_dev::write_dsp_feedback (
 		//dsp_feedback_mixer.level[i]    = (int)(round(gapp->xsm->Inst->VoltIn2Dig (set_point_factor[i]*level[i])));
 		dsp_feedback_mixer.gain[i]     = float_2_sranger_q15 (gain[i]);
 		dsp_feedback_mixer.mode[i]     = transform_mode[i];
+                // g_message ("MK2 MIX MODE#%d = %d = 0x%x", i, dsp_feedback_mixer.mode[i], dsp_feedback_mixer.mode[i]);
 	}
 	// feedback settings
 	// Scale Regler Consts. with 1/VZ and convert to SR-Q15

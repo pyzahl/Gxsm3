@@ -30,6 +30,7 @@ import faulthandler; faulthandler.enable()
 version = "1.0.0"
 
 import gi
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib
 
 import cairo

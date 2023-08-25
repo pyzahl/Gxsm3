@@ -328,28 +328,45 @@ int DSPMoverControl::create_waveform (double amp, double duration, int space){
 	switch (mover_param.MOV_waveform_id){
 	case MOV_WAVE_SAWTOOTH:
                 PI_DEBUG_GP (DBG_L2, " ** SAWTOOTH WAVEFORM CALC\n");
-                if (pointing > 0) // wave for forward direction
+                if (pointing > 0){ // wave for forward direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
                                 for (int k=0; k<channels; ++k)
                                         mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(((double)(t<n2? t : t-n)/n2)+mover_param.Wave_offset));
                         }
-                else // wave for reverse direction
+                } else { // wave for reverse direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
                                 for (int k=0; k<channels; ++k)
                                         mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(((double)(t<n2? -t : n-t)/n2)+mover_param.Wave_offset));
                         }
+                }
 		break;
 	case MOV_WAVE_SINE:
+                PI_DEBUG_GP (DBG_L2, " ** SAWTOOTH WAVEFORM CALC\n");
+                if (pointing > 0){ // wave for forward direction
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(((double)(t<n2? t : t-n)/n2)+mover_param.Wave_offset));
+                        }
+                } else { // wave for reverse direction
+                        for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.){
+                                for (int k=0; k<channels; ++k)
+                                        mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*(((double)(t<n2? -t : n-t)/n2)+mover_param.Wave_offset));
+                        }
+                }
+		break;
+#if 0
                 PI_DEBUG_GP (DBG_L2, " ** SINE WAVEFORM CALC\n");
-                if (pointing > 0) // wave for forward direction
+                if (pointing > 0){ // wave for forward direction
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
                                 for (int k=0; k<channels; ++k)
                                         mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*((sin (k*phase*2.0*M_PI + (double)t*2.*M_PI/n))+mover_param.Wave_offset));
-                else
+                } else {
                         for (int i=0; i < mover_param.MOV_wave_len; i += channels, t+=1.)
                                 for (int k=0; k<channels; ++k)
                                         mover_param.MOV_waveform[i+k] = (short)round (SR_VFAC*amp*((sin (k*phase*2.0*M_PI - (double)t*2.*M_PI/n))+mover_param.Wave_offset));
-		break;
+                }
+                break;
+#endif
 	case MOV_WAVE_CYCLO:
 	case MOV_WAVE_CYCLO_PL:
 	case MOV_WAVE_CYCLO_MI:

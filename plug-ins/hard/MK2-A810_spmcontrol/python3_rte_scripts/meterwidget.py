@@ -37,7 +37,7 @@
 ## they respect the standard.
 
 import gi
-#gi.require_version("Gtk", "3.0")
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 import os		# use os because python IO is bugy
@@ -460,8 +460,7 @@ class Meter(Gtk.DrawingArea):
                         cr.move_to(pad+xp-width/2, 15)
                         cr.text_path(lab)
                         cr.stroke()
-        return False
-                        
+
 class Instrument(Gtk.Label):
     def __init__(self, parent, vb, ft="VU", l="Meter", u="dB", fmt="%+5.3f ", widget_scale=1.0):
         #Initialize the Widget
@@ -512,7 +511,7 @@ class Instrument(Gtk.Label):
         spantag  = "<span size=\"24000\" font_family=\"monospace\"><b>"   # .. color=\"#ff0000\"
         self.set_markup (spantag + self.format %value + "</b></span>")
         self.cur_value = value       
-        GLib.idle_add (self.meter.queue_draw())
+        self.meter.queue_draw()
         
     def set_reading_lohi_markup (self, value, lo, hi):
         spantag  = "<span size=\"24000\" font_family=\"monospace\"><b>"   # .. color=\"#ff0000\"

@@ -2690,7 +2690,8 @@ void Inet_Json_External_Scandata::update_graph (){
                                 for (int k=0; k<n; ++k)
                                         wave->set_xy_fast (k,xcenter-yr*scope_z[0]*gain_scale[0]*signal[0][k],-yr*scope_z[1]*gain_scale[1]*signal[1][k]);
                                 wave->draw (cr);
-                        } if (transport == 0 and scope_fft_on){ // add FFT plot for CH1,2
+                        }
+                        if (transport == 0 and scope_fft_on){ // add FFT plot for CH1,2
                                 const unsigned int fftlen = FFT_LEN; // use first N samples from buffer
                                 double tm = FFT_LEN/1024*bram_window_length;
                                 double fm = FFT_LEN/tm/2.;
@@ -2775,18 +2776,16 @@ void Inet_Json_External_Scandata::update_graph (){
                                 // dB/Hz ticks
                                 cursors->set_stroke_rgba (CAIRO_COLOR_MAGENTA_ID, 0.5);
                                 for (int db=(int)dB_hi; db >= -20*dB_mags; db -= 10){
-                                double y;
-                                valuestring = g_strdup_printf ("%4d dB/Hz", db);
-                                reading->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
-                                reading->set_text (scope_width - 70,  y=db_to_y ((double)db, dB_hi, y_hi, dB_mags), valuestring);
-                                g_free (valuestring);
-                                reading->draw (cr);
-                                cursors->set_xy_fast (0,xcenter+(scope_width)*(-0.5),y);
-                                cursors->set_xy_fast (1,xcenter+(scope_width*0.7)*(0.5),y);
-                                cursors->draw (cr);
-                        }
-
-                                
+                                        double y;
+                                        valuestring = g_strdup_printf ("%4d dB/Hz", db);
+                                        reading->set_stroke_rgba (CAIRO_COLOR_MAGENTA);
+                                        reading->set_text (scope_width - 70,  y=db_to_y ((double)db, dB_hi, y_hi, dB_mags), valuestring);
+                                        g_free (valuestring);
+                                        reading->draw (cr);
+                                        cursors->set_xy_fast (0,xcenter+(scope_width)*(-0.5),y);
+                                        cursors->set_xy_fast (1,xcenter+(scope_width*0.7)*(0.5),y);
+                                        cursors->draw (cr);
+                                }
                         }
                 }
                 delete wave;

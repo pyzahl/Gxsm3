@@ -184,6 +184,7 @@ inline void read_dp_process_time (int i){
 
 interrupt void dataprocess()
 {
+	DSP_LONG tmpL;
         unsigned long tmp1, tmp2;
 	int mi, i, k;
 // ============================================================
@@ -308,51 +309,64 @@ interrupt void dataprocess()
 					// Feedback Mixer -- data transform and delta computation, summing
 					feedback_mixer.delta = 0L;
 
+                                        
 					for (mi=0; mi<4; ++mi){
+
+                                                // negate?
+                                                if (feedback_mixer.mode[i] & 0x10) // negate feedback source?
+                                                        feedback_mixer.x = -AIC_IN(mi);
+                                                else 
+                                                        feedback_mixer.x = AIC_IN(mi);
+
 						// MIXER CHANNEL mi
-						switch (feedback_mixer.mode[mi]){
+						switch (feedback_mixer.mode[mi] & 0x0f){
 						case 3: // LOG
-							feedback_mixer.x = AIC_IN(mi);
 							asm_calc_mix_log ();
-							feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.lnx, feedback_mixer.setpoint_log[mi]), feedback_mixer.gain[mi]);
+                                                        tmpL = _ssub (feedback_mixer.lnx, feedback_mixer.setpoint_log[mi]);
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
 							break;
 						case 1: // LIN
-							feedback_mixer.x = AIC_IN(mi);
-							feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]), feedback_mixer.gain[mi]);
+							tmpL = _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]);
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
 							break;
-#ifdef OLDFUZZYLOGIC
-						case 9: // FUZZY
-							if (AIC_IN(mi) > feedback_mixer.level[mi]){
-								feedback_mixer.x = _ssub (AIC_IN(mi), feedback_mixer.level[mi]);
-								feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]), feedback_mixer.gain[mi]);
-							}
-							break;
-						case 11: // FUZZY LOG
-							if (AIC_IN(mi) > feedback_mixer.level[mi]){
-								feedback_mixer.x = _ssub (AIC_IN(mi), feedback_mixer.level[mi]);
-								asm_calc_mix_log ();
-								feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.lnx, feedback_mixer.setpoint[mi]), feedback_mixer.gain[mi]);
-							}
-							break;
-#else // new FUZZY Z-Pos Control
-                                                case 9: // CZ FUZZY LIN
-                                                        if (AIC_IN(mi) > feedback_mixer.level[mi]){
-                                                                feedback_mixer.x = AIC_IN(mi);
-                                                                feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]), feedback_mixer.gain[mi]);
-                                                        } else {
-                                                                feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback.z32neg>>16, feedback_mixer.Z_setpoint), feedback_mixer.gain[mi]);
+						case 5: // FUZZY
+							if (feedback_mixer.x > feedback_mixer.level[mi]){
+								feedback_mixer.x = _ssub (feedback_mixer.x, feedback_mixer.level[mi]);
+								tmpL = _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]);
+							} else {
+                                                                tmpL = 0L;
                                                         }
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
+							break;
+#if 0 // useless ??
+						case 7: // FUZZY LOG
+							if (feedback_mixer.x > feedback_mixer.level[mi]){
+								feedback_mixer.x = _ssub (feedback_mixer.x, feedback_mixer.level[mi]);
+								asm_calc_mix_log ();
+                                                                tmpL = _ssub (feedback_mixer.lnx, feedback_mixer.setpoint[mi]);
+							} else {
+                                                                tmpL = 0L;
+                                                        }
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
+							break;
+#endif
+                                                case 9: // CZ FUZZY LIN
+                                                        if (feedback_mixer.x > feedback_mixer.level[mi]){
+                                                                tmpL = _ssub (feedback_mixer.x, feedback_mixer.setpoint[mi]);
+                                                        } else {
+                                                                tmpL = _ssub (feedback.z32neg>>16, feedback_mixer.Z_setpoint);
+                                                        }
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
                                                         break;
                                                 case 11: // CZ FUZZY LOG
-                                                        if (abs (AIC_IN(mi)) > feedback_mixer.level[mi]){
-                                                                feedback_mixer.x = AIC_IN(mi);
+                                                        if (abs (feedback_mixer.x) > feedback_mixer.level[mi]){
                                                                 asm_calc_mix_log ();
-                                                                feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback_mixer.lnx, feedback_mixer.setpoint_log[mi]), feedback_mixer.gain[mi]);
+                                                                tmpL = _ssub (feedback_mixer.lnx, feedback_mixer.setpoint_log[mi]);
                                                         } else {
-                                                                feedback_mixer.delta = _smac(feedback_mixer.delta, _ssub (feedback.z32neg>>16, feedback_mixer.Z_setpoint), feedback_mixer.gain[mi]);
+                                                                tmpL = _ssub (feedback.z32neg>>16, feedback_mixer.Z_setpoint);
                                                         }
+                                                        feedback_mixer.delta = _smac(feedback_mixer.delta, tmpL, feedback_mixer.gain[mi]);
                                                         break;
-#endif                                                        
 						default: break; // OFF
 						}
 					}
@@ -361,7 +375,7 @@ interrupt void dataprocess()
 					feedback.delta =  _lsshl (feedback_mixer.delta, -15);
 					asm_feedback_from_delta ();
 					feedback.watch = 1; // OK, we did it! -- for actual watch fb activity
-				}
+                                }
 			}
 
 			read_dp_process_time (RT_TASK_FEEDBACK);
