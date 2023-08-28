@@ -2378,7 +2378,15 @@ static gboolean main_context_emit_toolbar_action_from_thread (gpointer user_data
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 
 	PI_DEBUG_GM (DBG_L2, "pyremote: main_context_emit_toolbar_action  >%s<", idle_data->string);
-       gapp->signal_emit_toolbar_action (idle_data->string);
+
+        if (!strcmp (idle_data->string, "Toolbar_Scan_Start")){
+                // CHECK FOR SCAN REPEAT OPTION SET, OVERRIDE AND DISABLE for this scanstart!
+                GSettings *global_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT ".global");
+                g_settings_set_int (global_settings, "math-global-share-variable-repeatmode-override", 1);
+                g_clear_object (&global_settings);
+        }
+
+        gapp->signal_emit_toolbar_action (idle_data->string);
 
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;

@@ -234,6 +234,13 @@
   </schema>
 
   <schema id="org.gnome.gxsm3.global" path="/org/gnome/gxsm3/global/">
+    <key name="math-global-share-variable-repeatmode-override" type="i">
+      <default>0</default>
+      <summary>repeat mode override/disable by pyremote</summary>
+      <description>
+        Shared parameter for plugin inter pluging controls via pyremote, etc.
+      </description>
+    </key>
     <key name="math-global-share-variable-radius" type="d">
       <default>6.0</default>
       <summary>math share radius</summary>
