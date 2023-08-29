@@ -4137,17 +4137,34 @@ static gboolean main_context_add_layer_information_from_thread (gpointer user_da
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 	gchar* info;
 	long layer = 0;
-
+        long nth = -1;
+        
+	if (!PyArg_ParseTuple(idle_data->args, "sll", &info, &layer, &nth)){
+                nth = -1;
+                idle_data->ret = -1;
+                UNSET_WAIT_JOIN_MAIN;
+                return G_SOURCE_REMOVE;
+        }
+        /*
 	if (!PyArg_ParseTuple(idle_data->args, "sl", &info, &layer)){
                 idle_data->ret = -1;
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
+        */
+        PI_DEBUG(DBG_L2, info << " to layer info, lv=" << layer << "  nth=" << nth);
 
-        PI_DEBUG(DBG_L2, info << " to layer info, lv=" << layer );
-        if (gapp->xsm->ActiveScan)
-                if(info && layer>=0 && layer<gapp->xsm->GetActiveScan() -> mem2d->GetNv())
-                       gapp->xsm->GetActiveScan() -> mem2d->add_layer_information ((int)layer, new LayerInformation (info));
+        if (nth >= 0)
+                if (gapp->xsm->ActiveScan)
+                        if(info && layer>=0 && layer<gapp->xsm->GetActiveScan() -> mem2d->GetNv()){
+                                LayerInformation *li = gapp->xsm->GetActiveScan() -> mem2d->get_layer_information_object ((int)nth);
+                                g_message ("%s",info);
+                                if (li) li->replace (info);
+                        }
+        else
+                if (gapp->xsm->ActiveScan)
+                        if(info && layer>=0 && layer<gapp->xsm->GetActiveScan() -> mem2d->GetNv())
+                                gapp->xsm->GetActiveScan() -> mem2d->add_layer_information ((int)layer, new LayerInformation (info));
 
         idle_data->ret = 0;
         UNSET_WAIT_JOIN_MAIN;
@@ -4384,7 +4401,7 @@ static PyMethodDef GxsmPyMethods[] = {
 	{"echo", remote_echo, METH_VARARGS, "Echo string to terminal. gxsm.echo('hello gxsm to terminal') "},
 	{"logev", remote_logev, METH_VARARGS, "Write string to Gxsm system log file and log monitor: gxsm.logev ('hello gxsm to logfile/monitor') "},
 	{"progress", remote_progress_info, METH_VARARGS, "Show/update gxsm progress info. fraction<0 init, 0..1 progress, >1 close: gxsm.progress ('Calculating...', fraction) "},
-	{"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation to active scan. gxsm.add_layerinformation('Text',ch)"}, 
+	{"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation to active scan. gxsm.add_layerinformation('Text', ch, nth)"}, 
 	{"da0", remote_da0, METH_VARARGS, "Da0. -- N/A for SRanger"},
 	{"signal_emit", remote_signal_emit, METH_VARARGS, "Action-String. "},
 	{"sleep", remote_sleep, METH_VARARGS, "Sleep N/10s: gxsm.sleep (N) "},

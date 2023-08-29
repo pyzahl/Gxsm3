@@ -468,40 +468,46 @@ static gboolean edge_run(Scan *Src, Scan *Dest)
 // check for multi dim calls, make sure not to ask user for paramters for every layer or time step!
         static gboolean ask_configure = true;
         static double ask_again = 1.0;
-        ask_again = ask_configure ? 1.0 : 0.0; 
-	if ((Src->mem2d->get_t_index () == 0 && Src->mem2d->GetLayer () == 0) || !edge_kernel || !ada_kernel || ask_configure) {
 
-                g_message("edge_run for ti=%d, vi=%d", Src->mem2d->get_t_index (), Src->mem2d->GetLayer ());
+        double gr;
+        GSettings *global_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT ".global");
+        // looup radius in settings
+        gr = g_settings_get_double (global_settings, "math-global-share-variable-radius");
+        g_settings_set_double (global_settings, "math-global-share-variable-radius", -1.0); // invalide for next time
+        g_clear_object (&global_settings);
+        if (gr >= 0.0){ // valid, use it and no more questions
+                edge_radius = gr;
+        } else {
+                ask_again = ask_configure ? 1.0 : 0.0; 
+                if ((Src->mem2d->get_t_index () == 0 && Src->mem2d->GetLayer () == 0) || !edge_kernel || !ada_kernel || ask_configure) {
 
-                const gchar* config_label[7] = { "Radius", "Adaptive Threashold", "Background f0", "Zero Replace Mode", "Krn Sigma", "Ask Again", NULL };
-                const gchar* config_info[6]  = { "Edge Kernel Radius. Convol Matrix[2R+2, 2R+1]", "Adaptive Threashold Value", "Replace Background (0) by f0", "Zero Replace none: 0, by value:1, auto:2", "Kernel Sigma x r/2", "Ask for filter setup again" };
-                UnitObj *config_units[6] { gapp->xsm->Unity,  gapp->xsm->data.Zunit, gapp->xsm->data.Zunit, gapp->xsm->Unity, gapp->xsm->Unity, gapp->xsm->Unity};
-                double config_minv[6] = { -1., -1e10, -1e10, 0., -10., -1};
-                double config_maxv[6] = { Src->mem2d->GetNx()/10., 1e10, 1e10, 10., 10., 1 };
-                const gchar* config_fmt[6]  = { ".0f", "g", "g", "g", "g", ".0f" };
-                double *config_values[6] = { &edge_radius_set, &adaptive_threashold, &zero_replace_value, &zero_replace_mode, &krn_sigma, &ask_again };    // Radius, Adaptive Threashold, Mode
+                        edge_radius_set = edge_radius;
+                        g_message("edge_run for ti=%d, vi=%d", Src->mem2d->get_t_index (), Src->mem2d->GetLayer ());
 
-                gapp->ValueRequestList ("Edge Filter Configuration",
-                                        config_label, config_info, config_units,
-                                        config_minv, config_maxv, config_fmt,
-                                        config_values
-                                        );
+                        const gchar* config_label[7] = { "Radius", "Adaptive Threashold", "Background f0", "Zero Replace Mode", "Krn Sigma", "Ask Again", NULL };
+                        const gchar* config_info[6]  = { "Edge Kernel Radius. Convol Matrix[2R+2, 2R+1]", "Adaptive Threashold Value", "Replace Background (0) by f0", "Zero Replace none: 0, by value:1, auto:2", "Kernel Sigma x r/2", "Ask for filter setup again" };
+                        UnitObj *config_units[6] { gapp->xsm->Unity,  gapp->xsm->data.Zunit, gapp->xsm->data.Zunit, gapp->xsm->Unity, gapp->xsm->Unity, gapp->xsm->Unity};
+                        double config_minv[6] = { -1., -1e10, -1e10, 0., -10., -1};
+                        double config_maxv[6] = { Src->mem2d->GetNx()/10., 1e10, 1e10, 10., 10., 1 };
+                        const gchar* config_fmt[6]  = { ".0f", "g", "g", "g", "g", ".0f" };
+                        double *config_values[6] = { &edge_radius_set, &adaptive_threashold, &zero_replace_value, &zero_replace_mode, &krn_sigma, &ask_again };    // Radius, Adaptive Threashold, Mode
 
-                ask_configure = ask_again != 0.0 ? true : false; 
-        }
-        
+                        gapp->ValueRequestList ("Edge Filter Configuration",
+                                                config_label, config_info, config_units,
+                                                config_minv, config_maxv, config_fmt,
+                                                config_values
+                                                );
+
+                        ask_configure = ask_again != 0.0 ? true : false; 
+                }
+                edge_radius = edge_radius_set;
+        }        
         if (edge_kernel)
                 free (edge_kernel);
 
         if (ada_kernel)
                 free (ada_kernel);
 
-        GSettings *global_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT ".global");
-        if (edge_radius_set < 0.) // get parameter via settings!
-                edge_radius = g_settings_get_double (global_settings, "math-global-share-variable-radius");
-                //g_settings_set_double (global_settings, "math-global-share-variable-radius", edge_radius);
-        else
-                edge_radius = edge_radius_set;
         g_clear_object (&global_settings);
                 
         g_message ("Setup MemAdaptiveTestKrn");

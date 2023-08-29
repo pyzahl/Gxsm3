@@ -1360,6 +1360,19 @@ void  Mem2d::add_layer_information (int lv, LayerInformation *li){
 	}
 }
 
+LayerInformation* Mem2d::get_layer_information_object (int nth){
+	int lv=GetLayer ();
+	if (lv < nlyi){
+		XSM_DEBUG (DBG_L6, "Mem2d::get_layer_information_object*[" << lv << "]");
+		int num = g_list_length (layer_information_list[lv]);
+		if (nth < num && nth >= 0){
+			LayerInformation *li = (LayerInformation*) g_list_nth_data (layer_information_list[lv], nth);
+			return li;
+		} else return NULL;
+	}
+        return NULL;
+}
+
 gchar *Mem2d::get_layer_information (int nth){
 	int lv=GetLayer ();
 	if (lv < nlyi){

@@ -118,8 +118,21 @@ public:
 	// create layer info tuple from ncf file from specified coordinates ti (time-index), v (value-index), k (layer-info-index)
 	LayerInformation (NcVar* ncv_description, NcVar* ncv_format, NcVar* ncv_osd_format, NcVar* ncv_values, int ti, int v, int k);
 	~LayerInformation ();
+        void replace (const gchar *description, const char *string=NULL){
+                g_free(desc);
+                if (string)
+                        desc = g_strconcat (description, ": ", string, NULL);
+                else
+                        desc = g_strdup (description);
+                g_free(fmt);
+                fmt = NULL;
+                g_free(fmtosd);
+                fmtosd = NULL;
+                num=0;
+        };
 	gchar *get (gboolean osd=FALSE);
-	double valule (int i=0){ return i==0?val[0]:val[1]; };
+	double get_value (int i=0){ return i==0?val[0]:val[1]; };
+	void set_value (double x, int i=0){ if (i<2 && i >= 0) val[i]=x; };
 	int get_len_description () { return desc?strlen (desc):0; };
 	int get_len_format () { return fmt?strlen (fmt):0; };
 	int get_len_osd_format () { return fmtosd?strlen (fmtosd):0; };
@@ -413,8 +426,9 @@ public:
 	void add_layer_information (int lv, LayerInformation *li);
 	void remove_layer_information () { L_info_new (); };
 	gchar *get_layer_information (int nth);
-	gchar *get_layer_information_osd (int nth);
 	gchar *get_layer_information (int lv, int nth);
+	gchar *get_layer_information_osd (int nth);
+	LayerInformation *get_layer_information_object (int lv);
 	void copy_layer_information (Mem2d *m, int vi=0);
 	void eval_max_sizes_layer_information (int* max_dim_description, int* max_dim_format, int* max_dim_format_osd, int* max_nlyi, int* max_nlyiv);
 	void start_store_layer_information (NcFile* ncf, 
