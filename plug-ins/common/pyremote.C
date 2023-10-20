@@ -4695,7 +4695,11 @@ void py_gxsm_console::kill(GtkToggleButton *btn, gpointer user_data)
         
                 //Py_AddPendingCall(-1);
                 PI_DEBUG_GM (DBG_L2,  "trying to interrup interpreter, sending SIGINT.");
-                PyErr_SetInterrupt ();
+                //PyErr_SetInterrupt ();
+
+                PyErr_SetString(PyExc_KeyboardInterrupt, "Abort");
+                PyErr_CheckSignals();
+
 #if 0
                 PyGILState_STATE state = PyGILState_Ensure();    
                 int r = Py_AddPendingCall(&Stop, NULL); // inject our Stop routine
