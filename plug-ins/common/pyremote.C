@@ -1548,53 +1548,53 @@ static void pyremote_configure( void );
 static void pyremote_cleanup( void );
 static void pyremote_run(GtkWidget *w, void *data);
 
- // Fill in the GxsmPlugin Description here
+// Fill in the GxsmPlugin Description here
 GxsmPlugin pyremote_pi = {
-	  NULL,                   // filled in and used by Gxsm, don't touch !
-	  NULL,                   // filled in and used by Gxsm, don't touch !
-	  0,                      // filled in and used by Gxsm, don't touch !
-	  NULL,                   // The Gxsm-App Class Ref.pointer (called "gapp" in Gxsm) is
-	  // filled in here by Gxsm on Plugin load,
-	  // just after init() is called !!!
-	  // ----------------------------------------------------------------------
-	  // Plugins Name, CodeStly is like: Name-M1S[ND]|M2S-BG|F1D|F2D|ST|TR|Misc
-	  (char *)"Pyremote",
-	  NULL,
-	  // Description, is shown by PluginViewer (Plugin: listplugin, Tools->Plugin Details)
-	  (char *)"Remote control",
-	  // Author(s)
-	  (char *) "Stefan Schroeder",
-	  // Menupath to position where it is appended to
-	  (char *)"tools-section",
-	  // Menuentry
-	  N_("Pyremote Console"),
-	  // help text shown on menu
-	  N_("Python Remote Control Console"),
-	  // more info...
-	  (char *)"See Manual.",
-	  NULL,          // error msg, plugin may put error status msg here later
-	  NULL,          // Plugin Status, managed by Gxsm, plugin may manipulate it too
-	  // init-function pointer, can be "NULL",
-	  // called if present at plugin load
-	  pyremote_init,
-	  // query-function pointer, can be "NULL",
-	  // called if present after plugin init to let plugin manage it install itself
-	  NULL, // query should be "NULL" for Gxsm-Math-Plugin !!!
-	  // about-function, can be "NULL"
-	  // can be called by "Plugin Details"
-	  pyremote_about,
-	  // configure-function, can be "NULL"
-	  // can be called by "Plugin Details"
-	  pyremote_configure,
-	  // run-function, can be "NULL", if non-Zero and no query defined,
-	  // it is called on menupath->"plugin"
-	  pyremote_run, // run should be "NULL" for Gxsm-Math-Plugin !!!
-	  // cleanup-function, can be "NULL"
-	  // called if present at plugin removal
-	  NULL, // direct menu entry callback1 or NULL
-	  NULL, // direct menu entry callback2 or NULL
+        NULL,                   // filled in and used by Gxsm, don't touch !
+        NULL,                   // filled in and used by Gxsm, don't touch !
+        0,                      // filled in and used by Gxsm, don't touch !
+        NULL,                   // The Gxsm-App Class Ref.pointer (called "gapp" in Gxsm) is
+                                // filled in here by Gxsm on Plugin load,
+                                // just after init() is called !!!
+        // ----------------------------------------------------------------------
+        // Plugins Name, CodeStly is like: Name-M1S[ND]|M2S-BG|F1D|F2D|ST|TR|Misc
+        (char *)"Pyremote",
+        NULL,
+        // Description, is shown by PluginViewer (Plugin: listplugin, Tools->Plugin Details)
+        (char *)"Remote control",
+        // Author(s)
+        (char *) "Stefan Schroeder",
+        // Menupath to position where it is appended to
+        (char *)"tools-section",
+        // Menuentry
+        N_("Pyremote Console"),
+        // help text shown on menu
+        N_("Python Remote Control Console"),
+        // more info...
+        (char *)"See Manual.",
+        NULL,          // error msg, plugin may put error status msg here later
+        NULL,          // Plugin Status, managed by Gxsm, plugin may manipulate it too
+        // init-function pointer, can be "NULL",
+        // called if present at plugin load
+        pyremote_init,
+        // query-function pointer, can be "NULL",
+        // called if present after plugin init to let plugin manage it install itself
+        NULL, // query should be "NULL" for Gxsm-Math-Plugin !!!
+        // about-function, can be "NULL"
+        // can be called by "Plugin Details"
+        pyremote_about,
+        // configure-function, can be "NULL"
+        // can be called by "Plugin Details"
+        pyremote_configure,
+        // run-function, can be "NULL", if non-Zero and no query defined,
+        // it is called on menupath->"plugin"
+        pyremote_run, // run should be "NULL" for Gxsm-Math-Plugin !!!
+        // cleanup-function, can be "NULL"
+        // called if present at plugin removal
+        NULL, // direct menu entry callback1 or NULL
+        NULL, // direct menu entry callback2 or NULL
 
-	  pyremote_cleanup
+        pyremote_cleanup
 };
 
 class py_gxsm_console;
@@ -1608,8 +1608,8 @@ static const char *about_text = N_("Gxsm Plugin\n\n"
 
 // Symbol "get_gxsm_plugin_info" is resolved by dlsym from Gxsm, used to get Plugin's info!!
 GxsmPlugin *get_gxsm_plugin_info ( void ){
-	pyremote_pi.description = g_strdup_printf(N_("Gxsm pyremote plugin %s"), VERSION);
-	return &pyremote_pi;
+        pyremote_pi.description = g_strdup_printf(N_("Gxsm pyremote plugin %s"), VERSION);
+        return &pyremote_pi;
 }
 
 // 5.) Start here with the plugins code, vars def., etc.... here.
@@ -1626,23 +1626,22 @@ GxsmPlugin *get_gxsm_plugin_info ( void ){
 // about-Function
 static void pyremote_about(void)
 {
-	const gchar *authors[] = { pyremote_pi.authors, NULL};
-	gtk_show_about_dialog (NULL, 
-			       "program-name",  pyremote_pi.name,
-			       "version", VERSION,
-			       "license", GTK_LICENSE_GPL_3_0,
-			       "comments", about_text,
-			       "authors", authors,
-			       NULL
-			       );
+        const gchar *authors[] = { pyremote_pi.authors, NULL};
+        gtk_show_about_dialog (NULL,
+                               "program-name",  pyremote_pi.name,
+                               "version", VERSION,
+                               "license", GTK_LICENSE_GPL_3_0,
+                               "comments", about_text,
+                               "authors", authors,
+                               NULL);
 }
 
 // configure-Function
 static void pyremote_configure(void)
 {
-	if(pyremote_pi.app){
-		pyremote_pi.app->message("Pyremote Plugin Configuration");
-	}
+        if(pyremote_pi.app){
+                pyremote_pi.app->message("Pyremote Plugin Configuration");
+        }
 }
 
 typedef struct {
@@ -1686,9 +1685,9 @@ typedef struct {
 } IDLE_from_thread_data;
 
 
-class py_gxsm_console : public AppBase{
+class py_gxsm_console : public AppBase {
 public:
-	py_gxsm_console ():AppBase(){
+        py_gxsm_console ():AppBase(){
                 script_filename = NULL;
                 gui_ready = false;
                 user_script_running = 0;
@@ -1701,10 +1700,10 @@ public:
                 initialize ();
                 g_mutex_init (&mutex);
         };
-	virtual ~py_gxsm_console ();
+        virtual ~py_gxsm_console ();
         
         virtual void AppWindowInit(const gchar *title);
-	
+
         void initialize(void);
         PyObject* run_string(const char *cmd, int type, PyObject *g, PyObject *l);
         void show_stderr(const gchar *str);
@@ -1801,14 +1800,14 @@ public:
                                                                  tmp_script_filename,
                                                                  err->message);
                                 append (message);
-                               gapp->warning (message);
+                                gapp->warning (message);
                                 g_free(message);
                         }
                 } else {
                         gchar *message = g_strdup_printf("Action script/library %s not yet defined.\nPlease define action script using the python console.", tmp_script_filename);
                         g_message ("%s", message);
                         append(message);
-                       gapp->warning (message);
+                        gapp->warning (message);
                         g_free(message);
                 }
                 g_free (tmp_script_filename);
@@ -2017,7 +2016,7 @@ private:
 
 /* stolen from app_remote.C */
 static void Check_ec(Gtk_EntryControl* ec, remote_args* ra){
-	ec->CheckRemoteCmd (ra); // only reading PCS is thread safe!
+        ec->CheckRemoteCmd (ra); // only reading PCS is thread safe!
 };
 
 static void Check_conf(GnomeResPreferences* grp, remote_args* ra){
@@ -2026,14 +2025,14 @@ static void Check_conf(GnomeResPreferences* grp, remote_args* ra){
 };
 
 static void CbAction_ra(remote_action_cb* ra, gpointer arglist){
-	if(ra->cmd && ((gchar**)arglist)[1])
-		if(! strcmp(((gchar**)arglist)[1], ra->cmd)){
-			if (ra->data)
-				(*ra->RemoteCb) (ra->widget, ra->data);
-			else
-				(*ra->RemoteCb) (ra->widget, arglist);
-			// see above and pcs.h
-		}
+        if(ra->cmd && ((gchar**)arglist)[1])
+                if(! strcmp(((gchar**)arglist)[1], ra->cmd)){
+                        if (ra->data)
+                                (*ra->RemoteCb) (ra->widget, ra->data);
+                        else
+                                (*ra->RemoteCb) (ra->widget, arglist);
+                        // see above and pcs.h
+                }
 };
 
 static PyObject* remote_help(PyObject *self, PyObject *args);
@@ -2054,89 +2053,89 @@ static PyObject* remote_help(PyObject *self, PyObject *args);
 */
 static PyObject* remote_listr(PyObject *self, PyObject *args)
 {
-	int slen = g_slist_length(gapp->RemoteEntryList ); // How many entries?
+        int slen = g_slist_length(gapp->RemoteEntryList ); // How many entries?
 
-	// This will be our return object with as many slots as input list has:
-	PyObject *ret = PyTuple_New(slen);
-	GSList* tmp =gapp->RemoteEntryList;
-	for (int n=0; n<slen; n++){
+// This will be our return object with as many slots as input list has:
+        PyObject *ret = PyTuple_New(slen);
+        GSList* tmp =gapp->RemoteEntryList;
+        for (int n=0; n<slen; n++){
                 Gtk_EntryControl* ec = (Gtk_EntryControl*)tmp->data; // Look at data item in GSList.
                 PyTuple_SetItem(ret, n, PyUnicode_FromString(ec->get_refname())); // Add Refname to Return-list
                 tmp = g_slist_next(tmp);
         }
 
-	return ret;
+        return ret;
 }
 
 static PyObject* remote_lista(PyObject *self, PyObject *args)
 {
-	int slen = g_slist_length(gapp->RemoteActionList ); // How many entries?
+        int slen = g_slist_length(gapp->RemoteActionList ); // How many entries?
 
-	// This will be our return object with as many slots as input list has:
-	PyObject *ret = PyTuple_New(slen);
-	GSList* tmp =gapp->RemoteActionList;
-	for (int n=0; n<slen; n++){
+        // This will be our return object with as many slots as input list has:
+        PyObject *ret = PyTuple_New(slen);
+        GSList* tmp =gapp->RemoteActionList;
+        for (int n=0; n<slen; n++){
                 remote_action_cb* ra = (remote_action_cb*)tmp->data; // Look at data item in GSList.
                 PyTuple_SetItem(ret, n, PyUnicode_FromString(ra->cmd)); // Add Refname to Return-list
                 tmp = g_slist_next(tmp);
         }
 
-	return ret;
+        return ret;
 }
 
 static PyObject* remote_gets(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Getting as string ");
-	gchar *parameter;
+        PI_DEBUG(DBG_L2, "pyremote: Getting as string ");
+        gchar *parameter;
 
-	if (!PyArg_ParseTuple(args, "s", &parameter))
-		return Py_BuildValue("i", -1);
+        if (!PyArg_ParseTuple(args, "s", &parameter))
+                return Py_BuildValue("i", -1);
 
-	int parameterlen = strlen(parameter);
-	int slen = g_slist_length(gapp->RemoteEntryList );
+        int parameterlen = strlen(parameter);
+        int slen = g_slist_length(gapp->RemoteEntryList );
 
-	gchar *ret = NULL;
+        gchar *ret = NULL;
 
-	GSList* tmp =gapp->RemoteEntryList;
-	for (int n=0; n<slen; n++)
-		{
-			Gtk_EntryControl* ec = (Gtk_EntryControl*)tmp->data;
+        GSList* tmp =gapp->RemoteEntryList;
+        for (int n=0; n<slen; n++)
+        {
+                Gtk_EntryControl* ec = (Gtk_EntryControl*)tmp->data;
 
-			if (strncmp(parameter, ec->get_refname(), parameterlen) == 0)
-				{
-					ret = g_strdup(ec->Get_UsrString());
-				}
-			tmp = g_slist_next(tmp);
-		}
+                if (strncmp(parameter, ec->get_refname(), parameterlen) == 0)
+                {
+                        ret = g_strdup(ec->Get_UsrString());
+                }
+                tmp = g_slist_next(tmp);
+        }
 
-	if (ret == NULL) // If the parameter doesn't exist.
-		{
-			ret = g_strdup("ERROR");
-		}
+        if (ret == NULL) // If the parameter doesn't exist.
+        {
+                ret = g_strdup("ERROR");
+        }
 
-	return Py_BuildValue("s", ret);
+        return Py_BuildValue("s", ret);
 }
 
 
 // Getting value in current user unit as plain double number -- could also/option get as string with unit
 static PyObject* remote_get(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Getting ");
-	gchar *parameter;
-	remote_args ra;
-	ra.qvalue = 0.;
+        PI_DEBUG(DBG_L2, "pyremote: Getting ");
+        gchar *parameter;
+        remote_args ra;
+        ra.qvalue = 0.;
 
-	if (!PyArg_ParseTuple(args, "s", &parameter))
-		return Py_BuildValue("i", -1);
+        if (!PyArg_ParseTuple(args, "s", &parameter))
+                return Py_BuildValue("i", -1);
 
-	PI_DEBUG(DBG_L2, parameter << " query" );
+        PI_DEBUG(DBG_L2, parameter << " query" );
 
-	ra.qvalue = 0.;
-	gchar *list[] = {(gchar *)"get", parameter, NULL};
-	ra.arglist = list;
+        ra.qvalue = 0.;
+        gchar *list[] = {(gchar *)"get", parameter, NULL};
+        ra.arglist = list;
 
-	g_slist_foreach(gapp->RemoteEntryList, (GFunc) Check_ec, (gpointer)&ra);
-	PI_DEBUG(DBG_L2, parameter << " query result: " << ra.qvalue );
+        g_slist_foreach(gapp->RemoteEntryList, (GFunc) Check_ec, (gpointer)&ra);
+        PI_DEBUG(DBG_L2, parameter << " query result: " << ra.qvalue );
 
         if (ra.qstr)
                 return Py_BuildValue("s", ra.qstr);
@@ -2148,14 +2147,14 @@ static gboolean main_context_set_entry_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
         
-	PI_DEBUG_GM (DBG_L2, "pyremote: main_context_set_entry_from_thread start %s %s %s", idle_data->ra.arglist[0], idle_data->ra.arglist[1], idle_data->ra.arglist[2] );
+        PI_DEBUG_GM (DBG_L2, "pyremote: main_context_set_entry_from_thread start %s %s %s", idle_data->ra.arglist[0], idle_data->ra.arglist[1], idle_data->ra.arglist[2] );
         // check PCS entries
-	g_slist_foreach (gapp->RemoteEntryList, (GFunc) Check_ec, (gpointer)&(idle_data->ra));
+        g_slist_foreach (gapp->RemoteEntryList, (GFunc) Check_ec, (gpointer)&(idle_data->ra));
 
         // check current active/open CONFIGURE elements
-	g_slist_foreach (gapp->RemoteConfigureList, (GFunc) Check_conf, (gpointer)&(idle_data->ra));
+        g_slist_foreach (gapp->RemoteConfigureList, (GFunc) Check_conf, (gpointer)&(idle_data->ra));
 
-	PI_DEBUG_GM (DBG_L2, "pyremote: main_context_set_entry_from_thread end");
+        PI_DEBUG_GM (DBG_L2, "pyremote: main_context_set_entry_from_thread end");
         UNSET_WAIT_JOIN_MAIN;
         
         return G_SOURCE_REMOVE;
@@ -2163,45 +2162,45 @@ static gboolean main_context_set_entry_from_thread (gpointer user_data){
 
 static PyObject* remote_set(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Setting ");
-	gchar *parameter, *value;
+        PI_DEBUG(DBG_L2, "pyremote: Setting ");
+        gchar *parameter, *value;
         IDLE_from_thread_data idle_data;
  
-	if (!PyArg_ParseTuple(args, "ss", &parameter, &value))
-		return Py_BuildValue("i", -1);
+        if (!PyArg_ParseTuple(args, "ss", &parameter, &value))
+                return Py_BuildValue("i", -1);
 
-	PI_DEBUG_GM (DBG_L2, "%s to %s", parameter, value );
+        PI_DEBUG_GM (DBG_L2, "%s to %s", parameter, value );
 
-	idle_data.ra.qvalue = 0.;
-	gchar *list[] = { (char *)"set", parameter, value, NULL };
-	idle_data.ra.arglist = list;
-	idle_data.wait_join = true;
+        idle_data.ra.qvalue = 0.;
+        gchar *list[] = { (char *)"set", parameter, value, NULL };
+        idle_data.ra.arglist = list;
+        idle_data.wait_join = true;
 
-	PI_DEBUG_GM (DBG_L2, "IDLE START" );
+        PI_DEBUG_GM (DBG_L2, "IDLE START" );
         g_idle_add (main_context_set_entry_from_thread, (gpointer)&idle_data);
-	PI_DEBUG_GM (DBG_L2, "IDLE WAIT JOIN" );
+        PI_DEBUG_GM (DBG_L2, "IDLE WAIT JOIN" );
         WAIT_JOIN_MAIN;
-	PI_DEBUG_GM (DBG_L2, "IDLE DONE" );
+        PI_DEBUG_GM (DBG_L2, "IDLE DONE" );
 
-	return Py_BuildValue("i", 0);
+        return Py_BuildValue("i", 0);
 }
 
 static gboolean main_context_action_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gchar *parameter=NULL;
+        gchar *parameter=NULL;
         gchar *value=NULL;
         idle_data->ret = -1;
 
-	if (!PyArg_ParseTuple(idle_data->args, "s|s", &parameter, &value)){
+        if (!PyArg_ParseTuple(idle_data->args, "s|s", &parameter, &value)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
 
         PI_DEBUG(DBG_L2, "pyremote Action ** idle cb: value:" << parameter << ", " << (value?value:"N/A") );
 
-	gchar *list[] = {(char *)"action", parameter, value, NULL};
-	g_slist_foreach(gapp->RemoteActionList, (GFunc) CbAction_ra, (gpointer)list);
+        gchar *list[] = {(char *)"action", parameter, value, NULL};
+        g_slist_foreach(gapp->RemoteActionList, (GFunc) CbAction_ra, (gpointer)list);
         idle_data->ret = 0;
 
         UNSET_WAIT_JOIN_MAIN;
@@ -2210,7 +2209,7 @@ static gboolean main_context_action_from_thread (gpointer user_data){
 
 static PyObject* remote_action(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Action ") ;
+        PI_DEBUG(DBG_L2, "pyremote: Action ") ;
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
@@ -2225,8 +2224,8 @@ static gboolean main_context_idle_rtquery (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATIONS
 
-	double u,v,w;
-	gint64 ret = gapp->xsm->hardware->RTQuery ( idle_data->string, u,v,w);
+        double u,v,w;
+        gint64 ret = gapp->xsm->hardware->RTQuery ( idle_data->string, u,v,w);
         idle_data->vec[0]=u;
         idle_data->vec[1]=v;
         idle_data->vec[2]=w;
@@ -2239,7 +2238,7 @@ static gboolean main_context_idle_rtquery (gpointer user_data){
 
 static gint64 idle_rtquery(const gchar *m, double &x, double &y, double &z)
 {
-	PI_DEBUG(DBG_L2, "IDLE RTQuery ") ;
+        PI_DEBUG(DBG_L2, "IDLE RTQuery ") ;
         IDLE_from_thread_data idle_data;
         idle_data.string = m;
         idle_data.wait_join = true;
@@ -2271,16 +2270,16 @@ static gint64 idle_rtquery(const gchar *m, double &x, double &y, double &z)
 static gboolean main_context_rtquery_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gchar *parameter=NULL;
+        gchar *parameter=NULL;
         idle_data->ret = -1;
 
-	if (!PyArg_ParseTuple(idle_data->args, "s", &parameter)){
+        if (!PyArg_ParseTuple(idle_data->args, "s", &parameter)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
 
-	double u,v,w;
-	gint64 ret = gapp->xsm->hardware->RTQuery (parameter, u,v,w);
+        double u,v,w;
+        gint64 ret = gapp->xsm->hardware->RTQuery (parameter, u,v,w);
         idle_data->c=parameter[0];
         idle_data->vec[0]=u;
         idle_data->vec[1]=v;
@@ -2294,7 +2293,7 @@ static gboolean main_context_rtquery_from_thread (gpointer user_data){
 
 static PyObject* remote_rtquery(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: RTQuery ") ;
+        PI_DEBUG(DBG_L2, "pyremote: RTQuery ") ;
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
@@ -2313,12 +2312,12 @@ static PyObject* remote_rtquery(PyObject *self, PyObject *args)
 // asks HwI via RTQuery for real time watches -- depends on HwI and it's capabilities/availabel options
 static PyObject* remote_y_current(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: y_current ") ;
-	//gchar *parameter;
+        PI_DEBUG(DBG_L2, "pyremote: y_current ") ;
+//gchar *parameter;
 
-	gint y =gapp->xsm->hardware->RTQuery ();
+        gint y =gapp->xsm->hardware->RTQuery ();
 
-	return Py_BuildValue("i", y);
+        return Py_BuildValue("i", y);
 }
 
 static gboolean main_context_remote_moveto_scan_xy_from_thread (gpointer user_data){
@@ -2341,14 +2340,14 @@ static gboolean main_context_remote_moveto_scan_xy_from_thread (gpointer user_da
 
 static PyObject* remote_moveto_scan_xy(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Moveto Scan XY ");
-	//remote_args ra;
-	double x, y;
+        PI_DEBUG(DBG_L2, "pyremote: Moveto Scan XY ");
+//remote_args ra;
+        double x, y;
         
-	if (!PyArg_ParseTuple(args, "dd", &x, &y))
-		return Py_BuildValue("i", -1);
+        if (!PyArg_ParseTuple(args, "dd", &x, &y))
+                return Py_BuildValue("i", -1);
 
-	PI_DEBUG(DBG_L2, x << ", " << y );
+        PI_DEBUG(DBG_L2, x << ", " << y );
 
         if (x >= -gapp->xsm->data.s.rx/2 && x <=gapp->xsm->data.s.rx/2 &&
             y >= -gapp->xsm->data.s.ry/2 && y <=gapp->xsm->data.s.ry/2){
@@ -2377,7 +2376,7 @@ static gboolean main_context_emit_toolbar_action_from_thread (gpointer user_data
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 
-	PI_DEBUG_GM (DBG_L2, "pyremote: main_context_emit_toolbar_action  >%s<", idle_data->string);
+        PI_DEBUG_GM (DBG_L2, "pyremote: main_context_emit_toolbar_action  >%s<", idle_data->string);
 
         if (!strcmp (idle_data->string, "Toolbar_Scan_Start")){
                 // CHECK FOR SCAN REPEAT OPTION SET, OVERRIDE AND DISABLE for this scanstart!
@@ -2394,15 +2393,15 @@ static gboolean main_context_emit_toolbar_action_from_thread (gpointer user_data
 
 static PyObject* remote_startscan(PyObject *self, PyObject *args)
 {
-	PI_DEBUG_GM (DBG_L2, "pyremote: Starting scan");
+        PI_DEBUG_GM (DBG_L2, "pyremote: Starting scan");
         IDLE_from_thread_data idle_data;
         idle_data.string = "Toolbar_Scan_Start";
         idle_data.wait_join = true;
         g_idle_add (main_context_emit_toolbar_action_from_thread, (gpointer)&idle_data);
-	PI_DEBUG_GM (DBG_L2, "pyremote: startscan idle job initiated");
+        PI_DEBUG_GM (DBG_L2, "pyremote: startscan idle job initiated");
         WAIT_JOIN_MAIN;
-	PI_DEBUG_GM (DBG_L2, "pyremote: startscan idle job completed");
-	return Py_BuildValue("i", 0);
+        PI_DEBUG_GM (DBG_L2, "pyremote: startscan idle job completed");
+        return Py_BuildValue("i", 0);
 }
 
 static gboolean main_context_createscan_from_thread (gpointer user_data){
@@ -2410,15 +2409,15 @@ static gboolean main_context_createscan_from_thread (gpointer user_data){
 
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
         long ch;
-	long sizex, sizey, sizev;
-	double rangex, rangey;
-	PyObject *obj;
+        long sizex, sizey, sizev;
+        double rangex, rangey;
+        PyObject *obj;
         long append=0;
 
         idle_data->ret = -1;
         
         sizev=1; // try xyv
-	if(!PyArg_ParseTuple (idle_data->args, "llllddOl", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj, &append)){
+        if(!PyArg_ParseTuple (idle_data->args, "llllddOl", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj, &append)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
@@ -2441,10 +2440,10 @@ static gboolean main_context_createscan_from_thread (gpointer user_data){
         g_message ("Create Scan: array len=%ld OK.", view.len / sizeof(long));
         
 
-	//Scan *dst;
-	//gapp->xsm->ActivateFreeChannel();
-	//dst =gapp->xsm->GetActiveScan();
-	Scan *dst =gapp->xsm->GetScanChannel (ch);
+//Scan *dst;
+//gapp->xsm->ActivateFreeChannel();
+//dst =gapp->xsm->GetActiveScan();
+        Scan *dst =gapp->xsm->GetScanChannel (ch);
 
         if (dst){
                 g_message ("Resize");
@@ -2508,7 +2507,7 @@ static gboolean main_context_createscan_from_thread (gpointer user_data){
                 } else
                         dst->free_time_elements ();
                 
-               gapp->spm_update_all();
+                gapp->spm_update_all();
                 dst->draw();
 
                 if (rf)
@@ -2528,7 +2527,7 @@ static gboolean main_context_createscan_from_thread (gpointer user_data){
 
 static PyObject* remote_createscan(PyObject *self, PyObject *args)
 {
-	PI_DEBUG_GM (DBG_L2, "pyremote: Creating scan");
+        PI_DEBUG_GM (DBG_L2, "pyremote: Creating scan");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
@@ -2546,17 +2545,17 @@ static gboolean main_context_createscanf_from_thread (gpointer user_data){
 
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
 
-	PyObject *obj;
+        PyObject *obj;
 
         long ch;
-	long sizex, sizey, sizev;
-	double rangex, rangey;
+long sizex, sizey, sizev;
+double rangex, rangey;
         long append=0;
 
         idle_data->ret = -1;
 
         sizev=1; // try xyv
-	if(!PyArg_ParseTuple (idle_data->args, "llllddOl", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj, &append)){
+if(!PyArg_ParseTuple (idle_data->args, "llllddOl", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj, &append)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
@@ -2572,20 +2571,20 @@ static gboolean main_context_createscanf_from_thread (gpointer user_data){
                 }
                 rf=true;
         }
-	if ( (long unsigned int)(view.len / sizeof(float)) != (long unsigned int)(sizex*sizey*sizev) ) {
+        if ( (long unsigned int)(view.len / sizeof(float)) != (long unsigned int)(sizex*sizey*sizev) ) {
                 g_message ("Create Scan: ERROR array len=%ld does not match nx x ny=%ld", view.len / sizeof(float), sizex*sizey);
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
-	}
+        }
         g_message ("Create Scan: array len=%ld OK.", view.len / sizeof(float));
         
-	//if (PyObject_AsWriteBuffer(the_array, (void **) &pbuf, (Py_ssize_t*)&blen))
-	//	return Py_BuildValue("i", -1);
-	//Scan *dst;
-	//gapp->xsm->ActivateFreeChannel();
-	//dst =gapp->xsm->GetActiveScan();
+//if (PyObject_AsWriteBuffer(the_array, (void **) &pbuf, (Py_ssize_t*)&blen))
+//        return Py_BuildValue("i", -1);
+//Scan *dst;
+//gapp->xsm->ActivateFreeChannel();
+//dst =gapp->xsm->GetActiveScan();
 
-	Scan *dst =gapp->xsm->GetScanChannel (ch);
+        Scan *dst =gapp->xsm->GetScanChannel (ch);
         if (dst){
         
                 dst->mem2d->Resize (sizex, sizey, sizev, ZD_FLOAT);
@@ -2646,7 +2645,7 @@ static gboolean main_context_createscanf_from_thread (gpointer user_data){
                 } else
                         dst->free_time_elements ();
 
-               gapp->spm_update_all();
+                gapp->spm_update_all();
                 dst->draw();
                 dst = NULL;
 
@@ -2668,7 +2667,7 @@ static gboolean main_context_createscanf_from_thread (gpointer user_data){
 
 static PyObject *remote_createscanf(PyObject * self, PyObject * args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Creating scanf");
+        PI_DEBUG(DBG_L2, "pyremote: Creating scanf");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
@@ -2682,15 +2681,15 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
 
 static PyObject* remote_set_scan_unit(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: set scan zunit ");
-	//remote_args ra;
+        PI_DEBUG(DBG_L2, "pyremote: set scan zunit ");
+//remote_args ra;
         int ch;
-	gchar *udim, *unitid, *ulabel;
+        gchar *udim, *unitid, *ulabel;
 
-	if (!PyArg_ParseTuple(args, "lsss", &ch, &udim, &unitid, &ulabel))
-		return Py_BuildValue("i", -1);
+        if (!PyArg_ParseTuple(args, "lsss", &ch, &udim, &unitid, &ulabel))
+                return Py_BuildValue("i", -1);
 
-	Scan *dst =gapp->xsm->GetScanChannel (ch);
+        Scan *dst =gapp->xsm->GetScanChannel (ch);
         if (dst){
        
                 UnitObj *u =gapp->xsm->MakeUnit (unitid, ulabel);
@@ -2716,21 +2715,21 @@ static PyObject* remote_set_scan_unit(PyObject *self, PyObject *args)
                 g_message ("Invalid channel %d given.", ch);
                 return Py_BuildValue("i", -1);
         }
-	return Py_BuildValue("i", 0);
+        return Py_BuildValue("i", 0);
 }
 
 static PyObject* remote_set_scan_lookup(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: set scan lookup ");
-	//remote_args ra;
+        PI_DEBUG(DBG_L2, "pyremote: set scan lookup ");
+//remote_args ra;
         int ch;
-	gchar *udim;
+        gchar *udim;
         double start, end;
 
-	if (!PyArg_ParseTuple(args, "lsdd", &ch, &udim, &start, &end))
-		return Py_BuildValue("i", -1);
+        if (!PyArg_ParseTuple(args, "lsdd", &ch, &udim, &start, &end))
+                return Py_BuildValue("i", -1);
 
-	Scan *dst =gapp->xsm->GetScanChannel (ch);
+        Scan *dst =gapp->xsm->GetScanChannel (ch);
         if (dst){
        
                 switch (udim[0]){
@@ -2748,109 +2747,109 @@ static PyObject* remote_set_scan_lookup(PyObject *self, PyObject *args)
         else
                 return Py_BuildValue("i", -1);
 
-	return Py_BuildValue("i", 0);
+        return Py_BuildValue("i", 0);
 }
 
 
 static PyObject* remote_getgeometry(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:getgeometry");
+        PI_DEBUG(DBG_L2, "pyremote:getgeometry");
 
-	long ch;
+        long ch;
 
-	if (!PyArg_ParseTuple (args, "l", &ch))
-		return Py_BuildValue("ddddd", 0., 0., 0., 0., 0.);
+        if (!PyArg_ParseTuple (args, "l", &ch))
+                return Py_BuildValue("ddddd", 0., 0., 0., 0., 0.);
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src)
                 return Py_BuildValue("ddddd", src->data.s.rx, src->data.s.ry, src->data.s.x0, src->data.s.y0, src->data.s.alpha);
         else
-		return Py_BuildValue("ddddd", 0., 0., 0., 0., 0.);
+                return Py_BuildValue("ddddd", 0., 0., 0., 0., 0.);
 }
 
 static PyObject* remote_getdifferentials(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:getdifferentials");
+        PI_DEBUG(DBG_L2, "pyremote:getdifferentials");
 
-	long ch;
+        long ch;
 
-	if (!PyArg_ParseTuple (args, "l", &ch))
-		return Py_BuildValue("dddd", 0., 0., 0., 0.);
+        if (!PyArg_ParseTuple (args, "l", &ch))
+                return Py_BuildValue("dddd", 0., 0., 0., 0.);
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src)
                 return Py_BuildValue("dddd", src->data.s.dx, src->data.s.dy, src->data.s.dz, src->data.s.dl);
         else
-		return Py_BuildValue("dddd", 0., 0., 0., 0.);
+                return Py_BuildValue("dddd", 0., 0., 0., 0.);
 }
 
 static PyObject* remote_getdimensions(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:getdimensions");
+        PI_DEBUG(DBG_L2, "pyremote:getdimensions");
 
-	long ch;
+        long ch;
 
-	if (!PyArg_ParseTuple (args, "l", &ch))
-		return Py_BuildValue("llll", -1, -1, -1, -1);
+        if (!PyArg_ParseTuple (args, "l", &ch))
+                return Py_BuildValue("llll", -1, -1, -1, -1);
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src)
                 return Py_BuildValue("llll", src->mem2d->GetNx (), src->mem2d->GetNy (), src->mem2d->GetNv (), src->number_of_time_elements ());
         else
-		return Py_BuildValue("llll", -1, -1, -1, -1);
+                return Py_BuildValue("llll", -1, -1, -1, -1);
 }
 
 static PyObject* remote_getdatapkt(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:getdatapkt");
+        PI_DEBUG(DBG_L2, "pyremote:getdatapkt");
 
-	long ch;
+        long ch;
         double x, y, v, t;
         
-	if (!PyArg_ParseTuple (args, "ldddd", &ch, &x, &y, &v, &t))
-		return Py_BuildValue("d", 0.);
+        if (!PyArg_ParseTuple (args, "ldddd", &ch, &x, &y, &v, &t))
+                return Py_BuildValue("d", 0.);
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src)
                 if (t > 0.)
                         return Py_BuildValue("d", src->mem2d->GetDataPktInterpol (x,y,v, src, (int)(t)));
                 else
                         return Py_BuildValue("d", src->mem2d->GetDataPktInterpol (x,y,v));
         else
-		return Py_BuildValue("d", 0.);
+                return Py_BuildValue("d", 0.);
 }
 
 static PyObject* remote_putdatapkt(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: putdatapkt");
-	long ch;
+        PI_DEBUG(DBG_L2, "pyremote: putdatapkt");
+        long ch;
         long x, y, v, t;
         double value;
         
-	if (!PyArg_ParseTuple (args, "dlllll", &value, &ch, &x, &y, &v, &t))
-		return Py_BuildValue("i", -1);
+        if (!PyArg_ParseTuple (args, "dlllll", &value, &ch, &x, &y, &v, &t))
+                return Py_BuildValue("i", -1);
 
-	Scan *dst =gapp->xsm->GetScanChannel (ch);
+        Scan *dst =gapp->xsm->GetScanChannel (ch);
         if (dst){
                 dst->mem2d->PutDataPkt (value, x,y,v);
                 return Py_BuildValue("i", 0);
         } else
-		return Py_BuildValue("i", -1);
+                return Py_BuildValue("i", -1);
 }
 
 //{"get_slice", remote_getslice, METH_VARARGS, "Get Slice/Image: [nx,ny,array]=gxsm.get_slice (ch, v, t, yi, yn)"},
 
 static PyObject* remote_getslice(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: getslice");
-	long ch,v,t,yi,yn;
+        PI_DEBUG(DBG_L2, "pyremote: getslice");
+        long ch,v,t,yi,yn;
 
-	//PyObject *obj;
+//PyObject *obj;
         
-	if (!PyArg_ParseTuple (args, "lllll", &ch, &v, &t, &yi, &yn))
-		return Py_BuildValue("i", -1);
+        if (!PyArg_ParseTuple (args, "lllll", &ch, &v, &t, &yi, &yn))
+                return Py_BuildValue("i", -1);
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src && (yi+yn) <= src->mem2d->GetNy()){
                 g_message ("remote_getslice from mem2d scan data in (dz scaled to unit) CH%d, Ys=%d Yf=%d", (int)ch, (int)yi, (int)(yi+yn));
 
@@ -2872,68 +2871,68 @@ static PyObject* remote_getslice(PyObject *self, PyObject *args)
                 PyArray_ENABLEFLAGS((PyArrayObject*) pyarr, NPY_ARRAY_OWNDATA);
                 return Py_BuildValue("O", pyarr); // Python code will receive the array as numpy array.
         } else
-		return Py_BuildValue("i", -1);
+                return Py_BuildValue("i", -1);
 
-	return Py_BuildValue("i", 0);
+        return Py_BuildValue("i", 0);
 }
 
 static PyObject* remote_get_x_lookup(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+        PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
 
-	long ch, i;
+        long ch, i;
 
-	if (!PyArg_ParseTuple (args, "ll", &ch, &i))
-		return Py_BuildValue("d", 0.);
+        if (!PyArg_ParseTuple (args, "ll", &ch, &i))
+                return Py_BuildValue("d", 0.);
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src)
                 return Py_BuildValue("d", src->mem2d->data->GetXLookup(i));
         else
-		return Py_BuildValue("d", 0.);
+                return Py_BuildValue("d", 0.);
 }
 
 static PyObject* remote_get_y_lookup(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+        PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
 
-	long ch, i;
+        long ch, i;
 
-	if (!PyArg_ParseTuple (args, "ll", &ch, &i))
-		return Py_BuildValue("d", 0.);
+        if (!PyArg_ParseTuple (args, "ll", &ch, &i))
+                return Py_BuildValue("d", 0.);
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src)
                 return Py_BuildValue("d", src->mem2d->data->GetYLookup(i));
         else
-		return Py_BuildValue("d", 0.);
+                return Py_BuildValue("d", 0.);
 }
 
 static PyObject* remote_get_v_lookup(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+        PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
 
-	long ch, i;
+        long ch, i;
 
-	if (!PyArg_ParseTuple (args, "ll", &ch, &i))
-		return Py_BuildValue("d", 0.);
+        if (!PyArg_ParseTuple (args, "ll", &ch, &i))
+                return Py_BuildValue("d", 0.);
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src)
                 return Py_BuildValue("d", src->mem2d->data->GetVLookup(i));
         else
-		return Py_BuildValue("d", 0.);
+                return Py_BuildValue("d", 0.);
 }
 
 static PyObject* remote_set_global_share_parameter(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:set_global_share_parmeter");
+        PI_DEBUG(DBG_L2, "pyremote:set_global_share_parmeter");
 
-	gchar *key;
+        gchar *key;
         double x;
 
-	if (!PyArg_ParseTuple (args, "sd", &key, &x))
-		return Py_BuildValue("d", 0.);
+        if (!PyArg_ParseTuple (args, "sd", &key, &x))
+                return Py_BuildValue("d", 0.);
 
         GSettings *global_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT ".global");
         //g_settings_set_double (global_settings, "math-global-share-variable-radius", edge_radius);
@@ -2947,69 +2946,69 @@ static PyObject* remote_set_global_share_parameter(PyObject *self, PyObject *arg
 
 static PyObject* remote_set_x_lookup(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+        PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
 
-	long ch, i;
+        long ch, i;
         double v;
 
-	if (!PyArg_ParseTuple (args, "lld", &ch, &i, &v))
-		return Py_BuildValue("d", 0.);
+        if (!PyArg_ParseTuple (args, "lld", &ch, &i, &v))
+                return Py_BuildValue("d", 0.);
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src){
                 src->mem2d->data->SetXLookup(i, v);
                 return Py_BuildValue("d", src->mem2d->data->GetXLookup(i));
         } else
-		return Py_BuildValue("d", 0.);
+                return Py_BuildValue("d", 0.);
 }
 
 static PyObject* remote_set_y_lookup(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+        PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
 
-	long ch, i;
+        long ch, i;
         double v;
 
-	if (!PyArg_ParseTuple (args, "lld", &ch, &i, &v))
-		return Py_BuildValue("d", 0.);
+        if (!PyArg_ParseTuple (args, "lld", &ch, &i, &v))
+                return Py_BuildValue("d", 0.);
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src){
                 src->mem2d->data->SetYLookup(i, v);
                 return Py_BuildValue("d", src->mem2d->data->GetYLookup(i));
         } else
-		return Py_BuildValue("d", 0.);
+                return Py_BuildValue("d", 0.);
 }
 
 static PyObject* remote_set_v_lookup(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
+        PI_DEBUG(DBG_L2, "pyremote:get_x_lookup");
 
-	long ch, i;
+        long ch, i;
         double v;
 
-	if (!PyArg_ParseTuple (args, "lld", &ch, &i, &v))
-		return Py_BuildValue("d", 0.);
+        if (!PyArg_ParseTuple (args, "lld", &ch, &i, &v))
+                return Py_BuildValue("d", 0.);
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src){
                 src->mem2d->data->SetVLookup(i, v);
                 return Py_BuildValue("d", src->mem2d->data->GetVLookup(i));
         } else
-		return Py_BuildValue("d", 0.);
+                return Py_BuildValue("d", 0.);
 }
 
 
 static PyObject* remote_getobject(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:getobject");
+        PI_DEBUG(DBG_L2, "pyremote:getobject");
 
-	long ch, nth;
+        long ch, nth;
         
-	if (!PyArg_ParseTuple (args, "ll", &ch, &nth))
-		return Py_BuildValue("s", "Invalid Parameters. [ll]: ch, nth");
+        if (!PyArg_ParseTuple (args, "ll", &ch, &nth))
+                return Py_BuildValue("s", "Invalid Parameters. [ll]: ch, nth");
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src){
                 int n_obj = src->number_of_object ();
                 if (nth < n_obj){
@@ -3037,17 +3036,17 @@ static PyObject* remote_getobject(PyObject *self, PyObject *args)
 static gboolean main_context_getobject_action_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	long ch;
+        long ch;
         gchar *objnameid;
         gchar *action;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple (idle_data->args, "lss", &ch, &objnameid, &action)){
+        if (!PyArg_ParseTuple (idle_data->args, "lss", &ch, &objnameid, &action)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
 
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (src){
                 int n_obj = src->number_of_object ();
                 for (int i=0; i < n_obj; ++i){
@@ -3093,7 +3092,7 @@ static gboolean main_context_getobject_action_from_thread (gpointer user_data){
 
 static PyObject* remote_getobject_action(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote:getobject_getcoords_setup_scan");
+        PI_DEBUG(DBG_L2, "pyremote:getobject_getcoords_setup_scan");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
@@ -3110,23 +3109,23 @@ static PyObject* remote_getobject_action(PyObject *self, PyObject *args)
 static gboolean main_context_addmobject_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	long ch,grp,x,y;
+        long ch,grp,x,y;
         double size = 1.0;
         gchar *id;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple (idle_data->args, "lsllld", &ch, &id, &grp, &x, &y, &size)){
-		//return Py_BuildValue("s", "Invalid Parameters. [ll]: ch, nth");
+        if (!PyArg_ParseTuple (idle_data->args, "lsllld", &ch, &id, &grp, &x, &y, &size)){
+                //return Py_BuildValue("s", "Invalid Parameters. [ll]: ch, nth");
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
 
-	const gchar *marker_group[] = { 
-		"*Marker:red", "*Marker:green", "*Marker:blue", "*Marker:yellow", "*Marker:cyan", "*Marker:magenta",  
-		NULL };
-	PI_DEBUG(DBG_L2, "pyremote:putobject");
+        const gchar *marker_group[] = {
+                "*Marker:red", "*Marker:green", "*Marker:blue", "*Marker:yellow", "*Marker:cyan", "*Marker:magenta",
+                NULL };
+        PI_DEBUG(DBG_L2, "pyremote:putobject");
       
-	Scan *src =gapp->xsm->GetScanChannel (ch);
+        Scan *src =gapp->xsm->GetScanChannel (ch);
         if (!strncmp(id,"Rectangle",9)){
                 VObject *vo;
                 double xy[4];
@@ -3251,21 +3250,21 @@ static PyObject* remote_addmobject(PyObject *self, PyObject *args)
 
 static PyObject* remote_stopscan(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Stopping scan");
+        PI_DEBUG(DBG_L2, "pyremote: Stopping scan");
         IDLE_from_thread_data idle_data;
         idle_data.string = "Toolbar_Scan_Stop";
         idle_data.wait_join = true;
         g_idle_add (main_context_emit_toolbar_action_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", 0);
+        return Py_BuildValue("i", 0);
 }
 
 static PyObject* remote_waitscan(PyObject *self, PyObject *args)
 {
         double x,y,z;
         long block = 0;
-	PI_DEBUG_GM (DBG_L2, "pyremote: wait scan");
-	if (PyArg_ParseTuple (args, "l", &block)){
+        PI_DEBUG_GM (DBG_L2, "pyremote: wait scan");
+        if (PyArg_ParseTuple (args, "l", &block)){
                 g_usleep(50000);
                 if(idle_rtquery ("W",x,y,z) ){
                         if (block){
@@ -3290,86 +3289,86 @@ static PyObject* remote_waitscan(PyObject *self, PyObject *args)
 
 static PyObject* remote_scaninit(PyObject *self, PyObject *args)
 {
-	PI_DEBUG_GM (DBG_L2, "pyremote: Initializing scan");
+        PI_DEBUG_GM (DBG_L2, "pyremote: Initializing scan");
         IDLE_from_thread_data idle_data;
         idle_data.string = "Toolbar_Scan_Init";
         idle_data.wait_join = true;
         g_idle_add (main_context_emit_toolbar_action_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", 0);
+        return Py_BuildValue("i", 0);
 }
 
 static PyObject* remote_scanupdate(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Updating scan (hardware)");
+        PI_DEBUG(DBG_L2, "pyremote: Updating scan (hardware)");
         IDLE_from_thread_data idle_data;
         idle_data.string = "Toolbar_Scan_UpdateParam";
         idle_data.wait_join = true;
         g_idle_add (main_context_emit_toolbar_action_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", 0);
+        return Py_BuildValue("i", 0);
 }
 
 static PyObject* remote_scanylookup(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Scanylookup");
-	int value1 = 0;
-	double value2 = 0.0;
-	if (!PyArg_ParseTuple(args, "ld", &value1, &value2))
-		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2,  value1 << " and " << value2 );
-	if(value1 && value2){
-		gchar *cmd = NULL;
-		cmd = g_strdup_printf ("2 %d %g", value1, value2);
-		gapp->PutPluginData (cmd);
-		//gapp->signal_emit_toolbar_action ("Toolbar_Scan_SetYLookup");
+        PI_DEBUG(DBG_L2, "pyremote: Scanylookup");
+        int value1 = 0;
+        double value2 = 0.0;
+        if (!PyArg_ParseTuple(args, "ld", &value1, &value2))
+                return Py_BuildValue("i", -1);
+        PI_DEBUG(DBG_L2,  value1 << " and " << value2 );
+        if(value1 && value2){
+                gchar *cmd = NULL;
+                cmd = g_strdup_printf ("2 %d %g", value1, value2);
+                gapp->PutPluginData (cmd);
+                //gapp->signal_emit_toolbar_action ("Toolbar_Scan_SetYLookup");
                 IDLE_from_thread_data idle_data;
                 idle_data.string = "Toolbar_Scan_SetYLookup";
                 idle_data.wait_join = true;
                 g_idle_add (main_context_emit_toolbar_action_from_thread, (gpointer)&idle_data);
                 WAIT_JOIN_MAIN;
-		g_free (cmd);
-	}
-	return Py_BuildValue("i", 0);
+                g_free (cmd);
+        }
+        return Py_BuildValue("i", 0);
 }
 
 static PyObject* remote_scanline(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Scan line");
-	int value1 = 0, value2 = 0, value3 = 0;
-	if (!PyArg_ParseTuple(args, "lll", &value1, &value2, &value3))
-		return Py_BuildValue("i", -1);
-	PI_DEBUG(DBG_L2,  value1 << " and " << value2 << " and " << value3);
-	PI_DEBUG(DBG_L2, "pyremote: Warning toolbar NYI");
-	if(value1){
-		gchar *cmd = NULL;
-		if(value2 && value3){
-			cmd = g_strdup_printf ("3 %d %d %d",
-					       value1,
-					       value2,
-					       value3);
-			gapp->PutPluginData (cmd);
-			//gapp->signal_emit_toolbar_action ("Toolbar_Scan_Partial_Line");
+        PI_DEBUG(DBG_L2, "pyremote: Scan line");
+        int value1 = 0, value2 = 0, value3 = 0;
+        if (!PyArg_ParseTuple(args, "lll", &value1, &value2, &value3))
+                return Py_BuildValue("i", -1);
+        PI_DEBUG(DBG_L2,  value1 << " and " << value2 << " and " << value3);
+        PI_DEBUG(DBG_L2, "pyremote: Warning toolbar NYI");
+        if(value1){
+                gchar *cmd = NULL;
+                if(value2 && value3){
+                        cmd = g_strdup_printf ("3 %d %d %d",
+                                               value1,
+                                               value2,
+                                               value3);
+                        gapp->PutPluginData (cmd);
+                        //gapp->signal_emit_toolbar_action ("Toolbar_Scan_Partial_Line");
                         IDLE_from_thread_data idle_data;
                         idle_data.string = "Toolbar_Scan_Partial_Line";
                         idle_data.wait_join = true;
                         g_idle_add (main_context_emit_toolbar_action_from_thread, (gpointer)&idle_data);
                         WAIT_JOIN_MAIN;
-		}
-		else{
-			cmd = g_strdup_printf ("d %d",
-					       value1);
-			gapp->PutPluginData (cmd);
-			//gapp->signal_emit_toolbar_action ("Toolbar_Scan_Line");
+                }
+                else{
+                        cmd = g_strdup_printf ("d %d",
+                                               value1);
+                        gapp->PutPluginData (cmd);
+                        //gapp->signal_emit_toolbar_action ("Toolbar_Scan_Line");
                         IDLE_from_thread_data idle_data;
                         idle_data.string = "Toolbar_Scan_Line";
                         idle_data.wait_join = true;
                         g_idle_add (main_context_emit_toolbar_action_from_thread, (gpointer)&idle_data);
                         WAIT_JOIN_MAIN;
-		}
-		g_free (cmd);
-	}
-	return Py_BuildValue("i", 0);
+                }
+                g_free (cmd);
+        }
+        return Py_BuildValue("i", 0);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -3380,10 +3379,10 @@ static PyObject* remote_scanline(PyObject *self, PyObject *args)
 static gboolean main_context_TEMPLATE_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	long channel = 0;
+        long channel = 0;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
+        if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
@@ -3401,16 +3400,16 @@ static gboolean main_context_TEMPLATE_from_thread (gpointer user_data){
         idle_data.wait_join = true;
         g_idle_add (main_context_TEMPLATE_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 #endif
 
 static gboolean main_context_autosave_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-       gapp->enter_thread_safe_no_gui_mode();
-       gapp->auto_save_scans ();
-       gapp->exit_thread_safe_no_gui_mode();
+        gapp->enter_thread_safe_no_gui_mode();
+        gapp->auto_save_scans ();
+        gapp->exit_thread_safe_no_gui_mode();
         
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -3418,21 +3417,21 @@ static gboolean main_context_autosave_from_thread (gpointer user_data){
 
 static PyObject* remote_autosave(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Save All/Update");
+        PI_DEBUG(DBG_L2, "pyremote: Save All/Update");
         IDLE_from_thread_data idle_data;
         idle_data.wait_join = true;
         g_idle_add (main_context_autosave_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", (long)gapp->xsm->hardware->RTQuery ());
+        return Py_BuildValue("i", (long)gapp->xsm->hardware->RTQuery ());
 }
 
 
 static gboolean main_context_autoupdate_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-       gapp->enter_thread_safe_no_gui_mode();
-       gapp->auto_update_scans ();
-       gapp->exit_thread_safe_no_gui_mode();
+        gapp->enter_thread_safe_no_gui_mode();
+        gapp->auto_update_scans ();
+        gapp->exit_thread_safe_no_gui_mode();
         
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -3440,19 +3439,19 @@ static gboolean main_context_autoupdate_from_thread (gpointer user_data){
 
 static PyObject* remote_autoupdate(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Save All/Update");
+        PI_DEBUG(DBG_L2, "pyremote: Save All/Update");
         IDLE_from_thread_data idle_data;
         idle_data.wait_join = true;
         g_idle_add (main_context_autoupdate_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", (long)gapp->xsm->hardware->RTQuery ());
+        return Py_BuildValue("i", (long)gapp->xsm->hardware->RTQuery ());
 }
 
 
 static gboolean main_context_save_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gapp->xsm->save(MANUAL_SAVE_AS, NULL, -1, TRUE);
+        gapp->xsm->save(MANUAL_SAVE_AS, NULL, -1, TRUE);
         
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -3460,32 +3459,32 @@ static gboolean main_context_save_from_thread (gpointer user_data){
 
 static PyObject* remote_save(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Save");
+        PI_DEBUG(DBG_L2, "pyremote: Save");
         IDLE_from_thread_data idle_data;
         idle_data.wait_join = true;
         g_idle_add (main_context_save_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", 0);
+        return Py_BuildValue("i", 0);
 }
 
 
 static gboolean main_context_saveas_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gchar* fname = NULL;
-	long channel = 0;
+        gchar* fname = NULL;
+        long channel = 0;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple(idle_data->args, "ls", &channel, &fname)){
+        if (!PyArg_ParseTuple(idle_data->args, "ls", &channel, &fname)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
         
-	if (fname){
-		gapp->xsm->save (MANUAL_SAVE_AS, g_strdup(fname), channel, TRUE);
-		//gapp->xsm->save(TRUE, fname, channel);
+        if (fname){
+                gapp->xsm->save (MANUAL_SAVE_AS, g_strdup(fname), channel, TRUE);
+                //gapp->xsm->save(TRUE, fname, channel);
                 idle_data->ret = 0;
-	}
+        }
 
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -3493,33 +3492,33 @@ static gboolean main_context_saveas_from_thread (gpointer user_data){
 
 static PyObject* remote_saveas(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Save As ");
+        PI_DEBUG(DBG_L2, "pyremote: Save As ");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_saveas_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static gboolean main_context_load_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gchar* fname = NULL;
-	long channel = 0;
+        gchar* fname = NULL;
+        long channel = 0;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple(idle_data->args, "ls", &channel, &fname)){
+        if (!PyArg_ParseTuple(idle_data->args, "ls", &channel, &fname)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
         
-	if (fname){
-		gapp->xsm->ActivateChannel (channel);
-		gapp->xsm->load (fname);
+        if (fname){
+                gapp->xsm->ActivateChannel (channel);
+                gapp->xsm->load (fname);
                 idle_data->ret = 0;
-	}
+        }
 
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -3527,33 +3526,33 @@ static gboolean main_context_load_from_thread (gpointer user_data){
 
 static PyObject* remote_load(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Loading ");
+        PI_DEBUG(DBG_L2, "pyremote: Loading ");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_load_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static gboolean main_context_import_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gchar* fname = NULL;
-	long channel = 0;
+        gchar* fname = NULL;
+        long channel = 0;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple(idle_data->args, "ls", &channel, &fname)){
+        if (!PyArg_ParseTuple(idle_data->args, "ls", &channel, &fname)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
         
-	if (fname){
-		gapp->xsm->ActivateChannel (channel);
-		gapp->xsm->load (fname);
+        if (fname){
+                gapp->xsm->ActivateChannel (channel);
+                gapp->xsm->load (fname);
                 idle_data->ret = 0;
-	}
+        }
 
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -3562,33 +3561,33 @@ static gboolean main_context_import_from_thread (gpointer user_data){
 
 static PyObject* remote_import(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Importing ");
+        PI_DEBUG(DBG_L2, "pyremote: Importing ");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_import_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static gboolean main_context_export_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gchar* fname = NULL;
-	long channel = 0;
+        gchar* fname = NULL;
+        long channel = 0;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple(idle_data->args, "ls", &channel, &fname)){
+        if (!PyArg_ParseTuple(idle_data->args, "ls", &channel, &fname)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
         
-	if (fname){
-		gapp->xsm->ActivateChannel (channel);
-		gapp->xsm->gnuexport (fname);
+        if (fname){
+                gapp->xsm->ActivateChannel (channel);
+                gapp->xsm->gnuexport (fname);
                 idle_data->ret = 0;
-	}
+        }
 
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -3596,33 +3595,33 @@ static gboolean main_context_export_from_thread (gpointer user_data){
 
 static PyObject* remote_export(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Exporting ");
+        PI_DEBUG(DBG_L2, "pyremote: Exporting ");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_export_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static gboolean main_context_save_drawing_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gchar* fname = NULL;
-	long channel = 0;
+        gchar* fname = NULL;
+        long channel = 0;
         long time_index = 0;
         long layer_index = 0;
 
         idle_data->ret = -1;
         
- 	if (!PyArg_ParseTuple(idle_data->args, "llls", &channel, &time_index, &layer_index, &fname)){
+        if (!PyArg_ParseTuple(idle_data->args, "llls", &channel, &time_index, &layer_index, &fname)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
         
-	if (fname){
-		gapp->xsm->ActivateChannel (channel);
+        if (fname){
+                gapp->xsm->ActivateChannel (channel);
                 ViewControl* vc =gapp->xsm->GetActiveScan()->view->Get_ViewControl();
 
                 if (!vc){
@@ -3638,7 +3637,7 @@ static gboolean main_context_save_drawing_from_thread (gpointer user_data){
                 gapp->xsm->GetActiveScan()->mem2d_time_element (time_index)->SetLayer (layer_index);
                 vc->view_file_save_drawing (fname);
                 idle_data->ret = 0;
-	}
+        }
 
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -3646,14 +3645,14 @@ static gboolean main_context_save_drawing_from_thread (gpointer user_data){
 
 static PyObject* remote_save_drawing (PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: save drawing ");
+        PI_DEBUG(DBG_L2, "pyremote: save drawing ");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_save_drawing_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -3663,12 +3662,12 @@ static PyObject* remote_save_drawing (PyObject *self, PyObject *args)
 static gboolean main_context_set_view_indices_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	long channel = 0;
+        long channel = 0;
         long time_index = 0;
         long layer_index = 0;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple(idle_data->args, "lll", &channel, &time_index, &layer_index)){
+        if (!PyArg_ParseTuple(idle_data->args, "lll", &channel, &time_index, &layer_index)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
@@ -3689,14 +3688,14 @@ static gboolean main_context_set_view_indices_from_thread (gpointer user_data){
 
 static PyObject* remote_set_view_indices (PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: save drawing ");
+        PI_DEBUG(DBG_L2, "pyremote: save drawing ");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_set_view_indices_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 
@@ -3715,7 +3714,7 @@ static gboolean main_context_autodisplay_from_thread (gpointer user_data){
 
 static PyObject* remote_autodisplay(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Autodisplay");
+        PI_DEBUG(DBG_L2, "pyremote: Autodisplay");
         if (!gapp->xsm->ActiveScan)
                 return Py_BuildValue("i", -1);
 
@@ -3728,10 +3727,10 @@ static PyObject* remote_autodisplay(PyObject *self, PyObject *args)
 
 static PyObject* remote_chfname(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chfname ");
-	long channel = 0;
-	if (!PyArg_ParseTuple(args, "l", &channel))
-		return Py_BuildValue("i", -1);
+        PI_DEBUG(DBG_L2, "pyremote: Chfname ");
+        long channel = 0;
+        if (!PyArg_ParseTuple(args, "l", &channel))
+                return Py_BuildValue("i", -1);
         int ch=channel;
         if (ch >= 100) ch -= 100;
         if (gapp->xsm->GetScanChannel(ch)){
@@ -3747,10 +3746,10 @@ static PyObject* remote_chfname(PyObject *self, PyObject *args)
 static gboolean main_context_chmodea_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	long channel = 0;
+        long channel = 0;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
+        if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
@@ -3763,23 +3762,23 @@ static gboolean main_context_chmodea_from_thread (gpointer user_data){
 
 static PyObject* remote_chmodea(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chmode a ");
+        PI_DEBUG(DBG_L2, "pyremote: Chmode a ");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_chmodea_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static gboolean main_context_chmodex_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	long channel = 0;
+        long channel = 0;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
+        if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
@@ -3792,23 +3791,23 @@ static gboolean main_context_chmodex_from_thread (gpointer user_data){
 
 static PyObject* remote_chmodex(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chmode x ");
+        PI_DEBUG(DBG_L2, "pyremote: Chmode x ");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_chmodex_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static gboolean main_context_chmodem_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	long channel = 0;
+        long channel = 0;
         idle_data->ret = -1;
         
-	if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
+        if (!PyArg_ParseTuple(idle_data->args, "l", &channel)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
@@ -3821,20 +3820,20 @@ static gboolean main_context_chmodem_from_thread (gpointer user_data){
 
 static PyObject* remote_chmodem(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chmode m ");
+        PI_DEBUG(DBG_L2, "pyremote: Chmode m ");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_chmodem_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static gboolean main_context_chmoden_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	long channel = 0;
+        long channel = 0;
         long mode = 0;
         idle_data->ret = -1;
 
@@ -3850,69 +3849,69 @@ static gboolean main_context_chmoden_from_thread (gpointer user_data){
 
 static PyObject* remote_chmoden(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chmode n ");
+        PI_DEBUG(DBG_L2, "pyremote: Chmode n ");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_chmoden_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static PyObject* remote_chmodeno(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chmode no -- not available");
-	return Py_BuildValue("i", 0);
+        PI_DEBUG(DBG_L2, "pyremote: Chmode no -- not available");
+        return Py_BuildValue("i", 0);
 #if 0 // not thread safe, may trigger GUI / dialog 
-	long channel = 0;
-	if (!PyArg_ParseTuple(args, "l", &channel))
-		return Py_BuildValue("i", -1);
-	return Py_BuildValue ("i",gapp->xsm->SetView ((int)channel, ID_CH_V_NO));
+        long channel = 0;
+        if (!PyArg_ParseTuple(args, "l", &channel))
+                return Py_BuildValue("i", -1);
+        return Py_BuildValue ("i",gapp->xsm->SetView ((int)channel, ID_CH_V_NO));
 #endif
 }
 
 static PyObject* remote_chview1d(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chmode 1d -- not available");
-	return Py_BuildValue("i", 0);
+        PI_DEBUG(DBG_L2, "pyremote: Chmode 1d -- not available");
+        return Py_BuildValue("i", 0);
 #if 0 // not thread safe, may trigger GUI / dialog 
-	PI_DEBUG(DBG_L2, "pyremote: Chview 1d.");
-	long channel = 0;
-	if (!PyArg_ParseTuple(args, "l", &channel))
-		return Py_BuildValue("i", -1);
-	return Py_BuildValue ("i",gapp->xsm->SetView (channel, ID_CH_V_PROFILE));
+        PI_DEBUG(DBG_L2, "pyremote: Chview 1d.");
+        long channel = 0;
+        if (!PyArg_ParseTuple(args, "l", &channel))
+                return Py_BuildValue("i", -1);
+        return Py_BuildValue ("i",gapp->xsm->SetView (channel, ID_CH_V_PROFILE));
 #endif
 }
 
 static PyObject* remote_chview2d(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chview 2d -- not avialable");
-	return Py_BuildValue("i", 0);
+        PI_DEBUG(DBG_L2, "pyremote: Chview 2d -- not avialable");
+        return Py_BuildValue("i", 0);
 #if 0 // not thread safe, may trigger GUI / dialog 
-	long channel = 0;
-	if (!PyArg_ParseTuple(args, "l", &channel))
-		return Py_BuildValue("i", -1);
-	return Py_BuildValue ("i",gapp->xsm->SetView ((int)channel, ID_CH_V_GREY));
+        long channel = 0;
+        if (!PyArg_ParseTuple(args, "l", &channel))
+                return Py_BuildValue("i", -1);
+        return Py_BuildValue ("i",gapp->xsm->SetView ((int)channel, ID_CH_V_GREY));
 #endif
 }
 
 static PyObject* remote_chview3d(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Chview 3d -- not available");
-	return Py_BuildValue("i", 0);
+        PI_DEBUG(DBG_L2, "pyremote: Chview 3d -- not available");
+        return Py_BuildValue("i", 0);
 #if 0 // not thread safe, may trigger GUI / dialog 
-	long channel = 0;
-	if (!PyArg_ParseTuple(args, "l", &channel))
-		return Py_BuildValue("i", -1);
-	return Py_BuildValue ("i",gapp->xsm->SetView ((int)channel, ID_CH_V_SURFACE));
+        long channel = 0;
+        if (!PyArg_ParseTuple(args, "l", &channel))
+                return Py_BuildValue("i", -1);
+        return Py_BuildValue ("i",gapp->xsm->SetView ((int)channel, ID_CH_V_SURFACE));
 #endif
 }
 
 static gboolean main_context_setvm_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gapp->xsm->SetVM (idle_data->ret);
+        gapp->xsm->SetVM (idle_data->ret);
         idle_data->ret = 0;
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -3921,7 +3920,7 @@ static gboolean main_context_setvm_from_thread (gpointer user_data){
 
 static PyObject* remote_quick(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Quick");
+        PI_DEBUG(DBG_L2, "pyremote: Quick");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
@@ -3929,12 +3928,12 @@ static PyObject* remote_quick(PyObject *self, PyObject *args)
         idle_data.wait_join = true;
         g_idle_add (main_context_setvm_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static PyObject* remote_direct(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Direkt");
+        PI_DEBUG(DBG_L2, "pyremote: Direkt");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
@@ -3942,12 +3941,12 @@ static PyObject* remote_direct(PyObject *self, PyObject *args)
         idle_data.wait_join = true;
         g_idle_add (main_context_setvm_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static PyObject* remote_log(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Log");
+        PI_DEBUG(DBG_L2, "pyremote: Log");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
@@ -3955,17 +3954,17 @@ static PyObject* remote_log(PyObject *self, PyObject *args)
         idle_data.wait_join = true;
         g_idle_add (main_context_setvm_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static gboolean main_context_math_crop_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	long chsrc = 0;
-	long chdst = 1;
+        long chsrc = 0;
+        long chdst = 1;
         idle_data->ret = -1;
 
-	if (!PyArg_ParseTuple(idle_data->args, "ll", &chsrc, &chdst)){
+        if (!PyArg_ParseTuple(idle_data->args, "ll", &chsrc, &chdst)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
@@ -3975,7 +3974,7 @@ static gboolean main_context_math_crop_from_thread (gpointer user_data){
 
         if (chsrc != chdst && gapp->xsm->GetScanChannel(chsrc) && gapp->xsm->GetScanChannel(chdst)){
                 if (CropScan (gapp->xsm->GetScanChannel (chsrc), gapp->xsm->GetScanChannel (chdst)) == MATH_OK)
-                    idle_data->ret = 0;
+                        idle_data->ret = 0;
 
                 gapp->enter_thread_safe_no_gui_mode();
                 gapp->xsm->ActivateChannel (chdst);
@@ -3989,14 +3988,14 @@ static gboolean main_context_math_crop_from_thread (gpointer user_data){
 
 static PyObject* remote_crop(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Crop");
+        PI_DEBUG(DBG_L2, "pyremote: Crop");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_math_crop_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -4009,31 +4008,31 @@ static PyObject* remote_crop(PyObject *self, PyObject *args)
 
 static PyObject* remote_unitbz(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: unitbz");
-	gapp->xsm->SetModeFlg(MODE_BZUNIT);
-	gapp->xsm->ClrModeFlg(MODE_VOLTUNIT);
-	return Py_BuildValue("i", 0);
+        PI_DEBUG(DBG_L2, "pyremote: unitbz");
+        gapp->xsm->SetModeFlg(MODE_BZUNIT);
+        gapp->xsm->ClrModeFlg(MODE_VOLTUNIT);
+        return Py_BuildValue("i", 0);
 }
 static PyObject* remote_unitvolt(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: unitvolt");
-	gapp->xsm->SetModeFlg(MODE_VOLTUNIT);
-	gapp->xsm->ClrModeFlg(MODE_BZUNIT);
-	return Py_BuildValue("i", 0);
+        PI_DEBUG(DBG_L2, "pyremote: unitvolt");
+        gapp->xsm->SetModeFlg(MODE_VOLTUNIT);
+        gapp->xsm->ClrModeFlg(MODE_BZUNIT);
+        return Py_BuildValue("i", 0);
 }
 static PyObject* remote_unitev(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: unitev");
-	gapp->xsm->SetModeFlg(MODE_ENERGY_EV);
-	gapp->xsm->ClrModeFlg(MODE_ENERGY_S);
-	return Py_BuildValue("i", 0);
+        PI_DEBUG(DBG_L2, "pyremote: unitev");
+        gapp->xsm->SetModeFlg(MODE_ENERGY_EV);
+        gapp->xsm->ClrModeFlg(MODE_ENERGY_S);
+        return Py_BuildValue("i", 0);
 }
 static PyObject* remote_units(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: units");
-	gapp->xsm->SetModeFlg(MODE_ENERGY_S);
-	gapp->xsm->ClrModeFlg(MODE_ENERGY_EV);
-	return Py_BuildValue("i", 0);
+        PI_DEBUG(DBG_L2, "pyremote: units");
+        gapp->xsm->SetModeFlg(MODE_ENERGY_S);
+        gapp->xsm->ClrModeFlg(MODE_ENERGY_EV);
+        return Py_BuildValue("i", 0);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -4048,30 +4047,30 @@ static PyObject* remote_units(PyObject *self, PyObject *args)
 static PyObject* remote_echo(PyObject *self, PyObject *args)
 {
 
-	PI_DEBUG(DBG_L2, "pyremote: Echo.");
-	gchar* line1;
-	if (!PyArg_ParseTuple(args, "s", &line1))
-		return Py_BuildValue("i", -1);
-	/*Change the Debuglevel to: print always.*/
+        PI_DEBUG(DBG_L2, "pyremote: Echo.");
+        gchar* line1;
+        if (!PyArg_ParseTuple(args, "s", &line1))
+                return Py_BuildValue("i", -1);
+        /*Change the Debuglevel to: print always.*/
         g_message ("%s", line1);
-	return Py_BuildValue("i", 0);
+        return Py_BuildValue("i", 0);
 }
 
 
 static gboolean main_context_logev_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gchar* zeile;
-	if (!PyArg_ParseTuple(idle_data->args, "s", &zeile)){
+        gchar* zeile;
+        if (!PyArg_ParseTuple(idle_data->args, "s", &zeile)){
                 idle_data->ret = -1;
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
-	if(zeile){
-		gapp->monitorcontrol->LogEvent((char *)"RemoteLogEv", zeile);
-	}else{
-		gapp->monitorcontrol->LogEvent((char *)"RemoteLogEv", (char *)"--");
-	}
+        if(zeile){
+                gapp->monitorcontrol->LogEvent((char *)"RemoteLogEv", zeile);
+        }else{
+                gapp->monitorcontrol->LogEvent((char *)"RemoteLogEv", (char *)"--");
+        }
         idle_data->ret = 0;
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -4079,7 +4078,7 @@ static gboolean main_context_logev_from_thread (gpointer user_data){
 
 static PyObject* remote_logev(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Log ev.");
+        PI_DEBUG(DBG_L2, "pyremote: Log ev.");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
@@ -4087,33 +4086,33 @@ static PyObject* remote_logev(PyObject *self, PyObject *args)
         idle_data.wait_join = true;
         g_idle_add (main_context_logev_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static gboolean main_context_progress_info_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
         double d;
-	gchar* info;
+        gchar* info;
         idle_data->ret = -1;
 
-	if (!PyArg_ParseTuple(idle_data->args, "sd", &info, &d)){
+        if (!PyArg_ParseTuple(idle_data->args, "sd", &info, &d)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
 
-	if(info){
+        if(info){
                 if (d < 0.)
-                       gapp->progress_info_new (info, 1);
+                        gapp->progress_info_new (info, 1);
                 else {
-                       gapp->progress_info_set_bar_fraction (d, 1);
-                       gapp->progress_info_set_bar_text (info, 1);
+                        gapp->progress_info_set_bar_fraction (d, 1);
+                        gapp->progress_info_set_bar_text (info, 1);
                 }
                 if (d > 1.){
-                       gapp->progress_info_close ();
+                        gapp->progress_info_close ();
                 }
                 idle_data->ret = 0;
-	}
+        }
         
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
@@ -4121,36 +4120,36 @@ static gboolean main_context_progress_info_from_thread (gpointer user_data){
 
 static PyObject* remote_progress_info(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: progress_info");
+        PI_DEBUG(DBG_L2, "pyremote: progress_info");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_progress_info_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 
 static gboolean main_context_add_layer_information_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gchar* info;
-	long layer = 0;
+        gchar* info;
+        long layer = 0;
         long nth = -1;
         
-	if (!PyArg_ParseTuple(idle_data->args, "sll", &info, &layer, &nth)){
+        if (!PyArg_ParseTuple(idle_data->args, "sll", &info, &layer, &nth)){
                 nth = -1;
                 idle_data->ret = -1;
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
         /*
-	if (!PyArg_ParseTuple(idle_data->args, "sl", &info, &layer)){
-                idle_data->ret = -1;
-                UNSET_WAIT_JOIN_MAIN;
-                return G_SOURCE_REMOVE;
-        }
+          if (!PyArg_ParseTuple(idle_data->args, "sl", &info, &layer)){
+          idle_data->ret = -1;
+          UNSET_WAIT_JOIN_MAIN;
+          return G_SOURCE_REMOVE;
+          }
         */
         PI_DEBUG(DBG_L2, info << " to layer info, lv=" << layer << "  nth=" << nth);
 
@@ -4161,10 +4160,10 @@ static gboolean main_context_add_layer_information_from_thread (gpointer user_da
                                 g_message ("%s",info);
                                 if (li) li->replace (info);
                         }
-        else
-                if (gapp->xsm->ActiveScan)
-                        if(info && layer>=0 && layer<gapp->xsm->GetActiveScan() -> mem2d->GetNv())
-                                gapp->xsm->GetActiveScan() -> mem2d->add_layer_information ((int)layer, new LayerInformation (info));
+                        else
+                                if (gapp->xsm->ActiveScan)
+                                        if(info && layer>=0 && layer<gapp->xsm->GetActiveScan() -> mem2d->GetNv())
+                                                gapp->xsm->GetActiveScan() -> mem2d->add_layer_information ((int)layer, new LayerInformation (info));
 
         idle_data->ret = 0;
         UNSET_WAIT_JOIN_MAIN;
@@ -4173,50 +4172,50 @@ static gboolean main_context_add_layer_information_from_thread (gpointer user_da
 
 static PyObject* remote_add_layer_information(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: add_layer_information to active scan channel");
+        PI_DEBUG(DBG_L2, "pyremote: add_layer_information to active scan channel");
         IDLE_from_thread_data idle_data;
         idle_data.self = self;
         idle_data.args = args;
         idle_data.wait_join = true;
         g_idle_add (main_context_add_layer_information_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 static PyObject* remote_da0(PyObject *self, PyObject *args)
 {
 
-	PI_DEBUG(DBG_L2, "pyremote: da0 ");
-	double channel = 0;
-	if (!PyArg_ParseTuple(args, "d", &channel))
-		return Py_BuildValue("i", -1);
-	if (channel){
-		PI_DEBUG(DBG_L2, "Commented out.");
-		//gapp->xsm->hardware->SetAnalog("da-name", channel);
-	}
-	return Py_BuildValue("i", 0);
+        PI_DEBUG(DBG_L2, "pyremote: da0 ");
+        double channel = 0;
+        if (!PyArg_ParseTuple(args, "d", &channel))
+                return Py_BuildValue("i", -1);
+        if (channel){
+                PI_DEBUG(DBG_L2, "Commented out.");
+                //gapp->xsm->hardware->SetAnalog("da-name", channel);
+        }
+        return Py_BuildValue("i", 0);
 }
 
 
 static gboolean main_context_signal_emit_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-	gchar *action;
+        gchar *action;
         idle_data->ret = -1;
 
-	if (!PyArg_ParseTuple(idle_data->args, "s", &action)){
+        if (!PyArg_ParseTuple(idle_data->args, "s", &action)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
 
-	PI_DEBUG_GM (DBG_L2, "pyremote::remote_signal_emit (calling g_action_group_activate_action): %s", action);
+        PI_DEBUG_GM (DBG_L2, "pyremote::remote_signal_emit (calling g_action_group_activate_action): %s", action);
 
         GActionMap *gm = G_ACTION_MAP (g_application_get_default ());
         //        g_message ("pyremote::remote_signal_emit get g_action_map: %s", gm ? "OK":"??");
 
         GAction *ga = g_action_map_lookup_action (gm, action);
         //        GAction *ga = g_action_map_lookup_action (G_ACTION_MAP (gapp->getApp ()), action);
-        //	g_message ("pyremote::remote_signal_emit g_action_map_lookup_action: %s -> %s", action, ga?"OK":"??");
+        //      g_message ("pyremote::remote_signal_emit g_action_map_lookup_action: %s -> %s", action, ga?"OK":"??");
 
         if (ga){
                 g_action_activate (ga, NULL);
@@ -4237,7 +4236,7 @@ static PyObject* remote_signal_emit(PyObject *self, PyObject *args)
         idle_data.wait_join = true;
         g_idle_add (main_context_signal_emit_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 #if 0
@@ -4246,44 +4245,44 @@ static gboolean busy_sleep;
 gint ret_false(gpointer r)
 {
         // FIX-ME GTK4 ??? what is it at all
-	//gtk_main_quit();
+        //gtk_main_quit();
         *((int *)r) = FALSE;
-	return FALSE;
+        return FALSE;
 }
 
 void sleep_ms(int ms)
 {
-	if (busy_sleep) return;          /* Don't allow more than 1 sleep_ms */
-	busy_sleep=TRUE;
+        if (busy_sleep) return;          /* Don't allow more than 1 sleep_ms */
+        busy_sleep=TRUE;
         int wait=TRUE;
-	g_timeout_add(ms,(GSourceFunc)ret_false, &wait); /* Start time-out function*/
+        g_timeout_add(ms,(GSourceFunc)ret_false, &wait); /* Start time-out function*/
         while (wait)
                 while(g_main_context_pending (NULL)) g_main_context_iteration (NULL, FALSE);
 
         //gtk_main();                             /* wait */
-	busy_sleep=FALSE;
+        busy_sleep=FALSE;
 }
 #endif
 
 static PyObject* remote_sleep(PyObject *self, PyObject *args)
 {
-	PI_DEBUG(DBG_L2, "pyremote: Sleep ");
-	double d;
-	if (!PyArg_ParseTuple(args, "d", &d))
-		return Py_BuildValue("i", -1);
-	if (d>0.){ // d in 1/10s
+        PI_DEBUG(DBG_L2, "pyremote: Sleep ");
+        double d;
+        if (!PyArg_ParseTuple(args, "d", &d))
+                return Py_BuildValue("i", -1);
+        if (d>0.){ // d in 1/10s
                 g_usleep ((useconds_t)round(d*1e5)); // now in a thread and can simply sleep here!
-		// sleep_ms((int)(round(d*100)));
-	}
-	return Py_BuildValue("i", 0);
+                // sleep_ms((int)(round(d*100)));
+        }
+        return Py_BuildValue("i", 0);
 }
 
 
 static gboolean main_context_set_sc_label_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
-	gchar *id, *label;
+        gchar *id, *label;
 
-	if (!PyArg_ParseTuple(idle_data->args, "ss", &id, &label)){
+        if (!PyArg_ParseTuple(idle_data->args, "ss", &id, &label)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
@@ -4302,136 +4301,136 @@ static PyObject* remote_set_sc_label(PyObject *self, PyObject *args)
         idle_data.wait_join = true;
         g_idle_add (main_context_set_sc_label_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
-	return Py_BuildValue("i", idle_data.ret);
+        return Py_BuildValue("i", idle_data.ret);
 }
 
 
 
 ///////////////////////////////////////////////////////////
 /*
-PyMethodDef
-Structure used to describe a method of an extension type. This structure has four fields:
+  PyMethodDef
+  Structure used to describe a method of an extension type. This structure has four fields:
 
-Field	C Type	Meaning
-ml_name	char *	name of the method
-ml_meth	PyCFunction	pointer to the C implementation
-ml_flags	int	flag bits indicating how the call should be constructed
-ml_doc	char *	points to the contents of the docstring
+  Field   C Type  Meaning
+  ml_name         char *  name of the method
+  ml_meth         PyCFunction     pointer to the C implementation
+  ml_flags        int     flag bits indicating how the call should be constructed
+  ml_doc  char *  points to the contents of the docstring
 */
 
 static PyMethodDef GxsmPyMethods[] = {
-	// BLOCK I
-	{"help", remote_help, METH_VARARGS, "List Gxsm methods: print gxsm.help ()"},
-	{"set", remote_set, METH_VARARGS, "Set Gxsm entry value, see list_refnames: gxsm.set ('refname','value as string')"},
-	{"get", remote_get, METH_VARARGS, "Get Gxsm entry as value, see list_refnames. gxsm.get ('refname')"},
-	{"gets", remote_gets, METH_VARARGS, "Get Gxsm entry as string. gxsm.gets ('refname')"},
-	{"list_refnames", remote_listr, METH_VARARGS, "List all available Gxsm entry refnames (Better: pointer hover over Gxsm-Entry to see tooltip with ref-name). print gxsm.list_refnames ()"},
-	{"action", remote_action, METH_VARARGS, "Trigger Gxsm action (menu action or button signal), see list_actions: gxsm.action('action')"},
-	{"list_actions", remote_lista, METH_VARARGS, "List all available Gxsm actions (Better: pointer hover over Gxsm-Button to see tooltip with action-name): print gxsm.list_actions ()"},
-	{"rtquery", remote_rtquery, METH_VARARGS, "Gxsm hardware Real-Time-Query: svec[3] = gxsm.rtquery('X|Y|Z|xy|zxy|o|f|s|i|U') "},
+        // BLOCK I
+        {"help", remote_help, METH_VARARGS, "List Gxsm methods: print gxsm.help ()"},
+        {"set", remote_set, METH_VARARGS, "Set Gxsm entry value, see list_refnames: gxsm.set ('refname','value as string')"},
+        {"get", remote_get, METH_VARARGS, "Get Gxsm entry as value, see list_refnames. gxsm.get ('refname')"},
+        {"gets", remote_gets, METH_VARARGS, "Get Gxsm entry as string. gxsm.gets ('refname')"},
+        {"list_refnames", remote_listr, METH_VARARGS, "List all available Gxsm entry refnames (Better: pointer hover over Gxsm-Entry to see tooltip with ref-name). print gxsm.list_refnames ()"},
+        {"action", remote_action, METH_VARARGS, "Trigger Gxsm action (menu action or button signal), see list_actions: gxsm.action('action')"},
+        {"list_actions", remote_lista, METH_VARARGS, "List all available Gxsm actions (Better: pointer hover over Gxsm-Button to see tooltip with action-name): print gxsm.list_actions ()"},
+        {"rtquery", remote_rtquery, METH_VARARGS, "Gxsm hardware Real-Time-Query: svec[3] = gxsm.rtquery('X|Y|Z|xy|zxy|o|f|s|i|U') "},
         {"y_current", remote_y_current, METH_VARARGS, "RTQuery Current Scanline."},
-	{"moveto_scan_xy", remote_moveto_scan_xy, METH_VARARGS, "Set tip position to Scan-XY: gxsm.moveto_scan_xy (x,y)"},
+        {"moveto_scan_xy", remote_moveto_scan_xy, METH_VARARGS, "Set tip position to Scan-XY: gxsm.moveto_scan_xy (x,y)"},
 
-	// BLOCK II
-	{"createscan", remote_createscan, METH_VARARGS, "Create Scan int: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('l', [...]), append)"},
-	{"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('f', [...]), append)"},
-	{"set_scan_unit", remote_set_scan_unit, METH_VARARGS, "Set Scan X,Y,Z,L Dim Unit: gxsm.set_scan_unit (ch,'X|Y|Z|L|T','UnitId string','Label string')"},
-	{"set_scan_lookup", remote_set_scan_lookup, METH_VARARGS, "Set Scan Lookup for Dim: gxsm.set_scan_lookup (ch,'X|Y|L',start,end)"},
-	//{"set_scan_lookup_i", remote_set_scan_llookup, METH_VARARGS, "Set Scan Lookup for Dim: gxsm.set_scan_lookup_i (ch,'X|Y|L',start,end)"},
+        // BLOCK II
+        {"createscan", remote_createscan, METH_VARARGS, "Create Scan int: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('l', [...]), append)"},
+        {"createscanf", remote_createscanf, METH_VARARGS, "Create Scan float: gxsm.createscan (ch,nx,ny,nv pixels, rx,ry in A, array.array('f', [...]), append)"},
+        {"set_scan_unit", remote_set_scan_unit, METH_VARARGS, "Set Scan X,Y,Z,L Dim Unit: gxsm.set_scan_unit (ch,'X|Y|Z|L|T','UnitId string','Label string')"},
+        {"set_scan_lookup", remote_set_scan_lookup, METH_VARARGS, "Set Scan Lookup for Dim: gxsm.set_scan_lookup (ch,'X|Y|L',start,end)"},
+        //{"set_scan_lookup_i", remote_set_scan_llookup, METH_VARARGS, "Set Scan Lookup for Dim: gxsm.set_scan_lookup_i (ch,'X|Y|L',start,end)"},
 
-	{"get_geometry", remote_getgeometry, METH_VARARGS, "Get Scan Geometry: [rx,ry,x0,y0,alpha]=gxsm.get_geometry (ch)"},
-	{"get_differentials", remote_getdifferentials, METH_VARARGS, "Get Scan Scaling: [dx,dy,dz,dl]=gxsm.get_differentials (ch)"},
-	{"get_dimensions", remote_getdimensions, METH_VARARGS, "Get Scan Dimensions: [nx,ny,nv,nt]=gxsm.get_dimensions (ch)"},
-	{"get_data_pkt", remote_getdatapkt, METH_VARARGS, "Get Data Value at point: value=gxsm.get_data_pkt (ch, x, y, v, t)"},
-	{"put_data_pkt", remote_putdatapkt, METH_VARARGS, "Put Data Value to point: gxsm.put_data_pkt (value, ch, x, y, v, t)"},
-	{"get_slice", remote_getslice, METH_VARARGS, "Get Image Data Slice (Lines) from Scan in channel ch, yi ... yi+yn: [nx,ny,array]=gxsm.get_slice (ch, v, t, yi, yn)"},
-	{"set_global_share_parameter", remote_set_global_share_parameter, METH_VARARGS, "Set Global Shared Parameter for Plugins, etc. in settings: gxsm.set_global_share_parameter (key, x)"},
-	{"get_x_lookup", remote_get_x_lookup, METH_VARARGS, "Get Scan Data index to world mapping: x=gxsm.get_x_lookup (ch, i)"},
-	{"get_y_lookup", remote_get_y_lookup, METH_VARARGS, "Get Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i)"},
-	{"get_v_lookup", remote_get_v_lookup, METH_VARARGS, "Get Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i)"},
-	{"set_x_lookup", remote_set_x_lookup, METH_VARARGS, "Set Scan Data index to world mapping: x=gxsm.get_x_lookup (ch, i, v)"},
-	{"set_y_lookup", remote_set_y_lookup, METH_VARARGS, "Set Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i, v)"},
-	{"set_v_lookup", remote_set_v_lookup, METH_VARARGS, "Set Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i, v)"},
-	{"get_object", remote_getobject, METH_VARARGS, "Get Object Coordinates: [type, x,y,..]=gxsm.get_object (ch, n)"},
-	{"add_marker_object", remote_addmobject, METH_VARARGS, "Put Marker/Rectangle Object at pixel coordinates or current tip pos (id='xy'|grp=-1, 'Rectangle[id]|grp=-2, 'Point[id]'): gxsm.add_marker_object (ch, label=str|'xy'|'Rectangle-id', mgrp=0..5|-1, x=ix,y=iy, size)"},
+        {"get_geometry", remote_getgeometry, METH_VARARGS, "Get Scan Geometry: [rx,ry,x0,y0,alpha]=gxsm.get_geometry (ch)"},
+        {"get_differentials", remote_getdifferentials, METH_VARARGS, "Get Scan Scaling: [dx,dy,dz,dl]=gxsm.get_differentials (ch)"},
+        {"get_dimensions", remote_getdimensions, METH_VARARGS, "Get Scan Dimensions: [nx,ny,nv,nt]=gxsm.get_dimensions (ch)"},
+        {"get_data_pkt", remote_getdatapkt, METH_VARARGS, "Get Data Value at point: value=gxsm.get_data_pkt (ch, x, y, v, t)"},
+        {"put_data_pkt", remote_putdatapkt, METH_VARARGS, "Put Data Value to point: gxsm.put_data_pkt (value, ch, x, y, v, t)"},
+        {"get_slice", remote_getslice, METH_VARARGS, "Get Image Data Slice (Lines) from Scan in channel ch, yi ... yi+yn: [nx,ny,array]=gxsm.get_slice (ch, v, t, yi, yn)"},
+        {"set_global_share_parameter", remote_set_global_share_parameter, METH_VARARGS, "Set Global Shared Parameter for Plugins, etc. in settings: gxsm.set_global_share_parameter (key, x)"},
+        {"get_x_lookup", remote_get_x_lookup, METH_VARARGS, "Get Scan Data index to world mapping: x=gxsm.get_x_lookup (ch, i)"},
+        {"get_y_lookup", remote_get_y_lookup, METH_VARARGS, "Get Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i)"},
+        {"get_v_lookup", remote_get_v_lookup, METH_VARARGS, "Get Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i)"},
+        {"set_x_lookup", remote_set_x_lookup, METH_VARARGS, "Set Scan Data index to world mapping: x=gxsm.get_x_lookup (ch, i, v)"},
+        {"set_y_lookup", remote_set_y_lookup, METH_VARARGS, "Set Scan Data index to world mapping: y=gxsm.get_y_lookup (ch, i, v)"},
+        {"set_v_lookup", remote_set_v_lookup, METH_VARARGS, "Set Scan Data index to world mapping: v=gxsm.get_v_lookup (ch, i, v)"},
+        {"get_object", remote_getobject, METH_VARARGS, "Get Object Coordinates: [type, x,y,..]=gxsm.get_object (ch, n)"},
+        {"add_marker_object", remote_addmobject, METH_VARARGS, "Put Marker/Rectangle Object at pixel coordinates or current tip pos (id='xy'|grp=-1, 'Rectangle[id]|grp=-2, 'Point[id]'): gxsm.add_marker_object (ch, label=str|'xy'|'Rectangle-id', mgrp=0..5|-1, x=ix,y=iy, size)"},
         {"marker_getobject_action", remote_getobject_action, METH_VARARGS, "Marker/Rectangle Object Action: gxsm.marker_getobject_action (ch, objnameid, action='REMOVE'|'REMOVE-ALL'|'GET_COORDS'|'SET-OFFSET')"},
         
-	{"startscan", remote_startscan, METH_VARARGS, "Start Scan."},
-	{"stopscan", remote_stopscan, METH_VARARGS, "Stop Scan."},
-	{"waitscan", remote_waitscan, METH_VARARGS, "Wait Scan. ret=gxsm.waitscan(blocking=true). ret=-1: no scan in progress, else current line index."},
-	{"scaninit", remote_scaninit, METH_VARARGS, "Scaninit."},
-	{"scanupdate", remote_scanupdate, METH_VARARGS, "Scanupdate."},
-	{"scanylookup", remote_scanylookup, METH_VARARGS, "Scanylookup."},
-	{"scanline", remote_scanline, METH_VARARGS, "Scan line."},
+        {"startscan", remote_startscan, METH_VARARGS, "Start Scan."},
+        {"stopscan", remote_stopscan, METH_VARARGS, "Stop Scan."},
+        {"waitscan", remote_waitscan, METH_VARARGS, "Wait Scan. ret=gxsm.waitscan(blocking=true). ret=-1: no scan in progress, else current line index."},
+        {"scaninit", remote_scaninit, METH_VARARGS, "Scaninit."},
+        {"scanupdate", remote_scanupdate, METH_VARARGS, "Scanupdate."},
+        {"scanylookup", remote_scanylookup, METH_VARARGS, "Scanylookup."},
+        {"scanline", remote_scanline, METH_VARARGS, "Scan line."},
 
-	// BLOCK III
-	{"autosave", remote_autosave, METH_VARARGS, "Save: Auto Save Scans. gxsm.autosave (). Returns current scanline y index and file name(s) if scanning."},
-	{"autoupdate", remote_autoupdate, METH_VARARGS, "Save: Auto Update Scans. gxsm.autoupdate (). Returns current scanline y index and file name(s) if scanning."},
-	{"save", remote_save, METH_VARARGS, "Save: Auto Save Scans: gxsm.save ()"},
-	{"saveas", remote_saveas, METH_VARARGS, "Save File As: gxsm.saveas (ch, 'path/fname.nc')"},
-	{"load", remote_load, METH_VARARGS, "Load File: gxsm.load (ch, 'path/fname.nc')"},
-	{"export", remote_export, METH_VARARGS, "Export scan: gxsm.export (ch, 'path/fname.nc')"},
-	{"import", remote_import, METH_VARARGS, "Import scan: gxsm.import (ch, 'path/fname.nc')"},
-	{"save_drawing", remote_save_drawing, METH_VARARGS, "Save Drawing to file: gxsm.save_drawing (ch, time, layer, 'path/fname.png|pdf|svg')"},
+        // BLOCK III
+        {"autosave", remote_autosave, METH_VARARGS, "Save: Auto Save Scans. gxsm.autosave (). Returns current scanline y index and file name(s) if scanning."},
+        {"autoupdate", remote_autoupdate, METH_VARARGS, "Save: Auto Update Scans. gxsm.autoupdate (). Returns current scanline y index and file name(s) if scanning."},
+        {"save", remote_save, METH_VARARGS, "Save: Auto Save Scans: gxsm.save ()"},
+        {"saveas", remote_saveas, METH_VARARGS, "Save File As: gxsm.saveas (ch, 'path/fname.nc')"},
+        {"load", remote_load, METH_VARARGS, "Load File: gxsm.load (ch, 'path/fname.nc')"},
+        {"export", remote_export, METH_VARARGS, "Export scan: gxsm.export (ch, 'path/fname.nc')"},
+        {"import", remote_import, METH_VARARGS, "Import scan: gxsm.import (ch, 'path/fname.nc')"},
+        {"save_drawing", remote_save_drawing, METH_VARARGS, "Save Drawing to file: gxsm.save_drawing (ch, time, layer, 'path/fname.png|pdf|svg')"},
 
-	// BLOCK IV
-	{"set_view_indices", remote_set_view_indices, METH_VARARGS, "Set Ch view time and layer indices: gxsm.set_view_indices (ch, time, layer)"},
-	{"autodisplay", remote_autodisplay, METH_VARARGS, "Autodisplay active channel: gxsm.autodisplay ()"},
-	{"chfname", remote_chfname, METH_VARARGS, "Get Ch Filename: filename = gxsm.chfname (ch)"},
-	{"chmodea", remote_chmodea, METH_VARARGS, "Set Ch Mode to A: gxsm.chmodea (ch)"},
-	{"chmodex", remote_chmodex, METH_VARARGS, "Set Ch Mode to X: gxsm.chmodex (ch)"},
-	{"chmodem", remote_chmodem, METH_VARARGS, "Set Ch Mode to MATH: gxsm.chmodem (ch)"},
-	{"chmoden", remote_chmoden, METH_VARARGS, "Set Ch Mode to Data Channel <X+N>: gxsm.chmoden (ch,n)"},
-	{"chmodeno", remote_chmodeno, METH_VARARGS, "Set View Mode to No: gxsm.chmodeno (ch)"},
-	{"chview1d", remote_chview1d, METH_VARARGS, "Set View Mode to 1D: gxsm.chmode1d (ch)"},
-	{"chview2d", remote_chview2d, METH_VARARGS, "Set View Mode to 2D: gxsm.chmode2d (ch)"},
-	{"chview3d", remote_chview3d, METH_VARARGS, "Set View Mode to 3D: gxsm.chmode3d (ch)"},
-	{"quick", remote_quick, METH_VARARGS, "Quick."},
-	{"direct", remote_direct, METH_VARARGS, "Direct."},
-	{"log", remote_log, METH_VARARGS, "Log."},
-	{"crop", remote_crop, METH_VARARGS, "Crop (ch-src, ch-dst)"},
+        // BLOCK IV
+        {"set_view_indices", remote_set_view_indices, METH_VARARGS, "Set Ch view time and layer indices: gxsm.set_view_indices (ch, time, layer)"},
+        {"autodisplay", remote_autodisplay, METH_VARARGS, "Autodisplay active channel: gxsm.autodisplay ()"},
+        {"chfname", remote_chfname, METH_VARARGS, "Get Ch Filename: filename = gxsm.chfname (ch)"},
+        {"chmodea", remote_chmodea, METH_VARARGS, "Set Ch Mode to A: gxsm.chmodea (ch)"},
+        {"chmodex", remote_chmodex, METH_VARARGS, "Set Ch Mode to X: gxsm.chmodex (ch)"},
+        {"chmodem", remote_chmodem, METH_VARARGS, "Set Ch Mode to MATH: gxsm.chmodem (ch)"},
+        {"chmoden", remote_chmoden, METH_VARARGS, "Set Ch Mode to Data Channel <X+N>: gxsm.chmoden (ch,n)"},
+        {"chmodeno", remote_chmodeno, METH_VARARGS, "Set View Mode to No: gxsm.chmodeno (ch)"},
+        {"chview1d", remote_chview1d, METH_VARARGS, "Set View Mode to 1D: gxsm.chmode1d (ch)"},
+        {"chview2d", remote_chview2d, METH_VARARGS, "Set View Mode to 2D: gxsm.chmode2d (ch)"},
+        {"chview3d", remote_chview3d, METH_VARARGS, "Set View Mode to 3D: gxsm.chmode3d (ch)"},
+        {"quick", remote_quick, METH_VARARGS, "Quick."},
+        {"direct", remote_direct, METH_VARARGS, "Direct."},
+        {"log", remote_log, METH_VARARGS, "Log."},
+        {"crop", remote_crop, METH_VARARGS, "Crop (ch-src, ch-dst)"},
 
-	// BLOCK V
-	{"unitbz", remote_unitbz, METH_VARARGS, "UnitBZ."},
-	{"unitvolt", remote_unitvolt, METH_VARARGS, "UnitVolt."},
-	{"unitev", remote_unitev, METH_VARARGS, "UniteV."},
-	{"units", remote_units, METH_VARARGS, "UnitS."},
+        // BLOCK V
+        {"unitbz", remote_unitbz, METH_VARARGS, "UnitBZ."},
+        {"unitvolt", remote_unitvolt, METH_VARARGS, "UnitVolt."},
+        {"unitev", remote_unitev, METH_VARARGS, "UniteV."},
+        {"units", remote_units, METH_VARARGS, "UnitS."},
 
-	// BLOCK VI
-	{"echo", remote_echo, METH_VARARGS, "Echo string to terminal. gxsm.echo('hello gxsm to terminal') "},
-	{"logev", remote_logev, METH_VARARGS, "Write string to Gxsm system log file and log monitor: gxsm.logev ('hello gxsm to logfile/monitor') "},
-	{"progress", remote_progress_info, METH_VARARGS, "Show/update gxsm progress info. fraction<0 init, 0..1 progress, >1 close: gxsm.progress ('Calculating...', fraction) "},
-	{"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation to active scan. gxsm.add_layerinformation('Text', ch, nth)"}, 
-	{"da0", remote_da0, METH_VARARGS, "Da0. -- N/A for SRanger"},
-	{"signal_emit", remote_signal_emit, METH_VARARGS, "Action-String. "},
-	{"sleep", remote_sleep, METH_VARARGS, "Sleep N/10s: gxsm.sleep (N) "},
-	{"set_sc_label", remote_set_sc_label, METH_VARARGS, "Set PyRemote SC label: gxsm.set_sc_label (id [1..8],'value as string')"},
+        // BLOCK VI
+        {"echo", remote_echo, METH_VARARGS, "Echo string to terminal. gxsm.echo('hello gxsm to terminal') "},
+        {"logev", remote_logev, METH_VARARGS, "Write string to Gxsm system log file and log monitor: gxsm.logev ('hello gxsm to logfile/monitor') "},
+        {"progress", remote_progress_info, METH_VARARGS, "Show/update gxsm progress info. fraction<0 init, 0..1 progress, >1 close: gxsm.progress ('Calculating...', fraction) "},
+        {"add_layerinformation", remote_add_layer_information, METH_VARARGS, "Add Layerinformation to active scan. gxsm.add_layerinformation('Text', ch, nth)"},
+        {"da0", remote_da0, METH_VARARGS, "Da0. -- N/A for SRanger"},
+        {"signal_emit", remote_signal_emit, METH_VARARGS, "Action-String. "},
+        {"sleep", remote_sleep, METH_VARARGS, "Sleep N/10s: gxsm.sleep (N) "},
+        {"set_sc_label", remote_set_sc_label, METH_VARARGS, "Set PyRemote SC label: gxsm.set_sc_label (id [1..8],'value as string')"},
 
-	{NULL, NULL, 0, NULL}
+        {NULL, NULL, 0, NULL}
 };
 
 static PyObject* remote_help(PyObject *self, PyObject *args)
 {
         gint entries;
-	for (entries=0; GxsmPyMethods[entries].ml_name != NULL; entries++);
-	PyObject *ret = PyTuple_New(entries);
-	for (int n=0; n < entries; n++){
+        for (entries=0; GxsmPyMethods[entries].ml_name != NULL; entries++);
+        PyObject *ret = PyTuple_New(entries);
+        for (int n=0; n < entries; n++){
                 gchar *tmp = g_strdup_printf ("gxsm.%s : %s", GxsmPyMethods[n].ml_name, GxsmPyMethods[n].ml_doc);
                 PyTuple_SetItem(ret, n, PyUnicode_FromString (tmp)); // Add Refname to Return-list
                 g_free (tmp);
         }
 
-	return ret;
+        return ret;
 }
 
 
 
 int ok_button_callback( GtkWidget *widget, gpointer data)
 {
-	//    cout << getpid() << endl;
-	kill (getpid(), SIGINT);
-	//    cout << "pressed" <<endl;
-	return 0;
+        //    cout << getpid() << endl;
+        kill (getpid(), SIGINT);
+        //    cout << "pressed" <<endl;
+        return 0;
 }
 
 py_gxsm_console::~py_gxsm_console (){
@@ -4458,34 +4457,34 @@ static PyObject* redirection_stdoutredirect(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef RedirectionMethods[] = {
-                                           {"stdoutredirect", redirection_stdoutredirect, METH_VARARGS,
-                                            "stdout redirection helper"},
-                                           {NULL, NULL, 0, NULL}
+        {"stdoutredirect", redirection_stdoutredirect, METH_VARARGS,
+         "stdout redirection helper"},
+        {NULL, NULL, 0, NULL}
 };
 
 static struct PyModuleDef redirection_module_def = {
-                                       PyModuleDef_HEAD_INIT,
-                                       "redirection",     /* m_name */
-                                       "GXSM Python Console STDI Redirection Module",  /* m_doc */
-                                       -1,                  /* m_size */
-                                       RedirectionMethods,  /* m_methods */
-                                       NULL,                /* m_reload */
-                                       NULL,                /* m_traverse */
-                                       NULL,                /* m_clear */
-                                       NULL,                /* m_free */
+        PyModuleDef_HEAD_INIT,
+        "redirection",     /* m_name */
+        "GXSM Python Console STDI Redirection Module",  /* m_doc */
+        -1,                  /* m_size */
+        RedirectionMethods,  /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
 };
 
 
 static struct PyModuleDef gxsm_module_def = {
-                                       PyModuleDef_HEAD_INIT,
-                                       "gxsm",     /* m_name */
-                                       "GXSM Python Remote Module",  /* m_doc */
-                                       -1,                  /* m_size */
-                                       GxsmPyMethods,       /* m_methods */
-                                       NULL,                /* m_reload */
-                                       NULL,                /* m_traverse */
-                                       NULL,                /* m_clear */
-                                       NULL,                /* m_free */
+        PyModuleDef_HEAD_INIT,
+        "gxsm",     /* m_name */
+        "GXSM Python Remote Module",  /* m_doc */
+        -1,                  /* m_size */
+        GxsmPyMethods,       /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
 };
 
 static PyObject* PyInit_Gxsm(void)
@@ -4505,10 +4504,10 @@ static PyObject* PyInit_Redirection(void)
 
 void py_gxsm_console::initialize(void)
 {
-	PI_DEBUG_GM (DBG_L1, "pyremote Plugin :: py_gxsm_console::initialize **");
+        PI_DEBUG_GM (DBG_L1, "pyremote Plugin :: py_gxsm_console::initialize **");
 
-	if (!Py_IsInitialized()) {
-		PI_DEBUG_GM (DBG_L1, "** Initializing Python interpreter, loading gxsm module and stdout redirection helper **");
+        if (!Py_IsInitialized()) {
+                PI_DEBUG_GM (DBG_L1, "** Initializing Python interpreter, loading gxsm module and stdout redirection helper **");
                 PI_DEBUG_GM (DBG_L1, "pyremote Plugin :: initialize -- PyImport_Append");
 
                 // g_print ("pyremote Plugin :: initialize -- PyImport_Append\n");
@@ -4517,7 +4516,7 @@ void py_gxsm_console::initialize(void)
 
                 PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: initialize --  PyInitializeEx(0)");
                 // g_print ("pyremote Plugin :: initialize -- PyInitializeEx(0)\n");
-		// Do not register signal handlers -- i.e. do not "crash" gxsm on errors!
+                // Do not register signal handlers -- i.e. do not "crash" gxsm on errors!
                 Py_InitializeEx (0);
 
                 //import_array(); // returns a value
@@ -4531,26 +4530,26 @@ void py_gxsm_console::initialize(void)
                 //PyEval_InitThreads(); obsolete in 3.7
                 //PyEval_ReleaseLock();
 
-		PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: initialize -- ImportModule gxsm");
+                PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: initialize -- ImportModule gxsm");
                 // g_print ("pyremote Plugin :: initialize -- ImportModule gxsm\n");
                 py_gxsm_module.module = PyImport_ImportModule("gxsm");
                 PyImport_ImportModule("redirection");
 
                 PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: initialize -- AddModule main\n");
                 // g_print ("pyremote Plugin :: initialize -- AddModule main\n");
-		py_gxsm_module.main_module = PyImport_AddModule("__main__");
+                py_gxsm_module.main_module = PyImport_AddModule("__main__");
                 
-		PI_DEBUG_GM (DBG_L2, "Get dict");
+                PI_DEBUG_GM (DBG_L2, "Get dict");
                 // g_print ("pyremote Plugin :: initialize -- GetDict");
-		py_gxsm_module.dict = PyModule_GetDict (py_gxsm_module.module);
+                py_gxsm_module.dict = PyModule_GetDict (py_gxsm_module.module);
 
                 //PyGILState_STATE py_state = PyGILState_Ensure();
                 //PyGILState_Release (py_state);
 
                 
         } else {
-		g_message ("Python interpreter already initialized.");
-	}
+                g_message ("Python interpreter already initialized.");
+        }
 }
 
 PyObject* py_gxsm_console::run_string(const char *cmd, int type, PyObject *g, PyObject *l) {
@@ -4565,11 +4564,11 @@ PyObject* py_gxsm_console::run_string(const char *cmd, int type, PyObject *g, Py
                             "\n<<< Python interpreter finished processing string. <<<\n" :
                             "\n<<< Python interpreter completed with Exception/Error. <<<\n");
         push_message_async (NULL); // terminate IDLE push task
-	if (!ret) {
-		g_message ("Python interpreter completed with Exception/Error.");
-		PyErr_Print();
-	}
-	return ret;
+        if (!ret) {
+                g_message ("Python interpreter completed with Exception/Error.");
+                PyErr_Print();
+        }
+        return ret;
 }
 
 
@@ -4582,11 +4581,11 @@ void py_gxsm_console::show_stderr(const gchar *str)
                                                          _("_CLOSE"), GTK_RESPONSE_CLOSE,
                                                          NULL);
 
-	GtkWidget *text = gtk_text_view_new ();
-	GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
-	gtk_container_add (GTK_CONTAINER (scroll), text);
-	gtk_text_view_set_editable (GTK_TEXT_VIEW(text), FALSE);
-	gtk_text_buffer_set_text (gtk_text_view_get_buffer(GTK_TEXT_VIEW(text)),
+        GtkWidget *text = gtk_text_view_new ();
+        GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+        gtk_container_add (GTK_CONTAINER (scroll), text);
+        gtk_text_view_set_editable (GTK_TEXT_VIEW(text), FALSE);
+        gtk_text_buffer_set_text (gtk_text_view_get_buffer(GTK_TEXT_VIEW(text)),
                                   str,
                                   -1);
         gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), scroll);
@@ -4613,58 +4612,58 @@ void py_gxsm_console::initialize_stderr_redirect(PyObject *d)
                     "        redirection.stdoutredirect('\\n')\n"
                     "sys.stdout = StdoutCatcher()\n"
                     "sys.stderr = StderrCatcher()\n",
-		   Py_file_input,
-		   d,
-		   d);
+                    Py_file_input,
+                    d,
+                    d);
 }
 
 PyObject *py_gxsm_console::create_environment(const gchar *filename, gboolean show_errors) {
-	PyObject *d, *plugin_filename;
-	wchar_t *argv[1];
-	argv[0] = NULL;
+        PyObject *d, *plugin_filename;
+        wchar_t *argv[1];
+        argv[0] = NULL;
 
         PI_DEBUG_GM (DBG_L2, "py_gxsm_console::create_environment **");
 
-	d = PyDict_Copy (PyModule_GetDict (py_gxsm_module.main_module));
-	// set __file__ variable for clearer error reporting
-	plugin_filename = Py_BuildValue("s", filename);
-	PyDict_SetItemString(d, "__file__", plugin_filename);
-	PySys_SetArgv(0, argv);
+        d = PyDict_Copy (PyModule_GetDict (py_gxsm_module.main_module));
+        // set __file__ variable for clearer error reporting
+        plugin_filename = Py_BuildValue("s", filename);
+        PyDict_SetItemString(d, "__file__", plugin_filename);
+        PySys_SetArgv(0, argv);
 
         initialize_stderr_redirect(d);
 
 #if 0
-	// redirect stderr and stdout of python script to temporary file
-	if (show_errors) {
-		PI_DEBUG (DBG_L4,  "showing errors");
-		initialize_stderr_redirect(d);
-	} else {
-		PI_DEBUG (DBG_L4,  "NOT showing errors");
+        // redirect stderr and stdout of python script to temporary file
+        if (show_errors) {
+                PI_DEBUG (DBG_L4,  "showing errors");
+                initialize_stderr_redirect(d);
+        } else {
+                PI_DEBUG (DBG_L4,  "NOT showing errors");
         }
 #endif
-	return d;
+        return d;
 }
 
 void py_gxsm_console::destroy_environment(PyObject *d, gboolean show_errors) {
         PI_DEBUG_GM (DBG_L2, "py_gxsm_console::destroy_environment **");
 
-	// show content of temporary file which contains stderr and stdout of python
-	// script and close it
-	PyDict_Clear(d);
-	Py_DECREF(d);
+        // show content of temporary file which contains stderr and stdout of python
+        // script and close it
+        PyDict_Clear(d);
+        Py_DECREF(d);
 }
 
 void py_gxsm_console::clear_output(GtkButton *btn, gpointer user_data)
 {
-	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
-	GtkTextBuffer *console_buf;
-	GtkTextIter start_iter, end_iter;
-	GtkTextView *textview;
+        py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+        GtkTextBuffer *console_buf;
+        GtkTextIter start_iter, end_iter;
+        GtkTextView *textview;
 
-	textview = GTK_TEXT_VIEW (pygc->console_output);
-	console_buf = gtk_text_view_get_buffer(textview);
-	gtk_text_buffer_get_bounds(console_buf, &start_iter, &end_iter);
-	gtk_text_buffer_delete(console_buf, &start_iter, &end_iter);
+        textview = GTK_TEXT_VIEW (pygc->console_output);
+        console_buf = gtk_text_view_get_buffer(textview);
+        gtk_text_buffer_get_bounds(console_buf, &start_iter, &end_iter);
+        gtk_text_buffer_delete(console_buf, &start_iter, &end_iter);
 }
 
 
@@ -4688,7 +4687,7 @@ int Stop(void *)
  */
 void py_gxsm_console::kill(GtkToggleButton *btn, gpointer user_data)
 {
-	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+        py_gxsm_console *pygc = (py_gxsm_console *)user_data;
 
         if (pygc->user_script_running > 0){
                 pygc->append (N_("\n*** SCRIPT INTERRUPT REQUESTED: Setting PyErr SIGINT to abort script.\n"));
@@ -4755,8 +4754,8 @@ gpointer py_gxsm_console::PyRun_GThreadFunc (gpointer data){
         if (!s->ret) PyErr_Print();
         --s->pygc->user_script_running;
         s->pygc->push_message_async (s->ret ?
-                                    "\n<<< PyRun user script (as thread) finished. <<<\n" :
-                                    "\n<<< PyRun user script (as thread) run raised an exeption. <<<\n");
+                                     "\n<<< PyRun user script (as thread) finished. <<<\n" :
+                                     "\n<<< PyRun user script (as thread) run raised an exeption. <<<\n");
         s->pygc->push_message_async (NULL); // terminate IDLE push task
         PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: py_gxsm_console::PyRun_GThreadFunc finished.");
 
@@ -4770,7 +4769,7 @@ void py_gxsm_console::PyRun_GAsyncReadyCallback (GObject *source_object,
                                                  GAsyncResult *res,
                                                  gpointer user_data){
         PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: py_gxsm_console::PyRun_GAsyncReadyCallback");
-	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+        py_gxsm_console *pygc = (py_gxsm_console *)user_data;
 
         PyGILState_STATE py_state = PyGILState_Ensure();
         if (!pygc->run_data.ret) PyErr_Print();
@@ -4787,10 +4786,10 @@ void py_gxsm_console::PyRun_GAsyncReadyCallback (GObject *source_object,
 
 const gchar* py_gxsm_console::run_command(const gchar *cmd, int mode)
 {
-	if (!cmd) {
-		g_warning("No command.");
-		return NULL;
-	}
+        if (!cmd) {
+                g_warning("No command.");
+                return NULL;
+        }
 
         PyErr_Clear(); // clear any previous error or interrupts set
 
@@ -4820,7 +4819,7 @@ const gchar* py_gxsm_console::run_command(const gchar *cmd, int mode)
 
 void py_gxsm_console::append (const gchar *msg)
 {
-	if (!msg) return;
+        if (!msg) return;
         GtkTextBuffer *text_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (console_output));
         GtkTextIter text_iter_end;
         gtk_text_buffer_get_end_iter (text_buffer, &text_iter_end);
@@ -4844,10 +4843,10 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
         if (r > 10){
                 gchar *message = g_strdup_printf("Pasing Error: Potential dead-loop of recursive inclusion detected:\n"
                                                  "Include Level > 10.\n"
-                                                 );
+                        );
                 g_warning ("%s", message);
                 append(message);
-               gapp->warning (message);
+                gapp->warning (message);
                 g_free(message);
 
                 g_free (parsed_script);
@@ -4901,10 +4900,10 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
                                                                          i,
                                                                          lines[0],
                                                                          name
-                                                                         );
+                                                );
                                         g_message ("%s", message);
                                         append(message);
-                                       gapp->warning (message);
+                                        gapp->warning (message);
                                         g_free(message);
                                 }
                         } else {
@@ -4917,7 +4916,7 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
                                                                  lines[0]);
                                 g_message ("%s", message);
                                 append(message);
-                               gapp->warning (message);
+                                gapp->warning (message);
                                 g_free(message);
                         }
                 } else {
@@ -4945,14 +4944,14 @@ gchar *py_gxsm_console::pre_parse_script (const gchar *script, int *n_lines, int
 
 void py_gxsm_console::run_file(GtkButton *btn, gpointer user_data)
 {
-	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
-	GtkTextView *textview;
-	GtkTextBuffer *console_file_buf;
-	GtkTextIter start_iter, end_iter;
+        py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+        GtkTextView *textview;
+        GtkTextBuffer *console_file_buf;
+        GtkTextIter start_iter, end_iter;
         gchar *script, *parsed_script;
 
-	textview = GTK_TEXT_VIEW(pygc->console_file_content);
-	console_file_buf = gtk_text_view_get_buffer(textview);
+        textview = GTK_TEXT_VIEW(pygc->console_file_content);
+        console_file_buf = gtk_text_view_get_buffer(textview);
 
         //gchar *tmp = g_strdup_printf ("%s #jobs[%d]+1\n", N_("\n>>> Checking for user script execution... \n"), pygc->user_script_running);
         //pygc->append (tmp);
@@ -4977,40 +4976,40 @@ void py_gxsm_console::run_file(GtkButton *btn, gpointer user_data)
 
 void py_gxsm_console::fix_eols_to_unix(gchar *text)
 {
-	gchar *p = strchr(text, '\r');
-	guint i, j;
+        gchar *p = strchr(text, '\r');
+        guint i, j;
 
-	/* Unix */
-	if (!p)
-		return;
+        /* Unix */
+        if (!p)
+                return;
 
-	/* Mac */
-	if (p[1] != '\n') {
-		do {
-			*p = '\n';
-		} while ((p = strchr(p+1, '\r')));
+        /* Mac */
+        if (p[1] != '\n') {
+                do {
+                        *p = '\n';
+                } while ((p = strchr(p+1, '\r')));
 
-		return;
-	}
+                return;
+        }
 
-	/* MS-DOS */
-	for (i = 0, j = 0; text[i]; i++) {
-		if (text[i] != '\r') {
-			text[j] = text[i];
-			j++;
-		}
-	}
-	text[j] = '\0';
+        /* MS-DOS */
+        for (i = 0, j = 0; text[i]; i++) {
+                if (text[i] != '\r') {
+                        text[j] = text[i];
+                        j++;
+                }
+        }
+        text[j] = '\0';
 }
 
 
 void py_gxsm_console::open_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
-	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
-	GtkWidget *file_chooser;
-	GtkFileFilter *filter = gtk_file_filter_new();
-	GtkTextBuffer *console_file_buf;
-	GtkTextView *textview;
+        py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+        GtkWidget *file_chooser;
+        GtkFileFilter *filter = gtk_file_filter_new();
+        GtkTextBuffer *console_file_buf;
+        GtkTextView *textview;
 
         gtk_file_filter_add_mime_type(filter, "text/x-python");
         gtk_file_filter_add_pattern(filter, "*.py");
@@ -5069,10 +5068,10 @@ void py_gxsm_console::open_file_callback (GSimpleAction *action, GVariant *param
 
 void py_gxsm_console::open_action_script_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
-	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
-	//GtkWidget *file_chooser;
-	GtkTextBuffer *console_file_buf;
-	GtkTextView *textview;
+        py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+        //GtkWidget *file_chooser;
+        GtkTextBuffer *console_file_buf;
+        GtkTextView *textview;
         GVariant *old_state=NULL, *new_state=NULL;
         gchar *file_content;
         GError *err = NULL;
@@ -5117,61 +5116,61 @@ void py_gxsm_console::open_action_script_callback (GSimpleAction *action, GVaria
 
 void py_gxsm_console::save_file_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
-	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
-	GtkTextView *textview;
-	GtkTextBuffer *buf;
-	GtkTextIter start_iter, end_iter;
-	gchar *script;
-	FILE *f;
+        py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+        GtkTextView *textview;
+        GtkTextBuffer *buf;
+        GtkTextIter start_iter, end_iter;
+        gchar *script;
+        FILE *f;
 
-	if (pygc->script_filename == NULL) {
-		pygc->save_file_as_callback (NULL, NULL, user_data);
-	}
-	else {
-		textview = GTK_TEXT_VIEW (pygc->console_file_content);
-		buf = gtk_text_view_get_buffer(textview);
-		gtk_text_buffer_get_bounds(buf, &start_iter, &end_iter);
-		script = gtk_text_buffer_get_text(buf, &start_iter, &end_iter, FALSE);
-		f = g_fopen (pygc->script_filename, "wb");
-		if (f) {
-			fwrite(script, 1, strlen(script), f);
-			fclose(f);
+        if (pygc->script_filename == NULL) {
+                pygc->save_file_as_callback (NULL, NULL, user_data);
+        }
+        else {
+                textview = GTK_TEXT_VIEW (pygc->console_file_content);
+                buf = gtk_text_view_get_buffer(textview);
+                gtk_text_buffer_get_bounds(buf, &start_iter, &end_iter);
+                script = gtk_text_buffer_get_text(buf, &start_iter, &end_iter, FALSE);
+                f = g_fopen (pygc->script_filename, "wb");
+                if (f) {
+                        fwrite(script, 1, strlen(script), f);
+                        fclose(f);
                         pygc->set_script_filename ();
-		}
-		else {
-			gchar *message = g_strdup_printf("Cannot open file '%s': %s",
-							 pygc->script_filename,
-							 g_strerror(errno));
-			pygc->append(message);
-			g_free(message);
+                }
+                else {
+                        gchar *message = g_strdup_printf("Cannot open file '%s': %s",
+                                                         pygc->script_filename,
+                                                         g_strerror(errno));
+                        pygc->append(message);
+                        g_free(message);
                         pygc->set_script_filename ("invalid file");
-		}
-		g_free(script);
-	}
+                }
+                g_free(script);
+        }
 }
 
 void py_gxsm_console::save_file_as_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
-	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
-	GtkWidget *dialog;
+        py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+        GtkWidget *dialog;
 
-	dialog = gtk_file_chooser_dialog_new(N_("Save Script as"),
-					     NULL,
-					     GTK_FILE_CHOOSER_ACTION_SAVE,
-					     N_("_Cancel"), GTK_RESPONSE_CANCEL,
-					     N_("_Save"), GTK_RESPONSE_ACCEPT,
-					     NULL);
-	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
+        dialog = gtk_file_chooser_dialog_new(N_("Save Script as"),
+                                             NULL,
+                                             GTK_FILE_CHOOSER_ACTION_SAVE,
+                                             N_("_Cancel"), GTK_RESPONSE_CANCEL,
+                                             N_("_Save"), GTK_RESPONSE_ACCEPT,
+                                             NULL);
+        gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
 
-	//gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), default_folder_for_saving);
-	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog),
-					  "Untitled document");
+        //gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), default_folder_for_saving);
+        gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog),
+                                          "Untitled document");
 
-	if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
-		pygc->script_filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-		pygc->save_file_callback (NULL, NULL, user_data);
-	}
-	gtk_widget_destroy(dialog);
+        if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+                pygc->script_filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+                pygc->save_file_callback (NULL, NULL, user_data);
+        }
+        gtk_widget_destroy(dialog);
 }
 
 
@@ -5191,19 +5190,19 @@ void py_gxsm_console::configure_callback (GSimpleAction *action, GVariant *param
         g_simple_action_set_state (action, new_state);
         g_variant_unref (old_state);
         
-	if (g_variant_get_boolean (new_state)){
-		;
-	}
+        if (g_variant_get_boolean (new_state)){
+                ;
+        }
 }
 
 static GActionEntry win_py_gxsm_action_entries[] = {
-	{ "pyfile-open", py_gxsm_console::open_file_callback, NULL, NULL, NULL },
-	{ "pyfile-save", py_gxsm_console::save_file_callback, NULL, NULL, NULL },
-	{ "pyfile-save-as", py_gxsm_console::save_file_as_callback, NULL, NULL, NULL },
+        { "pyfile-open", py_gxsm_console::open_file_callback, NULL, NULL, NULL },
+        { "pyfile-save", py_gxsm_console::save_file_callback, NULL, NULL, NULL },
+        { "pyfile-save-as", py_gxsm_console::save_file_as_callback, NULL, NULL, NULL },
 
-	{ "pyfile-action-use", py_gxsm_console::open_action_script_callback, "s", "'sf1'", NULL },
+        { "pyfile-action-use", py_gxsm_console::open_action_script_callback, "s", "'sf1'", NULL },
 
-	{ "pyremote-configure", py_gxsm_console::configure_callback, NULL, NULL, NULL },
+        { "pyremote-configure", py_gxsm_console::configure_callback, NULL, NULL, NULL },
 };
 
 void py_gxsm_console::AppWindowInit(const gchar *title){
@@ -5224,13 +5223,13 @@ void py_gxsm_console::AppWindowInit(const gchar *title){
         g_action_map_add_action_entries (G_ACTION_MAP (app_window),
                                          win_py_gxsm_action_entries, G_N_ELEMENTS (win_py_gxsm_action_entries),
                                          this);
-	PI_DEBUG (DBG_L2,  "pyremote Plugin :: setup file menu" );
+        PI_DEBUG (DBG_L2,  "pyremote Plugin :: setup file menu" );
 
         // create window PopUp menu  ---------------------------------------------------------------------
         file_menu = gtk_menu_new_from_model (G_MENU_MODEL (gapp->get_plugin_pyremote_file_menu ()));
         g_assert (GTK_IS_MENU (file_menu));
 
-	GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
+        GtkIconSize tmp_toolbar_icon_size = GTK_ICON_SIZE_LARGE_TOOLBAR;
 
         // attach popup file menu button --------------------------------
         GtkWidget *header_menu_button = gtk_menu_button_new ();
@@ -5239,31 +5238,31 @@ void py_gxsm_console::AppWindowInit(const gchar *title){
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
         gtk_widget_show (header_menu_button);
 
-	PI_DEBUG (DBG_L2,  "pyremote Plugin ::  header button" );
+        PI_DEBUG (DBG_L2,  "pyremote Plugin ::  header button" );
        
         // attach execute action buttons --------------------------------
         GtkWidget *header_action_button = gtk_button_new ();
         gtk_button_set_image (GTK_BUTTON (header_action_button), gtk_image_new_from_icon_name ("system-run-symbolic", tmp_toolbar_icon_size));
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_action_button);
         gtk_widget_show (header_action_button);
-	g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::run_file), this);
-	gtk_widget_set_tooltip_text (header_action_button, N_("Execute Script"));
+        g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::run_file), this);
+        gtk_widget_set_tooltip_text (header_action_button, N_("Execute Script"));
 
         header_action_button = gtk_button_new ();
         gtk_button_set_image (GTK_BUTTON (header_action_button), gtk_image_new_from_icon_name ("edit-clear-all-symbolic", tmp_toolbar_icon_size));
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_action_button);
         gtk_widget_show (header_action_button);
         g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::clear_output), this);
-	gtk_widget_set_tooltip_text (header_action_button, N_("Clear Console Output"));
+        gtk_widget_set_tooltip_text (header_action_button, N_("Clear Console Output"));
 
         header_action_button = gtk_button_new ();
         gtk_button_set_image (GTK_BUTTON (header_action_button), gtk_image_new_from_icon_name ("system-shutdown-symbolic", tmp_toolbar_icon_size));
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_action_button);
         gtk_widget_show (header_action_button);
-	g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::kill), this);
-	gtk_widget_set_tooltip_text (header_action_button, N_("Abort Script"));
+        g_signal_connect (header_action_button, "clicked", G_CALLBACK(py_gxsm_console::kill), this);
+        gtk_widget_set_tooltip_text (header_action_button, N_("Abort Script"));
 
-	PI_DEBUG (DBG_L2,  "pyremote Plugin :: setup titlbar" );
+        PI_DEBUG (DBG_L2,  "pyremote Plugin :: setup titlbar" );
 
         gtk_window_set_title (GTK_WINDOW (window), title);
         gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
@@ -5278,11 +5277,11 @@ void py_gxsm_console::AppWindowInit(const gchar *title){
                           G_CALLBACK(App::close_scan_event_cb),
                           this);
         
-	v_grid = gtk_grid_new ();
+        v_grid = gtk_grid_new ();
         gtk_container_add (GTK_CONTAINER (window), v_grid);
-	g_object_set_data (G_OBJECT (window), "v_grid", v_grid);
+        g_object_set_data (G_OBJECT (window), "v_grid", v_grid);
 
-	gtk_widget_show_all (GTK_WIDGET (window));
+        gtk_widget_show_all (GTK_WIDGET (window));
 
         PI_DEBUG(DBG_L2, "pyremote Plugin :: AppWindoInit() -- building Console AppWindow -- calling GUI builder.");
         create_gui ();
@@ -5291,44 +5290,44 @@ void py_gxsm_console::AppWindowInit(const gchar *title){
         PI_DEBUG(DBG_L2, "pyremote Plugin :: AppWindoInit() -- Console AppWindow ready.");
 
         set_window_geometry ("python-console");
- }
+}
 
 void py_gxsm_console::create_gui ()
 {
-	GtkWidget *console_scrolledwin, *file_scrolledwin, *vpaned, *hpaned_scpane, *frame, *sc_grid;
-	GtkWidget *entry_input;
+        GtkWidget *console_scrolledwin, *file_scrolledwin, *vpaned, *hpaned_scpane, *frame, *sc_grid;
+        GtkWidget *entry_input;
 
-	GtkTextView *file_textview, *output_textview;
-	//PangoFontDescription *font_desc;
+        GtkTextView *file_textview, *output_textview;
+        //PangoFontDescription *font_desc;
         
-	BuildParam *bp;
-	BuildParam *bp_sc;
-	UnitObj *null_unit;
+        BuildParam *bp;
+        BuildParam *bp_sc;
+        UnitObj *null_unit;
 
 #ifdef HAVE_GTKSOURCEVIEW
-	GtkSourceLanguageManager *manager;
-	GtkSourceBuffer *sourcebuffer;
-	GtkSourceLanguage *language;
+        GtkSourceLanguageManager *manager;
+        GtkSourceBuffer *sourcebuffer;
+        GtkSourceLanguage *language;
 #endif
         PI_DEBUG(DBG_L2, "pyremote Plugin :: create_gui() -- building GUI elements.");
 
         sc_grid = gtk_grid_new ();
         bp = new BuildParam (v_grid, NULL, gapp->RemoteEntryList);
         
-	// create static structure;
-	exec_value = 50.0; // mid value
+        // create static structure;
+        exec_value = 50.0; // mid value
         
-	// create GUI
+        // create GUI
 
         PI_DEBUG(DBG_L2, "pyremote Plugin :: create_gui() -- building GUI elements..");
 
-	// window
+        // window
         hpaned_scpane = gtk_paned_new (GTK_ORIENTATION_HORIZONTAL);
         gtk_widget_set_vexpand (hpaned_scpane, TRUE);
         gtk_widget_set_hexpand (hpaned_scpane, TRUE);
         bp->grid_add_widget (hpaned_scpane, 100);
         
-	vpaned = gtk_paned_new (GTK_ORIENTATION_VERTICAL);
+        vpaned = gtk_paned_new (GTK_ORIENTATION_VERTICAL);
         gtk_widget_set_hexpand (vpaned, TRUE);
         gtk_widget_set_vexpand (vpaned, TRUE);
 
@@ -5337,26 +5336,26 @@ void py_gxsm_console::create_gui ()
         //bp->grid_add_widget (vpaned, 100);
         bp->new_line ();
 
-	file_scrolledwin = gtk_scrolled_window_new(NULL, NULL);
-	gtk_paned_pack1(GTK_PANED(vpaned), file_scrolledwin, TRUE, FALSE);
-	gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(file_scrolledwin),
-					    GTK_SHADOW_IN);
-	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(file_scrolledwin),
-				       GTK_POLICY_AUTOMATIC,
-				       GTK_POLICY_AUTOMATIC);
-	console_scrolledwin = gtk_scrolled_window_new(NULL, NULL);
-	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(console_scrolledwin),
-				       GTK_POLICY_AUTOMATIC,
-				       GTK_POLICY_AUTOMATIC);
-	gtk_paned_pack2(GTK_PANED(vpaned), console_scrolledwin, TRUE, TRUE);
-	gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(console_scrolledwin),
-					    GTK_SHADOW_IN);
+        file_scrolledwin = gtk_scrolled_window_new(NULL, NULL);
+        gtk_paned_pack1(GTK_PANED(vpaned), file_scrolledwin, TRUE, FALSE);
+        gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(file_scrolledwin),
+                                            GTK_SHADOW_IN);
+        gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(file_scrolledwin),
+                                       GTK_POLICY_AUTOMATIC,
+                                       GTK_POLICY_AUTOMATIC);
+        console_scrolledwin = gtk_scrolled_window_new(NULL, NULL);
+        gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(console_scrolledwin),
+                                       GTK_POLICY_AUTOMATIC,
+                                       GTK_POLICY_AUTOMATIC);
+        gtk_paned_pack2(GTK_PANED(vpaned), console_scrolledwin, TRUE, TRUE);
+        gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(console_scrolledwin),
+                                            GTK_SHADOW_IN);
 
         PI_DEBUG(DBG_L2, "pyremote Plugin :: create_gui() -- building GUI elements...");
 
-	// console output
-	console_output = gtk_text_view_new();
-	output_textview = GTK_TEXT_VIEW (console_output);
+        // console output
+        console_output = gtk_text_view_new();
+        output_textview = GTK_TEXT_VIEW (console_output);
         /* create an auto-updating 'always at end' marker to scroll */
         GtkTextBuffer *text_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (console_output));
         GtkTextIter text_iter_end;
@@ -5367,48 +5366,48 @@ void py_gxsm_console::create_gui ()
                                                         &text_iter_end,
                                                         FALSE);
 
-	gtk_container_add(GTK_CONTAINER(console_scrolledwin), console_output);
-	gtk_text_view_set_editable(output_textview, FALSE);
+        gtk_container_add(GTK_CONTAINER(console_scrolledwin), console_output);
+        gtk_text_view_set_editable(output_textview, FALSE);
 
-	// source view file buffer
+        // source view file buffer
         sourcebuffer = gtk_source_buffer_new (NULL);
         console_file_content = gtk_source_view_new_with_buffer (sourcebuffer);
-	file_textview = GTK_TEXT_VIEW(console_file_content);
-	gtk_source_view_set_show_line_numbers(GTK_SOURCE_VIEW(file_textview), TRUE);
-	gtk_source_view_set_auto_indent(GTK_SOURCE_VIEW(file_textview), TRUE);
-	manager = gtk_source_language_manager_get_default();
+        file_textview = GTK_TEXT_VIEW(console_file_content);
+        gtk_source_view_set_show_line_numbers(GTK_SOURCE_VIEW(file_textview), TRUE);
+        gtk_source_view_set_auto_indent(GTK_SOURCE_VIEW(file_textview), TRUE);
+        manager = gtk_source_language_manager_get_default();
 
-	language = gtk_source_language_manager_get_language(manager, "pygwy");
-	if (!language)
-		language = gtk_source_language_manager_get_language(manager, "python");
-	gtk_source_buffer_set_language(sourcebuffer, language);
-	gtk_source_buffer_set_highlight_syntax(sourcebuffer, TRUE);
+        language = gtk_source_language_manager_get_language(manager, "pygwy");
+        if (!language)
+                language = gtk_source_language_manager_get_language(manager, "python");
+        gtk_source_buffer_set_language(sourcebuffer, language);
+        gtk_source_buffer_set_highlight_syntax(sourcebuffer, TRUE);
 
 #if 0
-	console_file_content = gtk_text_view_new();
-	file_textview = GTK_TEXT_VIEW(console_file_content);
+        console_file_content = gtk_text_view_new();
+        file_textview = GTK_TEXT_VIEW(console_file_content);
 #endif
 
         PI_DEBUG(DBG_L2, "pyremote Plugin :: create_gui() -- building GUI elements....");
-	// set font
-	//font_desc = pango_font_description_from_string ("Monospace 8");
-	//gtk_widget_override_font (console_file_content, font_desc);
+        // set font
+        //font_desc = pango_font_description_from_string ("Monospace 8");
+        //gtk_widget_override_font (console_file_content, font_desc);
         //gtk_widget_override_font (console_output, font_desc);
-	//pango_font_description_free (font_desc);
+        //pango_font_description_free (font_desc);
 
-	gtk_container_add (GTK_CONTAINER(file_scrolledwin),
+        gtk_container_add (GTK_CONTAINER(file_scrolledwin),
                            console_file_content);
-	gtk_text_view_set_editable (file_textview, TRUE);
+        gtk_text_view_set_editable (file_textview, TRUE);
 
-	frame = gtk_frame_new (N_("Command"));
-	entry_input = gtk_entry_new ();
-	gtk_container_add (GTK_CONTAINER(frame), entry_input);
-	gtk_entry_set_invisible_char (GTK_ENTRY(entry_input), 9679);
-	gtk_widget_grab_focus (GTK_WIDGET(entry_input));
+        frame = gtk_frame_new (N_("Command"));
+        entry_input = gtk_entry_new ();
+        gtk_container_add (GTK_CONTAINER(frame), entry_input);
+        gtk_entry_set_invisible_char (GTK_ENTRY(entry_input), 9679);
+        gtk_widget_grab_focus (GTK_WIDGET(entry_input));
         bp->grid_add_widget (frame, 80);
         
-	null_unit = new UnitObj(" "," ");
-	bp->grid_add_ec ("Script Control", null_unit, &exec_value, 0.0, 100.0, "4g", 1., 10., "script-control");
+        null_unit = new UnitObj(" "," ");
+        bp->grid_add_ec ("Script Control", null_unit, &exec_value, 0.0, 100.0, "4g", 1., 10., "script-control");
 
         gapp->RemoteEntryList = bp->get_remote_list_head ();
 
@@ -5425,23 +5424,23 @@ void py_gxsm_console::create_gui ()
         }
         gapp->RemoteEntryList = bp_sc->get_remote_list_head ();
 
-	g_signal_connect(entry_input, "activate",
-			 G_CALLBACK(py_gxsm_console::command_execute), this);
+        g_signal_connect(entry_input, "activate",
+                         G_CALLBACK(py_gxsm_console::command_execute), this);
         
         PI_DEBUG(DBG_L2, "pyremote Plugin :: console_create_gui() -- building GUI elements.... hooking up");
 
-	// connect on window close()
-	g_signal_connect (window, "delete-event",
-			  G_CALLBACK(gtk_widget_hide_on_delete), this);
-	gtk_text_view_set_wrap_mode (output_textview, GTK_WRAP_WORD_CHAR);
+        // connect on window close()
+        g_signal_connect (window, "delete-event",
+                          G_CALLBACK(gtk_widget_hide_on_delete), this);
+        gtk_text_view_set_wrap_mode (output_textview, GTK_WRAP_WORD_CHAR);
 
         gtk_widget_show_all (v_grid);
         gtk_widget_show_all (sc_grid);
 
         gtk_window_resize (GTK_WINDOW(window), 600, 500);
-	//gtk_paned_set_position (GTK_PANED(vpaned), 50);
-	//gtk_paned_set_position (GTK_PANED(vpaned), -1); // 1:1 -- unset default
-	gtk_paned_set_position (GTK_PANED(hpaned_scpane), 300);
+        //gtk_paned_set_position (GTK_PANED(vpaned), 50);
+        //gtk_paned_set_position (GTK_PANED(vpaned), -1); // 1:1 -- unset default
+        gtk_paned_set_position (GTK_PANED(hpaned_scpane), 300);
         PI_DEBUG(DBG_L2, "pyremote Plugin :: console_create_gui() -- building GUI elements.... completed.");
 }
 
@@ -5449,100 +5448,100 @@ void py_gxsm_console::create_gui ()
 // Small idiotic function to create a file with some pyremote example commands if none is found.
 void  py_gxsm_console::write_example_file(void)
 {
-	std::ofstream example_file;
-	example_file.open(example_filename);
-	example_file << "\n#Since no default file / script was found, here are some\n"
-		"# things you can do with the python interface.\n\n"
+        std::ofstream example_file;
+        example_file.open(example_filename);
+        example_file << "\n#Since no default file / script was found, here are some\n"
+                "# things you can do with the python interface.\n\n"
                 "# Please visit/install gxsm3-lib-utils.py, ... before executing this:\n"
                 "# Simply visit Menu/Libraries/Lib Utils first.\n"
                 "\n"
                 "#GXSM_USE_LIBRARY <gxsm3-lib-scan>\n"
                 "\n"
-		"# You can also create the more extensive default/example tools collection: File->Use default.\n"
-		"# - see the manual for more information\n"
+                "# You can also create the more extensive default/example tools collection: File->Use default.\n"
+                "# - see the manual for more information\n"
                 "# Load scan support object from library\n"
                 "\n"
                 "scan = scan_control()\n"
                 "\n"
-		"# Execute to try these\n"
-		"c = gxsm.get(\"script-control\")\n"
-		"print \"Control value: \", c\n"
-		"if c < 50:\n"
-		"    print \"control value below limit - aborting!\"\n"
-		"    print \"you can set the value in the window above\"\n"
-		"    # you could set Script_Control like any other variable - see below\n"
-		"else:\n"
-		"    gxsm.set (\"RangeX\",\"200\")\n"
-		"    gxsm.set (\"RangeY\",\"200\")\n"
-		"    gxsm.set (\"PointsX\",\"100\")\n"
-		"    gxsm.set (\"PointsY\",\"100\")\n"
-		"    gxsm.set (\"dsp-fbs-bias\",\"0.1\")\n"
-		"    gxsm.set (\"dsp-fbs-mx0-current-set\",\"1.5\")\n"
-		"    gxsm.set (\"dsp-fbs-cp\", \"25\")\n"
-		"    gxsm.set (\"dsp-fbs-ci\", \"20\")\n"
-		"    gxsm.set (\"OffsetX\", \"0\")\n"
-		"    gxsm.set (\"OffsetY\", \"0\")\n"
-		"#    gxsm.action (\"DSP_CMD_AUTOAPP\")\n"
-		"    gxsm.sleep (10)\n"
+                "# Execute to try these\n"
+                "c = gxsm.get(\"script-control\")\n"
+                "print \"Control value: \", c\n"
+                "if c < 50:\n"
+                "    print \"control value below limit - aborting!\"\n"
+                "    print \"you can set the value in the window above\"\n"
+                "    # you could set Script_Control like any other variable - see below\n"
+                "else:\n"
+                "    gxsm.set (\"RangeX\",\"200\")\n"
+                "    gxsm.set (\"RangeY\",\"200\")\n"
+                "    gxsm.set (\"PointsX\",\"100\")\n"
+                "    gxsm.set (\"PointsY\",\"100\")\n"
+                "    gxsm.set (\"dsp-fbs-bias\",\"0.1\")\n"
+                "    gxsm.set (\"dsp-fbs-mx0-current-set\",\"1.5\")\n"
+                "    gxsm.set (\"dsp-fbs-cp\", \"25\")\n"
+                "    gxsm.set (\"dsp-fbs-ci\", \"20\")\n"
+                "    gxsm.set (\"OffsetX\", \"0\")\n"
+                "    gxsm.set (\"OffsetY\", \"0\")\n"
+                "#    gxsm.action (\"DSP_CMD_AUTOAPP\")\n"
+                "    gxsm.sleep (10)\n"
                 "\n"
-		"    #gxsm.startscan ()\n"
+                "    #gxsm.startscan ()\n"
                 "\n"
                 "    scan.run_set ([-0.6, -0.4, -0.3])  # simply executes a scan for every bias voltage given in the list.\n"
                 "\n"
-	        "    gxsm.moveto_scan_xy (100.,50.)\n";
-	example_file.close();
+                "    gxsm.moveto_scan_xy (100.,50.)\n";
+        example_file.close();
 }
 
 void py_gxsm_console::run()
 {
-	PyObject *d;
+        PyObject *d;
 
-	PI_DEBUG_GM(DBG_L2, "pyremote Plugin :: console_run()");
+        PI_DEBUG_GM(DBG_L2, "pyremote Plugin :: console_run()");
 
         // are we up already? just make sure to (re) present window, else create
         if (gui_ready){
                 gtk_window_present (GTK_WINDOW(window));
-		return;
-	} else {
-		AppWindowInit (pyremote_pi.help);
+                return;
+        } else {
+                AppWindowInit (pyremote_pi.help);
         }
 
         append("Welcome to the PyRemote Control for GXSM: Python Version is ");
         append(Py_GetVersion());
               
-	script_filename = NULL;
+        script_filename = NULL;
         fail = false;
-	// create new environment
-	d = create_environment("__console__", FALSE); // was FALSE, want to see change in error message handling
-	if (!d) {
-		g_warning("Cannot create copy of Python dictionary.");
-		return;
-	}
+        // create new environment
+        d = create_environment("__console__", FALSE); // was FALSE, want to see change in error message handling
+        if (!d) {
+                g_warning("Cannot create copy of Python dictionary.");
+                return;
+        }
 
-	PI_DEBUG_GM(DBG_L2, "pyremote Plugin :: console_run() run_string to import gxsm module.");
+        PI_DEBUG_GM(DBG_L2, "pyremote Plugin :: console_run() run_string to import gxsm module.");
 
-	run_string("import gxsm\n",
-        	   Py_file_input,
-		   d,
-		   d);
+        run_string("import gxsm\n",
+                   Py_file_input,
+                   d,
+                   d);
 
         dictionary = d;
 
-	// try loading the default pyremote file
-	script_filename = g_strdup_printf("%s.py", xsmres.PyremoteFile);
-	query_filename = false;
+        // try loading the default pyremote file
+        script_filename = g_strdup_printf("%s.py", xsmres.PyremoteFile);
+        query_filename = false;
 
-	PI_DEBUG_GM(DBG_L1, "Pyremote console opening >%s< ", script_filename);
-	open_file_callback (NULL, NULL, this);
+        PI_DEBUG_GM(DBG_L1, "Pyremote console opening >%s< ", script_filename);
+        open_file_callback (NULL, NULL, this);
 
-	// put some small sommand example if no file is found
-	if (fail) {
+        // put some small sommand example if no file is found
+        if (fail) {
                 PI_DEBUG(DBG_L1, "Pyremote console opening failed. Generating example.");
-		query_filename = false;
-		write_example_file();
-		script_filename = g_strdup(example_filename);
-		open_file_callback (NULL, NULL, this);
-	}
+                query_filename = false;
+                write_example_file();
+                script_filename = g_strdup(example_filename);
+                open_file_callback (NULL, NULL, this);
+        }
 
         append("\n\n");
         append("WARNING: ================================================================================\n");
@@ -5555,21 +5554,21 @@ void py_gxsm_console::run()
 
 void py_gxsm_console::command_execute(GtkEntry *entry, gpointer user_data)
 {
-	py_gxsm_console *pygc = (py_gxsm_console *)user_data;
-	gchar *input_line;
-	const gchar *command;
-	GString *output;
+        py_gxsm_console *pygc = (py_gxsm_console *)user_data;
+        gchar *input_line;
+        const gchar *command;
+        GString *output;
 
         input_line = g_strconcat(">>> ", gtk_entry_buffer_get_text (GTK_ENTRY_BUFFER (gtk_entry_get_buffer (GTK_ENTRY (entry)))), "\n", NULL);
-	output = g_string_new(input_line);
-	command = gtk_entry_buffer_get_text (GTK_ENTRY_BUFFER (gtk_entry_get_buffer (GTK_ENTRY (entry))));
-	output = g_string_append(output,
-				 pygc->run_command(command, Py_single_input));
+        output = g_string_new(input_line);
+        command = gtk_entry_buffer_get_text (GTK_ENTRY_BUFFER (gtk_entry_get_buffer (GTK_ENTRY (entry))));
+        output = g_string_append(output,
+                                 pygc->run_command(command, Py_single_input));
 
-	pygc->append((gchar *)output->str);
-	g_string_free(output, TRUE);
+        pygc->append((gchar *)output->str);
+        g_string_free(output, TRUE);
 
-	gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1);
+        gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1);
 }
 
 
@@ -5583,19 +5582,19 @@ static void run_action_script_callback (gpointer data){
 // init-Function
 static void pyremote_init(void)
 {
-	/* Python will search for remote.py in the directories, defined
-	   by PYTHONPATH. */
-	PI_DEBUG_GM(DBG_L2, "pyremote Plugin Init");
-	if (!getenv("PYTHONPATH")){
-		PI_DEBUG_GM(DBG_L2, "pyremote: PYTHONPATH is not set.");
-		PI_DEBUG_GM(DBG_L2, "pyremote: Setting to '.'");
-		setenv("PYTHONPATH", ".", 0);
-	}
+        /* Python will search for remote.py in the directories, defined
+           by PYTHONPATH. */
+        PI_DEBUG_GM(DBG_L2, "pyremote Plugin Init");
+        if (!getenv("PYTHONPATH")){
+                PI_DEBUG_GM(DBG_L2, "pyremote: PYTHONPATH is not set.");
+                PI_DEBUG_GM(DBG_L2, "pyremote: Setting to '.'");
+                setenv("PYTHONPATH", ".", 0);
+        }
 
-	if (!py_gxsm_remote_console){
-		py_gxsm_remote_console = new py_gxsm_console ();
-	
-               gapp->ConnectPluginToRemoteAction (run_action_script_callback);
+        if (!py_gxsm_remote_console){
+                py_gxsm_remote_console = new py_gxsm_console ();
+
+                gapp->ConnectPluginToRemoteAction (run_action_script_callback);
         }
 
         py_gxsm_remote_console->run();
@@ -5605,23 +5604,23 @@ static void pyremote_init(void)
 // cleanup-Function
 static void pyremote_cleanup(void)
 {
-	PI_DEBUG_GM(DBG_L2, "Pyremote Plugin Cleanup");
-	if (py_gxsm_remote_console){
+        PI_DEBUG_GM(DBG_L2, "Pyremote Plugin Cleanup");
+        if (py_gxsm_remote_console){
                 PI_DEBUG(DBG_L3, "Pyremote Plugin: savinggeometry forced now.");
                 py_gxsm_remote_console->SaveGeometry (); // some what needed and now it running the destruictor also. Weird.
                 PI_DEBUG(DBG_L3, "Pyremote Plugin: closing up remote control console: delete py_gxsm_remote_console.");
-		delete py_gxsm_remote_console;
+                delete py_gxsm_remote_console;
         }
         py_gxsm_remote_console = NULL;
 }
 
 void pyremote_run( GtkWidget *w, void *data ){
-	PI_DEBUG_GM(DBG_L2, "pyremote Plugin Run Console.");
+        PI_DEBUG_GM(DBG_L2, "pyremote Plugin Run Console.");
 
         // check if we are created -- should be.
         if (!py_gxsm_remote_console)
-		py_gxsm_remote_console = new py_gxsm_console ();
+                py_gxsm_remote_console = new py_gxsm_console ();
 
-	PI_DEBUG_GM(DBG_L2, "pyremote Plugin Run: Console-Run");
-	py_gxsm_remote_console->run();
+        PI_DEBUG_GM(DBG_L2, "pyremote Plugin Run: Console-Run");
+        py_gxsm_remote_console->run();
 }
