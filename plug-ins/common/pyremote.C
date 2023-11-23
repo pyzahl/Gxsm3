@@ -2440,9 +2440,9 @@ static gboolean main_context_createscan_from_thread (gpointer user_data){
         g_message ("Create Scan: array len=%ld OK.", view.len / sizeof(long));
         
 
-//Scan *dst;
-//gapp->xsm->ActivateFreeChannel();
-//dst =gapp->xsm->GetActiveScan();
+        //Scan *dst;
+        //gapp->xsm->ActivateFreeChannel();
+        //dst =gapp->xsm->GetActiveScan();
         Scan *dst =gapp->xsm->GetScanChannel (ch);
 
         if (dst){
@@ -2548,14 +2548,14 @@ static gboolean main_context_createscanf_from_thread (gpointer user_data){
         PyObject *obj;
 
         long ch;
-long sizex, sizey, sizev;
-double rangex, rangey;
+        long sizex, sizey, sizev;
+        double rangex, rangey;
         long append=0;
 
         idle_data->ret = -1;
 
         sizev=1; // try xyv
-if(!PyArg_ParseTuple (idle_data->args, "llllddOl", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj, &append)){
+        if(!PyArg_ParseTuple (idle_data->args, "llllddOl", &ch, &sizex, &sizey, &sizev, &rangex, &rangey, &obj, &append)){
                 UNSET_WAIT_JOIN_MAIN;
                 return G_SOURCE_REMOVE;
         }
@@ -2578,11 +2578,11 @@ if(!PyArg_ParseTuple (idle_data->args, "llllddOl", &ch, &sizex, &sizey, &sizev, 
         }
         g_message ("Create Scan: array len=%ld OK.", view.len / sizeof(float));
         
-//if (PyObject_AsWriteBuffer(the_array, (void **) &pbuf, (Py_ssize_t*)&blen))
-//        return Py_BuildValue("i", -1);
-//Scan *dst;
-//gapp->xsm->ActivateFreeChannel();
-//dst =gapp->xsm->GetActiveScan();
+        //if (PyObject_AsWriteBuffer(the_array, (void **) &pbuf, (Py_ssize_t*)&blen))
+        //        return Py_BuildValue("i", -1);
+        //Scan *dst;
+        //gapp->xsm->ActivateFreeChannel();
+        //dst =gapp->xsm->GetActiveScan();
 
         Scan *dst =gapp->xsm->GetScanChannel (ch);
         if (dst){
@@ -2682,7 +2682,7 @@ static PyObject *remote_createscanf(PyObject * self, PyObject * args)
 static PyObject* remote_set_scan_unit(PyObject *self, PyObject *args)
 {
         PI_DEBUG(DBG_L2, "pyremote: set scan zunit ");
-//remote_args ra;
+        //remote_args ra;
         int ch;
         gchar *udim, *unitid, *ulabel;
 
@@ -2844,7 +2844,7 @@ static PyObject* remote_getslice(PyObject *self, PyObject *args)
         PI_DEBUG(DBG_L2, "pyremote: getslice");
         long ch,v,t,yi,yn;
 
-//PyObject *obj;
+        //PyObject *obj;
         
         if (!PyArg_ParseTuple (args, "lllll", &ch, &v, &t, &yi, &yn))
                 return Py_BuildValue("i", -1);
