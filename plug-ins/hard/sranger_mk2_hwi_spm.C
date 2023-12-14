@@ -133,16 +133,21 @@ sranger_mk2_hwi_spm::~sranger_mk2_hwi_spm(){
  "A" :                Mover/Wave axis counts 0,1,2 (X/Y/Z)
  "p" :                X,Y Scan/Probe Coords in Pixel, 0,0 is center, DSP Scan Coords
  "P" :                X,Y Scan/Probe Coords in Pixel, 0,0 is top left [indices]
+ "M" : AIC[1,2,3] // MK2 hack
+ "N" : AIC[4,5,6] // MK2 hack
+ "L" : AIC[0,6,7] // MK2 hack
  */
 //#define MK2_SCAN_STRUCT_DEBUG
 gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &val2, double &val3){
         const gint64 max_age = 50000; // 50ms
         const gint64 max_age_as = 250000; // 250ms
         static gint64 time_of_last_xyz_reading = 0; // abs time in us
+        static gint64 time_of_last_analog_reading = 0; // abs time in us
         static gint64 time_of_last_fb_reading = 0; // abs time in us
         static gint64 time_of_last_as_reading = 0; // abs time in us
 	static struct { DSP_INT x_offset, y_offset, z_offset, x_scan, y_scan, z_scan, bias, motor; } dsp_analog;
 	static struct { DSP_INT adc[8]; } dsp_analog_in;
+        static DSP_INT AIC_in[8];
 	static MOVE_OFFSET dsp_move;
 	static AREA_SCAN dsp_scan;
 	static PROBE dsp_probe;
@@ -151,6 +156,39 @@ gint sranger_mk2_hwi_spm::RTQuery (const gchar *property, double &val1, double &
         static AUTOAPPROACH dsp_autoapp;
 	static gint ok=FALSE;
 
+        // auto buffered
+        if ((*property == 'M' || *property == 'N' || *property == 'L') && (time_of_last_analog_reading+max_age) < g_get_real_time () ){
+		// read/convert 3D tip positon
+		lseek (dsp_alternative, magic_data.AIC_in, SRANGER_MK23_SEEK_DATA_SPACE | SRANGER_MK23_SEEK_ATOMIC); // ## CONSIDER NON_ATOMIC
+		sr_read  (dsp_alternative, &AIC_in, 8*sizeof (DSP_INT));
+
+                for (int i=0; i<8; ++i)
+                        CONV_16 (AIC_in[i]);
+
+                time_of_last_analog_reading = g_get_real_time ();
+        }
+
+        if (*property == 'M'){
+                val1 = gapp->xsm->Inst->Dig2VoltIn((double)AIC_in[1]);
+                val2 = gapp->xsm->Inst->Dig2VoltIn((double)AIC_in[2]);
+                val3 = gapp->xsm->Inst->Dig2VoltIn((double)AIC_in[3]);
+                return TRUE;
+        }
+
+        if (*property == 'N'){
+                val1 = gapp->xsm->Inst->Dig2VoltIn((double)AIC_in[4]);
+                val2 = gapp->xsm->Inst->Dig2VoltIn((double)AIC_in[5]);
+                val3 = gapp->xsm->Inst->Dig2VoltIn((double)AIC_in[6]);
+                return TRUE;
+        }
+        
+        if (*property == 'L'){
+                val1 = gapp->xsm->Inst->Dig2VoltIn((double)AIC_in[0]);
+                val2 = gapp->xsm->Inst->Dig2VoltIn((double)AIC_in[6]);
+                val3 = gapp->xsm->Inst->Dig2VoltIn((double)AIC_in[7]);
+                return TRUE;
+        }
+        
         // auto buffered
         if ( (*property == 'z' || *property == 'R' || *property == 'o') && (time_of_last_xyz_reading+max_age) < g_get_real_time () ){
 		// read/convert 3D tip positon
