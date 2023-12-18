@@ -50,7 +50,6 @@ static void pyremote_init( void );
 static void pyremote_about( void );
 static void pyremote_configure( void );
 static void pyremote_cleanup( void );
-static void pyremote_run(GtkWidget *w, void *data);
 
 #endif
 
