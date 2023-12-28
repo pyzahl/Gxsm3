@@ -4660,6 +4660,10 @@ void py_gxsm_console::clear_output(GtkButton *btn, gpointer user_data)
         gtk_text_buffer_delete(console_buf, &start_iter, &end_iter);
 }
 
+int Stop(void *){
+        PyErr_SetString (PyExc_KeyboardInterrupt, "Abort");
+}
+
 /*
  * killing the interpreter
  * see http://stackoverflow.com/questions/1420957/stopping-embedded-python
@@ -4672,7 +4676,10 @@ void py_gxsm_console::kill(GtkToggleButton *btn, gpointer user_data)
         if (pygc->user_script_data.cmd){ // User script running (or should be)
                 pygc->append (N_("\n*** SCRIPT INTERRUPT REQUESTED: Setting PyErr SIGINT to abort script.\n"));
                 PI_DEBUG_GM (DBG_L2,  "trying to interrup interpreter, sending SIGINT.");
-                PyErr_SetInterruptEx (SIGINT);
+                int r = Py_AddPendingCall(&Stop, NULL); // inject Stop routine
+                if (r == -1) {
+                        pygc->append("\nInterrupt request failed!")
+                }
         } else {
                 pygc->append (N_("\n*** SCRIPT INTERRUPT: No user script is currently running.\n"));
         }
