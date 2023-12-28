@@ -4662,6 +4662,7 @@ void py_gxsm_console::clear_output(GtkButton *btn, gpointer user_data)
 
 int Stop(void *){
         PyErr_SetString (PyExc_KeyboardInterrupt, "Abort");
+        return -1;  // Return <0 indicates exception/issue.
 }
 
 /*
@@ -4678,8 +4679,12 @@ void py_gxsm_console::kill(GtkToggleButton *btn, gpointer user_data)
                 PI_DEBUG_GM (DBG_L2,  "trying to interrup interpreter, sending SIGINT.");
                 int r = Py_AddPendingCall(&Stop, NULL); // inject Stop routine
                 if (r == -1) {
-                        pygc->append("\nInterrupt request failed!")
+                        pygc->append("\nInterrupt request failed!\n");
                 }
+                 g_usleep(DEFAULT_SLEEP_USECS);
+                 // if the interpreter has not ended, it is because the interpreter is
+                 // not releasing control. Force an exit with a standard call.
+                 PyErr_SetInterruptEx (SIGINT);
         } else {
                 pygc->append (N_("\n*** SCRIPT INTERRUPT: No user script is currently running.\n"));
         }
