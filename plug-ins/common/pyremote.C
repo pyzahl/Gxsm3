@@ -4754,20 +4754,20 @@ gpointer py_gxsm_console::PyRunActionScriptThread(gpointer user_data)
         PyRunThreadData *s = (PyRunThreadData *)user_data;
 
         // Register this thread with the Python interpreter, and get the GIL.
-        PyGILState_STATE gstate = PyGILState_Ensure();
+        PyGILState_STATE gstate = PyGILState_Ensure ();
 
         // create new environment
         PyObject *d = NULL;
-        gchar* script_name = g_strdup_printf("action_script_%d",
-                                             pygc->action_script_running);
-        d = pygc->create_environment(script_name);
+        gchar* script_name = g_strdup_printf ("action_script_%d",
+                                              pygc->action_script_running);
+        d = pygc->create_environment (script_name);
         if (d != NULL) {
                 pygc->action_script_running++;
                 // TODO: Do we want extra info to show up in console?
                 // Note that all messages are passed to console currently
                 // (via redirection_stdouredirect).
-                py_gxsm_console::run_string(s->cmd, s->mode, d, d,
-                                            pygc);
+                py_gxsm_console::run_string (s->cmd, s->mode, d, d,
+                                             pygc);
                 --pygc->action_script_running;
 
                 PI_DEBUG_GM(DBG_L2, "Pyremote Plugin: Python action script thread ending.");
@@ -4775,11 +4775,11 @@ gpointer py_gxsm_console::PyRunActionScriptThread(gpointer user_data)
 
         // Clean-up
         if (d != NULL)
-                pygc->destroy_environment(d);
+                pygc->destroy_environment (d);
         delete s;
 
         // Release the GIL and ... unregister this thread?
-        PyGILState_Release(gstate);
+        PyGILState_Release (gstate);
         return NULL;
 }
 
@@ -4792,10 +4792,10 @@ const gchar* py_gxsm_console::run_command (const gchar *cmd, int mode,
                 return NULL;
         }
 
-
         PyRunThreadData *run_data = &user_script_data;
         if (run_as_action_script)
-                run_data = new PyRunThreadData(); // RunActionScripThread will delete
+                // New a struct; RunActionScriptThread will delete
+                run_data = new PyRunThreadData ();
 
         if (!run_data->cmd){
                 PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: py_gxsm_console::run_command *** starting console IDLE message pop job.");
