@@ -4681,10 +4681,12 @@ void py_gxsm_console::kill(GtkToggleButton *btn, gpointer user_data)
                 if (r == -1) {
                         pygc->append("\nInterrupt request failed!\n");
                 }
-                 g_usleep(DEFAULT_SLEEP_USECS);
-                 // if the interpreter has not ended, it is because the interpreter is
-                 // not releasing control. Force an exit with a standard call.
-                 PyErr_SetInterruptEx (SIGINT);
+
+                // Try to force Stop() being called by calling CheckSignals().
+                PyGILState_STATE gstate = PyGILState_Ensure ();
+                PyErr_CheckSignals ();
+                PyGILState_Release (gstate);
+
         } else {
                 pygc->append (N_("\n*** SCRIPT INTERRUPT: No user script is currently running.\n"));
         }
