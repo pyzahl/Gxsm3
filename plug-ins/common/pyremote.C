@@ -5569,8 +5569,8 @@ static void pyremote_init(void)
                 gapp->ConnectPluginToRemoteAction (run_action_script_callback);
         }
 
-        g_thread_new (NULL, py_gxsm_console::PyRunConsoleThread, NULL);
         py_gxsm_remote_console->run();
+        g_thread_new (NULL, py_gxsm_console::PyRunConsoleThread, NULL);
 }
 
 
