@@ -1711,7 +1711,12 @@ public:
                                     py_gxsm_console *console = NULL);
         void show_stderr(const gchar *str);
         void initialize_stderr_redirect(PyObject *d);
-        void destroy_environment(PyObject *d);
+        // Decrement the reference to a copied __main__, to inform the
+        // interpreter it can be destroyed. If clearGlobals is true,
+        // we clear our provided dict. Note that this will stop any other
+        // thread running Python within the interpreter!
+        void destroy_environment(PyObject *d, bool clearGlobals=false);
+        // Shallow copy __main__, for use running a script.
         PyObject* create_environment(const gchar *filename);
 
         static gpointer PyRunConsoleThread(gpointer data);
@@ -4638,12 +4643,12 @@ PyObject *py_gxsm_console::create_environment(const gchar *filename) {
         return d;
 }
 
-void py_gxsm_console::destroy_environment(PyObject *d) {
+void py_gxsm_console::destroy_environment(PyObject *d, bool clearGlobals) {
         PI_DEBUG_GM (DBG_L2, "py_gxsm_console::destroy_environment **");
 
-        // show content of temporary file which contains stderr and stdout of python
-        // script and close it
-        PyDict_Clear(d);
+        if (clearGlobals) {
+                PyDict_Clear(d);
+        }
         Py_DECREF(d);
 }
 
@@ -4750,7 +4755,7 @@ gpointer py_gxsm_console::PyRunConsoleThread(gpointer user_data)
         // Destroy environment, close python interpreter.
         PyEval_RestoreThread (thread_state);
         if (d != NULL)
-                pygc->destroy_environment(d);
+                pygc->destroy_environment(d, true);
         Py_FinalizeEx();
 
         PI_DEBUG_GM(DBG_L2, "Pyremote Plugin: Python thread ended..");
