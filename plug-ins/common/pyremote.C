@@ -1723,7 +1723,8 @@ public:
         static gpointer PyRunActionScriptThread(gpointer data);
 
         const char* run_command(const gchar *cmd, int mode,
-                                bool reset_locals, bool run_as_action_script);
+                                bool reset_locals, bool reset_globals,
+                                bool run_as_action_script);
 
         void push_message_async (const gchar *msg){
                 g_mutex_lock (&g_list_mutex);
@@ -1773,6 +1774,7 @@ public:
         static void save_file_as_callback_exec (GtkDialog *dialog,  int response, gpointer user_data);
         static void save_file_as_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
         static void configure_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+        static void restart_interpreter_callback (GSimpleAction *action, GVariant *parameter, gpointer user_data);
 
         static void run_file (GtkButton *btn, gpointer user_data);
         static void kill (GtkToggleButton *btn, gpointer user_data);
@@ -1825,7 +1827,7 @@ public:
                         append ("\n");
                         // TODO: No way to know if it ran??
                         const gchar *output = run_command(tmp_script, Py_file_input,
-                                false, true);
+                                false, false, true);
                         g_free (tmp_script);
                         append (output);
                         append (N_("\n<<< Action script starting?: "));
@@ -1986,6 +1988,7 @@ private:
         // Data linked to Python scripts
         PyRunThreadData user_script_data;
         bool reset_user_script_data;
+        bool restart_interpreter;
         gint action_script_running;
 
         gboolean closing; // Indicates Python console closing
@@ -4793,8 +4796,10 @@ gpointer py_gxsm_console::PyRunActionScriptThread(gpointer user_data)
         }
 
         // Clean-up
-        if (d != NULL)
-                pygc->destroy_environment (d);
+        if (d != NULL) {
+                pygc->destroy_environment (d, pygc->restart_interpreter);
+                pygc->restart_interpreter = false;
+        }
         delete s;
 
         // Release the GIL and ... unregister this thread?
@@ -4804,7 +4809,7 @@ gpointer py_gxsm_console::PyRunActionScriptThread(gpointer user_data)
 
 
 const gchar* py_gxsm_console::run_command (const gchar *cmd, int mode,
-        bool reset_locals, bool run_as_action_script)
+        bool reset_locals, bool reset_globals, bool run_as_action_script)
 {
         if (!cmd) {
                 g_warning("No command.");
@@ -4824,6 +4829,8 @@ const gchar* py_gxsm_console::run_command (const gchar *cmd, int mode,
 
                 if (reset_locals)
                         reset_user_script_data = true;
+                if (reset_globals)
+                        restart_interpreter = true;
 
                 if (run_as_action_script)  // Spawn new thread
                         g_thread_new (NULL, PyRunActionScriptThread, run_data);
@@ -4980,7 +4987,7 @@ void py_gxsm_console::run_file(GtkButton *btn, gpointer user_data)
                 script = parsed_script;
 
                 pygc->push_message_async (N_("\n>>> Executing parsed script >>>\n"));
-                pygc->run_command (script, Py_file_input, true, false);
+                pygc->run_command (script, Py_file_input, true, false, false);
                 g_free(script);
         }
 }
@@ -5206,6 +5213,16 @@ void py_gxsm_console::configure_callback (GSimpleAction *action, GVariant *param
         }
 }
 
+
+void py_gxsm_console::restart_interpreter_callback(GSimpleAction *action, GVariant *parameter,
+                                          gpointer user_data){
+        py_gxsm_console *pygc = (py_gxsm_console *) user_data;
+
+        const gchar *cmd = "";
+        int mode = Py_file_input;
+        pygc->run_command (cmd, mode, false, true, true);
+}
+
 static GActionEntry win_py_gxsm_action_entries[] = {
         { "pyfile-open", py_gxsm_console::open_file_callback, NULL, NULL, NULL },
         { "pyfile-save", py_gxsm_console::save_file_callback, NULL, NULL, NULL },
@@ -5214,6 +5231,8 @@ static GActionEntry win_py_gxsm_action_entries[] = {
         { "pyfile-action-use", py_gxsm_console::open_action_script_callback, "s", "'sf1'", NULL },
 
         { "pyremote-configure", py_gxsm_console::configure_callback, NULL, NULL, NULL },
+        { "pyremote-restart-interpreter", py_gxsm_console::restart_interpreter_callback, NULL,
+          NULL, NULL },
 };
 
 void py_gxsm_console::AppWindowInit(const gchar *title){
@@ -5554,7 +5573,7 @@ void py_gxsm_console::command_execute(GtkEntry *entry, gpointer user_data)
         command = gtk_entry_buffer_get_text (GTK_ENTRY_BUFFER (gtk_entry_get_buffer (GTK_ENTRY (entry))));
         output = g_string_append(output,
                                  pygc->run_command(command, Py_single_input,
-                                         false, false));
+                                         false, false, false));
 
         pygc->append((gchar *)output->str);
         g_string_free(output, TRUE);
