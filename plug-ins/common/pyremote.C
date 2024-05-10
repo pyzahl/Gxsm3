@@ -54,6 +54,12 @@
  the appendix you will find a tutorial with examples and tips and
  tricks.
 
+ Python Venv is supported if setup:
+\begin{alltt}
+ Create using: $ python3 -m venv .gxsm3/pyaction/GxsmPythonVenv
+\end{alltt}
+
+
 % OptPlugInSection: Reference
 
 The following script shows you all commands that the gxsm-module supports:
