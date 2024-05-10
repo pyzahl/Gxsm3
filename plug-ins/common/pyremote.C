@@ -4522,6 +4522,62 @@ void py_gxsm_console::initialize(void)
                 PI_DEBUG_GM (DBG_L1, "** Initializing Python interpreter, loading gxsm module and stdout redirection helper **");
                 PI_DEBUG_GM (DBG_L1, "pyremote Plugin :: initialize -- PyImport_Append");
 
+                // Testing Venv use
+                gchar* venv_path = g_strconcat (g_get_home_dir (), "/.gxsm3/pyaction/GxsmPythonVenv", NULL);
+                gchar* venv_cfg  = g_strconcat (venv_path, "/pyvenv.cfg", NULL);
+                gchar* venv_python  = g_strconcat (venv_path, "/bin/python", NULL);
+                // create using: $ python3 -m venv .gxsm3/pyaction/GxsmPythonVenv
+                if (g_file_test (venv_cfg, G_FILE_TEST_EXISTS))
+                        if (g_file_test (venv_python, G_FILE_TEST_EXISTS)){
+                                //wchar_t *wc = Py_DecodeLocale(const char *arg, size_t *size)
+                                push_message_async (N_("\n\nINFO: Found Gxsm Python Venv. Using:"  ));
+                                push_message_async (venv_python);
+                                PyStatus status;
+                                PyPreConfig preconfig;
+                                PyPreConfig_InitPythonConfig(&preconfig);
+                                preconfig.utf8_mode = 1;
+                                status = Py_PreInitialize(&preconfig);
+                                Py_SetProgramName(Py_DecodeLocale(venv_python, NULL));
+
+                                //status = Py_InitializeFromConfig(&config);
+
+                        }
+
+#if 0
+                // This API is kept for backward compatibility: setting PyConfig.program_name should be used instead, see Python Initialization Configuration.
+                
+                PyStatus status;
+
+                PyConfig config;
+                PyConfig_InitPythonConfig(&config);
+                config.isolated = 1;
+
+                /* Decode command line arguments.
+                   Implicitly preinitialize Python (in isolated mode). */
+                status = PyConfig_SetBytesArgv(&config, argc, argv);
+                if (PyStatus_Exception(status)) {
+                        goto exception;
+                }
+
+                status = Py_InitializeFromConfig(&config);
+                if (PyStatus_Exception(status)) {
+                        goto exception;
+                }
+                PyConfig_Clear(&config);
+
+                return Py_RunMain();
+
+        exception:
+                PyConfig_Clear(&config);
+                if (PyStatus_IsExit(status)) {
+                        return status.exitcode;
+                }
+                /* Display the error message and exit the process with
+                   non-zero exit code */
+                Py_ExitStatusException(status);
+#endif
+
+                
                 // g_print ("pyremote Plugin :: initialize -- PyImport_Append\n");
                 PyImport_AppendInittab ("gxsm", &PyInit_Gxsm);
                 PyImport_AppendInittab ("redirection", &PyInit_Redirection);
@@ -4529,8 +4585,10 @@ void py_gxsm_console::initialize(void)
                 PI_DEBUG_GM (DBG_L2, "pyremote Plugin :: initialize --  PyInitializeEx(0)");
                 // g_print ("pyremote Plugin :: initialize -- PyInitializeEx(0)\n");
                 // Do not register signal handlers -- i.e. do not "crash" gxsm on errors!
+                push_message_async ("\nInitializing Python ...\n");
                 Py_InitializeEx (0);
 
+                
                 if (_import_array() < 0) {
                         PI_DEBUG_GM (DBG_L1, "pyremote Plugin :: initialize -- ImportModule gxsm, import array failed.");
                         PyErr_Print(); PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
@@ -4546,8 +4604,10 @@ void py_gxsm_console::initialize(void)
                 py_gxsm_module.main_module = PyImport_AddModule("__main__");
 
                 PI_DEBUG_GM (DBG_L2, "Get dict");
+                push_message_async ("\nPython ready.\n");
         } else {
                 g_message ("Python interpreter already initialized.");
+                push_message_async ("\nPython is initialzie.\n");
         }
 }
 
@@ -4557,8 +4617,11 @@ PyObject* py_gxsm_console::run_string(const char *cmd, int type, PyObject *g,
         // called (i.e. you have the GIL and are in a thread that Python is aware of).
         // Note: the console can be passed to push messages.
         if (console) {
-                console->push_message_async ("\n<<< Running string in python. <<<\n");
-                console->push_message_async (cmd);
+                console->push_message_async ("\n<<< Starting Python. <<<\n");
+                if (0){ // add verbose mode??
+                        console->push_message_async ("\n<<< Running string in python. <<<\n");
+                        console->push_message_async (cmd);
+                }
         }
 
         PyErr_Clear(); // Clear any errors before running?
