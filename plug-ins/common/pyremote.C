@@ -4528,6 +4528,9 @@ void py_gxsm_console::initialize(void)
                 PI_DEBUG_GM (DBG_L1, "** Initializing Python interpreter, loading gxsm module and stdout redirection helper **");
                 PI_DEBUG_GM (DBG_L1, "pyremote Plugin :: initialize -- PyImport_Append");
 
+                push_message_async (N_("\n\nChecking for Gxsm Python Venv. -- You can setup a Gxsm Python dedicated virtual environmnet if desired:\n to create run $python3 -m venv ~/.gxsm3/pyaction/GxsmPythonVenv"));
+                // create using: $ python3 -m venv .gxsm3/pyaction/GxsmPythonVenv
+                
                 // Testing Venv use
                 gchar* venv_path = g_strconcat (g_get_home_dir (), "/.gxsm3/pyaction/GxsmPythonVenv", NULL);
                 gchar* venv_cfg  = g_strconcat (venv_path, "/pyvenv.cfg", NULL);
