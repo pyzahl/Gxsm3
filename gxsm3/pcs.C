@@ -1200,16 +1200,22 @@ void Gtk_EntryControl::pcs_adjustment_configure (){
 	tmp = g_strdup_printf (N_("Warning: know what you are doing here!" \
                                   "\nInfo: You may use the dconf-editor." \
                                   "\nD-Bus path is:"                    \
-                                  "\n %s/%s [%d]"),
-                               gsettings_path, gsettings_key, get_count () 
+                                  "\n %s/%s [%d]"                       \
+                                  "\nCurrent Limits: %g .. %g Warn: [%g .. %g]"\
+                                  "\nVar Max is set to: +/- %g"
+                                  ),
+                               gsettings_path, gsettings_key, get_count (),
+                               vMin, vMax, vMin_warn, vMax_warn, EC_INF
                                );
         bp.grid_add_label (tmp, NULL, 2); bp.new_line ();
-	g_free (tmp);	
+	g_free (tmp);
+        bp.set_no_spin ();
+
 	bp.grid_add_ec ("Upper Limit", unit, &vMax, -EC_INF, EC_INF, "8g"); bp.new_line ();
 	bp.grid_add_ec ("Upper Warn",  unit, &vMax_warn, -EC_INF, EC_INF, "8g"); bp.new_line ();
 	bp.grid_add_ec ("Lower Warn",  unit, &vMin_warn, -EC_INF, EC_INF, "8g"); bp.new_line ();
 	bp.grid_add_ec ("Lower Limit", unit, &vMin, -EC_INF, EC_INF, "8g"); bp.new_line ();
-
+        
         bp.grid_add_widget (gtk_separator_new (GTK_ORIENTATION_HORIZONTAL), 2); bp.new_line ();
 	bp.grid_add_ec ("Exclude Hi", unit, &v_ex_hi, -EC_INF, EC_INF, "8g"); bp.new_line ();
 	bp.grid_add_ec ("Exclude Lo", unit, &v_ex_lo, -EC_INF, EC_INF, "8g"); bp.new_line ();
@@ -1257,6 +1263,7 @@ void Gtk_EntryControl::pcs_adjustment_configure (){
                         mode_tmp |= PARAM_CONTROL_ADJUSTMENT_ADD_MARKS;
                        
   	gtk_widget_destroy (dialog);
+        g_print (" ** DONE PCS CONFIG Limits for [%s]: %g .. %g\n", gsettings_key, vMin, vMax);
 
         delete unity;
 
