@@ -21,6 +21,7 @@ lib_LTLIBRARIES = \
 	libwip_im_export.la \
 	libv5d_export.la \
 	libbin_import.la \
+	libraw16_import.la \
 	libcube_import.la \
 	librhk_spm32_import.la
 
@@ -42,6 +43,9 @@ libsdfimport_la_SOURCES = sdfimport.C
 
 libbin_import_la_LDFLAGS = -module -export-dynamic -avoid-version
 libbin_import_la_SOURCES = bin_import.C
+
+libraw16_import_la_LDFLAGS = -module -export-dynamic -avoid-version
+libraw16_import_la_SOURCES = raw16_import.C
 
 libcube_import_la_LDFLAGS = -module -export-dynamic -avoid-version
 libcube_import_la_SOURCES = cube_import.C
