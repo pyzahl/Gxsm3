@@ -281,8 +281,8 @@ FIO_STATUS raw16_ImExportFile::import(const char *fname){
         h.extends_xyz[0]=3088;
         h.extends_xyz[1]=2064;
         h.extends_xyz[2]=400;
-        h.bin[0] = 2;
-        h.bin[1] = 2;
+        h.bin[0] = 4;
+        h.bin[1] = 4;
         
         g_message ("Raw16 Read. Filename: %s\nDim-XYZB: %dpx %dpx %dpx %dbin\nExtends-XYZ: %f %f %f",
                    fname,
@@ -372,14 +372,13 @@ FIO_STATUS raw16_ImExportFile::import(const char *fname){
         scan->data.s.nvalues = 1;
         scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, 1, ZD_FLOAT);
         
+        int v=0;
         // convert data
-        for (int v=0; v<2000; ++v){
+        for (; v<2000; ++v){
                 g_message ("Reading Frame: %d", v);
                 f.read ((char*)data, sizeof (guint16) * frame_buffer_size);
                 if (! f.good ()){
                         g_warning ("Raw16 data read EOF. #Frames read: %d", v);
-                        scan->data.s.nvalues = v;
-                        scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, v, ZD_FLOAT);
                         break;
                 }
                 if (scan->data.s.nvalues <= v){
@@ -394,20 +393,21 @@ FIO_STATUS raw16_ImExportFile::import(const char *fname){
                 guint16 *p = data;
                 for (int row=0; row < scan->mem2d->GetNy (); ++row){
                         for (int col=0; col < scan->mem2d->GetNx (); ++col){
-                                double bin = (double)*p; // 2x2 binning
-                                bin += (double)*(p+h.dimensions_xyzb[0]);
-                                p++;
-                                bin += (double)*p;
-                                bin += (double)*(p+h.dimensions_xyzb[0]);
-                                p++;
+                                double bin = 0.; // binning
+                                for (int ib = 0; ib<h.bin[0]; ib++)
+                                        for (int jb = 0; jb<h.bin[1]; jb++)
+                                                bin += (double)*(p+ib+jb*h.dimensions_xyzb[0]);
+                                p+=h.bin[0];
                                 scan->mem2d->PutDataPkt (bin, col, row, v);
                         }
-                        p+=h.dimensions_xyzb[0];
+                        p+=(h.bin[1]-1)*h.dimensions_xyzb[0];
                 }
         }
-        
         f.close ();
         g_free (data);
+
+        scan->data.s.nvalues = v;
+        scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, v, ZD_FLOAT);
         
 	scan->data.orgmode = SCAN_ORG_CENTER;
 	scan->mem2d->data->MkXLookup (-scan->data.s.rx/2., scan->data.s.rx/2.);
