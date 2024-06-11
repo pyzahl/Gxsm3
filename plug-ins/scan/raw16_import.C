@@ -42,6 +42,190 @@
 \label{plugins:raw16_import}
 The \GxsmEmph{Raw16} plug-in supports reading of a simple raw16 volumetric data file format.
 
+
+SER format description version 3
+
+Ser format consist of three parts:
+A) Header with fixed size of 178 Byte
+B) Image frame data with variable byte size of: <BytePerPixel> x <Image width> x <Image height> x <Total amount of Images>
+C) Trailer Optional. Byte size of 8 x <Total amount of Images>Ser format consist of three parts:
+
+
+1_FileID
+Format: String
+Length: 14 Byte (14 ASCII characters)
+Content: "LUCAM-RECORDER" (fix)
+
+2_LuID
+Format: Integer_32 (little-endian)
+Length: 4 Byte
+Content: Lumenera camera series ID (currently unused; default = 0)
+
+3_ColorID
+Format:Integer_32 (little-endian)
+Length:
+Content:4 Byte
+0  = MONO
+8  = BAYER_RGGB
+9  = BAYER_GRBG
+10 = BAYER_GBRG
+11 = BAYER_BGGR
+16 = BAYER_CYYM
+17 = BAYER_YCMY
+18 = BAYER_YMCY
+19 = BAYER_MYYC
+100 = RGB
+101 = BGR
+
+4_LittleEndian
+Format:  Integer_32 (little-endian)
+Length:  4 Byte
+Content: 0 (FALSE) for big-endian byte order in 16 bit image data
+         1 (TRUE) for little-endian byte order in 16 bit image data
+
+5_ImageWidth
+Format:  Integer_32 (little-endian)
+Length:  4 Byte
+Content: Width of every image in pixel
+
+
+6_ImageHeight
+Format:  Integer_32 (little-endian)
+Length:  4 Byte
+Content: Height of every image in pixel
+
+7_PixelDepthPerPlane
+Format:  Integer_32 (little-endian)
+Length:  4 Byte
+Content: True bit depth per pixel per plane
+
+3_ColorID           NumberOfPlanes
+MONO … BAYER_MYYC   1
+RGB, BGR            3
+
+7_PixelDepthPerPlane  BytesPerPixel
+1..8                  1 * NumberOfPlanes
+9..16                 2 * NumberOfPlanes
+
+Pixel data organization:
+8 bit unsigned integer    (7_PixelDepthPerPlane = 1..8)
+
+3_ColorID              Pixel data [Byte]
+MONO … BAYER_MYYC      [M]
+RGB                    [R] [G] [B]
+BGR                    [B] [G] [R]
+
+16 bit unsigned integer (7_PixelDepthPerPlane = 9..16)
+
+3_ColorID              Pixel data [Byte]
+MONO … BAYER_MYYC      [M][M]
+RGB                    [R][R] [G][G] [B][B]
+BGR                    [B][B] [G][G] [R][R]
+
+Byte order in 16 bit format (Lo / Hi byte) depends on 4_LittleEndian.
+Image data organization:
+Start pixel is the upper left pixel of the image.
+Data of between 1 and 8 bits should be stored aligned with the most significant bit
+(MSB). For example:
+1-bit data
+2-bit data
+3-bit data
+4-bit data
+5-bit data
+6-bit data
+7-bit data
+8-bit data
+MSB ->LSB
+b0000000
+bb000000
+bbb00000
+bbbb0000
+bbbbb000
+bbbbbb00
+bbbbbbb0
+bbbbbbbb
+Data between 9 and 16 bits should be stored aligned with the least significant bit
+(LSB). For example:
+9-bit data
+10-bit data
+11-bit data
+12-bit data
+13-bit data
+14-bit data
+15-bit data
+MSB
+->
+LSB
+0000000bbbbbbbbb
+000000bbbbbbbbbb
+00000bbbbbbbbbbb
+0000bbbbbbbbbbbb
+000bbbbbbbbbbbbb
+00bbbbbbbbbbbbbb
+0bbbbbbbbbbbbbbb16-bit data
+bbbbbbbbbbbbbbbb
+
+8_FrameCount
+Format: Integer_32 (little-endian)
+Length: 4 Byte
+Content: Number of image frames in SER file
+
+9_Observer
+Format: String
+Length: 40 Byte (40 ASCII characters {32…126 dec.}, fill unused characters with 0 dec.)
+Content: Name of observer
+
+10_Instrument
+Format: String
+Length: 40 Byte (40 ASCII characters {32…126 dec.}, fill unused characters with 0 dec.)
+Content: Name of used camera
+
+11_Telescope
+Format: String
+Length: 40 Byte (40 ASCII characters {32…126 dec.}, fill unused characters with 0 dec.)
+Content: Name of used telescope
+
+12_DateTime
+Format: Date / Integer_64 (little-endian)
+Length: 8 Byte
+Content: Start time of image stream (local time)
+If 12_DateTime <= 0 then 12_DateTime is invalid and the SER file does not contain a
+Time stamp trailer.
+
+13_DateTime_UTC
+Format: Date / Integer_64 (little-endian)
+Length: 8 Byte
+Content: Start time of image stream in UTC
+
+
+
+Image Data
+Image data starts at File start offset decimal 178
+Size of every image frame in byte is: 5_ImageWidth x 6_ImageHeigth x BytePerPixel
+
+
+
+Trailer in detail
+Trailer starts at byte offset: 178 + 8_FrameCount x 5_ImageWidth x 6_ImageHeigth x BytePerPixel.
+
+Trailer contains Date / Integer_64 (little-endian) time stamps in UTC for every image frame.
+
+
+According to Microsoft documentation the used time stamp has the following format:
+“Holds IEEE 64-bit (8-byte) values that represent dates ranging from January 1 of the year 0001
+through December 31 of the year 9999, and times from 12:00:00 AM (midnight) through
+11:59:59.9999999 PM. Each increment represents 100 nanoseconds of elapsed time since the
+beginning of January 1 of the year 1 in the Gregorian calendar. The maximum value represents
+100 nanoseconds before the beginning of January 1 of the year 10000.”
+According to the findings of Raoul Behrend, Université de Genève, the date record is not a 64 bits
+unsigned integer as stated, but a 62 bits unsigned integer. He got no information about the use of
+the two MSB.
+
+
+
+
+
+
 Data Set File Format:
 
 The data files for rectilinearly sampled scalar data are written in
@@ -256,6 +440,37 @@ FIO_STATUS raw16_ImExportFile::Read(xsm::open_mode mode){
 }
 
 FIO_STATUS raw16_ImExportFile::import(const char *fname){
+        // SER HEADER: 178 BYTES
+        struct SERheaderID {
+                gchar FileID[16]; //1 "LUCAM-RECORDER"
+        } lucam;
+        struct SERheader {
+                //gchar FileID[14]; //1 "LUCAM-RECORDER" -- alignment problem here!!
+                guint32 LuID;     //2 serial = 0
+                guint32 ColorID;  //3 MONO = 0, BAYER_RGGB=8, ..., RGB=100, BGR=101; see docu
+                guint32 LittleEndian; //4 1=LE (TRUE), 0=BE
+                guint32 ImageWidth;   //5   3088
+                guint32 ImageHeight;  //6   2064
+                guint32 PixelDepthPerPlane; //7   12
+                // True bit depth per pixel per plane. [MONO...BAYER+*: NumPlanes=1, RGB,BGR: NumPlanes=3;] 1..8: 1Byte/Pixel*NumPLanes, 9..16: 2Byte/Pixel*NumPLanes
+                guint32 FrameCount;   //8
+                gchar Observer[40];   //9
+                gchar Instrument[40]; //10
+                gchar Telescope[40];  //11
+                guint64 DateTime;     //12 Start time of image stream (local time) If 12_DateTime <= 0 then 12_DateTime is invalid and the SER file does not contain a Time stamp trailer.
+                guint64 DateTimeUTC;  //13 in UTC
+        } ser_header;
+        int SER=0;
+        
+        // Trailer contains Date / Integer_64 (little-endian) time stamps in UTC for every image frame.
+        /* According to Microsoft documentation the used time stamp has the following format:
+           “Holds IEEE 64-bit (8-byte) values that represent dates ranging from January 1 of the year 0001
+           through December 31 of the year 9999, and times from 12:00:00 AM (midnight) through
+           11:59:59.9999999 PM. Each increment represents 100 nanoseconds of elapsed time since the
+           beginning of January 1 of the year 1 in the Gregorian calendar. The maximum value represents
+           100 nanoseconds before the beginning of January 1 of the year 10000.”
+        */
+                         
         struct header {
                 guint32 dimensions_xyzb[4];
                 double  extends_xyz[3];
@@ -270,19 +485,58 @@ FIO_STATUS raw16_ImExportFile::import(const char *fname){
 	f.open(name, ios::in);
 	if (!f.good())
 	        return status=FIO_OPEN_ERR;
-	
-	FileList = g_string_new ("Imported by GXSM from simple Binay data file.\n");
 
-        //f.read ((char*)&h, sizeof (bin_header));
-        h.dimensions_xyzb[0]=3088;
-        h.dimensions_xyzb[1]=2064;
-        h.dimensions_xyzb[2]=1000;
-        h.dimensions_xyzb[3]=16;
-        h.extends_xyz[0]=3088;
-        h.extends_xyz[1]=2064;
-        h.extends_xyz[2]=400;
-        h.bin[0] = 4;
-        h.bin[1] = 4;
+        // TRY and check for SER
+        memset ((char*)&lucam, 0, 14); // zero
+        f.read ((char*)&lucam, 14); // read 14 -- followed by 0,0 now!
+	if (!f.good())
+	        return status=FIO_OPEN_ERR;
+
+	FileList = g_string_new ("Imported by GXSM from simple Binay/SER data file.\n");
+        //g_string_append_printf (FileList, "");
+        if (strncmp(lucam.FileID, "LUCAM-RECORDER", 14) == 0){
+                g_message ("Checking for SER header: OK  ID=%14s", lucam.FileID);
+                g_string_append_printf (FileList, "SER header: OK  ID=%14s\n", lucam.FileID);
+                SER=1;
+                f.read ((char*)&ser_header, sizeof (ser_header));
+                g_string_append_printf (FileList, "ColorID=%d %s\n", ser_header.ColorID, ser_header.ColorID==0 ? "MONO": ser_header.ColorID < 100?"BAYER_***":"RGB/BGR");
+                g_string_append_printf (FileList, "%sEndian\n", ser_header.LittleEndian?"Little":"Big");
+                g_string_append_printf (FileList, "Image Width %d x Height %d\n", ser_header.ImageWidth, ser_header.ImageHeight);
+                g_string_append_printf (FileList, "PixelDepthPerPlane: %d\n", ser_header.PixelDepthPerPlane);
+                g_string_append_printf (FileList, "FrameCount:         %d\n", ser_header.FrameCount);
+                g_string_append_printf (FileList, "Observer:   %s\n", ser_header. Observer);
+                g_string_append_printf (FileList, "Instrument: %s\n", ser_header.Instrument);
+                g_string_append_printf (FileList, "Telescope:  %s\n", ser_header.Telescope);
+                g_string_append_printf (FileList, "DateTime:   %d\n", ser_header.DateTime);
+                g_string_append_printf (FileList, "DateTimeUTC %d\n", ser_header.DateTimeUTC);
+
+                h.dimensions_xyzb[0]=ser_header.ImageWidth;
+                h.dimensions_xyzb[1]=ser_header.ImageHeight;
+                h.dimensions_xyzb[2]=ser_header.FrameCount;
+                h.dimensions_xyzb[3]=ser_header.PixelDepthPerPlane > 15? 16:8;
+                h.extends_xyz[0]=ser_header.ImageWidth;
+                h.extends_xyz[1]=ser_header.ImageHeight;
+                h.extends_xyz[2]=ser_header.FrameCount;
+                h.bin[0] = 4;
+                h.bin[1] = 4;
+                
+        }else{
+                f.close ();
+                g_message ("Checking for SER header: FAILED ID=%14s", lucam.FileID);
+                g_string_append_printf (FileList, "No SER header: ID=%14s\n", lucam.FileID);
+                f.open(name, ios::in); // reopen from beginning
+                g_string_append_printf (FileList, "Assuming plain raw dump IMX178M 3088x2064x16bit MONO, reading up to 1000 frames/end.\n");
+                h.dimensions_xyzb[0]=3088;
+                h.dimensions_xyzb[1]=2064;
+                h.dimensions_xyzb[2]=1000;
+                h.dimensions_xyzb[3]=16;
+                h.extends_xyz[0]=3088;
+                h.extends_xyz[1]=2064;
+                h.extends_xyz[2]=1000;
+                h.bin[0] = 4;
+                h.bin[1] = 4;
+        }
+
         
         g_message ("Raw16 Read. Filename: %s\nDim-XYZB: %dpx %dpx %dpx %dbin\nExtends-XYZ: %f %f %f",
                    fname,
@@ -361,6 +615,7 @@ FIO_STATUS raw16_ImExportFile::import(const char *fname){
 	scan->data.SetZUnit(u);
 	delete u;
 
+        g_message (FileList->str);
 	scan->data.ui.SetComment (FileList->str);
 	g_string_free(FileList, TRUE); 
 	FileList=NULL;
@@ -460,6 +715,7 @@ FIO_STATUS raw16_ImExportFile::Write(){
 // Plugin's Notify Cb's, registered to be called on file load/save to check file
 // return via filepointer, it is set to Zero or passed as Zero if file has been processed!
 // That's all fine, you should just change the Text Stings below...
+
 
 
 static void raw16_import_filecheck_load_callback (gpointer data ){
