@@ -267,6 +267,14 @@ int Scan::number_of_time_elements (){
 	return g_list_length (TimeList);
 }
 
+void Scan::set_nth_time_element_frame_time (int index, double t){
+	if (! TimeList) 
+		return;
+
+	TimeElementOfScan *tes = (TimeElementOfScan*) g_list_nth_data (TimeList, index);
+        tes->mem2d->set_frame_time (t);
+}
+
 double Scan::retrieve_time_element (int index){
 	if (! TimeList) 
 		return 0.;

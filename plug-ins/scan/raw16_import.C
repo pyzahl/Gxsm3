@@ -665,6 +665,25 @@ FIO_STATUS raw16_ImExportFile::import(const char *fname){
                         scan->append_current_to_time_elements (index_time, index_time);
                 }
                 g_free (data);
+
+                // trailer may have frame times
+                g_message ("SER reading trailer, frame times");
+                gint64 frame_times[ser_header.FrameCount];
+                f.read ((char*)frame_times, sizeof (guint64) * ser_header.FrameCount);
+                if (f.good ()){
+                        guint64 start=frame_times[0];
+                        for (int index_time=0; index_time<ser_header.FrameCount; ++index_time){
+                                g_message ("#%05d @ %llu %g s", index_time, frame_times[index_time], (double)(frame_times[index_time]-start)/10000000.);
+                                scan->set_nth_time_element_frame_time (index_time, (double)(frame_times[index_time]-start)/10000000.);
+                        }
+                } else {
+                        if (ser_header.FrameCount > 2){
+                                g_message ("?? #%05d @ %llu ??", 0, frame_times[0]);
+                                g_message ("?? #%05d @ %llu ??", 1, frame_times[1]);
+                        }
+                        g_message ("No or inclmplete SER trailer.\n");
+                }
+                
                 gapp->progress_info_close ();
                 scan->retrieve_time_element (0);
         } else if (SER && ser_header.PixelDepthPerPlane <= 16 && ser_header.ColorID == 0){ // MONO
@@ -705,6 +724,24 @@ FIO_STATUS raw16_ImExportFile::import(const char *fname){
                         scan->append_current_to_time_elements (index_time, index_time);
                 }
                 g_free (data);
+
+                // trailer may have frame times
+                g_message ("SER reading trailer, frame times");
+                gint64 frame_times[ser_header.FrameCount];
+                f.read ((char*)frame_times, sizeof (guint64) * ser_header.FrameCount);
+                if (f.good ()){
+                        guint64 start=frame_times[0];
+                        for (int index_time=0; index_time<ser_header.FrameCount; ++index_time){
+                                g_message ("#%05d @ %llu %g s", index_time, frame_times[index_time], (double)(frame_times[index_time]-start)/10000000.);
+                                scan->set_nth_time_element_frame_time (index_time, (double)(frame_times[index_time]-start)/10000000.);
+                        }
+                } else {
+                        if (ser_header.FrameCount > 2){
+                                g_message ("?? #%05d @ %llu ??", 0, frame_times[0]);
+                                g_message ("?? #%05d @ %llu ??", 1, frame_times[1]);
+                        }
+                        g_message ("No or inclmplete SER trailer.\n");
+                }
         } else if (!SER){
                 // Read Img Data.
                 size_t frame_buffer_size =  (size_t)h.dimensions_xyzb[0] * (size_t)h.dimensions_xyzb[1];

@@ -240,6 +240,7 @@ public:
 	int remove_time_element (int index); /* time elemet */
 	int number_of_time_elements (); /* find and return number of time elements in list */
 	void reindex_time_elements (); /* reindex time elements in list */
+        void set_nth_time_element_frame_time (int index, double t);
 	double retrieve_time_element (int index); /* retrieve time element "index" and revert to it, returns time */
 	Mem2d* mem2d_time_element (int index); /* retrieve mem2d ptr from time element "index" */
 	int get_current_time_element (); /* find index of current time element, -1 if not in list */
