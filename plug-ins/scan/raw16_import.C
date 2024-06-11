@@ -476,7 +476,6 @@ FIO_STATUS raw16_ImExportFile::import(const char *fname){
                 double  extends_xyz[3];
                 int     bin[2];
         } h;
-        guint16 *data;
 
 	// Am I resposible for that file -- can only do a dimension sanity check
 	ifstream f;
@@ -620,50 +619,127 @@ FIO_STATUS raw16_ImExportFile::import(const char *fname){
 	g_string_free(FileList, TRUE); 
 	FileList=NULL;
 
-        // Read Img Data.
-        size_t frame_buffer_size =  (size_t)h.dimensions_xyzb[0] * (size_t)h.dimensions_xyzb[1];
-        data = g_new (guint16, frame_buffer_size);
 
-        scan->data.s.nvalues = 1;
-        scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, 1, ZD_FLOAT);
-        
-        int v=0;
-        // convert data
-        for (; v<2000; ++v){
-                g_message ("Reading Frame: %d", v);
-                f.read ((char*)data, sizeof (guint16) * frame_buffer_size);
-                if (! f.good ()){
-                        g_warning ("Raw16 data read EOF. #Frames read: %d", v);
-                        break;
+
+        // ser_header.PixelDepthPerPlane
+        // ser_header.ColorID, ser_header.ColorID==0 ? "MONO": ser_header.ColorID < 100?"BAYER_***":"RGB/BGR"
+
+        // not support all variation, add as needed!
+        if (SER && ser_header.PixelDepthPerPlane == 8 && ser_header.ColorID == 100){ // RGB 24bit total in 3 planes
+                // Read Img Data.
+                size_t frame_buffer_size =  3*(size_t)h.dimensions_xyzb[0] * (size_t)h.dimensions_xyzb[1];
+                guint8 *data;
+                data = g_new (guint8, frame_buffer_size);
+
+                g_message ("SER Raw RGB24 Import");
+
+                gapp->progress_info_new ("SER Raw RGB24 Import", 2);
+                gapp->progress_info_set_bar_fraction (0., 1);
+                gapp->progress_info_set_bar_text (fname, 1);
+
+                scan->data.s.nvalues = 3;
+                scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, ZD_RGBA);
+                // convert data
+                for (int index_time=0; index_time<ser_header.FrameCount; ++index_time){
+                        gapp->progress_info_set_bar_fraction ((gdouble)index_time/(gdouble)ser_header.FrameCount, 1);
+                        g_message ("Reading Frame: %d", index_time);
+                        f.read ((char*)data, sizeof (guint8) * frame_buffer_size);
+                        if (! f.good ()){
+                                g_warning ("Raw16 data read EOF. #Frames read: %d", index_time);
+                                break;
+                        }
+                        guint8 *p = data;
+                        for (int row=0; row < scan->mem2d->GetNy (); ++row){
+                                for (int col=0; col < scan->mem2d->GetNx (); ++col){
+                                        for (int k=0; k<3; ++k){ // RGB
+                                                double bin = 0.; // binning
+                                                for (int ib = 0; ib<h.bin[0]; ib++)
+                                                        for (int jb = 0; jb<h.bin[1]; jb++)
+                                                                bin += (double)*(p+ib+jb*3*h.dimensions_xyzb[0]+k);
+                                                p+=h.bin[0];
+                                                scan->mem2d->PutDataPkt (bin, col, row, k);
+                                        }
+                                }
+                                p+=(h.bin[1]-1)*3*h.dimensions_xyzb[0];
+                        }
+                        scan->append_current_to_time_elements (index_time, index_time);
                 }
-                if (scan->data.s.nvalues <= v){
-                        if (v > 10){
-                                scan->data.s.nvalues = v+200;
-                                scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, v+200, ZD_FLOAT);
-                        }else{
-                                scan->data.s.nvalues = v+1;
-                                scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, v+1, ZD_FLOAT);
+                g_free (data);
+                gapp->progress_info_close ();
+                scan->retrieve_time_element (0);
+        } else if (SER && ser_header.PixelDepthPerPlane <= 16 && ser_header.ColorID == 0){ // MONO
+                // Read Img Data.
+                size_t frame_buffer_size =  (size_t)h.dimensions_xyzb[0] * (size_t)h.dimensions_xyzb[1];
+                guint16 *data;
+
+                g_message ("SER Raw MONO16 Import");
+
+                gapp->progress_info_set_bar_fraction (0., 1);
+                gapp->progress_info_set_bar_text (fname, 1);
+
+                data = g_new (guint16, frame_buffer_size);
+                
+                scan->data.s.nvalues = 1;
+                scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, 1, ZD_FLOAT);
+                // convert data
+                for (int index_time=0; index_time<ser_header.FrameCount; ++index_time){
+                        gapp->progress_info_set_bar_fraction ((gdouble)index_time/(gdouble)ser_header.FrameCount, 1);
+                        g_message ("Reading Frame: %d", index_time);
+                        f.read ((char*)data, sizeof (guint16) * frame_buffer_size);
+                        if (! f.good ()){
+                                g_warning ("Raw16 data read EOF. #Frames read: %d", index_time);
+                                break;
+                        }
+                        guint16 *p = data;
+                        for (int row=0; row < scan->mem2d->GetNy (); ++row){
+                                for (int col=0; col < scan->mem2d->GetNx (); ++col){
+                                        double bin = 0.; // binning
+                                        for (int ib = 0; ib<h.bin[0]; ib++)
+                                                for (int jb = 0; jb<h.bin[1]; jb++)
+                                                        bin += (double)*(p+ib+jb*h.dimensions_xyzb[0]);
+                                        p+=h.bin[0];
+                                        scan->mem2d->PutDataPkt (bin, col, row);
+                                }
+                                p+=(h.bin[1]-1)*h.dimensions_xyzb[0];
+                        }
+                        scan->append_current_to_time_elements (index_time, index_time);
+                }
+                g_free (data);
+        } else if (!SER){
+                // Read Img Data.
+                size_t frame_buffer_size =  (size_t)h.dimensions_xyzb[0] * (size_t)h.dimensions_xyzb[1];
+                guint16 *data;
+                data = g_new (guint16, frame_buffer_size);
+                
+                scan->data.s.nvalues = 1;
+                scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, 1, ZD_FLOAT);
+                // convert data
+                for (int frame=0;;++frame){
+                        g_message ("Reading Frame: %d", frame);
+                        f.read ((char*)data, sizeof (guint16) * frame_buffer_size);
+                        if (! f.good ()){
+                                g_warning ("Raw16 data read EOF. #Frames read: %d", frame);
+                                break;
+                        }
+                        guint16 *p = data;
+                        for (int row=0; row < scan->mem2d->GetNy (); ++row){
+                                for (int col=0; col < scan->mem2d->GetNx (); ++col){
+                                        double bin = 0.; // binning
+                                        for (int ib = 0; ib<h.bin[0]; ib++)
+                                                for (int jb = 0; jb<h.bin[1]; jb++)
+                                                        bin += (double)*(p+ib+jb*h.dimensions_xyzb[0]);
+                                        p+=h.bin[0];
+                                        scan->mem2d->PutDataPkt (bin, col, row);
+                                }
+                                p+=(h.bin[1]-1)*h.dimensions_xyzb[0];
                         }
                 }
-                guint16 *p = data;
-                for (int row=0; row < scan->mem2d->GetNy (); ++row){
-                        for (int col=0; col < scan->mem2d->GetNx (); ++col){
-                                double bin = 0.; // binning
-                                for (int ib = 0; ib<h.bin[0]; ib++)
-                                        for (int jb = 0; jb<h.bin[1]; jb++)
-                                                bin += (double)*(p+ib+jb*h.dimensions_xyzb[0]);
-                                p+=h.bin[0];
-                                scan->mem2d->PutDataPkt (bin, col, row, v);
-                        }
-                        p+=(h.bin[1]-1)*h.dimensions_xyzb[0];
-                }
+                g_free (data);
+                gapp->progress_info_close ();
+                scan->retrieve_time_element (0);
         }
         f.close ();
-        g_free (data);
-
-        scan->data.s.nvalues = v;
-        scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, v, ZD_FLOAT);
-        
+       
 	scan->data.orgmode = SCAN_ORG_CENTER;
 	scan->mem2d->data->MkXLookup (-scan->data.s.rx/2., scan->data.s.rx/2.);
 	scan->mem2d->data->MkYLookup (scan->data.s.ry/2., -scan->data.s.ry/2.);
