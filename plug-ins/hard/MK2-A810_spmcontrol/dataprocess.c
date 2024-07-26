@@ -314,7 +314,7 @@ interrupt void dataprocess()
 
 #if 0  // OBSOLETE HERE, NEGATE IS DONE ABOVE
                                                 // negate?
-                                                if (feedback_mixer.mode[i] & 0x10) // negate feedback source?
+                                                if (feedback_mixer.mode[mi] & 0x10) // negate feedback source? [was [i] !!]
                                                         feedback_mixer.x = -AIC_IN(mi);
                                                 else 
                                                         feedback_mixer.x = AIC_IN(mi);
