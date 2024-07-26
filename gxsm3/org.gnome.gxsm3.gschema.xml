@@ -276,6 +276,58 @@
         Math share parameter for plugin settings via pyremote, etc.
       </description>
     </key>
+
+    <key name="import-ser-start-frame" type="d">
+      <default>0.0</default>
+      <summary>math share d</summary>
+      <description>
+        Share parameter for plugin settings via pyremote, etc.
+      </description>
+    </key>
+    <key name="import-ser-end-frame" type="d">
+      <default>10.0</default>
+      <summary>math share d</summary>
+      <description>
+        Share parameter for plugin settings via pyremote, etc.
+      </description>
+    </key>
+    <key name="import-ser-tbin" type="d">
+      <default>1.0</default>
+      <summary>math share d</summary>
+      <description>
+        Share parameter for plugin settings via pyremote, etc.
+      </description>
+    </key>
+    <key name="import-ser-xbin" type="d">
+      <default>1.0</default>
+      <summary>math share d</summary>
+      <description>
+        Share parameter for plugin settings via pyremote, etc.
+      </description>
+    </key>
+    <key name="import-ser-ybin" type="d">
+      <default>1.0</default>
+      <summary>math share d</summary>
+      <description>
+        Share parameter for plugin settings via pyremote, etc.
+      </description>
+    </key>
+    <key name="import-ser-roi-ls" type="d">
+      <default>-1.0</default>
+      <summary>math share d</summary>
+      <description>
+        Share parameter for plugin settings via pyremote, etc.
+      </description>
+    </key>
+    <key name="import-ser-roi-le" type="d">
+      <default>-1.0</default>
+      <summary>math share d</summary>
+      <description>
+        Share parameter for plugin settings via pyremote, etc.
+      </description>
+    </key>
+
+
   </schema>
 
 </schemalist>

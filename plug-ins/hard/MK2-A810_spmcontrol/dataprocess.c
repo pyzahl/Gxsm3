@@ -312,12 +312,15 @@ interrupt void dataprocess()
                                         
 					for (mi=0; mi<4; ++mi){
 
+#if 0  // OBSOLETE HERE, NEGATE IS DONE ABOVE
                                                 // negate?
                                                 if (feedback_mixer.mode[i] & 0x10) // negate feedback source?
                                                         feedback_mixer.x = -AIC_IN(mi);
                                                 else 
                                                         feedback_mixer.x = AIC_IN(mi);
-
+#endif
+                                                feedback_mixer.x = AIC_IN(mi); // assign source, negation is done previously above as requested
+                                                
 						// MIXER CHANNEL mi
 						switch (feedback_mixer.mode[mi] & 0x0f){
 						case 3: // LOG
