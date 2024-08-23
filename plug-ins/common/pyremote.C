@@ -1510,10 +1510,10 @@ to the community. The GXSM-Forums always welcome input.
 
 #include <Python.h>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include "numpy/arrayobject.h"
-#include "numpy/ndarraytypes.h"
-#include "numpy/ndarrayobject.h"
-#include "numpy/arrayobject.h"
+//#include "numpy/arrayobject.h"
+#include "/usr/lib/python3/dist-packages/numpy/core/include/numpy/arrayobject.h"
+#include "/usr/lib/python3/dist-packages/numpy/core/include/numpy/ndarraytypes.h"
+#include "/usr/lib/python3/dist-packages/numpy/core/include/numpy/ndarrayobject.h"
 
 #include <sys/types.h>
 #include <signal.h>
