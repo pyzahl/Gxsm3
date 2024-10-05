@@ -4,7 +4,7 @@ dnl Process this file with autoconf to produc a configure script.
 AC_PREREQ(2.63.2)
 
 m4_define(gxsm3_major_version, 3)
-m4_define(gxsm3_minor_version, 53)
+m4_define(gxsm3_minor_version, 54)
 m4_define(gxsm3_micro_version, 0)
 m4_define(gxsm3_version, gxsm3_major_version.gxsm3_minor_version.gxsm3_micro_version)
 
@@ -19,7 +19,7 @@ AC_INIT([gxsm3],
 # AX_REQUIRE_DEFINED([APPSTREAM_XML])
 # AX_REQUIRE_DEFINED([GTK_DOC_CHECK])
 
-AC_DEFINE_UNQUOTED(GXSM_VERSION_NAME, "Map ExplorerHD","GXSM version identifier screen name")
+AC_DEFINE_UNQUOTED(GXSM_VERSION_NAME, "Molecule Master","GXSM version identifier screen name")
 AC_DEFINE_UNQUOTED(GXSM_WIDGET_PAD, 5, "default widget padding (replaces obsolete GNOME_PAD)")
 AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup_at_pointer (M, E), "for gtk-3.22 and up")
 # AC_DEFINE_UNQUOTED(MENU_AT_POINTER(M,E), gtk_menu_popup (M, NULL, NULL, NULL, NULL, E->button.button, E->button.time), "for gtk versions older than 3.22")
@@ -479,23 +479,13 @@ AC_DEFINE_UNQUOTED(COMPILEDBYNAME, "$USER@`hostname`; `date`", GXSM user@host CC
 # Quicktime library for Im/Export Plugin
 AC_CHECK_HEADERS(lqt/quicktime.h)
 
-
-
 # Now requires Python 3.7 or higher!
-AC_CHECK_LIB(python3.7, main,AC_SUBST(enable_python,"yes"))
-AC_CHECK_HEADERS(python3.7/Python.h)
-AC_CHECK_LIB(python3.7m, main,AC_SUBST(enable_python,"yes"))
-AC_CHECK_HEADERS(python3.7m/Python.h)
+AM_PATH_PYTHON([3.7],, [:])
+AM_CONDITIONAL([HAVE_PYTHON], [ test "$PYTHON" != ":" ])
 
-AC_CHECK_LIB(python3.8, main,AC_SUBST(enable_python,"yes"))
-AC_CHECK_HEADERS(python3.8/Python.h)
+AC_SUBST([GXSM3_PYTHON_CFLAGS], ["-I/usr/lib/python3/dist-packages/numpy/core/include/"])
 
-AC_CHECK_LIB(python3.9, main,AC_SUBST(enable_python,"yes"))
-AC_CHECK_HEADERS(python3.9/Python.h)
-
-AC_CHECK_LIB(python3.10, main,AC_SUBST(enable_python,"yes"))
-AC_CHECK_HEADERS(python3.10/Python.h)
-
+echo "$PYTHON_VERSION"
 
 dnl ---------------------------------------------------------
 dnl Architecture specific stuff
@@ -629,7 +619,7 @@ PKG_CHECK_MODULES(GXSM3, [
 	libsoup-2.4
 ])
 
-GXSM3_CFLAGS="$CFLAGS $GXSM3_CFLAGS $X11_CFLAGS $UNIX_CFLAGS"
+GXSM3_CFLAGS="$CFLAGS $GXSM3_CFLAGS $X11_CFLAGS $UNIX_CFLAGS $GXSM3_PYTHON_CFLAGS"
 GXSM3_LIBS="$GXSM3_LIBS $X11_LIBS $UNIX_LIBS"
 
 AC_SUBST(GXSM3_CFLAGS)
@@ -718,10 +708,6 @@ YELP_HELP_INIT
 #	enable_introspection=no
 #fi
 
-# Vala
-#VAPIGEN_CHECK([0.25.1])
-
-
 AC_CONFIG_FILES([
 Makefile
 gxsm3/Makefile
@@ -766,8 +752,7 @@ Configuration:
 	Deprecations enabled:	$enable_deprecations
 	GObject Introspection:	$enable_introspection
 	GDK Backend:            $gdk_windowing
-	Python support:         $enable_python
-	Vala support:           $enable_vala
+	Python support:         $PYTHON_VERSION
 "
 
 if expr ${GXSM3_MINOR_VERSION} % 2 > /dev/null; then

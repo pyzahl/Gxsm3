@@ -4,7 +4,7 @@
  * universal STM/AFM/SARLS/SPALEED/... controlling and
  * data analysis software
  *
- * Gxsm Plugin Name: raw16_impor.C
+ * Gxsm Plugin Name: ser_impor.C
  * ========================================
  * 
  * Copyright (C) 1999 The Free Software Foundation
@@ -32,15 +32,15 @@
  * Chapter. Add a complete PlugIn documentation inbetween the Begin/End marks!
  * --------------------------------------------------------------------------------
 % BeginPlugInDocuSection
-% PlugInDocuCaption: Raw16 file Import
-% PlugInName: raw16_import
+% PlugInDocuCaption: Ser file Import
+% PlugInName: ser_import
 % PlugInAuthor: Percy Zahl
 % PlugInAuthorEmail: zahl@users.sf.net
-% PlugInMenuPath: File/Import/Raw16
+% PlugInMenuPath: File/Import/Ser
 
 % PlugInDescription
-\label{plugins:raw16_import}
-The \GxsmEmph{Raw16} plug-in supports reading of a simple raw16 volumetric data file format.
+\label{plugins:ser_import}
+The \GxsmEmph{Ser} plug-in supports reading of a simple ser volumetric data file format.
 
 
 SER format description version 3
@@ -229,7 +229,7 @@ the two MSB.
 Data Set File Format:
 
 The data files for rectilinearly sampled scalar data are written in
-the following format (all fields big-endian raw16): 
+the following format (all fields big-endian ser): 
 
 Resolution (number of grid points in x, y and z direction): three
 32-bit int values. Let's refer to them as numX, numY, numZ.
@@ -250,7 +250,7 @@ words, they are stored in the memory order of a standard C
 three-dimensional array unsigned char values\[numX\]\[numY\]\[numZ\].
 
 % PlugInUsage
-The plug-in is called by \GxsmMenu{File/Import/Raw16}. 
+The plug-in is called by \GxsmMenu{File/Import/Ser}. 
 Only import direction is implemented.
 
 %% OptPlugInKnownBugs
@@ -295,12 +295,12 @@ GxsmPlugin ser_import_pi = {
   "Ser_Import",
   NULL,                   // PlugIn's Categorie, set to NULL for all, I just don't want this always to be loaded!
   // Description, is shown by PluginViewer (Plugin: listplugin, Tools->Plugin Details)
-  g_strdup ("Im/Export of the SER raw video (LUCAM-RECORDER) data file format."),
+  g_strdup ("Im/Export of the SER (camera video) data file format."),
   "Percy Zahl",
   "file-import-section,file-export-section",
   N_("SER,SER"),
   N_("SER import,SER export"),
-  N_("SER (raw video) data file import and export filter."),
+  N_("SER data file (camera raw video or still) import and export filter."),
   NULL,          // error msg, plugin may put error status msg here later
   NULL,          // Plugin Status, managed by Gxsm, plugin may manipulate it too
   ser_import_init,
@@ -323,7 +323,7 @@ GxsmPlugin ser_import_pi = {
 };
 
 // Text used in Aboutbox, please update!!
-static const char *about_text = N_("GXSM SER video data file Import/Export Plugin\n\n");
+static const char *about_text = N_("GXSM ser data file Import/Export Plugin\n\n");
 
 static const char *file_mask = "*";
 
@@ -439,6 +439,43 @@ FIO_STATUS ser_ImExportFile::Read(xsm::open_mode mode){
 	return  FIO_NOT_RESPONSIBLE_FOR_THAT_FILE;
 }
 
+
+
+/*
+void setup_multidimensional_data_copy (const gchar *title, Scan *src, int &ti, int &tf, int &vi, int &vf, int *crop_window_xy=NULL, gboolean crop=FALSE){
+	UnitObj *Pixel = new UnitObj("Pix","Pix");
+	UnitObj *Unity = new UnitObj(" "," ");
+	GtkWidget *dialog = gtk_dialog_new_with_buttons (N_(title),
+							 NULL, 
+							 (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+							 _("_OK"), GTK_RESPONSE_ACCEPT,
+							 NULL); 
+	BuildParam bp;
+        gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), bp.grid);
+
+        bp.grid_add_label ("New Time and Layer bounds:"); bp.new_line ();
+
+	gint t_max = src->number_of_time_elements ()-1;
+	if (t_max < 0) t_max=0;
+
+        bp.grid_add_ec ("t-inintial",  Unity, &ti, 0, t_max, ".0f"); bp.new_line ();
+        bp.grid_add_ec ("t-final",     Unity, &tf, 0, t_max, ".0f"); bp.new_line ();
+        bp.grid_add_ec ("lv-inintial", Unity, &vi, 0, src->mem2d->GetNv (), ".0f"); bp.new_line ();
+        bp.grid_add_ec ("lv-final",    Unity, &vf, 0, src->mem2d->GetNv (), ".0f"); bp.new_line ();
+
+	gtk_widget_show_all (dialog);
+	gtk_dialog_run (GTK_DIALOG(dialog));
+
+	gtk_widget_destroy (dialog);
+
+	delete Pixel;
+	delete Unity;	
+}
+*/
+
+
+
+
 FIO_STATUS ser_ImExportFile::import(const char *fname){
         // SER HEADER: 178 BYTES
         struct SERheaderID {
@@ -460,43 +497,8 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
                 guint64 DateTime;     //12 Start time of image stream (local time) If 12_DateTime <= 0 then 12_DateTime is invalid and the SER file does not contain a Time stamp trailer.
                 guint64 DateTimeUTC;  //13 in UTC
         } ser_header;
-        struct header {
-                guint32 dimensions_xyzb[4];
-                double  extends_xyz[3];
-                int     bin[2];
-        } h;
         int SER=0;
-        int frame_start, frame_end;
-        int roi_ls, roi_le, tbin;
-
-        //double gr;
-        GSettings *global_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT ".global");
-        //gr = g_settings_get_double (global_settings, "math-global-share-variable-radius");
-        //g_settings_set_double (global_settings, "math-global-share-variable-radius", -1.0); // invalide for next time
-
-        /*
-        gxsm.set_global_share_parameter('import-ser-start-frame', 0.0)
-        gxsm.set_global_share_parameter('import-ser-end-frame', 12694.0)
-        gxsm.set_global_share_parameter('import-ser-tbin', 10.0)
-        gxsm.set_global_share_parameter('import-ser-xbin', 2.0)
-        gxsm.set_global_share_parameter('import-ser-ybin', 2.0)
-        gxsm.set_global_share_parameter('import-ser-roi-ls', 200.0)
-        gxsm.set_global_share_parameter('import-ser-roi-le',300.0)
-        */
-        //gr = g_settings_get_double (global_settings, "math-global-share-variable-radius");
-        frame_start = (int)g_settings_get_double (global_settings, "import-ser-start-frame");
-        frame_end   = (int)g_settings_get_double (global_settings, "import-ser-end-frame");
-        tbin = (int)g_settings_get_double (global_settings, "import-ser-tbin");
-        h.bin[0] = (int)g_settings_get_double (global_settings, "import-ser-xbin");
-        h.bin[1] = (int)g_settings_get_double (global_settings, "import-ser-ybin");
-        roi_ls = (int)g_settings_get_double (global_settings, "import-ser-roi-ls");
-        roi_le = (int)g_settings_get_double (global_settings, "import-ser-roi-le");
-        g_clear_object (&global_settings);
-
-        if (h.bin[0] < 1) h.bin[0] = 1;
-        if (h.bin[1] < 1) h.bin[1] = 1;
-        if (tbin < 1) tbin = 1;
-                                  
+        
         // Trailer contains Date / Integer_64 (little-endian) time stamps in UTC for every image frame.
         /* According to Microsoft documentation the used time stamp has the following format:
            “Holds IEEE 64-bit (8-byte) values that represent dates ranging from January 1 of the year 0001
@@ -506,12 +508,32 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
            100 nanoseconds before the beginning of January 1 of the year 10000.”
         */
                          
+        struct header {
+                guint32 dimensions_xyzb[4];
+                double  extends_xyz[3];
+                int     bin[3];
+        } h;
 
 	// Am I resposible for that file -- can only do a dimension sanity check
 	ifstream f;
 	GString *FileList=NULL;
 
-	f.open(name, ios::in);
+
+
+        GSettings *global_settings = g_settings_new (GXSM_RES_BASE_PATH_DOT ".global");
+        int sf = (int)g_settings_get_double (global_settings, "import-ser-start-frame");
+        int ef = (int)g_settings_get_double (global_settings, "import-ser-end-frame");
+        int tb = (int)g_settings_get_double (global_settings, "import-ser-tbin");
+        int xb = (int)g_settings_get_double (global_settings, "import-ser-xbin");
+        int yb = (int)g_settings_get_double (global_settings, "import-ser-ybin");
+        int roi_ls = (int)g_settings_get_double (global_settings, "import-ser-roi-ls");
+        int roi_le = (int)g_settings_get_double (global_settings, "import-ser-roi-le");
+        g_clear_object (&global_settings);
+        
+        g_message ("SER import controls ** start: %d end: %d binning: %d/%d/%d  roi L %d .. %d", sf, ef, xb,yb,tb, roi_ls, roi_le);
+
+
+        f.open(name, ios::in);
 	if (!f.good())
 	        return status=FIO_OPEN_ERR;
 
@@ -533,13 +555,15 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
                 g_string_append_printf (FileList, "Image Width %d x Height %d\n", ser_header.ImageWidth, ser_header.ImageHeight);
                 g_string_append_printf (FileList, "PixelDepthPerPlane: %d\n", ser_header.PixelDepthPerPlane);
                 g_string_append_printf (FileList, "FrameCount:         %d\n", ser_header.FrameCount);
+                // 0 terminate for sure:
+                ser_header.Observer[39] = 0; 
+                ser_header.Instrument[39] = 0;
+                ser_header.Telescope[39] = 0;  //11
                 g_string_append_printf (FileList, "Observer:   %s\n", ser_header. Observer);
                 g_string_append_printf (FileList, "Instrument: %s\n", ser_header.Instrument);
                 g_string_append_printf (FileList, "Telescope:  %s\n", ser_header.Telescope);
                 g_string_append_printf (FileList, "DateTime:   %d\n", ser_header.DateTime);
                 g_string_append_printf (FileList, "DateTimeUTC %d\n", ser_header.DateTimeUTC);
-
-                g_message (FileList->str);
 
                 h.dimensions_xyzb[0]=ser_header.ImageWidth;
                 h.dimensions_xyzb[1]=ser_header.ImageHeight;
@@ -548,6 +572,9 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
                 h.extends_xyz[0]=ser_header.ImageWidth;
                 h.extends_xyz[1]=ser_header.ImageHeight;
                 h.extends_xyz[2]=ser_header.FrameCount;
+                h.bin[0] = xb; // X
+                h.bin[1] = yb; // Y
+                h.bin[2] = tb; // TIME
                 
         }else{
                 f.close ();
@@ -562,10 +589,13 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
                 h.extends_xyz[0]=3088;
                 h.extends_xyz[1]=2064;
                 h.extends_xyz[2]=1000;
+                h.bin[0] = xb; // X
+                h.bin[1] = yb; // Y 
+                h.bin[2] = tb; // TIME
         }
 
         
-        g_message ("SER Read. Filename: %s\nDim-XYZB: %dpx %dpx %dpx %dbin\nExtends-XYZ: %f %f %f",
+        g_message ("Ser Read. Filename: %s\nDim-XYZB: %dpx %dpx %dpx %dbin\nExtends-XYZ: %f %f %f",
                    fname,
                    (int)h.dimensions_xyzb[0], (int)h.dimensions_xyzb[1], (int)h.dimensions_xyzb[2], h.dimensions_xyzb[3], 
                    (double)h.extends_xyz[0],  (double)h.extends_xyz[1],  (double)h.extends_xyz[2]);
@@ -575,8 +605,9 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
                 g_string_append_printf (FileList, "Original Filename: %s\nDim-XYZB: %d %d %d %d\nExtends-XYZ: %f %f %f", fname,
                                         (int)h.dimensions_xyzb[0], (int)h.dimensions_xyzb[1], (int)h.dimensions_xyzb[2], h.dimensions_xyzb[3], 
                                         (double)h.extends_xyz[0],  (double)h.extends_xyz[1],  (double)h.extends_xyz[2]);
-                if ((double)h.dimensions_xyzb[0] * (double)h.dimensions_xyzb[1] * (double)h.dimensions_xyzb[2] > 1e10){
+                if ((double)h.dimensions_xyzb[0] * (double)h.dimensions_xyzb[1] * (double)h.dimensions_xyzb[2] > 1e12){
                         f.close ();
+                        g_message ("SER Read Total Extends exceeding 1e12 -- stopping.");
                         return status=FIO_NOT_RESPONSIBLE_FOR_THAT_FILE; // possibly wrong. Arbitrary limits. Adjust if needed.
                 }
 	} else {
@@ -590,7 +621,7 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
 	gchar *tmp = g_strconcat ((ctime(&t)), " (Imported)", NULL); scan->data.ui.SetDateOfScan (tmp); g_free (tmp);
 	scan->data.ui.SetName (fname);
 	scan->data.ui.SetOriginalName (fname);
-	scan->data.ui.SetType ("Raw16 Volume"); 
+	scan->data.ui.SetType ("Ser Volume"); 
 
 
 	// put some usefull values in the ui structure
@@ -606,7 +637,7 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
 	scan->data.s.ntimes  = 1;
 	scan->data.s.nx = h.dimensions_xyzb[0]/h.bin[0];
 	scan->data.s.ny = h.dimensions_xyzb[1]/h.bin[1];
-	scan->data.s.nvalues = h.dimensions_xyzb[2];
+	scan->data.s.nvalues = 1; //h.dimensions_xyzb[2];
 	scan->data.s.dx = h.extends_xyz[0]/h.dimensions_xyzb[0]*h.bin[0]; // need Angstroems
 	scan->data.s.dy = h.extends_xyz[1]/h.dimensions_xyzb[1]*h.bin[1];
 	scan->data.s.dz = h.extends_xyz[2]/h.dimensions_xyzb[2];
@@ -673,7 +704,7 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
                         g_message ("Reading Frame: %d", index_time);
                         f.read ((char*)data, sizeof (guint8) * frame_buffer_size);
                         if (! f.good ()){
-                                g_warning ("Raw16 data read EOF. #Frames read: %d", index_time);
+                                g_warning ("Ser data read EOF. #Frames read: %d", index_time);
                                 break;
                         }
                         guint8 *p = data;
@@ -719,25 +750,39 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
                 size_t frame_buffer_size =  (size_t)h.dimensions_xyzb[0] * (size_t)h.dimensions_xyzb[1];
                 guint16 *data;
 
-                g_message ("SER Raw MONO16 Import");
-
+                g_message ("SER Raw MONO16 Import, Frame Count %d", ser_header.FrameCount);
+                
                 gapp->progress_info_set_bar_fraction (0., 1);
                 gapp->progress_info_set_bar_text (fname, 1);
 
                 data = g_new (guint16, frame_buffer_size);
                 
                 scan->data.s.nvalues = 1;
+                if (roi_ls >= 0 && roi_le >= 0){
+                        scan->data.s.ny = roi_le - roi_ls + 1;
+                }
                 scan->mem2d->Resize (scan->data.s.nx, scan->data.s.ny, 1, ZD_FLOAT);
                 // convert data
+                int fi=0;
+                int tbin=0;
                 for (int index_time=0; index_time<ser_header.FrameCount; ++index_time){
                         gapp->progress_info_set_bar_fraction ((gdouble)index_time/(gdouble)ser_header.FrameCount, 1);
                         g_message ("Reading Frame: %d", index_time);
                         f.read ((char*)data, sizeof (guint16) * frame_buffer_size);
                         if (! f.good ()){
-                                g_warning ("Raw16 data read EOF. #Frames read: %d", index_time);
+                                g_warning ("Ser data read EOF. #Frames read: %d", index_time);
                                 break;
                         }
+                        if (sf > 0)
+                                if (index_time < sf)
+                                        continue;
+                        if (ef > 0)
+                                if (index_time > ef)
+                                        break;
+                                
                         guint16 *p = data;
+                        if (roi_ls > 0)
+                                p += (int)h.extends_xyz[0]*(roi_ls-1);
                         for (int row=0; row < scan->mem2d->GetNy (); ++row){
                                 for (int col=0; col < scan->mem2d->GetNx (); ++col){
                                         double bin = 0.; // binning
@@ -745,11 +790,28 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
                                                 for (int jb = 0; jb<h.bin[1]; jb++)
                                                         bin += (double)*(p+ib+jb*h.dimensions_xyzb[0]);
                                         p+=h.bin[0];
-                                        scan->mem2d->PutDataPkt (bin, col, row);
+                                        if (tbin == 0){
+                                                //g_message ("[%d,%d] %g", col,row,bin);
+                                                scan->mem2d->PutDataPkt (bin, col, row);
+                                        }else
+                                                scan->mem2d->data->Zadd (bin, col, row);
                                 }
                                 p+=(h.bin[1]-1)*h.dimensions_xyzb[0];
                         }
-                        scan->append_current_to_time_elements (index_time, index_time);
+                        if (tb > 1){
+                                tbin++;
+                                if (tbin == tb){
+                                        g_message ("Appending Frame: %d -> index %d, tbin=%d", index_time, fi, tbin);
+                                        scan->append_current_to_time_elements (fi, index_time);
+                                        fi++;
+                                        tbin = 0;
+                                }
+                        }
+                        else{
+                                g_message ("Appending Frame: %d -> index %d", index_time, fi);
+                                scan->append_current_to_time_elements (fi, index_time);
+                                fi++;
+                        }
                 }
                 g_free (data);
 
@@ -757,11 +819,22 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
                 g_message ("SER reading trailer, frame times");
                 gint64 frame_times[ser_header.FrameCount];
                 f.read ((char*)frame_times, sizeof (guint64) * ser_header.FrameCount);
+
+                fi=0;
                 if (f.good ()){
                         guint64 start=frame_times[0];
                         for (int index_time=0; index_time<ser_header.FrameCount; ++index_time){
-                                g_message ("#%05d @ %llu %g s", index_time, frame_times[index_time], (double)(frame_times[index_time]-start)/10000000.);
-                                scan->set_nth_time_element_frame_time (index_time, (double)(frame_times[index_time]-start)/10000000.);
+                                if (sf > 0)
+                                        if (index_time < sf)
+                                                continue;
+                                if (ef > 0)
+                                        if (index_time >= ef)
+                                                break;
+                                g_message ("[%d] #%05d @ %llu %g s", fi, index_time, frame_times[index_time], (double)(frame_times[index_time]-start)/10000000.);
+                                if (index_time % tb == 0){
+                                        scan->set_nth_time_element_frame_time (fi, (double)(frame_times[index_time]-start)/10000000.);
+                                        fi++;
+                                }
                         }
                 } else {
                         if (ser_header.FrameCount > 2){
@@ -783,7 +856,7 @@ FIO_STATUS ser_ImExportFile::import(const char *fname){
                         g_message ("Reading Frame: %d", frame);
                         f.read ((char*)data, sizeof (guint16) * frame_buffer_size);
                         if (! f.good ()){
-                                g_warning ("Raw16 data read EOF. #Frames read: %d", frame);
+                                g_warning ("Ser data read EOF. #Frames read: %d", frame);
                                 break;
                         }
                         guint16 *p = data;
@@ -820,7 +893,7 @@ FIO_STATUS ser_ImExportFile::Write(){
 						    GTK_DIALOG_DESTROY_WITH_PARENT,
 						    GTK_MESSAGE_INFO,
 						    GTK_BUTTONS_OK,
-						    N_("Raw16 export.")
+						    N_("Ser export.")
 						    );
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
@@ -831,7 +904,7 @@ FIO_STATUS ser_ImExportFile::Write(){
 	if(strlen(name)>0)
 		fname = (const char*)name;
 	else
-		fname = gapp->file_dialog("File Export: Raw16"," ",file_mask,"","Raw16 write");
+		fname = gapp->file_dialog("File Export: Ser"," ",file_mask,"","Ser write");
 	if (fname == NULL) return FIO_NO_NAME;
 
 	// check if we like to handle this

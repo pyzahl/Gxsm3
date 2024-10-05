@@ -296,7 +296,7 @@ size_t FPGA_PACPLL_CFG_block_size = 0;
 size_t FPGA_PACPLL_BRAM_block_size = 0;
 
 //#define DEVELOPMENT_PACPLL_OP
-int verbose = 0;
+int verbose = 2;
 
 //fprintf(stderr, "");
 
