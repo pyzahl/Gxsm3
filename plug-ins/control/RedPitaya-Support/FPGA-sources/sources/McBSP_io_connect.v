@@ -57,7 +57,7 @@ module McBSP_io_connect #(
 // IOBUF macro, .T(0) : Output direction. IO = I, O = I (passed)
 // IOBUF macro, .T(1) : Input direction.  IO = Z (high imp), O = IO (passed), I=X
 
-// V1.0 interface McBSP on exp_p_io[], IO-in on exp_n_io
+// V1.0 interface McBSP on exp_p_io[], IO-in on exp_n_io (old only on LT-STM)
 // ==========================================================================
 /*
 IOBUF clk_iobuf (.O(McBSP_clk),      .IO(exp_p_io[0]), .I(0),         .T(1) );
@@ -73,11 +73,16 @@ if (USE_RP_DIGITAL_IO)
 begin
     IOBUF exp_in_iobuf[8-1:0] (.O(RP_exp_in[8-1:0]), .IO(exp_n_io[8-1:0]), .I(8'b00000000),    .T(8'b11111111) );
 end
-// = V1 =====================================================================
+else
+begin
+    assign RP_exp_in = 0;
+end
 */
+// = V1 =====================================================================
+
 // ---------------------------------------- OR -------------------------------
 
-// V2.0 interface McBSP on exp_n_io[], IO-in on exp_p_io (swapped pins)
+// V2.0 interface McBSP on exp_n_io[], IO-in on exp_p_io (swapped pins) new builds
 // ===========================================================================
 IOBUF clk_iobuf (.O(McBSP_clk),      .IO(exp_n_io[0]), .I(0),         .T(1) );
 IOBUF fs_iobuf  (.O(McBSP_fs),       .IO(exp_n_io[1]), .I(0),         .T(1) );
@@ -97,6 +102,7 @@ begin
     assign RP_exp_in = 0;
 end
 // = V2 =====================================================================
+
 
 // assign McBSP_dbg = { McBSP_clk, McBSP_fs, McBSP_rx, McBSP_nrx };
 
