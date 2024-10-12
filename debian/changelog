@@ -1,3 +1,9 @@
+gxsm3 (3.54.0-0ubuntu1) noble; urgency=medium
+
+  * fixed dependencies for Ubuntu24.04 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 12 Oct 2024 09:19:21 +0200
+
 gxsm3 (3.54.0-0ubuntu0) noble; urgency=medium
 
   *  Ubuntu 24.04 LTS port
