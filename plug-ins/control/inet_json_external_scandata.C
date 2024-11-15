@@ -583,6 +583,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->grid_add_check_button ( N_("Enable"), "Enable Pulse Forming", 2,
                                     G_CALLBACK (Inet_Json_External_Scandata::pulse_form_enable), this);
 
+        bp->grid_add_exec_button ( N_("Single Shot"),
+                                   G_CALLBACK (Inet_Json_External_Scandata::pulse_form_fire), this, "FirePulse",
+                                   2);
+
         // =======================================
 
         bp->pop_grid ();
@@ -943,8 +947,10 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
 
         bp->new_line ();
+        bp->grid_add_exec_button ( N_("Save"), G_CALLBACK (Inet_Json_External_Scandata::scope_save_data_callback), this, "ScopeSaveData");
+
         bram_shift = 0;
-        bp->grid_add_widget (gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0, 4096, 10), 10);
+        bp->grid_add_widget (gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0, 4096, 10), 9);
         g_signal_connect (G_OBJECT (bp->any_widget), "value-changed",
                           G_CALLBACK (Inet_Json_External_Scandata::scope_buffer_position_callback),
                           this);
@@ -1267,6 +1273,87 @@ void Inet_Json_External_Scandata::pulse_form_enable (GtkWidget *widget, Inet_Jso
         self->pulse_form_parameter_changed (NULL, self);
 }
 
+void Inet_Json_External_Scandata::pulse_form_fire (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        gtk_combo_box_set_active (GTK_COMBO_BOX (self->update_op_widget), 3); // RESET (INIT BRAM TRANSPORT AND CLEAR FIR RING BUFFERS)
+        while(gtk_events_pending()) gtk_main_iteration();
+        usleep(300000);
+        gtk_combo_box_set_active (GTK_COMBO_BOX (self->update_op_widget), 4); // SINGLE SHOT
+}
+
+void Inet_Json_External_Scandata::save_scope_data (){
+        static int count=0;
+        static int base_count=-1;
+	std::ofstream f;
+        int i;
+	const gchar *separator = "\t";
+	time_t t;
+	time(&t);
+
+        if (base_count != gapp->xsm->file_counter) // auto reset for new image
+                count=0;
+                
+        base_count = gapp->xsm->file_counter;
+        gchar *fntmp = g_strdup_printf ("%s/%s%03d-%s%04d.rpdata",
+					g_settings_get_string (gapp->get_as_settings (), "auto-save-folder-probe"), 
+					gapp->xsm->data.ui.basename, base_count, "RP", count++);
+        
+	f.open (fntmp);
+
+        int ix=-999999, iy=-999999;
+
+	if (gapp->xsm->MasterScan){
+		gapp->xsm->MasterScan->World2Pixel (gapp->xsm->data.s.x0, gapp->xsm->data.s.y0, ix, iy, SCAN_COORD_ABSOLUTE);
+	}
+
+	f << "# view via: xmgrace -graph 0 -pexec 'title \"GXSM RP Data: " << fntmp << "\"' -block " << fntmp  << " -bxy 2:4 ..." << std::endl;
+	f << "# GXSM RP Data :: RPVersion=00.01 vdate=20241114" << std::endl;
+	f << "# Date                   :: date=" << ctime(&t) << "#" << std::endl;
+	f << "# FileName               :: name=" << fntmp << std::endl;
+	f << "# GXSM-Main-Offset       :: X0=" << gapp->xsm->data.s.x0 << " Ang" <<  "  Y0=" << gapp->xsm->data.s.y0 << " Ang" 
+	  << ", iX0=" << ix << " Pix iX0=" << iy << " Pix"
+	  << std::endl;
+	f << "#C " << std::endl;
+
+
+        double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5, // 0...4 CH1..5
+                             pacpll_signals.signal_phase, pacpll_signals.signal_ampl  }; // 5,6 PHASE, AMPL in Tune Mode, averaged from burst
+
+        int uwait=500000;
+        
+        write_parameter ("BRAM_SCOPE_SHIFT_POINTS", 0);
+        usleep(uwait); // wait for data to update
+        while(gtk_events_pending()) gtk_main_iteration();
+ 
+        for (i=0; i<1024; ++i)
+                f << i << " " << pacpll_signals.signal_ch1[(i+1)%1024] << " " << pacpll_signals.signal_ch2[i] << "\n";
+        
+        write_parameter ("BRAM_SCOPE_SHIFT_POINTS", 1024);
+        usleep(uwait);
+        while(gtk_events_pending()) gtk_main_iteration();
+
+        for (i=0; i<1024; ++i)
+                f << (i+1024) << " " << pacpll_signals.signal_ch1[(i+1)%1024] << " " << pacpll_signals.signal_ch2[i] << "\n";
+
+        write_parameter ("BRAM_SCOPE_SHIFT_POINTS", 2*1024);
+        usleep(uwait);
+        while(gtk_events_pending()) gtk_main_iteration();
+
+        for (i=0; i<1024; ++i)
+                f << (i+2*1024) << " " << pacpll_signals.signal_ch1[(i+1)%1024] << " " << pacpll_signals.signal_ch2[i] << "\n";
+
+
+        write_parameter ("BRAM_SCOPE_SHIFT_POINTS", 3*1024);
+        usleep(uwait);
+        while(gtk_events_pending()) gtk_main_iteration();
+
+        for (i=0; i<1023; ++i)
+                f << (i+3*1024) << " " << pacpll_signals.signal_ch1[(i+1)%1024] << " " << pacpll_signals.signal_ch2[i] << "\n";
+
+        f.close();
+
+        write_parameter ("BRAM_SCOPE_SHIFT_POINTS", 0);
+        
+}
 
 void Inet_Json_External_Scandata::save_values (NcFile *ncf){
         // store all Inet_Json_External_Scandata's control parameters for the RP PAC-PLL
@@ -1437,6 +1524,10 @@ void Inet_Json_External_Scandata::choice_auto_set_callback (GtkWidget *widget, I
 
 void Inet_Json_External_Scandata::scope_buffer_position_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
         self->write_parameter ("BRAM_SCOPE_SHIFT_POINTS", self->bram_shift = (int)gtk_range_get_value (GTK_RANGE (widget)));
+}
+
+void Inet_Json_External_Scandata::scope_save_data_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        self->save_scope_data ();
 }
 
 

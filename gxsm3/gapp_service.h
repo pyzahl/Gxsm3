@@ -505,6 +505,10 @@ class BuildParam{
 		grid_add_widget (button, bwx);
                 return button;
         };
+        GtkWidget* grid_add_exec_button (const gchar* labeltxt,
+                                         GCallback exec_cb, gpointer cb_data, const gchar *control_id,
+                                         int bwx=1,
+                                         const gchar *data_key=NULL, gpointer key_data=NULL);
         GtkWidget* grid_add_check_button (const gchar* labeltxt, const char *tooltip=NULL, int bwx=1,
                                           GCallback cb=NULL, gpointer data=NULL, gint source=0, gint mask=-1){
                 button = gtk_check_button_new_with_label (N_(labeltxt));
