@@ -110,6 +110,8 @@ module axis_4s_combine #(
     input wire                             S_AXIS8_tvalid,
 
     input wire [SAXIS_3_DATA_WIDTH-1:0] axis3_center,  
+    input wire [2:0] zero_spcp,
+
     input wire [8-1:0]   rp_digital_in,
     input wire [32-1:0]  operation, // 0..7 control bits 0: 1=start 1: 1=single shot/0=fifo loop 2, 4: 16=init/reset , [31:8] DATA ACCUMULATOR (64) SHR   [0] start/stop, [1] ss/loop, [2], [3], [4] reset
     input wire [32-1:0]  ndecimate,
@@ -147,7 +149,11 @@ module axis_4s_combine #(
     output wire BR_next,
     output wire BR_reset,
     input  wire BR_ready,
-    input  wire [15:0] BR_wpos
+    input  wire [15:0] BR_wpos,
+    
+    output wire pulse_arm_single,
+    output wire pulse_run
+    
     );
     
     reg [2:0] dec_sms=3'd0;
@@ -179,6 +185,12 @@ module axis_4s_combine #(
     reg bram_reset=1;
     reg bram_next=0;
     reg bram_retry=0;
+    reg reg_pulse_arm_single=0;
+    reg reg_pulse_run=1;
+
+    assign pulse_arm_single = reg_pulse_arm_single;
+    assign pulse_run = reg_pulse_run;
+
 
     //wire signed [64-1:0] Q31HALF = { {(64-31){1'b0}}, 1'b1, {(31-1){1'b0}} };
 
@@ -250,9 +262,46 @@ module axis_4s_combine #(
         
         if(reg_operation[0]) // operation mode: tigger start running
         begin
-            trigger <= trigger_next;    // GPIO TRIGGER: VIA SOFTWARE, AUTO RUN
+            if (reg_operation[1]) // Scope Manual Single Shot Mode 
+            begin
+                if (zero_spcp[0] && zero_spcp[1]) // wait for ref zero crossing
+                begin
+                    if (!trigger)
+                    begin
+                        reg_pulse_arm_single <= 1; // arm simple pulse
+                        reg_pulse_run <= 0;
+                    end                     
+                    trigger <= trigger_next;    // GPIO TRIGGER: VIA SOFTWARE, AUTO RUN
+                end
+                else
+                begin
+                    trigger <= 0; // wait
+                    reg_pulse_arm_single <= 0; // disable pulse
+                    reg_pulse_run <= 0;
+                end
+            end
+            else // Scope Auto Mode, but auto trigger on S
+            begin
+                if (zero_spcp[0] && zero_spcp[2]) // wait for ref zero crossing
+                begin
+                    if (!trigger)
+                    begin
+                        reg_pulse_arm_single <= 0; // arm simple pulse
+                        reg_pulse_run <= 1;
+                    end                     
+                    trigger <= trigger_next;    // GPIO TRIGGER: VIA SOFTWARE, AUTO RUN
+                end
+                else
+                begin
+                    trigger <= 0; // wait
+                    reg_pulse_arm_single <= 0;
+                    reg_pulse_run <= 1; // keep pulses running 
+                end
+            end         
         end else begin
             trigger <= reg_ext_trigger; // PL TRIGGER: (McBSP hardware trigger mode)
+            reg_pulse_arm_single <= 0;
+            reg_pulse_run <= 1;
         end
             
         // ===============================================================================

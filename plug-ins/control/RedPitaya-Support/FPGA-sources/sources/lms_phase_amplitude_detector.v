@@ -319,10 +319,6 @@ module lms_phase_amplitude_detector #(
             RAtau <= Atau; // buffer to register -- Q22 tau amplitude
             
         //  special IIR DC filter DC error on average of samples at 0,90,180,270
-            if (sc_zero)
-            begin
-                sc_zero <= 0; // reset zero indicator
-            end
             
         // Signal Input
             signal   <= S_AXIS_SIGNAL_tdata[LMS_DATA_WIDTH-1:0];
@@ -351,31 +347,37 @@ module lms_phase_amplitude_detector #(
             s3 <= s2;
             
         // S,C Zero Detector
-            if (s > $signed(0) && ~sp)
+            if (sc_zero)
             begin
-                sp <= 1;
-                sc_zero <= 1;
-            end else
-            begin
-                if (s<$signed(0) && sp)
+                sc_zero <= 0; // reset zero indicator
+            end
+            else begin
+                if (s > $signed(0) && ~sp)
                 begin
-                    sp <= 0;
+                    sp <= 1;
                     sc_zero <= 1;
+                end else
+                begin
+                    if (s<$signed(0) && sp)
+                    begin
+                        sp <= 0;
+                        sc_zero <= 1;
+                    end
+                end
+                if (c>$signed(0) && ~cp)
+                begin
+                    cp <= 1;
+                    sc_zero <= 1;
+                end else
+                begin
+                    if (c<$signed(0) && cp)
+                    begin
+                        cp <= 0;
+                        sc_zero <= 1;
+                    end
                 end
             end
-            if (c>$signed(0) && ~cp)
-            begin
-                cp <= 1;
-                sc_zero <= 1;
-            end else
-            begin
-                if (c<$signed(0) && cp)
-                begin
-                    cp <= 0;
-                    sc_zero <= 1;
-                end
-            end
-    
+            
             // Compute the prediction
             // ### 1 pipeline level
             // predict <= (s * a + c * b + "0.5") >>> 22; // Q22
