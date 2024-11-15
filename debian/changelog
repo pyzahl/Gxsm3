@@ -1,3 +1,21 @@
+gxsm3 (3.54.0-0ubuntu1) noble; urgency=medium
+
+  * fixed dependencies for Ubuntu24.04 
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 12 Oct 2024 09:19:21 +0200
+
+gxsm3 (3.54.0-0ubuntu0) noble; urgency=medium
+
+  *  Ubuntu 24.04 LTS port
+
+ -- Thorsten Wagner <stm@users.sf.net>  Wed, 09 Oct 2024 20:47:52 +0200
+
+gxsm3 (3.53.0-0ubuntu13) jammy; urgency=medium
+
+  * MK2 patch
+
+ -- Thorsten Wagner <stm@users.sf.net>  Fri, 23 Jun 2023 22:15:52 +0200
+
 gxsm3 (3.53.0-0ubuntu12) jammy; urgency=medium
 
   * updated MK2 interface

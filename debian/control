@@ -1,0 +1,130 @@
+Source: gxsm3
+Section: science
+Priority: optional
+Maintainer: Thorsten Wagner <stm@users.sf.net>
+Build-Depends: 	debhelper (>= 12~),
+		autotools-dev,
+		freeglut3-dev,
+		gsettings-desktop-schemas-dev,
+		gtk-doc-tools,
+		intltool,
+		libatk-bridge2.0-dev,
+		libcairo2-dev,
+		libopencv-dev,
+		libfftw3-dev,
+		libgail-3-dev,
+		libglew-dev,
+		libglib2.0-dev,
+		libglm-dev,
+		libglu1-mesa-dev,
+		libgsl-dev,
+		libgtk-3-dev,
+		libgtksourceview-3.0-dev,
+		libnetcdf-dev,
+		libnetcdf-c++4-dev,
+		libnetcdf-cxx-legacy-dev,
+		libnlopt-dev,
+		libopencv-dev,
+		libpopt-dev,
+		libpython3-dev,
+		libquicktime-dev,
+		libsoup2.4-dev,
+		libxml2-dev,
+		mesa-common-dev,
+		python3,
+		python3-dev,
+		python3-gi,
+		python3-numpy,
+		yelp,
+		yelp-tools 
+Standards-Version: 3.9.7
+Homepage: http://gxsm.sf.net
+#Vcs-Git: https://github.com/pyzahl/Gxsm3.git
+#Vcs-Browser:  https://github.com/pyzahl/Gxsm3
+
+Package: gxsm3
+Architecture: any
+Multi-Arch: same
+Pre-Depends:	${misc:Pre-Depends}
+Depends: 	${shlibs:Depends}, 
+		${misc:Depends},
+		bash,
+		dbus-x11,
+		devscripts,
+		gsettings-desktop-schemas,
+		libatk-bridge2.0-0,
+		libcairo2,
+		libfftw3-bin,
+		libgail-3-0,
+		libglew2.2,
+		libglib2.0-0,
+		libglu1-mesa,
+		libgsl27,
+		libgtk-3-0,
+		libgtksourceview-3.0-1,
+		libgtksourceview-3.0-common,
+		libnetcdf-c++4-1,
+		libnlopt0,
+		libopencv-contrib406t64,
+		libopencv-core406t64,
+		libopencv-highgui406t64,
+		libopencv-imgproc406t64,
+		libopencv-objdetect406t64,
+		libopencv-video406t64,
+		libpopt0,
+		libpython3.12t64,
+		libquicktime2,
+		libsoup2.4-1,
+		libxdot4,
+		libxml2-dev,
+		python3,
+		python3-gi,
+		python3-numpy,
+		python3-pydot,
+		python3-scipy,
+		sed,
+		subversion,
+		xdg-utils,
+		xdot
+Suggests: sranger-modules-mk23-dkms, sranger-modules-std-dkms, gwyddion
+Replaces: sranger (<< 0.0.2 )
+Breaks: sranger (<< 0.0.2 )
+Description: Multi-channel data acquisition via STM/AFM
+ GXSM -- Gnome X Scanning Microscopy.
+ .
+ Gxsm is a powerful graphical interface for any kind of 2D
+ and 3D (multilayered 2D mode) data acquisition methods, 
+ especially designed for SPM and SPA-LEED, which are used 
+ in surface science. It includes methods for 2D data (of 
+ various types: byte, short, long, double) visualization 
+ and manipulation. We are currently using it for STM, AFM, 
+ SARLS, and SPA-LEED.
+ .
+ Gxsm is powerful, it is easy to extend via plug-ins, it is
+ unlimited in data size... and it is a free and open source 
+ software hosted by SourceForge! It is based on the Linux 
+ Gtk+/Gnome development environment.
+ .
+ More details on http://gxsm.sf.net and 
+ http://sranger.sf.net or in 
+ J. Vac. Sci. Technol. B 28, C4E39 (2010) 
+ (doi:10.1116/1.3374719) 
+ 
+#Package: gxsm3-mk3dspemu
+#Architecture: any
+#Multi-Arch: same
+#Pre-Depends:	${misc:Pre-Depends}
+#Depends: 	${shlibs:Depends}, 
+#		${misc:Depends}, 
+#		gxsm3
+#Suggests: 
+#Replaces: sranger (<< 0.0.2 ), gxsm3 (<< 3.52.0-0ubuntu7)
+#Breaks: sranger (<< 0.0.2 ), gxsm3 (<< 3.52.0-0ubuntu7)
+#Description: Multi-channel data acquisition via STM/AFM
+# GXSM -- Gnome X Scanning Microscopy.
+# --- MK3 Emulation package ---
+# --- !!only experimental!! ---
+# You will have to run 
+# shm_fd = shm_open (sr_emu_dev_file, O_CREAT | O_TRUNC | O_RDWR, 0666);
+# in a terminal to create the shared memory file (sr_emu_dev_file) and adapt
+# the corresponding preferences in GXSM3
