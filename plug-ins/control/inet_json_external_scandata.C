@@ -69,6 +69,7 @@ RP data streaming
 //#include "gxsm3/xsmtypes.h"
 //#include "gxsm3/glbvars.h"
 //#include "gxsm3/action_id.h"
+#include "remote.h"
 
 #include "plug-ins/control/inet_json_external_scandata.h"
 #include "plug-ins/control/resonance_fit.h"
@@ -172,6 +173,7 @@ static void inet_json_external_scandata_SaveValues_callback ( gpointer gp_ncf ){
 // ----------------------------------------------------------------------
 //
 
+static void dummy_func_wd (GtkWidget* w, void* d){}
 
 // init-Function
 static void inet_json_external_scandata_init(void)
@@ -1044,6 +1046,22 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         // hookup to scan start and stop
         inet_json_external_scandata_pi.app->ConnectPluginToStartScanEvent (Inet_Json_External_Scandata::scan_start_callback);
         inet_json_external_scandata_pi.app->ConnectPluginToStopScanEvent (Inet_Json_External_Scandata::scan_stop_callback);
+
+
+        remote_action_cb *ra = g_new( remote_action_cb, 1);     
+        ra -> cmd = g_strdup_printf("GET_RPDATA_VECTOR"); 
+        ra -> RemoteCb = (void (*)(GtkWidget*, void*))dummy_func_wd;  
+        ra -> widget = NULL;
+        ra -> data = NULL;                                      
+        ra -> return_data = g_strdup_printf("VECTOR");
+        ra -> data_length    = 4096;
+        ra -> data_vector[0] = &bram_saved_buffer[0][0];
+        ra -> data_vector[1] = &bram_saved_buffer[1][0];
+        ra -> data_vector[2] = &bram_saved_buffer[2][0];
+        ra -> data_vector[3] = &bram_saved_buffer[3][0];
+        ra -> data_vector[4] = &bram_saved_buffer[4][0];
+        gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
+        
 }
 
 Inet_Json_External_Scandata::~Inet_Json_External_Scandata (){
@@ -1305,6 +1323,25 @@ void Inet_Json_External_Scandata::save_scope_data (){
 		gapp->xsm->MasterScan->World2Pixel (gapp->xsm->data.s.x0, gapp->xsm->data.s.y0, ix, iy, SCAN_COORD_ABSOLUTE);
 	}
 
+	const gchar *transport_modes[] = {
+                "IN1, IN2",             // [0] SCOPE
+                "IN1: AC, DC",          // [1] MON
+                "AMC: Ampl, Exec",      // [2] AMC Adjust
+                "PHC: dPhase, dFreq",   // [3] PHC Adjust
+                "Phase, Ampl",          // [4] TUNE
+                "Phase, dFreq,[Am,Ex]", // [5] SCAN
+                "DHC: dFreq, dFControl", // [6] DFC Adjust
+                "DDR IN1/IN2",          // [7] SCOPE with DEC=1,SHR=0 Double(max) Data Rate config
+                "DEBUG McBSP",          // [8]
+                NULL };
+
+        
+        // self->bram_window_length = 1024.*(double)decimation*1./125e6; // sec
+        int decimation = 1 << data_shr_max;
+        double tw1024 = bram_window_length;
+
+        f.precision (12);
+
 	f << "# view via: xmgrace -graph 0 -pexec 'title \"GXSM RP Data: " << fntmp << "\"' -block " << fntmp  << " -bxy 2:4 ..." << std::endl;
 	f << "# GXSM RP Data :: RPVersion=00.01 vdate=20241114" << std::endl;
 	f << "# Date                   :: date=" << ctime(&t) << "#" << std::endl;
@@ -1312,43 +1349,44 @@ void Inet_Json_External_Scandata::save_scope_data (){
 	f << "# GXSM-Main-Offset       :: X0=" << gapp->xsm->data.s.x0 << " Ang" <<  "  Y0=" << gapp->xsm->data.s.y0 << " Ang" 
 	  << ", iX0=" << ix << " Pix iX0=" << iy << " Pix"
 	  << std::endl;
-	f << "#C " << std::endl;
 
+        f << "#C RP SAMPLING and DECIMATION SETTINGS:" << std::endl;
+        f << "#C BRAM transfer window length is 1024 points, duration is tw=" << tw1024 << " s" << std::endl;
+        f << "#C BRAM data length is 4096 points=" << (4*tw1024) << " s" << std::endl;
+        f << "#C                    SHR_DEC_DATA=" << data_shr_max << std::endl;
+        f << "#C            TRANSPORT_DECIMATION=" << decimation << std::endl;
+        f << "#C         BRAM_SCOPE_TRIGGER_MODE=" << trigger_mode << std::endl;
+        f << "#C SET_SINGLESHOT_TRGGER_POST_TIME=" << trigger_post_time << " us" << std::endl;
+        f << "#C              BRAM_WINDOW_LENGTH=" << (1e3*bram_window_length)       << " ms" << std::endl;
+        f << "#C                        BRAM_DEC=" << decimation << std::endl;
+        f << "#C                   BRAM_DATA_SHR=" << data_shr_max << std::endl;
+	f << "#C       CH1 CH2 TRANSPORT MAPPING=" << transport << " CH1,CH2 <= " << transport_modes[transport] << std::endl;
+	f << "#C Data CH1, CH2 is raw data as of RP subsystem. For In1/In2: voltage in mV" << std::endl;
+	f << "#C " << std::endl;
 
         double *signal[] = { pacpll_signals.signal_ch1, pacpll_signals.signal_ch2, pacpll_signals.signal_ch3, pacpll_signals.signal_ch4, pacpll_signals.signal_ch5, // 0...4 CH1..5
                              pacpll_signals.signal_phase, pacpll_signals.signal_ampl  }; // 5,6 PHASE, AMPL in Tune Mode, averaged from burst
 
-        int uwait=500000;
+        int uwait=600000;
         
-        write_parameter ("BRAM_SCOPE_SHIFT_POINTS", 0);
-        usleep(uwait); // wait for data to update
-        while(gtk_events_pending()) gtk_main_iteration();
+        tw1024 /= 1024.; // per px in sec
+        tw1024 *= 1e6;   // effective sample intervall in us between points
+        f << "#C index time[us] " << transport_modes[transport] << std::endl;
+        for (int k=0; k<4; ++k){
+                write_parameter ("BRAM_SCOPE_SHIFT_POINTS", k*1024);
+                usleep(uwait); // wait for data to update
+                while(gtk_events_pending()) gtk_main_iteration();
  
-        for (i=0; i<1024; ++i)
-                f << i << " " << pacpll_signals.signal_ch1[(i+1)%1024] << " " << pacpll_signals.signal_ch2[i] << "\n";
-        
-        write_parameter ("BRAM_SCOPE_SHIFT_POINTS", 1024);
-        usleep(uwait);
-        while(gtk_events_pending()) gtk_main_iteration();
-
-        for (i=0; i<1024; ++i)
-                f << (i+1024) << " " << pacpll_signals.signal_ch1[(i+1)%1024] << " " << pacpll_signals.signal_ch2[i] << "\n";
-
-        write_parameter ("BRAM_SCOPE_SHIFT_POINTS", 2*1024);
-        usleep(uwait);
-        while(gtk_events_pending()) gtk_main_iteration();
-
-        for (i=0; i<1024; ++i)
-                f << (i+2*1024) << " " << pacpll_signals.signal_ch1[(i+1)%1024] << " " << pacpll_signals.signal_ch2[i] << "\n";
-
-
-        write_parameter ("BRAM_SCOPE_SHIFT_POINTS", 3*1024);
-        usleep(uwait);
-        while(gtk_events_pending()) gtk_main_iteration();
-
-        for (i=0; i<1023; ++i)
-                f << (i+3*1024) << " " << pacpll_signals.signal_ch1[(i+1)%1024] << " " << pacpll_signals.signal_ch2[i] << "\n";
-
+                for (i=0; i<1024; ++i){
+                        bram_saved_buffer[0][i+k*1024] = ((i+k*1024)*tw1024);                   // time; buffer for later access via pyremote
+                        bram_saved_buffer[1][i+k*1024] = pacpll_signals.signal_ch1[(i+1)%1024]; // CH1; buffer for later access via pyremote
+                        bram_saved_buffer[2][i+k*1024] = pacpll_signals.signal_ch2[(i+1)%1024]; // CH2; buffer for later access via pyremote
+                        f << (i+k*1024) << " \t"
+                          << ((i+k*1024)*tw1024) << " \t"
+                          << pacpll_signals.signal_ch1[(i+1)%1024] << " \t"
+                          << pacpll_signals.signal_ch2[i] << "\n";
+                }
+        }
         f.close();
 
         write_parameter ("BRAM_SCOPE_SHIFT_POINTS", 0);
@@ -1491,7 +1529,11 @@ void Inet_Json_External_Scandata::choice_update_ts_callback (GtkWidget *widget, 
         //g_print ("BRAM_WINDOW_LENGTH ............ = %g ms\n", 1e3*self->bram_window_length);
         //g_print ("BRAM_DEC ...................... = %d\n", decimation);
         //g_print ("BRAM_DATA_SHR ................. = %d\n", self->data_shr_max);
-        self->write_parameter ("SET_SINGLESHOT_TRIGGER_POST_TIME", 0.1 * 1e6*self->bram_window_length); // is us --  10% pre trigger
+        if (self->trigger_mode > 0)
+                self->trigger_post_time = 0.1 * 1e6*self->bram_window_length; // is us --  10% pre trigger
+        else
+                self->trigger_post_time = 0.0; // None
+        self->write_parameter ("SET_SINGLESHOT_TRIGGER_POST_TIME", self->trigger_post_time); // is us
 }
 
 void Inet_Json_External_Scandata::choice_transport_ch12_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -1505,7 +1547,7 @@ void Inet_Json_External_Scandata::choice_transport_ch12_callback (GtkWidget *wid
 }
 
 void Inet_Json_External_Scandata::choice_trigger_mode_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
-        self->write_parameter ("BRAM_SCOPE_TRIGGER_MODE", gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
+        self->write_parameter ("BRAM_SCOPE_TRIGGER_MODE", self->trigger_mode = gtk_combo_box_get_active (GTK_COMBO_BOX (widget)));
         self->write_parameter ("BRAM_SCOPE_TRIGGER_POS", (int)(0.1*1024));
 }
 

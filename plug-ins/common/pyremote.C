@@ -1688,6 +1688,7 @@ typedef struct {
         double vec[4];
         gint64 i64;
         gchar  c;
+        remote_action_cb *ra_info;
 } IDLE_from_thread_data;
 
 
@@ -2043,6 +2044,8 @@ static void CbAction_ra(remote_action_cb* ra, gpointer arglist){
                                 (*ra->RemoteCb) (ra->widget, ra->data);
                         else
                                 (*ra->RemoteCb) (ra->widget, arglist);
+                        // g_message ("CbAction");
+                        ((gchar**)arglist)[3] = (gchar*)ra;
                         // see above and pcs.h
                 }
 };
@@ -2211,8 +2214,9 @@ static gboolean main_context_action_from_thread (gpointer user_data){
 
         PI_DEBUG(DBG_L2, "pyremote Action ** idle cb: value:" << parameter << ", " << (value?value:"N/A") );
 
-        gchar *list[] = {(char *)"action", parameter, value, NULL};
+        gchar *list[] = {(char *)"action", parameter, value, NULL, NULL};
         g_slist_foreach(gapp->RemoteActionList, (GFunc) CbAction_ra, (gpointer)list);
+        idle_data->ra_info = (remote_action_cb*)(list[3]);
         idle_data->ret = 0;
 
         UNSET_WAIT_JOIN_MAIN;
@@ -2228,6 +2232,15 @@ static PyObject* remote_action(PyObject *self, PyObject *args)
         idle_data.wait_join = true;
         g_idle_add (main_context_action_from_thread, (gpointer)&idle_data);
         WAIT_JOIN_MAIN;
+        if ( idle_data.ra_info )
+                if ( idle_data.ra_info->data_length > 0){
+                        npy_intp dims[2];
+                        dims[0] = 3; // max 5
+                        dims[1] = idle_data.ra_info->data_length;
+                        PyObject* pyarr = PyArray_SimpleNewFromData(2, dims, NPY_DOUBLE, (void*)idle_data.ra_info->data_vector[0]);
+                        PyArray_ENABLEFLAGS((PyArrayObject*) pyarr, NPY_ARRAY_OWNDATA);
+                        return Py_BuildValue("O", pyarr); // Python code will receive the array as numpy array.
+                }
         return Py_BuildValue("i", idle_data.ret);
 }
 

@@ -1139,7 +1139,8 @@ GtkWidget* BuildParam::grid_add_exec_button (const gchar* labeltxt,
         ra -> RemoteCb = (void (*)(GtkWidget*, void*))exec_cb;  
         ra -> widget = button;                                  
         ra -> data = cb_data;                                      
-
+        ra -> return_data = NULL;
+        
         if (data_key)
                 g_object_set_data (G_OBJECT (button), data_key, key_data);
         gtk_widget_set_tooltip_text (button, tooltip);

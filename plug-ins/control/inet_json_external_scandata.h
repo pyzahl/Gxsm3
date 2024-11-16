@@ -564,6 +564,9 @@ private:
         double scope_dc_level[5];
         int transport;
         int bram_shift;
+        int trigger_mode;
+        double trigger_post_time;
+        double bram_saved_buffer[5][4096];
         double gain_scale[5];
         double time_scale[5];
         gboolean unwrap_phase_plot;

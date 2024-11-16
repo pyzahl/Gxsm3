@@ -37,13 +37,8 @@
 
 #include "gxsm3/gxsm_app.h"
 #include "gxsm3/gxsm_window.h"
+#include "gxsm3/remote.h"
 
-struct remote_action_cb {
-    const gchar  *cmd;
-    void (*RemoteCb)(GtkWidget *widget , void* data);
-    GtkWidget *widget;
-    gpointer data;
-};
 
 // Plugin Prototypes
 static void pyremote_init( void );

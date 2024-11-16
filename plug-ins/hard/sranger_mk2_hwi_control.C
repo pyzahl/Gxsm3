@@ -404,6 +404,7 @@ public:
                 ra -> RemoteCb = (void (*)(GtkWidget*, void*))exec_cb;  
                 ra -> widget = button;                                  
                 ra -> data = cb_data;                                      
+                ra -> return_data = NULL;
 
                 
                 gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra ); 
@@ -2639,6 +2640,8 @@ DSPControl::DSPControl () {
                 ra -> RemoteCb = (void (*)(GtkWidget*, void*))callback_GVP_store_vp;
                 ra -> widget = dsp_bp->button;
                 ra -> data = this;
+                ra -> return_data = NULL;
+
                 gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
                 PI_DEBUG (DBG_L2, "Adding new Remote Cmd: " << ra->cmd ); 
 
@@ -2659,6 +2662,8 @@ DSPControl::DSPControl () {
                 ra -> RemoteCb = (void (*)(GtkWidget*, void*))callback_GVP_restore_vp;
                 ra -> widget = dsp_bp->button;
                 ra -> data = this;
+                ra -> return_data = NULL;
+
                 gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
                 PI_DEBUG (DBG_L2, "Adding new Remote Cmd: " << ra->cmd ); 
                 
