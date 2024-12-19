@@ -329,6 +329,7 @@ public:
         static void scope_buffer_position_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void scope_save_data_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
 
+        static void copy_f0_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         
         static void choice_update_ts_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
         static void choice_trigger_mode_callback (GtkWidget *widget, Inet_Json_External_Scandata *self);
@@ -548,6 +549,9 @@ private:
         int deg_extend;
 
         double bram_window_length; // scope window length in sec
+
+        double resonator_frequency_fitted;
+        double resonator_phase_fitted;
         
         PACPLL_parameters parameters;
         PACPLL_signals signals;

@@ -227,14 +227,19 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 {
         GtkWidget *tmp;
         GtkWidget *wid;
-	
+        GtkWidget *CpyButton;
+        
 	GSList *EC_R_list=NULL;
 	GSList *EC_QC_list=NULL;
+	GSList *EC_FP_list=NULL;
 
         debug_level = 0;
         input_rpaddress = NULL;
         text_status = NULL;
         streaming = 0;
+
+        resonator_frequency_fitted = -1.;
+        resonator_phase_fitted = -1.;
 
         ch_freq = -1;
         ch_ampl = -1;
@@ -332,12 +337,18 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_input_nx (2);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::pac_frequency_parameter_changed, this);
   	bp->grid_add_ec ("Frequency", Hz, &parameters.frequency_manual, 0.0, 20e6, ".3lf", 0.1, 10., "FREQUENCY-MANUAL");
+        EC_FP_list = g_slist_prepend( EC_FP_list, bp->ec);
         bp->new_line ();
         bp->set_no_spin (true);
         bp->set_input_width_chars (8);
         bp->set_input_nx (1);
-  	bp->grid_add_ec ("Center,Scale", Hz, &parameters.frequency_center, 0.0, 20e6, ".3lf", 0.1, 10., "FREQUENCY-CENTER");
-  	bp->grid_add_ec (NULL, Unity, &parameters.aux_scale, -1e6, 1e6, ".6lf", 0.1, 10., "AUX-SCALE");
+  	bp->grid_add_ec ("Center", Hz, &parameters.frequency_center, 0.0, 20e6, ".3lf", 0.1, 10., "FREQUENCY-CENTER");
+        EC_FP_list = g_slist_prepend( EC_FP_list, bp->ec);
+  	bp->grid_add_button (N_("Copy"), "Copy F-center result from tune.", 1,
+                             G_CALLBACK (Inet_Json_External_Scandata::copy_f0_callback), this);
+        CpyButton = bp->button;
+  	//bp->grid_add_ec ("Center,Scale", Hz, &parameters.frequency_center, 0.0, 20e6, ".3lf", 0.1, 10., "FREQUENCY-CENTER");
+  	//bp->grid_add_ec (NULL, Unity, &parameters.aux_scale, -1e6, 1e6, ".6lf", 0.1, 10., "AUX-SCALE");
         bp->new_line ();
         bp->set_no_spin (false);
         bp->set_input_nx (2);
@@ -431,6 +442,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         bp->set_input_width_chars (8);
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::phase_ctrl_parameter_changed, this);
         bp->grid_add_ec ("Setpoint", Deg, &parameters.phase_fb_setpoint, -180.0, 180.0, "5g", 0.1, 1.0, "PHASE-FB-SETPOINT");
+        EC_FP_list = g_slist_prepend( EC_FP_list, bp->ec);
         bp->new_line ();
         bp->set_default_ec_change_notice_fkt (Inet_Json_External_Scandata::phase_gain_changed, this);
         bp->grid_add_ec ("CP gain", dB, &parameters.phase_fb_cp_db, -200.0, 200.0, "g", 0.1, 1.0, "PHASE-FB-CP");
@@ -1037,6 +1049,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
 	//g_object_set_data( G_OBJECT (window), "INETJSONSCANCONTROL_EC_list", EC_list);
 
 	g_object_set_data( G_OBJECT (window), "PAC_EC_READINGS_list", EC_R_list);
+	g_object_set_data( G_OBJECT (CpyButton), "PAC_FP_list", EC_FP_list);
 
         set_window_geometry ("inet-json-rp-control"); // needs rescoure entry and defines window menu entry as geometry is managed
 
@@ -1689,6 +1702,15 @@ void Inet_Json_External_Scandata::update_monitoring_parameters(){
         if (G_IS_OBJECT (window))
 		g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (window), "PAC_EC_READINGS_list"),
 				(GFunc) App::update_ec, NULL);
+}
+
+void Inet_Json_External_Scandata::copy_f0_callback (GtkWidget *widget, Inet_Json_External_Scandata *self){
+        if (self->resonator_frequency_fitted > 0){
+                self->parameters.frequency_center = self->parameters.frequency_manual = self->resonator_frequency_fitted;
+                self->parameters.phase_fb_setpoint = self->resonator_phase_fitted;
+                g_slist_foreach((GSList*)g_object_get_data( G_OBJECT (widget), "PAC_FP_list"),
+				(GFunc) App::update_ec, NULL);
+        }
 }
 
 void Inet_Json_External_Scandata::enable_scope (GtkWidget *widget, Inet_Json_External_Scandata *self){
@@ -2801,7 +2823,9 @@ void Inet_Json_External_Scandata::update_graph (){
                                         phfit->draw (cr);
                                         delete resfit;
                                         delete phfit;
-
+                                        
+                                        resonator_frequency_fitted = lmgeofit_res.get_F0 ();
+                                        resonator_phase_fitted = lmgeofit_ph.get_C ();
                                         valuestring = g_strdup_printf ("Model Q: %g  A: %g mV  F0: %g Hz  Phase: %g [%g] @ %g Hz",
                                                                        lmgeofit_res.get_Q (),
                                                                        1000./lmgeofit_res.get_A (),
@@ -2814,6 +2838,9 @@ void Inet_Json_External_Scandata::update_graph (){
                                         reading->set_text (10, (110-14*1), valuestring);
                                         g_free (valuestring);
                                         reading->draw (cr);
+                                } else {
+                                        resonator_frequency_fitted = -1.; // invalid, no fit
+                                        resonator_phase_fitted = -1.;
                                 }
                         }
                         
