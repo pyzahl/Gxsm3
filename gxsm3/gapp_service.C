@@ -1153,3 +1153,41 @@ GtkWidget* BuildParam::grid_add_exec_button (const gchar* labeltxt,
         return button;
 }
 
+GtkWidget* BuildParam::grid_add_check_button_guint64 (const gchar* labeltxt, const char *tooltip, int bwx,
+                                          GCallback cb, gpointer cb_data, guint64 source, guint64 mask, const gchar *control_id){
+
+        button = gtk_check_button_new_with_label (N_(labeltxt));
+        if (control_id && cb){
+                remote_action_cb *ra = g_new( remote_action_cb, 1);     
+                ra -> cmd = g_strdup_printf("CHECK_%s", control_id);
+                gchar *autotooltip = g_strconcat ("Remote example: action ([UN]", ra->cmd, ")", NULL); 
+                gtk_widget_set_tooltip_text (button, autotooltip);
+                g_free (autotooltip);
+                ra -> RemoteCb = (void (*)(GtkWidget*, void*))cb;  
+                ra -> widget = button;                                  
+                ra -> data = cb_data;                                      
+                ra -> return_data = NULL;
+                gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra ); 
+
+                ra -> cmd = g_strdup_printf("UNCHECK_%s", control_id);
+                ra -> RemoteCb = (void (*)(GtkWidget*, void*))cb;  
+                ra -> widget = button;                                  
+                ra -> data = cb_data;                                      
+                ra -> return_data = NULL;
+                gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra ); 
+        } else
+                if (tooltip)
+                        gtk_widget_set_tooltip_text (button, tooltip);
+        if (mask > 0){
+                g_object_set_data(G_OBJECT(button), "Bit_Mask", GUINT_TO_POINTER (mask));
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), (((source) & (mask)) ? 1:0));
+        }
+        if (mask == 0){
+                gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), (source)? 1:0);
+        }
+        if (cb){
+                g_signal_connect(G_OBJECT (button), "toggled", G_CALLBACK(cb), cb_data);
+        }
+        grid_add_widget (button, bwx);
+        return button;
+}
