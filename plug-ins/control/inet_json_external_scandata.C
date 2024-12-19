@@ -1060,6 +1060,7 @@ Inet_Json_External_Scandata::Inet_Json_External_Scandata ()
         ra -> data_vector[2] = &bram_saved_buffer[2][0];
         ra -> data_vector[3] = &bram_saved_buffer[3][0];
         ra -> data_vector[4] = &bram_saved_buffer[4][0];
+
         gapp->RemoteActionList = g_slist_prepend ( gapp->RemoteActionList, ra );
         
 }
