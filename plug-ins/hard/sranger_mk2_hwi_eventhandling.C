@@ -558,6 +558,8 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
                                       gint xmap, gint src, gint num_active_xmaps, gint num_active_sources){
 
         static gint last_current_i=0;
+	UnitObj *UXaxis = new UnitObj(xua, " ", "g", xlab);
+	UnitObj *UYaxis = new UnitObj(yua,  " ", "g", ylab);
 	double xmin, xmax, x;
 
         // force rebuild if view/window arrangement changed?
@@ -632,6 +634,8 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 	XSM_DEBUG_PG("DBG-M VIS 1");
 
 	XSM_DEBUG_PG("Probing_graph_callback Visualization U&T/Rz" );
+	UXaxis->SetAlias (xlab);
+	UYaxis->SetAlias (ylab);
 	if (!pc){
 		XSM_DEBUG_PG("DBG-M VIS c1  ci=" << current_i);
 		XSM_DEBUG_PG ("Probing_graph_callback Visualization -- new pc" );
@@ -640,12 +644,8 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 		XSM_DEBUG_PG("DBG-M VIS c2  " << title << " xr= " << xmin << " .. " << xmax << " " << ylab);
                 gchar *resid = g_strdelimit (g_strconcat (xlab,ylab,NULL), " ;:()[],./?!@#$%^&*()+-=<>", '_');
 
-                UnitObj UXaxis (xua, " ", "g", xlab);
-                UnitObj UYaxis (yua, " ", "g", ylab);
-                UXaxis.SetAlias (xlab);
-                UYaxis.SetAlias (ylab);
 		pc = new ProfileControl (title, current_i, 
-                                         &UXaxis, &UYaxis, 
+                                         UXaxis, UYaxis, 
                                          xmin, xmax,
                                          resid,
                                          GrMatWin ? vpg_app_window : NULL);
@@ -689,6 +689,10 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 		pc->scan1d->data.s.nvalues=1;
 		pc->scan1d->data.s.ntimes=1;
 		pc->SetXrange (xmin, xmax);
+
+                { gchar *tmp = UXaxis->MakeLongLabel(); pc->SetXlabel (tmp); g_free (tmp); }
+                { gchar *tmp = UYaxis->MakeLongLabel(); pc->SetYlabel (tmp); g_free (tmp); }
+                { gchar *title = g_strdup_printf ("Vector Probe, Channel: %s", ylab); pc->SetTitle (title); g_free (title); }
 
 		if (join_same_x && si >= pc->get_scount ()){
 			pc->AddLine (si);
@@ -756,12 +760,8 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 		if (!pc_av){
 			XSM_DEBUG_PG ("Probing_graph_callback Visualization -- new pc_av" );
 			gchar   *title = g_strdup_printf ("Vector Probe, Channel: %s %s", ylab, (vis_PlotAvg & plot_msk)?"averaged":"cur. section");
-                        UnitObj UXaxis (xua, " ", "g", xlab);
-                        UnitObj UYaxis (yua, " ", "g", ylab);
-                        UXaxis.SetAlias (xlab);
-                        UYaxis.SetAlias (ylab);
 			pc_av = new ProfileControl (title, spectra_index+1, 
-						    &UXaxis, &UYaxis,
+						    UXaxis, UYaxis,
                                                     xmin, xmax, ylab);
 			pc_av->scan1d->mem2d->Resize (spectra_index+1, join_same_x ? nas:1);
 			pc_av->SetTitle (title);
@@ -805,6 +805,8 @@ void DSPControl::probedata_visualize (GArray *probedata_x, GArray *probedata_y, 
 		}
 		XSM_DEBUG_PG("DBG-M VIS avgx");
 	} 
+	delete UXaxis;
+	delete UYaxis;
 	XSM_DEBUG_PG ("DSPControl::probedata_visualize -- exit");
 }
 
