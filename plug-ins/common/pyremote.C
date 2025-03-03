@@ -3476,7 +3476,7 @@ static PyObject* remote_autoupdate(PyObject *self, PyObject *args)
 static gboolean main_context_save_from_thread (gpointer user_data){
         IDLE_from_thread_data *idle_data = (IDLE_from_thread_data *) user_data;
         // NOT THREAD SAFE GUI OPERATION TRIGGER HERE
-        gapp->xsm->save(MANUAL_SAVE_AS, NULL, -1, TRUE);
+        gapp->file_save_callback(NULL, NULL, NULL);
 
         UNSET_WAIT_JOIN_MAIN;
         return G_SOURCE_REMOVE;
