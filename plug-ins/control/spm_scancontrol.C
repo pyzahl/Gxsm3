@@ -332,6 +332,7 @@ static void cb_mvolt_generate_list( GtkWidget *widget, SPM_ScanControl *scc ){
 	scc->compute_mvolt_list (GTK_WIDGET (g_object_get_data( G_OBJECT (widget), "GRID_SETUP")));
 }
 
+        
 SPM_ScanControl::SPM_ScanControl ()
 {
 	GtkWidget *grid;
@@ -481,12 +482,22 @@ SPM_ScanControl::SPM_ScanControl ()
         // Repeat, Multi (Volt,...), SubScan - Mode selections
         x=1,++y;
 	// --------------------------------------------------
-	GtkWidget *checkbutton = gtk_check_button_new_with_label(N_("Repeat"));
-	gtk_widget_set_tooltip_text (checkbutton, N_("Auto Restart Scan after completion.\nWARNING:\n Script triggered scan start will\nnever go beyond that scan start comand\n and repeats as long as this is checked."));
+
+
+        GtkWidget *checkbutton = check_button_remote_enabled (N_("Repeat"),
+                                                              N_("Auto Restart Scan after completion. "
+                                                                 PYREMOTE_CHECK_HOOK_KEY("SCAN-REPEAT")
+                                                                 "\nWARNING:\n Script triggered scan start will\n"
+                                                                 "never go beyond that scan start comand\n and repeats as long as this is checked.") ,
+                                                              G_CALLBACK (cb_repeat_mode), this,
+                                                              RepeatMode (), 0, "SCAN-REPEAT");
+        
+        //GtkWidget *checkbutton = gtk_check_button_new_with_label(N_("Repeat"));
+	//gtk_widget_set_tooltip_text (checkbutton, N_("Auto Restart Scan after completion.\nWARNING:\n Script triggered scan start will\nnever go beyond that scan start comand\n and repeats as long as this is checked."));
 	gtk_grid_attach (GTK_GRID (grid_ctrl), checkbutton, x++, y, 1,1);
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (checkbutton), RepeatMode ());
-	g_signal_connect (G_OBJECT (checkbutton), "toggled",
-			  G_CALLBACK (cb_repeat_mode), this);
+	//gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (checkbutton), RepeatMode ());
+	//g_signal_connect (G_OBJECT (checkbutton), "toggled",
+	//		  G_CALLBACK (cb_repeat_mode), this);
 
 
 	checkbutton = gtk_check_button_new_with_label(N_("Multi Layer"));

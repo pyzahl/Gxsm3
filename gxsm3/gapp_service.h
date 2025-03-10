@@ -41,7 +41,8 @@
 #include "pcs.h"
 
 typedef struct _Gxsm3appWindow         Gxsm3appWindow;
-
+#define PYREMOTE_CHECK_HOOK_KEY_PREFIX "PyRemote:action([UN]CHECK-"
+#define PYREMOTE_CHECK_HOOK_KEY(KEY)   PYREMOTE_CHECK_HOOK_KEY_PREFIX KEY")"
 
 // Used Ressource Types
 typedef enum
@@ -73,6 +74,10 @@ typedef struct
 } RES_ENTRY;
 
 typedef void (*GappBrowseFunc)(gchar *fname, gpointer user_data);
+
+// for non bp compatibility/backporting
+GtkWidget* check_button_remote_enabled (const gchar* labeltxt, const char *tooltip,
+                                        GCallback cb, gpointer cb_data, guint64 source, guint64 mask, const gchar *control_id);
 
 
 /* Example use:
@@ -505,10 +510,45 @@ class BuildParam{
 		grid_add_widget (button, bwx);
                 return button;
         };
+        GtkWidget* grid_add_button_icon_name (const gchar* iconname, const char *tooltip=NULL, int bwx=1,
+                                              GCallback cb=NULL, gpointer data=NULL,
+                                              const gchar *data_key=NULL, gpointer key_data=NULL){
+                button = gtk_button_new_from_icon_name (iconname, GTK_ICON_SIZE_BUTTON);
+
+                if (data_key)
+                        g_object_set_data (G_OBJECT (button), data_key, key_data);
+                if (tooltip)
+                        gtk_widget_set_tooltip_text (button, tooltip);
+                if (cb){
+                        g_signal_connect(G_OBJECT (button), "clicked", G_CALLBACK(cb), data);
+                }
+		grid_add_widget (button, bwx);
+                return button;
+        };
+
+        // generate ID-KEY for tooltip remote hook
+        const gchar* PYREMOTE_CHECK_HOOK_KEY_FUNC(const gchar* tt, const gchar *idkey, int k=-1){
+                g_message ("PYREMOTE_CHECK_HOOK_KEY_FUNC: %s. %s%s%02d)",tt,PYREMOTE_CHECK_HOOK_KEY_PREFIX,idkey,k);
+                if (k >= 0)
+                        return g_strdup_printf ("%s. %s%s%02d)",tt,PYREMOTE_CHECK_HOOK_KEY_PREFIX,idkey,k);
+                else
+                        return g_strdup_printf ("%s. %s%s)",tt,PYREMOTE_CHECK_HOOK_KEY_PREFIX,idkey);
+        };
+
+        // add this (example) is tooltip string for remote enabling:  PYREMOTE_CHECK_HOOK_KEY("SCAN-REPEAT")
+        GtkWidget* grid_add_check_button_remote_enabled (const gchar* labeltxt, const char *tooltip=NULL, int bwx=1,
+                                                         GCallback cb=NULL, gpointer data=NULL, guint64 source=0, guint64 mask=0, const gchar *control_id=NULL);
+        
+        GtkWidget* grid_add_check_button (const gchar* labeltxt, const char *tooltip=NULL, int bwx=1, GCallback cb=NULL, gpointer data=NULL, int source=0, int mask=0);
+
+        //GtkWidget* grid_add_check_button_guint64(const gchar* labeltxt, const char *tooltip=NULL, int bwx=1, GCallback cb=NULL, gpointer data=NULL, guint64 source=0, guint64 mask=0, const gchar *control_id=NULL);
+
+        
         GtkWidget* grid_add_exec_button (const gchar* labeltxt,
                                          GCallback exec_cb, gpointer cb_data, const gchar *control_id,
                                          int bwx=1,
                                          const gchar *data_key=NULL, gpointer key_data=NULL);
+        /*
         GtkWidget* grid_add_check_button (const gchar* labeltxt, const char *tooltip=NULL, int bwx=1,
                                           GCallback cb=NULL, gpointer data=NULL, gint source=0, gint mask=-1){
                 button = gtk_check_button_new_with_label (N_(labeltxt));
@@ -527,6 +567,7 @@ class BuildParam{
                 grid_add_widget (button, bwx);
                 return button;
         };
+        */
         static void lock_callback (GtkWidget *button, void *data) {
                 gtk_button_set_image
                         (GTK_BUTTON (button),
@@ -583,8 +624,9 @@ class BuildParam{
                 return button;
         };
 
-        GtkWidget* grid_add_check_button_guint64 (const gchar* labeltxt, const char *tooltip, int bwx,
-                                          GCallback cb, gpointer data, guint64 source, guint64 mask, const gchar *control_id=NULL);
+        GtkWidget* grid_add_check_button_guint64(const gchar* labeltxt, const char *tooltip=NULL, int bwx=1, GCallback cb=NULL, gpointer data=NULL, guint64 source=0, guint64 mask=0, const gchar *control_id=NULL);
+
+        //GtkWidget* grid_add_check_button_guint64 (const gchar* labeltxt, const char *tooltip, int bwx,  GCallback cb, gpointer data, guint64 source, guint64 mask, const gchar *control_id=NULL);
 
         GtkWidget* grid_add_radio_button (const gchar* labeltxt, const char *tooltip=NULL,
                                           GCallback cb=NULL, gpointer data=NULL, gboolean start=false){
