@@ -1888,9 +1888,9 @@ class SPMcontrol():
                 else:
                         print ("")
                         print ("*** Sorry, no valid SPM-CONTROL found running on any potentially plugged in MK2/3 ***")
-                        print ("ByBy.")
+                        #print ("ByBy.")
                         self.sr_dev_path  = "none"
-                        exit (0)
+                        #exit (0)
 
         def status (self):
                 return self.spm_control_found

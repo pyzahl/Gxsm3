@@ -867,6 +867,7 @@ for i in range(sr_spd_dev_index, 8-sr_spd_dev_index):
 
         print ("continue seeking for HV1 ...")
 
+print ("USING <"+sr_spd_dev_path+"> HV1 Magic Code ID:   %08X" %HV1_configuration[ii_config_softwareid])
 if ( HV1_configuration[ii_config_softwareid] != HV1_magic_softwareid ):
                 print ("\nERROR: Exiting -- sorry, no valid HV1 (Smart Piezo Drive) code Mk3-Pro identified.")
 else:
