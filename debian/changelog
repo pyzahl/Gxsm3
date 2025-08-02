@@ -1,3 +1,17 @@
+gxsm3 (3.54.0-0ubuntu3) noble; urgency=medium
+
+  * intermediate build on 02.08.2025
+  * some minor backport included
+  * increases package version numer
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 02 Aug 2025 20:25:25 +0200
+
+gxsm3 (3.54.0-0ubuntu2) noble; urgency=medium
+
+  * intermediate build
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sat, 14 Dec 2024 19:01:49 +0100
+
 gxsm3 (3.54.0-0ubuntu1) noble; urgency=medium
 
   * fixed dependencies for Ubuntu24.04 
