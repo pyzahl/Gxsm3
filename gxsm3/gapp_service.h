@@ -886,13 +886,15 @@ public:
   
 	// Basic Setup Window/Widget
 	virtual void AppWindowInit(const gchar *title);
+        virtual void SetTitle(const gchar *title, const gchar *sub_title=NULL);
+
         virtual void add_window_to_window_menu(const gchar *menu_item_label, const gchar* key);
 
 	int set_window_geometry (const gchar *key, gint index=-1, gboolean add_to_menu=true);
 
 	static void SaveGeometryCallback(AppBase *apb);
 
-	int SaveGeometry(int savealways=TRUE);
+	int SaveGeometry(int store_to_settings=TRUE);
 	int LoadGeometry();
 
 	/* action callbacks */
@@ -931,6 +933,8 @@ protected:
 	GtkWidget* v_grid; // 1st level grid in window
 
 private:
+        gchar *main_title_buffer;
+        gchar *sub_title_buffer;
 
         GSettings *geometry_settings;
         gchar *window_key;

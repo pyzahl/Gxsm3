@@ -1510,6 +1510,7 @@ to the community. The GXSM-Forums always welcome input.
 
 #include <Python.h>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+// TESTING
 //#include "/usr/local/lib/python3.9/dist-packages/numpy/core/include/numpy/arrayobject.h"
 //#include "/usr/local/lib/python3.9/dist-packages/numpy/core/include/numpy/ndarraytypes.h"
 //#include "/usr/local/lib/python3.9/dist-packages/numpy/core/include/numpy/ndarrayobject.h"
@@ -5461,13 +5462,10 @@ void py_gxsm_console::AppWindowInit(const gchar *title){
 
         PI_DEBUG (DBG_L2,  "pyremote Plugin :: setup titlbar" );
 
-        gtk_window_set_title (GTK_WINDOW (window), title);
-        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
         if (script_filename)
-                gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), script_filename);
+                SetTitle(title, script_filename);
         else
-                gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), "no script file name.");
-        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+                SetTitle(title, "no script file name.");
 
         g_signal_connect (G_OBJECT(window),
                           "delete_event",

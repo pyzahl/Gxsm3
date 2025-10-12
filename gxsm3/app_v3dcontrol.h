@@ -84,7 +84,7 @@ public:
                 auto_update_mode = override;
         };
         static gboolean v3dview_timer_callback (gpointer data);
-        void SetTitle(char *title);
+        //void SetTitle(char *title);
         void SetActive(int flg);
         void CheckOptions();
 

@@ -122,10 +122,7 @@ void MonitorControl::AppWindowInit(const gchar *title){
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
         gtk_widget_show (header_menu_button);
 
-        gtk_window_set_title (GTK_WINDOW (window), title);
-        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
-        // gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
-        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+        SetTitle (title);
 
 	v_grid = gtk_grid_new ();
         gtk_container_add (GTK_CONTAINER (window), v_grid);
