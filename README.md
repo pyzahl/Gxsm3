@@ -13,6 +13,11 @@ DSP hardware and provided also Open Source Code for all the low level
 signal processing tasks and instrument controls in a most flexible and
 adaptable manner.
 
+Gxsm3 is about to get obsoleted, frozen and no further active developments or back-porting is planned.
+Please visit and upgrade to https://github.com/pyzahl/Gxsm4
+
+---
+
 All latest stable software is available
 via SVN (gxsm2) and GIT (gxsm3) only
 
