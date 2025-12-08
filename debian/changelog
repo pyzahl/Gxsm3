@@ -1,3 +1,9 @@
+gxsm3 (3.54.0-0ubuntu5) noble; urgency=medium
+
+  * added missing dependency to json-glib
+
+ -- Thorsten Wagner <stm@users.sf.net>  Mon, 08 Dec 2025 19:43:18 +0100
+
 gxsm3 (3.54.0-0ubuntu4) noble; urgency=medium
 
   * removed nctopng from package
