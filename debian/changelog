@@ -1,3 +1,10 @@
+gxsm3 (3.54.0-0ubuntu4) noble; urgency=medium
+
+  * removed nctopng from package
+  * nctopng is now in gxsm-nc-thumbnailer and does not require netcdf-legacy any more
+
+ -- Thorsten Wagner <stm@users.sf.net>  Mon, 08 Dec 2025 18:36:41 +0100
+
 gxsm3 (3.54.0-0ubuntu3) noble; urgency=medium
 
   * intermediate build on 02.08.2025

@@ -1,0 +1,43 @@
+--- a/tools/Makefile.am
++++ b/tools/Makefile.am
+@@ -9,22 +9,22 @@
+ AM_CPPFLAGS = -I.. -I$(includedir) `pkg-config --cflags glib-2.0`
+ 
+ bin_PROGRAMS = \
+-	nctopng \
+ 	scalatopng \
+ 	gmetopng \
+ 	uksoft2001topng \
+ 	rhkspm32topng \
+ 	vpdata2ascii \
+ 	wizard \
+-	nc2top
++	nc2top # \
++	# nctopng
+ 
+-nctopng_LDFLAGS = -export-dynamic -L$(libdir) `pkg-config --libs glib-2.0`
+-nctopng_LDADD = \
+-	-lnetcdf_c++ -lnetcdf \
+-	-lpng \
+-	-lpopt \
+-	$(INTLLIBS) # for i18n
+-nctopng_SOURCES = nctopng.C thumbpal.h writepng.C writepng.h
++#nctopng_LDFLAGS = -export-dynamic -L$(libdir) `pkg-config --libs glib-2.0`
++#nctopng_LDADD = \
++#	-lnetcdf_c++ -lnetcdf \
++#	-lpng \
++#	-lpopt \
++#	$(INTLLIBS) # for i18n
++#nctopng_SOURCES = nctopng.C thumbpal.h writepng.C writepng.h
+ 
+ 
+ scalatopng_LDFLAGS = -export-dynamic -L$(libdir) `pkg-config --libs glib-2.0`
+--- a/thumbnailers/Makefile.am
++++ b/thumbnailers/Makefile.am
+@@ -1,5 +1,5 @@
+ thumbnailersdir = $(datadir)/thumbnailers
+ 
+-thumbnailers_DATA = gxsm-nc.thumbnailer
++#thumbnailers_DATA = gxsm-nc.thumbnailer
+ 
+ 
