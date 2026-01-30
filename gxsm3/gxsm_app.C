@@ -293,10 +293,7 @@ void App::AppWindowInit(const gchar *title){
         }
 
         // Title bar
-        gtk_window_set_title (GTK_WINDOW (window), title);
-        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
-        gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), GXSM_VERSION_NAME);
-        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+        SetTitle (title, GXSM_VERSION_NAME);
 
         /* main window content is a grid to place main control elements */
         grid = gtk_grid_new ();

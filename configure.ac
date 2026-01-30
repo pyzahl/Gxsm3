@@ -617,6 +617,7 @@ PKG_CHECK_MODULES(GXSM3, [
 	gtksourceview-3.0 >= $GTKSOURCEVIEW_REQUIRED
 	gsettings-desktop-schemas
 	libsoup-2.4
+	json-glib-1.0
 ])
 
 GXSM3_CFLAGS="$CFLAGS $GXSM3_CFLAGS $X11_CFLAGS $UNIX_CFLAGS $GXSM3_PYTHON_CFLAGS"

@@ -735,10 +735,7 @@ void DSPMoverControl::AppWindowInit(const gchar *title){
 
                 XSM_DEBUG (DBG_L2,  "VC::VC setup titlbar" );
 
-                gtk_window_set_title (GTK_WINDOW (window), title);
-                gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
-                // gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
-                gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+                SetTitle (title);
 
                 g_signal_connect (G_OBJECT(window),
                                   "delete_event",

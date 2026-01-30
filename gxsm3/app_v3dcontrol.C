@@ -150,11 +150,7 @@ void V3dControl::AppWindowInit(const gchar *title){
         gtk_header_bar_pack_end (GTK_HEADER_BAR (header_bar), header_menu_button);
         gtk_widget_show (header_menu_button);
 
-        gtk_window_set_title (GTK_WINDOW (window), title);
-        gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
-        gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), "V3D view subtitle");
-
-        gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+        SetTitle (title, "V3D view subtitle");
 
         //        g_signal_connect (G_OBJECT(window),
         //                          "delete_event",
@@ -280,11 +276,12 @@ V3dControl::~V3dControl (){
 	XSM_DEBUG(DBG_L2, "~V3dControl out" );
 }
 
-
+#if 0
 void V3dControl::SetTitle(char *title){
 	gtk_window_set_title (GTK_WINDOW (window), title);
 	CheckOptions();
 }
+#endif
 
 void V3dControl::SetActive(int flg){
 	GtkWidget *statusbar = (GtkWidget*)g_object_get_data (G_OBJECT (glarea), "statusbar");

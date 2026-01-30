@@ -352,10 +352,7 @@ void SPM_SIM_Control::AppWindowInit(const gchar *title){
                 // hide close, min, max window decorations
                 gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (header_bar), false);
 
-                gtk_window_set_title (GTK_WINDOW (window), title);
-                gtk_header_bar_set_title ( GTK_HEADER_BAR (header_bar), title);
-                // gtk_header_bar_set_subtitle (GTK_HEADER_BAR  (header_bar), title);
-                gtk_window_set_titlebar (GTK_WINDOW (window), header_bar);
+                SetTitle (title);
 
                 g_signal_connect (G_OBJECT(window),
                                   "delete_event",
