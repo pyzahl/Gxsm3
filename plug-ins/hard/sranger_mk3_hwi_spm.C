@@ -1136,7 +1136,8 @@ gboolean sranger_mk3_hwi_spm::tip_to_origin(double x, double y, gint *state_quer
 
                         double Mdx = x - (double)dsp_scan.xyz_vec[i_X];
                         double Mdy = y - (double)dsp_scan.xyz_vec[i_Y];
-                        double mvspd = (1<<16) * sranger_mk2_hwi_pi.app->xsm->Inst->X0A2Dig (DSPControlClass->move_speed_x) 
+                        // Fixed X0A2Dig to XA2Dig as of https://sourceforge.net/p/gxsm/discussion/40919/thread/839f9246/
+                        double mvspd = (1<<16) * sranger_mk2_hwi_pi.app->xsm->Inst->XA2Dig (DSPControlClass->move_speed_x) 
                                 / DSPControlClass->frq_ref;
                         double steps = round (sqrt (Mdx*Mdx + Mdy*Mdy) / mvspd);
                         dsp_scan.fm_dx = (long)round(Mdx/steps);
@@ -1520,7 +1521,8 @@ gboolean sranger_mk3_hwi_spm::Move_delta_XYZ (double dx, double dy, double dz, M
 	double Mdx = Q16 * dx;
 	double Mdy = Q16 * dy;
 	double Mdz = Q16 * dz;
-	double mvspd = Q16 * sranger_mk2_hwi_pi.app->xsm->Inst->X0A2Dig (DSPControlClass->move_speed_x) / DSPControlClass->frq_ref;
+        // Fixed X0A2Dig to XA2Dig  as of https://sourceforge.net/p/gxsm/discussion/40919/thread/839f9246/
+	double mvspd = Q16 * sranger_mk2_hwi_pi.app->xsm->Inst->XA2Dig (DSPControlClass->move_speed_x) / DSPControlClass->frq_ref;
 	double steps = round (sqrt (Mdx*Mdx + Mdy*Mdy + Mdz*Mdz) / mvspd);
 	dsp_scan.fm_dx = (long)round(Mdx/steps);
 	dsp_scan.fm_dy = (long)round(Mdy/steps);
@@ -1836,7 +1838,8 @@ gboolean sranger_mk3_hwi_spm::ScanLineM(int yindex, int xdir, int lssrcs, Mem2d 
                 
 		//### double Mdx = -(double)(Nx+1)*dsp_scan.dnx*dsp_scan.fs_dx/2. - (double)dsp_scan.xyz_vec[i_X];
 		//### double Mdy =  (double)(Ny-1)*dsp_scan.dny*dsp_scan.fs_dy/2. - (double)dsp_scan.xyz_vec[i_Y];
-		double mvspd = fract * sranger_mk2_hwi_pi.app->xsm->Inst->X0A2Dig (DSPControlClass->move_speed_x) / DSPControlClass->frq_ref;
+                // Fixed X0A2Dig to XA2Dig  as of https://sourceforge.net/p/gxsm/discussion/40919/thread/839f9246/
+		double mvspd = fract * sranger_mk2_hwi_pi.app->xsm->Inst->XA2Dig (DSPControlClass->move_speed_x) / DSPControlClass->frq_ref;
 		double steps = round (sqrt (Mdx*Mdx + Mdy*Mdy) / mvspd);
 		dsp_scan.fm_dx = (long)round(Mdx/steps);
 		dsp_scan.fm_dy = (long)round(Mdy/steps);
