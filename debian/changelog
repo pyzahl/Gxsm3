@@ -1,3 +1,9 @@
+gxsm3 (3.54.0-0ubuntu6) noble; urgency=medium
+
+  * uptodate release on Ubuntu 24.04 LTS before migrating to Ubuntu 26.04 LTS
+
+ -- Thorsten Wagner <stm@users.sf.net>  Sun, 26 Apr 2026 16:02:15 +0200
+
 gxsm3 (3.54.0-0ubuntu5) noble; urgency=medium
 
   * added missing dependency to json-glib
