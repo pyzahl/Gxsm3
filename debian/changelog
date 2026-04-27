@@ -1,3 +1,9 @@
+gxsm3 (3.54.0-0ubuntu7) noble; urgency=medium
+
+  * fixed problem with hard coded dependency to python3.7 in pyremote
+
+ -- Thorsten Wagner <stm@users.sf.net>  Mon, 27 Apr 2026 09:22:00 +0200
+
 gxsm3 (3.54.0-0ubuntu6) noble; urgency=medium
 
   * uptodate release on Ubuntu 24.04 LTS before migrating to Ubuntu 26.04 LTS
